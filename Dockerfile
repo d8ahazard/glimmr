@@ -1,5 +1,5 @@
-ENV ASPNETCORE_URLS=http://+:5666
 FROM mcr.microsoft.com/dotnet/core/aspnet:3.0-buster-slim AS base
+ENV ASPNETCORE_URLS=http://+:5666
 WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/core/sdk:3.0-buster AS build
