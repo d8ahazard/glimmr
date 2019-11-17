@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29324.140
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HueDream", "HueDream.csproj", "{B1EC763B-FF59-4B74-B153-39E8A13902DD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HueDream", "HueDream.csproj", "{B1EC763B-FF59-4B74-B153-39E8A13902DD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,8 +11,8 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{B1EC763B-FF59-4B74-B153-39E8A13902DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B1EC763B-FF59-4B74-B153-39E8A13902DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1EC763B-FF59-4B74-B153-39E8A13902DD}.Debug|Any CPU.ActiveCfg = Release|Any CPU
+		{B1EC763B-FF59-4B74-B153-39E8A13902DD}.Debug|Any CPU.Build.0 = Release|Any CPU
 		{B1EC763B-FF59-4B74-B153-39E8A13902DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B1EC763B-FF59-4B74-B153-39E8A13902DD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
