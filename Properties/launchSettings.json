@@ -1,7 +1,7 @@
-﻿{
+{
   "iisSettings": {
-    "windowsAuthentication": false, 
-    "anonymousAuthentication": true, 
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
     "iisExpress": {
       "applicationUrl": "http://localhost:5666",
       "sslPort": 0
@@ -18,10 +18,17 @@
     "HueDream": {
       "commandName": "Project",
       "launchBrowser": true,
-      "applicationUrl": "http://localhost:5666",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Debug"
-      }
+      },
+      "applicationUrl": "http://localhost:5666"
+    },
+    "Docker": {
+      "commandName": "Docker",
+      "launchBrowser": true,
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "environmentVariables": {},
+      "httpPort": 10000
     }
   }
 }
