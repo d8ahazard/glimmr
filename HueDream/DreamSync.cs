@@ -27,6 +27,7 @@ namespace HueDream.HueDream {
                 Console.WriteLine("Sync is already started...");
             } else {
                 if (dreamData.HUE_SYNC && dreamData.HUE_AUTH) {
+                    Console.WriteLine("Starting sync.");
                     doSync = true;
                     sender = new System.Threading.Thread(SyncData);
                     sender.IsBackground = true;
@@ -36,6 +37,7 @@ namespace HueDream.HueDream {
         }
 
         public void StopSync() {
+            Console.WriteLine("Stopping sync.");
             doSync = false;
             if (sender.Join(200) == false) {
                 sender.Abort();
@@ -44,17 +46,12 @@ namespace HueDream.HueDream {
         }
 
         private void SyncData() {
-            Console.WriteLine("SyncData fired.");
             dreamScreen.startListening();
             Task bill = hueBridge.startEntertainment();
             while (doSync) {
                 // Read updating color var from dreamscreen
-                var colors = dreamScreen.colors;
-                // Save it to the hue bridge's variable
-                hueBridge.colors = colors;
+                hueBridge.colors = dreamScreen.colors;
             }
-            
-
         }
     }
 }

@@ -4,7 +4,7 @@
 
     <div class="accordion wrapper" id="accordion">
         <h1>HueDream Config</h1>
-        <form method="post" action="./api/HueData">            
+        <form method="post" action="./api/HueData" id="settingsForm">            
             <div class="card bg-dark text-white">
                 <div class="card-header" id="headingTwo">
                     <h2 class="mb-0">
@@ -21,7 +21,7 @@
                             <label for="ds_ip">Dreamscreen IP</label>
                             <input type="text" class="form-control" id="ds_ip" name="ds_ip" placeholder="0.0.0.0">
                         </div>
-                        <button class="btn btn-secondary" id="ds_find">Find Dreamscreen</button>
+                        <button class="btn btn-secondary" id="ds_find" OnClientClick="return false;">Find Dreamscreen</button>
                     </div>
                 </div>
             </div>
@@ -45,7 +45,7 @@
                         <div class="form-group">
                             <label for="hue_auth">Hue Bridge Authorization</label>
                             <input type="text" class="form-control" id="hue_auth" placeholder="Unauthorized" disabled>
-                            <button class="btn btn-secondary" id="hb_authorize">Authorize</button>
+                            <button class="btn btn-secondary" id="hb_authorize" OnClientClick="return false;">Authorize</button>
                         </div>
                     </div>
                 </div>
@@ -64,7 +64,7 @@
                 <div id="collapseFour" class="collapse show" aria-labelledby="headingFour" data-parent="#accordion">
                     <div class="card-body">
                         <div class="form-group">
-                            <button class="btn btn-secondary" id="load_lights">Load Lights</button>
+                            <button class="btn btn-secondary" id="load_lights" OnClientClick="return false;">Load Lights</button>
                             <div class="form-check">
                                 <input type="checkbox" class="form-check-input" id="hue_sync" name="hue_sync">
                                 <label class="form-check-label" for="hue_sync">Sync DS and Hue</label>
@@ -124,6 +124,6 @@
                 </div>
             </div>
             <br>
-            <button type="submit" class="btn btn-primary">Submit</button>
+            <button type="submit" class="btn btn-primary" OnClientClick="return false;">Submit</button>
         </form>
     </div>   

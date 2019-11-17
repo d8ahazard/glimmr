@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -36,20 +37,30 @@ namespace HueDream.DreamScreenControl {
         private byte groupNumber = 0;
         private UdpClient receiver;
         public bool listening = false;
-        
+
 
         public DreamScreen(string remoteIP) {
             dreamScreenIp = IPAddress.Parse(remoteIP);
             endPoint = new IPEndPoint(dreamScreenIp, Port);
             groupNumber = 1;
-            colors = new string[12][];            
+            colors = new string[12][];
+            for (int i = 0; i < colors.Length; i++) {
+                colors[i] = new string[] { "FF", "FF", "FF" };
+            }
             dreamScreenSocket = new Socket(System.Net.Sockets.AddressFamily.InterNetwork, System.Net.Sockets.SocketType.Dgram, System.Net.Sockets.ProtocolType.Udp);
             dreamScreenSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, (int)1);
-
+            getMode();
         }
 
         public void setMode(int mode) {
             sendUDPWrite((byte)3, (byte)1, new byte[] { (byte)mode });
+        }
+
+        public void getMode() {
+            Console.WriteLine("Trying to get state...");
+            byte[] payload = Array.Empty<byte>();
+            requestState();
+            Listen();
         }
 
         public void startListening() {
@@ -91,18 +102,16 @@ namespace HueDream.DreamScreenControl {
             // This is hacky as hell
             if (byteString == "FC-05-01-30-01-0C-FF") {
                 try {
-                    //Console.WriteLine("Replying to subscription Message.");
                     sendUDPWrite((byte)0x01, (byte)0x0C, new byte[] { (byte)0x01 }, (byte)0x10);
                 } catch (Exception e) {
                     Console.WriteLine(e.ToString());
                 }
-            // So is this, but it works.
+                // So is this, but it works.
             } else if ($"{bytesString[4]}{bytesString[5]}" == "0316") {
                 IEnumerable<string> colorData = bytesString.Skip(6);
                 int lightCount = 0;
                 int count = 0;
                 string[] colorList = new string[3];
-                //Console.WriteLine("Updating color data on ds");
                 foreach (string colorValue in colorData) {
                     if (count == 0) {
                         colorList = new string[3];
@@ -117,6 +126,9 @@ namespace HueDream.DreamScreenControl {
                         count++;
                     }
                 }
+            } else {
+                DreamScreenState dState = new DreamScreenState(byteString);
+                Console.WriteLine("Device State: " + JsonConvert.SerializeObject(dState));
             }
 
             // Restart listening for udp data packages
@@ -140,13 +152,11 @@ namespace HueDream.DreamScreenControl {
                 var recvBuffer = udpClient.Receive(ref from);
                 string localAddress = GetLocalIPAddress() + ":8888";
                 if (from.ToString() != localAddress) {
-                    //Console.WriteLine("Received from " + from + " " + Encoding.UTF8.GetString(recvBuffer));
                     devices.Add(from.ToString());
                     noDevice = false;
                 }
                 count++;
             }
-            Console.WriteLine("Broke the loop");
             return devices;
         }
 
@@ -186,7 +196,28 @@ namespace HueDream.DreamScreenControl {
                     // CRC
                     response.Write(calculateCrc(byteSend));
                     string msg = BitConverter.ToString(stream.ToArray());
-                    //Console.WriteLine("Sending " + stream.Length + " bytes: " + msg);
+                    sendUDPUnicast(stream.ToArray());
+                }
+            }
+        }
+
+        void requestState() {
+
+            using (MemoryStream stream = new MemoryStream()) {
+                // : FC:05:FF:30:01:0A:2A
+                using (BinaryWriter response = new BinaryWriter(stream)) {
+                    // Magic header
+                    response.Write((byte)0xFC);
+                    response.Write((byte)0x05);
+                    response.Write((byte)0xFF);
+                    response.Write((byte)0x30);
+                    response.Write((byte)0x01);
+                    response.Write((byte)0x0A);
+                    response.Write((byte)0x2A);
+                    var byteSend = stream.ToArray();
+                    // CRC
+                    response.Write(calculateCrc(byteSend));
+                    string msg = BitConverter.ToString(stream.ToArray());
                     sendUDPUnicast(stream.ToArray());
                 }
             }
@@ -204,6 +235,37 @@ namespace HueDream.DreamScreenControl {
         private void sendUDPUnicast(byte[] data) {
             dreamScreenSocket.SendTo(data, endPoint);
         }
+
+        class DreamScreenState {
+            public string deviceType;
+            public string deviceState;
+            public DreamScreenState(string byteString) {
+                string[] bytesIn = byteString.Split("-");
+                string magic = bytesIn[0];
+                string type = bytesIn[bytesIn.Length - 2];
+                string state = bytesIn[33];
+                string typeString = "Unknown";
+                if (type == "01") {
+                    typeString = "DreamScreen";
+                } else if (type == "02") {
+                    typeString = "DreamScreen 4K";
+                } else if (type == "03") {
+                    typeString = "Sidekick";
+                }
+                deviceType = typeString;
+                if (state == "00") {
+                    deviceState = "Sleep";
+                } else if (state == "01") {
+                    deviceState = "Video";
+                } else if (state == "02") {
+                    deviceState = "Music";
+                } else if (state == "03") {
+                    deviceState = "Ambient";
+                }
+                Console.WriteLine("Type is " + typeString + ", state is " + state);
+            }
+        }
     }
 
+    
 }

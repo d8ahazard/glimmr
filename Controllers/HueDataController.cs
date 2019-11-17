@@ -14,17 +14,16 @@ namespace HueDream.Controllers {
     public class HueDataController : ControllerBase {
         // GET: api/HueData/action?action=...
         [HttpGet("action")]
-        public IActionResult Get(string action) {
+        public JsonResult Get(string action) {
             string message = "Unrecognized action";
             DreamData userData = new DreamData();
             Console.Write("Now we're cooking: " + action);
             if (action == "connectDreamScreen") {
-                Console.Write("Connecting dream screen?");
                 string dsIp = userData.DS_IP;
                 DreamScreenControl.DreamScreen ds = new DreamScreenControl.DreamScreen(dsIp);
                 if (dsIp == "0.0.0.0") {
                     List<string> devices = ds.findDevices();
-                    if (devices.Count() > 0) {
+                    if (devices.Count > 0) {
                         userData.DS_IP = devices[0].Split(":")[0];
                         Console.WriteLine("We have a DS IP: " + userData.DS_IP);
                         userData.saveData();
@@ -33,7 +32,6 @@ namespace HueDream.Controllers {
                     }
                 }
             } else if (action == "authorizeHue") {
-                Console.WriteLine("Auth request");
                 if (userData.HUE_IP != "0.0.0.0") {
                     HueBridge hb = new HueBridge();
                     RegisterEntertainmentResult appKey = hb.checkAuth();
@@ -46,10 +44,10 @@ namespace HueDream.Controllers {
                         userData.HUE_AUTH = true;
                         userData.saveData();
                     }
+                } else {
+                    message = "No Operation: Bridge Already Linked.";
                 }
-                Console.Write("Authorize hue");
             } else if (action == "findHue") {
-                Console.Write("Find hue");
                 string bridgeIp = HueBridge.findBridge();
                 if (bridgeIp != "") {
                     userData.HUE_IP = bridgeIp;
@@ -63,22 +61,23 @@ namespace HueDream.Controllers {
                     HueBridge hb = new HueBridge();
                     userData.HUE_LIGHTS = hb.getLights();
                     userData.saveData();
+                    return new JsonResult(userData.HUE_LIGHTS);
+                } else {
+                    message = "Error: Link your hue bridge first.";
                 }
             }
-            return Ok(message);
+            return new JsonResult(message);
         }
 
         // GET: api/HueData/json
         [HttpGet("json")]
         public IActionResult Get() {
-            Console.Write("Normal JSON request");
             DreamData userData = new DreamData();
             return Ok(userData);
         }
 
         [HttpGet("lights")]
         public IActionResult GetWhatever() {
-            Console.Write("Light JSON request");
             DreamData userData = new DreamData();
             return Ok(userData);
         }
@@ -86,7 +85,7 @@ namespace HueDream.Controllers {
 
         // GET: api/HueData/5
         [HttpGet("{id}", Name = "Get")]
-        public string Get(int id) {
+        public static string Get(int id) {
             return "value";
         }
 
@@ -100,13 +99,13 @@ namespace HueDream.Controllers {
             foreach (string key in keys) {
                 Console.WriteLine("We have a key and value: " + key + " " + Request.Form[key]);
                 if (key.Contains("lightMap")) {
-                    int lightId = Int32.Parse(key.Replace("lightMap", ""));
+                    int lightId = int.Parse(key.Replace("lightMap", ""));
                     lightMap.Add(new KeyValuePair<int, string>(lightId, Request.Form[key]));
                 } else if (key == "ds_ip") {
                     userData.DS_IP = Request.Form[key];
                 } else if (key == "hue_ip") {
                     userData.HUE_IP = Request.Form[key];
-                } else if (key == "ds_sync") {
+                } else if (key == "hue_sync") {
                     string val = Request.Form[key];
                     bool res = false;
                     if (val == "on") {
@@ -122,7 +121,7 @@ namespace HueDream.Controllers {
             CheckSync(userData);
         }
 
-        private void CheckSync(DreamData userData) {
+        private static void CheckSync(DreamData userData) {
             DreamSync ds = new DreamSync();
             if (userData.DS_IP != "0.0.0.0" && userData.HUE_SYNC && !ds.doSync) {
                 Console.WriteLine("Starting Dreamscreen sync!");
@@ -131,16 +130,6 @@ namespace HueDream.Controllers {
                 Console.WriteLine("Stopping sync.");
                 ds.StopSync();
             }
-        }
-
-        // PUT: api/HueData/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value) {
-        }
-
-        // DELETE: api/ApiWithActions/5
-        [HttpDelete("{id}")]
-        public void Delete(int id) {
-        }
+        }        
     }
 }

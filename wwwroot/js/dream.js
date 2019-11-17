@@ -1,46 +1,69 @@
 $(function () {
 
+    $('#settingsForm').submit(function (e) {
+        e.preventDefault();
+        var data = $(this).serialize();
+        $.ajax({
+            url: "./api/HueData",
+            type: "POST",
+            data: data,
+            success: function (data) {
+                console.log("Posted!", data);
+            },
+            error: function (jXHR, textStatus, errorThrown) {
+                alert(errorThrown);
+            }
+        }); 
+    });
+
     $('#hb_authorize').on('click', function() {
         console.log("Trying to authorize with hue.");
-        $.get("./api/HueData/action?action=authorizeHue", function(data) {
-            if (data['registered'] != null) {
-                var result = data['registered'];
-                if (result == "Already Authorized" || result == "Authorized") {
-                    $('#hb_auth').val("Authorized")
-                    $('#hb_authorize').hide();
-                } else {
-                    $('#hb_auth').val(result);
-                    $('#hb_authorize').show();
-                }
+        $.get("./api/HueData/action?action=authorizeHue", function (data) {
+            if (data.indexOf("Success: ") !== -1) {
+                $('#hb_auth').val("Authorized")
+                $('#hb_authorize').hide();                
+            } else {
+                $('#hb_auth').val("Not authorized");
+                $('#hb_authorize').show();
             }
+            alert(data);
         });
     });
 
     $('#ds_find').on('click', function() {
         console.log("Trying to find dreamscreen.");
-        $.get("./api/HueData/action?action=connectDreamScreen", function(data) {
-            if (data['response'] != null) {
-                var result = data['response'];
-                if (result != "0.0.0.0") {
+        $.get("./api/HueData/action?action=connectDreamScreen", function (data) {
+            if (data.indexOf("Success: ") !== -1) {
+                var result = $.trim(data.replace("Success: ", ""));
+                if (result != "0.0.0.0") {                    
                     $('#ds_ip').val(result)
                     $('#ds_find').hide();
                 } else {
                     $('#ds_find').show();
                 }
-            }
+                alert(data);
+            }            
         });
     });
 
     $('#load_lights').on('click', function() {
-        $.get("./api/HueData/action?action=getLights", function(data) {
-            if (data['ERROR'] == null) {
-                console.log("Mapping lights", data)
-                mapLights({}, data)
+        $.get("./api/HueData/action?action=getLights", function (data) {
+            console.log("Data: ", data);
+            if (data.indexOf("Error: ") === -1) {
+                console.log("Mapping lights", data);
+                mapLights({}, data);
+                data = "Light data retrieved.";
             }
+            alert(data);
         });
     });
 
-    var data = $.get('./api/HueData/json', function(config){
+    fetchJson();
+    
+});
+
+function fetchJson() {
+    $.get('./api/HueData/json', function (config) {
         console.log("We have some config", config);
         var hueLights = false;
         var lightMap = false;
@@ -86,10 +109,11 @@ $(function () {
     });
     var height = ($('#lightPreview').width() / 16) * 5;
     $('#lightPreview').css('height', height);
-});
+}
 
 function mapLights(map, lights) {
     var lightGroup = document.getElementById("lightGroup");
+    lightGroup.innerHTML = "";
     var lightDiv = "";
     for (var l in lights) {
         var id = lights[l]['Key'];

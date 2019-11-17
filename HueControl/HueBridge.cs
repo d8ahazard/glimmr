@@ -57,7 +57,7 @@ namespace HueDream.HueControl {
             }
 
             if (targetGroup == "") {
-                Console.WriteLine("Creating target group?");
+                Console.WriteLine("Creating target group.");
                 string group = "";
                 try {
                     Dictionary<string, object> data = new Dictionary<string, object>();
@@ -68,7 +68,6 @@ namespace HueDream.HueControl {
                     var content = JsonConvert.SerializeObject(data);
                     var response = await httpClient.PostAsync("http://" + bridgeIp + "/api/" + bridgeUser + "/groups/", new StringContent(content, Encoding.UTF8, "application/json"));
                     var responseString = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine("Response: " + responseString);
                     var responseData = JToken.Parse(JsonConvert.SerializeObject(responseString));
                     if (responseData["Success"] != null) {
                         group = (string) responseData["Success"]["id"];
@@ -93,30 +92,21 @@ namespace HueDream.HueControl {
                 Console.WriteLine("AutoUpdate Enabled.");
                 EntertainmentLayer entertainmentLayer = entGroup.GetNewLayer(isBaseLayer: true);
                 while (true) {
-                    Console.WriteLine("Looping Hue Bridge send..." + JsonConvert.SerializeObject(colors));
                     foreach(KeyValuePair<int, string> lights in bridgeLights) {
                         if (lights.Value != "-1") {
                             int mapId = Int32.Parse(lights.Value);
                             string[] colorString = colors[mapId];
-                            Console.WriteLine("Color String for light" + mapId);
                             foreach(EntertainmentLight light in entertainmentLayer) {
-                                Console.WriteLine("Light ID: " + light.Id);
                                 if (light.Id == lights.Key) {
                                     string colorStrings = string.Join("", colorString);
-                                    Console.WriteLine("We can map this: " + colorStrings);
-
                                     light.State.SetRGBColor(new RGBColor(colorStrings));
                                     light.State.SetBrightness(100);
                                 }
                             }
-                            //var light = entertainmentLayer.Where(x => x.Id == mapId).FirstOrDefault();
-                            
                         }
                     }
                     
                 }
-                //foreach()
-                //var l1 = entLayer.Where(x => x.Id == 1);
             } else {
                 Console.WriteLine("Target Group creation failed!");
             }
@@ -159,9 +149,7 @@ namespace HueDream.HueControl {
                 var task = Task.Run(async () => await client.GetLightsAsync());
                 var lightArray = task.Result;
                 foreach (Light light in lightArray) {
-                    Console.WriteLine("Got a light");
                     if (light.Type == "Extended color light") {
-                        Console.WriteLine("And it's colored");
                         lights.Add(new KeyValuePair<int, string>(Int32.Parse(light.Id), light.Name));
                     }
                 }
