@@ -49,7 +49,7 @@ namespace HueDream.DreamScreenControl {
             }
             dreamScreenSocket = new Socket(System.Net.Sockets.AddressFamily.InterNetwork, System.Net.Sockets.SocketType.Dgram, System.Net.Sockets.ProtocolType.Udp);
             dreamScreenSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, (int)1);
-            getMode();
+            //getMode();
         }
 
         public void setMode(int mode) {
