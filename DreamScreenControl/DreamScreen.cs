@@ -127,6 +127,7 @@ namespace HueDream.DreamScreenControl {
                     }
                 }
             } else {
+                Console.WriteLine("State: " + byteString);
                 DreamScreenState dState = new DreamScreenState(byteString);
                 Console.WriteLine("Device State: " + JsonConvert.SerializeObject(dState));
             }
@@ -243,27 +244,32 @@ namespace HueDream.DreamScreenControl {
             public DreamScreenState(string byteString) {
                 string[] bytesIn = byteString.Split("-");
                 string magic = bytesIn[0];
-                string type = bytesIn[bytesIn.Length - 2];
-                string state = bytesIn[33];
                 string typeString = "Unknown";
-                if (type == "01") {
-                    typeString = "DreamScreen";
-                } else if (type == "02") {
-                    typeString = "DreamScreen 4K";
-                } else if (type == "03") {
-                    typeString = "Sidekick";
+                string deviceState = "Unknown";
+
+                if (magic == "FC") {
+                    string type = bytesIn[bytesIn.Length - 2];
+                    string state = bytesIn[33];
+                    
+                    if (type == "01") {
+                        typeString = "DreamScreen";
+                    } else if (type == "02") {
+                        typeString = "DreamScreen 4K";
+                    } else if (type == "03") {
+                        typeString = "Sidekick";
+                    }
+                    deviceType = typeString;
+                    if (state == "00") {
+                        deviceState = "Sleep";
+                    } else if (state == "01") {
+                        deviceState = "Video";
+                    } else if (state == "02") {
+                        deviceState = "Music";
+                    } else if (state == "03") {
+                        deviceState = "Ambient";
+                    }
                 }
-                deviceType = typeString;
-                if (state == "00") {
-                    deviceState = "Sleep";
-                } else if (state == "01") {
-                    deviceState = "Video";
-                } else if (state == "02") {
-                    deviceState = "Music";
-                } else if (state == "03") {
-                    deviceState = "Ambient";
-                }
-                Console.WriteLine("Type is " + typeString + ", state is " + state);
+                Console.WriteLine("Type is " + typeString + ", state is " + deviceState);
             }
         }
     }
