@@ -142,6 +142,7 @@ namespace HueDream.DreamScreenControl {
             payload[0] = (byte)1;
             int PORT = 8888;
             UdpClient udpClient = new UdpClient();
+            udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, PORT));
 
             var from = new IPEndPoint(0, 0);
