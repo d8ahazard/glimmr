@@ -22,6 +22,7 @@ port that the web UI listens on. If so, modify the port number. e.g.: 'http://+:
 docker create \
   --name=huedream \
   -e ASPNETCORE_URLS=http://+:5666 \
+  -v <path to data>:/opt/huedream \ 
   --restart unless-stopped \
   --network=host \
   digitalhigh/huedream
@@ -43,6 +44,8 @@ services:
       - ASPNETCORE_URLS=http://+:5666
     network_mode: "host"
     restart: unless-stopped
+	volumes:
+      - <path to data>:/opt/huedream
 ```
 
 ## Parameters
@@ -52,6 +55,8 @@ Container images are configured using parameters passed at runtime (such as thos
 | Parameter | Function |
 | :----: | --- |
 | `-e ASPNETCORE_URLS=http://+:5666` | Modify port number as needed |
+| `-v <path_to_data>/opt/huedream` | Change <path_to_data> to the location where to keep HueDream ini |
+
 
 
 
