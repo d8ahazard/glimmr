@@ -20,6 +20,22 @@ namespace HueDream.HueDream {
         public List<KeyValuePair<int, string>> HUE_MAP { get; set; }
 
         public DreamData() {
+            if (Directory.Exists("/etc/huedream")) {
+                Console.WriteLine("Directory exists.");
+                if (File.Exists(iniPath)) {
+                    Console.WriteLine("We should move our ini to /etc");
+                    File.Copy(iniPath, "/etc/huedream/huedream.ini");
+                    if (File.Exists("/etc/huedream/huedream.ini")) {
+                        Console.WriteLine("File moved, updating INI path.");
+                        File.Delete(iniPath);
+                    }
+                }
+                if (File.Exists("/etc/huedream/huedream.ini")) {
+                    iniPath = "/etc/huedream/huedream.ini";
+                }
+            }
+
+
             if (!File.Exists(iniPath)) {
                 DS_IP = "0.0.0.0";
                 HUE_IP = HueBridge.findBridge();
@@ -41,7 +57,6 @@ namespace HueDream.HueDream {
                 data["MAIN"]["HUE_MAP"] = JsonConvert.SerializeObject(HUE_MAP);
                 parser.WriteFile(iniPath, data);
             } else {
-                Console.Write("We have our ini!");
                 loadData();
             }
         }

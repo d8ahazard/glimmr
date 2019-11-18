@@ -1,5 +1,4 @@
-﻿using HueDream.DreamScreenControl;
-using HueDream.HueDream;
+﻿using HueDream.HueDream;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Q42.HueApi;
@@ -11,7 +10,6 @@ using Q42.HueApi.Streaming;
 using Q42.HueApi.Streaming.Models;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
@@ -23,12 +21,15 @@ namespace HueDream.HueControl {
         public string bridgeKey { get; set; }
         public string bridgeUser { get; set; }
 
-        public bool bridgeAuth;
+        public bool doEntertain { set; get; }
 
-        public List<KeyValuePair<int, string>> bridgeLights;
-        public string[][] colors { get; set; }
+        private readonly bool bridgeAuth;
+
+        public List<KeyValuePair<int, string>> bridgeLights { get; }
+        private string[][] colors;
 
         private static readonly HttpClient httpClient = new HttpClient();
+
 
         public HueBridge() {
             DreamData dd = new DreamData();
@@ -39,25 +40,37 @@ namespace HueDream.HueControl {
             bridgeLights = dd.HUE_MAP;
         }
 
-        public async Task startEntertainment() {
+        public string[][] getColors() {
+            return colors;
+        }
+
+        public void setColors(string[][] colorIn) {
+            colors = colorIn;
+        }
+
+        public async Task Entertain() {
             Console.WriteLine("Starting entertainment, " + bridgeIp + " " + bridgeUser + " " + bridgeKey);
             StreamingHueClient client = new StreamingHueClient(bridgeIp, bridgeUser, bridgeKey);
-            var lightList = (from kvp in bridgeLights select kvp.Key.ToString()).Distinct().ToList();
+            var lightList = new List<string>();
+            foreach (KeyValuePair<int, string> kvp in bridgeLights) {
+                if (kvp.Value != "-1") {
+                    lightList.Add(kvp.Key.ToString());
+                }
+            }
+
             Console.WriteLine("Light List: " + JsonConvert.SerializeObject(lightList));
             //Get the entertainment group
             var all = await client.LocalHueClient.GetEntertainmentGroups();
             var targetGroup = "";
-            foreach(Group eg in all) {
+            foreach (Group eg in all) {
                 if (eg.Name == "HueDream2") {
-                    Console.WriteLine("Got our group");
+                    Console.WriteLine("Entertainment Group found: " + eg.Id);
                     targetGroup = eg.Id;
-                } else {
-                    Console.WriteLine("Group is " + eg.Name);
                 }
             }
 
             if (targetGroup == "") {
-                Console.WriteLine("Creating target group.");
+                Console.WriteLine("Creating Entertainment Group.");
                 string group = "";
                 try {
                     Dictionary<string, object> data = new Dictionary<string, object>();
@@ -70,33 +83,33 @@ namespace HueDream.HueControl {
                     var responseString = await response.Content.ReadAsStringAsync();
                     var responseData = JToken.Parse(JsonConvert.SerializeObject(responseString));
                     if (responseData["Success"] != null) {
-                        group = (string) responseData["Success"]["id"];
+                        group = (string)responseData["Success"]["id"];
 
                     }
                 } catch (ArgumentNullException e) {
                     Console.WriteLine("Null Exception!");
                 }
-                Console.WriteLine("Target group creation complete...");
+                Console.WriteLine("Target group creation complete.");
                 if (group != "") targetGroup = group;
             }
             //Create a streaming group
             if (targetGroup != "") {
-                Group sg = await client.LocalHueClient.GetGroupAsync(targetGroup);
-                Console.WriteLine("Creating streaming group: " + targetGroup);
+                Group sg = await client.LocalHueClient.GetGroupAsync(targetGroup).ConfigureAwait(false);
                 var entGroup = new StreamingGroup(sg.Locations);
                 //Connect to the streaming group
-                await client.Connect(targetGroup);
+                await client.Connect(targetGroup).ConfigureAwait(false);
                 Console.WriteLine("Connected.");
                 //Start auto updating this entertainment group
                 client.AutoUpdate(entGroup, CancellationToken.None);
                 Console.WriteLine("AutoUpdate Enabled.");
                 EntertainmentLayer entertainmentLayer = entGroup.GetNewLayer(isBaseLayer: true);
-                while (true) {
-                    foreach(KeyValuePair<int, string> lights in bridgeLights) {
+                Console.WriteLine("Beginning entertainment stream.");
+                while (doEntertain) {
+                    foreach (KeyValuePair<int, string> lights in bridgeLights) {
                         if (lights.Value != "-1") {
-                            int mapId = Int32.Parse(lights.Value);
+                            int mapId = int.Parse(lights.Value);
                             string[] colorString = colors[mapId];
-                            foreach(EntertainmentLight light in entertainmentLayer) {
+                            foreach (EntertainmentLight light in entertainmentLayer) {
                                 if (light.Id == lights.Key) {
                                     string colorStrings = string.Join("", colorString);
                                     light.State.SetRGBColor(new RGBColor(colorStrings));
@@ -105,11 +118,27 @@ namespace HueDream.HueControl {
                             }
                         }
                     }
-                    
                 }
+                client.LocalHueClient.SetStreamingAsync(targetGroup, false);
+                client.Close();
+                Console.WriteLine("Entertainment stream completed.");
             } else {
                 Console.WriteLine("Target Group creation failed!");
             }
+        }
+
+
+        public void startEntertainment() {
+            if (!doEntertain) {
+                Console.WriteLine("Starting entertainment.");
+                doEntertain = true;
+                var task = Task.Run(async () => await Entertain().ConfigureAwait(false));
+            }
+        }
+
+        public void stopEntertainment() {
+            Console.WriteLine("Stopping entertainment stream.");
+            doEntertain = false;
         }
 
         public RegisterEntertainmentResult checkAuth() {
@@ -131,7 +160,7 @@ namespace HueDream.HueControl {
             string bridgeIp = "";
             Console.WriteLine("Looking for bridges");
             IBridgeLocator locator = new HttpBridgeLocator();
-            var task = Task.Run(async () => await locator.LocateBridgesAsync(TimeSpan.FromSeconds(5)));
+            var task = Task.Run(async () => await locator.LocateBridgesAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false));
             var bridgeIPs = task.Result;
             foreach (LocatedBridge bIp in bridgeIPs) {
                 Console.WriteLine("Bridge IP is " + bIp.IpAddress);
@@ -146,11 +175,11 @@ namespace HueDream.HueControl {
             if (bridgeIp != "0.0.0.0" && bridgeAuth) {
                 ILocalHueClient client = new LocalHueClient(bridgeIp);
                 client.Initialize(bridgeUser);
-                var task = Task.Run(async () => await client.GetLightsAsync());
+                var task = Task.Run(async () => await client.GetLightsAsync().ConfigureAwait(false));
                 var lightArray = task.Result;
                 foreach (Light light in lightArray) {
                     if (light.Type == "Extended color light") {
-                        lights.Add(new KeyValuePair<int, string>(Int32.Parse(light.Id), light.Name));
+                        lights.Add(new KeyValuePair<int, string>(int.Parse(light.Id), light.Name));
                     }
                 }
             }

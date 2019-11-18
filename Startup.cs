@@ -1,4 +1,3 @@
-using HueDream.DreamScreenControl;
 using HueDream.HueDream;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -13,10 +12,10 @@ namespace HueDream {
         public Startup(IConfiguration configuration) {
             Configuration = configuration;
             DreamData dreamData = new DreamData();
-            DreamSync ds = new DreamSync();            
+            DreamSync ds = new DreamSync();
             if (dreamData.DS_IP != "0.0.0.0" && dreamData.HUE_SYNC) {
-                Console.WriteLine("Starting Dreamscreen sync!");
-                Task.Run(() => ds.startSync());
+                //Console.WriteLine("Starting Dreamscreen sync!");
+                //Task.Run(() => ds.startSync());
             }
         }
 

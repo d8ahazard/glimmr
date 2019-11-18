@@ -1,5 +1,11 @@
-$(function () {
+var syncToggle;
 
+$(function () {
+    syncToggle = $('#syncToggle');
+    syncToggle.bootstrapToggle();
+
+   
+    
     $('#settingsForm').submit(function (e) {
         e.preventDefault();
         var data = $(this).serialize();
@@ -9,22 +15,20 @@ $(function () {
             data: data,
             success: function (data) {
                 console.log("Posted!", data);
-            },
-            error: function (jXHR, textStatus, errorThrown) {
-                alert(errorThrown);
+                fetchJson();
             }
         }); 
     });
 
-    $('#hb_authorize').on('click', function() {
+    $('#hue_authorize').on('click', function() {
         console.log("Trying to authorize with hue.");
         $.get("./api/HueData/action?action=authorizeHue", function (data) {
             if (data.indexOf("Success: ") !== -1) {
-                $('#hb_auth').val("Authorized")
-                $('#hb_authorize').hide();                
+                $('#hue_auth').val("Authorized")
+                $('#hue_authorize').hide();                
             } else {
-                $('#hb_auth').val("Not authorized");
-                $('#hb_authorize').show();
+                $('#hue_auth').val("Not authorized");
+                $('#hue_authorize').show();
             }
             alert(data);
         });
@@ -57,9 +61,19 @@ $(function () {
             alert(data);
         });
     });
-
     fetchJson();
-    
+
+    syncToggle.change(function () {
+        var data = { 'hue_sync': $(this).prop('checked') };
+        $.ajax({
+            url: "./api/HueData",
+            type: "POST",
+            data: data,
+            success: function (data) {
+                console.log("Posted!", data);
+            }
+        });
+    });
 });
 
 function fetchJson() {
@@ -67,41 +81,54 @@ function fetchJson() {
         console.log("We have some config", config);
         var hueLights = false;
         var lightMap = false;
+        var hueAuth = false;
+        var dsIp = false;
+        var hueSync = false;
+
         for (var v in config) {
             key = v;
             value = config[v];
             var id = key.toLowerCase();
             console.log("id, value", id, value)
 
-            if (id == "hb_auth") {
+            if (id == "hue_auth") {
+                hueAuth = value;
                 if (value) {
-                    $('#hb_auth').val("Authorized")
-                    $('#hb_authorize').hide();
+                    $('#hue_auth').val("Authorized")
+                    $('#hue_authorize').hide();
                 } else {
-                    $('#hb_auth').val("Not authorized, press the link button on your hue bridge and click below.");
+                    $('#hue_auth').val("Not authorized, press the link button on your hue bridge and click below.");
                 }
             } else if (id == "hue_sync") {
-                if (value) {
-                    console.log("Das is enabled.")
-                    $('#hue_sync').prop('checked', value);
-                }
+                hueSync = value;
             } else if (id == "hue_map") {
                 lightMap = value;
             } else if (id == "hue_lights") {
                 hueLights = value;
             } else {
                 console.log("Setting value for #" + id, value);
-
                 if (id == 'ds_ip') {
-                    if (value == "0.0.0.0") {
-                        $('#hue_sync').attr('disabled', true);
-                    } else {
-                        $('#ds_find').hide();
+                    dsIp = value;
+                    if (value != "0.0.0.0") {
+                         $('#ds_find').hide();
                     }
                 }
                 $('#' + id).val(value);
             }
         }
+
+        console.log("Stuff:", lightMap, dsIp, hueAuth);
+        if (lightMap && hueAuth && dsIp) {
+            syncToggle.bootstrapToggle('enable');
+            if (hueSync) {
+                syncToggle.bootstrapToggle('on');
+            } else {
+                syncToggle.bootstrapToggle('off');
+            }
+        } else {
+            syncToggle.bootstrapToggle('disable');
+        }
+
         if (hueLights && lightMap) {
             console.log("Mapping lights");
             mapLights(lightMap, hueLights);

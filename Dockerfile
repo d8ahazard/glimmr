@@ -12,8 +12,10 @@ RUN dotnet build "HueDream.csproj" -c Release -o /app/build
 
 FROM build AS publish
 RUN dotnet publish "HueDream.csproj" -c Release -o /app/publish
-
+RUN mkdir -p /etc/huedream
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "HueDream.dll"]
+
+VOLUME /etc/huedream

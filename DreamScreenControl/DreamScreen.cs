@@ -6,7 +6,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 
 namespace HueDream.DreamScreenControl {
     class DreamScreen {
@@ -34,6 +33,7 @@ namespace HueDream.DreamScreenControl {
         private Socket dreamScreenSocket;
         private int Port = 8888;
         private IPEndPoint endPoint;
+        private IPEndPoint receiverPort;
         private byte groupNumber = 0;
         private UdpClient receiver;
         public bool listening = false;
@@ -47,7 +47,7 @@ namespace HueDream.DreamScreenControl {
             for (int i = 0; i < colors.Length; i++) {
                 colors[i] = new string[] { "FF", "FF", "FF" };
             }
-            dreamScreenSocket = new Socket(System.Net.Sockets.AddressFamily.InterNetwork, System.Net.Sockets.SocketType.Dgram, System.Net.Sockets.ProtocolType.Udp);
+            dreamScreenSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             dreamScreenSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, (int)1);
             //getMode();
         }
@@ -63,7 +63,8 @@ namespace HueDream.DreamScreenControl {
             Listen();
         }
 
-        public void startListening() {
+        public void StartListening() {
+            Console.WriteLine("Listen called.");
             sendUDPWrite((byte)0x01, (byte)0x0C, new byte[] { (byte)0x01 }, (byte)0x10);
             Listen();
         }
@@ -71,7 +72,7 @@ namespace HueDream.DreamScreenControl {
         public void Listen() {
             if (!listening) {
                 // Create UDP client
-                IPEndPoint receiverPort = new IPEndPoint(IPAddress.Any, 8888); ;
+                receiverPort = new IPEndPoint(IPAddress.Any, 8888); ;
                 receiver = new UdpClient();
                 receiver.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 receiver.EnableBroadcast = true;
@@ -84,8 +85,8 @@ namespace HueDream.DreamScreenControl {
         }
 
         public void StopListening() {
+            Console.WriteLine("Listening canceled.");
             if (listening) {
-                dreamScreenSocket.Close();
                 listening = false;
             }
         }
@@ -133,7 +134,12 @@ namespace HueDream.DreamScreenControl {
             }
 
             // Restart listening for udp data packages
-            c.BeginReceive(DataReceived, ar.AsyncState);
+            if (listening) {
+                c.BeginReceive(DataReceived, ar.AsyncState);
+            } else {
+                Console.WriteLine("Closing listening socket.");
+                dreamScreenSocket.Close();
+            }
         }
 
 
@@ -196,9 +202,9 @@ namespace HueDream.DreamScreenControl {
 
                     var byteSend = stream.ToArray();
                     // CRC
-                    response.Write(calculateCrc(byteSend));
+                    response.Write(CalculateCrc(byteSend));
                     string msg = BitConverter.ToString(stream.ToArray());
-                    sendUDPUnicast(stream.ToArray());
+                    SendUDPUnicast(stream.ToArray());
                 }
             }
         }
@@ -210,6 +216,7 @@ namespace HueDream.DreamScreenControl {
                 using (BinaryWriter response = new BinaryWriter(stream)) {
                     // Magic header
                     response.Write((byte)0xFC);
+                    // Hacky implementation, but itttt works
                     response.Write((byte)0x05);
                     response.Write((byte)0xFF);
                     response.Write((byte)0x30);
@@ -218,14 +225,14 @@ namespace HueDream.DreamScreenControl {
                     response.Write((byte)0x2A);
                     var byteSend = stream.ToArray();
                     // CRC
-                    response.Write(calculateCrc(byteSend));
+                    response.Write(CalculateCrc(byteSend));
                     string msg = BitConverter.ToString(stream.ToArray());
-                    sendUDPUnicast(stream.ToArray());
+                    SendUDPUnicast(stream.ToArray());
                 }
             }
         }
 
-        private byte calculateCrc(byte[] data) {
+        private byte CalculateCrc(byte[] data) {
             byte size = (byte)(data[1] + 1);
             byte crc = (byte)0;
             for (byte cntr = (byte)0; cntr < size; cntr = (byte)(cntr + 1)) {
@@ -234,7 +241,7 @@ namespace HueDream.DreamScreenControl {
             return crc;
         }
 
-        private void sendUDPUnicast(byte[] data) {
+        private void SendUDPUnicast(byte[] data) {
             dreamScreenSocket.SendTo(data, endPoint);
         }
 
@@ -250,7 +257,7 @@ namespace HueDream.DreamScreenControl {
                 if (magic == "FC") {
                     string type = bytesIn[bytesIn.Length - 2];
                     string state = bytesIn[33];
-                    
+
                     if (type == "01") {
                         typeString = "DreamScreen";
                     } else if (type == "02") {
@@ -274,5 +281,5 @@ namespace HueDream.DreamScreenControl {
         }
     }
 
-    
+
 }

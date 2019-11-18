@@ -3,8 +3,9 @@
 ## Installation
 
 ### Windows
-For Windows, download the latest release and extract wherever you like. Open the folder. Run HueDream.exe. Instructions on how to install as a service will follow,
-as soon as I figure out how to do it.
+For Windows, download the latest release and extract wherever you like. You may need to unblock HueDream.exe from Windows Firewall.
+
+To run as a service, try out [NSSM - The Non Sucking Service Manager](http://nssm.cc/)
 
 ### Linux
 For Linux, download the latest release and extract to /opt/huedream (or wherever you want). I'll provide instructions on how to install as a service
