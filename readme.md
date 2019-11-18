@@ -1,4 +1,4 @@
-# [d8ahazard/docker-huedream](https://github.com/d8ahazard/docker-huedream)
+# [d8ahazard/huedream](https://github.com/d8ahazard/huedream)
 
 ## Installation
 
@@ -61,8 +61,24 @@ Container images are configured using parameters passed at runtime (such as thos
 
 
 &nbsp;
-## Application Setup
+## Application Usage
 
-Access the webui at `<your-ip>:5666`.
+Once installed, access the Web UI at `<your-ip>:5666`.
 
-Click through each header, and ensure values are set for both the Hue Bridge and DreamScreen.
+### Find DreamScreen
+In the DreamScreen section, click the "Find DreamScreen" button if your DreamScreen ip is not shown in the UI. If you have more than one DreamScreen, you're currently SOL until I write logic to handle that...
+
+### Link Your Hue Bridge
+Press the link button on your hue bridge. Go to the Hue section, click "Authorize Hue". You should get a response stating your hue has been linked.
+
+### Map your Lights
+Go to the Sync section. Press the "Load Lights" button. You should see a list of all available color-changing bulbs.
+
+To map a light, select the dropdown next to it that corresponds to the color sector shown in the grid.
+
+Click "Submit" to save your mapping.
+
+
+## PROFIT
+
+Click the "Enable Sync" toggle at the top to enable/disable syncronization between your dreamscreen and hue bridge.
