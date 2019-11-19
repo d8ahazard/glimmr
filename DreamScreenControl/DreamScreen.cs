@@ -6,6 +6,8 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace HueDream.DreamScreenControl {
     class DreamScreen {
@@ -36,8 +38,8 @@ namespace HueDream.DreamScreenControl {
         private IPEndPoint receiverPort;
         private byte groupNumber = 0;
         private UdpClient receiver;
-        public bool listening = false;
-
+        public static bool listening { get; set; }
+        private CancellationTokenSource cts;
 
         public DreamScreen(string remoteIP) {
             dreamScreenIp = IPAddress.Parse(remoteIP);
@@ -60,17 +62,17 @@ namespace HueDream.DreamScreenControl {
             Console.WriteLine("Trying to get state...");
             byte[] payload = Array.Empty<byte>();
             requestState();
-            Listen();
+            Task.Run(async() => await(Listen(CancellationToken.None)));
         }
 
-        public void StartListening() {
-            Console.WriteLine("Listen called.");
-            sendUDPWrite((byte)0x01, (byte)0x0C, new byte[] { (byte)0x01 }, (byte)0x10);
-            Listen();
-        }
+       
 
-        public void Listen() {
-            if (!listening) {
+        public async Task Listen(CancellationToken ct) {
+            if (!listening && ct != CancellationToken.None) {
+                sendUDPWrite((byte)0x01, (byte)0x0C, new byte[] { (byte)0x01 }, (byte)0x10);
+                listening = true;
+            }
+            if (!ct.IsCancellationRequested && listening) {
                 // Create UDP client
                 receiverPort = new IPEndPoint(IPAddress.Any, 8888); ;
                 receiver = new UdpClient();
@@ -81,15 +83,11 @@ namespace HueDream.DreamScreenControl {
                 // Call DataReceived() every time it gets something
                 listening = true;
                 receiver.BeginReceive(DataReceived, receiver);
+            } else {
+                Console.WriteLine("DreamScreen: Listening completed.");
             }
         }
 
-        public void StopListening() {
-            Console.WriteLine("Listening canceled.");
-            if (listening) {
-                listening = false;
-            }
-        }
 
         private void DataReceived(IAsyncResult ar) {
             UdpClient c = (UdpClient)ar.AsyncState;
@@ -137,7 +135,7 @@ namespace HueDream.DreamScreenControl {
             if (listening) {
                 c.BeginReceive(DataReceived, ar.AsyncState);
             } else {
-                Console.WriteLine("Closing listening socket.");
+                Console.WriteLine("DreamScreen: Closing listening socket.");
                 dreamScreenSocket.Close();
             }
         }

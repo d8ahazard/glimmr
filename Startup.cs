@@ -11,12 +11,8 @@ namespace HueDream {
     public class Startup {
         public Startup(IConfiguration configuration) {
             Configuration = configuration;
-            DreamData dreamData = new DreamData();
-            DreamSync ds = new DreamSync();
-            if (dreamData.DS_IP != "0.0.0.0" && dreamData.HUE_SYNC) {
-                //Console.WriteLine("Starting Dreamscreen sync!");
-                //Task.Run(() => ds.startSync());
-            }
+            
+
         }
 
         public IConfiguration Configuration { get; }

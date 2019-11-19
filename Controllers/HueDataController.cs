@@ -12,13 +12,11 @@ namespace HueDream.Controllers {
     [Route("api/[controller]")]
     [ApiController]
     public class HueDataController : ControllerBase {
-        private DreamSync ds;
         private DreamData userData;
-
+        private static DreamSync ds;
         public HueDataController() {
-            ds = new DreamSync();
             userData = new DreamData();
-            CheckSync();
+            ds = new DreamSync();            
         }
 
         // GET: api/HueData/action?action=...
@@ -80,6 +78,7 @@ namespace HueDream.Controllers {
         // GET: api/HueData/json
         [HttpGet("json")]
         public IActionResult Get() {
+            Console.WriteLine("JSON GOT.");
             return Ok(userData);
         }
 
@@ -101,6 +100,8 @@ namespace HueDream.Controllers {
             string[] keys = Request.Form.Keys.ToArray<string>();
             Console.WriteLine("We have a post: " + value);
             bool mapLights = false;
+            bool sync = userData.HUE_SYNC;
+            bool enableSync = false;
             List<KeyValuePair<int, string>> lightMap = new List<KeyValuePair<int, string>>();
             foreach (string key in keys) {
                 Console.WriteLine("We have a key and value: " + key + " " + Request.Form[key]);
@@ -113,26 +114,27 @@ namespace HueDream.Controllers {
                 } else if (key == "hue_ip") {
                     userData.HUE_IP = Request.Form[key];
                 } else if (key == "hue_sync") {
-                    string val = Request.Form[key];
-                    bool res = false;
-                    if (val == "true") {
-                        res = true;
-                    } else {
-                        res = false;
+                    if ((string) Request.Form[key] == "true") {
+                        Console.WriteLine("TRUE");
+                        enableSync = true;
                     }
-                    userData.HUE_SYNC = res;
+                    
+                    userData.HUE_SYNC = enableSync;
                 }
             }
             if (mapLights) userData.HUE_MAP = lightMap;
             userData.saveData();
-            CheckSync();
+            CheckSync(enableSync);
+            
         }
 
-        private void CheckSync() {
-            if (userData.DS_IP != "0.0.0.0" && userData.HUE_SYNC && !ds.doSync) {
+        private void CheckSync(bool enabled) {
+            bool dsSync = DreamSync.doSync;
+            Console.WriteLine("DSSYNC: " + dsSync + " HS: " + enabled);
+            if (userData.DS_IP != "0.0.0.0" && enabled && !dsSync) {
                 Console.WriteLine("Starting Dreamscreen sync!");
                 Task.Run(() => ds.startSync());
-            } else if (!userData.HUE_SYNC && ds.doSync) {
+            } else if (!enabled && dsSync) {
                 Console.WriteLine("Stopping sync.");
                 ds.StopSync();
             }

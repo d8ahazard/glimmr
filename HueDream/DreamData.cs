@@ -19,6 +19,11 @@ namespace HueDream.HueDream {
         public List<KeyValuePair<int, string>> HUE_LIGHTS { get; set; }
         public List<KeyValuePair<int, string>> HUE_MAP { get; set; }
 
+        public bool SyncEnabled() {
+            loadData();
+            return HUE_SYNC;
+        }
+
         public DreamData() {
             if (Directory.Exists("/etc/huedream")) {
                 Console.WriteLine("Directory exists.");

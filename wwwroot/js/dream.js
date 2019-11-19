@@ -64,6 +64,7 @@ $(function () {
     fetchJson();
 
     syncToggle.change(function () {
+        console.log("Sync Toggle clicked.");
         var data = { 'hue_sync': $(this).prop('checked') };
         $.ajax({
             url: "./api/HueData",
@@ -147,7 +148,7 @@ function mapLights(map, lights) {
         var name = lights[l]['Value'];
         console.log("Name and ID are ", name, id);
         var newSelect=document.createElement('select');
-        newSelect.className = "col-3";
+        newSelect.className = "col-3 col-sm-4";
         newSelect.setAttribute('id','lightMap' + id);
         newSelect.setAttribute('name', 'lightMap' + id);
         var selection = -1;
@@ -161,7 +162,7 @@ function mapLights(map, lights) {
         var i;
         var opt = document.createElement("option");
             opt.value= -1;
-            opt.innerHTML = "None";
+            opt.innerHTML = "";
             if (selection == -1) opt.setAttribute('selected', true);
             newSelect.appendChild(opt);
         for (i = 0; i < 13; i++) {
@@ -172,13 +173,13 @@ function mapLights(map, lights) {
             newSelect.appendChild(opt);
         }
         var lightLabel = document.createElement('div');
-        lightLabel.className += " col-6 row";
+        lightLabel.className += " col-6 col-sm-12 row";
 
         lightLabel.id = id;
         lightLabel.setAttribute('data-name', name);
         lightLabel.setAttribute('data-id', id);
         var label = document.createElement('label');
-        label.className = "col-9";
+        label.className = "col-9 col-sm-8";
         label.innerHTML = name + ":  ";
         lightLabel.appendChild(label);
         lightLabel.appendChild(newSelect);
