@@ -11,6 +11,7 @@ using Q42.HueApi.Streaming.Models;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -95,7 +96,11 @@ namespace HueDream.HueControl {
                 doEntertain = false;
                 Console.WriteLine("Entertainment: Force cancellation.");
                 client.LocalHueClient.SetStreamingAsync(targetGroup, false);
-                client.Close();
+                try {
+                    client.Close();
+                } catch (SocketException) {
+                    Console.WriteLine("Socket Exception.");
+                }
                 Console.WriteLine("Entertainment2 closed and done.");
             }
         }
