@@ -24,9 +24,14 @@ namespace HueDream.Controllers {
         public JsonResult Get(string action) {
             string message = "Unrecognized action";
             Console.Write("Now we're cooking: " + action);
+            if (action == "getStatus") {
+                DreamScreenControl.DreamScreen ds = new DreamScreenControl.DreamScreen();
+                ds.getMode();
+            }
+            
             if (action == "connectDreamScreen") {
                 string dsIp = userData.DS_IP;
-                DreamScreenControl.DreamScreen ds = new DreamScreenControl.DreamScreen(dsIp);
+                DreamScreenControl.DreamScreen ds = new DreamScreenControl.DreamScreen();
                 if (dsIp == "0.0.0.0") {
                     List<string> devices = ds.findDevices();
                     if (devices.Count > 0) {
@@ -36,6 +41,9 @@ namespace HueDream.Controllers {
                         ds.dreamScreenIp = IPAddress.Parse(userData.DS_IP);
                         message = "Success: " + userData.DS_IP;
                     }
+                } else {
+                    Console.WriteLine("Searching for devices for the fun of it.");
+                    ds.findDevices();
                 }
             } else if (action == "authorizeHue") {
                 if (userData.HUE_IP != "0.0.0.0") {

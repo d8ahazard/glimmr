@@ -18,9 +18,14 @@ namespace HueDream.HueDream {
             dreamData = new DreamData();
             Console.WriteLine("Creating new sync?");
             syncToken = new CancellationTokenSource();
-            if (dreamData.DS_IP != "0.0.0.0") {
-                hueBridge = new HueBridge();
-                dreamScreen = new DreamScreen(dreamData.DS_IP);
+            hueBridge = new HueBridge();
+            dreamScreen = new DreamScreen();
+            // Start our dreamscreen listening like a good boy
+            if (!DreamScreen.listening) {
+                Console.WriteLine("Calling listen on dreamscreen.");
+                dreamScreen.Listen();
+                DreamScreen.listening = true;
+                Console.WriteLine("Listen called.");
             }
         }
 
@@ -32,11 +37,9 @@ namespace HueDream.HueDream {
             } else {
                 Console.WriteLine("Starting sync.");
                 doSync = true;
-                DreamScreen.listening = true;
-                dreamScreen.Listen(syncToken.Token);                
+                DreamScreen.subscribed = true;
                 Task.Run(async() => hueBridge.StartStream());
-                Task.Run(async() => SyncData(syncToken.Token), syncToken.Token);
-                
+                Task.Run(async() => SyncData());                
             }
         }
 
@@ -44,13 +47,13 @@ namespace HueDream.HueDream {
             Console.WriteLine("Dreamsync: Stopsync fired.");
             doSync = false;
             hueBridge.StopStream();
-            DreamScreen.listening = false;
+            DreamScreen.subscribed = false;
             syncToken.Cancel();            
         }
 
-        private void SyncData(CancellationToken token) {
+        private void SyncData() {
             Console.WriteLine("SyncData called");            
-            while (!token.IsCancellationRequested) {
+            while (doSync) {
                 // Read updating color var from dreamscreen
                 hueBridge.setColors(dreamScreen.colors);
             }

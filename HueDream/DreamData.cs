@@ -11,6 +11,9 @@ namespace HueDream.HueDream {
     public class DreamData {
         public string iniPath = "huedream.ini";
         public string DS_IP { get; set; }
+        public string DS_GROUP_NAME { get; set; }
+        public string DS_DEVICE_NAME { get; set; }
+        public int DS_GROUP_ID { get; set; }        
         public string HUE_IP { get; set; }
         public bool HUE_SYNC { get; set; }
         public bool HUE_AUTH { get; set; }
@@ -43,6 +46,9 @@ namespace HueDream.HueDream {
 
             if (!File.Exists(iniPath)) {
                 DS_IP = "0.0.0.0";
+                DS_GROUP_ID = 100;
+                DS_GROUP_NAME = "undefined";
+                DS_DEVICE_NAME = "HueDream";
                 HUE_IP = HueBridge.findBridge();
                 HUE_SYNC = false;
                 HUE_AUTH = false;
@@ -58,6 +64,9 @@ namespace HueDream.HueDream {
                 data["MAIN"]["HUE_AUTH"] = HUE_AUTH ? "True" : "False";
                 data["MAIN"]["HUE_KEY"] = HUE_KEY;
                 data["MAIN"]["HUE_USER"] = HUE_USER;
+                data["MAIN"]["DS_GROUP_NAME"] = DS_GROUP_NAME;
+                data["MAIN"]["DS_GROUP_ID"] = DS_GROUP_ID.ToString();
+                data["MAIN"]["DS_DEVICE_NAME"] = DS_DEVICE_NAME;
                 data["MAIN"]["HUE_LIGHTS"] = JsonConvert.SerializeObject(HUE_LIGHTS);
                 data["MAIN"]["HUE_MAP"] = JsonConvert.SerializeObject(HUE_MAP);
                 parser.WriteFile(iniPath, data);
@@ -75,6 +84,9 @@ namespace HueDream.HueDream {
             data["MAIN"]["HUE_AUTH"] = HUE_AUTH ? "True" : "False";
             data["MAIN"]["HUE_KEY"] = HUE_KEY;
             data["MAIN"]["HUE_USER"] = HUE_USER;
+            data["MAIN"]["DS_GROUP_NAME"] = DS_GROUP_NAME;
+            data["MAIN"]["DS_GROUP_ID"] = DS_GROUP_ID.ToString();
+            data["MAIN"]["DS_DEVICE_NAME"] = DS_DEVICE_NAME;
             data["MAIN"]["HUE_LIGHTS"] = JsonConvert.SerializeObject(HUE_LIGHTS);
             data["MAIN"]["HUE_MAP"] = JsonConvert.SerializeObject(HUE_MAP);
             parser.WriteFile(iniPath, data);
@@ -89,6 +101,9 @@ namespace HueDream.HueDream {
             HUE_AUTH = data["MAIN"]["HUE_AUTH"] == "True";
             HUE_KEY = data["MAIN"]["HUE_KEY"];
             HUE_USER = data["MAIN"]["HUE_USER"];
+            DS_GROUP_NAME = data["MAIN"]["DS_GROUP_NAME"];
+            DS_GROUP_ID = int.Parse(data["MAIN"]["DS_GROUP_ID"]);
+            DS_DEVICE_NAME = data["MAIN"]["DS_DEVICE_NAME"];
             HUE_LIGHTS = JsonConvert.DeserializeObject<List<KeyValuePair<int, string>>>(data["MAIN"]["HUE_LIGHTS"]);
             HUE_MAP = JsonConvert.DeserializeObject<List<KeyValuePair<int, string>>>(data["MAIN"]["HUE_MAP"]);
             return false;
