@@ -1,4 +1,5 @@
 ﻿using HueDream.HueDream;
+using HueDream.Util;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -59,25 +60,7 @@ namespace HueDream.DreamScreenControl {
          (byte)0xFA, (byte)0xFD, (byte)0xF4, (byte)0xF3
         };
 
-        /*private static byte[] crc8_table = new byte[] { unchecked((byte)0), unchecked((byte)7), unchecked((byte)14), unchecked((byte)9), unchecked((byte)28), unchecked((byte)27), unchecked((byte)18), unchecked((byte)21), unchecked((byte)56), unchecked((byte)63), unchecked((byte)54), unchecked((byte)49),
-            unchecked((byte)36), unchecked((byte)35), unchecked((byte)42), unchecked((byte)45), unchecked((byte)112), unchecked((byte)119), unchecked((byte)126), unchecked((byte)121), unchecked((byte)108), unchecked((byte)107), unchecked((byte)98), unchecked((byte)101), unchecked((byte)72), unchecked((byte)79),
-            unchecked((byte)70), unchecked((byte)65), unchecked((byte)84), unchecked((byte)83), unchecked((byte)90), unchecked((byte)93), unchecked((byte)-32), unchecked((byte)-25), unchecked((byte)-18), unchecked((byte)-23), unchecked((byte)-4), unchecked((byte)-5), unchecked((byte)-14), unchecked((byte)-11),
-            unchecked((byte)-40), unchecked((byte)-33), unchecked((byte)-42), unchecked((byte)-47), unchecked((byte)-60), unchecked((byte)-61), unchecked((byte)-54), unchecked((byte)-51), unchecked((byte)-112), unchecked((byte)-105), unchecked((byte)-98), unchecked((byte)-103), unchecked((byte)-116), unchecked((byte)-117),
-            unchecked((byte)-126), unchecked((byte)-123), unchecked((byte)-88), unchecked((byte)-81), unchecked((byte)-90), unchecked((byte)-95), unchecked((byte)-76), unchecked((byte)-77), unchecked((byte)-70), unchecked((byte)-67), unchecked((byte)-57), unchecked((byte)-64), unchecked((byte)-55), unchecked((byte)-50),
-            unchecked((byte)-37), unchecked((byte)-36), unchecked((byte)-43), unchecked((byte)-46), unchecked((byte)-1), unchecked((byte)-8), unchecked((byte)-15), unchecked((byte)-10), unchecked((byte)-29), unchecked((byte)-28), unchecked((byte)-19), unchecked((byte)-22), unchecked((byte)-73), unchecked((byte)-80),
-            unchecked((byte)-71), unchecked((byte)-66), unchecked((byte)-85), unchecked((byte)-84), unchecked((byte)-91), unchecked((byte)-94), unchecked((byte)-113), unchecked((byte)-120), unchecked((byte)-127), unchecked((byte)-122), unchecked((byte)-109), unchecked((byte)-108), unchecked((byte)-99), unchecked((byte)-102),
-            unchecked((byte)39), unchecked((byte)32), unchecked((byte)41), unchecked((byte)46), unchecked((byte)59), unchecked((byte)60), unchecked((byte)53), unchecked((byte)50), unchecked((byte)31), unchecked((byte)24), unchecked((byte)17), unchecked((byte)22), unchecked((byte)3), unchecked((byte)4), unchecked((byte)13),
-            unchecked((byte)10), unchecked((byte)87), unchecked((byte)80), unchecked((byte)89), unchecked((byte)94), unchecked((byte)75), unchecked((byte)76), unchecked((byte)69), unchecked((byte)66), unchecked((byte)111), unchecked((byte)104), unchecked((byte)97), unchecked((byte)102), unchecked((byte)115), unchecked((byte)116),
-            unchecked((byte)125), unchecked((byte)122), unchecked((byte)-119), unchecked((byte)-114), unchecked((byte)-121), 0, unchecked((byte)-107), unchecked((byte)-110), unchecked((byte)-101), unchecked((byte)-100), unchecked((byte)-79), unchecked((byte)-74), unchecked((byte)-65), unchecked((byte)-72), unchecked((byte)-83),
-            unchecked((byte)-86), unchecked((byte)-93), unchecked((byte)-92), unchecked((byte)-7), unchecked((byte)-2), unchecked((byte)-9), unchecked((byte)-16), unchecked((byte)-27), unchecked((byte)-30), unchecked((byte)-21), unchecked((byte)-20), unchecked((byte)-63), unchecked((byte)-58), unchecked((byte)-49), unchecked((byte)-56),
-            unchecked((byte)-35), unchecked((byte)-38), unchecked((byte)-45), unchecked((byte)-44), unchecked((byte)105), unchecked((byte)110), unchecked((byte)103), unchecked((byte)96), unchecked((byte)117), unchecked((byte)114), unchecked((byte)123), unchecked((byte)124), unchecked((byte)81), unchecked((byte)86), unchecked((byte)95),
-            unchecked((byte)88), unchecked((byte)77), unchecked((byte)74), unchecked((byte)67), unchecked((byte)68), unchecked((byte)25), unchecked((byte)30), unchecked((byte)23), unchecked((byte)16), unchecked((byte)5), unchecked((byte)2), unchecked((byte)11), unchecked((byte)12), unchecked((byte)33), unchecked((byte)38),
-            unchecked((byte)47), unchecked((byte)40), unchecked((byte)61), unchecked((byte)58), unchecked((byte)51), unchecked((byte)52), unchecked((byte)78), unchecked((byte)73), unchecked((byte)64), unchecked((byte)71), unchecked((byte)82), unchecked((byte)85), unchecked((byte)92), unchecked((byte)91), unchecked((byte)118),
-            unchecked((byte)113), unchecked((byte)120), (byte)255, unchecked((byte)106), unchecked((byte)109), unchecked((byte)100), unchecked((byte)99), unchecked((byte)62), unchecked((byte)57), unchecked((byte)48), unchecked((byte)55), unchecked((byte)34), unchecked((byte)37), unchecked((byte)44), unchecked((byte)43),
-            unchecked((byte)6), unchecked((byte)1), unchecked((byte)8), unchecked((byte)15), unchecked((byte)26), unchecked((byte)29), unchecked((byte)20), unchecked((byte)19), unchecked((byte)-82), unchecked((byte)-87), unchecked((byte)-96), unchecked((byte)-89), unchecked((byte)-78), unchecked((byte)-75), unchecked((byte)-68),
-            unchecked((byte)-69), unchecked((byte)-106), unchecked((byte)-111), unchecked((byte)-104), unchecked((byte)-97), unchecked((byte)-118), unchecked((byte)-115), unchecked((byte)-124), unchecked((byte)-125), unchecked((byte)-34), unchecked((byte)-39), unchecked((byte)-48), unchecked((byte)-41), unchecked((byte)-62),
-            unchecked((byte)-59), unchecked((byte)-52), unchecked((byte)-53), unchecked((byte)-26), unchecked((byte)-31), unchecked((byte)-24), unchecked((byte)-17), unchecked((byte)-6), unchecked((byte)-3), unchecked((byte)-12), unchecked((byte)-13) };
-*/
+       
         public IPAddress dreamScreenIp { get; set; }
         public string[][] colors { get; }
         private Socket dreamScreenSocket;
@@ -123,10 +106,10 @@ namespace HueDream.DreamScreenControl {
             }
         }
 
-       
+
 
         public async Task Listen() {
-            
+
             if (!listening) {
                 // Create UDP client
                 try {
@@ -146,7 +129,7 @@ namespace HueDream.DreamScreenControl {
                 Console.WriteLine("DreamScreen: Listen terminated");
             }
         }
-        
+
 
 
 
@@ -176,8 +159,8 @@ namespace HueDream.DreamScreenControl {
             } catch (Exception e) {
                 Console.WriteLine("Exception: " + e.Message);
             }
-            
-            switch(command) {
+
+            switch (command) {
                 case "SUBSCRIBE":
                     if (subscribed) {
                         sendUDPWrite((byte)0x01, (byte)0x0C, new byte[] { (byte)0x01 }, (byte)0x10); // Send sub response
@@ -213,22 +196,41 @@ namespace HueDream.DreamScreenControl {
                     }
                     break;
                 case "GROUP_NAME":
-                    
-                    string gName = HexString(string.Join("", payload));
+
+                    string gName = ByteStringUtil.HexString(string.Join("", payload));
                     dd.DS_GROUP_NAME = gName;
                     dd.saveData();
                     break;
                 case "GROUP_NUMBER":
-                    int gNum = HexInt(payload[0]);
+                    int gNum = ByteStringUtil.HexInt(payload[0]);
                     dd.DS_GROUP_ID = gNum;
                     dd.saveData();
                     break;
                 case "NAME":
-                    string dName = HexString(string.Join("", payload));
+                    string dName = ByteStringUtil.HexString(string.Join("", payload));
                     dd.DS_DEVICE_NAME = dName;
                     dd.saveData();
                     break;
-
+                case "BRIGHTNESS":
+                    dd.DS_BRIGHTNESS = ByteStringUtil.HexInt(payload[0]);
+                    dd.saveData();
+                    break;
+                case "SATURATION":
+                    dd.DS_SATURATION = string.Join("", payload);
+                    dd.saveData();
+                    break;
+                case "MODE":
+                    dd.DS_MODE = ByteStringUtil.HexInt(payload[0]);
+                    dd.saveData();
+                    break;
+                case "AMBIENT_MODE_TYPE":
+                    dd.DS_AMBIENT_MODE_TYPE = ByteStringUtil.HexInt(payload[0]);
+                    dd.saveData();
+                    break;
+                case "AMBIENT_COLOR":
+                    dd.DS_AMBIENT_COLOR = string.Join("", payload);
+                    dd.saveData();
+                    break;
             }
 
             // Restart listening for udp data packages
@@ -247,20 +249,21 @@ namespace HueDream.DreamScreenControl {
             dss.groupName = dd.DS_GROUP_NAME; // Change this to match main unit, I think.
             dss.mode = dd.HUE_SYNC ? 1 : 0;
             dss.toneRemapping = 0;
-            dss.type = "SideKick";
-            dss.brightness = 0;
-            dss.color = "FFFFFF";
-            dss.scene = 1;
+            dss.type = "Connect";
+            dss.brightness = dd.DS_BRIGHTNESS;
+            dss.color = dd.DS_AMBIENT_COLOR;
+            dss.scene = dd.DS_AMBIENT_SCENE;
+            dss.saturation = dd.DS_SATURATION;
             byte[] payload = dss.EncodeState();
-            this.groupNumber = IntByte(dd.DS_GROUP_ID);
+            this.groupNumber = ByteStringUtil.IntByte(dd.DS_GROUP_ID);
             sendUDPWrite((byte)0x01, (byte)0x0A, payload, 0x60, src);
         }
 
 
         public List<string> findDevices() {
             List<string> devices = new List<string>();
-            byte[] payload = new byte[] {0x01};
-            sendUDPWrite(0x01, 0x0A, payload, 0x30);        
+            byte[] payload = new byte[] { 0x01 };
+            sendUDPWrite(0x01, 0x0A, payload, 0x30);
             return devices;
         }
 
@@ -301,7 +304,7 @@ namespace HueDream.DreamScreenControl {
                     response.Write(CalculateCrc(byteSend));
                     string msg = BitConverter.ToString(stream.ToArray());
                     SendUDPUnicast(stream.ToArray(), ep);
-                    
+
                 }
             }
         }
@@ -310,7 +313,7 @@ namespace HueDream.DreamScreenControl {
 
             using (MemoryStream stream = new MemoryStream()) {
                 using (BinaryWriter response = new BinaryWriter(stream)) {
-                    sendUDPWrite(0x01, 0x0A, Array.Empty<byte>(), 0x30);                   
+                    sendUDPWrite(0x01, 0x0A, Array.Empty<byte>(), 0x30);
                 }
             }
         }
@@ -334,7 +337,7 @@ namespace HueDream.DreamScreenControl {
             }
 
             return (crc == checkCrc);
-            
+
         }
 
         private void SendUDPUnicast(byte[] data, IPEndPoint ep) {
@@ -345,7 +348,7 @@ namespace HueDream.DreamScreenControl {
             dreamScreenSocket.SendTo(data, ep);
         }
 
-        
+
 
         [Serializable]
         class DreamScreenMessage {
@@ -372,6 +375,7 @@ namespace HueDream.DreamScreenControl {
                     { "010C", "SUBSCRIBE" },
                     { "0113", "UNKNOWN" },
                     { "0115", "READ_BOOTLOADER_MODE" },
+                    { "0201", "READ_CONNECT_VERSION?" },
                     { "0202", "READ_PCI_VERSION" },
                     { "0203", "READ_DIAGNOSTIC" },
                     { "0301", "MODE" },
@@ -411,7 +415,9 @@ namespace HueDream.DreamScreenControl {
                     { "0401", "BOOTLOADER_SETUP" },
                     { "0402", "RESET_PIC" },
                     { "040D", "ESP_CONNECTED_TO_WIFI" },
-                    { "0414", "OTHER_CONNECTED_TO_WIFI" }
+                    { "0414", "OTHER_CONNECTED_TO_WIFI" },
+                    { "0510", "IR_ENABLE" },
+                    { "0511", "ADD_IR_CODE" }
                 };
                 string[] bytesIn = byteString.Split("-");
                 hex = string.Join("", bytesIn);
@@ -427,7 +433,7 @@ namespace HueDream.DreamScreenControl {
                 } else {
                     Console.WriteLine("No matching key in dict for bytes: " + cmd);
                 }
-               
+
                 if (magic == "FC") {
                     if (len > 5) {
                         payload = Payload(bytesIn);
@@ -436,7 +442,7 @@ namespace HueDream.DreamScreenControl {
                         state = new DreamScreenState();
                         state.LoadState(payload);
                         payload = null;
-                    }                    
+                    }
                 } else {
                     Console.WriteLine("Error, magic missing.");
                 }
@@ -445,7 +451,7 @@ namespace HueDream.DreamScreenControl {
             static string[] Payload(string[] source) {
                 int i = 0;
                 List<string> output = new List<string>();
-                foreach(string s in source) {
+                foreach (string s in source) {
                     if (i > 5 && i < source.Length - 1) {
                         output.Add(s);
                     }
@@ -454,9 +460,12 @@ namespace HueDream.DreamScreenControl {
                 return output.ToArray();
             }
 
-            
+
         }
 
+        /// <summary>
+        /// The state of a dreamscreen device.
+        /// </summary>
         [Serializable]
         class DreamScreenState {
             public string type { get; set; }
@@ -467,6 +476,7 @@ namespace HueDream.DreamScreenControl {
             public int mode { get; set; }
             public int brightness { get; set; }
             public string color { get; set; }
+            public string saturation { get; set; }
             public int scene { get; set; }
             public int input { get; set; }
             public string inputName0 { get; set; }
@@ -475,12 +485,17 @@ namespace HueDream.DreamScreenControl {
             public int activeChannels { get; set; }
             public int toneRemapping { get; set; }
 
+
             public DreamScreenState() {
 
             }
 
+            /// <summary>
+            /// Load a device state message
+            /// </summary>
+            /// <param name="stateMessage"></param>
             public void LoadState(string[] stateMessage) {
-                switch(stateMessage[stateMessage.Length - 1]) {
+                switch (stateMessage[stateMessage.Length - 1]) {
                     case "01":
                         type = "DreamScreen";
                         break;
@@ -495,156 +510,141 @@ namespace HueDream.DreamScreenControl {
                         break;
                 }
 
-                
+
                 if (!string.IsNullOrEmpty(type)) {
-                    name = ExtractHexString(stateMessage, 0, 16);
-                    groupName = ExtractHexString(stateMessage, 16, 16);
-                    groupNumber = HexInt(stateMessage[32]);
-                    mode = HexInt(stateMessage[33]);
-                    brightness = HexInt(stateMessage[34]);
+                    name = ByteStringUtil.ExtractHexString(stateMessage, 0, 16);
+                    groupName = ByteStringUtil.ExtractHexString(stateMessage, 16, 16);
+                    groupNumber = ByteStringUtil.HexInt(stateMessage[32]);
+                    mode = ByteStringUtil.HexInt(stateMessage[33]);
+                    brightness = ByteStringUtil.HexInt(stateMessage[34]);
                 }
 
                 if (type == "SideKick") {
                     color = stateMessage[35] + stateMessage[36] + stateMessage[37];
-                    scene = HexInt(stateMessage[60]);
-                } else {
+                    saturation = stateMessage[38] + stateMessage[39] + stateMessage[40];
+                    scene = ByteStringUtil.HexInt(stateMessage[60]);
+                } else if (type == "Connect") {
+                    color = stateMessage[35] + stateMessage[36] + stateMessage[37];
+                    scene = ByteStringUtil.HexInt(stateMessage[60]);
+                } else { 
                     color = stateMessage[40] + stateMessage[41] + stateMessage[42];
-                    scene = HexInt(stateMessage[62]);
-                    input = HexInt(stateMessage[73]);
-                    inputName0 = ExtractHexString(stateMessage, 75, 16);
-                    inputName1 = ExtractHexString(stateMessage, 91, 16);
-                    inputName2 = ExtractHexString(stateMessage, 107, 16);
-                    activeChannels = HexInt(stateMessage[129]);
-                    toneRemapping = HexInt(stateMessage[139]);
+                    scene = ByteStringUtil.HexInt(stateMessage[62]);
+                    input = ByteStringUtil.HexInt(stateMessage[73]);
+                    inputName0 = ByteStringUtil.ExtractHexString(stateMessage, 75, 16);
+                    inputName1 = ByteStringUtil.ExtractHexString(stateMessage, 91, 16);
+                    inputName2 = ByteStringUtil.ExtractHexString(stateMessage, 107, 16);
+                    activeChannels = ByteStringUtil.HexInt(stateMessage[129]);
+                    toneRemapping = ByteStringUtil.HexInt(stateMessage[139]);
                 }
             }
 
+            /// <summary>
+            /// Encode our state into a DreamScreen payload
+            /// </summary>
+            /// <returns>A byte array</returns>
             public byte[] EncodeState() {
                 List<byte> response = new List<byte>();
                 // Write padded Device name
-                byte[] nByte = StringByte(name, 16);
-                foreach (byte b in nByte) {
-                    response.Add(b);
-                }
+                byte[] nByte = ByteStringUtil.StringBytePad(name, 16);
+                response.AddRange(nByte);
                 // Write padded group
-                byte[] gByte = StringByte(groupName, 16);
-                foreach (byte b in gByte) {
-                    response.Add(b);
-                }
-                
+                byte[] gByte = ByteStringUtil.StringBytePad(groupName, 16);
+                response.AddRange(gByte);
                 // Group number
-                response.Add(IntByte(groupNumber));
-                
+                response.Add(ByteStringUtil.IntByte(groupNumber));
                 // Mode 
-                response.Add(IntByte(mode));
-
+                response.Add(ByteStringUtil.IntByte(mode));
                 // Brightness
-                response.Add(IntByte(brightness));
-                response.Add(0x00);
+                response.Add(ByteStringUtil.IntByte(brightness));
                 int i = 0;
                 if (type == "SideKick") {
-                    // Pad 1?
-                    //response.Write(0x00);
                     // Ambient color (3byte)
                     string cString = "";
-                    foreach (char c in color) {
-                        cString += c;
-                        if (i == 1) {
-                            response.Add(HexByte(cString));
-                            cString = "";
-                            i = 0;
-                        } else {
-                            i = 1;
-                        }
-                    }
+                    // Ambient color (3byte)
+                    response.AddRange(ByteStringUtil.HexBytes(color));
+                    // Saturation color (3byte)
+                    response.AddRange(ByteStringUtil.HexBytes(saturation));
+                    // Pad 1??
+                    response.Add(0x00);
+                    // Sector data?
+                    byte[] bAdd = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0b, 0x0C };
+                    response.AddRange(bAdd);
 
-                    byte[] bAdd = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0b, 0x0C };
-
-                    foreach(byte ba in bAdd) {
-                        response.Add(ba);
-                    }
-                    // Pad 9 bytes, scene needs to be at 60
-                    i = 0;
-                    while (i < 6) {
-                        response.Add(0x00);
-                        i++;
-                    }
+                    // Pad 6 bytes, scene needs to be at 60
+                    response.AddRange(new byte[6]);
 
                     // Scene
-                    response.Add(IntByte(scene));
+                    response.Add(ByteStringUtil.IntByte(scene));
                     response.Add(0x00);
                     // Type
                     response.Add(0x03);
 
+                } else if (type == "Connect") {
+                    // color (3byte)
+                    response.AddRange(ByteStringUtil.HexBytes(color));
+                    // Pad 3, probably for unused saturation
+                    response.AddRange(new byte[3]);
+                    // I don't know what this does yet, but it's either 0x32 or 0x04, so let's use 4
+                    response.Add(0x04);
+                    // Pad 16, Not sure what this is for
+                    response.AddRange(new byte[16]);
+                    // Always 4? 
+                    response.Add(0x04);
+                    // Hue linked? Not sure
+                    response.Add(0x01);
+                    // Ambient scene
+                    response.Add(0x00);
+                    // Pad 3
+                    response.AddRange(new byte[3]);
+                    // Flag 0x1? Wifi set??
+                    response.Add(0x00);
+                    // IR Enabled
+                    response.Add(0x01);
+                    // Pad 1
+                    response.Add(0x00);
+                    // Pad 40 - This is the bank of IR codes, with 8 slots of 5, value 0 is the action ID, the other 4 are for the code
+                    response.AddRange(new byte[40]);
+                    // Pad 7. Some key?
+                    response.AddRange(new byte[7]);
+                    // Pad 38 - this might be a google auth token
+                    response.AddRange(new byte[38]);
+                    // Pad 25 - Hue token? Not sure yet
+                    response.AddRange(new byte[25]);
+                    // Finally, our device type!
+                    response.Add(0x04);
                 } else {
+                    // Dreamscreen/Dreamscreen 4k state
                     // Pad 6 before adding ambient
-                    while (i < 6) {
-                        response.Add(0x00);
-                        i++;
-                    }
-
+                    response.AddRange(new byte[6]);
                     // Ambient color (3byte)
-                    string cString = "";
-                    foreach (char c in color) {
-                        cString += c;
-                        if (i == 1) {
-                            response.Add(HexByte(cString));
-                            cString = "";
-                            i = 0;
-                        } else {
-                            i = 1;
-                        }
-                    }
-
+                    response.AddRange(ByteStringUtil.HexBytes(color));
                     // Pad 20
-                    while (i < 20) {
-                        response.Add(0x00);
-                        i++;
-                    }
-
+                    response.AddRange(new byte[20]);
                     // Ambient scene (@byte 62)
-                    response.Add(IntByte(scene));
-
+                    response.Add(ByteStringUtil.IntByte(scene));
                     // Pad 11
-                    while (i < 11) {
-                        response.Add(0x00);
-                        i++;
-                    }
-
+                    response.AddRange(new byte[11]);
                     // HDMI Input (@byte 73)
-                    response.Add(IntByte(input));
-
+                    response.Add(ByteStringUtil.IntByte(input));
                     // Pad 2
-                    while (i < 2) {
-                        response.Add(0x00);
-                        i++;
-                    }
+                    response.AddRange(new byte[2]);                    
 
                     // HDMI Interface names
                     string[] iList = { inputName0, inputName1, inputName2 };
                     foreach (string iName in iList) {
-                        byte[] iByte = StringByte(iName, 16);
-                        foreach (byte b in iByte) {
-                            response.Add(b);
-                        }
+                        response.AddRange(ByteStringUtil.StringBytePad(iName, 16));                        
                     }
 
                     // Pad 7
-                    while (i < 7) {
-                        response.Add(0x00);
-                        i++;
-                    }
+                    response.AddRange(new byte[7]);
 
                     // HDMI Active Channels
-                    response.Add(IntByte(activeChannels));
+                    response.Add(ByteStringUtil.IntByte(activeChannels));
 
                     // Pad 10
-                    while (i < 10) {
-                        response.Add(0x00);
-                        i++;
-                    }
+                    response.AddRange(new byte[10]);
 
-                    response.Add(IntByte(toneRemapping));
+                    response.Add(ByteStringUtil.IntByte(toneRemapping));
 
                     // Device type
                     if (type == "DreamScreen") {
@@ -652,90 +652,14 @@ namespace HueDream.DreamScreenControl {
                     } else {
                         response.Add(0x02);
                     }
-                            
+
                 }
 
                 return response.ToArray();
-                
+
             }
 
-            
-        }
-        private static byte[] StringByte(string toPad, int len) {
-            string output = "";
-            if (toPad.Length > len) {
-                output = toPad.Substring(0, len);
-            } else {
-                output = toPad;
-            }
-            System.Text.ASCIIEncoding encoding = new ASCIIEncoding();
-            byte[] outBytes = new byte[len];
-            byte[] myBytes = encoding.GetBytes(output);
-            for (int bb = 0; bb < len; bb++) {
-                if (bb < myBytes.Length) {
-                    outBytes[bb] = myBytes[bb];
-                } else {
-                    outBytes[bb] = 0;
-                }
-            }
-            return outBytes;
-        }
 
-        private static byte IntByte(int toByte) {
-            byte b = Convert.ToByte(toByte.ToString("X2"), 16);
-            return b;
-        }
-
-        private static int HexInt(string intIn) {
-            return int.Parse(intIn, System.Globalization.NumberStyles.HexNumber);
-        }
-
-        private static byte HexByte(string hexStr) {
-            return Convert.ToByte(hexStr, 16);
-        }
-
-        private static string HexString(string hexString) {
-            string sb = "";
-            for (int i = 0; i < hexString.Length; i += 2) {
-                string hs = hexString.Substring(i, 2);
-                sb += HexChar(hs);
-            }
-            return sb;
-        }
-
-        private static string ExtractHexString(string[] input, int start, int len) {
-            string strOut = "";
-            if (len < input.Length) {
-                string[] nameArr = new string[len];
-                Array.Copy(input, start, nameArr, 0, len);
-
-                foreach (string s in nameArr) {
-                    strOut += HexChar(s);
-                }
-            } else {
-                Console.WriteLine("Len for input request " + len + " is less than array len: " + input.Length);
-            }
-            return strOut;
-        }
-
-        private static string HexChar(string hexString) {
-            try {
-                string ascii = string.Empty;
-
-                for (int i = 0; i < hexString.Length; i += 2) {
-                    string hs = string.Empty;
-
-                    hs = hexString.Substring(i, 2);
-                    uint decval = Convert.ToUInt32(hs, 16);
-                    char character = Convert.ToChar(decval);
-                    ascii += character;
-
-                }
-
-                return ascii;
-            } catch (Exception ex) { Console.WriteLine(ex.Message); }
-
-            return string.Empty;
         }
     }
 

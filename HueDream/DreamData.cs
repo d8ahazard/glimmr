@@ -13,7 +13,13 @@ namespace HueDream.HueDream {
         public string DS_IP { get; set; }
         public string DS_GROUP_NAME { get; set; }
         public string DS_DEVICE_NAME { get; set; }
-        public int DS_GROUP_ID { get; set; }        
+        public int DS_GROUP_ID { get; set; }
+        public int DS_BRIGHTNESS { get; set; }
+        public string DS_SATURATION { get; set; }
+        public string DS_AMBIENT_COLOR { get; set; }
+        public int DS_AMBIENT_MODE_TYPE { get; set; }
+        public int DS_AMBIENT_SCENE { get; set; }
+        public int DS_MODE { get; set; }
         public string HUE_IP { get; set; }
         public bool HUE_SYNC { get; set; }
         public bool HUE_AUTH { get; set; }
@@ -49,6 +55,12 @@ namespace HueDream.HueDream {
                 DS_GROUP_ID = 100;
                 DS_GROUP_NAME = "undefined";
                 DS_DEVICE_NAME = "HueDream";
+                DS_BRIGHTNESS = 100;
+                DS_SATURATION = "FFFFFF";
+                DS_AMBIENT_COLOR = "FFFFFF";
+                DS_AMBIENT_MODE_TYPE = 0;
+                DS_AMBIENT_SCENE = 0;
+                DS_MODE = 0;
                 HUE_IP = HueBridge.findBridge();
                 HUE_SYNC = false;
                 HUE_AUTH = false;
@@ -67,6 +79,12 @@ namespace HueDream.HueDream {
                 data["MAIN"]["DS_GROUP_NAME"] = DS_GROUP_NAME;
                 data["MAIN"]["DS_GROUP_ID"] = DS_GROUP_ID.ToString();
                 data["MAIN"]["DS_DEVICE_NAME"] = DS_DEVICE_NAME;
+                data["MAIN"]["DS_BRIGHTNESS"] = DS_BRIGHTNESS.ToString();
+                data["MAIN"]["DS_SATURATION"] = DS_SATURATION;
+                data["MAIN"]["DS_AMBIENT_COLOR"] = DS_AMBIENT_COLOR;
+                data["MAIN"]["DS_AMBIENT_MODE_TYPE"] = DS_AMBIENT_MODE_TYPE.ToString();
+                data["MAIN"]["DS_AMBIENT_SCENE"] = DS_AMBIENT_SCENE.ToString();
+                data["MAIN"]["DS_MODE"] = DS_MODE.ToString();
                 data["MAIN"]["HUE_LIGHTS"] = JsonConvert.SerializeObject(HUE_LIGHTS);
                 data["MAIN"]["HUE_MAP"] = JsonConvert.SerializeObject(HUE_MAP);
                 parser.WriteFile(iniPath, data);
@@ -87,6 +105,12 @@ namespace HueDream.HueDream {
             data["MAIN"]["DS_GROUP_NAME"] = DS_GROUP_NAME;
             data["MAIN"]["DS_GROUP_ID"] = DS_GROUP_ID.ToString();
             data["MAIN"]["DS_DEVICE_NAME"] = DS_DEVICE_NAME;
+            data["MAIN"]["DS_BRIGHTNESS"] = DS_BRIGHTNESS.ToString();
+            data["MAIN"]["DS_SATURATION"] = DS_SATURATION;
+            data["MAIN"]["DS_AMBIENT_COLOR"] = DS_AMBIENT_COLOR;
+            data["MAIN"]["DS_AMBIENT_MODE_TYPE"] = DS_AMBIENT_MODE_TYPE.ToString();
+            data["MAIN"]["DS_AMBIENT_SCENE"] = DS_AMBIENT_SCENE.ToString();
+            data["MAIN"]["DS_MODE"] = DS_MODE.ToString();
             data["MAIN"]["HUE_LIGHTS"] = JsonConvert.SerializeObject(HUE_LIGHTS);
             data["MAIN"]["HUE_MAP"] = JsonConvert.SerializeObject(HUE_MAP);
             parser.WriteFile(iniPath, data);
@@ -101,9 +125,15 @@ namespace HueDream.HueDream {
             HUE_AUTH = data["MAIN"]["HUE_AUTH"] == "True";
             HUE_KEY = data["MAIN"]["HUE_KEY"];
             HUE_USER = data["MAIN"]["HUE_USER"];
-            DS_GROUP_NAME = data["MAIN"]["DS_GROUP_NAME"];
-            DS_GROUP_ID = int.Parse(data["MAIN"]["DS_GROUP_ID"]);
-            DS_DEVICE_NAME = data["MAIN"]["DS_DEVICE_NAME"];
+            DS_GROUP_NAME = data["MAIN"]["DS_GROUP_NAME"] ?? "undefined";
+            DS_GROUP_ID = int.Parse(data["MAIN"]["DS_GROUP_ID"] ?? "100");
+            DS_DEVICE_NAME = data["MAIN"]["DS_DEVICE_NAME"] ?? "HueDream";
+            DS_BRIGHTNESS = int.Parse(data["MAIN"]["DS_BRIGHTNESS"] ?? "100");
+            DS_SATURATION = data["MAIN"]["DS_SATURATION"] ?? "FFFFFF";
+            DS_AMBIENT_COLOR = data["MAIN"]["DS_AMBIENT_COLOR"] ?? "FFFFFF";
+            DS_AMBIENT_MODE_TYPE = int.Parse(data["MAIN"]["DS_AMBIENT_MODE_TYPE"] ?? "0");
+            DS_MODE = int.Parse(data["MAIN"]["DS_MODE"] ?? "0");
+            DS_MODE = int.Parse(data["MAIN"]["DS_AMBIENT_SCENE"] ?? "0");
             HUE_LIGHTS = JsonConvert.DeserializeObject<List<KeyValuePair<int, string>>>(data["MAIN"]["HUE_LIGHTS"]);
             HUE_MAP = JsonConvert.DeserializeObject<List<KeyValuePair<int, string>>>(data["MAIN"]["HUE_MAP"]);
             return false;
