@@ -1,6 +1,8 @@
 ﻿using HueDream.DreamScreenControl;
 using HueDream.HueControl;
 using System;
+using System.Collections.Generic;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -10,26 +12,25 @@ namespace HueDream.HueDream {
         private HueBridge hueBridge;
         private DreamScreen dreamScreen;
         private DreamData dreamData;
-        
-        private CancellationTokenSource syncToken;
-        
+
         public static bool doSync { get; set; }
         public DreamSync() {
+            Console.WriteLine("Creating new sync.");
             dreamData = new DreamData();
-            Console.WriteLine("Creating new sync?");
-            syncToken = new CancellationTokenSource();
-            hueBridge = new HueBridge();
-            dreamScreen = new DreamScreen();
+            Console.WriteLine("Data loaded.");
+            hueBridge = new HueBridge(dreamData);
+            Console.WriteLine("Bridge created.");
+            dreamScreen = new DreamScreen(this, dreamData);
+            Console.WriteLine("DS Create.");
             // Start our dreamscreen listening like a good boy
             if (!DreamScreen.listening) {
-                Console.WriteLine("Calling listen on dreamscreen.");
+                Console.WriteLine("DS Listen start.");
                 dreamScreen.Listen();
                 DreamScreen.listening = true;
-                Console.WriteLine("Listen called.");
+                Console.WriteLine("DS Listen running.");
             }
         }
 
-        
 
         public void startSync() {
             if (doSync) {
@@ -37,7 +38,7 @@ namespace HueDream.HueDream {
             } else {
                 Console.WriteLine("Starting sync.");
                 doSync = true;
-                DreamScreen.subscribed = true;
+                dreamScreen.subscribe();
                 Task.Run(async() => hueBridge.StartStream());
                 Task.Run(async() => SyncData());                
             }
@@ -46,18 +47,22 @@ namespace HueDream.HueDream {
         public void StopSync() {
             Console.WriteLine("Dreamsync: Stopsync fired.");
             doSync = false;
-            hueBridge.StopStream();
-            DreamScreen.subscribed = false;
-            syncToken.Cancel();            
+            HueBridge.doEntertain = false;
         }
 
         private void SyncData() {
-            Console.WriteLine("SyncData called");            
-            while (doSync) {
-                // Read updating color var from dreamscreen
-                hueBridge.setColors(dreamScreen.colors);
+            hueBridge.setColors(dreamScreen.colors);            
+        }
+
+        public void CheckSync(bool enabled) {
+            Console.WriteLine("DSSYNC: " + doSync + " HS: " + enabled);
+            if (dreamData.DS_IP != "0.0.0.0" && enabled && !doSync) {
+                Console.WriteLine("Beginning DS stream to Hue...");
+                Task.Run(() => startSync());
+            } else if (!enabled && doSync) {
+                Console.WriteLine("Stopping sync.");
+                StopSync();
             }
-            Console.WriteLine("Dosync completed.");
         }
     }
 }

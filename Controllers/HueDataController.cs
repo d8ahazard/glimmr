@@ -25,29 +25,22 @@ namespace HueDream.Controllers {
             string message = "Unrecognized action";
             Console.Write("Now we're cooking: " + action);
             if (action == "getStatus") {
-                DreamScreenControl.DreamScreen ds = new DreamScreenControl.DreamScreen();
+                DreamScreenControl.DreamScreen ds = new DreamScreenControl.DreamScreen(null, userData);
                 ds.getMode();
             }
             
             if (action == "connectDreamScreen") {
                 string dsIp = userData.DS_IP;
-                DreamScreenControl.DreamScreen ds = new DreamScreenControl.DreamScreen();
+                DreamScreenControl.DreamScreen ds = new DreamScreenControl.DreamScreen(null, userData);
                 if (dsIp == "0.0.0.0") {
-                    List<string> devices = ds.findDevices();
-                    if (devices.Count > 0) {
-                        userData.DS_IP = devices[0].Split(":")[0];
-                        Console.WriteLine("We have a DS IP: " + userData.DS_IP);
-                        userData.saveData();
-                        ds.dreamScreenIp = IPAddress.Parse(userData.DS_IP);
-                        message = "Success: " + userData.DS_IP;
-                    }
+                    ds.findDevices();                    
                 } else {
                     Console.WriteLine("Searching for devices for the fun of it.");
                     ds.findDevices();
                 }
             } else if (action == "authorizeHue") {
                 if (userData.HUE_IP != "0.0.0.0") {
-                    HueBridge hb = new HueBridge();
+                    HueBridge hb = new HueBridge(userData);
                     RegisterEntertainmentResult appKey = hb.checkAuth();
                     if (appKey == null) {
                         message = "Error: Press the link button";
@@ -72,7 +65,7 @@ namespace HueDream.Controllers {
                 }
             } else if (action == "getLights") {
                 if (userData.HUE_AUTH) {
-                    HueBridge hb = new HueBridge();
+                    HueBridge hb = new HueBridge(userData);
                     userData.HUE_LIGHTS = hb.getLights();
                     userData.saveData();
                     return new JsonResult(userData.HUE_LIGHTS);
@@ -132,20 +125,10 @@ namespace HueDream.Controllers {
             }
             if (mapLights) userData.HUE_MAP = lightMap;
             userData.saveData();
-            CheckSync(enableSync);
+            ds.CheckSync(enableSync);
             
         }
 
-        private void CheckSync(bool enabled) {
-            bool dsSync = DreamSync.doSync;
-            Console.WriteLine("DSSYNC: " + dsSync + " HS: " + enabled);
-            if (userData.DS_IP != "0.0.0.0" && enabled && !dsSync) {
-                Console.WriteLine("Starting Dreamscreen sync!");
-                Task.Run(() => ds.startSync());
-            } else if (!enabled && dsSync) {
-                Console.WriteLine("Stopping sync.");
-                ds.StopSync();
-            }
-        }
+       
     }
 }

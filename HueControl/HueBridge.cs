@@ -27,62 +27,70 @@ namespace HueDream.HueControl {
         private readonly bool bridgeAuth;
 
         public List<KeyValuePair<int, string>> bridgeLights { get; }
-        private string[][] colors;
+        private string[] colors;
 
-        private static readonly HttpClient httpClient = new HttpClient();
+        private DreamData dreamData;
         private StreamingHueClient client;
         private EntertainmentLayer entLayer;
-        private Group streamingGroup;
+        private StreamingGroup entGroup;
         private string targetGroup;
+        private int brightness;
 
 
-        public HueBridge() {
-            DreamData dd = new DreamData();            
+        public HueBridge(DreamData dd) {
+            dreamData = dd;
             bridgeIp = dd.HUE_IP;
             bridgeKey = dd.HUE_KEY;
             bridgeUser = dd.HUE_USER;
             bridgeAuth = dd.HUE_AUTH;
             bridgeLights = dd.HUE_MAP;
+            brightness = dd.DS_BRIGHTNESS;
+            Console.WriteLine("Still alive");
             client = new StreamingHueClient(bridgeIp, bridgeUser, bridgeKey);
             entLayer = null;
-            streamingGroup = null;
+            entGroup = null;
             targetGroup = null;
+            GetGroups();
         }
 
-        public string[][] getColors() {
+        public string[] getColors() {
             return colors;
         }
 
-        public void setColors(string[][] colorIn) {
+        public void setColors(string[] colorIn) {
             colors = colorIn;
         }
 
-        public void StartStream() {
-            Console.WriteLine("StartStream fired.");
+        public async Task StartStream() {
+            Console.WriteLine("Connecting to bridge.");
             if (!doEntertain) {
                 doEntertain = true;
                 // Connect to our stream?
-                ConnectStream().Wait(5000);
+                await client.Connect(targetGroup);
+                Console.WriteLine("Connected.");
+                //Start automagically updating this entertainment group
+                client.AutoUpdate(entGroup, CancellationToken.None);
                 if (entLayer != null) {
-                    Console.WriteLine("Starting da loop...");
+                    Console.WriteLine("Connected! Beginning transmission...");
+                    int frame = 0;
                     while (doEntertain) {
+                        double dBright = dreamData.DS_BRIGHTNESS;                        
                         foreach (KeyValuePair<int, string> lights in bridgeLights) {
                             if (lights.Value != "-1") {
                                 int mapId = int.Parse(lights.Value);
-                                string[] colorString = colors[mapId];
+                                string colorString = colors[mapId];
                                 foreach (EntertainmentLight light in entLayer) {
                                     if (light.Id == lights.Key) {
-                                        string colorStrings = string.Join("", colorString);
+                                        string colorStrings = colorString;
                                         light.State.SetRGBColor(new RGBColor(colorStrings));
-                                        light.State.SetBrightness(100);
+                                        light.State.SetBrightness(dBright);                                        
                                     }
                                 }
                             }
                         }
                     }
-                    Console.WriteLine("Token cancellation received by entertainment.");
+                    // Stop streaming?
                     client.LocalHueClient.SetStreamingAsync(targetGroup, false);
-                    client.Close();
                     Console.WriteLine("Entertainment closed and done.");
                 } else {
                     Console.WriteLine("Unable to fetch entertainment layer?");
@@ -91,77 +99,37 @@ namespace HueDream.HueControl {
         }
 
         public void StopStream() {
-            Console.WriteLine("FFS");
-            if (doEntertain) {
-                doEntertain = false;
-                Console.WriteLine("Entertainment: Force cancellation.");
-                client.LocalHueClient.SetStreamingAsync(targetGroup, false);
-                try {
-                    client.Close();
-                } catch (SocketException) {
-                    Console.WriteLine("Socket Exception.");
-                }
-                Console.WriteLine("Entertainment2 closed and done.");
-            }
-        }
-
-        public async Task ConnectStream() {
-            Console.WriteLine("Connecting hue stream...");
-            targetGroup = await ConfigureStreamingGroup(client);
-            Group sg = await client.LocalHueClient.GetGroupAsync(targetGroup).ConfigureAwait(false);
-            var entGroup = new StreamingGroup(sg.Locations);
-            //Connect to the streaming group
-            await client.Connect(targetGroup).ConfigureAwait(false);
-            Console.WriteLine("Connected.");
-            //Start manually updating this entertainment group
-            client.AutoUpdate(entGroup, CancellationToken.None);
-            Console.WriteLine("AutoUpdate Enabled.");
-            entLayer = entGroup.GetNewLayer(isBaseLayer: true);
+            Console.WriteLine("FFS");            
         }
 
 
-        public async Task Entertain(CancellationToken token) {
-            Console.WriteLine("Starting entertainment...");
-            string targetGroup = await ConfigureStreamingGroup(client);
-            Console.WriteLine("Target Group: " + targetGroup);
-            //Create a streaming group
-            if (!string.IsNullOrEmpty(targetGroup)) {
+
+        private async void GetGroups() {
+            if (entGroup == null) {
+                if (targetGroup == null) targetGroup = await ConfigureStreamingGroup(client);
+                Console.WriteLine("Target Group is " + targetGroup);
+                // Get our actual group object?
                 Group sg = await client.LocalHueClient.GetGroupAsync(targetGroup).ConfigureAwait(false);
-                var entGroup = new StreamingGroup(sg.Locations);
-                //Connect to the streaming group
-                await client.Connect(targetGroup).ConfigureAwait(false);
-                Console.WriteLine("Connected.");
-                //Start manually updating this entertainment group
-                client.AutoUpdate(entGroup, token);
-                Console.WriteLine("AutoUpdate Enabled.");
-                EntertainmentLayer entertainmentLayer = entGroup.GetNewLayer(isBaseLayer: true);
-                
-                Console.WriteLine("Beginning entertainment stream.");
-                //updateLoop(entertainmentLayer);
-                while (doEntertain) {
-                    foreach (KeyValuePair<int, string> lights in bridgeLights) {
-                        if (lights.Value != "-1") {
-                            int mapId = int.Parse(lights.Value);
-                            string[] colorString = colors[mapId];
-                            foreach (EntertainmentLight light in entertainmentLayer) {
-                                if (light.Id == lights.Key) {
-                                    string colorStrings = string.Join("", colorString);
-                                    light.State.SetRGBColor(new RGBColor(colorStrings));
-                                    light.State.SetBrightness(100);
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                Console.WriteLine("Token cancellation received by entertainment.");
-                client.LocalHueClient.SetStreamingAsync(targetGroup, false);
-                Console.WriteLine("Entertainment stream completed.");
-            } else {
-                Console.WriteLine("Target Group creation failed!");
+                Console.WriteLine("Streaming group Retreived.");
+                entGroup = new StreamingGroup(sg.Locations);
+                Console.WriteLine("Ent group created.");
             }
-            client.Close();
+            //Connect to the streaming group
 
+            if (entLayer == null) {
+                Console.WriteLine("AutoUpdate Enabled.");
+                entLayer = entGroup.GetNewLayer(isBaseLayer: true);
+                Console.WriteLine("Entertainment layer is set.");
+            }
+        }
+       
+        private bool ListContains(List<string> needle, List<string>haystack) {
+            foreach(string s in needle) {
+                if (!haystack.Contains(s)) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         private async Task<string> ConfigureStreamingGroup(StreamingHueClient client) {
@@ -173,49 +141,17 @@ namespace HueDream.HueControl {
                     lightList.Add(kvp.Key.ToString());
                 }
             }
-
-            // Build our data
-            Dictionary<string, object> data = new Dictionary<string, object>();
-            data.Add("name", "HueDream2");
-            data.Add("lights", lightList);
-            data.Add("class", "Other");
-            Console.WriteLine("Light List: " + JsonConvert.SerializeObject(lightList));
-
-            // Check if entertainment group exists
+                        
+            // Fetch our entertainment groups
             var all = await client.LocalHueClient.GetEntertainmentGroups().ConfigureAwait(false);
             foreach (Group eg in all) {
-                if (eg.Name == "HueDream2") {
-                    Console.WriteLine("Entertainment Group found: " + eg.Id);
+                if (ListContains(lightList, eg.Lights)) {
+                    Console.WriteLine("We've found a group with all of our lights in it.");
                     groupId = eg.Id;
-                    break;
-                }
+                }                
             }
 
-            try {
-                if (string.IsNullOrEmpty(groupId)) {
-                    Console.WriteLine("Creating Entertainment Group.");
-                    string group = "";
-                    data.Add("type", "Entertainment");
-                    var content = JsonConvert.SerializeObject(data);
-                    var response = await httpClient.PostAsync("http://" + bridgeIp + "/api/" + bridgeUser + "/groups/", new StringContent(content, Encoding.UTF8, "application/json")).ConfigureAwait(false);
-                    var responseString = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    var responseData = JToken.Parse(JsonConvert.SerializeObject(responseString));
-                    if (responseData["Success"] != null) {
-                        Console.WriteLine("Target group creation complete.");
-                        groupId = (string)responseData["Success"]["id"];
-                    } else {
-                        Console.WriteLine("Group creation failed.");
-                    }                                        
-                } else {
-                    Console.WriteLine("Updating Entertainment Group.");
-                    var content = JsonConvert.SerializeObject(data);
-                    var response = await httpClient.PutAsync("http://" + bridgeIp + "/api/" + bridgeUser + "/groups/" + groupId, new StringContent(content, Encoding.UTF8, "application/json"));
-                    var responseString = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine("ResponseString: " + responseString);                    
-                }
-            } catch (ArgumentNullException) {
-                Console.WriteLine("Null Exception!");
-            }
+            
             return groupId;
         }
 

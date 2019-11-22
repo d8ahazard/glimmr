@@ -9,9 +9,10 @@ using System.Threading.Tasks;
 
 namespace HueDream {
     public class Startup {
+        private DreamSync ds;
         public Startup(IConfiguration configuration) {
+            ds = new DreamSync();
             Configuration = configuration;
-            
 
         }
 

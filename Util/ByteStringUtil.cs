@@ -33,7 +33,7 @@ namespace HueDream.Util {
             return outBytes;
         }
 
-        static IEnumerable<string> SplitHex(string str, int chunkSize) {
+        public static IEnumerable<string> SplitHex(string str, int chunkSize) {
             return Enumerable.Range(0, str.Length / chunkSize)
                 .Select(i => str.Substring(i * chunkSize, chunkSize));
         }
