@@ -1,8 +1,6 @@
 ﻿using HueDream.DreamScreenControl;
 using HueDream.HueControl;
 using System;
-using System.Collections.Generic;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,8 +10,9 @@ namespace HueDream.HueDream {
         private HueBridge hueBridge;
         private DreamScreen dreamScreen;
         private DreamData dreamData;
+        private CancellationTokenSource cts;
 
-        public static bool doSync { get; set; }
+        public static bool syncEnabled { get; set; }
         public DreamSync() {
             Console.WriteLine("Creating new sync.");
             dreamData = new DreamData();
@@ -33,33 +32,30 @@ namespace HueDream.HueDream {
 
 
         public void startSync() {
-            if (doSync) {
-                Console.WriteLine("Sync is already started...");
-            } else {
-                Console.WriteLine("Starting sync.");
-                doSync = true;
-                dreamScreen.subscribe();
-                Task.Run(async() => hueBridge.StartStream());
-                Task.Run(async() => SyncData());                
-            }
+            cts = new CancellationTokenSource();
+            Console.WriteLine("Starting sync.");
+            dreamScreen.subscribe();
+            Task.Run(async () => SyncData());
+            Task.Run(async () => hueBridge.StartStream(cts.Token));
+            Console.WriteLine("Sync should be running.");
+            syncEnabled = true;
         }
 
         public void StopSync() {
             Console.WriteLine("Dreamsync: Stopsync fired.");
-            doSync = false;
-            HueBridge.doEntertain = false;
+            cts.Cancel();
+            syncEnabled = false;
         }
 
         private void SyncData() {
-            hueBridge.setColors(dreamScreen.colors);            
+            hueBridge.setColors(dreamScreen.colors);
         }
 
         public void CheckSync(bool enabled) {
-            Console.WriteLine("DSSYNC: " + doSync + " HS: " + enabled);
-            if (dreamData.DS_IP != "0.0.0.0" && enabled && !doSync) {
+            if (dreamData.DS_IP != "0.0.0.0" && enabled && !syncEnabled) {
                 Console.WriteLine("Beginning DS stream to Hue...");
                 Task.Run(() => startSync());
-            } else if (!enabled && doSync) {
+            } else if (!enabled && syncEnabled) {
                 Console.WriteLine("Stopping sync.");
                 StopSync();
             }

@@ -5,8 +5,6 @@ using Q42.HueApi.Models.Bridge;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Threading.Tasks;
 
 namespace HueDream.Controllers {
     [Route("api/[controller]")]
@@ -16,7 +14,7 @@ namespace HueDream.Controllers {
         private static DreamSync ds;
         public HueDataController() {
             userData = new DreamData();
-            ds = new DreamSync();            
+            ds = new DreamSync();
         }
 
         // GET: api/HueData/action?action=...
@@ -28,12 +26,12 @@ namespace HueDream.Controllers {
                 DreamScreenControl.DreamScreen ds = new DreamScreenControl.DreamScreen(null, userData);
                 ds.getMode();
             }
-            
+
             if (action == "connectDreamScreen") {
                 string dsIp = userData.DS_IP;
                 DreamScreenControl.DreamScreen ds = new DreamScreenControl.DreamScreen(null, userData);
                 if (dsIp == "0.0.0.0") {
-                    ds.findDevices();                    
+                    ds.findDevices();
                 } else {
                     Console.WriteLine("Searching for devices for the fun of it.");
                     ds.findDevices();
@@ -115,20 +113,20 @@ namespace HueDream.Controllers {
                 } else if (key == "hue_ip") {
                     userData.HUE_IP = Request.Form[key];
                 } else if (key == "hue_sync") {
-                    if ((string) Request.Form[key] == "true") {
+                    if ((string)Request.Form[key] == "true") {
                         Console.WriteLine("TRUE");
                         enableSync = true;
                     }
-                    
+
                     userData.HUE_SYNC = enableSync;
                 }
             }
             if (mapLights) userData.HUE_MAP = lightMap;
             userData.saveData();
             ds.CheckSync(enableSync);
-            
+
         }
 
-       
+
     }
 }

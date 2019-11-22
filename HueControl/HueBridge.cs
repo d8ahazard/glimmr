@@ -1,6 +1,5 @@
 ﻿using HueDream.HueDream;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Q42.HueApi;
 using Q42.HueApi.ColorConverters;
 using Q42.HueApi.Interfaces;
@@ -10,9 +9,6 @@ using Q42.HueApi.Streaming;
 using Q42.HueApi.Streaming.Models;
 using System;
 using System.Collections.Generic;
-using System.Net.Http;
-using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -36,7 +32,6 @@ namespace HueDream.HueControl {
         private string targetGroup;
         private int brightness;
 
-
         public HueBridge(DreamData dd) {
             dreamData = dd;
             bridgeIp = dd.HUE_IP;
@@ -46,11 +41,9 @@ namespace HueDream.HueControl {
             bridgeLights = dd.HUE_MAP;
             brightness = dd.DS_BRIGHTNESS;
             Console.WriteLine("Still alive");
-            client = new StreamingHueClient(bridgeIp, bridgeUser, bridgeKey);
             entLayer = null;
             entGroup = null;
             targetGroup = null;
-            GetGroups();
         }
 
         public string[] getColors() {
@@ -61,45 +54,51 @@ namespace HueDream.HueControl {
             colors = colorIn;
         }
 
-        public async Task StartStream() {
+        public async Task StartStream(CancellationToken ct) {
             Console.WriteLine("Connecting to bridge.");
-            if (!doEntertain) {
-                doEntertain = true;
-                // Connect to our stream?
-                await client.Connect(targetGroup);
-                Console.WriteLine("Connected.");
-                //Start automagically updating this entertainment group
-                client.AutoUpdate(entGroup, CancellationToken.None);
-                if (entLayer != null) {
-                    Console.WriteLine("Connected! Beginning transmission...");
-                    int frame = 0;
-                    while (doEntertain) {
-                        double dBright = dreamData.DS_BRIGHTNESS;                        
-                        foreach (KeyValuePair<int, string> lights in bridgeLights) {
-                            if (lights.Value != "-1") {
-                                int mapId = int.Parse(lights.Value);
-                                string colorString = colors[mapId];
-                                foreach (EntertainmentLight light in entLayer) {
-                                    if (light.Id == lights.Key) {
-                                        string colorStrings = colorString;
-                                        light.State.SetRGBColor(new RGBColor(colorStrings));
-                                        light.State.SetBrightness(dBright);                                        
-                                    }
+            List<string> lights = new List<string>();
+            foreach (KeyValuePair<int, string> kp in bridgeLights) {
+                if (kp.Value != "-1") lights.Add(kp.Key.ToString());
+            }
+            Console.WriteLine("Lights: " + JsonConvert.SerializeObject(lights));
+            StreamingGroup stream = await StreamingSetup.SetupAndReturnGroup(bridgeIp, bridgeUser, bridgeKey, lights, ct);
+            Console.WriteLine("Got stream.");
+            entLayer = stream.GetNewLayer(isBaseLayer: true);
+            // Connect to our stream?
+            Console.WriteLine("Connected.");
+            //Start automagically updating this entertainment group
+            Console.WriteLine("Sending Color Data.");
+            SendColorData(ct);
+        }
+
+        private async Task SendColorData(CancellationToken ct) {
+            if (entLayer != null) {
+                Console.WriteLine("Connected! Beginning transmission...");
+                while (!ct.IsCancellationRequested) {
+                    double dBright = dreamData.DS_BRIGHTNESS;
+                    foreach (KeyValuePair<int, string> lights in bridgeLights) {
+                        if (lights.Value != "-1") {
+                            int mapId = int.Parse(lights.Value);
+                            string colorString = colors[mapId];
+                            foreach (EntertainmentLight light in entLayer) {
+                                if (light.Id == lights.Key) {
+                                    string colorStrings = colorString;
+                                    light.State.SetRGBColor(new RGBColor(colorStrings));
+                                    light.State.SetBrightness(dBright);
                                 }
                             }
                         }
                     }
-                    // Stop streaming?
-                    client.LocalHueClient.SetStreamingAsync(targetGroup, false);
-                    Console.WriteLine("Entertainment closed and done.");
-                } else {
-                    Console.WriteLine("Unable to fetch entertainment layer?");
                 }
+                // Stop streaming?
+                Console.WriteLine("Entertainment closed and done.");
+            } else {
+                Console.WriteLine("Unable to fetch entertainment layer?");
             }
         }
 
         public void StopStream() {
-            Console.WriteLine("FFS");            
+            Console.WriteLine("FFS");
         }
 
 
@@ -122,9 +121,9 @@ namespace HueDream.HueControl {
                 Console.WriteLine("Entertainment layer is set.");
             }
         }
-       
-        private bool ListContains(List<string> needle, List<string>haystack) {
-            foreach(string s in needle) {
+
+        private bool ListContains(List<string> needle, List<string> haystack) {
+            foreach (string s in needle) {
                 if (!haystack.Contains(s)) {
                     return false;
                 }
@@ -141,21 +140,21 @@ namespace HueDream.HueControl {
                     lightList.Add(kvp.Key.ToString());
                 }
             }
-                        
+
             // Fetch our entertainment groups
             var all = await client.LocalHueClient.GetEntertainmentGroups().ConfigureAwait(false);
             foreach (Group eg in all) {
                 if (ListContains(lightList, eg.Lights)) {
                     Console.WriteLine("We've found a group with all of our lights in it.");
                     groupId = eg.Id;
-                }                
+                }
             }
 
-            
+
             return groupId;
         }
 
-       
+
         public void StopEntertainment() {
             Console.WriteLine("Stopping the e the hard way?");
             doEntertain = false;

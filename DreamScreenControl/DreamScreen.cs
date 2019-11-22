@@ -8,7 +8,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace HueDream.DreamScreenControl {
@@ -60,7 +59,7 @@ namespace HueDream.DreamScreenControl {
          (byte)0xFA, (byte)0xFD, (byte)0xF4, (byte)0xF3
         };
 
-       
+
         public IPAddress dreamScreenIp { get; set; }
         public string[] colors { get; }
         public int deviceMode { get; set; }
@@ -74,7 +73,7 @@ namespace HueDream.DreamScreenControl {
         public static bool listening { get; set; }
         public static bool subscribed { get; set; }
 
-        
+
         private DreamSync dreamSync;
 
         private List<string> devices;
@@ -113,6 +112,7 @@ namespace HueDream.DreamScreenControl {
                 bool sync = (newMode != 0);
                 dd.HUE_SYNC = sync;
                 dd.saveData();
+                Console.WriteLine("Updating mode to " + newMode.ToString());
                 // If ambient, set to ambient colorS                
                 dreamSync.CheckSync(sync);
                 if (newMode == 3) {
@@ -121,13 +121,13 @@ namespace HueDream.DreamScreenControl {
                     }
                     Console.WriteLine("Updating color array to use ambient color: " + colors[0]);
                 }
-            }                       
+            }
         }
 
 
         public void subscribe() {
             Console.WriteLine("Subscribing to color data...");
-            sendUDPWrite((byte)0x01, (byte)0x0C, new byte[] { (byte)0x01 }, (byte)0x10);            
+            sendUDPWrite((byte)0x01, (byte)0x0C, new byte[] { (byte)0x01 }, (byte)0x10);
         }
 
 
@@ -200,7 +200,7 @@ namespace HueDream.DreamScreenControl {
                         int lightCount = 0;
                         int count = 0;
                         //Console.WriteLine("ColorData: " + JsonConvert.SerializeObject(colorData));
-                        foreach (string colorValue in colorData) {                            
+                        foreach (string colorValue in colorData) {
                             colors[lightCount] = colorValue;
                             lightCount++;
                             if (lightCount > 11) break;
@@ -214,7 +214,7 @@ namespace HueDream.DreamScreenControl {
                         SendDeviceStatus(target);
                     } else if (flag == "60") {
                         if (!devices.Contains(from) && dss != null) {
-                            if(dss.type == "DreamScreen" || dss.type == "DreamScreen 4K") {
+                            if (dss.type == "DreamScreen" || dss.type == "DreamScreen 4K") {
                                 Console.WriteLine("Adding devices");
                                 if (dd.DS_IP == "0.0.0.0") dd.DS_IP = from;
                                 devices.Add(from);
@@ -253,7 +253,7 @@ namespace HueDream.DreamScreenControl {
                     dd.saveData();
                     break;
                 case "AMBIENT_COLOR":
-                    dd.DS_AMBIENT_COLOR = string.Join("", payload);                    
+                    dd.DS_AMBIENT_COLOR = string.Join("", payload);
                     dd.saveData();
                     for (int i = 0; i < colors.Length; i++) {
                         colors[i] = dd.DS_AMBIENT_COLOR;
@@ -556,7 +556,7 @@ namespace HueDream.DreamScreenControl {
                 } else if (type == "Connect") {
                     color = stateMessage[35] + stateMessage[36] + stateMessage[37];
                     scene = ByteStringUtil.HexInt(stateMessage[60]);
-                } else { 
+                } else {
                     color = stateMessage[40] + stateMessage[41] + stateMessage[42];
                     scene = ByteStringUtil.HexInt(stateMessage[62]);
                     input = ByteStringUtil.HexInt(stateMessage[73]);
@@ -657,12 +657,12 @@ namespace HueDream.DreamScreenControl {
                     // HDMI Input (@byte 73)
                     response.Add(ByteStringUtil.IntByte(input));
                     // Pad 2
-                    response.AddRange(new byte[2]);                    
+                    response.AddRange(new byte[2]);
 
                     // HDMI Interface names
                     string[] iList = { inputName0, inputName1, inputName2 };
                     foreach (string iName in iList) {
-                        response.AddRange(ByteStringUtil.StringBytePad(iName, 16));                        
+                        response.AddRange(ByteStringUtil.StringBytePad(iName, 16));
                     }
 
                     // Pad 7
