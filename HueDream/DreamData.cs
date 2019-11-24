@@ -62,8 +62,12 @@ namespace HueDream.HueDream {
         public static void SaveJson(DataObj dObj) {
             string jsonPath = GetConfigPath("huedream.json");
             JsonSerializer serializer = new JsonSerializer();
-            using (StreamWriter file = File.CreateText(jsonPath)) {
-                serializer.Serialize(file, dObj);
+            try {
+                using (StreamWriter file = File.CreateText(jsonPath)) {
+                    serializer.Serialize(file, dObj);
+                }
+            } catch (IOException e) {
+                Console.WriteLine("An IO Exception occurred: " + e.ToString());
             }
         }
 
@@ -76,9 +80,13 @@ namespace HueDream.HueDream {
             DataObj output = null;
             string jsonPath = GetConfigPath("huedream.json");
             if (File.Exists(jsonPath)) {
-                using (StreamReader file = File.OpenText(jsonPath)) {
-                    JsonSerializer js = new JsonSerializer();
-                    output = (DataObj) js.Deserialize(file, typeof(DataObj));
+                try {
+                    using (StreamReader file = File.OpenText(jsonPath)) {
+                        JsonSerializer js = new JsonSerializer();
+                        output = (DataObj)js.Deserialize(file, typeof(DataObj));
+                    }
+                } catch (IOException e) {
+                    Console.WriteLine("An IO Exception occurred: " + e.ToString());
                 }
             } else {
                 output = new DataObj();
@@ -102,10 +110,6 @@ namespace HueDream.HueDream {
                         File.Delete(filePath);
                     }
                 }
-                if (File.Exists("/etc/huedream/" + filePath)) {
-                    Console.WriteLine("We have a docker path for " + filePath);
-                }
-                Console.WriteLine("Using docker path for " + filePath);
                 return "/etc/huedream/" + filePath;
             }
             return filePath;
