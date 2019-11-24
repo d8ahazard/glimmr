@@ -9,40 +9,17 @@
 
     <title>@ViewData["Title"] - HueDream</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap-material-design.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/bootstrap-material-design.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
     <style>
-        background {
-            background: #ffffff;
-        }
-
-        .wrapper {
-            width: 80%;
-            height: 80%;
-            margin: 20px auto;
-            text-align: center;
-        }
-
-        .light-preview {
-            width: 100%;
-            display: grid;
-            grid-template-columns: auto auto auto auto auto;
-            grid-template-rows: auto auto auto;
-            margin-bottom: 25px;
-        }
-
-        .lightRegion {
-            border: 1px solid black;
-        }
+        
     </style>
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">HueDream</a>
-            </div>
+        <nav class="navbar navbar-dark bg-dark">
+            <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">HueDream</a>
         </nav>
     </header>
     <div class="container">

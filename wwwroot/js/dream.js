@@ -62,6 +62,35 @@ $(function () {
         }
     });
 
+    $('.dsType').change(function () {
+        var val = $(this).val();
+        var dsIcon = $('#dsIcon');
+        console.log("Val is " + val);
+        if (val == "SideKick") {
+            dsIcon.attr('src', './img/sidekick_icon.png');
+        } else {
+            dsIcon.attr('src', './img/connect_icon.png');
+        }
+    });
+
+    $(document).on('focusin', '.mapSelect', function () {
+        console.log("Saving sel value " + $(this).val());
+        $(this).data('val', $(this).val());
+    }).on('change', '.mapSelect', function () {
+        var prev = $(this).data('val');
+        var current = $(this).val();
+        if (current != -1) {
+            console.log("Flipping the script?", prev);
+            var target = $('#sector' + current);
+            if (!target.hasClass('checked')) target.addClass('checked');
+            $('#sector' + prev).removeClass('checked');
+            $(this).data('val', $(this).val());
+        }
+        console.log("Prev value " + prev);
+        console.log("New value " + current);
+    });
+
+   
     $('#load_lights').on('click', function() {
         $.get("./api/DreamData/action?action=getLights", function (data) {
             console.log("Data: ", data);
@@ -74,7 +103,7 @@ $(function () {
         });
     });
     fetchJson();
-   
+    $('body').bootstrapMaterialDesign();   
 });
 
 function fetchJson() {
@@ -93,7 +122,7 @@ function fetchJson() {
             if (id == "hueAuth") {
                 hueAuth = value;
                 if (value) {
-                    $('#hue_auth').val("Authorized")
+                    $('#hueAuth').val("Authorized")
                     $('#hue_authorize').hide();
                 } else {
                     $('#hue_auth').val("Not authorized, press the link button on your hue bridge and click below.");
@@ -108,9 +137,15 @@ function fetchJson() {
                 group = value;
             } else if (id == "entertainmentGroups") {
                 groups = value;
+            } else if (id == "dreamState") {
+                $('#dsName').html(value.name);
+                $('#dsGroupName').html(value.groupName);
+                $('#dsType').html(value.type);
+                var modestr = (value.mode == 0) ? "Off" : ((value.mode == 1) ? "Video" : ((value.mode == 2) ? "Music" : ((value.mode == 3) ? "Ambient" : "WTF")));
+                $('#dsMode').html(modestr);
             } else {
                 console.log("Setting value for #" + id, value);
-                if (id == 'ds_ip') {
+                if (id == 'dsIp') {
                     dsIp = value;
                     if (value != "0.0.0.0") {
                          $('#ds_find').hide();
@@ -131,59 +166,79 @@ function fetchJson() {
             mapLights(group, lightMap, hueLights);
         }
     });
-    var height = ($('#lightPreview').width() / 16) * 5;
-    $('#lightPreview').css('height', height);
+   
 }
 
 function mapLights(group, map, lights) {
-    console.log("GML", group, map, lights);
-    var lightGroup = document.getElementById("lightGroup");
-    lightGroup.innerHTML = "";
+    // Get the main light group
+    var lightGroup = document.getElementById("mapSel");
+    // Clear it
+    $('div').remove('.delSel');
+    // Clear the light region checked status
+    $('.lightRegion').removeClass("checked");
+    // Get the list of lights for the selected group
     var ids = group.lights;
+    // Loop through our list of all lights that could be in ent group
     for (var l in lights) {
         var id = lights[l]['Key'];
-        var name = lights[l]['Value'];
-        console.log("Name and ID are ", name, id, ids);
         if ($.inArray(id.toString(), ids) !== -1) {
+            var name = lights[l]['Value'];
+            // Create a select for this light
             var newSelect = document.createElement('select');
-            newSelect.className = "col-3 col-sm-4";
+            newSelect.className = "mapSelect form-control text-dark bg-light";
             newSelect.setAttribute('id', 'lightMap' + id);
             newSelect.setAttribute('name', 'lightMap' + id);
+            // Assume it's not mapped
             var selection = -1;
+            // Check to see if it is mapped
             for (var m in map) {
                 if (map[m]['Key'] == id) {
                     selection = map[m]['Value'];
-                    console.log("We have a selection?", selection);
                 }
             }
 
-            var i;
+            // Create the blank "unmapped" option
             var opt = document.createElement("option");
             opt.value = -1;
             opt.innerHTML = "";
-            if (selection == -1) opt.setAttribute('selected', true);
+
+            // Set it to selected if we don't have a mapping
+            if (selection == -1) {
+                opt.setAttribute('selected', true);
+            } else {
+                var checkDiv = $('#sector' + selection);
+                if (!checkDiv.hasClass('checked')) checkDiv.addClass('checked');
+            }
             newSelect.appendChild(opt);
-            for (i = 0; i < 13; i++) {
+
+            // Add the options for our regions
+            for (var i = 0; i < 12; i++) {
                 var opt = document.createElement("option");
                 opt.value = i;
-                opt.innerHTML = i;
+                opt.innerHTML = "<BR>" + (i + 1);
+                // Mark it selected if it's mapped
                 if (selection == i) opt.setAttribute('selected', true);
                 newSelect.appendChild(opt);
             }
-            var lightLabel = document.createElement('div');
-            lightLabel.className += " col-6 col-sm-12 row";
 
-            lightLabel.id = id;
-            lightLabel.setAttribute('data-name', name);
-            lightLabel.setAttribute('data-id', id);
+            // Create the label
             var label = document.createElement('label');
-            label.className = "col-9 col-sm-8";
             label.innerHTML = name + ":  ";
-            lightLabel.appendChild(label);
-            lightLabel.appendChild(newSelect);
-            lightGroup.appendChild(lightLabel);
+
+            // Create the div to hold it all
+            var lightDiv = document.createElement('div');
+            lightDiv.className += "form-group delSel";
+            lightDiv.id = id;
+            lightDiv.setAttribute('data-name', name);
+            lightDiv.setAttribute('data-id', id);
+
+            // Congratulations, it's a boy!
+            lightDiv.appendChild(label);
+            lightDiv.appendChild(newSelect);
+            lightGroup.appendChild(lightDiv);
         }
     }
+    $('.delSel').bootstrapMaterialDesign();   
 }
 
 function listGroups() {
@@ -200,12 +255,14 @@ function listGroups() {
             gs.append(`<option value="${val}"${selected}>${txt}</option>`);
             i++;
         });
+        return groups;
     });
 }
 
 function listLights() {
     $.get("./api/DreamData/action?action=listLights", function (data) {
         lights = data;
+        return data;
     });
 }
 
