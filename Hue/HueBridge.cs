@@ -188,9 +188,7 @@ namespace HueDream.Hue {
                 var task = Task.Run(async () => await client.GetLightsAsync().ConfigureAwait(false));
                 var lightArray = task.Result;
                 foreach (Light light in lightArray) {
-                    if (light.Type == "Extended color light") {
-                        lights.Add(new KeyValuePair<int, string>(int.Parse(light.Id), light.Name));
-                    }
+                    lights.Add(new KeyValuePair<int, string>(int.Parse(light.Id), light.Name));                    
                 }
             }
             return lights;
