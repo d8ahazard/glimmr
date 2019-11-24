@@ -14,9 +14,12 @@ namespace HueDream.HueDream {
         public static void CheckConfig() {
             string jsonPath = GetConfigPath("huedream.json");
             string iniPath = GetConfigPath("huedream.ini");
+            Console.WriteLine("Json path is " + jsonPath + ", ini path is " + iniPath);
             if (!File.Exists(jsonPath) && File.Exists(iniPath)) {
                 ConvertConfig(iniPath);
             }
+            if (File.Exists(jsonPath)) Console.WriteLine("JSON Path exists.");
+            if (File.Exists(iniPath)) Console.WriteLine("INI Path exists.");
         }
 
         private static void ConvertConfig(string iniPath) {
