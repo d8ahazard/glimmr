@@ -19,7 +19,15 @@
                     <div class="card-body">
                         <div class="form-group">
                             <label for="ds_ip">Dreamscreen IP</label>
-                            <input type="text" class="form-control" id="ds_ip" readonly placeholder="0.0.0.0">
+                            <input type="text" class="form-control" id="dsIp" readonly placeholder="0.0.0.0">
+                        </div>
+                        <div class="form-group">
+                            <label for="ds_ip">Emulation Type</label>
+                            <select class="form-control" id="dsType" name="ds_type">
+                                <option value="SideKick">Sidekick</option>
+                                <option value="Connect">Connect</option>
+                            </select>
+                            <small id="typeHelp" class="form-text text-muted">WARNING: Connect will only work with the beta version of the DS app.</small>
                         </div>
                         <button class="btn btn-secondary" id="ds_find" OnClientClick="return false;">Find Dreamscreen</button>
                     </div>
@@ -40,11 +48,11 @@
                     <div class="card-body">
                         <div class="form-group">
                             <label for="hue_ip">Hue Bridge IP</label>
-                            <input type="text" class="form-control" id="hue_ip" readonly placeholder="0.0.0.0">
+                            <input type="text" class="form-control" id="hueIp" readonly placeholder="0.0.0.0">
                         </div>
                         <div class="form-group">
                             <label for="hue_auth">Hue Bridge Authorization</label>
-                            <input type="text" class="form-control" id="hue_auth" placeholder="Unauthorized" disabled>
+                            <input type="text" class="form-control" id="hueAuth" placeholder="Unauthorized" disabled>
                             <button class="btn btn-secondary" id="hue_authorize" OnClientClick="return false;">Authorize</button>
                         </div>
                     </div>
@@ -64,7 +72,10 @@
                 <div id="collapseFour" class="collapse show" aria-labelledby="headingFour" data-parent="#accordion">
                     <div class="card-body">
                         <div class="form-group">
-                            <button class="btn btn-secondary" id="load_lights" OnClientClick="return false;">Load Lights</button>                            
+                            <label for="dsGroup">Entertainment Group</label>
+                            <select id="dsGroup" name="dsGroup">
+
+                            </select>
                         </div>
                         <div class="light-preview" id="lightPreview">
                             <div class="lightRegion">

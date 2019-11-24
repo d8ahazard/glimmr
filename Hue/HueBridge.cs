@@ -11,8 +11,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
 
-namespace HueDream.HueControl {
+namespace HueDream.Hue {
     public class HueBridge {
         public string bridgeIp { get; set; }
         public string bridgeKey { get; set; }
@@ -22,33 +23,24 @@ namespace HueDream.HueControl {
 
         private readonly bool bridgeAuth;
 
-        public List<KeyValuePair<int, string>> bridgeLights { get; }
+        public List<KeyValuePair<int, int>> bridgeLights { get; }
         private string[] colors;
 
-        private DreamData dreamData;
-        private StreamingHueClient client;
+        private DataObj dreamData;
         private EntertainmentLayer entLayer;
-        private StreamingGroup entGroup;
-        private string targetGroup;
-        private int brightness;
-
-        public HueBridge(DreamData dd) {
+        private Group entGroup;
+        
+        public HueBridge(DataObj dd) {
             dreamData = dd;
-            bridgeIp = dd.HUE_IP;
-            bridgeKey = dd.HUE_KEY;
-            bridgeUser = dd.HUE_USER;
-            bridgeAuth = dd.HUE_AUTH;
-            bridgeLights = dd.HUE_MAP;
-            brightness = dd.DS_BRIGHTNESS;
-            Console.WriteLine("Still alive");
+            bridgeIp = dd.HueIp;
+            bridgeKey = dd.HueKey;
+            bridgeUser = dd.HueUser;
+            bridgeAuth = dd.HueAuth;
+            bridgeLights = dd.HueMap;
+            entGroup = dd.EntertainmentGroup;
             entLayer = null;
-            entGroup = null;
-            targetGroup = null;
         }
 
-        public string[] getColors() {
-            return colors;
-        }
 
         public void setColors(string[] colorIn) {
             colors = colorIn;
@@ -57,11 +49,11 @@ namespace HueDream.HueControl {
         public async Task StartStream(CancellationToken ct) {
             Console.WriteLine("Connecting to bridge.");
             List<string> lights = new List<string>();
-            foreach (KeyValuePair<int, string> kp in bridgeLights) {
-                if (kp.Value != "-1") lights.Add(kp.Key.ToString());
+            foreach (KeyValuePair<int, int> kp in bridgeLights) {
+                if (kp.Value != -1) lights.Add(kp.Key.ToString());
             }
             Console.WriteLine("Lights: " + JsonConvert.SerializeObject(lights));
-            StreamingGroup stream = await StreamingSetup.SetupAndReturnGroup(bridgeIp, bridgeUser, bridgeKey, lights, ct);
+            StreamingGroup stream = await StreamingSetup.SetupAndReturnGroup(dreamData, lights, ct);
             Console.WriteLine("Got stream.");
             entLayer = stream.GetNewLayer(isBaseLayer: true);
             // Connect to our stream?
@@ -75,10 +67,10 @@ namespace HueDream.HueControl {
             if (entLayer != null) {
                 Console.WriteLine("Connected! Beginning transmission...");
                 while (!ct.IsCancellationRequested) {
-                    double dBright = dreamData.DS_BRIGHTNESS;
-                    foreach (KeyValuePair<int, string> lights in bridgeLights) {
-                        if (lights.Value != "-1") {
-                            int mapId = int.Parse(lights.Value);
+                    double dBright = dreamData.DreamState.brightness;
+                    foreach (KeyValuePair<int, int> lights in bridgeLights) {
+                        if (lights.Value != -1) {
+                            int mapId = lights.Value;
                             string colorString = colors[mapId];
                             foreach (EntertainmentLight light in entLayer) {
                                 if (light.Id == lights.Key) {
@@ -97,29 +89,27 @@ namespace HueDream.HueControl {
             }
         }
 
-        public void StopStream() {
-            Console.WriteLine("FFS");
+
+
+        public async Task<Group[]> ListGroups() {
+            StreamingHueClient client = new StreamingHueClient(bridgeIp, bridgeUser, bridgeKey);
+            //Get the entertainment group
+            Console.WriteLine("LG");
+            var all = await client.LocalHueClient.GetEntertainmentGroups();
+            Console.WriteLine("Done");
+            List<Group> output = new List<Group>();
+            output.AddRange(all);
+            Console.WriteLine("Returning");
+            return output.ToArray();
         }
 
-
-
-        private async void GetGroups() {
-            if (entGroup == null) {
-                if (targetGroup == null) targetGroup = await ConfigureStreamingGroup(client);
-                Console.WriteLine("Target Group is " + targetGroup);
-                // Get our actual group object?
-                Group sg = await client.LocalHueClient.GetGroupAsync(targetGroup).ConfigureAwait(false);
-                Console.WriteLine("Streaming group Retreived.");
-                entGroup = new StreamingGroup(sg.Locations);
-                Console.WriteLine("Ent group created.");
-            }
-            //Connect to the streaming group
-
-            if (entLayer == null) {
-                Console.WriteLine("AutoUpdate Enabled.");
-                entLayer = entGroup.GetNewLayer(isBaseLayer: true);
-                Console.WriteLine("Entertainment layer is set.");
-            }
+        public async Task<Light[]> ListLights() {
+            LocalHueClient client = new LocalHueClient(bridgeIp, bridgeUser, bridgeKey);
+            //Get the entertainment group
+            IEnumerable<Light> lList = new List<Light>();
+            lList = await client.GetLightsAsync();
+            Console.WriteLine("Returning");
+            return lList.ToArray();
         }
 
         private bool ListContains(List<string> needle, List<string> haystack) {
@@ -135,8 +125,8 @@ namespace HueDream.HueControl {
             string groupId = null;
             var lightList = new List<string>();
 
-            foreach (KeyValuePair<int, string> kvp in bridgeLights) {
-                if (kvp.Value != "-1") {
+            foreach (KeyValuePair<int, int> kvp in bridgeLights) {
+                if (kvp.Value != -1) {
                     lightList.Add(kvp.Key.ToString());
                 }
             }

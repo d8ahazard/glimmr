@@ -9,6 +9,7 @@ namespace HueDream {
     public class Startup {
         private DreamSync ds;
         public Startup(IConfiguration configuration) {
+            DreamData.CheckConfig();
             ds = new DreamSync();
             Configuration = configuration;
 

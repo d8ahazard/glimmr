@@ -78,6 +78,14 @@ To map a light, select the dropdown next to it that corresponds to the color sec
 
 Click "Submit" to save your mapping.
 
+### Create An Entertainment Group!! (NEW)
+Go into your hue app. In the side menu, select "Entertainment areas".
+
+Create a new entertainment area and configure it with your lights as they are in the room.
+
+*BE SURE THAT ALL MAPPED LIGHTS ARE IN YOUR GROUP, OR STREAMING WILL NOT WORK.* 
+(This is a WIP, I'll eventually include a proper group selection.)
+
 
 ## PROFIT
 
