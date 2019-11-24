@@ -52,7 +52,7 @@ $(function () {
         });
     });
 
-    $('#dsGroup').change(function () {
+    $('.dsGroup').change(function () {
         console.log("Gchange?");
         var id = $(this).val();
         var newGroup = findGroup(id);
@@ -267,9 +267,13 @@ function listLights() {
 }
 
 function findGroup(id) {
+    var res = false;
     $.each(groups, function () {
-        console.log("Findloop", id, $(this)[0]);
-        if (id == $(this)[0].id) return $(this)[0];
+        console.log("Findloop", id, $(this)[0].id);
+        if (id === $(this)[0].id) {
+            console.log("Group match");
+            res = $(this)[0];
+        }
     });
-    return false;
+    return res;
 }
