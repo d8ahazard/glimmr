@@ -22,7 +22,6 @@ namespace HueDream.DreamScreen {
                     { "FFFF", "INVALID" },
                     { "0103", "GET_SERIAL" },
                     { "0105", "RESET_ESP" },
-                    { "0105", "FACTORY_RESET_DS_SK" },
                     { "0107", "NAME" },
                     { "0108", "GROUP_NAME" },
                     { "0109", "GROUP_NUMBER" },

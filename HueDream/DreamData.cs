@@ -20,6 +20,7 @@ namespace HueDream.HueDream {
         }
 
         private static void ConvertConfig(string iniPath) {
+            Console.WriteLine("Converting config from ini to json.");
             DataObj dObj = new DataObj();
             var parser = new FileIniDataParser();
             IniData data = parser.ReadFile(iniPath);
@@ -89,7 +90,7 @@ namespace HueDream.HueDream {
         /// <param name="filePath">Config file to check</param>
         /// <returns>Modified path to config file</returns>
         private static string GetConfigPath(string filePath) {
-            if (Directory.Exists("/etc/huedream")) {
+            if (Directory.Exists("/etc/huedream")) {                
                 if (File.Exists(filePath)) {
                     Console.WriteLine("We should move our ini to /etc");
                     File.Copy(filePath, "/etc/huedream/" + filePath);
@@ -98,6 +99,10 @@ namespace HueDream.HueDream {
                         File.Delete(filePath);
                     }
                 }
+                if (File.Exists("/etc/huedream/" + filePath)) {
+                    Console.WriteLine("We have a docker path for " + filePath);
+                }
+                Console.WriteLine("Using docker path for " + filePath);
                 return "/etc/huedream/" + filePath;
             }
             return filePath;
