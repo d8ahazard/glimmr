@@ -75,10 +75,14 @@ namespace HueDream.Controllers {
             Console.WriteLine("JSON GOT.");
             DataObj doo = DreamData.LoadJson();
             if (doo.HueAuth) {
-                HueBridge hb = new HueBridge(doo);
-                doo.HueLights = hb.getLights();
-                doo.EntertainmentGroups = hb.ListGroups().Result;
-                DreamData.SaveJson(doo);
+                try {
+                    HueBridge hb = new HueBridge(doo);                
+                    doo.HueLights = hb.getLights();
+                    doo.EntertainmentGroups = hb.ListGroups().Result;
+                    DreamData.SaveJson(doo);
+                } catch (AggregateException e) {
+                    Console.WriteLine("An exception occurred fetching hue data: " + e);
+                }
             }
             return Ok(doo);
         }
