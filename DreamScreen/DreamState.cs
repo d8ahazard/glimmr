@@ -31,6 +31,18 @@ namespace HueDream.DreamScreen {
         /// Load a device state message
         /// </summary>
         /// <param name="stateMessage"></param>
+        /// 
+        public void SetDefaults() {
+            type = "SideKick";
+            name = "HueDream";
+            groupName = "undefined";
+            groupNumber = 100;
+            mode = 0;
+            color = "FFFFFF";
+            saturation = "FFFFFF";
+            scene = 0;
+        }
+
         public void LoadState(string[] stateMessage) {
             switch (stateMessage[stateMessage.Length - 1]) {
                 case "01":
@@ -47,7 +59,7 @@ namespace HueDream.DreamScreen {
                     break;
             }
 
-
+            Console.WriteLine("Parsing DS State message: " + string.Join("", stateMessage));
             if (!string.IsNullOrEmpty(type)) {
                 name = ByteStringUtil.ExtractHexString(stateMessage, 0, 16);
                 groupName = ByteStringUtil.ExtractHexString(stateMessage, 16, 16);
@@ -64,6 +76,7 @@ namespace HueDream.DreamScreen {
                 color = stateMessage[35] + stateMessage[36] + stateMessage[37];
                 scene = ByteStringUtil.HexInt(stateMessage[60]);
             } else {
+                
                 color = stateMessage[40] + stateMessage[41] + stateMessage[42];
                 scene = ByteStringUtil.HexInt(stateMessage[62]);
                 input = ByteStringUtil.HexInt(stateMessage[73]);
@@ -82,26 +95,34 @@ namespace HueDream.DreamScreen {
         public byte[] EncodeState() {
             List<byte> response = new List<byte>();
             // Write padded Device name
+            Console.WriteLine("Padname");
             byte[] nByte = ByteStringUtil.StringBytePad(name, 16);
             response.AddRange(nByte);
             // Write padded group
+            Console.WriteLine("PadGname");
             byte[] gByte = ByteStringUtil.StringBytePad(groupName, 16);
             response.AddRange(gByte);
             // Group number
+            Console.WriteLine("gnum");
             response.Add(ByteStringUtil.IntByte(groupNumber));
             // Mode 
+            Console.WriteLine("mode");
             response.Add(ByteStringUtil.IntByte(mode));
             // Brightness
+            Console.WriteLine("bright");
             response.Add(ByteStringUtil.IntByte(brightness));
             int i = 0;
             if (type == "SideKick") {
+                Console.WriteLine("skmsg - col");
                 // Ambient color (3byte)
                 string cString = "";
                 // Ambient color (3byte)
                 response.AddRange(ByteStringUtil.HexBytes(color));
                 // Saturation color (3byte)
+                Console.WriteLine("sat");
                 response.AddRange(ByteStringUtil.HexBytes(saturation));
                 // Pad 1??
+                Console.WriteLine("Pad");
                 response.Add(0x00);
                 // Sector data?
                 byte[] bAdd = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0b, 0x0C };
@@ -111,12 +132,15 @@ namespace HueDream.DreamScreen {
                 response.AddRange(new byte[6]);
 
                 // Scene
+                Console.WriteLine("Scene");
                 response.Add(ByteStringUtil.IntByte(scene));
                 response.Add(0x00);
                 // Type
+                Console.WriteLine("Type");
                 response.Add(0x03);
 
             } else if (type == "Connect") {
+                Console.WriteLine("Cmsg - col");
                 // color (3byte)
                 response.AddRange(ByteStringUtil.HexBytes(color));
                 // Pad 3, probably for unused saturation
@@ -154,18 +178,21 @@ namespace HueDream.DreamScreen {
                 // Pad 6 before adding ambient
                 response.AddRange(new byte[6]);
                 // Ambient color (3byte)
+                Console.WriteLine("DS MSG - color");
                 response.AddRange(ByteStringUtil.HexBytes(color));
                 // Pad 20
                 response.AddRange(new byte[20]);
+                Console.WriteLine("DS MSG - scene");
                 // Ambient scene (@byte 62)
                 response.Add(ByteStringUtil.IntByte(scene));
                 // Pad 11
                 response.AddRange(new byte[11]);
                 // HDMI Input (@byte 73)
+                Console.WriteLine("input");
                 response.Add(ByteStringUtil.IntByte(input));
                 // Pad 2
                 response.AddRange(new byte[2]);
-
+                Console.WriteLine("hdmiInterfaces");
                 // HDMI Interface names
                 string[] iList = { inputName0, inputName1, inputName2 };
                 foreach (string iName in iList) {
@@ -174,15 +201,16 @@ namespace HueDream.DreamScreen {
 
                 // Pad 7
                 response.AddRange(new byte[7]);
-
+                Console.WriteLine("Channels");
                 // HDMI Active Channels
                 response.Add(ByteStringUtil.IntByte(activeChannels));
 
                 // Pad 10
                 response.AddRange(new byte[10]);
-
+                Console.WriteLine("Toneremapping");
                 response.Add(ByteStringUtil.IntByte(toneRemapping));
 
+                Console.WriteLine("Type");
                 // Device type
                 if (type == "DreamScreen") {
                     response.Add(0x01);

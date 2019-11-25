@@ -26,6 +26,7 @@ namespace HueDream.HueDream {
         public DataObj() {
             DsIp = "0.0.0.0";
             dreamState = new DreamState();
+            dreamState.SetDefaults();
             HueIp = HueBridge.findBridge();
             HueSync = false;
             HueAuth = false;

@@ -13,21 +13,27 @@ namespace HueDream.Util {
         /// A byte array representing the padded/truncated string
         /// </returns>
         public static byte[] StringBytePad(string toPad, int len) {
-            string output = "";
-            if (toPad.Length > len) {
-                output = toPad.Substring(0, len);
-            } else {
-                output = toPad;
-            }
-            System.Text.ASCIIEncoding encoding = new ASCIIEncoding();
-            byte[] outBytes = new byte[len];
-            byte[] myBytes = encoding.GetBytes(output);
-            for (int bb = 0; bb < len; bb++) {
-                if (bb < myBytes.Length) {
-                    outBytes[bb] = myBytes[bb];
+            byte[] outBytes = Array.Empty<byte>();
+            if (toPad != null) {
+                string output = "";
+                outBytes = new byte[len];
+                if (toPad.Length > len) {
+                    output = toPad.Substring(0, len);
                 } else {
-                    outBytes[bb] = 0;
+                    output = toPad;
                 }
+                System.Text.ASCIIEncoding encoding = new ASCIIEncoding();
+
+                byte[] myBytes = encoding.GetBytes(output);
+                for (int bb = 0; bb < len; bb++) {
+                    if (bb < myBytes.Length) {
+                        outBytes[bb] = myBytes[bb];
+                    } else {
+                        outBytes[bb] = 0;
+                    }
+                }
+            } else {
+                Console.WriteLine("NULL VALUE");
             }
             return outBytes;
         }

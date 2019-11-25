@@ -1,5 +1,6 @@
 ﻿using HueDream.HueDream;
 using HueDream.Util;
+using Microsoft.EntityFrameworkCore.Internal;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -77,7 +78,7 @@ namespace HueDream.DreamScreen {
         private IPEndPoint streamEndPoint;
         private IPEndPoint receiverPort;
         private UdpClient receiver;
-        private Socket listenSocket;
+        private Socket sender;
 
 
         public DreamScreen(DreamSync ds, DataObj dreamData) {
@@ -99,8 +100,8 @@ namespace HueDream.DreamScreen {
                 colors[i] = "FFFFFF";
             }
             // Create a listening socket
-            listenSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            listenSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, (int)1);
+            sender = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            sender.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, (int)1);
         }
 
         public void getMode() {
@@ -216,10 +217,11 @@ namespace HueDream.DreamScreen {
                     } else if (flag == "60") {
                         if (dss != null) {
                             Console.WriteLine("Adding devices");
-                            if (dd.DsIp == "0.0.0.0") dd.DsIp = from;
+                            if (dd.DsIp == "0.0.0.0" && dss.type.Contains("DreamScreen")) dd.DsIp = from;
                             DreamData.SaveJson(dd);
                             if (searching) {
                                 Console.WriteLine("Adding devices for real");
+                                devices.Add(dss);
                                 devices.Add(dss);
                             }
                         }
@@ -285,31 +287,22 @@ namespace HueDream.DreamScreen {
         public async Task<List<DreamState>> findDevices() {
             searching = true;
             devices = new List<DreamState>();
-            byte[] payload = new byte[] { 0x01 };
-            IPAddress multicastaddress = IPAddress.Parse("255.255.255.255");
-            IPEndPoint remoteep = new IPEndPoint(multicastaddress, 8888);
+            byte[] payload = new byte[] { 0xFF };
             Console.WriteLine("Sending da multicast");
-            byte[] msg = buildPacket(0x01, 0x0A, payload, 0x30);
-            int PORT = 8888;
-            UdpClient udpClient = new UdpClient();
-            udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            udpClient.EnableBroadcast = true;
-
-            udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, PORT));
-
-            var from = new IPEndPoint(0, 0);
-
-            udpClient.Send(msg, msg.Length, "255.255.255.255", PORT);
+            // FC:05:FF:30:01:0A:2A
+            // FC:05:FF:30:01:0A:2A
+            byte[] msg = new byte[] { 0xFC, 0x05, 0xFF, 0x30, 0x01, 0x0A, 0x2A };
+            SendUDPBroadcast(msg);
             Stopwatch s = new Stopwatch();
             s.Start();
-            while (s.Elapsed < TimeSpan.FromSeconds(5)) {
+            Console.WriteLine("Looping");
+            while (s.Elapsed < TimeSpan.FromSeconds(10)) {
 
             }
-            Console.WriteLine("Time up");
-            Console.WriteLine("SHITHead: " + JsonConvert.SerializeObject(devices));
+            devices = devices.Distinct<DreamState>().ToList<DreamState>();
+            Console.WriteLine("Found Devices: " + JsonConvert.SerializeObject(devices));
             s.Stop();
-            searching = false;
-
+            searching = false; 
 
             return devices;
         }
@@ -340,7 +333,11 @@ namespace HueDream.DreamScreen {
                     // CRC
                     response.Write(CalculateCrc(byteSend));
                     string msg = BitConverter.ToString(stream.ToArray());
-                    SendUDPUnicast(stream.ToArray(), ep);
+                    if (flag == 0x30) {
+                        SendUDPBroadcast(stream.ToArray());
+                    } else {
+                        SendUDPUnicast(stream.ToArray(), ep);
+                    }
 
                 }
             }
@@ -412,7 +409,20 @@ namespace HueDream.DreamScreen {
             string byteString = BitConverter.ToString(data);
             DreamScreenMessage sm = new DreamScreenMessage(byteString);
             Console.WriteLine("localhost:8888 -> " + ep.ToString() + " " + JsonConvert.SerializeObject(sm));
-            listenSocket.SendTo(data, ep);
+            sender.EnableBroadcast = false;
+            sender.SendTo(data, ep);
+        }
+
+
+        
+
+        public void SendUDPBroadcast(byte[] bytes) {
+            UdpClient client = new UdpClient();
+            client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            IPEndPoint ip = new IPEndPoint(IPAddress.Parse("255.255.255.255"), 8888);
+            client.Send(bytes, bytes.Length, ip);
+            client.Close();
+            Console.WriteLine("SENT");
         }
 
 

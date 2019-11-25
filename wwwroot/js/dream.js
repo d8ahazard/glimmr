@@ -74,9 +74,7 @@ $(function () {
             $('#sector' + prev).removeClass('checked');
             $(this).data('val', $(this).val());
         }
-    });
-
-   
+    });   
     
     fetchJson();
     listDreamDevices();
@@ -86,10 +84,19 @@ $(function () {
 
 function checkHueAuth() {
     $.get("./api/DreamData/action?action=authorizeHue", function (data) {
-        if (data.indexOf("Success: ") !== -1) {
-            authorized = true;
+        if (data === "Success: Bridge Linked." || data === "Success: Bridge Already Linked.") {
+            console.log("LINKED");
+            hueAuth = true;
         }
     });
+    if (hueAuth) {
+        $('#linkBtn').css('background-image', 'url("../img/hue_bridge_v2_linked.png")');
+        $('#linkHint').html("Bridge successfully linked");
+        fetchJson();
+    } else {
+        $('#linkBtn').css('background-image', 'url("../img/hue_bridge_v2_unlinked.png")');
+        $('#linkHint').html("Click here to link bridge");
+    }    
 }
 
 function fetchJson() {
@@ -139,7 +146,7 @@ function fetchJson() {
             }
         }       
 
-        if (hueGroup === null && hueGroups.length) {
+        if (hueGroup !== null && hueGroups.length) {
             hueGroup = hueGroups[0];
         }
 
@@ -274,6 +281,7 @@ function linkHue() {
         console.log("Trying to authorize with hue.");
         $('#circleBar').show();
         $('#linkBtn').css('background-image', 'url("../img/hue_bridge_v2_pushlink.png")');
+        $('#linkHint').html("Press the link button on your Hue bridge");
         var bar = new ProgressBar.Circle(circleBar, {
             strokeWidth: 10,
             easing: 'easeInOut',
@@ -292,25 +300,14 @@ function linkHue() {
             checkHueAuth();
             bar.animate((x / 30));
             if (++x === 30 || hueAuth) {
-                window.clearInterval(intervalID);
+                window.clearInterval(intervalID);   
                 $('#circleBar').hide();
-                if (hueAuth) {
-                    $('#linkBtn').css('background-image', 'url("../img/hue_bridge_v2_linked.png")');
-                } else {
-                    $('#linkBtn').css('background-image', 'url("../img/hue_bridge_v2_unlinked.png")');
-                }
                 linking = false;
             }
         }, 1000);
 
         setTimeout(function () {
             $('#circleBar').hide();
-
-            if (hueAuth) {
-                $('#linkBtn').css('background-image', 'url("../img/hue_bridge_v2_linked.png")');
-            } else {
-                $('#linkBtn').css('background-image', 'url("../img/hue_bridge_v2_unlinked.png")');
-            }
             linking = false;
         }, 30000);
     } else {

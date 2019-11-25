@@ -36,20 +36,26 @@ namespace HueDream.Controllers {
                     return new JsonResult(dev);
                 }
             } else if (action == "authorizeHue") {
-                if (userData.HueIp != "0.0.0.0") {
+                if (!userData.HueAuth) {                    
                     HueBridge hb = new HueBridge(userData);
-                    RegisterEntertainmentResult appKey = hb.checkAuth();
-                    if (appKey == null) {
-                        message = "Error: Press the link button";
-                    } else {
+                    RegisterEntertainmentResult appKey = hb.checkAuth().Result;
+                    Console.WriteLine("APPKEY: " + JsonConvert.SerializeObject(appKey));
+                    if (appKey != null) {
+                        Console.WriteLine("LINKED!");
                         message = "Success: Bridge Linked.";
                         userData.HueKey = appKey.StreamingClientKey;
-                        userData.HueKey = appKey.Username;
+                        userData.HueUser = appKey.Username;
+                        userData.HueAuth = true;
                         DreamData.SaveJson(userData);
+                    } else {
+                        Console.WriteLine("NOT LINKED");
+                        message = "Error: Press the link button";
                     }
+
                 } else {
-                    message = "No Operation: Bridge Already Linked.";
+                    message = "Success: Bridge Already Linked.";
                 }
+                
             } else if (action == "findHue") {
                 string bridgeIp = HueBridge.findBridge();
                 if (string.IsNullOrEmpty(bridgeIp)) {

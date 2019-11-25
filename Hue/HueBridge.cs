@@ -151,19 +151,18 @@ namespace HueDream.Hue {
         }
 
 
-        public RegisterEntertainmentResult checkAuth() {
+        public async Task<RegisterEntertainmentResult> checkAuth() {
+            RegisterEntertainmentResult result = null;
             try {
                 ILocalHueClient client = new LocalHueClient(bridgeIp);
                 //Make sure the user has pressed the button on the bridge before calling RegisterAsync
                 //It will throw an LinkButtonNotPressedException if the user did not press the button
-                var task = Task.Run(async () => await client.RegisterAsync("HueDream", System.Environment.MachineName, true));
-                var appKey = task.Result;
-                Console.WriteLine("Auth result: " + appKey.Username);
-                return appKey;
-            } catch (Exception e) {
-                Console.WriteLine("Exception: " + e);
-                return null;
+                result = await client.RegisterAsync("HueDream", Environment.MachineName, true);
+                Console.WriteLine("Auth result: " + result.Username);
+            } catch (Exception) {
+                Console.WriteLine("The link button is not pressed.");
             }
+            return result;
         }
 
         public static string findBridge() {
