@@ -156,13 +156,16 @@ select {
     background-position: center;
 }
 
+.linkBtn {
+    cursor: pointer;
+}
+
 #linkBtn {
     background-image: url("../img/hue_bridge_v2_unlinked.png");
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
     height: 150px;
-    cursor: pointer;
     position: relative;
     z-index: 20;
 }

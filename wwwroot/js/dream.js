@@ -24,7 +24,7 @@ $(function () {
         }); 
     });
 
-    $('#linkBtn').on('click', function () {
+    $('.linkBtn').on('click', function () {
         linkHue();        
     });
 
