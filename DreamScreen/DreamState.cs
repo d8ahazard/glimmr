@@ -57,6 +57,9 @@ namespace HueDream.DreamScreen {
                 case "04":
                     type = "Connect";
                     break;
+                case "07":
+                    type = "DreamScreen Solo";
+                    break;
             }
 
             Console.WriteLine("Parsing DS State message: " + string.Join("", stateMessage));
@@ -76,7 +79,6 @@ namespace HueDream.DreamScreen {
                 color = stateMessage[35] + stateMessage[36] + stateMessage[37];
                 scene = ByteStringUtil.HexInt(stateMessage[60]);
             } else {
-
                 color = stateMessage[40] + stateMessage[41] + stateMessage[42];
                 scene = ByteStringUtil.HexInt(stateMessage[62]);
                 input = ByteStringUtil.HexInt(stateMessage[73]);
