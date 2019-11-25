@@ -36,7 +36,7 @@ namespace HueDream.Controllers {
                     return new JsonResult(dev);
                 }
             } else if (action == "authorizeHue") {
-                if (!userData.HueAuth) {                    
+                if (!userData.HueAuth) {
                     HueBridge hb = new HueBridge(userData);
                     RegisterEntertainmentResult appKey = hb.checkAuth().Result;
                     Console.WriteLine("APPKEY: " + JsonConvert.SerializeObject(appKey));
@@ -55,7 +55,7 @@ namespace HueDream.Controllers {
                 } else {
                     message = "Success: Bridge Already Linked.";
                 }
-                
+
             } else if (action == "findHue") {
                 string bridgeIp = HueBridge.findBridge();
                 if (string.IsNullOrEmpty(bridgeIp)) {

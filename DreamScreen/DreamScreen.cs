@@ -302,7 +302,7 @@ namespace HueDream.DreamScreen {
             devices = devices.Distinct<DreamState>().ToList<DreamState>();
             Console.WriteLine("Found Devices: " + JsonConvert.SerializeObject(devices));
             s.Stop();
-            searching = false; 
+            searching = false;
 
             return devices;
         }
@@ -414,7 +414,7 @@ namespace HueDream.DreamScreen {
         }
 
 
-        
+
 
         public void SendUDPBroadcast(byte[] bytes) {
             UdpClient client = new UdpClient();

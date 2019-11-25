@@ -12,6 +12,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="huedream.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="huedream.json.bk" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="ini-parser" Version="2.5.2" />
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.7">
       <PrivateAssets>all</PrivateAssets>
