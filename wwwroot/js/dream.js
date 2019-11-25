@@ -235,6 +235,7 @@ function listGroups() {
     var gs = $('#dsGroup');
     gs.html("");
     var i = 0;
+    if (hueGroup === null && hueGroups.length > 0) hueGroup = hueGroups[0];
     $.each(hueGroups, function () {
         var val = $(this)[0].id;
         var txt = $(this)[0].name;
