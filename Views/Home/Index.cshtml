@@ -2,13 +2,12 @@
     ViewData["Title"] = "Home Page";
 }
 
-    <div class="accordion wrapper" id="accordion">
-        <h1>HueDream Config</h1>
+    <div class="accordion wrapper" id="accordion">        
         <form method="post" action="./api/HueData" id="settingsForm">            
             <div class="card bg-dark text-white">
                 <div class="card-header" id="headingTwo">
                     <h2 class="mb-0">
-                        <button class="btn btn-link btn-light collapsed" type="button" data-toggle="collapse" data-target="#collapseTwo"
+                        <button class="btn btn-outline-secondary collapsed" type="button" data-toggle="collapse" data-target="#collapseTwo"
                                 aria-expanded="false" aria-controls="collapseTwo">
                             Dreamscreen
                         </button>
@@ -18,11 +17,10 @@
                 <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
                     <div class="card-body">
                         <div class="form-group">
-                            <div class="row">
-                                <div class="iconWrap col-4">
-                                    <img id="dsIcon" src="~/img/sidekick_icon.png" />
+                            <div class="row justify-content-center">
+                                <div class="col-4" id="iconWrap">                                     
                                 </div>
-                                <div id="dsData" class="col-8">
+                                <div id="dsData" class="col-4">
                                     <div class="row">
                                         <span class="purdy">Name:</span><span id="dsName"></span>
                                     </div>
@@ -39,11 +37,13 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="ds_ip">Dreamscreen IP</label>
-                            <input type="text" class="form-control" id="dsIp" readonly placeholder="0.0.0.0">
+                            <label for="dsIp">Target DreamScreen:</label>
+                            <select class="form-control bg-light text-dark" id="dsIp" name="dsIp">
+                                <option value="">No devices found</option>
+                            </select>
                         </div>
                         <div class="form-group">
-                            <label for="ds_ip">Emulation Type</label>
+                            <label for="ds_ip">Emulation Type:</label>
                             <select class="form-control bg-light text-dark dsType" id="dsType" name="ds_type">
                                 <option value="SideKick">Sidekick</option>
                                 <option value="Connect">Connect</option>
@@ -54,11 +54,11 @@
                     </div>
                 </div>
             </div>
-
+            <br />
             <div class="card bg-dark text-white">
                 <div class="card-header" id="headingThree">
                     <h2 class="mb-0">
-                        <button class="btn btn-link btn-light collapsed" type="button" data-toggle="collapse" data-target="#collapseThree"
+                        <button class="btn btn-outline-secondary collapsed" type="button" data-toggle="collapse" data-target="#collapseThree"
                                 aria-expanded="false" aria-controls="collapseThree">
                             Hue
                         </button>
@@ -68,22 +68,22 @@
                 <div id="collapseThree" class="collapse" aria-labelledby="headingThree" data-parent="#accordion">
                     <div class="card-body">
                         <div class="form-group">
-                            <label for="hue_ip">Hue Bridge IP</label>
-                            <input type="text" class="form-control" id="hueIp" readonly placeholder="0.0.0.0">
+                            <div id="linkBtn" class="unlinked">
+                                <div id="circleBar"></div>
+                            </div>
                         </div>
                         <div class="form-group">
-                            <label for="hue_auth">Hue Bridge Authorization</label>
-                            <input type="text" class="form-control" id="hueAuth" placeholder="Unauthorized" disabled>
-                            <button class="btn btn-secondary" id="hue_authorize" OnClientClick="return false;">Authorize</button>
-                        </div>
+                            <label for="hue_ip">Hue Bridge IP</label>
+                            <input type="text" class="form-control" id="hueIp" readonly placeholder="0.0.0.0">
+                        </div>                        
                     </div>
                 </div>
             </div>
-
+            <br />
             <div class="card bg-dark text-white">
                 <div class="card-header" id="headingFour">
                     <h2 class="mb-0">
-                        <button class="btn btn-link btn-light" type="button" data-toggle="collapse" data-target="#collapseFour"
+                        <button class="btn btn-outline-secondary" type="button" data-toggle="collapse" data-target="#collapseFour"
                                 aria-expanded="true" aria-controls="collapseFour">
                             Sync
                         </button>
@@ -157,6 +157,6 @@
                 </div>
             </div>
             <br>
-            <button type="submit" class="btn btn-info active" OnClientClick="return false;">Submit</button>
+            <button type="submit" class="btn btn-info active" OnClientClick="return false;">Save Settings</button>
         </form>
     </div>   

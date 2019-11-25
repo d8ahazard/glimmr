@@ -9,9 +9,9 @@ using Q42.HueApi.Streaming;
 using Q42.HueApi.Streaming.Models;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Linq;
 
 namespace HueDream.Hue {
     public class HueBridge {
@@ -29,7 +29,7 @@ namespace HueDream.Hue {
         private DataObj dreamData;
         private EntertainmentLayer entLayer;
         private Group entGroup;
-        
+
         public HueBridge(DataObj dd) {
             dreamData = dd;
             bridgeIp = dd.HueIp;
@@ -188,7 +188,7 @@ namespace HueDream.Hue {
                 var task = Task.Run(async () => await client.GetLightsAsync().ConfigureAwait(false));
                 var lightArray = task.Result;
                 foreach (Light light in lightArray) {
-                    lights.Add(new KeyValuePair<int, string>(int.Parse(light.Id), light.Name));                    
+                    lights.Add(new KeyValuePair<int, string>(int.Parse(light.Id), light.Name));
                 }
             }
             return lights;

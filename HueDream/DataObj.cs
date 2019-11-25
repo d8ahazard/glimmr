@@ -3,8 +3,6 @@ using HueDream.Hue;
 using Q42.HueApi.Models.Groups;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace HueDream.HueDream {
 
@@ -23,10 +21,11 @@ namespace HueDream.HueDream {
         public Group[] EntertainmentGroups { get; set; }
         public Group EntertainmentGroup { get; set; }
         public DreamState DreamState { get => dreamState; set => dreamState = value; }
+        public DreamState[] devices { get; set; }
 
         public DataObj() {
             DsIp = "0.0.0.0";
-            DreamState = new DreamState();
+            dreamState = new DreamState();
             HueIp = HueBridge.findBridge();
             HueSync = false;
             HueAuth = false;
@@ -36,6 +35,7 @@ namespace HueDream.HueDream {
             HueMap = new List<KeyValuePair<int, int>>();
             EntertainmentGroups = null;
             EntertainmentGroup = null;
+            devices = Array.Empty<DreamState>();
         }
 
     }

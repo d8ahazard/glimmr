@@ -12,6 +12,7 @@ namespace HueDream.DreamScreen {
         public int state { get; set; }
         public string name { get; set; }
         public string groupName { get; set; }
+        public string ipAddress { get; set; }
         public int groupNumber { get; set; }
         public int mode { get; set; }
         public int ambientMode { get; set; }

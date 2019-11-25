@@ -22,7 +22,7 @@ port that the web UI listens on. If so, modify the port number. e.g.: 'http://+:
 docker create \
   --name=huedream \
   -e ASPNETCORE_URLS=http://+:5666 \
-  -v <path to data>:/opt/huedream \ 
+  -v <path to data>:/etc/huedream \ 
   --restart unless-stopped \
   --network=host \
   digitalhigh/huedream
@@ -45,7 +45,7 @@ services:
     network_mode: "host"
     restart: unless-stopped
 	volumes:
-      - <path to data>:/opt/huedream
+      - <path to data>:/etc/huedream
 ```
 
 ## Parameters
@@ -55,7 +55,7 @@ Container images are configured using parameters passed at runtime (such as thos
 | Parameter | Function |
 | :----: | --- |
 | `-e ASPNETCORE_URLS=http://+:5666` | Modify port number as needed |
-| `-v <path_to_data>/opt/huedream` | Change <path_to_data> to the location where to keep HueDream ini |
+| `-v <path_to_data>/etc/huedream` | Change <path_to_data> to the location where to keep HueDream ini |
 
 
 
@@ -68,11 +68,15 @@ Once installed, access the Web UI at `<your-ip>:5666`.
 ### Find DreamScreen
 In the DreamScreen section, click the "Find DreamScreen" button if your DreamScreen ip is not shown in the UI. If you have more than one DreamScreen, you're currently SOL until I write logic to handle that...
 
+Optionally, you can select the type of DS device to emulate. If you choose "Connect", you wll need the beta version of the DS app.
+
 ### Link Your Hue Bridge
 Press the link button on your hue bridge. Go to the Hue section, click "Authorize Hue". You should get a response stating your hue has been linked.
 
 ### Map your Lights
-Go to the Sync section. Press the "Load Lights" button. You should see a list of all available color-changing bulbs.
+Go to the Sync section. Press the "Load Lights" button. 
+
+The UI should show a dropdown with available entertainment groups. The lights in that group will be shown for mapping.
 
 To map a light, select the dropdown next to it that corresponds to the color sector shown in the grid.
 
@@ -89,4 +93,10 @@ Create a new entertainment area and configure it with your lights as they are in
 
 ## PROFIT
 
-Click the "Enable Sync" toggle at the top to enable/disable syncronization between your dreamscreen and hue bridge.
+Open up your DreamScreen app. Select "Add new", and your device should show up as a sidekick or connect. 
+
+From here, you can use the app normally to control your hue lights. You can rename it, add it to a group, and change the modes.
+
+To stop synchronization, select the device in the DS app and set the mode to "Off".
+
+To start synchronization, select the GROUP in the DS app, and set the mode to "Video". If the device is not in a group, control it directly.

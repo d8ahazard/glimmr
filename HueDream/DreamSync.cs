@@ -1,5 +1,4 @@
-﻿using HueDream.DreamScreen;
-using HueDream.Hue;
+﻿using HueDream.Hue;
 using System;
 using System.Threading;
 using System.Threading.Tasks;

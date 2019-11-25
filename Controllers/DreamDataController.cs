@@ -1,4 +1,5 @@
-﻿using HueDream.Hue;
+﻿using HueDream.DreamScreen;
+using HueDream.Hue;
 using HueDream.HueDream;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -12,7 +13,7 @@ namespace HueDream.Controllers {
     [Route("api/[controller]")]
     [ApiController]
     public class DreamDataController : ControllerBase {
-        
+
         // GET: api/HueData/action?action=...
         [HttpGet("action")]
         public JsonResult Get(string action) {
@@ -30,7 +31,9 @@ namespace HueDream.Controllers {
                     ds.findDevices();
                 } else {
                     Console.WriteLine("Searching for devices for the fun of it.");
-                    ds.findDevices();
+                    List<DreamState> dev = ds.findDevices().Result;
+                    Console.WriteLine("Devices? " + JsonConvert.SerializeObject(dev));
+                    return new JsonResult(dev);
                 }
             } else if (action == "authorizeHue") {
                 if (userData.HueIp != "0.0.0.0") {
@@ -56,25 +59,6 @@ namespace HueDream.Controllers {
                 } else {
                     message = "Error: No bridge found.";
                 }
-            } else if (action == "listLights") {
-                if (userData.HueAuth) {
-                    HueBridge hb = new HueBridge(userData);
-                    userData.HueLights = hb.getLights();
-                    DreamData.SaveJson(userData);
-                    return new JsonResult(userData.HueLights);
-                } else {
-                    message = "Error: Link your hue bridge first.";
-                }
-            } else if (action == "listGroups") {
-                Console.WriteLine("list groups.");
-                if (userData.HueAuth) {
-                    HueBridge hb = new HueBridge(userData);
-                    userData.EntertainmentGroups = hb.ListGroups().Result;
-                    DreamData.SaveJson(userData);
-                    return new JsonResult(userData.EntertainmentGroups);
-                } else {
-                    message = "Error: Link your hue bridge first.";
-                }
             }
             return new JsonResult(message);
         }
@@ -83,7 +67,14 @@ namespace HueDream.Controllers {
         [HttpGet("json")]
         public IActionResult Get() {
             Console.WriteLine("JSON GOT.");
-            return Ok(DreamData.LoadJson());
+            DataObj doo = DreamData.LoadJson();
+            if (doo.HueAuth) {
+                HueBridge hb = new HueBridge(doo);
+                doo.HueLights = hb.getLights();
+                doo.EntertainmentGroups = hb.ListGroups().Result;
+                DreamData.SaveJson(doo);
+            }
+            return Ok(doo);
         }
 
         [HttpGet("lights")]

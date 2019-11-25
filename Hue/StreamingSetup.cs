@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace HueDream.Hue {
     public class StreamingSetup {
-               
+
         public static async Task<StreamingGroup> SetupAndReturnGroup(DataObj dd, List<string> lights, CancellationToken ct) {
 
             Console.WriteLine("Creating client....");
@@ -46,7 +46,7 @@ namespace HueDream.Hue {
 
             //Create a streaming group
             var stream = new StreamingGroup(group.Locations);
-           
+
             //Connect to the streaming group
             await client.Connect(group.Id);
 

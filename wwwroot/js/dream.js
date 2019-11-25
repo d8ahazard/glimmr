@@ -1,12 +1,13 @@
 var syncToggle;
-var groups;
-var lights;
+var hueGroups;
+var hueLights;
 var lightMap;
+var dsIp;
+var hueAuth = false;
+var linking = false;
 
 $(function () {
 
-    listLights();
-    listGroups();
     
     $('#settingsForm').submit(function (e) {
         e.preventDefault();
@@ -22,18 +23,8 @@ $(function () {
         }); 
     });
 
-    $('#hue_authorize').on('click', function() {
-        console.log("Trying to authorize with hue.");
-        $.get("./api/DreamData/action?action=authorizeHue", function (data) {
-            if (data.indexOf("Success: ") !== -1) {
-                $('#hue_auth').val("Authorized")
-                $('#hue_authorize').hide();                
-            } else {
-                $('#hue_auth').val("Not authorized");
-                $('#hue_authorize').show();
-            }
-            alert(data);
-        });
+    $('#linkBtn').on('click', function () {
+        linkHue();        
     });
 
     $('#ds_find').on('click', function() {
@@ -41,8 +32,8 @@ $(function () {
         $.get("./api/DreamData/action?action=connectDreamScreen", function (data) {
             if (data.indexOf("Success: ") !== -1) {
                 var result = $.trim(data.replace("Success: ", ""));
-                if (result != "0.0.0.0") {                    
-                    $('#ds_ip').val(result)
+                if (result !== "0.0.0.0") {                    
+                    $('#ds_ip').val(result);
                     $('#ds_find').hide();
                 } else {
                     $('#ds_find').show();
@@ -58,18 +49,18 @@ $(function () {
         var newGroup = findGroup(id);
         if (newGroup) {
             console.log("Remapping");
-            mapLights(newGroup, lightMap, lights);
+            mapLights(newGroup);
         }
     });
 
     $('.dsType').change(function () {
         var val = $(this).val();
-        var dsIcon = $('#dsIcon');
+        var dsIcon = $('#iconWrap');
         console.log("Val is " + val);
-        if (val == "SideKick") {
-            dsIcon.attr('src', './img/sidekick_icon.png');
+        if (val === "SideKick") {
+            dsIcon.css('background-image', './img/sidekick_icon.png');
         } else {
-            dsIcon.attr('src', './img/connect_icon.png');
+            dsIcon.css('background-image', './img/connect_icon.png');
         }
     });
 
@@ -79,7 +70,7 @@ $(function () {
     }).on('change', '.mapSelect', function () {
         var prev = $(this).data('val');
         var current = $(this).val();
-        if (current != -1) {
+        if (current !== -1) {
             console.log("Flipping the script?", prev);
             var target = $('#sector' + current);
             if (!target.hasClass('checked')) target.addClass('checked');
@@ -91,20 +82,20 @@ $(function () {
     });
 
    
-    $('#load_lights').on('click', function() {
-        $.get("./api/DreamData/action?action=getLights", function (data) {
-            console.log("Data: ", data);
-            if (data.indexOf("Error: ") === -1) {
-                console.log("Mapping lights", data);
-                mapLights({}, data);
-                data = "Light data retrieved.";
-            }
-            alert(data);
-        });
-    });
+    
     fetchJson();
+    listDreamDevices();
+
     $('body').bootstrapMaterialDesign();   
 });
+
+function checkHueAuth() {
+    $.get("./api/DreamData/action?action=authorizeHue", function (data) {
+        if (data.indexOf("Success: ") !== -1) {
+            authorized = true;
+        }
+    });
+}
 
 function fetchJson() {
     $.get('./api/DreamData/json', function (config) {
@@ -119,35 +110,37 @@ function fetchJson() {
             var id = key;
             console.log("id, value", id, value)
 
-            if (id == "hueAuth") {
+            if (id === "hueAuth") {
+                authorized = value;
+                var lb = $('#linkBtn');
                 hueAuth = value;
                 if (value) {
-                    $('#hueAuth').val("Authorized")
-                    $('#hue_authorize').hide();
+                    lb.css('background-image', 'url("../img/hue_bridge_v2_linked.png")');
+                    lb.removeClass('unlinked');
                 } else {
-                    $('#hue_auth').val("Not authorized, press the link button on your hue bridge and click below.");
+                    lb.css('background-image', 'url("../img/hue_bridge_v2_unlinked.png")');
                 }
-            } else if (id == "hueSync") {
+            } else if (id === "hueSync") {
                 hueSync = value;
-            } else if (id == "hueMap") {
+            } else if (id === "hueMap") {
                 lightMap = value;
-            } else if (id == "hueLights") {
+            } else if (id === "hueLights") {
                 hueLights = value;
-            } else if (id == "entertainmentGroup") {
+            } else if (id === "entertainmentGroup") {
                 group = value;
-            } else if (id == "entertainmentGroups") {
-                groups = value;
-            } else if (id == "dreamState") {
+            } else if (id === "entertainmentGroups") {
+                hueGroups = value;
+            } else if (id === "dreamState") {
                 $('#dsName').html(value.name);
                 $('#dsGroupName').html(value.groupName);
                 $('#dsType').html(value.type);
-                var modestr = (value.mode == 0) ? "Off" : ((value.mode == 1) ? "Video" : ((value.mode == 2) ? "Music" : ((value.mode == 3) ? "Ambient" : "WTF")));
+                var modestr = (value.mode === 0) ? "Off" : ((value.mode === 1) ? "Video" : ((value.mode === 2) ? "Music" : ((value.mode === 3) ? "Ambient" : "WTF")));
                 $('#dsMode').html(modestr);
             } else {
                 console.log("Setting value for #" + id, value);
-                if (id == 'dsIp') {
+                if (id === 'dsIp') {
                     dsIp = value;
-                    if (value != "0.0.0.0") {
+                    if (value !== "0.0.0.0") {
                          $('#ds_find').hide();
                     }
                 }
@@ -155,16 +148,18 @@ function fetchJson() {
             }
         }       
 
-        console.log("GROUPS: ", groups);
-        if (group == null && groups.length) {
+        console.log("GROUPS: ", hueGroups);
+        if (group === null && hueGroups.length) {
             console.log("SETGROUP");
-            group = groups[0];
+            group = hueGroups[0];
         }
 
+        listGroups();
         if (hueLights && lightMap && group) {
             console.log("Mapping lights");
             mapLights(group, lightMap, hueLights);
         }
+
     });
    
 }
@@ -192,7 +187,7 @@ function mapLights(group, map, lights) {
             var selection = -1;
             // Check to see if it is mapped
             for (var m in map) {
-                if (map[m]['Key'] == id) {
+                if (map[m]['Key'] === id) {
                     selection = map[m]['Value'];
                 }
             }
@@ -203,7 +198,7 @@ function mapLights(group, map, lights) {
             opt.innerHTML = "";
 
             // Set it to selected if we don't have a mapping
-            if (selection == -1) {
+            if (selection === -1) {
                 opt.setAttribute('selected', true);
             } else {
                 var checkDiv = $('#sector' + selection);
@@ -213,11 +208,11 @@ function mapLights(group, map, lights) {
 
             // Add the options for our regions
             for (var i = 0; i < 12; i++) {
-                var opt = document.createElement("option");
+                opt = document.createElement("option");
                 opt.value = i;
                 opt.innerHTML = "<BR>" + (i + 1);
                 // Mark it selected if it's mapped
-                if (selection == i) opt.setAttribute('selected', true);
+                if (selection === i) opt.setAttribute('selected', true);
                 newSelect.appendChild(opt);
             }
 
@@ -242,33 +237,42 @@ function mapLights(group, map, lights) {
 }
 
 function listGroups() {
-    $.get("./api/DreamData/action?action=listGroups", function (data) {
-        groups = data;
-        var gs = $('#dsGroup');
-        gs.html("");
-        var i = 0;
-        $.each(data, function () {
-            console.log($(this)[0]);
-            var val = $(this)[0].id;
-            var txt = $(this)[0].name;
-            var selected = (i == 0) ? "" : " selected";
-            gs.append(`<option value="${val}"${selected}>${txt}</option>`);
-            i++;
-        });
-        return groups;
+    var gs = $('#dsGroup');
+    gs.html("");
+    var i = 0;
+    $.each(hueGroups, function () {
+        console.log($(this)[0]);
+        var val = $(this)[0].id;
+        var txt = $(this)[0].name;
+        var selected = (i === 0) ? "" : " selected";
+        gs.append(`<option value="${val}"${selected}>${txt}</option>`);
+        i++;
     });
 }
 
-function listLights() {
-    $.get("./api/DreamData/action?action=listLights", function (data) {
-        lights = data;
-        return data;
+function listDreamDevices() {
+    $.get("./api/DreamData/action?action=connectDreamScreen", function (data) {
+        console.log("Dream devices: ", data);
+        var devList = $('#dsIp');
+        devList.html("");
+        $.each(data, function () {
+            var dev = $(this)[0];
+            console.log("Device: ", dev);
+            var name = dev.name;
+            var ip = dev.ipAddress;
+            var type = dev.type;
+            if (name !== undefined && ip !== undefined && type.includes("DreamScreen")) {
+                var selected = (ip === dsIp) ? "selected" : "";
+                devList.append(`<option value='${ip}'${selected}>${name}: ${ip}</option>`);
+            }
+        });
+
     });
 }
 
 function findGroup(id) {
     var res = false;
-    $.each(groups, function () {
+    $.each(hueGroups, function () {
         console.log("Findloop", id, $(this)[0].id);
         if (id === $(this)[0].id) {
             console.log("Group match");
@@ -277,3 +281,58 @@ function findGroup(id) {
     });
     return res;
 }
+
+function linkHue() {
+    console.log("Authorized: ", hueAuth);
+
+    if (!hueAuth && !linking) {
+        linking = true;
+        console.log("Trying to authorize with hue.");
+        $('#circleBar').show();
+        $('#linkBtn').css('background-image', 'url("../img/hue_bridge_v2_pushlink.png")');
+        var bar = new ProgressBar.Circle(circleBar, {
+            strokeWidth: 10,
+            easing: 'easeInOut',
+            duration: 0,
+            color: '#0000FF',
+            trailColor: '#eee',
+            trailWidth: 0,
+            svgStyle: null,
+            value: 1
+        });
+
+
+        var x = 0;
+        hueAuth = false;
+        var intervalID = window.setInterval(function () {
+            console.log("TICK");
+            checkHueAuth();
+            bar.animate((x / 30));
+            if (++x === 30 || hueAuth) {
+                window.clearInterval(intervalID);
+                $('#circleBar').hide();
+                if (hueAuth) {
+                    $('#linkBtn').css('background-image', 'url("../img/hue_bridge_v2_linked.png")');
+                } else {
+                    $('#linkBtn').css('background-image', 'url("../img/hue_bridge_v2_unlinked.png")');
+                }
+                linking = false;
+            }
+        }, 1000);
+
+        setTimeout(function () {
+            $('#circleBar').hide();
+
+            if (hueAuth) {
+                $('#linkBtn').css('background-image', 'url("../img/hue_bridge_v2_linked.png")');
+            } else {
+                $('#linkBtn').css('background-image', 'url("../img/hue_bridge_v2_unlinked.png")');
+            }
+            linking = false;
+        }, 30000);
+    } else {
+        console.log("Already authorized.");
+    }
+
+}
+

@@ -10,7 +10,7 @@ using System.IO;
 namespace HueDream.HueDream {
     [Serializable]
     public static class DreamData {
-        
+
         public static void CheckConfig() {
             string jsonPath = GetConfigPath("huedream.json");
             string iniPath = GetConfigPath("huedream.ini");
@@ -29,7 +29,7 @@ namespace HueDream.HueDream {
             IniData data = parser.ReadFile(iniPath);
             dObj.DsIp = data["MAIN"]["DS_IP"];
             dObj.DreamState.type = "SideKick";
-            dObj.HueIp = data["MAIN"]["HUE_IP"];            
+            dObj.HueIp = data["MAIN"]["HUE_IP"];
             dObj.HueAuth = data["MAIN"]["HUE_AUTH"] == "True";
             dObj.HueKey = data["MAIN"]["HUE_KEY"];
             dObj.HueUser = data["MAIN"]["HUE_USER"];
@@ -50,7 +50,7 @@ namespace HueDream.HueDream {
         private static List<KeyValuePair<int, int>> FixPair(List<KeyValuePair<int, string>> kp) {
             List<KeyValuePair<int, int>> output = new List<KeyValuePair<int, int>>();
             foreach (KeyValuePair<int, string> kpp in kp) {
-                output.Add(new KeyValuePair<int, int> ( kpp.Key, int.Parse(kpp.Value)));
+                output.Add(new KeyValuePair<int, int>(kpp.Key, int.Parse(kpp.Value)));
             }
             return output;
         }
@@ -71,7 +71,7 @@ namespace HueDream.HueDream {
             }
         }
 
-        
+
         /// <summary>
         /// Load Config Data from json file
         /// </summary>
@@ -101,7 +101,7 @@ namespace HueDream.HueDream {
         /// <param name="filePath">Config file to check</param>
         /// <returns>Modified path to config file</returns>
         private static string GetConfigPath(string filePath) {
-            if (Directory.Exists("/etc/huedream")) {                
+            if (Directory.Exists("/etc/huedream")) {
                 if (File.Exists(filePath)) {
                     Console.WriteLine("We should move our ini to /etc");
                     File.Copy(filePath, "/etc/huedream/" + filePath);
