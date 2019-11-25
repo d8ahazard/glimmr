@@ -19,13 +19,14 @@ namespace HueDream.Hue {
             StreamingHueClient client = new StreamingHueClient(dd.HueIp, dd.HueUser, dd.HueKey);
             Console.WriteLine("Created client");
             //Get the entertainment group
-            var all = await client.LocalHueClient.GetEntertainmentGroups();
-            Console.WriteLine("Got Groups");
+            
 
             Group group = null;
             if (dd.EntertainmentGroup != null) {
                 group = dd.EntertainmentGroup;
             } else {
+                var all = await client.LocalHueClient.GetEntertainmentGroups();
+                Console.WriteLine("Got Groups");
                 foreach (Group eg in all) {
                     bool valid = true;
                     Console.WriteLine("Comparing LightGroup: " + JsonConvert.SerializeObject(eg.Lights));
@@ -46,7 +47,7 @@ namespace HueDream.Hue {
 
             //Create a streaming group
             var stream = new StreamingGroup(group.Locations);
-
+            Console.WriteLine("Group setup complete, connecting to client...");
             //Connect to the streaming group
             await client.Connect(group.Id);
 

@@ -101,14 +101,13 @@ namespace HueDream.Controllers {
 
         // POST: api/HueData
         [HttpPost]
-        public void Post(string value) {
+        public void Post() {
             DataObj userData = DreamData.LoadJson();
             string[] keys = Request.Form.Keys.ToArray<string>();
-            Console.WriteLine("We have a post: " + value);
+            Console.WriteLine("We have a post: " + JsonConvert.SerializeObject(keys));
             bool mapLights = false;
             List<KeyValuePair<int, int>> lightMap = new List<KeyValuePair<int, int>>();
             foreach (string key in keys) {
-                Console.WriteLine("We have a key and value: " + key + " " + Request.Form[key]);
                 if (key.Contains("lightMap")) {
                     mapLights = true;
                     int lightId = int.Parse(key.Replace("lightMap", ""));
@@ -119,6 +118,7 @@ namespace HueDream.Controllers {
                     var groups = userData.EntertainmentGroups;
                     foreach (Group g in groups) {
                         if (g.Id == Request.Form[key]) {
+                            Console.WriteLine("Group match: " + JsonConvert.SerializeObject(g));
                             userData.EntertainmentGroup = g;
                         }
                     }
