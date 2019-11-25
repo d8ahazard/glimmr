@@ -2,6 +2,7 @@ var syncToggle;
 var hueGroups;
 var hueLights;
 var lightMap;
+var hueGroup;
 var dsIp;
 var hueAuth = false;
 var linking = false;
@@ -44,19 +45,17 @@ $(function () {
     });
 
     $('.dsGroup').change(function () {
-        console.log("Gchange?");
         var id = $(this).val();
         var newGroup = findGroup(id);
         if (newGroup) {
-            console.log("Remapping");
-            mapLights(newGroup);
+            hueGroup = newGroup;
+            mapLights(newGroup, lightMap, hueLights);
         }
     });
 
     $('.dsType').change(function () {
         var val = $(this).val();
         var dsIcon = $('#iconWrap');
-        console.log("Val is " + val);
         if (val === "SideKick") {
             dsIcon.css('background-image', './img/sidekick_icon.png');
         } else {
@@ -65,20 +64,16 @@ $(function () {
     });
 
     $(document).on('focusin', '.mapSelect', function () {
-        console.log("Saving sel value " + $(this).val());
         $(this).data('val', $(this).val());
     }).on('change', '.mapSelect', function () {
         var prev = $(this).data('val');
         var current = $(this).val();
         if (current !== -1) {
-            console.log("Flipping the script?", prev);
             var target = $('#sector' + current);
             if (!target.hasClass('checked')) target.addClass('checked');
             $('#sector' + prev).removeClass('checked');
             $(this).data('val', $(this).val());
         }
-        console.log("Prev value " + prev);
-        console.log("New value " + current);
     });
 
    
@@ -100,15 +95,12 @@ function checkHueAuth() {
 function fetchJson() {
     $.get('./api/DreamData/json', function (config) {
         console.log("We have some config", config);
-        var hueLights = false;
-        var group = false;
         
-
         for (var v in config) {
             key = v;
             value = config[v];
             var id = key;
-            console.log("id, value", id, value)
+            
 
             if (id === "hueAuth") {
                 authorized = value;
@@ -127,7 +119,7 @@ function fetchJson() {
             } else if (id === "hueLights") {
                 hueLights = value;
             } else if (id === "entertainmentGroup") {
-                group = value;
+                hueGroup = value;
             } else if (id === "entertainmentGroups") {
                 hueGroups = value;
             } else if (id === "dreamState") {
@@ -137,7 +129,6 @@ function fetchJson() {
                 var modestr = (value.mode === 0) ? "Off" : ((value.mode === 1) ? "Video" : ((value.mode === 2) ? "Music" : ((value.mode === 3) ? "Ambient" : "WTF")));
                 $('#dsMode').html(modestr);
             } else {
-                console.log("Setting value for #" + id, value);
                 if (id === 'dsIp') {
                     dsIp = value;
                     if (value !== "0.0.0.0") {
@@ -148,16 +139,13 @@ function fetchJson() {
             }
         }       
 
-        console.log("GROUPS: ", hueGroups);
-        if (group === null && hueGroups.length) {
-            console.log("SETGROUP");
-            group = hueGroups[0];
+        if (hueGroup === null && hueGroups.length) {
+            hueGroup = hueGroups[0];
         }
 
         listGroups();
-        if (hueLights && lightMap && group) {
-            console.log("Mapping lights");
-            mapLights(group, lightMap, hueLights);
+        if (hueLights && lightMap && hueGroup) {
+            mapLights(hueGroup, lightMap, hueLights);
         }
 
     });
@@ -241,10 +229,9 @@ function listGroups() {
     gs.html("");
     var i = 0;
     $.each(hueGroups, function () {
-        console.log($(this)[0]);
         var val = $(this)[0].id;
         var txt = $(this)[0].name;
-        var selected = (i === 0) ? "" : " selected";
+        var selected = (val === hueGroup.id) ? " selected" : "";
         gs.append(`<option value="${val}"${selected}>${txt}</option>`);
         i++;
     });
@@ -257,7 +244,6 @@ function listDreamDevices() {
         devList.html("");
         $.each(data, function () {
             var dev = $(this)[0];
-            console.log("Device: ", dev);
             var name = dev.name;
             var ip = dev.ipAddress;
             var type = dev.type;
@@ -273,9 +259,7 @@ function listDreamDevices() {
 function findGroup(id) {
     var res = false;
     $.each(hueGroups, function () {
-        console.log("Findloop", id, $(this)[0].id);
         if (id === $(this)[0].id) {
-            console.log("Group match");
             res = $(this)[0];
         }
     });
@@ -305,7 +289,6 @@ function linkHue() {
         var x = 0;
         hueAuth = false;
         var intervalID = window.setInterval(function () {
-            console.log("TICK");
             checkHueAuth();
             bar.animate((x / 30));
             if (++x === 30 || hueAuth) {
