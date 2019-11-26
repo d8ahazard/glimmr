@@ -11,8 +11,8 @@ namespace HueDream.DreamScreen.Devices {
             ProductId = 7;
             Name = "DreamScreen Solo";
             Tag = tag;
-            espFirmwareVersion = requiredSoloEspFirmwareVersion;
-            picVersionNumber = requiredSoloPicVersionNumber;
+            EspFirmwareVersion = requiredSoloEspFirmwareVersion;
+            PicVersionNumber = requiredSoloPicVersionNumber;
         }
     }
 

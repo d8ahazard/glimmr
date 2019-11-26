@@ -10,76 +10,76 @@ namespace HueDream.DreamScreen.Devices {
         private static readonly byte[] requiredPicVersionNumber = new byte[] { 1, 7 };
         private const string resetKey = "sA";
         private const string tag = "DreamScreen";
-        private byte[] appMusicData;
-        private int bootState;
-        private int cecPassthroughEnable;
-        private int cecPowerEnable;
-        private int cecSwitchingEnable;
-        private int colorBoost;
-        internal byte[] espFirmwareVersion;
-        private int[] flexSetup;
-        internal byte hdmiActiveChannels;
-        private int hdmiInput;
-        internal string hdmiInputName1;
-        internal string hdmiInputName2;
-        internal string hdmiInputName3;
-        private int hdrToneRemapping;
-        private int hpdEnable;
-        private int indicatorLightAutoOff;
-        internal bool isDemo;
-        private int letterboxingEnable;
-        private int[] minimumLuminosity;
-        private int[] musicModeColors;
-        private int musicModeSource;
-        private int musicModeType;
-        private int[] musicModeWeights;
-        internal byte[] picVersionNumber;
-        private int pillarboxingEnable;
-        private int sectorBroadcastControl;
-        private int sectorBroadcastTiming;
-        private int skuSetup;
-        private int usbPowerEnable;
-        private int videoFrameDelay;
-        private byte zones;
-        private int[] zonesBrightness;
+        private byte[] appMusicData { get; set; }
+        public int BootState { get; set; }
+        public int CecPassthroughEnable { get; set; }
+        public int CecPowerEnable { get; set; }
+        public int CecSwitchingEnable { get; set; }
+        public int ColorBoost { get; set; }
+        public byte[] EspFirmwareVersion { get; set; }
+        public int[] FlexSetup { get; set; }
+        public byte HdmiActiveChannels { get; set; }
+        public int HdmiInput { get; set; }
+        public string HdmiInputName1 { get; set; }
+        public string HdmiInputName2 { get; set; }
+        public string HdmiInputName3 { get; set; }
+        public int HdrToneRemapping { get; set; }
+        public int HpdEnable { get; set; }
+        public int IndicatorLightAutoOff { get; set; }
+        public bool IsDemo { get; set; }
+        public int LetterboxingEnable { get; set; }
+        public int[] MinimumLuminosity { get; set; }
+        public int[] MusicModeColors { get; set; }
+        public int MusicModeSource { get; set; }
+        public int MusicModeType { get; set; }
+        public int[] MusicModeWeights { get; set; }
+        public byte[] PicVersionNumber { get; set; }
+        public int PillarboxingEnable { get; set; }
+        public int SectorBroadcastControl { get; set; }
+        public int SectorBroadcastTiming { get; set; }
+        public int SkuSetup { get; set; }
+        public int UsbPowerEnable { get; set; }
+        public int VideoFrameDelay { get; set; }
+        public byte Zones { get; set; }
+        public int[] ZonesBrightness { get; set; }
 
         public DreamScreen(string ipAddress) : base(ipAddress) {
             Tag = tag;
-            espFirmwareVersion = requiredEspFirmwareVersion;
-            picVersionNumber = requiredPicVersionNumber;
-            zones = 15;
-            zonesBrightness = new int[] { 255, 255, 255 };
-            musicModeType = 0;
-            musicModeColors = new int[] { 255, 255, 255 };
-            musicModeWeights = new int[] { 100, 100, 100 };
-            minimumLuminosity = new int[] { 0, 0, 0 };
-            indicatorLightAutoOff = 1;
-            usbPowerEnable = 0;
-            sectorBroadcastControl = 0;
-            sectorBroadcastTiming = 1;
-            hdmiInput = 0;
-            musicModeSource = 0;
+            EspFirmwareVersion = requiredEspFirmwareVersion;
+            PicVersionNumber = requiredPicVersionNumber;
+            Zones = 15;
+            ZonesBrightness = new int[] { 255, 255, 255 };
+            MusicModeType = 0;
+            MusicModeColors = new int[] { 255, 255, 255 };
+            MusicModeWeights = new int[] { 100, 100, 100 };
+            MinimumLuminosity = new int[] { 0, 0, 0 };
+            IndicatorLightAutoOff = 1;
+            UsbPowerEnable = 0;
+            SectorBroadcastControl = 0;
+            SectorBroadcastTiming = 1;
+            HdmiInput = 0;
+            MusicModeSource = 0;
             appMusicData = new byte[] { 0, 0, 0 };
-            cecPassthroughEnable = 1;
-            cecSwitchingEnable = 1;
-            hpdEnable = 1;
-            videoFrameDelay = 0;
-            letterboxingEnable = 0;
-            pillarboxingEnable = 0;
-            hdmiActiveChannels = 0;
-            colorBoost = 0;
-            cecPowerEnable = 0;
-            flexSetup = new int[] { 8, 16, 48, 0, 7, 0 };
-            skuSetup = 0;
-            hdrToneRemapping = 0;
-            bootState = 0;
-            isDemo = false;
+            CecPassthroughEnable = 1;
+            CecSwitchingEnable = 1;
+            HpdEnable = 1;
+            VideoFrameDelay = 0;
+            LetterboxingEnable = 0;
+            PillarboxingEnable = 0;
+            HdmiActiveChannels = 0;
+            ColorBoost = 0;
+            CecPowerEnable = 0;
+            FlexSetup = new int[] { 8, 16, 48, 0, 7, 0 };
+            SkuSetup = 0;
+            HdrToneRemapping = 0;
+            BootState = 0;
+            IsDemo = false;
             ProductId = 1;
             Name = "DreamScreen HD";
             try {
-                hdmiInputName1 = "HDMI 1";
-                hdmiInputName2 = "HDMI 2";
-                hdmiInputName3 = "HDMI 3";
+                HdmiInputName1 = "HDMI 1";
+                HdmiInputName2 = "HDMI 2";
+                HdmiInputName3 = "HDMI 3";
             } catch (Exception) {
             }
         }
@@ -104,53 +104,53 @@ namespace HueDream.DreamScreen.Devices {
             GroupNumber = payload[32];
             Mode = payload[33];
             Brightness = payload[34];
-            zones = payload[35];
+            Zones = payload[35];
             Console.WriteLine("ZB");
-            zonesBrightness = ByteUtils.ExtractInt(payload, 36, 40);
+            ZonesBrightness = ByteUtils.ExtractInt(payload, 36, 40);
             AmbientColor = ByteUtils.ExtractInt(payload, 40, 43);
             Saturation = ByteUtils.ExtractInt(payload, 43, 46);
-            flexSetup = ByteUtils.ExtractInt(payload, 46, 52);
+            FlexSetup = ByteUtils.ExtractInt(payload, 46, 52);
             Console.WriteLine("MMType");
-            musicModeType = payload[52];
-            musicModeColors = ByteUtils.ExtractInt(payload, 53, 56);
-            musicModeWeights = ByteUtils.ExtractInt(payload, 56, 59);
-            minimumLuminosity = ByteUtils.ExtractInt(payload, 59, 62);
+            MusicModeType = payload[52];
+            MusicModeColors = ByteUtils.ExtractInt(payload, 53, 56);
+            MusicModeWeights = ByteUtils.ExtractInt(payload, 56, 59);
+            MinimumLuminosity = ByteUtils.ExtractInt(payload, 59, 62);
             AmbientShowType = payload[62];
             FadeRate = payload[63];
             Console.WriteLine("Frate");
-            indicatorLightAutoOff = payload[69];
-            usbPowerEnable = payload[70];
-            sectorBroadcastControl = payload[71];
-            sectorBroadcastTiming = payload[72];
-            hdmiInput = payload[73];
-            musicModeSource = payload[74];
+            IndicatorLightAutoOff = payload[69];
+            UsbPowerEnable = payload[70];
+            SectorBroadcastControl = payload[71];
+            SectorBroadcastTiming = payload[72];
+            HdmiInput = payload[73];
+            MusicModeSource = payload[74];
             Console.WriteLine("MModesource");
-            hdmiInputName1 = ByteUtils.ExtractString(payload, 75, 91);
-            hdmiInputName2 = ByteUtils.ExtractString(payload, 91, 107);
-            hdmiInputName3 = ByteUtils.ExtractString(payload, 107, 123);
-            cecPassthroughEnable = payload[123];
-            cecSwitchingEnable = payload[124];
-            hpdEnable = payload[125];
-            videoFrameDelay = payload[127];
-            letterboxingEnable = payload[128];
-            hdmiActiveChannels = payload[129];
-            espFirmwareVersion = ByteUtils.ExtractBytes(payload, 130, 132);
-            picVersionNumber = ByteUtils.ExtractBytes(payload, 132, 134);
-            colorBoost = payload[134];
+            HdmiInputName1 = ByteUtils.ExtractString(payload, 75, 91);
+            HdmiInputName2 = ByteUtils.ExtractString(payload, 91, 107);
+            HdmiInputName3 = ByteUtils.ExtractString(payload, 107, 123);
+            CecPassthroughEnable = payload[123];
+            CecSwitchingEnable = payload[124];
+            HpdEnable = payload[125];
+            VideoFrameDelay = payload[127];
+            LetterboxingEnable = payload[128];
+            HdmiActiveChannels = payload[129];
+            EspFirmwareVersion = ByteUtils.ExtractBytes(payload, 130, 132);
+            PicVersionNumber = ByteUtils.ExtractBytes(payload, 132, 134);
+            ColorBoost = payload[134];
             if (payload.Length >= 137) {
-                cecPowerEnable = payload[135];
+                CecPowerEnable = payload[135];
             }
             if (payload.Length >= 138) {
-                skuSetup = payload[136];
+                SkuSetup = payload[136];
             }
             if (payload.Length >= 139) {
-                bootState = payload[137];
+                BootState = payload[137];
             }
             if (payload.Length >= 140) {
-                pillarboxingEnable = payload[138];
+                PillarboxingEnable = payload[138];
             }
             if (payload.Length >= 141) {
-                hdrToneRemapping = payload[139];
+                HdrToneRemapping = payload[139];
             }
             Console.WriteLine("Parsed");
         }
@@ -164,44 +164,44 @@ namespace HueDream.DreamScreen.Devices {
             response.Add(ByteUtils.IntByte(GroupNumber));
             response.Add(ByteUtils.IntByte(Mode));
             response.Add(ByteUtils.IntByte(Brightness));
-            response.Add(zones);
-            response.AddRange(ByteUtils.IntBytes(zonesBrightness));
+            response.Add(Zones);
+            response.AddRange(ByteUtils.IntBytes(ZonesBrightness));
             response.AddRange(ByteUtils.IntBytes(AmbientColor));
             response.AddRange(ByteUtils.IntBytes(Saturation));
-            response.AddRange(ByteUtils.IntBytes(flexSetup));
-            response.Add(ByteUtils.IntByte(musicModeType));
-            response.AddRange(ByteUtils.IntBytes(musicModeColors));
-            response.AddRange(ByteUtils.IntBytes(musicModeWeights));
-            response.AddRange(ByteUtils.IntBytes(minimumLuminosity));
+            response.AddRange(ByteUtils.IntBytes(FlexSetup));
+            response.Add(ByteUtils.IntByte(MusicModeType));
+            response.AddRange(ByteUtils.IntBytes(MusicModeColors));
+            response.AddRange(ByteUtils.IntBytes(MusicModeWeights));
+            response.AddRange(ByteUtils.IntBytes(MinimumLuminosity));
             response.Add(ByteUtils.IntByte(AmbientShowType));
             response.Add(ByteUtils.IntByte(FadeRate));
             response.AddRange(new byte[5]);
-            response.Add(ByteUtils.IntByte(indicatorLightAutoOff));
-            response.Add(ByteUtils.IntByte(usbPowerEnable));
-            response.Add(ByteUtils.IntByte(sectorBroadcastControl));
-            response.Add(ByteUtils.IntByte(sectorBroadcastTiming));
-            response.Add(ByteUtils.IntByte(hdmiInput));
+            response.Add(ByteUtils.IntByte(IndicatorLightAutoOff));
+            response.Add(ByteUtils.IntByte(UsbPowerEnable));
+            response.Add(ByteUtils.IntByte(SectorBroadcastControl));
+            response.Add(ByteUtils.IntByte(SectorBroadcastTiming));
+            response.Add(ByteUtils.IntByte(HdmiInput));
             response.AddRange(new byte[2]);
             Console.WriteLine("hdmiInterfaces");
-            string[] iList = { hdmiInputName1, hdmiInputName2, hdmiInputName3 };
+            string[] iList = { HdmiInputName1, HdmiInputName2, HdmiInputName3 };
             foreach (string iName in iList) {
                 response.AddRange(ByteUtils.StringBytePad(iName, 16));
             }
-            response.Add(ByteUtils.IntByte(cecPassthroughEnable));
-            response.Add(ByteUtils.IntByte(cecSwitchingEnable));
-            response.Add(ByteUtils.IntByte(hpdEnable));
+            response.Add(ByteUtils.IntByte(CecPassthroughEnable));
+            response.Add(ByteUtils.IntByte(CecSwitchingEnable));
+            response.Add(ByteUtils.IntByte(HpdEnable));
             response.Add(0x00);
-            response.Add(ByteUtils.IntByte(videoFrameDelay));
-            response.Add(ByteUtils.IntByte(letterboxingEnable));
-            response.Add(ByteUtils.IntByte(hdmiActiveChannels));
-            response.AddRange(espFirmwareVersion);
-            response.AddRange(picVersionNumber);
-            response.Add(ByteUtils.IntByte(colorBoost));
-            response.Add(ByteUtils.IntByte(cecPowerEnable));
-            response.Add(ByteUtils.IntByte(skuSetup));
-            response.Add(ByteUtils.IntByte(bootState));
-            response.Add(ByteUtils.IntByte(pillarboxingEnable));
-            response.Add(ByteUtils.IntByte(hdrToneRemapping));
+            response.Add(ByteUtils.IntByte(VideoFrameDelay));
+            response.Add(ByteUtils.IntByte(LetterboxingEnable));
+            response.Add(ByteUtils.IntByte(HdmiActiveChannels));
+            response.AddRange(EspFirmwareVersion);
+            response.AddRange(PicVersionNumber);
+            response.Add(ByteUtils.IntByte(ColorBoost));
+            response.Add(ByteUtils.IntByte(CecPowerEnable));
+            response.Add(ByteUtils.IntByte(SkuSetup));
+            response.Add(ByteUtils.IntByte(BootState));
+            response.Add(ByteUtils.IntByte(PillarboxingEnable));
+            response.Add(ByteUtils.IntByte(HdrToneRemapping));
             Console.WriteLine("Type");
             // Device type
             if (Tag == "DreamScreen") {

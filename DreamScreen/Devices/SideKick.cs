@@ -6,10 +6,10 @@
     public class SideKick : BaseDevice {
         private static readonly byte[] requiredEspFirmwareVersion = new byte[] { 3, 1 };
         private const string tag = "SideKick";
-        private byte[] espFirmwareVersion { get; set; }
-        private bool isDemo { get; set; }
-        private byte[] sectorAssignment { get; set; }
-        private byte[] sectorData { get; set; }
+        public byte[] espFirmwareVersion { get; set; }
+        public bool isDemo { get; set; }
+        public byte[] sectorAssignment { get; set; }
+        public byte[] sectorData { get; set; }
 
         public SideKick(string ipAddress) : base(ipAddress) {
             espFirmwareVersion = requiredEspFirmwareVersion;

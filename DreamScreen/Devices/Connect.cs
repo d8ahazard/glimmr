@@ -12,70 +12,38 @@ namespace HueDream.DreamScreen.Devices {
         public const int LIGHT_COUNT = 10;
         private static readonly byte[] requiredEspFirmwareVersion = new byte[] { 0, 4 };
         private const string tag = "Connect";
-        private int ambientLightAutoAdjustEnabled;
-        private int displayAnimationEnabled;
-        private string emailAddress;
-        private bool emailReceived;
+        public int ambientLightAutoAdjustEnabled { get; set; }
+        public int displayAnimationEnabled { get; set; }
         private byte[] espFirmwareVersion;
-        private int hdmiInput;
-        private byte[] hueBridgeClientKey;
-        private string hueBridgeGroupName;
-        private int hueBridgeGroupNumber;
-        private string hueBridgeUsername;
-        private byte[] hueBulbIds;
+        public int HdmiInput { get; set; }
         /* access modifiers changed from: private */
-        public bool hueLifxSettingsReceived;
-        private int irEnabled;
-        private int irLearningMode;
-        private byte[] irManifest;
-        private bool isDemo;
+        public bool HueLifxSettingsReceived { get; set; }
+        public int IrEnabled { get; set; }
+        public int IrLearningMode { get; set; }
+        public byte[] IrManifest { get; set; }
+        public bool isDemo { get; set; }
         private readonly string ipAddress;
-        private string[] lightNames;
-        private byte[] lightSectorAssignments;
-        private int lightType;
-        private int microphoneAudioBroadcastEnabled;
-        private byte[] sectorData;
-        private string thingName;
+        public int microphoneAudioBroadcastEnabled { get; set; }
+        public byte[] sectorData { get; set; }
+        public string ThingName { get; set; }
 
         public Connect(string ipAddress) : base(ipAddress) {
             Tag = tag;
             espFirmwareVersion = requiredEspFirmwareVersion;
-            hdmiInput = 0;
+            HdmiInput = 0;
             displayAnimationEnabled = 0;
             ambientLightAutoAdjustEnabled = 0;
             microphoneAudioBroadcastEnabled = 0;
-            irEnabled = 1;
-            irLearningMode = 0;
-            irManifest = new byte[40];
-            emailAddress = "";
-            thingName = "";
-            lightType = 0;
+            IrEnabled = 1;
+            IrLearningMode = 0;
+            IrManifest = new byte[40];
+            ThingName = "";
             this.ipAddress = "";
-            lightSectorAssignments = new byte[150];
-            hueBridgeUsername = "";
-            hueBulbIds = new byte[10];
-            hueBridgeClientKey = new byte[16];
-            hueBridgeGroupNumber = 0;
-            hueBridgeGroupName = "";
-            lightNames = new string[10];
             sectorData = new byte[] { 0 };
             isDemo = false;
-            hueLifxSettingsReceived = false;
-            emailReceived = false;
+            HueLifxSettingsReceived = false;
             ProductId = 4;
-            Name = "Connect";
-            byte b = 0;
-            while (b < 10) {
-                try {
-                    hueBulbIds[b] = 0;
-                    lightNames[b] = "";
-                    b = (byte)(b + 1);
-                } catch (Exception) {
-                }
-            }
-            for (byte b2 = 0; b2 < 16; b2 = (byte)(b2 + 1)) {
-                hueBridgeClientKey[b2] = 0;
-            }
+            Name = "Connect";        
         }
 
         public override void ParsePayload(byte[] payload) {
@@ -102,17 +70,17 @@ namespace HueDream.DreamScreen.Devices {
             espFirmwareVersion = ByteUtils.ExtractBytes(payload, 57, 59);
             AmbientModeType = payload[59];
             AmbientShowType = payload[60];
-            hdmiInput = payload[61];
+            HdmiInput = payload[61];
             displayAnimationEnabled = payload[62];
             ambientLightAutoAdjustEnabled = payload[63];
             microphoneAudioBroadcastEnabled = payload[64];
-            irEnabled = payload[65];
-            irLearningMode = payload[66];
-            irManifest = ByteUtils.ExtractBytes(payload, 67, 107);
+            IrEnabled = payload[65];
+            IrLearningMode = payload[66];
+            IrManifest = ByteUtils.ExtractBytes(payload, 67, 107);
             try {
-                thingName = ByteUtils.ExtractString(payload, 115, 178);
+                ThingName = ByteUtils.ExtractString(payload, 115, 178);
             } catch (Exception) {
-                thingName = "";
+                ThingName = "";
             }
         }
 
@@ -129,14 +97,14 @@ namespace HueDream.DreamScreen.Devices {
             response.AddRange(espFirmwareVersion);
             response.Add(ByteUtils.IntByte(AmbientModeType));
             response.Add(ByteUtils.IntByte(AmbientShowType));
-            response.Add(ByteUtils.IntByte(hdmiInput));
+            response.Add(ByteUtils.IntByte(HdmiInput));
             response.Add(ByteUtils.IntByte(displayAnimationEnabled));
             response.Add(ByteUtils.IntByte(ambientLightAutoAdjustEnabled));
             response.Add(ByteUtils.IntByte(microphoneAudioBroadcastEnabled));
-            response.Add(ByteUtils.IntByte(irEnabled));
-            response.Add(ByteUtils.IntByte(irLearningMode));
-            response.AddRange(irManifest);
-            response.AddRange(ByteUtils.StringBytePad(thingName, 63));
+            response.Add(ByteUtils.IntByte(IrEnabled));
+            response.Add(ByteUtils.IntByte(IrLearningMode));
+            response.AddRange(IrManifest);
+            response.AddRange(ByteUtils.StringBytePad(ThingName, 63));
             // Type
             response.Add(0x04);
             

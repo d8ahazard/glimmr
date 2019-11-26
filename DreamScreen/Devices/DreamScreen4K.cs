@@ -10,8 +10,8 @@ namespace HueDream.DreamScreen.Devices {
             ProductId = 2;
             Name = "DreamScreen 4K";
             Tag = tag;
-            espFirmwareVersion = required4KEspFirmwareVersion;
-            picVersionNumber = required4KPicVersionNumber;
+            EspFirmwareVersion = required4KEspFirmwareVersion;
+            PicVersionNumber = required4KPicVersionNumber;
         }
     }
 }
