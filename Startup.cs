@@ -7,7 +7,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace HueDream {
     public class Startup {
-        private DreamSync ds;
+        private readonly DreamSync ds;
         public Startup(IConfiguration configuration) {
             DreamData.CheckConfig();
             ds = new DreamSync();

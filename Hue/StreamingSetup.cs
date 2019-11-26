@@ -19,13 +19,13 @@ namespace HueDream.Hue {
             StreamingHueClient client = new StreamingHueClient(dd.HueIp, dd.HueUser, dd.HueKey);
             Console.WriteLine("Created client");
             //Get the entertainment group
-            
+
 
             Group group = null;
             if (dd.EntertainmentGroup != null) {
                 group = dd.EntertainmentGroup;
             } else {
-                var all = await client.LocalHueClient.GetEntertainmentGroups();
+                IReadOnlyList<Group> all = await client.LocalHueClient.GetEntertainmentGroups();
                 Console.WriteLine("Got Groups");
                 foreach (Group eg in all) {
                     bool valid = true;
@@ -34,7 +34,9 @@ namespace HueDream.Hue {
                         if (!eg.Lights.Contains(s)) {
                             valid = false;
                         }
-                        if (valid) group = eg;
+                        if (valid) {
+                            group = eg;
+                        }
                     }
                 }
             }
@@ -46,7 +48,7 @@ namespace HueDream.Hue {
             }
 
             //Create a streaming group
-            var stream = new StreamingGroup(group.Locations);
+            StreamingGroup stream = new StreamingGroup(group.Locations);
             Console.WriteLine("Group setup complete, connecting to client...");
             //Connect to the streaming group
             await client.Connect(group.Id);
@@ -55,7 +57,7 @@ namespace HueDream.Hue {
             client.AutoUpdate(stream, ct, 50, onlySendDirtyStates: false);
 
             //Optional: Check if streaming is currently active
-            var bridgeInfo = await client.LocalHueClient.GetBridgeAsync();
+            Bridge bridgeInfo = await client.LocalHueClient.GetBridgeAsync();
             Console.WriteLine(bridgeInfo.IsStreamingActive ? "Streaming is active" : "Streaming is not active");
             return stream;
         }

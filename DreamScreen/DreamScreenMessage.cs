@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HueDream.DreamScreen.Devices;
+using System;
 using System.Collections.Generic;
 
 namespace HueDream.DreamScreen {
@@ -10,15 +11,13 @@ namespace HueDream.DreamScreen {
         public string flags { get; }
         public string upper { get; }
         public string lower { get; }
-        public string[] payload { get; }
+        public byte[] payload { get; }
+        public string[] payloadString { get; set; }
         public string hex { get; }
 
-        public DreamState state { get; set; }
+        public string ipAddress;
 
-        private static Dictionary<string, string> commands;
-
-        public DreamScreenMessage(string byteString) {
-            commands = new Dictionary<string, string> {
+        private static Dictionary<string, string> commands = new Dictionary<string, string> {
                     { "FFFF", "INVALID" },
                     { "0103", "GET_SERIAL" },
                     { "0105", "RESET_ESP" },
@@ -52,7 +51,7 @@ namespace HueDream.DreamScreen {
                     { "0317", "SECTOR_ASSIGNMENT" },
                     { "0318", "SECTOR_BROADCAST_CONTROL" },
                     { "0319", "SECTOR_BROADCAST_TIMING" },
-                    { "0320", "HDMI_INPUT" }, // Define channels 01, 02, 03
+                    { "0320", "HDMI_INPUT" },
                     { "0321", "MUSIC_MODE_SOURCE" },
                     { "0323", "HDMI_INPUT_1_NAME" },
                     { "0324", "HDMI_INPUT_2_NAME" },
@@ -84,28 +83,64 @@ namespace HueDream.DreamScreen {
                     { "0521", "SET_THING_NAME" },
 
                 };
-            string[] bytesIn = byteString.Split("-");
+
+        public BaseDevice device { get; set; }
+
+        
+        public DreamScreenMessage(byte[] bytesIn, string from) {
+            string byteString = BitConverter.ToString(bytesIn);
+            string[] bytesString = byteString.Split("-");
             hex = string.Join("", bytesIn);
-            string magic = bytesIn[0];
-            int len = int.Parse(bytesIn[1], System.Globalization.NumberStyles.HexNumber);
-            addr = bytesIn[2];
-            flags = bytesIn[3];
-            upper = bytesIn[4];
-            lower = bytesIn[5];
-            string cmd = bytesIn[4] + bytesIn[5];
+            string magic = bytesString[0];
+            int len = bytesIn[1];
+            addr = bytesString[2];
+            flags = bytesString[3];
+            upper = bytesString[4];
+            lower = bytesString[5];
+            string cmd = bytesString[4] + bytesString[5];
             if (commands.ContainsKey(cmd)) {
                 command = commands[cmd];
             } else {
                 Console.WriteLine("No matching key in dict for bytes: " + cmd);
             }
 
+            BaseDevice dreamDev = null; 
             if (magic == "FC") {
+                string type = "";
+                
                 if (len > 5) {
                     payload = Payload(bytesIn);
+                    string pString = BitConverter.ToString(payload);
+                    payloadString = pString.Split("-");
                 }
-                if (command == "DEVICE_DISCOVERY" && flags == "60") {
-                    state = new DreamState();
-                    state.LoadState(payload);
+                if (command == "DEVICE_DISCOVERY" && flags == "60" && len > 46) {
+                    string typeByte = payloadString[payloadString.Length - 1];
+                    Console.WriteLine("In Byte: " + typeByte);
+                    switch (typeByte) {
+                        case "01":
+                            dreamDev = new Devices.DreamScreen(from);
+                            break;
+                        case "02":
+                            dreamDev = new DreamScreen4K(from);
+                            break;
+                        case "03":
+                            dreamDev = new SideKick(from);
+                            break;
+                        case "04":
+                            dreamDev = new Connect(from);
+                            break;
+                        case "07":
+                            dreamDev = new DreamScreenSolo(from);
+                            break;
+                    }
+                    if (dreamDev != null) {
+                        Console.WriteLine("Parsing payload?");
+                        dreamDev.Initialize();
+                        dreamDev.ParsePayload(payload);
+                    } else {
+                        Console.WriteLine("DreamDev is null.");
+                    }
+                    device = dreamDev;
                     payload = null;
                 }
             } else {
@@ -113,12 +148,12 @@ namespace HueDream.DreamScreen {
             }
         }
 
-        static string[] Payload(string[] source) {
+        private static byte[] Payload(byte[] source) {
             int i = 0;
-            List<string> output = new List<string>();
-            foreach (string s in source) {
+            List<byte> output = new List<byte>();
+            foreach (byte b in source) {
                 if (i > 5 && i < source.Length - 1) {
-                    output.Add(s);
+                    output.Add(b);
                 }
                 i++;
             }

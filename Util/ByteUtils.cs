@@ -1,10 +1,11 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
 namespace HueDream.Util {
-    public static class ByteStringUtil {
+    public static class ByteUtils {
 
         /// <summary>
         /// Convert an ASCII string and pad or truncate
@@ -62,6 +63,17 @@ namespace HueDream.Util {
             return b;
         }
 
+        // Convert an array of integers to bytes
+        public static byte[] IntBytes(int[] toBytes) {
+            byte[] output = new byte[toBytes.Length];
+            int c = 0;
+            foreach (int i in toBytes) {
+                output[c] = Convert.ToByte(i.ToString("X2"), 16);
+                c++;
+            }
+            return output;
+        }
+
         /// <summary>
         /// Convert an Hex string to it's integer representation
         /// </summary>
@@ -103,19 +115,53 @@ namespace HueDream.Util {
         /// <returns>
         /// A string of hex-encoded values with no spacing
         /// </returns>
-        public static string ExtractHexString(string[] input, int start, int len) {
+        public static string ExtractString(byte[] input, int start, int end) {
+            int len = end - start;
             string strOut = "";
             if (len < input.Length) {
-                string[] nameArr = new string[len];
-                Array.Copy(input, start, nameArr, 0, len);
+                byte[] subArr = new byte[len];
+                Array.Copy(input, start, subArr, 0, len);
 
-                foreach (string s in nameArr) {
-                    strOut += HexChar(s);
+                foreach (byte b in subArr) {
+                    strOut += Convert.ToChar(b);
                 }
             } else {
                 Console.WriteLine("Len for input request " + len + " is less than array len: " + input.Length);
             }
             return strOut;
+        }
+
+        public static int[] ExtractInt(byte[] input, int start, int end) {
+            int len = end - start;
+            int[] intOut = new int[len];
+            if (len < input.Length) {
+                byte[] subArr = new byte[len];
+                Array.Copy(input, start, subArr, 0, len);
+                Console.WriteLine("Copied. Len is " + len + ", subarr len is " + subArr.Length);
+                int c = 0;
+
+                foreach (byte b in subArr) {
+                    intOut[c] = b;
+                    c++;
+                }
+            } else {
+                Console.WriteLine("Len for input request " + len + " is less than array len: " + input.Length);
+            }
+            Console.WriteLine("Returning: " + JsonConvert.SerializeObject(intOut));
+            return intOut;
+        }
+
+        public static byte[] ExtractBytes(byte[] input, int start, int end) {
+            int len = end - start;
+            byte[] byteOut = new byte[len];
+            if (len < input.Length) {
+                byte[] subArr = new byte[len];
+                Array.Copy(input, start, subArr, 0, len);
+
+            } else {
+                Console.WriteLine("Len for input request " + len + " is less than array len: " + input.Length);
+            }
+            return byteOut;
         }
 
         /// <summary>
@@ -143,6 +189,9 @@ namespace HueDream.Util {
 
             return string.Empty;
         }
+
+        
+
     }
 }
 

@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 namespace HueDream.HueDream {
     public class DreamSync {
 
-        private HueBridge hueBridge;
-        private DreamScreen.DreamScreen dreamScreen;
-        private DataObj dreamData;
+        private readonly HueBridge hueBridge;
+        private readonly DreamScreen.DreamClient dreamScreen;
+        private readonly DataObj dreamData;
         private CancellationTokenSource cts;
 
         public static bool syncEnabled { get; set; }
@@ -16,12 +16,12 @@ namespace HueDream.HueDream {
             Console.WriteLine("Creating new sync.");
             dreamData = DreamData.LoadJson();
             hueBridge = new HueBridge(dreamData);
-            dreamScreen = new DreamScreen.DreamScreen(this, dreamData);
+            dreamScreen = new DreamScreen.DreamClient(this, dreamData);
             // Start our dreamscreen listening like a good boy
-            if (!DreamScreen.DreamScreen.listening) {
+            if (!DreamScreen.DreamClient.listening) {
                 Console.WriteLine("DS Listen start.");
                 dreamScreen.Listen();
-                DreamScreen.DreamScreen.listening = true;
+                DreamScreen.DreamClient.listening = true;
                 Console.WriteLine("DS Listen running.");
             }
         }

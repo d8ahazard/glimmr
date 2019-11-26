@@ -1,15 +1,18 @@
 ﻿using HueDream.DreamScreen;
+using HueDream.DreamScreen.Devices;
 using HueDream.Hue;
 using Q42.HueApi.Models.Groups;
 using System;
 using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
 
 namespace HueDream.HueDream {
 
     [Serializable]
     public class DataObj {
 
-        private DreamState dreamState;
+        public BaseDevice MyDevice { get; set; }
         public string DsIp { get; set; }
         public string HueIp { get; set; }
         public bool HueSync { get; set; }
@@ -20,13 +23,20 @@ namespace HueDream.HueDream {
         public List<KeyValuePair<int, int>> HueMap { get; set; }
         public Group[] EntertainmentGroups { get; set; }
         public Group EntertainmentGroup { get; set; }
-        public DreamState DreamState { get => dreamState; set => dreamState = value; }
-        public DreamState[] devices { get; set; }
+        
+        private BaseDevice[] devices;
+
+        public BaseDevice[] GetDevices() {
+            return devices;
+        }
+
+        public void SetDevices(BaseDevice[] value) {
+            devices = value;
+        }
 
         public DataObj() {
             DsIp = "0.0.0.0";
-            dreamState = new DreamState();
-            dreamState.SetDefaults();
+            MyDevice = new SideKick(GetLocalIPAddress());
             HueIp = HueBridge.findBridge();
             HueSync = false;
             HueAuth = false;
@@ -36,8 +46,18 @@ namespace HueDream.HueDream {
             HueMap = new List<KeyValuePair<int, int>>();
             EntertainmentGroups = null;
             EntertainmentGroup = null;
-            devices = Array.Empty<DreamState>();
+            SetDevices(Array.Empty<BaseDevice>());
+            MyDevice.Initialize();
         }
 
+        private static string GetLocalIPAddress() {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList) {
+                if (ip.AddressFamily == AddressFamily.InterNetwork) {
+                    return ip.ToString();
+                }
+            }
+            return "localhost";
+        }
     }
 }

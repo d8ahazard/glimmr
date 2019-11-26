@@ -129,10 +129,10 @@ function fetchJson() {
                 hueGroup = value;
             } else if (id === "entertainmentGroups") {
                 hueGroups = value;
-            } else if (id === "dreamState") {
+            } else if (id === "myDevice") {
                 $('#dsName').html(value.name);
                 $('#dsGroupName').html(value.groupName);
-                $('#dsType').html(value.type);
+                $('#dsType').html(value.tag);
                 var modestr = (value.mode === 0) ? "Off" : ((value.mode === 1) ? "Video" : ((value.mode === 2) ? "Music" : ((value.mode === 3) ? "Ambient" : "WTF")));
                 $('#dsMode').html(modestr);
             } else {
@@ -256,7 +256,7 @@ function listDreamDevices() {
             var dev = $(this)[0];
             var name = dev.name;
             var ip = dev.ipAddress;
-            var type = dev.type;
+            var type = dev.tag;
             if (name !== undefined && ip !== undefined && type.includes("DreamScreen")) {
                 var selected = (ip === dsIp) ? "selected" : "";
                 devList.append(`<option value='${ip}'${selected}>${name}: ${ip}</option>`);

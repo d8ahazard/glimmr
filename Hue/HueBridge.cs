@@ -26,9 +26,9 @@ namespace HueDream.Hue {
         public List<KeyValuePair<int, int>> bridgeLights { get; }
         private string[] colors;
 
-        private DataObj dreamData;
+        private readonly DataObj dreamData;
         private EntertainmentLayer entLayer;
-        private Group entGroup;
+        private readonly Group entGroup;
 
         public HueBridge(DataObj dd) {
             dreamData = dd;
@@ -50,7 +50,9 @@ namespace HueDream.Hue {
             Console.WriteLine("Connecting to bridge.");
             List<string> lights = new List<string>();
             foreach (KeyValuePair<int, int> kp in bridgeLights) {
-                if (kp.Value != -1) lights.Add(kp.Key.ToString());
+                if (kp.Value != -1) {
+                    lights.Add(kp.Key.ToString());
+                }
             }
             Console.WriteLine("Lights: " + JsonConvert.SerializeObject(lights));
             StreamingGroup stream = await StreamingSetup.SetupAndReturnGroup(dreamData, lights, ct);
@@ -67,7 +69,7 @@ namespace HueDream.Hue {
             if (entLayer != null) {
                 Console.WriteLine("Connected! Beginning transmission...");
                 while (!ct.IsCancellationRequested) {
-                    double dBright = dreamData.DreamState.brightness;
+                    double dBright = dreamData.MyDevice.Brightness;
                     foreach (KeyValuePair<int, int> lights in bridgeLights) {
                         if (lights.Value != -1) {
                             int mapId = lights.Value;
@@ -95,7 +97,7 @@ namespace HueDream.Hue {
             StreamingHueClient client = new StreamingHueClient(bridgeIp, bridgeUser, bridgeKey);
             //Get the entertainment group
             Console.WriteLine("LG");
-            var all = await client.LocalHueClient.GetEntertainmentGroups();
+            IReadOnlyList<Group> all = await client.LocalHueClient.GetEntertainmentGroups();
             Console.WriteLine("Done");
             List<Group> output = new List<Group>();
             output.AddRange(all);
@@ -123,7 +125,7 @@ namespace HueDream.Hue {
 
         private async Task<string> ConfigureStreamingGroup(StreamingHueClient client) {
             string groupId = null;
-            var lightList = new List<string>();
+            List<string> lightList = new List<string>();
 
             foreach (KeyValuePair<int, int> kvp in bridgeLights) {
                 if (kvp.Value != -1) {
@@ -132,7 +134,7 @@ namespace HueDream.Hue {
             }
 
             // Fetch our entertainment groups
-            var all = await client.LocalHueClient.GetEntertainmentGroups().ConfigureAwait(false);
+            IReadOnlyList<Group> all = await client.LocalHueClient.GetEntertainmentGroups().ConfigureAwait(false);
             foreach (Group eg in all) {
                 if (ListContains(lightList, eg.Lights)) {
                     Console.WriteLine("We've found a group with all of our lights in it.");
@@ -169,8 +171,8 @@ namespace HueDream.Hue {
             string bridgeIp = "";
             Console.WriteLine("Looking for bridges");
             IBridgeLocator locator = new HttpBridgeLocator();
-            var task = Task.Run(async () => await locator.LocateBridgesAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false));
-            var bridgeIPs = task.Result;
+            Task<IEnumerable<LocatedBridge>> task = Task.Run(async () => await locator.LocateBridgesAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false));
+            IEnumerable<LocatedBridge> bridgeIPs = task.Result;
             foreach (LocatedBridge bIp in bridgeIPs) {
                 Console.WriteLine("Bridge IP is " + bIp.IpAddress);
                 return bIp.IpAddress;
@@ -184,8 +186,8 @@ namespace HueDream.Hue {
             if (bridgeIp != "0.0.0.0" && bridgeAuth) {
                 ILocalHueClient client = new LocalHueClient(bridgeIp);
                 client.Initialize(bridgeUser);
-                var task = Task.Run(async () => await client.GetLightsAsync().ConfigureAwait(false));
-                var lightArray = task.Result;
+                Task<IEnumerable<Light>> task = Task.Run(async () => await client.GetLightsAsync().ConfigureAwait(false));
+                IEnumerable<Light> lightArray = task.Result;
                 foreach (Light light in lightArray) {
                     lights.Add(new KeyValuePair<int, string>(int.Parse(light.Id), light.Name));
                 }

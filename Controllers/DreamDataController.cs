@@ -1,4 +1,5 @@
 ﻿using HueDream.DreamScreen;
+using HueDream.DreamScreen.Devices;
 using HueDream.Hue;
 using HueDream.HueDream;
 using Microsoft.AspNetCore.Mvc;
@@ -17,21 +18,21 @@ namespace HueDream.Controllers {
         // GET: api/HueData/action?action=...
         [HttpGet("action")]
         public JsonResult Get(string action) {
-            DataObj userData = DreamData.LoadJson();
+            DataObj userData = DreamData.dataObj;
             string message = "Unrecognized action";
             if (action == "getStatus") {
-                DreamScreen.DreamScreen ds = new DreamScreen.DreamScreen(null, userData);
+                DreamScreen.DreamClient ds = new DreamScreen.DreamClient(null, userData);
                 ds.getMode();
             }
 
             if (action == "connectDreamScreen") {
                 string dsIp = userData.DsIp;
-                DreamScreen.DreamScreen ds = new DreamScreen.DreamScreen(null, userData);
+                DreamScreen.DreamClient ds = new DreamScreen.DreamClient(null, userData);
                 if (dsIp == "0.0.0.0") {
                     ds.findDevices();
                 } else {
                     Console.WriteLine("Searching for devices for the fun of it.");
-                    List<DreamState> dev = ds.findDevices().Result;
+                    List<BaseDevice> dev = ds.findDevices().Result;
                     Console.WriteLine("Devices? " + JsonConvert.SerializeObject(dev));
                     return new JsonResult(dev);
                 }
@@ -73,10 +74,10 @@ namespace HueDream.Controllers {
         [HttpGet("json")]
         public IActionResult Get() {
             Console.WriteLine("JSON GOT.");
-            DataObj doo = DreamData.LoadJson();
+            DataObj doo = DreamData.dataObj;
             if (doo.HueAuth) {
                 try {
-                    HueBridge hb = new HueBridge(doo);                
+                    HueBridge hb = new HueBridge(doo);
                     doo.HueLights = hb.getLights();
                     doo.EntertainmentGroups = hb.ListGroups().Result;
                     DreamData.SaveJson(doo);
@@ -89,7 +90,7 @@ namespace HueDream.Controllers {
 
         [HttpGet("lights")]
         public IActionResult GetWhatever() {
-            return Ok(DreamData.LoadJson());
+            return Ok(DreamData.dataObj);
         }
 
 
@@ -113,9 +114,13 @@ namespace HueDream.Controllers {
                     int lightId = int.Parse(key.Replace("lightMap", ""));
                     lightMap.Add(new KeyValuePair<int, int>(lightId, int.Parse(Request.Form[key])));
                 } else if (key == "dsType") {
-                    userData.DreamState.type = Request.Form[key];
+                    if (Request.Form[key] == "Connect") {
+                        userData.MyDevice = new Connect("localhost");
+                    } else {
+                        userData.MyDevice = new SideKick("localhost");
+                    }
                 } else if (key == "dsGroup") {
-                    var groups = userData.EntertainmentGroups;
+                    Group[] groups = userData.EntertainmentGroups;
                     foreach (Group g in groups) {
                         if (g.Id == Request.Form[key]) {
                             Console.WriteLine("Group match: " + JsonConvert.SerializeObject(g));
@@ -124,7 +129,10 @@ namespace HueDream.Controllers {
                     }
                 }
             }
-            if (mapLights) userData.HueMap = lightMap;
+            if (mapLights) {
+                userData.HueMap = lightMap;
+            }
+
             DreamData.SaveJson(userData);
         }
     }

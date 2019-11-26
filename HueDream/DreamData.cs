@@ -1,4 +1,5 @@
-﻿using HueDream.Hue;
+﻿using HueDream.DreamScreen.Devices;
+using HueDream.Hue;
 using IniParser;
 using IniParser.Model;
 using Newtonsoft.Json;
@@ -10,6 +11,7 @@ using System.IO;
 namespace HueDream.HueDream {
     [Serializable]
     public static class DreamData {
+        public static DataObj dataObj { get; set; }
 
         public static void CheckConfig() {
             string jsonPath = GetConfigPath("huedream.json");
@@ -18,30 +20,26 @@ namespace HueDream.HueDream {
             if (!File.Exists(jsonPath) && File.Exists(iniPath)) {
                 ConvertConfig(iniPath);
             }
-            if (File.Exists(jsonPath)) Console.WriteLine("JSON Path exists.");
-            if (File.Exists(iniPath)) Console.WriteLine("INI Path exists.");
+            if (File.Exists(jsonPath)) {
+                Console.WriteLine("JSON Path exists.");
+            }
+
+            if (File.Exists(iniPath)) {
+                Console.WriteLine("INI Path exists.");
+            }
         }
 
         private static void ConvertConfig(string iniPath) {
             Console.WriteLine("Converting config from ini to json.");
             DataObj dObj = new DataObj();
-            var parser = new FileIniDataParser();
+            FileIniDataParser parser = new FileIniDataParser();
             IniData data = parser.ReadFile(iniPath);
             dObj.DsIp = data["MAIN"]["DS_IP"];
-            dObj.DreamState.type = "SideKick";
             dObj.HueIp = data["MAIN"]["HUE_IP"];
             dObj.HueAuth = data["MAIN"]["HUE_AUTH"] == "True";
             dObj.HueKey = data["MAIN"]["HUE_KEY"];
             dObj.HueUser = data["MAIN"]["HUE_USER"];
-            dObj.DreamState.groupName = data["MAIN"]["DS_GROUP_NAME"] ?? "undefined";
-            dObj.DreamState.groupNumber = int.Parse(data["MAIN"]["DS_GROUP_ID"] ?? "100");
-            dObj.DreamState.name = data["MAIN"]["DS_DEVICE_NAME"] ?? "HueDream";
-            dObj.DreamState.brightness = int.Parse(data["MAIN"]["DS_BRIGHTNESS"] ?? "100");
-            dObj.DreamState.saturation = data["MAIN"]["DS_SATURATION"] ?? "FFFFFF";
-            dObj.DreamState.color = data["MAIN"]["DS_AMBIENT_COLOR"] ?? "FFFFFF";
-            dObj.DreamState.ambientMode = int.Parse(data["MAIN"]["DS_AMBIENT_MODE_TYPE"] ?? "0");
-            dObj.DreamState.mode = int.Parse(data["MAIN"]["DS_MODE"] ?? "0");
-            dObj.DreamState.scene = int.Parse(data["MAIN"]["DS_AMBIENT_SCENE"] ?? "0");
+            dObj.MyDevice = new SideKick("localhost");
             dObj.HueLights = JsonConvert.DeserializeObject<List<KeyValuePair<int, string>>>(data["MAIN"]["HUE_LIGHTS"]);
             dObj.HueMap = FixPair(JsonConvert.DeserializeObject<List<KeyValuePair<int, string>>>(data["MAIN"]["HUE_MAP"]));
             SaveJson(dObj);
@@ -60,6 +58,7 @@ namespace HueDream.HueDream {
         /// </summary>
         /// <param name="dObj">A data object</param>
         public static void SaveJson(DataObj dObj) {
+            dataObj = dObj;
             string jsonPath = GetConfigPath("huedream.json");
             JsonSerializer serializer = new JsonSerializer();
             try {
@@ -88,10 +87,16 @@ namespace HueDream.HueDream {
                 } catch (IOException e) {
                     Console.WriteLine("An IO Exception occurred: " + e.ToString());
                 }
+                if (output.MyDevice == null) {
+                    output.MyDevice = new SideKick("localhost");
+                    SaveJson(output);
+                }
+
             } else {
                 output = new DataObj();
                 SaveJson(output);
             }
+            dataObj = output;
             return output;
         }
 
