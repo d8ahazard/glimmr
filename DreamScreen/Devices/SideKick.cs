@@ -19,21 +19,21 @@
             ProductId = 3;
             Name = tag;
             Tag = tag;
+            GroupName = "unassigned";
         }
 
         public override void ParsePayload(byte[] payload) {
-            Console.WriteLine("parsePayload");
             try {
                 string name = ByteUtils.ExtractString(payload, 0, 16);
                 if (name.Length == 0) {
                     name = tag;
                 }
-                this.Name = name;
+                Name = name;
                 string groupName = ByteUtils.ExtractString(payload, 16, 32);
                 if (groupName.Length == 0) {
                     groupName = "unassigned";
                 }
-                this.GroupName = groupName;
+                GroupName = groupName;
             } catch (Exception) {
             }
             GroupNumber = payload[32];
@@ -67,7 +67,7 @@
             response.Add(ByteUtils.IntByte(AmbientModeType));
             response.Add(ByteUtils.IntByte(AmbientShowType));
             // Type
-            response.Add(0x03);            
+            response.Add(0x03);
             return response.ToArray();
         }
     }

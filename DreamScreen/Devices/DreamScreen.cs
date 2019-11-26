@@ -1,7 +1,6 @@
 ﻿using HueDream.Util;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace HueDream.DreamScreen.Devices {
     public class DreamScreen : BaseDevice {
@@ -86,7 +85,6 @@ namespace HueDream.DreamScreen.Devices {
 
 
         public override void ParsePayload(byte[] payload) {
-            Console.WriteLine("parsePayload: " + payload.Length);
             try {
                 string name1 = ByteUtils.ExtractString(payload, 0, 16);
                 if (name1.Length == 0) {
@@ -100,31 +98,26 @@ namespace HueDream.DreamScreen.Devices {
                 GroupName = groupName1;
             } catch (Exception) {
             }
-            Console.WriteLine("Name");
             GroupNumber = payload[32];
             Mode = payload[33];
             Brightness = payload[34];
             Zones = payload[35];
-            Console.WriteLine("ZB");
             ZonesBrightness = ByteUtils.ExtractInt(payload, 36, 40);
             AmbientColor = ByteUtils.ExtractInt(payload, 40, 43);
             Saturation = ByteUtils.ExtractInt(payload, 43, 46);
             FlexSetup = ByteUtils.ExtractInt(payload, 46, 52);
-            Console.WriteLine("MMType");
             MusicModeType = payload[52];
             MusicModeColors = ByteUtils.ExtractInt(payload, 53, 56);
             MusicModeWeights = ByteUtils.ExtractInt(payload, 56, 59);
             MinimumLuminosity = ByteUtils.ExtractInt(payload, 59, 62);
             AmbientShowType = payload[62];
             FadeRate = payload[63];
-            Console.WriteLine("Frate");
             IndicatorLightAutoOff = payload[69];
             UsbPowerEnable = payload[70];
             SectorBroadcastControl = payload[71];
             SectorBroadcastTiming = payload[72];
             HdmiInput = payload[73];
             MusicModeSource = payload[74];
-            Console.WriteLine("MModesource");
             HdmiInputName1 = ByteUtils.ExtractString(payload, 75, 91);
             HdmiInputName2 = ByteUtils.ExtractString(payload, 91, 107);
             HdmiInputName3 = ByteUtils.ExtractString(payload, 107, 123);
@@ -152,7 +145,6 @@ namespace HueDream.DreamScreen.Devices {
             if (payload.Length >= 141) {
                 HdrToneRemapping = payload[139];
             }
-            Console.WriteLine("Parsed");
         }
 
         public override byte[] EncodeState() {
@@ -182,7 +174,6 @@ namespace HueDream.DreamScreen.Devices {
             response.Add(ByteUtils.IntByte(SectorBroadcastTiming));
             response.Add(ByteUtils.IntByte(HdmiInput));
             response.AddRange(new byte[2]);
-            Console.WriteLine("hdmiInterfaces");
             string[] iList = { HdmiInputName1, HdmiInputName2, HdmiInputName3 };
             foreach (string iName in iList) {
                 response.AddRange(ByteUtils.StringBytePad(iName, 16));
@@ -202,7 +193,6 @@ namespace HueDream.DreamScreen.Devices {
             response.Add(ByteUtils.IntByte(BootState));
             response.Add(ByteUtils.IntByte(PillarboxingEnable));
             response.Add(ByteUtils.IntByte(HdrToneRemapping));
-            Console.WriteLine("Type");
             // Device type
             if (Tag == "DreamScreen") {
                 response.Add(0x01);
@@ -212,7 +202,6 @@ namespace HueDream.DreamScreen.Devices {
                 response.Add(0x07);
             }
 
-            
             return response.ToArray();
 
         }

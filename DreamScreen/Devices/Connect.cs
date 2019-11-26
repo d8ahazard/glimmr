@@ -1,7 +1,6 @@
 ﻿using HueDream.Util;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace HueDream.DreamScreen.Devices {
     public class Connect : BaseDevice {
@@ -43,7 +42,8 @@ namespace HueDream.DreamScreen.Devices {
             isDemo = false;
             HueLifxSettingsReceived = false;
             ProductId = 4;
-            Name = "Connect";        
+            Name = "Connect";
+            GroupName = "unassigned";
         }
 
         public override void ParsePayload(byte[] payload) {
@@ -53,12 +53,12 @@ namespace HueDream.DreamScreen.Devices {
                 if (name.Length == 0) {
                     name = "Connect";
                 }
-                this.Name = name;
+                Name = name;
                 string groupName = ByteUtils.ExtractString(payload, 16, 32);
                 if (groupName.Length == 0) {
                     groupName = "Group";
                 }
-                this.GroupName = groupName;
+                GroupName = groupName;
             } catch (Exception) {
             }
             GroupNumber = payload[32];
@@ -107,9 +107,9 @@ namespace HueDream.DreamScreen.Devices {
             response.AddRange(ByteUtils.StringBytePad(ThingName, 63));
             // Type
             response.Add(0x04);
-            
+
             return response.ToArray();
-        }       
+        }
     }
 
 }

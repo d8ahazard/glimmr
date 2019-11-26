@@ -17,7 +17,7 @@ namespace HueDream.DreamScreen {
 
         public string ipAddress;
 
-        private static Dictionary<string, string> commands = new Dictionary<string, string> {
+        private static readonly Dictionary<string, string> commands = new Dictionary<string, string> {
                     { "FFFF", "INVALID" },
                     { "0103", "GET_SERIAL" },
                     { "0105", "RESET_ESP" },
@@ -86,7 +86,7 @@ namespace HueDream.DreamScreen {
 
         public BaseDevice device { get; set; }
 
-        
+
         public DreamScreenMessage(byte[] bytesIn, string from) {
             string byteString = BitConverter.ToString(bytesIn);
             string[] bytesString = byteString.Split("-");
@@ -104,10 +104,8 @@ namespace HueDream.DreamScreen {
                 Console.WriteLine("No matching key in dict for bytes: " + cmd);
             }
 
-            BaseDevice dreamDev = null; 
+            BaseDevice dreamDev = null;
             if (magic == "FC") {
-                string type = "";
-                
                 if (len > 5) {
                     payload = Payload(bytesIn);
                     string pString = BitConverter.ToString(payload);

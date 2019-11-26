@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Text;
 
 namespace HueDream.DreamScreen.Devices {
     [Serializable]
-    public abstract class BaseDevice: DreamDevice {
+    public abstract class BaseDevice : DreamDevice {
 
         public string Tag { get; set; }
         public int[] AmbientColor { get; set; }
@@ -11,7 +10,7 @@ namespace HueDream.DreamScreen.Devices {
         public int AmbientShowType { get; set; }
         public int Brightness { get; set; }
         public string BroadcastIP { get; set; }
-        private byte[] espSerialNumber = new byte[] { 0, 0 };
+        private readonly byte[] espSerialNumber = new byte[] { 0, 0 };
         public int FadeRate { get; set; }
         public string Name { get; set; }
         public string GroupName { get; set; }
@@ -21,7 +20,7 @@ namespace HueDream.DreamScreen.Devices {
         public int ProductId { get; set; }
         public int[] Saturation { get; set; }
 
-        
+
         public void Initialize() {
             GroupName = "unassigned";
             GroupNumber = 0;

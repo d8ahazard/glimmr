@@ -1,5 +1,4 @@
-﻿using HueDream.DreamScreen;
-using HueDream.DreamScreen.Devices;
+﻿using HueDream.DreamScreen.Devices;
 using HueDream.Hue;
 using Q42.HueApi.Models.Groups;
 using System;
@@ -13,6 +12,7 @@ namespace HueDream.HueDream {
     public class DataObj {
 
         public BaseDevice MyDevice { get; set; }
+        //public BaseDevice[] MyDevices { get; set; }
         public string DsIp { get; set; }
         public string HueIp { get; set; }
         public bool HueSync { get; set; }
@@ -23,7 +23,7 @@ namespace HueDream.HueDream {
         public List<KeyValuePair<int, int>> HueMap { get; set; }
         public Group[] EntertainmentGroups { get; set; }
         public Group EntertainmentGroup { get; set; }
-        
+
         private BaseDevice[] devices;
 
         public BaseDevice[] GetDevices() {
@@ -48,11 +48,12 @@ namespace HueDream.HueDream {
             EntertainmentGroup = null;
             SetDevices(Array.Empty<BaseDevice>());
             MyDevice.Initialize();
+            //MyDevices = Array.Empty<BaseDevice>();
         }
 
         private static string GetLocalIPAddress() {
-            var host = Dns.GetHostEntry(Dns.GetHostName());
-            foreach (var ip in host.AddressList) {
+            IPHostEntry host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (IPAddress ip in host.AddressList) {
                 if (ip.AddressFamily == AddressFamily.InterNetwork) {
                     return ip.ToString();
                 }

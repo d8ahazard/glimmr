@@ -10,11 +10,13 @@ namespace HueDream.HueDream {
         private readonly DreamScreen.DreamClient dreamScreen;
         private readonly DataObj dreamData;
         private CancellationTokenSource cts;
+        private static long lastStopTime;
 
         public static bool syncEnabled { get; set; }
         public DreamSync() {
             Console.WriteLine("Creating new sync.");
             dreamData = DreamData.LoadJson();
+            lastStopTime = 0;
             hueBridge = new HueBridge(dreamData);
             dreamScreen = new DreamScreen.DreamClient(this, dreamData);
             // Start our dreamscreen listening like a good boy
@@ -41,6 +43,7 @@ namespace HueDream.HueDream {
             Console.WriteLine("Dreamsync: Stopsync fired.");
             cts.Cancel();
             syncEnabled = false;
+            lastStopTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         }
 
         private void SyncData() {
@@ -50,7 +53,11 @@ namespace HueDream.HueDream {
         public void CheckSync(bool enabled) {
             if (dreamData.DsIp != "0.0.0.0" && enabled && !syncEnabled) {
                 Console.WriteLine("Beginning DS stream to Hue...");
-                Task.Run(() => startSync());
+                if (DateTimeOffset.Now.ToUnixTimeMilliseconds() - lastStopTime > 10000.0) {
+                    Task.Run(() => startSync());
+                } else {
+                    Console.WriteLine("Can't start, waiting for ent group to be open.");
+                }
             } else if (!enabled && syncEnabled) {
                 Console.WriteLine("Stopping sync.");
                 StopSync();

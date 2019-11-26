@@ -1,5 +1,4 @@
-﻿using HueDream.DreamScreen;
-using HueDream.DreamScreen.Devices;
+﻿using HueDream.DreamScreen.Devices;
 using HueDream.Hue;
 using HueDream.HueDream;
 using Microsoft.AspNetCore.Mvc;
@@ -34,6 +33,8 @@ namespace HueDream.Controllers {
                     Console.WriteLine("Searching for devices for the fun of it.");
                     List<BaseDevice> dev = ds.findDevices().Result;
                     Console.WriteLine("Devices? " + JsonConvert.SerializeObject(dev));
+                    //userData.MyDevices = dev.ToArray();
+                    DreamData.SaveJson(userData);
                     return new JsonResult(dev);
                 }
             } else if (action == "authorizeHue") {
@@ -113,11 +114,14 @@ namespace HueDream.Controllers {
                     mapLights = true;
                     int lightId = int.Parse(key.Replace("lightMap", ""));
                     lightMap.Add(new KeyValuePair<int, int>(lightId, int.Parse(Request.Form[key])));
-                } else if (key == "dsType") {
-                    if (Request.Form[key] == "Connect") {
-                        userData.MyDevice = new Connect("localhost");
-                    } else {
-                        userData.MyDevice = new SideKick("localhost");
+                } else if (key == "ds_type") {
+                    if (userData.MyDevice.Tag != Request.Form[key]) {
+                        if (Request.Form[key] == "Connect") {
+                            userData.MyDevice = new Connect("localhost");
+                        } else {
+                            userData.MyDevice = new SideKick("localhost");
+                        }
+                        userData.MyDevice.Initialize();
                     }
                 } else if (key == "dsGroup") {
                     Group[] groups = userData.EntertainmentGroups;
@@ -130,6 +134,7 @@ namespace HueDream.Controllers {
                 }
             }
             if (mapLights) {
+                Console.WriteLine("Updating light map");
                 userData.HueMap = lightMap;
             }
 

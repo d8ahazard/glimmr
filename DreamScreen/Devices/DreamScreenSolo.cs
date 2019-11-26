@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace HueDream.DreamScreen.Devices {
+﻿namespace HueDream.DreamScreen.Devices {
 
     public class DreamScreenSolo : DreamScreen {
         private static readonly byte[] requiredSoloEspFirmwareVersion = new byte[] { 1, 6 };

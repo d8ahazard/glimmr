@@ -181,7 +181,7 @@ namespace HueDream.DreamScreen {
                 DreamScreenMessage msg = new DreamScreenMessage(receivedBytes, from);
                 payload = msg.payload;
                 payloadString = msg.payloadString;
-                command = msg.command;                
+                command = msg.command;
                 dss = msg.device;
                 string[] ignore = { "SUBSCRIBE", "READ_CONNECT_VERSION?", "COLOR_DATA" };
                 if (!ignore.Contains(command)) {
@@ -271,7 +271,7 @@ namespace HueDream.DreamScreen {
                     for (int i = 0; i < colors.Length; i++) {
                         colors[i] = payloadString.Join(string.Empty);
                     }
-                    
+
                     break;
             }
 
@@ -286,7 +286,7 @@ namespace HueDream.DreamScreen {
 
         public void SendDeviceStatus(IPEndPoint src) {
             byte[] payload = dss.EncodeState();
-            string pString = BitConverter.ToString(payload).Replace("-",string.Empty);
+            string pString = BitConverter.ToString(payload).Replace("-", string.Empty);
             Console.WriteLine("PAYLOAD: " + pString);
             groupNumber = ByteUtils.IntByte(dd.MyDevice.GroupNumber);
             sendUDPWrite(0x01, 0x0A, payload, 0x60, src);
