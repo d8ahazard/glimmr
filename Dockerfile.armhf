@@ -2,7 +2,7 @@ FROM mcr.microsoft.com/dotnet/core/aspnet:3.0-buster-slim-arm32v7 AS base
 ENV ASPNETCORE_URLS=http://+:5666
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/core/sdk:3.0-buster AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:3.0-buster-arm32v7 AS build
 WORKDIR /src
 COPY ["HueDream.csproj", ""]
 RUN dotnet restore "./HueDream.csproj"
