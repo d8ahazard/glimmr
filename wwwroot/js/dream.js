@@ -184,8 +184,8 @@ function mapLights(group, map, lights) {
             var selection = -1;
             // Check to see if it is mapped
             for (var m in map) {
-                if (map[m]['Key'] === id) {
-                    selection = map[m]['Value'];
+                if (map[m].lightId === id) {
+                    selection = map[m].sectorId;
                 }
             }
 

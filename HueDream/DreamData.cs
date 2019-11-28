@@ -1,105 +1,75 @@
 ﻿using HueDream.DreamScreen.Devices;
 using HueDream.Hue;
-using IniParser;
-using IniParser.Model;
+using JsonFlatFileDataStore;
 using Newtonsoft.Json;
 using Q42.HueApi.Models.Groups;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
+using System.Net.Sockets;
+using System.Reflection;
 
 namespace HueDream.HueDream {
     [Serializable]
     public static class DreamData {
-        public static DataObj dataObj { get; set; }
-
-        public static void CheckConfig() {
-            string jsonPath = GetConfigPath("huedream.json");
-            string iniPath = GetConfigPath("huedream.ini");
-            Console.WriteLine("Json path is " + jsonPath + ", ini path is " + iniPath);
-            if (!File.Exists(jsonPath) && File.Exists(iniPath)) {
-                ConvertConfig(iniPath);
-            }
-            if (File.Exists(jsonPath)) {
-                Console.WriteLine("JSON Path exists.");
+        public static DataStore getStore() {
+            string path = GetConfigPath("store.json");
+            bool createDefaults = false;            
+            if (!File.Exists(path)) {
+                createDefaults = true;
             }
 
-            if (File.Exists(iniPath)) {
-                Console.WriteLine("INI Path exists.");
+            DataStore store = new DataStore(path);
+            if (createDefaults) {
+                store.InsertItemAsync("dsIp", "0.0.0.0");
+                BaseDevice myDevice = new SideKick(GetLocalIPAddress());
+                myDevice.Initialize();
+                store.InsertItemAsync("myDevice", myDevice);
+                store.InsertItemAsync("emuType", "SideKick");
+                store.InsertItemAsync("hueIp", HueBridge.findBridge());
+                store.InsertItemAsync("hueSync", false);
+                store.InsertItemAsync("hueAuth", false);
+                store.InsertItemAsync("hueKey", "");
+                store.InsertItemAsync("hueUser", "");
+                store.InsertItemAsync("hueLights", new List<KeyValuePair<int, string>>());
+                store.InsertItemAsync("hueMap", new List<LightMap>());
+                store.InsertItemAsync("entertainmentGroups", new List<Group>());
+                store.InsertItemAsync("entertainmentGroup", "");
+                store.InsertItemAsync("devices", Array.Empty<BaseDevice>());
+            }
+            return store;
+        }
+
+        public static dynamic GetItem(string key) {
+            using(var dStore = new DataStore(GetConfigPath("store.json"))) {
+                dynamic output = dStore.GetItem(key);
+                return output;
             }
         }
 
-        private static void ConvertConfig(string iniPath) {
-            Console.WriteLine("Converting config from ini to json.");
-            DataObj dObj = new DataObj();
-            FileIniDataParser parser = new FileIniDataParser();
-            IniData data = parser.ReadFile(iniPath);
-            dObj.DsIp = data["MAIN"]["DS_IP"];
-            dObj.HueIp = data["MAIN"]["HUE_IP"];
-            dObj.HueAuth = data["MAIN"]["HUE_AUTH"] == "True";
-            dObj.HueKey = data["MAIN"]["HUE_KEY"];
-            dObj.HueUser = data["MAIN"]["HUE_USER"];
-            dObj.MyDevice = new SideKick("localhost");
-            dObj.HueLights = JsonConvert.DeserializeObject<List<KeyValuePair<int, string>>>(data["MAIN"]["HUE_LIGHTS"]);
-            dObj.HueMap = FixPair(JsonConvert.DeserializeObject<List<KeyValuePair<int, string>>>(data["MAIN"]["HUE_MAP"]));
-            SaveJson(dObj);
-        }
-
-        private static List<KeyValuePair<int, int>> FixPair(List<KeyValuePair<int, string>> kp) {
-            List<KeyValuePair<int, int>> output = new List<KeyValuePair<int, int>>();
-            foreach (KeyValuePair<int, string> kpp in kp) {
-                output.Add(new KeyValuePair<int, int>(kpp.Key, int.Parse(kpp.Value)));
-            }
-            return output;
-        }
-
-        /// <summary>
-        /// Save our data object 
-        /// </summary>
-        /// <param name="dObj">A data object</param>
-        public static void SaveJson(DataObj dObj) {
-            dataObj = dObj;
-            string jsonPath = GetConfigPath("huedream.json");
-            JsonSerializer serializer = new JsonSerializer();
-            try {
-                using (StreamWriter file = File.CreateText(jsonPath)) {
-                    serializer.Serialize(file, dObj);
-                }
-            } catch (IOException e) {
-                Console.WriteLine("An IO Exception occurred: " + e.ToString());
+        public static bool SetItem(string key, dynamic value) {
+            using (var dStore = new DataStore(GetConfigPath("store.json"))) {
+                dynamic output = dStore.ReplaceItem(key, value);
+                return output;
             }
         }
 
-
-        /// <summary>
-        /// Load Config Data from json file
-        /// </summary>
-        /// <returns>DataObject</returns>
-        public static DataObj LoadJson() {
-            DataObj output = null;
-            string jsonPath = GetConfigPath("huedream.json");
+        public static DataObj GetStoreSerialized() {
+            string jsonPath = GetConfigPath("store.json");
             if (File.Exists(jsonPath)) {
                 try {
                     using (StreamReader file = File.OpenText(jsonPath)) {
-                        JsonSerializer js = new JsonSerializer();
-                        output = (DataObj)js.Deserialize(file, typeof(DataObj));
+                        JsonSerializer jss = new JsonSerializer();
+                        return (DataObj)jss.Deserialize(file, typeof(DataObj));
                     }
                 } catch (IOException e) {
                     Console.WriteLine("An IO Exception occurred: " + e.ToString());
                 }
-                if (output.MyDevice == null) {
-                    output.MyDevice = new SideKick("localhost");
-                    SaveJson(output);
-                }
-
-            } else {
-                output = new DataObj();
-                SaveJson(output);
             }
-            dataObj = output;
-            return output;
+            return null;
         }
-
+        
         /// <summary>
         /// Determine if config path is local, or docker
         /// </summary>
@@ -120,11 +90,14 @@ namespace HueDream.HueDream {
             return filePath;
         }
 
-        private static Group[] ListGroups() {
-            HueBridge hb = new HueBridge(LoadJson());
-            Group[] groups = hb.ListGroups().Result;
-            return groups;
+        private static string GetLocalIPAddress() {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList) {
+                if (ip.AddressFamily == AddressFamily.InterNetwork) {
+                    return ip.ToString();
+                }
+            }
+            throw new Exception("No network adapters with an IPv4 address in the system!");
         }
     }
-
 }

@@ -6,3 +6,5 @@ obj/*
 huedream.ini
 *.sln
 huedream.json
+huedream.json.bk
+store.json

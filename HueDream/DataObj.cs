@@ -20,7 +20,7 @@ namespace HueDream.HueDream {
         public string HueKey { get; set; }
         public string HueUser { get; set; }
         public List<KeyValuePair<int, string>> HueLights { get; set; }
-        public List<KeyValuePair<int, int>> HueMap { get; set; }
+        public List<LightMap> HueMap { get; set; }
         public Group[] EntertainmentGroups { get; set; }
         public Group EntertainmentGroup { get; set; }
 
@@ -43,7 +43,7 @@ namespace HueDream.HueDream {
             HueKey = "";
             HueUser = "";
             HueLights = new List<KeyValuePair<int, string>>();
-            HueMap = new List<KeyValuePair<int, int>>();
+            HueMap = new List<LightMap>();
             EntertainmentGroups = null;
             EntertainmentGroup = null;
             SetDevices(Array.Empty<BaseDevice>());

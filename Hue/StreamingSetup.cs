@@ -1,4 +1,5 @@
 ﻿using HueDream.HueDream;
+using JsonFlatFileDataStore;
 using Newtonsoft.Json;
 using Q42.HueApi;
 using Q42.HueApi.Models.Groups;
@@ -12,18 +13,27 @@ using System.Threading.Tasks;
 namespace HueDream.Hue {
     public class StreamingSetup {
 
-        public static async Task<StreamingGroup> SetupAndReturnGroup(DataObj dd, List<string> lights, CancellationToken ct) {
-
+        public static async Task<StreamingGroup> SetupAndReturnGroup(List<string> lights, CancellationToken ct) {
+            Console.WriteLine("Loading data from store?");
+            DataStore store = DreamData.getStore();
+            string hueIp = store.GetItem("hueIp");
+            string hueUser = store.GetItem("hueUser");
+            string hueKey = store.GetItem("hueKey");
+            Console.WriteLine("Got hue keys.");
+            Group entGroup = store.GetItem<Group>("entertainmentGroup");
+            Console.WriteLine("Got group?");
+            store.Dispose();
+            Console.WriteLine("Disposed");
             Console.WriteLine("Creating client....");
             //Initialize streaming client
-            StreamingHueClient client = new StreamingHueClient(dd.HueIp, dd.HueUser, dd.HueKey);
+            StreamingHueClient client = new StreamingHueClient(hueIp, hueUser, hueKey);
             Console.WriteLine("Created client");
             //Get the entertainment group
 
 
             Group group = null;
-            if (dd.EntertainmentGroup != null) {
-                group = dd.EntertainmentGroup;
+            if (entGroup != null) {
+                group = entGroup;
             } else {
                 IReadOnlyList<Group> all = await client.LocalHueClient.GetEntertainmentGroups();
                 Console.WriteLine("Got Groups");

@@ -1,4 +1,5 @@
 ﻿using HueDream.Hue;
+using JsonFlatFileDataStore;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,17 +9,17 @@ namespace HueDream.HueDream {
 
         private readonly HueBridge hueBridge;
         private readonly DreamScreen.DreamClient dreamScreen;
-        private readonly DataObj dreamData;
         private CancellationTokenSource cts;
         private static long lastStopTime;
 
         public static bool syncEnabled { get; set; }
         public DreamSync() {
+            DataStore store = DreamData.getStore();
+            store.Dispose();
             Console.WriteLine("Creating new sync.");
-            dreamData = DreamData.LoadJson();
             lastStopTime = 0;
-            hueBridge = new HueBridge(dreamData);
-            dreamScreen = new DreamScreen.DreamClient(this, dreamData);
+            hueBridge = new HueBridge();
+            dreamScreen = new DreamScreen.DreamClient(this);
             // Start our dreamscreen listening like a good boy
             if (!DreamScreen.DreamClient.listening) {
                 Console.WriteLine("DS Listen start.");
@@ -51,7 +52,7 @@ namespace HueDream.HueDream {
         }
 
         public void CheckSync(bool enabled) {
-            if (dreamData.DsIp != "0.0.0.0" && enabled && !syncEnabled) {
+            if (DreamData.GetItem("dsIp") != "0.0.0.0" && enabled && !syncEnabled) {
                 Console.WriteLine("Beginning DS stream to Hue...");
                 if (DateTimeOffset.Now.ToUnixTimeMilliseconds() - lastStopTime > 10000.0) {
                     Task.Run(() => startSync());

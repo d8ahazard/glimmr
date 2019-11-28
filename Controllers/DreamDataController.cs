@@ -1,6 +1,7 @@
 ﻿using HueDream.DreamScreen.Devices;
 using HueDream.Hue;
 using HueDream.HueDream;
+using JsonFlatFileDataStore;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Q42.HueApi.Models.Bridge;
@@ -17,38 +18,32 @@ namespace HueDream.Controllers {
         // GET: api/HueData/action?action=...
         [HttpGet("action")]
         public JsonResult Get(string action) {
-            DataObj userData = DreamData.dataObj;
+            DataStore store = DreamData.getStore();
             string message = "Unrecognized action";
             if (action == "getStatus") {
-                DreamScreen.DreamClient ds = new DreamScreen.DreamClient(null, userData);
+                DreamScreen.DreamClient ds = new DreamScreen.DreamClient(null);
                 ds.getMode();
             }
 
             if (action == "connectDreamScreen") {
-                string dsIp = userData.DsIp;
-                DreamScreen.DreamClient ds = new DreamScreen.DreamClient(null, userData);
-                if (dsIp == "0.0.0.0") {
-                    ds.findDevices();
-                } else {
-                    Console.WriteLine("Searching for devices for the fun of it.");
-                    List<BaseDevice> dev = ds.findDevices().Result;
-                    Console.WriteLine("Devices? " + JsonConvert.SerializeObject(dev));
-                    //userData.MyDevices = dev.ToArray();
-                    DreamData.SaveJson(userData);
-                    return new JsonResult(dev);
-                }
+                string dsIp = store.GetItem("dsIp");
+                DreamScreen.DreamClient ds = new DreamScreen.DreamClient(null);
+                List<BaseDevice> dev = ds.findDevices().Result;
+                Console.WriteLine("devices? " + JsonConvert.SerializeObject(dev));
+                //store.ReplaceItemAsync("myDevices", dev.ToArray()); 
+                return new JsonResult(dev);
+                
             } else if (action == "authorizeHue") {
-                if (!userData.HueAuth) {
-                    HueBridge hb = new HueBridge(userData);
+                if (!store.GetItem("hueAuth")) {
+                    HueBridge hb = new HueBridge();
                     RegisterEntertainmentResult appKey = hb.checkAuth().Result;
                     Console.WriteLine("APPKEY: " + JsonConvert.SerializeObject(appKey));
                     if (appKey != null) {
                         Console.WriteLine("LINKED!");
                         message = "Success: Bridge Linked.";
-                        userData.HueKey = appKey.StreamingClientKey;
-                        userData.HueUser = appKey.Username;
-                        userData.HueAuth = true;
-                        DreamData.SaveJson(userData);
+                        store.ReplaceItemAsync("hueKey", appKey.StreamingClientKey);
+                        store.ReplaceItemAsync("hueUser", appKey.Username);
+                        store.ReplaceItemAsync("hueAuth", true);
                     } else {
                         Console.WriteLine("NOT LINKED");
                         message = "Error: Press the link button";
@@ -61,13 +56,13 @@ namespace HueDream.Controllers {
             } else if (action == "findHue") {
                 string bridgeIp = HueBridge.findBridge();
                 if (string.IsNullOrEmpty(bridgeIp)) {
-                    userData.HueIp = bridgeIp;
-                    DreamData.SaveJson(userData);
+                    store.ReplaceItemAsync("hueIp", bridgeIp);
                     message = "Success: Bridge IP is " + bridgeIp;
                 } else {
                     message = "Error: No bridge found.";
                 }
             }
+            store.Dispose();
             return new JsonResult(message);
         }
 
@@ -75,23 +70,23 @@ namespace HueDream.Controllers {
         [HttpGet("json")]
         public IActionResult Get() {
             Console.WriteLine("JSON GOT.");
-            DataObj doo = DreamData.dataObj;
-            if (doo.HueAuth) {
+            DataStore store = DreamData.getStore();
+            if (store.GetItem("hueAuth")) {
                 try {
-                    HueBridge hb = new HueBridge(doo);
-                    doo.HueLights = hb.getLights();
-                    doo.EntertainmentGroups = hb.ListGroups().Result;
-                    DreamData.SaveJson(doo);
+                    HueBridge hb = new HueBridge();
+                    store.ReplaceItem("hueLights", hb.getLights());
+                    store.ReplaceItem("entertainmentGroups", hb.ListGroups().Result);
                 } catch (AggregateException e) {
                     Console.WriteLine("An exception occurred fetching hue data: " + e);
                 }
             }
-            return Ok(doo);
+            store.Dispose();
+            return Ok(DreamData.GetStoreSerialized());
         }
 
         [HttpGet("lights")]
         public IActionResult GetWhatever() {
-            return Ok(DreamData.dataObj);
+            return Ok(DreamData.getStore());
         }
 
 
@@ -104,41 +99,48 @@ namespace HueDream.Controllers {
         // POST: api/HueData
         [HttpPost]
         public void Post() {
-            DataObj userData = DreamData.LoadJson();
-            string[] keys = Request.Form.Keys.ToArray<string>();
+            DataStore store = DreamData.getStore();
+            string devType = store.GetItem("emuType");
+            BaseDevice myDevice;
+            if (devType == "SideKick") {
+                myDevice = store.GetItem<SideKick>("myDevice");
+            } else {
+                myDevice = store.GetItem<Connect>("myDevice");
+            }
+            string[] keys = Request.Form.Keys.ToArray();
             Console.WriteLine("We have a post: " + JsonConvert.SerializeObject(keys));
             bool mapLights = false;
-            List<KeyValuePair<int, int>> lightMap = new List<KeyValuePair<int, int>>();
+            List<LightMap> lightMap = new List<LightMap>();
             foreach (string key in keys) {
                 if (key.Contains("lightMap")) {
                     mapLights = true;
                     int lightId = int.Parse(key.Replace("lightMap", ""));
-                    lightMap.Add(new KeyValuePair<int, int>(lightId, int.Parse(Request.Form[key])));
+                    int sectorId = int.Parse(Request.Form[key]);
+                    lightMap.Add(new LightMap(lightId, sectorId));
                 } else if (key == "ds_type") {
-                    if (userData.MyDevice.Tag != Request.Form[key]) {
+                    if (myDevice.Tag != Request.Form[key]) {
                         if (Request.Form[key] == "Connect") {
-                            userData.MyDevice = new Connect("localhost");
+                            myDevice = new Connect("localhost");
                         } else {
-                            userData.MyDevice = new SideKick("localhost");
+                            myDevice = new SideKick("localhost");
                         }
-                        userData.MyDevice.Initialize();
+                        myDevice.Initialize();
                     }
                 } else if (key == "dsGroup") {
-                    Group[] groups = userData.EntertainmentGroups;
+                    Group[] groups = store.GetItem<Group[]>("entertainmentGroups");
                     foreach (Group g in groups) {
                         if (g.Id == Request.Form[key]) {
                             Console.WriteLine("Group match: " + JsonConvert.SerializeObject(g));
-                            userData.EntertainmentGroup = g;
+                            store.ReplaceItemAsync("entertainmentGroup", g);
                         }
                     }
                 }
             }
             if (mapLights) {
                 Console.WriteLine("Updating light map");
-                userData.HueMap = lightMap;
+                store.ReplaceItemAsync("hueMap", lightMap);
             }
-
-            DreamData.SaveJson(userData);
+            store.Dispose();
         }
     }
 }
