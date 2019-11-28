@@ -185,3 +185,30 @@ select {
     position: relative;
     z-index: 0;
 }
+
+.modeBtn {
+    border: 1px gray solid;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+
+.modeBtn.active {
+    background-color: gray;
+}
+
+.modeBtn:hover {
+    background-color: darkgray;
+}
+
+
+#modeRow {
+    height: 50px;
+}
+
+.modeIcon {
+    width: 50px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}

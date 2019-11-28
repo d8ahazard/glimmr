@@ -33,7 +33,7 @@ namespace HueDream.HueDream {
         public void startSync() {
             cts = new CancellationTokenSource();
             Console.WriteLine("Starting sync.");
-            dreamScreen.subscribe();
+            dreamScreen.Subscribe();
             Task.Run(async () => SyncData());
             Task.Run(async () => hueBridge.StartStream(cts.Token));
             Console.WriteLine("Sync should be running.");

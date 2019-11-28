@@ -9,27 +9,38 @@ using Q42.HueApi.Models.Groups;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 
 namespace HueDream.Controllers {
     [Route("api/[controller]")]
     [ApiController]
     public class DreamDataController : ControllerBase {
 
-        // GET: api/HueData/action?action=...
+        // GET: api/DreamData/mode
+        [HttpGet("mode")]
+        public int GetMode() {
+            BaseDevice dev = DreamData.GetDeviceData();
+            return dev.Mode;
+        }
+
+        [HttpPost]
+
+        [Route("mode")]
+        public IActionResult mode([FromBody] int mode) {
+            DreamSender.SendUDPWrite(0x03, 0x01, new byte[] { (byte) mode }, 0x21, 0, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8888));
+            return Ok(mode);
+        }
+
         [HttpGet("action")]
         public JsonResult Get(string action) {
             DataStore store = DreamData.getStore();
             string message = "Unrecognized action";
-            if (action == "getStatus") {
-                DreamScreen.DreamClient ds = new DreamScreen.DreamClient(null);
-                ds.getMode();
-            }
-
+            
             if (action == "connectDreamScreen") {
                 string dsIp = store.GetItem("dsIp");
                 DreamScreen.DreamClient ds = new DreamScreen.DreamClient(null);
-                List<BaseDevice> dev = ds.findDevices().Result;
-                Console.WriteLine("devices? " + JsonConvert.SerializeObject(dev));
+                List<BaseDevice> dev = ds.FindDevices().Result;
+                Console.WriteLine("Listing devices: " + JsonConvert.SerializeObject(dev));
                 //store.ReplaceItemAsync("myDevices", dev.ToArray()); 
                 return new JsonResult(dev);
 

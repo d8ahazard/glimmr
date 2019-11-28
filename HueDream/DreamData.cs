@@ -69,6 +69,18 @@ namespace HueDream.HueDream {
             return null;
         }
 
+        public static BaseDevice GetDeviceData() {
+            using DataStore dd = getStore();
+            BaseDevice dev;
+            string devType = dd.GetItem("emuType");
+            if (devType == "SideKick") {
+                dev = dd.GetItem<SideKick>("myDevice");
+            } else {
+                dev = dd.GetItem<Connect>("myDevice");
+            }
+            return dev;
+        }
+
         /// <summary>
         /// Determine if config path is local, or docker
         /// </summary>

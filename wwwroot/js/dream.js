@@ -44,6 +44,22 @@ $(function () {
         });
     });
 
+    $('.modeBtn').click(function () {
+        $(".modeBtn").removeClass("active");
+        $(this).addClass('active');
+        var mode = $(this).data('mode');
+        $.ajax({
+            type: "POST",
+            contentType: "application/json",
+            url: "./api/DreamData/mode/",
+            dataType: "json",
+            data: JSON.stringify(mode),
+            success: function (response) {
+                console.log("Mode is " + response);
+            }
+        });
+    });
+
     $('.dsGroup').change(function () {
         var id = $(this).val();
         var newGroup = findGroup(id);
@@ -133,7 +149,23 @@ function fetchJson() {
                 $('#dsName').html(value.name);
                 $('#dsGroupName').html(value.groupName);
                 $('#dsType').html(value.tag);
-                var modestr = (value.mode === 0) ? "Off" : ((value.mode === 1) ? "Video" : ((value.mode === 2) ? "Music" : ((value.mode === 3) ? "Ambient" : "WTF")));
+                var modestr = "";
+                $('.modeBtn').removeClass('active');
+                switch (value.mode) {
+                    case 0:
+                        modestr = "Off";
+                        break;
+                    case 1:
+                        modestr = "Video";
+                        break;
+                    case 2:
+                        modestr = "Audio";
+                        break;
+                    case 3:
+                        modestr = "Ambient";
+                        break;
+                }
+                $('#mode' + value.mode).addClass('active');
                 $('#dsMode').html(modestr);
             } else if (id === "myDevices") {
                 if (value !== null) buildDevList(value);
