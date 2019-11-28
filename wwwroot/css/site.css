@@ -212,3 +212,11 @@ select {
     background-repeat: no-repeat;
     background-position: center;
 }
+
+#headerLogo {
+    height: 50px;
+}
+
+.bmd-label-static {
+    padding-left: 15px;
+}
