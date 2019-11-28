@@ -75,7 +75,7 @@ namespace HueDream.DreamScreen {
         private IPEndPoint receiverPort;
         private UdpClient receiver;
         private readonly Socket sender;
-        private string sourceIp;
+        private readonly string sourceIp;
 
 
         public DreamClient(DreamSync ds) {
@@ -194,7 +194,7 @@ namespace HueDream.DreamScreen {
                 Console.WriteLine("CRC Check Failed!");
                 return;
             }
-            
+
             string command = null;
             string flag = null;
             string from = receivedIpEndPoint.Address.ToString();
@@ -268,27 +268,48 @@ namespace HueDream.DreamScreen {
                     break;
                 case "GROUP_NAME":
                     string gName = System.Text.Encoding.ASCII.GetString(payload);
-                    if (writeState) dss.GroupName = gName;
+                    if (writeState) {
+                        dss.GroupName = gName;
+                    }
+
                     break;
                 case "GROUP_NUMBER":
                     int gNum = payload[0];
-                    if (writeState) dss.GroupNumber = gNum;
+                    if (writeState) {
+                        dss.GroupNumber = gNum;
+                    }
+
                     break;
                 case "NAME":
                     string dName = System.Text.Encoding.ASCII.GetString(payload);
-                    if (writeState) dss.Name = dName;
+                    if (writeState) {
+                        dss.Name = dName;
+                    }
+
                     break;
                 case "BRIGHTNESS":
-                    if (writeState) dss.Brightness = payload[0];
+                    if (writeState) {
+                        dss.Brightness = payload[0];
+                    }
+
                     break;
                 case "SATURATION":
-                    if (writeState) dss.Saturation = Array.ConvertAll(payload, c => (int)c);
+                    if (writeState) {
+                        dss.Saturation = Array.ConvertAll(payload, c => (int)c);
+                    }
+
                     break;
                 case "MODE":
-                    if (writeState) updateMode(payload[0]);
+                    if (writeState) {
+                        updateMode(payload[0]);
+                    }
+
                     break;
                 case "AMBIENT_MODE_TYPE":
-                    if (writeState) dss.AmbientModeType = payload[0];
+                    if (writeState) {
+                        dss.AmbientModeType = payload[0];
+                    }
+
                     break;
                 case "AMBIENT_COLOR":
                     if (writeState) {
@@ -301,7 +322,9 @@ namespace HueDream.DreamScreen {
                     break;
             }
 
-            if (writeState) SaveDeviceState(dss);
+            if (writeState) {
+                SaveDeviceState(dss);
+            }
             // Restart listening for udp data packages
             if (listening) {
                 c.BeginReceive(DataReceived, ar.AsyncState);

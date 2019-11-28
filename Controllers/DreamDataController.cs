@@ -32,7 +32,7 @@ namespace HueDream.Controllers {
                 Console.WriteLine("devices? " + JsonConvert.SerializeObject(dev));
                 //store.ReplaceItemAsync("myDevices", dev.ToArray()); 
                 return new JsonResult(dev);
-                
+
             } else if (action == "authorizeHue") {
                 if (!store.GetItem("hueAuth")) {
                     HueBridge hb = new HueBridge();

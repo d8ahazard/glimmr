@@ -8,14 +8,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Reflection;
 
 namespace HueDream.HueDream {
     [Serializable]
     public static class DreamData {
         public static DataStore getStore() {
             string path = GetConfigPath("store.json");
-            bool createDefaults = false;            
+            bool createDefaults = false;
             if (!File.Exists(path)) {
                 createDefaults = true;
             }
@@ -42,14 +41,14 @@ namespace HueDream.HueDream {
         }
 
         public static dynamic GetItem(string key) {
-            using(var dStore = new DataStore(GetConfigPath("store.json"))) {
+            using (DataStore dStore = new DataStore(GetConfigPath("store.json"))) {
                 dynamic output = dStore.GetItem(key);
                 return output;
             }
         }
 
         public static bool SetItem(string key, dynamic value) {
-            using (var dStore = new DataStore(GetConfigPath("store.json"))) {
+            using (DataStore dStore = new DataStore(GetConfigPath("store.json"))) {
                 dynamic output = dStore.ReplaceItem(key, value);
                 return output;
             }
@@ -69,7 +68,7 @@ namespace HueDream.HueDream {
             }
             return null;
         }
-        
+
         /// <summary>
         /// Determine if config path is local, or docker
         /// </summary>
@@ -91,8 +90,8 @@ namespace HueDream.HueDream {
         }
 
         private static string GetLocalIPAddress() {
-            var host = Dns.GetHostEntry(Dns.GetHostName());
-            foreach (var ip in host.AddressList) {
+            IPHostEntry host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (IPAddress ip in host.AddressList) {
                 if (ip.AddressFamily == AddressFamily.InterNetwork) {
                     return ip.ToString();
                 }

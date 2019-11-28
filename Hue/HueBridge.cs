@@ -6,7 +6,6 @@ using Q42.HueApi.ColorConverters;
 using Q42.HueApi.Interfaces;
 using Q42.HueApi.Models.Bridge;
 using Q42.HueApi.Models.Groups;
-using Q42.HueApi.Streaming;
 using Q42.HueApi.Streaming.Models;
 using System;
 using System.Collections.Generic;
@@ -114,7 +113,7 @@ namespace HueDream.Hue {
             return lList.ToArray();
         }
 
-        
+
 
         public void StopEntertainment() {
             Console.WriteLine("Stopping the e the hard way?");
