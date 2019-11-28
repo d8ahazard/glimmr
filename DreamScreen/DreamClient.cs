@@ -30,14 +30,14 @@ namespace HueDream.DreamScreen {
         private UdpClient listener;
         private readonly Socket sender;
         private readonly string sourceIp;
-        private byte group;
+        private readonly byte group;
 
 
         public DreamClient(DreamSync ds) {
             DataStore dd = DreamData.getStore();
             BaseDevice dev = GetDeviceData();
             sourceIp = dd.GetItem("dsIp");
-            group = (byte) dev.GroupNumber;
+            group = (byte)dev.GroupNumber;
             targetEndpoint = new IPEndPoint(IPAddress.Parse(sourceIp), 8888);
             dd.Dispose();
             dreamSync = ds;
@@ -50,7 +50,7 @@ namespace HueDream.DreamScreen {
             sender = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             sender.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, 1);
         }
-                
+
         private BaseDevice GetDeviceData() {
             using DataStore dd = DreamData.getStore();
             BaseDevice dev;
@@ -298,7 +298,7 @@ namespace HueDream.DreamScreen {
             return devices;
         }
 
-       
+
         private void requestState() {
             using (MemoryStream stream = new MemoryStream()) {
                 using (BinaryWriter response = new BinaryWriter(stream)) {

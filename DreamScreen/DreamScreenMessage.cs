@@ -20,7 +20,7 @@ namespace HueDream.DreamScreen {
 
         public bool IsValid { get; set; }
 
-        
+
         public BaseDevice device { get; set; }
 
 

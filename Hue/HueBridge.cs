@@ -57,7 +57,7 @@ namespace HueDream.Hue {
             StreamingGroup stream = await StreamingSetup.SetupAndReturnGroup(lights, ct);
             Console.WriteLine("Got stream.");
             entLayer = stream.GetNewLayer(isBaseLayer: true);
-            
+
             // Connect to our stream?
             Console.WriteLine("Connected.");
             //Start automagically updating this entertainment group
@@ -84,7 +84,7 @@ namespace HueDream.Hue {
                         }
                     }
                 }
-                Console.WriteLine("Hue: Token has been canceled.");                
+                Console.WriteLine("Hue: Token has been canceled.");
             } else {
                 Console.WriteLine("Unable to fetch entertainment layer?");
             }

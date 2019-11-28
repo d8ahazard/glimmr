@@ -54,7 +54,7 @@ namespace HueDream.HueDream {
         public void CheckSync(bool enabled) {
             if (DreamData.GetItem("dsIp") != "0.0.0.0" && enabled && !syncEnabled) {
                 Console.WriteLine("Beginning DS stream to Hue...");
-                Task.Run(() => startSync());                
+                Task.Run(() => startSync());
             } else if (!enabled && syncEnabled) {
                 Console.WriteLine("Stopping sync.");
                 StopSync();

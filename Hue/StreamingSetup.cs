@@ -3,7 +3,6 @@ using JsonFlatFileDataStore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Q42.HueApi;
-using Q42.HueApi.Interfaces;
 using Q42.HueApi.Models;
 using Q42.HueApi.Models.Groups;
 using Q42.HueApi.Streaming;
@@ -33,20 +32,24 @@ namespace HueDream.Hue {
 
             string id = entGroup.Id;
             // We're just going to use the code from the actual library till our pull request goes through
-            if (id == null)
+            if (id == null) {
                 throw new ArgumentNullException(nameof(id));
-            if (id.Trim() == String.Empty)
-                throw new ArgumentException("id must not be empty", nameof(id));
+            }
 
-            JObject jsonObj = new JObject();
-            jsonObj.Add("stream", JToken.FromObject(new { active = false }));
+            if (id.Trim() == string.Empty) {
+                throw new ArgumentException("id must not be empty", nameof(id));
+            }
+
+            JObject jsonObj = new JObject {
+                { "stream", JToken.FromObject(new { active = false }) }
+            };
 
             string jsonString = JsonConvert.SerializeObject(jsonObj, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore });
 
             HttpClient client = new HttpClient();
-            Uri ApiUri = new Uri("http://" + hueIp + "/api/" + hueUser + "/groups/" + id); 
-            var response = await client.PutAsync(ApiUri, new JsonContent(jsonString)).ConfigureAwait(false);
-            var jsonResult = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            Uri ApiUri = new Uri("http://" + hueIp + "/api/" + hueUser + "/groups/" + id);
+            HttpResponseMessage response = await client.PutAsync(ApiUri, new JsonContent(jsonString)).ConfigureAwait(false);
+            string jsonResult = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             HueResults result = JsonConvert.DeserializeObject<HueResults>(jsonResult);
             Console.WriteLine("Done");
             return new HueResults();

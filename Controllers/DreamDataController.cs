@@ -27,7 +27,7 @@ namespace HueDream.Controllers {
 
         [Route("mode")]
         public IActionResult mode([FromBody] int mode) {
-            DreamSender.SendUDPWrite(0x03, 0x01, new byte[] { (byte) mode }, 0x21, 0, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8888));
+            DreamSender.SendUDPWrite(0x03, 0x01, new byte[] { (byte)mode }, 0x21, 0, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8888));
             return Ok(mode);
         }
 
@@ -35,7 +35,7 @@ namespace HueDream.Controllers {
         public JsonResult Get(string action) {
             DataStore store = DreamData.getStore();
             string message = "Unrecognized action";
-            
+
             if (action == "connectDreamScreen") {
                 string dsIp = store.GetItem("dsIp");
                 DreamScreen.DreamClient ds = new DreamScreen.DreamClient(null);

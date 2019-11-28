@@ -7,7 +7,7 @@ using System.Net.Sockets;
 
 namespace HueDream.DreamScreen.Devices {
     public static class DreamSender {
-        
+
         public static void SendUDPWrite(byte command1, byte command2, byte[] payload, byte flag = 17, byte group = 0, IPEndPoint ep = null) {
             // If we don't specify an endpoint...talk to ourself
             if (ep == null) {
