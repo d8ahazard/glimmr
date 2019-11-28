@@ -57,6 +57,7 @@ namespace HueDream.Hue {
             StreamingGroup stream = await StreamingSetup.SetupAndReturnGroup(lights, ct);
             Console.WriteLine("Got stream.");
             entLayer = stream.GetNewLayer(isBaseLayer: true);
+            
             // Connect to our stream?
             Console.WriteLine("Connected.");
             //Start automagically updating this entertainment group
@@ -83,8 +84,7 @@ namespace HueDream.Hue {
                         }
                     }
                 }
-                // Stop streaming?
-                Console.WriteLine("Entertainment closed and done.");
+                Console.WriteLine("Hue: Token has been canceled.");                
             } else {
                 Console.WriteLine("Unable to fetch entertainment layer?");
             }
@@ -116,8 +116,11 @@ namespace HueDream.Hue {
 
 
         public void StopEntertainment() {
-            Console.WriteLine("Stopping the e the hard way?");
             doEntertain = false;
+            HueResults stopResult = StreamingSetup.StopStream().Result;
+            Console.WriteLine("Stop result: " + JsonConvert.SerializeObject(stopResult));
+            // Stop streaming?
+            Console.WriteLine("Entertainment closed and done.");
         }
 
 

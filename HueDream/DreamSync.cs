@@ -43,8 +43,8 @@ namespace HueDream.HueDream {
         public void StopSync() {
             Console.WriteLine("Dreamsync: Stopsync fired.");
             cts.Cancel();
+            hueBridge.StopEntertainment();
             syncEnabled = false;
-            lastStopTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         }
 
         private void SyncData() {
@@ -54,11 +54,7 @@ namespace HueDream.HueDream {
         public void CheckSync(bool enabled) {
             if (DreamData.GetItem("dsIp") != "0.0.0.0" && enabled && !syncEnabled) {
                 Console.WriteLine("Beginning DS stream to Hue...");
-                if (DateTimeOffset.Now.ToUnixTimeMilliseconds() - lastStopTime > 10000.0) {
-                    Task.Run(() => startSync());
-                } else {
-                    Console.WriteLine("Can't start, waiting for ent group to be open.");
-                }
+                Task.Run(() => startSync());                
             } else if (!enabled && syncEnabled) {
                 Console.WriteLine("Stopping sync.");
                 StopSync();

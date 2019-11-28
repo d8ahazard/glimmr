@@ -1,17 +1,57 @@
 ﻿using HueDream.HueDream;
 using JsonFlatFileDataStore;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Q42.HueApi;
+using Q42.HueApi.Interfaces;
+using Q42.HueApi.Models;
 using Q42.HueApi.Models.Groups;
 using Q42.HueApi.Streaming;
 using Q42.HueApi.Streaming.Models;
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace HueDream.Hue {
     public class StreamingSetup {
+
+        public static async Task<HueResults> StopStream() {
+            Console.WriteLine("Hue: Stopping stream.");
+            DataStore store = DreamData.getStore();
+            string hueIp = store.GetItem("hueIp");
+            string hueUser = store.GetItem("hueUser");
+            string hueKey = store.GetItem("hueKey");
+            Console.WriteLine("Hue: got keys.");
+            Group entGroup = store.GetItem<Group>("entertainmentGroup");
+            Console.WriteLine("Hue: Got group.");
+            store.Dispose();
+            Console.WriteLine("Hue: Creating client....");
+            //Initialize streaming client
+            //LocalHueClient client = new LocalHueClient(hueIp, hueUser, hueKey);
+
+            string id = entGroup.Id;
+            // We're just going to use the code from the actual library till our pull request goes through
+            if (id == null)
+                throw new ArgumentNullException(nameof(id));
+            if (id.Trim() == String.Empty)
+                throw new ArgumentException("id must not be empty", nameof(id));
+
+            JObject jsonObj = new JObject();
+            jsonObj.Add("stream", JToken.FromObject(new { active = false }));
+
+            string jsonString = JsonConvert.SerializeObject(jsonObj, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore });
+
+            HttpClient client = new HttpClient();
+            Uri ApiUri = new Uri("http://" + hueIp + "/api/" + hueUser + "/groups/" + id); 
+            var response = await client.PutAsync(ApiUri, new JsonContent(jsonString)).ConfigureAwait(false);
+            var jsonResult = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            HueResults result = JsonConvert.DeserializeObject<HueResults>(jsonResult);
+            Console.WriteLine("Done");
+            return new HueResults();
+
+        }
 
         public static async Task<StreamingGroup> SetupAndReturnGroup(List<string> lights, CancellationToken ct) {
             Console.WriteLine("Loading data from store?");
@@ -23,7 +63,6 @@ namespace HueDream.Hue {
             Group entGroup = store.GetItem<Group>("entertainmentGroup");
             Console.WriteLine("Got group?");
             store.Dispose();
-            Console.WriteLine("Disposed");
             Console.WriteLine("Creating client....");
             //Initialize streaming client
             StreamingHueClient client = new StreamingHueClient(hueIp, hueUser, hueKey);
