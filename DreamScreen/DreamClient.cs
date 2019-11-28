@@ -7,14 +7,13 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
 namespace HueDream.DreamScreen {
-    internal class DreamClient {
+    internal class DreamClient : IDisposable {
 
         public string[] colors { get; }
         public static bool listening { get; set; }
@@ -167,17 +166,13 @@ namespace HueDream.DreamScreen {
             switch (command) {
                 case "SUBSCRIBE":
                     if (deviceMode != 0) {
-                        Console.WriteLine("Sending Sub reply, mode is " + deviceMode);
-                        //sendUDPWrite(0x01, 0x0C, new byte[] { 0x01 }, 0x10); // Send sub response
                         DreamSender.SendUDPWrite(0x01, 0x0C, new byte[] { 0x01 }, 0x10, group, replyPoint);
                     }
                     break;
                 case "COLOR_DATA":
                     if (deviceMode != 0) {
-                        //Console.WriteLine("ColorData: " + payload);
                         IEnumerable<string> colorData = ByteUtils.SplitHex(string.Join("", payloadString), 6); // Swap this with payload
                         int lightCount = 0;
-                        //Console.WriteLine("ColorData: " + JsonConvert.SerializeObject(colorData));
                         foreach (string colorValue in colorData) {
                             colors[lightCount] = colorValue;
                             lightCount++;
@@ -196,7 +191,6 @@ namespace HueDream.DreamScreen {
                             string dsIpCheck = DreamData.GetItem("dsIp");
                             if (dsIpCheck == "0.0.0.0" && msgDevice.Tag.Contains("DreamScreen")) {
                                 DreamData.SetItem("dsIp", from);
-                                // If we haven't set a target endpoint, set it
                                 targetEndpoint = replyPoint;
                             }
                             if (searching) {
@@ -298,14 +292,8 @@ namespace HueDream.DreamScreen {
             return devices;
         }
 
-
-        private void requestState() {
-            using (MemoryStream stream = new MemoryStream()) {
-                using (BinaryWriter response = new BinaryWriter(stream)) {
-                    DreamSender.SendUDPWrite(0x01, 0x0A, Array.Empty<byte>(), 0x30);
-                }
-            }
+        public void Dispose() {
+            sender.Close();
         }
-
     }
 }

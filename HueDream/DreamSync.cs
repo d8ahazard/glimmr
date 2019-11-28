@@ -10,14 +10,12 @@ namespace HueDream.HueDream {
         private readonly HueBridge hueBridge;
         private readonly DreamScreen.DreamClient dreamScreen;
         private CancellationTokenSource cts;
-        private static long lastStopTime;
 
         public static bool syncEnabled { get; set; }
         public DreamSync() {
             DataStore store = DreamData.getStore();
             store.Dispose();
             Console.WriteLine("Creating new sync.");
-            lastStopTime = 0;
             hueBridge = new HueBridge();
             dreamScreen = new DreamScreen.DreamClient(this);
             // Start our dreamscreen listening like a good boy

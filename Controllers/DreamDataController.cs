@@ -27,7 +27,7 @@ namespace HueDream.Controllers {
 
         [Route("mode")]
         public IActionResult mode([FromBody] int mode) {
-            DreamSender.SendUDPWrite(0x03, 0x01, new byte[] { (byte)mode }, 0x21, 0, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8888));
+            SetMode(mode);
             return Ok(mode);
         }
 
@@ -38,10 +38,11 @@ namespace HueDream.Controllers {
 
             if (action == "connectDreamScreen") {
                 string dsIp = store.GetItem("dsIp");
-                DreamScreen.DreamClient ds = new DreamScreen.DreamClient(null);
-                List<BaseDevice> dev = ds.FindDevices().Result;
+                List<BaseDevice> dev = new List<BaseDevice>();
+                using (DreamScreen.DreamClient ds = new DreamScreen.DreamClient(null)) {
+                    dev = ds.FindDevices().Result;
+                }
                 Console.WriteLine("Listing devices: " + JsonConvert.SerializeObject(dev));
-                //store.ReplaceItemAsync("myDevices", dev.ToArray()); 
                 return new JsonResult(dev);
 
             } else if (action == "authorizeHue") {
@@ -112,6 +113,9 @@ namespace HueDream.Controllers {
         public void Post() {
             DataStore store = DreamData.getStore();
             string devType = store.GetItem("emuType");
+            Group entGroup = store.GetItem<Group>("entertainmentGroup");
+            string curId = (entGroup == null) ? "-1" : entGroup.Id;
+            List<LightMap> map = store.GetItem<List<LightMap>>("hueMap");
             BaseDevice myDevice;
             if (devType == "SideKick") {
                 myDevice = store.GetItem<SideKick>("myDevice");
@@ -122,6 +126,8 @@ namespace HueDream.Controllers {
             Console.WriteLine("We have a post: " + JsonConvert.SerializeObject(keys));
             bool mapLights = false;
             List<LightMap> lightMap = new List<LightMap>();
+            int curMode = myDevice.Mode;
+
             foreach (string key in keys) {
                 if (key.Contains("lightMap")) {
                     mapLights = true;
@@ -137,21 +143,44 @@ namespace HueDream.Controllers {
                         }
                         myDevice.Initialize();
                     }
-                } else if (key == "dsGroup") {
+                } else if (key == "dsGroup" && curId != Request.Form[key]) {
                     Group[] groups = store.GetItem<Group[]>("entertainmentGroups");
                     foreach (Group g in groups) {
                         if (g.Id == Request.Form[key]) {
                             Console.WriteLine("Group match: " + JsonConvert.SerializeObject(g));
-                            store.ReplaceItemAsync("entertainmentGroup", g);
+                            if (curMode != 0) {
+                                SetMode(0);
+                            }
+                            store.ReplaceItem("entertainmentGroup", g);
+                            if (curMode != 0) {
+                                SetMode(curMode);
+                            }
                         }
                     }
                 }
             }
+
             if (mapLights) {
-                Console.WriteLine("Updating light map");
-                store.ReplaceItemAsync("hueMap", lightMap);
+                // Check to see if the map actually changed
+                if (JsonConvert.SerializeObject(map) != JsonConvert.SerializeObject(lightMap)) {
+                    Console.WriteLine("Updating light map");
+                    if (curMode != 0) {
+                        SetMode(0);
+                    }
+                    // Now update data, and wait
+                    store.ReplaceItem("hueMap", lightMap);
+                    // Now restart with new mappings
+                    if (curMode != 0) {
+                        SetMode(curMode);
+                    }
+                }
             }
             store.Dispose();
         }
+
+        private void SetMode(int mode) {
+            DreamSender.SendUDPWrite(0x03, 0x01, new byte[] { (byte)mode }, 0x21, 0, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8888));
+        }
+
     }
 }
