@@ -203,6 +203,9 @@ function mapLights(group, map, lights) {
     // Get the list of lights for the selected group
     var ids = group.lights;
     // Loop through our list of all lights that could be in ent group
+    lights = lights.sort(function (a, b) {
+        return a.Value.localeCompare(b.Value);
+    });
     for (var l in lights) {
         var id = lights[l]['Key'];
         if ($.inArray(id.toString(), ids) !== -1) {

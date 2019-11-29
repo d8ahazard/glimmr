@@ -37,7 +37,6 @@ namespace HueDream.DreamScreen.Devices {
                     // CRC
                     response.Write(MsgUtils.CalculateCrc(byteSend));
                     string msg = BitConverter.ToString(stream.ToArray());
-                    Console.WriteLine("Sending:" + msg);
                     if (flag == 0x30) {
                         SendUDPBroadcast(stream.ToArray());
                     } else {
@@ -53,7 +52,7 @@ namespace HueDream.DreamScreen.Devices {
             sender.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, 1);
             string byteString = BitConverter.ToString(data);
             DreamScreenMessage sm = new DreamScreenMessage(data, "localhost");
-            Console.WriteLine("localhost:8888 -> " + ep.ToString() + " " + JsonConvert.SerializeObject(sm));
+            //Console.WriteLine("localhost:8888 -> " + ep.ToString() + " " + JsonConvert.SerializeObject(sm));
             sender.EnableBroadcast = false;
             sender.SendTo(data, ep);
         }

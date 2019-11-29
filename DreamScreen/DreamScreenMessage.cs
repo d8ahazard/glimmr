@@ -29,7 +29,7 @@ namespace HueDream.DreamScreen {
             string[] bytesString = byteString.Split("-");
             string magic = bytesString[0];
             if (!MsgUtils.CheckCrc(bytesIn) || magic != "FC") {
-                Console.WriteLine("CRC Failed.");
+                Console.WriteLine("CRC Failed!");
                 IsValid = false;
                 return;
             }
@@ -43,7 +43,7 @@ namespace HueDream.DreamScreen {
             if (MsgUtils.commands.ContainsKey(cmd)) {
                 command = MsgUtils.commands[cmd];
             } else {
-                Console.WriteLine("No matching key in dict for bytes: " + cmd);
+                Console.WriteLine("DSMessage: No matching key in dict for bytes: " + cmd);
             }
 
             BaseDevice dreamDev = null;
@@ -54,7 +54,6 @@ namespace HueDream.DreamScreen {
             }
             if (command == "DEVICE_DISCOVERY" && flags == "60" && len > 46) {
                 string typeByte = payloadString[payloadString.Length - 1];
-                Console.WriteLine("In Byte: " + typeByte);
                 switch (typeByte) {
                     case "01":
                         dreamDev = new Devices.DreamScreen(from);
@@ -76,7 +75,7 @@ namespace HueDream.DreamScreen {
                     dreamDev.Initialize();
                     dreamDev.ParsePayload(payload);
                 } else {
-                    Console.WriteLine("DreamDev is null.");
+                    Console.WriteLine("DSMessage: Device is null.");
                 }
                 device = dreamDev;
                 payload = null;

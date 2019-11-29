@@ -39,25 +39,23 @@ namespace HueDream.Controllers {
             if (action == "connectDreamScreen") {
                 string dsIp = store.GetItem("dsIp");
                 List<BaseDevice> dev = new List<BaseDevice>();
-                using (DreamScreen.DreamClient ds = new DreamScreen.DreamClient(null)) {
+                using (DreamScreen.DreamClient ds = new DreamScreen.DreamClient()) {
                     dev = ds.FindDevices().Result;
                 }
-                Console.WriteLine("Listing devices: " + JsonConvert.SerializeObject(dev));
                 return new JsonResult(dev);
 
             } else if (action == "authorizeHue") {
                 if (!store.GetItem("hueAuth")) {
                     HueBridge hb = new HueBridge();
                     RegisterEntertainmentResult appKey = hb.checkAuth().Result;
-                    Console.WriteLine("APPKEY: " + JsonConvert.SerializeObject(appKey));
                     if (appKey != null) {
-                        Console.WriteLine("LINKED!");
+                        Console.WriteLine("Bridge linked.");
                         message = "Success: Bridge Linked.";
                         store.ReplaceItemAsync("hueKey", appKey.StreamingClientKey);
                         store.ReplaceItemAsync("hueUser", appKey.Username);
                         store.ReplaceItemAsync("hueAuth", true);
                     } else {
-                        Console.WriteLine("NOT LINKED");
+                        Console.WriteLine("Bridge Link Failure.");
                         message = "Error: Press the link button";
                     }
 
@@ -101,33 +99,22 @@ namespace HueDream.Controllers {
             return Ok(DreamData.getStore());
         }
 
-
-        // GET: api/HueData/5
-        [HttpGet("{id}", Name = "Get")]
-        public static string Get(int id) {
-            return "value";
-        }
-
+                
         // POST: api/HueData
         [HttpPost]
         public void Post() {
+            BaseDevice myDevice = DreamData.GetDeviceData();
             DataStore store = DreamData.getStore();
-            string devType = store.GetItem("emuType");
             Group entGroup = store.GetItem<Group>("entertainmentGroup");
-            string curId = (entGroup == null) ? "-1" : entGroup.Id;
-            List<LightMap> map = store.GetItem<List<LightMap>>("hueMap");
-            BaseDevice myDevice;
-            if (devType == "SideKick") {
-                myDevice = store.GetItem<SideKick>("myDevice");
-            } else {
-                myDevice = store.GetItem<Connect>("myDevice");
-            }
+            List<LightMap> map = store.GetItem<List<LightMap>>("hueMap");            
+            Group[] groups = store.GetItem<Group[]>("entertainmentGroups");
+            store.Dispose();
+            string curId = (entGroup == null) ? "-1" : entGroup.Id;           
             string[] keys = Request.Form.Keys.ToArray();
             Console.WriteLine("We have a post: " + JsonConvert.SerializeObject(keys));
             bool mapLights = false;
             List<LightMap> lightMap = new List<LightMap>();
             int curMode = myDevice.Mode;
-
             foreach (string key in keys) {
                 if (key.Contains("lightMap")) {
                     mapLights = true;
@@ -144,7 +131,6 @@ namespace HueDream.Controllers {
                         myDevice.Initialize();
                     }
                 } else if (key == "dsGroup" && curId != Request.Form[key]) {
-                    Group[] groups = store.GetItem<Group[]>("entertainmentGroups");
                     foreach (Group g in groups) {
                         if (g.Id == Request.Form[key]) {
                             Console.WriteLine("Group match: " + JsonConvert.SerializeObject(g));
@@ -163,7 +149,7 @@ namespace HueDream.Controllers {
             if (mapLights) {
                 // Check to see if the map actually changed
                 if (JsonConvert.SerializeObject(map) != JsonConvert.SerializeObject(lightMap)) {
-                    Console.WriteLine("Updating light map");
+                    Console.WriteLine("Updating light map: " + JsonConvert.SerializeObject(map));
                     if (curMode != 0) {
                         SetMode(0);
                     }
@@ -175,7 +161,6 @@ namespace HueDream.Controllers {
                     }
                 }
             }
-            store.Dispose();
         }
 
         private void SetMode(int mode) {

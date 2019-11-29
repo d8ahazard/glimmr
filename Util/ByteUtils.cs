@@ -137,7 +137,6 @@ namespace HueDream.Util {
             if (len < input.Length) {
                 byte[] subArr = new byte[len];
                 Array.Copy(input, start, subArr, 0, len);
-                Console.WriteLine("Copied. Len is " + len + ", subarr len is " + subArr.Length);
                 int c = 0;
 
                 foreach (byte b in subArr) {
@@ -147,7 +146,6 @@ namespace HueDream.Util {
             } else {
                 Console.WriteLine("Len for input request " + len + " is less than array len: " + input.Length);
             }
-            Console.WriteLine("Returning: " + JsonConvert.SerializeObject(intOut));
             return intOut;
         }
 

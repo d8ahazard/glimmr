@@ -11,7 +11,6 @@ namespace HueDream {
         public Startup(IConfiguration configuration) {
             ds = new DreamSync();
             Configuration = configuration;
-
         }
 
         public IConfiguration Configuration { get; }
