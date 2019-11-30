@@ -254,7 +254,7 @@ function mapLights(group, map, lights) {
 
             // Create the div to hold it all
             var lightDiv = document.createElement('div');
-            lightDiv.className += "form-group delSel col-lg-6 col-12";
+            lightDiv.className += "form-group delSel col-xs-4 col-sm-4 col-md-3 col-lg-2";
             lightDiv.id = id;
             lightDiv.setAttribute('data-name', name);
             lightDiv.setAttribute('data-id', id);

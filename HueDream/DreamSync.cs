@@ -3,6 +3,8 @@ using HueDream.DreamScreen.Devices;
 using HueDream.Hue;
 using JsonFlatFileDataStore;
 using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -53,17 +55,44 @@ namespace HueDream.HueDream {
             while (!ct.IsCancellationRequested) {
                 hueBridge.SetColors(dreamScreen.colors);
                 hueBridge.Brightness = dreamScreen.Brightness;
-                //Console.WriteLine("SYNCLOOP: " + hueBridge.Brightness);
             }
-            //hueBridge.SetSaturation(dreamScreen.Saturation);            
         }
 
         public void CheckSync(bool enabled) {
-            if (DreamData.GetItem("dsIp") != "0.0.0.0" && enabled && !syncEnabled) {
-                Task.Run(() => startSync());
-            } else if (!enabled && syncEnabled) {
-                StopSync();
+            if (CanSync()) {
+                if (enabled && !syncEnabled) {
+                    Task.Run(() => startSync());
+                } else if (!enabled && syncEnabled) {
+                    StopSync();
+                }
             }
+        }
+
+        private bool CanSync() {
+            DataStore store = DreamData.getStore();
+            string dsIp = store.GetItem("dsIp");
+            bool hueAuth = store.GetItem("hueAuth");
+            Group entGroup = store.GetItem<Group>("entertainmentGroup");
+            List<LightMap> map = store.GetItem<List<LightMap>>("hueMap");
+            store.Dispose();
+            if (dsIp != "0.0.0.0") {
+                if (hueAuth) {
+                    if (entGroup != null) {
+                        if (map.Count > 0) {
+                            return true;
+                        } else {
+                            Console.WriteLine("No lights mapped.");
+                        }
+                    } else {
+                        Console.WriteLine("No entertainment group.");
+                    }
+                } else {
+                    Console.WriteLine("Hue is not authorized.");
+                }
+            } else {
+                Console.WriteLine("No target IP.");
+            }
+            return false;
         }
     }
 }
