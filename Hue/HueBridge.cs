@@ -26,7 +26,7 @@ namespace HueDream.Hue {
 
         private readonly bool bridgeAuth;
 
-        public List<LightMap> bridgeLights { get; }
+        public List<LightMap> bridgeLights { get; set; }
         private string[] colors;
 
         private EntertainmentLayer entLayer;
@@ -52,6 +52,7 @@ namespace HueDream.Hue {
 
         
         public async Task StartStream(CancellationToken ct, DreamSync ds) {
+            bridgeLights = DreamData.GetItem<List<LightMap>>("hueMap");
             Console.WriteLine("Hue: Connecting to bridge...");
             List<string> lights = new List<string>();
             foreach (LightMap lm in bridgeLights) {
