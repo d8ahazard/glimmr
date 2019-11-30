@@ -71,17 +71,15 @@ namespace HueDream.Hue {
             if (entLayer != null) {
                 Console.WriteLine("Hue: Bridge Connected. Beginning transmission...");
                 while (!ct.IsCancellationRequested) {
-                    //Console.WriteLine("Brightness is " + Brightness);
                     foreach (LightMap lightMap in bridgeLights) {
                         if (lightMap.SectorId != -1) {
                             int mapId = lightMap.SectorId;
                             string colorString = colors[mapId];
                             
-                            //double bClamp = lightMap.OverrideBrightness ?  : (255 * Brightness) / 100;
+                            // Clamp our brightness based on settings
                             double bClamp = (255 * Brightness) / 100;
                             if (lightMap.OverrideBrightness) {
                                 int newB = lightMap.Brightness;
-                                Console.WriteLine("We should override b to " + lightMap.Brightness);
                                 bClamp = (255 * newB) / 100;
                             }
                             foreach (EntertainmentLight entLight in entLayer) {
@@ -151,8 +149,7 @@ namespace HueDream.Hue {
             string bridgeIp = "";
             Console.WriteLine("Hue: Looking for bridges");
             IBridgeLocator locator = new HttpBridgeLocator();
-            Task<IEnumerable<LocatedBridge>> task = Task.Run(async () => await locator.LocateBridgesAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false));
-            IEnumerable<LocatedBridge> bridgeIPs = task.Result;
+            IEnumerable<LocatedBridge> bridgeIPs = locator.LocateBridgesAsync(TimeSpan.FromSeconds(2)).Result;
             foreach (LocatedBridge bIp in bridgeIPs) {
                 Console.WriteLine("Hue: Bridge IP is " + bIp.IpAddress);
                 return bIp.IpAddress;
