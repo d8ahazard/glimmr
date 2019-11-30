@@ -16,65 +16,71 @@
 
                 <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
                     <div class="card-body">
-                        <div class="row justify-content-center">
-                            <div class="form-group col-12 col-lg-10">
-                                <div class="row justify-content-center">
-                                    <div class="col-4" id="iconWrap">
-                                    </div>
-                                    <div id="dsData" class="col-4">
-                                        <div class="row">
-                                            <span class="purdy">Name:</span><span id="dsName"></span>
+                        <div class="container">
+                            <div class="row justify-content-center">
+                                <div class="form-group col-12 col-lg-10">
+                                    <div class="row justify-content-center">
+                                        <div class="col-2 col-sm-4" id="iconWrap">
                                         </div>
-                                        <div class="row">
-                                            <span class="purdy">Group:</span><span id="dsGroupName"></span>
-                                        </div>
-                                        <div class="row">
-                                            <span class="purdy">Type:</span><span id="dsType"></span>
-                                        </div>
-                                        <div class="row">
-                                            <span class="purdy">Mode:</span><span id="dsMode"></span>
+                                        <div id="dsData" class="col-6 col-sm-4">
+                                            <div class="row">
+                                                <span class="purdy">Name:</span><span id="dsName"></span>
+                                            </div>
+                                            <div class="row">
+                                                <span class="purdy">Group:</span><span id="dsGroupName"></span>
+                                            </div>
+                                            <div class="row">
+                                                <span class="purdy">Type:</span><span id="dsType"></span>
+                                            </div>
+                                            <div class="row">
+                                                <span class="purdy">Mode:</span><span id="dsMode"></span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                                <br />
-                                <div class="row justify-content-center" id="modeRow">
-                                    <div class="col modeBtn" data-mode="0" id="mode0">
-                                        <img class="modeIcon" src="~/img/mode_off_icon.png" /><br />
-                                        <span>Off</span>
-                                    </div>
-                                    <div class="col modeBtn" data-mode="1" id="mode1">
-                                        <img class="modeIcon" src="~/img/mode_video_icon.png" /><br />
-                                        <span>Video</span>
-                                    </div>
-                                    <div class="col modeBtn" data-mode="2" id="mode2">
-                                        <img class="modeIcon" src="~/img/mode_audio_icon.png" /><br />
-                                        <span>Music</span>
-                                    </div>
-                                    <div class="col modeBtn" data-mode="3" id="mode3">
-                                        <img class="modeIcon" src="~/img/mode_ambient_icon.png" /><br />
-                                        <span>Ambient</span>
+                            </div>
+                            <div class="row justify-content-center">
+                                <div class="col-6 col-sm-3 col-md-2 modeBtn" data-mode="0" id="mode0">
+                                    <img class="modeIcon" src="~/img/mode_off_icon.png" /><br />
+                                    <span>Off</span>
+                                </div>
+                                <div class="col-6 col-sm-3 col-md-2 modeBtn" data-mode="1" id="mode1">
+                                    <img class="modeIcon" src="~/img/mode_video_icon.png" /><br />
+                                    <span>Video</span>
+                                </div>
+                                <div class="col-6 col-sm-3 col-md-2 modeBtn" data-mode="2" id="mode2">
+                                    <img class="modeIcon" src="~/img/mode_audio_icon.png" /><br />
+                                    <span>Music</span>
+                                </div>
+                                <div class="col-6 col-sm-3 col-md-2 modeBtn" data-mode="3" id="mode3">
+                                    <img class="modeIcon" src="~/img/mode_ambient_icon.png" /><br />
+                                    <span>Ambient</span>
+                                </div>
+                                
+                                
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-6 col-12">
+                                    <div class="form-group">
+                                        <label for="dsIp">Target DreamScreen:</label>
+                                        <select class="form-control bg-light text-dark" id="dsIp" name="dsIp">
+                                            <option value="">No devices found</option>
+                                        </select>
                                     </div>
                                 </div>
-                                <br />
+                                <div class="col-lg-6 col-12">
+                                    <div class="form-group">
+                                        <label for="ds_ip">Emulation Type:</label>
+                                        <select class="form-control bg-light text-dark dsType" id="dsType" name="ds_type">
+                                            <option value="SideKick">Sidekick</option>
+                                            <option value="Connect">Connect</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="row">
-                            <div class="form-group col-lg-6 col-12">
-                                <label for="dsIp">Target DreamScreen:</label>
-                                <select class="form-control bg-light text-dark" id="dsIp" name="dsIp">
-                                    <option value="">No devices found</option>
-                                </select>
+                            <div class="row justify-content-center">
+                                <small id="typeHelp" class="form-text">WARNING: Connect will only work with the <a href="https://github.com/d8ahazard/HueDream/raw/master/DreamScreen%202.2.2.apk">beta version</a> of the DS app.</small>
                             </div>
-                            <div class="form-group col-lg-6 col-12">
-                                <label for="ds_ip">Emulation Type:</label>
-                                <select class="form-control bg-light text-dark dsType" id="dsType" name="ds_type">
-                                    <option value="SideKick">Sidekick</option>
-                                    <option value="Connect">Connect</option>
-                                </select>                                
-                            </div>
-                        </div>
-                        <div class="row justify-content-center">
-                            <small id="typeHelp" class="form-text">WARNING: Connect will only work with the <a href="https://github.com/d8ahazard/HueDream/raw/master/DreamScreen%202.2.2.apk">beta version</a> of the DS app.</small>
                         </div>
                     </div>
                 </div>
@@ -92,16 +98,19 @@
 
                 <div id="collapseThree" class="collapse" aria-labelledby="headingThree" data-parent="#accordion">
                     <div class="card-body">
-                        <div class="form-group">
-                            <div id="linkBtn" class="unlinked linkBtn">
+                        <div class="row justify-content-center">
+                            <div id="linkBtn">
+                                <div id="linkImg" class="unlinked"></div>
                                 <div id="circleBar"></div>
+                                <small id="linkHint">Click here to link bridge</small>
                             </div>
                         </div>
-                        <small id="linkHint" class="linkBtn">Click here to link bridge</small>
                         <div class="row justify-content-center">
-                            <div class="form-group col-lg-6 col-12">
-                                <label for="hue_ip">Hue Bridge IP</label>
-                                <input type="text" class="form-control" id="hueIp" readonly placeholder="0.0.0.0">
+                            <div class="col-lg-6 col-12">
+                                <div class="form-group">
+                                    <label for="hue_ip">Hue Bridge IP</label>
+                                    <input type="text" class="form-control" id="hueIp" readonly placeholder="0.0.0.0">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -119,7 +128,7 @@
                 </div>
 
                 <div id="collapseFour" class="collapse show" aria-labelledby="headingFour" data-parent="#accordion">
-                    <div class="card-body">
+                    <div class="card-body">                        
                         <div class="">
                             <div class="previewWrap" id="previewWrap">
                                 <div class="light-preview" id="lightPreview">
@@ -177,15 +186,18 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="row justify-content-center">
-                            <div class="form-group col-md-12 col-lg-6">
-                                <label for="dsGroup">Entertainment Group:</label>
-                                <select id="dsGroup" name="dsGroup" class="form-control bg-light text-dark dsGroup">
-                                </select>
+                        <div class="container">
+                            <div class="row justify-content-center">
+                                <div class="col-md-12 col-lg-6">
+                                    <div class="form-group">
+                                        <label for="dsGroup">Entertainment Group:</label>
+                                        <select id="dsGroup" name="dsGroup" class="form-control bg-light text-dark dsGroup">
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="row justify-content-center" id="mapSel">
-
+                            <div class="row justify-content-center" id="mapSel">
+                            </div>
                         </div>
                     </div>
                 </div>

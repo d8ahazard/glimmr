@@ -24,8 +24,10 @@ $(function () {
         }); 
     });
 
-    $('.linkBtn').on('click', function () {
-        linkHue();        
+    $('#linkBtn').on('click', function () {
+        if (!hueAuth && !linking) {
+            linkHue();
+        }
     });
 
     $('#ds_find').on('click', function() {
@@ -45,19 +47,21 @@ $(function () {
     });
 
     $('.modeBtn').click(function () {
-        $(".modeBtn").removeClass("active");
-        $(this).addClass('active');
-        var mode = $(this).data('mode');
-        $.ajax({
-            type: "POST",
-            contentType: "application/json",
-            url: "./api/DreamData/mode/",
-            dataType: "json",
-            data: JSON.stringify(mode),
-            success: function (response) {
-                console.log("Mode is " + response);
-            }
-        });
+        if (hueAuth) {
+            $(".modeBtn").removeClass("active");
+            $(this).addClass('active');
+            var mode = $(this).data('mode');
+            $.ajax({
+                type: "POST",
+                contentType: "application/json",
+                url: "./api/DreamData/mode/",
+                dataType: "json",
+                data: JSON.stringify(mode),
+                success: function (response) {
+                    console.log("Mode is " + response);
+                }
+            });
+        }
     });
 
     $('.dsGroup').change(function () {
@@ -103,16 +107,12 @@ function checkHueAuth() {
         if (data === "Success: Bridge Linked." || data === "Success: Bridge Already Linked.") {
             console.log("LINKED");
             hueAuth = true;
+            if (hueAuth) {
+                fetchJson();
+            }
+            setLinkStatus();
         }
     });
-    if (hueAuth) {
-        $('#linkBtn').css('background-image', 'url("../img/hue_bridge_v2_linked.png")');
-        $('#linkHint').html("Bridge successfully linked");
-        fetchJson();
-    } else {
-        $('#linkBtn').css('background-image', 'url("../img/hue_bridge_v2_unlinked.png")');
-        $('#linkHint').html("Click here to link bridge");
-    }    
 }
 
 function fetchJson() {
@@ -122,19 +122,13 @@ function fetchJson() {
         for (var v in config) {
             key = v;
             value = config[v];
-            var id = key;
-            
+            var id = key;            
 
             if (id === "hueAuth") {
                 authorized = value;
                 var lb = $('#linkBtn');
                 hueAuth = value;
-                if (value) {
-                    lb.css('background-image', 'url("../img/hue_bridge_v2_linked.png")');
-                    lb.removeClass('unlinked');
-                } else {
-                    lb.css('background-image', 'url("../img/hue_bridge_v2_unlinked.png")');
-                }
+                setLinkStatus();
             } else if (id === "hueSync") {
                 hueSync = value;
             } else if (id === "hueMap") {
@@ -216,6 +210,7 @@ function mapLights(group, map, lights) {
             // Create the label for select
             var label = document.createElement('label');
             label.innerHTML = name + ":  ";
+            label.setAttribute("for", "lightMap" + id);
 
             // Create a select for this light
             var newSelect = document.createElement('select');
@@ -256,6 +251,11 @@ function mapLights(group, map, lights) {
                 newSelect.appendChild(opt);
             }
 
+            var selDiv = document.createElement('div');
+            selDiv.className += "form-group";
+            selDiv.appendChild(label);
+            selDiv.appendChild(newSelect);
+
             // Create label for brightness
             var brightLabel = document.createElement('label');
             brightLabel.innerHTML = "Brightness: ";
@@ -294,7 +294,7 @@ function mapLights(group, map, lights) {
             
             // Create the div to hold it all
             var lightDiv = document.createElement('div');
-            lightDiv.className += "form-group delSel col-xs-4 col-sm-4 col-md-3 col-lg-2";
+            lightDiv.className += "delSel col-xs-4 col-sm-4 col-md-3";
             lightDiv.id = id;
             lightDiv.setAttribute('data-name', name);
             lightDiv.setAttribute('data-id', id);
@@ -305,10 +305,9 @@ function mapLights(group, map, lights) {
             chkDiv.appendChild(checkLabel);
 
             // Congratulations, it's a boy!
-            lightDiv.appendChild(label);
-            lightDiv.appendChild(newSelect);
-            lightDiv.appendChild(rangeDiv);
+            lightDiv.appendChild(selDiv);
             lightDiv.appendChild(chkDiv);
+            lightDiv.appendChild(rangeDiv);
 
             // Add it to our document
             lightGroup.appendChild(lightDiv);
@@ -365,6 +364,27 @@ function findGroup(id) {
     return res;
 }
 
+function setLinkStatus() {
+    var lImg = $('#linkImg');
+    var lHint = $('#linkHint');
+    var lBtn = $('#linkBtn');
+    lImg.removeClass('linked unlinked linking');
+    if (hueAuth) {
+        lImg.addClass('linked');
+        lHint.html("Your Hue Bridge is linked.");
+        lBtn.css('cursor', 'default');
+    } else {
+        if (linking) {
+            lImg.addClass('linking');
+            lHint.html("Press the link button on your Bridge.");
+        } else {
+            lImg.addClass('unlinked');
+            lHint.html("Click here to link your bridge.");
+        }
+        lBtn.css('cursor', 'pointer');
+    }
+}
+
 function linkHue() {
     console.log("Authorized: ", hueAuth);
 
@@ -372,10 +392,9 @@ function linkHue() {
         linking = true;
         console.log("Trying to authorize with hue.");
         $('#circleBar').show();
-        $('#linkBtn').css('background-image', 'url("../img/hue_bridge_v2_pushlink.png")');
-        $('#linkHint').html("Press the link button on your Hue bridge");
+        setLinkStatus();
         var bar = new ProgressBar.Circle(circleBar, {
-            strokeWidth: 10,
+            strokeWidth: 15,
             easing: 'easeInOut',
             duration: 0,
             color: '#0000FF',
@@ -384,7 +403,6 @@ function linkHue() {
             svgStyle: null,
             value: 1
         });
-
 
         var x = 0;
         hueAuth = false;
@@ -395,12 +413,15 @@ function linkHue() {
                 window.clearInterval(intervalID);   
                 $('#circleBar').hide();
                 linking = false;
+                setLinkStatus();
             }
         }, 1000);
 
         setTimeout(function () {
+            $('#circleBar').html("");
             $('#circleBar').hide();
             linking = false;
+            setLinkStatus();
         }, 30000);
     } else {
         console.log("Already authorized.");
