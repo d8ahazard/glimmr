@@ -18,8 +18,8 @@ namespace HueDream.HueDream {
         public static bool syncEnabled { get; set; }
         public DreamSync() {
             DataStore store = DreamData.getStore();
+            string dsIp = store.GetItem("dsIp");
             store.Dispose();
-            BaseDevice dev = DreamData.GetDeviceData();
             Console.WriteLine("DreamSync: Creating new sync...");
             hueBridge = new HueBridge();
             dreamScreen = new DreamClient(this);
@@ -29,6 +29,10 @@ namespace HueDream.HueDream {
                 dreamScreen.Listen();
                 DreamClient.listening = true;
                 Console.WriteLine("DreamSync: Listening.");
+            }
+            if (dsIp == "0.0.0.0") {
+                Console.WriteLine("Searching for DS Devices.");
+                dreamScreen.FindDevices();
             }
         }
 
@@ -77,7 +81,7 @@ namespace HueDream.HueDream {
             store.Dispose();
             if (dsIp != "0.0.0.0") {
                 if (hueAuth) {
-                    if (entGroup != null) {
+                    if (entGroup.Id != null) {
                         if (map.Count > 0) {
                             return true;
                         } else {

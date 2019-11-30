@@ -34,7 +34,7 @@ namespace HueDream.HueDream {
                 store.InsertItemAsync("hueLights", new List<KeyValuePair<int, string>>());
                 store.InsertItemAsync("hueMap", new List<LightMap>());
                 store.InsertItemAsync("entertainmentGroups", new List<Group>());
-                store.InsertItemAsync("entertainmentGroup", "");
+                store.InsertItemAsync("entertainmentGroup", new Group());
                 store.InsertItemAsync("devices", Array.Empty<BaseDevice>());
             }
             return store;
