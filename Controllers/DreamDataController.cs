@@ -116,7 +116,7 @@ namespace HueDream.Controllers {
             Group entGroup = DreamData.GetItem<Group>("entertainmentGroup");
             string curId = (entGroup == null) ? "-1" : entGroup.Id;           
             string[] keys = Request.Form.Keys.ToArray();
-            Console.WriteLine("We have a post: " + JsonConvert.SerializeObject(keys));
+            Console.WriteLine("We have a post: " + JsonConvert.SerializeObject(Request.Form));
             bool mapLights = false;
             List<LightMap> lightMap = new List<LightMap>();
             int curMode = myDevice.Mode;
@@ -125,7 +125,9 @@ namespace HueDream.Controllers {
                     mapLights = true;
                     int lightId = int.Parse(key.Replace("lightMap", ""));
                     int sectorId = int.Parse(Request.Form[key]);
-                    lightMap.Add(new LightMap(lightId, sectorId));
+                    bool overrideB = (Request.Form["overrideBrightness" + lightId] == "on");
+                    int newB = int.Parse(Request.Form["brightness" + lightId]);
+                    lightMap.Add(new LightMap(lightId, sectorId, overrideB, newB));
                 } else if (key == "ds_type") {
                     if (myDevice.Tag != Request.Form[key]) {
                         if (Request.Form[key] == "Connect") {

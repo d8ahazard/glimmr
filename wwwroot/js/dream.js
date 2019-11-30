@@ -210,6 +210,13 @@ function mapLights(group, map, lights) {
         var id = lights[l]['Key'];
         if ($.inArray(id.toString(), ids) !== -1) {
             var name = lights[l]['Value'];
+            var brightness = 100;
+            var override = false;
+
+            // Create the label for select
+            var label = document.createElement('label');
+            label.innerHTML = name + ":  ";
+
             // Create a select for this light
             var newSelect = document.createElement('select');
             newSelect.className = "mapSelect form-control text-dark bg-light";
@@ -221,9 +228,10 @@ function mapLights(group, map, lights) {
             for (var m in map) {
                 if (map[m].lightId === id) {
                     selection = map[m].sectorId;
+                    brightness = map[m].brightness;
+                    override = map[m].overrideBrightness;
                 }
             }
-
             // Create the blank "unmapped" option
             var opt = document.createElement("option");
             opt.value = -1;
@@ -248,10 +256,42 @@ function mapLights(group, map, lights) {
                 newSelect.appendChild(opt);
             }
 
-            // Create the label
-            var label = document.createElement('label');
-            label.innerHTML = name + ":  ";
+            // Create label for brightness
+            var brightLabel = document.createElement('label');
+            brightLabel.innerHTML = "Brightness: ";
+            brightLabel.setAttribute('for', 'brightness' + id);
 
+            // Create the brightness slider
+            var newRange = document.createElement("input");
+            newRange.className = "mapBrightness form-control";
+            newRange.setAttribute("type", "range");
+            newRange.setAttribute('id', 'brightness' + id);
+            newRange.setAttribute('name', 'brightness' + id);
+            newRange.setAttribute('min', 0);
+            newRange.setAttribute('max', 100);
+            newRange.setAttribute('value', brightness);
+
+            var rangeDiv = document.createElement('div');
+            rangeDiv.className += "form-group";
+            rangeDiv.appendChild(brightLabel);
+            rangeDiv.appendChild(newRange);
+
+
+            // Create label for override check
+            var checkLabel = document.createElement('label');
+            checkLabel.innerHTML = "Override";
+            checkLabel.className += "form-check-label";
+            checkLabel.setAttribute('for', 'overrideBrightness' + id);
+
+
+            // Create a checkbox
+            var newCheck = document.createElement("input");
+            newCheck.className += "overrideBright form-check-input";
+            newCheck.setAttribute('id', 'overrideBrightness' + id);
+            newCheck.setAttribute('name', 'overrideBrightness' + id);
+            newCheck.setAttribute("type", "checkbox");
+            if (override) newCheck.setAttribute("checked", 'checked');
+            
             // Create the div to hold it all
             var lightDiv = document.createElement('div');
             lightDiv.className += "form-group delSel col-xs-4 col-sm-4 col-md-3 col-lg-2";
@@ -259,9 +299,18 @@ function mapLights(group, map, lights) {
             lightDiv.setAttribute('data-name', name);
             lightDiv.setAttribute('data-id', id);
 
+            var chkDiv = document.createElement('div');
+            chkDiv.className += "form-check";
+            chkDiv.appendChild(newCheck);
+            chkDiv.appendChild(checkLabel);
+
             // Congratulations, it's a boy!
             lightDiv.appendChild(label);
             lightDiv.appendChild(newSelect);
+            lightDiv.appendChild(rangeDiv);
+            lightDiv.appendChild(chkDiv);
+
+            // Add it to our document
             lightGroup.appendChild(lightDiv);
         }
     }

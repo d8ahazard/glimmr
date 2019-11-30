@@ -72,13 +72,20 @@ namespace HueDream.Hue {
                 Console.WriteLine("Hue: Bridge Connected. Beginning transmission...");
                 while (!ct.IsCancellationRequested) {
                     //Console.WriteLine("Brightness is " + Brightness);
-                    foreach (LightMap lights in bridgeLights) {
-                        if (lights.SectorId != -1) {
-                            int mapId = lights.SectorId;
+                    foreach (LightMap lightMap in bridgeLights) {
+                        if (lightMap.SectorId != -1) {
+                            int mapId = lightMap.SectorId;
                             string colorString = colors[mapId];
+                            
+                            //double bClamp = lightMap.OverrideBrightness ?  : (255 * Brightness) / 100;
                             double bClamp = (255 * Brightness) / 100;
-                            foreach (EntertainmentLight light in entLayer) {
-                                if (light.Id == lights.LightId) {
+                            if (lightMap.OverrideBrightness) {
+                                int newB = lightMap.Brightness;
+                                Console.WriteLine("We should override b to " + lightMap.Brightness);
+                                bClamp = (255 * newB) / 100;
+                            }
+                            foreach (EntertainmentLight entLight in entLayer) {
+                                if (entLight.Id == lightMap.LightId) {
                                     RGBColor oColor = new RGBColor(colorString);
                                     double sB = oColor.GetBrightness();
                                     HSB hsb = new HSB((int) oColor.GetHue(), (int)oColor.GetSaturation(), (int)oColor.GetBrightness());
@@ -87,8 +94,8 @@ namespace HueDream.Hue {
                                     }
                                     oColor = hsb.GetRGB();
                                     double nB = oColor.GetBrightness();
-                                    light.State.SetRGBColor(oColor);
-                                    light.State.SetBrightness(Brightness);
+                                    entLight.State.SetRGBColor(oColor);
+                                    entLight.State.SetBrightness(Brightness);
                                 }
                             }
                         }
