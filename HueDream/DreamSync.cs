@@ -4,9 +4,9 @@ using HueDream.Hue;
 using JsonFlatFileDataStore;
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Q42.HueApi.Models.Groups;
 
 namespace HueDream.HueDream {
     public class DreamSync {
@@ -76,12 +76,12 @@ namespace HueDream.HueDream {
             DataStore store = DreamData.getStore();
             string dsIp = store.GetItem("dsIp");
             bool hueAuth = store.GetItem("hueAuth");
-            Group entGroup = store.GetItem<Group>("entertainmentGroup");
             List<LightMap> map = store.GetItem<List<LightMap>>("hueMap");
             store.Dispose();
+            Group entGroup = DreamData.GetItem<Group>("entertainmentGroup");
             if (dsIp != "0.0.0.0") {
                 if (hueAuth) {
-                    if (entGroup.Id != null) {
+                    if (entGroup != null) {
                         if (map.Count > 0) {
                             return true;
                         } else {

@@ -28,7 +28,7 @@ namespace HueDream.DreamScreen.Devices {
             AmbientColor = new int[] { 0, 0, 0 };
             AmbientModeType = 0;
             AmbientShowType = 0;
-            Brightness = 0;
+            Brightness = 100;
             FadeRate = 4;
             Mode = 0;
             // = "Light";

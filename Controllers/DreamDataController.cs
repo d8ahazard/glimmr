@@ -1,4 +1,5 @@
-﻿using HueDream.DreamScreen.Devices;
+﻿using HueDream.DreamScreen;
+using HueDream.DreamScreen.Devices;
 using HueDream.Hue;
 using HueDream.HueDream;
 using JsonFlatFileDataStore;
@@ -37,9 +38,9 @@ namespace HueDream.Controllers {
             string message = "Unrecognized action";
 
             if (action == "connectDreamScreen") {
-                string dsIp = store.GetItem("dsIp");
+                Console.WriteLine("ConnectDreamScreen fired.");
                 List<BaseDevice> dev = new List<BaseDevice>();
-                using (DreamScreen.DreamClient ds = new DreamScreen.DreamClient()) {
+                using (DreamClient ds = new DreamClient()) {
                     dev = ds.FindDevices().Result;
                 }
                 return new JsonResult(dev);
@@ -90,6 +91,10 @@ namespace HueDream.Controllers {
                     Console.WriteLine("An exception occurred fetching hue data: " + e);
                 }
             }
+            if (store.GetItem("dsIp") == "0.0.0.0") {
+                DreamClient dc = new DreamClient();
+                dc.FindDevices();
+            }
             store.Dispose();
             return Ok(DreamData.GetStoreSerialized());
         }
@@ -105,10 +110,10 @@ namespace HueDream.Controllers {
         public void Post() {
             BaseDevice myDevice = DreamData.GetDeviceData();
             DataStore store = DreamData.getStore();
-            Group entGroup = store.GetItem<Group>("entertainmentGroup");
             List<LightMap> map = store.GetItem<List<LightMap>>("hueMap");            
             Group[] groups = store.GetItem<Group[]>("entertainmentGroups");
             store.Dispose();
+            Group entGroup = DreamData.GetItem<Group>("entertainmentGroup");
             string curId = (entGroup == null) ? "-1" : entGroup.Id;           
             string[] keys = Request.Form.Keys.ToArray();
             Console.WriteLine("We have a post: " + JsonConvert.SerializeObject(keys));
@@ -129,6 +134,7 @@ namespace HueDream.Controllers {
                             myDevice = new SideKick("localhost");
                         }
                         myDevice.Initialize();
+                        DreamData.SetItem("myDevice", myDevice);
                     }
                 } else if (key == "dsGroup" && curId != Request.Form[key]) {
                     foreach (Group g in groups) {
@@ -137,7 +143,9 @@ namespace HueDream.Controllers {
                             if (curMode != 0) {
                                 SetMode(0);
                             }
-                            store.ReplaceItem("entertainmentGroup", g);
+
+                            DreamData.SetItem("entertainmentGroup", g);
+
                             if (curMode != 0) {
                                 SetMode(curMode);
                             }
@@ -149,12 +157,12 @@ namespace HueDream.Controllers {
             if (mapLights) {
                 // Check to see if the map actually changed
                 if (JsonConvert.SerializeObject(map) != JsonConvert.SerializeObject(lightMap)) {
-                    Console.WriteLine("Updating light map: " + JsonConvert.SerializeObject(map));
+                    Console.WriteLine("Updating light map: " + JsonConvert.SerializeObject(lightMap));
                     if (curMode != 0) {
                         SetMode(0);
                     }
                     // Now update data, and wait
-                    store.ReplaceItem("hueMap", lightMap);
+                    DreamData.SetItem("hueMap", lightMap);
                     // Now restart with new mappings
                     if (curMode != 0) {
                         SetMode(curMode);

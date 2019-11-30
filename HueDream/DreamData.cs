@@ -34,22 +34,44 @@ namespace HueDream.HueDream {
                 store.InsertItemAsync("hueLights", new List<KeyValuePair<int, string>>());
                 store.InsertItemAsync("hueMap", new List<LightMap>());
                 store.InsertItemAsync("entertainmentGroups", new List<Group>());
-                store.InsertItemAsync("entertainmentGroup", new Group());
+                //store.InsertItemAsync<Group>("entertainmentGroup", null);
                 store.InsertItemAsync("devices", Array.Empty<BaseDevice>());
             }
             return store;
         }
-
+        /// <summary>
+        /// Loads our datastore from a dynamic path, and tries to get the item
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns>dynamic object corresponding to key, or null if not found</returns>
         public static dynamic GetItem(string key) {
-            using (DataStore dStore = new DataStore(GetConfigPath("store.json"))) {
-                dynamic output = dStore.GetItem(key);
-                return output;
+            try {
+                using (DataStore dStore = new DataStore(GetConfigPath("store.json"))) {
+                    dynamic output = dStore.GetItem(key);
+                    return output;
+                }
+            } catch (KeyNotFoundException) {
+                
             }
+            return null;
+        }
+
+        public static dynamic GetItem<T>(string key) {
+            try {
+                using (DataStore dStore = new DataStore(GetConfigPath("store.json"))) {
+                    dynamic output = dStore.GetItem<T>(key);
+                    return output;
+                }
+            } catch (KeyNotFoundException) {
+
+            }
+            return null;
         }
 
         public static bool SetItem(string key, dynamic value) {
             using (DataStore dStore = new DataStore(GetConfigPath("store.json"))) {
-                dynamic output = dStore.ReplaceItem(key, value);
+                
+                dynamic output = dStore.ReplaceItem(key, value, true);
                 return output;
             }
         }

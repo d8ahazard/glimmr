@@ -198,6 +198,7 @@ namespace HueDream.DreamScreen {
                         if (msgDevice != null) {
                             string dsIpCheck = DreamData.GetItem("dsIp");
                             if (dsIpCheck == "0.0.0.0" && msgDevice.Tag.Contains("DreamScreen")) {
+                                Console.WriteLine("No DS IP Set, setting.");
                                 DreamData.SetItem("dsIp", from);
                                 targetEndpoint = replyPoint;
                             }

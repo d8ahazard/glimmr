@@ -17,10 +17,12 @@
 
   <ItemGroup>
     <Content Remove="huedream.ini" />
+    <Content Remove="store.json" />
   </ItemGroup>
 
   <ItemGroup>
     <None Remove="huedream.json.bk" />
+    <None Remove="store.json.bk" />
   </ItemGroup>
 
   <ItemGroup>
