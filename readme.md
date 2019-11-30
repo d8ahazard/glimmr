@@ -73,23 +73,16 @@ Optionally, you can select the type of DS device to emulate. If you choose "Conn
 ### Link Your Hue Bridge
 Press the link button on your hue bridge. Go to the Hue section, click "Authorize Hue". You should get a response stating your hue has been linked.
 
-### Map your Lights
-Go to the Sync section. Press the "Load Lights" button. 
-
-The UI should show a dropdown with available entertainment groups. The lights in that group will be shown for mapping.
-
-To map a light, select the dropdown next to it that corresponds to the color sector shown in the grid.
-
-Click "Submit" to save your mapping.
-
 ### Create An Entertainment Group!! (NEW)
 Go into your hue app. In the side menu, select "Entertainment areas".
 
 Create a new entertainment area and configure it with your lights as they are in the room.
 
-*BE SURE THAT ALL MAPPED LIGHTS ARE IN YOUR GROUP, OR STREAMING WILL NOT WORK.* 
-(This is a WIP, I'll eventually include a proper group selection.)
+### Configure Light Mappings
+Back in the HueDream web UI, go to the "sync" section, and select your entertainment group.
+For each light you wish to map, select the sector in the dropdown that corresponds to the sector you wish to map to.
 
+Click the "Save settings" button to submit your configuration.
 
 ## PROFIT
 
@@ -100,3 +93,20 @@ From here, you can use the app normally to control your hue lights. You can rena
 To stop synchronization, select the device in the DS app and set the mode to "Off".
 
 To start synchronization, select the GROUP in the DS app, and set the mode to "Video". If the device is not in a group, control it directly.
+
+## NOTES
+
+Ambient scenes are not currently implemented, simply because this program is native to each DS device, and is not streamed.
+
+Meaning, I will have to manually program each scene before this will work.
+
+
+Saturation is not yet implemented. 
+
+
+Sector mappings within the DS app currently do nothing...
+
+
+## Buy me a beer
+
+If you like my work and want to say thanks, I humbly accept donations via paypal at donate.to.digitalhigh@gmail.com
