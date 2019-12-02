@@ -10,7 +10,7 @@ namespace HueDream.DreamScreen.Scenes {
             "FF0000", // Red
             "00FF00" // Green
             });
-            AnimationTime = .75;
+            AnimationTime = 1.75;
             Mode = AnimationMode.Linear;
             Easing = EasingType.fadeOut;
         }

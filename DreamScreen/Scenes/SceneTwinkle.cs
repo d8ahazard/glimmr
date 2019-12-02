@@ -7,12 +7,13 @@ namespace HueDream.DreamScreen.Scenes {
     public class SceneTwinkle : SceneBase {
         public SceneTwinkle() {
             SetColors(new string[] {
-                "FFFFFF",
-                "000000"
+                "AAAAAA",
+                "000000",
+                "AAAAAA"
             });
-            AnimationTime = .25;
-            Mode = AnimationMode.Linear;
-            Easing = EasingType.none;
+            AnimationTime = 1;
+            Mode = AnimationMode.Random;
+            Easing = EasingType.blend;
         }
     }
 }

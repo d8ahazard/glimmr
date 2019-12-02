@@ -13,10 +13,12 @@ namespace HueDream.DreamScreen.Scenes {
             "ff8600", // Orange
             "ffba00", // Tangerine
             "fff200", // Yellow
+            "ffba00", // Tangerine
+            "ff8600", // Orange            
             "7d3e1e" // Brownish
             });
-            AnimationTime = .75;
-            Mode = AnimationMode.Random;
+            AnimationTime = .25;
+            Mode = AnimationMode.Linear;
             Easing = EasingType.blend;
         }
     }

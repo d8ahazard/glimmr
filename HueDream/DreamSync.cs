@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Q42.HueApi.Models.Groups;
+using Newtonsoft.Json;
 
 namespace HueDream.HueDream {
     public class DreamSync {
@@ -18,8 +19,9 @@ namespace HueDream.HueDream {
         public static bool syncEnabled { get; set; }
         public DreamSync() {
             DataStore store = DreamData.getStore();
-            string dsIp = store.GetItem("dsIp");
             store.Dispose();
+            string dsIp = DreamData.GetItem("dsIp");
+
             Console.WriteLine("DreamSync: Creating new sync...");
             hueBridge = new HueBridge();
             dreamScreen = new DreamClient(this);
@@ -60,8 +62,10 @@ namespace HueDream.HueDream {
 
         private void SyncData(CancellationToken ct) {
             while (!ct.IsCancellationRequested) {
+                //Console.WriteLine("Syncing colors: " + JsonConvert.SerializeObject(dreamScreen.colors));
                 hueBridge.SetColors(dreamScreen.colors);
                 hueBridge.Brightness = dreamScreen.Brightness;
+                hueBridge.sceneBase = dreamScreen.sceneBase;
             }
         }
 

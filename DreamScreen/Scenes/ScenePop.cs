@@ -14,9 +14,9 @@ namespace HueDream.DreamScreen.Scenes {
             "11e5f6" // Teal
 
             });
-            AnimationTime = .5;
-            Mode = AnimationMode.Random;
-            Easing = EasingType.fadeIn;
+            AnimationTime = 3;
+            Mode = AnimationMode.Linear;
+            Easing = EasingType.blend;
         }
     }
 }

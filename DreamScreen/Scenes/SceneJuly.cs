@@ -12,9 +12,9 @@ namespace HueDream.DreamScreen.Scenes {
             "000000" // White
 
             });
-            AnimationTime = .5;
+            AnimationTime = 1;
             Mode = AnimationMode.Random;
-            Easing = EasingType.none;
+            Easing = EasingType.fadeOut;
         }
     }
 }

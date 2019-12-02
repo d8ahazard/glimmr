@@ -11,9 +11,9 @@ namespace HueDream.DreamScreen.Scenes {
             "0cac00", // Light Green
             "89bc09" // Yellow green
             });
-            AnimationTime = .5;
+            AnimationTime = 2.5;
             Mode = AnimationMode.Random;
-            Easing = EasingType.fadeOutIn;
+            Easing = EasingType.blend;
         }
     }
 }

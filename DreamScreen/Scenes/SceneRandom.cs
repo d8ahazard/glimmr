@@ -15,7 +15,7 @@ namespace HueDream.DreamScreen.Scenes {
 
             });
             AnimationTime = 1;
-            Mode = AnimationMode.Random;
+            Mode = AnimationMode.RandomAll;
             Easing = EasingType.blend;
         }
     }

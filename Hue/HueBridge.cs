@@ -1,4 +1,5 @@
-﻿using HueDream.HueDream;
+﻿using HueDream.DreamScreen.Scenes;
+using HueDream.HueDream;
 using HueDream.Util;
 using JsonFlatFileDataStore;
 using Newtonsoft.Json;
@@ -15,6 +16,7 @@ using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using static HueDream.DreamScreen.Scenes.SceneBase;
 
 namespace HueDream.Hue {
     public class HueBridge {
@@ -22,14 +24,17 @@ namespace HueDream.Hue {
         public string bridgeKey { get; set; }
         public string bridgeUser { get; set; }
         public int Brightness { get; set; }
+        public SceneBase sceneBase;
         public static bool doEntertain { set; get; }
 
         private readonly bool bridgeAuth;
 
         public List<LightMap> bridgeLights { get; set; }
         private string[] colors;
+        private string[] prevColors;
 
         private EntertainmentLayer entLayer;
+
 
         public HueBridge() {
             DataStore dd = DreamData.getStore();
@@ -40,6 +45,7 @@ namespace HueDream.Hue {
             bridgeAuth = dd.GetItem("hueAuth");
             bridgeLights = dd.GetItem<List<LightMap>>("hueMap");
             entLayer = null;
+            sceneBase = null;
             dd.Dispose();
         }
 
@@ -65,13 +71,17 @@ namespace HueDream.Hue {
             Console.WriteLine("Hue: Stream established.");
             entLayer = stream.GetNewLayer(isBaseLayer: true);
             //Start automagically updating this entertainment group
+            prevColors = colors;
             SendColorData(ct, ds);
         }
 
         private async Task SendColorData(CancellationToken ct, DreamSync ds) {
             if (entLayer != null) {
                 Console.WriteLine("Hue: Bridge Connected. Beginning transmission...");
+                Transition[] tList = new Transition[bridgeLights.Count];
                 while (!ct.IsCancellationRequested) {
+                    
+                    int lightInt = 0;
                     foreach (LightMap lightMap in bridgeLights) {
                         if (lightMap.SectorId != -1) {
                             int mapId = lightMap.SectorId;
@@ -87,18 +97,65 @@ namespace HueDream.Hue {
                                 if (entLight.Id == lightMap.LightId) {
                                     RGBColor oColor = new RGBColor(colorString);
                                     double sB = oColor.GetBrightness();
-                                    HSB hsb = new HSB((int) oColor.GetHue(), (int)oColor.GetSaturation(), (int)oColor.GetBrightness());
+                                    HSB hsb = new HSB((int)oColor.GetHue(), (int)oColor.GetSaturation(), (int)oColor.GetBrightness());
                                     if (hsb.Brightness > bClamp) {
-                                        hsb.Brightness = (int) bClamp;
+                                        hsb.Brightness = (int)bClamp;
                                     }
                                     oColor = hsb.GetRGB();
                                     double nB = oColor.GetBrightness();
-                                    entLight.State.SetRGBColor(oColor);
-                                    entLight.State.SetBrightness(Brightness);
+
+                                    if (sceneBase != null) {
+                                        EasingType easing = sceneBase.Easing;
+                                        RGBColor sColor = new RGBColor(prevColors[mapId]);
+                                        RGBColor tColor = oColor;
+                                        double sBright = sColor.GetBrightness();
+                                        double tBright = tColor.GetBrightness();
+                                        double t1 = sceneBase.AnimationTime;
+                                        double t2 = 0;
+
+                                        switch (easing) {
+                                            case EasingType.blend:
+                                                sBright = (int)sColor.GetBrightness();                                                
+                                                break;
+                                            case EasingType.fadeIn:
+                                                sBright = 0;
+                                                sColor = oColor;
+                                                break;
+                                            case EasingType.fadeOutIn:
+                                                t1 = t1 / 2;
+                                                t2 = t1;
+                                                break;
+                                            case EasingType.fadeOut:
+                                                sBright = 0;
+                                                sColor = oColor;                                                
+                                                break;
+                                        }
+                                        Transition oTrans = tList[lightInt];
+                                        bool doTrans = true;
+                                        if (oTrans != null) {
+                                            if (!oTrans.IsFinished) {
+                                                doTrans = false;
+                                            }
+                                        }
+                                        if (doTrans) {
+                                            Transition lTrans = new Transition(tColor, tBright, TimeSpan.FromSeconds(t1));
+                                            entLight.Transition = lTrans;
+                                            lTrans.Start(sColor, sBright, ct);
+                                            prevColors[mapId] = oColor.ToHex();
+                                            tList[lightInt] = lTrans;
+                                        }
+                                    } else {
+                                        Console.WriteLine("No base scene foundd...");
+                                        entLight.State.SetRGBColor(oColor);
+                                        entLight.State.SetBrightness(Brightness);
+                                    }
                                 }
                             }
                         }
+                        lightInt++;
                     }
+
+                    
                 }
                 Console.WriteLine("Hue: Token has been canceled.");
             } else {

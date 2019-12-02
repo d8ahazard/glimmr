@@ -4,8 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 
 namespace HueDream.DreamScreen.Scenes {
+    [Serializable]
     public abstract class SceneBase {
-        public enum AnimationMode { Linear, Reverse, Random };
+        public enum AnimationMode { Linear, Reverse, Random, RandomAll };
         public enum EasingType { none, fadeOut, fadeIn, fadeOutIn, blend }
         private string[] colors;
 
@@ -14,7 +15,6 @@ namespace HueDream.DreamScreen.Scenes {
         public void SetColors(string[] value) { colors = value; }
         public double AnimationTime { get; set; }
         public AnimationMode Mode { get; set; }
-        public EasingType Easing { get; set; }
-        
+        public EasingType Easing { get; set; }        
     }
 }

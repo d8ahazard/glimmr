@@ -11,79 +11,104 @@ using static HueDream.DreamScreen.Scenes.SceneBase;
 namespace HueDream.DreamScreen {
     public class DreamScene {
         private string[] colorArray;
+        private string[] targetArray;
 
         public string[] GetColorArray() {
             return colorArray;
         }
 
         private int startInt;
+        private double animationTime;
+        private string[] colors;
+        private AnimationMode mode;
                 
         public DreamScene() {
         }
 
-        private SceneBase LoadScene(int sceneNumber) {
+        public SceneBase currentScene { get; set; }
+
+        public void LoadScene(int sceneNumber) {
+            SceneBase scene;
             switch (sceneNumber) {
                 case 0:
-                    return new SceneRandom();
+                    scene = new SceneRandom();
+                    break;
                 case 1:
-                    return new SceneFire();
+                    scene = new SceneFire();
+                    break;
                 case 2:
-                    return new SceneTwinkle();
+                    scene = new SceneTwinkle();
+                    break;
                 case 3:
-                    return new SceneOcean();
+                    scene = new SceneOcean();
+                    break;
                 case 4:
-                    return new SceneRainbow();
+                    scene = new SceneRainbow();
+                    break;
                 case 5:
-                    return new SceneJuly();
+                    scene = new SceneJuly();
+                    break;
                 case 6:
-                    return new SceneHoliday();
+                    scene = new SceneHoliday();
+                    break;
                 case 7:
-                    return new ScenePop();
+                    scene = new ScenePop();
+                    break;
                 case 8:
-                    return new SceneForest();
+                    scene = new SceneForest();
+                    break;
+                default:
+                    scene = null;
+                    break;
             }
-            return null;
+            if (scene != null) {
+                currentScene = scene;
+                colors = scene.GetColors();
+                animationTime = scene.AnimationTime;
+                mode = scene.Mode;
+                colorArray = RefreshColors(colors);
+                targetArray = colorArray;
+                startInt = 0;
+            }
         }
 
         public async Task BuildColors(int sceneNumber, CancellationToken ct) {
-            SceneBase scene = LoadScene(sceneNumber);
-            string[] colors = scene.GetColors();
-            double animationTime = scene.AnimationTime;
-            AnimationMode mode = scene.Mode;
-            EasingType easing = scene.Easing;
             startInt = 0;
             Console.WriteLine("Loaded scene " + sceneNumber);
             long startTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
             long curTime = startTime;
+            // Set our colors right away
+            Console.WriteLine("Initial calculation complete, starting loop.");
             while (!ct.IsCancellationRequested) {
                 curTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
                 long dTime = curTime - startTime;
                 // Check and set colors if time is greater than animation int, then reset time count...
-                if (dTime >= animationTime * 1000) {
+                double tickPercent = dTime / (animationTime * 1000);
+                if (dTime > animationTime * 1000) {
                     startTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-                    colorArray = CalculateColors(RefreshColors(colors, mode), easing);
+                    colorArray = RefreshColors(colors);                    
                     Console.WriteLine("TICK: " + JsonConvert.SerializeObject(colorArray));
-                } else {
-                    colorArray = CalculateColors(colorArray, easing);
                 }
             }
             Console.WriteLine("Canceled??");
         }
 
-        private string[] RefreshColors(string[] input, AnimationMode mode) {
-            Console.WriteLine("Refreshing colors.");
+        private string[] RefreshColors(string[] input) {
             string[] output = new string[12];
             int maxColors = input.Length - 1;
             int colorCount = startInt;
             int col1 = colorCount;
+            int allRand = new Random().Next(0, maxColors);
             for (int i = 0; i < 12; i++) {
                 col1 = i + col1;
                 if (mode == AnimationMode.Random) {
                     col1 = new Random().Next(0, maxColors);
-                }
+                }                
                 while (col1 > maxColors) {
                     col1 -= maxColors;
-                    Console.WriteLine("Col1: " + col1);
+                }
+                if (mode == AnimationMode.RandomAll) {
+                    col1 = allRand;
                 }
                 output[i] = input[col1];
             }
@@ -105,25 +130,6 @@ namespace HueDream.DreamScreen {
             return output;
         }
 
-        private string[] CalculateColors(string[] current, EasingType easing) {
-            int i = 0;
-            string[] output = current;
-            /*foreach (string color in current) {
-                switch (easing) {
-                    case EasingType.none:
-                        break;
-                    case EasingType.blend:
-                        break;
-                    case EasingType.fadeIn:
-                        break;
-                    case EasingType.fadeOut:
-                        break;
-                    case EasingType.fadeOutIn:
-                        break;
-                }
-                i++;
-            }*/
-            return output;
-        }
     }
 }
+ 
