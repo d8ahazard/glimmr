@@ -27,6 +27,9 @@ namespace HueDream.HueDream {
             if (!DreamClient.listening) {
                 Console.WriteLine("DreamSync:  Listen start...");
                 dreamScreen.Listen();
+                // Start another listener for show state change
+                Task.Run(async () => dreamScreen.CheckShow());
+                Console.WriteLine("Show listener started.");
                 DreamClient.listening = true;
                 Console.WriteLine("DreamSync: Listening.");
             }

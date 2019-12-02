@@ -10,12 +10,13 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace HueDream.DreamScreen {
     internal class DreamClient : IDisposable {
 
-        public string[] colors { get; }
+        public string[] colors { get; set; }
         public int Brightness { get; set; }
         public int[] Saturation { get; set; }
 
@@ -29,6 +30,12 @@ namespace HueDream.DreamScreen {
         private IPEndPoint targetEndpoint;
         private IPEndPoint listenEndPoint;
         private UdpClient listener;
+        private DreamScene dreamScene;
+        private CancellationTokenSource cts;
+        private int ambientMode;
+        private int ambientShow;
+        private int prevShow;
+        private bool showStarted;
         private readonly string sourceIp;
         private readonly byte group;
 
@@ -36,6 +43,11 @@ namespace HueDream.DreamScreen {
         public DreamClient(DreamSync ds) {
             DataStore dd = DreamData.getStore();
             BaseDevice dev = GetDeviceData();
+            dreamScene = new DreamScene();
+            ambientMode = dev.AmbientModeType;
+            ambientShow = dev.AmbientShowType;
+            prevShow = -1;
+            showStarted = false;
             int devB = dev.Brightness;
             Brightness = devB;
             Saturation = dev.Saturation;
@@ -49,6 +61,7 @@ namespace HueDream.DreamScreen {
             }
             deviceMode = -1;
             dreamSync = ds;
+            UpdateMode(dev.Mode);
         }
 
         public DreamClient() {
@@ -68,20 +81,68 @@ namespace HueDream.DreamScreen {
 
         public void UpdateMode(int newMode) {
             BaseDevice dev = DreamData.GetDeviceData();
-            if (deviceMode != newMode || newMode == -1) {
+            if (deviceMode != newMode || newMode == -1) {                
                 deviceMode = newMode;
+                Console.WriteLine("Umode: " + deviceMode);
                 dev.Mode = newMode;
                 Console.WriteLine("DreamScreen: Updating mode to " + dev.Mode);
                 // If ambient, set to ambient colorS   
                 bool sync = (newMode != 0);
                 if (newMode == 3) {
-                    SetAmbientColor(dev.AmbientColor);
-                    Console.WriteLine("DreamScreen: Updating color array to use ambient color: " + colors[0]);
+                    if (dev.AmbientModeType == 0) {
+                        SetAmbientColor(dev.AmbientColor);
+                    }
+                    //Console.WriteLine("DreamScreen: Updating color array to use ambient color: " + colors[0]);
                 } else if (newMode == 2 || newMode == 1) {
                     Console.WriteLine("DreamScreen: Subscribing to sector data.");
                     Subscribe();
                 }
                 dreamSync.CheckSync(sync);
+            }
+        }
+
+        public async Task CheckShow() {
+            cts = new CancellationTokenSource();
+            Console.WriteLine("Check show started: " + prevShow);
+            while (true) {
+                //Console.WriteLine("LOOP: " + deviceMode + " show " + ambientShow);
+                // If the show is running and we've changed scene, cancel current show
+                if (prevShow != ambientShow && showStarted && !cts.IsCancellationRequested) {
+                    Console.WriteLine("Canceling previous show: " + prevShow);
+                    showStarted = false;
+                    cts.Cancel();
+                    cts = new CancellationTokenSource();
+                    Console.WriteLine("Canceled.");
+                }
+
+                // If we're still in ambient mode
+                if (deviceMode == 3) {
+                    //Console.WriteLine("Devmode: " + deviceMode);
+                    // If we're using scenes
+                    if (ambientMode == 1) {
+                        // Start our show generation if it's not running.
+                        if (!showStarted) {
+                            Console.WriteLine("Starting new ambient show: " + ambientShow);
+                            Task.Run(async() => dreamScene.BuildColors(ambientShow, cts.Token));
+                            prevShow = ambientShow;
+                            showStarted = true;
+                        }
+
+                        // Start updating our color data
+                        if (showStarted) {
+                            colors = dreamScene.GetColorArray();
+                            //Console.WriteLine("COLORS: " + JsonConvert.SerializeObject(colors));
+                        }
+                    }
+                }
+
+                // If our ambient mode is not 1 and the show is running...
+                if (ambientMode != 1 && showStarted) {
+                    Console.WriteLine("Stopping ambient show: " + ambientShow);
+                    showStarted = false;
+                    cts.Cancel();
+                    cts = new CancellationTokenSource();
+                }
             }
         }
 
@@ -248,12 +309,22 @@ namespace HueDream.DreamScreen {
                     if (writeState) {
                         dss.Mode = payload[0];
                         UpdateMode(payload[0]);
+                        Console.WriteLine("Updating mode: " + payload[0]);
                     }
 
                     break;
                 case "AMBIENT_MODE_TYPE":
                     if (writeState) {
                         dss.AmbientModeType = payload[0];
+                        ambientMode = payload[0];
+                    }
+
+                    break;
+                case "AMBIENT_SCENE":
+                    if (writeState) {                        
+                        dss.AmbientShowType = payload[0];
+                        ambientShow = payload[0];
+                        Console.WriteLine("Scene updated: "+ ambientShow);
                     }
 
                     break;
