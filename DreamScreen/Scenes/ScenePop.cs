@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace HueDream.DreamScreen.Scenes {
+﻿namespace HueDream.DreamScreen.Scenes {
     public class ScenePop : SceneBase {
         public ScenePop() {
             SetColors(new string[]{

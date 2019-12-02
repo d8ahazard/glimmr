@@ -1,21 +1,19 @@
 ﻿using HueDream.DreamScreen;
-using HueDream.DreamScreen.Devices;
 using HueDream.Hue;
 using JsonFlatFileDataStore;
+using Q42.HueApi.Models.Groups;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Q42.HueApi.Models.Groups;
-using Newtonsoft.Json;
 
 namespace HueDream.HueDream {
     public class DreamSync {
 
-        private HueBridge hueBridge;
-        private DreamClient dreamScreen;
+        private readonly HueBridge hueBridge;
+        private readonly DreamClient dreamScreen;
         private CancellationTokenSource cts;
-        
+
         public static bool syncEnabled { get; set; }
         public DreamSync() {
             DataStore store = DreamData.getStore();

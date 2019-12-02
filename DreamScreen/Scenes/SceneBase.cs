@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace HueDream.DreamScreen.Scenes {
     [Serializable]
@@ -15,6 +12,6 @@ namespace HueDream.DreamScreen.Scenes {
         public void SetColors(string[] value) { colors = value; }
         public double AnimationTime { get; set; }
         public AnimationMode Mode { get; set; }
-        public EasingType Easing { get; set; }        
+        public EasingType Easing { get; set; }
     }
 }

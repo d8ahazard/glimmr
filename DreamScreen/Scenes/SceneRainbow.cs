@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace HueDream.DreamScreen.Scenes {
+﻿namespace HueDream.DreamScreen.Scenes {
     public class SceneRainbow : SceneBase {
         public SceneRainbow() {
             SetColors(new string[]{
@@ -21,6 +16,6 @@ namespace HueDream.DreamScreen.Scenes {
             Mode = AnimationMode.Linear;
             Easing = EasingType.blend;
         }
-        
+
     }
 }

@@ -1,9 +1,6 @@
 ﻿using HueDream.DreamScreen.Scenes;
 using Newtonsoft.Json;
-using Q42.HueApi.ColorConverters;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using static HueDream.DreamScreen.Scenes.SceneBase;
@@ -21,7 +18,7 @@ namespace HueDream.DreamScreen {
         private double animationTime;
         private string[] colors;
         private AnimationMode mode;
-                
+
         public DreamScene() {
         }
 
@@ -86,7 +83,7 @@ namespace HueDream.DreamScreen {
                 double tickPercent = dTime / (animationTime * 1000);
                 if (dTime > animationTime * 1000) {
                     startTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-                    colorArray = RefreshColors(colors);                    
+                    colorArray = RefreshColors(colors);
                     Console.WriteLine("TICK: " + JsonConvert.SerializeObject(colorArray));
                 }
             }
@@ -103,7 +100,7 @@ namespace HueDream.DreamScreen {
                 col1 = i + col1;
                 if (mode == AnimationMode.Random) {
                     col1 = new Random().Next(0, maxColors);
-                }                
+                }
                 while (col1 > maxColors) {
                     col1 -= maxColors;
                 }
@@ -132,4 +129,3 @@ namespace HueDream.DreamScreen {
 
     }
 }
- 

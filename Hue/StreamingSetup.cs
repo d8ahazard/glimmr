@@ -1,6 +1,5 @@
 ﻿using HueDream.HueDream;
 using JsonFlatFileDataStore;
-using Newtonsoft.Json;
 using Q42.HueApi;
 using Q42.HueApi.Models.Groups;
 using Q42.HueApi.Streaming;

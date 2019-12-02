@@ -1,6 +1,5 @@
 ﻿using HueDream.DreamScreen.Scenes;
 using HueDream.HueDream;
-using HueDream.Util;
 using JsonFlatFileDataStore;
 using Newtonsoft.Json;
 using Q42.HueApi;
@@ -12,7 +11,6 @@ using Q42.HueApi.Models.Groups;
 using Q42.HueApi.Streaming.Models;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -54,9 +52,9 @@ namespace HueDream.Hue {
             colors = colorIn;
         }
 
-        
 
-        
+
+
         public async Task StartStream(CancellationToken ct, DreamSync ds) {
             bridgeLights = DreamData.GetItem<List<LightMap>>("hueMap");
             Console.WriteLine("Hue: Connecting to bridge...");
@@ -80,13 +78,13 @@ namespace HueDream.Hue {
                 Console.WriteLine("Hue: Bridge Connected. Beginning transmission...");
                 Transition[] tList = new Transition[bridgeLights.Count];
                 while (!ct.IsCancellationRequested) {
-                    
+
                     int lightInt = 0;
                     foreach (LightMap lightMap in bridgeLights) {
                         if (lightMap.SectorId != -1) {
                             int mapId = lightMap.SectorId;
                             string colorString = colors[mapId];
-                            
+
                             // Clamp our brightness based on settings
                             double bClamp = (255 * Brightness) / 100;
                             if (lightMap.OverrideBrightness) {
@@ -115,7 +113,7 @@ namespace HueDream.Hue {
 
                                         switch (easing) {
                                             case EasingType.blend:
-                                                sBright = (int)sColor.GetBrightness();                                                
+                                                sBright = (int)sColor.GetBrightness();
                                                 break;
                                             case EasingType.fadeIn:
                                                 sBright = 0;
@@ -127,7 +125,7 @@ namespace HueDream.Hue {
                                                 break;
                                             case EasingType.fadeOut:
                                                 sBright = 0;
-                                                sColor = oColor;                                                
+                                                sColor = oColor;
                                                 break;
                                         }
                                         Transition oTrans = tList[lightInt];
@@ -155,7 +153,7 @@ namespace HueDream.Hue {
                         lightInt++;
                     }
 
-                    
+
                 }
                 Console.WriteLine("Hue: Token has been canceled.");
             } else {

@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace HueDream.DreamScreen.Scenes {
+﻿namespace HueDream.DreamScreen.Scenes {
     public class SceneRandom : SceneBase {
         public SceneRandom() {
-            SetColors(new string[]{ 
+            SetColors(new string[]{
             "FF0000", // Red
             "00FF00", // Green
             "0000FF", // Blue

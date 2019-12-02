@@ -32,7 +32,7 @@ namespace HueDream.DreamScreen {
         private IPEndPoint targetEndpoint;
         private IPEndPoint listenEndPoint;
         private UdpClient listener;
-        private DreamScene dreamScene;
+        private readonly DreamScene dreamScene;
         private CancellationTokenSource cts;
         private int ambientMode;
         private int ambientShow;
@@ -84,7 +84,7 @@ namespace HueDream.DreamScreen {
 
         public void UpdateMode(int newMode) {
             BaseDevice dev = DreamData.GetDeviceData();
-            if (deviceMode != newMode || newMode == -1) {                
+            if (deviceMode != newMode || newMode == -1) {
                 deviceMode = newMode;
                 Console.WriteLine("Umode: " + deviceMode);
                 dev.Mode = newMode;
@@ -107,15 +107,15 @@ namespace HueDream.DreamScreen {
         public async Task CheckShow() {
             cts = new CancellationTokenSource();
             Console.WriteLine("Check show started: " + prevShow);
-            while (true) {               
+            while (true) {
                 // If we're still in ambient mode
-                if (deviceMode == 3 && ambientMode == 1) {                    
+                if (deviceMode == 3 && ambientMode == 1) {
                     // Start our show generation if it's not running.
                     if (!showStarted) {
                         Console.WriteLine("Starting new ambient show: " + ambientShow);
                         sceneBase = dreamScene.currentScene;
                         Console.WriteLine("Updated stored base to " + JsonConvert.SerializeObject(sceneBase));
-                        Task.Run(async() => dreamScene.BuildColors(ambientShow, cts.Token));
+                        Task.Run(async () => dreamScene.BuildColors(ambientShow, cts.Token));
                         prevShow = ambientShow;
                         showStarted = true;
                     } else {
@@ -130,7 +130,7 @@ namespace HueDream.DreamScreen {
                         colors = dreamScene.GetColorArray();
                         //Console.WriteLine("COLORS: " + JsonConvert.SerializeObject(colors));
                     }
-                    
+
                 }
 
                 // If our ambient mode is not 1 and the show is running...
@@ -319,10 +319,10 @@ namespace HueDream.DreamScreen {
 
                     break;
                 case "AMBIENT_SCENE":
-                    if (writeState) {                        
+                    if (writeState) {
                         dss.AmbientShowType = payload[0];
                         ambientShow = payload[0];
-                        Console.WriteLine("Scene updated: "+ ambientShow);
+                        Console.WriteLine("Scene updated: " + ambientShow);
                     }
 
                     break;

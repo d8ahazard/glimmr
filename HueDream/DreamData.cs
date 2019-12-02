@@ -51,7 +51,7 @@ namespace HueDream.HueDream {
                     return output;
                 }
             } catch (KeyNotFoundException) {
-                
+
             }
             return null;
         }
@@ -70,7 +70,7 @@ namespace HueDream.HueDream {
 
         public static bool SetItem(string key, dynamic value) {
             using (DataStore dStore = new DataStore(GetConfigPath("store.json"))) {
-                
+
                 dynamic output = dStore.ReplaceItem(key, value, true);
                 return output;
             }

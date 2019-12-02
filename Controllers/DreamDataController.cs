@@ -104,17 +104,17 @@ namespace HueDream.Controllers {
             return Ok(DreamData.getStore());
         }
 
-                
+
         // POST: api/HueData
         [HttpPost]
         public void Post() {
             BaseDevice myDevice = DreamData.GetDeviceData();
             DataStore store = DreamData.getStore();
-            List<LightMap> map = store.GetItem<List<LightMap>>("hueMap");            
+            List<LightMap> map = store.GetItem<List<LightMap>>("hueMap");
             Group[] groups = store.GetItem<Group[]>("entertainmentGroups");
             store.Dispose();
             Group entGroup = DreamData.GetItem<Group>("entertainmentGroup");
-            string curId = (entGroup == null) ? "-1" : entGroup.Id;           
+            string curId = (entGroup == null) ? "-1" : entGroup.Id;
             string[] keys = Request.Form.Keys.ToArray();
             Console.WriteLine("We have a post: " + JsonConvert.SerializeObject(Request.Form));
             bool mapLights = false;
