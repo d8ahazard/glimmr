@@ -161,6 +161,15 @@ function fetchJson() {
                 }
                 $('#mode' + value.mode).addClass('active');
                 $('#dsMode').html(modestr);
+                if (value.tag === "Connect") {
+                    $('#iconWrap').addClass("Connect").removeClass("SideKick");
+                    console.log("Connect");
+                } else {
+                    $('#iconWrap').addClass("SideKick").removeClass("Connect");
+                    console.log("Sidekick");
+                }
+                $('#dsType').val(value.tag);
+                $('#dsType option[value='+value.tag+']').attr('selected', true);
             } else if (id === "myDevices") {
                 if (value !== null) buildDevList(value);
             } else {

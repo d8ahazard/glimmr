@@ -57,7 +57,7 @@ namespace HueDream.DreamScreen {
         private BaseDevice GetDeviceData() {
             using DataStore dd = DreamData.getStore();
             BaseDevice dev;
-            string devType = dd.GetItem("emuType");
+            string devType = dd.GetItem<string>("emuType");
             if (devType == "SideKick") {
                 dev = dd.GetItem<SideKick>("myDevice");
             } else {

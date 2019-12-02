@@ -76,6 +76,14 @@ namespace HueDream.HueDream {
             }
         }
 
+        public static bool SetItem<T>(string key, dynamic value) {
+            using (DataStore dStore = new DataStore(GetConfigPath("store.json"))) {
+
+                dynamic output = dStore.ReplaceItem<T>(key, value, true);
+                return output;
+            }
+        }
+
         public static DataObj GetStoreSerialized() {
             string jsonPath = GetConfigPath("store.json");
             if (File.Exists(jsonPath)) {

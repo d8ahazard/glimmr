@@ -15,6 +15,7 @@ namespace HueDream.HueDream {
         //public BaseDevice[] MyDevices { get; set; }
         public string DsIp { get; set; }
         public string HueIp { get; set; }
+        public string EmuType { get; set; }
         public bool HueSync { get; set; }
         public bool HueAuth { get; set; }
         public string HueKey { get; set; }
@@ -42,6 +43,7 @@ namespace HueDream.HueDream {
             HueAuth = false;
             HueKey = "";
             HueUser = "";
+            EmuType = "SideKick";
             HueLights = new List<KeyValuePair<int, string>>();
             HueMap = new List<LightMap>();
             EntertainmentGroups = null;

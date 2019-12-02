@@ -149,7 +149,14 @@ select {
     padding-right: 15px;
 }
 
-#iconWrap {
+#iconWrap.Connect {
+    background-image: url("../img/connect_icon.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+#iconWrap.SideKick {
     background-image: url("../img/sidekick_icon.png");
     background-size: contain;
     background-repeat: no-repeat;

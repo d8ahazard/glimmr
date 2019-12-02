@@ -137,6 +137,7 @@ namespace HueDream.Controllers {
                         }
                         myDevice.Initialize();
                         DreamData.SetItem("myDevice", myDevice);
+                        DreamData.SetItem<string>("emuType", Request.Form[key]);
                     }
                 } else if (key == "dsGroup" && curId != Request.Form[key]) {
                     foreach (Group g in groups) {
