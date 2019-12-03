@@ -1,7 +1,6 @@
 ﻿using HueDream.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Diagnostics;
 
 namespace HueDream.Controllers {
@@ -13,7 +12,6 @@ namespace HueDream.Controllers {
         }
 
         public IActionResult Index() {
-            Console.WriteLine("Returning index.");
             return View();
         }
 
@@ -26,12 +24,6 @@ namespace HueDream.Controllers {
         }
 
 
-        [HttpPost]
-        public void Post([FromBody] string value) {
-            _logger.LogDebug("Post received.", value);
-        }
-
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error() {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }

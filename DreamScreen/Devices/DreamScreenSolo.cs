@@ -1,6 +1,6 @@
 ﻿namespace HueDream.DreamScreen.Devices {
 
-    public class DreamScreenSolo : DreamScreen {
+    public class DreamScreenSolo : DreamScreenHD {
         private static readonly byte[] requiredSoloEspFirmwareVersion = new byte[] { 1, 6 };
         private static readonly byte[] requiredSoloPicVersionNumber = new byte[] { 6, 2 };
         private const string tag = "DreamScreenSolo";

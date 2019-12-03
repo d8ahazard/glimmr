@@ -62,7 +62,7 @@ namespace HueDream.Hue {
 
 
 
-        public async Task StartStream(DreamSync ds, CancellationToken ct) {
+        public async Task StartStream(CancellationToken ct) {
             SetBridgeLights(DreamData.GetItem<List<LightMap>>("hueMap"));
             Console.WriteLine($"Hue: Connecting to bridge at {bridgeIp}...");
             List<string> lights = new List<string>();
@@ -201,10 +201,10 @@ namespace HueDream.Hue {
                 ILocalHueClient client = new LocalHueClient(bridgeIp);
                 //Make sure the user has pressed the button on the bridge before calling RegisterAsync
                 //It will throw an LinkButtonNotPressedException if the user did not press the button
-                result = await client.RegisterAsync("HueDream", Environment.MachineName, true);
+                result = await client.RegisterAsync("HueDream", Environment.MachineName, true).ConfigureAwait(true);
                 Console.WriteLine("Hue: User name is " + result.Username);
-            } catch (Exception) {
-                Console.WriteLine("Hue: The link button is not pressed.");
+            } catch (HueException) {
+                Console.WriteLine($"Hue: The link button is not pressed at {bridgeIp}.");
             }
             return result;
         }

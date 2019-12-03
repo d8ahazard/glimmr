@@ -145,7 +145,12 @@ namespace HueDream.Util {
                 crc = crc8_table[((byte)(data[cntr] ^ crc)) & 255];
             }
 
-            return (crc == checkCrc);
+            if (crc == checkCrc) {
+                return true;
+            } else {
+                Console.WriteLine($"CRC Check failed, expected {crc} got {checkCrc}.");
+                return false;
+            }
         }
 
     }

@@ -10,7 +10,7 @@
 
 
 
-        
+
         int AmbientModeType { get; set; }
         int Brightness { get; set; }
 

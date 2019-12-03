@@ -3,11 +3,9 @@ using System;
 using System.Collections.Generic;
 
 namespace HueDream.DreamScreen.Devices {
-    public class DreamScreen : BaseDevice {
-        private const string bootloaderKey = "Ka";
+    public class DreamScreenHD : BaseDevice {
         private static readonly byte[] requiredEspFirmwareVersion = new byte[] { 1, 6 };
         private static readonly byte[] requiredPicVersionNumber = new byte[] { 1, 7 };
-        private const string resetKey = "sA";
         private const string tag = "DreamScreen";
         private byte[] appMusicData { get; set; }
         public int BootState { get; set; }
@@ -42,7 +40,7 @@ namespace HueDream.DreamScreen.Devices {
         public byte Zones { get; set; }
         public int[] ZonesBrightness { get; set; }
 
-        public DreamScreen(string ipAddress) : base(ipAddress) {
+        public DreamScreenHD(string ipAddress) : base(ipAddress) {
             Tag = tag;
             EspFirmwareVersion = requiredEspFirmwareVersion;
             PicVersionNumber = requiredPicVersionNumber;
@@ -77,7 +75,7 @@ namespace HueDream.DreamScreen.Devices {
             Name = "DreamScreen HD";
             HdmiInputName1 = "HDMI 1";
             HdmiInputName2 = "HDMI 2";
-            HdmiInputName3 = "HDMI 3";            
+            HdmiInputName3 = "HDMI 3";
         }
 
 

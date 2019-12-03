@@ -23,7 +23,7 @@ namespace HueDream.DreamScreen.Devices {
         public int ProductId { get; set; }
         public string Saturation { get; set; }
 
-        
+
         public void Initialize() {
             GroupName = "unassigned";
             GroupNumber = 0;

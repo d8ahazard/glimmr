@@ -71,7 +71,7 @@ namespace HueDream.DreamScreen {
         public DreamClient() {
         }
 
-        private BaseDevice GetDeviceData() {
+        private static BaseDevice GetDeviceData() {
             using DataStore dd = DreamData.getStore();
             BaseDevice dev;
             string devType = dd.GetItem<string>("emuType");
@@ -187,7 +187,6 @@ namespace HueDream.DreamScreen {
             byte[] receivedBytes = c.EndReceive(ar, ref receivedIpEndPoint);
             // Convert data to ASCII and print in console
             if (!MsgUtils.CheckCrc(receivedBytes)) {
-                Console.WriteLine("DreamScreen: CRC Check Failed!");
                 return;
             }
             //Console.WriteLine("DS: Brightness is " + Brightness);
@@ -214,14 +213,14 @@ namespace HueDream.DreamScreen {
                     flag = msg.Flags;
                     bool groupMatch = int.Parse(msg.Group) == dev.GroupNumber;
                     if ((flag == "11" || flag == "21") && groupMatch) {
-                        dev= GetDeviceData();
+                        dev = GetDeviceData();
                         writeState = true;
                     }
                     if (!groupMatch) {
                         Console.WriteLine($"Group {int.Parse(msg.Group)} doesn't match {dev.GroupNumber}.");
                     }
                 }
-            } catch (Exception e) {
+            } catch (ArgumentException e) {
                 Console.WriteLine("MSG parse Exception: " + e.Message);
             }
 

@@ -32,7 +32,7 @@ namespace HueDream.Controllers {
         }
 
         [HttpGet("action")]
-        public JsonResult Get(string action) {            
+        public JsonResult Get(string action) {
             string message = "Unrecognized action";
             DataStore store = DreamData.getStore();
             Console.WriteLine($"{action} fired.");
@@ -97,7 +97,7 @@ namespace HueDream.Controllers {
             store.Dispose();
             return Ok(DreamData.GetStoreSerialized());
         }
-               
+
 
 
         // POST: api/HueData
@@ -169,7 +169,7 @@ namespace HueDream.Controllers {
             }
         }
 
-        private void SetMode(int mode) {
+        private static void SetMode(int mode) {
             DreamSender.SendUDPWrite(0x03, 0x01, new byte[] { (byte)mode }, 0x21, 0, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8888));
         }
 

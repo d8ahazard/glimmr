@@ -36,7 +36,7 @@ namespace HueDream.DreamScreen.Devices {
             IrLearningMode = 0;
             IrManifest = new byte[40];
             ThingName = "";
-            sectorData = new byte[] { 0 };
+            sectorData = DefaultSectorAssignment;
             isDemo = false;
             HueLifxSettingsReceived = false;
             ProductId = 4;

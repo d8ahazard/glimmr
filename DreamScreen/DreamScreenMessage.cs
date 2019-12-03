@@ -19,7 +19,7 @@ namespace HueDream.DreamScreen {
             return payload;
         }
 
-        public string PayloadString { get; set; }       
+        public string PayloadString { get; set; }
 
         public string Hex { get; }
         public string IpAddress { get; set; }
@@ -35,9 +35,7 @@ namespace HueDream.DreamScreen {
             string[] bytesString = byteString.Split("-");
             string magic = bytesString[0];
             if (!MsgUtils.CheckCrc(bytesIn) || magic != "FC") {
-                Console.WriteLine($"CRC Failed: {magic}");
-                IsValid = false;
-                return;
+                throw new ArgumentException($"Invalid message format: {magic}");
             }
             Hex = string.Join("", bytesString);
             int len = bytesIn[1];
@@ -61,7 +59,7 @@ namespace HueDream.DreamScreen {
                 int devType = payload[payload.Length - 2];
                 switch (devType) {
                     case 1:
-                        dreamDev = new Devices.DreamScreen(from);
+                        dreamDev = new Devices.DreamScreenHD(from);
                         break;
                     case 2:
                         dreamDev = new DreamScreen4K(from);

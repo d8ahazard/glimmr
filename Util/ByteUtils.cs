@@ -35,7 +35,7 @@ namespace HueDream.Util {
                     outBytes[bb] = 0;
                 }
             }
-            
+
             return outBytes;
         }
 
@@ -152,7 +152,7 @@ namespace HueDream.Util {
                     strOut += Convert.ToChar(b);
                 }
             } else {
-                throw new IndexOutOfRangeException();                
+                throw new IndexOutOfRangeException();
             }
             return strOut;
         }
@@ -208,8 +208,8 @@ namespace HueDream.Util {
                 }
 
                 return ascii;
-            } catch (IndexOutOfRangeException ex) { 
-                Console.WriteLine(ex.Message); 
+            } catch (IndexOutOfRangeException ex) {
+                Console.WriteLine(ex.Message);
             }
 
             return string.Empty;

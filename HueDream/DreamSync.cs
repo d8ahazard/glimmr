@@ -13,7 +13,7 @@ namespace HueDream.HueDream {
         private readonly HueBridge hueBridge;
         private readonly DreamClient dreamScreen;
         private CancellationTokenSource syncTokenSource;
-        private CancellationTokenSource dreamTokenSource;
+        private readonly CancellationTokenSource dreamTokenSource;
         private bool disposed = false;
 
         public static bool syncEnabled { get; set; }
@@ -45,7 +45,7 @@ namespace HueDream.HueDream {
             syncTokenSource = new CancellationTokenSource();
             dreamScreen.Subscribe();
             Task.Run(async () => await SyncData(syncTokenSource.Token).ConfigureAwait(false));
-            Task.Run(async () => await hueBridge.StartStream(this, syncTokenSource.Token).ConfigureAwait(false));
+            Task.Run(async () => await hueBridge.StartStream(syncTokenSource.Token).ConfigureAwait(false));
             Console.WriteLine("DreamSync: Sync running.");
             syncEnabled = true;
         }
@@ -78,7 +78,7 @@ namespace HueDream.HueDream {
             }
         }
 
-        private bool CanSync() {
+        private static bool CanSync() {
             DataStore store = DreamData.getStore();
             string dsIp = store.GetItem("dsIp");
             bool hueAuth = store.GetItem("hueAuth");
@@ -105,7 +105,7 @@ namespace HueDream.HueDream {
             return false;
         }
 
-        
+
         public void Dispose() {
             Dispose(true);
             GC.SuppressFinalize(this);
@@ -113,12 +113,14 @@ namespace HueDream.HueDream {
 
         // Protected implementation of Dispose pattern.
         protected virtual void Dispose(bool disposing) {
-            if (disposed)
+            if (disposed) {
                 return;
+            }
 
             if (disposing) {
                 if (syncTokenSource != null) {
                     syncTokenSource.Dispose();
+                    dreamTokenSource.Dispose();
                 }
                 dreamScreen.Dispose();
             }
