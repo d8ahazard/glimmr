@@ -22,17 +22,24 @@ namespace HueDream.Hue {
         public string bridgeKey { get; set; }
         public string bridgeUser { get; set; }
         public int Brightness { get; set; }
-        public SceneBase sceneBase;
-        public static bool doEntertain { set; get; }
+        public SceneBase DreamSceneBase { get; set; }
+        public static bool DoEntertain { set; get; }
 
         private readonly bool bridgeAuth;
 
-        public List<LightMap> bridgeLights { get; set; }
+        public List<LightMap> GetBridgeLights() {
+            return bridgeLights;
+        }
+
+        public void SetBridgeLights(List<LightMap> value) {
+            bridgeLights = value;
+        }
+
         private string[] colors;
         private string[] prevColors;
 
         private EntertainmentLayer entLayer;
-
+        private List<LightMap> bridgeLights;
 
         public HueBridge() {
             DataStore dd = DreamData.getStore();
@@ -41,9 +48,9 @@ namespace HueDream.Hue {
             bridgeKey = dd.GetItem("hueKey");
             bridgeUser = dd.GetItem("hueUser");
             bridgeAuth = dd.GetItem("hueAuth");
-            bridgeLights = dd.GetItem<List<LightMap>>("hueMap");
+            SetBridgeLights(dd.GetItem<List<LightMap>>("hueMap"));
             entLayer = null;
-            sceneBase = null;
+            DreamSceneBase = null;
             dd.Dispose();
         }
 
@@ -55,109 +62,110 @@ namespace HueDream.Hue {
 
 
 
-        public async Task StartStream(CancellationToken ct, DreamSync ds) {
-            bridgeLights = DreamData.GetItem<List<LightMap>>("hueMap");
-            Console.WriteLine("Hue: Connecting to bridge...");
+        public async Task StartStream(DreamSync ds, CancellationToken ct) {
+            SetBridgeLights(DreamData.GetItem<List<LightMap>>("hueMap"));
+            Console.WriteLine($"Hue: Connecting to bridge at {bridgeIp}...");
             List<string> lights = new List<string>();
-            foreach (LightMap lm in bridgeLights) {
+            foreach (LightMap lm in GetBridgeLights()) {
                 if (lm.SectorId != -1) {
                     lights.Add(lm.LightId.ToString());
                 }
             }
             Console.WriteLine("Hue: Using Lights: " + JsonConvert.SerializeObject(lights));
-            StreamingGroup stream = await StreamingSetup.SetupAndReturnGroup(lights, ct);
-            Console.WriteLine("Hue: Stream established.");
+            StreamingGroup stream = await StreamingSetup.SetupAndReturnGroup(lights, ct).ConfigureAwait(true);
+            Console.WriteLine($"Hue: Stream established at {bridgeIp}.");
             entLayer = stream.GetNewLayer(isBaseLayer: true);
             //Start automagically updating this entertainment group
             prevColors = colors;
-            SendColorData(ct, ds);
+            await SendColorData(ct).ConfigureAwait(false);
         }
 
-        private async Task SendColorData(CancellationToken ct, DreamSync ds) {
+        private async Task SendColorData(CancellationToken ct) {
             if (entLayer != null) {
-                Console.WriteLine("Hue: Bridge Connected. Beginning transmission...");
-                Transition[] tList = new Transition[bridgeLights.Count];
-                while (!ct.IsCancellationRequested) {
+                Console.WriteLine($"Hue: Bridge Connected. Beginning transmission to {bridgeIp}...");
+                Transition[] tList = new Transition[GetBridgeLights().Count];
+                await Task.Run(() => {
+                    while (!ct.IsCancellationRequested) {
+                        int lightInt = 0;
+                        foreach (LightMap lightMap in GetBridgeLights()) {
+                            if (lightMap.SectorId != -1) {
+                                int mapId = lightMap.SectorId;
+                                string colorString = colors[mapId];
 
-                    int lightInt = 0;
-                    foreach (LightMap lightMap in bridgeLights) {
-                        if (lightMap.SectorId != -1) {
-                            int mapId = lightMap.SectorId;
-                            string colorString = colors[mapId];
-
-                            // Clamp our brightness based on settings
-                            double bClamp = (255 * Brightness) / 100;
-                            if (lightMap.OverrideBrightness) {
-                                int newB = lightMap.Brightness;
-                                bClamp = (255 * newB) / 100;
-                            }
-                            foreach (EntertainmentLight entLight in entLayer) {
-                                if (entLight.Id == lightMap.LightId) {
-                                    RGBColor oColor = new RGBColor(colorString);
-                                    double sB = oColor.GetBrightness();
-                                    HSB hsb = new HSB((int)oColor.GetHue(), (int)oColor.GetSaturation(), (int)oColor.GetBrightness());
-                                    if (hsb.Brightness > bClamp) {
-                                        hsb.Brightness = (int)bClamp;
-                                    }
-                                    oColor = hsb.GetRGB();
-                                    double nB = oColor.GetBrightness();
-
-                                    if (sceneBase != null) {
-                                        EasingType easing = sceneBase.Easing;
-                                        RGBColor sColor = new RGBColor(prevColors[mapId]);
-                                        RGBColor tColor = oColor;
-                                        double sBright = sColor.GetBrightness();
-                                        double tBright = tColor.GetBrightness();
-                                        double t1 = sceneBase.AnimationTime;
-                                        double t2 = 0;
-
-                                        switch (easing) {
-                                            case EasingType.blend:
-                                                sBright = (int)sColor.GetBrightness();
-                                                break;
-                                            case EasingType.fadeIn:
-                                                sBright = 0;
-                                                sColor = oColor;
-                                                break;
-                                            case EasingType.fadeOutIn:
-                                                t1 = t1 / 2;
-                                                t2 = t1;
-                                                break;
-                                            case EasingType.fadeOut:
-                                                sBright = 0;
-                                                sColor = oColor;
-                                                break;
+                                // Clamp our brightness based on settings
+                                double bClamp = (255 * Brightness) / 100;
+                                if (lightMap.OverrideBrightness) {
+                                    int newB = lightMap.Brightness;
+                                    bClamp = (255 * newB) / 100;
+                                }
+                                foreach (EntertainmentLight entLight in entLayer) {
+                                    if (entLight.Id == lightMap.LightId) {
+                                        RGBColor oColor = new RGBColor(colorString);
+                                        double sB = oColor.GetBrightness();
+                                        HSB hsb = new HSB((int)oColor.GetHue(), (int)oColor.GetSaturation(), (int)oColor.GetBrightness());
+                                        if (hsb.Brightness > bClamp) {
+                                            hsb.Brightness = (int)bClamp;
                                         }
-                                        Transition oTrans = tList[lightInt];
-                                        bool doTrans = true;
-                                        if (oTrans != null) {
-                                            if (!oTrans.IsFinished) {
-                                                doTrans = false;
+                                        oColor = hsb.GetRGB();
+                                        double nB = oColor.GetBrightness();
+
+                                        if (DreamSceneBase != null) {
+                                            EasingType easing = DreamSceneBase.Easing;
+                                            RGBColor sColor = new RGBColor(prevColors[mapId]);
+                                            RGBColor tColor = oColor;
+                                            double sBright = sColor.GetBrightness();
+                                            double tBright = tColor.GetBrightness();
+                                            double t1 = DreamSceneBase.AnimationTime;
+                                            double t2 = 0;
+
+                                            switch (easing) {
+                                                case EasingType.blend:
+                                                    sBright = (int)sColor.GetBrightness();
+                                                    break;
+                                                case EasingType.fadeIn:
+                                                    sBright = 0;
+                                                    sColor = oColor;
+                                                    break;
+                                                case EasingType.fadeOutIn:
+                                                    t1 = t1 / 2;
+                                                    t2 = t1;
+                                                    break;
+                                                case EasingType.fadeOut:
+                                                    sBright = 0;
+                                                    sColor = oColor;
+                                                    break;
                                             }
+                                            Transition oTrans = tList[lightInt];
+                                            bool doTrans = true;
+                                            if (oTrans != null) {
+                                                if (!oTrans.IsFinished) {
+                                                    doTrans = false;
+                                                }
+                                            }
+                                            if (doTrans) {
+                                                Transition lTrans = new Transition(tColor, tBright, TimeSpan.FromSeconds(t1));
+                                                entLight.Transition = lTrans;
+                                                lTrans.Start(sColor, sBright, ct);
+                                                prevColors[mapId] = oColor.ToHex();
+                                                tList[lightInt] = lTrans;
+                                            }
+                                        } else {
+                                            Console.WriteLine("No base scene foundd...");
+                                            entLight.State.SetRGBColor(oColor);
+                                            entLight.State.SetBrightness(Brightness);
                                         }
-                                        if (doTrans) {
-                                            Transition lTrans = new Transition(tColor, tBright, TimeSpan.FromSeconds(t1));
-                                            entLight.Transition = lTrans;
-                                            lTrans.Start(sColor, sBright, ct);
-                                            prevColors[mapId] = oColor.ToHex();
-                                            tList[lightInt] = lTrans;
-                                        }
-                                    } else {
-                                        Console.WriteLine("No base scene foundd...");
-                                        entLight.State.SetRGBColor(oColor);
-                                        entLight.State.SetBrightness(Brightness);
                                     }
                                 }
                             }
+                            lightInt++;
                         }
-                        lightInt++;
+
+
                     }
-
-
-                }
-                Console.WriteLine("Hue: Token has been canceled.");
+                }).ConfigureAwait(true);
+                Console.WriteLine($"Hue: Token has been canceled for {bridgeIp}.");
             } else {
-                Console.WriteLine("Hue: Unable to fetch entertainment layer.");
+                Console.WriteLine($"Hue: Unable to fetch entertainment layer. {bridgeIp}");
             }
         }
 
@@ -165,7 +173,7 @@ namespace HueDream.Hue {
 
         public async Task<Group[]> ListGroups() {
             LocalHueClient client = new LocalHueClient(bridgeIp, bridgeUser, bridgeKey);
-            IReadOnlyList<Group> all = await client.GetEntertainmentGroups();
+            IReadOnlyList<Group> all = await client.GetEntertainmentGroups().ConfigureAwait(true);
             List<Group> output = new List<Group>();
             output.AddRange(all);
             return output.ToArray();
@@ -174,16 +182,16 @@ namespace HueDream.Hue {
         public async Task<Light[]> ListLights() {
             LocalHueClient client = new LocalHueClient(bridgeIp, bridgeUser, bridgeKey);
             IEnumerable<Light> lList = new List<Light>();
-            lList = await client.GetLightsAsync();
+            lList = await client.GetLightsAsync().ConfigureAwait(true);
             return lList.ToArray();
         }
 
 
 
         public void StopEntertainment() {
-            doEntertain = false;
+            DoEntertain = false;
             _ = StreamingSetup.StopStream().Result;
-            Console.WriteLine("Hue: Entertainment closed and done.");
+            Console.WriteLine($"Hue: Entertainment closed and done to {bridgeIp}.");
         }
 
 
@@ -203,11 +211,11 @@ namespace HueDream.Hue {
 
         public static string findBridge() {
             string bridgeIp = "";
-            Console.WriteLine("Hue: Looking for bridges");
+            Console.WriteLine("Hue: Looking for bridges...");
             IBridgeLocator locator = new HttpBridgeLocator();
             IEnumerable<LocatedBridge> bridgeIPs = locator.LocateBridgesAsync(TimeSpan.FromSeconds(2)).Result;
             foreach (LocatedBridge bIp in bridgeIPs) {
-                Console.WriteLine("Hue: Bridge IP is " + bIp.IpAddress);
+                Console.WriteLine($"Hue: Bridge IP is {bIp.IpAddress}.");
                 return bIp.IpAddress;
             }
             return bridgeIp;

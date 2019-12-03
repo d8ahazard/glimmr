@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace HueDream.Util {
@@ -119,15 +120,23 @@ namespace HueDream.Util {
 
 
         public static byte CalculateCrc(byte[] data) {
-            byte size = (byte)(data[1] + 1);
-            byte crc = 0;
-            for (byte cntr = 0; cntr < size; cntr = (byte)(cntr + 1)) {
-                crc = crc8_table[((byte)(data[cntr] ^ crc)) & 255];
+            if (data != null) {
+                byte size = (byte)(data[1] + 1);
+                byte crc = 0;
+                for (byte cntr = 0; cntr < size; cntr = (byte)(cntr + 1)) {
+                    crc = crc8_table[((byte)(data[cntr] ^ crc)) & 255];
+                }
+                return crc;
+            } else {
+                throw new ArgumentNullException(nameof(data));
             }
-            return crc;
         }
 
         public static bool CheckCrc(byte[] data) {
+            if (data is null) {
+                throw new ArgumentNullException(nameof(data));
+            }
+
             byte checkCrc = data[data.Length - 1];
             data = data.Take(data.Length - 1).ToArray();
             byte size = (byte)(data[1] + 1);

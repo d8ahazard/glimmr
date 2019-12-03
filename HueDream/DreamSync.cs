@@ -8,63 +8,64 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace HueDream.HueDream {
-    public class DreamSync {
+    public class DreamSync : IDisposable {
 
         private readonly HueBridge hueBridge;
         private readonly DreamClient dreamScreen;
-        private CancellationTokenSource cts;
+        private CancellationTokenSource syncTokenSource;
+        private CancellationTokenSource dreamTokenSource;
+        private bool disposed = false;
 
         public static bool syncEnabled { get; set; }
         public DreamSync() {
+            dreamTokenSource = new CancellationTokenSource();
             DataStore store = DreamData.getStore();
             store.Dispose();
             string dsIp = DreamData.GetItem("dsIp");
 
-            Console.WriteLine("DreamSync: Creating new sync...");
+            Console.WriteLine($"DreamSync: Creating new sync at {dsIp}...");
             hueBridge = new HueBridge();
             dreamScreen = new DreamClient(this);
             // Start our dreamscreen listening like a good boy
             if (!DreamClient.listening) {
-                Console.WriteLine("DreamSync:  Listen start...");
-                dreamScreen.Listen();
+                Console.WriteLine($"DreamSync:  Listen started at {dsIp}...");
+                dreamScreen.Listen().ConfigureAwait(false);
                 // Start another listener for show state change
-                Task.Run(async () => dreamScreen.CheckShow());
-                Console.WriteLine("Show listener started.");
+                Task.Run(async () => await dreamScreen.CheckShow(dreamTokenSource.Token).ConfigureAwait(false));
                 DreamClient.listening = true;
-                Console.WriteLine("DreamSync: Listening.");
             }
             if (dsIp == "0.0.0.0") {
-                Console.WriteLine("Searching for DS Devices.");
-                dreamScreen.FindDevices();
+                dreamScreen.FindDevices().ConfigureAwait(false);
             }
         }
 
 
         public void startSync() {
             Console.WriteLine("DreamSync: Starting sync...");
-            cts = new CancellationTokenSource();
+            syncTokenSource = new CancellationTokenSource();
             dreamScreen.Subscribe();
-            Task.Run(async () => SyncData(cts.Token));
-            Task.Run(async () => hueBridge.StartStream(cts.Token, this));
+            Task.Run(async () => await SyncData(syncTokenSource.Token).ConfigureAwait(false));
+            Task.Run(async () => await hueBridge.StartStream(this, syncTokenSource.Token).ConfigureAwait(false));
             Console.WriteLine("DreamSync: Sync running.");
             syncEnabled = true;
         }
 
         public void StopSync() {
-            Console.WriteLine("DreamSync: Stopping Sync...");
-            cts.Cancel();
+            Console.WriteLine($"DreamSync: Stopping Sync...{syncEnabled}");
+            syncTokenSource.Cancel();
             hueBridge.StopEntertainment();
             syncEnabled = false;
-            Console.WriteLine("DreamSync: Sync Stopped.");
+            Console.WriteLine($"DreamSync: Sync Stopped. {syncEnabled}");
         }
 
-        private void SyncData(CancellationToken ct) {
-            while (!ct.IsCancellationRequested) {
-                //Console.WriteLine("Syncing colors: " + JsonConvert.SerializeObject(dreamScreen.colors));
-                hueBridge.SetColors(dreamScreen.colors);
-                hueBridge.Brightness = dreamScreen.Brightness;
-                hueBridge.sceneBase = dreamScreen.sceneBase;
-            }
+        private async Task SyncData(CancellationToken ct) {
+            await Task.Run(() => {
+                while (!ct.IsCancellationRequested) {
+                    hueBridge.SetColors(dreamScreen.colors);
+                    hueBridge.Brightness = dreamScreen.Brightness;
+                    hueBridge.DreamSceneBase = dreamScreen.sceneBase;
+                }
+            }).ConfigureAwait(true);
         }
 
         public void CheckSync(bool enabled) {
@@ -102,6 +103,27 @@ namespace HueDream.HueDream {
                 Console.WriteLine("No target IP.");
             }
             return false;
+        }
+
+        
+        public void Dispose() {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        // Protected implementation of Dispose pattern.
+        protected virtual void Dispose(bool disposing) {
+            if (disposed)
+                return;
+
+            if (disposing) {
+                if (syncTokenSource != null) {
+                    syncTokenSource.Dispose();
+                }
+                dreamScreen.Dispose();
+            }
+
+            disposed = true;
         }
     }
 }

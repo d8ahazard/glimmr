@@ -329,15 +329,17 @@ function listGroups() {
     var gs = $('#dsGroup');
     gs.html("");
     var i = 0;
-    if (hueGroups !== null) {
-        if (hueGroup === null && hueGroups.length > 0) hueGroup = hueGroups[0];
-        $.each(hueGroups, function () {
-            var val = $(this)[0].id;
-            var txt = $(this)[0].name;
-            var selected = (val === hueGroup.id) ? " selected" : "";
-            gs.append(`<option value="${val}"${selected}>${txt}</option>`);
-            i++;
-        });
+    if (hueAuth) {
+        if (hueGroups !== null) {
+            if (hueGroup === null && hueGroups.length > 0) hueGroup = hueGroups[0];
+            $.each(hueGroups, function() {
+                var val = $(this)[0].id;
+                var txt = $(this)[0].name;
+                var selected = (val === hueGroup.id) ? " selected" : "";
+                gs.append(`<option value="${val}"${selected}>${txt}</option>`);
+                i++;
+            });
+        }
     }
 }
 

@@ -75,36 +75,36 @@ namespace HueDream.DreamScreen.Devices {
             IsDemo = false;
             ProductId = 1;
             Name = "DreamScreen HD";
-            try {
-                HdmiInputName1 = "HDMI 1";
-                HdmiInputName2 = "HDMI 2";
-                HdmiInputName3 = "HDMI 3";
-            } catch (Exception) {
-            }
+            HdmiInputName1 = "HDMI 1";
+            HdmiInputName2 = "HDMI 2";
+            HdmiInputName3 = "HDMI 3";            
         }
 
 
         public override void ParsePayload(byte[] payload) {
-            try {
-                string name1 = ByteUtils.ExtractString(payload, 0, 16);
-                if (name1.Length == 0) {
-                    name1 = tag;
-                }
-                Name = name1;
-                string groupName1 = ByteUtils.ExtractString(payload, 16, 32);
-                if (groupName1.Length == 0) {
-                    groupName1 = "Group";
-                }
-                GroupName = groupName1;
-            } catch (Exception) {
+            if (payload is null) {
+                throw new ArgumentNullException(nameof(payload));
             }
+            if (payload.Length < 132) {
+                throw new ArgumentException($"Payload length is too short: {payload.Length}");
+            }
+            string name1 = ByteUtils.ExtractString(payload, 0, 16);
+            if (name1.Length == 0) {
+                name1 = tag;
+            }
+            Name = name1;
+            string groupName1 = ByteUtils.ExtractString(payload, 16, 32);
+            if (groupName1.Length == 0) {
+                groupName1 = "Group";
+            }
+            GroupName = groupName1;
             GroupNumber = payload[32];
             Mode = payload[33];
             Brightness = payload[34];
             Zones = payload[35];
             ZonesBrightness = ByteUtils.ExtractInt(payload, 36, 40);
-            AmbientColor = ByteUtils.ExtractInt(payload, 40, 43);
-            Saturation = ByteUtils.ExtractInt(payload, 43, 46);
+            AmbientColor = ByteUtils.ExtractString(payload, 40, 43);
+            Saturation = ByteUtils.ExtractString(payload, 43, 46);
             FlexSetup = ByteUtils.ExtractInt(payload, 46, 52);
             MusicModeType = payload[52];
             MusicModeColors = ByteUtils.ExtractInt(payload, 53, 56);
@@ -158,8 +158,8 @@ namespace HueDream.DreamScreen.Devices {
             response.Add(ByteUtils.IntByte(Brightness));
             response.Add(Zones);
             response.AddRange(ByteUtils.IntBytes(ZonesBrightness));
-            response.AddRange(ByteUtils.IntBytes(AmbientColor));
-            response.AddRange(ByteUtils.IntBytes(Saturation));
+            response.AddRange(ByteUtils.StringBytes(AmbientColor));
+            response.AddRange(ByteUtils.StringBytes(Saturation));
             response.AddRange(ByteUtils.IntBytes(FlexSetup));
             response.Add(ByteUtils.IntByte(MusicModeType));
             response.AddRange(ByteUtils.IntBytes(MusicModeColors));

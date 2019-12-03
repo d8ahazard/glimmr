@@ -7,16 +7,22 @@ namespace HueDream.DreamScreen {
 
     [Serializable]
     public class DreamScreenMessage {
-        public string command { get; set; }
-        public string addr { get; }
-        public string flags { get; }
-        public string upper { get; }
-        public string lower { get; }
-        public byte[] payload { get; }
-        public string[] payloadString { get; set; }
-        public string hex { get; }
+        public string Command { get; set; }
+        public string Group { get; }
+        public string Flags { get; }
+        public string Upper { get; }
+        public string Lower { get; }
 
-        public string ipAddress;
+        private readonly byte[] payload;
+
+        public byte[] GetPayload() {
+            return payload;
+        }
+
+        public string PayloadString { get; set; }       
+
+        public string Hex { get; }
+        public string IpAddress { get; set; }
 
         public bool IsValid { get; set; }
 
@@ -29,53 +35,52 @@ namespace HueDream.DreamScreen {
             string[] bytesString = byteString.Split("-");
             string magic = bytesString[0];
             if (!MsgUtils.CheckCrc(bytesIn) || magic != "FC") {
-                Console.WriteLine("CRC Failed!");
+                Console.WriteLine($"CRC Failed: {magic}");
                 IsValid = false;
                 return;
             }
-            hex = string.Join("", bytesString);
+            Hex = string.Join("", bytesString);
             int len = bytesIn[1];
-            addr = bytesString[2];
-            flags = bytesString[3];
-            upper = bytesString[4];
-            lower = bytesString[5];
+            Group = bytesString[2];
+            Flags = bytesString[3];
+            Upper = bytesString[4];
+            Lower = bytesString[5];
             string cmd = bytesString[4] + bytesString[5];
             if (MsgUtils.commands.ContainsKey(cmd)) {
-                command = MsgUtils.commands[cmd];
+                Command = MsgUtils.commands[cmd];
             } else {
                 Console.WriteLine("DSMessage: No matching key in dict for bytes: " + cmd);
             }
 
             BaseDevice dreamDev = null;
             if (len > 5) {
-                payload = Payload(bytesIn);
-                string pString = BitConverter.ToString(payload);
-                payloadString = pString.Split("-");
+                payload = ExtractPayload(bytesIn);
+                PayloadString = BitConverter.ToString(GetPayload()).Replace("-", string.Empty);
             }
-            if (command == "DEVICE_DISCOVERY" && flags == "60" && len > 46) {
-                string typeByte = payloadString[payloadString.Length - 1];
-                switch (typeByte) {
-                    case "01":
+            if (Command == "DEVICE_DISCOVERY" && Flags == "60" && len > 46) {
+                int devType = payload[payload.Length - 2];
+                switch (devType) {
+                    case 1:
                         dreamDev = new Devices.DreamScreen(from);
                         break;
-                    case "02":
+                    case 2:
                         dreamDev = new DreamScreen4K(from);
                         break;
-                    case "03":
+                    case 3:
                         dreamDev = new SideKick(from);
                         break;
-                    case "04":
+                    case 4:
                         dreamDev = new Connect(from);
                         break;
-                    case "07":
+                    case 7:
                         dreamDev = new DreamScreenSolo(from);
                         break;
                 }
                 if (dreamDev != null) {
                     dreamDev.Initialize();
-                    dreamDev.ParsePayload(payload);
+                    dreamDev.ParsePayload(GetPayload());
                 } else {
-                    Console.WriteLine("DSMessage: Device is null.");
+                    Console.WriteLine($"DSMessage: Device is null from {devType}.");
                 }
                 device = dreamDev;
                 payload = null;
@@ -83,7 +88,7 @@ namespace HueDream.DreamScreen {
             IsValid = true;
         }
 
-        private static byte[] Payload(byte[] source) {
+        private static byte[] ExtractPayload(byte[] source) {
             int i = 0;
             List<byte> output = new List<byte>();
             foreach (byte b in source) {

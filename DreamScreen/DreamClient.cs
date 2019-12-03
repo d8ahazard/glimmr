@@ -20,7 +20,7 @@ namespace HueDream.DreamScreen {
         public string[] colors { get; set; }
         public SceneBase sceneBase { get; set; }
         public int Brightness { get; set; }
-        public int[] Saturation { get; set; }
+        public string Saturation { get; set; }
 
         public static bool listening { get; set; }
         public static bool subscribed { get; set; }
@@ -32,6 +32,7 @@ namespace HueDream.DreamScreen {
         private IPEndPoint targetEndpoint;
         private IPEndPoint listenEndPoint;
         private UdpClient listener;
+        private BaseDevice dev;
         private readonly DreamScene dreamScene;
         private CancellationTokenSource cts;
         private int ambientMode;
@@ -44,7 +45,7 @@ namespace HueDream.DreamScreen {
 
         public DreamClient(DreamSync ds) {
             DataStore dd = DreamData.getStore();
-            BaseDevice dev = GetDeviceData();
+            dev = GetDeviceData();
             dreamScene = new DreamScene();
             ambientMode = dev.AmbientModeType;
             ambientShow = dev.AmbientShowType;
@@ -83,7 +84,7 @@ namespace HueDream.DreamScreen {
         }
 
         public void UpdateMode(int newMode) {
-            BaseDevice dev = DreamData.GetDeviceData();
+            dev = DreamData.GetDeviceData();
             if (deviceMode != newMode || newMode == -1) {
                 deviceMode = newMode;
                 Console.WriteLine("Umode: " + deviceMode);
@@ -97,70 +98,60 @@ namespace HueDream.DreamScreen {
                     }
                     //Console.WriteLine("DreamScreen: Updating color array to use ambient color: " + colors[0]);
                 } else if (newMode == 2 || newMode == 1) {
-                    Console.WriteLine("DreamScreen: Subscribing to sector data.");
+                    Console.WriteLine($"DreamScreen: Subscribing to sector data for mode: {newMode}");
                     Subscribe();
                 }
                 dreamSync.CheckSync(sync);
             }
         }
 
-        public async Task CheckShow() {
-            cts = new CancellationTokenSource();
+        public async Task CheckShow(CancellationToken sCt) {
             Console.WriteLine("Check show started: " + prevShow);
-            while (true) {
-                // If we're still in ambient mode
-                if (deviceMode == 3 && ambientMode == 1) {
-                    // Start our show generation if it's not running.
-                    if (!showStarted) {
-                        Console.WriteLine("Starting new ambient show: " + ambientShow);
-                        sceneBase = dreamScene.currentScene;
-                        Console.WriteLine("Updated stored base to " + JsonConvert.SerializeObject(sceneBase));
-                        Task.Run(async () => dreamScene.BuildColors(ambientShow, cts.Token));
-                        prevShow = ambientShow;
-                        showStarted = true;
-                    } else {
-                        if (prevShow != ambientShow) {
-                            dreamScene.LoadScene(ambientShow);
+            await Task.Run(() => {
+                while (!sCt.IsCancellationRequested) {
+                    // If we're still in ambient mode
+                    if (deviceMode == 3 && ambientMode == 1) {
+                        // Start our show generation if it's not running.
+                        if (!showStarted) {
+                            Console.WriteLine("Starting new ambient show: " + ambientShow);
+                            sceneBase = dreamScene.currentScene;
+                            Console.WriteLine("Updated stored base to " + JsonConvert.SerializeObject(sceneBase));
+                            Task.Run(() => dreamScene.BuildColors(ambientShow, cts.Token)).ConfigureAwait(false);
                             prevShow = ambientShow;
+                            showStarted = true;
+                        } else {
+                            if (prevShow != ambientShow) {
+                                dreamScene.LoadScene(ambientShow);
+                                prevShow = ambientShow;
+                            }
                         }
+
+                        // Start updating our color data
+                        if (showStarted) {
+                            colors = dreamScene.GetColorArray();
+                            //Console.WriteLine("COLORS: " + JsonConvert.SerializeObject(colors));
+                        }
+
                     }
 
-                    // Start updating our color data
-                    if (showStarted) {
-                        colors = dreamScene.GetColorArray();
-                        //Console.WriteLine("COLORS: " + JsonConvert.SerializeObject(colors));
+                    // If our ambient mode is not 1 and the show is running...
+                    if ((deviceMode != 3 || ambientMode != 1) && showStarted) {
+                        Console.WriteLine("Stopping ambient show: " + ambientShow);
+                        showStarted = false;
+                        sceneBase = null;
+                        cts.Cancel();
+                        cts = new CancellationTokenSource();
                     }
-
                 }
-
-                // If our ambient mode is not 1 and the show is running...
-                if ((deviceMode != 3 || ambientMode != 1) && showStarted) {
-                    Console.WriteLine("Stopping ambient show: " + ambientShow);
-                    showStarted = false;
-                    sceneBase = null;
-                    cts.Cancel();
-                    cts = new CancellationTokenSource();
-                }
-            }
+            }).ConfigureAwait(true);
         }
 
-        private void SetAmbientColor(int[] aColor) {
-            string cString = aColor[0].ToString("X2");
-            cString += aColor[1].ToString("X2");
-            cString += aColor[2].ToString("X2");
-            Console.WriteLine("DreamScreen: Setting ambient color to: " + cString + " from " + JsonConvert.SerializeObject(aColor));
+        private void SetAmbientColor(string aColor) {
+            Console.WriteLine("DreamScreen: Setting ambient color to: " + aColor);
             for (int i = 0; i < colors.Length; i++) {
-                colors[i] = cString;
+                colors[i] = aColor;
             }
         }
-
-        private void SaveDeviceState(BaseDevice dev) {
-            DataStore dd = DreamData.getStore();
-            dd.ReplaceItemAsync("myDevice", dev);
-            dd.Dispose();
-
-        }
-
 
         public void Subscribe() {
             DreamSender.SendUDPWrite(0x01, 0x0C, new byte[] { 0x01 }, 0x10, group, targetEndpoint);
@@ -169,18 +160,19 @@ namespace HueDream.DreamScreen {
 
         public async Task Listen() {
             if (!listening) {
-
                 // Create UDP client
-                try {
-                    listenEndPoint = new IPEndPoint(IPAddress.Any, 8888); ;
-                    listener = new UdpClient();
-                    listener.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                    listener.EnableBroadcast = true;
-                    listener.Client.Bind(listenEndPoint);
-                    listening = true;
-                } catch (SocketException e) {
-                    Console.WriteLine("Socket exception: " + e.Message);
-                }
+                await Task.Run(() => {
+                    try {
+                        listenEndPoint = new IPEndPoint(IPAddress.Any, 8888); ;
+                        listener = new UdpClient();
+                        listener.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                        listener.EnableBroadcast = true;
+                        listener.Client.Bind(listenEndPoint);
+                        listening = true;
+                    } catch (SocketException e) {
+                        Console.WriteLine("Socket exception: " + e.Message);
+                    }
+                }).ConfigureAwait(true);
                 Console.WriteLine("DreamScreen: Starting UDP receiving on port " + listenEndPoint.Port);
                 // Call DataReceived() every time it gets something
                 listener.BeginReceive(DataReceived, listener);
@@ -203,27 +195,30 @@ namespace HueDream.DreamScreen {
             string flag = null;
             string from = receivedIpEndPoint.Address.ToString();
             IPEndPoint replyPoint = new IPEndPoint(receivedIpEndPoint.Address, 8888);
-            string[] payloadString = Array.Empty<string>();
+            string payloadString = string.Empty;
             byte[] payload = Array.Empty<byte>();
             BaseDevice msgDevice = null;
-            BaseDevice dss = null;
             bool writeState = false;
 
             try {
                 DreamScreenMessage msg = new DreamScreenMessage(receivedBytes, from);
                 if (msg.IsValid) {
-                    payload = msg.payload;
-                    payloadString = msg.payloadString;
-                    command = msg.command;
+                    payload = msg.GetPayload();
+                    payloadString = msg.PayloadString;
+                    command = msg.Command;
                     msgDevice = msg.device;
                     string[] ignore = { "SUBSCRIBE", "READ_CONNECT_VERSION?", "COLOR_DATA", "DEVICE_DISCOVERY" };
                     if (!ignore.Contains(command)) {
                         Console.WriteLine(from + " -> " + JsonConvert.SerializeObject(msg));
                     }
-                    flag = msg.flags;
-                    if (flag == "11" || flag == "21") {
-                        dss = GetDeviceData();
+                    flag = msg.Flags;
+                    bool groupMatch = int.Parse(msg.Group) == dev.GroupNumber;
+                    if ((flag == "11" || flag == "21") && groupMatch) {
+                        dev= GetDeviceData();
                         writeState = true;
+                    }
+                    if (!groupMatch) {
+                        Console.WriteLine($"Group {int.Parse(msg.Group)} doesn't match {dev.GroupNumber}.");
                     }
                 }
             } catch (Exception e) {
@@ -238,7 +233,7 @@ namespace HueDream.DreamScreen {
                     break;
                 case "COLOR_DATA":
                     if (deviceMode == 1 || deviceMode == 2) {
-                        IEnumerable<string> colorData = ByteUtils.SplitHex(string.Join("", payloadString), 6); // Swap this with payload
+                        IEnumerable<string> colorData = ByteUtils.SplitHex(payloadString, 6); // Swap this with payload
                         int lightCount = 0;
                         foreach (string colorValue in colorData) {
                             colors[lightCount] = colorValue;
@@ -270,21 +265,21 @@ namespace HueDream.DreamScreen {
                 case "GROUP_NAME":
                     string gName = System.Text.Encoding.ASCII.GetString(payload);
                     if (writeState) {
-                        dss.GroupName = gName;
+                        dev.GroupName = gName;
                     }
 
                     break;
                 case "GROUP_NUMBER":
                     int gNum = payload[0];
                     if (writeState) {
-                        dss.GroupNumber = gNum;
+                        dev.GroupNumber = gNum;
                     }
 
                     break;
                 case "NAME":
                     string dName = System.Text.Encoding.ASCII.GetString(payload);
                     if (writeState) {
-                        dss.Name = dName;
+                        dev.Name = dName;
                     }
 
                     break;
@@ -292,20 +287,19 @@ namespace HueDream.DreamScreen {
                     Brightness = payload[0];
                     if (writeState) {
                         Console.WriteLine("Setting brightness to " + Brightness);
-                        dss.Brightness = payload[0];
+                        dev.Brightness = payload[0];
                     }
 
                     break;
                 case "SATURATION":
                     if (writeState) {
-                        dss.Saturation = Array.ConvertAll(payload, c => (int)c);
-                        Saturation = dss.Saturation;
+                        dev.Saturation = (ByteUtils.ByteString(payload));
                     }
 
                     break;
                 case "MODE":
                     if (writeState) {
-                        dss.Mode = payload[0];
+                        dev.Mode = payload[0];
                         UpdateMode(payload[0]);
                         Console.WriteLine("Updating mode: " + payload[0]);
                     }
@@ -313,14 +307,14 @@ namespace HueDream.DreamScreen {
                     break;
                 case "AMBIENT_MODE_TYPE":
                     if (writeState) {
-                        dss.AmbientModeType = payload[0];
+                        dev.AmbientModeType = payload[0];
                         ambientMode = payload[0];
                     }
 
                     break;
                 case "AMBIENT_SCENE":
                     if (writeState) {
-                        dss.AmbientShowType = payload[0];
+                        dev.AmbientShowType = payload[0];
                         ambientShow = payload[0];
                         Console.WriteLine("Scene updated: " + ambientShow);
                     }
@@ -328,15 +322,15 @@ namespace HueDream.DreamScreen {
                     break;
                 case "AMBIENT_COLOR":
                     if (writeState) {
-                        dss.AmbientColor = Array.ConvertAll(payload, c => (int)c);
-                        SetAmbientColor(dss.AmbientColor);
+                        dev.AmbientColor = ByteUtils.ByteString(payload);
+                        SetAmbientColor(dev.AmbientColor);
                     }
 
                     break;
             }
 
             if (writeState) {
-                SaveDeviceState(dss);
+                DreamData.SetItem<BaseDevice>("myDevice", dev);
             }
             // Restart listening for udp data packages
             if (listening) {
@@ -361,9 +355,7 @@ namespace HueDream.DreamScreen {
             DreamSender.SendUDPBroadcast(msg);
             Stopwatch s = new Stopwatch();
             s.Start();
-            while (s.Elapsed < TimeSpan.FromSeconds(3)) {
-
-            }
+            await Task.Delay(3000).ConfigureAwait(true);
             devices = devices.Distinct().ToList();
             s.Stop();
             searching = false;

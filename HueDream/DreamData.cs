@@ -118,15 +118,17 @@ namespace HueDream.HueDream {
         /// <returns>Modified path to config file</returns>
         private static string GetConfigPath(string filePath) {
             if (Directory.Exists("/etc/huedream")) {
+                string newPath = string.Empty;
                 if (File.Exists(filePath)) {
-                    Console.WriteLine("We should move our ini to /etc");
-                    File.Copy(filePath, "/etc/huedream/" + filePath);
-                    if (File.Exists("/etc/huedream/huedream.ini")) {
-                        Console.WriteLine("File moved, updating INI path.");
+                    newPath = "/etc/huedream/" + filePath;
+                    Console.WriteLine($"Moving file from {filePath} to {newPath}");
+                    File.Copy(filePath, newPath);
+                    if (File.Exists(filePath)) {
+                        Console.WriteLine($"File moved to {newPath}, updating INI path.");
                         File.Delete(filePath);
                     }
                 }
-                return "/etc/huedream/" + filePath;
+                return newPath;
             }
             return filePath;
         }
@@ -138,7 +140,7 @@ namespace HueDream.HueDream {
                     return ip.ToString();
                 }
             }
-            throw new Exception("No network adapters with an IPv4 address in the system!");
+            throw new Exception("No network adapters found in " + JsonConvert.SerializeObject(host));
         }
     }
 }

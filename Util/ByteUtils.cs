@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -13,32 +14,54 @@ namespace HueDream.Util {
         /// A byte array representing the padded/truncated string
         /// </returns>
         public static byte[] StringBytePad(string toPad, int len) {
-            byte[] outBytes = Array.Empty<byte>();
-            if (toPad != null) {
-                string output = "";
-                outBytes = new byte[len];
-                if (toPad.Length > len) {
-                    output = toPad.Substring(0, len);
-                } else {
-                    output = toPad;
-                }
-                System.Text.ASCIIEncoding encoding = new ASCIIEncoding();
-
-                byte[] myBytes = encoding.GetBytes(output);
-                for (int bb = 0; bb < len; bb++) {
-                    if (bb < myBytes.Length) {
-                        outBytes[bb] = myBytes[bb];
-                    } else {
-                        outBytes[bb] = 0;
-                    }
-                }
-            } else {
-                Console.WriteLine("NULL VALUE");
+            if (toPad is null) {
+                throw new ArgumentNullException(nameof(toPad));
             }
+
+            byte[] outBytes = new byte[len];
+            string output;
+            if (toPad.Length > len) {
+                output = toPad.Substring(0, len);
+            } else {
+                output = toPad;
+            }
+            System.Text.ASCIIEncoding encoding = new ASCIIEncoding();
+
+            byte[] myBytes = encoding.GetBytes(output);
+            for (int bb = 0; bb < len; bb++) {
+                if (bb < myBytes.Length) {
+                    outBytes[bb] = myBytes[bb];
+                } else {
+                    outBytes[bb] = 0;
+                }
+            }
+            
             return outBytes;
         }
 
+        public static byte[] StringBytes(string hexString) {
+            if (hexString is null) {
+                throw new ArgumentNullException(nameof(hexString));
+            }
+
+            if (hexString.Length % 2 != 0) {
+                throw new ArgumentException(string.Format(CultureInfo.InvariantCulture, "The binary key cannot have an odd number of digits: {0}", hexString));
+            }
+
+            byte[] data = new byte[hexString.Length / 2];
+            for (int index = 0; index < data.Length; index++) {
+                string byteValue = hexString.Substring(index * 2, 2);
+                data[index] = byte.Parse(byteValue, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+            }
+
+            return data;
+        }
+
         public static IEnumerable<string> SplitHex(string str, int chunkSize) {
+            if (str is null) {
+                throw new ArgumentNullException(nameof(str));
+            }
+
             return Enumerable.Range(0, str.Length / chunkSize)
                 .Select(i => str.Substring(i * chunkSize, chunkSize));
         }
@@ -115,6 +138,10 @@ namespace HueDream.Util {
         /// A string of hex-encoded values with no spacing
         /// </returns>
         public static string ExtractString(byte[] input, int start, int end) {
+            if (input is null) {
+                throw new ArgumentNullException(nameof(input));
+            }
+
             int len = end - start;
             string strOut = "";
             if (len < input.Length) {
@@ -125,7 +152,7 @@ namespace HueDream.Util {
                     strOut += Convert.ToChar(b);
                 }
             } else {
-                Console.WriteLine("Len for input request " + len + " is less than array len: " + input.Length);
+                throw new IndexOutOfRangeException();                
             }
             return strOut;
         }
@@ -143,7 +170,7 @@ namespace HueDream.Util {
                     c++;
                 }
             } else {
-                Console.WriteLine("Len for input request " + len + " is less than array len: " + input.Length);
+                throw new IndexOutOfRangeException();
             }
             return intOut;
         }
@@ -154,9 +181,8 @@ namespace HueDream.Util {
             if (len < input.Length) {
                 byte[] subArr = new byte[len];
                 Array.Copy(input, start, subArr, 0, len);
-
             } else {
-                Console.WriteLine("Len for input request " + len + " is less than array len: " + input.Length);
+                throw new IndexOutOfRangeException();
             }
             return byteOut;
         }
@@ -182,11 +208,24 @@ namespace HueDream.Util {
                 }
 
                 return ascii;
-            } catch (Exception ex) { Console.WriteLine(ex.Message); }
+            } catch (IndexOutOfRangeException ex) { 
+                Console.WriteLine(ex.Message); 
+            }
 
             return string.Empty;
         }
 
+        public static string ByteString(byte[] input) {
+            if (input is null) {
+                throw new ArgumentNullException(nameof(input));
+            }
+
+            string strOut = "";
+            foreach (byte b in input) {
+                strOut += b.ToString("X2");
+            }
+            return strOut;
+        }
 
 
     }

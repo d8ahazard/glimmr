@@ -18,8 +18,7 @@ namespace HueDream.Controllers {
     public class DreamDataController : ControllerBase {
 
         // GET: api/DreamData/mode
-        [HttpGet("mode")]
-        public int GetMode() {
+        public static int GetMode() {
             BaseDevice dev = DreamData.GetDeviceData();
             return dev.Mode;
         }
@@ -33,16 +32,17 @@ namespace HueDream.Controllers {
         }
 
         [HttpGet("action")]
-        public JsonResult Get(string action) {
-            DataStore store = DreamData.getStore();
+        public JsonResult Get(string action) {            
             string message = "Unrecognized action";
+            DataStore store = DreamData.getStore();
+            Console.WriteLine($"{action} fired.");
 
             if (action == "connectDreamScreen") {
-                Console.WriteLine("ConnectDreamScreen fired.");
                 List<BaseDevice> dev = new List<BaseDevice>();
                 using (DreamClient ds = new DreamClient()) {
                     dev = ds.FindDevices().Result;
                 }
+                store.Dispose();
                 return new JsonResult(dev);
 
             } else if (action == "authorizeHue") {
@@ -50,13 +50,11 @@ namespace HueDream.Controllers {
                     HueBridge hb = new HueBridge();
                     RegisterEntertainmentResult appKey = hb.checkAuth().Result;
                     if (appKey != null) {
-                        Console.WriteLine("Bridge linked.");
                         message = "Success: Bridge Linked.";
                         store.ReplaceItemAsync("hueKey", appKey.StreamingClientKey);
                         store.ReplaceItemAsync("hueUser", appKey.Username);
                         store.ReplaceItemAsync("hueAuth", true);
                     } else {
-                        Console.WriteLine("Bridge Link Failure.");
                         message = "Error: Press the link button";
                     }
 
@@ -73,6 +71,7 @@ namespace HueDream.Controllers {
                     message = "Error: No bridge found.";
                 }
             }
+            Console.WriteLine(message);
             store.Dispose();
             return new JsonResult(message);
         }
@@ -80,7 +79,6 @@ namespace HueDream.Controllers {
         // GET: api/HueData/json
         [HttpGet("json")]
         public IActionResult Get() {
-            Console.WriteLine("JSON GOT.");
             DataStore store = DreamData.getStore();
             if (store.GetItem("hueAuth")) {
                 try {
@@ -93,16 +91,13 @@ namespace HueDream.Controllers {
             }
             if (store.GetItem("dsIp") == "0.0.0.0") {
                 DreamClient dc = new DreamClient();
-                dc.FindDevices();
+                dc.FindDevices().ConfigureAwait(true);
+                dc.Dispose();
             }
             store.Dispose();
             return Ok(DreamData.GetStoreSerialized());
         }
-
-        [HttpGet("lights")]
-        public IActionResult GetWhatever() {
-            return Ok(DreamData.getStore());
-        }
+               
 
 
         // POST: api/HueData

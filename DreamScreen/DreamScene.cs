@@ -71,23 +71,22 @@ namespace HueDream.DreamScreen {
 
         public async Task BuildColors(int sceneNumber, CancellationToken ct) {
             startInt = 0;
-            Console.WriteLine("Loaded scene " + sceneNumber);
+            Console.WriteLine("DreamScene: Loaded scene " + sceneNumber);
             long startTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-            long curTime = startTime;
-            // Set our colors right away
-            Console.WriteLine("Initial calculation complete, starting loop.");
-            while (!ct.IsCancellationRequested) {
-                curTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-                long dTime = curTime - startTime;
-                // Check and set colors if time is greater than animation int, then reset time count...
-                double tickPercent = dTime / (animationTime * 1000);
-                if (dTime > animationTime * 1000) {
-                    startTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-                    colorArray = RefreshColors(colors);
-                    Console.WriteLine("TICK: " + JsonConvert.SerializeObject(colorArray));
+            await Task.Run(() => {
+                while (!ct.IsCancellationRequested) {
+                    long curTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
+                    long dTime = curTime - startTime;
+                    // Check and set colors if time is greater than animation int, then reset time count...
+                    if (dTime > animationTime * 1000) {
+                        startTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
+                        colorArray = RefreshColors(colors);
+                        Console.WriteLine("TICK: " + JsonConvert.SerializeObject(colorArray));
+                    }
                 }
-            }
-            Console.WriteLine("Canceled??");
+            }).ConfigureAwait(true);
+
+            Console.WriteLine($"DreamScene: Builder canceled. {startTime}");
         }
 
         private string[] RefreshColors(string[] input) {

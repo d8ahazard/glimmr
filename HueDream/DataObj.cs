@@ -20,9 +20,19 @@ namespace HueDream.HueDream {
         public bool HueAuth { get; set; }
         public string HueKey { get; set; }
         public string HueUser { get; set; }
-        public List<KeyValuePair<int, string>> HueLights { get; set; }
-        public List<LightMap> HueMap { get; set; }
-        public Group[] EntertainmentGroups { get; set; }
+        public List<KeyValuePair<int, string>> HueLights { get; }
+        public List<LightMap> HueMap { get; }
+
+        private Group[] entertainmentGroups;
+
+        public Group[] GetEntertainmentGroups() {
+            return entertainmentGroups;
+        }
+
+        public void SetEntertainmentGroups(Group[] value) {
+            entertainmentGroups = value;
+        }
+
         public Group EntertainmentGroup { get; set; }
 
         private BaseDevice[] devices;
@@ -46,7 +56,7 @@ namespace HueDream.HueDream {
             EmuType = "SideKick";
             HueLights = new List<KeyValuePair<int, string>>();
             HueMap = new List<LightMap>();
-            EntertainmentGroups = null;
+            SetEntertainmentGroups(null);
             EntertainmentGroup = null;
             SetDevices(Array.Empty<BaseDevice>());
             MyDevice.Initialize();

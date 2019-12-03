@@ -10,25 +10,23 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace HueDream.Hue {
-    public class StreamingSetup {
+    public static class StreamingSetup {
+        private const string V = "Hue: Streaming is active.";
+        private const string Value = "Hue: Group setup complete, connecting to client...";
 
         public static async Task<HueResults> StopStream() {
-            Console.WriteLine("Hue: Stopping stream.");
             DataStore store = DreamData.getStore();
             string hueIp = store.GetItem("hueIp");
+            Console.WriteLine($"Hue: Stopping stream at {hueIp}.");
             string hueUser = store.GetItem("hueUser");
             string hueKey = store.GetItem("hueKey");
-            Console.WriteLine("Hue: got keys.");
             Group entGroup = store.GetItem<Group>("entertainmentGroup");
-            Console.WriteLine("Hue: Got group.");
             store.Dispose();
-            Console.WriteLine("Hue: Creating client....");
+            Console.WriteLine($"Hue: Creating client at {hueIp}...");
             //Initialize streaming client
             LocalHueClient client = new LocalHueClient(hueIp, hueUser, hueKey);
-
             string id = entGroup.Id;
-            return await client.SetStreamingAsync(id, false);
-
+            return await client.SetStreamingAsync(id, false).ConfigureAwait(true);
         }
 
         public static async Task<StreamingGroup> SetupAndReturnGroup(List<string> lights, CancellationToken ct) {
@@ -49,7 +47,7 @@ namespace HueDream.Hue {
             if (entGroup != null) {
                 group = entGroup;
             } else {
-                IReadOnlyList<Group> all = await client.LocalHueClient.GetEntertainmentGroups();
+                IReadOnlyList<Group> all = await client.LocalHueClient.GetEntertainmentGroups().ConfigureAwait(true);
                 foreach (Group eg in all) {
                     bool valid = true;
                     foreach (string s in lights) {
@@ -71,16 +69,16 @@ namespace HueDream.Hue {
 
             //Create a streaming group
             StreamingGroup stream = new StreamingGroup(group.Locations);
-            Console.WriteLine("Hue: Group setup complete, connecting to client...");
+            Console.WriteLine(Value);
             //Connect to the streaming group
-            await client.Connect(group.Id);
+            await client.Connect(group.Id).ConfigureAwait(true);
 
             //Start auto updating this entertainment group
-            client.AutoUpdate(stream, ct, 50, onlySendDirtyStates: false);
+            await client.AutoUpdate(stream, ct, 50, onlySendDirtyStates: false).ConfigureAwait(false);
 
             //Optional: Check if streaming is currently active
-            Bridge bridgeInfo = await client.LocalHueClient.GetBridgeAsync();
-            Console.WriteLine(bridgeInfo.IsStreamingActive ? "Hue: Streaming is active." : "Hue: Streaming is not active.");
+            Bridge bridgeInfo = await client.LocalHueClient.GetBridgeAsync().ConfigureAwait(true);
+            Console.WriteLine(bridgeInfo.IsStreamingActive ? V : "Hue: Streaming is not active.");
             return stream;
         }
     }

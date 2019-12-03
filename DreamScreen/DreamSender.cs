@@ -8,6 +8,9 @@ namespace HueDream.DreamScreen.Devices {
     public static class DreamSender {
 
         public static void SendUDPWrite(byte command1, byte command2, byte[] payload, byte flag = 17, byte group = 0, IPEndPoint ep = null) {
+            if (payload is null) {
+                throw new ArgumentNullException(nameof(payload));
+            }
             // If we don't specify an endpoint...talk to ourself
             if (ep == null) {
                 ep = new IPEndPoint(IPAddress.Parse("0.0.0.0"), 8888);
@@ -49,22 +52,25 @@ namespace HueDream.DreamScreen.Devices {
         public static void SendUDPUnicast(byte[] data, IPEndPoint ep) {
             Socket sender = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             sender.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, 1);
-            string byteString = BitConverter.ToString(data);
-            DreamScreenMessage sm = new DreamScreenMessage(data, "localhost");
-            //Console.WriteLine("localhost:8888 -> " + ep.ToString() + " " + JsonConvert.SerializeObject(sm));
             sender.EnableBroadcast = false;
             sender.SendTo(data, ep);
+            sender.Dispose();
         }
 
 
 
 
         public static void SendUDPBroadcast(byte[] bytes) {
+            if (bytes is null) {
+                throw new ArgumentNullException(nameof(bytes));
+            }
+
             UdpClient client = new UdpClient();
             client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             IPEndPoint ip = new IPEndPoint(IPAddress.Parse("255.255.255.255"), 8888);
             client.Send(bytes, bytes.Length, ip);
-            Console.WriteLine("SENT");
+            client.Dispose();
+            Console.WriteLine($"Sent message to {ip.Address}:{ip.Port}");
         }
 
     }
