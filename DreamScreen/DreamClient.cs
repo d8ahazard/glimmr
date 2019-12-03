@@ -71,7 +71,7 @@ namespace HueDream.DreamScreen {
         public DreamClient() {
         }
 
-        private static BaseDevice GetDeviceData() {
+        private BaseDevice GetDeviceData() {
             using DataStore dd = DreamData.getStore();
             BaseDevice dev;
             string devType = dd.GetItem<string>("emuType");
@@ -220,7 +220,7 @@ namespace HueDream.DreamScreen {
                         Console.WriteLine($"Group {int.Parse(msg.Group)} doesn't match {dev.GroupNumber}.");
                     }
                 }
-            } catch (ArgumentException e) {
+            } catch (Exception e) {
                 Console.WriteLine("MSG parse Exception: " + e.Message);
             }
 
