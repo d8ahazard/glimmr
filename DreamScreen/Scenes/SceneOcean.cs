@@ -1,7 +1,7 @@
 ﻿namespace HueDream.DreamScreen.Scenes {
     public class SceneOcean : SceneBase {
         public SceneOcean() {
-            SetColors(new string[] {
+            SetColors(new[] {
                 "02c676", // Sea Green
                 "2dbee7", // Sky Blue
                 "aaaaaa", // White
@@ -10,7 +10,7 @@
             });
             AnimationTime = 3;
             Mode = AnimationMode.Linear;
-            Easing = EasingType.blend;
+            Easing = EasingType.Blend;
         }
     }
 }

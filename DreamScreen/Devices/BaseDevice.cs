@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.Serialization;
+using Newtonsoft.Json;
 
 namespace HueDream.DreamScreen.Devices {
     [Serializable]
@@ -11,15 +12,17 @@ namespace HueDream.DreamScreen.Devices {
         public int AmbientModeType { get; set; }
         public int AmbientShowType { get; set; }
         public int Brightness { get; set; }
-        public string BroadcastIP { get; set; }
-
-        //private readonly byte[] espSerialNumber = new byte[] { 0, 0 };
+        [JsonProperty]
+        private readonly byte[] espSerialNumber = { 0, 0 };
+        [JsonProperty]
         public int FadeRate { get; set; }
         public string Name { get; set; }
         public string GroupName { get; set; }
         public int GroupNumber { get; set; }
+        [JsonProperty]
         public string IpAddress { get; set; }
         public int Mode { get; set; }
+        [JsonProperty]
         public int ProductId { get; set; }
         public string Saturation { get; set; }
 
@@ -38,7 +41,7 @@ namespace HueDream.DreamScreen.Devices {
         }
 
 
-        public BaseDevice(string address) {
+        protected BaseDevice(string address) {
             IpAddress = address;
         }
 

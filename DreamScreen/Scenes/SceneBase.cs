@@ -4,14 +4,15 @@ namespace HueDream.DreamScreen.Scenes {
     [Serializable]
     public abstract class SceneBase {
         public enum AnimationMode { Linear, Reverse, Random, RandomAll };
-        public enum EasingType { none, fadeOut, fadeIn, fadeOutIn, blend }
+        public enum EasingType {
+            FadeOut, FadeIn, Blend }
         private string[] colors;
 
         public string[] GetColors() { return colors; }
 
-        public void SetColors(string[] value) { colors = value; }
-        public double AnimationTime { get; set; }
-        public AnimationMode Mode { get; set; }
-        public EasingType Easing { get; set; }
+        protected void SetColors(string[] value) { colors = value; }
+        public double AnimationTime { get; protected set; }
+        public AnimationMode Mode { get; protected set; }
+        public EasingType Easing { get; protected set; }
     }
 }

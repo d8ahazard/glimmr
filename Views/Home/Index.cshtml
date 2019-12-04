@@ -30,7 +30,7 @@
                                                 <span class="purdy">Group:</span><span id="dsGroupName"></span>
                                             </div>
                                             <div class="row">
-                                                <span class="purdy">Type:</span><span id="dsType"></span>
+                                                <span class="purdy">Type:</span><span id="dsTypeText"></span>
                                             </div>
                                             <div class="row">
                                                 <span class="purdy">Mode:</span><span id="dsMode"></span>
@@ -41,19 +41,19 @@
                             </div>
                             <div class="row justify-content-center">
                                 <div class="col-6 col-sm-3 col-md-2 modeBtn" data-mode="0" id="mode0">
-                                    <img class="modeIcon" src="~/img/mode_off_icon.png" /><br />
+                                    <img class="modeIcon" src="~/img/mode_off_icon.png" alt=""/><br />
                                     <span>Off</span>
                                 </div>
                                 <div class="col-6 col-sm-3 col-md-2 modeBtn" data-mode="1" id="mode1">
-                                    <img class="modeIcon" src="~/img/mode_video_icon.png" /><br />
+                                    <img class="modeIcon" src="~/img/mode_video_icon.png" alt=""/><br />
                                     <span>Video</span>
                                 </div>
                                 <div class="col-6 col-sm-3 col-md-2 modeBtn" data-mode="2" id="mode2">
-                                    <img class="modeIcon" src="~/img/mode_audio_icon.png" /><br />
+                                    <img class="modeIcon" src="~/img/mode_audio_icon.png" alt=""/><br />
                                     <span>Music</span>
                                 </div>
                                 <div class="col-6 col-sm-3 col-md-2 modeBtn" data-mode="3" id="mode3">
-                                    <img class="modeIcon" src="~/img/mode_ambient_icon.png" /><br />
+                                    <img class="modeIcon" src="~/img/mode_ambient_icon.png" alt=""/><br />
                                     <span>Ambient</span>
                                 </div>
                                 
@@ -70,7 +70,7 @@
                                 </div>
                                 <div class="col-lg-6 col-12">
                                     <div class="form-group">
-                                        <label for="ds_ip">Emulation Type:</label>
+                                        <label for="dsType">Emulation Type:</label>
                                         <select class="form-control bg-light text-dark dsType" id="dsType" name="ds_type">
                                             <option value="SideKick">Sidekick</option>
                                             <option value="Connect">Connect</option>
@@ -108,7 +108,7 @@
                         <div class="row justify-content-center">
                             <div class="col-lg-6 col-12">
                                 <div class="form-group">
-                                    <label for="hue_ip">Hue Bridge IP</label>
+                                    <label for="hueIp">Hue Bridge IP</label>
                                     <input type="text" class="form-control" id="hueIp" readonly placeholder="0.0.0.0">
                                 </div>
                             </div>

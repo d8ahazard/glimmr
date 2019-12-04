@@ -1,55 +1,85 @@
 ﻿using HueDream.Util;
 using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace HueDream.DreamScreen.Devices {
-    public class DreamScreenHD : BaseDevice {
-        private static readonly byte[] requiredEspFirmwareVersion = new byte[] { 1, 6 };
-        private static readonly byte[] requiredPicVersionNumber = new byte[] { 1, 7 };
-        private const string tag = "DreamScreen";
-        private byte[] appMusicData { get; set; }
+    public class DreamScreenHd : BaseDevice {
+        private static readonly byte[] RequiredEspFirmwareVersion = { 1, 6 };
+        private static readonly byte[] RequiredPicVersionNumber = { 1, 7 };
+        private const string DeviceTag = "DreamScreen";
+        [JsonProperty] 
+        private byte[] appMusicData;
+        [JsonProperty] 
         public int BootState { get; set; }
+        [JsonProperty] 
         public int CecPassthroughEnable { get; set; }
+        [JsonProperty] 
         public int CecPowerEnable { get; set; }
+        [JsonProperty] 
         public int CecSwitchingEnable { get; set; }
+        [JsonProperty] 
         public int ColorBoost { get; set; }
-        public byte[] EspFirmwareVersion { get; set; }
-        public int[] FlexSetup { get; set; }
+        [JsonProperty] public byte[] EspFirmwareVersion { get; set; }
+        [JsonProperty] private int[] flexSetup;
+        [JsonProperty] 
         public byte HdmiActiveChannels { get; set; }
+        [JsonProperty] 
         public int HdmiInput { get; set; }
+        [JsonProperty] 
         public string HdmiInputName1 { get; set; }
+        [JsonProperty] 
         public string HdmiInputName2 { get; set; }
+        [JsonProperty] 
         public string HdmiInputName3 { get; set; }
+        [JsonProperty] 
         public int HdrToneRemapping { get; set; }
+        [JsonProperty] 
         public int HpdEnable { get; set; }
+        [JsonProperty] 
         public int IndicatorLightAutoOff { get; set; }
+        [JsonProperty]
         public bool IsDemo { get; set; }
+        [JsonProperty]
         public int LetterboxingEnable { get; set; }
-        public int[] MinimumLuminosity { get; set; }
-        public int[] MusicModeColors { get; set; }
-        public int MusicModeSource { get; set; }
-        public int MusicModeType { get; set; }
-        public int[] MusicModeWeights { get; set; }
-        public byte[] PicVersionNumber { get; set; }
-        public int PillarboxingEnable { get; set; }
-        public int SectorBroadcastControl { get; set; }
-        public int SectorBroadcastTiming { get; set; }
-        public int SkuSetup { get; set; }
-        public int UsbPowerEnable { get; set; }
-        public int VideoFrameDelay { get; set; }
-        public byte Zones { get; set; }
-        public int[] ZonesBrightness { get; set; }
+        [JsonProperty]
+        private int[] MinimumLuminosity { get; set; }
 
-        public DreamScreenHD(string ipAddress) : base(ipAddress) {
-            Tag = tag;
-            EspFirmwareVersion = requiredEspFirmwareVersion;
-            PicVersionNumber = requiredPicVersionNumber;
+        [JsonProperty]
+        private int[] musicModeColors;
+        [JsonProperty]
+        public int MusicModeSource { get; set; }
+        [JsonProperty]
+        public int MusicModeType { get; set; }
+        [JsonProperty] private int[] musicModeWeights;
+        [JsonProperty] public byte[] PicVersionNumber { get; set; }
+        [JsonProperty] 
+        public int PillarboxingEnable { get; set; }
+        [JsonProperty] 
+        public int SectorBroadcastControl { get; set; }
+        [JsonProperty] 
+        public int SectorBroadcastTiming { get; set; }
+        [JsonProperty] 
+        public int SkuSetup { get; set; }
+        [JsonProperty] 
+        public int UsbPowerEnable { get; set; }
+        [JsonProperty] 
+        public int VideoFrameDelay { get; set; }
+        [JsonProperty] 
+        public byte Zones { get; set; }
+        [JsonProperty] 
+        private int[] ZonesBrightness { get; set; }
+
+        public DreamScreenHd(string ipAddress) : base(ipAddress) {
+            Tag = DeviceTag;
+            EspFirmwareVersion = RequiredEspFirmwareVersion;
+            PicVersionNumber = RequiredPicVersionNumber;
             Zones = 15;
-            ZonesBrightness = new int[] { 255, 255, 255 };
+            ZonesBrightness = new[] { 255, 255, 255 };
             MusicModeType = 0;
-            MusicModeColors = new int[] { 255, 255, 255 };
-            MusicModeWeights = new int[] { 100, 100, 100 };
-            MinimumLuminosity = new int[] { 0, 0, 0 };
+            musicModeColors = new[] { 255, 255, 255 };
+            musicModeWeights = new[] { 100, 100, 100 };
+            MinimumLuminosity = new[] { 0, 0, 0 };
             IndicatorLightAutoOff = 1;
             UsbPowerEnable = 0;
             SectorBroadcastControl = 0;
@@ -66,7 +96,7 @@ namespace HueDream.DreamScreen.Devices {
             HdmiActiveChannels = 0;
             ColorBoost = 0;
             CecPowerEnable = 0;
-            FlexSetup = new int[] { 8, 16, 48, 0, 7, 0 };
+            flexSetup = new[] { 8, 16, 48, 0, 7, 0 };
             SkuSetup = 0;
             HdrToneRemapping = 0;
             BootState = 0;
@@ -86,12 +116,12 @@ namespace HueDream.DreamScreen.Devices {
             if (payload.Length < 132) {
                 throw new ArgumentException($"Payload length is too short: {payload.Length}");
             }
-            string name1 = ByteUtils.ExtractString(payload, 0, 16);
+            var name1 = ByteUtils.ExtractString(payload, 0, 16);
             if (name1.Length == 0) {
-                name1 = tag;
+                name1 = DeviceTag;
             }
             Name = name1;
-            string groupName1 = ByteUtils.ExtractString(payload, 16, 32);
+            var groupName1 = ByteUtils.ExtractString(payload, 16, 32);
             if (groupName1.Length == 0) {
                 groupName1 = "Group";
             }
@@ -103,10 +133,10 @@ namespace HueDream.DreamScreen.Devices {
             ZonesBrightness = ByteUtils.ExtractInt(payload, 36, 40);
             AmbientColor = ByteUtils.ExtractString(payload, 40, 43);
             Saturation = ByteUtils.ExtractString(payload, 43, 46);
-            FlexSetup = ByteUtils.ExtractInt(payload, 46, 52);
+            flexSetup = ByteUtils.ExtractInt(payload, 46, 52);
             MusicModeType = payload[52];
-            MusicModeColors = ByteUtils.ExtractInt(payload, 53, 56);
-            MusicModeWeights = ByteUtils.ExtractInt(payload, 56, 59);
+            musicModeColors = ByteUtils.ExtractInt(payload, 53, 56);
+            musicModeWeights = ByteUtils.ExtractInt(payload, 56, 59);
             MinimumLuminosity = ByteUtils.ExtractInt(payload, 59, 62);
             AmbientShowType = payload[62];
             FadeRate = payload[63];
@@ -146,10 +176,10 @@ namespace HueDream.DreamScreen.Devices {
         }
 
         public override byte[] EncodeState() {
-            List<byte> response = new List<byte>();
-            byte[] nByte = ByteUtils.StringBytePad(Name, 16);
+            var response = new List<byte>();
+            var nByte = ByteUtils.StringBytePad(Name, 16);
             response.AddRange(nByte);
-            byte[] gByte = ByteUtils.StringBytePad(GroupName, 16);
+            var gByte = ByteUtils.StringBytePad(GroupName, 16);
             response.AddRange(gByte);
             response.Add(ByteUtils.IntByte(GroupNumber));
             response.Add(ByteUtils.IntByte(Mode));
@@ -158,10 +188,10 @@ namespace HueDream.DreamScreen.Devices {
             response.AddRange(ByteUtils.IntBytes(ZonesBrightness));
             response.AddRange(ByteUtils.StringBytes(AmbientColor));
             response.AddRange(ByteUtils.StringBytes(Saturation));
-            response.AddRange(ByteUtils.IntBytes(FlexSetup));
+            response.AddRange(ByteUtils.IntBytes(flexSetup));
             response.Add(ByteUtils.IntByte(MusicModeType));
-            response.AddRange(ByteUtils.IntBytes(MusicModeColors));
-            response.AddRange(ByteUtils.IntBytes(MusicModeWeights));
+            response.AddRange(ByteUtils.IntBytes(musicModeColors));
+            response.AddRange(ByteUtils.IntBytes(musicModeWeights));
             response.AddRange(ByteUtils.IntBytes(MinimumLuminosity));
             response.Add(ByteUtils.IntByte(AmbientShowType));
             response.Add(ByteUtils.IntByte(FadeRate));
@@ -173,7 +203,7 @@ namespace HueDream.DreamScreen.Devices {
             response.Add(ByteUtils.IntByte(HdmiInput));
             response.AddRange(new byte[2]);
             string[] iList = { HdmiInputName1, HdmiInputName2, HdmiInputName3 };
-            foreach (string iName in iList) {
+            foreach (var iName in iList) {
                 response.AddRange(ByteUtils.StringBytePad(iName, 16));
             }
             response.Add(ByteUtils.IntByte(CecPassthroughEnable));

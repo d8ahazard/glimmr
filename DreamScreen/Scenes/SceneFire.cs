@@ -1,7 +1,7 @@
 ﻿namespace HueDream.DreamScreen.Scenes {
     public class SceneFire : SceneBase {
         public SceneFire() {
-            SetColors(new string[]{
+            SetColors(new[]{
             "ff0600", // Red red
             "c8231f", // Deep red
             "d2491a", // Orange red
@@ -14,7 +14,7 @@
             });
             AnimationTime = .25;
             Mode = AnimationMode.Linear;
-            Easing = EasingType.blend;
+            Easing = EasingType.Blend;
         }
     }
 }

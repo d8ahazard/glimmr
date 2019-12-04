@@ -1,26 +1,32 @@
-﻿namespace HueDream.DreamScreen.Devices {
-    using global::HueDream.Util;
+﻿using Newtonsoft.Json;
+
+namespace HueDream.DreamScreen.Devices {
+    using Util;
     using System;
     using System.Collections.Generic;
 
     public class SideKick : BaseDevice {
-        private static readonly byte[] requiredEspFirmwareVersion = new byte[] { 3, 1 };
-        public static readonly byte[] DefaultSectorAssignment = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 0, 0 };
+        private static readonly byte[] RequiredEspFirmwareVersion = { 3, 1 };
+        public static readonly byte[] DefaultSectorAssignment = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 0, 0 };
 
-        private const string tag = "SideKick";
-        public byte[] espFirmwareVersion { get; set; }
-        public bool isDemo { get; set; }
-        public byte[] sectorAssignment { get; set; }
-        public byte[] sectorData { get; set; }
+        private const string DeviceTag = "SideKick";
+        [JsonProperty]
+        private byte[] EspFirmwareVersion { get; set; }
+        [JsonProperty]
+        private bool IsDemo { get; set; }
+        [JsonProperty]
+        private byte[] SectorAssignment { get; set; }
+        [JsonProperty]
+        private byte[] SectorData { get; set; }
 
         public SideKick(string ipAddress) : base(ipAddress) {
-            espFirmwareVersion = requiredEspFirmwareVersion;
-            sectorData = new byte[] { 0 };
-            sectorAssignment = DefaultSectorAssignment;
-            isDemo = false;
+            EspFirmwareVersion = RequiredEspFirmwareVersion;
+            SectorData = new byte[] { 0 };
+            SectorAssignment = DefaultSectorAssignment;
+            IsDemo = false;
             ProductId = 3;
-            Name = tag;
-            Tag = tag;
+            Name = DeviceTag;
+            Tag = DeviceTag;
             GroupName = "unassigned";
         }
 
@@ -29,12 +35,12 @@
                 throw new ArgumentNullException(nameof(payload));
             }
 
-            string name = ByteUtils.ExtractString(payload, 0, 16);
+            var name = ByteUtils.ExtractString(payload, 0, 16);
             if (name.Length == 0) {
-                name = tag;
+                name = DeviceTag;
             }
             Name = name;
-            string groupName = ByteUtils.ExtractString(payload, 16, 32);
+            var groupName = ByteUtils.ExtractString(payload, 16, 32);
             if (groupName.Length == 0) {
                 groupName = "unassigned";
             }
@@ -45,8 +51,8 @@
             AmbientColor = (ByteUtils.ExtractString(payload, 35, 38));
             Saturation = (ByteUtils.ExtractString(payload, 38, 41));
             FadeRate = payload[41];
-            sectorAssignment = ByteUtils.ExtractBytes(payload, 42, 57);
-            espFirmwareVersion = ByteUtils.ExtractBytes(payload, 57, 59);
+            SectorAssignment = ByteUtils.ExtractBytes(payload, 42, 57);
+            EspFirmwareVersion = ByteUtils.ExtractBytes(payload, 57, 59);
             if (payload.Length == 62) {
                 AmbientModeType = payload[59];
                 AmbientShowType = payload[60];
@@ -54,7 +60,7 @@
         }
 
         public override byte[] EncodeState() {
-            List<byte> response = new List<byte>();
+            var response = new List<byte>();
             response.AddRange(ByteUtils.StringBytePad(Name, 16));
             response.AddRange(ByteUtils.StringBytePad(GroupName, 16));
             response.Add(ByteUtils.IntByte(GroupNumber));
@@ -65,7 +71,7 @@
             response.Add(ByteUtils.IntByte(FadeRate));
             // Sector Data
             response.AddRange(new byte[15]);
-            response.AddRange(espFirmwareVersion);
+            response.AddRange(EspFirmwareVersion);
             response.Add(ByteUtils.IntByte(AmbientModeType));
             response.Add(ByteUtils.IntByte(AmbientShowType));
             // Type

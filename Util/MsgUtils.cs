@@ -4,8 +4,7 @@ using System.Linq;
 
 namespace HueDream.Util {
     public static class MsgUtils {
-
-        private static readonly byte[] crc8_table = new byte[] {
+        private static readonly byte[] Crc8Table = {
          0x00, 0x07, 0x0E, 0x09, 0x1C, 0x1B,
          0x12, 0x15, 0x38, 0x3F, 0x36, 0x31,
          0x24, 0x23, 0x2A, 0x2D, 0x70, 0x77,
@@ -51,7 +50,7 @@ namespace HueDream.Util {
          0xFA, 0xFD, 0xF4, 0xF3
         };
 
-        public static readonly Dictionary<string, string> commands = new Dictionary<string, string> {
+        public static readonly Dictionary<string, string> Commands = new Dictionary<string, string> {
                     { "FFFF", "INVALID" },
                     { "0103", "GET_SERIAL" },
                     { "0105", "RESET_ESP" },
@@ -114,22 +113,22 @@ namespace HueDream.Util {
                     { "0511", "SET_IR_LEARNING_MODE" },
                     { "0513", "SET_IR_MANIFEST_ENTRY" },
                     { "0520", "SET_EMAIL_ADDRESS" },
-                    { "0521", "SET_THING_NAME" },
-
+                    { "0521", "SET_THING_NAME" }
                 };
 
 
-        public static byte CalculateCrc(byte[] data) {
+        public static byte CalculateCrc(byte[] data)
+        {
             if (data != null) {
-                byte size = (byte)(data[1] + 1);
+                var size = (byte)(data[1] + 1);
                 byte crc = 0;
-                for (byte cntr = 0; cntr < size; cntr = (byte)(cntr + 1)) {
-                    crc = crc8_table[((byte)(data[cntr] ^ crc)) & 255];
+                for (byte counter = 0; counter < size; counter = (byte)(counter + 1)) {
+                    crc = Crc8Table[(byte)(data[counter] ^ crc) & 255];
                 }
                 return crc;
-            } else {
-                throw new ArgumentNullException(nameof(data));
             }
+
+            throw new ArgumentNullException(nameof(data));
         }
 
         public static bool CheckCrc(byte[] data) {
@@ -137,20 +136,20 @@ namespace HueDream.Util {
                 throw new ArgumentNullException(nameof(data));
             }
 
-            byte checkCrc = data[data.Length - 1];
+            var checkCrc = data[^1];
             data = data.Take(data.Length - 1).ToArray();
-            byte size = (byte)(data[1] + 1);
+            var size = (byte)(data[1] + 1);
             byte crc = 0;
-            for (byte cntr = 0; cntr < size; cntr = (byte)(cntr + 1)) {
-                crc = crc8_table[((byte)(data[cntr] ^ crc)) & 255];
+            for (byte counter = 0; counter < size; counter = (byte)(counter + 1)) {
+                crc = Crc8Table[(byte)(data[counter] ^ crc) & 255];
             }
 
             if (crc == checkCrc) {
                 return true;
-            } else {
-                Console.WriteLine($"CRC Check failed, expected {crc} got {checkCrc}.");
-                return false;
             }
+
+            Console.WriteLine($@"CRC Check failed, expected {crc} got {checkCrc}.");
+            return false;
         }
 
     }

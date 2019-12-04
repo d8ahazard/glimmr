@@ -8,7 +8,7 @@ using Microsoft.Extensions.Hosting;
 namespace HueDream {
     public class Startup {
         public Startup(IConfiguration configuration) {
-            using DreamSync ds = new DreamSync();
+            using var ds = new DreamSync();
             Configuration = configuration;
         }
 

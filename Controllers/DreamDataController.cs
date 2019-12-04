@@ -19,7 +19,7 @@ namespace HueDream.Controllers {
 
         // GET: api/DreamData/mode
         public static int GetMode() {
-            BaseDevice dev = DreamData.GetDeviceData();
+            var dev = DreamData.GetDeviceData();
             return dev.Mode;
         }
 
@@ -33,13 +33,13 @@ namespace HueDream.Controllers {
 
         [HttpGet("action")]
         public JsonResult Get(string action) {
-            string message = "Unrecognized action";
-            DataStore store = DreamData.getStore();
+            var message = "Unrecognized action";
+            var store = DreamData.GetStore();
             Console.WriteLine($"{action} fired.");
 
             if (action == "connectDreamScreen") {
-                List<BaseDevice> dev = new List<BaseDevice>();
-                using (DreamClient ds = new DreamClient()) {
+                var dev = new List<BaseDevice>();
+                using (var ds = new DreamClient()) {
                     dev = ds.FindDevices().Result;
                 }
                 store.Dispose();
@@ -47,8 +47,8 @@ namespace HueDream.Controllers {
 
             } else if (action == "authorizeHue") {
                 if (!store.GetItem("hueAuth")) {
-                    HueBridge hb = new HueBridge();
-                    RegisterEntertainmentResult appKey = hb.checkAuth().Result;
+                    var hb = new HueBridge();
+                    var appKey = hb.CheckAuth().Result;
                     if (appKey != null) {
                         message = "Success: Bridge Linked.";
                         store.ReplaceItemAsync("hueKey", appKey.StreamingClientKey);
@@ -63,7 +63,7 @@ namespace HueDream.Controllers {
                 }
 
             } else if (action == "findHue") {
-                string bridgeIp = HueBridge.findBridge();
+                var bridgeIp = HueBridge.FindBridge();
                 if (string.IsNullOrEmpty(bridgeIp)) {
                     store.ReplaceItemAsync("hueIp", bridgeIp);
                     message = "Success: Bridge IP is " + bridgeIp;
@@ -79,18 +79,18 @@ namespace HueDream.Controllers {
         // GET: api/HueData/json
         [HttpGet("json")]
         public IActionResult Get() {
-            DataStore store = DreamData.getStore();
+            var store = DreamData.GetStore();
             if (store.GetItem("hueAuth")) {
                 try {
-                    HueBridge hb = new HueBridge();
-                    store.ReplaceItem("hueLights", hb.getLights());
+                    var hb = new HueBridge();
+                    store.ReplaceItem("hueLights", hb.GetLights());
                     store.ReplaceItem("entertainmentGroups", hb.ListGroups().Result);
                 } catch (AggregateException e) {
                     Console.WriteLine("An exception occurred fetching hue data: " + e);
                 }
             }
             if (store.GetItem("dsIp") == "0.0.0.0") {
-                DreamClient dc = new DreamClient();
+                var dc = new DreamClient();
                 dc.FindDevices().ConfigureAwait(true);
                 dc.Dispose();
             }
@@ -103,25 +103,25 @@ namespace HueDream.Controllers {
         // POST: api/HueData
         [HttpPost]
         public void Post() {
-            BaseDevice myDevice = DreamData.GetDeviceData();
-            DataStore store = DreamData.getStore();
-            List<LightMap> map = store.GetItem<List<LightMap>>("hueMap");
-            Group[] groups = store.GetItem<Group[]>("entertainmentGroups");
+            var myDevice = DreamData.GetDeviceData();
+            var store = DreamData.GetStore();
+            var map = store.GetItem<List<LightMap>>("hueMap");
+            var groups = store.GetItem<Group[]>("entertainmentGroups");
             store.Dispose();
             Group entGroup = DreamData.GetItem<Group>("entertainmentGroup");
-            string curId = (entGroup == null) ? "-1" : entGroup.Id;
-            string[] keys = Request.Form.Keys.ToArray();
+            var curId = (entGroup == null) ? "-1" : entGroup.Id;
+            var keys = Request.Form.Keys.ToArray();
             Console.WriteLine("We have a post: " + JsonConvert.SerializeObject(Request.Form));
-            bool mapLights = false;
-            List<LightMap> lightMap = new List<LightMap>();
-            int curMode = myDevice.Mode;
-            foreach (string key in keys) {
+            var mapLights = false;
+            var lightMap = new List<LightMap>();
+            var curMode = myDevice.Mode;
+            foreach (var key in keys) {
                 if (key.Contains("lightMap")) {
                     mapLights = true;
-                    int lightId = int.Parse(key.Replace("lightMap", ""));
-                    int sectorId = int.Parse(Request.Form[key]);
-                    bool overrideB = (Request.Form["overrideBrightness" + lightId] == "on");
-                    int newB = int.Parse(Request.Form["brightness" + lightId]);
+                    var lightId = int.Parse(key.Replace("lightMap", ""));
+                    var sectorId = int.Parse(Request.Form[key]);
+                    var overrideB = (Request.Form["overrideBrightness" + lightId] == "on");
+                    var newB = int.Parse(Request.Form["brightness" + lightId]);
                     lightMap.Add(new LightMap(lightId, sectorId, overrideB, newB));
                 } else if (key == "ds_type") {
                     if (myDevice.Tag != Request.Form[key]) {
@@ -135,7 +135,7 @@ namespace HueDream.Controllers {
                         DreamData.SetItem<string>("emuType", Request.Form[key]);
                     }
                 } else if (key == "dsGroup" && curId != Request.Form[key]) {
-                    foreach (Group g in groups) {
+                    foreach (var g in groups) {
                         if (g.Id == Request.Form[key]) {
                             Console.WriteLine("Group match: " + JsonConvert.SerializeObject(g));
                             if (curMode != 0) {
@@ -170,7 +170,7 @@ namespace HueDream.Controllers {
         }
 
         private static void SetMode(int mode) {
-            DreamSender.SendUDPWrite(0x03, 0x01, new byte[] { (byte)mode }, 0x21, 0, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8888));
+            DreamSender.SendUdpWrite(0x03, 0x01, new byte[] { (byte)mode }, 0x21, 0, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8888));
         }
 
     }

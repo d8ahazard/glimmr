@@ -1,7 +1,7 @@
 ﻿namespace HueDream.DreamScreen.Scenes {
     public class SceneRandom : SceneBase {
         public SceneRandom() {
-            SetColors(new string[]{
+            SetColors(new[]{
             "FF0000", // Red
             "00FF00", // Green
             "0000FF", // Blue
@@ -11,7 +11,7 @@
             });
             AnimationTime = 1;
             Mode = AnimationMode.RandomAll;
-            Easing = EasingType.blend;
+            Easing = EasingType.Blend;
         }
     }
 }

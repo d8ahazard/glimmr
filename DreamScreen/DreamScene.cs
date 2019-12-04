@@ -8,7 +8,6 @@ using static HueDream.DreamScreen.Scenes.SceneBase;
 namespace HueDream.DreamScreen {
     public class DreamScene {
         private string[] colorArray;
-        private string[] targetArray;
 
         public string[] GetColorArray() {
             return colorArray;
@@ -19,10 +18,7 @@ namespace HueDream.DreamScreen {
         private string[] colors;
         private AnimationMode mode;
 
-        public DreamScene() {
-        }
-
-        public SceneBase currentScene { get; set; }
+        public SceneBase CurrentScene { get; private set; }
 
         public void LoadScene(int sceneNumber) {
             SceneBase scene;
@@ -58,44 +54,42 @@ namespace HueDream.DreamScreen {
                     scene = null;
                     break;
             }
-            if (scene != null) {
-                currentScene = scene;
-                colors = scene.GetColors();
-                animationTime = scene.AnimationTime;
-                mode = scene.Mode;
-                colorArray = RefreshColors(colors);
-                targetArray = colorArray;
-                startInt = 0;
-            }
+
+            if (scene == null) return;
+            CurrentScene = scene;
+            colors = scene.GetColors();
+            animationTime = scene.AnimationTime;
+            mode = scene.Mode;
+            colorArray = RefreshColors(colors);
+            startInt = 0;
         }
 
-        public async Task BuildColors(int sceneNumber, CancellationToken ct) {
+        public async Task BuildColors(CancellationToken ct) {
             startInt = 0;
-            Console.WriteLine("DreamScene: Loaded scene " + sceneNumber);
-            long startTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
+            Console.WriteLine(@"DreamScene: Loaded scene: {sceneNumber}.");
+            var startTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
             await Task.Run(() => {
                 while (!ct.IsCancellationRequested) {
-                    long curTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-                    long dTime = curTime - startTime;
+                    var curTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
+                    var dTime = curTime - startTime;
                     // Check and set colors if time is greater than animation int, then reset time count...
-                    if (dTime > animationTime * 1000) {
-                        startTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-                        colorArray = RefreshColors(colors);
-                        Console.WriteLine("TICK: " + JsonConvert.SerializeObject(colorArray));
-                    }
+                    if (!(dTime > animationTime * 1000)) continue;
+                    startTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
+                    colorArray = RefreshColors(colors);
+                    Console.WriteLine($@"TICK: {JsonConvert.SerializeObject(colorArray)}.");
                 }
-            }).ConfigureAwait(true);
+            }, ct).ConfigureAwait(true);
 
-            Console.WriteLine($"DreamScene: Builder canceled. {startTime}");
+            Console.WriteLine($@"DreamScene: Builder canceled. {startTime}");
         }
 
         private string[] RefreshColors(string[] input) {
-            string[] output = new string[12];
-            int maxColors = input.Length - 1;
-            int colorCount = startInt;
-            int col1 = colorCount;
-            int allRand = new Random().Next(0, maxColors);
-            for (int i = 0; i < 12; i++) {
+            var output = new string[12];
+            var maxColors = input.Length - 1;
+            var colorCount = startInt;
+            var col1 = colorCount;
+            var allRand = new Random().Next(0, maxColors);
+            for (var i = 0; i < 12; i++) {
                 col1 = i + col1;
                 if (mode == AnimationMode.Random) {
                     col1 = new Random().Next(0, maxColors);
@@ -122,7 +116,7 @@ namespace HueDream.DreamScreen {
             if (startInt < 0) {
                 startInt = maxColors;
             }
-            Console.WriteLine("Returning refreshed colors: " + JsonConvert.SerializeObject(output));
+            Console.WriteLine($@"Returning refreshed colors: {JsonConvert.SerializeObject(output)}.");
             return output;
         }
 

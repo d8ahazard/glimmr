@@ -2,16 +2,15 @@
 using HueDream.Util;
 using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace HueDream.DreamScreen {
 
     [Serializable]
     public class DreamScreenMessage {
-        public string Command { get; set; }
-        public string Group { get; }
+        public string Command { get; }
+        public int Group { get; }
         public string Flags { get; }
-        public string Upper { get; }
-        public string Lower { get; }
 
         private readonly byte[] payload;
 
@@ -19,47 +18,45 @@ namespace HueDream.DreamScreen {
             return payload;
         }
 
-        public string PayloadString { get; set; }
-
-        public string Hex { get; }
+        public string PayloadString { get; }
+        [JsonProperty]
         public string IpAddress { get; set; }
 
-        public bool IsValid { get; set; }
+        public bool IsValid { get; }
 
 
-        public BaseDevice device { get; set; }
+        public BaseDevice Device { get; }
 
 
         public DreamScreenMessage(byte[] bytesIn, string from) {
-            string byteString = BitConverter.ToString(bytesIn);
-            string[] bytesString = byteString.Split("-");
-            string magic = bytesString[0];
-            if (!MsgUtils.CheckCrc(bytesIn) || magic != "FC") {
-                throw new ArgumentException($"Invalid message format: {magic}");
-            }
-            Hex = string.Join("", bytesString);
-            int len = bytesIn[1];
-            Group = bytesString[2];
-            Flags = bytesString[3];
-            Upper = bytesString[4];
-            Lower = bytesString[5];
-            string cmd = bytesString[4] + bytesString[5];
-            if (MsgUtils.commands.ContainsKey(cmd)) {
-                Command = MsgUtils.commands[cmd];
-            } else {
-                Console.WriteLine("DSMessage: No matching key in dict for bytes: " + cmd);
+            var byteString = BitConverter.ToString(bytesIn);
+            var bytesString = byteString.Split("-");
+            var magic = bytesString[0];
+            if (!MsgUtils.CheckCrc(bytesIn) || magic != "FC" || bytesString.Length < 7) {
+                //throw new ArgumentException($"Invalid message format: {magic}");
+                IsValid = false;
+                return;
             }
 
+            int len = bytesIn[1];
+            Group = bytesIn[2];
+            Flags = bytesString[3];
+            var cmd = bytesString[4] + bytesString[5];
+            if (MsgUtils.Commands.ContainsKey(cmd)) {
+                Command = MsgUtils.Commands[cmd];
+            } else {
+                Console.WriteLine($@"DSMessage: No matching key in dict for bytes: {cmd}.");
+            }
             BaseDevice dreamDev = null;
             if (len > 5) {
                 payload = ExtractPayload(bytesIn);
-                PayloadString = BitConverter.ToString(GetPayload()).Replace("-", string.Empty);
-            }
+                PayloadString = payload.Length != 0 ? BitConverter.ToString(payload).Replace("-", string.Empty, StringComparison.CurrentCulture) : "";
+            } 
             if (Command == "DEVICE_DISCOVERY" && Flags == "60" && len > 46) {
-                int devType = payload[payload.Length - 2];
+                int devType = payload[^2];
                 switch (devType) {
                     case 1:
-                        dreamDev = new Devices.DreamScreenHD(from);
+                        dreamDev = new DreamScreenHd(from);
                         break;
                     case 2:
                         dreamDev = new DreamScreen4K(from);
@@ -74,22 +71,23 @@ namespace HueDream.DreamScreen {
                         dreamDev = new DreamScreenSolo(from);
                         break;
                 }
+                
                 if (dreamDev != null) {
                     dreamDev.Initialize();
                     dreamDev.ParsePayload(GetPayload());
                 } else {
-                    Console.WriteLine($"DSMessage: Device is null from {devType}.");
+                    Console.WriteLine($@"DSMessage: Device is null from {devType}.");
                 }
-                device = dreamDev;
+                Device = dreamDev;
                 payload = null;
             }
             IsValid = true;
         }
 
         private static byte[] ExtractPayload(byte[] source) {
-            int i = 0;
-            List<byte> output = new List<byte>();
-            foreach (byte b in source) {
+            var i = 0;
+            var output = new List<byte>();
+            foreach (var b in source) {
                 if (i > 5 && i < source.Length - 1) {
                     output.Add(b);
                 }

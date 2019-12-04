@@ -5,50 +5,42 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using Newtonsoft.Json;
 
 namespace HueDream.HueDream {
 
     [Serializable]
     public class DataObj {
 
-        public BaseDevice MyDevice { get; set; }
+        [JsonProperty] public BaseDevice MyDevice { get; set; }
         //public BaseDevice[] MyDevices { get; set; }
-        public string DsIp { get; set; }
-        public string HueIp { get; set; }
-        public string EmuType { get; set; }
-        public bool HueSync { get; set; }
-        public bool HueAuth { get; set; }
-        public string HueKey { get; set; }
-        public string HueUser { get; set; }
-        public List<KeyValuePair<int, string>> HueLights { get; }
-        public List<LightMap> HueMap { get; }
+        [JsonProperty] public string DsIp { get; set; }
+        [JsonProperty] public string HueIp { get; set; }
+        [JsonProperty] public string EmuType { get; set; }
+        [JsonProperty] public bool HueSync { get; set; }
+        [JsonProperty] public bool HueAuth { get; set; }
+        [JsonProperty] public string HueKey { get; set; }
+        [JsonProperty] public string HueUser { get; set; }
+        [JsonProperty] public List<KeyValuePair<int, string>> HueLights { get; }
+        [JsonProperty] public List<LightMap> HueMap { get; }
+        
+        [JsonProperty] private Group[] entertainmentGroups;
 
-        private Group[] entertainmentGroups;
-
-        public Group[] GetEntertainmentGroups() {
-            return entertainmentGroups;
-        }
-
-        public void SetEntertainmentGroups(Group[] value) {
+        private void SetEntertainmentGroups(Group[] value) {
             entertainmentGroups = value;
         }
 
-        public Group EntertainmentGroup { get; set; }
-
+        [JsonProperty]
         private BaseDevice[] devices;
 
-        public BaseDevice[] GetDevices() {
-            return devices;
-        }
-
-        public void SetDevices(BaseDevice[] value) {
+        private void SetDevices(BaseDevice[] value) {
             devices = value;
         }
 
         public DataObj() {
             DsIp = "0.0.0.0";
-            MyDevice = new SideKick(GetLocalIPAddress());
-            HueIp = HueBridge.findBridge();
+            MyDevice = new SideKick(GetLocalIpAddress());
+            HueIp = HueBridge.FindBridge();
             HueSync = false;
             HueAuth = false;
             HueKey = "";
@@ -57,15 +49,13 @@ namespace HueDream.HueDream {
             HueLights = new List<KeyValuePair<int, string>>();
             HueMap = new List<LightMap>();
             SetEntertainmentGroups(null);
-            EntertainmentGroup = null;
             SetDevices(Array.Empty<BaseDevice>());
             MyDevice.Initialize();
-            //MyDevices = Array.Empty<BaseDevice>();
         }
 
-        private static string GetLocalIPAddress() {
-            IPHostEntry host = Dns.GetHostEntry(Dns.GetHostName());
-            foreach (IPAddress ip in host.AddressList) {
+        private static string GetLocalIpAddress() {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList) {
                 if (ip.AddressFamily == AddressFamily.InterNetwork) {
                     return ip.ToString();
                 }

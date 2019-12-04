@@ -1,18 +1,17 @@
-var syncToggle;
-var hueGroups;
-var hueLights;
-var lightMap;
-var hueGroup;
-var dsIp;
-var hueAuth = false;
-var linking = false;
+let hueGroups;
+let hueLights;
+let lightMap;
+let hueGroup;
+let dsIp;
+let hueAuth = false;
+let linking = false;
 
 $(function () {
 
     
     $('#settingsForm').submit(function (e) {
         e.preventDefault();
-        var data = $(this).serialize();
+        const data = $(this).serialize();
         $.ajax({
             url: "./api/DreamData",
             type: "POST",
@@ -34,7 +33,7 @@ $(function () {
         console.log("Trying to find dreamscreen.");
         $.get("./api/DreamData/action?action=connectDreamScreen", function (data) {
             if (data.indexOf("Success: ") !== -1) {
-                var result = $.trim(data.replace("Success: ", ""));
+                const result = $.trim(data.replace("Success: ", ""));
                 if (result !== "0.0.0.0") {                    
                     $('#ds_ip').val(result);
                     $('#ds_find').hide();
@@ -50,7 +49,7 @@ $(function () {
         if (hueAuth) {
             $(".modeBtn").removeClass("active");
             $(this).addClass('active');
-            var mode = $(this).data('mode');
+            const mode = $(this).data('mode');
             $.ajax({
                 type: "POST",
                 contentType: "application/json",
@@ -65,8 +64,8 @@ $(function () {
     });
 
     $('.dsGroup').change(function () {
-        var id = $(this).val();
-        var newGroup = findGroup(id);
+        const id = $(this).val();
+        const newGroup = findGroup(id);
         if (newGroup) {
             hueGroup = newGroup;
             mapLights(newGroup, lightMap, hueLights);
@@ -74,8 +73,8 @@ $(function () {
     });
 
     $('.dsType').change(function () {
-        var val = $(this).val();
-        var dsIcon = $('#iconWrap');
+        const val = $(this).val();
+        const dsIcon = $('#iconWrap');
         if (val === "SideKick") {
             dsIcon.css('background-image', './img/sidekick_icon.png');
         } else {
@@ -86,10 +85,10 @@ $(function () {
     $(document).on('focusin', '.mapSelect', function () {
         $(this).data('val', $(this).val());
     }).on('change', '.mapSelect', function () {
-        var prev = $(this).data('val');
-        var current = $(this).val();
+        const prev = $(this).data('val');
+        const current = $(this).val();
         if (current !== -1) {
-            var target = $('#sector' + current);
+            const target = $('#sector' + current);
             if (!target.hasClass('checked')) target.addClass('checked');
             $('#sector' + prev).removeClass('checked');
             $(this).data('val', $(this).val());
@@ -118,19 +117,18 @@ function checkHueAuth() {
 function fetchJson() {
     $.get('./api/DreamData/json', function (config) {
         console.log("We have some config", config);
-        
-        for (var v in config) {
+
+        let key;
+        let value;
+        for (let v in config) {
+            if (!config.hasOwnProperty(v)) continue;
             key = v;
             value = config[v];
-            var id = key;            
+            const id = key;
 
             if (id === "hueAuth") {
-                authorized = value;
-                var lb = $('#linkBtn');
                 hueAuth = value;
                 setLinkStatus();
-            } else if (id === "hueSync") {
-                hueSync = value;
             } else if (id === "hueMap") {
                 lightMap = value;
             } else if (id === "hueLights") {
@@ -141,9 +139,9 @@ function fetchJson() {
                 hueGroups = value;
             } else if (id === "myDevice") {
                 $('#dsName').html(value.name);
-                $('#dsGroupName').html(value.groupName);
+                if (value.hasOwnProperty('groupName')) $('#dsGroupName').html(value.groupName);
                 $('#dsType').html(value.tag);
-                var modestr = "";
+                let modestr = "";
                 $('.modeBtn').removeClass('active');
                 switch (value.mode) {
                     case 0:
@@ -168,22 +166,21 @@ function fetchJson() {
                     $('#iconWrap').addClass("SideKick").removeClass("Connect");
                     console.log("Sidekick");
                 }
-                $('#dsType').val(value.tag);
-                $('#dsType option[value='+value.tag+']').attr('selected', true);
+                $('#dsType option[value=' + value.tag + ']').attr('selected', true);
             } else if (id === "myDevices") {
                 if (value !== null) buildDevList(value);
             } else {
                 if (id === 'dsIp') {
                     dsIp = value;
                     if (value !== "0.0.0.0") {
-                         $('#ds_find').hide();
+                        $('#ds_find').hide();
                     }
                 }
                 $('#' + id).val(value);
             }
         }       
 
-        if (hueGroup !== null && hueGroups.length) {
+        if (hueGroup === undefined && hueGroups !== undefined && hueGroups.length) {
             hueGroup = hueGroups[0];
         }
 
@@ -196,147 +193,161 @@ function fetchJson() {
    
 }
 
+
 function mapLights(group, map, lights) {
     // Get the main light group
-    var lightGroup = document.getElementById("mapSel");
+    const lightGroup = document.getElementById("mapSel");
     // Clear it
     $('div').remove('.delSel');
     // Clear the light region checked status
     $('.lightRegion').removeClass("checked");
     // Get the list of lights for the selected group
-    var ids = group.lights;
+    if (!group.hasOwnProperty('lights')) return false;
+    const ids = group.lights;
     // Loop through our list of all lights that could be in ent group
     lights = lights.sort(function (a, b) {
+        if (!a.hasOwnProperty('Value') || !b.hasOwnProperty('Value')) return false;
         return a.Value.localeCompare(b.Value);
     });
-    for (var l in lights) {
-        var id = lights[l]['Key'];
-        if ($.inArray(id.toString(), ids) !== -1) {
-            var name = lights[l]['Value'];
-            var brightness = 100;
-            var override = false;
+    for (let l in lights) {
+        if (lights.hasOwnProperty(l)) {
+            const id = lights[l]['Key'];
+            if ($.inArray(id.toString(), ids) !== -1) {
+                const name = lights[l]['Value'];
+                let brightness = 100;
+                let override = false;
 
-            // Create the label for select
-            var label = document.createElement('label');
-            label.innerHTML = name + ":  ";
-            label.setAttribute("for", "lightMap" + id);
+                // Create the label for select
+                const label = document.createElement('label');
+                label.innerHTML = name + ":  ";
+                label.setAttribute("for", "lightMap" + id);
 
-            // Create a select for this light
-            var newSelect = document.createElement('select');
-            newSelect.className = "mapSelect form-control text-dark bg-light";
-            newSelect.setAttribute('id', 'lightMap' + id);
-            newSelect.setAttribute('name', 'lightMap' + id);
-            // Assume it's not mapped
-            var selection = -1;
-            // Check to see if it is mapped
-            for (var m in map) {
-                if (map[m].lightId === id) {
-                    selection = map[m].sectorId;
-                    brightness = map[m].brightness;
-                    override = map[m].overrideBrightness;
+                // Create a select for this light
+                const newSelect = document.createElement('select');
+                newSelect.className = "mapSelect form-control text-dark bg-light";
+                newSelect.setAttribute('id', 'lightMap' + id);
+                newSelect.setAttribute('name', 'lightMap' + id);
+                // Assume it's not mapped
+                let selection = -1;
+                // Check to see if it is mapped
+                for (let m in map) {
+                    if (map.hasOwnProperty(m)) {
+                        let lm = map[m];
+                        if (lm.hasOwnProperty('lightId') &&
+                            lm.hasOwnProperty('sectorId') &&
+                            lm.hasOwnProperty('brightness') &&
+                            lm.hasOwnProperty('overrideBrightness') 
+                        ) {
+                            if (lm.lightId === id) {
+                                selection = lm.sectorId;
+                                brightness = lm.brightness;
+                                override = lm.overrideBrightness;
+                            }
+                        }
+                    }
                 }
-            }
-            // Create the blank "unmapped" option
-            var opt = document.createElement("option");
-            opt.value = -1;
-            opt.innerHTML = "";
+                // Create the blank "unmapped" option
+                let opt = document.createElement("option");
+                opt.value = "-1";
+                opt.innerHTML = "";
 
-            // Set it to selected if we don't have a mapping
-            if (selection === -1) {
-                opt.setAttribute('selected', true);
-            } else {
-                var checkDiv = $('#sector' + selection);
-                if (!checkDiv.hasClass('checked')) checkDiv.addClass('checked');
-            }
-            newSelect.appendChild(opt);
-
-            // Add the options for our regions
-            for (var i = 0; i < 12; i++) {
-                opt = document.createElement("option");
-                opt.value = i;
-                opt.innerHTML = "<BR>" + (i + 1);
-                // Mark it selected if it's mapped
-                if (selection === i) opt.setAttribute('selected', true);
+                // Set it to selected if we don't have a mapping
+                if (selection === -1) {
+                    opt.setAttribute('selected', 'selected');
+                } else {
+                    const checkDiv = $('#sector' + selection);
+                    if (!checkDiv.hasClass('checked')) checkDiv.addClass('checked');
+                }
                 newSelect.appendChild(opt);
+
+                // Add the options for our regions
+                for (let i = 0; i < 12; i++) {
+                    opt = document.createElement("option");
+                    opt.value = i.toString();
+                    opt.innerHTML = "<BR>" + (i + 1);
+                    // Mark it selected if it's mapped
+                    if (selection === i) opt.setAttribute('selected', 'selected');
+                    newSelect.appendChild(opt);
+                }
+
+                const selDiv = document.createElement('div');
+                selDiv.className += "form-group";
+                selDiv.appendChild(label);
+                selDiv.appendChild(newSelect);
+
+                // Create label for brightness
+                const brightLabel = document.createElement('label');
+                brightLabel.innerHTML = "Brightness: ";
+                brightLabel.setAttribute('for', 'brightness' + id);
+
+                // Create the brightness slider
+                const newRange = document.createElement("input");
+                newRange.className = "mapBrightness form-control";
+                newRange.setAttribute("type", "range");
+                newRange.setAttribute('id', 'brightness' + id);
+                newRange.setAttribute('name', 'brightness' + id);
+                newRange.setAttribute('min', "0");
+                newRange.setAttribute('max', "100");
+                newRange.setAttribute('value', brightness.toString());
+
+                const rangeDiv = document.createElement('div');
+                rangeDiv.className += "form-group";
+                rangeDiv.appendChild(brightLabel);
+                rangeDiv.appendChild(newRange);
+
+
+                // Create label for override check
+                const checkLabel = document.createElement('label');
+                checkLabel.innerHTML = "Override";
+                checkLabel.className += "form-check-label";
+                checkLabel.setAttribute('for', 'overrideBrightness' + id);
+
+
+                // Create a checkbox
+                const newCheck = document.createElement("input");
+                newCheck.className += "overrideBright form-check-input";
+                newCheck.setAttribute('id', 'overrideBrightness' + id);
+                newCheck.setAttribute('name', 'overrideBrightness' + id);
+                newCheck.setAttribute("type", "checkbox");
+                if (override) newCheck.setAttribute("checked", 'checked');
+
+                // Create the div to hold it all
+                const lightDiv = document.createElement('div');
+                lightDiv.className += "delSel col-xs-4 col-sm-4 col-md-3";
+                lightDiv.id = id;
+                lightDiv.setAttribute('data-name', name);
+                lightDiv.setAttribute('data-id', id);
+
+                const chkDiv = document.createElement('div');
+                chkDiv.className += "form-check";
+                chkDiv.appendChild(newCheck);
+                chkDiv.appendChild(checkLabel);
+
+                // Congratulations, it's a boy!
+                lightDiv.appendChild(selDiv);
+                lightDiv.appendChild(chkDiv);
+                lightDiv.appendChild(rangeDiv);
+
+                // Add it to our document
+                lightGroup.appendChild(lightDiv);
             }
-
-            var selDiv = document.createElement('div');
-            selDiv.className += "form-group";
-            selDiv.appendChild(label);
-            selDiv.appendChild(newSelect);
-
-            // Create label for brightness
-            var brightLabel = document.createElement('label');
-            brightLabel.innerHTML = "Brightness: ";
-            brightLabel.setAttribute('for', 'brightness' + id);
-
-            // Create the brightness slider
-            var newRange = document.createElement("input");
-            newRange.className = "mapBrightness form-control";
-            newRange.setAttribute("type", "range");
-            newRange.setAttribute('id', 'brightness' + id);
-            newRange.setAttribute('name', 'brightness' + id);
-            newRange.setAttribute('min', 0);
-            newRange.setAttribute('max', 100);
-            newRange.setAttribute('value', brightness);
-
-            var rangeDiv = document.createElement('div');
-            rangeDiv.className += "form-group";
-            rangeDiv.appendChild(brightLabel);
-            rangeDiv.appendChild(newRange);
-
-
-            // Create label for override check
-            var checkLabel = document.createElement('label');
-            checkLabel.innerHTML = "Override";
-            checkLabel.className += "form-check-label";
-            checkLabel.setAttribute('for', 'overrideBrightness' + id);
-
-
-            // Create a checkbox
-            var newCheck = document.createElement("input");
-            newCheck.className += "overrideBright form-check-input";
-            newCheck.setAttribute('id', 'overrideBrightness' + id);
-            newCheck.setAttribute('name', 'overrideBrightness' + id);
-            newCheck.setAttribute("type", "checkbox");
-            if (override) newCheck.setAttribute("checked", 'checked');
-            
-            // Create the div to hold it all
-            var lightDiv = document.createElement('div');
-            lightDiv.className += "delSel col-xs-4 col-sm-4 col-md-3";
-            lightDiv.id = id;
-            lightDiv.setAttribute('data-name', name);
-            lightDiv.setAttribute('data-id', id);
-
-            var chkDiv = document.createElement('div');
-            chkDiv.className += "form-check";
-            chkDiv.appendChild(newCheck);
-            chkDiv.appendChild(checkLabel);
-
-            // Congratulations, it's a boy!
-            lightDiv.appendChild(selDiv);
-            lightDiv.appendChild(chkDiv);
-            lightDiv.appendChild(rangeDiv);
-
-            // Add it to our document
-            lightGroup.appendChild(lightDiv);
         }
     }
     $('.delSel').bootstrapMaterialDesign();   
 }
 
 function listGroups() {
-    var gs = $('#dsGroup');
+    const gs = $('#dsGroup');
     gs.html("");
-    var i = 0;
+    let i = 0;
     if (hueAuth) {
         if (hueGroups !== undefined) {
             if (hueGroup === undefined && hueGroups.length > 0) hueGroup = hueGroups[0];
             $.each(hueGroups, function() {
-                var val = $(this)[0].id;
-                var txt = $(this)[0].name;
-                var selected = (val === hueGroup.id) ? " selected" : "";
-                gs.append(`<option value="${val}"${selected}>${txt}</option>`);
+                let val = $(this)[0].id;
+                let txt = $(this)[0].name;
+                let selected = (val === hueGroup.id) ? " selected" : "";
+                gs.append(`<option value="${val}" ${selected}>${txt}</option>`);
                 i++;
             });
         }
@@ -351,22 +362,22 @@ function listDreamDevices() {
 }
 
 function buildDevList(data) {
-    var devList = $('#dsIp');
+    const devList = $('#dsIp');
     devList.html("");
     $.each(data, function () {
-        var dev = $(this)[0];
-        var name = dev.name;
-        var ip = dev.ipAddress;
-        var type = dev.tag;
+        const dev = $(this)[0];
+        const name = dev.name;
+        const ip = dev.ipAddress;
+        const type = dev.tag;
         if (name !== undefined && ip !== undefined && type.includes("DreamScreen")) {
-            var selected = (ip === dsIp) ? "selected" : "";
-            devList.append(`<option value='${ip}'${selected}>${name}: ${ip}</option>`);
+            const selected = (ip === dsIp) ? "selected" : "";
+            devList.append(`<option value='${ip}' ${selected}>${name}: ${ip}</option>`);
         }
     });
 }
 
 function findGroup(id) {
-    var res = false;
+    let res = false;
     $.each(hueGroups, function () {
         if (id === $(this)[0].id) {
             res = $(this)[0];
@@ -376,9 +387,9 @@ function findGroup(id) {
 }
 
 function setLinkStatus() {
-    var lImg = $('#linkImg');
-    var lHint = $('#linkHint');
-    var lBtn = $('#linkBtn');
+    const lImg = $('#linkImg');
+    const lHint = $('#linkHint');
+    const lBtn = $('#linkBtn');
     lImg.removeClass('linked unlinked linking');
     if (hueAuth) {
         lImg.addClass('linked');
@@ -404,7 +415,7 @@ function linkHue() {
         console.log("Trying to authorize with hue.");
         $('#circleBar').show();
         setLinkStatus();
-        var bar = new ProgressBar.Circle(circleBar, {
+        const bar = new ProgressBar.Circle(circleBar, {
             strokeWidth: 15,
             easing: 'easeInOut',
             duration: 0,
@@ -415,13 +426,13 @@ function linkHue() {
             value: 1
         });
 
-        var x = 0;
+        let x = 0;
         hueAuth = false;
-        var intervalID = window.setInterval(function () {
+        const intervalID = window.setInterval(function () {
             checkHueAuth();
-            bar.animate((x / 30));
-            if (++x === 30 || hueAuth) {
-                window.clearInterval(intervalID);   
+            bar.animate((x / 30));            
+            if (x++ === 30 || hueAuth) {
+                window.clearInterval(intervalID);
                 $('#circleBar').hide();
                 linking = false;
                 setLinkStatus();
@@ -429,8 +440,9 @@ function linkHue() {
         }, 1000);
 
         setTimeout(function () {
-            $('#circleBar').html("");
-            $('#circleBar').hide();
+            let cb = $('#circleBar');
+            cb.html("");
+            cb.hide();
             linking = false;
             setLinkStatus();
         }, 30000);
