@@ -103,14 +103,15 @@ namespace HueDream.HueDream {
         /// <param name="filePath">Config file to check</param>
         /// <returns>Modified path to config file</returns>
         private static string GetConfigPath(string filePath) {
+            // If no etc dir, return normal path
             if (!Directory.Exists("/etc/huedream")) return filePath;
-            var newPath = string.Empty;
+            // Make our etc path for docker
+            var newPath = "/etc/huedream/" + filePath;
+            // If the config file doesn't exist locally, we're done
             if (!File.Exists(filePath)) return newPath;
-            newPath = "/etc/huedream/" + filePath;
+            // Otherwise, move the config to etc
             Console.WriteLine($@"Moving file from {filePath} to {newPath}");
             File.Copy(filePath, newPath);
-            if (!File.Exists(filePath)) return newPath;
-            Console.WriteLine($@"File moved to {newPath}, updating INI path.");
             File.Delete(filePath);
             return newPath;
         }

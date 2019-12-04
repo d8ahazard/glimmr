@@ -17,7 +17,6 @@ namespace HueDream.DreamScreen {
     internal class DreamClient : IDisposable {
         private static bool _searching;
         private readonly DreamScene dreamScene;
-
         private readonly DreamSync dreamSync;
         private readonly byte group;
         private int ambientMode;
