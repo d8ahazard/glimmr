@@ -1,24 +1,24 @@
-﻿using HueDream.DreamScreen.Scenes;
-using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using HueDream.DreamScreen.Scenes;
+using Newtonsoft.Json;
 using static HueDream.DreamScreen.Scenes.SceneBase;
 
 namespace HueDream.DreamScreen {
     public class DreamScene {
+        private double animationTime;
         private string[] colorArray;
+        private string[] colors;
+        private AnimationMode mode;
+
+        private int startInt;
+
+        public SceneBase CurrentScene { get; private set; }
 
         public string[] GetColorArray() {
             return colorArray;
         }
-
-        private int startInt;
-        private double animationTime;
-        private string[] colors;
-        private AnimationMode mode;
-
-        public SceneBase CurrentScene { get; private set; }
 
         public void LoadScene(int sceneNumber) {
             SceneBase scene;
@@ -69,6 +69,7 @@ namespace HueDream.DreamScreen {
             Console.WriteLine(@"DreamScene: Loaded scene: {sceneNumber}.");
             var startTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
             await Task.Run(() => {
+                Console.WriteLine(@"Starting scene builder listener...");
                 while (!ct.IsCancellationRequested) {
                     var curTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
                     var dTime = curTime - startTime;
@@ -78,7 +79,7 @@ namespace HueDream.DreamScreen {
                     colorArray = RefreshColors(colors);
                     Console.WriteLine($@"TICK: {JsonConvert.SerializeObject(colorArray)}.");
                 }
-            }, ct).ConfigureAwait(true);
+            }).ConfigureAwait(true);
 
             Console.WriteLine($@"DreamScene: Builder canceled. {startTime}");
         }
@@ -91,34 +92,20 @@ namespace HueDream.DreamScreen {
             var allRand = new Random().Next(0, maxColors);
             for (var i = 0; i < 12; i++) {
                 col1 = i + col1;
-                if (mode == AnimationMode.Random) {
-                    col1 = new Random().Next(0, maxColors);
-                }
-                while (col1 > maxColors) {
-                    col1 -= maxColors;
-                }
-                if (mode == AnimationMode.RandomAll) {
-                    col1 = allRand;
-                }
+                if (mode == AnimationMode.Random) col1 = new Random().Next(0, maxColors);
+                while (col1 > maxColors) col1 -= maxColors;
+                if (mode == AnimationMode.RandomAll) col1 = allRand;
                 output[i] = input[col1];
             }
-            if (mode == AnimationMode.Linear) {
-                startInt++;
-            }
 
-            if (mode == AnimationMode.Reverse) {
-                startInt--;
-            }
-            if (startInt > maxColors) {
-                startInt = 0;
-            }
+            if (mode == AnimationMode.Linear) startInt++;
 
-            if (startInt < 0) {
-                startInt = maxColors;
-            }
+            if (mode == AnimationMode.Reverse) startInt--;
+            if (startInt > maxColors) startInt = 0;
+
+            if (startInt < 0) startInt = maxColors;
             Console.WriteLine($@"Returning refreshed colors: {JsonConvert.SerializeObject(output)}.");
             return output;
         }
-
     }
 }

@@ -1,23 +1,20 @@
-﻿using HueDream.DreamScreen;
-using HueDream.Hue;
-using Q42.HueApi.Models.Groups;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using HueDream.DreamScreen;
+using HueDream.Hue;
+using Q42.HueApi.Models.Groups;
 
 namespace HueDream.HueDream {
     public sealed class DreamSync : IDisposable {
+        private readonly DreamClient dreamScreen;
 
         private readonly HueBridge hueBridge;
-        private readonly DreamClient dreamScreen;
-        private CancellationTokenSource syncTokenSource;
-        private readonly CancellationTokenSource dreamTokenSource;
         private bool disposed;
+        private CancellationTokenSource syncTokenSource;
 
-        private static bool SyncEnabled { get; set; }
         public DreamSync() {
-            dreamTokenSource = new CancellationTokenSource();
             var store = DreamData.GetStore();
             store.Dispose();
             string dsIp = DreamData.GetItem("dsIp");
@@ -30,12 +27,18 @@ namespace HueDream.HueDream {
                 Console.WriteLine($@"DreamSync:  Listen started at {dsIp}...");
                 dreamScreen.Listen().ConfigureAwait(false);
                 // Start another listener for show state change
-                Task.Run(async () => await dreamScreen.CheckShow(dreamTokenSource.Token).ConfigureAwait(false));
                 DreamClient.Listening = true;
             }
-            if (dsIp == "0.0.0.0") {
-                dreamScreen.FindDevices().ConfigureAwait(false);
-            }
+
+            if (dsIp == "0.0.0.0") dreamScreen.FindDevices().ConfigureAwait(false);
+        }
+
+        private static bool SyncEnabled { get; set; }
+
+
+        public void Dispose() {
+            Dispose(true);
+            //GC.SuppressFinalize(this);
         }
 
 
@@ -45,6 +48,7 @@ namespace HueDream.HueDream {
             dreamScreen.Subscribe();
             Task.Run(async () => await SyncData(syncTokenSource.Token).ConfigureAwait(false));
             Task.Run(async () => await hueBridge.StartStream(syncTokenSource.Token).ConfigureAwait(false));
+            Task.Run(async () => await dreamScreen.CheckShow(syncTokenSource.Token).ConfigureAwait(false));
             Console.WriteLine(@"DreamSync: Sync running.");
             SyncEnabled = true;
         }
@@ -64,16 +68,14 @@ namespace HueDream.HueDream {
                     hueBridge.Brightness = dreamScreen.Brightness;
                     hueBridge.DreamSceneBase = dreamScreen.SceneBase;
                 }
-            }, ct).ConfigureAwait(true);
+            }).ConfigureAwait(true);
         }
 
         public void CheckSync(bool enabled) {
             if (CanSync()) {
-                if (enabled && !SyncEnabled) {
+                if (enabled && !SyncEnabled)
                     Task.Run(StartSync);
-                } else if (!enabled && SyncEnabled) {
-                    StopSync();
-                }
+                else if (!enabled && SyncEnabled) StopSync();
             }
         }
 
@@ -86,42 +88,36 @@ namespace HueDream.HueDream {
             Group entGroup = DreamData.GetItem<Group>("entertainmentGroup");
             if (dsIp != "0.0.0.0") {
                 if (hueAuth) {
-                    if (entGroup != null)
-                    {
-                        if (map.Count > 0) {
-                            return true;
-                        }
+                    if (entGroup != null) {
+                        if (map.Count > 0) return true;
 
                         Console.WriteLine(@"No lights mapped.");
-                    } else {
+                    }
+                    else {
                         Console.WriteLine(@"No entertainment group.");
                     }
-                } else {
+                }
+                else {
                     Console.WriteLine(@"Hue is not authorized.");
                 }
-            } else {
+            }
+            else {
                 Console.WriteLine(@"No target IP.");
             }
+
             return false;
-        }
-
-
-        public void Dispose() {
-            Dispose(true);
-            //GC.SuppressFinalize(this);
         }
 
         // Protected implementation of Dispose pattern.
         private void Dispose(bool disposing) {
-            if (disposed) {
-                return;
-            }
+            if (disposed) return;
 
             if (disposing) {
                 if (syncTokenSource != null) {
-                    syncTokenSource.Dispose();
-                    dreamTokenSource.Dispose();
+                    //syncTokenSource.Dispose();
+                    //dreamTokenSource.Dispose();
                 }
+
                 dreamScreen.Dispose();
             }
 

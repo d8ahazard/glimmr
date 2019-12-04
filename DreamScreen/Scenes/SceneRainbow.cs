@@ -1,7 +1,7 @@
 ﻿namespace HueDream.DreamScreen.Scenes {
     public class SceneRainbow : SceneBase {
         public SceneRainbow() {
-            SetColors(new[]{
+            SetColors(new[] {
                 "FF0000", // Red
                 "ff00ff", // Pink
                 "7f00ff", // Violet
@@ -16,6 +16,5 @@
             Mode = AnimationMode.Linear;
             Easing = EasingType.Blend;
         }
-
     }
 }

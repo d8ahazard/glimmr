@@ -118,13 +118,10 @@ function fetchJson() {
     $.get('./api/DreamData/json', function (config) {
         console.log("We have some config", config);
 
-        let key;
-        let value;
         for (let v in config) {
             if (!config.hasOwnProperty(v)) continue;
-            key = v;
-            value = config[v];
-            const id = key;
+            let id = v;
+            let value = config[v];
 
             if (id === "hueAuth") {
                 hueAuth = value;
@@ -166,7 +163,8 @@ function fetchJson() {
                     $('#iconWrap').addClass("SideKick").removeClass("Connect");
                     console.log("Sidekick");
                 }
-                $('#dsType option[value=' + value.tag + ']').attr('selected', true);
+                $('#emuType option[value=' + value.tag + ']').attr('selected', true);
+                $('#emuTypeText').html(value.tag);
             } else if (id === "myDevices") {
                 if (value !== null) buildDevList(value);
             } else {
@@ -211,9 +209,10 @@ function mapLights(group, map, lights) {
     });
     for (let l in lights) {
         if (lights.hasOwnProperty(l)) {
-            const id = lights[l]['Key'];
+            console.log("LIGHT: ", lights[l]);
+            let id = lights[l]['key'];
             if ($.inArray(id.toString(), ids) !== -1) {
-                const name = lights[l]['Value'];
+                const name = lights[l]['value'];
                 let brightness = 100;
                 let override = false;
 
@@ -352,6 +351,12 @@ function listGroups() {
             });
         }
     }
+}
+
+function getMode() {
+    $.get("./api/DreamData/getMode", function(data) {
+       console.log("DATA: ", data); 
+    });
 }
 
 function listDreamDevices() {

@@ -77,7 +77,7 @@
       do {
         // eslint-disable-next-line no-bitwise
         prefix += ~~(Math.random() * MAX_UID); // "~~" acts like a faster Math.floor() here
-      } while (document.getElementById(prefix))
+      } while (document.getElementById(prefix));
       return prefix
     },
 
@@ -863,11 +863,11 @@
         case ARROW_LEFT_KEYCODE:
           event.preventDefault();
           this.prev();
-          break
+          break;
         case ARROW_RIGHT_KEYCODE:
           event.preventDefault();
           this.next();
-          break
+          break;
         default:
       }
     }
@@ -5805,7 +5805,7 @@
         for (var i = 0; i < toggles.length; i++) {
           var _ret = _loop(i);
 
-          if (_ret === "continue") continue;
+          if (_ret === "continue") 
         }
       };
 

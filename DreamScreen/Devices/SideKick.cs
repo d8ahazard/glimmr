@@ -1,27 +1,17 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using System.Collections.Generic;
+using HueDream.Util;
+using Newtonsoft.Json;
 
 namespace HueDream.DreamScreen.Devices {
-    using Util;
-    using System;
-    using System.Collections.Generic;
-
     public class SideKick : BaseDevice {
-        private static readonly byte[] RequiredEspFirmwareVersion = { 3, 1 };
-        public static readonly byte[] DefaultSectorAssignment = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 0, 0 };
-
         private const string DeviceTag = "SideKick";
-        [JsonProperty]
-        private byte[] EspFirmwareVersion { get; set; }
-        [JsonProperty]
-        private bool IsDemo { get; set; }
-        [JsonProperty]
-        private byte[] SectorAssignment { get; set; }
-        [JsonProperty]
-        private byte[] SectorData { get; set; }
+        private static readonly byte[] RequiredEspFirmwareVersion = {3, 1};
+        public static readonly byte[] DefaultSectorAssignment = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 0, 0};
 
         public SideKick(string ipAddress) : base(ipAddress) {
             EspFirmwareVersion = RequiredEspFirmwareVersion;
-            SectorData = new byte[] { 0 };
+            SectorData = new byte[] {0};
             SectorAssignment = DefaultSectorAssignment;
             IsDemo = false;
             ProductId = 3;
@@ -30,26 +20,28 @@ namespace HueDream.DreamScreen.Devices {
             GroupName = "unassigned";
         }
 
+        [JsonProperty] private byte[] EspFirmwareVersion { get; set; }
+
+        [JsonProperty] private bool IsDemo { get; set; }
+
+        [JsonProperty] private byte[] SectorAssignment { get; set; }
+
+        [JsonProperty] private byte[] SectorData { get; set; }
+
         public override void ParsePayload(byte[] payload) {
-            if (payload is null) {
-                throw new ArgumentNullException(nameof(payload));
-            }
+            if (payload is null) throw new ArgumentNullException(nameof(payload));
 
             var name = ByteUtils.ExtractString(payload, 0, 16);
-            if (name.Length == 0) {
-                name = DeviceTag;
-            }
+            if (name.Length == 0) name = DeviceTag;
             Name = name;
             var groupName = ByteUtils.ExtractString(payload, 16, 32);
-            if (groupName.Length == 0) {
-                groupName = "unassigned";
-            }
+            if (groupName.Length == 0) groupName = "unassigned";
             GroupName = groupName;
             GroupNumber = payload[32];
             Mode = payload[33];
             Brightness = payload[34];
-            AmbientColor = (ByteUtils.ExtractString(payload, 35, 38));
-            Saturation = (ByteUtils.ExtractString(payload, 38, 41));
+            AmbientColor = ByteUtils.ExtractString(payload, 35, 38);
+            Saturation = ByteUtils.ExtractString(payload, 38, 41);
             FadeRate = payload[41];
             SectorAssignment = ByteUtils.ExtractBytes(payload, 42, 57);
             EspFirmwareVersion = ByteUtils.ExtractBytes(payload, 57, 59);
@@ -79,5 +71,4 @@ namespace HueDream.DreamScreen.Devices {
             return response.ToArray();
         }
     }
-
 }

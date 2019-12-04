@@ -1,13 +1,13 @@
-﻿using HueDream.DreamScreen.Devices;
-using HueDream.Hue;
-using JsonFlatFileDataStore;
-using Newtonsoft.Json;
-using Q42.HueApi.Models.Groups;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using HueDream.DreamScreen.Devices;
+using HueDream.Hue;
+using JsonFlatFileDataStore;
+using Newtonsoft.Json;
+using Q42.HueApi.Models.Groups;
 
 namespace HueDream.HueDream {
     [Serializable]
@@ -35,58 +35,54 @@ namespace HueDream.HueDream {
             store.InsertItemAsync("devices", Array.Empty<BaseDevice>());
             return store;
         }
+
         /// <summary>
-        /// Loads our data store from a dynamic path, and tries to get the item
+        ///     Loads our data store from a dynamic path, and tries to get the item
         /// </summary>
         /// <param name="key"></param>
         /// <returns>dynamic object corresponding to key, or null if not found</returns>
         public static dynamic GetItem(string key) {
-            try
-            {
+            try {
                 using var dStore = new DataStore(GetConfigPath("store.json"));
                 var output = dStore.GetItem(key);
                 return output;
-            } catch (KeyNotFoundException) {
-
             }
+            catch (KeyNotFoundException) { }
+
             return null;
         }
 
         public static dynamic GetItem<T>(string key) {
-            try
-            {
+            try {
                 using var dStore = new DataStore(GetConfigPath("store.json"));
                 dynamic output = dStore.GetItem<T>(key);
                 return output;
-            } catch (KeyNotFoundException) {
-
             }
+            catch (KeyNotFoundException) { }
+
             return null;
         }
 
-        public static void SetItem(string key, dynamic value)
-        {
+        public static void SetItem(string key, dynamic value) {
             using var dStore = new DataStore(GetConfigPath("store.json"));
             dStore.ReplaceItem(key, value, true);
         }
 
-        public static void SetItem<T>(string key, dynamic value)
-        {
+        public static void SetItem<T>(string key, dynamic value) {
             using var dStore = new DataStore(GetConfigPath("store.json"));
             dStore.ReplaceItem<T>(key, value, true);
         }
 
-        public static DataObj GetStoreSerialized() {
+        public static string GetStoreSerialized() {
             var jsonPath = GetConfigPath("store.json");
             if (!File.Exists(jsonPath)) return null;
-            try
-            {
-                using var file = File.OpenText(jsonPath);
-                var jss = new JsonSerializer();
-                return (DataObj)jss.Deserialize(file, typeof(DataObj));
-            } catch (IOException e) {
+            try {
+                return File.ReadAllText(jsonPath);
+            }
+            catch (IOException e) {
                 Console.WriteLine($@"An IO Exception occurred: {e.Message}.");
             }
+
             return null;
         }
 
@@ -94,16 +90,15 @@ namespace HueDream.HueDream {
             using var dd = GetStore();
             BaseDevice dev;
             string devType = dd.GetItem("emuType");
-            if (devType == "SideKick") {
+            if (devType == "SideKick")
                 dev = dd.GetItem<SideKick>("myDevice");
-            } else {
+            else
                 dev = dd.GetItem<Connect>("myDevice");
-            }
             return dev;
         }
 
         /// <summary>
-        /// Determine if config path is local, or docker
+        ///     Determine if config path is local, or docker
         /// </summary>
         /// <param name="filePath">Config file to check</param>
         /// <returns>Modified path to config file</returns>
@@ -122,11 +117,9 @@ namespace HueDream.HueDream {
 
         private static string GetLocalIpAddress() {
             var host = Dns.GetHostEntry(Dns.GetHostName());
-            foreach (var ip in host.AddressList) {
-                if (ip.AddressFamily == AddressFamily.InterNetwork) {
+            foreach (var ip in host.AddressList)
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
                     return ip.ToString();
-                }
-            }
             throw new Exception("No network adapters found in " + JsonConvert.SerializeObject(host));
         }
     }

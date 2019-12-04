@@ -39,10 +39,10 @@ namespace HueDream.Hue {
             var client = new StreamingHueClient(hueIp, hueUser, hueKey);
             Console.WriteLine(@"Hue: Created client.");
             //Get the entertainment group
-            
-            if (group == null) {
-                throw new HueException("No Entertainment Group found. Create one using the Hue App and link it in the web UI.");
-            }
+
+            if (group == null)
+                throw new HueException(
+                    "No Entertainment Group found. Create one using the Hue App and link it in the web UI.");
 
             Console.WriteLine($@"Hue: Using Entertainment Group {group.Id}");
 
@@ -53,7 +53,9 @@ namespace HueDream.Hue {
             await client.Connect(group.Id).ConfigureAwait(true);
 
             //Start auto updating this entertainment group
-            await client.AutoUpdate(stream, ct).ConfigureAwait(false);
+#pragma warning disable 4014
+            client.AutoUpdate(stream, ct);
+#pragma warning restore 4014
 
             //Optional: Check if streaming is currently active
             var bridgeInfo = await client.LocalHueClient.GetBridgeAsync().ConfigureAwait(true);

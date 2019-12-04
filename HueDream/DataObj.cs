@@ -1,41 +1,18 @@
-﻿using HueDream.DreamScreen.Devices;
-using HueDream.Hue;
-using Q42.HueApi.Models.Groups;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using HueDream.DreamScreen.Devices;
+using HueDream.Hue;
 using Newtonsoft.Json;
+using Q42.HueApi.Models.Groups;
 
 namespace HueDream.HueDream {
-
     [Serializable]
     public class DataObj {
+        [JsonProperty] private BaseDevice[] devices;
 
-        [JsonProperty] public BaseDevice MyDevice { get; set; }
-        //public BaseDevice[] MyDevices { get; set; }
-        [JsonProperty] public string DsIp { get; set; }
-        [JsonProperty] public string HueIp { get; set; }
-        [JsonProperty] public string EmuType { get; set; }
-        [JsonProperty] public bool HueSync { get; set; }
-        [JsonProperty] public bool HueAuth { get; set; }
-        [JsonProperty] public string HueKey { get; set; }
-        [JsonProperty] public string HueUser { get; set; }
-        [JsonProperty] public List<KeyValuePair<int, string>> HueLights { get; }
-        [JsonProperty] public List<LightMap> HueMap { get; }
-        
         [JsonProperty] private Group[] entertainmentGroups;
-
-        private void SetEntertainmentGroups(Group[] value) {
-            entertainmentGroups = value;
-        }
-
-        [JsonProperty]
-        private BaseDevice[] devices;
-
-        private void SetDevices(BaseDevice[] value) {
-            devices = value;
-        }
 
         public DataObj() {
             DsIp = "0.0.0.0";
@@ -53,13 +30,32 @@ namespace HueDream.HueDream {
             MyDevice.Initialize();
         }
 
+        [JsonProperty] public BaseDevice MyDevice { get; set; }
+
+        //public BaseDevice[] MyDevices { get; set; }
+        [JsonProperty] public string DsIp { get; set; }
+        [JsonProperty] public string HueIp { get; set; }
+        [JsonProperty] public string EmuType { get; set; }
+        [JsonProperty] public bool HueSync { get; set; }
+        [JsonProperty] public bool HueAuth { get; set; }
+        [JsonProperty] public string HueKey { get; set; }
+        [JsonProperty] public string HueUser { get; set; }
+        [JsonProperty] public List<KeyValuePair<int, string>> HueLights { get; }
+        [JsonProperty] public List<LightMap> HueMap { get; }
+
+        private void SetEntertainmentGroups(Group[] value) {
+            entertainmentGroups = value;
+        }
+
+        private void SetDevices(BaseDevice[] value) {
+            devices = value;
+        }
+
         private static string GetLocalIpAddress() {
             var host = Dns.GetHostEntry(Dns.GetHostName());
-            foreach (var ip in host.AddressList) {
-                if (ip.AddressFamily == AddressFamily.InterNetwork) {
+            foreach (var ip in host.AddressList)
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
                     return ip.ToString();
-                }
-            }
             return "localhost";
         }
     }

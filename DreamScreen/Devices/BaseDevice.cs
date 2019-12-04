@@ -5,26 +5,35 @@ using Newtonsoft.Json;
 namespace HueDream.DreamScreen.Devices {
     [Serializable]
     public abstract class BaseDevice : IDreamDevice {
+        [JsonProperty] private readonly byte[] espSerialNumber = {0, 0};
+
+
+        protected BaseDevice(string address) {
+            IpAddress = address;
+        }
+
+        public int AmbientShowType { get; set; }
+
+        [JsonProperty] public int FadeRate { get; set; }
+
+        [JsonProperty] public string IpAddress { get; set; }
+
+        [JsonProperty] public int ProductId { get; set; }
 
         public string Tag { get; set; }
-        [DataMember]
-        public string AmbientColor { get; set; }
+
+        [DataMember] public string AmbientColor { get; set; }
+
         public int AmbientModeType { get; set; }
-        public int AmbientShowType { get; set; }
         public int Brightness { get; set; }
-        [JsonProperty]
-        private readonly byte[] espSerialNumber = { 0, 0 };
-        [JsonProperty]
-        public int FadeRate { get; set; }
         public string Name { get; set; }
         public string GroupName { get; set; }
         public int GroupNumber { get; set; }
-        [JsonProperty]
-        public string IpAddress { get; set; }
         public int Mode { get; set; }
-        [JsonProperty]
-        public int ProductId { get; set; }
         public string Saturation { get; set; }
+
+        public abstract void ParsePayload(byte[] payload);
+        public abstract byte[] EncodeState();
 
 
         public void Initialize() {
@@ -39,14 +48,5 @@ namespace HueDream.DreamScreen.Devices {
             Mode = 0;
             // = "Light";
         }
-
-
-        protected BaseDevice(string address) {
-            IpAddress = address;
-        }
-
-        public abstract void ParsePayload(byte[] payload);
-        public abstract byte[] EncodeState();
     }
-
 }

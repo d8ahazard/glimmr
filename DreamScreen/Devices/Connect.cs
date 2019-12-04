@@ -1,41 +1,20 @@
-﻿using HueDream.Util;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using HueDream.Util;
 using Newtonsoft.Json;
 
 namespace HueDream.DreamScreen.Devices {
     public class Connect : BaseDevice {
-        public static readonly byte[] DefaultSectorAssignment = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 0, 0 };
+        private const string DeviceTag = "Connect";
+
+        public static readonly byte[] DefaultSectorAssignment = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 0, 0};
+
         //public static readonly List<int> RemoteCommandValues = new List<int> { Convert.ToInt32(1836103725), Convert.ToInt32(1342658845), Convert.ToInt32(1339163517), Convert.ToInt32(459778273), Convert.ToInt32(720925977), Convert.ToInt32(1114347969), Convert.ToInt32(30463369), Convert.ToInt32(-1573044211) };
         //public static readonly List<string> IrCommands = new List<string> { "Undefined", "Mode Toggle", "Mode Sleep", "Mode Video", "Mode Audio", "Mode Ambient", "Brightness Up 10%", "Brightness Down 10%", "HDMI Toggle", "HDMI 1", "HDMI 2", "HDMI 3", "Ambient Scene Toggle" };
         //public const int LightCount = 10;
-        private static readonly byte[] RequiredEspFirmwareVersion = { 0, 4 };
-        private const string DeviceTag = "Connect";
-        [JsonProperty]
-        public int AmbientLightAutoAdjustEnabled { get; set; }
-        [JsonProperty]
-        public int DisplayAnimationEnabled { get; set; }
-        [JsonProperty]
-        private byte[] espFirmwareVersion;
-        [JsonProperty]
-        public int HdmiInput { get; set; }
-        /* access modifiers changed from: private */
-        [JsonProperty]
-        public bool HueLifxSettingsReceived { get; set; }
-        [JsonProperty]
-        public int IrEnabled { get; set; }
-        [JsonProperty]
-        public int IrLearningMode { get; set; }
-        [JsonProperty]
-        public byte[] IrManifest { get; set; }
-        [JsonProperty]
-        public bool IsDemo { get; set; }
-        [JsonProperty]
-        public int MicrophoneAudioBroadcastEnabled { get; set; }
-        [JsonProperty]
-        public byte[] SectorData { get; set; }
-        [JsonProperty]
-        public string ThingName { get; set; }
+        private static readonly byte[] RequiredEspFirmwareVersion = {0, 4};
+
+        [JsonProperty] private byte[] espFirmwareVersion;
 
         public Connect(string ipAddress) : base(ipAddress) {
             Tag = DeviceTag;
@@ -56,22 +35,43 @@ namespace HueDream.DreamScreen.Devices {
             GroupName = "unassigned";
         }
 
+        [JsonProperty] public int AmbientLightAutoAdjustEnabled { get; set; }
+
+        [JsonProperty] public int DisplayAnimationEnabled { get; set; }
+
+        [JsonProperty] public int HdmiInput { get; set; }
+
+        /* access modifiers changed from: private */
+        [JsonProperty] public bool HueLifxSettingsReceived { get; set; }
+
+        [JsonProperty] public int IrEnabled { get; set; }
+
+        [JsonProperty] public int IrLearningMode { get; set; }
+
+        [JsonProperty] public byte[] IrManifest { get; set; }
+
+        [JsonProperty] public bool IsDemo { get; set; }
+
+        [JsonProperty] public int MicrophoneAudioBroadcastEnabled { get; set; }
+
+        [JsonProperty] public byte[] SectorData { get; set; }
+
+        [JsonProperty] public string ThingName { get; set; }
+
         public override void ParsePayload(byte[] payload) {
             if (payload != null) {
                 try {
                     var name = ByteUtils.ExtractString(payload, 0, 16);
-                    if (name.Length == 0) {
-                        name = "Connect";
-                    }
+                    if (name.Length == 0) name = "Connect";
                     Name = name;
                     var groupName = ByteUtils.ExtractString(payload, 16, 32);
-                    if (groupName.Length == 0) {
-                        groupName = "Group";
-                    }
+                    if (groupName.Length == 0) groupName = "Group";
                     GroupName = groupName;
-                } catch (IndexOutOfRangeException) {
+                }
+                catch (IndexOutOfRangeException) {
                     Console.WriteLine($@"Index out of range, payload length is {payload.Length}.");
                 }
+
                 GroupNumber = payload[32];
                 Mode = payload[33];
                 Brightness = payload[34];
@@ -88,13 +88,13 @@ namespace HueDream.DreamScreen.Devices {
                 IrEnabled = payload[65];
                 IrLearningMode = payload[66];
                 IrManifest = ByteUtils.ExtractBytes(payload, 67, 107);
-                if (payload.Length > 115) {
+                if (payload.Length > 115)
                     try {
                         ThingName = ByteUtils.ExtractString(payload, 115, 178);
-                    } catch (IndexOutOfRangeException) {
+                    }
+                    catch (IndexOutOfRangeException) {
                         ThingName = "";
                     }
-                }
             }
         }
 
@@ -125,5 +125,4 @@ namespace HueDream.DreamScreen.Devices {
             return response.ToArray();
         }
     }
-
 }

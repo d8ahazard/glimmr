@@ -6,22 +6,18 @@ using HueDream.Util;
 
 namespace HueDream.DreamScreen {
     public static class DreamSender {
-
-        public static void SendUdpWrite(byte command1, byte command2, byte[] payload, byte flag = 17, byte group = 0, IPEndPoint ep = null) {
-            if (payload is null) {
-                throw new ArgumentNullException(nameof(payload));
-            }
+        public static void SendUdpWrite(byte command1, byte command2, byte[] payload, byte flag = 17, byte group = 0,
+            IPEndPoint ep = null) {
+            if (payload is null) throw new ArgumentNullException(nameof(payload));
             // If we don't specify an endpoint...talk to self
-            if (ep == null) {
-                ep = new IPEndPoint(IPAddress.Parse("0.0.0.0"), 8888);
-            }
+            if (ep == null) ep = new IPEndPoint(IPAddress.Parse("0.0.0.0"), 8888);
 
             using var stream = new MemoryStream();
             using var response = new BinaryWriter(stream);
             // Magic header
-            response.Write((byte)0xFC);
+            response.Write((byte) 0xFC);
             // Payload length
-            response.Write((byte)(payload.Length + 5));
+            response.Write((byte) (payload.Length + 5));
             // Group number
             response.Write(group);
             // Flag, should be 0x10 for subscription, 17 for everything else
@@ -31,18 +27,15 @@ namespace HueDream.DreamScreen {
             // Lower command
             response.Write(command2);
             // Payload
-            foreach (var b in payload) {
-                response.Write(b);
-            }
+            foreach (var b in payload) response.Write(b);
 
             var byteSend = stream.ToArray();
             // CRC
             response.Write(MsgUtils.CalculateCrc(byteSend));
-            if (flag == 0x30) {
+            if (flag == 0x30)
                 SendUdpBroadcast(stream.ToArray());
-            } else {
+            else
                 SendUdpUnicast(stream.ToArray(), ep);
-            }
         }
 
         private static void SendUdpUnicast(byte[] data, EndPoint ep) {
@@ -54,12 +47,8 @@ namespace HueDream.DreamScreen {
         }
 
 
-
-
         public static void SendUdpBroadcast(byte[] bytes) {
-            if (bytes is null) {
-                throw new ArgumentNullException(nameof(bytes));
-            }
+            if (bytes is null) throw new ArgumentNullException(nameof(bytes));
 
             var client = new UdpClient();
             client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
@@ -68,6 +57,5 @@ namespace HueDream.DreamScreen {
             client.Dispose();
             Console.WriteLine($@"Sent message to {ip.Address}:{ip.Port}");
         }
-
     }
 }
