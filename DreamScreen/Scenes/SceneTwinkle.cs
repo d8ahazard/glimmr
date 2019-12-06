@@ -3,11 +3,10 @@
         public SceneTwinkle() {
             SetColors(new[] {
                 "AAAAAA",
-                "000000",
-                "AAAAAA"
+                "000000"
             });
-            AnimationTime = 1;
-            Mode = AnimationMode.Random;
+            AnimationTime = .5;
+            Mode = AnimationMode.Linear;
             Easing = EasingType.Blend;
         }
     }

@@ -8,7 +8,7 @@
                 "00beff", // Deeper blue
                 "00a763" // Deeper green
             });
-            AnimationTime = 3;
+            AnimationTime = 5;
             Mode = AnimationMode.Linear;
             Easing = EasingType.Blend;
         }

@@ -2,17 +2,14 @@
     public class SceneFire : SceneBase {
         public SceneFire() {
             SetColors(new[] {
-                "ff0600", // Red red
-                "c8231f", // Deep red
                 "d2491a", // Orange red
-                "ff8600", // Orange
-                "ffba00", // Tangerine
-                "fff200", // Yellow
-                "ffba00", // Tangerine
-                "ff8600", // Orange            
-                "7d3e1e" // Brownish
+                "f58600", // Orange
+                "f59700", // Tangerine
+                "f5dd02", // Yellow
+                "f59700", // Tangerine
+                "f58600" // Orange
             });
-            AnimationTime = .25;
+            AnimationTime = .15;
             Mode = AnimationMode.Linear;
             Easing = EasingType.Blend;
         }

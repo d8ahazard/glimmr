@@ -11,7 +11,6 @@ namespace HueDream.DreamScreen {
         private string[] colorArray;
         private string[] colors;
         private AnimationMode mode;
-
         private int startInt;
 
         public SceneBase CurrentScene { get; private set; }
@@ -20,9 +19,9 @@ namespace HueDream.DreamScreen {
             return colorArray;
         }
 
-        public void LoadScene(int sceneNumber) {
+        public void LoadScene(int sceneNo) {
             SceneBase scene;
-            switch (sceneNumber) {
+            switch (sceneNo) {
                 case 0:
                     scene = new SceneRandom();
                     break;
@@ -66,21 +65,16 @@ namespace HueDream.DreamScreen {
 
         public async Task BuildColors(CancellationToken ct) {
             startInt = 0;
-            Console.WriteLine(@"DreamScene: Loaded scene: {sceneNumber}.");
             var startTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-            await Task.Run(() => {
-                Console.WriteLine(@"Starting scene builder listener...");
-                while (!ct.IsCancellationRequested) {
-                    var curTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-                    var dTime = curTime - startTime;
-                    // Check and set colors if time is greater than animation int, then reset time count...
-                    if (!(dTime > animationTime * 1000)) continue;
-                    startTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-                    colorArray = RefreshColors(colors);
-                    Console.WriteLine($@"TICK: {JsonConvert.SerializeObject(colorArray)}.");
-                }
-            }).ConfigureAwait(true);
-
+            Console.WriteLine(@"Starting scene builder listener...");
+            while (!ct.IsCancellationRequested) {
+                var curTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
+                var dTime = curTime - startTime;
+                // Check and set colors if time is greater than animation int, then reset time count...
+                if (!(dTime > animationTime * 1000)) continue;
+                startTime = curTime;
+                colorArray = RefreshColors(colors);
+            }
             Console.WriteLine($@"DreamScene: Builder canceled. {startTime}");
         }
 

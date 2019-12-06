@@ -48,6 +48,7 @@ namespace HueDream.DreamScreen {
             for (var i = 0; i < Colors.Length; i++) Colors[i] = "FFFFFF";
             SceneBase = null;
             DeviceMode = -1;
+            cts = new CancellationTokenSource();
             dreamSync = ds;
             UpdateMode(dev.Mode);
         }
@@ -96,7 +97,7 @@ namespace HueDream.DreamScreen {
 
         public async Task CheckShow(CancellationToken sCt) {
             await Task.Run(() => {
-                Console.WriteLine(@"Checkshow Started.");
+                Console.WriteLine(@"Check show Started.");
                 while (!sCt.IsCancellationRequested) {
                     // If we're still in ambient mode
                     if (DeviceMode == 3 && ambientMode == 1) {
@@ -104,8 +105,9 @@ namespace HueDream.DreamScreen {
                         if (!showStarted) {
                             Console.WriteLine($@"Starting new ambient show: {ambientShow}.");
                             SceneBase = dreamScene.CurrentScene;
-                            Console.WriteLine($@"Updated stored base to {JsonConvert.SerializeObject(SceneBase)}.");
-                            Task.Run(() => dreamScene.BuildColors(cts.Token), sCt).ConfigureAwait(false);
+                            Console.WriteLine($@"Updated stored base to {ambientShow}.");
+                            Task.Run(() => dreamScene.BuildColors(cts.Token));
+                            Console.WriteLine(@"DreamClient: Scene builder started...");
                             prevShow = ambientShow;
                             showStarted = true;
                         }

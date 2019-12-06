@@ -7,7 +7,7 @@
             });
             AnimationTime = 1.75;
             Mode = AnimationMode.Linear;
-            Easing = EasingType.FadeOut;
+            Easing = EasingType.Blend;
         }
     }
 }
