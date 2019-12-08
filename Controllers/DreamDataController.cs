@@ -32,7 +32,7 @@ namespace HueDream.Controllers {
         }
 
         [HttpGet("action")]
-        public IActionResult Action(string action) {
+        public IActionResult Action(string action, string value="") {
             var message = "Unrecognized action";
             var store = DreamData.GetStore();
             Console.WriteLine($@"{action} fired.");
@@ -48,14 +48,30 @@ namespace HueDream.Controllers {
             }
 
             if (action == "authorizeHue") {
-                if (!store.GetItem("hueAuth")) {
-                    var hb = new HueBridge();
-                    var appKey = hb.CheckAuth().Result;
-                    if (appKey != null) {
+                var doAuth = true;
+                var bridges = store.GetItem("bridges");
+                BridgeData bd = null;
+                int bridgeInt = -1;
+
+                if (!string.IsNullOrEmpty(value)) {
+                    int bCount = 0;
+                    foreach (BridgeData b in bridges) {
+                        if (b.BridgeIp == value) {
+                            bd = b;
+                            bridgeInt = bCount;
+                            doAuth = b.BridgeKey == null || b.BridgeUser == null;
+                        }
+                        bCount++;
+                    }
+                }
+                if (doAuth) {
+                    var appKey = HueBridge.CheckAuth(value).Result;
+                    if (appKey != null && bd != null) {
                         message = "Success: Bridge Linked.";
-                        store.ReplaceItemAsync("hueKey", appKey.StreamingClientKey);
-                        store.ReplaceItemAsync("hueUser", appKey.Username);
-                        store.ReplaceItemAsync("hueAuth", true);
+                        bd.BridgeKey = appKey.StreamingClientKey;
+                        bd.BridgeUser = appKey.Username;
+                        bridges[bridgeInt] = bd;
+                        store.ReplaceItem("bridges", bridges,true);
                     }
                     else {
                         message = "Error: Press the link button";
@@ -66,10 +82,9 @@ namespace HueDream.Controllers {
                 }
             }
             else if (action == "findHue") {
-                var bridgeIp = HueBridge.FindBridge();
-                if (string.IsNullOrEmpty(bridgeIp)) {
-                    store.ReplaceItemAsync("hueIp", bridgeIp);
-                    message = "Success: Bridge IP is " + bridgeIp;
+                var bridges = HueBridge.FindBridges();
+                if (bridges != null) {
+                    store.ReplaceItem("bridges", bridges, true);
                 }
                 else {
                     message = "Error: No bridge found.";
@@ -85,15 +100,28 @@ namespace HueDream.Controllers {
         [HttpGet("json")]
         public IActionResult GetJson() {
             var store = DreamData.GetStore();
-            if (store.GetItem("hueAuth"))
-                try {
-                    var hb = new HueBridge();
-                    store.ReplaceItem("hueLights", hb.GetLights());
-                    store.ReplaceItem("entertainmentGroups", hb.ListGroups().Result);
+            if (DreamData.GetItem<List<BridgeData>>("bridges") != null) {
+                var bridges = store.GetItem<List<BridgeData>>("bridges");
+                var nb = new List<BridgeData>();
+                var update = false;
+                if (bridges.Count > 0) {
+                    foreach (var b in bridges) {
+                        if (b.BridgeKey != null && b.BridgeUser != null) {
+                            var hb = new HueBridge(b);
+                            b.SetLights(hb.GetLights());
+                            b.SetGroups(hb.ListGroups().Result);
+                            update = true;
+                        }
+                        nb.Add(b);
+                    }
                 }
-                catch (AggregateException e) {
-                    Console.WriteLine($@"An exception occurred fetching hue data: {e.Message}");
+
+                if (update) {
+                    bridges = nb;
+                    store.ReplaceItem("bridges", bridges, true);
                 }
+            }
+                
 
             if (store.GetItem("dsIp") == "0.0.0.0") {
                 var dc = new DreamClient();

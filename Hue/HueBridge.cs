@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using HueDream.DreamScreen.Scenes;
 using HueDream.HueDream;
+using Newtonsoft.Json;
 using Q42.HueApi;
 using Q42.HueApi.ColorConverters;
 using Q42.HueApi.ColorConverters.HSB;
@@ -17,20 +17,13 @@ using Q42.HueApi.Streaming.Models;
 
 namespace HueDream.Hue {
     public class HueBridge {
-        private static readonly IFormatProvider Format = new CultureInfo("en-US");
-
-        private readonly bool bridgeAuth;
-
         private string[] colors;
 
         private EntertainmentLayer entLayer;
         private List<LightMap> lightMappings;
-        private BridgeData bd;
-       
 
-        public HueBridge(BridgeData data) {
-            bd = data;
-            
+
+        public HueBridge(BridgeData bd) {
             Brightness = 100;
             BridgeIp = bd.BridgeIp;
             BridgeKey = bd.BridgeKey;
@@ -140,20 +133,22 @@ namespace HueDream.Hue {
         }
 
 
-        public async Task<RegisterEntertainmentResult> CheckAuth() {
-            RegisterEntertainmentResult result = null;
+        public static async Task<RegisterEntertainmentResult> CheckAuth(string bridgeIp) {
+            RegisterEntertainmentResult result;
             try {
-                ILocalHueClient client = new LocalHueClient(BridgeIp);
+                ILocalHueClient client = new LocalHueClient(bridgeIp);
                 //Make sure the user has pressed the button on the bridge before calling RegisterAsync
                 //It will throw an LinkButtonNotPressedException if the user did not press the button
-                result = await client.RegisterAsync("HueDream", Environment.MachineName, true).ConfigureAwait(true);
+                result = client.RegisterAsync("HueDream", Environment.MachineName, true).Result;
                 Console.WriteLine($@"Hue: User name is {result.Username}.");
+                return result;
+
             }
             catch (HueException) {
-                Console.WriteLine($@"Hue: The link button is not pressed at {BridgeIp}.");
+                Console.WriteLine($@"Hue: The link button is not pressed at {bridgeIp}.");
             }
 
-            return result;
+            return null;
         }
 
         public static string FindBridge() {
@@ -171,18 +166,22 @@ namespace HueDream.Hue {
         public static LocatedBridge[] FindBridges() {
             Console.WriteLine(@"Hue: Looking for bridges...");
             IBridgeLocator locator = new HttpBridgeLocator();
-            return locator.LocateBridgesAsync(TimeSpan.FromSeconds(2)).Result.ToArray();
+            var res = locator.LocateBridgesAsync(TimeSpan.FromSeconds(2)).Result;
+            return res.ToArray();
         }
 
-        public Light[] GetLights() {
+        public LightData[] GetLights() {
             // If we have no IP or we're not authorized, return
-            if (BridgeIp == "0.0.0.0" || !bridgeAuth) return Array.Empty<Light>();
+            if (BridgeIp == "0.0.0.0" || BridgeUser == null || BridgeKey == null) return Array.Empty<LightData>();
             // Create client
+            Console.WriteLine(@"Hue: Enumerating lights.");
             ILocalHueClient client = new LocalHueClient(BridgeIp);
             client.Initialize(BridgeUser);
             // Get lights
-            var task = Task.Run(async () => await client.GetLightsAsync().ConfigureAwait(false));
-            return task.Result.ToArray();
+            var res = client.GetLightsAsync().Result;
+            var ld = res.Select(r => new LightData(r)).ToList();
+            Console.WriteLine(@"Returning: " + JsonConvert.SerializeObject(ld));
+            return ld.ToArray();
         }
     }
 }

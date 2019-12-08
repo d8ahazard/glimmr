@@ -132,8 +132,8 @@ namespace HueDream.HueDream {
             var bUser = GetItem("hueUser");
             var bKey = GetItem("hueKey");
             List<Group> entGroups = GetItem<List<Group>>("entertainmentGroups");
-            var entGroup = GetItem("entertainmentGroup");
-            List<KeyValuePair<int, string>> lights = GetItem("hueLights");
+            var entGroup = GetItem<Group>("entertainmentGroup");
+            //List<Light> lights = GetItem("hueLights");
             
             var bList = HueBridge.FindBridges();
             var bData = new List<BridgeData>();
@@ -142,8 +142,8 @@ namespace HueDream.HueDream {
                 Console.WriteLine(@"Upgrading bridge storage for existing bridge.");
                 var bd = new BridgeData(lb.IpAddress, lb.BridgeId, bUser, bKey);
                 bd.SetGroups(entGroups.ToArray());
-                bd.SetLights(lights.ToArray());
-                bd.EntertainmentGroup = entGroup;
+              //  bd.SetLights(lights.ToArray());
+                bd.SelectedGroup = entGroup;
                 bData.Add(bd);
             }
 

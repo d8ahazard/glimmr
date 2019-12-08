@@ -15,22 +15,23 @@ namespace HueDream.Hue {
         public string BridgeId { get; set; }
         public string BridgeUser { get; set; }
         public string BridgeKey { get; set; }
-        public Group EntertainmentGroup { get; set; }
+        public Group SelectedGroup { get; set; }
         [JsonProperty]
         private LightMap[] mappedLights;
         [JsonProperty]
-        private Group[] entertainmentGroups;
-
-        private Light[] groupLights;
+        private Group[] bridgeGroups;
+        [JsonProperty]
+        private LightData[] bridgeLights;
 
         public BridgeData() {
             BridgeIp = null;
             BridgeId = null;
             BridgeUser = null;
             BridgeKey = null;
-            EntertainmentGroup = null;
+            SelectedGroup = null;
             mappedLights = Array.Empty<LightMap>();
-            entertainmentGroups = Array.Empty<Group>();
+            bridgeGroups = Array.Empty<Group>();
+            bridgeLights = Array.Empty<LightData>();
         }
 
         public BridgeData(string ip, string id) {
@@ -44,13 +45,14 @@ namespace HueDream.Hue {
             BridgeUser = user;
             BridgeKey = key;
             mappedLights = Array.Empty<LightMap>();
-            entertainmentGroups = Array.Empty<Group>();
+            bridgeGroups = Array.Empty<Group>();
+            bridgeLights = Array.Empty<LightData>();
         }
 
         public void SetDefaultGroup() {
-            var fg = entertainmentGroups.FirstOrDefault();
+            var fg = bridgeGroups.FirstOrDefault();
             if (fg != null) {
-                EntertainmentGroup = entertainmentGroups[0];
+                SelectedGroup = bridgeGroups[0];
             }
         }
         
@@ -62,21 +64,21 @@ namespace HueDream.Hue {
             return mappedLights;
         }
         
-        public void SetLights(Light[] lights) {
-            groupLights = lights;
+        public void SetLights(LightData[] lights) {
+            bridgeLights = lights;
         }
 
-        public Light[] GetLights() {
-            return groupLights;
+        public LightData[] GetLights() {
+            return bridgeLights;
         }
 
         public void SetGroups(Group[] groups) {
-            entertainmentGroups = groups;
+            bridgeGroups = groups;
             SetDefaultGroup();
         }
 
         public Group[] GetGroups() {
-            return entertainmentGroups;
+            return bridgeGroups;
         }
     }
     
