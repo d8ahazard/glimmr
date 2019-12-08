@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using HueDream.DreamScreen.Devices;
 using HueDream.Hue;
 using JsonFlatFileDataStore;
 using Newtonsoft.Json;
+using Q42.HueApi;
+using Q42.HueApi.Models.Bridge;
 using Q42.HueApi.Models.Groups;
 
 namespace HueDream.HueDream {
@@ -15,23 +18,21 @@ namespace HueDream.HueDream {
         public static DataStore GetStore() {
             var path = GetConfigPath("store.json");
             var createDefaults = !File.Exists(path);
-
             var store = new DataStore(path);
+            UpgradeBridgeStorage();
             if (!createDefaults) return store;
             // Make our store if it doesn't already exist
             store.InsertItemAsync("dsIp", "0.0.0.0");
             BaseDevice myDevice = new SideKick(GetLocalIpAddress());
             myDevice.Initialize();
+            var bList = HueBridge.FindBridges();
+            var bData = new List<BridgeData>();
+            foreach (LocatedBridge lb in bList) {
+                bData.Add(new BridgeData(lb.IpAddress, lb.BridgeId));
+            }
             store.InsertItemAsync("myDevice", myDevice);
             store.InsertItemAsync("emuType", "SideKick");
-            store.InsertItemAsync("hueIp", HueBridge.FindBridge());
-            store.InsertItemAsync("hueSync", false);
-            store.InsertItemAsync("hueAuth", false);
-            store.InsertItemAsync("hueKey", "");
-            store.InsertItemAsync("hueUser", "");
-            store.InsertItemAsync("hueLights", new List<KeyValuePair<int, string>>());
-            store.InsertItemAsync("hueMap", new List<LightMap>());
-            store.InsertItemAsync("entertainmentGroups", new List<Group>());
+            store.InsertItemAsync("bridges", bData);
             store.InsertItemAsync("devices", Array.Empty<BaseDevice>());
             return store;
         }
@@ -51,6 +52,7 @@ namespace HueDream.HueDream {
 
             return null;
         }
+        
 
         public static dynamic GetItem<T>(string key) {
             try {
@@ -122,6 +124,31 @@ namespace HueDream.HueDream {
                 if (ip.AddressFamily == AddressFamily.InterNetwork)
                     return ip.ToString();
             throw new Exception("No network adapters found in " + JsonConvert.SerializeObject(host));
+        }
+
+        private static void UpgradeBridgeStorage() {
+            if (GetItem("bridges") != null) return;
+            var bIp = GetItem("hueIp");
+            var bUser = GetItem("hueUser");
+            var bKey = GetItem("hueKey");
+            List<Group> entGroups = GetItem<List<Group>>("entertainmentGroups");
+            var entGroup = GetItem("entertainmentGroup");
+            List<KeyValuePair<int, string>> lights = GetItem("hueLights");
+            
+            var bList = HueBridge.FindBridges();
+            var bData = new List<BridgeData>();
+            foreach (var lb in bList) {
+                if (lb.IpAddress != bIp) continue;
+                Console.WriteLine(@"Upgrading bridge storage for existing bridge.");
+                var bd = new BridgeData(lb.IpAddress, lb.BridgeId, bUser, bKey);
+                bd.SetGroups(entGroups.ToArray());
+                bd.SetLights(lights.ToArray());
+                bd.EntertainmentGroup = entGroup;
+                bData.Add(bd);
+            }
+
+            bData.AddRange(from lb in bList where lb.IpAddress != bIp select new BridgeData(lb.IpAddress, lb.BridgeId));
+            SetItem("bridges", bData.ToArray());
         }
     }
 }

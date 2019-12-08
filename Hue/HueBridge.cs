@@ -12,8 +12,8 @@ using Q42.HueApi.ColorConverters.HSB;
 using Q42.HueApi.Interfaces;
 using Q42.HueApi.Models.Bridge;
 using Q42.HueApi.Models.Groups;
+using Q42.HueApi.Streaming.Extensions;
 using Q42.HueApi.Streaming.Models;
-using static HueDream.DreamScreen.Scenes.SceneBase;
 
 namespace HueDream.Hue {
     public class HueBridge {
@@ -25,27 +25,27 @@ namespace HueDream.Hue {
 
         private EntertainmentLayer entLayer;
         private List<LightMap> lightMappings;
-        private string[] prevColors;
+        private BridgeData bd;
+       
 
-        public HueBridge() {
-            var dd = DreamData.GetStore();
+        public HueBridge(BridgeData data) {
+            bd = data;
+            
             Brightness = 100;
-            BridgeIp = dd.GetItem("hueIp");
-            BridgeKey = dd.GetItem("hueKey");
-            BridgeUser = dd.GetItem("hueUser");
-            bridgeAuth = dd.GetItem("hueAuth");
-            var lights = dd.GetItem<List<LightMap>>("hueMap");
-            lightMappings = (from lm in lights where lm.SectorId != -1 select lm).ToList();
+            BridgeIp = bd.BridgeIp;
+            BridgeKey = bd.BridgeKey;
+            BridgeUser = bd.BridgeUser;
+            var lightMap = bd.GetMap();
+            lightMappings = (from lm in lightMap where lm.SectorId != -1 select lm).ToList();
             entLayer = null;
-            DreamSceneBase = null;
-            dd.Dispose();
+            ActiveScene = null;
         }
 
         private string BridgeIp { get; }
         private string BridgeKey { get; }
         private string BridgeUser { get; }
         public int Brightness { get; set; }
-        public SceneBase DreamSceneBase { get; set; }
+        public SceneBase ActiveScene { get; set; }
 
 
         public void SetColors(string[] colorIn) {
@@ -63,18 +63,15 @@ namespace HueDream.Hue {
             Console.WriteLine($@"Hue: Stream established at {BridgeIp}.");
             entLayer = stream.GetNewLayer(true);
             // Start automagically updating this entertainment group
-            prevColors = colors;
             await SendColorData(ct).ConfigureAwait(false);
         }
 
         private async Task SendColorData(CancellationToken ct) {
             if (entLayer != null) {
                 Console.WriteLine($@"Hue: Bridge Connected. Beginning transmission to {BridgeIp}...");
-                var tList = new Transition[lightMappings.Count];
-
                 await Task.Run(() => {
+                    var startTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
                     while (!ct.IsCancellationRequested) {
-                        var lightInt = 0;
                         // Loop through lights in entertainment layer
                         foreach (var entLight in entLayer) {
                             // Get data for our light from map
@@ -85,46 +82,22 @@ namespace HueDream.Hue {
                             var colorString = colors[lightData.SectorId];
                             // Make it into a color
                             var endColor = ClampBrightness(colorString, lightData);
-
+                            
                             // If we're currently using a scene, animate it
-                            if (DreamSceneBase != null) {
+                            if (ActiveScene != null) {
                                 // Our start color is the last color we had
-                                var startColor = new RGBColor(prevColors[lightData.SectorId]);
-                                // If fading in and out, set the start/end colors appropriately
-                                switch (DreamSceneBase.Easing) {
-                                    case EasingType.FadeIn:
-                                        startColor = new RGBColor("000000");
-                                        break;
-                                    case EasingType.FadeOut:
-                                        startColor = endColor;
-                                        endColor = new RGBColor("000000");
-                                        break;
-                                }
-
-                                // See if we already have a transition on our light
-                                var currentTransition = tList[lightInt];
-
-                                // If we do have a transition and it's running, break for this light
-                                if (currentTransition != null)
-                                    if (!currentTransition.IsFinished)
-                                        continue;
-
-                                // Create a new transition if we aren't running one
-                                var lTrans = new Transition(endColor,
-                                    TimeSpan.FromSeconds(DreamSceneBase.AnimationTime));
-
-                                // Set and start it
-                                entLight.Transition = lTrans;
-                                lTrans.Start(startColor, startColor.GetBrightness(), ct);
-
-                                // Store for next loop
-                                prevColors[lightData.SectorId] = endColor.ToHex();
-                                tList[lightInt] = lTrans;
+                                var nowTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
+                                var tDiff = nowTime - startTime;
+                                if (!(tDiff >= ActiveScene.AnimationTime * 1000)) continue;
+                                startTime = nowTime;
+                                entLight.SetState(ct, endColor, endColor.GetBrightness(),
+                                    TimeSpan.FromSeconds(ActiveScene.AnimationTime));
                             }
                             else {
                                 // Otherwise, if we're streaming, just set the color
-                                entLight.State.SetRGBColor(endColor);
-                                entLight.State.SetBrightness(Brightness);
+                                entLight.SetState(ct, endColor, endColor.GetBrightness());
+                                //entLight.State.SetRGBColor(endColor);
+                                //entLight.State.SetBrightness(endColor.GetBrightness());
                             }
                         }
                     }
@@ -194,20 +167,22 @@ namespace HueDream.Hue {
 
             return string.Empty;
         }
+        
+        public static LocatedBridge[] FindBridges() {
+            Console.WriteLine(@"Hue: Looking for bridges...");
+            IBridgeLocator locator = new HttpBridgeLocator();
+            return locator.LocateBridgesAsync(TimeSpan.FromSeconds(2)).Result.ToArray();
+        }
 
-        public List<KeyValuePair<int, string>> GetLights() {
-            var lights = new List<KeyValuePair<int, string>>();
+        public Light[] GetLights() {
             // If we have no IP or we're not authorized, return
-            if (BridgeIp == "0.0.0.0" || !bridgeAuth) return lights;
+            if (BridgeIp == "0.0.0.0" || !bridgeAuth) return Array.Empty<Light>();
             // Create client
             ILocalHueClient client = new LocalHueClient(BridgeIp);
             client.Initialize(BridgeUser);
             // Get lights
             var task = Task.Run(async () => await client.GetLightsAsync().ConfigureAwait(false));
-            var lightArray = task.Result;
-            lights.AddRange(lightArray.Select(light =>
-                new KeyValuePair<int, string>(int.Parse(light.Id, Format), light.Name)));
-            return lights;
+            return task.Result.ToArray();
         }
     }
 }
