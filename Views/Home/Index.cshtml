@@ -99,36 +99,16 @@
     <div id="collapseThree" class="collapse" aria-labelledby="headingThree" data-parent="#accordion">
         <div class="card-body">
             <div class="row justify-content-center">
+                <div id="bridgePrev" class="btn btn-secondary btn-lg btn-outline arrowBtn"><<</div>
                 <div id="linkBtn">
-                    <div id="linkImg" class="unlinked"></div>
-                    <div id="circleBar"></div>
-                    <small id="linkHint">Click here to link bridge</small>
-                </div>
-            </div>
-            <div class="row justify-content-center">
-                <div class="col-lg-6 col-12">
-                    <div class="form-group">
-                        <label for="hueIp">Hue Bridge IP</label>
-                        <input type="text" class="form-control" id="hueIp" readonly placeholder="0.0.0.0">
+                    <div id="linkImg" class="unlinked">
+                        <small id="hueIp"></small>
+                        <div id="circleBar"></div>
+                        <small id="linkHint">Click here to link bridge</small>
                     </div>
                 </div>
+                <div id="bridgeNext" class="btn btn-secondary btn-lg btn-outline arrowBtn">>></div>
             </div>
-        </div>
-    </div>
-</div>
-<br/>
-<div class="card bg-dark text-white">
-    <div class="card-header" id="headingFour">
-        <h2 class="mb-0">
-            <button class="btn btn-outline-secondary" type="button" data-toggle="collapse" data-target="#collapseFour"
-                    aria-expanded="true" aria-controls="collapseFour">
-                Sync
-            </button>
-        </h2>
-    </div>
-
-    <div id="collapseFour" class="collapse show" aria-labelledby="headingFour" data-parent="#accordion">
-        <div class="card-body">
             <div class="">
                 <div class="previewWrap" id="previewWrap">
                     <div class="light-preview" id="lightPreview">

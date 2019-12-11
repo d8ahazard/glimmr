@@ -74,6 +74,11 @@ body {
     border: 1px solid black;
 }
 
+.arrowBtn {
+    padding-top: 6% !important;
+    margin: 15px;
+}
+
 #lightPreview {
     background-image: url("../img/sectoring_tv.png");
     background-size: cover;

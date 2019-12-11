@@ -1,87 +1,121 @@
+let dsIp;
+let emulationType = "SideKick";
+let deviceData = null;
+let linking = false;
+let bridges = [];
+// Set this from config load, wham, bam, thank you maaam...
+let bridge = null;
+// Set all of these based on bridge, or remove them
+let hueAuth = false;
+let bridgeInt = 0;
 let hueGroups;
 let hueLights;
 let lightMap;
 let hueGroup;
-let dsIp;
-let hueAuth = false;
-let linking = false;
+let hueIp = "";
+
+// Not actually used yet
+let webSocketProtocol = location.protocol === "https:" ? "wss:" : "ws:";
+let webSocketURI = webSocketProtocol + "//" + location.host + "/ws";
+let socket = new WebSocket(webSocketURI);
+
 
 $(function () {
 
-    
+    // Fetch data
+    fetchJson();
+
+    // List our devices
+    listDreamDevices();
+
+    // Initialize BMD
+    $('body').bootstrapMaterialDesign();
+
+    // Post our data
     $('#settingsForm').submit(function (e) {
         e.preventDefault();
-        const data = $(this).serialize();
-        $.ajax({
-            url: "./api/DreamData",
-            type: "POST",
-            data: data,
-            success: function (data) {
-                console.log("Posted!", data);
-                fetchJson();
-            }
-        }); 
+        bridge["selectedGroup"] = hueGroup;
+        bridges[bridgeInt] = bridge;
+        postData("bridges", bridges);
+        postData("dsIp", dsIp);
+        if (deviceData.tag === "SideKick") {
+            postData("dsSidekick", deviceData);    
+        } else {
+            postData("dsConnect", deviceData);
+        }
+        
     });
 
+    // Do the linking
     $('#linkBtn').on('click', function () {
         if (!hueAuth && !linking) {
             linkHue();
         }
     });
-
-    $('#ds_find').on('click', function() {
-        console.log("Trying to find dreamscreen.");
-        $.get("./api/DreamData/action?action=connectDreamScreen", function (data) {
-            if (data.indexOf("Success: ") !== -1) {
-                const result = $.trim(data.replace("Success: ", ""));
-                if (result !== "0.0.0.0") {                    
-                    $('#ds_ip').val(result);
-                    $('#ds_find').hide();
-                } else {
-                    $('#ds_find').show();
-                }
-                alert(data);
-            }            
-        });
+    
+    // Emulator type change
+    $(document).on('change', '.emuType', function() {
+        deviceData.name = deviceData.name.replace(deviceData.tag, $(this).val());
+        deviceData.tag = $(this).val();        
+        loadDeviceData();
     });
 
+    // On light map change
+    $(document).on('change', '.mapSelect', function() {
+        let myId = $(this).attr('id').replace("lightMap", "");
+        let newVal = $(this).val().toString();
+        updateLightProperty(myId, "targetSector", newVal);
+    });
+
+    // On brightness slider change
+    $(document).on('change', '.mapBrightness', function() {
+        let myId = $(this).attr('id').replace("brightness", "");
+        let newVal = $(this).val();
+        updateLightProperty(myId, "brightness", newVal);
+    });
+    
+    // On Override click
+    $(document).on('click', '.overrideBright', function() {
+        let myId = $(this).attr('id').replace("overrideBrightness", "");
+        let newVal = ($(this).val() === "on");
+        console.log("Change func for override!", myId, newVal);
+        updateLightProperty(myId, "overrideBrightness", newVal);
+    });
+    
+    // Cycle bridges
+    $('.arrowBtn').click(function() {
+        let cycleInt = 1;
+        let curInt = bridgeInt;
+        if ($(this).id === "bridgePrev") cycleInt = -1;
+        curInt += cycleInt;
+        if (curInt >= bridges.length) curInt = 0;
+        if (curInt < 0) curInt = (bridges.length - 1);
+        if (bridgeInt !== curInt) {
+            bridgeInt = curInt;
+            // #todo: Make an animation here
+            loadBridge(bridgeInt);
+        }
+    });
+        
+    // On device mode change 
     $('.modeBtn').click(function () {
         if (hueAuth) {
             $(".modeBtn").removeClass("active");
             $(this).addClass('active');
             const mode = $(this).data('mode');
-            $.ajax({
-                type: "POST",
-                contentType: "application/json",
-                url: "./api/DreamData/mode/",
-                dataType: "json",
-                data: JSON.stringify(mode),
-                success: function (response) {
-                    console.log("Mode is " + response);
-                }
-            });
+            postData("mode", mode);
         }
     });
-
+    
+    // On group selection change
     $('.dsGroup').change(function () {
         const id = $(this).val();
-        const newGroup = findGroup(id);
-        if (newGroup) {
-            hueGroup = newGroup;
-            mapLights(newGroup, lightMap, hueLights);
-        }
+        hueGroup = id;
+        bridges[bridgeInt]["selectedGroup"] = id;
+        mapLights();        
     });
-
-    $('.dsType').change(function () {
-        const val = $(this).val();
-        const dsIcon = $('#iconWrap');
-        if (val === "SideKick") {
-            dsIcon.css('background-image', './img/sidekick_icon.png');
-        } else {
-            dsIcon.css('background-image', './img/connect_icon.png');
-        }
-    });
-
+    
+    // On selection map change
     $(document).on('focusin', '.mapSelect', function () {
         $(this).data('val', $(this).val());
     }).on('change', '.mapSelect', function () {
@@ -93,106 +127,103 @@ $(function () {
             $('#sector' + prev).removeClass('checked');
             $(this).data('val', $(this).val());
         }
+        hueGroup = current.toString();        
     });   
+        
+    // Socket fun
+    socket.onopen = function () {
+        console.log("Connected.");
+    };
     
-    fetchJson();
-    listDreamDevices();
+    // Socket fun, ctd.
+    socket.onclose = function (event) {
+        if (event.wasClean) {
+            console.log('Disconnected.');
+        } else {
+            console.log('Connection lost.'); // for example if server processes is killed
+        }
+        console.log('Code: ' + event.code + '. Reason: ' + event.reason);
+    };
+    socket.onmessage = function (event) {
+        console.log("Data received: " + event.data);
+    };
+    socket.onerror = function (error) {
+        console.log("Error: " + error.message);
+    };
 
-    $('body').bootstrapMaterialDesign();   
 });
 
+// This gets called in loop by hue auth to see if we've linked our bridge.
 function checkHueAuth() {
-    $.get("./api/DreamData/action?action=authorizeHue", function (data) {
+    $.get("./api/DreamData/action?action=authorizeHue&value=" + hueIp, function (data) {
         if (data === "Success: Bridge Linked." || data === "Success: Bridge Already Linked.") {
             console.log("LINKED");
             hueAuth = true;
             if (hueAuth) {
                 fetchJson();
             }
-            setLinkStatus();
         }
     });
 }
 
+// Post settings data in chunks for deserialization
+function postData(endpoint, payload) {
+    $.ajax({
+        url: "./api/DreamData/" + endpoint,
+        type: "POST",
+        contentType: "application/json;",
+        dataType: "json",
+        data: JSON.stringify(payload),
+        success: function (data) {
+            console.log(`Posted to ${endpoint}`, endpoint, data);
+        }
+    });
+}
+
+// Update our stored setting data for various light values
+function updateLightProperty(myId, propertyName, value) {
+    console.log("Updating light " + propertyName + " for " + myId, value);
+    for(let k in hueLights) {
+        if (hueLights.hasOwnProperty(k)) {
+            if (hueLights[k]["id"] === myId) {
+                hueLights[k][propertyName] = value;
+            }
+        }
+    }    
+    console.log("Updated light data: ", hueLights);
+    bridges[bridgeInt]["lights"] = hueLights;
+}
+
+// Retrieve the bulk of our setting data
 function fetchJson() {
     $.get('./api/DreamData/json', function (config) {
         console.log("We have some config", config);
-
-        for (let v in config) {
-            if (!config.hasOwnProperty(v)) continue;
-            let id = v;
-            let value = config[v];
-
-            if (id === "hueAuth") {
-                hueAuth = value;
-                setLinkStatus();
-            } else if (id === "hueMap") {
-                lightMap = value;
-            } else if (id === "hueLights") {
-                hueLights = value;
-            } else if (id === "entertainmentGroup") {
-                hueGroup = value;
-            } else if (id === "entertainmentGroups") {
-                hueGroups = value;
-            } else if (id === "myDevice") {
-                $('#dsName').html(value.name);
-                if (value.hasOwnProperty('groupName')) $('#dsGroupName').html(value.groupName);
-                $('#dsType').html(value.tag);
-                let modestr = "";
-                $('.modeBtn').removeClass('active');
-                switch (value.mode) {
-                    case 0:
-                        modestr = "Off";
-                        break;
-                    case 1:
-                        modestr = "Video";
-                        break;
-                    case 2:
-                        modestr = "Audio";
-                        break;
-                    case 3:
-                        modestr = "Ambient";
-                        break;
-                }
-                $('#mode' + value.mode).addClass('active');
-                $('#dsMode').html(modestr);
-                if (value.tag === "Connect") {
-                    $('#iconWrap').addClass("Connect").removeClass("SideKick");
-                    console.log("Connect");
-                } else {
-                    $('#iconWrap').addClass("SideKick").removeClass("Connect");
-                    console.log("Sidekick");
-                }
-                $('#emuType option[value=' + value.tag + ']').attr('selected', true);
-                $('#emuTypeText').html(value.tag);
-            } else if (id === "myDevices") {
-                if (value !== null) buildDevList(value);
-            } else {
-                if (id === 'dsIp') {
-                    dsIp = value;
-                    if (value !== "0.0.0.0") {
-                        $('#ds_find').hide();
-                    }
-                }
-                $('#' + id).val(value);
-            }
-        }       
-
-        if (hueGroup === undefined && hueGroups !== undefined && hueGroups.length) {
-            hueGroup = hueGroups[0];
+        // Load emulator settings
+        if (config.hasOwnProperty("myDevice")) {
+            deviceData = config.myDevice;
+            loadDeviceData();
         }
-
-        listGroups();
-        if (hueLights && lightMap && hueGroup) {
-            mapLights(hueGroup, lightMap, hueLights);
+        // Load target DS IP
+        if (config.hasOwnProperty("dsIp")) {
+            dsIp = config.dsIp;
+        }        
+        // Load DS devices? 
+        if (config.hasOwnProperty("devices")) {
+            buildDevList(config.devices);
         }
-
+        // Load bridge data
+        if (config.hasOwnProperty("bridges")) {
+            bridges = config.bridges;
+            loadBridges(bridges);
+        }
     });
-   
 }
 
-
-function mapLights(group, map, lights) {
+// Update our pretty table so we can map the lights
+function mapLights() {
+    let group = findGroup(hueGroup);
+    let lights = hueLights;
+    console.log("Mapping: ", group, lights);
     // Get the main light group
     const lightGroup = document.getElementById("mapSel");
     // Clear it
@@ -201,24 +232,29 @@ function mapLights(group, map, lights) {
     $('.lightRegion').removeClass("checked");
     // Get the list of lights for the selected group
     if (!group.hasOwnProperty('lights')) return false;
-    const ids = group.lights;
-    // Loop through our list of all lights that could be in ent group
+    const ids = group["lights"];
+    
+    // Sort our lights by name
     lights = lights.sort(function (a, b) {
         if (!a.hasOwnProperty('Value') || !b.hasOwnProperty('Value')) return false;
         return a.Value.localeCompare(b.Value);
     });
+    console.log("IDS: " + ids);
+    // Loop through our list of all lights
     for (let l in lights) {
         if (lights.hasOwnProperty(l)) {
-            console.log("LIGHT: ", lights[l]);
-            let id = lights[l]['key'];
-            if ($.inArray(id.toString(), ids) !== -1) {
-                const name = lights[l]['value'];
-                let brightness = 100;
-                let override = false;
+            let light = lights[l];
+            console.log("LIGHT: ", light);
+            let id = light['id'];
+            if ($.inArray(id, ids) !== -1) {
+                const name = light['name'];
+                let brightness = light["brightness"];
+                let override = light["overrideBrightness"];
+                let selection = light["targetSector"];
 
                 // Create the label for select
                 const label = document.createElement('label');
-                label.innerHTML = name + ":  ";
+                label.innerHTML = name + ":";
                 label.setAttribute("for", "lightMap" + id);
 
                 // Create a select for this light
@@ -226,25 +262,7 @@ function mapLights(group, map, lights) {
                 newSelect.className = "mapSelect form-control text-dark bg-light";
                 newSelect.setAttribute('id', 'lightMap' + id);
                 newSelect.setAttribute('name', 'lightMap' + id);
-                // Assume it's not mapped
-                let selection = -1;
-                // Check to see if it is mapped
-                for (let m in map) {
-                    if (map.hasOwnProperty(m)) {
-                        let lm = map[m];
-                        if (lm.hasOwnProperty('lightId') &&
-                            lm.hasOwnProperty('sectorId') &&
-                            lm.hasOwnProperty('brightness') &&
-                            lm.hasOwnProperty('overrideBrightness') 
-                        ) {
-                            if (lm.lightId === id) {
-                                selection = lm.sectorId;
-                                brightness = lm.brightness;
-                                override = lm.overrideBrightness;
-                            }
-                        }
-                    }
-                }
+                
                 // Create the blank "unmapped" option
                 let opt = document.createElement("option");
                 opt.value = "-1";
@@ -254,6 +272,7 @@ function mapLights(group, map, lights) {
                 if (selection === -1) {
                     opt.setAttribute('selected', 'selected');
                 } else {
+                    // Check our box on the sector square
                     const checkDiv = $('#sector' + selection);
                     if (!checkDiv.hasClass('checked')) checkDiv.addClass('checked');
                 }
@@ -269,6 +288,7 @@ function mapLights(group, map, lights) {
                     newSelect.appendChild(opt);
                 }
 
+                // Create the div to hold our select
                 const selDiv = document.createElement('div');
                 selDiv.className += "form-group";
                 selDiv.appendChild(label);
@@ -289,18 +309,17 @@ function mapLights(group, map, lights) {
                 newRange.setAttribute('max', "100");
                 newRange.setAttribute('value', brightness.toString());
 
+                // Create container div for brightness slider
                 const rangeDiv = document.createElement('div');
                 rangeDiv.className += "form-group";
                 rangeDiv.appendChild(brightLabel);
                 rangeDiv.appendChild(newRange);
-
 
                 // Create label for override check
                 const checkLabel = document.createElement('label');
                 checkLabel.innerHTML = "Override";
                 checkLabel.className += "form-check-label";
                 checkLabel.setAttribute('for', 'overrideBrightness' + id);
-
 
                 // Create a checkbox
                 const newCheck = document.createElement("input");
@@ -309,20 +328,19 @@ function mapLights(group, map, lights) {
                 newCheck.setAttribute('name', 'overrideBrightness' + id);
                 newCheck.setAttribute("type", "checkbox");
                 if (override) newCheck.setAttribute("checked", 'checked');
-
-                // Create the div to hold it all
-                const lightDiv = document.createElement('div');
-                lightDiv.className += "delSel col-xs-4 col-sm-4 col-md-3";
-                lightDiv.id = id;
-                lightDiv.setAttribute('data-name', name);
-                lightDiv.setAttribute('data-id', id);
-
+                
+                // Create the div to hold the checkbox
                 const chkDiv = document.createElement('div');
                 chkDiv.className += "form-check";
                 chkDiv.appendChild(newCheck);
                 chkDiv.appendChild(checkLabel);
 
-                // Congratulations, it's a boy!
+                // Create the div for the other divs
+                const lightDiv = document.createElement('div');
+                lightDiv.className += "delSel col-xs-4 col-sm-4 col-md-3";
+                lightDiv.id = id;
+                lightDiv.setAttribute('data-name', name);
+                lightDiv.setAttribute('data-id', id);
                 lightDiv.appendChild(selDiv);
                 lightDiv.appendChild(chkDiv);
                 lightDiv.appendChild(rangeDiv);
@@ -335,17 +353,21 @@ function mapLights(group, map, lights) {
     $('.delSel').bootstrapMaterialDesign();   
 }
 
+// Take our hue groups and make a select
 function listGroups() {
     const gs = $('#dsGroup');
     gs.html("");
     let i = 0;
     if (hueAuth) {
-        if (hueGroups !== undefined) {
-            if (hueGroup === undefined && hueGroups.length > 0) hueGroup = hueGroups[0];
+        if (hueGroups !== null) {
+            if (hueGroup === -1 && hueGroups.length > 0) {
+                hueGroup = hueGroups[0][id];
+                console.log("Setting default group to " + hueGroup);
+            }
             $.each(hueGroups, function() {
                 let val = $(this)[0].id;
                 let txt = $(this)[0].name;
-                let selected = (val === hueGroup.id) ? " selected" : "";
+                let selected = (val === hueGroup) ? " selected" : "";
                 gs.append(`<option value="${val}" ${selected}>${txt}</option>`);
                 i++;
             });
@@ -353,12 +375,14 @@ function listGroups() {
     }
 }
 
+// Not used, probably won't. This will eventually get replaced by a websocket
 function getMode() {
     $.get("./api/DreamData/getMode", function(data) {
        console.log("DATA: ", data); 
     });
 }
 
+// Get a list of dreamscreen devices
 function listDreamDevices() {
     $.get("./api/DreamData/action?action=connectDreamScreen", function (data) {
         console.log("Dream devices: ", data);
@@ -366,6 +390,7 @@ function listDreamDevices() {
     });
 }
 
+// Take our DS devices and make a select
 function buildDevList(data) {
     const devList = $('#dsIp');
     devList.html("");
@@ -381,20 +406,73 @@ function buildDevList(data) {
     });
 }
 
-function findGroup(id) {
-    let res = false;
-    $.each(hueGroups, function () {
-        if (id === $(this)[0].id) {
-            res = $(this)[0];
-        }
-    });
-    return res;
+// Update the UI with emulator device data
+function loadDeviceData() {
+    $('#dsName').html(deviceData.name);
+    if (deviceData.hasOwnProperty('groupName')) $('#dsGroupName').html(deviceData.groupName);
+    emulationType = deviceData.tag;
+    $('#dsType').html();
+    let modestr = "";
+    $('.modeBtn').removeClass('active');
+    switch (deviceData.mode) {
+        case 0:
+            modestr = "Off";
+            break;
+        case 1:
+            modestr = "Video";
+            break;
+        case 2:
+            modestr = "Audio";
+            break;
+        case 3:
+            modestr = "Ambient";
+            break;
+    }
+    $('#mode' + deviceData.mode).addClass('active');
+    $('#dsMode').html(modestr);
+    if (emulationType === "Connect") {
+        $('#iconWrap').addClass("Connect").removeClass("SideKick");
+        console.log("Connect");
+    } else {
+        $('#iconWrap').addClass("SideKick").removeClass("Connect");
+        console.log("Sidekick");
+    }
+    $('#emuType option[value=' + emulationType + ']').attr('selected', true);
+    $('#emuTypeText').html(emulationType);
 }
 
-function setLinkStatus() {
+// Load new bridge data and update UI with selected bridge
+function loadBridges(value) {
+    bridges = value;
+    loadBridge(bridgeInt);
+}
+
+// Update UI with specific bridge data
+function loadBridge(bridgeIndex) {
+    // Get our UI elements
+    const hIp = $('#hueIp');
     const lImg = $('#linkImg');
     const lHint = $('#linkHint');
     const lBtn = $('#linkBtn');
+
+    // We cant load a bridge if this stuff ain't right
+    if (bridges === null || bridges === undefined) return false;
+    if (bridgeIndex >= bridges.length) return false;
+    // This is our bridge. There are many others like it...but this one is MINE.
+    let b = bridges[bridgeIndex];
+    console.log("Loaded bridge: ", b);
+    // Now we've got it.
+    bridge = b;
+    hueIp = b["ip"];
+    hIp.html(b["ip"]);        
+    hueGroup = b["selectedGroup"];
+    hueGroups = b["groups"];
+    if (hueGroup === -1 && hueGroups.length > 0) {
+        hueGroup = hueGroups[0]["id"];
+        console.log("Updated group to " + hueGroup);
+    }
+    hueLights = b["lights"];
+    hueAuth = (b["user"] !== null && b["key"] !== null);            
     lImg.removeClass('linked unlinked linking');
     if (hueAuth) {
         lImg.addClass('linked');
@@ -410,16 +488,36 @@ function setLinkStatus() {
         }
         lBtn.css('cursor', 'pointer');
     }
+    console.log("Loaded", bridge, hueGroup, hueGroups, hueLights);
+    listGroups();
+    mapLights();
 }
 
+// Get a group by group ID
+function findGroup(id) {
+    console.log("Looking for group with ID " + id);
+    let res = false;
+    if (id === -1 || id === "-1") {
+        console.log("We don't have a group", hueGroups[0]);        
+        return hueGroups[0];    
+    }
+    $.each(hueGroups, function () {
+        console.log("ID, this ID", id, $(this)[0].id);
+
+        if (id === $(this)[0].id) {
+            res = $(this)[0];
+        }        
+    });
+    return res;
+}
+
+// Runs a loop to detect if our hue device is linked
 function linkHue() {
     console.log("Authorized: ", hueAuth);
-
     if (!hueAuth && !linking) {
         linking = true;
         console.log("Trying to authorize with hue.");
         $('#circleBar').show();
-        setLinkStatus();
         const bar = new ProgressBar.Circle(circleBar, {
             strokeWidth: 15,
             easing: 'easeInOut',
@@ -440,7 +538,6 @@ function linkHue() {
                 window.clearInterval(intervalID);
                 $('#circleBar').hide();
                 linking = false;
-                setLinkStatus();
             }
         }, 1000);
 
@@ -449,11 +546,9 @@ function linkHue() {
             cb.html("");
             cb.hide();
             linking = false;
-            setLinkStatus();
         }, 30000);
     } else {
         console.log("Already authorized.");
     }
-
 }
 
