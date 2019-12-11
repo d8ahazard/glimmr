@@ -5,8 +5,8 @@
                 "AAAAAA",
                 "000000"
             });
-            AnimationTime = .5;
-            Mode = AnimationMode.Linear;
+            AnimationTime = 1;
+            Mode = AnimationMode.Random;
             Easing = EasingType.Blend;
         }
     }

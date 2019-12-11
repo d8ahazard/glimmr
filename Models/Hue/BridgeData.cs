@@ -6,28 +6,9 @@ using Newtonsoft.Json.Linq;
 using Q42.HueApi.Models.Groups;
 
 namespace HueDream.Models.Hue {
-    
     [Serializable]
     public class BridgeData {
-        [JsonProperty]
-        public string Ip { get; set; }
-        [JsonProperty]
-        public string Id { get; set; }
-        [JsonProperty]
-        public string User { get; set; }
-        [JsonProperty]
-        public string Key { get; set; }
-        [JsonProperty]
-        public string SelectedGroup { get; set; }
-
-        [JsonProperty(NullValueHandling=NullValueHandling.Ignore)] 
-        public List<Group> Groups { get; set; }
-        [JsonProperty(NullValueHandling=NullValueHandling.Ignore)]
-        public List<LightData> Lights { get; set; }
-
-        public BridgeData() {
-            
-        }
+        public BridgeData() { }
 
         public BridgeData(string ip, string id) {
             Ip = ip;
@@ -44,8 +25,23 @@ namespace HueDream.Models.Hue {
             Lights = new List<LightData>();
         }
 
-        
-        
+        [JsonProperty] public string Ip { get; set; }
+
+        [JsonProperty] public string Id { get; set; }
+
+        [JsonProperty] public string User { get; set; }
+
+        [JsonProperty] public string Key { get; set; }
+
+        [JsonProperty] public string SelectedGroup { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public List<Group> Groups { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public List<LightData> Lights { get; set; }
+
+
         public void SetLights(List<LightData> lights) {
             Lights = lights;
         }
@@ -61,7 +57,7 @@ namespace HueDream.Models.Hue {
         public List<Group> GetGroups() {
             return Groups ??= new List<Group>();
         }
-        
+
         public static BridgeData DeserializeBridgeData(JObject o) {
             var bridgeId = string.Empty;
             var bridgeIp = string.Empty;
@@ -70,8 +66,8 @@ namespace HueDream.Models.Hue {
             var selectedGroup = "-1";
             var bridgeGroups = Array.Empty<Group>();
             var bridgeLights = new List<LightData>();
-            Console.WriteLine(@"Deserializing bridge...");            
-            foreach (var property in o.Properties()) {
+            Console.WriteLine(@"Deserializing bridge...");
+            foreach (var property in o.Properties())
                 switch (property.Name) {
                     case "ip":
                         bridgeIp = (string) property.Value;
@@ -89,9 +85,11 @@ namespace HueDream.Models.Hue {
                         try {
                             bridgeLights = property.Value.ToObject<List<LightData>>();
                             Console.Write(@"Parsed lights: " + JsonConvert.SerializeObject(bridgeLights));
-                        } finally {
+                        }
+                        finally {
                             Console.Write(@"Light parse exception.");
                         }
+
                         break;
                     case "selectedGroup":
                         selectedGroup = (string) property.Value;
@@ -101,12 +99,13 @@ namespace HueDream.Models.Hue {
                         try {
                             bridgeGroups = property.Value.ToObject<Group[]>();
                             Console.WriteLine(@"Deserialized groups: " + JsonConvert.SerializeObject(bridgeGroups));
-                        } finally {
+                        }
+                        finally {
                             Console.WriteLine(@"Cast exception for group.");
                         }
+
                         break;
                 }
-            }
 
             var bd = new BridgeData(bridgeIp, bridgeId) {
                 Groups = bridgeGroups.ToList(),
@@ -119,5 +118,4 @@ namespace HueDream.Models.Hue {
             return bd;
         }
     }
-    
 }

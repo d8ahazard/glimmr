@@ -15,11 +15,11 @@ namespace HueDream.Models.Hue {
 
         public static async Task<HueResults> StopStream(BridgeData b) {
             var store = DreamData.GetStore();
-            string hueIp = b.Ip;
+            var hueIp = b.Ip;
             Console.WriteLine($@"Hue: Stopping stream at {hueIp}.");
-            string hueUser = b.User;
-            string hueKey = b.Key;
-            string id = b.SelectedGroup;
+            var hueUser = b.User;
+            var hueKey = b.Key;
+            var id = b.SelectedGroup;
             store.Dispose();
             Console.WriteLine($@"Hue: Creating client at {hueIp}...");
             //Initialize streaming client
@@ -28,10 +28,10 @@ namespace HueDream.Models.Hue {
         }
 
         public static async Task<StreamingGroup> SetupAndReturnGroup(BridgeData b, CancellationToken ct) {
-            string hueIp = b.Ip;
-            string hueUser = b.User;
-            string hueKey = b.Key;
-            string groupId = b.SelectedGroup;
+            var hueIp = b.Ip;
+            var hueUser = b.User;
+            var hueKey = b.Key;
+            var groupId = b.SelectedGroup;
             Console.WriteLine(@"Hue: Creating client...");
             //Initialize streaming client
             var client = new StreamingHueClient(hueIp, hueUser, hueKey);
@@ -42,7 +42,9 @@ namespace HueDream.Models.Hue {
             //Create a streaming group
             var lights = group.Lights;
             Console.WriteLine(@"Group Lights: " + JsonConvert.SerializeObject(lights));
-            var mappedLights = (from light in lights from ml in b.Lights where ml.Id == light && ml.TargetSector != -1 select light).ToList();
+            var mappedLights =
+                (from light in lights from ml in b.Lights where ml.Id == light && ml.TargetSector != -1 select light)
+                .ToList();
             Console.WriteLine(@"Using mapped lights for group: " + JsonConvert.SerializeObject(mappedLights));
             var stream = new StreamingGroup(mappedLights);
             Console.WriteLine(Value);
@@ -50,9 +52,7 @@ namespace HueDream.Models.Hue {
             await client.Connect(group.Id).ConfigureAwait(true);
 
             //Start auto updating this entertainment group
-#pragma warning disable 4014
-            client.AutoUpdate(stream, ct,30, true);
-#pragma warning restore 4014
+            client.AutoUpdate(stream, ct);
 
             //Optional: Check if streaming is currently active
             var bridgeInfo = await client.LocalHueClient.GetBridgeAsync().ConfigureAwait(true);

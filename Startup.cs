@@ -9,14 +9,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace HueDream {
-    public class Startup : IDisposable
-    {
-        
+    public class Startup : IDisposable {
         public Startup(IConfiguration configuration) {
             Configuration = configuration;
         }
 
         public IConfiguration Configuration { get; }
+
+        public void Dispose() { }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public static void ConfigureServices(IServiceCollection services) {
@@ -57,20 +57,20 @@ namespace HueDream {
                     "{controller=Home}/{action=Index}/{id?}");
             });
         }
-        
-        private async Task Echo(WebSocket webSocket) {
-            byte[] buffer = new byte[1024 * 4];
-            var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None).ConfigureAwait(true);
-            while (!result.CloseStatus.HasValue) {
-                await webSocket.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), result.MessageType, result.EndOfMessage, CancellationToken.None).ConfigureAwait(true);
-                result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None).ConfigureAwait(true);
-            }
-            await webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None).ConfigureAwait(true);
-        }
 
-        public void Dispose()
-        {
-            
+        private async Task Echo(WebSocket webSocket) {
+            var buffer = new byte[1024 * 4];
+            var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None)
+                .ConfigureAwait(true);
+            while (!result.CloseStatus.HasValue) {
+                await webSocket.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), result.MessageType,
+                    result.EndOfMessage, CancellationToken.None).ConfigureAwait(true);
+                result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None)
+                    .ConfigureAwait(true);
+            }
+
+            await webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None)
+                .ConfigureAwait(true);
         }
     }
 }

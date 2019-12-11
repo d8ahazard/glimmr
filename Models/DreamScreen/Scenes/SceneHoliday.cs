@@ -3,10 +3,11 @@
         public SceneHoliday() {
             SetColors(new[] {
                 "FF0000", // Red
-                "00FF00" // Green
+                "00FF00", // Green
+                "FF0000" // Red
             });
             AnimationTime = 1.75;
-            Mode = AnimationMode.Linear;
+            Mode = AnimationMode.Random;
             Easing = EasingType.Blend;
         }
     }

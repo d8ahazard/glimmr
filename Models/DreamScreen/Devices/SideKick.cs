@@ -11,9 +11,8 @@ namespace HueDream.DreamScreen.Devices {
         private static readonly byte[] RequiredEspFirmwareVersion = {3, 1};
         public static readonly byte[] DefaultSectorAssignment = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 0, 0};
 
-        public SideKick() {
-            
-        }
+        public SideKick() { }
+
         public SideKick(string ipAddress) : base(ipAddress) {
             EspFirmwareVersion = RequiredEspFirmwareVersion;
             SectorData = new byte[] {0};

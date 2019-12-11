@@ -50,7 +50,7 @@ namespace HueDream.Models {
             store.InsertItemAsync("devices", Array.Empty<BaseDevice>());
             return store;
         }
-        
+
 
         public static dynamic GetItem<T>(string key) {
             try {
@@ -62,7 +62,7 @@ namespace HueDream.Models {
                 Console.WriteLine($@"Value not found: {e.Message}");
             }
             catch (KeyNotFoundException) { }
-            
+
 
             return null;
         }
@@ -136,7 +136,7 @@ namespace HueDream.Models {
             List<Group> entGroups = GetItem<List<Group>>("entertainmentGroups");
             var entGroup = GetItem<Group>("entertainmentGroup");
             //List<Light> lights = GetItem("hueLights");
-            
+
             var bList = HueBridge.FindBridges();
             var bData = new List<BridgeData>();
             foreach (var lb in bList) {
@@ -144,13 +144,13 @@ namespace HueDream.Models {
                 Console.WriteLine(@"Upgrading bridge storage for existing bridge.");
                 var bd = new BridgeData(lb.IpAddress, lb.BridgeId, bUser, bKey);
                 bd.SetGroups(entGroups);
-              //  bd.SetLights(lights.ToArray());
+                //  bd.SetLights(lights.ToArray());
                 bd.SelectedGroup = entGroup;
                 bData.Add(bd);
             }
 
             bData.AddRange(from lb in bList where lb.IpAddress != bIp select new BridgeData(lb.IpAddress, lb.BridgeId));
-            
+
             SetItem<List<BridgeData>>("bridges", bData);
         }
     }

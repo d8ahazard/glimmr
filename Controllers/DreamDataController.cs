@@ -12,8 +12,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace HueDream.Controllers {
-    [Route("api/[controller]")]
-    [ApiController]
+    [Route("api/[controller]"), ApiController]
     public class DreamDataController : ControllerBase {
         // GET: api/DreamData/getMode
         [Route("getMode")]
@@ -29,7 +28,7 @@ namespace HueDream.Controllers {
             SetMode(mode);
             return Ok(mode);
         }
-        
+
         // POST: api/HueData/bridges
         [HttpPost("bridges")]
         public IActionResult PostBridges([FromBody] List<JObject> bData) {
@@ -38,7 +37,7 @@ namespace HueDream.Controllers {
             DreamData.SetItem("bridges", bridgeData);
             return Ok(bData.Count);
         }
-        
+
         // POST: api/HueData/dsIp
         [HttpPost("dsIp")]
         public IActionResult PostIp([FromBody] string dsIp) {
@@ -46,7 +45,7 @@ namespace HueDream.Controllers {
             DreamData.SetItem("dsIp", dsIp);
             return Ok(dsIp);
         }
-        
+
         // POST: api/HueData/dsSidekick
         [HttpPost("dsSidekick")]
         public IActionResult PostSk([FromBody] SideKick skDevice) {
@@ -54,7 +53,7 @@ namespace HueDream.Controllers {
             DreamData.SetItem("myDevice", skDevice);
             return Ok("ok");
         }
-        
+
         // POST: api/HueData/dsConnect
         [HttpPost("dsConnect")]
         public IActionResult PostDevice([FromBody] Connect myDevice) {
@@ -64,7 +63,7 @@ namespace HueDream.Controllers {
         }
 
         [HttpGet("action")]
-        public IActionResult Action(string action, string value="") {
+        public IActionResult Action(string action, string value = "") {
             var message = "Unrecognized action";
             var store = DreamData.GetStore();
             Console.WriteLine($@"{action} fired.");
@@ -83,19 +82,21 @@ namespace HueDream.Controllers {
                 var doAuth = true;
                 var bridges = store.GetItem<List<BridgeData>>("bridges");
                 BridgeData bd = null;
-                int bridgeInt = -1;
+                var bridgeInt = -1;
 
                 if (!string.IsNullOrEmpty(value)) {
-                    int bCount = 0;
-                    foreach (BridgeData b in bridges) {
+                    var bCount = 0;
+                    foreach (var b in bridges) {
                         if (b.Ip == value) {
                             bd = b;
                             bridgeInt = bCount;
                             doAuth = b.Key == null || b.User == null;
                         }
+
                         bCount++;
                     }
                 }
+
                 if (doAuth) {
                     var appKey = HueBridge.CheckAuth(value).Result;
                     if (appKey != null && bd != null) {
@@ -103,7 +104,7 @@ namespace HueDream.Controllers {
                         bd.Key = appKey.StreamingClientKey;
                         bd.User = appKey.Username;
                         bridges[bridgeInt] = bd;
-                        store.ReplaceItem("bridges", bridges,true);
+                        store.ReplaceItem("bridges", bridges, true);
                     }
                     else {
                         message = "Error: Press the link button";
@@ -115,12 +116,10 @@ namespace HueDream.Controllers {
             }
             else if (action == "findHue") {
                 var bridges = HueBridge.FindBridges(3);
-                if (bridges != null) {
+                if (bridges != null)
                     store.ReplaceItem("bridges", bridges, true);
-                }
-                else {
+                else
                     message = "Error: No bridge found.";
-                }
             }
 
             Console.WriteLine(message);
@@ -138,7 +137,7 @@ namespace HueDream.Controllers {
                 var newBridges = HueBridge.FindBridges();
                 var nb = new List<BridgeData>();
                 var update = false;
-                if (bridges.Count > 0) {
+                if (bridges.Count > 0)
                     foreach (var b in bridges) {
                         if (b.Key != null && b.User != null) {
                             var hb = new HueBridge(b);
@@ -146,17 +145,15 @@ namespace HueDream.Controllers {
                             b.SetGroups(hb.ListGroups().Result);
                             update = true;
                         }
+
                         nb.Add(b);
                     }
-                }
-                
+
                 foreach (var bb in newBridges) {
                     var exists = false;
-                    foreach (var b in bridges) {
-                        if (bb.BridgeId == b.Id) {
+                    foreach (var b in bridges)
+                        if (bb.BridgeId == b.Id)
                             exists = true;
-                        }
-                    }
 
                     if (!exists) {
                         Console.WriteLine($@"Adding new bridge at {bb.IpAddress}.");
@@ -164,14 +161,14 @@ namespace HueDream.Controllers {
                         update = true;
                     }
                 }
-                
+
 
                 if (update) {
                     bridges = nb;
                     store.ReplaceItem("bridges", bridges, true);
                 }
             }
-                
+
 
             if (store.GetItem("dsIp") == "0.0.0.0") {
                 var dc = new DreamClient();
@@ -189,7 +186,5 @@ namespace HueDream.Controllers {
             DreamSender.SendUdpWrite(0x03, 0x01, new[] {(byte) mode}, 0x21, (byte) dev.GroupNumber,
                 new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8888));
         }
-
-       
     }
 }

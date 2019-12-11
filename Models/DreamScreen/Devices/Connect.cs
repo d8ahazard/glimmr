@@ -16,9 +16,7 @@ namespace HueDream.Models.DreamScreen.Devices {
 
         [JsonProperty] private byte[] espFirmwareVersion;
 
-        public Connect() {
-            
-        }
+        public Connect() { }
 
         public Connect(string ipAddress) : base(ipAddress) {
             Tag = DeviceTag;

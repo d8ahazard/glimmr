@@ -3,8 +3,7 @@ using System.Runtime.Serialization;
 using HueDream.DreamScreen.Devices;
 
 namespace HueDream.Models.DreamScreen.Devices {
-    [Serializable]
-    [DataContract]
+    [Serializable, DataContract]
     public abstract class BaseDevice : IDreamDevice {
         [DataMember] private readonly byte[] espSerialNumber = {0, 0};
 
@@ -12,6 +11,8 @@ namespace HueDream.Models.DreamScreen.Devices {
         protected BaseDevice(string address) {
             IpAddress = address;
         }
+
+        protected BaseDevice() { }
 
         [DataMember] public int AmbientShowType { get; set; }
 
@@ -36,9 +37,6 @@ namespace HueDream.Models.DreamScreen.Devices {
         public abstract void ParsePayload(byte[] payload);
         public abstract byte[] EncodeState();
 
-        protected BaseDevice() {
-            
-        }
         public void Initialize() {
             GroupName = "unassigned";
             GroupNumber = 0;

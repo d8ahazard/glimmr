@@ -8,7 +8,6 @@ using static HueDream.Models.DreamScreen.Scenes.SceneBase;
 namespace HueDream.Models.DreamScreen {
     public class DreamScene {
         private double animationTime;
-        public string[] ColorArray { get; private set; }
         private string[] colors;
         private AnimationMode mode;
         private int startInt;
@@ -55,7 +54,7 @@ namespace HueDream.Models.DreamScreen {
             colors = scene.GetColors();
             animationTime = scene.AnimationTime;
             mode = scene.Mode;
-            ColorArray = RefreshColors(colors);
+            RefreshColors(colors);
             startInt = 0;
         }
 
@@ -71,6 +70,7 @@ namespace HueDream.Models.DreamScreen {
                 startTime = curTime;
                 dc.SendColors(RefreshColors(colors), animationTime);
             }
+
             Console.WriteLine($@"DreamScene: Color Builder canceled. {startTime}");
         }
 

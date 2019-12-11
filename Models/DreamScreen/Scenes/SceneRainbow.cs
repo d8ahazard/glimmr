@@ -12,7 +12,7 @@
                 "fff200", // Yellow
                 "ff7e00" // Orange
             });
-            AnimationTime = 2;
+            AnimationTime = 5;
             Mode = AnimationMode.Linear;
             Easing = EasingType.Blend;
         }

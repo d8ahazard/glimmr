@@ -5,14 +5,6 @@ using Q42.HueApi;
 namespace HueDream.Models.Hue {
     [Serializable]
     public class LightData {
-        [JsonProperty] public string Name { get; set; }
-        [JsonProperty] public string Id { get; set; }
-        [JsonProperty] public string Type { get; set; }
-        [JsonProperty] public int Brightness { get; set; }
-        [JsonProperty] public bool OverrideBrightness { get; set; }
-        [JsonProperty] public int TargetSector { get; set; }
-        [JsonProperty] public string ModelId { get; set; }
-
         public LightData() {
             Name = string.Empty;
             Type = string.Empty;
@@ -21,8 +13,8 @@ namespace HueDream.Models.Hue {
             TargetSector = -1;
             Brightness = 100;
             OverrideBrightness = false;
-            
         }
+
         public LightData(Light l) {
             if (l == null) return;
             Name = l.Name;
@@ -33,5 +25,13 @@ namespace HueDream.Models.Hue {
             Brightness = 100;
             OverrideBrightness = false;
         }
+
+        [JsonProperty] public string Name { get; set; }
+        [JsonProperty] public string Id { get; set; }
+        [JsonProperty] public string Type { get; set; }
+        [JsonProperty] public int Brightness { get; set; }
+        [JsonProperty] public bool OverrideBrightness { get; set; }
+        [JsonProperty] public int TargetSector { get; set; }
+        [JsonProperty] public string ModelId { get; set; }
     }
 }
