@@ -6,7 +6,7 @@
                 "00FF00", // Green
                 "FF0000" // Red
             });
-            AnimationTime = 1.75;
+            AnimationTime = 3;
             Mode = AnimationMode.Random;
             Easing = EasingType.Blend;
         }

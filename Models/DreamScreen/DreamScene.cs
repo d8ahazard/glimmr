@@ -55,8 +55,8 @@ namespace HueDream.Models.DreamScreen {
             colors = scene.GetColors();
             animationTime = scene.AnimationTime;
             mode = scene.Mode;
-            RefreshColors(colors);
             startInt = 0;
+            RefreshColors(colors);
         }
 
         public async Task BuildColors(DreamClient dc, CancellationToken ct) {
@@ -79,7 +79,7 @@ namespace HueDream.Models.DreamScreen {
             var output = new string[12];
             var maxColors = input.Length - 1;
             var colorCount = startInt;
-            var col1 = colorCount;
+            var col1 = startInt;
             var allRand = new Random().Next(0, maxColors);
             for (var i = 0; i < 12; i++) {
                 col1 = i + col1;
@@ -87,6 +87,13 @@ namespace HueDream.Models.DreamScreen {
                 while (col1 > maxColors) col1 -= maxColors;
                 if (mode == AnimationMode.RandomAll) col1 = allRand;
                 output[i] = input[col1];
+            }
+
+            if (mode == AnimationMode.LinearAll) {
+                for (var i = 0; i < 12; i++) {
+                    output[i] = input[colorCount];
+                }
+                startInt++;
             }
 
             if (mode == AnimationMode.Linear) startInt++;

@@ -7,7 +7,8 @@ namespace HueDream.Models.DreamScreen.Scenes {
             Linear,
             Reverse,
             Random,
-            RandomAll
+            RandomAll,
+            LinearAll
         }
 
         public enum EasingType {

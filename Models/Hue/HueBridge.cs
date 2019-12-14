@@ -47,6 +47,7 @@ namespace HueDream.Models.Hue {
             // This is what we actually need
             entLayer = stream.GetNewLayer(true);
             LogUtil.WriteInc($"Streaming established: {BridgeIp}");
+            
         }
         
         public void DisableStreaming() {
@@ -65,7 +66,7 @@ namespace HueDream.Models.Hue {
             if (entLayer != null) {
                 var lightMappings = bd.Lights;
                 // Loop through lights in entertainment layer
-                Console.WriteLine(@"Sending to bridge...");
+                //Console.WriteLine(@"Sending to bridge...");
                 foreach (var entLight in entLayer) {
                     // Get data for our light from map
                     var lightData = lightMappings.SingleOrDefault(item => item.Id == entLight.Id.ToString());
@@ -75,8 +76,8 @@ namespace HueDream.Models.Hue {
                     var colorString = colors[lightData.TargetSector];
                     // Make it into a color
                     var endColor = ClampBrightness(colorString, lightData, brightness);
-                    var xyColor = HueColorConverter.RgbToXY(endColor, CIE1931Gamut.PhilipsWideGamut);
-                    endColor = HueColorConverter.XYToRgb(xyColor, GetLightGamut(lightData.ModelId));
+                    //var xyColor = HueColorConverter.RgbToXY(endColor, CIE1931Gamut.PhilipsWideGamut);
+                    //endColor = HueColorConverter.XYToRgb(xyColor, GetLightGamut(lightData.ModelId));
                     // If we're currently using a scene, animate it
                     if (fadeTime != 0) // Our start color is the last color we had
                         entLight.SetState(ct, endColor, endColor.GetBrightness(),

@@ -9,7 +9,7 @@
                 "f59700", // Tangerine
                 "f58600" // Orange
             });
-            AnimationTime = .15;
+            AnimationTime = .35;
             Mode = AnimationMode.Linear;
             Easing = EasingType.Blend;
         }

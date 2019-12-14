@@ -93,7 +93,8 @@ namespace HueDream.Models.DreamScreen {
 
         public virtual async Task StopAsync(CancellationToken cancellationToken) {
             try {
-                listenTokenSource?.Cancel();
+                Console.WriteLine(@"StopAsync called.");
+                CancelSource(listenTokenSource);
                 StopStream();
                 StopShowBuilder();
             }
@@ -129,8 +130,8 @@ namespace HueDream.Models.DreamScreen {
                 case 1:
                 case 2:
                     Console.WriteLine($@"DreamScreen: Subscribing to sector data for mode: {newMode}");
-                    Subscribe();
                     if (!streamStarted) StartStream();
+                    Subscribe();
                     break;
                 case 3:
                     if (!streamStarted) StartStream();
@@ -162,6 +163,7 @@ namespace HueDream.Models.DreamScreen {
 
         private void UpdateAmbientShow(int newShow) {
             if (prevAmbientShow == newShow) return;
+            StopShowBuilder();
             StartShowBuilder();
             dreamScene.LoadScene(newShow);
             prevAmbientShow = newShow;
@@ -187,6 +189,7 @@ namespace HueDream.Models.DreamScreen {
                     b.DisableStreaming();
                     b.EnableStreaming(sendTokenSource.Token);
                     bridges.Add(b);
+                    LogUtil.Write("Starting stream on " + bridge.Ip);
                     streamStarted = true;
                 }
             }
@@ -201,11 +204,12 @@ namespace HueDream.Models.DreamScreen {
                 }
                 CancelSource(sendTokenSource);
                 LogUtil.WriteDec("Stream stopped.");
+                streamStarted = false;
             }
         }
 
         public void SendColors(string[] colors, double fadeTime = 0) {
-            Console.WriteLine(@"Sending colors...");
+            //Console.WriteLine(@"Sending colors...");
             if (bridges.Count > 0) {
                 Console.WriteLine(@"Updating colors: " + JsonConvert.SerializeObject(colors));
                 foreach (var bridge in bridges)
