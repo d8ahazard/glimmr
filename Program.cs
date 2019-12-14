@@ -12,6 +12,7 @@ namespace HueDream {
         private static IHostBuilder CreateHostBuilder(string[] args) {
             return Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); })
+                // Initialize our dream screen emulator
                 .ConfigureServices(services => { services.AddHostedService<DreamClient>(); });
         }
     }

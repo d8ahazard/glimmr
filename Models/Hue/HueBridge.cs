@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using HueDream.Models.Util;
 using Newtonsoft.Json;
 using Q42.HueApi;
 using Q42.HueApi.ColorConverters;
@@ -43,14 +44,14 @@ namespace HueDream.Models.Hue {
             Console.WriteLine($@"Hue: Connecting to bridge at {BridgeIp}...");
             // Grab our stream
             var stream = StreamingSetup.SetupAndReturnGroup(bd, ct).Result;
-            Console.WriteLine($@"Hue: Stream established at {BridgeIp}.");
             // This is what we actually need
             entLayer = stream.GetNewLayer(true);
-            Console.WriteLine($@"Hue: Bridge Connected. Beginning transmission to {BridgeIp}...");
+            LogUtil.WriteInc($"Streaming established: {BridgeIp}");
         }
         
         public void DisableStreaming() {
             StreamingSetup.StopStream(bd);
+            LogUtil.WriteDec($"Streaming stopped: {BridgeIp}");
         }
 
         /// <summary>
@@ -178,7 +179,6 @@ namespace HueDream.Models.Hue {
             }
 
             lights.AddRange(output);
-            Console.WriteLine(@"Returning: " + JsonConvert.SerializeObject(lights));
             return lights;
         }
     }

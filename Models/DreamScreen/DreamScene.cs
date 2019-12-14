@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using HueDream.Models.DreamScreen.Scenes;
+using HueDream.Models.Util;
 using Newtonsoft.Json;
 using static HueDream.Models.DreamScreen.Scenes.SceneBase;
 
@@ -61,7 +62,7 @@ namespace HueDream.Models.DreamScreen {
         public async Task BuildColors(DreamClient dc, CancellationToken ct) {
             startInt = 0;
             var startTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-            Console.WriteLine($@"Color builder started, animation time is {animationTime}...");
+            LogUtil.WriteInc($@"Color builder started, animation time is {animationTime}...");
             while (!ct.IsCancellationRequested) {
                 var curTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
                 var dTime = curTime - startTime;
@@ -71,7 +72,7 @@ namespace HueDream.Models.DreamScreen {
                 dc.SendColors(RefreshColors(colors), animationTime);
             }
 
-            Console.WriteLine($@"DreamScene: Color Builder canceled. {startTime}");
+            LogUtil.WriteDec($@"DreamScene: Color Builder canceled. {startTime}");
         }
 
         private string[] RefreshColors(string[] input) {
