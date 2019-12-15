@@ -7,6 +7,17 @@ For Windows, download the latest release and extract wherever you like. You may 
 
 To run as a service, try out [NSSM - The Non Sucking Service Manager](http://nssm.cc/)
 
+Place NSSM.exe in the root of your HueDream folder. Open a command-line window in that directory, and type "nssm install HueDream".
+
+A dialog will open. Press the ... button next to the PATH option, and select "huedream.exe" from the dialog.
+
+Click "Install service", and you're all set. 
+
+Now, just open a browser window and navigate to http://localhost:5000 to complete setup.
+
+(You may need to open ports 9000 and 8888 in Windows Firewall, or unblock huedream.exe entirely)
+
+
 ### Linux
 For Linux, download the latest release and extract to /opt/huedream (or wherever you want). I'll provide instructions on how to install as a service
 as soon as I figure out how to do it. ;)

@@ -1,4 +1,3 @@
-
 .idea/*
 .vs/*
 bin/*
@@ -9,3 +8,4 @@ huedream.json
 huedream.json.bk
 store.json
 store.json.bk
+CodeGraphData/*
