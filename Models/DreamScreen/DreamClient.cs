@@ -84,7 +84,7 @@ namespace HueDream.Models.DreamScreen {
         private static List<BaseDevice> Devices { get; set; }
         
         public Task StartAsync(CancellationToken cancellationToken) {
-            //LogUtil.WriteInc("DreamClient Started.");
+            LogUtil.WriteInc("DreamClient Started.");
             listenTokenSource = new CancellationTokenSource();
             listenTask = StartListening(listenTokenSource.Token);
             UpdateMode(dev.Mode);

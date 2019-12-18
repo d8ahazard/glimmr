@@ -1,5 +1,5 @@
-using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 
 namespace HueDream {
     public static class Program {
@@ -7,8 +7,9 @@ namespace HueDream {
             CreateHostBuilder(args).Build().Run();
         }
 
-        private static IWebHostBuilder CreateHostBuilder(string[] args) {
-            return WebHost.CreateDefaultBuilder(args).UseStartup<Startup>();
+        public static IHostBuilder CreateHostBuilder(string[] args) {
+            return Host.CreateDefaultBuilder(args)
+                .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
         }
     }
 }

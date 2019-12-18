@@ -14,10 +14,11 @@ namespace HueDream {
 
         public Startup(IConfiguration configuration) {
             Console.WriteLine(@"Startup called...");
-            Configuration = configuration;
             Dc = new DreamClient();
             ct = new CancellationTokenSource();
             Dc.StartAsync(ct.Token);
+            Console.WriteLine(@"DC Started.");
+            Configuration = configuration;
         }
 
         public IConfiguration Configuration { get; }
