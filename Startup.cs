@@ -9,14 +9,11 @@ using Microsoft.Extensions.Hosting;
 
 namespace HueDream {
     public class Startup : IDisposable {
-        public DreamClient Dc;
-        private CancellationTokenSource ct;
-
+        private DreamClient Dc;
+        
         public Startup(IConfiguration configuration) {
             Console.WriteLine(@"Startup called...");
             Dc = new DreamClient();
-            ct = new CancellationTokenSource();
-            Dc.StartAsync(ct.Token);
             Console.WriteLine(@"DC Started.");
             Configuration = configuration;
         }
@@ -24,7 +21,6 @@ namespace HueDream {
         public IConfiguration Configuration { get; }
 
         public void Dispose() {
-            ct.Cancel();
             Dc.Dispose();
         }
 

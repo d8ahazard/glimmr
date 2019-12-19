@@ -16,7 +16,7 @@ using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 
 namespace HueDream.Models.DreamScreen {
-    public class DreamClient : IHostedService, IDisposable
+    public class DreamClient : IDisposable
     {
         private static bool _searching;
         private readonly DreamScene dreamScene;
@@ -78,12 +78,13 @@ namespace HueDream.Models.DreamScreen {
             targetEndpoint = new IPEndPoint(IPAddress.Parse(sourceIp), 8888);
             dd.Dispose();
             bridges = new List<HueBridge>();
+            Task.Run(StartAsync);
         }
 
 
         private static List<BaseDevice> Devices { get; set; }
         
-        public Task StartAsync(CancellationToken cancellationToken) {
+        public Task StartAsync() {
             LogUtil.WriteInc("DreamClient Started.");
             listenTokenSource = new CancellationTokenSource();
             listenTask = StartListening(listenTokenSource.Token);
@@ -91,18 +92,7 @@ namespace HueDream.Models.DreamScreen {
             return listenTask;
         }
 
-        public virtual async Task StopAsync(CancellationToken cancellationToken) {
-            try {
-                Console.WriteLine(@"StopAsync called.");
-                CancelSource(listenTokenSource);
-                StopStream();
-                StopShowBuilder();
-            }
-            finally {
-                LogUtil.WriteDec("DreamClient Stopped.");
-                await Task.WhenAny(listenTask, Task.Delay(Timeout.Infinite, cancellationToken));
-            }
-        }
+        
 
         private static BaseDevice GetDeviceData() {
             using var dd = DreamData.GetStore();
