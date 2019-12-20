@@ -169,7 +169,7 @@ namespace HueDream.Models.Hue {
             ILocalHueClient client = new LocalHueClient(BridgeIp);
             client.Initialize(BridgeUser);
             // Get lights
-            var lights = bd.Lights;
+            var lights = bd.Lights ?? new List<LightData>();
             var res = client.GetLightsAsync().Result;
             var ld = res.Select(r => new LightData(r)).ToList();
             var output = new List<LightData>();
