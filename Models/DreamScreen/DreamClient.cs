@@ -306,8 +306,6 @@ namespace HueDream.Models.DreamScreen {
                     dev = GetDeviceData();
                     writeState = true;
                 }
-
-                if (!groupMatch) Console.WriteLine($@"Group {msg.Group} doesn't match {dev.GroupNumber}.");
             }
 
             switch (command) {
