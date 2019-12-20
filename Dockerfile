@@ -19,3 +19,7 @@ COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "HueDream.dll"]
 
 VOLUME /etc/huedream
+EXPOSE 1900/udp
+EXPOSE 2100/udp
+EXPOSE 5666
+EXPOSE 8888/udp

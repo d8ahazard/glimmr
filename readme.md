@@ -13,7 +13,7 @@ A dialog will open. Press the ... button next to the PATH option, and select "hu
 
 Click "Install service", and you're all set. 
 
-Now, just open a browser window and navigate to http://localhost:5000 to complete setup.
+Now, just open a browser window and navigate to http://localhost:5666 to complete setup.
 
 (You may need to open ports 9000 and 8888 in Windows Firewall, or unblock huedream.exe entirely)
 
@@ -27,15 +27,18 @@ For Docker (recommended), see below...
 ### docker
 
 Use the following command. You don't need to specify the ASPNETCORE_URLS value, unless you wish to change the default
-port that the web UI listens on. If so, modify the port number. e.g.: 'http://+:5666' to 'http://+:5000'
+port that the web UI listens on. If so, modify the port number. e.g.: 'http://+:5666' to 'http://+:5666'
 
 ```
 docker create \
   --name=huedream \
-  -e ASPNETCORE_URLS=http://+:5666 \
-  -v <path to data>:/etc/huedream \ 
+  -v <path to data>:/etc/huedream \
+  -p 1900:1900/udp \
+  -p 2100:2100/udp \
+  -p 5666:5666 \
+  -p 8888:8888/udp \ 
+  --network="bridge" \
   --restart unless-stopped \
-  --network=host \
   digitalhigh/huedream
 ```
 
@@ -51,12 +54,15 @@ services:
   huedream:
     image: d8ahazard/huedream
     container_name: huedream
-    environment:
-      - ASPNETCORE_URLS=http://+:5666
-    network_mode: "host"
     restart: unless-stopped
+    network: bridge
 	volumes:
       - <path to data>:/etc/huedream
+    ports:
+      - 1900:1900/udp
+      - 2100:2100/udp
+      - 5666:5666
+      - 8888:8888/udp
 ```
 
 ## Parameters
@@ -65,8 +71,11 @@ Container images are configured using parameters passed at runtime (such as thos
 
 | Parameter | Function |
 | :----: | --- |
-| `-e ASPNETCORE_URLS=http://+:5666` | Modify port number as needed |
 | `-v <path_to_data>/etc/huedream` | Change <path_to_data> to the location where to keep HueDream ini |
+| `-p 1900:1900\udp` | Hue discovery port |
+| `-p 2100:2100\udp` | Hue broadcast port |
+| `-p 5666:5666` | Web UI port |
+| `-p 8888:8888\udp` | DS Emulation port |
 
 
 
