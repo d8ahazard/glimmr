@@ -9,7 +9,6 @@ using HueDream.Models.DreamScreen.Devices;
 using HueDream.Models.Hue;
 using JsonFlatFileDataStore;
 using Newtonsoft.Json;
-using Q42.HueApi.Models.Groups;
 
 namespace HueDream.Models {
     [Serializable]
@@ -18,7 +17,6 @@ namespace HueDream.Models {
             var path = GetConfigPath("store.json");
             var createDefaults = !File.Exists(path);
             var store = new DataStore(path);
-            UpgradeBridgeStorage();
             return createDefaults ? SetDefaults(store) : store;
         }
 
@@ -39,15 +37,15 @@ namespace HueDream.Models {
         }
 
         private static DataStore SetDefaults(DataStore store) {
-            store.InsertItemAsync("dsIp", "0.0.0.0");
+            store.InsertItem("dsIp", "0.0.0.0");
             BaseDevice myDevice = new SideKick(GetLocalIpAddress());
             myDevice.Initialize();
             var bList = HueBridge.FindBridges();
             var bData = bList.Select(lb => new BridgeData(lb.IpAddress, lb.BridgeId)).ToList();
-            store.InsertItemAsync("myDevice", myDevice);
-            store.InsertItemAsync("emuType", "SideKick");
-            store.InsertItemAsync("bridges", bData);
-            store.InsertItemAsync("devices", Array.Empty<BaseDevice>());
+            store.InsertItem("myDevice", myDevice);
+            store.InsertItem("emuType", "SideKick");
+            store.InsertItem("bridges", bData);
+            store.InsertItem("devices", Array.Empty<BaseDevice>());
             return store;
         }
 
@@ -126,32 +124,6 @@ namespace HueDream.Models {
                 if (ip.AddressFamily == AddressFamily.InterNetwork)
                     return ip.ToString();
             throw new Exception("No network adapters found in " + JsonConvert.SerializeObject(host));
-        }
-
-        private static void UpgradeBridgeStorage() {
-            if (GetItem("bridges") != null) return;
-            var bIp = GetItem("hueIp");
-            var bUser = GetItem("hueUser");
-            var bKey = GetItem("hueKey");
-            List<Group> entGroups = GetItem<List<Group>>("entertainmentGroups");
-            var entGroup = GetItem<Group>("entertainmentGroup");
-            //List<Light> lights = GetItem("hueLights");
-
-            var bList = HueBridge.FindBridges();
-            var bData = new List<BridgeData>();
-            foreach (var lb in bList) {
-                if (lb.IpAddress != bIp) continue;
-                Console.WriteLine(@"Upgrading bridge storage for existing bridge.");
-                var bd = new BridgeData(lb.IpAddress, lb.BridgeId, bUser, bKey);
-                bd.SetGroups(entGroups);
-                //  bd.SetLights(lights.ToArray());
-                bd.SelectedGroup = entGroup;
-                bData.Add(bd);
-            }
-
-            bData.AddRange(from lb in bList where lb.IpAddress != bIp select new BridgeData(lb.IpAddress, lb.BridgeId));
-
-            SetItem<List<BridgeData>>("bridges", bData);
         }
     }
 }
