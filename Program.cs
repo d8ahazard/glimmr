@@ -1,4 +1,6 @@
+using HueDream.Models.DreamScreen;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace HueDream {
@@ -7,9 +9,11 @@ namespace HueDream {
             CreateHostBuilder(args).Build().Run();
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) {
+        private static IHostBuilder CreateHostBuilder(string[] args) {
             return Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
+                .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); })
+                // Initialize our dream screen emulator
+                .ConfigureServices(services => { services.AddHostedService<DreamClient>(); });
         }
     }
 }

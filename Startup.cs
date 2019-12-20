@@ -9,20 +9,13 @@ using Microsoft.Extensions.Hosting;
 
 namespace HueDream {
     public class Startup : IDisposable {
-        private DreamClient Dc;
-        
         public Startup(IConfiguration configuration) {
-            Console.WriteLine(@"Startup called...");
-            Dc = new DreamClient();
-            Console.WriteLine(@"DC Started.");
             Configuration = configuration;
         }
 
         public IConfiguration Configuration { get; }
 
-        public void Dispose() {
-            Dc.Dispose();
-        }
+        public void Dispose() { }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public static void ConfigureServices(IServiceCollection services) {
