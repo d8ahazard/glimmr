@@ -129,6 +129,7 @@ namespace HueDream.Models.DreamScreen {
                     break;
                 case 1:
                 case 2:
+                    StopShowBuilder();
                     Console.WriteLine($@"DreamScreen: Subscribing to sector data for mode: {newMode}");
                     if (!streamStarted) StartStream();
                     Subscribe();
