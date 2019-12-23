@@ -7,7 +7,6 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using HueDream.DreamScreen.Devices;
 using HueDream.Models.DreamScreen.Devices;
 using HueDream.Models.DreamScreen.Scenes;
 using HueDream.Models.Hue;
@@ -53,6 +52,8 @@ namespace HueDream.Models.DreamScreen {
 
         // Use this to check if we've initialized our bridges
         private bool streamStarted;
+
+        private bool disposed;
         
         // Use this to check if we've started our show builder
         private bool showBuilderStarted;
@@ -77,6 +78,7 @@ namespace HueDream.Models.DreamScreen {
             group = (byte) dev.GroupNumber;
             targetEndpoint = new IPEndPoint(IPAddress.Parse(sourceIp), 8888);
             dd.Dispose();
+            disposed = false;
             bridges = new List<HueBridge>();
         }
 
@@ -84,7 +86,6 @@ namespace HueDream.Models.DreamScreen {
         private static List<BaseDevice> Devices { get; set; }
         
         public Task StartAsync(CancellationToken cancellationToken) {
-            //LogUtil.WriteInc("DreamClient Started.");
             listenTokenSource = new CancellationTokenSource();
             listenTask = StartListening(listenTokenSource.Token);
             UpdateMode(dev.Mode);
@@ -99,7 +100,7 @@ namespace HueDream.Models.DreamScreen {
                 StopShowBuilder();
             }
             finally {
-                LogUtil.WriteDec("DreamClient Stopped.");
+                LogUtil.WriteDec(@"DreamClient Stopped.");
                 await Task.WhenAny(listenTask, Task.Delay(Timeout.Infinite, cancellationToken));
             }
         }
@@ -124,15 +125,15 @@ namespace HueDream.Models.DreamScreen {
             // If we are not in ambient mode and ambient scene is running, stop it
             switch (newMode) {
                 case 0:
-                    StopStream();
                     StopShowBuilder();
+                    StopStream();
                     break;
                 case 1:
                 case 2:
                     StopShowBuilder();
                     Console.WriteLine($@"DreamScreen: Subscribing to sector data for mode: {newMode}");
                     if (!streamStarted) StartStream();
-                    Subscribe();
+                    Subscribe(true);
                     break;
                 case 3:
                     if (!streamStarted) StartStream();
@@ -180,6 +181,7 @@ namespace HueDream.Models.DreamScreen {
 
         private void StartStream() {
             if (!streamStarted) {
+                LogUtil.Write("Starting stream.");
                 var bridgeArray = DreamData.GetItem<List<BridgeData>>("bridges");
                 bridges = new List<HueBridge>();
                 sendTokenSource = new CancellationTokenSource();
@@ -190,7 +192,7 @@ namespace HueDream.Models.DreamScreen {
                     b.DisableStreaming();
                     b.EnableStreaming(sendTokenSource.Token);
                     bridges.Add(b);
-                    LogUtil.Write("Starting stream on " + bridge.Ip);
+                    LogUtil.Write("Stream started to " + bridge.Ip);
                     streamStarted = true;
                 }
             }
@@ -236,7 +238,7 @@ namespace HueDream.Models.DreamScreen {
             if (showBuilderStarted) {
                 CancelSource(showBuilderSource);
                 showBuilderStarted = false;
-                LogUtil.WriteDec("Stopping show builder.");
+                LogUtil.WriteDec(@"Stopping show builder.");
             }
         }
 
@@ -250,7 +252,8 @@ namespace HueDream.Models.DreamScreen {
             SendColors(colors);
         }
 
-        private void Subscribe() {
+        private void Subscribe(bool log = false) {
+            if (log) LogUtil.Write(@"Sending subscribe message.");
             DreamSender.SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x10, group, targetEndpoint);
         }
 
@@ -284,7 +287,6 @@ namespace HueDream.Models.DreamScreen {
         private void ProcessData(byte[] receivedBytes, IPEndPoint receivedIpEndPoint) {
             // Convert data to ASCII and print in console
             if (!MsgUtils.CheckCrc(receivedBytes)) return;
-            //Console.WriteLine("DS: Brightness is " + Brightness);
             string command = null;
             string flag = null;
             var from = receivedIpEndPoint.Address.ToString();
@@ -377,8 +379,9 @@ namespace HueDream.Models.DreamScreen {
                 case "MODE":
                     if (writeState) {
                         dev.Mode = payload[0];
-                        UpdateMode(dev.Mode);
                         Console.WriteLine($@"Updating mode: {dev.Mode}.");
+                        UpdateMode(dev.Mode);
+                        
                     }
 
                     break;
@@ -439,15 +442,30 @@ namespace HueDream.Models.DreamScreen {
             }
         }
 
+
         public void Dispose() {
-            CancelSource(listenTokenSource);
-            StopShowBuilder();
-            StopStream();
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
-        public void Dispose(bool finalize) {
-            if (!finalize) GC.SuppressFinalize(this);
+        public void Dispose(bool disposing) {
+            if (disposed) {
+                return;
+            }
+
+            if (disposing) {
+                listener?.Dispose();
+                listenTask?.Dispose();
+                sendTokenSource?.Dispose();
+                showBuilderSource?.Dispose();
+                listenTokenSource?.Dispose();
+                foreach (var b in bridges) {
+                    b.DisableStreaming();
+                    b.Dispose();
+                }
+            }
+
+            disposed = true;
         }
     }
 }

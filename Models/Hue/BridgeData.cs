@@ -59,6 +59,7 @@ namespace HueDream.Models.Hue {
         }
 
         public static BridgeData DeserializeBridgeData(JObject o) {
+            if (o == null) throw new ArgumentNullException(nameof(o));
             var bridgeId = string.Empty;
             var bridgeIp = string.Empty;
             var bridgeUser = string.Empty;

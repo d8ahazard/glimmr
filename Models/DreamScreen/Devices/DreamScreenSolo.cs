@@ -1,4 +1,4 @@
-﻿namespace HueDream.DreamScreen.Devices {
+﻿namespace HueDream.Models.DreamScreen.Devices {
     public class DreamScreenSolo : DreamScreenHd {
         private const string DeviceTag = "DreamScreenSolo";
         private static readonly byte[] RequiredSoloEspFirmwareVersion = {1, 6};

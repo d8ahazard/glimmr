@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using HueDream.DreamScreen.Devices;
 using HueDream.Models;
 using HueDream.Models.DreamScreen;
 using HueDream.Models.DreamScreen.Devices;

@@ -13,50 +13,46 @@ using Q42.HueApi.Streaming.Models;
 
 namespace HueDream.Models.Hue {
     public static class StreamingSetup {
-        private const string V = "Hue: Streaming is active.";
-        private const string Value = "Hue: Group setup complete, connecting to client...";
 
-        public static async Task StopStream(BridgeData b) {
-            var store = DreamData.GetStore();
-            var hueIp = b.Ip;
-            Console.WriteLine($@"Hue: Stopping stream at {hueIp}.");
-            var hueUser = b.User;
-            var hueKey = b.Key;
-            var id = b.SelectedGroup;
-            store.Dispose();
-            Console.WriteLine($@"Hue: Creating client at {hueIp}...");
-            //Initialize streaming client
-            var client = new LocalHueClient(hueIp, hueUser, hueKey);
-            await client.SetStreamingAsync(id, false).ConfigureAwait(true);
-        }
-
-        public static async Task<StreamingGroup> SetupAndReturnGroup(BridgeData b, CancellationToken ct) {
+        public static StreamingHueClient GetClient(BridgeData b) {
             var hueIp = b.Ip;
             var hueUser = b.User;
             var hueKey = b.Key;
-            var groupId = b.SelectedGroup;
             Console.WriteLine(@"Hue: Creating client...");
             //Initialize streaming client
             var client = new StreamingHueClient(hueIp, hueUser, hueKey);
+            return client;
+        }
+        
+        public static async Task StopStream(StreamingHueClient client, BridgeData b) {
+            var id = b.SelectedGroup;
+            Console.WriteLine($@"Hue: Stopping stream.");
+            await client.LocalHueClient.SetStreamingAsync(id, false).ConfigureAwait(true);
+        }
+
+        public static async Task<StreamingGroup> SetupAndReturnGroup(StreamingHueClient client, BridgeData b, CancellationToken ct) {
+            
+            var groupId = b.SelectedGroup;
             Console.WriteLine(@"Hue: Created client.");
             //Get the entertainment group
             var group = client.LocalHueClient.GetGroupAsync(groupId).Result;
             if (group == null) {
                 LogUtil.Write("Group is null, defaulting to first group...");
-                if (b.Groups.Count > 0) {
-                    groupId = b.Groups[0].Id;
+                var groups = b.GetGroups();
+                if (groups.Count > 0) {
+                    groupId = groups[0].Id;
                     group = client.LocalHueClient.GetGroupAsync(groupId).Result;
                     if (group != null) {
-                        LogUtil.Write($"Selected first group: {groupId}");
+                        LogUtil.Write(@$"Selected first group: {groupId}");
                     }
                     else {
-                        LogUtil.Write("Unable to load group, can't connect for streaming.");
+                        LogUtil.Write(@"Unable to load group, can't connect for streaming.");
                         return null;
                     }
                 }
             }
             else {
-                LogUtil.Write($"Group {groupId} fetched successfully.");
+                LogUtil.Write(@$"Group {groupId} fetched successfully.");
             }
             
             //Create a streaming group
@@ -68,23 +64,24 @@ namespace HueDream.Models.Hue {
                     .ToList();
                 Console.WriteLine(@"Using mapped lights for group: " + JsonConvert.SerializeObject(mappedLights));
                 var stream = new StreamingGroup(mappedLights);
-                Console.WriteLine(Value);
                 //Connect to the streaming group
                 try {
-                    LogUtil.Write("Connecting to client: " + group.Id);
+                    LogUtil.Write(@"Connecting to client: " + group.Id);
                     await client.Connect(group.Id).ConfigureAwait(true);
                 }
                 catch (Exception e) {
-                    LogUtil.Write("Exception: " + e);
+                    LogUtil.Write(@"Exception: " + e);
                 }
 
-                LogUtil.Write("Client connected?");
+                LogUtil.Write(@"Client connected?");
                 //Start auto updating this entertainment group
+#pragma warning disable 4014
                 client.AutoUpdate(stream, ct);
+#pragma warning restore 4014
 
                 //Optional: Check if streaming is currently active
                 var bridgeInfo = await client.LocalHueClient.GetBridgeAsync().ConfigureAwait(true);
-                Console.WriteLine(bridgeInfo.IsStreamingActive ? V : "Hue: Streaming is not active.");
+                LogUtil.Write(bridgeInfo.IsStreamingActive ? @"Streaming is active." : @"Streaming is not active.");
                 return stream;
             }
 

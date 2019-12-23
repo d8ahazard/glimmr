@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.Serialization;
-using HueDream.DreamScreen.Devices;
 
 namespace HueDream.Models.DreamScreen.Devices {
     [Serializable, DataContract]

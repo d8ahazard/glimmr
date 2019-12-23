@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using HueDream.Models.DreamScreen.Devices;
 using HueDream.Models.Util;
 using Newtonsoft.Json;
 
-namespace HueDream.DreamScreen.Devices {
+namespace HueDream.Models.DreamScreen.Devices {
     public class DreamScreenHd : BaseDevice {
         private const string DeviceTag = "DreamScreen";
         private static readonly byte[] RequiredEspFirmwareVersion = {1, 6};

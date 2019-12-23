@@ -59,7 +59,8 @@ namespace HueDream.Models.DreamScreen {
             RefreshColors(colors);
         }
 
-        public async Task BuildColors(DreamClient dc, CancellationToken ct) {
+        public void BuildColors(DreamClient dc, CancellationToken ct) {
+            if (dc == null) throw new ArgumentNullException(nameof(dc));
             startInt = 0;
             var startTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
             LogUtil.WriteInc($@"Color builder started, animation time is {animationTime}...");

@@ -7,25 +7,30 @@ using HueDream.Models.Util;
 using Newtonsoft.Json;
 using Q42.HueApi;
 using Q42.HueApi.ColorConverters;
-using Q42.HueApi.ColorConverters.Gamut;
 using Q42.HueApi.ColorConverters.HSB;
 using Q42.HueApi.Interfaces;
 using Q42.HueApi.Models.Bridge;
-using Q42.HueApi.Models.Gamut;
 using Q42.HueApi.Models.Groups;
+using Q42.HueApi.Streaming;
 using Q42.HueApi.Streaming.Extensions;
 using Q42.HueApi.Streaming.Models;
 
 namespace HueDream.Models.Hue {
-    public class HueBridge {
+    public class HueBridge : IDisposable {
         private readonly BridgeData bd;
         private EntertainmentLayer entLayer;
+        private StreamingHueClient client;
+        private bool disposed;
+        private bool streaming;
 
         public HueBridge(BridgeData data) {
-            bd = data;
+            bd = data ?? throw new ArgumentNullException(nameof(data));
             BridgeIp = bd.Ip;
             BridgeKey = bd.Key;
             BridgeUser = bd.User;
+            client = StreamingSetup.GetClient(bd);
+            disposed = false;
+            streaming = false;
             entLayer = null;
             Console.WriteLine(@"Hue: Loading bridge: " + BridgeIp);
         }
@@ -43,16 +48,18 @@ namespace HueDream.Models.Hue {
             // Get our light map and filter for mapped lights
             Console.WriteLine($@"Hue: Connecting to bridge at {BridgeIp}...");
             // Grab our stream
-            var stream = StreamingSetup.SetupAndReturnGroup(bd, ct).Result;
+            var stream = StreamingSetup.SetupAndReturnGroup(client, bd, ct).Result;
             // This is what we actually need
             entLayer = stream.GetNewLayer(true);
             LogUtil.WriteInc($"Streaming established: {BridgeIp}");
-            
+            streaming = true;
+
         }
         
         public void DisableStreaming() {
-            StreamingSetup.StopStream(bd);
+            var unused = StreamingSetup.StopStream(client, bd);
             LogUtil.WriteDec($"Streaming stopped: {BridgeIp}");
+            streaming = false;
         }
 
         /// <summary>
@@ -63,6 +70,7 @@ namespace HueDream.Models.Hue {
         /// <param name="ct">A cancellation token</param>
         /// <param name="fadeTime">Optional: how long to fade to next state</param>
         public void UpdateLights(string[] colors, int brightness, CancellationToken ct, double fadeTime = 0) {
+            if (colors == null) throw new ArgumentNullException(nameof(colors));
             if (entLayer != null) {
                 var lightMappings = bd.Lights;
                 // Loop through lights in entertainment layer
@@ -109,26 +117,9 @@ namespace HueDream.Models.Hue {
             return oColor;
         }
 
-        private CIE1931Gamut GetLightGamut(string modelId) {
-            /*"""Gets the correct color gamut for the provided model id.
-            Docs: http://www.developers.meethue.com/documentation/supported-lights
-            """*/
-            string[] modelsA = {"LST001", "LLC010", "LLC011", "LLC012", "LLC006", "LLC007", "LLC013"};
-            string[] modelsB = {"LCT001", "LCT007", "LCT002", "LCT003", "LLM001"};
-            string[] modelsC = {"LCT010", "LCT014", "LCT011", "LLC020", "LST002"};
-            if (Array.Exists(modelsA, element => element == modelId)) return CIE1931Gamut.ModelTypeA;
-
-            if (Array.Exists(modelsB, element => element == modelId)) return CIE1931Gamut.ModelTypeB;
-
-            return Array.Exists(modelsC, element => element == modelId)
-                ? CIE1931Gamut.ModelTypeC
-                : CIE1931Gamut.PhilipsWideGamut;
-        }
-
 
         public async Task<List<Group>> ListGroups() {
-            var client = new LocalHueClient(BridgeIp, BridgeUser, BridgeKey);
-            var all = await client.GetEntertainmentGroups().ConfigureAwait(true);
+            var all = await client.LocalHueClient.GetEntertainmentGroups().ConfigureAwait(true);
             var output = new List<Group>();
             output.AddRange(all);
             return output;
@@ -136,12 +127,11 @@ namespace HueDream.Models.Hue {
 
 
         public static async Task<RegisterEntertainmentResult> CheckAuth(string bridgeIp) {
-            RegisterEntertainmentResult result;
             try {
                 ILocalHueClient client = new LocalHueClient(bridgeIp);
                 //Make sure the user has pressed the button on the bridge before calling RegisterAsync
                 //It will throw an LinkButtonNotPressedException if the user did not press the button
-                result = client.RegisterAsync("HueDream", Environment.MachineName, true).Result;
+                var result = await client.RegisterAsync("HueDream", Environment.MachineName, true);
                 Console.WriteLine($@"Hue: User name is {result.Username}.");
                 return result;
             }
@@ -166,11 +156,10 @@ namespace HueDream.Models.Hue {
             if (BridgeIp == "0.0.0.0" || BridgeUser == null || BridgeKey == null) return new List<LightData>();
             // Create client
             Console.WriteLine(@"Hue: Enumerating lights.");
-            ILocalHueClient client = new LocalHueClient(BridgeIp);
-            client.Initialize(BridgeUser);
+            client.LocalHueClient.Initialize(BridgeUser);
             // Get lights
             var lights = bd.Lights ?? new List<LightData>();
-            var res = client.GetLightsAsync().Result;
+            var res = client.LocalHueClient.GetLightsAsync().Result;
             var ld = res.Select(r => new LightData(r)).ToList();
             var output = new List<LightData>();
             foreach (var light in ld) {
@@ -182,5 +171,28 @@ namespace HueDream.Models.Hue {
             lights.AddRange(output);
             return lights;
         }
+       
+        
+        public void Dispose() {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        
+        public void Dispose(bool disposing) {
+            if (disposed) {
+                return;
+            }
+
+            if (disposing) {
+                if (streaming) {
+                    DisableStreaming();
+                }
+                client?.Dispose();
+            }
+
+            disposed = true;
+        }
+        
     }
 }

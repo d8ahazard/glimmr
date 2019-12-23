@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using HueDream.DreamScreen.Devices;
 using HueDream.Models.DreamScreen.Devices;
 using HueDream.Models.Util;
 using Newtonsoft.Json;

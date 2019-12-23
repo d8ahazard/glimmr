@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using HueDream.DreamScreen.Devices;
 using HueDream.Models.DreamScreen.Devices;
 using HueDream.Models.Hue;
 using JsonFlatFileDataStore;

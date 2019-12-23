@@ -1,4 +1,4 @@
-﻿namespace HueDream.DreamScreen.Devices {
+﻿namespace HueDream.Models.DreamScreen.Devices {
     public class DreamScreen4K : DreamScreenHd {
         private const string DeviceTag = "DreamScreen4K";
         private static readonly byte[] Required4KEspFirmwareVersion = {1, 6};
