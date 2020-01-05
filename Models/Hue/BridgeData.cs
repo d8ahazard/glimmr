@@ -66,6 +66,7 @@ namespace HueDream.Models.Hue {
             var bridgeKey = string.Empty;
             var selectedGroup = "-1";
             var bridgeGroups = Array.Empty<Group>();
+            var groupIds = new List<string>();
             var bridgeLights = new List<LightData>();
             Console.WriteLine(@"Deserializing bridge...");
             foreach (var property in o.Properties())
@@ -85,7 +86,7 @@ namespace HueDream.Models.Hue {
                     case "lights":
                         try {
                             bridgeLights = property.Value.ToObject<List<LightData>>();
-                            Console.Write(@"Parsed lights: " + JsonConvert.SerializeObject(bridgeLights));
+                            //Console.Write(@"Parsed lights: " + JsonConvert.SerializeObject(bridgeLights));
                         }
                         finally {
                             Console.Write(@"Light parse exception.");
@@ -94,16 +95,16 @@ namespace HueDream.Models.Hue {
                         break;
                     case "selectedGroup":
                         selectedGroup = (string) property.Value;
-                        Console.WriteLine(@"Group is " + selectedGroup);
+                        Console.WriteLine(@"Selected Group is " + selectedGroup);
                         break;
                     case "groups":
                         try {
                             bridgeGroups = property.Value.ToObject<Group[]>();
-                            Console.WriteLine(@"Deserialized groups: " + JsonConvert.SerializeObject(bridgeGroups));
-                        }
-                        finally {
+                            //Console.WriteLine(@"Deserialized groups: " + JsonConvert.SerializeObject(bridgeGroups));
+                        } catch {
                             Console.WriteLine(@"Cast exception for group.");
                         }
+                        
 
                         break;
                 }
@@ -115,6 +116,13 @@ namespace HueDream.Models.Hue {
                 SelectedGroup = selectedGroup,
                 Lights = bridgeLights
             };
+            if (bd.Groups.Count > 0) {
+                groupIds.AddRange(bd.Groups.Select(g => g.Id));
+                if (!groupIds.Contains(selectedGroup) || selectedGroup == "-1") {
+                    bd.SelectedGroup = groupIds[0];
+                }
+            }
+            
             Console.WriteLine(@"Returning bridge data item: " + JsonConvert.SerializeObject(bd));
             return bd;
         }
