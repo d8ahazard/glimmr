@@ -111,6 +111,8 @@ namespace HueDream.Models.DreamScreen {
             var devType = dd.GetItem<string>("emuType");
             if (devType == "SideKick")
                 myDev = dd.GetItem<SideKick>("myDevice");
+            else if (devType == "DreamVision")
+                myDev = dd.GetItem<Devices.DreamVision>("myDevice");
             else
                 myDev = dd.GetItem<Connect>("myDevice");
             return myDev;

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using HueDream.Models.DreamGrab;
 using HueDream.Models.DreamScreen.Devices;
 using HueDream.Models.Hue;
 using JsonFlatFileDataStore;
@@ -37,13 +38,16 @@ namespace HueDream.Models {
 
         private static DataStore SetDefaults(DataStore store) {
             store.InsertItem("dsIp", "0.0.0.0");
+            store.InsertItem("dataSource", "DreamScreen");
             BaseDevice myDevice = new SideKick(GetLocalIpAddress());
             myDevice.Initialize();
             var bList = HueBridge.FindBridges();
             var bData = bList.Select(lb => new BridgeData(lb.IpAddress, lb.BridgeId)).ToList();
+            var lData = new LedData(true);
             store.InsertItem("myDevice", myDevice);
             store.InsertItem("emuType", "SideKick");
             store.InsertItem("bridges", bData);
+            store.InsertItem("ledData", lData);
             store.InsertItem("devices", Array.Empty<BaseDevice>());
             return store;
         }

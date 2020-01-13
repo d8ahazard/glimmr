@@ -26,6 +26,9 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="Accord.Math" Version="3.8.0" />
+        <PackageReference Include="Emgu.CV" Version="4.1.0.3408" />
+        <PackageReference Include="freetype2" Version="2.6.0.1" />
         <PackageReference Include="JsonFlatFileDataStore" Version="2.2.1" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.0.0" />
         <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8">
@@ -40,8 +43,39 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="3.1.0" />
         <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.9.5" />
         <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.0" />
+        <PackageReference Include="MMALSharp" Version="0.5.1" />
+        <PackageReference Include="OpenCvSharp4" Version="4.2.0.20200108" />
+        <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.2.0.20200108" />
         <PackageReference Include="Q42.HueApi" Version="3.14.0" />
         <PackageReference Include="Q42.HueApi.Entertainment" Version="3.14.0" />
+        <PackageReference Include="ws281x.Net" Version="1.0.6" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="Emgu.CV.DebuggerVisualizers.VS2012">
+        <HintPath>lib\Emgu.CV.DebuggerVisualizers.VS2012.dll</HintPath>
+      </Reference>
+      <Reference Include="Emgu.CV.DebuggerVisualizers.VS2013">
+        <HintPath>lib\Emgu.CV.DebuggerVisualizers.VS2013.dll</HintPath>
+      </Reference>
+      <Reference Include="Emgu.CV.DebuggerVisualizers.VS2015">
+        <HintPath>lib\Emgu.CV.DebuggerVisualizers.VS2015.dll</HintPath>
+      </Reference>
+      <Reference Include="Emgu.CV.DebuggerVisualizers.VS2017">
+        <HintPath>lib\Emgu.CV.DebuggerVisualizers.VS2017.dll</HintPath>
+      </Reference>
+      <Reference Include="Emgu.CV.DebuggerVisualizers.VS2019">
+        <HintPath>lib\Emgu.CV.DebuggerVisualizers.VS2019.dll</HintPath>
+      </Reference>
+      <Reference Include="Emgu.CV.UI">
+        <HintPath>lib\Emgu.CV.UI.dll</HintPath>
+      </Reference>
+      <Reference Include="Emgu.CV.World">
+        <HintPath>lib\Emgu.CV.World.dll</HintPath>
+      </Reference>
+      <Reference Include="ZedGraph">
+        <HintPath>lib\ZedGraph.dll</HintPath>
+      </Reference>
     </ItemGroup>
 
     <ItemGroup>
