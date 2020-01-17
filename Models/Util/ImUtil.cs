@@ -6,16 +6,17 @@ using Accord.Math.Distances;
 using Emgu.CV;
 using Emgu.CV.Freetype;
 using Emgu.CV.Structure;
+using Emgu.CV.Util;
 
 namespace HueDream.Models.Util {
     public static class ImUtil {
-        public static Image<Bgr, byte> DrawLabel(Image<Bgr, byte> input, string text, Point pos, MCvScalar color) {
+        public static Mat DrawLabel(Mat input, string text, Point pos, MCvScalar color) {
             using Freetype2 ft = new Freetype2();
             ft.PutText(input, text, pos, 6, color, 1, Emgu.CV.CvEnum.LineType.AntiAlias, false);
             return input;
         }
 
-        public static Image<Bgr, byte> Resize(Image<Bgr, byte> input, Emgu.CV.CvEnum.Inter inter, int width = 0, int height = 0) {
+        public static Mat Resize(Mat input, Emgu.CV.CvEnum.Inter inter, int width = 0, int height = 0) {
             var w = input.Width;
             var h = input.Height;
 
@@ -28,14 +29,17 @@ namespace HueDream.Models.Util {
                 var r = width / w;
                 height = h * r;
             }
-            
-            return input.Resize(width, height, inter);
+            using Mat m = new Mat();
+            Size s = new Size(width, height);
+            CvInvoke.Resize(input, m, s, 0, 0, inter);
+            return m;
         }
 
-        public static PointF[] OrderPoints(List<PointF> points) {
+        public static PointF[] OrderPoints(VectorOfPoint inP) {
+            var points = inP.ToArray();
             var xPoints = points.OrderByDescending(p => p.X).ToList();
-            PointF[] leftMost = { points[0], points[1] };
-            PointF[] rightMost = points.Skip(Math.Max(0, points.Count() - 2)).ToArray();
+            Point[] leftMost = { points[0], points[1] };
+            Point[] rightMost = points.Skip(Math.Max(0, points.Count() - 2)).ToArray();
 
             leftMost = leftMost.OrderByDescending(p => p.Y).ToArray();
             var tl = leftMost[0];
@@ -45,7 +49,7 @@ namespace HueDream.Models.Util {
             double maxDistance = 0;
             var farPoint = tl;
             var dt = new Tuple<double, double>(tl.X, tl.Y);
-            foreach (PointF p in points) {
+            foreach (Point p in points) {
                 var pt = new Tuple<double, double>(p.X, p.Y);
                 var e = new Euclidean();
                 var dist = e.Distance(dt, pt);
@@ -55,18 +59,18 @@ namespace HueDream.Models.Util {
                     br = p;
                 }                
             }
-            foreach(PointF p in points) {
+            foreach(Point p in points) {
                 if (p != farPoint) {
                     tr = p;
                 }
             }
             var outPut = new List<PointF>();
-            var final = new[] { tl, tr, bl, br };
+            PointF[] final = new[] { tl, tr, bl, (PointF)br };
             outPut.AddRange(final);
             return outPut.ToArray();
         }
 
-        public static Image<Bgr, byte> FourPointTransform(Image<Bgr, byte> input, List<PointF> points) {
+        public static Mat FourPointTransform(Mat input, VectorOfPoint points) {
             var rect = OrderPoints(points);
             var tl = rect[0];
             var tr = rect[1];
@@ -82,10 +86,10 @@ namespace HueDream.Models.Util {
 
             PointF[] dst = { new PointF(0, 0), new PointF(maxWidth - 1, 0), new PointF(maxWidth - 1, maxHeight - 1), new PointF(0, maxHeight - 1) };
             var m = CvInvoke.GetPerspectiveTransform(rect, dst);
-            var foo = new Mat();
+            using Mat output = new Mat();
             Size size = new Size(Convert.ToInt32(maxWidth), Convert.ToInt32(maxHeight));
-            CvInvoke.WarpPerspective(input, foo, m, size);
-            return foo.ToImage<Bgr, byte>();
+            CvInvoke.WarpPerspective(input, output, m, size);
+            return output;
         }
     }
 }

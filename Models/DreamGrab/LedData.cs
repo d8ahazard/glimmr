@@ -16,6 +16,8 @@ namespace HueDream.Models.DreamGrab {
         [JsonProperty] public int CamType { get; set; }
         [JsonProperty] public int StreamId { get; set; }
 
+        [JsonProperty] public bool UseLed { get; set; }
+
         public LedData() {}
 
         public LedData(bool init) {
@@ -31,6 +33,7 @@ namespace HueDream.Models.DreamGrab {
             StartupAnimation = 0;
             CamType = 1;
             StreamId = 0;
+            UseLed = false;
         }
     }
 }

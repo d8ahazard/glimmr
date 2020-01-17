@@ -9,7 +9,7 @@ namespace HueDream.Models.DreamGrab {
             throw new System.NotImplementedException();
         }
 
-        public Image<Bgr, byte> GetFrame() {
+        public Mat GetFrame() {
             throw new System.NotImplementedException();
         }
     }

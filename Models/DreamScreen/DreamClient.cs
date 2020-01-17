@@ -25,6 +25,7 @@ namespace HueDream.Models.DreamScreen {
         private int ambientShow;
         private List<HueBridge> bridges;
         private int brightness;
+        private int captureMode;
 
         private BaseDevice dev;
 
@@ -68,6 +69,7 @@ namespace HueDream.Models.DreamScreen {
             ambientShow = dev.AmbientShowType;
             ambientColor = dev.AmbientColor;
             brightness = dev.Brightness;
+            captureMode = dd.GetItem<int>("captureMode");
             // Set these to "unset" states
             prevMode = -1;
             prevAmbientMode = -1;
@@ -91,7 +93,7 @@ namespace HueDream.Models.DreamScreen {
             UpdateMode(dev.Mode);
             return listenTask;
         }
-
+              
         public virtual async Task StopAsync(CancellationToken cancellationToken) {
             try {
                 Console.WriteLine(@"StopAsync called.");
@@ -270,12 +272,15 @@ namespace HueDream.Models.DreamScreen {
 
                 // Return listen task to kill later
                 return Task.Run(() => {
+                    if (captureMode == 1) {
+                        Task.Run(() => StartCapture(ct));
+                    }
                     LogUtil.WriteInc("Listener started.");
                     while (!ct.IsCancellationRequested) {
                         var sourceEndPoint = new IPEndPoint(IPAddress.Any, 0);
                         var receivedResults = listener.Receive(ref sourceEndPoint);
                         ProcessData(receivedResults, sourceEndPoint);
-                    }
+                    }                    
                 });
             }
             catch (SocketException e) {
@@ -284,6 +289,21 @@ namespace HueDream.Models.DreamScreen {
 
             return null;
         }
+
+        private Task StartCapture(CancellationToken cancellationToken) {
+            Console.WriteLine("StartAsync has been fired.");
+            var grabber = new DreamGrab.DreamGrab();
+            LogUtil.Write("StartAsync fired.");
+            var captureTask = grabber.StartCapture(cancellationToken);
+            if (captureTask.IsCompleted) {
+                return captureTask;
+            }
+
+            // Otherwise it's running
+            return Task.CompletedTask;
+
+        }
+
 
 
         private void ProcessData(byte[] receivedBytes, IPEndPoint receivedIpEndPoint) {

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
-
     <PropertyGroup>
-        <TargetFramework>netcoreapp3.0</TargetFramework>
+		<LangVersion>8.0</LangVersion>  
+        <TargetFramework>netcoreapp3.1</TargetFramework>
         <StartupObject></StartupObject>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
         <DockerfileContext>.</DockerfileContext>
@@ -27,7 +27,7 @@
 
     <ItemGroup>
         <PackageReference Include="Accord.Math" Version="3.8.0" />
-        <PackageReference Include="Emgu.CV" Version="4.1.0.3408" />
+        <PackageReference Include="Emgu.CV" Version="4.1.1.3497" />
         <PackageReference Include="freetype2" Version="2.6.0.1" />
         <PackageReference Include="JsonFlatFileDataStore" Version="2.2.1" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.0.0" />
@@ -43,7 +43,7 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="3.1.0" />
         <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.9.5" />
         <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.0" />
-        <PackageReference Include="MMALSharp" Version="0.5.1" />
+        <PackageReference Include="MMALSharp" Version="0.6.0-293" />
         <PackageReference Include="OpenCvSharp4" Version="4.2.0.20200108" />
         <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.2.0.20200108" />
         <PackageReference Include="Q42.HueApi" Version="3.14.0" />
@@ -72,6 +72,9 @@
       </Reference>
       <Reference Include="Emgu.CV.World">
         <HintPath>lib\Emgu.CV.World.dll</HintPath>
+      </Reference>
+      <Reference Include="System.ServiceModel">
+        <HintPath>C:\Windows\Microsoft.NET\Framework\v3.0\Windows Communication Foundation\System.ServiceModel.dll</HintPath>
       </Reference>
       <Reference Include="ZedGraph">
         <HintPath>lib\ZedGraph.dll</HintPath>

@@ -17,7 +17,15 @@ namespace HueDream.Models {
             var path = GetConfigPath("store.json");
             var createDefaults = !File.Exists(path);
             var store = new DataStore(path);
-            return createDefaults ? SetDefaults(store) : store;
+            var output = createDefaults ? SetDefaults(store) : store;
+            try {
+                if (output.GetItem<LedData>("ledData") == null) {
+                    output.InsertItem("ledData", new LedData());
+                }
+            } catch (KeyNotFoundException) {
+                output.InsertItem("ledData", new LedData(true));
+            }
+            return output;
         }
 
         /// <summary>
@@ -48,6 +56,7 @@ namespace HueDream.Models {
             store.InsertItem("emuType", "SideKick");
             store.InsertItem("bridges", bData);
             store.InsertItem("ledData", lData);
+            store.InsertItem("captureMode", 0);
             store.InsertItem("devices", Array.Empty<BaseDevice>());
             return store;
         }

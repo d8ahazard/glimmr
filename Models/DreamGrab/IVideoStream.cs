@@ -6,6 +6,6 @@ using Emgu.CV.Structure;
 namespace HueDream.Models.DreamGrab {
     public interface IVideoStream {
         public Task Start(CancellationToken ct);
-        public Image<Bgr, byte> GetFrame(); 
+        public Mat GetFrame(); 
     }
 }
