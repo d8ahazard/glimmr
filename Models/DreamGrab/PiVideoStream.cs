@@ -14,7 +14,7 @@ using MMALSharp.Ports.Outputs;
 namespace HueDream.Models.DreamGrab {
     public class PiVideoStream : IVideoStream, System.IDisposable {
         private MMALCamera cam;
-        private Image<Bgr, byte> frame;
+        public Mat frame;
         private int capWidth;
         private int capHeight;
         public PiVideoStream(int width = 800, int height = 600) {
@@ -22,11 +22,7 @@ namespace HueDream.Models.DreamGrab {
             capWidth = width;
             capHeight = height;
         }
-
-        
-        public Mat GetFrame() {
-            return frame.Mat;
-        }
+       
 
         public class EmguEventArgs : EventArgs {
             public byte[] ImageData { get; set; }
@@ -98,11 +94,14 @@ namespace HueDream.Models.DreamGrab {
         protected virtual void OnEmguEventCallback(object sender, EmguEventArgs args) {
             Console.WriteLine("I'm in OnEmguEventCallback.");
 
-            frame = new Image<Bgr, byte>(capWidth, capHeight);
-            frame.Bytes = args.ImageData;
+            var input = new Image<Bgr, byte>(capWidth, capHeight);
+            input.Bytes = args.ImageData;
+            frame = input.Mat;
         }
         #region IDisposable Support
         private bool disposedValue = false;
+
+        Mat IVideoStream.frame { get => frame; set => frame = value; }
 
         protected virtual void Dispose(bool disposing) {
             if (!disposedValue) {

@@ -5,6 +5,9 @@ using Emgu.CV.Structure;
 
 namespace HueDream.Models.DreamGrab {
     public class CaptureVideoStream : IVideoStream {
+        private Mat frame;
+        Mat IVideoStream.frame { get => frame; set => frame=value; }
+
         public Task Start(CancellationToken ct) {
             throw new System.NotImplementedException();
         }

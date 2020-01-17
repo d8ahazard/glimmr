@@ -9,23 +9,21 @@ namespace HueDream.Models.DreamGrab {
 
         private VideoCapture video;
         private Mat frame;
+        private bool saved;
+
+        Mat IVideoStream.frame { get => frame; set => frame = value; }
 
         public WebCamVideoStream(int inputStream) {
-            video = new VideoCapture(inputStream);
+            video = new VideoCapture(inputStream, VideoCapture.API.DShow);
             frame = new Mat();
+            saved = false;
             LogUtil.Write("Stream init.");            
         }
-
-        public Mat GetFrame() {
-            LogUtil.Write("Frame got?");
-            return frame;
-        }
+       
 
         private void SetFrame(object sender, EventArgs e) {
             if (video != null && video.Ptr != IntPtr.Zero) {
-                LogUtil.Write("Frame saved.");
                 video.Read(frame);
-                CvInvoke.Imshow("Frame", frame);
             }
         }
 

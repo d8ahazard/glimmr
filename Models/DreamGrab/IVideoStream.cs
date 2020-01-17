@@ -5,7 +5,7 @@ using Emgu.CV.Structure;
 
 namespace HueDream.Models.DreamGrab {
     public interface IVideoStream {
-        public Task Start(CancellationToken ct);
-        public Mat GetFrame(); 
+        public Task Start(CancellationToken ct);        
+        public Mat frame { get; set; }
     }
 }

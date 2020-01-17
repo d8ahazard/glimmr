@@ -69,14 +69,18 @@ namespace HueDream.Models.DreamGrab {
                 LogUtil.Write("Splitter created.");
                 while (true) {
                     LogUtil.Write("Grabbing frame");
-                    var frame = cam.GetFrame();
-                    
+                    var frame = cam.frame;                    
                     if (frame != null) {
+                        if (frame.Bitmap == null) continue;
+                        LogUtil.Write("We have a frame");
                         var warped = ProcessFrame(frame);
                         if (warped != null) {
                             var colors = splitter.GetColors(warped);
+                            LogUtil.Write("Colors grabbed too!");
                             UpdateStrip(colors);
                         }
+                    } else {
+                        LogUtil.Write("Frame is null?");
                     }
                 }
             });
@@ -93,41 +97,48 @@ namespace HueDream.Models.DreamGrab {
         
         private Mat GetScreen(Mat input) {
             if (!targetLocked) {
+                LogUtil.Write("Target is not locked, finding target.");
                 var srcArea = scale_width * scale_height;
-                var edgeColor = Color.Red;
-                Console.WriteLine("Acquiring target...");
-                // Convert to grayscale
-                StringBuilder msgBuilder = new StringBuilder("Performance: ");
-                Size s = new Size(scale_width, scale_height);
-                using Mat scaled = new Mat();
-                CvInvoke.Resize(input, scaled, s);
+                var edgeColor = Color.Red;                
+                Console.WriteLine("Resizing");
+                Mat scaled = new Mat();
+                Console.WriteLine("Resizing2");
+                CvInvoke.Resize(input, scaled, new Size(scale_width, scale_height), 0, 0, Inter.Linear);
+                //CvInvoke.WaitKey(1);
+                Console.WriteLine("Resized");
                 //Load the image from file and resize it for display
                 //Convert the image to grayscale and filter out the noise
-                UMat uimage = new UMat();
+                Mat uimage = new Mat();
+                Mat gray = new Mat();
+                Console.WriteLine("GreyScaling");
                 CvInvoke.CvtColor(scaled, uimage, ColorConversion.Bgr2Gray);
+                CvInvoke.BilateralFilter(uimage, gray, 11, 17, 17);
                 //use image pyr to remove noise
-                UMat pyrDown = new UMat();
-                CvInvoke.PyrDown(uimage, pyrDown);
-                CvInvoke.PyrUp(pyrDown, uimage);
-                UMat cannyEdges = new UMat();
-                double cannyThreshold = 180.0;
-                double cannyThresholdLinking = 120.0;
-                CvInvoke.Canny(uimage, cannyEdges, cannyThreshold, cannyThresholdLinking);
+                Mat cannyEdges = new Mat();
+                double cannyThreshold = 10.0;
+                double cannyThresholdLinking = 200.0;
+                Console.WriteLine("Canny");
+                CvInvoke.Canny(gray, cannyEdges, cannyThreshold, cannyThresholdLinking);
                 Stopwatch watch = Stopwatch.StartNew();
-                #region Find triangles and rectangles
+                #region Find rectangles
                 List<RotatedRect> boxList = new List<RotatedRect>(); //a box is a rotated rectangle
-
+                
                 using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint()) {
+                    MCvScalar color = new MCvScalar(255, 255, 0);
+                    CvInvoke.DrawContours(scaled, contours, -1, color);
                     CvInvoke.FindContours(cannyEdges, contours, null, RetrType.List, ChainApproxMethod.ChainApproxSimple);
                     int count = contours.Size;
+                    Console.WriteLine($@"Looping contours, we have {count}");
                     for (int i = 0; i < count; i++) {
                         using (VectorOfPoint contour = contours[i])
                         using (VectorOfPoint approxContour = new VectorOfPoint()) {
-                            CvInvoke.ApproxPolyDP(contour, approxContour, CvInvoke.ArcLength(contour, true) * 0.05, true);
+                            CvInvoke.ApproxPolyDP(contour, approxContour, CvInvoke.ArcLength(contour, true) * 0.02, true);
+                            
                             if (CvInvoke.ContourArea(approxContour, false) / srcArea > .35) //only consider contours with area greater than 250
                             {
                                 if (approxContour.Size == 4) //The contour has 4 vertices.
                                 {
+                                    Console.WriteLine("We have a big box.");
                                     #region determine if all the angles in the contour are within [80, 100] degree
                                     bool isRectangle = true;
                                     Point[] pts = approxContour.ToArray();
@@ -161,6 +172,8 @@ namespace HueDream.Models.DreamGrab {
                             warped = ImUtil.FourPointTransform(input, curr_target);
                         }
                     }
+                    CvInvoke.Imshow("Input", scaled);
+                    CvInvoke.WaitKey(1);
                 }
 
                 watch.Stop();
