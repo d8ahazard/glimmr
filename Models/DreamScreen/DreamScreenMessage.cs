@@ -58,6 +58,7 @@ namespace HueDream.Models.DreamScreen {
                 if (dreamDev != null) {
                     dreamDev.Initialize();
                     dreamDev.ParsePayload(GetPayload());
+                    dreamDev.Id = from;
                 }
                 else {
                     Console.WriteLine($@"DSMessage: Device is null from {devType}.");

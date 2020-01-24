@@ -20,7 +20,7 @@ namespace HueDream.Models.DreamGrab {
             numRight = ld.CountRight;
             numBottom = ld.CountBottom;
             numTop = ld.CountTop;
-            LogUtil.Write("Splitter init.");
+            LogUtil.Write($@"Splitter init, {numLeft}, {numRight}, {numBottom}, {numTop}");
             DrawGrid(srcWidth, srcHeight);
         }
 
@@ -31,9 +31,8 @@ namespace HueDream.Models.DreamGrab {
         
         public Color[] GetColors(Mat input) {
             var output = new List<Color>();
-            foreach(Rectangle r in areaRects) {
-                Mat sub = new Mat();
-                CvInvoke.cvGetSubRect(input, sub, r);
+            foreach(Rectangle r in areaCoords) {
+                Mat sub = new Mat(input, r);
                 output.Add(GetAverage(sub));
             }
             return output.ToArray();
@@ -99,7 +98,7 @@ namespace HueDream.Models.DreamGrab {
                 areaCoords.Add(new Rectangle(ord, b_top, step, b_bott - b_top));
                 step += 1;
             }
-            LogUtil.Write("Grid drawn.");
+            LogUtil.Write("Grid drawn, we have " + areaCoords.Count + " items.");
         }
     }
 }

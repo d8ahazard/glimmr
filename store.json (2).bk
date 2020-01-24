@@ -1,0 +1,478 @@
+{
+  "dsIp": "192.168.1.157",
+  "myDevice": {
+    "espSerialNumber": "AAA=",
+    "espFirmwareVersion": "AwE=",
+    "isDemo": false,
+    "sectorAssignment": "AQIDBAUGBwgJCgsMAAAA",
+    "sectorData": "AA==",
+    "ambientShowType": 5,
+    "fadeRate": 4,
+    "ipAddress": "192.168.1.103",
+    "productId": 3,
+    "tag": "SideKick",
+    "ambientColor": "FFE369",
+    "ambientModeType": 1,
+    "brightness": 81,
+    "name": "SideKick",
+    "groupName": "Basement\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+    "groupNumber": 1,
+    "mode": 0,
+    "saturation": "FFFFFF"
+  },
+  "emuType": "SideKick",
+  "bridges": [
+    {
+      "ip": "192.168.1.138",
+      "id": "0017884dbb1d",
+      "user": "b1GeoelWVXNiKavnGevZLBSBk6YXYeoPcr7Mq-RX",
+      "key": "DB19C723989BDB86B90D721AC439DCC4",
+      "selectedGroup": "7",
+      "groups": [
+        {
+          "id": "7",
+          "name": "Basement lights",
+          "type": "Entertainment",
+          "class": "TV",
+          "modelid": null,
+          "lights": [
+            "11",
+            "12",
+            "15",
+            "9",
+            "10"
+          ],
+          "action": {
+            "on": false,
+            "bri": 191,
+            "hue": 8418,
+            "sat": 140,
+            "xy": [
+              0.4573,
+              0.41
+            ],
+            "ct": 366,
+            "alert": "select",
+            "effect": "none",
+            "colormode": "ct",
+            "reachable": null,
+            "transitiontime": null,
+            "mode": null
+          },
+          "state": {
+            "any_on": false,
+            "all_on": false
+          },
+          "locations": {
+            "11": [
+              -0.62,
+              0.32,
+              1.0
+            ],
+            "12": [
+              0.51,
+              -0.82,
+              1.0
+            ],
+            "15": [
+              -0.59,
+              -0.81,
+              1.0
+            ],
+            "9": [
+              1.0,
+              1.0,
+              -1.0
+            ],
+            "10": [
+              0.61,
+              0.32,
+              1.0
+            ]
+          },
+          "recycle": false,
+          "stream": {
+            "proxymode": "auto",
+            "proxynode": "/lights/10",
+            "active": false,
+            "owner": null
+          },
+          "sensors": [],
+          "presence": null,
+          "lightlevel": null
+        },
+        {
+          "id": "9",
+          "name": "Front Basement Lights",
+          "type": "Entertainment",
+          "class": "TV",
+          "modelid": null,
+          "lights": [
+            "11",
+            "10"
+          ],
+          "action": {
+            "on": false,
+            "bri": 191,
+            "hue": 8418,
+            "sat": 140,
+            "xy": [
+              0.4573,
+              0.41
+            ],
+            "ct": 366,
+            "alert": "select",
+            "effect": "none",
+            "colormode": "ct",
+            "reachable": null,
+            "transitiontime": null,
+            "mode": null
+          },
+          "state": {
+            "any_on": false,
+            "all_on": false
+          },
+          "locations": {
+            "11": [
+              -0.74,
+              -0.2,
+              0.0
+            ],
+            "10": [
+              0.6,
+              -0.2,
+              0.0
+            ]
+          },
+          "recycle": false,
+          "stream": {
+            "proxymode": "auto",
+            "proxynode": "/lights/11",
+            "active": false,
+            "owner": null
+          },
+          "sensors": [],
+          "presence": null,
+          "lightlevel": null
+        },
+        {
+          "id": "17",
+          "name": "Man cave",
+          "type": "Entertainment",
+          "class": "TV",
+          "modelid": null,
+          "lights": [
+            "11",
+            "12",
+            "9",
+            "10"
+          ],
+          "action": {
+            "on": false,
+            "bri": 191,
+            "hue": 8418,
+            "sat": 140,
+            "xy": [
+              0.4573,
+              0.41
+            ],
+            "ct": 366,
+            "alert": "select",
+            "effect": "none",
+            "colormode": "ct",
+            "reachable": null,
+            "transitiontime": null,
+            "mode": null
+          },
+          "state": {
+            "any_on": false,
+            "all_on": false
+          },
+          "locations": {
+            "11": [
+              0.65,
+              -0.49,
+              0.0
+            ],
+            "12": [
+              -0.57,
+              0.7,
+              0.0
+            ],
+            "9": [
+              -0.69,
+              -0.55,
+              0.0
+            ],
+            "10": [
+              0.64,
+              0.64,
+              0.0
+            ]
+          },
+          "recycle": false,
+          "stream": {
+            "proxymode": "auto",
+            "proxynode": "/lights/11",
+            "active": false,
+            "owner": null
+          },
+          "sensors": [],
+          "presence": null,
+          "lightlevel": null
+        }
+      ],
+      "lights": [
+        {
+          "name": "Corner Lamp",
+          "id": "3",
+          "type": "Dimmable light",
+          "brightness": 100,
+          "overrideBrightness": false,
+          "targetSector": -1,
+          "modelId": "LWB006"
+        },
+        {
+          "name": "Sofa Lamp",
+          "id": "4",
+          "type": "Dimmable light",
+          "brightness": 100,
+          "overrideBrightness": false,
+          "targetSector": -1,
+          "modelId": "LWB006"
+        },
+        {
+          "name": "Sink Light",
+          "id": "5",
+          "type": "Dimmable light",
+          "brightness": 100,
+          "overrideBrightness": false,
+          "targetSector": -1,
+          "modelId": "LWB006"
+        },
+        {
+          "name": "Bar L",
+          "id": "6",
+          "type": "Dimmable light",
+          "brightness": 100,
+          "overrideBrightness": false,
+          "targetSector": -1,
+          "modelId": "LWB014"
+        },
+        {
+          "name": "Bar R",
+          "id": "7",
+          "type": "Dimmable light",
+          "brightness": 100,
+          "overrideBrightness": false,
+          "targetSector": -1,
+          "modelId": "LWB014"
+        },
+        {
+          "name": "Garage",
+          "id": "8",
+          "type": "Dimmable light",
+          "brightness": 100,
+          "overrideBrightness": false,
+          "targetSector": -1,
+          "modelId": "LWB014"
+        },
+        {
+          "name": "Corner r",
+          "id": "9",
+          "type": "Extended color light",
+          "brightness": 100,
+          "overrideBrightness": false,
+          "targetSector": 0,
+          "modelId": "LCT011"
+        },
+        {
+          "name": "Basement Front Right",
+          "id": "10",
+          "type": "Extended color light",
+          "brightness": 5,
+          "overrideBrightness": false,
+          "targetSector": 2,
+          "modelId": "LCT011"
+        },
+        {
+          "name": "Basement Front Left",
+          "id": "11",
+          "type": "Extended color light",
+          "brightness": 9,
+          "overrideBrightness": false,
+          "targetSector": 6,
+          "modelId": "LCT011"
+        },
+        {
+          "name": "Basement Back Right",
+          "id": "12",
+          "type": "Extended color light",
+          "brightness": 64,
+          "overrideBrightness": false,
+          "targetSector": 2,
+          "modelId": "LCT011"
+        },
+        {
+          "name": "Closet 1",
+          "id": "13",
+          "type": "Extended color light",
+          "brightness": 100,
+          "overrideBrightness": false,
+          "targetSector": -1,
+          "modelId": "LCT002"
+        },
+        {
+          "name": "Office",
+          "id": "14",
+          "type": "Extended color light",
+          "brightness": 100,
+          "overrideBrightness": false,
+          "targetSector": -1,
+          "modelId": "LCT002"
+        },
+        {
+          "name": "Basement Back L",
+          "id": "15",
+          "type": "Extended color light",
+          "brightness": 65,
+          "overrideBrightness": false,
+          "targetSector": 6,
+          "modelId": "LCT002"
+        },
+        {
+          "name": "Gavin's room",
+          "id": "16",
+          "type": "Dimmable light",
+          "brightness": 100,
+          "overrideBrightness": false,
+          "targetSector": -1,
+          "modelId": "LWB014"
+        }
+      ]
+    },
+    {
+      "ip": "192.168.1.79",
+      "id": "bc5ff4cdc619",
+      "user": null,
+      "key": null,
+      "selectedGroup": null,
+      "groups": [],
+      "lights": []
+    }
+  ],
+  "devices": [
+    {
+      "espSerialNumber": "AAA=",
+      "espFirmwareVersion": "AAA=",
+      "isDemo": false,
+      "sectorAssignment": "AAAAAAAAAAAAAAAAAAAA",
+      "sectorData": "AA==",
+      "ambientShowType": 0,
+      "fadeRate": 4,
+      "ipAddress": "192.168.1.2",
+      "productId": 3,
+      "tag": "SideKick",
+      "ambientColor": "\u0000\u0000\u0000",
+      "ambientModeType": 0,
+      "brightness": 100,
+      "name": "SideKick\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+      "groupName": "unassigned\u0000\u0000\u0000\u0000\u0000\u0000",
+      "groupNumber": 0,
+      "mode": 0,
+      "saturation": "ÿÿÿ"
+    },
+    {
+      "espSerialNumber": "AAA=",
+      "espFirmwareVersion": "AAA=",
+      "isDemo": false,
+      "sectorAssignment": "AAAAAAAAAAAAAAAAAAAA",
+      "sectorData": "AA==",
+      "ambientShowType": 5,
+      "fadeRate": 4,
+      "ipAddress": "192.168.1.103",
+      "productId": 3,
+      "tag": "SideKick",
+      "ambientColor": "ÿãi",
+      "ambientModeType": 1,
+      "brightness": 81,
+      "name": "SideKick\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+      "groupName": "Basement\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+      "groupNumber": 1,
+      "mode": 0,
+      "saturation": "ÿÿÿ"
+    },
+    {
+      "appMusicData": "AAAA",
+      "flexSetup": [
+        12,
+        24,
+        72,
+        72,
+        7,
+        7
+      ],
+      "musicModeColors": [
+        0,
+        2,
+        1
+      ],
+      "musicModeWeights": [
+        50,
+        50,
+        50
+      ],
+      "espSerialNumber": "AAA=",
+      "bootState": 1,
+      "cecPassthroughEnable": 1,
+      "cecPowerEnable": 0,
+      "cecSwitchingEnable": 1,
+      "colorBoost": 0,
+      "espFirmwareVersion": "AAA=",
+      "hdmiActiveChannels": 4,
+      "hdmiInput": 2,
+      "hdmiInputName1": "HDMI 1          ",
+      "hdmiInputName2": "HDMI 2          ",
+      "hdmiInputName3": "HDMI 3          ",
+      "hdrToneRemapping": 1,
+      "hpdEnable": 1,
+      "indicatorLightAutoOff": 0,
+      "isDemo": false,
+      "letterboxingEnable": 0,
+      "musicModeSource": 0,
+      "musicModeType": 0,
+      "picVersionNumber": "AAA=",
+      "pillarboxingEnable": 0,
+      "sectorBroadcastControl": 0,
+      "sectorBroadcastTiming": 2,
+      "skuSetup": 1,
+      "usbPowerEnable": 1,
+      "videoFrameDelay": 0,
+      "zones": 15,
+      "ambientShowType": 0,
+      "fadeRate": 4,
+      "ipAddress": "192.168.1.157",
+      "productId": 2,
+      "tag": "DreamScreen4K",
+      "ambientColor": "ÿãi",
+      "ambientModeType": 0,
+      "brightness": 100,
+      "name": "DreamScreen 4K\u0000\u0000",
+      "groupName": "Basement\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+      "groupNumber": 1,
+      "mode": 0,
+      "saturation": "ÿ¢¦",
+      "minimumLuminosity": [
+        0,
+        0,
+        0
+      ],
+      "zonesBrightness": [
+        255,
+        255,
+        255,
+        255
+      ]
+    }
+  ]
+}

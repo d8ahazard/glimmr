@@ -2,17 +2,23 @@ let dsIp;
 let emulationType = "SideKick";
 let deviceData = null;
 let linking = false;
+let nanoLinking = false;
 let bridges = [];
+let leaves = [];
 // Set this from config load, wham, bam, thank you maaam...
 let bridge = null;
 // Set all of these based on bridge, or remove them
 let hueAuth = false;
+let nanoAuth = false;
 let bridgeInt = 0;
 let hueGroups;
 let hueLights;
 let lightMap;
 let hueGroup;
 let hueIp = "";
+let nanoIp = "";
+let devices = {};
+let nanoDrag = null;
 
 // Not actually used yet
 let webSocketProtocol = location.protocol === "https:" ? "wss:" : "ws:";
@@ -22,14 +28,14 @@ let socket = new WebSocket(webSocketURI);
 
 $(function () {
 
-    // Fetch data
-    fetchJson();
-
-    // List our devices
-    listDreamDevices();
-
+    listDevices();
+    $('#nanoCard').hide();
+    $('#hueCard').hide();
+    $('dsCard').hide();
     // Initialize BMD
     $('body').bootstrapMaterialDesign();
+    
+    setDrag();
 
     // Post our data
     $('#settingsForm').submit(function (e) {
@@ -52,12 +58,18 @@ $(function () {
             linkHue();
         }
     });
+
+    $('#nanoBtn').on('click', function () {
+        if (!nanoAuth && !nanoLinking) {
+            linkNano();
+        }
+    });
     
     // Emulator type change
     $(document).on('change', '.emuType', function() {
         deviceData.name = deviceData.name.replace(deviceData.tag, $(this).val());
         deviceData.tag = $(this).val();        
-        loadDeviceData();
+        loadDsData();
     });
 
     // On light map change
@@ -80,6 +92,20 @@ $(function () {
         let newVal = ($(this).val() === "on");
         console.log("Change func for override!", myId, newVal);
         updateLightProperty(myId, "overrideBrightness", newVal);
+    });
+
+
+    // On Device Click
+    $(document).on('click', '.devSelect', function (event) {
+        console.log("Device click select.");
+        let id = $(this).data('device');
+        console.log("Selecting " + id);
+        $.each(devices, function() {
+            if ($(this)[0]['id'] === id) {
+                showDevicePanel($(this)[0]);
+            }
+        });
+        event.stopPropagation();
     });
     
     // Cycle bridges
@@ -129,28 +155,7 @@ $(function () {
         }
         hueGroup = current.toString();        
     });   
-        
-    // Socket fun
-    socket.onopen = function () {
-        console.log("Connected.");
-    };
     
-    // Socket fun, ctd.
-    socket.onclose = function (event) {
-        if (event.wasClean) {
-            console.log('Disconnected.');
-        } else {
-            console.log('Connection lost.'); // for example if server processes is killed
-        }
-        console.log('Code: ' + event.code + '. Reason: ' + event.reason);
-    };
-    socket.onmessage = function (event) {
-        console.log("Data received: " + event.data);
-    };
-    socket.onerror = function (error) {
-        console.log("Error: " + error.message);
-    };
-
 });
 
 // This gets called in loop by hue auth to see if we've linked our bridge.
@@ -160,7 +165,19 @@ function checkHueAuth() {
             console.log("LINKED");
             hueAuth = true;
             if (hueAuth) {
-                fetchJson();
+                listDevices();
+            }
+        }
+    });
+}
+
+function checkNanoAuth() {
+    $.get("./api/DreamData/action?action=authorizeNano&value=" + nanoIp, function (data) {
+        if (data === "Success: Nanoleaf Linked." || data === "Success: Nanoleaf Already Linked.") {
+            console.log("LINKED");
+            nanoAuth = true;
+            if (nanoAuth) {
+                listDevices();
             }
         }
     });
@@ -194,30 +211,36 @@ function updateLightProperty(myId, propertyName, value) {
     bridges[bridgeInt]["lights"] = hueLights;
 }
 
-// Retrieve the bulk of our setting data
-function fetchJson() {
-    $.get('./api/DreamData/json', function (config) {
-        console.log("We have some config", config);
-        // Load emulator settings
-        if (config.hasOwnProperty("myDevice")) {
-            deviceData = config.myDevice;
-            loadDeviceData();
-        }
-        // Load target DS IP
-        if (config.hasOwnProperty("dsIp")) {
-            dsIp = config.dsIp;
-        }        
-        // Load DS devices? 
-        if (config.hasOwnProperty("devices")) {
-            buildDevList(config.devices);
-        }
-        // Load bridge data
-        if (config.hasOwnProperty("bridges")) {
-            bridges = config.bridges;
-            loadBridges(bridges);
+function setDrag() {
+    if (nanoDrag !== null) {
+        nanoDrag.forEach(item => {
+            item.disable();
+        });
+    }
+    nanoDrag = subjx('#nanoCanvas').drag({
+        proportions: true,
+        resizable: true,
+        rotatable: true,
+        container: '#canvasDiv',
+        onMove(dx, dy) {
+            console.log("Moved: ", dx, dy);
+            // fires on moving
+        },
+        onResize(dx, dy, handle) {
+            console.log("Resized: ", dx, dy, handle);
+            // fires on resizing
+        },
+        onRotate(rad) {
+            console.log("Rotated: ", rad);
+            // fires on rotation
+        },
+        onDrop(e, el) {
+            console.log("Dropped: ", e, el);
+            // fires on drop
         }
     });
 }
+
 
 // Update our pretty table so we can map the lights
 function mapLights() {
@@ -384,10 +407,122 @@ function getMode() {
 
 // Get a list of dreamscreen devices
 function listDreamDevices() {
-    $.get("./api/DreamData/action?action=connectDreamScreen", function (data) {
+    $.get("./api/DreamData/action?action=findDreamDevices", function (data) {
         console.log("Dream devices: ", data);
         buildDevList(data);
     });
+}
+
+
+function listDevices() {
+    $.get("./api/DreamData/action?action=listDevices", function (data) {
+        console.log("Dream devices: ", data);
+        buildLists(data);
+    });
+}
+
+
+function buildLists(data) {
+    devices = [];
+    let groups = {};
+    let dsDevs = [];
+    leaves = data['leaves'];
+    bridges = data['bridges'];
+    // Push dreamscreen devices to groups first, so they appear on top. The, do sidekicks, nanoleaves, then bridges.
+    $.each(data['ds'], function() {
+        let item = $(this)[0];
+        if (item['id'] === undefined && item['ipAddress'] !== undefined) item['id'] = item['ipAddress'];
+        if (item['id'] === undefined && item['ipV4Address'] !== undefined) item['id'] = item['ipV4Address'];
+        if (this.tag.includes("DreamScreen")) {
+            let groupNumber = (item['groupNumber'] === undefined) ? 0 : item['groupNumber'];
+            let groupName = (item['groupName'] === undefined) ? "undefined" : item['groupName'];
+            if (groups[groupNumber] === undefined) {
+                groups[groupNumber] = {};
+                groups[groupNumber]['name'] = groupName;
+                groups[groupNumber]['id'] = groupNumber;
+                groups[groupNumber]['items'] = [];
+            }
+            groups[groupNumber]['items'].push(item);
+        } else {
+            dsDevs.push(item);
+        }
+    });
+
+    const sorted = [];
+    // Sort other DS Devices
+    groups = sortDevices(dsDevs, groups, false, false);
+    // Sort nanoleaves
+    groups = sortDevices(data['leaves'], groups, "NanoLeaf", "NanoLeaf");
+    // Sort bridges
+    groups = sortDevices(data['bridges'], groups, "HueBridge", "Hue Bridge");
+    $('#devGroup').html("");
+    console.log("Groups: ", groups);
+    let unSorted = false;
+    $.each(groups, function () {
+        let item = $(this)[0];
+        console.log("Group: ", item);
+        if (item['id'] !== 0) {
+            sorted.push(item);
+        } else {
+            unSorted = item;
+        }        
+    });
+    if (unSorted !== false) appendDeviceGroup(unSorted);
+    $('#devGroup').append($('<li class="spacer">Groups</li>'));
+
+    if (sorted.length > 0) {
+        $.each(sorted, function () {
+            appendDeviceGroup($(this)[0]);
+        });
+    }
+    
+}
+
+function appendDeviceGroup(item) {
+    let name = item['name'];
+    let elements = item['items'];
+    let devGroup = $('#devGroup');
+    if (item['id'] === 0) {
+        if (item['id'] === undefined) item['id'] = item['ipAddress'];
+        if (item['id'] === undefined) item['id'] = item['ipV4Address'];
+        $.each(elements, function () {
+            let element = $(this)[0];
+            devices.push(element);
+            devGroup.append('<li class="devSelect" data-device="' + element.id + '"><img class="devIcon" src="./img/' + element.tag + '_icon.png"><span class="devName">' + element.name + '<span></li>');
+        });
+    } else {        
+        let list = $('<li  class="nav-header groupHeader devSelect" data-device="#group' + item['id'] + '"></li>');
+        list.append($('<img src="./img/group_icon.png" class="devIcon">'));
+        list.append($('<span class="devName">' + name + '</span>'));
+        let container = $('<ul id="group' + item['id'] + '" class="nav-list groupList"></ul>');
+        $.each(elements, function () {
+            let element = $(this)[0];
+            devices.push(element);
+            container.append('<li class="devSelect" data-device="' + element.id + '"><img class="devIcon" src="./img/' + element.tag + '_icon.png"><span class="devName">' + element.name + '<span></li>');
+        });
+        list.append(container);
+        console.log("Appending: ", list);
+        devGroup.append(list);
+    }
+}
+
+
+function sortDevices(data, groups, tag, name) {
+    $.each(data, function () {
+        let item = $(this)[0];
+        let groupNumber = (item['groupNumber'] === undefined) ? 0 : item['groupNumber'];
+        let groupName = (item['groupName'] === undefined) ? "undefined" : item['groupName'];
+        if (groups[groupNumber] === undefined) {
+            groups[groupNumber] = {};
+            groups[groupNumber]['name'] = groupName;
+            groups[groupNumber]['id'] = groupNumber;
+            groups[groupNumber]['items'] = [];
+        }
+        if (tag !== false) item.tag = tag;
+        if (item.name === undefined && name !== false) item.name = name;
+        groups[groupNumber]['items'].push(item);
+    });
+    return groups;
 }
 
 // Take our DS devices and make a select
@@ -406,10 +541,43 @@ function buildDevList(data) {
     });
 }
 
+function showDevicePanel(data) {
+    console.log("Showing panel data: ", data);
+    let nanoCard = $('#nanoCard');
+    let hueCard = $('#hueCard');
+    let dsCard = $('#dsCard');
+    $('#navTitle').html(data.name);
+    switch (data.tag) {
+        case "SideKick":
+        case "Connect":
+        case "DreamScreen":
+        case "DreamScreen4K":
+        case "DreamScreenSolo":
+            loadDsData(data);
+            nanoCard.slideUp();
+            hueCard.slideUp();
+            dsCard.slideDown();
+            break;
+        case "HueBridge":
+            loadBridgeData(data);
+            nanoCard.slideUp();
+            dsCard.slideUp();
+            hueCard.slideDown();
+            break;
+        case "NanoLeaf":
+            loadNanoData(data);
+            dsCard.slideUp();
+            hueCard.slideUp();
+            nanoCard.slideDown();
+            break;
+    }
+}
+
 // Update the UI with emulator device data
-function loadDeviceData() {
+function loadDsData(data) {
+    console.log("Loading: ", data);
+    deviceData = data;
     $('#dsName').html(deviceData.name);
-    if (deviceData.hasOwnProperty('groupName')) $('#dsGroupName').html(deviceData.groupName);
     emulationType = deviceData.tag;
     $('#dsType').html();
     let modestr = "";
@@ -430,41 +598,23 @@ function loadDeviceData() {
     }
     $('#mode' + deviceData.mode).addClass('active');
     $('#dsMode').html(modestr);
-    if (emulationType === "Connect") {
-        $('#iconWrap').addClass("Connect").removeClass("SideKick");
-        console.log("Connect");
-    } else {
-        $('#iconWrap').addClass("SideKick").removeClass("Connect");
-        console.log("Sidekick");
-    }
-    $('#emuType option[value=' + emulationType + ']').attr('selected', true);
-    $('#emuTypeText').html(emulationType);
-}
-
-// Load new bridge data and update UI with selected bridge
-function loadBridges(value) {
-    bridges = value;
-    loadBridge(bridgeInt);
+    $('#iconWrap').removeClass().addClass("col-2 col-sm-4 " + emulationType);
 }
 
 // Update UI with specific bridge data
-function loadBridge(bridgeIndex) {
+function loadBridgeData(data) {
     // Get our UI elements
     const hIp = $('#hueIp');
     const lImg = $('#linkImg');
     const lHint = $('#linkHint');
     const lBtn = $('#linkBtn');
 
-    // We cant load a bridge if this stuff ain't right
-    if (bridges === null || bridges === undefined) return false;
-    if (bridgeIndex >= bridges.length) return false;
     // This is our bridge. There are many others like it...but this one is MINE.
-    let b = bridges[bridgeIndex];
-    console.log("Loaded bridge: ", b);
+    console.log("Loaded bridge: ", data);
     // Now we've got it.
-    bridge = b;
-    hueIp = b["ip"];
-    hIp.html(b["ip"]);        
+    let b = data;
+    hueIp = b["ipV4Address"];
+    hIp.html(b["ipV4Address"]);        
     hueGroup = b["selectedGroup"];
     hueGroups = b["groups"];
     if (hueGroup === -1 && hueGroups.length > 0) {
@@ -491,6 +641,144 @@ function loadBridge(bridgeIndex) {
     console.log("Loaded", bridge, hueGroup, hueGroups, hueLights);
     listGroups();
     mapLights();
+}
+
+// Load nanoleaf data
+function loadNanoData(data) {
+    // Get our UI elements
+    const hIp = $('#nanoIp');
+    const lImg = $('#nanoImg');
+    const lHint = $('#nanoHint');
+    const lBtn = $('#nanoBtn');
+
+    // This is our bridge. There are many others like it...but this one is MINE.
+    console.log("Loaded nanodata: ", data);
+    // Now we've got it.
+    let n = data;
+    nanoIp = n["ipV4Address"];
+    drawNanoShapes(data['layout']);
+    hIp.html(n["ipV4Address"]);    
+    nanoAuth = (n["token"] !== null && n["token"] !== undefined);
+    lImg.removeClass('linked unlinked linking');
+    if (nanoAuth) {
+        lImg.addClass('linked');
+        lHint.html("Your Nanoleaf is linked.");
+        lBtn.css('cursor', 'default');
+    } else {
+        if (nanoLinking) {
+            lImg.addClass('linking');
+            lHint.html("Press the link button on your Nanoleaf.");
+        } else {
+            lImg.addClass('unlinked');
+            lHint.html("Click here to link your nanoleaf.");
+        }
+        lBtn.css('cursor', 'pointer');
+    }
+    console.log("Loaded Nano data? ", data);    
+}
+
+function drawNanoShapes(layout) {
+    let c = document.getElementById("nanoCanvas");
+    let ctx = c.getContext("2d");    
+    ctx.clearRect(0, 0, c.width, c.height);
+    ctx.strokeStyle = "#cc0000";
+    ctx.lineWidth = 2;
+    console.log("Drawing layout: ", layout);
+    let count = layout['numPanels'];
+    let sideLength = layout['sideLength'];
+    
+    let gridAdjust = count * sideLength;
+    c.width = gridAdjust * 2;
+    c.height = gridAdjust * 2;
+    let positions = layout['positionData'];
+    let minX = 0;
+    let minY = 0;
+    let maxX = 0;
+    let maxY = 0;
+    for (let panel in positions) {
+        let data = positions[panel];
+        if (data.x > maxX) maxX = data.x;
+        if ((data.y * -1) > maxY) maxY = (data.y * -1);
+        if (data.x < minX) minX = data.x;
+        if ((data.y * -1) < minY) minY = (data.y * -1);
+    }
+    let triHeight = sideLength * (Math.sqrt(3)/2);
+    maxX += triHeight;
+    maxY += triHeight * 2;
+    minX -= triHeight;
+    minY -= triHeight;
+    let xAdjust = maxX - minX;
+    let yAdjust = maxY - minY;
+    c.width = xAdjust;
+    c.height = yAdjust;
+    console.log("Range adjust is ", xAdjust, yAdjust);
+    for (let panel in positions) {
+        let data = positions[panel];
+        console.log("Draw panel: ", data);
+        let shape = data.shapeType;
+        let x = data.x + Math.abs(minX);
+        let y = (data.y * -1) + Math.abs(minY);
+        let o = data.o;
+        ctx.strokeStyle = "#ccff00";
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, 2 * Math.PI);
+        ctx.stroke();
+        ctx.closePath();
+        switch (shape) {
+            case 0:
+            case 1:
+                y = (data.y * -1) + Math.abs(minY);
+                let invert = false;                
+                if (o === 60 || o === 180 || o === 300) {
+                    invert = true;
+                }
+                
+                let angle = (2*Math.PI)/3;
+                // Calculate our overall height based on side length
+                let h = sideLength * (Math.sqrt(3)/2);
+                h *= 2;
+                let halfHeight = h /2;
+                ctx.beginPath();
+                let ha = angle / 4;
+                let a0 = ha;
+                let a1 = angle + ha;
+                let a2 = (angle * 2) + ha;
+                let x0 = halfHeight * Math.cos(a0) + x;
+                let x1 = halfHeight * Math.cos(a1) + x;
+                let x2 = halfHeight * Math.cos(a2) + x;
+                let y0 = (halfHeight * Math.sin(a0) + y) - halfHeight;
+                let y1 = halfHeight * Math.sin(a1) + y - halfHeight;
+                let y2 = halfHeight * Math.sin(a2) + y + h;
+                if (!invert) {                    
+                    y0 = halfHeight * Math.sin(a0) + y;
+                    y1 = halfHeight * Math.sin(a1) + y;
+                    y2 = halfHeight * Math.sin(a2) + y;                    
+                }
+                ctx.moveTo(x0, y0);
+                ctx.lineTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.lineTo(x0, y0);
+                ctx.closePath();
+                ctx.stroke();                
+                break;
+            case 2:
+            case 3:
+            case 4:          
+                let tx = x - (sideLength / 2);
+                let ty = y - (sideLength / 2);
+                ctx.beginPath();
+                console.log("Draw a square.", tx, ty, sideLength);
+                ctx.rect(tx, ty, sideLength, sideLength);
+                ctx.stroke();
+                ctx.closePath();
+                break;
+            case 5:
+                console.log("Draw a power supply??");
+                break;
+        }
+        
+    }
+    setTimeout(function(){setDrag();}, 200);
 }
 
 // Get a group by group ID
@@ -546,6 +834,48 @@ function linkHue() {
             cb.html("");
             cb.hide();
             linking = false;
+        }, 30000);
+    } else {
+        console.log("Already authorized.");
+    }
+}
+
+
+// Runs a loop to detect if our hue device is linked
+function linkNano() {
+    console.log("Authorized: ", nanoAuth);
+    if (!nanoAuth && !nanoLinking) {
+        nanoLinking = true;
+        console.log("Trying to authorize with nanoleaf.");
+        $('#nanoBar').show();
+        const bar = new ProgressBar.Circle(nanoBar, {
+            strokeWidth: 15,
+            easing: 'easeInOut',
+            duration: 0,
+            color: '#0000FF',
+            trailColor: '#eee',
+            trailWidth: 0,
+            svgStyle: null,
+            value: 1
+        });
+
+        let x = 0;
+        nanoAuth = false;
+        const intervalID = window.setInterval(function () {
+            checkNanoAuth();
+            bar.animate((x / 30));
+            if (x++ === 30 || hueAuth) {
+                window.clearInterval(intervalID);
+                $('#nanoBar').hide();
+                nanoLinking = false;
+            }
+        }, 1000);
+
+        setTimeout(function () {
+            let cb = $('#nanoBar');
+            cb.html("");
+            cb.hide();
+            nanoLinking = false;
         }, 30000);
     } else {
         console.log("Already authorized.");

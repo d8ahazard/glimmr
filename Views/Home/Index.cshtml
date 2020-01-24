@@ -1,188 +1,194 @@
 ﻿@{
     ViewData["Title"] = "Home Page";
 }
-
-<div class="accordion wrapper" id="accordion">
-    <form method="post" action="./api/HueData" id="settingsForm">
-        <div class="card bg-dark text-white">
-            <div class="card-header" id="headingTwo">
-                <h2 class="mb-0">
-                    <button class="btn btn-outline-secondary collapsed" type="button" data-toggle="collapse" data-target="#collapseTwo"
-                            aria-expanded="false" aria-controls="collapseTwo">
-                        Dreamscreen
-                    </button>
-                </h2>
+    <div class="bmd-layout-container bmd-drawer-f-l bmd-drawer-overlay">
+        <header class="bmd-layout-header">
+            <div class="navbar navbar-dark bg-dark text-light">
+                <button class="navbar-toggler" type="button" data-toggle="drawer" data-target="#dw-s2">
+                    <span class="sr-only">Toggle drawer</span>
+                    <i class="material-icons">menu</i>
+                </button>
+                <ul class="nav navbar-nav">
+                    <li class="nav-item" id="navTitle"></li>
+                </ul>
             </div>
+        </header>
+        <div id="dw-s2" class="bmd-layout-drawer bg-dark text-light">
+            <a class="navbar-brand"><img src="~/img/huedream_logo.png" id="headerLogo"/></a>
+            <ul class="dev-group nav nav-list" id="devGroup">
+                
+            </ul>
+            <div class="settings-group btn-group">
+                <div class="btn"><img class="settingIcon" id="editGroups" src="./img/lock_icon.png" /></div>
+                <div class="btn"><img class="settingIcon" id="showSettings" src="./img/settings_icon.png" /></div>
+                <div class="btn"><img class="settingIcon" id="refreshDevices" src="./img/add_icon.png" /></div>
+            </div>
+        </div>
 
-            <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
-                <div class="card-body">
-                    <div class="container">
-                        <div class="row justify-content-center">
-                            <div class="form-group col-12 col-lg-10">
+        <main class="bmd-layout-content">
+            <div class="container">                
+                <form method="post" action="./api/HueData" id="settingsForm">
+                    <div class="card bg-dark text-white" id="dsCard">
+                        <div id="dsPane">
+                            <div class="card-body">
+                                <div class="container">
+                                    <div class="row justify-content-center">
+                                        <div class="form-group col-12 col-lg-10">
+                                            <div class="row justify-content-center">
+                                                <div class="col-2 col-sm-4" id="iconWrap">
+                                                </div>
+                                                <div id="dsData" class="col-6 col-sm-4">
+                                                    <div class="row">
+                                                        <span class="purdy">Name:</span><span id="dsName"></span>
+                                                    </div>
+                                                    <div class="row">
+                                                        <span class="purdy">IP:</span><span id="dsIp"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row justify-content-center">
+                                        <div class="col-6 col-sm-3 col-md-2 modeBtn" data-mode="0" id="mode0">
+                                            <img class="modeIcon" src="~/img/mode_off_icon.png" alt="" /><br />
+                                            <span>Off</span>
+                                        </div>
+                                        <div class="col-6 col-sm-3 col-md-2 modeBtn" data-mode="1" id="mode1">
+                                            <img class="modeIcon" src="~/img/mode_video_icon.png" alt="" /><br />
+                                            <span>Video</span>
+                                        </div>
+                                        <div class="col-6 col-sm-3 col-md-2 modeBtn" data-mode="2" id="mode2">
+                                            <img class="modeIcon" src="~/img/mode_audio_icon.png" alt="" /><br />
+                                            <span>Music</span>
+                                        </div>
+                                        <div class="col-6 col-sm-3 col-md-2 modeBtn" data-mode="3" id="mode3">
+                                            <img class="modeIcon" src="~/img/mode_ambient_icon.png" alt="" /><br />
+                                            <span>Ambient</span>
+                                        </div>
+
+                                    </div>                                    
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card bg-dark text-white" id="hueCard">
+                        <div id="huePane">
+                            <div class="card-body">
                                 <div class="row justify-content-center">
-                                    <div class="col-2 col-sm-4" id="iconWrap">
-                                    </div>
-                                    <div id="dsData" class="col-6 col-sm-4">
-                                        <div class="row">
-                                            <span class="purdy">Name:</span><span id="dsName"></span>
-                                        </div>
-                                        <div class="row">
-                                            <span class="purdy">Group:</span><span id="dsGroupName"></span>
-                                        </div>
-                                        <div class="row">
-                                            <span class="purdy">Type:</span><span id="dsTypeText"></span>
-                                        </div>
-                                        <div class="row">
-                                            <span class="purdy">Mode:</span><span id="dsMode"></span>
+                                    <div id="linkBtn">
+                                        <div id="linkImg" class="unlinked">
+                                            <div class="linkImg"></div>
+                                            <small id="hueIp" class="linkIp"></small>
+                                            <div id="circleBar"></div>
+                                            <small id="linkHint" class="linkHint">Click here to link bridge</small>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                        <div class="row justify-content-center">
-                            <div class="col-6 col-sm-3 col-md-2 modeBtn" data-mode="0" id="mode0">
-                                <img class="modeIcon" src="~/img/mode_off_icon.png" alt=""/><br/>
-                                <span>Off</span>
-                            </div>
-                            <div class="col-6 col-sm-3 col-md-2 modeBtn" data-mode="1" id="mode1">
-                                <img class="modeIcon" src="~/img/mode_video_icon.png" alt=""/><br/>
-                                <span>Video</span>
-                            </div>
-                            <div class="col-6 col-sm-3 col-md-2 modeBtn" data-mode="2" id="mode2">
-                                <img class="modeIcon" src="~/img/mode_audio_icon.png" alt=""/><br/>
-                                <span>Music</span>
-                            </div>
-                            <div class="col-6 col-sm-3 col-md-2 modeBtn" data-mode="3" id="mode3">
-                                <img class="modeIcon" src="~/img/mode_ambient_icon.png" alt=""/><br/>
-                                <span>Ambient</span>
-                            </div>
+                                <div>
+                                    <div class="previewWrap" id="previewWrap">
+                                        <div class="light-preview" id="lightPreview">
+                                            <div id="regions">
+                                                <div class="row sectorRow">
+                                                    <div class="lightRegion col" id="sector6">
+                                                        7
+                                                    </div>
+                                                    <div class="lightRegion col" id="sector5">
+                                                        6
+                                                    </div>
+                                                    <div class="lightRegion col" id="sector4">
+                                                        5
+                                                    </div>
+                                                    <div class="lightRegion col" id="sector3">
+                                                        4
+                                                    </div>
+                                                    <div class="lightRegion col" id="sector2">
+                                                        3
+                                                    </div>
+                                                </div>
+                                                <div class="row sectorRow">
+                                                    <div class="lightRegion col" id="sector7">
+                                                        8
+                                                    </div>
+                                                    <div class="centerRegion col">
+                                                    </div>
+                                                    <div class="centerRegion col">
+                                                    </div>
+                                                    <div class="centerRegion col">
+                                                    </div>
 
-
-                        </div>
-                        <div class="row">
-                            <div class="col-lg-6 col-12">
-                                <div class="form-group">
-                                    <label for="dsIp">Target DreamScreen:</label>
-                                    <select class="form-control bg-light text-dark" id="dsIp" name="dsIp">
-                                        <option value="">No devices found</option>
-                                    </select>
+                                                    <div class="lightRegion col" id="sector1">
+                                                        2
+                                                    </div>
+                                                </div>
+                                                <div class="row sectorRow">
+                                                    <div class="lightRegion col" id="sector8">
+                                                        9
+                                                    </div>
+                                                    <div class="lightRegion col" id="sector9">
+                                                        10
+                                                    </div>
+                                                    <div class="lightRegion col" id="sector10">
+                                                        11
+                                                    </div>
+                                                    <div class="lightRegion col" id="sector11">
+                                                        12
+                                                    </div>
+                                                    <div class="lightRegion col" id="sector0">
+                                                        1
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="container">
+                                    <div class="row justify-content-center">
+                                        <div class="col-md-12 col-lg-6">
+                                            <div class="form-group">
+                                                <label for="dsGroup">Entertainment Group:</label>
+                                                <select id="dsGroup" name="dsGroup" class="form-control bg-light text-dark dsGroup">
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row justify-content-center" id="mapSel">
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-lg-6 col-12">
-                                <div class="form-group">
-                                    <label for="emuType">Emulation Type:</label>
-                                    <select class="form-control bg-light text-dark emuType" id="emuType" name="emuType">
-                                        <option value="SideKick">Sidekick</option>
-                                        <option value="Connect">Connect</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row justify-content-center">
-                            <small id="typeHelp" class="form-text">WARNING: Connect will only work with the <a href="https://github.com/d8ahazard/HueDream/raw/master/DreamScreen%202.2.2.apk">beta version</a> of the DS app.</small>
                         </div>
                     </div>
-                </div>
+                    <div class="card bg-dark text-white" id="nanoCard">
+                        <div id="nanoPane">
+                            <div class="card-body">
+                                <div class="row justify-content-center">
+                                    <div id="nanoBtn">
+                                        <div id="nanoImg" class="unlinked">
+                                            <div class="linkImg"></div>
+                                            <small id="nanoIp" class="linkIp"></small>
+                                            <div id="nanoBar"></div>
+                                            <small id="nanoHint" class="linkHint">Click here to link Nanoleaf</small>
+                                        </div>
+                                    </div>                                    
+                                </div>
+                                <div class="row controlRow"></div>
+                                <div class="row previewRow" id="nanoContainer">
+                                    <div id="canvasDiv">
+                                        <canvas id="nanoCanvas" class="previewCanvas" width="1000" height="1000"></canvas>
+                                    </div>
+
+                                    <div class="previewWrap" id="nanoWrap">
+                                        <div class="light-preview" id="nanoPreview">
+
+                                        </div>
+                                    </div>
+                                </div>                                
+                            </div>
+                        </div>
+                    </div>
+                    <br>
+                    <button type="submit" class="btn btn-info active" OnClientClick="return false;">Save Settings</button>
+                </form>
+                
             </div>
-        </div>
-        <br/>
-        <div class="card bg-dark text-white">
-            <div class="card-header" id="headingThree">
-                <h2 class="mb-0">
-                    <button class="btn btn-outline-secondary collapsed" type="button" data-toggle="collapse" data-target="#collapseThree"
-                            aria-expanded="false" aria-controls="collapseThree">
-                        Hue
-                    </button>
-                </h2>
-            </div>
-
-            <div id="collapseThree" class="collapse" aria-labelledby="headingThree" data-parent="#accordion">
-                <div class="card-body">
-                    <div class="row justify-content-center">
-                        <div id="bridgePrev" class="btn btn-secondary btn-lg btn-outline arrowBtn"><<</div>
-                        <div id="linkBtn">
-                            <div id="linkImg" class="unlinked">
-                                <small id="hueIp"></small>
-                                <div id="circleBar"></div>
-                                <small id="linkHint">Click here to link bridge</small>
-                            </div>
-                        </div>
-                        <div id="bridgeNext" class="btn btn-secondary btn-lg btn-outline arrowBtn">>></div>
-                    </div>
-                    <div class="">
-                        <div class="previewWrap" id="previewWrap">
-                            <div class="light-preview" id="lightPreview">
-                                <div id="regions">
-                                    <div class="row sectorRow">
-                                        <div class="lightRegion col" id="sector6">
-                                            7
-                                        </div>
-                                        <div class="lightRegion col" id="sector5">
-                                            6
-                                        </div>
-                                        <div class="lightRegion col" id="sector4">
-                                            5
-                                        </div>
-                                        <div class="lightRegion col" id="sector3">
-                                            4
-                                        </div>
-                                        <div class="lightRegion col" id="sector2">
-                                            3
-                                        </div>
-                                    </div>
-                                    <div class="row sectorRow">
-                                        <div class="lightRegion col" id="sector7">
-                                            8
-                                        </div>
-                                        <div class="centerRegion col">
-                                        </div>
-                                        <div class="centerRegion col">
-                                        </div>
-                                        <div class="centerRegion col">
-                                        </div>
-
-                                        <div class="lightRegion col" id="sector1">
-                                            2
-                                        </div>
-                                    </div>
-                                    <div class="row sectorRow">
-                                        <div class="lightRegion col" id="sector8">
-                                            9
-                                        </div>
-                                        <div class="lightRegion col" id="sector9">
-                                            10
-                                        </div>
-                                        <div class="lightRegion col" id="sector10">
-                                            11
-                                        </div>
-                                        <div class="lightRegion col" id="sector11">
-                                            12
-                                        </div>
-                                        <div class="lightRegion col" id="sector0">
-                                            1
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="container">
-                        <div class="row justify-content-center">
-                            <div class="col-md-12 col-lg-6">
-                                <div class="form-group">
-                                    <label for="dsGroup">Entertainment Group:</label>
-                                    <select id="dsGroup" name="dsGroup" class="form-control bg-light text-dark dsGroup">
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row justify-content-center" id="mapSel">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <br>
-        <button type="submit" class="btn btn-info active" OnClientClick="return false;">Save Settings</button>
-    </form>
-</div>
+        </main>
+    </div>

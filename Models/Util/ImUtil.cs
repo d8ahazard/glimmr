@@ -86,7 +86,7 @@ namespace HueDream.Models.Util {
 
             PointF[] dst = { new PointF(0, 0), new PointF(maxWidth - 1, 0), new PointF(maxWidth - 1, maxHeight - 1), new PointF(0, maxHeight - 1) };
             var m = CvInvoke.GetPerspectiveTransform(rect, dst);
-            using Mat output = new Mat();
+            Mat output = new Mat();
             Size size = new Size(Convert.ToInt32(maxWidth), Convert.ToInt32(maxHeight));
             CvInvoke.WarpPerspective(input, output, m, size);
             return output;

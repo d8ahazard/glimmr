@@ -1,18 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using HueDream.Models.DreamGrab;
 using HueDream.Models.DreamScreen.Devices;
 using HueDream.Models.DreamScreen.Scenes;
 using HueDream.Models.Hue;
 using HueDream.Models.Util;
 using Microsoft.Extensions.Hosting;
+using Nanoleaf.Client;
 using Newtonsoft.Json;
+using Q42.HueApi.ColorConverters;
 
 namespace HueDream.Models.DreamScreen {
     public class DreamClient : IHostedService, IDisposable
@@ -20,10 +24,11 @@ namespace HueDream.Models.DreamScreen {
         private static bool _searching;
         private readonly DreamScene dreamScene;
         private readonly byte group;
-        private readonly string ambientColor;
+        private Color ambientColor;
         private readonly int ambientMode;
         private int ambientShow;
         private List<HueBridge> bridges;
+        private List<NanoleafClient> panels;
         private int brightness;
         private int captureMode;
 
@@ -35,6 +40,7 @@ namespace HueDream.Models.DreamScreen {
         private UdpClient listener;
 
         private Task listenTask;
+        private Task captureTask;
 
         // I don't know if we actually need all these
         private int prevAmbientMode;
@@ -50,7 +56,8 @@ namespace HueDream.Models.DreamScreen {
         private CancellationTokenSource showBuilderSource;
         // Token used for the ds listen loop
         private CancellationTokenSource listenTokenSource;
-
+        // Use this for capturing screen/video
+        private CancellationTokenSource captureTokenSource;
         // Use this to check if we've initialized our bridges
         private bool streamStarted;
 
@@ -59,6 +66,7 @@ namespace HueDream.Models.DreamScreen {
         // Use this to check if we've started our show builder
         private bool showBuilderStarted;
         private IPEndPoint targetEndpoint;
+        private LedStrip strip;
 
         public DreamClient() {
             var dd = DreamData.GetStore();
@@ -67,7 +75,7 @@ namespace HueDream.Models.DreamScreen {
             devMode = dev.Mode;
             ambientMode = dev.AmbientModeType;
             ambientShow = dev.AmbientShowType;
-            ambientColor = dev.AmbientColor;
+            ambientColor = ColorFromString(dev.AmbientColor);
             brightness = dev.Brightness;
             captureMode = dd.GetItem<int>("captureMode");
             // Set these to "unset" states
@@ -77,11 +85,16 @@ namespace HueDream.Models.DreamScreen {
             streamStarted = false;
             showBuilderStarted = false;
             string sourceIp = dd.GetItem("dsIp");
+            var ledData = dd.GetItem<LedData>("ledData") ?? new LedData(true);
+            if (ledData.UseLed) {
+                strip = new LedStrip(ledData);
+            }
             group = (byte) dev.GroupNumber;
             targetEndpoint = new IPEndPoint(IPAddress.Parse(sourceIp), 8888);
             dd.Dispose();
             disposed = false;
             bridges = new List<HueBridge>();
+            captureTokenSource = new CancellationTokenSource();
         }
 
 
@@ -131,10 +144,14 @@ namespace HueDream.Models.DreamScreen {
                 case 0:
                     StopShowBuilder();
                     StopStream();
+                    if (!captureTokenSource.IsCancellationRequested) captureTokenSource.Cancel();
                     break;
                 case 1:
+                    StartVideoCaptureTask();
+                    break;
                 case 2:
                     StopShowBuilder();
+                    StartAudioCaptureTask();
                     Console.WriteLine($@"DreamScreen: Subscribing to sector data for mode: {newMode}");
                     if (!streamStarted) StartStream();
                     Subscribe(true);
@@ -183,6 +200,11 @@ namespace HueDream.Models.DreamScreen {
             }
         }
 
+
+        private Color ColorFromString(string inputString) {
+            return ColorTranslator.FromHtml("#" + inputString);
+        }
+
         private void StartStream() {
             if (!streamStarted) {
                 LogUtil.Write("Starting stream.");
@@ -196,9 +218,9 @@ namespace HueDream.Models.DreamScreen {
                     b.DisableStreaming();
                     b.EnableStreaming(sendTokenSource.Token);
                     bridges.Add(b);
-                    LogUtil.Write("Stream started to " + bridge.Ip);
+                    LogUtil.Write("Stream started to " + bridge.IpV4Address);
                     streamStarted = true;
-                }
+                }                
             }
 
             if (streamStarted) LogUtil.WriteInc("Stream started.");
@@ -215,7 +237,7 @@ namespace HueDream.Models.DreamScreen {
             }
         }
 
-        public void SendColors(string[] colors, double fadeTime = 0) {
+        public void SendColors(Color[] colors, double fadeTime = 0) {
             //Console.WriteLine(@"Sending colors...");
             if (bridges.Count > 0) {
                 Console.WriteLine(@"Updating colors: " + JsonConvert.SerializeObject(colors));
@@ -223,6 +245,9 @@ namespace HueDream.Models.DreamScreen {
                     bridge.UpdateLights(colors, brightness, sendTokenSource.Token, fadeTime);
             } else {
                 Console.WriteLine(@"No bridges to update.");
+            }
+            if (strip != null) {                
+                strip.UpdateAll(colors);
             }
         }
 
@@ -246,13 +271,16 @@ namespace HueDream.Models.DreamScreen {
             }
         }
 
-        private void UpdateAmbientColor(string aColor) {
+        private void UpdateAmbientColor(Color aColor) {
             // Re initialize, just in case
             StopShowBuilder();
-            var colors = new string[12];
-            for (var i = 0; i < colors.Length; i++) colors[i] = "FFFFFF";
-            Console.WriteLine($@"DreamScreen: Setting ambient color to: {aColor}.");
-            for (var i = 0; i < colors.Length; i++) colors[i] = aColor;
+            var colors = new Color[12];
+            for (var i = 0; i < colors.Length; i++) colors[i] = Color.Black;
+            Console.WriteLine($@"DreamScreen: Setting ambient color to: {aColor.ToString()}.");
+            for (var i = 0; i < colors.Length; i++) {
+                colors[i] = aColor;
+            }
+            
             SendColors(colors);
         }
 
@@ -271,10 +299,7 @@ namespace HueDream.Models.DreamScreen {
                 listener.Client.Bind(listenEndPoint);
 
                 // Return listen task to kill later
-                return Task.Run(() => {
-                    if (captureMode == 1) {
-                        Task.Run(() => StartCapture(ct));
-                    }
+                return Task.Run(() => {                    
                     LogUtil.WriteInc("Listener started.");
                     while (!ct.IsCancellationRequested) {
                         var sourceEndPoint = new IPEndPoint(IPAddress.Any, 0);
@@ -286,13 +311,12 @@ namespace HueDream.Models.DreamScreen {
             catch (SocketException e) {
                 Console.WriteLine($@"Socket exception: {e.Message}.");
             }
-
             return null;
         }
 
-        private Task StartCapture(CancellationToken cancellationToken) {
+        private Task StartVideoCapture(CancellationToken cancellationToken) {
             Console.WriteLine("StartAsync has been fired.");
-            var grabber = new DreamGrab.DreamGrab();
+            var grabber = new DreamGrab.DreamGrab(this);
             LogUtil.Write("StartAsync fired.");
             var captureTask = grabber.StartCapture(cancellationToken);
             if (captureTask.IsCompleted) {
@@ -301,7 +325,28 @@ namespace HueDream.Models.DreamScreen {
 
             // Otherwise it's running
             return Task.CompletedTask;
+        }
 
+        private void StartVideoCaptureTask() {
+            if (captureMode == 0) return;
+            if (!captureTokenSource.IsCancellationRequested) {
+                captureTokenSource.Cancel();
+            }
+            captureTokenSource = new CancellationTokenSource();            
+            captureTask = Task.Run(() => StartVideoCapture(captureTokenSource.Token));            
+        }
+
+        private Task StartAudioCapture(CancellationToken cancellation) {
+            return Task.CompletedTask;
+        }
+
+        private void StartAudioCaptureTask() {
+            if (captureMode == 0) return;
+            if (!captureTokenSource.IsCancellationRequested) {
+                captureTokenSource.Cancel();
+            }
+            captureTokenSource = new CancellationTokenSource();
+            captureTask = Task.Run(() => StartAudioCapture(captureTokenSource.Token));
         }
 
 
@@ -311,7 +356,7 @@ namespace HueDream.Models.DreamScreen {
             if (!MsgUtils.CheckCrc(receivedBytes)) return;
             string command = null;
             string flag = null;
-            var from = receivedIpEndPoint.Address.ToString();
+            var from = receivedIpEndPoint.Address.ToString();            
             var replyPoint = new IPEndPoint(receivedIpEndPoint.Address, 8888);
             var payloadString = string.Empty;
             var payload = Array.Empty<byte>();
@@ -339,12 +384,12 @@ namespace HueDream.Models.DreamScreen {
                         DreamSender.SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x10, group, replyPoint);
                     break;
                 case "COLOR_DATA":
-                    if (devMode == 1 || devMode == 2) {
+                    if (captureMode == 0 && (devMode == 1 || devMode == 2)) {
                         var colorData = ByteUtils.SplitHex(payloadString, 6); // Swap this with payload
                         var lightCount = 0;
-                        var colors = new string[12];
+                        var colors = new Color[12];
                         foreach (var colorValue in colorData) {
-                            colors[lightCount] = colorValue;
+                            colors[lightCount] = ColorFromString(colorValue);
                             if (lightCount > 11) break;
                             lightCount++;
                         }
@@ -426,7 +471,7 @@ namespace HueDream.Models.DreamScreen {
                 case "AMBIENT_COLOR":
                     if (writeState) {
                         dev.AmbientColor = ByteUtils.ByteString(payload);
-                        UpdateAmbientColor(dev.AmbientColor);
+                        UpdateAmbientColor(ColorFromString(dev.AmbientColor));
                     }
 
                     break;

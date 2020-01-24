@@ -40,7 +40,6 @@ namespace HueDream.Models {
                 return output;
             }
             catch (KeyNotFoundException) { }
-
             return null;
         }
 

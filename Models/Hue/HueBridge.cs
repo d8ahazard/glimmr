@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,7 +26,7 @@ namespace HueDream.Models.Hue {
 
         public HueBridge(BridgeData data) {
             bd = data ?? throw new ArgumentNullException(nameof(data));
-            BridgeIp = bd.Ip;
+            BridgeIp = bd.IpV4Address;
             BridgeKey = bd.Key;
             BridgeUser = bd.User;
             client = StreamingSetup.GetClient(bd);
@@ -69,7 +70,7 @@ namespace HueDream.Models.Hue {
         /// <param name="brightness">The general brightness of the device</param>
         /// <param name="ct">A cancellation token</param>
         /// <param name="fadeTime">Optional: how long to fade to next state</param>
-        public void UpdateLights(string[] colors, int brightness, CancellationToken ct, double fadeTime = 0) {
+        public void UpdateLights(Color[] colors, int brightness, CancellationToken ct, double fadeTime = 0) {
             if (colors == null) throw new ArgumentNullException(nameof(colors));
             if (entLayer != null) {
                 var lightMappings = bd.Lights;
@@ -81,9 +82,9 @@ namespace HueDream.Models.Hue {
                     // Return if not mapped
                     if (lightData == null) continue;
                     // Otherwise, get the corresponding sector color
-                    var colorString = colors[lightData.TargetSector];
+                    var color = colors[lightData.TargetSector];
                     // Make it into a color
-                    var endColor = ClampBrightness(colorString, lightData, brightness);
+                    var endColor = ClampBrightness(color, lightData, brightness);
                     //var xyColor = HueColorConverter.RgbToXY(endColor, CIE1931Gamut.PhilipsWideGamut);
                     //endColor = HueColorConverter.XYToRgb(xyColor, GetLightGamut(lightData.ModelId));
                     // If we're currently using a scene, animate it
@@ -101,8 +102,8 @@ namespace HueDream.Models.Hue {
             }
         }
 
-        private RGBColor ClampBrightness(string colorString, LightData lightData, int brightness) {
-            var oColor = new RGBColor(colorString);
+        private RGBColor ClampBrightness(Color colorIn, LightData lightData, int brightness) {
+            var oColor = new RGBColor(colorIn.R, colorIn.G, colorIn.B);
             // Clamp our brightness based on settings
             long bClamp = 255 * brightness / 100;
             if (lightData.OverrideBrightness) {
@@ -142,6 +143,34 @@ namespace HueDream.Models.Hue {
             return null;
         }
 
+        public static List<BridgeData> GetBridgeData() {
+            var bridges = DreamData.GetItem<List<BridgeData>>("bridges");
+            var newBridges = FindBridges();
+            var nb = new List<BridgeData>();
+            if (bridges.Count > 0) {
+                foreach (var b in bridges) {
+                    if (b.Key != null && b.User != null) {
+                        var hb = new HueBridge(b);
+                        b.SetLights(hb.GetLights());
+                        b.SetGroups(hb.ListGroups().Result);
+                    }
+                    nb.Add(b);
+                }
+            }
+
+            foreach (var bb in newBridges) {
+                var exists = false;
+                foreach (var b in bridges) {
+                    if (bb.BridgeId == b.Id)
+                        exists = true;
+                }
+                if (!exists) {
+                    Console.WriteLine($@"Adding new bridge at {bb.IpAddress}.");
+                    nb.Add(new BridgeData(bb.IpAddress, bb.BridgeId));
+                }
+            }
+            return nb;
+        }
 
         public static LocatedBridge[] FindBridges(int time = 2) {
             Console.WriteLine(@"Hue: Looking for bridges...");

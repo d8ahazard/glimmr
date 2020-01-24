@@ -30,23 +30,25 @@
         <PackageReference Include="Emgu.CV" Version="4.1.1.3497" />
         <PackageReference Include="freetype2" Version="2.6.0.1" />
         <PackageReference Include="JsonFlatFileDataStore" Version="2.2.1" />
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.0.0" />
+        <PackageReference Include="Makaretu.Dns.Multicast" Version="0.27.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.1" />
         <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.1.0" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="3.1.0">
+        <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.1.1" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="3.1.1">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="3.1.0" />
-        <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.9.5" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="3.1.1" />
+        <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.9.10" />
         <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.0" />
-        <PackageReference Include="MMALSharp" Version="0.6.0-293" />
+        <PackageReference Include="MMALSharp" Version="0.6.0-297" />
+        <PackageReference Include="Nanoleaf.Core" Version="1.1.7.1" />
         <PackageReference Include="OpenCvSharp4" Version="4.2.0.20200108" />
         <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.2.0.20200108" />
-        <PackageReference Include="Q42.HueApi" Version="3.14.0" />
+        <PackageReference Include="Q42.HueApi" Version="3.14.1" />
         <PackageReference Include="Q42.HueApi.Entertainment" Version="3.14.0" />
         <PackageReference Include="ws281x.Net" Version="1.0.6" />
     </ItemGroup>
