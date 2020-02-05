@@ -24,6 +24,7 @@ namespace HueDream.Models.DreamScreen.Devices {
         }
 
         [JsonProperty] private byte[] EspFirmwareVersion { get; set; }
+        [JsonProperty] public int[] flexSetup { get; set; }
 
         [JsonProperty] private bool IsDemo { get; set; }
 

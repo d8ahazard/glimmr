@@ -12,6 +12,10 @@ a {
   color: #0366d6;
 }
 
+.hidden {
+    display: none;
+}
+
 .btn-primary {
   color: #fff;
   background-color: #1b6ec2;
@@ -78,6 +82,31 @@ body {
     margin: 15px;
 }
 
+#ledPreview {
+    
+}
+
+#ledImg {
+    margin: auto;
+    width: 90%;
+}
+
+.form-control {
+    color: lightgray;
+}
+
+.bmd-label-floating {
+    color: gray;
+}
+
+.bmd-help {
+    color: white !important;
+}
+
+.is-focused [class^='bmd-label'], .is-focused [class*=' bmd-label'], .is-focused [class^='bmd-label'], .is-focused [class*=' bmd-label'] {
+    color: #5b57e6;
+}
+
 .previewRow {
     border: 1px black solid;
 }
@@ -93,7 +122,7 @@ body {
 }
 
 #lightPreview {
-    background-image: url("../img/sectoring_tv.png");
+    background-image: url("../img/sectoring_tv2.png");
     background-size: cover;
     background-repeat: no-repeat;
     position: relative;
@@ -104,7 +133,7 @@ body {
 }
 
 #nanoPreview {
-    background-image: url("../img/sectoring_tv.png");
+    background-image: url("../img/start_tv.png");
     background-size: cover;
     background-repeat: no-repeat;
     position: relative;
@@ -165,14 +194,79 @@ select {
 }
 
 #dsData {
-    padding-top: 12px;
+    padding-top: 30px;
     padding-bottom: 12px;
     font-size: 16px;
 }
 
 
+#dsName {
+    font-size: 30px;
+}
+
+#dsIp {
+    font-size: 14px;
+    top: -10px;
+    position: relative;
+}
+
+
 .purdy {
     padding-right: 15px;
+}
+
+.modeLabel {
+    position: absolute;
+    bottom: -19px;
+    left: -1px;
+    width: 100%;
+    text-align: center;
+}
+
+.btnWrap {
+    display: inline-block;
+    position: relative;
+}
+
+.mapBrightness {
+    margin-top: 25px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    position: relative;
+    top: 0px;
+    z-index: 1;
+    width: 11px;
+    height: 11px;
+    cursor: pointer;
+    -webkit-box-shadow: 0px 6px 5px 0px rgba(0, 0, 0, 0.6);
+    -moz-box-shadow: 0px 6px 5px 0px rgba(0, 0, 0, 0.6);
+    box-shadow: 0px 6px 5px 0px rgba(0, 0, 0, 0.6);
+    -webkit-border-radius: 20px;
+    -moz-border-radius: 20px;
+    border-radius: 20px;
+    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #ebf1f6), color-stop(50%, #abd3ee), color-stop(51%, #89c3eb), color-stop(100%, #d5ebfb));
+}
+input[type="range"]:hover ~ #rangevalue,
+input[type="range"]:active ~ #rangevalue {
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=100)";
+    filter: alpha(opacity=100);
+    opacity: 1;
+    top: -75px;
+} 
+
+#iconWrap {
+    width: 80px;
+    height: 80px;
+    margin: 15px;
+}
+
+#iconWrap.group {
+    background-image: url("../img/group_icon.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 #iconWrap.Connect {
@@ -197,7 +291,7 @@ select {
 }
 
 #iconWrap.DreamScreenSolo {
-    background-image: url("../img/dreamscreenssolo_icon.png");
+    background-image: url("../img/dreamscreensolo_icon.png");
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
@@ -299,13 +393,20 @@ select {
     cursor: pointer;
 }
 
-
-.modeBtn.active {
-    background-color: gray;
+.capModeBtn, .capModeBtn img {
+    width: 75px;
+    height: 75px;
+    padding: 0;
+    margin: 0;
 }
 
-.modeBtn:hover {
-    background-color: darkgray;
+
+.btn.modeBtn.active {
+    background-color: #0006c7 !important;
+}
+
+.btn.modeBtn:hover {
+    background-color: #7a7fff !important;
 }
 
 
@@ -314,8 +415,8 @@ select {
 }
 
 .modeIcon {
-    width: 100%;
-    max-width: 50px;
+    width: 90%;
+    padding-top: 5%;
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
@@ -408,4 +509,9 @@ select {
 #nanoCanvas {
     position: absolute;
     z-index: 10;
+}
+
+.container-wide {
+    max-width: 100%;
+    width: 100%;
 }

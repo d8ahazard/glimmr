@@ -7,8 +7,10 @@ using System.Net.Sockets;
 using HueDream.Models.DreamGrab;
 using HueDream.Models.DreamScreen.Devices;
 using HueDream.Models.Hue;
+using HueDream.Models.Util;
 using JsonFlatFileDataStore;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace HueDream.Models {
     [Serializable]
@@ -56,6 +58,7 @@ namespace HueDream.Models {
             store.InsertItem("bridges", bData);
             store.InsertItem("ledData", lData);
             store.InsertItem("captureMode", 0);
+            store.InsertItem("camType", 1);
             store.InsertItem("devices", Array.Empty<BaseDevice>());
             return store;
         }
@@ -108,6 +111,25 @@ namespace HueDream.Models {
             else
                 dev = dd.GetItem<Connect>("myDevice");
             return dev;
+        }
+
+
+        public static (int, int) GetTargetLeds() {
+            var dsIp = GetItem<string>("dsIp");
+            var devs = GetItem<List<BaseDevice>>("devices");
+            foreach (var dev in devs) {
+                var tsIp = dev.IpAddress;
+                LogUtil.Write("TSIP: " + tsIp);
+                if (tsIp == dsIp) {
+                    LogUtil.Write("We have a matching IP");
+                    var fs = dev.flexSetup;
+                    var dX = fs[0];
+                    var dY = fs[1];
+                    LogUtil.Write($@"DX, DY: {dX} {dY}");
+                    return (dX, dY);
+                }
+            }
+            return (0,0);
         }
 
         /// <summary>

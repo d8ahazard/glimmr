@@ -71,7 +71,8 @@ namespace HueDream.Models.DreamScreen {
                 // Check and set colors if time is greater than animation int, then reset time count...
                 if (!(dTime > animationTime * 1000)) continue;
                 startTime = curTime;
-                dc.SendColors(RefreshColors(colors), animationTime);
+                var cols = RefreshColors(colors);
+                dc.SendColors(cols, cols, animationTime);
             }
 
             LogUtil.WriteDec($@"DreamScene: Color Builder canceled. {startTime}");

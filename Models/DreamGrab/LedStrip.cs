@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HueDream.Models.Util;
+using System;
 using System.Drawing;
 using ws281x.Net;
 
@@ -7,17 +8,24 @@ namespace HueDream.Models.DreamGrab {
         public int Brightness { get; set; }
         public int StartupAnimation { get; set; }
 
+        private int ledCount;
+
         private Neopixel neopixel;
         
         public LedStrip(LedData ld) {
+            LogUtil.Write("Initializing LED Strip.");
             Brightness = ld.Brightness;
             StartupAnimation = ld.StartupAnimation;
-            neopixel = new Neopixel(ld.LedCount, ld.PinNumber, ld.StripType);
+            ledCount = ld.LedCount;
+            LogUtil.Write($@"Bright, count, anim: {Brightness}, {ledCount}, {StartupAnimation}");            
+            var stripType = rpi_ws281x.WS2812_STRIP;
+            LogUtil.Write("Read variables, wtf...");
+            neopixel = new Neopixel(ld.LedCount, ld.PinNumber, stripType);
+            LogUtil.Write("Neopixel created.");
             neopixel.Begin();
         }
 
         public void Update() {
-            
             var pixelCount = neopixel.GetNumberOfPixels();
             for (var i = 0; i < pixelCount; i++) {
                 var progress = i / pixelCount;
@@ -27,13 +35,15 @@ namespace HueDream.Models.DreamGrab {
         }
         
         public void UpdateAll(Color[] colors) {
-            var lCount = 0;
-            if (colors != null)
-                foreach (var c in colors) {
-                    neopixel.SetPixelColor(lCount, c);
-                    lCount++;
+            var iSource = 0;
+            var destArray = new Color[ledCount];
+            for (var i = 0; i < ledCount; i++) {
+                if (iSource >= colors.Length) {
+                    iSource = 0; // reset if at end of source
                 }
-
+                neopixel.SetPixelColor(i, colors[iSource]);
+                destArray[i] = colors[iSource++];
+            }
             neopixel.Show();
         }
 

@@ -45,16 +45,17 @@ namespace HueDream.Models.Hue {
         ///     Set up and create a new streaming layer based on our light map
         /// </summary>
         /// <param name="ct">A cancellation token.</param>
-        public void EnableStreaming(CancellationToken ct) {
+        public bool EnableStreaming(CancellationToken ct) {
             // Get our light map and filter for mapped lights
             Console.WriteLine($@"Hue: Connecting to bridge at {BridgeIp}...");
             // Grab our stream
             var stream = StreamingSetup.SetupAndReturnGroup(client, bd, ct).Result;
             // This is what we actually need
+            if (stream == null) return false;
             entLayer = stream.GetNewLayer(true);
             LogUtil.WriteInc($"Streaming established: {BridgeIp}");
             streaming = true;
-
+            return streaming;
         }
         
         public void DisableStreaming() {
@@ -123,6 +124,7 @@ namespace HueDream.Models.Hue {
             var all = await client.LocalHueClient.GetEntertainmentGroups().ConfigureAwait(true);
             var output = new List<Group>();
             output.AddRange(all);
+            LogUtil.Write("Listed");
             return output;
         }
 
@@ -148,17 +150,22 @@ namespace HueDream.Models.Hue {
             var newBridges = FindBridges();
             var nb = new List<BridgeData>();
             if (bridges.Count > 0) {
+                LogUtil.Write("We have existing bridges.");
                 foreach (var b in bridges) {
                     if (b.Key != null && b.User != null) {
                         var hb = new HueBridge(b);
                         b.SetLights(hb.GetLights());
+                        LogUtil.Write("Listing groups?");
                         b.SetGroups(hb.ListGroups().Result);
+                        LogUtil.Write("Groups listed.");
+                        
                     }
                     nb.Add(b);
                 }
             }
 
             foreach (var bb in newBridges) {
+                LogUtil.Write("We have new bridges?");
                 var exists = false;
                 foreach (var b in bridges) {
                     if (bb.BridgeId == b.Id)
@@ -167,6 +174,8 @@ namespace HueDream.Models.Hue {
                 if (!exists) {
                     Console.WriteLine($@"Adding new bridge at {bb.IpAddress}.");
                     nb.Add(new BridgeData(bb.IpAddress, bb.BridgeId));
+                } else {
+                    LogUtil.Write("Nothing to add.");
                 }
             }
             return nb;
@@ -196,7 +205,7 @@ namespace HueDream.Models.Hue {
                 foreach (var unused in lights.Where(oLight => oLight.Id == light.Id)) add = false;
                 if (add) output.Add(light);
             }
-
+            LogUtil.Write("Lights retrieved...");
             lights.AddRange(output);
             return lights;
         }

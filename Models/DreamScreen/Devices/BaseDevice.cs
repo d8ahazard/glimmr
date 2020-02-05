@@ -21,6 +21,7 @@ namespace HueDream.Models.DreamScreen.Devices {
         [DataMember] [JsonProperty] public string Tag { get; set; }
         [DataMember] [JsonProperty] public string AmbientColor { get; set; }
         [DataMember] [JsonProperty] public int AmbientModeType { get; set; }
+        [DataMember] [JsonProperty] public int[] flexSetup { get; set; }
         [DataMember] [JsonProperty] public int Brightness { get; set; }
         [DataMember] [JsonProperty] public string Name { get; set; }
         [DataMember] [JsonProperty] public string GroupName { get; set; }

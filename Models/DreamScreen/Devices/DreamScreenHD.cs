@@ -11,7 +11,7 @@ namespace HueDream.Models.DreamScreen.Devices {
 
         [JsonProperty] private byte[] appMusicData;
 
-        [JsonProperty] private int[] flexSetup;
+        [JsonProperty] public int[] flexSetup { get; set; }
 
         [JsonProperty] private int[] musicModeColors;
 

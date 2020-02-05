@@ -60,8 +60,8 @@ namespace HueDream.Models.Util {
         /// <returns>
         ///     A byte representation of the integer.
         /// </returns>
-        public static byte IntByte(int toByte) {
-            var b = Convert.ToByte(toByte.ToString("X2", Format), 16);
+        public static byte IntByte(int toByte, string format = "X2") {
+            var b = Convert.ToByte(toByte.ToString(format, Format), 16);
             return b;
         }
 
@@ -133,6 +133,13 @@ namespace HueDream.Models.Util {
             }
 
             return byteOut;
+        }
+
+        public static byte[] PadInt(int toPad, int take = 2) {
+            byte[] intBytes = BitConverter.GetBytes(toPad);
+            Array.Reverse(intBytes);
+            intBytes = intBytes.Reverse().Take(take).Reverse().ToArray();
+            return intBytes;
         }
 
         public static string ByteString(byte[] input) {

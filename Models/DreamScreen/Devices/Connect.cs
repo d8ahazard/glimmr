@@ -15,6 +15,7 @@ namespace HueDream.Models.DreamScreen.Devices {
         private static readonly byte[] RequiredEspFirmwareVersion = {0, 4};
 
         [JsonProperty] private byte[] espFirmwareVersion;
+        [JsonProperty] public int[] flexSetup { get; set; }
 
         public Connect() { }
 

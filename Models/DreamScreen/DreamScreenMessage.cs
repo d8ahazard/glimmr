@@ -10,6 +10,7 @@ namespace HueDream.Models.DreamScreen {
         private readonly byte[] payload;
 
         public DreamScreenMessage(byte[] bytesIn, string from) {
+            IpAddress = from;
             var byteString = BitConverter.ToString(bytesIn);
             var bytesString = byteString.Split("-");
             var magic = bytesString[0];
@@ -19,7 +20,7 @@ namespace HueDream.Models.DreamScreen {
                 return;
             }
 
-            int len = bytesIn[1];
+            len = bytesIn[1];
             Group = bytesIn[2];
             Flags = bytesString[3];
             var cmd = bytesString[4] + bytesString[5];
@@ -34,7 +35,7 @@ namespace HueDream.Models.DreamScreen {
                     ? BitConverter.ToString(payload).Replace("-", string.Empty, StringComparison.CurrentCulture)
                     : "";
             }
-
+            
             if (Command == "DEVICE_DISCOVERY" && Flags == "60" && len > 46) {
                 int devType = payload[^1];
                 switch (devType) {
@@ -79,6 +80,8 @@ namespace HueDream.Models.DreamScreen {
         [JsonProperty] public string IpAddress { get; set; }
 
         public bool IsValid { get; }
+        
+        public int len { get; set; }
         public BaseDevice Device { get; }
 
         public byte[] GetPayload() {

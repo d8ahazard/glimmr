@@ -15,6 +15,7 @@ namespace HueDream.Models.DreamScreen.Devices {
         [JsonProperty] int GroupNumber { get; set; }
 
         [JsonProperty] int Mode { get; set; }
+        [JsonProperty] public int[] flexSetup { get; set; }
 
         [JsonProperty] int AmbientModeType { get; set; }
 

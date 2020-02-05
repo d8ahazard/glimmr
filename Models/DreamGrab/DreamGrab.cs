@@ -1,60 +1,60 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
-using Emgu.CV.UI;
 using Emgu.CV.Util;
 using HueDream.Models.DreamScreen;
 using HueDream.Models.Util;
-using Microsoft.Extensions.Hosting;
-using Newtonsoft.Json;
-using Point = System.Drawing.Point;
 
 namespace HueDream.Models.DreamGrab {
-        
     public class DreamGrab {
         private int lockCount;
-        private VectorOfPoint lockTarget;
         private VectorOfPoint target;
-        private static int scale_height = 300;
-        private static int scale_width = 400;
+        private const int ScaleHeight = 300;
+        private const int ScaleWidth = 400;
         private bool targetLocked;
-        private LedData ledData;
+        private readonly LedData ledData;
+        private readonly PointF[] vectors;
+        private readonly DreamClient dc;
+        private readonly int camType;
+        private VectorOfPoint lockTarget;
         private LedStrip strip;
         private CancellationTokenSource cts;
-        private PointF[] vects;
-        private DreamClient dc;
+
 
         public DreamGrab(DreamClient client) {
             LogUtil.Write("Dreamgrab Initialized.");
             dc = client;
             ledData = DreamData.GetItem<LedData>("ledData");
+            camType = DreamData.GetItem<int>("camType");
             var tl = new Point(0, 0);
-            var tr = new Point(scale_width, 0);
-            var br = new Point(scale_width, scale_height);
-            var bl = new Point(0, scale_height);
-            vects = new PointF[]{ tl, tr, br, bl };
+            var tr = new Point(ScaleWidth, 0);
+            var br = new Point(ScaleWidth, ScaleHeight);
+            var bl = new Point(0, ScaleHeight);
+            vectors = new PointF[] {tl, tr, br, bl};
 
             LogUtil.Write("Init done?");
         }
 
-        public IVideoStream GetCamera() {
-            if (ledData.CamType == 0) { // 0 = pi module, 1 = webcam, 3 = capture?
-                LogUtil.Write("Loading Pi cam.");
-                return new PiVideoStream();
-            } else if (ledData.CamType == 1) {
-                LogUtil.Write("Loading webcam.");
-                return new WebCamVideoStream(ledData.StreamId);
-            } else {
-                return new CaptureVideoStream();
+        private IVideoStream GetCamera() {
+            if (dc.CaptureMode != 1 && dc.CaptureMode != 2)
+                return dc.CaptureMode == 3 ? new CaptureVideoStream() : null;
+            switch (camType) {
+                case 0:
+                    // 0 = pi module, 1 = web cam, 3 = capture?
+                    LogUtil.Write("Loading Pi cam.");
+                    return new PiVideoStream();
+                case 1:
+                    LogUtil.Write("Loading web cam.");
+                    return new WebCamVideoStream(0);
             }
-        }        
+
+            return null;
+        }
 
         public Task StartCapture(CancellationToken cancellationToken) {
             return Task.Run(() => {
@@ -62,86 +62,83 @@ namespace HueDream.Models.DreamGrab {
                 var cam = GetCamera();
                 cam.Start(cancellationToken);
                 LogUtil.Write("Cam started?");
-                var splitter = new Splitter(ledData, scale_width, scale_height);
+                var splitter = new Splitter(ledData, ScaleWidth, ScaleHeight);
                 LogUtil.Write("Splitter created.");
-                while (true) {
-                    var frame = cam.frame;                    
+                while (!cancellationToken.IsCancellationRequested) {
+                    var frame = cam.frame;
                     if (frame != null) {
-                        if (frame.Bitmap == null) continue;
+                        if (frame.Cols == 0) continue;
                         var warped = ProcessFrame(frame);
-                        if (warped != null) {
-                            var colors = splitter.GetColors(warped);
-                            dc.SendColors(colors);
-                        }
+                        if (warped == null) continue;
+                        var colors = splitter.GetColors(warped);
+                        var sectors = splitter.GetSectors(warped);
+                        dc.SendColors(colors, sectors);
                     } else {
                         LogUtil.Write("Frame is null?");
                     }
                 }
+                return Task.CompletedTask;
             });
         }
 
         private Mat ProcessFrame(Mat input) {
-            if (ledData.CamType != 3) {
+            if (camType != 3) {
                 return GetScreen(input);
-            } else {
-                return input;
             }
+
+            return input;
         }
 
-        
+
         private Mat GetScreen(Mat input) {
-            Mat warped = null;            
-            VectorOfPoint approxContour = new VectorOfPoint();
-            Mat scaled = new Mat();            
-            var srcArea = scale_width * scale_height;
-            CvInvoke.Resize(input, scaled, new Size(scale_width, scale_height), 0, 0, Inter.Linear);
+            Mat warped = null;
+            var approxContour = new VectorOfPoint();
+            var scaled = new Mat();
+            const int srcArea = ScaleWidth * ScaleHeight;
+            CvInvoke.Resize(input, scaled, new Size(ScaleWidth, ScaleHeight));
 
             // If target isn't locked, then find it.
             if (!targetLocked) {
                 target = null;
-                Mat cannyEdges = new Mat();
-                Mat uimage = new Mat();
-                Mat gray = new Mat();
+                var cannyEdges = new Mat();
+                var uImage = new Mat();
+                var gray = new Mat();
                 // Convert to greyscale
-                CvInvoke.CvtColor(scaled, uimage, ColorConversion.Bgr2Gray);
-                CvInvoke.BilateralFilter(uimage, gray, 11, 17, 17);
+                CvInvoke.CvtColor(scaled, uImage, ColorConversion.Bgr2Gray);
+                CvInvoke.BilateralFilter(uImage, gray, 11, 17, 17);
                 // Get edged version
-                double cannyThreshold = 0.0;
-                double cannyThresholdLinking = 200.0;
+                const double cannyThreshold = 0.0;
+                const double cannyThresholdLinking = 200.0;
                 CvInvoke.Canny(gray, cannyEdges, cannyThreshold, cannyThresholdLinking);
                 // Get contours
-                using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint()) {
-                    MCvScalar color = new MCvScalar(255, 255, 0);
+                using (var contours = new VectorOfVectorOfPoint()) {
+                    var color = new MCvScalar(255, 255, 0);
                     CvInvoke.DrawContours(scaled, contours, -1, color);
-                    CvInvoke.FindContours(cannyEdges, contours, null, RetrType.List, ChainApproxMethod.ChainApproxSimple);
-                    int count = contours.Size;
+                    CvInvoke.FindContours(cannyEdges, contours, null, RetrType.List,
+                        ChainApproxMethod.ChainApproxSimple);
+                    var count = contours.Size;
                     // Looping contours
-                    for (int i = 0; i < count; i++) {
-                        using (VectorOfPoint contour = contours[i]){
-                            CvInvoke.ApproxPolyDP(contour, approxContour, CvInvoke.ArcLength(contour, true) * 0.02, true);
-                            var cntArea = CvInvoke.ContourArea(approxContour, false);
-                            LogUtil.Write($@"Contour area is {cntArea}, source area is {srcArea}.");
-                            if (cntArea / srcArea > .25) //only consider contours with area greater than 25% total screen
-                            {
-                                if (approxContour.Size == 4) //The contour has 4 vertices.
-                                {
-                                    Console.WriteLine("We have a big box.");
-                                    lockCount++;
-                                    if (lockCount > 30) {
-                                        LogUtil.Write("TARGET LOCKED!");
-                                        targetLocked = true;
-                                        target = approxContour;
-                                        break;
-                                    }                                    
-                                }
-                            }
-                        }
+                    for (var i = 0; i < count; i++) {
+                        using var contour = contours[i];
+                        CvInvoke.ApproxPolyDP(contour, approxContour, CvInvoke.ArcLength(contour, true) * 0.02,
+                            true);
+                        var cntArea = CvInvoke.ContourArea(approxContour);
+                        LogUtil.Write($@"Contour area is {cntArea}, source area is {srcArea}.");
+                        if (!(cntArea / srcArea > .25)) continue;
+                        if (approxContour.Size != 4) continue;
+                        Console.WriteLine("We have a big box.");
+                        lockCount++;
+                        if (lockCount <= 30) continue;
+                        LogUtil.Write("TARGET LOCKED!");
+                        targetLocked = true;
+                        target = approxContour;
+                        break;
                     }
                 }
-                //CvInvoke.Imshow("Input", scaled);
+
                 CvInvoke.Imshow("Edged", cannyEdges);
                 cannyEdges.Dispose();
-                uimage.Dispose();
+                uImage.Dispose();
                 gray.Dispose();
             }
 
@@ -153,38 +150,25 @@ namespace HueDream.Models.DreamGrab {
                 warped = outImg;
                 CvInvoke.Imshow("Warped!", warped);
             }
+
             CvInvoke.WaitKey(1);
             scaled.Dispose();
             return warped;
         }
 
 
-        private Mat GetWarp(VectorOfPoint target) {            
-            var ta = target.ToArray();
+        private Mat GetWarp(VectorOfPoint wTarget) {
+            var ta = wTarget.ToArray();
             var pointList = new List<PointF>();
             foreach (PointF p in ta) {
                 pointList.Add(p);
             }
             var pointArray = pointList.ToArray();
-            var warpMat = CvInvoke.FindHomography(pointArray, vects, RobustEstimationAlgorithm.AllPoints);
+            var warpMat = CvInvoke.FindHomography(pointArray, vectors);
             return warpMat;
         }
-       
-        
-        private void UpdateStrip(Color[] colors) {
-            if (strip != null) {
-                strip.UpdateAll(colors);
-            }
-        }
 
-        public Task StopAsync(CancellationToken cancellationToken) {
-            try {
-                Console.WriteLine(@"StopAsync called.");
-                cts.Cancel();
-            } finally {
-                LogUtil.WriteDec(@"DreamGrabber done.");
-            }
-            return Task.CompletedTask;
-        }
+
+      
     }
 }

@@ -6,22 +6,19 @@ using HueDream.Models.Util;
 
 namespace HueDream.Models.DreamGrab {
     public class Splitter {
-        private int numLeft;
-        private int numRight;
-        private int numTop;
-        private int numBottom;
+        private int vCount;
+        private int hCount;
         private List<Rectangle> areaCoords;
-        private List<Rectangle> areaRects;
+        private List<Rectangle> areaSectors;
         private int border_width = 20;
         private int border_height = 20;
         
         public Splitter(LedData ld, int srcWidth, int srcHeight) {
-            numLeft = ld.CountLeft;
-            numRight = ld.CountRight;
-            numBottom = ld.CountBottom;
-            numTop = ld.CountTop;
-            LogUtil.Write($@"Splitter init, {numLeft}, {numRight}, {numBottom}, {numTop}");
+            vCount = ld.VCount;
+            hCount = ld.HCount;
+            LogUtil.Write($@"Splitter init, {vCount}, {vCount}, {hCount}, {hCount}");
             DrawGrid(srcWidth, srcHeight);
+            DrawSectors(srcWidth, srcHeight);
         }
 
         private Color GetAverage(Mat input) {
@@ -31,16 +28,24 @@ namespace HueDream.Models.DreamGrab {
         
         public Color[] GetColors(Mat input) {
             var output = new List<Color>();
-            foreach(Rectangle r in areaCoords) {
-                Mat sub = new Mat(input, r);
+            foreach(var r in areaCoords) {
+                var sub = new Mat(input, r);
                 output.Add(GetAverage(sub));
             }
             return output.ToArray();
-        } 
+        }
+        
+        public Color[] GetSectors(Mat input) {
+            var output = new List<Color>();
+            foreach(var r in areaSectors) {
+                var sub = new Mat(input, r);
+                output.Add(GetAverage(sub));
+            }
+            return output.ToArray();
+        }
 
         private void DrawGrid(int srcWidth, int srcHeight) {
             LogUtil.Write("Drawing grid...");
-            areaRects = new List<Rectangle>();
             areaCoords = new List<Rectangle>();
             LogUtil.Write("Lists created?");
             var h = srcHeight;
@@ -62,20 +67,20 @@ namespace HueDream.Models.DreamGrab {
             var r_right = w;
             LogUtil.Write("Dafuq.");
             // Steps
-            var t_step = w / numTop;
-            var b_step = w / numBottom;
-            var l_step = h / numLeft;
-            var r_step = h / numRight;
+            var t_step = w / hCount;
+            var b_step = w / hCount;
+            var l_step = h / vCount;
+            var r_step = h / vCount;
             LogUtil.Write("Steps calculated...");
             // Calc right regions, bottom to top
-            var step = numRight - 1;
+            var step = vCount - 1;
             while (step >= 0) {
                 var ord = step * r_step;
                 areaCoords.Add(new Rectangle(r_left, ord, r_right - r_left, step));
                 step--;
             }
             LogUtil.Write("Done with right calc?");
-            step = numTop - 1;
+            step = hCount - 1;
             // Calc top regions, from right to left
             while (step >= 0) {
                 var ord = step * t_step;
@@ -85,7 +90,7 @@ namespace HueDream.Models.DreamGrab {
 
             step = 0;
             // Calc left regions (top to bottom)
-            while (step < numLeft) {
+            while (step < vCount) {
                 var ord = step * l_step;
                 areaCoords.Add(new Rectangle(l_left, ord, l_right - l_left, step));
                 step++;
@@ -93,12 +98,81 @@ namespace HueDream.Models.DreamGrab {
 
             step = 0;
             // Calc bottom regions (L-R)
-            while (step < numBottom) {
+            while (step < hCount) {
                 var ord = step * b_step;
                 areaCoords.Add(new Rectangle(ord, b_top, step, b_bott - b_top));
                 step += 1;
             }
             LogUtil.Write("Grid drawn, we have " + areaCoords.Count + " items.");
+        }
+        
+        private void DrawSectors(int srcWidth, int srcHeight) {
+            LogUtil.Write("Drawing sectors...");
+            areaSectors = new List<Rectangle>();
+            LogUtil.Write("Lists created?");
+            var h = srcHeight;
+            var w = srcWidth;
+
+            var t_top = 0;
+            var t_bott = border_height;
+
+            // Bottom Gridlines
+            var b_top = h - t_bott;
+            var b_bott = h;
+
+            // Left Column Border
+            var l_left = 0;
+            var l_right = border_width;
+
+            // Right Column Border
+            int r_left = w - l_right;
+            var r_right = w;
+            LogUtil.Write("Dafuq.");
+            // Steps
+            var h_step = w / 5;
+            var v_step = h / 3;
+            LogUtil.Write("Steps calculated...");
+            // Calc right regions, bottom to top
+            var step = vCount - 1;
+            while (step >= 0) {
+                var ord = step * v_step;
+                areaSectors.Add(new Rectangle(r_left, ord, r_right - r_left, step));
+                step--;
+            }
+            LogUtil.Write("Done with right calc?");
+            step = hCount - 2;
+            // Calc top regions, from right to left, skipping topright corner
+            while (step >= 0) {
+                var ord = step * h_step;
+                areaSectors.Add(new Rectangle(ord, t_top, step, t_bott - t_top));
+                step--;
+            }
+
+            step = 1;
+            // Calc left regions (top to bottom), skipping topleft
+            while (step < vCount) {
+                var ord = step * v_step;
+                areaSectors.Add(new Rectangle(l_left, ord, l_right - l_left, step));
+                step++;
+            }
+
+            step = 1;
+            // Calc bottom regions (L-R)
+            while (step < hCount) {
+                var ord = step * h_step;
+                areaSectors.Add(new Rectangle(ord, b_top, step, b_bott - b_top));
+                step += 1;
+            }
+            
+            // Calculate middle (13-15)
+            step = 3;
+            // Calc bottom regions (L-R)
+            while (step > 0) {
+                var ord = step * h_step;
+                areaSectors.Add(new Rectangle(ord, t_bott, step, b_bott - b_top));
+                step += 1;
+            }
+            LogUtil.Write("Sectors drawn, we have " + areaCoords.Count + " items.");
         }
     }
 }
