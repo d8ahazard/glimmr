@@ -46,8 +46,6 @@
         <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.1" />
         <PackageReference Include="MMALSharp" Version="0.6.0-297" />
         <PackageReference Include="Nanoleaf.Core" Version="1.1.7.1" />
-        <PackageReference Include="OpenCvSharp4" Version="4.2.0.20200108" />
-        <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.2.0.20200108" />
         <PackageReference Include="Q42.HueApi" Version="3.15.0" />
         <PackageReference Include="Q42.HueApi.Entertainment" Version="3.15.0" />
         <PackageReference Include="ws281x.Net" Version="1.0.6" />
