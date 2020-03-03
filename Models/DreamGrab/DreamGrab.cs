@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
@@ -9,18 +11,26 @@ using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using HueDream.Models.DreamScreen;
 using HueDream.Models.Util;
+using Newtonsoft.Json;
 
 namespace HueDream.Models.DreamGrab {
     public class DreamGrab {
         private int lockCount;
         private VectorOfPoint target;
-        private const int ScaleHeight = 300;
-        private const int ScaleWidth = 400;
+        private int ScaleHeight = 400;
+        private int ScaleWidth = 600;
+        private int camWidth;
+        private int camHeight;
+        private float scaleFactor;
+        private bool showSource;
+        private bool showEdged;
+        private bool showWarped;
         private bool targetLocked;
-        private readonly LedData ledData;
-        private readonly PointF[] vectors;
+        private PointF[] vectors;
+        private int camType;
+        private LedData ledData;
+
         private readonly DreamClient dc;
-        private readonly int camType;
         private VectorOfPoint lockTarget;
         private LedStrip strip;
         private CancellationTokenSource cts;
@@ -29,15 +39,26 @@ namespace HueDream.Models.DreamGrab {
         public DreamGrab(DreamClient client) {
             LogUtil.Write("Dreamgrab Initialized.");
             dc = client;
+            setCapVars();
+            LogUtil.Write("Init done?");
+        }
+
+        private void setCapVars() {
             ledData = DreamData.GetItem<LedData>("ledData");
             camType = DreamData.GetItem<int>("camType");
+            camWidth = DreamData.GetItem<int>("camWidth") ?? 1920;
+            camHeight = DreamData.GetItem<int>("camHeight") ?? 1080;
+            scaleFactor = DreamData.GetItem<float>("scaleFactor") ?? .5;
+            ScaleWidth = Convert.ToInt32(camWidth * scaleFactor);
+            ScaleHeight = Convert.ToInt32(camHeight * scaleFactor);
             var tl = new Point(0, 0);
             var tr = new Point(ScaleWidth, 0);
             var br = new Point(ScaleWidth, ScaleHeight);
             var bl = new Point(0, ScaleHeight);
-            vectors = new PointF[] {tl, tr, br, bl};
-
-            LogUtil.Write("Init done?");
+            showSource = DreamData.GetItem<bool>("showSource") ?? false;
+            showEdged = DreamData.GetItem<bool>("showEdged") ?? false;
+            showWarped = DreamData.GetItem<bool>("showWarped") ?? false;
+            vectors = new PointF[] { tl, tr, br, bl };
         }
 
         private IVideoStream GetCamera() {
@@ -47,7 +68,8 @@ namespace HueDream.Models.DreamGrab {
                 case 0:
                     // 0 = pi module, 1 = web cam, 3 = capture?
                     LogUtil.Write("Loading Pi cam.");
-                    return new PiVideoStream();
+                    var camMode = DreamData.GetItem<int>("camMode") ?? 1;
+                    return new PiVideoStream(camWidth, camHeight, camMode);
                 case 1:
                     LogUtil.Write("Loading web cam.");
                     return new WebCamVideoStream(0);
@@ -58,13 +80,14 @@ namespace HueDream.Models.DreamGrab {
 
         public Task StartCapture(CancellationToken cancellationToken) {
             return Task.Run(() => {
+                setCapVars();
                 LogUtil.Write("Start Capture should be running...");
                 var cam = GetCamera();
-                cam.Start(cancellationToken);
+                Task.Run(() => cam.Start(cancellationToken));
                 LogUtil.Write("Cam started?");
                 var splitter = new Splitter(ledData, ScaleWidth, ScaleHeight);
                 LogUtil.Write("Splitter created.");
-                while (!cancellationToken.IsCancellationRequested) {
+                while (!cancellationToken.IsCancellationRequested) {                    
                     var frame = cam.frame;
                     if (frame != null) {
                         if (frame.Cols == 0) continue;
@@ -73,8 +96,6 @@ namespace HueDream.Models.DreamGrab {
                         var colors = splitter.GetColors(warped);
                         var sectors = splitter.GetSectors(warped);
                         dc.SendColors(colors, sectors);
-                    } else {
-                        LogUtil.Write("Frame is null?");
                     }
                 }
                 return Task.CompletedTask;
@@ -94,11 +115,15 @@ namespace HueDream.Models.DreamGrab {
             Mat warped = null;
             var approxContour = new VectorOfPoint();
             var scaled = new Mat();
-            const int srcArea = ScaleWidth * ScaleHeight;
-            CvInvoke.Resize(input, scaled, new Size(ScaleWidth, ScaleHeight));
+            int srcArea = ScaleWidth * ScaleHeight;
+            var scaleSize = new Size(ScaleWidth, ScaleHeight);
+            LogUtil.Write("Input dimensions are " + input.Width + " and " + input.Height);
+            if (showSource) CvInvoke.Imshow("Source", input);
+            CvInvoke.Resize(input, scaled, scaleSize);
 
             // If target isn't locked, then find it.
             if (!targetLocked) {
+                LogUtil.Write("No target, looking for stuff.");
                 target = null;
                 var cannyEdges = new Mat();
                 var uImage = new Mat();
@@ -124,7 +149,7 @@ namespace HueDream.Models.DreamGrab {
                             true);
                         var cntArea = CvInvoke.ContourArea(approxContour);
                         LogUtil.Write($@"Contour area is {cntArea}, source area is {srcArea}.");
-                        if (!(cntArea / srcArea > .25)) continue;
+                        if (!(cntArea / srcArea > .15)) continue;
                         if (approxContour.Size != 4) continue;
                         Console.WriteLine("We have a big box.");
                         lockCount++;
@@ -135,8 +160,8 @@ namespace HueDream.Models.DreamGrab {
                         break;
                     }
                 }
-
-                CvInvoke.Imshow("Edged", cannyEdges);
+                LogUtil.Write("Edged width is " + cannyEdges.Width + " and " + cannyEdges.Height);
+                if (showEdged) CvInvoke.Imshow("Edged", cannyEdges);
                 cannyEdges.Dispose();
                 uImage.Dispose();
                 gray.Dispose();
@@ -144,14 +169,28 @@ namespace HueDream.Models.DreamGrab {
 
             if (targetLocked && target != null) {
                 var warpMat = GetWarp(target);
-                var scaleSize = new Size(scaled.Cols, scaled.Rows);
                 var outImg = new Mat();
                 CvInvoke.WarpPerspective(scaled, outImg, warpMat, scaleSize);
                 warped = outImg;
-                CvInvoke.Imshow("Warped!", warped);
+                if (showWarped) CvInvoke.Imshow("Warped!", warped);
             }
 
-            CvInvoke.WaitKey(1);
+            if (showWarped || showEdged || showSource)
+            {
+                var c = CvInvoke.WaitKey(1);
+                if (c == 'c')
+                {
+                    LogUtil.Write("C pressed.");
+                    Process.GetCurrentProcess().Kill();
+                }
+                else
+                {
+                    if (c != -1)
+                    {
+                        LogUtil.Write(c + " pressed.");
+                    }
+                }
+            }
             scaled.Dispose();
             return warped;
         }
@@ -159,16 +198,34 @@ namespace HueDream.Models.DreamGrab {
 
         private Mat GetWarp(VectorOfPoint wTarget) {
             var ta = wTarget.ToArray();
-            var pointList = new List<PointF>();
-            foreach (PointF p in ta) {
-                pointList.Add(p);
-            }
-            var pointArray = pointList.ToArray();
-            var warpMat = CvInvoke.FindHomography(pointArray, vectors);
-            return warpMat;
+            var pointOut = new PointF[wTarget.Size];
+            for (int i = 0; i < ta.Length; i++) pointOut[i] = ta[i];
+            // Order points?
+            pointOut = SortPoints(pointOut);            
+            var warpMat = CvInvoke.FindHomography(vectors, pointOut.ToArray());
+            var homogMat = new Mat();
+            CvInvoke.Invert(warpMat, homogMat, DecompMethod.LU);
+            return homogMat;
         }
 
+        private PointF[] SortPoints(PointF[] pIn) {
+            var tPoints = pIn.OrderBy(p => p.Y);
+            var vPoints = pIn.OrderByDescending(p => p.Y);
+            var vtPoints = tPoints.Take(2);
+            var vvPoints = vPoints.Take(2);
+            vtPoints = vtPoints.OrderBy(p => p.X);
+            vvPoints = vvPoints.OrderByDescending(p => p.X);
+            PointF tl = vtPoints.ElementAt(0);
+            PointF tr = vtPoints.ElementAt(1);
+            PointF br = vvPoints.ElementAt(0);
+            PointF bl = vvPoints.ElementAt(1);
+            PointF[] outPut = new PointF[] { tl, tr, br, bl };
+            return outPut;
+        }
 
-      
+        
+
+
+
     }
 }

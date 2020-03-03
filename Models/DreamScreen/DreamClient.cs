@@ -567,6 +567,7 @@ namespace HueDream.Models.DreamScreen {
                 CancelSource(sendTokenSource, true);
                 CancelSource(showBuilderSource, true);
                 CancelSource(listenTokenSource, true);
+                CancelSource(captureTokenSource, true);
                 LogUtil.Write("Tokens canceled.");
                 foreach (var b in bridges) {
                     b.DisableStreaming();

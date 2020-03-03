@@ -48,6 +48,13 @@ namespace HueDream.Models {
         private static DataStore SetDefaults(DataStore store) {
             store.InsertItem("dsIp", "0.0.0.0");
             store.InsertItem("dataSource", "DreamScreen");
+            store.InsertItem("camWidth", 1920);
+            store.InsertItem("camHeight", 1080);
+            store.InsertItem("camMode", 1);
+            store.InsertItem("scaleFactor", .5);
+            store.InsertItem("showSource", false);
+            store.InsertItem("showEdged", false);
+            store.InsertItem("showWarped", false);
             BaseDevice myDevice = new SideKick(GetLocalIpAddress());
             myDevice.Initialize();
             var bList = HueBridge.FindBridges();

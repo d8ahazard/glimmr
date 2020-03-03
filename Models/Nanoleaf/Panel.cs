@@ -44,6 +44,7 @@ namespace HueDream.Models.Nanoleaf {
             BasePath = "http://" + IpAddress + ":16021/api/v1/" + Token;
             LogUtil.Write("Created");
             HC = new HttpClient();
+            
         }
 
         public Panel(NanoData n) {
@@ -206,8 +207,8 @@ namespace HueDream.Models.Nanoleaf {
             StartPanel(ct);
             var controlVersion = "v" + streamMode;
             var body = new { write = new{command = "display", animType = "extControl", extControlVersion = controlVersion}};
-
-        var startResult = SendPutRequest(JsonConvert.SerializeObject(body), "effects").Result;
+         
+            var startResult = SendPutRequest(JsonConvert.SerializeObject(body), "effects").Result;
             if (controlVersion == "v2") {
                 LogUtil.Write("We should have no response here: " + startResult);
             }
@@ -313,27 +314,38 @@ namespace HueDream.Models.Nanoleaf {
 
         public async Task<string> SendPutRequest(string json, string path = "") {
             var authorizedPath = BasePath + "/" + path;
-            using (var content = new StringContent(json, Encoding.UTF8, "application/json")) 
-                using (var responseMessage = await HC.PutAsync(authorizedPath, content)) {
+            try {
+                using (var content = new StringContent(json, Encoding.UTF8, "application/json"))
+                using (var responseMessage = await HC.PutAsync(authorizedPath, content))
+                {
                     LogUtil.Write($@"Sending put request to {authorizedPath}: {json}");
-                    if (!responseMessage.IsSuccessStatusCode) {
+                    if (!responseMessage.IsSuccessStatusCode)
+                    {
                         HandleNanoleafErrorStatusCodes(responseMessage);
                     }
                     LogUtil.Write("Returning");
                     return await responseMessage.Content.ReadAsStringAsync();
                 }
+            } catch (HttpRequestException) {
+                return null;
+            }
         }
 
         public async Task<string> SendGetRequest(string path = "") {
             var authorizedPath = BasePath + "/" + path;
-            LogUtil.Write("Auth path is : " + authorizedPath);
-            using (var responseMessage = await HC.GetAsync(authorizedPath)) {
-                if (!responseMessage.IsSuccessStatusCode) {
-                    LogUtil.Write("Error code?");
-                    HandleNanoleafErrorStatusCodes(responseMessage);
+            try
+            {
+                LogUtil.Write("Auth path is : " + authorizedPath);
+                using (var responseMessage = await HC.GetAsync(authorizedPath)) {
+                    if (!responseMessage.IsSuccessStatusCode) {
+                        LogUtil.Write("Error code?");
+                        HandleNanoleafErrorStatusCodes(responseMessage);
+                    }
+                    LogUtil.Write("Returning");
+                    return await responseMessage.Content.ReadAsStringAsync();
                 }
-                LogUtil.Write("Returning");
-                return await responseMessage.Content.ReadAsStringAsync();
+            } catch (HttpRequestException) {
+                return null;
             }
         }
         private void HandleNanoleafErrorStatusCodes(HttpResponseMessage responseMessage) {
