@@ -19,7 +19,7 @@ namespace HueDream.Models.DreamGrab {
         private int capWidth;
         private int capHeight;
         private int camMode;
-        public PiVideoStream(int width = 1296, int height = 9, int mode = 1) {
+        public PiVideoStream(int width = 1296, int height = 972, int mode = 4) {
             cam = MMALCamera.Instance;
             capWidth = width;
             capHeight = height;
