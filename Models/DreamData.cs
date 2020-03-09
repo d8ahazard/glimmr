@@ -55,18 +55,19 @@ namespace HueDream.Models {
             store.InsertItem("showSource", false);
             store.InsertItem("showEdged", false);
             store.InsertItem("showWarped", false);
+            store.InsertItem("emuType", "SideKick");
+            store.InsertItem("captureMode", 0);
+            store.InsertItem("camType", 1);
+            store.InsertItem("devices", Array.Empty<BaseDevice>());
+
             BaseDevice myDevice = new SideKick(GetLocalIpAddress());
             myDevice.Initialize();
             var bList = HueBridge.FindBridges();
             var bData = bList.Select(lb => new BridgeData(lb.IpAddress, lb.BridgeId)).ToList();
             var lData = new LedData(true);
             store.InsertItem("myDevice", myDevice);
-            store.InsertItem("emuType", "SideKick");
             store.InsertItem("bridges", bData);
             store.InsertItem("ledData", lData);
-            store.InsertItem("captureMode", 0);
-            store.InsertItem("camType", 1);
-            store.InsertItem("devices", Array.Empty<BaseDevice>());
             return store;
         }
 

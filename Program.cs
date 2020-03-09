@@ -21,7 +21,7 @@ namespace HueDream {
                 })    
                 .ConfigureWebHostDefaults(webBuilder => { 
                     webBuilder.UseStartup<Startup>();
-                    webBuilder.UseUrls("http://*:5666");
+                    webBuilder.UseUrls("http://*:5699");
 
 
                 })
