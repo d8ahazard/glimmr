@@ -20,8 +20,11 @@ namespace HueDream.Models.DreamScreen.Devices {
         [JsonProperty] int AmbientModeType { get; set; }
 
         [JsonProperty] int Brightness { get; set; }
+        [JsonProperty] int SkuSetup { get; set; }
 
         void ParsePayload(byte[] payload);
+
+        public void SetDefaults();
 
         byte[] EncodeState();
     }

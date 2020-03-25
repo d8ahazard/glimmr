@@ -15,7 +15,7 @@ namespace HueDream.Models.Hue {
     public static class StreamingSetup {
 
         public static StreamingHueClient GetClient(BridgeData b) {
-            var hueIp = b.IpV4Address;
+            var hueIp = b.IpAddress;
             var hueUser = b.User;
             var hueKey = b.Key;
             Console.WriteLine(@"Hue: Creating client...");

@@ -62,11 +62,8 @@ namespace HueDream.Models {
 
             BaseDevice myDevice = new SideKick(GetLocalIpAddress());
             myDevice.Initialize();
-            var bList = HueBridge.FindBridges();
-            var bData = bList.Select(lb => new BridgeData(lb.IpAddress, lb.BridgeId)).ToList();
             var lData = new LedData(true);
             store.InsertItem("myDevice", myDevice);
-            store.InsertItem("bridges", bData);
             store.InsertItem("ledData", lData);
             return store;
         }
@@ -77,12 +74,9 @@ namespace HueDream.Models {
                 using var dStore = new DataStore(GetConfigPath("store.json"));
                 dynamic output = dStore.GetItem<T>(key);
                 return output;
-            }
-            catch (NullReferenceException e) {
+            } catch (Exception e) {
                 Console.WriteLine($@"Value not found: {e.Message}");
             }
-            catch (KeyNotFoundException) { }
-
 
             return null;
         }
@@ -113,12 +107,18 @@ namespace HueDream.Models {
         public static BaseDevice GetDeviceData() {
             using var dd = GetStore();
             BaseDevice dev;
-            string devType = dd.GetItem("emuType");
-            if (devType == "SideKick")
+            string devType = dd.GetItem("devType");
+            if (devType == "SideKick") {
                 dev = dd.GetItem<SideKick>("myDevice");
-            else
+            } else if (devType == "DreamVision") {
+                dev = dd.GetItem<DreamScreen4K>("myDevice");
+            } else {
                 dev = dd.GetItem<Connect>("myDevice");
+            }
+            
+            LogUtil.Write("Getting a device data: " + JsonConvert.SerializeObject(dev));
             return dev;
+            
         }
 
 

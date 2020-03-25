@@ -25,6 +25,7 @@ let targetDs = null;
 let datastore = null;
 let vLedCount = 0;
 let hLedCount = 0;
+let postResult = null;
 
 
 $(function () {
@@ -39,9 +40,33 @@ $(function () {
     
     $('#showSettings').click(function(){
         hidePanels();
+        $('.navbar-toggler').click();
         $('#navTitle').html("Settings");
         selectedDevice = null;
-        $('#settingsCard').slideDown();
+        $('#settingsCard').slideDown();        
+    });
+
+    $('#refreshDevices').click(function(){
+        $('.navbar-toggler').click();
+        RefreshData();
+    });
+
+    $('#dsName').on('input', function(){
+                
+    });
+
+    $("#dsName").blur(function() {
+        let nVal = $(this).text();
+        let ip = $(this).data('ip');
+        let group = $(this).data('group');
+        let out = {
+            ip: ip,
+            group: group,
+            name: nVal
+        };
+            postData("devname", out);
+            console.log("I AM CHANGED: " + nVal);    //Here you can write the code to run when the content change
+            RefreshData();
     });
 
     // On capture mode btn click
@@ -63,6 +88,24 @@ $(function () {
         if (!nanoAuth && !nanoLinking) {
             linkNano();
         }
+    });
+    
+    $('.nanoFlip').on('click', function() {
+       let flipVal = $(this).val() === "on";
+       let flipDir = $(this).data('orientation');
+       console.log("Setting da flip for " + flipDir + " to " + flipVal);       
+       if (flipDir === "h") {
+           selectedDevice['mirrorX'] = flipVal;
+       } else {
+           selectedDevice['mirrorY'] = flipVal;
+       }
+       postData("flipNano", {dir: flipDir, val: flipVal, id: selectedDevice.id});
+       setTimeout(function() {
+           let newNano = postResult;
+           console.log("New nano: ", newNano);
+           drawNanoShapes(newNano);
+       }, 1000);
+        
     });
     
     // Emulator type change #TODO Post directly
@@ -153,6 +196,7 @@ $(function () {
                 showDevicePanel($(this)[0]);
             }
         });
+        $('.navbar-toggler').click();
         event.stopPropagation();
     });
     
@@ -178,7 +222,7 @@ $(function () {
         const mode = $(this).data('mode');
         selectedDevice.mode = mode;
         saveSelectedDevice();
-        postData("mode", selectedDevice);        
+        postData("mode", mode);        
     });
     
     // On group selection change
@@ -204,7 +248,7 @@ $(function () {
         hueGroup = current.toString();        
     });
 
-    setInterval(function(){RefreshData();}, 10000);    
+    setInterval(function(){RefreshData();}, 60000);    
 
 });
 
@@ -243,6 +287,7 @@ function postData(endpoint, payload) {
         data: JSON.stringify(payload),
         success: function (data) {
             console.log(`Posted to ${endpoint}`, endpoint, data);
+            postResult = data;
         }
     });
 }
@@ -259,6 +304,7 @@ function updateLightProperty(myId, propertyName, value) {
     }    
     console.log("Updated light data: ", hueLights);
     bridges[bridgeInt]["lights"] = hueLights;
+    postData("bridges", bridges);
 }
 
 // Update our pretty table so we can map the lights
@@ -457,7 +503,7 @@ function RefreshData() {
         console.log("Refreshing data.");
         $.get("./api/DreamData/action?action=refreshDevices", function (data) {
             console.log("Dream data: ", data);
-            datastore.ds = data.dreamDevices;
+            datastore.devices = data.devices;
             datastore.bridges = data.bridges;
             datastore.leaves = data.leaves;
             refreshing = false;
@@ -468,7 +514,7 @@ function RefreshData() {
 function buildLists(data) {
     dsDevs = [];
     let groups = [];
-    devices = data['ds'];
+    devices = data['devices'];
     leaves = data['leaves'];
     bridges = data['bridges'];
     deviceData = data['myDevice'];
@@ -477,11 +523,11 @@ function buildLists(data) {
     captureMode = data['captureMode'];
     let mode = selectCaptureMode(captureMode);
     emulationType = data['emuType'];
-    buildDevList(data['ds']);
+    buildDevList(data['devices']);
     setCaptureMode(mode);
 
     // Push dreamscreen devices to groups first, so they appear on top. The, do sidekicks, nanoleaves, then bridges.
-    $.each(data['ds'], function() {
+    $.each(devices, function() {
         let item = $(this)[0];
         if (item['id'] === undefined && item['ipAddress'] !== undefined) item['id'] = item['ipAddress'];
         if (item['id'] === undefined && item['ipV4Address'] !== undefined) item['id'] = item['ipV4Address'];
@@ -513,11 +559,13 @@ function buildLists(data) {
     $.each(groups, function () {
         let item = $(this)[0];
         console.log("Group: ", item);
-        if (item['id'] !== 0) {
-            sorted.push(item);
-        } else {
-            unSorted = item;
-        }        
+        if (item['screenX'] === undefined) {
+            if (item['id'] !== 0) {
+                sorted.push(item);
+            } else {
+                unSorted = item;
+            }
+        }
     });
     if (unSorted !== false) appendDeviceGroup(unSorted);
     $('#devGroup').append($('<li class="spacer">Groups</li>'));
@@ -532,6 +580,7 @@ function buildLists(data) {
 
 
 function appendDeviceGroup(item) {
+    console.log("Appending: ", item);
     let name = item['name'];
     let elements = item['items'];
     let devGroup = $('#devGroup');
@@ -559,7 +608,7 @@ function appendDeviceGroup(item) {
             devices.push(element);
             container.append('<li class="devSelect" data-device="' + element.id + '"><img class="devIcon" src="./img/' + element.tag.toLowerCase() + '_icon.png"><span class="devName">' + element.name + '<span></li>');
         });
-        console.log("PUSHING GROUP: ", item);
+        console.log("PUSHING GROUP: ", item);        
         item['tag'] = "group";
         item['groupNumber'] = item['id'];
         item['groupName'] = item['name'];
@@ -602,11 +651,11 @@ function setCaptureMode(target) {
     let hCount = 0;
     let vCount = 0;
     if (captureMode === 0) {
-        hCount = targetDs.flexSetup[0];
-        vCount = targetDs.flexSetup[1];
+        hCount = ledData.hCountDs;
+        vCount = ledData.vCountDs;
     } else {
-        hCount = ledData.countTop;
-        vCount = ledData.countLeft;
+        hCount = ledData.hCount;
+        vCount = ledData.vCount;
     }
     vLedCount = vCount;
     hLedCount = hCount;
@@ -624,8 +673,10 @@ function setCaptureMode(target) {
 function sortDevices(data, groups, tag, name) {
     $.each(data, function () {
         let item = $(this)[0];
-        let groupNumber = (item['groupNumber'] === undefined) ? 0 : item['groupNumber'];
-        let groupName = (item['groupName'] === undefined) ? "undefined" : item['groupName'];
+        let gn = item['groupNumber'];
+        let gName = item['groupName'];
+        let groupNumber = (gn === undefined || gn === null) ? 0 : gn; 
+        let groupName = (gName === undefined || gName === null) ? "undefined" : gName;
         if (groups[groupNumber] === undefined) {
             groups[groupNumber] = {};
             groups[groupNumber]['name'] = groupName;
@@ -633,7 +684,11 @@ function sortDevices(data, groups, tag, name) {
             groups[groupNumber]['items'] = [];
         }
         if (tag !== false) item.tag = tag;
-        if (item.name === undefined && name !== false) item.name = name;
+        if (name !== false) {
+            if (item.name === undefined || item.name === null) {
+                item.name = name;
+            }
+        }
         groups[groupNumber]['items'].push(item);
     });
     return groups;
@@ -715,6 +770,9 @@ function loadDsData(data) {
     console.log("Loading: ", data);
     deviceData = data;
     $('#dsName').html(deviceData.name);
+    $('#dsName').data("ip", deviceData.ipAddress);
+    $('#dsName').data('group', deviceData.groupNumber);
+    
     $('#dsIp').html(deviceData.ipAddress);
     emulationType = deviceData.tag;
     $('#dsType').html();
@@ -751,8 +809,8 @@ function loadBridgeData(data) {
     console.log("Loaded bridge: ", data);
     // Now we've got it.
     let b = data;
-    hueIp = b["ipV4Address"];
-    hIp.html(b["ipV4Address"]);        
+    hueIp = b["ipAddress"];
+    hIp.html(b["ipAddress"]);        
     hueGroup = b["selectedGroup"];
     hueGroups = b["groups"];
     if (hueGroup === -1 && hueGroups.length > 0) {
@@ -794,7 +852,7 @@ function loadNanoData(data) {
     // Now we've got it.
     let n = data;
     nanoIp = n["ipV4Address"];
-    drawNanoShapes(data);
+    
     hIp.html(n["ipV4Address"]);    
     nanoAuth = (n["token"] !== null && n["token"] !== undefined);
     lImg.removeClass('linked unlinked linking');
@@ -802,6 +860,7 @@ function loadNanoData(data) {
         lImg.addClass('linked');
         lHint.html("Your Nanoleaf is linked.");
         lBtn.css('cursor', 'default');
+        drawNanoShapes(data);
     } else {
         if (nanoLinking) {
             lImg.addClass('linking');
@@ -835,7 +894,6 @@ function drawNanoShapes(panel) {
     let cLayer = new Konva.Layer();
     stage.add(cLayer);
 
-
     // Get layout data from panel
     let pX = panel['x'];
     let pY = panel['y'];
@@ -847,8 +905,8 @@ function drawNanoShapes(panel) {
     let sideLength = layout['sideLength'];
 
     // Set our TV image width
-    let tvWidth = (vLedCount / 4) * sideLength;
-    let tvHeight = (hLedCount / 4) * sideLength;
+    let tvWidth = (hLedCount / 4) * sideLength;
+    let tvHeight = (vLedCount / 4) * sideLength;
 
     // If window is less than 500px, divide our scale by half
     let halfScale = false;
@@ -946,8 +1004,6 @@ function drawNanoShapes(panel) {
     let positions = layout['positionData'];
     let minX = 0;
     let minY = 0;
-    let maxX = 0;
-    let maxY = 0;
     
     // Calculate the min/max range for each tile
     for (let panel in positions) {
@@ -965,8 +1021,13 @@ function drawNanoShapes(panel) {
         let data = positions[panel];
         console.log("Draw panel: ", data);
         let shape = data['shapeType'];
-        let x = data.x + Math.abs(minX);
-        let y = (data.y * -1) + Math.abs(minY);
+        let x = data.x;
+        let y = data.y;
+        if (mirrorX) x *= -1;
+        if (!mirrorY) y *= -1;
+        x += Math.abs(minX);
+        y += Math.abs(minY);
+        
         let sText = new Konva.Text({
             x: x,
             y: y,

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using Newtonsoft.Json;
+using Serilog;
 
 namespace HueDream.Models.Util {
     public static class LogUtil {
@@ -19,6 +20,7 @@ namespace HueDream.Models.Util {
 
         public static void Write(string text) {
             var cls = GetCaller();
+            Log.Information(text);
             Console.WriteLine($@"{cls} - {text}");
         }
 

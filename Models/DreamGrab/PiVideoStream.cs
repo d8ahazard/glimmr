@@ -50,19 +50,9 @@ namespace HueDream.Models.DreamGrab {
         }
 
         public async Task Start(CancellationToken ct) {
-            LogUtil.Write("Trying to take a picture.");
-                // Singleton initialized lazily. Reference once in your application.
-                MMALCamera cam = MMALCamera.Instance;
-                MMALCameraConfig.StillResolution = new Resolution(capWidth, capHeight);
-                //MMALCameraConfig.StillFramerate
-                using (var imgCaptureHandler = new ImageStreamCaptureHandler("/home/pi/images/", "jpg"))
-                {
-                    await cam.TakePicture(imgCaptureHandler, MMALEncoding.JPEG, MMALEncoding.I420);
-                }
-
-                // Cleanup disposes all unmanaged resources and unloads Broadcom library. To be called when no more processing is to be done
-                // on the camera.
-                //cam.Cleanup();
+            MMALCamera cam = MMALCamera.Instance;
+            MMALCameraConfig.VideoStabilisation = false;
+                
             var sensorMode = MMALSensorMode.Mode0;
             switch(camMode) {
                 case 1:
@@ -89,10 +79,7 @@ namespace HueDream.Models.DreamGrab {
             }
             MMALCameraConfig.SensorMode = sensorMode;
             MMALCameraConfig.VideoResolution = new Resolution(capWidth, capHeight);
-
-            //MMALCameraConfig.VideoResolution = new Resolution(1296, 972);
-            //MMALCameraConfig.VideoFramerate = new MMAL_RATIONAL_T(40, 1); // This represents a fraction. The "num" parameter is the framerate divided by 1 to give you 40.
-            //MMALCameraConfig.SensorMode = MMALSensorMode.Mode4; // This forces mode 4. Mode 0 (automatic) should figure out we want sensor mode 4 anyway based on the resolution and framerate.
+            MMALCameraConfig.VideoFramerate = new MMAL_RATIONAL_T(60, 1);
 
             using (var vidCaptureHandler = new EmguInMemoryCaptureHandler())
             using (var splitter = new MMALSplitterComponent())
@@ -116,8 +103,11 @@ namespace HueDream.Models.DreamGrab {
                 cam.Camera.VideoPort.ConnectTo(splitter);
 
                 // Camera warm up time
+                LogUtil.Write("Camera is warming up...");
                 await Task.Delay(2000).ConfigureAwait(false);
+                LogUtil.Write("Camera initialized.");
                 await cam.ProcessAsync(cam.Camera.VideoPort, ct);
+                LogUtil.Write("Camera closed.");
             }
         }
 

@@ -47,11 +47,12 @@ namespace HueDream.Models.Util {
             return data;
         }
 
-        public static IEnumerable<string> SplitHex(string str, int chunkSize) {
-            if (str is null) throw new ArgumentNullException(nameof(str));
-
-            return Enumerable.Range(0, str.Length / chunkSize)
-                .Select(i => str.Substring(i * chunkSize, chunkSize));
+        public static List<string> SplitHex(string value, int chunkLength)
+        {
+            var res = new List<string>();
+            int count = (value.Length / chunkLength) + (value.Length % chunkLength > 0 ? 1 : 0);
+            Enumerable.Range(0, count).ToList().ForEach(f => res.Add(value.Skip(f * chunkLength).Take(chunkLength).Select(z => z.ToString()).Aggregate((a,b) => a+b)));
+            return res;
         }
 
         /// <summary>

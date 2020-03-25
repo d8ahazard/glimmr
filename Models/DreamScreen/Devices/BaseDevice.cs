@@ -14,6 +14,7 @@ namespace HueDream.Models.DreamScreen.Devices {
 
         protected BaseDevice() { }
 
+        
         [DataMember][JsonProperty] public int AmbientShowType { get; set; }
         [DataMember][JsonProperty] public int FadeRate { get; set; }
         [DataMember][JsonProperty] public string IpAddress { get; set; }
@@ -23,6 +24,7 @@ namespace HueDream.Models.DreamScreen.Devices {
         [DataMember] [JsonProperty] public int AmbientModeType { get; set; }
         [DataMember] [JsonProperty] public int[] flexSetup { get; set; }
         [DataMember] [JsonProperty] public int Brightness { get; set; }
+        [DataMember] [JsonProperty] public int SkuSetup { get; set; }
         [DataMember] [JsonProperty] public string Name { get; set; }
         [DataMember] [JsonProperty] public string GroupName { get; set; }
         [DataMember] [JsonProperty] public int GroupNumber { get; set; }
@@ -31,6 +33,10 @@ namespace HueDream.Models.DreamScreen.Devices {
         [DataMember] [JsonProperty] public string Saturation { get; set; }
 
         public abstract void ParsePayload(byte[] payload);
+        public virtual void SetDefaults() {
+            
+        }
+
         public abstract byte[] EncodeState();
 
         public void Initialize() {

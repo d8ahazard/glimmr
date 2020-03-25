@@ -18,6 +18,7 @@ using Microsoft.Extensions.Hosting;
 using Nanoleaf.Client;
 using Newtonsoft.Json;
 using Q42.HueApi.ColorConverters;
+using Serilog;
 
 namespace HueDream.Models.DreamScreen {
     public sealed class DreamClient : IHostedService, IDisposable
@@ -67,10 +68,10 @@ namespace HueDream.Models.DreamScreen {
         private bool showBuilderStarted;
         private IPEndPoint targetEndpoint;
         private readonly LedStrip strip;
-
+        
         public DreamClient() {
             var dd = DreamData.GetStore();
-            dev = GetDeviceData();
+            dev = DreamData.GetDeviceData();
             dreamScene = new DreamScene();
             devMode = dev.Mode;
             ambientMode = dev.AmbientModeType;
@@ -107,8 +108,7 @@ namespace HueDream.Models.DreamScreen {
         private static List<BaseDevice> Devices { get; set; }
         
         public Task StartAsync(CancellationToken cancellationToken) {
-            listenTokenSource = new CancellationTokenSource();
-            var listenTask = StartListening(listenTokenSource.Token);
+            var listenTask = StartListening(cancellationToken);
             UpdateMode(dev.Mode);
             return listenTask;
         }
@@ -116,7 +116,7 @@ namespace HueDream.Models.DreamScreen {
         public Task StopAsync(CancellationToken cancellationToken) {
             try {
                 LogUtil.Write("StopAsync called.");
-                CancelSource(listenTokenSource);
+                
                 StopStream();
                 StopShowBuilder();
                 Dispose(true);
@@ -128,18 +128,7 @@ namespace HueDream.Models.DreamScreen {
             return Task.CompletedTask;
         }
 
-        private static BaseDevice GetDeviceData() {
-            using var dd = DreamData.GetStore();
-            BaseDevice myDev;
-            var devType = dd.GetItem<string>("emuType");
-            if (devType == "SideKick")
-                myDev = dd.GetItem<SideKick>("myDevice");
-            else if (devType == "DreamVision")
-                myDev = dd.GetItem<DreamVision>("myDevice");
-            else
-                myDev = dd.GetItem<Connect>("myDevice");
-            return myDev;
-        }
+        
 
         private void UpdateMode(int newMode) {
             if (prevMode == newMode) return;
@@ -227,7 +216,7 @@ namespace HueDream.Models.DreamScreen {
                     var enable = b.EnableStreaming(sendTokenSource.Token);
                     if (enable) {
                         bridges.Add(b);
-                        LogUtil.Write("Stream started to " + bridge.IpV4Address);
+                        LogUtil.Write("Stream started to " + bridge.IpAddress);
                         streamStarted = true;
                     }
                 }
@@ -257,6 +246,11 @@ namespace HueDream.Models.DreamScreen {
                 foreach (var b in bridges) {
                     b.DisableStreaming();
                 }
+
+                if (strip != null) {
+                    strip.StopLights();
+                }
+                CancelSource(captureTokenSource);
                 CancelSource(sendTokenSource);
                 LogUtil.WriteDec("Stream stopped.");
                 streamStarted = false;
@@ -264,7 +258,8 @@ namespace HueDream.Models.DreamScreen {
         }
 
         public void SendColors(Color[] colors, Color[] sectors, double fadeTime = 0) {
-            //Console.WriteLine(@"Sending colors...");
+            //Console.WriteLine(@"Sending colors: " + JsonConvert.SerializeObject(sectors));
+            
             if (bridges.Count > 0) {
                 foreach (var bridge in bridges) {
                     var bridgeSectors = new Color[12];
@@ -410,7 +405,7 @@ namespace HueDream.Models.DreamScreen {
                 flag = msg.Flags;
                 var groupMatch = msg.Group == dev.GroupNumber || msg.Group == 255;
                 if ((flag == "11" || flag == "21") && groupMatch) {
-                    dev = GetDeviceData();
+                    dev = DreamData.GetDeviceData();
                     writeState = true;
                 }
             } else {
@@ -424,15 +419,17 @@ namespace HueDream.Models.DreamScreen {
                     break;
                 case "COLOR_DATA":
                     if (CaptureMode == 0 && (devMode == 1 || devMode == 2)) {
+                        //LogUtil.Write("Raw payload: " + payload);
+                        //LogUtil.Write("Raw payload string: " + payloadString);
                         var colorData = ByteUtils.SplitHex(payloadString, 6); // Swap this with payload
+                        //LogUtil.Write("Color data is " + colorData.Count + " long.");
                         var lightCount = 0;
-                        var colors = new Color[12];
+                        var colors = new List<Color>();
+                        
                         foreach (var colorValue in colorData) {
-                            colors[lightCount] = ColorFromString(colorValue);
-                            if (lightCount > 11) break;
-                            lightCount++;
+                            colors.Add(ColorFromString(colorValue));
                         }
-                        SendColors(colors, colors);
+                        SendColors(colors.ToArray(), colors.ToArray());
                     }
 
                     break;
@@ -513,13 +510,30 @@ namespace HueDream.Models.DreamScreen {
                     }
 
                     break;
+                case "SKU_SETUP":
+                    if (writeState) {
+                        LogUtil.Write("Setting SKU type?");
+                        //dev.SkuSetup = payload[0];
+                    }
+                    break;
+                case "FLEX_SETUP":
+                    if (writeState) {
+                        LogUtil.Write("Setting FlexSetup");
+                        int[] fSetup = payload.Select(x => (int)x).ToArray();
+                        dev.flexSetup = fSetup;
+                    }
+                    break;
+                case "RESET_PIC":
+                    LogUtil.Write("Reboot command issued!");
+                    
+                    break;
             }
 
             if (writeState) DreamData.SetItem<BaseDevice>("myDevice", dev);
         }
 
         private void SendDeviceStatus(IPEndPoint src) {
-            var dss = GetDeviceData();
+            var dss = DreamData.GetDeviceData();
             var payload = dss.EncodeState();
             DreamSender.SendUdpWrite(0x01, 0x0A, payload, 0x60, group, src);
         }
@@ -582,6 +596,7 @@ namespace HueDream.Models.DreamScreen {
 
             disposed = true;
             LogUtil.Write("Disposal complete.");
+            Log.CloseAndFlush();
         }
     }
 }

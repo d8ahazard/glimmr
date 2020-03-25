@@ -20,7 +20,7 @@ namespace HueDream.Models.DreamScreen {
                 return;
             }
 
-            len = bytesIn[1];
+            Len = bytesIn[1];
             Group = bytesIn[2];
             Flags = bytesString[3];
             var cmd = bytesString[4] + bytesString[5];
@@ -29,14 +29,14 @@ namespace HueDream.Models.DreamScreen {
             else
                 Console.WriteLine($@"DSMessage: No matching key in dict for bytes: {cmd}.");
             BaseDevice dreamDev = null;
-            if (len > 5) {
+            if (Len > 5) {
                 payload = ExtractPayload(bytesIn);
                 PayloadString = payload.Length != 0
                     ? BitConverter.ToString(payload).Replace("-", string.Empty, StringComparison.CurrentCulture)
                     : "";
             }
             
-            if (Command == "DEVICE_DISCOVERY" && Flags == "60" && len > 46) {
+            if (Command == "DEVICE_DISCOVERY" && Flags == "60" && Len > 46) {
                 int devType = payload[^1];
                 switch (devType) {
                     case 1:
@@ -81,7 +81,7 @@ namespace HueDream.Models.DreamScreen {
 
         public bool IsValid { get; }
         
-        public int len { get; set; }
+        public int Len { get; set; }
         public BaseDevice Device { get; }
 
         public byte[] GetPayload() {

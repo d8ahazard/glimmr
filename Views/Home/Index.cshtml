@@ -45,7 +45,7 @@
                                     <div id="iconWrap">
                                     </div>
                                     <div id="dsData" class="">
-                                        <span id="dsName"></span><br/>
+                                        <div id="dsName" onclick="listenForDoubleClick(this);" onblur="this.contentEditable=false;"></div><br/>
                                         <span id="dsIp"></span>
                                     </div>
                                 </div>
@@ -187,7 +187,18 @@
                             </div>
                         </div>
                     </div>
-                    <div class="row controlRow"></div>
+                    <div class="row justify-content-center controlRow">
+                        <div class="checkbox mr-3 text-white">
+                        <label class="text-white">
+                          <input type="checkbox" id="nanoFlipHorizontal" data-orientation="h" class="nanoFlip"> Flip Horizontally
+                        </label>
+                      </div>
+                      <div class="checkbox text-white">
+                          <label class="text-white">
+                            <input type="checkbox" id="nanoFlipVertical" data-orientation="v" class="nanoFlip"> Flip Vertically
+                          </label>
+                        </div>
+                    </div>
                     <div class="row previewRow" id="nanoContainer">
                         <div id="canvasDiv">
                         </div>

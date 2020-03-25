@@ -5,6 +5,7 @@
         <StartupObject></StartupObject>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
         <DockerfileContext>.</DockerfileContext>
+        <AssemblyName>Glimmr</AssemblyName>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -48,6 +49,9 @@
         <PackageReference Include="Nanoleaf.Core" Version="1.1.7.1" />
         <PackageReference Include="Q42.HueApi" Version="3.15.1" />
         <PackageReference Include="Q42.HueApi.Entertainment" Version="3.15.0" />
+        <PackageReference Include="Serilog" Version="2.9.1-dev-01154" />
+        <PackageReference Include="Serilog.Sinks.Console" Version="4.0.0-dev-00839" />
+        <PackageReference Include="Serilog.Sinks.File" Version="5.0.0-dev-00864" />
         <PackageReference Include="Unosquare.Raspberry.IO" Version="0.27.0" />
         <PackageReference Include="ws281x.Net" Version="1.0.6" />
         <PackageReference Include="ZedGraph" Version="6.0.0-alpha0001" />

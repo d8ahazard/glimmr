@@ -13,17 +13,22 @@ namespace HueDream.Models.DreamScreen.Devices {
         public SideKick() { }
 
         public SideKick(string ipAddress) : base(ipAddress) {
+            Name = DeviceTag;
             EspFirmwareVersion = RequiredEspFirmwareVersion;
             SectorData = new byte[] {0};
             SectorAssignment = DefaultSectorAssignment;
             IsDemo = false;
             ProductId = 3;
-            Name = DeviceTag;
             Tag = DeviceTag;
             GroupName = "unassigned";
         }
 
         [JsonProperty] private byte[] EspFirmwareVersion { get; set; }
+
+        public override void SetDefaults() {
+            
+        }
+
         [JsonProperty] public int[] flexSetup { get; set; }
 
         [JsonProperty] private bool IsDemo { get; set; }

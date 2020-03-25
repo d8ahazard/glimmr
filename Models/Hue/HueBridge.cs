@@ -26,7 +26,7 @@ namespace HueDream.Models.Hue {
 
         public HueBridge(BridgeData data) {
             bd = data ?? throw new ArgumentNullException(nameof(data));
-            BridgeIp = bd.IpV4Address;
+            BridgeIp = bd.IpAddress;
             BridgeKey = bd.Key;
             BridgeUser = bd.User;
             client = StreamingSetup.GetClient(bd);
@@ -147,7 +147,7 @@ namespace HueDream.Models.Hue {
 
         public static List<BridgeData> GetBridgeData() {
             var bridges = DreamData.GetItem<List<BridgeData>>("bridges");
-            var newBridges = FindBridges();
+            var newBridges = FindBridges(2);
             var nb = new List<BridgeData>();
             if (bridges.Count > 0) {
                 LogUtil.Write("We have existing bridges.");
@@ -183,7 +183,7 @@ namespace HueDream.Models.Hue {
 
         public static LocatedBridge[] FindBridges(int time = 2) {
             Console.WriteLine(@"Hue: Looking for bridges...");
-            IBridgeLocator locator = new SsdpBridgeLocator();
+            IBridgeLocator locator = new MdnsBridgeLocator();
             var res = locator.LocateBridgesAsync(TimeSpan.FromSeconds(time)).Result;
             Console.WriteLine($@"Result: {JsonConvert.SerializeObject(res)}");
             return res.ToArray();

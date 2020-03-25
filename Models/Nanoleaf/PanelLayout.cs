@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -14,7 +15,9 @@ namespace HueDream.Models.Nanoleaf {
         public int SideLength { get; set; }
         [JsonProperty]
         public List<PanelLayout> PositionData { get; set; }
-
+        public NanoLayout() {
+            PositionData = new List<PanelLayout>();
+        }
     }
     [Serializable]
     public class PanelLayout {
@@ -26,6 +29,10 @@ namespace HueDream.Models.Nanoleaf {
         public int Y { get; set; }
         [JsonProperty]
         public int O { get; set; }
+        [DefaultValue(-1)]            
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public int Sector { get; set; }
+        [JsonProperty]
         public int ShapeType { get; set; }
     }
 }

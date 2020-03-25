@@ -11,12 +11,12 @@ namespace HueDream.Models.Hue {
         public BridgeData() { }
 
         public BridgeData(string ip, string id) {
-            IpV4Address = ip;
+            IpAddress = ip;
             Id = id;
         }
 
         public BridgeData(string ip, string id, string user, string key, string group = "-1", string groupName = "undefined", int groupNumber = 0) {
-            IpV4Address = ip;
+            IpAddress = ip;
             Id = id;
             User = user;
             Key = key;
@@ -27,7 +27,7 @@ namespace HueDream.Models.Hue {
             GroupNumber = groupNumber;
         }
 
-        [JsonProperty] public string IpV4Address { get; set; }
+        [JsonProperty] public string IpAddress { get; set; }
         [JsonProperty] public string Id { get; set; }
         [JsonProperty] public string User { get; set; }
         [JsonProperty] public string Key { get; set; }

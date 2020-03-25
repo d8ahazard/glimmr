@@ -58,7 +58,35 @@ namespace HueDream.Models.Nanoleaf {
             LogUtil.Write("Created");
             HC = new HttpClient();
             clock = new Stopwatch();
-            panelPositions = CalculatePoints(n);
+            var pd = layout.PositionData;
+            bool autoCalc = false;
+            foreach (var pl in pd) {
+                if (pl.Sector == -1) {
+                    autoCalc = true;
+                    break;
+                }
+            }
+
+            if (autoCalc) {
+                panelPositions = CalculatePoints(n);
+                var newPd = new List<PanelLayout>();
+                foreach (var pl in pd) {
+                    if (pl.Sector == -1) {
+                        pl.Sector = panelPositions[pl.PanelId];
+                    }
+                    newPd.Add(pl);
+                }
+                layout.PositionData = newPd;
+                var leaves = DreamData.GetItem<List<NanoData>>("leaves");
+                var newLeaves = new List<NanoData>();
+                foreach (var leaf in leaves) {
+                    if (leaf.Id == n.Id) {
+                        leaf.Layout = layout;
+                    }
+                    newLeaves.Add(leaf);
+                }
+                DreamData.SetItem<List<NanoData>>("leaves", newLeaves);
+            }
         }
 
         private static Dictionary<int, int> CalculatePoints(NanoData nd) {
@@ -252,26 +280,30 @@ namespace HueDream.Models.Nanoleaf {
 
             foreach (var pd in layout.PositionData) {
                 var id = pd.PanelId;
+                var sector = pd.Sector;
                 if (streamMode == 2) {
                     byteString.AddRange(ByteUtils.PadInt(id));
                 } else {
                     byteString.Add(ByteUtils.IntByte(id));
                 }
 
-                var color = PickColor(id, colors);
-                // Pad ID, this is probably wrong
-                // Add rgb
-                byteString.Add(ByteUtils.IntByte(color.R));
-                byteString.Add(ByteUtils.IntByte(color.G));
-                byteString.Add(ByteUtils.IntByte(color.B));
-                // White value
-                byteString.AddRange(ByteUtils.PadInt(0,1));
-                // Pad duration time
-                if (streamMode == 2) {
-                    byteString.AddRange(ByteUtils.PadInt(1));
-                } else {
-                    // Fade Duration time
-                    byteString.AddRange(ByteUtils.PadInt(1, 1));
+                if (sector != -1) {
+                    var color = colors[sector];
+                    //LogUtil.Write("Sending sector " + (sector + 1) + " out of " + colors.Length);
+                    // Pad ID, this is probably wrong
+                    // Add rgb
+                    byteString.Add(ByteUtils.IntByte(color.R));
+                    byteString.Add(ByteUtils.IntByte(color.G));
+                    byteString.Add(ByteUtils.IntByte(color.B));
+                    // White value
+                    byteString.AddRange(ByteUtils.PadInt(0, 1));
+                    // Pad duration time
+                    if (streamMode == 2) {
+                        byteString.AddRange(ByteUtils.PadInt(1));
+                    } else {
+                        // Fade Duration time
+                        byteString.AddRange(ByteUtils.PadInt(1, 1));
+                    }
                 }
             }
             SendUdpUnicast(byteString.ToArray());

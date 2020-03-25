@@ -48,12 +48,14 @@ namespace HueDream.Models.DreamGrab {
         }
 
         public void StopLights() {
+            LogUtil.Write("Stopping LED Strip.");
             var pixelCount = neopixel.GetNumberOfPixels();
             for (var i = 0; i < pixelCount; i++) {
                 neopixel.SetPixelColor(i, Color.Black);
             }
             neopixel.Show();
-            neopixel.Dispose();
+            LogUtil.Write("LED Strips stopped.");
+            //neopixel.Dispose();
         }
 
         public static Color Rainbow(float progress)
@@ -86,6 +88,7 @@ namespace HueDream.Models.DreamGrab {
             if (!disposedValue) {
                 if (disposing) {
                     StopLights();
+                    neopixel.Dispose();
                 }
                 disposedValue = true;
             }
