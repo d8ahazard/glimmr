@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using Emgu.CV;
 using Emgu.CV.Structure;
 using HueDream.Models.Util;
+using Newtonsoft.Json;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto.Prng;
 
@@ -16,6 +18,7 @@ namespace HueDream.Models.DreamGrab {
         private int border_height = 20;
         private bool useGridSectors;
         private Color[] gridColors;
+        private int fcount;
         
         public Splitter(LedData ld, int srcWidth, int srcHeight, bool useGrid = false) {
             vCount = ld.VCount;
@@ -24,12 +27,30 @@ namespace HueDream.Models.DreamGrab {
             LogUtil.Write($@"Splitter init, {vCount}, {vCount}, {hCount}, {hCount}");
             DrawGrid(srcWidth, srcHeight);
             DrawSectors(srcWidth, srcHeight);
+            fcount = 0;
             LogUtil.Write("Splitter should be created.");
         }
 
         private Color GetAverage(Mat input) {
             var colors = CvInvoke.Mean(input);
-            return Color.FromArgb(255,(int)colors.V2, (int)colors.V1, (int)colors.V0);
+            // var colors = new MCvScalar();
+            // var foo = new MCvScalar();
+            // CvInvoke.MeanStdDev(input, ref foo, ref colors);
+            var cB = (int) colors.V0;
+            var cG = (int) colors.V1;
+            var cR = (int) colors.V2;
+            if (cB + cG + cR < 30) {
+                cB = 0;
+                cG = 0;
+                cR = 0;
+            }
+            return Color.FromArgb(255,cR, cG, cB);
+        }
+        
+        public static int FRound(double value) {
+            int outPut = (int)Math.Round((decimal)value / 10, MidpointRounding.AwayFromZero) * 10;
+            if (outPut < 10) outPut = 0;
+            return outPut;
         }
         
         public Color[] GetColors(Mat input) {
@@ -50,6 +71,7 @@ namespace HueDream.Models.DreamGrab {
                 var sub = new Mat(input, r);
                 output.Add(GetAverage(sub));
             }
+            //LogUtil.Write("Output array: " + JsonConvert.SerializeObject(output));
             return output.ToArray();
         }
 

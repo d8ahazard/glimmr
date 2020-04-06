@@ -78,6 +78,7 @@ namespace HueDream.Models.DreamGrab {
                     break;
             }
             MMALCameraConfig.SensorMode = sensorMode;
+            MMALCameraConfig.ExposureMode = MMAL_PARAM_EXPOSUREMODE_T.MMAL_PARAM_EXPOSUREMODE_BACKLIGHT;
             MMALCameraConfig.VideoResolution = new Resolution(capWidth, capHeight);
             MMALCameraConfig.VideoFramerate = new MMAL_RATIONAL_T(60, 1);
 

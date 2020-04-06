@@ -16,16 +16,17 @@ namespace HueDream.Models.DreamGrab {
             LogUtil.Write("Initializing LED Strip.");
             Brightness = ld.Brightness;
             StartupAnimation = ld.StartupAnimation;
-            ledCount = ld.LedCount;
+            ledCount = ld.VCount * 2 + ld.HCount * 2;
             LogUtil.Write($@"Bright, count, anim: {Brightness}, {ledCount}, {StartupAnimation}");            
             var stripType = rpi_ws281x.WS2812_STRIP;
             LogUtil.Write("Read variables, wtf...");
             neopixel = new Neopixel(ld.LedCount, ld.PinNumber, stripType);
-            LogUtil.Write("Neopixel created.");
+            LogUtil.Write("Neopixel created using " + ledCount + "leds.");
             neopixel.Begin();
+            Demo();
         }
 
-        public void Update() {
+        public void Demo() {
             var pixelCount = neopixel.GetNumberOfPixels();
             for (var i = 0; i < pixelCount; i++) {
                 var progress = i / pixelCount;

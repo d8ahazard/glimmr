@@ -135,17 +135,13 @@ namespace HueDream.Models.DreamGrab {
         private Mat ProcessFrame(Mat input) {
             if (frameCount == 0 || frameCount == 450 || frameCount == 900) {
                 if (input != null) {
-                    LogUtil.Write("Trying to save preview frame...");
                     string path = Directory.GetCurrentDirectory();
-                    LogUtil.Write("Path? " + path);
                     input.Save(path + "/wwwroot/img/screen_preview.jpg");
-                    LogUtil.Write("Saved");
                 }
             }
             Mat output = null;
             if (camType != 3) {
                 output = CamFrame(input);
-                //return GetScreen(input);
             }
             
             if (frameCount > 900) {
@@ -190,9 +186,7 @@ namespace HueDream.Models.DreamGrab {
             // If we didn't just acquire a target, do a background check to see if the target has moved
 
             if (frameCount > 900) {
-                LogUtil.Write("Updating target.");
                 frameCount = 0;
-                lockTarget = FindTarget(scaled);
             }
 
             if (showWarped || showEdged || showSource) {
@@ -255,7 +249,6 @@ namespace HueDream.Models.DreamGrab {
                         }
                     }
                 }
-                LogUtil.Write("We should have " + targets.Count + " targets.");
                 if (showEdged) {
                     var color = new MCvScalar(255, 255, 0);
                     CvInvoke.DrawContours(input, contours, -1, color);
@@ -264,7 +257,6 @@ namespace HueDream.Models.DreamGrab {
             }
 
             output = CountTargets(targets);
-            LogUtil.Write("Disposing edges.");
             cannyEdges.Dispose();
             return output;
         }
@@ -275,7 +267,6 @@ namespace HueDream.Models.DreamGrab {
 
         private VectorOfPointF CountTargets(List<VectorOfPoint> inputT) {
             VectorOfPointF output = null;
-            LogUtil.Write("COUNTING TARGETS...");
             var x1 = 0;
             var x2 = 0;
             var x3 = 0;
@@ -308,20 +299,14 @@ namespace HueDream.Models.DreamGrab {
 
                 PointF[] avgPoints = {new PointF(x1, y1), new PointF(x2, y2), new PointF(x3, y3), new PointF(x4, y4)};
                 var avgVect = new VectorOfPointF(avgPoints);
-                LogUtil.Write("Average Points: " + JsonConvert.SerializeObject(avgVect));
                 if (iCount > 20) {
-                    LogUtil.Write("Setting lock target.");
                     output = avgVect;
                 }
-                LogUtil.Write("Disposing vector.");
-                //avgVect.Dispose();
             }
 
             if (iCount > 200) {
-                LogUtil.Write("Truncating range.");
                 targets.RemoveRange(0, 150);
             }
-            LogUtil.Write("Done.");
             return output;
         }
 
