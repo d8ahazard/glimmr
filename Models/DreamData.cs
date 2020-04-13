@@ -34,7 +34,7 @@ namespace HueDream.Models {
         ///     Loads our data store from a dynamic path, and tries to get the item
         /// </summary>
         /// <param name="key"></param>
-        /// <returns>dynamic object corresponding to key, or null if not found</returns>
+        /// <returns>dynamic object corresponding to key, or default if not found</returns>
         public static dynamic GetItem(string key) {
             try {
                 using var dStore = new DataStore(GetConfigPath("store.json"));
@@ -44,6 +44,7 @@ namespace HueDream.Models {
             catch (KeyNotFoundException) { }
             return null;
         }
+        
 
         private static DataStore SetDefaults(DataStore store) {
             store.InsertItem("dsIp", "0.0.0.0");
@@ -116,9 +117,7 @@ namespace HueDream.Models {
                 dev = dd.GetItem<Connect>("myDevice");
             }
             
-            LogUtil.Write("Getting a device data: " + JsonConvert.SerializeObject(dev));
             return dev;
-            
         }
 
 

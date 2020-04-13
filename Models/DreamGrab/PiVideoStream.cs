@@ -50,6 +50,8 @@ namespace HueDream.Models.DreamGrab {
         }
 
         public async Task Start(CancellationToken ct) {
+            LogUtil.Write("Starting Camera...");
+
             MMALCamera cam = MMALCamera.Instance;
             MMALCameraConfig.VideoStabilisation = false;
                 
@@ -106,9 +108,9 @@ namespace HueDream.Models.DreamGrab {
                 // Camera warm up time
                 LogUtil.Write("Camera is warming up...");
                 await Task.Delay(2000).ConfigureAwait(false);
-                LogUtil.Write("Camera initialized.");
+                LogUtil.WriteInc("Camera initialized.");
                 await cam.ProcessAsync(cam.Camera.VideoPort, ct);
-                LogUtil.Write("Camera closed.");
+                LogUtil.WriteDec("Camera closed.");
             }
         }
 
@@ -118,7 +120,7 @@ namespace HueDream.Models.DreamGrab {
             Frame = input.Mat;
         }
         #region IDisposable Support
-        private bool disposedValue = false;
+        private bool disposedValue;
 
         Mat IVideoStream.frame { get => Frame; set => Frame = value; }
 

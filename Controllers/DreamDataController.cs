@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Q42.HueApi;
+using Swan;
 
 namespace HueDream.Controllers {
     [Route("api/[controller]"), ApiController]
@@ -217,11 +218,7 @@ namespace HueDream.Controllers {
             }
 
             if (action == "findDreamDevices") {
-                List<BaseDevice> dev;
-                using (var ds = new DreamClient()) {
-                    dev = ds.FindDevices().Result;
-                }
-
+                List<BaseDevice> dev = DreamDiscovery.FindDevices().Result;
                 store.Dispose();
                 return new JsonResult(dev);
             }
@@ -242,6 +239,7 @@ namespace HueDream.Controllers {
                 if (nd != null) {
                     var panel = new Panel(nd.IpV4Address, nd.Token);
                     var layout = panel.GetLayout().Result;
+                    panel.Dispose();
                     if (layout != null) {
                         nd.Layout = layout;
                         leaves[leafInt] = nd;
@@ -297,12 +295,13 @@ namespace HueDream.Controllers {
                             var nl = new Panel(leaf.IpV4Address, leaf.Token);
                             var layout = nl.GetLayout().Result;
                             if (layout != null) leaf.Layout = layout;
+                            nl.Dispose();
                         }
                         catch (Exception) {
                             LogUtil.Write("An exception occurred, probably the nanoleaf is unplugged.");
                         }
-
                         Console.WriteLine("Device: " + JsonConvert.SerializeObject(leaf));
+                        
                     }
                 }
                 LogUtil.Write("Saving nano data from nano search: " + JsonConvert.SerializeObject(all));
@@ -383,6 +382,7 @@ namespace HueDream.Controllers {
                     } else {
                         message = "Error: Press the link button";
                     }
+                    panel.Dispose();
                 } else {
                     message = "Success: NanoLeaf Already Linked.";
                 }
@@ -405,9 +405,7 @@ namespace HueDream.Controllers {
             }
 
             if (store.GetItem("dsIp") == "0.0.0.0") {
-                var dc = new DreamClient();
-                dc.FindDevices().ConfigureAwait(true);
-                dc.Dispose();
+                DreamDiscovery.FindDevices().Await();
             }
 
             store.Dispose();
@@ -539,10 +537,8 @@ namespace HueDream.Controllers {
         private static void RefreshDevices() {
             // Get dream devices
             List<BaseDevice> dreamDevices;
+            dreamDevices = DreamDiscovery.FindDevices().Result;
             
-            using (var ds = new DreamClient()) {
-                dreamDevices = ds.FindDevices().Result;
-            }
 
             var leaves = Discovery.Refresh();
 

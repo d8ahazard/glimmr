@@ -1,5 +1,5 @@
 @echo off
-
+REM plink -no-antispoof -pw glimmr root@192.168.1.30 service glimmr stop
 set version=1.1.0
 dotnet build HueDream.csproj /p:DeployOnBuild=true /p:PublishProfile=LinuxARM
 cd .\bin\publish\huedream-linux-arm
@@ -13,7 +13,5 @@ pscp -pw glimmr .\Glimmr.runtimeconfig.json dietpi@192.168.1.30:/home/dietpi/gli
 pscp -pw glimmr .\Glimmr.Views.dll dietpi@192.168.1.30:/home/dietpi/glimmr
 pscp -pw glimmr .\Glimmr.Views.pdb dietpi@192.168.1.30:/home/dietpi/glimmr
 pscp -pw glimmr .\web.config dietpi@192.168.1.30:/home/dietpi/glimmr
-echo Starting glimmr...
-echo Stopping glimmr...
-plink -no-antispoof -pw glimmr root@192.168.1.30 service glimmr restart
+REM plink -no-antispoof -pw glimmr root@192.168.1.30 service glimmr start
 

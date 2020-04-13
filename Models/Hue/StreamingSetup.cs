@@ -26,8 +26,9 @@ namespace HueDream.Models.Hue {
         
         public static async Task StopStream(StreamingHueClient client, BridgeData b) {
             var id = b.SelectedGroup;
-            Console.WriteLine($@"Hue: Stopping stream.");
+            Console.WriteLine(@"Hue: Stopping stream.");
             await client.LocalHueClient.SetStreamingAsync(id, false).ConfigureAwait(true);
+            Console.WriteLine("Hue: Stopped.");
         }
 
         public static async Task<StreamingGroup> SetupAndReturnGroup(StreamingHueClient client, BridgeData b, CancellationToken ct) {

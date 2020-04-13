@@ -1,30 +1,21 @@
-﻿using HueDream.Models.Util;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
+using System.Net.Http;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using HueDream.Models.DreamGrab;
+using HueDream.Models.Util;
 using Nanoleaf.Client;
 using Nanoleaf.Client.Exceptions;
 using Nanoleaf.Client.Models.Responses;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Drawing;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Net.Sockets;
-using System.Text;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
-using Accord.Math;
-using Emgu.CV.Util;
-using HueDream.Models.DreamGrab;
-using MMALSharp.Ports.Outputs;
-using Org.BouncyCastle.Utilities;
 
 namespace HueDream.Models.Nanoleaf {
-    public class Panel {
-
+    public sealed class Panel : IDisposable {
         private string IpAddress;
         private string Token;
         private string BasePath;
@@ -32,19 +23,19 @@ namespace HueDream.Models.Nanoleaf {
         private HttpClient HC;
         private string Nanotype;
         private int streamMode;
-        private UdpClient uc;
         private Stopwatch clock;
         private long cycleTime;
         private List<List<Color>> Colors;
         private Dictionary<int, int> panelPositions;
-        
+        private bool disposed;
+
         public Panel(string ipAddress, string token = "") {
             IpAddress = ipAddress;
             Token = token;
             BasePath = "http://" + IpAddress + ":16021/api/v1/" + Token;
             LogUtil.Write("Created");
             HC = new HttpClient();
-            
+            disposed = false;
         }
 
         public Panel(NanoData n) {
@@ -74,8 +65,10 @@ namespace HueDream.Models.Nanoleaf {
                     if (pl.Sector == -1) {
                         pl.Sector = panelPositions[pl.PanelId];
                     }
+
                     newPd.Add(pl);
                 }
+
                 layout.PositionData = newPd;
                 var leaves = DreamData.GetItem<List<NanoData>>("leaves");
                 var newLeaves = new List<NanoData>();
@@ -83,17 +76,21 @@ namespace HueDream.Models.Nanoleaf {
                     if (leaf.Id == n.Id) {
                         leaf.Layout = layout;
                     }
+
                     newLeaves.Add(leaf);
                 }
+
                 DreamData.SetItem<List<NanoData>>("leaves", newLeaves);
             }
+
+            disposed = false;
         }
 
         private static Dictionary<int, int> CalculatePoints(NanoData nd) {
             var pl = nd.Layout;
             // calculate panel points in 2d space
-            
-            
+
+
             // calculate color points in 2d space?
             var sPoints = new Dictionary<int, Point>();
             var cMode = DreamData.GetItem<int>("captureMode");
@@ -115,12 +112,12 @@ namespace HueDream.Models.Nanoleaf {
             var vStep = vd / 3;
             // Get horizont spaces between tiles
             var hStep = hd / 5;
-            
+
             // Center of screen
             hd /= 2;
             vd /= 2;
             LogUtil.Write($@"Center is {hd}, {vd}; steps are {hStep}, {vStep}");
-            
+
             var pPoints = new List<Point>();
             // We need to calculate the min/max of the coords and adjust to center
             var minX = 0;
@@ -155,7 +152,7 @@ namespace HueDream.Models.Nanoleaf {
                 var p = new Point(pX, pY);
                 pPoints.Add(p);
             }
-            
+
             // Set our marker at center
             var xMarker = 0;
             var yMarker = 0;
@@ -204,7 +201,7 @@ namespace HueDream.Models.Nanoleaf {
             foreach (var pPoint in pPoints) {
                 double maxDist = double.MaxValue;
                 var pTarget = -1;
-                foreach(KeyValuePair<int, Point> kp in sPoints) {
+                foreach (KeyValuePair<int, Point> kp in sPoints) {
                     var dX = kp.Value.X - pPoint.X;
                     var dY = kp.Value.Y - pPoint.Y;
                     var dist = Math.Sqrt(Math.Pow(dX, 2) + Math.Pow(dY, 2));
@@ -214,6 +211,7 @@ namespace HueDream.Models.Nanoleaf {
                         pTarget = kp.Key;
                     }
                 }
+
                 if (pTarget != -1) {
                     LogUtil.Write($@"Target for {panelInt}: {maxDist} {pTarget}");
                     var pId = pl.PositionData[panelInt].PanelId;
@@ -221,8 +219,10 @@ namespace HueDream.Models.Nanoleaf {
                 } else {
                     LogUtil.Write($@"Can't get target: {maxDist} {pTarget}");
                 }
+
                 panelInt++;
             }
+
             LogUtil.Write("Final List: " + JsonConvert.SerializeObject(tList));
             return tList;
         }
@@ -234,29 +234,28 @@ namespace HueDream.Models.Nanoleaf {
         public void EnableStreaming(CancellationToken ct) {
             StartPanel(ct);
             var controlVersion = "v" + streamMode;
-            var body = new { write = new{command = "display", animType = "extControl", extControlVersion = controlVersion}};
-         
+            var body = new
+                {write = new {command = "display", animType = "extControl", extControlVersion = controlVersion}};
+
             var startResult = SendPutRequest(JsonConvert.SerializeObject(body), "effects").Result;
             if (controlVersion == "v2") {
                 LogUtil.Write("We should have no response here: " + startResult);
-            }
-            else {
+            } else {
                 LogUtil.Write("We should have a body with stuff: " + startResult);
             }
-            uc = new UdpClient();
         }
 
         public async void StartPanel(CancellationToken ct) {
             await SendPutRequest(JsonConvert.SerializeObject(new {on = new {value = true}}), "state");
             clock.Start();
             cycleTime = clock.ElapsedMilliseconds;
+            LogUtil.WriteInc($@"Nanoleaf: Starting panel: {IpAddress}");
             while (!ct.IsCancellationRequested) {
-                
             }
+            LogUtil.WriteDec($@"Nanoleaf: Stopped panel: {IpAddress}");
             StopPanel();
-
         }
-        
+
         public async void StopPanel() {
             await SendPutRequest(JsonConvert.SerializeObject(new {on = new {value = false}}), "state");
         }
@@ -306,6 +305,7 @@ namespace HueDream.Models.Nanoleaf {
                     }
                 }
             }
+
             SendUdpUnicast(byteString.ToArray());
         }
 
@@ -320,12 +320,13 @@ namespace HueDream.Models.Nanoleaf {
             try {
                 var nanoleaf = new NanoleafClient(IpAddress);
                 return await nanoleaf.CreateTokenAsync();
-            } catch (Exception) {
-
             }
+            catch (Exception) {
+            }
+
             return null;
         }
-        
+
         private void SendUdpUnicast(byte[] data) {
             var ep = IpUtil.Parse(IpAddress, 60222);
             var sender = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
@@ -348,57 +349,77 @@ namespace HueDream.Models.Nanoleaf {
             var authorizedPath = BasePath + "/" + path;
             try {
                 using (var content = new StringContent(json, Encoding.UTF8, "application/json"))
-                using (var responseMessage = await HC.PutAsync(authorizedPath, content))
-                {
+                using (var responseMessage = await HC.PutAsync(authorizedPath, content)) {
                     LogUtil.Write($@"Sending put request to {authorizedPath}: {json}");
-                    if (!responseMessage.IsSuccessStatusCode)
-                    {
+                    if (!responseMessage.IsSuccessStatusCode) {
                         HandleNanoleafErrorStatusCodes(responseMessage);
                     }
+
                     LogUtil.Write("Returning");
                     return await responseMessage.Content.ReadAsStringAsync();
                 }
-            } catch (HttpRequestException) {
+            }
+            catch (HttpRequestException) {
                 return null;
             }
         }
 
         public async Task<string> SendGetRequest(string path = "") {
             var authorizedPath = BasePath + "/" + path;
-            try
-            {
+            try {
                 LogUtil.Write("Auth path is : " + authorizedPath);
                 using (var responseMessage = await HC.GetAsync(authorizedPath)) {
                     if (!responseMessage.IsSuccessStatusCode) {
                         LogUtil.Write("Error code?");
                         HandleNanoleafErrorStatusCodes(responseMessage);
                     }
+
                     LogUtil.Write("Returning");
                     return await responseMessage.Content.ReadAsStringAsync();
                 }
-            } catch (HttpRequestException) {
+            }
+            catch (HttpRequestException) {
                 return null;
             }
         }
+
         private void HandleNanoleafErrorStatusCodes(HttpResponseMessage responseMessage) {
-            switch ((int)responseMessage.StatusCode) {
+            switch ((int) responseMessage.StatusCode) {
                 case 400:
                     throw new NanoleafHttpException("Error 400: Bad request!");
                 case 401:
-                    throw new NanoleafUnauthorizedException($"Error 401: Not authorized! Provided an invalid token for this Aurora. Request path: {responseMessage.RequestMessage.RequestUri.AbsolutePath}");
+                    throw new NanoleafUnauthorizedException(
+                        $"Error 401: Not authorized! Provided an invalid token for this Aurora. Request path: {responseMessage.RequestMessage.RequestUri.AbsolutePath}");
                 case 403:
                     throw new NanoleafHttpException("Error 403: Forbidden!");
                 case 404:
-                    throw new NanoleafResourceNotFoundException($"Error 404: Resource not found! Request Uri: {responseMessage.RequestMessage.RequestUri.AbsoluteUri}");
+                    throw new NanoleafResourceNotFoundException(
+                        $"Error 404: Resource not found! Request Uri: {responseMessage.RequestMessage.RequestUri.AbsoluteUri}");
                 case 422:
                     throw new NanoleafHttpException("Error 422: Unprocessable Entity");
                 case 500:
                     throw new NanoleafHttpException("Error 500: Internal Server Error");
                 default:
-                    throw new NanoleafHttpException("ERROR! UNKNOWN ERROR " + (int)responseMessage.StatusCode);
+                    throw new NanoleafHttpException("ERROR! UNKNOWN ERROR " + (int) responseMessage.StatusCode);
+            }
+        }
+
+        public void Dispose() {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool disposing) {
+            if (disposed) {
+                LogUtil.Write("Already disposed.");
+                return;
+            }
+
+            if (disposing) {
+                LogUtil.Write("Panel Disposed.");
+                disposed = true;
+                HC.Dispose();
             }
         }
     }
-
-    
 }

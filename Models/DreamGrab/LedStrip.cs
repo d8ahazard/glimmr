@@ -4,13 +4,13 @@ using System.Drawing;
 using ws281x.Net;
 
 namespace HueDream.Models.DreamGrab {
-    public class LedStrip : IDisposable {
+    public sealed class LedStrip : IDisposable {
         public int Brightness { get; set; }
-        public int StartupAnimation { get; set; }
+        private int StartupAnimation { get; }
 
-        private int ledCount;
+        private readonly int ledCount;
 
-        private Neopixel neopixel;
+        private readonly Neopixel neoPixel;
         
         public LedStrip(LedData ld) {
             LogUtil.Write("Initializing LED Strip.");
@@ -19,20 +19,22 @@ namespace HueDream.Models.DreamGrab {
             ledCount = ld.VCount * 2 + ld.HCount * 2;
             LogUtil.Write($@"Bright, count, anim: {Brightness}, {ledCount}, {StartupAnimation}");            
             var stripType = rpi_ws281x.WS2812_STRIP;
-            LogUtil.Write("Read variables, wtf...");
-            neopixel = new Neopixel(ld.LedCount, ld.PinNumber, stripType);
-            LogUtil.Write("Neopixel created using " + ledCount + "leds.");
-            neopixel.Begin();
+            neoPixel = new Neopixel(ledCount, ld.PinNumber, stripType);
+            LogUtil.Write($@"NeoPixel created using {ledCount} LEDs.");
+            neoPixel.Begin();
             Demo();
         }
 
-        public void Demo() {
-            var pixelCount = neopixel.GetNumberOfPixels();
-            for (var i = 0; i < pixelCount; i++) {
-                var progress = i / pixelCount;
-                neopixel.SetPixelColor(i, Rainbow(progress));
+        private void Demo() {
+            for (var i = 0; i < ledCount; i++) {
+                var pi = i * 1.0f;
+                var progress = pi / ledCount;
+                var rCol = Rainbow(progress);
+                neoPixel.SetPixelColor(i, rCol);
+                neoPixel.Show();
             }
-            neopixel.Show();
+            System.Threading.Thread.Sleep(1000);
+            StopLights();
         }
         
         public void UpdateAll(Color[] colors) {
@@ -42,57 +44,47 @@ namespace HueDream.Models.DreamGrab {
                 if (iSource >= colors.Length) {
                     iSource = 0; // reset if at end of source
                 }
-                neopixel.SetPixelColor(i, colors[iSource]);
+                neoPixel.SetPixelColor(i, colors[iSource]);
                 destArray[i] = colors[iSource++];
+                
             }
-            neopixel.Show();
+            neoPixel.Show();
         }
 
         public void StopLights() {
+            var blk = Color.FromArgb(0,0,0, 0);
             LogUtil.Write("Stopping LED Strip.");
-            var pixelCount = neopixel.GetNumberOfPixels();
-            for (var i = 0; i < pixelCount; i++) {
-                neopixel.SetPixelColor(i, Color.Black);
+            for (var i = 0; i <= ledCount; i++) {
+                neoPixel.SetPixelColor(i, blk);
+                neoPixel.Show();
             }
-            neopixel.Show();
             LogUtil.Write("LED Strips stopped.");
-            //neopixel.Dispose();
         }
 
-        public static Color Rainbow(float progress)
-        {
-            float div = Math.Abs(progress % 1) * 6;
-            int ascending = (int) (div % 1 * 255);
-            int descending = 255 - ascending;
-
-            switch ((int) div)
-            {
-                case 0:
-                    return Color.FromArgb(255, 255, ascending, 0);
-                case 1:
-                    return Color.FromArgb(255, descending, 255, 0);
-                case 2:
-                    return Color.FromArgb(255, 0, 255, ascending);
-                case 3:
-                    return Color.FromArgb(255, 0, descending, 255);
-                case 4:
-                    return Color.FromArgb(255, ascending, 0, 255);
-                default: // case 5:
-                    return Color.FromArgb(255, 255, 0, descending);
-            }
+        private static Color Rainbow(float progress) {
+            var div = Math.Abs(progress % 1) * 6;
+            var ascending = (int) (div % 1 * 255);
+            var descending = 255 - ascending;
+            return (int) div switch {
+                0 => Color.FromArgb(255, 255, ascending, 0),
+                1 => Color.FromArgb(255, descending, 255, 0),
+                2 => Color.FromArgb(255, 0, 255, ascending),
+                3 => Color.FromArgb(255, 0, descending, 255),
+                4 => Color.FromArgb(255, ascending, 0, 255),
+                _ => Color.FromArgb(255, 255, 0, descending)
+            };
         }
 
         #region IDisposable Support
-        private bool disposedValue = false;
+        private bool disposedValue;
 
-        protected virtual void Dispose(bool disposing) {
-            if (!disposedValue) {
-                if (disposing) {
-                    StopLights();
-                    neopixel.Dispose();
-                }
-                disposedValue = true;
+        private void Dispose(bool disposing) {
+            if (disposedValue) return;
+            if (disposing) {
+                StopLights();
+                neoPixel.Dispose();
             }
+            disposedValue = true;
         }
 
         public void Dispose() {

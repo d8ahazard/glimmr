@@ -53,14 +53,14 @@ namespace HueDream.Models.Hue {
             // This is what we actually need
             if (stream == null) return false;
             entLayer = stream.GetNewLayer(true);
-            LogUtil.WriteInc($"Streaming established: {BridgeIp}");
+            LogUtil.WriteInc($"Starting Hue Stream: {BridgeIp}");
             streaming = true;
             return streaming;
         }
         
         public void DisableStreaming() {
-            var unused = StreamingSetup.StopStream(client, bd);
-            LogUtil.WriteDec($"Streaming stopped: {BridgeIp}");
+            var _ = StreamingSetup.StopStream(client, bd);
+            LogUtil.WriteDec($"Stopping Hue Stream: {BridgeIp}");
             streaming = false;
         }
 
@@ -158,7 +158,7 @@ namespace HueDream.Models.Hue {
                         LogUtil.Write("Listing groups?");
                         b.SetGroups(hb.ListGroups().Result);
                         LogUtil.Write("Groups listed.");
-                        
+                        hb.Dispose();
                     }
                     nb.Add(b);
                 }
@@ -216,8 +216,8 @@ namespace HueDream.Models.Hue {
             GC.SuppressFinalize(this);
         }
 
-        
-        public void Dispose(bool disposing) {
+
+        protected virtual void Dispose(bool disposing) {
             if (disposed) {
                 return;
             }
