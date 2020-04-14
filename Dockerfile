@@ -19,7 +19,7 @@ RUN mkdir -p /etc/huedream
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "HueDream.dll"]
+ENTRYPOINT ["dotnet", "Glimmr.dll"]
 
 VOLUME /etc/huedream
 EXPOSE 1900/udp

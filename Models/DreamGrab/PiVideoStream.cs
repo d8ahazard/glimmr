@@ -5,6 +5,7 @@ using Emgu.CV;
 using Emgu.CV.Structure;
 using HueDream.Models.Util;
 using MMALSharp;
+using MMALSharp.Common;
 using MMALSharp.Common.Utility;
 using MMALSharp.Components;
 using MMALSharp.Handlers;
@@ -13,34 +14,34 @@ using MMALSharp.Ports;
 using MMALSharp.Ports.Outputs;
 
 namespace HueDream.Models.DreamGrab {
-    public class PiVideoStream : IVideoStream, IDisposable {
-        private MMALCamera cam;
-        public Mat Frame;
-        private int capWidth;
-        private int capHeight;
-        private int camMode;
+    public sealed class PiVideoStream : IVideoStream, IDisposable {
+        public Mat frame;
+        private readonly MMALCamera cam;
+        private readonly int capWidth;
+        private readonly int capHeight;
+        private readonly int camMode;
         public PiVideoStream(int width = 1296, int height = 972, int mode = 4) {
             cam = MMALCamera.Instance;
             capWidth = width;
             capHeight = height;
             camMode = mode;
         }
-       
 
-        public class EmguEventArgs : EventArgs {
+
+        private class EmguEventArgs : EventArgs {
             public byte[] ImageData { get; set; }
         }
 
-        public class EmguInMemoryCaptureHandler : InMemoryCaptureHandler, IVideoCaptureHandler {
+        private class EmguInMemoryCaptureHandler : InMemoryCaptureHandler, IVideoCaptureHandler {
             public event EventHandler<EmguEventArgs> MyEmguEvent;
 
-            public override void Process(byte[] data, bool eos) {
+            public override void Process(ImageContext context) {
                 
-                base.Process(data, eos);
+                base.Process(context);
 
-                if (eos) {
-                    this.MyEmguEvent(this, new EmguEventArgs { ImageData = this.WorkingData.ToArray() });
-                    this.WorkingData.Clear();
+                if (context != null && context.Eos) {
+                    MyEmguEvent?.Invoke(this, new EmguEventArgs {ImageData = WorkingData.ToArray()});
+                    WorkingData.Clear();
                 }
             }
 
@@ -114,17 +115,18 @@ namespace HueDream.Models.DreamGrab {
             }
         }
 
-        protected virtual void OnEmguEventCallback(object sender, EmguEventArgs args) {
+        private void OnEmguEventCallback(object sender, EmguEventArgs args) {
             var input = new Image<Bgr, byte>(capWidth, capHeight);
             input.Bytes = args.ImageData;
-            Frame = input.Mat;
+            frame = input.Mat;
+            input.Dispose();
         }
         #region IDisposable Support
         private bool disposedValue;
 
-        Mat IVideoStream.frame { get => Frame; set => Frame = value; }
+        Mat IVideoStream.frame { get => frame; set => frame = value; }
 
-        protected virtual void Dispose(bool disposing) {
+        private void Dispose(bool disposing) {
             if (!disposedValue) {
                 if (disposing) {
                     cam.Cleanup();
