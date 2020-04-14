@@ -253,6 +253,7 @@ namespace HueDream.Models.DreamScreen {
         }
 
         public void SendColors(Color[] colors, Color[] sectors, double fadeTime = 0) {
+            if (sendTokenSource == null) sendTokenSource = new CancellationTokenSource();
             if (sendTokenSource.IsCancellationRequested) return;
 
             foreach (var bridge in bridges) {

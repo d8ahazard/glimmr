@@ -279,7 +279,7 @@ namespace HueDream.Models.Nanoleaf {
 
             foreach (var pd in layout.PositionData) {
                 var id = pd.PanelId;
-                var sector = pd.Sector;
+                var sector = pd.Sector - 1;
                 if (streamMode == 2) {
                     byteString.AddRange(ByteUtils.PadInt(id));
                 } else {
