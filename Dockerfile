@@ -8,6 +8,7 @@ COPY ["HueDream.csproj", ""]
 RUN dotnet restore "./HueDream.csproj"
 COPY . .
 WORKDIR "/src/."
+RUN dotnet restore --source ./pkg
 RUN dotnet build "HueDream.csproj" -c Release -o /app/build
 
 FROM build AS publish
