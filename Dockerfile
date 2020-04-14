@@ -7,8 +7,9 @@ WORKDIR /src
 COPY ["HueDream.csproj", ""]
 RUN dotnet restore "./HueDream.csproj"
 COPY . .
-WORKDIR "/src/."
+COPY /NuGet.Config /root/.config/NuGet/
 RUN dotnet restore --source ./pkg
+WORKDIR "/src/."
 RUN dotnet build "HueDream.csproj" -c Release -o /app/build
 
 FROM build AS publish
