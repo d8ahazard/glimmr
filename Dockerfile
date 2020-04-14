@@ -5,8 +5,9 @@ WORKDIR /app
 FROM mcr.microsoft.com/dotnet/core/sdk:3.1-buster AS build
 WORKDIR /src
 COPY ["HueDream.csproj", ""]
+COPY ["pkg", "/root/pkg"]
 COPY ["NuGet.Config", "/root/.config/NuGet/"]
-RUN dotnet restore --source ./pkg
+RUN dotnet restore --source "/root/pkg"
 RUN dotnet restore "./HueDream.csproj"
 COPY . .
 WORKDIR "/src/."
