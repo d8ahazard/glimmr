@@ -10,3 +10,4 @@ store.json
 store.json.bk
 CodeGraphData/*
 log/*
+*.log
