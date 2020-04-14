@@ -10,6 +10,7 @@ namespace HueDream.Models.DreamScreen {
         private readonly byte[] payload;
 
         public DreamScreenMessage(byte[] bytesIn, string from) {
+            IpAddress = from;
             var byteString = BitConverter.ToString(bytesIn);
             var bytesString = byteString.Split("-");
             var magic = bytesString[0];
@@ -19,7 +20,7 @@ namespace HueDream.Models.DreamScreen {
                 return;
             }
 
-            int len = bytesIn[1];
+            Len = bytesIn[1];
             Group = bytesIn[2];
             Flags = bytesString[3];
             var cmd = bytesString[4] + bytesString[5];
@@ -28,14 +29,14 @@ namespace HueDream.Models.DreamScreen {
             else
                 Console.WriteLine($@"DSMessage: No matching key in dict for bytes: {cmd}.");
             BaseDevice dreamDev = null;
-            if (len > 5) {
+            if (Len > 5) {
                 payload = ExtractPayload(bytesIn);
                 PayloadString = payload.Length != 0
                     ? BitConverter.ToString(payload).Replace("-", string.Empty, StringComparison.CurrentCulture)
                     : "";
             }
-
-            if (Command == "DEVICE_DISCOVERY" && Flags == "60" && len > 46) {
+            
+            if (Command == "DEVICE_DISCOVERY" && Flags == "60" && Len > 46) {
                 int devType = payload[^1];
                 switch (devType) {
                     case 1:
@@ -58,6 +59,7 @@ namespace HueDream.Models.DreamScreen {
                 if (dreamDev != null) {
                     dreamDev.Initialize();
                     dreamDev.ParsePayload(GetPayload());
+                    dreamDev.Id = from;
                 }
                 else {
                     Console.WriteLine($@"DSMessage: Device is null from {devType}.");
@@ -78,6 +80,8 @@ namespace HueDream.Models.DreamScreen {
         [JsonProperty] public string IpAddress { get; set; }
 
         public bool IsValid { get; }
+        
+        public int Len { get; set; }
         public BaseDevice Device { get; }
 
         public byte[] GetPayload() {

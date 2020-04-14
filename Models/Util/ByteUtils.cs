@@ -47,11 +47,12 @@ namespace HueDream.Models.Util {
             return data;
         }
 
-        public static IEnumerable<string> SplitHex(string str, int chunkSize) {
-            if (str is null) throw new ArgumentNullException(nameof(str));
-
-            return Enumerable.Range(0, str.Length / chunkSize)
-                .Select(i => str.Substring(i * chunkSize, chunkSize));
+        public static List<string> SplitHex(string value, int chunkLength)
+        {
+            var res = new List<string>();
+            int count = (value.Length / chunkLength) + (value.Length % chunkLength > 0 ? 1 : 0);
+            Enumerable.Range(0, count).ToList().ForEach(f => res.Add(value.Skip(f * chunkLength).Take(chunkLength).Select(z => z.ToString()).Aggregate((a,b) => a+b)));
+            return res;
         }
 
         /// <summary>
@@ -60,8 +61,8 @@ namespace HueDream.Models.Util {
         /// <returns>
         ///     A byte representation of the integer.
         /// </returns>
-        public static byte IntByte(int toByte) {
-            var b = Convert.ToByte(toByte.ToString("X2", Format), 16);
+        public static byte IntByte(int toByte, string format = "X2") {
+            var b = Convert.ToByte(toByte.ToString(format, Format), 16);
             return b;
         }
 
@@ -133,6 +134,13 @@ namespace HueDream.Models.Util {
             }
 
             return byteOut;
+        }
+
+        public static byte[] PadInt(int toPad, int take = 2) {
+            byte[] intBytes = BitConverter.GetBytes(toPad);
+            Array.Reverse(intBytes);
+            intBytes = intBytes.Reverse().Take(take).Reverse().ToArray();
+            return intBytes;
         }
 
         public static string ByteString(byte[] input) {

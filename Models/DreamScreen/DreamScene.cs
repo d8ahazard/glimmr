@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
 using HueDream.Models.DreamScreen.Scenes;
@@ -70,14 +71,15 @@ namespace HueDream.Models.DreamScreen {
                 // Check and set colors if time is greater than animation int, then reset time count...
                 if (!(dTime > animationTime * 1000)) continue;
                 startTime = curTime;
-                dc.SendColors(RefreshColors(colors), animationTime);
+                var cols = RefreshColors(colors);
+                dc.SendColors(cols, cols, animationTime);
             }
 
             LogUtil.WriteDec($@"DreamScene: Color Builder canceled. {startTime}");
         }
 
-        private string[] RefreshColors(string[] input) {
-            var output = new string[12];
+        private Color[] RefreshColors(string[] input) {
+            var output = new Color[12];
             var maxColors = input.Length - 1;
             var colorCount = startInt;
             var col1 = startInt;
@@ -87,12 +89,12 @@ namespace HueDream.Models.DreamScreen {
                 if (mode == AnimationMode.Random) col1 = new Random().Next(0, maxColors);
                 while (col1 > maxColors) col1 -= maxColors;
                 if (mode == AnimationMode.RandomAll) col1 = allRand;
-                output[i] = input[col1];
+                output[i] = ColorTranslator.FromHtml("#" + input[col1]);
             }
 
             if (mode == AnimationMode.LinearAll) {
                 for (var i = 0; i < 12; i++) {
-                    output[i] = input[colorCount];
+                    output[i] = ColorTranslator.FromHtml("#" + input[colorCount]);
                 }
                 startInt++;
             }

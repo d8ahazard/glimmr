@@ -11,28 +11,30 @@ namespace HueDream.Models.Hue {
         public BridgeData() { }
 
         public BridgeData(string ip, string id) {
-            Ip = ip;
+            IpAddress = ip;
             Id = id;
         }
 
-        public BridgeData(string ip, string id, string user, string key, string group = "-1") {
-            Ip = ip;
+        public BridgeData(string ip, string id, string user, string key, string group = "-1", string groupName = "undefined", int groupNumber = 0) {
+            IpAddress = ip;
             Id = id;
             User = user;
             Key = key;
             SelectedGroup = group;
             Groups = new List<Group>();
             Lights = new List<LightData>();
+            GroupName = groupName;
+            GroupNumber = groupNumber;
         }
 
-        [JsonProperty] public string Ip { get; set; }
-
+        [JsonProperty] public string IpAddress { get; set; }
         [JsonProperty] public string Id { get; set; }
-
         [JsonProperty] public string User { get; set; }
-
         [JsonProperty] public string Key { get; set; }
-
+        [JsonProperty] public static string Tag = "HueBridge";
+        [JsonProperty] public string Name { get; set; }
+        [JsonProperty] public string GroupName { get; set; }
+        [JsonProperty] public int GroupNumber { get; set; }
         [JsonProperty] public string SelectedGroup { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
@@ -65,6 +67,9 @@ namespace HueDream.Models.Hue {
             var bridgeUser = string.Empty;
             var bridgeKey = string.Empty;
             var selectedGroup = "-1";
+            var groupNumber = 0;
+            var name = "Hue Bridge";
+            var groupName = "undefined";
             var bridgeGroups = Array.Empty<Group>();
             var groupIds = new List<string>();
             var bridgeLights = new List<LightData>();
@@ -104,8 +109,12 @@ namespace HueDream.Models.Hue {
                         } catch {
                             Console.WriteLine(@"Cast exception for group.");
                         }
-                        
-
+                        break;
+                    case "groupNumber":
+                        groupNumber = (int) property.Value;
+                        break;
+                    case "groupName":
+                        groupName = (string)property.Value;
                         break;
                 }
 
@@ -114,8 +123,11 @@ namespace HueDream.Models.Hue {
                 Key = bridgeKey,
                 User = bridgeUser,
                 SelectedGroup = selectedGroup,
-                Lights = bridgeLights
-            };
+                Lights = bridgeLights,
+                GroupName = groupName,
+                GroupNumber = groupNumber,
+                Name = name
+        };
             if (bd.Groups.Count > 0) {
                 groupIds.AddRange(bd.Groups.Select(g => g.Id));
                 if (!groupIds.Contains(selectedGroup) || selectedGroup == "-1") {

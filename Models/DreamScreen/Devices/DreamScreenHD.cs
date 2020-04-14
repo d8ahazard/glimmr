@@ -11,49 +11,12 @@ namespace HueDream.Models.DreamScreen.Devices {
 
         [JsonProperty] private byte[] appMusicData;
 
-        [JsonProperty] private int[] flexSetup;
+        [JsonProperty] public int[] flexSetup { get; set; }
 
         [JsonProperty] private int[] musicModeColors;
 
         [JsonProperty] private int[] musicModeWeights;
 
-        public DreamScreenHd(string ipAddress) : base(ipAddress) {
-            Tag = DeviceTag;
-            EspFirmwareVersion = RequiredEspFirmwareVersion;
-            PicVersionNumber = RequiredPicVersionNumber;
-            Zones = 15;
-            ZonesBrightness = new[] {255, 255, 255};
-            MusicModeType = 0;
-            musicModeColors = new[] {255, 255, 255};
-            musicModeWeights = new[] {100, 100, 100};
-            MinimumLuminosity = new[] {0, 0, 0};
-            IndicatorLightAutoOff = 1;
-            UsbPowerEnable = 0;
-            SectorBroadcastControl = 0;
-            SectorBroadcastTiming = 1;
-            HdmiInput = 0;
-            MusicModeSource = 0;
-            appMusicData = new byte[] {0, 0, 0};
-            CecPassthroughEnable = 1;
-            CecSwitchingEnable = 1;
-            HpdEnable = 1;
-            VideoFrameDelay = 0;
-            LetterboxingEnable = 0;
-            PillarboxingEnable = 0;
-            HdmiActiveChannels = 0;
-            ColorBoost = 0;
-            CecPowerEnable = 0;
-            flexSetup = new[] {8, 16, 48, 0, 7, 0};
-            SkuSetup = 0;
-            HdrToneRemapping = 0;
-            BootState = 0;
-            IsDemo = false;
-            ProductId = 1;
-            Name = "DreamScreen HD";
-            HdmiInputName1 = "HDMI 1";
-            HdmiInputName2 = "HDMI 2";
-            HdmiInputName3 = "HDMI 3";
-        }
 
         [JsonProperty] public int BootState { get; set; }
 
@@ -110,6 +73,52 @@ namespace HueDream.Models.DreamScreen.Devices {
         [JsonProperty] public byte Zones { get; set; }
 
         [JsonProperty] private int[] ZonesBrightness { get; set; }
+
+        public DreamScreenHd(string ipAddress) : base(ipAddress) {
+            Name = "DreamScreen HD";
+            LogUtil.Write("Setting DS Defaults.");
+            Tag = DeviceTag;
+            EspFirmwareVersion = RequiredEspFirmwareVersion;
+            PicVersionNumber = RequiredPicVersionNumber;
+            ProductId = 1;
+            Zones = 15;
+            ZonesBrightness = new[] {255, 255, 255};
+            MusicModeType = 0;
+            musicModeColors = new[] {255, 255, 255};
+            musicModeWeights = new[] {100, 100, 100};
+            MinimumLuminosity = new[] {0, 0, 0};
+            IndicatorLightAutoOff = 1;
+            UsbPowerEnable = 0;
+            SectorBroadcastControl = 0;
+            SectorBroadcastTiming = 1;
+            HdmiInput = 0;
+            MusicModeSource = 0;
+            appMusicData = new byte[] {0, 0, 0};
+            CecPassthroughEnable = 1;
+            CecSwitchingEnable = 1;
+            HpdEnable = 1;
+            VideoFrameDelay = 0;
+            LetterboxingEnable = 0;
+            PillarboxingEnable = 0;
+            HdmiActiveChannels = 0;
+            ColorBoost = 0;
+            CecPowerEnable = 0;
+            flexSetup = new[] {8, 16, 48, 0, 7, 0};
+            SkuSetup = 0;
+            HdrToneRemapping = 0;
+            BootState = 0;
+            IsDemo = false;
+            HdmiInputName1 = "HDMI 1";
+            HdmiInputName2 = "HDMI 2";
+            HdmiInputName3 = "HDMI 3";
+        }
+
+        public DreamScreenHd() {
+        }
+
+        public override void SetDefaults() {
+            
+        }
 
 
         public override void ParsePayload(byte[] payload) {

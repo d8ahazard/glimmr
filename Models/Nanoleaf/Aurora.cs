@@ -21,7 +21,7 @@ namespace HueDream.Models.Nanoleaf {
         }
         
            
-        public virtual JObject __put(object endpoint, JObject data) {
+        public virtual JObject Put(object endpoint, JObject data) {
             var url = BaseUrl + endpoint;
             try {
                 var r = Requests.Put(url, data);
@@ -32,7 +32,7 @@ namespace HueDream.Models.Nanoleaf {
             }
         }
         
-        public virtual JObject __get(string endpoint = "") {
+        public virtual JObject Get(string endpoint = "") {
             var url = BaseUrl + endpoint;
             try {
                 var r = Requests.Get(url);
@@ -44,7 +44,7 @@ namespace HueDream.Models.Nanoleaf {
                 
         }
         
-        public virtual JObject __delete(string endpoint = "") {
+        public virtual JObject Delete(string endpoint = "") {
             var url = BaseUrl + endpoint;
             try {
                 var r = Requests.Delete(url);
@@ -57,7 +57,7 @@ namespace HueDream.Models.Nanoleaf {
         
         public virtual JObject CheckError(RequestObj r) {
             switch (r.StatusCode) {
-                case 200 when r.Text == "":
+                case 200 when string.IsNullOrEmpty(r.Text):
                     return null;
                 case 200:
                     return r.Json;
@@ -91,14 +91,14 @@ namespace HueDream.Models.Nanoleaf {
         //         Useful for debugging since it's just a fat dump.
         public object Info {
             get {
-                return __get();
+                return Get();
             }
         }
         
         // Returns the current color mode.
         public object ColorMode {
             get {
-                return __get("state/colorMode");
+                return Get("state/colorMode");
             }
         }
         
@@ -107,40 +107,38 @@ namespace HueDream.Models.Nanoleaf {
         //##########################################
         // Briefly flash the panels on and off
         public virtual object Identify() {
-            return __put("identify", new JObject());
+            return Put("identify", new JObject());
         }
         
         // Returns the firmware version of the device
         public object Firmware {
             get {
-                return __get("firmwareVersion");
+                return Get("firmwareVersion");
             }
         }
         
         // Returns the model number of the device. (Always returns 'NL22')
         public object Model {
             get {
-                return __get("model");
+                return Get("model");
             }
         }
         
         // Returns the serial number of the device
         public object SerialNumber {
             get {
-                return __get("serialNo");
+                return Get("serialNo");
             }
         }
-        
+
         // CAUTION: Revokes your auth token from the device.
-        public virtual object delete_user() {
-            return __delete();
-        }
-        
+        public virtual object DeleteUser => Delete();
+
         // Returns True if the device is on, False if it's off
         // Turns the device on/off. True = on, False = off
         public bool On {
             get {
-                var res = __get("state/on/value");
+                var res = Get("state/on/value");
                 Console.WriteLine(@"Res: " + res);
                 return (bool) res.GetValue("value").ToObject(typeof(bool));
             }
@@ -149,7 +147,7 @@ namespace HueDream.Models.Nanoleaf {
                 {
                     "on",
                     value}};
-                __put("state", JObject.FromObject(data));
+                Put("state", JObject.FromObject(data));
             }
         }
         
@@ -166,7 +164,7 @@ namespace HueDream.Models.Nanoleaf {
         // Sets the brightness to the given level (0-100)
         public int Brightness {
             get {
-                return (int) __get("state/brightness/value").GetValue("value").ToObject(typeof(int));
+                return (int)Get("state/brightness/value").GetValue("value").ToObject(typeof(int));
             } set {
                 var data = new Dictionary<object, object> {
                 {
@@ -175,18 +173,18 @@ namespace HueDream.Models.Nanoleaf {
                     {
                         "value",
                         value}}}};
-                __put("state", JObject.FromObject(data));
+                Put("state", JObject.FromObject(data));
             }
         }
         
         // Returns the minimum brightness possible. (This always returns 0)
         public int BrightnessMin {
-            get { return int.Parse(__get("state/brightness/min").GetValue("value").ToString()); }
+            get { return int.Parse(Get("state/brightness/min").GetValue("value").ToString()); }
         }
         
         // Returns the maximum brightness possible. (This always returns 100)
         public object BrightnessMax {
-            get { return int.Parse(__get("state/brightness/max").GetValue("value").ToString()); }
+            get { return int.Parse(Get("state/brightness/max").GetValue("value").ToString()); }
         }
         
         //##########################################
@@ -201,7 +199,7 @@ namespace HueDream.Models.Nanoleaf {
                 {
                     "increment",
                     level}}}};
-            return __put("state", JObject.FromObject(data));
+            return Put("state", JObject.FromObject(data));
         }
         
         // Lower the brightness of the device by a relative amount (negative raises brightness)
@@ -213,7 +211,7 @@ namespace HueDream.Models.Nanoleaf {
         // Sets the hue to the given level (0-360)
         public int Hue {
             get {
-                return int.Parse(__get("state/hue/value").GetValue("value").ToString());
+                return int.Parse(Get("state/hue/value").GetValue("value").ToString());
             }
             set {
                 var data = new Dictionary<object, object> {
@@ -223,21 +221,21 @@ namespace HueDream.Models.Nanoleaf {
                     {
                         "value",
                         value}}}};
-                __put("state", JObject.FromObject(data));
+                Put("state", JObject.FromObject(data));
             }
         }
         
         // Returns the minimum hue possible. (This always returns 0)
         public int HueMin {
             get {
-                return int.Parse(__get("state/hue/min").GetValue("value").ToString());
+                return int.Parse(Get("state/hue/min").GetValue("value").ToString());
             }
         }
         
         // Returns the maximum hue possible. (This always returns 360)
         public int HueMax {
             get {
-                return int.Parse(__get("state/hue/max").GetValue("value").ToString());
+                return int.Parse(Get("state/hue/max").GetValue("value").ToString());
             }
         }
         
@@ -253,7 +251,7 @@ namespace HueDream.Models.Nanoleaf {
                 {
                     "increment",
                     level}}}};
-            return __put("state", JObject.FromObject(data));
+            return Put("state", JObject.FromObject(data));
         }
         
         // Lower the hue of the device by a relative amount (negative raises hue)
@@ -265,7 +263,7 @@ namespace HueDream.Models.Nanoleaf {
         // Sets the saturation to the given level (0-100)
         public int Saturation {
             get {
-                return int.Parse(__get("state/sat/value").GetValue("value").ToString());
+                return int.Parse(Get("state/sat/value").GetValue("value").ToString());
             }
             set {
                 var data = new Dictionary<object, object> {
@@ -275,21 +273,21 @@ namespace HueDream.Models.Nanoleaf {
                     {
                         "value",
                         value}}}};
-                __put("state", JObject.FromObject(data));
+                Put("state", JObject.FromObject(data));
             }
         }
         
         // Returns the minimum saturation possible. (This always returns 0)
         public int SaturationMin {
             get {
-                return int.Parse(__get("state/sat/min").GetValue("value").ToString());
+                return int.Parse(Get("state/sat/min").GetValue("value").ToString());
             }
         }
         
         // Returns the maximum saturation possible. (This always returns 100)
         public int SaturationMax {
             get {
-                return int.Parse(__get("state/sat/max").GetValue("value").ToString());
+                return int.Parse(Get("state/sat/max").GetValue("value").ToString());
             }
         }
         
@@ -305,7 +303,7 @@ namespace HueDream.Models.Nanoleaf {
                 {
                     "increment",
                     level}}}};
-            return __put("state", JObject.FromObject(data));
+            return Put("state", JObject.FromObject(data));
         }
         
         // Lower the saturation of the device by a relative amount (negative raises saturation)
@@ -317,7 +315,7 @@ namespace HueDream.Models.Nanoleaf {
         // Sets the color temperature to the given level (0-100)
         public int ColorTemperature {
             get {
-                return int.Parse(__get("state/ct/value").GetValue("value").ToString());
+                return int.Parse(Get("state/ct/value").GetValue("value").ToString());
             }
             set {
                 var data = new Dictionary<object, object> {
@@ -327,21 +325,21 @@ namespace HueDream.Models.Nanoleaf {
                     {
                         "value",
                         value}}}};
-                this.__put("state", JObject.FromObject(data));
+                this.Put("state", JObject.FromObject(data));
             }
         }
         
         // Returns the minimum color temperature possible. (This always returns 1200)
         public int ColorTemperatureMin {
             get {
-                return int.Parse(__get("state/ct/min").GetValue("value").ToString());
+                return int.Parse(Get("state/ct/min").GetValue("value").ToString());
             }
         }
         
         // Returns the maximum color temperature possible. (This always returns 6500)
         public int ColorTemperatureMax {
             get {
-                return int.Parse(__get("state/ct/max").GetValue("value").ToString());
+                return int.Parse(Get("state/ct/max").GetValue("value").ToString());
             }
         }
         
@@ -357,7 +355,7 @@ namespace HueDream.Models.Nanoleaf {
                 {
                     "increment",
                     level}}}};
-            return __put("state", JObject.FromObject(data));
+            return Put("state", JObject.FromObject(data));
         }
         
         // Lower the color temperature of the device by a relative amount (negative raises color temperature)
@@ -398,42 +396,42 @@ namespace HueDream.Models.Nanoleaf {
                         {
                             "value",
                             brightness}}}};
-                __put("state", JObject.FromObject(data));
+                Put("state", JObject.FromObject(data));
             }
         }
         
         // Returns the orientation of the device (0-360)
         public JObject Orientation {
             get {
-                return __get("panelLayout/globalOrientation/value");
+                return Get("panelLayout/globalOrientation/value");
             }
         }
         
         // Returns the minimum orientation possible. (This always returns 0)
         public JObject OrientationMin {
             get {
-                return __get("panelLayout/globalOrientation/min");
+                return Get("panelLayout/globalOrientation/min");
             }
         }
         
         // Returns the maximum orientation possible. (This always returns 360)
         public JObject OrientationMax {
             get {
-                return __get("panelLayout/globalOrientation/max");
+                return Get("panelLayout/globalOrientation/max");
             }
         }
         
         // Returns the number of panels connected to the device
         public int PanelCount {
             get {
-                return int.Parse(__get("panelLayout/layout/numPanels").GetValue("value").ToString());
+                return int.Parse(Get("panelLayout/layout/numPanels").GetValue("value").ToString());
             }
         }
         
         // Returns the length of a single panel. (This always returns 150)
         public int PanelLength {
             get {
-                return int.Parse(__get("panelLayout/layout/sideLength").GetValue("value").ToString());
+                return int.Parse(Get("panelLayout/layout/sideLength").GetValue("value").ToString());
             }
         }
         
@@ -446,7 +444,7 @@ namespace HueDream.Models.Nanoleaf {
         //         
         public JObject PanelPositions {
             get {
-                return __get("panelLayout/layout/positionData");
+                return Get("panelLayout/layout/positionData");
             }
         }
         
@@ -460,7 +458,7 @@ namespace HueDream.Models.Nanoleaf {
         // Sets the active effect to the name specified
         public string Effect {
             get {
-                return __get("effects/select").GetValue("value").ToString();
+                return Get("effects/select").GetValue("value").ToString();
 
             }
             set {
@@ -468,14 +466,14 @@ namespace HueDream.Models.Nanoleaf {
                 {
                     "select",
                     value}};
-                __put("effects", JObject.FromObject(data));
+                Put("effects", JObject.FromObject(data));
             }
         }
         
         // Returns a list of all effects stored on the device
         public JObject EffectsList {
             get {
-                return __get("effects/effectsList");
+                return Get("effects/effectsList");
             }
         }
         
@@ -502,7 +500,7 @@ namespace HueDream.Models.Nanoleaf {
             {
                 "write",
                 effectData}};
-            return __put("effects", JObject.FromObject(data));
+            return Put("effects", JObject.FromObject(data));
         }
         
         // Returns the dict containing details for the effect specified
@@ -517,7 +515,7 @@ namespace HueDream.Models.Nanoleaf {
                     {
                         "animName",
                         name}}}};
-            return __put("effects", JObject.FromObject(data));
+            return Put("effects", JObject.FromObject(data));
         }
         
         // Returns a dict containing details for all effects on the device
@@ -529,7 +527,7 @@ namespace HueDream.Models.Nanoleaf {
                 {
                     "command",
                     "requestAll"}}}};
-            return __put("effects", JObject.FromObject(data));
+            return Put("effects", JObject.FromObject(data));
         }
         
         // Removed the specified effect from the device
@@ -544,7 +542,7 @@ namespace HueDream.Models.Nanoleaf {
                     {
                         "animName",
                         name}}}};
-            return __put("effects", JObject.FromObject(data));
+            return Put("effects", JObject.FromObject(data));
         }
         
         // Renames the specified effect saved on the device to a new name
@@ -562,7 +560,7 @@ namespace HueDream.Models.Nanoleaf {
                     {
                         "newName",
                         newName}}}};
-            return __put("effects", JObject.FromObject(data));
+            return Put("effects", JObject.FromObject(data));
         }
         
         public double[] HsvToRgb(double h, double s, double v)

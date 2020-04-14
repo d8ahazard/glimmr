@@ -16,9 +16,15 @@ namespace HueDream.Models.DreamScreen.Devices {
 
         [JsonProperty] private byte[] espFirmwareVersion;
 
+        public override void SetDefaults() {
+        }
+
+        [JsonProperty] public int[] flexSetup { get; set; }
+
         public Connect() { }
 
         public Connect(string ipAddress) : base(ipAddress) {
+            Name = "Connect";
             Tag = DeviceTag;
             espFirmwareVersion = RequiredEspFirmwareVersion;
             HdmiInput = 0;
@@ -33,7 +39,6 @@ namespace HueDream.Models.DreamScreen.Devices {
             IsDemo = false;
             HueLifxSettingsReceived = false;
             ProductId = 4;
-            Name = "Connect";
             GroupName = "unassigned";
         }
 

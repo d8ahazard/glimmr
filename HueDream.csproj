@@ -1,10 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
-
     <PropertyGroup>
-        <TargetFramework>netcoreapp3.0</TargetFramework>
+		<LangVersion>8.0</LangVersion>  
+        <TargetFramework>netcoreapp3.1</TargetFramework>
         <StartupObject></StartupObject>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
         <DockerfileContext>.</DockerfileContext>
+        <AssemblyName>Glimmr</AssemblyName>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -26,22 +27,41 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="JsonFlatFileDataStore" Version="2.2.1" />
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.0.0" />
+        <PackageReference Include="Accord.Math" Version="3.8.2-alpha" />
+        <PackageReference Include="Emgu.CV.runtime.raspbian-CR" Version="4.2.0.3685" />
+        <PackageReference Include="freetype2" Version="2.6.0.1" />
+        <PackageReference Include="JsonFlatFileDataStore" Version="2.2.2" />
+        <PackageReference Include="Makaretu.Dns.Multicast" Version="0.27.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.2" />
         <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.1.0" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="3.1.0">
+        <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.1.2" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="3.1.2">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="3.1.0" />
-        <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.9.5" />
-        <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.0" />
-        <PackageReference Include="Q42.HueApi" Version="3.14.0" />
-        <PackageReference Include="Q42.HueApi.Entertainment" Version="3.14.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="3.1.2" />
+        <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.9.10" />
+        <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.1" />
+        <PackageReference Include="MMALSharp" Version="0.6.0-297" />
+        <PackageReference Include="Nanoleaf.Core" Version="1.1.7.1" />
+        <PackageReference Include="Q42.HueApi" Version="3.15.1" />
+        <PackageReference Include="Q42.HueApi.Entertainment" Version="3.15.0" />
+        <PackageReference Include="Serilog" Version="2.9.1-dev-01154" />
+        <PackageReference Include="Serilog.Sinks.Console" Version="4.0.0-dev-00839" />
+        <PackageReference Include="Serilog.Sinks.File" Version="5.0.0-dev-00864" />
+        <PackageReference Include="Unosquare.Raspberry.IO" Version="0.27.0" />
+        <PackageReference Include="ws281x.Net" Version="1.0.6" />
+        <PackageReference Include="ZedGraph" Version="6.0.0-alpha0001" />
+        <PackageReference Include="ZedGraph.WinForms" Version="6.0.0-alpha0001" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="System.ServiceModel">
+        <HintPath>C:\Windows\Microsoft.NET\Framework\v3.0\Windows Communication Foundation\System.ServiceModel.dll</HintPath>
+      </Reference>
     </ItemGroup>
 
     <ItemGroup>

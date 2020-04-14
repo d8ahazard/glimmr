@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,7 +26,7 @@ namespace HueDream.Models.Hue {
 
         public HueBridge(BridgeData data) {
             bd = data ?? throw new ArgumentNullException(nameof(data));
-            BridgeIp = bd.Ip;
+            BridgeIp = bd.IpAddress;
             BridgeKey = bd.Key;
             BridgeUser = bd.User;
             client = StreamingSetup.GetClient(bd);
@@ -44,21 +45,22 @@ namespace HueDream.Models.Hue {
         ///     Set up and create a new streaming layer based on our light map
         /// </summary>
         /// <param name="ct">A cancellation token.</param>
-        public void EnableStreaming(CancellationToken ct) {
+        public bool EnableStreaming(CancellationToken ct) {
             // Get our light map and filter for mapped lights
             Console.WriteLine($@"Hue: Connecting to bridge at {BridgeIp}...");
             // Grab our stream
             var stream = StreamingSetup.SetupAndReturnGroup(client, bd, ct).Result;
             // This is what we actually need
+            if (stream == null) return false;
             entLayer = stream.GetNewLayer(true);
-            LogUtil.WriteInc($"Streaming established: {BridgeIp}");
+            LogUtil.WriteInc($"Starting Hue Stream: {BridgeIp}");
             streaming = true;
-
+            return streaming;
         }
         
         public void DisableStreaming() {
-            var unused = StreamingSetup.StopStream(client, bd);
-            LogUtil.WriteDec($"Streaming stopped: {BridgeIp}");
+            var _ = StreamingSetup.StopStream(client, bd);
+            LogUtil.WriteDec($"Stopping Hue Stream: {BridgeIp}");
             streaming = false;
         }
 
@@ -69,7 +71,7 @@ namespace HueDream.Models.Hue {
         /// <param name="brightness">The general brightness of the device</param>
         /// <param name="ct">A cancellation token</param>
         /// <param name="fadeTime">Optional: how long to fade to next state</param>
-        public void UpdateLights(string[] colors, int brightness, CancellationToken ct, double fadeTime = 0) {
+        public void UpdateLights(Color[] colors, int brightness, CancellationToken ct, double fadeTime = 0) {
             if (colors == null) throw new ArgumentNullException(nameof(colors));
             if (entLayer != null) {
                 var lightMappings = bd.Lights;
@@ -81,9 +83,10 @@ namespace HueDream.Models.Hue {
                     // Return if not mapped
                     if (lightData == null) continue;
                     // Otherwise, get the corresponding sector color
-                    var colorString = colors[lightData.TargetSector];
+                    var targetSector = lightData.TargetSector - 1;
+                    var color = colors[targetSector];
                     // Make it into a color
-                    var endColor = ClampBrightness(colorString, lightData, brightness);
+                    var endColor = ClampBrightness(color, lightData, brightness);
                     //var xyColor = HueColorConverter.RgbToXY(endColor, CIE1931Gamut.PhilipsWideGamut);
                     //endColor = HueColorConverter.XYToRgb(xyColor, GetLightGamut(lightData.ModelId));
                     // If we're currently using a scene, animate it
@@ -101,8 +104,8 @@ namespace HueDream.Models.Hue {
             }
         }
 
-        private RGBColor ClampBrightness(string colorString, LightData lightData, int brightness) {
-            var oColor = new RGBColor(colorString);
+        private RGBColor ClampBrightness(Color colorIn, LightData lightData, int brightness) {
+            var oColor = new RGBColor(colorIn.R, colorIn.G, colorIn.B);
             // Clamp our brightness based on settings
             long bClamp = 255 * brightness / 100;
             if (lightData.OverrideBrightness) {
@@ -122,6 +125,7 @@ namespace HueDream.Models.Hue {
             var all = await client.LocalHueClient.GetEntertainmentGroups().ConfigureAwait(true);
             var output = new List<Group>();
             output.AddRange(all);
+            LogUtil.Write("Listed");
             return output;
         }
 
@@ -142,10 +146,45 @@ namespace HueDream.Models.Hue {
             return null;
         }
 
+        public static List<BridgeData> GetBridgeData() {
+            var bridges = DreamData.GetItem<List<BridgeData>>("bridges");
+            var newBridges = FindBridges(2);
+            var nb = new List<BridgeData>();
+            if (bridges.Count > 0) {
+                LogUtil.Write("We have existing bridges.");
+                foreach (var b in bridges) {
+                    if (b.Key != null && b.User != null) {
+                        var hb = new HueBridge(b);
+                        b.SetLights(hb.GetLights());
+                        LogUtil.Write("Listing groups?");
+                        b.SetGroups(hb.ListGroups().Result);
+                        LogUtil.Write("Groups listed.");
+                        hb.Dispose();
+                    }
+                    nb.Add(b);
+                }
+            }
+
+            foreach (var bb in newBridges) {
+                LogUtil.Write("We have new bridges?");
+                var exists = false;
+                foreach (var b in bridges) {
+                    if (bb.BridgeId == b.Id)
+                        exists = true;
+                }
+                if (!exists) {
+                    Console.WriteLine($@"Adding new bridge at {bb.IpAddress}.");
+                    nb.Add(new BridgeData(bb.IpAddress, bb.BridgeId));
+                } else {
+                    LogUtil.Write("Nothing to add.");
+                }
+            }
+            return nb;
+        }
 
         public static LocatedBridge[] FindBridges(int time = 2) {
             Console.WriteLine(@"Hue: Looking for bridges...");
-            IBridgeLocator locator = new SsdpBridgeLocator();
+            IBridgeLocator locator = new MdnsBridgeLocator();
             var res = locator.LocateBridgesAsync(TimeSpan.FromSeconds(time)).Result;
             Console.WriteLine($@"Result: {JsonConvert.SerializeObject(res)}");
             return res.ToArray();
@@ -167,7 +206,7 @@ namespace HueDream.Models.Hue {
                 foreach (var unused in lights.Where(oLight => oLight.Id == light.Id)) add = false;
                 if (add) output.Add(light);
             }
-
+            LogUtil.Write("Lights retrieved...");
             lights.AddRange(output);
             return lights;
         }
@@ -178,8 +217,8 @@ namespace HueDream.Models.Hue {
             GC.SuppressFinalize(this);
         }
 
-        
-        public void Dispose(bool disposing) {
+
+        protected virtual void Dispose(bool disposing) {
             if (disposed) {
                 return;
             }

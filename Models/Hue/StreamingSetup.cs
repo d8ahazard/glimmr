@@ -15,7 +15,7 @@ namespace HueDream.Models.Hue {
     public static class StreamingSetup {
 
         public static StreamingHueClient GetClient(BridgeData b) {
-            var hueIp = b.Ip;
+            var hueIp = b.IpAddress;
             var hueUser = b.User;
             var hueKey = b.Key;
             Console.WriteLine(@"Hue: Creating client...");
@@ -26,8 +26,9 @@ namespace HueDream.Models.Hue {
         
         public static async Task StopStream(StreamingHueClient client, BridgeData b) {
             var id = b.SelectedGroup;
-            Console.WriteLine($@"Hue: Stopping stream.");
+            Console.WriteLine(@"Hue: Stopping stream.");
             await client.LocalHueClient.SetStreamingAsync(id, false).ConfigureAwait(true);
+            Console.WriteLine("Hue: Stopped.");
         }
 
         public static async Task<StreamingGroup> SetupAndReturnGroup(StreamingHueClient client, BridgeData b, CancellationToken ct) {
@@ -59,6 +60,7 @@ namespace HueDream.Models.Hue {
             if (group != null) {
                 var lights = group.Lights;
                 Console.WriteLine(@"Group Lights: " + JsonConvert.SerializeObject(lights));
+                if (lights == null) return null;
                 var mappedLights =
                     (from light in lights from ml in b.Lights where ml.Id == light && ml.TargetSector != -1 select light)
                     .ToList();
