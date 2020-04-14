@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using HueDream.Models.DreamGrab;
 using HueDream.Models.DreamScreen.Devices;
 using HueDream.Models.Hue;
+using HueDream.Models.Nanoleaf;
 using HueDream.Models.Util;
 using JsonFlatFileDataStore;
 using Newtonsoft.Json;
@@ -17,17 +18,9 @@ namespace HueDream.Models {
     public static class DreamData {
         public static DataStore GetStore() {
             var path = GetConfigPath("store.json");
-            var createDefaults = !File.Exists(path);
             var store = new DataStore(path);
-            var output = createDefaults ? SetDefaults(store) : store;
-            try {
-                if (output.GetItem<LedData>("ledData") == null) {
-                    output.InsertItem("ledData", new LedData());
-                }
-            } catch (KeyNotFoundException) {
-                output.InsertItem("ledData", new LedData(true));
-            }
-            return output;
+            store = CheckDefaults(store);
+            return store;
         }
 
         /// <summary>
@@ -37,8 +30,9 @@ namespace HueDream.Models {
         /// <returns>dynamic object corresponding to key, or default if not found</returns>
         public static dynamic GetItem(string key) {
             try {
-                using var dStore = new DataStore(GetConfigPath("store.json"));
+                var dStore = GetStore();
                 var output = dStore.GetItem(key);
+                dStore.Dispose();
                 return output;
             }
             catch (KeyNotFoundException) { }
@@ -48,8 +42,9 @@ namespace HueDream.Models {
         
         public static dynamic GetItem<T>(string key) {
             try {
-                using var dStore = new DataStore(GetConfigPath("store.json"));
+                using var dStore = GetStore();
                 var output = dStore.GetItem<T>(key);
+                dStore.Dispose();
                 return output;
             } catch (KeyNotFoundException e) {
                 Console.WriteLine($@"Value not found: {e.Message}");
@@ -57,39 +52,107 @@ namespace HueDream.Models {
             }
         }
 
-        private static DataStore SetDefaults(DataStore store) {
-            store.InsertItem("dsIp", "0.0.0.0");
-            store.InsertItem("dataSource", "DreamScreen");
-            store.InsertItem("camWidth", 1920);
-            store.InsertItem("camHeight", 1080);
-            store.InsertItem("camMode", 1);
-            store.InsertItem("scaleFactor", .5);
-            store.InsertItem("showSource", false);
-            store.InsertItem("showEdged", false);
-            store.InsertItem("showWarped", false);
-            store.InsertItem("emuType", "SideKick");
-            store.InsertItem("captureMode", 0);
-            store.InsertItem("camType", 1);
-            store.InsertItem("devices", Array.Empty<BaseDevice>());
-
-            BaseDevice myDevice = new SideKick(GetLocalIpAddress());
-            myDevice.Initialize();
-            var lData = new LedData(true);
-            store.InsertItem("myDevice", myDevice);
-            store.InsertItem("ledData", lData);
+        
+        private static DataStore CheckDefaults(DataStore store) {
+            string[] values = {
+                "dsIp",
+                "dataSource",
+                "camWidth",
+                "camHeight",
+                "camMode",
+                "scaleFactor",
+                "showSource",
+                "showEdged",
+                "showWarped",
+                "emuType",
+                "captureMode",
+                "camType",
+                "devices",
+                "myDevice",
+                "ledData",
+                "bridges",
+                "saturationBoost",
+                "minBrightness",
+                "leaves"
+            };
+            foreach (var key in values) {
+                try {
+                    store.GetItem(key);
+                } catch (KeyNotFoundException) {
+                    switch (key) {
+                        case "dsIp":
+                            store.InsertItem("dsIp", "0.0.0.0");
+                            break;
+                        case "dataSource":
+                            store.InsertItem("dataSource", "DreamScreen");
+                            break;
+                        case "camWidth":
+                            store.InsertItem("camWidth", 1920);
+                            break;
+                        case "camHeight":
+                            store.InsertItem("camHeight", 1080);
+                            break;
+                        case "camMode":
+                            store.InsertItem("camMode", 1);
+                            break;
+                        case "scaleFactor":
+                            store.InsertItem("scaleFactor", .5);
+                            break;
+                        case "showSource":
+                            store.InsertItem("showSource", false);
+                            break;
+                        case "showEdged":
+                            store.InsertItem("showEdged", false);
+                            break;
+                        case "showWarped":
+                            store.InsertItem("showWarped", false);
+                            break;
+                        case "emuType":
+                            store.InsertItem("emuType", "SideKick");
+                            break;
+                        case "captureMode":
+                            store.InsertItem("captureMode", 0);
+                            break;
+                        case "camType":
+                            store.InsertItem("camType", 1);
+                            break;
+                        case "devices":
+                            store.InsertItem("devices", Array.Empty<BaseDevice>());
+                            break;
+                        case "myDevice":
+                            BaseDevice myDevice = new SideKick(GetLocalIpAddress());
+                            myDevice.Initialize();
+                            store.InsertItem("myDevice", myDevice);
+                            break;
+                        case "ledData":
+                            var lData = new LedData(true);
+                            store.InsertItem("ledData", lData);
+                            break;
+                        case "bridges":
+                            store.InsertItem("bridges", new List<BridgeData>());
+                            break;
+                        case "leaves":
+                            store.InsertItem("leaves", new List<NanoData>());
+                            break;
+                        case "minBrightness":
+                            store.InsertItem("minBrightness", 0);
+                            break;
+                        case "saturationBoost":
+                            store.InsertItem("saturationBoost", 0);
+                            break;
+                    }
+                }
+            }
             return store;
         }
 
-
-       
-
         public static void SetItem(string key, dynamic value) {
-            using var dStore = new DataStore(GetConfigPath("store.json"));
+            using var dStore = GetStore();
             dStore.ReplaceItem(key, value, true);
         }
 
         public static void SetItem<T>(string key, dynamic value) {
-            using var dStore = new DataStore(GetConfigPath("store.json"));
+            using var dStore = GetStore();
             dStore.ReplaceItem<T>(key, value, true);
         }
 
