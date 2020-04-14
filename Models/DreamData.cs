@@ -45,6 +45,17 @@ namespace HueDream.Models {
             return null;
         }
         
+        
+        public static dynamic GetItem<T>(string key) {
+            try {
+                using var dStore = new DataStore(GetConfigPath("store.json"));
+                var output = dStore.GetItem<T>(key);
+                return output;
+            } catch (KeyNotFoundException e) {
+                Console.WriteLine($@"Value not found: {e.Message}");
+                return null;
+            }
+        }
 
         private static DataStore SetDefaults(DataStore store) {
             store.InsertItem("dsIp", "0.0.0.0");
@@ -70,17 +81,7 @@ namespace HueDream.Models {
         }
 
 
-        public static dynamic GetItem<T>(string key) {
-            try {
-                using var dStore = new DataStore(GetConfigPath("store.json"));
-                dynamic output = dStore.GetItem<T>(key);
-                return output;
-            } catch (Exception e) {
-                Console.WriteLine($@"Value not found: {e.Message}");
-            }
-
-            return null;
-        }
+       
 
         public static void SetItem(string key, dynamic value) {
             using var dStore = new DataStore(GetConfigPath("store.json"));
