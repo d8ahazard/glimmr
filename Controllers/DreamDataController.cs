@@ -213,12 +213,12 @@ namespace HueDream.Controllers {
             }
 
             if (action == "refreshDevices") {
-                RefreshDevices();
+                DreamData.RefreshDevices();
                 return Content(DreamData.GetStoreSerialized(), "application/json");
             }
 
             if (action == "findDreamDevices") {
-                List<BaseDevice> dev = DreamDiscovery.FindDevices().Result;
+                List<BaseDevice> dev = DreamDiscovery.FindDevices();
                 store.Dispose();
                 return new JsonResult(dev);
             }
@@ -255,7 +255,7 @@ namespace HueDream.Controllers {
             if (action == "findNanoLeaf") {
                 LogUtil.Write("Find Nano Leaf called.");
                 var existingLeaves = DreamData.GetItem<List<NanoData>>("leaves");
-                var leaves = Discovery.Discover(2);
+                var leaves = NanoDiscovery.Discover(2);
                 
                 var all = new List<NanoData>();
                 LogUtil.Write("Got all devices: " + JsonConvert.SerializeObject(existingLeaves));
@@ -405,7 +405,8 @@ namespace HueDream.Controllers {
             }
 
             if (store.GetItem("dsIp") == "0.0.0.0") {
-                DreamDiscovery.FindDevices().Await();
+                var devs = DreamDiscovery.FindDevices();
+                store.ReplaceItem("devices", devs);
             }
 
             store.Dispose();
@@ -534,22 +535,6 @@ namespace HueDream.Controllers {
                 new IPEndPoint(IPAddress.Parse(ipAddress), 8888), groupSend);
         }
 
-        private static void RefreshDevices() {
-            // Get dream devices
-            List<BaseDevice> dreamDevices;
-            dreamDevices = DreamDiscovery.FindDevices().Result;
-            
-
-            var leaves = Discovery.Refresh();
-
-            // Find bridges
-            var bridges = HueBridge.GetBridgeData();
-            LogUtil.Write("Discovery done.");
-            DreamData.SetItem("devices", dreamDevices);
-            LogUtil.Write("DS Saved.");
-            DreamData.SetItem("bridges", bridges);
-            LogUtil.Write("Bridges Saved.");
-            DreamData.SetItem("leaves", leaves);
-        }
+        
     }
 }

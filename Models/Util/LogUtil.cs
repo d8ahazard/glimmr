@@ -1,75 +1,91 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using Newtonsoft.Json;
 using Serilog;
 
 namespace HueDream.Models.Util {
     public static class LogUtil {
-        private static int msgCount;
+        private static int _msgCount;
         
-        public static void Write(string text, dynamic myObject) {
+        public static void Write(string text, dynamic myObject, string level="INFO") {
             var objStr = string.Empty;
             if (!myObject.GetType().IsSerializable) {
-                Write(text);
+                Write(text, level);
             } else {
                 objStr = JsonConvert.SerializeObject(myObject, myObject.GetType());
             }
-            Write(text + objStr);
+            Write(text + objStr, level);
         
         }
 
-        public static void Write(string text) {
+        public static void Write(string text, string level="INFO") {
             var cls = GetCaller();
-            Log.Information(text);
-            Console.WriteLine($@"{cls} - {text}");
+            var msg = $@"{cls} - {text}";
+            switch (level) {
+                case "INFO":
+                    Log.Information(msg);
+                    break;
+                case "DEBUG":
+                    Log.Debug(msg);
+                    break;
+                case "WARN":
+                    Log.Warning(msg);
+                    break;
+                case "ERROR":
+                    Log.Error(msg);
+                    break;
+            }
         }
 
-        public static void WriteInc(string text, dynamic myObject) {
+        public static void WriteInc(string text, dynamic myObject, string level="INFO") {
             var objStr = string.Empty;
             if (!myObject.GetType().IsSerializable) {
-                WriteInc(text);
+                WriteInc(text, level);
             } else {
                 objStr = JsonConvert.SerializeObject(myObject, myObject.GetType());
             }
-            WriteInc(text + objStr);
+            WriteInc(text + objStr, level);
         }
 
-        public static void WriteDec(string text, dynamic myObject) {
+        public static void WriteDec(string text, dynamic myObject, string level="INFO") {
             var objStr = string.Empty;
             if (!myObject.GetType().IsSerializable) {
-                WriteDec(text);
+                WriteDec(text, level);
             } else {
                 objStr = JsonConvert.SerializeObject(myObject, myObject.GetType());
             }
-            WriteDec(text + objStr);
+            WriteDec(text + objStr, level);
         }
         
-        public static void WriteInc(string text) {
-            Write($@"C{msgCount} - {text}");
-            msgCount++;
+        public static void WriteInc(string text, string level="INFO") {
+            Write($@"C{_msgCount} - {text}", level);
+            _msgCount++;
         }
 
-        public static void WriteDec(string text) {
-            msgCount--;
-            if (msgCount < 0) msgCount = 0;
-            Write($@"C{msgCount} - {text}");
+        public static void WriteDec(string text, string level="INFO") {
+            _msgCount--;
+            if (_msgCount < 0) _msgCount = 0;
+            Write($@"C{_msgCount} - {text}", level);
         }
 
         private static string GetCaller() {
-            var cls = string.Empty;
-            int stackInt = 1;
-            while (stackInt < 5) {
-                var mth = new StackTrace().GetFrame(stackInt).GetMethod();
-                if (mth.ReflectedType != null) cls = mth.ReflectedType.Name;
-                if (cls != string.Empty) {
-                    if (cls != "LogUtil") {
-                        return cls;
+            var stackInt = 1;
+            var st = new StackTrace();
+            while (stackInt < 10) {
+                var mth = st.GetFrame(stackInt).GetMethod();
+                var dType = mth.DeclaringType;
+                if (dType != null) {
+                    var cls = dType.Name;
+                    if (!string.IsNullOrEmpty(cls)) {
+                        if (cls != "LogUtil") {
+                            return cls + "::" + mth.Name;
+                        }
                     }
                 }
+
                 stackInt++;
             }
 
-            return cls;
+            return string.Empty;
         }
     }
 }

@@ -35,8 +35,6 @@ namespace HueDream {
                 .ConfigureWebHostDefaults(webBuilder => { 
                     webBuilder.UseStartup<Startup>();
                     webBuilder.UseUrls("http://*:5699");
-
-
                 })
                 // Initialize our dream screen emulator
                 .ConfigureServices(services => { services.AddHostedService<DreamClient>();});

@@ -547,6 +547,7 @@ function buildLists(data) {
     });
 
     const sorted = [];
+    const unsorted = [];
     // Sort other DS Devices
     groups = sortDevices(dsDevs, groups, false, false);
     // Sort nanoleaves
@@ -555,7 +556,6 @@ function buildLists(data) {
     groups = sortDevices(data['bridges'], groups, "HueBridge", "Hue Bridge");
     $('#devGroup').html("");
     console.log("Groups: ", groups);
-    let unSorted = false;
     $.each(groups, function () {
         let item = $(this)[0];
         console.log("Group: ", item);
@@ -563,11 +563,12 @@ function buildLists(data) {
             if (item['id'] !== 0) {
                 sorted.push(item);
             } else {
-                unSorted = item;
+                appendDeviceGroup(item);
             }
         }
     });
-    if (unSorted !== false) appendDeviceGroup(unSorted);
+    
+    
     $('#devGroup').append($('<li class="spacer">Groups</li>'));
 
     if (sorted.length > 0) {
@@ -580,16 +581,18 @@ function buildLists(data) {
 
 
 function appendDeviceGroup(item) {
-    console.log("Appending: ", item);
+    console.log("Appending group: ", item);
     let name = item['name'];
     let elements = item['items'];
     let devGroup = $('#devGroup');
     // This is not a group
     if (item['id'] === 0) {
-        if (item['id'] === undefined) item['id'] = item['ipAddress'];
-        if (item['id'] === undefined) item['id'] = item['ipV4Address'];
         $.each(elements, function () {
             let element = $(this)[0];
+            if (element['id'] === undefined) element['id'] = element['bridgeId'];
+            if (element['id'] === undefined) element['id'] = element['ipAddress'];
+            if (element['id'] === undefined) element['id'] = element['ipV4Address'];
+            console.log("Adding unsorted element:", element);
             devices.push(element);
             devGroup.append('<li class="devSelect" data-device="' + element.id + '"><img class="devIcon" src="./img/' + element.tag.toLowerCase() + '_icon.png"><span class="devName">' + element.name + '<span></li>');
         });
@@ -600,6 +603,7 @@ function appendDeviceGroup(item) {
         let container = $('<ul id="group' + item['id'] + '" class="nav-list groupList"></ul>');
         $.each(elements, function () {
             let element = $(this)[0];
+            console.log("Adding sorted element: ", element);
             if (element.tag.includes("DreamScreen")) {
                 item.mode = element.mode;
                 item.brightness = element.brightness;
@@ -614,7 +618,6 @@ function appendDeviceGroup(item) {
         item['groupName'] = item['name'];
         item.ipAddress = "255.255.255.0";
         devices.push(item);
-
         list.append(container);
         console.log("Appending: ", list);
         devGroup.append(list);
@@ -818,7 +821,7 @@ function loadBridgeData(data) {
         console.log("Updated group to " + hueGroup);
     }
     hueLights = b["lights"];
-    hueAuth = (b["user"] !== null && b["key"] !== null);            
+    hueAuth = (b["user"] !== null || b["key"] !== null);            
     lImg.removeClass('linked unlinked linking');
     if (hueAuth) {
         lImg.addClass('linked');

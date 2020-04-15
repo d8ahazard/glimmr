@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Net;
@@ -17,8 +18,7 @@ using Newtonsoft.Json;
 using Serilog;
 
 namespace HueDream.Models.DreamScreen {
-    public sealed class DreamClient : IHostedService, IDisposable
-    {
+    public class DreamClient : BackgroundService {
         public int CaptureMode { get; }
         private static bool _searching;
         private readonly DreamScene dreamScene;
@@ -92,12 +92,9 @@ namespace HueDream.Models.DreamScreen {
             camTokenSource = new CancellationTokenSource();
         }
 
-       
-
 
         
-        
-        public Task StartAsync(CancellationToken cancellationToken) {
+        protected override Task ExecuteAsync(CancellationToken cancellationToken) {
             LogUtil.WriteInc("Starting DreamClient services.");
             
             if (CaptureMode != 0) {
@@ -111,18 +108,13 @@ namespace HueDream.Models.DreamScreen {
             }
             
             var lt = StartListening(cancellationToken);
+            LogUtil.Write("Listener retrieved.");
             UpdateMode(dev.Mode);
+            LogUtil.Write("Updating device mode on startup.");
             return lt;
         }
               
-        public Task StopAsync(CancellationToken cancellationToken) {
-            try {
-                StopServices();
-            } finally {
-                LogUtil.WriteDec(@"DreamClient Stopped.");
-            }
-            return Task.CompletedTask;
-        }
+        
 
 
         private void UpdateMode(int newMode) {
@@ -279,9 +271,10 @@ namespace HueDream.Models.DreamScreen {
         }
 
         private void StopShowBuilder() {
+            if (showBuilderStarted) LogUtil.WriteDec(@"Stopping show builder.");
             CancelSource(showBuilderSource);
             showBuilderStarted = false;
-            LogUtil.WriteDec(@"Stopping show builder.");
+            
         }
 
         private void UpdateAmbientColor(Color aColor) {
@@ -319,7 +312,13 @@ namespace HueDream.Models.DreamScreen {
                         var receivedResults = listener.Receive(ref sourceEndPoint);
                         ProcessData(receivedResults, sourceEndPoint);
                     }                    
-                }, ct);
+                    LogUtil.WriteDec("Listener cancelled.");
+                    try {
+                        StopServices();
+                    } finally {
+                        LogUtil.WriteDec(@"DreamClient Stopped.");
+                    }
+                });
             }
             catch (SocketException e) {
                 Console.WriteLine($@"Socket exception: {e.Message}.");
@@ -553,6 +552,13 @@ namespace HueDream.Models.DreamScreen {
 
 
         public void Dispose() {
+            StackTrace stackTrace = new StackTrace();
+
+            var methodName = stackTrace.GetFrame(1).GetMethod();
+            var className = methodName.DeclaringType.Name;
+
+            LogUtil.Write("Disposal called by " + methodName.Name + "*****" + className );
+
             Dispose(true);
             GC.SuppressFinalize(this);
         }

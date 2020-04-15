@@ -4,7 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using Accord.IO;
 using HueDream.Models.DreamGrab;
+using HueDream.Models.DreamScreen;
 using HueDream.Models.DreamScreen.Devices;
 using HueDream.Models.Hue;
 using HueDream.Models.Nanoleaf;
@@ -54,95 +56,35 @@ namespace HueDream.Models {
 
         
         private static DataStore CheckDefaults(DataStore store) {
-            string[] values = {
-                "dsIp",
-                "dataSource",
-                "camWidth",
-                "camHeight",
-                "camMode",
-                "scaleFactor",
-                "showSource",
-                "showEdged",
-                "showWarped",
-                "emuType",
-                "captureMode",
-                "camType",
-                "devices",
-                "myDevice",
-                "ledData",
-                "bridges",
-                "saturationBoost",
-                "minBrightness",
-                "leaves"
-            };
-            foreach (var key in values) {
-                try {
-                    store.GetItem(key);
-                } catch (KeyNotFoundException) {
-                    switch (key) {
-                        case "dsIp":
-                            store.InsertItem("dsIp", "0.0.0.0");
-                            break;
-                        case "dataSource":
-                            store.InsertItem("dataSource", "DreamScreen");
-                            break;
-                        case "camWidth":
-                            store.InsertItem("camWidth", 1920);
-                            break;
-                        case "camHeight":
-                            store.InsertItem("camHeight", 1080);
-                            break;
-                        case "camMode":
-                            store.InsertItem("camMode", 1);
-                            break;
-                        case "scaleFactor":
-                            store.InsertItem("scaleFactor", .5);
-                            break;
-                        case "showSource":
-                            store.InsertItem("showSource", false);
-                            break;
-                        case "showEdged":
-                            store.InsertItem("showEdged", false);
-                            break;
-                        case "showWarped":
-                            store.InsertItem("showWarped", false);
-                            break;
-                        case "emuType":
-                            store.InsertItem("emuType", "SideKick");
-                            break;
-                        case "captureMode":
-                            store.InsertItem("captureMode", 0);
-                            break;
-                        case "camType":
-                            store.InsertItem("camType", 1);
-                            break;
-                        case "devices":
-                            store.InsertItem("devices", Array.Empty<BaseDevice>());
-                            break;
-                        case "myDevice":
-                            BaseDevice myDevice = new SideKick(GetLocalIpAddress());
-                            myDevice.Initialize();
-                            store.InsertItem("myDevice", myDevice);
-                            break;
-                        case "ledData":
-                            var lData = new LedData(true);
-                            store.InsertItem("ledData", lData);
-                            break;
-                        case "bridges":
-                            store.InsertItem("bridges", new List<BridgeData>());
-                            break;
-                        case "leaves":
-                            store.InsertItem("leaves", new List<NanoData>());
-                            break;
-                        case "minBrightness":
-                            store.InsertItem("minBrightness", 0);
-                            break;
-                        case "saturationBoost":
-                            store.InsertItem("saturationBoost", 0);
-                            break;
-                    }
-                }
-            }
+                
+            var v = store.GetItem("defaultsSet");
+            if (v == null) SetDefaults(store);
+            return store;
+        }
+
+        private static DataStore SetDefaults(DataStore store) {
+            LogUtil.Write("Setting defaults.");
+            store.InsertItem("dataSource", "DreamScreen");
+            store.InsertItem("camWidth", 1920);
+            store.InsertItem("camHeight", 1080);
+            store.InsertItem("camMode", 1);
+            store.InsertItem("scaleFactor", .5);
+            store.InsertItem("showSource", false);
+            store.InsertItem("showEdged", false);
+            store.InsertItem("showWarped", false);
+            store.InsertItem("emuType", "SideKick");
+            store.InsertItem("captureMode", 0);
+            store.InsertItem("camType", 1);
+            BaseDevice myDevice = new SideKick(GetLocalIpAddress());
+            myDevice.Initialize();
+            store.InsertItem("myDevice", myDevice);
+            var lData = new LedData(true);
+            store.InsertItem("ledData", lData);
+            store.InsertItem("minBrightness", 0);
+            store.InsertItem("saturationBoost", 0);
+            store.InsertItem("dsIp", "0.0.0.0");
+            ScanDevices(store);
+            store.InsertItem("defaultsSet", true);
             return store;
         }
 
@@ -187,8 +129,8 @@ namespace HueDream.Models {
 
         public static (int, int) GetTargetLeds() {
             var dsIp = GetItem<string>("dsIp");
-            var devs = GetItem<List<BaseDevice>>("devices");
-            foreach (var dev in devs) {
+            var devices = GetItem<List<BaseDevice>>("devices");
+            foreach (var dev in devices) {
                 var tsIp = dev.IpAddress;
                 LogUtil.Write("TSIP: " + tsIp);
                 if (tsIp == dsIp) {
@@ -228,6 +170,34 @@ namespace HueDream.Models {
                 if (ip.AddressFamily == AddressFamily.InterNetwork)
                     return ip.ToString();
             throw new Exception("No network adapters found in " + JsonConvert.SerializeObject(host));
+        }
+        
+        public static void RefreshDevices() {
+            // Get dream devices
+            var dreamDevices = DreamDiscovery.FindDevices();
+            var leaves = NanoDiscovery.Refresh();
+            // Find bridges
+            var bridges = HueBridge.GetBridgeData();
+                SetItem("devices", dreamDevices);
+                SetItem("bridges", bridges);
+                SetItem("leaves", leaves);
+            
+        }
+        
+        public static void ScanDevices(DataStore store) {
+            // Get dream devices
+            var dreamDevices = DreamDiscovery.FindDevices();
+            var leaves = NanoDiscovery.Discover();
+            // Find bridges
+            var bridges = HueBridge.FindBridges();
+            store.InsertItem("devices", dreamDevices);
+            store.InsertItem("bridges", bridges);
+            store.InsertItem("leaves", leaves);
+        }
+
+        public static void RefreshPublicIp() {
+            var myIp = Dns.GetHostEntry(Dns.GetHostName()).AddressList[0].ToString();  
+            LogUtil.Write("My IP Address is :" + myIp);
         }
     }
 }

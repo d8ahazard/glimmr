@@ -148,7 +148,7 @@ namespace HueDream.Models.Hue {
 
         public static List<BridgeData> GetBridgeData() {
             var bridges = DreamData.GetItem<List<BridgeData>>("bridges");
-            var newBridges = FindBridges(2);
+            var newBridges = FindBridges();
             var nb = new List<BridgeData>();
             if (bridges.Count > 0) {
                 LogUtil.Write("We have existing bridges.");
@@ -183,10 +183,10 @@ namespace HueDream.Models.Hue {
         }
 
         public static LocatedBridge[] FindBridges(int time = 2) {
-            Console.WriteLine(@"Hue: Looking for bridges...");
+            Console.WriteLine(@"Hue: Discovery Started.");
             IBridgeLocator locator = new MdnsBridgeLocator();
             var res = locator.LocateBridgesAsync(TimeSpan.FromSeconds(time)).Result;
-            Console.WriteLine($@"Result: {JsonConvert.SerializeObject(res)}");
+            Console.WriteLine($@"Discovery Completed: {JsonConvert.SerializeObject(res)}");
             return res.ToArray();
         }
 
@@ -194,7 +194,7 @@ namespace HueDream.Models.Hue {
             // If we have no IP or we're not authorized, return
             if (BridgeIp == "0.0.0.0" || BridgeUser == null || BridgeKey == null) return new List<LightData>();
             // Create client
-            Console.WriteLine(@"Hue: Enumerating lights.");
+            Console.WriteLine(@"Enumerating lights.");
             client.LocalHueClient.Initialize(BridgeUser);
             // Get lights
             var lights = bd.Lights ?? new List<LightData>();
