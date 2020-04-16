@@ -10,14 +10,18 @@ using HueDream.Models.Hue;
 using HueDream.Models.Nanoleaf;
 using HueDream.Models.Util;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Q42.HueApi;
-using Swan;
 
 namespace HueDream.Controllers {
     [Route("api/[controller]"), ApiController]
     public class DreamDataController : ControllerBase {
+        private DreamClient dClient;
+        public DreamDataController(DreamClient dc) {
+            dClient = dc;
+        }
+        
         // GET: api/DreamData/getMode
         [Route("getMode")]
         public static int GetMode() {
@@ -29,19 +33,18 @@ namespace HueDream.Controllers {
         // POST: api/DreamData/mode
         [HttpPost("mode")]
         public IActionResult Mode([FromBody] int dMode) {
-            SetMode((byte)dMode);
+            SetMode((byte) dMode);
             return Ok(dMode);
         }
-       
-      
-        
+
+
         // POST: api/DreamData/capturemode
         [HttpPost("capturemode")]
         public IActionResult CaptureMode([FromBody] int cMode) {
             SetCaptureMode(cMode);
             return Ok(cMode);
         }
-        
+
         // POST: api/DreamData/devname
         [HttpPost("devname")]
         public IActionResult Devname([FromBody] JObject devInfo) {
@@ -58,7 +61,7 @@ namespace HueDream.Controllers {
             SetBrightness(dBright);
             return Ok(dBright);
         }
-        
+
         // POST: api/DreamData/camType
         [HttpPost("camType")]
         public IActionResult CamType([FromBody] int cType) {
@@ -66,7 +69,7 @@ namespace HueDream.Controllers {
             ResetMode();
             return Ok(cType);
         }
-        
+
         // POST: api/DreamData/vcount
         [HttpPost("vcount")]
         public IActionResult Vcount([FromBody] int count) {
@@ -100,16 +103,17 @@ namespace HueDream.Controllers {
                 vCount = ledData.VCount;
                 ledData.HCount = count;
             }
+
             ledData.LedCount = vCount * 2 + count * 2;
             DreamData.SetItem<LedData>("ledData", ledData);
             ResetMode();
             return Ok(count);
         }
-        
+
         // POST: api/DreamData/bridges
         [HttpPost("bridges")]
         public IActionResult PostBridges([FromBody] List<BridgeData> bData) {
-            Console.WriteLine(@"Bridge Post received..." + JsonConvert.SerializeObject(bData));
+            LogUtil.Write(@"Bridge Post received..." + JsonConvert.SerializeObject(bData));
             var bridgeData = bData;
             DreamData.SetItem("bridges", bridgeData);
             ResetMode();
@@ -119,7 +123,7 @@ namespace HueDream.Controllers {
         // POST: api/DreamData/leaves
         [HttpPost("leaves")]
         public IActionResult PostLeaves([FromBody] List<NanoData> lData) {
-            Console.WriteLine(@"Bridge Post received..." + JsonConvert.SerializeObject(lData));
+            LogUtil.Write(@"Bridge Post received..." + JsonConvert.SerializeObject(lData));
             DreamData.SetItem("leaves", lData);
             ResetMode();
             return Ok(lData.Count);
@@ -128,15 +132,17 @@ namespace HueDream.Controllers {
         // POST: api/DreamData/leaf
         [HttpPost("leaf")]
         public IActionResult PostLeaf([FromBody] NanoData lData) {
-            Console.WriteLine(@"Leaf Post received..." + JsonConvert.SerializeObject(lData));
+            LogUtil.Write(@"Leaf Post received..." + JsonConvert.SerializeObject(lData));
             var leaves = DreamData.GetItem<List<NanoData>>("leaves");
             var leafInt = 0;
             if (leaves.Count > 0) {
                 foreach (var leaf in leaves) {
-                    if (leaf.Id == lData.Id) {
-                        leaves[leafInt] = lData;
-                        break;
-                    }
+                    if (lData != null)
+                        if (leaf.Id == lData.Id) {
+                            leaves[leafInt] = lData;
+                            break;
+                        }
+
                     leafInt++;
                 }
             } else {
@@ -165,6 +171,7 @@ namespace HueDream.Controllers {
                     } else {
                         leaf.MirrorY = flipVal;
                     }
+
                     nanoTarget = leaf;
                 }
 
@@ -176,11 +183,11 @@ namespace HueDream.Controllers {
             return new JsonResult(nanoTarget);
         }
 
-        
+
         // POST: api/DreamData/dsIp
         [HttpPost("dsIp")]
         public IActionResult PostIp([FromBody] string dsIp) {
-            Console.WriteLine(@"Did it work? " + dsIp);
+            LogUtil.Write(@"Did it work? " + dsIp);
             DreamData.SetItem("dsIp", dsIp);
             ResetMode();
             return Ok(dsIp);
@@ -189,7 +196,7 @@ namespace HueDream.Controllers {
         // POST: api/DreamData/dsSidekick
         [HttpPost("dsSidekick")]
         public IActionResult PostSk([FromBody] SideKick skDevice) {
-            Console.WriteLine(@"Did it work? " + JsonConvert.SerializeObject(skDevice));
+            LogUtil.Write(@"Did it work? " + JsonConvert.SerializeObject(skDevice));
             DreamData.SetItem("myDevice", skDevice);
             return Ok("ok");
         }
@@ -197,7 +204,7 @@ namespace HueDream.Controllers {
         // POST: api/DreamData/dsConnect
         [HttpPost("dsConnect")]
         public IActionResult PostDevice([FromBody] Connect myDevice) {
-            Console.WriteLine(@"Did it work? " + JsonConvert.SerializeObject(myDevice));
+            LogUtil.Write(@"Did it work? " + JsonConvert.SerializeObject(myDevice));
             DreamData.SetItem("myDevice", myDevice);
             return Ok(myDevice);
         }
@@ -205,190 +212,188 @@ namespace HueDream.Controllers {
         [HttpGet("action")]
         public IActionResult Action(string action, string value = "") {
             var message = "Unrecognized action";
-            var store = DreamData.GetStore();
-            Console.WriteLine($@"{action} fired.");
+            using var store = DreamData.GetStore();
+            var exInt = 0;
+            LogUtil.Write($@"{action} fired.");
+            switch (action) {
+                case "loadData":
+                    return Content(DreamData.GetStoreSerialized(), "application/json");
+                case "refreshDevices":
+                    DreamData.RefreshDevices(dClient);
+                    return Content(DreamData.GetStoreSerialized(), "application/json");
+                case "findDreamDevices": {
+                    var dev = dClient.FindDevices().Result;
+                    store.Dispose();
+                    return new JsonResult(dev);
+                }
+                case "refreshNanoLeaf": {
+                    var leaves = DreamData.GetItem<List<NanoData>>("leaves");
+                    NanoData nd = null;
+                    var leafInt = 0;
+                    foreach (NanoData leaf in leaves) {
+                        if (leaf.IpV4Address == value) {
+                            nd = leaf;
+                            break;
+                        }
 
-            if (action == "loadData") {
-                return Content(DreamData.GetStoreSerialized(), "application/json");
-            }
-
-            if (action == "refreshDevices") {
-                DreamData.RefreshDevices();
-                return Content(DreamData.GetStoreSerialized(), "application/json");
-            }
-
-            if (action == "findDreamDevices") {
-                List<BaseDevice> dev = DreamDiscovery.FindDevices();
-                store.Dispose();
-                return new JsonResult(dev);
-            }
-
-            if (action == "refreshNanoLeaf") {
-                var leaves = DreamData.GetItem<List<NanoData>>("leaves");
-                NanoData nd = null;
-                var leafInt = 0;
-                foreach (NanoData leaf in leaves) {
-                    if (leaf.IpV4Address == value) {
-                        nd = leaf;
-                        break;
+                        leafInt++;
                     }
 
-                    leafInt++;
-                }
-
-                if (nd != null) {
-                    var panel = new Panel(nd.IpV4Address, nd.Token);
-                    var layout = panel.GetLayout().Result;
-                    panel.Dispose();
-                    if (layout != null) {
+                    if (nd != null) {
+                        var panel = new Panel(nd.IpV4Address, nd.Token);
+                        var layout = panel.GetLayout().Result;
+                        panel.Dispose();
+                        if (layout == null) return new JsonResult(null);
                         nd.Layout = layout;
                         leaves[leafInt] = nd;
                         DreamData.SetItem<List<NanoData>>("leaves", leaves);
+
+                        return new JsonResult(layout);
                     }
 
-                    return new JsonResult(layout);
+                    message = "You suck, supply an IP.";
+                    break;
                 }
+                case "findNanoLeaf": {
+                    LogUtil.Write("Find Nano Leaf called.");
+                    var existingLeaves = DreamData.GetItem<List<NanoData>>("leaves");
+                    var leaves = NanoDiscovery.Discover(2);
 
-                message = "You suck, supply an IP.";
-            }
+                    var all = new List<NanoData>();
+                    LogUtil.Write("Got all devices: " + JsonConvert.SerializeObject(existingLeaves));
+                    if (existingLeaves != null) {
+                        LogUtil.Write("Adding range.");
+                        foreach (var newLeaf in leaves) {
+                            var add = true;
+                            foreach (var leaf in existingLeaves) {
+                                if (leaf.Id == newLeaf.Id) {
+                                    LogUtil.Write("Updating existing leaf.");
+                                    newLeaf.Token = leaf.Token;
+                                    existingLeaves[exInt] = newLeaf;
+                                    add = false;
+                                    break;
+                                }
 
-            if (action == "findNanoLeaf") {
-                LogUtil.Write("Find Nano Leaf called.");
-                var existingLeaves = DreamData.GetItem<List<NanoData>>("leaves");
-                var leaves = NanoDiscovery.Discover(2);
-                
-                var all = new List<NanoData>();
-                LogUtil.Write("Got all devices: " + JsonConvert.SerializeObject(existingLeaves));
-                if (existingLeaves != null) {
-                    LogUtil.Write("Adding range.");
-                    foreach (var newLeaf in leaves) {
-                        var add = true;
-                        var exint = 0;
-                        foreach (var leaf in existingLeaves) {
-                            if (leaf.Id == newLeaf.Id) {
-                                LogUtil.Write("Updating existing leaf.");
-                                newLeaf.Token = leaf.Token;
-                                existingLeaves[exint] = newLeaf;
-                                add = false;
-                                break;
+                                exInt++;
                             }
 
-                            exint++;
+                            if (add) {
+                                LogUtil.Write("Adding new leaf.");
+                                all.Add(newLeaf);
+                            }
                         }
 
-                        if (add) {
-                            LogUtil.Write("Adding new leaf.");
-                            all.Add(newLeaf);
-                        }
+                        all.AddRange(existingLeaves);
+                    } else {
+                        all.AddRange(leaves);
                     }
 
-                    all.AddRange(existingLeaves);
-                } else {
-                    all.AddRange(leaves);
-                }
-
-                LogUtil.Write("Looping: " + all.Count);
-                foreach (var leaf in all) {
-                    if (leaf.Token != null) {
+                    LogUtil.Write("Looping: " + all.Count);
+                    foreach (var leaf in all.Where(leaf => leaf.Token != null)) {
                         LogUtil.Write("Fetching leaf data.");
                         try {
                             var nl = new Panel(leaf.IpV4Address, leaf.Token);
                             var layout = nl.GetLayout().Result;
                             if (layout != null) leaf.Layout = layout;
                             nl.Dispose();
+                        } catch (Exception) {
+                            LogUtil.Write("An exception occurred, probably the nanoleaf is unplugged.", "WARN");
                         }
-                        catch (Exception) {
-                            LogUtil.Write("An exception occurred, probably the nanoleaf is unplugged.");
-                        }
-                        Console.WriteLine("Device: " + JsonConvert.SerializeObject(leaf));
-                        
+
+                        LogUtil.Write("Device: " + JsonConvert.SerializeObject(leaf));
                     }
+
+                    LogUtil.Write("Saving nano data from nano search: " + JsonConvert.SerializeObject(all));
+                    DreamData.SetItem<List<NanoData>>("leaves", all);
+                    message = JsonConvert.SerializeObject(all);
+                    break;
                 }
-                LogUtil.Write("Saving nano data from nano search: " + JsonConvert.SerializeObject(all));
-                DreamData.SetItem<List<NanoData>>("leaves", all);
-                message = JsonConvert.SerializeObject(all);
-            }
+                case "authorizeHue": {
+                    var doAuth = true;
+                    var bridges = store.GetItem<List<BridgeData>>("bridges");
+                    BridgeData bd = null;
+                    var bridgeInt = -1;
 
-            if (action == "authorizeHue") {
-                var doAuth = true;
-                var bridges = store.GetItem<List<BridgeData>>("bridges");
-                BridgeData bd = null;
-                var bridgeInt = -1;
+                    if (!string.IsNullOrEmpty(value)) {
+                        var bCount = 0;
+                        foreach (var b in bridges) {
+                            if (b.IpAddress == value) {
+                                bd = b;
+                                bridgeInt = bCount;
+                                doAuth = b.Key == null || b.User == null;
+                            }
 
-                if (!string.IsNullOrEmpty(value)) {
-                    var bCount = 0;
-                    foreach (var b in bridges) {
-                        if (b.IpAddress == value) {
-                            bd = b;
-                            bridgeInt = bCount;
-                            doAuth = b.Key == null || b.User == null;
+                            bCount++;
                         }
-
-                        bCount++;
                     }
-                }
 
-                if (doAuth) {
-                    var appKey = HueBridge.CheckAuth(value).Result;
-                    if (appKey != null && bd != null) {
-                        message = "Success: Bridge Linked.";
-                        bd.Key = appKey.StreamingClientKey;
-                        bd.User = appKey.Username;
-                        bridges[bridgeInt] = bd;
+                    if (doAuth) {
+                        var appKey = HueBridge.CheckAuth(value).Result;
+                        if (appKey != null && bd != null) {
+                            message = "Success: Bridge Linked.";
+                            bd.Key = appKey.StreamingClientKey;
+                            bd.User = appKey.Username;
+                            bridges[bridgeInt] = bd;
+                            store.ReplaceItem("bridges", bridges, true);
+                        } else {
+                            message = "Error: Press the link button";
+                        }
+                    } else {
+                        message = "Success: Bridge Already Linked.";
+                    }
+
+                    break;
+                }
+                case "findHue": {
+                    var bridges = HueBridge.FindBridges(3);
+                    if (bridges != null) {
                         store.ReplaceItem("bridges", bridges, true);
-                    } else {
-                        message = "Error: Press the link button";
+                        return new JsonResult(bridges);
                     }
-                } else {
-                    message = "Success: Bridge Already Linked.";
+
+                    message = "Error: No bridge found.";
+                    break;
                 }
-            }
+                case "authorizeNano": {
+                    var doAuth = true;
+                    var leaves = store.GetItem<List<NanoData>>("leaves");
+                    NanoData bd = null;
+                    var nanoInt = -1;
+                    if (!string.IsNullOrEmpty(value)) {
+                        var nanoCount = 0;
+                        foreach (var n in leaves) {
+                            if (n.IpV4Address == value) {
+                                bd = n;
+                                doAuth = n.Token == null;
+                                nanoInt = nanoCount;
+                            }
 
-            if (action == "findHue") {
-                var bridges = HueBridge.FindBridges(3);
-                if (bridges != null) {
-                    store.ReplaceItem("bridges", bridges, true);
-                    return new JsonResult(bridges);
-                }
-
-                message = "Error: No bridge found.";
-            }
-
-            if (action == "authorizeNano") {
-                var doAuth = true;
-                var leaves = store.GetItem<List<NanoData>>("leaves");
-                NanoData bd = null;
-                var nanoInt = -1;
-                if (!string.IsNullOrEmpty(value)) {
-                    var nanoCount = 0;
-                    foreach (var n in leaves) {
-                        if (n.IpV4Address == value) {
-                            bd = n;
-                            doAuth = n.Token == null;
-                            nanoInt = nanoCount;
+                            nanoCount++;
                         }
-                        nanoCount++;
                     }
-                }
 
-                if (doAuth) {
-                    var panel = new Panel(value);
-                    var appKey = panel.CheckAuth().Result;
-                    if (appKey != null && bd != null) {
-                        message = "Success: Bridge Linked.";
-                        bd.Token = appKey.Token;
-                        leaves[nanoInt] = bd;
-                        store.ReplaceItem("leaves", leaves, true);
+                    if (doAuth) {
+                        var panel = new Panel(value);
+                        var appKey = panel.CheckAuth().Result;
+                        if (appKey != null && bd != null) {
+                            message = "Success: Bridge Linked.";
+                            bd.Token = appKey.Token;
+                            leaves[nanoInt] = bd;
+                            store.ReplaceItem("leaves", leaves, true);
+                        } else {
+                            message = "Error: Press the link button";
+                        }
+
+                        panel.Dispose();
                     } else {
-                        message = "Error: Press the link button";
+                        message = "Success: NanoLeaf Already Linked.";
                     }
-                    panel.Dispose();
-                } else {
-                    message = "Success: NanoLeaf Already Linked.";
+
+                    break;
                 }
             }
 
-            Console.WriteLine(message);
+            LogUtil.Write(message);
             store.Dispose();
             return new JsonResult(message);
         }
@@ -396,17 +401,17 @@ namespace HueDream.Controllers {
         // GET: api/DreamData/json
         [HttpGet("json")]
         public IActionResult GetJson() {
-            Console.WriteLine(@"GetJson Called.");
+            LogUtil.Write(@"GetJson Called.");
             var store = DreamData.GetStore();
             var bridgeArray = DreamData.GetItem<List<BridgeData>>("bridges");
-            if (bridgeArray.Count == 0 || bridgeArray == null) {
-                var newBridges = HueBridge.FindBridges(2);
+            if (bridgeArray.Count == 0) {
+                var newBridges = HueBridge.FindBridges();
                 store.ReplaceItem("bridges", newBridges, true);
             }
 
             if (store.GetItem("dsIp") == "0.0.0.0") {
-                var devs = DreamDiscovery.FindDevices();
-                store.ReplaceItem("devices", devs);
+                var devices = dClient.FindDevices().Result;
+                store.ReplaceItem("devices", devices);
             }
 
             store.Dispose();
@@ -414,15 +419,15 @@ namespace HueDream.Controllers {
         }
 
 
-        private static void ResetMode() {
+        private void ResetMode() {
             var myDev = DreamData.GetDeviceData();
             var curMode = myDev.Mode;
             if (curMode == 0) return;
-            SetMode(0);
-            SetMode(curMode);
-
+            dClient.UpdateMode(0);
+            dClient.UpdateMode(curMode);
         }
-        private static void SetMode(int mode) {
+
+        private void SetMode(int mode) {
             var newMode = ByteUtils.IntByte(mode);
             var myDev = DreamData.GetDeviceData();
             var curMode = myDev.Mode;
@@ -430,7 +435,7 @@ namespace HueDream.Controllers {
             LogUtil.Write("Updating mode to " + mode);
             var ipAddress = myDev.IpAddress;
             var groupNumber = (byte) myDev.GroupNumber;
-            
+
             var groupSend = false;
             byte mFlag = 0x11;
             if (ipAddress == "255.255.255.0") {
@@ -439,12 +444,12 @@ namespace HueDream.Controllers {
                 mFlag = 0x21;
             }
 
-            DreamSender.SendUdpWrite(0x03, 0x01, new[] {newMode}, mFlag, groupNumber,
+            dClient.SendUdpWrite(0x03, 0x01, new[] {newMode}, mFlag, groupNumber,
                 new IPEndPoint(IPAddress.Parse(ipAddress), 8888), groupSend);
         }
 
-        
-        private static void SetCaptureMode(int capMode) {
+
+        private void SetCaptureMode(int capMode) {
             LogUtil.Write("Updating capture mode to " + capMode);
             var curMode = DreamData.GetItem<int>("captureMode");
             var dev = DreamData.GetDeviceData();
@@ -460,10 +465,11 @@ namespace HueDream.Controllers {
             if (capMode == 0) {
                 SwitchDeviceType(devType, dev);
             }
+
             DreamData.SetItem<string>("devType", devType);
             if (colorMode == 0) return;
-            SetMode(0);
-            SetMode(colorMode);
+            dClient.UpdateMode(0);
+            dClient.UpdateMode(colorMode);
         }
 
         private static void SwitchDeviceType(string devType, BaseDevice curDevice) {
@@ -492,10 +498,9 @@ namespace HueDream.Controllers {
                 newDevice.Mode = curDevice.Mode;
                 DreamData.SetItem("myDevice", newDevice);
             }
-            
         }
-        
-        private static void SetDevName(string ipAddress, string name, int group) {
+
+        private void SetDevName(string ipAddress, string name, int group) {
             var groupNumber = (byte) group;
             bool groupSend = false;
             byte mFlag = 0x11;
@@ -504,37 +509,39 @@ namespace HueDream.Controllers {
             } else {
                 mFlag = 0x21;
             }
+
             LogUtil.Write($@"Setting device name for {ipAddress} to {name}.");
-            DreamSender.SendUdpWrite(0x01, 0x07, ByteUtils.StringBytePad(name, 16).ToArray(), mFlag, groupNumber,
+            dClient.SendUdpWrite(0x01, 0x07, ByteUtils.StringBytePad(name, 16).ToArray(), mFlag, groupNumber,
                 new IPEndPoint(IPAddress.Parse(ipAddress), 8888), groupSend);
-            List<JObject> devs = DreamData.GetItem<List<JObject>>("devices");
-            List<JObject> newDevs = new List<JObject>();
-            foreach(var dev in devs) {
+            List<JObject> devices = DreamData.GetItem<List<JObject>>("devices");
+            var newDevices = new List<JObject>();
+            foreach (var dev in devices) {
                 var dIp = (string) dev.SelectToken("ipAddress");
                 if (dIp == ipAddress) {
                     dev["name"] = ByteUtils.StringBytePad(name, 16).ToArray();
                     LogUtil.Write("We dun got us an updated device: " + JsonConvert.SerializeObject(dev));
                 }
-                newDevs.Add(dev);
+
+                newDevices.Add(dev);
             }
-            DreamData.SetItem("devices", newDevs);
+
+            DreamData.SetItem("devices", newDevices);
         }
-        
-        private static void SetBrightness(int dData) {
+
+        private void SetBrightness(int dData) {
             var myDev = DreamData.GetDeviceData();
             var ipAddress = myDev.IpAddress;
             var groupNumber = (byte) myDev.GroupNumber;
-            bool groupSend = false;
+            var groupSend = false;
             byte mFlag = 0x11;
             if (ipAddress == "255.255.255.0") {
                 groupSend = true;
             } else {
                 mFlag = 0x21;
             }
-            DreamSender.SendUdpWrite(0x03, 0x02, new[] {ByteUtils.IntByte(dData)}, mFlag, groupNumber,
+
+            dClient.SendUdpWrite(0x03, 0x02, new[] {ByteUtils.IntByte(dData)}, mFlag, groupNumber,
                 new IPEndPoint(IPAddress.Parse(ipAddress), 8888), groupSend);
         }
-
-        
     }
 }

@@ -12,24 +12,17 @@ namespace HueDream.Models.Nanoleaf {
             using (var mDns = new MulticastService()) {
                 using (var sd = new ServiceDiscovery(mDns)) {
                     mDns.NetworkInterfaceDiscovered += (s, e) => {
-                        foreach (var nic in e.NetworkInterfaces) {
-                            LogUtil.Write($"NIC '{nic.Name}'");
-                        }
-
                         // Ask for the name of all services.
                         sd.QueryServiceInstances("_nanoleafapi._tcp");
-                        //sd.QueryAllServices();
                     };
 
                     sd.ServiceDiscovered += (s, serviceName) => {
-                        LogUtil.Write($"service '{serviceName}'");
                         mDns.SendQuery(serviceName, type: DnsType.PTR);
                     };
 
                     sd.ServiceInstanceDiscovered += (s, e) => {
                         var name = e.ServiceInstanceName.ToString();
-                        var nData = new NanoData();
-                        nData.IpV4Address = String.Empty;
+                        var nData = new NanoData {IpV4Address = string.Empty};
                         if (!name.Contains("nanoleafapi")) return;
                         foreach (var msg in e.Message.AdditionalRecords) {
                             switch (msg.Type) {
@@ -66,7 +59,6 @@ namespace HueDream.Models.Nanoleaf {
                             nData.IpV4Address = nData.Hostname;
                         }
 
-
                         if (!string.IsNullOrEmpty(nData.IpV4Address) && !string.IsNullOrEmpty(nData.Id)) {
                             output.Add(nData);
                         }
@@ -95,7 +87,6 @@ namespace HueDream.Models.Nanoleaf {
             var nanoLeaves = new List<NanoData>();
 
             if (existingLeaves != null) {
-                LogUtil.Write("Adding range.");
                 foreach (var newLeaf in leaves) {
                     var add = true;
                     var exInt = 0;
@@ -127,10 +118,8 @@ namespace HueDream.Models.Nanoleaf {
                 nanoLeaves.AddRange(leaves);
             }
 
-            LogUtil.Write("Looping: " + nanoLeaves.Count);
             foreach (var leaf in nanoLeaves) {
                 if (leaf.Token != null) {
-                    LogUtil.Write("Fetching leaf data.");
                     try {
                         var nl = new Panel(leaf.IpV4Address, leaf.Token);
                         var layout = nl.GetLayout().Result;
@@ -139,11 +128,8 @@ namespace HueDream.Models.Nanoleaf {
                     } catch (Exception) {
                         LogUtil.Write("An exception occurred, probably the nanoleaf is unplugged.");
                     }
-
-                    Console.WriteLine("Device: " + JsonConvert.SerializeObject(leaf));
                 }
             }
-            LogUtil.Write("Returning from refresh: " + JsonConvert.SerializeObject(nanoLeaves));
             DreamData.SetItem<List<NanoData>>("leaves", nanoLeaves);
             return nanoLeaves;
         }

@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using Accord.IO;
 using HueDream.Models.DreamGrab;
 using HueDream.Models.DreamScreen;
 using HueDream.Models.DreamScreen.Devices;
@@ -13,7 +11,6 @@ using HueDream.Models.Nanoleaf;
 using HueDream.Models.Util;
 using JsonFlatFileDataStore;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace HueDream.Models {
     [Serializable]
@@ -21,7 +18,6 @@ namespace HueDream.Models {
         public static DataStore GetStore() {
             var path = GetConfigPath("store.json");
             var store = new DataStore(path);
-            store = CheckDefaults(store);
             return store;
         }
 
@@ -55,14 +51,14 @@ namespace HueDream.Models {
         }
 
         
-        private static DataStore CheckDefaults(DataStore store) {
-                
+        public static DataStore CheckDefaults(DreamClient dc) {
+            var store = GetStore();
             var v = store.GetItem("defaultsSet");
-            if (v == null) SetDefaults(store);
+            if (v == null) SetDefaults(store, dc);
             return store;
         }
 
-        private static DataStore SetDefaults(DataStore store) {
+        private static DataStore SetDefaults(DataStore store, DreamClient dc) {
             LogUtil.Write("Setting defaults.");
             store.InsertItem("dataSource", "DreamScreen");
             store.InsertItem("camWidth", 1920);
@@ -83,7 +79,7 @@ namespace HueDream.Models {
             store.InsertItem("minBrightness", 0);
             store.InsertItem("saturationBoost", 0);
             store.InsertItem("dsIp", "0.0.0.0");
-            ScanDevices(store);
+            ScanDevices(store, dc);
             store.InsertItem("defaultsSet", true);
             return store;
         }
@@ -127,20 +123,19 @@ namespace HueDream.Models {
         }
 
 
-        public static (int, int) GetTargetLeds() {
+        public static (int, int) GetTargetLights() {
             var dsIp = GetItem<string>("dsIp");
             var devices = GetItem<List<BaseDevice>>("devices");
             foreach (var dev in devices) {
                 var tsIp = dev.IpAddress;
-                LogUtil.Write("TSIP: " + tsIp);
-                if (tsIp == dsIp) {
-                    LogUtil.Write("We have a matching IP");
-                    var fs = dev.flexSetup;
-                    var dX = fs[0];
-                    var dY = fs[1];
-                    LogUtil.Write($@"DX, DY: {dX} {dY}");
-                    return (dX, dY);
-                }
+                LogUtil.Write("Device IP: " + tsIp);
+                if (tsIp != dsIp) continue;
+                LogUtil.Write("We have a matching IP");
+                var fs = dev.flexSetup;
+                var dX = fs[0];
+                var dY = fs[1];
+                LogUtil.Write($@"DX, DY: {dX} {dY}");
+                return (dX, dY);
             }
             return (0,0);
         }
@@ -172,24 +167,27 @@ namespace HueDream.Models {
             throw new Exception("No network adapters found in " + JsonConvert.SerializeObject(host));
         }
         
-        public static void RefreshDevices() {
+        public static void RefreshDevices(DreamClient dc) {
             // Get dream devices
-            var dreamDevices = DreamDiscovery.FindDevices();
             var leaves = NanoDiscovery.Refresh();
             // Find bridges
             var bridges = HueBridge.GetBridgeData();
+            var dreamDevices = dc.FindDevices().Result;
+
                 SetItem("devices", dreamDevices);
                 SetItem("bridges", bridges);
                 SetItem("leaves", leaves);
             
         }
         
-        public static void ScanDevices(DataStore store) {
+        public static void ScanDevices(DataStore store, DreamClient dc) {
             // Get dream devices
-            var dreamDevices = DreamDiscovery.FindDevices();
             var leaves = NanoDiscovery.Discover();
             // Find bridges
             var bridges = HueBridge.FindBridges();
+            var dreamDevices = dc.FindDevices().Result;
+
+            if (store == null) return;
             store.InsertItem("devices", dreamDevices);
             store.InsertItem("bridges", bridges);
             store.InsertItem("leaves", leaves);

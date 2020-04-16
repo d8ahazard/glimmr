@@ -26,18 +26,16 @@ namespace HueDream {
 
         private static IHostBuilder CreateHostBuilder(string[] args) {
             return Host.CreateDefaultBuilder(args)
-                .ConfigureLogging((hostingContext, logging) =>
-                {
+                .ConfigureLogging((hostingContext, logging) => {
                     logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
                     logging.AddConsole();
                     logging.AddDebug();
-                })    
-                .ConfigureWebHostDefaults(webBuilder => { 
+                })
+                .ConfigureWebHostDefaults(webBuilder => {
                     webBuilder.UseStartup<Startup>();
                     webBuilder.UseUrls("http://*:5699");
-                })
-                // Initialize our dream screen emulator
-                .ConfigureServices(services => { services.AddHostedService<DreamClient>();});
+                });
+
         }
     }
 }

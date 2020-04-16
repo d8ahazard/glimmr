@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -14,17 +15,18 @@ using HueDream.Models.Hue;
 using HueDream.Models.Nanoleaf;
 using HueDream.Models.Util;
 using Microsoft.Extensions.Hosting;
+using MMALSharp.Native;
 using Newtonsoft.Json;
-using Serilog;
+using Org.BouncyCastle.Cms;
 
 namespace HueDream.Models.DreamScreen {
     public class DreamClient : BackgroundService {
-        public int CaptureMode { get; }
+        private int CaptureMode { get; }
         private static bool _searching;
         private readonly DreamScene dreamScene;
         private readonly byte group;
         private readonly Color ambientColor;
-        private readonly int ambientMode;
+        public int ambientMode;
         private int ambientShow;
         private List<HueBridge> bridges;
         private List<Panel> panels;
@@ -34,10 +36,9 @@ namespace HueDream.Models.DreamScreen {
 
         // Our functional values
         private int devMode;
+        
         private IPEndPoint listenEndPoint;
         private UdpClient listener;
-
-        private Task listenTask;
 
         // I don't know if we actually need all these
         private int prevAmbientMode;
@@ -45,27 +46,31 @@ namespace HueDream.Models.DreamScreen {
 
         // Used by our loops to know when to update?
         private int prevMode;
-        
+
         // Token passed to our hue bridges
         private CancellationTokenSource sendTokenSource;
+
         // Token used by our show builder for ambient scenes
         private CancellationTokenSource showBuilderSource;
+
         // Use this for capturing screen/video
         private CancellationTokenSource captureTokenSource;
+
         // Use this for the camera
-        private CancellationTokenSource camTokenSource;
+        private readonly CancellationTokenSource camTokenSource;
+
         // Use this to check if we've initialized our bridges
         private bool streamStarted;
 
-        private bool disposed;
         
         // Use this to check if we've started our show builder
         private bool showBuilderStarted;
         private IPEndPoint targetEndpoint;
         private LedStrip strip;
-        private static List<BaseDevice> Devices { get; set; }
         
+        private List<BaseDevice> Devices { get; set; }
         public DreamClient() {
+            DreamData.CheckDefaults(this);
             var dd = DreamData.GetStore();
             dev = DreamData.GetDeviceData();
             dreamScene = new DreamScene();
@@ -85,44 +90,41 @@ namespace HueDream.Models.DreamScreen {
             group = (byte) dev.GroupNumber;
             targetEndpoint = new IPEndPoint(IPAddress.Parse(sourceIp), 8888);
             dd.Dispose();
-            disposed = false;
             bridges = new List<HueBridge>();
             panels = new List<Panel>();
             captureTokenSource = new CancellationTokenSource();
             camTokenSource = new CancellationTokenSource();
         }
 
-
         
         protected override Task ExecuteAsync(CancellationToken cancellationToken) {
             LogUtil.WriteInc("Starting DreamClient services.");
-            
+
             if (CaptureMode != 0) {
                 grabber = new StreamCapture(camTokenSource.Token);
                 var ledData = DreamData.GetItem<LedData>("ledData") ?? new LedData(true);
                 try {
                     strip = new LedStrip(ledData);
-                } catch (TypeInitializationException e) {
+                }
+                catch (TypeInitializationException e) {
                     LogUtil.Write("Type init error: " + e.Message);
                 }
             }
-            
+
             var lt = StartListening(cancellationToken);
             LogUtil.Write("Listener retrieved.");
             UpdateMode(dev.Mode);
             LogUtil.Write("Updating device mode on startup.");
             return lt;
         }
-              
-        
 
 
-        private void UpdateMode(int newMode) {
+        public void UpdateMode(int newMode) {
             if (prevMode == newMode) return;
             dev = DreamData.GetDeviceData();
             dev.Mode = newMode;
             devMode = newMode;
-            Console.WriteLine($@"DreamScreen: Updating mode to {newMode} from {prevMode}.");
+            LogUtil.Write($@"DreamScreen: Updating mode to {newMode} from {prevMode}.");
             // If we are not in ambient mode and ambient scene is running, stop it
             switch (newMode) {
                 case 0:
@@ -137,7 +139,7 @@ namespace HueDream.Models.DreamScreen {
                 case 2:
                     StopShowBuilder();
                     StartAudioCaptureTask();
-                    Console.WriteLine($@"DreamScreen: Subscribing to sector data for mode: {newMode}");
+                    LogUtil.Write($@"DreamScreen: Subscribing to sector data for mode: {newMode}");
                     if (!streamStarted) StartStream();
                     Subscribe(true);
                     break;
@@ -147,7 +149,7 @@ namespace HueDream.Models.DreamScreen {
                     UpdateAmbientMode(ambientMode);
                     break;
             }
-        
+
             prevMode = newMode;
         }
 
@@ -213,7 +215,7 @@ namespace HueDream.Models.DreamScreen {
                 }
 
                 var leaves = DreamData.GetItem<List<NanoData>>("leaves");
-                
+
                 panels = new List<Panel>();
                 LogUtil.Write("Loading nano panels??");
                 foreach (NanoData n in leaves) {
@@ -255,11 +257,11 @@ namespace HueDream.Models.DreamScreen {
             foreach (var p in panels) {
                 p.UpdateLights(sectors);
             }
-            
+
             strip?.UpdateAll(colors);
         }
 
-       
+
         private void StartShowBuilder() {
             if (showBuilderStarted) return;
             dreamScene.LoadScene(ambientShow);
@@ -274,7 +276,7 @@ namespace HueDream.Models.DreamScreen {
             if (showBuilderStarted) LogUtil.WriteDec(@"Stopping show builder.");
             CancelSource(showBuilderSource);
             showBuilderStarted = false;
-            
+
         }
 
         private void UpdateAmbientColor(Color aColor) {
@@ -282,18 +284,21 @@ namespace HueDream.Models.DreamScreen {
             StopShowBuilder();
             var colors = new Color[12];
             for (var i = 0; i < colors.Length; i++) colors[i] = Color.Black;
-            Console.WriteLine($@"DreamScreen: Setting ambient color to: {aColor.ToString()}.");
+            LogUtil.Write($@"DreamScreen: Setting ambient color to: {aColor.ToString()}.");
             for (var i = 0; i < colors.Length; i++) {
                 colors[i] = aColor;
             }
-            
+
             SendColors(colors, colors);
         }
 
         private void Subscribe(bool log = false) {
             if (log) LogUtil.Write(@"Sending subscribe message.");
-            DreamSender.SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x10, group, targetEndpoint);
+            SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x10, group, targetEndpoint);
         }
+        
+        
+
 
 
         private Task StartListening(CancellationToken ct) {
@@ -305,29 +310,31 @@ namespace HueDream.Models.DreamScreen {
                 listener.Client.Bind(listenEndPoint);
 
                 // Return listen task to kill later
-                return Task.Run(() => {                    
+                return Task.Run(() => {
                     LogUtil.WriteInc("Listener started.");
                     while (!ct.IsCancellationRequested) {
                         var sourceEndPoint = new IPEndPoint(IPAddress.Any, 0);
                         var receivedResults = listener.Receive(ref sourceEndPoint);
                         ProcessData(receivedResults, sourceEndPoint);
-                    }                    
+                    }
+
                     LogUtil.WriteDec("Listener cancelled.");
                     try {
                         StopServices();
-                    } finally {
+                    }
+                    finally {
                         LogUtil.WriteDec(@"DreamClient Stopped.");
                     }
                 });
             }
             catch (SocketException e) {
-                Console.WriteLine($@"Socket exception: {e.Message}.");
+                LogUtil.Write($@"Socket exception: {e.Message}.");
             }
             return null;
         }
 
         private Task StartVideoCapture(CancellationToken cancellationToken) {
-            Console.WriteLine("Start video capture has been initialized.");
+            LogUtil.Write("Start video capture has been initialized.");
             if (grabber == null) return Task.CompletedTask;
             var captureTask = grabber.StartCapture(this, cancellationToken);
             return captureTask.IsCompleted ? captureTask : Task.CompletedTask;
@@ -337,7 +344,7 @@ namespace HueDream.Models.DreamScreen {
             if (CaptureMode == 0) {
                 Subscribe();
                 if (!streamStarted) StartStream();
-            } else {                
+            } else {
                 CancelSource(captureTokenSource);
                 captureTokenSource = new CancellationTokenSource();
                 if (!streamStarted) StartStream();
@@ -346,6 +353,9 @@ namespace HueDream.Models.DreamScreen {
         }
 
         private Task StartAudioCapture(CancellationToken cancellation) {
+            if (cancellation != CancellationToken.None) {
+                LogUtil.Write("Foo-fiddy foo foo foo.");
+            }
             return Task.CompletedTask;
         }
 
@@ -360,10 +370,13 @@ namespace HueDream.Models.DreamScreen {
 
         private void ProcessData(byte[] receivedBytes, IPEndPoint receivedIpEndPoint) {
             // Convert data to ASCII and print in console
-            if (!MsgUtils.CheckCrc(receivedBytes)) return;
+            if (!MsgUtils.CheckCrc(receivedBytes)) {
+                if (_searching) LogUtil.Write("Discarding message from " + receivedIpEndPoint.Address);
+                return;
+            }
             string command = null;
             string flag = null;
-            var from = receivedIpEndPoint.Address.ToString();            
+            var from = receivedIpEndPoint.Address.ToString();
             var replyPoint = new IPEndPoint(receivedIpEndPoint.Address, 8888);
             var payloadString = string.Empty;
             var payload = Array.Empty<byte>();
@@ -375,8 +388,7 @@ namespace HueDream.Models.DreamScreen {
                 payloadString = msg.PayloadString;
                 command = msg.Command;
                 msgDevice = msg.Device;
-                string[] ignore = {"SUBSCRIBE", "READ_CONNECT_VERSION?", "COLOR_DATA", "DEVICE_DISCOVERY"};
-                if (!ignore.Contains(command)) Console.WriteLine($@"{from} -> {JsonConvert.SerializeObject(msg)}.");
+                LogUtil.Write($@"{from} -> localhost::{command}.");
                 flag = msg.Flags;
                 var groupMatch = msg.Group == dev.GroupNumber || msg.Group == 255;
                 if ((flag == "11" || flag == "21") && groupMatch) {
@@ -384,26 +396,23 @@ namespace HueDream.Models.DreamScreen {
                     writeState = true;
                 }
             } else {
-                LogUtil.Write("Invalid message?");
+                LogUtil.Write($@"Invalid message from {from}");
             }
 
             switch (command) {
                 case "SUBSCRIBE":
                     if (devMode == 1 || devMode == 2)
-                        DreamSender.SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x10, group, replyPoint);
+                        SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x10, group, replyPoint);
                     break;
                 case "COLOR_DATA":
                     if (CaptureMode == 0 && (devMode == 1 || devMode == 2)) {
-                        //LogUtil.Write("Raw payload: " + payload);
-                        //LogUtil.Write("Raw payload string: " + payloadString);
                         var colorData = ByteUtils.SplitHex(payloadString, 6); // Swap this with payload
-                        //LogUtil.Write("Color data is " + colorData.Count + " long.");
-                        var lightCount = 0;
                         var colors = new List<Color>();
-                        
+
                         foreach (var colorValue in colorData) {
                             colors.Add(ColorFromString(colorValue));
                         }
+
                         SendColors(colors.ToArray(), colors.ToArray());
                     }
 
@@ -416,7 +425,7 @@ namespace HueDream.Models.DreamScreen {
                             string dsIpCheck = DreamData.GetItem("dsIp");
                             if (dsIpCheck == "0.0.0.0" &&
                                 msgDevice.Tag.Contains("DreamScreen", StringComparison.CurrentCulture)) {
-                                Console.WriteLine(@"No DS IP Set, setting.");
+                                LogUtil.Write(@"No DS IP Set, setting.");
                                 DreamData.SetItem("dsIp", from);
                                 targetEndpoint = replyPoint;
                             }
@@ -443,7 +452,7 @@ namespace HueDream.Models.DreamScreen {
                 case "BRIGHTNESS":
                     brightness = payload[0];
                     if (writeState) {
-                        Console.WriteLine($@"Setting brightness to {brightness}.");
+                        LogUtil.Write($@"Setting brightness to {brightness}.");
                         dev.Brightness = payload[0];
                         UpdateBrightness(payload[0]);
                     }
@@ -456,9 +465,9 @@ namespace HueDream.Models.DreamScreen {
                 case "MODE":
                     if (writeState) {
                         dev.Mode = payload[0];
-                        Console.WriteLine($@"Updating mode: {dev.Mode}.");
+                        LogUtil.Write($@"Updating mode: {dev.Mode}.");
                         UpdateMode(dev.Mode);
-                        
+
                     }
 
                     break;
@@ -474,7 +483,7 @@ namespace HueDream.Models.DreamScreen {
                         ambientShow = payload[0];
                         dev.AmbientShowType = ambientShow;
                         UpdateAmbientShow(ambientShow);
-                        Console.WriteLine($@"Scene updated: {ambientShow}.");
+                        LogUtil.Write($@"Scene updated: {ambientShow}.");
                     }
 
                     break;
@@ -490,17 +499,19 @@ namespace HueDream.Models.DreamScreen {
                         LogUtil.Write("Setting SKU type?");
                         //dev.SkuSetup = payload[0];
                     }
+
                     break;
                 case "FLEX_SETUP":
                     if (writeState) {
                         LogUtil.Write("Setting FlexSetup");
-                        int[] fSetup = payload.Select(x => (int)x).ToArray();
+                        int[] fSetup = payload.Select(x => (int) x).ToArray();
                         dev.flexSetup = fSetup;
                     }
+
                     break;
                 case "RESET_PIC":
                     LogUtil.Write("Reboot command issued!");
-                    
+
                     break;
             }
 
@@ -510,19 +521,79 @@ namespace HueDream.Models.DreamScreen {
         private void SendDeviceStatus(IPEndPoint src) {
             var dss = DreamData.GetDeviceData();
             var payload = dss.EncodeState();
-            DreamSender.SendUdpWrite(0x01, 0x0A, payload, 0x60, group, src);
+            SendUdpWrite(0x01, 0x0A, payload, 0x60, group, src);
+        }
+
+
+        public async Task<List<BaseDevice>> FindDevices() {
+            _searching = true;
+            Devices = new List<BaseDevice>();
+            var msg = new byte[] {0xFC, 0x05, 0xFF, 0x30, 0x01, 0x0A, 0x2A};
+            var ip = new IPEndPoint(IPAddress.Parse("255.255.255.255"), 8888);
+            SendUdpMessage(msg, ip, "DISCOVER");
+            var s = new Stopwatch();
+            s.Start();
+            await Task.Delay(3000).ConfigureAwait(true);
+            Devices = Devices.Distinct().ToList();
+            s.Stop();
+            _searching = false;
+            LogUtil.Write("DEVICES: " + JsonConvert.SerializeObject(Devices));
+            return Devices;
+        }
+
+        private void CancelSource(CancellationTokenSource target, bool dispose = false) {
+            if (target == null) return;
+            if (!target.IsCancellationRequested) {
+                target.Cancel();
+            }
+
+            if (dispose) target.Dispose();
+        }
+        
+        public void SendUdpWrite(byte command1, byte command2, byte[] payload, byte flag = 17, byte group = 0,
+            IPEndPoint ep = null, bool groupSend = false) {
+            if (payload is null) throw new ArgumentNullException(nameof(payload));
+            // If we don't specify an endpoint...talk to self
+            if (ep == null) ep = new IPEndPoint(IPAddress.Parse("0.0.0.0"), 8888);
+            using var stream = new MemoryStream();
+            using var response = new BinaryWriter(stream);
+            // Magic header
+            response.Write((byte) 0xFC);
+            // Payload length
+            response.Write((byte) (payload.Length + 5));
+            // Group number
+            response.Write(group);
+            // Flag, should be 0x10 for subscription, 17 for everything else
+            response.Write(flag);
+            // Upper command
+            response.Write(command1);
+            // Lower command
+            response.Write(command2);
+            // Payload
+            foreach (var b in payload) response.Write(b);
+
+            var byteSend = stream.ToArray();
+            // CRC
+            response.Write(MsgUtils.CalculateCrc(byteSend));
+
+            if (flag == 0x30 | groupSend) {
+                ep = new IPEndPoint(IPAddress.Parse("255.255.255.255"), 8888);
+            }
+            SendUdpMessage(stream.ToArray(), ep, $"{command1}{command2}");
+        }
+
+        private void SendUdpMessage(byte[] data, IPEndPoint ep, string cmd=null) {
+            listener.Send(data, data.Length, ep);
+            if (cmd != null) {
+                LogUtil.Write($"localhost -> {ep.Address}::{cmd}");
+            } else {
+                LogUtil.Write($"localhost -> {ep.Address}");
+            }
+            
         }
 
 
         
-        private void CancelSource(CancellationTokenSource target, bool dispose = false) {
-            if (target == null) return;
-            if (!target.IsCancellationRequested) {
-                target.Cancel();                
-            }
-            if (dispose) target.Dispose();
-        }
-
         private void StopServices() {
             listener?.Dispose();
             CancelSource(sendTokenSource, true);
@@ -545,38 +616,9 @@ namespace HueDream.Models.DreamScreen {
                 p.DisableStreaming();
                 p.Dispose();
             }
-            
+
             panels = new List<Panel>();
             LogUtil.Write("Panels disposed.");
-        }
-
-
-        public void Dispose() {
-            StackTrace stackTrace = new StackTrace();
-
-            var methodName = stackTrace.GetFrame(1).GetMethod();
-            var className = methodName.DeclaringType.Name;
-
-            LogUtil.Write("Disposal called by " + methodName.Name + "*****" + className );
-
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        public void Dispose(bool disposing) {
-            if (disposed) {
-                LogUtil.Write("Already disposed.");
-                return;
-            }
-
-            if (disposing) {
-                LogUtil.Write("Stopping services from dispose call.");
-                StopServices();
-            }
-
-            disposed = true;
-            LogUtil.Write("Disposal complete.");
-            Log.CloseAndFlush();
         }
     }
 }

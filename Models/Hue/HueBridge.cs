@@ -17,10 +17,10 @@ using Q42.HueApi.Streaming.Extensions;
 using Q42.HueApi.Streaming.Models;
 
 namespace HueDream.Models.Hue {
-    public class HueBridge : IDisposable {
+    public sealed class HueBridge : IDisposable {
         private readonly BridgeData bd;
         private EntertainmentLayer entLayer;
-        private StreamingHueClient client;
+        private readonly StreamingHueClient client;
         private bool disposed;
         private bool streaming;
 
@@ -33,7 +33,7 @@ namespace HueDream.Models.Hue {
             disposed = false;
             streaming = false;
             entLayer = null;
-            Console.WriteLine(@"Hue: Loading bridge: " + BridgeIp);
+            LogUtil.Write(@"Hue: Loading bridge: " + BridgeIp);
         }
 
         private string BridgeIp { get; }
@@ -47,7 +47,7 @@ namespace HueDream.Models.Hue {
         /// <param name="ct">A cancellation token.</param>
         public bool EnableStreaming(CancellationToken ct) {
             // Get our light map and filter for mapped lights
-            Console.WriteLine($@"Hue: Connecting to bridge at {BridgeIp}...");
+            LogUtil.Write($@"Hue: Connecting to bridge at {BridgeIp}...");
             // Grab our stream
             var stream = StreamingSetup.SetupAndReturnGroup(client, bd, ct).Result;
             // This is what we actually need
@@ -76,7 +76,7 @@ namespace HueDream.Models.Hue {
             if (entLayer != null) {
                 var lightMappings = bd.Lights;
                 // Loop through lights in entertainment layer
-                //Console.WriteLine(@"Sending to bridge...");
+                //LogUtil.Write(@"Sending to bridge...");
                 foreach (var entLight in entLayer) {
                     // Get data for our light from map
                     var lightData = lightMappings.SingleOrDefault(item => item.Id == entLight.Id.ToString());
@@ -100,7 +100,7 @@ namespace HueDream.Models.Hue {
                 }
             }
             else {
-                Console.WriteLine($@"Hue: Unable to fetch entertainment layer. {BridgeIp}");
+                LogUtil.Write($@"Hue: Unable to fetch entertainment layer. {BridgeIp}");
             }
         }
 
@@ -121,7 +121,7 @@ namespace HueDream.Models.Hue {
         }
 
 
-        public async Task<List<Group>> ListGroups() {
+        private async Task<List<Group>> ListGroups() {
             var all = await client.LocalHueClient.GetEntertainmentGroups().ConfigureAwait(true);
             var output = new List<Group>();
             output.AddRange(all);
@@ -136,11 +136,11 @@ namespace HueDream.Models.Hue {
                 //Make sure the user has pressed the button on the bridge before calling RegisterAsync
                 //It will throw an LinkButtonNotPressedException if the user did not press the button
                 var result = await client.RegisterAsync("HueDream", Environment.MachineName, true);
-                Console.WriteLine($@"Hue: User name is {result.Username}.");
+                LogUtil.Write($@"Hue: User name is {result.Username}.");
                 return result;
             }
             catch (HueException) {
-                Console.WriteLine($@"Hue: The link button is not pressed at {bridgeIp}.");
+                LogUtil.Write($@"Hue: The link button is not pressed at {bridgeIp}.");
             }
 
             return null;
@@ -151,7 +151,6 @@ namespace HueDream.Models.Hue {
             var newBridges = FindBridges();
             var nb = new List<BridgeData>();
             if (bridges.Count > 0) {
-                LogUtil.Write("We have existing bridges.");
                 foreach (var b in bridges) {
                     if (b.Key != null && b.User != null) {
                         var hb = new HueBridge(b);
@@ -166,35 +165,32 @@ namespace HueDream.Models.Hue {
             }
 
             foreach (var bb in newBridges) {
-                LogUtil.Write("We have new bridges?");
                 var exists = false;
                 foreach (var b in bridges) {
                     if (bb.BridgeId == b.Id)
                         exists = true;
                 }
-                if (!exists) {
-                    Console.WriteLine($@"Adding new bridge at {bb.IpAddress}.");
-                    nb.Add(new BridgeData(bb.IpAddress, bb.BridgeId));
-                } else {
-                    LogUtil.Write("Nothing to add.");
-                }
+
+                if (exists) continue;
+                LogUtil.Write($@"Adding new bridge at {bb.IpAddress}.");
+                nb.Add(new BridgeData(bb.IpAddress, bb.BridgeId));
             }
             return nb;
         }
 
         public static LocatedBridge[] FindBridges(int time = 2) {
-            Console.WriteLine(@"Hue: Discovery Started.");
+            LogUtil.Write(@"Hue: Discovery Started.");
             IBridgeLocator locator = new MdnsBridgeLocator();
             var res = locator.LocateBridgesAsync(TimeSpan.FromSeconds(time)).Result;
-            Console.WriteLine($@"Discovery Completed: {JsonConvert.SerializeObject(res)}");
+            LogUtil.Write($@"Discovery Completed: {JsonConvert.SerializeObject(res)}");
             return res.ToArray();
         }
 
-        public List<LightData> GetLights() {
+        private List<LightData> GetLights() {
             // If we have no IP or we're not authorized, return
             if (BridgeIp == "0.0.0.0" || BridgeUser == null || BridgeKey == null) return new List<LightData>();
             // Create client
-            Console.WriteLine(@"Enumerating lights.");
+            LogUtil.Write(@"Enumerating lights.");
             client.LocalHueClient.Initialize(BridgeUser);
             // Get lights
             var lights = bd.Lights ?? new List<LightData>();
@@ -218,7 +214,7 @@ namespace HueDream.Models.Hue {
         }
 
 
-        protected virtual void Dispose(bool disposing) {
+        private void Dispose(bool disposing) {
             if (disposed) {
                 return;
             }
