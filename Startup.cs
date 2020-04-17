@@ -16,11 +16,11 @@ namespace HueDream {
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public static void ConfigureServices(IServiceCollection services) {
+            services.AddHostedService<DreamClient>();
             services.AddControllersWithViews();
             services.AddControllers()
                 .AddNewtonsoftJson();
-            services.AddSingleton<DreamClient>();
-            services.AddSingleton<IHostedService>(p => p.GetService<DreamClient>());
+            
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

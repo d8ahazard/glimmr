@@ -230,6 +230,7 @@ $(function () {
         const id = $(this).val();
         hueGroup = id;
         bridges[bridgeInt]["selectedGroup"] = id;
+        postData("bridges", bridges);
         mapLights();        
     });
     
@@ -255,23 +256,25 @@ $(function () {
 // This gets called in loop by hue auth to see if we've linked our bridge.
 function checkHueAuth() {
     $.get("./api/DreamData/action?action=authorizeHue&value=" + hueIp, function (data) {
-        if (data === "Success: Bridge Linked." || data === "Success: Bridge Already Linked.") {
-            console.log("LINKED");
+        console.log("Bridge data:", data);
+        if (data.key !== null && data.key !== undefined) {
+            console.log("Bridge is linked!");
             hueAuth = true;
             if (hueAuth) {
-                loadData();
+                loadBridgeData(data);
             }
-        }
+        } else {
+            console.log("Bridge is not linked yet.");
+        }        
     });
 }
 
 function checkNanoAuth() {
     $.get("./api/DreamData/action?action=authorizeNano&value=" + nanoIp, function (data) {
-        if (data === "Success: Nanoleaf Linked." || data === "Success: Nanoleaf Already Linked.") {
-            console.log("LINKED");
+        if (data.token !== null && data.token !== undefined) {
             nanoAuth = true;
             if (nanoAuth) {
-                loadData();
+                loadNanoData(data);
             }
         }
     });
@@ -311,7 +314,8 @@ function updateLightProperty(myId, propertyName, value) {
 function mapLights() {
     let group = findGroup(hueGroup);
     let lights = hueLights;
-    console.log("Mapping: ", group, lights);
+    console.log("Mapping lights: ", lights);
+    console.log("Target group: ", group);
     // Get the main light group
     const lightGroup = document.getElementById("mapSel");
     // Clear it
@@ -357,7 +361,7 @@ function mapLights() {
                 opt.innerHTML = "";
 
                 // Set it to selected if we don't have a mapping
-                if (selection === -1) {
+                if (selection == -1) {
                     opt.setAttribute('selected', 'selected');
                 } else {
                     // Check our box on the sector square
@@ -372,7 +376,7 @@ function mapLights() {
                     opt.value = i.toString();
                     opt.innerHTML = "<BR>" + (i + 1);
                     // Mark it selected if it's mapped
-                    if (selection === i) opt.setAttribute('selected', 'selected');
+                    if (selection == i) opt.setAttribute('selected', 'selected');
                     newSelect.appendChild(opt);
                 }
 
@@ -506,6 +510,7 @@ function RefreshData() {
             datastore.devices = data.devices;
             datastore.bridges = data.bridges;
             datastore.leaves = data.leaves;
+            buildLists(data);
             refreshing = false;
         });
     }
@@ -816,9 +821,11 @@ function loadBridgeData(data) {
     hIp.html(b["ipAddress"]);        
     hueGroup = b["selectedGroup"];
     hueGroups = b["groups"];
-    if (hueGroup === -1 && hueGroups.length > 0) {
+    if ((hueGroup === -1 && hueGroups.length > 0) || hueGroup === null || hueGroup === undefined) {
         hueGroup = hueGroups[0]["id"];
+        bridges[bridgeInt].selectedGroup = hueGroup;
         console.log("Updated group to " + hueGroup);
+        postData("bridges", bridges);
     }
     hueLights = b["lights"];
     hueAuth = (b["user"] !== null || b["key"] !== null);            
@@ -833,7 +840,7 @@ function loadBridgeData(data) {
             lHint.html("Press the link button on your Bridge.");
         } else {
             lImg.addClass('unlinked');
-            lHint.html("Click here to link your bridge.");
+            lHint.html("Click above to link.");
         }
         lBtn.css('cursor', 'pointer');
     }
@@ -870,7 +877,7 @@ function loadNanoData(data) {
             lHint.html("Press the link button on your Nanoleaf.");
         } else {
             lImg.addClass('unlinked');
-            lHint.html("Click here to link your nanoleaf.");
+            lHint.html("Click above to link.");
         }
         lBtn.css('cursor', 'pointer');
     }
@@ -1148,7 +1155,7 @@ function drawNanoShapes(panel) {
 function findGroup(id) {
     console.log("Looking for group with ID " + id);
     let res = false;
-    if (id === -1 || id === "-1") {
+    if (id === -1 || id === "-1" || id === null) {
         console.log("We don't have a group", hueGroups[0]);        
         return hueGroups[0];    
     }

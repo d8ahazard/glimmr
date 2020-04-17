@@ -1,45 +1,41 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using Emgu.CV;
 using HueDream.Models.Util;
-using Newtonsoft.Json;
 
 namespace HueDream.Models.DreamGrab {
     public class Splitter {
         private Mat input;
-        private int vCount;
-        private int hCount;
-        private List<Rectangle> fullCoords;
-        private List<Rectangle> letterCoords;
-        private List<Rectangle> pillarCoords;
-        private List<Rectangle> boxCoords;
-        private List<Rectangle> fullSectors;
-        private List<Rectangle> letterSectors;
-        private List<Rectangle> pillarSectors;
-        private List<Rectangle> boxSectors;
-        private List<Rectangle> checkRegions;
-        private float border_width;
-        private float border_height;
-        private int letterCount;
-        private int pillarCount;
-        private int boxCount;
-        private int boxMode;
-        private Color[] gridColors;
-        private Color[] gridSectors;
-        private int fcount;
-        private float brightBoost;
-        private float saturationBoost;
-        private int minBrightness;
+        private readonly int vCount;
+        private readonly int hCount;
+        private readonly List<Rectangle> fullCoords;
+        private readonly List<Rectangle> letterCoords;
+        private readonly List<Rectangle> pillarCoords;
+        private readonly List<Rectangle> boxCoords;
+        private readonly List<Rectangle> fullSectors;
+        private readonly List<Rectangle> letterSectors;
+        private readonly List<Rectangle> pillarSectors;
+        private readonly List<Rectangle> boxSectors;
+        private readonly List<Rectangle> checkRegions;
+        private readonly float borderWidth;
+        private readonly float borderHeight;
+        private readonly int boxMode;
+        private List<Color> gridColors;
+        private List<Color> gridSectors;
+        private int frameCount;
+        private readonly float brightBoost;
+        private readonly float saturationBoost;
+        private readonly int minBrightness;
         
         public Splitter(LedData ld, int srcWidth, int srcHeight) {
-            vCount = ld.VCount;
-            hCount = ld.HCount;
-            border_width = srcWidth * .15625f;
-            border_height = srcHeight * .20833333333f;
-            letterCount = 0;
-            pillarCount = 0;
-            boxCount = 0;
+            if (ld != null) {
+                vCount = ld.VCount;
+                hCount = ld.HCount;
+            }
+            borderWidth = srcWidth * .15625f;
+            borderHeight = srcHeight * .20833333333f;
             boxMode = 0;
             LogUtil.Write($@"Splitter init, {vCount}, {vCount}, {hCount}, {hCount}");
             brightBoost = 0;
@@ -57,7 +53,7 @@ namespace HueDream.Models.DreamGrab {
             // Add letterbox regions
             checkRegions.Add(new Rectangle(0, 0, srcWidth, (int) vo));
             checkRegions.Add(new Rectangle(0, (int) lb, srcWidth, (int) vo));
-            // Add pillarbox regions
+            // Add pillar regions
             checkRegions.Add(new Rectangle(0, 0, (int) ho, srcHeight));
             checkRegions.Add(new Rectangle((int) pr, 0, (int) ho, srcHeight));
             letterCoords = DrawGrid(srcWidth, srcHeight, vo);
@@ -66,7 +62,7 @@ namespace HueDream.Models.DreamGrab {
             pillarSectors = DrawSectors(srcWidth, srcHeight, 0, ho);
             boxCoords = DrawGrid(srcWidth, srcHeight, vo, ho);
             boxSectors = DrawSectors(srcWidth, srcHeight, vo, ho);
-            fcount = 0;
+            frameCount = 0;
             LogUtil.Write("Splitter should be created.");
         }
 
@@ -76,11 +72,11 @@ namespace HueDream.Models.DreamGrab {
             var output2 = new List<Color>();
             var coords = fullCoords;
             var sectors = fullSectors;
-            if (fcount >= 10) {
+            if (frameCount >= 10) {
                 CheckSectors();
-                fcount = 0;
+                frameCount = 0;
             }
-            fcount++;
+            frameCount++;
             if (boxMode == 1) {
                 coords = letterCoords;
                 sectors = letterSectors;
@@ -108,8 +104,8 @@ namespace HueDream.Models.DreamGrab {
                 sub.Dispose();
             }
 
-            gridColors = output.ToArray();
-            gridSectors = output2.ToArray();
+            gridColors = output;
+            gridSectors = output2;
         }
 
         private Color GetAverage(Mat sInput) {
@@ -124,8 +120,8 @@ namespace HueDream.Models.DreamGrab {
             }
             
             var outColor = Color.FromArgb(255,cR, cG, cB);
-            if (brightBoost != 0.0) outColor = ColorUtil.BoostBrightness(outColor, brightBoost);
-            if (saturationBoost != 0.0) outColor = ColorUtil.BoostSaturation(outColor, saturationBoost);
+            if (Math.Abs(brightBoost) > 0.01) outColor = ColorUtil.BoostBrightness(outColor, brightBoost);
+            if (Math.Abs(saturationBoost) > 0.01) outColor = ColorUtil.BoostSaturation(outColor, saturationBoost);
             
             return outColor;
         }
@@ -133,11 +129,11 @@ namespace HueDream.Models.DreamGrab {
 
         
         
-        public Color[] GetColors() {
+        public List<Color> GetColors() {
             return gridColors;
         }
         
-        public Color[] GetSectors() {
+        public List<Color> GetSectors() {
             return gridSectors;
         }
 
@@ -171,26 +167,24 @@ namespace HueDream.Models.DreamGrab {
             var w = srcWidth - hOffset * 2;
 
             var tTop = vOffset;
-            var tBott = border_height + tTop;
+            var tBottom = borderHeight + tTop;
 
             // Bottom Gridlines
-            var bTop = srcHeight - vOffset - border_height;
-            var bBott = bTop + border_height;
+            var bTop = srcHeight - vOffset - borderHeight;
+            var bBottom = bTop + borderHeight;
 
             // Left Column Border
             var lLeft = hOffset;
-            var lRight = hOffset + border_width;
+            var lRight = hOffset + borderWidth;
 
             // Right Column Border
-            var rLeft = srcWidth - hOffset - border_width;
-            var rRight = rLeft + border_width;
-            LogUtil.Write("Dafuq.");
+            var rLeft = srcWidth - hOffset - borderWidth;
+            var rRight = rLeft + borderWidth;
             // Steps
             var tStep = w / hCount;
             var bStep = w / hCount;
             var lStep = h / vCount;
             var rStep = h / vCount;
-            LogUtil.Write("Steps calculated...");
             // Calc right regions, bottom to top
             var step = vCount - 1;
             while (step >= 0) {
@@ -199,12 +193,11 @@ namespace HueDream.Models.DreamGrab {
                 fc.Add(new Rectangle((int) rLeft, (int) ord, (int) vw, step));
                 step--;
             }
-            LogUtil.Write("Done with right calc?");
             step = hCount - 1;
             // Calc top regions, from right to left
             while (step >= 0) {
                 var ord = step * tStep + hOffset;
-                var vw = tBott - tTop;
+                var vw = tBottom - tTop;
                 fc.Add(new Rectangle((int) ord, (int) tTop, step, (int) vw));
                 step--;
             }
@@ -222,7 +215,7 @@ namespace HueDream.Models.DreamGrab {
             // Calc bottom regions (L-R)
             while (step < hCount) {
                 var ord = step * bStep + hOffset;
-                var vw = bBott - bTop;
+                var vw = bBottom - bTop;
                 fc.Add(new Rectangle((int) ord, (int) bTop, step, (int) vw));
                 step += 1;
             }
@@ -236,9 +229,9 @@ namespace HueDream.Models.DreamGrab {
             var h = srcWidth - hOffset * 2;
             var v = srcHeight - vOffset * 2;
             var hWidth = h / 5;
-            var vWidth = (int)border_width;
+            var vWidth = (int)borderWidth;
             var vHeight = v / 3;
-            var hHeight = (int)border_height;
+            var hHeight = (int)borderHeight;
             
             var minTop = vOffset;
             var minBot = srcHeight - hHeight - vOffset;
@@ -252,14 +245,14 @@ namespace HueDream.Models.DreamGrab {
                 step--;
             }
             step = 3;
-            // Calc top regions, from right to left, skipping topright corner
+            // Calc top regions, from right to left, skipping top-right corner
             while (step >= 0) {
                 var ord = step * hWidth + hOffset;
                 fs.Add(new Rectangle((int) ord, (int) minTop, (int) hWidth, hHeight));
                 step--;
             }
             step = 1;
-            // Calc left regions (top to bottom), skipping topleft
+            // Calc left regions (top to bottom), skipping top-left
             while (step <= 2) {
                 var ord = step * vHeight + vOffset;
                 fs.Add(new Rectangle((int) minLeft, (int) ord, vWidth, (int) vHeight));

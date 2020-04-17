@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Drawing;
-using System.Globalization;
 using System.IO;
+using System.Linq;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -10,31 +10,26 @@ using HueDream.Models.Util;
 using Newtonsoft.Json;
 
 namespace HueDream.Models.DreamGrab {
-    public class Calibrate {
+    public static class Calibrate {
         public static void ProcessFrames() {
             var cornersObjectList = new List<MCvPoint3D32f[]>();
             var cornersPointsList = new List<PointF[]>();
-            var cornersPointsVec = new List<VectorOfPointF>();
             var width = 8; //width of chessboard no. squares in width - 1
             var height = 6; // heght of chess board no. squares in heigth - 1
             float squareSize = width * height;
-            Size patternSize = new Size(width, height); //size of chess board to be detected
-            VectorOfPointF corners = new VectorOfPointF(); //corners found from chessboard
+            var patternSize = new Size(width, height); //size of chess board to be detected
+            var corners = new VectorOfPointF(); //corners found from chessboard
 
             Mat[] _rvecs, _tvecs;
 
-            List<Mat> frameArrayBuffer = new List<Mat>();
-            var startFlag = true;
+            var frameArrayBuffer = new List<Mat>();
 
             var cameraMatrix = new Mat(3, 3, DepthType.Cv64F, 1);
             var distCoeffs = new Mat(8, 1, DepthType.Cv64F, 1);
 
-            var frames = new List<Mat>();
             // Glob our frames from the static dir, loop for them
             string[] filePaths = Directory.GetFiles(@"/home/dietpi/", "*.jpg");
-            foreach (var path in filePaths) {
-                frames.Add(CvInvoke.Imread(path));
-            }
+            var frames = filePaths.Select(path => CvInvoke.Imread(path)).ToList();
             LogUtil.Write("We have " + frames.Count + " frames.");
             var fc = 0;
             foreach (var frame in frames) {
@@ -58,6 +53,7 @@ namespace HueDream.Models.DreamGrab {
                 fc++;
                 corners = new VectorOfPointF();
             }
+
             LogUtil.Write("We have " + frameArrayBuffer.Count + " frames to use for mapping.");
             // Loop through frames where board was detected
             foreach (var frame in frameArrayBuffer) {
@@ -85,17 +81,16 @@ namespace HueDream.Models.DreamGrab {
 
             //our error should be as close to 0 as possible
 
-            double error = CvInvoke.CalibrateCamera(cornersObjectList.ToArray(), cornersPointsList.ToArray(), frames[0].Size,
+            double error = CvInvoke.CalibrateCamera(cornersObjectList.ToArray(), cornersPointsList.ToArray(),
+                frames[0].Size,
                 cameraMatrix, distCoeffs, CalibType.RationalModel, new MCvTermCriteria(30, 0.1), out _rvecs,
                 out _tvecs);
             LogUtil.Write("Correction error: " + error);
             var sk = JsonConvert.SerializeObject(cameraMatrix);
             var sd = JsonConvert.SerializeObject(distCoeffs);
 
-            LogUtil.Write("Cameramatrix: " + sk);
-            LogUtil.Write("Dist coeff: " + sd);
-            var s = JsonConvert.DeserializeObject(sk);
-            var d = JsonConvert.DeserializeObject(sd);
+            LogUtil.Write("Camera matrix: " + sk);
+            LogUtil.Write("Dist coefficient: " + sd);
             DreamData.SetItem("k", sk);
             DreamData.SetItem("d", sd);
         }

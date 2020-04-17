@@ -1,5 +1,6 @@
 ﻿using HueDream.Models.Util;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using ws281x.Net;
 
@@ -37,11 +38,11 @@ namespace HueDream.Models.DreamGrab {
             StopLights();
         }
         
-        public void UpdateAll(Color[] colors) {
+        public void UpdateAll(List<Color> colors) {
             var iSource = 0;
             var destArray = new Color[ledCount];
             for (var i = 0; i < ledCount; i++) {
-                if (iSource >= colors.Length) {
+                if (iSource >= colors.Count) {
                     iSource = 0; // reset if at end of source
                 }
                 neoPixel.SetPixelColor(i, colors[iSource]);

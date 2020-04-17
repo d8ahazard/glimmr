@@ -123,7 +123,7 @@ namespace HueDream.Models.DreamGrab {
                 LogUtil.WriteInc("Starting capture task.");
                 splitter = new Splitter(ledData, scaleWidth, scaleHeight);
                 while (!cancellationToken.IsCancellationRequested) {                    
-                    var frame = vc.frame;
+                    var frame = vc.Frame;
                     if (frame == null) continue;
                     if (frame.Cols == 0) continue;
                     var warped = ProcessFrame(frame);

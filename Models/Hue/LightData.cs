@@ -32,6 +32,8 @@ namespace HueDream.Models.Hue {
         [JsonProperty] public int Brightness { get; set; }
         [JsonProperty] public bool OverrideBrightness { get; set; }
         [JsonProperty] public int TargetSector { get; set; }
-        [JsonProperty] public string ModelId { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public string ModelId { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public int Presence { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public int LightLevel { get; set; }
     }
 }

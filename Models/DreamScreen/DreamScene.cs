@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
-using System.Threading.Tasks;
 using HueDream.Models.DreamScreen.Scenes;
 using HueDream.Models.Util;
 using Newtonsoft.Json;
@@ -13,8 +13,6 @@ namespace HueDream.Models.DreamScreen {
         private string[] colors;
         private AnimationMode mode;
         private int startInt;
-
-        public SceneBase CurrentScene { get; private set; }
 
         public void LoadScene(int sceneNo) {
             SceneBase scene;
@@ -52,7 +50,6 @@ namespace HueDream.Models.DreamScreen {
             }
 
             if (scene == null) return;
-            CurrentScene = scene;
             colors = scene.GetColors();
             animationTime = scene.AnimationTime;
             mode = scene.Mode;
@@ -78,8 +75,8 @@ namespace HueDream.Models.DreamScreen {
             LogUtil.WriteDec($@"DreamScene: Color Builder canceled. {startTime}");
         }
 
-        private Color[] RefreshColors(string[] input) {
-            var output = new Color[12];
+        private List<Color> RefreshColors(string[] input) {
+            var output = new List<Color>();
             var maxColors = input.Length - 1;
             var colorCount = startInt;
             var col1 = startInt;
@@ -94,8 +91,9 @@ namespace HueDream.Models.DreamScreen {
 
             if (mode == AnimationMode.LinearAll) {
                 for (var i = 0; i < 12; i++) {
-                    output[i] = ColorTranslator.FromHtml("#" + input[colorCount]);
+                    output.Add(ColorTranslator.FromHtml("#" + input[colorCount]));
                 }
+
                 startInt++;
             }
 

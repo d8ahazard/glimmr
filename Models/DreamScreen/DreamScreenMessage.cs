@@ -27,7 +27,7 @@ namespace HueDream.Models.DreamScreen {
             if (MsgUtils.Commands.ContainsKey(cmd))
                 Command = MsgUtils.Commands[cmd];
             else
-                Console.WriteLine($@"DSMessage: No matching key in dict for bytes: {cmd}.");
+                LogUtil.Write($@"DSMessage: No matching key in dict for bytes: {cmd}.");
             BaseDevice dreamDev = null;
             if (Len > 5) {
                 payload = ExtractPayload(bytesIn);
@@ -62,7 +62,7 @@ namespace HueDream.Models.DreamScreen {
                     dreamDev.Id = from;
                 }
                 else {
-                    Console.WriteLine($@"DSMessage: Device is null from {devType}.");
+                    LogUtil.Write($@"DSMessage: Device is null from {devType}.");
                 }
 
                 Device = dreamDev;

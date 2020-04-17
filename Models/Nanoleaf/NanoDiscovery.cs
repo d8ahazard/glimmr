@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
+using System.Linq;
 using HueDream.Models.Util;
 using Makaretu.Dns;
-using Newtonsoft.Json;
 
 namespace HueDream.Models.Nanoleaf {
     public static class NanoDiscovery {
@@ -23,7 +24,7 @@ namespace HueDream.Models.Nanoleaf {
                     sd.ServiceInstanceDiscovered += (s, e) => {
                         var name = e.ServiceInstanceName.ToString();
                         var nData = new NanoData {IpV4Address = string.Empty};
-                        if (!name.Contains("nanoleafapi")) return;
+                        if (!name.Contains("nanoleafapi", StringComparison.InvariantCulture)) return;
                         foreach (var msg in e.Message.AdditionalRecords) {
                             switch (msg.Type) {
                                 case DnsType.A:
@@ -35,9 +36,9 @@ namespace HueDream.Models.Nanoleaf {
                                 case DnsType.TXT:
                                     var txtString = msg.ToString();
                                     var txtValues = txtString.Split(" ");
-                                    nData.Version = txtValues[5].Replace("srcvers=", string.Empty);
-                                    nData.Type = txtValues[4].Replace("md=", string.Empty);
-                                    nData.Id = txtValues[3].Replace("id=", string.Empty);
+                                    nData.Version = txtValues[5].Replace("srcvers=", string.Empty, StringComparison.InvariantCulture);
+                                    nData.Type = txtValues[4].Replace("md=", string.Empty, StringComparison.InvariantCulture);
+                                    nData.Id = txtValues[3].Replace("id=", string.Empty, StringComparison.InvariantCulture);
                                     break;
                                 case DnsType.AAAA:
                                     var mString = msg.ToString();
@@ -49,7 +50,7 @@ namespace HueDream.Models.Nanoleaf {
                                 case DnsType.SRV:
                                     var sString = msg.ToString();
                                     var sValues = sString.Split(" ");
-                                    nData.Port = int.Parse(sValues[6]);
+                                    nData.Port = int.Parse(sValues[6], CultureInfo.InvariantCulture);
                                     nData.Hostname = sValues[7];
                                     break;
                             }
@@ -75,7 +76,7 @@ namespace HueDream.Models.Nanoleaf {
 
                     s.Stop();
                     mDns.Stop();
-                    LogUtil.Write("Discovery stopped, result: " + JsonConvert.SerializeObject(output));
+                    LogUtil.Write($"Discovery complete, found {output.Count} devices.");
                     return output;
                 }
             }
@@ -103,12 +104,10 @@ namespace HueDream.Models.Nanoleaf {
                             add = false;
                             break;
                         }
-
                         exInt++;
                     }
 
                     if (add) {
-                        LogUtil.Write("Adding new leaf.");
                         nanoLeaves.Add(newLeaf);
                     }
                 }
@@ -121,7 +120,7 @@ namespace HueDream.Models.Nanoleaf {
             foreach (var leaf in nanoLeaves) {
                 if (leaf.Token != null) {
                     try {
-                        var nl = new Panel(leaf.IpV4Address, leaf.Token);
+                        using var nl = new Panel(leaf.IpV4Address, leaf.Token);
                         var layout = nl.GetLayout().Result;
                         if (layout != null) leaf.Layout = layout;
                         leaf.Scale = 1;
@@ -136,20 +135,16 @@ namespace HueDream.Models.Nanoleaf {
        
 
         private static NanoLayout MergeLayouts(NanoLayout source, NanoLayout dest) {
-            var output = new NanoLayout();
-            output.PositionData = new List<PanelLayout>();
-            if (source != null && dest != null) {
-                foreach (PanelLayout s in source.PositionData) {
-                    var sId = s.PanelId;
-                    foreach (PanelLayout d in dest.PositionData) {
-                        if (d.PanelId == sId) {
-                            d.Sector = s.Sector;
-                            output.PositionData.Add(d);
-                        }
-                    }
-                }    
+            var output = new NanoLayout {PositionData = new List<PanelLayout>()};
+            if (source == null || dest == null) return output;
+            foreach (var s in source.PositionData) {
+                var sId = s.PanelId;
+                foreach (var d in dest.PositionData.Where(d => d.PanelId == sId)) {
+                    d.Sector = s.Sector;
+                    output.PositionData.Add(d);
+                }
             }
-            
+
             return output;
         }
     }

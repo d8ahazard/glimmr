@@ -10,18 +10,12 @@ using HueDream.Models.Hue;
 using HueDream.Models.Nanoleaf;
 using HueDream.Models.Util;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace HueDream.Controllers {
     [Route("api/[controller]"), ApiController]
     public class DreamDataController : ControllerBase {
-        private DreamClient dClient;
-        public DreamDataController(DreamClient dc) {
-            dClient = dc;
-        }
-        
         // GET: api/DreamData/getMode
         [Route("getMode")]
         public static int GetMode() {
@@ -112,18 +106,16 @@ namespace HueDream.Controllers {
 
         // POST: api/DreamData/bridges
         [HttpPost("bridges")]
-        public IActionResult PostBridges([FromBody] List<BridgeData> bData) {
-            LogUtil.Write(@"Bridge Post received..." + JsonConvert.SerializeObject(bData));
-            var bridgeData = bData;
-            DreamData.SetItem("bridges", bridgeData);
+        public IActionResult PostBridges([FromBody] JArray bData) {
+            DreamData.SetItem("bridges", bData);
             ResetMode();
-            return Ok(bData.Count);
+            return Ok();
         }
 
         // POST: api/DreamData/leaves
         [HttpPost("leaves")]
         public IActionResult PostLeaves([FromBody] List<NanoData> lData) {
-            LogUtil.Write(@"Bridge Post received..." + JsonConvert.SerializeObject(lData));
+            LogUtil.Write(@"Leaf Post received..." + JsonConvert.SerializeObject(lData));
             DreamData.SetItem("leaves", lData);
             ResetMode();
             return Ok(lData.Count);
@@ -212,18 +204,16 @@ namespace HueDream.Controllers {
         [HttpGet("action")]
         public IActionResult Action(string action, string value = "") {
             var message = "Unrecognized action";
-            using var store = DreamData.GetStore();
             var exInt = 0;
-            LogUtil.Write($@"{action} fired.");
+            LogUtil.Write($@"{action} called from Web API.");
             switch (action) {
                 case "loadData":
                     return Content(DreamData.GetStoreSerialized(), "application/json");
                 case "refreshDevices":
-                    DreamData.RefreshDevices(dClient);
+                    DreamData.RefreshDevices();
                     return Content(DreamData.GetStoreSerialized(), "application/json");
                 case "findDreamDevices": {
-                    var dev = dClient.FindDevices().Result;
-                    store.Dispose();
+                    List<BaseDevice> dev = DreamDiscovery.FindDevices();
                     return new JsonResult(dev);
                 }
                 case "refreshNanoLeaf": {
@@ -310,7 +300,7 @@ namespace HueDream.Controllers {
                 }
                 case "authorizeHue": {
                     var doAuth = true;
-                    var bridges = store.GetItem<List<BridgeData>>("bridges");
+                    var bridges = DreamData.GetItem<List<BridgeData>>("bridges");
                     BridgeData bd = null;
                     var bridgeInt = -1;
 
@@ -330,24 +320,18 @@ namespace HueDream.Controllers {
                     if (doAuth) {
                         var appKey = HueBridge.CheckAuth(value).Result;
                         if (appKey != null && bd != null) {
-                            message = "Success: Bridge Linked.";
                             bd.Key = appKey.StreamingClientKey;
                             bd.User = appKey.Username;
                             bridges[bridgeInt] = bd;
-                            store.ReplaceItem("bridges", bridges, true);
-                        } else {
-                            message = "Error: Press the link button";
+                            DreamData.SetItem("bridges", bridges);
                         }
-                    } else {
-                        message = "Success: Bridge Already Linked.";
                     }
-
-                    break;
+                    return new JsonResult(bd);
                 }
                 case "findHue": {
                     var bridges = HueBridge.FindBridges(3);
                     if (bridges != null) {
-                        store.ReplaceItem("bridges", bridges, true);
+                        DreamData.SetItem("bridges", bridges);
                         return new JsonResult(bridges);
                     }
 
@@ -356,7 +340,7 @@ namespace HueDream.Controllers {
                 }
                 case "authorizeNano": {
                     var doAuth = true;
-                    var leaves = store.GetItem<List<NanoData>>("leaves");
+                    var leaves = DreamData.GetItem<List<NanoData>>("leaves");
                     NanoData bd = null;
                     var nanoInt = -1;
                     if (!string.IsNullOrEmpty(value)) {
@@ -367,34 +351,25 @@ namespace HueDream.Controllers {
                                 doAuth = n.Token == null;
                                 nanoInt = nanoCount;
                             }
-
                             nanoCount++;
                         }
                     }
 
                     if (doAuth) {
                         var panel = new Panel(value);
-                        var appKey = panel.CheckAuth().Result;
+                        var appKey = panel.CheckAuth();
                         if (appKey != null && bd != null) {
-                            message = "Success: Bridge Linked.";
                             bd.Token = appKey.Token;
                             leaves[nanoInt] = bd;
-                            store.ReplaceItem("leaves", leaves, true);
-                        } else {
-                            message = "Error: Press the link button";
+                            DreamData.SetItem("leaves", leaves);
                         }
-
                         panel.Dispose();
-                    } else {
-                        message = "Success: NanoLeaf Already Linked.";
                     }
-
-                    break;
+                    return new JsonResult(bd);
                 }
             }
 
             LogUtil.Write(message);
-            store.Dispose();
             return new JsonResult(message);
         }
 
@@ -410,7 +385,7 @@ namespace HueDream.Controllers {
             }
 
             if (store.GetItem("dsIp") == "0.0.0.0") {
-                var devices = dClient.FindDevices().Result;
+                var devices = DreamDiscovery.FindDevices();
                 store.ReplaceItem("devices", devices);
             }
 
@@ -423,8 +398,9 @@ namespace HueDream.Controllers {
             var myDev = DreamData.GetDeviceData();
             var curMode = myDev.Mode;
             if (curMode == 0) return;
-            dClient.UpdateMode(0);
-            dClient.UpdateMode(curMode);
+            SetMode(0);
+            SetMode(curMode);
+
         }
 
         private void SetMode(int mode) {
@@ -444,7 +420,7 @@ namespace HueDream.Controllers {
                 mFlag = 0x21;
             }
 
-            dClient.SendUdpWrite(0x03, 0x01, new[] {newMode}, mFlag, groupNumber,
+            DreamSender.SendUdpWrite(0x03, 0x01, new[] {newMode}, mFlag, groupNumber,
                 new IPEndPoint(IPAddress.Parse(ipAddress), 8888), groupSend);
         }
 
@@ -468,8 +444,8 @@ namespace HueDream.Controllers {
 
             DreamData.SetItem<string>("devType", devType);
             if (colorMode == 0) return;
-            dClient.UpdateMode(0);
-            dClient.UpdateMode(colorMode);
+            SetMode(0);
+            SetMode(colorMode);
         }
 
         private static void SwitchDeviceType(string devType, BaseDevice curDevice) {
@@ -511,20 +487,18 @@ namespace HueDream.Controllers {
             }
 
             LogUtil.Write($@"Setting device name for {ipAddress} to {name}.");
-            dClient.SendUdpWrite(0x01, 0x07, ByteUtils.StringBytePad(name, 16).ToArray(), mFlag, groupNumber,
+            DreamSender.SendUdpWrite(0x01, 0x07, ByteUtils.StringBytePad(name, 16).ToArray(), mFlag, groupNumber,
                 new IPEndPoint(IPAddress.Parse(ipAddress), 8888), groupSend);
             List<JObject> devices = DreamData.GetItem<List<JObject>>("devices");
-            var newDevices = new List<JObject>();
-            foreach (var dev in devices) {
+            List<JObject> newDevices = new List<JObject>();
+            foreach(var dev in devices) {
                 var dIp = (string) dev.SelectToken("ipAddress");
                 if (dIp == ipAddress) {
                     dev["name"] = ByteUtils.StringBytePad(name, 16).ToArray();
                     LogUtil.Write("We dun got us an updated device: " + JsonConvert.SerializeObject(dev));
                 }
-
                 newDevices.Add(dev);
             }
-
             DreamData.SetItem("devices", newDevices);
         }
 
@@ -540,7 +514,7 @@ namespace HueDream.Controllers {
                 mFlag = 0x21;
             }
 
-            dClient.SendUdpWrite(0x03, 0x02, new[] {ByteUtils.IntByte(dData)}, mFlag, groupNumber,
+            DreamSender.SendUdpWrite(0x03, 0x02, new[] {ByteUtils.IntByte(dData)}, mFlag, groupNumber,
                 new IPEndPoint(IPAddress.Parse(ipAddress), 8888), groupSend);
         }
     }

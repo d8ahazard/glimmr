@@ -1,40 +1,47 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using HueDream.Models.Util;
-using Microsoft.AspNetCore.Server.IIS.Core;
 using Newtonsoft.Json;
-using Q42.HueApi;
-using Q42.HueApi.Models.Groups;
 using Q42.HueApi.Streaming;
 using Q42.HueApi.Streaming.Models;
 
 namespace HueDream.Models.Hue {
     public static class StreamingSetup {
-
         public static StreamingHueClient GetClient(BridgeData b) {
+            if (b == null) {
+                throw new ArgumentException("Invalid argument.");
+            }
+
             var hueIp = b.IpAddress;
             var hueUser = b.User;
             var hueKey = b.Key;
-            Console.WriteLine(@"Hue: Creating client...");
+            LogUtil.Write("Creating client...");
             //Initialize streaming client
             var client = new StreamingHueClient(hueIp, hueUser, hueKey);
             return client;
         }
-        
+
         public static async Task StopStream(StreamingHueClient client, BridgeData b) {
+            if (client == null || b == null) {
+                throw new ArgumentException("Invalid argument.");
+            }
+
             var id = b.SelectedGroup;
-            Console.WriteLine(@"Hue: Stopping stream.");
+            LogUtil.Write("Stopping stream.");
             await client.LocalHueClient.SetStreamingAsync(id, false).ConfigureAwait(true);
-            Console.WriteLine("Hue: Stopped.");
+            LogUtil.Write("Stopped.");
         }
 
-        public static async Task<StreamingGroup> SetupAndReturnGroup(StreamingHueClient client, BridgeData b, CancellationToken ct) {
-            
+        public static async Task<StreamingGroup> SetupAndReturnGroup(StreamingHueClient client, BridgeData b,
+            CancellationToken ct) {
+            if (client == null || b == null) {
+                throw new ArgumentException("Invalid argument.");
+            }
+
             var groupId = b.SelectedGroup;
-            Console.WriteLine(@"Hue: Created client.");
+            LogUtil.Write("Created client.");
             //Get the entertainment group
             var group = client.LocalHueClient.GetGroupAsync(groupId).Result;
             if (group == null) {
@@ -45,33 +52,32 @@ namespace HueDream.Models.Hue {
                     group = client.LocalHueClient.GetGroupAsync(groupId).Result;
                     if (group != null) {
                         LogUtil.Write(@$"Selected first group: {groupId}");
-                    }
-                    else {
+                    } else {
                         LogUtil.Write(@"Unable to load group, can't connect for streaming.");
                         return null;
                     }
                 }
-            }
-            else {
+            } else {
                 LogUtil.Write(@$"Group {groupId} fetched successfully.");
             }
-            
+
             //Create a streaming group
             if (group != null) {
                 var lights = group.Lights;
-                Console.WriteLine(@"Group Lights: " + JsonConvert.SerializeObject(lights));
-                if (lights == null) return null;
+                LogUtil.Write(@"Group Lights: " + JsonConvert.SerializeObject(lights));
                 var mappedLights =
-                    (from light in lights from ml in b.Lights where ml.Id == light && ml.TargetSector != -1 select light)
+                    (from light in lights
+                        from ml in b.Lights
+                        where ml.Id == light && ml.TargetSector != -1
+                        select light)
                     .ToList();
-                Console.WriteLine(@"Using mapped lights for group: " + JsonConvert.SerializeObject(mappedLights));
+                LogUtil.Write(@"Using mapped lights for group: " + JsonConvert.SerializeObject(mappedLights));
                 var stream = new StreamingGroup(mappedLights);
                 //Connect to the streaming group
                 try {
                     LogUtil.Write(@"Connecting to client: " + group.Id);
                     await client.Connect(group.Id).ConfigureAwait(true);
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     LogUtil.Write(@"Exception: " + e);
                 }
 
@@ -89,6 +95,5 @@ namespace HueDream.Models.Hue {
 
             return null;
         }
-        
     }
 }

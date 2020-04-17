@@ -11,7 +11,7 @@ namespace HueDream.Models.DreamGrab {
         private Mat frame;
         private bool saved;
 
-        Mat IVideoStream.frame { get => frame; set => frame = value; }
+        Mat IVideoStream.Frame => frame;
 
         public WebCamVideoStream(int inputStream) {
             video = new VideoCapture(inputStream, VideoCapture.API.DShow);

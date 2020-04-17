@@ -372,7 +372,7 @@ input[type="range"]:active ~ #rangevalue {
     width: 110%;
     text-align: center;
     left: -5%;
-    bottom: -20px;
+    bottom: -25px;
     z-index: 7;
     color: white;
 }

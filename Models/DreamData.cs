@@ -11,6 +11,7 @@ using HueDream.Models.Nanoleaf;
 using HueDream.Models.Util;
 using JsonFlatFileDataStore;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace HueDream.Models {
     [Serializable]
@@ -18,6 +19,7 @@ namespace HueDream.Models {
         public static DataStore GetStore() {
             var path = GetConfigPath("store.json");
             var store = new DataStore(path);
+            store = CheckDefaults(store);
             return store;
         }
 
@@ -51,16 +53,17 @@ namespace HueDream.Models {
         }
 
         
-        public static DataStore CheckDefaults(DreamClient dc) {
-            var store = GetStore();
+        private static DataStore CheckDefaults(DataStore store) {
+                
             var v = store.GetItem("defaultsSet");
-            if (v == null) SetDefaults(store, dc);
+            if (v == null) SetDefaults(store);
             return store;
         }
 
-        private static DataStore SetDefaults(DataStore store, DreamClient dc) {
+        private static DataStore SetDefaults(DataStore store) {
             LogUtil.Write("Setting defaults.");
             store.InsertItem("dataSource", "DreamScreen");
+            store.InsertItem("devType", "SideKick");
             store.InsertItem("camWidth", 1920);
             store.InsertItem("camHeight", 1080);
             store.InsertItem("camMode", 1);
@@ -79,7 +82,7 @@ namespace HueDream.Models {
             store.InsertItem("minBrightness", 0);
             store.InsertItem("saturationBoost", 0);
             store.InsertItem("dsIp", "0.0.0.0");
-            ScanDevices(store, dc);
+            ScanDevices(store);
             store.InsertItem("defaultsSet", true);
             return store;
         }
@@ -120,6 +123,40 @@ namespace HueDream.Models {
             }
             
             return dev;
+        }
+
+        public static List<BaseDevice> GetDreamDevices() {
+            using var dd = GetStore();
+            var output = new List<BaseDevice>();
+            var dl = GetItem<List<JToken>>("devices");
+            foreach (JObject dev in dl) {
+                foreach (var pair in dev) {
+                    var key = pair.Key;
+                    if (key == "tag") {
+                        var tag = pair.Value.ToString();
+                        LogUtil.Write("Dev tag: " + tag);
+                        switch (tag) {
+                            case "SideKick":
+                                output.Add(dev.ToObject<SideKick>());
+                                break;
+                            case "Connect":
+                                output.Add(dev.ToObject<Connect>());
+                                break;
+                            case "DreamScreen":
+                                output.Add(dev.ToObject<DreamScreenHd>());
+                                break;
+                            case "DreamScreen4K":
+                                output.Add(dev.ToObject<DreamScreen4K>());
+                                break;
+                            case "DreamScreenSolo":
+                                output.Add(dev.ToObject<DreamScreenSolo>());
+                                break;
+                        }
+                    }
+                }
+            }
+
+            return output;
         }
 
 
@@ -167,27 +204,24 @@ namespace HueDream.Models {
             throw new Exception("No network adapters found in " + JsonConvert.SerializeObject(host));
         }
         
-        public static void RefreshDevices(DreamClient dc) {
+        public static void RefreshDevices() {
             // Get dream devices
+            var dreamDevices = DreamDiscovery.FindDevices();
             var leaves = NanoDiscovery.Refresh();
             // Find bridges
             var bridges = HueBridge.GetBridgeData();
-            var dreamDevices = dc.FindDevices().Result;
-
                 SetItem("devices", dreamDevices);
-                SetItem("bridges", bridges);
+                SetItem<List<BridgeData>>("bridges", bridges);
                 SetItem("leaves", leaves);
             
         }
         
-        public static void ScanDevices(DataStore store, DreamClient dc) {
+        public static void ScanDevices(DataStore store) {
             // Get dream devices
+            var dreamDevices = DreamDiscovery.FindDevices();
             var leaves = NanoDiscovery.Discover();
             // Find bridges
             var bridges = HueBridge.FindBridges();
-            var dreamDevices = dc.FindDevices().Result;
-
-            if (store == null) return;
             store.InsertItem("devices", dreamDevices);
             store.InsertItem("bridges", bridges);
             store.InsertItem("leaves", leaves);

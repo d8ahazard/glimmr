@@ -1,37 +1,36 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Newtonsoft.Json.Linq;
 using Q42.HueApi.ColorConverters;
 using Q42.HueApi.ColorConverters.HSB;
 
 namespace HueDream.Models.Nanoleaf {
-
     public class Aurora {
-        
         public object AuthToken;
-        
+
         public string BaseUrl;
 
         public object IpAddress;
-        
+
         public Aurora(string ipAddress, string authToken) {
             BaseUrl = "http://" + ipAddress + ":16021/api/v1/" + authToken + "/";
             IpAddress = ipAddress;
             AuthToken = authToken;
         }
-        
-           
+
+
         public virtual JObject Put(object endpoint, JObject data) {
             var url = BaseUrl + endpoint;
             try {
                 var r = Requests.Put(url, data);
                 return CheckError(r);
-            } catch (Exception e){
+            } catch (Exception e) {
                 Console.WriteLine(e.Message);
                 return null;
             }
         }
-        
+
         public virtual JObject Get(string endpoint = "") {
             var url = BaseUrl + endpoint;
             try {
@@ -41,9 +40,8 @@ namespace HueDream.Models.Nanoleaf {
                 Console.WriteLine(e.Message);
                 return null;
             }
-                
         }
-        
+
         public virtual JObject Delete(string endpoint = "") {
             var url = BaseUrl + endpoint;
             try {
@@ -54,7 +52,7 @@ namespace HueDream.Models.Nanoleaf {
                 return null;
             }
         }
-        
+
         public virtual JObject CheckError(RequestObj r) {
             switch (r.StatusCode) {
                 case 200 when string.IsNullOrEmpty(r.Text):
@@ -67,7 +65,8 @@ namespace HueDream.Models.Nanoleaf {
                     Console.WriteLine(@"Error 400: Bad request! (" + IpAddress + @")");
                     break;
                 case 401:
-                    Console.WriteLine(@"Error 401: Not authorized! This is an invalid token for this Aurora (" + IpAddress + @")");
+                    Console.WriteLine(@"Error 401: Not authorized! This is an invalid token for this Aurora (" +
+                                      IpAddress + @")");
                     break;
                 case 404:
                     Console.WriteLine(@"Error 404: Resource not found! (" + IpAddress + @")");
@@ -79,29 +78,26 @@ namespace HueDream.Models.Nanoleaf {
                     Console.WriteLine(@"Error 500: Internal Server Error (" + IpAddress + @")");
                     break;
                 default:
-                    Console.WriteLine(@"ERROR! UNKNOWN ERROR " + r.StatusCode + @". Please post an issue on the GitHub page: https://github.com/software-2/nanoleaf/issues");
+                    Console.WriteLine(@"ERROR! UNKNOWN ERROR " + r.StatusCode +
+                                      @". Please post an issue on the GitHub page: https://github.com/software-2/nanoleaf/issues");
                     break;
             }
 
             return null;
         }
-        
+
         // Returns the full Aurora Info request. 
         //         
         //         Useful for debugging since it's just a fat dump.
         public object Info {
-            get {
-                return Get();
-            }
+            get { return Get(); }
         }
-        
+
         // Returns the current color mode.
         public object ColorMode {
-            get {
-                return Get("state/colorMode");
-            }
+            get { return Get("state/colorMode"); }
         }
-        
+
         //##########################################
         // General functionality methods
         //##########################################
@@ -109,26 +105,20 @@ namespace HueDream.Models.Nanoleaf {
         public virtual object Identify() {
             return Put("identify", new JObject());
         }
-        
+
         // Returns the firmware version of the device
         public object Firmware {
-            get {
-                return Get("firmwareVersion");
-            }
+            get { return Get("firmwareVersion"); }
         }
-        
+
         // Returns the model number of the device. (Always returns 'NL22')
         public object Model {
-            get {
-                return Get("model");
-            }
+            get { return Get("model"); }
         }
-        
+
         // Returns the serial number of the device
         public object SerialNumber {
-            get {
-                return Get("serialNo");
-            }
+            get { return Get("serialNo"); }
         }
 
         // CAUTION: Revokes your auth token from the device.
@@ -140,18 +130,20 @@ namespace HueDream.Models.Nanoleaf {
             get {
                 var res = Get("state/on/value");
                 Console.WriteLine(@"Res: " + res);
-                return (bool) res.GetValue("value").ToObject(typeof(bool));
+                return (bool) res.GetValue("value", StringComparison.InvariantCulture).ToObject(typeof(bool));
             }
             set {
                 var data = new Dictionary<object, object> {
-                {
-                    "on",
-                    value}};
+                    {
+                        "on",
+                        value
+                    }
+                };
                 Put("state", JObject.FromObject(data));
             }
         }
-        
-        
+
+
         //##########################################
         // On / Off methods
         //##########################################
@@ -159,210 +151,263 @@ namespace HueDream.Models.Nanoleaf {
         public void ToggleState() {
             On = !On;
         }
-        
+
         // Returns the brightness of the device (0-100)
         // Sets the brightness to the given level (0-100)
         public int Brightness {
             get {
-                return (int)Get("state/brightness/value").GetValue("value").ToObject(typeof(int));
-            } set {
+                return (int) Get("state/brightness/value").GetValue("value", StringComparison.InvariantCulture)
+                    .ToObject(typeof(int));
+            }
+            set {
                 var data = new Dictionary<object, object> {
-                {
-                    "brightness",
-                    new Dictionary<object, object> {
                     {
-                        "value",
-                        value}}}};
+                        "brightness",
+                        new Dictionary<object, object> {
+                            {
+                                "value",
+                                value
+                            }
+                        }
+                    }
+                };
                 Put("state", JObject.FromObject(data));
             }
         }
-        
+
         // Returns the minimum brightness possible. (This always returns 0)
         public int BrightnessMin {
-            get { return int.Parse(Get("state/brightness/min").GetValue("value").ToString()); }
+            get {
+                return int.Parse(
+                    Get("state/brightness/min").GetValue("value", StringComparison.InvariantCulture).ToString(),
+                    CultureInfo.InvariantCulture);
+            }
         }
-        
+
         // Returns the maximum brightness possible. (This always returns 100)
         public object BrightnessMax {
-            get { return int.Parse(Get("state/brightness/max").GetValue("value").ToString()); }
+            get {
+                return int.Parse(
+                    Get("state/brightness/max").GetValue("value", StringComparison.InvariantCulture).ToString(),
+                    CultureInfo.InvariantCulture);
+            }
         }
-        
+
         //##########################################
         // Brightness methods
         //##########################################
         // Raise the brightness of the device by a relative amount (negative lowers brightness)
         public JObject brightness_raise(int level) {
             var data = new Dictionary<object, object> {
-            {
-                "brightness",
-                new Dictionary<object, object> {
                 {
-                    "increment",
-                    level}}}};
+                    "brightness",
+                    new Dictionary<object, object> {
+                        {
+                            "increment",
+                            level
+                        }
+                    }
+                }
+            };
             return Put("state", JObject.FromObject(data));
         }
-        
+
         // Lower the brightness of the device by a relative amount (negative raises brightness)
         public void brightness_lower(int level) {
             brightness_raise(level * -1);
         }
-        
+
         // Returns the hue of the device (0-360)
         // Sets the hue to the given level (0-360)
         public int Hue {
             get {
-                return int.Parse(Get("state/hue/value").GetValue("value").ToString());
+                return int.Parse(
+                    Get("state/hue/value").GetValue("value", StringComparison.InvariantCultureIgnoreCase).ToString(),
+                    CultureInfo.InvariantCulture);
             }
             set {
                 var data = new Dictionary<object, object> {
-                {
-                    "hue",
-                    new Dictionary<object, object> {
                     {
-                        "value",
-                        value}}}};
+                        "hue",
+                        new Dictionary<object, object> {
+                            {
+                                "value",
+                                value
+                            }
+                        }
+                    }
+                };
                 Put("state", JObject.FromObject(data));
             }
         }
-        
+
         // Returns the minimum hue possible. (This always returns 0)
         public int HueMin {
             get {
-                return int.Parse(Get("state/hue/min").GetValue("value").ToString());
+                return int.Parse(
+                    Get("state/hue/min").GetValue("value", StringComparison.InvariantCultureIgnoreCase).ToString(),
+                    CultureInfo.InvariantCulture);
             }
         }
-        
+
         // Returns the maximum hue possible. (This always returns 360)
         public int HueMax {
             get {
-                return int.Parse(Get("state/hue/max").GetValue("value").ToString());
+                return int.Parse(Get("state/hue/max").GetValue("value", StringComparison.InvariantCulture).ToString(),
+                    CultureInfo.InvariantCulture);
             }
         }
-        
+
         //##########################################
         // Hue methods
         //##########################################
         // Raise the hue of the device by a relative amount (negative lowers hue)
         public JObject hue_raise(int level) {
             var data = new Dictionary<object, object> {
-            {
-                "hue",
-                new Dictionary<object, object> {
                 {
-                    "increment",
-                    level}}}};
+                    "hue",
+                    new Dictionary<object, object> {
+                        {
+                            "increment",
+                            level
+                        }
+                    }
+                }
+            };
             return Put("state", JObject.FromObject(data));
         }
-        
+
         // Lower the hue of the device by a relative amount (negative raises hue)
         public JObject hue_lower(int level) {
             return hue_raise(-level);
         }
-        
+
         // Returns the saturation of the device (0-100)
         // Sets the saturation to the given level (0-100)
         public int Saturation {
             get {
-                return int.Parse(Get("state/sat/value").GetValue("value").ToString());
+                return int.Parse(Get("state/sat/value").GetValue("value", StringComparison.InvariantCulture).ToString(),
+                    CultureInfo.InvariantCulture);
             }
             set {
                 var data = new Dictionary<object, object> {
-                {
-                    "sat",
-                    new Dictionary<object, object> {
                     {
-                        "value",
-                        value}}}};
+                        "sat",
+                        new Dictionary<object, object> {
+                            {
+                                "value",
+                                value
+                            }
+                        }
+                    }
+                };
                 Put("state", JObject.FromObject(data));
             }
         }
-        
+
         // Returns the minimum saturation possible. (This always returns 0)
         public int SaturationMin {
             get {
-                return int.Parse(Get("state/sat/min").GetValue("value").ToString());
+                return int.Parse(Get("state/sat/min").GetValue("value", StringComparison.InvariantCulture).ToString(),
+                    CultureInfo.InvariantCulture);
             }
         }
-        
+
         // Returns the maximum saturation possible. (This always returns 100)
         public int SaturationMax {
             get {
-                return int.Parse(Get("state/sat/max").GetValue("value").ToString());
+                return int.Parse(Get("state/sat/max").GetValue("value", StringComparison.InvariantCulture).ToString(),
+                    CultureInfo.InvariantCulture);
             }
         }
-        
+
         //##########################################
         // Saturation methods
         //##########################################
         // Raise the saturation of the device by a relative amount (negative lowers saturation)
         public JObject saturation_raise(int level) {
             var data = new Dictionary<object, object> {
-            {
-                "sat",
-                new Dictionary<object, object> {
                 {
-                    "increment",
-                    level}}}};
+                    "sat",
+                    new Dictionary<object, object> {
+                        {
+                            "increment",
+                            level
+                        }
+                    }
+                }
+            };
             return Put("state", JObject.FromObject(data));
         }
-        
+
         // Lower the saturation of the device by a relative amount (negative raises saturation)
         public JObject saturation_lower(int level) {
             return saturation_raise(-level);
         }
-        
+
         // Returns the color temperature of the device (0-100)
         // Sets the color temperature to the given level (0-100)
         public int ColorTemperature {
             get {
-                return int.Parse(Get("state/ct/value").GetValue("value").ToString());
+                return int.Parse(Get("state/ct/value").GetValue("value", StringComparison.InvariantCulture).ToString(),
+                    CultureInfo.InvariantCulture);
             }
             set {
                 var data = new Dictionary<object, object> {
-                {
-                    "ct",
-                    new Dictionary<object, object> {
                     {
-                        "value",
-                        value}}}};
+                        "ct",
+                        new Dictionary<object, object> {
+                            {
+                                "value",
+                                value
+                            }
+                        }
+                    }
+                };
                 this.Put("state", JObject.FromObject(data));
             }
         }
-        
+
         // Returns the minimum color temperature possible. (This always returns 1200)
         public int ColorTemperatureMin {
             get {
-                return int.Parse(Get("state/ct/min").GetValue("value").ToString());
+                return int.Parse(Get("state/ct/min").GetValue("value", StringComparison.InvariantCulture).ToString(),
+                    CultureInfo.InvariantCulture);
             }
         }
-        
+
         // Returns the maximum color temperature possible. (This always returns 6500)
         public int ColorTemperatureMax {
             get {
-                return int.Parse(Get("state/ct/max").GetValue("value").ToString());
+                return int.Parse(Get("state/ct/max").GetValue("value", StringComparison.InvariantCulture).ToString(),
+                    CultureInfo.InvariantCulture);
             }
         }
-        
+
         //##########################################
         // Color Temperature methods
         //##########################################
         // Raise the color temperature of the device by a relative amount (negative lowers color temperature)
         public JObject color_temperature_raise(int level) {
             var data = new Dictionary<object, object> {
-            {
-                "ct",
-                new Dictionary<object, object> {
                 {
-                    "increment",
-                    level}}}};
+                    "ct",
+                    new Dictionary<object, object> {
+                        {
+                            "increment",
+                            level
+                        }
+                    }
+                }
+            };
             return Put("state", JObject.FromObject(data));
         }
-        
+
         // Lower the color temperature of the device by a relative amount (negative raises color temperature)
         public JObject color_temperature_lower(int level) {
             return color_temperature_raise(-level);
         }
-        
+
         // The color of the device, as represented by 0-255 RGB values
         // Set the color of the device, as represented by either a hex string or a list of 0-255 RGB values
         public RGBColor Rgb {
@@ -371,7 +416,8 @@ namespace HueDream.Models.Nanoleaf {
                 var saturation = Saturation;
                 var brightness = Brightness;
                 var rgb = HsvToRgb(hue / 360.0, saturation / 100.0, brightness / 100.0);
-                return new RGBColor(Convert.ToInt32(rgb[0] * 255), Convert.ToInt32(rgb[1] * 255), Convert.ToInt32(rgb[2] * 255));
+                return new RGBColor(Convert.ToInt32(rgb[0] * 255), Convert.ToInt32(rgb[1] * 255),
+                    Convert.ToInt32(rgb[2] * 255));
             }
             set {
                 var hue = value.GetHue();
@@ -381,60 +427,66 @@ namespace HueDream.Models.Nanoleaf {
                     {
                         "hue",
                         new Dictionary<object, object> {
-                        {
-                            "value",
-                            hue}}},
-                    {
+                            {
+                                "value",
+                                hue
+                            }
+                        }
+                    }, {
                         "sat",
                         new Dictionary<object, object> {
-                        {
-                            "value",
-                            saturation}}},
-                    {
+                            {
+                                "value",
+                                saturation
+                            }
+                        }
+                    }, {
                         "brightness",
                         new Dictionary<object, object> {
-                        {
-                            "value",
-                            brightness}}}};
+                            {
+                                "value",
+                                brightness
+                            }
+                        }
+                    }
+                };
                 Put("state", JObject.FromObject(data));
             }
         }
-        
+
         // Returns the orientation of the device (0-360)
         public JObject Orientation {
-            get {
-                return Get("panelLayout/globalOrientation/value");
-            }
+            get { return Get("panelLayout/globalOrientation/value"); }
         }
-        
+
         // Returns the minimum orientation possible. (This always returns 0)
         public JObject OrientationMin {
-            get {
-                return Get("panelLayout/globalOrientation/min");
-            }
+            get { return Get("panelLayout/globalOrientation/min"); }
         }
-        
+
         // Returns the maximum orientation possible. (This always returns 360)
         public JObject OrientationMax {
-            get {
-                return Get("panelLayout/globalOrientation/max");
-            }
+            get { return Get("panelLayout/globalOrientation/max"); }
         }
-        
+
         // Returns the number of panels connected to the device
         public int PanelCount {
             get {
-                return int.Parse(Get("panelLayout/layout/numPanels").GetValue("value").ToString());
+                return int.Parse(
+                    Get("panelLayout/layout/numPanels").GetValue("value", StringComparison.InvariantCulture).ToString(),
+                    CultureInfo.InvariantCulture);
             }
         }
-        
+
         // Returns the length of a single panel. (This always returns 150)
         public int PanelLength {
             get {
-                return int.Parse(Get("panelLayout/layout/sideLength").GetValue("value").ToString());
+                return int.Parse(
+                    Get("panelLayout/layout/sideLength").GetValue("value", StringComparison.InvariantCulture)
+                        .ToString(), CultureInfo.InvariantCulture);
             }
         }
-        
+
         // Returns a list of all panels with their attributes represented in a dict.
         //         
         //         panelId - Unique identifier for this panel
@@ -443,40 +495,35 @@ namespace HueDream.Models.Nanoleaf {
         //         o - Rotational orientation
         //         
         public JObject PanelPositions {
-            get {
-                return Get("panelLayout/layout/positionData");
-            }
+            get { return Get("panelLayout/layout/positionData"); }
         }
-        
+
         public List<string> ReservedEffectNames = new List<string> {
             "*Static*",
             "*Dynamic*",
             "*Solid*"
         };
-        
+
         // Returns the active effect
         // Sets the active effect to the name specified
         public string Effect {
-            get {
-                return Get("effects/select").GetValue("value").ToString();
-
-            }
+            get { return Get("effects/select").GetValue("value", StringComparison.InvariantCulture).ToString(); }
             set {
                 var data = new Dictionary<object, object> {
-                {
-                    "select",
-                    value}};
+                    {
+                        "select",
+                        value
+                    }
+                };
                 Put("effects", JObject.FromObject(data));
             }
         }
-        
+
         // Returns a list of all effects stored on the device
         public JObject EffectsList {
-            get {
-                return Get("effects/effectsList");
-            }
+            get { return Get("effects/effectsList"); }
         }
-        
+
         // Sets the active effect to a new random effect stored on the device.
         //         
         //         Returns the name of the new effect.
@@ -491,102 +538,118 @@ namespace HueDream.Models.Nanoleaf {
             this.Effect = new_effect;
             return new_effect;
         }*/
-        
+
         // Sends a raw dict containing effect data to the device.
         // 
         //         The dict given must match the json structure specified in the API docs.
         public JObject effect_set_raw(JObject effectData) {
             var data = new Dictionary<object, object> {
-            {
-                "write",
-                effectData}};
+                {
+                    "write",
+                    effectData
+                }
+            };
             return Put("effects", JObject.FromObject(data));
         }
-        
+
         // Returns the dict containing details for the effect specified
         public JObject effect_details(string name) {
             var data = new Dictionary<object, object> {
-            {
-                "write",
-                new Dictionary<object, object> {
-                    {
-                        "command",
-                        "request"},
-                    {
-                        "animName",
-                        name}}}};
+                {
+                    "write",
+                    new Dictionary<object, object> {
+                        {
+                            "command",
+                            "request"
+                        }, {
+                            "animName",
+                            name
+                        }
+                    }
+                }
+            };
             return Put("effects", JObject.FromObject(data));
         }
-        
+
         // Returns a dict containing details for all effects on the device
         public JObject effect_details_all() {
             var data = new Dictionary<object, object> {
-            {
-                "write",
-                new Dictionary<object, object> {
                 {
-                    "command",
-                    "requestAll"}}}};
+                    "write",
+                    new Dictionary<object, object> {
+                        {
+                            "command",
+                            "requestAll"
+                        }
+                    }
+                }
+            };
             return Put("effects", JObject.FromObject(data));
         }
-        
+
         // Removed the specified effect from the device
         public JObject effect_delete(string name) {
             var data = new Dictionary<object, object> {
-            {
-                "write",
-                new Dictionary<object, object> {
-                    {
-                        "command",
-                        "delete"},
-                    {
-                        "animName",
-                        name}}}};
+                {
+                    "write",
+                    new Dictionary<object, object> {
+                        {
+                            "command",
+                            "delete"
+                        }, {
+                            "animName",
+                            name
+                        }
+                    }
+                }
+            };
             return Put("effects", JObject.FromObject(data));
         }
-        
+
         // Renames the specified effect saved on the device to a new name
         public JObject effect_rename(string oldName, string newName) {
             var data = new Dictionary<object, object> {
-            {
-                "write",
-                new Dictionary<object, object> {
-                    {
-                        "command",
-                        "rename"},
-                    {
-                        "animName",
-                        oldName},
-                    {
-                        "newName",
-                        newName}}}};
+                {
+                    "write",
+                    new Dictionary<object, object> {
+                        {
+                            "command",
+                            "rename"
+                        }, {
+                            "animName",
+                            oldName
+                        }, {
+                            "newName",
+                            newName
+                        }
+                    }
+                }
+            };
             return Put("effects", JObject.FromObject(data));
         }
-        
-        public double[] HsvToRgb(double h, double s, double v)
-        {    
-            while (h < 0) { h += 360; }
 
-            while (h >= 360) { h -= 360; }
+        private double[] HsvToRgb(double h, double s, double v) {
+            while (h < 0) {
+                h += 360;
+            }
+
+            while (h >= 360) {
+                h -= 360;
+            }
 
             double r, g, b;
-            if (v <= 0)
-            { r = g = b = 0; }
-            else if (s <= 0)
-            {
+            if (v <= 0) {
+                r = g = b = 0;
+            } else if (s <= 0) {
                 r = g = b = v;
-            }
-            else
-            {
+            } else {
                 double hf = h / 60.0;
-                int i = (int)Math.Floor(hf);
+                int i = (int) Math.Floor(hf);
                 double f = hf - i;
                 double pv = v * (1 - s);
                 double qv = v * (1 - s * f);
                 double tv = v * (1 - s * (1 - f));
-                switch (i)
-                {
-
+                switch (i) {
                     // Red is the dominant color
 
                     case 0:
@@ -650,23 +713,20 @@ namespace HueDream.Models.Nanoleaf {
                         break;
                 }
             }
-            r = Clamp((int)(r * 255.0));
-            g = Clamp((int)(g * 255.0));
-            b = Clamp((int)(b * 255.0));
-            return new[] {r,g,b};
+
+            r = Clamp((int) (r * 255.0));
+            g = Clamp((int) (g * 255.0));
+            b = Clamp((int) (b * 255.0));
+            return new[] {r, g, b};
         }
 
         /// <summary>
         /// Clamp a value to 0-255
         /// </summary>
-        int Clamp(int i)
-        {
+        int Clamp(int i) {
             if (i < 0) return 0;
             if (i > 255) return 255;
             return i;
         }
     }
-    
-    
-    
 }

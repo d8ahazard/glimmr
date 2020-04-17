@@ -1,7 +1,6 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.ComponentModel;
-using System.Drawing;
+using Newtonsoft.Json;
 
 namespace HueDream.Models.Nanoleaf {
     [Serializable]
@@ -20,24 +19,29 @@ namespace HueDream.Models.Nanoleaf {
         [JsonProperty] public string Version { get; set; }
         [JsonProperty] public int Mode { get; set; }
         [JsonProperty] public NanoLayout Layout { get; set; }
-        
-        [DefaultValue(0)]            
+
+        [DefaultValue(0)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public float X { get; set; }
-        [DefaultValue(50)]            
+
+        [DefaultValue(50)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public float Y { get; set; }
-        [DefaultValue(1)]            
+
+        [DefaultValue(1)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public float Scale { get; set; }
-        [DefaultValue(0)]            
+
+        [DefaultValue(0)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public float Rotation { get; set; }
-        [DefaultValue(false)]            
+
+        [DefaultValue(false)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool MirrorX { get; set; }
-        [DefaultValue(false)]            
+
+        [DefaultValue(false)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool MirrorY { get; set; }
-}
+    }
 }
