@@ -249,8 +249,6 @@ $(function () {
         hueGroup = current.toString();        
     });
 
-    setInterval(function(){RefreshData();}, 60000);    
-
 });
 
 // This gets called in loop by hue auth to see if we've linked our bridge.

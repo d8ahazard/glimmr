@@ -27,7 +27,9 @@ namespace HueDream.Models.DreamScreen {
             response.Write(command2);
             // Payload
             foreach (var b in payload) response.Write(b);
-
+            var byteSend = stream.ToArray();
+            // CRC
+            response.Write(MsgUtils.CalculateCrc(byteSend));
             var byteString = BitConverter.ToString(stream.ToArray());
             var bytesString = byteString.Split("-");
             var cmd = bytesString[4] + bytesString[5];
@@ -36,8 +38,8 @@ namespace HueDream.Models.DreamScreen {
                 LogUtil.Write($"localhost -> 255.255.255.255::{cmd}");
                 SendUdpBroadcast(stream.ToArray());
             } else {
-                LogUtil.Write($"localhost -> {ep.Address}::{cmd}");
                 SendUdpUnicast(stream.ToArray(), ep);
+                LogUtil.Write($"localhost -> {ep.Address}::{cmd}");
             }
         }
 

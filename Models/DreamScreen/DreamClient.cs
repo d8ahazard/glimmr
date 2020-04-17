@@ -13,6 +13,7 @@ using HueDream.Models.Hue;
 using HueDream.Models.Nanoleaf;
 using HueDream.Models.Util;
 using Microsoft.Extensions.Hosting;
+using Serilog;
 
 namespace HueDream.Models.DreamScreen {
     public class DreamClient : BackgroundService {
@@ -118,7 +119,7 @@ namespace HueDream.Models.DreamScreen {
             dev = DreamData.GetDeviceData();
             dev.Mode = newMode;
             devMode = newMode;
-            LogUtil.Write($@"DreamScreen: Updating mode to {newMode} from {prevMode}.");
+            LogUtil.Write($@"DreamScreen: Updating mode from {prevMode} to {newMode}.");
             // If we are not in ambient mode and ambient scene is running, stop it
             switch (newMode) {
                 case 0:
@@ -243,7 +244,6 @@ namespace HueDream.Models.DreamScreen {
         public void SendColors(List<Color> colors, List<Color> sectors, double fadeTime = 0) {
             if (sendTokenSource == null) sendTokenSource = new CancellationTokenSource();
             if (sendTokenSource.IsCancellationRequested) return;
-
             foreach (var bridge in bridges) {
                 bridge.UpdateLights(sectors, brightness, sendTokenSource.Token, fadeTime);
             }
@@ -319,7 +319,7 @@ namespace HueDream.Models.DreamScreen {
                     finally {
                         LogUtil.WriteDec(@"DreamClient Stopped.");
                     }
-                }, ct);
+                });
             }
             catch (SocketException e) {
                 LogUtil.Write($@"Socket exception: {e.Message}.");
