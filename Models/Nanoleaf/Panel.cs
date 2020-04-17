@@ -279,7 +279,7 @@ namespace HueDream.Models.Nanoleaf {
 
             foreach (var pd in layout.PositionData) {
                 var id = pd.PanelId;
-                var sector = pd.Sector - 1;
+                var colorInt = pd.Sector - 1;
                 if (streamMode == 2) {
                     byteString.AddRange(ByteUtils.PadInt(id));
                 } else {
@@ -287,7 +287,7 @@ namespace HueDream.Models.Nanoleaf {
                 }
 
                 if (pd.Sector == -1) continue;
-                var color = colors[sector];
+                var color = colors[colorInt];
                 //LogUtil.Write("Sending sector " + (sector + 1) + " out of " + colors.Length);
                 // Pad ID, this is probably wrong
                 // Add rgb

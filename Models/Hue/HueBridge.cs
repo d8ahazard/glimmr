@@ -88,8 +88,8 @@ namespace HueDream.Models.Hue {
                     // Return if not mapped
                     if (lightData == null) continue;
                     // Otherwise, get the corresponding sector color
-                    var targetSector = lightData.TargetSector;
-                    var color = colors[targetSector];
+                    var colorInt = lightData.TargetSector - 1;
+                    var color = colors[colorInt];
                     // Make it into a color
                     var endColor = ClampBrightness(color, lightData, brightness);
                     //var xyColor = HueColorConverter.RgbToXY(endColor, CIE1931Gamut.PhilipsWideGamut);
