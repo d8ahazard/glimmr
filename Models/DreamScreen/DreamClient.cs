@@ -13,7 +13,6 @@ using HueDream.Models.Hue;
 using HueDream.Models.Nanoleaf;
 using HueDream.Models.Util;
 using Microsoft.Extensions.Hosting;
-using Serilog;
 
 namespace HueDream.Models.DreamScreen {
     public class DreamClient : BackgroundService {
@@ -346,7 +345,7 @@ namespace HueDream.Models.DreamScreen {
             }
         }
 
-        private Task StartAudioCapture(CancellationToken cancellation) {
+        public Task StartAudioCapture(CancellationToken cancellation) {
             if (cancellation != CancellationToken.None) {
                 LogUtil.Write("Foo-fiddy foo foo foo.");
             }
@@ -379,7 +378,9 @@ namespace HueDream.Models.DreamScreen {
                 payloadString = msg.PayloadString;
                 command = msg.Command;
                 msgDevice = msg.Device;
-                if (from != null && command != null && command != "COLOR_DATA") LogUtil.Write($@"{from} -> localhost::{command}.");
+                if (from != null && command != null && command != "COLOR_DATA" && command != "SUBSCRIBE") {
+                    LogUtil.Write($@"{from} -> localhost::{command}.");
+                }
                 flag = msg.Flags;
                 var groupMatch = msg.Group == dev.GroupNumber || msg.Group == 255;
                 if ((flag == "11" || flag == "21") && groupMatch) {

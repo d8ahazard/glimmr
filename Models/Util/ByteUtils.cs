@@ -47,11 +47,13 @@ namespace HueDream.Models.Util {
             return data;
         }
 
-        public static List<string> SplitHex(string value, int chunkLength)
-        {
+        public static List<string> SplitHex(string value, int chunkLength) {
+            if (value == null) throw new ArgumentException("Invalid input."); 
             var res = new List<string>();
-            int count = (value.Length / chunkLength) + (value.Length % chunkLength > 0 ? 1 : 0);
-            Enumerable.Range(0, count).ToList().ForEach(f => res.Add(value.Skip(f * chunkLength).Take(chunkLength).Select(z => z.ToString()).Aggregate((a,b) => a+b)));
+            var count = value.Length / chunkLength + (value.Length % chunkLength > 0 ? 1 : 0);
+            Enumerable.Range(0, count).ToList().ForEach(f =>
+                res.Add(value.Skip(f * chunkLength).Take(chunkLength).Select(z => z.ToString(CultureInfo.InvariantCulture))
+                    .Aggregate((a, b) => a + b)));
             return res;
         }
 
@@ -68,6 +70,7 @@ namespace HueDream.Models.Util {
 
         // Convert an array of integers to bytes
         public static byte[] IntBytes(int[] toBytes) {
+            if (toBytes == null) throw new ArgumentException("Invalid input.");
             var output = new byte[toBytes.Length];
             var c = 0;
             foreach (var i in toBytes) {
@@ -94,8 +97,7 @@ namespace HueDream.Models.Util {
                 Array.Copy(input, start, subArr, 0, len);
 
                 foreach (var b in subArr) strOut += Convert.ToChar(b);
-            }
-            else {
+            } else {
                 throw new IndexOutOfRangeException();
             }
 
@@ -103,6 +105,7 @@ namespace HueDream.Models.Util {
         }
 
         public static int[] ExtractInt(byte[] input, int start, int end) {
+            if (input == null) throw new ArgumentException("Invalid input.");
             var len = end - start;
             var intOut = new int[len];
             if (len < input.Length) {
@@ -114,8 +117,7 @@ namespace HueDream.Models.Util {
                     intOut[c] = b;
                     c++;
                 }
-            }
-            else {
+            } else {
                 throw new IndexOutOfRangeException();
             }
 
@@ -123,13 +125,13 @@ namespace HueDream.Models.Util {
         }
 
         public static byte[] ExtractBytes(byte[] input, int start, int end) {
+            if (input == null) throw new ArgumentException("Invalid input.");
             var len = end - start;
             var byteOut = new byte[len];
             if (len < input.Length) {
                 var subArr = new byte[len];
                 Array.Copy(input, start, subArr, 0, len);
-            }
-            else {
+            } else {
                 throw new IndexOutOfRangeException();
             }
 

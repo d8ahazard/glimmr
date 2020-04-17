@@ -403,7 +403,7 @@ namespace HueDream.Controllers {
 
         }
 
-        private void SetMode(int mode) {
+        private static void SetMode(int mode) {
             var newMode = ByteUtils.IntByte(mode);
             var myDev = DreamData.GetDeviceData();
             var curMode = myDev.Mode;
@@ -476,7 +476,7 @@ namespace HueDream.Controllers {
             }
         }
 
-        private void SetDevName(string ipAddress, string name, int group) {
+        private static void SetDevName(string ipAddress, string name, int group) {
             var groupNumber = (byte) group;
             bool groupSend = false;
             byte mFlag = 0x11;
@@ -502,7 +502,7 @@ namespace HueDream.Controllers {
             DreamData.SetItem("devices", newDevices);
         }
 
-        private void SetBrightness(int dData) {
+        private static void SetBrightness(int dData) {
             var myDev = DreamData.GetDeviceData();
             var ipAddress = myDev.IpAddress;
             var groupNumber = (byte) myDev.GroupNumber;

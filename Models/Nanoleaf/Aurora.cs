@@ -723,10 +723,9 @@ namespace HueDream.Models.Nanoleaf {
         /// <summary>
         /// Clamp a value to 0-255
         /// </summary>
-        int Clamp(int i) {
+        private static int Clamp(int i) {
             if (i < 0) return 0;
-            if (i > 255) return 255;
-            return i;
+            return i > 255 ? 255 : i;
         }
     }
 }

@@ -228,13 +228,11 @@ namespace HueDream.Models.DreamGrab {
                     using var contour = contours[i];
                     CvInvoke.ApproxPolyDP(contour, approxContour, CvInvoke.ArcLength(contour, true) * 0.02,
                         true);
-                    if (approxContour.Size == 4) {
-                        var cntArea = CvInvoke.ContourArea(approxContour);
-                        if (cntArea / srcArea > .15) {
-                            var pointOut = new VectorOfPointF(SortPoints(approxContour));
-                            targets.Add(VPointFToVPoint(pointOut));
-                        }
-                    }
+                    if (approxContour.Size != 4) continue;
+                    var cntArea = CvInvoke.ContourArea(approxContour);
+                    if (!(cntArea / srcArea > .15)) continue;
+                    var pointOut = new VectorOfPointF(SortPoints(approxContour));
+                    targets.Add(VPointFToVPoint(pointOut));
                 }
                 if (showEdged) {
                     var color = new MCvScalar(255, 255, 0);
@@ -293,7 +291,7 @@ namespace HueDream.Models.DreamGrab {
             return output;
         }
 
-        private VectorOfPoint VPointFToVPoint(VectorOfPointF input) {
+        private static VectorOfPoint VPointFToVPoint(VectorOfPointF input) {
             var ta = input.ToArray();
             var pIn = new Point[input.Size];
             for (int i = 0; i < ta.Length; i++) pIn[i] = new Point((int) ta[i].X, (int) ta[i].Y);
@@ -301,7 +299,7 @@ namespace HueDream.Models.DreamGrab {
         }
        
 
-        private PointF[] SortPoints(VectorOfPoint wTarget) {
+        private static PointF[] SortPoints(VectorOfPoint wTarget) {
             var ta = wTarget.ToArray();
             var pIn = new PointF[wTarget.Size];
             for (int i = 0; i < ta.Length; i++) pIn[i] = ta[i];

@@ -35,11 +35,11 @@ namespace HueDream.Models.DreamScreen {
             var cmd = bytesString[4] + bytesString[5];
             cmd = MsgUtils.Commands[cmd] ?? cmd;
             if (flag == 0x30 | groupSend) {
-                LogUtil.Write($"localhost -> 255.255.255.255::{cmd}");
                 SendUdpBroadcast(stream.ToArray());
+                if (cmd != "SUBSCRIBE") LogUtil.Write($"localhost -> 255.255.255.255::{cmd}");
             } else {
                 SendUdpUnicast(stream.ToArray(), ep);
-                LogUtil.Write($"localhost -> {ep.Address}::{cmd}");
+                if (cmd != "SUBSCRIBE") LogUtil.Write($"localhost -> {ep.Address}::{cmd}");
             }
         }
 
