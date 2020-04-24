@@ -4,12 +4,14 @@ using System.Threading.Tasks;
 using Emgu.CV;
 using HueDream.Models.Util;
 
-namespace HueDream.Models.DreamGrab {
-    public class WebCamVideoStream : IVideoStream {
+namespace HueDream.Models.Capture {
+    public class WebCamVideoStream : IVideoStream, IDisposable
+    {
 
         private VideoCapture video;
         private Mat frame;
         private bool saved;
+        private bool disposed;
 
         Mat IVideoStream.Frame => frame;
 
@@ -35,6 +37,19 @@ namespace HueDream.Models.DreamGrab {
             LogUtil.Write("WebCam Stream started.");
             video.ImageGrabbed += SetFrame;
             video.Start();
+        }
+
+        public void Dispose() {
+            if (disposed) return;
+            disposed = true;
+            GC.SuppressFinalize(this);
+            Dispose(true);
+        }
+
+        protected virtual void Dispose(bool disposing) {
+            if (!disposing) return;
+            frame.Dispose();
+            video.Dispose();
         }
     }
 }

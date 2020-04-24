@@ -7,12 +7,13 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using HueDream.Models.DreamGrab;
+using HueDream.Models.LED;
 using HueDream.Models.Util;
 using Nanoleaf.Client;
 using Nanoleaf.Client.Exceptions;
 using Nanoleaf.Client.Models.Responses;
 using Newtonsoft.Json;
+using ZedGraph;
 
 namespace HueDream.Models.Nanoleaf {
     public sealed class Panel : IDisposable {
@@ -67,7 +68,7 @@ namespace HueDream.Models.Nanoleaf {
                     }
 
                     layout.PositionData = newPd;
-                    var leaves = DreamData.GetItem<List<NanoData>>("leaves");
+                    var leaves = DataUtil.GetItem<List<NanoData>>("leaves");
                     var newLeaves = new List<NanoData>();
                     foreach (var leaf in leaves) {
                         if (leaf.Id == n.Id) {
@@ -77,120 +78,21 @@ namespace HueDream.Models.Nanoleaf {
                         newLeaves.Add(leaf);
                     }
 
-                    DreamData.SetItem<List<NanoData>>("leaves", newLeaves);
+                    DataUtil.SetItem<List<NanoData>>("leaves", newLeaves);
                 }
             }
 
             disposed = false;
         }
 
-        private static Dictionary<int, int> CalculatePoints(NanoData nd) {
+        public static Dictionary<int, int> CalculatePoints(NanoData nd) {
+            if (nd == null) throw new ArgumentException("Invalid panel data.");
             var pl = nd.Layout;
-            // calculate panel points in 2d space
-
-
-            // calculate color points in 2d space?
-            var sPoints = new Dictionary<int, Point>();
-            var cMode = DreamData.GetItem<int>("captureMode");
-            int vc;
-            int hc;
-            var lD = DreamData.GetItem<LedData>("ledData");
-            if (cMode == 0) {
-                vc = lD.VCountDs;
-                hc = lD.HCountDs;
-            } else {
-                vc = lD.VCount;
-                hc = lD.HCount;
-            }
-
-            // 1 LED = 25 tile units for nano
-            var hd = hc * 25;
-            var vd = vc * 25;
-            // Get vertical spaces between tiles
-            var vStep = vd / 3;
-            // Get horizontal spaces between tiles
-            var hStep = hd / 5;
-
-            // Center of screen
-            hd /= 2;
-            vd /= 2;
-            LogUtil.Write($@"Center is {hd}, {vd}; steps are {hStep}, {vStep}");
-
-            var pPoints = new List<Point>();
-            // We need to calculate the min/max of the coords and adjust to center
-            var minX = 0;
-            var minY = 0;
-            var maxX = 0;
-            var maxY = 0;
-            foreach (var layout in pl.PositionData) {
-                var pX = layout.X;
-                var pY = layout.Y;
-                if (pX < minX) minX = pX;
-                if (pY < minY) minY = pY;
-                if (pX > maxX) maxX = pX;
-                if (pY > maxY) maxY = pY;
-            }
-
-            var xRange = maxX - minX;
-            var yRange = maxY - minY;
-            LogUtil.Write($@"Ranges: {xRange}, {yRange}");
-            var adjX = (maxX - minX) / 2;
-            var adjY = (maxY - minY) / 2;
-            foreach (var layout in pl.PositionData) {
-                int pX = layout.X - adjX;
-                int pY = layout.Y - adjY;
-                LogUtil.Write($@"We could adjust by {adjX}, {adjY} or {minX}, {minY}");
-                LogUtil.Write($@"PX, PY: {pX}, {pY}");
-                pX += (int) nd.X;
-                pY += (int) nd.Y;
-                LogUtil.Write($@"PX adj, PY adj: {pX}, {pY}");
-
-                var p = new Point(pX, pY);
-                pPoints.Add(p);
-            }
-
+            
+            var pPoints = CalculatePanelPoints(nd);
+            var sPoints = CalculateSectorPoints(nd);
             // Set our marker at center
-            var xMarker = 0;
-            var yMarker = 0;
-
-            yMarker -= vStep; // Down one
-            xMarker += hStep * 2; // Right x2
-            var pointInt = 0;
-            sPoints[pointInt] = new Point(xMarker, yMarker);
-            pointInt++;
-            yMarker += vStep;
-            sPoints[pointInt] = new Point(xMarker, yMarker);
-            pointInt++;
-            yMarker += vStep;
-            sPoints[pointInt] = new Point(xMarker, yMarker);
-            pointInt++;
-            xMarker -= hStep;
-            sPoints[pointInt] = new Point(xMarker, yMarker);
-            pointInt++;
-            xMarker -= hStep;
-            sPoints[pointInt] = new Point(xMarker, yMarker);
-            pointInt++;
-            xMarker -= hStep;
-            sPoints[pointInt] = new Point(xMarker, yMarker);
-            pointInt++;
-            xMarker -= hStep;
-            sPoints[pointInt] = new Point(xMarker, yMarker);
-            pointInt++;
-            yMarker -= vStep;
-            sPoints[pointInt] = new Point(xMarker, yMarker);
-            pointInt++;
-            yMarker -= vStep;
-            sPoints[pointInt] = new Point(xMarker, yMarker);
-            pointInt++;
-            xMarker += hStep;
-            sPoints[pointInt] = new Point(xMarker, yMarker);
-            pointInt++;
-            xMarker += hStep;
-            sPoints[pointInt] = new Point(xMarker, yMarker);
-            pointInt++;
-            xMarker += hStep;
-            sPoints[pointInt] = new Point(xMarker, yMarker);
-            LogUtil.Write("P points: " + JsonConvert.SerializeObject(pPoints));
+            
             LogUtil.Write("S points: " + JsonConvert.SerializeObject(sPoints));
             var tList = new Dictionary<int, int>();
             var panelInt = 0;
@@ -202,14 +104,12 @@ namespace HueDream.Models.Nanoleaf {
                     var dY = kp.Value.Y - pPoint.Y;
                     var dist = Math.Sqrt(Math.Pow(dX, 2) + Math.Pow(dY, 2));
                     if (dist < maxDist) {
-                        LogUtil.Write("Setting min to " + dist);
                         maxDist = dist;
                         pTarget = kp.Key;
                     }
                 }
 
                 if (pTarget != -1) {
-                    LogUtil.Write($@"Target for {panelInt}: {maxDist} {pTarget}");
                     var pId = pl.PositionData[panelInt].PanelId;
                     tList[pId] = pTarget;
                 } else {
@@ -222,7 +122,126 @@ namespace HueDream.Models.Nanoleaf {
             LogUtil.Write("Final List: " + JsonConvert.SerializeObject(tList));
             return tList;
         }
+    
+        private static List<PointD> CalculatePanelPoints(NanoData nd) {
+            var pl = nd.Layout;
+            var pPoints = new List<PointD>();
+            var sideLength = pl.SideLength;
+            var nX = nd.X;
+            var nY = nd.Y;
+            
+            var minX = 1000;
+            var minY = 1000;
+            var maxX = 0;
+            var maxY = 0;
+    
+            // Calculate the min/max range for each tile
+            foreach(var data in pl.PositionData) {
+                if (data.X < minX) minX = data.X;
+                if (data.Y * -1 < minY) minY = data.Y * -1;
+                if (data.X > maxX) maxX = data.X;
+                if (data.Y * -1 > maxY) maxY = data.Y * -1;
+            }
 
+            var xRange = maxX - minX;
+            var yRange = maxY - minY;
+            
+            foreach (var layout in pl.PositionData) {
+                double pX = layout.X;
+                double pY = layout.Y;
+                if (nd.MirrorX) pX *= -1;
+                if (!nd.MirrorY) pY *= -1;
+                pX -= xRange / 2;
+                pY += yRange / 2;
+                pX -= sideLength / 2;
+                pY += sideLength / 2;
+                pX += nX;
+                pY += nY;
+                var p = new PointD(pX, pY);
+                pPoints.Add(p);
+            }
+            LogUtil.Write("P points: " + JsonConvert.SerializeObject(pPoints));
+            return pPoints;
+        }
+
+        private static Dictionary<int, Point> CalculateSectorPoints(NanoData nd) {
+            
+            int verticalCount;
+            int horizontalCount;
+            var cMode = DataUtil.GetItem<int>("captureMode");
+            var lD = DataUtil.GetItem<LedData>("ledData");
+            if (cMode == 0) {
+                verticalCount = lD.VCountDs;
+                horizontalCount = lD.HCountDs;
+            } else {
+                verticalCount = lD.VCount;
+                horizontalCount = lD.HCount;
+            }
+
+            // 1 LED = 25 tile units for nano
+            
+            // Get window width
+            var width = 1024;
+            var height = 768;
+    
+            // Set our TV image width
+            var tvWidth = horizontalCount * 25;
+            var tvHeight = verticalCount * 25;
+
+            // Get vertical spaces between tiles
+            var vStep = tvHeight / 3;
+            // Get horizontal spaces between tiles
+            var hStep = tvWidth / 5;
+
+            // If window is less than 500px, divide our scale by half
+            tvWidth /= 2;
+            tvHeight /= 2;
+
+            LogUtil.Write($"TvWidth, height {tvWidth}{tvHeight}");
+            
+            var sPoints = new Dictionary<int, Point>();
+            var yMarker = vStep * -1; // Down one
+            var xMarker = hStep * 2; // Right x2
+            
+            var pointInt = 1;
+            sPoints[pointInt] = new Point(xMarker, yMarker);
+            pointInt++;
+            yMarker += vStep;
+            sPoints[pointInt] = new Point(xMarker, yMarker);
+            pointInt++;
+            yMarker += vStep;
+            sPoints[pointInt] = new Point(xMarker, yMarker);
+            pointInt++;
+            xMarker -= hStep;
+            sPoints[pointInt] = new Point(xMarker, yMarker);
+            pointInt++;
+            xMarker -= hStep;
+            sPoints[pointInt] = new Point(xMarker, yMarker);
+            pointInt++;
+            xMarker -= hStep;
+            sPoints[pointInt] = new Point(xMarker, yMarker);
+            pointInt++;
+            xMarker -= hStep;
+            sPoints[pointInt] = new Point(xMarker, yMarker);
+            pointInt++;
+            yMarker -= vStep;
+            sPoints[pointInt] = new Point(xMarker, yMarker);
+            pointInt++;
+            yMarker -= vStep;
+            sPoints[pointInt] = new Point(xMarker, yMarker);
+            pointInt++;
+            xMarker += hStep;
+            sPoints[pointInt] = new Point(xMarker, yMarker);
+            pointInt++;
+            xMarker += hStep;
+            sPoints[pointInt] = new Point(xMarker, yMarker);
+            pointInt++;
+            xMarker += hStep;
+            sPoints[pointInt] = new Point(xMarker, yMarker);
+            
+            LogUtil.Write("S points: " + JsonConvert.SerializeObject(sPoints));
+            return sPoints;
+        }
         public void DisableStreaming() {
             StopPanel();
         }
@@ -303,9 +322,15 @@ namespace HueDream.Models.Nanoleaf {
             SendUdpUnicast(byteString.ToArray());
         }
 
-        public UserToken CheckAuth() {
+        public async Task<UserToken> CheckAuth() {
             var nanoleaf = new NanoleafClient(ipAddress);
-            var result = nanoleaf.CreateTokenAsync().Result;
+            UserToken result = null;
+            try {
+                result = await nanoleaf.CreateTokenAsync().ConfigureAwait(false);
+                LogUtil.Write("Authorized.");
+            } catch (AggregateException e) {
+                LogUtil.Write("Unauthorized...");
+            }
             nanoleaf.Dispose();
             return result;
         }

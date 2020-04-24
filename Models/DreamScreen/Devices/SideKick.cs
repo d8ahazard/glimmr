@@ -61,7 +61,7 @@ namespace HueDream.Models.DreamScreen.Devices {
         }
 
         public override byte[] EncodeState() {
-            LogUtil.Write($"Encoding state: {Name}, {GroupName}, {GroupNumber}, {Mode}, {Brightness}, {AmbientColor}, {Saturation}, {FadeRate}, {EspFirmwareVersion}, {AmbientModeType}, {AmbientShowType}");
+            LogUtil.Write($"Encoding state: {Name}, {GroupName}, {GroupNumber}, {Mode}, {Brightness}, {AmbientColor}, {Saturation}, {FadeRate}, {RequiredEspFirmwareVersion}, {AmbientModeType}, {AmbientShowType}");
             var response = new List<byte>();
             response.AddRange(ByteUtils.StringBytePad(Name, 16));
             response.AddRange(ByteUtils.StringBytePad(GroupName, 16));

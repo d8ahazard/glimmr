@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -11,10 +10,11 @@ using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using HueDream.Models.DreamScreen;
+using HueDream.Models.LED;
 using HueDream.Models.Util;
 using Newtonsoft.Json;
 
-namespace HueDream.Models.DreamGrab {
+namespace HueDream.Models.Capture {
     public sealed class StreamCapture
     {
         private int scaleHeight = 400;
@@ -49,17 +49,17 @@ namespace HueDream.Models.DreamGrab {
         }
 
         private void SetCapVars() {
-            ledData = DreamData.GetItem<LedData>("ledData");
-            camType = DreamData.GetItem<int>("camType");
-            camWidth = DreamData.GetItem<int>("camWidth") ?? 1920;
-            camHeight = DreamData.GetItem<int>("camHeight") ?? 1080;
-            scaleFactor = DreamData.GetItem<float>("scaleFactor") ?? .5f;
+            ledData = DataUtil.GetItem<LedData>("ledData");
+            camType = DataUtil.GetItem<int>("camType");
+            camWidth = DataUtil.GetItem<int>("camWidth") ?? 1920;
+            camHeight = DataUtil.GetItem<int>("camHeight") ?? 1080;
+            scaleFactor = DataUtil.GetItem<float>("scaleFactor") ?? .5f;
             scaleWidth = Convert.ToInt32(camWidth * scaleFactor);
             scaleHeight = Convert.ToInt32(camHeight * scaleFactor);
             srcArea = scaleWidth * scaleHeight;
             scaleSize = new Size(scaleWidth, scaleHeight);
             if (camType == 0) {
-                var kStr = DreamData.GetItem("k");
+                var kStr = DataUtil.GetItem("k");
                 if (kStr == null) {
                     LogUtil.Write("Running static camera calibration.");
                     Calibrate.ProcessFrames();
@@ -67,14 +67,14 @@ namespace HueDream.Models.DreamGrab {
                     LogUtil.Write("Camera calibration settings loaded.");
                 }
             
-                kStr = DreamData.GetItem("k");
-                var dStr = DreamData.GetItem("d");
+                kStr = DataUtil.GetItem("k");
+                var dStr = DataUtil.GetItem("d");
                 k = JsonConvert.DeserializeObject<Mat>(kStr);
                 d = JsonConvert.DeserializeObject<Mat>(dStr);
                 LogUtil.Write("calib vars deserialized.");
             }
             try {
-                var lt = DreamData.GetItem<PointF[]>("lockTarget");
+                var lt = DataUtil.GetItem<PointF[]>("lockTarget");
                 LogUtil.Write("LT Grabbed? " + JsonConvert.SerializeObject(lt));
                 if (lt != null) {
                     lockTarget = new VectorOfPointF(lt);
@@ -92,23 +92,23 @@ namespace HueDream.Models.DreamGrab {
             var tr = new Point(scaleWidth, 0);
             var br = new Point(scaleWidth, scaleHeight);
             var bl = new Point(0, scaleHeight);
-            showSource = DreamData.GetItem<bool>("showSource") ?? false;
-            showEdged = DreamData.GetItem<bool>("showEdged") ?? false;
-            showWarped = DreamData.GetItem<bool>("showWarped") ?? false;
+            showSource = DataUtil.GetItem<bool>("showSource") ?? false;
+            showEdged = DataUtil.GetItem<bool>("showEdged") ?? false;
+            showWarped = DataUtil.GetItem<bool>("showWarped") ?? false;
             vectors = new PointF[] { tl, tr, br, bl };
             frameCount = 0;
             LogUtil.Write("Start Capture should be running...");
         }
 
         private IVideoStream GetCamera() {
-            var capMode = DreamData.GetItem<int>("captureMode");
+            var capMode = DataUtil.GetItem<int>("captureMode");
             if (capMode != 1 && capMode != 2)
                 return capMode == 3 ? new CaptureVideoStream() : null;
             switch (camType) {
                 case 0:
                     // 0 = pi module, 1 = web cam, 3 = capture?
                     LogUtil.Write("Loading Pi cam.");
-                    var camMode = DreamData.GetItem<int>("camMode") ?? 1;
+                    var camMode = DataUtil.GetItem<int>("camMode") ?? 1;
                     return new PiVideoStream(camWidth, camHeight, camMode);
                 case 1:
                     LogUtil.Write("Loading web cam.");
@@ -178,7 +178,7 @@ namespace HueDream.Models.DreamGrab {
                 lockTarget = FindTarget(scaled);
                 if (lockTarget != null) {
                     LogUtil.Write("Target hit.");
-                    DreamData.SetItem<PointF[]>("lockTarget", lockTarget.ToArray());
+                    DataUtil.SetItem<PointF[]>("lockTarget", lockTarget.ToArray());
                 } else {
                     LogUtil.Write("No target.");
                 }

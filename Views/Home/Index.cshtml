@@ -34,262 +34,295 @@
 </div>
 
 <main class="bmd-layout-content">
-    <div class="">
-        <div class="bg-dark text-white hidden" id="dsCard">
-            <div id="dsPane">
-                <div class="card-body">
-                    <div class="container">
-                        <div class="row justify-content-center">
-                            <div class="form-group col-12 col-lg-10">
-                                <div class="row justify-content-center">
-                                    <div id="iconWrap">
-                                    </div>
-                                    <div id="dsData" class="">
-                                        <div id="dsName" onclick="listenForDoubleClick(this);" onblur="this.contentEditable=false;"></div><br/>
-                                        <span id="dsIp"></span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row justify-content-center">
-                            <div class="btn-group-lg">
-                                <div class="btnWrap">
-                                    <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="0" id="mode0">
-                                        <img class="modeIcon" src="~/img/mode_off_icon.png" alt=""/>
-                                    </div>
-                                    <span class="modeLabel">Off</span>
-                                </div>
-                                <div class="btnWrap">
-                                    <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="1" id="mode1">
-                                        <img class="modeIcon" src="~/img/mode_video_icon.png" alt=""/>
-                                    </div>
-                                    <span class="modeLabel">Video</span>
-                                </div>
-                                <div class="btnWrap">
-                                    <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="2" id="mode2">
-                                        <img class="modeIcon" src="~/img/mode_audio_icon.png" alt=""/>
-                                    </div>
-                                    <span class="modeLabel">Music</span>
-                                </div>
-                                <div class="btnWrap">
-                                    <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="3" id="mode3">
-                                        <img class="modeIcon" src="~/img/mode_ambient_icon.png" alt=""/>
-                                    </div>
-                                    <span class="modeLabel">Ambient</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row justify-content-center">
-                            <div class="col-8 col-md-6 col-xl-4">
-                                <input class="mapBrightness form-control devBrightness" type="range" id="dsBrightness" name="dsBrightness" min="0" max="100" value="100">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="bg-dark text-white hidden" id="hueCard">
-            <div id="huePane">
-                <div class="card-body">
-                    <div class="row justify-content-center">
-                        <div id="linkBtn">
-                            <div id="linkImg" class="unlinked">
-                                <div class="linkImg"></div>
-                                <small id="hueIp" class="linkIp"></small>
-                                <div id="circleBar"></div>
-                                <small id="linkHint" class="linkHint">Click here to link bridge</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="previewWrap" id="previewWrap">
-                            <div class="light-preview" id="lightPreview">
-                                <div id="regions">
-                                    <div class="row sectorRow">
-                                        <div class="lightRegion col" id="sector7">
-                                            7
-                                        </div>
-                                        <div class="lightRegion col" id="sector6">
-                                            6
-                                        </div>
-                                        <div class="lightRegion col" id="sector5">
-                                            5
-                                        </div>
-                                        <div class="lightRegion col" id="sector4">
-                                            4
-                                        </div>
-                                        <div class="lightRegion col" id="sector3">
-                                            3
-                                        </div>
-                                    </div>
-                                    <div class="row sectorRow">
-                                        <div class="lightRegion col" id="sector8">
-                                            8
-                                        </div>
-                                        <div class="centerRegion col">
-                                        </div>
-                                        <div class="centerRegion col">
-                                        </div>
-                                        <div class="centerRegion col">
-                                        </div>
-
-                                        <div class="lightRegion col" id="sector2">
-                                            2
-                                        </div>
-                                    </div>
-                                    <div class="row sectorRow">
-                                        <div class="lightRegion col" id="sector9">
-                                            9
-                                        </div>
-                                        <div class="lightRegion col" id="sector10">
-                                            10
-                                        </div>
-                                        <div class="lightRegion col" id="sector11">
-                                            11
-                                        </div>
-                                        <div class="lightRegion col" id="sector12">
-                                            12
-                                        </div>
-                                        <div class="lightRegion col" id="sector1">
-                                            1
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="container">
-                        <div class="row justify-content-center">
-                            <div class="col-md-12 col-lg-6">
-                                <div class="form-group">
-                                    <label for="dsGroup">Entertainment Group:</label>
-                                    <select id="dsGroup" name="dsGroup" class="form-control bg-light text-dark dsGroup">
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row justify-content-center" id="mapSel">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="bg-dark text-white hidden" id="nanoCard">
-            <div id="nanoPane">
-                <div class="card-body">
-                    <div class="row justify-content-center">
-                        <div id="nanoBtn">
-                            <div id="nanoImg" class="unlinked">
-                                <div class="linkImg"></div>
-                                <small id="nanoIp" class="linkIp"></small>
-                                <div id="nanoBar"></div>
-                                <small id="nanoHint" class="linkHint">Click here to link Nanoleaf</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row justify-content-center controlRow">
-                        <div class="checkbox mr-3 text-white">
-                        <label class="text-white">
-                          <input type="checkbox" id="nanoFlipHorizontal" data-orientation="h" class="nanoFlip"> Flip Horizontally
-                        </label>
-                      </div>
-                      <div class="checkbox text-white">
-                          <label class="text-white">
-                            <input type="checkbox" id="nanoFlipVertical" data-orientation="v" class="nanoFlip"> Flip Vertically
-                          </label>
-                        </div>
-                    </div>
-                    <div class="row previewRow" id="nanoContainer">
-                        <div id="canvasDiv">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="bg-dark text-white hidden" id="settingsCard">
-            <div id="settingsPane">
-                <div class="card-body container">
+<div class="">
+<div class="bg-dark text-white hidden" id="dsCard">
+    <div id="dsPane">
+        <div class="card-body">
+            <div class="container">
                 <div class="row justify-content-center">
-                    <h3>Capture Mode</h3>
-                </div>
-                    <div class="row justify-content-center">
-                        <div class="btn-toolbar" role="toolbar" aria-label="Toolbar with button groups">
-                            <div class="btn-group mr-2" role="group" aria-label="First group" id="modeBar">
-                                <button type="button" class="btn btn-secondary capModeBtn" data-target="dsCapPane" id="dsCapPaneBtn">
-                                    <img src="img/cap_mode_dreamscreen.png" alt="Dreamscreen Capture Mode"/>
-                                </button>
-                                <button type="button" class="btn btn-secondary capModeBtn" data-target="cameraCapPane" id="cameraCapPaneBtn">
-                                    <img src="img/cap_mode_camera.png" alt="Camera Capture Mode"/>
-                                </button>
-                                <button type="button" class="btn btn-secondary capModeBtn" data-target="hdmiCapPane" id="hdmiCapPaneBtn">
-                                    <img src="img/cap_mode_hdmi.png" alt="HDMI Capture Mode"/>
-                                </button>
-                                <button type="button" class="btn btn-secondary capModeBtn" data-target="screenCapPane" id="screenCapPaneBtn">
-                                    <img src="img/cap_mode_screen.png" alt="Screen Capture Mode"/>
-                                </button>
+                    <div class="form-group col-12 col-lg-10">
+                        <div class="row justify-content-center">
+                            <div id="iconWrap">
+                            </div>
+                            <div id="dsData" class="">
+                                <div id="dsName" onclick="listenForDoubleClick(this);" onblur="this.contentEditable=false;"></div><br/>
+                                <span id="dsIp"></span>
+                            </div>
+                            <div class="btn btn-primary settingsBtn" data-target="dsSettings">
                             </div>
                         </div>
                     </div>
-                    <div class="row justify-content-center">
-                        <div class="col-12 col-md-6">
-                        <div id="dsCapPane" class="capPane">
-                            <div class="form-group bmd-form-group">
-                                <label for="dsIpSelect" class="bmd-label-floating">Target DreamScreen: </label>
-                                <select id="dsIpSelect" class="form-control"></select>
+                </div>
+                <div class="row justify-content-center">
+                    <div class="btn-group-lg">
+                        <div class="btnWrap">
+                            <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="0" id="mode0">
+                                <img class="modeIcon" src="~/img/mode_off_icon.png" alt=""/>
                             </div>
+                            <span class="modeLabel">Off</span>
                         </div>
-                        <div id="hdmiCapPane" class="capPane">
-                            <div class="form-group bmd-form-group">
-                                <div>HDMI</div>
+                        <div class="btnWrap">
+                            <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="1" id="mode1">
+                                <img class="modeIcon" src="~/img/mode_video_icon.png" alt=""/>
                             </div>
+                            <span class="modeLabel">Video</span>
                         </div>
-                        <div id="cameraCapPane" class="capPane">
-                            <div class="form-group bmd-form-group">
-                                <label for="dsIpSelect" class="bmd-label-floating">Camera Type: </label>
-                                <select id="cameraType" class="form-control">
-                                    <option value="0">Raspberry Pi Camera</option>
-                                    <option value="1">USB Camera</option>
-                                </select>
+                        <div class="btnWrap">
+                            <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="2" id="mode2">
+                                <img class="modeIcon" src="~/img/mode_audio_icon.png" alt=""/>
                             </div>
+                            <span class="modeLabel">Music</span>
                         </div>
-                            <div id="screenCapPane" class="capPane">
-                                <div class="form-group bmd-form-group">
-                                    <label for="dsIpSelect" class="bmd-label-floating">Monitor selection: </label>
-                                    <select id="monitorSelection" class="form-control">
-                                        <option value="0">Stub monitor 1</option>
-                                        <option value="1">Stub monitor 2</option>
-                                    </select>
+                        <div class="btnWrap">
+                            <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="3" id="mode3">
+                                <img class="modeIcon" src="~/img/mode_ambient_icon.png" alt=""/>
+                            </div>
+                            <span class="modeLabel">Ambient</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row justify-content-center">
+                    <div class="col-8 col-md-6 col-xl-4">
+                        <input class="mapBrightness form-control devBrightness" type="range" id="dsBrightness" name="dsBrightness" min="0" max="100" value="100">
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row justify-content-center center settingExpand collapse" id="dsSettings">
+                    <div class="col-8 col-md-6 col-xl-4">
+                        Foo foo
+                    </div>
+                    <div class="col-8 col-md-6 col-xl-4">
+                        Foo foo
+                    </div>
+                    <div class="col-8 col-md-6 col-xl-4">
+                        Foo foo
+                    </div>
+                    <div class="col-8 col-md-6 col-xl-4">
+                        Foo foo
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="bg-dark text-white hidden" id="hueCard">
+    <div id="huePane">
+        <div class="card-body">
+            <div class="row justify-content-center">
+                <div id="linkBtn">
+                    <div id="linkImg" class="unlinked">
+                        <div class="linkImg"></div>
+                        <small id="hueIp" class="linkIp"></small>
+                        <div id="circleBar"></div>
+                        <small id="linkHint" class="linkHint">Click here to link bridge</small>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="previewWrap" id="previewWrap">
+                    <div class="light-preview" id="lightPreview">
+                        <div id="regions">
+                            <div class="row sectorRow">
+                                <div class="lightRegion col" id="sector7">
+                                    7
+                                </div>
+                                <div class="lightRegion col" id="sector6">
+                                    6
+                                </div>
+                                <div class="lightRegion col" id="sector5">
+                                    5
+                                </div>
+                                <div class="lightRegion col" id="sector4">
+                                    4
+                                </div>
+                                <div class="lightRegion col" id="sector3">
+                                    3
+                                </div>
+                            </div>
+                            <div class="row sectorRow">
+                                <div class="lightRegion col" id="sector8">
+                                    8
+                                </div>
+                                <div class="centerRegion col">
+                                </div>
+                                <div class="centerRegion col">
+                                </div>
+                                <div class="centerRegion col">
+                                </div>
+
+                                <div class="lightRegion col" id="sector2">
+                                    2
+                                </div>
+                            </div>
+                            <div class="row sectorRow">
+                                <div class="lightRegion col" id="sector9">
+                                    9
+                                </div>
+                                <div class="lightRegion col" id="sector10">
+                                    10
+                                </div>
+                                <div class="lightRegion col" id="sector11">
+                                    11
+                                </div>
+                                <div class="lightRegion col" id="sector12">
+                                    12
+                                </div>
+                                <div class="lightRegion col" id="sector1">
+                                    1
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="row justify-content-center">
-                        <h3>LED Count</h3>
-                    </div>
-                    <div class="row justify-content-center" id="ledPreview">
-                        <div class="previewRow col-12 col-md-6" id="ledContainer">
-                            <div id="ledDiv">
-                                <img src="img/start_tv.png" alt="led_size" id="ledImg"/>
-                            </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-md-12 col-lg-6">
+                        <div class="form-group">
+                            <label for="dsGroup">Entertainment Group:</label>
+                            <select id="dsGroup" name="dsGroup" class="form-control bg-light text-dark dsGroup">
+                            </select>
                         </div>
                     </div>
-                    <div class="row justify-content-center">
-                        <div class="form-group bmd-form-group col-12 col-md-6">
-                            <label for="vCount" class="bmd-label-floating">Top/Bottom Count:</label>
-                            <input type="text" class="form-control ledCount" id="vCount" data-type="v">
-                            <span class="bmd-help">Enter the number of LEDs on the top and bottom of the screen.</span>
-                        </div>
-                    </div>
-                    <div class="row justify-content-center">
-                        <div class="form-group bmd-form-group col-12 col-md-6">
-                            <label for="hCount" class="bmd-label-floating">Left/Right Count:</label>
-                            <input type="text" class="form-control ledcount" id="hCount" data-type="h">
-                            <span class="bmd-help">Enter the number of LEDs on the left and right sides of the screen.</span>
-                        </div>
+                </div>
+                <div class="row justify-content-center" id="mapSel">
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header" id="headingTwo">
+                    <h5 class="mb-0">
+                        <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                            Collapsible Group Item #2
+                        </button>
+                    </h5>
+                </div>
+                <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
+                    <div class="card-body">
+                        Anim pariatur cliche reprehenderit, enim eiusmod high life accusamus terry richardson ad squid. 3 wolf moon officia aute, non cupidatat skateboard dolor brunch. Food truck quinoa nesciunt laborum eiusmod. Brunch 3 wolf moon tempor, sunt aliqua put a bird on it squid single-origin coffee nulla assumenda shoreditch et. Nihil anim keffiyeh helvetica, craft beer labore wes anderson cred nesciunt sapiente ea proident. Ad vegan excepteur butcher vice lomo. Leggings occaecat craft beer farm-to-table, raw denim aesthetic synth nesciunt you probably haven't heard of them accusamus labore sustainable VHS.
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
+<div class="bg-dark text-white hidden" id="nanoCard">
+    <div id="nanoPane">
+        <div class="card-body">
+            <div class="row justify-content-center">
+                <div id="nanoBtn">
+                    <div id="nanoImg" class="unlinked">
+                        <div class="linkImg"></div>
+                        <small id="nanoIp" class="linkIp"></small>
+                        <div id="nanoBar"></div>
+                        <small id="nanoHint" class="linkHint">Click here to link Nanoleaf</small>
+                    </div>
+                </div>
+            </div>
+            <div class="row justify-content-center controlRow">
+                <div class="checkbox mr-3 text-white">
+                    <label class="text-white">
+                        <input type="checkbox" id="nanoFlipHorizontal" data-orientation="h" class="nanoFlip"> Flip Horizontally
+                    </label>
+                </div>
+                <div class="checkbox text-white">
+                    <label class="text-white">
+                        <input type="checkbox" id="nanoFlipVertical" data-orientation="v" class="nanoFlip"> Flip Vertically
+                    </label>
+                </div>
+            </div>
+            <div class="row previewRow" id="nanoContainer">
+                <div id="canvasDiv">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="bg-dark text-white hidden" id="settingsCard">
+    <div id="settingsPane">
+        <div class="card-body container">
+            <div class="row justify-content-center">
+                <h3>Capture Mode</h3>
+            </div>
+            <div class="row justify-content-center">
+                <div class="btn-toolbar" role="toolbar" aria-label="Toolbar with button groups">
+                    <div class="btn-group mr-2" role="group" aria-label="First group" id="modeBar">
+                        <button type="button" class="btn btn-secondary capModeBtn" data-target="dsCapPane" id="dsCapPaneBtn">
+                            <img src="img/cap_mode_dreamscreen.png" alt="Dreamscreen Capture Mode"/>
+                        </button>
+                        <button type="button" class="btn btn-secondary capModeBtn" data-target="cameraCapPane" id="cameraCapPaneBtn">
+                            <img src="img/cap_mode_camera.png" alt="Camera Capture Mode"/>
+                        </button>
+                        <button type="button" class="btn btn-secondary capModeBtn" data-target="hdmiCapPane" id="hdmiCapPaneBtn">
+                            <img src="img/cap_mode_hdmi.png" alt="HDMI Capture Mode"/>
+                        </button>
+                        <button type="button" class="btn btn-secondary capModeBtn" data-target="screenCapPane" id="screenCapPaneBtn">
+                            <img src="img/cap_mode_screen.png" alt="Screen Capture Mode"/>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="row justify-content-center">
+                <div class="col-12 col-md-6">
+                    <div id="dsCapPane" class="capPane">
+                        <div class="form-group bmd-form-group">
+                            <label for="dsIpSelect" class="bmd-label-floating">Target DreamScreen: </label>
+                            <select id="dsIpSelect" class="form-control"></select>
+                        </div>
+                    </div>
+                    <div id="hdmiCapPane" class="capPane">
+                        <div class="form-group bmd-form-group">
+                            <div>HDMI</div>
+                        </div>
+                    </div>
+                    <div id="cameraCapPane" class="capPane">
+                        <div class="form-group bmd-form-group">
+                            <label for="dsIpSelect" class="bmd-label-floating">Camera Type: </label>
+                            <select id="cameraType" class="form-control">
+                                <option value="0">Raspberry Pi Camera</option>
+                                <option value="1">USB Camera</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="screenCapPane" class="capPane">
+                        <div class="form-group bmd-form-group">
+                            <label for="dsIpSelect" class="bmd-label-floating">Monitor selection: </label>
+                            <select id="monitorSelection" class="form-control">
+                                <option value="0">Stub monitor 1</option>
+                                <option value="1">Stub monitor 2</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row justify-content-center">
+                <h3>LED Count</h3>
+            </div>
+            <div class="row justify-content-center" id="ledPreview">
+                <div class="previewRow col-12 col-md-6" id="ledContainer">
+                    <div id="ledDiv">
+                        <img src="img/start_tv.png" alt="led_size" id="ledImg"/>
+                    </div>
+                </div>
+            </div>
+            <div class="row justify-content-center">
+                <div class="form-group bmd-form-group col-12 col-md-6">
+                    <label for="vCount" class="bmd-label-floating">Top/Bottom Count:</label>
+                    <input type="text" class="form-control ledCount" id="vCount" data-type="v">
+                    <span class="bmd-help">Enter the number of LEDs on the top and bottom of the screen.</span>
+                </div>
+            </div>
+            <div class="row justify-content-center">
+                <div class="form-group bmd-form-group col-12 col-md-6">
+                    <label for="hCount" class="bmd-label-floating">Left/Right Count:</label>
+                    <input type="text" class="form-control ledcount" id="hCount" data-type="h">
+                    <span class="bmd-help">Enter the number of LEDs on the left and right sides of the screen.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
 </main>
 </div>

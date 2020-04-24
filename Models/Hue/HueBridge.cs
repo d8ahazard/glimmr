@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using HueDream.Models.Util;
+using Newtonsoft.Json;
 using Q42.HueApi;
 using Q42.HueApi.ColorConverters;
 using Q42.HueApi.ColorConverters.HSB;
@@ -152,43 +153,52 @@ namespace HueDream.Models.Hue {
         }
 
         public static List<BridgeData> GetBridgeData() {
-            var bridges = DreamData.GetItem<List<BridgeData>>("bridges");
+            var bridges = DataUtil.GetItem<List<BridgeData>>("bridges");
             var newBridges = FindBridges();
+            LogUtil.Write("Now we're enumerating old bridges.");
             var output = new List<BridgeData>();
-            if (bridges.Count > 0) {
-                foreach (var b in bridges) {
-                    if (b.Key != null && b.User != null) {
-                        var hb = new HueBridge(b);
-                        b.SetLights(hb.GetLights());
-                        b.SetGroups(hb.ListGroups().Result);
-                        hb.Dispose();
-                    }
+            if (bridges != null) {
+                if (bridges.Count > 0) {
+                    LogUtil.Write("We have existing data.");
+                    foreach (var b in bridges) {
+                        if (b.Key != null && b.User != null) {
+                            var hb = new HueBridge(b);
+                            b.SetLights(hb.GetLights());
+                            b.SetGroups(hb.ListGroups().Result);
+                            hb.Dispose();
+                        }
 
-                    output.Add(b);
+                        if (b.Id != null) output.Add(b);
+                    }
                 }
             }
 
             foreach (var bb in newBridges) {
                 var exists = false;
-                foreach (var b in bridges) {
-                    if (bb.Id == b.Id) exists = true;
+                if (bridges != null) {
+                    foreach (var b in bridges) {
+                        if (bb.BridgeId == b.Id) exists = true;
+                    }
                 }
 
                 if (exists) continue;
-                output.Add(bb);
+                output.Add(new BridgeData(bb.IpAddress, bb.BridgeId));
             }
 
             return output;
         }
 
-        public static BridgeData[] FindBridges(int time = 2) {
+        public static LocatedBridge[] FindBridges(int time = 2) {
             LogUtil.Write("Discovery Started.");
-            IBridgeLocator locator = new MdnsBridgeLocator();
-            var res = locator.LocateBridgesAsync(TimeSpan.FromSeconds(time)).Result;
-            var output = res.Select(b => new BridgeData(b.IpAddress, b.BridgeId)).ToList();
-            LogUtil.Write($"Discovery complete, found {output.Count} devices.");
+            // var hd = new HueDiscovery();
+            // var res = hd.LocateBridges().Result;
+            // var output = res.ToArray();
+            var bridgeTask	= HueBridgeDiscovery.FastDiscoveryWithNetworkScanFallbackAsync(TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(7));
+            var output = bridgeTask.Result.ToArray();
+            LogUtil.Write($"Discovery complete, found {output.Length} devices.");
             return output.ToArray();
         }
+
 
         private List<LightData> GetLights() {
             // If we have no IP or we're not authorized, return

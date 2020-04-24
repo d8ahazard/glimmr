@@ -13,7 +13,7 @@ using MMALSharp.Native;
 using MMALSharp.Ports;
 using MMALSharp.Ports.Outputs;
 
-namespace HueDream.Models.DreamGrab {
+namespace HueDream.Models.Capture {
     public sealed class PiVideoStream : IVideoStream, IDisposable {
         public Mat Frame;
         private readonly MMALCamera cam;

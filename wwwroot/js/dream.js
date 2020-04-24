@@ -7,6 +7,7 @@ let dsDevs = [];
 let captureMode = 0;
 let bridgeInt = 0;
 let linking = false;
+let resizeTimer;
 let nanoLinking = false;
 let hueAuth = false;
 let nanoAuth = false;
@@ -52,7 +53,7 @@ $(function () {
     });
 
     $('#dsName').on('input', function(){
-                
+        
     });
 
     $("#dsName").blur(function() {
@@ -64,8 +65,7 @@ $(function () {
             group: group,
             name: nVal
         };
-            postData("devname", out);
-            console.log("I AM CHANGED: " + nVal);    //Here you can write the code to run when the content change
+        postData("devname", out);            
             RefreshData();
     });
 
@@ -122,11 +122,17 @@ $(function () {
         updateLightProperty(myId, "targetSector", newVal);
     });
 
-    // Resize device panel on window resize
-    $(window).resize(function() {
-        if (selectedDevice != null) {
-            showDevicePanel(selectedDevice);
-        }
+    
+    
+
+    $(window).on('resize', function(e) {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function() {
+            if (selectedDevice != null) {
+                showDevicePanel(selectedDevice);
+            }
+        }, 250);
+
     });
 
     // On brightness slider change
@@ -180,14 +186,12 @@ $(function () {
     $(document).on('click', '.overrideBright', function() {
         let myId = $(this).attr('id').replace("overrideBrightness", "");
         let newVal = ($(this).val() === "on");
-        console.log("Change func for override!", myId, newVal);
         updateLightProperty(myId, "overrideBrightness", newVal);
     });
 
 
     // On Device Click
     $(document).on('click', '.devSelect', function (event) {
-        console.log("Device click select.");
         let id = $(this).data('device');
         id = id.replace("#group", "");
         console.log("Selecting " + id);
@@ -223,6 +227,21 @@ $(function () {
         selectedDevice.mode = mode;
         saveSelectedDevice();
         postData("mode", mode);        
+    });
+
+    
+    $('.settingsBtn').click(function () {
+        let target = $(this).data('target');
+        let tDiv = $("#" + target);
+        if (tDiv.hasClass("collapse")) {
+            tDiv.removeClass('collapse');
+            tDiv.addClass('show');
+            $(this).addClass('sActive');
+        } else {
+            tDiv.addClass('collapse');
+            tDiv.removeClass('show');
+            $(this).removeClass('sActive');
+        }        
     });
     
     // On group selection change
@@ -313,7 +332,6 @@ function mapLights() {
     let group = findGroup(hueGroup);
     let lights = hueLights;
     console.log("Mapping lights: ", lights);
-    console.log("Target group: ", group);
     // Get the main light group
     const lightGroup = document.getElementById("mapSel");
     // Clear it
@@ -329,12 +347,10 @@ function mapLights() {
         if (!a.hasOwnProperty('Value') || !b.hasOwnProperty('Value')) return false;
         return a.Value.localeCompare(b.Value);
     });
-    console.log("IDS: " + ids);
     // Loop through our list of all lights
     for (let l in lights) {
         if (lights.hasOwnProperty(l)) {
             let light = lights[l];
-            console.log("LIGHT: ", light);
             let id = light['id'];
             if ($.inArray(id, ids) !== -1) {
                 const name = light['name'];
@@ -449,7 +465,7 @@ function listGroups() {
     gs.html("");
     let i = 0;
     if (hueAuth) {
-        if (hueGroups !== null) {
+        if (hueGroups !== null && hueGroups !== undefined) {
             if (hueGroup === -1 && hueGroups.length > 0) {
                 hueGroup = hueGroups[0][id];
                 console.log("Setting default group to " + hueGroup);
@@ -561,7 +577,6 @@ function buildLists(data) {
     console.log("Groups: ", groups);
     $.each(groups, function () {
         let item = $(this)[0];
-        console.log("Group: ", item);
         if (item['screenX'] === undefined) {
             if (item['id'] !== 0) {
                 sorted.push(item);
@@ -615,14 +630,12 @@ function appendDeviceGroup(item) {
             devices.push(element);
             container.append('<li class="devSelect" data-device="' + element.id + '"><img class="devIcon" src="./img/' + element.tag.toLowerCase() + '_icon.png"><span class="devName">' + element.name + '<span></li>');
         });
-        console.log("PUSHING GROUP: ", item);        
         item['tag'] = "group";
         item['groupNumber'] = item['id'];
         item['groupName'] = item['name'];
         item.ipAddress = "255.255.255.0";
         devices.push(item);
         list.append(container);
-        console.log("Appending: ", list);
         devGroup.append(list);
     }
 }
@@ -665,7 +678,6 @@ function setCaptureMode(target) {
     }
     vLedCount = vCount;
     hLedCount = hCount;
-    console.log("Hcount, vcount", hCount, vCount);
     let hc = $('#hCount');
     let vc = $('#vCount');
     hc.val(hCount);
@@ -740,9 +752,9 @@ function showDevicePanel(data) {
     let nanoCard = $('#nanoCard');
     let hueCard = $('#hueCard');
     let dsCard = $('#dsCard');
-    hidePanels();
+    if (!resizeTimer) hidePanels();
     setTimeout(function(){
-        $('#navTitle').html(data.name);
+        $('#navTitle').html(data.tag);
         selectedDevice = data;
         switch (data.tag) {
             case "SideKick":
@@ -752,17 +764,19 @@ function showDevicePanel(data) {
             case "DreamScreenSolo":
             case "group":
                 loadDsData(data);            
-                dsCard.slideDown();
+                if (!resizeTimer) dsCard.slideDown();
                 break;
             case "HueBridge":
                 loadBridgeData(data);
-                hueCard.slideDown();
+                if (!resizeTimer) hueCard.slideDown();
                 break;
             case "NanoLeaf":
                 loadNanoData(data);
-                nanoCard.slideDown();
+                if (!resizeTimer) nanoCard.slideDown();
                 break;
         }
+
+        resizeTimer = null;
     },200);
 }
 
@@ -818,12 +832,14 @@ function loadBridgeData(data) {
     hueIp = b["ipAddress"];
     hIp.html(b["ipAddress"]);        
     hueGroup = b["selectedGroup"];
-    hueGroups = b["groups"];
-    if ((hueGroup === -1 && hueGroups.length > 0) || hueGroup === null || hueGroup === undefined) {
-        hueGroup = hueGroups[0]["id"];
-        bridges[bridgeInt].selectedGroup = hueGroup;
-        console.log("Updated group to " + hueGroup);
-        postData("bridges", bridges);
+    if (b.hasOwnProperty("groups")) {
+        hueGroups = b["groups"];
+        if ((hueGroup === -1 && hueGroups.length > 0) || hueGroup === null || hueGroup === undefined) {
+            hueGroup = hueGroups[0]["id"];
+            bridges[bridgeInt].selectedGroup = hueGroup;
+            console.log("Updated group to " + hueGroup);
+            postData("bridges", bridges);
+        }
     }
     hueLights = b["lights"];
     hueAuth = (b["user"] !== null || b["key"] !== null);            
@@ -842,7 +858,6 @@ function loadBridgeData(data) {
         }
         lBtn.css('cursor', 'pointer');
     }
-    console.log("Loaded", bridge, hueGroup, hueGroups, hueLights);
     listGroups();
     mapLights();
 }
@@ -878,8 +893,7 @@ function loadNanoData(data) {
             lHint.html("Click above to link.");
         }
         lBtn.css('cursor', 'pointer');
-    }
-    console.log("Loaded Nano data? ", data);    
+    }    
 }
 
 
@@ -887,20 +901,17 @@ function drawNanoShapes(panel) {
     // Wipe it out
     $('#canvasDiv').remove();
     $('#nanoContainer').append('<div id="canvasDiv"></div>');
+
+    let snaps = [];
+    for (let q = 0; q <= 360; q+=10) {
+        snaps.push(q);
+    }
+
     // Get window width
     let width = window.innerWidth;
-    let height = window.innerHeight;
-
-    // Create our stage
-    let stage = new Konva.Stage({
-        container: 'canvasDiv',
-        width: width,
-        height: height
-    });
-
-    // Shape layer
-    let cLayer = new Konva.Layer();
-    stage.add(cLayer);
+    let height = width * .5625;
+    let centerX = width / 2;
+    let centerY = height / 2;
 
     // Get layout data from panel
     let pX = panel['x'];
@@ -913,8 +924,8 @@ function drawNanoShapes(panel) {
     let sideLength = layout['sideLength'];
 
     // Set our TV image width
-    let tvWidth = (hLedCount / 4) * sideLength;
-    let tvHeight = (vLedCount / 4) * sideLength;
+    let tvWidth = hLedCount * 25;
+    let tvHeight = vLedCount * 25;
 
     // If window is less than 500px, divide our scale by half
     let halfScale = false;
@@ -930,15 +941,21 @@ function drawNanoShapes(panel) {
         pScale /= 2;
     }
     
-    console.log("TvWidth, height", tvWidth, tvHeight);
-
     // Determine TV x/y position
     let tvX = (width - tvWidth) / 2;
     let tvY = (height - tvHeight) / 2;
-    let centerX = width / 2;
-    let centerY = height / 2;
     
-   
+    // Create our stage
+    let stage = new Konva.Stage({
+        container: 'canvasDiv',
+        width: width,
+        height: height
+    });
+
+    // Shape layer
+    let cLayer = new Konva.Layer();
+    stage.add(cLayer);
+
     // Group for the shapes
     let shapeGroup = new Konva.Group({       
         rotation: pRot,
@@ -948,12 +965,8 @@ function drawNanoShapes(panel) {
     });
 
     cLayer.add(shapeGroup);
-    let snaps = [];
-    for (let q = 0; q <= 360; q+=10) {
-        snaps.push(q);
-    }
+    
     // Transform for scaling
-
     let tr2 = new Konva.Transformer({
         keepRatio: true,
         enabledAnchors: [],
@@ -967,7 +980,6 @@ function drawNanoShapes(panel) {
 
     cLayer.draw();
 
-
     // Drag listener
     shapeGroup.on('dragend', function(e) {
         doTheThing();
@@ -980,19 +992,26 @@ function drawNanoShapes(panel) {
     
     // Transform values and post them
     function doTheThing() {
-        // Group x and y position
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        let centerX = width / 2;
+        let centerY = height / 2;
+
+        // Get the top-left x,y coordinates
         let gX = shapeGroup.x();
         let gY = shapeGroup.y();
+        // Get the overall width and height of the shape
         let sW = tr2.width();
         let sH = tr2.height();
-        console.log("GX, GY:", gX, gY);
-        console.log("HW, HH:", sW, sH);
-        console.log("CX, CY:", centerX, centerY);
+        // Add half of the width and height to the shape for center
         gX += (sW / 2);
         gY += (sH / 2);
+        // Subtract the center of the screen to determine the x/y pos
         gX = gX - centerX;
         gY = gY - centerY;
+        // Flip our y-coord to be negative?
         gY *= -1;
+        // Apply scale to the coordinate
         if (halfScale) {
             gX *= 4;
             gY *= 4;
@@ -1010,31 +1029,29 @@ function drawNanoShapes(panel) {
     
     
     let positions = layout['positionData'];
-    let minX = 0;
-    let minY = 0;
+    let minX = 1000;
+    let minY = 1000;
+    let maxX = 0;
+    let maxY = 0;
     
     // Calculate the min/max range for each tile
     for (let panel in positions) {
         let data = positions[panel];
         if (data.x < minX) minX = data.x;
         if ((data.y * -1) < minY) minY = (data.y * -1);
+        if (data.x > maxX) maxX = data.x;
+        if ((data.y * -1) > maxY) maxY = (data.y * -1);
     }
-    
-    let triHeight = sideLength * (Math.sqrt(3)/2);
-    minX -= triHeight;
-    minY -= triHeight;
-    
     
     for (let panel in positions) {
         let data = positions[panel];
-        console.log("Draw panel: ", data);
         let shape = data['shapeType'];
         let x = data.x;
         let y = data.y;
         if (mirrorX) x *= -1;
         if (!mirrorY) y *= -1;
-        x += Math.abs(minX);
-        y += Math.abs(minY);
+        //x += Math.abs(minX / 2);
+        //y += Math.abs(minY / 2);
         
         let sText = new Konva.Text({
             x: x,
@@ -1108,11 +1125,12 @@ function drawNanoShapes(panel) {
     
     // add the layer to the stage
     tr2.forceUpdate();
+    
+    // Get the width of the group as drawn in the UI
     let nW = tr2.width();
     let nH = tr2.height();
     
-    console.log("New width, height", nW, nH);
-    console.log("CX, CY: ", centerX, centerY);
+    // Apply the appropriate scale to x and y of panel
     if (halfScale) {
         pY /=4;
         pX /=4;
@@ -1120,20 +1138,21 @@ function drawNanoShapes(panel) {
         pY /= 2;
         pX /= 2;
     }
-    
+    // Invert y
     pY *= -1;
+    
+    // Add the center values of the screen
     pY += centerY;
     pX += centerX;
-    pY -= (nH / 2);
+    // Subtract half of the width
+    pY += (nH);
     pX -= (nW / 2);
-    console.log("Adjusted XY", pX, pY);
     shapeGroup.x(pX);
     shapeGroup.y(pY);
     cLayer.draw();
     let iLayer = new Konva.Layer();
     stage.add(iLayer);
     
-    console.log("TV width and height are " + tvWidth + " and " + tvHeight);
     // Add the tv image
     Konva.Image.fromURL('../img/sectoring_tv2.png', function(tvImage) {
         tvImage.setAttrs({
@@ -1143,7 +1162,7 @@ function drawNanoShapes(panel) {
             height: tvHeight
         });
         iLayer.add(tvImage);
-        iLayer.zIndex(1);
+        iLayer.zIndex(0);
         iLayer.batchDraw();
     });
     cLayer.zIndex(0);
@@ -1151,15 +1170,12 @@ function drawNanoShapes(panel) {
 
 // Get a group by group ID
 function findGroup(id) {
-    console.log("Looking for group with ID " + id);
     let res = false;
+    if (hueGroups === null || hueGroups === undefined) return res;
     if (id === -1 || id === "-1" || id === null) {
-        console.log("We don't have a group", hueGroups[0]);        
         return hueGroups[0];    
     }
     $.each(hueGroups, function () {
-        console.log("ID, this ID", id, $(this)[0].id);
-
         if (id === $(this)[0].id) {
             res = $(this)[0];
         }        
@@ -1169,10 +1185,8 @@ function findGroup(id) {
 
 // Runs a loop to detect if our hue device is linked
 function linkHue() {
-    console.log("Authorized: ", hueAuth);
     if (!hueAuth && !linking) {
         linking = true;
-        console.log("Trying to authorize with hue.");
         $('#circleBar').show();
         const bar = new ProgressBar.Circle(circleBar, {
             strokeWidth: 15,
@@ -1230,9 +1244,9 @@ function linkNano() {
         let x = 0;
         nanoAuth = false;
         const intervalID = window.setInterval(function () {
-            checkNanoAuth();
+            if (!nanoAuth) checkNanoAuth();
             bar.animate((x / 30));
-            if (x++ === 30 || hueAuth) {
+            if (x++ === 30 || nanoAuth) {
                 window.clearInterval(intervalID);
                 $('#nanoBar').hide();
                 nanoLinking = false;

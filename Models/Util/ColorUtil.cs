@@ -12,7 +12,7 @@ namespace HueDream.Models.Util {
             value = max / 255d;
         }
 
-        public static Color ColorFromHSV(double hue, double saturation, double value) {
+        public static Color ColorFromHsv(double hue, double saturation, double value) {
             var hi = Convert.ToInt32(Math.Floor(hue / 60)) % 6;
             var f = hue / 60 - Math.Floor(hue / 60);
 
@@ -45,7 +45,7 @@ namespace HueDream.Models.Util {
             } else {
                 s = 1.0;
             }
-            return ColorFromHSV(h, s, v);
+            return ColorFromHsv(h, s, v);
         }
 
         public static Color BoostBrightness(Color input, float boost) {
@@ -55,7 +55,7 @@ namespace HueDream.Models.Util {
             } else {
                 v = 1.0;
             }
-            return ColorFromHSV(h, s, v);
+            return ColorFromHsv(h, s, v);
         }
 
         public static Color Blend(this Color color, Color backColor, double amount) {

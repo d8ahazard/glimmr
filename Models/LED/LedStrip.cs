@@ -1,10 +1,10 @@
-﻿using HueDream.Models.Util;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using HueDream.Models.Util;
 using ws281x.Net;
 
-namespace HueDream.Models.DreamGrab {
+namespace HueDream.Models.LED {
     public sealed class LedStrip : IDisposable {
         public int Brightness { get; set; }
         private int StartupAnimation { get; }

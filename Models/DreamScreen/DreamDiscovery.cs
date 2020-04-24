@@ -20,13 +20,10 @@ namespace HueDream.Models.DreamScreen {
             // Send our notification to actually discover
             var msg = new byte[] {0xFC, 0x05, 0xFF, 0x30, 0x01, 0x0A, 0x2A};
             DreamSender.SendUdpBroadcast(msg);
-            var s = new Stopwatch();
-            s.Start();
-            var t = TimeSpan.FromSeconds(5);
-            while (s.Elapsed < t) {}
-            s.Stop();
+            Thread.Sleep(5000);
             DreamSender.SendUdpWrite(0x01, 0x0E,new byte[]{0x01},0x30,0x00, selfEp);
-            var devices = DreamData.GetDreamDevices();
+            Thread.Sleep(500);
+            var devices = DataUtil.GetDreamDevices();
             LogUtil.Write($"Discovery complete, found {devices.Count} devices.");
             return devices;
         }

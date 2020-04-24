@@ -7,16 +7,18 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using HueDream.Models.DreamGrab;
+using HueDream.Models.Capture;
 using HueDream.Models.DreamScreen.Devices;
 using HueDream.Models.Hue;
+using HueDream.Models.LED;
 using HueDream.Models.Nanoleaf;
 using HueDream.Models.Util;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.Hosting;
 
 namespace HueDream.Models.DreamScreen {
     public class DreamClient : BackgroundService {
-        private int CaptureMode { get; }
+        private int CaptureMode { get; set; }
         private readonly DreamScene dreamScene;
         private readonly byte group;
         private readonly Color ambientColor;
@@ -28,6 +30,7 @@ namespace HueDream.Models.DreamScreen {
         private bool discovering;
         private int brightness;
         private StreamCapture grabber;
+        private AudioStream aStream;
         private BaseDevice dev;
 
         // Our functional values
@@ -64,8 +67,9 @@ namespace HueDream.Models.DreamScreen {
         private LedStrip strip;
         
         public DreamClient() {
-            var dd = DreamData.GetStore();
-            dev = DreamData.GetDeviceData();
+            aStream = new AudioStream();
+            var dd = DataUtil.GetStore();
+            dev = DataUtil.GetDeviceData();
             dreamScene = new DreamScene();
             devices = new List<BaseDevice>();
             devMode = dev.Mode;
@@ -96,7 +100,7 @@ namespace HueDream.Models.DreamScreen {
 
             if (CaptureMode != 0) {
                 grabber = new StreamCapture(camTokenSource.Token);
-                var ledData = DreamData.GetItem<LedData>("ledData") ?? new LedData(true);
+                var ledData = DataUtil.GetItem<LedData>("ledData") ?? new LedData(true);
                 try {
                     strip = new LedStrip(ledData);
                 } catch (TypeInitializationException e) {
@@ -115,7 +119,7 @@ namespace HueDream.Models.DreamScreen {
 
         private void UpdateMode(int newMode) {
             if (prevMode == newMode) return;
-            dev = DreamData.GetDeviceData();
+            dev = DataUtil.GetDeviceData();
             dev.Mode = newMode;
             devMode = newMode;
             LogUtil.Write($@"DreamScreen: Updating mode from {prevMode} to {newMode}.");
@@ -184,13 +188,14 @@ namespace HueDream.Models.DreamScreen {
 
 
         private static Color ColorFromString(string inputString) {
+            
             return ColorTranslator.FromHtml("#" + inputString);
         }
 
         private void StartStream() {
             if (!streamStarted) {
                 LogUtil.Write("Starting stream.");
-                var bridgeArray = DreamData.GetItem<List<BridgeData>>("bridges");
+                var bridgeArray = DataUtil.GetItem<List<BridgeData>>("bridges");
                 bridges = new List<HueBridge>();
                 sendTokenSource = new CancellationTokenSource();
                 foreach (BridgeData bridge in bridgeArray) {
@@ -208,7 +213,7 @@ namespace HueDream.Models.DreamScreen {
                     }
                 }
 
-                var leaves = DreamData.GetItem<List<NanoData>>("leaves");
+                var leaves = DataUtil.GetItem<List<NanoData>>("leaves");
 
                 panels = new List<Panel>();
                 LogUtil.Write("Loading nano panels??");
@@ -347,14 +352,27 @@ namespace HueDream.Models.DreamScreen {
 
         public Task StartAudioCapture(CancellationToken cancellation) {
             if (cancellation != CancellationToken.None) {
-                LogUtil.Write("Foo-fiddy foo foo foo.");
+                LogUtil.Write("Starting audio capture service.");
+                aStream.StartStream(cancellation);
+                return Task.Run(() => {
+                    while (!cancellation.IsCancellationRequested) {
+                        var cols = aStream.GetColors();
+                        SendColors(cols, cols, 0D);
+                    }
+                });
             }
+
+            LogUtil.Write("Cancellation token is null??");
             return Task.CompletedTask;
         }
 
         private void StartAudioCaptureTask() {
-            if (CaptureMode == 0) return;
+            // if (CaptureMode == 0) {
+            //     LogUtil.Write("cap mode is 0");
+            //     return;
+            // }
             CancelSource(captureTokenSource);
+            LogUtil.Write("Starting ac");
             captureTokenSource = new CancellationTokenSource();
             Task.Run(() => StartAudioCapture(captureTokenSource.Token));
         }
@@ -384,7 +402,7 @@ namespace HueDream.Models.DreamScreen {
                 flag = msg.Flags;
                 var groupMatch = msg.Group == dev.GroupNumber || msg.Group == 255;
                 if ((flag == "11" || flag == "21") && groupMatch) {
-                    dev = DreamData.GetDeviceData();
+                    dev = DataUtil.GetDeviceData();
                     writeState = true;
                 }
             } else {
@@ -404,7 +422,7 @@ namespace HueDream.Models.DreamScreen {
                 case "DISCOVERY_STOP":
                     LogUtil.Write("Discovery stop.");
                     discovering = false;
-                    DreamData.SetItem<List<BaseDevice>>("devices", devices);
+                    DataUtil.SetItem<List<BaseDevice>>("devices", devices);
                     break;
                 case "COLOR_DATA":
                     if (CaptureMode == 0 && (devMode == 1 || devMode == 2)) {
@@ -425,11 +443,11 @@ namespace HueDream.Models.DreamScreen {
                         SendDeviceStatus(replyPoint);
                     } else if (flag == "60") {
                         if (msgDevice != null) {
-                            string dsIpCheck = DreamData.GetItem("dsIp");
+                            string dsIpCheck = DataUtil.GetItem("dsIp");
                             if (dsIpCheck == "0.0.0.0" &&
                                 msgDevice.Tag.Contains("DreamScreen", StringComparison.CurrentCulture)) {
                                 LogUtil.Write(@"Setting a target DS IP.");
-                                DreamData.SetItem("dsIp", from);
+                                DataUtil.SetItem("dsIp", from);
                                 targetEndpoint = replyPoint;
                             }
 
@@ -522,11 +540,11 @@ namespace HueDream.Models.DreamScreen {
                     break;
             }
 
-            if (writeState) DreamData.SetItem<BaseDevice>("myDevice", dev);
+            if (writeState) DataUtil.SetItem<BaseDevice>("myDevice", dev);
         }
 
         private void SendDeviceStatus(IPEndPoint src) {
-            var dss = DreamData.GetDeviceData();
+            var dss = DataUtil.GetDeviceData();
             var payload = dss.EncodeState();
             DreamSender.SendUdpWrite(0x01, 0x0A, payload, 0x60, group, src);
         }

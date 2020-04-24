@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using Emgu.CV;
+using HueDream.Models.LED;
 using HueDream.Models.Util;
 
-namespace HueDream.Models.DreamGrab {
+namespace HueDream.Models.Capture {
     public class Splitter {
         private Mat input;
         private readonly int vCount;

@@ -8,4 +8,10 @@ by editing this MSBuild file. In order to learn more about this please visit htt
     <TimeStampOfAssociatedLegacyPublishXmlFile />
     <_PublishTargetUrl>D:\dev\huedream\bin\publish\huedream-windows\</_PublishTargetUrl>
   </PropertyGroup>
+  <ItemGroup>
+    <_CustomFiles Include="$(MSBuildProjectDirectory)/build/x64/*" />
+    <DotNetPublishFiles Include="@(_CustomFiles)">
+      <DestinationRelativePath>%(RecursiveDir)%(Filename)%(Extension)</DestinationRelativePath>
+    </DotNetPublishFiles>
+  </ItemGroup>
 </Project>

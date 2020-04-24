@@ -2,14 +2,14 @@
 for details on configuring this project to bundle and minify static web assets. */
 
 a.navbar-brand {
-  white-space: normal;
-  text-align: center;
-  word-break: break-all;
+    white-space: normal;
+    text-align: center;
+    word-break: break-all;
 }
 
 /* Provide sufficient contrast against white background */
 a {
-  color: #0366d6;
+    color: #0366d6;
 }
 
 .hidden {
@@ -17,60 +17,63 @@ a {
 }
 
 .btn-primary {
-  color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
+    color: #fff;
+    background-color: #1b6ec2;
+    border-color: #1861ac;
 }
 
 .nav-pills .nav-link.active, .nav-pills .show > .nav-link {
-  color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
+    color: #fff;
+    background-color: #1b6ec2;
+    border-color: #1861ac;
 }
 
 /* Sticky footer styles
 -------------------------------------------------- */
 html {
-  font-size: 14px;
+    font-size: 14px;
 }
+
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+    html {
+        font-size: 16px;
+    }
 }
 
 .border-top {
-  border-top: 1px solid #e5e5e5;
+    border-top: 1px solid #e5e5e5;
 }
+
 .border-bottom {
-  border-bottom: 1px solid #e5e5e5;
+    border-bottom: 1px solid #e5e5e5;
 }
 
 .box-shadow {
-  box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
+    box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
 }
 
 button.accept-policy {
-  font-size: 1rem;
-  line-height: inherit;
+    font-size: 1rem;
+    line-height: inherit;
 }
 
 /* Sticky footer styles
 -------------------------------------------------- */
 html {
-  position: relative;
-  min-height: 100%;
+    position: relative;
+    min-height: 100%;
 }
 
 body {
-  height: 100%;
+    height: 100%;
 }
+
 .footer {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  white-space: nowrap;
-  line-height: 60px; /* Vertically center the text there */
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    white-space: nowrap;
+    line-height: 60px; /* Vertically center the text there */
 }
 
 .toggle-group, .toggle-handle {
@@ -83,7 +86,7 @@ body {
 }
 
 #ledPreview {
-    
+
 }
 
 #ledImg {
@@ -190,7 +193,7 @@ select {
 }
 
 .bmd-label-static {
-    color: white!important;
+    color: white !important;
 }
 
 #dsData {
@@ -206,7 +209,7 @@ select {
 
 #dsIp {
     font-size: 14px;
-    top: -10px;
+    top: -35px;
     position: relative;
 }
 
@@ -235,26 +238,27 @@ select {
 input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     position: relative;
-    top: 0px;
+    top: 0;
     z-index: 1;
     width: 11px;
     height: 11px;
     cursor: pointer;
-    -webkit-box-shadow: 0px 6px 5px 0px rgba(0, 0, 0, 0.6);
-    -moz-box-shadow: 0px 6px 5px 0px rgba(0, 0, 0, 0.6);
-    box-shadow: 0px 6px 5px 0px rgba(0, 0, 0, 0.6);
+    -webkit-box-shadow: 0 6px 5px 0 rgba(0, 0, 0, 0.6);
+    -moz-box-shadow: 0 6px 5px 0 rgba(0, 0, 0, 0.6);
+    box-shadow: 0 6px 5px 0 rgba(0, 0, 0, 0.6);
     -webkit-border-radius: 20px;
     -moz-border-radius: 20px;
     border-radius: 20px;
     background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #ebf1f6), color-stop(50%, #abd3ee), color-stop(51%, #89c3eb), color-stop(100%, #d5ebfb));
 }
+
 input[type="range"]:hover ~ #rangevalue,
 input[type="range"]:active ~ #rangevalue {
     -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=100)";
     filter: alpha(opacity=100);
     opacity: 1;
     top: -75px;
-} 
+}
 
 #iconWrap {
     width: 80px;
@@ -343,11 +347,11 @@ input[type="range"]:active ~ #rangevalue {
     background-position: center;
     position: absolute;
     height: 30px;
-    width: 30px;   
+    width: 30px;
 }
 
 .linked .linkImg {
-    background-image: url("../img/check_overlay.png");    
+    background-image: url("../img/check_overlay.png");
 }
 
 .unlinked .linkImg {
@@ -377,6 +381,27 @@ input[type="range"]:active ~ #rangevalue {
     color: white;
 }
 
+.settingExpand.collapse, .settingExpand.show {
+    max-height: 0;
+    overflow-y: hidden;
+    -webkit-transition: max-height 0.5s ease-in-out;
+    -moz-transition: max-height 0.5s ease-in-out;
+    -o-transition: max-height 0.5s ease-in-out;
+    transition: max-height 0.5s ease-in-out;
+}
+
+.settingExpand.show {
+    max-height: 200px;
+}
+
+.settingBtn.active {
+    background-color: white;
+}
+
+.center {
+    text-align: center;
+}
+
 #circleBar {
     margin: auto;
     width: 44px;
@@ -400,12 +425,23 @@ input[type="range"]:active ~ #rangevalue {
     margin: 0;
 }
 
+.btn.settingsBtn {
+    width: 50px;
+    height: 50px;
+    padding: 0;
+    margin: 0;
+    position: fixed;
+    top: 100px;
+    right: 15px;
+    background-image: url("../img/settings_icon.png");
+    background-size: contain;
+}
 
-.btn.modeBtn.active {
+.btn.modeBtn.active, .btn.settingsBtn.active {
     background-color: #0006c7 !important;
 }
 
-.btn.modeBtn:hover {
+.btn.modeBtn:hover, .btn.settingsBtn:hover {
     background-color: #7a7fff !important;
 }
 
@@ -448,7 +484,7 @@ input[type="range"]:active ~ #rangevalue {
 
 
 .devName {
-    font-size: 16px;   
+    font-size: 16px;
     padding-left: 10px;
 }
 
@@ -485,7 +521,7 @@ input[type="range"]:active ~ #rangevalue {
     height: 100%;
 }
 
-.settings-group { 
+.settings-group {
     position: absolute;
     bottom: 0;
     width: 100%;
@@ -493,7 +529,7 @@ input[type="range"]:active ~ #rangevalue {
 }
 
 .navHeader, .groupHeader, .devSelect {
-    cursor:pointer;
+    cursor: pointer;
 }
 
 .bmd-layout-backdrop.in {

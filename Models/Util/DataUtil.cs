@@ -3,19 +3,19 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using HueDream.Models.DreamGrab;
 using HueDream.Models.DreamScreen;
 using HueDream.Models.DreamScreen.Devices;
 using HueDream.Models.Hue;
+using HueDream.Models.LED;
 using HueDream.Models.Nanoleaf;
-using HueDream.Models.Util;
 using JsonFlatFileDataStore;
+using ManagedBass;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace HueDream.Models {
+namespace HueDream.Models.Util {
     [Serializable]
-    public static class DreamData {
+    public static class DataUtil {
         public static DataStore GetStore() {
             var path = GetConfigPath("store.json");
             var store = new DataStore(path);
@@ -27,6 +27,7 @@ namespace HueDream.Models {
         ///     Loads our data store from a dynamic path, and tries to get the item
         /// </summary>
         /// <param name="key"></param>
+        /// <param name="def"></param>
         /// <returns>dynamic object corresponding to key, or default if not found</returns>
         public static dynamic GetItem(string key) {
             try {
@@ -34,12 +35,12 @@ namespace HueDream.Models {
                 var output = dStore.GetItem(key);
                 dStore.Dispose();
                 return output;
+            } catch (KeyNotFoundException) {
+                return null;
             }
-            catch (KeyNotFoundException) { }
-            return null;
         }
-        
-        
+
+
         public static dynamic GetItem<T>(string key) {
             try {
                 using var dStore = GetStore();
@@ -47,14 +48,13 @@ namespace HueDream.Models {
                 dStore.Dispose();
                 return output;
             } catch (KeyNotFoundException e) {
-                Console.WriteLine($@"Value not found: {e.Message}");
+                LogUtil.Write($@"Value not found: {e.Message}");
                 return null;
             }
         }
 
-        
+
         private static DataStore CheckDefaults(DataStore store) {
-                
             var v = store.GetItem("defaultsSet");
             if (v == null) SetDefaults(store);
             return store;
@@ -82,8 +82,10 @@ namespace HueDream.Models {
             store.InsertItem("minBrightness", 0);
             store.InsertItem("saturationBoost", 0);
             store.InsertItem("dsIp", "0.0.0.0");
-            ScanDevices(store);
             store.InsertItem("defaultsSet", true);
+            store.InsertItem("audioDevices", new List<DeviceInfo>());
+            store.InsertItem("audioThreshold", .01f);
+            ScanDevices(store);
             return store;
         }
 
@@ -102,9 +104,8 @@ namespace HueDream.Models {
             if (!File.Exists(jsonPath)) return null;
             try {
                 return File.ReadAllText(jsonPath);
-            }
-            catch (IOException e) {
-                Console.WriteLine($@"An IO Exception occurred: {e.Message}.");
+            } catch (IOException e) {
+                LogUtil.Write($@"An IO Exception occurred: {e.Message}.");
             }
 
             return null;
@@ -121,7 +122,10 @@ namespace HueDream.Models {
             } else {
                 dev = dd.GetItem<Connect>("myDevice");
             }
-            
+
+            if (string.IsNullOrEmpty(dev.AmbientColor)) {
+                dev.AmbientColor = "FFFFFF";
+            }
             return dev;
         }
 
@@ -129,6 +133,7 @@ namespace HueDream.Models {
             using var dd = GetStore();
             var output = new List<BaseDevice>();
             var dl = GetItem<List<JToken>>("devices");
+            if (dl == null) return output;
             foreach (JObject dev in dl) {
                 foreach (var pair in dev) {
                     var key = pair.Key;
@@ -155,7 +160,6 @@ namespace HueDream.Models {
                     }
                 }
             }
-
             return output;
         }
 
@@ -174,7 +178,8 @@ namespace HueDream.Models {
                 LogUtil.Write($@"DX, DY: {dX} {dY}");
                 return (dX, dY);
             }
-            return (0,0);
+
+            return (0, 0);
         }
 
         /// <summary>
@@ -190,7 +195,7 @@ namespace HueDream.Models {
             // If the config file doesn't exist locally, we're done
             if (!File.Exists(filePath)) return newPath;
             // Otherwise, move the config to etc
-            Console.WriteLine($@"Moving file from {filePath} to {newPath}");
+            LogUtil.Write($@"Moving file from {filePath} to {newPath}");
             File.Copy(filePath, newPath);
             File.Delete(filePath);
             return newPath;
@@ -203,32 +208,33 @@ namespace HueDream.Models {
                     return ip.ToString();
             throw new Exception("No network adapters found in " + JsonConvert.SerializeObject(host));
         }
-        
+
         public static void RefreshDevices() {
             // Get dream devices
-            var dreamDevices = DreamDiscovery.FindDevices();
             var leaves = NanoDiscovery.Refresh();
             // Find bridges
             var bridges = HueBridge.GetBridgeData();
-                SetItem("devices", dreamDevices);
-                SetItem<List<BridgeData>>("bridges", bridges);
-                SetItem("leaves", leaves);
-            
+            SetItem<List<BridgeData>>("bridges", bridges);
+            SetItem<List<NanoData>>("leaves", leaves);
+            var dreamDevices = DreamDiscovery.FindDevices();
+
+            SetItem("devices", dreamDevices);
         }
-        
+
         public static void ScanDevices(DataStore store) {
             // Get dream devices
-            var dreamDevices = DreamDiscovery.FindDevices();
             var leaves = NanoDiscovery.Discover();
             // Find bridges
             var bridges = HueBridge.FindBridges();
-            store.InsertItem("devices", dreamDevices);
             store.InsertItem("bridges", bridges);
             store.InsertItem("leaves", leaves);
+            var dreamDevices = DreamDiscovery.FindDevices();
+
+            store.InsertItem("devices", dreamDevices);
         }
 
         public static void RefreshPublicIp() {
-            var myIp = Dns.GetHostEntry(Dns.GetHostName()).AddressList[0].ToString();  
+            var myIp = Dns.GetHostEntry(Dns.GetHostName()).AddressList[0].ToString();
             LogUtil.Write("My IP Address is :" + myIp);
         }
     }

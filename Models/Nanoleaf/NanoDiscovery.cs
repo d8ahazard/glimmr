@@ -83,7 +83,7 @@ namespace HueDream.Models.Nanoleaf {
         }
 
         public static List<NanoData> Refresh(int timeout = 5) {
-            var existingLeaves = DreamData.GetItem<List<NanoData>>("leaves");
+            var existingLeaves = DataUtil.GetItem<List<NanoData>>("leaves");
             var leaves = Discover(timeout);
             var nanoLeaves = new List<NanoData>();
 
@@ -129,7 +129,7 @@ namespace HueDream.Models.Nanoleaf {
                     }
                 }
             }
-            DreamData.SetItem<List<NanoData>>("leaves", nanoLeaves);
+            DataUtil.SetItem<List<NanoData>>("leaves", nanoLeaves);
             return nanoLeaves;
         }
        

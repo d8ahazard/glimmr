@@ -9,7 +9,7 @@ using Emgu.CV.Util;
 using HueDream.Models.Util;
 using Newtonsoft.Json;
 
-namespace HueDream.Models.DreamGrab {
+namespace HueDream.Models.Capture {
     public static class Calibrate {
         public static void ProcessFrames() {
             var cornersObjectList = new List<MCvPoint3D32f[]>();
@@ -91,8 +91,8 @@ namespace HueDream.Models.DreamGrab {
 
             LogUtil.Write("Camera matrix: " + sk);
             LogUtil.Write("Dist coefficient: " + sd);
-            DreamData.SetItem("k", sk);
-            DreamData.SetItem("d", sd);
+            DataUtil.SetItem("k", sk);
+            DataUtil.SetItem("d", sd);
         }
     }
 }
