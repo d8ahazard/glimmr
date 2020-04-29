@@ -425,12 +425,12 @@ function mapLights() {
                 newSelect.appendChild(opt);
 
                 // Add the options for our regions
-                for (let i = 0; i < 12; i++) {
+                for (let i = 1; i < 13; i++) {
                     opt = document.createElement("option");
-                    opt.value = (i+1).toString();
-                    opt.innerHTML = "<BR>" + (i + 1);
+                    opt.value = (i).toString();
+                    opt.innerHTML = "<BR>" + (i);
                     // Mark it selected if it's mapped
-                    if (selection == i + 1) opt.setAttribute('selected', 'selected');
+                    if (selection == i) opt.setAttribute('selected', 'selected');
                     newSelect.appendChild(opt);
                 }
 

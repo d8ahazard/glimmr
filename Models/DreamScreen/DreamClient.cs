@@ -19,6 +19,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.VisualBasic.CompilerServices;
+using Newtonsoft.Json;
 using Color = System.Drawing.Color;
 
 namespace HueDream.Models.DreamScreen {
@@ -79,6 +80,7 @@ namespace HueDream.Models.DreamScreen {
             dev = DataUtil.GetDeviceData();
             dreamScene = new DreamScene();
             devices = new List<BaseDevice>();
+            bulbs = new List<LifxBulb>();
             devMode = dev.Mode;
             ambientMode = dev.AmbientModeType;
             ambientShow = dev.AmbientShowType;
@@ -232,16 +234,26 @@ namespace HueDream.Models.DreamScreen {
                     panels.Add(p);
                     LogUtil.Write("Panel stream enabled: " + n.IpV4Address);
                     streamStarted = true;
+                    LogUtil.Write("No, really...");
                 }
                 // Init lifx
+                LogUtil.Write("What the fuck...");
                 var lifx = DataUtil.GetItem<List<LifxData>>("lifxBulbs");
+                LogUtil.Write("Got stuff: " + JsonConvert.SerializeObject(lifx));
                 bulbs = new List<LifxBulb>();
+                LogUtil.Write("List made");
                 if (lifx != null) {
+                    LogUtil.Write("Data valid.");
                     lifxClient = LifxClient.CreateAsync().Result;
+                    LogUtil.Write("Client initialized.");
                     foreach (LifxData b in lifx) {
+                        LogUtil.Write("looping data...");
                         if (b.SectorMapping == -1) continue;
+                        LogUtil.Write("Initializing bulb: " + b.HostName);
                         var bulb = new LifxBulb(b);
+                        LogUtil.Write("Bulb initialized.");
                         bulb.StartStream(lifxClient);
+                        LogUtil.Write("Started, adding.");
                         bulbs.Add(bulb);
                     }
                 }

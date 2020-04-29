@@ -48,7 +48,7 @@ namespace HueDream.Models.Util {
                 var output = dStore.GetItem<T>(key);
                 dStore.Dispose();
                 return output;
-            } catch (KeyNotFoundException e) {
+            } catch (Exception e) {
                 LogUtil.Write($@"Value not found: {e.Message}");
                 return null;
             }

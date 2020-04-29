@@ -16,6 +16,16 @@ namespace HueDream.Models.Util {
             value = max / 255d;
         }
 
+        public static int ColorTemperature(Color input) {
+            // Get difference between red and blue
+            var diff = input.B - input.R;
+            // Pad it +255 to adjust to 0
+            diff += 255;
+            // What percentage is it?
+            return diff / 255 * 13500 + 1500;
+            
+        }
+
 
         public static Color ColorFromHsv(double hue, double saturation, double value) {
             var hi = Convert.ToInt32(Math.Floor(hue / 60)) % 6;
