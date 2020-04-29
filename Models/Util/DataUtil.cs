@@ -7,6 +7,7 @@ using HueDream.Models.DreamScreen;
 using HueDream.Models.DreamScreen.Devices;
 using HueDream.Models.Hue;
 using HueDream.Models.LED;
+using HueDream.Models.LIFX;
 using HueDream.Models.Nanoleaf;
 using JsonFlatFileDataStore;
 using ManagedBass;
@@ -217,7 +218,11 @@ namespace HueDream.Models.Util {
             SetItem<List<BridgeData>>("bridges", bridges);
             SetItem<List<NanoData>>("leaves", leaves);
             var dreamDevices = DreamDiscovery.FindDevices();
-
+            var ld = new LifxDiscovery();
+            var bulbs = ld.Refresh();
+            LogUtil.Write("Bulbs: " + JsonConvert.SerializeObject(bulbs));
+            SetItem<List<LifxData>>("lifxBulbs", bulbs);
+            ld.Dispose();
             SetItem("devices", dreamDevices);
         }
 
@@ -229,8 +234,12 @@ namespace HueDream.Models.Util {
             store.InsertItem("bridges", bridges);
             store.InsertItem("leaves", leaves);
             var dreamDevices = DreamDiscovery.FindDevices();
-
             store.InsertItem("devices", dreamDevices);
+            var ld = new LifxDiscovery();
+            var bulbs = ld.Discover(5);
+            LogUtil.Write("Bulbs: " + JsonConvert.SerializeObject(bulbs));
+            store.InsertItem("lifxBulbs", bulbs);
+            ld.Dispose();
         }
 
         public static void RefreshPublicIp() {

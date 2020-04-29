@@ -10,11 +10,6 @@ namespace HueDream.Models.LIFX {
             Service = b.Service;
             Port = b.Port;
             MacAddress = b.MacAddress;
-            var lC = LifxClient.CreateAsync().Result;
-            Power = lC.GetLightPowerAsync(b).Result;
-            var state = lC.GetLightStateAsync(b).Result;
-            Hue = state.Hue;
-            Brightness = state.Brightness;
         }
         
         public string HostName { get; internal set; }
@@ -29,8 +24,11 @@ namespace HueDream.Models.LIFX {
 
         /// <summary>Gets the MAC address</summary>
         public byte[] MacAddress { get; internal set; }
-        public int Brightness { get; set; }
+        public double Hue { get; set; }
+        public double Saturation { get; set; }
+        public double Brightness { get; set; }
+        public ushort Kelvin { get; set; }
         public bool Power { get; set; }
-        public ushort Hue { get; set; }
+        public int SectorMapping { get; set; }
     }
 }

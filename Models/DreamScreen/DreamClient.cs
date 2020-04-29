@@ -11,10 +11,15 @@ using HueDream.Models.Capture;
 using HueDream.Models.DreamScreen.Devices;
 using HueDream.Models.Hue;
 using HueDream.Models.LED;
+using HueDream.Models.LIFX;
 using HueDream.Models.Nanoleaf;
 using HueDream.Models.Util;
+using LifxNet;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.VisualBasic.CompilerServices;
+using Color = System.Drawing.Color;
 
 namespace HueDream.Models.DreamScreen {
     public class DreamClient : BackgroundService {
@@ -27,6 +32,8 @@ namespace HueDream.Models.DreamScreen {
         private List<HueBridge> bridges;
         private List<Panel> panels;
         private List<BaseDevice> devices;
+        private List<LifxBulb> bulbs;
+        private LifxClient lifxClient;
         private bool discovering;
         private int brightness;
         private StreamCapture grabber;
@@ -195,6 +202,7 @@ namespace HueDream.Models.DreamScreen {
         private void StartStream() {
             if (!streamStarted) {
                 LogUtil.Write("Starting stream.");
+                // Init bridges
                 var bridgeArray = DataUtil.GetItem<List<BridgeData>>("bridges");
                 bridges = new List<HueBridge>();
                 sendTokenSource = new CancellationTokenSource();
@@ -212,9 +220,8 @@ namespace HueDream.Models.DreamScreen {
                         b.Dispose();
                     }
                 }
-
+                // Init leaves
                 var leaves = DataUtil.GetItem<List<NanoData>>("leaves");
-
                 panels = new List<Panel>();
                 LogUtil.Write("Loading nano panels??");
                 foreach (NanoData n in leaves) {
@@ -225,6 +232,18 @@ namespace HueDream.Models.DreamScreen {
                     panels.Add(p);
                     LogUtil.Write("Panel stream enabled: " + n.IpV4Address);
                     streamStarted = true;
+                }
+                // Init lifx
+                var lifx = DataUtil.GetItem<List<LifxData>>("lifxBulbs");
+                bulbs = new List<LifxBulb>();
+                if (lifx != null) {
+                    lifxClient = LifxClient.CreateAsync().Result;
+                    foreach (LifxData b in lifx) {
+                        if (b.SectorMapping == -1) continue;
+                        var bulb = new LifxBulb(b);
+                        bulb.StartStream(lifxClient);
+                        bulbs.Add(bulb);
+                    }
                 }
             }
 
@@ -240,6 +259,14 @@ namespace HueDream.Models.DreamScreen {
                     b.DisableStreaming();
                 }
 
+                var bData = DataUtil.GetItem<List<LifxData>>("lifxBulbs");
+                if (bData != null) {
+                    foreach (var b in bulbs) {
+                       b.StopStream(lifxClient); 
+                    }
+                }
+                lifxClient?.Dispose();
+
                 LogUtil.WriteDec("Stream stopped.");
                 streamStarted = false;
             }
@@ -254,6 +281,10 @@ namespace HueDream.Models.DreamScreen {
 
             foreach (var p in panels) {
                 p.UpdateLights(sectors);
+            }
+
+            foreach (var b in bulbs) {
+                b.SetColor(lifxClient, sectors);
             }
 
             strip?.UpdateAll(colors);
