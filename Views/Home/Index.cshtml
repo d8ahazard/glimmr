@@ -4,9 +4,13 @@
 <div class="bmd-layout-container bmd-drawer-f-l bmd-drawer-overlay">
 <header class="bmd-layout-header">
     <div class="navbar navbar-dark bg-dark text-light">
-        <button class="navbar-toggler" type="button" data-toggle="drawer" data-target="#dw-s2">
+        <button class="navbar-toggler" type="button" data-toggle="drawer" id="drawerOpen" data-target="#dw-s2">
             <span class="sr-only">Toggle drawer</span>
             <i class="material-icons">menu</i>
+        </button>
+        <button class="navbar-toggler" type="button" data-toggle="drawer" id="settingsBack" data-target="foo">
+            <span class="sr-only">Back</span>
+            <i class="material-icons">keyboard_arrow_left</i>
         </button>
         <ul class="nav navbar-nav">
             <li class="nav-item" id="navTitle"></li>
@@ -39,69 +43,117 @@
     <div id="dsPane">
         <div class="card-body">
             <div class="container">
-                <div class="row justify-content-center">
-                    <div class="form-group col-12 col-lg-10">
-                        <div class="row justify-content-center">
-                            <div id="iconWrap">
-                            </div>
-                            <div id="dsData" class="">
-                                <div id="dsName" onclick="listenForDoubleClick(this);" onblur="this.contentEditable=false;"></div><br/>
-                                <span id="dsIp"></span>
-                            </div>
-                            <div class="btn btn-primary settingsBtn" data-target="dsSettings">
+                <div class="devDisplay">
+                    <div class="row justify-content-center">
+                        <div class="form-group col-12 col-lg-10">
+                            <div class="row justify-content-center">
+                                <div id="iconWrap">
+                                </div>
+                                <div id="dsData" class="">
+                                    <div id="dsName" onclick="listenForDoubleClick(this);" onblur="this.contentEditable=false;"></div><br/>
+                                    <span id="dsIp"></span>
+                                </div>
+                                <div class="btn btn-primary settingsBtn" data-target="dsSettings">
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="row justify-content-center">
-                    <div class="btn-group-lg">
-                        <div class="btnWrap">
-                            <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="0" id="mode0">
-                                <img class="modeIcon" src="~/img/mode_off_icon.png" alt=""/>
+                    <div class="row justify-content-center">
+                        <div class="btn-group-lg">
+                            <div class="btnWrap">
+                                <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="0" id="mode0">
+                                    <img class="modeIcon" src="~/img/mode_off_icon.png" alt=""/>
+                                </div>
+                                <span class="modeLabel">Off</span>
                             </div>
-                            <span class="modeLabel">Off</span>
+                            <div class="btnWrap">
+                                <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="1" id="mode1">
+                                    <img class="modeIcon" src="~/img/mode_video_icon.png" alt=""/>
+                                </div>
+                                <span class="modeLabel">Video</span>
+                            </div>
+                            <div class="btnWrap">
+                                <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="2" id="mode2">
+                                    <img class="modeIcon" src="~/img/mode_audio_icon.png" alt=""/>
+                                </div>
+                                <span class="modeLabel">Music</span>
+                            </div>
+                            <div class="btnWrap">
+                                <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="3" id="mode3">
+                                    <img class="modeIcon" src="~/img/mode_ambient_icon.png" alt=""/>
+                                </div>
+                                <span class="modeLabel">Ambient</span>
+                            </div>
                         </div>
-                        <div class="btnWrap">
-                            <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="1" id="mode1">
-                                <img class="modeIcon" src="~/img/mode_video_icon.png" alt=""/>
-                            </div>
-                            <span class="modeLabel">Video</span>
-                        </div>
-                        <div class="btnWrap">
-                            <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="2" id="mode2">
-                                <img class="modeIcon" src="~/img/mode_audio_icon.png" alt=""/>
-                            </div>
-                            <span class="modeLabel">Music</span>
-                        </div>
-                        <div class="btnWrap">
-                            <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="3" id="mode3">
-                                <img class="modeIcon" src="~/img/mode_ambient_icon.png" alt=""/>
-                            </div>
-                            <span class="modeLabel">Ambient</span>
+                    </div>
+                    <div class="row justify-content-center">
+                        <div class="col-8 col-md-6 col-xl-4">
+                            <input class="mapBrightness form-control devBrightness" type="range" id="dsBrightness" name="dsBrightness" min="0" max="100" value="100">
                         </div>
                     </div>
                 </div>
-                <div class="row justify-content-center">
-                    <div class="col-8 col-md-6 col-xl-4">
-                        <input class="mapBrightness form-control devBrightness" type="range" id="dsBrightness" name="dsBrightness" min="0" max="100" value="100">
-                    </div>
-                </div>
-            </div>
-            <div class="container">
                 <div class="row justify-content-center center settingExpand collapse" id="dsSettings">
-                    <div class="col-8 col-md-6 col-xl-4">
-                        Foo foo
+                    <div class="col-10 col-md-8 col-xl-6">
+                        <br/>
+                        <h3>Settings</h3>
+                        <div id="settingsListDS" class="ds1">
+                            <div class="col-12 s1 border" data-target="settingsVideoDS">
+                                Video Settings
+                            </div>
+                            <div class="col-12 s1 border" data-target="settingsMusicDS">
+                                Music Settings
+                            </div>
+                            <div class="col-12 s1 border" data-target="settingsAdvancedDS">
+                                Advanced Settings
+                            </div>
+                            <div class="col-12 s1 border" data-target="settingsInstallDS">
+                                Installation Settings
+                            </div>
+                            <div class="col-12 s1 border" data-target="settingsResetDS">
+                                Update and Reset
+                            </div>
+                        </div>
+                        <div id="settingsVideoDS" class="ds2">
+                            <div id="saturationDS" class="border">
+                                <h5>Saturation <span class="material-icons hintbtn">help_outline</span></h5>
+                                <label for="dsSatR">Red</label>
+                                <input class="form-control devSaturation" type="range" id="dsSatR" name="dsSatR" min="0" max="100" value="100">
+                                <label for="dsSatG">Green</label>
+                                <input class="form-control devSaturation" type="range" id="dsSatG" name="dsSatG" min="0" max="100" value="100">
+                                <label for="dsSatB">Blue</label>
+                                <input class="form-control devSaturation" type="range" id="dsSatB" name="dsSatB" min="0" max="100" value="100">
+                                <div class="hint">Adjust the RGB channels to appear correctly or when wall behind DreamScreen is not white.</div>
+                            </div>
+                            <div id="detectionDS" class="border">
+                                <h5>Wiescreen Detection <span class="material-icons hintbtn">help_outline</span></h5>
+                                <div class="btn-group">
+                                    <div class="btn" id="dsDetectAuto">Auto</div>
+                                    <div class="btn" id="dsDetectOn">On</div>
+                                    <div class="btn" id="dsDetectOff">Off</div>
+                                </div>
+                                <div class="hint">DreamScreen will detect when the Video Source has been formatted to fit a widescreen.</div>
+                            </div>
+                            <div id="fadeRateDS" class="border">
+                                <h5>Fade Rate <span class="material-icons hintbtn">help_outline</span></h5>
+                                <input class="form-control devFadeRate" type="range" id="dsFadeRate" name="dsFadeRate" min="0" max="100" value="100">
+                                <div class="hint">Adjusts the reaction speed of the LEDs.</div>
+                            </div>
+                            <div id="luminosityDS" class="border">
+                                <h5>Minimum Luminosity <span class="material-icons hintbtn">help_outline</span></h5>
+                                <input class="form-control devFadeRate" type="range" id="dsLuminosity" name="dsLuminosity" min="0" max="100" value="100">
+                                <div class="hint">Set a low level of background light when there is no video content playing.</div>
+                            </div>
+                            <div id="colorboostDS" class="border">
+                                <h5>Color Boost <span class="material-icons hintbtn">help_outline</span></h5>
+                                <div class="btn" id="dsColorBoost">Off</div>
+                                <div class="hint">Enhances RGB tones making ligher hues appear stronger.</div>
+                            </div>
+                        </div>
+                        <div id="settingsMusicDS" class="ds2"></div>
+                        <div id="settingsAdvancedDS" class="ds2"></div>
+                        <div id="settingsInstallDS" class="ds2"></div>
+                        <div id="settingsResetDS" class="ds2"></div>
                     </div>
-                    <div class="col-8 col-md-6 col-xl-4">
-                        Foo foo
-                    </div>
-                    <div class="col-8 col-md-6 col-xl-4">
-                        Foo foo
-                    </div>
-                    <div class="col-8 col-md-6 col-xl-4">
-                        Foo foo
-                    </div>
-                    
                 </div>
             </div>
         </div>

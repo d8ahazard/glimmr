@@ -55,6 +55,7 @@ namespace HueDream.Models.DreamScreen {
         public static void SendUdpBroadcast(byte[] bytes) {
             if (bytes is null) throw new ArgumentNullException(nameof(bytes));
             var client = new UdpClient();
+            client.Ttl = 128;
             client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             var ip = new IPEndPoint(IPAddress.Parse("255.255.255.255"), 8888);
             client.Send(bytes, bytes.Length, ip);

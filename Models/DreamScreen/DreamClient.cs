@@ -560,7 +560,7 @@ namespace HueDream.Models.DreamScreen {
             output[5] = input[5];
             output[6] = input[6];
             output[7] = input[7];
-            output[8] = input[9];
+            output[8] = input[9].Blend(input[10],.5);
             output[9] = input[10];
             output[10] = input[11];
             output[11] = input[11].Blend(input[0], .5);

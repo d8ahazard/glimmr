@@ -27,7 +27,8 @@ let datastore = null;
 let vLedCount = 0;
 let hLedCount = 0;
 let postResult = null;
-
+let sTarget = null;
+let sTarget2 = null;
 
 $(function () {
     loadData();
@@ -37,7 +38,16 @@ $(function () {
     // Initialize BMD
     $('body').bootstrapMaterialDesign();
     
-   
+   $('.hintbtn').click(function(){
+       let gp = $(this).parent().parent();
+       let hint = gp.find('.hint');
+       console.log("HINT: ", hint, gp);
+       if (hint.css('display') === 'none') {
+           hint.slideDown();
+       } else {
+           hint.slideUp();
+       }
+   });
     
     $('#showSettings').click(function(){
         hidePanels();
@@ -45,6 +55,50 @@ $(function () {
         $('#navTitle').html("Settings");
         selectedDevice = null;
         $('#settingsCard').slideDown();        
+    });
+
+    $('.settingsBtn').click(function () {
+        let target = $(this).data('target');
+        let tDiv = $("#" + target);
+        sTarget2 = tDiv;
+        tDiv.parent().find(".devDisplay").slideUp();
+
+        if (tDiv.hasClass("collapse")) {
+            tDiv.removeClass('collapse');
+            tDiv.addClass('show');
+            $(this).addClass('sActive');
+        }
+        $(this).hide();
+        $('#drawerOpen').hide();
+        $('#settingsBack').show();
+    });
+
+    $('.s1').click(function(){
+        let parent = $(this).parent();
+        parent.hide();
+        sTarget = parent;
+        sTarget2=$('#' +$(this).data('target'));
+        sTarget2.show();        
+    });
+    
+    $('#settingsBack').click(function() {
+       if (sTarget !== null) {
+           sTarget.show();
+           sTarget2.hide();
+           sTarget = sTarget2;
+           sTarget = null;           
+       }  else {
+           $('#drawerOpen').show();
+           $('#settingsBack').hide();
+           $('.settingsBtn').show();
+           $('.settingExpand').removeClass('show').addClass('collapse');
+           if (sTarget2 === null) {
+               
+           } else {
+               console.log("Starget", sTarget);
+               sTarget.parent().parent().find(".devDisplay").slideDown();
+           }
+       }
     });
 
     $('#refreshDevices').click(function(){
@@ -229,20 +283,6 @@ $(function () {
         postData("mode", mode);        
     });
 
-    
-    $('.settingsBtn').click(function () {
-        let target = $(this).data('target');
-        let tDiv = $("#" + target);
-        if (tDiv.hasClass("collapse")) {
-            tDiv.removeClass('collapse');
-            tDiv.addClass('show');
-            $(this).addClass('sActive');
-        } else {
-            tDiv.addClass('collapse');
-            tDiv.removeClass('show');
-            $(this).removeClass('sActive');
-        }        
-    });
     
     // On group selection change
     $('.dsGroup').change(function () {
