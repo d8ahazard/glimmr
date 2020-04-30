@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading.Tasks;
 using HueDream.Models.DreamScreen;
 using HueDream.Models.DreamScreen.Devices;
@@ -12,10 +11,7 @@ using HueDream.Models.LIFX;
 using HueDream.Models.Nanoleaf;
 using JsonFlatFileDataStore;
 using ManagedBass;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Q42.HueApi;
-using Q42.HueApi.Models.Bridge;
 
 namespace HueDream.Models.Util {
     [Serializable]
@@ -31,7 +27,6 @@ namespace HueDream.Models.Util {
         ///     Loads our data store from a dynamic path, and tries to get the item
         /// </summary>
         /// <param name="key"></param>
-        /// <param name="def"></param>
         /// <returns>dynamic object corresponding to key, or default if not found</returns>
         public static dynamic GetItem(string key) {
             try {
@@ -44,7 +39,7 @@ namespace HueDream.Models.Util {
             }
         }
 
-
+       
         public static dynamic GetItem<T>(string key) {
             try {
                 using var dStore = GetStore();
@@ -52,7 +47,7 @@ namespace HueDream.Models.Util {
                 dStore.Dispose();
                 return output;
             } catch (Exception e) {
-                LogUtil.Write($@"Value not found: {e.Message}");
+                LogUtil.Write($@"Get exception for {key}: {e.Message}");
                 return null;
             }
         }
@@ -60,36 +55,37 @@ namespace HueDream.Models.Util {
 
         private static DataStore CheckDefaults(DataStore store) {
             var v = store.GetItem("defaultsSet");
-            if (v == null) SetDefaults(store);
+            if (v == null) store = SetDefaults(store).Result;
             return store;
         }
 
-        private static DataStore SetDefaults(DataStore store) {
+        private static async Task<DataStore> SetDefaults(DataStore store) {
             LogUtil.Write("Setting defaults.");
-            store.InsertItem("dataSource", "DreamScreen");
-            store.InsertItem("devType", "SideKick");
-            store.InsertItem("camWidth", 1920);
-            store.InsertItem("camHeight", 1080);
-            store.InsertItem("camMode", 1);
-            store.InsertItem("scaleFactor", .5);
-            store.InsertItem("showSource", false);
-            store.InsertItem("showEdged", false);
-            store.InsertItem("showWarped", false);
-            store.InsertItem("emuType", "SideKick");
-            store.InsertItem("captureMode", 0);
-            store.InsertItem("camType", 1);
             BaseDevice myDevice = new SideKick(IpUtil.GetLocalIpAddress());
             myDevice.SetDefaults();
-            store.InsertItem("myDevice", myDevice);
             var lData = new LedData(true);
-            store.InsertItem("ledData", lData);
-            store.InsertItem("minBrightness", 0);
-            store.InsertItem("saturationBoost", 0);
-            store.InsertItem("dsIp", "0.0.0.0");
-            store.InsertItem("defaultsSet", true);
-            store.InsertItem("audioDevices", new List<DeviceInfo>());
-            store.InsertItem("audioThreshold", .01f);
-            ScanDevices(store);
+
+            await store.InsertItemAsync("dataSource", "DreamScreen").ConfigureAwait(false);
+            await store.InsertItemAsync("devType", "SideKick").ConfigureAwait(false);
+            await store.InsertItemAsync("camWidth", 1920).ConfigureAwait(false);
+            await store.InsertItemAsync("camHeight", 1080).ConfigureAwait(false);
+            await store.InsertItemAsync("camMode", 1).ConfigureAwait(false);
+            await store.InsertItemAsync("scaleFactor", .5).ConfigureAwait(false);
+            await store.InsertItemAsync("showSource", false).ConfigureAwait(false);
+            await store.InsertItemAsync("showEdged", false).ConfigureAwait(false);
+            await store.InsertItemAsync("showWarped", false).ConfigureAwait(false);
+            await store.InsertItemAsync("emuType", "SideKick").ConfigureAwait(false);
+            await store.InsertItemAsync("captureMode", 0).ConfigureAwait(false);
+            await store.InsertItemAsync("camType", 1).ConfigureAwait(false);
+            await store.InsertItemAsync("myDevice", myDevice).ConfigureAwait(false);
+            await store.InsertItemAsync("ledData", lData).ConfigureAwait(false);
+            await store.InsertItemAsync("minBrightness", 0).ConfigureAwait(false);
+            await store.InsertItemAsync("saturationBoost", 0).ConfigureAwait(false);
+            await store.InsertItemAsync("dsIp", "0.0.0.0").ConfigureAwait(false);
+            await store.InsertItemAsync("audioDevices", new List<DeviceInfo>()).ConfigureAwait(false);
+            await store.InsertItemAsync("audioThreshold", .01f).ConfigureAwait(false);
+            await ScanDevices(store).ConfigureAwait(false);
+            await store.InsertItemAsync("defaultsSet", true).ConfigureAwait(false);
             return store;
         }
 
@@ -130,6 +126,7 @@ namespace HueDream.Models.Util {
             if (string.IsNullOrEmpty(dev.AmbientColor)) {
                 dev.AmbientColor = "FFFFFF";
             }
+
             return dev;
         }
 
@@ -164,6 +161,7 @@ namespace HueDream.Models.Util {
                     }
                 }
             }
+
             return output;
         }
 
@@ -213,9 +211,7 @@ namespace HueDream.Models.Util {
             var bridgeTask = HueBridge.GetBridgeData();
             var dreamTask = DreamDiscovery.FindDevices();
             var bulbTask = ld.Refresh();
-            LogUtil.Write("Tasks created...");
             await Task.WhenAll(nanoTask, bridgeTask, dreamTask, bulbTask).ConfigureAwait(false);
-            LogUtil.Write("Await done?");
             var leaves = nanoTask.Result;
             var bridges = await bridgeTask.ConfigureAwait(false);
             var dreamDevices = await dreamTask.ConfigureAwait(false);
@@ -227,6 +223,7 @@ namespace HueDream.Models.Util {
         }
 
         public static async Task ScanDevices(DataStore store) {
+            if (store == null) throw new ArgumentException("Invalid store.");
             // Get dream devices
             var ld = new LifxDiscovery();
             var nanoTask = NanoDiscovery.Discover();
@@ -242,7 +239,6 @@ namespace HueDream.Models.Util {
             await store.InsertItemAsync("leaves", leaves).ConfigureAwait(false);
             await store.InsertItemAsync("devices", dreamDevices).ConfigureAwait(false);
             await store.InsertItemAsync("lifxBulbs", bulbs).ConfigureAwait(false);
-            
         }
 
         public static void RefreshPublicIp() {

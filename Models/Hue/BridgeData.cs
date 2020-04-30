@@ -105,7 +105,6 @@ namespace HueDream.Models.Hue {
                     case "groups":
                         try {
                             bridgeGroups = property.Value.ToObject<Group[]>();
-                            //Console.WriteLine(@"Deserialized groups: " + JsonConvert.SerializeObject(bridgeGroups));
                         } catch {
                             Console.WriteLine(@"Cast exception for group.");
                         }

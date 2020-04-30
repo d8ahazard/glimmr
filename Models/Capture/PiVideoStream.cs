@@ -15,7 +15,7 @@ using MMALSharp.Ports.Outputs;
 
 namespace HueDream.Models.Capture {
     public sealed class PiVideoStream : IVideoStream, IDisposable {
-        public Mat Frame;
+        public Mat Frame { get; set; }
         private readonly MMALCamera cam;
         private readonly int capWidth;
         private readonly int capHeight;
@@ -52,8 +52,6 @@ namespace HueDream.Models.Capture {
 
         public async Task Start(CancellationToken ct) {
             LogUtil.Write("Starting Camera...");
-
-            MMALCamera cam = MMALCamera.Instance;
             MMALCameraConfig.VideoStabilisation = false;
                 
             var sensorMode = MMALSensorMode.Mode0;
@@ -85,34 +83,33 @@ namespace HueDream.Models.Capture {
             MMALCameraConfig.VideoResolution = new Resolution(capWidth, capHeight);
             MMALCameraConfig.VideoFramerate = new MMAL_RATIONAL_T(60, 1);
 
-            using (var vidCaptureHandler = new EmguInMemoryCaptureHandler())
-            using (var splitter = new MMALSplitterComponent())
-            using (var renderer = new MMALNullSinkComponent()) {
-                cam.ConfigureCameraSettings();
-                LogUtil.Write("Cam mode is " + MMALCameraConfig.SensorMode);
-                // Register to the event.
-                vidCaptureHandler.MyEmguEvent += OnEmguEventCallback;
+            using var vidCaptureHandler = new EmguInMemoryCaptureHandler();
+            using var splitter = new MMALSplitterComponent();
+            using var renderer = new MMALNullSinkComponent();
+            this.cam.ConfigureCameraSettings();
+            LogUtil.Write("Cam mode is " + MMALCameraConfig.SensorMode);
+            // Register to the event.
+            vidCaptureHandler.MyEmguEvent += OnEmguEventCallback;
 
-                // We are instructing the splitter to do a format conversion to BGR24.
-                var splitterPortConfig = new MMALPortConfig(MMALEncoding.BGR24, MMALEncoding.BGR24, capWidth, capHeight, null);
+            // We are instructing the splitter to do a format conversion to BGR24.
+            var splitterPortConfig = new MMALPortConfig(MMALEncoding.BGR24, MMALEncoding.BGR24, capWidth, capHeight, null);
 
-                // By default in MMALSharp, the Video port outputs using proprietary communication (Opaque) with a YUV420 pixel format.
-                // Changes to this are done via MMALCameraConfig.VideoEncoding and MMALCameraConfig.VideoSubformat.                
-                splitter.ConfigureInputPort(new MMALPortConfig(MMALEncoding.OPAQUE, MMALEncoding.I420, capWidth, capHeight, null), cam.Camera.VideoPort, null);
+            // By default in MMALSharp, the Video port outputs using proprietary communication (Opaque) with a YUV420 pixel format.
+            // Changes to this are done via MMALCameraConfig.VideoEncoding and MMALCameraConfig.VideoSub format.                
+            splitter.ConfigureInputPort(new MMALPortConfig(MMALEncoding.OPAQUE, MMALEncoding.I420, capWidth, capHeight, null), this.cam.Camera.VideoPort, null);
 
-                // We then use the splitter config object we constructed earlier. We then tell this output port to use our capture handler to record data.
-                splitter.ConfigureOutputPort<SplitterVideoPort>(0, splitterPortConfig, vidCaptureHandler);
+            // We then use the splitter config object we constructed earlier. We then tell this output port to use our capture handler to record data.
+            splitter.ConfigureOutputPort<SplitterVideoPort>(0, splitterPortConfig, vidCaptureHandler);
 
-                cam.Camera.PreviewPort.ConnectTo(renderer);
-                cam.Camera.VideoPort.ConnectTo(splitter);
+            this.cam.Camera.PreviewPort.ConnectTo(renderer);
+            this.cam.Camera.VideoPort.ConnectTo(splitter);
 
-                // Camera warm up time
-                LogUtil.Write("Camera is warming up...");
-                await Task.Delay(2000).ConfigureAwait(false);
-                LogUtil.WriteInc("Camera initialized.");
-                await cam.ProcessAsync(cam.Camera.VideoPort, ct);
-                LogUtil.WriteDec("Camera closed.");
-            }
+            // Camera warm up time
+            LogUtil.Write("Camera is warming up...");
+            await Task.Delay(2000).ConfigureAwait(false);
+            LogUtil.WriteInc("Camera initialized.");
+            await this.cam.ProcessAsync(this.cam.Camera.VideoPort, ct).ConfigureAwait(false);
+            LogUtil.WriteDec("Camera closed.");
         }
 
         private void OnEmguEventCallback(object sender, EmguEventArgs args) {
@@ -137,7 +134,6 @@ namespace HueDream.Models.Capture {
 
         public void Dispose() {
             Dispose(true);
-            GC.SuppressFinalize(this);
         }
         #endregion
     }

@@ -15,8 +15,7 @@ using HueDream.Models.Util;
 using Newtonsoft.Json;
 
 namespace HueDream.Models.Capture {
-    public sealed class StreamCapture
-    {
+    public sealed class StreamCapture {
         private int scaleHeight = 400;
         private int scaleWidth = 600;
         private int camWidth;
@@ -66,13 +65,14 @@ namespace HueDream.Models.Capture {
                 } else {
                     LogUtil.Write("Camera calibration settings loaded.");
                 }
-            
+
                 kStr = DataUtil.GetItem("k");
                 var dStr = DataUtil.GetItem("d");
                 k = JsonConvert.DeserializeObject<Mat>(kStr);
                 d = JsonConvert.DeserializeObject<Mat>(dStr);
                 LogUtil.Write("calib vars deserialized.");
             }
+
             try {
                 var lt = DataUtil.GetItem<PointF[]>("lockTarget");
                 LogUtil.Write("LT Grabbed? " + JsonConvert.SerializeObject(lt));
@@ -95,7 +95,7 @@ namespace HueDream.Models.Capture {
             showSource = DataUtil.GetItem<bool>("showSource") ?? false;
             showEdged = DataUtil.GetItem<bool>("showEdged") ?? false;
             showWarped = DataUtil.GetItem<bool>("showWarped") ?? false;
-            vectors = new PointF[] { tl, tr, br, bl };
+            vectors = new PointF[] {tl, tr, br, bl};
             frameCount = 0;
             LogUtil.Write("Start Capture should be running...");
         }
@@ -122,7 +122,7 @@ namespace HueDream.Models.Capture {
             return Task.Run(() => {
                 LogUtil.WriteInc("Starting capture task.");
                 splitter = new Splitter(ledData, scaleWidth, scaleHeight);
-                while (!cancellationToken.IsCancellationRequested) {                    
+                while (!cancellationToken.IsCancellationRequested) {
                     var frame = vc.Frame;
                     if (frame == null) continue;
                     if (frame.Cols == 0) continue;
@@ -133,6 +133,7 @@ namespace HueDream.Models.Capture {
                     var sectors = splitter.GetSectors();
                     dreamClient.SendColors(colors, sectors);
                 }
+
                 LogUtil.WriteDec("Capture task completed.");
                 return Task.CompletedTask;
             }, cancellationToken);
@@ -150,7 +151,7 @@ namespace HueDream.Models.Capture {
                     output?.Save(path + "/wwwroot/img/_preview_output.jpg");
                 }
             }
-            
+
             // Increment our frame counter
             if (frameCount >= 900) {
                 frameCount = 0;
@@ -161,11 +162,11 @@ namespace HueDream.Models.Capture {
             return output;
         }
 
-        
+
         private Mat CamFrame(Mat input) {
             Mat output = null;
             var scaled = new Mat();
-            
+
             // Check to see if we actually have to scale down and do it
             if (Math.Abs(scaleFactor - 1.0f) > .0001) {
                 CvInvoke.Resize(input, scaled, scaleSize);
@@ -183,14 +184,14 @@ namespace HueDream.Models.Capture {
                     LogUtil.Write("No target.");
                 }
             }
-            
+
             // If we do or we found one...crop it out
             if (lockTarget != null) {
                 var dPoints = lockTarget.ToArray();
                 var warpMat = CvInvoke.GetPerspectiveTransform(dPoints, vectors);
                 output = new Mat();
                 CvInvoke.WarpPerspective(scaled, output, warpMat, scaleSize);
-                warpMat.Dispose();                
+                warpMat.Dispose();
             }
 
             scaled.Dispose();
@@ -203,7 +204,7 @@ namespace HueDream.Models.Capture {
             var uImage = new Mat();
             var gray = new Mat();
             var blurred = new Mat();
-            
+
             // Convert to greyscale
             CvInvoke.CvtColor(input, uImage, ColorConversion.Bgr2Gray);
             CvInvoke.BilateralFilter(uImage, gray, 11, 17, 17);
@@ -234,6 +235,7 @@ namespace HueDream.Models.Capture {
                     var pointOut = new VectorOfPointF(SortPoints(approxContour));
                     targets.Add(VPointFToVPoint(pointOut));
                 }
+
                 if (showEdged) {
                     var color = new MCvScalar(255, 255, 0);
                     CvInvoke.DrawContours(input, contours, -1, color);
@@ -245,7 +247,7 @@ namespace HueDream.Models.Capture {
             cannyEdges.Dispose();
             return output;
         }
-        
+
         private VectorOfPointF CountTargets(List<VectorOfPoint> inputT) {
             VectorOfPointF output = null;
             var x1 = 0;
@@ -288,6 +290,7 @@ namespace HueDream.Models.Capture {
             if (iCount > 200) {
                 targets.RemoveRange(0, 150);
             }
+
             return output;
         }
 
@@ -297,7 +300,7 @@ namespace HueDream.Models.Capture {
             for (int i = 0; i < ta.Length; i++) pIn[i] = new Point((int) ta[i].X, (int) ta[i].Y);
             return new VectorOfPoint(pIn);
         }
-       
+
 
         private static PointF[] SortPoints(VectorOfPoint wTarget) {
             var ta = wTarget.ToArray();
@@ -314,9 +317,8 @@ namespace HueDream.Models.Capture {
             PointF tr = vtPoints.ElementAt(1);
             PointF br = vvPoints.ElementAt(0);
             PointF bl = vvPoints.ElementAt(1);
-            PointF[] outPut = { tl, tr, br, bl };
+            PointF[] outPut = {tl, tr, br, bl};
             return outPut;
         }
-
     }
 }

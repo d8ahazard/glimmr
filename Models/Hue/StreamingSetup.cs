@@ -89,7 +89,7 @@ namespace HueDream.Models.Hue {
 
                 //Optional: Check if streaming is currently active
                 var bridgeInfo = await client.LocalHueClient.GetBridgeAsync().ConfigureAwait(true);
-                LogUtil.Write(bridgeInfo.IsStreamingActive ? @"Streaming is active." : @"Streaming is not active.");
+                LogUtil.Write(bridgeInfo != null && bridgeInfo.IsStreamingActive ? @"Streaming is active." : @"Streaming is not active.");
                 return stream;
             }
 

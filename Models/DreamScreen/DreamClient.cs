@@ -15,10 +15,7 @@ using HueDream.Models.LIFX;
 using HueDream.Models.Nanoleaf;
 using HueDream.Models.Util;
 using LifxNet;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.VisualBasic.CompilerServices;
 using Newtonsoft.Json;
 using Color = System.Drawing.Color;
 
@@ -43,7 +40,7 @@ namespace HueDream.Models.DreamScreen {
 
         // Our functional values
         private int devMode;
-        
+
         private IPEndPoint listenEndPoint;
         private UdpClient listener;
 
@@ -65,15 +62,16 @@ namespace HueDream.Models.DreamScreen {
 
         // Use this for the camera
         private readonly CancellationTokenSource camTokenSource;
+
         // Use this to check if we've initialized our bridges
         private bool streamStarted;
 
-        
+
         // Use this to check if we've started our show builder
         private bool showBuilderStarted;
         private IPEndPoint targetEndpoint;
         private LedStrip strip;
-        
+
         public DreamClient() {
             aStream = new AudioStream();
             var dd = DataUtil.GetStore();
@@ -103,7 +101,7 @@ namespace HueDream.Models.DreamScreen {
             camTokenSource = new CancellationTokenSource();
         }
 
-        
+
         protected override Task ExecuteAsync(CancellationToken cancellationToken) {
             LogUtil.WriteInc("Starting DreamClient services.");
 
@@ -117,7 +115,7 @@ namespace HueDream.Models.DreamScreen {
                 }
             }
 
-            
+
             var lt = StartListening(cancellationToken);
             LogUtil.Write("Listener retrieved.");
             UpdateMode(dev.Mode);
@@ -197,7 +195,6 @@ namespace HueDream.Models.DreamScreen {
 
 
         private static Color ColorFromString(string inputString) {
-            
             return ColorTranslator.FromHtml("#" + inputString);
         }
 
@@ -222,6 +219,7 @@ namespace HueDream.Models.DreamScreen {
                         b.Dispose();
                     }
                 }
+
                 // Init leaves
                 var leaves = DataUtil.GetItem<List<NanoData>>("leaves");
                 panels = new List<Panel>();
@@ -236,6 +234,7 @@ namespace HueDream.Models.DreamScreen {
                     streamStarted = true;
                     LogUtil.Write("No, really...");
                 }
+
                 // Init lifx
                 LogUtil.Write("What the fuck...");
                 var lifx = DataUtil.GetItem<List<LifxData>>("lifxBulbs");
@@ -283,7 +282,7 @@ namespace HueDream.Models.DreamScreen {
         }
 
         public void SendColors(List<Color> colors, List<Color> sectors, double fadeTime = 0) {
-            if (sendTokenSource == null) sendTokenSource = new CancellationTokenSource();
+            sendTokenSource ??= new CancellationTokenSource();
             if (sendTokenSource.IsCancellationRequested) return;
             foreach (var bridge in bridges) {
                 bridge.UpdateLights(sectors, brightness, sendTokenSource.Token, fadeTime);
@@ -315,7 +314,6 @@ namespace HueDream.Models.DreamScreen {
             if (showBuilderStarted) LogUtil.WriteDec(@"Stopping show builder.");
             CancelSource(showBuilderSource);
             showBuilderStarted = false;
-
         }
 
         private void UpdateAmbientColor(Color aColor) {
@@ -335,9 +333,6 @@ namespace HueDream.Models.DreamScreen {
             if (log) LogUtil.Write(@"Sending subscribe message.");
             DreamSender.SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x10, group, targetEndpoint);
         }
-        
-        
-
 
 
         private Task StartListening(CancellationToken ct) {
@@ -360,15 +355,14 @@ namespace HueDream.Models.DreamScreen {
                     LogUtil.WriteDec("Listener cancelled.");
                     try {
                         StopServices();
-                    }
-                    finally {
+                    } finally {
                         LogUtil.WriteDec(@"DreamClient Stopped.");
                     }
                 });
-            }
-            catch (SocketException e) {
+            } catch (SocketException e) {
                 LogUtil.Write($@"Socket exception: {e.Message}.");
             }
+
             return null;
         }
 
@@ -398,7 +392,7 @@ namespace HueDream.Models.DreamScreen {
                 return Task.Run(() => {
                     while (!cancellation.IsCancellationRequested) {
                         var cols = aStream.GetColors();
-                        SendColors(cols, cols, 0D);
+                        SendColors(cols, cols);
                     }
                 });
             }
@@ -417,7 +411,6 @@ namespace HueDream.Models.DreamScreen {
             captureTokenSource = new CancellationTokenSource();
             Task.Run(() => StartAudioCapture(captureTokenSource.Token));
         }
-
 
 
         private void ProcessData(byte[] receivedBytes, IPEndPoint receivedIpEndPoint) {
@@ -440,6 +433,7 @@ namespace HueDream.Models.DreamScreen {
                 if (from != null && command != null && command != "COLOR_DATA" && command != "SUBSCRIBE") {
                     LogUtil.Write($@"{from} -> {dev.IpAddress}::{command}.");
                 }
+
                 flag = msg.Flags;
                 var groupMatch = msg.Group == dev.GroupNumber || msg.Group == 255;
                 if ((flag == "11" || flag == "21") && groupMatch) {
@@ -456,12 +450,12 @@ namespace HueDream.Models.DreamScreen {
                         DreamSender.SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x10, group, replyPoint);
                     break;
                 case "DISCOVERY_START":
-                    LogUtil.Write("Discovery start.");
+                    LogUtil.Write("DreamScreen: Starting discovery.");
                     devices = new List<BaseDevice>();
                     discovering = true;
                     break;
                 case "DISCOVERY_STOP":
-                    LogUtil.Write("Discovery stop.");
+                    LogUtil.Write($"DreamScreen: Discovery complete, found {devices.Count} devices.");
                     discovering = false;
                     DataUtil.SetItem<List<BaseDevice>>("devices", devices);
                     break;
@@ -493,7 +487,6 @@ namespace HueDream.Models.DreamScreen {
                             }
 
                             if (discovering) {
-                                LogUtil.Write("We are discovering, saving devices.");
                                 devices.Add(msgDevice);
                             }
                         }
@@ -533,7 +526,6 @@ namespace HueDream.Models.DreamScreen {
                         dev.Mode = payload[0];
                         LogUtil.Write($@"Updating mode: {dev.Mode}.");
                         UpdateMode(dev.Mode);
-
                     }
 
                     break;
@@ -601,7 +593,7 @@ namespace HueDream.Models.DreamScreen {
             output[5] = input[5];
             output[6] = input[6];
             output[7] = input[7];
-            output[8] = input[9].Blend(input[10],.5);
+            output[8] = input[9].Blend(input[10], .5);
             output[9] = input[10];
             output[10] = input[11];
             output[11] = input[11].Blend(input[0], .5);
@@ -609,7 +601,7 @@ namespace HueDream.Models.DreamScreen {
             nl.AddRange(output);
             return nl;
         }
-        
+
         private static void CancelSource(CancellationTokenSource target, bool dispose = false) {
             if (target == null) return;
             if (!target.IsCancellationRequested) {
@@ -618,8 +610,8 @@ namespace HueDream.Models.DreamScreen {
 
             if (dispose) target.Dispose();
         }
-        
-        
+
+
         private void StopServices() {
             listener?.Dispose();
             CancelSource(sendTokenSource, true);

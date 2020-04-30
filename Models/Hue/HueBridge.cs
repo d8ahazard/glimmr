@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using HueDream.Models.Util;
-using Newtonsoft.Json;
 using Q42.HueApi;
 using Q42.HueApi.ColorConverters;
 using Q42.HueApi.ColorConverters.HSB;
@@ -143,7 +142,6 @@ namespace HueDream.Models.Hue {
                 //It will throw an LinkButtonNotPressedException if the user did not press the button
                 var result = await client.RegisterAsync("HueDream", Environment.MachineName, true)
                     .ConfigureAwait(false);
-                LogUtil.Write($@"Hue: User name is {result.Username}.");
                 return result;
             } catch (HueException) {
                 LogUtil.Write($@"Hue: The link button is not pressed at {bridgeIp}.");
@@ -155,11 +153,9 @@ namespace HueDream.Models.Hue {
         public static async Task<List<BridgeData>> GetBridgeData() {
             var bridges = DataUtil.GetItem<List<BridgeData>>("bridges");
             var newBridges = await FindBridges().ConfigureAwait(false);
-            LogUtil.Write("Now we're enumerating old bridges.");
             var output = new List<BridgeData>();
             if (bridges != null) {
                 if (bridges.Count > 0) {
-                    LogUtil.Write("We have existing data.");
                     foreach (var b in bridges) {
                         if (b.Key != null && b.User != null) {
                             var hb = new HueBridge(b);
@@ -189,9 +185,11 @@ namespace HueDream.Models.Hue {
         }
 
         public static async Task<LocatedBridge[]> FindBridges(int time = 3) {
-            LogUtil.Write("Discovery Started.");
-            var output	= await HueBridgeDiscovery.FastDiscoveryWithNetworkScanFallbackAsync(TimeSpan.FromSeconds(time), TimeSpan.FromSeconds(7)).ConfigureAwait(false);
-            LogUtil.Write($"Discovery complete, found {output.Count} devices.");
+            LogUtil.Write("Hue: Discovery Started.");
+            var output = await HueBridgeDiscovery
+                .FastDiscoveryWithNetworkScanFallbackAsync(TimeSpan.FromSeconds(time), TimeSpan.FromSeconds(7))
+                .ConfigureAwait(false);
+            LogUtil.Write($"Hue: Discovery complete, found {output.Count} devices.");
             return output.ToArray();
         }
 

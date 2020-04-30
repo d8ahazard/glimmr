@@ -8,9 +8,8 @@ namespace HueDream.Models.Capture {
     public class WebCamVideoStream : IVideoStream, IDisposable
     {
 
-        private VideoCapture video;
-        private Mat frame;
-        private bool saved;
+        private readonly VideoCapture video;
+        private readonly Mat frame;
         private bool disposed;
 
         Mat IVideoStream.Frame => frame;
@@ -18,7 +17,6 @@ namespace HueDream.Models.Capture {
         public WebCamVideoStream(int inputStream) {
             video = new VideoCapture(inputStream, VideoCapture.API.DShow);
             frame = new Mat();
-            saved = false;
             LogUtil.Write("Stream init.");            
         }
        

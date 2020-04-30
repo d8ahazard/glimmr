@@ -76,7 +76,6 @@ namespace HueDream.Models.DreamScreen.Devices {
 
         public DreamScreenHd(string ipAddress) : base(ipAddress) {
             Name = "DreamScreen HD";
-            LogUtil.Write("Setting DS Defaults.");
             Tag = DeviceTag;
             EspFirmwareVersion = RequiredEspFirmwareVersion;
             PicVersionNumber = RequiredPicVersionNumber;

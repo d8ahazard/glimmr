@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,70 +10,69 @@ namespace HueDream.Models.Nanoleaf {
     public static class NanoDiscovery {
         public static async Task<List<NanoData>> Discover(int timeout = 5) {
             var output = new List<NanoData>();
-            using (var mDns = new MulticastService()) {
-                using (var sd = new ServiceDiscovery(mDns)) {
-                    mDns.NetworkInterfaceDiscovered += (s, e) => {
-                        // Ask for the name of all services.
-                        sd.QueryServiceInstances("_nanoleafapi._tcp");
-                    };
+            var mDns = new MulticastService();
+            var sd = new ServiceDiscovery(mDns);
+            mDns.NetworkInterfaceDiscovered += (s, e) => {
+                // Ask for the name of all services.
+                sd.QueryServiceInstances("_nanoleafapi._tcp");
+            };
 
-                    sd.ServiceDiscovered += (s, serviceName) => {
-                        mDns.SendQuery(serviceName, type: DnsType.PTR);
-                    };
+            sd.ServiceDiscovered += (s, serviceName) => { mDns.SendQuery(serviceName, type: DnsType.PTR); };
 
-                    sd.ServiceInstanceDiscovered += (s, e) => {
-                        var name = e.ServiceInstanceName.ToString();
-                        var nData = new NanoData {IpV4Address = string.Empty};
-                        if (!name.Contains("nanoleafapi", StringComparison.InvariantCulture)) return;
-                        foreach (var msg in e.Message.AdditionalRecords) {
-                            switch (msg.Type) {
-                                case DnsType.A:
-                                    var aString = msg.ToString();
-                                    var aValues = aString.Split(" ");
-                                    nData.IpV4Address = aValues[4];
-                                    nData.Name = aValues[0].Split(".")[0];
-                                    break;
-                                case DnsType.TXT:
-                                    var txtString = msg.ToString();
-                                    var txtValues = txtString.Split(" ");
-                                    nData.Version = txtValues[5].Replace("srcvers=", string.Empty, StringComparison.InvariantCulture);
-                                    nData.Type = txtValues[4].Replace("md=", string.Empty, StringComparison.InvariantCulture);
-                                    nData.Id = txtValues[3].Replace("id=", string.Empty, StringComparison.InvariantCulture);
-                                    break;
-                                case DnsType.AAAA:
-                                    var mString = msg.ToString();
-                                    var mValues = mString.Split(" ");
-                                    nData.IpV6Address = mValues[4];
-                                    // Remove rest of FQDN
-                                    nData.Name = mValues[0].Split(".")[0];
-                                    break;
-                                case DnsType.SRV:
-                                    var sString = msg.ToString();
-                                    var sValues = sString.Split(" ");
-                                    nData.Port = int.Parse(sValues[6], CultureInfo.InvariantCulture);
-                                    nData.Hostname = sValues[7];
-                                    break;
-                            }
-                        }
-
-                        if (string.IsNullOrEmpty(nData.IpV4Address) && !string.IsNullOrEmpty(nData.Hostname)) {
-                            nData.IpV4Address = nData.Hostname;
-                        }
-
-                        if (!string.IsNullOrEmpty(nData.IpV4Address) && !string.IsNullOrEmpty(nData.Id)) {
-                            output.Add(nData);
-                        }
-                    };
-
-
-                    mDns.Start();
-                    LogUtil.Write("Discovery Started.");
-                    await Task.Delay(5000).ConfigureAwait(false);
-                    mDns.Stop();
-                    LogUtil.Write($"Discovery complete, found {output.Count} devices.");
-                    return output;
+            sd.ServiceInstanceDiscovered += (s, e) => {
+                var name = e.ServiceInstanceName.ToString();
+                var nData = new NanoData {IpV4Address = string.Empty};
+                if (!name.Contains("nanoleafapi", StringComparison.InvariantCulture)) return;
+                foreach (var msg in e.Message.AdditionalRecords) {
+                    switch (msg.Type) {
+                        case DnsType.A:
+                            var aString = msg.ToString();
+                            var aValues = aString.Split(" ");
+                            nData.IpV4Address = aValues[4];
+                            nData.Name = aValues[0].Split(".")[0];
+                            break;
+                        case DnsType.TXT:
+                            var txtString = msg.ToString();
+                            var txtValues = txtString.Split(" ");
+                            nData.Version = txtValues[5]
+                                .Replace("srcvers=", string.Empty, StringComparison.InvariantCulture);
+                            nData.Type = txtValues[4].Replace("md=", string.Empty, StringComparison.InvariantCulture);
+                            nData.Id = txtValues[3].Replace("id=", string.Empty, StringComparison.InvariantCulture);
+                            break;
+                        case DnsType.AAAA:
+                            var mString = msg.ToString();
+                            var mValues = mString.Split(" ");
+                            nData.IpV6Address = mValues[4];
+                            // Remove rest of FQDN
+                            nData.Name = mValues[0].Split(".")[0];
+                            break;
+                        case DnsType.SRV:
+                            var sString = msg.ToString();
+                            var sValues = sString.Split(" ");
+                            nData.Port = int.Parse(sValues[6], CultureInfo.InvariantCulture);
+                            nData.Hostname = sValues[7];
+                            break;
+                    }
                 }
-            }
+
+                if (string.IsNullOrEmpty(nData.IpV4Address) && !string.IsNullOrEmpty(nData.Hostname)) {
+                    nData.IpV4Address = nData.Hostname;
+                }
+
+                if (!string.IsNullOrEmpty(nData.IpV4Address) && !string.IsNullOrEmpty(nData.Id)) {
+                    output.Add(nData);
+                }
+            };
+
+
+            mDns.Start();
+            LogUtil.Write("Nano: Discovery Started.");
+            await Task.Delay(timeout * 1000).ConfigureAwait(false);
+            mDns.Stop();
+            sd.Dispose();
+            mDns.Dispose();
+            LogUtil.Write($"Nano: Discovery complete, found {output.Count} devices.");
+            return output;
         }
 
         public static async Task<List<NanoData>> Refresh(int timeout = 5) {
@@ -88,7 +86,6 @@ namespace HueDream.Models.Nanoleaf {
                     var exInt = 0;
                     foreach (var leaf in existingLeaves) {
                         if (leaf.Id == newLeaf.Id) {
-                            LogUtil.Write("Updating existing leaf.");
                             newLeaf.Token = leaf.Token;
                             newLeaf.X = leaf.X;
                             newLeaf.Y = leaf.Y;
@@ -99,6 +96,7 @@ namespace HueDream.Models.Nanoleaf {
                             add = false;
                             break;
                         }
+
                         exInt++;
                     }
 
@@ -120,14 +118,15 @@ namespace HueDream.Models.Nanoleaf {
                         if (layout != null) leaf.Layout = layout;
                         leaf.Scale = 1;
                     } catch (Exception) {
-                        LogUtil.Write("An exception occurred, probably the nanoleaf is unplugged.");
+                        LogUtil.Write("An exception occurred, probably the nanoleaf is unplugged.","ERROR");
                     }
                 }
             }
+
             DataUtil.SetItem<List<NanoData>>("leaves", nanoLeaves);
             return nanoLeaves;
         }
-       
+
 
         private static NanoLayout MergeLayouts(NanoLayout source, NanoLayout dest) {
             var output = new NanoLayout {PositionData = new List<PanelLayout>()};

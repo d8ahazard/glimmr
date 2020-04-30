@@ -14,6 +14,7 @@ namespace HueDream.Models.LED {
         private readonly Neopixel neoPixel;
         
         public LedStrip(LedData ld) {
+            if (ld == null) throw new ArgumentException("Invalid LED Data.");
             LogUtil.Write("Initializing LED Strip.");
             Brightness = ld.Brightness;
             StartupAnimation = ld.StartupAnimation;
@@ -39,6 +40,7 @@ namespace HueDream.Models.LED {
         }
         
         public void UpdateAll(List<Color> colors) {
+            if (colors == null) throw new ArgumentException("Invalid color input.");
             var iSource = 0;
             var destArray = new Color[ledCount];
             for (var i = 0; i < ledCount; i++) {
@@ -90,7 +92,6 @@ namespace HueDream.Models.LED {
 
         public void Dispose() {
             Dispose(true);
-            GC.SuppressFinalize(this);
         }
         #endregion
     }

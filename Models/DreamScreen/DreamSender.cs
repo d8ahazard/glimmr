@@ -10,7 +10,7 @@ namespace HueDream.Models.DreamScreen {
             IPEndPoint ep = null, bool groupSend = false) {
             if (payload is null) throw new ArgumentNullException(nameof(payload));
             // If we don't specify an endpoint...talk to self
-            if (ep == null) ep = new IPEndPoint(IPAddress.Parse("0.0.0.0"), 8888);
+            ep ??= new IPEndPoint(IPAddress.Parse("0.0.0.0"), 8888);
             using var stream = new MemoryStream();
             using var response = new BinaryWriter(stream);
             // Magic header
@@ -54,8 +54,7 @@ namespace HueDream.Models.DreamScreen {
 
         public static void SendUdpBroadcast(byte[] bytes) {
             if (bytes is null) throw new ArgumentNullException(nameof(bytes));
-            var client = new UdpClient();
-            client.Ttl = 128;
+            var client = new UdpClient {Ttl = 128};
             client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             var ip = new IPEndPoint(IPAddress.Parse("255.255.255.255"), 8888);
             client.Send(bytes, bytes.Length, ip);

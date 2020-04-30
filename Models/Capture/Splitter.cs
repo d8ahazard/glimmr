@@ -50,13 +50,14 @@ namespace HueDream.Models.Capture {
             var ho = srcWidth * .127;
             var lb = srcHeight - vo;
             var pr = srcWidth - ho;
-            checkRegions = new List<Rectangle>();
+            checkRegions = new List<Rectangle> {
+                new Rectangle(0, 0, srcWidth, (int) vo),
+                new Rectangle(0, (int) lb, srcWidth, (int) vo),
+                new Rectangle(0, 0, (int) ho, srcHeight),
+                new Rectangle((int) pr, 0, (int) ho, srcHeight)
+            };
             // Add letterbox regions
-            checkRegions.Add(new Rectangle(0, 0, srcWidth, (int) vo));
-            checkRegions.Add(new Rectangle(0, (int) lb, srcWidth, (int) vo));
             // Add pillar regions
-            checkRegions.Add(new Rectangle(0, 0, (int) ho, srcHeight));
-            checkRegions.Add(new Rectangle((int) pr, 0, (int) ho, srcHeight));
             letterCoords = DrawGrid(srcWidth, srcHeight, vo);
             letterSectors = DrawSectors(srcWidth, srcHeight, vo);
             pillarCoords = DrawGrid(srcWidth, srcHeight, 0, ho);
