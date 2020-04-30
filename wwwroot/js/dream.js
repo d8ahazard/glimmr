@@ -37,24 +37,33 @@ $(function () {
     $('dsCard').hide();
     // Initialize BMD
     $('body').bootstrapMaterialDesign();
+    setListeners();
+    // Refresh devices every 60 seconds
+    setInterval(function(){
+        RefreshData();
+    },60000);
     
-   $('.hintbtn').click(function(){
-       let gp = $(this).parent().parent();
-       let hint = gp.find('.hint');
-       console.log("HINT: ", hint, gp);
-       if (hint.css('display') === 'none') {
-           hint.slideDown();
-       } else {
-           hint.slideUp();
-       }
-   });
-    
+
+});
+
+function setListeners() {
+    $('.hintbtn').click(function(){
+        let gp = $(this).parent().parent();
+        let hint = gp.find('.hint');
+        console.log("HINT: ", hint, gp);
+        if (hint.css('display') === 'none') {
+            hint.slideDown();
+        } else {
+            hint.slideUp();
+        }
+    });
+
     $('#showSettings').click(function(){
         hidePanels();
         $('.navbar-toggler').click();
         $('#navTitle').html("Settings");
         selectedDevice = null;
-        $('#settingsCard').slideDown();        
+        $('#settingsCard').slideDown();
     });
 
     $('.settingsBtn').click(function () {
@@ -78,27 +87,27 @@ $(function () {
         parent.hide();
         sTarget = parent;
         sTarget2=$('#' +$(this).data('target'));
-        sTarget2.show();        
+        sTarget2.show();
     });
-    
+
     $('#settingsBack').click(function() {
-       if (sTarget !== null) {
-           sTarget.show();
-           sTarget2.hide();
-           sTarget = sTarget2;
-           sTarget = null;           
-       }  else {
-           $('#drawerOpen').show();
-           $('#settingsBack').hide();
-           $('.settingsBtn').show();
-           $('.settingExpand').removeClass('show').addClass('collapse');
-           if (sTarget2 === null) {
-               
-           } else {
-               console.log("Starget", sTarget);
-               sTarget.parent().parent().find(".devDisplay").slideDown();
-           }
-       }
+        if (sTarget !== null) {
+            sTarget.show();
+            sTarget2.hide();
+            sTarget = sTarget2;
+            sTarget = null;
+        }  else {
+            $('#drawerOpen').show();
+            $('#settingsBack').hide();
+            $('.settingsBtn').show();
+            $('.settingExpand').removeClass('show').addClass('collapse');
+            if (sTarget2 === null) {
+
+            } else {
+                console.log("Starget", sTarget);
+                sTarget.parent().parent().find(".devDisplay").slideDown();
+            }
+        }
     });
 
     $('#refreshDevices').click(function(){
@@ -107,7 +116,7 @@ $(function () {
     });
 
     $('#dsName').on('input', function(){
-        
+
     });
 
     $("#dsName").blur(function() {
@@ -119,15 +128,15 @@ $(function () {
             group: group,
             name: nVal
         };
-        postData("devname", out);            
-            RefreshData();
+        postData("devname", out);
+        RefreshData();
     });
 
     // On capture mode btn click
     $('.capModeBtn').click(function() {
-       let target = $(this).data('target');
-       setCaptureMode(target);
-        
+        let target = $(this).data('target');
+        setCaptureMode(target);
+
     });
 
     // Link the hue
@@ -143,29 +152,29 @@ $(function () {
             linkNano();
         }
     });
-    
+
     $('.nanoFlip').on('click', function() {
-       let flipVal = $(this).val() === "on";
-       let flipDir = $(this).data('orientation');
-       console.log("Setting da flip for " + flipDir + " to " + flipVal);       
-       if (flipDir === "h") {
-           selectedDevice['mirrorX'] = flipVal;
-       } else {
-           selectedDevice['mirrorY'] = flipVal;
-       }
-       postData("flipNano", {dir: flipDir, val: flipVal, id: selectedDevice.id});
-       setTimeout(function() {
-           let newNano = postResult;
-           console.log("New nano: ", newNano);
-           drawNanoShapes(newNano);
-       }, 1000);
-        
+        let flipVal = $(this).val() === "on";
+        let flipDir = $(this).data('orientation');
+        console.log("Setting da flip for " + flipDir + " to " + flipVal);
+        if (flipDir === "h") {
+            selectedDevice['mirrorX'] = flipVal;
+        } else {
+            selectedDevice['mirrorY'] = flipVal;
+        }
+        postData("flipNano", {dir: flipDir, val: flipVal, id: selectedDevice.id});
+        setTimeout(function() {
+            let newNano = postResult;
+            console.log("New nano: ", newNano);
+            drawNanoShapes(newNano);
+        }, 1000);
+
     });
-    
+
     // Emulator type change #TODO Post directly
     $(document).on('change', '.emuType', function() {
         deviceData.name = deviceData.name.replace(deviceData.tag, $(this).val());
-        deviceData.tag = $(this).val();        
+        deviceData.tag = $(this).val();
         loadDsData();
     });
 
@@ -175,9 +184,6 @@ $(function () {
         let newVal = $(this).val().toString();
         updateLightProperty(myId, "targetSector", newVal);
     });
-
-    
-    
 
     $(window).on('resize', function(e) {
         clearTimeout(resizeTimer);
@@ -202,28 +208,28 @@ $(function () {
         saveSelectedDevice();
         postData('brightness', selectedDevice);
     });
-    
+
     $('#dsIpSelect').change( function() {
         let dsIp = $(this).val();
         $.each(devices, function() {
-           if ($(this)[0].ipAddress === dsIp) {
-               targetDs = $(this)[0];
-               if (captureMode === 0) {
-                   vLedCount = $(this)[0].flexSetup[0];
-                   hLedCount = $(this)[0].flexSetup[1];
-                   $('#vCount').val(vLedCount);
-                   $('#hCount').val(hLedCount);
-               }
-           } 
+            if ($(this)[0].ipAddress === dsIp) {
+                targetDs = $(this)[0];
+                if (captureMode === 0) {
+                    vLedCount = $(this)[0].flexSetup[0];
+                    hLedCount = $(this)[0].flexSetup[1];
+                    $('#vCount').val(vLedCount);
+                    $('#hCount').val(hLedCount);
+                }
+            }
         });
         postData("dsIp", dsIp);
     });
-    
+
     $('#cameraType').change(function() {
-       let cType = $(this).val();
-       postData('camType', cType); 
+        let cType = $(this).val();
+        postData('camType', cType);
     });
-    
+
     $('.ledCount').change(function() {
         let lCount = $(this).val();
         let type = $(this).data('type');
@@ -235,7 +241,7 @@ $(function () {
             postData("hcount", lCount);
         }
     });
-    
+
     // On Override click
     $(document).on('click', '.overrideBright', function() {
         let myId = $(this).attr('id').replace("overrideBrightness", "");
@@ -257,7 +263,7 @@ $(function () {
         $('.navbar-toggler').click();
         event.stopPropagation();
     });
-    
+
     // Cycle bridges
     $('.arrowBtn').click(function() {
         let cycleInt = 1;
@@ -272,27 +278,27 @@ $(function () {
             loadBridge(bridgeInt);
         }
     });
-        
+
     // On device mode change 
-    $('.modeBtn').click(function () {        
+    $('.modeBtn').click(function () {
         $(".modeBtn").removeClass("active");
         $(this).addClass('active');
         const mode = $(this).data('mode');
         selectedDevice.mode = mode;
         saveSelectedDevice();
-        postData("mode", mode);        
+        postData("mode", mode);
     });
 
-    
+
     // On group selection change
     $('.dsGroup').change(function () {
         const id = $(this).val();
         hueGroup = id;
         bridges[bridgeInt]["selectedGroup"] = id;
         postData("bridges", bridges);
-        mapLights();        
+        mapLights();
     });
-    
+
     // On selection map change
     $(document).on('focusin', '.mapSelect', function () {
         $(this).data('val', $(this).val());
@@ -305,10 +311,10 @@ $(function () {
             $('#sector' + prev).removeClass('checked');
             $(this).data('val', $(this).val());
         }
-        hueGroup = current.toString();        
+        hueGroup = current.toString();
     });
 
-});
+}
 
 // This gets called in loop by hue auth to see if we've linked our bridge.
 function checkHueAuth() {
@@ -552,6 +558,7 @@ function loadData() {
         console.log("Dream data: ", data);
         datastore = data;
         buildLists(data);
+        RefreshData();
     });
 }
 

@@ -75,8 +75,8 @@ namespace HueDream.Models.Util {
             store.InsertItem("emuType", "SideKick");
             store.InsertItem("captureMode", 0);
             store.InsertItem("camType", 1);
-            BaseDevice myDevice = new SideKick(GetLocalIpAddress());
-            myDevice.Initialize();
+            BaseDevice myDevice = new SideKick(IpUtil.GetLocalIpAddress());
+            myDevice.SetDefaults();
             store.InsertItem("myDevice", myDevice);
             var lData = new LedData(true);
             store.InsertItem("ledData", lData);
@@ -202,13 +202,6 @@ namespace HueDream.Models.Util {
             return newPath;
         }
 
-        private static string GetLocalIpAddress() {
-            var host = Dns.GetHostEntry(Dns.GetHostName());
-            foreach (var ip in host.AddressList)
-                if (ip.AddressFamily == AddressFamily.InterNetwork)
-                    return ip.ToString();
-            throw new Exception("No network adapters found in " + JsonConvert.SerializeObject(host));
-        }
 
         public static void RefreshDevices() {
             // Get dream devices

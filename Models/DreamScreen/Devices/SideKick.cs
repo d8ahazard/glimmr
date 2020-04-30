@@ -10,23 +10,29 @@ namespace HueDream.Models.DreamScreen.Devices {
         private static readonly byte[] RequiredEspFirmwareVersion = {3, 1};
         public static readonly byte[] DefaultSectorAssignment = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 0, 0};
 
-        public SideKick() { }
+        public SideKick() {
+        }
 
         public SideKick(string ipAddress) : base(ipAddress) {
+            SetDefaults();
+            IpAddress = ipAddress;
+        }
+
+        [JsonProperty] private byte[] EspFirmwareVersion { get; set; }
+
+        public override void SetDefaults() {
             Name = DeviceTag;
             EspFirmwareVersion = RequiredEspFirmwareVersion;
             SectorData = new byte[] {0};
             SectorAssignment = DefaultSectorAssignment;
             IsDemo = false;
             ProductId = 3;
+            GroupNumber = 0;
             Tag = DeviceTag;
             GroupName = "unassigned";
-        }
-
-        [JsonProperty] private byte[] EspFirmwareVersion { get; set; }
-
-        public override void SetDefaults() {
-            
+            Saturation = "FFFFFF";
+            AmbientColor = "FFFFFF";
+            Brightness = 100;
         }
 
         [JsonProperty] public int[] flexSetup { get; set; }
@@ -39,7 +45,6 @@ namespace HueDream.Models.DreamScreen.Devices {
 
         public override void ParsePayload(byte[] payload) {
             if (payload is null) throw new ArgumentNullException(nameof(payload));
-
             var name = ByteUtils.ExtractString(payload, 0, 16);
             if (name.Length == 0) name = DeviceTag;
             Name = name;

@@ -440,7 +440,7 @@ namespace HueDream.Models.DreamScreen {
                 command = msg.Command;
                 msgDevice = msg.Device;
                 if (from != null && command != null && command != "COLOR_DATA" && command != "SUBSCRIBE") {
-                    LogUtil.Write($@"{from} -> localhost::{command}.");
+                    LogUtil.Write($@"{from} -> {dev.IpAddress}::{command}.");
                 }
                 flag = msg.Flags;
                 var groupMatch = msg.Group == dev.GroupNumber || msg.Group == 255;
