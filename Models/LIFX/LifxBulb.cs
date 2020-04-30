@@ -5,37 +5,39 @@ using LifxNet;
 
 namespace HueDream.Models.LIFX {
     public class LifxBulb {
-        public LifxData data;
-        public LightBulb b;
-        private int targetSector;
+        private LifxData Data { get; }
+        private LightBulb B { get; }
+        private readonly int targetSector;
         public LifxBulb(LifxData d) {
-            data = d ?? throw new ArgumentException("Invalid Data");
-            b = new LightBulb(d.HostName, d.MacAddress, d.Service, (uint)d.Port);
+            Data = d ?? throw new ArgumentException("Invalid Data");
+            B = new LightBulb(d.HostName, d.MacAddress, d.Service, (uint)d.Port);
             targetSector = d.SectorMapping - 1;
         }
 
-        public async void StartStream(LifxClient c) {
-            if (c == null) throw new ArgumentException("Invalid LIFX Client.");
+        public async void StartStream() {
+            var c = LifxSender.getClient();
             var col = new Color {R = 0x00, G = 0x00, B = 0x00};
-            c.SetLightPowerAsync(b, TimeSpan.Zero, true);
-            c.SetColorAsync(b, col, 2700);
+            await c.SetLightPowerAsync(B, TimeSpan.Zero, true).ConfigureAwait(false);
+            await c.SetColorAsync(B, col, 2700).ConfigureAwait(false);
         }
         
-        public async void SetColor(LifxClient c, List<System.Drawing.Color> inputs) {
+        public async void SetColor(List<System.Drawing.Color> inputs) {
+            var c = LifxSender.getClient();
             if (inputs == null || c == null) throw new ArgumentException("Invalid color inputs.");
             if (inputs.Count < 12) throw new ArgumentOutOfRangeException(nameof(inputs));
             var input = inputs[targetSector];
             var nC = new Color {R = input.R, G = input.G, B = input.B};
-            c.SetColorAsync(b, nC, 7500);
+            await c.SetColorAsync(B, nC, 7500).ConfigureAwait(false);
         }
 
-        public async void StopStream(LifxClient c) {
+        public async void StopStream() {
+            var c = LifxSender.getClient();
             if (c == null) throw new ArgumentException("Invalid lifx client.");
             LogUtil.Write("Setting color back the way it was.");
-            var prevColor = ColorUtil.HslToColor(data.Hue, data.Saturation, data.Brightness);
+            var prevColor = ColorUtil.HslToColor(Data.Hue, Data.Saturation, Data.Brightness);
             var nC = new Color {R = prevColor.R, G = prevColor.G, B = prevColor.B};
-            c.SetColorAsync(b, nC, (ushort) data.Kelvin);
-            c.SetLightPowerAsync(b, TimeSpan.Zero, data.Power);
+            await c.SetColorAsync(B, nC, (ushort) Data.Kelvin).ConfigureAwait(false);
+            await c.SetLightPowerAsync(B, TimeSpan.Zero, Data.Power).ConfigureAwait(false);
 
             
         }

@@ -244,7 +244,7 @@ namespace HueDream.Models.DreamScreen {
                 LogUtil.Write("List made");
                 if (lifx != null) {
                     LogUtil.Write("Data valid.");
-                    lifxClient = LifxClient.CreateAsync().Result;
+                    lifxClient = LifxSender.getClient();
                     LogUtil.Write("Client initialized.");
                     foreach (LifxData b in lifx) {
                         LogUtil.Write("looping data...");
@@ -252,7 +252,7 @@ namespace HueDream.Models.DreamScreen {
                         LogUtil.Write("Initializing bulb: " + b.HostName);
                         var bulb = new LifxBulb(b);
                         LogUtil.Write("Bulb initialized.");
-                        bulb.StartStream(lifxClient);
+                        bulb.StartStream();
                         LogUtil.Write("Started, adding.");
                         bulbs.Add(bulb);
                     }
@@ -274,11 +274,9 @@ namespace HueDream.Models.DreamScreen {
                 var bData = DataUtil.GetItem<List<LifxData>>("lifxBulbs");
                 if (bData != null) {
                     foreach (var b in bulbs) {
-                       b.StopStream(lifxClient); 
+                        b.StopStream();
                     }
                 }
-                lifxClient?.Dispose();
-
                 LogUtil.WriteDec("Stream stopped.");
                 streamStarted = false;
             }
@@ -296,7 +294,7 @@ namespace HueDream.Models.DreamScreen {
             }
 
             foreach (var b in bulbs) {
-                b.SetColor(lifxClient, sectors);
+                b.SetColor(sectors);
             }
 
             strip?.UpdateAll(colors);
@@ -647,6 +645,7 @@ namespace HueDream.Models.DreamScreen {
 
             panels = new List<Panel>();
             LogUtil.Write("Panels disposed.");
+            LifxSender.destroyClient();
         }
     }
 }

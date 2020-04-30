@@ -1,41 +1,36 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using HueDream.Models.Util;
 using LifxNet;
 
 namespace HueDream.Models.LIFX {
-    public sealed class LifxDiscovery : IDisposable {
-        private readonly LifxClient _client;
-        private List<LightBulb> _bulbs;
-        private bool _disposed;
+    public sealed class LifxDiscovery {
+        private readonly LifxClient client;
+        private List<LightBulb> bulbs;
+        private bool disposed;
 
         public LifxDiscovery() {
-            _client = LifxClient.CreateAsync().Result;
+            client = LifxSender.getClient();
         }
 
         public async Task<List<LifxData>> Discover(int timeOut) {
-            _bulbs = new List<LightBulb>();
-            _client.DeviceDiscovered += Client_DeviceDiscovered;
-            var s = new Stopwatch();
-            s.Start();
-            _client.StartDeviceDiscovery();
+            bulbs = new List<LightBulb>();
+            client.DeviceDiscovered += Client_DeviceDiscovered;
+            client.StartDeviceDiscovery();
             LogUtil.Write("Starting discovery.");
-            while (s.ElapsedMilliseconds < timeOut * 1000) {
-            }
-
+            await Task.Delay(timeOut * 1000).ConfigureAwait(false);
             LogUtil.Write("Discovery completed.");
-            _client.StopDeviceDiscovery();
+            client.StopDeviceDiscovery();
             var output = new List<LifxData>();
-            foreach (var b in _bulbs) {
-                var state = _client.GetLightStateAsync(b).Result;
+            foreach (var b in bulbs) {
+                var state = client.GetLightStateAsync(b).Result;
                 var d = new LifxData(b) {
-                    Power = _client.GetLightPowerAsync(b).Result,
+                    Power = client.GetLightPowerAsync(b).Result,
                     Hue = state.Hue / 35565 * 360,
-                    Saturation = state.Saturation / 35565,
-                    Brightness = state.Brightness / 35565,
-                    Kelvin =  state.Kelvin
+                    Saturation = (double) state.Saturation / 35565,
+                    Brightness = (double) state.Brightness / 35565,
+                    Kelvin = state.Kelvin,
+                    SectorMapping = -1
                 };
                 output.Add(d);
             }
@@ -50,11 +45,14 @@ namespace HueDream.Models.LIFX {
             foreach (LifxData bulb in b) {
                 var add = true;
                 if (existing != null) {
-                    foreach (LifxData e in existing) {
-                        if (e.MacAddressString != bulb.MacAddressString) continue;
+                    for (var i = 0; i < existing.Count; i++) {
+                        LifxData ex = existing[i];
+                        if (ex.MacAddressString != bulb.MacAddressString) continue;
                         add = false;
                         LogUtil.Write("Matching existing device, skipping...");
-                        e.LastSeen = bulb.LastSeen;
+                        ex.LastSeen = bulb.LastSeen;
+                        ex.SectorMapping = -1;
+                        existing[i] = ex;
                     }
                 }
 
@@ -70,24 +68,7 @@ namespace HueDream.Models.LIFX {
         private void Client_DeviceDiscovered(object sender, LifxClient.DeviceDiscoveryEventArgs e) {
             var bulb = e.Device as LightBulb;
             LogUtil.Write("Bulb discovered?");
-            _bulbs.Add(bulb);
-        }
-
-        public void Dispose() {
-            Dispose(true);
-        }
-
-
-        private void Dispose(bool disposing) {
-            if (_disposed) {
-                return;
-            }
-
-            if (disposing) {
-                _client?.Dispose();
-            }
-
-            _disposed = true;
+            bulbs.Add(bulb);
         }
     }
 }

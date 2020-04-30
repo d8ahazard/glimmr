@@ -220,8 +220,6 @@ namespace HueDream.Models.Util {
             var bridges = await bridgeTask.ConfigureAwait(false);
             var dreamDevices = await dreamTask.ConfigureAwait(false);
             var lifxDevices = await bulbTask.ConfigureAwait(false);
-            ld.Dispose();
-            LogUtil.Write("Vars acquired...");
             SetItem<List<BridgeData>>("bridges", bridges);
             SetItem<List<NanoData>>("leaves", leaves);
             SetItem<List<LifxData>>("lifxBulbs", lifxDevices);
@@ -240,7 +238,6 @@ namespace HueDream.Models.Util {
             var bridges = await hueTask.ConfigureAwait(false);
             var dreamDevices = await dreamTask.ConfigureAwait(false);
             var bulbs = await bulbTask.ConfigureAwait(false);
-            ld.Dispose();
             await store.InsertItemAsync("bridges", bridges).ConfigureAwait(false);
             await store.InsertItemAsync("leaves", leaves).ConfigureAwait(false);
             await store.InsertItemAsync("devices", dreamDevices).ConfigureAwait(false);
