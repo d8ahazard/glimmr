@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 using HueDream.Models.Util;
 using Makaretu.Dns;
 
 namespace HueDream.Models.Nanoleaf {
     public static class NanoDiscovery {
-        public static List<NanoData> Discover(int timeout = 5) {
+        public static async Task<List<NanoData>> Discover(int timeout = 5) {
             var output = new List<NanoData>();
             using (var mDns = new MulticastService()) {
                 using (var sd = new ServiceDiscovery(mDns)) {
@@ -66,15 +67,9 @@ namespace HueDream.Models.Nanoleaf {
                     };
 
 
-                    var s = new Stopwatch();
-                    s.Start();
                     mDns.Start();
                     LogUtil.Write("Discovery Started.");
-                    while (s.Elapsed < TimeSpan.FromSeconds(timeout)) {
-                        //LogUtil.Write("Looping: " + s.Elapsed);
-                    }
-
-                    s.Stop();
+                    await Task.Delay(5000).ConfigureAwait(false);
                     mDns.Stop();
                     LogUtil.Write($"Discovery complete, found {output.Count} devices.");
                     return output;
@@ -82,9 +77,9 @@ namespace HueDream.Models.Nanoleaf {
             }
         }
 
-        public static List<NanoData> Refresh(int timeout = 5) {
+        public static async Task<List<NanoData>> Refresh(int timeout = 5) {
             var existingLeaves = DataUtil.GetItem<List<NanoData>>("leaves");
-            var leaves = Discover(timeout);
+            var leaves = await Discover(timeout).ConfigureAwait(false);
             var nanoLeaves = new List<NanoData>();
 
             if (existingLeaves != null) {

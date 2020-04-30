@@ -152,9 +152,9 @@ namespace HueDream.Models.Hue {
             return null;
         }
 
-        public static List<BridgeData> GetBridgeData() {
+        public static async Task<List<BridgeData>> GetBridgeData() {
             var bridges = DataUtil.GetItem<List<BridgeData>>("bridges");
-            var newBridges = FindBridges();
+            var newBridges = await FindBridges().ConfigureAwait(false);
             LogUtil.Write("Now we're enumerating old bridges.");
             var output = new List<BridgeData>();
             if (bridges != null) {
@@ -188,14 +188,10 @@ namespace HueDream.Models.Hue {
             return output;
         }
 
-        public static LocatedBridge[] FindBridges(int time = 2) {
+        public static async Task<LocatedBridge[]> FindBridges(int time = 3) {
             LogUtil.Write("Discovery Started.");
-            // var hd = new HueDiscovery();
-            // var res = hd.LocateBridges().Result;
-            // var output = res.ToArray();
-            var bridgeTask	= HueBridgeDiscovery.FastDiscoveryWithNetworkScanFallbackAsync(TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(7));
-            var output = bridgeTask.Result.ToArray();
-            LogUtil.Write($"Discovery complete, found {output.Length} devices.");
+            var output	= await HueBridgeDiscovery.FastDiscoveryWithNetworkScanFallbackAsync(TimeSpan.FromSeconds(time), TimeSpan.FromSeconds(7)).ConfigureAwait(false);
+            LogUtil.Write($"Discovery complete, found {output.Count} devices.");
             return output.ToArray();
         }
 

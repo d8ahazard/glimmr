@@ -16,6 +16,7 @@ namespace HueDream.Models.LIFX {
             Service = b.Service;
             Port = (int) b.Port;
             MacAddress = b.MacAddress;
+            MacAddressString = b.MacAddressName;
         }
         [JsonProperty] 
         public string HostName { get; internal set; }
@@ -30,6 +31,10 @@ namespace HueDream.Models.LIFX {
 
         [JsonProperty] 
         public byte[] MacAddress { get; internal set; }
+        
+        [JsonProperty] 
+        public string MacAddressString { get; internal set; }
+
         [JsonProperty] 
         public double Hue { get; set; }
         [JsonProperty] 

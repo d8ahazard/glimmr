@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using HueDream.Models.DreamScreen;
 using HueDream.Models.DreamScreen.Devices;
 using HueDream.Models.Hue;
@@ -13,6 +14,8 @@ using JsonFlatFileDataStore;
 using ManagedBass;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Q42.HueApi;
+using Q42.HueApi.Models.Bridge;
 
 namespace HueDream.Models.Util {
     [Serializable]
@@ -203,36 +206,46 @@ namespace HueDream.Models.Util {
         }
 
 
-        public static void RefreshDevices() {
+        public static async void RefreshDevices() {
             // Get dream devices
-            var leaves = NanoDiscovery.Refresh();
-            // Find bridges
-            var bridges = HueBridge.GetBridgeData();
+            var ld = new LifxDiscovery();
+            var nanoTask = NanoDiscovery.Refresh();
+            var bridgeTask = HueBridge.GetBridgeData();
+            var dreamTask = DreamDiscovery.FindDevices();
+            var bulbTask = ld.Refresh();
+            LogUtil.Write("Tasks created...");
+            await Task.WhenAll(nanoTask, bridgeTask, dreamTask, bulbTask).ConfigureAwait(false);
+            LogUtil.Write("Await done?");
+            var leaves = nanoTask.Result;
+            var bridges = await bridgeTask.ConfigureAwait(false);
+            var dreamDevices = await dreamTask.ConfigureAwait(false);
+            var lifxDevices = await bulbTask.ConfigureAwait(false);
+            ld.Dispose();
+            LogUtil.Write("Vars acquired...");
             SetItem<List<BridgeData>>("bridges", bridges);
             SetItem<List<NanoData>>("leaves", leaves);
-            var dreamDevices = DreamDiscovery.FindDevices();
-            var ld = new LifxDiscovery();
-            var bulbs = ld.Refresh();
-            LogUtil.Write("Bulbs: " + JsonConvert.SerializeObject(bulbs));
-            SetItem<List<LifxData>>("lifxBulbs", bulbs);
-            ld.Dispose();
+            SetItem<List<LifxData>>("lifxBulbs", lifxDevices);
             SetItem("devices", dreamDevices);
         }
 
-        public static void ScanDevices(DataStore store) {
+        public static async Task ScanDevices(DataStore store) {
             // Get dream devices
-            var leaves = NanoDiscovery.Discover();
-            // Find bridges
-            var bridges = HueBridge.FindBridges();
-            store.InsertItem("bridges", bridges);
-            store.InsertItem("leaves", leaves);
-            var dreamDevices = DreamDiscovery.FindDevices();
-            store.InsertItem("devices", dreamDevices);
             var ld = new LifxDiscovery();
-            var bulbs = ld.Discover(5);
-            LogUtil.Write("Bulbs: " + JsonConvert.SerializeObject(bulbs));
-            store.InsertItem("lifxBulbs", bulbs);
+            var nanoTask = NanoDiscovery.Discover();
+            var hueTask = HueBridge.FindBridges();
+            var dreamTask = DreamDiscovery.FindDevices();
+            var bulbTask = ld.Discover(5);
+            await Task.WhenAll(nanoTask, hueTask, dreamTask, bulbTask).ConfigureAwait(false);
+            var leaves = await nanoTask.ConfigureAwait(false);
+            var bridges = await hueTask.ConfigureAwait(false);
+            var dreamDevices = await dreamTask.ConfigureAwait(false);
+            var bulbs = await bulbTask.ConfigureAwait(false);
             ld.Dispose();
+            await store.InsertItemAsync("bridges", bridges).ConfigureAwait(false);
+            await store.InsertItemAsync("leaves", leaves).ConfigureAwait(false);
+            await store.InsertItemAsync("devices", dreamDevices).ConfigureAwait(false);
+            await store.InsertItemAsync("lifxBulbs", bulbs).ConfigureAwait(false);
+            
         }
 
         public static void RefreshPublicIp() {

@@ -227,7 +227,7 @@ namespace HueDream.Controllers {
                     DataUtil.RefreshDevices();
                     return Content(DataUtil.GetStoreSerialized(), "application/json");
                 case "findDreamDevices": {
-                    List<BaseDevice> dev = DreamDiscovery.FindDevices();
+                    List<BaseDevice> dev = DreamDiscovery.FindDevices().Result;
                     return new JsonResult(dev);
                 }
                 case "refreshNanoLeaf": {
@@ -261,7 +261,7 @@ namespace HueDream.Controllers {
                 case "findNanoLeaf": {
                     LogUtil.Write("Find Nano Leaf called.");
                     var existingLeaves = DataUtil.GetItem<List<NanoData>>("leaves");
-                    var leaves = NanoDiscovery.Discover(2);
+                    var leaves = NanoDiscovery.Discover(2).Result;
 
                     var all = new List<NanoData>();
                     LogUtil.Write("Got all devices: " + JsonConvert.SerializeObject(existingLeaves));

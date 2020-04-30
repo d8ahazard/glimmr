@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using HueDream.Models.Util;
 using LifxNet;
 
@@ -14,7 +15,7 @@ namespace HueDream.Models.LIFX {
             _client = LifxClient.CreateAsync().Result;
         }
 
-        public List<LifxData> Discover(int timeOut) {
+        public async Task<List<LifxData>> Discover(int timeOut) {
             _bulbs = new List<LightBulb>();
             _client.DeviceDiscovered += Client_DeviceDiscovered;
             var s = new Stopwatch();
@@ -42,17 +43,18 @@ namespace HueDream.Models.LIFX {
             return output;
         }
 
-        public List<LifxData> Refresh() {
-            var b = Discover(5);
+        public async Task<List<LifxData>> Refresh() {
+            var b = await Discover(5).ConfigureAwait(false);
             var output = new List<LifxData>();
             var existing = DataUtil.GetItem<List<LifxData>>("lifxBulbs");
-            foreach (var bulb in b) {
+            foreach (LifxData bulb in b) {
                 var add = true;
                 if (existing != null) {
                     foreach (LifxData e in existing) {
-                        if (e.MacAddress == bulb.MacAddress) {
-                            add = false;
-                        }
+                        if (e.MacAddressString != bulb.MacAddressString) continue;
+                        add = false;
+                        LogUtil.Write("Matching existing device, skipping...");
+                        e.LastSeen = bulb.LastSeen;
                     }
                 }
 
