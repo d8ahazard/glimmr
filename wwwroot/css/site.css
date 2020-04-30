@@ -409,18 +409,7 @@ input[type="range"]:active ~ #rangevalue {
     color: white;
 }
 
-.settingExpand.collapse, .settingExpand.show {
-    max-height: 0;
-    overflow-y: hidden;
-    -webkit-transition: max-height 0.5s ease-in-out;
-    -moz-transition: max-height 0.5s ease-in-out;
-    -o-transition: max-height 0.5s ease-in-out;
-    transition: max-height 0.5s ease-in-out;
-}
 
-.settingExpand.show {
-    max-height: 100%;
-}
 
 .settingBtn.active {
     background-color: white;

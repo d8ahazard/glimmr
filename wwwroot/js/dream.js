@@ -27,14 +27,14 @@ let datastore = null;
 let vLedCount = 0;
 let hLedCount = 0;
 let postResult = null;
-let sTarget = null;
-let sTarget2 = null;
+let sTarget = [];
 
 $(function () {
     loadData();
     $('#nanoCard').hide();
     $('#hueCard').hide();
     $('dsCard').hide();
+    $('.settingExpand').slideUp();
     // Initialize BMD
     $('body').bootstrapMaterialDesign();
     setListeners();
@@ -69,43 +69,37 @@ function setListeners() {
     $('.settingsBtn').click(function () {
         let target = $(this).data('target');
         let tDiv = $("#" + target);
-        sTarget2 = tDiv;
-        tDiv.parent().find(".devDisplay").slideUp();
-
-        if (tDiv.hasClass("collapse")) {
-            tDiv.removeClass('collapse');
-            tDiv.addClass('show');
-            $(this).addClass('sActive');
-        }
+        let sDiv = tDiv.parent().find(".devDisplay");
+        sTarget.push(sDiv, tDiv);
+        sDiv.slideUp();
+        tDiv.slideDown();
         $(this).hide();
         $('#drawerOpen').hide();
         $('#settingsBack').show();
+        console.log("Stargets: ", sTarget);
     });
 
     $('.s1').click(function(){
         let parent = $(this).parent();
-        parent.hide();
-        sTarget = parent;
-        sTarget2=$('#' +$(this).data('target'));
-        sTarget2.show();
+        let sTarget2 = $('#' +$(this).data('target'));
+        sTarget.push(parent, sTarget2);
+        parent.slideUp();
+        sTarget2.slideDown();
+        console.log("Stargets: ", sTarget);
     });
 
     $('#settingsBack').click(function() {
-        if (sTarget !== null) {
-            sTarget.show();
-            sTarget2.hide();
-            sTarget = sTarget2;
-            sTarget = null;
-        }  else {
-            $('#drawerOpen').show();
-            $('#settingsBack').hide();
-            $('.settingsBtn').show();
-            $('.settingExpand').removeClass('show').addClass('collapse');
-            if (sTarget2 === null) {
-
-            } else {
-                console.log("Starget", sTarget);
-                sTarget.parent().parent().find(".devDisplay").slideDown();
+        if (sTarget.length >= 2) {
+            console.log("Stargets: ", sTarget);
+            let toHide = sTarget.pop();
+            let toShow = sTarget.pop();
+            toHide.slideUp();
+            toShow.slideDown();
+            console.log("Stargets(2): ", sTarget);
+            if (sTarget.length === 0) {
+                $('#drawerOpen').show();
+                $('#settingsBack').hide();
+                $('.settingsBtn').show();
             }
         }
     });
