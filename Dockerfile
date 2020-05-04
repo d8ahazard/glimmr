@@ -22,9 +22,16 @@ COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "Glimmr.dll"]
 
 VOLUME /etc/huedream
-EXPOSE 1900/udp
-EXPOSE 2100/udp
+# Web UI
 EXPOSE 5699
+# Hue Discovery
+EXPOSE 1900/udp
+# Hue Streaming
+EXPOSE 2100/udp
+# DreamScreen
 EXPOSE 8888/udp
+# Lifx
 EXPOSE 56700/udp
+# Nanoleaf
+EXPOSE 60222/udp
 
