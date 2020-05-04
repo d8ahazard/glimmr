@@ -215,9 +215,9 @@ namespace HueDream.Models.Util {
         /// <returns>Modified path to config file</returns>
         private static string GetConfigPath(string filePath) {
             // If no etc dir, return normal path
-            if (!Directory.Exists("/etc/huedream")) return filePath;
+            if (!Directory.Exists("/etc/glimmr")) return filePath;
             // Make our etc path for docker
-            var newPath = "/etc/huedream/" + filePath;
+            var newPath = "/etc/glimmr/" + filePath;
             // If the config file doesn't exist locally, we're done
             if (!File.Exists(filePath)) return newPath;
             // Otherwise, move the config to etc
