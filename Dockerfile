@@ -7,6 +7,7 @@ WORKDIR /src
 COPY ["HueDream.csproj", ""]
 COPY ["pkg", "/root/pkg"]
 COPY ["build/linux", "/root/"]
+COPY ["build/linux", "/usr/lib/"]
 COPY ["NuGet.Config", "~/.nuget/packages"]
 RUN dotnet restore --source "/root/pkg" --source "https://api.nuget.org/v3/index.json" --source "https://www.myget.org/F/mmalsharp/api/v3/index.json"
 RUN dotnet restore "./HueDream.csproj"
@@ -23,6 +24,7 @@ COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "Glimmr.dll"]
 
 VOLUME /etc/huedream
+VOLUME /usr/lib
 # Web UI
 EXPOSE 5699
 # Hue Discovery
