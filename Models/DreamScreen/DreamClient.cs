@@ -73,7 +73,7 @@ namespace HueDream.Models.DreamScreen {
         private LedStrip strip;
 
         public DreamClient() {
-            aStream = new AudioStream();
+            aStream = getStream();
             var dd = DataUtil.GetStore();
             dev = DataUtil.GetDeviceData();
             dreamScene = new DreamScene();
@@ -123,6 +123,15 @@ namespace HueDream.Models.DreamScreen {
             return lt;
         }
 
+        private AudioStream getStream() {
+            try {
+                return new AudioStream();
+            } catch (DllNotFoundException e) {
+                LogUtil.Write("Unable to load bass Dll: " + e.Message);
+            }
+
+            return null;
+        }
 
         private void UpdateMode(int newMode) {
             if (prevMode == newMode) return;
@@ -386,6 +395,10 @@ namespace HueDream.Models.DreamScreen {
         }
 
         public Task StartAudioCapture(CancellationToken cancellation) {
+            if (aStream == null) {
+                LogUtil.Write("No Audio devices, no stream.");
+                return Task.CompletedTask;
+            }
             if (cancellation != CancellationToken.None) {
                 LogUtil.Write("Starting audio capture service.");
                 aStream.StartStream(cancellation);
