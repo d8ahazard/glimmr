@@ -6,6 +6,7 @@ FROM mcr.microsoft.com/dotnet/core/sdk:3.1-buster AS build
 WORKDIR /src
 COPY ["HueDream.csproj", ""]
 COPY ["pkg", "/root/pkg"]
+COPY ["build/linux", "/root/"]
 COPY ["NuGet.Config", "~/.nuget/packages"]
 RUN dotnet restore --source "/root/pkg" --source "https://api.nuget.org/v3/index.json" --source "https://www.myget.org/F/mmalsharp/api/v3/index.json"
 RUN dotnet restore "./HueDream.csproj"
