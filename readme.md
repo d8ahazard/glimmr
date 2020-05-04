@@ -1,25 +1,25 @@
-# [d8ahazard/huedream](https://github.com/d8ahazard/huedream)
+# [d8ahazard/glimmr](https://github.com/d8ahazard/glimmr)
 
 ## Installation
 
 ### Windows
-For Windows, download the latest release and extract wherever you like. You may need to unblock HueDream.exe from Windows Firewall.
+For Windows, download the latest release and extract wherever you like. You may need to unblock glimmr.exe from Windows Firewall.
 
 To run as a service, try out [NSSM - The Non Sucking Service Manager](http://nssm.cc/)
 
-Place NSSM.exe in the root of your HueDream folder. Open a command-line window in that directory, and type "nssm install HueDream".
+Place NSSM.exe in the root of your glimmr folder. Open a command-line window in that directory, and type "nssm install glimmr".
 
-A dialog will open. Press the ... button next to the PATH option, and select "huedream.exe" from the dialog.
+A dialog will open. Press the ... button next to the PATH option, and select "glimmr.exe" from the dialog.
 
 Click "Install service", and you're all set. 
 
 Now, just open a browser window and navigate to http://localhost:5699 to complete setup.
 
-(You may need to open ports 9000 and 8888 in Windows Firewall, or unblock huedream.exe entirely)
+(You may need to open ports 9000 and 8888 in Windows Firewall, or unblock Glimmr.exe entirely)
 
 
 ### Linux
-For Linux, download the latest release and extract to /opt/huedream (or wherever you want). I'll provide instructions on how to install as a service
+For Linux, download the latest release and extract to /opt/glimmr (or wherever you want). I'll provide instructions on how to install as a service
 as soon as I figure out how to do it. ;)
 
 For Docker (recommended), see below...
@@ -31,15 +31,15 @@ port that the web UI listens on. If so, modify the port number. e.g.: 'http://+:
 
 ```
 docker create \
-  --name=huedream \
-  -v <path to data>:/etc/huedream \
+  --name=glimmr \
+  -v <path to data>:/etc/glimmr \
   -p 1900:1900/udp \
   -p 2100:2100/udp \
   -p 5699:5699 \
   -p 8888:8888/udp \ 
   --network="bridge" \
   --restart unless-stopped \
-  digitalhigh/huedream
+  digitalhigh/glimmr
 ```
 
 
@@ -51,13 +51,13 @@ Compatible with docker-compose v2 schemas.
 ---
 version: "2"
 services:
-  huedream:
-    image: d8ahazard/huedream
-    container_name: huedream
+  glimmr:
+    image: d8ahazard/glimmr
+    container_name: glimmr
     restart: unless-stopped
     network: bridge
 	volumes:
-      - <path to data>:/etc/huedream
+      - <path to data>:/etc/glimmr
     ports:
       - 1900:1900/udp
       - 2100:2100/udp
@@ -71,7 +71,7 @@ Container images are configured using parameters passed at runtime (such as thos
 
 | Parameter | Function |
 | :----: | --- |
-| `-v <path_to_data>/etc/huedream` | Change <path_to_data> to the location where to keep HueDream ini |
+| `-v <path_to_data>/etc/glimmr` | Change <path_to_data> to the location where to keep glimmr ini |
 | `-p 1900:1900\udp` | Hue discovery port |
 | `-p 2100:2100\udp` | Hue broadcast port |
 | `-p 5699:5699` | Web UI port |
@@ -85,8 +85,8 @@ Container images are configured using parameters passed at runtime (such as thos
 
 Once installed, access the Web UI at `<your-ip>:5699`.
 
-### Find DreamScreen
-In the DreamScreen section, click the "Find DreamScreen" button if your DreamScreen ip is not shown in the UI. If you have more than one DreamScreen, you're currently SOL until I write logic to handle that...
+### Find Glimmr
+In the Glimmr section, click the "Find Glimmr" button if your Glimmr ip is not shown in the UI. If you have more than one Glimmr, you're currently SOL until I write logic to handle that...
 
 Optionally, you can select the type of DS device to emulate. If you choose "Connect", you wll need the beta version of the DS app.
 
@@ -99,14 +99,14 @@ Go into your hue app. In the side menu, select "Entertainment areas".
 Create a new entertainment area and configure it with your lights as they are in the room.
 
 ### Configure Light Mappings
-Back in the HueDream web UI, go to the "sync" section, and select your entertainment group.
+Back in the glimmr web UI, go to the "sync" section, and select your entertainment group.
 For each light you wish to map, select the sector in the dropdown that corresponds to the sector you wish to map to.
 
 Click the "Save settings" button to submit your configuration.
 
 ## PROFIT
 
-Open up your DreamScreen app. Select "Add new", and your device should show up as a sidekick or connect. 
+Open up your Glimmr app. Select "Add new", and your device should show up as a sidekick or connect. 
 
 From here, you can use the app normally to control your hue lights. You can rename it, add it to a group, and change the modes.
 
