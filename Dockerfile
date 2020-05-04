@@ -16,7 +16,7 @@ WORKDIR "/src/."
 RUN dotnet build "HueDream.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "HueDream.csproj" -c Release -o /app/publish -p:PublishProfile=Linux
+RUN dotnet publish "HueDream.csproj" -c Release -o /app/publish
 RUN mkdir -p /etc/glimmr
 FROM base AS final
 WORKDIR /app

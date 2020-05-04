@@ -159,6 +159,7 @@ namespace HueDream.Models.Hue {
                     foreach (var b in bridges) {
                         if (b.Key != null && b.User != null) {
                             var hb = new HueBridge(b);
+                            LogUtil.Write("Refreshing bridge: " + b.Id);
                             b.SetLights(hb.GetLights());
                             b.SetGroups(hb.ListGroups().Result);
                             hb.Dispose();
@@ -205,13 +206,15 @@ namespace HueDream.Models.Hue {
             var ld = res.Select(r => new LightData(r)).ToList();
             var output = new List<LightData>();
             foreach (var light in ld) {
-                var add = true;
-                foreach (var unused in lights.Where(oLight => oLight.Id == light.Id)) add = false;
-                if (add) output.Add(light);
+                foreach (var ex in lights.Where(ex => ex.Id == light.Id)) {
+                    light.TargetSector = ex.TargetSector;
+                    light.Brightness = ex.Brightness;
+                    light.OverrideBrightness = ex.OverrideBrightness;
+                }
+                output.Add(light);
             }
 
-            lights.AddRange(output);
-            return lights;
+            return output;
         }
 
 
