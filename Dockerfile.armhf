@@ -29,6 +29,8 @@ EXPOSE 5699
 EXPOSE 1900/udp
 # Hue Streaming
 EXPOSE 2100/udp
+# MDNS Discovery
+EXPOSE 5353/udp
 # DreamScreen
 EXPOSE 8888/udp
 # Lifx
