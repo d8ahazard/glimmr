@@ -16,7 +16,7 @@ WORKDIR "/src/."
 RUN dotnet build "HueDream.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "HueDream.csproj" -c Release -o /app/publish
+RUN dotnet publish "HueDream.csproj" -c Release -o /app/publish -p:PublishProfile=Linux
 RUN mkdir -p /etc/glimmr
 FROM base AS final
 WORKDIR /app
@@ -24,7 +24,6 @@ COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "Glimmr.dll"]
 
 VOLUME /etc/glimmr
-VOLUME /usr/lib
 # Web UI
 EXPOSE 5699
 # Hue Discovery

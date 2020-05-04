@@ -23,7 +23,6 @@ COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "Glimmr.dll"]
 
 VOLUME /etc/glimmr
-VOLUME /usr/lib
 # Web UI
 EXPOSE 5699
 # Hue Discovery
