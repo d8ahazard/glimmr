@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -51,7 +52,30 @@ namespace HueDream.Models.Util {
                 return null;
             }
         }
+        
+        
+        public static IDocumentCollection<T> GetCollection<T>() where T : class {
+            try {
+                using var dStore = GetStore();
+                var output = dStore.GetCollection<T>();
+                return output;
+            } catch (Exception e) {
+                LogUtil.Write($@"Get exception for {typeof(T)}: {e.Message}");
+                return null;
+            }
+        }
 
+
+        public static void InsertCollection(string key, dynamic filter, dynamic value) {
+            try {
+                using var dStore = GetStore();
+                var coll = dStore.GetCollection(key);
+                coll.ReplaceOne(filter, value, true);
+            } catch (Exception e) {
+                LogUtil.Write($@"Replace exception for {key}: {e.Message}");
+            }
+        }
+        
 
         private static DataStore CheckDefaults(DataStore store) {
             var v = store.GetItem("defaultsSet");
@@ -84,8 +108,8 @@ namespace HueDream.Models.Util {
             await store.InsertItemAsync("dsIp", "0.0.0.0").ConfigureAwait(false);
             await store.InsertItemAsync("audioDevices", new List<DeviceInfo>()).ConfigureAwait(false);
             await store.InsertItemAsync("audioThreshold", .01f).ConfigureAwait(false);
-            await ScanDevices(store).ConfigureAwait(false);
             await store.InsertItemAsync("defaultsSet", true).ConfigureAwait(false);
+            await ScanDevices(store).ConfigureAwait(false);
             return store;
         }
 
