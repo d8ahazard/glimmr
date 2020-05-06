@@ -7,10 +7,10 @@ using Accord.Math.Optimization;
 using HueDream.Models;
 using HueDream.Models.DreamScreen;
 using HueDream.Models.DreamScreen.Devices;
-using HueDream.Models.Hue;
-using HueDream.Models.LED;
-using HueDream.Models.LIFX;
-using HueDream.Models.Nanoleaf;
+using HueDream.Models.StreamingDevice.Hue;
+using HueDream.Models.StreamingDevice.LED;
+using HueDream.Models.StreamingDevice.LIFX;
+using HueDream.Models.StreamingDevice.Nanoleaf;
 using HueDream.Models.Util;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -136,7 +136,7 @@ namespace HueDream.Controllers {
                         if (leaf.Id == lData.Id) {
                             if (leaf.X != lData.X || leaf.Y != lData.Y) {
                                 LogUtil.Write("Recalculating panel positions.");
-                                var panelPositions = Panel.CalculatePoints(lData);
+                                var panelPositions = NanoGroup.CalculatePoints(lData);
                                 var newPd = new List<PanelLayout>();
                                 var pd = lData.Layout.PositionData;
                                 foreach (var pl in pd) {
@@ -253,7 +253,7 @@ namespace HueDream.Controllers {
                     }
 
                     if (nd != null) {
-                        var panel = new Panel(nd.IpV4Address, nd.Token);
+                        var panel = new NanoGroup(nd.IpV4Address, nd.Token);
                         var layout = panel.GetLayout().Result;
                         panel.Dispose();
                         if (layout == null) return new JsonResult(null);
@@ -269,97 +269,33 @@ namespace HueDream.Controllers {
                 }
                 case "findNanoLeaf": {
                     LogUtil.Write("Find Nano Leaf called.");
-                    var existingLeaves = DataUtil.GetItem<List<NanoData>>("leaves");
-                    var leaves = NanoDiscovery.Discover(2).Result;
-
-                    var all = new List<NanoData>();
-                    LogUtil.Write("Got all devices: " + JsonConvert.SerializeObject(existingLeaves));
-                    if (existingLeaves != null) {
-                        LogUtil.Write("Adding range.");
-                        foreach (var newLeaf in leaves) {
-                            var add = true;
-                            foreach (var leaf in existingLeaves) {
-                                if (leaf.Id == newLeaf.Id) {
-                                    LogUtil.Write("Updating existing leaf.");
-                                    newLeaf.Token = leaf.Token;
-                                    existingLeaves[exInt] = newLeaf;
-                                    add = false;
-                                    break;
-                                }
-
-                                exInt++;
-                            }
-
-                            if (add) {
-                                LogUtil.Write("Adding new leaf.");
-                                all.Add(newLeaf);
-                            }
-                        }
-
-                        all.AddRange(existingLeaves);
-                    } else {
-                        all.AddRange(leaves);
-                    }
-
-                    LogUtil.Write("Looping: " + all.Count);
-                    foreach (var leaf in all.Where(leaf => leaf.Token != null)) {
-                        LogUtil.Write("Fetching leaf data.");
-                        try {
-                            var nl = new Panel(leaf.IpV4Address, leaf.Token);
-                            var layout = nl.GetLayout().Result;
-                            if (layout != null) leaf.Layout = layout;
-                            nl.Dispose();
-                        } catch (Exception) {
-                            LogUtil.Write("An exception occurred, probably the nanoleaf is unplugged.", "WARN");
-                        }
-
-                        LogUtil.Write("Device: " + JsonConvert.SerializeObject(leaf));
-                    }
-
-                    LogUtil.Write("Saving nano data from nano search: " + JsonConvert.SerializeObject(all));
-                    DataUtil.SetItem<List<NanoData>>("leaves", all);
+                    var all = NanoDiscovery.Refresh().Result;
                     message = JsonConvert.SerializeObject(all);
                     break;
                 }
                 case "authorizeHue": {
                     var doAuth = true;
-                    var bridges = DataUtil.GetItem<List<BridgeData>>("bridges");
                     BridgeData bd = null;
-                    var bridgeInt = -1;
-
                     if (!string.IsNullOrEmpty(value)) {
-                        var bCount = 0;
-                        foreach (var b in bridges) {
-                            if (b.IpAddress == value) {
-                                bd = b;
-                                bridgeInt = bCount;
-                                doAuth = b.Key == null || b.User == null;
-                            }
-
-                            bCount++;
-                        }
+                        bd = DataUtil.GetCollectionItem<BridgeData>("bridges", value);
+                        if (bd == null) return new JsonResult(null);
+                        if (bd.Key != null && bd.User != null) doAuth = false;
+                    } else {
+                        doAuth = false;
                     }
 
-                    if (doAuth) {
-                        var appKey = HueBridge.CheckAuth(value).Result;
-                        if (appKey != null && bd != null) {
-                            bd.Key = appKey.StreamingClientKey;
-                            bd.User = appKey.Username;
-                            bridges[bridgeInt] = bd;
-                            DataUtil.SetItem("bridges", bridges);
-                        }
-                    }
+                    if (!doAuth) return new JsonResult(bd);
+                    var appKey = HueDiscovery.CheckAuth(value).Result;
+                    if (appKey == null) return new JsonResult(bd);
+                    bd.Key = appKey.StreamingClientKey;
+                    bd.User = appKey.Username;
+                    DataUtil.InsertCollection<BridgeData>("bridges", bd);
                     return new JsonResult(bd);
                 }
                 case "findHue": {
-                    var bridges = HueBridge.Discover(3);
-                    if (bridges != null) {
-                        DataUtil.SetItem("bridges", bridges);
-                        return new JsonResult(bridges);
-                    }
-
-                    message = "Error: No bridge found.";
-                    break;
+                    var bridges = HueDiscovery.Discover();
+                    DataUtil.SetItem("bridges", bridges);
+                    return new JsonResult(bridges);
                 }
                 case "authorizeNano": {
                     var doAuth = true;
@@ -379,7 +315,7 @@ namespace HueDream.Controllers {
                     }
 
                     if (doAuth) {
-                        var panel = new Panel(value);
+                        var panel = new NanoGroup(value);
                         var appKey = panel.CheckAuth().Result;
                         if (appKey != null && bd != null) {
                             bd.Token = appKey.Token;
@@ -401,9 +337,9 @@ namespace HueDream.Controllers {
         public IActionResult GetJson() {
             LogUtil.Write(@"GetJson Called.");
             var store = DataUtil.GetStore();
-            var bridgeArray = DataUtil.GetItem<List<BridgeData>>("bridges");
+            var bridgeArray = DataUtil.GetCollection<BridgeData>("bridges");
             if (bridgeArray.Count == 0) {
-                var newBridges = HueBridge.Discover();
+                var newBridges = HueDiscovery.Discover();
                 store.ReplaceItem("bridges", newBridges, true);
             }
 

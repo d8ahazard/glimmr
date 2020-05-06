@@ -7,10 +7,10 @@ using System.Net;
 using System.Threading.Tasks;
 using HueDream.Models.DreamScreen;
 using HueDream.Models.DreamScreen.Devices;
-using HueDream.Models.Hue;
-using HueDream.Models.LED;
-using HueDream.Models.LIFX;
-using HueDream.Models.Nanoleaf;
+using HueDream.Models.StreamingDevice.Hue;
+using HueDream.Models.StreamingDevice.LED;
+using HueDream.Models.StreamingDevice.LIFX;
+using HueDream.Models.StreamingDevice.Nanoleaf;
 using HueDream.Models.Util;
 using JsonFlatFileDataStore;
 using ManagedBass;
@@ -314,7 +314,7 @@ namespace HueDream.Models.Util {
             // Get dream devices
             var ld = new LifxDiscovery();
             var nanoTask = NanoDiscovery.Refresh();
-            var bridgeTask = HueBridge.Refresh();
+            var bridgeTask = HueDiscovery.Refresh();
             var dreamTask = DreamDiscovery.Discover();
             var bulbTask = ld.Refresh();
             await Task.WhenAll(nanoTask, bridgeTask, dreamTask, bulbTask).ConfigureAwait(false);
@@ -329,7 +329,7 @@ namespace HueDream.Models.Util {
             // Get dream devices
             var ld = new LifxDiscovery();
             var nanoTask = NanoDiscovery.Discover();
-            var hueTask = HueBridge.Discover();
+            var hueTask = HueDiscovery.Discover();
             var dreamTask = DreamDiscovery.Discover();
             var bulbTask = ld.Discover(5);
             await Task.WhenAll(nanoTask, hueTask, dreamTask, bulbTask).ConfigureAwait(false);

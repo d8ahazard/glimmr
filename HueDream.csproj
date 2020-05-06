@@ -80,6 +80,10 @@
             <LastGenOutput>Resources.Designer.cs</LastGenOutput>
         </EmbeddedResource>
     </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Models\LED" />
+    </ItemGroup>
     
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">
         <TypeScriptTarget>ES5</TypeScriptTarget>

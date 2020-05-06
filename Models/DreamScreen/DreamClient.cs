@@ -7,12 +7,14 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using HueDream.Models.Capture;
+using HueDream.Models.CaptureSource.Audio;
+using HueDream.Models.CaptureSource.Camera;
 using HueDream.Models.DreamScreen.Devices;
-using HueDream.Models.Hue;
-using HueDream.Models.LED;
-using HueDream.Models.LIFX;
-using HueDream.Models.Nanoleaf;
+using HueDream.Models.StreamingDevice;
+using HueDream.Models.StreamingDevice.Hue;
+using HueDream.Models.StreamingDevice.LED;
+using HueDream.Models.StreamingDevice.LIFX;
+using HueDream.Models.StreamingDevice.Nanoleaf;
 using HueDream.Models.Util;
 using LifxNet;
 using Microsoft.Extensions.Hosting;
@@ -28,9 +30,10 @@ namespace HueDream.Models.DreamScreen {
         private readonly int ambientMode;
         private int ambientShow;
         private List<HueBridge> bridges;
-        private List<Panel> panels;
+        private List<NanoGroup> panels;
         private List<BaseDevice> devices;
         private List<LifxBulb> bulbs;
+        private List<IStreamingDevice> sDevices;
         private LifxClient lifxClient;
         private bool discovering;
         private int brightness;
@@ -96,7 +99,8 @@ namespace HueDream.Models.DreamScreen {
             targetEndpoint = new IPEndPoint(IPAddress.Parse(sourceIp), 8888);
             dd.Dispose();
             bridges = new List<HueBridge>();
-            panels = new List<Panel>();
+            panels = new List<NanoGroup>();
+            sDevices = new List<IStreamingDevice>();
             captureTokenSource = new CancellationTokenSource();
             camTokenSource = new CancellationTokenSource();
         }
@@ -211,60 +215,39 @@ namespace HueDream.Models.DreamScreen {
             if (!streamStarted) {
                 LogUtil.Write("Starting stream.");
                 // Init bridges
-                var bridgeArray = DataUtil.GetItem<List<BridgeData>>("bridges");
+                var bridgeArray = DataUtil.GetCollection<BridgeData>("bridges");
                 bridges = new List<HueBridge>();
                 sendTokenSource = new CancellationTokenSource();
-                foreach (BridgeData bridge in bridgeArray) {
-                    if (string.IsNullOrEmpty(bridge.Key) || string.IsNullOrEmpty(bridge.User) ||
-                        bridge.SelectedGroup == "-1") continue;
-                    var b = new HueBridge(bridge);
-                    b.DisableStreaming();
-                    var enable = b.EnableStreaming(sendTokenSource.Token);
-                    if (enable) {
-                        bridges.Add(b);
-                        LogUtil.Write("Stream started to " + bridge.IpAddress);
-                        streamStarted = true;
-                    } else {
-                        b.Dispose();
-                    }
+                foreach (var bridge in bridgeArray.Where(bridge => !string.IsNullOrEmpty(bridge.Key) && !string.IsNullOrEmpty(bridge.User) && bridge.SelectedGroup != "-1")) {
+                    sDevices.Add(new HueBridge(bridge));
                 }
 
                 // Init leaves
-                var leaves = DataUtil.GetItem<List<NanoData>>("leaves");
-                panels = new List<Panel>();
+                var leaves = DataUtil.GetCollection<NanoData>("leaves");
+                panels = new List<NanoGroup>();
                 LogUtil.Write("Loading nano panels??");
-                foreach (NanoData n in leaves) {
-                    if (string.IsNullOrEmpty(n.Token) || n.Layout == null) continue;
-                    var p = new Panel(n);
-                    p.DisableStreaming();
-                    p.EnableStreaming(sendTokenSource.Token);
-                    panels.Add(p);
-                    LogUtil.Write("Panel stream enabled: " + n.IpV4Address);
-                    streamStarted = true;
-                    LogUtil.Write("No, really...");
+                foreach (var n in leaves.Where(n => !string.IsNullOrEmpty(n.Token) && n.Layout != null)) {
+                    sDevices.Add(new NanoGroup(n));
                 }
 
                 // Init lifx
-                LogUtil.Write("What the fuck...");
-                var lifx = DataUtil.GetItem<List<LifxData>>("lifxBulbs");
-                LogUtil.Write("Got stuff: " + JsonConvert.SerializeObject(lifx));
+                var lifx = DataUtil.GetCollection<LifxData>("lifxBulbs");
                 bulbs = new List<LifxBulb>();
                 LogUtil.Write("List made");
                 if (lifx != null) {
-                    LogUtil.Write("Data valid.");
                     lifxClient = LifxSender.getClient();
-                    LogUtil.Write("Client initialized.");
-                    foreach (LifxData b in lifx) {
-                        LogUtil.Write("looping data...");
-                        if (b.SectorMapping == -1) continue;
-                        LogUtil.Write("Initializing bulb: " + b.HostName);
-                        var bulb = new LifxBulb(b);
-                        LogUtil.Write("Bulb initialized.");
-                        bulb.StartStream();
-                        LogUtil.Write("Started, adding.");
-                        bulbs.Add(bulb);
+                    foreach (var b in lifx.Where(b => b.SectorMapping != -1)) {
+                        sDevices.Add(new LifxBulb(b));
                     }
                 }
+
+                var added = false;
+                foreach (var sd in sDevices.Where(sd => !sd.Streaming)) {
+                    sd.StartStream(sendTokenSource.Token);
+                    added = true;
+                }
+                
+                streamStarted = added;
             }
 
             if (streamStarted) LogUtil.WriteInc("Stream started.");
@@ -275,16 +258,11 @@ namespace HueDream.Models.DreamScreen {
                 CancelSource(captureTokenSource);
                 CancelSource(sendTokenSource);
                 strip?.StopLights();
-                foreach (var b in bridges) {
-                    b.DisableStreaming();
+                
+                foreach (var s in sDevices.Where(s => s.Streaming)) {
+                    s.StopStream();
                 }
-
-                var bData = DataUtil.GetItem<List<LifxData>>("lifxBulbs");
-                if (bData != null) {
-                    foreach (var b in bulbs) {
-                        b.StopStream();
-                    }
-                }
+                
                 LogUtil.WriteDec("Stream stopped.");
                 streamStarted = false;
             }
@@ -293,18 +271,12 @@ namespace HueDream.Models.DreamScreen {
         public void SendColors(List<Color> colors, List<Color> sectors, double fadeTime = 0) {
             sendTokenSource ??= new CancellationTokenSource();
             if (sendTokenSource.IsCancellationRequested) return;
-            foreach (var bridge in bridges) {
-                bridge.UpdateLights(sectors, brightness, sendTokenSource.Token, fadeTime);
+            if (!streamStarted) return;
+            var output = sectors;
+            foreach (var sd in sDevices) {
+                sd.SetColor(output, fadeTime);
             }
-
-            foreach (var p in panels) {
-                p.UpdateLights(sectors);
-            }
-
-            foreach (var b in bulbs) {
-                b.SetColor(sectors);
-            }
-
+            
             strip?.UpdateAll(colors);
         }
 
@@ -637,18 +609,18 @@ namespace HueDream.Models.DreamScreen {
             strip?.Dispose();
             LogUtil.Write("Strip disposed.");
             foreach (var b in bridges) {
-                b.DisableStreaming();
+                b.StopStream();
                 b.Dispose();
             }
 
             bridges = new List<HueBridge>();
             LogUtil.Write("Bridges disposed.");
             foreach (var p in panels) {
-                p.DisableStreaming();
+                p.StopStream();
                 p.Dispose();
             }
 
-            panels = new List<Panel>();
+            panels = new List<NanoGroup>();
             LogUtil.Write("Panels disposed.");
             LifxSender.destroyClient();
         }

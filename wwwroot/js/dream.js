@@ -904,7 +904,7 @@ function loadBridgeData(data) {
     console.log("Loaded bridge: ", data);
     // Now we've got it.
     let b = data;
-    hueIp = b["ipAddress"];
+    hueIp = b.id;
     hIp.html(b["ipAddress"]);        
     hueGroup = b["selectedGroup"];
     if (b.hasOwnProperty("groups")) {

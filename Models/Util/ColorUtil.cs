@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Drawing;
 using System.Globalization;
-using HueDream.Models.Hue;
 using Q42.HueApi.ColorConverters;
 using Q42.HueApi.ColorConverters.HSB;
 
@@ -30,7 +29,7 @@ namespace HueDream.Models.Util {
         }
         
         
-        public static RGBColor ClampBrightness(Color colorIn, int brightness) {
+        public static RGBColor ClampBrightnessRgb(Color colorIn, int brightness) {
             var oColor = new RGBColor(colorIn.R, colorIn.G, colorIn.B);
             // Clamp our brightness based on settings
             long bClamp = 255 * brightness / 100;
@@ -39,6 +38,20 @@ namespace HueDream.Models.Util {
             oColor = hsb.GetRGB();
             return oColor;
         }
+        
+        
+        public static Color ClampBrightness(Color colorIn, int brightness) {
+            var oColor = new RGBColor(colorIn.R, colorIn.G, colorIn.B);
+            // Clamp our brightness based on settings
+            long bClamp = 255 * brightness / 100;
+            var hsb = new HSB((int) oColor.GetHue(), (int) oColor.GetSaturation(), (int) oColor.GetBrightness());
+            if (hsb.Brightness > bClamp) hsb.Brightness = (int) bClamp;
+            oColor = hsb.GetRGB();
+            var output = Color.FromName("#" + oColor.ToHex());
+            return output;
+        }
+        
+        
 
 
         public static Color ColorFromHsv(double hue, double saturation, double value) {
