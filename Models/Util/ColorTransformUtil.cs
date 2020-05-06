@@ -332,11 +332,10 @@ namespace HueDream.Models.Util {
             double bClamp = maxBrightness * .01;
             double[] hsl = RgBtoHsb(color);
             if (SystemMath.Abs(hsl[2]) > bClamp) {
-                LogUtil.Write($"Clamping to {bClamp} from {hsl[2]}");
                 hsl[2] = bClamp;
+                return HsBtoRgb(hsl[0], hsl[1], hsl[2], color.A);
             }
-
-            return HsBtoRgb(hsl[0], hsl[1], hsl[2], color.A);
+            return color;
         }
 
 

@@ -102,7 +102,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
                     var color = colors[colorInt];
                     var mb = lightData.OverrideBrightness ? lightData.Brightness : MaxBrightness;
                     if (mb < 100) {
-                        //color = ColorUtil.ClampBrightness(color, mb); 
+                        color = ColorTransformUtil.ClampBrightness(color, mb); 
                     }
                     var oColor = new RGBColor(color.R, color.G, color.B);
 
