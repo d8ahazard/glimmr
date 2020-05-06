@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO.Compression;
 using HueDream.Models.Util;
 using LifxNet;
 
@@ -26,6 +27,10 @@ namespace HueDream.Models.LIFX {
             if (inputs == null || c == null) throw new ArgumentException("Invalid color inputs.");
             if (inputs.Count < 12) throw new ArgumentOutOfRangeException(nameof(inputs));
             var input = inputs[targetSector];
+            if (Data.MaxBrightness < 100) {
+                var col2 = ColorUtil.ClampBrightness(input, Data.MaxBrightness);
+                input = System.Drawing.Color.FromName("#" + col2.ToHex());
+            }
             var nC = new Color {R = input.R, G = input.G, B = input.B};
             await c.SetColorAsync(B, nC, 7500).ConfigureAwait(false);
         }

@@ -6,7 +6,7 @@ using HueDream.Models.Util;
 
 namespace HueDream.Models.DreamScreen {
     public static class DreamDiscovery {
-        public static async Task<List<BaseDevice>> FindDevices() {
+        public static async Task<List<BaseDevice>> Discover() {
             LogUtil.Write("Discovery started..");
             // Send a custom internal message to self to store discovery results
             var selfEp = new IPEndPoint(IPAddress.Loopback, 8888);
@@ -17,8 +17,7 @@ namespace HueDream.Models.DreamScreen {
             await Task.Delay(3000).ConfigureAwait(false);
             DreamSender.SendUdpWrite(0x01, 0x0E, new byte[] {0x01}, 0x30, 0x00, selfEp);
             await Task.Delay(500).ConfigureAwait(false);
-            var devices = DataUtil.GetDreamDevices();
-            LogUtil.Write($"Discovery complete, found {devices.Count} devices.");
+            var devices = DataUtil.GetItem<List<BaseDevice>>("devices");
             return devices;
         }
     }

@@ -9,6 +9,7 @@ using HueDream.Models.DreamScreen;
 using HueDream.Models.DreamScreen.Devices;
 using HueDream.Models.Hue;
 using HueDream.Models.LED;
+using HueDream.Models.LIFX;
 using HueDream.Models.Nanoleaf;
 using HueDream.Models.Util;
 using Microsoft.AspNetCore.Mvc;
@@ -53,9 +54,9 @@ namespace HueDream.Controllers {
 
         // POST: api/DreamData/brightness
         [HttpPost("brightness")]
-        public IActionResult Brightness([FromBody] int dBright) {
-            SetBrightness(dBright);
-            return Ok(dBright);
+        public IActionResult Brightness([FromBody] JObject bo) {
+            SetBrightness(bo);
+            return Ok(bo);
         }
 
         // POST: api/DreamData/camType
@@ -214,6 +215,14 @@ namespace HueDream.Controllers {
             DataUtil.SetItem("myDevice", myDevice);
             return Ok(myDevice);
         }
+        
+        // POST: api/DreamData/lifxMapping
+        [HttpPost("lifxMapping")]
+        public IActionResult LifxMapping([FromBody] LifxData myDevice) {
+            LogUtil.Write(@"Did it work? " + JsonConvert.SerializeObject(myDevice));
+            DataUtil.InsertCollection<LifxData>("lifxBulbs", myDevice);
+            return Ok(myDevice);
+        }
 
         [HttpGet("action")]
         public IActionResult Action(string action, string value = "") {
@@ -227,7 +236,7 @@ namespace HueDream.Controllers {
                     DataUtil.RefreshDevices();
                     return Content(DataUtil.GetStoreSerialized(), "application/json");
                 case "findDreamDevices": {
-                    List<BaseDevice> dev = DreamDiscovery.FindDevices().Result;
+                    List<BaseDevice> dev = DreamDiscovery.Discover().Result;
                     return new JsonResult(dev);
                 }
                 case "refreshNanoLeaf": {
@@ -343,7 +352,7 @@ namespace HueDream.Controllers {
                     return new JsonResult(bd);
                 }
                 case "findHue": {
-                    var bridges = HueBridge.FindBridges(3);
+                    var bridges = HueBridge.Discover(3);
                     if (bridges != null) {
                         DataUtil.SetItem("bridges", bridges);
                         return new JsonResult(bridges);
@@ -394,12 +403,12 @@ namespace HueDream.Controllers {
             var store = DataUtil.GetStore();
             var bridgeArray = DataUtil.GetItem<List<BridgeData>>("bridges");
             if (bridgeArray.Count == 0) {
-                var newBridges = HueBridge.FindBridges();
+                var newBridges = HueBridge.Discover();
                 store.ReplaceItem("bridges", newBridges, true);
             }
 
             if (store.GetItem("dsIp") == "0.0.0.0") {
-                var devices = DreamDiscovery.FindDevices();
+                var devices = DreamDiscovery.Discover();
                 store.ReplaceItem("devices", devices);
             }
 
@@ -408,7 +417,7 @@ namespace HueDream.Controllers {
         }
 
 
-        private void ResetMode() {
+        private static void ResetMode() {
             var myDev = DataUtil.GetDeviceData();
             var curMode = myDev.Mode;
             if (curMode == 0) return;
@@ -517,20 +526,45 @@ namespace HueDream.Controllers {
             DataUtil.SetItem("devices", newDevices);
         }
 
-        private static void SetBrightness(int dData) {
-            var myDev = DataUtil.GetDeviceData();
-            var ipAddress = myDev.IpAddress;
-            var groupNumber = (byte) myDev.GroupNumber;
-            var groupSend = false;
-            byte mFlag = 0x11;
-            if (ipAddress == "255.255.255.0") {
-                groupSend = true;
-            } else {
-                mFlag = 0x21;
-            }
+        private static void SetBrightness(JObject dData) {
+            if (dData == null) throw new ArgumentException("invalid jobject");
+            var tag = (dData["tag"] ?? "INVALID").Value<string>();
+            var id = (dData["id"] ?? "INVALID").Value<string>();
+            var brightness = (dData["brightness"] ?? -1).Value<int>();
+            LogUtil.Write($"Setting brightness for {tag} {id} to {brightness}.");
+            switch (tag) {
+                case "Hue":
+                    var bridge = DataUtil.GetCollectionItem<BridgeData>("bridges", id);
+                    bridge.MaxBrightness = brightness;
+                    DataUtil.InsertCollection<BridgeData>("bridges", bridge);
+                    break;
+                case "Lifx":
+                    var bulb = DataUtil.GetCollectionItem<LifxData>("lifxBulbs", id);
+                    bulb.MaxBrightness = brightness;
+                    DataUtil.InsertCollection<LifxData>("lifxBulbs", bulb);
+                    break;
+                case "NanoLeaf":
+                    var panel = DataUtil.GetCollectionItem<NanoData>("leaves", id);
+                    panel.MaxBrightness = brightness;
+                    DataUtil.InsertCollection<NanoData>("leaves", panel);
+                    break;
+                default:
+                    var myDev = DataUtil.GetDeviceData();
+                    var ipAddress = myDev.IpAddress;
+                    var groupNumber = (byte) myDev.GroupNumber;
+                    var groupSend = false;
+                    byte mFlag = 0x11;
+                    if (ipAddress == "255.255.255.0") {
+                        groupSend = true;
+                    } else {
+                        mFlag = 0x21;
+                    }
 
-            DreamSender.SendUdpWrite(0x03, 0x02, new[] {ByteUtils.IntByte(dData)}, mFlag, groupNumber,
-                new IPEndPoint(IPAddress.Parse(ipAddress), 8888), groupSend);
+                    DreamSender.SendUdpWrite(0x03, 0x02, new[] {ByteUtils.IntByte(brightness)}, mFlag, groupNumber,
+                        new IPEndPoint(IPAddress.Parse(ipAddress), 8888), groupSend);
+                    break;
+            }
+            ResetMode();
         }
     }
 }

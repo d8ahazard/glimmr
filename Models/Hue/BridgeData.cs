@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Q42.HueApi.Models.Bridge;
 using Q42.HueApi.Models.Groups;
 
 namespace HueDream.Models.Hue {
@@ -13,6 +15,12 @@ namespace HueDream.Models.Hue {
         public BridgeData(string ip, string id) {
             IpAddress = ip;
             Id = id;
+        }
+
+        public BridgeData(LocatedBridge b) {
+            if (b == null) throw new ArgumentException("Invalid located bridge.");
+            IpAddress = b.IpAddress;
+            Id = b.BridgeId;
         }
 
         public BridgeData(string ip, string id, string user, string key, string group = "-1", string groupName = "undefined", int groupNumber = 0) {
@@ -27,6 +35,14 @@ namespace HueDream.Models.Hue {
             GroupNumber = groupNumber;
         }
 
+        public void CopyBridgeData(BridgeData existing) {
+            if (existing == null) throw new ArgumentException("Invalid bridge data.");
+            Key = existing.Key;
+            User = existing.User;
+            Lights = existing.Lights;
+            Groups = existing.Groups;
+        }
+
         [JsonProperty] public string IpAddress { get; set; }
         [JsonProperty] public string Id { get; set; }
         [JsonProperty] public string User { get; set; }
@@ -35,6 +51,10 @@ namespace HueDream.Models.Hue {
         [JsonProperty] public string Name { get; set; }
         [JsonProperty] public string GroupName { get; set; }
         [JsonProperty] public int GroupNumber { get; set; }
+        
+        [DefaultValue(100)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public int MaxBrightness { get; set; }
         [JsonProperty] public string SelectedGroup { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
@@ -125,7 +145,8 @@ namespace HueDream.Models.Hue {
                 Lights = bridgeLights,
                 GroupName = groupName,
                 GroupNumber = groupNumber,
-                Name = name
+                Name = name,
+                Id = bridgeId
         };
             if (bd.Groups.Count > 0) {
                 groupIds.AddRange(bd.Groups.Select(g => g.Id));

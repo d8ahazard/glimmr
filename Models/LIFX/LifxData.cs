@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using LifxNet;
 using Newtonsoft.Json;
 
@@ -10,6 +11,7 @@ namespace HueDream.Models.LIFX {
         public LifxData(LightBulb b) {
             if (b == null) throw new ArgumentException("Invalid bulb data.");
             HostName = b.HostName;
+            Id = b.MacAddressName;
             Service = b.Service;
             Port = (int) b.Port;
             MacAddress = b.MacAddress;
@@ -17,6 +19,7 @@ namespace HueDream.Models.LIFX {
         }
 
         [JsonProperty] public string HostName { get; internal set; }
+        [JsonProperty] public string Id { get; internal set; }
 
         [JsonProperty] public byte Service { get; internal set; }
 
@@ -33,5 +36,9 @@ namespace HueDream.Models.LIFX {
         [JsonProperty] public int Kelvin { get; set; }
         [JsonProperty] public bool Power { get; set; }
         [JsonProperty] public int SectorMapping { get; set; }
+        [DefaultValue(100)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public int MaxBrightness { get; set; }
+
     }
 }

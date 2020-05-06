@@ -49,6 +49,7 @@ namespace HueDream.Models.Hue {
             // Get our light map and filter for mapped lights
             LogUtil.Write($@"Hue: Connecting to bridge at {BridgeIp}...");
             // Grab our stream
+            if (bd.Id == null || bd.Key == null || bd.Lights == null || bd.Groups == null) return false;
             var stream = StreamingSetup.SetupAndReturnGroup(client, bd, ct).Result;
             // This is what we actually need
             if (stream == null) return false;
@@ -91,7 +92,8 @@ namespace HueDream.Models.Hue {
                     var colorInt = lightData.TargetSector - 1;
                     var color = colors[colorInt];
                     // Make it into a color
-                    var endColor = ClampBrightness(color, lightData, brightness);
+                    var oColor = new RGBColor(color.R, color.G, color.B);
+                    var endColor = lightData.OverrideBrightness ? ColorUtil.ClampBrightness(color, lightData.Brightness) : oColor;
                     //var xyColor = HueColorConverter.RgbToXY(endColor, CIE1931Gamut.PhilipsWideGamut);
                     //endColor = HueColorConverter.XYToRgb(xyColor, GetLightGamut(lightData.ModelId));
                     // If we're currently using a scene, animate it
@@ -109,21 +111,7 @@ namespace HueDream.Models.Hue {
             }
         }
 
-        private static RGBColor ClampBrightness(Color colorIn, LightData lightData, int brightness) {
-            var oColor = new RGBColor(colorIn.R, colorIn.G, colorIn.B);
-            // Clamp our brightness based on settings
-            long bClamp = 255 * brightness / 100;
-            if (lightData.OverrideBrightness) {
-                var newB = lightData.Brightness;
-                bClamp = 255 * newB / 100;
-            }
-
-            var hsb = new HSB((int) oColor.GetHue(), (int) oColor.GetSaturation(), (int) oColor.GetBrightness());
-            if (hsb.Brightness > bClamp) hsb.Brightness = (int) bClamp;
-            oColor = hsb.GetRGB();
-
-            return oColor;
-        }
+        
 
 
         private async Task<List<Group>> ListGroups() {
@@ -150,48 +138,35 @@ namespace HueDream.Models.Hue {
             return null;
         }
 
-        public static async Task<List<BridgeData>> GetBridgeData() {
-            var bridges = DataUtil.GetItem<List<BridgeData>>("bridges");
-            var newBridges = await FindBridges().ConfigureAwait(false);
-            var output = new List<BridgeData>();
-            if (bridges != null) {
-                if (bridges.Count > 0) {
-                    foreach (var b in bridges) {
-                        if (b.Key != null && b.User != null) {
-                            var hb = new HueBridge(b);
-                            LogUtil.Write("Refreshing bridge: " + b.Id);
-                            b.SetLights(hb.GetLights());
-                            b.SetGroups(hb.ListGroups().Result);
-                            hb.Dispose();
-                        }
-
-                        if (b.Id != null) output.Add(b);
-                    }
+        public static async Task<List<BridgeData>> Refresh() {
+            var newBridges = await Discover().ConfigureAwait(false);
+            foreach (var nb in newBridges) {
+                var ex = DataUtil.GetCollectionItem<BridgeData>("bridges", nb.Id);
+                LogUtil.Write("Looping for bridge...");
+                if (ex != null) nb.CopyBridgeData(ex);
+                if (nb.Key != null && nb.User != null) {
+                    var hb = new HueBridge(nb);
+                    LogUtil.Write("Refreshing bridge: " + nb.Id);
+                    nb.SetLights(hb.GetLights());
+                    nb.SetGroups(hb.ListGroups().Result);
+                    hb.Dispose();
                 }
+                DataUtil.InsertCollection<BridgeData>("bridges", nb);
             }
 
-            foreach (var bb in newBridges) {
-                var exists = false;
-                if (bridges != null) {
-                    foreach (var b in bridges) {
-                        if (bb.BridgeId == b.Id) exists = true;
-                    }
-                }
-
-                if (exists) continue;
-                output.Add(new BridgeData(bb.IpAddress, bb.BridgeId));
-            }
-
-            return output;
+            return DataUtil.GetCollection<BridgeData>("bridges");
         }
 
-        public static async Task<LocatedBridge[]> FindBridges(int time = 3) {
+        public static async Task<List<BridgeData>> Discover(int time = 3) {
             LogUtil.Write("Hue: Discovery Started.");
-            var output = await HueBridgeDiscovery
+            var discovered = await HueBridgeDiscovery
                 .FastDiscoveryWithNetworkScanFallbackAsync(TimeSpan.FromSeconds(time), TimeSpan.FromSeconds(7))
                 .ConfigureAwait(false);
-            LogUtil.Write($"Hue: Discovery complete, found {output.Count} devices.");
-            return output.ToArray();
+
+            var output = discovered.Select(bridge => new BridgeData(bridge)).ToList();
+
+            LogUtil.Write($"Hue: Discovery complete, found {discovered.Count} devices.");
+            return output;
         }
 
 
@@ -211,6 +186,7 @@ namespace HueDream.Models.Hue {
                     light.Brightness = ex.Brightness;
                     light.OverrideBrightness = ex.OverrideBrightness;
                 }
+
                 output.Add(light);
             }
 

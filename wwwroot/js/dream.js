@@ -21,6 +21,7 @@ let nanoIp = "";
 let selectedDevice = null;
 let ledData = null;
 let bridge = null;
+let lifx = null;
 let deviceData = null;
 let targetDs = null;
 let datastore = null;
@@ -189,7 +190,7 @@ function setListeners() {
 
     });
 
-    // On brightness slider change
+    // On brightness slider change for hue
     $(document).on('change', '.mapBrightness', function() {
         let myId = $(this).attr('id').replace("brightness", "");
         let newVal = $(this).val();
@@ -200,7 +201,12 @@ function setListeners() {
     $(document).on('change', '.devBrightness', function() {
         selectedDevice.brightness = $(this).val();
         saveSelectedDevice();
-        postData('brightness', selectedDevice);
+        let newObj = {
+            id: selectedDevice.id,
+            brightness: selectedDevice.brightness,
+            tag: selectedDevice.tag            
+        };
+        postData('brightness', newObj);
     });
 
     $('#dsIpSelect').change( function() {
@@ -281,6 +287,17 @@ function setListeners() {
         selectedDevice.mode = mode;
         saveSelectedDevice();
         postData("mode", mode);
+    });
+    
+    $('.clickRegion').click(function() {
+        if (!$(this).hasClass('checked')) {
+            $('.clickRegion').removeClass('checked');
+            $(this).addClass('checked');
+            let val =$(this).data('region');
+            console.log("Val is " + val);
+            selectedDevice.sectorMapping = val;
+            postData("lifxMapping", selectedDevice);
+        }
     });
 
 
@@ -565,6 +582,7 @@ function RefreshData() {
             datastore.devices = data.devices;
             datastore.bridges = data.bridges;
             datastore.leaves = data.leaves;
+            datastore.lifxBulbs = data.lifxBulbs;
             buildLists(data);
             refreshing = false;
         });
@@ -578,6 +596,7 @@ function buildLists(data) {
     leaves = data['leaves'];
     bridges = data['bridges'];
     deviceData = data['myDevice'];
+    lifx = data['lifxBulbx'];
     dsIp = data['dsIp'];
     ledData = data['ledData'];
     captureMode = data['captureMode'];
@@ -614,6 +633,7 @@ function buildLists(data) {
     groups = sortDevices(data['leaves'], groups, "NanoLeaf", "NanoLeaf");
     // Sort bridges
     groups = sortDevices(data['bridges'], groups, "HueBridge", "Hue Bridge");
+    groups = sortDevices(data['lifxBulbs'], groups, "Lifx", "Lifx Bulb");
     $('#devGroup').html("");
     console.log("Groups: ", groups);
     $.each(groups, function () {
@@ -781,10 +801,12 @@ function hidePanels() {
     let nanoCard = $('#nanoCard');
     let hueCard = $('#hueCard');
     let dsCard = $('#dsCard');
+    let lifxCard = $('#lifxCard');
     let settingsCard = $('#settingsCard');
     nanoCard.slideUp();
     hueCard.slideUp();
     dsCard.slideUp();
+    lifxCard.slideUp();
     settingsCard.slideUp();
 }
 
@@ -793,6 +815,7 @@ function showDevicePanel(data) {
     let nanoCard = $('#nanoCard');
     let hueCard = $('#hueCard');
     let dsCard = $('#dsCard');
+    let lifxCard = $('#lifxCard');
     if (!resizeTimer) hidePanels();
     setTimeout(function(){
         $('#navTitle').html(data.tag);
@@ -815,6 +838,9 @@ function showDevicePanel(data) {
                 loadNanoData(data);
                 if (!resizeTimer) nanoCard.slideDown();
                 break;
+            case "Lifx":
+                loadLifxData(data);
+                if (!resizeTimer) lifxCard.slideDown();
         }
 
         resizeTimer = null;
@@ -833,9 +859,17 @@ function loadDsData(data) {
     $('#dsName').html(deviceData.name);
     $('#dsName').data("ip", deviceData.ipAddress);
     $('#dsName').data('group', deviceData.groupNumber);
-    
+    $('#dsBrightness').val(deviceData.maxBrightness);
     $('#dsIp').html(deviceData.ipAddress);
     emulationType = deviceData.tag;
+    let settingTarget = "dsSettings";
+    if (emulationType === "SideKick") {
+        settingTarget = "sidekickSettings";
+    } else if (emulationType === "Connect") {
+        settingTarget = "ConnectSettings";
+    }
+    console.log("Settings target is " + settingTarget);
+    $('#dsSettingsBtn').data('target',settingTarget);
     $('#dsType').html();
     let modestr = "";
     $('.modeBtn').removeClass('active');
@@ -910,11 +944,12 @@ function loadNanoData(data) {
     const lImg = $('#nanoImg');
     const lHint = $('#nanoHint');
     const lBtn = $('#nanoBtn');
-
+    const nBrightness = $("#nanoBrightness");
     // This is our bridge. There are many others like it...but this one is MINE.
     console.log("Loaded nanodata: ", data);
     // Now we've got it.
     let n = data;
+    nBrightness.val(n["maxBrightness"]);
     nanoIp = n["ipV4Address"];
     
     hIp.html(n["ipV4Address"]);    
@@ -937,6 +972,21 @@ function loadNanoData(data) {
     }    
 }
 
+function loadLifxData(data) {
+    // Get our UI elements
+    const hIp = $('#lifxIp');
+    const lName = $('#lifxName');
+    const lBrightness = $("#lifxBrightness");
+    // This is our bridge. There are many others like it...but this one is MINE.
+    console.log("Loaded nanodata: ", data);
+    // Now we've got it.
+    let n = data;
+    nanoIp = n["hostName"];
+    lName.html(nanoIp);
+    hIp.html(data.id);
+    $('.clickRegion[data-region="' + data.sectorMapping +'"]').addClass('checked');
+    lBrightness.val(data.maxBrightness);    
+}
 
 function drawNanoShapes(panel) {
     // Wipe it out

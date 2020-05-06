@@ -27,6 +27,7 @@ namespace HueDream.Models.Nanoleaf {
         private long cycleTime;
         private readonly Dictionary<int, int> panelPositions;
         private bool disposed;
+        private readonly int maxBrightness;
 
         public Panel(string ipAddress, string token = "") {
             this.ipAddress = ipAddress;
@@ -41,6 +42,7 @@ namespace HueDream.Models.Nanoleaf {
                 ipAddress = n.IpV4Address;
                 token = n.Token;
                 layout = n.Layout;
+                maxBrightness = n.MaxBrightness;
                 var nanoType = n.Type;
                 streamMode = nanoType == "NL29" ? 2 : 1;
                 basePath = "http://" + ipAddress + ":16021/api/v1/" + token;
@@ -307,6 +309,10 @@ namespace HueDream.Models.Nanoleaf {
 
                 if (pd.Sector == -1) continue;
                 var color = colors[colorInt];
+                if (maxBrightness < 100) {
+                    var nColor = ColorUtil.ClampBrightness(color, maxBrightness);
+                    color = Color.FromName("#" + nColor.ToHex());
+                }
                 //LogUtil.Write("Sending sector " + (sector + 1) + " out of " + colors.Length);
                 // Pad ID, this is probably wrong
                 // Add rgb

@@ -64,7 +64,6 @@ namespace HueDream.Models.Nanoleaf {
                 }
             };
 
-
             mDns.Start();
             LogUtil.Write("Nano: Discovery Started.");
             await Task.Delay(timeout * 1000).ConfigureAwait(false);
@@ -76,70 +75,14 @@ namespace HueDream.Models.Nanoleaf {
         }
 
         public static async Task<List<NanoData>> Refresh(int timeout = 5) {
-            var existingLeaves = DataUtil.GetItem<List<NanoData>>("leaves");
-            var leaves = await Discover(timeout).ConfigureAwait(false);
-            var nanoLeaves = new List<NanoData>();
-
-            if (existingLeaves != null) {
-                foreach (var newLeaf in leaves) {
-                    var add = true;
-                    var exInt = 0;
-                    foreach (var leaf in existingLeaves) {
-                        if (leaf.Id == newLeaf.Id) {
-                            newLeaf.Token = leaf.Token;
-                            newLeaf.X = leaf.X;
-                            newLeaf.Y = leaf.Y;
-                            newLeaf.Scale = 1;
-                            newLeaf.Rotation = leaf.Rotation;
-                            newLeaf.Layout = MergeLayouts(leaf.Layout, newLeaf.Layout);
-                            existingLeaves[exInt] = newLeaf;
-                            add = false;
-                            break;
-                        }
-
-                        exInt++;
-                    }
-
-                    if (add) {
-                        nanoLeaves.Add(newLeaf);
-                    }
-                }
-
-                nanoLeaves.AddRange(existingLeaves);
-            } else {
-                nanoLeaves.AddRange(leaves);
+            var newLeaves = await Discover(timeout).ConfigureAwait(false);
+            foreach (var nl in newLeaves) {
+                var ex = DataUtil.GetCollectionItem<NanoData>("leaves", nl.Id);
+                if (ex != null) nl.CopyExisting(ex);
+                nl.RefreshLeaf();
+                DataUtil.InsertCollection<NanoData>("leaves", nl);
             }
-
-            foreach (var leaf in nanoLeaves) {
-                if (leaf.Token != null) {
-                    try {
-                        using var nl = new Panel(leaf.IpV4Address, leaf.Token);
-                        var layout = nl.GetLayout().Result;
-                        if (layout != null) leaf.Layout = layout;
-                        leaf.Scale = 1;
-                    } catch (Exception) {
-                        LogUtil.Write("An exception occurred, probably the nanoleaf is unplugged.","ERROR");
-                    }
-                }
-            }
-
-            DataUtil.SetItem<List<NanoData>>("leaves", nanoLeaves);
-            return nanoLeaves;
-        }
-
-
-        private static NanoLayout MergeLayouts(NanoLayout source, NanoLayout dest) {
-            var output = new NanoLayout {PositionData = new List<PanelLayout>()};
-            if (source == null || dest == null) return output;
-            foreach (var s in source.PositionData) {
-                var sId = s.PanelId;
-                foreach (var d in dest.PositionData.Where(d => d.PanelId == sId)) {
-                    d.Sector = s.Sector;
-                    output.PositionData.Add(d);
-                }
-            }
-
-            return output;
+            return DataUtil.GetCollection<NanoData>("leaves");
         }
     }
 }

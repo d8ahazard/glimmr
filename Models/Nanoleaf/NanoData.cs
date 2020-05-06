@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
+using HueDream.Models.Util;
 using Newtonsoft.Json;
 
 namespace HueDream.Models.Nanoleaf {
@@ -43,5 +46,46 @@ namespace HueDream.Models.Nanoleaf {
         [DefaultValue(false)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool MirrorY { get; set; }
+        
+        [DefaultValue(100)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public int MaxBrightness { get; set; }
+
+
+        public void CopyExisting(NanoData leaf) {
+            Token = leaf.Token;
+            X = leaf.X;
+            Y = leaf.Y;
+            Scale = 1;
+            Rotation = leaf.Rotation;
+            MaxBrightness = leaf.MaxBrightness;
+            Layout = MergeLayouts(leaf.Layout, Layout);
+        }
+
+        private static NanoLayout MergeLayouts(NanoLayout source, NanoLayout dest) {
+            var output = new NanoLayout {PositionData = new List<PanelLayout>()};
+            if (source == null || dest == null) return output;
+            foreach (var s in source.PositionData) {
+                var sId = s.PanelId;
+                foreach (var d in dest.PositionData.Where(d => d.PanelId == sId)) {
+                    d.Sector = s.Sector;
+                    output.PositionData.Add(d);
+                }
+            }
+
+            return output;
+        }
+        
+        public void RefreshLeaf() {
+            if (Token == null) return;
+            try {
+                using var nl = new Panel(IpV4Address, Token);
+                var layout = nl.GetLayout().Result;
+                if (layout != null) Layout = layout;
+                Scale = 1;
+            } catch (Exception) {
+                LogUtil.Write("An exception occurred, probably the nanoleaf is unplugged.","ERROR");
+            }
+        }
     }
 }

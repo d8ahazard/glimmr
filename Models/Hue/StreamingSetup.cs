@@ -65,6 +65,7 @@ namespace HueDream.Models.Hue {
             if (group != null) {
                 var lights = group.Lights;
                 LogUtil.Write(@"Group Lights: " + JsonConvert.SerializeObject(lights));
+                if (lights == null) return null; 
                 var mappedLights =
                     (from light in lights
                         from ml in b.Lights

@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Drawing;
 using System.Globalization;
+using HueDream.Models.Hue;
+using Q42.HueApi.ColorConverters;
+using Q42.HueApi.ColorConverters.HSB;
 
 namespace HueDream.Models.Util {
     public static class ColorUtil {
@@ -24,6 +27,17 @@ namespace HueDream.Models.Util {
             // What percentage is it?
             return diff / 255 * 13500 + 1500;
             
+        }
+        
+        
+        public static RGBColor ClampBrightness(Color colorIn, int brightness) {
+            var oColor = new RGBColor(colorIn.R, colorIn.G, colorIn.B);
+            // Clamp our brightness based on settings
+            long bClamp = 255 * brightness / 100;
+            var hsb = new HSB((int) oColor.GetHue(), (int) oColor.GetSaturation(), (int) oColor.GetBrightness());
+            if (hsb.Brightness > bClamp) hsb.Brightness = (int) bClamp;
+            oColor = hsb.GetRGB();
+            return oColor;
         }
 
 

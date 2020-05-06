@@ -120,19 +120,24 @@ body {
 
 .previewWrap {
     width: 50%;
-    margin: 15% 25%;
+    margin: 25px 25%;
 
 }
 
-#lightPreview {
+.linkRow {
+    padding-top: 25px;
+    padding-bottom: 25px;
+}
+
+.light-preview {
     background-image: url("../img/sectoring_tv.png");
     background-size: contain;
     background-repeat: no-repeat;
     position: relative;
     width: 100%;
+    min-width: 270px;
     height: 0;
-    padding-top: 67.8764%; /* (img-height / img-width * container-width) */
-    /* (853 / 1280 * 100) */
+    padding-top: 67.8764%;
 }
 
 #nanoPreview {
@@ -157,7 +162,7 @@ background {
     text-align: center;
 }
 
-#regions {
+.regions {
     margin-bottom: 25px;
     position: absolute;
     top: -3%;
@@ -173,6 +178,37 @@ background {
 
 .ds2 {
     display: none;
+}
+
+.ds1 {
+    cursor: pointer;
+}
+
+.ds1 > div:hover {
+    color: grey;
+}
+
+
+.devSaturation {
+    -webkit-appearance: none;  /* Override default CSS styles */
+    appearance: none;
+    width: 100%; /* Full-width */
+    height: 5px; /* Specified height */
+    outline: none; /* Remove outline */
+    opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+    -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+    transition: opacity .2s;
+}
+#dsSatR {
+    background: #ff0000;    
+}
+
+#dsSatG {
+    background: #00ff00;
+}
+
+#dsSatB {
+    background: #0000ff;
 }
 
 .border {
@@ -199,7 +235,7 @@ background {
     height: 33.33%;
 }
 
-.lightRegion {
+.lightRegion, .clickRegion {
     background-image: url("../img/sector_unchecked_background.png");
     background-size: contain;
     background-repeat: no-repeat;
@@ -207,7 +243,7 @@ background {
     padding: 15px;
 }
 
-.lightRegion.checked {
+.lightRegion.checked, .clickRegion.checked {
     background-image: url("../img/sector_checked_background.png");
     background-size: contain;
     background-repeat: no-repeat;
@@ -224,18 +260,17 @@ select {
     color: white !important;
 }
 
-#dsData {
-    padding-top: 30px;
-    padding-bottom: 12px;
+#dsData, #lifxData {
+    padding-top: 15px;
     font-size: 16px;
 }
 
 
-#dsName {
+#dsName, #lifxName {
     font-size: 30px;
 }
 
-#dsIp {
+#dsIp, #lifxIp {
     font-size: 14px;
     top: -35px;
     position: relative;
@@ -288,7 +323,15 @@ input[type="range"]:active ~ #rangevalue {
     top: -75px;
 }
 
-#iconWrap {
+#lifxIcon {
+    background-image: url("../img/lifx_icon.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+
+#iconWrap, #lifxIcon {
     width: 80px;
     height: 80px;
     margin: 15px;

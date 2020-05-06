@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using HueDream.Models.DreamScreen;
@@ -10,8 +11,10 @@ using HueDream.Models.Hue;
 using HueDream.Models.LED;
 using HueDream.Models.LIFX;
 using HueDream.Models.Nanoleaf;
+using HueDream.Models.Util;
 using JsonFlatFileDataStore;
 using ManagedBass;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace HueDream.Models.Util {
@@ -53,11 +56,28 @@ namespace HueDream.Models.Util {
             }
         }
         
-        
-        public static IDocumentCollection<T> GetCollection<T>() where T : class {
+        public static List<dynamic> GetCollection(string key) {
             try {
                 using var dStore = GetStore();
-                var output = dStore.GetCollection<T>();
+                var coll = dStore.GetCollection(key);
+                var output = new List<dynamic>();
+                if (coll == null) return output;
+                output.AddRange(coll.AsQueryable());
+                dStore.Dispose();
+                return output;
+            } catch (Exception e) {
+                LogUtil.Write($@"Get exception for {key}: {e.Message}");
+                return null;
+            }
+        }
+        public static List<T> GetCollection<T>() where T : class {
+            try {
+                using var dStore = GetStore();
+                var coll = dStore.GetCollection<T>();
+                var output = new List<T>();
+                if (coll == null) return output;
+                output.AddRange(coll.AsQueryable());
+                dStore.Dispose();
                 return output;
             } catch (Exception e) {
                 LogUtil.Write($@"Get exception for {typeof(T)}: {e.Message}");
@@ -65,12 +85,72 @@ namespace HueDream.Models.Util {
             }
         }
 
-
-        public static void InsertCollection(string key, dynamic filter, dynamic value) {
+        
+                
+        public static List<T> GetCollection<T>(string key) where T : class {
             try {
                 using var dStore = GetStore();
+                var coll = dStore.GetCollection<T>(key);
+                var output = new List<T>();
+                if (coll == null) return output;
+                output.AddRange(coll.AsQueryable());
+                dStore.Dispose();
+                return output;
+            } catch (Exception e) {
+                LogUtil.Write($@"Get exception for {typeof(T)}: {e.Message}");
+                return null;
+            }
+        }
+        
+        public static dynamic GetCollectionItem<T>(string key, dynamic value) where T : class {
+            try {
+                using var dStore = GetStore();
+                var coll = dStore.GetCollection<T>(key);
+                IEnumerable<T> res =  coll.Find(value);
+                dStore.Dispose();
+                LogUtil.Write("Existing: " + JsonConvert.SerializeObject(res));
+                return res.FirstOrDefault();
+            } catch (Exception e) {
+                LogUtil.Write($@"Get exception for {typeof(T)}: {e.Message}");
+                return null;
+            }
+        }
+
+
+        public static void InsertCollection<T>(dynamic value) where T: class {
+            try {
+                LogUtil.Write($@"INSERTING ITEM INTO COLLECTION FOR {typeof(T)}: {JsonConvert.SerializeObject(value)}");
+                using var dStore = GetStore();
+                var coll = dStore.GetCollection<T>();
+                LogUtil.Write("Collection: " + JsonConvert.SerializeObject(coll));
+                coll.ReplaceOne(value.Id, value, true);
+                dStore.Dispose();
+            } catch (Exception e) {
+                LogUtil.Write($@"Replace exception for {typeof(T)}: {e.Message}");
+            }
+        }
+        
+        public static void InsertCollection<T>(string key, dynamic value) where T: class {
+            try {
+                LogUtil.Write($@"INSERTING ITEM INTO COLLECTION FOR {typeof(T)}: {JsonConvert.SerializeObject(value)}");
+                using var dStore = GetStore();
+                var coll = dStore.GetCollection<T>(key);
+                LogUtil.Write("Collection: " + JsonConvert.SerializeObject(coll));
+                coll.ReplaceOne(value.Id, value, true);
+                dStore.Dispose();
+            } catch (Exception e) {
+                LogUtil.Write($@"Replace exception for {typeof(T)}: {e.Message}");
+            }
+        }
+        
+        public static void InsertCollection(string key, dynamic value) {
+            try {
+                LogUtil.Write($@"INSERTING ITEM INTO COLLECTION FOR {key}: {JsonConvert.SerializeObject(value)}");
+                using var dStore = GetStore();
                 var coll = dStore.GetCollection(key);
-                coll.ReplaceOne(filter, value, true);
+                LogUtil.Write("Collection: " + JsonConvert.SerializeObject(coll));
+                coll.ReplaceOne(value.Id, value, true);
+                dStore.Dispose();
             } catch (Exception e) {
                 LogUtil.Write($@"Replace exception for {key}: {e.Message}");
             }
@@ -116,11 +196,13 @@ namespace HueDream.Models.Util {
         public static void SetItem(string key, dynamic value) {
             using var dStore = GetStore();
             dStore.ReplaceItem(key, value, true);
+            dStore.Dispose();
         }
 
         public static void SetItem<T>(string key, dynamic value) {
             using var dStore = GetStore();
             dStore.ReplaceItem<T>(key, value, true);
+            dStore.Dispose();
         }
 
         public static string GetStoreSerialized() {
@@ -150,7 +232,7 @@ namespace HueDream.Models.Util {
             if (string.IsNullOrEmpty(dev.AmbientColor)) {
                 dev.AmbientColor = "FFFFFF";
             }
-
+            dd.Dispose();
             return dev;
         }
 
@@ -185,7 +267,7 @@ namespace HueDream.Models.Util {
                     }
                 }
             }
-
+            dd.Dispose();
             return output;
         }
 
@@ -232,18 +314,14 @@ namespace HueDream.Models.Util {
             // Get dream devices
             var ld = new LifxDiscovery();
             var nanoTask = NanoDiscovery.Refresh();
-            var bridgeTask = HueBridge.GetBridgeData();
-            var dreamTask = DreamDiscovery.FindDevices();
+            var bridgeTask = HueBridge.Refresh();
+            var dreamTask = DreamDiscovery.Discover();
             var bulbTask = ld.Refresh();
             await Task.WhenAll(nanoTask, bridgeTask, dreamTask, bulbTask).ConfigureAwait(false);
-            var leaves = nanoTask.Result;
-            var bridges = await bridgeTask.ConfigureAwait(false);
-            var dreamDevices = await dreamTask.ConfigureAwait(false);
-            var lifxDevices = await bulbTask.ConfigureAwait(false);
-            SetItem<List<BridgeData>>("bridges", bridges);
-            SetItem<List<NanoData>>("leaves", leaves);
-            SetItem<List<LifxData>>("lifxBulbs", lifxDevices);
-            SetItem("devices", dreamDevices);
+            // await nanoTask.ConfigureAwait(false);
+            // await bridgeTask.ConfigureAwait(false);
+            // await dreamTask.ConfigureAwait(false);
+            // await bulbTask.ConfigureAwait(false);
         }
 
         public static async Task ScanDevices(DataStore store) {
@@ -251,8 +329,8 @@ namespace HueDream.Models.Util {
             // Get dream devices
             var ld = new LifxDiscovery();
             var nanoTask = NanoDiscovery.Discover();
-            var hueTask = HueBridge.FindBridges();
-            var dreamTask = DreamDiscovery.FindDevices();
+            var hueTask = HueBridge.Discover();
+            var dreamTask = DreamDiscovery.Discover();
             var bulbTask = ld.Discover(5);
             await Task.WhenAll(nanoTask, hueTask, dreamTask, bulbTask).ConfigureAwait(false);
             var leaves = await nanoTask.ConfigureAwait(false);
@@ -263,6 +341,7 @@ namespace HueDream.Models.Util {
             await store.InsertItemAsync("leaves", leaves).ConfigureAwait(false);
             await store.InsertItemAsync("devices", dreamDevices).ConfigureAwait(false);
             await store.InsertItemAsync("lifxBulbs", bulbs).ConfigureAwait(false);
+            store.Dispose();
         }
 
         public static void RefreshPublicIp() {
