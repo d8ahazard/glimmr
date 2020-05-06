@@ -41,6 +41,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
             User = existing.User;
             Lights = existing.Lights;
             Groups = existing.Groups;
+            SelectedGroup = existing.SelectedGroup;
         }
 
         [JsonProperty] public string IpAddress { get; set; }

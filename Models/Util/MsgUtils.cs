@@ -61,6 +61,7 @@ namespace HueDream.Models.Util {
             {"010C", "SUBSCRIBE"},
             {"010D", "DISCOVERY_START"},
             {"010E", "DISCOVERY_STOP"},
+            {"0110", "REMOTE_BRIGHTNESS"},
             {"0113", "UNKNOWN"},
             {"0115", "READ_BOOTLOADER_MODE"},
             {"0117", "STOP_ESP_DRIVERS"},

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Globalization;
+using Newtonsoft.Json;
 using Q42.HueApi.ColorConverters;
 using Q42.HueApi.ColorConverters.HSB;
 
@@ -27,33 +28,7 @@ namespace HueDream.Models.Util {
             return diff / 255 * 13500 + 1500;
             
         }
-        
-        
-        public static RGBColor ClampBrightnessRgb(Color colorIn, int brightness) {
-            var oColor = new RGBColor(colorIn.R, colorIn.G, colorIn.B);
-            // Clamp our brightness based on settings
-            long bClamp = 255 * brightness / 100;
-            var hsb = new HSB((int) oColor.GetHue(), (int) oColor.GetSaturation(), (int) oColor.GetBrightness());
-            if (hsb.Brightness > bClamp) hsb.Brightness = (int) bClamp;
-            oColor = hsb.GetRGB();
-            return oColor;
-        }
-        
-        
-        public static Color ClampBrightness(Color colorIn, int brightness) {
-            var oColor = new RGBColor(colorIn.R, colorIn.G, colorIn.B);
-            // Clamp our brightness based on settings
-            long bClamp = 255 * brightness / 100;
-            var hsb = new HSB((int) oColor.GetHue(), (int) oColor.GetSaturation(), (int) oColor.GetBrightness());
-            if (hsb.Brightness > bClamp) hsb.Brightness = (int) bClamp;
-            oColor = hsb.GetRGB();
-            var output = Color.FromName("#" + oColor.ToHex());
-            return output;
-        }
-        
-        
-
-
+       
         public static Color ColorFromHsv(double hue, double saturation, double value) {
             var hi = Convert.ToInt32(Math.Floor(hue / 60)) % 6;
             var f = hue / 60 - Math.Floor(hue / 60);
@@ -80,7 +55,7 @@ namespace HueDream.Models.Util {
             }
         }
 
-        public static ushort[] ColorToHsl(Color rgb) {
+        public static double[] ColorToHsb(Color rgb) {
             // normalize red, green and blue values
             var r = rgb.R / 255.0;
             var g = rgb.G / 255.0;
@@ -102,9 +77,9 @@ namespace HueDream.Models.Util {
 
             var s = max <= 0.0000001 ? 0.0 : 1.0 - min / max;
             return new[] {
-                (ushort) (h / 360 * 65535),
-                (ushort) (s * 65535),
-                (ushort) (max * 65535)
+                h,
+                s,
+                max
             };
         }
 
@@ -117,7 +92,7 @@ namespace HueDream.Models.Util {
         /// <param name="s">Saturation, must be in [0, 1].</param>
         /// <param name="b">Brightness, must be in [0, 1].</param>
         /// <param name="a">Output Alpha, must be in [0, 255].</param>
-        public static Color HslToColor(double h, double s, double b, int a = 255) {
+        public static Color HsbToColor(double h, double s, double b, int a = 255) {
             h = Math.Max(0D, Math.Min(360D, h));
             s = Math.Max(0D, Math.Min(1D, s));
             b = Math.Max(0D, Math.Min(1D, b));

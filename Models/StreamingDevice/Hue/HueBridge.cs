@@ -17,8 +17,9 @@ namespace HueDream.Models.StreamingDevice.Hue {
         private EntertainmentLayer entLayer;
         private readonly StreamingHueClient client;
         private bool disposed;
-        private bool streaming;
-
+        public int MaxBrightness { get; set; }
+        public string Id { get; set; }
+        
         public HueBridge(BridgeData data) {
             bd = data ?? throw new ArgumentNullException(nameof(data));
             BridgeIp = bd.IpAddress;
@@ -26,6 +27,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
             disposed = false;
             Streaming = false;
             entLayer = null;
+            MaxBrightness = data.MaxBrightness;
             LogUtil.Write(@"Hue: Loading bridge: " + BridgeIp);
         }
 
@@ -39,6 +41,8 @@ namespace HueDream.Models.StreamingDevice.Hue {
         /// </summary>
         /// <param name="ct">A cancellation token.</param>
         public async void StartStream(CancellationToken ct) {
+            StopStream();
+            if (ct == null) throw new ArgumentException("Invalid cancellation token.");
             // Get our light map and filter for mapped lights
             LogUtil.Write($@"Hue: Connecting to bridge at {BridgeIp}...");
             // Grab our stream
@@ -96,19 +100,20 @@ namespace HueDream.Models.StreamingDevice.Hue {
                     // Otherwise, get the corresponding sector color
                     var colorInt = lightData.TargetSector - 1;
                     var color = colors[colorInt];
-                    // Make it into a color
+                    var mb = lightData.OverrideBrightness ? lightData.Brightness : MaxBrightness;
+                    if (mb < 100) {
+                        //color = ColorUtil.ClampBrightness(color, mb); 
+                    }
                     var oColor = new RGBColor(color.R, color.G, color.B);
-                    var endColor = lightData.OverrideBrightness
-                        ? ColorUtil.ClampBrightnessRgb(color, lightData.Brightness)
-                        : oColor;
+
                     // If we're currently using a scene, animate it
                     if (Math.Abs(fadeTime) > 0.00001) {
                         // Our start color is the last color we had}
-                        entLight.SetState(CancellationToken.None, endColor, endColor.GetBrightness(),
+                        entLight.SetState(CancellationToken.None, oColor, oColor.GetBrightness(),
                             TimeSpan.FromSeconds(fadeTime));
                     } else {
                         // Otherwise, if we're streaming, just set the color
-                        entLight.SetState(CancellationToken.None, endColor, endColor.GetBrightness());
+                        entLight.SetState(CancellationToken.None, oColor, oColor.GetBrightness());
                     }
                 }
             } else {
@@ -128,7 +133,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
             }
 
             if (disposing) {
-                if (streaming) {
+                if (Streaming) {
                     StopStream();
                 }
 

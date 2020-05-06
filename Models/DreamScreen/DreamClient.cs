@@ -444,6 +444,13 @@ namespace HueDream.Models.DreamScreen {
                     discovering = false;
                     DataUtil.SetItem<List<BaseDevice>>("devices", devices);
                     break;
+                case "REMOTE_BRIGHTNESS":
+                    var id = Encoding.UTF8.GetString(payload.Skip(1).ToArray());
+                    var tDev = sDevices.First(b => b.Id == id);
+                    var max = Convert.ToInt32(payload[0]);
+                    LogUtil.Write($"Set remote brightness for {id} to {max}");
+                    if (tDev != null) tDev.MaxBrightness = max;
+                    break;
                 case "COLOR_DATA":
                     if (CaptureMode == 0 && (devMode == 1 || devMode == 2)) {
                         var colorData = ByteUtils.SplitHex(payloadString, 6); // Swap this with payload

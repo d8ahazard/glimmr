@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading;
 using Accord.Math.Optimization;
 using HueDream.Models;
@@ -468,26 +469,34 @@ namespace HueDream.Controllers {
             var id = (dData["id"] ?? "INVALID").Value<string>();
             var brightness = (dData["brightness"] ?? -1).Value<int>();
             LogUtil.Write($"Setting brightness for {tag} {id} to {brightness}.");
+            var myDev = DataUtil.GetDeviceData();
+            var ipAddress = myDev.IpAddress;
+            var groupNumber = (byte) myDev.GroupNumber;
+            var sendRemote = false;
+            var remoteId = "";
             switch (tag) {
                 case "Hue":
                     var bridge = DataUtil.GetCollectionItem<BridgeData>("bridges", id);
                     bridge.MaxBrightness = brightness;
                     DataUtil.InsertCollection<BridgeData>("bridges", bridge);
+                    sendRemote = true;
+                    remoteId = bridge.Id;
                     break;
                 case "Lifx":
                     var bulb = DataUtil.GetCollectionItem<LifxData>("lifxBulbs", id);
                     bulb.MaxBrightness = brightness;
                     DataUtil.InsertCollection<LifxData>("lifxBulbs", bulb);
+                    sendRemote = true;
+                    remoteId = bulb.Id;
                     break;
                 case "NanoLeaf":
                     var panel = DataUtil.GetCollectionItem<NanoData>("leaves", id);
                     panel.MaxBrightness = brightness;
                     DataUtil.InsertCollection<NanoData>("leaves", panel);
+                    sendRemote = true;
+                    remoteId = panel.Id;
                     break;
                 default:
-                    var myDev = DataUtil.GetDeviceData();
-                    var ipAddress = myDev.IpAddress;
-                    var groupNumber = (byte) myDev.GroupNumber;
                     var groupSend = false;
                     byte mFlag = 0x11;
                     if (ipAddress == "255.255.255.0") {
@@ -500,7 +509,15 @@ namespace HueDream.Controllers {
                         new IPEndPoint(IPAddress.Parse(ipAddress), 8888), groupSend);
                     break;
             }
-            ResetMode();
+
+            if (sendRemote) {
+                var payload = new List<byte>();
+                payload.Add( ByteUtils.IntByte(brightness));
+                var utf8 = new UTF8Encoding();
+                payload.AddRange(utf8.GetBytes(remoteId));
+                DreamSender.SendUdpWrite(0x01, 0x10, payload.ToArray(), 0x21, groupNumber,
+                    new IPEndPoint(IPAddress.Parse(ipAddress), 8888));
+            }
         }
     }
 }
