@@ -42,6 +42,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
             Lights = existing.Lights;
             Groups = existing.Groups;
             SelectedGroup = existing.SelectedGroup;
+            MaxBrightness = existing.MaxBrightness;
         }
 
         [JsonProperty] public string IpAddress { get; set; }
