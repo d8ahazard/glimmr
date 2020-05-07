@@ -50,7 +50,7 @@ namespace HueDream.Models.Util {
                 var output = dStore.GetItem<T>(key);
                 dStore.Dispose();
                 return output;
-            } catch (Exception e) {
+            } catch (KeyNotFoundException e) {
                 LogUtil.Write($@"Get exception for {key}: {e.Message}");
                 return null;
             }
@@ -88,7 +88,7 @@ namespace HueDream.Models.Util {
         
                 
         public static List<T> GetCollection<T>(string key) where T : class {
-            try {
+            
                 using var dStore = GetStore();
                 var coll = dStore.GetCollection<T>(key);
                 var output = new List<T>();
@@ -96,10 +96,7 @@ namespace HueDream.Models.Util {
                 output.AddRange(coll.AsQueryable());
                 dStore.Dispose();
                 return output;
-            } catch (Exception e) {
-                LogUtil.Write($@"Get exception for {typeof(T)}: {e.Message}");
-                return null;
-            }
+            
         }
         
         public static dynamic GetCollectionItem<T>(string key, dynamic value) where T : class {
@@ -108,7 +105,6 @@ namespace HueDream.Models.Util {
                 var coll = dStore.GetCollection<T>(key);
                 IEnumerable<T> res =  coll.Find(value);
                 dStore.Dispose();
-                LogUtil.Write("Existing: " + JsonConvert.SerializeObject(res));
                 return res.FirstOrDefault();
             } catch (Exception e) {
                 LogUtil.Write($@"Get exception for {typeof(T)}: {e.Message}");
@@ -119,10 +115,8 @@ namespace HueDream.Models.Util {
 
         public static void InsertCollection<T>(dynamic value) where T: class {
             try {
-                LogUtil.Write($@"INSERTING ITEM INTO COLLECTION FOR {typeof(T)}: {JsonConvert.SerializeObject(value)}");
                 using var dStore = GetStore();
                 var coll = dStore.GetCollection<T>();
-                LogUtil.Write("Collection: " + JsonConvert.SerializeObject(coll));
                 coll.ReplaceOne(value.Id, value, true);
                 dStore.Dispose();
             } catch (Exception e) {
@@ -132,10 +126,8 @@ namespace HueDream.Models.Util {
         
         public static void InsertCollection<T>(string key, dynamic value) where T: class {
             try {
-                LogUtil.Write($@"INSERTING ITEM INTO COLLECTION FOR {typeof(T)}: {JsonConvert.SerializeObject(value)}");
                 using var dStore = GetStore();
                 var coll = dStore.GetCollection<T>(key);
-                LogUtil.Write("Collection: " + JsonConvert.SerializeObject(coll));
                 coll.ReplaceOne(value.Id, value, true);
                 dStore.Dispose();
             } catch (Exception e) {
@@ -145,10 +137,8 @@ namespace HueDream.Models.Util {
         
         public static void InsertCollection(string key, dynamic value) {
             try {
-                LogUtil.Write($@"INSERTING ITEM INTO COLLECTION FOR {key}: {JsonConvert.SerializeObject(value)}");
                 using var dStore = GetStore();
                 var coll = dStore.GetCollection(key);
-                LogUtil.Write("Collection: " + JsonConvert.SerializeObject(coll));
                 coll.ReplaceOne(value.Id, value, true);
                 dStore.Dispose();
             } catch (Exception e) {

@@ -259,31 +259,37 @@ function setListeners() {
         event.stopPropagation();
     });
 
-    // Cycle bridges
-    $('.arrowBtn').click(function() {
-        let cycleInt = 1;
-        let curInt = bridgeInt;
-        if ($(this).id === "bridgePrev") cycleInt = -1;
-        curInt += cycleInt;
-        if (curInt >= bridges.length) curInt = 0;
-        if (curInt < 0) curInt = (bridges.length - 1);
-        if (bridgeInt !== curInt) {
-            bridgeInt = curInt;
-            // #todo: Make an animation here
-            loadBridge(bridgeInt);
-        }
-    });
+    
 
-    // On device mode change 
     $('.modeBtn').click(function () {
         $(".modeBtn").removeClass("active");
         $(this).addClass('active');
         const mode = $(this).data('mode');
+        let id = selectedDevice.id;
         selectedDevice.mode = mode;
         saveSelectedDevice();
-        postData("mode", mode);
+        postData("mode", {
+            id: id,
+            mode: mode,
+            tag: selectedDevice.tag
+        });
     });
-    
+
+    $('.dsModeBtn').click(function () {
+        $(".dsModeBtn").removeClass("active");
+        $(this).addClass('active');
+        const mode = $(this).data('mode');
+        let id = selectedDevice.id;
+        selectedDevice.mode = mode;
+        saveSelectedDevice();
+        postData("mode", {
+            id: id,
+            mode: mode,
+            tag: selectedDevice.tag
+        });
+    });
+
+
     $('.clickRegion').click(function() {
         if (!$(this).hasClass('checked')) {
             $('.clickRegion').removeClass('checked');
@@ -534,26 +540,11 @@ function listGroups() {
     }
 }
 
-// Not used, probably won't. This will eventually get replaced by a websocket
-function getMode() {
-    $.get("./api/DreamData/getMode", function(data) {
-       console.log("DATA: ", data); 
-    });
-}
-
-// Get a list of dreamscreen devices
-function listDreamDevices() {
-    $.get("./api/DreamData/action?action=findDreamDevices", function (data) {
-        console.log("Dream devices: ", data);
-        buildDevList(data);
-    });
-}
-
 
 function saveSelectedDevice() {
     for (let q = 0; q < devices.length; q++) {
         let tDev = devices[q];
-        if (tDev.id == selectedDevice.id) {
+        if (tDev.id === selectedDevice.id) {
             devices[q] = selectedDevice;
         }
     }
@@ -599,8 +590,8 @@ function buildLists(data) {
     let mode = selectCaptureMode(captureMode);
     emulationType = data['emuType'];
     buildDevList(data['devices']);
-    setCaptureMode(mode);
-
+    setCaptureMode(mode, false);
+    setMode(deviceData.mode);
     // Push dreamscreen devices to groups first, so they appear on top. The, do sidekicks, nanoleaves, then bridges.
     $.each(devices, function() {
         let item = $(this)[0];
@@ -711,7 +702,12 @@ function selectCaptureMode(targetInt) {
     return null;
 }
 
-function setCaptureMode(target) {
+function setMode(devMode) {
+    $('.modeBtn').removeClass('active');
+    $('#mode' + devMode).addClass('active');
+}
+
+function setCaptureMode(target, post=true) {
     if (target === "dsCapPane") {
         captureMode = 0;
     } else if (target === "cameraCapPane") {
@@ -721,7 +717,7 @@ function setCaptureMode(target) {
     } else if (target === "screenCapPane") {
         captureMode = 3;
     }
-    postData("capturemode", captureMode);
+    if (post) postData("capturemode", captureMode);
     $('.capModeBtn.active').removeClass('active');
     $('#' + target + 'Btn').addClass('active');
     let hCount = 0;
@@ -812,6 +808,7 @@ function showDevicePanel(data) {
     let hueCard = $('#hueCard');
     let dsCard = $('#dsCard');
     let lifxCard = $('#lifxCard');
+    let modeGroup = $(".modeGroup");
     if (!resizeTimer) hidePanels();
     setTimeout(function(){
         $('#navTitle').html(data.tag);
@@ -823,19 +820,23 @@ function showDevicePanel(data) {
             case "DreamScreen4K":
             case "DreamScreenSolo":
             case "group":
-                loadDsData(data);            
+                loadDsData(data);
+                modeGroup.hide();
                 if (!resizeTimer) dsCard.slideDown();
                 break;
             case "HueBridge":
                 loadBridgeData(data);
+                modeGroup.show();
                 if (!resizeTimer) hueCard.slideDown();
                 break;
             case "NanoLeaf":
                 loadNanoData(data);
+                modeGroup.show();
                 if (!resizeTimer) nanoCard.slideDown();
                 break;
             case "Lifx":
                 loadLifxData(data);
+                modeGroup.show();
                 if (!resizeTimer) lifxCard.slideDown();
         }
 
@@ -850,11 +851,12 @@ function showGroupPanel(groupId) {
 
 // Update the UI with emulator device data
 function loadDsData(data) {
+    let dsName = $('#dsName');
     console.log("Loading: ", data);
     deviceData = data;
-    $('#dsName').html(deviceData.name);
-    $('#dsName').data("ip", deviceData.ipAddress);
-    $('#dsName').data('group', deviceData.groupNumber);
+    dsName.html(deviceData.name);
+    dsName.data("ip", deviceData.ipAddress);
+    dsName.data('group', deviceData.groupNumber);
     $('#dsBrightness').val(deviceData.maxBrightness);
     $('#dsIp').html(deviceData.ipAddress);
     emulationType = deviceData.tag;
@@ -868,7 +870,7 @@ function loadDsData(data) {
     $('#dsSettingsBtn').data('target',settingTarget);
     $('#dsType').html();
     let modestr = "";
-    $('.modeBtn').removeClass('active');
+    $('.dsModeBtn').removeClass('active');
     switch (deviceData.mode) {
         case 0:
             modestr = "Off";
@@ -883,8 +885,7 @@ function loadDsData(data) {
             modestr = "Ambient";
             break;
     }
-    $('#mode' + deviceData.mode).addClass('active');
-    $('#dsMode').html(modestr);
+    $('#dsMode' + deviceData.mode).addClass('active');
     $('#iconWrap').removeClass().addClass(emulationType);
 }
 
@@ -895,12 +896,13 @@ function loadBridgeData(data) {
     const lImg = $('#linkImg');
     const lHint = $('#linkHint');
     const lBtn = $('#linkBtn');
-
+    const bSlider = $('#hueBrightness');
     // This is our bridge. There are many others like it...but this one is MINE.
     console.log("Loaded bridge: ", data);
     // Now we've got it.
     let b = data;
     hueIp = b.id;
+    bSlider.val(b.maxBrightness);
     hIp.html(b["ipAddress"]);        
     hueGroup = b["selectedGroup"];
     if (b.hasOwnProperty("groups")) {

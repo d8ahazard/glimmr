@@ -19,7 +19,6 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
                 var hc = getClient();
                 using var content = new StringContent(json, Encoding.UTF8, "application/json");
                 using var responseMessage = await hc.PutAsync(authorizedPath, content).ConfigureAwait(false);
-                LogUtil.Write($@"Sending put request to {authorizedPath}: {json}");
                 if (!responseMessage.IsSuccessStatusCode) {
                     HandleNanoleafErrorStatusCodes(responseMessage);
                 }

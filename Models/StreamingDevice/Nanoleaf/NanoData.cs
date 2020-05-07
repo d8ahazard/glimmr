@@ -78,14 +78,11 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
         
         public void RefreshLeaf() {
             if (Token == null) return;
-            try {
                 using var nl = new NanoGroup(IpV4Address, Token);
                 var layout = nl.GetLayout().Result;
                 if (layout != null) Layout = layout;
                 Scale = 1;
-            } catch (Exception) {
-                LogUtil.Write("An exception occurred, probably the nanoleaf is unplugged.","ERROR");
-            }
+            
         }
     }
 }

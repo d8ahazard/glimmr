@@ -86,10 +86,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
         /// <param name="colors">An array of 12 colors corresponding to sector data</param>
         /// <param name="fadeTime">Optional: how long to fade to next state</param>
         public void SetColor(List<Color> colors, double fadeTime = 0) {
-            if (!Streaming) {
-                LogUtil.Write("Hue: We are not streaming, returning.");
-                return;
-            }
+            if (!Streaming) return;
             if (colors == null) {
                 LogUtil.Write("Error with color array!", "ERROR");
                 return;

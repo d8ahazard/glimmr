@@ -12,6 +12,29 @@
             <span class="sr-only">Back</span>
             <i class="material-icons">keyboard_arrow_left</i>
         </button>
+        <div class="btn-group modeGroup">
+            <div class="btnWrap">
+                <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="0" id="mode0">
+                    <img class="modeIcon" src="~/img/mode_off_icon.png" alt=""/>
+                </div>
+            </div>
+            <div class="btnWrap">
+                <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="1" id="mode1">
+                    <img class="modeIcon" src="~/img/mode_video_icon.png" alt=""/>
+                </div>
+            </div>
+            <div class="btnWrap">
+                <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="2" id="mode2">
+                    <img class="modeIcon" src="~/img/mode_audio_icon.png" alt=""/>
+                </div>
+            </div>
+            <div class="btnWrap">
+                <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="3" id="mode3">
+                    <img class="modeIcon" src="~/img/mode_ambient_icon.png" alt=""/>
+                </div>
+            </div>
+        </div>
+
         <ul class="nav navbar-nav">
             <li class="nav-item" id="navTitle"></li>
         </ul>
@@ -39,247 +62,243 @@
 
 <main class="bmd-layout-content">
 <div class="">
-<div class="bg-dark text-white hidden" id="dsCard">
+    <div class="bg-dark text-white hidden" id="dsCard">
     <div id="dsPane">
-        <div class="card-body">
-            <div class="container">
-                <div class="devDisplay">
+    <div class="card-body">
+    <div class="container">
+        <div class="devDisplay">
+            <div class="row justify-content-center">
+                <div class="form-group col-12 col-lg-10">
                     <div class="row justify-content-center">
-                        <div class="form-group col-12 col-lg-10">
-                            <div class="row justify-content-center">
-                                <div id="iconWrap">
-                                </div>
-                                <div id="dsData" class="">
-                                    <div id="dsName" onclick="listenForDoubleClick(this);" onblur="this.contentEditable=false;"></div><br/>
-                                    <span id="dsIp"></span>
-                                </div>
-                                <div class="btn btn-primary settingsBtn" id="dsSettingsBtn" data-target="dsSettings">
-                                </div>
-                            </div>
+                        <div id="iconWrap">
+                        </div>
+                        <div id="dsData" class="">
+                            <div id="dsName" onclick="listenForDoubleClick(this);" onblur="this.contentEditable=false;"></div><br/>
+                            <span id="dsIp"></span>
+                        </div>
+                        <div class="btn btn-primary settingsBtn" id="dsSettingsBtn" data-target="dsSettings">
                         </div>
                     </div>
                     <div class="row justify-content-center">
-                        <div class="btn-group-lg">
+                        <div class="btn-group">
                             <div class="btnWrap">
-                                <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="0" id="mode0">
+                                <div class="btn btn-secondary dsModeBtn bmd-btn-fab" data-mode="0" id="dsMode0">
                                     <img class="modeIcon" src="~/img/mode_off_icon.png" alt=""/>
                                 </div>
-                                <span class="modeLabel">Off</span>
                             </div>
                             <div class="btnWrap">
-                                <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="1" id="mode1">
+                                <div class="btn btn-secondary dsModeBtn bmd-btn-fab" data-mode="1" id="dsMode1">
                                     <img class="modeIcon" src="~/img/mode_video_icon.png" alt=""/>
                                 </div>
-                                <span class="modeLabel">Video</span>
                             </div>
                             <div class="btnWrap">
-                                <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="2" id="mode2">
+                                <div class="btn btn-secondary dsModeBtn bmd-btn-fab" data-mode="2" id="dsMode2">
                                     <img class="modeIcon" src="~/img/mode_audio_icon.png" alt=""/>
                                 </div>
-                                <span class="modeLabel">Music</span>
                             </div>
                             <div class="btnWrap">
-                                <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="3" id="mode3">
+                                <div class="btn btn-secondary dsModeBtn bmd-btn-fab" data-mode="3" id="dsMode3">
                                     <img class="modeIcon" src="~/img/mode_ambient_icon.png" alt=""/>
                                 </div>
-                                <span class="modeLabel">Ambient</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row justify-content-center">
-                        <div class="col-8 col-md-6 col-xl-4">
-                            <input class="form-control devBrightness" type="range" name="dsBrightness" id="dsBrightness" min="0" max="100" value="100">
-                        </div>
-                    </div>
-                </div>
-                <div class="row justify-content-center center settingExpand" id="dsSettings">
-                    <div class="col-10 col-md-8 col-xl-6">
-                        <br/>
-                        <h3>Settings</h3>
-                        <div id="settingsListDS" class="ds1">
-                            <div class="col-12 s1 border" data-target="settingsVideoDS">
-                                Video Settings
-                            </div>
-                            <div class="col-12 s1 border" data-target="settingsMusicDS">
-                                Music Settings
-                            </div>
-                            <div class="col-12 s1 border" data-target="settingsAdvancedDS">
-                                Advanced Settings
-                            </div>
-                            <div class="col-12 s1 border" data-target="settingsInstallDS">
-                                Installation Settings
-                            </div>
-                            <div class="col-12 s1 border" data-target="settingsResetDS">
-                                Update and Reset
-                            </div>
-                        </div>
-                        <div id="settingsVideoDS" class="ds2">
-                            <div id="saturationDS" class="border">
-                                <h5>Saturation <span class="material-icons hintbtn">help_outline</span></h5>
-                                <label for="dsSatR">Red</label>
-                                <input class="form-control devSaturation" type="range" id="dsSatR" name="dsSatR" min="0" max="100" value="100">
-                                <label for="dsSatG">Green</label>
-                                <input class="form-control devSaturation" type="range" id="dsSatG" name="dsSatG" min="0" max="100" value="100">
-                                <label for="dsSatB">Blue</label>
-                                <input class="form-control devSaturation" type="range" id="dsSatB" name="dsSatB" min="0" max="100" value="100">
-                                <div class="hint">Adjust the RGB channels to appear correctly or when wall behind DreamScreen is not white.</div>
-                            </div>
-                            <div id="detectionDS" class="border">
-                                <h5>Wiescreen Detection <span class="material-icons hintbtn">help_outline</span></h5>
-                                <div class="btn-group">
-                                    <div class="btn" id="dsDetectAuto">Auto</div>
-                                    <div class="btn" id="dsDetectOn">On</div>
-                                    <div class="btn" id="dsDetectOff">Off</div>
-                                </div>
-                                <div class="hint">DreamScreen will detect when the Video Source has been formatted to fit a widescreen.</div>
-                            </div>
-                            <div id="fadeRateDS" class="border">
-                                <h5>Fade Rate <span class="material-icons hintbtn">help_outline</span></h5>
-                                <input class="form-control devFadeRate" type="range" id="dsFadeRate" name="dsFadeRate" min="0" max="100" value="100">
-                                <div class="hint">Adjusts the reaction speed of the LEDs.</div>
-                            </div>
-                            <div id="luminosityDS" class="border">
-                                <h5>Minimum Luminosity <span class="material-icons hintbtn">help_outline</span></h5>
-                                <input class="form-control devFadeRate" type="range" id="dsLuminosity" name="dsLuminosity" min="0" max="100" value="100">
-                                <div class="hint">Set a low level of background light when there is no video content playing.</div>
-                            </div>
-                            <div id="colorboostDS" class="border">
-                                <h5>Color Boost <span class="material-icons hintbtn">help_outline</span></h5>
-                                <div class="btn" id="dsColorBoost">Off</div>
-                                <div class="hint">Enhances RGB tones making ligher hues appear stronger.</div>
-                            </div>
-                        </div>
-                        <div id="settingsMusicDS" class="ds2"></div>
-                        <div id="settingsAdvancedDS" class="ds2"></div>
-                        <div id="settingsInstallDS" class="ds2"></div>
-                        <div id="settingsResetDS" class="ds2">
-                            <div class="col-12 border">
-                                Firmware Version
-                            </div>
-                            <div class="col-12 border">
-                                Factor Reset
-                            </div>
-                            <div class="col-12 border">
-                                Restart Device
-                            </div>
-                            <div class="col-12 border">
-                                Ip Address
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="row justify-content-center center settingExpand" id="sidekickSettings">
-                                    <div class="col-10 col-md-8 col-xl-6">
-                                        <br/>
-                                        <h3>Settings</h3>
-                                        <div id="settingsListSideKick" class="ds1">
-                                            <div class="col-12 s1 border" data-target="settingsColorSK">
-                                                Color Settings
-                                            </div>
-                                            <div class="col-12 s1 border" data-target="settingsSectorSK">
-                                                Sector Settings
-                                            </div>
-                                            <div class="col-12 s1 border" data-target="settingsResetSK">
-                                                Update and Reset
-                                            </div>
-                                        </div>
-                                        <div id="settingsColorSK" class="ds2">
-                                            <div id="saturationSK" class="border">
-                                                <h5>Saturation <span class="material-icons hintbtn">help_outline</span></h5>
-                                                <label for="dsSatR">Red</label>
-                                                <input class="form-control devSaturation" type="range" id="skSatR" name="skSatR" min="0" max="100" value="100">
-                                                <label for="dsSatG">Green</label>
-                                                <input class="form-control devSaturation" type="range" id="skSatG" name="skSatG" min="0" max="100" value="100">
-                                                <label for="dsSatB">Blue</label>
-                                                <input class="form-control devSaturation" type="range" id="skSatB" name="skSatB" min="0" max="100" value="100">
-                                                <div class="hint">Adjust the RGB channels to appear correctly or when wall behind DreamScreen is not white.</div>
-                                            </div>
-                                        </div>
-                                        <div id="settingsSectorSK" class="ds2"></div>
-                                        <div id="settingsResetSK" class="ds2">
-                                            <div class="col-12 border">
-                                                Firmware Version
-                                            </div>
-                                            <div class="col-12 border">
-                                                Factor Reset
-                                            </div>
-                                            <div class="col-12 border">
-                                                Restart Device
-                                            </div>
-                                            <div class="col-12 border">
-                                                Ip Address
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                <div class="row justify-content-center center settingExpand" id="connectSettings">
-                    <div class="col-10 col-md-8 col-xl-6">
-                        <br/>
-                        <h3>Settings</h3>
-                        <div id="settingsListCo" class="ds1">
-                            <div class="col-12 s1 border" data-target="settingsVideoDS">
-                                Video Settings
-                            </div>
-                            <div class="col-12 s1 border" data-target="settingsMusicDS">
-                                Music Settings
-                            </div>
-                            <div class="col-12 s1 border" data-target="settingsAdvancedDS">
-                                Advanced Settings
-                            </div>
-                            <div class="col-12 s1 border" data-target="settingsInstallDS">
-                                Installation Settings
-                            </div>
-                            <div class="col-12 s1 border" data-target="settingsResetDS">
-                                Update and Reset
-                            </div>
+            </div>
+            <div class="row justify-content-center">
+                <div class="col-8 col-md-6 col-xl-4">
+                    <input class="form-control devBrightness" type="range" name="dsBrightness" id="dsBrightness" min="0" max="100" value="100">
+                </div>
+            </div>
+        </div>
+        <div class="row justify-content-center center settingExpand" id="dsSettings">
+            <div class="col-10 col-md-8 col-xl-6">
+                <br/>
+                <h3>Settings</h3>
+                <div id="settingsListDS" class="ds1">
+                    <div class="col-12 s1 border" data-target="settingsVideoDS">
+                        Video Settings
+                    </div>
+                    <div class="col-12 s1 border" data-target="settingsMusicDS">
+                        Music Settings
+                    </div>
+                    <div class="col-12 s1 border" data-target="settingsAdvancedDS">
+                        Advanced Settings
+                    </div>
+                    <div class="col-12 s1 border" data-target="settingsInstallDS">
+                        Installation Settings
+                    </div>
+                    <div class="col-12 s1 border" data-target="settingsResetDS">
+                        Update and Reset
+                    </div>
+                </div>
+                <div id="settingsVideoDS" class="ds2">
+                    <div id="saturationDS" class="border">
+                        <h5>Saturation <span class="material-icons hintbtn">help_outline</span></h5>
+                        <label for="dsSatR">Red</label>
+                        <input class="form-control devSaturation" type="range" id="dsSatR" name="dsSatR" min="0" max="100" value="100">
+                        <label for="dsSatG">Green</label>
+                        <input class="form-control devSaturation" type="range" id="dsSatG" name="dsSatG" min="0" max="100" value="100">
+                        <label for="dsSatB">Blue</label>
+                        <input class="form-control devSaturation" type="range" id="dsSatB" name="dsSatB" min="0" max="100" value="100">
+                        <div class="hint">Adjust the RGB channels to appear correctly or when wall behind DreamScreen is not white.</div>
+                    </div>
+                    <div id="detectionDS" class="border">
+                        <h5>Wiescreen Detection <span class="material-icons hintbtn">help_outline</span></h5>
+                        <div class="btn-group">
+                            <div class="btn" id="dsDetectAuto">Auto</div>
+                            <div class="btn" id="dsDetectOn">On</div>
+                            <div class="btn" id="dsDetectOff">Off</div>
                         </div>
-                        <div id="settingsVideoCo" class="ds2">
-                            <div id="saturationCo" class="border">
-                                <h5>Saturation <span class="material-icons hintbtn">help_outline</span></h5>
-                                <label for="dsSatR">Red</label>
-                                <input class="form-control devSaturation" type="range" id="coSatR" name="dsSatR" min="0" max="100" value="100">
-                                <label for="dsSatG">Green</label>
-                                <input class="form-control devSaturation" type="range" id="coSatG" name="dsSatG" min="0" max="100" value="100">
-                                <label for="dsSatB">Blue</label>
-                                <input class="form-control devSaturation" type="range" id="coSatB" name="dsSatB" min="0" max="100" value="100">
-                                <div class="hint">Adjust the RGB channels to appear correctly or when wall behind DreamScreen is not white.</div>
-                            </div>
-                            <div id="detectionCo" class="border">
-                                <h5>Wiescreen Detection <span class="material-icons hintbtn">help_outline</span></h5>
-                                <div class="btn-group">
-                                    <div class="btn" id="coDetectAuto">Auto</div>
-                                    <div class="btn" id="coDetectOn">On</div>
-                                    <div class="btn" id="coDetectOff">Off</div>
-                                </div>
-                                <div class="hint">DreamScreen will detect when the Video Source has been formatted to fit a widescreen.</div>
-                            </div>
-                            <div id="fadeRateCo" class="border">
-                                <h5>Fade Rate <span class="material-icons hintbtn">help_outline</span></h5>
-                                <input class="form-control devFadeRate" type="range" id="coFadeRate" name="dsFadeRate" min="0" max="100" value="100">
-                                <div class="hint">Adjusts the reaction speed of the LEDs.</div>
-                            </div>
-                            <div id="luminosityCo" class="border">
-                                <h5>Minimum Luminosity <span class="material-icons hintbtn">help_outline</span></h5>
-                                <input class="form-control devFadeRate" type="range" id="coLuminosity" name="dsLuminosity" min="0" max="100" value="100">
-                                <div class="hint">Set a low level of background light when there is no video content playing.</div>
-                            </div>
-                            <div id="colorboostCo" class="border">
-                                <h5>Color Boost <span class="material-icons hintbtn">help_outline</span></h5>
-                                <div class="btn" id="coColorBoost">Off</div>
-                                <div class="hint">Enhances RGB tones making ligher hues appear stronger.</div>
-                            </div>
-                        </div>
-                        <div id="settingsMusicCo" class="ds2"></div>
-                        <div id="settingsAdvancedCo" class="ds2"></div>
-                        <div id="settingsInstallCo" class="ds2"></div>
-                        <div id="settingsResetCo" class="ds2"></div>
+                        <div class="hint">DreamScreen will detect when the Video Source has been formatted to fit a widescreen.</div>
+                    </div>
+                    <div id="fadeRateDS" class="border">
+                        <h5>Fade Rate <span class="material-icons hintbtn">help_outline</span></h5>
+                        <input class="form-control devFadeRate" type="range" id="dsFadeRate" name="dsFadeRate" min="0" max="100" value="100">
+                        <div class="hint">Adjusts the reaction speed of the LEDs.</div>
+                    </div>
+                    <div id="luminosityDS" class="border">
+                        <h5>Minimum Luminosity <span class="material-icons hintbtn">help_outline</span></h5>
+                        <input class="form-control devFadeRate" type="range" id="dsLuminosity" name="dsLuminosity" min="0" max="100" value="100">
+                        <div class="hint">Set a low level of background light when there is no video content playing.</div>
+                    </div>
+                    <div id="colorboostDS" class="border">
+                        <h5>Color Boost <span class="material-icons hintbtn">help_outline</span></h5>
+                        <div class="btn" id="dsColorBoost">Off</div>
+                        <div class="hint">Enhances RGB tones making ligher hues appear stronger.</div>
+                    </div>
+                </div>
+                <div id="settingsMusicDS" class="ds2"></div>
+                <div id="settingsAdvancedDS" class="ds2"></div>
+                <div id="settingsInstallDS" class="ds2"></div>
+                <div id="settingsResetDS" class="ds2">
+                    <div class="col-12 border">
+                        Firmware Version
+                    </div>
+                    <div class="col-12 border">
+                        Factor Reset
+                    </div>
+                    <div class="col-12 border">
+                        Restart Device
+                    </div>
+                    <div class="col-12 border">
+                        Ip Address
                     </div>
                 </div>
             </div>
         </div>
+        <div class="row justify-content-center center settingExpand" id="sidekickSettings">
+            <div class="col-10 col-md-8 col-xl-6">
+                <br/>
+                <h3>Settings</h3>
+                <div id="settingsListSideKick" class="ds1">
+                    <div class="col-12 s1 border" data-target="settingsColorSK">
+                        Color Settings
+                    </div>
+                    <div class="col-12 s1 border" data-target="settingsSectorSK">
+                        Sector Settings
+                    </div>
+                    <div class="col-12 s1 border" data-target="settingsResetSK">
+                        Update and Reset
+                    </div>
+                </div>
+                <div id="settingsColorSK" class="ds2">
+                    <div id="saturationSK" class="border">
+                        <h5>Saturation <span class="material-icons hintbtn">help_outline</span></h5>
+                        <label for="dsSatR">Red</label>
+                        <input class="form-control devSaturation" type="range" id="skSatR" name="skSatR" min="0" max="100" value="100">
+                        <label for="dsSatG">Green</label>
+                        <input class="form-control devSaturation" type="range" id="skSatG" name="skSatG" min="0" max="100" value="100">
+                        <label for="dsSatB">Blue</label>
+                        <input class="form-control devSaturation" type="range" id="skSatB" name="skSatB" min="0" max="100" value="100">
+                        <div class="hint">Adjust the RGB channels to appear correctly or when wall behind DreamScreen is not white.</div>
+                    </div>
+                </div>
+                <div id="settingsSectorSK" class="ds2"></div>
+                <div id="settingsResetSK" class="ds2">
+                    <div class="col-12 border">
+                        Firmware Version
+                    </div>
+                    <div class="col-12 border">
+                        Factor Reset
+                    </div>
+                    <div class="col-12 border">
+                        Restart Device
+                    </div>
+                    <div class="col-12 border">
+                        Ip Address
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row justify-content-center center settingExpand" id="connectSettings">
+        <div class="col-10 col-md-8 col-xl-6">
+            <br/>
+            <h3>Settings</h3>
+            <div id="settingsListCo" class="ds1">
+                <div class="col-12 s1 border" data-target="settingsVideoDS">
+                    Video Settings
+                </div>
+                <div class="col-12 s1 border" data-target="settingsMusicDS">
+                    Music Settings
+                </div>
+                <div class="col-12 s1 border" data-target="settingsAdvancedDS">
+                    Advanced Settings
+                </div>
+                <div class="col-12 s1 border" data-target="settingsInstallDS">
+                    Installation Settings
+                </div>
+                <div class="col-12 s1 border" data-target="settingsResetDS">
+                    Update and Reset
+                </div>
+            </div>
+            <div id="settingsVideoCo" class="ds2">
+                <div id="saturationCo" class="border">
+                    <h5>Saturation <span class="material-icons hintbtn">help_outline</span></h5>
+                    <label for="dsSatR">Red</label>
+                    <input class="form-control devSaturation" type="range" id="coSatR" name="dsSatR" min="0" max="100" value="100">
+                    <label for="dsSatG">Green</label>
+                    <input class="form-control devSaturation" type="range" id="coSatG" name="dsSatG" min="0" max="100" value="100">
+                    <label for="dsSatB">Blue</label>
+                    <input class="form-control devSaturation" type="range" id="coSatB" name="dsSatB" min="0" max="100" value="100">
+                    <div class="hint">Adjust the RGB channels to appear correctly or when wall behind DreamScreen is not white.</div>
+                </div>
+                <div id="detectionCo" class="border">
+                    <h5>Wiescreen Detection <span class="material-icons hintbtn">help_outline</span></h5>
+                    <div class="btn-group">
+                        <div class="btn" id="coDetectAuto">Auto</div>
+                        <div class="btn" id="coDetectOn">On</div>
+                        <div class="btn" id="coDetectOff">Off</div>
+                    </div>
+                    <div class="hint">DreamScreen will detect when the Video Source has been formatted to fit a widescreen.</div>
+                </div>
+                <div id="fadeRateCo" class="border">
+                    <h5>Fade Rate <span class="material-icons hintbtn">help_outline</span></h5>
+                    <input class="form-control devFadeRate" type="range" id="coFadeRate" name="dsFadeRate" min="0" max="100" value="100">
+                    <div class="hint">Adjusts the reaction speed of the LEDs.</div>
+                </div>
+                <div id="luminosityCo" class="border">
+                    <h5>Minimum Luminosity <span class="material-icons hintbtn">help_outline</span></h5>
+                    <input class="form-control devFadeRate" type="range" id="coLuminosity" name="dsLuminosity" min="0" max="100" value="100">
+                    <div class="hint">Set a low level of background light when there is no video content playing.</div>
+                </div>
+                <div id="colorboostCo" class="border">
+                    <h5>Color Boost <span class="material-icons hintbtn">help_outline</span></h5>
+                    <div class="btn" id="coColorBoost">Off</div>
+                    <div class="hint">Enhances RGB tones making ligher hues appear stronger.</div>
+                </div>
+            </div>
+            <div id="settingsMusicCo" class="ds2"></div>
+            <div id="settingsAdvancedCo" class="ds2"></div>
+            <div id="settingsInstallCo" class="ds2"></div>
+            <div id="settingsResetCo" class="ds2"></div>
+        </div>
+    </div>
     </div>
 </div>
-<div class="bg-dark text-white hidden" id="hueCard">
+</div>
+</div>
+    <div class="bg-dark text-white hidden" id="hueCard">
     <div id="huePane">
         <div class="card-body">
             <div class="row justify-content-center linkRow">
@@ -290,6 +309,11 @@
                         <div id="circleBar"></div>
                         <small id="linkHint" class="linkHint">Click here to link bridge</small>
                     </div>
+                </div>
+            </div>
+            <div class="row justify-content-center">
+                <div class="col-8 col-md-6 col-xl-4">
+                    <input class="form-control devBrightness" type="range" name="hueBrightness" id="hueBrightness" min="0" max="100" value="100">
                 </div>
             </div>
             <div>
@@ -365,7 +389,7 @@
         </div>
     </div>
 </div>
-<div class="bg-dark text-white hidden" id="nanoCard">
+    <div class="bg-dark text-white hidden" id="nanoCard">
     <div id="nanoPane">
         <div class="card-body">
             <div class="row justify-content-center linkRow">
@@ -402,59 +426,31 @@
         </div>
     </div>
 </div>
-<div class="bg-dark text-white hidden" id="lifxCard">
+    <div class="bg-dark text-white hidden" id="lifxCard">
     <div id="lifxPane">
         <div class="card-body">
-        <div class="devDisplay">
-                            <div class="row justify-content-center">
-                                <div class="form-group col-12 col-lg-10">
-                                    <div class="row justify-content-center">
-                                        <div id="lifxIcon">
-                                        </div>
-                                        <div id="lifxData" class="">
-                                            <div id="lifxName" onclick="listenForDoubleClick(this);" onblur="this.contentEditable=false;"></div><br/>
-                                            <span id="lifxIp"></span>
-                                        </div>
-                                        <div class="btn btn-primary settingsBtn" id="lifxSettingsBtn" data-target="dsSettings">
-                                        </div>
-                                    </div>
-                                </div>
+            <div class="devDisplay">
+                <div class="row justify-content-center">
+                    <div class="form-group col-12 col-lg-10">
+                        <div class="row justify-content-center">
+                            <div id="lifxIcon">
                             </div>
-                            <div class="row justify-content-center">
-                                <div class="btn-group-lg">
-                                    <div class="btnWrap">
-                                        <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="0">
-                                            <img class="modeIcon" src="~/img/mode_off_icon.png" alt=""/>
-                                        </div>
-                                        <span class="modeLabel">Off</span>
-                                    </div>
-                                    <div class="btnWrap">
-                                        <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="1">
-                                            <img class="modeIcon" src="~/img/mode_video_icon.png" alt=""/>
-                                        </div>
-                                        <span class="modeLabel">Video</span>
-                                    </div>
-                                    <div class="btnWrap">
-                                        <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="2">
-                                            <img class="modeIcon" src="~/img/mode_audio_icon.png" alt=""/>
-                                        </div>
-                                        <span class="modeLabel">Music</span>
-                                    </div>
-                                    <div class="btnWrap">
-                                        <div class="btn btn-secondary modeBtn bmd-btn-fab" data-mode="3">
-                                            <img class="modeIcon" src="~/img/mode_ambient_icon.png" alt=""/>
-                                        </div>
-                                        <span class="modeLabel">Ambient</span>
-                                    </div>
-                                </div>
+                            <div id="lifxData" class="">
+                                <div id="lifxName" onclick="listenForDoubleClick(this);" onblur="this.contentEditable=false;"></div><br/>
+                                <span id="lifxIp"></span>
                             </div>
-                            <div class="row justify-content-center">
-                                <div class="col-8 col-md-6 col-xl-4">
-                                    <input class="form-control devBrightness" type="range" id="lifxBrightness" name="lifxBrightness" min="0" max="100" value="100">
-                                </div>
+                            <div class="btn btn-primary settingsBtn" id="lifxSettingsBtn" data-target="dsSettings">
                             </div>
                         </div>
-                    <div>
+                    </div>
+                </div>
+                <div class="row justify-content-center">
+                    <div class="col-8 col-md-6 col-xl-4">
+                        <input class="form-control devBrightness" type="range" id="lifxBrightness" name="lifxBrightness" min="0" max="100" value="100">
+                    </div>
+                </div>
+            </div>
+            <div>
                 <div class="previewWrap">
                     <div class="light-preview">
                         <div id="lifxRegions" class="regions">
@@ -514,7 +510,7 @@
         </div>
     </div>
 </div>
-<div class="bg-dark text-white hidden" id="settingsCard">
+    <div class="bg-dark text-white hidden" id="settingsCard">
     <div id="settingsPane">
         <div class="card-body container">
             <div class="row justify-content-center">

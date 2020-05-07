@@ -57,10 +57,7 @@ namespace HueDream.Models.StreamingDevice.LIFX {
         }
 
         public void SetColor(List<System.Drawing.Color> inputs, double fadeTime = 0) {
-            if (!Streaming) {
-                LogUtil.Write("Lifx: We are not streaming, returning.");
-                return;
-            }
+            if (!Streaming) return;
             var c = LifxSender.getClient();
             if (inputs == null || c == null) throw new ArgumentException("Invalid color inputs.");
             if (inputs.Count < 12) throw new ArgumentOutOfRangeException(nameof(inputs));

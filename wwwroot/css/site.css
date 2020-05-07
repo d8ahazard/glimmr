@@ -124,7 +124,7 @@ body {
 
 }
 
-.linkRow {
+.linkRow, .modeRow {
     padding-top: 25px;
     padding-bottom: 25px;
 }
@@ -472,10 +472,24 @@ input[type="range"]:active ~ #rangevalue {
     z-index: 5;
 }
 
-.modeBtn {
+.modeGroup {
+    margin: auto;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+}
+
+.modeBtn, .dsModeBtn {
     border: 1px gray solid;
-    border-radius: 10px;
+    border-radius: 8px;
     cursor: pointer;
+    width: 3.3rem !important;
+    min-width: 3.3rem !important;
+    height: 3.3rem !important;
 }
 
 .capModeBtn, .capModeBtn img {
@@ -497,11 +511,11 @@ input[type="range"]:active ~ #rangevalue {
     background-size: contain;
 }
 
-.btn.modeBtn.active, .btn.settingsBtn.active {
+.btn.modeBtn.active, .btn.settingsBtn.active, .btn.dsModeBtn.active {
     background-color: #0006c7 !important;
 }
 
-.btn.modeBtn:hover, .btn.settingsBtn:hover {
+.btn.modeBtn:hover, .btn.settingsBtn:hover, .btn.dsModeBtn:hover {
     background-color: #7a7fff !important;
 }
 
@@ -511,11 +525,15 @@ input[type="range"]:active ~ #rangevalue {
 }
 
 .modeIcon {
-    width: 90%;
-    padding-top: 5%;
+    width: 85%;
+    padding-top: 7%;
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
+}
+
+.navbar-toggler {
+    z-index: 1;
 }
 
 #headerLogo {

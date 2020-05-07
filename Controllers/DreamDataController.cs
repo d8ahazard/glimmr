@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -30,10 +31,11 @@ namespace HueDream.Controllers {
 
         // POST: api/DreamData/mode
         [HttpPost("mode")]
-        public IActionResult Mode([FromBody] int dMode) {
-            SetMode((byte) dMode);
-            return Ok(dMode);
+        public IActionResult DevMode([FromBody] JObject modeObj) {
+            SetMode(modeObj);
+            return Ok(modeObj);
         }
+       
 
         // POST: api/DreamData/updateDevice
         [HttpPost("updateDevice")]
@@ -221,6 +223,45 @@ namespace HueDream.Controllers {
 
         }
 
+
+        private static void SetMode(JObject modeObj) {
+            var myDev = DataUtil.GetDeviceData();
+            var ipAddress = myDev.IpAddress;
+            var groupNumber = (byte) myDev.GroupNumber;
+            var newMode = (byte)(modeObj["mode"] ?? "").Value<int>();
+            var id = (modeObj["id"] ?? "").Value<string>();
+            var tag = (modeObj["tag"] ?? "").Value<string>();
+            var groupSend = false;
+            byte mFlag = 0x21;
+            LogUtil.Write("Setting mode for: " + JsonConvert.SerializeObject(modeObj));
+            switch (tag) {
+                case "HueBridge":
+                case "Lifx":
+                case "NanoLeaf":
+                    if (myDev.Mode == newMode) return;
+                    myDev.Mode = newMode;
+                    DataUtil.SetItem("myDevice", myDev);
+                    break;
+                case "Group":
+                    groupNumber = (byte) int.Parse(id,CultureInfo.InvariantCulture);
+                    ipAddress = "255.255.255.0";
+                    groupSend = true;
+                    mFlag = 0x11;
+                   break;
+                default:
+                    var dev = DataUtil.GetDreamDevices().Find(e => e.Id == id);
+                    if (dev != null) {
+                        ipAddress = dev.IpAddress;
+                        if (dev.Mode == newMode) return;
+                        dev.Mode = newMode;
+                        DataUtil.InsertCollection("devices",dev);
+                    }
+                    break;
+            }
+            DreamSender.SendUdpWrite(0x03, 0x01, new[] {newMode}, mFlag, groupNumber,
+                new IPEndPoint(IPAddress.Parse(ipAddress), 8888), groupSend);
+        }
+        
         private static void SetMode(int mode) {
             var newMode = ByteUtils.IntByte(mode);
             var myDev = DataUtil.GetDeviceData();
@@ -230,16 +271,8 @@ namespace HueDream.Controllers {
             var ipAddress = myDev.IpAddress;
             var groupNumber = (byte) myDev.GroupNumber;
 
-            var groupSend = false;
-            byte mFlag = 0x11;
-            if (ipAddress == "255.255.255.0") {
-                groupSend = true;
-            } else {
-                mFlag = 0x21;
-            }
-
-            DreamSender.SendUdpWrite(0x03, 0x01, new[] {newMode}, mFlag, groupNumber,
-                new IPEndPoint(IPAddress.Parse(ipAddress), 8888), groupSend);
+            DreamSender.SendUdpWrite(0x03, 0x01, new[] {newMode}, 0x21, groupNumber,
+                new IPEndPoint(IPAddress.Parse(ipAddress), 8888));
         }
 
 

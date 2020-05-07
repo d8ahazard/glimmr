@@ -224,7 +224,6 @@ namespace HueDream.Models.DreamScreen {
                 // Init leaves
                 var leaves = DataUtil.GetCollection<NanoData>("leaves");
                 panels = new List<NanoGroup>();
-                LogUtil.Write("Loading nano panels??");
                 foreach (var n in leaves.Where(n => !string.IsNullOrEmpty(n.Token) && n.Layout != null)) {
                     sDevices.Add(new NanoGroup(n));
                 }
@@ -232,7 +231,6 @@ namespace HueDream.Models.DreamScreen {
                 // Init lifx
                 var lifx = DataUtil.GetCollection<LifxData>("lifxBulbs");
                 bulbs = new List<LifxBulb>();
-                LogUtil.Write("List made");
                 if (lifx != null) {
                     lifxClient = LifxSender.getClient();
                     foreach (var b in lifx.Where(b => b.SectorMapping != -1)) {
@@ -325,14 +323,14 @@ namespace HueDream.Models.DreamScreen {
 
                 // Return listen task to kill later
                 return Task.Run(() => {
-                    LogUtil.WriteInc("Listener started.");
+                    LogUtil.Write("Listener started.");
                     while (!ct.IsCancellationRequested) {
                         var sourceEndPoint = new IPEndPoint(IPAddress.Any, 0);
                         var receivedResults = listener.Receive(ref sourceEndPoint);
                         ProcessData(receivedResults, sourceEndPoint);
                     }
 
-                    LogUtil.WriteDec("Listener cancelled.");
+                    LogUtil.Write("Listener cancelled.");
                     try {
                         StopServices();
                     } finally {
@@ -441,7 +439,7 @@ namespace HueDream.Models.DreamScreen {
                 case "DISCOVERY_STOP":
                     LogUtil.Write($"DreamScreen: Discovery complete, found {devices.Count} devices.");
                     discovering = false;
-                    DataUtil.SetItem<List<BaseDevice>>("devices", devices);
+                    //DataUtil.SetItem<List<BaseDevice>>("devices", devices);
                     break;
                 case "REMOTE_REFRESH":
                     var id = Encoding.UTF8.GetString(payload.ToArray());
@@ -477,6 +475,7 @@ namespace HueDream.Models.DreamScreen {
                             }
 
                             if (discovering) {
+                                DataUtil.InsertCollection("devices", msgDevice);
                                 devices.Add(msgDevice);
                             }
                         }

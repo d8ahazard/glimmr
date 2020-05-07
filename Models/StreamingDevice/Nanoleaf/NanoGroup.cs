@@ -112,10 +112,7 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
         
         
         public void SetColor(List<Color> colors, double fadeTime = 0) {
-            if (!Streaming) {
-                LogUtil.Write("We are not streaming.");
-                return;
-            }
+            if (!Streaming) return;
             if (colors == null || colors.Count < 12) {
                 throw new ArgumentException("Invalid color list.");
             }
@@ -336,10 +333,8 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
 
         public async Task<NanoLayout> GetLayout() {
             if (string.IsNullOrEmpty(token)) return null;
-            LogUtil.Write("Getting layout.");
             var fLayout = await NanoSender.SendGetRequest(basePath, "panelLayout/layout").ConfigureAwait(false);
             var lObject = JsonConvert.DeserializeObject<NanoLayout>(fLayout);
-            LogUtil.Write("We got a layout: " + JsonConvert.SerializeObject(lObject));
             return lObject;
         }
 
@@ -356,7 +351,7 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             if (!disposing) return;
             LogUtil.Write("Panel Disposed.");
             disposed = true;
-            hc.Dispose();
+            hc?.Dispose();
         }
     }
 }

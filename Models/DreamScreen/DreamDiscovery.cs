@@ -17,7 +17,7 @@ namespace HueDream.Models.DreamScreen {
             await Task.Delay(3000).ConfigureAwait(false);
             DreamSender.SendUdpWrite(0x01, 0x0E, new byte[] {0x01}, 0x30, 0x00, selfEp);
             await Task.Delay(500).ConfigureAwait(false);
-            var devices = DataUtil.GetItem<List<BaseDevice>>("devices");
+            var devices = DataUtil.GetDreamDevices();
             return devices;
         }
     }
