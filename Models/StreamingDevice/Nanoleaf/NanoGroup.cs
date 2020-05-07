@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
@@ -15,12 +16,12 @@ using ZedGraph;
 
 namespace HueDream.Models.StreamingDevice.Nanoleaf {
     public sealed class NanoGroup : IStreamingDevice, IDisposable {
-        private readonly string ipAddress;
-        private readonly string token;
-        private readonly string basePath;
-        private readonly NanoLayout layout;
+        private string ipAddress;
+        private string token;
+        private string basePath;
+        private NanoLayout layout;
         private readonly HttpClient hc;
-        private readonly int streamMode;
+        private int streamMode;
         private readonly Stopwatch clock;
         private long cycleTime;
         private bool disposed;
@@ -36,55 +37,53 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
 
         public NanoGroup(NanoData n) {
             if (n != null) {
-                ipAddress = n.IpV4Address;
-                token = n.Token;
-                layout = n.Layout;
-                MaxBrightness = n.MaxBrightness;
-                var nanoType = n.Type;
-                streamMode = nanoType == "NL29" ? 2 : 1;
-                basePath = "http://" + ipAddress + ":16021/api/v1/" + token;
-                Id = n.Id;
+                SetData(n);
                 hc = new HttpClient();
                 clock = new Stopwatch();
-                var pd = layout.PositionData;
-                bool autoCalc = false;
-                foreach (var pl in pd) {
-                    if (pl.Sector == -1) {
-                        autoCalc = true;
-                        break;
-                    }
-                }
-
-                if (autoCalc) {
-                    LogUtil.Write("Automagically calculating panel positions.");
-                    var panelPositions = CalculatePoints(n);
-                    var newPd = new List<PanelLayout>();
-                    foreach (var pl in pd) {
-                        if (pl.Sector == -1) {
-                            pl.Sector = panelPositions[pl.PanelId];
-                        }
-
-                        newPd.Add(pl);
-                    }
-
-                    layout.PositionData = newPd;
-                    var leaves = DataUtil.GetItem<List<NanoData>>("leaves");
-                    var newLeaves = new List<NanoData>();
-                    foreach (var leaf in leaves) {
-                        if (leaf.Id == n.Id) {
-                            leaf.Layout = layout;
-                        }
-
-                        newLeaves.Add(leaf);
-                    }
-
-                    DataUtil.SetItem<List<NanoData>>("leaves", newLeaves);
-                }
+                CheckPositions(n);
+                
             }
 
             disposed = false;
         }
+
         
+        public void ReloadData() {
+            var newData = DataUtil.GetCollectionItem<NanoData>("leaves", Id);
+            SetData(newData);
+            CheckPositions(newData, true);
+        }
+
+        private void SetData(NanoData n) {
+            ipAddress = n.IpV4Address;
+            token = n.Token;
+            layout = n.Layout;
+            MaxBrightness = n.MaxBrightness;
+            var nanoType = n.Type;
+            streamMode = nanoType == "NL29" ? 2 : 1;
+            basePath = "http://" + ipAddress + ":16021/api/v1/" + token;
+            Id = n.Id;
+        }
+
+        private void CheckPositions(NanoData n, bool force=false) {
+            var pd = layout.PositionData;
+            var autoCalc = pd.Any(pl => pl.Sector == -1);
+
+            if (autoCalc || force) {
+                LogUtil.Write("Automagically calculating panel positions.");
+                var panelPositions = CalculatePoints(n);
+                var newPd = new List<PanelLayout>();
+                foreach (var pl in pd) {
+                    if (pl.Sector == -1 || force) {
+                        pl.Sector = panelPositions[pl.PanelId];
+                    }
+                    newPd.Add(pl);
+                }
+                layout.PositionData = newPd;
+                n.Layout = layout;
+                DataUtil.InsertCollection<NanoData>("leaves", n);
+            }
+        }
         
         public bool Streaming { get; set; }
 

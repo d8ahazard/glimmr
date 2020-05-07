@@ -18,7 +18,6 @@ using HueDream.Models.StreamingDevice.Nanoleaf;
 using HueDream.Models.Util;
 using LifxNet;
 using Microsoft.Extensions.Hosting;
-using Newtonsoft.Json;
 using Color = System.Drawing.Color;
 
 namespace HueDream.Models.DreamScreen {
@@ -444,12 +443,11 @@ namespace HueDream.Models.DreamScreen {
                     discovering = false;
                     DataUtil.SetItem<List<BaseDevice>>("devices", devices);
                     break;
-                case "REMOTE_BRIGHTNESS":
-                    var id = Encoding.UTF8.GetString(payload.Skip(1).ToArray());
+                case "REMOTE_REFRESH":
+                    var id = Encoding.UTF8.GetString(payload.ToArray());
                     var tDev = sDevices.First(b => b.Id == id);
-                    var max = Convert.ToInt32(payload[0]);
-                    LogUtil.Write($"Set remote brightness for {id} to {max}");
-                    if (tDev != null) tDev.MaxBrightness = max;
+                    LogUtil.Write($"Triggering reload of device {id}.");
+                    tDev?.ReloadData();
                     break;
                 case "COLOR_DATA":
                     if (CaptureMode == 0 && (devMode == 1 || devMode == 2)) {

@@ -23,5 +23,9 @@ namespace HueDream.Models.StreamingDevice {
                 
             }
         }
+
+        public void ReloadData() {
+            
+        }
     }
 }

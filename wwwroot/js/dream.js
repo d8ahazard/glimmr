@@ -157,11 +157,11 @@ function setListeners() {
         } else {
             selectedDevice['mirrorY'] = flipVal;
         }
-        postData("flipNano", {dir: flipDir, val: flipVal, id: selectedDevice.id});
+        postData("updateDevice", selectedDevice);
         setTimeout(function() {
             let newNano = postResult;
-            console.log("New nano: ", newNano);
-            drawNanoShapes(newNano);
+            console.log("New nano: ", selectedDevice);
+            drawNanoShapes(selectedDevice);
         }, 1000);
 
     });
@@ -200,13 +200,8 @@ function setListeners() {
     // On dev brightness slider change
     $(document).on('change', '.devBrightness', function() {
         selectedDevice.brightness = $(this).val();
-        saveSelectedDevice();
-        let newObj = {
-            id: selectedDevice.id,
-            brightness: selectedDevice.brightness,
-            tag: selectedDevice.tag            
-        };
-        postData('brightness', newObj);
+        saveSelectedDevice();        
+        postData('updateDevice', selectedDevice);
     });
 
     $('#dsIpSelect').change( function() {
@@ -296,7 +291,7 @@ function setListeners() {
             let val =$(this).data('region');
             console.log("Val is " + val);
             selectedDevice.sectorMapping = val;
-            postData("lifxMapping", selectedDevice);
+            postData("updateDevice", selectedDevice);
         }
     });
 
@@ -306,7 +301,7 @@ function setListeners() {
         const id = $(this).val();
         hueGroup = id;
         bridges[bridgeInt]["selectedGroup"] = id;
-        postData("bridges", bridges);
+        postData("updateDevice", bridges[bridgeInt]);
         mapLights();
     });
 
@@ -356,16 +351,17 @@ function checkNanoAuth() {
 
 // Post settings data in chunks for deserialization
 function postData(endpoint, payload) {
+    
     $.ajax({
         url: "./api/DreamData/" + endpoint,
-        type: "POST",
-        contentType: "application/json;",
         dataType: "json",
+        contentType: "application/json;",
         data: JSON.stringify(payload),
-        success: function (data) {
+        success: function(data) {
             console.log(`Posted to ${endpoint}`, endpoint, data);
             postResult = data;
-        }
+        },
+        type: 'POST'
     });
 }
 
@@ -381,7 +377,7 @@ function updateLightProperty(myId, propertyName, value) {
     }    
     console.log("Updated light data: ", hueLights);
     bridges[bridgeInt]["lights"] = hueLights;
-    postData("bridges", bridges);
+    postData("updateDevice", bridges[bridgeInt]);
 }
 
 // Update our pretty table so we can map the lights
@@ -913,7 +909,7 @@ function loadBridgeData(data) {
             hueGroup = hueGroups[0]["id"];
             bridges[bridgeInt].selectedGroup = hueGroup;
             console.log("Updated group to " + hueGroup);
-            postData("bridges", bridges);
+            postData("updateData", bridges[bridgeInt]);
         }
     }
     hueLights = b["lights"];
@@ -1115,7 +1111,7 @@ function drawNanoShapes(panel) {
         selectedDevice.scale = 1;
         selectedDevice.rotation = shapeGroup.rotation();
         saveSelectedDevice();
-        postData("leaf", selectedDevice);
+        postData("updateDevice", selectedDevice);
     }
     
     

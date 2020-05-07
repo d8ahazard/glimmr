@@ -6,11 +6,11 @@ using LifxNet;
 
 namespace HueDream.Models.StreamingDevice.LIFX {
     public class LifxBulb : IStreamingDevice {
-        private LifxData Data { get; }
+        private LifxData Data { get; set; }
         private LightBulb B { get; }
         public bool Streaming { get; set; }
 
-        private readonly int targetSector;
+        private int targetSector;
         public int MaxBrightness { get; set; }
         public string Id { get; set; }
         public LifxBulb(LifxData d) {
@@ -47,7 +47,15 @@ namespace HueDream.Models.StreamingDevice.LIFX {
             c.SetColorAsync(B, nC, (ushort) Data.Kelvin).ConfigureAwait(false);
             c.SetLightPowerAsync(B, TimeSpan.Zero, Data.Power).ConfigureAwait(false);
         }
-        
+
+        public void ReloadData() {
+            var newData = DataUtil.GetCollectionItem<LifxData>("lifxBulbs", Id);
+            Data = newData;
+            targetSector = newData.SectorMapping - 1;
+            MaxBrightness = newData.MaxBrightness;
+            Id = newData.Id;
+        }
+
         public void SetColor(List<System.Drawing.Color> inputs, double fadeTime = 0) {
             if (!Streaming) {
                 LogUtil.Write("Lifx: We are not streaming, returning.");

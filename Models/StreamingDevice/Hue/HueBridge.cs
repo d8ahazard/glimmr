@@ -13,9 +13,9 @@ using Q42.HueApi.Streaming.Models;
 
 namespace HueDream.Models.StreamingDevice.Hue {
     public sealed class HueBridge : IStreamingDevice, IDisposable {
-        private readonly BridgeData bd;
+        private BridgeData bd;
         private EntertainmentLayer entLayer;
-        private readonly StreamingHueClient client;
+        private StreamingHueClient client;
         private bool disposed;
         public int MaxBrightness { get; set; }
         public string Id { get; set; }
@@ -31,7 +31,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
             LogUtil.Write(@"Hue: Loading bridge: " + BridgeIp);
         }
 
-        private string BridgeIp { get; }
+        private string BridgeIp { get; set; }
 
 
         public bool Streaming { get; set; }
@@ -70,6 +70,14 @@ namespace HueDream.Models.StreamingDevice.Hue {
             var _ = StreamingSetup.StopStream(client, bd);
             LogUtil.WriteDec($"Stopping Hue Stream: {BridgeIp}");
             Streaming = false;
+        }
+
+        public void ReloadData() {
+            var newData = DataUtil.GetCollectionItem<BridgeData>("bridges", Id);
+            bd = newData;
+            BridgeIp = bd.IpAddress;
+            MaxBrightness = newData.MaxBrightness;
+            LogUtil.Write(@"Hue: Reloaded bridge: " + BridgeIp);
         }
 
         /// <summary>
