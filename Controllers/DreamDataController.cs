@@ -129,7 +129,6 @@ namespace HueDream.Controllers {
         [HttpGet("action")]
         public IActionResult Action(string action, string value = "") {
             var message = "Unrecognized action";
-            var exInt = 0;
             LogUtil.Write($@"{action} called from Web API.");
             switch (action) {
                 case "loadData":
