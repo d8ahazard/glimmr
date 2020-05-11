@@ -17,8 +17,8 @@ namespace HueDream.Models.StreamingDevice.LIFX {
             bulbs = new List<LightBulb>();
             client.DeviceDiscovered += Client_DeviceDiscovered;
             client.StartDeviceDiscovery();
-            LogUtil.Write("Starting discovery.");
-            await Task.Delay(timeOut * 1000).ConfigureAwait(false);
+            LogUtil.Write("Lifx: Discovery started.");
+            await Task.Delay(timeOut * 1000);
             LogUtil.Write("Discovery completed.");
             client.StopDeviceDiscovery();
             return bulbs.Select(GetBulbInfo).ToList();

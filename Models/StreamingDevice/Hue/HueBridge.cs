@@ -4,7 +4,9 @@ using System.Drawing;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
+using Accord;
 using HueDream.Models.Util;
+using Q42.HueApi;
 using Q42.HueApi.ColorConverters;
 using Q42.HueApi.ColorConverters.HSB;
 using Q42.HueApi.Streaming;
@@ -50,6 +52,9 @@ namespace HueDream.Models.StreamingDevice.Hue {
                 return;
             }
             client = new StreamingHueClient(bd.IpAddress, bd.User, bd.Key);
+            // Save previous light state(s) before stopping
+            bd.Lights = HueDiscovery.GetLights(bd, client);
+            DataUtil.InsertCollection<BridgeData>("bridges", bd);
             var stream = await StreamingSetup.SetupAndReturnGroup(client, bd, ct);
             // This is what we actually need
             if (stream == null) {
@@ -70,7 +75,26 @@ namespace HueDream.Models.StreamingDevice.Hue {
             var _ = StreamingSetup.StopStream(client, bd);
             LogUtil.WriteDec($"Stopping Hue Stream: {BridgeIp}");
             Streaming = false;
-            client?.Dispose();
+            ResetColors();
+        }
+
+        private void ResetColors() {
+            foreach (var entLight in entLayer) {
+                // Get data for our light from map
+                var lightMappings = bd.Lights;
+                var lightData = lightMappings.SingleOrDefault(item =>
+                    item.Id == entLight.Id.ToString(CultureInfo.InvariantCulture));
+                if (lightData == null) continue;
+                LogUtil.Write("Resetting bulb: " + lightData.Id);
+                var sat = lightData.LastState.Saturation;
+                var bri = lightData.LastState.Brightness;
+                var hue = lightData.LastState.Hue;
+                var isOn = lightData.LastState.On;
+                LogUtil.Write("Got bulb");
+                var ll = new List<string> {lightData.Id};
+                var cmd = new LightCommand {Saturation = sat, Brightness = bri, Hue = hue, On = isOn};
+                client.LocalHueClient.SendCommandAsync(cmd, ll);
+            }
         }
 
         public void ReloadData() {

@@ -13,6 +13,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
             TargetSector = -1;
             Brightness = 100;
             OverrideBrightness = false;
+            LastState = null;
         }
 
         public LightData(Light l) {
@@ -24,6 +25,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
             TargetSector = -1;
             Brightness = 100;
             OverrideBrightness = false;
+            LastState = l.State;
         }
 
         [JsonProperty] public string Name { get; set; }
@@ -32,6 +34,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
         [JsonProperty] public int Brightness { get; set; }
         [JsonProperty] public bool OverrideBrightness { get; set; }
         [JsonProperty] public int TargetSector { get; set; }
+        [JsonProperty] public State LastState { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public string ModelId { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public int Presence { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public int LightLevel { get; set; }

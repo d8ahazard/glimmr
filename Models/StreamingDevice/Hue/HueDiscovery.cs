@@ -79,7 +79,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
         }
 
 
-        private static List<LightData> GetLights(BridgeData bd, StreamingHueClient client) {
+        public static List<LightData> GetLights(BridgeData bd, StreamingHueClient client) {
             if (bd == null || client == null) throw new ArgumentException("Invalid argument.");
             // If we have no IP or we're not authorized, return
             if (bd.IpAddress == "0.0.0.0" || bd.User == null || bd.Key == null) return new List<LightData>();
@@ -96,7 +96,6 @@ namespace HueDream.Models.StreamingDevice.Hue {
                     light.Brightness = ex.Brightness;
                     light.OverrideBrightness = ex.OverrideBrightness;
                 }
-
                 output.Add(light);
             }
 

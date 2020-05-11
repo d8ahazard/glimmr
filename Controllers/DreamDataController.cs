@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Accord.Math.Optimization;
 using HueDream.Models;
 using HueDream.Models.DreamScreen;
@@ -134,7 +135,7 @@ namespace HueDream.Controllers {
                 case "loadData":
                     return Content(DataUtil.GetStoreSerialized(), "application/json");
                 case "refreshDevices":
-                    DataUtil.RefreshDevices();
+                    Task.Run(DataUtil.RefreshDevices);
                     Thread.Sleep(5000);
                     return Content(DataUtil.GetStoreSerialized(), "application/json");
                 case "authorizeHue": {

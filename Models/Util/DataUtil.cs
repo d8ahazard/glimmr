@@ -302,7 +302,12 @@ namespace HueDream.Models.Util {
 
 
         public static async void RefreshDevices() {
-            if (scanning) return;
+            if (scanning) {
+                LogUtil.Write("We are already scanning...hold your horses.", "WARN");
+                return;
+            } else {
+                LogUtil.Write("Starting scan.");
+            }
             scanning = true;
             // Get dream devices
             var ld = new LifxDiscovery();
@@ -311,6 +316,7 @@ namespace HueDream.Models.Util {
             var dreamTask = DreamDiscovery.Discover();
             var bulbTask = ld.Refresh();
             await Task.WhenAll(nanoTask, bridgeTask, dreamTask, bulbTask).ConfigureAwait(false);
+            LogUtil.Write("Refresh complete.");
             scanning = false;
         }
 

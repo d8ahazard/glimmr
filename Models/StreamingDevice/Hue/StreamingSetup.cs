@@ -1,15 +1,13 @@
 ﻿using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using HueDream.Models.Util;
-using Newtonsoft.Json;
 using Q42.HueApi.Streaming;
 using Q42.HueApi.Streaming.Models;
 
 namespace HueDream.Models.StreamingDevice.Hue {
     public static class StreamingSetup {
-        
         public static async Task StopStream(StreamingHueClient client, BridgeData b) {
             if (client == null || b == null) {
                 throw new ArgumentException("Invalid argument.");
@@ -28,6 +26,11 @@ namespace HueDream.Models.StreamingDevice.Hue {
             }
 
             var groupId = b.SelectedGroup;
+            if (groupId == null && b.Groups != null && b.Groups.Count > 0) {
+                groupId = b.Groups[0].Id;
+            }
+
+            if (groupId == null) return null;
             LogUtil.Write($"Created client, selecting group {groupId}.");
             //Get the entertainment group
             var group = client.LocalHueClient.GetGroupAsync(groupId).Result;
@@ -49,16 +52,19 @@ namespace HueDream.Models.StreamingDevice.Hue {
             //Create a streaming group
             if (group != null) {
                 var lights = group.Lights;
-                var mappedLights =
-                    (from light in lights
-                        from ml in b.Lights
-                        where ml.Id == light && ml.TargetSector != -1
-                        select light)
-                    .ToList();
+                var mappedLights = new List<string>();
+                foreach (var light in lights) {
+                    foreach (var ml in b.Lights) {
+                        if (ml.Id == light && ml.TargetSector != -1) {
+                            mappedLights.Add(light);
+                        }
+                    }
+                }
+
                 var stream = new StreamingGroup(mappedLights);
                 //Connect to the streaming group
                 try {
-                    await client.Connect(group.Id).ConfigureAwait(true);
+                    await client.Connect(group.Id);
                 } catch (Exception e) {
                     LogUtil.Write(@"Exception: " + e);
                 }
@@ -70,7 +76,9 @@ namespace HueDream.Models.StreamingDevice.Hue {
 
                 //Optional: Check if streaming is currently active
                 var bridgeInfo = await client.LocalHueClient.GetBridgeAsync().ConfigureAwait(true);
-                LogUtil.Write(bridgeInfo != null && bridgeInfo.IsStreamingActive ? @"Streaming is active." : @"Streaming is not active.");
+                LogUtil.Write(bridgeInfo != null && bridgeInfo.IsStreamingActive
+                    ? @"Streaming is active."
+                    : @"Streaming is not active.");
                 return stream;
             }
 
