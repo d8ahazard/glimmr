@@ -50,7 +50,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
                 return;
             }
             client = new StreamingHueClient(bd.IpAddress, bd.User, bd.Key);
-            var stream = await StreamingSetup.SetupAndReturnGroup(client, bd, ct).ConfigureAwait(true);
+            var stream = await StreamingSetup.SetupAndReturnGroup(client, bd, ct);
             // This is what we actually need
             if (stream == null) {
                 LogUtil.Write("Error fetching bridge stream.","WARN");
