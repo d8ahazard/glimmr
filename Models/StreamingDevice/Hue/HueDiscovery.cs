@@ -60,15 +60,19 @@ namespace HueDream.Models.StreamingDevice.Hue {
             return DataUtil.GetCollection<BridgeData>("bridges");
         }
 
-        public static async Task<List<BridgeData>> Discover(int time = 3) {
+        public static async Task<List<BridgeData>> Discover(int time = 5) {
             LogUtil.Write("Hue: Discovery Started.");
-            var discovered = await HueBridgeDiscovery
-                .FastDiscoveryWithNetworkScanFallbackAsync(TimeSpan.FromSeconds(time), TimeSpan.FromSeconds(7))
-                .ConfigureAwait(false);
+            var output = new List<BridgeData>();
+            try {
+                var discovered = await HueBridgeDiscovery
+                    .FastDiscoveryWithNetworkScanFallbackAsync(TimeSpan.FromSeconds(time), TimeSpan.FromSeconds(7));
 
-            var output = discovered.Select(bridge => new BridgeData(bridge)).ToList();
+                output = discovered.Select(bridge => new BridgeData(bridge)).ToList();
+                LogUtil.Write($"Hue: Discovery complete, found {discovered.Count} devices.");
+            } catch (TaskCanceledException e) {
+                LogUtil.Write("Discovery exception, task canceled: " + e.Message);
+            }
 
-            LogUtil.Write($"Hue: Discovery complete, found {discovered.Count} devices.");
             return output;
         }
 
