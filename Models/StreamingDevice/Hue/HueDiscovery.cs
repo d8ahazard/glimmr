@@ -45,13 +45,15 @@ namespace HueDream.Models.StreamingDevice.Hue {
                 LogUtil.Write("Looping for bridge...");
                 if (ex != null) nb.CopyBridgeData(ex);
                 if (nb.Key != null && nb.User != null) {
+                    var client = new StreamingHueClient(nb.IpAddress, nb.User, nb.Key);
                     try {
-                        using var client = StreamingSetup.GetClient(nb);
-                        LogUtil.Write("Refreshing bridge: " + nb.Id);
+                        LogUtil.Write($"Refreshing bridge: {nb.Id} - {nb.IpAddress}");
                         nb.SetLights(GetLights(nb, client));
                         nb.SetGroups(ListGroups(client).Result);
                     } catch (SocketException e) {
                         LogUtil.Write("Socket Exception: " + e.Message, "ERROR");
+                    } finally {
+                        client.Dispose();
                     }
                 }
                 DataUtil.InsertCollection<BridgeData>("bridges", nb);

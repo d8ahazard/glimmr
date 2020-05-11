@@ -20,6 +20,7 @@ using Newtonsoft.Json.Linq;
 namespace HueDream.Models.Util {
     [Serializable]
     public static class DataUtil {
+        public static bool scanning { get; set; }
         public static DataStore GetStore() {
             var path = GetConfigPath("store.json");
             var store = new DataStore(path);
@@ -301,6 +302,8 @@ namespace HueDream.Models.Util {
 
 
         public static async void RefreshDevices() {
+            if (scanning) return;
+            scanning = true;
             // Get dream devices
             var ld = new LifxDiscovery();
             var nanoTask = NanoDiscovery.Refresh();
@@ -308,14 +311,13 @@ namespace HueDream.Models.Util {
             var dreamTask = DreamDiscovery.Discover();
             var bulbTask = ld.Refresh();
             await Task.WhenAll(nanoTask, bridgeTask, dreamTask, bulbTask).ConfigureAwait(false);
-            // await nanoTask.ConfigureAwait(false);
-            // await bridgeTask.ConfigureAwait(false);
-            // await dreamTask.ConfigureAwait(false);
-            // await bulbTask.ConfigureAwait(false);
+            scanning = false;
         }
 
         public static async Task ScanDevices(DataStore store) {
             if (store == null) throw new ArgumentException("Invalid store.");
+            if (scanning) return;
+            scanning = true;
             // Get dream devices
             var ld = new LifxDiscovery();
             var nanoTask = NanoDiscovery.Discover();
@@ -332,6 +334,7 @@ namespace HueDream.Models.Util {
             await store.InsertItemAsync("devices", dreamDevices).ConfigureAwait(false);
             await store.InsertItemAsync("lifxBulbs", bulbs).ConfigureAwait(false);
             store.Dispose();
+            scanning = false;
         }
 
         public static void RefreshPublicIp() {

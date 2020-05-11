@@ -9,20 +9,7 @@ using Q42.HueApi.Streaming.Models;
 
 namespace HueDream.Models.StreamingDevice.Hue {
     public static class StreamingSetup {
-        public static StreamingHueClient GetClient(BridgeData b) {
-            if (b == null) {
-                throw new ArgumentException("Invalid argument.");
-            }
-
-            var hueIp = b.IpAddress;
-            var hueUser = b.User;
-            var hueKey = b.Key;
-            LogUtil.Write("Creating client...");
-            //Initialize streaming client
-            var client = new StreamingHueClient(hueIp, hueUser, hueKey);
-            return client;
-        }
-
+        
         public static async Task StopStream(StreamingHueClient client, BridgeData b) {
             if (client == null || b == null) {
                 throw new ArgumentException("Invalid argument.");

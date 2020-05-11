@@ -23,7 +23,6 @@ namespace HueDream.Models.StreamingDevice.Hue {
         public HueBridge(BridgeData data) {
             bd = data ?? throw new ArgumentNullException(nameof(data));
             BridgeIp = bd.IpAddress;
-            client = StreamingSetup.GetClient(bd);
             disposed = false;
             Streaming = false;
             entLayer = null;
@@ -41,7 +40,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
         /// </summary>
         /// <param name="ct">A cancellation token.</param>
         public async void StartStream(CancellationToken ct) {
-            StopStream();
+            if (client != null) StopStream();
             if (ct == null) throw new ArgumentException("Invalid cancellation token.");
             // Get our light map and filter for mapped lights
             LogUtil.Write($@"Hue: Connecting to bridge at {BridgeIp}...");
@@ -50,7 +49,8 @@ namespace HueDream.Models.StreamingDevice.Hue {
                 LogUtil.Write("Bridge is not authorized.");
                 return;
             }
-            var stream = await StreamingSetup.SetupAndReturnGroup(client, bd, ct);
+            client = new StreamingHueClient(bd.IpAddress, bd.User, bd.Key);
+            var stream = await StreamingSetup.SetupAndReturnGroup(client, bd, ct).ConfigureAwait(true);
             // This is what we actually need
             if (stream == null) {
                 LogUtil.Write("Error fetching bridge stream.","WARN");
@@ -70,6 +70,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
             var _ = StreamingSetup.StopStream(client, bd);
             LogUtil.WriteDec($"Stopping Hue Stream: {BridgeIp}");
             Streaming = false;
+            client?.Dispose();
         }
 
         public void ReloadData() {
@@ -141,8 +142,6 @@ namespace HueDream.Models.StreamingDevice.Hue {
                 if (Streaming) {
                     StopStream();
                 }
-
-                client?.Dispose();
             }
 
             disposed = true;
