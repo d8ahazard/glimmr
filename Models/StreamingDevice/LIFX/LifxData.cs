@@ -30,10 +30,10 @@ namespace HueDream.Models.StreamingDevice.LIFX {
 
         [JsonProperty] public string MacAddressString { get; internal set; }
 
-        [JsonProperty] public double Hue { get; set; }
-        [JsonProperty] public double Saturation { get; set; }
-        [JsonProperty] public double Brightness { get; set; }
-        [JsonProperty] public int Kelvin { get; set; }
+        [JsonProperty] public ushort Hue { get; set; }
+        [JsonProperty] public ushort Saturation { get; set; }
+        [JsonProperty] public ushort Brightness { get; set; }
+        [JsonProperty] public ushort Kelvin { get; set; }
         [JsonProperty] public bool Power { get; set; }
         [JsonProperty] public int SectorMapping { get; set; }
         [DefaultValue(100)]

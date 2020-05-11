@@ -48,9 +48,9 @@ namespace HueDream.Models.StreamingDevice.LIFX {
             var state = client.GetLightStateAsync(b).Result;
             var d = new LifxData(b) {
                 Power = client.GetLightPowerAsync(b).Result,
-                Hue = state.Hue / 35565 * 360,
-                Saturation = (double) state.Saturation / 35565,
-                Brightness = (double) state.Brightness / 35565,
+                Hue = state.Hue,
+                Saturation = state.Saturation,
+                Brightness = state.Brightness,
                 Kelvin = state.Kelvin,
                 SectorMapping = -1
             };

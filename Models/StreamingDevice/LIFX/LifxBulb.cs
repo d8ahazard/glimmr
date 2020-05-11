@@ -42,9 +42,7 @@ namespace HueDream.Models.StreamingDevice.LIFX {
             var c = LifxSender.getClient();
             if (c == null) throw new ArgumentException("Invalid lifx client.");
             LogUtil.Write("Setting color back the way it was.");
-            var prevColor = ColorUtil.HsbToColor(Data.Hue, Data.Saturation, Data.Brightness);
-            var nC = new Color {R = prevColor.R, G = prevColor.G, B = prevColor.B};
-            c.SetColorAsync(B, nC, (ushort) Data.Kelvin).ConfigureAwait(false);
+            c.SetColorAsync(B, Data.Hue, Data.Saturation, Data.Brightness, Data.Kelvin, TimeSpan.Zero);
             c.SetLightPowerAsync(B, TimeSpan.Zero, Data.Power).ConfigureAwait(false);
         }
 
