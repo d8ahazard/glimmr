@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 using HueDream.Models.Util;
 using Q42.HueApi;
@@ -14,7 +15,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
 
         
          private static async Task<List<Group>> ListGroups(StreamingHueClient client) {
-            var all = await client.LocalHueClient.GetEntertainmentGroups().ConfigureAwait(true);
+            var all = await client.LocalHueClient.GetEntertainmentGroups();
             var output = new List<Group>();
             output.AddRange(all);
             LogUtil.Write("Listed");
@@ -44,10 +45,14 @@ namespace HueDream.Models.StreamingDevice.Hue {
                 LogUtil.Write("Looping for bridge...");
                 if (ex != null) nb.CopyBridgeData(ex);
                 if (nb.Key != null && nb.User != null) {
-                    using var client = StreamingSetup.GetClient(nb);
-                    LogUtil.Write("Refreshing bridge: " + nb.Id);
-                    nb.SetLights(GetLights(nb, client));
-                    nb.SetGroups(ListGroups(client).Result);
+                    try {
+                        using var client = StreamingSetup.GetClient(nb);
+                        LogUtil.Write("Refreshing bridge: " + nb.Id);
+                        nb.SetLights(GetLights(nb, client));
+                        nb.SetGroups(ListGroups(client).Result);
+                    } catch (SocketException e) {
+                        LogUtil.Write("Socket Exception: " + e.Message, "ERROR");
+                    }
                 }
                 DataUtil.InsertCollection<BridgeData>("bridges", nb);
             }
