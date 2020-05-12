@@ -4,7 +4,6 @@ using System.Drawing;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
-using Accord;
 using HueDream.Models.Util;
 using Q42.HueApi;
 using Q42.HueApi.ColorConverters;
@@ -21,7 +20,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
         private bool disposed;
         public int MaxBrightness { get; set; }
         public string Id { get; set; }
-        
+
         public HueBridge(BridgeData data) {
             bd = data ?? throw new ArgumentNullException(nameof(data));
             BridgeIp = bd.IpAddress;
@@ -51,6 +50,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
                 LogUtil.Write("Bridge is not authorized.");
                 return;
             }
+
             client = new StreamingHueClient(bd.IpAddress, bd.User, bd.Key);
             // Save previous light state(s) before stopping
             bd.Lights = HueDiscovery.GetLights(bd, client);
@@ -58,9 +58,10 @@ namespace HueDream.Models.StreamingDevice.Hue {
             var stream = await StreamingSetup.SetupAndReturnGroup(client, bd, ct);
             // This is what we actually need
             if (stream == null) {
-                LogUtil.Write("Error fetching bridge stream.","WARN");
+                LogUtil.Write("Error fetching bridge stream.", "WARN");
                 return;
             }
+
             entLayer = stream.GetNewLayer(true);
             LogUtil.WriteInc($"Starting Hue Stream: {BridgeIp}");
             while (!ct.IsCancellationRequested) {
@@ -132,8 +133,9 @@ namespace HueDream.Models.StreamingDevice.Hue {
                     var color = colors[colorInt];
                     var mb = lightData.OverrideBrightness ? lightData.Brightness : MaxBrightness;
                     if (mb < 100) {
-                        color = ColorTransformUtil.ClampBrightness(color, mb); 
+                        color = ColorTransformUtil.ClampBrightness(color, mb);
                     }
+
                     var oColor = new RGBColor(color.R, color.G, color.B);
 
                     // If we're currently using a scene, animate it

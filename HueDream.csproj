@@ -82,7 +82,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Models\LED" />
+      <Folder Include="Models\StreamingDevice\LED" />
     </ItemGroup>
     
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">

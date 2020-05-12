@@ -10,8 +10,8 @@ using Accord.Math.Optimization;
 using HueDream.Models;
 using HueDream.Models.DreamScreen;
 using HueDream.Models.DreamScreen.Devices;
+using HueDream.Models.LED;
 using HueDream.Models.StreamingDevice.Hue;
-using HueDream.Models.StreamingDevice.LED;
 using HueDream.Models.StreamingDevice.LIFX;
 using HueDream.Models.StreamingDevice.Nanoleaf;
 using HueDream.Models.Util;
@@ -300,19 +300,6 @@ namespace HueDream.Controllers {
         }
 
         private static void SwitchDeviceType(string devType, BaseDevice curDevice) {
-            if (devType == "DreamVision") {
-                var newDevice = new DreamVision();
-                newDevice.SetDefaults();
-                newDevice.Id = curDevice.Id;
-                newDevice.Name = curDevice.Name;
-                newDevice.IpAddress = curDevice.IpAddress;
-                newDevice.Brightness = curDevice.Brightness;
-                newDevice.GroupNumber = curDevice.GroupNumber;
-                newDevice.flexSetup = curDevice.flexSetup;
-                newDevice.Saturation = curDevice.Saturation;
-                newDevice.Mode = curDevice.Mode;
-                DataUtil.SetItem("myDevice", newDevice);
-            } else {
                 var newDevice = new SideKick();
                 newDevice.SetDefaults();
                 newDevice.Id = curDevice.Id;
@@ -324,7 +311,7 @@ namespace HueDream.Controllers {
                 newDevice.Saturation = curDevice.Saturation;
                 newDevice.Mode = curDevice.Mode;
                 DataUtil.SetItem("myDevice", newDevice);
-            }
+            
         }
 
        

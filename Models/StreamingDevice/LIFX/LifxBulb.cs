@@ -23,7 +23,7 @@ namespace HueDream.Models.StreamingDevice.LIFX {
 
         public async void StartStream(CancellationToken ct) {
             LogUtil.Write("Lifx: Starting stream.");
-            var c = LifxSender.getClient();
+            var c = LifxSender.GetClient();
             var col = new Color {R = 0x00, G = 0x00, B = 0x00};
             Streaming = true;
             await c.SetLightPowerAsync(B, TimeSpan.Zero, true).ConfigureAwait(false);
@@ -39,7 +39,7 @@ namespace HueDream.Models.StreamingDevice.LIFX {
         
         public void StopStream() {
             Streaming = false;
-            var c = LifxSender.getClient();
+            var c = LifxSender.GetClient();
             if (c == null) throw new ArgumentException("Invalid lifx client.");
             LogUtil.Write("Setting color back the way it was.");
             c.SetColorAsync(B, Data.Hue, Data.Saturation, Data.Brightness, Data.Kelvin, TimeSpan.Zero);
@@ -56,7 +56,7 @@ namespace HueDream.Models.StreamingDevice.LIFX {
 
         public void SetColor(List<System.Drawing.Color> inputs, double fadeTime = 0) {
             if (!Streaming) return;
-            var c = LifxSender.getClient();
+            var c = LifxSender.GetClient();
             if (inputs == null || c == null) throw new ArgumentException("Invalid color inputs.");
             if (inputs.Count < 12) throw new ArgumentOutOfRangeException(nameof(inputs));
             var input = inputs[targetSector];

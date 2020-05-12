@@ -1,17 +1,15 @@
 ﻿using LifxNet;
 
 namespace HueDream.Models.StreamingDevice.LIFX {
-    public class LifxSender {
-        private static LifxClient client;
+    public static class LifxSender {
+        private static LifxClient _client;
 
-        public static LifxClient getClient() {
-            if (client == null)
-                client = LifxClient.CreateAsync().Result;
-            return client;
+        public static LifxClient GetClient() {
+            return _client ??= LifxClient.CreateAsync().Result;
         }
 
-        public static void destroyClient() {
-            client?.Dispose();
+        public static void DestroyClient() {
+            _client?.Dispose();
         }
     }
 }

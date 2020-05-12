@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using HueDream.Models.Util;
@@ -65,7 +66,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
                 //Connect to the streaming group
                 try {
                     await client.Connect(group.Id);
-                } catch (Exception e) {
+                } catch (SocketException e) {
                     LogUtil.Write(@"Exception: " + e);
                 }
 

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using HueDream.Models.Util;
 using Newtonsoft.Json;
 
 namespace HueDream.Models.StreamingDevice.Nanoleaf {
@@ -46,13 +45,14 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
         [DefaultValue(false)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool MirrorY { get; set; }
-        
+
         [DefaultValue(100)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public int MaxBrightness { get; set; }
 
 
         public void CopyExisting(NanoData leaf) {
+            if (leaf == null) throw new ArgumentException("Invalid nanodata!");
             Token = leaf.Token;
             X = leaf.X;
             Y = leaf.Y;
@@ -75,14 +75,13 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
 
             return output;
         }
-        
+
         public void RefreshLeaf() {
             if (Token == null) return;
-                using var nl = new NanoGroup(IpV4Address, Token);
-                var layout = nl.GetLayout().Result;
-                if (layout != null) Layout = layout;
-                Scale = 1;
-            
+            using var nl = new NanoGroup(IpV4Address, Token);
+            var layout = nl.GetLayout().Result;
+            if (layout != null) Layout = layout;
+            Scale = 1;
         }
     }
 }

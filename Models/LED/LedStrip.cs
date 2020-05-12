@@ -4,9 +4,9 @@ using System.Drawing;
 using HueDream.Models.Util;
 using ws281x.Net;
 
-namespace HueDream.Models.StreamingDevice.LED {
+namespace HueDream.Models.LED {
     public sealed class LedStrip : IDisposable {
-        public int Brightness { get; set; }
+        private int Brightness { get; }
         private int StartupAnimation { get; }
 
         private readonly int ledCount;

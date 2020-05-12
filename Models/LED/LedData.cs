@@ -1,7 +1,7 @@
 ﻿using System;
 using Newtonsoft.Json;
 
-namespace HueDream.Models.StreamingDevice.LED {
+namespace HueDream.Models.LED {
     [Serializable]
     public class LedData {
         [JsonProperty] public int LedCount { get; set; }

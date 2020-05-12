@@ -10,7 +10,7 @@ namespace HueDream.Models.StreamingDevice.LIFX {
         private List<LightBulb> bulbs;
 
         public LifxDiscovery() {
-            client = LifxSender.getClient();
+            client = LifxSender.GetClient();
         }
 
         public async Task<List<LifxData>> Discover(int timeOut) {

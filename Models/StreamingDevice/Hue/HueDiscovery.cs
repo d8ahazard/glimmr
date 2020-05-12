@@ -11,10 +11,9 @@ using Q42.HueApi.Models.Groups;
 using Q42.HueApi.Streaming;
 
 namespace HueDream.Models.StreamingDevice.Hue {
-    public class HueDiscovery {
+    public static class HueDiscovery {
 
-        
-         private static async Task<List<Group>> ListGroups(StreamingHueClient client) {
+        private static async Task<List<Group>> ListGroups(StreamingHueClient client) {
             var all = await client.LocalHueClient.GetEntertainmentGroups();
             var output = new List<Group>();
             output.AddRange(all);

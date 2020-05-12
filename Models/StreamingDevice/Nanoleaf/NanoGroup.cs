@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using HueDream.Models.StreamingDevice.LED;
+using HueDream.Models.LED;
 using HueDream.Models.Util;
 using Nanoleaf.Client;
 using Nanoleaf.Client.Models.Responses;
@@ -22,8 +21,6 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
         private NanoLayout layout;
         private readonly HttpClient hc;
         private int streamMode;
-        private readonly Stopwatch clock;
-        private long cycleTime;
         private bool disposed;
         public int MaxBrightness { get; set; }
         public string Id { get; set; }
@@ -39,15 +36,13 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             if (n != null) {
                 SetData(n);
                 hc = new HttpClient();
-                clock = new Stopwatch();
                 CheckPositions(n);
-                
             }
 
             disposed = false;
         }
 
-        
+
         public void ReloadData() {
             var newData = DataUtil.GetCollectionItem<NanoData>("leaves", Id);
             SetData(newData);
@@ -65,7 +60,7 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             Id = n.Id;
         }
 
-        private void CheckPositions(NanoData n, bool force=false) {
+        private void CheckPositions(NanoData n, bool force = false) {
             var pd = layout.PositionData;
             var autoCalc = pd.Any(pl => pl.Sector == -1);
 
@@ -77,14 +72,16 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
                     if (pl.Sector == -1 || force) {
                         pl.Sector = panelPositions[pl.PanelId];
                     }
+
                     newPd.Add(pl);
                 }
+
                 layout.PositionData = newPd;
                 n.Layout = layout;
                 DataUtil.InsertCollection<NanoData>("leaves", n);
             }
         }
-        
+
         public bool Streaming { get; set; }
 
         public async void StartStream(CancellationToken ct) {
@@ -93,7 +90,8 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             var body = new
                 {write = new {command = "display", animType = "extControl", extControlVersion = controlVersion}};
 
-            await NanoSender.SendPutRequest(basePath, JsonConvert.SerializeObject(new {on = new {value = true}}), "state");
+            await NanoSender.SendPutRequest(basePath, JsonConvert.SerializeObject(new {on = new {value = true}}),
+                "state");
             await NanoSender.SendPutRequest(basePath, JsonConvert.SerializeObject(body), "effects");
             while (!ct.IsCancellationRequested) {
                 Streaming = true;
@@ -101,21 +99,21 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
 
             LogUtil.WriteDec($@"Nanoleaf: Stopped panel: {ipAddress}");
             StopStream();
-            
         }
 
         public void StopStream() {
             Streaming = false;
-            NanoSender.SendPutRequest(basePath, JsonConvert.SerializeObject(new {on = new {value = false}}), "state").ConfigureAwait(false);
+            NanoSender.SendPutRequest(basePath, JsonConvert.SerializeObject(new {on = new {value = false}}), "state")
+                .ConfigureAwait(false);
         }
 
-        
-        
+
         public void SetColor(List<Color> colors, double fadeTime = 0) {
             if (!Streaming) return;
             if (colors == null || colors.Count < 12) {
                 throw new ArgumentException("Invalid color list.");
             }
+
             var byteString = new List<byte>();
             if (streamMode == 2) {
                 byteString.AddRange(ByteUtils.PadInt(layout.NumPanels));
@@ -137,6 +135,7 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
                 if (MaxBrightness < 100) {
                     color = ColorTransformUtil.ClampBrightness(color, MaxBrightness);
                 }
+
                 // Pad ID, this is probably wrong
                 // Add rgb
                 byteString.Add(ByteUtils.IntByte(color.R));
@@ -147,18 +146,19 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
                 // Pad duration time
                 byteString.AddRange(streamMode == 2 ? ByteUtils.PadInt(1) : ByteUtils.PadInt(1, 1));
             }
+
             SendUdpUnicast(byteString.ToArray());
         }
 
 
-        public static Dictionary<int, int> CalculatePoints(NanoData nd) {
+        private static Dictionary<int, int> CalculatePoints(NanoData nd) {
             if (nd == null) throw new ArgumentException("Invalid panel data.");
             var pl = nd.Layout;
-            
+
             var pPoints = CalculatePanelPoints(nd);
-            var sPoints = CalculateSectorPoints(nd);
+            var sPoints = CalculateSectorPoints();
             // Set our marker at center
-            
+
             LogUtil.Write("S points: " + JsonConvert.SerializeObject(sPoints));
             var tList = new Dictionary<int, int>();
             var panelInt = 0;
@@ -188,21 +188,21 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             LogUtil.Write("Final List: " + JsonConvert.SerializeObject(tList));
             return tList;
         }
-    
+
         private static List<PointD> CalculatePanelPoints(NanoData nd) {
             var pl = nd.Layout;
             var pPoints = new List<PointD>();
             var sideLength = pl.SideLength;
             var nX = nd.X;
             var nY = nd.Y;
-            
+
             var minX = 1000;
             var minY = 1000;
             var maxX = 0;
             var maxY = 0;
-    
+
             // Calculate the min/max range for each tile
-            foreach(var data in pl.PositionData) {
+            foreach (var data in pl.PositionData) {
                 if (data.X < minX) minX = data.X;
                 if (data.Y * -1 < minY) minY = data.Y * -1;
                 if (data.X > maxX) maxX = data.X;
@@ -211,27 +211,27 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
 
             var xRange = maxX - minX;
             var yRange = maxY - minY;
-            
+
             foreach (var layout in pl.PositionData) {
                 double pX = layout.X;
                 double pY = layout.Y;
                 if (nd.MirrorX) pX *= -1;
                 if (!nd.MirrorY) pY *= -1;
-                pX -= xRange / 2;
-                pY += yRange / 2;
-                pX -= sideLength / 2;
-                pY += sideLength / 2;
+                pX -= xRange / 2f;
+                pY += yRange / 2f;
+                pX -= sideLength / 2f;
+                pY += sideLength / 2f;
                 pX += nX;
                 pY += nY;
                 var p = new PointD(pX, pY);
                 pPoints.Add(p);
             }
+
             LogUtil.Write("P points: " + JsonConvert.SerializeObject(pPoints));
             return pPoints;
         }
 
-        private static Dictionary<int, Point> CalculateSectorPoints(NanoData nd) {
-            
+        private static Dictionary<int, Point> CalculateSectorPoints() {
             int verticalCount;
             int horizontalCount;
             var cMode = DataUtil.GetItem<int>("captureMode");
@@ -245,11 +245,7 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             }
 
             // 1 LED = 25 tile units for nano
-            
-            // Get window width
-            var width = 1024;
-            var height = 768;
-    
+
             // Set our TV image width
             var tvWidth = horizontalCount * 25;
             var tvHeight = verticalCount * 25;
@@ -264,11 +260,11 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             tvHeight /= 2;
 
             LogUtil.Write($"TvWidth, height {tvWidth}{tvHeight}");
-            
+
             var sPoints = new Dictionary<int, Point>();
             var yMarker = vStep * -1; // Down one
             var xMarker = hStep * 2; // Right x2
-            
+
             var pointInt = 1;
             sPoints[pointInt] = new Point(xMarker, yMarker);
             pointInt++;
@@ -304,11 +300,11 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             pointInt++;
             xMarker += hStep;
             sPoints[pointInt] = new Point(xMarker, yMarker);
-            
+
             LogUtil.Write("S points: " + JsonConvert.SerializeObject(sPoints));
             return sPoints;
         }
-        
+
         public async Task<UserToken> CheckAuth() {
             var nanoleaf = new NanoleafClient(ipAddress);
             UserToken result = null;
@@ -316,8 +312,9 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
                 result = await nanoleaf.CreateTokenAsync().ConfigureAwait(false);
                 LogUtil.Write("Authorized.");
             } catch (AggregateException e) {
-                LogUtil.Write("Unauthorized...");
+                LogUtil.Write("Unauthorized Exception: " + e.Message);
             }
+
             nanoleaf.Dispose();
             return result;
         }
@@ -338,7 +335,7 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             return lObject;
         }
 
-       
+
         public void Dispose() {
             Dispose(true);
         }

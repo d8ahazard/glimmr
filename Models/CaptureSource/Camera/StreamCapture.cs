@@ -11,7 +11,7 @@ using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using HueDream.Models.CaptureSource.Screen;
 using HueDream.Models.DreamScreen;
-using HueDream.Models.StreamingDevice.LED;
+using HueDream.Models.LED;
 using HueDream.Models.Util;
 using Newtonsoft.Json;
 

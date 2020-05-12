@@ -10,9 +10,9 @@ using System.Threading.Tasks;
 using HueDream.Models.CaptureSource.Audio;
 using HueDream.Models.CaptureSource.Camera;
 using HueDream.Models.DreamScreen.Devices;
+using HueDream.Models.LED;
 using HueDream.Models.StreamingDevice;
 using HueDream.Models.StreamingDevice.Hue;
-using HueDream.Models.StreamingDevice.LED;
 using HueDream.Models.StreamingDevice.LIFX;
 using HueDream.Models.StreamingDevice.Nanoleaf;
 using HueDream.Models.Util;
@@ -232,7 +232,7 @@ namespace HueDream.Models.DreamScreen {
                 var lifx = DataUtil.GetCollection<LifxData>("lifxBulbs");
                 bulbs = new List<LifxBulb>();
                 if (lifx != null) {
-                    lifxClient = LifxSender.getClient();
+                    lifxClient = LifxSender.GetClient();
                     foreach (var b in lifx.Where(b => b.SectorMapping != -1)) {
                         sDevices.Add(new LifxBulb(b));
                     }
@@ -439,7 +439,7 @@ namespace HueDream.Models.DreamScreen {
                 case "DISCOVERY_STOP":
                     LogUtil.Write($"DreamScreen: Discovery complete, found {devices.Count} devices.");
                     discovering = false;
-                    //DataUtil.SetItem<List<BaseDevice>>("devices", devices);
+                    DataUtil.SetItem<List<BaseDevice>>("devices", devices);
                     break;
                 case "REMOTE_REFRESH":
                     var id = Encoding.UTF8.GetString(payload.ToArray());
@@ -475,7 +475,6 @@ namespace HueDream.Models.DreamScreen {
                             }
 
                             if (discovering) {
-                                DataUtil.InsertCollection("devices", msgDevice);
                                 devices.Add(msgDevice);
                             }
                         }
@@ -626,7 +625,7 @@ namespace HueDream.Models.DreamScreen {
 
             panels = new List<NanoGroup>();
             LogUtil.Write("Panels disposed.");
-            LifxSender.destroyClient();
+            LifxSender.DestroyClient();
         }
     }
 }
