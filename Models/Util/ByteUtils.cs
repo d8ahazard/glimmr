@@ -87,16 +87,18 @@ namespace HueDream.Models.Util {
         /// <returns>
         ///     A string of hex-encoded values with no spacing
         /// </returns>
-        public static string ExtractString(byte[] input, int start, int end) {
+        public static string ExtractString(byte[] input, int start, int end, bool hex=false) {
             if (input is null) throw new ArgumentNullException(nameof(input));
-
             var len = end - start;
             var strOut = "";
             if (len < input.Length) {
                 var subArr = new byte[len];
                 Array.Copy(input, start, subArr, 0, len);
-
-                foreach (var b in subArr) strOut += Convert.ToChar(b);
+                if (hex) {
+                    strOut = BitConverter.ToString(subArr).Replace("-","", StringComparison.InvariantCulture);   
+                } else {
+                    strOut = subArr.Aggregate(strOut, (current, b) => current + Convert.ToChar(b));
+                }
             } else {
                 throw new IndexOutOfRangeException();
             }

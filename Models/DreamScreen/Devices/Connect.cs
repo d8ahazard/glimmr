@@ -22,6 +22,19 @@ namespace HueDream.Models.DreamScreen.Devices {
         [JsonProperty] public int[] flexSetup { get; set; }
 
         public Connect() { }
+        
+        public Connect(BaseDevice curDevice) {
+            if (curDevice == null) throw new ArgumentException("Invalid baseDevice.");
+            Id = curDevice.Id;
+            Name = curDevice.Name;
+            IpAddress = curDevice.IpAddress;
+            Brightness = curDevice.Brightness;
+            GroupNumber = curDevice.GroupNumber;
+            flexSetup = curDevice.flexSetup;
+            Saturation = curDevice.Saturation;
+            Mode = curDevice.Mode;
+            AmbientColor = curDevice.AmbientColor;
+        }
 
         public Connect(string ipAddress) : base(ipAddress) {
             Name = "Connect";
@@ -82,8 +95,8 @@ namespace HueDream.Models.DreamScreen.Devices {
                 GroupNumber = payload[32];
                 Mode = payload[33];
                 Brightness = payload[34];
-                AmbientColor = ByteUtils.ExtractString(payload, 35, 38);
-                Saturation = ByteUtils.ExtractString(payload, 38, 41);
+                AmbientColor = ByteUtils.ExtractString(payload, 35, 38, true);
+                Saturation = ByteUtils.ExtractString(payload, 38, 41, true);
                 FadeRate = payload[41];
                 espFirmwareVersion = ByteUtils.ExtractBytes(payload, 57, 59);
                 AmbientModeType = payload[59];
@@ -104,8 +117,11 @@ namespace HueDream.Models.DreamScreen.Devices {
                     }
             }
         }
+        
+        
 
         public override byte[] EncodeState() {
+            LogUtil.Write("Encoding sidekick State.");
             var response = new List<byte>();
             response.AddRange(ByteUtils.StringBytePad(Name, 16));
             response.AddRange(ByteUtils.StringBytePad(GroupName, 16));

@@ -23,11 +23,18 @@ namespace HueDream.Models.DreamScreen {
             Len = bytesIn[1];
             Group = bytesIn[2];
             Flags = bytesString[3];
+            C1 = bytesString[4];
+            C2 = bytesString[5];
             var cmd = bytesString[4] + bytesString[5];
-            if (MsgUtils.Commands.ContainsKey(cmd))
+
+            if (MsgUtils.Commands.ContainsKey(cmd)) {
                 Command = MsgUtils.Commands[cmd];
-            else
+                if (Command == "SATURATION") LogUtil.Write("BYTE STRING: " + byteString);
+
+            } else {
                 LogUtil.Write($@"DSMessage: No matching key in dict for bytes: {cmd}.");
+            }
+
             BaseDevice dreamDev = null;
             if (Len > 5) {
                 payload = ExtractPayload(bytesIn);
@@ -73,6 +80,8 @@ namespace HueDream.Models.DreamScreen {
         }
 
         public string Command { get; }
+        public string C1 { get; }
+        public string C2 { get; }
         public int Group { get; }
         public string Flags { get; }
         public string PayloadString { get; }

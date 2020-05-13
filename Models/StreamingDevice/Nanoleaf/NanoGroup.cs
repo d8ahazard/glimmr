@@ -93,6 +93,7 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             await NanoSender.SendPutRequest(basePath, JsonConvert.SerializeObject(new {on = new {value = true}}),
                 "state");
             await NanoSender.SendPutRequest(basePath, JsonConvert.SerializeObject(body), "effects");
+            LogUtil.Write("Nanoleaf: Streaming is active.");
             while (!ct.IsCancellationRequested) {
                 Streaming = true;
             }

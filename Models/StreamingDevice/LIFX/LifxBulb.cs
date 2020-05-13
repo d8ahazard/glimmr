@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
+using HueDream.Controllers;
 using HueDream.Models.Util;
 using LifxNet;
+using Newtonsoft.Json;
 
 namespace HueDream.Models.StreamingDevice.LIFX {
     public class LifxBulb : IStreamingDevice {
@@ -27,7 +29,9 @@ namespace HueDream.Models.StreamingDevice.LIFX {
             var col = new Color {R = 0x00, G = 0x00, B = 0x00};
             Streaming = true;
             await c.SetLightPowerAsync(B, TimeSpan.Zero, true).ConfigureAwait(false);
+            LogUtil.Write("Power set.");
             await c.SetColorAsync(B, col, 2700).ConfigureAwait(false);
+            LogUtil.Write("Lifx: Streaming is active.");
             while (!ct.IsCancellationRequested) {
                 Streaming = true;
             }

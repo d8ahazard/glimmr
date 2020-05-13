@@ -135,36 +135,41 @@
                 <div id="settingsVideoDS" class="ds2">
                     <div id="saturationDS" class="border">
                         <h5>Saturation <span class="material-icons hintbtn">help_outline</span></h5>
-                        <label for="dsSatR">Red</label>
-                        <input class="form-control devSaturation" type="range" id="dsSatR" name="dsSatR" min="0" max="100" value="100">
-                        <label for="dsSatG">Green</label>
-                        <input class="form-control devSaturation" type="range" id="dsSatG" name="dsSatG" min="0" max="100" value="100">
-                        <label for="dsSatB">Blue</label>
-                        <input class="form-control devSaturation" type="range" id="dsSatB" name="dsSatB" min="0" max="100" value="100">
+                        <label>Red</label>
+                        <input class="form-control devSaturation" data-color="r" type="range" min="0" max="255" value="255">
+                        <label>Green</label>
+                        <input class="form-control devSaturation" data-color="g" type="range" min="0" max="255" value="255">
+                        <label>Blue</label>
+                        <input class="form-control devSaturation" data-color="b" type="range" min="0" max="255" value="255">
                         <div class="hint">Adjust the RGB channels to appear correctly or when wall behind DreamScreen is not white.</div>
                     </div>
                     <div id="detectionDS" class="border">
                         <h5>Wiescreen Detection <span class="material-icons hintbtn">help_outline</span></h5>
                         <div class="btn-group">
-                            <div class="btn" id="dsDetectAuto">Auto</div>
-                            <div class="btn" id="dsDetectOn">On</div>
-                            <div class="btn" id="dsDetectOff">Off</div>
+                            <div class="btn dsDetection" data-mode="0">Auto</div>
+                            <div class="btn dsDetection" data-mode="1">On</div>
+                            <div class="btn dsDetection" data-mode="2">Off</div>
                         </div>
                         <div class="hint">DreamScreen will detect when the Video Source has been formatted to fit a widescreen.</div>
                     </div>
                     <div id="fadeRateDS" class="border">
                         <h5>Fade Rate <span class="material-icons hintbtn">help_outline</span></h5>
-                        <input class="form-control devFadeRate" type="range" id="dsFadeRate" name="dsFadeRate" min="0" max="100" value="100">
+                        <input class="form-control devFadeRate" type="range" min="0" max="100" value="100">
                         <div class="hint">Adjusts the reaction speed of the LEDs.</div>
                     </div>
                     <div id="luminosityDS" class="border">
                         <h5>Minimum Luminosity <span class="material-icons hintbtn">help_outline</span></h5>
-                        <input class="form-control devFadeRate" type="range" id="dsLuminosity" name="dsLuminosity" min="0" max="100" value="100">
+                        <input class="form-control devLuminosity" type="range" min="0" max="100" value="100">
                         <div class="hint">Set a low level of background light when there is no video content playing.</div>
                     </div>
                     <div id="colorboostDS" class="border">
                         <h5>Color Boost <span class="material-icons hintbtn">help_outline</span></h5>
-                        <div class="btn" id="dsColorBoost">Off</div>
+                        <div class="btn-group">
+                            <div class="btn colorBoost" data-mode="0">Off</div>
+                            <div class="btn colorBoost" data-mode="1">Low</div>
+                            <div class="btn colorBoost" data-mode="2">Med</div>
+                            <div class="btn colorBoost" data-mode="3">High</div>
+                        </div>
                         <div class="hint">Enhances RGB tones making ligher hues appear stronger.</div>
                     </div>
                 </div>
@@ -205,12 +210,12 @@
                 <div id="settingsColorSK" class="ds2">
                     <div id="saturationSK" class="border">
                         <h5>Saturation <span class="material-icons hintbtn">help_outline</span></h5>
-                        <label for="dsSatR">Red</label>
-                        <input class="form-control devSaturation" type="range" id="skSatR" name="skSatR" min="0" max="100" value="100">
-                        <label for="dsSatG">Green</label>
-                        <input class="form-control devSaturation" type="range" id="skSatG" name="skSatG" min="0" max="100" value="100">
-                        <label for="dsSatB">Blue</label>
-                        <input class="form-control devSaturation" type="range" id="skSatB" name="skSatB" min="0" max="100" value="100">
+                        <label>Red</label>
+                        <input class="form-control devSaturation" data-color="r" type="range" min="0" max="255" value="100">
+                        <label>Green</label>
+                        <input class="form-control devSaturation" data-color="g" type="range" min="0" max="255" value="100">
+                        <label>Blue</label>
+                        <input class="form-control devSaturation" data-color="b" type="range" min="0" max="255" value="100">
                         <div class="hint">Adjust the RGB channels to appear correctly or when wall behind DreamScreen is not white.</div>
                     </div>
                 </div>
@@ -255,12 +260,12 @@
             <div id="settingsVideoCo" class="ds2">
                 <div id="saturationCo" class="border">
                     <h5>Saturation <span class="material-icons hintbtn">help_outline</span></h5>
-                    <label for="dsSatR">Red</label>
-                    <input class="form-control devSaturation" type="range" id="coSatR" name="dsSatR" min="0" max="100" value="100">
-                    <label for="dsSatG">Green</label>
-                    <input class="form-control devSaturation" type="range" id="coSatG" name="dsSatG" min="0" max="100" value="100">
-                    <label for="dsSatB">Blue</label>
-                    <input class="form-control devSaturation" type="range" id="coSatB" name="dsSatB" min="0" max="100" value="100">
+                    <label>Red</label>
+                    <input class="form-control devSaturation" data-color="r" type="range" min="0" max="255" value="100">
+                    <label>Green</label>
+                    <input class="form-control devSaturation" data-color="g" type="range" min="0" max="255" value="100">
+                    <label>Blue</label>
+                    <input class="form-control devSaturation" data-color="b" type="range" min="0" max="255" value="100">
                     <div class="hint">Adjust the RGB channels to appear correctly or when wall behind DreamScreen is not white.</div>
                 </div>
                 <div id="detectionCo" class="border">

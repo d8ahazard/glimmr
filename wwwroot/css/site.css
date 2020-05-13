@@ -199,16 +199,21 @@ background {
     -webkit-transition: .2s; /* 0.2 seconds transition on hover */
     transition: opacity .2s;
 }
-#dsSatR {
+.devSaturation[data-color="r"] {
     background: #ff0000;    
 }
 
-#dsSatG {
+.devSaturation[data-color="g"] {
     background: #00ff00;
 }
 
-#dsSatB {
+.devSaturation[data-color="b"] {
     background: #0000ff;
+}
+
+.btn.selected {
+    background-color: dimgrey;
+    color: white;
 }
 
 .border {

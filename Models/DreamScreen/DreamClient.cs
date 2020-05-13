@@ -406,21 +406,29 @@ namespace HueDream.Models.DreamScreen {
             var payload = Array.Empty<byte>();
             BaseDevice msgDevice = null;
             var writeState = false;
+            var writeDev = false;
             var msg = new DreamScreenMessage(receivedBytes, from);
             if (msg.IsValid) {
                 payload = msg.GetPayload();
                 payloadString = msg.PayloadString;
                 command = msg.Command;
                 msgDevice = msg.Device;
+                
+                flag = msg.Flags;
                 if (from != null && command != null && command != "COLOR_DATA" && command != "SUBSCRIBE") {
-                    LogUtil.Write($@"{from} -> {dev.IpAddress}::{command}.");
+                    LogUtil.Write($@"{from} -> {dev.IpAddress}::{command} {flag}-{msg.Group}.");
                 }
 
-                flag = msg.Flags;
                 var groupMatch = msg.Group == dev.GroupNumber || msg.Group == 255;
                 if ((flag == "11" || flag == "21") && groupMatch) {
                     dev = DataUtil.GetDeviceData();
                     writeState = true;
+                    writeDev = true;
+                }
+                if (flag == "41") {
+                    LogUtil.Write("We should save a device's updated setting?");
+                    dev = DataUtil.GetDreamDevice(from);
+                    writeDev = true;
                 }
             } else {
                 LogUtil.Write($@"Invalid message from {from}");
@@ -483,72 +491,71 @@ namespace HueDream.Models.DreamScreen {
                     break;
                 case "GROUP_NAME":
                     var gName = Encoding.ASCII.GetString(payload);
-                    if (writeState) dev.GroupName = gName;
+                    if (writeState | writeDev) dev.GroupName = gName;
 
                     break;
                 case "GROUP_NUMBER":
                     int gNum = payload[0];
-                    if (writeState) dev.GroupNumber = gNum;
+                    if (writeState | writeDev) dev.GroupNumber = gNum;
 
                     break;
                 case "NAME":
                     var dName = Encoding.ASCII.GetString(payload);
-                    if (writeState) dev.Name = dName;
+                    if (writeState | writeDev) dev.Name = dName;
 
                     break;
                 case "BRIGHTNESS":
                     brightness = payload[0];
-                    if (writeState) {
+                    if (writeState | writeDev) {
                         LogUtil.Write($@"Setting brightness to {brightness}.");
                         dev.Brightness = payload[0];
-                        UpdateBrightness(payload[0]);
                     }
+                    if (writeState) UpdateBrightness(payload[0]);
 
                     break;
                 case "SATURATION":
-                    if (writeState) dev.Saturation = ByteUtils.ByteString(payload);
+                    if (writeState | writeDev) dev.Saturation = ByteUtils.ByteString(payload);
 
                     break;
                 case "MODE":
-                    if (writeState) {
+                    if (writeState | writeDev) {
                         dev.Mode = payload[0];
                         LogUtil.Write($@"Updating mode: {dev.Mode}.");
-                        UpdateMode(dev.Mode);
                     }
+                    if (writeState) UpdateMode(dev.Mode);
 
                     break;
                 case "AMBIENT_MODE_TYPE":
-                    if (writeState) {
+                    if (writeState | writeDev) {
                         dev.AmbientModeType = payload[0];
-                        UpdateAmbientMode(dev.Mode);
                     }
+                    if (writeState) UpdateAmbientMode(dev.Mode);
 
                     break;
                 case "AMBIENT_SCENE":
-                    if (writeState) {
+                    if (writeState | writeDev) {
                         ambientShow = payload[0];
                         dev.AmbientShowType = ambientShow;
-                        UpdateAmbientShow(ambientShow);
                         LogUtil.Write($@"Scene updated: {ambientShow}.");
                     }
-
+                    if (writeState) UpdateAmbientShow(ambientShow);
                     break;
                 case "AMBIENT_COLOR":
-                    if (writeState) {
+                    if (writeDev | writeState) {
                         dev.AmbientColor = ByteUtils.ByteString(payload);
-                        UpdateAmbientColor(ColorFromString(dev.AmbientColor));
                     }
+                    if (writeState) UpdateAmbientColor(ColorFromString(dev.AmbientColor));
 
                     break;
                 case "SKU_SETUP":
-                    if (writeState) {
+                    if (writeState | writeDev) {
                         LogUtil.Write("Setting SKU type?");
-                        //dev.SkuSetup = payload[0];
+                        dev.SkuSetup = payload[0];
                     }
 
                     break;
                 case "FLEX_SETUP":
-                    if (writeState) {
+                    if (writeState | writeDev) {
                         LogUtil.Write("Setting FlexSetup");
                         int[] fSetup = payload.Select(x => (int) x).ToArray();
                         dev.flexSetup = fSetup;
@@ -561,7 +568,11 @@ namespace HueDream.Models.DreamScreen {
                     break;
             }
 
-            if (writeState) DataUtil.SetItem<BaseDevice>("myDevice", dev);
+            if (writeState) {
+                DataUtil.SetItem<BaseDevice>("myDevice", dev);
+                //DreamSender.SendUdpWrite(msg.C1, msg.C2, 0x41, msg.Group, null, true);
+            }
+            if (writeDev) DataUtil.InsertDsDevice(dev);
         }
 
         private void SendDeviceStatus(IPEndPoint src) {

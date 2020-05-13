@@ -146,6 +146,13 @@ namespace HueDream.Models.Util {
                 LogUtil.Write($@"Replace exception for {key}: {e.Message}");
             }
         }
+
+        public static void InsertDsDevice(BaseDevice dev) {
+            if (dev == null) throw new ArgumentException("Invalid device.");
+            var ex = GetDreamDevices();
+            var newList = ex.Select(c => c.Id == dev.Id ? dev : c).ToList();
+            SetItem<List<BaseDevice>>("devices", newList);
+        }
         
 
         private static DataStore CheckDefaults(DataStore store) {
@@ -159,7 +166,6 @@ namespace HueDream.Models.Util {
             BaseDevice myDevice = new SideKick(IpUtil.GetLocalIpAddress());
             myDevice.SetDefaults();
             var lData = new LedData(true);
-
             await store.InsertItemAsync("dataSource", "DreamScreen").ConfigureAwait(false);
             await store.InsertItemAsync("devType", "SideKick").ConfigureAwait(false);
             await store.InsertItemAsync("camWidth", 1920).ConfigureAwait(false);
@@ -212,9 +218,10 @@ namespace HueDream.Models.Util {
             using var dd = GetStore();
             BaseDevice dev;
             string devType = dd.GetItem("devType");
+            LogUtil.Write("DeviceData fetched, we have a " + devType);
             if (devType == "SideKick") {
                 dev = dd.GetItem<SideKick>("myDevice");
-            } else if (devType == "DreamVision") {
+            } else if (devType == "DreamScreen4K") {
                 dev = dd.GetItem<DreamScreen4K>("myDevice");
             } else {
                 dev = dd.GetItem<Connect>("myDevice");
@@ -262,6 +269,9 @@ namespace HueDream.Models.Util {
             return output;
         }
 
+        public static BaseDevice GetDreamDevice(string id) {
+            return GetDreamDevices().FirstOrDefault(dev => dev.Id == id);
+        }
 
         public static (int, int) GetTargetLights() {
             var dsIp = GetItem<string>("dsIp");

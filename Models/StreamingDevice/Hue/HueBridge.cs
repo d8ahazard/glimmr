@@ -41,17 +41,17 @@ namespace HueDream.Models.StreamingDevice.Hue {
         /// </summary>
         /// <param name="ct">A cancellation token.</param>
         public async void StartStream(CancellationToken ct) {
-            if (client != null) StopStream();
-            if (ct == null) throw new ArgumentException("Invalid cancellation token.");
-            // Get our light map and filter for mapped lights
-            LogUtil.Write($@"Hue: Connecting to bridge at {BridgeIp}...");
-            // Grab our stream
             if (bd.Id == null || bd.Key == null || bd.Lights == null || bd.Groups == null) {
                 LogUtil.Write("Bridge is not authorized.");
                 return;
             }
-
-            client = new StreamingHueClient(bd.IpAddress, bd.User, bd.Key);
+            SetClient();
+            StopStream();
+            if (ct == null) throw new ArgumentException("Invalid cancellation token.");
+            // Get our light map and filter for mapped lights
+            LogUtil.Write($@"Hue: Connecting to bridge at {BridgeIp}...");
+            // Grab our stream
+            
             // Save previous light state(s) before stopping
             bd.Lights = HueDiscovery.GetLights(bd, client);
             DataUtil.InsertCollection<BridgeData>("bridges", bd);
@@ -63,7 +63,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
             }
 
             entLayer = stream.GetNewLayer(true);
-            LogUtil.WriteInc($"Starting Hue Stream: {BridgeIp}");
+            LogUtil.WriteInc($"Hue: Streaming is active: {BridgeIp}");
             while (!ct.IsCancellationRequested) {
                 Streaming = true;
             }
@@ -75,8 +75,15 @@ namespace HueDream.Models.StreamingDevice.Hue {
         public void StopStream() {
             var _ = StreamingSetup.StopStream(client, bd);
             LogUtil.WriteDec($"Stopping Hue Stream: {BridgeIp}");
+            if (Streaming) ResetColors();
             Streaming = false;
-            ResetColors();
+            
+        }
+
+        private void SetClient() {
+            if (bd?.User == null || bd?.Key == null) return;
+            if (client != null) return;
+            client = new StreamingHueClient(bd.IpAddress, bd.User, bd.Key);
         }
 
         private void ResetColors() {

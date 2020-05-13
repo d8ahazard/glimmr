@@ -36,7 +36,17 @@ namespace HueDream.Controllers {
             SetMode(modeObj);
             return Ok(modeObj);
         }
-       
+
+        [HttpPost("updateDs")]
+        public IActionResult UpdateDs([FromBody] JObject dsSetting) {
+            if (dsSetting == null) throw new ArgumentException("Invalid Jobject.");
+            var id = (dsSetting["id"] ?? "").Value<string>();
+            var property = (dsSetting["property"] ?? "").Value<string>();
+            var value = (dsSetting["value"] ?? "").Value<string>();
+            LogUtil.Write($"We got our stuff: {id}, {property}, {value}");
+            DreamSender.SendMessage(property, value, id);
+            return Ok();
+        }
 
         // POST: api/DreamData/updateDevice
         [HttpPost("updateDevice")]
@@ -285,14 +295,9 @@ namespace HueDream.Controllers {
             DataUtil.SetItem<int>("captureMode", capMode);
             var devType = "SideKick";
             if (capMode != 0 && curMode == 0) {
-                devType = "DreamVision";
-                SwitchDeviceType(devType, dev);
+                devType = "DreamScreen4K";
             }
-
-            if (capMode == 0) {
-                SwitchDeviceType(devType, dev);
-            }
-
+            SwitchDeviceType(devType, dev);
             DataUtil.SetItem<string>("devType", devType);
             if (colorMode == 0) return;
             SetMode(0);
@@ -300,18 +305,16 @@ namespace HueDream.Controllers {
         }
 
         private static void SwitchDeviceType(string devType, BaseDevice curDevice) {
-                var newDevice = new SideKick();
-                newDevice.SetDefaults();
-                newDevice.Id = curDevice.Id;
-                newDevice.Name = curDevice.Name;
-                newDevice.IpAddress = curDevice.IpAddress;
-                newDevice.Brightness = curDevice.Brightness;
-                newDevice.GroupNumber = curDevice.GroupNumber;
-                newDevice.flexSetup = curDevice.flexSetup;
-                newDevice.Saturation = curDevice.Saturation;
-                newDevice.Mode = curDevice.Mode;
+            if (devType == "SideKick") {
+                var newDevice = new SideKick(curDevice);
                 DataUtil.SetItem("myDevice", newDevice);
-            
+            } else if (devType == "DreamScreen4K") {
+                var newDevice = new DreamScreen4K(curDevice);
+                DataUtil.SetItem("myDevice", newDevice);
+            } else if (devType == "Connect") {
+                var newDevice = new Connect(curDevice);
+                DataUtil.SetItem("myDevice", newDevice);
+            }
         }
 
        

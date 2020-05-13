@@ -39,6 +39,7 @@ $(function () {
     // Initialize BMD
     $('body').bootstrapMaterialDesign();
     setListeners();
+    $('.devSelect').sortableLists();
     // Refresh devices every 60 seconds
     setInterval(function(){
         RefreshData();
@@ -47,7 +48,62 @@ $(function () {
 
 });
 
+function updateDsProperty(property, value) {
+    console.log("Updating DS property: ", property, value);
+    if (selectedDevice.hasOwnProperty(property)) {
+        console.log("We have a valid property.");
+        selectedDevice[property] = value;
+        saveSelectedDevice();
+        postData("updateDs",{
+           id: selectedDevice.id,
+           property: property,
+           value: value 
+        });
+    } else {
+        console.log("Invalid property name: ", property);
+    }
+}
+
 function setListeners() {
+    
+    $('.devSaturation').on('input', function(){
+        let r = $('.devSaturation[data-color="r"]').val();
+        let g = $('.devSaturation[data-color="g"]').val();
+        let b = $('.devSaturation[data-color="b"]').val();
+        let val = $(this).val();
+        let col = $(this).data('color');
+        if (col === "r") r = val;
+        if (col === "g") g = val;
+        if (col === "b") b = val;
+        console.log("SAT Change: ",r,g,b);
+        let newColor = rgbToHex(r,g,b);
+        updateDsProperty("saturation", newColor);
+    });
+    
+    $('.colorBoost').click(function(){
+        let boost = $(this).data('mode');
+        $('.colorBoost').removeClass('selected');
+        $(this).addClass('selected');
+        updateDsProperty("colorBoost", boost);
+    });
+    
+    $('.dsDetection').click(function(){
+        let mode = $(this).data('mode');
+        $('.dsDetection').removeClass('selected');
+        $(this).addClass('selected');
+        updateDsProperty('letterboxingEnable', parseInt(mode));
+    });
+
+    $('.devFadeRate').change(function(){
+        let rate = $(this).val();
+        updateDsProperty('fadeRate', rate);
+    });
+
+    $('.devLuminosity').change(function(){
+        let lum = $(this).val();
+        updateDsProperty('minimumLuminosity', lum);
+    });
+    
     $('.hintbtn').click(function(){
         let gp = $(this).parent().parent();
         let hint = gp.find('.hint');
@@ -131,9 +187,9 @@ function setListeners() {
     $('.capModeBtn').click(function() {
         let target = $(this).data('target');
         setCaptureMode(target);
-
     });
-
+    
+    
     // Link the hue
     $('#linkBtn').on('click', function () {
         if (!hueAuth && !linking) {
@@ -860,11 +916,23 @@ function loadDsData(data) {
     $('#dsBrightness').val(deviceData.maxBrightness);
     $('#dsIp').html(deviceData.ipAddress);
     emulationType = deviceData.tag;
+    let satVal = hexToRgb(deviceData.saturation);
+    console.log("Saturation values: ", satVal);
+    $('.devSaturation[data-color="r"]').val(satVal.r);
+    $('.devSaturation[data-color="g"]').val(satVal.g);
+    $('.devSaturation[data-color="b"]').val(satVal.b);
     let settingTarget = "dsSettings";
     if (emulationType === "SideKick") {
         settingTarget = "sidekickSettings";
     } else if (emulationType === "Connect") {
         settingTarget = "ConnectSettings";
+    } else {
+        $('.colorBoost').removeClass('selected');
+        $('.colorBoost[data-mode="' + deviceData['colorBoost'] + '"').addClass('selected');
+        $('.dsDetection').removeClass('selected');
+        $('.dsDetection[data-mode="' + deviceData['letterboxingEnable'] + '"]').addClass('selected');
+        $('.devFadeRate').val(deviceData['fadeRate']);
+        $('.devLuminosity').val(deviceData['minimumLuminosity'][0]);
     }
     console.log("Settings target is " + settingTarget);
     $('#dsSettingsBtn').data('target',settingTarget);
@@ -934,6 +1002,25 @@ function loadBridgeData(data) {
     listGroups();
     mapLights();
 }
+
+function hexToRgb(hex) {
+    let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : null;
+}
+
+function rgbToHex(r, g, b) {
+    let rs = Number(r).toString(16);
+    let gs = Number(g).toString(16);
+    let bs = Number(b).toString(16);
+    if (rs.length < 2) rs = "0" + rs;
+    if (gs.length < 2) gs = "0" + gs;
+    if (bs.length < 2) bs = "0" + bs;
+    return rs + gs + bs;
+};
 
 // Load nanoleaf data
 function loadNanoData(data) {

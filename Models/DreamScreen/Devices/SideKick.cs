@@ -11,6 +11,21 @@ namespace HueDream.Models.DreamScreen.Devices {
         public static readonly byte[] DefaultSectorAssignment = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 0, 0};
 
         public SideKick() {
+            SetDefaults();
+        }
+
+        public SideKick(BaseDevice curDevice) {
+            if (curDevice == null) throw new ArgumentException("Invalid baseDevice.");
+            SetDefaults();
+            Id = curDevice.Id;
+            Name = curDevice.Name;
+            IpAddress = curDevice.IpAddress;
+            Brightness = curDevice.Brightness;
+            GroupNumber = curDevice.GroupNumber;
+            flexSetup = curDevice.flexSetup;
+            Saturation = curDevice.Saturation;
+            Mode = curDevice.Mode;
+            AmbientColor = curDevice.AmbientColor;
         }
 
         public SideKick(string ipAddress) : base(ipAddress) {
@@ -20,7 +35,7 @@ namespace HueDream.Models.DreamScreen.Devices {
 
         [JsonProperty] private byte[] EspFirmwareVersion { get; set; }
 
-        public override void SetDefaults() {
+        public sealed override void SetDefaults() {
             Name = DeviceTag;
             EspFirmwareVersion = RequiredEspFirmwareVersion;
             SectorData = new byte[] {0};
@@ -54,8 +69,8 @@ namespace HueDream.Models.DreamScreen.Devices {
             GroupNumber = payload[32];
             Mode = payload[33];
             Brightness = payload[34];
-            AmbientColor = ByteUtils.ExtractString(payload, 35, 38);
-            Saturation = ByteUtils.ExtractString(payload, 38, 41);
+            AmbientColor = ByteUtils.ExtractString(payload, 35, 38, true);
+            Saturation = ByteUtils.ExtractString(payload, 38, 41, true);
             FadeRate = payload[41];
             SectorAssignment = ByteUtils.ExtractBytes(payload, 42, 57);
             EspFirmwareVersion = ByteUtils.ExtractBytes(payload, 57, 59);
@@ -66,6 +81,7 @@ namespace HueDream.Models.DreamScreen.Devices {
         }
 
         public override byte[] EncodeState() {
+            LogUtil.Write("Encoding sidekick state.");
             var response = new List<byte>();
             response.AddRange(ByteUtils.StringBytePad(Name, 16));
             response.AddRange(ByteUtils.StringBytePad(GroupName, 16));

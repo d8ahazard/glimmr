@@ -44,7 +44,7 @@ namespace HueDream.Models.StreamingDevice.LIFX {
             bulbs.Add(bulb);
         }
 
-        private LifxData GetBulbInfo(LightBulb b) {
+        public LifxData GetBulbInfo(LightBulb b) {
             var state = client.GetLightStateAsync(b).Result;
             var d = new LifxData(b) {
                 Power = client.GetLightPowerAsync(b).Result,

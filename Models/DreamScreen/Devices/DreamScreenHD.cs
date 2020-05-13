@@ -75,6 +75,14 @@ namespace HueDream.Models.DreamScreen.Devices {
         [JsonProperty] private int[] ZonesBrightness { get; set; }
 
         public DreamScreenHd(string ipAddress) : base(ipAddress) {
+            IpAddress = ipAddress;
+            SetDefaults();
+        }
+
+        public DreamScreenHd() {
+        }
+
+        public override void SetDefaults() {
             Name = "DreamScreen HD";
             Tag = DeviceTag;
             EspFirmwareVersion = RequiredEspFirmwareVersion;
@@ -112,13 +120,6 @@ namespace HueDream.Models.DreamScreen.Devices {
             HdmiInputName3 = "HDMI 3";
         }
 
-        public DreamScreenHd() {
-        }
-
-        public override void SetDefaults() {
-            
-        }
-
 
         public override void ParsePayload(byte[] payload) {
             if (payload is null) throw new ArgumentNullException(nameof(payload));
@@ -135,8 +136,8 @@ namespace HueDream.Models.DreamScreen.Devices {
             Brightness = payload[34];
             Zones = payload[35];
             ZonesBrightness = ByteUtils.ExtractInt(payload, 36, 40);
-            AmbientColor = ByteUtils.ExtractString(payload, 40, 43);
-            Saturation = ByteUtils.ExtractString(payload, 43, 46);
+            AmbientColor = ByteUtils.ExtractString(payload, 40, 43, true);
+            Saturation = ByteUtils.ExtractString(payload, 43, 46, true);
             flexSetup = ByteUtils.ExtractInt(payload, 46, 52);
             MusicModeType = payload[52];
             musicModeColors = ByteUtils.ExtractInt(payload, 53, 56);
@@ -170,6 +171,7 @@ namespace HueDream.Models.DreamScreen.Devices {
         }
 
         public override byte[] EncodeState() {
+            LogUtil.Write("Encoding state for DS.");
             var response = new List<byte>();
             var nByte = ByteUtils.StringBytePad(Name, 16);
             response.AddRange(nByte);

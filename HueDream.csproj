@@ -29,6 +29,7 @@
     <ItemGroup>
         <PackageReference Include="Accord.Math" Version="3.8.2-alpha" />
         <PackageReference Include="Emgu.CV.runtime.raspbian-CR" Version="4.2.0.3685" />
+        <PackageReference Include="Emgu.CV.runtime.windows" Version="4.2.0.3662" />
         <PackageReference Include="freetype2" Version="2.6.0.1" />
         <PackageReference Include="JsonFlatFileDataStore" Version="2.2.2" />
         <PackageReference Include="LifxNet" Version="2.2.0" />
