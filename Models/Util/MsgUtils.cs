@@ -119,6 +119,48 @@ namespace HueDream.Models.Util {
             {"0521", "SET_THING_NAME"}
         };
 
+        
+        public static readonly Dictionary<string, byte[]> CommandBytes = new Dictionary<string, byte[]> {
+            {"name", new byte[]{0x01,0x07}},
+            {"groupName", new byte[]{0x01,0x08}},
+            {"groupNum", new byte[]{0x01,0x09}},
+            {"mode", new byte[]{0x03,0x01}},
+            {"brightness", new byte[]{0x03,0x02}},
+            {"zones", new byte[]{0x03,0x03}},
+            {"zonesBrightness", new byte[]{0x03,0x04}},
+            {"ambientColor", new byte[]{0x03,0x05}},
+            {"saturation", new byte[]{0x03,0x06}},
+            {"ambientModeType", new byte[]{0x03,0x08}},
+            {"musicModeType", new byte[]{0x03,0x09}},
+            {"musicModeColors", new byte[]{0x03,0x0A}},
+            {"musicModeWeights", new byte[]{0x03,0x0B}},
+            {"minimumLuminosity", new byte[]{0x03,0x0C}},
+            {"ambientScene", new byte[]{0x03,0x0D}},
+            {"fadeRate", new byte[]{0x03,0x0E}},
+            {"indicatorLightAutoOff", new byte[]{0x03,0x13}},
+            {"usbPowerEnable", new byte[]{0x03,0x14}},
+            {"colorData", new byte[]{0x03,0x16}},
+            {"sectorAssignment", new byte[]{0x03,0x17}},
+            {"hdmiInput", new byte[]{0x03,0x20}},
+            {"musicModeSource", new byte[]{0x03,0x21}},
+            {"hdmiInput1Name", new byte[]{0x03,0x23}},
+            {"hdmiInput2Name", new byte[]{0x03,0x24}},
+            {"hdmiInput3Name", new byte[]{0x03,0x25}},
+            {"cecPassthroughEnable", new byte[]{0x03,0x26}},
+            {"cecSwitchingEnable", new byte[]{0x03,0x27}},
+            {"hdpEnable", new byte[]{0x03,0x28}},
+            {"videoFrameDelay", new byte[]{0x03,0x2A}},
+            {"letterboxingEnable", new byte[]{0x03,0x2B}},
+            {"hdmiActiveChannels", new byte[]{0x03,0x2C}},
+            {"colorBoost", new byte[]{0x03,0x2D}},
+            {"cecPowerEnable", new byte[]{0x03,0x2E}},
+            {"pillarboxingEnable", new byte[]{0x03,0x2F}},
+            {"hdrToneRemapping", new byte[]{0x03,0x60}},
+            {"ambientLightAutoAdjust", new byte[]{0x05,0x02}},
+            {"microphoneAudioBroadcastEnable", new byte[]{0x05,0x03}},
+            {"irEnable", new byte[]{0x05,0x10}}
+        };
+
 
         public static byte CalculateCrc(byte[] data) {
             if (data != null) {

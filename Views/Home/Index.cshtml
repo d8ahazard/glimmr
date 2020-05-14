@@ -173,15 +173,91 @@
                         <div class="hint">Enhances RGB tones making ligher hues appear stronger.</div>
                     </div>
                 </div>
-                <div id="settingsMusicDS" class="ds2"></div>
-                <div id="settingsAdvancedDS" class="ds2"></div>
+                <div id="settingsMusicDS" class="ds2">
+                    <div id="vizStyleDS" class="border">
+                        <h5>Select Music Visualizer Style</h5>
+                        <div class="vizStyle vs0" data-style="0"></div>
+                        <div class="vizStyle vs1" data-style="1"></div>
+                        <div class="vizStyle vs2" data-style="2"></div>
+                        <div class="vizStyle vs3" data-style="3"></div>
+                    </div>
+                    <div id="vizOutputDS" class="border">
+                        <h5>Adjust color and brightness of Music Output</h5>
+                        <label>Treble</label>
+                        <input class="form-control devModeWeight" data-channel="treble" type="range" min="0" max="100" value="100">
+                        <label>Middle</label>
+                        <input class="form-control devModeWeight" data-channel="middle" type="range" min="0" max="100" value="100">
+                        <label>Bass</label>
+                        <input class="form-control devModeWeight" data-channel="bass" type="range" min="0" max="100" value="100">
+                    </div>
+                </div>
+                <div id="settingsAdvancedDS" class="ds2">
+                    <div id="zoneControlDS" class="border border-left">
+                        <h5>Zone Control <span class="material-icons hintbtn">help_outline</span></h5>
+                        <div class="zoneControlWrap"></div>
+                        <div class="hint">Turn On/Off with arrow icon or adjust brightness with slide bar for each side of your TV.</div>
+                    </div>
+                    <div id="cecPassthroughDS" class="border border-left">
+                        <h5>CEC Passthrough <span class="material-icons hintbtn">help_outline</span></h5>
+                        <label class="switch">
+                            <input type="checkbox" class="dsSlider" data-attribute="cecPassthroughEnable">
+                            <span class="slider round"></span>
+                        </label>
+                        <div class="hint">Allow for CEC communication between television and selected source.</div>
+                    </div>
+                    <div id="cecInputSwitchingDS" class="border border-left">
+                        <h5>CEC Input Port Switching <span class="material-icons hintbtn">help_outline</span></h5>
+                        <label class="switch">
+                            <input type="checkbox" class="dsSlider" data-attribute="cecSwitchingEnable">
+                            <span class="slider round"></span>
+                        </label>
+                        <div class="hint">Allow for CEC commands to switch active HDMI source.</div>
+                    </div>
+                    <div id="hpdEnableDS" class="border border-left">
+                        <h5>HPD Enabling <span class="material-icons hintbtn">help_outline</span></h5>
+                        <label class="switch">
+                            <input type="checkbox" class="dsSlider" data-attribute="hpdEnable">
+                            <span class="slider round"></span>
+                        </label>
+                        <div class="hint">DreamScreen will automatically switch to a source when plugged in.</div>
+                    </div>
+                    <div id="usbPowerDetectDS" class="border border-left">
+                        <h5>USB Power Detect <span class="material-icons hintbtn">help_outline</span></h5>
+                        <label class="switch">
+                            <input type="checkbox" class="dsSlider" data-attribute="usbPowerEnable">
+                            <span class="slider round"></span>
+                        </label>
+                        <div class="hint">DreamScreen will automaticall switch to sleep mode if the USB port connected to the TV turns off. Use a standard Micro USB cable to connect your DreamScreen hub to the TV.</div>
+                    </div>
+                    <div id="cecPowerDetectDS" class="border border-left">
+                        <h5>CEC Power Detect <span class="material-icons hintbtn">help_outline</span></h5>
+                        <label class="switch">
+                            <input type="checkbox" class="dsSlider" data-attribute="cecPowerEnable">
+                            <span class="slider round"></span>
+                        </label>
+                        <div class="hint">Allow for television to turn off DreamScreen lights via CEC. This feature will require your television to have CEC capability and for the option to be enabled in television settings. Typicall, TVs send out an OFF command but do not necessarily send out an ON command. If this is the case, disable tis feature and use USB Power Detect.</div>
+                    </div>
+                    <div id="frameDelayDS" class="border">
+                        <h5>Frame Delay <span class="material-icons hintbtn">help_outline</span></h5>
+                        <input type="range" min="0" max="100" value="100" class="videoFrameDelay"/>
+                        <div class="hint">If DreamScreen is displaying faster than the TV, Dreamscreen can delay up to 60 frames.</div>
+                    </div>
+                    <div id="hdrToneRemappingDS" class="border border-left">
+                        <h5>HDR Tone Remapping <span class="material-icons hintbtn">help_outline</span></h5>
+                        <label class="switch">
+                            <input type="checkbox" class="dsSlider" data-attribute="hdrToneRemapping">
+                            <span class="slider round"></span>
+                        </label>
+                        <div class="hint">HDR allows compatibile sources to send HDMI Video with Dynamic Range to extend the contrast and color capabilities of televisions. Enable this feature to allow for Tone Remapping to correct the Color Range in HDR mode. This option should be disabled for Non-HDR (SDR) content.</div>
+                    </div>
+                </div>
                 <div id="settingsInstallDS" class="ds2"></div>
                 <div id="settingsResetDS" class="ds2">
                     <div class="col-12 border">
                         Firmware Version
                     </div>
                     <div class="col-12 border">
-                        Factor Reset
+                        Factory Reset
                     </div>
                     <div class="col-12 border">
                         Restart Device
@@ -269,7 +345,7 @@
                     <div class="hint">Adjust the RGB channels to appear correctly or when wall behind DreamScreen is not white.</div>
                 </div>
                 <div id="detectionCo" class="border">
-                    <h5>Wiescreen Detection <span class="material-icons hintbtn">help_outline</span></h5>
+                    <h5>Widescreen Detection <span class="material-icons hintbtn">help_outline</span></h5>
                     <div class="btn-group">
                         <div class="btn" id="coDetectAuto">Auto</div>
                         <div class="btn" id="coDetectOn">On</div>

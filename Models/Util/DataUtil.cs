@@ -244,7 +244,6 @@ namespace HueDream.Models.Util {
                     var key = pair.Key;
                     if (key == "tag") {
                         var tag = pair.Value.ToString();
-                        LogUtil.Write("Dev tag: " + tag);
                         switch (tag) {
                             case "SideKick":
                                 output.Add(dev.ToObject<SideKick>());

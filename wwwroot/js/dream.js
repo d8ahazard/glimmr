@@ -80,6 +80,14 @@ function setListeners() {
         updateDsProperty("saturation", newColor);
     });
     
+    $('.dsSlider').click(function(){
+       console.log("I AM CLICKED: " + $(this).data('attribute'));
+       let checked = $(this).prop('checked');
+       console.log("And I am checked: " + checked);
+       updateDsProperty($(this).data('attribute'),checked ? 1 : 0);
+       
+    });
+    
     $('.colorBoost').click(function(){
         let boost = $(this).data('mode');
         $('.colorBoost').removeClass('selected');
@@ -933,6 +941,11 @@ function loadDsData(data) {
         $('.dsDetection[data-mode="' + deviceData['letterboxingEnable'] + '"]').addClass('selected');
         $('.devFadeRate').val(deviceData['fadeRate']);
         $('.devLuminosity').val(deviceData['minimumLuminosity'][0]);
+        let boolProps = ['cecPassthroughEnable', 'cecPowerEnable','cecSwitchinEnable','hpdEnable','usbPowerEnable','hdrToneRemapping'];
+        for (let i=0; i< boolProps.length; i++) {
+            let prop = boolProps[i];
+            $('.dsSlider[data-attribute="'+prop+'"]').prop('checked',deviceData[prop] === 1);
+        }
     }
     console.log("Settings target is " + settingTarget);
     $('#dsSettingsBtn').data('target',settingTarget);

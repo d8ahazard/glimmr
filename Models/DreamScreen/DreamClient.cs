@@ -570,7 +570,7 @@ namespace HueDream.Models.DreamScreen {
 
             if (writeState) {
                 DataUtil.SetItem<BaseDevice>("myDevice", dev);
-                //DreamSender.SendUdpWrite(msg.C1, msg.C2, 0x41, msg.Group, null, true);
+                DreamSender.SendUdpWrite(msg.C1, msg.C2, msg.GetPayload(), 0x41, (byte)msg.Group, receivedIpEndPoint,false);
             }
             if (writeDev) DataUtil.InsertDsDevice(dev);
         }
