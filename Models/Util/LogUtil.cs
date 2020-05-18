@@ -1,4 +1,7 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
+using System.Text.RegularExpressions;
+using Microsoft.CodeAnalysis.Differencing;
 using Newtonsoft.Json;
 using Serilog;
 
@@ -70,14 +73,21 @@ namespace HueDream.Models.Util {
         private static string GetCaller() {
             var stackInt = 1;
             var st = new StackTrace();
+            
             while (stackInt < 10) {
-                var mth = st.GetFrame(stackInt).GetMethod();
+                var frame = st.GetFrame(stackInt);
+                if (frame == null) continue;
+                var mth = frame.GetMethod();
+                if (mth == null) continue;
                 var dType = mth.DeclaringType;
                 if (dType != null) {
                     var cls = dType.Name;
                     if (!string.IsNullOrEmpty(cls)) {
                         if (cls != "LogUtil") {
-                            return cls + "::" + mth.Name;
+                            var c1 = Regex.Match(cls, @"(?<=<).*?(?=>)", RegexOptions.None);
+                            cls = c1.Success ? c1.Value : cls;
+                            var name = mth.Name == "MoveNext" ? "" : mth.Name;
+                            return cls + "::" + name;
                         }
                     }
                 }

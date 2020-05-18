@@ -279,12 +279,21 @@ input:checked + .slider:before {
     border-radius: 50%;
 }
 
-.border {
+.border, .border-left {
     padding: 10px;
+    border: 1px solid #dee2e6 !important;
+}
+
+.border > h5, .border > label {
+    text-align: left;
+}
+
+.border > .btn-group {
+    text-align: center;
 }
 
 .border-left {
-    text-align:left;
+    text-align: left;
 }
 
 .border-left > h5 {

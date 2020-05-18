@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Accord.Math.Optimization;
-using HueDream.Models;
 using HueDream.Models.DreamScreen;
 using HueDream.Models.DreamScreen.Devices;
 using HueDream.Models.LED;
@@ -135,7 +132,7 @@ namespace HueDream.Controllers {
             DataUtil.SetItem("myDevice", myDevice);
             return Ok(myDevice);
         }
-        
+
 
         [HttpGet("action")]
         public IActionResult Action(string action, string value = "") {
@@ -145,9 +142,12 @@ namespace HueDream.Controllers {
                 case "loadData":
                     return Content(DataUtil.GetStoreSerialized(), "application/json");
                 case "refreshDevices":
-                    Task.Run(DataUtil.RefreshDevices);
-                    Thread.Sleep(5000);
-                    return Content(DataUtil.GetStoreSerialized(), "application/json");
+                    var res = Task.Run(() => {
+                        DataUtil.RefreshDevices();
+                        Thread.Sleep(5000);
+                        return DataUtil.GetStoreSerialized();
+                    }).Result;
+                    return Content(res);
                 case "authorizeHue": {
                     var doAuth = true;
                     BridgeData bd = null;
@@ -180,6 +180,7 @@ namespace HueDream.Controllers {
                                 doAuth = n.Token == null;
                                 nanoInt = nanoCount;
                             }
+
                             nanoCount++;
                         }
                     }
@@ -192,8 +193,10 @@ namespace HueDream.Controllers {
                             leaves[nanoInt] = bd;
                             DataUtil.SetItem("leaves", leaves);
                         }
+
                         panel.Dispose();
                     }
+
                     return new JsonResult(bd);
                 }
             }
@@ -230,7 +233,6 @@ namespace HueDream.Controllers {
             SetMode(0);
             Thread.Sleep(1000);
             SetMode(curMode);
-
         }
 
 
@@ -238,7 +240,7 @@ namespace HueDream.Controllers {
             var myDev = DataUtil.GetDeviceData();
             var ipAddress = myDev.IpAddress;
             var groupNumber = (byte) myDev.GroupNumber;
-            var newMode = (byte)(modeObj["mode"] ?? "").Value<int>();
+            var newMode = (byte) (modeObj["mode"] ?? "").Value<int>();
             var id = (modeObj["id"] ?? "").Value<string>();
             var tag = (modeObj["tag"] ?? "").Value<string>();
             var groupSend = false;
@@ -253,25 +255,27 @@ namespace HueDream.Controllers {
                     DataUtil.SetItem("myDevice", myDev);
                     break;
                 case "Group":
-                    groupNumber = (byte) int.Parse(id,CultureInfo.InvariantCulture);
+                    groupNumber = (byte) int.Parse(id, CultureInfo.InvariantCulture);
                     ipAddress = "255.255.255.0";
                     groupSend = true;
                     mFlag = 0x11;
-                   break;
+                    break;
                 default:
                     var dev = DataUtil.GetDreamDevices().Find(e => e.Id == id);
                     if (dev != null) {
                         ipAddress = dev.IpAddress;
                         if (dev.Mode == newMode) return;
                         dev.Mode = newMode;
-                        DataUtil.InsertCollection("devices",dev);
+                        DataUtil.InsertCollection("devices", dev);
                     }
+
                     break;
             }
+
             DreamSender.SendUdpWrite(0x03, 0x01, new[] {newMode}, mFlag, groupNumber,
                 new IPEndPoint(IPAddress.Parse(ipAddress), 8888), groupSend);
         }
-        
+
         private static void SetMode(int mode) {
             var newMode = ByteUtils.IntByte(mode);
             var myDev = DataUtil.GetDeviceData();
@@ -297,6 +301,7 @@ namespace HueDream.Controllers {
             if (capMode != 0 && curMode == 0) {
                 devType = "DreamScreen4K";
             }
+
             SwitchDeviceType(devType, dev);
             DataUtil.SetItem<string>("devType", devType);
             if (colorMode == 0) return;
@@ -317,7 +322,7 @@ namespace HueDream.Controllers {
             }
         }
 
-       
+
         private static bool TriggerReload(JObject dData) {
             if (dData == null) throw new ArgumentException("invalid jobject");
             var tag = (dData["tag"] ?? "INVALID").Value<string>();
@@ -339,7 +344,8 @@ namespace HueDream.Controllers {
                     LogUtil.Write("Updating nanoleaf");
                     DataUtil.InsertCollection<NanoData>("leaves", dData.ToObject<NanoData>());
                     break;
-            } 
+            }
+
             var payload = new List<byte>();
             var utf8 = new UTF8Encoding();
             payload.AddRange(utf8.GetBytes(id));
@@ -395,13 +401,12 @@ namespace HueDream.Controllers {
                     break;
             }
 
-            if (sendRemote) {
-                var payload = new List<byte> {ByteUtils.IntByte(brightness)};
-                var utf8 = new UTF8Encoding();
-                payload.AddRange(utf8.GetBytes(remoteId));
-                DreamSender.SendUdpWrite(0x01, 0x10, payload.ToArray(), 0x21, groupNumber,
-                    new IPEndPoint(IPAddress.Parse(ipAddress), 8888));
-            }
+            if (!sendRemote) return;
+            var payload = new List<byte> {ByteUtils.IntByte(brightness)};
+            var utf8 = new UTF8Encoding();
+            payload.AddRange(utf8.GetBytes(remoteId));
+            DreamSender.SendUdpWrite(0x01, 0x10, payload.ToArray(), 0x21, groupNumber,
+                new IPEndPoint(IPAddress.Parse(ipAddress), 8888));
         }
     }
 }

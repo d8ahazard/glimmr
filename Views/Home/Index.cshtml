@@ -144,7 +144,7 @@
                         <div class="hint">Adjust the RGB channels to appear correctly or when wall behind DreamScreen is not white.</div>
                     </div>
                     <div id="detectionDS" class="border">
-                        <h5>Wiescreen Detection <span class="material-icons hintbtn">help_outline</span></h5>
+                        <h5>Widescreen Detection <span class="material-icons hintbtn">help_outline</span></h5>
                         <div class="btn-group">
                             <div class="btn dsDetection" data-mode="0">Auto</div>
                             <div class="btn dsDetection" data-mode="1">On</div>
@@ -152,14 +152,14 @@
                         </div>
                         <div class="hint">DreamScreen will detect when the Video Source has been formatted to fit a widescreen.</div>
                     </div>
-                    <div id="fadeRateDS" class="border">
+                    <div id="fadeRateDS" class="border-left">
                         <h5>Fade Rate <span class="material-icons hintbtn">help_outline</span></h5>
-                        <input class="form-control devFadeRate" type="range" min="0" max="100" value="100">
+                        <input class="form-control settingSlider slider-right" type="range" min="0" max="100" value="100">
                         <div class="hint">Adjusts the reaction speed of the LEDs.</div>
                     </div>
-                    <div id="luminosityDS" class="border">
+                    <div id="luminosityDS" class="border-left">
                         <h5>Minimum Luminosity <span class="material-icons hintbtn">help_outline</span></h5>
-                        <input class="form-control devLuminosity" type="range" min="0" max="100" value="100">
+                        <input class="form-control devLuminosity slider-right" type="range" min="0" max="100" value="100">
                         <div class="hint">Set a low level of background light when there is no video content playing.</div>
                     </div>
                     <div id="colorboostDS" class="border">
@@ -174,15 +174,16 @@
                     </div>
                 </div>
                 <div id="settingsMusicDS" class="ds2">
+                    <div class="border"><h5>Music Settings</h5></div>
                     <div id="vizStyleDS" class="border">
-                        <h5>Select Music Visualizer Style</h5>
+                        <h7>Select Music Visualizer Style</h7>
                         <div class="vizStyle vs0" data-style="0"></div>
                         <div class="vizStyle vs1" data-style="1"></div>
                         <div class="vizStyle vs2" data-style="2"></div>
                         <div class="vizStyle vs3" data-style="3"></div>
                     </div>
                     <div id="vizOutputDS" class="border">
-                        <h5>Adjust color and brightness of Music Output</h5>
+                        <h7>Adjust color and brightness of Music Output</h7>
                         <label>Treble</label>
                         <input class="form-control devModeWeight" data-channel="treble" type="range" min="0" max="100" value="100">
                         <label>Middle</label>
@@ -237,9 +238,10 @@
                         </label>
                         <div class="hint">Allow for television to turn off DreamScreen lights via CEC. This feature will require your television to have CEC capability and for the option to be enabled in television settings. Typicall, TVs send out an OFF command but do not necessarily send out an ON command. If this is the case, disable tis feature and use USB Power Detect.</div>
                     </div>
-                    <div id="frameDelayDS" class="border">
+                    <div id="frameDelayDS" class="border border-left">
                         <h5>Frame Delay <span class="material-icons hintbtn">help_outline</span></h5>
-                        <input type="range" min="0" max="100" value="100" class="videoFrameDelay"/>
+                        <input type="range" min="0" max="100" value="100" class="videoFrameDelay settingSlider form-control"/>
+                        
                         <div class="hint">If DreamScreen is displaying faster than the TV, Dreamscreen can delay up to 60 frames.</div>
                     </div>
                     <div id="hdrToneRemappingDS" class="border border-left">
@@ -251,7 +253,16 @@
                         <div class="hint">HDR allows compatibile sources to send HDMI Video with Dynamic Range to extend the contrast and color capabilities of televisions. Enable this feature to allow for Tone Remapping to correct the Color Range in HDR mode. This option should be disabled for Non-HDR (SDR) content.</div>
                     </div>
                 </div>
-                <div id="settingsInstallDS" class="ds2"></div>
+                <div id="settingsInstallDS" class="ds2">
+                    <div class="border">
+                        <select id="installType">
+                            <option value="0">Classic - 32" - 45"</option>
+                            <option value="1">Mega - 45" - 65"</option>
+                            <option value="2">Xtreme - 65" - 80"</option>
+                            <option value="3">Flex / DIY"</option>
+                        </select>
+                    </div>
+                </div>
                 <div id="settingsResetDS" class="ds2">
                     <div class="col-12 border">
                         Firmware Version
@@ -355,12 +366,12 @@
                 </div>
                 <div id="fadeRateCo" class="border">
                     <h5>Fade Rate <span class="material-icons hintbtn">help_outline</span></h5>
-                    <input class="form-control devFadeRate" type="range" id="coFadeRate" name="dsFadeRate" min="0" max="100" value="100">
+                    <input class="form-control settingSlider" type="range" id="coFadeRate" name="dsFadeRate" min="0" max="100" value="100">
                     <div class="hint">Adjusts the reaction speed of the LEDs.</div>
                 </div>
                 <div id="luminosityCo" class="border">
                     <h5>Minimum Luminosity <span class="material-icons hintbtn">help_outline</span></h5>
-                    <input class="form-control devFadeRate" type="range" id="coLuminosity" name="dsLuminosity" min="0" max="100" value="100">
+                    <input class="form-control settingSlider" type="range" id="coLuminosity" name="dsLuminosity" min="0" max="100" value="100">
                     <div class="hint">Set a low level of background light when there is no video content playing.</div>
                 </div>
                 <div id="colorboostCo" class="border">

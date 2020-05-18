@@ -93,12 +93,10 @@ namespace HueDream.Models.StreamingDevice.Hue {
                 var lightData = lightMappings.SingleOrDefault(item =>
                     item.Id == entLight.Id.ToString(CultureInfo.InvariantCulture));
                 if (lightData == null) continue;
-                LogUtil.Write("Resetting bulb: " + lightData.Id);
                 var sat = lightData.LastState.Saturation;
                 var bri = lightData.LastState.Brightness;
                 var hue = lightData.LastState.Hue;
                 var isOn = lightData.LastState.On;
-                LogUtil.Write("Got bulb");
                 var ll = new List<string> {lightData.Id};
                 var cmd = new LightCommand {Saturation = sat, Brightness = bri, Hue = hue, On = isOn};
                 client.LocalHueClient.SendCommandAsync(cmd, ll);
