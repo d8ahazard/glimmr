@@ -274,8 +274,8 @@ function setListeners() {
             if ($(this)[0].ipAddress === dsIp) {
                 targetDs = $(this)[0];
                 if (captureMode === 0) {
-                    vLedCount = $(this)[0].flexSetup[0];
-                    hLedCount = $(this)[0].flexSetup[1];
+                    vLedCount = $(this)[0]["flexSetup"][0];
+                    hLedCount = $(this)[0]["flexSetup"][1];
                     $('#vCount').val(vLedCount);
                     $('#hCount').val(hLedCount);
                 }
@@ -315,7 +315,7 @@ function setListeners() {
         id = id.replace("#group", "");
         console.log("Selecting " + id);
         $.each(devices, function() {
-            if ($(this)[0]['id'] == id) {
+            if ($(this)[0]['id'] === id) {
                 showDevicePanel($(this)[0]);
             }
         });
@@ -498,7 +498,7 @@ function mapLights() {
                 opt.innerHTML = "";
 
                 // Set it to selected if we don't have a mapping
-                if (selection == -1) {
+                if (selection === -1) {
                     opt.setAttribute('selected', 'selected');
                 } else {
                     // Check our box on the sector square
@@ -513,7 +513,7 @@ function mapLights() {
                     opt.value = (i).toString();
                     opt.innerHTML = "<BR>" + (i);
                     // Mark it selected if it's mapped
-                    if (selection == i) opt.setAttribute('selected', 'selected');
+                    if (selection === i) opt.setAttribute('selected', 'selected');
                     newSelect.appendChild(opt);
                 }
 
@@ -619,7 +619,7 @@ function loadData() {
     $.get("./api/DreamData/action?action=loadData", function (data) {
         console.log("Dream data: ", data);
         datastore = data;
-        buildLists(data);
+        buildLists();
         RefreshData();
     });
 }
@@ -634,26 +634,27 @@ function RefreshData() {
             datastore.bridges = data.bridges;
             datastore.leaves = data.leaves;
             datastore.lifxBulbs = data.lifxBulbs;
-            buildLists(data);
+            buildLists();
             refreshing = false;
         });
     }
 }
 
-function buildLists(data) {
+function buildLists() {
+    let dg = $('#devGroup');
     dsDevs = [];
     let groups = [];
-    devices = data['devices'];
-    leaves = data['leaves'];
-    bridges = data['bridges'];
-    deviceData = data['myDevice'];
-    lifx = data['lifxBulbx'];
-    dsIp = data['dsIp'];
-    ledData = data['ledData'];
-    captureMode = data['captureMode'];
+    devices = datastore['devices'];
+    leaves = datastore['leaves'];
+    bridges = datastore['bridges'];
+    deviceData = datastore['myDevice'];
+    lifx = datastore['lifxBulbx'];
+    dsIp = datastore['dsIp'];
+    ledData = datastore['ledData'];
+    captureMode = datastore['captureMode'];
     let mode = selectCaptureMode(captureMode);
-    emulationType = data['emuType'];
-    buildDevList(data['devices']);
+    emulationType = datastore['emuType'];
+    buildDevList(datastore['devices']);
     setCaptureMode(mode, false);
     setMode(deviceData.mode);
     // Push dreamscreen devices to groups first, so they appear on top. The, do sidekicks, nanoleaves, then bridges.
@@ -677,15 +678,14 @@ function buildLists(data) {
     });
 
     const sorted = [];
-    const unsorted = [];
     // Sort other DS Devices
     groups = sortDevices(dsDevs, groups, false, false);
     // Sort nanoleaves
-    groups = sortDevices(data['leaves'], groups, "NanoLeaf", "NanoLeaf");
+    groups = sortDevices(datastore['leaves'], groups, "NanoLeaf", "NanoLeaf");
     // Sort bridges
-    groups = sortDevices(data['bridges'], groups, "HueBridge", "Hue Bridge");
-    groups = sortDevices(data['lifxBulbs'], groups, "Lifx", "Lifx Bulb");
-    $('#devGroup').html("");
+    groups = sortDevices(datastore['bridges'], groups, "HueBridge", "Hue Bridge");
+    groups = sortDevices(datastore['lifxBulbs'], groups, "Lifx", "Lifx Bulb");
+    dg.html("");
     console.log("Groups: ", groups);
     $.each(groups, function () {
         let item = $(this)[0];
@@ -699,7 +699,7 @@ function buildLists(data) {
     });
     
     
-    $('#devGroup').append($('<li class="spacer">Groups</li>'));
+    dg.append($('<li class="spacer">Groups</li>'));
 
     if (sorted.length > 0) {
         $.each(sorted, function () {
@@ -724,11 +724,11 @@ function appendDeviceGroup(item) {
             if (element['id'] === undefined) element['id'] = element['ipV4Address'];
             console.log("Adding unsorted element:", element);
             devices.push(element);
-            devGroup.append('<li class="devSelect" data-device="' + element.id + '"><img class="devIcon" src="./img/' + element.tag.toLowerCase() + '_icon.png"><span class="devName">' + element.name + '<span></li>');
+            devGroup.append('<li class="devSelect" data-device="' + element.id + '"><img class="devIcon" src="./img/' + element.tag.toLowerCase() + '_icon.png" alt="device icon"><span class="devName">' + element.name + '<span></li>');
         });
     } else {        
         let list = $('<li  class="nav-header groupHeader devSelect" data-device="#group' + item['id'] + '"></li>');
-        list.append($('<img src="./img/group_icon.png" class="devIcon">'));
+        list.append($('<img src="./img/group_icon.png" class="devIcon" alt="group icon">'));
         list.append($('<span class="devName">' + name + '</span>'));
         let container = $('<ul id="group' + item['id'] + '" class="nav-list groupList"></ul>');
         $.each(elements, function () {
@@ -740,7 +740,7 @@ function appendDeviceGroup(item) {
                 item.saturation = element.saturation;
             }
             devices.push(element);
-            container.append('<li class="devSelect" data-device="' + element.id + '"><img class="devIcon" src="./img/' + element.tag.toLowerCase() + '_icon.png"><span class="devName">' + element.name + '<span></li>');
+            container.append('<li class="devSelect" data-device="' + element.id + '"><img class="devIcon" src="./img/' + element.tag.toLowerCase() + '_icon.png" alt="device icon"><span class="devName">' + element.name + '<span></li>');
         });
         item['tag'] = "group";
         item['groupNumber'] = item['id'];
@@ -786,10 +786,10 @@ function setCaptureMode(target, post=true) {
     $('#' + target + 'Btn').addClass('active');
     let hCount = 0;
     let vCount = 0;
-    if (captureMode === 0) {
+    if (captureMode === 0 && ledData.hasOwnProperty("hCountDs") && ledData.hasOwnProperty("vCountDs")) {
         hCount = ledData.hCountDs;
         vCount = ledData.vCountDs;
-    } else {
+    } else if (ledData.hasOwnProperty("hCount") && ledData.hasOwnProperty("vCount")) {
         hCount = ledData.hCount;
         vCount = ledData.vCount;
     }
@@ -797,8 +797,8 @@ function setCaptureMode(target, post=true) {
     hLedCount = hCount;
     let hc = $('#hCount');
     let vc = $('#vCount');
-    hc.val(hCount);
-    vc.val(vCount);
+    hc.val(hLedCount);
+    vc.val(vLedCount);
     hc.parent().addClass("is-filled");
     vc.parent().addClass("is-filled");
     $('.capPane').slideUp();
@@ -908,10 +908,6 @@ function showDevicePanel(data) {
     },200);
 }
 
-// Show a group setting panel
-function showGroupPanel(groupId) {
-    
-}
 
 // Update the UI with emulator device data
 function loadDsData(data) {
@@ -921,7 +917,7 @@ function loadDsData(data) {
     dsName.html(deviceData.name);
     dsName.data("ip", deviceData.ipAddress);
     dsName.data('group', deviceData.groupNumber);
-    $('#dsBrightness').val(deviceData.maxBrightness);
+    $('#dsBrightness').val(deviceData["maxBrightness"]);
     $('#dsIp').html(deviceData.ipAddress);
     emulationType = deviceData.tag;
     let satVal = hexToRgb(deviceData.saturation);
@@ -983,7 +979,7 @@ function loadBridgeData(data) {
     // Now we've got it.
     let b = data;
     hueIp = b.id;
-    bSlider.val(b.maxBrightness);
+    bSlider.val(b["maxBrightness"]);
     hIp.html(b["ipAddress"]);        
     hueGroup = b["selectedGroup"];
     if (b.hasOwnProperty("groups")) {
@@ -1033,7 +1029,7 @@ function rgbToHex(r, g, b) {
     if (gs.length < 2) gs = "0" + gs;
     if (bs.length < 2) bs = "0" + bs;
     return rs + gs + bs;
-};
+}
 
 // Load nanoleaf data
 function loadNanoData(data) {
@@ -1083,7 +1079,7 @@ function loadLifxData(data) {
     lName.html(nanoIp);
     hIp.html(data.id);
     $('.clickRegion[data-region="' + data.sectorMapping +'"]').addClass('checked');
-    lBrightness.val(data.maxBrightness);    
+    lBrightness.val(data["maxBrightness"]);    
 }
 
 function drawNanoShapes(panel) {
@@ -1224,16 +1220,16 @@ function drawNanoShapes(panel) {
     let maxY = 0;
     
     // Calculate the min/max range for each tile
-    for (let panel in positions) {
-        let data = positions[panel];
+    for (let i=0; i< positions.length; i++) {
+        let data = positions[i];
         if (data.x < minX) minX = data.x;
         if ((data.y * -1) < minY) minY = (data.y * -1);
         if (data.x > maxX) maxX = data.x;
         if ((data.y * -1) > maxY) maxY = (data.y * -1);
     }
     
-    for (let panel in positions) {
-        let data = positions[panel];
+    for (let i=0; i < positions.length; i++) {
+        let data = positions[i];
         let shape = data['shapeType'];
         let x = data.x;
         let y = data.y;
@@ -1245,7 +1241,7 @@ function drawNanoShapes(panel) {
         let sText = new Konva.Text({
             x: x,
             y: y,
-            text: data.panelId,
+            text: data["panelId"],
             fontSize: 30,
             fontFamily: 'Calibri'
         });

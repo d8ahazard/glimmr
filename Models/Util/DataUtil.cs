@@ -187,6 +187,7 @@ namespace HueDream.Models.Util {
             await store.InsertItemAsync("audioThreshold", .01f).ConfigureAwait(false);
             await store.InsertItemAsync("defaultsSet", true).ConfigureAwait(false);
             await ScanDevices(store).ConfigureAwait(false);
+            LogUtil.Write("All data defaults have been set.");
             return store;
         }
 
