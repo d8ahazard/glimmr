@@ -9,6 +9,7 @@ using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
+using HueDream.Models.CaptureSource.HDMI;
 using HueDream.Models.CaptureSource.Screen;
 using HueDream.Models.DreamScreen;
 using HueDream.Models.LED;
@@ -27,6 +28,7 @@ namespace HueDream.Models.CaptureSource.Camera {
         private bool showWarped;
         private PointF[] vectors;
         private int camType;
+        private int captureMode;
         private int srcArea;
         private Size scaleSize;
         private LedData ledData;
@@ -58,6 +60,7 @@ namespace HueDream.Models.CaptureSource.Camera {
             scaleHeight = Convert.ToInt32(camHeight * scaleFactor);
             srcArea = scaleWidth * scaleHeight;
             scaleSize = new Size(scaleWidth, scaleHeight);
+            captureMode = DataUtil.GetItem<int>("captureMode");
             if (camType == 0) {
                 var kStr = DataUtil.GetItem("k");
                 if (kStr == null) {
@@ -71,7 +74,7 @@ namespace HueDream.Models.CaptureSource.Camera {
                 var dStr = DataUtil.GetItem("d");
                 k = JsonConvert.DeserializeObject<Mat>(kStr);
                 d = JsonConvert.DeserializeObject<Mat>(dStr);
-                LogUtil.Write("calib vars deserialized.");
+                LogUtil.Write("calibration vars deserialized.");
             }
 
             try {
@@ -102,12 +105,18 @@ namespace HueDream.Models.CaptureSource.Camera {
         }
 
         private IVideoStream GetCamera() {
-            var capMode = DataUtil.GetItem<int>("captureMode");
-            if (capMode != 1 && capMode != 2)
-                return capMode == 3 ? new CaptureVideoStream() : null;
+            if (captureMode != 1 && captureMode != 2) {
+                switch (captureMode) {
+                    case 3:
+                        return new HdmiVideoStream();
+                    case 4:
+                        return new ScreenVideoStream();
+                }
+            }
+
             switch (camType) {
                 case 0:
-                    // 0 = pi module, 1 = web cam, 3 = capture?
+                    // 0 = pi module, 1 = web cam
                     LogUtil.Write("Loading Pi cam.");
                     var camMode = DataUtil.GetItem<int>("camMode") ?? 1;
                     return new PiVideoStream(camWidth, camHeight, camMode);
@@ -142,7 +151,7 @@ namespace HueDream.Models.CaptureSource.Camera {
 
         private Mat ProcessFrame(Mat input) {
             Mat output = null;
-            if (camType != 3) {
+            if (captureMode == 0 || captureMode == 1) {
                 // Crop our camera frame if the input type is not HDMI
                 output = CamFrame(input);
                 // Save a preview frame every 450 frames
@@ -151,6 +160,8 @@ namespace HueDream.Models.CaptureSource.Camera {
                     input?.Save(path + "/wwwroot/img/_preview_input.jpg");
                     output?.Save(path + "/wwwroot/img/_preview_output.jpg");
                 }
+            } else {
+                output = input;
             }
 
             // Increment our frame counter

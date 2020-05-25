@@ -86,7 +86,7 @@ namespace HueDream.Models.CaptureSource.Camera {
             using var vidCaptureHandler = new EmguInMemoryCaptureHandler();
             using var splitter = new MMALSplitterComponent();
             using var renderer = new MMALNullSinkComponent();
-            this.cam.ConfigureCameraSettings();
+            cam.ConfigureCameraSettings();
             LogUtil.Write("Cam mode is " + MMALCameraConfig.SensorMode);
             // Register to the event.
             vidCaptureHandler.MyEmguEvent += OnEmguEventCallback;
@@ -96,19 +96,19 @@ namespace HueDream.Models.CaptureSource.Camera {
 
             // By default in MMALSharp, the Video port outputs using proprietary communication (Opaque) with a YUV420 pixel format.
             // Changes to this are done via MMALCameraConfig.VideoEncoding and MMALCameraConfig.VideoSub format.                
-            splitter.ConfigureInputPort(new MMALPortConfig(MMALEncoding.OPAQUE, MMALEncoding.I420, capWidth, capHeight, null), this.cam.Camera.VideoPort, null);
+            splitter.ConfigureInputPort(new MMALPortConfig(MMALEncoding.OPAQUE, MMALEncoding.I420, capWidth, capHeight, null), cam.Camera.VideoPort, null);
 
             // We then use the splitter config object we constructed earlier. We then tell this output port to use our capture handler to record data.
             splitter.ConfigureOutputPort<SplitterVideoPort>(0, splitterPortConfig, vidCaptureHandler);
 
-            this.cam.Camera.PreviewPort.ConnectTo(renderer);
-            this.cam.Camera.VideoPort.ConnectTo(splitter);
+            cam.Camera.PreviewPort.ConnectTo(renderer);
+            cam.Camera.VideoPort.ConnectTo(splitter);
 
             // Camera warm up time
             LogUtil.Write("Camera is warming up...");
             await Task.Delay(2000).ConfigureAwait(false);
             LogUtil.WriteInc("Camera initialized.");
-            await this.cam.ProcessAsync(this.cam.Camera.VideoPort, ct).ConfigureAwait(false);
+            await cam.ProcessAsync(cam.Camera.VideoPort, ct).ConfigureAwait(false);
             LogUtil.WriteDec("Camera closed.");
         }
 
@@ -121,7 +121,10 @@ namespace HueDream.Models.CaptureSource.Camera {
         #region IDisposable Support
         private bool disposedValue;
 
-        Mat IVideoStream.Frame => Frame;
+        Mat IVideoStream.Frame {
+            get => Frame;
+            set => Frame = value;
+        }
 
         private void Dispose(bool disposing) {
             if (!disposedValue) {
