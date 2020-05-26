@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Accord.IO;
 using HueDream.Models.DreamScreen;
 using HueDream.Models.DreamScreen.Devices;
 using HueDream.Models.LED;
@@ -129,7 +130,14 @@ namespace HueDream.Models.Util {
             try {
                 using var dStore = GetStore();
                 var coll = dStore.GetCollection<T>(key);
-                coll.ReplaceOne(value.Id, value, true);
+                if (coll == null) {
+                    var list = new List<T>();
+                    list.Add(value);
+                    dStore.InsertItem(key, list);
+                } else {
+                    coll.ReplaceOne(value.Id, value, true);
+                }
+
                 dStore.Dispose();
             } catch (Exception e) {
                 LogUtil.Write($@"Replace exception for {typeof(T)}: {e.Message}");
