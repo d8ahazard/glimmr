@@ -2,10 +2,6 @@
 
 ## Installation
 
-### Raspberry Pi
-Execute the following command:
-bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/master/setup_pi.sh)
-
 ### Windows
 Create a directory where you want Glimmr to reside.
 
@@ -13,14 +9,23 @@ Download this script, save it into the directory you created, and run it.
 https://raw.githubusercontent.com/d8ahazard/glimmr/master/setup_win.bat
 
 
-### Linux
-For Linux, download the latest release and extract to /opt/glimmr (or wherever you want). I'll provide instructions on how to install as a service
-as soon as I figure out how to do it. ;)
+### Raspberry Pi
+Execute the following command:
+```
+bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/master/setup_pi.sh)
+```
+You may want to reboot your computer after exectution if it's a first-time install...
 
-For Docker (recommended), see below...
+
+### Linux
+Execute the following command:
+```
+bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/master/setup_linux.sh)
+```
+You may want to reboot your computer after exectution if it's a first-time install...
+
 
 ### docker
-
 Use the following command. You don't need to specify the ASPNETCORE_URLS value, unless you wish to change the default
 port that the web UI listens on. If so, modify the port number. e.g.: 'http://+:5699' to 'http://+:5699'
 
@@ -30,8 +35,11 @@ docker create \
   -v <path to data>:/etc/glimmr \
   -p 1900:1900/udp \
   -p 2100:2100/udp \
-  -p 5699:5699 \
+  -p 5353:5353/udp \  
   -p 8888:8888/udp \ 
+  -p 56700:56700/udp \ 
+  -p 60222:60222/udp \ 
+  -p 5699:5699 \
   --network="bridge" \
   --restart unless-stopped \
   digitalhigh/glimmr
@@ -52,12 +60,15 @@ services:
     restart: unless-stopped
     network: bridge
 	volumes:
-      - <path to data>:/etc/glimmr
+      	- <path to data>:/etc/glimmr
     ports:
-      - 1900:1900/udp
-      - 2100:2100/udp
-      - 5699:5699
-      - 8888:8888/udp
+      	- 1900:1900/udp
+  	- 2100:2100/udp
+  	- 5353:5353/udp
+  	- 8888:8888/udp
+  	- 56700:56700/udp
+  	- 60222:60222/udp
+  	- 5699:5699
 ```
 
 ## Parameters
@@ -67,10 +78,15 @@ Container images are configured using parameters passed at runtime (such as thos
 | Parameter | Function |
 | :----: | --- |
 | `-v <path_to_data>/etc/glimmr` | Change <path_to_data> to the location where to keep glimmr ini |
-| `-p 1900:1900\udp` | Hue discovery port |
-| `-p 2100:2100\udp` | Hue broadcast port |
-| `-p 5699:5699` | Web UI port |
+| `-p 1900:1900\udp` | Hue Discovery port |
+| `-p 2100:2100\udp` | Hue Broadcast port |
+| `-p 5353:5353\udp` | MDNS Discovery port |
 | `-p 8888:8888\udp` | DS Emulation port |
+| `-p 56700:56700\udp` | LIFX Discovery port |
+| `-p 60222:5353\udp` | Nanoleaf Discovery port |
+| `-p 5699:5699` | Web UI port |
+| `-network="bridge"` | Because Glimmr requires MDNS for discovery, it is recommended to use a bridge when running this container, otherwise a binding error on port 5353 is likely to occur. |
+
 
 
 
@@ -80,47 +96,60 @@ Container images are configured using parameters passed at runtime (such as thos
 
 Once installed, access the Web UI at `<your-ip>:5699`.
 
-### Find Glimmr
-In the Glimmr section, click the "Find Glimmr" button if your Glimmr ip is not shown in the UI. If you have more than one Glimmr, you're currently SOL until I write logic to handle that...
+### Discover Devices
+Discovery should be auto-triggered when you open the web UI. If devices are missing, you can open the side menu and then click the + icon to trigger a rescan. Discovered devices will automatically be added to the side menu.
 
-Optionally, you can select the type of DS device to emulate. If you choose "Connect", you wll need the beta version of the DS app.
+### Configure Glimmr Settings
+Open the side menu, and click the gear icon to access settings.
+Optional capture modes are "DreamScreen (Default)", "Camera", "HDMI", and "Screen Capture".
 
-### Link Your Hue Bridge
-Press the link button on your hue bridge. Go to the Hue section, click "Authorize Hue". You should get a response stating your hue has been linked.
+Screen capture and HDMI are either WIP or not implemented.
 
-### Create An Entertainment Group!! (NEW)
+If using the default Dreamscreen mode and you have more than one DS device, you can select the "target" dreamscreen to use color data from here. LED counts here should not be edited, as they are auto-populated. I should really just make sure that's disabled if this is selected.
+
+If using a camera, it is assumed that you are using a raspberry Pi to power your LED strips. You will need to manually input the proper number of vertical and horizontal LED's in order for everything to work correctly. You can also select the camera type to use - either Raspberry Pi camera or Webcam. I need to implement auto enumeration of USB devices for easier camera selection, for now, it just assumes input cam device 1 is the target.
+
+### Configure your Lifx Bulbs
+Select your discovered bulb in the Web UI. Click the desired sector to map your bulb to that sector. Repeat for all bulbs.
+
+### Configure Your Nanoleaf Panels
+Select your Nano device in the web UI. Click the "Click here to link..." button. Press and hold the power button on your nanoleaf panel until the Web UI shows "linked".
+
+Once linked, your panel layout will be shown in the Web UI. Drag it around to set the position in relation to the screen, and your lights will be auto-mapped to the proper sectors.
+
+
+### Configure Your Hue Bridge
+Select your Hue Bridge in the web UI. Click the "Click here to link..." button. Within 30 seconds, press the link button on your Hue Bridge. The Web UI should update to show that the bridge has been linked.
+
+#### Create A Hue Entertainment Group!! (NEW)
 Go into your hue app. In the side menu, select "Entertainment areas".
 
 Create a new entertainment area and configure it with your lights as they are in the room.
 
-### Configure Light Mappings
-Back in the glimmr web UI, go to the "sync" section, and select your entertainment group.
+#### Configure Hue Light Mappings
+Back in the glimmr web UI, reload the page, then select your hue bridge, and select the newly created entertainment group from the drop-down.
 For each light you wish to map, select the sector in the dropdown that corresponds to the sector you wish to map to.
 
 Click the "Save settings" button to submit your configuration.
 
 ## PROFIT
 
-Open up your Glimmr app. Select "Add new", and your device should show up as a sidekick or connect. 
+From here, you can use the app normally to control your devices. Open up the DreamScreen mobile app, add new devices if your Glimmr device is not deteced, and then place it in a group with a DS device (If using DS sync mode).
 
-From here, you can use the app normally to control your hue lights. You can rename it, add it to a group, and change the modes.
+To stop synchronization, select the device in the DS app or Glimmr Web UI and set the mode to "Off".
 
-To stop synchronization, select the device in the DS app and set the mode to "Off".
+To start synchronization, select the GROUP in the DS app, (or device in Glimmr Web UI) and set the mode to "Video". If the device is not in a group, you can control it directly.
 
-To start synchronization, select the GROUP in the DS app, and set the mode to "Video". If the device is not in a group, control it directly.
+
+## UPDATING
+For windows/linux/raspi, just re-run the setup script you executed to install Glimmr, and it will automatically download the latest source from github, stop services, compile the code from source, copy into place, and restart services. 
+
+For docker...just restart the container. :)
 
 ## NOTES
 
-Ambient scenes are not currently implemented, simply because this program is native to each DS device, and is not streamed.
-
-Meaning, I will have to manually program each scene before this will work.
-
-
-Saturation is not yet implemented. 
-
-
-Sector mappings within the DS app currently do nothing...
-
+Ambient Scenes and music mode *are* now implemented. I still have some work to do with Mic detection, but the functionality exists.
+Not all settings for DS devices in the Web UI are implemented...but the video and advanced settings should now be working properly.
 
 ## Buy me a beer
 
