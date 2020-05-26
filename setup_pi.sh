@@ -1,6 +1,6 @@
 #!/bin/bash
 # Add user if not exist
-id -u glimmrtv &>/dev/null || useradd glimmrtv 
+id -u glimmrtv &>/dev/null || adduser glimmrtv 
 cd /home/glimmrtv || exit
 # Check dotnet installation
 if [ ! -d "/opt/dotnet" ]
