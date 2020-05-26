@@ -66,6 +66,7 @@ fi
 
 # Build latest version
 echo "Building glimmr..."
+dotnet build HueDream.csproj /p:PublishProfile=LinuxARM
 dotnet build HueDream.csproj /p:PublishProfile=LinuxARM -o /home/glimmrtv/glimmr
 echo "DONE."
 # Copy necessary libraries
