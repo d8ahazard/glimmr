@@ -115,16 +115,6 @@ namespace HueDream.Models.Util {
         }
 
 
-        public static void InsertCollection<T>(dynamic value) where T: class {
-            try {
-                using var dStore = GetStore();
-                var coll = dStore.GetCollection<T>();
-                coll.ReplaceOne(value.Id, value, true);
-                dStore.Dispose();
-            } catch (Exception e) {
-                LogUtil.Write($@"Replace exception for {typeof(T)}: {e.Message}");
-            }
-        }
         
         public static void InsertCollection<T>(string key, dynamic value) where T: class {
             try {
@@ -140,7 +130,7 @@ namespace HueDream.Models.Util {
 
                 dStore.Dispose();
             } catch (Exception e) {
-                LogUtil.Write($@"Replace exception for {typeof(T)}: {e.Message} : {e.GetType()}");
+                LogUtil.Write($@"Insert exception (typed) for {typeof(T)}: {e.Message} : {e.GetType()}");
             }
         }
         
@@ -151,7 +141,7 @@ namespace HueDream.Models.Util {
                 coll.ReplaceOne(value.Id, value, true);
                 dStore.Dispose();
             } catch (Exception e) {
-                LogUtil.Write($@"Replace exception for {key}: {e.Message}");
+                LogUtil.Write($@"Insert (notype) exception for {key}: {e.Message}");
             }
         }
 
