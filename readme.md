@@ -2,20 +2,15 @@
 
 ## Installation
 
+### Raspberry Pi
+Execute the following command:
+bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/master/setup_pi.sh)
+
 ### Windows
-For Windows, download the latest release and extract wherever you like. You may need to unblock glimmr.exe from Windows Firewall.
+Create a directory where you want Glimmr to reside.
 
-To run as a service, try out [NSSM - The Non Sucking Service Manager](http://nssm.cc/)
-
-Place NSSM.exe in the root of your glimmr folder. Open a command-line window in that directory, and type "nssm install glimmr".
-
-A dialog will open. Press the ... button next to the PATH option, and select "glimmr.exe" from the dialog.
-
-Click "Install service", and you're all set. 
-
-Now, just open a browser window and navigate to http://localhost:5699 to complete setup.
-
-(You may need to open ports 9000 and 8888 in Windows Firewall, or unblock Glimmr.exe entirely)
+Download this script, save it into the directory you created, and run it.
+https://raw.githubusercontent.com/d8ahazard/glimmr/master/setup_win.bat
 
 
 ### Linux
