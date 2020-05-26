@@ -78,10 +78,10 @@ net stop GlimmrTV
 echo Publishing for windows
 set version=1.1.0
 dotnet build HueDream.csproj /p:DeployOnBuild=true /p:PublishProfile=Windows
-dotnet build HueDream.csproj /p:DeployOnBuild=true /p:PublishProfile=Windows -o %~dp0
 echo copying bass.dll from %~dp0src\build\win\bass.dll to %~dp0x64\bass.dll
 copy %~dp0src\build\win\bass.dll %~dp0x64\bass.dll
 mkdir %~dp0wwwroot
+xcopy %~dp0src\bin\publish\huedream-windows\* %~dp0\ /s /i /y
 xcopy %~dp0src\wwwroot\* %~dp0wwwroot\ /s /i /y
 net start GlimmrTV
 pause
