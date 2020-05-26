@@ -144,7 +144,7 @@ To start synchronization, select the GROUP in the DS app, (or device in Glimmr W
 ## UPDATING
 For windows/linux/raspi, just re-run the setup script you executed to install Glimmr, and it will automatically download the latest source from github, stop services, compile the code from source, copy into place, and restart services. 
 
-For docker...just restart the container. :)
+For docker...just recreate the container. :)
 
 ## NOTES
 
