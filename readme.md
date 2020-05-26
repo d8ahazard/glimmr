@@ -27,7 +27,7 @@ You may want to reboot your computer after exectution if it's a first-time insta
 
 ### docker
 Use the following command. You don't need to specify the ASPNETCORE_URLS value, unless you wish to change the default
-port that the web UI listens on. If so, modify the port number. e.g.: 'http://+:5699' to 'http://+:5699'
+port that the web UI listens on. If so, modify the port number. e.g.: 'http://+:5699' to 'http://+:80'
 
 ```
 docker create \
