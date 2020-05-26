@@ -140,7 +140,7 @@ namespace HueDream.Models.Util {
 
                 dStore.Dispose();
             } catch (Exception e) {
-                LogUtil.Write($@"Replace exception for {typeof(T)}: {e.Message}");
+                LogUtil.Write($@"Replace exception for {typeof(T)}: {e.Message} : {e.GetType()}");
             }
         }
         
