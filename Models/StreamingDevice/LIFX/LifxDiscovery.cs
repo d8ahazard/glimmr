@@ -25,7 +25,7 @@ namespace HueDream.Models.StreamingDevice.LIFX {
         }
 
         public async Task<List<LifxData>> Refresh() {
-            var b = await Discover(5).ConfigureAwait(false);
+            var b = await Discover(5);
             foreach (var bulb in b) {
                 var existing = DataUtil.GetCollectionItem<LifxData>("lifxBulbs", bulb.MacAddressString);
                 if (existing != null) {
@@ -34,7 +34,6 @@ namespace HueDream.Models.StreamingDevice.LIFX {
                 }
                 DataUtil.InsertCollection<LifxData>("lifxBulbs", bulb);
             }
-
             return DataUtil.GetCollection<LifxData>("lifxBulbs");
         }
 
