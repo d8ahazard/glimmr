@@ -23,8 +23,10 @@ then
   echo "DONE!"
 fi
 
+cd /opt/dotnet || exit
 # Install dependencies
 echo "Installing dependencies..."
+sudo apt-get -y update && apt-get -y upgrade
 sudo apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa libdc1394-22 libtesseract-dev scons icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libatlas-base-dev gfortran libopengl-dev git gcc xauth
 # Moar Cleanup
 echo "More cleanup..."
@@ -69,6 +71,7 @@ cp -r /home/glimmrtv/glimmr/src/build/arm /usr/lib
 # Check service start/install
 if systemctl --all --type service | grep -q "$serviceName";then
   echo "Starting glimmr..."
+  systemctl daemon-reload
   service glimmr start
   echo "DONE!"
 else  
