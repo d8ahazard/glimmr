@@ -172,6 +172,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
             if (disposing) {
                 if (Streaming) {
                     StopStream();
+                    client.Dispose();
                 }
             }
 

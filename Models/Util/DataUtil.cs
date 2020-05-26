@@ -132,10 +132,9 @@ namespace HueDream.Models.Util {
                 dStore.Dispose();
             } catch (NullReferenceException e) {
                 LogUtil.Write($@"Insert exception (typed) for {typeof(T)}: {e.Message} : {e.GetType()}");
-                LogUtil.Write($"Object: {JsonConvert.SerializeObject(value)}");
                 var list = dStore.GetItem<List<T>>(key) ?? new List<T>();
                 list.Add(value);
-                dStore.InsertItem(key, list);
+                SetItem(key,list);
             }
             dStore.Dispose();
         }
