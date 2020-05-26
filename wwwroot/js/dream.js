@@ -617,10 +617,10 @@ function saveSelectedDevice() {
 
 function loadData() {
     $.get("./api/DreamData/action?action=loadData", function (data) {
-        console.log("Dream data: ", data);
-        datastore = data;
-        buildLists();
-        RefreshData();
+            console.log("Dream data: ", data);
+            datastore = data;
+            buildLists();
+            RefreshData();
     });
 }
 
@@ -629,11 +629,8 @@ function RefreshData() {
         refreshing = true;
         console.log("Refreshing data.");
         $.get("./api/DreamData/action?action=refreshDevices", function (data) {
-            console.log("Dream data: ", data);
-            datastore.devices = data.devices;
-            datastore.bridges = data.bridges;
-            datastore.leaves = data.leaves;
-            datastore.lifxBulbs = data.lifxBulbs;
+            console.log("Refreshed datastore: ", data);
+            datastore = data;
             buildLists();
             refreshing = false;
         });

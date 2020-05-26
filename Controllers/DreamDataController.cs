@@ -146,8 +146,8 @@ namespace HueDream.Controllers {
                         DataUtil.RefreshDevices();
                         Thread.Sleep(5000);
                         return DataUtil.GetStoreSerialized();
-                    }).Result;
-                    return Content(res);
+                    });
+                    return Content(res.Result, "application/json");
                 case "authorizeHue": {
                     var doAuth = true;
                     BridgeData bd = null;
