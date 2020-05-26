@@ -117,8 +117,9 @@ namespace HueDream.Models.Util {
 
         
         public static void InsertCollection<T>(string key, dynamic value) where T: class {
+            var dStore = GetStore();
             try {
-                using var dStore = GetStore();
+                
                 var coll = dStore.GetCollection<T>(key);
                 if (coll == null) {
                     var list = new List<T>();
@@ -129,9 +130,14 @@ namespace HueDream.Models.Util {
                 }
 
                 dStore.Dispose();
-            } catch (Exception e) {
+            } catch (NullReferenceException e) {
                 LogUtil.Write($@"Insert exception (typed) for {typeof(T)}: {e.Message} : {e.GetType()}");
+                LogUtil.Write($"Object: {JsonConvert.SerializeObject(value)}");
+                var list = dStore.GetItem<List<T>>(key) ?? new List<T>();
+                list.Add(value);
+                dStore.InsertItem(key, list);
             }
+            dStore.Dispose();
         }
         
         public static void InsertCollection(string key, dynamic value) {
