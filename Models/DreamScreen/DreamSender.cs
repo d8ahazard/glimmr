@@ -105,20 +105,28 @@ namespace HueDream.Models.DreamScreen {
         }
 
         private static void SendUdpUnicast(byte[] data, EndPoint ep) {
-            var sender = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            sender.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            sender.EnableBroadcast = true;
-            sender.SendTo(data, ep);
-            sender.Dispose();
+            try {
+                var sender = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                sender.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                sender.EnableBroadcast = true;
+                sender.SendTo(data, ep);
+                sender.Dispose();
+            } catch (SocketException e) {
+                LogUtil.Write($"Socket Exception: {e.Message}", "WARN");
+            }
         }
 
         public static void SendUdpBroadcast(byte[] bytes) {
             if (bytes is null) throw new ArgumentNullException(nameof(bytes));
-            var client = new UdpClient {Ttl = 128};
-            client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            var ip = new IPEndPoint(IPAddress.Parse("255.255.255.255"), 8888);
-            client.Send(bytes, bytes.Length, ip);
-            client.Dispose();
+            try {
+                var client = new UdpClient {Ttl = 128};
+                client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                var ip = new IPEndPoint(IPAddress.Parse("255.255.255.255"), 8888);
+                client.Send(bytes, bytes.Length, ip);
+                client.Dispose();
+            } catch (SocketException e) {
+                LogUtil.Write($"Socket Exception: {e.Message}", "WARN");
+            }
         }
     }
 }

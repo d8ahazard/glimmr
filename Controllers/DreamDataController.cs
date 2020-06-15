@@ -15,10 +15,13 @@ using HueDream.Models.Util;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Q42.HueApi;
+using Serilog;
 
 namespace HueDream.Controllers {
     [Route("api/[controller]"), ApiController]
     public class DreamDataController : ControllerBase {
+        private HueClient hueClient;
         // GET: api/DreamData/getMode
         [Route("getMode")]
         public static int GetMode() {
@@ -48,6 +51,13 @@ namespace HueDream.Controllers {
         // POST: api/DreamData/updateDevice
         [HttpPost("updateDevice")]
         public IActionResult UpdateDevice([FromBody] JObject dData) {
+            var res = TriggerReload(dData);
+            return Ok(res);
+        }
+        
+        // POST: api/DreamData/updateDevice
+        [HttpPost("updateData")]
+        public IActionResult UpdateData([FromBody] JObject dData) {
             var res = TriggerReload(dData);
             return Ok(res);
         }
@@ -149,21 +159,40 @@ namespace HueDream.Controllers {
                     });
                     return Content(res.Result, "application/json");
                 case "authorizeHue": {
+                    LogUtil.Write("AuthHue called, for real.");
                     var doAuth = true;
                     BridgeData bd = null;
                     if (!string.IsNullOrEmpty(value)) {
+                        LogUtil.Write("Value is good: " + value);
                         bd = DataUtil.GetCollectionItem<BridgeData>("bridges", value);
-                        if (bd == null) return new JsonResult(null);
-                        if (bd.Key != null && bd.User != null) doAuth = false;
+                        LogUtil.Write("BD: " + JsonConvert.SerializeObject(bd));
+                        if (bd == null) {
+                            LogUtil.Write("Null bridge retrieved.");
+                            return new JsonResult(null);
+                        }
+
+                        if (bd.Key != null && bd.User != null) {
+                            LogUtil.Write("Bridge is already authorized.");
+                            doAuth = false;
+                        }
                     } else {
+                        LogUtil.Write("Null value.", "WARN");
                         doAuth = false;
                     }
 
-                    if (!doAuth) return new JsonResult(bd);
-                    var appKey = HueDiscovery.CheckAuth(value).Result;
-                    if (appKey == null) return new JsonResult(bd);
+                    if (!doAuth) {
+                        LogUtil.Write("No auth, returning existing data.");
+                        return new JsonResult(bd);
+                    }
+                    LogUtil.Write("Trying to retrieve appkey...");
+                    var appKey = HueDiscovery.CheckAuth(bd.IpAddress).Result;
+                    if (appKey == null) {
+                        LogUtil.Write("Error retrieving app key.");
+                        return new JsonResult(bd);
+                    }
                     bd.Key = appKey.StreamingClientKey;
                     bd.User = appKey.Username;
+                    LogUtil.Write("We should be authorized, returning.");
                     DataUtil.InsertCollection<BridgeData>("bridges", bd);
                     return new JsonResult(bd);
                 }
@@ -280,7 +309,10 @@ namespace HueDream.Controllers {
             var newMode = ByteUtils.IntByte(mode);
             var myDev = DataUtil.GetDeviceData();
             var curMode = myDev.Mode;
-            if (curMode == newMode) return;
+            if (curMode == newMode) {
+                LogUtil.Write("Old mode is same as new, nothing to do.");
+                return;
+            }
             LogUtil.Write("Updating mode to " + mode);
             var ipAddress = myDev.IpAddress;
             var groupNumber = (byte) myDev.GroupNumber;
@@ -332,7 +364,7 @@ namespace HueDream.Controllers {
             var ipAddress = myDev.IpAddress;
             var groupNumber = (byte) myDev.GroupNumber;
             switch (tag) {
-                case "Hue":
+                case "HueBridge":
                     LogUtil.Write("Updating bridge");
                     DataUtil.InsertCollection<BridgeData>("bridges", dData.ToObject<BridgeData>());
                     break;
