@@ -1,12 +1,15 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
 using Emgu.CV.Structure;
-using Pranas;
+using HueDream.Models.Util;
+using Newtonsoft.Json;
 
-namespace HueDream.Models.CaptureSource.Screen {
+namespace HueDream.Models.CaptureSource.ScreenCapture {
     public class ScreenVideoStream : IVideoStream {
         public Mat Frame { get; set; }
 
@@ -16,12 +19,24 @@ namespace HueDream.Models.CaptureSource.Screen {
         }
 
         public Task Start(CancellationToken ct) {
+            LogUtil.Write("Starting screen capture??");
             while (!ct.IsCancellationRequested) {
-                var screen = ScreenshotCapture.TakeScreenshot();
-                Frame = GetMatFromSdImage(screen);
+                CaptureScreen();
             }
-
+            LogUtil.Write("Screen capture complete!");
             return Task.CompletedTask;
+        }
+        
+        private void CaptureScreen() {
+            var s = DisplayUtil.GetDisplaySize();
+            var width = s.Width;
+            var height = s.Height;
+            Bitmap bmpScreenCapture = new Bitmap(width, height);
+            using Graphics g = Graphics.FromImage(bmpScreenCapture);
+            g.CopyFromScreen(0, 0,0, 0, bmpScreenCapture.Size, CopyPixelOperation.SourceCopy);
+            //var foo = bmpScreenCapture.ToImage(Bgr, Byte);
+            //var foo2 = bmpScreenCapture.ToMat();
+            //Frame = imageCV.Mat;
         }
 
 

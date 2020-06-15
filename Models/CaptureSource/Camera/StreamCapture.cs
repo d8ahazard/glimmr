@@ -10,7 +10,7 @@ using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using HueDream.Models.CaptureSource.HDMI;
-using HueDream.Models.CaptureSource.Screen;
+using HueDream.Models.CaptureSource.ScreenCapture;
 using HueDream.Models.DreamScreen;
 using HueDream.Models.LED;
 using HueDream.Models.Util;
@@ -105,11 +105,13 @@ namespace HueDream.Models.CaptureSource.Camera {
         }
 
         private IVideoStream GetCamera() {
-            if (captureMode != 1 && captureMode != 2) {
+            if (captureMode != 0 && captureMode != 1) {
                 switch (captureMode) {
-                    case 3:
+                    case 2:
+                        LogUtil.Write("Definitely grabbing HDMI video stream here.");
                         return new HdmiVideoStream();
-                    case 4:
+                    case 3:
+                        LogUtil.Write("Definitely grabbing screen here.");
                         return new ScreenVideoStream();
                 }
             }
