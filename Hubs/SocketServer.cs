@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using Q42.HueApi.Models.Bridge;
+using Serilog;
 
 namespace HueDream.Hubs {
     public class SocketServer : Hub {
@@ -110,5 +111,12 @@ namespace HueDream.Hubs {
 
         public void SendData(string command) {
         }
+
+        public override Task OnDisconnectedAsync(Exception exception) {
+            LogUtil.Write("User disconnected");
+            return base.OnDisconnectedAsync(exception);
+        }
+
+            
     }
 }

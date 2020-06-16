@@ -52,7 +52,6 @@ const bar = new ProgressBar.Circle(circleBar, {
 $(function () {
     setSocketListeners();
     loadSocket();
-    loadData();
     $('#nanoCard').hide();
     $('#hueCard').hide();
     $('dsCard').hide();
@@ -60,11 +59,7 @@ $(function () {
     // Initialize BMD
     $('body').bootstrapMaterialDesign();
     setListeners();
-    $('.devSelect').sortableLists();
-    // Refresh devices every 10 minutes
-    setInterval(function(){
-        RefreshData();
-    },600000);
+    $('.devSelect').sortableLists();    
 });
 
 function sendMessage(endpoint, data, encode=true) {
@@ -101,6 +96,7 @@ function loadSocket() {
     websocket.start().then(function () {
         console.log("Connected.");
         socketLoaded = true;
+        loadData();
     }).catch(function (err) {
         console.error(err.toString());
     });
@@ -331,7 +327,6 @@ function setListeners() {
             name: nVal
         };
         postData("devname", out);
-        RefreshData();
     });
 
     // On capture mode btn click
@@ -1025,10 +1020,10 @@ function showDevicePanel(data) {
     let dsCard = $('#dsCard');
     let lifxCard = $('#lifxCard');
     let modeGroup = $(".modeGroup");
+    selectedDevice = data;
     if (!resizeTimer) hidePanels();
     setTimeout(function(){
         $('#navTitle').html(data.tag);
-        selectedDevice = data;
         switch (data.tag) {
             case "SideKick":
             case "Connect":
@@ -1106,7 +1101,7 @@ function loadDsData(data) {
     dsName.html(deviceData.name);
     dsName.data("ip", deviceData.ipAddress);
     dsName.data('group', deviceData.groupNumber);
-    $('#dsBrightness').val(deviceData["maxBrightness"]);
+    $('#dsBrightness').val(deviceData["brightness"]);
     $('#dsIp').html(deviceData.ipAddress);
     emulationType = deviceData.tag;
     let satVal = hexToRgb(deviceData.saturation);

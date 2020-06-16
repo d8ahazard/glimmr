@@ -33,7 +33,7 @@ namespace HueDream.Controllers {
         [HttpPost("SetMode")]
         public IActionResult DevMode([FromBody] JObject modeObj) {
             SetMode(modeObj);
-            _hubContext.Clients.All.SendAsync("SetMode", modeObj);
+            _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
             return Ok(modeObj);
         }
 
@@ -45,7 +45,7 @@ namespace HueDream.Controllers {
             var value = (dsSetting["value"] ?? "").Value<string>();
             LogUtil.Write($"We got our stuff: {id}, {property}, {value}");
             DreamSender.SendMessage(property, value, id);
-            _hubContext.Clients.All.SendAsync("SetMode", dsSetting);
+            _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
             return Ok();
         }
 
@@ -373,6 +373,9 @@ namespace HueDream.Controllers {
             if (tag == "INVALID" || id == "INVALID") return false;
             var myDev = DataUtil.GetDeviceData();
             var ipAddress = myDev.IpAddress;
+            if (ipAddress == (dData["ipAddress"] ?? "INVALID").Value<string>()) {
+                DataUtil.SetItem("myDevice", dData);
+            }
             var groupNumber = (byte) myDev.GroupNumber;
             switch (tag) {
                 case "HueBridge":
@@ -393,6 +396,27 @@ namespace HueDream.Controllers {
                     DataUtil.InsertCollection<NanoData>("leaves", nData);
                     _hubContext.Clients.All.SendAsync("nanoData", nData);
                     break;
+                case "SideKick":
+                    var dsData = dData.ToObject<SideKick>();
+                    DataUtil.InsertDsDevice(dsData);
+                    break;
+                case "Connect":
+                    var dcData = dData.ToObject<Connect>();
+                    DataUtil.InsertDsDevice(dcData);
+                    break;
+                case "DreamScreenHd":
+                    var dshdData = dData.ToObject<DreamScreenHd>();
+                    DataUtil.InsertDsDevice(dshdData);
+                    break;
+                case "DreamScreen4K":
+                    var ds4KData = dData.ToObject<DreamScreen4K>();
+                    DataUtil.InsertDsDevice(ds4KData);
+                    break;
+                case "DreamScreenSolo":
+                    var dsSoloData = dData.ToObject<DreamScreenSolo>();
+                    DataUtil.InsertDsDevice(dsSoloData);
+                    break;
+                
             }
 
             var payload = new List<byte>();

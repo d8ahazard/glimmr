@@ -318,9 +318,9 @@ namespace HueDream.Models.Util {
             if (scanning) {
                 LogUtil.Write("We are already scanning...hold your horses.", "WARN");
                 return;
-            } else {
-                LogUtil.Write("Starting scan.");
             }
+
+            LogUtil.Write("Starting scan.");
             scanning = true;
             // Get dream devices
             var ld = new LifxDiscovery();
