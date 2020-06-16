@@ -53,7 +53,7 @@ namespace HueDream.Controllers {
         [HttpPost("updateDevice")]
         public IActionResult UpdateDevice([FromBody] JObject dData) {
             var res = TriggerReload(dData);
-            _hubContext.Clients.All.SendAsync("updateDevice", res);
+            _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
             return Ok(res);
         }
         
@@ -61,7 +61,7 @@ namespace HueDream.Controllers {
         [HttpPost("updateData")]
         public IActionResult UpdateData([FromBody] JObject dData) {
             var res = TriggerReload(dData);
-            _hubContext.Clients.All.SendAsync("updateData", res);
+            _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
             return Ok(res);
         }
 
@@ -69,7 +69,7 @@ namespace HueDream.Controllers {
         [HttpPost("capturemode")]
         public IActionResult CaptureMode([FromBody] int cMode) {
             SetCaptureMode(cMode);
-            _hubContext.Clients.All.SendAsync("capturemode", cMode);
+            _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
             return Ok(cMode);
         }
 
@@ -77,7 +77,7 @@ namespace HueDream.Controllers {
         [HttpPost("camType")]
         public IActionResult CamType([FromBody] int cType) {
             DataUtil.SetItem<int>("camType", cType);
-            _hubContext.Clients.All.SendAsync("camType", cType);
+            _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
             ResetMode();
             return Ok(cType);
         }
@@ -98,6 +98,7 @@ namespace HueDream.Controllers {
 
             ledData.ledCount = hCount * 2 + count * 2;
             DataUtil.SetItem<LedData>("ledData", ledData);
+            _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
             ResetMode();
             return Ok(count);
         }
@@ -118,6 +119,7 @@ namespace HueDream.Controllers {
 
             ledData.LedCount = vCount * 2 + count * 2;
             DataUtil.SetItem<LedData>("ledData", ledData);
+            _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
             ResetMode();
             return Ok(count);
         }
@@ -137,6 +139,7 @@ namespace HueDream.Controllers {
         public IActionResult PostSk([FromBody] SideKick skDevice) {
             LogUtil.Write(@"Did it work? " + JsonConvert.SerializeObject(skDevice));
             DataUtil.SetItem("myDevice", skDevice);
+            _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
             return Ok("ok");
         }
 
@@ -145,6 +148,7 @@ namespace HueDream.Controllers {
         public IActionResult PostDevice([FromBody] Connect myDevice) {
             LogUtil.Write(@"Did it work? " + JsonConvert.SerializeObject(myDevice));
             DataUtil.SetItem("myDevice", myDevice);
+            _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
             return Ok(myDevice);
         }
 

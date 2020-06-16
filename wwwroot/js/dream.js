@@ -30,6 +30,7 @@ let hLedCount = 0;
 let postResult = null;
 let sTarget = [];
 let socketLoaded = false;
+let allDevices = [];
 
 let websocket = new signalR.HubConnectionBuilder()
     .configureLogging(signalR.LogLevel.Information)
@@ -184,9 +185,10 @@ function setSocketListeners() {
     websocket.on('olo', function(stuff) {
         stuff = stuff.replace(/\\n/g, '');
         let foo = JSON.parse(stuff);
-        console.log("OLO! ", foo);
+        console.log("OLO! ", foo, selectedDevice);
         datastore = foo;
         buildLists();
+        reloadDevice();
         socketLoaded = true;
     });
 
@@ -825,6 +827,7 @@ function buildLists() {
 
     const sorted = [];
     // Sort other DS Devices
+    allDevices = [];
     groups = sortDevices(dsDevs, groups, false, false);
     // Sort nanoleaves
     groups = sortDevices(datastore['leaves'], groups, "NanoLeaf", "NanoLeaf");
@@ -833,6 +836,7 @@ function buildLists() {
     groups = sortDevices(datastore['lifxBulbs'], groups, "Lifx", "Lifx Bulb");
     dg.html("");
     console.log("Groups: ", groups);
+    console.log("ALL DEVICES: ", allDevices);
     $.each(groups, function () {
         let item = $(this)[0];
         if (item['screenX'] === undefined) {
@@ -954,6 +958,8 @@ function setCaptureMode(target, post=true) {
 function sortDevices(data, groups, tag, name) {
     $.each(data, function () {
         let item = $(this)[0];
+        console.log("PUSHING: ", item);
+        allDevices.push(item);
         let gn = item['groupNumber'];
         let gName = item['groupName'];
         let groupNumber = (gn === undefined || gn === null) ? 0 : gn; 
@@ -1052,6 +1058,43 @@ function showDevicePanel(data) {
 
         resizeTimer = null;
     },200);
+}
+
+function reloadDevice() {
+    let id = selectedDevice.id;
+    let data = null;
+    for (let q=0; q < allDevices.length; q++ ) {
+        if(allDevices[q].id === selectedDevice.id) {
+            console.log("Comparing " + allDevices[q].id + " to " + selectedDevice.id);
+            data = allDevices[q];
+        }
+    }
+    console.log("Reloading panel data: ", data);
+    if (data != null) {
+        $('#navTitle').html(data.tag);
+        selectedDevice = data;
+        switch (data.tag) {
+            case "SideKick":
+            case "Connect":
+            case "DreamScreen":
+            case "DreamScreen4K":
+            case "DreamScreenSolo":
+            case "group":
+                loadDsData(data);
+                break;
+            case "HueBridge":
+                loadBridgeData(data);
+                break;
+            case "NanoLeaf":
+                loadNanoData(data);
+                break;
+            case "Lifx":
+                loadLifxData(data);
+                break;
+        }
+    } else {
+        console.log("ERROR FETCHING DATA, FOO.");
+    }
 }
 
 
