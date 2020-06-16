@@ -22,7 +22,7 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
         private readonly HttpClient hc;
         private int streamMode;
         private bool disposed;
-        public int MaxBrightness { get; set; }
+        public int Brightness { get; set; }
         public string Id { get; set; }
 
         public NanoGroup(string ipAddress, string token = "") {
@@ -53,7 +53,7 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             ipAddress = n.IpV4Address;
             token = n.Token;
             layout = n.Layout;
-            MaxBrightness = n.MaxBrightness;
+            Brightness = n.Brightness;
             var nanoType = n.Type;
             streamMode = nanoType == "NL29" ? 2 : 1;
             basePath = "http://" + ipAddress + ":16021/api/v1/" + token;
@@ -133,8 +133,8 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
 
                 if (pd.Sector == -1) continue;
                 var color = colors[colorInt];
-                if (MaxBrightness < 100) {
-                    color = ColorTransformUtil.ClampBrightness(color, MaxBrightness);
+                if (Brightness < 100) {
+                    color = ColorTransformUtil.ClampBrightness(color, Brightness);
                 }
 
                 // Pad ID, this is probably wrong

@@ -200,9 +200,6 @@ function setSocketListeners() {
     })
 }
 
-function updateDevice() {
-    
-}
 
 function setListeners() {    
     $('.devSaturation').on('input', function(){
@@ -1163,7 +1160,7 @@ function loadBridgeData(data) {
     // Now we've got it.
     let b = data;
     hueIp = b.id;
-    bSlider.val(b["maxBrightness"]);
+    bSlider.val(b["brightness"]);
     hIp.html(b["ipAddress"]);        
     hueGroup = b["selectedGroup"];
     if (b.hasOwnProperty("groups")) {
@@ -1227,7 +1224,7 @@ function loadNanoData(data) {
     console.log("Loaded nanodata: ", data);
     // Now we've got it.
     let n = data;
-    nBrightness.val(n["maxBrightness"]);
+    nBrightness.val(n["brightness"]);
     nanoIp = n["ipV4Address"];
     
     hIp.html(n["ipV4Address"]);    
@@ -1263,7 +1260,7 @@ function loadLifxData(data) {
     lName.html(nanoIp);
     hIp.html(data.id);
     $('.clickRegion[data-region="' + data.sectorMapping +'"]').addClass('checked');
-    lBrightness.val(data["maxBrightness"]);    
+    lBrightness.val(data["brightness"]);    
 }
 
 function drawNanoShapes(panel) {
@@ -1394,7 +1391,6 @@ function drawNanoShapes(panel) {
         selectedDevice.rotation = shapeGroup.rotation();
         saveSelectedDevice();
         postData("updateDevice", selectedDevice);
-        sendMessage("updateDevice", selectedDevice);
     }
     
     

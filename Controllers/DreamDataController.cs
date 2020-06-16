@@ -22,18 +22,19 @@ namespace HueDream.Controllers {
     [Route("api/[controller]"), ApiController]
     public class DreamDataController : ControllerBase {
 
-        private IHubContext<SocketServer> _hubContext;
+        private IHubContext<SocketServer> hubContext;
+        private bool timerStarted;
         
         public DreamDataController(IHubContext<SocketServer> hubContext) {
             LogUtil.Write("Initialized ddc with hub context.");
-            _hubContext = hubContext;
+            this.hubContext = hubContext;
         }
         
         // POST: api/DreamData/mode
         [HttpPost("SetMode")]
         public IActionResult DevMode([FromBody] JObject modeObj) {
             SetMode(modeObj);
-            _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+            NotifyClients();
             return Ok(modeObj);
         }
 
@@ -45,7 +46,7 @@ namespace HueDream.Controllers {
             var value = (dsSetting["value"] ?? "").Value<string>();
             LogUtil.Write($"We got our stuff: {id}, {property}, {value}");
             DreamSender.SendMessage(property, value, id);
-            _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+            NotifyClients();
             return Ok();
         }
 
@@ -53,7 +54,7 @@ namespace HueDream.Controllers {
         [HttpPost("updateDevice")]
         public IActionResult UpdateDevice([FromBody] JObject dData) {
             var res = TriggerReload(dData);
-            _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+            NotifyClients();
             return Ok(res);
         }
         
@@ -61,7 +62,7 @@ namespace HueDream.Controllers {
         [HttpPost("updateData")]
         public IActionResult UpdateData([FromBody] JObject dData) {
             var res = TriggerReload(dData);
-            _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+            NotifyClients();
             return Ok(res);
         }
 
@@ -69,7 +70,7 @@ namespace HueDream.Controllers {
         [HttpPost("capturemode")]
         public IActionResult CaptureMode([FromBody] int cMode) {
             SetCaptureMode(cMode);
-            _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+            NotifyClients();
             return Ok(cMode);
         }
 
@@ -77,7 +78,7 @@ namespace HueDream.Controllers {
         [HttpPost("camType")]
         public IActionResult CamType([FromBody] int cType) {
             DataUtil.SetItem<int>("camType", cType);
-            _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+            NotifyClients();
             ResetMode();
             return Ok(cType);
         }
@@ -98,7 +99,7 @@ namespace HueDream.Controllers {
 
             ledData.ledCount = hCount * 2 + count * 2;
             DataUtil.SetItem<LedData>("ledData", ledData);
-            _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+            NotifyClients();
             ResetMode();
             return Ok(count);
         }
@@ -119,7 +120,7 @@ namespace HueDream.Controllers {
 
             ledData.LedCount = vCount * 2 + count * 2;
             DataUtil.SetItem<LedData>("ledData", ledData);
-            _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+            NotifyClients();
             ResetMode();
             return Ok(count);
         }
@@ -139,7 +140,7 @@ namespace HueDream.Controllers {
         public IActionResult PostSk([FromBody] SideKick skDevice) {
             LogUtil.Write(@"Did it work? " + JsonConvert.SerializeObject(skDevice));
             DataUtil.SetItem("myDevice", skDevice);
-            _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+            NotifyClients();
             return Ok("ok");
         }
 
@@ -148,7 +149,7 @@ namespace HueDream.Controllers {
         public IActionResult PostDevice([FromBody] Connect myDevice) {
             LogUtil.Write(@"Did it work? " + JsonConvert.SerializeObject(myDevice));
             DataUtil.SetItem("myDevice", myDevice);
-            _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+            NotifyClients();
             return Ok(myDevice);
         }
 
@@ -159,13 +160,13 @@ namespace HueDream.Controllers {
             LogUtil.Write($@"{action} called from Web API.");
             switch (action) {
                 case "loadData":
-                    _hubContext?.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+                    NotifyClients();
                     return Content(DataUtil.GetStoreSerialized(), "application/json");
                 case "refreshDevices":
                     var res = Task.Run(() => {
                         DataUtil.RefreshDevices();
                         Thread.Sleep(5000);
-                        _hubContext?.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+                        NotifyClients();
                         return DataUtil.GetStoreSerialized();
                     });
                     return Content(res.Result, "application/json");
@@ -174,7 +175,7 @@ namespace HueDream.Controllers {
                     var doAuth = true;
                     BridgeData bd = null;
                     if (!string.IsNullOrEmpty(value)) {
-                        _hubContext?.Clients.All.SendAsync("hueAuth", "start");
+                        hubContext?.Clients.All.SendAsync("hueAuth", "start");
                         bd = DataUtil.GetCollectionItem<BridgeData>("bridges", value);
                         LogUtil.Write("BD: " + JsonConvert.SerializeObject(bd));
                         if (bd == null) {
@@ -382,19 +383,19 @@ namespace HueDream.Controllers {
                     LogUtil.Write("Updating bridge");
                     var bData = dData.ToObject<BridgeData>();
                     DataUtil.InsertCollection<BridgeData>("bridges", bData);
-                    _hubContext.Clients.All.SendAsync("hueData", bData);
+                    hubContext.Clients.All.SendAsync("hueData", bData);
                     break;
                 case "Lifx":
                     LogUtil.Write("Updating lifx bulb");
                     var lData = dData.ToObject<LifxData>();
                     DataUtil.InsertCollection<LifxData>("lifxBulbs", lData);
-                    _hubContext.Clients.All.SendAsync("lifxData", lData);
+                    hubContext.Clients.All.SendAsync("lifxData", lData);
                     break;
                 case "NanoLeaf":
                     LogUtil.Write("Updating nanoleaf");
                     var nData = dData.ToObject<NanoData>();
                     DataUtil.InsertCollection<NanoData>("leaves", nData);
-                    _hubContext.Clients.All.SendAsync("nanoData", nData);
+                    hubContext.Clients.All.SendAsync("nanoData", nData);
                     break;
                 case "SideKick":
                     var dsData = dData.ToObject<SideKick>();
@@ -427,6 +428,15 @@ namespace HueDream.Controllers {
             return true;
         }
 
+        private async void NotifyClients() {
+            if (timerStarted) return;
+            timerStarted = true;
+            await Task.Delay(TimeSpan.FromSeconds(.5));
+            await hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+            timerStarted = false;
+            LogUtil.Write("Sending updated data via socket.");
+        }
+        
         private static void SetBrightness(JObject dData) {
             if (dData == null) throw new ArgumentException("invalid jobject");
             var tag = (dData["tag"] ?? "INVALID").Value<string>();

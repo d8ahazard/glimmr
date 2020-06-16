@@ -19,7 +19,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
         private EntertainmentLayer entLayer;
         private StreamingHueClient client;
         private bool disposed;
-        public int MaxBrightness { get; set; }
+        public int Brightness { get; set; }
         public string Id { get; set; }
 
         public HueBridge(BridgeData data) {
@@ -28,7 +28,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
             disposed = false;
             Streaming = false;
             entLayer = null;
-            MaxBrightness = data.MaxBrightness;
+            Brightness = data.Brightness;
             LogUtil.Write(@"Hue: Loading bridge: " + BridgeIp);
         }
 
@@ -116,7 +116,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
             var newData = DataUtil.GetCollectionItem<BridgeData>("bridges", Id);
             bd = newData;
             BridgeIp = bd.IpAddress;
-            MaxBrightness = newData.MaxBrightness;
+            Brightness = newData.MaxBrightness;
             LogUtil.Write(@"Hue: Reloaded bridge: " + BridgeIp);
         }
 
@@ -145,7 +145,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
                     // Otherwise, get the corresponding sector color
                     var colorInt = lightData.TargetSector - 1;
                     var color = colors[colorInt];
-                    var mb = lightData.OverrideBrightness ? lightData.Brightness : MaxBrightness;
+                    var mb = lightData.OverrideBrightness ? lightData.Brightness : Brightness;
                     if (mb < 100) {
                         color = ColorTransformUtil.ClampBrightness(color, mb);
                     }

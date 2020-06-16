@@ -5,7 +5,7 @@ using System.Threading;
 namespace HueDream.Models.StreamingDevice {
     public interface IStreamingDevice {
         public bool Streaming { get; set; }
-        public int MaxBrightness { get; set; }
+        public int Brightness { get; set; }
         public string Id { get; set; }
         public async void StartStream(CancellationToken ct) {
             while (!ct.IsCancellationRequested) {

@@ -48,7 +48,7 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
 
         [DefaultValue(100)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-        public int MaxBrightness { get; set; }
+        public int Brightness { get; set; }
 
 
         public void CopyExisting(NanoData leaf) {
@@ -58,7 +58,7 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             Y = leaf.Y;
             Scale = 1;
             Rotation = leaf.Rotation;
-            MaxBrightness = leaf.MaxBrightness;
+            Brightness = leaf.Brightness;
             Layout = MergeLayouts(leaf.Layout, Layout);
         }
 

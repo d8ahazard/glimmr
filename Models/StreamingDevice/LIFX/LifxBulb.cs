@@ -13,13 +13,13 @@ namespace HueDream.Models.StreamingDevice.LIFX {
         public bool Streaming { get; set; }
 
         private int targetSector;
-        public int MaxBrightness { get; set; }
+        public int Brightness { get; set; }
         public string Id { get; set; }
         public LifxBulb(LifxData d) {
             Data = d ?? throw new ArgumentException("Invalid Data");
             B = new LightBulb(d.HostName, d.MacAddress, d.Service, (uint)d.Port);
             targetSector = d.SectorMapping - 1;
-            MaxBrightness = d.MaxBrightness;
+            Brightness = d.Brightness;
             Id = d.Id;
         }
 
@@ -46,7 +46,7 @@ namespace HueDream.Models.StreamingDevice.LIFX {
             var c = LifxSender.GetClient();
             if (c == null) throw new ArgumentException("Invalid lifx client.");
             LogUtil.Write("Setting color back the way it was.");
-            c.SetColorAsync(B, Data.Hue, Data.Saturation, Data.Brightness, Data.Kelvin, TimeSpan.Zero);
+            c.SetColorAsync(B, Data.Hue, Data.Saturation,Convert.ToUInt16(Data.Brightness), Data.Kelvin, TimeSpan.Zero);
             c.SetLightPowerAsync(B, TimeSpan.Zero, Data.Power).ConfigureAwait(false);
         }
 
@@ -54,7 +54,7 @@ namespace HueDream.Models.StreamingDevice.LIFX {
             var newData = DataUtil.GetCollectionItem<LifxData>("lifxBulbs", Id);
             Data = newData;
             targetSector = newData.SectorMapping - 1;
-            MaxBrightness = newData.MaxBrightness;
+            Brightness = newData.MaxBrightness;
             Id = newData.Id;
         }
 
@@ -64,8 +64,8 @@ namespace HueDream.Models.StreamingDevice.LIFX {
             if (inputs == null || c == null) throw new ArgumentException("Invalid color inputs.");
             if (inputs.Count < 12) throw new ArgumentOutOfRangeException(nameof(inputs));
             var input = inputs[targetSector];
-            if (MaxBrightness < 100) {
-                input = ColorTransformUtil.ClampBrightness(input, MaxBrightness);
+            if (Brightness < 100) {
+                input = ColorTransformUtil.ClampBrightness(input, Brightness);
             }
             var nC = new Color {R = input.R, G = input.G, B = input.B};
             var fadeSpan = TimeSpan.FromSeconds(fadeTime);

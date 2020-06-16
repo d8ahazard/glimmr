@@ -20,6 +20,7 @@ using HueDream.Models.Util;
 using LifxNet;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
+using Org.BouncyCastle.Utilities;
 using Color = System.Drawing.Color;
 
 namespace HueDream.Models.DreamScreen {
@@ -41,6 +42,7 @@ namespace HueDream.Models.DreamScreen {
         private AudioStream aStream;
         private BaseDevice dev;
         private int notifyTimer;
+        private bool timerStarted;
 
         // Our functional values
         private int devMode;
@@ -602,14 +604,14 @@ namespace HueDream.Models.DreamScreen {
         }
 
         private async void NotifyClients() {
-            notifyTimer = 0;
-            while (notifyTimer < 10) {
-                await Task.Delay(TimeSpan.FromMilliseconds(10));
-                notifyTimer++;
-            }
+            if (timerStarted) return;
+            timerStarted = true;
+            await Task.Delay(TimeSpan.FromSeconds(.5));
+            await HubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+            timerStarted = false;
             LogUtil.Write("Sending updated data via socket.");
-            
         }
+        
         private void SendDeviceStatus(IPEndPoint src) {
             var dss = DataUtil.GetDeviceData();
             var payload = dss.EncodeState();
