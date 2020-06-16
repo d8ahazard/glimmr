@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using HueDream.Hubs;
 using HueDream.Models.CaptureSource.Audio;
 using HueDream.Models.CaptureSource.Camera;
 using HueDream.Models.DreamScreen.Devices;
@@ -17,16 +18,18 @@ using HueDream.Models.StreamingDevice.LIFX;
 using HueDream.Models.StreamingDevice.Nanoleaf;
 using HueDream.Models.Util;
 using LifxNet;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Color = System.Drawing.Color;
 
 namespace HueDream.Models.DreamScreen {
     public class DreamClient : BackgroundService {
         private int CaptureMode { get; set; }
-        private readonly DreamScene dreamScene;
-        private readonly byte group;
-        private readonly Color ambientColor;
-        private readonly int ambientMode;
+        private DreamScene dreamScene;
+        private byte group;
+        private Color ambientColor;
+        private int ambientMode;
+        public static IHubContext<SocketServer> HubContext;
         private int ambientShow;
         private List<HueBridge> bridges;
         private List<NanoGroup> panels;
@@ -63,7 +66,7 @@ namespace HueDream.Models.DreamScreen {
         private CancellationTokenSource captureTokenSource;
 
         // Use this for the camera
-        private readonly CancellationTokenSource camTokenSource;
+        private CancellationTokenSource camTokenSource;
 
         // Use this to check if we've initialized our bridges
         private bool streamStarted;
@@ -74,7 +77,17 @@ namespace HueDream.Models.DreamScreen {
         private IPEndPoint targetEndpoint;
         private LedStrip strip;
 
+        public DreamClient(IHubContext<SocketServer> hubContext) {
+            HubContext = hubContext;
+            LogUtil.Write("Initialized with hubcontext??");
+            Initialize();
+        }
         public DreamClient() {
+            LogUtil.Write("Initialized without hubcontext.");
+            Initialize();
+        }
+
+        private void Initialize() {
             aStream = getStream();
             var dd = DataUtil.GetStore();
             dev = DataUtil.GetDeviceData();
@@ -103,7 +116,6 @@ namespace HueDream.Models.DreamScreen {
             captureTokenSource = new CancellationTokenSource();
             camTokenSource = new CancellationTokenSource();
         }
-
 
         protected override Task ExecuteAsync(CancellationToken cancellationToken) {
             LogUtil.WriteInc("Starting DreamClient services.");
@@ -141,6 +153,7 @@ namespace HueDream.Models.DreamScreen {
             dev = DataUtil.GetDeviceData();
             dev.Mode = newMode;
             devMode = newMode;
+            HubContext.Clients.All.SendAsync("mode", newMode);
             LogUtil.Write($@"DreamScreen: Updating mode from {prevMode} to {newMode}.");
             // If we are not in ambient mode and ambient scene is running, stop it
             switch (newMode) {
@@ -175,6 +188,8 @@ namespace HueDream.Models.DreamScreen {
             if (ambientMode == 0 && prevAmbientMode != -1) {
                 // Cancel ambient task
                 StopShowBuilder();
+            } else {
+                HubContext.Clients.All.SendAsync("ambientMode", newMode);
             }
 
             switch (ambientMode) {
@@ -200,6 +215,7 @@ namespace HueDream.Models.DreamScreen {
         private void UpdateBrightness(int newBrightness) {
             if (brightness == newBrightness) return;
             brightness = newBrightness;
+            HubContext.Clients.All.SendAsync("setBrightness", brightness);
             if (ambientMode == 0 && devMode == 3) {
                 UpdateAmbientColor(ambientColor);
             }
@@ -514,7 +530,10 @@ namespace HueDream.Models.DreamScreen {
 
                     break;
                 case "SATURATION":
-                    if (writeState | writeDev) dev.Saturation = ByteUtils.ByteString(payload);
+                    if (writeState | writeDev) {
+                        dev.Saturation = ByteUtils.ByteString(payload);
+                        HubContext.Clients.All.SendAsync("updateSaturation", dev.Saturation);
+                    }
 
                     break;
                 case "MODE":
@@ -536,6 +555,7 @@ namespace HueDream.Models.DreamScreen {
                     if (writeState | writeDev) {
                         ambientShow = payload[0];
                         dev.AmbientShowType = ambientShow;
+                        HubContext.Clients.All.SendAsync("ambientShow", dev.AmbientColor);
                         LogUtil.Write($@"Scene updated: {ambientShow}.");
                     }
                     if (writeState) UpdateAmbientShow(ambientShow);
@@ -543,6 +563,7 @@ namespace HueDream.Models.DreamScreen {
                 case "AMBIENT_COLOR":
                     if (writeDev | writeState) {
                         dev.AmbientColor = ByteUtils.ByteString(payload);
+                        HubContext.Clients.All.SendAsync("ambientColor", dev.AmbientColor);
                     }
                     if (writeState) UpdateAmbientColor(ColorFromString(dev.AmbientColor));
 

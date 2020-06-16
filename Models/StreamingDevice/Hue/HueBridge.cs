@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using HueDream.Models.Util;
+using ISocketLite.PCL.Exceptions;
 using Q42.HueApi;
 using Q42.HueApi.ColorConverters;
 using Q42.HueApi.ColorConverters.HSB;
@@ -55,7 +56,15 @@ namespace HueDream.Models.StreamingDevice.Hue {
             // Save previous light state(s) before stopping
             bd.Lights = HueDiscovery.GetLights(bd, client);
             DataUtil.InsertCollection<BridgeData>("bridges", bd);
-            var stream = await StreamingSetup.SetupAndReturnGroup(client, bd, ct);
+            StreamingGroup stream = null;
+            try {
+                stream = await StreamingSetup.SetupAndReturnGroup(client, bd, ct);
+            } catch (SocketException e) {
+                LogUtil.Write("Socket Exception (Probably tried stopping/starting too quickly): " + e.Message, "WARN");
+                return;
+            }
+            
+
             // This is what we actually need
             if (stream == null) {
                 LogUtil.Write("Error fetching bridge stream.", "WARN");

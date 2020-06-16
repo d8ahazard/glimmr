@@ -29,8 +29,28 @@ let vLedCount = 0;
 let hLedCount = 0;
 let postResult = null;
 let sTarget = [];
+let socketLoaded = false;
+
+let websocket = new signalR.HubConnectionBuilder()
+    .configureLogging(signalR.LogLevel.Information)
+    .withUrl("/socket")
+    .build();
+
+const bar = new ProgressBar.Circle(circleBar, {
+    strokeWidth: 15,
+    easing: 'easeInOut',
+    duration: 0,
+    color: '#0000FF',
+    trailColor: '#eee',
+    trailWidth: 0,
+    svgStyle: null,
+    value: 1
+});
+
 
 $(function () {
+    setSocketListeners();
+    loadSocket();
     loadData();
     $('#nanoCard').hide();
     $('#hueCard').hide();
@@ -40,13 +60,22 @@ $(function () {
     $('body').bootstrapMaterialDesign();
     setListeners();
     $('.devSelect').sortableLists();
-    // Refresh devices every 60 seconds
+    // Refresh devices every 10 minutes
     setInterval(function(){
         RefreshData();
-    },60000);
-    
-
+    },600000);
 });
+
+function sendMessage(endpoint, data, encode=true) {
+    if (encode) data = JSON.stringify(data);
+    websocket.invoke(endpoint, data).then(
+        console.log("Do the damned thang.")
+    ).catch(function (err) {
+        return console.error(err.toString());
+    });
+}
+    
+    
 
 function updateDsProperty(property, value) {
     console.log("Updating DS property: ", property, value);
@@ -64,8 +93,120 @@ function updateDsProperty(property, value) {
     }
 }
 
-function setListeners() {
+
+function loadSocket() {
+    if (socketLoaded) return;
+    console.log("Trying to connect to socket.");
+    websocket.start().then(function () {
+        console.log("Connected.");
+        socketLoaded = true;
+    }).catch(function (err) {
+        console.error(err.toString());
+    });
+}
+
+
+function setSocketListeners() {
+    websocket.on("ReceiveMessage", function (message) {
+        console.log("RecMsg: " + message);
+    });
     
+    websocket.on("mode", function (mode) {
+        console.log("Socket has set mode to " + mode);
+        $('.modeBtn').removeClass('active');
+        $("#mode" + mode).addClass('active');
+    });
+
+    websocket.on("ambientMode", function (mode) {
+        console.log("Socket has set ambient mode to " + mode);        
+    });
+
+    websocket.on("ambientShow", function (show) {
+        console.log("Socket has set ambient show to " + show);
+    });
+
+    websocket.on("ambientColor", function (color) {
+        console.log("Socket has set ambient color to " + color);
+    });
+
+    websocket.on("brightness", function (brightness) {
+        console.log("Socket has set ambient mode to " + brightness);
+    });
+
+    websocket.on("saturation", function (sat) {
+        console.log("Socket has set saturation to " + sat);
+    });
+
+    websocket.on("updateDevice", function (device) {
+        console.log("New device data " + device);
+    });
+
+    websocket.on("hueAuth", function (value) {
+        console.log("Hue Auth message: " + value);
+        let cb = $('#circleBar');
+
+        switch (value) {
+            case "start":
+                bar.animate(0);
+                cb.show();
+                break;
+            case "stop":                
+            case "authorized":
+                cb.hide();
+                break;
+            default:
+                if (Number.isInteger(value)) {
+                    bar.animate((value / 30));                    
+                }
+                break;
+        }
+    });
+
+    websocket.on("authorizeNano", function (value) {
+        console.log("Nano Auth message: " + value);
+        switch (value) {
+            case "start":
+                break;
+            case "stop":
+                break;
+            case "authorized":
+                break;
+            default:
+                break;
+        }
+    });
+    
+    websocket.on('open', function() {
+        console.log("Socket connected.");
+        socketLoaded = true;
+    });
+
+    websocket.on('olo', function(stuff) {
+        stuff = stuff.replace(/\\n/g, '');
+        let foo = JSON.parse(stuff);
+        console.log("OLO! ", foo);
+        datastore = foo;
+        buildLists();
+        socketLoaded = true;
+    });
+
+    websocket.onclose(function() {
+        console.log("Disconnected...");
+        socketLoaded = false;        
+        console.log("Loopity loop.");
+        let i = 0;
+        let intr = setInterval(function() {
+            loadSocket();
+            if (++i >= 100 || socketLoaded) clearInterval(intr);
+        }, 5000);
+    })
+}
+
+function updateDevice() {
+    
+}
+
+function setListeners() {    
     $('.devSaturation').on('input', function(){
         let r = $('.devSaturation[data-color="r"]').val();
         let g = $('.devSaturation[data-color="g"]').val();
@@ -393,7 +534,7 @@ function setListeners() {
 }
 
 // This gets called in loop by hue auth to see if we've linked our bridge.
-function checkHueAuth() {
+function checkHueAuth() {    
     $.get("./api/DreamData/action?action=authorizeHue&value=" + hueIp, function (data) {
         console.log("Bridge data:", data);
         if (data.key !== null && data.key !== undefined) {
@@ -404,8 +545,8 @@ function checkHueAuth() {
             }
         } else {
             console.log("Bridge is not linked yet.");
-        }        
-    });
+        }
+    });    
 }
 
 function checkNanoAuth() {
@@ -616,24 +757,32 @@ function saveSelectedDevice() {
 
 
 function loadData() {
-    $.get("./api/DreamData/action?action=loadData", function (data) {
+    if (socketLoaded) {
+        $.get("./api/DreamData/action?action=loadData");
+    } else {
+        $.get("./api/DreamData/action?action=loadData", function (data) {
             console.log("Dream data: ", data);
             datastore = data;
             buildLists();
             RefreshData();
-    });
+        });
+    }
 }
 
 function RefreshData() {
     if (!refreshing) {
         refreshing = true;
         console.log("Refreshing data.");
-        $.get("./api/DreamData/action?action=refreshDevices", function (data) {
-            console.log("Refreshed datastore: ", data);
-            datastore = data;
-            buildLists();
-            refreshing = false;
-        });
+        if (socketLoaded) {
+            $.get("./api/DreamData/action?action=refreshDevices");
+        } else {
+            $.get("./api/DreamData/action?action=refreshDevices", function (data) {
+                console.log("Refreshed datastore: ", data);
+                datastore = data;
+                buildLists();
+                refreshing = false;
+            });
+        }
     }
 }
 
@@ -1207,6 +1356,7 @@ function drawNanoShapes(panel) {
         selectedDevice.rotation = shapeGroup.rotation();
         saveSelectedDevice();
         postData("updateDevice", selectedDevice);
+        sendMessage("updateDevice", selectedDevice);
     }
     
     
@@ -1370,35 +1520,29 @@ function linkHue() {
     if (!hueAuth && !linking) {
         linking = true;
         $('#circleBar').show();
-        const bar = new ProgressBar.Circle(circleBar, {
-            strokeWidth: 15,
-            easing: 'easeInOut',
-            duration: 0,
-            color: '#0000FF',
-            trailColor: '#eee',
-            trailWidth: 0,
-            svgStyle: null,
-            value: 1
-        });
-
+       
         let x = 0;
         hueAuth = false;
-        const intervalID = window.setInterval(function () {
-            checkHueAuth();
-            bar.animate((x / 30));            
-            if (x++ === 30 || hueAuth) {
-                window.clearInterval(intervalID);
-                $('#circleBar').hide();
-                linking = false;
-            }
-        }, 1000);
+        if (socketLoaded) {
+            websocket.invoke("AuthorizeHue", hueIp);    
+        } else {
+            const intervalID = window.setInterval(function () {
+                checkHueAuth();
+                bar.animate((x / 30));
+                if (x++ === 30 || hueAuth) {
+                    window.clearInterval(intervalID);
+                    $('#circleBar').hide();
+                    linking = false;
+                }
+            }, 1000);
 
-        setTimeout(function () {
-            let cb = $('#circleBar');
-            cb.html("");
-            cb.hide();
-            linking = false;
-        }, 30000);
+            setTimeout(function () {
+                let cb = $('#circleBar');
+                cb.html("");
+                cb.hide();
+                linking = false;
+            }, 30000);
+        }
     } else {
         console.log("Already authorized.");
     }
@@ -1412,17 +1556,7 @@ function linkNano() {
         nanoLinking = true;
         console.log("Trying to authorize with nanoleaf.");
         $('#nanoBar').show();
-        const bar = new ProgressBar.Circle(nanoBar, {
-            strokeWidth: 15,
-            easing: 'easeInOut',
-            duration: 0,
-            color: '#0000FF',
-            trailColor: '#eee',
-            trailWidth: 0,
-            svgStyle: null,
-            value: 1
-        });
-
+        
         let x = 0;
         nanoAuth = false;
         const intervalID = window.setInterval(function () {

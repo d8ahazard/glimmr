@@ -48,7 +48,12 @@ namespace HueDream.Models.StreamingDevice.Hue {
                 LogUtil.Write("Looping for bridge...");
                 if (ex != null) nb.CopyBridgeData(ex);
                 if (nb.Key != null && nb.User != null) {
-                    _hc?.Dispose();
+                    try {
+                        _hc?.Dispose();
+                    } catch (ObjectDisposedException) {
+                        LogUtil.Write("Client is already disposed...");
+                    }
+
                     _hc = new StreamingHueClient(nb.IpAddress, nb.User, nb.Key);
                     try {
                         LogUtil.Write($"Refreshing bridge: {nb.Id} - {nb.IpAddress}");

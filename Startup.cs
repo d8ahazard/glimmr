@@ -1,5 +1,8 @@
+using HueDream.Hubs;
+using HueDream.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -37,7 +40,20 @@ namespace HueDream {
                 endpoints.MapControllerRoute(
                     "default",
                     "{controller=Home}/{action=Index}/{id?}");
+                endpoints.MapHub<SocketServer>("/socket");
             });
+            
+            app.Use(async (context, next) =>
+            {
+                var hubContext = context.RequestServices
+                    .GetRequiredService<IHubContext<SocketServer>>();
+    
+                if (next != null)
+                {
+                    await next.Invoke();
+                }
+            });
+         
         }
 
     }

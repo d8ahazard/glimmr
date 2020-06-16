@@ -5,6 +5,7 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using HueDream.Hubs;
 using HueDream.Models.DreamScreen;
 using HueDream.Models.DreamScreen.Devices;
 using HueDream.Models.LED;
@@ -13,27 +14,26 @@ using HueDream.Models.StreamingDevice.LIFX;
 using HueDream.Models.StreamingDevice.Nanoleaf;
 using HueDream.Models.Util;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Q42.HueApi;
-using Serilog;
 
 namespace HueDream.Controllers {
     [Route("api/[controller]"), ApiController]
     public class DreamDataController : ControllerBase {
-        private HueClient hueClient;
-        // GET: api/DreamData/getMode
-        [Route("getMode")]
-        public static int GetMode() {
-            var dev = DataUtil.GetDeviceData();
-            return dev.Mode;
+
+        private IHubContext<SocketServer> _hubContext;
+        
+        public DreamDataController(IHubContext<SocketServer> hubContext) {
+            LogUtil.Write("Initialized ddc with hub context.");
+            _hubContext = hubContext;
         }
-
-
+        
         // POST: api/DreamData/mode
-        [HttpPost("mode")]
+        [HttpPost("SetMode")]
         public IActionResult DevMode([FromBody] JObject modeObj) {
             SetMode(modeObj);
+            _hubContext.Clients.All.SendAsync("SetMode", modeObj);
             return Ok(modeObj);
         }
 
@@ -45,6 +45,7 @@ namespace HueDream.Controllers {
             var value = (dsSetting["value"] ?? "").Value<string>();
             LogUtil.Write($"We got our stuff: {id}, {property}, {value}");
             DreamSender.SendMessage(property, value, id);
+            _hubContext.Clients.All.SendAsync("SetMode", dsSetting);
             return Ok();
         }
 
@@ -52,6 +53,7 @@ namespace HueDream.Controllers {
         [HttpPost("updateDevice")]
         public IActionResult UpdateDevice([FromBody] JObject dData) {
             var res = TriggerReload(dData);
+            _hubContext.Clients.All.SendAsync("updateDevice", res);
             return Ok(res);
         }
         
@@ -59,6 +61,7 @@ namespace HueDream.Controllers {
         [HttpPost("updateData")]
         public IActionResult UpdateData([FromBody] JObject dData) {
             var res = TriggerReload(dData);
+            _hubContext.Clients.All.SendAsync("updateData", res);
             return Ok(res);
         }
 
@@ -66,6 +69,7 @@ namespace HueDream.Controllers {
         [HttpPost("capturemode")]
         public IActionResult CaptureMode([FromBody] int cMode) {
             SetCaptureMode(cMode);
+            _hubContext.Clients.All.SendAsync("capturemode", cMode);
             return Ok(cMode);
         }
 
@@ -73,6 +77,7 @@ namespace HueDream.Controllers {
         [HttpPost("camType")]
         public IActionResult CamType([FromBody] int cType) {
             DataUtil.SetItem<int>("camType", cType);
+            _hubContext.Clients.All.SendAsync("camType", cType);
             ResetMode();
             return Ok(cType);
         }
@@ -150,11 +155,13 @@ namespace HueDream.Controllers {
             LogUtil.Write($@"{action} called from Web API.");
             switch (action) {
                 case "loadData":
+                    _hubContext?.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
                     return Content(DataUtil.GetStoreSerialized(), "application/json");
                 case "refreshDevices":
                     var res = Task.Run(() => {
                         DataUtil.RefreshDevices();
                         Thread.Sleep(5000);
+                        _hubContext?.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
                         return DataUtil.GetStoreSerialized();
                     });
                     return Content(res.Result, "application/json");
@@ -163,7 +170,7 @@ namespace HueDream.Controllers {
                     var doAuth = true;
                     BridgeData bd = null;
                     if (!string.IsNullOrEmpty(value)) {
-                        LogUtil.Write("Value is good: " + value);
+                        _hubContext?.Clients.All.SendAsync("hueAuth", "start");
                         bd = DataUtil.GetCollectionItem<BridgeData>("bridges", value);
                         LogUtil.Write("BD: " + JsonConvert.SerializeObject(bd));
                         if (bd == null) {
@@ -355,7 +362,7 @@ namespace HueDream.Controllers {
         }
 
 
-        private static bool TriggerReload(JObject dData) {
+        private bool TriggerReload(JObject dData) {
             if (dData == null) throw new ArgumentException("invalid jobject");
             var tag = (dData["tag"] ?? "INVALID").Value<string>();
             var id = (dData["id"] ?? "INVALID").Value<string>();
@@ -366,15 +373,21 @@ namespace HueDream.Controllers {
             switch (tag) {
                 case "HueBridge":
                     LogUtil.Write("Updating bridge");
-                    DataUtil.InsertCollection<BridgeData>("bridges", dData.ToObject<BridgeData>());
+                    var bData = dData.ToObject<BridgeData>();
+                    DataUtil.InsertCollection<BridgeData>("bridges", bData);
+                    _hubContext.Clients.All.SendAsync("hueData", bData);
                     break;
                 case "Lifx":
                     LogUtil.Write("Updating lifx bulb");
-                    DataUtil.InsertCollection<LifxData>("lifxBulbs", dData.ToObject<LifxData>());
+                    var lData = dData.ToObject<LifxData>();
+                    DataUtil.InsertCollection<LifxData>("lifxBulbs", lData);
+                    _hubContext.Clients.All.SendAsync("lifxData", lData);
                     break;
                 case "NanoLeaf":
                     LogUtil.Write("Updating nanoleaf");
-                    DataUtil.InsertCollection<NanoData>("leaves", dData.ToObject<NanoData>());
+                    var nData = dData.ToObject<NanoData>();
+                    DataUtil.InsertCollection<NanoData>("leaves", nData);
+                    _hubContext.Clients.All.SendAsync("nanoData", nData);
                     break;
             }
 

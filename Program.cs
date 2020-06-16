@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Runtime.InteropServices;
+using HueDream.Models;
 using Serilog;
 
 namespace HueDream {
@@ -36,7 +37,10 @@ namespace HueDream {
                     webBuilder.UseUrls("http://*:5699");
                 })
                 // Initialize our dream screen emulator
-                .ConfigureServices(services => { services.AddHostedService<DreamClient>();});
+                .ConfigureServices(services => {
+                    services.AddSignalR();
+                    services.AddHostedService<DreamClient>();
+                });
         }
     }
 }
