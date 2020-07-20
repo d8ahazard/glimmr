@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using HueDream.Models.Util;
 using Newtonsoft.Json;
@@ -40,9 +41,10 @@ namespace HueDream.Models.StreamingDevice.Hue {
             return null;
         }
 
-        public static async Task<List<BridgeData>> Refresh() {
+        public static async Task<List<BridgeData>> Refresh(CancellationToken ct) {
             var output = new List<BridgeData>();
-            var newBridges = await Discover();
+            var foo = Task.Run(() => Discover(), ct);
+            var newBridges = await foo;
             foreach (var nb in newBridges) {
                 var ex = DataUtil.GetCollectionItem<BridgeData>("bridges", nb.Id);
                 LogUtil.Write("Looping for bridge...");
@@ -79,9 +81,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
             LogUtil.Write("Hue: Discovery Started.");
             var output = new List<BridgeData>();
             try {
-                var discovered = await HueBridgeDiscovery.FastDiscoveryAsync(TimeSpan.FromSeconds(time));
-                //var discovered = await HueBridgeDiscovery
-                    //.FastDiscoveryWithNetworkScanFallbackAsync(TimeSpan.FromSeconds(time), TimeSpan.FromSeconds(time));
+                var discovered = await HueBridgeDiscovery.CompleteDiscoveryAsync(TimeSpan.FromSeconds(time),TimeSpan.FromSeconds(time));
                 LogUtil.Write("Fast discovery done...");
                 output = discovered.Select(bridge => new BridgeData(bridge)).ToList();
                 LogUtil.Write($"Hue: Discovery complete, found {discovered.Count} devices.");

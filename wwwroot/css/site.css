@@ -140,15 +140,31 @@ body {
     padding-top: 67.8764%;
 }
 
-#nanoPreview {
-    background-image: url("../img/start_tv.png");
-    background-size: cover;
+#nanoSectors {
+    background-image: url("../img/sectoring_tv.png");
+    background-size: contain;
     background-repeat: no-repeat;
     position: relative;
     width: 100%;
+    min-width: 270px;
+    height: 0;
+    padding-top: 67.8764%;
+}
+
+#nanoPreview {
+    background-image: url("../img/sectoring_tv.png");
+    background-size: cover;
+    background-repeat: no-repeat;
+    position: relative;
+    width: 105%;
     height: 0;
     padding-top: 67.8764%; /* (img-height / img-width * container-width) */
+    text-align: center;
     /* (853 / 1280 * 100) */
+}
+
+#nanoPreviewWrap {
+    width: 95%;
 }
 
 background {
@@ -318,11 +334,11 @@ input:checked + .slider:before {
     
 }
 
-.sectorRow {
+.sectorRow, .nanoSectorRow {
     height: 33.33%;
 }
 
-.lightRegion, .clickRegion {
+.lightRegion, .clickRegion, .nanoRegion {
     background-image: url("../img/sector_unchecked_background.png");
     background-size: contain;
     background-repeat: no-repeat;
@@ -330,7 +346,7 @@ input:checked + .slider:before {
     padding: 15px;
 }
 
-.lightRegion.checked, .clickRegion.checked {
+.lightRegion.checked, .clickRegion.checked, .nanoRegion.checked {
     background-image: url("../img/sector_checked_background.png");
     background-size: contain;
     background-repeat: no-repeat;

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using Accord.IO;
 using HueDream.Models.DreamScreen;
@@ -315,20 +316,17 @@ namespace HueDream.Models.Util {
 
 
         public static async void RefreshDevices() {
-            if (scanning) {
-                LogUtil.Write("We are already scanning...hold your horses.", "WARN");
-                return;
-            }
-
+            var cs = new CancellationTokenSource();
+            cs.CancelAfter(10000);
             LogUtil.Write("Starting scan.");
             scanning = true;
             // Get dream devices
             var ld = new LifxDiscovery();
-            var nanoTask = NanoDiscovery.Refresh();
-            var bridgeTask = HueDiscovery.Refresh();
+            var nanoTask = NanoDiscovery.Refresh(cs.Token);
+            var bridgeTask = HueDiscovery.Refresh(cs.Token);
             var dreamTask = DreamDiscovery.Discover();
-            var bulbTask = ld.Refresh();
-            await Task.WhenAll(nanoTask, bridgeTask, dreamTask, bulbTask).ConfigureAwait(false);
+            var bulbTask = ld.Refresh(cs.Token);
+            await Task.WhenAll(nanoTask, bridgeTask, dreamTask, bulbTask);
             LogUtil.Write("Refresh complete.");
             scanning = false;
         }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Threading;
 using System.Threading.Tasks;
 using HueDream.Models.Util;
 using Makaretu.Dns;
@@ -73,8 +74,9 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             return output;
         }
 
-        public static async Task<List<NanoData>> Refresh(int timeout = 5) {
-            var newLeaves = await Discover(timeout).ConfigureAwait(false);
+        public static async Task<List<NanoData>> Refresh(CancellationToken ct) {
+            var foo = Task.Run(() => Discover(), ct);
+            var newLeaves = await foo;
             foreach (var nl in newLeaves) {
                 var ex = DataUtil.GetCollectionItem<NanoData>("leaves", nl.Id);
                 if (ex != null) nl.CopyExisting(ex);

@@ -31,6 +31,13 @@ let postResult = null;
 let sTarget = [];
 let socketLoaded = false;
 let allDevices = [];
+let canvasTask = null;
+let nanoX = 0;
+let nanoY = 0;
+let tvX = 0;
+let tvY = 0;
+let nanoTarget = -1;
+let nanoSector = -1;
 
 let websocket = new signalR.HubConnectionBuilder()
     .configureLogging(signalR.LogLevel.Information)
@@ -500,6 +507,30 @@ function setListeners() {
         }
     });
 
+    $('.nanoRegion').click(function() {
+        if (!$(this).hasClass('checked')) {
+            $('.nanoRegion').removeClass('checked');
+            $(this).addClass('checked');
+            let val=$(this).data('region');
+            nanoSector = val;
+            console.log("Val is " + val);
+            let sTarget = -1;
+            let sectors = selectedDevice["layout"]["positionData"];
+            for (let q=0; q < sectors.length; q++) {
+                if (sectors[q]["panelId"] === nanoTarget) {
+                    sTarget = q;
+                }
+            }
+            
+            if (sTarget !== -1) {
+                selectedDevice["layout"]["positionData"][sTarget]["sector"] = nanoSector;
+                console.log("Updating target sector for nano panel: " + nanoTarget + " and " + nanoSector, selectedDevice);
+                postData("updateDevice", selectedDevice);    
+            }
+            $('#nanoModal').modal('toggle');            
+        }
+    });
+
 
     // On group selection change
     $('.dsGroup').change(function () {
@@ -641,16 +672,6 @@ function mapLights() {
                     if (!checkDiv.hasClass('checked')) checkDiv.addClass('checked');
                 }
                 newSelect.appendChild(opt);
-
-                // Add the options for our regions
-                for (let i = 1; i < 13; i++) {
-                    opt = document.createElement("option");
-                    opt.value = (i).toString();
-                    opt.innerHTML = "<BR>" + (i);
-                    // Mark it selected if it's mapped
-                    if (selection === i) opt.setAttribute('selected', 'selected');
-                    newSelect.appendChild(opt);
-                }
 
                 // Create the div to hold our select
                 const selDiv = document.createElement('div');
@@ -1234,6 +1255,12 @@ function loadNanoData(data) {
         lImg.addClass('linked');
         lHint.html("Your Nanoleaf is linked.");
         lBtn.css('cursor', 'default');
+        if (nanoX === data.x && nanoY === data.y) {
+            console.log("Shapes position hasn't changed, returning.");
+        } else {
+            nanoX = data.x;
+            nanoY = data.y;
+        }
         drawNanoShapes(data);
     } else {
         if (nanoLinking) {
@@ -1308,16 +1335,25 @@ function drawNanoShapes(panel) {
     }
     
     // Determine TV x/y position
-    let tvX = (width - tvWidth) / 2;
-    let tvY = (height - tvHeight) / 2;
-    
+    tvX = (width - tvWidth) / 2;
+    tvY = (height - tvHeight) / 2;
+    pX += tvX;
+    pY += tvY;
     // Create our stage
     let stage = new Konva.Stage({
         container: 'canvasDiv',
         width: width,
         height: height
     });
-
+    
+    let tLayer = new Konva.Layer();
+    tLayer.add(new Konva.Text({
+        text: "Click a tile to set sector mapping.",
+        fontSize: 30,
+        fontFamily: 'Calibri',
+        fill: "white"
+    }));
+    stage.add(tLayer);
     // Shape layer
     let cLayer = new Konva.Layer();
     stage.add(cLayer);
@@ -1335,7 +1371,7 @@ function drawNanoShapes(panel) {
     // Transform for scaling
     let tr2 = new Konva.Transformer({
         keepRatio: true,
-        enabledAnchors: [],
+        resizeEnabled: false,
         rotationSnaps: snaps
     });
 
@@ -1348,47 +1384,37 @@ function drawNanoShapes(panel) {
 
     // Drag listener
     shapeGroup.on('dragend', function(e) {
-        doTheThing();
+        if (canvasTask !== null) {
+            clearTimeout(canvasTask);
+        }
+        console.log("NanoX and NanoY are " + nanoX + " and " + nanoY);
+        canvasTask = setTimeout(function(){
+            doTheThing();    
+        }, 500);            
+            
     });
     
-    // Transform listener
-    shapeGroup.on('transformend', function(e) {
-       doTheThing();
-    });
+   
     
     // Transform values and post them
     function doTheThing() {
-        let width = window.innerWidth;
-        let height = window.innerHeight;
-        let centerX = width / 2;
-        let centerY = height / 2;
-
         // Get the top-left x,y coordinates
-        let gX = shapeGroup.x();
-        let gY = shapeGroup.y();
-        // Get the overall width and height of the shape
-        let sW = tr2.width();
-        let sH = tr2.height();
-        // Add half of the width and height to the shape for center
-        gX += (sW / 2);
-        gY += (sH / 2);
-        // Subtract the center of the screen to determine the x/y pos
-        gX = gX - centerX;
-        gY = gY - centerY;
-        // Flip our y-coord to be negative?
-        gY *= -1;
-        // Apply scale to the coordinate
-        if (halfScale) {
-            gX *= 4;
-            gY *= 4;
+        let gX = shapeGroup.x() - tvX;
+        let gY = shapeGroup.y() - tvY;
+        if (nanoX !== gX || nanoY !== gY) {
+            console.log("Updating nano group position: " + gX + " and " + gY);
+            nanoX = gX;
+            nanoY = gY;
         } else {
-            gX *= 2;
-            gY *= 2;
+            console.log("Nano position has not changed, returning.");
+            return;
         }
         selectedDevice.x = gX;
         selectedDevice.y = gY;
         selectedDevice.scale = 1;
         selectedDevice.rotation = shapeGroup.rotation();
+        console.log("Setting x and y to " + gX + " and " + gY);
+
         saveSelectedDevice();
         postData("updateDevice", selectedDevice);
     }
@@ -1423,6 +1449,13 @@ function drawNanoShapes(panel) {
             x: x,
             y: y,
             text: data["panelId"],
+            fontSize: 30,
+            fontFamily: 'Calibri'
+        });
+        let sText2 = new Konva.Text({
+            x: x,
+            y: y - 35,
+            text: data["sector"],
             fontSize: 30,
             fontFamily: 'Calibri'
         });
@@ -1461,7 +1494,11 @@ function drawNanoShapes(panel) {
                     fill: 'white',
                     stroke: 'black',
                     strokeWidth: 5,
-                    closed: true
+                    closed: true,
+                    id: data["panelId"]
+                });
+                poly.on('click', function(){
+                    setNanoMap(data['panelId'], data['sector']);
                 });
                 shapeGroup.add(poly);
                 break;
@@ -1477,7 +1514,11 @@ function drawNanoShapes(panel) {
                     height: sideLength,
                     fill: 'white',
                     stroke: 'black',
-                    strokeWidth: 4
+                    strokeWidth: 4,
+                    id: data["panelId"]
+                });
+                rect1.on('click', function(){
+                    setNanoMap(data['panelId'], data['sector']);
                 });
                 shapeGroup.add(rect1);
                 break;
@@ -1486,33 +1527,21 @@ function drawNanoShapes(panel) {
                 break;
         }
         sText.offsetX(sText.width() / 2);
+        sText2.offsetX(sText2.width() / 2);
+        sText.on('click', function(){
+            setNanoMap(data['panelId'], data['sector']);
+            
+        });
+        sText2.on('click', function(){
+            setNanoMap(data['panelId'], data['sector']);
+        });
         shapeGroup.add(sText);
+        shapeGroup.add(sText2);
     }
     
     // add the layer to the stage
     tr2.forceUpdate();
     
-    // Get the width of the group as drawn in the UI
-    let nW = tr2.width();
-    let nH = tr2.height();
-    
-    // Apply the appropriate scale to x and y of panel
-    if (halfScale) {
-        pY /=4;
-        pX /=4;
-    } else {
-        pY /= 2;
-        pX /= 2;
-    }
-    // Invert y
-    pY *= -1;
-    
-    // Add the center values of the screen
-    pY += centerY;
-    pX += centerX;
-    // Subtract half of the width
-    pY += (nH);
-    pX -= (nW / 2);
     shapeGroup.x(pX);
     shapeGroup.y(pY);
     cLayer.draw();
@@ -1532,6 +1561,20 @@ function drawNanoShapes(panel) {
         iLayer.batchDraw();
     });
     cLayer.zIndex(0);
+}
+
+function setNanoMap(id, current) {
+    nanoTarget = id;
+    nanoSector = current;
+    console.log("Mapping sector for nano panel " + id);
+    // Add the options for our regions
+    $('.nanoRegion').removeClass('checked');
+    if (current !== -1) {
+        $('#nanoSector' + current).addClass('checked');
+    }
+    $('#nanoModal').modal({
+        show: true
+    });
 }
 
 // Get a group by group ID

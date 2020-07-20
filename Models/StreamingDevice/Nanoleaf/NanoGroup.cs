@@ -36,7 +36,6 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             if (n != null) {
                 SetData(n);
                 hc = new HttpClient();
-                CheckPositions(n);
             }
 
             disposed = false;
@@ -46,7 +45,6 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
         public void ReloadData() {
             var newData = DataUtil.GetCollectionItem<NanoData>("leaves", Id);
             SetData(newData);
-            CheckPositions(newData, true);
         }
 
         private void SetData(NanoData n) {
@@ -62,24 +60,7 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
 
         private void CheckPositions(NanoData n, bool force = false) {
             var pd = layout.PositionData;
-            var autoCalc = pd.Any(pl => pl.Sector == -1);
-
-            if (autoCalc || force) {
-                LogUtil.Write("Automagically calculating panel positions.");
-                var panelPositions = CalculatePoints(n);
-                var newPd = new List<PanelLayout>();
-                foreach (var pl in pd) {
-                    if (pl.Sector == -1 || force) {
-                        pl.Sector = panelPositions[pl.PanelId];
-                    }
-
-                    newPd.Add(pl);
-                }
-
-                layout.PositionData = newPd;
-                n.Layout = layout;
-                DataUtil.InsertCollection<NanoData>("leaves", n);
-            }
+            
         }
 
         public bool Streaming { get; set; }

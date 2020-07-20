@@ -38,6 +38,7 @@ namespace HueDream.Models.StreamingDevice.LIFX {
         [DefaultValue(100)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public int Brightness { get; set; }
+        public int MaxBrightness { get; set; }
 
     }
 }

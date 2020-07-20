@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using HueDream.Models.Util;
 using LifxNet;
@@ -24,13 +25,14 @@ namespace HueDream.Models.StreamingDevice.LIFX {
             return bulbs.Select(GetBulbInfo).ToList();
         }
 
-        public async Task<List<LifxData>> Refresh() {
-            var b = await Discover(5);
+        public async Task<List<LifxData>> Refresh(CancellationToken ct) {
+            var foo = Task.Run(() => Discover(5), ct);
+            var b = await foo;
             foreach (var bulb in b) {
                 var existing = DataUtil.GetCollectionItem<LifxData>("lifxBulbs", bulb.MacAddressString);
                 if (existing != null) {
                     bulb.SectorMapping = existing.SectorMapping;
-                    bulb.Brightness = existing.MaxBrightness;
+                    bulb.Brightness = existing.Brightness;
                 }
                 DataUtil.InsertCollection<LifxData>("lifxBulbs", bulb);
             }
