@@ -344,6 +344,7 @@ input:checked + .slider:before {
     background-repeat: no-repeat;
     background-position: center;
     padding: 15px;
+    color: white;
 }
 
 .lightRegion.checked, .clickRegion.checked, .nanoRegion.checked {

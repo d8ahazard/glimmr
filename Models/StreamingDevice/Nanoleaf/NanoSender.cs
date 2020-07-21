@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using HueDream.Models.Util;
 using Nanoleaf.Client.Exceptions;
+using Newtonsoft.Json;
 
 namespace HueDream.Models.StreamingDevice.Nanoleaf {
     public static class NanoSender {
@@ -19,6 +20,7 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
                 var hc = getClient();
                 using var content = new StringContent(json, Encoding.UTF8, "application/json");
                 using var responseMessage = await hc.PutAsync(authorizedPath, content).ConfigureAwait(false);
+                LogUtil.Write("Nano Put response: " + JsonConvert.SerializeObject(responseMessage));
                 if (!responseMessage.IsSuccessStatusCode) {
                     HandleNanoleafErrorStatusCodes(responseMessage);
                 }
@@ -47,6 +49,7 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
         }
 
         private static void HandleNanoleafErrorStatusCodes(HttpResponseMessage responseMessage) {
+            LogUtil.Write("Error with nano request: " + responseMessage.StatusCode, "ERROR");
             throw (int) responseMessage.StatusCode switch {
                 400 => new NanoleafHttpException("Error 400: Bad request!"),
                 401 => new NanoleafUnauthorizedException(

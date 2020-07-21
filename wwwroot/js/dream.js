@@ -673,6 +673,16 @@ function mapLights() {
                 }
                 newSelect.appendChild(opt);
 
+                // Add the options for our regions
+                for (let i = 1; i < 13; i++) {
+                    opt = document.createElement("option");
+                    opt.value = (i).toString();
+                    opt.innerHTML = "<BR>" + (i);
+                    // Mark it selected if it's mapped
+                    if (selection === i) opt.setAttribute('selected', 'selected');
+                    newSelect.appendChild(opt);
+                }
+                
                 // Create the div to hold our select
                 const selDiv = document.createElement('div');
                 selDiv.className += "form-group";
@@ -1353,6 +1363,7 @@ function drawNanoShapes(panel) {
         fontFamily: 'Calibri',
         fill: "white"
     }));
+    
     stage.add(tLayer);
     // Shape layer
     let cLayer = new Konva.Layer();
@@ -1514,8 +1525,7 @@ function drawNanoShapes(panel) {
                     height: sideLength,
                     fill: 'white',
                     stroke: 'black',
-                    strokeWidth: 4,
-                    id: data["panelId"]
+                    strokeWidth: 4
                 });
                 rect1.on('click', function(){
                     setNanoMap(data['panelId'], data['sector']);

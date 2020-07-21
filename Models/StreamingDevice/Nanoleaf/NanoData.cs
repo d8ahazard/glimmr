@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using HueDream.Models.Util;
 using Newtonsoft.Json;
 
 namespace HueDream.Models.StreamingDevice.Nanoleaf {
@@ -59,17 +60,28 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             Scale = 1;
             Rotation = leaf.Rotation;
             Brightness = leaf.Brightness;
-            Layout = MergeLayouts(leaf.Layout, Layout);
+            RefreshLeaf();
+            var newL = MergeLayouts(leaf.Layout, Layout);
+            Layout = newL;
         }
 
-        private static NanoLayout MergeLayouts(NanoLayout source, NanoLayout dest) {
-            var output = new NanoLayout {PositionData = new List<PanelLayout>()};
-            if (source == null || dest == null) return output;
+        private NanoLayout MergeLayouts(NanoLayout source, NanoLayout dest) {
+            var output = new NanoLayout();
+            if (source == null) {
+                LogUtil.Write("Source is null, returning.");
+                return output;
+            }
+            
+            if (source.PositionData == null) {
+                return output;
+            }
+            
+            // Loop through "old" data, copy sector mappings if found
             foreach (var s in source.PositionData) {
                 var sId = s.PanelId;
-                foreach (var d in dest.PositionData.Where(d => d.PanelId == sId)) {
+                foreach (var d in Layout.PositionData.Where(d => d.PanelId == sId)) {
                     d.Sector = s.Sector;
-                    output.PositionData.Add(d);
+                    output.PositionData.Add(s);
                 }
             }
 
@@ -78,8 +90,10 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
 
         public void RefreshLeaf() {
             if (Token == null) return;
+            LogUtil.Write("Refreshing leaf...");
             using var nl = new NanoGroup(IpV4Address, Token);
             var layout = nl.GetLayout().Result;
+            LogUtil.Write("New layout retrieved: " + JsonConvert.SerializeObject(layout));
             if (layout != null) Layout = layout;
             Scale = 1;
         }

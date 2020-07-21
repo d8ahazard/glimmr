@@ -54,7 +54,7 @@
         <PackageReference Include="MMALSharp" Version="0.6.0" />
         <PackageReference Include="Nanoleaf.Core" Version="1.1.7.1" />
         <PackageReference Include="Pranas.ScreenshotCapture" Version="1.0.11" />
-        <PackageReference Include="Q42.HueApi" Version="3.15.2" />
+        <PackageReference Include="Q42.HueApi" Version="3.15.4" />
         <PackageReference Include="Q42.HueApi.Entertainment" Version="3.15.0" />
         <PackageReference Include="Serilog" Version="2.9.1-dev-01154" />
         <PackageReference Include="Serilog.Sinks.Console" Version="4.0.0-dev-00839" />

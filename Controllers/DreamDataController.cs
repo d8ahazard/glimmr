@@ -231,6 +231,7 @@ namespace HueDream.Controllers {
                         var appKey = panel.CheckAuth().Result;
                         if (appKey != null && bd != null) {
                             bd.Token = appKey.Token;
+                            bd.RefreshLeaf();
                             leaves[nanoInt] = bd;
                             DataUtil.SetItem("leaves", leaves);
                         }

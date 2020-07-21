@@ -91,7 +91,10 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
 
 
         public void SetColor(List<Color> colors, double fadeTime = 0) {
-            if (!Streaming) return;
+            if (!Streaming) {
+                LogUtil.Write("Streaming is  not active?");
+                return;
+            }
             if (colors == null || colors.Count < 12) {
                 throw new ArgumentException("Invalid color list.");
             }
@@ -102,7 +105,6 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             } else {
                 byteString.Add(ByteUtils.IntByte(layout.NumPanels));
             }
-
             foreach (var pd in layout.PositionData) {
                 var id = pd.PanelId;
                 var colorInt = pd.Sector - 1;
@@ -111,7 +113,7 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
                 } else {
                     byteString.Add(ByteUtils.IntByte(id));
                 }
-
+                
                 if (pd.Sector == -1) continue;
                 var color = colors[colorInt];
                 if (Brightness < 100) {
@@ -128,165 +130,11 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
                 // Pad duration time
                 byteString.AddRange(streamMode == 2 ? ByteUtils.PadInt(1) : ByteUtils.PadInt(1, 1));
             }
-
             SendUdpUnicast(byteString.ToArray());
         }
 
 
-        private static Dictionary<int, int> CalculatePoints(NanoData nd) {
-            if (nd == null) throw new ArgumentException("Invalid panel data.");
-            var pl = nd.Layout;
-
-            var pPoints = CalculatePanelPoints(nd);
-            var sPoints = CalculateSectorPoints();
-            // Set our marker at center
-
-            LogUtil.Write("S points: " + JsonConvert.SerializeObject(sPoints));
-            var tList = new Dictionary<int, int>();
-            var panelInt = 0;
-            foreach (var pPoint in pPoints) {
-                double maxDist = double.MaxValue;
-                var pTarget = -1;
-                foreach (KeyValuePair<int, Point> kp in sPoints) {
-                    var dX = kp.Value.X - pPoint.X;
-                    var dY = kp.Value.Y - pPoint.Y;
-                    var dist = Math.Sqrt(Math.Pow(dX, 2) + Math.Pow(dY, 2));
-                    if (dist < maxDist) {
-                        maxDist = dist;
-                        pTarget = kp.Key;
-                    }
-                }
-
-                if (pTarget != -1) {
-                    var pId = pl.PositionData[panelInt].PanelId;
-                    tList[pId] = pTarget;
-                } else {
-                    LogUtil.Write($@"Can't get target: {maxDist} {pTarget}");
-                }
-
-                panelInt++;
-            }
-
-            LogUtil.Write("Final List: " + JsonConvert.SerializeObject(tList));
-            return tList;
-        }
-
-        private static List<PointD> CalculatePanelPoints(NanoData nd) {
-            var pl = nd.Layout;
-            var pPoints = new List<PointD>();
-            var sideLength = pl.SideLength;
-            var nX = nd.X;
-            var nY = nd.Y;
-
-            var minX = 1000;
-            var minY = 1000;
-            var maxX = 0;
-            var maxY = 0;
-
-            // Calculate the min/max range for each tile
-            foreach (var data in pl.PositionData) {
-                if (data.X < minX) minX = data.X;
-                if (data.Y * -1 < minY) minY = data.Y * -1;
-                if (data.X > maxX) maxX = data.X;
-                if (data.Y * -1 > maxY) maxY = data.Y * -1;
-            }
-
-            var xRange = maxX - minX;
-            var yRange = maxY - minY;
-
-            foreach (var layout in pl.PositionData) {
-                double pX = layout.X;
-                double pY = layout.Y;
-                if (nd.MirrorX) pX *= -1;
-                if (!nd.MirrorY) pY *= -1;
-                pX -= xRange / 2f;
-                pY += yRange / 2f;
-                pX -= sideLength / 2f;
-                pY += sideLength / 2f;
-                pX += nX;
-                pY += nY;
-                var p = new PointD(pX, pY);
-                pPoints.Add(p);
-            }
-
-            LogUtil.Write("P points: " + JsonConvert.SerializeObject(pPoints));
-            return pPoints;
-        }
-
-        private static Dictionary<int, Point> CalculateSectorPoints() {
-            int verticalCount;
-            int horizontalCount;
-            var cMode = DataUtil.GetItem<int>("captureMode");
-            var lD = DataUtil.GetItem<LedData>("ledData");
-            if (cMode == 0) {
-                verticalCount = lD.VCountDs;
-                horizontalCount = lD.HCountDs;
-            } else {
-                verticalCount = lD.VCount;
-                horizontalCount = lD.HCount;
-            }
-
-            // 1 LED = 25 tile units for nano
-
-            // Set our TV image width
-            var tvWidth = horizontalCount * 25;
-            var tvHeight = verticalCount * 25;
-
-            // Get vertical spaces between tiles
-            var vStep = tvHeight / 3;
-            // Get horizontal spaces between tiles
-            var hStep = tvWidth / 5;
-
-            // If window is less than 500px, divide our scale by half
-            tvWidth /= 2;
-            tvHeight /= 2;
-
-            LogUtil.Write($"TvWidth, height {tvWidth}{tvHeight}");
-
-            var sPoints = new Dictionary<int, Point>();
-            var yMarker = vStep * -1; // Down one
-            var xMarker = hStep * 2; // Right x2
-
-            var pointInt = 1;
-            sPoints[pointInt] = new Point(xMarker, yMarker);
-            pointInt++;
-            yMarker += vStep;
-            sPoints[pointInt] = new Point(xMarker, yMarker);
-            pointInt++;
-            yMarker += vStep;
-            sPoints[pointInt] = new Point(xMarker, yMarker);
-            pointInt++;
-            xMarker -= hStep;
-            sPoints[pointInt] = new Point(xMarker, yMarker);
-            pointInt++;
-            xMarker -= hStep;
-            sPoints[pointInt] = new Point(xMarker, yMarker);
-            pointInt++;
-            xMarker -= hStep;
-            sPoints[pointInt] = new Point(xMarker, yMarker);
-            pointInt++;
-            xMarker -= hStep;
-            sPoints[pointInt] = new Point(xMarker, yMarker);
-            pointInt++;
-            yMarker -= vStep;
-            sPoints[pointInt] = new Point(xMarker, yMarker);
-            pointInt++;
-            yMarker -= vStep;
-            sPoints[pointInt] = new Point(xMarker, yMarker);
-            pointInt++;
-            xMarker += hStep;
-            sPoints[pointInt] = new Point(xMarker, yMarker);
-            pointInt++;
-            xMarker += hStep;
-            sPoints[pointInt] = new Point(xMarker, yMarker);
-            pointInt++;
-            xMarker += hStep;
-            sPoints[pointInt] = new Point(xMarker, yMarker);
-
-            LogUtil.Write("S points: " + JsonConvert.SerializeObject(sPoints));
-            return sPoints;
-        }
-
+     
         public async Task<UserToken> CheckAuth() {
             var nanoleaf = new NanoleafClient(ipAddress);
             UserToken result = null;

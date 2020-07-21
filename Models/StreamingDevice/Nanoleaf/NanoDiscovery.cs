@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using HueDream.Models.Util;
 using Makaretu.Dns;
+using Newtonsoft.Json;
 
 namespace HueDream.Models.StreamingDevice.Nanoleaf {
     public static class NanoDiscovery {
@@ -79,8 +80,13 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             var newLeaves = await foo;
             foreach (var nl in newLeaves) {
                 var ex = DataUtil.GetCollectionItem<NanoData>("leaves", nl.Id);
-                if (ex != null) nl.CopyExisting(ex);
-                nl.RefreshLeaf();
+                if (ex != null) {
+                    LogUtil.Write("New Leaf: " + JsonConvert.SerializeObject(nl));
+                    LogUtil.Write("Existing leaf found, copying: " + JsonConvert.SerializeObject(ex));
+                    nl.CopyExisting(ex);
+                } else {
+                    LogUtil.Write("New leaf discovered, not copying...");
+                }
                 DataUtil.InsertCollection<NanoData>("leaves", nl);
             }
             return DataUtil.GetCollection<NanoData>("leaves");
