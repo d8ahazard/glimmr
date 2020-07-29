@@ -75,7 +75,8 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             if (source.PositionData == null) {
                 return output;
             }
-            
+
+            output.NumPanels = source.NumPanels;
             // Loop through "old" data, copy sector mappings if found
             foreach (var s in source.PositionData) {
                 var sId = s.PanelId;

@@ -22,12 +22,12 @@ namespace HueDream.Controllers {
     [Route("api/[controller]"), ApiController]
     public class DreamDataController : ControllerBase {
 
-        private IHubContext<SocketServer> hubContext;
+        private readonly IHubContext<SocketServer> _hubContext;
         private bool timerStarted;
         
         public DreamDataController(IHubContext<SocketServer> hubContext) {
             LogUtil.Write("Initialized ddc with hub context.");
-            this.hubContext = hubContext;
+            this._hubContext = hubContext;
         }
         
         // POST: api/DreamData/mode
@@ -163,19 +163,14 @@ namespace HueDream.Controllers {
                     NotifyClients();
                     return Content(DataUtil.GetStoreSerialized(), "application/json");
                 case "refreshDevices":
-                    var res = Task.Run(() => {
-                        DataUtil.RefreshDevices();
-                        Thread.Sleep(5000);
-                        NotifyClients();
-                        return DataUtil.GetStoreSerialized();
-                    });
-                    return Content(res.Result, "application/json");
+                    // Just trigger dreamclient to refresh devices
+                    
                 case "authorizeHue": {
                     LogUtil.Write("AuthHue called, for real.");
                     var doAuth = true;
                     BridgeData bd = null;
                     if (!string.IsNullOrEmpty(value)) {
-                        hubContext?.Clients.All.SendAsync("hueAuth", "start");
+                        _hubContext?.Clients.All.SendAsync("hueAuth", "start");
                         bd = DataUtil.GetCollectionItem<BridgeData>("bridges", value);
                         LogUtil.Write("BD: " + JsonConvert.SerializeObject(bd));
                         if (bd == null) {
@@ -384,19 +379,19 @@ namespace HueDream.Controllers {
                     LogUtil.Write("Updating bridge");
                     var bData = dData.ToObject<BridgeData>();
                     DataUtil.InsertCollection<BridgeData>("bridges", bData);
-                    hubContext.Clients.All.SendAsync("hueData", bData);
+                    _hubContext.Clients.All.SendAsync("hueData", bData);
                     break;
                 case "Lifx":
                     LogUtil.Write("Updating lifx bulb");
                     var lData = dData.ToObject<LifxData>();
                     DataUtil.InsertCollection<LifxData>("lifxBulbs", lData);
-                    hubContext.Clients.All.SendAsync("lifxData", lData);
+                    _hubContext.Clients.All.SendAsync("lifxData", lData);
                     break;
                 case "NanoLeaf":
                     LogUtil.Write("Updating nanoleaf");
                     var nData = dData.ToObject<NanoData>();
                     DataUtil.InsertCollection<NanoData>("leaves", nData);
-                    hubContext.Clients.All.SendAsync("nanoData", nData);
+                    _hubContext.Clients.All.SendAsync("nanoData", nData);
                     break;
                 case "SideKick":
                     var dsData = dData.ToObject<SideKick>();
@@ -433,7 +428,7 @@ namespace HueDream.Controllers {
             if (timerStarted) return;
             timerStarted = true;
             await Task.Delay(TimeSpan.FromSeconds(.5));
-            await hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+            await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
             timerStarted = false;
             LogUtil.Write("Sending updated data via socket.");
         }

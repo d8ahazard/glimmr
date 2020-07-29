@@ -66,21 +66,6 @@ namespace HueDream.Models.StreamingDevice.Hue {
         public List<LightData> Lights { get; set; }
 
 
-        public void SetLights(List<LightData> lights) {
-            Lights = lights;
-        }
-
-        public List<LightData> GetLights() {
-            return Lights ??= new List<LightData>();
-        }
-
-        public void SetGroups(List<Group> groups) {
-            Groups = groups;
-        }
-
-        public List<Group> GetGroups() {
-            return Groups ??= new List<Group>();
-        }
 
         public static BridgeData DeserializeBridgeData(JObject o) {
             if (o == null) throw new ArgumentNullException(nameof(o));

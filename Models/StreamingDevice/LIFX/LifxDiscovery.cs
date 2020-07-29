@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using HueDream.Models.Util;
@@ -10,11 +11,11 @@ namespace HueDream.Models.StreamingDevice.LIFX {
         private readonly LifxClient client;
         private List<LightBulb> bulbs;
 
-        public LifxDiscovery() {
-            client = LifxSender.GetClient();
+        public LifxDiscovery(LifxClient client) {
         }
 
         public async Task<List<LifxData>> Discover(int timeOut) {
+            if (client == null) return new List<LifxData>();
             bulbs = new List<LightBulb>();
             client.DeviceDiscovered += Client_DeviceDiscovered;
             client.StartDeviceDiscovery();

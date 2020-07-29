@@ -15,6 +15,7 @@ using HueDream.Models.StreamingDevice.LIFX;
 using HueDream.Models.StreamingDevice.Nanoleaf;
 using HueDream.Models.Util;
 using JsonFlatFileDataStore;
+using LifxNet;
 using ManagedBass;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -26,7 +27,6 @@ namespace HueDream.Models.Util {
         public static DataStore GetStore() {
             var path = GetConfigPath("store.json");
             var store = new DataStore(path);
-            store = CheckDefaults(store);
             return store;
         }
 
@@ -159,13 +159,13 @@ namespace HueDream.Models.Util {
         }
         
 
-        private static DataStore CheckDefaults(DataStore store) {
+        public static DataStore CheckDefaults(DataStore store, LifxClient lc) {
             var v = store.GetItem("defaultsSet");
-            if (v == null) store = SetDefaults(store).Result;
+            if (v == null) store = SetDefaults(store, lc).Result;
             return store;
         }
 
-        private static async Task<DataStore> SetDefaults(DataStore store) {
+        private static async Task<DataStore> SetDefaults(DataStore store, LifxClient lc) {
             LogUtil.Write("Setting defaults.");
             BaseDevice myDevice = new SideKick(IpUtil.GetLocalIpAddress());
             myDevice.SetDefaults();
@@ -190,7 +190,7 @@ namespace HueDream.Models.Util {
             await store.InsertItemAsync("audioDevices", new List<DeviceInfo>()).ConfigureAwait(false);
             await store.InsertItemAsync("audioThreshold", .01f).ConfigureAwait(false);
             await store.InsertItemAsync("defaultsSet", true).ConfigureAwait(false);
-            await ScanDevices(store).ConfigureAwait(false);
+            await ScanDevices(store, lc).ConfigureAwait(false);
             LogUtil.Write("All data defaults have been set.");
             return store;
         }
@@ -315,13 +315,13 @@ namespace HueDream.Models.Util {
         }
 
 
-        public static async void RefreshDevices() {
+        public static async void RefreshDevices(LifxClient c) {
             var cs = new CancellationTokenSource();
             cs.CancelAfter(10000);
             LogUtil.Write("Starting scan.");
             scanning = true;
             // Get dream devices
-            var ld = new LifxDiscovery();
+            var ld = new LifxDiscovery(c);
             var nanoTask = NanoDiscovery.Refresh(cs.Token);
             var bridgeTask = HueDiscovery.Refresh(cs.Token);
             var dreamTask = DreamDiscovery.Discover();
@@ -329,14 +329,15 @@ namespace HueDream.Models.Util {
             await Task.WhenAll(nanoTask, bridgeTask, dreamTask, bulbTask);
             LogUtil.Write("Refresh complete.");
             scanning = false;
+            cs.Dispose();
         }
 
-        public static async Task ScanDevices(DataStore store) {
+        public static async Task ScanDevices(DataStore store, LifxClient lc) {
             if (store == null) throw new ArgumentException("Invalid store.");
             if (scanning) return;
             scanning = true;
             // Get dream devices
-            var ld = new LifxDiscovery();
+            var ld = new LifxDiscovery(lc);
             var nanoTask = NanoDiscovery.Discover();
             var hueTask = HueDiscovery.Discover();
             var dreamTask = DreamDiscovery.Discover();

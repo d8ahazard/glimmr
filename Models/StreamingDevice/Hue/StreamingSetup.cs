@@ -39,7 +39,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
                 var group = client.LocalHueClient.GetGroupAsync(groupId).Result;
                 if (group == null) {
                     LogUtil.Write("Group is null, defaulting to first group...");
-                    var groups = b.GetGroups();
+                    var groups = b.Groups;
                     if (groups.Count > 0) {
                         groupId = groups[0].Id;
                         group = client.LocalHueClient.GetGroupAsync(groupId).Result;

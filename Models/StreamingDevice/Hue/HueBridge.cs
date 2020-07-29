@@ -4,30 +4,34 @@ using System.Drawing;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using HueDream.Models.Util;
 using ISocketLite.PCL.Exceptions;
 using Q42.HueApi;
 using Q42.HueApi.ColorConverters;
 using Q42.HueApi.ColorConverters.HSB;
+using Q42.HueApi.Interfaces;
+using Q42.HueApi.Models.Bridge;
+using Q42.HueApi.Models.Groups;
 using Q42.HueApi.Streaming;
 using Q42.HueApi.Streaming.Extensions;
 using Q42.HueApi.Streaming.Models;
 
 namespace HueDream.Models.StreamingDevice.Hue {
     public sealed class HueBridge : IStreamingDevice, IDisposable {
-        private BridgeData bd;
-        private EntertainmentLayer entLayer;
-        private StreamingHueClient client;
-        private bool disposed;
+        public BridgeData Bd;
+        private EntertainmentLayer _entLayer;
+        private StreamingHueClient _client;
+        private bool _disposed;
         public int Brightness { get; set; }
         public string Id { get; set; }
 
         public HueBridge(BridgeData data) {
-            bd = data ?? throw new ArgumentNullException(nameof(data));
-            BridgeIp = bd.IpAddress;
-            disposed = false;
+            Bd = data ?? throw new ArgumentNullException(nameof(data));
+            BridgeIp = Bd.IpAddress;
+            _disposed = false;
             Streaming = false;
-            entLayer = null;
+            _entLayer = null;
             Brightness = data.Brightness;
             LogUtil.Write(@"Hue: Loading bridge: " + BridgeIp);
         }
@@ -42,7 +46,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
         /// </summary>
         /// <param name="ct">A cancellation token.</param>
         public async void StartStream(CancellationToken ct) {
-            if (bd.Id == null || bd.Key == null || bd.Lights == null || bd.Groups == null) {
+            if (Bd.Id == null || Bd.Key == null || Bd.Lights == null || Bd.Groups == null) {
                 LogUtil.Write("Bridge is not authorized.");
                 return;
             }
@@ -54,11 +58,11 @@ namespace HueDream.Models.StreamingDevice.Hue {
             // Grab our stream
             
             // Save previous light state(s) before stopping
-            bd.Lights = HueDiscovery.GetLights(bd, client);
-            DataUtil.InsertCollection<BridgeData>("bridges", bd);
-            StreamingGroup stream = null;
+            RefreshData();
+            DataUtil.InsertCollection<BridgeData>("bridges", Bd);
+            StreamingGroup stream;
             try {
-                stream = await StreamingSetup.SetupAndReturnGroup(client, bd, ct);
+                stream = await StreamingSetup.SetupAndReturnGroup(_client, Bd, ct);
             } catch (SocketException e) {
                 LogUtil.Write("Socket Exception (Probably tried stopping/starting too quickly): " + e.Message, "WARN");
                 return;
@@ -71,7 +75,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
                 return;
             }
 
-            entLayer = stream.GetNewLayer(true);
+            _entLayer = stream.GetNewLayer(true);
             LogUtil.WriteInc($"Hue: Streaming is active: {BridgeIp}");
             while (!ct.IsCancellationRequested) {
                 Streaming = true;
@@ -82,7 +86,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
         }
 
         public void StopStream() {
-            var _ = StreamingSetup.StopStream(client, bd);
+            var _ = StreamingSetup.StopStream(_client, Bd);
             LogUtil.WriteDec($"Stopping Hue Stream: {BridgeIp}");
             if (Streaming) ResetColors();
             Streaming = false;
@@ -90,15 +94,15 @@ namespace HueDream.Models.StreamingDevice.Hue {
         }
 
         private void SetClient() {
-            if (bd?.User == null || bd?.Key == null) return;
-            if (client != null) return;
-            client = new StreamingHueClient(bd.IpAddress, bd.User, bd.Key);
+            if (Bd?.User == null || Bd?.Key == null) return;
+            if (_client != null) return;
+            _client = new StreamingHueClient(Bd.IpAddress, Bd.User, Bd.Key);
         }
 
         private void ResetColors() {
-            foreach (var entLight in entLayer) {
+            foreach (var entLight in _entLayer) {
                 // Get data for our light from map
-                var lightMappings = bd.Lights;
+                var lightMappings = Bd.Lights;
                 var lightData = lightMappings.SingleOrDefault(item =>
                     item.Id == entLight.Id.ToString(CultureInfo.InvariantCulture));
                 if (lightData == null) continue;
@@ -108,14 +112,14 @@ namespace HueDream.Models.StreamingDevice.Hue {
                 var isOn = lightData.LastState.On;
                 var ll = new List<string> {lightData.Id};
                 var cmd = new LightCommand {Saturation = sat, Brightness = bri, Hue = hue, On = isOn};
-                client.LocalHueClient.SendCommandAsync(cmd, ll);
+                _client.LocalHueClient.SendCommandAsync(cmd, ll);
             }
         }
 
         public void ReloadData() {
             var newData = DataUtil.GetCollectionItem<BridgeData>("bridges", Id);
-            bd = newData;
-            BridgeIp = bd.IpAddress;
+            Bd = newData;
+            BridgeIp = Bd.IpAddress;
             Brightness = newData.MaxBrightness;
             LogUtil.Write(@"Hue: Reloaded bridge: " + BridgeIp);
         }
@@ -132,11 +136,11 @@ namespace HueDream.Models.StreamingDevice.Hue {
                 return;
             }
 
-            if (entLayer != null) {
-                var lightMappings = bd.Lights;
+            if (_entLayer != null) {
+                var lightMappings = Bd.Lights;
                 // Loop through lights in entertainment layer
                 //LogUtil.Write(@"Sending to bridge...");
-                foreach (var entLight in entLayer) {
+                foreach (var entLight in _entLayer) {
                     // Get data for our light from map
                     var lightData = lightMappings.SingleOrDefault(item =>
                         item.Id == entLight.Id.ToString(CultureInfo.InvariantCulture));
@@ -167,6 +171,47 @@ namespace HueDream.Models.StreamingDevice.Hue {
             }
         }
 
+        
+        public async void RefreshData() {
+            // If we have no IP or we're not authorized, return
+            var newLights = new List<LightData>();
+            var newGroups = new List<Group>();
+
+            if (Bd.IpAddress == "0.0.0.0" || Bd.User == null || Bd.Key == null) {
+                Bd.Lights = newLights;
+                Bd.Groups = newGroups;
+                LogUtil.Write("No authorization, returning empty lights.");
+                return;
+            }
+            // Get our client
+            SetClient();
+            LogUtil.Write("Adding lights...");
+            _client.LocalHueClient.Initialize(Bd.User);
+            // Get lights
+            var lights = Bd.Lights ?? new List<LightData>();
+            var res = _client.LocalHueClient.GetLightsAsync().Result;
+            var ld = res.Select(r => new LightData(r)).ToList();
+            
+            foreach (var light in ld) {
+                foreach (var ex in lights.Where(ex => ex.Id == light.Id)) {
+                    light.TargetSector = ex.TargetSector;
+                    light.Brightness = ex.Brightness;
+                    light.OverrideBrightness = ex.OverrideBrightness;
+                }
+                newLights.Add(light);
+            }
+            Bd.Lights = newLights;
+            
+            var all = await _client.LocalHueClient.GetEntertainmentGroups();
+            newGroups.AddRange(all);
+            LogUtil.Write("Listed.");
+            Bd.Groups = newGroups;
+        }
+        
+       
+
+       
+        
 
         public void Dispose() {
             Dispose(true);
@@ -174,18 +219,18 @@ namespace HueDream.Models.StreamingDevice.Hue {
 
 
         private void Dispose(bool disposing) {
-            if (disposed) {
+            if (_disposed) {
                 return;
             }
 
             if (disposing) {
                 if (Streaming) {
                     StopStream();
-                    client.Dispose();
+                    _client.Dispose();
                 }
             }
 
-            disposed = true;
+            _disposed = true;
         }
     }
 }

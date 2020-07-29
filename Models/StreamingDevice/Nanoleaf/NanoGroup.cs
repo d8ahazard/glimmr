@@ -15,30 +15,35 @@ using ZedGraph;
 
 namespace HueDream.Models.StreamingDevice.Nanoleaf {
     public sealed class NanoGroup : IStreamingDevice, IDisposable {
-        private string ipAddress;
-        private string token;
-        private string basePath;
-        private NanoLayout layout;
-        private readonly HttpClient hc;
-        private int streamMode;
-        private bool disposed;
+        private string _ipAddress;
+        private string _token;
+        private string _basePath;
+        private NanoLayout _layout;
+        private int _streamMode;
+        private bool _disposed;
+        private bool _sending;
         public int Brightness { get; set; }
         public string Id { get; set; }
+        private HttpClient _hc;
+        private readonly Socket _sender;
+
 
         public NanoGroup(string ipAddress, string token = "") {
-            this.ipAddress = ipAddress;
-            this.token = token;
-            basePath = "http://" + this.ipAddress + ":16021/api/v1/" + this.token;
-            disposed = false;
+            _ipAddress = ipAddress;
+            _token = token;
+            _hc = new HttpClient();
+            _basePath = "http://" + _ipAddress + ":16021/api/v1/" + _token;
+            _disposed = false;
         }
 
-        public NanoGroup(NanoData n) {
+        public NanoGroup(NanoData n, HttpClient hc, Socket hs) {
             if (n != null) {
                 SetData(n);
-                hc = new HttpClient();
+                _hc = hc;
+                _sender = hs;
             }
 
-            disposed = false;
+            _disposed = false;
         }
 
 
@@ -48,44 +53,46 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
         }
 
         private void SetData(NanoData n) {
-            ipAddress = n.IpV4Address;
-            token = n.Token;
-            layout = n.Layout;
+            _ipAddress = n.IpV4Address;
+            _token = n.Token;
+            _layout = n.Layout;
             Brightness = n.Brightness;
             var nanoType = n.Type;
-            streamMode = nanoType == "NL29" ? 2 : 1;
-            basePath = "http://" + ipAddress + ":16021/api/v1/" + token;
+            _streamMode = nanoType == "NL29" ? 2 : 1;
+            _basePath = "http://" + _ipAddress + ":16021/api/v1/" + _token;
             Id = n.Id;
         }
 
-        private void CheckPositions(NanoData n, bool force = false) {
-            var pd = layout.PositionData;
-            
-        }
-
+        
         public bool Streaming { get; set; }
 
         public async void StartStream(CancellationToken ct) {
-            LogUtil.WriteInc($@"Nanoleaf: Starting panel: {ipAddress}");
-            var controlVersion = "v" + streamMode;
+            LogUtil.WriteInc($@"Nanoleaf: Starting panel: {_ipAddress}");
+            // Turn it on first.
+            var currentState = NanoSender.SendGetRequest(_basePath).Result;
+            LogUtil.Write("Current state: " + currentState);
+            //await NanoSender.SendPutRequest(_basePath, JsonConvert.SerializeObject(new {on = new {value = true}}),
+                //"state");
+            var controlVersion = "v" + _streamMode;
             var body = new
                 {write = new {command = "display", animType = "extControl", extControlVersion = controlVersion}};
 
-            await NanoSender.SendPutRequest(basePath, JsonConvert.SerializeObject(new {on = new {value = true}}),
+            await NanoSender.SendPutRequest(_basePath, JsonConvert.SerializeObject(new {on = new {value = true}}),
                 "state");
-            await NanoSender.SendPutRequest(basePath, JsonConvert.SerializeObject(body), "effects");
+            await NanoSender.SendPutRequest(_basePath, JsonConvert.SerializeObject(body), "effects");
             LogUtil.Write("Nanoleaf: Streaming is active.");
+            _sending = true;
             while (!ct.IsCancellationRequested) {
                 Streaming = true;
             }
-
-            LogUtil.WriteDec($@"Nanoleaf: Stopped panel: {ipAddress}");
+            _sending = false;
+            LogUtil.WriteDec($@"Nanoleaf: Stopped panel: {_ipAddress}");
             StopStream();
         }
 
         public void StopStream() {
             Streaming = false;
-            NanoSender.SendPutRequest(basePath, JsonConvert.SerializeObject(new {on = new {value = false}}), "state")
+            NanoSender.SendPutRequest(_basePath, JsonConvert.SerializeObject(new {on = new {value = false}}), "state")
                 .ConfigureAwait(false);
         }
 
@@ -100,35 +107,35 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             }
 
             var byteString = new List<byte>();
-            if (streamMode == 2) {
-                byteString.AddRange(ByteUtils.PadInt(layout.NumPanels));
+            if (_streamMode == 2) {
+                byteString.AddRange(ByteUtils.PadInt(_layout.NumPanels));
             } else {
-                byteString.Add(ByteUtils.IntByte(layout.NumPanels));
+                byteString.Add(ByteUtils.IntByte(_layout.NumPanels));
             }
-            foreach (var pd in layout.PositionData) {
+            foreach (var pd in _layout.PositionData) {
                 var id = pd.PanelId;
                 var colorInt = pd.Sector - 1;
-                if (streamMode == 2) {
+                if (_streamMode == 2) {
                     byteString.AddRange(ByteUtils.PadInt(id));
                 } else {
                     byteString.Add(ByteUtils.IntByte(id));
                 }
-                
+
                 if (pd.Sector == -1) continue;
+                //LogUtil.Write("Sector for light " + id + " is " + pd.Sector);
                 var color = colors[colorInt];
                 if (Brightness < 100) {
                     color = ColorTransformUtil.ClampBrightness(color, Brightness);
                 }
 
-                // Pad ID, this is probably wrong
-                // Add rgb
+                // Add rgb values
                 byteString.Add(ByteUtils.IntByte(color.R));
                 byteString.Add(ByteUtils.IntByte(color.G));
                 byteString.Add(ByteUtils.IntByte(color.B));
                 // White value
                 byteString.AddRange(ByteUtils.PadInt(0, 1));
                 // Pad duration time
-                byteString.AddRange(streamMode == 2 ? ByteUtils.PadInt(1) : ByteUtils.PadInt(1, 1));
+                byteString.AddRange(_streamMode == 2 ? ByteUtils.PadInt(1) : ByteUtils.PadInt(1, 1));
             }
             SendUdpUnicast(byteString.ToArray());
         }
@@ -136,7 +143,7 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
 
      
         public async Task<UserToken> CheckAuth() {
-            var nanoleaf = new NanoleafClient(ipAddress);
+            var nanoleaf = new NanoleafClient(_ipAddress);
             UserToken result = null;
             try {
                 result = await nanoleaf.CreateTokenAsync().ConfigureAwait(false);
@@ -150,17 +157,14 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
         }
 
         private void SendUdpUnicast(byte[] data) {
-            var ep = IpUtil.Parse(ipAddress, 60222);
-            var sender = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            sender.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            sender.EnableBroadcast = false;
-            sender.SendTo(data, ep);
-            sender.Dispose();
+            if (!_sending) return;
+            var ep = IpUtil.Parse(_ipAddress, 60222);
+            _sender.SendTo(data, ep);
         }
 
         public async Task<NanoLayout> GetLayout() {
-            if (string.IsNullOrEmpty(token)) return null;
-            var fLayout = await NanoSender.SendGetRequest(basePath, "panelLayout/layout").ConfigureAwait(false);
+            if (string.IsNullOrEmpty(_token)) return null;
+            var fLayout = await NanoSender.SendGetRequest(_basePath, "panelLayout/layout").ConfigureAwait(false);
             var lObject = JsonConvert.DeserializeObject<NanoLayout>(fLayout);
             return lObject;
         }
@@ -171,14 +175,13 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
         }
 
         private void Dispose(bool disposing) {
-            if (disposed) {
+            if (_disposed) {
                 return;
             }
 
             if (!disposing) return;
             LogUtil.Write("Panel Disposed.");
-            disposed = true;
-            hc?.Dispose();
+            _disposed = true;
         }
     }
 }
