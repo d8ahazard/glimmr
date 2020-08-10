@@ -69,7 +69,9 @@ namespace HueDream.Models.StreamingDevice.Hue {
                 LogUtil.Write($"Hue: Discovery complete, found {discovered.Count} devices.");
             } catch (TaskCanceledException e) {
                 LogUtil.Write("Discovery exception, task canceled: " + e.Message, "WARN");
-            } catch (SocketException f) {
+            } catch (OperationCanceledException e) {
+                LogUtil.Write("Discovery exception, operation canceled: " + e.Message, "WARN");
+            }catch (SocketException f) {
                 LogUtil.Write("Socket exception, task canceled: " + f.Message, "WARN");
             } catch (HttpRequestException g) {
                 LogUtil.Write("HTTP exception, task canceled: " + g.Message, "WARN");

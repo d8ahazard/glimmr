@@ -51,7 +51,11 @@ namespace HueDream.Models.StreamingDevice.Hue {
                 return;
             }
             SetClient();
+			try {
             StopStream();
+			} catch (SocketException e) {
+				LogUtil.Write("Socket exception, probably no socket to stop. Oh well.");
+			}
             if (ct == null) throw new ArgumentException("Invalid cancellation token.");
             // Get our light map and filter for mapped lights
             LogUtil.Write($@"Hue: Connecting to bridge at {BridgeIp}...");

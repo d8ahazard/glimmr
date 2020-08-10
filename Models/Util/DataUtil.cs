@@ -326,7 +326,12 @@ namespace HueDream.Models.Util {
             var bridgeTask = HueDiscovery.Refresh(cs.Token);
             var dreamTask = DreamDiscovery.Discover();
             var bulbTask = ld.Refresh(cs.Token);
-            await Task.WhenAll(nanoTask, bridgeTask, dreamTask, bulbTask);
+			try {
+				await Task.WhenAll(nanoTask, bridgeTask, dreamTask, bulbTask);
+			} catch (TaskCanceledException e) {
+				LogUtil.Write("Discovery task was canceled before completion.");
+			}
+				
             LogUtil.Write("Refresh complete.");
             scanning = false;
             cs.Dispose();
