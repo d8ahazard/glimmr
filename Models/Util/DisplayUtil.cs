@@ -10,16 +10,17 @@ namespace HueDream.Models.Util {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
                 return GetWindowsDisplaySize();
             }
+            
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
                 return GetLinuxDisplaySize();
             }
 
             return new Size(0, 0);
         }
-        public enum SystemMetric
-        {
+
+        private enum SystemMetric {
             VirtualScreenWidth = 78, // CXVIRTUALSCREEN 0x0000004E 
-            VirtualScreenHeight = 79, // CYVIRTUALSCREEN 0x0000004F 
+            VirtualScreenHeight = 79 // CYVIRTUALSCREEN 0x0000004F 
         }
 
         [DllImport("user32.dll")]
@@ -32,14 +33,13 @@ namespace HueDream.Models.Util {
         }
         
         private static Size GetLinuxDisplaySize() {
-            // Use xrandr to get size of screen located at offset (0,0).
-            System.Diagnostics.Process p = new System.Diagnostics.Process();
-            p.StartInfo.UseShellExecute = false;
-            p.StartInfo.RedirectStandardOutput = true;
-            p.StartInfo.FileName = "xrandr";
+            var p = new System.Diagnostics.Process {
+                StartInfo = {UseShellExecute = false, RedirectStandardOutput = true, FileName = "xrandr"}
+            };
             p.Start();
-            string output = p.StandardOutput.ReadToEnd();
+            var output = p.StandardOutput.ReadToEnd();
             p.WaitForExit();
+            p.Dispose();
             var match = System.Text.RegularExpressions.Regex.Match(output, @"(\d+)x(\d+)\+0\+0");
             var w = match.Groups[1].Value;
             var h = match.Groups[2].Value;

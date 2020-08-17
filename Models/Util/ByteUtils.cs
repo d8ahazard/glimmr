@@ -94,11 +94,7 @@ namespace HueDream.Models.Util {
             if (len < input.Length) {
                 var subArr = new byte[len];
                 Array.Copy(input, start, subArr, 0, len);
-                if (hex) {
-                    strOut = BitConverter.ToString(subArr).Replace("-","", StringComparison.InvariantCulture);   
-                } else {
-                    strOut = subArr.Aggregate(strOut, (current, b) => current + Convert.ToChar(b));
-                }
+                strOut = hex ? BitConverter.ToString(subArr).Replace("-","", StringComparison.InvariantCulture) : subArr.Aggregate(strOut, (current, b) => current + Convert.ToChar(b));
             } else {
                 throw new IndexOutOfRangeException();
             }

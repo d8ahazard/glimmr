@@ -2,23 +2,11 @@
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis.Differencing;
-using Newtonsoft.Json;
 using Serilog;
 
 namespace HueDream.Models.Util {
     public static class LogUtil {
         private static int _msgCount;
-        
-        public static void Write(string text, dynamic myObject, string level="INFO") {
-            var objStr = string.Empty;
-            if (!myObject.GetType().IsSerializable) {
-                Write(text, level);
-            } else {
-                objStr = JsonConvert.SerializeObject(myObject, myObject.GetType());
-            }
-            Write(text + objStr, level);
-        
-        }
 
         public static void Write(string text, string level="INFO") {
             var cls = GetCaller();
@@ -39,26 +27,6 @@ namespace HueDream.Models.Util {
             }
         }
 
-        public static void WriteInc(string text, dynamic myObject, string level="INFO") {
-            var objStr = string.Empty;
-            if (!myObject.GetType().IsSerializable) {
-                WriteInc(text, level);
-            } else {
-                objStr = JsonConvert.SerializeObject(myObject, myObject.GetType());
-            }
-            WriteInc(text + objStr, level);
-        }
-
-        public static void WriteDec(string text, dynamic myObject, string level="INFO") {
-            var objStr = string.Empty;
-            if (!myObject.GetType().IsSerializable) {
-                WriteDec(text, level);
-            } else {
-                objStr = JsonConvert.SerializeObject(myObject, myObject.GetType());
-            }
-            WriteDec(text + objStr, level);
-        }
-        
         public static void WriteInc(string text, string level="INFO") {
             Write($@"C{_msgCount} - {text}", level);
             _msgCount++;
