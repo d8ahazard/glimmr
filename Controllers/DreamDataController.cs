@@ -164,7 +164,8 @@ namespace HueDream.Controllers {
                     return Content(DataUtil.GetStoreSerialized(), "application/json");
                 case "refreshDevices":
                     // Just trigger dreamclient to refresh devices
-                    
+                    TriggerRefresh();
+                    break;
                 case "authorizeHue": {
                     LogUtil.Write("AuthHue called, for real.");
                     var doAuth = true;
@@ -227,13 +228,12 @@ namespace HueDream.Controllers {
                         if (appKey != null && bd != null) {
                             bd.Token = appKey.Token;
                             bd.RefreshLeaf();
-                            leaves[nanoInt] = bd;
-                            DataUtil.SetItem("leaves", leaves);
+                            LogUtil.Write("Leaf refreshed and set...");
                         }
 
                         panel.Dispose();
                     }
-
+                    LogUtil.Write("REturning.");
                     return new JsonResult(bd);
                 }
             }
@@ -311,6 +311,12 @@ namespace HueDream.Controllers {
 
             DreamSender.SendUdpWrite(0x03, 0x01, new[] {newMode}, mFlag, groupNumber,
                 new IPEndPoint(IPAddress.Parse(ipAddress), 8888), groupSend);
+        }
+
+        private void TriggerRefresh() {
+            DreamSender.SendUdpWrite(0x01, 0x11, new byte[] {0}, 0);
+            Thread.Sleep(TimeSpan.FromSeconds(5));
+            NotifyClients();
         }
 
         private static void SetMode(int mode) {

@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using HueDream.Hubs;
 using HueDream.Models.CaptureSource.Audio;
 using HueDream.Models.CaptureSource.Camera;
@@ -84,7 +85,7 @@ namespace HueDream.Models.DreamScreen {
         private IPEndPoint _targetEndpoint;
         private LedStrip _strip;
 
-        private Timer _refreshTimer;
+        private System.Timers.Timer _refreshTimer;
 
         public DreamClient(IHubContext<SocketServer> hubContext) {
             _hubContext = hubContext;
@@ -139,11 +140,7 @@ namespace HueDream.Models.DreamScreen {
 
         protected override Task ExecuteAsync(CancellationToken cancellationToken) {
             LogUtil.WriteInc("Starting DreamClient services.");
-            _refreshTimer = new Timer(
-                e => DeviceDiscovery(),  
-                null, 
-                TimeSpan.Zero, 
-                TimeSpan.FromMinutes(10));
+            SetRefreshTimer();
 
             if (CaptureMode != 0) {
                 _grabber = new StreamCapture(_camTokenSource.Token);
@@ -161,8 +158,18 @@ namespace HueDream.Models.DreamScreen {
             LogUtil.Write("Updating device mode on startup.");
             return lt;
         }
+
+        private void SetRefreshTimer(bool refreshNow = false) {
+            if (refreshNow) {
+                DeviceDiscovery(null, null);
+            }
+            _refreshTimer = new System.Timers.Timer(600000);
+            _refreshTimer.Elapsed += DeviceDiscovery;
+            _refreshTimer.AutoReset = true;
+            _refreshTimer.Enabled = true;
+        }
         
-        private async Task DeviceDiscovery() {
+        private async void DeviceDiscovery(object sender, ElapsedEventArgs elapsedEventArgs) {
             LogUtil.Write("Starting device discovery.");
             // Trigger a refresh
             DataUtil.RefreshDevices(_lifxClient);
@@ -575,8 +582,9 @@ namespace HueDream.Models.DreamScreen {
                     if (writeState) UpdateMode(_dev.Mode);
 
                     break;
-                case "TRIGGER_DISCOVERY":
+                case "REFRESH_CLIENTS":
                     LogUtil.Write("Triggering discovery.");
+                    SetRefreshTimer(true);
                     break;
                 case "AMBIENT_MODE_TYPE":
                     if (writeState | writeDev) {
