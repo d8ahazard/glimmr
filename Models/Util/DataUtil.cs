@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Accord.IO;
@@ -127,6 +128,7 @@ namespace HueDream.Models.Util {
                     list.Add(value);
                     dStore.InsertItem(key, list);
                 } else {
+                    if (key == "leaves") LogUtil.Write("Inserting: " + JsonConvert.SerializeObject(value));
                     coll.ReplaceOne(value.Id, value, true);
                 }
 
@@ -326,11 +328,13 @@ namespace HueDream.Models.Util {
             var bridgeTask = HueDiscovery.Refresh(cs.Token);
             var dreamTask = DreamDiscovery.Discover();
             var bulbTask = ld.Refresh(cs.Token);
-			try {
-				await Task.WhenAll(nanoTask, bridgeTask, dreamTask, bulbTask);
-			} catch (TaskCanceledException e) {
-				LogUtil.Write("Discovery task was canceled before completion.");
-			}
+            try {
+                await Task.WhenAll(nanoTask, bridgeTask, dreamTask, bulbTask);
+            } catch (TaskCanceledException e) {
+                LogUtil.Write("Discovery task was canceled before completion: " + e.Message, "WARN");
+            } catch (SocketException f) {
+                LogUtil.Write("Socket Exception during discovery: " + f.Message, "WARN");
+            }
 				
             LogUtil.Write("Refresh complete.");
             scanning = false;
