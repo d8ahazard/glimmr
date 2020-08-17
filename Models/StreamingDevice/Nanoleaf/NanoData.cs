@@ -59,7 +59,7 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             Y = leaf.Y;
             Scale = 1;
             Rotation = leaf.Rotation;
-            Brightness = leaf.Brightness;
+            if (leaf.Brightness != 0)  Brightness = leaf.Brightness;
             RefreshLeaf();
             var newL = MergeLayouts(leaf.Layout, Layout);
             Layout = newL;

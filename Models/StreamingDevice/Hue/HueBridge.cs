@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using HueDream.Models.Util;
@@ -193,23 +194,32 @@ namespace HueDream.Models.StreamingDevice.Hue {
             _client.LocalHueClient.Initialize(Bd.User);
             // Get lights
             var lights = Bd.Lights ?? new List<LightData>();
-            var res = _client.LocalHueClient.GetLightsAsync().Result;
-            var ld = res.Select(r => new LightData(r)).ToList();
-            
-            foreach (var light in ld) {
-                foreach (var ex in lights.Where(ex => ex.Id == light.Id)) {
-                    light.TargetSector = ex.TargetSector;
-                    light.Brightness = ex.Brightness;
-                    light.OverrideBrightness = ex.OverrideBrightness;
+            try {
+                var res = _client.LocalHueClient.GetLightsAsync().Result;
+                var ld = res.Select(r => new LightData(r)).ToList();
+
+                foreach (var light in ld) {
+                    foreach (var ex in lights.Where(ex => ex.Id == light.Id)) {
+                        light.TargetSector = ex.TargetSector;
+                        light.Brightness = ex.Brightness;
+                        light.OverrideBrightness = ex.OverrideBrightness;
+                    }
+
+                    newLights.Add(light);
                 }
-                newLights.Add(light);
+
+                Bd.Lights = newLights;
+                var all = await _client.LocalHueClient.GetEntertainmentGroups();
+                newGroups.AddRange(all);
+                LogUtil.Write("Listed.");
+                Bd.Groups = newGroups;
+            } catch (AggregateException e) {
+                LogUtil.Write("Aggregate exception: " + e);
+            } catch (HttpRequestException f) {
+                LogUtil.Write("Http Request Exception: " + f);
+            } catch (System.Net.Sockets.SocketException g) {
+                LogUtil.Write("Socket Exception: " + g);
             }
-            Bd.Lights = newLights;
-            
-            var all = await _client.LocalHueClient.GetEntertainmentGroups();
-            newGroups.AddRange(all);
-            LogUtil.Write("Listed.");
-            Bd.Groups = newGroups;
         }
         
        
