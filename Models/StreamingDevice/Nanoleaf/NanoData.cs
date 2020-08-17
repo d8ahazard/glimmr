@@ -97,6 +97,7 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             LogUtil.Write("New layout retrieved: " + JsonConvert.SerializeObject(layout));
             if (layout != null) Layout = layout;
             Scale = 1;
+            DataUtil.InsertCollection<NanoData>("leaves", this);
         }
     }
 }

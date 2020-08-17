@@ -87,7 +87,6 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
                 } else {
                     LogUtil.Write("New leaf discovered, not copying...");
                 }
-                DataUtil.InsertCollection<NanoData>("leaves", nl);
             }
             return DataUtil.GetCollection<NanoData>("leaves");
         }
