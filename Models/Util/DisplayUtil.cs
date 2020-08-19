@@ -1,7 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Windows.Forms;
+using Emgu.CV.Aruco;
 
 namespace HueDream.Models.Util {
     public static class DisplayUtil {
@@ -29,7 +33,22 @@ namespace HueDream.Models.Util {
         private static Size GetWindowsDisplaySize() {
             var width = GetSystemMetrics(SystemMetric.VirtualScreenWidth);
             var height = GetSystemMetrics(SystemMetric.VirtualScreenHeight);
-            return new Size(width, height);
+            var currentDpi = (int)Microsoft.Win32.Registry.GetValue("HKEY_CURRENT_USER\\Control Panel\\Desktop\\WindowMetrics", "AppliedDPI", 0);
+            var scaleTable = new Dictionary<int, float> {
+                [96] = 1.00f,
+                [120] = 1.25f,
+                [144] = 1.50f,
+                [192] = 2.00f,
+                [240] = 2.50f,
+                [288] = 3.00f,
+                [384] = 4.00f,
+                [480] = 5.00f
+            };
+            var newScale = 1.00f;
+            if (scaleTable.ContainsKey(currentDpi)) newScale = scaleTable[currentDpi];
+            var tWidth = width * newScale;
+            var tHeight = height * newScale;
+            return new Size((int) tWidth, (int) tHeight);
         }
         
         private static Size GetLinuxDisplaySize() {

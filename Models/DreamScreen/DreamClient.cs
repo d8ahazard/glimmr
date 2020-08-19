@@ -205,22 +205,29 @@ namespace HueDream.Models.DreamScreen {
         private async void SubscribeBroadcast(CancellationToken ct) {
             _subscribers = new Dictionary<string, int>();
             // Loop until canceled
-            while (!ct.IsCancellationRequested) {
-                // Send our subscribe multicast
-                DreamSender.SendUdpWrite(0x01, 0x0C, new byte[]{0x01}, 0x30, (byte) _dev.GroupNumber, null, true);
-                // Enumerate all subscribers, check to see that they are still valid
-                var keys = new List<string>(_subscribers.Keys);
-                foreach (var key in keys) {
-                    // If the subscribers haven't replied in three messages, remove them, otherwise, count down one
-                    if (_subscribers[key] <= 0) {
-                        _subscribers.Remove(key);
-                    } else {
-                        _subscribers[key] -= 1;
+            try {
+                while (!ct.IsCancellationRequested) {
+                    // Send our subscribe multicast
+                    DreamSender.SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x30, (byte) _dev.GroupNumber, null, true);
+                    // Enumerate all subscribers, check to see that they are still valid
+                    var keys = new List<string>(_subscribers.Keys);
+                    foreach (var key in keys) {
+                        // If the subscribers haven't replied in three messages, remove them, otherwise, count down one
+                        if (_subscribers[key] <= 0) {
+                            _subscribers.Remove(key);
+                        } else {
+                            _subscribers[key] -= 1;
+                        }
                     }
+
+                    // Sleep for 5s
+                    await Task.Delay(5000, ct);
                 }
-                // Sleep for 5s
-                await Task.Delay(5000, ct);
+            } catch (TaskCanceledException) {
+                LogUtil.Write("Broadcast task was canceled.");
+                _subscribers = new Dictionary<string, int>();
             }
+
             LogUtil.Write("Sub broadcast canceled.");
         }
 

@@ -153,13 +153,10 @@ namespace HueDream.Models.CaptureSource.Camera {
                         LogUtil.Write("Unable to process frame, Dude.", "WARN");
                         continue;
                     }
-                    LogUtil.Write("Processed frame...");
                     splitter.Update(warped);
                     var colors = splitter.GetColors();
                     var sectors = splitter.GetSectors();
-                    LogUtil.Write("Sending...");
                     dreamClient.SendColors(colors, sectors);
-                    LogUtil.Write("Sent.");
                 }
 
                 LogUtil.Write("Capture task completed!", "WARN");
@@ -168,7 +165,8 @@ namespace HueDream.Models.CaptureSource.Camera {
         }
 
         private Mat ProcessFrame(Mat input) {
-            Mat output = null;
+            Mat output;
+            // If we need to crop our image...do it.
             if (captureMode == 0 || captureMode == 1) {
                 // Crop our camera frame if the input type is not HDMI
                 output = CamFrame(input);
@@ -178,6 +176,7 @@ namespace HueDream.Models.CaptureSource.Camera {
                     input?.Save(path + "/wwwroot/img/_preview_input.jpg");
                     output?.Save(path + "/wwwroot/img/_preview_output.jpg");
                 }
+                // Otherwise, just return the input.
             } else {
                 output = input;
             }

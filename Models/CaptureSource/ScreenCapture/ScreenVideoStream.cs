@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
+using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using HueDream.Models.Util;
 
@@ -28,10 +29,12 @@ namespace HueDream.Models.CaptureSource.ScreenCapture {
         }
         
         private void CaptureScreen(Size s, CancellationToken ct) {
+        
             while (!ct.IsCancellationRequested) {
                 Graphics g = Graphics.FromImage(_bmpScreenCapture);
                 g.CopyFromScreen(0, 0, 0, 0, s, CopyPixelOperation.SourceCopy);
                 _screen = _bmpScreenCapture.ToImage<Bgr, Byte>();
+                _screen.Resize(600, 400, Inter.Nearest);
                 Frame = _screen.Mat;
             }
             LogUtil.Write("Capture completed?");
