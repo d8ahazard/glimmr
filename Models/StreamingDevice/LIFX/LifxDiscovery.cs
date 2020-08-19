@@ -8,21 +8,22 @@ using LifxNet;
 
 namespace HueDream.Models.StreamingDevice.LIFX {
     public sealed class LifxDiscovery {
-        private readonly LifxClient client;
+        private readonly LifxClient _client;
         private List<LightBulb> bulbs;
 
         public LifxDiscovery(LifxClient client) {
+            _client = client;
         }
 
         public async Task<List<LifxData>> Discover(int timeOut) {
-            if (client == null) return new List<LifxData>();
+            if (_client == null) return new List<LifxData>();
             bulbs = new List<LightBulb>();
-            client.DeviceDiscovered += Client_DeviceDiscovered;
-            client.StartDeviceDiscovery();
+            _client.DeviceDiscovered += Client_DeviceDiscovered;
+            _client.StartDeviceDiscovery();
             LogUtil.Write("Lifx: Discovery started.");
             await Task.Delay(timeOut * 1000);
             LogUtil.Write("Discovery completed.");
-            client.StopDeviceDiscovery();
+            _client.StopDeviceDiscovery();
             return bulbs.Select(GetBulbInfo).ToList();
         }
 
@@ -47,9 +48,9 @@ namespace HueDream.Models.StreamingDevice.LIFX {
         }
 
         public LifxData GetBulbInfo(LightBulb b) {
-            var state = client.GetLightStateAsync(b).Result;
+            var state = _client.GetLightStateAsync(b).Result;
             var d = new LifxData(b) {
-                Power = client.GetLightPowerAsync(b).Result,
+                Power = _client.GetLightPowerAsync(b).Result,
                 Hue = state.Hue,
                 Saturation = state.Saturation,
                 Brightness = state.Brightness,

@@ -9,7 +9,7 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
     [Serializable]
     public class NanoData {
         [JsonProperty] public const string Tag = "NanoLeaf";
-        [JsonProperty] public string IpV4Address { get; set; }
+        [JsonProperty] public string IpAddress { get; set; }
         [JsonProperty] public string IpV6Address { get; set; }
         [JsonProperty] public string Hostname { get; set; }
         [JsonProperty] public string Name { get; set; }
@@ -52,49 +52,49 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
         public int Brightness { get; set; }
 
 
+        // Copy data from an existing leaf into this leaf...don't insert
         public void CopyExisting(NanoData leaf) {
-            if (leaf == null) throw new ArgumentException("Invalid nanodata!");
+            if (leaf == null) throw new ArgumentException("Invalid nano data!");
             Token = leaf.Token;
             X = leaf.X;
             Y = leaf.Y;
             Scale = 1;
             Rotation = leaf.Rotation;
             if (leaf.Brightness != 0)  Brightness = leaf.Brightness;
+            // Grab the new leaf layout
             RefreshLeaf();
-            var newL = MergeLayouts(leaf.Layout, Layout);
+            // Merge this data's layout with the existing leaf (copy sector)
+            var newL = MergeLayouts(leaf.Layout);
             Layout = newL;
         }
 
-        private NanoLayout MergeLayouts(NanoLayout source, NanoLayout dest) {
-            var output = new NanoLayout();
-            if (source == null) {
+        private NanoLayout MergeLayouts(NanoLayout existing) {
+            var posData = new List<PanelLayout>();
+            var output = Layout;
+            if (existing == null) {
                 LogUtil.Write("Source is null, returning.");
                 return output;
             }
             
-            if (source.PositionData == null) {
+            if (existing.PositionData == null) {
                 return output;
             }
 
-            output.NumPanels = source.NumPanels;
-            // Loop through "old" data, copy sector mappings if found
-            foreach (var s in source.PositionData) {
-                var sId = s.PanelId;
-                foreach (var d in Layout.PositionData.Where(d => d.PanelId == sId)) {
+            foreach (var d in Layout.PositionData) {
+                foreach (var s in existing.PositionData.Where(s => s.PanelId == d.PanelId)) {
+                    LogUtil.Write("Copying existing panel sector mapping...");
                     d.Sector = s.Sector;
-                    output.PositionData.Add(s);
                 }
+                posData.Add(d);
             }
-
+            output.PositionData = posData;
             return output;
         }
 
         public void RefreshLeaf() {
             if (Token == null) return;
-            LogUtil.Write("Refreshing leaf...");
-            using var nl = new NanoGroup(IpV4Address, Token);
+            using var nl = new NanoGroup(IpAddress, Token);
             var layout = nl.GetLayout().Result;
-            LogUtil.Write("New layout retrieved: " + JsonConvert.SerializeObject(layout));
             if (layout != null) Layout = layout;
             Scale = 1;
             DataUtil.InsertCollection<NanoData>("leaves", this);

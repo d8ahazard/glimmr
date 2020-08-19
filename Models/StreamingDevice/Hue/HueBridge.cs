@@ -26,19 +26,18 @@ namespace HueDream.Models.StreamingDevice.Hue {
         private bool _disposed;
         public int Brightness { get; set; }
         public string Id { get; set; }
+        public string IpAddress { get; set; }
 
         public HueBridge(BridgeData data) {
             Bd = data ?? throw new ArgumentNullException(nameof(data));
-            BridgeIp = Bd.IpAddress;
+            IpAddress = Bd.IpAddress;
             _disposed = false;
             Streaming = false;
             _entLayer = null;
             Brightness = data.Brightness;
-            LogUtil.Write(@"Hue: Loading bridge: " + BridgeIp);
         }
 
-        private string BridgeIp { get; set; }
-
+        
 
         public bool Streaming { get; set; }
 
@@ -53,13 +52,16 @@ namespace HueDream.Models.StreamingDevice.Hue {
             }
             SetClient();
 			try {
-            StopStream();
+                // Make sure we are not already streaming.
+                var _ = StreamingSetup.StopStream(_client, Bd);
+                if (Streaming) ResetColors();
+                Streaming = false;
 			} catch (SocketException e) {
-				LogUtil.Write("Socket exception, probably no socket to stop. Oh well.");
+				LogUtil.Write("Socket exception, probably our bridge wasn't streaming. Oh well: " + e.Message);
 			}
             if (ct == null) throw new ArgumentException("Invalid cancellation token.");
             // Get our light map and filter for mapped lights
-            LogUtil.Write($@"Hue: Connecting to bridge at {BridgeIp}...");
+            LogUtil.Write($@"Hue: Connecting to bridge at {IpAddress}...");
             // Grab our stream
             
             // Save previous light state(s) before stopping
@@ -81,7 +83,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
             }
 
             _entLayer = stream.GetNewLayer(true);
-            LogUtil.WriteInc($"Hue: Streaming is active: {BridgeIp}");
+            LogUtil.Write($"Hue: Streaming is active: {IpAddress}");
             while (!ct.IsCancellationRequested) {
                 Streaming = true;
             }
@@ -92,10 +94,10 @@ namespace HueDream.Models.StreamingDevice.Hue {
 
         public void StopStream() {
             var _ = StreamingSetup.StopStream(_client, Bd);
-            LogUtil.WriteDec($"Stopping Hue Stream: {BridgeIp}");
+            LogUtil.Write($"Hue: Stopping Stream: {IpAddress}...");
             if (Streaming) ResetColors();
             Streaming = false;
-            
+            LogUtil.Write("Hue: Streaming Stopped.");
         }
 
         private void SetClient() {
@@ -124,9 +126,9 @@ namespace HueDream.Models.StreamingDevice.Hue {
         public void ReloadData() {
             var newData = DataUtil.GetCollectionItem<BridgeData>("bridges", Id);
             Bd = newData;
-            BridgeIp = Bd.IpAddress;
+            IpAddress = Bd.IpAddress;
             Brightness = newData.MaxBrightness;
-            LogUtil.Write(@"Hue: Reloaded bridge: " + BridgeIp);
+            LogUtil.Write(@"Hue: Reloaded bridge: " + IpAddress);
         }
 
         /// <summary>
@@ -172,7 +174,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
                     }
                 }
             } else {
-                LogUtil.Write($@"Hue: Unable to fetch entertainment layer. {BridgeIp}");
+                LogUtil.Write($@"Hue: Unable to fetch entertainment layer. {IpAddress}");
             }
         }
 
@@ -190,7 +192,6 @@ namespace HueDream.Models.StreamingDevice.Hue {
             }
             // Get our client
             SetClient();
-            LogUtil.Write("Adding lights...");
             _client.LocalHueClient.Initialize(Bd.User);
             // Get lights
             var lights = Bd.Lights ?? new List<LightData>();
@@ -211,7 +212,6 @@ namespace HueDream.Models.StreamingDevice.Hue {
                 Bd.Lights = newLights;
                 var all = await _client.LocalHueClient.GetEntertainmentGroups();
                 newGroups.AddRange(all);
-                LogUtil.Write("Listed.");
                 Bd.Groups = newGroups;
             } catch (AggregateException e) {
                 LogUtil.Write("Aggregate exception: " + e);

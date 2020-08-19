@@ -35,7 +35,7 @@ namespace HueDream.Models.Util {
 
                 //try to use the address as IPv4, otherwise get hostname
                 if (!IPAddress.TryParse(values[0], out ipaddy))
-                    ipaddy = GetIPfromHost(values[0]);
+                    ipaddy = GetIpFromHost(values[0]);
             } else if (values.Length > 2) //ipv6
             {
                 //could [a:b:c]:d
@@ -70,7 +70,7 @@ namespace HueDream.Models.Util {
             return port;
         }
 
-        private static IPAddress GetIPfromHost(string p) {
+        public static IPAddress GetIpFromHost(string p) {
             var hosts = Dns.GetHostAddresses(p);
 
             if (hosts == null || hosts.Length == 0)

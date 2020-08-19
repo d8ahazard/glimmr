@@ -22,14 +22,14 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
 
             sd.ServiceInstanceDiscovered += (s, e) => {
                 var name = e.ServiceInstanceName.ToString();
-                var nData = new NanoData {IpV4Address = string.Empty};
+                var nData = new NanoData {IpAddress = string.Empty};
                 if (!name.Contains("nanoleafapi", StringComparison.InvariantCulture)) return;
                 foreach (var msg in e.Message.AdditionalRecords) {
                     switch (msg.Type) {
                         case DnsType.A:
                             var aString = msg.ToString();
                             var aValues = aString.Split(" ");
-                            nData.IpV4Address = aValues[4];
+                            nData.IpAddress = aValues[4];
                             nData.Name = aValues[0].Split(".")[0];
                             break;
                         case DnsType.TXT:
@@ -56,11 +56,11 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
                     }
                 }
 
-                if (string.IsNullOrEmpty(nData.IpV4Address) && !string.IsNullOrEmpty(nData.Hostname)) {
-                    nData.IpV4Address = nData.Hostname;
+                if (string.IsNullOrEmpty(nData.IpAddress) && !string.IsNullOrEmpty(nData.Hostname)) {
+                    nData.IpAddress = nData.Hostname;
                 }
 
-                if (!string.IsNullOrEmpty(nData.IpV4Address) && !string.IsNullOrEmpty(nData.Id)) {
+                if (!string.IsNullOrEmpty(nData.IpAddress) && !string.IsNullOrEmpty(nData.Id)) {
                     output.Add(nData);
                 }
             };
@@ -81,12 +81,9 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             foreach (var nl in newLeaves) {
                 var ex = DataUtil.GetCollectionItem<NanoData>("leaves", nl.Id);
                 if (ex != null) {
-                    LogUtil.Write("New Leaf: " + JsonConvert.SerializeObject(nl));
-                    LogUtil.Write("Existing leaf found, copying: " + JsonConvert.SerializeObject(ex));
                     nl.CopyExisting(ex);
-                } else {
-                    LogUtil.Write("New leaf discovered, not copying...");
                 }
+                DataUtil.InsertCollection<NanoData>("leaves", nl);
             }
             return DataUtil.GetCollection<NanoData>("leaves");
         }

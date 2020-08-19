@@ -15,9 +15,9 @@ namespace HueDream.Models.StreamingDevice.Hue {
             }
 
             var id = b.SelectedGroup;
-            LogUtil.Write("Stopping stream.");
+            //LogUtil.Write("Stopping stream...");
             await client.LocalHueClient.SetStreamingAsync(id, false).ConfigureAwait(true);
-            LogUtil.Write("Stopped.");
+            //LogUtil.Write("Stopped.");
         }
 
         public static async Task<StreamingGroup> SetupAndReturnGroup(StreamingHueClient client, BridgeData b,
@@ -34,7 +34,6 @@ namespace HueDream.Models.StreamingDevice.Hue {
                 }
 
                 if (groupId == null) return null;
-                LogUtil.Write($"Created client, selecting group {groupId}.");
                 //Get the entertainment group
                 var group = client.LocalHueClient.GetGroupAsync(groupId).Result;
                 if (group == null) {
@@ -77,11 +76,6 @@ namespace HueDream.Models.StreamingDevice.Hue {
                     client.AutoUpdate(stream, ct);
 #pragma warning restore 4014
 
-                    //Optional: Check if streaming is currently active
-                    var bridgeInfo = await client.LocalHueClient.GetBridgeAsync().ConfigureAwait(true);
-                    LogUtil.Write(bridgeInfo != null && bridgeInfo.IsStreamingActive
-                        ? @"Streaming is active."
-                        : @"Streaming is not active.");
                     return stream;
                 }
             } catch (SocketException e) {

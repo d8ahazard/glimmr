@@ -24,24 +24,20 @@ namespace HueDream.Models.StreamingDevice.Hue {
             foreach (var nb in newBridges) {
                 var staticData = nb;
                 var ex = DataUtil.GetCollectionItem<BridgeData>("bridges", nb.Id);
-                LogUtil.Write("Looping for bridge...");
                 if (ex != null) nb.CopyBridgeData(ex);
                 if (nb.Key != null && nb.User != null) {
                     try {
-                        LogUtil.Write($"Refreshing bridge: {nb.Id} - {nb.IpAddress}");
                         var nhb = new HueBridge(nb);
                         nhb.RefreshData();
                         staticData = nhb.Bd;
+                        nhb.Dispose();
                     } catch (Exception e) {
                         LogUtil.Write("Socket Exception: " + e.Message, "ERROR");
                     }
                 }
-                LogUtil.Write("Adding bridge to output.");
                 output.Add(staticData);
                 DataUtil.InsertCollection<BridgeData>("bridges",staticData);
-                LogUtil.Write("ADDED.");
             }
-            LogUtil.Write("Setting the damned list of bridges...");
             return output;
         }
         
@@ -64,7 +60,6 @@ namespace HueDream.Models.StreamingDevice.Hue {
             var output = new List<BridgeData>();
             try {
                 var discovered = await HueBridgeDiscovery.CompleteDiscoveryAsync(TimeSpan.FromSeconds(time),TimeSpan.FromSeconds(time));
-                LogUtil.Write("Fast discovery done...");
                 output = discovered.Select(bridge => new BridgeData(bridge)).ToList();
                 LogUtil.Write($"Hue: Discovery complete, found {discovered.Count} devices.");
             } catch (TaskCanceledException e) {

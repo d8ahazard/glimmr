@@ -15,24 +15,26 @@ namespace HueDream.Models.CaptureSource.ScreenCapture {
             set => Frame = value;
         }
 
+        private Image<Bgr, byte> _screen;
+        private Bitmap _bmpScreenCapture;
+
         public Task Start(CancellationToken ct) {
-            LogUtil.Write("Starting screen capture??");
-            while (!ct.IsCancellationRequested) {
-                CaptureScreen();
-            }
-            LogUtil.Write("Screen capture complete!");
-            return Task.CompletedTask;
-        }
-        
-        private void CaptureScreen() {
             var s = DisplayUtil.GetDisplaySize();
             var width = s.Width;
             var height = s.Height;
-            Bitmap bmpScreenCapture = new Bitmap(width, height);
-            Graphics g = Graphics.FromImage(bmpScreenCapture);
-            g.CopyFromScreen(0, 0, 0, 0, s, CopyPixelOperation.SourceCopy);
-            Frame = bmpScreenCapture.ToImage<Bgr, Byte>().Mat;
-            bmpScreenCapture.Dispose();
+            LogUtil.Write("Starting screen capture, width is " + width + " height is " + height + ".");
+            _bmpScreenCapture = new Bitmap(width, height);
+            return Task.Run(() => CaptureScreen(s, ct));
+        }
+        
+        private void CaptureScreen(Size s, CancellationToken ct) {
+            while (!ct.IsCancellationRequested) {
+                Graphics g = Graphics.FromImage(_bmpScreenCapture);
+                g.CopyFromScreen(0, 0, 0, 0, s, CopyPixelOperation.SourceCopy);
+                _screen = _bmpScreenCapture.ToImage<Bgr, Byte>();
+                Frame = _screen.Mat;
+            }
+            LogUtil.Write("Capture completed?");
         }
     }
 }

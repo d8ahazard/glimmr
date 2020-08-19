@@ -38,11 +38,62 @@ let tvX = 0;
 let tvY = 0;
 let nanoTarget = -1;
 let nanoSector = -1;
+let mode = 0;
+let ambientMode = 0;
+let ambientShow = 0;
+let posting = false;
+let colorTimer;
 
 let websocket = new signalR.HubConnectionBuilder()
     .configureLogging(signalR.LogLevel.Information)
     .withUrl("/socket")
     .build();
+
+let pickr = Pickr.create({
+    el: '.color-picker',
+    container: '.color-picker',
+    disabled: false,
+    showAlways: true,
+    comparison: false,
+    inline: true,
+    position: "middle",
+    theme: 'classic', // or 'monolith', or 'nano'
+
+    swatches: [
+        'rgb(255,0,0)',
+        'rgb(255,0,79)',
+        'rgb(255,0,128)',
+        'rgb(255,79,128)',
+        'rgb(255,128,128)',
+        'rgb(255,0,255)',
+        'rgb(53,0,255)',
+        'rgb(0,128,255)',
+        'rgb(0,255,216)',
+        'rgb(0,255,81)',
+        'rgb(128,255,0)',
+        'rgb(255,255,0)',
+        'rgb(255,235,0)',
+        'rgb(255,193,0)',
+        'rgb(255,79,0)'
+    ],
+
+    components: {
+
+        // Main components
+        preview: false,
+        hue: true,
+
+        // Input / output Options
+        interaction: {
+            hex: true,
+            rgba: true,
+            hsla: true,
+            hsva: true,
+            cmyk: true,
+            input: true,
+        }
+    }
+});
 
 const bar = new ProgressBar.Circle(circleBar, {
     strokeWidth: 15,
@@ -81,6 +132,7 @@ function sendMessage(endpoint, data, encode=true) {
     
 
 function updateDsProperty(property, value) {
+    if (posting) return;
     console.log("Updating DS property: ", property, value);
     if (selectedDevice.hasOwnProperty(property)) {
         console.log("We have a valid property.");
@@ -186,6 +238,7 @@ function setSocketListeners() {
     });
 
     websocket.on('olo', function(stuff) {
+        posting = true;
         stuff = stuff.replace(/\\n/g, '');
         let foo = JSON.parse(stuff);
         console.log("OLO! ", foo, selectedDevice);
@@ -208,7 +261,18 @@ function setSocketListeners() {
 }
 
 
-function setListeners() {    
+function setListeners() {        
+    pickr.on('change', instance => {
+        clearTimeout(colorTimer);
+        colorTimer = setTimeout(function() {
+            if (posting) return;
+            let colStr = instance.toHEXA()[0] + instance.toHEXA()[1] + instance.toHEXA()[2];
+            console.log('change', colStr);
+            postData("ambientColor",{device: selectedDevice.id, group: selectedDevice.groupNumber, color: colStr});    // Do the ajax stuff
+        }, 500);
+        
+    });
+    
     $('.devSaturation').on('input', function(){
         let r = $('.devSaturation[data-color="r"]').val();
         let g = $('.devSaturation[data-color="g"]').val();
@@ -239,7 +303,7 @@ function setListeners() {
     });
     
     $('.dsDetection').click(function(){
-        let mode = $(this).data('mode');
+        mode = $(this).data('mode');
         $('.dsDetection').removeClass('selected');
         $(this).addClass('selected');
         updateDsProperty('letterboxingEnable', parseInt(mode));
@@ -345,6 +409,28 @@ function setListeners() {
         if (!hueAuth && !linking) {
             linkHue();
         }
+    });
+    
+    $('.ambientModeBtn').on('click', function() {
+        ambientMode = $(this).data('value');
+        toggleAmbientSection();
+        console.log("New mode is " + ambientMode);
+        let payLoad = {
+            id: selectedDevice.id,
+            mode: ambientMode
+        };
+        postData("ambientMode", payLoad);
+    });
+    
+    $('.showBtn').on('click', function() {
+       ambientShow = $(this).data('show');
+       toggleAmbientSection();
+        console.log("New mode is " + ambientShow);
+        let payLoad = {
+            id: selectedDevice.id,
+            scene: ambientShow
+        };
+        postData("ambientShow", payLoad);
     });
 
     // Link the nano
@@ -457,7 +543,8 @@ function setListeners() {
         id = id.replace("#group", "");
         console.log("Selecting " + id);
         $.each(devices, function() {
-            if ($(this)[0]['id'] === id) {
+            if ($(this)[0]['id'] == id) {
+                console.log("Found the device, wtf.")
                 showDevicePanel($(this)[0]);
             }
         });
@@ -470,10 +557,11 @@ function setListeners() {
     $('.modeBtn').click(function () {
         $(".modeBtn").removeClass("active");
         $(this).addClass('active');
-        const mode = $(this).data('mode');
+        mode = $(this).data('mode');
         let id = selectedDevice.id;
         selectedDevice.mode = mode;
         saveSelectedDevice();
+        toggleAmbientSection();
         postData("mode", {
             id: id,
             mode: mode,
@@ -484,10 +572,11 @@ function setListeners() {
     $('.dsModeBtn').click(function () {
         $(".dsModeBtn").removeClass("active");
         $(this).addClass('active');
-        const mode = $(this).data('mode');
+        mode = $(this).data('mode');
         let id = selectedDevice.id;
         selectedDevice.mode = mode;
         saveSelectedDevice();
+        toggleAmbientSection();
         postData("mode", {
             id: id,
             mode: mode,
@@ -558,6 +647,29 @@ function setListeners() {
 
 }
 
+function toggleAmbientSection() {
+    console.log("UPDATING: ", mode, ambientMode, ambientShow);
+    if (mode === 3) {
+        console.log("Mode is ambient.")
+        $('#ambientDiv').slideDown();
+        $('.ambientModeBtn').removeClass("selected");
+        $('.ambientModeBtn[data-value="'+ambientMode+'"]').addClass("selected");
+        if (ambientMode === 1) {
+            console.log("Should be scenes.")
+            $('#ambientColorDiv').slideUp();
+            $('#ambientSceneDiv').slideDown();
+            $(".showBtn").removeClass("selected");
+            $('.showBtn[data-show="'+ambientShow+'"]').addClass("selected");
+        } else {
+            console.log("Should be solid color.")
+            $('#ambientColorDiv').slideDown();
+            $('#ambientSceneDiv').slideUp();
+        }
+    } else {
+        $('#ambientDiv').slideUp();
+    }
+}
+
 // This gets called in loop by hue auth to see if we've linked our bridge.
 function checkHueAuth() {    
     $.get("./api/DreamData/action?action=authorizeHue&value=" + hueIp, function (data) {
@@ -587,7 +699,7 @@ function checkNanoAuth() {
 
 // Post settings data in chunks for deserialization
 function postData(endpoint, payload) {
-    
+    if (posting) return;
     $.ajax({
         url: "./api/DreamData/" + endpoint,
         dataType: "json",
@@ -823,7 +935,7 @@ function buildLists() {
     dsIp = datastore['dsIp'];
     ledData = datastore['ledData'];
     captureMode = datastore['captureMode'];
-    let mode = selectCaptureMode(captureMode);
+    mode = selectCaptureMode(captureMode);
     emulationType = datastore['emuType'];
     buildDevList(datastore['devices']);
     setCaptureMode(mode, false);
@@ -832,15 +944,24 @@ function buildLists() {
     $.each(devices, function() {
         let item = $(this)[0];
         if (item['id'] === undefined && item['ipAddress'] !== undefined) item['id'] = item['ipAddress'];
-        if (item['id'] === undefined && item['ipV4Address'] !== undefined) item['id'] = item['ipV4Address'];
         if (this.tag.includes("DreamScreen")) {
             let groupNumber = (item['groupNumber'] === undefined) ? 0 : item['groupNumber'];
             let groupName = (item['groupName'] === undefined) ? "undefined" : item['groupName'];
+            let ambientColor = (item['ambientColor'] === undefined) ? "FFFFFF" : item['ambientColor'];
+            let ambientShow = (item['ambientShowType'] === undefined) ? 0 : item['ambientShowType'];
+            let ambientMode = (item['ambientModeType'] === undefined) ? 0 : item['ambientModeType'];
+            let mode = (item['mode'] === undefined) ? 0 : item['mode'];
+            let brightness = (item['brightness'] === undefined) ? 0 : item['brightness'];
             if (groups[groupNumber] === undefined) {
                 groups[groupNumber] = {};
                 groups[groupNumber]['name'] = groupName;
                 groups[groupNumber]['id'] = groupNumber;
                 groups[groupNumber]['items'] = [];
+                groups[groupNumber]['ambientColor'] = ambientColor;
+                groups[groupNumber]['ambientShowType'] = ambientShow;
+                groups[groupNumber]['ambientModeType'] = ambientMode;
+                groups[groupNumber]['mode'] = mode;
+                groups[groupNumber]['brightness'] = brightness;
             }
             groups[groupNumber]['items'].push(item);
         } else {
@@ -1118,6 +1239,7 @@ function reloadDevice() {
     } else {
         console.log("ERROR FETCHING DATA, FOO.");
     }
+    posting = false;
 }
 
 
@@ -1148,7 +1270,7 @@ function loadDsData(data) {
         $('.dsDetection').removeClass('selected');
         $('.dsDetection[data-mode="' + deviceData['letterboxingEnable'] + '"]').addClass('selected');
         $('.devFadeRate').val(deviceData['fadeRate']);
-        $('.devLuminosity').val(deviceData['minimumLuminosity'][0]);
+        if (deviceData.hasOwnProperty('minimumLuminosity')) $('.devLuminosity').val(deviceData['minimumLuminosity'][0]);
         let boolProps = ['cecPassthroughEnable', 'cecPowerEnable','cecSwitchinEnable','hpdEnable','usbPowerEnable','hdrToneRemapping'];
         for (let i=0; i< boolProps.length; i++) {
             let prop = boolProps[i];
@@ -1174,6 +1296,16 @@ function loadDsData(data) {
             modestr = "Ambient";
             break;
     }
+    mode = deviceData.mode;
+    ambientMode = deviceData['ambientModeType'];
+    ambientShow = deviceData['ambientShowType'];
+    let ambientColor = deviceData['ambientColor'];
+    if (ambientColor !== null) {
+        console.log("Setting ambient color to: #", ambientColor);
+        let set = pickr.setColor('#' + ambientColor);
+        console.log("SET: ", set);
+    }
+    toggleAmbientSection();
     $('#dsMode' + deviceData.mode).addClass('active');
     $('#iconWrap').removeClass().addClass(emulationType);
 }
@@ -1333,11 +1465,12 @@ function drawNanoShapes(panel) {
     // If window is less than 500px, divide our scale by half
     let halfScale = false;
     if (width < 500) {
-        halfScale = true;
-        height /= 2;
+        halfScale = 2;
         pScale /= 4;
         tvWidth /= 4;
-        tvHeight /= 4;
+        tvHeight /= 4;     
+        pX /= 2;
+        pY /= 2;
     } else {
         tvWidth /= 2;
         tvHeight /= 2;
@@ -1349,6 +1482,7 @@ function drawNanoShapes(panel) {
     tvY = (height - tvHeight) / 2;
     pX += tvX;
     pY += tvY;
+    console.log("PY is " + pY);
     // Create our stage
     let stage = new Konva.Stage({
         container: 'canvasDiv',
@@ -1356,15 +1490,6 @@ function drawNanoShapes(panel) {
         height: height
     });
     
-    let tLayer = new Konva.Layer();
-    tLayer.add(new Konva.Text({
-        text: "Click a tile to set sector mapping.",
-        fontSize: 30,
-        fontFamily: 'Calibri',
-        fill: "white"
-    }));
-    
-    stage.add(tLayer);
     // Shape layer
     let cLayer = new Konva.Layer();
     stage.add(cLayer);
@@ -1412,6 +1537,13 @@ function drawNanoShapes(panel) {
         // Get the top-left x,y coordinates
         let gX = shapeGroup.x() - tvX;
         let gY = shapeGroup.y() - tvY;
+        if (halfScale) {
+            gX*=2;
+            gY*=2;
+            console.log("Half scale: ", gX, gY);
+        }  else {
+            console.log("Normal scale: ", gX, gY);  
+        }
         if (nanoX !== gX || nanoY !== gY) {
             console.log("Updating nano group position: " + gX + " and " + gY);
             nanoX = gX;

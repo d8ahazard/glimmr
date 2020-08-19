@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using Newtonsoft.Json;
 
 namespace HueDream.Models.Util {
     public static class ByteUtils {
@@ -77,7 +78,6 @@ namespace HueDream.Models.Util {
                 output[c] = Convert.ToByte(i.ToString("X2", Format), 16);
                 c++;
             }
-
             return output;
         }
 

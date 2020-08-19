@@ -105,6 +105,28 @@
             </div>
         </div>
     </div>
+    <div class="row justify-content-center" id="ambientDiv">
+        <div class="col-8 col-md-6 col-xl-4" id="ambientSelectionDiv">
+            <div class="btn-group">
+                <div class="btn btn-primary ambientModeBtn" data-value="0">Color</div>
+                <div class="btn btn-primary ambientModeBtn" data-value="1">Show</div>
+            </div>
+        </div>
+        <div id="ambientColorDiv">
+            <div class="color-picker"></div>
+        </div>
+        <div class="col-8 col-md6-col-xl-4" id="ambientSceneDiv">
+            <div class="showBtn" data-show="0" style="background-image:url('./img/scene/random_icon.png')"></div>
+            <div class="showBtn" data-show="1" style="background-image:url('./img/scene/fire_icon.png')"></div>
+            <div class="showBtn" data-show="2" style="background-image:url('./img/scene/twinkle_icon.png')"></div>
+            <div class="showBtn" data-show="3" style="background-image:url('./img/scene/ocean_icon.png')"></div>
+            <div class="showBtn" data-show="4" style="background-image:url('./img/scene/rainbow_icon.png')"></div>
+            <div class="showBtn" data-show="5" style="background-image:url('./img/scene/july.png')"></div>
+            <div class="showBtn" data-show="6" style="background-image:url('./img/scene/holiday_icon.png')"></div>
+            <div class="showBtn" data-show="7" style="background-image:url('./img/scene/pop_icon.png')"></div>
+            <div class="showBtn" data-show="8" style="background-image:url('./img/scene/enchanted_forest.png')"></div>
+        </div>
+    </div>
     <div class="row justify-content-center">
         <div class="col-8 col-md-6 col-xl-4">
             <input class="form-control devBrightness" type="range" name="dsBrightness" id="dsBrightness" min="0" max="100" value="100">
@@ -512,6 +534,9 @@
                         <input type="checkbox" id="nanoFlipVertical" data-orientation="v" class="nanoFlip"> Flip Vertically
                     </label>
                 </div>
+            </div>
+            <div class="row justify-content-center">
+                <div id="clickMapLabel">Click a tile to set sector mapping.</div>
             </div>
             <div class="row previewRow" id="nanoContainer">
                 <div id="canvasDiv">

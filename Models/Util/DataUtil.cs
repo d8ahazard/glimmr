@@ -125,7 +125,6 @@ namespace HueDream.Models.Util {
                     list.Add(value);
                     dStore.InsertItem(key, list);
                 } else {
-                    if (key == "leaves") LogUtil.Write("Inserting: " + JsonConvert.SerializeObject(value));
                     coll.ReplaceOne(value.Id, value, true);
                 }
 
@@ -222,7 +221,6 @@ namespace HueDream.Models.Util {
             using var dd = GetStore();
             BaseDevice dev;
             string devType = dd.GetItem("devType");
-            LogUtil.Write("DeviceData fetched, we have a " + devType);
             if (devType == "SideKick") {
                 dev = dd.GetItem<SideKick>("myDevice");
             } else if (devType == "DreamScreen4K") {

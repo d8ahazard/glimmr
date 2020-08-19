@@ -15,6 +15,7 @@ namespace HueDream.Models.StreamingDevice.LIFX {
         private int _targetSector;
         public int Brightness { get; set; }
         public string Id { get; set; }
+        public string IpAddress { get; set; }
 
         private LifxClient _client;
         
@@ -25,6 +26,7 @@ namespace HueDream.Models.StreamingDevice.LIFX {
             _targetSector = d.SectorMapping - 1;
             Brightness = d.Brightness;
             Id = d.Id;
+            IpAddress = d.IpAddress;
         }
 
         public async void StartStream(CancellationToken ct) {

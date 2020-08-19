@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
 using System.Globalization;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
@@ -17,6 +20,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Color = LifxNet.Color;
 
 namespace HueDream.Controllers {
     [Route("api/[controller]"), ApiController]
@@ -31,7 +35,7 @@ namespace HueDream.Controllers {
         }
         
         // POST: api/DreamData/mode
-        [HttpPost("SetMode")]
+        [HttpPost("mode")]
         public IActionResult DevMode([FromBody] JObject modeObj) {
             SetMode(modeObj);
             NotifyClients();
@@ -153,6 +157,47 @@ namespace HueDream.Controllers {
             return Ok(myDevice);
         }
 
+        // POST: api/DreamData/dsConnect
+        [HttpPost("ambientColor")]
+        public IActionResult PostColor([FromBody] JObject myDevice) {
+            if (myDevice == null) throw new ArgumentException("Invalid argument.");
+            LogUtil.Write(@"Did it work (ambient Color)? " + JsonConvert.SerializeObject(myDevice));
+            var id = (string) myDevice.GetValue("device", StringComparison.InvariantCulture);
+            var value = myDevice.GetValue("color", StringComparison.InvariantCulture);
+            var group = (int) myDevice.GetValue("group", StringComparison.InvariantCulture);
+            var color = ColorTranslator.FromHtml("#" + value);
+            // If setting this from a group, set it for all devices in that group
+            if (int.TryParse(id, out var idNum)) {
+                var devs = DataUtil.GetDreamDevices();
+                foreach (var dev in devs.Where(dev => dev.GroupNumber == idNum)) {
+                    DreamSender.SetAmbientColor(color, dev.IpAddress, idNum);
+                }
+            } else { // Otherwise, just target the specified device.
+                DreamSender.SetAmbientColor(color, id, group);    
+            }
+            //NotifyClients();
+            return Ok("Ok");
+        }
+        
+        // POST: api/DreamData/dsConnect
+        [HttpPost("ambientMode")]
+        public IActionResult PostAmbientMode([FromBody] JObject myDevice) {
+            LogUtil.Write(@"Did it work (ambient Mode)? " + JsonConvert.SerializeObject(myDevice));
+            DreamSender.SendMessage("ambientModeType",(int) myDevice.GetValue("mode"),(string)myDevice.GetValue("id"));
+
+            //NotifyClients();
+            return Ok("Ok");
+        }
+        
+        // POST: api/DreamData/dsConnect
+        [HttpPost("ambientShow")]
+        public IActionResult PostShow([FromBody] JObject myDevice) {
+            LogUtil.Write(@"Did it work (ambient Show)? " + JsonConvert.SerializeObject(myDevice));
+            DreamSender.SendMessage("ambientScene",myDevice.GetValue("scene"),(string)myDevice.GetValue("id"));
+
+            //NotifyClients();
+            return Ok(myDevice);
+        }
 
         [HttpGet("action")]
         public IActionResult Action(string action, string value = "") {
@@ -165,7 +210,7 @@ namespace HueDream.Controllers {
                 case "refreshDevices":
                     // Just trigger dreamclient to refresh devices
                     TriggerRefresh();
-                    break;
+                    return new JsonResult("OK");
                 case "authorizeHue": {
                     LogUtil.Write("AuthHue called, for real.");
                     var doAuth = true;
@@ -290,6 +335,9 @@ namespace HueDream.Controllers {
                     if (myDev.Mode == newMode) return;
                     myDev.Mode = newMode;
                     DataUtil.SetItem("myDevice", myDev);
+                    ipAddress = "127.0.0.1";
+                    mFlag = 0x11;
+                    groupSend = true;
                     break;
                 case "Group":
                     groupNumber = (byte) int.Parse(id, CultureInfo.InvariantCulture);
@@ -303,6 +351,7 @@ namespace HueDream.Controllers {
                         ipAddress = dev.IpAddress;
                         if (dev.Mode == newMode) return;
                         dev.Mode = newMode;
+                        SetMode(newMode);
                         DataUtil.InsertCollection("devices", dev);
                     }
 
@@ -314,7 +363,11 @@ namespace HueDream.Controllers {
         }
 
         private void TriggerRefresh() {
-            DreamSender.SendUdpWrite(0x01, 0x11, new byte[] {0}, 0);
+            var myDev = DataUtil.GetDeviceData();
+            var ipAddress = myDev.IpAddress;
+            var groupNumber = (byte) myDev.GroupNumber;
+            var me = new IPEndPoint(IPAddress.Parse(ipAddress), 8888);
+            DreamSender.SendUdpWrite(0x01, 0x11, new byte[] {0}, 0, groupNumber, me);
             Thread.Sleep(TimeSpan.FromSeconds(5));
             NotifyClients();
         }
@@ -327,12 +380,14 @@ namespace HueDream.Controllers {
                 LogUtil.Write("Old mode is same as new, nothing to do.");
                 return;
             }
-            LogUtil.Write("Updating mode to " + mode);
-            var ipAddress = myDev.IpAddress;
-            var groupNumber = (byte) myDev.GroupNumber;
 
-            DreamSender.SendUdpWrite(0x03, 0x01, new[] {newMode}, 0x21, groupNumber,
-                new IPEndPoint(IPAddress.Parse(ipAddress), 8888));
+            myDev.Mode = mode;
+            DataUtil.SetItem("myDevice", myDev);
+            var payload = new List<byte>();
+            var utf8 = new UTF8Encoding();
+            payload.AddRange(utf8.GetBytes(myDev.Id));
+            DreamSender.SendUdpWrite(0x01, 0x10, payload.ToArray(), 0x21, (byte)myDev.GroupNumber,
+                new IPEndPoint(IPAddress.Parse(myDev.IpAddress), 8888));
         }
 
 

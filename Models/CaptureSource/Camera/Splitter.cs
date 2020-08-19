@@ -162,9 +162,7 @@ namespace HueDream.Models.CaptureSource.Camera {
         }
 
         private List<Rectangle> DrawGrid(int srcWidth, int srcHeight, double vOffset = 0, double hOffset = 0) {
-            LogUtil.Write("Drawing grid...");
             var fc = new List<Rectangle>();
-            LogUtil.Write("Lists created?");
             var h = srcHeight - vOffset * 2;
             var w = srcWidth - hOffset * 2;
 
@@ -225,9 +223,7 @@ namespace HueDream.Models.CaptureSource.Camera {
         }
         
         private List<Rectangle> DrawSectors(int srcWidth, int srcHeight, double vOffset = 0, double hOffset = 0) {
-            LogUtil.Write("Drawing sectors...");
             var fs = new List<Rectangle>();
-            LogUtil.Write("Lists created?");
             var h = srcWidth - hOffset * 2;
             var v = srcHeight - vOffset * 2;
             var hWidth = h / 5;
@@ -267,7 +263,6 @@ namespace HueDream.Models.CaptureSource.Camera {
                 fs.Add(new Rectangle((int) ord, (int) minBot, (int) hWidth, hHeight));
                 step += 1;
             }
-            LogUtil.Write("Sectors drawn, we have " + fs.Count + " items.");
             return fs;
         }
         

@@ -9,38 +9,32 @@ using ManagedBass;
 using Newtonsoft.Json;
 
 namespace HueDream.Models.CaptureSource.Audio {
-    public class AudioStream : IDisposable {
-        private bool disposed;
-        private List<DeviceInfo> devices;
-        private int recordDeviceIndex;
-        private int channels;
-        private int frequency;
-        private int sensitivity;
-        private float max;
-        private CancellationToken token;
-        private List<Color> colors;
+    public sealed class AudioStream : IDisposable {
+        private bool _disposed;
+        private List<DeviceInfo> _devices;
+        private int _recordDeviceIndex;
+        private int _channels;
+        private int _frequency;
+        private int _sensitivity;
+        private float _max;
+        private CancellationToken _token;
+        private List<Color> _colors;
 
 
         public AudioStream() {
-            colors = new List<Color>();
+            _colors = new List<Color>();
             for (var i = 0; i < 12; i++) {
-                colors.Add(Color.Black);
+                _colors.Add(Color.Black);
             }
 
-            devices = new List<DeviceInfo>();
-            //DataUtil.GetItem("audioThreshold") ?? .01f;
-            recordDeviceIndex = -1;
-            var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-            if (isWindows) {
-                LogUtil.Write("This is a windows box.");
-            }
-
-            sensitivity = DataUtil.GetItem("sensitivity") ?? 5;
+            _devices = new List<DeviceInfo>();
+            _recordDeviceIndex = -1;
+            _sensitivity = DataUtil.GetItem("sensitivity") ?? 5;
             LoadDevices();
         }
 
         public List<Color> GetColors() {
-            return colors;
+            return _colors;
         }
         
         private static float Limit(float value, int inclusiveMinimum, int inclusiveMaximum)
@@ -53,39 +47,37 @@ namespace HueDream.Models.CaptureSource.Audio {
 
         private void LoadDevices() {
             Bass.Init();
-            devices = new List<DeviceInfo>();
+            _devices = new List<DeviceInfo>();
             string rd = DataUtil.GetItem("recDev");
-            DeviceInfo info;
-            for (var a = 0; Bass.RecordGetDeviceInfo(a, out info); a++) {
+            for (var a = 0; Bass.RecordGetDeviceInfo(a, out var info); a++) {
                 if (!info.IsEnabled) continue;
-                devices.Add(info);
+                _devices.Add(info);
                 if (rd == null && a == 0) {
                     DataUtil.SetItem("recDev", info.Name);
                 } else {
                     if (rd != info.Name) continue;
                     LogUtil.Write($"Selecting recording device index {a}: {info.Name}");
-                    recordDeviceIndex = a;
+                    _recordDeviceIndex = a;
                 }
             }
 
-            LogUtil.Write("Found " + devices.Count + " recording device(s).");
-            DataUtil.SetItem<List<DeviceInfo>>("audioDevices", devices);
+            DataUtil.SetItem<List<DeviceInfo>>("audioDevices", _devices);
         }
 
         public void StartStream(CancellationToken ct) {
-            token = ct;
-            if (recordDeviceIndex != -1) {
-                LogUtil.Write("Starting stream with device " + recordDeviceIndex);
+            _token = ct;
+            if (_recordDeviceIndex != -1) {
+                LogUtil.Write("Starting stream with device " + _recordDeviceIndex);
                 Bass.Init();
                 // Initialize Recording device.
-                Bass.RecordInit(recordDeviceIndex);
-                Bass.CurrentRecordingDevice = recordDeviceIndex;
+                Bass.RecordInit(_recordDeviceIndex);
+                Bass.CurrentRecordingDevice = _recordDeviceIndex;
                 var info = Bass.RecordingInfo;
                 LogUtil.Write("Info: " + JsonConvert.SerializeObject(info));
-                channels = info.Channels == 0 ? 2 : info.Channels;
-                frequency = info.Frequency == 0 ? 48000 : info.Frequency;
-                LogUtil.Write($"Setting channels and frequency to {channels} and {frequency}.");
-                var record = Bass.RecordStart(frequency, channels, BassFlags.Float, Procedure);
+                _channels = info.Channels == 0 ? 2 : info.Channels;
+                _frequency = info.Frequency == 0 ? 48000 : info.Frequency;
+                LogUtil.Write($"Setting channels and frequency to {_channels} and {_frequency}.");
+                //var record = Bass.RecordStart(_frequency, _channels, BassFlags.Float, Procedure);
                 var error = Bass.LastError;
                 LogUtil.Write("err? " + error);
             } else {
@@ -95,7 +87,7 @@ namespace HueDream.Models.CaptureSource.Audio {
 
 
         private bool Procedure(int handle, IntPtr buffer, int length, IntPtr user) {
-            if (token.IsCancellationRequested) {
+            if (_token.IsCancellationRequested) {
                 LogUtil.Write("We dun canceled our token.");
                 Bass.Free();
                 return false;
@@ -112,8 +104,8 @@ namespace HueDream.Models.CaptureSource.Audio {
                 var val = fft[a];
                 if (val > 0.01) {
                     var amp = val * 100;
-                    var freq = FftIndex2Frequency(a, samples, frequency);
-                    if (amp > max) max = amp;
+                    var freq = FftIndex2Frequency(a, samples, _frequency);
+                    if (amp > _max) _max = amp;
                     cData[freq] = amp;
                 }
             }
@@ -124,7 +116,7 @@ namespace HueDream.Models.CaptureSource.Audio {
             for (var q = 0; q < amps.Length; q++) {
                 var amp = amps[q];
                 var value = amp > 0 ? 1 : 0;
-                colors[q] = ColorUtil.ColorFromHsv(HueFromAmplitude(amp), 1, value);
+                _colors[q] = ColorUtil.ColorFromHsv(HueFromAmplitude(amp), 1, value);
             }
 
             return true;
@@ -198,7 +190,7 @@ namespace HueDream.Models.CaptureSource.Audio {
             
             var output = new float[12];
             for(var l = 0; l < 12; l++) {
-                var v = sectors[l] - sensitivity;
+                var v = sectors[l] - _sensitivity;
                 v = Limit(v, 0, 60);
                 output[l] = v;
             }
@@ -219,7 +211,7 @@ namespace HueDream.Models.CaptureSource.Audio {
             Console.WriteLine();
             LogColor(input[7], "|");
             Console.ForegroundColor = ConsoleColor.White;
-            Console.Write($@"    {max:F2}    |");
+            Console.Write($@"    {_max:F2}    |");
             LogColor(input[2]);
             Console.WriteLine();
             LogColor(input[8], "|");
@@ -274,8 +266,8 @@ namespace HueDream.Models.CaptureSource.Audio {
             return ConsoleColor.White;
         }
 
-        protected virtual void Dispose(bool disposing) {
-            if (disposed) {
+        private void Dispose(bool disposing) {
+            if (_disposed) {
                 return;
             }
 
@@ -283,7 +275,7 @@ namespace HueDream.Models.CaptureSource.Audio {
                 //ac?.Dispose();
             }
 
-            disposed = true;
+            _disposed = true;
         }
     }
 }

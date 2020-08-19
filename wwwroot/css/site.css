@@ -140,6 +140,38 @@ body {
     padding-top: 67.8764%;
 }
 
+#ambientDiv, #ambientColorDiv, #ambientSceneDiv {
+    display: none;
+    height: 100%;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.showBtn {
+    background-size: contain;
+    width: 75px;
+    height: 75px;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.showBtn.selected {
+    border: 2px black solid;
+}
+
+#ambientSelectionDiv {
+    margin: 0 auto;
+    text-align: center;
+}
+
+.pickr {
+    display: none !important;
+}
+
+.pcr-app.visible {
+    margin: 0 auto;
+}
+
 #nanoSectors {
     background-image: url("../img/sectoring_tv.png");
     background-size: contain;
@@ -722,6 +754,15 @@ input[type="range"]:active ~ #rangevalue {
 .canvasDiv {
     height: 100px;
     width: 100px;
+}
+
+#nanoContainer {
+    min-height: 250px;
+}
+
+#clickMapLabel {
+    font-size: 30px;
+    font-size: 4vw;
 }
 
 #nanoCanvas {

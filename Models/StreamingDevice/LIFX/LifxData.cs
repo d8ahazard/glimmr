@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using HueDream.Models.Util;
 using LifxNet;
 using Newtonsoft.Json;
 
@@ -11,6 +12,7 @@ namespace HueDream.Models.StreamingDevice.LIFX {
         public LifxData(LightBulb b) {
             if (b == null) throw new ArgumentException("Invalid bulb data.");
             HostName = b.HostName;
+            IpAddress = IpUtil.GetIpFromHost(HostName).ToString();
             Id = b.MacAddressName;
             Service = b.Service;
             Port = (int) b.Port;
@@ -22,10 +24,9 @@ namespace HueDream.Models.StreamingDevice.LIFX {
         [JsonProperty] public string Id { get; internal set; }
 
         [JsonProperty] public byte Service { get; internal set; }
-
+        [JsonProperty] public string IpAddress { get; internal set; }
         [JsonProperty] public int Port { get; internal set; }
         [JsonProperty] internal DateTime LastSeen { get; set; }
-
         [JsonProperty] public byte[] MacAddress { get; internal set; }
 
         [JsonProperty] public string MacAddressString { get; internal set; }

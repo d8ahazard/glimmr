@@ -40,6 +40,7 @@ namespace HueDream.Models.CaptureSource.Camera {
         private Splitter splitter;
         private Mat k;
         private Mat d;
+        private Task _capTask;
 
 
         public StreamCapture(CancellationToken camToken) {
@@ -134,19 +135,34 @@ namespace HueDream.Models.CaptureSource.Camera {
             return Task.Run(() => {
                 LogUtil.WriteInc("Starting capture task.");
                 splitter = new Splitter(ledData, scaleWidth, scaleHeight);
+                LogUtil.Write("Splitter is created.");
+                LogUtil.Write("VC Started.");
                 while (!cancellationToken.IsCancellationRequested) {
                     var frame = vc.Frame;
-                    if (frame == null) continue;
-                    if (frame.Cols == 0) continue;
+                    if (frame == null) {
+                        LogUtil.Write("Frame is null, dude.", "WARN");
+                        continue;
+                    }
+
+                    if (frame.Cols == 0) {
+                        LogUtil.Write("Frame has no columns, dude.", "WARN");
+                        continue;
+                    }
                     var warped = ProcessFrame(frame);
-                    if (warped == null) continue;
+                    if (warped == null) {
+                        LogUtil.Write("Unable to process frame, Dude.", "WARN");
+                        continue;
+                    }
+                    LogUtil.Write("Processed frame...");
                     splitter.Update(warped);
                     var colors = splitter.GetColors();
                     var sectors = splitter.GetSectors();
+                    LogUtil.Write("Sending...");
                     dreamClient.SendColors(colors, sectors);
+                    LogUtil.Write("Sent.");
                 }
 
-                LogUtil.WriteDec("Capture task completed.");
+                LogUtil.Write("Capture task completed!", "WARN");
                 return Task.CompletedTask;
             }, cancellationToken);
         }
