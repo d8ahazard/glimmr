@@ -18,96 +18,101 @@ using Newtonsoft.Json;
 
 namespace HueDream.Models.CaptureSource.Camera {
     public sealed class StreamCapture {
-        private int scaleHeight = 400;
-        private int scaleWidth = 600;
-        private int camWidth;
-        private int camHeight;
-        private float scaleFactor;
-        private bool showSource;
-        private bool showEdged;
-        private bool showWarped;
-        private PointF[] vectors;
-        private int camType;
-        private int captureMode;
-        private int srcArea;
-        private Size scaleSize;
-        private LedData ledData;
-        private int frameCount;
-        private DreamClient dc;
-        private VectorOfPointF lockTarget;
-        private List<VectorOfPoint> targets;
-        private IVideoStream vc;
-        private Splitter splitter;
-        private Mat k;
-        private Mat d;
+        private int _scaleHeight = 400;
+        private int _scaleWidth = 600;
+        private float _scaleFactor = 0.5f;
+        private int _camWidth;
+        private int _camHeight;
+        private bool _showSource;
+        private bool _showEdged;
+        private bool _showWarped;
+        private PointF[] _vectors;
+        private int _camType;
+        private int _captureMode;
+        private int _srcArea;
+        private Size _scaleSize;
+        private LedData _ledData;
+        private int _frameCount;
+        private DreamClient _dc;
+        private VectorOfPointF _lockTarget;
+        private List<VectorOfPoint> _targets;
+        private IVideoStream _vc;
+        private Splitter _splitter;
+        private Mat _k;
+        private Mat _d;
         private Task _capTask;
 
 
         public StreamCapture(CancellationToken camToken) {
             LogUtil.WriteInc("Initializing stream capture.");
-            targets = new List<VectorOfPoint>();
+            _targets = new List<VectorOfPoint>();
             SetCapVars();
-            vc = GetCamera();
-            vc.Start(camToken);
+            _vc = GetCamera();
+            _vc.Start(camToken);
         }
 
         private void SetCapVars() {
-            ledData = DataUtil.GetItem<LedData>("ledData");
-            camType = DataUtil.GetItem<int>("camType");
-            camWidth = DataUtil.GetItem<int>("camWidth") ?? 1920;
-            camHeight = DataUtil.GetItem<int>("camHeight") ?? 1080;
-            scaleFactor = DataUtil.GetItem<float>("scaleFactor") ?? .5f;
-            scaleWidth = Convert.ToInt32(camWidth * scaleFactor);
-            scaleHeight = Convert.ToInt32(camHeight * scaleFactor);
-            srcArea = scaleWidth * scaleHeight;
-            scaleSize = new Size(scaleWidth, scaleHeight);
-            captureMode = DataUtil.GetItem<int>("captureMode");
-            if (camType == 0) {
-                var kStr = DataUtil.GetItem("k");
-                if (kStr == null) {
-                    LogUtil.Write("Running static camera calibration.");
-                    Calibrate.ProcessFrames();
-                } else {
-                    LogUtil.Write("Camera calibration settings loaded.");
-                }
+            _ledData = DataUtil.GetItem<LedData>("ledData");
+            _captureMode = DataUtil.GetItem<int>("captureMode");
+            _camType = DataUtil.GetItem<int>("camType");
 
-                kStr = DataUtil.GetItem("k");
-                var dStr = DataUtil.GetItem("d");
-                k = JsonConvert.DeserializeObject<Mat>(kStr);
-                d = JsonConvert.DeserializeObject<Mat>(dStr);
-                LogUtil.Write("calibration vars deserialized.");
-            }
+            if (_captureMode == 1) {
 
-            try {
-                var lt = DataUtil.GetItem<PointF[]>("lockTarget");
-                LogUtil.Write("LT Grabbed? " + JsonConvert.SerializeObject(lt));
-                if (lt != null) {
-                    lockTarget = new VectorOfPointF(lt);
-                    var lC = 0;
-                    while (lC < 20) {
-                        targets.Add(VPointFToVPoint(lockTarget));
-                        lC++;
+                _camWidth = DataUtil.GetItem<int>("camWidth") ?? 1920;
+                _camHeight = DataUtil.GetItem<int>("camHeight") ?? 1080;
+                _scaleFactor = DataUtil.GetItem<float>("scaleFactor") ?? .5f;
+                _scaleWidth = Convert.ToInt32(_camWidth * _scaleFactor);
+                _scaleHeight = Convert.ToInt32(_camHeight * _scaleFactor);
+                _srcArea = _scaleWidth * _scaleHeight;
+                _scaleSize = new Size(_scaleWidth, _scaleHeight);
+
+                if (_camType == 0) {
+                    var kStr = DataUtil.GetItem("k");
+                    if (kStr == null) {
+                        LogUtil.Write("Running static camera calibration.");
+                        Calibrate.ProcessFrames();
+                    } else {
+                        LogUtil.Write("Camera calibration settings loaded.");
                     }
+
+                    kStr = DataUtil.GetItem("k");
+                    var dStr = DataUtil.GetItem("d");
+                    _k = JsonConvert.DeserializeObject<Mat>(kStr);
+                    _d = JsonConvert.DeserializeObject<Mat>(dStr);
+                    LogUtil.Write("calibration vars deserialized.");
                 }
-            } catch (Exception e) {
-                LogUtil.Write("Exception: " + e.Message);
+
+                try {
+                    var lt = DataUtil.GetItem<PointF[]>("lockTarget");
+                    LogUtil.Write("LT Grabbed? " + JsonConvert.SerializeObject(lt));
+                    if (lt != null) {
+                        _lockTarget = new VectorOfPointF(lt);
+                        var lC = 0;
+                        while (lC < 20) {
+                            _targets.Add(VPointFToVPoint(_lockTarget));
+                            lC++;
+                        }
+                    }
+                } catch (Exception e) {
+                    LogUtil.Write("Exception: " + e.Message);
+                }
             }
 
             var tl = new Point(0, 0);
-            var tr = new Point(scaleWidth, 0);
-            var br = new Point(scaleWidth, scaleHeight);
-            var bl = new Point(0, scaleHeight);
-            showSource = DataUtil.GetItem<bool>("showSource") ?? false;
-            showEdged = DataUtil.GetItem<bool>("showEdged") ?? false;
-            showWarped = DataUtil.GetItem<bool>("showWarped") ?? false;
-            vectors = new PointF[] {tl, tr, br, bl};
-            frameCount = 0;
+            var tr = new Point(_scaleWidth, 0);
+            var br = new Point(_scaleWidth, _scaleHeight);
+            var bl = new Point(0, _scaleHeight);
+            _showSource = DataUtil.GetItem<bool>("showSource") ?? false;
+            _showEdged = DataUtil.GetItem<bool>("showEdged") ?? false;
+            _showWarped = DataUtil.GetItem<bool>("showWarped") ?? false;
+            _vectors = new PointF[] {tl, tr, br, bl};
+            _frameCount = 0;
             LogUtil.Write("Start Capture should be running...");
         }
 
         private IVideoStream GetCamera() {
-            if (captureMode != 0 && captureMode != 1) {
-                switch (captureMode) {
+            if (_captureMode != 0 && _captureMode != 1) {
+                switch (_captureMode) {
                     case 2:
                         LogUtil.Write("Definitely grabbing HDMI video stream here.");
                         return new HdmiVideoStream();
@@ -117,12 +122,12 @@ namespace HueDream.Models.CaptureSource.Camera {
                 }
             }
 
-            switch (camType) {
+            switch (_camType) {
                 case 0:
                     // 0 = pi module, 1 = web cam
                     LogUtil.Write("Loading Pi cam.");
                     var camMode = DataUtil.GetItem<int>("camMode") ?? 1;
-                    return new PiVideoStream(camWidth, camHeight, camMode);
+                    return new PiVideoStream(_camWidth, _camHeight, camMode);
                 case 1:
                     LogUtil.Write("Loading web cam.");
                     return new WebCamVideoStream(0);
@@ -133,12 +138,12 @@ namespace HueDream.Models.CaptureSource.Camera {
 
         public Task StartCapture(DreamClient dreamClient, CancellationToken cancellationToken) {
             return Task.Run(() => {
-                LogUtil.WriteInc("Starting capture task.");
-                splitter = new Splitter(ledData, scaleWidth, scaleHeight);
+                LogUtil.WriteInc($"Starting capture task, setting sw and h to {_scaleWidth} and {_scaleHeight}");
+                _splitter = new Splitter(_ledData, _scaleWidth, _scaleHeight);
                 LogUtil.Write("Splitter is created.");
                 LogUtil.Write("VC Started.");
                 while (!cancellationToken.IsCancellationRequested) {
-                    var frame = vc.Frame;
+                    var frame = _vc.Frame;
                     if (frame == null) {
                         LogUtil.Write("Frame is null, dude.", "WARN");
                         continue;
@@ -153,9 +158,9 @@ namespace HueDream.Models.CaptureSource.Camera {
                         LogUtil.Write("Unable to process frame, Dude.", "WARN");
                         continue;
                     }
-                    splitter.Update(warped);
-                    var colors = splitter.GetColors();
-                    var sectors = splitter.GetSectors();
+                    _splitter.Update(warped);
+                    var colors = _splitter.GetColors();
+                    var sectors = _splitter.GetSectors();
                     dreamClient.SendColors(colors, sectors);
                 }
 
@@ -167,11 +172,11 @@ namespace HueDream.Models.CaptureSource.Camera {
         private Mat ProcessFrame(Mat input) {
             Mat output;
             // If we need to crop our image...do it.
-            if (captureMode == 0 || captureMode == 1) {
+            if (_captureMode == 0 || _captureMode == 1) {
                 // Crop our camera frame if the input type is not HDMI
                 output = CamFrame(input);
                 // Save a preview frame every 450 frames
-                if (frameCount == 0 || frameCount == 450 || frameCount == 900) {
+                if (_frameCount == 0 || _frameCount == 450 || _frameCount == 900) {
                     var path = Directory.GetCurrentDirectory();
                     input?.Save(path + "/wwwroot/img/_preview_input.jpg");
                     output?.Save(path + "/wwwroot/img/_preview_output.jpg");
@@ -182,10 +187,10 @@ namespace HueDream.Models.CaptureSource.Camera {
             }
 
             // Increment our frame counter
-            if (frameCount >= 900) {
-                frameCount = 0;
+            if (_frameCount >= 900) {
+                _frameCount = 0;
             } else {
-                frameCount++;
+                _frameCount++;
             }
 
             return output;
@@ -197,29 +202,29 @@ namespace HueDream.Models.CaptureSource.Camera {
             var scaled = new Mat();
 
             // Check to see if we actually have to scale down and do it
-            if (Math.Abs(scaleFactor - 1.0f) > .0001) {
-                CvInvoke.Resize(input, scaled, scaleSize);
+            if (Math.Abs(_scaleFactor - 1.0f) > .0001) {
+                CvInvoke.Resize(input, scaled, _scaleSize);
             } else {
                 scaled = input.Clone();
             }
 
             // If we don't have a target, find one
-            if (lockTarget == null) {
-                lockTarget = FindTarget(scaled);
-                if (lockTarget != null) {
+            if (_lockTarget == null) {
+                _lockTarget = FindTarget(scaled);
+                if (_lockTarget != null) {
                     LogUtil.Write("Target hit.");
-                    DataUtil.SetItem<PointF[]>("lockTarget", lockTarget.ToArray());
+                    DataUtil.SetItem<PointF[]>("lockTarget", _lockTarget.ToArray());
                 } else {
                     LogUtil.Write("No target.");
                 }
             }
 
             // If we do or we found one...crop it out
-            if (lockTarget != null) {
-                var dPoints = lockTarget.ToArray();
-                var warpMat = CvInvoke.GetPerspectiveTransform(dPoints, vectors);
+            if (_lockTarget != null) {
+                var dPoints = _lockTarget.ToArray();
+                var warpMat = CvInvoke.GetPerspectiveTransform(dPoints, _vectors);
                 output = new Mat();
-                CvInvoke.WarpPerspective(scaled, output, warpMat, scaleSize);
+                CvInvoke.WarpPerspective(scaled, output, warpMat, _scaleSize);
                 warpMat.Dispose();
             }
 
@@ -246,7 +251,7 @@ namespace HueDream.Models.CaptureSource.Camera {
             CvInvoke.Canny(blurred, cannyEdges, cannyThreshold, cannyThresholdLinking);
             blurred.Dispose();
 
-            if (showEdged) CvInvoke.Imshow("Source", cannyEdges);
+            if (_showEdged) CvInvoke.Imshow("Source", cannyEdges);
             // Get contours
             using (var contours = new VectorOfVectorOfPoint()) {
                 CvInvoke.FindContours(cannyEdges, contours, null, RetrType.List,
@@ -260,19 +265,19 @@ namespace HueDream.Models.CaptureSource.Camera {
                         true);
                     if (approxContour.Size != 4) continue;
                     var cntArea = CvInvoke.ContourArea(approxContour);
-                    if (!(cntArea / srcArea > .15)) continue;
+                    if (!(cntArea / _srcArea > .15)) continue;
                     var pointOut = new VectorOfPointF(SortPoints(approxContour));
-                    targets.Add(VPointFToVPoint(pointOut));
+                    _targets.Add(VPointFToVPoint(pointOut));
                 }
 
-                if (showEdged) {
+                if (_showEdged) {
                     var color = new MCvScalar(255, 255, 0);
                     CvInvoke.DrawContours(input, contours, -1, color);
                     CvInvoke.Imshow("Edged", cannyEdges);
                 }
             }
 
-            var output = CountTargets(targets);
+            var output = CountTargets(_targets);
             cannyEdges.Dispose();
             return output;
         }
@@ -317,7 +322,7 @@ namespace HueDream.Models.CaptureSource.Camera {
             }
 
             if (iCount > 200) {
-                targets.RemoveRange(0, 150);
+                _targets.RemoveRange(0, 150);
             }
 
             return output;

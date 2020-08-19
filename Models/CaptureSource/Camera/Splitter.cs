@@ -70,6 +70,7 @@ namespace HueDream.Models.CaptureSource.Camera {
 
         public void Update(Mat inputMat) {
             input = inputMat;
+            
             var output = new List<Color>();
             var output2 = new List<Color>();
             var coords = fullCoords;

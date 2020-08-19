@@ -34,8 +34,8 @@ namespace HueDream.Models.CaptureSource.ScreenCapture {
                 Graphics g = Graphics.FromImage(_bmpScreenCapture);
                 g.CopyFromScreen(0, 0, 0, 0, s, CopyPixelOperation.SourceCopy);
                 _screen = _bmpScreenCapture.ToImage<Bgr, Byte>();
-                _screen.Resize(600, 400, Inter.Nearest);
-                Frame = _screen.Mat;
+                var newMat = _screen.Resize(600, 400, Inter.Nearest);
+                Frame = newMat.Mat;
             }
             LogUtil.Write("Capture completed?");
         }
