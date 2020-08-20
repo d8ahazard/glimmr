@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -33,14 +34,12 @@ namespace HueDream.Models.CaptureSource.Camera {
         private Size _scaleSize;
         private LedData _ledData;
         private int _frameCount;
-        private DreamClient _dc;
         private VectorOfPointF _lockTarget;
         private List<VectorOfPoint> _targets;
         private IVideoStream _vc;
         private Splitter _splitter;
-        private Mat _k;
-        private Mat _d;
-        private Task _capTask;
+        private System.Timers.Timer saveTimer;
+        private bool doSave;
 
 
         public StreamCapture(CancellationToken camToken) {
@@ -75,10 +74,6 @@ namespace HueDream.Models.CaptureSource.Camera {
                         LogUtil.Write("Camera calibration settings loaded.");
                     }
 
-                    kStr = DataUtil.GetItem("k");
-                    var dStr = DataUtil.GetItem("d");
-                    _k = JsonConvert.DeserializeObject<Mat>(kStr);
-                    _d = JsonConvert.DeserializeObject<Mat>(dStr);
                     LogUtil.Write("calibration vars deserialized.");
                 }
 
@@ -102,6 +97,7 @@ namespace HueDream.Models.CaptureSource.Camera {
             var tr = new Point(_scaleWidth, 0);
             var br = new Point(_scaleWidth, _scaleHeight);
             var bl = new Point(0, _scaleHeight);
+            // Debugging vars...
             _showSource = DataUtil.GetItem<bool>("showSource") ?? false;
             _showEdged = DataUtil.GetItem<bool>("showEdged") ?? false;
             _showWarped = DataUtil.GetItem<bool>("showWarped") ?? false;
@@ -111,7 +107,7 @@ namespace HueDream.Models.CaptureSource.Camera {
         }
 
         private IVideoStream GetCamera() {
-            if (_captureMode != 0 && _captureMode != 1) {
+            if (_captureMode == 2 || _captureMode == 3) {
                 switch (_captureMode) {
                     case 2:
                         LogUtil.Write("Definitely grabbing HDMI video stream here.");
@@ -136,8 +132,16 @@ namespace HueDream.Models.CaptureSource.Camera {
             return null;
         }
 
+        private void SaveFrame(object sender, ElapsedEventArgs elapsedEventArgs) {
+            if (!doSave) doSave = true;
+        }
+
         public Task StartCapture(DreamClient dreamClient, CancellationToken cancellationToken) {
             return Task.Run(() => {
+                saveTimer = new System.Timers.Timer(5000);
+                saveTimer.Elapsed += SaveFrame;
+                saveTimer.AutoReset = true;
+                saveTimer.Start();
                 LogUtil.WriteInc($"Starting capture task, setting sw and h to {_scaleWidth} and {_scaleHeight}");
                 _splitter = new Splitter(_ledData, _scaleWidth, _scaleHeight);
                 LogUtil.Write("Splitter is created.");
@@ -173,25 +177,20 @@ namespace HueDream.Models.CaptureSource.Camera {
         private Mat ProcessFrame(Mat input) {
             Mat output;
             // If we need to crop our image...do it.
-            if (_captureMode == 0 || _captureMode == 1) {
+            if (_captureMode == 1) {
                 // Crop our camera frame if the input type is not HDMI
                 output = CamFrame(input);
-                // Save a preview frame every 450 frames
-                if (_frameCount == 0 || _frameCount == 450 || _frameCount == 900) {
-                    var path = Directory.GetCurrentDirectory();
-                    input?.Save(path + "/wwwroot/img/_preview_input.jpg");
-                    output?.Save(path + "/wwwroot/img/_preview_output.jpg");
-                }
                 // Otherwise, just return the input.
             } else {
                 output = input;
             }
-
-            // Increment our frame counter
-            if (_frameCount >= 900) {
-                _frameCount = 0;
-            } else {
-                _frameCount++;
+            
+            // Save a preview frame every 5 seconds
+            if (doSave) {
+                doSave = false;
+                var path = Directory.GetCurrentDirectory();
+                input?.Save(path + "/wwwroot/img/_preview_input.jpg");
+                output?.Save(path + "/wwwroot/img/_preview_output.jpg");
             }
 
             return output;
