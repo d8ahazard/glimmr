@@ -111,6 +111,7 @@ const bar = new ProgressBar.Circle(circleBar, {
 $(function () {
     setSocketListeners();
     loadSocket();
+    setPreviewTimer();
     $('#nanoCard').hide();
     $('#hueCard').hide();
     $('dsCard').hide();
@@ -120,6 +121,26 @@ $(function () {
     setListeners();
     $('.devSelect').sortableLists();    
 });
+
+function setPreviewTimer() {
+    let inputElement = document.getElementById('inputPreview');
+    let croppedElement = document.getElementById('outputPreview');
+    
+    inputElement.src = './img/_preview_input.jpg?rand=' + Math.random();
+    croppedElement.src = './img/_preview_output.jpg?rand=' + Math.random();
+    
+        setInterval(function() {
+            let inputElement = document.getElementById('inputPreview');
+            let croppedElement = document.getElementById('outputPreview');
+            if (captureMode === 0 || mode === 0) {
+                inputElement.src = './img/no_preview.jpg';
+                croppedElement.src = './img/no_preview.jpg';
+            } else {
+                inputElement.src = './img/_preview_input.jpg?rand=' + Math.random();
+                croppedElement.src = './img/_preview_output.jpg?rand=' + Math.random();
+            }
+        }, 5000);
+}
 
 function sendMessage(endpoint, data, encode=true) {
     if (encode) data = JSON.stringify(data);
@@ -1171,7 +1192,6 @@ function buildDevList(data) {
     });
 }
 
-
 function hidePanels() {
     let nanoCard = $('#nanoCard');
     let hueCard = $('#hueCard');
@@ -1263,7 +1283,6 @@ function reloadDevice() {
     }
     posting = false;
 }
-
 
 // Update the UI with emulator device data
 function loadDsData(data) {

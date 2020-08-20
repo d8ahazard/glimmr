@@ -19,25 +19,31 @@ using Newtonsoft.Json;
 
 namespace HueDream.Models.CaptureSource.Camera {
     public sealed class StreamCapture {
+        // Scaling variables
         private int _scaleHeight = 400;
         private int _scaleWidth = 600;
         private float _scaleFactor = 0.5f;
+        private Size _scaleSize;
+        // Camera vars
         private int _camWidth;
         private int _camHeight;
+        // Debug options
         private bool _showSource;
         private bool _showEdged;
         private bool _showWarped;
+        // Source stuff
         private PointF[] _vectors;
+        private VectorOfPointF _lockTarget;
+        private List<VectorOfPoint> _targets;
+        // Loaded data
         private int _camType;
         private int _captureMode;
         private int _srcArea;
-        private Size _scaleSize;
         private LedData _ledData;
-        private int _frameCount;
-        private VectorOfPointF _lockTarget;
-        private List<VectorOfPoint> _targets;
+        // Video source and splitter
         private IVideoStream _vc;
         private Splitter _splitter;
+        // Timer and bool for saving sample frames
         private System.Timers.Timer saveTimer;
         private bool doSave;
 
@@ -102,7 +108,6 @@ namespace HueDream.Models.CaptureSource.Camera {
             _showEdged = DataUtil.GetItem<bool>("showEdged") ?? false;
             _showWarped = DataUtil.GetItem<bool>("showWarped") ?? false;
             _vectors = new PointF[] {tl, tr, br, bl};
-            _frameCount = 0;
             LogUtil.Write("Start Capture should be running...");
         }
 

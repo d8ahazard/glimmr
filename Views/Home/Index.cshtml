@@ -730,19 +730,29 @@
             <div class="row justify-content-center">
                 <div class="btn-toolbar" role="toolbar" aria-label="Toolbar with button groups">
                     <div class="btn-group mr-2" role="group" aria-label="First group" id="modeBar">
-                        <button type="button" class="btn btn-secondary capModeBtn" data-target="dsCapPane" id="dsCapPaneBtn">
+                        <button type="button" class="btn btn-secondary capModeBtn" data-target="dsCapPane" data-mode="0" id="dsCapPaneBtn">
                             <img src="img/cap_mode_dreamscreen.png" alt="Dreamscreen Capture Mode"/>
                         </button>
-                        <button type="button" class="btn btn-secondary capModeBtn" data-target="cameraCapPane" id="cameraCapPaneBtn">
+                        <button type="button" class="btn btn-secondary capModeBtn" data-target="cameraCapPane" data-mode="1" id="cameraCapPaneBtn">
                             <img src="img/cap_mode_camera.png" alt="Camera Capture Mode"/>
                         </button>
-                        <button type="button" class="btn btn-secondary capModeBtn" data-target="hdmiCapPane" id="hdmiCapPaneBtn">
+                        <button type="button" class="btn btn-secondary capModeBtn" data-target="hdmiCapPane" data-mode="2" id="hdmiCapPaneBtn">
                             <img src="img/cap_mode_hdmi.png" alt="HDMI Capture Mode"/>
                         </button>
-                        <button type="button" class="btn btn-secondary capModeBtn" data-target="screenCapPane" id="screenCapPaneBtn">
+                        <button type="button" class="btn btn-secondary capModeBtn" data-target="screenCapPane" data-mode="3" id="screenCapPaneBtn">
                             <img src="img/cap_mode_screen.png" alt="Screen Capture Mode"/>
                         </button>
                     </div>
+                </div>
+            </div>
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-6" id="inputPreviewWrap">
+                <span>Input</span>
+                    <img id="inputPreview" class="prevImg" alt="Input preview." src="./img/no_preview.jpg"/>
+                </div>
+                <div class="col-12 col-lg-6" id="outputPreviewWrap">
+                    <span>Output</span>
+                    <img id="outputPreview" class="prevImg" alt="Output preview." src="./img/no_preview.jpg"/>
                 </div>
             </div>
             <div class="row justify-content-center">
