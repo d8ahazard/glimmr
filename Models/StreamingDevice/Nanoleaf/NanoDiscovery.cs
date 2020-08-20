@@ -77,15 +77,18 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
 
         public static async Task<List<NanoData>> Refresh(CancellationToken ct) {
             var foo = Task.Run(() => Discover(), ct);
+            var output = new List<NanoData>();
             var newLeaves = await foo;
             foreach (var nl in newLeaves) {
+                var cp = nl;
                 var ex = DataUtil.GetCollectionItem<NanoData>("leaves", nl.Id);
                 if (ex != null) {
-                    nl.CopyExisting(ex);
+                    cp = NanoData.CopyExisting(nl, ex);
                 }
-                DataUtil.InsertCollection<NanoData>("leaves", nl);
+                output.Add(cp);
             }
-            return DataUtil.GetCollection<NanoData>("leaves");
+            DataUtil.SetItem<List<NanoData>>("leaves", output);
+            return output;
         }
     }
 }

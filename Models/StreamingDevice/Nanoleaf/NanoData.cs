@@ -53,43 +53,43 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
 
 
         // Copy data from an existing leaf into this leaf...don't insert
-        public void CopyExisting(NanoData leaf) {
-            if (leaf == null) throw new ArgumentException("Invalid nano data!");
-            Token = leaf.Token;
-            X = leaf.X;
-            Y = leaf.Y;
-            Scale = 1;
-            Rotation = leaf.Rotation;
-            if (leaf.Brightness != 0)  Brightness = leaf.Brightness;
+        public static NanoData CopyExisting(NanoData newLeaf, NanoData existingLeaf) {
+            if (existingLeaf == null || newLeaf == null) throw new ArgumentException("Invalid nano data!");
+            newLeaf.Token = existingLeaf.Token;
+            newLeaf.X = existingLeaf.X;
+            newLeaf.Y = existingLeaf.Y;
+            newLeaf.Scale = 1;
+            newLeaf.Rotation = existingLeaf.Rotation;
+            if (existingLeaf.Brightness != 0)  newLeaf.Brightness = existingLeaf.Brightness;
             // Grab the new leaf layout
-            RefreshLeaf();
+            newLeaf.RefreshLeaf();
             // Merge this data's layout with the existing leaf (copy sector)
-            var newL = MergeLayouts(leaf.Layout);
-            Layout = newL;
+            var newL = MergeLayouts(newLeaf.Layout, existingLeaf.Layout);
+            newLeaf.Layout = newL;
+            return newLeaf;
         }
 
-        private NanoLayout MergeLayouts(NanoLayout existing) {
+        private static NanoLayout MergeLayouts(NanoLayout newLayout, NanoLayout existing) {
+            if (newLayout == null || existing == null) throw new ArgumentException("Invalid argument.");
             var posData = new List<PanelLayout>();
-            var output = Layout;
-            if (existing == null) {
-                LogUtil.Write("Source is null, returning.");
-                return output;
-            }
+            var output = newLayout;
             
             if (existing.PositionData == null) {
                 return output;
             }
 
-            foreach (var d in Layout.PositionData) {
-                foreach (var s in existing.PositionData.Where(s => s.PanelId == d.PanelId)) {
-                    LogUtil.Write("Copying existing panel sector mapping...");
-                    d.TargetSector = s.TargetSector;
-                    d.TargetSectorV2 = s.TargetSectorV2;
-                    if (d.TargetSector != -1 && d.TargetSectorV2 == -1) {
-                        d.TargetSectorV2 = d.TargetSector * 2;
+            // Loop through each panel in the new position data, find existing info and copy
+            foreach (var nl in newLayout.PositionData) {
+                foreach (var el in existing.PositionData.Where(s => s.PanelId == nl.PanelId)) {
+                    LogUtil.Write($"Copying existing panel sector mapping: {el.TargetSector}");
+                    nl.TargetSector = el.TargetSector;
+                    nl.TargetSectorV2 = el.TargetSectorV2;
+                    // If normal sector is set, but v2 is not, do some crude math and get the new sector
+                    if (nl.TargetSector != -1 && nl.TargetSectorV2 == -1) {
+                        nl.TargetSectorV2 = nl.TargetSector * 2;
                     }
                 }
-                posData.Add(d);
+                posData.Add(nl);
             }
             output.PositionData = posData;
             return output;
@@ -101,7 +101,6 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             var layout = nl.GetLayout().Result;
             if (layout != null) Layout = layout;
             Scale = 1;
-            DataUtil.InsertCollection<NanoData>("leaves", this);
         }
     }
 }
