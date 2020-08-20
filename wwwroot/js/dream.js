@@ -242,7 +242,7 @@ function setSocketListeners() {
         posting = true;
         stuff = stuff.replace(/\\n/g, '');
         let foo = JSON.parse(stuff);
-        console.log("OLO! ", foo, selectedDevice);
+        console.log("Received updated data: ", foo);
         datastore = foo;
         buildLists();
         reloadDevice();
@@ -252,7 +252,6 @@ function setSocketListeners() {
     websocket.onclose(function() {
         console.log("Disconnected...");
         socketLoaded = false;        
-        console.log("Loopity loop.");
         let i = 0;
         let intr = setInterval(function() {
             loadSocket();
@@ -268,7 +267,6 @@ function setListeners() {
         colorTimer = setTimeout(function() {
             if (posting) return;
             let colStr = instance.toHEXA()[0] + instance.toHEXA()[1] + instance.toHEXA()[2];
-            console.log('change', colStr);
             postData("ambientColor",{device: selectedDevice.id, group: selectedDevice.groupNumber, color: colStr});    // Do the ajax stuff
         }, 500);
         
@@ -283,15 +281,12 @@ function setListeners() {
         if (col === "r") r = val;
         if (col === "g") g = val;
         if (col === "b") b = val;
-        console.log("SAT Change: ",r,g,b);
         let newColor = rgbToHex(r,g,b);
         updateDsProperty("saturation", newColor);
     });
     
     $('.dsSlider').click(function(){
-       console.log("I AM CLICKED: " + $(this).data('attribute'));
        let checked = $(this).prop('checked');
-       console.log("And I am checked: " + checked);
        updateDsProperty($(this).data('attribute'),checked ? 1 : 0);
        
     });
@@ -323,7 +318,6 @@ function setListeners() {
     $('.hintbtn').click(function(){
         let gp = $(this).parent().parent();
         let hint = gp.find('.hint');
-        console.log("HINT: ", hint, gp);
         if (hint.css('display') === 'none') {
             hint.slideDown();
         } else {
@@ -349,7 +343,6 @@ function setListeners() {
         $(this).hide();
         $('#drawerOpen').hide();
         $('#settingsBack').show();
-        console.log("Stargets: ", sTarget);
     });
 
     $('.s1').click(function(){
@@ -358,17 +351,14 @@ function setListeners() {
         sTarget.push(parent, sTarget2);
         parent.slideUp();
         sTarget2.slideDown();
-        console.log("Stargets: ", sTarget);
     });
 
     $('#settingsBack').click(function() {
         if (sTarget.length >= 2) {
-            console.log("Stargets: ", sTarget);
             let toHide = sTarget.pop();
             let toShow = sTarget.pop();
             toHide.slideUp();
             toShow.slideDown();
-            console.log("Stargets(2): ", sTarget);
             if (sTarget.length === 0) {
                 $('#drawerOpen').show();
                 $('#settingsBack').hide();
@@ -415,7 +405,6 @@ function setListeners() {
     $('.ambientModeBtn').on('click', function() {
         ambientMode = $(this).data('value');
         toggleAmbientSection();
-        console.log("New mode is " + ambientMode);
         let payLoad = {
             id: selectedDevice.id,
             mode: ambientMode
@@ -426,7 +415,6 @@ function setListeners() {
     $('.showBtn').on('click', function() {
        ambientShow = $(this).data('show');
        toggleAmbientSection();
-        console.log("New mode is " + ambientShow);
         let payLoad = {
             id: selectedDevice.id,
             scene: ambientShow
@@ -444,7 +432,6 @@ function setListeners() {
     $('.nanoFlip').on('click', function() {
         let flipVal = $(this).val() === "on";
         let flipDir = $(this).data('orientation');
-        console.log("Setting da flip for " + flipDir + " to " + flipVal);
         if (flipDir === "h") {
             selectedDevice['mirrorX'] = flipVal;
         } else {
@@ -453,7 +440,6 @@ function setListeners() {
         postData("updateDevice", selectedDevice);
         setTimeout(function() {
             let newNano = postResult;
-            console.log("New nano: ", selectedDevice);
             drawNanoShapes(selectedDevice);
         }, 1000);
 
@@ -547,7 +533,6 @@ function setListeners() {
     $(document).on('click', '.devSelect', function (event) {
         let id = $(this).data('device');
         id = id.replace("#group", "");
-        console.log("Selecting " + id);
         $.each(devices, function() {
             if ($(this)[0]['id'] == id) {
                 console.log("Found the device, wtf.")
@@ -596,7 +581,6 @@ function setListeners() {
             $('.lifxRegion').removeClass('checked');
             $(this).addClass('checked');
             let val =$(this).data('region');
-            console.log("Val is " + val);
             selectedDevice.targetSector = val;
             postData("updateDevice", selectedDevice);
         }
@@ -607,7 +591,6 @@ function setListeners() {
             $('.lifxRegionV2').removeClass('checked');
             $(this).addClass('checked');
             let val =$(this).data('region');
-            console.log("Val is " + val);
             selectedDevice.targetSectorV2 = val;
             postData("updateDevice", selectedDevice);
         }
@@ -619,7 +602,6 @@ function setListeners() {
             $(this).addClass('checked');
             let val=$(this).data('region');
             nanoSector = val;
-            console.log("Val is " + val);
             let sTarget = -1;
             let sectors = selectedDevice["layout"]["positionData"];
             for (let q=0; q < sectors.length; q++) {
@@ -630,7 +612,6 @@ function setListeners() {
             
             if (sTarget !== -1) {
                 selectedDevice["layout"]["positionData"][sTarget]["targetSector"] = nanoSector;
-                console.log("Updating target sector for nano panel: " + nanoTarget + " and " + nanoSector, selectedDevice);
                 postData("updateDevice", selectedDevice);    
             }
             $('#nanoModal').modal('toggle');            
@@ -643,7 +624,6 @@ function setListeners() {
             $(this).addClass('checked');
             let val=$(this).data('region');
             nanoSectorV2 = val;
-            console.log("Val is " + val);
             let sTarget = -1;
             let sectors = selectedDevice["layout"]["positionData"];
             for (let q=0; q < sectors.length; q++) {
@@ -654,7 +634,6 @@ function setListeners() {
 
             if (sTarget !== -1) {
                 selectedDevice["layout"]["positionData"][sTarget]["targetSectorV2"] = nanoSectorV2;
-                console.log("Updating target sector for nano panel: " + nanoTarget + " and " + nanoSectorV2, selectedDevice);
                 postData("updateDevice", selectedDevice);
             }
             $('#nanoModal').modal('toggle');
@@ -689,20 +668,16 @@ function setListeners() {
 }
 
 function toggleAmbientSection() {
-    console.log("UPDATING: ", mode, ambientMode, ambientShow);
     if (mode === 3) {
-        console.log("Mode is ambient.")
         $('#ambientDiv').slideDown();
         $('.ambientModeBtn').removeClass("selected");
         $('.ambientModeBtn[data-value="'+ambientMode+'"]').addClass("selected");
         if (ambientMode === 1) {
-            console.log("Should be scenes.")
             $('#ambientColorDiv').slideUp();
             $('#ambientSceneDiv').slideDown();
             $(".showBtn").removeClass("selected");
             $('.showBtn[data-show="'+ambientShow+'"]').addClass("selected");
         } else {
-            console.log("Should be solid color.")
             $('#ambientColorDiv').slideDown();
             $('#ambientSceneDiv').slideUp();
         }
@@ -714,15 +689,11 @@ function toggleAmbientSection() {
 // This gets called in loop by hue auth to see if we've linked our bridge.
 function checkHueAuth() {    
     $.get("./api/DreamData/action?action=authorizeHue&value=" + hueIp, function (data) {
-        console.log("Bridge data:", data);
         if (data.key !== null && data.key !== undefined) {
-            console.log("Bridge is linked!");
             hueAuth = true;
             if (hueAuth) {
                 loadBridgeData(data);
             }
-        } else {
-            console.log("Bridge is not linked yet.");
         }
     });    
 }
@@ -747,7 +718,7 @@ function postData(endpoint, payload) {
         contentType: "application/json;",
         data: JSON.stringify(payload),
         success: function(data) {
-            console.log(`Posted to ${endpoint}`, endpoint, data);
+            console.log(`Posting to ${endpoint}`, endpoint, data);
             postResult = data;
         },
         type: 'POST'
@@ -773,7 +744,6 @@ function updateLightProperty(myId, propertyName, value) {
 function mapLights() {
     let group = findGroup(hueGroup);
     let lights = hueLights;
-    console.log("Mapping lights: ", lights);
     // Get the main light group
     const lightGroup = document.getElementById("mapSel");
     // Clear it
@@ -923,7 +893,6 @@ function listGroups() {
         if (hueGroups !== null && hueGroups !== undefined) {
             if (hueGroup === -1 && hueGroups.length > 0) {
                 hueGroup = hueGroups[0][id];
-                console.log("Setting default group to " + hueGroup);
             }
             $.each(hueGroups, function() {
                 let val = $(this)[0].id;
@@ -968,7 +937,6 @@ function RefreshData() {
             $.get("./api/DreamData/action?action=refreshDevices");
         } else {
             $.get("./api/DreamData/action?action=refreshDevices", function (data) {
-                console.log("Refreshed datastore: ", data);
                 datastore = data;
                 buildLists();
                 refreshing = false;
@@ -1040,8 +1008,6 @@ function buildLists() {
     groups = sortDevices(datastore['bridges'], groups, "HueBridge", "Hue Bridge");
     groups = sortDevices(datastore['lifxBulbs'], groups, "Lifx", "Lifx Bulb");
     dg.html("");
-    console.log("Groups: ", groups);
-    console.log("ALL DEVICES: ", allDevices);
     $.each(groups, function () {
         let item = $(this)[0];
         if (item['screenX'] === undefined) {
@@ -1066,7 +1032,6 @@ function buildLists() {
 
 
 function appendDeviceGroup(item) {
-    console.log("Appending group: ", item);
     let name = item['name'];
     let elements = item['items'];
     let devGroup = $('#devGroup');
@@ -1077,7 +1042,6 @@ function appendDeviceGroup(item) {
             if (element['id'] === undefined) element['id'] = element['bridgeId'];
             if (element['id'] === undefined) element['id'] = element['ipAddress'];
             if (element['id'] === undefined) element['id'] = element['ipV4Address'];
-            console.log("Adding unsorted element:", element);
             devices.push(element);
             devGroup.append('<li class="devSelect" data-device="' + element.id + '"><img class="devIcon" src="./img/' + element.tag.toLowerCase() + '_icon.png" alt="device icon"><span class="devName">' + element.name + '<span></li>');
         });
@@ -1088,7 +1052,6 @@ function appendDeviceGroup(item) {
         let container = $('<ul id="group' + item['id'] + '" class="nav-list groupList"></ul>');
         $.each(elements, function () {
             let element = $(this)[0];
-            console.log("Adding sorted element: ", element);
             if (element.tag.includes("DreamScreen")) {
                 item.mode = element.mode;
                 item.brightness = element.brightness;
@@ -1163,7 +1126,6 @@ function setCaptureMode(target, post=true) {
 function sortDevices(data, groups, tag, name) {
     $.each(data, function () {
         let item = $(this)[0];
-        console.log("PUSHING: ", item);
         allDevices.push(item);
         let gn = item['groupNumber'];
         let gName = item['groupName'];
@@ -1270,7 +1232,6 @@ function reloadDevice() {
     let data = null;
     for (let q=0; q < allDevices.length; q++ ) {
         if(allDevices[q].id === selectedDevice.id) {
-            console.log("Comparing " + allDevices[q].id + " to " + selectedDevice.id);
             data = allDevices[q];
         }
     }
@@ -1307,7 +1268,6 @@ function reloadDevice() {
 // Update the UI with emulator device data
 function loadDsData(data) {
     let dsName = $('#dsName');
-    console.log("Loading: ", data);
     deviceData = data;
     dsName.html(deviceData.name);
     dsName.data("ip", deviceData.ipAddress);
@@ -1316,7 +1276,6 @@ function loadDsData(data) {
     $('#dsIp').html(deviceData.ipAddress);
     emulationType = deviceData.tag;
     let satVal = hexToRgb(deviceData.saturation);
-    console.log("Saturation values: ", satVal);
     $('.devSaturation[data-color="r"]').val(satVal.r);
     $('.devSaturation[data-color="g"]').val(satVal.g);
     $('.devSaturation[data-color="b"]').val(satVal.b);
@@ -1338,7 +1297,6 @@ function loadDsData(data) {
             $('.dsSlider[data-attribute="'+prop+'"]').prop('checked',deviceData[prop] === 1);
         }
     }
-    console.log("Settings target is " + settingTarget);
     $('#dsSettingsBtn').data('target',settingTarget);
     $('#dsType').html();
     let modestr = "";
@@ -1362,9 +1320,7 @@ function loadDsData(data) {
     ambientShow = deviceData['ambientShowType'];
     let ambientColor = deviceData['ambientColor'];
     if (ambientColor !== null) {
-        console.log("Setting ambient color to: #", ambientColor);
         let set = pickr.setColor('#' + ambientColor);
-        console.log("SET: ", set);
     }
     toggleAmbientSection();
     $('#dsMode' + deviceData.mode).addClass('active');
@@ -1379,9 +1335,6 @@ function loadBridgeData(data) {
     const lHint = $('#linkHint');
     const lBtn = $('#linkBtn');
     const bSlider = $('#hueBrightness');
-    // This is our bridge. There are many others like it...but this one is MINE.
-    console.log("Loaded bridge: ", data);
-    // Now we've got it.
     let b = data;
     hueIp = b.id;
     bSlider.val(b["brightness"]);
@@ -1392,7 +1345,6 @@ function loadBridgeData(data) {
         if ((hueGroup === -1 && hueGroups.length > 0) || hueGroup === null || hueGroup === undefined) {
             hueGroup = hueGroups[0]["id"];
             bridges[bridgeInt].selectedGroup = hueGroup;
-            console.log("Updated group to " + hueGroup);
             postData("updateData", bridges[bridgeInt]);
         }
     }
@@ -1445,7 +1397,6 @@ function loadNanoData(data) {
     const lBtn = $('#nanoBtn');
     const nBrightness = $("#nanoBrightness");
     // This is our bridge. There are many others like it...but this one is MINE.
-    console.log("Loaded nanodata: ", data);
     // Now we've got it.
     let n = data;
     nBrightness.val(n["brightness"]);
@@ -1458,9 +1409,7 @@ function loadNanoData(data) {
         lImg.addClass('linked');
         lHint.html("Your Nanoleaf is linked.");
         lBtn.css('cursor', 'default');
-        if (nanoX === data.x && nanoY === data.y) {
-            console.log("Shapes position hasn't changed, returning.");
-        } else {
+        if (nanoX !== data.x && nanoY !== data.y) {            
             nanoX = data.x;
             nanoY = data.y;
         }
@@ -1482,9 +1431,6 @@ function loadLifxData(data) {
     const hIp = $('#lifxIp');
     const lName = $('#lifxName');
     const lBrightness = $("#lifxBrightness");
-    // This is our bridge. There are many others like it...but this one is MINE.
-    console.log("Loaded nanodata: ", data);
-    // Now we've got it.
     let n = data;
     nanoIp = n["hostName"];
     lName.html(nanoIp);
@@ -1509,9 +1455,7 @@ function drawNanoShapes(panel) {
     // Get window width
     let width = window.innerWidth;
     let height = width * .5625;
-    let centerX = width / 2;
-    let centerY = height / 2;
-
+    
     // Get layout data from panel
     let pX = panel['x'];
     let pY = panel['y'];
@@ -1546,7 +1490,6 @@ function drawNanoShapes(panel) {
     tvY = (height - tvHeight) / 2;
     pX += tvX;
     pY += tvY;
-    console.log("PY is " + pY);
     // Create our stage
     let stage = new Konva.Stage({
         container: 'canvasDiv',
@@ -1587,7 +1530,6 @@ function drawNanoShapes(panel) {
         if (canvasTask !== null) {
             clearTimeout(canvasTask);
         }
-        console.log("NanoX and NanoY are " + nanoX + " and " + nanoY);
         canvasTask = setTimeout(function(){
             doTheThing();    
         }, 500);            
@@ -1604,24 +1546,17 @@ function drawNanoShapes(panel) {
         if (halfScale) {
             gX*=2;
             gY*=2;
-            console.log("Half scale: ", gX, gY);
-        }  else {
-            console.log("Normal scale: ", gX, gY);  
         }
         if (nanoX !== gX || nanoY !== gY) {
-            console.log("Updating nano group position: " + gX + " and " + gY);
             nanoX = gX;
             nanoY = gY;
         } else {
-            console.log("Nano position has not changed, returning.");
             return;
         }
         selectedDevice.x = gX;
         selectedDevice.y = gY;
         selectedDevice.scale = 1;
         selectedDevice.rotation = shapeGroup.rotation();
-        console.log("Setting x and y to " + gX + " and " + gY);
-
         saveSelectedDevice();
         postData("updateDevice", selectedDevice);
     }
@@ -1791,7 +1726,6 @@ function setNanoMap(id, current, v2) {
     nanoTarget = id;
     nanoSector = current;
     nanoSectorV2 = v2;
-    console.log("Mapping sector for nano panel " + id);
     // Add the options for our regions
     $('.nanoRegion').removeClass('checked');
     if (current !== -1) {
