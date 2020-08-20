@@ -71,7 +71,7 @@ namespace HueDream.Models.StreamingDevice.LIFX {
             if (!Streaming) return;
             if (inputs == null || _client == null) throw new ArgumentException("Invalid color inputs.");
             var capCount = _captureMode == 0 ? 12 : 28;
-            if (inputs.Count < capCount) throw new ArgumentOutOfRangeException(nameof(inputs));
+            if (inputs.Count < capCount) throw new ArgumentOutOfRangeException($"Error, we have {inputs.Count} inputs, but should have {capCount}.");
             var input = inputs[_targetSector];
             if (Brightness < 100) {
                 input = ColorTransformUtil.ClampBrightness(input, Brightness);

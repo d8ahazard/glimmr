@@ -143,10 +143,10 @@ namespace HueDream.Models.DreamScreen {
             cmd = MsgUtils.Commands[cmd] ?? cmd;
             if (flag == 0x30 | groupSend) {
                 SendUdpBroadcast(stream.ToArray());
-                if (cmd != "SUBSCRIBE") LogUtil.Write($"localhost -> 255.255.255.255::{cmd} {flag}-{group}");
+                if (cmd != "SUBSCRIBE" && cmd != "COLOR_DATA") LogUtil.Write($"localhost -> 255.255.255.255::{cmd} {flag}-{group}");
             } else {
                 SendUdpUnicast(stream.ToArray(), ep);
-                if (cmd != "SUBSCRIBE") LogUtil.Write($"localhost -> {ep.Address}::{cmd} {flag}-{group}");
+                if (cmd != "SUBSCRIBE" && cmd != "COLOR_DATA") LogUtil.Write($"localhost -> {ep.Address}::{cmd} {flag}-{group}");
             }
         }
 
