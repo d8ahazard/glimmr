@@ -62,6 +62,7 @@ button.accept-policy {
 html {
     position: relative;
     min-height: 100%;
+    background-color:#333333;
 }
 
 body {
@@ -753,6 +754,7 @@ input[type="range"]:active ~ #rangevalue {
     position: fixed;
     overflow: hidden;
     height: 100%;
+    z-index: 10;
 }
 
 .settings-group {
