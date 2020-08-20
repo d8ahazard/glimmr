@@ -86,7 +86,7 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
                     nl.TargetSectorV2 = el.TargetSectorV2;
                     // If normal sector is set, but v2 is not, do some crude math and get the new sector
                     if (nl.TargetSector != -1 && nl.TargetSectorV2 == -1) {
-                        nl.TargetSectorV2 = nl.TargetSector * 2;
+                        nl.TargetSectorV2 = nl.TargetSector / 12 * 28;
                     }
                 }
                 posData.Add(nl);
