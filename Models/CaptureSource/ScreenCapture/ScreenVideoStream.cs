@@ -23,6 +23,10 @@ namespace HueDream.Models.CaptureSource.ScreenCapture {
             var s = DisplayUtil.GetDisplaySize();
             var width = s.Width;
             var height = s.Height;
+            if (width == 0 || height == 0) {
+                LogUtil.Write("We have no screen, returning.");
+                return Task.CompletedTask;
+            }
             LogUtil.Write("Starting screen capture, width is " + width + " height is " + height + ".");
             _bmpScreenCapture = new Bitmap(width, height);
             return Task.Run(() => CaptureScreen(s, ct));

@@ -50,17 +50,25 @@ namespace HueDream.Models.Util {
         
         private static Size GetLinuxDisplaySize() {
             var p = new System.Diagnostics.Process {
-                StartInfo = {UseShellExecute = false, RedirectStandardOutput = true, FileName = "xrandr"}
+                StartInfo = {UseShellExecute = cleafalse, RedirectStandardOutput = true, FileName = "xrandr"}
             };
             p.Start();
             var output = p.StandardOutput.ReadToEnd();
             p.WaitForExit();
             p.Dispose();
-            var match = System.Text.RegularExpressions.Regex.Match(output, @"(\d+)x(\d+)\+0\+0");
-            var w = match.Groups[1].Value;
-            var h = match.Groups[2].Value;
-            var r = new Size(int.Parse(w,CultureInfo.InvariantCulture), int.Parse(h,CultureInfo.InvariantCulture));
-            Console.WriteLine ("Display Size is {0} x {1}", w, h);
+            LogUtil.Write("Output from screen check: " + output);
+            var r = new Size(0,0);
+            try {
+                var match = System.Text.RegularExpressions.Regex.Match(output, @"(\d+)x(\d+)\+0\+0");
+                var w = match.Groups[1].Value;
+                var h = match.Groups[2].Value;
+                r = new Size(int.Parse(w, CultureInfo.InvariantCulture),
+                    int.Parse(h, CultureInfo.InvariantCulture));
+                Console.WriteLine ("Display Size is {0} x {1}", w, h);
+            } catch (FormatException) {
+                LogUtil.Write("Format exception, probably we have no screen.");
+            }
+
             return r;
         }
     }

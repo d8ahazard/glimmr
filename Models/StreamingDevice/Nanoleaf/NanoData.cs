@@ -70,7 +70,8 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
         }
 
         private static NanoLayout MergeLayouts(NanoLayout newLayout, NanoLayout existing) {
-            if (newLayout == null || existing == null) throw new ArgumentException("Invalid argument.");
+            if (newLayout == null) throw new ArgumentException("Invalid argument.");
+            if (existing == null) return newLayout;
             var posData = new List<PanelLayout>();
             var output = newLayout;
             
