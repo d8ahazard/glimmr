@@ -34,10 +34,30 @@ html {
     font-size: 14px;
 }
 
+
+/* Small devices (landscape phones, 576px and up) */
+@media (max-width: 577px) {
+    .previewWrap {
+        width: 100% !important;
+        margin: 0 auto !important;
+    }
+}
+
+/* Medium devices (tablets, 768px and up) The navbar toggle appears at this breakpoint */
 @media (min-width: 768px) {
     html {
         font-size: 16px;
     }
+}
+
+/* Large devices (desktops, 992px and up) */
+@media (min-width: 992px) {
+
+}
+
+/* Extra large devices (large desktops, 1200px and up) */
+@media (min-width: 1200px) {
+
 }
 
 .border-top {
