@@ -12,3 +12,5 @@ CodeGraphData/*
 log/*
 *.log
 *.bk
+wwwroot/img/_preview_input.jpg
+wwwroot/img/_preview_output.jpg
