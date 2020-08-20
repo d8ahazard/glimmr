@@ -452,7 +452,7 @@ function setListeners() {
         loadDsData();
     });
 
-    // On light map change #TODO Post directly
+    // On light map change
     $(document).on('change', '.mapSelect', function() {
         let myId = $(this).attr('id').replace("lightMap", "");
         let newVal = $(this).val().toString();

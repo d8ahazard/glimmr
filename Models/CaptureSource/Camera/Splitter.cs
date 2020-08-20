@@ -222,31 +222,29 @@ namespace HueDream.Models.CaptureSource.Camera {
                         LogUtil.Write("Full box set.");
                         if (_countFullBox > MaxFrameCount * 2) _countFullBox = MaxFrameCount * 2;
                         _boxMode = 3;
-                    } else {
-                        if (_countLetterBox > 150) {
-                            LogUtil.Write("Enabling Letterbox Mode.");
-                            if (_countLetterBox > MaxFrameCount * 2) _countLetterBox = MaxFrameCount * 2;
-                            _boxMode = 1;
-                            return;
-                        }
-
-                        if (_countPillarBox > 150) {
-                            LogUtil.Write("Enabling Pillarbox Mode.");
-                            if (_countPillarBox > MaxFrameCount * 2) _countPillarBox = MaxFrameCount * 2;
-                            _boxMode = 2;
-                            return;
-                        }
+                        return;
                     }
+                    
+                    if (_countPillarBox > MaxFrameCount) {
+                        LogUtil.Write("Enabling Pillarbox Mode.");
+                        if (_countPillarBox > MaxFrameCount * 2) _countPillarBox = MaxFrameCount * 2;
+                        _boxMode = 2;
+                        return;
+                    }
+                    
+                    if (_countLetterBox > MaxFrameCount) {
+                        LogUtil.Write("Enabling Letterbox Mode.");
+                        if (_countLetterBox > MaxFrameCount * 2) _countLetterBox = MaxFrameCount * 2;
+                        _boxMode = 1;
+                        return;
+                    }
+
                 } else {
-                    _countNoImg = 100;
+                    if (_countNoImg > MaxFrameCount * 2) _countNoImg = MaxFrameCount * 2;
                 }
 
+                // Set default mode only if nothing else is set.
                 _boxMode = 0;
-
-
-
-
-
             }
         }
 

@@ -81,7 +81,6 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             // Loop through each panel in the new position data, find existing info and copy
             foreach (var nl in newLayout.PositionData) {
                 foreach (var el in existing.PositionData.Where(s => s.PanelId == nl.PanelId)) {
-                    LogUtil.Write($"Copying existing panel sector mapping: {el.TargetSector}");
                     nl.TargetSector = el.TargetSector;
                     nl.TargetSectorV2 = el.TargetSectorV2;
                     // If normal sector is set, but v2 is not, do some crude math and get the new sector
