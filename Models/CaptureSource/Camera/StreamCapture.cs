@@ -161,7 +161,8 @@ namespace HueDream.Models.CaptureSource.Camera {
                     _splitter.Update(warped);
                     var colors = _splitter.GetColors();
                     var sectors = _splitter.GetSectors();
-                    dreamClient.SendColors(colors, sectors);
+                    var sectors3 = _splitter.GetSectorsV2();
+                    dreamClient.SendColors(colors, sectors, sectors3);
                 }
 
                 LogUtil.Write("Capture task completed!", "WARN");

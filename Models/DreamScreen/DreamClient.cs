@@ -397,7 +397,7 @@ namespace HueDream.Models.DreamScreen {
                 // Init lifx
                 var lifx = DataUtil.GetCollection<LifxData>("lifxBulbs");
                 if (lifx != null) {
-                    foreach (var b in lifx.Where(b => b.SectorMapping != -1)) {
+                    foreach (var b in lifx.Where(b => b.TargetSector != -1)) {
                         _sDevices.Add(new LifxBulb(b, _lifxClient));
                     }
                 }
@@ -440,6 +440,36 @@ namespace HueDream.Models.DreamScreen {
             foreach (var sd in _sDevices) {
                 sd.SetColor(output, fadeTime);
             }
+
+            if (CaptureMode != 0) {
+                // If we have subscribers and we're capturing
+                if (_subscribers.Count > 0) {
+                    LogUtil.Write("We have " + _subscribers.Count + " subscribers: " + CaptureMode);
+                }
+
+                if (_subscribers.Count > 0 && CaptureMode != 0) {
+                    var keys = new List<string>(_subscribers.Keys);
+                    foreach (var ip in keys) {
+                        DreamSender.SendSectors(sectors, ip, _dev.GroupNumber);
+                        LogUtil.Write("Sent.");
+                    }
+
+                    LogUtil.Write("Sent to each subscriber.");
+                }
+
+                _strip?.UpdateAll(colors);
+            }
+        }
+
+        // If we pass in a third set of sectors, use that info instead.
+        public void SendColors(List<Color> colors, List<Color> sectors, List<Color> sectorsV2, double fadeTime = 0) {
+            _sendTokenSource ??= new CancellationTokenSource();
+            if (_sendTokenSource.IsCancellationRequested) return;
+            if (!_streamStarted) return;
+            foreach (var sd in _sDevices) {
+                sd.SetColor(sectorsV2, fadeTime);
+            }
+            
 
             if (CaptureMode != 0) {
                 // If we have subscribers and we're capturing

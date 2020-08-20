@@ -8,7 +8,7 @@ namespace HueDream.Models.StreamingDevice {
         public int Brightness { get; set; }
         public string Id { get; set; }
         public string IpAddress { get; set; }
-        public async void StartStream(CancellationToken ct) {
+        public void StartStream(CancellationToken ct) {
             while (!ct.IsCancellationRequested) {
                 Streaming = true;
             }
@@ -19,12 +19,10 @@ namespace HueDream.Models.StreamingDevice {
             Streaming = false;
         }
 
-        public async void SetColor(List<Color> colors, double fadeTime) {
-            if (Streaming) {
-                
-            }
+        public void SetColor(List<Color> colors, double fadeTime) {
         }
-
+       
+     
         public void ReloadData() {
             
         }
