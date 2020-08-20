@@ -396,7 +396,6 @@ namespace HueDream.Controllers {
             var curMode = DataUtil.GetItem<int>("captureMode");
             var dev = DataUtil.GetDeviceData();
             if (curMode == capMode) return;
-            var colorMode = dev.Mode;
             DataUtil.SetItem<int>("captureMode", capMode);
             var devType = "SideKick";
             if (capMode != 0 && curMode == 0) {
@@ -405,21 +404,33 @@ namespace HueDream.Controllers {
 
             SwitchDeviceType(devType, dev);
             DataUtil.SetItem<string>("devType", devType);
-            if (colorMode == 0) return;
+            TriggerReload(JObject.FromObject(dev));
+            if (dev.Mode == 0) return;
             SetMode(0);
-            SetMode(colorMode);
+            SetMode(dev.Mode);
+            
         }
 
         private static void SwitchDeviceType(string devType, BaseDevice curDevice) {
-            if (devType == "SideKick") {
-                var newDevice = new SideKick(curDevice);
-                DataUtil.SetItem("myDevice", newDevice);
-            } else if (devType == "DreamScreen4K") {
-                var newDevice = new DreamScreen4K(curDevice);
-                DataUtil.SetItem("myDevice", newDevice);
-            } else if (devType == "Connect") {
-                var newDevice = new Connect(curDevice);
-                DataUtil.SetItem("myDevice", newDevice);
+            switch (devType) {
+                case "SideKick": {
+                    var newDevice = new SideKick(curDevice);
+                    DataUtil.SetItem("myDevice", newDevice);
+                    DataUtil.InsertDsDevice(newDevice);
+                    break;
+                }
+                case "DreamScreen4K": {
+                    var newDevice = new DreamScreen4K(curDevice);
+                    DataUtil.SetItem("myDevice", newDevice);
+                    DataUtil.InsertDsDevice(newDevice);
+                    break;
+                }
+                case "Connect": {
+                    var newDevice = new Connect(curDevice);
+                    DataUtil.SetItem("myDevice", newDevice);
+                    DataUtil.InsertDsDevice(newDevice);
+                    break;
+                }
             }
         }
 
