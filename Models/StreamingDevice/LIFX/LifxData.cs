@@ -35,7 +35,14 @@ namespace HueDream.Models.StreamingDevice.LIFX {
         [JsonProperty] public ushort Saturation { get; set; }
         [JsonProperty] public ushort Kelvin { get; set; }
         [JsonProperty] public bool Power { get; set; }
-        [JsonProperty] public int SectorMapping { get; set; }
+        [DefaultValue(-1)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public int TargetSector { get; set; }
+        
+        [DefaultValue(-1)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public int TargetSectorV2 { get; set; }
+        
         [DefaultValue(100)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public int Brightness { get; set; }

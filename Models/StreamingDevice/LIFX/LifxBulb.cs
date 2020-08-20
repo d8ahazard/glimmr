@@ -13,6 +13,8 @@ namespace HueDream.Models.StreamingDevice.LIFX {
         public bool Streaming { get; set; }
 
         private int _targetSector;
+        
+        private int _captureMode;
         public int Brightness { get; set; }
         public string Id { get; set; }
         public string IpAddress { get; set; }
@@ -20,10 +22,11 @@ namespace HueDream.Models.StreamingDevice.LIFX {
         private LifxClient _client;
         
         public LifxBulb(LifxData d, LifxClient c) {
+            _captureMode = DataUtil.GetItem<int>("captureMode");
             Data = d ?? throw new ArgumentException("Invalid Data");
             _client = c;
             B = new LightBulb(d.HostName, d.MacAddress, d.Service, (uint)d.Port);
-            _targetSector = d.SectorMapping - 1;
+            _targetSector = d.TargetSector - 1;
             Brightness = d.Brightness;
             Id = d.Id;
             IpAddress = d.IpAddress;
@@ -56,8 +59,10 @@ namespace HueDream.Models.StreamingDevice.LIFX {
 
         public void ReloadData() {
             var newData = DataUtil.GetCollectionItem<LifxData>("lifxBulbs", Id);
+            _captureMode = DataUtil.GetItem<int>("captureMode");
             Data = newData;
-            _targetSector = newData.SectorMapping - 1;
+            var targetSector = _captureMode == 0 ? newData.TargetSector : newData.TargetSectorV2;
+            _targetSector = targetSector - 1;
             Brightness = newData.MaxBrightness;
             Id = newData.Id;
         }
@@ -65,7 +70,8 @@ namespace HueDream.Models.StreamingDevice.LIFX {
         public void SetColor(List<System.Drawing.Color> inputs, double fadeTime = 0) {
             if (!Streaming) return;
             if (inputs == null || _client == null) throw new ArgumentException("Invalid color inputs.");
-            if (inputs.Count < 12) throw new ArgumentOutOfRangeException(nameof(inputs));
+            var capCount = _captureMode == 0 ? 12 : 28;
+            if (inputs.Count < capCount) throw new ArgumentOutOfRangeException(nameof(inputs));
             var input = inputs[_targetSector];
             if (Brightness < 100) {
                 input = ColorTransformUtil.ClampBrightness(input, Brightness);

@@ -33,7 +33,7 @@ namespace HueDream.Models.StreamingDevice.LIFX {
             foreach (var bulb in b) {
                 var existing = DataUtil.GetCollectionItem<LifxData>("lifxBulbs", bulb.MacAddressString);
                 if (existing != null) {
-                    bulb.SectorMapping = existing.SectorMapping;
+                    bulb.TargetSector = existing.SectorMapping;
                     bulb.Brightness = existing.Brightness;
                 }
                 DataUtil.InsertCollection<LifxData>("lifxBulbs", bulb);
@@ -55,7 +55,7 @@ namespace HueDream.Models.StreamingDevice.LIFX {
                 Saturation = state.Saturation,
                 Brightness = state.Brightness,
                 Kelvin = state.Kelvin,
-                SectorMapping = -1
+                TargetSector = -1
             };
             return d;
         }

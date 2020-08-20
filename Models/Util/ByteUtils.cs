@@ -71,7 +71,7 @@ namespace HueDream.Models.Util {
 
         // Convert an array of integers to bytes
         public static byte[] IntBytes(int[] toBytes) {
-            if (toBytes == null) throw new ArgumentException("Invalid input.");
+            //if (toBytes == null) throw new ArgumentException("Invalid input.");
             var output = new byte[toBytes.Length];
             var c = 0;
             foreach (var i in toBytes) {

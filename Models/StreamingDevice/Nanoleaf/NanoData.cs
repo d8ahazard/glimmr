@@ -83,7 +83,11 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             foreach (var d in Layout.PositionData) {
                 foreach (var s in existing.PositionData.Where(s => s.PanelId == d.PanelId)) {
                     LogUtil.Write("Copying existing panel sector mapping...");
-                    d.Sector = s.Sector;
+                    d.TargetSector = s.TargetSector;
+                    d.TargetSectorV2 = s.TargetSectorV2;
+                    if (d.TargetSector != -1 && d.TargetSectorV2 == -1) {
+                        d.TargetSectorV2 = d.TargetSector * 2;
+                    }
                 }
                 posData.Add(d);
             }

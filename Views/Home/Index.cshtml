@@ -2,7 +2,7 @@
     ViewData["Title"] = "Home Page";
 }
 <div class="bmd-layout-container bmd-drawer-f-l bmd-drawer-overlay">
-<header class="bmd-layout-header">
+    <header class="bmd-layout-header">
     <div class="navbar navbar-dark bg-dark text-light">
         <button class="navbar-toggler" type="button" data-toggle="drawer" id="drawerOpen" data-target="#dw-s2">
             <span class="sr-only">Toggle drawer</span>
@@ -40,7 +40,7 @@
         </ul>
     </div>
 </header>
-<div id="dw-s2" class="bmd-layout-drawer bg-dark text-light">
+    <div id="dw-s2" class="bmd-layout-drawer bg-dark text-light">
     <a class="navbar-brand">
         <img src="~/img/glimmr_logo.png" id="headerLogo"/>
     </a>
@@ -60,429 +60,502 @@
     </div>
 </div>
 
-<main class="bmd-layout-content">
-<div class="">
-<div class="bg-dark text-white hidden" id="dsCard">
-<div id="dsPane">
-<div class="card-body">
-<div class="container">
-<div class="devDisplay">
-    <div class="row justify-content-center">
-        <div class="form-group col-12 col-lg-10">
-            <div class="row justify-content-center">
-                <div id="iconWrap">
-                </div>
-                <div id="dsData" class="">
-                    <div id="dsName" onclick="listenForDoubleClick(this);" onblur="this.contentEditable=false;"></div><br/>
-                    <span id="dsIp"></span>
-                </div>
-                <div class="btn btn-primary settingsBtn" id="dsSettingsBtn" data-target="dsSettings">
-                </div>
-            </div>
-            <div class="row justify-content-center">
-                <div class="btn-group">
-                    <div class="btnWrap">
-                        <div class="btn btn-secondary dsModeBtn bmd-btn-fab" data-mode="0" id="dsMode0">
-                            <img class="modeIcon" src="~/img/mode_off_icon.png" alt=""/>
-                        </div>
-                    </div>
-                    <div class="btnWrap">
-                        <div class="btn btn-secondary dsModeBtn bmd-btn-fab" data-mode="1" id="dsMode1">
-                            <img class="modeIcon" src="~/img/mode_video_icon.png" alt=""/>
-                        </div>
-                    </div>
-                    <div class="btnWrap">
-                        <div class="btn btn-secondary dsModeBtn bmd-btn-fab" data-mode="2" id="dsMode2">
-                            <img class="modeIcon" src="~/img/mode_audio_icon.png" alt=""/>
-                        </div>
-                    </div>
-                    <div class="btnWrap">
-                        <div class="btn btn-secondary dsModeBtn bmd-btn-fab" data-mode="3" id="dsMode3">
-                            <img class="modeIcon" src="~/img/mode_ambient_icon.png" alt=""/>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="row justify-content-center" id="ambientDiv">
-        <div class="col-8 col-md-6 col-xl-4" id="ambientSelectionDiv">
-            <div class="btn-group">
-                <div class="btn btn-primary ambientModeBtn" data-value="0">Color</div>
-                <div class="btn btn-primary ambientModeBtn" data-value="1">Show</div>
-            </div>
-        </div>
-        <div id="ambientColorDiv">
-            <div class="color-picker"></div>
-        </div>
-        <div class="col-8 col-md6-col-xl-4" id="ambientSceneDiv">
-            <div class="showBtn" data-show="0" style="background-image:url('./img/scene/random_icon.png')"></div>
-            <div class="showBtn" data-show="1" style="background-image:url('./img/scene/fire_icon.png')"></div>
-            <div class="showBtn" data-show="2" style="background-image:url('./img/scene/twinkle_icon.png')"></div>
-            <div class="showBtn" data-show="3" style="background-image:url('./img/scene/ocean_icon.png')"></div>
-            <div class="showBtn" data-show="4" style="background-image:url('./img/scene/rainbow_icon.png')"></div>
-            <div class="showBtn" data-show="5" style="background-image:url('./img/scene/july.png')"></div>
-            <div class="showBtn" data-show="6" style="background-image:url('./img/scene/holiday_icon.png')"></div>
-            <div class="showBtn" data-show="7" style="background-image:url('./img/scene/pop_icon.png')"></div>
-            <div class="showBtn" data-show="8" style="background-image:url('./img/scene/enchanted_forest.png')"></div>
-        </div>
-    </div>
-    <div class="row justify-content-center">
-        <div class="col-8 col-md-6 col-xl-4">
-            <input class="form-control devBrightness" type="range" name="dsBrightness" id="dsBrightness" min="0" max="100" value="100">
-        </div>
-    </div>
-</div>
-<div class="row justify-content-center center settingExpand" id="dsSettings">
-    <div class="col-10 col-md-8 col-xl-6">
-        <br/>
-        <h3>Settings</h3>
-        <div id="settingsListDS" class="ds1">
-            <div class="col-12 s1 border" data-target="settingsVideoDS">
-                Video Settings
-            </div>
-            <div class="col-12 s1 border" data-target="settingsMusicDS">
-                Music Settings
-            </div>
-            <div class="col-12 s1 border" data-target="settingsAdvancedDS">
-                Advanced Settings
-            </div>
-            <div class="col-12 s1 border" data-target="settingsInstallDS">
-                Installation Settings
-            </div>
-            <div class="col-12 s1 border" data-target="settingsResetDS">
-                Update and Reset
-            </div>
-        </div>
-        <div id="settingsVideoDS" class="ds2">
-            <div id="saturationDS" class="border">
-                <h5>Saturation <span class="material-icons hintbtn">help_outline</span></h5>
-                <label>Red</label>
-                <input class="form-control devSaturation" data-color="r" type="range" min="0" max="255" value="255">
-                <label>Green</label>
-                <input class="form-control devSaturation" data-color="g" type="range" min="0" max="255" value="255">
-                <label>Blue</label>
-                <input class="form-control devSaturation" data-color="b" type="range" min="0" max="255" value="255">
-                <div class="hint">Adjust the RGB channels to appear correctly or when wall behind DreamScreen is not white.</div>
-            </div>
-            <div id="detectionDS" class="border">
-                <h5>Widescreen Detection <span class="material-icons hintbtn">help_outline</span></h5>
-                <div class="btn-group">
-                    <div class="btn dsDetection" data-mode="0">Auto</div>
-                    <div class="btn dsDetection" data-mode="1">On</div>
-                    <div class="btn dsDetection" data-mode="2">Off</div>
-                </div>
-                <div class="hint">DreamScreen will detect when the Video Source has been formatted to fit a widescreen.</div>
-            </div>
-            <div id="fadeRateDS" class="border-left">
-                <h5>Fade Rate <span class="material-icons hintbtn">help_outline</span></h5>
-                <input class="form-control settingSlider slider-right" type="range" min="0" max="100" value="100">
-                <div class="hint">Adjusts the reaction speed of the LEDs.</div>
-            </div>
-            <div id="luminosityDS" class="border-left">
-                <h5>Minimum Luminosity <span class="material-icons hintbtn">help_outline</span></h5>
-                <input class="form-control devLuminosity slider-right" type="range" min="0" max="100" value="100">
-                <div class="hint">Set a low level of background light when there is no video content playing.</div>
-            </div>
-            <div id="colorboostDS" class="border">
-                <h5>Color Boost <span class="material-icons hintbtn">help_outline</span></h5>
-                <div class="btn-group">
-                    <div class="btn colorBoost" data-mode="0">Off</div>
-                    <div class="btn colorBoost" data-mode="1">Low</div>
-                    <div class="btn colorBoost" data-mode="2">Med</div>
-                    <div class="btn colorBoost" data-mode="3">High</div>
-                </div>
-                <div class="hint">Enhances RGB tones making ligher hues appear stronger.</div>
-            </div>
-        </div>
-        <div id="settingsMusicDS" class="ds2">
-            <div class="border">
-                <h5>Music Settings</h5>
-            </div>
-            <div id="vizStyleDS" class="border">
-                <h7>Select Music Visualizer Style</h7>
-                <div class="vizStyle vs0" data-style="0"></div>
-                <div class="vizStyle vs1" data-style="1"></div>
-                <div class="vizStyle vs2" data-style="2"></div>
-                <div class="vizStyle vs3" data-style="3"></div>
-            </div>
-            <div id="vizOutputDS" class="border">
-                <h7>Adjust color and brightness of Music Output</h7>
-                <label>Treble</label>
-                <input class="form-control devModeWeight" data-channel="treble" type="range" min="0" max="100" value="100">
-                <label>Middle</label>
-                <input class="form-control devModeWeight" data-channel="middle" type="range" min="0" max="100" value="100">
-                <label>Bass</label>
-                <input class="form-control devModeWeight" data-channel="bass" type="range" min="0" max="100" value="100">
-            </div>
-        </div>
-        <div id="settingsAdvancedDS" class="ds2">
-            <div id="zoneControlDS" class="border border-left">
-                <h5>Zone Control <span class="material-icons hintbtn">help_outline</span></h5>
-                <div class="zoneControlWrap"></div>
-                <div class="hint">Turn On/Off with arrow icon or adjust brightness with slide bar for each side of your TV.</div>
-            </div>
-            <div id="cecPassthroughDS" class="border border-left">
-                <h5>CEC Passthrough <span class="material-icons hintbtn">help_outline</span></h5>
-                <label class="switch">
-                    <input type="checkbox" class="dsSlider" data-attribute="cecPassthroughEnable">
-                    <span class="slider round"></span>
-                </label>
-                <div class="hint">Allow for CEC communication between television and selected source.</div>
-            </div>
-            <div id="cecInputSwitchingDS" class="border border-left">
-                <h5>CEC Input Port Switching <span class="material-icons hintbtn">help_outline</span></h5>
-                <label class="switch">
-                    <input type="checkbox" class="dsSlider" data-attribute="cecSwitchingEnable">
-                    <span class="slider round"></span>
-                </label>
-                <div class="hint">Allow for CEC commands to switch active HDMI source.</div>
-            </div>
-            <div id="hpdEnableDS" class="border border-left">
-                <h5>HPD Enabling <span class="material-icons hintbtn">help_outline</span></h5>
-                <label class="switch">
-                    <input type="checkbox" class="dsSlider" data-attribute="hpdEnable">
-                    <span class="slider round"></span>
-                </label>
-                <div class="hint">DreamScreen will automatically switch to a source when plugged in.</div>
-            </div>
-            <div id="usbPowerDetectDS" class="border border-left">
-                <h5>USB Power Detect <span class="material-icons hintbtn">help_outline</span></h5>
-                <label class="switch">
-                    <input type="checkbox" class="dsSlider" data-attribute="usbPowerEnable">
-                    <span class="slider round"></span>
-                </label>
-                <div class="hint">DreamScreen will automaticall switch to sleep mode if the USB port connected to the TV turns off. Use a standard Micro USB cable to connect your DreamScreen hub to the TV.</div>
-            </div>
-            <div id="cecPowerDetectDS" class="border border-left">
-                <h5>CEC Power Detect <span class="material-icons hintbtn">help_outline</span></h5>
-                <label class="switch">
-                    <input type="checkbox" class="dsSlider" data-attribute="cecPowerEnable">
-                    <span class="slider round"></span>
-                </label>
-                <div class="hint">Allow for television to turn off DreamScreen lights via CEC. This feature will require your television to have CEC capability and for the option to be enabled in television settings. Typicall, TVs send out an OFF command but do not necessarily send out an ON command. If this is the case, disable tis feature and use USB Power Detect.</div>
-            </div>
-            <div id="frameDelayDS" class="border border-left">
-                <h5>Frame Delay <span class="material-icons hintbtn">help_outline</span></h5>
-                <input type="range" min="0" max="100" value="100" class="videoFrameDelay settingSlider form-control"/>
-
-                <div class="hint">If DreamScreen is displaying faster than the TV, Dreamscreen can delay up to 60 frames.</div>
-            </div>
-            <div id="hdrToneRemappingDS" class="border border-left">
-                <h5>HDR Tone Remapping <span class="material-icons hintbtn">help_outline</span></h5>
-                <label class="switch">
-                    <input type="checkbox" class="dsSlider" data-attribute="hdrToneRemapping">
-                    <span class="slider round"></span>
-                </label>
-                <div class="hint">HDR allows compatibile sources to send HDMI Video with Dynamic Range to extend the contrast and color capabilities of televisions. Enable this feature to allow for Tone Remapping to correct the Color Range in HDR mode. This option should be disabled for Non-HDR (SDR) content.</div>
-            </div>
-        </div>
-        <div id="settingsInstallDS" class="ds2">
-            <div class="border">
-                <select id="installType">
-                    <option value="0">Classic - 32" - 45"</option>
-                    <option value="1">Mega - 45" - 65"</option>
-                    <option value="2">Xtreme - 65" - 80"</option>
-                    <option value="3">Flex / DIY"</option>
-                </select>
-            </div>
-        </div>
-        <div id="settingsResetDS" class="ds2">
-            <div class="col-12 border">
-                Firmware Version
-            </div>
-            <div class="col-12 border">
-                Factory Reset
-            </div>
-            <div class="col-12 border">
-                Restart Device
-            </div>
-            <div class="col-12 border">
-                Ip Address
-            </div>
-        </div>
-    </div>
-</div>
-<div class="row justify-content-center center settingExpand" id="sidekickSettings">
-    <div class="col-10 col-md-8 col-xl-6">
-        <br/>
-        <h3>Settings</h3>
-        <div id="settingsListSideKick" class="ds1">
-            <div class="col-12 s1 border" data-target="settingsColorSK">
-                Color Settings
-            </div>
-            <div class="col-12 s1 border" data-target="settingsSectorSK">
-                Sector Settings
-            </div>
-            <div class="col-12 s1 border" data-target="settingsResetSK">
-                Update and Reset
-            </div>
-        </div>
-        <div id="settingsColorSK" class="ds2">
-            <div id="saturationSK" class="border">
-                <h5>Saturation <span class="material-icons hintbtn">help_outline</span></h5>
-                <label>Red</label>
-                <input class="form-control devSaturation" data-color="r" type="range" min="0" max="255" value="100">
-                <label>Green</label>
-                <input class="form-control devSaturation" data-color="g" type="range" min="0" max="255" value="100">
-                <label>Blue</label>
-                <input class="form-control devSaturation" data-color="b" type="range" min="0" max="255" value="100">
-                <div class="hint">Adjust the RGB channels to appear correctly or when wall behind DreamScreen is not white.</div>
-            </div>
-        </div>
-        <div id="settingsSectorSK" class="ds2"></div>
-        <div id="settingsResetSK" class="ds2">
-            <div class="col-12 border">
-                Firmware Version
-            </div>
-            <div class="col-12 border">
-                Factor Reset
-            </div>
-            <div class="col-12 border">
-                Restart Device
-            </div>
-            <div class="col-12 border">
-                Ip Address
-            </div>
-        </div>
-    </div>
-</div>
-<div class="row justify-content-center center settingExpand" id="connectSettings">
-    <div class="col-10 col-md-8 col-xl-6">
-        <br/>
-        <h3>Settings</h3>
-        <div id="settingsListCo" class="ds1">
-            <div class="col-12 s1 border" data-target="settingsVideoDS">
-                Video Settings
-            </div>
-            <div class="col-12 s1 border" data-target="settingsMusicDS">
-                Music Settings
-            </div>
-            <div class="col-12 s1 border" data-target="settingsAdvancedDS">
-                Advanced Settings
-            </div>
-            <div class="col-12 s1 border" data-target="settingsInstallDS">
-                Installation Settings
-            </div>
-            <div class="col-12 s1 border" data-target="settingsResetDS">
-                Update and Reset
-            </div>
-        </div>
-        <div id="settingsVideoCo" class="ds2">
-            <div id="saturationCo" class="border">
-                <h5>Saturation <span class="material-icons hintbtn">help_outline</span></h5>
-                <label>Red</label>
-                <input class="form-control devSaturation" data-color="r" type="range" min="0" max="255" value="100">
-                <label>Green</label>
-                <input class="form-control devSaturation" data-color="g" type="range" min="0" max="255" value="100">
-                <label>Blue</label>
-                <input class="form-control devSaturation" data-color="b" type="range" min="0" max="255" value="100">
-                <div class="hint">Adjust the RGB channels to appear correctly or when wall behind DreamScreen is not white.</div>
-            </div>
-            <div id="detectionCo" class="border">
-                <h5>Widescreen Detection <span class="material-icons hintbtn">help_outline</span></h5>
-                <div class="btn-group">
-                    <div class="btn" id="coDetectAuto">Auto</div>
-                    <div class="btn" id="coDetectOn">On</div>
-                    <div class="btn" id="coDetectOff">Off</div>
-                </div>
-                <div class="hint">DreamScreen will detect when the Video Source has been formatted to fit a widescreen.</div>
-            </div>
-            <div id="fadeRateCo" class="border">
-                <h5>Fade Rate <span class="material-icons hintbtn">help_outline</span></h5>
-                <input class="form-control settingSlider" type="range" id="coFadeRate" name="dsFadeRate" min="0" max="100" value="100">
-                <div class="hint">Adjusts the reaction speed of the LEDs.</div>
-            </div>
-            <div id="luminosityCo" class="border">
-                <h5>Minimum Luminosity <span class="material-icons hintbtn">help_outline</span></h5>
-                <input class="form-control settingSlider" type="range" id="coLuminosity" name="dsLuminosity" min="0" max="100" value="100">
-                <div class="hint">Set a low level of background light when there is no video content playing.</div>
-            </div>
-            <div id="colorboostCo" class="border">
-                <h5>Color Boost <span class="material-icons hintbtn">help_outline</span></h5>
-                <div class="btn" id="coColorBoost">Off</div>
-                <div class="hint">Enhances RGB tones making ligher hues appear stronger.</div>
-            </div>
-        </div>
-        <div id="settingsMusicCo" class="ds2"></div>
-        <div id="settingsAdvancedCo" class="ds2"></div>
-        <div id="settingsInstallCo" class="ds2"></div>
-        <div id="settingsResetCo" class="ds2"></div>
-    </div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="bg-dark text-white hidden" id="hueCard">
-    <div id="huePane">
+    <div class="bg-dark text-white hidden" id="dsCard">
+    <div id="dsPane">
         <div class="card-body">
-            <div class="row justify-content-center linkRow">
-                <div id="linkBtn">
-                    <div id="linkImg" class="unlinked">
-                        <div class="linkImg"></div>
-                        <small id="hueIp" class="linkIp"></small>
-                        <div id="circleBar"></div>
-                        <small id="linkHint" class="linkHint">Click here to link bridge</small>
+            <div class="container">
+                <div class="devDisplay">
+                    <div class="row justify-content-center">
+                        <div class="form-group col-12 col-lg-10">
+                            <div class="row justify-content-center">
+                                <div id="iconWrap">
+                                </div>
+                                <div id="dsData" class="">
+                                    <div id="dsName" onclick="listenForDoubleClick(this);" onblur="this.contentEditable=false;"></div><br/>
+                                    <span id="dsIp"></span>
+                                </div>
+                                <div class="btn btn-primary settingsBtn" id="dsSettingsBtn" data-target="dsSettings">
+                                </div>
+                            </div>
+                            <div class="row justify-content-center">
+                                <div class="btn-group">
+                                    <div class="btnWrap">
+                                        <div class="btn btn-secondary dsModeBtn bmd-btn-fab" data-mode="0" id="dsMode0">
+                                            <img class="modeIcon" src="~/img/mode_off_icon.png" alt=""/>
+                                        </div>
+                                    </div>
+                                    <div class="btnWrap">
+                                        <div class="btn btn-secondary dsModeBtn bmd-btn-fab" data-mode="1" id="dsMode1">
+                                            <img class="modeIcon" src="~/img/mode_video_icon.png" alt=""/>
+                                        </div>
+                                    </div>
+                                    <div class="btnWrap">
+                                        <div class="btn btn-secondary dsModeBtn bmd-btn-fab" data-mode="2" id="dsMode2">
+                                            <img class="modeIcon" src="~/img/mode_audio_icon.png" alt=""/>
+                                        </div>
+                                    </div>
+                                    <div class="btnWrap">
+                                        <div class="btn btn-secondary dsModeBtn bmd-btn-fab" data-mode="3" id="dsMode3">
+                                            <img class="modeIcon" src="~/img/mode_ambient_icon.png" alt=""/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row justify-content-center" id="ambientDiv">
+                        <div class="col-8 col-md-6 col-xl-4" id="ambientSelectionDiv">
+                            <div class="btn-group">
+                                <div class="btn btn-primary ambientModeBtn" data-value="0">Color</div>
+                                <div class="btn btn-primary ambientModeBtn" data-value="1">Show</div>
+                            </div>
+                        </div>
+                        <div id="ambientColorDiv">
+                            <div class="color-picker"></div>
+                        </div>
+                        <div class="col-8 col-md6-col-xl-4" id="ambientSceneDiv">
+                            <div class="showBtn" data-show="0" style="background-image:url('./img/scene/random_icon.png')"></div>
+                            <div class="showBtn" data-show="1" style="background-image:url('./img/scene/fire_icon.png')"></div>
+                            <div class="showBtn" data-show="2" style="background-image:url('./img/scene/twinkle_icon.png')"></div>
+                            <div class="showBtn" data-show="3" style="background-image:url('./img/scene/ocean_icon.png')"></div>
+                            <div class="showBtn" data-show="4" style="background-image:url('./img/scene/rainbow_icon.png')"></div>
+                            <div class="showBtn" data-show="5" style="background-image:url('./img/scene/july.png')"></div>
+                            <div class="showBtn" data-show="6" style="background-image:url('./img/scene/holiday_icon.png')"></div>
+                            <div class="showBtn" data-show="7" style="background-image:url('./img/scene/pop_icon.png')"></div>
+                            <div class="showBtn" data-show="8" style="background-image:url('./img/scene/enchanted_forest.png')"></div>
+                        </div>
+                    </div>
+                    <div class="row justify-content-center">
+                    <div class="col-8 col-md-6 col-xl-4">
+                        <input class="form-control devBrightness" type="range" name="dsBrightness" id="dsBrightness" min="0" max="100" value="100">
                     </div>
                 </div>
-            </div>
-            <div class="row justify-content-center">
-                <div class="col-8 col-md-6 col-xl-4">
-                    <input class="form-control devBrightness" type="range" name="hueBrightness" id="hueBrightness" min="0" max="100" value="100">
+                </div>
+                <div class="row justify-content-center center settingExpand" id="dsSettings">
+                    <div class="col-10 col-md-8 col-xl-6">
+                        <br/>
+                        <h3>Settings</h3>
+                        <div id="settingsListDS" class="ds1">
+                            <div class="col-12 s1 border" data-target="settingsVideoDS">
+                                Video Settings
+                            </div>
+                            <div class="col-12 s1 border" data-target="settingsMusicDS">
+                                Music Settings
+                            </div>
+                            <div class="col-12 s1 border" data-target="settingsAdvancedDS">
+                                Advanced Settings
+                            </div>
+                            <div class="col-12 s1 border" data-target="settingsInstallDS">
+                                Installation Settings
+                            </div>
+                            <div class="col-12 s1 border" data-target="settingsResetDS">
+                                Update and Reset
+                            </div>
+                        </div>
+                        <div id="settingsVideoDS" class="ds2">
+                            <div id="saturationDS" class="border">
+                                <h5>Saturation <span class="material-icons hintbtn">help_outline</span></h5>
+                                <label>Red</label>
+                                <input class="form-control devSaturation" data-color="r" type="range" min="0" max="255" value="255">
+                                <label>Green</label>
+                                <input class="form-control devSaturation" data-color="g" type="range" min="0" max="255" value="255">
+                                <label>Blue</label>
+                                <input class="form-control devSaturation" data-color="b" type="range" min="0" max="255" value="255">
+                                <div class="hint">Adjust the RGB channels to appear correctly or when wall behind DreamScreen is not white.</div>
+                            </div>
+                            <div id="detectionDS" class="border">
+                                <h5>Widescreen Detection <span class="material-icons hintbtn">help_outline</span></h5>
+                                <div class="btn-group">
+                                    <div class="btn dsDetection" data-mode="0">Auto</div>
+                                    <div class="btn dsDetection" data-mode="1">On</div>
+                                    <div class="btn dsDetection" data-mode="2">Off</div>
+                                </div>
+                                <div class="hint">DreamScreen will detect when the Video Source has been formatted to fit a widescreen.</div>
+                            </div>
+                            <div id="fadeRateDS" class="border-left">
+                                <h5>Fade Rate <span class="material-icons hintbtn">help_outline</span></h5>
+                                <input class="form-control settingSlider slider-right" type="range" min="0" max="100" value="100">
+                                <div class="hint">Adjusts the reaction speed of the LEDs.</div>
+                            </div>
+                            <div id="luminosityDS" class="border-left">
+                                <h5>Minimum Luminosity <span class="material-icons hintbtn">help_outline</span></h5>
+                                <input class="form-control devLuminosity slider-right" type="range" min="0" max="100" value="100">
+                                <div class="hint">Set a low level of background light when there is no video content playing.</div>
+                            </div>
+                            <div id="colorboostDS" class="border">
+                                <h5>Color Boost <span class="material-icons hintbtn">help_outline</span></h5>
+                                <div class="btn-group">
+                                    <div class="btn colorBoost" data-mode="0">Off</div>
+                                    <div class="btn colorBoost" data-mode="1">Low</div>
+                                    <div class="btn colorBoost" data-mode="2">Med</div>
+                                    <div class="btn colorBoost" data-mode="3">High</div>
+                                </div>
+                                <div class="hint">Enhances RGB tones making ligher hues appear stronger.</div>
+                            </div>
+                        </div>
+                        <div id="settingsMusicDS" class="ds2">
+                            <div class="border">
+                                <h5>Music Settings</h5>
+                            </div>
+                            <div id="vizStyleDS" class="border">
+                                <h7>Select Music Visualizer Style</h7>
+                                <div class="vizStyle vs0" data-style="0"></div>
+                                <div class="vizStyle vs1" data-style="1"></div>
+                                <div class="vizStyle vs2" data-style="2"></div>
+                                <div class="vizStyle vs3" data-style="3"></div>
+                            </div>
+                            <div id="vizOutputDS" class="border">
+                                <h7>Adjust color and brightness of Music Output</h7>
+                                <label>Treble</label>
+                                <input class="form-control devModeWeight" data-channel="treble" type="range" min="0" max="100" value="100">
+                                <label>Middle</label>
+                                <input class="form-control devModeWeight" data-channel="middle" type="range" min="0" max="100" value="100">
+                                <label>Bass</label>
+                                <input class="form-control devModeWeight" data-channel="bass" type="range" min="0" max="100" value="100">
+                            </div>
+                        </div>
+                        <div id="settingsAdvancedDS" class="ds2">
+                            <div id="zoneControlDS" class="border border-left">
+                                <h5>Zone Control <span class="material-icons hintbtn">help_outline</span></h5>
+                                <div class="zoneControlWrap"></div>
+                                <div class="hint">Turn On/Off with arrow icon or adjust brightness with slide bar for each side of your TV.</div>
+                            </div>
+                            <div id="cecPassthroughDS" class="border border-left">
+                                <h5>CEC Passthrough <span class="material-icons hintbtn">help_outline</span></h5>
+                                <label class="switch">
+                                    <input type="checkbox" class="dsSlider" data-attribute="cecPassthroughEnable">
+                                    <span class="slider round"></span>
+                                </label>
+                                <div class="hint">Allow for CEC communication between television and selected source.</div>
+                            </div>
+                            <div id="cecInputSwitchingDS" class="border border-left">
+                                <h5>CEC Input Port Switching <span class="material-icons hintbtn">help_outline</span></h5>
+                                <label class="switch">
+                                    <input type="checkbox" class="dsSlider" data-attribute="cecSwitchingEnable">
+                                    <span class="slider round"></span>
+                                </label>
+                                <div class="hint">Allow for CEC commands to switch active HDMI source.</div>
+                            </div>
+                            <div id="hpdEnableDS" class="border border-left">
+                                <h5>HPD Enabling <span class="material-icons hintbtn">help_outline</span></h5>
+                                <label class="switch">
+                                    <input type="checkbox" class="dsSlider" data-attribute="hpdEnable">
+                                    <span class="slider round"></span>
+                                </label>
+                                <div class="hint">DreamScreen will automatically switch to a source when plugged in.</div>
+                            </div>
+                            <div id="usbPowerDetectDS" class="border border-left">
+                                <h5>USB Power Detect <span class="material-icons hintbtn">help_outline</span></h5>
+                                <label class="switch">
+                                    <input type="checkbox" class="dsSlider" data-attribute="usbPowerEnable">
+                                    <span class="slider round"></span>
+                                </label>
+                                <div class="hint">DreamScreen will automaticall switch to sleep mode if the USB port connected to the TV turns off. Use a standard Micro USB cable to connect your DreamScreen hub to the TV.</div>
+                            </div>
+                            <div id="cecPowerDetectDS" class="border border-left">
+                                <h5>CEC Power Detect <span class="material-icons hintbtn">help_outline</span></h5>
+                                <label class="switch">
+                                    <input type="checkbox" class="dsSlider" data-attribute="cecPowerEnable">
+                                    <span class="slider round"></span>
+                                </label>
+                                <div class="hint">Allow for television to turn off DreamScreen lights via CEC. This feature will require your television to have CEC capability and for the option to be enabled in television settings. Typicall, TVs send out an OFF command but do not necessarily send out an ON command. If this is the case, disable tis feature and use USB Power Detect.</div>
+                            </div>
+                            <div id="frameDelayDS" class="border border-left">
+                                <h5>Frame Delay <span class="material-icons hintbtn">help_outline</span></h5>
+                                <input type="range" min="0" max="100" value="100" class="videoFrameDelay settingSlider form-control"/>
+
+                                <div class="hint">If DreamScreen is displaying faster than the TV, Dreamscreen can delay up to 60 frames.</div>
+                            </div>
+                            <div id="hdrToneRemappingDS" class="border border-left">
+                                <h5>HDR Tone Remapping <span class="material-icons hintbtn">help_outline</span></h5>
+                                <label class="switch">
+                                    <input type="checkbox" class="dsSlider" data-attribute="hdrToneRemapping">
+                                    <span class="slider round"></span>
+                                </label>
+                                <div class="hint">HDR allows compatibile sources to send HDMI Video with Dynamic Range to extend the contrast and color capabilities of televisions. Enable this feature to allow for Tone Remapping to correct the Color Range in HDR mode. This option should be disabled for Non-HDR (SDR) content.</div>
+                            </div>
+                        </div>
+                        <div id="settingsInstallDS" class="ds2">
+                            <div class="border">
+                                <select id="installType">
+                                    <option value="0">Classic - 32" - 45"</option>
+                                    <option value="1">Mega - 45" - 65"</option>
+                                    <option value="2">Xtreme - 65" - 80"</option>
+                                    <option value="3">Flex / DIY"</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="settingsResetDS" class="ds2">
+                            <div class="col-12 border">
+                                Firmware Version
+                            </div>
+                            <div class="col-12 border">
+                                Factory Reset
+                            </div>
+                            <div class="col-12 border">
+                                Restart Device
+                            </div>
+                            <div class="col-12 border">
+                                Ip Address
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row justify-content-center center settingExpand" id="sidekickSettings">
+                    <div class="col-10 col-md-8 col-xl-6">
+                        <br/>
+                        <h3>Settings</h3>
+                        <div id="settingsListSideKick" class="ds1">
+                            <div class="col-12 s1 border" data-target="settingsColorSK">
+                                Color Settings
+                            </div>
+                            <div class="col-12 s1 border" data-target="settingsSectorSK">
+                                Sector Settings
+                            </div>
+                            <div class="col-12 s1 border" data-target="settingsResetSK">
+                                Update and Reset
+                            </div>
+                        </div>
+                        <div id="settingsColorSK" class="ds2">
+                            <div id="saturationSK" class="border">
+                                <h5>Saturation <span class="material-icons hintbtn">help_outline</span></h5>
+                                <label>Red</label>
+                                <input class="form-control devSaturation" data-color="r" type="range" min="0" max="255" value="100">
+                                <label>Green</label>
+                                <input class="form-control devSaturation" data-color="g" type="range" min="0" max="255" value="100">
+                                <label>Blue</label>
+                                <input class="form-control devSaturation" data-color="b" type="range" min="0" max="255" value="100">
+                                <div class="hint">Adjust the RGB channels to appear correctly or when wall behind DreamScreen is not white.</div>
+                            </div>
+                        </div>
+                        <div id="settingsSectorSK" class="ds2"></div>
+                        <div id="settingsResetSK" class="ds2">
+                            <div class="col-12 border">
+                                Firmware Version
+                            </div>
+                            <div class="col-12 border">
+                                Factor Reset
+                            </div>
+                            <div class="col-12 border">
+                                Restart Device
+                            </div>
+                            <div class="col-12 border">
+                                Ip Address
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row justify-content-center center settingExpand" id="connectSettings">
+                    <div class="col-10 col-md-8 col-xl-6">
+                    <br/>
+                    <h3>Settings</h3>
+                    <div id="settingsListCo" class="ds1">
+                        <div class="col-12 s1 border" data-target="settingsVideoDS">
+                            Video Settings
+                        </div>
+                        <div class="col-12 s1 border" data-target="settingsMusicDS">
+                            Music Settings
+                        </div>
+                        <div class="col-12 s1 border" data-target="settingsAdvancedDS">
+                            Advanced Settings
+                        </div>
+                        <div class="col-12 s1 border" data-target="settingsInstallDS">
+                            Installation Settings
+                        </div>
+                        <div class="col-12 s1 border" data-target="settingsResetDS">
+                            Update and Reset
+                        </div>
+                    </div>
+                    <div id="settingsVideoCo" class="ds2">
+                        <div id="saturationCo" class="border">
+                            <h5>Saturation <span class="material-icons hintbtn">help_outline</span></h5>
+                            <label>Red</label>
+                            <input class="form-control devSaturation" data-color="r" type="range" min="0" max="255" value="100">
+                            <label>Green</label>
+                            <input class="form-control devSaturation" data-color="g" type="range" min="0" max="255" value="100">
+                            <label>Blue</label>
+                            <input class="form-control devSaturation" data-color="b" type="range" min="0" max="255" value="100">
+                            <div class="hint">Adjust the RGB channels to appear correctly or when wall behind DreamScreen is not white.</div>
+                        </div>
+                        <div id="detectionCo" class="border">
+                            <h5>Widescreen Detection <span class="material-icons hintbtn">help_outline</span></h5>
+                            <div class="btn-group">
+                                <div class="btn" id="coDetectAuto">Auto</div>
+                                <div class="btn" id="coDetectOn">On</div>
+                                <div class="btn" id="coDetectOff">Off</div>
+                            </div>
+                            <div class="hint">DreamScreen will detect when the Video Source has been formatted to fit a widescreen.</div>
+                        </div>
+                        <div id="fadeRateCo" class="border">
+                            <h5>Fade Rate <span class="material-icons hintbtn">help_outline</span></h5>
+                            <input class="form-control settingSlider" type="range" id="coFadeRate" name="dsFadeRate" min="0" max="100" value="100">
+                            <div class="hint">Adjusts the reaction speed of the LEDs.</div>
+                        </div>
+                        <div id="luminosityCo" class="border">
+                            <h5>Minimum Luminosity <span class="material-icons hintbtn">help_outline</span></h5>
+                            <input class="form-control settingSlider" type="range" id="coLuminosity" name="dsLuminosity" min="0" max="100" value="100">
+                            <div class="hint">Set a low level of background light when there is no video content playing.</div>
+                        </div>
+                        <div id="colorboostCo" class="border">
+                            <h5>Color Boost <span class="material-icons hintbtn">help_outline</span></h5>
+                            <div class="btn" id="coColorBoost">Off</div>
+                            <div class="hint">Enhances RGB tones making ligher hues appear stronger.</div>
+                        </div>
+                    </div>
+                    <div id="settingsMusicCo" class="ds2"></div>
+                    <div id="settingsAdvancedCo" class="ds2"></div>
+                    <div id="settingsInstallCo" class="ds2"></div>
+                    <div id="settingsResetCo" class="ds2"></div>
+                </div>
                 </div>
             </div>
-            <div>
-                <div class="previewWrap" id="previewWrap">
-                    <div class="light-preview" id="lightPreview">
-                        <div id="regions" class="regions">
-                            <div class="row sectorRow">
-                                <div class="lightRegion col" id="sector7">
-                                    7
+        </div>
+    </div>
+</div>
+    <div class="bg-dark text-white hidden" id="hueCard">
+        <div id="huePane">
+            <div class="card-body">
+                <div class="row justify-content-center linkRow">
+                    <div id="linkBtn">
+                        <div id="linkImg" class="unlinked">
+                            <div class="linkImg"></div>
+                            <small id="hueIp" class="linkIp"></small>
+                            <div id="circleBar"></div>
+                            <small id="linkHint" class="linkHint">Click here to link bridge</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="row justify-content-center">
+                    <div class="col-8 col-md-6 col-xl-4">
+                        <input class="form-control devBrightness" type="range" name="hueBrightness" id="hueBrightness" min="0" max="100" value="100">
+                    </div>
+                </div>
+                <div>
+                    <div class="previewWrap" id="previewWrap">
+                        <div class="light-preview" id="lightPreview">
+                            <div class="regions">
+                                <div class="row sectorRow">
+                                    <div class="lightRegion sectorRegion col" id="sector7">
+                                        7
+                                    </div>
+                                    <div class="lightRegion sectorRegion col" id="sector6">
+                                        6
+                                    </div>
+                                    <div class="lightRegion sectorRegion col" id="sector5">
+                                        5
+                                    </div>
+                                    <div class="lightRegion sectorRegion col" id="sector4">
+                                        4
+                                    </div>
+                                    <div class="lightRegion sectorRegion col" id="sector3">
+                                        3
+                                    </div>
                                 </div>
-                                <div class="lightRegion col" id="sector6">
-                                    6
-                                </div>
-                                <div class="lightRegion col" id="sector5">
-                                    5
-                                </div>
-                                <div class="lightRegion col" id="sector4">
-                                    4
-                                </div>
-                                <div class="lightRegion col" id="sector3">
-                                    3
-                                </div>
-                            </div>
-                            <div class="row sectorRow">
-                                <div class="lightRegion col" id="sector8">
-                                    8
-                                </div>
-                                <div class="centerRegion col">
-                                </div>
-                                <div class="centerRegion col">
-                                </div>
-                                <div class="centerRegion col">
-                                </div>
+                                <div class="row sectorRow">
+                                    <div class="lightRegion sectorRegion col" id="sector8">
+                                        8
+                                    </div>
+                                    <div class="centerRegion col">
+                                    </div>
+                                    <div class="centerRegion col">
+                                    </div>
+                                    <div class="centerRegion col">
+                                    </div>
 
-                                <div class="lightRegion col" id="sector2">
-                                    2
+                                    <div class="lightRegion sectorRegion col" id="sector2">
+                                        2
+                                    </div>
+                                </div>
+                                <div class="row sectorRow">
+                                    <div class="lightRegion sectorRegion col" id="sector9">
+                                        9
+                                    </div>
+                                    <div class="lightRegion sectorRegion col" id="sector10">
+                                        10
+                                    </div>
+                                    <div class="lightRegion sectorRegion col" id="sector11">
+                                        11
+                                    </div>
+                                    <div class="lightRegion sectorRegion col" id="sector12">
+                                        12
+                                    </div>
+                                    <div class="lightRegion sectorRegion col" id="sector1">
+                                        1
+                                    </div>
                                 </div>
                             </div>
-                            <div class="row sectorRow">
-                                <div class="lightRegion col" id="sector9">
-                                    9
+                            <div class="regionsV2">
+                                <div class="row lightSectorRowV2">
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="15">15</div>
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="14">14</div>
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="13">13</div>
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="12">12</div>
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="11">11</div>
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="10">10</div>
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="9">9</div>
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="8">8</div>
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="7">7</div>
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="6">6</div>
                                 </div>
-                                <div class="lightRegion col" id="sector10">
-                                    10
+                                <div class="row lightSectorRowV2">
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="16">16</div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="5">5</div>
                                 </div>
-                                <div class="lightRegion col" id="sector11">
-                                    11
+                                <div class="row lightSectorRowV2">
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="17">17</div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="4">4</div>
                                 </div>
-                                <div class="lightRegion col" id="sector12">
-                                    12
+                                <div class="row lightSectorRowV2">
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="18">18</div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="3">3</div>
                                 </div>
-                                <div class="lightRegion col" id="sector1">
-                                    1
+                                <div class="row lightSectorRowV2">
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="19">19</div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="centerRegion col"></div>
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="2">2</div>
+                                </div>
+                                <div class="row lightSectorRowV2">
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="20">20</div>
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="21">21</div>
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="22">22</div>
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="23">23</div>
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="24">24</div>
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="25">25</div>
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="26">26</div>
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="27">27</div>
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="28">28</div>
+                                    <div class="lightRegionV2 sectorRegionV2 col" data-region="1">1</div>
                                 </div>
                             </div>
                         </div>
@@ -574,53 +647,99 @@
                     <div class="light-preview">
                         <div id="lifxRegions" class="regions">
                             <div class="row sectorRow">
-                                <div class="clickRegion col" data-region="7">
-                                    7
-                                </div>
-                                <div class="clickRegion col" data-region="6">
-                                    6
-                                </div>
-                                <div class="clickRegion col" data-region="5">
-                                    5
-                                </div>
-                                <div class="clickRegion col" data-region="4">
-                                    4
-                                </div>
-                                <div class="clickRegion col" data-region="3">
-                                    3
-                                </div>
+                                <div class="lifxRegion sectorRegion col" data-region="7">7</div>
+                                <div class="lifxRegion sectorRegion col" data-region="6">6</div>
+                                <div class="lifxRegion sectorRegion col" data-region="5">5</div>
+                                <div class="lifxRegion sectorRegion col" data-region="4">4</div>
+                                <div class="lifxRegion sectorRegion col" data-region="3">3</div>
                             </div>
                             <div class="row sectorRow">
-                                <div class="clickRegion col" data-region="8">
-                                    8
-                                </div>
-                                <div class="centerRegion col">
-                                </div>
-                                <div class="centerRegion col">
-                                </div>
-                                <div class="centerRegion col">
-                                </div>
-
-                                <div class="clickRegion col" data-region="2">
-                                    2
-                                </div>
+                                <div class="lifxRegion sectorRegion col" data-region="8">8</div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="lifxRegion sectorRegion col" data-region="2">2</div>
                             </div>
                             <div class="row sectorRow">
-                                <div class="clickRegion col" data-region="9">
-                                    9
-                                </div>
-                                <div class="clickRegion col" data-region="10">
-                                    10
-                                </div>
-                                <div class="clickRegion col" data-region="11">
-                                    11
-                                </div>
-                                <div class="clickRegion col" data-region="12">
-                                    12
-                                </div>
-                                <div class="clickRegion col" data-region="1">
-                                    1
-                                </div>
+                                <div class="lifxRegion sectorRegion col" data-region="9">9</div>
+                                <div class="lifxRegion sectorRegion col" data-region="10">10</div>
+                                <div class="lifxRegion sectorRegion col" data-region="11">11</div>
+                                <div class="lifxRegion sectorRegion col" data-region="12">12</div>
+                                <div class="lifxRegion sectorRegion col" data-region="1">1</div>
+                            </div>
+                        </div>
+                        <div class="regionsV2">
+                            <div class="row lifxSectorRowV2">
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="15">15</div>
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="14">14</div>
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="13">13</div>
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="12">12</div>
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="11">11</div>
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="10">10</div>
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="9">9</div>
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="8">8</div>
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="7">7</div>
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="6">6</div>
+                            </div>
+                            <div class="row lifxSectorRowV2">
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="16">16</div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="5">5</div>
+                            </div>
+                            <div class="row lifxSectorRowV2">
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="17">17</div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="4">4</div>
+                            </div>
+                            <div class="row lifxSectorRowV2">
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="18">18</div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="3">3</div>
+                            </div>
+                            <div class="row lifxSectorRowV2">
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="19">19</div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="2">2</div>
+                            </div>
+                            <div class="row lifxSectorRowV2">
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="20">20</div>
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="21">21</div>
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="22">22</div>
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="23">23</div>
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="24">24</div>
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="25">25</div>
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="26">26</div>
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="27">27</div>
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="28">28</div>
+                                <div class="lifxRegionV2 sectorRegionV2 col" data-region="1">1</div>
                             </div>
                         </div>
                     </div>
@@ -713,10 +832,7 @@
         </div>
     </div>
 </div>
-</div>
 
-</main>
-</div>
 <div class="modal" tabindex="-1" id="nanoModal" role="dialog">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
@@ -732,53 +848,99 @@
                     <div class="nano-preview" id="nanoPreview">
                         <div id="nanoRegions" class="regions">
                             <div class="row nanoSectorRow">
-                                <div class="nanoRegion col" id="nanoSector7" data-region="7">
-                                    7
-                                </div>
-                                <div class="nanoRegion col" id="nanoSector6" data-region="6">
-                                    6
-                                </div>
-                                <div class="nanoRegion col" id="nanoSector5" data-region="5">
-                                    5
-                                </div>
-                                <div class="nanoRegion col" id="nanoSector4" data-region="4">
-                                    4
-                                </div>
-                                <div class="nanoRegion col" id="nanoSector3" data-region="3">
-                                    3
-                                </div>
+                                <div class="nanoRegion sectorRegion col" data-region="7">7</div>
+                                <div class="nanoRegion sectorRegion col" data-region="6">6</div>
+                                <div class="nanoRegion sectorRegion col" data-region="5">5</div>
+                                <div class="nanoRegion sectorRegion col" data-region="4">4</div>
+                                <div class="nanoRegion sectorRegion col" data-region="3">3</div>
                             </div>
                             <div class="row nanoSectorRow">
-                                <div class="nanoRegion col" id="nanoSector8" data-region="8">
-                                    8
-                                </div>
-                                <div class="centerRegion col">
-                                </div>
-                                <div class="centerRegion col">
-                                </div>
-                                <div class="centerRegion col">
-                                </div>
-
-                                <div class="nanoRegion col" id="nanoSector2" data-region="2">
-                                    2
-                                </div>
+                                <div class="nanoRegion sectorRegion col" data-region="8">8</div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="nanoRegion sectorRegion col" data-region="2">2</div>
                             </div>
                             <div class="row nanoSectorRow">
-                                <div class="nanoRegion col" id="nanoSector9" data-region="9">
-                                    9
-                                </div>
-                                <div class="nanoRegion col" id="nanoSector10" data-region="10">
-                                    10
-                                </div>
-                                <div class="nanoRegion col" id="nanoSector11" data-region="11">
-                                    11
-                                </div>
-                                <div class="nanoRegion col" id="nanoSector12" data-region="12">
-                                    12
-                                </div>
-                                <div class="nanoRegion col" id="nanoSector1"  data-region="1">
-                                    1
-                                </div>
+                                <div class="nanoRegion sectorRegion col" data-region="9">9</div>
+                                <div class="nanoRegion sectorRegion col" data-region="10">10</div>
+                                <div class="nanoRegion sectorRegion col" data-region="11">11</div>
+                                <div class="nanoRegion sectorRegion col" data-region="12">12</div>
+                                <div class="nanoRegion sectorRegion col" data-region="1">1</div>
+                            </div>
+                        </div>
+                        <div id="regionsV2" class="regionsV2">
+                            <div class="row nanoSectorRowV2">
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="15">15</div>
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="14">14</div>
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="13">13</div>
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="12">12</div>
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="11">11</div>
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="10">10</div>
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="9">9</div>
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="8">8</div>
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="7">7</div>
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="6">6</div>
+                            </div>
+                            <div class="row nanoSectorRowV2">
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="16">16</div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="5">5</div>
+                            </div>
+                            <div class="row nanoSectorRowV2">
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="17">17</div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="4">4</div>
+                            </div>
+                            <div class="row nanoSectorRowV2">
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="18">18</div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="3">3</div>
+                            </div>
+                            <div class="row nanoSectorRowV2">
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="19">19</div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="centerRegion col"></div>
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="2">2</div>
+                            </div>
+                            <div class="row nanoSectorRowV2">
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="20">20</div>
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="21">21</div>
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="22">22</div>
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="23">23</div>
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="24">24</div>
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="25">25</div>
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="26">26</div>
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="27">27</div>
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="28">28</div>
+                                <div class="nanoRegionV2 sectorRegionV2 col" data-region="1">1</div>
                             </div>
                         </div>
                     </div>

@@ -21,6 +21,7 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
         private int _streamMode;
         private bool _disposed;
         private bool _sending;
+        private int _captureMode;
         public int Brightness { get; set; }
         public string Id { get; set; }
         public string IpAddress { get; set; }
@@ -29,6 +30,7 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
 
 
         public NanoGroup(string ipAddress, string token = "") {
+            _captureMode = DataUtil.GetItem<int>("captureMode");
             IpAddress = ipAddress;
             _token = token;
             _hc = new HttpClient();
@@ -37,6 +39,7 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
         }
 
         public NanoGroup(NanoData n, HttpClient hc, Socket hs) {
+            _captureMode = DataUtil.GetItem<int>("captureMode");
             if (n != null) {
                 SetData(n);
                 _hc = hc;
@@ -53,6 +56,7 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
         }
 
         private void SetData(NanoData n) {
+            _captureMode = DataUtil.GetItem<int>("captureMode");
             IpAddress = n.IpAddress;
             _token = n.Token;
             _layout = n.Layout;
@@ -69,7 +73,7 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
         public async void StartStream(CancellationToken ct) {
             LogUtil.WriteInc($@"Nanoleaf: Starting panel: {IpAddress}");
             // Turn it on first.
-            var currentState = NanoSender.SendGetRequest(_basePath).Result;
+            //var currentState = NanoSender.SendGetRequest(_basePath).Result;
             //await NanoSender.SendPutRequest(_basePath, JsonConvert.SerializeObject(new {on = new {value = true}}),
                 //"state");
             var controlVersion = "v" + _streamMode;
@@ -102,7 +106,10 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
                 LogUtil.Write("Streaming is  not active?");
                 return;
             }
-            if (colors == null || colors.Count < 12) {
+
+            var capCount = _captureMode == 0 ? 12 : 28;
+            
+            if (colors == null || colors.Count < capCount) {
                 throw new ArgumentException("Invalid color list.");
             }
 
@@ -114,14 +121,14 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             }
             foreach (var pd in _layout.PositionData) {
                 var id = pd.PanelId;
-                var colorInt = pd.Sector - 1;
+                var colorInt = _captureMode == 0 ?  pd.TargetSector - 1 : pd.TargetSectorV2 - 1;
                 if (_streamMode == 2) {
                     byteString.AddRange(ByteUtils.PadInt(id));
                 } else {
                     byteString.Add(ByteUtils.IntByte(id));
                 }
 
-                if (pd.Sector == -1) continue;
+                if (pd.TargetSector == -1) continue;
                 //LogUtil.Write("Sector for light " + id + " is " + pd.Sector);
                 var color = colors[colorInt];
                 if (Brightness < 100) {

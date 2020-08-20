@@ -24,11 +24,13 @@ namespace HueDream.Models.StreamingDevice.Hue {
         private EntertainmentLayer _entLayer;
         private StreamingHueClient _client;
         private bool _disposed;
+        private int _captureMode;
         public int Brightness { get; set; }
         public string Id { get; set; }
         public string IpAddress { get; set; }
 
         public HueBridge(BridgeData data) {
+            _captureMode = DataUtil.GetItem<int>("captureMode");
             Bd = data ?? throw new ArgumentNullException(nameof(data));
             IpAddress = Bd.IpAddress;
             _disposed = false;
@@ -125,6 +127,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
 
         public void ReloadData() {
             var newData = DataUtil.GetCollectionItem<BridgeData>("bridges", Id);
+            _captureMode = DataUtil.GetItem<int>("captureMode");
             Bd = newData;
             IpAddress = Bd.IpAddress;
             Brightness = newData.MaxBrightness;
@@ -154,7 +157,8 @@ namespace HueDream.Models.StreamingDevice.Hue {
                     // Return if not mapped
                     if (lightData == null) continue;
                     // Otherwise, get the corresponding sector color
-                    var colorInt = lightData.TargetSector - 1;
+                    var tSector = _captureMode == 0 ? lightData.TargetSector : lightData.TargetSectorV2;
+                    var colorInt = tSector - 1;
                     var color = colors[colorInt];
                     var mb = lightData.OverrideBrightness ? lightData.Brightness : Brightness;
                     if (mb < 100) {
@@ -202,6 +206,10 @@ namespace HueDream.Models.StreamingDevice.Hue {
                 foreach (var light in ld) {
                     foreach (var ex in lights.Where(ex => ex.Id == light.Id)) {
                         light.TargetSector = ex.TargetSector;
+                        light.TargetSectorV2 = ex.TargetSectorV2;
+                        if (light.TargetSectorV2 == -1 && light.TargetSector != -1) {
+                            light.TargetSectorV2 = ex.TargetSector * 2;
+                        }
                         light.Brightness = ex.Brightness;
                         light.OverrideBrightness = ex.OverrideBrightness;
                     }

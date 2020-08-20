@@ -38,6 +38,7 @@ let tvX = 0;
 let tvY = 0;
 let nanoTarget = -1;
 let nanoSector = -1;
+let nanoSectorV2 = -1;
 let mode = 0;
 let ambientMode = 0;
 let ambientShow = 0;
@@ -469,7 +470,12 @@ function setListeners() {
     $(document).on('change', '.mapSelect', function() {
         let myId = $(this).attr('id').replace("lightMap", "");
         let newVal = $(this).val().toString();
-        updateLightProperty(myId, "targetSector", newVal);
+        if (captureMode === 0) {
+            updateLightProperty(myId, "targetSector", newVal);    
+        } else {
+            updateLightProperty(myId, "targetSectorV2", newVal);
+        }
+        
     });
 
     $(window).on('resize', function(e) {
@@ -585,13 +591,24 @@ function setListeners() {
     });
 
 
-    $('.clickRegion').click(function() {
+    $('.lifxRegion').click(function() {
         if (!$(this).hasClass('checked')) {
-            $('.clickRegion').removeClass('checked');
+            $('.lifxRegion').removeClass('checked');
             $(this).addClass('checked');
             let val =$(this).data('region');
             console.log("Val is " + val);
-            selectedDevice.sectorMapping = val;
+            selectedDevice.targetSector = val;
+            postData("updateDevice", selectedDevice);
+        }
+    });
+
+    $('.lifxRegionV2').click(function() {
+        if (!$(this).hasClass('checked')) {
+            $('.lifxRegionV2').removeClass('checked');
+            $(this).addClass('checked');
+            let val =$(this).data('region');
+            console.log("Val is " + val);
+            selectedDevice.targetSectorV2 = val;
             postData("updateDevice", selectedDevice);
         }
     });
@@ -612,11 +629,35 @@ function setListeners() {
             }
             
             if (sTarget !== -1) {
-                selectedDevice["layout"]["positionData"][sTarget]["sector"] = nanoSector;
+                selectedDevice["layout"]["positionData"][sTarget]["targetSector"] = nanoSector;
                 console.log("Updating target sector for nano panel: " + nanoTarget + " and " + nanoSector, selectedDevice);
                 postData("updateDevice", selectedDevice);    
             }
             $('#nanoModal').modal('toggle');            
+        }
+    });
+
+    $('.nanoRegionV2').click(function() {
+        if (!$(this).hasClass('checked')) {
+            $('.nanoRegionV2').removeClass('checked');
+            $(this).addClass('checked');
+            let val=$(this).data('region');
+            nanoSectorV2 = val;
+            console.log("Val is " + val);
+            let sTarget = -1;
+            let sectors = selectedDevice["layout"]["positionData"];
+            for (let q=0; q < sectors.length; q++) {
+                if (sectors[q]["panelId"] === nanoTarget) {
+                    sTarget = q;
+                }
+            }
+
+            if (sTarget !== -1) {
+                selectedDevice["layout"]["positionData"][sTarget]["targetSectorV2"] = nanoSectorV2;
+                console.log("Updating target sector for nano panel: " + nanoTarget + " and " + nanoSectorV2, selectedDevice);
+                postData("updateDevice", selectedDevice);
+            }
+            $('#nanoModal').modal('toggle');
         }
     });
 
@@ -739,6 +780,7 @@ function mapLights() {
     $('div').remove('.delSel');
     // Clear the light region checked status
     $('.lightRegion').removeClass("checked");
+    $('.lightRegionV2').removeClass("checked");
     // Get the list of lights for the selected group
     if (!group.hasOwnProperty('lights')) return false;
     const ids = group["lights"];
@@ -758,6 +800,7 @@ function mapLights() {
                 let brightness = light["brightness"];
                 let override = light["overrideBrightness"];
                 let selection = light["targetSector"];
+                let selectionV2 = light["targetSectorV2"];
 
                 // Create the label for select
                 const label = document.createElement('label');
@@ -780,19 +823,30 @@ function mapLights() {
                     opt.setAttribute('selected', 'selected');
                 } else {
                     // Check our box on the sector square
-                    const checkDiv = $('#sector' + selection);
-                    if (!checkDiv.hasClass('checked')) checkDiv.addClass('checked');
+                    $('.lightRegion[data-region="' + selection +'"]').addClass('checked');
+                    $('.lightRegionV2[data-region="' + selectionV2 +'"]').addClass('checked');
                 }
                 newSelect.appendChild(opt);
 
                 // Add the options for our regions
-                for (let i = 1; i < 13; i++) {
-                    opt = document.createElement("option");
-                    opt.value = (i).toString();
-                    opt.innerHTML = "<BR>" + (i);
-                    // Mark it selected if it's mapped
-                    if (selection === i) opt.setAttribute('selected', 'selected');
-                    newSelect.appendChild(opt);
+                if (captureMode === 0) {
+                    for (let i = 1; i < 13; i++) {
+                        opt = document.createElement("option");
+                        opt.value = (i).toString();
+                        opt.innerHTML = "<BR>" + (i);
+                        // Mark it selected if it's mapped
+                        if (selection === i) opt.setAttribute('selected', 'selected');
+                        newSelect.appendChild(opt);
+                    }
+                } else {
+                    for (let i = 1; i < 29; i++) {
+                        opt = document.createElement("option");
+                        opt.value = (i).toString();
+                        opt.innerHTML = "<BR>" + (i);
+                        // Mark it selected if it's mapped
+                        if (selectionV2 === i) opt.setAttribute('selected', 'selected');
+                        newSelect.appendChild(opt);
+                    }
                 }
                 
                 // Create the div to hold our select
@@ -935,6 +989,13 @@ function buildLists() {
     dsIp = datastore['dsIp'];
     ledData = datastore['ledData'];
     captureMode = datastore['captureMode'];
+    if (captureMode == 0) {
+        $('.regions').show();
+        $('.regionsV2').hide();
+    } else {
+        $('.regions').hide();
+        $('.regionsV2').show();
+    }
     mode = selectCaptureMode(captureMode);
     emulationType = datastore['emuType'];
     buildDevList(datastore['devices']);
@@ -1428,7 +1489,10 @@ function loadLifxData(data) {
     nanoIp = n["hostName"];
     lName.html(nanoIp);
     hIp.html(data.id);
-    $('.clickRegion[data-region="' + data.sectorMapping +'"]').addClass('checked');
+    $('.lifxRegion').removeClass('checked');
+    $('.lifxRegion[data-region="' + data.targetSector +'"]').addClass('checked');
+    $('.lifxRegionV2').removeClass('checked');
+    $('.lifxRegionV2[data-region="' + data.targetSectorV2 +'"]').addClass('checked');
     lBrightness.val(data["brightness"]);    
 }
 
@@ -1595,10 +1659,15 @@ function drawNanoShapes(panel) {
             fontSize: 30,
             fontFamily: 'Calibri'
         });
+        
+        let sectorText = data['targetSector'];
+        if (captureMode !== 0) {
+            sectorText = data['targetSectorV2'];
+        }
         let sText2 = new Konva.Text({
             x: x,
             y: y - 35,
-            text: data["sector"],
+            text: sectorText,
             fontSize: 30,
             fontFamily: 'Calibri'
         });
@@ -1641,7 +1710,11 @@ function drawNanoShapes(panel) {
                     id: data["panelId"]
                 });
                 poly.on('click', function(){
-                    setNanoMap(data['panelId'], data['sector']);
+                    setNanoMap(data['panelId'], data['targetSector'], data['targetSectorV2']);
+                });
+                poly.on('tap', function(){
+                    console.log("POLY TAP")
+                    setNanoMap(data['panelId'], data['targetSector'], data['targetSectorV2']);
                 });
                 shapeGroup.add(poly);
                 break;
@@ -1660,7 +1733,10 @@ function drawNanoShapes(panel) {
                     strokeWidth: 4
                 });
                 rect1.on('click', function(){
-                    setNanoMap(data['panelId'], data['sector']);
+                    setNanoMap(data['panelId'], data['targetSector'], data['targetSector2']);
+                });
+                rect1.on('tap', function(){
+                    setNanoMap(data['panelId'], data['targetSector'], data['targetSector2']);
                 });
                 shapeGroup.add(rect1);
                 break;
@@ -1671,11 +1747,17 @@ function drawNanoShapes(panel) {
         sText.offsetX(sText.width() / 2);
         sText2.offsetX(sText2.width() / 2);
         sText.on('click', function(){
-            setNanoMap(data['panelId'], data['sector']);
+            setNanoMap(data['panelId'], data['targetSector'], data['targetSector2']);
             
         });
         sText2.on('click', function(){
-            setNanoMap(data['panelId'], data['sector']);
+            setNanoMap(data['panelId'], data['targetSector'], data['targetSector2']);
+        });
+        sText.on('tap', function () {
+            console.log("Stext tap.")
+        });
+        sText2.on('tap', function () {
+            console.log("Stext2 tap.")
         });
         shapeGroup.add(sText);
         shapeGroup.add(sText2);
@@ -1705,14 +1787,19 @@ function drawNanoShapes(panel) {
     cLayer.zIndex(0);
 }
 
-function setNanoMap(id, current) {
+function setNanoMap(id, current, v2) {
     nanoTarget = id;
     nanoSector = current;
+    nanoSectorV2 = v2;
     console.log("Mapping sector for nano panel " + id);
     // Add the options for our regions
     $('.nanoRegion').removeClass('checked');
     if (current !== -1) {
-        $('#nanoSector' + current).addClass('checked');
+        $('.nanoRegion[data-region="'+current+'"]').addClass("checked");
+    }
+    $('.nanoRegionV2').removeClass('checked');
+    if (v2 !== -1) {
+        $('.nanoRegionV2[data-region="'+v2+'"]').addClass("checked");
     }
     $('#nanoModal').modal({
         show: true

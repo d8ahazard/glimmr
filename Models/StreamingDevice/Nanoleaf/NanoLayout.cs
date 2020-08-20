@@ -29,7 +29,11 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
 
         [DefaultValue(-1)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-        public int Sector { get; set; }
+        public int TargetSector { get; set; }
+        
+        [DefaultValue(-1)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public int TargetSectorV2 { get; set; }
 
         [JsonProperty] public int ShapeType { get; set; }
     }
