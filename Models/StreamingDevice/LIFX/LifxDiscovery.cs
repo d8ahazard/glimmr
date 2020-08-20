@@ -33,7 +33,7 @@ namespace HueDream.Models.StreamingDevice.LIFX {
             foreach (var bulb in b) {
                 var existing = DataUtil.GetCollectionItem<LifxData>("lifxBulbs", bulb.MacAddressString);
                 if (existing != null) {
-                    bulb.TargetSector = existing.SectorMapping;
+                    bulb.TargetSector = existing.TargetSector;
                     bulb.Brightness = existing.Brightness;
                 }
                 DataUtil.InsertCollection<LifxData>("lifxBulbs", bulb);
