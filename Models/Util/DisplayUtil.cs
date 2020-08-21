@@ -50,7 +50,7 @@ namespace HueDream.Models.Util {
         
         private static Size GetLinuxDisplaySize() {
             var p = new System.Diagnostics.Process {
-                StartInfo = {UseShellExecute = cleafalse, RedirectStandardOutput = true, FileName = "xrandr"}
+                StartInfo = {UseShellExecute = false, RedirectStandardOutput = true, FileName = "xrandr"}
             };
             p.Start();
             var output = p.StandardOutput.ReadToEnd();
