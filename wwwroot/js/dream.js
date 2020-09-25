@@ -530,6 +530,11 @@ function setListeners() {
         postData('camType', cType);
     });
 
+    ('#stripType').change(function() {
+        let cType = $(this).val();
+        postData('striptype', cType);
+    });
+
     $('.ledCount').change(function() {
         let lCount = $(this).val();
         let type = $(this).data('type');

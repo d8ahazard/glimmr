@@ -20,7 +20,20 @@ namespace HueDream.Models.LED {
             StartupAnimation = ld.StartupAnimation;
             ledCount = ld.VCount * 2 + ld.HCount * 2;
             LogUtil.Write($@"Bright, count, anim: {Brightness}, {ledCount}, {StartupAnimation}");            
-            var stripType = rpi_ws281x.WS2812_STRIP;
+            var stripType = ld.StripType;
+            var stripInt = DataUtil.GetItem("stripInt") ?? 0;
+            switch (ld.StripType) {
+                case 1:
+                    stripType = rpi_ws281x.SK6812_STRIP;
+                    break;
+                case 2:
+                    stripType = rpi_ws281x.WS2811_STRIP_RGB;
+                    break;
+                default:
+                    stripType = rpi_ws281x.WS2812_STRIP;
+                    break;
+
+            }
             neoPixel = new Neopixel(ledCount, ld.PinNumber, stripType);
             LogUtil.Write($@"NeoPixel created using {ledCount} LEDs.");
             neoPixel.Begin();

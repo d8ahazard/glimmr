@@ -774,6 +774,7 @@
                             <select id="cameraType" class="form-control">
                                 <option value="0">Raspberry Pi Camera</option>
                                 <option value="1">USB Camera</option>
+                                <option value="2">Video Capture Device</option>
                             </select>
                         </div>
                     </div>
@@ -810,6 +811,16 @@
                     <label for="hCount" class="bmd-label-floating">Left/Right Count:</label>
                     <input type="text" class="form-control ledcount" id="hCount" data-type="h">
                     <span class="bmd-help">Enter the number of LEDs on the left and right sides of the screen.</span>
+                </div>
+            </div>
+            <div class="row justify-content-center">
+                <div class="form-group bmd-form-group col-12 col-md-6">
+                    <label for="hCount" class="bmd-label-floating">LED Type:</label>
+                    <select id="stripType">
+                        <option value="0">WS2812x (DreamScreen)</option>
+                        <option value="1">SK6812</option>
+                        <option value="2">WS2811</option>
+                    </select>
                 </div>
             </div>
         </div>

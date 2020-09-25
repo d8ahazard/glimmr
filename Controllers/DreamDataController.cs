@@ -128,6 +128,17 @@ namespace HueDream.Controllers {
             ResetMode();
             return Ok(count);
         }
+        
+        // POST: api/DreamData/striptype
+        [HttpPost("striptype")]
+        public IActionResult Striptype([FromBody] int type) {
+            LedData ledData = DataUtil.GetItem<LedData>("ledData");
+            ledData.StripType = type;
+            DataUtil.SetItem<LedData>("ledData", ledData);
+            NotifyClients();
+            ResetMode();
+            return Ok(type);
+        }
 
 
         // POST: api/DreamData/dsIp
