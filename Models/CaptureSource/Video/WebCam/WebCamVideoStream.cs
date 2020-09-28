@@ -4,13 +4,12 @@ using System.Threading.Tasks;
 using Emgu.CV;
 using HueDream.Models.Util;
 
-namespace HueDream.Models.CaptureSource.Camera {
+namespace HueDream.Models.CaptureSource.Video.WebCam {
     public class WebCamVideoStream : IVideoStream, IDisposable
     {
-
-        private readonly VideoCapture video;
+        private readonly VideoCapture _video;
         public Mat Frame;
-        private bool disposed;
+        private bool _disposed;
 
         Mat IVideoStream.Frame {
             get => Frame;
@@ -18,31 +17,30 @@ namespace HueDream.Models.CaptureSource.Camera {
         }
 
         public WebCamVideoStream(int inputStream) {
-            video = new VideoCapture(inputStream, VideoCapture.API.DShow);
+            var capType = VideoCapture.API.DShow;
+            _video = new VideoCapture(inputStream, capType);
+            var foo = _video.CaptureSource.ToString();
             Frame = new Mat();
-            LogUtil.Write("Stream init.");            
+            LogUtil.Write("Stream init, capture source is " + foo + ", " + inputStream);            
         }
-       
 
         private void SetFrame(object sender, EventArgs e) {
-            if (video != null && video.Ptr != IntPtr.Zero) {
-                video.Read(Frame);
+            if (_video != null && _video.Ptr != IntPtr.Zero) {
+                _video.Read(Frame);
+            } else {
+                LogUtil.Write("No frame to set...");
             }
         }
-
-       
-
-
-
+        
         public async Task Start(CancellationToken ct) {
             LogUtil.Write("WebCam Stream started.");
-            video.ImageGrabbed += SetFrame;
-            video.Start();
+            _video.ImageGrabbed += SetFrame;
+            _video.Start();
         }
 
         public void Dispose() {
-            if (disposed) return;
-            disposed = true;
+            if (_disposed) return;
+            _disposed = true;
             GC.SuppressFinalize(this);
             Dispose(true);
         }
@@ -50,7 +48,7 @@ namespace HueDream.Models.CaptureSource.Camera {
         protected virtual void Dispose(bool disposing) {
             if (!disposing) return;
             Frame.Dispose();
-            video.Dispose();
+            _video.Dispose();
         }
     }
 }

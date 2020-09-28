@@ -1,7 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Text.RegularExpressions;
-using Microsoft.CodeAnalysis.Differencing;
 using Serilog;
 
 namespace HueDream.Models.Util {
@@ -26,7 +24,7 @@ namespace HueDream.Models.Util {
                     break;
             }
         }
-
+        
         public static void WriteInc(string text, string level="INFO") {
             Write($@"C{_msgCount} - {text}", level);
             _msgCount++;

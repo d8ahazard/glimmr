@@ -1,10 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Timers;
 using Emgu.CV;
+using Emgu.CV.CvEnum;
+using Emgu.CV.Structure;
+using Emgu.CV.Util;
 using HueDream.Models.LED;
 using HueDream.Models.Util;
+using Newtonsoft.Json;
 
 namespace HueDream.Models.CaptureSource.Camera {
     public class Splitter {
@@ -24,6 +30,8 @@ namespace HueDream.Models.CaptureSource.Camera {
         private readonly List<Rectangle> _pillarSectorsV2;
         private readonly List<Rectangle> _boxSectorsV2;
         private readonly List<Rectangle> _checkRegions;
+        private int sourceWidth;
+        private int sourceHeight;
         private int _countNoImg;
         private int _countLetterBox;
         private int _countPillarBox;
@@ -38,54 +46,58 @@ namespace HueDream.Models.CaptureSource.Camera {
         private readonly float _brightBoost;
         private readonly float _saturationBoost;
         private readonly int _minBrightness;
-
+        public bool DoSave;
         private const int MaxFrameCount = 150;
         
         public Splitter(LedData ld, int srcWidth, int srcHeight) {
+            // Set some defaults, this should probably just not be null
             if (ld != null) {
                 _vCount = ld.VCount;
                 _hCount = ld.HCount;
             }
-            _borderWidth = srcWidth * .15625f;
-            _borderHeight = srcHeight * .20833333333f;
+
+            sourceWidth = srcWidth;
+            sourceHeight = srcHeight;
+            // Set desired width of capture region to 15% total image
+            _borderWidth = sourceWidth * .05f;
+            _borderHeight = sourceHeight * .05f;
+            // Set default box mode to zero, no boxing
             _boxMode = 0;
             LogUtil.Write($@"Splitter init, {_vCount}, {_vCount}, {_hCount}, {_hCount}");
+            LogUtil.Write($"Splitter src width and height are {srcWidth} and {srcHeight}.");
+            // Set brightness boost, min brightness, sat boost...
             _brightBoost = 0;
             _minBrightness = 90;
             _saturationBoost = .2f;
-            LogUtil.Write("Defaults loaded...");
-            _fullCoords = DrawGrid(srcWidth, srcHeight);
-            _fullSectors = DrawSectors(srcWidth, srcHeight);
-            _fullSectorsV2 = DrawSectorsV2(srcWidth, srcHeight);
-            var vo = srcHeight * .12;
-            // Check this
-            var ho = srcWidth * .127;
-            var lb = srcHeight - vo;
-            var pr = srcWidth - ho;
+            // Get sectors
+            _fullCoords = DrawGrid();
+            _fullSectors = DrawSectors();
+            _fullSectorsV2 = DrawSectors(0,0, true);
+            var lb = srcHeight - _borderHeight;
+            var pr = srcWidth - _borderWidth;
             _checkRegions = new List<Rectangle> {
-                new Rectangle(0, 0, srcWidth, (int) vo),
-                new Rectangle(0, (int) lb, srcWidth, (int) vo),
-                new Rectangle(0, 0, (int) ho, srcHeight),
-                new Rectangle((int) pr, 0, (int) ho, srcHeight)
+                new Rectangle(0, 0, srcWidth, (int) _borderHeight),
+                new Rectangle(0, (int) lb, srcWidth, (int) _borderHeight),
+                new Rectangle(0, 0, (int) _borderWidth, srcHeight),
+                new Rectangle((int) pr, 0, (int) _borderWidth, srcHeight)
             };
-            // Add letterbox regions
-            // Add pillar regions
-            _letterCoords = DrawGrid(srcWidth, srcHeight, vo);
-            _pillarCoords = DrawGrid(srcWidth, srcHeight, 0, ho);
-            _boxCoords = DrawGrid(srcWidth, srcHeight, vo, ho);
-            _letterSectors = DrawSectors(srcWidth, srcHeight, vo);
-            _pillarSectors = DrawSectors(srcWidth, srcHeight, 0, ho);
-            _boxSectors = DrawSectors(srcWidth, srcHeight, vo, ho);
-            _letterSectorsV2 = DrawSectorsV2(srcWidth, srcHeight, vo);
-            _pillarSectorsV2 = DrawSectorsV2(srcWidth, srcHeight, 0, ho);
-            _boxSectorsV2 = DrawSectorsV2(srcWidth, srcHeight, vo, ho);
+            _letterCoords = DrawGrid(_borderHeight);
+            _pillarCoords = DrawGrid(0, _borderWidth);
+            _boxCoords = DrawGrid(_borderHeight, _borderWidth);
+            _letterSectors = DrawSectors(_borderHeight);
+            _pillarSectors = DrawSectors(0, _borderWidth);
+            _boxSectors = DrawSectors(_borderHeight, _borderWidth);
+            _letterSectorsV2 = DrawSectors(_borderHeight,0, true);
+            _pillarSectorsV2 = DrawSectors(0, _borderWidth, true);
+            _boxSectorsV2 = DrawSectors(_borderHeight, _borderWidth, true);
             _frameCount = 0;
             LogUtil.Write("Splitter should be created.");
         }
 
         public void Update(Mat inputMat) {
-            _input = inputMat;
-            
+            _input = inputMat ?? throw new ArgumentException("Invalid input material.");
+            // Don't do anything if there's no frame.
+            if (_input.IsEmpty) return;
             var outputLed = new List<Color>();
             var outputSectors = new List<Color>();
             var outputSectorsV2 = new List<Color>();
@@ -93,7 +105,7 @@ namespace HueDream.Models.CaptureSource.Camera {
             var sectors = _fullSectors;
             var sectorsV2 = _fullSectorsV2;
             if (_frameCount >= 10) {
-                CheckSectors();
+                //CheckSectors();
                 _frameCount = 0;
             }
             _frameCount++;
@@ -117,50 +129,64 @@ namespace HueDream.Models.CaptureSource.Camera {
                 sectors = _boxSectors;
                 sectorsV2 = _boxSectorsV2;
             }
-            
-            foreach(var r in coords) {
+
+            if (DoSave) {
+                LogUtil.Write("Saving splitter frame here...");
+                DoSave = false;
+                var path = Directory.GetCurrentDirectory();
+                var gMat = new Mat();
+                inputMat.CopyTo(gMat);
+                var colInt = 0;
+                foreach (var r in coords) {
+                    var col = new Bgr(_colorsLed[colInt]).MCvScalar;
+                    CvInvoke.Rectangle(gMat,r, col, -1, LineType.AntiAlias);
+                    colInt++;
+                }
+                gMat.Save(path + "/wwwroot/img/_preview_output.jpg");
+                gMat.Dispose();
+            }
+
+            foreach (var r in coords) {
+                //LogUtil.Write($"Trying to get coords from {_input.Width} and {_input.Height}: " + r);
                 var sub = new Mat(_input, r);
                 outputLed.Add(GetAverage(sub));
                 sub.Dispose();
             }
 
-            foreach (var r in sectors) {
-                var sub = new Mat(_input, r);
+            foreach (var sub in sectors.Select(r => new Mat(_input, r))) {
                 outputSectors.Add(GetAverage(sub));
                 sub.Dispose();
             }
-            
-            foreach (var r in sectorsV2) {
-                var sub = new Mat(_input, r);
+
+            foreach (var sub in sectorsV2.Select(r => new Mat(_input, r))) {
                 outputSectorsV2.Add(GetAverage(sub));
                 sub.Dispose();
             }
-
             _colorsLed = outputLed;
             _colorsSectors = outputSectors;
             _colorsSectorsV2 = outputSectorsV2;
         }
 
+       
         private Color GetAverage(Mat sInput) {
+            var outColor = Color.Black;
+            if (sInput.Cols == 0) return outColor;
             var colors = CvInvoke.Mean(sInput);
             var cB = (int) colors.V0;
             var cG = (int) colors.V1;
             var cR = (int) colors.V2;
             if (cB + cG + cR < _minBrightness) {
-                cB = 0;
-                cG = 0;
-                cR = 0;
+            //    cB = 0;
+            //    cG = 0;
+            //    cR = 0;
             }
             
-            var outColor = Color.FromArgb(255,cR, cG, cB);
-            if (Math.Abs(_brightBoost) > 0.01) outColor = ColorUtil.BoostBrightness(outColor, _brightBoost);
-            if (Math.Abs(_saturationBoost) > 0.01) outColor = ColorUtil.BoostSaturation(outColor, _saturationBoost);
+            outColor = Color.FromArgb(255,cR, cG, cB);
+            //if (Math.Abs(_brightBoost) > 0.01) outColor = ColorUtil.BoostBrightness(outColor, _brightBoost);
+            //if (Math.Abs(_saturationBoost) > 0.01) outColor = ColorUtil.BoostSaturation(outColor, _saturationBoost);
             
             return outColor;
         }
-
-
-        
         
         public List<Color> GetColors() {
             return _colorsLed;
@@ -248,36 +274,37 @@ namespace HueDream.Models.CaptureSource.Camera {
             }
         }
 
-        private List<Rectangle> DrawGrid(int srcWidth, int srcHeight, double vOffset = 0, double hOffset = 0) {
-            var fc = new List<Rectangle>();
-            var h = srcHeight - vOffset * 2;
-            var w = srcWidth - hOffset * 2;
+        private List<Rectangle> DrawGrid(double vOffset = 0, double hOffset = 0) {
+            var output = new List<Rectangle>();
+            var srcHeight = sourceHeight - vOffset * 2;
+            var srcWidth = sourceWidth - hOffset * 2;
 
+            // Top Region
             var tTop = vOffset;
             var tBottom = _borderHeight + tTop;
 
             // Bottom Gridlines
-            var bTop = srcHeight - vOffset - _borderHeight;
-            var bBottom = bTop + _borderHeight;
+            var bTop = srcHeight - _borderHeight;
+            var bBottom = srcHeight;
 
             // Left Column Border
             var lLeft = hOffset;
             var lRight = hOffset + _borderWidth;
 
             // Right Column Border
-            var rLeft = srcWidth - hOffset - _borderWidth;
-            var rRight = rLeft + _borderWidth;
+            var rLeft = srcWidth - _borderWidth;
+            var rRight = srcWidth;
             // Steps
-            var tStep = w / _hCount;
-            var bStep = w / _hCount;
-            var lStep = h / _vCount;
-            var rStep = h / _vCount;
+            var tStep = srcWidth / _hCount;
+            var bStep = srcWidth / _hCount;
+            var lStep = srcHeight / _vCount;
+            var rStep = srcHeight / _vCount;
             // Calc right regions, bottom to top
             var step = _vCount - 1;
             while (step >= 0) {
                 var ord = step * rStep + vOffset;
                 var vw = rRight - rLeft;
-                fc.Add(new Rectangle((int) rLeft, (int) ord, (int) vw, step));
+                output.Add(new Rectangle((int) rLeft, (int) ord, (int) vw, (int) rStep));
                 step--;
             }
             step = _hCount - 1;
@@ -285,7 +312,7 @@ namespace HueDream.Models.CaptureSource.Camera {
             while (step >= 0) {
                 var ord = step * tStep + hOffset;
                 var vw = tBottom - tTop;
-                fc.Add(new Rectangle((int) ord, (int) tTop, step, (int) vw));
+                output.Add(new Rectangle((int) ord, (int) tTop,  (int) tStep, (int) vw));
                 step--;
             }
 
@@ -294,7 +321,7 @@ namespace HueDream.Models.CaptureSource.Camera {
             while (step < _vCount) {
                 var ord = step * lStep + vOffset;
                 var vw = lRight - lLeft;
-                fc.Add(new Rectangle((int) lLeft, (int) ord, (int) vw, step));
+                output.Add(new Rectangle((int) lLeft, (int) ord, (int) vw, (int) lStep));
                 step++;
             }
 
@@ -303,34 +330,47 @@ namespace HueDream.Models.CaptureSource.Camera {
             while (step < _hCount) {
                 var ord = step * bStep + hOffset;
                 var vw = bBottom - bTop;
-                fc.Add(new Rectangle((int) ord, (int) bTop, step, (int) vw));
+                output.Add(new Rectangle((int) ord, (int) bTop, (int) bStep, (int) vw));
                 step += 1;
             }
-            return fc;
+            LogUtil.Write($"Grid drawn, we have {output.Count} items. Hazzah.");
+            return output;
         }
         
-        private List<Rectangle> DrawSectors(int srcWidth, int srcHeight, double vOffset = 0, double hOffset = 0) {
+        private List<Rectangle> DrawSectors(double vOffset = 0, double hOffset = 0, bool v2 = false) {
+            // How many sectors does each region have?
+            var vSectorCount = 3;
+            var hSectorCount = 5;
+
+            if (v2) {
+                vSectorCount *= 2;
+                hSectorCount *= 2;
+            }
+            // This is where we're saving our output
             var fs = new List<Rectangle>();
-            var h = srcWidth - hOffset * 2;
-            var v = srcHeight - vOffset * 2;
-            var hWidth = h / 5;
+            // Calculate heights, minus offset for boxing
+            var inputWidth = sourceWidth - hOffset * 2;
+            var inputHeight = sourceHeight - vOffset * 2;
+            // Individual segment sizes
+            var hWidth = inputWidth / hSectorCount;
+            var vHeight = inputHeight / vSectorCount;
+            // These are based on the border/strip values
             var vWidth = (int)_borderWidth;
-            var vHeight = v / 3;
             var hHeight = (int)_borderHeight;
-            
+            // Minimum limits for top, bottom, left, right            
             var minTop = vOffset;
-            var minBot = srcHeight - hHeight - vOffset;
+            var minBot = sourceHeight - hHeight - vOffset;
             var minLeft = hOffset;
-            var minRight = srcWidth - vWidth - hOffset;
+            var minRight = sourceWidth - vWidth - hOffset;
             // Calc right regions, bottom to top
-            var step = 2;
+            var step = vSectorCount - 1;
             while (step >= 0) {
                 var ord = step * vHeight + vOffset;
                 fs.Add(new Rectangle((int) minRight, (int) ord, vWidth, (int) vHeight));
                 step--;
             }
-            step = 3;
-            // Calc top regions, from right to left, skipping top-right corner
+            // Calc top regions, from right to left, skipping top-right corner (total horizontal sectors minus one)
+            step = hSectorCount - 1;
             while (step >= 0) {
                 var ord = step * hWidth + hOffset;
                 fs.Add(new Rectangle((int) ord, (int) minTop, (int) hWidth, hHeight));
@@ -338,59 +378,14 @@ namespace HueDream.Models.CaptureSource.Camera {
             }
             step = 1;
             // Calc left regions (top to bottom), skipping top-left
-            while (step <= 2) {
+            while (step <= vSectorCount - 1) {
                 var ord = step * vHeight + vOffset;
                 fs.Add(new Rectangle((int) minLeft, (int) ord, vWidth, (int) vHeight));
                 step++;
             }
             step = 1;
             // Calc bottom center regions (L-R)
-            while (step <= 3) {
-                var ord = step * hWidth + hOffset;
-                fs.Add(new Rectangle((int) ord, (int) minBot, (int) hWidth, hHeight));
-                step += 1;
-            }
-            return fs;
-        }
-        
-        // Draw a grid of sectors, but with twice as many as normal DS
-        private List<Rectangle> DrawSectorsV2(int srcWidth, int srcHeight, double vOffset = 0, double hOffset = 0) {
-            var fs = new List<Rectangle>();
-            var h = srcWidth - hOffset * 2;
-            var v = srcHeight - vOffset * 2;
-            var hWidth = h / 10;
-            var vWidth = (int)_borderWidth;
-            var vHeight = v / 6;
-            var hHeight = (int)_borderHeight;
-            
-            var minTop = vOffset;
-            var minBot = srcHeight - hHeight - vOffset;
-            var minLeft = hOffset;
-            var minRight = srcWidth - vWidth - hOffset;
-            // Calc right regions, bottom to top
-            var step = 5;
-            while (step >= 0) {
-                var ord = step * vHeight + vOffset;
-                fs.Add(new Rectangle((int) minRight, (int) ord, vWidth, (int) vHeight));
-                step--;
-            }
-            step = 8;
-            // Calc top regions, from right to left, skipping top-right corner
-            while (step >= 0) {
-                var ord = step * hWidth + hOffset;
-                fs.Add(new Rectangle((int) ord, (int) minTop, (int) hWidth, hHeight));
-                step--;
-            }
-            step = 1;
-            // Calc left regions (top to bottom), skipping top-left
-            while (step <= 5) {
-                var ord = step * vHeight + vOffset;
-                fs.Add(new Rectangle((int) minLeft, (int) ord, vWidth, (int) vHeight));
-                step++;
-            }
-            step = 1;
-            // Calc bottom center regions (L-R)
-            while (step <= 8) {
+            while (step <= hSectorCount - 2) {
                 var ord = step * hWidth + hOffset;
                 fs.Add(new Rectangle((int) ord, (int) minBot, (int) hWidth, hHeight));
                 step += 1;

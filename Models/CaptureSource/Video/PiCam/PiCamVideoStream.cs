@@ -13,14 +13,14 @@ using MMALSharp.Native;
 using MMALSharp.Ports;
 using MMALSharp.Ports.Outputs;
 
-namespace HueDream.Models.CaptureSource.Camera {
-    public sealed class PiVideoStream : IVideoStream, IDisposable {
+namespace HueDream.Models.CaptureSource.Video.PiCam {
+    public sealed class PiCamVideoStream : IVideoStream, IDisposable {
         public Mat Frame { get; set; }
         private readonly MMALCamera cam;
         private readonly int capWidth;
         private readonly int capHeight;
         private readonly int camMode;
-        public PiVideoStream(int width = 1296, int height = 972, int mode = 4) {
+        public PiCamVideoStream(int width = 1296, int height = 972, int mode = 4) {
             cam = MMALCamera.Instance;
             capWidth = width;
             capHeight = height;

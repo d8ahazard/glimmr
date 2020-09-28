@@ -12,7 +12,7 @@ using Serilog;
 namespace HueDream {
     public static class Program {
         public static void Main(string[] args) {
-            var logPath = "/var/log/glimmr.log";
+            var logPath = "/var/log/glimmr/glimmr.log";
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
                 logPath = "log\\glimmr.log";
             }

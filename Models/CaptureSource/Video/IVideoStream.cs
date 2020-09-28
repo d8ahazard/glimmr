@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Emgu.CV;
 
-namespace HueDream.Models.CaptureSource {
+namespace HueDream.Models.CaptureSource.Video {
     public interface IVideoStream {
         public Task Start(CancellationToken ct);        
         public Mat Frame { get; set; }

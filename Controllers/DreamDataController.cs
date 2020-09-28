@@ -81,6 +81,7 @@ namespace HueDream.Controllers {
         // POST: api/DreamData/camType
         [HttpPost("camType")]
         public IActionResult CamType([FromBody] int cType) {
+            LogUtil.Write("Camera type set to " + cType);
             DataUtil.SetItem<int>("camType", cType);
             NotifyClients();
             ResetMode();
@@ -129,9 +130,9 @@ namespace HueDream.Controllers {
             return Ok(count);
         }
         
-        // POST: api/DreamData/striptype
-        [HttpPost("striptype")]
-        public IActionResult Striptype([FromBody] int type) {
+        // POST: api/DreamData/stripType
+        [HttpPost("stripType")]
+        public IActionResult StripType([FromBody] int type) {
             LedData ledData = DataUtil.GetItem<LedData>("ledData");
             ledData.StripType = type;
             DataUtil.SetItem<LedData>("ledData", ledData);
@@ -395,8 +396,7 @@ namespace HueDream.Controllers {
             myDev.Mode = mode;
             DataUtil.SetItem("myDevice", myDev);
             var payload = new List<byte>();
-            var utf8 = new UTF8Encoding();
-            payload.AddRange(utf8.GetBytes(myDev.Id));
+            payload.Add((byte)mode);
             DreamSender.SendUdpWrite(0x01, 0x10, payload.ToArray(), 0x21, (byte)myDev.GroupNumber,
                 new IPEndPoint(IPAddress.Parse(myDev.IpAddress), 8888));
         }
@@ -409,7 +409,7 @@ namespace HueDream.Controllers {
             if (curMode == capMode) return;
             DataUtil.SetItem<int>("captureMode", capMode);
             var devType = "SideKick";
-            if (capMode != 0 && curMode == 0) {
+            if (capMode != 0) {
                 devType = "DreamScreen4K";
             }
 
@@ -423,6 +423,7 @@ namespace HueDream.Controllers {
         }
 
         private static void SwitchDeviceType(string devType, BaseDevice curDevice) {
+            LogUtil.Write("Switching type to " + devType);
             switch (devType) {
                 case "SideKick": {
                     var newDevice = new SideKick(curDevice);

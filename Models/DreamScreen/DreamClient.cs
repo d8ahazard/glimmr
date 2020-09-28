@@ -12,6 +12,7 @@ using System.Timers;
 using HueDream.Hubs;
 using HueDream.Models.CaptureSource.Audio;
 using HueDream.Models.CaptureSource.Camera;
+using HueDream.Models.CaptureSource.Video;
 using HueDream.Models.DreamScreen.Devices;
 using HueDream.Models.LED;
 using HueDream.Models.StreamingDevice;
@@ -402,18 +403,14 @@ namespace HueDream.Models.DreamScreen {
                     }
                 }
 
-                var added = false;
                 foreach (var sd in _sDevices.Where(sd => !sd.Streaming)) {
-                    added = false;
                     LogUtil.Write("Starting device: " + sd.IpAddress);
                     sd.StartStream(_sendTokenSource.Token);
-                    added = true;
                     LogUtil.Write($"Started {sd.IpAddress}.");
                 }
-                
-                _streamStarted = added;
             }
 
+            _streamStarted = true;
             if (_streamStarted) LogUtil.WriteInc("Streaming on all devices should be started now.");
         }
 
@@ -450,8 +447,8 @@ namespace HueDream.Models.DreamScreen {
                 if (_subscribers.Count > 0 && CaptureMode != 0) {
                     var keys = new List<string>(_subscribers.Keys);
                     foreach (var ip in keys) {
-                        DreamSender.SendSectors(sectors, ip, _dev.GroupNumber);
-                        LogUtil.Write("Sent.");
+                        //DreamSender.SendSectors(sectors, ip, _dev.GroupNumber);
+                        //LogUtil.Write("Sent.");
                     }
 
                     LogUtil.Write("Sent to each subscriber.");
@@ -464,8 +461,15 @@ namespace HueDream.Models.DreamScreen {
         // If we pass in a third set of sectors, use that info instead.
         public void SendColors(List<Color> colors, List<Color> sectors, List<Color> sectorsV2, double fadeTime = 0) {
             _sendTokenSource ??= new CancellationTokenSource();
-            if (_sendTokenSource.IsCancellationRequested) return;
-            if (!_streamStarted) return;
+            if (_sendTokenSource.IsCancellationRequested) {
+                LogUtil.Write("Canceled.");
+                return;
+            }
+
+            if (!_streamStarted) {
+                LogUtil.Write("The stream isn't started??");
+                return;
+            }
             foreach (var sd in _sDevices) {
                 sd.SetColor(sectorsV2, fadeTime);
             }
@@ -477,7 +481,6 @@ namespace HueDream.Models.DreamScreen {
                         DreamSender.SendSectors(sectors, ip, _dev.GroupNumber);
                     }
                 }
-
                 _strip?.UpdateAll(colors);
             }
         }
@@ -515,10 +518,14 @@ namespace HueDream.Models.DreamScreen {
 
         private Task StartVideoCapture(CancellationToken cancellationToken) {
             LogUtil.Write("Start video capture has been initialized.");
-            if (_grabber == null) return Task.CompletedTask;
+            if (_grabber == null) {
+                LogUtil.Write("Grabber is null!!", "WARN");
+                return Task.CompletedTask;
+            }
             var captureTask = _grabber.StartCapture(this, cancellationToken);
+            //captureTask.Start();
             LogUtil.Write("Capture task is set.");
-            return captureTask.IsCompleted ? captureTask : Task.CompletedTask;
+            return captureTask.IsCompleted ? Task.CompletedTask : captureTask;
         }
 
         private void StartVideoCaptureTask() {

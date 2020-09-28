@@ -7,7 +7,7 @@ using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using HueDream.Models.Util;
 
-namespace HueDream.Models.CaptureSource.ScreenCapture {
+namespace HueDream.Models.CaptureSource.Video.Screen {
     public class ScreenVideoStream : IVideoStream {
         public Mat Frame { get; set; }
 

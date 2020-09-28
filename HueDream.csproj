@@ -34,6 +34,7 @@
         <PackageReference Include="Emgu.CV.runtime.windows.dldt" Version="4.4.0.4022" />
         <PackageReference Include="freetype2" Version="2.6.0.1" />
         <PackageReference Include="JsonFlatFileDataStore" Version="2.2.2" />
+        <PackageReference Include="kenssamson.rpi-ws281x-csharp" Version="1.1.0" />
         <PackageReference Include="LifxNet" Version="2.2.0" />
         <PackageReference Include="Makaretu.Dns.Multicast" Version="0.27.0" />
         <PackageReference Include="ManagedBass" Version="3.0.0" />
@@ -62,7 +63,6 @@
         <PackageReference Include="Serilog.Sinks.Console" Version="4.0.0-dev-00839" />
         <PackageReference Include="Serilog.Sinks.File" Version="5.0.0-dev-00864" />
         <PackageReference Include="System.Net.WebSockets" Version="4.3.0" />
-        <PackageReference Include="ws281x.Net" Version="1.0.6" />
         <PackageReference Include="ZedGraph" Version="6.0.0-alpha0001" />
         <PackageReference Include="ZedGraph.WinForms" Version="6.0.0-alpha0001" />
     </ItemGroup>
@@ -90,6 +90,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Folder Include="Models\CaptureSource\ScreenCapture" />
       <Folder Include="Models\StreamingDevice\LED" />
     </ItemGroup>
     

@@ -35,17 +35,15 @@ echo "DONE!"
 # Moar Cleanup
 echo "More cleanup..."
 sudo apt-get -y remove x264 libx264-dev
-if [ ! -d "/home/glimmrtv/ws281x" ]
-then
-  echo "Cloning LED libraries..."	
-  git clone https://github.com/jgarff/rpi_ws281x /home/glimmrtv/ws281x
-  cd /home/glimmrtv/ws281x || exit
-  echo "LED setup..."
-  scons
+
+echo "Cloning LED libraries..."	
+git clone https://github.com/jgarff/rpi_ws281x /home/glimmrtv/ws281x
+cd /home/glimmrtv/ws281x || exit
+echo "LED setup..."
+scons
+gcc -shared -o ws2811.so *.o
+cp ./ws2811.so /usr/lib/ws2811.so
   echo "DONE!"
-else
-  echo "LED Libraries already installed"
-fi
 
 if [ ! -d "/home/glimmrtv/glimmr" ]
 then
