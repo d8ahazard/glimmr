@@ -162,13 +162,10 @@ namespace HueDream.Models.CaptureSource.Video {
         public Task StartCapture(DreamClient dreamClient, CancellationToken cancellationToken) {
             LogUtil.Write("FIRING STARTCAPTURE");
             return Task.Run(() => {
-                LogUtil.Write("Starting capture save timer...");
                 var autoEvent = new AutoResetEvent(false);
                 saveTimer = new Timer(SaveFrame, autoEvent, 5000, 5000);
                 LogUtil.WriteInc($"Starting capture task, setting sw and h to {_scaleWidth} and {_scaleHeight}");
                 _splitter = new Splitter(_ledData, _scaleWidth, _scaleHeight);
-                LogUtil.Write("Splitter is created.");
-                LogUtil.Write("VC Started, camType is " + _camType);
                 while (!cancellationToken.IsCancellationRequested) {
                     var frame = _vc.Frame;
                     if (frame == null) {

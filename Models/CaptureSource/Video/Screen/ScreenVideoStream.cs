@@ -48,6 +48,7 @@ namespace HueDream.Models.CaptureSource.Video.Screen {
         public void Dispose() {
             _bmpScreenCapture?.Dispose();
             _screen?.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }

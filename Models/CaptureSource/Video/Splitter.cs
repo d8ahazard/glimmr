@@ -109,25 +109,25 @@ namespace HueDream.Models.CaptureSource.Camera {
                 _frameCount = 0;
             }
             _frameCount++;
-            // Letterbox
-            if (_boxMode == 1) {
-                coords = _letterCoords;
-                sectors = _letterSectors;
-                sectorsV2 = _letterSectorsV2;
-            }
-
-            // Pillarbox
-            if (_boxMode == 2) {
-                coords = _pillarCoords;
-                sectors = _pillarSectors;
-                sectorsV2 = _pillarSectorsV2;
-            }
-
-            // FullBox
-            if (_boxMode == 3) {
-                coords = _boxCoords;
-                sectors = _boxSectors;
-                sectorsV2 = _boxSectorsV2;
+            switch (_boxMode) {
+                // Letterbox
+                case 1:
+                    coords = _letterCoords;
+                    sectors = _letterSectors;
+                    sectorsV2 = _letterSectorsV2;
+                    break;
+                // Pillarbox
+                case 2:
+                    coords = _pillarCoords;
+                    sectors = _pillarSectors;
+                    sectorsV2 = _pillarSectorsV2;
+                    break;
+                // FullBox
+                case 3:
+                    coords = _boxCoords;
+                    sectors = _boxSectors;
+                    sectorsV2 = _boxSectorsV2;
+                    break;
             }
 
             if (DoSave) {
@@ -137,7 +137,9 @@ namespace HueDream.Models.CaptureSource.Camera {
                 inputMat.CopyTo(gMat);
                 var colInt = 0;
                 foreach (var r in coords) {
-                    var col = new Bgr(_colorsLed[colInt]).MCvScalar;
+                    var scCol = _colorsLed[colInt];
+                    var stCol = ColorUtil.ClampAlpha(scCol);
+                    var col = new Bgr(stCol).MCvScalar;
                     CvInvoke.Rectangle(gMat,r, col, -1, LineType.AntiAlias);
                     colInt++;
                 }
