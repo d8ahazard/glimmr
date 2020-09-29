@@ -8,7 +8,8 @@ using Emgu.CV.Structure;
 using HueDream.Models.Util;
 
 namespace HueDream.Models.CaptureSource.Video.Screen {
-    public class ScreenVideoStream : IVideoStream {
+    public class ScreenVideoStream : IVideoStream, IDisposable
+    {
         public Mat Frame { get; set; }
 
         Mat IVideoStream.Frame {
@@ -42,6 +43,11 @@ namespace HueDream.Models.CaptureSource.Video.Screen {
                 Frame = newMat.Mat;
             }
             LogUtil.Write("Capture completed?");
+        }
+
+        public void Dispose() {
+            _bmpScreenCapture?.Dispose();
+            _screen?.Dispose();
         }
     }
 }

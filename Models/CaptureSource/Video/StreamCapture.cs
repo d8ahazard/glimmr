@@ -156,7 +156,6 @@ namespace HueDream.Models.CaptureSource.Video {
         }
 
         private void SaveFrame(object? sender) {
-            LogUtil.Write("SaveFRAME, Streamcapture.");
             if (!doSave) doSave = true;
         }
 

@@ -105,7 +105,7 @@ namespace HueDream.Models.CaptureSource.Camera {
             var sectors = _fullSectors;
             var sectorsV2 = _fullSectorsV2;
             if (_frameCount >= 10) {
-                //CheckSectors();
+                CheckSectors();
                 _frameCount = 0;
             }
             _frameCount++;
@@ -131,7 +131,6 @@ namespace HueDream.Models.CaptureSource.Camera {
             }
 
             if (DoSave) {
-                LogUtil.Write("Saving splitter frame here...");
                 DoSave = false;
                 var path = Directory.GetCurrentDirectory();
                 var gMat = new Mat();
@@ -175,15 +174,9 @@ namespace HueDream.Models.CaptureSource.Camera {
             var cB = (int) colors.V0;
             var cG = (int) colors.V1;
             var cR = (int) colors.V2;
-            if (cB + cG + cR < _minBrightness) {
-            //    cB = 0;
-            //    cG = 0;
-            //    cR = 0;
-            }
+            outColor = Color.FromArgb(cR, cG, cB);
             
-            outColor = Color.FromArgb(255,cR, cG, cB);
-            //if (Math.Abs(_brightBoost) > 0.01) outColor = ColorUtil.BoostBrightness(outColor, _brightBoost);
-            //if (Math.Abs(_saturationBoost) > 0.01) outColor = ColorUtil.BoostSaturation(outColor, _saturationBoost);
+            
             
             return outColor;
         }
@@ -222,7 +215,7 @@ namespace HueDream.Models.CaptureSource.Camera {
                     // Otherwise, check to see if letter or pillar boxed.
                     _countFullBox--;
                     if (colors[0] == blk && colors[1] == blk) {
-                        LogUtil.Write("Letterbox detected.");
+                        //LogUtil.Write("Letterbox detected.");
                         _countLetterBox++;
                     } else {
                         _countLetterBox--;
@@ -259,7 +252,7 @@ namespace HueDream.Models.CaptureSource.Camera {
                     }
                     
                     if (_countLetterBox > MaxFrameCount) {
-                        LogUtil.Write("Enabling Letterbox Mode.");
+                        //LogUtil.Write("Enabling Letterbox Mode.");
                         if (_countLetterBox > MaxFrameCount * 2) _countLetterBox = MaxFrameCount * 2;
                         _boxMode = 1;
                         return;
@@ -333,7 +326,6 @@ namespace HueDream.Models.CaptureSource.Camera {
                 output.Add(new Rectangle((int) ord, (int) bTop, (int) bStep, (int) vw));
                 step += 1;
             }
-            LogUtil.Write($"Grid drawn, we have {output.Count} items. Hazzah.");
             return output;
         }
         

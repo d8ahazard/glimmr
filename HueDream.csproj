@@ -28,13 +28,12 @@
 
     <ItemGroup>
         <PackageReference Include="Accord.Math" Version="3.8.2-alpha" />
-        <PackageReference Include="Emgu.CV" Version="4.4.0.4027" />
+        <PackageReference Include="Emgu.CV" Version="4.4.0.4077" />
         <PackageReference Include="Emgu.CV.Bitmap" Version="4.4.0.4027" />
         <PackageReference Include="Emgu.CV.runtime.raspbian" Version="4.4.0.4027" />
-        <PackageReference Include="Emgu.CV.runtime.windows.dldt" Version="4.4.0.4022" />
+        <PackageReference Include="Emgu.CV.runtime.windows" Version="4.4.0.4077" />
         <PackageReference Include="freetype2" Version="2.6.0.1" />
         <PackageReference Include="JsonFlatFileDataStore" Version="2.2.2" />
-        <PackageReference Include="kenssamson.rpi-ws281x-csharp" Version="1.1.0" />
         <PackageReference Include="LifxNet" Version="2.2.0" />
         <PackageReference Include="Makaretu.Dns.Multicast" Version="0.27.0" />
         <PackageReference Include="ManagedBass" Version="3.0.0" />
@@ -59,6 +58,7 @@
         <PackageReference Include="Pranas.ScreenshotCapture" Version="1.0.11" />
         <PackageReference Include="Q42.HueApi" Version="3.15.4" />
         <PackageReference Include="Q42.HueApi.Entertainment" Version="3.15.0" />
+        <PackageReference Include="rpi-ws281x-dotnet" Version="1.0.0" />
         <PackageReference Include="Serilog" Version="2.9.1-dev-01154" />
         <PackageReference Include="Serilog.Sinks.Console" Version="4.0.0-dev-00839" />
         <PackageReference Include="Serilog.Sinks.File" Version="5.0.0-dev-00864" />
