@@ -51,14 +51,24 @@ namespace HueDream.Hubs {
             var count = 0;
             while (count < 30) {
                 count++;
-                RegisterEntertainmentResult appKey = HueDiscovery.CheckAuth(bd.IpAddress).Result;
-                if (!string.IsNullOrEmpty(appKey.StreamingClientKey)) {
-                    bd.Key = appKey.StreamingClientKey;
-                    bd.User = appKey.Username;
-                    DataUtil.InsertCollection<BridgeData>("bridges", bd);
-                    await Clients.All.SendAsync("hueAuth", "authorized");
-                    await Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
-                    return;
+                try {
+                    RegisterEntertainmentResult appKey = HueDiscovery.CheckAuth(bd.IpAddress).Result;
+                    LogUtil.Write("Appkey retrieved! " + JsonConvert.SerializeObject(appKey));
+                    if (!string.IsNullOrEmpty(appKey.StreamingClientKey)) {
+                        bd.Key = appKey.StreamingClientKey;
+                        bd.User = appKey.Username;
+                        // Need to grab light group stuff here
+                        var nhb = new HueBridge(bd);
+                        nhb.RefreshData();
+                        bd = nhb.Bd;
+                        nhb.Dispose();
+                        DataUtil.InsertCollection<BridgeData>("bridges", bd);
+                        await Clients.All.SendAsync("hueAuth", "authorized");
+                        await Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+                        return;
+                    }
+                } catch (NullReferenceException e) {
+                    LogUtil.Write("NULL EXCEPTION: " + e.Message, "WARN");
                 }
                 await Clients.All.SendAsync("hueAuth", count);
                 Thread.Sleep(1000);

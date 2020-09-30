@@ -41,7 +41,6 @@ namespace HueDream.Models.LED {
             }
 
             System.Threading.Thread.Sleep(500);
-
             StopLights();
         }
         
@@ -54,7 +53,6 @@ namespace HueDream.Models.LED {
                 }
 
                 var tCol = colors[iSource];
-                //tCol = ColorUtil.ClampAlpha(tCol);
                 _controller.SetLED(i, tCol);
                 iSource++;
             }

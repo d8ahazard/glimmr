@@ -769,6 +769,7 @@ function updateLightProperty(myId, propertyName, value) {
 // Update our pretty table so we can map the lights
 function mapLights() {
     let group = findGroup(hueGroup);
+    if (!group) return;
     let lights = hueLights;
     // Get the main light group
     const lightGroup = document.getElementById("mapSel");
@@ -1367,9 +1368,11 @@ function loadBridgeData(data) {
     if (b.hasOwnProperty("groups")) {
         hueGroups = b["groups"];
         if ((hueGroup === -1 && hueGroups.length > 0) || hueGroup === null || hueGroup === undefined) {
-            hueGroup = hueGroups[0]["id"];
-            bridges[bridgeInt].selectedGroup = hueGroup;
-            postData("updateData", bridges[bridgeInt]);
+            if (hueGroups[0] !== undefined) {
+                hueGroup = hueGroups[0]["id"];
+                bridges[bridgeInt].selectedGroup = hueGroup;
+                postData("updateData", bridges[bridgeInt]);
+            }
         }
     }
     hueLights = b["lights"];

@@ -18,24 +18,16 @@ namespace HueDream.Models.CaptureSource.Camera {
         private readonly int _vCount;
         private readonly int _hCount;
         private readonly List<Rectangle> _fullCoords;
-        private readonly List<Rectangle> _letterCoords;
-        private readonly List<Rectangle> _pillarCoords;
-        private readonly List<Rectangle> _boxCoords;
         private readonly List<Rectangle> _fullSectors;
-        private readonly List<Rectangle> _letterSectors;
-        private readonly List<Rectangle> _pillarSectors;
-        private readonly List<Rectangle> _boxSectors;
         private readonly List<Rectangle> _fullSectorsV2;
-        private readonly List<Rectangle> _letterSectorsV2;
-        private readonly List<Rectangle> _pillarSectorsV2;
-        private readonly List<Rectangle> _boxSectorsV2;
-        private readonly List<Rectangle> _checkRegions;
         private int sourceWidth;
         private int sourceHeight;
-        private int _countNoImg;
-        private int _countLetterBox;
-        private int _countPillarBox;
-        private int _countFullBox;
+        private int vCropCount = 0;
+        private int hCropCount = 0;
+        private int vCropPixels = 0;
+        private int hCropPixels = 0;
+        private bool vCrop;
+        private bool hCrop;
         private readonly float _borderWidth;
         private readonly float _borderHeight;
         private int _boxMode;
@@ -73,23 +65,6 @@ namespace HueDream.Models.CaptureSource.Camera {
             _fullCoords = DrawGrid();
             _fullSectors = DrawSectors();
             _fullSectorsV2 = DrawSectors(0,0, true);
-            var lb = srcHeight - _borderHeight;
-            var pr = srcWidth - _borderWidth;
-            _checkRegions = new List<Rectangle> {
-                new Rectangle(0, 0, srcWidth, (int) _borderHeight),
-                new Rectangle(0, (int) lb, srcWidth, (int) _borderHeight),
-                new Rectangle(0, 0, (int) _borderWidth, srcHeight),
-                new Rectangle((int) pr, 0, (int) _borderWidth, srcHeight)
-            };
-            _letterCoords = DrawGrid(_borderHeight);
-            _pillarCoords = DrawGrid(0, _borderWidth);
-            _boxCoords = DrawGrid(_borderHeight, _borderWidth);
-            _letterSectors = DrawSectors(_borderHeight);
-            _pillarSectors = DrawSectors(0, _borderWidth);
-            _boxSectors = DrawSectors(_borderHeight, _borderWidth);
-            _letterSectorsV2 = DrawSectors(_borderHeight,0, true);
-            _pillarSectorsV2 = DrawSectors(0, _borderWidth, true);
-            _boxSectorsV2 = DrawSectors(_borderHeight, _borderWidth, true);
             _frameCount = 0;
             LogUtil.Write("Splitter should be created.");
         }
@@ -109,47 +84,33 @@ namespace HueDream.Models.CaptureSource.Camera {
                 _frameCount = 0;
             }
             _frameCount++;
-            switch (_boxMode) {
-                // Letterbox
-                case 1:
-                    coords = _letterCoords;
-                    sectors = _letterSectors;
-                    sectorsV2 = _letterSectorsV2;
-                    break;
-                // Pillarbox
-                case 2:
-                    coords = _pillarCoords;
-                    sectors = _pillarSectors;
-                    sectorsV2 = _pillarSectorsV2;
-                    break;
-                // FullBox
-                case 3:
-                    coords = _boxCoords;
-                    sectors = _boxSectors;
-                    sectorsV2 = _boxSectorsV2;
-                    break;
+            
+            if (vCrop || hCrop) {
+                var vp = vCrop ? vCropPixels : 0;
+                var hp = hCrop ? hCropPixels : 0;
+                coords = DrawGrid(hp, vp);
+                sectors = DrawSectors(hp, vp);
+                sectorsV2 = DrawSectors(hp, vp, true);
             }
-
+            
             if (DoSave) {
                 DoSave = false;
                 var path = Directory.GetCurrentDirectory();
                 var gMat = new Mat();
                 inputMat.CopyTo(gMat);
                 var colInt = 0;
-                foreach (var r in coords) {
-                    var scCol = _colorsLed[colInt];
+                foreach (var s in sectorsV2) {
+                    var scCol = _colorsSectorsV2[colInt];
                     var stCol = ColorUtil.ClampAlpha(scCol);
                     var col = new Bgr(stCol).MCvScalar;
-                    CvInvoke.Rectangle(gMat,r, col, -1, LineType.AntiAlias);
+                    CvInvoke.Rectangle(gMat, s, col, -1, LineType.AntiAlias);
                     colInt++;
                 }
                 gMat.Save(path + "/wwwroot/img/_preview_output.jpg");
                 gMat.Dispose();
             }
 
-            foreach (var r in coords) {
-                //LogUtil.Write($"Trying to get coords from {_input.Width} and {_input.Height}: " + r);
-                var sub = new Mat(_input, r);
+            foreach (var sub in coords.Select(r => new Mat(_input, r))) {
                 outputLed.Add(GetAverage(sub));
                 sub.Dispose();
             }
@@ -169,7 +130,7 @@ namespace HueDream.Models.CaptureSource.Camera {
         }
 
        
-        private Color GetAverage(Mat sInput) {
+        private static Color GetAverage(Mat sInput) {
             var outColor = Color.Black;
             if (sInput.Cols == 0) return outColor;
             var colors = CvInvoke.Mean(sInput);
@@ -197,135 +158,156 @@ namespace HueDream.Models.CaptureSource.Camera {
 
         private void CheckSectors() {
             // First, we need to get averages for pillar and letter sectors
-            var colors = new List<Color>();
             var blk = Color.FromArgb(0,0,0);
-            if (GetAverage(_input) == blk) {
-                //LogUtil.Write("It appears we have no input.");
-                _countNoImg++;
-            } else {
-                _countNoImg--;
-                foreach (var nm in _checkRegions.Select(sector => new Mat(_input, sector))) {
-                    colors.Add(GetAverage(nm));
-                    nm.Dispose();
+                // Loop through half the rows, from top to bottom
+                // These are our average values
+                var cropHorizontal = 0;
+                var cropVertical = 0;
+                
+                for (var r = 0; r < _input.Height / 2; r++) {
+                    // This is the number of the bottom row to check
+                    var r2 = _input.Height - r;
+                    var s1 = new Rectangle(0,r,_input.Width,5);
+                    var t1 = new Mat(_input, s1);
+                    var t1Col = GetAverage(t1);
+                    t1.Dispose();
+                    if (t1Col != blk) continue;
+                    var s2 = new Rectangle(0,r2-5,_input.Width,5);
+                    var t2 = new Mat(_input, s2);
+                    var t2Col = GetAverage(t2);
+                    t2.Dispose();
+                    if (t2Col == blk) {
+                        cropHorizontal = r;
+                    }
                 }
                 
-                // First, check to see if it's fully boxed
-                if (colors[0] == blk && colors[1] == blk && colors[2] == blk && colors[3] == blk) {
-                    LogUtil.Write("This is fully boxed.");
-                    _countFullBox++;
-                } else {
-                    // Otherwise, check to see if letter or pillar boxed.
-                    _countFullBox--;
-                    if (colors[0] == blk && colors[1] == blk) {
-                        //LogUtil.Write("Letterbox detected.");
-                        _countLetterBox++;
-                    } else {
-                        _countLetterBox--;
-                    }
-                    
-                    if (colors[2] == blk && colors[3] == blk) {
-                        LogUtil.Write("Pillar box detected.");
-                        _countPillarBox++;
-                    } else {
-                        _countPillarBox--;
+                for (var c = 0; c < _input.Width / 2; c++) {
+                    // This is the number of the bottom row to check
+                    var c2 = _input.Width - c;
+                    var s1 = new Rectangle(c,0,5,_input.Height);
+                    var t1 = new Mat(_input, s1);
+                    var t1Col = GetAverage(t1);
+                    t1.Dispose();
+                    if (t1Col != blk) continue;
+                    var s2 = new Rectangle(c2 - 5,0,1,_input.Height);
+                    var t2 = new Mat(_input, s2);
+                    var t2Col = GetAverage(t2);
+                    t2.Dispose();
+                    if (t2Col == blk) {
+                        cropVertical = c;
                     }
                 }
 
-                // Reset our counts to 0 so they don't go negative.
-                if (_countNoImg < 0) _countNoImg = 0;
-                if (_countFullBox < 0) _countFullBox = 0;
-                if (_countLetterBox < 0) _countLetterBox = 0;
-                if (_countPillarBox < 0) _countPillarBox = 0;
-                
-                // Now set pillar/letter flags
-                if (_countNoImg <= MaxFrameCount) {
-                    if (_countFullBox >= MaxFrameCount) {
-                        LogUtil.Write("Full box set.");
-                        if (_countFullBox > MaxFrameCount * 2) _countFullBox = MaxFrameCount * 2;
-                        _boxMode = 3;
-                        return;
+                if (cropHorizontal != 0) {
+                    if (cropHorizontal == hCropPixels) {
+                        hCropCount++;
+                        if (hCropCount > MaxFrameCount) {
+                            hCropCount = MaxFrameCount;
+                            if (!hCrop) {
+                                hCrop = true;
+                                LogUtil.Write($"Enabling horizontal crop for {cropHorizontal} rows.");
+                            }
+                        }
+                    } else {
+                        hCropCount++;
+                        hCropPixels = cropHorizontal;
                     }
                     
-                    if (_countPillarBox > MaxFrameCount) {
-                        LogUtil.Write("Enabling Pillarbox Mode.");
-                        if (_countPillarBox > MaxFrameCount * 2) _countPillarBox = MaxFrameCount * 2;
-                        _boxMode = 2;
-                        return;
-                    }
-                    
-                    if (_countLetterBox > MaxFrameCount) {
-                        //LogUtil.Write("Enabling Letterbox Mode.");
-                        if (_countLetterBox > MaxFrameCount * 2) _countLetterBox = MaxFrameCount * 2;
-                        _boxMode = 1;
-                        return;
-                    }
-
                 } else {
-                    if (_countNoImg > MaxFrameCount * 2) _countNoImg = MaxFrameCount * 2;
+                    hCropCount--;
+                    if (hCropCount < 0) {
+                        hCropPixels = 0;
+                        hCropCount = 0;
+                        if (hCrop) {
+                            hCrop = false;
+                            LogUtil.Write("Disabling horizontal crop.");
+                        }
+                    }
                 }
 
-                // Set default mode only if nothing else is set.
-                _boxMode = 0;
-            }
+                if (cropVertical != 0) {
+                    if (cropVertical == vCropPixels) {
+                        vCropCount++;
+                        if (vCropCount > MaxFrameCount) {
+                            vCropCount = MaxFrameCount;
+                            if (!vCrop) {
+                                vCrop = true;
+                                LogUtil.Write($"Enabling vertical crop for {cropVertical} columns.");
+                            }        
+                        }
+                    } else {
+                        vCropPixels = cropVertical;
+                    }
+                } else {
+                    vCropCount--;
+                    if (vCropCount < 0) {
+                        vCropCount = 0;
+                        vCropPixels = 0;
+                        if (vCrop) {
+                            vCrop = false;
+                            LogUtil.Write("Disabling vertical crop.");    
+                        }
+                        
+                    }
+                }
+    
         }
 
         private List<Rectangle> DrawGrid(double vOffset = 0, double hOffset = 0) {
             var output = new List<Rectangle>();
-            var srcHeight = sourceHeight - vOffset * 2;
-            var srcWidth = sourceWidth - hOffset * 2;
-
+            
             // Top Region
             var tTop = vOffset;
             var tBottom = _borderHeight + tTop;
 
             // Bottom Gridlines
-            var bTop = srcHeight - _borderHeight;
-            var bBottom = srcHeight;
+            var bBottom = sourceHeight - vOffset;
+            var bTop = bBottom - _borderHeight;
 
             // Left Column Border
             var lLeft = hOffset;
             var lRight = hOffset + _borderWidth;
 
             // Right Column Border
-            var rLeft = srcWidth - _borderWidth;
-            var rRight = srcWidth;
+            var rRight = sourceWidth - hOffset;
+            var rLeft = rRight - _borderWidth;
             // Steps
-            var tStep = srcWidth / _hCount;
-            var bStep = srcWidth / _hCount;
-            var lStep = srcHeight / _vCount;
-            var rStep = srcHeight / _vCount;
+            var tStep = sourceWidth / _hCount;
+            var bStep = sourceWidth / _hCount;
+            var lStep = sourceHeight / _vCount;
+            var rStep = sourceHeight / _vCount;
             // Calc right regions, bottom to top
             var step = _vCount - 1;
             while (step >= 0) {
-                var ord = step * rStep + vOffset;
+                var ord = step * rStep;
                 var vw = rRight - rLeft;
-                output.Add(new Rectangle((int) rLeft, (int) ord, (int) vw, (int) rStep));
+                output.Add(new Rectangle((int) rLeft, ord, (int) vw, rStep));
                 step--;
             }
             step = _hCount - 1;
             // Calc top regions, from right to left
             while (step >= 0) {
-                var ord = step * tStep + hOffset;
+                var ord = step * tStep;
                 var vw = tBottom - tTop;
-                output.Add(new Rectangle((int) ord, (int) tTop,  (int) tStep, (int) vw));
+                output.Add(new Rectangle(ord, (int) tTop,  tStep, (int) vw));
                 step--;
             }
 
             step = 0;
             // Calc left regions (top to bottom)
             while (step < _vCount) {
-                var ord = step * lStep + vOffset;
+                var ord = step * lStep;
                 var vw = lRight - lLeft;
-                output.Add(new Rectangle((int) lLeft, (int) ord, (int) vw, (int) lStep));
+                output.Add(new Rectangle((int) lLeft, ord, (int) vw, lStep));
                 step++;
             }
 
             step = 0;
             // Calc bottom regions (L-R)
             while (step < _hCount) {
-                var ord = step * bStep + hOffset;
+                var ord = step * bStep;
                 var vw = bBottom - bTop;
-                output.Add(new Rectangle((int) ord, (int) bTop, (int) bStep, (int) vw));
+                output.Add(new Rectangle(ord, (int) bTop, bStep, (int) vw));
                 step += 1;
             }
             return output;
@@ -343,45 +325,41 @@ namespace HueDream.Models.CaptureSource.Camera {
             // This is where we're saving our output
             var fs = new List<Rectangle>();
             // Calculate heights, minus offset for boxing
-            var inputWidth = sourceWidth - hOffset * 2;
-            var inputHeight = sourceHeight - vOffset * 2;
             // Individual segment sizes
-            var hWidth = inputWidth / hSectorCount;
-            var vHeight = inputHeight / vSectorCount;
+            var sectorWidth =(int) (sourceWidth - hOffset * 2) / hSectorCount;
+            var sectorHeight = (int) (sourceHeight - vOffset * 2) / vSectorCount;
             // These are based on the border/strip values
-            var vWidth = (int)_borderWidth;
-            var hHeight = (int)_borderHeight;
             // Minimum limits for top, bottom, left, right            
             var minTop = vOffset;
-            var minBot = sourceHeight - hHeight - vOffset;
+            var minBot = sourceHeight - vOffset - sectorHeight;
             var minLeft = hOffset;
-            var minRight = sourceWidth - vWidth - hOffset;
+            var minRight = sourceWidth - hOffset - sectorWidth;
             // Calc right regions, bottom to top
             var step = vSectorCount - 1;
             while (step >= 0) {
-                var ord = step * vHeight + vOffset;
-                fs.Add(new Rectangle((int) minRight, (int) ord, vWidth, (int) vHeight));
+                var ord = step * sectorHeight;
+                fs.Add(new Rectangle((int) minRight, ord, sectorWidth, sectorHeight));
                 step--;
             }
             // Calc top regions, from right to left, skipping top-right corner (total horizontal sectors minus one)
             step = hSectorCount - 1;
             while (step >= 0) {
-                var ord = step * hWidth + hOffset;
-                fs.Add(new Rectangle((int) ord, (int) minTop, (int) hWidth, hHeight));
+                var ord = step * sectorWidth;
+                fs.Add(new Rectangle(ord, (int) minTop, sectorWidth, sectorHeight));
                 step--;
             }
             step = 1;
             // Calc left regions (top to bottom), skipping top-left
             while (step <= vSectorCount - 1) {
-                var ord = step * vHeight + vOffset;
-                fs.Add(new Rectangle((int) minLeft, (int) ord, vWidth, (int) vHeight));
+                var ord = step * sectorHeight;
+                fs.Add(new Rectangle((int) minLeft, ord, sectorWidth, sectorHeight));
                 step++;
             }
             step = 1;
             // Calc bottom center regions (L-R)
             while (step <= hSectorCount - 2) {
-                var ord = step * hWidth + hOffset;
-                fs.Add(new Rectangle((int) ord, (int) minBot, (int) hWidth, hHeight));
+                var ord = step * sectorWidth;
+                fs.Add(new Rectangle(ord, (int) minBot, sectorWidth, sectorHeight));
                 step += 1;
             }
             return fs;

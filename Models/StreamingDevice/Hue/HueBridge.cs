@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using HueDream.Models.Util;
 using ISocketLite.PCL.Exceptions;
+using Newtonsoft.Json;
 using Q42.HueApi;
 using Q42.HueApi.ColorConverters;
 using Q42.HueApi.ColorConverters.HSB;
@@ -103,8 +104,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
         }
 
         private void SetClient() {
-            if (Bd?.User == null || Bd?.Key == null) return;
-            if (_client != null) return;
+            if (Bd?.User == null || Bd?.Key == null || _client != null) return;
             _client = new StreamingHueClient(Bd.IpAddress, Bd.User, Bd.Key);
         }
 

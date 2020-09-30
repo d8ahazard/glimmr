@@ -87,7 +87,6 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
                 }
                 output.Add(cp);
             }
-            DataUtil.SetItem<List<NanoData>>("leaves", output);
             return output;
         }
     }

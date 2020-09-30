@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using HueDream.Controllers;
 using HueDream.Models.Util;
 using Newtonsoft.Json;
 using Q42.HueApi;
@@ -13,6 +14,7 @@ using Q42.HueApi.Interfaces;
 using Q42.HueApi.Models.Bridge;
 using Q42.HueApi.Models.Groups;
 using Q42.HueApi.Streaming;
+using Tmds.Linux;
 
 namespace HueDream.Models.StreamingDevice.Hue {
     public static class HueDiscovery {
@@ -21,24 +23,45 @@ namespace HueDream.Models.StreamingDevice.Hue {
             var output = new List<BridgeData>();
             var foo = Task.Run(() => Discover(), ct);
             var newBridges = await foo;
+            LogUtil.Write("New bridges: " + JsonConvert.SerializeObject(newBridges));
+            var current = DataUtil.GetItem<List<BridgeData>>("bridges");
             foreach (var nb in newBridges) {
-                var staticData = nb;
-                var ex = DataUtil.GetCollectionItem<BridgeData>("bridges", nb.Id);
-                if (ex != null) nb.CopyBridgeData(ex);
-                if (nb.Key != null && nb.User != null) {
+                foreach (var ex in current) {
+                    if (ex.Id == nb.Id) {
+                        nb.CopyBridgeData(ex);
+                    }
+                }
+                output.Add(nb);
+            }
+
+            foreach (var ex in current) {
+                var matched = false;
+                foreach (var o in output.Where(o => o.Id == ex.Id)) {
+                    matched = true;
+                }
+                if (!matched) output.Add(ex);
+            }
+
+            var output2 = new List<BridgeData>();
+            foreach (var o in output) {
+                if (o.Key == null || o.User == null) {
+                    output2.Add(o);
+                } else {
+                    var copied = false;
                     try {
-                        var nhb = new HueBridge(nb);
+                        var nhb = new HueBridge(o);
                         nhb.RefreshData();
-                        staticData = nhb.Bd;
+                        output2.Add(o);
                         nhb.Dispose();
+                        copied = true;
                     } catch (Exception e) {
                         LogUtil.Write("Socket Exception: " + e.Message, "ERROR");
                     }
+                    if (!copied) { output2.Add(o); }
                 }
-                output.Add(staticData);
-                DataUtil.InsertCollection<BridgeData>("bridges",staticData);
+
             }
-            return output;
+            return output2;
         }
         
         public static async Task<RegisterEntertainmentResult> CheckAuth(string bridgeIp) {

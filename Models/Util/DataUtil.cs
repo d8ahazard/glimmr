@@ -15,7 +15,6 @@ using HueDream.Models.StreamingDevice.Nanoleaf;
 using JsonFlatFileDataStore;
 using LifxNet;
 using ManagedBass;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace HueDream.Models.Util {
@@ -90,13 +89,13 @@ namespace HueDream.Models.Util {
                 
         public static List<T> GetCollection<T>(string key) where T : class {
             
-                using var dStore = GetStore();
-                var coll = dStore.GetCollection<T>(key);
-                var output = new List<T>();
-                if (coll == null) return output;
-                output.AddRange(coll.AsQueryable());
-                dStore.Dispose();
-                return output;
+            using var dStore = GetStore();
+            var coll = dStore.GetCollection<T>(key);
+            var output = new List<T>();
+            if (coll == null) return output;
+            output.AddRange(coll.AsQueryable());
+            dStore.Dispose();
+            return output;
             
         }
         
@@ -332,6 +331,15 @@ namespace HueDream.Models.Util {
             }
 				
             LogUtil.Write("Refresh complete.");
+            try {
+                SetItem<List<NanoData>>("leaves", nanoTask.Result);
+                SetItem<List<BridgeData>>("bridges", bridgeTask.Result);
+                // We don't need to store dream devices because of janky discovery. Maybe fix this...
+                SetItem<List<LifxData>>("lifxBulbs", bulbTask.Result);
+            } catch (TaskCanceledException) {
+                
+            }
+
             scanning = false;
             cs.Dispose();
         }
