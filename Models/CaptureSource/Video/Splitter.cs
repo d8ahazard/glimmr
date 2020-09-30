@@ -363,7 +363,7 @@ namespace HueDream.Models.CaptureSource.Camera {
                 step--;
             }
             // Calc top regions, from right to left, skipping top-right corner (total horizontal sectors minus one)
-            step = hSectorCount - 1;
+            step = hSectorCount - 2;
             while (step >= 0) {
                 var ord = step * sectorWidth + hOffset;
                 fs.Add(new Rectangle((int) ord, (int) minTop, sectorWidth, sectorHeight));
