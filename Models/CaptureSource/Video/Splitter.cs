@@ -100,7 +100,7 @@ namespace HueDream.Models.CaptureSource.Camera {
                 inputMat.CopyTo(gMat);
                 var colInt = 0;
                 var textColor = new Bgr(Color.White).MCvScalar;
-                var previewCheck = 1;
+                var previewCheck = 3;
                 var sectorTarget = coords;
                 var colorTarget = _colorsLed;
                 if (previewCheck == 2) {
@@ -180,7 +180,7 @@ namespace HueDream.Models.CaptureSource.Camera {
                 var cropHorizontal = 0;
                 var cropVertical = 0;
                 
-                for (var r = 0; r < _input.Height / 2; r++) {
+                for (var r = 0; r < _input.Height / 4; r++) {
                     // This is the number of the bottom row to check
                     var r2 = _input.Height - r;
                     var s1 = new Rectangle(0,r,_input.Width,5);
@@ -197,7 +197,7 @@ namespace HueDream.Models.CaptureSource.Camera {
                     }
                 }
                 
-                for (var c = 0; c < _input.Width / 2; c++) {
+                for (var c = 0; c < _input.Width / 4; c++) {
                     // This is the number of the bottom row to check
                     var c2 = _input.Width - c;
                     var s1 = new Rectangle(c,0,5,_input.Height);
@@ -215,8 +215,8 @@ namespace HueDream.Models.CaptureSource.Camera {
                 }
 
                 if (cropHorizontal != 0) {
-                    if (cropHorizontal == hCropPixels) {
-                        hCropCount++;
+                    hCropCount++;
+                    if (Math.Abs(cropHorizontal - hCropPixels) < 5) {
                         if (hCropCount > MaxFrameCount) {
                             hCropCount = MaxFrameCount;
                             if (!hCrop) {
@@ -225,7 +225,7 @@ namespace HueDream.Models.CaptureSource.Camera {
                             }
                         }
                     } else {
-                        hCropCount++;
+                        if (hCrop) LogUtil.Write($"Adjusting horizontal crop to {hCropPixels} pixels.");
                         hCropPixels = cropHorizontal;
                     }
                     
@@ -242,7 +242,7 @@ namespace HueDream.Models.CaptureSource.Camera {
                 }
 
                 if (cropVertical != 0) {
-                    if (cropVertical == vCropPixels) {
+                    if (Math.Abs(cropVertical - vCropPixels) < 5) {
                         vCropCount++;
                         if (vCropCount > MaxFrameCount) {
                             vCropCount = MaxFrameCount;
@@ -253,6 +253,7 @@ namespace HueDream.Models.CaptureSource.Camera {
                         }
                     } else {
                         vCropPixels = cropVertical;
+                        if (vCrop) LogUtil.Write($"Adjusting vertical crop to {vCropPixels} pixels.");
                     }
                 } else {
                     vCropCount--;
