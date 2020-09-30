@@ -337,6 +337,8 @@ namespace HueDream.Models.Util {
                 // We don't need to store dream devices because of janky discovery. Maybe fix this...
                 SetItem<List<LifxData>>("lifxBulbs", bulbTask.Result);
             } catch (TaskCanceledException) {
+
+            } catch (AggregateException) {
                 
             }
 
