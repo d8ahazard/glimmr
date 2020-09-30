@@ -39,7 +39,7 @@ namespace HueDream.Models.CaptureSource.Camera {
         private readonly float _saturationBoost;
         private readonly int _minBrightness;
         public bool DoSave;
-        private const int MaxFrameCount = 150;
+        private const int MaxFrameCount = 75;
         
         public Splitter(LedData ld, int srcWidth, int srcHeight) {
             // Set some defaults, this should probably just not be null
@@ -99,11 +99,28 @@ namespace HueDream.Models.CaptureSource.Camera {
                 var gMat = new Mat();
                 inputMat.CopyTo(gMat);
                 var colInt = 0;
-                foreach (var s in sectorsV2) {
-                    var scCol = _colorsSectorsV2[colInt];
+                var textColor = new Bgr(Color.White).MCvScalar;
+                var previewCheck = 1;
+                var sectorTarget = coords;
+                var colorTarget = _colorsLed;
+                if (previewCheck == 2) {
+                    sectorTarget = sectors;
+                    colorTarget = _colorsSectors;
+                } else if (previewCheck == 3) {
+                    sectorTarget = sectorsV2;
+                    colorTarget = _colorsSectorsV2;
+                }
+                foreach (var s in sectorTarget) {
+                    var scCol = colorTarget[colInt];
                     var stCol = ColorUtil.ClampAlpha(scCol);
                     var col = new Bgr(stCol).MCvScalar;
                     CvInvoke.Rectangle(gMat, s, col, -1, LineType.AntiAlias);
+                    if (previewCheck != 1) {
+                        var cInt = colInt + 1;
+                        var tPoint = new Point(s.X, s.Y + 30);
+                        CvInvoke.PutText(gMat, cInt.ToString(), tPoint, FontFace.HersheySimplex, 1.0, textColor);
+                    }
+
                     colInt++;
                 }
                 gMat.Save(path + "/wwwroot/img/_preview_output.jpg");
@@ -158,7 +175,6 @@ namespace HueDream.Models.CaptureSource.Camera {
 
         private void CheckSectors() {
             // First, we need to get averages for pillar and letter sectors
-            var blk = Color.FromArgb(0,0,0);
                 // Loop through half the rows, from top to bottom
                 // These are our average values
                 var cropHorizontal = 0;
@@ -171,12 +187,12 @@ namespace HueDream.Models.CaptureSource.Camera {
                     var t1 = new Mat(_input, s1);
                     var t1Col = GetAverage(t1);
                     t1.Dispose();
-                    if (t1Col != blk) continue;
+                    if (!isBlack(t1Col)) continue;
                     var s2 = new Rectangle(0,r2-5,_input.Width,5);
                     var t2 = new Mat(_input, s2);
                     var t2Col = GetAverage(t2);
                     t2.Dispose();
-                    if (t2Col == blk) {
+                    if (isBlack(t2Col)) {
                         cropHorizontal = r;
                     }
                 }
@@ -188,12 +204,12 @@ namespace HueDream.Models.CaptureSource.Camera {
                     var t1 = new Mat(_input, s1);
                     var t1Col = GetAverage(t1);
                     t1.Dispose();
-                    if (t1Col != blk) continue;
+                    if (!isBlack(t1Col)) continue;
                     var s2 = new Rectangle(c2 - 5,0,1,_input.Height);
                     var t2 = new Mat(_input, s2);
                     var t2Col = GetAverage(t2);
                     t2.Dispose();
-                    if (t2Col == blk) {
+                    if (isBlack(t2Col)) {
                         cropVertical = c;
                     }
                 }
@@ -251,6 +267,10 @@ namespace HueDream.Models.CaptureSource.Camera {
                     }
                 }
     
+        }
+
+        private static bool isBlack(Color color) {
+            return color.R < 5 && color.G < 5 && color.B < 5;
         }
 
         private List<Rectangle> DrawGrid(double vOffset = 0, double hOffset = 0) {
@@ -337,29 +357,29 @@ namespace HueDream.Models.CaptureSource.Camera {
             // Calc right regions, bottom to top
             var step = vSectorCount - 1;
             while (step >= 0) {
-                var ord = step * sectorHeight;
-                fs.Add(new Rectangle((int) minRight, ord, sectorWidth, sectorHeight));
+                var ord = step * sectorHeight + vOffset;
+                fs.Add(new Rectangle((int) minRight, (int) ord, sectorWidth, sectorHeight));
                 step--;
             }
             // Calc top regions, from right to left, skipping top-right corner (total horizontal sectors minus one)
             step = hSectorCount - 1;
             while (step >= 0) {
-                var ord = step * sectorWidth;
-                fs.Add(new Rectangle(ord, (int) minTop, sectorWidth, sectorHeight));
+                var ord = step * sectorWidth + hOffset;
+                fs.Add(new Rectangle((int) ord, (int) minTop, sectorWidth, sectorHeight));
                 step--;
             }
             step = 1;
             // Calc left regions (top to bottom), skipping top-left
             while (step <= vSectorCount - 1) {
-                var ord = step * sectorHeight;
-                fs.Add(new Rectangle((int) minLeft, ord, sectorWidth, sectorHeight));
+                var ord = step * sectorHeight + vOffset;
+                fs.Add(new Rectangle((int) minLeft, (int) ord, sectorWidth, sectorHeight));
                 step++;
             }
             step = 1;
             // Calc bottom center regions (L-R)
             while (step <= hSectorCount - 2) {
-                var ord = step * sectorWidth;
-                fs.Add(new Rectangle(ord, (int) minBot, sectorWidth, sectorHeight));
+                var ord = step * sectorWidth + hOffset;
+                fs.Add(new Rectangle((int) ord, (int) minBot, sectorWidth, sectorHeight));
                 step += 1;
             }
             return fs;
