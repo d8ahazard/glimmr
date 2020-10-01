@@ -10,7 +10,9 @@ store.json
 store.json.bk
 CodeGraphData/*
 log/*
+backup/*
 *.log
 *.bk
 wwwroot/img/_preview_input.jpg
 wwwroot/img/_preview_output.jpg
+store.json.bak
