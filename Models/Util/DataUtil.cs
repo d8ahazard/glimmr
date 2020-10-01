@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -15,6 +16,7 @@ using HueDream.Models.StreamingDevice.Nanoleaf;
 using JsonFlatFileDataStore;
 using LifxNet;
 using ManagedBass;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace HueDream.Models.Util {
@@ -23,8 +25,116 @@ namespace HueDream.Models.Util {
         public static bool scanning { get; set; }
         public static DataStore GetStore() {
             var path = GetConfigPath("store.json");
-            var store = new DataStore(path);
-            return store;
+            // Check that our store is actually valid
+            DataStore store;
+            try {
+                store = new DataStore(path);
+                try {
+                    string lastBackup = store.GetItem("lastBackup");
+                    if (string.IsNullOrEmpty(lastBackup)) {
+                        CreateBackup(path);
+                    } else {
+                        var lDate = DateTime.Parse(lastBackup, CultureInfo.InvariantCulture);
+                        if (lDate - DateTime.Now > TimeSpan.FromMinutes(30)) {
+                            CreateBackup(path);
+                        }
+                    }
+                } catch (Exception e) {
+                    LogUtil.Write("An exception occurred fetching last backup date: " + e.Message);
+                }
+                return store;
+            } catch (Exception e) {
+                LogUtil.Write("Store Read Exception: " + e.Message, "WARN");
+            }
+        
+            // If we couldn't read our store, restore from backup and try again
+            var restored = RestoreBackup(path);
+            if (restored) {
+                try {
+                    store = new DataStore(path);
+                    return store;
+                } catch {
+                    LogUtil.Write("Well, this is really bad. We couldn't restore our restored store from storage.", "ERROR");
+                }
+            }
+            // Nuclear option, we should never actually get here.
+            File.Delete(path);
+            var tStore = new DataStore(path);
+            var lifxClient = LifxClient.CreateAsync().Result;
+            CheckDefaults(tStore, lifxClient);
+            lifxClient.Dispose();
+            return tStore;
+        }
+
+        private static bool RestoreBackup(string storePath) {
+            bool restored;
+            var location = Path.GetDirectoryName(storePath);
+            if (string.IsNullOrEmpty(location)) {
+                location = ".";
+            }
+            var sep = Path.DirectorySeparatorChar;
+            var backupDir = location + sep + "backup";
+            var backupFile = backupDir + sep + "store.json.bak";
+            if (File.Exists(backupFile)) {
+                try {
+                    var tStore = new DataStore(backupFile);
+                    File.Copy(backupFile, storePath, true);
+                    tStore.Dispose();
+                    restored = true;
+                    LogUtil.Write("Backup restored.");
+                } catch (Exception e) {
+                    LogUtil.Write("An exception occurred restoring backup datastore: " + e.Message, "ERROR");
+                    restored = false;
+                }
+            } else {
+                LogUtil.Write("NO BACKUP STORE FOUND, CREATING NEW STORE!!", "ERROR");
+                LogUtil.Write("NO BACKUP STORE FOUND, CREATING NEW STORE!!", "ERROR");
+                LogUtil.Write("NO BACKUP STORE FOUND, CREATING NEW STORE!!", "ERROR");
+                File.Delete(storePath);
+                var tStore = new DataStore(storePath);
+                var lifxClient = LifxClient.CreateAsync().Result;
+                CheckDefaults(tStore, lifxClient);
+                tStore.Dispose();
+                lifxClient.Dispose();
+                LogUtil.Write("NEW STORE CREATED.", "WARN");
+                restored = true;
+            }
+
+            return restored;
+        }
+
+        /// <summary>
+        /// Create a backup of the existing datastore.
+        /// DO NOT CALL THIS unless you've already validated the JSON is good.
+        /// Due to the use case, we don't want to call it from the method
+        /// because then we will be creating unnecessary I/O.
+        /// </summary>
+        /// <param name="storePath">The location of the validated datastore to back up.</param>
+        /// <returns>True if backup was successful</returns>
+        private static bool CreateBackup(string storePath) {
+            bool done;
+            // Create our paths
+            var location = Path.GetDirectoryName(storePath);
+            if (string.IsNullOrEmpty(location)) {
+                location = ".";
+            }
+            var sep = Path.DirectorySeparatorChar;
+            var backupDir = location + sep + "backup";
+            var backupFile = backupDir + sep + "store.json.bak";
+            // We don't need to check dir exists, this method just does it
+            LogUtil.Write("Creating backup to " + backupFile);
+            Directory.CreateDirectory(backupDir);
+            try {
+                var dstore = new DataStore(storePath);
+                dstore.InsertItem("lastBackup", DateTime.Now.ToString(CultureInfo.InvariantCulture));
+                dstore.Dispose();
+                File.Copy(storePath, backupFile, true);
+                done = true;
+            } catch (Exception e) {
+                LogUtil.Write("An exception was thrown during file backup: " + e.Message);
+                done = false;
+            }
+            return done;
         }
 
         /// <summary>
@@ -41,6 +151,23 @@ namespace HueDream.Models.Util {
             } catch (KeyNotFoundException) {
                 return null;
             }
+        }
+
+        public static string GetDeviceSerial() {
+            var serial = string.Empty;
+            try {
+                serial = GetItem("serial");
+            } catch (KeyNotFoundException) {
+                
+            }
+
+            if (string.IsNullOrEmpty(serial)) {
+                Random rd = new Random();
+                serial = "12091" + rd.Next(0, 9) + rd.Next(0, 9) + rd.Next(0, 9);
+                SetItem("serial", serial);
+            }
+
+            return serial;
         }
 
        

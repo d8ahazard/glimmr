@@ -161,6 +161,7 @@ namespace HueDream.Models.CaptureSource.Video {
 
         public Task StartCapture(DreamClient dreamClient, CancellationToken cancellationToken) {
             LogUtil.Write("FIRING STARTCAPTURE");
+            SetCapVars();
             return Task.Run(() => {
                 var autoEvent = new AutoResetEvent(false);
                 saveTimer = new Timer(SaveFrame, autoEvent, 5000, 5000);

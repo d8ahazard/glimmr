@@ -531,19 +531,21 @@ function setListeners() {
     });
 
     $('#stripType').change(function() {
+        console.log("STRIP CHANGE.");
         let cType = $(this).val();
         postData('stripType', cType);
     });
     
-    $('.ledCount').change(function() {
+    $(document).on('change', '.ledCount', function() {
+        console.log("LED COUNT CHANGE.")
         let lCount = $(this).val();
         let type = $(this).data('type');
         if (type === "h") {
-            vLedCount = lCount;
-            postData("vcount", lCount);
-        } else {
             hLedCount = lCount;
             postData("hcount", lCount);
+        } else {
+            vLedCount = lCount;
+            postData("vcount", lCount);
         }
     });
 
@@ -1138,10 +1140,13 @@ function setCaptureMode(target, post=true) {
         hCount = ledData.hCount;
         vCount = ledData.vCount;
     }
+    let stripType = 0;
+    if (ledData.hasOwnProperty("stripType")) stripType = ledData.stripType;
     vLedCount = vCount;
     hLedCount = hCount;
     let hc = $('#hCount');
     let vc = $('#vCount');
+    $('#stripType').val(stripType);
     hc.val(hLedCount);
     vc.val(vLedCount);
     hc.parent().addClass("is-filled");

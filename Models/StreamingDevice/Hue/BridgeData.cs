@@ -15,12 +15,14 @@ namespace HueDream.Models.StreamingDevice.Hue {
         public BridgeData(string ip, string id) {
             IpAddress = ip;
             Id = id;
+            Brightness = 100;
         }
 
         public BridgeData(LocatedBridge b) {
             if (b == null) throw new ArgumentException("Invalid located bridge.");
             IpAddress = b.IpAddress;
             Id = b.BridgeId;
+            Brightness = 100;
         }
 
         public BridgeData(string ip, string id, string user, string key, string group = "-1", string groupName = "undefined", int groupNumber = 0) {
@@ -73,6 +75,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
             var bridgeIp = string.Empty;
             var bridgeUser = string.Empty;
             var bridgeKey = string.Empty;
+            var brightness = 100;
             var selectedGroup = "-1";
             var groupNumber = 0;
             var name = "Hue Bridge";
@@ -122,6 +125,10 @@ namespace HueDream.Models.StreamingDevice.Hue {
                     case "groupName":
                         groupName = (string)property.Value;
                         break;
+                    case "brightness":
+                        brightness = (int) property.Value;
+                        break;
+                        
                 }
 
             var bd = new BridgeData(bridgeIp, bridgeId) {
@@ -133,7 +140,8 @@ namespace HueDream.Models.StreamingDevice.Hue {
                 GroupName = groupName,
                 GroupNumber = groupNumber,
                 Name = name,
-                Id = bridgeId
+                Id = bridgeId,
+                Brightness = brightness
         };
             if (bd.Groups.Count > 0) {
                 groupIds.AddRange(bd.Groups.Select(g => g.Id));

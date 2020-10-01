@@ -23,6 +23,7 @@ using HueDream.Models.Util;
 using LifxNet;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 using Color = System.Drawing.Color;
 
 namespace HueDream.Models.DreamScreen {
@@ -594,7 +595,7 @@ namespace HueDream.Models.DreamScreen {
                 msgDevice = msg.Device;
                 flag = msg.Flags;
                 var groupMatch = msg.Group == _dev.GroupNumber || msg.Group == 255;
-                if ((flag == "11" || flag == "21") && groupMatch) {
+                if ((flag == "11" || flag == "17" ||flag == "21") && groupMatch) {
                     writeState = true;
                     writeDev = true;
                 }
@@ -678,11 +679,21 @@ namespace HueDream.Models.DreamScreen {
                             }
 
                             if (_discovering) {
+                                LogUtil.Write("Sending request for serial!");
+                                DreamSender.SendUdpWrite(0x01, 0x03, new byte[]{0},0x60,0,replyPoint);
                                 _devices.Add(msgDevice);
                             }
                         }
                     }
 
+                    break;
+                case "GET_SERIAL":
+                    if (flag == "30") {
+                        SendDeviceSerial(replyPoint);
+                    } else {
+                        LogUtil.Write("DEVICE SERIAL RETRIEVED: " + JsonConvert.SerializeObject(msg));
+                    }
+                    
                     break;
                 case "GROUP_NAME":
                     var gName = Encoding.ASCII.GetString(payload);
@@ -801,6 +812,11 @@ namespace HueDream.Models.DreamScreen {
             var dss = DataUtil.GetDeviceData();
             var payload = dss.EncodeState();
             DreamSender.SendUdpWrite(0x01, 0x0A, payload, 0x60, _group, src);
+        }
+        
+        private void SendDeviceSerial(IPEndPoint src) {
+            var serial = DataUtil.GetDeviceSerial();
+            DreamSender.SendUdpWrite(0x01, 0x03, ByteUtils.StringBytes(serial), 0x60, _group, src);
         }
 
         private static List<Color> ShiftColors(List<Color> input) {

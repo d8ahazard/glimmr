@@ -226,18 +226,19 @@ namespace HueDream.Models.CaptureSource.Camera {
                         }
                     } else {
                         if (hCrop) LogUtil.Write($"Adjusting horizontal crop to {hCropPixels} pixels.");
+                        hCropCount--;
                         hCropPixels = cropHorizontal;
                     }
-                    
                 } else {
-                    hCropCount--;
-                    if (hCropCount < 0) {
-                        hCropPixels = 0;
-                        hCropCount = 0;
-                        if (hCrop) {
-                            hCrop = false;
-                            LogUtil.Write("Disabling horizontal crop.");
-                        }
+                    hCropCount = -1;
+                }
+                
+                if (hCropCount < 0) {
+                    hCropPixels = 0;
+                    hCropCount = 0;
+                    if (hCrop) {
+                        hCrop = false;
+                        LogUtil.Write("Disabling horizontal crop.");
                     }
                 }
 

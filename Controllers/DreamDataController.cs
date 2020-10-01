@@ -91,7 +91,7 @@ namespace HueDream.Controllers {
         // POST: api/DreamData/vcount
         [HttpPost("vcount")]
         public IActionResult Vcount([FromBody] int count) {
-            var ledData = DataUtil.GetItem<LedData>("ledData");
+            LedData ledData = DataUtil.GetItem<LedData>("ledData");
             var capMode = DataUtil.GetItem<int>("captureMode");
             int hCount;
             if (capMode == 0) {
@@ -102,7 +102,7 @@ namespace HueDream.Controllers {
                 ledData.VCount = count;
             }
 
-            ledData.ledCount = hCount * 2 + count * 2;
+            ledData.LedCount = hCount * 2 + count * 2;
             DataUtil.SetItem<LedData>("ledData", ledData);
             NotifyClients();
             ResetMode();
