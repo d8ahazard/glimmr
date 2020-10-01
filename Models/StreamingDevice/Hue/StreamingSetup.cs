@@ -68,7 +68,9 @@ namespace HueDream.Models.StreamingDevice.Hue {
                     try {
                         await client.Connect(group.Id);
                     } catch (SocketException e) {
-                        LogUtil.Write(@"Exception: " + e);
+                        LogUtil.Write(@"Exception: " + e.Message);
+                    } catch (InvalidOperationException f) {
+                        LogUtil.Write("Exception: " + f.Message);
                     }
 
                     //Start auto updating this entertainment group
