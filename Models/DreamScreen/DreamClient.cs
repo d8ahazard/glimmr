@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Net;
@@ -11,7 +12,6 @@ using System.Threading.Tasks;
 using System.Timers;
 using HueDream.Hubs;
 using HueDream.Models.CaptureSource.Audio;
-using HueDream.Models.CaptureSource.Camera;
 using HueDream.Models.CaptureSource.Video;
 using HueDream.Models.DreamScreen.Devices;
 using HueDream.Models.LED;
@@ -24,6 +24,7 @@ using LifxNet;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
+using Serilog;
 using Color = System.Drawing.Color;
 
 namespace HueDream.Models.DreamScreen {
@@ -44,6 +45,8 @@ namespace HueDream.Models.DreamScreen {
         private Socket _nanoSocket;
         
         private bool _discovering;
+        private bool _sendAudioColors;
+        private bool _autoDisabled;
         private int _brightness;
         private StreamCapture _grabber;
         private AudioStream _aStream;
@@ -81,9 +84,6 @@ namespace HueDream.Models.DreamScreen {
         // Use this to check if devices are subscribed, and if so, send out color/sector data
         private Dictionary<string, int> _subscribers;
         
-        // Use this in the future to possibly send richer color/sector data to devices
-        //private int _sectorVersion = 1;
-
         // Use this to check if we've started our show builder
         private bool _showBuilderStarted;
         
@@ -99,14 +99,14 @@ namespace HueDream.Models.DreamScreen {
         // We pass hub context to this so we can send data directly to the websocket
         public DreamClient(IHubContext<SocketServer> hubContext) {
             _hubContext = hubContext;
-            LogUtil.Write("Initializing with hubcontext...");
+            LogUtil.Write("Initializing with hub context...");
             Initialize();
             LogUtil.Write("Initialisation complete.");
         }
         
         // Normal initializer, not actually used
         public DreamClient() {
-            LogUtil.Write("Initializing without hubcontext.");
+            LogUtil.Write("Initializing without hub context.");
             Initialize();
             LogUtil.Write("Initialisation complete.");
         }
@@ -147,6 +147,13 @@ namespace HueDream.Models.DreamScreen {
             _ambientShow = _dev.AmbientShowType;
             _ambientColor = ColorFromString(_dev.AmbientColor);
             _brightness = _dev.Brightness;
+            _autoDisabled = false;
+            try {
+                _autoDisabled = dd.GetItem<bool>("autoDisabled");
+            } catch {
+                
+            }
+
             CaptureMode = dd.GetItem<int>("captureMode");
             
             // Set default values
@@ -164,19 +171,44 @@ namespace HueDream.Models.DreamScreen {
             StartRefreshTimer();
             // Start our service to capture (if capture mode is set)
             StartCaptureServices(_captureTokenSource.Token);
+            StartVideoCaptureTask();
             // Now, start listening for UDP commands
             StartListening();
             // Finally start our normal device behavior
-            UpdateMode(_dev.Mode);
+            LogUtil.Write("UPDATING MODE FROM INIT");
+            if (!_autoDisabled) UpdateMode(_dev.Mode);
         }
 
         // This is called because it's a service. I thought I needed this, maybe I don't...
         protected override Task ExecuteAsync(CancellationToken cancellationToken) {
             return Task.Run(async () => {
                 LogUtil.Write("Just chilling, waiting to kill some stuff.");
+                var sourceCounter = 0;
                 while (!cancellationToken.IsCancellationRequested) {
-                    // Just sit here until the process ends.
-                    // We probably should do the stop somewhere else.
+                    if (_grabber == null) continue;
+                    if (_grabber.SourceActive) {
+                        if (_autoDisabled) {
+                            LogUtil.Write("Auto-enabling stream.");
+                            sourceCounter = 0;
+                            UpdateMode(1, true);       
+                        }
+                    } else {
+                        if (!_autoDisabled) {
+                            if (_devMode == 1) {
+                                if (sourceCounter > 2000) {
+                                    LogUtil.Write("Auto-sleeping lights.");
+                                    _autoDisabled = true;
+                                    DataUtil.SetItem<bool>("autoDisabled", _autoDisabled);
+                                    UpdateMode(0, true);
+                                    sourceCounter = 0;
+                                } else {
+                                    LogUtil.Write("Source is not active: " + sourceCounter);
+                                }
+                            }
+                            sourceCounter++;        
+                        }
+                    }
+                    
                 }
                 LogUtil.Write("All done.");
                 StopServices();
@@ -270,9 +302,12 @@ namespace HueDream.Models.DreamScreen {
         }
 
         // Update our device mode
-        private void UpdateMode(int newMode) {
+        private void UpdateMode(int newMode, bool force = false) {
             // If the mode doesn't change, we don't need to do anything
-            if (_prevMode == newMode) return;
+            if (_prevMode == newMode && !force) {
+                LogUtil.Write("Modes are the same, nothing to do.");
+                return;
+            }
             // Reload our device data so we're sure it's fresh
             _dev = DataUtil.GetDeviceData();
             _dev.Mode = newMode;
@@ -282,25 +317,29 @@ namespace HueDream.Models.DreamScreen {
             LogUtil.Write($@"DreamScreen: Updating mode from {_prevMode} to {newMode}.");
             // If we are not in ambient mode and ambient scene is running, stop it
             StopShowBuilder();
-
+            
+            if (newMode != 0 && _autoDisabled) {
+                _autoDisabled = false;
+                DataUtil.SetItem<bool>("autoDisabled", _autoDisabled);
+                LogUtil.Write("Disabling auto...disable.");
+            }
             switch (newMode) {
                 case 0: // Off
                     StopStream();
-                    CancelSource(_captureTokenSource);
+                    _grabber?.ToggleSend(false);
+                    _sendAudioColors = false;
                     break;
                 case 1: // Video
-                    StartVideoCaptureTask();
                     if (!_streamStarted) StartStream();
+                    _grabber?.ToggleSend();
                     Subscribe(true);
                     break;
                 case 2: // Audio
-                    StartAudioCaptureTask();
-                    LogUtil.Write($@"DreamScreen: Subscribing to sector data for mode: {newMode}");
                     if (!_streamStarted) StartStream();
+                    _sendAudioColors = true;
                     Subscribe(true);
                     break;
                 case 3: // Ambient
-                    CancelSource(_captureTokenSource);
                     if (!_streamStarted) StartStream();
                     UpdateAmbientMode(_ambientMode);
                     break;
@@ -417,7 +456,6 @@ namespace HueDream.Models.DreamScreen {
 
         private void StopStream() {
             if (_streamStarted) {
-                CancelSource(_captureTokenSource);
                 CancelSource(_sendTokenSource);
                 _strip?.StopLights();
                 
@@ -463,12 +501,11 @@ namespace HueDream.Models.DreamScreen {
         public void SendColors(List<Color> colors, List<Color> sectors, List<Color> sectorsV2, double fadeTime = 0) {
             _sendTokenSource ??= new CancellationTokenSource();
             if (_sendTokenSource.IsCancellationRequested) {
-                LogUtil.Write("Canceled.");
+                //LogUtil.Write("Canceled.");
                 return;
             }
 
             if (!_streamStarted) {
-                LogUtil.Write("The stream isn't started??");
                 return;
             }
             foreach (var sd in _sDevices) {
@@ -505,16 +542,23 @@ namespace HueDream.Models.DreamScreen {
                 _listener.BeginReceive(Recv, null);
             } catch (SocketException e) {
                 LogUtil.Write($@"Socket exception: {e.Message}.");
+            } catch (ObjectDisposedException) {
+                LogUtil.Write("Object Disposed exception caught.");
             }
+            
         }
         
         private void Recv(IAsyncResult res) {
             //Process codes
-            var sourceEndPoint = new IPEndPoint(IPAddress.Any, 8888);
-            var receivedResults = _listener.EndReceive(res, ref sourceEndPoint);
+            try {
+                var sourceEndPoint = new IPEndPoint(IPAddress.Any, 8888);
+                var receivedResults = _listener.EndReceive(res, ref sourceEndPoint);
                 ProcessData(receivedResults, sourceEndPoint);
-            
-            _listener.BeginReceive(Recv, null);
+
+                _listener.BeginReceive(Recv, null);
+            } catch (ObjectDisposedException) {
+                LogUtil.Write("Object is already disposed.");
+            }
         }
 
         private Task StartVideoCapture(CancellationToken cancellationToken) {
@@ -532,11 +576,11 @@ namespace HueDream.Models.DreamScreen {
         private void StartVideoCaptureTask() {
             if (CaptureMode == 0) {
                 Subscribe();
-                if (!_streamStarted) StartStream();
+                //if (!_streamStarted) StartStream();
             } else {
                 CancelSource(_captureTokenSource);
                 _captureTokenSource = new CancellationTokenSource();
-                if (!_streamStarted) StartStream();
+                //if (!_streamStarted) StartStream();
                 Task.Run(() => StartVideoCapture(_captureTokenSource.Token));
                 LogUtil.Write("Capture task should be running and not blocking...");
             }
@@ -552,8 +596,10 @@ namespace HueDream.Models.DreamScreen {
                 _aStream.StartStream(cancellation);
                 return Task.Run(() => {
                     while (!cancellation.IsCancellationRequested) {
-                        var cols = _aStream.GetColors();
-                        SendColors(cols, cols);
+                        if (_sendAudioColors) {
+                            var cols = _aStream.GetColors();
+                            SendColors(cols, cols);
+                        }
                     }
                 });
             }
@@ -563,13 +609,7 @@ namespace HueDream.Models.DreamScreen {
         }
 
         private void StartAudioCaptureTask() {
-            // if (CaptureMode == 0) {
-            //     LogUtil.Write("cap mode is 0");
-            //     return;
-            // }
-            CancelSource(_captureTokenSource);
-            LogUtil.Write("Starting ac");
-            _captureTokenSource = new CancellationTokenSource();
+            LogUtil.Write("Starting audio capture task.");
             Task.Run(() => StartAudioCapture(_captureTokenSource.Token));
         }
 
@@ -728,6 +768,8 @@ namespace HueDream.Models.DreamScreen {
                 case "MODE":
                     if (writeState | writeDev) {
                         tDevice.Mode = payload[0];
+                        LogUtil.Write("UPDATING MODE FROM REMOTE");
+
                         LogUtil.Write($@"Updating mode: {tDevice.Mode}.");
                     } else {
                         LogUtil.Write("Mode flag set, but we're not doing anything... " + flag);

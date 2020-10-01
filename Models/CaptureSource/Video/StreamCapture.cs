@@ -21,6 +21,7 @@ using Newtonsoft.Json;
 
 namespace HueDream.Models.CaptureSource.Video {
     public sealed class StreamCapture {
+        private bool _sendColors;
         // Scaling variables
         private int _scaleHeight = 400;
         private int _scaleWidth = 600;
@@ -48,6 +49,7 @@ namespace HueDream.Models.CaptureSource.Video {
         // Timer and bool for saving sample frames
         private System.Threading.Timer saveTimer;
         private bool doSave;
+        public bool SourceActive;
 
 
         public StreamCapture(CancellationToken camToken) {
@@ -56,6 +58,10 @@ namespace HueDream.Models.CaptureSource.Video {
             SetCapVars();
             _vc = GetStream();
             _vc.Start(camToken);
+        }
+
+        public void ToggleSend(bool enable = true) {
+            _sendColors = enable;
         }
 
         private void SetCapVars() {
@@ -170,24 +176,30 @@ namespace HueDream.Models.CaptureSource.Video {
                 while (!cancellationToken.IsCancellationRequested) {
                     var frame = _vc.Frame;
                     if (frame == null) {
+                        SourceActive = false;
                         LogUtil.Write("Frame is null, dude.", "WARN");
                         continue;
                     }
 
                     if (frame.Cols == 0) {
+                        SourceActive = false;
                         LogUtil.Write("Frame has no columns, dude.", "WARN");
                         continue;
                     }
                     var warped = ProcessFrame(frame);
                     if (warped == null) {
+                        SourceActive = false;
                         LogUtil.Write("Unable to process frame, Dude.", "WARN");
                         continue;
                     }
+
                     _splitter.Update(warped);
+                    SourceActive = !_splitter.NoImage;
+                    
                     var colors = _splitter.GetColors();
                     var sectors = _splitter.GetSectors();
                     var sectors3 = _splitter.GetSectorsV2();
-                    dreamClient.SendColors(colors, sectors, sectors3);
+                    if (_sendColors) dreamClient.SendColors(colors, sectors, sectors3);
                 }
 
                 saveTimer.Dispose();

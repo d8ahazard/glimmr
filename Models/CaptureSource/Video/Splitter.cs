@@ -39,6 +39,7 @@ namespace HueDream.Models.CaptureSource.Camera {
         private readonly float _saturationBoost;
         private readonly int _minBrightness;
         public bool DoSave;
+        public bool NoImage;
         private const int MaxFrameCount = 75;
         
         public Splitter(LedData ld, int srcWidth, int srcHeight) {
@@ -179,7 +180,8 @@ namespace HueDream.Models.CaptureSource.Camera {
                 // These are our average values
                 var cropHorizontal = 0;
                 var cropVertical = 0;
-                
+                NoImage = isBlack(GetAverage(_input));
+                if (NoImage) return;
                 for (var r = 0; r < _input.Height / 4; r++) {
                     // This is the number of the bottom row to check
                     var r2 = _input.Height - r;
