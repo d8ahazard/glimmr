@@ -13,6 +13,7 @@ using HueDream.Models.LED;
 using HueDream.Models.StreamingDevice.Hue;
 using HueDream.Models.StreamingDevice.LIFX;
 using HueDream.Models.StreamingDevice.Nanoleaf;
+using HueDream.Models.StreamingDevice.WLed;
 using JsonFlatFileDataStore;
 using LifxNet;
 using ManagedBass;
@@ -448,9 +449,10 @@ namespace HueDream.Models.Util {
             var nanoTask = NanoDiscovery.Refresh(cs.Token);
             var bridgeTask = HueDiscovery.Refresh(cs.Token);
             var dreamTask = DreamDiscovery.Discover();
+            var wLedTask = WledDiscovery.Discover();
             var bulbTask = ld.Refresh(cs.Token);
             try {
-                await Task.WhenAll(nanoTask, bridgeTask, dreamTask, bulbTask);
+                await Task.WhenAll(nanoTask, bridgeTask, dreamTask, bulbTask, wLedTask);
             } catch (TaskCanceledException e) {
                 LogUtil.Write("Discovery task was canceled before completion: " + e.Message, "WARN");
             } catch (SocketException f) {
@@ -461,6 +463,7 @@ namespace HueDream.Models.Util {
             try {
                 SetItem<List<NanoData>>("leaves", nanoTask.Result);
                 SetItem<List<BridgeData>>("bridges", bridgeTask.Result);
+                //SetItem<List<WLedData>>("wled", wLedTask.Result);
                 // We don't need to store dream devices because of janky discovery. Maybe fix this...
                 SetItem<List<LifxData>>("lifxBulbs", bulbTask.Result);
             } catch (TaskCanceledException) {
@@ -482,16 +485,19 @@ namespace HueDream.Models.Util {
             var nanoTask = NanoDiscovery.Discover();
             var hueTask = HueDiscovery.Discover();
             var dreamTask = DreamDiscovery.Discover();
+            var wLedTask = WledDiscovery.Discover();
             var bulbTask = ld.Discover(5);
             await Task.WhenAll(nanoTask, hueTask, dreamTask, bulbTask).ConfigureAwait(false);
             var leaves = await nanoTask.ConfigureAwait(false);
             var bridges = await hueTask.ConfigureAwait(false);
             var dreamDevices = await dreamTask.ConfigureAwait(false);
             var bulbs = await bulbTask.ConfigureAwait(false);
+            var wleds = await wLedTask.ConfigureAwait(false);
             await store.InsertItemAsync("bridges", bridges).ConfigureAwait(false);
             await store.InsertItemAsync("leaves", leaves).ConfigureAwait(false);
             await store.InsertItemAsync("devices", dreamDevices).ConfigureAwait(false);
             await store.InsertItemAsync("lifxBulbs", bulbs).ConfigureAwait(false);
+            await store.InsertItemAsync("wled", wleds).ConfigureAwait(false);
             store.Dispose();
             scanning = false;
         }

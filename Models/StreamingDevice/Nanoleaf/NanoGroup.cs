@@ -71,7 +71,7 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
         public bool Streaming { get; set; }
 
         public async void StartStream(CancellationToken ct) {
-            LogUtil.WriteInc($@"Nanoleaf: Starting panel: {IpAddress}");
+            LogUtil.Write($@"Nanoleaf: Starting panel: {IpAddress}");
             // Turn it on first.
             //var currentState = NanoSender.SendGetRequest(_basePath).Result;
             //await NanoSender.SendPutRequest(_basePath, JsonConvert.SerializeObject(new {on = new {value = true}}),
@@ -83,13 +83,12 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             await NanoSender.SendPutRequest(_basePath, JsonConvert.SerializeObject(new {on = new {value = true}}),
                 "state");
             await NanoSender.SendPutRequest(_basePath, JsonConvert.SerializeObject(body), "effects");
-            LogUtil.Write("Nanoleaf: Streaming is active.");
+            LogUtil.Write("Nanoleaf: Streaming is active...");
             _sending = true;
             while (!ct.IsCancellationRequested) {
                 Streaming = true;
             }
             _sending = false;
-            LogUtil.WriteDec($@"Nanoleaf: Stopped panel: {IpAddress}");
             StopStream();
         }
 
@@ -97,6 +96,8 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             Streaming = false;
             NanoSender.SendPutRequest(_basePath, JsonConvert.SerializeObject(new {on = new {value = false}}), "state")
                 .ConfigureAwait(false);
+            LogUtil.Write($@"Nanoleaf: Stopped panel: {IpAddress}");
+
         }
 
 

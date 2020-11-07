@@ -50,9 +50,10 @@ namespace HueDream.Models.StreamingDevice.Hue {
         /// <param name="ct">A cancellation token.</param>
         public async void StartStream(CancellationToken ct) {
             if (Bd.Id == null || Bd.Key == null || Bd.Lights == null || Bd.Groups == null) {
-                LogUtil.Write("Bridge is not authorized.");
+                LogUtil.Write("Bridge is not authorized.","WARN");
                 return;
             }
+            LogUtil.Write("Hue: Starting stream...");
             SetClient();
 			try {
                 // Make sure we are not already streaming.
@@ -64,7 +65,6 @@ namespace HueDream.Models.StreamingDevice.Hue {
 			}
             if (ct == null) throw new ArgumentException("Invalid cancellation token.");
             // Get our light map and filter for mapped lights
-            LogUtil.Write($@"Hue: Connecting to bridge at {IpAddress}...");
             // Grab our stream
             
             // Save previous light state(s) before stopping
@@ -73,8 +73,8 @@ namespace HueDream.Models.StreamingDevice.Hue {
             StreamingGroup stream;
             try {
                 stream = await StreamingSetup.SetupAndReturnGroup(_client, Bd, ct);
-            } catch (SocketException e) {
-                LogUtil.Write("Socket Exception (Probably tried stopping/starting too quickly): " + e.Message, "WARN");
+            } catch (Exception e) {
+                LogUtil.Write("SException (Probably tried stopping/starting too quickly): " + e.Message, "WARN");
                 return;
             }
             
@@ -86,18 +86,17 @@ namespace HueDream.Models.StreamingDevice.Hue {
             }
 
             _entLayer = stream.GetNewLayer(true);
-            LogUtil.Write($"Hue: Streaming is active: {IpAddress}");
+            LogUtil.Write($"Hue: Stream started: {IpAddress}");
             while (!ct.IsCancellationRequested) {
                 Streaming = true;
             }
 
-            LogUtil.Write("Token canceled, self-excising.");
             StopStream();
         }
 
         public void StopStream() {
-            var _ = StreamingSetup.StopStream(_client, Bd);
             LogUtil.Write($"Hue: Stopping Stream: {IpAddress}...");
+            var _ = StreamingSetup.StopStream(_client, Bd);
             if (Streaming) ResetColors();
             Streaming = false;
             LogUtil.Write("Hue: Streaming Stopped.");

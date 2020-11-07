@@ -65,6 +65,7 @@
         <PackageReference Include="System.Net.WebSockets" Version="4.3.0" />
         <PackageReference Include="ZedGraph" Version="6.0.0-alpha0001" />
         <PackageReference Include="ZedGraph.WinForms" Version="6.0.0-alpha0001" />
+        <PackageReference Include="Zeroconf" Version="3.4.2" />
     </ItemGroup>
 
     <ItemGroup>
@@ -90,7 +91,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Models\CaptureSource\ScreenCapture" />
       <Folder Include="Models\StreamingDevice\LED" />
     </ItemGroup>
     

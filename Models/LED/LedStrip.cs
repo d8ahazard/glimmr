@@ -3,16 +3,17 @@ using System.Collections.Generic;
 using System.Drawing;
 using HueDream.Models.Util;
 using rpi_ws281x;
-using ColorUtil = rpi_ws281x.ColorUtil;
+using ColorUtil = HueDream.Models.Util.ColorUtil;
 
 namespace HueDream.Models.LED {
     public sealed class LedStrip : IDisposable {
         private readonly int _ledCount;
         private readonly WS281x _strip;
         private readonly Controller _controller;
+        private LedData _ld;
         
         public LedStrip(LedData ld) {
-            if (ld == null) throw new ArgumentException("Invalid LED Data.");
+            _ld = ld ?? throw new ArgumentException("Invalid LED Data.");
             LogUtil.Write("Initializing LED Strip, type is " + ld.StripType);
             _ledCount = ld.VCount * 2 + ld.HCount * 2;
             var stripType = ld.StripType switch {
@@ -53,6 +54,9 @@ namespace HueDream.Models.LED {
                 }
 
                 var tCol = colors[iSource];
+                if (_ld.FixGamma)  {
+                    tCol = ColorUtil.FixGamma(tCol);
+                }
                 _controller.SetLED(i, tCol);
                 iSource++;
             }

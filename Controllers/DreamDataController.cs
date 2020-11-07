@@ -8,6 +8,7 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Accord;
 using HueDream.Hubs;
 using HueDream.Models.DreamScreen;
 using HueDream.Models.DreamScreen.Devices;
@@ -15,6 +16,7 @@ using HueDream.Models.LED;
 using HueDream.Models.StreamingDevice.Hue;
 using HueDream.Models.StreamingDevice.LIFX;
 using HueDream.Models.StreamingDevice.Nanoleaf;
+using HueDream.Models.StreamingDevice.WLed;
 using HueDream.Models.Util;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -290,7 +292,7 @@ namespace HueDream.Controllers {
 
                         panel.Dispose();
                     }
-                    LogUtil.Write("REturning.");
+                    LogUtil.Write("Returning.");
                     return new JsonResult(bd);
                 }
             }
@@ -343,6 +345,7 @@ namespace HueDream.Controllers {
             switch (tag) {
                 case "HueBridge":
                 case "Lifx":
+                case "WLed":
                 case "NanoLeaf":
                     if (myDev.Mode == newMode) return;
                     myDev.Mode = newMode;
@@ -459,6 +462,12 @@ namespace HueDream.Controllers {
             }
             var groupNumber = (byte) myDev.GroupNumber;
             switch (tag) {
+                case "WLed":
+                    LogUtil.Write("Updating wled");
+                    var wData = dData.ToObject<WLedData>();
+                    DataUtil.InsertCollection<WLedData>("wled",wData);
+                    _hubContext.Clients.All.SendAsync("wledData", wData);
+                    break;
                 case "HueBridge":
                     LogUtil.Write("Updating bridge");
                     var bData = dData.ToObject<BridgeData>();

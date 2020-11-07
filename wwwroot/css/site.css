@@ -60,6 +60,14 @@ html {
 
 }
 
+#wledDivSectored {
+    display: none;
+}
+
+#wledDivSubSectored {
+    display: none;
+}
+
 .border-top {
     border-top: 1px solid #e5e5e5;
 }

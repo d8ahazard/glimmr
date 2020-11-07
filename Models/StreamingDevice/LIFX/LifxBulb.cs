@@ -37,15 +37,13 @@ namespace HueDream.Models.StreamingDevice.LIFX {
             var col = new Color {R = 0x00, G = 0x00, B = 0x00};
             Streaming = true;
             await _client.SetLightPowerAsync(B, TimeSpan.Zero, true).ConfigureAwait(false);
-            LogUtil.Write("Power set.");
             await _client.SetColorAsync(B, col, 2700).ConfigureAwait(false);
-            LogUtil.Write("Lifx: Streaming is active.");
+            LogUtil.Write("Lifx: Streaming is active...");
             while (!ct.IsCancellationRequested) {
                 Streaming = true;
             }
 
             StopStream();
-            LogUtil.Write("Lifx: Stream stopped.");
         }
 
         
@@ -55,6 +53,7 @@ namespace HueDream.Models.StreamingDevice.LIFX {
             LogUtil.Write("Setting color back the way it was.");
             _client.SetColorAsync(B, Data.Hue, Data.Saturation,Convert.ToUInt16(Data.Brightness), Data.Kelvin, TimeSpan.Zero);
             _client.SetLightPowerAsync(B, TimeSpan.Zero, Data.Power).ConfigureAwait(false);
+            LogUtil.Write("Lifx: Stream stopped.");
         }
 
         public void ReloadData() {

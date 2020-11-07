@@ -16,6 +16,7 @@ using HueDream.Models.CaptureSource.Video.Screen;
 using HueDream.Models.CaptureSource.Video.WebCam;
 using HueDream.Models.DreamScreen;
 using HueDream.Models.LED;
+using HueDream.Models.StreamingDevice.WLed;
 using HueDream.Models.Util;
 using Newtonsoft.Json;
 
@@ -166,13 +167,19 @@ namespace HueDream.Models.CaptureSource.Video {
         }
 
         public Task StartCapture(DreamClient dreamClient, CancellationToken cancellationToken) {
-            LogUtil.Write("FIRING STARTCAPTURE");
+            LogUtil.Write("Beginning capture process...");
             SetCapVars();
             return Task.Run(() => {
                 var autoEvent = new AutoResetEvent(false);
                 saveTimer = new Timer(SaveFrame, autoEvent, 5000, 5000);
                 LogUtil.WriteInc($"Starting capture task, setting sw and h to {_scaleWidth} and {_scaleHeight}");
                 _splitter = new Splitter(_ledData, _scaleWidth, _scaleHeight);
+                var wlArray = DataUtil.GetCollection<WLedData>("wled");
+                foreach (var wl in wlArray) {
+                    _splitter.AddWled(wl);
+                }
+                LogUtil.Write("All wled devices added, executing main capture loop...");
+                    
                 while (!cancellationToken.IsCancellationRequested) {
                     var frame = _vc.Frame;
                     if (frame == null) {
@@ -192,14 +199,14 @@ namespace HueDream.Models.CaptureSource.Video {
                         LogUtil.Write("Unable to process frame, Dude.", "WARN");
                         continue;
                     }
-
                     _splitter.Update(warped);
                     SourceActive = !_splitter.NoImage;
                     
                     var colors = _splitter.GetColors();
                     var sectors = _splitter.GetSectors();
                     var sectors3 = _splitter.GetSectorsV2();
-                    if (_sendColors) dreamClient.SendColors(colors, sectors, sectors3);
+                    var sectorsWled = _splitter.GetWledSectors();
+                    if (_sendColors) dreamClient.SendColors(colors, sectors, sectors3, sectorsWled);
                 }
 
                 saveTimer.Dispose();

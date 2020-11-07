@@ -15,9 +15,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
             }
 
             var id = b.SelectedGroup;
-            //LogUtil.Write("Stopping stream...");
             await client.LocalHueClient.SetStreamingAsync(id, false).ConfigureAwait(true);
-            //LogUtil.Write("Stopped.");
         }
 
         public static async Task<StreamingGroup> SetupAndReturnGroup(StreamingHueClient client, BridgeData b,
@@ -37,7 +35,6 @@ namespace HueDream.Models.StreamingDevice.Hue {
                 //Get the entertainment group
                 var group = client.LocalHueClient.GetGroupAsync(groupId).Result;
                 if (group == null) {
-                    LogUtil.Write("Group is null, defaulting to first group...");
                     var groups = b.Groups;
                     if (groups.Count > 0) {
                         groupId = groups[0].Id;
@@ -71,6 +68,8 @@ namespace HueDream.Models.StreamingDevice.Hue {
                         LogUtil.Write(@"Exception: " + e.Message);
                     } catch (InvalidOperationException f) {
                         LogUtil.Write("Exception: " + f.Message);
+                    } catch (Exception) {
+                        LogUtil.Write("Random exception caught.");
                     }
 
                     //Start auto updating this entertainment group

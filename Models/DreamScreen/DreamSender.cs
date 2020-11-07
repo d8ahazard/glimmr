@@ -3,13 +3,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using HueDream.Models.Util;
-using LifxNet;
 using Newtonsoft.Json;
-using Color = System.Drawing.Color;
 
 namespace HueDream.Models.DreamScreen {
     public static class DreamSender {
@@ -59,13 +56,11 @@ namespace HueDream.Models.DreamScreen {
             p.Add(ByteUtils.IntByte(color.R));
             p.Add(ByteUtils.IntByte(color.G));
             p.Add(ByteUtils.IntByte(color.B));
-            LogUtil.Write("WTF: " + id);
             var ep = new IPEndPoint(IPAddress.Parse(id), 8888);
             SendUdpWrite(c1, c2, p.ToArray(), flag, (byte) group, ep);
         }
         public static void SendMessage(string command, dynamic value, string id) {
             var dev = DataUtil.GetDreamDevice(id);
-            LogUtil.Write("Sending to: " + JsonConvert.SerializeObject(dev));
             byte flag = 0x11;
             byte c1 = 0x03;
             byte c2 = 0x00;
@@ -143,10 +138,10 @@ namespace HueDream.Models.DreamScreen {
             cmd = MsgUtils.Commands[cmd] ?? cmd;
             if (flag == 0x30 | groupSend) {
                 SendUdpBroadcast(stream.ToArray());
-                if (cmd != "SUBSCRIBE" && cmd != "COLOR_DATA") LogUtil.Write($"localhost -> 255.255.255.255::{cmd} {flag}-{group}");
+                //if (cmd != "SUBSCRIBE" && cmd != "COLOR_DATA") LogUtil.Write($"localhost -> 255.255.255.255::{cmd} {flag}-{group}");
             } else {
                 SendUdpUnicast(stream.ToArray(), ep);
-                if (cmd != "SUBSCRIBE" && cmd != "COLOR_DATA") LogUtil.Write($"localhost -> {ep.Address}::{cmd} {flag}-{group}");
+                //if (cmd != "SUBSCRIBE" && cmd != "COLOR_DATA") LogUtil.Write($"localhost -> {ep.Address}::{cmd} {flag}-{group}");
             }
         }
 

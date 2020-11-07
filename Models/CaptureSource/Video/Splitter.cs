@@ -9,6 +9,7 @@ using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using HueDream.Models.LED;
+using HueDream.Models.StreamingDevice.WLed;
 using HueDream.Models.Util;
 using Newtonsoft.Json;
 
@@ -20,20 +21,24 @@ namespace HueDream.Models.CaptureSource.Camera {
         private readonly List<Rectangle> _fullCoords;
         private readonly List<Rectangle> _fullSectors;
         private readonly List<Rectangle> _fullSectorsV2;
+        public Dictionary<string, List<Rectangle>> WLSectors;
+        public Dictionary<string, List<int>> WLModules;
         private int sourceWidth;
         private int sourceHeight;
-        private int vCropCount = 0;
-        private int hCropCount = 0;
-        private int vCropPixels = 0;
-        private int hCropPixels = 0;
-        private bool vCrop;
-        private bool hCrop;
+        private int _vCropCount;
+        private int _hCropCount;
+        private int _vCropPixels;
+        private int _hCropPixels;
+        private bool _vCrop;
+        private bool _hCrop;
+        private bool _sectorChanged;
         private readonly float _borderWidth;
         private readonly float _borderHeight;
         private int _boxMode;
         private List<Color> _colorsLed;
         private List<Color> _colorsSectors;
         private List<Color> _colorsSectorsV2;
+        private Dictionary<string, List<Color>> _colorsWled;
         private int _frameCount;
         private readonly float _brightBoost;
         private readonly float _saturationBoost;
@@ -43,6 +48,7 @@ namespace HueDream.Models.CaptureSource.Camera {
         private const int MaxFrameCount = 75;
         
         public Splitter(LedData ld, int srcWidth, int srcHeight) {
+            LogUtil.Write("Initializing splitter...");
             // Set some defaults, this should probably just not be null
             if (ld != null) {
                 _vCount = ld.VCount;
@@ -56,8 +62,6 @@ namespace HueDream.Models.CaptureSource.Camera {
             _borderHeight = sourceHeight * .05f;
             // Set default box mode to zero, no boxing
             _boxMode = 0;
-            LogUtil.Write($@"Splitter init, {_vCount}, {_vCount}, {_hCount}, {_hCount}");
-            LogUtil.Write($"Splitter src width and height are {srcWidth} and {srcHeight}.");
             // Set brightness boost, min brightness, sat boost...
             _brightBoost = 0;
             _minBrightness = 90;
@@ -67,33 +71,48 @@ namespace HueDream.Models.CaptureSource.Camera {
             _fullSectors = DrawSectors();
             _fullSectorsV2 = DrawSectors(0,0, true);
             _frameCount = 0;
-            LogUtil.Write("Splitter should be created.");
+            _colorsWled = new Dictionary<string, List<Color>>();
+            WLModules = new Dictionary<string, List<int>>();
+            WLSectors = new Dictionary<string, List<Rectangle>>();
+            LogUtil.Write("Splitter init complete.");
         }
 
         public void Update(Mat inputMat) {
             _input = inputMat ?? throw new ArgumentException("Invalid input material.");
             // Don't do anything if there's no frame.
-            if (_input.IsEmpty) return;
-            var outputLed = new List<Color>();
-            var outputSectors = new List<Color>();
-            var outputSectorsV2 = new List<Color>();
+            //LogUtil.Write("Updating splitter...");
+            if (_input.IsEmpty) {
+                LogUtil.Write("SPLITTER: NO INPUT.");
+                return;
+            }
+            var outColorsStrip = new List<Color>();
+            var outColorsSector = new List<Color>();
+            var outColorsSectorV2 = new List<Color>();
+            var outColorsWled = new Dictionary<string, List<Color>>();
             var coords = _fullCoords;
             var sectors = _fullSectors;
             var sectorsV2 = _fullSectorsV2;
+            var wlSectors = WLSectors;
             if (_frameCount >= 10) {
                 CheckSectors();
                 _frameCount = 0;
             }
             _frameCount++;
             
-            if (vCrop || hCrop) {
-                var vp = vCrop ? vCropPixels : 0;
-                var hp = hCrop ? hCropPixels : 0;
+            // Only calculate new sectors if the value has changed
+            if ((_vCrop || _hCrop) && _sectorChanged) {
+                _sectorChanged = false;
+                var vp = _vCrop ? _vCropPixels : 0;
+                var hp = _hCrop ? _hCropPixels : 0;
                 coords = DrawGrid(hp, vp);
                 sectors = DrawSectors(hp, vp);
                 sectorsV2 = DrawSectors(hp, vp, true);
+                foreach (var id in WLModules.Keys) {
+                    wlSectors[id] = DrawWledGrid(id, hp, vp);
+                }
             }
             
+            // Save a preview image if desired
             if (DoSave) {
                 DoSave = false;
                 var path = Directory.GetCurrentDirectory();
@@ -129,22 +148,46 @@ namespace HueDream.Models.CaptureSource.Camera {
             }
 
             foreach (var sub in coords.Select(r => new Mat(_input, r))) {
-                outputLed.Add(GetAverage(sub));
+                outColorsStrip.Add(GetAverage(sub));
                 sub.Dispose();
             }
 
             foreach (var sub in sectors.Select(r => new Mat(_input, r))) {
-                outputSectors.Add(GetAverage(sub));
+                outColorsSector.Add(GetAverage(sub));
                 sub.Dispose();
             }
 
             foreach (var sub in sectorsV2.Select(r => new Mat(_input, r))) {
-                outputSectorsV2.Add(GetAverage(sub));
+                outColorsSectorV2.Add(GetAverage(sub));
                 sub.Dispose();
             }
-            _colorsLed = outputLed;
-            _colorsSectors = outputSectors;
-            _colorsSectorsV2 = outputSectorsV2;
+
+            foreach (var wlId in wlSectors.Keys) {
+                var colorList = new List<Color>();
+                foreach (var sub in wlSectors[wlId].Select(r => new Mat(_input, r))) {
+                    colorList.Add(GetAverage(sub));
+                }
+                outColorsWled[wlId] = colorList;
+            }
+            _colorsLed = outColorsStrip;
+            _colorsSectors = outColorsSector;
+            _colorsSectorsV2 = outColorsSectorV2;
+            _colorsWled = outColorsWled;
+            //LogUtil.Write("Splitter updated...");
+        }
+
+        public void AddWled(WLedData wData) {
+            LogUtil.Write("Adding wled to splitter.");
+            // Create a simple list of vars that describe LED placement
+            // Hcount, VCount, LedCount, Offset, Direction
+            var ledVars = new List<int> {wData.HCount, wData.VCount, wData.LedCount, wData.Offset, wData.StripDirection};
+            LogUtil.Write("LED Vars set");
+            // Store it for recall later
+            WLModules[wData.Id] = ledVars;
+            LogUtil.Write("Drawing grid...");
+            // Generate our base grid sectors
+            WLSectors[wData.Id] = DrawWledGrid(wData.Id);
+            LogUtil.Write("WLED added.");
         }
 
        
@@ -174,13 +217,17 @@ namespace HueDream.Models.CaptureSource.Camera {
             return _colorsSectorsV2;
         }
 
+        public Dictionary<string, List<Color>> GetWledSectors() {
+            return _colorsWled;
+        }
+        
         private void CheckSectors() {
             // First, we need to get averages for pillar and letter sectors
                 // Loop through half the rows, from top to bottom
                 // These are our average values
                 var cropHorizontal = 0;
                 var cropVertical = 0;
-                NoImage = isBlack(GetAverage(_input));
+                NoImage = ColorUtil.IsBlack(GetAverage(_input));
                 if (NoImage) return;
                 for (var r = 0; r < _input.Height / 4; r++) {
                     // This is the number of the bottom row to check
@@ -189,12 +236,12 @@ namespace HueDream.Models.CaptureSource.Camera {
                     var t1 = new Mat(_input, s1);
                     var t1Col = GetAverage(t1);
                     t1.Dispose();
-                    if (!isBlack(t1Col)) continue;
+                    if (!ColorUtil.IsBlack(t1Col)) continue;
                     var s2 = new Rectangle(0,r2-5,_input.Width,5);
                     var t2 = new Mat(_input, s2);
                     var t2Col = GetAverage(t2);
                     t2.Dispose();
-                    if (isBlack(t2Col)) {
+                    if (ColorUtil.IsBlack(t2Col)) {
                         cropHorizontal = r;
                     }
                 }
@@ -206,65 +253,69 @@ namespace HueDream.Models.CaptureSource.Camera {
                     var t1 = new Mat(_input, s1);
                     var t1Col = GetAverage(t1);
                     t1.Dispose();
-                    if (!isBlack(t1Col)) continue;
+                    if (!ColorUtil.IsBlack(t1Col)) continue;
                     var s2 = new Rectangle(c2 - 5,0,1,_input.Height);
                     var t2 = new Mat(_input, s2);
                     var t2Col = GetAverage(t2);
                     t2.Dispose();
-                    if (isBlack(t2Col)) {
+                    if (ColorUtil.IsBlack(t2Col)) {
                         cropVertical = c;
                     }
                 }
 
                 if (cropHorizontal != 0) {
-                    hCropCount++;
-                    if (Math.Abs(cropHorizontal - hCropPixels) < 5) {
-                        if (hCropCount > MaxFrameCount) {
-                            hCropCount = MaxFrameCount;
-                            if (!hCrop) {
-                                hCrop = true;
+                    _hCropCount++;
+                    if (Math.Abs(cropHorizontal - _hCropPixels) < 5) {
+                        if (_hCropCount > MaxFrameCount) {
+                            _hCropCount = MaxFrameCount;
+                            if (!_hCrop) {
+                                _sectorChanged = true;
+                                _hCrop = true;
                                 LogUtil.Write($"Enabling horizontal crop for {cropHorizontal} rows.");
                             }
                         }
                     } else {
-                        if (hCrop) LogUtil.Write($"Adjusting horizontal crop to {hCropPixels} pixels.");
-                        hCropCount--;
-                        hCropPixels = cropHorizontal;
+                        if (_hCrop) LogUtil.Write($"Adjusting horizontal crop to {_hCropPixels} pixels.");
+                        _hCropCount--;
+                        _hCropPixels = cropHorizontal;
                     }
                 } else {
-                    hCropCount = -1;
+                    _hCropCount = -1;
                 }
                 
-                if (hCropCount < 0) {
-                    hCropPixels = 0;
-                    hCropCount = 0;
-                    if (hCrop) {
-                        hCrop = false;
+                if (_hCropCount < 0) {
+                    _hCropPixels = 0;
+                    _hCropCount = 0;
+                    if (_hCrop) {
+                        _sectorChanged = true;
+                        _hCrop = false;
                         LogUtil.Write("Disabling horizontal crop.");
                     }
                 }
 
                 if (cropVertical != 0) {
-                    if (Math.Abs(cropVertical - vCropPixels) < 5) {
-                        vCropCount++;
-                        if (vCropCount > MaxFrameCount) {
-                            vCropCount = MaxFrameCount;
-                            if (!vCrop) {
-                                vCrop = true;
+                    if (Math.Abs(cropVertical - _vCropPixels) < 5) {
+                        _vCropCount++;
+                        if (_vCropCount > MaxFrameCount) {
+                            _vCropCount = MaxFrameCount;
+                            if (!_vCrop) {
+                                _vCrop = true;
+                                _sectorChanged = true;
                                 LogUtil.Write($"Enabling vertical crop for {cropVertical} columns.");
                             }        
                         }
                     } else {
-                        vCropPixels = cropVertical;
-                        if (vCrop) LogUtil.Write($"Adjusting vertical crop to {vCropPixels} pixels.");
+                        _vCropPixels = cropVertical;
+                        if (_vCrop) LogUtil.Write($"Adjusting vertical crop to {_vCropPixels} pixels.");
                     }
                 } else {
-                    vCropCount--;
-                    if (vCropCount < 0) {
-                        vCropCount = 0;
-                        vCropPixels = 0;
-                        if (vCrop) {
-                            vCrop = false;
+                    _vCropCount--;
+                    if (_vCropCount < 0) {
+                        _vCropCount = 0;
+                        _vCropPixels = 0;
+                        if (_vCrop) {
+                            _sectorChanged = true;
+                            _vCrop = false;
                             LogUtil.Write("Disabling vertical crop.");    
                         }
                         
@@ -273,10 +324,7 @@ namespace HueDream.Models.CaptureSource.Camera {
     
         }
 
-        private static bool isBlack(Color color) {
-            return color.R < 5 && color.G < 5 && color.B < 5;
-        }
-
+       
         private List<Rectangle> DrawGrid(double vOffset = 0, double hOffset = 0) {
             var output = new List<Rectangle>();
             
@@ -335,6 +383,122 @@ namespace HueDream.Models.CaptureSource.Camera {
                 step += 1;
             }
             return output;
+        }
+        
+        private List<Rectangle> DrawWledGrid(string moduleId, double vOffset = 0, double hOffset = 0) {
+            
+            var output = new List<Rectangle>();
+            var dims = WLModules[moduleId];
+            LogUtil.Write("Drawing wled grid with dims: " + JsonConvert.SerializeObject(dims));
+            // Hcount, VCount, LedCount, Offset, Direction
+            var hCount = dims[0];
+            var vCount = dims[1];
+            var len = dims[2];
+            var offset = dims[3];
+            var dir = dims[4];
+            if (hCount == 0 || vCount == 0 || len == 0) {
+                LogUtil.Write("WLED needs to be configured first!");
+                return null;
+            }
+            var bWidth = sourceWidth * .05f;
+            var bHeight = sourceHeight * .05f;
+            // Top Region
+            var tTop = vOffset;
+            var tBottom = bHeight + tTop;
+
+            // Bottom Gridlines
+            var bBottom = sourceHeight - vOffset;
+            var bTop = bBottom - bHeight;
+
+            // Left Column Border
+            var lLeft = hOffset;
+            var lRight = hOffset + bWidth;
+
+            // Right Column Border
+            var rRight = sourceWidth - hOffset;
+            var rLeft = rRight - bWidth;
+            // Steps
+            var tStep = sourceWidth / hCount;
+            var bStep = sourceWidth / hCount;
+            var lStep = sourceHeight / vCount;
+            var rStep = sourceHeight / vCount;
+            // Calc right regions, bottom to top
+            var step = vCount - 1;
+            LogUtil.Write("Stepping...");
+            while (step >= 0) {
+                var ord = step * rStep;
+                var vw = rRight - rLeft;
+                output.Add(new Rectangle((int) rLeft, ord, (int) vw, rStep));
+                step--;
+            }
+            step = _hCount - 1;
+            // Calc top regions, from right to left
+            while (step >= 0) {
+                var ord = step * tStep;
+                var vw = tBottom - tTop;
+                output.Add(new Rectangle(ord, (int) tTop,  tStep, (int) vw));
+                step--;
+            }
+
+            step = 0;
+            // Calc left regions (top to bottom)
+            while (step < vCount) {
+                var ord = step * lStep;
+                var vw = lRight - lLeft;
+                output.Add(new Rectangle((int) lLeft, ord, (int) vw, lStep));
+                step++;
+            }
+
+            step = 0;
+            // Calc bottom regions (L-R)
+            while (step < hCount) {
+                var ord = step * bStep;
+                var vw = bBottom - bTop;
+                output.Add(new Rectangle(ord, (int) bTop, bStep, (int) vw));
+                step += 1;
+            }
+
+            LogUtil.Write("Truncating...");
+            // Offset our colors based on info
+            var truncated = new List<Rectangle>();
+            var lastCount = 0;
+            if (dir == 0) {
+                LogUtil.Write($"Dir0, offset is {offset}");
+                var o = offset;
+                while (o < output.Count && 0 < len) {
+                    LogUtil.Write("Grabbing index " + o);
+                    truncated.Add(output[o]);
+                    o++;
+                    lastCount++;
+                }
+                
+                if (lastCount < len) {
+                    var target = len - lastCount;
+                    for (var i = 0; i < target && i < output.Count; i++) {
+                        LogUtil.Write("Grabbing index " + i);
+                        truncated.Add(output[i]);
+                    }
+                }
+            } else {
+                LogUtil.Write("Dir1");
+                var maxIdx = output.Count - 1;
+                lastCount = 0;
+                var o = maxIdx - offset;
+                while (o > maxIdx - len) {
+                    o--;
+                    lastCount--;
+                    truncated.Add(output[o]);
+                }
+
+                if (lastCount < len) {
+                    var target = len - lastCount;
+                    for (var i = maxIdx; i >= maxIdx - target && i >= 0; i--) {
+                        truncated.Add(output[i]);
+                    }
+                }
+            }
+            LogUtil.Write("Returning " + truncated.Count + " sectors for wled.");
+            return truncated;
         }
         
         private List<Rectangle> DrawSectors(double vOffset = 0, double hOffset = 0, bool v2 = false) {

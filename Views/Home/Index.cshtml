@@ -591,6 +591,92 @@
         </div>
     </div>
 </div>
+<div class="bg-dark text-white hidden" id="wledCard">
+    <div id="wledPane">
+        <div class="card-body">
+            <div class="row justify-content-center">
+                <div class="col-8 col-md-6 col-xl-4">
+                    <input class="form-control devBrightness" id="wledBrightness" type="range" min="0" max="100" value="100">
+                </div>
+            </div>
+            <div class="row justify-content-center">
+                <div class="form-group bmd-form-group col-12 col-md-6">
+                    <label for="hCount" class="bmd-label-floating">LED Type:</label>
+                    <select id="wLedMode">
+                        <option value="0">Individual</option>
+                        <option value="1">Sectored</option>
+                        <option value="2">Multi-Sectored</option>
+                    </select>
+                    <span class="bmd-help">Individual mode assumes the LEDs are around a screen, like a DreamScreen or Ambilight.</span>
+                    <span class="bmd-help">Sectored mode allows you to assign specific sectors of the screen to all lights.</span>
+                    <span class="bmd-help">Multi-Sectored Mode divides a strip into smaller segments, each of which can be assigned to a specific sector.</span>
+                </div>
+                
+
+                <div class="form-group bmd-form-group col-12 col-md-6">
+                    <label for="hCount" class="bmd-label-floating">LED Type:</label>
+                    <select id="wstripType">
+                        <option value="0">WS2812x (DreamScreen)</option>
+                        <option value="1">SK6812 (RGBW)</option>
+                    </select>
+                    <span class="bmd-help">WS2812x is the standard type of light that ships with Dreamscreen. SK6812 are RGBW strips.</span>
+                </div>
+            </div>
+            <div class="row justify-content-center">
+                <h3>LED Count</h3>
+            </div>
+            
+            <div class="row justify-content-center" id="wledPreview">
+                <div class="previewRow col-12 col-md-6" id="wledContainer">
+                    <div id="wledDivFull">
+                        <img src="img/start_tv.png" alt="led_size" id="wledImg"/>
+                    </div>
+                    <div id="wledDivSectored">
+                        <img src="img/start_tv.png" alt="led_size" id="wledSectored"/>
+                    </div>
+                    <div id="wledDivSubSectored">
+                        <img src="img/start_tv.png" alt="led_size" id="wledSub"/>
+                    </div>
+                </div>
+            </div>
+            <div class="row justify-content-center">
+                <div class="form-group bmd-form-group col-12 col-md-6">
+                    <label for="whCount" class="bmd-label-floating">Top/Bottom Total Pixel Count:</label>
+                    <input type="text" class="form-control ledCount" id="whCount" data-type="wH">
+                    <span class="bmd-help">Enter the number of LEDs on the top and bottom of the screen.</span>
+                </div>
+            </div>
+            <div class="row justify-content-center">
+                <div class="form-group bmd-form-group col-12 col-md-6">
+                    <label for="wvCount" class="bmd-label-floating">Left/Right Total Pixel Count:</label>
+                    <input type="text" class="form-control ledCount" id="wvCount" data-type="wV">
+                    <span class="bmd-help">Enter the number of LEDs on the left and right sides of the screen.</span>
+                </div>
+            </div>
+            <div class="row justify-content-center">
+                <div class="form-group bmd-form-group col-12 col-md-6">
+                    <label for="wTotal" class="bmd-label-floating">Total LEDs in strip:</label>
+                    <input type="text" class="form-control ledCount" id="wTotal" data-type="wTotal">
+                    <span class="bmd-help">Enter the total number of LEDs in the strip.</span>
+                </div>
+            </div>
+            <div class="row justify-content-center">
+                <div class="form-group bmd-form-group col-12 col-md-6">
+                    <label for="wOffset" class="bmd-label-floating">LED Offset:</label>
+                    <input type="text" class="form-control ledCount" id="wOffset" data-type="wOffset">
+                    <span class="bmd-help">The total number of pixels from the lower-right of the screen to skip/start from.</span>
+                </div>
+            </div>
+            <div class="row justify-content-center">
+                <div class="form-group bmd-form-group col-12 col-md-6">
+                    <label for="wDirection" class="bmd-label-floating">LED Direction:</label>
+                    <input type="text" class="form-control ledCount" id="wDirection" data-type="wDirection">
+                    <span class="bmd-help">0 = conterclockwise (normal) as you face the screen, 1 = clockwise.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="bg-dark text-white hidden" id="lifxCard">
     <div id="lifxPane">
         <div class="card-body">

@@ -18,6 +18,7 @@ let lightMap;
 let hueGroup;
 let hueIp = "";
 let nanoIp = "";
+let wledIp = "";
 let selectedDevice = null;
 let ledData = null;
 let bridge = null;
@@ -1001,6 +1002,7 @@ function buildLists() {
     // Push dreamscreen devices to groups first, so they appear on top. The, do sidekicks, nanoleaves, then bridges.
     $.each(devices, function() {
         let item = $(this)[0];
+        if (item === null || item === undefined) return;
         if (item['id'] === undefined && item['ipAddress'] !== undefined) item['id'] = item['ipAddress'];
         if (this.tag.includes("DreamScreen")) {
             let groupNumber = (item['groupNumber'] === undefined) ? 0 : item['groupNumber'];
@@ -1035,7 +1037,10 @@ function buildLists() {
     groups = sortDevices(datastore['leaves'], groups, "NanoLeaf", "NanoLeaf");
     // Sort bridges
     groups = sortDevices(datastore['bridges'], groups, "HueBridge", "Hue Bridge");
+    // Sort lifx
     groups = sortDevices(datastore['lifxBulbs'], groups, "Lifx", "Lifx Bulb");
+    // Sort wled
+    groups = sortDevices(datastore['wled'], groups, "WLed", "Wireless LEDs")
     dg.html("");
     $.each(groups, function () {
         let item = $(this)[0];
@@ -1208,11 +1213,13 @@ function hidePanels() {
     let hueCard = $('#hueCard');
     let dsCard = $('#dsCard');
     let lifxCard = $('#lifxCard');
+    let wledCard = $('#wledCard');
     let settingsCard = $('#settingsCard');
     nanoCard.slideUp();
     hueCard.slideUp();
     dsCard.slideUp();
     lifxCard.slideUp();
+    wledCard.slideUp();
     settingsCard.slideUp();
 }
 
@@ -1222,11 +1229,17 @@ function showDevicePanel(data) {
     let hueCard = $('#hueCard');
     let dsCard = $('#dsCard');
     let lifxCard = $('#lifxCard');
+    let wledCard = $('#wledCard');
     let modeGroup = $(".modeGroup");
     selectedDevice = data;
     if (!resizeTimer) hidePanels();
     setTimeout(function(){
-        $('#navTitle').html(data.tag);
+        let title = data.tag;
+        if (title == "WLed") {
+            title = data.id;
+        }
+        $('#navTitle').html(title);
+        
         switch (data.tag) {
             case "SideKick":
             case "Connect":
@@ -1252,6 +1265,12 @@ function showDevicePanel(data) {
                 loadLifxData(data);
                 modeGroup.show();
                 if (!resizeTimer) lifxCard.slideDown();
+                break;
+            case "WLed":
+                loadWledData(data);
+                modeGroup.show();
+                if (!resizeTimer) wledCard.slideDown();
+                break;
         }
 
         resizeTimer = null;
@@ -1472,6 +1491,29 @@ function loadLifxData(data) {
     $('.lifxRegionV2').removeClass('checked');
     $('.lifxRegionV2[data-region="' + data.targetSectorV2 +'"]').addClass('checked');
     lBrightness.val(data["brightness"]);    
+}
+
+function loadWledData(data) {
+    // Get our UI elements
+    const hIp = $('#wledIp');
+    const wName = $('#wledName');
+    const wBrightness = $("#wledBrightness");
+    wledIp = data["hostName"];
+    wName.html(wledIp);
+    hIp.html(data.id);
+    $('.wledRegion').removeClass('checked');
+    $('.wledRegion[data-region="' + data.targetSector +'"]').addClass('checked');
+    $('.wledRegionV2').removeClass('checked');
+    $('.wledRegionV2[data-region="' + data.targetSectorV2 +'"]').addClass('checked');
+    $('#whCount').val(data["hCount"]);
+    $('#wvCount').val(data["vCount"]);
+    let ledCount = data["state"]["info"]["leds"]["count"];
+    let isRgbw = data["state"]["info"]["leds"]["rgbw"];
+    wBrightness.val(data["state"]["state"]["bri"]);
+    $("#wstripType").val(isRgbw);
+    $("#wOffset").val(data["offset"]);
+    $("#wDirection").val(data["stripDirection"]);
+    $("#wTotal").val(ledCount);
 }
 
 function drawNanoShapes(panel) {

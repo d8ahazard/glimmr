@@ -13,6 +13,7 @@ namespace HueDream.Models.LED {
         [JsonProperty] public int HCount { get; set; }
         [JsonProperty] public int VCountDs { get; set; }
         [JsonProperty] public int HCountDs { get; set; }
+        [JsonProperty] public bool FixGamma { get; set; }
 
         public LedData() {}
 
@@ -27,6 +28,7 @@ namespace HueDream.Models.LED {
             StripType = 2812;
             Brightness = 255;
             StartupAnimation = 0;
+            FixGamma = true;
         }
     }
 }
