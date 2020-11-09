@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using HueDream.Models.Util;
@@ -31,14 +30,14 @@ namespace HueDream.Models.StreamingDevice.LIFX {
             var foo = Task.Run(() => Discover(5), ct);
             var b = await foo;
             foreach (var bulb in b) {
-                var existing = DataUtil.GetCollectionItem<LifxData>("lifxBulbs", bulb.MacAddressString);
+                var existing = DataUtil.GetCollectionItem<LifxData>("Dev_Lifx", bulb.MacAddressString);
                 if (existing != null) {
                     bulb.TargetSector = existing.TargetSector;
                     bulb.Brightness = existing.Brightness;
                 }
-                DataUtil.InsertCollection<LifxData>("lifxBulbs", bulb);
+                DataUtil.InsertCollection<LifxData>("Dev_Lifx", bulb);
             }
-            return DataUtil.GetCollection<LifxData>("lifxBulbs");
+            return DataUtil.GetCollection<LifxData>("Dev_Lifx");
         }
 
         private void Client_DeviceDiscovered(object sender, LifxClient.DeviceDiscoveryEventArgs e) {

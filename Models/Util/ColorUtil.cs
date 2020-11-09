@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Drawing;
 using System.Globalization;
-using Newtonsoft.Json;
-using Q42.HueApi.ColorConverters;
-using Q42.HueApi.ColorConverters.HSB;
 
 namespace HueDream.Models.Util {
     public static class ColorUtil {

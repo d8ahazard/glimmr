@@ -23,6 +23,14 @@ namespace HueDream.Models.StreamingDevice.Hue {
             IpAddress = b.IpAddress;
             Id = b.BridgeId;
             Brightness = 100;
+            Name = Id;
+            User = "";
+            Key = "";
+            SelectedGroup = "-1";
+            Groups = new List<Group>();
+            Lights = new List<LightData>();
+            GroupName = "";
+            GroupNumber = -1;
         }
 
         public BridgeData(string ip, string id, string user, string key, string group = "-1", string groupName = "undefined", int groupNumber = 0) {

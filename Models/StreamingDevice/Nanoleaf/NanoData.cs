@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using HueDream.Models.Util;
 using Newtonsoft.Json;
 
 namespace HueDream.Models.StreamingDevice.Nanoleaf {

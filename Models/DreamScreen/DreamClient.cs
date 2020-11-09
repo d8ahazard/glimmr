@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
@@ -26,8 +25,8 @@ using LifxNet;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
-using Serilog;
 using Color = System.Drawing.Color;
+using Timer = System.Timers.Timer;
 
 namespace HueDream.Models.DreamScreen {
     public class DreamClient : BackgroundService {
@@ -97,7 +96,7 @@ namespace HueDream.Models.DreamScreen {
         private LedStrip _strip;
 
         // Timer for refreshing devices
-        private System.Timers.Timer _refreshTimer;
+        private Timer _refreshTimer;
 
         // We pass hub context to this so we can send data directly to the websocket
         public DreamClient(IHubContext<SocketServer> hubContext) {
@@ -132,9 +131,9 @@ namespace HueDream.Models.DreamScreen {
             _nanoSocket.EnableBroadcast = false;
 
             // Cache data store
-            var dd = DataUtil.GetStore();
             // Check default settings
-            DataUtil.CheckDefaults(dd, _lifxClient);
+            DataUtil.CheckDefaults(_lifxClient);
+            var dd = DataUtil.GetDb();
             // Get audio input if exists
             _aStream = GetStream();
             // Get our device data
@@ -151,12 +150,12 @@ namespace HueDream.Models.DreamScreen {
             _brightness = _dev.Brightness;
             _autoDisabled = false;
             try {
-                _autoDisabled = dd.GetItem<bool>("autoDisabled");
+                _autoDisabled = DataUtil.GetItem("AutoDisabled");
             } catch {
                 
             }
 
-            CaptureMode = dd.GetItem<int>("captureMode");
+            CaptureMode = DataUtil.GetItem("CaptureMode");
             
             // Set default values
             _prevMode = -1;
@@ -165,8 +164,7 @@ namespace HueDream.Models.DreamScreen {
             _streamStarted = false;
             _showBuilderStarted = false;
             _group = (byte) _dev.GroupNumber;
-            _targetEndpoint = new IPEndPoint(IPAddress.Parse(dd.GetItem("dsIp")), 8888);
-            dd.Dispose();
+            _targetEndpoint = new IPEndPoint(IPAddress.Parse(DataUtil.GetItem("DsIp")), 8888);
             _sDevices = new List<IStreamingDevice>();
             _wlStrips = new List<WLedStrip>();
             // Start our timer to refresh devices
@@ -212,15 +210,18 @@ namespace HueDream.Models.DreamScreen {
                 }
                 LogUtil.Write("DreamClient: Main loop terminated, stopping services...");
                 StopServices();
+                // Dispose our DB instance
+                DataUtil.Dispose();
             });
         }
 
         // Starts our capture service and initializes our LEDs
         private void StartCaptureServices(CancellationToken ct) {
             if (CaptureMode == 0) return;
-            var ledData = DataUtil.GetItem<LedData>("ledData") ?? new LedData(true);
+            LedData ledData = DataUtil.GetObject<LedData>("LedData") ?? new LedData(true);
             try {
                 _strip = new LedStrip(ledData);
+                LogUtil.Write("Initialized LED strip...");
             } catch (TypeInitializationException e) {
                 LogUtil.Write("Type init error: " + e.Message);
             }
@@ -265,7 +266,7 @@ namespace HueDream.Models.DreamScreen {
             }
             
             // Reset and restart our timer
-            _refreshTimer = new System.Timers.Timer(600000);
+            _refreshTimer = new Timer(600000);
             _refreshTimer.Elapsed += DeviceDiscovery;
             _refreshTimer.AutoReset = true;
             _refreshTimer.Enabled = true;
@@ -320,7 +321,13 @@ namespace HueDream.Models.DreamScreen {
                     break;
                 case 1: // Video
                     if (!_streamStarted) StartStream();
-                    _grabber?.ToggleSend();
+                    if (_grabber != null) {
+                        _grabber?.ToggleSend();
+                        LogUtil.Write("Toggling send on grabber...");
+                    } else {
+                        LogUtil.Write("Grabber is NULL!", "WARN");
+                    }
+                    
                     Subscribe(true);
                     break;
                 case 2: // Audio
@@ -408,27 +415,27 @@ namespace HueDream.Models.DreamScreen {
             if (!_streamStarted) {
                 LogUtil.Write("Starting stream...");
                 // Init bridges
-                var bridgeArray = DataUtil.GetCollection<BridgeData>("bridges");
+                var bridgeArray = DataUtil.GetCollection<BridgeData>("Dev_Hue");
                 _sendTokenSource = new CancellationTokenSource();
                 foreach (var bridge in bridgeArray.Where(bridge => !string.IsNullOrEmpty(bridge.Key) && !string.IsNullOrEmpty(bridge.User) && bridge.SelectedGroup != "-1")) {
                     _sDevices.Add(new HueBridge(bridge));
                 }
 
                 // Init leaves
-                var leaves = DataUtil.GetCollection<NanoData>("leaves");
+                var leaves = DataUtil.GetCollection<NanoData>("Dev_NanoLeaf");
                 foreach (var n in leaves.Where(n => !string.IsNullOrEmpty(n.Token) && n.Layout != null)) {
                     _sDevices.Add(new NanoGroup(n, _nanoClient, _nanoSocket));
                 }
 
                 // Init lifx
-                var lifx = DataUtil.GetCollection<LifxData>("lifxBulbs");
+                var lifx = DataUtil.GetCollection<LifxData>("Dev_Lifx");
                 if (lifx != null) {
                     foreach (var b in lifx.Where(b => b.TargetSector != -1)) {
                         _sDevices.Add(new LifxBulb(b, _lifxClient));
                     }
                 }
                 
-                var wlArray = DataUtil.GetCollection<WLedData>("wled");
+                var wlArray = DataUtil.GetCollection<WLedData>("Dev_Wled");
                 foreach (var wl in wlArray) {
                     LogUtil.Write("Adding Wled device!");
                     _wlStrips.Add(new WLedStrip(wl));
@@ -442,7 +449,6 @@ namespace HueDream.Models.DreamScreen {
                 }
 
                 foreach (var wl in _wlStrips.Where(wl => !wl.Streaming)) {
-                    LogUtil.Write("Starting wled device: " + JsonConvert.SerializeObject(wl));
                     wl.StartStream(_sendTokenSource.Token);
                     LogUtil.Write($"Started wled device at {wl.IpAddress}.");
                 }
@@ -496,7 +502,7 @@ namespace HueDream.Models.DreamScreen {
                         //LogUtil.Write("Sent.");
                     }
                 }
-
+                LogUtil.Write("Updating strip...");
                 _strip?.UpdateAll(colors);
             }
         }
@@ -520,7 +526,7 @@ namespace HueDream.Models.DreamScreen {
             }
 
             foreach (var wl in _wlStrips) {
-                    wl.SetColor(wledSectors[wl.Id], fadeTime);
+                wl.SetColor(wledSectors[wl.Id], fadeTime);
             }
             
             if (CaptureMode != 0) {
@@ -689,7 +695,10 @@ namespace HueDream.Models.DreamScreen {
                 case "DISCOVERY_STOP":
                     LogUtil.Write($"DreamScreen: Discovery complete, found {_devices.Count} devices.");
                     _discovering = false;
-                    DataUtil.SetItem<List<BaseDevice>>("devices", _devices);
+                    foreach (var d in _devices) {
+                        DataUtil.InsertCollection<BaseDevice>("devices", d);
+                    }
+                    
                     break;
                 case "REMOTE_REFRESH":
                     var id = Encoding.UTF8.GetString(payload.ToArray());
@@ -715,11 +724,11 @@ namespace HueDream.Models.DreamScreen {
                         SendDeviceStatus(replyPoint);
                     } else if (flag == "60") {
                         if (msgDevice != null) {
-                            string dsIpCheck = DataUtil.GetItem("dsIp");
+                            string dsIpCheck = DataUtil.GetItem("DsIp");
                             if (dsIpCheck == "0.0.0.0" &&
                                 msgDevice.Tag.Contains("DreamScreen", StringComparison.CurrentCulture)) {
                                 LogUtil.Write(@"Setting a target DS IP.");
-                                DataUtil.SetItem("dsIp", from);
+                                DataUtil.SetItem("DsIp", from);
                                 _targetEndpoint = replyPoint;
                             }
 
@@ -829,7 +838,7 @@ namespace HueDream.Models.DreamScreen {
             }
 
             if (writeState) {
-                DataUtil.SetItem<BaseDevice>("myDevice", tDevice);
+                DataUtil.SetObject("myDevice", tDevice);
                 _dev = tDevice;
                 DreamSender.SendUdpWrite(msg.C1, msg.C2, msg.GetPayload(), 0x41, (byte)msg.Group, receivedIpEndPoint);
             }

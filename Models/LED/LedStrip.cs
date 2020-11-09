@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using HueDream.Models.StreamingDevice.WLed;
 using HueDream.Models.Util;
 using rpi_ws281x;
 using ColorUtil = HueDream.Models.Util.ColorUtil;
@@ -33,12 +34,42 @@ namespace HueDream.Models.LED {
         }
 
         private void Demo() {
+            var wlData = DataUtil.GetCollection<WLedData>("wled");
+            var strips = new List<WLedStrip>();
+            foreach (var wl in wlData) {
+                strips.Add(new WLedStrip(wl));
+            }
+
+            foreach (var s in strips) {
+                s.StartStream();
+            }
             for (var i = 0; i < _ledCount; i++) {
                 var pi = i * 1.0f;
                 var progress = pi / _ledCount;
                 var rCol = Rainbow(progress);
                 _controller.SetLED(i, rCol);
                 _strip.Render();
+                foreach (var s in strips) {
+                    // Total index of LEDs
+                    var lastIndex = s.Data.LedCount + s.Data.Offset;
+                    // Value we should start at if the strip loops
+                    var reStartIndex = -1;
+                    var reStartStop = 0;
+                    // If we have more LEDs in index than count, start from zero
+                    if (lastIndex > _ledCount) {
+                        reStartIndex = 0;
+                        reStartStop = lastIndex - _ledCount;
+                    } 
+                    // If i is between offset or end of all colors, set that pixel
+                    if (s.Data.Offset >= i && i <= s.Data.LedCount) {
+                        s.UpdatePixel(i,rCol);
+                    } else if (reStartIndex <= i && i < reStartStop ) {
+                        s.UpdatePixel(i,rCol);
+                    }
+                }
+            }
+            foreach (var s in strips) {
+                s.StopStream();
             }
 
             System.Threading.Thread.Sleep(500);

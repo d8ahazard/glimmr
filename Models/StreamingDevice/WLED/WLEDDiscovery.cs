@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using HueDream.Models.LED;
 using HueDream.Models.Util;
 using Makaretu.Dns;
 using Newtonsoft.Json;
@@ -14,10 +13,9 @@ namespace HueDream.Models.StreamingDevice.WLed {
             var output = new List<WLedData>();
             var existing = new List<WLedData>();
             try {
-                existing = DataUtil.GetItem<List<WLedData>>("wled");
+                existing = DataUtil.GetCollection<WLedData>("Dev_Wled");
             } catch (Exception e) {
                 LogUtil.Write("No Led data...");
-                DataUtil.SetItem<List<WLedData>>("wled", existing);
             }
 
             if (existing == null) {
@@ -50,7 +48,7 @@ namespace HueDream.Models.StreamingDevice.WLed {
                         }
                     }
                     LogUtil.Write("We should be inserting here: " + JsonConvert.SerializeObject(nData));
-                    DataUtil.InsertCollection("wled", nData);
+                    DataUtil.InsertCollection<WLedData>("Dev_Wled", nData);
                 }
             };
 

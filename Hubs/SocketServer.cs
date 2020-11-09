@@ -5,11 +5,9 @@ using System.Threading.Tasks;
 using HueDream.Models.StreamingDevice.Hue;
 using HueDream.Models.StreamingDevice.Nanoleaf;
 using HueDream.Models.Util;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using Q42.HueApi.Models.Bridge;
-using Serilog;
 
 namespace HueDream.Hubs {
     public class SocketServer : Hub {
@@ -77,13 +75,13 @@ namespace HueDream.Hubs {
         }
 
         public async void AuthorizeNano(string id) {
-            var leaves = DataUtil.GetItem<List<NanoData>>("leaves");
+            var leaves = DataUtil.GetCollection<NanoData>("leaves");
             NanoData bd = null;
             var nanoInt = -1;
             if (!string.IsNullOrEmpty(id)) {
                 var nanoCount = 0;
                 foreach (var n in leaves) {
-                    if (n.IpV4Address == id) {
+                    if (n.IpAddress == id) {
                         bd = n;
                         bool doAuth = n.Token == null;
                         if (doAuth) {
@@ -103,8 +101,7 @@ namespace HueDream.Hubs {
                 var appKey = panel.CheckAuth().Result;
                 if (appKey != null && bd != null) {
                     bd.Token = appKey.Token;
-                    leaves[nanoInt] = bd;
-                    DataUtil.SetItem("leaves", leaves);
+                    DataUtil.InsertCollection<NanoData>("leaves", bd);
                     await Clients.All.SendAsync("nanoAuth", "authorized");
                     await Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
                     panel.Dispose();

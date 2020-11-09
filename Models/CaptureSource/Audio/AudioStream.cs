@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading;
 using HueDream.Models.Util;
 using ManagedBass;
@@ -29,7 +28,7 @@ namespace HueDream.Models.CaptureSource.Audio {
 
             _devices = new List<DeviceInfo>();
             _recordDeviceIndex = -1;
-            _sensitivity = DataUtil.GetItem("sensitivity") ?? 5;
+            _sensitivity = DataUtil.GetItem("Sensitivity") ?? 5;
             LoadDevices();
         }
 
@@ -48,12 +47,12 @@ namespace HueDream.Models.CaptureSource.Audio {
         private void LoadDevices() {
             Bass.Init();
             _devices = new List<DeviceInfo>();
-            string rd = DataUtil.GetItem("recDev");
+            string rd = DataUtil.GetItem("RecDev");
             for (var a = 0; Bass.RecordGetDeviceInfo(a, out var info); a++) {
                 if (!info.IsEnabled) continue;
                 _devices.Add(info);
                 if (rd == null && a == 0) {
-                    DataUtil.SetItem("recDev", info.Name);
+                    DataUtil.SetItem("RecDev", info.Name);
                 } else {
                     if (rd != info.Name) continue;
                     LogUtil.Write($"Selecting recording device index {a}: {info.Name}");

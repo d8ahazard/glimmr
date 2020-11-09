@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Drawing;
 using System.Globalization;
 using System.Linq;
@@ -8,7 +7,6 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Accord;
 using HueDream.Hubs;
 using HueDream.Models.DreamScreen;
 using HueDream.Models.DreamScreen.Devices;
@@ -22,7 +20,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Color = LifxNet.Color;
 
 namespace HueDream.Controllers {
     [Route("api/[controller]"), ApiController]
@@ -47,9 +44,9 @@ namespace HueDream.Controllers {
         [HttpPost("updateDs")]
         public IActionResult UpdateDs([FromBody] JObject dsSetting) {
             if (dsSetting == null) throw new ArgumentException("Invalid Jobject.");
-            var id = (dsSetting["id"] ?? "").Value<string>();
-            var property = (dsSetting["property"] ?? "").Value<string>();
-            var value = (dsSetting["value"] ?? "").Value<string>();
+            var id = (dsSetting["Id"] ?? "").Value<string>();
+            var property = (dsSetting["Property"] ?? "").Value<string>();
+            var value = (dsSetting["Value"] ?? "").Value<string>();
             LogUtil.Write($"We got our stuff: {id}, {property}, {value}");
             DreamSender.SendMessage(property, value, id);
             NotifyClients();
@@ -84,7 +81,7 @@ namespace HueDream.Controllers {
         [HttpPost("camType")]
         public IActionResult CamType([FromBody] int cType) {
             LogUtil.Write("Camera type set to " + cType);
-            DataUtil.SetItem<int>("camType", cType);
+            DataUtil.SetItem<int>("CamType", cType);
             NotifyClients();
             ResetMode();
             return Ok(cType);
@@ -93,8 +90,8 @@ namespace HueDream.Controllers {
         // POST: api/DreamData/vcount
         [HttpPost("vcount")]
         public IActionResult Vcount([FromBody] int count) {
-            LedData ledData = DataUtil.GetItem<LedData>("ledData");
-            var capMode = DataUtil.GetItem<int>("captureMode");
+            LedData ledData = DataUtil.GetCollection<LedData>("ledData").First();
+            var capMode = DataUtil.GetItem<int>("CaptureMode");
             int hCount;
             if (capMode == 0) {
                 hCount = ledData.HCountDs;
@@ -105,7 +102,7 @@ namespace HueDream.Controllers {
             }
 
             ledData.LedCount = hCount * 2 + count * 2;
-            DataUtil.SetItem<LedData>("ledData", ledData);
+            DataUtil.SetObject("LedData", ledData);
             NotifyClients();
             ResetMode();
             return Ok(count);
@@ -114,8 +111,8 @@ namespace HueDream.Controllers {
         // POST: api/DreamData/hcount
         [HttpPost("hcount")]
         public IActionResult Hcount([FromBody] int count) {
-            LedData ledData = DataUtil.GetItem<LedData>("ledData");
-            var capMode = DataUtil.GetItem<int>("captureMode");
+            LedData ledData = DataUtil.GetCollection<LedData>("ledData").First();
+            var capMode = DataUtil.GetItem<int>("CaptureMode");
             int vCount;
             if (capMode == 0) {
                 vCount = ledData.VCountDs;
@@ -126,7 +123,7 @@ namespace HueDream.Controllers {
             }
 
             ledData.LedCount = vCount * 2 + count * 2;
-            DataUtil.SetItem<LedData>("ledData", ledData);
+            DataUtil.SetObject("LedData", ledData);
             NotifyClients();
             ResetMode();
             return Ok(count);
@@ -135,9 +132,9 @@ namespace HueDream.Controllers {
         // POST: api/DreamData/stripType
         [HttpPost("stripType")]
         public IActionResult StripType([FromBody] int type) {
-            LedData ledData = DataUtil.GetItem<LedData>("ledData");
+            LedData ledData = DataUtil.GetCollection<LedData>("ledData").First();
             ledData.StripType = type;
-            DataUtil.SetItem<LedData>("ledData", ledData);
+            DataUtil.SetObject("LedData", ledData);
             NotifyClients();
             ResetMode();
             return Ok(type);
@@ -148,7 +145,7 @@ namespace HueDream.Controllers {
         [HttpPost("dsIp")]
         public IActionResult PostIp([FromBody] string dsIp) {
             LogUtil.Write(@"Did it work? " + dsIp);
-            DataUtil.SetItem("dsIp", dsIp);
+            DataUtil.SetItem("DsIp", dsIp);
             ResetMode();
             return Ok(dsIp);
         }
@@ -157,7 +154,7 @@ namespace HueDream.Controllers {
         [HttpPost("dsSidekick")]
         public IActionResult PostSk([FromBody] SideKick skDevice) {
             LogUtil.Write(@"Did it work? " + JsonConvert.SerializeObject(skDevice));
-            DataUtil.SetItem("myDevice", skDevice);
+            DataUtil.SetItem("MyDevice", skDevice);
             NotifyClients();
             return Ok("ok");
         }
@@ -166,7 +163,7 @@ namespace HueDream.Controllers {
         [HttpPost("dsConnect")]
         public IActionResult PostDevice([FromBody] Connect myDevice) {
             LogUtil.Write(@"Did it work? " + JsonConvert.SerializeObject(myDevice));
-            DataUtil.SetItem("myDevice", myDevice);
+            DataUtil.SetItem("MyDevice", myDevice);
             NotifyClients();
             return Ok(myDevice);
         }
@@ -231,7 +228,7 @@ namespace HueDream.Controllers {
                     BridgeData bd = null;
                     if (!string.IsNullOrEmpty(value)) {
                         _hubContext?.Clients.All.SendAsync("hueAuth", "start");
-                        bd = DataUtil.GetCollectionItem<BridgeData>("bridges", value);
+                        bd = DataUtil.GetCollectionItem<BridgeData>("Dev_Hue", value);
                         LogUtil.Write("BD: " + JsonConvert.SerializeObject(bd));
                         if (bd == null) {
                             LogUtil.Write("Null bridge retrieved.");
@@ -260,18 +257,18 @@ namespace HueDream.Controllers {
                     bd.Key = appKey.StreamingClientKey;
                     bd.User = appKey.Username;
                     LogUtil.Write("We should be authorized, returning.");
-                    DataUtil.InsertCollection<BridgeData>("bridges", bd);
+                    DataUtil.InsertCollection<BridgeData>("Dev_Hue", bd);
                     return new JsonResult(bd);
                 }
                 case "authorizeNano": {
                     var doAuth = true;
-                    var leaves = DataUtil.GetItem<List<NanoData>>("leaves");
+                    var leaves = DataUtil.GetCollection<NanoData>("Dev_NanoLeaf");
                     NanoData bd = null;
                     var nanoInt = -1;
                     if (!string.IsNullOrEmpty(value)) {
                         var nanoCount = 0;
                         foreach (var n in leaves) {
-                            if (n.IpV4Address == value) {
+                            if (n.IpAddress == value) {
                                 bd = n;
                                 doAuth = n.Token == null;
                                 nanoInt = nanoCount;
@@ -305,19 +302,22 @@ namespace HueDream.Controllers {
         [HttpGet("json")]
         public IActionResult GetJson() {
             LogUtil.Write(@"GetJson Called.");
-            var store = DataUtil.GetStore();
-            var bridgeArray = DataUtil.GetCollection<BridgeData>("bridges");
+            var bridgeArray = DataUtil.GetCollection<BridgeData>("Dev_Hue");
             if (bridgeArray.Count == 0) {
-                var newBridges = HueDiscovery.Discover();
-                store.ReplaceItem("bridges", newBridges, true);
+                var newBridges = HueDiscovery.Discover().Result;
+                foreach (var b in newBridges) {
+                    DataUtil.InsertCollection<BridgeData>("Dev_Hue", b);
+                }
             }
 
-            if (store.GetItem("dsIp") == "0.0.0.0") {
-                var devices = DreamDiscovery.Discover();
-                store.ReplaceItem("devices", devices);
+            if (DataUtil.GetItem("DsIp") == "127.0.0.1") {
+                var newDevices = DreamDiscovery.Discover();
+                var devices = DataUtil.GetCollection<BaseDevice>("Dev_DreamScreen");
+                foreach (var d in devices) {
+                    DataUtil.InsertCollection<BaseDevice>("Dev_DreamScreen", d);
+                }
             }
 
-            store.Dispose();
             return Content(DataUtil.GetStoreSerialized(), "application/json");
         }
 
@@ -349,7 +349,7 @@ namespace HueDream.Controllers {
                 case "NanoLeaf":
                     if (myDev.Mode == newMode) return;
                     myDev.Mode = newMode;
-                    DataUtil.SetItem("myDevice", myDev);
+                    DataUtil.SetItem("MyDevice", myDev);
                     ipAddress = "127.0.0.1";
                     mFlag = 0x11;
                     groupSend = true;
@@ -397,7 +397,7 @@ namespace HueDream.Controllers {
             }
 
             myDev.Mode = mode;
-            DataUtil.SetItem("myDevice", myDev);
+            DataUtil.SetItem("MyDevice", myDev);
             var payload = new List<byte>();
             payload.Add((byte)mode);
             DreamSender.SendUdpWrite(0x01, 0x10, payload.ToArray(), 0x21, (byte)myDev.GroupNumber,
@@ -407,17 +407,17 @@ namespace HueDream.Controllers {
 
         private void SetCaptureMode(int capMode) {
             LogUtil.Write("Updating capture mode to " + capMode);
-            var curMode = DataUtil.GetItem<int>("captureMode");
+            var curMode = DataUtil.GetItem<int>("CaptureMode");
             var dev = DataUtil.GetDeviceData();
             if (curMode == capMode) return;
-            DataUtil.SetItem<int>("captureMode", capMode);
+            DataUtil.SetItem<int>("CaptureMode", capMode);
             var devType = "SideKick";
             if (capMode != 0) {
                 devType = "DreamScreen4K";
             }
 
             SwitchDeviceType(devType, dev);
-            DataUtil.SetItem<string>("devType", devType);
+            DataUtil.SetItem<string>("DevType", devType);
             TriggerReload(JObject.FromObject(dev));
             if (dev.Mode == 0) return;
             SetMode(0);
@@ -430,19 +430,19 @@ namespace HueDream.Controllers {
             switch (devType) {
                 case "SideKick": {
                     var newDevice = new SideKick(curDevice);
-                    DataUtil.SetItem("myDevice", newDevice);
+                    DataUtil.SetItem("MyDevice", newDevice);
                     DataUtil.InsertDsDevice(newDevice);
                     break;
                 }
                 case "DreamScreen4K": {
                     var newDevice = new DreamScreen4K(curDevice);
-                    DataUtil.SetItem("myDevice", newDevice);
+                    DataUtil.SetItem("MyDevice", newDevice);
                     DataUtil.InsertDsDevice(newDevice);
                     break;
                 }
                 case "Connect": {
                     var newDevice = new Connect(curDevice);
-                    DataUtil.SetItem("myDevice", newDevice);
+                    DataUtil.SetItem("MyDevice", newDevice);
                     DataUtil.InsertDsDevice(newDevice);
                     break;
                 }
@@ -458,32 +458,32 @@ namespace HueDream.Controllers {
             var myDev = DataUtil.GetDeviceData();
             var ipAddress = myDev.IpAddress;
             if (ipAddress == (dData["ipAddress"] ?? "INVALID").Value<string>()) {
-                DataUtil.SetItem("myDevice", dData);
+                DataUtil.SetItem("MyDevice", dData);
             }
             var groupNumber = (byte) myDev.GroupNumber;
             switch (tag) {
                 case "WLed":
                     LogUtil.Write("Updating wled");
                     var wData = dData.ToObject<WLedData>();
-                    DataUtil.InsertCollection<WLedData>("wled",wData);
+                    DataUtil.InsertCollection<WLedData>("Dev_Wled",wData);
                     _hubContext.Clients.All.SendAsync("wledData", wData);
                     break;
                 case "HueBridge":
                     LogUtil.Write("Updating bridge");
                     var bData = dData.ToObject<BridgeData>();
-                    DataUtil.InsertCollection<BridgeData>("bridges", bData);
+                    DataUtil.InsertCollection<BridgeData>("Dev_Hue", bData);
                     _hubContext.Clients.All.SendAsync("hueData", bData);
                     break;
                 case "Lifx":
                     LogUtil.Write("Updating lifx bulb");
                     var lData = dData.ToObject<LifxData>();
-                    DataUtil.InsertCollection<LifxData>("lifxBulbs", lData);
+                    DataUtil.InsertCollection<LifxData>("Dev_Lifx", lData);
                     _hubContext.Clients.All.SendAsync("lifxData", lData);
                     break;
                 case "NanoLeaf":
                     LogUtil.Write("Updating nanoleaf");
                     var nData = dData.ToObject<NanoData>();
-                    DataUtil.InsertCollection<NanoData>("leaves", nData);
+                    DataUtil.InsertCollection<NanoData>("Dev_NanoLeaf", nData);
                     _hubContext.Clients.All.SendAsync("nanoData", nData);
                     break;
                 case "SideKick":
@@ -539,23 +539,23 @@ namespace HueDream.Controllers {
             var remoteId = "";
             switch (tag) {
                 case "Hue":
-                    var bridge = DataUtil.GetCollectionItem<BridgeData>("bridges", id);
+                    var bridge = DataUtil.GetCollectionItem<BridgeData>("Dev_Hue", id);
                     bridge.MaxBrightness = brightness;
-                    DataUtil.InsertCollection<BridgeData>("bridges", bridge);
+                    DataUtil.InsertCollection<BridgeData>("Dev_Hue", bridge);
                     sendRemote = true;
                     remoteId = bridge.Id;
                     break;
                 case "Lifx":
-                    var bulb = DataUtil.GetCollectionItem<LifxData>("lifxBulbs", id);
+                    var bulb = DataUtil.GetCollectionItem<LifxData>("Dev_Lifx", id);
                     bulb.MaxBrightness = brightness;
-                    DataUtil.InsertCollection<LifxData>("lifxBulbs", bulb);
+                    DataUtil.InsertCollection<LifxData>("Dev_Lifx", bulb);
                     sendRemote = true;
                     remoteId = bulb.Id;
                     break;
                 case "NanoLeaf":
-                    var panel = DataUtil.GetCollectionItem<NanoData>("leaves", id);
+                    var panel = DataUtil.GetCollectionItem<NanoData>("Dev_NanoLeaf", id);
                     panel.MaxBrightness = brightness;
-                    DataUtil.InsertCollection<NanoData>("leaves", panel);
+                    DataUtil.InsertCollection<NanoData>("Dev_Nanoleaf", panel);
                     sendRemote = true;
                     remoteId = panel.Id;
                     break;

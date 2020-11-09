@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
-using HueDream.Controllers;
 using HueDream.Models.Util;
 using LifxNet;
-using Newtonsoft.Json;
 
 namespace HueDream.Models.StreamingDevice.LIFX {
     public class LifxBulb : IStreamingDevice {

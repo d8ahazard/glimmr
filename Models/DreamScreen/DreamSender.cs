@@ -6,7 +6,6 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using HueDream.Models.Util;
-using Newtonsoft.Json;
 
 namespace HueDream.Models.DreamScreen {
     public static class DreamSender {

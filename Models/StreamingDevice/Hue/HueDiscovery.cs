@@ -1,20 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using HueDream.Controllers;
 using HueDream.Models.Util;
 using Newtonsoft.Json;
 using Q42.HueApi;
 using Q42.HueApi.Interfaces;
 using Q42.HueApi.Models.Bridge;
-using Q42.HueApi.Models.Groups;
-using Q42.HueApi.Streaming;
-using Tmds.Linux;
 
 namespace HueDream.Models.StreamingDevice.Hue {
     public static class HueDiscovery {
@@ -24,7 +19,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
             var foo = Task.Run(() => Discover(), ct);
             var newBridges = await foo;
             LogUtil.Write("New bridges: " + JsonConvert.SerializeObject(newBridges));
-            var current = DataUtil.GetItem<List<BridgeData>>("bridges");
+            var current = DataUtil.GetCollection<BridgeData>("Dev_Hue");
             foreach (var nb in newBridges) {
                 foreach (var ex in current) {
                     if (ex.Id == nb.Id) {

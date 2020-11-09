@@ -4,7 +4,6 @@ using System.Text;
 using System.Threading.Tasks;
 using HueDream.Models.Util;
 using Nanoleaf.Client.Exceptions;
-using Newtonsoft.Json;
 
 namespace HueDream.Models.StreamingDevice.Nanoleaf {
     public static class NanoSender {

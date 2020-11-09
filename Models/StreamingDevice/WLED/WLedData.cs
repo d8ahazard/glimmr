@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Net;
-using Accord.Math;
 using HueDream.Models.LED;
 using HueDream.Models.Util;
 using Newtonsoft.Json;
@@ -38,9 +36,9 @@ namespace HueDream.Models.StreamingDevice.WLed {
             AutoDisable = true;
             Sectors = new List<int>();
             SubSectors = new Dictionary<int, int>();
-            LedData ld = new LedData();
+            LedData ld = new LedData(true);
             try {
-                ld = DataUtil.GetItem<LedData>("ledData");
+                ld = DataUtil.GetObject<LedData>("LedData");
             } catch (KeyNotFoundException e) {
             }
 

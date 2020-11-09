@@ -91,8 +91,8 @@ namespace HueDream.Models.CaptureSource.Camera {
 
             LogUtil.Write("Camera matrix: " + sk);
             LogUtil.Write("Dist coefficient: " + sd);
-            DataUtil.SetItem("k", sk);
-            DataUtil.SetItem("d", sd);
+            DataUtil.SetItem("K", sk);
+            DataUtil.SetItem("D", sd);
         }
     }
 }

@@ -1,12 +1,9 @@
-using System;
 using HueDream.Models.DreamScreen;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using System.Net;
 using System.Runtime.InteropServices;
-using HueDream.Models;
 using Serilog;
 
 namespace HueDream {

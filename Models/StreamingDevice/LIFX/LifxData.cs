@@ -2,10 +2,12 @@
 using System.ComponentModel;
 using HueDream.Models.Util;
 using LifxNet;
+using LiteDB;
 using Newtonsoft.Json;
 
 namespace HueDream.Models.StreamingDevice.LIFX {
-    public class LifxData {
+    public class LifxData { 
+        [BsonCtor]
         public LifxData() {
         }
 

@@ -33,9 +33,9 @@
         <PackageReference Include="Emgu.CV.runtime.raspbian" Version="4.4.0.4027" />
         <PackageReference Include="Emgu.CV.runtime.windows" Version="4.4.0.4077" />
         <PackageReference Include="freetype2" Version="2.6.0.1" />
-        <PackageReference Include="JsonFlatFileDataStore" Version="2.2.2" />
         <PackageReference Include="kenssamson.rpi-ws281x-csharp" Version="1.1.1" />
         <PackageReference Include="LifxNet" Version="2.2.0" />
+        <PackageReference Include="LiteDB" Version="5.0.9" />
         <PackageReference Include="Makaretu.Dns.Multicast" Version="0.27.0" />
         <PackageReference Include="ManagedBass" Version="3.0.0" />
         <PackageReference Include="Microsoft.AspNet.SignalR.JS" Version="2.4.1" />
@@ -63,6 +63,7 @@
         <PackageReference Include="Serilog.Sinks.Console" Version="4.0.0-dev-00839" />
         <PackageReference Include="Serilog.Sinks.File" Version="5.0.0-dev-00864" />
         <PackageReference Include="System.Net.WebSockets" Version="4.3.0" />
+        <PackageReference Include="System.Reflection.TypeExtensions" Version="4.7.0" />
         <PackageReference Include="ZedGraph" Version="6.0.0-alpha0001" />
         <PackageReference Include="ZedGraph.WinForms" Version="6.0.0-alpha0001" />
         <PackageReference Include="Zeroconf" Version="3.4.2" />

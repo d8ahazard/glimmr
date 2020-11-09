@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using Newtonsoft.Json;
 
 namespace HueDream.Models.Util {
     public static class ByteUtils {

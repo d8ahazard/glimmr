@@ -3,11 +3,9 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Timers;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
-using Emgu.CV.Util;
 using HueDream.Models.LED;
 using HueDream.Models.StreamingDevice.WLed;
 using HueDream.Models.Util;
@@ -48,7 +46,7 @@ namespace HueDream.Models.CaptureSource.Camera {
         private const int MaxFrameCount = 75;
         
         public Splitter(LedData ld, int srcWidth, int srcHeight) {
-            LogUtil.Write("Initializing splitter...");
+            LogUtil.Write("Initializing splitter, using LED Data: " + JsonConvert.SerializeObject(ld));
             // Set some defaults, this should probably just not be null
             if (ld != null) {
                 _vCount = ld.VCount;
@@ -164,9 +162,19 @@ namespace HueDream.Models.CaptureSource.Camera {
 
             foreach (var wlId in wlSectors.Keys) {
                 var colorList = new List<Color>();
-                foreach (var sub in wlSectors[wlId].Select(r => new Mat(_input, r))) {
-                    colorList.Add(GetAverage(sub));
+                foreach (var r in wlSectors[wlId]) {
+                    if (0 <= r.X
+                        && 0 <= r.Width
+                        && r.X + r.Width <= _input.Cols
+                        && 0 <= r.Y
+                        && 0 <= _input.Height
+                        && r.Y + r.Height <= _input.Rows){
+                        using var sub = new Mat(_input, r);
+                        // box within the image plane
+                        colorList.Add(GetAverage(sub));
+                    }
                 }
+                
                 outColorsWled[wlId] = colorList;
             }
             _colorsLed = outColorsStrip;
@@ -181,7 +189,7 @@ namespace HueDream.Models.CaptureSource.Camera {
             // Create a simple list of vars that describe LED placement
             // Hcount, VCount, LedCount, Offset, Direction
             var ledVars = new List<int> {wData.HCount, wData.VCount, wData.LedCount, wData.Offset, wData.StripDirection};
-            LogUtil.Write("LED Vars set");
+            LogUtil.Write("LED Vars set: " + JsonConvert.SerializeObject(ledVars));
             // Store it for recall later
             WLModules[wData.Id] = ledVars;
             LogUtil.Write("Drawing grid...");
@@ -400,6 +408,7 @@ namespace HueDream.Models.CaptureSource.Camera {
                 LogUtil.Write("WLED needs to be configured first!");
                 return null;
             }
+            LogUtil.Write($"WL Splitter srcwidth and heigth are {sourceWidth} and {sourceHeight}");
             var bWidth = sourceWidth * .05f;
             var bHeight = sourceHeight * .05f;
             // Top Region
@@ -461,37 +470,32 @@ namespace HueDream.Models.CaptureSource.Camera {
             LogUtil.Write("Truncating...");
             // Offset our colors based on info
             var truncated = new List<Rectangle>();
-            var lastCount = 0;
             if (dir == 0) {
                 LogUtil.Write($"Dir0, offset is {offset}");
                 var o = offset;
-                while (o < output.Count && 0 < len) {
-                    LogUtil.Write("Grabbing index " + o);
+                while (o < output.Count && truncated.Count < len) {
+                    //LogUtil.Write("Grabbing index " + o);
                     truncated.Add(output[o]);
-                    o++;
-                    lastCount++;
-                }
+                    o++;                }
                 
-                if (lastCount < len) {
-                    var target = len - lastCount;
+                if (truncated.Count < len) {
+                    var target = len - truncated.Count;
                     for (var i = 0; i < target && i < output.Count; i++) {
-                        LogUtil.Write("Grabbing index " + i);
+                        //LogUtil.Write("Grabbing index " + i);
                         truncated.Add(output[i]);
                     }
                 }
             } else {
                 LogUtil.Write("Dir1");
                 var maxIdx = output.Count - 1;
-                lastCount = 0;
                 var o = maxIdx - offset;
                 while (o > maxIdx - len) {
                     o--;
-                    lastCount--;
                     truncated.Add(output[o]);
                 }
 
-                if (lastCount < len) {
-                    var target = len - lastCount;
+                if (truncated.Count < len) {
+                    var target = len - truncated.Count;
                     for (var i = maxIdx; i >= maxIdx - target && i >= 0; i--) {
                         truncated.Add(output[i]);
                     }

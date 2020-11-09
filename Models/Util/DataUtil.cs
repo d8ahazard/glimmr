@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -14,386 +13,288 @@ using HueDream.Models.StreamingDevice.Hue;
 using HueDream.Models.StreamingDevice.LIFX;
 using HueDream.Models.StreamingDevice.Nanoleaf;
 using HueDream.Models.StreamingDevice.WLed;
-using JsonFlatFileDataStore;
 using LifxNet;
-using ManagedBass;
+using LiteDB;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Org.BouncyCastle.Asn1.X509.Qualified;
+using ZedGraph;
 
 namespace HueDream.Models.Util {
     [Serializable]
     public static class DataUtil {
         public static bool scanning { get; set; }
-        public static DataStore GetStore() {
-            var path = GetConfigPath("store.json");
-            // Check that our store is actually valid
-            DataStore store;
-            try {
-                store = new DataStore(path);
-                try {
-                    string lastBackup = store.GetItem("lastBackup");
-                    if (string.IsNullOrEmpty(lastBackup)) {
-                        CreateBackup(path);
-                    } else {
-                        var lDate = DateTime.Parse(lastBackup, CultureInfo.InvariantCulture);
-                        if (lDate - DateTime.Now > TimeSpan.FromMinutes(30)) {
-                            CreateBackup(path);
-                        }
-                    }
-                } catch (Exception e) {
-                    LogUtil.Write("An exception occurred fetching last backup date: " + e.Message);
-                }
-                return store;
-            } catch (Exception e) {
-                LogUtil.Write("Store Read Exception: " + e.Message, "WARN");
-            }
+        private static LiteDatabase _db;
         
-            // If we couldn't read our store, restore from backup and try again
-            var restored = RestoreBackup(path);
-            if (restored) {
-                try {
-                    store = new DataStore(path);
-                    return store;
-                } catch {
-                    LogUtil.Write("Well, this is really bad. We couldn't restore our restored store from storage.", "ERROR");
-                }
-            }
-            // Nuclear option, we should never actually get here.
-            File.Delete(path);
-            var tStore = new DataStore(path);
-            var lifxClient = LifxClient.CreateAsync().Result;
-            CheckDefaults(tStore, lifxClient);
-            lifxClient.Dispose();
-            return tStore;
+        public static LiteDatabase GetDb() {
+            if (_db == null) _db = new LiteDatabase(@"./store.db");
+            return _db;
         }
 
-        private static bool RestoreBackup(string storePath) {
-            bool restored;
-            var location = Path.GetDirectoryName(storePath);
-            if (string.IsNullOrEmpty(location)) {
-                location = ".";
-            }
-            var sep = Path.DirectorySeparatorChar;
-            var backupDir = location + sep + "backup";
-            var backupFile = backupDir + sep + "store.json.bak";
-            if (File.Exists(backupFile)) {
-                try {
-                    var tStore = new DataStore(backupFile);
-                    File.Copy(backupFile, storePath, true);
-                    tStore.Dispose();
-                    restored = true;
-                    LogUtil.Write("Backup restored.");
-                } catch (Exception e) {
-                    LogUtil.Write("An exception occurred restoring backup datastore: " + e.Message, "ERROR");
-                    restored = false;
+        public static void Dispose() {
+            LogUtil.Write("DISPOSING DATABASE.");
+            _db?.Dispose();
+        }
+
+        public static void DbDefaults(LifxClient lc) {
+            var db = GetDb();
+            // Check to see if we have our system data object
+            var defaultSet = GetItem("DefaultSet");
+            if (defaultSet == null || defaultSet == false) {
+                LogUtil.Write("Starting to create defaults.");
+                // If not, create it
+                var sd = new SystemData(true);
+                foreach (var v in sd.GetType().GetProperties()) {
+                    LogUtil.Write("Setting: " + v.Name);
+                    SetItem(v.Name, v.GetValue(sd));
                 }
+
+                var dsIp = GetItem("DsIp");
+                var ledData = new LedData(true);
+                var myDevice = new DreamScreen4K(dsIp);
+                myDevice.SetDefaults();
+                myDevice.Id = dsIp;
+                SetObject("LedData", ledData);
+                SetObject("MyDevice", myDevice);
+                LogUtil.Write("Loading first...");
+                // Get/create our collection of Dream devices
+                var d = db.GetCollection<BaseDevice>("devices");
+                // Create our default device
+                // Save it
+                d.Upsert(myDevice.Id, myDevice);
+                d.EnsureIndex(x => x.Id);
+                db.Commit();
+                // Scan for devices
+                ScanDevices(lc).ConfigureAwait(false);
             } else {
-                LogUtil.Write("NO BACKUP STORE FOUND, CREATING NEW STORE!!", "ERROR");
-                LogUtil.Write("NO BACKUP STORE FOUND, CREATING NEW STORE!!", "ERROR");
-                LogUtil.Write("NO BACKUP STORE FOUND, CREATING NEW STORE!!", "ERROR");
-                File.Delete(storePath);
-                var tStore = new DataStore(storePath);
-                var lifxClient = LifxClient.CreateAsync().Result;
-                CheckDefaults(tStore, lifxClient);
-                tStore.Dispose();
-                lifxClient.Dispose();
-                LogUtil.Write("NEW STORE CREATED.", "WARN");
-                restored = true;
-            }
-
-            return restored;
-        }
-
-        /// <summary>
-        /// Create a backup of the existing datastore.
-        /// DO NOT CALL THIS unless you've already validated the JSON is good.
-        /// Due to the use case, we don't want to call it from the method
-        /// because then we will be creating unnecessary I/O.
-        /// </summary>
-        /// <param name="storePath">The location of the validated datastore to back up.</param>
-        /// <returns>True if backup was successful</returns>
-        private static bool CreateBackup(string storePath) {
-            bool done;
-            // Create our paths
-            var location = Path.GetDirectoryName(storePath);
-            if (string.IsNullOrEmpty(location)) {
-                location = ".";
-            }
-            var sep = Path.DirectorySeparatorChar;
-            var backupDir = location + sep + "backup";
-            var backupFile = backupDir + sep + "store.json.bak";
-            // We don't need to check dir exists, this method just does it
-            LogUtil.Write("Creating backup to " + backupFile);
-            Directory.CreateDirectory(backupDir);
-            try {
-                var dstore = new DataStore(storePath);
-                dstore.InsertItem("lastBackup", DateTime.Now.ToString(CultureInfo.InvariantCulture));
-                dstore.Dispose();
-                File.Copy(storePath, backupFile, true);
-                done = true;
-            } catch (Exception e) {
-                LogUtil.Write("An exception was thrown during file backup: " + e.Message);
-                done = false;
-            }
-            return done;
-        }
-
-        /// <summary>
-        ///     Loads our data store from a dynamic path, and tries to get the item
-        /// </summary>
-        /// <param name="key"></param>
-        /// <returns>dynamic object corresponding to key, or default if not found</returns>
-        public static dynamic GetItem(string key) {
-            try {
-                var dStore = GetStore();
-                var output = dStore.GetItem(key);
-                dStore.Dispose();
-                return output;
-            } catch (KeyNotFoundException) {
-                return null;
+                LogUtil.Write("Defaults are already set.");
             }
         }
-
-        public static string GetDeviceSerial() {
-            var serial = string.Empty;
-            try {
-                serial = GetItem("serial");
-            } catch (KeyNotFoundException) {
-                
-            }
-
-            if (string.IsNullOrEmpty(serial)) {
-                Random rd = new Random();
-                serial = "12091" + rd.Next(0, 9) + rd.Next(0, 9) + rd.Next(0, 9);
-                SetItem("serial", serial);
-            }
-
-            return serial;
-        }
-
        
-        public static dynamic GetItem<T>(string key) {
-            try {
-                using var dStore = GetStore();
-                var output = dStore.GetItem<T>(key);
-                dStore.Dispose();
-                return output;
-            } catch (KeyNotFoundException e) {
-                LogUtil.Write($@"Get exception for {key}: {e.Message}");
-                return null;
-            }
-        }
-        
+        //fixed
         public static List<dynamic> GetCollection(string key) {
             try {
-                using var dStore = GetStore();
-                var coll = dStore.GetCollection(key);
+                var db = GetDb();
+                var coll = db.GetCollection(key);
                 var output = new List<dynamic>();
                 if (coll == null) return output;
-                output.AddRange(coll.AsQueryable());
-                dStore.Dispose();
+                output.AddRange(coll.FindAll());
                 return output;
             } catch (Exception e) {
                 LogUtil.Write($@"Get exception for {key}: {e.Message}");
                 return null;
             }
         }
+        //fixed
         public static List<T> GetCollection<T>() where T : class {
             try {
-                using var dStore = GetStore();
-                var coll = dStore.GetCollection<T>();
+                var db = GetDb();
+                var coll = db.GetCollection<T>();
                 var output = new List<T>();
                 if (coll == null) return output;
-                output.AddRange(coll.AsQueryable());
-                dStore.Dispose();
+                output.AddRange(coll.FindAll());
                 return output;
             } catch (Exception e) {
                 LogUtil.Write($@"Get exception for {typeof(T)}: {e.Message}");
                 return null;
             }
         }
-
-        
-                
+        //fixed
         public static List<T> GetCollection<T>(string key) where T : class {
-            
-            using var dStore = GetStore();
-            var coll = dStore.GetCollection<T>(key);
+
+            var db = GetDb();
+            var coll = db.GetCollection<T>(key);
             var output = new List<T>();
             if (coll == null) return output;
-            output.AddRange(coll.AsQueryable());
-            dStore.Dispose();
+            output.AddRange(coll.FindAll());
             return output;
             
         }
-        
+        //fixed
         public static dynamic GetCollectionItem<T>(string key, dynamic value) where T : class {
             try {
-                using var dStore = GetStore();
-                var coll = dStore.GetCollection<T>(key);
+                var db = GetDb();
+                var coll = db.GetCollection<T>(key);
                 IEnumerable<T> res =  coll.Find(value);
-                dStore.Dispose();
                 return res.FirstOrDefault();
             } catch (Exception e) {
                 LogUtil.Write($@"Get exception for {typeof(T)}: {e.Message}");
                 return null;
             }
         }
-
-
-        
+        //fixed
         public static void InsertCollection<T>(string key, dynamic value) where T: class {
-            var dStore = GetStore();
-            try {
-                
-                var coll = dStore.GetCollection<T>(key);
-                if (coll == null) {
-                    var list = new List<T>();
-                    list.Add(value);
-                    dStore.InsertItem(key, list);
-                } else {
-                    coll.ReplaceOne(value.Id, value, true);
-                }
-
-                dStore.Dispose();
-            } catch (NullReferenceException e) {
-                LogUtil.Write($@"Insert exception (typed) for {typeof(T)}: {e.Message} : {e.GetType()}");
-                var list = dStore.GetItem<List<T>>(key) ?? new List<T>();
-                list.Add(value);
-                SetItem(key,list);
-            }
-            dStore.Dispose();
+            var db = GetDb();
+            var coll = db.GetCollection<T>(key);
+            coll.Upsert(value.Id, value);
+            db.Commit();
         }
-        
+        //fixed
         public static void InsertCollection(string key, dynamic value) {
-            try {
-                using var dStore = GetStore();
-                var coll = dStore.GetCollection(key);
-                coll.ReplaceOne(value.Id, value, true);
-                dStore.Dispose();
-            } catch (Exception e) {
-                LogUtil.Write($@"Insert (notype) exception for {key}: {e.Message}");
-            }
+                var db = GetDb();
+                var coll = db.GetCollection(key);
+                coll.Upsert(value.Id, value);
+                db.Commit();
         }
 
         public static void InsertDsDevice(BaseDevice dev) {
             if (dev == null) throw new ArgumentException("Invalid device.");
-            var ex = GetDreamDevices();
-            var newList = ex.Select(c => c.Id == dev.Id ? dev : c).ToList();
-            SetItem<List<BaseDevice>>("devices", newList);
+            var db = GetDb();
+            var ex = db.GetCollection<BaseDevice>("devices");
+            ex.Upsert(dev);
+            db.Commit();
         }
         
 
-        public static DataStore CheckDefaults(DataStore store, LifxClient lc) {
-            var v = store.GetItem("defaultsSet");
-            if (v == null) store = SetDefaults(store, lc).Result;
-            return store;
-        }
-
-        private static async Task<DataStore> SetDefaults(DataStore store, LifxClient lc) {
-            LogUtil.Write("Setting defaults.");
-            BaseDevice myDevice = new SideKick(IpUtil.GetLocalIpAddress());
-            myDevice.SetDefaults();
-            var lData = new LedData(true);
-            await store.InsertItemAsync("dataSource", "DreamScreen").ConfigureAwait(false);
-            await store.InsertItemAsync("devType", "SideKick").ConfigureAwait(false);
-            await store.InsertItemAsync("camWidth", 1920).ConfigureAwait(false);
-            await store.InsertItemAsync("camHeight", 1080).ConfigureAwait(false);
-            await store.InsertItemAsync("camMode", 1).ConfigureAwait(false);
-            await store.InsertItemAsync("scaleFactor", .5).ConfigureAwait(false);
-            await store.InsertItemAsync("showSource", false).ConfigureAwait(false);
-            await store.InsertItemAsync("showEdged", false).ConfigureAwait(false);
-            await store.InsertItemAsync("showWarped", false).ConfigureAwait(false);
-            await store.InsertItemAsync("emuType", "SideKick").ConfigureAwait(false);
-            await store.InsertItemAsync("captureMode", 0).ConfigureAwait(false);
-            await store.InsertItemAsync("camType", 1).ConfigureAwait(false);
-            await store.InsertItemAsync("myDevice", myDevice).ConfigureAwait(false);
-            await store.InsertItemAsync("ledData", lData).ConfigureAwait(false);
-            await store.InsertItemAsync("minBrightness", 0).ConfigureAwait(false);
-            await store.InsertItemAsync("saturationBoost", 0).ConfigureAwait(false);
-            await store.InsertItemAsync("dsIp", "0.0.0.0").ConfigureAwait(false);
-            await store.InsertItemAsync("audioDevices", new List<DeviceInfo>()).ConfigureAwait(false);
-            await store.InsertItemAsync("audioThreshold", .01f).ConfigureAwait(false);
-            await store.InsertItemAsync("defaultsSet", true).ConfigureAwait(false);
-            await ScanDevices(store, lc).ConfigureAwait(false);
-            LogUtil.Write("All data defaults have been set.");
-            return store;
-        }
-
-        public static void SetItem(string key, dynamic value) {
-            using var dStore = GetStore();
-            dStore.ReplaceItem(key, value, true);
-            dStore.Dispose();
-        }
-
-        public static void SetItem<T>(string key, dynamic value) {
-            using var dStore = GetStore();
-            dStore.ReplaceItem<T>(key, value, true);
-            dStore.Dispose();
-        }
-
-        public static string GetStoreSerialized() {
-            var jsonPath = GetConfigPath("store.json");
-            if (!File.Exists(jsonPath)) return null;
+        public static void CheckDefaults(LifxClient lc) {
+            var db = GetDb();
+            var sc = db.GetCollection<SystemData>("system");
+            LogUtil.Write("SC: " + JsonConvert.SerializeObject(sc.ToString()));
             try {
-                return File.ReadAllText(jsonPath);
-            } catch (IOException e) {
-                LogUtil.Write($@"An IO Exception occurred: {e.Message}.");
+                sc.Query().First();
+                LogUtil.Write("We should be set up already.");
+            } catch (InvalidOperationException) {
+                LogUtil.Write("Creating defaults.");
+                DbDefaults(lc);
+            } catch (NullReferenceException) {
+                LogUtil.Write("Creating defaults.");
+                DbDefaults(lc);
+            }
+        }
+
+        
+        public static string GetDeviceSerial() {
+            var serial = string.Empty;
+            try {
+                serial = GetItem("Serial");
+            } catch (KeyNotFoundException) {
+
             }
 
-            return null;
+            if (string.IsNullOrEmpty(serial)) {
+                Random rd = new Random();
+                serial = "12091" + rd.Next(0, 9) + rd.Next(0, 9) + rd.Next(0, 9);
+                SetItem("Serial", serial);
+            }
+
+            return serial;
+        }
+
+        
+        public static string GetStoreSerialized() {
+            var db = GetDb();
+            var cols = db.GetCollectionNames();
+            var output = new Dictionary<string, List<dynamic>>();
+            foreach (var col in cols) {
+                var collection = db.GetCollection(col);
+                var list = collection.FindAll().ToList();
+                var lList = new List<dynamic>();
+                foreach (var l in list) {
+                    var jObj = LiteDB.JsonSerializer.Serialize(l);
+                    var json = JObject.Parse(jObj);
+                    lList.Add(json);
+                }
+                output[col] = lList;
+            }
+
+            return JsonConvert.SerializeObject(output);
         }
 
         public static BaseDevice GetDeviceData() {
-            using var dd = GetStore();
+            var dd = GetDb();
             BaseDevice dev;
-            string devType = dd.GetItem("devType");
+            var devs = dd.GetCollection<BaseDevice>("devices");
+            var devType = GetItem("DevType");
+            string dsIp = GetItem("DsIp");
             if (devType == "SideKick") {
-                dev = dd.GetItem<SideKick>("myDevice");
+                dev = (SideKick) devs.FindOne(x => x.IpAddress == dsIp);
             } else if (devType == "DreamScreen4K") {
-                dev = dd.GetItem<DreamScreen4K>("myDevice");
+                dev = (DreamScreen4K) devs.FindOne(x => x.IpAddress == dsIp);
             } else {
-                dev = dd.GetItem<Connect>("myDevice");
+                dev = (Connect) devs.FindOne(x => x.IpAddress == dsIp);
             }
 
             if (string.IsNullOrEmpty(dev.AmbientColor)) {
                 dev.AmbientColor = "FFFFFF";
             }
-            dd.Dispose();
             return dev;
         }
 
+        public static void SetItem<T>(string key, dynamic value) {
+            SetItem(key, value);
+        }
+
+        
+        public static dynamic GetItem<T>(string key) {
+            return (T) GetItem(key);
+        }
+        
+        public static void SetItem(string key, dynamic value) {
+            var db = GetDb();
+            var col = db.GetCollection(key);
+            col.Insert(new BsonDocument { ["value"] = value });
+            db.Commit();
+        }
+        
+        public static void SetObject(string key, dynamic value) {
+            var db = GetDb();
+            var doc = BsonMapper.Global.ToDocument(value);
+            var col = db.GetCollection(key);
+            col.Upsert(0, doc);
+            db.Commit();
+        }
+
+        public static dynamic GetItem(string key) {
+            var db = GetDb();
+            var col = db.GetCollection(key);
+            foreach(var doc in col.FindAll()) {
+                return doc["value"];
+            }
+
+            return null;
+        }
+        
+        public static dynamic GetObject<T>(string key) {
+            var db = GetDb();
+            var col = db.GetCollection<T>(key);
+            foreach(var doc in col.FindAll()) {
+                return doc;
+            }
+
+            return null;
+        }
+
+        
+        
+        
+        
         public static List<BaseDevice> GetDreamDevices() {
-            using var dd = GetStore();
+            var dd = GetDb();
             var output = new List<BaseDevice>();
-            var dl = GetItem<List<JToken>>("devices");
+            var devs = dd.GetCollection<BaseDevice>("devices");
+            var dl = devs.FindAll();
             if (dl == null) return output;
-            foreach (JObject dev in dl) {
-                foreach (var pair in dev) {
-                    var key = pair.Key;
-                    if (key == "tag") {
-                        var tag = pair.Value.ToString();
-                        switch (tag) {
-                            case "SideKick":
-                                output.Add(dev.ToObject<SideKick>());
-                                break;
-                            case "Connect":
-                                output.Add(dev.ToObject<Connect>());
-                                break;
-                            case "DreamScreen":
-                                output.Add(dev.ToObject<DreamScreenHd>());
-                                break;
-                            case "DreamScreen4K":
-                                output.Add(dev.ToObject<DreamScreen4K>());
-                                break;
-                            case "DreamScreenSolo":
-                                output.Add(dev.ToObject<DreamScreenSolo>());
-                                break;
-                        }
-                    }
+            foreach (var dev in dl) {
+                var tag = dev.Tag;
+                switch (tag) {
+                    case "SideKick":
+                        output.Add((SideKick) dev);
+                        break;
+                    case "Connect":
+                        output.Add((Connect) dev);
+                        break;
+                    case "DreamScreen":
+                        output.Add((DreamScreenHd) dev);
+                        break;
+                    case "DreamScreen4K":
+                        output.Add((DreamScreen4K) dev);
+                        break;
+                    case "DreamScreenSolo":
+                        output.Add((DreamScreenSolo) dev);
+                        break;
                 }
             }
-            dd.Dispose();
+
             return output;
         }
 
@@ -402,8 +303,9 @@ namespace HueDream.Models.Util {
         }
 
         public static (int, int) GetTargetLights() {
-            var dsIp = GetItem<string>("dsIp");
-            var devices = GetItem<List<BaseDevice>>("devices");
+            var db = GetDb();
+            var dsIp = GetItem("DsIp");
+            var devices = db.GetCollection<BaseDevice>("devices").FindAll();
             foreach (var dev in devices) {
                 var tsIp = dev.IpAddress;
                 LogUtil.Write("Device IP: " + tsIp);
@@ -461,11 +363,27 @@ namespace HueDream.Models.Util {
 				
             LogUtil.Write("Refresh complete.");
             try {
-                SetItem<List<NanoData>>("leaves", nanoTask.Result);
-                SetItem<List<BridgeData>>("bridges", bridgeTask.Result);
-                //SetItem<List<WLedData>>("wled", wLedTask.Result);
-                // We don't need to store dream devices because of janky discovery. Maybe fix this...
-                SetItem<List<LifxData>>("lifxBulbs", bulbTask.Result);
+                var leaves = nanoTask.Result;
+                var bridges = bridgeTask.Result;
+                var dreamDevices = dreamTask.Result;
+                var bulbs = bulbTask.Result;
+                var wleds = wLedTask.Result;
+                var db = GetDb();
+                var bridgeCol = db.GetCollection<BridgeData>("Dev_Hue");
+                var nanoCol = db.GetCollection<NanoData>("Dev_Nanoleaf");
+                var devCol = db.GetCollection<BaseDevice>("Dev_DreamScreen");
+                var lifxCol = db.GetCollection<LifxData>("Dev_Lifx");
+                var wledCol = db.GetCollection<WLedData>("Dev_Wled");
+                foreach (var b in bridges) bridgeCol.Upsert(b);
+                foreach (var n in leaves) nanoCol.Upsert(n);
+                foreach (var dd in dreamDevices) devCol.Upsert(dd);
+                foreach (var b in bulbs) lifxCol.Upsert(b);
+                foreach (var w in wleds) wledCol.Upsert(w);
+                bridgeCol.EnsureIndex(x => x.Id);
+                nanoCol.EnsureIndex(x => x.Id);
+                devCol.EnsureIndex(x => x.Id);
+                lifxCol.EnsureIndex(x => x.Id);
+                wledCol.EnsureIndex(x => x.Id);
             } catch (TaskCanceledException) {
 
             } catch (AggregateException) {
@@ -476,30 +394,40 @@ namespace HueDream.Models.Util {
             cs.Dispose();
         }
 
-        public static async Task ScanDevices(DataStore store, LifxClient lc) {
-            if (store == null) throw new ArgumentException("Invalid store.");
+        public static async Task ScanDevices(LifxClient lc) {
             if (scanning) return;
             scanning = true;
-            // Get dream devices
-            var ld = new LifxDiscovery(lc);
-            var nanoTask = NanoDiscovery.Discover();
-            var hueTask = HueDiscovery.Discover();
-            var dreamTask = DreamDiscovery.Discover();
-            var wLedTask = WledDiscovery.Discover();
-            var bulbTask = ld.Discover(5);
-            await Task.WhenAll(nanoTask, hueTask, dreamTask, bulbTask).ConfigureAwait(false);
-            var leaves = await nanoTask.ConfigureAwait(false);
-            var bridges = await hueTask.ConfigureAwait(false);
-            var dreamDevices = await dreamTask.ConfigureAwait(false);
-            var bulbs = await bulbTask.ConfigureAwait(false);
-            var wleds = await wLedTask.ConfigureAwait(false);
-            await store.InsertItemAsync("bridges", bridges).ConfigureAwait(false);
-            await store.InsertItemAsync("leaves", leaves).ConfigureAwait(false);
-            await store.InsertItemAsync("devices", dreamDevices).ConfigureAwait(false);
-            await store.InsertItemAsync("lifxBulbs", bulbs).ConfigureAwait(false);
-            await store.InsertItemAsync("wled", wleds).ConfigureAwait(false);
-            store.Dispose();
-            scanning = false;
+            var db = GetDb();
+                // Get dream devices
+                var ld = new LifxDiscovery(lc);
+                var nanoTask = NanoDiscovery.Discover();
+                var hueTask = HueDiscovery.Discover();
+                var dreamTask = DreamDiscovery.Discover();
+                var wLedTask = WledDiscovery.Discover();
+                var bulbTask = ld.Discover(5);
+                await Task.WhenAll(nanoTask, hueTask, dreamTask, bulbTask).ConfigureAwait(false);
+                var leaves = await nanoTask.ConfigureAwait(false);
+                var bridges = await hueTask.ConfigureAwait(false);
+                var dreamDevices = await dreamTask.ConfigureAwait(false);
+                var bulbs = await bulbTask.ConfigureAwait(false);
+                var wleds = await wLedTask.ConfigureAwait(false);
+                var bridgeCol = db.GetCollection<BridgeData>("Dev_Hue");
+                var nanoCol = db.GetCollection<NanoData>("Dev_Nanoleaf");
+                var devCol = db.GetCollection<BaseDevice>("Dev_DreamScreen");
+                var lifxCol = db.GetCollection<LifxData>("Dev_Lifx");
+                var wledCol = db.GetCollection<WLedData>("Dev_Wled");
+                foreach (var b in bridges) bridgeCol.Upsert(b);
+                foreach (var n in leaves) nanoCol.Upsert(n);
+                foreach (var dd in dreamDevices) devCol.Upsert(dd);
+                foreach (var b in bulbs) lifxCol.Upsert(b);
+                foreach (var w in wleds) wledCol.Upsert(w);
+                bridgeCol.EnsureIndex(x => x.Id);
+                nanoCol.EnsureIndex(x => x.Id);
+                devCol.EnsureIndex(x => x.Id);
+                lifxCol.EnsureIndex(x => x.Id);
+                wledCol.EnsureIndex(x => x.Id);
+                scanning = false;
+            
         }
 
         public static void RefreshPublicIp() {

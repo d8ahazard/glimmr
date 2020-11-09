@@ -66,16 +66,16 @@ namespace HueDream.Models.CaptureSource.Video {
         }
 
         private void SetCapVars() {
-            _ledData = DataUtil.GetItem<LedData>("ledData");
-            _captureMode = DataUtil.GetItem<int>("captureMode");
-            _camType = DataUtil.GetItem<int>("camType");
+            _ledData = DataUtil.GetObject<LedData>("LedData");
+            _captureMode = DataUtil.GetItem<int>("CaptureMode");
+            _camType = DataUtil.GetItem<int>("CamType");
             LogUtil.Write("Capture mode is " + _captureMode);
             switch (_captureMode) {
                 // If camera mode
                 case 1: {
-                    _camWidth = DataUtil.GetItem<int>("camWidth") ?? 1920;
-                    _camHeight = DataUtil.GetItem<int>("camHeight") ?? 1080;
-                    _scaleFactor = DataUtil.GetItem<float>("scaleFactor") ?? .5f;
+                    _camWidth = DataUtil.GetItem<int>("CamWidth") ?? 1920;
+                    _camHeight = DataUtil.GetItem<int>("CamHeight") ?? 1080;
+                    _scaleFactor = DataUtil.GetItem<float>("ScaleFactor") ?? .5f;
                     _scaleWidth = Convert.ToInt32(_camWidth * _scaleFactor);
                     _scaleHeight = Convert.ToInt32(_camHeight * _scaleFactor);
                     _srcArea = _scaleWidth * _scaleHeight;
@@ -83,7 +83,7 @@ namespace HueDream.Models.CaptureSource.Video {
 
                     // If we have a pi cam, we can attempt to calibrate for warping
                     if (_camType == 0) {
-                        var kStr = DataUtil.GetItem("k");
+                        var kStr = DataUtil.GetItem("K");
                         if (kStr == null) {
                             LogUtil.Write("Running static camera calibration.");
                             Calibrate.ProcessFrames();
@@ -96,7 +96,7 @@ namespace HueDream.Models.CaptureSource.Video {
 
                     // If it is an actual cam, versus USB video capture, get a lock target
                     try {
-                        var lt = DataUtil.GetItem<PointF[]>("lockTarget");
+                        var lt = DataUtil.GetItem<PointF[]>("LockTarget");
                         LogUtil.Write("LT Grabbed? " + JsonConvert.SerializeObject(lt));
                         if (lt != null) {
                             _lockTarget = new VectorOfPointF(lt);
@@ -130,9 +130,9 @@ namespace HueDream.Models.CaptureSource.Video {
             var br = new Point(_scaleWidth, _scaleHeight);
             var bl = new Point(0, _scaleHeight);
             // Debugging vars...
-            _showSource = DataUtil.GetItem<bool>("showSource") ?? false;
-            _showEdged = DataUtil.GetItem<bool>("showEdged") ?? false;
-            _showWarped = DataUtil.GetItem<bool>("showWarped") ?? false;
+            _showSource = DataUtil.GetItem<bool>("ShowSource") ?? false;
+            _showEdged = DataUtil.GetItem<bool>("ShowEdged") ?? false;
+            _showWarped = DataUtil.GetItem<bool>("ShowWarped") ?? false;
             _vectors = new PointF[] {tl, tr, br, bl};
             LogUtil.Write("Start Capture should be running...");
         }
@@ -144,7 +144,7 @@ namespace HueDream.Models.CaptureSource.Video {
                         case 0:
                             // 0 = pi module, 1 = web cam, 2 = USB source
                             LogUtil.Write("Loading Pi cam.");
-                            var camMode = DataUtil.GetItem<int>("camMode") ?? 1;
+                            var camMode = DataUtil.GetItem<int>("CamMode") ?? 1;
                             return new PiCamVideoStream(_camWidth, _camHeight, camMode);
                         case 1:
                             LogUtil.Write("Loading web cam.");
@@ -174,7 +174,7 @@ namespace HueDream.Models.CaptureSource.Video {
                 saveTimer = new Timer(SaveFrame, autoEvent, 5000, 5000);
                 LogUtil.WriteInc($"Starting capture task, setting sw and h to {_scaleWidth} and {_scaleHeight}");
                 _splitter = new Splitter(_ledData, _scaleWidth, _scaleHeight);
-                var wlArray = DataUtil.GetCollection<WLedData>("wled");
+                var wlArray = DataUtil.GetCollection<WLedData>("Dev_Wled");
                 foreach (var wl in wlArray) {
                     _splitter.AddWled(wl);
                 }
@@ -206,7 +206,9 @@ namespace HueDream.Models.CaptureSource.Video {
                     var sectors = _splitter.GetSectors();
                     var sectors3 = _splitter.GetSectorsV2();
                     var sectorsWled = _splitter.GetWledSectors();
-                    if (_sendColors) dreamClient.SendColors(colors, sectors, sectors3, sectorsWled);
+                    if (_sendColors) {
+                        dreamClient.SendColors(colors, sectors, sectors3, sectorsWled);
+                    }
                 }
 
                 saveTimer.Dispose();
@@ -254,7 +256,7 @@ namespace HueDream.Models.CaptureSource.Video {
                 _lockTarget = FindTarget(scaled);
                 if (_lockTarget != null) {
                     LogUtil.Write("Target hit.");
-                    DataUtil.SetItem<PointF[]>("lockTarget", _lockTarget.ToArray());
+                    DataUtil.SetItem<PointF[]>("LockTarget", _lockTarget.ToArray());
                 } else {
                     LogUtil.Write("No target.");
                 }

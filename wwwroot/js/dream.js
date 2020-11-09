@@ -266,6 +266,7 @@ function setSocketListeners() {
         let foo = JSON.parse(stuff);
         console.log("Received updated data: ", foo);
         datastore = foo;
+        console.log("Building list...");
         buildLists();
         reloadDevice();
         socketLoaded = true;
@@ -979,15 +980,18 @@ function buildLists() {
     let dg = $('#devGroup');
     dsDevs = [];
     let groups = [];
-    devices = datastore['devices'];
-    leaves = datastore['leaves'];
-    bridges = datastore['bridges'];
-    deviceData = datastore['myDevice'];
-    lifx = datastore['lifxBulbx'];
-    dsIp = datastore['dsIp'];
-    ledData = datastore['ledData'];
-    captureMode = datastore['captureMode'];
-    if (captureMode == 0) {
+    console.log("Reading datastore...");
+    devices = datastore['Dev_DreamScreen'];
+    console.log("DS Devs: ", devices);
+    leaves = datastore['Dev_NanoLeaf'];
+    bridges = datastore['Dev_Bridges'];
+    deviceData = datastore['MyDevice'][0];
+    lifx = datastore['Dev_Lifx'];
+    dsIp = datastore['DsIp'][0]["value"];
+    ledData = datastore['LedData'][0];
+    captureMode = datastore['CaptureMode'][0]["value"];
+    console.log("CapMode: " + captureMode);
+    if (captureMode === 0) {
         $('.regions').show();
         $('.regionsV2').hide();
     } else {
@@ -995,109 +999,123 @@ function buildLists() {
         $('.regionsV2').show();
     }
     mode = selectCaptureMode(captureMode);
-    emulationType = datastore['emuType'];
-    buildDevList(datastore['devices']);
+    emulationType = datastore['DevType'][0]["value"];
+    buildDevList(datastore['Dev_DreamScreen']);
     setCaptureMode(mode, false);
+    console.log("Capmodes set...");
     setMode(deviceData.mode);
+    console.log("Mode set.");
     // Push dreamscreen devices to groups first, so they appear on top. The, do sidekicks, nanoleaves, then bridges.
     $.each(devices, function() {
+        console.log("Looping for device: ", $(this)[0]);
         let item = $(this)[0];
         if (item === null || item === undefined) return;
-        if (item['id'] === undefined && item['ipAddress'] !== undefined) item['id'] = item['ipAddress'];
-        if (this.tag.includes("DreamScreen")) {
-            let groupNumber = (item['groupNumber'] === undefined) ? 0 : item['groupNumber'];
-            let groupName = (item['groupName'] === undefined) ? "undefined" : item['groupName'];
-            let ambientColor = (item['ambientColor'] === undefined) ? "FFFFFF" : item['ambientColor'];
-            let ambientShow = (item['ambientShowType'] === undefined) ? 0 : item['ambientShowType'];
-            let ambientMode = (item['ambientModeType'] === undefined) ? 0 : item['ambientModeType'];
-            let mode = (item['mode'] === undefined) ? 0 : item['mode'];
-            let brightness = (item['brightness'] === undefined) ? 0 : item['brightness'];
+        if (item['Id'] === undefined && item['IpAddress'] !== undefined) item['Id'] = item['IpAddress'];
+        if (this["Tag"].includes("DreamScreen")) {
+            console.log("DS");
+            let groupNumber = (item['GroupNumber'] === undefined) ? 0 : item['GroupNumber'];
+            let groupName = (item['GroupName'] === undefined) ? "undefined" : item['GroupName'];
+            let ambientColor = (item['AmbientColor'] === undefined) ? "FFFFFF" : item['AmbientColor'];
+            let ambientShow = (item['AmbientShowType'] === undefined) ? 0 : item['AmbientShowType'];
+            let ambientMode = (item['AmbientModeType'] === undefined) ? 0 : item['AmbientModeType'];
+            let mode = (item['Mode'] === undefined) ? 0 : item['Mode'];
+            let brightness = (item['Brightness'] === undefined) ? 0 : item['Brightness'];
             if (groups[groupNumber] === undefined) {
                 groups[groupNumber] = {};
-                groups[groupNumber]['name'] = groupName;
-                groups[groupNumber]['id'] = groupNumber;
-                groups[groupNumber]['items'] = [];
-                groups[groupNumber]['ambientColor'] = ambientColor;
-                groups[groupNumber]['ambientShowType'] = ambientShow;
-                groups[groupNumber]['ambientModeType'] = ambientMode;
-                groups[groupNumber]['mode'] = mode;
-                groups[groupNumber]['brightness'] = brightness;
+                groups[groupNumber]['Name'] = groupName;
+                groups[groupNumber]['Id'] = groupNumber;
+                groups[groupNumber]['Items'] = [];
+                groups[groupNumber]['AmbientColor'] = ambientColor;
+                groups[groupNumber]['AmbientShowType'] = ambientShow;
+                groups[groupNumber]['AmbientModeType'] = ambientMode;
+                groups[groupNumber]['Mode'] = mode;
+                groups[groupNumber]['Brightness'] = brightness;
             }
-            groups[groupNumber]['items'].push(item);
+            groups[groupNumber]['Items'].push(item);
         } else {
             dsDevs.push(item);
         }
     });
-
+    console.log("Sorting devices...");
     const sorted = [];
     // Sort other DS Devices
     allDevices = [];
     groups = sortDevices(dsDevs, groups, false, false);
+    console.log("DS");
     // Sort nanoleaves
-    groups = sortDevices(datastore['leaves'], groups, "NanoLeaf", "NanoLeaf");
+    groups = sortDevices(datastore['Dev_NanoLeaf'], groups, "NanoLeaf", "NanoLeaf");
+    console.log("Nano");
     // Sort bridges
-    groups = sortDevices(datastore['bridges'], groups, "HueBridge", "Hue Bridge");
+    groups = sortDevices(datastore['Dev_Hue'], groups, "HueBridge", "Hue Bridge");
+    console.log("Hue");
     // Sort lifx
-    groups = sortDevices(datastore['lifxBulbs'], groups, "Lifx", "Lifx Bulb");
+    groups = sortDevices(datastore['Dev_Lifx'], groups, "Lifx", "Lifx Bulb");
+    console.log("Lifx");
     // Sort wled
-    groups = sortDevices(datastore['wled'], groups, "WLed", "Wireless LEDs")
+    groups = sortDevices(datastore['Dev_Wled'], groups, "WLed", "Wireless LEDs")
+    console.log("wled");
     dg.html("");
     $.each(groups, function () {
         let item = $(this)[0];
-        if (item['screenX'] === undefined) {
-            if (item['id'] !== 0) {
+        console.log("Appending: ", item);
+        if (item['ScreenX'] === undefined) {
+            if (item['Id'] !== 0) {
                 sorted.push(item);
             } else {
                 appendDeviceGroup(item);
             }
         }
     });
-    
+    console.log("Starting to append groups");
     
     dg.append($('<li class="spacer">Groups</li>'));
 
     if (sorted.length > 0) {
-        $.each(sorted, function () {
+        $.each(sorted, function () 
+        {
+            console.log("Appending: ",$(this)[0]);
             appendDeviceGroup($(this)[0]);
-        });
+        })
     }
     
 }
 
 
 function appendDeviceGroup(item) {
-    let name = item['name'];
-    let elements = item['items'];
+    let name = item['Name'];
+    let elements = item['Items'];
     let devGroup = $('#devGroup');
     // This is not a group
     if (item['id'] === 0) {
         $.each(elements, function () {
             let element = $(this)[0];
-            if (element['id'] === undefined) element['id'] = element['bridgeId'];
-            if (element['id'] === undefined) element['id'] = element['ipAddress'];
-            if (element['id'] === undefined) element['id'] = element['ipV4Address'];
+            if (element['Id'] === undefined) element['Id'] = element['BridgeId'];
+            if (element['Id'] === undefined) element['Id'] = element['IpAddress'];
+            if (element['Id'] === undefined) element['Id'] = element['IpV4Address'];
             devices.push(element);
-            devGroup.append('<li class="devSelect" data-device="' + element.id + '"><img class="devIcon" src="./img/' + element.tag.toLowerCase() + '_icon.png" alt="device icon"><span class="devName">' + element.name + '<span></li>');
+            devGroup.append('<li class="devSelect" data-device="' + element["Id"] + '"><img class="devIcon" src="./img/' + element["Tag"].toLowerCase() + '_icon.png" alt="device icon"><span class="devName">' + element["Name"] + '<span></li>');
         });
     } else {        
-        let list = $('<li  class="nav-header groupHeader devSelect" data-device="#group' + item['id'] + '"></li>');
+        let list = $('<li  class="nav-header groupHeader devSelect" data-device="#group' + item['Id'] + '"></li>');
         list.append($('<img src="./img/group_icon.png" class="devIcon" alt="group icon">'));
         list.append($('<span class="devName">' + name + '</span>'));
-        let container = $('<ul id="group' + item['id'] + '" class="nav-list groupList"></ul>');
+        let container = $('<ul id="group' + item['Id'] + '" class="nav-list groupList"></ul>');
         $.each(elements, function () {
             let element = $(this)[0];
-            if (element.tag.includes("DreamScreen")) {
-                item.mode = element.mode;
-                item.brightness = element.brightness;
-                item.saturation = element.saturation;
+            console.log("Appending group element: ", element, element["Tag"]);
+            if (element["Tag"].includes("DreamScreen")) {
+                item.Mode = element.Mode;
+                item.Brightness = element.Brightness;
+                item.Saturation = element.Saturation;
             }
             devices.push(element);
-            container.append('<li class="devSelect" data-device="' + element.id + '"><img class="devIcon" src="./img/' + element.tag.toLowerCase() + '_icon.png" alt="device icon"><span class="devName">' + element.name + '<span></li>');
+            container.append('<li class="devSelect" data-device="' + element.Id + '"><img class="devIcon" src="./img/' + element["Tag"].toLowerCase() + '_icon.png" alt="device icon"><span class="devName">' + element.Name + '<span></li>');
         });
-        item['tag'] = "group";
-        item['groupNumber'] = item['id'];
-        item['groupName'] = item['name'];
+        item['Tag'] = "group";
+        item['GroupNumber'] = item['Id'];
+        item['GroupName'] = item['Name'];
         item.ipAddress = "255.255.255.0";
+        console.log("Appending/pushing.");
         devices.push(item);
         list.append(container);
         devGroup.append(list);
@@ -1138,15 +1156,15 @@ function setCaptureMode(target, post=true) {
     $('#' + target + 'Btn').addClass('active');
     let hCount = 0;
     let vCount = 0;
-    if (captureMode === 0 && ledData.hasOwnProperty("hCountDs") && ledData.hasOwnProperty("vCountDs")) {
-        hCount = ledData.hCountDs;
-        vCount = ledData.vCountDs;
-    } else if (ledData.hasOwnProperty("hCount") && ledData.hasOwnProperty("vCount")) {
-        hCount = ledData.hCount;
-        vCount = ledData.vCount;
+    if (captureMode === 0 && ledData.hasOwnProperty("HCountDs") && ledData.hasOwnProperty("VCountDs")) {
+        hCount = ledData.HCountDs;
+        vCount = ledData.VCountDs;
+    } else if (ledData.hasOwnProperty("HCount") && ledData.hasOwnProperty("VCount")) {
+        hCount = ledData.HCount;
+        vCount = ledData.VCount;
     }
     let stripType = 0;
-    if (ledData.hasOwnProperty("stripType")) stripType = ledData.stripType;
+    if (ledData.hasOwnProperty("stripType")) stripType = ledData.StripType;
     vLedCount = vCount;
     hLedCount = hCount;
     let hc = $('#hCount');
@@ -1164,23 +1182,23 @@ function sortDevices(data, groups, tag, name) {
     $.each(data, function () {
         let item = $(this)[0];
         allDevices.push(item);
-        let gn = item['groupNumber'];
-        let gName = item['groupName'];
+        let gn = item['GroupNumber'];
+        let gName = item['GroupName'];
         let groupNumber = (gn === undefined || gn === null) ? 0 : gn; 
         let groupName = (gName === undefined || gName === null) ? "undefined" : gName;
         if (groups[groupNumber] === undefined) {
             groups[groupNumber] = {};
-            groups[groupNumber]['name'] = groupName;
-            groups[groupNumber]['id'] = groupNumber;
-            groups[groupNumber]['items'] = [];
+            groups[groupNumber]['Name'] = groupName;
+            groups[groupNumber]['Id'] = groupNumber;
+            groups[groupNumber]['Items'] = [];
         }
-        if (tag !== false) item.tag = tag;
+        if (tag !== false) item.Tag = tag;
         if (name !== false) {
-            if (item.name === undefined || item.name === null) {
-                item.name = name;
+            if (item.Name === undefined || item.Name === null) {
+                item.Name = name;
             }
         }
-        groups[groupNumber]['items'].push(item);
+        groups[groupNumber]['Items'].push(item);
     });
     return groups;
 }
@@ -1191,13 +1209,15 @@ function buildDevList(data) {
     devList.html("");
     $.each(data, function () {
         const dev = $(this)[0];
+        console.log("Building device: ", dev);
         if (selectedDevice == null) {
             selectedDevice = dev;
             showDevicePanel(dev);
         }
-        const name = dev.name;
-        const ip = dev.ipAddress;
-        const type = dev.tag;
+        const name = dev.Name;
+        const ip = dev["IpAddress"];
+        const type = dev["Tag"];
+        console.log("Name, ip, type: ", name, ip, type);
         if (name !== undefined && ip !== undefined && type.includes("DreamScreen")) {
             const selected = (ip === dsIp) ? "selected" : "";
             if (selected !== "") {
@@ -1206,6 +1226,7 @@ function buildDevList(data) {
             devList.append(`<option value='${ip}' ${selected}>${name}: ${ip}</option>`);
         }
     });
+    console.log("All devices built.");
 }
 
 function hidePanels() {
@@ -1234,13 +1255,13 @@ function showDevicePanel(data) {
     selectedDevice = data;
     if (!resizeTimer) hidePanels();
     setTimeout(function(){
-        let title = data.tag;
+        let title = data.Tag;
         if (title == "WLed") {
-            title = data.id;
+            title = data.Id;
         }
         $('#navTitle').html(title);
         
-        switch (data.tag) {
+        switch (data.Tag) {
             case "SideKick":
             case "Connect":
             case "DreamScreen":
@@ -1287,9 +1308,9 @@ function reloadDevice() {
     }
     console.log("Reloading panel data: ", data);
     if (data != null) {
-        $('#navTitle').html(data.tag);
+        $('#navTitle').html(data.Tag);
         selectedDevice = data;
-        switch (data.tag) {
+        switch (data.Tag) {
             case "SideKick":
             case "Connect":
             case "DreamScreen":
@@ -1318,13 +1339,13 @@ function reloadDevice() {
 function loadDsData(data) {
     let dsName = $('#dsName');
     deviceData = data;
-    dsName.html(deviceData.name);
-    dsName.data("ip", deviceData.ipAddress);
-    dsName.data('group', deviceData.groupNumber);
-    $('#dsBrightness').val(deviceData["brightness"]);
-    $('#dsIp').html(deviceData.ipAddress);
-    emulationType = deviceData.tag;
-    let satVal = hexToRgb(deviceData.saturation);
+    dsName.html(deviceData.Name);
+    dsName.data("ip", deviceData.IpAddress);
+    dsName.data('group', deviceData.GroupNumber);
+    $('#dsBrightness').val(deviceData["Brightness"]);
+    $('#dsIp').html(deviceData.IpAddress);
+    emulationType = deviceData.Tag;
+    let satVal = hexToRgb(deviceData.Saturation);
     $('.devSaturation[data-color="r"]').val(satVal.r);
     $('.devSaturation[data-color="g"]').val(satVal.g);
     $('.devSaturation[data-color="b"]').val(satVal.b);
@@ -1335,12 +1356,12 @@ function loadDsData(data) {
         settingTarget = "ConnectSettings";
     } else {
         $('.colorBoost').removeClass('selected');
-        $('.colorBoost[data-mode="' + deviceData['colorBoost'] + '"').addClass('selected');
+        $('.colorBoost[data-mode="' + deviceData['ColorBoost'] + '"').addClass('selected');
         $('.dsDetection').removeClass('selected');
-        $('.dsDetection[data-mode="' + deviceData['letterboxingEnable'] + '"]').addClass('selected');
+        $('.dsDetection[data-mode="' + deviceData['LetterboxingEnable'] + '"]').addClass('selected');
         $('.devFadeRate').val(deviceData['fadeRate']);
-        if (deviceData.hasOwnProperty('minimumLuminosity')) $('.devLuminosity').val(deviceData['minimumLuminosity'][0]);
-        let boolProps = ['cecPassthroughEnable', 'cecPowerEnable','cecSwitchinEnable','hpdEnable','usbPowerEnable','hdrToneRemapping'];
+        if (deviceData.hasOwnProperty('MinimumLuminosity')) $('.devLuminosity').val(deviceData['MinimumLuminosity'][0]);
+        let boolProps = ['CecPassthroughEnable', 'CecPowerEnable','CecSwitchinEnable','HpdEnable','UsbPowerEnable','HdrToneRemapping'];
         for (let i=0; i< boolProps.length; i++) {
             let prop = boolProps[i];
             $('.dsSlider[data-attribute="'+prop+'"]').prop('checked',deviceData[prop] === 1);
@@ -1365,9 +1386,9 @@ function loadDsData(data) {
             break;
     }
     mode = deviceData.mode;
-    ambientMode = deviceData['ambientModeType'];
-    ambientShow = deviceData['ambientShowType'];
-    let ambientColor = deviceData['ambientColor'];
+    ambientMode = deviceData['AmbientModeType'];
+    ambientShow = deviceData['AmbientShowType'];
+    let ambientColor = deviceData['AmbientColor'];
     if (ambientColor !== null) {
         let set = pickr.setColor('#' + ambientColor);
     }
@@ -1386,21 +1407,21 @@ function loadBridgeData(data) {
     const bSlider = $('#hueBrightness');
     let b = data;
     hueIp = b.id;
-    bSlider.val(b["brightness"]);
-    hIp.html(b["ipAddress"]);        
-    hueGroup = b["selectedGroup"];
+    bSlider.val(b["Brightness"]);
+    hIp.html(b["IpAddress"]);        
+    hueGroup = b["SelectedGroup"];
     if (b.hasOwnProperty("groups")) {
         hueGroups = b["groups"];
         if ((hueGroup === -1 && hueGroups.length > 0) || hueGroup === null || hueGroup === undefined) {
             if (hueGroups[0] !== undefined) {
-                hueGroup = hueGroups[0]["id"];
+                hueGroup = hueGroups[0]["Id"];
                 bridges[bridgeInt].selectedGroup = hueGroup;
                 postData("updateData", bridges[bridgeInt]);
             }
         }
     }
-    hueLights = b["lights"];
-    hueAuth = (b["user"] !== null || b["key"] !== null);            
+    hueLights = b["Lights"];
+    hueAuth = (b["User"] !== null || b["Key"] !== null);            
     lImg.removeClass('linked unlinked linking');
     if (hueAuth) {
         lImg.addClass('linked');
@@ -1450,11 +1471,11 @@ function loadNanoData(data) {
     // This is our bridge. There are many others like it...but this one is MINE.
     // Now we've got it.
     let n = data;
-    nBrightness.val(n["brightness"]);
-    nanoIp = n["ipV4Address"];
+    nBrightness.val(n["Brightness"]);
+    nanoIp = n["IpV4Address"];
     
-    hIp.html(n["ipV4Address"]);    
-    nanoAuth = (n["token"] !== null && n["token"] !== undefined);
+    hIp.html(n["IpV4Address"]);    
+    nanoAuth = (n["Token"] !== null && n["Token"] !== undefined);
     lImg.removeClass('linked unlinked linking');
     if (nanoAuth) {
         lImg.addClass('linked');
@@ -1483,14 +1504,14 @@ function loadLifxData(data) {
     const lName = $('#lifxName');
     const lBrightness = $("#lifxBrightness");
     let n = data;
-    nanoIp = n["hostName"];
+    nanoIp = n["HostName"];
     lName.html(nanoIp);
-    hIp.html(data.id);
+    hIp.html(data.Id);
     $('.lifxRegion').removeClass('checked');
-    $('.lifxRegion[data-region="' + data.targetSector +'"]').addClass('checked');
+    $('.lifxRegion[data-region="' + data.TargetSector +'"]').addClass('checked');
     $('.lifxRegionV2').removeClass('checked');
-    $('.lifxRegionV2[data-region="' + data.targetSectorV2 +'"]').addClass('checked');
-    lBrightness.val(data["brightness"]);    
+    $('.lifxRegionV2[data-region="' + data.TargetSectorV2 +'"]').addClass('checked');
+    lBrightness.val(data["Brightness"]);    
 }
 
 function loadWledData(data) {
@@ -1498,21 +1519,21 @@ function loadWledData(data) {
     const hIp = $('#wledIp');
     const wName = $('#wledName');
     const wBrightness = $("#wledBrightness");
-    wledIp = data["hostName"];
+    wledIp = data["HostName"];
     wName.html(wledIp);
-    hIp.html(data.id);
+    hIp.html(data.Id);
     $('.wledRegion').removeClass('checked');
-    $('.wledRegion[data-region="' + data.targetSector +'"]').addClass('checked');
+    $('.wledRegion[data-region="' + data.TargetSector +'"]').addClass('checked');
     $('.wledRegionV2').removeClass('checked');
-    $('.wledRegionV2[data-region="' + data.targetSectorV2 +'"]').addClass('checked');
-    $('#whCount').val(data["hCount"]);
-    $('#wvCount').val(data["vCount"]);
-    let ledCount = data["state"]["info"]["leds"]["count"];
-    let isRgbw = data["state"]["info"]["leds"]["rgbw"];
-    wBrightness.val(data["state"]["state"]["bri"]);
+    $('.wledRegionV2[data-region="' + data.TargetSectorV2 +'"]').addClass('checked');
+    $('#whCount').val(data["HCount"]);
+    $('#wvCount').val(data["VCount"]);
+    let ledCount = data["State"]["Info"]["Leds"]["Count"];
+    let isRgbw = data["State"]["Info"]["Leds"]["Rgbw"];
+    wBrightness.val(data["State"]["State"]["Bri"]);
     $("#wstripType").val(isRgbw);
-    $("#wOffset").val(data["offset"]);
-    $("#wDirection").val(data["stripDirection"]);
+    $("#wOffset").val(data["Offset"]);
+    $("#wDirection").val(data["StripDirection"]);
     $("#wTotal").val(ledCount);
 }
 
@@ -1531,14 +1552,14 @@ function drawNanoShapes(panel) {
     let height = width * .5625;
     
     // Get layout data from panel
-    let pX = panel['x'];
-    let pY = panel['y'];
-    let pScale = panel['scale'];
-    let pRot = panel['rotation'];
-    let mirrorX = panel['mirrorX'];
-    let mirrorY = panel['mirrorY'];    
-    let layout = panel['layout'];
-    let sideLength = layout['sideLength'];
+    let pX = panel['X'];
+    let pY = panel['Y'];
+    let pScale = panel['Scale'];
+    let pRot = panel['Rotation'];
+    let mirrorX = panel['MirrorX'];
+    let mirrorY = panel['MirrorY'];    
+    let layout = panel['Layout'];
+    let sideLength = layout['SideLength'];
 
     // Set our TV image width
     let tvWidth = hLedCount * 25;
@@ -1627,10 +1648,10 @@ function drawNanoShapes(panel) {
         } else {
             return;
         }
-        selectedDevice.x = gX;
-        selectedDevice.y = gY;
-        selectedDevice.scale = 1;
-        selectedDevice.rotation = shapeGroup.rotation();
+        selectedDevice.X = gX;
+        selectedDevice.Y = gY;
+        selectedDevice.Scale = 1;
+        selectedDevice.Rotation = shapeGroup.Rotation();
         saveSelectedDevice();
         postData("updateDevice", selectedDevice);
     }
@@ -1664,14 +1685,14 @@ function drawNanoShapes(panel) {
         let sText = new Konva.Text({
             x: x,
             y: y,
-            text: data["panelId"],
+            text: data["PanelId"],
             fontSize: 30,
             fontFamily: 'Calibri'
         });
         
-        let sectorText = data['targetSector'];
+        let sectorText = data['TargetSector'];
         if (captureMode !== 0) {
-            sectorText = data['targetSectorV2'];
+            sectorText = data['TargetSectorV2'];
         }
         let sText2 = new Konva.Text({
             x: x,
@@ -1719,11 +1740,11 @@ function drawNanoShapes(panel) {
                     id: data["panelId"]
                 });
                 poly.on('click', function(){
-                    setNanoMap(data['panelId'], data['targetSector'], data['targetSectorV2']);
+                    setNanoMap(data['PanelId'], data['TargetSector'], data['TargetSectorV2']);
                 });
                 poly.on('tap', function(){
                     console.log("POLY TAP")
-                    setNanoMap(data['panelId'], data['targetSector'], data['targetSectorV2']);
+                    setNanoMap(data['PanelId'], data['TargetSector'], data['TargetSectorV2']);
                 });
                 shapeGroup.add(poly);
                 break;
@@ -1742,10 +1763,10 @@ function drawNanoShapes(panel) {
                     strokeWidth: 4
                 });
                 rect1.on('click', function(){
-                    setNanoMap(data['panelId'], data['targetSector'], data['targetSector2']);
+                    setNanoMap(data['PanelId'], data['TargetSector'], data['TargetSectorV2']);
                 });
                 rect1.on('tap', function(){
-                    setNanoMap(data['panelId'], data['targetSector'], data['targetSector2']);
+                    setNanoMap(data['PanelId'], data['TargetSector'], data['TargetSectorV2']);
                 });
                 shapeGroup.add(rect1);
                 break;
@@ -1756,11 +1777,11 @@ function drawNanoShapes(panel) {
         sText.offsetX(sText.width() / 2);
         sText2.offsetX(sText2.width() / 2);
         sText.on('click', function(){
-            setNanoMap(data['panelId'], data['targetSector'], data['targetSector2']);
+            setNanoMap(data['PanelId'], data['TargetSector'], data['TargetSectorV2']);
             
         });
         sText2.on('click', function(){
-            setNanoMap(data['panelId'], data['targetSector'], data['targetSector2']);
+            setNanoMap(data['PanelId'], data['TargetSector'], data['TargetSectorV2']);
         });
         sText.on('tap', function () {
             console.log("Stext tap.")
@@ -1822,7 +1843,7 @@ function findGroup(id) {
         return hueGroups[0];    
     }
     $.each(hueGroups, function () {
-        if (id === $(this)[0].id) {
+        if (id === $(this)[0].Id) {
             res = $(this)[0];
         }        
     });

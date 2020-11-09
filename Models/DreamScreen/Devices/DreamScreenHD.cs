@@ -118,6 +118,7 @@ namespace HueDream.Models.DreamScreen.Devices {
             HdmiInputName1 = "HDMI 1";
             HdmiInputName2 = "HDMI 2";
             HdmiInputName3 = "HDMI 3";
+            Saturation = "FFFFFF";
         }
 
 

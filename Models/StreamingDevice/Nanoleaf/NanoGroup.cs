@@ -1,17 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using HueDream.Models.LED;
 using HueDream.Models.Util;
 using Nanoleaf.Client;
 using Nanoleaf.Client.Models.Responses;
 using Newtonsoft.Json;
-using ZedGraph;
 
 namespace HueDream.Models.StreamingDevice.Nanoleaf {
     public sealed class NanoGroup : IStreamingDevice, IDisposable {
