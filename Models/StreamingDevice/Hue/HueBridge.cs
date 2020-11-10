@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
+using System.Threading.Tasks;
 using HueDream.Models.Util;
 using ISocketLite.PCL.Exceptions;
 using Q42.HueApi;
@@ -225,6 +226,54 @@ namespace HueDream.Models.StreamingDevice.Hue {
             }
         }
         
+        public async Task<BridgeData> RefreshData(int timeout=5) {
+            // If we have no IP or we're not authorized, return
+            var newLights = new List<LightData>();
+            var newGroups = new List<Group>();
+
+            if (Bd.IpAddress == "0.0.0.0" || Bd.User == null || Bd.Key == null) {
+                Bd.Lights = newLights;
+                Bd.Groups = newGroups;
+                LogUtil.Write("No authorization, returning empty lights.");
+                return Bd;
+            }
+            // Get our client
+            SetClient();
+            _client.LocalHueClient.Initialize(Bd.User);
+            // Get lights
+            var lights = Bd.Lights ?? new List<LightData>();
+            try {
+                var res = _client.LocalHueClient.GetLightsAsync().Result;
+                var ld = res.Select(r => new LightData(r)).ToList();
+
+                foreach (var light in ld) {
+                    foreach (var ex in lights.Where(ex => ex.Id == light.Id)) {
+                        light.TargetSector = ex.TargetSector;
+                        light.TargetSectorV2 = ex.TargetSectorV2;
+                        if (light.TargetSectorV2 == -1 && light.TargetSector != -1) {
+                            light.TargetSectorV2 = ex.TargetSector * 2;
+                        }
+                        light.Brightness = ex.Brightness;
+                        light.OverrideBrightness = ex.OverrideBrightness;
+                    }
+
+                    newLights.Add(light);
+                }
+
+                Bd.Lights = newLights;
+                var all = await _client.LocalHueClient.GetEntertainmentGroups();
+                newGroups.AddRange(all);
+                Bd.Groups = newGroups;
+            } catch (AggregateException e) {
+                LogUtil.Write("Aggregate exception: " + e);
+            } catch (HttpRequestException f) {
+                LogUtil.Write("Http Request Exception: " + f);
+            } catch (System.Net.Sockets.SocketException g) {
+                LogUtil.Write("Socket Exception: " + g);
+            }
+
+            return Bd;
+        }
        
 
        

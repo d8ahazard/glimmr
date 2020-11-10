@@ -15,7 +15,6 @@ namespace HueDream.Models.StreamingDevice.LIFX {
             if (b == null) throw new ArgumentException("Invalid bulb data.");
             HostName = b.HostName;
             IpAddress = IpUtil.GetIpFromHost(HostName).ToString();
-            Id = b.MacAddressName;
             Service = b.Service;
             Port = (int) b.Port;
             MacAddress = b.MacAddress;
@@ -23,7 +22,7 @@ namespace HueDream.Models.StreamingDevice.LIFX {
         }
 
         [JsonProperty] public string HostName { get; internal set; }
-        [JsonProperty] public string Id { get; internal set; }
+        [JsonProperty] public string Id => MacAddressString;
 
         [JsonProperty] public byte Service { get; internal set; }
         [JsonProperty] public string IpAddress { get; internal set; }

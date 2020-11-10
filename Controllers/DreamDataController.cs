@@ -223,7 +223,7 @@ namespace HueDream.Controllers {
                     TriggerRefresh();
                     return new JsonResult("OK");
                 case "authorizeHue": {
-                    LogUtil.Write("AuthHue called, for real.");
+                    LogUtil.Write("AuthHue called, for reaal: " + value);
                     var doAuth = true;
                     BridgeData bd = null;
                     if (!string.IsNullOrEmpty(value)) {
@@ -430,19 +430,19 @@ namespace HueDream.Controllers {
             switch (devType) {
                 case "SideKick": {
                     var newDevice = new SideKick(curDevice);
-                    DataUtil.SetItem("MyDevice", newDevice);
+                    DataUtil.SetObject("MyDevice", newDevice);
                     DataUtil.InsertDsDevice(newDevice);
                     break;
                 }
                 case "DreamScreen4K": {
                     var newDevice = new DreamScreen4K(curDevice);
-                    DataUtil.SetItem("MyDevice", newDevice);
+                    DataUtil.SetObject("MyDevice", newDevice);
                     DataUtil.InsertDsDevice(newDevice);
                     break;
                 }
                 case "Connect": {
                     var newDevice = new Connect(curDevice);
-                    DataUtil.SetItem("MyDevice", newDevice);
+                    DataUtil.SetObject("MyDevice", newDevice);
                     DataUtil.InsertDsDevice(newDevice);
                     break;
                 }
@@ -452,8 +452,10 @@ namespace HueDream.Controllers {
 
         private bool TriggerReload(JObject dData) {
             if (dData == null) throw new ArgumentException("invalid jobject");
-            var tag = (dData["tag"] ?? "INVALID").Value<string>();
-            var id = (dData["id"] ?? "INVALID").Value<string>();
+            LogUtil.Write("Reloading data: " + JsonConvert.SerializeObject(dData));
+            var tag = (dData["Tag"] ?? "INVALID").Value<string>();
+            var id = (dData["_id"] ?? "INVALID").Value<string>();
+            dData["Id"] = id;
             if (tag == "INVALID" || id == "INVALID") return false;
             var myDev = DataUtil.GetDeviceData();
             var ipAddress = myDev.IpAddress;
@@ -464,7 +466,22 @@ namespace HueDream.Controllers {
             switch (tag) {
                 case "WLed":
                     LogUtil.Write("Updating wled");
+                    WLedData existing = DataUtil.GetCollectionItem<WLedData>("Dev_Wled", id);
                     var wData = dData.ToObject<WLedData>();
+                    if (wData != null) {
+                        var wl = new WLedStrip(wData);
+                        if (existing.State.info.leds.rgbw != wData.State.info.leds.rgbw) {
+                            LogUtil.Write("Update rgbw type.");
+                        }
+                        if (existing.State.info.leds.count != wData.State.info.leds.count) {
+                            LogUtil.Write("Update count type.");
+                        }
+
+                        if (existing.State.state.bri != wData.Brightness) {
+                            LogUtil.Write("Update Brightness...");
+                        }
+                    }
+
                     DataUtil.InsertCollection<WLedData>("Dev_Wled",wData);
                     _hubContext.Clients.All.SendAsync("wledData", wData);
                     break;

@@ -21,11 +21,11 @@ namespace HueDream.Hubs {
         }
 
         public async void AuthorizeHue(string id) {
-            LogUtil.Write("AuthHue called, for real.");
+            LogUtil.Write("AuthHue called, for real (socket): " + id);
             BridgeData bd;
             if (!string.IsNullOrEmpty(id)) {
                 await Clients.All.SendAsync("hueAuth", "start");
-                bd = DataUtil.GetCollectionItem<BridgeData>("bridges", id);
+                bd = DataUtil.GetCollectionItem<BridgeData>("Dev_Hue", id);
                 LogUtil.Write("BD: " + JsonConvert.SerializeObject(bd));
                 if (bd == null) {
                     LogUtil.Write("Null bridge retrieved.");
@@ -50,21 +50,27 @@ namespace HueDream.Hubs {
             while (count < 30) {
                 count++;
                 try {
-                    RegisterEntertainmentResult appKey = HueDiscovery.CheckAuth(bd.IpAddress).Result;
+                    var appKey = HueDiscovery.CheckAuth(bd.IpAddress).Result;
                     LogUtil.Write("Appkey retrieved! " + JsonConvert.SerializeObject(appKey));
-                    if (!string.IsNullOrEmpty(appKey.StreamingClientKey)) {
-                        bd.Key = appKey.StreamingClientKey;
-                        bd.User = appKey.Username;
-                        // Need to grab light group stuff here
-                        var nhb = new HueBridge(bd);
-                        nhb.RefreshData();
-                        bd = nhb.Bd;
-                        nhb.Dispose();
-                        DataUtil.InsertCollection<BridgeData>("bridges", bd);
-                        await Clients.All.SendAsync("hueAuth", "authorized");
-                        await Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
-                        return;
+                    if (appKey != null) {
+                        if (!string.IsNullOrEmpty(appKey.StreamingClientKey)) {
+                            LogUtil.Write("Updating bridge?");
+                            bd.Key = appKey.StreamingClientKey;
+                            bd.User = appKey.Username;
+                            LogUtil.Write("Creating new bridge...");
+                            // Need to grab light group stuff here
+                            var nhb = new HueBridge(bd);
+                            bd = nhb.RefreshData(5).Result;
+                            nhb.Dispose();
+                            DataUtil.InsertCollection<BridgeData>("Dev_Hue", bd);
+                            await Clients.All.SendAsync("hueAuth", "authorized");
+                            await Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+                            return;
+                        }
+                        LogUtil.Write("Appkey is null?");
                     }
+
+                    LogUtil.Write("Waiting for app key.");
                 } catch (NullReferenceException e) {
                     LogUtil.Write("NULL EXCEPTION: " + e.Message, "WARN");
                 }
@@ -75,33 +81,21 @@ namespace HueDream.Hubs {
         }
 
         public async void AuthorizeNano(string id) {
-            var leaves = DataUtil.GetCollection<NanoData>("leaves");
-            NanoData bd = null;
-            var nanoInt = -1;
-            if (!string.IsNullOrEmpty(id)) {
-                var nanoCount = 0;
-                foreach (var n in leaves) {
-                    if (n.IpAddress == id) {
-                        bd = n;
-                        bool doAuth = n.Token == null;
-                        if (doAuth) {
-                            await Clients.All.SendAsync("nanoAuth", "authorized");
-                            await Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
-                            return;
-                        }
-                        nanoInt = nanoCount;
-                    }
-                    nanoCount++;
-                }
+            var leaves = DataUtil.GetCollection<NanoData>("Dev_Nano");
+            var leaf = DataUtil.GetCollectionItem<NanoData>("Dev_Nano", id);
+            bool doAuth = leaf.Token == null;
+            if (doAuth) {
+                await Clients.All.SendAsync("nanoAuth", "authorized");
+                await Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+                return;
             }
-            
             var panel = new NanoGroup(id);
             var count = 0;
             while (count < 30) {
                 var appKey = panel.CheckAuth().Result;
-                if (appKey != null && bd != null) {
-                    bd.Token = appKey.Token;
-                    DataUtil.InsertCollection<NanoData>("leaves", bd);
+                if (appKey != null && leaf != null) {
+                    leaf.Token = appKey.Token;
+                    DataUtil.InsertCollection<NanoData>("Dev_NanoLeaf", leaf);
                     await Clients.All.SendAsync("nanoAuth", "authorized");
                     await Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
                     panel.Dispose();

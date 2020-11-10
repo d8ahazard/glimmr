@@ -21,9 +21,11 @@ namespace HueDream.Models.Util {
             var gI = tCol.G;
             var bI = tCol.B;
             float tM = Math.Max(rI, Math.Max(gI, bI));
-
+            float tm = Math.Min(rI, Math.Min(gI, bI));
             //If the maximum value is 0, immediately return pure black.
             if(tM == 0) { return Color.FromArgb(0, 0, 0,0); }
+            
+            if (tm >= 255) {return Color.FromArgb(255, 0, 0, 0);}
 
             //This section serves to figure out what the color with 100% hue is
             var multiplier = 255.0f / tM;
@@ -52,6 +54,20 @@ namespace HueDream.Models.Util {
             if (rO > 255) rO = 255;
             if (gO > 255) gO = 255;
             return Color.FromArgb(wO, rO, gO, bO);
+        }
+
+        
+        public static Color ClampAlpha2(Color tCol) {
+            var rI = tCol.R;
+            var gI = tCol.G;
+            var bI = tCol.B;
+            int tM = Math.Max(rI, Math.Max(gI, bI));
+            int tm = Math.Min(rI, Math.Min(gI, bI));
+            //If the maximum value is 0, immediately return pure black.
+            //if(tM == 0) { return Color.FromArgb(0, 0, 0,0); }
+            if (tm >= 255) {return Color.FromArgb(255, 0, 0, 0);}
+
+            return Color.FromArgb(tm, rI, gI, bI);
         }
 
         public static int ColorTemperature(Color input) {
@@ -242,7 +258,17 @@ namespace HueDream.Models.Util {
                 177,180,182,184,186,189,191,193,196,198,200,203,205,208,210,213,
                 215,218,220,223,225,228,231,233,236,239,241,244,247,249,252,255 };
             
-            return Color.FromArgb(input.A, gammas[input.R], gammas[input.G], gammas[input.B]);
+            return Color.FromArgb(gammas[input.A], gammas[input.R], gammas[input.G], gammas[input.B]);
+        }
+
+        public static Color FixGamma2(Color input) {
+            var w = ByteUtils.IntByte(input.A) >> 24;
+            var r = ByteUtils.IntByte(input.R) >> 16;
+            var g = ByteUtils.IntByte(input.G) >> 8;
+            var b = input.B;
+            var shifted = Color.FromArgb(w, r, g, b);
+            shifted = FixGamma(shifted);
+            return Color.FromArgb(shifted.A << 24, shifted.R << 16, shifted.G << 8, shifted.B);
         }
 
         public static Color Blend(this Color color, Color backColor, double amount) {

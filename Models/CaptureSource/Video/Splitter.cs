@@ -16,22 +16,31 @@ namespace HueDream.Models.CaptureSource.Camera {
         private Mat _input;
         private readonly int _vCount;
         private readonly int _hCount;
-        private readonly List<Rectangle> _fullCoords;
-        private readonly List<Rectangle> _fullSectors;
-        private readonly List<Rectangle> _fullSectorsV2;
+        private List<Rectangle> _fullCoords;
+        private List<Rectangle> _fullSectors;
+        private List<Rectangle> _fullSectorsV2;
         public Dictionary<string, List<Rectangle>> WLSectors;
         public Dictionary<string, List<int>> WLModules;
         private int sourceWidth;
         private int sourceHeight;
+        // Number of times our counts have matched
         private int _vCropCount;
         private int _hCropCount;
+        // Current crop settings
         private int _vCropPixels;
         private int _hCropPixels;
+        // Where we save the potential new value between checks
+        private int _vCropCheck;
+        private int _hCropCheck;
+        // Are we cropping right now?
         private bool _vCrop;
         private bool _hCrop;
+        // Set this when the sector changes
         private bool _sectorChanged;
+        // The width of the border to crop from for LEDs
         private readonly float _borderWidth;
         private readonly float _borderHeight;
+        // The current crop mode?
         private int _boxMode;
         private List<Color> _colorsLed;
         private List<Color> _colorsSectors;
@@ -43,7 +52,7 @@ namespace HueDream.Models.CaptureSource.Camera {
         private readonly int _minBrightness;
         public bool DoSave;
         public bool NoImage;
-        private const int MaxFrameCount = 75;
+        private const int MaxFrameCount = 30;
         
         public Splitter(LedData ld, int srcWidth, int srcHeight) {
             LogUtil.Write("Initializing splitter, using LED Data: " + JsonConvert.SerializeObject(ld));
@@ -56,8 +65,8 @@ namespace HueDream.Models.CaptureSource.Camera {
             sourceWidth = srcWidth;
             sourceHeight = srcHeight;
             // Set desired width of capture region to 15% total image
-            _borderWidth = sourceWidth * .05f;
-            _borderHeight = sourceHeight * .05f;
+            _borderWidth = sourceWidth * .025f;
+            _borderHeight = sourceHeight * .025f;
             // Set default box mode to zero, no boxing
             _boxMode = 0;
             // Set brightness boost, min brightness, sat boost...
@@ -67,7 +76,7 @@ namespace HueDream.Models.CaptureSource.Camera {
             // Get sectors
             _fullCoords = DrawGrid();
             _fullSectors = DrawSectors();
-            _fullSectorsV2 = DrawSectors(0,0, true);
+            _fullSectorsV2 = DrawSectors(true);
             _frameCount = 0;
             _colorsWled = new Dictionary<string, List<Color>>();
             WLModules = new Dictionary<string, List<int>>();
@@ -87,9 +96,6 @@ namespace HueDream.Models.CaptureSource.Camera {
             var outColorsSector = new List<Color>();
             var outColorsSectorV2 = new List<Color>();
             var outColorsWled = new Dictionary<string, List<Color>>();
-            var coords = _fullCoords;
-            var sectors = _fullSectors;
-            var sectorsV2 = _fullSectorsV2;
             var wlSectors = WLSectors;
             if (_frameCount >= 10) {
                 CheckSectors();
@@ -98,15 +104,16 @@ namespace HueDream.Models.CaptureSource.Camera {
             _frameCount++;
             
             // Only calculate new sectors if the value has changed
-            if ((_vCrop || _hCrop) && _sectorChanged) {
+            if (_sectorChanged) {
                 _sectorChanged = false;
-                var vp = _vCrop ? _vCropPixels : 0;
-                var hp = _hCrop ? _hCropPixels : 0;
-                coords = DrawGrid(hp, vp);
-                sectors = DrawSectors(hp, vp);
-                sectorsV2 = DrawSectors(hp, vp, true);
+                var vp = _vCropPixels;
+                var hp = _hCropPixels;
+                LogUtil.Write($"No, really, adjusting crops to {vp} and {hp}");
+                _fullCoords = DrawGrid();
+                _fullSectors = DrawSectors();
+                _fullSectorsV2 = DrawSectors( true);
                 foreach (var id in WLModules.Keys) {
-                    wlSectors[id] = DrawWledGrid(id, hp, vp);
+                    wlSectors[id] = DrawWledGrid(id);
                 }
             }
             
@@ -118,14 +125,14 @@ namespace HueDream.Models.CaptureSource.Camera {
                 inputMat.CopyTo(gMat);
                 var colInt = 0;
                 var textColor = new Bgr(Color.White).MCvScalar;
-                var previewCheck = 3;
-                var sectorTarget = coords;
+                var previewCheck = 1;
+                var sectorTarget = _fullCoords;
                 var colorTarget = _colorsLed;
                 if (previewCheck == 2) {
-                    sectorTarget = sectors;
+                    sectorTarget = _fullSectors;
                     colorTarget = _colorsSectors;
                 } else if (previewCheck == 3) {
-                    sectorTarget = sectorsV2;
+                    sectorTarget = _fullSectorsV2;
                     colorTarget = _colorsSectorsV2;
                 }
                 foreach (var s in sectorTarget) {
@@ -145,17 +152,17 @@ namespace HueDream.Models.CaptureSource.Camera {
                 gMat.Dispose();
             }
 
-            foreach (var sub in coords.Select(r => new Mat(_input, r))) {
+            foreach (var sub in _fullCoords.Select(r => new Mat(_input, r))) {
                 outColorsStrip.Add(GetAverage(sub));
                 sub.Dispose();
             }
 
-            foreach (var sub in sectors.Select(r => new Mat(_input, r))) {
+            foreach (var sub in _fullSectors.Select(r => new Mat(_input, r))) {
                 outColorsSector.Add(GetAverage(sub));
                 sub.Dispose();
             }
 
-            foreach (var sub in sectorsV2.Select(r => new Mat(_input, r))) {
+            foreach (var sub in _fullSectorsV2.Select(r => new Mat(_input, r))) {
                 outColorsSectorV2.Add(GetAverage(sub));
                 sub.Dispose();
             }
@@ -207,9 +214,6 @@ namespace HueDream.Models.CaptureSource.Camera {
             var cG = (int) colors.V1;
             var cR = (int) colors.V2;
             outColor = Color.FromArgb(cR, cG, cB);
-            
-            
-            
             return outColor;
         }
         
@@ -230,126 +234,166 @@ namespace HueDream.Models.CaptureSource.Camera {
         }
         
         private void CheckSectors() {
-            // First, we need to get averages for pillar and letter sectors
-                // Loop through half the rows, from top to bottom
-                // These are our average values
-                var cropHorizontal = 0;
-                var cropVertical = 0;
-                NoImage = ColorUtil.IsBlack(GetAverage(_input));
-                if (NoImage) return;
-                for (var r = 0; r < _input.Height / 4; r++) {
-                    // This is the number of the bottom row to check
-                    var r2 = _input.Height - r;
-                    var s1 = new Rectangle(0,r,_input.Width,5);
-                    var t1 = new Mat(_input, s1);
-                    var t1Col = GetAverage(t1);
-                    t1.Dispose();
-                    if (!ColorUtil.IsBlack(t1Col)) continue;
-                    var s2 = new Rectangle(0,r2-5,_input.Width,5);
-                    var t2 = new Mat(_input, s2);
-                    var t2Col = GetAverage(t2);
-                    t2.Dispose();
-                    if (ColorUtil.IsBlack(t2Col)) {
-                        cropHorizontal = r;
-                    }
+            // Number of pixels to check per loop. Smaller = more accurate, larger = faster?
+            const int checkSize = 1;
+            // Set our starting values to zero per loop
+            var cropHorizontal = 0;
+            var cropVertical = 0;
+            var gr = new Mat();
+            CvInvoke.CvtColor(_input, gr,ColorConversion.Bgr2Gray);
+            // Check to see if everything is black
+            var allB = CvInvoke.CountNonZero(gr);
+            NoImage = allB == 0;
+            // If it is, we can stop here
+            if (NoImage) {
+                gr.Dispose();
+                return;
+            }
+            // Loop through rows, checking for all black
+            for (var r = 0; r <= _input.Height / 4; r+= checkSize) {
+                // Define top position of bottom section
+                var r2 = _input.Height - r - checkSize;   
+                // Top Sector
+                var s1 = new Rectangle(0,r,_input.Width,checkSize);
+                // Make it a mat and check to see if it's black
+                var t1 = new Mat(gr, s1);
+                var n1 = CvInvoke.CountNonZero(t1);
+                t1.Dispose();
+                // If it isn't, we can stop here
+                if (n1 != 0) continue;
+                // If it is, check the corresponding bottom sector
+                var s2 = new Rectangle(0,r2,_input.Width,checkSize);
+                var t2 = new Mat(gr, s2);
+                n1 = CvInvoke.CountNonZero(t2);
+                t2.Dispose();
+                // If the bottom is also black, save that value
+                if (n1 == 0) {
+                    cropHorizontal = r;
                 }
-                
-                for (var c = 0; c < _input.Width / 4; c++) {
-                    // This is the number of the bottom row to check
-                    var c2 = _input.Width - c;
-                    var s1 = new Rectangle(c,0,5,_input.Height);
-                    var t1 = new Mat(_input, s1);
-                    var t1Col = GetAverage(t1);
-                    t1.Dispose();
-                    if (!ColorUtil.IsBlack(t1Col)) continue;
-                    var s2 = new Rectangle(c2 - 5,0,1,_input.Height);
-                    var t2 = new Mat(_input, s2);
-                    var t2Col = GetAverage(t2);
-                    t2.Dispose();
-                    if (ColorUtil.IsBlack(t2Col)) {
-                        cropVertical = c;
-                    }
+            }
+            
+            for (var c = 0; c < _input.Width / 4; c+= checkSize) {
+                // Define left coord of right sector
+                var c2 = _input.Width - c - checkSize;
+                // Create rect for left side check, make it a Mat
+                var s1 = new Rectangle(c,0,checkSize, _input.Height);
+                var t1 = new Mat(gr, s1);
+                // See if it's all black
+                var n1 = CvInvoke.CountNonZero(t1);
+                t1.Dispose();
+                // If not, stop here
+                if (n1 != 0) continue;
+                // Otherwise, do the same for the right side
+                var s2 = new Rectangle(c2,0,1, _input.Height);
+                var t2 = new Mat(gr, s2);
+                n1 = CvInvoke.CountNonZero(t2);
+                t2.Dispose();
+                // If it is also black, set that to our current check value
+                if (n1 == 0) {
+                    cropVertical = c;
                 }
-
-                if (cropHorizontal != 0) {
+            }
+           
+            gr.Dispose();
+            // If we have a hcrop value
+            if (cropHorizontal != 0) {
+                // Check to see if we have the same crop value
+                if (_hCropCheck == cropHorizontal) {
                     _hCropCount++;
-                    if (Math.Abs(cropHorizontal - _hCropPixels) < 5) {
-                        if (_hCropCount > MaxFrameCount) {
-                            _hCropCount = MaxFrameCount;
-                            if (!_hCrop) {
-                                _sectorChanged = true;
-                                _hCrop = true;
-                                LogUtil.Write($"Enabling horizontal crop for {cropHorizontal} rows.");
-                            }
-                        }
-                    } else {
-                        if (_hCrop) LogUtil.Write($"Adjusting horizontal crop to {_hCropPixels} pixels.");
-                        _hCropCount--;
-                        _hCropPixels = cropHorizontal;
-                    }
-                } else {
-                    _hCropCount = -1;
-                }
-                
-                if (_hCropCount < 0) {
-                    _hCropPixels = 0;
-                    _hCropCount = 0;
-                    if (_hCrop) {
-                        _sectorChanged = true;
-                        _hCrop = false;
-                        LogUtil.Write("Disabling horizontal crop.");
-                    }
-                }
-
-                if (cropVertical != 0) {
-                    if (Math.Abs(cropVertical - _vCropPixels) < 5) {
-                        _vCropCount++;
-                        if (_vCropCount > MaxFrameCount) {
-                            _vCropCount = MaxFrameCount;
-                            if (!_vCrop) {
-                                _vCrop = true;
-                                _sectorChanged = true;
-                                LogUtil.Write($"Enabling vertical crop for {cropVertical} columns.");
-                            }        
-                        }
-                    } else {
-                        _vCropPixels = cropVertical;
-                        if (_vCrop) LogUtil.Write($"Adjusting vertical crop to {_vCropPixels} pixels.");
-                    }
-                } else {
-                    _vCropCount--;
-                    if (_vCropCount < 0) {
-                        _vCropCount = 0;
-                        _vCropPixels = 0;
-                        if (_vCrop) {
+                    // If it is, set to new value
+                    // Now check to see if we've had the same value N times
+                    if (_hCropCount > MaxFrameCount) {
+                        _hCropCount = MaxFrameCount;
+                        _hCropPixels = _hCropCheck;
+                        // If we have, set the hCrop value and tell program to crop
+                        if (!_hCrop) {
                             _sectorChanged = true;
-                            _vCrop = false;
-                            LogUtil.Write("Disabling vertical crop.");    
+                            _hCrop = true;
+                            LogUtil.Write($"Enabling horizontal crop for {cropHorizontal} rows.");
                         }
-                        
                     }
+                } else {
+                    _hCropCheck = cropHorizontal;
                 }
+            } else {
+                _hCropCount = -1;
+            }
+            
+            //LogUtil.Write($"Hcropcount, new, check: {_hCropCount}, {cropHorizontal}, {_hCropCheck}");
+            
+            // If our crop count is lt zero, set it and the crop value to zero
+            if (_hCropCount < 0) {
+                _hCropPixels = 0;
+                _hCropCount = 0;
+                _hCropCheck = 0;
+                if (_hCrop) {
+                    _sectorChanged = true;
+                    _hCrop = false;
+                    LogUtil.Write("Disabling horizontal crop.");
+                }
+            }
+
+            // If we have a vCrop value
+            if (cropVertical != 0) {
+                // Check to see if we have the same crop value
+                if (_vCropCheck == cropVertical) {
+                    _vCropCount++;
+                    // If it is, set to new value
+                    // Now check to see if we've had the same value N times
+                    if (_vCropCount > MaxFrameCount) {
+                        _vCropCount = MaxFrameCount;
+                        _vCropPixels = _vCropCheck;
+                        // If we have, set the vCrop value and tell program to crop
+                        if (!_vCrop) {
+                            _sectorChanged = true;
+                            _vCrop = true;
+                            LogUtil.Write($"Enabling Vertical crop for {cropVertical} rows.");
+                        }
+                    }
+                } else {
+                    _vCropCheck = cropVertical;
+                }
+            } else {
+                _vCropCount = -1;
+            }
+            
+            //LogUtil.Write($"vCropcount, new, check: {_vCropCount}, {cropVertical}, {_vCropCheck}");
+            
+            // If our crop count is lt zero, set it and the crop value to zero
+            if (_vCropCount < 0) {
+                _vCropPixels = 0;
+                _vCropCount = 0;
+                _vCropCheck = 0;
+                if (_vCrop) {
+                    _sectorChanged = true;
+                    _vCrop = false;
+                    LogUtil.Write("Disabling Vertical crop.");
+                }
+            }
+
     
         }
 
        
-        private List<Rectangle> DrawGrid(double vOffset = 0, double hOffset = 0) {
+        private List<Rectangle> DrawGrid() {
+            var vOffset = _vCropPixels;
+            var hOffset = _hCropPixels;
             var output = new List<Rectangle>();
             
             // Top Region
-            var tTop = vOffset;
+            var tTop = hOffset;
             var tBottom = _borderHeight + tTop;
 
             // Bottom Gridlines
-            var bBottom = sourceHeight - vOffset;
+            var bBottom = sourceHeight - hOffset;
             var bTop = bBottom - _borderHeight;
 
             // Left Column Border
-            var lLeft = hOffset;
-            var lRight = hOffset + _borderWidth;
+            var lLeft = vOffset;
+            var lRight = vOffset + _borderWidth;
 
             // Right Column Border
-            var rRight = sourceWidth - hOffset;
+            var rRight = sourceWidth - vOffset;
             var rLeft = rRight - _borderWidth;
             // Steps
             var tStep = sourceWidth / _hCount;
@@ -369,7 +413,7 @@ namespace HueDream.Models.CaptureSource.Camera {
             while (step >= 0) {
                 var ord = step * tStep;
                 var vw = tBottom - tTop;
-                output.Add(new Rectangle(ord, (int) tTop,  tStep, (int) vw));
+                output.Add(new Rectangle(ord, tTop,  tStep, (int) vw));
                 step--;
             }
 
@@ -378,7 +422,7 @@ namespace HueDream.Models.CaptureSource.Camera {
             while (step < _vCount) {
                 var ord = step * lStep;
                 var vw = lRight - lLeft;
-                output.Add(new Rectangle((int) lLeft, ord, (int) vw, lStep));
+                output.Add(new Rectangle(lLeft, ord, (int) vw, lStep));
                 step++;
             }
 
@@ -393,8 +437,9 @@ namespace HueDream.Models.CaptureSource.Camera {
             return output;
         }
         
-        private List<Rectangle> DrawWledGrid(string moduleId, double vOffset = 0, double hOffset = 0) {
-            
+        private List<Rectangle> DrawWledGrid(string moduleId) {
+            var hOffset = _hCropPixels;
+            var vOffset = _vCropPixels;
             var output = new List<Rectangle>();
             var dims = WLModules[moduleId];
             LogUtil.Write("Drawing wled grid with dims: " + JsonConvert.SerializeObject(dims));
@@ -445,7 +490,7 @@ namespace HueDream.Models.CaptureSource.Camera {
             while (step >= 0) {
                 var ord = step * tStep;
                 var vw = tBottom - tTop;
-                output.Add(new Rectangle(ord, (int) tTop,  tStep, (int) vw));
+                output.Add(new Rectangle(ord, tTop,  tStep, (int) vw));
                 step--;
             }
 
@@ -454,7 +499,7 @@ namespace HueDream.Models.CaptureSource.Camera {
             while (step < vCount) {
                 var ord = step * lStep;
                 var vw = lRight - lLeft;
-                output.Add(new Rectangle((int) lLeft, ord, (int) vw, lStep));
+                output.Add(new Rectangle(lLeft, ord, (int) vw, lStep));
                 step++;
             }
 
@@ -505,8 +550,10 @@ namespace HueDream.Models.CaptureSource.Camera {
             return truncated;
         }
         
-        private List<Rectangle> DrawSectors(double vOffset = 0, double hOffset = 0, bool v2 = false) {
+        private List<Rectangle> DrawSectors(bool v2 = false) {
             // How many sectors does each region have?
+            var hOffset = _hCropPixels;
+            var vOffset = _vCropPixels;
             var vSectorCount = 3;
             var hSectorCount = 5;
 
@@ -518,8 +565,8 @@ namespace HueDream.Models.CaptureSource.Camera {
             var fs = new List<Rectangle>();
             // Calculate heights, minus offset for boxing
             // Individual segment sizes
-            var sectorWidth =(int) (sourceWidth - hOffset * 2) / hSectorCount;
-            var sectorHeight = (int) (sourceHeight - vOffset * 2) / vSectorCount;
+            var sectorWidth =(sourceWidth - hOffset * 2) / hSectorCount;
+            var sectorHeight = (sourceHeight - vOffset * 2) / vSectorCount;
             // These are based on the border/strip values
             // Minimum limits for top, bottom, left, right            
             var minTop = vOffset;
@@ -530,28 +577,28 @@ namespace HueDream.Models.CaptureSource.Camera {
             var step = vSectorCount - 1;
             while (step >= 0) {
                 var ord = step * sectorHeight + vOffset;
-                fs.Add(new Rectangle((int) minRight, (int) ord, sectorWidth, sectorHeight));
+                fs.Add(new Rectangle(minRight, ord, sectorWidth, sectorHeight));
                 step--;
             }
             // Calc top regions, from right to left, skipping top-right corner (total horizontal sectors minus one)
             step = hSectorCount - 2;
             while (step >= 0) {
                 var ord = step * sectorWidth + hOffset;
-                fs.Add(new Rectangle((int) ord, (int) minTop, sectorWidth, sectorHeight));
+                fs.Add(new Rectangle(ord, minTop, sectorWidth, sectorHeight));
                 step--;
             }
             step = 1;
             // Calc left regions (top to bottom), skipping top-left
             while (step <= vSectorCount - 1) {
                 var ord = step * sectorHeight + vOffset;
-                fs.Add(new Rectangle((int) minLeft, (int) ord, sectorWidth, sectorHeight));
+                fs.Add(new Rectangle(minLeft, ord, sectorWidth, sectorHeight));
                 step++;
             }
             step = 1;
             // Calc bottom center regions (L-R)
             while (step <= hSectorCount - 2) {
                 var ord = step * sectorWidth + hOffset;
-                fs.Add(new Rectangle((int) ord, (int) minBot, sectorWidth, sectorHeight));
+                fs.Add(new Rectangle(ord, minBot, sectorWidth, sectorHeight));
                 step += 1;
             }
             return fs;

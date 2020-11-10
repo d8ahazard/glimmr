@@ -37,26 +37,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
                 if (!matched) output.Add(ex);
             }
 
-            var output2 = new List<BridgeData>();
-            foreach (var o in output) {
-                if (o.Key == null || o.User == null) {
-                    output2.Add(o);
-                } else {
-                    var copied = false;
-                    try {
-                        var nhb = new HueBridge(o);
-                        nhb.RefreshData();
-                        output2.Add(o);
-                        nhb.Dispose();
-                        copied = true;
-                    } catch (Exception e) {
-                        LogUtil.Write("Socket Exception: " + e.Message, "ERROR");
-                    }
-                    if (!copied) { output2.Add(o); }
-                }
-
-            }
-            return output2;
+            return output;
         }
         
         public static async Task<RegisterEntertainmentResult> CheckAuth(string bridgeIp) {

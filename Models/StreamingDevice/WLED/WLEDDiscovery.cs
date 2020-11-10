@@ -47,7 +47,6 @@ namespace HueDream.Models.StreamingDevice.WLed {
                             nData.CopyExisting(ee);
                         }
                     }
-                    LogUtil.Write("We should be inserting here: " + JsonConvert.SerializeObject(nData));
                     DataUtil.InsertCollection<WLedData>("Dev_Wled", nData);
                 }
             };

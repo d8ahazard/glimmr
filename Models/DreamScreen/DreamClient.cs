@@ -332,11 +332,15 @@ namespace HueDream.Models.DreamScreen {
                     break;
                 case 2: // Audio
                     if (!_streamStarted) StartStream();
+                    _grabber?.ToggleSend(false);
+                    LogUtil.Write("Toggling send on grabber...");
                     _sendAudioColors = true;
                     Subscribe(true);
                     break;
                 case 3: // Ambient
                     if (!_streamStarted) StartStream();
+                    _grabber?.ToggleSend(false);
+                    LogUtil.Write("Toggling send on grabber...");
                     UpdateAmbientMode(_ambientMode);
                     break;
             }
@@ -486,7 +490,7 @@ namespace HueDream.Models.DreamScreen {
             }
 
             foreach (var wl in _wlStrips) {
-                wl.SetColor(output, fadeTime);
+                wl.SetColor(output, fadeTime, true);
             }
 
             if (CaptureMode != 0) {

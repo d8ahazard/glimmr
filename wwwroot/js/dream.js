@@ -4,10 +4,12 @@ let bridges = [];
 let leaves = [];
 let devices = [];
 let dsDevs = [];
+let wleds = [];
 let captureMode = 0;
 let bridgeInt = 0;
 let linking = false;
 let resizeTimer;
+let loadTimer;
 let nanoLinking = false;
 let hueAuth = false;
 let nanoAuth = false;
@@ -265,11 +267,18 @@ function setSocketListeners() {
         stuff = stuff.replace(/\\n/g, '');
         let foo = JSON.parse(stuff);
         console.log("Received updated data: ", foo);
-        datastore = foo;
-        console.log("Building list...");
-        buildLists();
-        reloadDevice();
-        socketLoaded = true;
+        if (!loadTimer) {
+            datastore = foo;
+            console.log("Building list...");
+            buildLists();
+            reloadDevice();
+            socketLoaded = true;
+            refreshing = false;
+        } else {
+            console.log("Not using updated data because we just loaded...");
+            loadTimer = null;
+            posting = false;
+        }
     });
 
     websocket.onclose(function() {
@@ -290,7 +299,7 @@ function setListeners() {
         colorTimer = setTimeout(function() {
             if (posting) return;
             let colStr = instance.toHEXA()[0] + instance.toHEXA()[1] + instance.toHEXA()[2];
-            postData("ambientColor",{device: selectedDevice.id, group: selectedDevice.groupNumber, color: colStr});    // Do the ajax stuff
+            postData("ambientColor",{device: selectedDevice["Id"], group: selectedDevice["GroupNumber"], color: colStr});    // Do the ajax stuff
         }, 500);
         
     });
@@ -401,14 +410,14 @@ function setListeners() {
 
     $("#dsName").blur(function() {
         let nVal = $(this).text();
-        let ip = $(this).data('ip');
-        let group = $(this).data('group');
-        let out = {
-            ip: ip,
-            group: group,
-            name: nVal
-        };
-        postData("devname", out);
+        selectedDevice["Name"] = nVal;
+        postData("updateDevice", selectedDevice);
+    });
+
+    $("#wlName").blur(function() {
+        let nVal = $(this).text();
+        selectedDevice["Name"] = nVal;
+        postData("updateDevice", selectedDevice);
     });
 
     // On capture mode btn click
@@ -558,14 +567,27 @@ function setListeners() {
         updateLightProperty(myId, "overrideBrightness", newVal);
     });
 
+    $(document).on('change', '.wlInput', function() {
+        let property = $(this).data("value");
+        let newVal = $(this).val();
+        console.log("We should update wled property to ",property, newVal);
+        if (property === "count" || property === "rgbw") {
+            if (property === "count") {
+                selectedDevice["LedCount"] = newVal;
+            }
+            selectedDevice["State"]["info"]["leds"][property] = newVal;
+        } else {
+            selectedDevice[property] = newVal;
+        }
+        postData("updateDevice", selectedDevice);
+    });
+
 
     // On Device Click
     $(document).on('click', '.devSelect', function (event) {
         let id = $(this).data('device');
-        id = id.replace("#group", "");
         $.each(devices, function() {
-            if ($(this)[0]['id'] == id) {
-                console.log("Found the device, wtf.")
+            if ($(this)[0]['_id'] === id) {
                 showDevicePanel($(this)[0]);
             }
         });
@@ -675,7 +697,7 @@ function setListeners() {
     $('.dsGroup').change(function () {
         const id = $(this).val();
         hueGroup = id;
-        bridges[bridgeInt]["selectedGroup"] = id;
+        bridges[bridgeInt]["SelectedGroup"] = id;
         postData("updateDevice", bridges[bridgeInt]);
         mapLights();
     });
@@ -741,7 +763,10 @@ function checkNanoAuth() {
 
 // Post settings data in chunks for deserialization
 function postData(endpoint, payload) {
-    if (posting) return;
+    if (posting) {
+        console.log("Already posting?");
+        return;
+    }
     $.ajax({
         url: "./api/DreamData/" + endpoint,
         dataType: "json",
@@ -760,13 +785,25 @@ function updateLightProperty(myId, propertyName, value) {
     console.log("Updating light " + propertyName + " for " + myId, value);
     for(let k in hueLights) {
         if (hueLights.hasOwnProperty(k)) {
-            if (hueLights[k]["id"] === myId) {
+            hueLights[k]["Id"] = parseInt(hueLights[k]["_id"]);
+            if (hueLights[k]["_id"] === myId) {
+                hueLights[k]["Id"] = parseInt(myId);
                 hueLights[k][propertyName] = value;
             }
         }
     }    
     console.log("Updated light data: ", hueLights);
-    bridges[bridgeInt]["lights"] = hueLights;
+    bridges[bridgeInt]["Lights"] = hueLights;
+    let fGroup = bridges[bridgeInt]["Groups"];
+    let nGroup = [];
+    for (let g in fGroup) {
+        if (fGroup.hasOwnProperty(g)) {
+            fGroup[g]["Id"] = fGroup[g]["_id"];
+            nGroup.push(fGroup[g]);    
+        }
+        
+    }
+    bridges[bridgeInt]["Groups"] = nGroup;
     postData("updateDevice", bridges[bridgeInt]);
 }
 
@@ -775,6 +812,7 @@ function mapLights() {
     let group = findGroup(hueGroup);
     if (!group) return;
     let lights = hueLights;
+    console.log("Mapping lights: ", lights);
     // Get the main light group
     const lightGroup = document.getElementById("mapSel");
     // Clear it
@@ -783,25 +821,26 @@ function mapLights() {
     $('.lightRegion').removeClass("checked");
     $('.lightRegionV2').removeClass("checked");
     // Get the list of lights for the selected group
-    if (!group.hasOwnProperty('lights')) return false;
-    const ids = group["lights"];
+    if (!group.hasOwnProperty('Lights')) return false;
+    const ids = group["Lights"];
     
     // Sort our lights by name
     lights = lights.sort(function (a, b) {
-        if (!a.hasOwnProperty('Value') || !b.hasOwnProperty('Value')) return false;
-        return a.Value.localeCompare(b.Value);
+        if (!a.hasOwnProperty('Name') || !b.hasOwnProperty('Name')) return false;
+        return a.Name.localeCompare(b.Name);
     });
+    console.log("Sorted lights: " + lights);
     // Loop through our list of all lights
     for (let l in lights) {
         if (lights.hasOwnProperty(l)) {
             let light = lights[l];
-            let id = light['id'];
+            let id = light['_id'];
             if ($.inArray(id, ids) !== -1) {
-                const name = light['name'];
-                let brightness = light["brightness"];
-                let override = light["overrideBrightness"];
-                let selection = light["targetSector"];
-                let selectionV2 = light["targetSectorV2"];
+                const name = light['Name'];
+                let brightness = light["Brightness"];
+                let override = light["OverrideBrightness"];
+                let selection = light["TargetSector"];
+                let selectionV2 = light["TargetSectorV2"];
 
                 // Create the label for select
                 const label = document.createElement('label');
@@ -923,11 +962,11 @@ function listGroups() {
     if (hueAuth) {
         if (hueGroups !== null && hueGroups !== undefined) {
             if (hueGroup === -1 && hueGroups.length > 0) {
-                hueGroup = hueGroups[0][id];
+                hueGroup = hueGroups[0]["_id"];
             }
             $.each(hueGroups, function() {
-                let val = $(this)[0].id;
-                let txt = $(this)[0].name;
+                let val = $(this)[0]["_id"];
+                let txt = $(this)[0]["Name"];
                 let selected = (val === hueGroup) ? " selected" : "";
                 gs.append(`<option value="${val}" ${selected}>${txt}</option>`);
                 i++;
@@ -965,7 +1004,7 @@ function RefreshData() {
         refreshing = true;
         console.log("Refreshing data.");
         if (socketLoaded) {
-            $.get("./api/DreamData/action?action=refreshDevices");
+            $.get("./api/DreamData/action?action=refreshDevices");            
         } else {
             $.get("./api/DreamData/action?action=refreshDevices", function (data) {
                 datastore = data;
@@ -982,9 +1021,9 @@ function buildLists() {
     let groups = [];
     console.log("Reading datastore...");
     devices = datastore['Dev_DreamScreen'];
-    console.log("DS Devs: ", devices);
     leaves = datastore['Dev_NanoLeaf'];
-    bridges = datastore['Dev_Bridges'];
+    bridges = datastore['Dev_Hue'];
+    wleds = datastore['Dev_Wled'];
     deviceData = datastore['MyDevice'][0];
     lifx = datastore['Dev_Lifx'];
     dsIp = datastore['DsIp'][0]["value"];
@@ -1043,23 +1082,24 @@ function buildLists() {
     groups = sortDevices(dsDevs, groups, false, false);
     console.log("DS");
     // Sort nanoleaves
-    groups = sortDevices(datastore['Dev_NanoLeaf'], groups, "NanoLeaf", "NanoLeaf");
+    groups = sortDevices(leaves, groups, "NanoLeaf", "NanoLeaf");
     console.log("Nano");
     // Sort bridges
-    groups = sortDevices(datastore['Dev_Hue'], groups, "HueBridge", "Hue Bridge");
+    groups = sortDevices(bridges, groups, "HueBridge", "Hue Bridge");
     console.log("Hue");
     // Sort lifx
-    groups = sortDevices(datastore['Dev_Lifx'], groups, "Lifx", "Lifx Bulb");
+    groups = sortDevices(lifx, groups, "Lifx", "Lifx Bulb");
     console.log("Lifx");
     // Sort wled
-    groups = sortDevices(datastore['Dev_Wled'], groups, "WLed", "Wireless LEDs")
+    groups = sortDevices(wleds, groups, "WLed", "Wireless LEDs")
     console.log("wled");
     dg.html("");
+    console.log("Final sorted groups: ", groups);
     $.each(groups, function () {
         let item = $(this)[0];
         console.log("Appending: ", item);
         if (item['ScreenX'] === undefined) {
-            if (item['Id'] !== 0) {
+            if (item['Id'] > 0) {
                 sorted.push(item);
             } else {
                 appendDeviceGroup(item);
@@ -1096,26 +1136,24 @@ function appendDeviceGroup(item) {
             devGroup.append('<li class="devSelect" data-device="' + element["Id"] + '"><img class="devIcon" src="./img/' + element["Tag"].toLowerCase() + '_icon.png" alt="device icon"><span class="devName">' + element["Name"] + '<span></li>');
         });
     } else {        
-        let list = $('<li  class="nav-header groupHeader devSelect" data-device="#group' + item['Id'] + '"></li>');
+        let list = $('<li  class="nav-header groupHeader devSelect" data-device="' + item['Id'] + '"></li>');
         list.append($('<img src="./img/group_icon.png" class="devIcon" alt="group icon">'));
         list.append($('<span class="devName">' + name + '</span>'));
-        let container = $('<ul id="group' + item['Id'] + '" class="nav-list groupList"></ul>');
+        let container = $('<ul id="group' + item['_id'] + '" class="nav-list groupList"></ul>');
         $.each(elements, function () {
             let element = $(this)[0];
-            console.log("Appending group element: ", element, element["Tag"]);
             if (element["Tag"].includes("DreamScreen")) {
                 item.Mode = element.Mode;
                 item.Brightness = element.Brightness;
                 item.Saturation = element.Saturation;
             }
             devices.push(element);
-            container.append('<li class="devSelect" data-device="' + element.Id + '"><img class="devIcon" src="./img/' + element["Tag"].toLowerCase() + '_icon.png" alt="device icon"><span class="devName">' + element.Name + '<span></li>');
+            container.append('<li class="devSelect" data-device="' + element._id + '"><img class="devIcon" src="./img/' + element["Tag"].toLowerCase() + '_icon.png" alt="device icon"><span class="devName">' + element.Name + '<span></li>');
         });
         item['Tag'] = "group";
         item['GroupNumber'] = item['Id'];
         item['GroupName'] = item['Name'];
         item.ipAddress = "255.255.255.0";
-        console.log("Appending/pushing.");
         devices.push(item);
         list.append(container);
         devGroup.append(list);
@@ -1178,14 +1216,14 @@ function setCaptureMode(target, post=true) {
     $('#' + target).slideDown();
 }
 
-function sortDevices(data, groups, tag, name) {
-    $.each(data, function () {
+function sortDevices(data, groups, tag, name) {    
+    $.each(data, function () {        
         let item = $(this)[0];
         allDevices.push(item);
         let gn = item['GroupNumber'];
         let gName = item['GroupName'];
-        let groupNumber = (gn === undefined || gn === null) ? 0 : gn; 
-        let groupName = (gName === undefined || gName === null) ? "undefined" : gName;
+        let groupNumber = (gn === undefined || gn === null || gn === -1) ? 0 : gn; 
+        let groupName = (gName === undefined || gName === null || groupNumber === 0) ? "Unsorted" : gName;
         if (groups[groupNumber] === undefined) {
             groups[groupNumber] = {};
             groups[groupNumber]['Name'] = groupName;
@@ -1209,7 +1247,6 @@ function buildDevList(data) {
     devList.html("");
     $.each(data, function () {
         const dev = $(this)[0];
-        console.log("Building device: ", dev);
         if (selectedDevice == null) {
             selectedDevice = dev;
             showDevicePanel(dev);
@@ -1217,7 +1254,6 @@ function buildDevList(data) {
         const name = dev.Name;
         const ip = dev["IpAddress"];
         const type = dev["Tag"];
-        console.log("Name, ip, type: ", name, ip, type);
         if (name !== undefined && ip !== undefined && type.includes("DreamScreen")) {
             const selected = (ip === dsIp) ? "selected" : "";
             if (selected !== "") {
@@ -1226,7 +1262,6 @@ function buildDevList(data) {
             devList.append(`<option value='${ip}' ${selected}>${name}: ${ip}</option>`);
         }
     });
-    console.log("All devices built.");
 }
 
 function hidePanels() {
@@ -1254,11 +1289,8 @@ function showDevicePanel(data) {
     let modeGroup = $(".modeGroup");
     selectedDevice = data;
     if (!resizeTimer) hidePanels();
-    setTimeout(function(){
+    loadTimer = setTimeout(function(){
         let title = data.Tag;
-        if (title == "WLed") {
-            title = data.Id;
-        }
         $('#navTitle').html(title);
         
         switch (data.Tag) {
@@ -1299,18 +1331,18 @@ function showDevicePanel(data) {
 }
 
 function reloadDevice() {
-    let id = selectedDevice.id;
+    let id = selectedDevice["Id"];
     let data = null;
     for (let q=0; q < allDevices.length; q++ ) {
-        if(allDevices[q].id === selectedDevice.id) {
+        if(allDevices[q]["_id"] === selectedDevice["_id"]) {
             data = allDevices[q];
         }
     }
     console.log("Reloading panel data: ", data);
     if (data != null) {
-        $('#navTitle').html(data.Tag);
+        $('#navTitle').html(data["Tag"]);
         selectedDevice = data;
-        switch (data.Tag) {
+        switch (data["Tag"]) {
             case "SideKick":
             case "Connect":
             case "DreamScreen":
@@ -1339,13 +1371,13 @@ function reloadDevice() {
 function loadDsData(data) {
     let dsName = $('#dsName');
     deviceData = data;
-    dsName.html(deviceData.Name);
-    dsName.data("ip", deviceData.IpAddress);
-    dsName.data('group', deviceData.GroupNumber);
+    dsName.html(deviceData["Name"]);
+    dsName.data("ip", deviceData["IpAddress"]);
+    dsName.data('group', deviceData["GroupNumber"]);
     $('#dsBrightness').val(deviceData["Brightness"]);
-    $('#dsIp').html(deviceData.IpAddress);
-    emulationType = deviceData.Tag;
-    let satVal = hexToRgb(deviceData.Saturation);
+    $('#dsIp').html(deviceData["IpAddress"]);
+    emulationType = deviceData["Tag"];
+    let satVal = hexToRgb(deviceData["Saturation"]);
     $('.devSaturation[data-color="r"]').val(satVal.r);
     $('.devSaturation[data-color="g"]').val(satVal.g);
     $('.devSaturation[data-color="b"]').val(satVal.b);
@@ -1406,22 +1438,23 @@ function loadBridgeData(data) {
     const lBtn = $('#linkBtn');
     const bSlider = $('#hueBrightness');
     let b = data;
-    hueIp = b.id;
+    hueIp = b["_id"];
     bSlider.val(b["Brightness"]);
     hIp.html(b["IpAddress"]);        
     hueGroup = b["SelectedGroup"];
-    if (b.hasOwnProperty("groups")) {
-        hueGroups = b["groups"];
-        if ((hueGroup === -1 && hueGroups.length > 0) || hueGroup === null || hueGroup === undefined) {
+    if (b.hasOwnProperty("Groups")) {
+        hueGroups = b["Groups"];
+        if ((hueGroup == -1 && hueGroups.length > 0) || hueGroup === null || hueGroup === undefined) {
             if (hueGroups[0] !== undefined) {
-                hueGroup = hueGroups[0]["Id"];
-                bridges[bridgeInt].selectedGroup = hueGroup;
+                hueGroup = hueGroups[0]["_id"];
+                bridges[bridgeInt]["SelectedGroup"] = hueGroup;
                 postData("updateData", bridges[bridgeInt]);
             }
         }
     }
     hueLights = b["Lights"];
-    hueAuth = (b["User"] !== null || b["Key"] !== null);            
+    hueAuth = (b["User"] !== null && b["Key"] !== null && b["Key"] !== undefined);
+    console.log("Hue Auth: ", hueAuth);
     lImg.removeClass('linked unlinked linking');
     if (hueAuth) {
         lImg.addClass('linked');
@@ -1519,6 +1552,10 @@ function loadWledData(data) {
     const hIp = $('#wledIp');
     const wName = $('#wledName');
     const wBrightness = $("#wledBrightness");
+    let dsName = $('#wlName');
+    deviceData = data;
+    dsName.html(deviceData["Name"]);
+    dsName.data("id", deviceData["IpAddress"]);
     wledIp = data["HostName"];
     wName.html(wledIp);
     hIp.html(data.Id);
@@ -1528,9 +1565,9 @@ function loadWledData(data) {
     $('.wledRegionV2[data-region="' + data.TargetSectorV2 +'"]').addClass('checked');
     $('#whCount').val(data["HCount"]);
     $('#wvCount').val(data["VCount"]);
-    let ledCount = data["State"]["Info"]["Leds"]["Count"];
-    let isRgbw = data["State"]["Info"]["Leds"]["Rgbw"];
-    wBrightness.val(data["State"]["State"]["Bri"]);
+    let ledCount = data["State"]["info"]["leds"]["count"];
+    let isRgbw = data["State"]["info"]["leds"]["rgbw"];
+    wBrightness.val(data["State"]["state"]["bri"]);
     $("#wstripType").val(isRgbw);
     $("#wOffset").val(data["Offset"]);
     $("#wDirection").val(data["StripDirection"]);
@@ -1843,7 +1880,7 @@ function findGroup(id) {
         return hueGroups[0];    
     }
     $.each(hueGroups, function () {
-        if (id === $(this)[0].Id) {
+        if (id === $(this)[0]["_id"]) {
             res = $(this)[0];
         }        
     });
@@ -1859,6 +1896,7 @@ function linkHue() {
         let x = 0;
         hueAuth = false;
         if (socketLoaded) {
+            console.log("Trying to auth using ip: " + hueIp);
             websocket.invoke("AuthorizeHue", hueIp);    
         } else {
             const intervalID = window.setInterval(function () {

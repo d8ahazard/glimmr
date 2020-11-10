@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using HueDream.Models.DreamScreen;
 using HueDream.Models.DreamScreen.Devices;
 using HueDream.Models.LED;
+using HueDream.Models.StreamingDevice;
 using HueDream.Models.StreamingDevice.Hue;
 using HueDream.Models.StreamingDevice.LIFX;
 using HueDream.Models.StreamingDevice.Nanoleaf;
@@ -33,6 +34,7 @@ namespace HueDream.Models.Util {
 
         public static void Dispose() {
             LogUtil.Write("DISPOSING DATABASE.");
+            _db?.Commit();
             _db?.Dispose();
         }
 
@@ -111,12 +113,13 @@ namespace HueDream.Models.Util {
             
         }
         //fixed
-        public static dynamic GetCollectionItem<T>(string key, dynamic value) where T : class {
+        public static dynamic GetCollectionItem<T>(string key, string value) where T : new() {
             try {
                 var db = GetDb();
                 var coll = db.GetCollection<T>(key);
-                IEnumerable<T> res =  coll.Find(value);
-                return res.FirstOrDefault();
+                    var r = coll.FindById(value);
+                    return r;
+                
             } catch (Exception e) {
                 LogUtil.Write($@"Get exception for {typeof(T)}: {e.Message}");
                 return null;
@@ -343,7 +346,7 @@ namespace HueDream.Models.Util {
 
         public static async void RefreshDevices(LifxClient c) {
             var cs = new CancellationTokenSource();
-            cs.CancelAfter(10000);
+            cs.CancelAfter(30000);
             LogUtil.Write("Starting scan.");
             scanning = true;
             // Get dream devices
@@ -374,7 +377,26 @@ namespace HueDream.Models.Util {
                 var devCol = db.GetCollection<BaseDevice>("Dev_DreamScreen");
                 var lifxCol = db.GetCollection<LifxData>("Dev_Lifx");
                 var wledCol = db.GetCollection<WLedData>("Dev_Wled");
-                foreach (var b in bridges) bridgeCol.Upsert(b);
+                foreach (var b in bridges) {
+                    var nb = b;
+                    if (b.Key !=  null && b.User != null) {
+                        var n = new HueBridge(b);
+                        nb = n.RefreshData(5).Result;
+                        n.Dispose();
+                    }
+                    bridgeCol.Upsert(nb);
+                }
+
+                foreach (var b in bridgeCol.FindAll()) {
+                    var nb = b;
+                    if (b.Key !=  null && b.User != null) {
+                        var n = new HueBridge(b);
+                        nb = n.RefreshData(5).Result;
+                        LogUtil.Write("Got me a bridge to update: " + nb.IpAddress);
+                        bridgeCol.Upsert(nb);
+                        n.Dispose();
+                    }
+                }
                 foreach (var n in leaves) nanoCol.Upsert(n);
                 foreach (var dd in dreamDevices) devCol.Upsert(dd);
                 foreach (var b in bulbs) lifxCol.Upsert(b);

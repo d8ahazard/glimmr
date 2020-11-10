@@ -63,6 +63,7 @@ namespace HueDream.Models.CaptureSource.Video {
 
         public void ToggleSend(bool enable = true) {
             _sendColors = enable;
+            LogUtil.Write("Toggling color send from splitter to " + _sendColors);
         }
 
         private void SetCapVars() {

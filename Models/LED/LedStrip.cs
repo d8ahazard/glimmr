@@ -77,6 +77,7 @@ namespace HueDream.Models.LED {
         }
         
         public void UpdateAll(List<Color> colors) {
+            //LogUtil.Write("NOT UPDATING.");
             if (colors == null) throw new ArgumentException("Invalid color input.");
             var iSource = 0;
             for (var i = 0; i < _ledCount; i++) {
@@ -85,9 +86,14 @@ namespace HueDream.Models.LED {
                 }
 
                 var tCol = colors[iSource];
-                if (_ld.FixGamma)  {
-                    tCol = ColorUtil.FixGamma(tCol);
+                if (!_ld.FixGamma)  {
+                    tCol = ColorUtil.FixGamma2(tCol);
                 }
+
+                if (_ld.StripType == 1) {
+                    tCol = ColorUtil.ClampAlpha2(tCol);    
+                }
+
                 _controller.SetLED(i, tCol);
                 iSource++;
             }

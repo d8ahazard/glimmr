@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 using HueDream.Models.CaptureSource.Camera;
 using HueDream.Models.Util;
@@ -41,7 +43,7 @@ namespace HueDream.Models.StreamingDevice.WLed {
             LogUtil.Write("WLED: Initializing stream.");
             var onObj = new JObject(
                 new JProperty("on", true),
-                new JProperty("bri", 255)
+                new JProperty("bri", Brightness)
                 );
             SendPost(onObj);
             _stripSender = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
@@ -58,7 +60,7 @@ namespace HueDream.Models.StreamingDevice.WLed {
             LogUtil.Write("WLED: Initializing stream.");
             var onObj = new JObject(
                 new JProperty("on", true),
-                new JProperty("bri", 255)
+                new JProperty("bri", Brightness)
             );
             SendPost(onObj);
             _stripSender = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
@@ -95,13 +97,14 @@ namespace HueDream.Models.StreamingDevice.WLed {
             SendPost(offObj);
         }
 
-        public void SetColor(List<Color> colors, double fadeTime) {
+        public void SetColor(List<Color> colors, double fadeTime, bool ambient = false) {
             if (colors == null) throw new InvalidEnumArgumentException("Colors cannot be null.");
             if (!Streaming) return;
             var packet = new List<Byte>();
             // Set mode to DRGB, dude.
+            var timeByte = ambient ? 255 : 2;
             packet.Add(ByteUtils.IntByte(2));
-            packet.Add(ByteUtils.IntByte(2));
+            packet.Add(ByteUtils.IntByte(timeByte));
             foreach (var color in colors) {
                 packet.Add(ByteUtils.IntByte(color.R));
                 packet.Add(ByteUtils.IntByte(color.G));
@@ -136,20 +139,70 @@ namespace HueDream.Models.StreamingDevice.WLed {
             appSplitter.AddWled(Data);
         }
 
-        private async void SendPost(JObject values) {
-            var uri = new Uri("http://" + IpAddress + "/json/state");
+        public void UpdateCount(int count) {
+            var setting = new Dictionary<string, dynamic>();
+            setting["LC"] = count;
+            SendForm(setting);
+        }
+
+        public void UpdateBrightness(int brightness) {
+            Brightness = brightness;
+            var onObj = new JObject(
+                new JProperty("bri", brightness)
+            );
+            SendPost(onObj);
+        }
+
+        public void UpdateType(bool isRgbw) {
+            var setting = new Dictionary<string, dynamic>();
+            setting["EW"] = isRgbw;
+            SendForm(setting);
+        }
+
+        private async void SendPost(JObject values, string target="/json/state") {
+            var uri = new Uri("http://" + IpAddress + target);
             var httpContent = new StringContent(values.ToString());
             httpContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
             await _client.PostAsync(uri, httpContent);
             httpContent.Dispose();
         }
 
+        private async void SendForm(Dictionary<string, dynamic> values) {
+            var uri = new Uri("http://" + IpAddress + "settings/leds");
+            var request = (HttpWebRequest)WebRequest.Create(uri);
+            string postData = string.Empty;
+            foreach (string k in values.Keys) {
+                if (string.IsNullOrEmpty(postData)) {
+                    postData = $"?{k}={values[k]}";
+                } else {
+                    postData += $"@{k}={values[k]}";
+                }
+            }
+            var data = Encoding.ASCII.GetBytes(postData);
+            request.Method = "POST";
+            request.ContentType = "application/x-www-form-urlencoded";
+            request.ContentLength = data.Length;
+            await using (var stream = request.GetRequestStream()) {
+                await stream.WriteAsync(data, 0, data.Length);
+            }
+
+            var response = (HttpWebResponse)request.GetResponse();
+
+            await using var rs = response.GetResponseStream();
+            if (rs != null) {
+                var responseString = await new StreamReader(rs).ReadToEndAsync();
+                LogUtil.Write("We got a response: " + responseString);    
+            }
+            response.Dispose();
+        }
+
         public void Dispose() {
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
 
-        private void Dispose(bool disposing) {
+        protected virtual void Dispose(bool disposing) {
             if (_disposed) {
                 return;
             }

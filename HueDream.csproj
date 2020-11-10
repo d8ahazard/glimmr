@@ -33,7 +33,7 @@
         <PackageReference Include="Emgu.CV.runtime.raspbian" Version="4.4.0.4027" />
         <PackageReference Include="Emgu.CV.runtime.windows" Version="4.4.0.4077" />
         <PackageReference Include="freetype2" Version="2.6.0.1" />
-        <PackageReference Include="kenssamson.rpi-ws281x-csharp" Version="1.1.1" />
+        <PackageReference Include="kenssamson.rpi-ws281x-csharp" Version="1.1.0" />
         <PackageReference Include="LifxNet" Version="2.2.0" />
         <PackageReference Include="LiteDB" Version="5.0.9" />
         <PackageReference Include="Makaretu.Dns.Multicast" Version="0.27.0" />
