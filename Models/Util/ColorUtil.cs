@@ -65,8 +65,9 @@ namespace HueDream.Models.Util {
             int tm = Math.Min(rI, Math.Min(gI, bI));
             //If the maximum value is 0, immediately return pure black.
             //if(tM == 0) { return Color.FromArgb(0, 0, 0,0); }
-            if (tm >= 255) {return Color.FromArgb(255, 0, 0, 0);}
-
+            if (tm >= 255 && rI + gI + bI >= 255) {
+                tm = 128;
+            }
             return Color.FromArgb(tm, rI, gI, bI);
         }
 

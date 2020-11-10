@@ -91,7 +91,7 @@ namespace HueDream.Models.LED {
                 }
 
                 if (_ld.StripType == 1) {
-                    tCol = ColorUtil.ClampAlpha2(tCol);    
+                    tCol = ColorUtil.ClampAlpha(tCol);    
                 }
 
                 _controller.SetLED(i, tCol);
