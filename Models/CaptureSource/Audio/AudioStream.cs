@@ -60,7 +60,11 @@ namespace Glimmr.Models.CaptureSource.Audio {
                 }
             }
 
-            DataUtil.SetItem<List<DeviceInfo>>("audioDevices", _devices);
+            try {
+                DataUtil.SetItem<List<DeviceInfo>>("audioDevices", _devices);
+            } catch (Exception) {
+                
+            }
         }
 
         public void StartStream(CancellationToken ct) {
