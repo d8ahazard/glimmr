@@ -82,7 +82,7 @@ else
   git stash && git fetch && git pull
 fi
 
-cd /home/glimmrtv/glimmr/src || exit
+cd /home/glimmrtv/glimmr || exit
 
 # Check for service stop
 serviceName="glimmr"
