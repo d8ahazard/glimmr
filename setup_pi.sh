@@ -25,29 +25,30 @@ if [ ! -f "/usr/bin/dotnet" ]
    exit 
 fi
 
-if [! -f "/home/glimmrtv/firstrun"]
- then
-  #Assign existing hostname to $hostn
-  hostn=$(cat /etc/hostname)
+  if [ ! -f "/home/glimmrtv/firstrun" ]
+   then
+    #Assign existing hostname to $hostn
+    hostn=$(cat /etc/hostname)
+    hostn=`cat /etc/hostname | tr -d " \t\n\r"`
+    newhost="glimmr"
+    if [ "$hostn" != "newhost" ]; then
+    
+      if nc -z $newhost 80 2>/dev/null; then
+        echo "Looks like there's already one glimmr device running, we're going to append the MAC to the hostname."
+        newhost==glimmr-$(cat /proc/cpuinfo | grep -E "^Serial" | sed "s/.*: 0*//")
+    else
+      echo "This appears to be the only Glimmr device on the network, making it the primary."
+    fi
 
-  #Display existing hostname
-  echo "Existing hostname is $hostn"
-  mac=$(ifconfig wlan0 | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}')
-  mac="${mac//:}"
-  mac=${mac: -4}
-  #Ask for new hostname $newhost
-  newhost="Glimmr-${mac}"
+    echo "Changing hostname from $hostn to $newhost..." >&2
+    echo $newhost > /etc/hostname
+    sudo sed -i "s/127.0.1.1.*$CURRENT_HOSTNAME\$/127.0.1.1\t$NEW_HOSTNAME/g" /etc/hosts
+  fi
 
-  #change hostname in /etc/hosts & /etc/hostname
-  sudo sed -i "s/$hostn/$newhost/g" /etc/hosts
-  sudo sed -i "s/$hostn/$newhost/g" /etc/hostname
-
-  #display new hostname
-  echo "Your new hostname is $newhost"
   # Install dependencies
   echo "Installing dependencies..."
   sudo apt-get -y update && apt-get -y upgrade
-  sudo apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa libdc1394-22 libtesseract-dev scons icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libatlas-base-dev gfortran libopengl-dev git gcc xauth
+  sudo apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa libdc1394-22 libtesseract-dev scons icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libatlas-base-dev gfortran libopengl-dev git gcc xauth avahi-daemon
   echo "DONE!"
   # Moar Cleanup
   echo "More cleanup..."
@@ -71,7 +72,10 @@ if [ ! -d "/home/glimmrtv/glimmr" ]
  then
  # Clone glimmr
   echo "Cloning glimmr"
-  git clone -b dev https://github.com/d8ahazard/glimmr /home/glimmrtv/glimmr/src
+  git clone -b dev https://github.com/d8ahazard/glimmr /home/glimmrtv/glimmr
+  # Install update script to init.d 
+  sudo chmod 777 /home/glimmrtv/glimmr/update_pi.sh
+  sudo ln -s /home/glimmrtv/glimmr/update_pi.sh /etc/init.d/update_glimmr.sh
 else
   echo "Source exists, updating..."
   cd /home/glimmrtv/glimmr/src || exit
