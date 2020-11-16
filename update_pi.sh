@@ -1,10 +1,11 @@
 ﻿#!/bin/bash
 #Update glimmr
 cd /home/glimmrtv/glimmr || exit
-git stash && git fetch && git clone
-
 service glimmr stop
 echo "SERVICE STOPPED!"
+
+git stash && git fetch && git clone
+
 
 # Build latest version
 echo "Building glimmr..."
