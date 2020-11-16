@@ -15,4 +15,5 @@ echo "DONE."
 # Copy necessary libraries
 echo "Copying libs..."
 cp -r /home/glimmrtv/glimmr/build/arm/* /usr/lib
+chmod 777 ./*.sh
 service glimmr start
