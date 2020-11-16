@@ -27,7 +27,7 @@ namespace Glimmr.Models.LED {
             if (ld.PinNumber == 13) pin = Pin.Gpio13;
             LogUtil.Write($@"Count, pin, type: {_ledCount}, {ld.PinNumber}, {(int)stripType}");
             var settings = Settings.CreateDefaultSettings();
-            _controller = settings.AddController(_ledCount, pin, stripType, ControllerType.PWM, (byte)ld.Brightness);
+            _controller = settings.AddController(_ledCount, pin, stripType, ControllerType.PWM0, (byte)ld.Brightness);
             try {
                 _strip = new WS281x(settings);
                 LogUtil.Write($@"Strip created using {_ledCount} LEDs.");
