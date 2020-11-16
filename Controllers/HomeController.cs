@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics;
-using HueDream.Models;
+using Glimmr.Models;
 using Microsoft.AspNetCore.Mvc;
 
-namespace HueDream.Controllers {
+namespace Glimmr.Controllers {
     public class HomeController : Controller {
         public IActionResult Index() {
             return View();
