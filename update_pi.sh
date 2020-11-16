@@ -1,8 +1,7 @@
 ﻿#!/bin/bash
 #Update glimmr
-cd /home/glimmrtv/glimmr
+cd /home/glimmrtv/glimmr || exit
 git stash && git fetch && git clone
-cd /home/glimmrtv/glimmr/src || exit
 
 service glimmr stop
 echo "SERVICE STOPPED!"

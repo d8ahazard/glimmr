@@ -78,7 +78,7 @@ if [ ! -d "/home/glimmrtv/glimmr" ]
   sudo ln -s /home/glimmrtv/glimmr/update_pi.sh /etc/init.d/update_glimmr.sh
 else
   echo "Source exists, updating..."
-  cd /home/glimmrtv/glimmr/src || exit
+  cd /home/glimmrtv/glimmr || exit
   git stash && git fetch && git pull
 fi
 
@@ -97,12 +97,11 @@ fi
 # Build latest version
 echo "Building glimmr..."
 dotnet build Glimmr.csproj /p:PublishProfile=LinuxARM
-cp -r /home/glimmrtv/glimmr/src/bin/debug/net5.0/linux-arm/* /home/glimmrtv/glimmr/
-cp -r /home/glimmrtv/glimmr/src/wwwroot/ /home/glimmrtv/glimmr/wwwroot/
+cp -r /home/glimmrtv/glimmr/bin/debug/net5.0/linux-arm/* /home/glimmrtv/glimmr/
 echo "DONE."
 # Copy necessary libraries
 echo "Copying libs..."
-cp -r /home/glimmrtv/glimmr/src/build/arm /usr/lib
+cp -r /home/glimmrtv/glimmr/build/arm /usr/lib
 
 # Check service start/install
 if systemctl --all --type service | grep -q "$serviceName";then
