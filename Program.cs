@@ -34,7 +34,7 @@ namespace Glimmr
                 })
                 .ConfigureWebHostDefaults(webBuilder => {
                     webBuilder.UseStartup<Startup>();
-                    webBuilder.UseUrls("http://*:5699");
+                    webBuilder.UseUrls("http://*","https://*");
                 })
                 // Initialize our dream screen emulator
                 .ConfigureServices(services => {
