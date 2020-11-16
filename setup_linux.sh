@@ -6,23 +6,15 @@ cd /home/glimmrtv || exit
 if [ ! -d "/opt/dotnet" ]
 then 
   echo "Installing dotnet."
-  echo "A..."
-  wget https://download.visualstudio.microsoft.com/download/pr/daec2daf-b458-4ae1-9046-b8ba09b5fb49/733e2d73b41640d6e6bdf1cc6b9ef03b/dotnet-sdk-3.1.200-linux-x64.tar.gz
-  wget https://download.visualstudio.microsoft.com/download/pr/2d72ee67-ac4d-42c6-97d9-a26a28201fc8/977ad14b99b6ed03dcefd6655789e43a/aspnetcore-runtime-3.1.2-linux-x64.tar.gz
-  mkdir -p /opt/dotnet
-  echo "Extracting Dotnet-SDK..."
-  tar zxf dotnet-sdk-3.1.200-linux-x64.tar.gz -C /opt/dotnet
-  echo "DONE!"
-  echo "Extracting runtime..."
-  tar zxf ./aspnetcore-runtime-3.1.2-linux-x64.tar.gz -C /opt/dotnet
-  echo "DONE!"
-  echo "Symlinking..."
-  sudo ln -s /opt/dotnet/dotnet /usr/local/bin
+  echo "Downloading..."
+  wget https://dotnetcli.blob.core.windows.net/dotnet/Sdk/master/dotnet-sdk-latest-linux.tar.gz
+  sudo mkdir -p /usr/share/dotnet
+  sudo tar -zxf dotnet-sdk-latest-linux.tar.gz -C /usr/share/dotnet
+  sudo ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
   echo "DONE!"
   # Cleanup
   echo "Cleanup..."
-  rm -rf ./dotnet-sdk-3.1.102-linux-arm.tar.gz
-  rm -rf ./aspnetcore-runtime-3.1.2-linux-arm.tar.gz
+  rm -rf ./dotnet-sdk-latest-linux-arm.tar.gz
   echo "DONE!"
 fi
 
@@ -34,12 +26,13 @@ sudo apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev
 echo "DONE!"
 # Moar Cleanup
 echo "More cleanup..."
+sudo apt-get -y remove x264 libx264-dev
 
 if [ ! -d "/home/glimmrtv/glimmr" ]
 then
 # Clone glimmr
   echo "Cloning glimmr"
-  git clone https://github.com/d8ahazard/glimmr /home/glimmrtv/glimmr/src
+  git clone -b dev https://github.com/d8ahazard/glimmr /home/glimmrtv/glimmr/src
 else
   echo "Source exists, updating..."
   cd /home/glimmrtv/glimmr/src || exit
@@ -98,4 +91,4 @@ WantedBy=multi-user.target
   systemctl enable glimmr.service
   systemctl start glimmr.service
 fi
-read -n 1 -r -s -p $'Install complete, press enter to continue. You may want to reboot your system.\n'
+read -n 1 -r -s -p $'Install complete, press enter to continue. You may want to reboot now.\n'

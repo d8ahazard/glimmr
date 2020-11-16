@@ -1,5 +1,3 @@
-using System;
-
 namespace Glimmr.Models
 {
     public class ErrorViewModel

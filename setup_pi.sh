@@ -4,7 +4,7 @@ id -u glimmrtv &>/dev/null || useradd -m glimmrtv
 usermod -aG sudo glimmrtv 
 cd /home/glimmrtv || exit
 # Check dotnet installation
-if [ ! -d "/opt/dotnet" ]
+if [ ! -f "/usr/bin/dotnet" ]
 then 
   echo "Installing dotnet."
   echo "Downloading..."
@@ -19,28 +19,57 @@ then
   echo "DONE!"
 fi
 
-cd /opt/dotnet || exit
-# Install dependencies
-echo "Installing dependencies..."
-sudo apt-get -y update && apt-get -y upgrade
-sudo apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa libdc1394-22 libtesseract-dev scons icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libatlas-base-dev gfortran libopengl-dev git gcc xauth
-echo "DONE!"
-# Moar Cleanup
-echo "More cleanup..."
-sudo apt-get -y remove x264 libx264-dev
+if [ ! -f "/usr/bin/dotnet" ]
+ then
+   echo "Error installing dotnet, cannot continue."
+   exit 
+fi
 
-echo "Cloning LED libraries..."	
-git clone https://github.com/jgarff/rpi_ws281x /home/glimmrtv/ws281x
-cd /home/glimmrtv/ws281x || exit
-echo "LED setup..."
-scons
-gcc -shared -o ws2811.so *.o
-cp ./ws2811.so /usr/lib/ws2811.so
+if [! -f "/home/glimmrtv/firstrun"]
+ then
+  #Assign existing hostname to $hostn
+  hostn=$(cat /etc/hostname)
+
+  #Display existing hostname
+  echo "Existing hostname is $hostn"
+  mac=$(ifconfig wlan0 | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}')
+  mac="${mac//:}"
+  mac=${mac: -4}
+  #Ask for new hostname $newhost
+  newhost="Glimmr-${mac}"
+
+  #change hostname in /etc/hosts & /etc/hostname
+  sudo sed -i "s/$hostn/$newhost/g" /etc/hosts
+  sudo sed -i "s/$hostn/$newhost/g" /etc/hostname
+
+  #display new hostname
+  echo "Your new hostname is $newhost"
+  # Install dependencies
+  echo "Installing dependencies..."
+  sudo apt-get -y update && apt-get -y upgrade
+  sudo apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa libdc1394-22 libtesseract-dev scons icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libatlas-base-dev gfortran libopengl-dev git gcc xauth
   echo "DONE!"
+  # Moar Cleanup
+  echo "More cleanup..."
+  sudo apt-get -y remove x264 libx264-dev
+  echo "done" > "/home/glimmrtv/firstrun"
+fi
+
+if [ ! -d "/home/glimmrtv/ws281x" ]
+ then
+  echo "Cloning LED libraries..."	
+  git clone https://github.com/jgarff/rpi_ws281x /home/glimmrtv/ws281x
+  cd /home/glimmrtv/ws281x || exit
+  echo "LED setup..."
+  scons
+  gcc -shared -o ws2811.so *.o
+  cp ./ws2811.so /usr/lib/ws2811.so
+    echo "DONE!"
+fi
 
 if [ ! -d "/home/glimmrtv/glimmr" ]
-then
-# Clone glimmr
+ then
+ # Clone glimmr
   echo "Cloning glimmr"
   git clone -b dev https://github.com/d8ahazard/glimmr /home/glimmrtv/glimmr/src
 else
@@ -64,7 +93,7 @@ fi
 # Build latest version
 echo "Building glimmr..."
 dotnet build Glimmr.csproj /p:PublishProfile=LinuxARM
-cp -r /home/glimmrtv/glimmr/src/bin/debug/netcoreapp3.1/linux-arm/* /home/glimmrtv/glimmr/
+cp -r /home/glimmrtv/glimmr/src/bin/debug/net5.0/linux-arm/* /home/glimmrtv/glimmr/
 cp -r /home/glimmrtv/glimmr/src/wwwroot/ /home/glimmrtv/glimmr/wwwroot/
 echo "DONE."
 # Copy necessary libraries

@@ -1,395 +1,391 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using HueDream.Hubs;
-using HueDream.Models.DreamScreen;
-using HueDream.Models.DreamScreen.Devices;
-using HueDream.Models.LED;
-using HueDream.Models.StreamingDevice.Hue;
-using HueDream.Models.StreamingDevice.LIFX;
-using HueDream.Models.StreamingDevice.Nanoleaf;
-using HueDream.Models.StreamingDevice.WLed;
-using HueDream.Models.Util;
+using Glimmr.Hubs;
+using Glimmr.Models.DreamScreen;
+using Glimmr.Models.DreamScreen.Devices;
+using Glimmr.Models.LED;
+using Glimmr.Models.StreamingDevice.Hue;
+using Glimmr.Models.StreamingDevice.LIFX;
+using Glimmr.Models.StreamingDevice.Nanoleaf;
+using Glimmr.Models.Util;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace HueDream.Controllers {
-    [Route("api/[controller]"), ApiController]
-    public class DreamDataController : ControllerBase {
+namespace Glimmr.Controllers {
+	[Route("api/[controller]"), ApiController]
+	public class DreamDataController : ControllerBase {
 
-        private readonly IHubContext<SocketServer> _hubContext;
-        private bool timerStarted;
+		private readonly IHubContext<SocketServer> _hubContext;
+		private bool timerStarted;
         
-        public DreamDataController(IHubContext<SocketServer> hubContext) {
-            LogUtil.Write("Initialized ddc with hub context.");
-            _hubContext = hubContext;
-        }
+		public DreamDataController(IHubContext<SocketServer> hubContext) {
+			LogUtil.Write("Initialized ddc with hub context.");
+			_hubContext = hubContext;
+		}
         
-        // POST: api/DreamData/mode
-        [HttpPost("mode")]
-        public IActionResult DevMode([FromBody] int mode) {
-            ControlUtil.SetMode(mode);
-            ControlUtil.NotifyClients(_hubContext);
-            return Ok(mode);
-        }
+		// POST: api/DreamData/mode
+		[HttpPost("mode")]
+		public IActionResult DevMode([FromBody] int mode) {
+			ControlUtil.SetMode(mode);
+			ControlUtil.NotifyClients(_hubContext);
+			return Ok(mode);
+		}
 
-        [HttpPost("updateDs")]
-        public IActionResult UpdateDs([FromBody] JObject dsSetting) {
-            if (dsSetting == null) throw new ArgumentException("Invalid Jobject.");
-            var id = (dsSetting["Id"] ?? "").Value<string>();
-            var property = (dsSetting["Property"] ?? "").Value<string>();
-            var value = (dsSetting["Value"] ?? "").Value<string>();
-            LogUtil.Write($"We got our stuff: {id}, {property}, {value}");
-            DreamSender.SendMessage(property, value, id);
-            ControlUtil.NotifyClients(_hubContext);
-            return Ok();
-        }
+		[HttpPost("updateDs")]
+		public IActionResult UpdateDs([FromBody] JObject dsSetting) {
+			if (dsSetting == null) throw new ArgumentException("Invalid Jobject.");
+			var id = (dsSetting["Id"] ?? "").Value<string>();
+			var property = (dsSetting["Property"] ?? "").Value<string>();
+			var value = (dsSetting["Value"] ?? "").Value<string>();
+			LogUtil.Write($"We got our stuff: {id}, {property}, {value}");
+			DreamSender.SendMessage(property, value, id);
+			ControlUtil.NotifyClients(_hubContext);
+			return Ok();
+		}
 
-        // POST: api/DreamData/updateDevice
-        [HttpPost("updateDevice")]
-        public IActionResult UpdateDevice([FromBody] JObject dData) {
-            var res = ControlUtil.TriggerReload(_hubContext, dData).Result;
-            ControlUtil.NotifyClients(_hubContext);
-            return Ok(res);
-        }
+		// POST: api/DreamData/updateDevice
+		[HttpPost("updateDevice")]
+		public IActionResult UpdateDevice([FromBody] JObject dData) {
+			var res = ControlUtil.TriggerReload(_hubContext, dData).Result;
+			ControlUtil.NotifyClients(_hubContext);
+			return Ok(res);
+		}
         
-        // POST: api/DreamData/updateDevice
-        [HttpPost("updateData")]
-        public IActionResult UpdateData([FromBody] JObject dData) {
-            var res = ControlUtil.TriggerReload(_hubContext, dData).Result;
-            ControlUtil.NotifyClients(_hubContext);
-            return Ok(res);
-        }
+		// POST: api/DreamData/updateDevice
+		[HttpPost("updateData")]
+		public IActionResult UpdateData([FromBody] JObject dData) {
+			var res = ControlUtil.TriggerReload(_hubContext, dData).Result;
+			ControlUtil.NotifyClients(_hubContext);
+			return Ok(res);
+		}
 
-        // POST: api/DreamData/capturemode
-        [HttpPost("capturemode")]
-        public IActionResult CaptureMode([FromBody] int cMode) {
-            ControlUtil.SetCaptureMode(_hubContext, cMode);
-            ControlUtil.NotifyClients(_hubContext);
-            return Ok(cMode);
-        }
+		// POST: api/DreamData/capturemode
+		[HttpPost("capturemode")]
+		public IActionResult CaptureMode([FromBody] int cMode) {
+			ControlUtil.SetCaptureMode(_hubContext, cMode);
+			ControlUtil.NotifyClients(_hubContext);
+			return Ok(cMode);
+		}
 
-        // POST: api/DreamData/camType
-        [HttpPost("camType")]
-        public IActionResult CamType([FromBody] int cType) {
-            LogUtil.Write("Camera type set to " + cType);
-            DataUtil.SetItem<int>("CamType", cType);
-            ControlUtil.NotifyClients(_hubContext);
-            ControlUtil.ResetMode();
-            return Ok(cType);
-        }
+		// POST: api/DreamData/camType
+		[HttpPost("camType")]
+		public IActionResult CamType([FromBody] int cType) {
+			LogUtil.Write("Camera type set to " + cType);
+			DataUtil.SetItem<int>("CamType", cType);
+			ControlUtil.NotifyClients(_hubContext);
+			ControlUtil.ResetMode();
+			return Ok(cType);
+		}
 
-        // POST: api/DreamData/vcount
-        [HttpPost("vcount")]
-        public IActionResult Vcount([FromBody] int count) {
-            LedData ledData = DataUtil.GetCollection<LedData>("ledData").First();
-            var capMode = DataUtil.GetItem<int>("CaptureMode");
-            int hCount;
-            if (capMode == 0) {
-                hCount = ledData.HCountDs;
-                ledData.VCountDs = count;
-            } else {
-                hCount = ledData.HCount;
-                ledData.VCount = count;
-            }
+		// POST: api/DreamData/vcount
+		[HttpPost("vcount")]
+		public IActionResult Vcount([FromBody] int count) {
+			LedData ledData = DataUtil.GetCollection<LedData>("ledData").First();
+			var capMode = DataUtil.GetItem<int>("CaptureMode");
+			int hCount;
+			if (capMode == 0) {
+				hCount = ledData.HCountDs;
+				ledData.VCountDs = count;
+			} else {
+				hCount = ledData.HCount;
+				ledData.VCount = count;
+			}
 
-            ledData.LedCount = hCount * 2 + count * 2;
-            DataUtil.SetObject("LedData", ledData);
-            ControlUtil.NotifyClients(_hubContext);
-            ControlUtil.ResetMode();
-            return Ok(count);
-        }
+			ledData.LedCount = hCount * 2 + count * 2;
+			DataUtil.SetObject("LedData", ledData);
+			ControlUtil.NotifyClients(_hubContext);
+			ControlUtil.ResetMode();
+			return Ok(count);
+		}
 
-        // POST: api/DreamData/hcount
-        [HttpPost("hcount")]
-        public IActionResult Hcount([FromBody] int count) {
-            LedData ledData = DataUtil.GetCollection<LedData>("ledData").First();
-            var capMode = DataUtil.GetItem<int>("CaptureMode");
-            int vCount;
-            if (capMode == 0) {
-                vCount = ledData.VCountDs;
-                ledData.HCountDs = count;
-            } else {
-                vCount = ledData.VCount;
-                ledData.HCount = count;
-            }
+		// POST: api/DreamData/hcount
+		[HttpPost("hcount")]
+		public IActionResult Hcount([FromBody] int count) {
+			LedData ledData = DataUtil.GetCollection<LedData>("ledData").First();
+			var capMode = DataUtil.GetItem<int>("CaptureMode");
+			int vCount;
+			if (capMode == 0) {
+				vCount = ledData.VCountDs;
+				ledData.HCountDs = count;
+			} else {
+				vCount = ledData.VCount;
+				ledData.HCount = count;
+			}
 
-            ledData.LedCount = vCount * 2 + count * 2;
-            DataUtil.SetObject("LedData", ledData);
-            ControlUtil.NotifyClients(_hubContext);
-            ControlUtil.ResetMode();
-            return Ok(count);
-        }
+			ledData.LedCount = vCount * 2 + count * 2;
+			DataUtil.SetObject("LedData", ledData);
+			ControlUtil.NotifyClients(_hubContext);
+			ControlUtil.ResetMode();
+			return Ok(count);
+		}
         
-        // POST: api/DreamData/stripType
-        [HttpPost("stripType")]
-        public IActionResult StripType([FromBody] int type) {
-            LedData ledData = DataUtil.GetCollection<LedData>("ledData").First();
-            ledData.StripType = type;
-            LogUtil.Write("Updating LED Data: " + JsonConvert.SerializeObject(ledData));
-            DataUtil.SetObject("LedData", ledData);
-            ControlUtil.NotifyClients(_hubContext);
-            ControlUtil.ResetMode();
-            return Ok(type);
-        }
+		// POST: api/DreamData/stripType
+		[HttpPost("stripType")]
+		public IActionResult StripType([FromBody] int type) {
+			LedData ledData = DataUtil.GetCollection<LedData>("ledData").First();
+			ledData.StripType = type;
+			LogUtil.Write("Updating LED Data: " + JsonConvert.SerializeObject(ledData));
+			DataUtil.SetObject("LedData", ledData);
+			ControlUtil.NotifyClients(_hubContext);
+			ControlUtil.ResetMode();
+			return Ok(type);
+		}
 
 
-        // POST: api/DreamData/dsIp
-        [HttpPost("dsIp")]
-        public IActionResult PostIp([FromBody] string dsIp) {
-            LogUtil.Write(@"Did it work? " + dsIp);
-            DataUtil.SetItem("DsIp", dsIp);
-            ControlUtil.ResetMode();
-            return Ok(dsIp);
-        }
+		// POST: api/DreamData/dsIp
+		[HttpPost("dsIp")]
+		public IActionResult PostIp([FromBody] string dsIp) {
+			LogUtil.Write(@"Did it work? " + dsIp);
+			DataUtil.SetItem("DsIp", dsIp);
+			ControlUtil.ResetMode();
+			return Ok(dsIp);
+		}
 
-        // POST: api/DreamData/dsSidekick
-        [HttpPost("dsSidekick")]
-        public IActionResult PostSk([FromBody] SideKick skDevice) {
-            LogUtil.Write(@"Did it work? " + JsonConvert.SerializeObject(skDevice));
-            DataUtil.SetItem("MyDevice", skDevice);
-            ControlUtil.NotifyClients(_hubContext);
-            return Ok("ok");
-        }
+		// POST: api/DreamData/dsSidekick
+		[HttpPost("dsSidekick")]
+		public IActionResult PostSk([FromBody] SideKick skDevice) {
+			LogUtil.Write(@"Did it work? " + JsonConvert.SerializeObject(skDevice));
+			DataUtil.SetItem("MyDevice", skDevice);
+			ControlUtil.NotifyClients(_hubContext);
+			return Ok("ok");
+		}
 
-        // POST: api/DreamData/dsConnect
-        [HttpPost("dsConnect")]
-        public IActionResult PostDevice([FromBody] Connect myDevice) {
-            LogUtil.Write(@"Did it work? " + JsonConvert.SerializeObject(myDevice));
-            DataUtil.SetItem("MyDevice", myDevice);
-            ControlUtil.NotifyClients(_hubContext);
-            return Ok(myDevice);
-        }
+		// POST: api/DreamData/dsConnect
+		[HttpPost("dsConnect")]
+		public IActionResult PostDevice([FromBody] Connect myDevice) {
+			LogUtil.Write(@"Did it work? " + JsonConvert.SerializeObject(myDevice));
+			DataUtil.SetItem("MyDevice", myDevice);
+			ControlUtil.NotifyClients(_hubContext);
+			return Ok(myDevice);
+		}
 
-        // POST: api/DreamData/dsConnect
-        [HttpPost("ambientColor")]
-        public IActionResult PostColor([FromBody] JObject myDevice) {
-            if (myDevice == null) throw new ArgumentException("Invalid argument.");
-            LogUtil.Write(@"Did it work (ambient Color)? " + JsonConvert.SerializeObject(myDevice));
-            var id = (string) myDevice.GetValue("device", StringComparison.InvariantCulture);
-            var value = myDevice.GetValue("color", StringComparison.InvariantCulture);
-            var group = (int) myDevice.GetValue("group", StringComparison.InvariantCulture);
-            var color = ColorTranslator.FromHtml("#" + value);
-            // If setting this from a group, set it for all devices in that group
-            if (int.TryParse(id, out var idNum)) {
-                var devs = DataUtil.GetDreamDevices();
-                foreach (var dev in devs.Where(dev => dev.GroupNumber == idNum)) {
-                    DreamSender.SetAmbientColor(color, dev.IpAddress, idNum);
-                }
-            } else { // Otherwise, just target the specified device.
-                DreamSender.SetAmbientColor(color, id, group);    
-            }
-            //ControlUtil.NotifyClients(_hubContext);
-            return Ok("Ok");
-        }
+		// POST: api/DreamData/dsConnect
+		[HttpPost("ambientColor")]
+		public IActionResult PostColor([FromBody] JObject myDevice) {
+			if (myDevice == null) throw new ArgumentException("Invalid argument.");
+			LogUtil.Write(@"Did it work (ambient Color)? " + JsonConvert.SerializeObject(myDevice));
+			var id = (string) myDevice.GetValue("device", StringComparison.InvariantCulture);
+			var value = myDevice.GetValue("color", StringComparison.InvariantCulture);
+			var group = (int) myDevice.GetValue("group", StringComparison.InvariantCulture);
+			var color = ColorTranslator.FromHtml("#" + value);
+			// If setting this from a group, set it for all devices in that group
+			if (int.TryParse(id, out var idNum)) {
+				var devs = DataUtil.GetDreamDevices();
+				foreach (var dev in devs.Where(dev => dev.GroupNumber == idNum)) {
+					DreamSender.SetAmbientColor(color, dev.IpAddress, idNum);
+				}
+			} else { // Otherwise, just target the specified device.
+				DreamSender.SetAmbientColor(color, id, group);    
+			}
+			//ControlUtil.NotifyClients(_hubContext);
+			return Ok("Ok");
+		}
         
-        // POST: api/DreamData/dsConnect
-        [HttpPost("ambientMode")]
-        public IActionResult PostAmbientMode([FromBody] JObject myDevice) {
-            LogUtil.Write(@"Did it work (ambient Mode)? " + JsonConvert.SerializeObject(myDevice));
-            DreamSender.SendMessage("ambientModeType",(int) myDevice.GetValue("mode"),(string)myDevice.GetValue("id"));
+		// POST: api/DreamData/dsConnect
+		[HttpPost("ambientMode")]
+		public IActionResult PostAmbientMode([FromBody] JObject myDevice) {
+			LogUtil.Write(@"Did it work (ambient Mode)? " + JsonConvert.SerializeObject(myDevice));
+			DreamSender.SendMessage("ambientModeType",(int) myDevice.GetValue("mode"),(string)myDevice.GetValue("id"));
 
-            //ControlUtil.NotifyClients(_hubContext);
-            return Ok("Ok");
-        }
+			//ControlUtil.NotifyClients(_hubContext);
+			return Ok("Ok");
+		}
         
-        // POST: api/DreamData/refreshDevices
-        public IActionResult RefreshDevices() {
-            ControlUtil.TriggerRefresh(_hubContext);
-            return new JsonResult("Refreshing...");
-        }
+		// POST: api/DreamData/refreshDevices
+		public IActionResult RefreshDevices() {
+			ControlUtil.TriggerRefresh(_hubContext);
+			return new JsonResult("Refreshing...");
+		}
         
-        // POST: api/DreamData/dsConnect
-        [HttpPost("ambientShow")]
-        public IActionResult PostShow([FromBody] JObject myDevice) {
-            LogUtil.Write(@"Did it work (ambient Show)? " + JsonConvert.SerializeObject(myDevice));
-            DreamSender.SendMessage("ambientScene",myDevice.GetValue("scene"),(string)myDevice.GetValue("id"));
+		// POST: api/DreamData/dsConnect
+		[HttpPost("ambientShow")]
+		public IActionResult PostShow([FromBody] JObject myDevice) {
+			LogUtil.Write(@"Did it work (ambient Show)? " + JsonConvert.SerializeObject(myDevice));
+			DreamSender.SendMessage("ambientScene",myDevice.GetValue("scene"),(string)myDevice.GetValue("id"));
 
-            //ControlUtil.NotifyClients(_hubContext);
-            return Ok(myDevice);
-        }
+			//ControlUtil.NotifyClients(_hubContext);
+			return Ok(myDevice);
+		}
 
-        [HttpGet("action")]
-        public IActionResult Action(string action, string value = "") {
-            var message = "Unrecognized action";
-            LogUtil.Write($@"{action} called from Web API.");
-            switch (action) {
-                case "loadData":
-                    ControlUtil.NotifyClients(_hubContext);
-                    return Content(DataUtil.GetStoreSerialized(), "application/json");
-                case "refreshDevices":
-                    // Just trigger dreamclient to refresh devices
-                    ControlUtil.TriggerRefresh(_hubContext);
-                    return new JsonResult("OK");
-                case "authorizeHue": {
-                    LogUtil.Write("AuthHue called, for reaal: " + value);
-                    var doAuth = true;
-                    BridgeData bd = null;
-                    if (!string.IsNullOrEmpty(value)) {
-                        _hubContext?.Clients.All.SendAsync("hueAuth", "start");
-                        bd = DataUtil.GetCollectionItem<BridgeData>("Dev_Hue", value);
-                        LogUtil.Write("BD: " + JsonConvert.SerializeObject(bd));
-                        if (bd == null) {
-                            LogUtil.Write("Null bridge retrieved.");
-                            return new JsonResult(null);
-                        }
+		[HttpGet("action")]
+		public IActionResult Action(string action, string value = "") {
+			var message = "Unrecognized action";
+			LogUtil.Write($@"{action} called from Web API.");
+			switch (action) {
+				case "loadData":
+					ControlUtil.NotifyClients(_hubContext);
+					return Content(DataUtil.GetStoreSerialized(), "application/json");
+				case "refreshDevices":
+					// Just trigger dreamclient to refresh devices
+					ControlUtil.TriggerRefresh(_hubContext);
+					return new JsonResult("OK");
+				case "authorizeHue": {
+					LogUtil.Write("AuthHue called, for reaal: " + value);
+					var doAuth = true;
+					BridgeData bd = null;
+					if (!string.IsNullOrEmpty(value)) {
+						_hubContext?.Clients.All.SendAsync("hueAuth", "start");
+						bd = DataUtil.GetCollectionItem<BridgeData>("Dev_Hue", value);
+						LogUtil.Write("BD: " + JsonConvert.SerializeObject(bd));
+						if (bd == null) {
+							LogUtil.Write("Null bridge retrieved.");
+							return new JsonResult(null);
+						}
 
-                        if (bd.Key != null && bd.User != null) {
-                            LogUtil.Write("Bridge is already authorized.");
-                            doAuth = false;
-                        }
-                    } else {
-                        LogUtil.Write("Null value.", "WARN");
-                        doAuth = false;
-                    }
+						if (bd.Key != null && bd.User != null) {
+							LogUtil.Write("Bridge is already authorized.");
+							doAuth = false;
+						}
+					} else {
+						LogUtil.Write("Null value.", "WARN");
+						doAuth = false;
+					}
 
-                    if (!doAuth) {
-                        LogUtil.Write("No auth, returning existing data.");
-                        return new JsonResult(bd);
-                    }
-                    LogUtil.Write("Trying to retrieve appkey...");
-                    var appKey = HueDiscovery.CheckAuth(bd.IpAddress).Result;
-                    if (appKey == null) {
-                        LogUtil.Write("Error retrieving app key.");
-                        return new JsonResult(bd);
-                    }
-                    bd.Key = appKey.StreamingClientKey;
-                    bd.User = appKey.Username;
-                    LogUtil.Write("We should be authorized, returning.");
-                    DataUtil.InsertCollection<BridgeData>("Dev_Hue", bd);
-                    return new JsonResult(bd);
-                }
-                case "authorizeNano": {
-                    var doAuth = true;
-                    var leaves = DataUtil.GetCollection<NanoData>("Dev_NanoLeaf");
-                    NanoData bd = null;
-                    var nanoInt = -1;
-                    if (!string.IsNullOrEmpty(value)) {
-                        var nanoCount = 0;
-                        foreach (var n in leaves) {
-                            if (n.IpAddress == value) {
-                                bd = n;
-                                doAuth = n.Token == null;
-                                nanoInt = nanoCount;
-                            }
+					if (!doAuth) {
+						LogUtil.Write("No auth, returning existing data.");
+						return new JsonResult(bd);
+					}
+					LogUtil.Write("Trying to retrieve appkey...");
+					var appKey = HueDiscovery.CheckAuth(bd.IpAddress).Result;
+					if (appKey == null) {
+						LogUtil.Write("Error retrieving app key.");
+						return new JsonResult(bd);
+					}
+					bd.Key = appKey.StreamingClientKey;
+					bd.User = appKey.Username;
+					LogUtil.Write("We should be authorized, returning.");
+					DataUtil.InsertCollection<BridgeData>("Dev_Hue", bd);
+					return new JsonResult(bd);
+				}
+				case "authorizeNano": {
+					var doAuth = true;
+					var leaves = DataUtil.GetCollection<NanoData>("Dev_NanoLeaf");
+					NanoData bd = null;
+					var nanoInt = -1;
+					if (!string.IsNullOrEmpty(value)) {
+						var nanoCount = 0;
+						foreach (var n in leaves) {
+							if (n.IpAddress == value) {
+								bd = n;
+								doAuth = n.Token == null;
+								nanoInt = nanoCount;
+							}
 
-                            nanoCount++;
-                        }
-                    }
+							nanoCount++;
+						}
+					}
 
-                    if (doAuth) {
-                        var panel = new NanoGroup(value);
-                        var appKey = panel.CheckAuth().Result;
-                        if (appKey != null && bd != null) {
-                            bd.Token = appKey.Token;
-                            bd.RefreshLeaf();
-                            LogUtil.Write("Leaf refreshed and set...");
-                        }
+					if (doAuth) {
+						var panel = new NanoGroup(value);
+						var appKey = panel.CheckAuth().Result;
+						if (appKey != null && bd != null) {
+							bd.Token = appKey.Token;
+							bd.RefreshLeaf();
+							LogUtil.Write("Leaf refreshed and set...");
+						}
 
-                        panel.Dispose();
-                    }
-                    LogUtil.Write("Returning.");
-                    return new JsonResult(bd);
-                }
-            }
+						panel.Dispose();
+					}
+					LogUtil.Write("Returning.");
+					return new JsonResult(bd);
+				}
+			}
 
-            LogUtil.Write(message);
-            return new JsonResult(message);
-        }
+			LogUtil.Write(message);
+			return new JsonResult(message);
+		}
 
-        // GET: api/DreamData/json
-        [HttpGet("json")]
-        public IActionResult GetJson() {
-            LogUtil.Write(@"GetJson Called.");
-            var bridgeArray = DataUtil.GetCollection<BridgeData>("Dev_Hue");
-            if (bridgeArray.Count == 0) {
-                var newBridges = HueDiscovery.Discover().Result;
-                foreach (var b in newBridges) {
-                    DataUtil.InsertCollection<BridgeData>("Dev_Hue", b);
-                }
-            }
+		// GET: api/DreamData/json
+		[HttpGet("json")]
+		public IActionResult GetJson() {
+			LogUtil.Write(@"GetJson Called.");
+			var bridgeArray = DataUtil.GetCollection<BridgeData>("Dev_Hue");
+			if (bridgeArray.Count == 0) {
+				var newBridges = HueDiscovery.Discover().Result;
+				foreach (var b in newBridges) {
+					DataUtil.InsertCollection<BridgeData>("Dev_Hue", b);
+				}
+			}
 
-            if (DataUtil.GetItem("DsIp") == "127.0.0.1") {
-                var newDevices = DreamDiscovery.Discover();
-                var devices = DataUtil.GetCollection<BaseDevice>("Dev_DreamScreen");
-                foreach (var d in devices) {
-                    DataUtil.InsertCollection<BaseDevice>("Dev_DreamScreen", d);
-                }
-            }
+			if (DataUtil.GetItem("DsIp") == "127.0.0.1") {
+				var newDevices = DreamDiscovery.Discover();
+				var devices = DataUtil.GetCollection<BaseDevice>("Dev_DreamScreen");
+				foreach (var d in devices) {
+					DataUtil.InsertCollection<BaseDevice>("Dev_DreamScreen", d);
+				}
+			}
 
-            return Content(DataUtil.GetStoreSerialized(), "application/json");
-        }
-        
-
-        
-
-
+			return Content(DataUtil.GetStoreSerialized(), "application/json");
+		}
         
 
         
+
+
+        
+
         
         
-        private static void SetBrightness(JObject dData) {
-            if (dData == null) throw new ArgumentException("invalid jobject");
-            var tag = (dData["tag"] ?? "INVALID").Value<string>();
-            var id = (dData["id"] ?? "INVALID").Value<string>();
-            var brightness = (dData["brightness"] ?? -1).Value<int>();
-            LogUtil.Write($"Setting brightness for {tag} {id} to {brightness}.");
-            var myDev = DataUtil.GetDeviceData();
-            var ipAddress = myDev.IpAddress;
-            var groupNumber = (byte) myDev.GroupNumber;
-            var sendRemote = false;
-            var remoteId = "";
-            switch (tag) {
-                case "Hue":
-                    var bridge = DataUtil.GetCollectionItem<BridgeData>("Dev_Hue", id);
-                    bridge.MaxBrightness = brightness;
-                    DataUtil.InsertCollection<BridgeData>("Dev_Hue", bridge);
-                    sendRemote = true;
-                    remoteId = bridge.Id;
-                    break;
-                case "Lifx":
-                    var bulb = DataUtil.GetCollectionItem<LifxData>("Dev_Lifx", id);
-                    bulb.MaxBrightness = brightness;
-                    DataUtil.InsertCollection<LifxData>("Dev_Lifx", bulb);
-                    sendRemote = true;
-                    remoteId = bulb.Id;
-                    break;
-                case "NanoLeaf":
-                    var panel = DataUtil.GetCollectionItem<NanoData>("Dev_NanoLeaf", id);
-                    panel.MaxBrightness = brightness;
-                    DataUtil.InsertCollection<NanoData>("Dev_Nanoleaf", panel);
-                    sendRemote = true;
-                    remoteId = panel.Id;
-                    break;
-                default:
-                    var groupSend = false;
-                    byte mFlag = 0x11;
-                    if (ipAddress == "255.255.255.0") {
-                        groupSend = true;
-                    } else {
-                        mFlag = 0x21;
-                    }
+        
+		private static void SetBrightness(JObject dData) {
+			if (dData == null) throw new ArgumentException("invalid jobject");
+			var tag = (dData["tag"] ?? "INVALID").Value<string>();
+			var id = (dData["id"] ?? "INVALID").Value<string>();
+			var brightness = (dData["brightness"] ?? -1).Value<int>();
+			LogUtil.Write($"Setting brightness for {tag} {id} to {brightness}.");
+			var myDev = DataUtil.GetDeviceData();
+			var ipAddress = myDev.IpAddress;
+			var groupNumber = (byte) myDev.GroupNumber;
+			var sendRemote = false;
+			var remoteId = "";
+			switch (tag) {
+				case "Hue":
+					var bridge = DataUtil.GetCollectionItem<BridgeData>("Dev_Hue", id);
+					bridge.MaxBrightness = brightness;
+					DataUtil.InsertCollection<BridgeData>("Dev_Hue", bridge);
+					sendRemote = true;
+					remoteId = bridge.Id;
+					break;
+				case "Lifx":
+					var bulb = DataUtil.GetCollectionItem<LifxData>("Dev_Lifx", id);
+					bulb.MaxBrightness = brightness;
+					DataUtil.InsertCollection<LifxData>("Dev_Lifx", bulb);
+					sendRemote = true;
+					remoteId = bulb.Id;
+					break;
+				case "NanoLeaf":
+					var panel = DataUtil.GetCollectionItem<NanoData>("Dev_NanoLeaf", id);
+					panel.MaxBrightness = brightness;
+					DataUtil.InsertCollection<NanoData>("Dev_Nanoleaf", panel);
+					sendRemote = true;
+					remoteId = panel.Id;
+					break;
+				default:
+					var groupSend = false;
+					byte mFlag = 0x11;
+					if (ipAddress == "255.255.255.0") {
+						groupSend = true;
+					} else {
+						mFlag = 0x21;
+					}
 
-                    DreamSender.SendUdpWrite(0x03, 0x02, new[] {ByteUtils.IntByte(brightness)}, mFlag, groupNumber,
-                        new IPEndPoint(IPAddress.Parse(ipAddress), 8888), groupSend);
-                    break;
-            }
+					DreamSender.SendUdpWrite(0x03, 0x02, new[] {ByteUtils.IntByte(brightness)}, mFlag, groupNumber,
+						new IPEndPoint(IPAddress.Parse(ipAddress), 8888), groupSend);
+					break;
+			}
 
-            if (!sendRemote) return;
-            var payload = new List<byte> {ByteUtils.IntByte(brightness)};
-            var utf8 = new UTF8Encoding();
-            payload.AddRange(utf8.GetBytes(remoteId));
-            DreamSender.SendUdpWrite(0x01, 0x10, payload.ToArray(), 0x21, groupNumber,
-                new IPEndPoint(IPAddress.Parse(ipAddress), 8888));
-        }
-    }
+			if (!sendRemote) return;
+			var payload = new List<byte> {ByteUtils.IntByte(brightness)};
+			var utf8 = new UTF8Encoding();
+			payload.AddRange(utf8.GetBytes(remoteId));
+			DreamSender.SendUdpWrite(0x01, 0x10, payload.ToArray(), 0x21, groupNumber,
+				new IPEndPoint(IPAddress.Parse(ipAddress), 8888));
+		}
+	}
 }

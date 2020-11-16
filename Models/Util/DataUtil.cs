@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Glimmr.Models.DreamScreen;
 using Glimmr.Models.DreamScreen.Devices;
 using Glimmr.Models.LED;
-using Glimmr.Models.StreamingDevice;
 using Glimmr.Models.StreamingDevice.Hue;
 using Glimmr.Models.StreamingDevice.LIFX;
 using Glimmr.Models.StreamingDevice.Nanoleaf;
@@ -18,7 +17,6 @@ using LifxNet;
 using LiteDB;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Org.BouncyCastle.Asn1.X509.Qualified;
 
 namespace Glimmr.Models.Util {
     [Serializable]

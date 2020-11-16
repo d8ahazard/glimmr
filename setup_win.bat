@@ -59,7 +59,7 @@ if %errorLevel% == 0 (
 dotnet
 if errorlevel 0 goto installGlimmr
 echo Installing dotnet binaries.
-powershell %~dp0dotnet-install.ps1 -Channel 3.1
+powershell %~dp0dotnet-install.ps1 -Channel 5.0
 
 :installGlimmr
 set file="%~dp0src"

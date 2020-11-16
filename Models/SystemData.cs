@@ -1,7 +1,5 @@
 ﻿using System.Net;
 using System.Net.Sockets;
-using Glimmr.Models.DreamScreen.Devices;
-using Glimmr.Models.LED;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
 namespace Glimmr.Models {

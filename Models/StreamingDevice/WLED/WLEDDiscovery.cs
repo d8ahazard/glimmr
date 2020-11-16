@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Makaretu.Dns;
-using Newtonsoft.Json;
 
 namespace Glimmr.Models.StreamingDevice.WLed {
     public static class WledDiscovery {

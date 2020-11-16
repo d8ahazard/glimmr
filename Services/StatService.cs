@@ -1,13 +1,10 @@
-﻿using System;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Emgu.Util;
 using Glimmr.Hubs;
 using Glimmr.Models.Util;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
-using Newtonsoft.Json;
 
 namespace Glimmr.Services {
 	public class StatService : BackgroundService
