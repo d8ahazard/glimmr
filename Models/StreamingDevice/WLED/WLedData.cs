@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
-using HueDream.Models.LED;
-using HueDream.Models.Util;
+using Glimmr.Models.LED;
+using Glimmr.Models.Util;
 using Newtonsoft.Json;
 
-namespace HueDream.Models.StreamingDevice.WLed {
-    public class WLedData {
-        [JsonProperty] public string Id { get; set; }
-        [JsonProperty] public string IpAddress { get; set; }
-        [JsonProperty] public int Brightness { get; set; }
+namespace Glimmr.Models.StreamingDevice.WLed {
+    public class WLedData : StreamingData {
         // 0 = normal
         // 1 = all to one sector
         // 2 = Sub sectors
@@ -23,15 +20,20 @@ namespace HueDream.Models.StreamingDevice.WLed {
         [JsonProperty] public int LedCount { get; set; }
         [JsonProperty] public List<int> Sectors { get; set; }
         [JsonProperty] public Dictionary<int, int> SubSectors { get; set; }
-        
-        [JsonProperty] public static string Tag = "WLed";
         [JsonProperty] public WLedStateData State { get; set; }
         [JsonProperty] public bool ControlStrip { get; set; }
         [JsonProperty] public bool AutoDisable { get; set; }
 
-        public WLedData() {}
+        public WLedData() {
+            Tag = "Wled";
+            Name ??= Tag;
+            if (Id != null) Name = StringUtil.UppercaseFirst(Id);
+        }
         public WLedData(string id) {
             Id = id;
+            Tag = "Wled";
+            Name ??= Tag;
+            if (Id != null) Name = StringUtil.UppercaseFirst(Id);
             ControlStrip = false;
             AutoDisable = true;
             Sectors = new List<int>();
@@ -84,6 +86,7 @@ namespace HueDream.Models.StreamingDevice.WLed {
             Brightness = input.Brightness;
             StripDirection = input.StripDirection;
             StripMode = input.StripMode;
+            if (Id != null) Name = StringUtil.UppercaseFirst(Id);
         }
     }
 }

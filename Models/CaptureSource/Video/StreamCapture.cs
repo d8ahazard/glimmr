@@ -9,18 +9,18 @@ using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
-using HueDream.Models.CaptureSource.Camera;
-using HueDream.Models.CaptureSource.Video.Hdmi;
-using HueDream.Models.CaptureSource.Video.PiCam;
-using HueDream.Models.CaptureSource.Video.Screen;
-using HueDream.Models.CaptureSource.Video.WebCam;
-using HueDream.Models.DreamScreen;
-using HueDream.Models.LED;
-using HueDream.Models.StreamingDevice.WLed;
-using HueDream.Models.Util;
+using Glimmr.Models.CaptureSource.Camera;
+using Glimmr.Models.CaptureSource.Video.Hdmi;
+using Glimmr.Models.CaptureSource.Video.PiCam;
+using Glimmr.Models.CaptureSource.Video.Screen;
+using Glimmr.Models.CaptureSource.Video.WebCam;
+using Glimmr.Models.DreamScreen;
+using Glimmr.Models.LED;
+using Glimmr.Models.StreamingDevice.WLed;
+using Glimmr.Models.Util;
 using Newtonsoft.Json;
 
-namespace HueDream.Models.CaptureSource.Video {
+namespace Glimmr.Models.CaptureSource.Video {
     public sealed class StreamCapture {
         private bool _sendColors;
         // Scaling variables

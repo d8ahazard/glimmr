@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using HueDream.Models.Util;
+using Glimmr.Models.Util;
 using Newtonsoft.Json;
 
-namespace HueDream.Models.DreamScreen.Devices {
+namespace Glimmr.Models.DreamScreen.Devices {
     public class Connect : BaseDevice {
         private const string DeviceTag = "Connect";
 
@@ -17,14 +17,18 @@ namespace HueDream.Models.DreamScreen.Devices {
         [JsonProperty] private byte[] espFirmwareVersion;
 
         public override void SetDefaults() {
+            Initialize();
         }
 
         [JsonProperty] public int[] flexSetup { get; set; }
 
-        public Connect() { }
+        public Connect() {
+            Initialize();
+        }
         
         public Connect(BaseDevice curDevice) {
             if (curDevice == null) throw new ArgumentException("Invalid baseDevice.");
+            Initialize();
             Id = curDevice.Id;
             Name = curDevice.Name;
             IpAddress = curDevice.IpAddress;

@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
-using HueDream.Models.Util;
+using Glimmr.Models.Util;
 using Makaretu.Dns;
 
-namespace HueDream.Models.StreamingDevice.Nanoleaf {
+namespace Glimmr.Models.StreamingDevice.Nanoleaf {
     public static class NanoDiscovery {
         public static async Task<List<NanoData>> Discover(int timeout = 5) {
             var output = new List<NanoData>();

@@ -6,10 +6,10 @@ using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
-using HueDream.Models.Util;
+using Glimmr.Models.Util;
 using Newtonsoft.Json;
 
-namespace HueDream.Models.CaptureSource.Camera {
+namespace Glimmr.Models.CaptureSource.Camera {
     public static class Calibrate {
         public static void ProcessFrames() {
             var cornersObjectList = new List<MCvPoint3D32f[]>();

@@ -4,7 +4,7 @@ using System.Drawing;
 using System.Globalization;
 using System.Runtime.InteropServices;
 
-namespace HueDream.Models.Util {
+namespace Glimmr.Models.Util {
     public static class DisplayUtil {
 
         public static Size GetDisplaySize() {

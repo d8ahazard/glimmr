@@ -6,22 +6,21 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using HueDream.Models.DreamScreen;
-using HueDream.Models.DreamScreen.Devices;
-using HueDream.Models.LED;
-using HueDream.Models.StreamingDevice;
-using HueDream.Models.StreamingDevice.Hue;
-using HueDream.Models.StreamingDevice.LIFX;
-using HueDream.Models.StreamingDevice.Nanoleaf;
-using HueDream.Models.StreamingDevice.WLed;
+using Glimmr.Models.DreamScreen;
+using Glimmr.Models.DreamScreen.Devices;
+using Glimmr.Models.LED;
+using Glimmr.Models.StreamingDevice;
+using Glimmr.Models.StreamingDevice.Hue;
+using Glimmr.Models.StreamingDevice.LIFX;
+using Glimmr.Models.StreamingDevice.Nanoleaf;
+using Glimmr.Models.StreamingDevice.WLed;
 using LifxNet;
 using LiteDB;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Org.BouncyCastle.Asn1.X509.Qualified;
-using ZedGraph;
 
-namespace HueDream.Models.Util {
+namespace Glimmr.Models.Util {
     [Serializable]
     public static class DataUtil {
         public static bool scanning { get; set; }
@@ -54,6 +53,7 @@ namespace HueDream.Models.Util {
                 var dsIp = GetItem("DsIp");
                 var ledData = new LedData(true);
                 var myDevice = new DreamScreen4K(dsIp);
+                myDevice.Initialize();
                 myDevice.SetDefaults();
                 myDevice.Id = dsIp;
                 SetObject("LedData", ledData);
@@ -204,31 +204,38 @@ namespace HueDream.Models.Util {
         }
 
         public static BaseDevice GetDeviceData() {
-            var dd = GetDb();
-            BaseDevice dev;
-            var devs = dd.GetCollection<BaseDevice>("devices");
-            var devType = GetItem("DevType");
-            string dsIp = GetItem("DsIp");
-            if (devType == "SideKick") {
-                dev = (SideKick) devs.FindOne(x => x.IpAddress == dsIp);
-            } else if (devType == "DreamScreen4K") {
-                dev = (DreamScreen4K) devs.FindOne(x => x.IpAddress == dsIp);
-            } else {
-                dev = (Connect) devs.FindOne(x => x.IpAddress == dsIp);
+            var myDevice = GetObject<BaseDevice>("MyDevice");
+            if (myDevice == null) {
+                var dsIp = GetItem("DsIp");
+                myDevice = new DreamScreen4K(dsIp);
+                myDevice.SetDefaults();
+                myDevice.Id = dsIp;
+                SetObject("MyDevice", myDevice);
             }
 
-            if (string.IsNullOrEmpty(dev.AmbientColor)) {
-                dev.AmbientColor = "FFFFFF";
-            }
-            return dev;
+            return myDevice;
         }
 
         public static void SetItem<T>(string key, dynamic value) {
-            SetItem(key, value);
+            var db = GetDb();
+            var col = db.GetCollection(key);
+            col.Insert(new BsonDocument { ["value"] = value });
+            db.Commit();
+        }
+        
+        public static void SetInt(string key, int value) {
+            var db = GetDb();
+            var col = db.GetCollection(key);
+            col.Insert(new BsonDocument { ["value"] = value });
+            db.Commit();
         }
 
         
         public static dynamic GetItem<T>(string key) {
+            var i = GetItem(key);
+            if (i == null) {
+                return null;
+            } 
             return (T) GetItem(key);
         }
         
@@ -260,8 +267,13 @@ namespace HueDream.Models.Util {
         public static dynamic GetObject<T>(string key) {
             var db = GetDb();
             var col = db.GetCollection<T>(key);
-            foreach(var doc in col.FindAll()) {
-                return doc;
+            if (col.Count() == 0) return null;
+            try {
+                foreach (var doc in col.FindAll()) {
+                    return doc;
+                }
+            } catch (Exception) {
+                
             }
 
             return null;

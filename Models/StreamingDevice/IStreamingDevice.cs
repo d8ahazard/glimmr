@@ -2,7 +2,7 @@
 using System.Drawing;
 using System.Threading;
 
-namespace HueDream.Models.StreamingDevice {
+namespace Glimmr.Models.StreamingDevice {
     public interface IStreamingDevice {
         public bool Streaming { get; set; }
         public int Brightness { get; set; }

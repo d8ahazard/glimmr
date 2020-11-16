@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace HueDream.Models.DreamScreen.Scenes {
+namespace Glimmr.Models.DreamScreen.Scenes {
     [Serializable]
     public abstract class SceneBase {
         public enum AnimationMode {

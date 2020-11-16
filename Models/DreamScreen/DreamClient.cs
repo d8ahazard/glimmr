@@ -10,17 +10,17 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
-using HueDream.Hubs;
-using HueDream.Models.CaptureSource.Audio;
-using HueDream.Models.CaptureSource.Video;
-using HueDream.Models.DreamScreen.Devices;
-using HueDream.Models.LED;
-using HueDream.Models.StreamingDevice;
-using HueDream.Models.StreamingDevice.Hue;
-using HueDream.Models.StreamingDevice.LIFX;
-using HueDream.Models.StreamingDevice.Nanoleaf;
-using HueDream.Models.StreamingDevice.WLed;
-using HueDream.Models.Util;
+using Glimmr.Hubs;
+using Glimmr.Models.CaptureSource.Audio;
+using Glimmr.Models.CaptureSource.Video;
+using Glimmr.Models.DreamScreen.Devices;
+using Glimmr.Models.LED;
+using Glimmr.Models.StreamingDevice;
+using Glimmr.Models.StreamingDevice.Hue;
+using Glimmr.Models.StreamingDevice.LIFX;
+using Glimmr.Models.StreamingDevice.Nanoleaf;
+using Glimmr.Models.StreamingDevice.WLed;
+using Glimmr.Models.Util;
 using LifxNet;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
@@ -28,7 +28,7 @@ using Newtonsoft.Json;
 using Color = System.Drawing.Color;
 using Timer = System.Timers.Timer;
 
-namespace HueDream.Models.DreamScreen {
+namespace Glimmr.Models.DreamScreen {
     public class DreamClient : BackgroundService {
         private int CaptureMode { get; set; }
         private DreamScene _dreamScene;
@@ -138,15 +138,17 @@ namespace HueDream.Models.DreamScreen {
             _aStream = GetStream();
             // Get our device data
             _dev = DataUtil.GetDeviceData();
+            LogUtil.Write("Device Data: " + JsonConvert.SerializeObject(_dev));
             // Create scene builder
             _dreamScene = new DreamScene();
             // Get a list of devices
             _devices = new List<BaseDevice>();
             // Read other variables
-            _devMode = _dev.Mode;
-            _ambientMode = _dev.AmbientModeType;
-            _ambientShow = _dev.AmbientShowType;
-            _ambientColor = ColorFromString(_dev.AmbientColor);
+            _devMode = DataUtil.GetItem<int>("DeviceMode");
+            _ambientMode = DataUtil.GetItem<int>("AmbientMode") ?? 0;
+            _ambientShow = DataUtil.GetItem<int>("AmbientShow") ?? 0;
+            var ac = DataUtil.GetItem<string>("AmbientColor") ?? "FFFFFF";
+            _ambientColor = ColorFromString(ac);
             _brightness = _dev.Brightness;
             _autoDisabled = false;
             try {
@@ -175,7 +177,7 @@ namespace HueDream.Models.DreamScreen {
             // Now, start listening for UDP commands
             StartListening();
             // Finally start our normal device behavior
-            if (!_autoDisabled) UpdateMode(_dev.Mode);
+            if (!_autoDisabled) UpdateMode(_devMode);
         }
 
         // This is called because it's a service. I thought I needed this, maybe I don't...

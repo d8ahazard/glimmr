@@ -1,23 +1,52 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Net;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using HueDream.Models.StreamingDevice.Hue;
-using HueDream.Models.StreamingDevice.Nanoleaf;
-using HueDream.Models.Util;
+using Glimmr.Models.DreamScreen;
+using Glimmr.Models.StreamingDevice.Hue;
+using Glimmr.Models.StreamingDevice.Nanoleaf;
+using Glimmr.Models.Util;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
-using Q42.HueApi.Models.Bridge;
 
-namespace HueDream.Hubs {
+namespace Glimmr.Hubs {
+    
     public class SocketServer : Hub {
-        public async Task SendMessage(string message) {
-            await Clients.All.SendAsync("ReceiveMessage", message);
-            LogUtil.Write("Sending message: " + message);
+        public int UserCount;
+        private CancellationTokenSource _ct;
+        private CancellationTokenSource _ct2;
+        private bool _initialized;
+        private bool timerStarted;
+        
+        private readonly IHubContext<SocketServer> _hubContext;
+        
+        public SocketServer(IHubContext<SocketServer> hubContext) {
+            LogUtil.Write("Initialized socket server with hub context.");
+            _hubContext = hubContext;
+        }
+       
+        public Task Mode(int mode) {
+            LogUtil.Write($"WS Mode: {mode}");
+            ControlUtil.SetMode(mode);
+            return Clients.All.SendAsync("mode", mode);
+        }
+       
+        public Task Action(string action, string value) {
+            LogUtil.Write($"WS Action: {action}: " + JsonConvert.SerializeObject(value));
+            return Clients.Caller.SendAsync("ack", true);
         }
 
-        public void SetMode(string id, int mode) {
-            LogUtil.Write($"WS Mode: {id}, {mode}");
+        public Task RefreshDevices() {
+            LogUtil.Write("Refresh called from socket!");
+            ControlUtil.TriggerRefresh(_hubContext);
+            return Task.CompletedTask;
+        }
+
+        private CpuData GetStats(CancellationToken token) {
+            return CpuUtil.GetStats();
         }
 
         public async void AuthorizeHue(string id) {
@@ -81,7 +110,6 @@ namespace HueDream.Hubs {
         }
 
         public async void AuthorizeNano(string id) {
-            var leaves = DataUtil.GetCollection<NanoData>("Dev_Nano");
             var leaf = DataUtil.GetCollectionItem<NanoData>("Dev_Nano", id);
             bool doAuth = leaf.Token == null;
             if (doAuth) {
@@ -93,7 +121,7 @@ namespace HueDream.Hubs {
             var count = 0;
             while (count < 30) {
                 var appKey = panel.CheckAuth().Result;
-                if (appKey != null && leaf != null) {
+                if (appKey != null) {
                     leaf.Token = appKey.Token;
                     DataUtil.InsertCollection<NanoData>("Dev_NanoLeaf", leaf);
                     await Clients.All.SendAsync("nanoAuth", "authorized");
@@ -109,15 +137,24 @@ namespace HueDream.Hubs {
 
             panel.Dispose();
         }
-
-        public void SendData(string command) {
-        }
-
+        
         public override Task OnDisconnectedAsync(Exception exception) {
-            LogUtil.Write("User disconnected");
-            return base.OnDisconnectedAsync(exception);
+            var dc = base.OnDisconnectedAsync(exception);
+            UserCount--;
+            LogUtil.Write("Disconnected: Users " + UserCount);
+            return dc;
         }
 
-            
+        public override Task OnConnectedAsync() {
+            var bc = base.OnConnectedAsync();
+            UserCount++;
+            LogUtil.Write("User Connected: " + UserCount);
+            return bc;
+        }
+        
+        public Task ThrowException() {
+            throw new HubException("Is this better: ");
+        }
+
     }
 }

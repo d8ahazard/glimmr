@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using HueDream.Models.DreamScreen.Devices;
-using HueDream.Models.Util;
+using Glimmr.Models.DreamScreen.Devices;
+using Glimmr.Models.Util;
 using Newtonsoft.Json;
 
-namespace HueDream.Models.DreamScreen {
+namespace Glimmr.Models.DreamScreen {
     [Serializable]
     public class DreamScreenMessage {
         private readonly byte[] payload;

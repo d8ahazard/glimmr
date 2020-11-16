@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
-using HueDream.Models.DreamScreen.Devices;
-using HueDream.Models.Util;
+using Glimmr.Models.DreamScreen.Devices;
+using Glimmr.Models.Util;
 
-namespace HueDream.Models.DreamScreen {
+namespace Glimmr.Models.DreamScreen {
     public static class DreamDiscovery {
         public static async Task<List<BaseDevice>> Discover() {
             LogUtil.Write("Discovery started..");

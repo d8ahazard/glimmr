@@ -1,11 +1,15 @@
 ﻿using System.Net;
 using System.Net.Sockets;
-using HueDream.Models.DreamScreen.Devices;
-using HueDream.Models.LED;
-using HueDream.Models.Util;
+using Glimmr.Models.DreamScreen.Devices;
+using Glimmr.Models.LED;
+using Glimmr.Models.Util;
 using Newtonsoft.Json;
-namespace HueDream.Models {
+namespace Glimmr.Models {
     public class SystemData {
+        [JsonProperty] public int DeviceMode { get; set; }
+        [JsonProperty] public int AmbientMode { get; set; }
+        [JsonProperty] public int AmbientShow { get; set; }
+        [JsonProperty] public string AmbientColor { get; set; }
         [JsonProperty] public bool DefaultSet { get; set; }
         [JsonProperty] public bool ShowSource { get; set; }
         [JsonProperty] public bool AutoDisabled { get; set; }
@@ -33,6 +37,10 @@ namespace HueDream.Models {
 
         public SystemData(bool setDefaults = false) {
             if (setDefaults) {
+                DeviceMode = 0;
+                AmbientMode = 0;
+                AmbientShow = 0;
+                AmbientColor = "FFFFFF";
                 RecId = 1;
                 DevType = "DreamScreen4K";
                 CamWidth = 1920;

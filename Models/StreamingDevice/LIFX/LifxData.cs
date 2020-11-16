@@ -1,31 +1,40 @@
 ﻿using System;
 using System.ComponentModel;
-using HueDream.Models.Util;
+using Glimmr.Models.Util;
 using LifxNet;
 using LiteDB;
 using Newtonsoft.Json;
 
-namespace HueDream.Models.StreamingDevice.LIFX {
-    public class LifxData { 
+namespace Glimmr.Models.StreamingDevice.LIFX {
+    public class LifxData : StreamingData { 
         [BsonCtor]
         public LifxData() {
+            Tag = "Lifx";
+            if (Id == null && MacAddressString != null) {
+                Id = MacAddressString;
+            }
+            Name ??= Tag;
+            if (Id != null) Name = "Lifx - " + Id.Substring(0, 4);
         }
 
         public LifxData(LightBulb b) {
             if (b == null) throw new ArgumentException("Invalid bulb data.");
+            Tag = "Lifx";
+            Name ??= Tag;
             HostName = b.HostName;
             IpAddress = IpUtil.GetIpFromHost(HostName).ToString();
             Service = b.Service;
             Port = (int) b.Port;
             MacAddress = b.MacAddress;
             MacAddressString = b.MacAddressName;
+            Id = MacAddressString;
+            if (Id != null) Name = "Lifx - " + Id.Substring(0, 4);
+
         }
 
         [JsonProperty] public string HostName { get; internal set; }
-        [JsonProperty] public string Id => MacAddressString;
-
+        
         [JsonProperty] public byte Service { get; internal set; }
-        [JsonProperty] public string IpAddress { get; internal set; }
         [JsonProperty] public int Port { get; internal set; }
         [JsonProperty] internal DateTime LastSeen { get; set; }
         [JsonProperty] public byte[] MacAddress { get; internal set; }
@@ -46,7 +55,6 @@ namespace HueDream.Models.StreamingDevice.LIFX {
         
         [DefaultValue(100)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-        public int Brightness { get; set; }
         public int MaxBrightness { get; set; }
 
     }

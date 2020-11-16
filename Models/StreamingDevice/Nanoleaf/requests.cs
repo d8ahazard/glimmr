@@ -2,7 +2,7 @@
 using System.Text;
 using Newtonsoft.Json.Linq;
 
-namespace HueDream.Models.StreamingDevice.Nanoleaf {
+namespace Glimmr.Models.StreamingDevice.Nanoleaf {
     public class Requests {
         public RequestObj Request;
         public static RequestObj Put(string addr, JObject data) {

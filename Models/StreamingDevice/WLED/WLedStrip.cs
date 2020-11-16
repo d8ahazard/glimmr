@@ -8,11 +8,11 @@ using System.Net.Http;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using HueDream.Models.CaptureSource.Camera;
-using HueDream.Models.Util;
+using Glimmr.Models.CaptureSource.Camera;
+using Glimmr.Models.Util;
 using Newtonsoft.Json.Linq;
 
-namespace HueDream.Models.StreamingDevice.WLed {
+namespace Glimmr.Models.StreamingDevice.WLed {
     public class WLedStrip : IStreamingDevice, IDisposable
     {
         public WLedData Data { get; set; }
@@ -163,7 +163,12 @@ namespace HueDream.Models.StreamingDevice.WLed {
             var uri = new Uri("http://" + IpAddress + target);
             var httpContent = new StringContent(values.ToString());
             httpContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-            await _client.PostAsync(uri, httpContent);
+            try {
+                await _client.PostAsync(uri, httpContent);
+            } catch (HttpRequestException e) {
+                
+            }
+
             httpContent.Dispose();
         }
 

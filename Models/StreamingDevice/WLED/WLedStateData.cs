@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace HueDream.Models.StreamingDevice.WLed {
+namespace Glimmr.Models.StreamingDevice.WLed {
      
     public class Ccnf    {
         public int min { get; set; } 

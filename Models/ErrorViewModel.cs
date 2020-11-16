@@ -1,5 +1,9 @@
-namespace HueDream.Models {
-    public class ErrorViewModel {
+using System;
+
+namespace Glimmr.Models
+{
+    public class ErrorViewModel
+    {
         public string RequestId { get; set; }
 
         public bool ShowRequestId => !string.IsNullOrEmpty(RequestId);

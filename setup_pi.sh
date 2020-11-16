@@ -1,28 +1,21 @@
 #!/bin/bash
 # Add user if not exist
-id -u glimmrtv &>/dev/null || useradd -m glimmrtv 
+id -u glimmrtv &>/dev/null || useradd -m glimmrtv
+usermod -aG sudo glimmrtv 
 cd /home/glimmrtv || exit
 # Check dotnet installation
 if [ ! -d "/opt/dotnet" ]
 then 
   echo "Installing dotnet."
   echo "Downloading..."
-  wget https://download.visualstudio.microsoft.com/download/pr/349f13f0-400e-476c-ba10-fe284b35b932/44a5863469051c5cf103129f1423ddb8/dotnet-sdk-3.1.102-linux-arm.tar.gz
-  wget https://download.visualstudio.microsoft.com/download/pr/8ccacf09-e5eb-481b-a407-2398b08ac6ac/1cef921566cb9d1ca8c742c9c26a521c/aspnetcore-runtime-3.1.2-linux-arm.tar.gz
-  mkdir -p /opt/dotnet
-  echo "Extracting Dotnet-SDK..."
-  tar zxf dotnet-sdk-3.1.102-linux-arm.tar.gz -C /opt/dotnet
-  echo "DONE!"
-  echo "Extracting runtime..."
-  tar zxf ./aspnetcore-runtime-3.1.2-linux-arm.tar.gz -C /opt/dotnet
-  echo "DONE!"
-  echo "Symlinking..."
-  sudo ln -s /opt/dotnet/dotnet /usr/local/bin
+  wget https://dotnetcli.blob.core.windows.net/dotnet/Sdk/master/dotnet-sdk-latest-linux-arm.tar.gz
+  sudo mkdir -p /usr/share/dotnet
+  sudo tar -zxf dotnet-sdk-latest-linux-arm.tar.gz -C /usr/share/dotnet
+  sudo ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
   echo "DONE!"
   # Cleanup
   echo "Cleanup..."
-  rm -rf ./dotnet-sdk-3.1.102-linux-arm.tar.gz
-  rm -rf ./aspnetcore-runtime-3.1.2-linux-arm.tar.gz
+  rm -rf ./dotnet-sdk-latest-linux-arm.tar.gz
   echo "DONE!"
 fi
 
@@ -49,7 +42,7 @@ if [ ! -d "/home/glimmrtv/glimmr" ]
 then
 # Clone glimmr
   echo "Cloning glimmr"
-  git clone https://github.com/d8ahazard/glimmr /home/glimmrtv/glimmr/src
+  git clone -b dev https://github.com/d8ahazard/glimmr /home/glimmrtv/glimmr/src
 else
   echo "Source exists, updating..."
   cd /home/glimmrtv/glimmr/src || exit
@@ -70,7 +63,7 @@ fi
 
 # Build latest version
 echo "Building glimmr..."
-dotnet build HueDream.csproj /p:PublishProfile=LinuxARM
+dotnet build Glimmr.csproj /p:PublishProfile=LinuxARM
 cp -r /home/glimmrtv/glimmr/src/bin/debug/netcoreapp3.1/linux-arm/* /home/glimmrtv/glimmr/
 cp -r /home/glimmrtv/glimmr/src/wwwroot/ /home/glimmrtv/glimmr/wwwroot/
 echo "DONE."

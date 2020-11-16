@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using HueDream.Models.StreamingDevice.WLed;
-using HueDream.Models.Util;
+using Glimmr.Models.StreamingDevice.WLed;
+using Glimmr.Models.Util;
 using rpi_ws281x;
-using ColorUtil = HueDream.Models.Util.ColorUtil;
+using ColorUtil = Glimmr.Models.Util.ColorUtil;
 
-namespace HueDream.Models.LED {
+namespace Glimmr.Models.LED {
     public sealed class LedStrip : IDisposable {
         private readonly int _ledCount;
         private readonly WS281x _strip;
@@ -27,10 +27,16 @@ namespace HueDream.Models.LED {
             if (ld.PinNumber == 13) pin = Pin.Gpio13;
             LogUtil.Write($@"Count, pin, type: {_ledCount}, {ld.PinNumber}, {(int)stripType}");
             var settings = Settings.CreateDefaultSettings();
-            _controller = settings.AddController(_ledCount, pin, stripType, ControllerType.PWM0, (byte)ld.Brightness);
-            _strip = new WS281x(settings);
-            LogUtil.Write($@"Strip created using {_ledCount} LEDs.");
-            Demo();
+            _controller = settings.AddController(_ledCount, pin, stripType, ControllerType.PWM, (byte)ld.Brightness);
+            try {
+                _strip = new WS281x(settings);
+                LogUtil.Write($@"Strip created using {_ledCount} LEDs.");
+                Demo();
+            } catch (DllNotFoundException) {
+                LogUtil.Write("Unable to initialize strips, we're not running on a pi!");
+            }
+
+            
         }
 
         private void Demo() {

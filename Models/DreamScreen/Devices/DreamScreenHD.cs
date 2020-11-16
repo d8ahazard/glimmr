@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using HueDream.Models.Util;
+using Glimmr.Models.Util;
 using Newtonsoft.Json;
 
-namespace HueDream.Models.DreamScreen.Devices {
+namespace Glimmr.Models.DreamScreen.Devices {
     public class DreamScreenHd : BaseDevice {
         private const string DeviceTag = "DreamScreen";
         private static readonly byte[] RequiredEspFirmwareVersion = {1, 6};
@@ -83,6 +83,7 @@ namespace HueDream.Models.DreamScreen.Devices {
         }
 
         public override void SetDefaults() {
+            Initialize();
             Name = "DreamScreen HD";
             Tag = DeviceTag;
             EspFirmwareVersion = RequiredEspFirmwareVersion;

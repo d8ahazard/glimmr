@@ -2,10 +2,10 @@
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using HueDream.Models.Util;
+using Glimmr.Models.Util;
 using Nanoleaf.Client.Exceptions;
 
-namespace HueDream.Models.StreamingDevice.Nanoleaf {
+namespace Glimmr.Models.StreamingDevice.Nanoleaf {
     public static class NanoSender {
         private static HttpClient client;
 

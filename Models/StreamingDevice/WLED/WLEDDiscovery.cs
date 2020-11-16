@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using HueDream.Models.Util;
+using Glimmr.Models.Util;
 using Makaretu.Dns;
 using Newtonsoft.Json;
 
-namespace HueDream.Models.StreamingDevice.WLed {
+namespace Glimmr.Models.StreamingDevice.WLed {
     public static class WledDiscovery {
         
         public static async Task<List<WLedData>> Discover(int timeout = 5) {

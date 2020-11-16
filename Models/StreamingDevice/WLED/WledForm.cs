@@ -1,7 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
-namespace HueDream.Models.StreamingDevice.WLed {
+namespace Glimmr.Models.StreamingDevice.WLed {
     public class WledForm    {
         [JsonProperty][JsonPropertyName("LC")] public string LedCount { get; set; } 
         [JsonProperty][JsonPropertyName("ABen")]public string AutoBrightness { get; set; } 

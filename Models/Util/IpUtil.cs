@@ -4,7 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using Newtonsoft.Json;
 
-namespace HueDream.Models.Util {
+namespace Glimmr.Models.Util {
     public static class IpUtil {
         public static IPEndPoint Parse(string endpointstring, int defaultport) {
             if (string.IsNullOrEmpty(endpointstring)

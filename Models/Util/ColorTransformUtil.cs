@@ -3,7 +3,7 @@ using System.Drawing;
 using SystemMath = System.Math;
 
 
-namespace HueDream.Models.Util {
+namespace Glimmr.Models.Util {
     /// <summary>
     /// Static methods for transforming argb spaces and argb values.
     /// </summary>

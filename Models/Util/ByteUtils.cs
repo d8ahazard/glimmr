@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 
-namespace HueDream.Models.Util {
+namespace Glimmr.Models.Util {
     public static class ByteUtils {
         private static readonly IFormatProvider Format = new CultureInfo("en-US");
 

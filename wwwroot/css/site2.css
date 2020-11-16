@@ -1,0 +1,16 @@
+﻿.card {
+    width: 18rem;
+}
+
+.deviceIcon {
+    width: 60px;
+    height: 60px;
+}
+
+.settingBtn {
+    width: 60px;
+}
+
+.fs-1 {
+    font-size: 5rem;
+}

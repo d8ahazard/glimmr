@@ -1,4 +1,4 @@
-﻿namespace HueDream.Models.DreamScreen.Scenes {
+﻿namespace Glimmr.Models.DreamScreen.Scenes {
     public class ScenePop : SceneBase {
         public ScenePop() {
             SetColors(new[] {

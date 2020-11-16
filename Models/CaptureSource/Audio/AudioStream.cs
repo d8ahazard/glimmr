@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Threading;
-using HueDream.Models.Util;
+using Glimmr.Models.Util;
 using ManagedBass;
 using Newtonsoft.Json;
 
-namespace HueDream.Models.CaptureSource.Audio {
+namespace Glimmr.Models.CaptureSource.Audio {
     public sealed class AudioStream : IDisposable {
         private bool _disposed;
         private List<DeviceInfo> _devices;

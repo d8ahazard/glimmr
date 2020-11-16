@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
 using Emgu.CV.Structure;
-using HueDream.Models.Util;
+using Glimmr.Models.Util;
 using MMALSharp;
 using MMALSharp.Common;
 using MMALSharp.Common.Utility;
@@ -13,7 +13,7 @@ using MMALSharp.Native;
 using MMALSharp.Ports;
 using MMALSharp.Ports.Outputs;
 
-namespace HueDream.Models.CaptureSource.Video.PiCam {
+namespace Glimmr.Models.CaptureSource.Video.PiCam {
     public sealed class PiCamVideoStream : IVideoStream, IDisposable {
         public Mat Frame { get; set; }
         private readonly MMALCamera cam;

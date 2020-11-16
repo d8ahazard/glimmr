@@ -5,13 +5,13 @@ using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using HueDream.Models.Util;
+using Glimmr.Models.Util;
 using Newtonsoft.Json;
 using Q42.HueApi;
 using Q42.HueApi.Interfaces;
 using Q42.HueApi.Models.Bridge;
 
-namespace HueDream.Models.StreamingDevice.Hue {
+namespace Glimmr.Models.StreamingDevice.Hue {
     public static class HueDiscovery {
         
         public static async Task<List<BridgeData>> Refresh(CancellationToken ct) {
@@ -45,7 +45,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
                 ILocalHueClient client = new LocalHueClient(bridgeIp);
                 //Make sure the user has pressed the button on the bridge before calling RegisterAsync
                 //It will throw an LinkButtonNotPressedException if the user did not press the button
-                var result = await client.RegisterAsync("HueDream", Environment.MachineName, true)
+                var result = await client.RegisterAsync("Glimmr", Environment.MachineName, true)
                     .ConfigureAwait(false);
                 return result;
             } catch (HueException) {

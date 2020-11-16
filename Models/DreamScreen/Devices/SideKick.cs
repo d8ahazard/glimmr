@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using HueDream.Models.Util;
+using Glimmr.Models.Util;
 using Newtonsoft.Json;
 
-namespace HueDream.Models.DreamScreen.Devices {
+namespace Glimmr.Models.DreamScreen.Devices {
     [Serializable]
     public class SideKick : BaseDevice {
         private const string DeviceTag = "SideKick";
@@ -36,6 +36,7 @@ namespace HueDream.Models.DreamScreen.Devices {
         [JsonProperty] private byte[] EspFirmwareVersion { get; set; }
 
         public sealed override void SetDefaults() {
+            Initialize();
             Name = DeviceTag;
             EspFirmwareVersion = RequiredEspFirmwareVersion;
             SectorData = new byte[] {0};

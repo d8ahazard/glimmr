@@ -1,18 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 using Newtonsoft.Json;
 
-namespace HueDream.Models.StreamingDevice.Nanoleaf {
+namespace Glimmr.Models.StreamingDevice.Nanoleaf {
     [Serializable]
-    public class NanoData {
-        [JsonProperty] public const string Tag = "NanoLeaf";
-        [JsonProperty] public string IpAddress { get; set; }
+    public class NanoData : StreamingData {
         [JsonProperty] public string IpV6Address { get; set; }
         [JsonProperty] public string Hostname { get; set; }
-        [JsonProperty] public string Name { get; set; }
-        [JsonProperty] public string Id { get; set; }
         [JsonProperty] public int Port { get; set; }
         [JsonProperty] public string GroupName { get; set; }
         [JsonProperty] public string Token { get; set; }
@@ -46,10 +43,14 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool MirrorY { get; set; }
 
-        [DefaultValue(100)]
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-        public int Brightness { get; set; }
-
+        public NanoData() {
+            Tag = "Nanoleaf";
+            Name ??= Tag;
+            if (IpAddress != null) {
+                var hc = string.GetHashCode(IpAddress, StringComparison.InvariantCulture);
+                Name = "Nanoleaf - " + (string) hc.ToString(CultureInfo.InvariantCulture).Substring(0, 4);
+            }
+        }
 
         // Copy data from an existing leaf into this leaf...don't insert
         public static NanoData CopyExisting(NanoData newLeaf, NanoData existingLeaf) {
@@ -65,6 +66,9 @@ namespace HueDream.Models.StreamingDevice.Nanoleaf {
             // Merge this data's layout with the existing leaf (copy sector)
             var newL = MergeLayouts(newLeaf.Layout, existingLeaf.Layout);
             newLeaf.Layout = newL;
+            newLeaf.Tag = "Nanoleaf";
+            newLeaf.Name ??= newLeaf.Tag;
+            
             return newLeaf;
         }
 

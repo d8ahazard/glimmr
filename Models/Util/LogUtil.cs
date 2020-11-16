@@ -2,7 +2,7 @@
 using System.Text.RegularExpressions;
 using Serilog;
 
-namespace HueDream.Models.Util {
+namespace Glimmr.Models.Util {
     public static class LogUtil {
         private static int _msgCount;
 

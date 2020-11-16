@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using HueDream.Models.Util;
+using Glimmr.Models.Util;
 using Newtonsoft.Json;
 using Q42.HueApi.Streaming;
 using Q42.HueApi.Streaming.Models;
 
-namespace HueDream.Models.StreamingDevice.Hue {
+namespace Glimmr.Models.StreamingDevice.Hue {
     public static class StreamingSetup {
         public static async Task StopStream(StreamingHueClient client, BridgeData b) {
             if (client == null || b == null) {

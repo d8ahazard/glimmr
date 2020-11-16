@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using Newtonsoft.Json;
 
-namespace HueDream.Models.StreamingDevice.Nanoleaf {
+namespace Glimmr.Models.StreamingDevice.Nanoleaf {
     // This one stores all the panel info
     [Serializable]
     public class NanoLayout {

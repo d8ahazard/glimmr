@@ -1,10 +1,11 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Runtime.Serialization;
+using Glimmr.Models.StreamingDevice;
 
-namespace HueDream.Models.DreamScreen.Devices {
+namespace Glimmr.Models.DreamScreen.Devices {
     [Serializable, DataContract]
-    public abstract class BaseDevice : IDreamDevice {
+    public abstract class BaseDevice : StreamingData, IDreamDevice {
         [DataMember] private readonly byte[] espSerialNumber = {0, 0};
 
 
@@ -17,25 +18,22 @@ namespace HueDream.Models.DreamScreen.Devices {
         
         [DataMember][JsonProperty] public int AmbientShowType { get; set; }
         [DataMember][JsonProperty] public int FadeRate { get; set; }
-        [DataMember][JsonProperty] public string IpAddress { get; set; }
         [DataMember] [JsonProperty] public int ProductId { get; set; }
-        [DataMember] [JsonProperty] public string Tag { get; set; }
         [DataMember] [JsonProperty] public string AmbientColor { get; set; }
         [DataMember] [JsonProperty] public int AmbientModeType { get; set; }
         [DataMember] [JsonProperty] public int[] flexSetup { get; set; }
         [DataMember] [JsonProperty] public int Brightness { get; set; }
         [DataMember] [JsonProperty] public int SkuSetup { get; set; }
-        [DataMember] [JsonProperty] public string Name { get; set; }
         [DataMember] [JsonProperty] public string GroupName { get; set; }
         [DataMember] [JsonProperty] public int GroupNumber { get; set; }
         [DataMember] [JsonProperty] public int Mode { get; set; }
-        [DataMember] [JsonProperty] public string Id { get; set; }
         [DataMember] [JsonProperty] public string Saturation { get; set; }
-
         public abstract void ParsePayload(byte[] payload);
         public virtual void SetDefaults() {
             
         }
+        
+        
 
         public abstract byte[] EncodeState();
 

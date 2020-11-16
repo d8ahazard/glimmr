@@ -6,12 +6,12 @@ using System.Linq;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
-using HueDream.Models.LED;
-using HueDream.Models.StreamingDevice.WLed;
-using HueDream.Models.Util;
+using Glimmr.Models.LED;
+using Glimmr.Models.StreamingDevice.WLed;
+using Glimmr.Models.Util;
 using Newtonsoft.Json;
 
-namespace HueDream.Models.CaptureSource.Camera {
+namespace Glimmr.Models.CaptureSource.Camera {
     public class Splitter {
         private Mat _input;
         private readonly int _vCount;

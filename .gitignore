@@ -7,6 +7,7 @@ huedream.ini
 huedream.json
 huedream.json.bk
 store.json*
+store.db*
 CodeGraphData/*
 log/*
 backup/*
@@ -16,3 +17,4 @@ wwwroot/img/_preview_input.jpg
 wwwroot/img/_preview_output.jpg
 copyPi.bat
 publish_pi.bat
+store-log.db

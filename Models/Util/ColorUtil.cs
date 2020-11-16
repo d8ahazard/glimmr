@@ -2,7 +2,7 @@
 using System.Drawing;
 using System.Globalization;
 
-namespace HueDream.Models.Util {
+namespace Glimmr.Models.Util {
     public static class ColorUtil {
         private static double tolerance
             => 0.000000000000001;

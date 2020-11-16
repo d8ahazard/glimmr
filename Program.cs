@@ -1,13 +1,21 @@
-using HueDream.Models.DreamScreen;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+using Glimmr.Models.DreamScreen;
+using Glimmr.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
-namespace HueDream {
-    public static class Program {
+namespace Glimmr
+{
+    public class Program
+    {
         public static void Main(string[] args) {
             var logPath = "/var/log/glimmr/glimmr.log";
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
@@ -37,6 +45,7 @@ namespace HueDream {
                 .ConfigureServices(services => {
                     services.AddSignalR();
                     services.AddHostedService<DreamClient>();
+                    services.AddHostedService<StatService>();
                 });
         }
     }

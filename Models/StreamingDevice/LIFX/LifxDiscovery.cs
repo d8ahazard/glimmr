@@ -2,10 +2,10 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using HueDream.Models.Util;
+using Glimmr.Models.Util;
 using LifxNet;
 
-namespace HueDream.Models.StreamingDevice.LIFX {
+namespace Glimmr.Models.StreamingDevice.LIFX {
     public sealed class LifxDiscovery {
         private readonly LifxClient _client;
         private List<LightBulb> bulbs;

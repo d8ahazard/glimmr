@@ -4,10 +4,10 @@ using System.Drawing;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using HueDream.Models.Util;
-using ISocketLite.PCL.Exceptions;
+using Glimmr.Models.Util;
 using Q42.HueApi;
 using Q42.HueApi.ColorConverters;
 using Q42.HueApi.ColorConverters.HSB;
@@ -16,7 +16,7 @@ using Q42.HueApi.Streaming;
 using Q42.HueApi.Streaming.Extensions;
 using Q42.HueApi.Streaming.Models;
 
-namespace HueDream.Models.StreamingDevice.Hue {
+namespace Glimmr.Models.StreamingDevice.Hue {
     public sealed class HueBridge : IStreamingDevice, IDisposable {
         public BridgeData Bd;
         private EntertainmentLayer _entLayer;

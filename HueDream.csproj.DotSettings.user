@@ -1,4 +1,0 @@
-﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
-	<s:String x:Key="/Default/CodeEditing/Localization/MoveToResource/LastResourceFile/@EntryValue">B1EC763B-FF59-4B74-B153-39E8A13902DD/d:Properties/f:Resources.resx</s:String>
-	<s:String x:Key="/Default/CodeInspection/WebPathMapping/MappedPaths/=WWWROOT_005CAPI_005CHUEDATA/@EntryIndexedValue">Controllers\DreamDataController.cs</s:String>
-	<s:String x:Key="/Default/CodeInspection/WebPathMapping/PathsInCorrectCasing/=WWWROOT_005CAPI_005CHUEDATA/@EntryIndexedValue">wwwroot\api\HueData</s:String></wpf:ResourceDictionary>

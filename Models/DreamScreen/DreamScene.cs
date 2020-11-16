@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
-using HueDream.Models.DreamScreen.Scenes;
-using HueDream.Models.Util;
+using Glimmr.Models.DreamScreen.Scenes;
+using Glimmr.Models.Util;
 using Newtonsoft.Json;
-using static HueDream.Models.DreamScreen.Scenes.SceneBase;
+using static Glimmr.Models.DreamScreen.Scenes.SceneBase;
 
-namespace HueDream.Models.DreamScreen {
+namespace Glimmr.Models.DreamScreen {
     public class DreamScene {
         private double _animationTime;
         private string[] _colors;

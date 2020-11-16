@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace HueDream.Models.Util {
+namespace Glimmr.Models.Util {
     public static class MsgUtils {
         private static readonly byte[] Crc8Table = {
             0x00, 0x07, 0x0E, 0x09, 0x1C, 0x1B,

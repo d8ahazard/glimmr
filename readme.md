@@ -39,7 +39,8 @@ docker create \
   -p 8888:8888/udp \ 
   -p 56700:56700/udp \ 
   -p 60222:60222/udp \ 
-  -p 5699:5699 \
+  -p 80:5699 \
+  -p 443:5670 \
   --network="bridge" \
   --restart unless-stopped \
   digitalhigh/glimmr

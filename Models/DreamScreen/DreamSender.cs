@@ -5,9 +5,9 @@ using System.Drawing;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using HueDream.Models.Util;
+using Glimmr.Models.Util;
 
-namespace HueDream.Models.DreamScreen {
+namespace Glimmr.Models.DreamScreen {
     public static class DreamSender {
         private static readonly string[] Ints = {
             "usbPowerEnable",

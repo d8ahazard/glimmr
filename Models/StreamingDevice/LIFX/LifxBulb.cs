@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
-using HueDream.Models.Util;
+using Glimmr.Models.Util;
 using LifxNet;
 
-namespace HueDream.Models.StreamingDevice.LIFX {
+namespace Glimmr.Models.StreamingDevice.LIFX {
     public class LifxBulb : IStreamingDevice {
         private LifxData Data { get; set; }
         private LightBulb B { get; }

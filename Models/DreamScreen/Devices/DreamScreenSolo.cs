@@ -1,10 +1,11 @@
-﻿namespace HueDream.Models.DreamScreen.Devices {
+﻿namespace Glimmr.Models.DreamScreen.Devices {
     public class DreamScreenSolo : DreamScreenHd {
         private const string DeviceTag = "DreamScreenSolo";
         private static readonly byte[] RequiredSoloEspFirmwareVersion = {1, 6};
         private static readonly byte[] RequiredSoloPicVersionNumber = {6, 2};
 
         public DreamScreenSolo(string ipAddress) : base(ipAddress) {
+            Initialize();
             ProductId = 7;
             Name = "DreamScreen Solo";
             Tag = DeviceTag;

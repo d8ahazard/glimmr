@@ -4,9 +4,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
-using HueDream.Models.Util;
+using Glimmr.Models.Util;
 
-namespace HueDream.Models.CaptureSource.Video.Hdmi {
+namespace Glimmr.Models.CaptureSource.Video.Hdmi {
     public class HdmiVideoStream : IVideoStream, IDisposable
     {
         private readonly VideoCapture _video;

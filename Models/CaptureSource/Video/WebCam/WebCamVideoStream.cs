@@ -2,9 +2,9 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
-using HueDream.Models.Util;
+using Glimmr.Models.Util;
 
-namespace HueDream.Models.CaptureSource.Video.WebCam {
+namespace Glimmr.Models.CaptureSource.Video.WebCam {
     public class WebCamVideoStream : IVideoStream, IDisposable
     {
         private readonly VideoCapture _video;

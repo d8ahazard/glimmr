@@ -5,12 +5,12 @@ using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using HueDream.Models.Util;
+using Glimmr.Models.Util;
 using Nanoleaf.Client;
 using Nanoleaf.Client.Models.Responses;
 using Newtonsoft.Json;
 
-namespace HueDream.Models.StreamingDevice.Nanoleaf {
+namespace Glimmr.Models.StreamingDevice.Nanoleaf {
     public sealed class NanoGroup : IStreamingDevice, IDisposable {
         private string _token;
         private string _basePath;

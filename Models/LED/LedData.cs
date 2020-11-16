@@ -1,7 +1,7 @@
 ﻿using System;
 using Newtonsoft.Json;
 
-namespace HueDream.Models.LED {
+namespace Glimmr.Models.LED {
     [Serializable]
     public class LedData {
         [JsonProperty] public int LedCount { get; set; }

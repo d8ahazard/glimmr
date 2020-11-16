@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
-using HueDream.Models.Util;
+using Glimmr.Models.Util;
 
-namespace HueDream.Models.CaptureSource.Video.Screen {
+namespace Glimmr.Models.CaptureSource.Video.Screen {
     public class ScreenVideoStream : IVideoStream, IDisposable
     {
         public Mat Frame { get; set; }

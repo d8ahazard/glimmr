@@ -2,7 +2,7 @@
 using Newtonsoft.Json;
 using Q42.HueApi;
 
-namespace HueDream.Models.StreamingDevice.Hue {
+namespace Glimmr.Models.StreamingDevice.Hue {
     [Serializable]
     public class LightData {
         public LightData() {

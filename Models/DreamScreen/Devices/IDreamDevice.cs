@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace HueDream.Models.DreamScreen.Devices {
+namespace Glimmr.Models.DreamScreen.Devices {
     public interface IDreamDevice {
         [JsonProperty] string Tag { get; set; }
 

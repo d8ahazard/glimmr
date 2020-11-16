@@ -7,15 +7,19 @@ using Newtonsoft.Json.Linq;
 using Q42.HueApi.Models.Bridge;
 using Q42.HueApi.Models.Groups;
 
-namespace HueDream.Models.StreamingDevice.Hue {
+namespace Glimmr.Models.StreamingDevice.Hue {
     [Serializable]
-    public class BridgeData {
-        public BridgeData() { }
+    public class BridgeData : StreamingData {
+        public BridgeData() {
+            Tag = "HueBridge";
+        }
 
         public BridgeData(string ip, string id) {
             IpAddress = ip;
             Id = id;
             Brightness = 100;
+            Tag = "HueBridge";
+            Name = "HueBridge - " + id.Substring(0, 4);
         }
 
         public BridgeData(LocatedBridge b) {
@@ -23,7 +27,7 @@ namespace HueDream.Models.StreamingDevice.Hue {
             IpAddress = b.IpAddress;
             Id = b.BridgeId;
             Brightness = 100;
-            Name = Id;
+            Name = "Hue Bridge - " + Id.Substring(0, 4);
             User = "";
             Key = "";
             SelectedGroup = "-1";
@@ -31,9 +35,11 @@ namespace HueDream.Models.StreamingDevice.Hue {
             Lights = new List<LightData>();
             GroupName = "";
             GroupNumber = -1;
+            Tag = "HueBridge";
         }
 
         public BridgeData(string ip, string id, string user, string key, string group = "-1", string groupName = "undefined", int groupNumber = 0) {
+            Name = "Hue Bridge - " + Id.Substring(0, 4);
             IpAddress = ip;
             Id = id;
             User = user;
@@ -43,30 +49,44 @@ namespace HueDream.Models.StreamingDevice.Hue {
             Lights = new List<LightData>();
             GroupName = groupName;
             GroupNumber = groupNumber;
+            Tag = "HueBridge";
         }
 
         public void CopyBridgeData(BridgeData existing) {
             if (existing == null) throw new ArgumentException("Invalid bridge data.");
             Key = existing.Key;
             User = existing.User;
+            var cl = new List<LightData>();
+            foreach (var l in existing.Lights.Where(l => l.Id != null)) {
+                foreach (var el in Lights.Where(el => el.Id == l.Id)) {
+                    l.TargetSector = el.TargetSector;
+                    l.TargetSectorV2 = el.TargetSectorV2;
+                    l.Brightness = el.Brightness;
+                    l.OverrideBrightness = el.OverrideBrightness;
+                }
+                cl.Add(l);
+            }
+
+            foreach (var el in Lights) {
+                var added = false;
+                foreach (var l in cl) {
+                    if (l.Id == el.Id) {
+                        added = true;
+                    }
+                }
+                if (!added) cl.Add(el);
+            }
             Lights = existing.Lights;
             Groups = existing.Groups;
+            Name = "Hue Bridge - " + existing.Id.Substring(0, 4);
             SelectedGroup = existing.SelectedGroup;
             Brightness = existing.Brightness;
         }
 
-        [JsonProperty] public string IpAddress { get; set; }
-        [JsonProperty] public string Id { get; set; }
         [JsonProperty] public string User { get; set; }
         [JsonProperty] public string Key { get; set; }
-        [JsonProperty] public static string Tag = "HueBridge";
-        [JsonProperty] public string Name { get; set; }
         [JsonProperty] public string GroupName { get; set; }
         [JsonProperty] public int GroupNumber { get; set; }
-        
-        [DefaultValue(100)]
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-        public int Brightness { get; set; }
         [JsonProperty] public string SelectedGroup { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
@@ -75,91 +95,5 @@ namespace HueDream.Models.StreamingDevice.Hue {
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public List<LightData> Lights { get; set; }
 
-
-
-        public static BridgeData DeserializeBridgeData(JObject o) {
-            if (o == null) throw new ArgumentNullException(nameof(o));
-            var bridgeId = string.Empty;
-            var bridgeIp = string.Empty;
-            var bridgeUser = string.Empty;
-            var bridgeKey = string.Empty;
-            var brightness = 100;
-            var selectedGroup = "-1";
-            var groupNumber = 0;
-            var name = "Hue Bridge";
-            var groupName = "undefined";
-            var bridgeGroups = Array.Empty<Group>();
-            var groupIds = new List<string>();
-            var bridgeLights = new List<LightData>();
-            Console.WriteLine(@"Deserializing bridge...");
-            foreach (var property in o.Properties())
-                switch (property.Name) {
-                    case "ip":
-                        bridgeIp = (string) property.Value;
-                        break;
-                    case "id":
-                        bridgeId = (string) property.Value;
-                        break;
-                    case "user":
-                        bridgeUser = (string) property.Value;
-                        break;
-                    case "key":
-                        bridgeKey = (string) property.Value;
-                        break;
-                    case "lights":
-                        try {
-                            bridgeLights = property.Value.ToObject<List<LightData>>();
-                            //Console.Write(@"Parsed lights: " + JsonConvert.SerializeObject(bridgeLights));
-                        }
-                        finally {
-                            Console.Write(@"Light parse exception.");
-                        }
-
-                        break;
-                    case "selectedGroup":
-                        selectedGroup = (string) property.Value;
-                        Console.WriteLine(@"Selected Group is " + selectedGroup);
-                        break;
-                    case "groups":
-                        try {
-                            bridgeGroups = property.Value.ToObject<Group[]>();
-                        } catch {
-                            Console.WriteLine(@"Cast exception for group.");
-                        }
-                        break;
-                    case "groupNumber":
-                        groupNumber = (int) property.Value;
-                        break;
-                    case "groupName":
-                        groupName = (string)property.Value;
-                        break;
-                    case "brightness":
-                        brightness = (int) property.Value;
-                        break;
-                        
-                }
-
-            var bd = new BridgeData(bridgeIp, bridgeId) {
-                Groups = bridgeGroups.ToList(),
-                Key = bridgeKey,
-                User = bridgeUser,
-                SelectedGroup = selectedGroup,
-                Lights = bridgeLights,
-                GroupName = groupName,
-                GroupNumber = groupNumber,
-                Name = name,
-                Id = bridgeId,
-                Brightness = brightness
-        };
-            if (bd.Groups.Count > 0) {
-                groupIds.AddRange(bd.Groups.Select(g => g.Id));
-                if (!groupIds.Contains(selectedGroup) || selectedGroup == "-1") {
-                    bd.SelectedGroup = groupIds[0];
-                }
-            }
-            
-            Console.WriteLine(@"Returning bridge data item: " + JsonConvert.SerializeObject(bd));
-            return bd;
-        }
     }
 }

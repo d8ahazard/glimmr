@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace HueDream.Models.DreamScreen.Devices {
+namespace Glimmr.Models.DreamScreen.Devices {
     public class DreamScreen4K : DreamScreenHd {
         private const string DeviceTag = "DreamScreen4K";
         private static readonly byte[] Required4KEspFirmwareVersion = {1, 6};
@@ -12,6 +12,7 @@ namespace HueDream.Models.DreamScreen.Devices {
 
         public sealed override void SetDefaults() {
             base.SetDefaults();
+            Initialize();
             ProductId = 2;
             Name = "DreamScreen 4K";
             Tag = DeviceTag;
