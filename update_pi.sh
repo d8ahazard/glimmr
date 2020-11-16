@@ -9,10 +9,9 @@ echo "SERVICE STOPPED!"
 # Build latest version
 echo "Building glimmr..."
 dotnet build Glimmr.csproj /p:PublishProfile=LinuxARM
-cp -r /home/glimmrtv/glimmr/src/bin/debug/net5.0/linux-arm/* /home/glimmrtv/glimmr/
-cp -r /home/glimmrtv/glimmr/src/wwwroot/ /home/glimmrtv/glimmr/wwwroot/
+cp -r /home/glimmrtv/glimmr/bin/Debug/net5.0/linux-arm/* /home/glimmrtv/glimmr/
 echo "DONE."
 # Copy necessary libraries
 echo "Copying libs..."
-cp -r /home/glimmrtv/glimmr/src/build/arm /usr/lib
+cp -r /home/glimmrtv/glimmr/build/arm/* /usr/lib
 service glimmr start
