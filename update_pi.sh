@@ -4,7 +4,7 @@ cd /home/glimmrtv/glimmr || exit
 service glimmr stop
 echo "SERVICE STOPPED!"
 
-git stash && git fetch && git clone
+git stash && git fetch && git pull
 
 
 # Build latest version
