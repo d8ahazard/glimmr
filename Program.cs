@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Runtime.InteropServices;
 using Glimmr.Models.DreamScreen;
+using Glimmr.Models.Services;
 using Glimmr.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -41,6 +42,9 @@ namespace Glimmr
                     services.AddSignalR();
                     services.AddHostedService<DreamClient>();
                     services.AddHostedService<StatService>();
+                    services.AddHostedService<UdpService>();
+                    services.AddHostedService<CaptureService>();
+                    services.AddSingleton<ControlService>();
                 });
         }
     }

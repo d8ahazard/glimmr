@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Glimmr.Models.StreamingDevice.Hue;
 using Glimmr.Models.StreamingDevice.Nanoleaf;
 using Glimmr.Models.Util;
+using Glimmr.Services;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 
@@ -12,20 +13,21 @@ namespace Glimmr.Hubs {
     public class SocketServer : Hub {
         public int UserCount;
         private CancellationTokenSource _ct;
-        private CancellationTokenSource _ct2;
         private bool _initialized;
         private bool timerStarted;
+
+        private ControlService _cs;
+        //private readonly IHubContext<SocketServer> _hubContext;
         
-        private readonly IHubContext<SocketServer> _hubContext;
         
-        public SocketServer(IHubContext<SocketServer> hubContext) {
-            LogUtil.Write("Initialized socket server with hub context.");
-            _hubContext = hubContext;
+        public SocketServer(ControlService cs) {
+            _cs = cs;
         }
        
         public Task Mode(int mode) {
             LogUtil.Write($"WS Mode: {mode}");
             ControlUtil.SetMode(mode);
+            _cs.Mode(mode);
             return Clients.All.SendAsync("mode", mode);
         }
        
@@ -36,7 +38,7 @@ namespace Glimmr.Hubs {
 
         public Task RefreshDevices() {
             LogUtil.Write("Refresh called from socket!");
-            ControlUtil.TriggerRefresh(_hubContext);
+            //ControlUtil.TriggerRefresh(_hubContext);
             return Task.CompletedTask;
         }
 

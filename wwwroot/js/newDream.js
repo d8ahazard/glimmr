@@ -281,6 +281,33 @@ function setListeners() {
 
 function loadUi() {
     console.log("Loading ui.");
+    let target;
+    let mode = getStoreProperty("DeviceMode");
+    switch(mode) {
+        case 0:
+            target = document.querySelector("[data-mode='0']");
+            break;
+        case 1:
+            target = document.querySelector("[data-mode='1']");
+            break;
+        case 2:
+            target = document.querySelector("[data-mode='2']");
+            break;
+        case 3:
+            target = document.querySelector("[data-mode='3']");
+            break;
+        default:
+            console.log("I don't know what this is: ", data.store.DeviceMode);
+            break;
+    }
+    
+    let others = document.querySelectorAll(".modeBtn");
+    for (let i=0; i< others.length; i++) {
+        if (others[i]) {
+            others[i].classList.remove("active");
+        }
+    }
+    if (target != null) target.classList.add("active");
     getDevices();
 }
 
@@ -463,4 +490,14 @@ function getCookie(cname) {
         }
     }
     return "";
+}
+
+function getStoreProperty(name) {
+    if (data.store.hasOwnProperty(name)) {
+        console.log("Store has prop: ", name);
+        return data.store[name][0]["value"];
+    } else {
+        console.log("Prop not found: ", name);
+    }
+    return null;
 }

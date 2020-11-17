@@ -26,7 +26,7 @@ namespace Glimmr.Models.Util {
 				return;
 			}
 
-			DataUtil.SetItem("DeviceMode", mode);
+			DataUtil.SetItem<int>("DeviceMode", mode);
 			var payload = new List<byte> {(byte) mode};
 			DreamSender.SendUdpWrite(0x01, 0x10, payload.ToArray(), 0x21, 0,
 				new IPEndPoint(IPAddress.Parse(ip), 8888));

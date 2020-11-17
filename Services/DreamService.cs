@@ -13,6 +13,7 @@ using System.Timers;
 using Glimmr.Hubs;
 using Glimmr.Models.CaptureSource.Audio;
 using Glimmr.Models.CaptureSource.Video;
+using Glimmr.Models.DreamScreen;
 using Glimmr.Models.DreamScreen.Devices;
 using Glimmr.Models.LED;
 using Glimmr.Models.StreamingDevice;
@@ -28,7 +29,7 @@ using Newtonsoft.Json;
 using Color = System.Drawing.Color;
 using Timer = System.Timers.Timer;
 
-namespace Glimmr.Models.DreamScreen {
+namespace Glimmr.Models.Services {
     public class DreamClient : BackgroundService {
         private int CaptureMode { get; set; }
         private DreamScene _dreamScene;

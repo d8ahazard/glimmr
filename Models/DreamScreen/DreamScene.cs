@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
 using Glimmr.Models.DreamScreen.Scenes;
+using Glimmr.Models.Services;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
 using static Glimmr.Models.DreamScreen.Scenes.SceneBase;

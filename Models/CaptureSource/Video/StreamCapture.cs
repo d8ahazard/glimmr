@@ -16,6 +16,7 @@ using Glimmr.Models.CaptureSource.Video.Screen;
 using Glimmr.Models.CaptureSource.Video.WebCam;
 using Glimmr.Models.DreamScreen;
 using Glimmr.Models.LED;
+using Glimmr.Models.Services;
 using Glimmr.Models.StreamingDevice.WLed;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;

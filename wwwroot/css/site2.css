@@ -14,3 +14,17 @@
 .fs-1 {
     font-size: 5rem;
 }
+
+.statIcon {
+    position: relative;
+    top: 5px;
+}
+
+.btn-clear.active {
+    color: white;
+    background-color: black;
+}
+
+.btn-clear.active.dark {
+
+}

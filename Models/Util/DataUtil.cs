@@ -217,14 +217,14 @@ namespace Glimmr.Models.Util {
         public static void SetItem<T>(string key, dynamic value) {
             var db = GetDb();
             var col = db.GetCollection(key);
-            col.Insert(new BsonDocument { ["value"] = value });
+            col.Upsert(new BsonDocument { ["value"] = value });
             db.Commit();
         }
         
         public static void SetInt(string key, int value) {
             var db = GetDb();
             var col = db.GetCollection(key);
-            col.Insert(new BsonDocument { ["value"] = value });
+            col.Upsert(new BsonDocument { ["value"] = value });
             db.Commit();
         }
 
@@ -240,7 +240,7 @@ namespace Glimmr.Models.Util {
         public static void SetItem(string key, dynamic value) {
             var db = GetDb();
             var col = db.GetCollection(key);
-            col.Insert(new BsonDocument { ["value"] = value });
+            col.Upsert(new BsonDocument { ["value"] = value });
             db.Commit();
         }
         
