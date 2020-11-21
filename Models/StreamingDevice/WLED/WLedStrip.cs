@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Glimmr.Models.CaptureSource.Camera;
+using Glimmr.Models.CaptureSource.Video;
 using Glimmr.Models.Util;
 using Newtonsoft.Json.Linq;
 
@@ -76,7 +79,7 @@ namespace Glimmr.Models.StreamingDevice.WLed {
         public void StopStream() {
             StopStrip();
             Streaming = false;
-            _stripSender.Dispose();
+            _stripSender?.Dispose();
             LogUtil.Write("WLED: Stream stopped.");
 
         }
@@ -90,7 +93,7 @@ namespace Glimmr.Models.StreamingDevice.WLed {
             for (var i = 0; i < Data.LedCount; i++) {
                 packet.AddRange(new byte[] {0, 0, 0});
             }
-            _stripSender.SendTo(packet.ToArray(), ep);
+            if (ep != null) _stripSender.SendTo(packet.ToArray(), ep);
             var offObj = new JObject(
                 new JProperty("on", false)
             );
@@ -100,6 +103,9 @@ namespace Glimmr.Models.StreamingDevice.WLed {
         public void SetColor(List<Color> colors, double fadeTime, bool ambient = false) {
             if (colors == null) throw new InvalidEnumArgumentException("Colors cannot be null.");
             if (!Streaming) return;
+            if (Data.StripMode == 2) {
+                colors = ShiftColors(colors);
+            }
             var packet = new List<Byte>();
             // Set mode to DRGB, dude.
             var timeByte = ambient ? 255 : 2;
@@ -116,8 +122,18 @@ namespace Glimmr.Models.StreamingDevice.WLed {
                 LogUtil.Write("Sending " + colors.Count + " colors to " + IpAddress);
                 LogUtil.Write("First packet: " + ByteUtils.ByteString(packet.ToArray()));
             }
-            _stripSender.SendTo(packet.ToArray(), ep);
+            if (ep != null) _stripSender.SendTo(packet.ToArray(), ep);
             //LogUtil.Write("Sent.");
+        }
+
+        private static List<Color> ShiftColors(IReadOnlyList<Color> input) {
+            var output = new Color[input.Count];
+            var il = input.Count - 1;
+            for (var i = 0; i < input.Count / 2; i++) {
+                output[i] = input[i];
+                output[il - i] = input[i];
+            }
+            return output.ToList();
         }
 
         public void UpdatePixel(int pixelIndex, Color color) {
@@ -160,7 +176,19 @@ namespace Glimmr.Models.StreamingDevice.WLed {
         }
 
         private async void SendPost(JObject values, string target="/json/state") {
-            var uri = new Uri("http://" + IpAddress + target);
+            Uri uri;
+            if (string.IsNullOrEmpty(IpAddress) && !string.IsNullOrEmpty(Id)) {
+                IpAddress = Id;
+                Data.IpAddress = Id;
+                DataUtil.InsertCollection<WLedData>("Dev_Wled", Data);
+            } 
+            try {
+                uri = new Uri("http://" + IpAddress + target);
+            } catch (UriFormatException) {
+                LogUtil.Write("Well, this isn't right: " + IpAddress);
+                return;
+            }
+
             var httpContent = new StringContent(values.ToString());
             httpContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
             try {

@@ -11,7 +11,7 @@ using Glimmr.Models.StreamingDevice.WLed;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
 
-namespace Glimmr.Models.CaptureSource.Camera {
+namespace Glimmr.Models.CaptureSource.Video {
     public class Splitter {
         private Mat _input;
         private readonly int _vCount;

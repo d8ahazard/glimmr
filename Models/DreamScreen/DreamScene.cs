@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
 using Glimmr.Models.DreamScreen.Scenes;
-using Glimmr.Models.Services;
 using Glimmr.Models.Util;
+using Glimmr.Services;
 using Newtonsoft.Json;
 using static Glimmr.Models.DreamScreen.Scenes.SceneBase;
 
@@ -66,7 +66,7 @@ namespace Glimmr.Models.DreamScreen {
             RefreshColors(_colors);
         }
 
-        public void BuildColors(DreamClient dc, CancellationToken ct) {
+        public void BuildColors(ControlService dc, CancellationToken ct) {
             if (dc == null) throw new ArgumentNullException(nameof(dc));
             _startInt = 0;
             var startTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
@@ -111,7 +111,7 @@ namespace Glimmr.Models.DreamScreen {
                         i--;
                     }
                 }
-                dc.SendColors(ledCols, cols, _animationTime);
+                dc.SendColors(ledCols, cols);
             }
 
             LogUtil.WriteDec($@"DreamScene: Color Builder canceled. {startTime}");

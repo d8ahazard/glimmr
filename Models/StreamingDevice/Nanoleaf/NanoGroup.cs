@@ -164,7 +164,7 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
         private void SendUdpUnicast(byte[] data) {
             if (!_sending) return;
             var ep = IpUtil.Parse(IpAddress, 60222);
-            _sender.SendTo(data, ep);
+            if (ep != null) _sender.SendTo(data, ep);
         }
 
         public async Task<NanoLayout> GetLayout() {

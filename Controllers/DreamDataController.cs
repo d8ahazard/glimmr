@@ -12,6 +12,7 @@ using Glimmr.Models.StreamingDevice.Hue;
 using Glimmr.Models.StreamingDevice.LIFX;
 using Glimmr.Models.StreamingDevice.Nanoleaf;
 using Glimmr.Models.Util;
+using Glimmr.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
@@ -22,18 +23,20 @@ namespace Glimmr.Controllers {
 	public class DreamDataController : ControllerBase {
 
 		private readonly IHubContext<SocketServer> _hubContext;
+		private ControlService _controlService;
 		private bool timerStarted;
         
-		public DreamDataController(IHubContext<SocketServer> hubContext) {
+		public DreamDataController(IHubContext<SocketServer> hubContext, ControlService controlService) {
 			LogUtil.Write("Initialized ddc with hub context.");
 			_hubContext = hubContext;
+			_controlService = controlService;
 		}
         
 		// POST: api/DreamData/mode
 		[HttpPost("mode")]
 		public IActionResult DevMode([FromBody] int mode) {
-			ControlUtil.SetMode(mode);
-			ControlUtil.NotifyClients(_hubContext);
+			_controlService.SetMode(mode);
+			_controlService.NotifyClients();
 			return Ok(mode);
 		}
 
@@ -53,6 +56,7 @@ namespace Glimmr.Controllers {
 		[HttpPost("updateDevice")]
 		public IActionResult UpdateDevice([FromBody] JObject dData) {
 			var res = ControlUtil.TriggerReload(_hubContext, dData).Result;
+			_controlService.ScanDevices();
 			ControlUtil.NotifyClients(_hubContext);
 			return Ok(res);
 		}
@@ -79,7 +83,7 @@ namespace Glimmr.Controllers {
 			LogUtil.Write("Camera type set to " + cType);
 			DataUtil.SetItem<int>("CamType", cType);
 			ControlUtil.NotifyClients(_hubContext);
-			ControlUtil.ResetMode();
+			_controlService.ResetMode();
 			return Ok(cType);
 		}
 
@@ -99,8 +103,8 @@ namespace Glimmr.Controllers {
 
 			ledData.LedCount = hCount * 2 + count * 2;
 			DataUtil.SetObject("LedData", ledData);
-			ControlUtil.NotifyClients(_hubContext);
-			ControlUtil.ResetMode();
+			_controlService.NotifyClients();
+			_controlService.ResetMode();
 			return Ok(count);
 		}
 
@@ -120,8 +124,8 @@ namespace Glimmr.Controllers {
 
 			ledData.LedCount = vCount * 2 + count * 2;
 			DataUtil.SetObject("LedData", ledData);
-			ControlUtil.NotifyClients(_hubContext);
-			ControlUtil.ResetMode();
+			_controlService.NotifyClients();
+			_controlService.ResetMode();
 			return Ok(count);
 		}
         
@@ -132,8 +136,8 @@ namespace Glimmr.Controllers {
 			ledData.StripType = type;
 			LogUtil.Write("Updating LED Data: " + JsonConvert.SerializeObject(ledData));
 			DataUtil.SetObject("LedData", ledData);
-			ControlUtil.NotifyClients(_hubContext);
-			ControlUtil.ResetMode();
+			_controlService.NotifyClients();
+			_controlService.ResetMode();
 			return Ok(type);
 		}
 
@@ -143,7 +147,8 @@ namespace Glimmr.Controllers {
 		public IActionResult PostIp([FromBody] string dsIp) {
 			LogUtil.Write(@"Did it work? " + dsIp);
 			DataUtil.SetItem("DsIp", dsIp);
-			ControlUtil.ResetMode();
+			_controlService.NotifyClients();
+			_controlService.ResetMode();
 			return Ok(dsIp);
 		}
 
@@ -152,7 +157,7 @@ namespace Glimmr.Controllers {
 		public IActionResult PostSk([FromBody] SideKick skDevice) {
 			LogUtil.Write(@"Did it work? " + JsonConvert.SerializeObject(skDevice));
 			DataUtil.SetItem("MyDevice", skDevice);
-			ControlUtil.NotifyClients(_hubContext);
+			_controlService.NotifyClients();
 			return Ok("ok");
 		}
 
@@ -161,7 +166,7 @@ namespace Glimmr.Controllers {
 		public IActionResult PostDevice([FromBody] Connect myDevice) {
 			LogUtil.Write(@"Did it work? " + JsonConvert.SerializeObject(myDevice));
 			DataUtil.SetItem("MyDevice", myDevice);
-			ControlUtil.NotifyClients(_hubContext);
+			_controlService.NotifyClients();
 			return Ok(myDevice);
 		}
 
@@ -199,7 +204,7 @@ namespace Glimmr.Controllers {
         
 		// POST: api/DreamData/refreshDevices
 		public IActionResult RefreshDevices() {
-			ControlUtil.TriggerRefresh(_hubContext);
+			_controlService.RefreshDevices();
 			return new JsonResult("Refreshing...");
 		}
         
@@ -219,11 +224,11 @@ namespace Glimmr.Controllers {
 			LogUtil.Write($@"{action} called from Web API.");
 			switch (action) {
 				case "loadData":
-					ControlUtil.NotifyClients(_hubContext);
+					_controlService.NotifyClients();
 					return Content(DataUtil.GetStoreSerialized(), "application/json");
 				case "refreshDevices":
 					// Just trigger dreamclient to refresh devices
-					ControlUtil.TriggerRefresh(_hubContext);
+					_controlService.RefreshDevices();
 					return new JsonResult("OK");
 				case "authorizeHue": {
 					LogUtil.Write("AuthHue called, for reaal: " + value);
@@ -323,16 +328,7 @@ namespace Glimmr.Controllers {
 
 			return Content(DataUtil.GetStoreSerialized(), "application/json");
 		}
-        
-
-        
-
-
-        
-
-        
-        
-        
+		
 		private static void SetBrightness(JObject dData) {
 			if (dData == null) throw new ArgumentException("invalid jobject");
 			var tag = (dData["tag"] ?? "INVALID").Value<string>();

@@ -1,4 +1,12 @@
-﻿.card {
+﻿.main {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    top: 0;
+    left: 0;
+}
+
+.devCard {
     width: 18rem;
 }
 
@@ -25,6 +33,25 @@
     background-color: black;
 }
 
+.btn-clear.btn-lg, .btn-clear.btn-lg > span {
+    font-size: 30px;
+}
+
 .btn-clear.active.dark {
 
+}
+
+.hide {
+    height: 0!important;
+    transition: height 0.4s linear;
+    overflow: hidden !important;
+}
+
+#mainContent {
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+.col-* {
+    min-width: 25px;
 }

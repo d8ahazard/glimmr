@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 namespace Glimmr.Models {
     public class SystemData {
         [JsonProperty] public int DeviceMode { get; set; }
+        [JsonProperty] public int DeviceGroup { get; set; }
         [JsonProperty] public int AmbientMode { get; set; }
         [JsonProperty] public int AmbientShow { get; set; }
         [JsonProperty] public string AmbientColor { get; set; }

@@ -14,18 +14,19 @@ namespace Glimmr.Services {
 		{
 			_hubContext = hubContext;
 		}
-		protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-		{
-			while (!stoppingToken.IsCancellationRequested) {
-				// If not linux, do nothing
-				if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) continue;
-				// Get cpu data
-				var cd = CpuUtil.GetStats();
-				// Send it to everybody
-				await _hubContext.Clients.All.SendAsync("cpuData", cd, stoppingToken);
-				// Sleep for 5s
-				await Task.Delay(5000, stoppingToken);
-			}            
+		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
+			return Task.Run(async () => {
+				while (!stoppingToken.IsCancellationRequested) {
+					// If not linux, do nothing
+					if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) continue;
+					// Get cpu data
+					var cd = CpuUtil.GetStats();
+					// Send it to everybody
+					await _hubContext.Clients.All.SendAsync("cpuData", cd, stoppingToken);
+					// Sleep for 5s
+					await Task.Delay(5000, stoppingToken);
+				}
+			});
 		}
 	}
 }

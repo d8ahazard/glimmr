@@ -34,6 +34,7 @@ namespace Glimmr.Models.Util {
                 //try to use the address as IPv4, otherwise get hostname
                 if (!IPAddress.TryParse(values[0], out ipaddy))
                     ipaddy = GetIpFromHost(values[0]);
+                if (ipaddy == null) return null;
             } else if (values.Length > 2) //ipv6
             {
                 //could [a:b:c]:d
@@ -69,6 +70,7 @@ namespace Glimmr.Models.Util {
         }
 
         public static IPAddress GetIpFromHost(string p) {
+            if (string.IsNullOrEmpty(p)) return null;
             var hosts = Dns.GetHostAddresses(p);
 
             if (hosts == null || hosts.Length == 0)

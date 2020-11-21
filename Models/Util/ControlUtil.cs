@@ -18,27 +18,8 @@ using Newtonsoft.Json.Linq;
 namespace Glimmr.Models.Util {
 	public static class ControlUtil {
 		
-		public static void SetMode(int mode) {
-			var ip = IpUtil.GetLocalIpAddress();
-			var curMode = DataUtil.GetItem("DeviceMode");
-			if (curMode == mode) {
-				LogUtil.Write("Old mode is same as new, nothing to do.");
-				return;
-			}
-
-			DataUtil.SetItem<int>("DeviceMode", mode);
-			var payload = new List<byte> {(byte) mode};
-			DreamSender.SendUdpWrite(0x01, 0x10, payload.ToArray(), 0x21, 0,
-				new IPEndPoint(IPAddress.Parse(ip), 8888));
-		}
 		
-		public static void ResetMode() {
-			var curMode = DataUtil.GetItem("DeviceMode");
-			if (curMode == 0) return;
-			SetMode(0);
-			Thread.Sleep(1000);
-			SetMode(curMode);
-		}
+		
 		
 		public static async void SetCaptureMode(IHubContext<SocketServer> hubContext, int capMode) {
 			LogUtil.Write("Updating capture mode to " + capMode);
@@ -55,7 +36,6 @@ namespace Glimmr.Models.Util {
 			DataUtil.SetItem<string>("DevType", devType);
 			await TriggerReload(hubContext, JObject.FromObject(dev));
 			if (dev.Mode == 0) return;
-			ResetMode();
             
 		}
 		
@@ -159,12 +139,7 @@ namespace Glimmr.Models.Util {
                     break;
                 
             }
-
-            var payload = new List<byte>();
-            var utf8 = new UTF8Encoding();
-            payload.AddRange(utf8.GetBytes(id));
-            DreamSender.SendUdpWrite(0x01, 0x10, payload.ToArray(), 0x21, groupNumber,
-                new IPEndPoint(IPAddress.Parse(ipAddress), 8888));
+;
             return true;
         }
 
@@ -173,13 +148,5 @@ namespace Glimmr.Models.Util {
 	        await hc.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
 	        LogUtil.Write("Sent updated store data via socket.");
         }
-        
-        public static void TriggerRefresh(IHubContext<SocketServer> hc) {
-	        var ipAddress = IpUtil.GetLocalIpAddress();
-	        var me = new IPEndPoint(IPAddress.Parse(ipAddress), 8888);
-	        DreamSender.SendUdpWrite(0x01, 0x11, new byte[] {0}, 0, 0, me);
-	        Thread.Sleep(TimeSpan.FromSeconds(5));
-	        NotifyClients(hc);
-        }
-	}
+    }
 }

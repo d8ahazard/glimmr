@@ -1,7 +1,10 @@
-﻿using System.Threading;
+﻿using System.Net.Http;
+using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Hubs;
 using Glimmr.Models.Util;
+using LifxNet;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 
@@ -14,6 +17,8 @@ namespace Glimmr.Services {
 		public UdpService(IHubContext<SocketServer> hubContext, ControlService controlService) {
 			_hubContext = hubContext;
 			_controlService = controlService;
+			
+
 			if (_controlService != null) {
 				LogUtil.Write("looks like control service is working!");
 			}
@@ -22,10 +27,12 @@ namespace Glimmr.Services {
 
 		
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
-			while (!stoppingToken.IsCancellationRequested) {
-				
-			}
-			return Task.CompletedTask;
+			return Task.Run(async () => {
+				LogUtil.Write("Starting UDP Service loop.");
+				while (!stoppingToken.IsCancellationRequested) {
+					await Task.Delay(1, stoppingToken);
+				}
+			});
 		}
 	}
 }

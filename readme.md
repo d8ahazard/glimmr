@@ -16,6 +16,51 @@ bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/master/setup_p
 ```
 You may want to reboot your computer after exectution if it's a first-time install...
 
+*Alternatively*, you can flash a custom image directly to your pi from here:
+
+https://mega.nz/folder/brR31IKS#B7EI5KTr24ZwXdpdeG6pTw 
+
+You will need to use "BalenaEtcher", a free software for flashing the image.
+
+https://www.balena.io/etcher/
+
+Once Balena is installed and loaded, select the image file you downloaded from above, and make sure your 
+micro SD card is connected to your computer. Select the SD card, and click "Flash" to begin.
+
+Once the image is flashed, there are two more things you want to do.
+
+The computer should have recognized the boot partition of the SD card and loaded it, most likely as 
+drive D:. Find and open this folder.
+
+Once opened, create two files.
+
+The first is just an empty text file called "ssh". This is not required, but when created, will
+enable you to remotely connect to your pi via Putty or other SSH client. If you don't know what this
+means or have no use for it, skip this.
+
+Secondly, create a file called "wpa_supplicant.conf". This is the configuration for your wireless network, 
+and is probably something you'll want to do.
+
+Open this file in notepad++ or another text editor, and paste the below text:
+
+```
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+update_config=1
+country=<Insert 2 letter ISO 3166-1 country code here>
+
+network={
+ ssid="<Name of your wireless LAN>"
+ psk="<Password for your wireless LAN>"
+}
+```
+
+Once pasted, edit the file accordingly. Replace <Inset 2 letter ISO...> with US, UK, whatever your country code is.
+
+Replace <Name of your wireless LAN> with your network name, keeping the quotes.
+Replace <Password for your wireless LAN> with your network password, again, keeping the quotes.
+
+Save the file, and you're ready to go! Insert the SD card in your pi, power it on, and enjoy!
+
 
 ### Linux
 Execute the following command:

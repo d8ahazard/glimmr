@@ -9,7 +9,8 @@
     <title>New Hotness</title>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+<div class="main">
+<nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top" id="mainNav">
     <div class="container-fluid">
         <div class="btn-group">
             <div class="btn btn-clear modeBtn" data-mode="0"><span class="material-icons">power_off</span></div>
@@ -18,19 +19,52 @@
             <div class="btn btn-clear modeBtn" data-mode="3"><span class="material-icons">color_lens</span></div>
         </div>
         <div class="btn-group-lg">
-            <div class="btn">
+            <div class="btn btn-clear btn-lg mainSettings">
                 <span class="material-icons">settings_applications</span>
             </div>
         </div>
     </div>
 </nav>
-<div class="container mt-3 px-4 py-5">
+<div id="mainContent">
     <div class="row justify-content-center" id="cardRow">
-        
+
+    </div>
+    <div class="row justify-content-center hide" id="settingsRow">
+        <div class="col-12">
+            <div class="card" id="mainSettingsCard" aria-labelledby="mainSettingsCard" data-backdrop="false" aria-hidden="true">
+                <div class="card-content">
+                    <div class="card-dialog">
+                        <div class="card-header">
+                            <h5 class="card-title" id="settingsTitle">Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="container-fluid">
+                                <ul class="nav nav-tabs" id="settingsTab" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <a class="nav-link active" id="home-tab" data-toggle="tab" href="#mainTab" role="tab" aria-controls="home" aria-selected="true">Main</a>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <a class="nav-link" id="profile-tab" data-toggle="tab" href="#audioTab" role="tab" aria-controls="profile" aria-selected="false">Audio</a>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <a class="nav-link" id="contact-tab" data-toggle="tab" href="#systemTab" role="tab" aria-controls="contact" aria-selected="false">System</a>
+                                    </li>
+                                </ul>
+                                <div class="tab-content" id="settingsContent">
+                                    <div class="tab-pane fade show active" id="mainTab" role="tabpanel" aria-labelledby="main-tab">...</div>
+                                    <div class="tab-pane fade" id="audioTab" role="tabpanel" aria-labelledby="audio-tab">...</div>
+                                    <div class="tab-pane fade" id="systemTab" role="tabpanel" aria-labelledby="system-tab">...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 <nav class="container-fluid fixed-bottom" id="footer">
-    <div class="position-absolute left-0 bottom-0">
+    <div class="fixed-bottom">
         <div id="tempDiv" class="d-inline-block">
             <span class="material-icons d-inline-block statIcon">toys</span>
             <div id="temperature" class="d-inline-block mb-2"></div>
@@ -47,5 +81,6 @@
         <span class="material-icons fs-1">refresh</span>
     </div>
 </nav>
+</div>
 </body>
 </html>

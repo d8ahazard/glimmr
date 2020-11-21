@@ -26,8 +26,7 @@ namespace Glimmr.Hubs {
        
         public Task Mode(int mode) {
             LogUtil.Write($"WS Mode: {mode}");
-            ControlUtil.SetMode(mode);
-            _cs.Mode(mode);
+            _cs.SetMode(mode);
             return Clients.All.SendAsync("mode", mode);
         }
        
@@ -36,9 +35,9 @@ namespace Glimmr.Hubs {
             return Clients.Caller.SendAsync("ack", true);
         }
 
-        public Task RefreshDevices() {
-            LogUtil.Write("Refresh called from socket!");
-            //ControlUtil.TriggerRefresh(_hubContext);
+        public Task ScanDevices() {
+            LogUtil.Write("Scan called from socket!");
+            _cs.ScanDevices();
             return Task.CompletedTask;
         }
 

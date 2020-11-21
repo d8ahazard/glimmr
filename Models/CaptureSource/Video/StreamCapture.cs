@@ -16,9 +16,9 @@ using Glimmr.Models.CaptureSource.Video.Screen;
 using Glimmr.Models.CaptureSource.Video.WebCam;
 using Glimmr.Models.DreamScreen;
 using Glimmr.Models.LED;
-using Glimmr.Models.Services;
 using Glimmr.Models.StreamingDevice.WLed;
 using Glimmr.Models.Util;
+using Glimmr.Services;
 using Newtonsoft.Json;
 
 namespace Glimmr.Models.CaptureSource.Video {
@@ -33,6 +33,7 @@ namespace Glimmr.Models.CaptureSource.Video {
         private int _camWidth;
         private int _camHeight;
         // Debug options
+        private bool noColumns;
         private bool _showSource;
         private bool _showEdged;
         private bool _showWarped;
@@ -168,7 +169,7 @@ namespace Glimmr.Models.CaptureSource.Video {
             if (!doSave) doSave = true;
         }
 
-        public Task StartCapture(DreamClient dreamClient, CancellationToken cancellationToken) {
+        public Task StartCapture(ColorService colorService, CancellationToken cancellationToken) {
             LogUtil.Write("Beginning capture process...");
             SetCapVars();
             return Task.Run(() => {
@@ -192,7 +193,10 @@ namespace Glimmr.Models.CaptureSource.Video {
 
                     if (frame.Cols == 0) {
                         SourceActive = false;
-                        LogUtil.Write("Frame has no columns, dude.", "WARN");
+                        if (!noColumns) {
+                            LogUtil.Write("Frame has no columns, dude.", "WARN");
+                            noColumns = true;
+                        }
                         continue;
                     }
                     var warped = ProcessFrame(frame);
@@ -209,7 +213,7 @@ namespace Glimmr.Models.CaptureSource.Video {
                     var sectors3 = _splitter.GetSectorsV2();
                     var sectorsWled = _splitter.GetWledSectors();
                     if (_sendColors) {
-                        dreamClient.SendColors(colors, sectors, sectors3, sectorsWled);
+                        colorService.SendColors(colors, sectors, sectors3, sectorsWled);
                     }
                 }
 

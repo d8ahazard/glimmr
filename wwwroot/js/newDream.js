@@ -1,6 +1,17 @@
 ﻿let socketLoaded = false;
 let loadTimeout;
 let loadCalled;
+// Row for settings and device cards divs
+let settingsRow;
+let cardRow;
+// Settings content elements
+let settingsTitle;
+let settingsTab;
+let settingsContent;
+// Is our settings window currently open?
+let settingsShown = false;
+// This is the data for the currently shown device in settings
+let deviceData;
 
 // We're going to create one object to store our stuff, and add listeners for when values are changed.
 let data = {
@@ -49,22 +60,29 @@ let websocket = new signalR.HubConnectionBuilder()
     .build();
 
 document.addEventListener("DOMContentLoaded", function(){
+    settingsRow = document.getElementById("settingsRow");
+    settingsTab = document.getElementById("settingsTab");
+    settingsTitle = document.getElementById("settingsTitle");
+    settingsContent = document.getElementById("settingsContent");
+    cardRow = document.getElementById("cardRow");
     setSocketListeners();
     loadSocket();
     loadUi();
     setListeners();
+    sizeContent();
 });
 
+
 // Send a message to the server, websocket or not
-function sendMessage(endpoint, data, encode=true) {
-    if (encode && data !== null && data !== undefined) data = JSON.stringify(data);
+function sendMessage(endpoint, sData, encode=true) {
+    if (encode && sData !== null && sData !== undefined) sData = JSON.stringify(sData);
     // Set a .5s timeout so that responses from sent messages aren't loaded
     loadTimeout = setTimeout(function(){
         loadTimeout = null;
     },500);
     if (socketLoaded) {
-        if (data !== null && data !== undefined) {
-            websocket.invoke(endpoint, data).catch(function (err) {
+        if (sData !== null && sData !== undefined) {
+            websocket.invoke(endpoint, sData).catch(function (err) {
                 return console.error("Fuck: ", err);
             });
         } else {
@@ -133,7 +151,6 @@ function setSocketListeners() {
     });
 
     websocket.on("cpuData", function (cpuData) {
-        console.log("Socket has sent CPU data:", cpuData);
         let tempDiv = $("#tempDiv");
         let tempText = $("#temperature");
         let cpuText = $("#cpuPct");
@@ -216,7 +233,8 @@ function setSocketListeners() {
 
     websocket.on('olo', function(stuff) {
         stuff = stuff.replace(/\\n/g, '');
-        data.store = JSON.parse(stuff);                
+        data.store = JSON.parse(stuff);
+        loadUi();
     });
 
     websocket.onclose(function() {
@@ -246,6 +264,8 @@ function loadSocket() {
 
 // Set all of the various listeners our page may use
 function setListeners() {
+    window.addEventListener('resize', sizeContent);
+    
     document.addEventListener('click',function(e){
         let target = e.target;
         if (target) {
@@ -255,34 +275,147 @@ function setListeners() {
                 console.log("Dev setting clicked, we are setting ", attribute, targetId), target.getAttribute("checked");
             }
             
-            if (target.classList.contains("settingBtn") || target.parentElement.classList.contains("settingBtn")) {
+            if (target.classList.contains("settingBtn")  || target.parentElement.classList.contains("settingBtn")) {
                 if (target.parentElement.classList.contains("settingBtn")) target = target.parentElement;
-                let targetId = target.getAttribute("data-target");
-                console.log("Setting button clicked, we are opening ", targetId);
+                console.log("S parent")
+                onCardClick(target);                
+            }
+
+            if (target.parentElement.classList.contains("settingBtn")) {
+                target.parentElement;
+                console.log("S");
+                onCardClick(target);
             }
 
             if (target.classList.contains("refreshBtn") || target.parentElement.classList.contains("refreshBtn")) {
                 if (target.parentElement.classList.contains("refreshBtn")) target = target.parentElement;
                 console.log("Refresh clicked!");
-                sendMessage("RefreshDevices");
+                sendMessage("ScanDevices");
             }
 
             if (target.classList.contains("modeBtn") || target.parentElement.classList.contains("modeBtn")) {
                 if (target.parentElement.classList.contains("modeBtn")) target = target.parentElement;
                 let newMode = parseInt(target.getAttribute("data-mode"));
-                console.log("Changing mode to ", newMode);
-                data.store["DeviceMode"] = newMode;
+                setMode(newMode);
                 sendMessage("Mode", newMode, false);
+            }
+
+            if (target.classList.contains("mainSettings") || target.parentElement.classList.contains("mainSettings")) {
+                if (target.parentElement.classList.contains("refreshBtn")) target = target.parentElement;
+                console.log("Refresh clicked!");                
+                toggleSettingsDiv(0);
+            }
+            
+            if (target.classList.contains("nav-link") || target.parentElement.classList.contains("nav-item")) {
+                if (target.classList.contains("nav-item")) target = target.firstChild;
+                let cDiv = target.getAttribute("href");
+                let fadePanes = document.querySelectorAll(".tab-pane");
+                for (let i=0; i < fadePanes.length; i++) {
+                    if (fadePanes[i]) {
+                        if (fadePanes[i].classList.contains("show")) {
+                            fadePanes[i].classList.remove("show", "active");
+                        }
+                    }
+                }
+                document.querySelector(cDiv).classList.add("show", "active");
             }
         }
         
     });
 }
 
-function loadUi() {
-    console.log("Loading ui.");
+function toggleSettingsDiv(target) {
+    let settingsIcon = document.querySelector(".mainSettings span");
+    if (!settingsShown) {
+        settingsIcon.textContent = "chevron_left";
+        // Load main settings
+        if (target === 0) {
+            console.log("We should be populating main settings.");
+            showSettingsMain();
+        } else {
+            let tDev = null;
+            for (let i=0; i < data.devices.length; i++) {
+                if (data.devices[i]) {
+                    if (data.devices[i]["_id"] === target) {
+                        tDev = data.devices[i];
+                        break;
+                    }
+                }                
+            }
+            if (tDev !== null) {
+                deviceData = tDev;
+                switch(tDev["Tag"]) {
+                    case "Wled":
+                        showSettingsWled();
+                        break;
+                    case "Lifx":
+                        showSettingsLifx();
+                        break;
+                    case "DreamScreen":
+                    case "DreamScreen4K":
+                    case "DreamScreenSolo":
+                    case "Sidekick":
+                    case "Connect":
+                        showSettingsDreamScreen();
+                        break;
+                    case "NanoLeaf":
+                        showSettingsNanoLeaf();
+                        break;
+                    case "HueBridge":
+                        showSettingsHue();
+                        break;
+                    default:
+                        console.log("Unknown device tag: " + tDev["Tag"]);
+                }
+            }
+        }
+        cardRow.classList.add("hide");
+        cardRow.classList.remove("show");
+        settingsRow.classList.add("show");
+        settingsRow.classList.remove("hide");
+    } else {
+        settingsIcon.textContent = "settings_applications";
+        cardRow.classList.add("show");
+        cardRow.classList.remove("hide");
+        settingsRow.classList.add("hide");
+        settingsRow.classList.remove("show");
+        deviceData = null;
+        settingsTitle.textContent = "";
+        settingsTab.innerHTML = "";
+        settingsContent.innerHTML = "";
+    }
+    settingsShown = !settingsShown;
+}
+
+function showSettingsMain() {
+    settingsTitle.textContent = "Main Settings";
+}
+
+function showSettingsLifx() {
+    settingsTitle.textContent = "Lifx Settings";
+}
+
+function showSettingsDreamScreen() {
+    settingsTitle.textContent = "DS Settings";
+}
+
+function showSettingsHue() {
+    settingsTitle.textContent = "Hue Settings";
+}
+
+function showSettingsWled() {
+    settingsTitle.textContent = "Wled Settings";
+}
+
+function showSettingsNanoLeaf() {
+    settingsTitle.textContent = "Nanoleaf Settings";
+}
+
+function setMode(newMode) {
+    console.log("Changing mode to ", newMode);
+    data.store["DeviceMode"] = newMode;
+    mode = newMode;
     let target;
-    let mode = getStoreProperty("DeviceMode");
     switch(mode) {
         case 0:
             target = document.querySelector("[data-mode='0']");
@@ -300,7 +433,7 @@ function loadUi() {
             console.log("I don't know what this is: ", data.store.DeviceMode);
             break;
     }
-    
+
     let others = document.querySelectorAll(".modeBtn");
     for (let i=0; i< others.length; i++) {
         if (others[i]) {
@@ -308,7 +441,15 @@ function loadUi() {
         }
     }
     if (target != null) target.classList.add("active");
+
+}
+
+function loadUi() {
+    console.log("Loading ui.");
+    let mode = getStoreProperty("DeviceMode");
+    setMode(mode);
     getDevices();
+    document.getElementById("cardRow").click();
 }
 
 function loadDevices() {
@@ -321,7 +462,7 @@ function loadDevices() {
             let device = data.devices[i];
             // Create main card
             let mainDiv = document.createElement("div");
-            mainDiv.classList.add("card", "m-4");
+            mainDiv.classList.add("card", "m-4", "devCard");
             // Create card body
             let bodyDiv = document.createElement("div");
             bodyDiv.classList.add("card-body");            
@@ -500,4 +641,137 @@ function getStoreProperty(name) {
         console.log("Prop not found: ", name);
     }
     return null;
+}
+
+const toggleExpansion = (element, to, duration = 350) => {
+    return new Promise((res) => {
+        requestAnimationFrame(() => {
+            element.style.transition = `
+						width ${duration}ms ease-in-out,
+						height ${duration}ms ease-in-out,
+						left ${duration}ms ease-in-out,
+						top ${duration}ms ease-in-out
+					`;
+            element.style.top = to.top;
+            element.style.left = to.left;
+            element.style.width = to.width;
+            element.style.height = to.height;
+            
+        });
+        setTimeout(function(){
+            element.querySelector(".card-body").querySelectorAll(".row").forEach(function(row){
+            console.log("Adding to row? ", row);
+            row.style.transition = `
+						width ${duration}ms ease-in-out,
+						height ${duration}ms ease-in-out,
+						left ${duration}ms ease-in-out,
+						top ${duration}ms ease-in-out
+					`;
+            row.classList.add("col-6", "d-flex", "justify-content-center");
+        });
+        }, 50);
+        
+        setTimeout(res, duration);
+    })
+}
+
+const fadeContent = (element, opacity, duration = 300) => {
+    return new Promise(res => {
+        [...element.children].forEach((child) => {
+            requestAnimationFrame(() => {
+                child.style.transition = `opacity ${duration}ms linear`;
+                child.style.opacity = opacity;
+            });
+        })
+        setTimeout(res, duration);
+    })
+}
+
+const onCardClick = async (e) => {
+    const card = (e.parentElement.parentElement.parentElement.parentElement);
+    // clone the card
+    let targetId = e.getAttribute("data-target");
+    console.log("Setting button clicked, we are opening ", targetId);
+    //toggleSettingsDiv(targetId);
+    const cardClone = card.cloneNode(true);
+    cardClone.classList.remove("devCard", "m-4");
+    cardClone.classList.add("container-fluid");
+    // get the location of the card in the view
+    const {top, left, width, height} = card.getBoundingClientRect();
+    // position the clone on top of the original
+    cardClone.style.position = 'fixed';
+    cardClone.style.top = top + 'px';
+    cardClone.style.left = left + 'px';
+    cardClone.style.width = width + 'px';
+    cardClone.style.height = height + 'px';
+    // hide the original card with opacity
+    card.style.opacity = '0';
+    // add card to the main container
+    document.querySelector(".main").appendChild(cardClone);
+    // create a close button to handle the undo
+    const closeButton = document.createElement('button');
+    // position the close button top corner
+    closeButton.style = `
+				position: fixed;
+				z-index: 10000;
+				top: 0;
+				right: 40px;
+				width: 35px;
+				height: 35px;
+			`;
+    // attach click event to the close button
+    closeButton.classList.add("btn", "btn-clear", "btn-lg");
+    const closeSpan = document.createElement('span');
+    closeSpan.classList.add("material-icons");
+    closeSpan.textContent = "arrow_left";
+    closeButton.appendChild(closeSpan);
+    closeButton.addEventListener('click', async () => {
+        // remove the button on close
+        document.querySelector(".mainSettings").classList.remove('d-none');
+        closeButton.remove();
+        // remove the display style so the original content is displayed right
+        cardClone.style.removeProperty('display');
+        cardClone.style.removeProperty('padding');
+        // show original card content
+        [...cardClone.children].forEach(child => child.style.removeProperty('display'));
+        fadeContent(cardClone, '0');        
+        // shrink the card back to the original position and size
+        await toggleExpansion(cardClone, {top: `${top}px`, left: `${left}px`, width: `${width}px`, height: `${height}px`}, 300)
+        // show the original card again
+        card.style.removeProperty('opacity');
+        // remove the clone card
+        cardClone.remove();
+    });
+    // fade the content away
+    
+    // expand the clone card
+    let topNav = document.getElementById("mainNav");
+    let oh = topNav.offsetHeight;
+    console.log("Top offset is " + oh);
+    // fadeContent(cardClone, '0')
+    //     .then(() => {
+    //         [...cardClone.children].forEach(child => child.style.display = 'none');
+    //     });
+    await toggleExpansion(cardClone, {top: oh + "px", left: 0, width: '100%', height: '100%'});
+    //const content = getCardContent(card.textContent, card.dataset.type)
+    // set the display block so the content will follow the normal flow in case the original card is not display block
+    cardClone.style.display = 'block';
+    cardClone.style.padding = '0';
+    // append the close button after the expansion is done
+    topNav.appendChild(closeButton);
+    document.querySelector(".mainSettings").classList.add('d-none');
+    //cardClone.insertAdjacentHTML('afterbegin', content);
+};
+
+function sizeContent() {
+    let navDiv = document.getElementById("mainNav");
+    let footDiv = document.getElementById("footer");
+    let cDiv = document.getElementById("mainContent");
+    let wHeight = window.innerHeight;
+    let wWidth = window.innerWidth;
+    cDiv.style.position = "fixed";
+    cDiv.style.top = navDiv.offsetHeight + "px";
+    cDiv.style.height = wHeight - navDiv.offsetHeight - footDiv.offsetHeight + "px";
+    cDiv.style.width = wWidth + "px";
+    console.log("Setting: ", navDiv.offsetHeight, footDiv.offsetHeight);
 }
