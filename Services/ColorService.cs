@@ -64,6 +64,7 @@ namespace Glimmr.Services {
 			_controlService.TriggerSendColorsEvent2 += SendColors;
 			_controlService.SetModeEvent += Mode;
 			_controlService.DeviceReloadEvent += RefreshEventData;
+			_controlService.TestLedEvent += LedTest;
 			_wledStrips = new List<WLedStrip>();
 			_sDevices = new List<IStreamingDevice>();
 			LogUtil.Write("Initialization complete.");
