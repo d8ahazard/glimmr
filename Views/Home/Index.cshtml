@@ -127,7 +127,7 @@
     </div>
     <div class="row justify-content-center">
         <div class="col-8 col-md-6 col-xl-4">
-            <input class="form-control devBrightness" type="range" name="dsBrightness" id="dsBrightness" min="0" max="100" value="100">
+            <input class="form-control devBrightness" type="range" name="dsBrightness" id="dsBrightness" min="0" max="255" value="255">
         </div>
     </div>
 </div>
@@ -894,18 +894,33 @@
             </div>
             <div class="row justify-content-center">
                 <div class="form-group bmd-form-group col-12 col-md-6">
-                    <label for="hCount" class="bmd-label-floating">Top/Bottom Count:</label>
-                    <input type="text" class="form-control ledCount" id="hCount" data-type="h">
-                    <span class="bmd-help">Enter the number of LEDs on the top and bottom of the screen.</span>
+                    <label for="topCount" class="bmd-label-floating">Top Count:</label>
+                    <input type="text" class="form-control ledCount" id="topCount" data-type="topCount">
+                    <span class="bmd-help">Enter the number of LEDs on the top of the screen.</span>
                 </div>
             </div>
             <div class="row justify-content-center">
                 <div class="form-group bmd-form-group col-12 col-md-6">
-                    <label for="vCount" class="bmd-label-floating">Left/Right Count:</label>
-                    <input type="text" class="form-control ledCount" id="vCount" data-type="v">
-                    <span class="bmd-help">Enter the number of LEDs on the left and right sides of the screen.</span>
+                    <label for="bottomCount" class="bmd-label-floating">Bottom Count:</label>
+                    <input type="text" class="form-control ledCount" id="bottomCount" data-type="bottomCount">
+                    <span class="bmd-help">Enter the number of LEDs on the bottom side of the screen.</span>
                 </div>
             </div>
+            <div class="row justify-content-center">
+                <div class="form-group bmd-form-group col-12 col-md-6">
+                    <label for="leftCount" class="bmd-label-floating">Left Count:</label>
+                    <input type="text" class="form-control ledCount" id="leftCount" data-type="leftCount">
+                    <span class="bmd-help">Enter the number of LEDs on the left side of the screen.</span>
+                </div>
+            </div>
+            <div class="row justify-content-center">
+                <div class="form-group bmd-form-group col-12 col-md-6">
+                    <label for="rightCount" class="bmd-label-floating">Right Count:</label>
+                    <input type="text" class="form-control ledCount" id="rightCount" data-type="rightCount">
+                    <span class="bmd-help">Enter the number of LEDs on the right side of the screen.</span>
+                </div>
+            </div>
+            
             <div class="row justify-content-center">
                 <div class="form-group bmd-form-group col-12 col-md-6">
                     <label for="hCount" class="bmd-label-floating">LED Type:</label>

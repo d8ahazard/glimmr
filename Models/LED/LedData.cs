@@ -9,21 +9,27 @@ namespace Glimmr.Models.LED {
         [JsonProperty] public int StripType { get; set; }
         [JsonProperty] public int Brightness { get; set; }
         [JsonProperty] public int StartupAnimation { get; set; }
-        [JsonProperty] public int VCount { get; set; }
-        [JsonProperty] public int HCount { get; set; }
+        [JsonProperty] public int LeftCount { get; set; }
+        [JsonProperty] public int RightCount { get; set; }
+        [JsonProperty] public int TopCount { get; set; }
+        [JsonProperty] public int BottomCount { get; set; }
         [JsonProperty] public int VCountDs { get; set; }
         [JsonProperty] public int HCountDs { get; set; }
         [JsonProperty] public bool FixGamma { get; set; }
 
-        public LedData() {}
+        public LedData() {
+            LedCount = LeftCount + RightCount + TopCount + BottomCount;
+        }
 
         public LedData(bool init) {
             if (!init) return;
-            VCount = 16;
-            HCount = 24;
+            LeftCount = 16;
+            TopCount = 24;
+            RightCount = 16;
+            BottomCount = 24;
             VCountDs = 16;
             HCountDs = 24;
-            LedCount = VCount + VCount + HCount + HCount;
+            LedCount = LeftCount + RightCount + TopCount + BottomCount;
             PinNumber = 18;
             StripType = 2812;
             Brightness = 255;

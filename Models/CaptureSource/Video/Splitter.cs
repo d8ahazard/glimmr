@@ -14,11 +14,15 @@ using Newtonsoft.Json;
 namespace Glimmr.Models.CaptureSource.Video {
     public class Splitter {
         private Mat _input;
-        private readonly int _vCount;
-        private readonly int _hCount;
+        private readonly int _leftCount;
+        private readonly int _topCount;
+        private readonly int _rightCount;
+        private readonly int _bottomCount;
         private List<Rectangle> _fullCoords;
         private List<Rectangle> _fullSectors;
         private List<Rectangle> _fullSectorsV2;
+        private bool _hasDs;
+        private bool _hasSd;
         public Dictionary<string, List<Rectangle>> WLSectors;
         public Dictionary<string, List<int>> WLModules;
         private int sourceWidth;
@@ -45,6 +49,7 @@ namespace Glimmr.Models.CaptureSource.Video {
         private List<Color> _colorsLed;
         private List<Color> _colorsSectors;
         private List<Color> _colorsSectorsV2;
+        private List<WLedData> _wleds;
         private Dictionary<string, List<Color>> _colorsWled;
         private int _frameCount;
         private readonly float _brightBoost;
@@ -54,19 +59,32 @@ namespace Glimmr.Models.CaptureSource.Video {
         public bool NoImage;
         private const int MaxFrameCount = 30;
         
-        public Splitter(LedData ld, int srcWidth, int srcHeight) {
+        public Splitter(LedData ld, int srcWidth, int srcHeight, bool hasDs, bool hasSd) {
+            _hasDs = hasDs;
+            _hasSd = hasSd;
             LogUtil.Write("Initializing splitter, using LED Data: " + JsonConvert.SerializeObject(ld));
             // Set some defaults, this should probably just not be null
             if (ld != null) {
-                _vCount = ld.VCount;
-                _hCount = ld.HCount;
+                _leftCount = ld.LeftCount;
+                _topCount = ld.TopCount;
+                if (ld.RightCount == 0) {
+                    _rightCount = _leftCount;
+                } else {
+                    _rightCount = ld.RightCount;
+                }
+                
+                if (ld.BottomCount == 0) {
+                    _bottomCount = _topCount;
+                } else {
+                    _bottomCount = ld.BottomCount;
+                }
             }
 
             sourceWidth = srcWidth;
             sourceHeight = srcHeight;
             // Set desired width of capture region to 15% total image
-            _borderWidth = sourceWidth * .025f;
-            _borderHeight = sourceHeight * .025f;
+            _borderWidth = 10;
+            _borderHeight = 10;
             // Set default box mode to zero, no boxing
             _boxMode = 0;
             // Set brightness boost, min brightness, sat boost...
@@ -79,8 +97,11 @@ namespace Glimmr.Models.CaptureSource.Video {
             _fullSectorsV2 = DrawSectors(true);
             _frameCount = 0;
             _colorsWled = new Dictionary<string, List<Color>>();
-            WLModules = new Dictionary<string, List<int>>();
-            WLSectors = new Dictionary<string, List<Rectangle>>();
+            var wlArray = DataUtil.GetCollection<WLedData>("Dev_Wled");
+            _wleds = new List<WLedData>();
+            foreach (var wl in wlArray) {
+                _wleds.Add(wl);
+            }
             LogUtil.Write("Splitter init complete.");
         }
 
@@ -96,7 +117,6 @@ namespace Glimmr.Models.CaptureSource.Video {
             var outColorsSector = new List<Color>();
             var outColorsSectorV2 = new List<Color>();
             var outColorsWled = new Dictionary<string, List<Color>>();
-            var wlSectors = WLSectors;
             if (_frameCount >= 10) {
                 CheckSectors();
                 _frameCount = 0;
@@ -106,15 +126,10 @@ namespace Glimmr.Models.CaptureSource.Video {
             // Only calculate new sectors if the value has changed
             if (_sectorChanged) {
                 _sectorChanged = false;
-                var vp = _vCropPixels;
-                var hp = _hCropPixels;
-                LogUtil.Write($"No, really, adjusting crops to {vp} and {hp}");
                 _fullCoords = DrawGrid();
-                _fullSectors = DrawSectors();
-                _fullSectorsV2 = DrawSectors( true);
-                foreach (var id in WLModules.Keys) {
-                    wlSectors[id] = DrawWledGrid(id);
-                }
+                // Only bother to update these if we have devices to send to...
+                if (_hasDs) _fullSectors = DrawSectors();
+                if (_hasSd) _fullSectorsV2 = DrawSectors( true);
             }
             
             // Save a preview image if desired
@@ -124,28 +139,13 @@ namespace Glimmr.Models.CaptureSource.Video {
                 var gMat = new Mat();
                 inputMat.CopyTo(gMat);
                 var colInt = 0;
-                var textColor = new Bgr(Color.White).MCvScalar;
-                var previewCheck = 1;
                 var sectorTarget = _fullCoords;
                 var colorTarget = _colorsLed;
-                if (previewCheck == 2) {
-                    sectorTarget = _fullSectors;
-                    colorTarget = _colorsSectors;
-                } else if (previewCheck == 3) {
-                    sectorTarget = _fullSectorsV2;
-                    colorTarget = _colorsSectorsV2;
-                }
                 foreach (var s in sectorTarget) {
                     var scCol = colorTarget[colInt];
                     var stCol = ColorUtil.ClampAlpha(scCol);
                     var col = new Bgr(stCol).MCvScalar;
                     CvInvoke.Rectangle(gMat, s, col, -1, LineType.AntiAlias);
-                    if (previewCheck != 1) {
-                        var cInt = colInt + 1;
-                        var tPoint = new Point(s.X, s.Y + 30);
-                        CvInvoke.PutText(gMat, cInt.ToString(), tPoint, FontFace.HersheySimplex, 1.0, textColor);
-                    }
-
                     colInt++;
                 }
                 gMat.Save(path + "/wwwroot/img/_preview_output.jpg");
@@ -157,56 +157,39 @@ namespace Glimmr.Models.CaptureSource.Video {
                 sub.Dispose();
             }
 
-            foreach (var sub in _fullSectors.Select(r => new Mat(_input, r))) {
-                outColorsSector.Add(GetAverage(sub));
-                sub.Dispose();
-            }
-
-            foreach (var sub in _fullSectorsV2.Select(r => new Mat(_input, r))) {
-                outColorsSectorV2.Add(GetAverage(sub));
-                sub.Dispose();
-            }
-
-            foreach (var wlId in wlSectors.Keys) {
-                var colorList = new List<Color>();
-                foreach (var r in wlSectors[wlId]) {
-                    if (0 <= r.X
-                        && 0 <= r.Width
-                        && r.X + r.Width <= _input.Cols
-                        && 0 <= r.Y
-                        && 0 <= _input.Height
-                        && r.Y + r.Height <= _input.Rows){
-                        using var sub = new Mat(_input, r);
-                        // box within the image plane
-                        colorList.Add(GetAverage(sub));
-                    }
+            if (_hasDs) {
+                foreach (var sub in _fullSectors.Select(r => new Mat(_input, r))) {
+                    outColorsSector.Add(GetAverage(sub));
+                    sub.Dispose();
                 }
-                
-                outColorsWled[wlId] = colorList;
+            }
+
+            if (_hasSd) {
+                foreach (var sub in _fullSectorsV2.Select(r => new Mat(_input, r))) {
+                    outColorsSectorV2.Add(GetAverage(sub));
+                    sub.Dispose();
+                }
+            }
+            
+            foreach (var wled in _wleds) {
+                var colorList = new List<Color>();
+                for (var i = wled.Offset - 1; i < wled.Offset + wled.LedCount - 1; i++) {
+                    var c = i;
+                    if (i > outColorsStrip.Count - 1) {
+                        c = i - outColorsStrip.Count - 1;
+                    }
+                    colorList.Add(outColorsStrip[c]);
+                }
+                outColorsWled[wled.Id] = colorList;
             }
             _colorsLed = outColorsStrip;
             _colorsSectors = outColorsSector;
             _colorsSectorsV2 = outColorsSectorV2;
             _colorsWled = outColorsWled;
-            //LogUtil.Write("Splitter updated...");
         }
-
-        public void AddWled(WLedData wData) {
-            LogUtil.Write("Adding wled to splitter.");
-            // Create a simple list of vars that describe LED placement
-            // Hcount, VCount, LedCount, Offset, Direction
-            var ledVars = new List<int> {wData.HCount, wData.VCount, wData.LedCount, wData.Offset, wData.StripDirection};
-            LogUtil.Write("LED Vars set: " + JsonConvert.SerializeObject(ledVars));
-            // Store it for recall later
-            WLModules[wData.Id] = ledVars;
-            LogUtil.Write("Drawing grid...");
-            // Generate our base grid sectors
-            WLSectors[wData.Id] = DrawWledGrid(wData.Id);
-            LogUtil.Write("WLED added.");
-        }
-
-       
-        private static Color GetAverage(Mat sInput) {
+        
+        
+        private static Color GetAverage2(Mat sInput) {
             var outColor = Color.Black;
             if (sInput.Cols == 0) return outColor;
             var colors = CvInvoke.Mean(sInput);
@@ -215,6 +198,12 @@ namespace Glimmr.Models.CaptureSource.Video {
             var cR = (int) colors.V2;
             outColor = Color.FromArgb(cR, cG, cB);
             return outColor;
+        }
+
+        private static Color GetAverage(Mat sInput) {
+            Image<Bgr, byte> floofles = sInput.ToImage<Bgr, byte>();
+            var avg = floofles.GetAverage();
+            return Color.FromArgb(255, (int) avg.Red, (int) avg.Green, (int) avg.Blue);
         }
         
         public List<Color> GetColors() {
@@ -249,6 +238,7 @@ namespace Glimmr.Models.CaptureSource.Video {
                 gr.Dispose();
                 return;
             }
+            
             // Loop through rows, checking for all black
             for (var r = 0; r <= _input.Height / 4; r+= checkSize) {
                 // Define top position of bottom section
@@ -260,15 +250,19 @@ namespace Glimmr.Models.CaptureSource.Video {
                 var n1 = CvInvoke.CountNonZero(t1);
                 t1.Dispose();
                 // If it isn't, we can stop here
-                if (n1 != 0) continue;
+                //LogUtil.Write($"R1 @ {r} is " + n1);                                
+                if (n1 >= 5) break;
                 // If it is, check the corresponding bottom sector
                 var s2 = new Rectangle(0,r2,_input.Width,checkSize);
                 var t2 = new Mat(gr, s2);
                 n1 = CvInvoke.CountNonZero(t2);
                 t2.Dispose();
                 // If the bottom is also black, save that value
-                if (n1 == 0) {
-                    cropHorizontal = r;
+                if (n1 <= 5) {
+                    //LogUtil.Write($"R2 @ {r} is " + n1);
+                    cropHorizontal = r + 1;
+                } else {
+                    break;
                 }
             }
             
@@ -282,15 +276,18 @@ namespace Glimmr.Models.CaptureSource.Video {
                 var n1 = CvInvoke.CountNonZero(t1);
                 t1.Dispose();
                 // If not, stop here
-                if (n1 != 0) continue;
+                //LogUtil.Write($"N2 @ {c} " + n1);
+                if (n1 >= 4) break;
                 // Otherwise, do the same for the right side
                 var s2 = new Rectangle(c2,0,1, _input.Height);
                 var t2 = new Mat(gr, s2);
                 n1 = CvInvoke.CountNonZero(t2);
                 t2.Dispose();
                 // If it is also black, set that to our current check value
-                if (n1 == 0) {
+                if (n1 <= 3) {
                     cropVertical = c;
+                } else {
+                    break;
                 }
             }
            
@@ -306,11 +303,10 @@ namespace Glimmr.Models.CaptureSource.Video {
                         _hCropCount = MaxFrameCount;
                         _hCropPixels = _hCropCheck;
                         // If we have, set the hCrop value and tell program to crop
-                        if (!_hCrop) {
-                            _sectorChanged = true;
-                            _hCrop = true;
-                            LogUtil.Write($"Enabling horizontal crop for {cropHorizontal} rows.");
-                        }
+                        _sectorChanged = true;
+                        _hCrop = true;
+                        if(!_hCrop) LogUtil.Write($"Enabling horizontal crop for {cropHorizontal} rows.");
+                        
                     }
                 } else {
                     _hCropCheck = cropHorizontal;
@@ -344,11 +340,9 @@ namespace Glimmr.Models.CaptureSource.Video {
                         _vCropCount = MaxFrameCount;
                         _vCropPixels = _vCropCheck;
                         // If we have, set the vCrop value and tell program to crop
-                        if (!_vCrop) {
                             _sectorChanged = true;
                             _vCrop = true;
-                            LogUtil.Write($"Enabling Vertical crop for {cropVertical} rows.");
-                        }
+                            if (!_vCrop) LogUtil.Write($"Enabling Vertical crop for {cropVertical} rows.");
                     }
                 } else {
                     _vCropCheck = cropVertical;
@@ -396,19 +390,19 @@ namespace Glimmr.Models.CaptureSource.Video {
             var rRight = sourceWidth - vOffset;
             var rLeft = rRight - _borderWidth;
             // Steps
-            var tStep = sourceWidth / _hCount;
-            var bStep = sourceWidth / _hCount;
-            var lStep = sourceHeight / _vCount;
-            var rStep = sourceHeight / _vCount;
+            var tStep = sourceWidth / _topCount;
+            var bStep = sourceWidth / _topCount;
+            var lStep = sourceHeight / _leftCount;
+            var rStep = sourceHeight / _leftCount;
             // Calc right regions, bottom to top
-            var step = _vCount - 1;
+            var step = _rightCount - 1;
             while (step >= 0) {
                 var ord = step * rStep;
                 var vw = rRight - rLeft;
                 output.Add(new Rectangle((int) rLeft, ord, (int) vw, rStep));
                 step--;
             }
-            step = _hCount - 1;
+            step = _topCount - 1;
             // Calc top regions, from right to left
             while (step >= 0) {
                 var ord = step * tStep;
@@ -419,7 +413,7 @@ namespace Glimmr.Models.CaptureSource.Video {
 
             step = 0;
             // Calc left regions (top to bottom)
-            while (step < _vCount) {
+            while (step < _leftCount) {
                 var ord = step * lStep;
                 var vw = lRight - lLeft;
                 output.Add(new Rectangle(lLeft, ord, (int) vw, lStep));
@@ -428,7 +422,7 @@ namespace Glimmr.Models.CaptureSource.Video {
 
             step = 0;
             // Calc bottom regions (L-R)
-            while (step < _hCount) {
+            while (step < _bottomCount) {
                 var ord = step * bStep;
                 var vw = bBottom - bTop;
                 output.Add(new Rectangle(ord, (int) bTop, bStep, (int) vw));
@@ -436,119 +430,7 @@ namespace Glimmr.Models.CaptureSource.Video {
             }
             return output;
         }
-        
-        private List<Rectangle> DrawWledGrid(string moduleId) {
-            var hOffset = _hCropPixels;
-            var vOffset = _vCropPixels;
-            var output = new List<Rectangle>();
-            var dims = WLModules[moduleId];
-            LogUtil.Write("Drawing wled grid with dims: " + JsonConvert.SerializeObject(dims));
-            // Hcount, VCount, LedCount, Offset, Direction
-            var hCount = dims[0];
-            var vCount = dims[1];
-            var len = dims[2];
-            var offset = dims[3];
-            var dir = dims[4];
-            if (hCount == 0 || vCount == 0 || len == 0) {
-                LogUtil.Write("WLED needs to be configured first!");
-                return null;
-            }
-            LogUtil.Write($"WL Splitter srcwidth and heigth are {sourceWidth} and {sourceHeight}");
-            var bWidth = sourceWidth * .05f;
-            var bHeight = sourceHeight * .05f;
-            // Top Region
-            var tTop = vOffset;
-            var tBottom = bHeight + tTop;
-
-            // Bottom Gridlines
-            var bBottom = sourceHeight - vOffset;
-            var bTop = bBottom - bHeight;
-
-            // Left Column Border
-            var lLeft = hOffset;
-            var lRight = hOffset + bWidth;
-
-            // Right Column Border
-            var rRight = sourceWidth - hOffset;
-            var rLeft = rRight - bWidth;
-            // Steps
-            var tStep = sourceWidth / hCount;
-            var bStep = sourceWidth / hCount;
-            var lStep = sourceHeight / vCount;
-            var rStep = sourceHeight / vCount;
-            // Calc right regions, bottom to top
-            var step = vCount - 1;
-            LogUtil.Write("Stepping...");
-            while (step >= 0) {
-                var ord = step * rStep;
-                var vw = rRight - rLeft;
-                output.Add(new Rectangle((int) rLeft, ord, (int) vw, rStep));
-                step--;
-            }
-            step = _hCount - 1;
-            // Calc top regions, from right to left
-            while (step >= 0) {
-                var ord = step * tStep;
-                var vw = tBottom - tTop;
-                output.Add(new Rectangle(ord, tTop,  tStep, (int) vw));
-                step--;
-            }
-
-            step = 0;
-            // Calc left regions (top to bottom)
-            while (step < vCount) {
-                var ord = step * lStep;
-                var vw = lRight - lLeft;
-                output.Add(new Rectangle(lLeft, ord, (int) vw, lStep));
-                step++;
-            }
-
-            step = 0;
-            // Calc bottom regions (L-R)
-            while (step < hCount) {
-                var ord = step * bStep;
-                var vw = bBottom - bTop;
-                output.Add(new Rectangle(ord, (int) bTop, bStep, (int) vw));
-                step += 1;
-            }
-
-            LogUtil.Write("Truncating...");
-            // Offset our colors based on info
-            var truncated = new List<Rectangle>();
-            if (dir == 0) {
-                LogUtil.Write($"Dir0, offset is {offset}");
-                var o = offset;
-                while (o < output.Count && truncated.Count < len) {
-                    //LogUtil.Write("Grabbing index " + o);
-                    truncated.Add(output[o]);
-                    o++;                }
-                
-                if (truncated.Count < len) {
-                    var target = len - truncated.Count;
-                    for (var i = 0; i < target && i < output.Count; i++) {
-                        //LogUtil.Write("Grabbing index " + i);
-                        truncated.Add(output[i]);
-                    }
-                }
-            } else {
-                LogUtil.Write("Dir1");
-                var maxIdx = output.Count - 1;
-                var o = maxIdx - offset;
-                while (o > maxIdx - len) {
-                    o--;
-                    truncated.Add(output[o]);
-                }
-
-                if (truncated.Count < len) {
-                    var target = len - truncated.Count;
-                    for (var i = maxIdx; i >= maxIdx - target && i >= 0; i--) {
-                        truncated.Add(output[i]);
-                    }
-                }
-            }
-            LogUtil.Write("Returning " + truncated.Count + " sectors for wled.");
-            return truncated;
-        }
+       
         
         private List<Rectangle> DrawSectors(bool v2 = false) {
             // How many sectors does each region have?

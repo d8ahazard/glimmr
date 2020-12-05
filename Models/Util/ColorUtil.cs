@@ -228,11 +228,11 @@ namespace Glimmr.Models.Util {
             return color.R < min && color.G < min && color.B < min;
         }
 
-        public static Color BoostBrightness(Color input, float boost) {
+        public static Color AdjustBrightness(Color input, float boost) {
             ColorToHSV(input, out var h, out var s, out var v);
             if (v + boost <= 1.0) {
                 v += boost;
-                s -= boost;
+                //s -= boost;
             } else {
                 v = 1.0;
             }

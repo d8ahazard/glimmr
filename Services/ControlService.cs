@@ -39,6 +39,8 @@ namespace Glimmr.Services {
 
 		public event ArgUtils.Action DreamSubscribeEvent = delegate { };
 		public event Action<int> SetModeEvent = delegate { };
+		
+		public event Action<int, bool, int> TestLedEvent = delegate { };
 
 		public event Action<int> SetAmbientModeEvent = delegate { };
 
@@ -62,6 +64,10 @@ namespace Glimmr.Services {
 			_hubContext.Clients.All.SendAsync("mode", mode);
 			DataUtil.SetItem<int>("DeviceMode",mode);
 			SetModeEvent(mode);
+		}
+
+		public void TestLeds(int len, bool stop, int test) {
+			TestLedEvent(len, stop, test);
 		}
 		
 		public void ResetMode() {
@@ -116,6 +122,7 @@ namespace Glimmr.Services {
 		public void TriggerDreamSubscribe() {
 			DreamSubscribeEvent();
 		}
+		
 		
 		public async void NotifyClients() {
 			await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());

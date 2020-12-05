@@ -25,7 +25,6 @@ namespace Glimmr.Models.StreamingDevice.Hue {
             if (client == null || b == null) {
                 throw new ArgumentException("Invalid argument.");
             }
-            LogUtil.Write("HueStream: Creating from bd data: " + JsonConvert.SerializeObject(b));
             try {
                 var groupId = b.SelectedGroup;
                 LogUtil.Write("HueStream: Selecting group ID: " + groupId);

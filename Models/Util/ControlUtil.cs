@@ -78,68 +78,75 @@ namespace Glimmr.Models.Util {
                 DataUtil.SetItem("MyDevice", dData);
             }
             var groupNumber = (byte) myDev.GroupNumber;
-            switch (tag) {
-                case "WLed":
-                    LogUtil.Write("Updating wled");
-                    WLedData existing = DataUtil.GetCollectionItem<WLedData>("Dev_Wled", id);
-                    var wData = dData.ToObject<WLedData>();
-                    if (wData != null) {
-                        if (existing.State.info.leds.rgbw != wData.State.info.leds.rgbw) {
-                            LogUtil.Write("Update rgbw type.");
-                        }
-                        if (existing.State.info.leds.count != wData.State.info.leds.count) {
-                            LogUtil.Write("Update count type.");
+            try {
+                switch (tag) {
+                    case "WLed":
+                        LogUtil.Write("Updating wled");
+                        WLedData existing = DataUtil.GetCollectionItem<WLedData>("Dev_Wled", id);
+                        var wData = dData.ToObject<WLedData>();
+                        if (wData != null) {
+                            if (existing.State.info.leds.rgbw != wData.State.info.leds.rgbw) {
+                                LogUtil.Write("Update rgbw type.");
+                            }
+
+                            if (existing.State.info.leds.count != wData.State.info.leds.count) {
+                                LogUtil.Write("Update count type.");
+                            }
+
+                            if (existing.State.state.bri != wData.Brightness) {
+                                LogUtil.Write("Update Brightness...");
+                            }
                         }
 
-                        if (existing.State.state.bri != wData.Brightness) {
-                            LogUtil.Write("Update Brightness...");
-                        }
-                    }
+                        DataUtil.InsertCollection<WLedData>("Dev_Wled", wData);
+                        await hubContext.Clients.All.SendAsync("wledData", wData);
+                        break;
+                    case "HueBridge":
+                        LogUtil.Write("Updating bridge");
+                        var bData = dData.ToObject<BridgeData>();
+                        DataUtil.InsertCollection<BridgeData>("Dev_Hue", bData);
+                        await hubContext.Clients.All.SendAsync("hueData", bData);
+                        break;
+                    case "Lifx":
+                        LogUtil.Write("Updating lifx bulb");
+                        var lData = dData.ToObject<LifxData>();
+                        DataUtil.InsertCollection<LifxData>("Dev_Lifx", lData);
+                        await hubContext.Clients.All.SendAsync("lifxData", lData);
+                        break;
+                    case "NanoLeaf":
+                        LogUtil.Write("Updating nanoleaf");
+                        var nData = dData.ToObject<NanoData>();
+                        DataUtil.InsertCollection<NanoData>("Dev_NanoLeaf", nData);
+                        await hubContext.Clients.All.SendAsync("nanoData", nData);
+                        break;
+                    case "SideKick":
+                        var dsData = dData.ToObject<SideKick>();
+                        DataUtil.InsertDsDevice(dsData);
+                        break;
+                    case "Connect":
+                        var dcData = dData.ToObject<Connect>();
+                        DataUtil.InsertDsDevice(dcData);
+                        break;
+                    case "DreamScreenHd":
+                        var dshdData = dData.ToObject<DreamScreenHd>();
+                        DataUtil.InsertDsDevice(dshdData);
+                        break;
+                    case "DreamScreen4K":
+                        var ds4KData = dData.ToObject<DreamScreen4K>();
+                        DataUtil.InsertDsDevice(ds4KData);
+                        break;
+                    case "DreamScreenSolo":
+                        var dsSoloData = dData.ToObject<DreamScreenSolo>();
+                        DataUtil.InsertDsDevice(dsSoloData);
+                        break;
 
-                    DataUtil.InsertCollection<WLedData>("Dev_Wled",wData);
-                    await hubContext.Clients.All.SendAsync("wledData", wData);
-                    break;
-                case "HueBridge":
-                    LogUtil.Write("Updating bridge");
-                    var bData = dData.ToObject<BridgeData>();
-                    DataUtil.InsertCollection<BridgeData>("Dev_Hue", bData);
-                    await hubContext.Clients.All.SendAsync("hueData", bData);
-                    break;
-                case "Lifx":
-                    LogUtil.Write("Updating lifx bulb");
-                    var lData = dData.ToObject<LifxData>();
-                    DataUtil.InsertCollection<LifxData>("Dev_Lifx", lData);
-                    await hubContext.Clients.All.SendAsync("lifxData", lData);
-                    break;
-                case "NanoLeaf":
-                    LogUtil.Write("Updating nanoleaf");
-                    var nData = dData.ToObject<NanoData>();
-                    DataUtil.InsertCollection<NanoData>("Dev_NanoLeaf", nData);
-                    await hubContext.Clients.All.SendAsync("nanoData", nData);
-                    break;
-                case "SideKick":
-                    var dsData = dData.ToObject<SideKick>();
-                    DataUtil.InsertDsDevice(dsData);
-                    break;
-                case "Connect":
-                    var dcData = dData.ToObject<Connect>();
-                    DataUtil.InsertDsDevice(dcData);
-                    break;
-                case "DreamScreenHd":
-                    var dshdData = dData.ToObject<DreamScreenHd>();
-                    DataUtil.InsertDsDevice(dshdData);
-                    break;
-                case "DreamScreen4K":
-                    var ds4KData = dData.ToObject<DreamScreen4K>();
-                    DataUtil.InsertDsDevice(ds4KData);
-                    break;
-                case "DreamScreenSolo":
-                    var dsSoloData = dData.ToObject<DreamScreenSolo>();
-                    DataUtil.InsertDsDevice(dsSoloData);
-                    break;
+                }
+
+
+            } catch (Exception e) {
                 
             }
-;
+
             return true;
         }
 

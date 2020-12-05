@@ -28,8 +28,10 @@ let lifx = null;
 let deviceData = null;
 let targetDs = null;
 let datastore = null;
-let vLedCount = 0;
-let hLedCount = 0;
+let leftLedCount = 0;
+let topLedCount = 0;
+let bottomLedCount = 0;
+let rightLedCount = 0;
 let postResult = null;
 let sTarget = [];
 let socketLoaded = false;
@@ -516,7 +518,13 @@ function setListeners() {
     // On dev brightness slider change
     $(document).on('change', '.devBrightness', function() {
         selectedDevice.brightness = $(this).val();
-        saveSelectedDevice();        
+        saveSelectedDevice();  
+        console.log("SdeviceId: ", selectedDevice["_id"]);
+        console.log("MyDevId: ", deviceData["IpAddress"]);
+        if (selectedDevice["_id"] === deviceData["IpAddress"]) {
+            ledData["Brightness"] = $(this).val();
+            postData("updateLed",ledData);
+        }
         postData('updateDevice', selectedDevice);
     });
 
@@ -526,10 +534,10 @@ function setListeners() {
             if ($(this)[0].ipAddress === dsIp) {
                 targetDs = $(this)[0];
                 if (captureMode === 0) {
-                    vLedCount = $(this)[0]["flexSetup"][0];
-                    hLedCount = $(this)[0]["flexSetup"][1];
-                    $('#vCount').val(vLedCount);
-                    $('#hCount').val(hLedCount);
+                    leftLedCount = $(this)[0]["flexSetup"][0];
+                    topLedCount = $(this)[0]["flexSetup"][1];
+                    $('#leftCount').val(leftLedCount);
+                    $('#topCount').val(topLedCount);
                 }
             }
         });
@@ -551,13 +559,26 @@ function setListeners() {
         console.log("LED COUNT CHANGE.")
         let lCount = $(this).val();
         let type = $(this).data('type');
-        if (type === "h") {
-            hLedCount = lCount;
-            postData("hcount", lCount);
-        } else {
-            vLedCount = lCount;
-            postData("vcount", lCount);
+        switch(type) {
+            case "topCount":
+                topLedCount = lCount;
+                break;
+            case "leftCount":
+                leftLedCount = lCount;
+                break;
+            case "rightCount":
+                rightLedCount = lCount;
+                break;
+            case "bottomCount":
+                bottomLedCount = lCount;
+                break;
         }
+        ledData["LeftCount"] = leftLedCount;
+        ledData["RightCount"] = rightLedCount;
+        ledData["TopCount"] = topLedCount;
+        ledData["BottomCount"] = bottomLedCount;
+
+        postData("updateLed", ledData);
     });
 
     // On Override click
@@ -1192,24 +1213,36 @@ function setCaptureMode(target, post=true) {
     if (post) postData("capturemode", captureMode);
     $('.capModeBtn.active').removeClass('active');
     $('#' + target + 'Btn').addClass('active');
-    let hCount = 0;
-    let vCount = 0;
+    let topCount = 0;
+    let leftCount = 0;
+    let rightCount = 0;
+    let bottomCount = 0;
     if (captureMode === 0 && ledData.hasOwnProperty("HCountDs") && ledData.hasOwnProperty("VCountDs")) {
-        hCount = ledData.HCountDs;
-        vCount = ledData.VCountDs;
-    } else if (ledData.hasOwnProperty("HCount") && ledData.hasOwnProperty("VCount")) {
-        hCount = ledData.HCount;
-        vCount = ledData.VCount;
+        topCount = ledData.HCountDs;
+        leftCount = ledData.VCountDs;
+    } else if (ledData.hasOwnProperty("TopCount") && ledData.hasOwnProperty("LeftCount")) {
+        topCount = ledData.TopCount;
+        leftCount = ledData.LeftCount;
+        rightCount = ledData["RightCount"]
+        bottomCount = ledData["BottomCount"];        
     }
+    if (rightCount === 0) rightCount = leftCount;
+    if (bottomCount === 0) bottomCount = topCount;
     let stripType = 0;
     if (ledData.hasOwnProperty("stripType")) stripType = ledData.StripType;
-    vLedCount = vCount;
-    hLedCount = hCount;
-    let hc = $('#hCount');
-    let vc = $('#vCount');
+    leftLedCount = leftCount;
+    topLedCount = topCount;
+    bottomLedCount = bottomCount;
+    rightLedCount = rightCount;
+    let hc = $('#leftCount');
+    let vc = $('#topCount');
+    let bc = $('#bottomCount');
+    let rc = $('#rightCount');
     $('#stripType').val(stripType);
-    hc.val(hLedCount);
-    vc.val(vLedCount);
+    hc.val(topLedCount);
+    vc.val(leftLedCount);
+    rc.val(rightLedCount);
+    bc.val(bottomLedCount);
     hc.parent().addClass("is-filled");
     vc.parent().addClass("is-filled");
     $('.capPane').slideUp();
@@ -1599,8 +1632,8 @@ function drawNanoShapes(panel) {
     let sideLength = layout['SideLength'];
 
     // Set our TV image width
-    let tvWidth = hLedCount * 25;
-    let tvHeight = vLedCount * 25;
+    let tvWidth = topLedCount * 25;
+    let tvHeight = leftLedCount * 25;
 
     // If window is less than 500px, divide our scale by half
     let halfScale = false;

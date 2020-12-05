@@ -1,4 +1,5 @@
 ﻿using System;
+using Newtonsoft.Json.Linq;
 
 namespace Glimmr.Models.DreamScreen.Devices {
     public class DreamScreen4K : DreamScreenHd {
@@ -8,6 +9,13 @@ namespace Glimmr.Models.DreamScreen.Devices {
 
         public DreamScreen4K() {
             SetDefaults();
+        }
+
+        public DreamScreen4K(JObject dData) {
+            SetDefaults();
+            Name = dData.GetValue("Name")?.ToString();
+            Id = dData.GetValue("_id")?.ToString();
+            
         }
 
         public sealed override void SetDefaults() {

@@ -24,7 +24,7 @@ namespace Glimmr.Models.CaptureSource.Video.Hdmi {
             _video = new VideoCapture(inputStream, capType);
             _video.SetCaptureProperty(CapProp.FrameWidth, 640);
             _video.SetCaptureProperty(CapProp.FrameHeight, 480);
-            LogUtil.Write("Set cap props to 640x480");
+            LogUtil.Write("Scaling HDMI to 640x480");
             var foo = _video.CaptureSource.ToString();
             Frame = new Mat();
             LogUtil.Write("Stream init, capture source is " + foo + ", " + inputStream);            
@@ -39,12 +39,12 @@ namespace Glimmr.Models.CaptureSource.Video.Hdmi {
             }
         }
 
-        public static int[] ListCameras() {
+        public static int[] ListSources() {
             var i = 0;
             var output = new List<int>();
             while (i < 10) {
                 try {
-                    // Check if camera is available.
+                    // Check if video stream is available.
                     var v = new VideoCapture(i); // Will crash if not available, hence try/catch.
                     var w = v.Width;
                     var h = v.Height;
@@ -65,9 +65,10 @@ namespace Glimmr.Models.CaptureSource.Video.Hdmi {
         }
 
         public async Task Start(CancellationToken ct) {
-            LogUtil.Write("WebCam Stream started.");
+            LogUtil.Write("Starting HDMI stream...");
             _video.ImageGrabbed += SetFrame;
             _video.Start();
+            LogUtil.Write("HDMI Stream started.");
         }
 
         public void Dispose() {

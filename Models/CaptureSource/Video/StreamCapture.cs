@@ -48,7 +48,7 @@ namespace Glimmr.Models.CaptureSource.Video {
         private LedData _ledData;
         // Video source and splitter
         private IVideoStream _vc;
-        private Splitter _splitter;
+        public Splitter StreamSplitter { get; set; }
         // Timer and bool for saving sample frames
         private System.Threading.Timer saveTimer;
         private bool doSave;
@@ -56,11 +56,12 @@ namespace Glimmr.Models.CaptureSource.Video {
 
 
         public StreamCapture(CancellationToken camToken) {
-            LogUtil.WriteInc("Initializing stream capture.");
+            LogUtil.WriteInc("Initializing stream capture...");
             _targets = new List<VectorOfPoint>();
             SetCapVars();
             _vc = GetStream();
             _vc.Start(camToken);
+            LogUtil.Write("Stream capture initialized.");
         }
 
         public void ToggleSend(bool enable = true) {
@@ -155,7 +156,7 @@ namespace Glimmr.Models.CaptureSource.Video {
                     }
                     return null;
                 case 2:
-                    var cams = HdmiVideoStream.ListCameras();
+                    var cams = HdmiVideoStream.ListSources();
                     LogUtil.Write("Loading video capture card." + JsonConvert.SerializeObject(cams));
                     return new HdmiVideoStream(cams[0]);
                 case 3:
@@ -169,19 +170,15 @@ namespace Glimmr.Models.CaptureSource.Video {
             if (!doSave) doSave = true;
         }
 
-        public Task StartCapture(ColorService colorService, CancellationToken cancellationToken) {
+        public Task StartCapture(ColorService colorService, CancellationToken cancellationToken, bool hasDs, bool hasSd) {
             LogUtil.Write("Beginning capture process...");
             SetCapVars();
             return Task.Run(() => {
                 var autoEvent = new AutoResetEvent(false);
                 saveTimer = new Timer(SaveFrame, autoEvent, 5000, 5000);
                 LogUtil.WriteInc($"Starting capture task, setting sw and h to {_scaleWidth} and {_scaleHeight}");
-                _splitter = new Splitter(_ledData, _scaleWidth, _scaleHeight);
-                var wlArray = DataUtil.GetCollection<WLedData>("Dev_Wled");
-                foreach (var wl in wlArray) {
-                    _splitter.AddWled(wl);
-                }
-                LogUtil.Write("All wled devices added, executing main capture loop...");
+                StreamSplitter = new Splitter(_ledData, _scaleWidth, _scaleHeight, hasDs, hasSd);
+                
                     
                 while (!cancellationToken.IsCancellationRequested) {
                     var frame = _vc.Frame;
@@ -205,16 +202,14 @@ namespace Glimmr.Models.CaptureSource.Video {
                         LogUtil.Write("Unable to process frame, Dude.", "WARN");
                         continue;
                     }
-                    _splitter.Update(warped);
-                    SourceActive = !_splitter.NoImage;
-                    
-                    var colors = _splitter.GetColors();
-                    var sectors = _splitter.GetSectors();
-                    var sectors3 = _splitter.GetSectorsV2();
-                    var sectorsWled = _splitter.GetWledSectors();
-                    if (_sendColors) {
-                        colorService.SendColors(colors, sectors, sectors3, sectorsWled);
-                    }
+                    StreamSplitter.Update(warped);
+                    SourceActive = !StreamSplitter.NoImage;
+                    var colors = StreamSplitter.GetColors();
+                    var sectors = StreamSplitter.GetSectors();
+                    var sectors3 = StreamSplitter.GetSectorsV2();
+                    var sectorsWled = StreamSplitter.GetWledSectors();
+                    if (!_sendColors) continue;
+                    colorService.SendColors(colors, sectors, sectors3, sectorsWled);
                 }
 
                 saveTimer.Dispose();
@@ -237,7 +232,7 @@ namespace Glimmr.Models.CaptureSource.Video {
             // Save a preview frame every 5 seconds
             if (doSave) {
                 doSave = false;
-                _splitter.DoSave = true;
+                StreamSplitter.DoSave = true;
                 var path = Directory.GetCurrentDirectory();
                 input?.Save(path + "/wwwroot/img/_preview_input.jpg");
             }

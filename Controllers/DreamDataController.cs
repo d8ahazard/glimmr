@@ -39,6 +39,21 @@ namespace Glimmr.Controllers {
 			_controlService.NotifyClients();
 			return Ok(mode);
 		}
+		
+		// GET: LED TEST
+		[HttpGet("corners")]
+		public IActionResult TestStrip([FromQuery] int len, bool stop = false) {
+			LogUtil.Write("Get got: " + len);
+			_controlService.TestLeds(len, stop, 0);
+			return Ok(len);
+		}
+		
+		[HttpGet("offset")]
+		public IActionResult TestStripOffset([FromQuery] int len, bool stop = false) {
+			LogUtil.Write("Get got: " + len);
+			_controlService.TestLeds(len, stop, 1);
+			return Ok(len);
+		}
 
 		[HttpPost("updateDs")]
 		public IActionResult UpdateDs([FromBody] JObject dsSetting) {
@@ -86,6 +101,16 @@ namespace Glimmr.Controllers {
 			_controlService.ResetMode();
 			return Ok(cType);
 		}
+		
+		// POST: api/DreamData/ledData
+		[HttpPost("updateLed")]
+		public IActionResult UpdateLed([FromBody] LedData ld) {
+			LogUtil.Write("Got LD from post: " + JsonConvert.SerializeObject(ld));
+			DataUtil.SetObject("LedData", ld);
+			_controlService.RefreshDevices();
+			_controlService.NotifyClients();
+			return Ok(ld);
+		}
 
 		// POST: api/DreamData/vcount
 		[HttpPost("vcount")]
@@ -97,8 +122,8 @@ namespace Glimmr.Controllers {
 				hCount = ledData.HCountDs;
 				ledData.VCountDs = count;
 			} else {
-				hCount = ledData.HCount;
-				ledData.VCount = count;
+				hCount = ledData.TopCount;
+				ledData.LeftCount = count;
 			}
 
 			ledData.LedCount = hCount * 2 + count * 2;
@@ -118,8 +143,8 @@ namespace Glimmr.Controllers {
 				vCount = ledData.VCountDs;
 				ledData.HCountDs = count;
 			} else {
-				vCount = ledData.VCount;
-				ledData.HCount = count;
+				vCount = ledData.LeftCount;
+				ledData.TopCount = count;
 			}
 
 			ledData.LedCount = vCount * 2 + count * 2;

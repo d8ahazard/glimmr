@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Glimmr.Models.LED;
 using Glimmr.Models.StreamingDevice.Hue;
 using Glimmr.Models.StreamingDevice.Nanoleaf;
 using Glimmr.Models.Util;
@@ -103,6 +104,12 @@ namespace Glimmr.Hubs {
                 Thread.Sleep(1000);
             }
             LogUtil.Write("We should be authorized, returning.");
+        }
+
+        public async void UpdateLed(string ld) {
+            LogUtil.Write("This worked: " + JsonConvert.SerializeObject(ld));
+            //DataUtil.SetObject("LedData", ld);
+            //_cs.RefreshDevices();
         }
 
         public async void AuthorizeNano(string id) {

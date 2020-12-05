@@ -20,6 +20,7 @@ using Glimmr.Models.Util;
 using LifxNet;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 using Color = System.Drawing.Color;
 
 namespace Glimmr.Services {
@@ -49,7 +50,9 @@ namespace Glimmr.Services {
 		private int _ambientMode;
 		private int _ambientShow;
 		private string _ambientColor;
+		private bool _testingStrip;
 		private Dictionary<string, int> _subscribers;
+		private LedData _ledData;
 
 		private Task _videoCaptureTask;
 
@@ -77,7 +80,7 @@ namespace Glimmr.Services {
 				RefreshEventData();
 				LogUtil.Write("Starting capture service...");
 				StartCaptureServices(stoppingToken);
-				LogUtil.Write("Starting capture task...");
+				LogUtil.Write("Starting video capture task...");
 				StartVideoCaptureTask();
 				LogUtil.Write("Starting audio capture task...");
 				StartAudioCaptureTask();
@@ -119,7 +122,17 @@ namespace Glimmr.Services {
 			
 		}
 
+		private void LedTest(int len, bool stop, int test) {
+			_testingStrip = stop;
+			if (stop) {
+				_strip.StopTest();
+			} else {
+				_strip.StartTest(len, test);
+			}
+		}
+
 		private void RefreshEventData() {
+			LogUtil.Write("Loading device data...");
 			// Reload main vars
 			_captureMode = DataUtil.GetItem<int>("CaptureMode") ?? 2;
 			_deviceMode = DataUtil.GetItem<int>("DeviceMode") ?? 0;
@@ -127,7 +140,16 @@ namespace Glimmr.Services {
 			_ambientMode = DataUtil.GetItem<int>("AmbientMode") ?? 0;
 			_ambientShow = DataUtil.GetItem<int>("AmbientShow") ?? 0;
 			_ambientColor = DataUtil.GetItem<string>("AmbientColor") ?? "FFFFFF";
-			
+			LogUtil.Write("Reloading strip");
+			try {
+				var ld = DataUtil.GetObject<LedData>("LedData");
+				_strip?.Reload(ld);
+				LogUtil.Write("Initialized LED strip...");
+			} catch (TypeInitializationException e) {
+				LogUtil.Write("Type init error: " + e.Message);
+			}
+
+			LogUtil.Write("Clearing devices...");
 			// Dispose any devices we may have that are running
 			foreach (var wl in _wledStrips) {
 				wl.StopStream();
@@ -138,7 +160,7 @@ namespace Glimmr.Services {
 				s.StopStream();
 				s.Dispose();
 			}
-			
+			LogUtil.Write("Creating new device lists...");
 			// Create new lists
 			_wledStrips = new List<WLedStrip>();
 			_sDevices = new List<IStreamingDevice>();
@@ -168,7 +190,7 @@ namespace Glimmr.Services {
 				LogUtil.Write("Adding Wled device!");
 				_wledStrips.Add(new WLedStrip(wl));
 			}
-
+			LogUtil.Write("All wleds added...");
 			// If we are capturing, re-initialize splitter
 			if (_videoCaptureTask != null) {
 				CancelSource(_captureTokenSource);
@@ -217,6 +239,7 @@ namespace Glimmr.Services {
 				LogUtil.Write("Capture mode is 0, we don't need to capture video.");
 				return;
 			}
+			LogUtil.Write("Starting capture service...");
 			LedData ledData = DataUtil.GetObject<LedData>("LedData") ?? new LedData(true);
 			try {
 				_strip = new LedStrip(ledData);
@@ -224,9 +247,12 @@ namespace Glimmr.Services {
 			} catch (TypeInitializationException e) {
 				LogUtil.Write("Type init error: " + e.Message);
 			}
-
+			LogUtil.Write("Initializing grabber...");
 			_grabber = new StreamCapture(ct);
+			
 			if (_grabber == null) return;
+			LogUtil.Write("Done, starting sub broadcast...");
+
 			Task.Run(() => SubscribeBroadcast(ct), ct);
 		}
 		
@@ -247,7 +273,7 @@ namespace Glimmr.Services {
 				return Task.CompletedTask;
 			}
 			LogUtil.Write("Starting grabber capture task...");
-			_videoCaptureTask = _grabber.StartCapture(this, cancellationToken);
+			_videoCaptureTask = _grabber.StartCapture(this, cancellationToken, _subscribers.Count > 0, _sDevices.Count > 0);
 			LogUtil.Write("Created...");
 			return _videoCaptureTask.IsCompleted ? Task.CompletedTask : _videoCaptureTask;
 		}
@@ -347,8 +373,11 @@ namespace Glimmr.Services {
 						LogUtil.Write("Sent.");
 					}
 				}
-				LogUtil.Write("Updating strip...");
-				_strip?.UpdateAll(colors);
+				
+				if (!_testingStrip) {
+					LogUtil.Write("Updating strip...");
+					_strip?.UpdateAll(colors);
+				}
 			}
 		}
 
@@ -367,14 +396,22 @@ namespace Glimmr.Services {
 			}
 
 			var fadeTime = 0;
-			foreach (var sd in _sDevices) {
-				sd.SetColor(sectorsV2, fadeTime);
+			if (sectorsV2.Count == 0 && _sDevices.Count > 0) {
+				LogUtil.Write("Sectors are empty!!");
+			} else {
+				foreach (var sd in _sDevices) {
+					sd.SetColor(sectorsV2, fadeTime);
+				}	
 			}
-
-			foreach (var wl in _wledStrips) {
-				wl.SetColor(wledSectors[wl.Id], fadeTime);
+			
+			if (wledSectors.Count == 0 && _wledStrips.Count > 0) {
+				LogUtil.Write("NO WLED SECTORS.");
+			} else {
+				foreach (var wl in _wledStrips) {
+					wl.SetColor(wledSectors[wl.Id], fadeTime);
+				}
+				
 			}
-
 			if (_captureMode == 0) return;
 			// If we have subscribers and we're capturing
 			if (_subscribers.Count > 0 && _captureMode != 0) {
@@ -383,7 +420,7 @@ namespace Glimmr.Services {
 					DreamSender.SendSectors(sectors, ip, _deviceGroup);
 				}
 			}
-			_strip?.UpdateAll(colors);
+			if (!_testingStrip) _strip?.UpdateAll(colors);
 		}
 
 		
@@ -412,6 +449,7 @@ namespace Glimmr.Services {
 			} catch (TaskCanceledException) {
 				_subscribers = new Dictionary<string, int>();
 			}
+			
 		}
 		
 		private static void CancelSource(CancellationTokenSource target, bool dispose = false) {

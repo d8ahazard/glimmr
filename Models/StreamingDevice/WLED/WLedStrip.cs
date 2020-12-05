@@ -152,7 +152,6 @@ namespace Glimmr.Models.StreamingDevice.WLed {
         public void ReloadData() {
             var id = Data.Id;
             Data = DataUtil.GetCollectionItem<WLedData>("wled", id);
-            appSplitter.AddWled(Data);
         }
 
         public void UpdateCount(int count) {

@@ -14,8 +14,10 @@ namespace Glimmr.Models.StreamingDevice.WLed {
         // If in normal mode, set an optional offset, strip direction, horizontal count, and vertical count.
         [JsonProperty] public int Offset { get; set; }
         [JsonProperty] public int StripDirection { get; set; }
-        [JsonProperty] public int HCount { get; set; }
-        [JsonProperty] public int VCount { get; set; }
+        [JsonProperty] public int TopCount { get; set; }
+        [JsonProperty] public int LeftCount { get; set; }
+        [JsonProperty] public int BottomCount { get; set; }
+        [JsonProperty] public int RightCount { get; set; }
         // Applicable for both modes
         [JsonProperty] public int LedCount { get; set; }
         [JsonProperty] public List<int> Sectors { get; set; }
@@ -46,11 +48,15 @@ namespace Glimmr.Models.StreamingDevice.WLed {
 
             var capMode = DataUtil.GetItem<int>("captureMode");
             if (capMode == 0) {
-                VCount = ld.VCountDs;
-                HCount = ld.HCountDs;
+                LeftCount = ld.VCountDs;
+                TopCount = ld.HCountDs;
+                RightCount = ld.VCountDs;
+                BottomCount = ld.VCountDs;
             } else {
-                VCount = ld.VCount;
-                HCount = ld.HCount;
+                LeftCount = ld.LeftCount;
+                TopCount = ld.TopCount;
+                RightCount = ld.RightCount;
+                BottomCount = ld.BottomCount;
             }
             
             try {
@@ -78,8 +84,13 @@ namespace Glimmr.Models.StreamingDevice.WLed {
         public void CopyExisting(WLedData input) {
             if (input == null) throw new ArgumentNullException(nameof(input));
             Offset = input.Offset;
-            HCount = input.HCount;
-            VCount = input.VCount;
+            TopCount = input.TopCount;
+            LeftCount = input.LeftCount;
+            RightCount = input.RightCount;
+            BottomCount = input.BottomCount;
+            // Probably don't need this, but...ehhh...
+            if (RightCount == 0) RightCount = LeftCount;
+            if (BottomCount == 0) BottomCount = TopCount;
             AutoDisable = input.AutoDisable;
             ControlStrip = input.ControlStrip;
             LedCount = input.LedCount;
