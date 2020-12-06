@@ -100,7 +100,7 @@ namespace Glimmr.Models.StreamingDevice.WLed {
             SendPost(offObj);
         }
 
-        public void SetColor(List<Color> colors, double fadeTime, bool ambient = false) {
+        public async void SetColor(List<Color> colors, double fadeTime, bool ambient = false) {
             if (colors == null) throw new InvalidEnumArgumentException("Colors cannot be null.");
             if (!Streaming) return;
             if (Data.StripMode == 2) {
@@ -122,7 +122,11 @@ namespace Glimmr.Models.StreamingDevice.WLed {
                 LogUtil.Write("Sending " + colors.Count + " colors to " + IpAddress);
                 LogUtil.Write("First packet: " + ByteUtils.ByteString(packet.ToArray()));
             }
-            if (ep != null) _stripSender.SendTo(packet.ToArray(), ep);
+
+            if (ep != null) await Task.Run(() => {
+                _stripSender.SendTo(packet.ToArray(), ep);
+            });
+             
             //LogUtil.Write("Sent.");
         }
 

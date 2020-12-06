@@ -19,7 +19,7 @@ namespace Glimmr.Models.StreamingDevice {
             Streaming = false;
         }
 
-        public void SetColor(List<Color> colors, double fadeTime) {
+        public async void SetColor(List<Color> colors, double fadeTime) {
         }
        
      
