@@ -71,6 +71,7 @@ namespace Glimmr.Models.StreamingDevice.WLed {
             _stripSender.Blocking = false;
             _stripSender.EnableBroadcast = false;
             ep = IpUtil.Parse(IpAddress, port);
+            _stripSender.ConnectAsync(ep);
             Streaming = true;
             LogUtil.Write("WLED: Streaming started...");
         }
@@ -100,7 +101,7 @@ namespace Glimmr.Models.StreamingDevice.WLed {
             SendPost(offObj);
         }
 
-        public async void SetColor(List<Color> colors, double fadeTime, bool ambient = false) {
+        public void SetColor(List<Color> colors, double fadeTime, bool ambient = false) {
             if (colors == null) throw new InvalidEnumArgumentException("Colors cannot be null.");
             if (!Streaming) return;
             if (Data.StripMode == 2) {
@@ -108,7 +109,7 @@ namespace Glimmr.Models.StreamingDevice.WLed {
             }
             var packet = new List<Byte>();
             // Set mode to DRGB, dude.
-            var timeByte = ambient ? 255 : 2;
+            var timeByte = ambient ? 255 : 5;
             packet.Add(ByteUtils.IntByte(2));
             packet.Add(ByteUtils.IntByte(timeByte));
             foreach (var color in colors) {
@@ -123,9 +124,13 @@ namespace Glimmr.Models.StreamingDevice.WLed {
                 LogUtil.Write("First packet: " + ByteUtils.ByteString(packet.ToArray()));
             }
 
-            if (ep != null) await Task.Run(() => {
-                _stripSender.SendTo(packet.ToArray(), ep);
-            });
+            if (ep != null) {
+                try {
+                    _stripSender.SendToAsync(packet.ToArray(),0, ep);
+                } catch (Exception e) {
+                    
+                }
+            }
              
             //LogUtil.Write("Sent.");
         }

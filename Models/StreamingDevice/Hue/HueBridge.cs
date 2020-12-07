@@ -135,7 +135,7 @@ namespace Glimmr.Models.StreamingDevice.Hue {
         /// </summary>
         /// <param name="colors">An array of 12 colors corresponding to sector data</param>
         /// <param name="fadeTime">Optional: how long to fade to next state</param>
-        public async void SetColor(List<Color> colors, double fadeTime = 0) {
+        public void SetColor(List<Color> colors, double fadeTime = 0) {
             if (!Streaming) return;
             if (colors == null) {
                 LogUtil.Write("Error with color array!", "ERROR");
@@ -146,36 +146,35 @@ namespace Glimmr.Models.StreamingDevice.Hue {
                 var lightMappings = Bd.Lights;
                 // Loop through lights in entertainment layer
                 //LogUtil.Write(@"Sending to bridge...");
-                await Task.Run(() => { 
-                    foreach (var entLight in _entLayer) {
-                        // Get data for our light from map
-                        var lightData = lightMappings.SingleOrDefault(item =>
-                            item.Id == entLight.Id.ToString(CultureInfo.InvariantCulture));
-                        // Return if not mapped
-                        if (lightData == null) continue;
-                        // Otherwise, get the corresponding sector color
-                        var tSector = _captureMode == 0 ? lightData.TargetSector : lightData.TargetSectorV2;
-                        var colorInt = tSector - 1;
-                        var color = colors[colorInt];
-                        var mb = lightData.OverrideBrightness ? lightData.Brightness : Brightness;
-                        if (mb < 100) {
-                            color = ColorTransformUtil.ClampBrightness(color, mb);
-                        }
-
-                        var oColor = new RGBColor(color.R, color.G, color.B);
-
-                        // If we're currently using a scene, animate it
-                        if (Math.Abs(fadeTime) > 0.00001) {
-                            // Our start color is the last color we had}
-                            entLight.SetState(CancellationToken.None, oColor, oColor.GetBrightness(),
-                                TimeSpan.FromSeconds(fadeTime));
-                        } else {
-                            // Otherwise, if we're streaming, just set the color
-                            entLight.SetState(CancellationToken.None, oColor, oColor.GetBrightness());
-                        }
-                    }
-                });
                 
+                foreach (var entLight in _entLayer) {
+                    // Get data for our light from map
+                    var lightData = lightMappings.SingleOrDefault(item =>
+                        item.Id == entLight.Id.ToString(CultureInfo.InvariantCulture));
+                    // Return if not mapped
+                    if (lightData == null) continue;
+                    // Otherwise, get the corresponding sector color
+                    var tSector = _captureMode == 0 ? lightData.TargetSector : lightData.TargetSectorV2;
+                    var colorInt = tSector - 1;
+                    var color = colors[colorInt];
+                    var mb = lightData.OverrideBrightness ? lightData.Brightness : Brightness;
+                    if (mb < 100) {
+                        color = ColorTransformUtil.ClampBrightness(color, mb);
+                    }
+
+                    var oColor = new RGBColor(color.R, color.G, color.B);
+
+                    // If we're currently using a scene, animate it
+                    if (Math.Abs(fadeTime) > 0.00001) {
+                        // Our start color is the last color we had}
+                        entLight.SetState(CancellationToken.None, oColor, oColor.GetBrightness(),
+                            TimeSpan.FromSeconds(fadeTime));
+                    } else {
+                        // Otherwise, if we're streaming, just set the color
+                        entLight.SetState(CancellationToken.None, oColor, oColor.GetBrightness());
+                    }
+                }
+
             } else {
                 LogUtil.Write($@"Hue: Unable to fetch entertainment layer. {IpAddress}");
             }

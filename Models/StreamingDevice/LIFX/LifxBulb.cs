@@ -64,7 +64,7 @@ namespace Glimmr.Models.StreamingDevice.LIFX {
             Id = newData.Id;
         }
 
-        public async void SetColor(List<System.Drawing.Color> inputs, double fadeTime = 0) {
+        public void SetColor(List<System.Drawing.Color> inputs, double fadeTime = 0) {
             if (!Streaming) return;
             if (inputs == null || _client == null) throw new ArgumentException("Invalid color inputs.");
             //var capCount = _captureMode == 0 ? 12 : 28;
@@ -75,7 +75,7 @@ namespace Glimmr.Models.StreamingDevice.LIFX {
             }
             var nC = new Color {R = input.R, G = input.G, B = input.B};
             var fadeSpan = TimeSpan.FromSeconds(fadeTime);
-            await _client.SetColorAsync(B, nC, 7500, fadeSpan);
+            _client.SetColorAsync(B, nC, 7500, fadeSpan);
         }
 
         

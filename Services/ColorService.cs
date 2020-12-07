@@ -395,8 +395,9 @@ namespace Glimmr.Services {
 				LogUtil.Write("Stream not started.");
 				return;
 			}
-
+			
 			var fadeTime = 0;
+			if (!_testingStrip) _strip?.UpdateAll(colors);
 			if (sectorsV2.Count == 0 && _sDevices.Count > 0) {
 				LogUtil.Write("Sectors are empty!!");
 			} else {
@@ -421,7 +422,7 @@ namespace Glimmr.Services {
 					DreamSender.SendSectors(sectors, ip, _deviceGroup);
 				}
 			}
-			if (!_testingStrip) _strip?.UpdateAll(colors);
+			
 		}
 
 		

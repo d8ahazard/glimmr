@@ -15,10 +15,12 @@ namespace Glimmr.Services {
 		private readonly ControlService _controlService;
 		private Timer _refreshTimer;
 		private LifxClient _lifxClient;
+		private bool isStreaming;
 		public DiscoveryService(IHubContext<SocketServer> hubContext, ControlService controlService) {
 			_hubContext = hubContext;
 			_controlService = controlService;
 			_controlService.RescanDeviceEvent += TriggerRefresh;
+			_controlService.SetModeEvent += ToggleAutoScan;
 			_lifxClient = _controlService.LifxClient;
 		}
 
@@ -32,6 +34,10 @@ namespace Glimmr.Services {
 
 				_refreshTimer.Close();
 			});
+		}
+
+		private void ToggleAutoScan(int mode) {
+			isStreaming = mode != 0;
 		}
 		
 		private void StartRefreshTimer(bool refreshNow = false) {
@@ -52,7 +58,13 @@ namespace Glimmr.Services {
 		}
         
 		// Discover...devices?
-		private async void DeviceDiscovery(object sender, ElapsedEventArgs elapsedEventArgs) {
+		private void DeviceDiscovery(object sender, ElapsedEventArgs elapsedEventArgs) {
+			if (!isStreaming) {
+				DeviceDiscovery();
+			}
+		}
+		
+		private async void DeviceDiscovery() {
 			LogUtil.Write("Triggering refresh of devices via timer.");
 			// Trigger a refresh
 			_lifxClient = _controlService.LifxClient;

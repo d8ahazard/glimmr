@@ -98,7 +98,7 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
         }
 
 
-        public async void SetColor(List<Color> colors, double fadeTime = 1) {
+        public void SetColor(List<Color> colors, double fadeTime = 1) {
             int ft = (int) fadeTime;
             if (!Streaming) {
                 LogUtil.Write("Streaming is  not active?");
@@ -143,7 +143,7 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
                 byteString.AddRange(_streamMode == 2 ? ByteUtils.PadInt(ft) : ByteUtils.PadInt(ft, 1));
             }
 
-            await Task.Run(() => {
+            Task.Run(() => {
                 SendUdpUnicast(byteString.ToArray());
             }); 
                 
