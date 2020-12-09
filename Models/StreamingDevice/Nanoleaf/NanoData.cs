@@ -60,6 +60,7 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
             newLeaf.Y = existingLeaf.Y;
             newLeaf.Scale = 1;
             newLeaf.Rotation = existingLeaf.Rotation;
+            newLeaf.Enable = existingLeaf.Enable;
             if (existingLeaf.Brightness != 0)  newLeaf.Brightness = existingLeaf.Brightness;
             // Grab the new leaf layout
             newLeaf.RefreshLeaf();

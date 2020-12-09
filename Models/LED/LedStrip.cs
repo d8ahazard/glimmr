@@ -52,55 +52,13 @@ namespace Glimmr.Models.LED {
             try {
                 _strip = new WS281x(settings);
                 LogUtil.Write($@"Strip created using {_ledCount} LEDs.");
-                if (demo) Demo();
+                
             } catch (DllNotFoundException) {
                 LogUtil.Write("Unable to initialize strips, we're not running on a pi!");
             }
         }
 
-        private void Demo() {
-            var wlData = DataUtil.GetCollection<WLedData>("wled");
-            var strips = new List<WLedStrip>();
-            foreach (var wl in wlData) {
-                strips.Add(new WLedStrip(wl));
-            }
-
-            foreach (var s in strips) {
-                s.StartStream();
-            }
-            for (var i = 0; i < _ledCount; i++) {
-                var pi = i * 1.0f;
-                var progress = pi / _ledCount;
-                var rCol = Rainbow(progress);
-                _controller.SetLED(i, rCol);
-                _strip.Render();
-                foreach (var s in strips) {
-                    // Total index of LEDs
-                    var lastIndex = s.Data.LedCount + s.Data.Offset;
-                    // Value we should start at if the strip loops
-                    var reStartIndex = -1;
-                    var reStartStop = 0;
-                    // If we have more LEDs in index than count, start from zero
-                    if (lastIndex > _ledCount) {
-                        reStartIndex = 0;
-                        reStartStop = lastIndex - _ledCount;
-                    } 
-                    // If i is between offset or end of all colors, set that pixel
-                    if (s.Data.Offset >= i && i <= s.Data.LedCount) {
-                        s.UpdatePixel(i,rCol);
-                    } else if (reStartIndex <= i && i < reStartStop ) {
-                        s.UpdatePixel(i,rCol);
-                    }
-                }
-            }
-            foreach (var s in strips) {
-                s.StopStream();
-            }
-
-            System.Threading.Thread.Sleep(500);
-            StopLights();
-        }
-
+        
         public void StartTest(int len, int test) {
             _testing = true;
             var lc = len;
@@ -108,11 +66,9 @@ namespace Glimmr.Models.LED {
                 lc = _ledCount;
             }
             var colors = new Color[lc];
-            colors = EmptyColors(colors);
+            colors = ColorUtil.EmptyColors(colors);
 
             if (test == 0) {
-                var counter = 0;
-                var c0 = 0;
                 var c1 = _ld.LeftCount - 1;
                 var c2 = _ld.LeftCount + _ld.TopCount - 1;
                 var c3 = _ld.LeftCount + _ld.TopCount + _ld.LeftCount - 1;
@@ -130,17 +86,10 @@ namespace Glimmr.Models.LED {
             UpdateAll(colors.ToList(), true);
         }
 
-        private Color[] EmptyColors(Color[] input) {
-            for (var i = 0; i < input.Length; i++) {
-                input[i] = Color.FromArgb(0, 0, 0, 0);
-            }
-
-            return input;
-        }
-
+        
         public void StopTest() {
             _testing = false;
-            var mt = EmptyColors(new Color[_ld.LedCount]);
+            var mt = ColorUtil.EmptyColors(new Color[_ld.LedCount]);
             UpdateAll(mt.ToList(), true);
         }
         
@@ -179,20 +128,7 @@ namespace Glimmr.Models.LED {
             LogUtil.Write("LED Strips stopped.");
         }
 
-        private static Color Rainbow(float progress) {
-            var div = Math.Abs(progress % 1) * 6;
-            var ascending = (int) (div % 1 * 255);
-            var descending = 255 - ascending;
-            var alpha = 0;
-            return (int) div switch {
-                0 => Color.FromArgb(alpha, 255, ascending, 0),
-                1 => Color.FromArgb(alpha, descending, 255, 0),
-                2 => Color.FromArgb(alpha, 0, 255, ascending),
-                3 => Color.FromArgb(alpha, 0, descending, 255),
-                4 => Color.FromArgb(alpha, ascending, 0, 255),
-                _ => Color.FromArgb(alpha, 255, 0, descending)
-            };
-        }
+        
 
         public void Dispose() {
             _strip?.Dispose();

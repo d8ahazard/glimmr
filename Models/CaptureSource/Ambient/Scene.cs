@@ -2,14 +2,14 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
-using Glimmr.Models.DreamScreen.Scenes;
+using Glimmr.Models.CaptureSource.Ambient.Scenes;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Newtonsoft.Json;
-using static Glimmr.Models.DreamScreen.Scenes.SceneBase;
+using static Glimmr.Models.CaptureSource.Ambient.Scenes.SceneBase;
 
-namespace Glimmr.Models.DreamScreen {
-    public class DreamScene {
+namespace Glimmr.Models.CaptureSource.Ambient {
+    public class Scene {
         private double _animationTime;
         private string[] _colors;
         private AnimationMode _mode;

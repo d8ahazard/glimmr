@@ -1,4 +1,4 @@
-﻿namespace Glimmr.Models.DreamScreen.Scenes {
+﻿namespace Glimmr.Models.CaptureSource.Ambient.Scenes {
     public class ScenePop : SceneBase {
         public ScenePop() {
             SetColors(new[] {

@@ -23,8 +23,6 @@ namespace Glimmr.Models.CaptureSource.Video {
         private List<Rectangle> _fullSectorsV2;
         private bool _hasDs;
         private bool _hasSd;
-        public Dictionary<string, List<Rectangle>> WLSectors;
-        public Dictionary<string, List<int>> WLModules;
         private int sourceWidth;
         private int sourceHeight;
         // Number of times our counts have matched
@@ -99,11 +97,13 @@ namespace Glimmr.Models.CaptureSource.Video {
             _colorsWled = new Dictionary<string, List<Color>>();
             var wlArray = DataUtil.GetCollection<WLedData>("Dev_Wled");
             _wleds = new List<WLedData>();
-            foreach (var wl in wlArray) {
+            foreach (var wl in wlArray.Where(wl => wl.Enable)) {
                 _wleds.Add(wl);
             }
             LogUtil.Write("Splitter init complete.");
         }
+
+       
 
         public void Update(Mat inputMat) {
             _input = inputMat ?? throw new ArgumentException("Invalid input material.");
@@ -116,7 +116,6 @@ namespace Glimmr.Models.CaptureSource.Video {
             var outColorsStrip = new List<Color>();
             var outColorsSector = new List<Color>();
             var outColorsSectorV2 = new List<Color>();
-            var outColorsWled = new Dictionary<string, List<Color>>();
             if (_frameCount >= 10) {
                 CheckSectors();
                 _frameCount = 0;
@@ -157,35 +156,18 @@ namespace Glimmr.Models.CaptureSource.Video {
                 sub.Dispose();
             }
 
-            if (_hasDs) {
-                foreach (var sub in _fullSectors.Select(r => new Mat(_input, r))) {
-                    outColorsSector.Add(GetAverage(sub));
-                    sub.Dispose();
-                }
+            foreach (var sub in _fullSectors.Select(r => new Mat(_input, r))) {
+                outColorsSector.Add(GetAverage(sub));
+                sub.Dispose();
             }
-
-            if (_hasSd) {
-                foreach (var sub in _fullSectorsV2.Select(r => new Mat(_input, r))) {
-                    outColorsSectorV2.Add(GetAverage(sub));
-                    sub.Dispose();
-                }
-            }
-            
-            foreach (var wled in _wleds) {
-                var colorList = new List<Color>();
-                for (var i = wled.Offset - 1; i < wled.Offset + wled.LedCount - 1; i++) {
-                    var c = i;
-                    if (i > outColorsStrip.Count - 1) {
-                        c = i - outColorsStrip.Count - 1;
-                    }
-                    colorList.Add(outColorsStrip[c]);
-                }
-                outColorsWled[wled.Id] = colorList;
+            foreach (var sub in _fullSectorsV2.Select(r => new Mat(_input, r))) {
+                outColorsSectorV2.Add(GetAverage(sub));
+                sub.Dispose();
             }
             _colorsLed = outColorsStrip;
             _colorsSectors = outColorsSector;
             _colorsSectorsV2 = outColorsSectorV2;
-            _colorsWled = outColorsWled;
+            //LogUtil.Write("Updated.");
         }
         
         
@@ -216,10 +198,6 @@ namespace Glimmr.Models.CaptureSource.Video {
         
         public List<Color> GetSectorsV2() {
             return _colorsSectorsV2;
-        }
-
-        public Dictionary<string, List<Color>> GetWledSectors() {
-            return _colorsWled;
         }
         
         private void CheckSectors() {
@@ -484,6 +462,10 @@ namespace Glimmr.Models.CaptureSource.Video {
                 step += 1;
             }
             return fs;
+        }
+
+        public void Refresh() {
+            
         }
     }
 }

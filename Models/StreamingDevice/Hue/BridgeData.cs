@@ -54,6 +54,8 @@ namespace Glimmr.Models.StreamingDevice.Hue {
             if (existing == null) throw new ArgumentException("Invalid bridge data.");
             Key = existing.Key;
             User = existing.User;
+            Enable = existing.Enable;
+            if (Id == null && !string.IsNullOrEmpty(IpAddress)) Id = IpAddress; 
             var cl = new List<LightData>();
             foreach (var l in existing.Lights.Where(l => l.Id != null)) {
                 foreach (var el in Lights.Where(el => el.Id == l.Id)) {

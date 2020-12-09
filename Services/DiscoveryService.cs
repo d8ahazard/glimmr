@@ -68,7 +68,7 @@ namespace Glimmr.Services {
 			LogUtil.Write("Triggering refresh of devices via timer.");
 			// Trigger a refresh
 			_lifxClient = _controlService.LifxClient;
-			DataUtil.RefreshDevices(_lifxClient);
+			DataUtil.RefreshDevices(_lifxClient, _controlService);
 			// Sleep for 5s for it to finish
 			Thread.Sleep(5000);
 			// Notify all clients to refresh data

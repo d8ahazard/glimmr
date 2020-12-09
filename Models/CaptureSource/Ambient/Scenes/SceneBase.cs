@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Glimmr.Models.DreamScreen.Scenes {
+namespace Glimmr.Models.CaptureSource.Ambient.Scenes {
     [Serializable]
     public abstract class SceneBase {
         public enum AnimationMode {

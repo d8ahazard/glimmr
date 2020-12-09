@@ -1,12 +1,12 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Net;
 using System.Text;
 using Glimmr.Hubs;
-using Glimmr.Models.DreamScreen;
-using Glimmr.Models.DreamScreen.Devices;
 using Glimmr.Models.LED;
 using Glimmr.Models.StreamingDevice.Hue;
 using Glimmr.Models.StreamingDevice.LIFX;
@@ -18,20 +18,22 @@ using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Glimmr.Controllers {
-	[Route("api/[controller]"), ApiController]
-	public class DreamDataController : ControllerBase {
+#endregion
 
+namespace Glimmr.Controllers {
+	[Route("api/[controller]")]
+	[ApiController]
+	public class DreamDataController : ControllerBase {
 		private readonly IHubContext<SocketServer> _hubContext;
-		private ControlService _controlService;
+		private readonly ControlService _controlService;
 		private bool timerStarted;
-        
+
 		public DreamDataController(IHubContext<SocketServer> hubContext, ControlService controlService) {
 			LogUtil.Write("Initialized ddc with hub context.");
 			_hubContext = hubContext;
 			_controlService = controlService;
 		}
-        
+
 		// POST: api/DreamData/mode
 		[HttpPost("mode")]
 		public IActionResult DevMode([FromBody] int mode) {
@@ -39,7 +41,7 @@ namespace Glimmr.Controllers {
 			_controlService.NotifyClients();
 			return Ok(mode);
 		}
-		
+
 		// GET: LED TEST
 		[HttpGet("corners")]
 		public IActionResult TestStrip([FromQuery] int len, bool stop = false) {
@@ -47,7 +49,7 @@ namespace Glimmr.Controllers {
 			_controlService.TestLeds(len, stop, 0);
 			return Ok(len);
 		}
-		
+
 		[HttpGet("offset")]
 		public IActionResult TestStripOffset([FromQuery] int len, bool stop = false) {
 			LogUtil.Write("Get got: " + len);
@@ -62,7 +64,7 @@ namespace Glimmr.Controllers {
 			var property = (dsSetting["Property"] ?? "").Value<string>();
 			var value = (dsSetting["Value"] ?? "").Value<string>();
 			LogUtil.Write($"We got our stuff: {id}, {property}, {value}");
-			DreamSender.SendMessage(property, value, id);
+			_controlService.SendDreamMessage(property, value, id);
 			ControlUtil.NotifyClients(_hubContext);
 			return Ok();
 		}
@@ -71,11 +73,11 @@ namespace Glimmr.Controllers {
 		[HttpPost("updateDevice")]
 		public IActionResult UpdateDevice([FromBody] JObject dData) {
 			var res = ControlUtil.TriggerReload(_hubContext, dData).Result;
-			_controlService.ScanDevices();
+			_controlService.RefreshDevice( (string) dData.GetValue("_id"));
 			ControlUtil.NotifyClients(_hubContext);
 			return Ok(res);
 		}
-        
+
 		// POST: api/DreamData/updateDevice
 		[HttpPost("updateData")]
 		public IActionResult UpdateData([FromBody] JObject dData) {
@@ -101,13 +103,13 @@ namespace Glimmr.Controllers {
 			_controlService.ResetMode();
 			return Ok(cType);
 		}
-		
+
 		// POST: api/DreamData/ledData
 		[HttpPost("updateLed")]
 		public IActionResult UpdateLed([FromBody] LedData ld) {
 			LogUtil.Write("Got LD from post: " + JsonConvert.SerializeObject(ld));
 			DataUtil.SetObject("LedData", ld);
-			_controlService.RefreshDevices();
+			_controlService.RefreshLedData();
 			_controlService.NotifyClients();
 			return Ok(ld);
 		}
@@ -115,7 +117,7 @@ namespace Glimmr.Controllers {
 		// POST: api/DreamData/vcount
 		[HttpPost("vcount")]
 		public IActionResult Vcount([FromBody] int count) {
-			LedData ledData = DataUtil.GetCollection<LedData>("ledData").First();
+			var ledData = DataUtil.GetCollection<LedData>("ledData").First();
 			var capMode = DataUtil.GetItem<int>("CaptureMode");
 			int hCount;
 			if (capMode == 0) {
@@ -136,7 +138,7 @@ namespace Glimmr.Controllers {
 		// POST: api/DreamData/hcount
 		[HttpPost("hcount")]
 		public IActionResult Hcount([FromBody] int count) {
-			LedData ledData = DataUtil.GetCollection<LedData>("ledData").First();
+			var ledData = DataUtil.GetCollection<LedData>("ledData").First();
 			var capMode = DataUtil.GetItem<int>("CaptureMode");
 			int vCount;
 			if (capMode == 0) {
@@ -153,11 +155,11 @@ namespace Glimmr.Controllers {
 			_controlService.ResetMode();
 			return Ok(count);
 		}
-        
+
 		// POST: api/DreamData/stripType
 		[HttpPost("stripType")]
 		public IActionResult StripType([FromBody] int type) {
-			LedData ledData = DataUtil.GetCollection<LedData>("ledData").First();
+			var ledData = DataUtil.GetCollection<LedData>("ledData").First();
 			ledData.StripType = type;
 			LogUtil.Write("Updating LED Data: " + JsonConvert.SerializeObject(ledData));
 			DataUtil.SetObject("LedData", ledData);
@@ -177,24 +179,6 @@ namespace Glimmr.Controllers {
 			return Ok(dsIp);
 		}
 
-		// POST: api/DreamData/dsSidekick
-		[HttpPost("dsSidekick")]
-		public IActionResult PostSk([FromBody] SideKick skDevice) {
-			LogUtil.Write(@"Did it work? " + JsonConvert.SerializeObject(skDevice));
-			DataUtil.SetItem("MyDevice", skDevice);
-			_controlService.NotifyClients();
-			return Ok("ok");
-		}
-
-		// POST: api/DreamData/dsConnect
-		[HttpPost("dsConnect")]
-		public IActionResult PostDevice([FromBody] Connect myDevice) {
-			LogUtil.Write(@"Did it work? " + JsonConvert.SerializeObject(myDevice));
-			DataUtil.SetItem("MyDevice", myDevice);
-			_controlService.NotifyClients();
-			return Ok(myDevice);
-		}
-
 		// POST: api/DreamData/dsConnect
 		[HttpPost("ambientColor")]
 		public IActionResult PostColor([FromBody] JObject myDevice) {
@@ -207,38 +191,40 @@ namespace Glimmr.Controllers {
 			// If setting this from a group, set it for all devices in that group
 			if (int.TryParse(id, out var idNum)) {
 				var devs = DataUtil.GetDreamDevices();
-				foreach (var dev in devs.Where(dev => dev.GroupNumber == idNum)) {
-					DreamSender.SetAmbientColor(color, dev.IpAddress, idNum);
-				}
-			} else { // Otherwise, just target the specified device.
-				DreamSender.SetAmbientColor(color, id, group);    
+				foreach (var dev in devs.Where(dev => dev.GroupNumber == idNum))
+					_controlService.SetAmbientColor(color, dev.IpAddress, idNum);
+			} else {
+				// Otherwise, just target the specified device.
+				_controlService.SetAmbientColor(color, id, group);
 			}
+
 			//ControlUtil.NotifyClients(_hubContext);
 			return Ok("Ok");
 		}
-        
+
 		// POST: api/DreamData/dsConnect
 		[HttpPost("ambientMode")]
 		public IActionResult PostAmbientMode([FromBody] JObject myDevice) {
 			LogUtil.Write(@"Did it work (ambient Mode)? " + JsonConvert.SerializeObject(myDevice));
-			DreamSender.SendMessage("ambientModeType",(int) myDevice.GetValue("mode"),(string)myDevice.GetValue("id"));
+			_controlService.SendDreamMessage("ambientModeType", (int) myDevice.GetValue("mode"),
+				(string) myDevice.GetValue("id"));
 
 			//ControlUtil.NotifyClients(_hubContext);
 			return Ok("Ok");
 		}
-        
+
 		// POST: api/DreamData/refreshDevices
 		public IActionResult RefreshDevices() {
-			_controlService.RefreshDevices();
+			_controlService.RescanDevices();
 			return new JsonResult("Refreshing...");
 		}
-        
+
 		// POST: api/DreamData/dsConnect
 		[HttpPost("ambientShow")]
 		public IActionResult PostShow([FromBody] JObject myDevice) {
 			LogUtil.Write(@"Did it work (ambient Show)? " + JsonConvert.SerializeObject(myDevice));
-			DreamSender.SendMessage("ambientScene",myDevice.GetValue("scene"),(string)myDevice.GetValue("id"));
-
+			_controlService.SendDreamMessage("ambientScene", myDevice.GetValue("scene"),
+				(string) myDevice.GetValue("id"));
 			//ControlUtil.NotifyClients(_hubContext);
 			return Ok(myDevice);
 		}
@@ -253,7 +239,7 @@ namespace Glimmr.Controllers {
 					return Content(DataUtil.GetStoreSerialized(), "application/json");
 				case "refreshDevices":
 					// Just trigger dreamclient to refresh devices
-					_controlService.RefreshDevices();
+					_controlService.RescanDevices();
 					return new JsonResult("OK");
 				case "authorizeHue": {
 					LogUtil.Write("AuthHue called, for reaal: " + value);
@@ -281,12 +267,14 @@ namespace Glimmr.Controllers {
 						LogUtil.Write("No auth, returning existing data.");
 						return new JsonResult(bd);
 					}
+
 					LogUtil.Write("Trying to retrieve appkey...");
 					var appKey = HueDiscovery.CheckAuth(bd.IpAddress).Result;
 					if (appKey == null) {
 						LogUtil.Write("Error retrieving app key.");
 						return new JsonResult(bd);
 					}
+
 					bd.Key = appKey.StreamingClientKey;
 					bd.User = appKey.Username;
 					LogUtil.Write("We should be authorized, returning.");
@@ -322,6 +310,7 @@ namespace Glimmr.Controllers {
 
 						panel.Dispose();
 					}
+
 					LogUtil.Write("Returning.");
 					return new JsonResult(bd);
 				}
@@ -338,23 +327,13 @@ namespace Glimmr.Controllers {
 			var bridgeArray = DataUtil.GetCollection<BridgeData>("Dev_Hue");
 			if (bridgeArray.Count == 0) {
 				var newBridges = HueDiscovery.Discover().Result;
-				foreach (var b in newBridges) {
-					DataUtil.InsertCollection<BridgeData>("Dev_Hue", b);
-				}
-			}
-
-			if (DataUtil.GetItem("DsIp") == "127.0.0.1") {
-				var newDevices = DreamDiscovery.Discover();
-				var devices = DataUtil.GetCollection<BaseDevice>("Dev_DreamScreen");
-				foreach (var d in devices) {
-					DataUtil.InsertCollection<BaseDevice>("Dev_DreamScreen", d);
-				}
+				foreach (var b in newBridges) DataUtil.InsertCollection<BridgeData>("Dev_Hue", b);
 			}
 
 			return Content(DataUtil.GetStoreSerialized(), "application/json");
 		}
-		
-		private static void SetBrightness(JObject dData) {
+
+		private void SetBrightness(JObject dData) {
 			if (dData == null) throw new ArgumentException("invalid jobject");
 			var tag = (dData["tag"] ?? "INVALID").Value<string>();
 			var id = (dData["id"] ?? "INVALID").Value<string>();
@@ -390,13 +369,12 @@ namespace Glimmr.Controllers {
 				default:
 					var groupSend = false;
 					byte mFlag = 0x11;
-					if (ipAddress == "255.255.255.0") {
+					if (ipAddress == "255.255.255.0")
 						groupSend = true;
-					} else {
+					else
 						mFlag = 0x21;
-					}
 
-					DreamSender.SendUdpWrite(0x03, 0x02, new[] {ByteUtils.IntByte(brightness)}, mFlag, groupNumber,
+					_controlService.SendUdpWrite(0x03, 0x02, new[] {ByteUtils.IntByte(brightness)}, mFlag, groupNumber,
 						new IPEndPoint(IPAddress.Parse(ipAddress), 8888), groupSend);
 					break;
 			}
@@ -405,7 +383,7 @@ namespace Glimmr.Controllers {
 			var payload = new List<byte> {ByteUtils.IntByte(brightness)};
 			var utf8 = new UTF8Encoding();
 			payload.AddRange(utf8.GetBytes(remoteId));
-			DreamSender.SendUdpWrite(0x01, 0x10, payload.ToArray(), 0x21, groupNumber,
+			_controlService.SendUdpWrite(0x01, 0x10, payload.ToArray(), 0x21, groupNumber,
 				new IPEndPoint(IPAddress.Parse(ipAddress), 8888));
 		}
 	}

@@ -13,17 +13,25 @@ using System.Threading.Tasks;
 using Glimmr.Models.CaptureSource.Camera;
 using Glimmr.Models.CaptureSource.Video;
 using Glimmr.Models.Util;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Glimmr.Models.StreamingDevice.WLed {
     public class WLedStrip : IStreamingDevice, IDisposable
     {
+        public bool Enable { get; set; }
+        StreamingData IStreamingDevice.Data {
+            get => Data;
+            set => Data = (WLedData) value;
+        }
+
         public WLedData Data { get; set; }
         
         public WLedStrip(WLedData wd) {
             _client = new HttpClient();
             _updateColors = new List<Color>();
             Data = wd ?? throw new ArgumentException("Invalid WLED data.");
+            LogUtil.Write("Enabled: " + IsEnabled());
             Id = Data.Id;
             IpAddress = Data.IpAddress;
         }
@@ -32,6 +40,7 @@ namespace Glimmr.Models.StreamingDevice.WLed {
         public int Brightness { get; set; }
         public string Id { get; set; }
         public string IpAddress { get; set; }
+        public string Tag { get; set; }
         private Socket _stripSender;
         private bool _disposed;
         private bool colorsSet;
@@ -43,37 +52,27 @@ namespace Glimmr.Models.StreamingDevice.WLed {
         
         public void StartStream(CancellationToken ct) {
             if (Streaming) return;
+            if (!Data.Enable) return;
             LogUtil.Write("WLED: Initializing stream.");
+            _stripSender = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            _stripSender.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            _stripSender.Blocking = false;
+            _stripSender.EnableBroadcast = false;
+
             var onObj = new JObject(
                 new JProperty("on", true),
                 new JProperty("bri", Brightness)
                 );
             SendPost(onObj);
-            _stripSender = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            _stripSender.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            _stripSender.Blocking = false;
-            _stripSender.EnableBroadcast = false;
             ep = IpUtil.Parse(IpAddress, port);
             Streaming = true;
             LogUtil.Write("WLED: Streaming started...");
         }
 
-        public void StartStream() {
-            if (Streaming) return;
-            LogUtil.Write("WLED: Initializing stream.");
-            var onObj = new JObject(
-                new JProperty("on", true),
-                new JProperty("bri", Brightness)
-            );
-            SendPost(onObj);
-            _stripSender = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            _stripSender.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            _stripSender.Blocking = false;
-            _stripSender.EnableBroadcast = false;
-            ep = IpUtil.Parse(IpAddress, port);
-            _stripSender.ConnectAsync(ep);
-            Streaming = true;
-            LogUtil.Write("WLED: Streaming started...");
+       
+
+        public bool IsEnabled() {
+            return Data.Enable;
         }
 
         
@@ -82,7 +81,6 @@ namespace Glimmr.Models.StreamingDevice.WLed {
             Streaming = false;
             _stripSender?.Dispose();
             LogUtil.Write("WLED: Stream stopped.");
-
         }
 
         private void StopStrip() {
@@ -101,15 +99,19 @@ namespace Glimmr.Models.StreamingDevice.WLed {
             SendPost(offObj);
         }
 
-        public void SetColor(List<Color> colors, double fadeTime, bool ambient = false) {
+        public void SetColor(List<Color> colors, double fadeTime) {
             if (colors == null) throw new InvalidEnumArgumentException("Colors cannot be null.");
-            if (!Streaming) return;
+            if (!Streaming) {
+                LogUtil.Write("Not streaming, dumbass: " + Data.Id);
+                return;
+            }
+            colors = TruncateColors(colors);
             if (Data.StripMode == 2) {
                 colors = ShiftColors(colors);
             }
             var packet = new List<Byte>();
             // Set mode to DRGB, dude.
-            var timeByte = ambient ? 255 : 5;
+            var timeByte = 255;
             packet.Add(ByteUtils.IntByte(2));
             packet.Add(ByteUtils.IntByte(timeByte));
             foreach (var color in colors) {
@@ -117,7 +119,6 @@ namespace Glimmr.Models.StreamingDevice.WLed {
                 packet.Add(ByteUtils.IntByte(color.G));
                 packet.Add(ByteUtils.IntByte(color.B));
             }
-            //LogUtil.Write("No, really, sending?");
             if (!colorsSet) {
                 colorsSet = true;
                 LogUtil.Write("Sending " + colors.Count + " colors to " + IpAddress);
@@ -126,13 +127,37 @@ namespace Glimmr.Models.StreamingDevice.WLed {
 
             if (ep != null) {
                 try {
-                    _stripSender.SendToAsync(packet.ToArray(),0, ep);
+                    if (ep != null) _stripSender.SendTo(packet.ToArray(), ep);
                 } catch (Exception e) {
-                    
+                    LogUtil.Write("Fucking exception, look at that: " + e.Message);        
                 }
             }
              
             //LogUtil.Write("Sent.");
+        }
+
+        private List<Color> TruncateColors(List<Color> input) {
+            var truncated = new List<Color>();
+            var offset = Data.Offset;
+            var len = Data.LedCount;
+            var loop = false;
+            var loopEnd = 0;
+            // Start at the beginning
+            if (offset + len > input.Count) {
+                loopEnd = offset + len - input.Count;
+                loop = true;
+            }
+
+            for (var i = 0; i < input.Count; i++) {
+                if (loop && i < loopEnd) {
+                    truncated.Add(input[i]);
+                }
+
+                if (i >= offset - 1 && i < offset + len - 1) {
+                    truncated.Add(input[i]);
+                }
+            }
+            return truncated;
         }
 
         private static List<Color> ShiftColors(IReadOnlyList<Color> input) {
@@ -160,7 +185,8 @@ namespace Glimmr.Models.StreamingDevice.WLed {
      
         public void ReloadData() {
             var id = Data.Id;
-            Data = DataUtil.GetCollectionItem<WLedData>("wled", id);
+            Data = DataUtil.GetCollectionItem<WLedData>("Dev_Wled", id);
+            LogUtil.Write($"Reloaded LED Data for {id}: " + JsonConvert.SerializeObject(Data));
         }
 
         public void UpdateCount(int count) {
@@ -193,7 +219,7 @@ namespace Glimmr.Models.StreamingDevice.WLed {
             try {
                 uri = new Uri("http://" + IpAddress + target);
             } catch (UriFormatException) {
-                LogUtil.Write("Well, this isn't right: " + IpAddress);
+                LogUtil.Write("Well, this isn't right: " + IpAddress, "WARN");
                 return;
             }
 
@@ -202,7 +228,7 @@ namespace Glimmr.Models.StreamingDevice.WLed {
             try {
                 await _client.PostAsync(uri, httpContent);
             } catch (HttpRequestException e) {
-                
+                LogUtil.Write("HTTP Request Exception: " + e.Message, "WARN");
             }
 
             httpContent.Dispose();
@@ -230,10 +256,8 @@ namespace Glimmr.Models.StreamingDevice.WLed {
             var response = (HttpWebResponse)request.GetResponse();
 
             await using var rs = response.GetResponseStream();
-            if (rs != null) {
-                var responseString = await new StreamReader(rs).ReadToEndAsync();
-                LogUtil.Write("We got a response: " + responseString);    
-            }
+            var responseString = await new StreamReader(rs).ReadToEndAsync();
+            LogUtil.Write("We got a response: " + responseString);    
             response.Dispose();
         }
 

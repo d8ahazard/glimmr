@@ -6,7 +6,13 @@ using LifxNet;
 
 namespace Glimmr.Models.StreamingDevice.LIFX {
     public class LifxBulb : IStreamingDevice {
-        private LifxData Data { get; set; }
+        public bool Enable { get; set; }
+        StreamingData IStreamingDevice.Data {
+            get => Data;
+            set => Data = (LifxData) value;
+        }
+
+        public LifxData Data { get; set; }
         private LightBulb B { get; }
         public bool Streaming { get; set; }
 
@@ -16,6 +22,7 @@ namespace Glimmr.Models.StreamingDevice.LIFX {
         public int Brightness { get; set; }
         public string Id { get; set; }
         public string IpAddress { get; set; }
+        public string Tag { get; set; }
 
         private LifxClient _client;
         
@@ -31,6 +38,7 @@ namespace Glimmr.Models.StreamingDevice.LIFX {
         }
 
         public async void StartStream(CancellationToken ct) {
+            if (!Data.Enable) return;
             LogUtil.Write("Lifx: Starting stream.");
             var col = new Color {R = 0x00, G = 0x00, B = 0x00};
             Streaming = true;
@@ -42,6 +50,10 @@ namespace Glimmr.Models.StreamingDevice.LIFX {
             }
 
             StopStream();
+        }
+        
+        public bool IsEnabled() {
+            return Data.Enable;
         }
 
         
@@ -55,13 +67,17 @@ namespace Glimmr.Models.StreamingDevice.LIFX {
         }
 
         public void ReloadData() {
-            var newData = DataUtil.GetCollectionItem<LifxData>("lifxBulbs", Id);
+            var newData = DataUtil.GetCollectionItem<LifxData>("Dev_Lifx", Id);
             _captureMode = DataUtil.GetItem<int>("captureMode");
             Data = newData;
             var targetSector = _captureMode == 0 ? newData.TargetSector : newData.TargetSectorV2;
             _targetSector = targetSector - 1;
             Brightness = newData.MaxBrightness;
             Id = newData.Id;
+        }
+
+        public void Dispose() {
+            
         }
 
         public void SetColor(List<System.Drawing.Color> inputs, double fadeTime = 0) {

@@ -41,7 +41,6 @@ namespace Glimmr
 					services.AddSingleton<ControlService>();
 					services.AddHostedService<DreamService>();
 					services.AddHostedService<StatService>();
-					services.AddHostedService<UdpService>();
 					services.AddHostedService<DiscoveryService>();
 					services.AddHostedService<ColorService>();
 				});

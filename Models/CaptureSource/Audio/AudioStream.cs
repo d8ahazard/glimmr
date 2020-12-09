@@ -1,16 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Glimmr.Models.Util;
+using Glimmr.Services;
+using LifxNet;
 using ManagedBass;
 using Newtonsoft.Json;
+using Color = System.Drawing.Color;
 
 namespace Glimmr.Models.CaptureSource.Audio {
     public sealed class AudioStream : IDisposable {
         private bool _disposed;
-        private List<DeviceInfo> _devices;
+        private List<AudioData> _devices;
         private int _recordDeviceIndex;
         private int _channels;
         private int _frequency;
@@ -18,15 +22,19 @@ namespace Glimmr.Models.CaptureSource.Audio {
         private float _max;
         private CancellationToken _token;
         private List<Color> _colors;
+        private bool _sendColors;
+        private ColorService _cs;
 
 
-        public AudioStream() {
+        public AudioStream(ColorService cs, CancellationToken cancellationToken) {
+            _cs = cs;
+            _token = cancellationToken;
             _colors = new List<Color>();
             for (var i = 0; i < 12; i++) {
                 _colors.Add(Color.Black);
             }
 
-            _devices = new List<DeviceInfo>();
+            _devices = new List<AudioData>();
             _recordDeviceIndex = -1;
             _sensitivity = DataUtil.GetItem("Sensitivity") ?? 5;
             LoadDevices();
@@ -46,13 +54,22 @@ namespace Glimmr.Models.CaptureSource.Audio {
 
         private void LoadDevices() {
             Bass.Init();
-            _devices = new List<DeviceInfo>();
+            _devices = new List<AudioData>();
             string rd = DataUtil.GetItem("RecDev");
             for (var a = 0; Bass.RecordGetDeviceInfo(a, out var info); a++) {
+                LogUtil.Write("Bass device?" + JsonConvert.SerializeObject(info));
                 if (!info.IsEnabled) continue;
-                _devices.Add(info);
+                try {
+                    var ad = new AudioData();
+                    ad.ParseDevice(info);
+                    DataUtil.InsertCollection<AudioData>("Dev_Audio", ad);
+                    _devices.Add(ad);
+                } catch (Exception) {
+                
+                }
                 if (rd == null && a == 0) {
                     DataUtil.SetItem("RecDev", info.Name);
+                    rd = info.Name;
                 } else {
                     if (rd != info.Name) continue;
                     LogUtil.Write($"Selecting recording device index {a}: {info.Name}");
@@ -60,40 +77,47 @@ namespace Glimmr.Models.CaptureSource.Audio {
                 }
             }
 
-            try {
-                DataUtil.SetItem<List<DeviceInfo>>("audioDevices", _devices);
-            } catch (Exception) {
-                
-            }
+            
         }
 
-        public void StartStream(CancellationToken ct) {
-            _token = ct;
+        public void StartCapture() {
             if (_recordDeviceIndex != -1) {
-                LogUtil.Write("Starting stream with device " + _recordDeviceIndex);
-                Bass.Init();
-                // Initialize Recording device.
-                Bass.RecordInit(_recordDeviceIndex);
-                Bass.CurrentRecordingDevice = _recordDeviceIndex;
-                var info = Bass.RecordingInfo;
-                LogUtil.Write("Info: " + JsonConvert.SerializeObject(info));
-                _channels = info.Channels == 0 ? 2 : info.Channels;
-                _frequency = info.Frequency == 0 ? 48000 : info.Frequency;
-                LogUtil.Write($"Setting channels and frequency to {_channels} and {_frequency}.");
-                //var record = Bass.RecordStart(_frequency, _channels, BassFlags.Float, Procedure);
-                var error = Bass.LastError;
-                LogUtil.Write("err? " + error);
+                SetCapVars();
+                
+                while (!_token.IsCancellationRequested) {
+                    
+                }
+                
             } else {
                 LogUtil.Write("No recording device available.");
             }
         }
 
+        private void SetCapVars() {
+            LogUtil.Write("Starting stream with device " + _recordDeviceIndex);
+            Bass.Init();
+            // Initialize Recording device.
+            Bass.RecordInit(1);
+            Bass.CurrentRecordingDevice = 1;
+            var info = Bass.RecordingInfo;
+            LogUtil.Write("Info: " + JsonConvert.SerializeObject(info));
+            _channels = info.Channels == 0 ? 2 : info.Channels;
+            _frequency = info.Frequency == 0 ? 48000 : info.Frequency;
+            LogUtil.Write($"Setting channels and frequency to {_channels} and {_frequency}.");
+            var record = Bass.RecordStart(_frequency, _channels, BassFlags.Float, Update);
+            var error = Bass.LastError;
+            LogUtil.Write("err? " + error);
+        }
 
-        private bool Procedure(int handle, IntPtr buffer, int length, IntPtr user) {
+        public void ToggleSend(bool enable = true) {
+            _sendColors = enable;
+        }
+
+        private bool Update(int handle, IntPtr buffer, int length, IntPtr user) {
+            if (!_sendColors) return true;
             if (_token.IsCancellationRequested) {
                 LogUtil.Write("We dun canceled our token.");
                 Bass.Free();
-                return false;
             }
 
             var samples = 256;
@@ -121,7 +145,8 @@ namespace Glimmr.Models.CaptureSource.Audio {
                 var value = amp > 0 ? 1 : 0;
                 _colors[q] = ColorUtil.ColorFromHsv(HueFromAmplitude(amp), 1, value);
             }
-
+            LogUtil.Write("Sending something...");
+            _cs.SendColors(_colors.ToList(),_colors.ToList(),_colors.ToList());
             return true;
         }
 
@@ -191,13 +216,14 @@ namespace Glimmr.Models.CaptureSource.Audio {
             sectors[10] = cValues["sub"];
             sectors[11] = cValues["bass"] + cValues["r"];
             
+            //LogUtil.Write("Cvalues: " + JsonConvert.SerializeObject(cValues));
             var output = new float[12];
             for(var l = 0; l < 12; l++) {
                 var v = sectors[l] - _sensitivity;
                 v = Limit(v, 0, 60);
                 output[l] = v;
             }
-            ConsoleView(output);
+            //ConsoleView(output);
             return output;
         }
 

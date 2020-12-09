@@ -271,8 +271,10 @@ function setListeners() {
         if (target) {
             if (target.classList.contains("devSetting")) {
                 let targetId = target.getAttribute("data-target");
-                let attribute = target.getAttribute("data-attribute");
-                console.log("Dev setting clicked, we are setting ", attribute, targetId), target.getAttribute("checked");
+                let attribute = target.getAttribute("data-attribute");                
+                console.log("Dev setting clicked, we are setting ", attribute, targetId, target.checked);
+                updateDevice(targetId, attribute, target.checked);
+                
             }
             
             if (target.classList.contains("settingBtn")  || target.parentElement.classList.contains("settingBtn")) {
@@ -498,6 +500,7 @@ function loadDevices() {
             let eLabel = document.createElement("label");
             enabled.setAttribute("data-target",device["_id"]);
             enabled.setAttribute("data-attribute","Enable");
+            if (device["Enable"]) enabled.checked = true;
             eLabel.classList.add("form-check-label");
             eLabel.setAttribute("for", checkId);
             eLabel.innerText = "Enable streaming";
@@ -558,7 +561,7 @@ function loadDevices() {
 function getDevices() {
     let d = [];
     for (const [key, value] of Object.entries(data.store)) {
-        if (key.includes("Dev_")) {
+        if (key.includes("Dev_") && key !== "Dev_Audio") {
             for (let i = 0; i < value.length; i++) {
                 if (value.hasOwnProperty(i)) {
                     d.push(value[i]);
@@ -569,6 +572,22 @@ function getDevices() {
     d.sort((a, b) => (a.Name > b.Name) ? 1 : -1);
     console.log("Devices: ", d);
     data.devices = d;
+}
+
+function updateDevice(id, property, value) {
+    for(let i = 0; i< data.devices.length; i++) {
+        let device = data.devices[i];
+        if (device["_id"] === id) {
+            if (device.hasOwnProperty(property)) {
+                console.log("Device property " + property + "exists, setting to " + value);
+                device[property] = value;
+                sendMessage("updateDevice", device);
+                data.devices[i] = device;
+            } else {
+                console.log("Device has no property for " + property);
+            }
+        }
+    }
 }
 
 function loadData() {

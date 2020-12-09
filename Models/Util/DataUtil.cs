@@ -6,13 +6,13 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Glimmr.Models.DreamScreen;
-using Glimmr.Models.DreamScreen.Devices;
 using Glimmr.Models.LED;
+using Glimmr.Models.StreamingDevice.DreamScreen;
 using Glimmr.Models.StreamingDevice.Hue;
 using Glimmr.Models.StreamingDevice.LIFX;
 using Glimmr.Models.StreamingDevice.Nanoleaf;
 using Glimmr.Models.StreamingDevice.WLed;
+using Glimmr.Services;
 using LifxNet;
 using LiteDB;
 using Newtonsoft.Json;
@@ -50,15 +50,13 @@ namespace Glimmr.Models.Util {
 
                 var dsIp = GetItem("DsIp");
                 var ledData = new LedData(true);
-                var myDevice = new DreamScreen4K(dsIp);
-                myDevice.Initialize();
-                myDevice.SetDefaults();
+                var myDevice = new DreamData();
                 myDevice.Id = dsIp;
                 SetObject("LedData", ledData);
                 SetObject("MyDevice", myDevice);
                 LogUtil.Write("Loading first...");
                 // Get/create our collection of Dream devices
-                var d = db.GetCollection<BaseDevice>("devices");
+                var d = db.GetCollection<DreamData>("Dev_DreamScreen");
                 // Create our default device
                 // Save it
                 d.Upsert(myDevice.Id, myDevice);
@@ -138,14 +136,6 @@ namespace Glimmr.Models.Util {
                 db.Commit();
         }
 
-        public static void InsertDsDevice(BaseDevice dev) {
-            if (dev == null) throw new ArgumentException("Invalid device.");
-            var db = GetDb();
-            var ex = db.GetCollection<BaseDevice>("devices");
-            ex.Upsert(dev);
-            db.Commit();
-        }
-        
 
         public static void CheckDefaults(LifxClient lc) {
             var db = GetDb();
@@ -181,6 +171,37 @@ namespace Glimmr.Models.Util {
             return serial;
         }
 
+
+        public static dynamic GetDeviceById(string id) {
+            var db = GetDb();
+            try {
+                var coll = db.GetCollection<BridgeData>("Dev_Hue");
+                var bDev = coll.FindById(id);
+                if (bDev != null) return bDev;
+
+                var coll1 = db.GetCollection<LifxData>("Dev_Lifx");
+                var bDev1 = coll1.FindById(id);
+                if (bDev1 != null) return bDev1;
+
+                var coll2 = db.GetCollection<NanoData>("Dev_NanoLeaf");
+                var bDev2 = coll2.FindById(id);
+                if (bDev2 != null) return bDev2;
+
+                var coll3 = db.GetCollection<WLedData>("Dev_Wled");
+                var bDev3 = coll3.FindById(id);
+                if (bDev3 != null) return bDev3;
+
+                var coll4 = db.GetCollection<NanoData>("Dev_DreamScreen");
+                var bDev4 = coll4.FindById(id);
+                if (bDev4 != null) return bDev4;
+            } catch (Exception e) {
+                LogUtil.Write("Exception getting device data");
+            }
+
+            return null;
+
+        }
+
         
         public static string GetStoreSerialized() {
             var db = GetDb();
@@ -201,17 +222,19 @@ namespace Glimmr.Models.Util {
             return JsonConvert.SerializeObject(output);
         }
 
-        public static BaseDevice GetDeviceData() {
-            var myDevice = GetObject<BaseDevice>("MyDevice");
-            if (myDevice == null) {
-                var dsIp = GetItem("DsIp");
-                myDevice = new DreamScreen4K(dsIp);
-                myDevice.SetDefaults();
-                myDevice.Id = dsIp;
-                SetObject("MyDevice", myDevice);
+        public static DreamData GetDeviceData() {
+            try {
+                var myDevice = GetObject<DreamData>("MyDevice");
+                if (myDevice != null) return myDevice;
+            } catch (Exception e) {
+                LogUtil.Write("Exception fetching deviceData: " + e.Message, "WARN");
             }
 
-            return myDevice;
+            var devIp = IpUtil.GetLocalIpAddress();
+            var newDevice = new DreamData {Id = devIp};
+            SetObject("MyDevice", newDevice);
+            return newDevice;
+            
         }
 
         public static void SetItem<T>(string key, dynamic value) {
@@ -281,50 +304,27 @@ namespace Glimmr.Models.Util {
         
         
         
-        public static List<BaseDevice> GetDreamDevices() {
+        public static List<DreamData> GetDreamDevices() {
             var dd = GetDb();
-            var output = new List<BaseDevice>();
-            var devs = dd.GetCollection<BaseDevice>("devices");
+            var devs = dd.GetCollection<DreamData>("Dev_DreamScreen");
             var dl = devs.FindAll();
-            if (dl == null) return output;
-            foreach (var dev in dl) {
-                var tag = dev.Tag;
-                switch (tag) {
-                    case "SideKick":
-                        output.Add((SideKick) dev);
-                        break;
-                    case "Connect":
-                        output.Add((Connect) dev);
-                        break;
-                    case "DreamScreen":
-                        output.Add((DreamScreenHd) dev);
-                        break;
-                    case "DreamScreen4K":
-                        output.Add((DreamScreen4K) dev);
-                        break;
-                    case "DreamScreenSolo":
-                        output.Add((DreamScreenSolo) dev);
-                        break;
-                }
-            }
-
-            return output;
+            return dl.ToList();
         }
 
-        public static BaseDevice GetDreamDevice(string id) {
+        public static DreamData GetDreamDevice(string id) {
             return GetDreamDevices().FirstOrDefault(dev => dev.Id == id);
         }
 
         public static (int, int) GetTargetLights() {
             var db = GetDb();
             var dsIp = GetItem("DsIp");
-            var devices = db.GetCollection<BaseDevice>("devices").FindAll();
+            var devices = db.GetCollection<DreamData>("Dev_DreamScreen").FindAll();
             foreach (var dev in devices) {
                 var tsIp = dev.IpAddress;
                 LogUtil.Write("Device IP: " + tsIp);
                 if (tsIp != dsIp) continue;
                 LogUtil.Write("We have a matching IP");
-                var fs = dev.flexSetup;
+                var fs = dev.FlexSetup;
                 var dX = fs[0];
                 var dY = fs[1];
                 LogUtil.Write($@"DX, DY: {dX} {dY}");
@@ -354,7 +354,7 @@ namespace Glimmr.Models.Util {
         }
 
 
-        public static async void RefreshDevices(LifxClient c) {
+        public static async void RefreshDevices(LifxClient c, ControlService controlService) {
             var cs = new CancellationTokenSource();
             cs.CancelAfter(30000);
             LogUtil.Write("Starting scan.");
@@ -363,11 +363,11 @@ namespace Glimmr.Models.Util {
             var ld = new LifxDiscovery(c);
             var nanoTask = NanoDiscovery.Refresh(cs.Token);
             var bridgeTask = HueDiscovery.Refresh(cs.Token);
-            var dreamTask = DreamDiscovery.Discover();
             var wLedTask = WledDiscovery.Discover();
             var bulbTask = ld.Refresh(cs.Token);
+            controlService.RefreshDreamScreen(cs.Token);
             try {
-                await Task.WhenAll(nanoTask, bridgeTask, dreamTask, bulbTask, wLedTask);
+                await Task.WhenAll(nanoTask, bridgeTask, bulbTask, wLedTask);
             } catch (TaskCanceledException e) {
                 LogUtil.Write("Discovery task was canceled before completion: " + e.Message, "WARN");
             } catch (SocketException f) {
@@ -378,13 +378,12 @@ namespace Glimmr.Models.Util {
             try {
                 var leaves = nanoTask.Result;
                 var bridges = bridgeTask.Result;
-                var dreamDevices = dreamTask.Result;
                 var bulbs = bulbTask.Result;
                 var wleds = wLedTask.Result;
                 var db = GetDb();
                 var bridgeCol = db.GetCollection<BridgeData>("Dev_Hue");
                 var nanoCol = db.GetCollection<NanoData>("Dev_Nanoleaf");
-                var devCol = db.GetCollection<BaseDevice>("Dev_DreamScreen");
+                var devCol = db.GetCollection<DreamData>("Dev_DreamScreen");
                 var lifxCol = db.GetCollection<LifxData>("Dev_Lifx");
                 var wledCol = db.GetCollection<WLedData>("Dev_Wled");
                 foreach (var b in bridges) {
@@ -398,7 +397,7 @@ namespace Glimmr.Models.Util {
                 }
 
                 foreach (var b in bridgeCol.FindAll()) {
-                    var nb = b;
+                    BridgeData nb;
                     if (b.Key !=  null && b.User != null) {
                         var n = new HueBridge(b);
                         nb = n.RefreshData(5).Result;
@@ -408,7 +407,6 @@ namespace Glimmr.Models.Util {
                     }
                 }
                 foreach (var n in leaves) nanoCol.Upsert(n);
-                foreach (var dd in dreamDevices) devCol.Upsert(dd);
                 foreach (var b in bulbs) lifxCol.Upsert(b);
                 foreach (var w in wleds) wledCol.Upsert(w);
                 bridgeCol.EnsureIndex(x => x.Id);
@@ -416,6 +414,8 @@ namespace Glimmr.Models.Util {
                 devCol.EnsureIndex(x => x.Id);
                 lifxCol.EnsureIndex(x => x.Id);
                 wledCol.EnsureIndex(x => x.Id);
+                var dsCol = db.GetCollection<DreamData>("Dev_DreamScreen");
+                dsCol.EnsureIndex(x => x.Id);
             } catch (TaskCanceledException) {
 
             } catch (AggregateException) {
@@ -434,23 +434,20 @@ namespace Glimmr.Models.Util {
                 var ld = new LifxDiscovery(lc);
                 var nanoTask = NanoDiscovery.Discover();
                 var hueTask = HueDiscovery.Discover();
-                var dreamTask = DreamDiscovery.Discover();
                 var wLedTask = WledDiscovery.Discover();
                 var bulbTask = ld.Discover(5);
-                await Task.WhenAll(nanoTask, hueTask, dreamTask, bulbTask).ConfigureAwait(false);
+                await Task.WhenAll(nanoTask, hueTask, bulbTask).ConfigureAwait(false);
                 var leaves = await nanoTask.ConfigureAwait(false);
                 var bridges = await hueTask.ConfigureAwait(false);
-                var dreamDevices = await dreamTask.ConfigureAwait(false);
                 var bulbs = await bulbTask.ConfigureAwait(false);
                 var wleds = await wLedTask.ConfigureAwait(false);
                 var bridgeCol = db.GetCollection<BridgeData>("Dev_Hue");
                 var nanoCol = db.GetCollection<NanoData>("Dev_Nanoleaf");
-                var devCol = db.GetCollection<BaseDevice>("Dev_DreamScreen");
+                var devCol = db.GetCollection<DreamData>("Dev_DreamScreen");
                 var lifxCol = db.GetCollection<LifxData>("Dev_Lifx");
                 var wledCol = db.GetCollection<WLedData>("Dev_Wled");
                 foreach (var b in bridges) bridgeCol.Upsert(b);
                 foreach (var n in leaves) nanoCol.Upsert(n);
-                foreach (var dd in dreamDevices) devCol.Upsert(dd);
                 foreach (var b in bulbs) lifxCol.Upsert(b);
                 foreach (var w in wleds) wledCol.Upsert(w);
                 bridgeCol.EnsureIndex(x => x.Id);

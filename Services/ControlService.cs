@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
@@ -35,23 +36,28 @@ namespace Glimmr.Services {
 		}
 
 		public event ArgUtils.Action RescanDeviceEvent = delegate { };
-		public event ArgUtils.Action DeviceReloadEvent = delegate { };
+		public event Action<string> DeviceReloadEvent = delegate { };
 
+		public event Action RefreshLedEvent = delegate { };
+
+		public event Action DeviceRescanEvent = delegate { };
 		public event ArgUtils.Action DreamSubscribeEvent = delegate { };
 		public event Action<int> SetModeEvent = delegate { };
-		
 		public event Action<int, bool, int> TestLedEvent = delegate { };
 
+		public event Action<CancellationToken> RefreshDreamScreenEvent = delegate { };
 		public event Action<int> SetAmbientModeEvent = delegate { };
-
 		public event Action<int> SetAmbientShowEvent = delegate { };
-		public event Action<string> SetAmbientColorEvent = delegate { };
+		public event Action<Color, string, int> SetAmbientColorEvent = delegate { };
+		public event Action<string, dynamic, string> SendDreamMessageEvent = delegate { };
+
+		public event Action<int, int, byte[], byte, byte, IPEndPoint, bool>  SendUdpWriteEvent = delegate { };
+
+		public event Action<List<Color>, string, int> SendSectorsEvent = delegate { };
 		public event Action<int> SetCaptureModeEvent = delegate { };
-
+		public event Action<List<Color>> TriggerSendColorsEventDs = delegate { };
 		public event Action<List<Color>, List<Color>> TriggerSendColorsEvent = delegate { };
-
-		public event Action<List<Color>, List<Color>, List<Color>,
-			Dictionary<string, List<Color>>> TriggerSendColorsEvent2= delegate { };
+		public event Action<List<Color>, List<Color>, List<Color>> TriggerSendColorsEvent2= delegate { };
 
 
 
@@ -97,26 +103,45 @@ namespace Glimmr.Services {
 			SetAmbientShowEvent(show);
 		}
 
-		public void SetAmbientColor(string color) {
+		public void SetAmbientColor(Color color, string id, int group) {
 			_hubContext.Clients.All.SendAsync("ambientColor", color);
 			DataUtil.SetItem<int>("AmbientColor",color);
-			SetAmbientColorEvent(color);
+			SetAmbientColorEvent(color, id, group);
+		}
+
+		public void SendDreamMessage(string command, dynamic message, string id) {
+			SendDreamMessageEvent(command, message, id);
+		}
+
+		public void SendSectors(List<Color> colors, string id, int group) {
+			SendSectorsEvent(colors, id, group);
 		}
 
 		/// <summary>
 		/// Call this to trigger device refresh
 		/// </summary>
-		public void RefreshDevices() {
-			DeviceReloadEvent();
+		public void RefreshDevice(string id) {
+			DeviceReloadEvent(id);
+		}
+
+		public void RescanDevices() {
+			DeviceRescanEvent();
+		}
+
+		public void RefreshLedData() {
+			RefreshLedEvent();
+		}
+
+		public void SendColors(List<Color> c1) {
+			TriggerSendColorsEventDs(c1);
 		}
 		
 		public void SendColors(List<Color> c1, List<Color> c2) {
 			TriggerSendColorsEvent(c1, c2);
 		}
 
-		public void SendColors(List<Color> colors, List<Color> sectors, List<Color> sectorsV2,
-			Dictionary<string, List<Color>> wledSectors) {
-			TriggerSendColorsEvent2(colors, sectors, sectorsV2, wledSectors);
+		public void SendColors(List<Color> colors, List<Color> sectors, List<Color> sectorsV2) {
+			TriggerSendColorsEvent2(colors, sectors, sectorsV2);
 		}
 		
 		public void TriggerDreamSubscribe() {
@@ -141,5 +166,16 @@ namespace Glimmr.Services {
 				NanoSocket?.Dispose();
 			});
 		}
+
+
+		public void SendUdpWrite(int p0, int p1, byte[] p2, byte mFlag, byte groupNumber, IPEndPoint p5, bool groupSend = false) {
+			SendUdpWriteEvent(p0, p1, p2, mFlag, groupNumber, p5, groupSend);
+		}
+
+		public void RefreshDreamScreen(in CancellationToken csToken) {
+			RefreshDreamScreenEvent(csToken);
+		}
+
+		
 	}
 }

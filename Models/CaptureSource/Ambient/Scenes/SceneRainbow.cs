@@ -1,4 +1,4 @@
-﻿namespace Glimmr.Models.DreamScreen.Scenes {
+﻿namespace Glimmr.Models.CaptureSource.Ambient.Scenes {
     public class SceneRainbow : SceneBase {
         public SceneRainbow() {
             SetColors(new[] {

@@ -63,10 +63,10 @@ namespace Glimmr.Models.StreamingDevice.Hue {
                     var mappedLights = new List<string>();
                     foreach (var light in lights) {
                         foreach (var ml in b.Lights) {
-                            if (ml.Id == light && ml.TargetSector != -1 || ml.TargetSectorV2 != -1) {
-                                LogUtil.Write("Adding mapped ID: " + ml.Id);
-                                mappedLights.Add(light);
-                            }
+                            if ((ml.Id != light || ml.TargetSector == -1) && ml.TargetSectorV2 == -1) continue;
+                            if (mappedLights.Contains(light)) continue;
+                            LogUtil.Write("Adding mapped ID: " + ml.Id);
+                            mappedLights.Add(light);
                         }
                     }
 
@@ -86,11 +86,8 @@ namespace Glimmr.Models.StreamingDevice.Hue {
                         LogUtil.Write("Random exception caught.");
                     }
 
-                    //Start auto updating this entertainment group
-#pragma warning disable 4014
                     client.AutoUpdate(stream, ct);
-#pragma warning restore 4014
-
+                    LogUtil.Write("Group setup complete, returning.");
                     return stream;
                 }
 

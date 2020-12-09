@@ -239,6 +239,30 @@ namespace Glimmr.Models.Util {
 
             return ColorFromHsv(h, s, v);
         }
+        
+        public static Color Rainbow(float progress) {
+            var div = Math.Abs(progress % 1) * 6;
+            var ascending = (int) (div % 1 * 255);
+            var descending = 255 - ascending;
+            var alpha = 0;
+            return (int) div switch {
+                0 => Color.FromArgb(alpha, 255, ascending, 0),
+                1 => Color.FromArgb(alpha, descending, 255, 0),
+                2 => Color.FromArgb(alpha, 0, 255, ascending),
+                3 => Color.FromArgb(alpha, 0, descending, 255),
+                4 => Color.FromArgb(alpha, ascending, 0, 255),
+                _ => Color.FromArgb(alpha, 255, 0, descending)
+            };
+        }
+        
+        public static Color[] EmptyColors(Color[] input) {
+            for (var i = 0; i < input.Length; i++) {
+                input[i] = Color.FromArgb(0, 0, 0, 0);
+            }
+
+            return input;
+        }
+
 
         public static Color FixGamma(Color input) {
             int[] gammas = {

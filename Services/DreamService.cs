@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
 using System.Net;
@@ -9,10 +9,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Hubs;
-using Glimmr.Models.CaptureSource.Audio;
-using Glimmr.Models.DreamScreen;
-using Glimmr.Models.DreamScreen.Devices;
+using Glimmr.Models.CaptureSource.Ambient;
+using Glimmr.Models.StreamingDevice.DreamScreen;
 using Glimmr.Models.Util;
+using LiteDB;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
@@ -21,20 +21,20 @@ using Color = System.Drawing.Color;
 namespace Glimmr.Services {
     public class DreamService : BackgroundService {
         private int CaptureMode { get; set; }
-        private DreamScene _dreamScene;
+        private Scene _scene;
         private byte _group;
         private Color _ambientColor;
         private int _ambientMode;
         private static IHubContext<SocketServer> _hubContext;
         private ControlService _controlService;
         private int _ambientShow;
-        private List<BaseDevice> _devices;
-        
-        
+        private List<DreamData> _devices;
+        private Socket _sender;
+        private UdpClient _client;
         private bool _discovering;
         private bool _autoDisabled;
         private int _brightness;
-        private BaseDevice _dev;
+        private DreamData _dev;
         private bool _timerStarted;
 
         // Our functional values
@@ -70,6 +70,8 @@ namespace Glimmr.Services {
             _controlService = controlService;
             _controlService.SetCaptureModeEvent += CheckSubscribe;
             _controlService.DreamSubscribeEvent += Subscribe;
+            _controlService.SetModeEvent += UpdateMode;
+            _controlService.RefreshDreamScreenEvent += Discover;
             Initialize();
             LogUtil.Write("Initialisation complete.");
         }
@@ -78,15 +80,17 @@ namespace Glimmr.Services {
         // This initializes all of the data in our class and starts function loops
         private void Initialize() {
             LogUtil.Write("Initializing dream client...");
-            // Create cancellation token sources
-             var dd = DataUtil.GetDb();
-            // Get audio input if exists
+            _sender = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            _sender.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            _sender.EnableBroadcast = true;
+            _client = new UdpClient {Ttl = 128};
+            _client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             _dev = DataUtil.GetDeviceData();
             LogUtil.Write("Device Data: " + JsonConvert.SerializeObject(_dev));
             // Create scene builder
-            _dreamScene = new DreamScene();
+            _scene = new Scene();
             // Get a list of devices
-            _devices = new List<BaseDevice>();
+            _devices = new List<DreamData>();
             // Read other variables
             _devMode = DataUtil.GetItem<int>("DeviceMode");
             _ambientMode = DataUtil.GetItem<int>("AmbientMode") ?? 0;
@@ -114,35 +118,41 @@ namespace Glimmr.Services {
         protected override Task ExecuteAsync(CancellationToken cancellationToken) {
             return Task.Run(async () => {
                 LogUtil.Write("All DS Services should now be running, executing main loop...");
-                var watch = new Stopwatch();
-                while (!cancellationToken.IsCancellationRequested) {
-                    await Task.Delay(1, cancellationToken);
+                
+                _subscribers = new Dictionary<string, int>();
+                // Loop until canceled
+                try {
+                    while (!cancellationToken.IsCancellationRequested) {
+                        // Send our subscribe multicast
+                        SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x30, (byte) _dev.GroupNumber, null, true);
+                        // Enumerate all subscribers, check to see that they are still valid
+                        var keys = new List<string>(_subscribers.Keys);
+                        foreach (var key in keys) {
+                            // If the subscribers haven't replied in three messages, remove them, otherwise, count down one
+                            if (_subscribers[key] <= 0) {
+                                _subscribers.Remove(key);
+                            } else {
+                                _subscribers[key] -= 1;
+                            }
+                        }
+
+                        // Sleep for 5s
+                        await Task.Delay(5000, cancellationToken);
+                    }
+                } catch (TaskCanceledException) {
+                    _subscribers = new Dictionary<string, int>();
                 }
                 LogUtil.Write("DreamClient: Main loop terminated, stopping services...");
                 StopServices();
                 // Dispose our DB instance
                 DataUtil.Dispose();
-            });
+            }, cancellationToken);
         }
-
-       
-
-        // This broadcasts the subscribe message that other devices reply to to get color data
-       
-        // Start a loop that refreshes our devices every 10 minutes
+        
         
 
-        // Get our audio stream and catch errors
-        private AudioStream GetStream() {
-            try {
-                return new AudioStream();
-            } catch (DllNotFoundException e) {
-                LogUtil.Write("Unable to load bass Dll: " + e.Message);
-            }
-
-            return null;
-        }
-
+        
+        
         // Update our device mode
         private void UpdateMode(int newMode) {
             // If the mode doesn't change, we don't need to do anything
@@ -151,7 +161,7 @@ namespace Glimmr.Services {
                 return;
             }
             // Reload our device data so we're sure it's fresh
-            _dev = DataUtil.GetDeviceData();
+            _dev = DataUtil.GetItem("MyDevice");
             _dev.Mode = newMode;
             // Notify web clients of mode change via socket
             LogUtil.Write($@"DreamScreen: Updating mode from {_prevMode} to {newMode}.");
@@ -163,6 +173,7 @@ namespace Glimmr.Services {
                 StopShowBuilder();
             }            // Store last state
             _prevMode = newMode;
+            _controlService.SetMode(newMode);
         }
 
         private void UpdateAmbientMode(int newMode) {
@@ -183,6 +194,7 @@ namespace Glimmr.Services {
 
             _prevAmbientMode = newMode;
             _ambientMode = newMode;
+            _controlService.SetAmbientMode(newMode);
         }
         
         
@@ -190,9 +202,9 @@ namespace Glimmr.Services {
             if (_showBuilderStarted) {
                 StopShowBuilder();
             }
-            _dreamScene.LoadScene(_ambientShow);
+            _scene.LoadScene(_ambientShow);
             _showBuilderSource = new CancellationTokenSource();
-            Task.Run(() => _dreamScene.BuildColors(_controlService, _showBuilderSource.Token));
+            Task.Run(() => _scene.BuildColors(_controlService, _showBuilderSource.Token));
             _prevAmbientShow = _ambientShow;
             _showBuilderStarted = true;
         }
@@ -209,13 +221,14 @@ namespace Glimmr.Services {
             // Create a list
             var colors = new List<Color>();
             for (var q = 0; q < 12; q++) colors.Add(aColor);
-            _controlService.SendColors(colors, colors);
+            _controlService.SendColors(colors);
         }
 
         private void UpdateAmbientShow(int newShow) {
             if (_prevAmbientShow == newShow) return;
-            _dreamScene.LoadScene(newShow);
+            _scene.LoadScene(newShow);
             _prevAmbientShow = newShow;
+            _controlService.SetAmbientShow(newShow);
         }
 
         private void UpdateBrightness(int newBrightness) {
@@ -237,7 +250,7 @@ namespace Glimmr.Services {
         }
         
         private void Subscribe() {
-            DreamSender.SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x10, _group, _targetEndpoint);
+            SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x10, _group, _targetEndpoint);
         }
 
 
@@ -265,7 +278,6 @@ namespace Glimmr.Services {
                 var sourceEndPoint = new IPEndPoint(IPAddress.Any, 8888);
                 var receivedResults = _listener.EndReceive(res, ref sourceEndPoint);
                 ProcessData(receivedResults, sourceEndPoint);
-
                 _listener.BeginReceive(Recv, null);
             } catch (ObjectDisposedException) {
                 LogUtil.Write("Object is already disposed.");
@@ -283,7 +295,7 @@ namespace Glimmr.Services {
             var replyPoint = new IPEndPoint(receivedIpEndPoint.Address, 8888);
             var payloadString = string.Empty;
             var payload = Array.Empty<byte>();
-            BaseDevice msgDevice = null;
+            DreamData msgDevice = null;
             var writeState = false;
             var writeDev = false;
             var msg = new DreamScreenMessage(receivedBytes, from);
@@ -301,10 +313,10 @@ namespace Glimmr.Services {
                 }
                 if (flag == "41") {
                     LogUtil.Write($"Flag is 41, we should save settings for {from}.");
-                    tDevice = DataUtil.GetDreamDevice(from);
+                    tDevice = DataUtil.GetCollectionItem<DreamData>("Dev_DreamScreen", from);
                     if (tDevice != null) writeDev = true;
                 }
-                if (from != null && command != null && command != "COLOR_DATA" && command != "SUBSCRIBE" && tDevice != null) {
+                if (command != null && command != "COLOR_DATA" && command != "SUBSCRIBE" && tDevice != null) {
                     LogUtil.Write($@"{from} -> {tDevice.IpAddress}::{command} {flag}-{msg.Group}.");
                 }
             } else {
@@ -314,7 +326,7 @@ namespace Glimmr.Services {
                 case "SUBSCRIBE":
                     
                     if (_devMode == 1 || _devMode == 2) {
-                        DreamSender.SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x10, _group, replyPoint);    
+                        SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x10, _group, replyPoint);    
                     }
                     
                     // If the device is on and capture mode is not using DS data
@@ -336,14 +348,14 @@ namespace Glimmr.Services {
                     break;
                 case "DISCOVERY_START":
                     LogUtil.Write("DreamScreen: Starting discovery.");
-                    _devices = new List<BaseDevice>();
+                    _devices = new List<DreamData>();
                     _discovering = true;
                     break;
                 case "DISCOVERY_STOP":
                     LogUtil.Write($"DreamScreen: Discovery complete, found {_devices.Count} devices.");
                     _discovering = false;
                     foreach (var d in _devices) {
-                        DataUtil.InsertCollection<BaseDevice>("devices", d);
+                        DataUtil.InsertCollection<DreamData>("Dev_DreamScreen", d);
                     }
                     
                     break;
@@ -375,7 +387,7 @@ namespace Glimmr.Services {
 
                             if (_discovering) {
                                 LogUtil.Write("Sending request for serial!");
-                                DreamSender.SendUdpWrite(0x01, 0x03, new byte[]{0},0x60,0,replyPoint);
+                                SendUdpWrite(0x01, 0x03, new byte[]{0},0x60,0,replyPoint);
                                 _devices.Add(msgDevice);
                             }
                         }
@@ -466,7 +478,7 @@ namespace Glimmr.Services {
                 case "FLEX_SETUP":
                     if (writeState | writeDev) {
                         int[] fSetup = payload.Select(x => (int) x).ToArray();
-                        tDevice.flexSetup = fSetup;
+                        tDevice.FlexSetup = fSetup;
                     }
 
                     break;
@@ -477,25 +489,39 @@ namespace Glimmr.Services {
             if (writeState) {
                 DataUtil.SetObject("myDevice", tDevice);
                 _dev = tDevice;
-                DreamSender.SendUdpWrite(msg.C1, msg.C2, msg.GetPayload(), 0x41, (byte)msg.Group, receivedIpEndPoint);
+                SendUdpWrite(msg.C1, msg.C2, msg.GetPayload(), 0x41, (byte)msg.Group, receivedIpEndPoint);
             }
 
             if (!writeState && !writeDev) return;
             // Notify if the sender was not us
             if (from != _dev.IpAddress) _controlService.NotifyClients();
-            DataUtil.InsertDsDevice(tDevice);
+            DataUtil.InsertCollection<DreamData>("Dev_DreamScreen", tDevice);
+        }
+        
+        
+        public async void Discover(CancellationToken ct) {
+            LogUtil.Write("Discovery started..");
+            // Send a custom internal message to self to store discovery results
+            var selfEp = new IPEndPoint(IPAddress.Loopback, 8888);
+            SendUdpWrite(0x01, 0x0D, new byte[] {0x01}, 0x30, 0x00, selfEp);
+            // Send our notification to actually discover
+            var msg = new byte[] {0xFC, 0x05, 0xFF, 0x30, 0x01, 0x0A, 0x2A};
+            SendUdpBroadcast(msg);
+            await Task.Delay(3000, ct).ConfigureAwait(false);
+            SendUdpWrite(0x01, 0x0E, new byte[] {0x01}, 0x30, 0x00, selfEp);
+            await Task.Delay(500, ct).ConfigureAwait(false);
         }
 
         
         private void SendDeviceStatus(IPEndPoint src) {
             var dss = DataUtil.GetDeviceData();
             var payload = dss.EncodeState();
-            DreamSender.SendUdpWrite(0x01, 0x0A, payload, 0x60, _group, src);
+            SendUdpWrite(0x01, 0x0A, payload, 0x60, _group, src);
         }
         
         private void SendDeviceSerial(IPEndPoint src) {
             var serial = DataUtil.GetDeviceSerial();
-            DreamSender.SendUdpWrite(0x01, 0x03, ByteUtils.StringBytes(serial), 0x60, _group, src);
+            SendUdpWrite(0x01, 0x03, ByteUtils.StringBytes(serial), 0x60, _group, src);
         }
 
         private static List<Color> ShiftColors(List<Color> input) {
@@ -533,5 +559,137 @@ namespace Glimmr.Services {
             CancelSource(_showBuilderSource, true);
             LogUtil.Write("All services have been stopped.");
         }
+
+        #region Messaging
+
+        public void SendSectors(List<Color> sectors, string id, int group) {
+            if (sectors == null) throw new InvalidEnumArgumentException("Invalid sector list.");
+            byte flag = 0x3D;
+            byte c1 = 0x03;
+            byte c2 = 0x16;
+            var p = new List<byte>();
+            foreach (var col in sectors) {
+                p.Add(ByteUtils.IntByte(col.R));
+                p.Add(ByteUtils.IntByte(col.G));
+                p.Add(ByteUtils.IntByte(col.B));
+            }
+            var ep = new IPEndPoint(IPAddress.Parse(id), 8888);
+            SendUdpWrite(c1, c2, p.ToArray(), flag, (byte) group, ep);
+        }
+        
+        public void SetAmbientColor(Color color, string id, int group) {
+            if (color == null) throw new InvalidEnumArgumentException("Invalid sector list.");
+            byte flag = 0x11;
+            byte c1 = 0x03;
+            byte c2 = 0x05;
+            var p = new List<byte>();
+            p.Add(ByteUtils.IntByte(color.R));
+            p.Add(ByteUtils.IntByte(color.G));
+            p.Add(ByteUtils.IntByte(color.B));
+            var ep = new IPEndPoint(IPAddress.Parse(id), 8888);
+            SendUdpWrite(c1, c2, p.ToArray(), flag, (byte) group, ep);
+        }
+        public void SendMessage(string command, dynamic value, string id) {
+            var dev = DataUtil.GetDreamDevice(id);
+            byte flag = 0x11;
+            byte c1 = 0x03;
+            byte c2 = 0x00;
+            int v;
+            var send = false;
+            var payload = Array.Empty<byte>();
+            var cFlags = MsgUtils.CommandBytes[command];
+            if (cFlags != null) {
+                c1 = cFlags[0];
+                c2 = cFlags[1];
+            }
+            switch (command) {
+                case "saturation":
+                    c2 = 0x06;
+                    payload = ByteUtils.StringBytes(value);
+                    send = true;
+                    break;
+                case "minimumLuminosity":
+                    c2 = 0x0C;
+                    v = int.Parse(value);
+                    payload = new[] {ByteUtils.IntByte(v), ByteUtils.IntByte(v), ByteUtils.IntByte(v)};
+                    send = true;
+                    break;
+                case "ambientModeType":
+                    if (cFlags != null) {
+                        payload = new[] {ByteUtils.IntByte((int)value)};
+                        c1 = cFlags[0];
+                        c2 = cFlags[1];
+                        send = true;
+                    }
+                    break;
+                case "ambientScene":
+                    if (cFlags != null) {
+                        payload = new[] {ByteUtils.IntByte((int)value)};
+                        c1 = cFlags[0];
+                        c2 = cFlags[1];
+                        send = true;
+                    }
+                    break;
+            }
+
+            if (send) {
+                var ep = new IPEndPoint(IPAddress.Parse(dev.IpAddress), 8888);
+                SendUdpWrite(c1, c2, payload, flag, (byte) dev.GroupNumber, ep, true);
+            }
+        }
+
+        private void SendUdpWrite(byte command1, byte command2, byte[] payload, byte flag = 17, byte group = 0,
+            IPEndPoint ep = null, bool groupSend = false) {
+            if (payload is null) throw new ArgumentNullException(nameof(payload));
+            // If we don't specify an endpoint...talk to self
+            ep ??= new IPEndPoint(IPAddress.Parse("0.0.0.0"), 8888);
+            // Magic header
+            // Payload length
+            // Group number
+            // Flag, should be 0x10 for subscription, 17 for everything else
+            // Upper command
+            // Lower command
+
+            var msg = new List<byte> {
+                0xFC,
+                (byte) (payload.Length + 5),
+                group,
+                flag,
+                command1,
+                command2
+            };
+            // Payload
+            msg.AddRange(payload);
+            // CRC
+            msg.Add(MsgUtils.CalculateCrc(msg.ToArray()));
+            if (flag == 0x30 | groupSend) {
+                SendUdpBroadcast(msg.ToArray());
+                //if (cmd != "SUBSCRIBE" && cmd != "COLOR_DATA") LogUtil.Write($"localhost -> 255.255.255.255::{cmd} {flag}-{group}");
+            } else {
+                SendUdpUnicast(msg.ToArray(), ep);
+                //if (cmd != "SUBSCRIBE" && cmd != "COLOR_DATA") LogUtil.Write($"localhost -> {ep.Address}::{cmd} {flag}-{group}");
+            }
+        }
+
+        private void SendUdpUnicast(byte[] data, EndPoint ep) {
+            try {
+                _sender.SendTo(data, ep);
+                _sender.Dispose();
+            } catch (SocketException e) {
+                LogUtil.Write($"Socket Exception: {e.Message}", "WARN");
+            }
+        }
+
+        private void SendUdpBroadcast(byte[] bytes) {
+            if (bytes is null) throw new ArgumentNullException(nameof(bytes));
+            try {
+                var ip = new IPEndPoint(IPAddress.Parse("255.255.255.255"), 8888);
+                _client.Send(bytes, bytes.Length, ip);
+            } catch (SocketException e) {
+                LogUtil.Write($"Socket Exception: {e.Message}", "WARN");
+            }
+        }
+
+        #endregion
     }
 }

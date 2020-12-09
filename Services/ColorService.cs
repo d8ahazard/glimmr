@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -9,9 +11,9 @@ using System.Threading.Tasks;
 using Glimmr.Hubs;
 using Glimmr.Models.CaptureSource.Audio;
 using Glimmr.Models.CaptureSource.Video;
-using Glimmr.Models.DreamScreen;
 using Glimmr.Models.LED;
 using Glimmr.Models.StreamingDevice;
+using Glimmr.Models.StreamingDevice.DreamScreen;
 using Glimmr.Models.StreamingDevice.Hue;
 using Glimmr.Models.StreamingDevice.LIFX;
 using Glimmr.Models.StreamingDevice.Nanoleaf;
@@ -23,26 +25,28 @@ using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Color = System.Drawing.Color;
 
+#endregion
+
 namespace Glimmr.Services {
 	// Handles capturing and sending color data
 	public class ColorService : BackgroundService {
 		private IHubContext<SocketServer> _hubContext;
 		private readonly ControlService _controlService;
 		private LedStrip _strip;
-		private StreamCapture _grabber;
-		private AudioStream _aStream;
+		private VideoStream _videoStream;
+		private AudioStream _audioStream;
 		private bool _autoDisabled;
 		private bool _streamStarted;
 		private bool _streamAudio;
 		private CancellationTokenSource _captureTokenSource;
 		private CancellationTokenSource _sendTokenSource;
-		
+
 		private LifxClient _lifxClient;
 		private HttpClient _nanoClient;
 		private Socket _nanoSocket;
 
-		private List<WLedStrip> _wledStrips;
 		private List<IStreamingDevice> _sDevices;
+		private Dictionary<string, int> _subscribers;
 
 		private int _captureMode;
 		private int _deviceMode;
@@ -51,47 +55,50 @@ namespace Glimmr.Services {
 		private int _ambientShow;
 		private string _ambientColor;
 		private bool _testingStrip;
-		private Dictionary<string, int> _subscribers;
 		private LedData _ledData;
+		private CancellationToken _stopToken;
 
-		private Task _videoCaptureTask;
-
+		
 
 		public ColorService(IHubContext<SocketServer> hubContext, ControlService controlService) {
 			_hubContext = hubContext;
 			_controlService = controlService;
+			_controlService.TriggerSendColorsEventDs += SendColors;
 			_controlService.TriggerSendColorsEvent += SendColors;
 			_controlService.TriggerSendColorsEvent2 += SendColors;
 			_controlService.SetModeEvent += Mode;
-			_controlService.DeviceReloadEvent += RefreshEventData;
+			_controlService.DeviceReloadEvent += RefreshDeviceData;
+			_controlService.RefreshLedEvent += ReloadLedData;
 			_controlService.TestLedEvent += LedTest;
-			_wledStrips = new List<WLedStrip>();
 			_sDevices = new List<IStreamingDevice>();
+			_subscribers = new Dictionary<string, int>();
 			LogUtil.Write("Initialization complete.");
 		}
-		
+
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
+			_stopToken = stoppingToken;
 			LogUtil.Write("Starting colorService loop...");
 			return Task.Run(async () => {
 				// If our control service says so, refresh data on all devices while streaming
 				LogUtil.Write("Control service starting...");
-				_controlService.DeviceReloadEvent += RefreshEventData;
+				_controlService.DeviceReloadEvent += RefreshDeviceData;
 				_controlService.SetModeEvent += Mode;
 				var watch = new Stopwatch();
-				RefreshEventData();
+				LoadData();
+				// Fire da demo
+				Demo();
 				LogUtil.Write("Starting capture service...");
-				StartCaptureServices(stoppingToken);
 				LogUtil.Write("Starting video capture task...");
-				StartVideoCaptureTask();
+				StartVideoCapture(stoppingToken);
 				LogUtil.Write("Starting audio capture task...");
-				StartAudioCaptureTask();
+				StartAudioCapture(stoppingToken);
 				LogUtil.Write("Color service tasks started, setting Mode...");
 				// Start our initial mode
 				Mode(_deviceMode);
 				LogUtil.Write("All color service tasks started, really executing main loop...");
 				while (!stoppingToken.IsCancellationRequested) {
-					if (_grabber == null) continue;
-					if (_grabber.SourceActive) {
+					if (_videoStream == null) continue;
+					if (_videoStream.SourceActive) {
 						watch.Reset();
 						if (!_autoDisabled) continue;
 						_autoDisabled = false;
@@ -114,25 +121,25 @@ namespace Glimmr.Services {
 							watch.Reset();
 						}
 					}
+
 					await Task.Delay(1, stoppingToken);
 				}
+
 				StopServices();
 				LogUtil.Write("Color service stopped.");
 				return Task.CompletedTask;
 			});
-			
 		}
 
 		private void LedTest(int len, bool stop, int test) {
 			_testingStrip = stop;
-			if (stop) {
+			if (stop)
 				_strip.StopTest();
-			} else {
+			else
 				_strip.StartTest(len, test);
-			}
 		}
 
-		private void RefreshEventData() {
+		private void LoadData() {
 			LogUtil.Write("Loading device data...");
 			// Reload main vars
 			_captureMode = DataUtil.GetItem<int>("CaptureMode") ?? 2;
@@ -141,63 +148,192 @@ namespace Glimmr.Services {
 			_ambientMode = DataUtil.GetItem<int>("AmbientMode") ?? 0;
 			_ambientShow = DataUtil.GetItem<int>("AmbientShow") ?? 0;
 			_ambientColor = DataUtil.GetItem<string>("AmbientColor") ?? "FFFFFF";
-			LogUtil.Write("Reloading strip");
+			_sendTokenSource = new CancellationTokenSource();
+			_captureTokenSource = new CancellationTokenSource();
+			LogUtil.Write("Loading strip");
+			_ledData = DataUtil.GetObject<LedData>("LedData");
+			var initTasks = new List<Task>();
 			try {
-				var ld = DataUtil.GetObject<LedData>("LedData");
-				_strip?.Reload(ld);
+				_strip = new LedStrip(_ledData);
 				LogUtil.Write("Initialized LED strip...");
 			} catch (TypeInitializationException e) {
 				LogUtil.Write("Type init error: " + e.Message);
 			}
 
-			LogUtil.Write("Clearing devices...");
-			// Dispose any devices we may have that are running
-			foreach (var wl in _wledStrips) {
-				wl.StopStream();
-				wl.Dispose();
-			}
-
-			foreach (var s in _sDevices) {
-				s.StopStream();
-				s.Dispose();
-			}
 			LogUtil.Write("Creating new device lists...");
 			// Create new lists
-			_wledStrips = new List<WLedStrip>();
 			_sDevices = new List<IStreamingDevice>();
-			
+
 			var bridgeArray = DataUtil.GetCollection<BridgeData>("Dev_Hue");
-			_sendTokenSource = new CancellationTokenSource();
-			foreach (var bridge in bridgeArray.Where(bridge => !string.IsNullOrEmpty(bridge.Key) && !string.IsNullOrEmpty(bridge.User) && bridge.SelectedGroup != "-1")) {
+			foreach (var bridge in bridgeArray.Where(bridge =>
+				!string.IsNullOrEmpty(bridge.Key) && !string.IsNullOrEmpty(bridge.User) &&
+				bridge.SelectedGroup != "-1")) {
+				LogUtil.Write("Adding Hue device: " + bridge.Id);
 				_sDevices.Add(new HueBridge(bridge));
 			}
 
 			// Init leaves
 			var leaves = DataUtil.GetCollection<NanoData>("Dev_NanoLeaf");
 			foreach (var n in leaves.Where(n => !string.IsNullOrEmpty(n.Token) && n.Layout != null)) {
+				_nanoClient ??= new HttpClient();
+
+				// Init nano socket
+				if (_nanoSocket == null) {
+					_nanoSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+					_nanoSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+					_nanoSocket.EnableBroadcast = false;
+					LogUtil.Write("Adding Nano device: " + n.Id);
+				}
+
 				_sDevices.Add(new NanoGroup(n, _nanoClient, _nanoSocket));
 			}
 
 			// Init lifx
 			var lifx = DataUtil.GetCollection<LifxData>("Dev_Lifx");
-			if (lifx != null) {
+			if (lifx != null)
 				foreach (var b in lifx.Where(b => b.TargetSector != -1)) {
+					_lifxClient ??= LifxClient.CreateAsync().Result;
+					LogUtil.Write("Adding Lifx device: " + b.Id);
 					_sDevices.Add(new LifxBulb(b, _lifxClient));
 				}
-			}
-                
+
 			var wlArray = DataUtil.GetCollection<WLedData>("Dev_Wled");
 			foreach (var wl in wlArray) {
-				LogUtil.Write("Adding Wled device!");
-				_wledStrips.Add(new WLedStrip(wl));
+				LogUtil.Write("Adding Wled device: " + wl.Id);
+				_sDevices.Add(new WLedStrip(wl));
 			}
-			LogUtil.Write("All wleds added...");
-			// If we are capturing, re-initialize splitter
-			if (_videoCaptureTask != null) {
-				CancelSource(_captureTokenSource);
-				StartVideoCaptureTask();
+
+			LogUtil.Write("Initializing Splitter.");
+			//var hasDs = _subscribers.Count > 0;
+			//var hasSd = _sDevices.Count > 0;
+
+			//_videoStream.Refresh(hasDs, hasSd);
+			LogUtil.Write("Color Service Data Load Complete...");
+		}
+
+		private void Demo() {
+			LogUtil.Write("Demo fired...");
+			var ledCount = _ledData.LedCount;
+			LogUtil.Write("Running demo on " + ledCount + "Leds");
+			var i = 0;
+			var cols = new Color[ledCount];
+			cols = ColorUtil.EmptyColors(cols);
+			var dcs = new CancellationTokenSource();
+			var wlDict = new List<WLedStrip>();
+			var wlCols = new Dictionary<string, Color[]>();
+			LogUtil.Write("Still alive 1, we have " + _sDevices.Count + " streaming devices.");
+			foreach (var sd in _sDevices) {
+				var id = sd.Id;
+				LogUtil.Write("Looping sdevice: " + id);
+				if (string.IsNullOrEmpty(id)) continue;
+				if (!sd.Id.Contains("wled")) continue;
+				LogUtil.Write("Got a wled...");
+				if (!sd.IsEnabled()) continue;
+				LogUtil.Write("And it's enabled.");
+				sd.StartStream(dcs.Token);
+				LogUtil.Write("Started stream, netx.");
+				var wlStrip = (WLedStrip) sd;
+				wlDict.Add(wlStrip);
+				var wlCount = wlStrip.Data.LedCount;
+				wlCols[sd.Id] = ColorUtil.EmptyColors(new Color[wlCount]);
+				LogUtil.Write("And saved and stuff...");
 			}
-			
+
+			while (i < ledCount) {
+				var pi = i * 1.0f;
+				var progress = pi / ledCount;
+				var rCol = ColorUtil.Rainbow(progress);
+				// Update our next pixel on the strip with the rainbow color
+				cols[i] = rCol;
+				_strip.UpdateAll(cols.ToList());
+				// Go through each device in our list of wled devices
+				foreach (var w in wlDict) {
+					// This is the value the color should go at in our array of possible colors
+					var j = i - w.Data.Offset - 1;
+					// This is the final pixel in our list
+					var k = w.Data.Offset + w.Data.LedCount - 1;
+
+					// Otherwise, check to see if j is within our LED range
+					if (j >= 0) {
+						if (j < k && j < wlCols[w.Id].Length) wlCols[w.Id][j] = rCol;
+						if (k > ledCount) {
+							// If so, calculate the value to the start of the full array
+							var l = k - ledCount;
+							// If this new value is within, grab it assign it to our array
+							if (i == l) wlCols[w.Id][j] = rCol;
+						}
+					}
+
+					// RENDER IT
+					w.SetColor(wlCols[w.Id].ToList(), 0);
+				}
+
+				i++;
+				Thread.Sleep(2);
+			}
+
+			// Finally show off our hard work
+			Thread.Sleep(500);
+
+			// THEN RIP IT ALL DOWN
+			foreach (var w in wlDict) w.StopStream();
+			_strip.StopLights();
+			dcs.Dispose();
+		}
+
+
+		private AudioStream GetStream() {
+			try {
+				return new AudioStream(this, _stopToken);
+			} catch (DllNotFoundException e) {
+				LogUtil.Write("Unable to load bass Dll: " + e.Message);
+			}
+			return null;
+		}
+
+
+		private void RefreshDeviceData(string id) {
+			var exists = false;
+			foreach (var sd in _sDevices.Where(sd => sd.Id == id)) {
+				sd.StopStream();
+				sd.ReloadData();
+				exists = true;
+				if (!sd.IsEnabled()) continue;
+				LogUtil.Write("Restarting streaming device.");
+				sd.StartStream(_sendTokenSource.Token);
+			}
+
+			if (exists) return;
+			var dev = DataUtil.GetDeviceById(id);
+			IStreamingDevice? sda = dev.Tag switch {
+				"Lifx" => new LifxBulb(dev, _lifxClient),
+				"HueBridge" => new HueBridge(dev),
+				"NanoLeaf" => new NanoGroup(dev),
+				"WLed" => new WLedStrip(dev),
+				"DreamData" => new DreamDevice(dev),
+				_ => null
+			};
+
+			// If our device is a real boy, start it and add it
+			if (sda == null) return;
+			sda.StartStream(_sendTokenSource.Token);
+			_sDevices.Add(sda);
+		}
+
+		private void ReloadLedData() {
+			_captureMode = DataUtil.GetItem<int>("CaptureMode") ?? 2;
+			_deviceMode = DataUtil.GetItem<int>("DeviceMode") ?? 0;
+			_deviceGroup = DataUtil.GetItem<int>("DeviceGroup") ?? 0;
+			_ambientMode = DataUtil.GetItem<int>("AmbientMode") ?? 0;
+			_ambientShow = DataUtil.GetItem<int>("AmbientShow") ?? 0;
+			_ambientColor = DataUtil.GetItem<string>("AmbientColor") ?? "FFFFFF";
+			LedData ledData = DataUtil.GetObject<LedData>("LedData") ?? new LedData(true);
+			try {
+				_strip?.Reload(ledData);
+				LogUtil.Write("Re-Initialized LED strip...");
+			} catch (TypeInitializationException e) {
+				LogUtil.Write("Type init error: " + e.Message);
+			}
 		}
 
 		private void Mode(int newMode) {
@@ -206,186 +342,137 @@ namespace Glimmr.Services {
 				_autoDisabled = false;
 				DataUtil.SetItem<bool>("AutoDisabled", _autoDisabled);
 			}
+
 			switch (newMode) {
 				case 0:
-					StopStream();
+					if (_streamStarted) StopStream();
 					break;
 				case 1:
 					if (!_streamStarted) StartStream();
-					_grabber?.ToggleSend();
-					_streamAudio = false;
-					LogUtil.Write("Toggling send on grabber...");
+					_videoStream?.ToggleSend();
+					_audioStream?.ToggleSend(false);
 					if (_captureMode == 0) _controlService.TriggerDreamSubscribe();
 					break;
 				case 2: // Audio
 					if (!_streamStarted) StartStream();
-					_grabber?.ToggleSend(false);
-					_streamAudio = true;
-					LogUtil.Write("Toggling send on grabber...");
+					_videoStream?.ToggleSend(false);
+					_audioStream?.ToggleSend();
 					if (_captureMode == 0) _controlService.TriggerDreamSubscribe();
 					break;
 				case 3: // Ambient
 					if (!_streamStarted) StartStream();
-					_grabber?.ToggleSend(false);
-					_streamAudio = false;
-					LogUtil.Write("Toggling send on grabber...");
-					
+					_videoStream?.ToggleSend(false);
+					_audioStream?.ToggleSend(false);
 					break;
 			}
 		}
-		
-		// Starts our capture service and initializes our LEDs
-		private void StartCaptureServices(CancellationToken ct) {
-			if (_captureMode == 0) {
-				LogUtil.Write("Capture mode is 0, we don't need to capture video.");
-				return;
-			}
-			LogUtil.Write("Starting capture service...");
-			LedData ledData = DataUtil.GetObject<LedData>("LedData") ?? new LedData(true);
-			try {
-				_strip = new LedStrip(ledData);
-				LogUtil.Write("Initialized LED strip...");
-			} catch (TypeInitializationException e) {
-				LogUtil.Write("Type init error: " + e.Message);
-			}
-			LogUtil.Write("Initializing grabber...");
-			_grabber = new StreamCapture(ct);
-			
-			if (_grabber == null) return;
-			LogUtil.Write("Done, starting sub broadcast...");
 
-			Task.Run(() => SubscribeBroadcast(ct), ct);
-		}
 		
-		private void StartVideoCaptureTask() {
+		private void StartVideoCapture(CancellationToken ct) {
 			if (_captureMode == 0) {
 				_controlService.TriggerDreamSubscribe();
 			} else {
-				CancelSource(_captureTokenSource);
-				_captureTokenSource = new CancellationTokenSource();
-				Task.Run(() => StartVideoCapture(_captureTokenSource.Token));
+				LogUtil.Write("Initializing video stream...");
+				LogUtil.Write("Continuing...");
+				_videoStream = new VideoStream(this, ct);
+				if (_videoStream == null) {
+					LogUtil.Write("Video stream is null.", "WARN");
+					return;
+				}
+				LogUtil.Write("Setting video capture task...");
+				Task.Run(async () => _videoStream.StartCapture( _subscribers.Count > 0, _sDevices.Count > 0), ct);
+				LogUtil.Write("Starting video capture task...");
+				//_videoCaptureTask.Start();
 				LogUtil.Write("Video capture task has been started.");
 			}
 		}
-		
-		private Task StartVideoCapture(CancellationToken cancellationToken) {
-			if (_grabber == null) {
-				LogUtil.Write("Grabber is null!!", "WARN");
-				return Task.CompletedTask;
+
+
+		private void StartAudioCapture(CancellationToken ct) {
+			if (_captureMode == 0) {
+				_controlService.TriggerDreamSubscribe();
+			} else {
+				_audioStream = GetStream(); 
+				if (_audioStream == null) {
+					LogUtil.Write("Audio stream is null.", "WARN");
+					return;
+				}
+
+				LogUtil.Write("Starting audio capture task...");
+				Task.Run(async () => _audioStream.StartCapture(), ct);
+				LogUtil.Write("Audio capture task has been started.");
 			}
-			LogUtil.Write("Starting grabber capture task...");
-			_videoCaptureTask = _grabber.StartCapture(this, cancellationToken, _subscribers.Count > 0, _sDevices.Count > 0);
-			LogUtil.Write("Created...");
-			return _videoCaptureTask.IsCompleted ? Task.CompletedTask : _videoCaptureTask;
 		}
 
-
-		private Task StartAudioCapture(CancellationToken cancellation) {
-			if (_aStream == null) {
-				LogUtil.Write("No Audio devices, no stream.");
-				return Task.CompletedTask;
-			}
-			if (cancellation != CancellationToken.None) {
-				LogUtil.Write("Starting audio capture service.");
-				_aStream.StartStream(cancellation);
-				return Task.Run(() => {
-					while (!cancellation.IsCancellationRequested) {
-						if (!_streamAudio) continue;
-						var cols = _aStream.GetColors();
-						SendColors(cols, cols);
-					}
-				});
-			}
-
-			LogUtil.Write("Cancellation token is null??");
-			return Task.CompletedTask;
-		}
-
-		private void StartAudioCaptureTask() {
-			LogUtil.Write("Starting audio capture task.");
-			Task.Run(() => StartAudioCapture(_captureTokenSource.Token));
-		}
-		
 		private void StartStream() {
-            if (!_streamStarted) {
-                LogUtil.Write("Starting stream...");
-                RefreshEventData();
+			if (!_streamStarted) {
+				LogUtil.Write("Starting stream...");
+				foreach (var sd in _sDevices.Where(sd => !sd.Streaming)) {
+					if (!sd.IsEnabled()) continue;
+					LogUtil.Write("Starting device: " + sd.IpAddress);
+					sd.StartStream(_sendTokenSource.Token);
+					LogUtil.Write($"Started device at {sd.IpAddress}.");
+				}
+			}
 
-                foreach (var sd in _sDevices.Where(sd => !sd.Streaming)) {
-                    LogUtil.Write("Starting device: " + sd.IpAddress);
-                    sd.StartStream(_sendTokenSource.Token);
-                    LogUtil.Write($"Started device at {sd.IpAddress}.");
-                }
+			_streamStarted = true;
+			if (_streamStarted) LogUtil.WriteInc("Streaming on all devices should now be started...");
+		}
 
-                foreach (var wl in _wledStrips.Where(wl => !wl.Streaming)) {
-                    wl.StartStream(_sendTokenSource.Token);
-                    LogUtil.Write($"Started wled device at {wl.IpAddress}.");
-                }
-            }
-
-            _streamStarted = true;
-            if (_streamStarted) LogUtil.WriteInc("Streaming on all devices should now be started...");
-        }
-		
 		private void StopStream() {
 			if (!_streamStarted) return;
-			_grabber?.ToggleSend(false);
-			_streamAudio = false;
-			CancelSource(_sendTokenSource);
+			_videoStream?.ToggleSend(false);
+			_audioStream?.ToggleSend(false);
 			_strip?.StopLights();
-                
-			foreach (var s in _sDevices.Where(s => s.Streaming)) {
-				s.StopStream();
-			}
-                
-			foreach (var wl in _wledStrips.Where(wl => wl.Streaming)) {
-				wl.StopStream();
-			}
-                
+			foreach (var s in _sDevices.Where(s => s.Streaming)) s.StopStream();
+
 			LogUtil.WriteDec("Stream stopped.");
 			_streamStarted = false;
 		}
 
 
+		private void SendColors(List<Color> colors) {
+		}
+
+
 		private void SendColors(List<Color> colors, List<Color> sectors) {
-			var fadeTime = 0;
+			LogUtil.Write("SEND FIRED.");
 			_sendTokenSource ??= new CancellationTokenSource();
 			if (_sendTokenSource.IsCancellationRequested) return;
 			if (!_streamStarted) return;
-			var output = sectors;
-			foreach (var sd in _sDevices) {
-				sd.SetColor(output, fadeTime);
-			}
 
-			foreach (var wl in _wledStrips) {
-				wl.SetColor(output, fadeTime, true);
-			}
+			var fadeTime = 0;
 
-			if (_captureMode != 0) {
-				// If we have subscribers and we're capturing
-				if (_subscribers.Count > 0) {
-					LogUtil.Write("We have " + _subscribers.Count + " subscribers: " + _captureMode);
-				}
+			if (!_testingStrip) _strip?.UpdateAll(colors);
 
-				if (_subscribers.Count > 0 && _captureMode != 0) {
-					var keys = new List<string>(_subscribers.Keys);
-					foreach (var ip in keys) {
-						DreamSender.SendSectors(sectors, ip, _deviceGroup);
-						LogUtil.Write("Sent.");
+			foreach (var sd in _sDevices)
+				if (sd.IsEnabled()) {
+					//LogUtil.Write("SD: " + sd.Id + " enabled");
+					if (sd.Id.Contains("wled") || sd.Id.Contains("Wled")) {
+						sd.SetColor(colors, fadeTime);
+					} else {
+						LogUtil.Write("Setting colors for non wled...");
+						sd.SetColor(sectors, fadeTime);
 					}
 				}
-				
-				if (!_testingStrip) {
-					LogUtil.Write("Updating strip...");
-					_strip?.UpdateAll(colors);
+
+			if (_captureMode == 0) return;
+			// If we have subscribers and we're capturing
+			if (_subscribers.Count > 0)
+				LogUtil.Write("We have " + _subscribers.Count + " subscribers: " + _captureMode);
+
+			if (_subscribers.Count > 0 && _captureMode != 0) {
+				var keys = new List<string>(_subscribers.Keys);
+				foreach (var ip in keys) {
+					_controlService.SendSectors(sectors, ip, _deviceGroup);
+					LogUtil.Write("Sent.");
 				}
 			}
 		}
 
 		// If we pass in a third set of sectors, use that info instead.
-		public void SendColors(List<Color> colors, List<Color> sectors, List<Color> sectorsV2, Dictionary<string, List<Color>> wledSectors) {
+		public void SendColors(List<Color> colors, List<Color> sectors, List<Color> sectorsV2) {
 			_sendTokenSource ??= new CancellationTokenSource();
-			if (wledSectors == null) throw new ArgumentNullException(nameof(wledSectors));
 			if (_sendTokenSource.IsCancellationRequested) {
 				LogUtil.Write("Canceled.");
 				return;
@@ -395,74 +482,42 @@ namespace Glimmr.Services {
 				LogUtil.Write("Stream not started.");
 				return;
 			}
-			
-			var fadeTime = 0;
-			if (!_testingStrip) _strip?.UpdateAll(colors);
-			if (sectorsV2.Count == 0 && _sDevices.Count > 0) {
-				LogUtil.Write("Sectors are empty!!");
-			} else {
-				foreach (var sd in _sDevices) {
-					sd.SetColor(sectorsV2, fadeTime);
-				}	
-			}
-			
-			if (wledSectors.Count == 0 && _wledStrips.Count > 0) {
-				LogUtil.Write("NO WLED SECTORS.");
-			} else {
-				foreach (var wl in _wledStrips) {
-					wl.SetColor(wledSectors[wl.Id], fadeTime);
-				}
-				
-			}
-			if (_captureMode == 0) return;
-			// If we have subscribers and we're capturing
-			if (_subscribers.Count > 0 && _captureMode != 0) {
-				var keys = new List<string>(_subscribers.Keys);
-				foreach (var ip in keys) {
-					DreamSender.SendSectors(sectors, ip, _deviceGroup);
-				}
-			}
-			
-		}
 
-		
-		
-		private async void SubscribeBroadcast(CancellationToken ct) {
-			_subscribers = new Dictionary<string, int>();
-			// Loop until canceled
-			try {
-				while (!ct.IsCancellationRequested) {
-					// Send our subscribe multicast
-					DreamSender.SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x30, (byte) _deviceGroup, null, true);
-					// Enumerate all subscribers, check to see that they are still valid
-					var keys = new List<string>(_subscribers.Keys);
-					foreach (var key in keys) {
-						// If the subscribers haven't replied in three messages, remove them, otherwise, count down one
-						if (_subscribers[key] <= 0) {
-							_subscribers.Remove(key);
-						} else {
-							_subscribers[key] -= 1;
-						}
+			var fadeTime = 0;
+			if (!_testingStrip) {
+				_strip?.UpdateAll(colors);
+			}
+
+			if (sectorsV2.Count == 0 && _sDevices.Count > 0)
+				LogUtil.Write("Sectors are empty!!");
+			else
+				foreach (var sd in _sDevices.Where(sd => sd.IsEnabled())) {
+					if (string.IsNullOrEmpty(sd.Id)) {
+						LogUtil.Write("EMPTY ID: " + JsonConvert.SerializeObject(sd));
+						continue;
 					}
 
-					// Sleep for 5s
-					await Task.Delay(5000, ct);
+					if (sd.Id.Contains("wled") || sd.Id.Contains("Wled"))
+						sd.SetColor(colors, fadeTime);
+					else
+						sd.SetColor(sectorsV2, fadeTime);
 				}
-			} catch (TaskCanceledException) {
-				_subscribers = new Dictionary<string, int>();
-			}
-			
+
+
+			// If we have subscribers and we're capturing
+			if (_subscribers.Count <= 0 || _captureMode == 0) return;
+			var keys = new List<string>(_subscribers.Keys);
+			foreach (var ip in keys) _controlService.SendSectors(sectors, ip, _deviceGroup);
 		}
-		
+
+
 		private static void CancelSource(CancellationTokenSource target, bool dispose = false) {
 			if (target == null) return;
-			if (!target.IsCancellationRequested) {
-				target.Cancel();
-			}
+			if (!target.IsCancellationRequested) target.CancelAfter(0);
 
 			if (dispose) target.Dispose();
 		}
-		
+
 		private void StopServices() {
 			CancelSource(_captureTokenSource, true);
 			Thread.Sleep(500);
@@ -473,13 +528,7 @@ namespace Glimmr.Services {
 				s.Dispose();
 			}
 
-			foreach (var w in _wledStrips) {
-				w.StopStream();
-				w.Dispose();
-			}
 			LogUtil.Write("All services have been stopped.");
 		}
-
 	}
-
 }

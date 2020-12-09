@@ -25,7 +25,8 @@ namespace Glimmr.Models.StreamingDevice.WLed {
         [JsonProperty] public WLedStateData State { get; set; }
         [JsonProperty] public bool ControlStrip { get; set; }
         [JsonProperty] public bool AutoDisable { get; set; }
-
+        
+        
         public WLedData() {
             Tag = "Wled";
             Name ??= Tag;
@@ -88,6 +89,7 @@ namespace Glimmr.Models.StreamingDevice.WLed {
             LeftCount = input.LeftCount;
             RightCount = input.RightCount;
             BottomCount = input.BottomCount;
+            Enable = input.Enable;
             // Probably don't need this, but...ehhh...
             if (RightCount == 0) RightCount = LeftCount;
             if (BottomCount == 0) BottomCount = TopCount;

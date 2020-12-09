@@ -35,4 +35,8 @@
     <PackageReference Include="Zeroconf" Version="3.4.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Models\StreamingDevice\DreamScreen\Encoders" />
+  </ItemGroup>
+
 </Project>
