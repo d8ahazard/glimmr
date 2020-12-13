@@ -30,64 +30,61 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 
 		[DefaultValue(new byte[0])]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public byte[] AppMusicData;
+		public byte[] AppMusicData = Array.Empty<byte>();
 
-		[DefaultValue(new[] {255, 255, 255})]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int[] MusicModeColors;
+		[DefaultValue(new[] {255, 255, 255})] [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int[] MusicModeColors = {255, 255, 255};
 
-		[DefaultValue(new[] {100, 100, 100})]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int[] MusicModeWeights;
+		[DefaultValue(new[] {100, 100, 100})] [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int[] MusicModeWeights = {100, 100, 100};
 
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int AmbientShowType { get; set; }
+		public int AmbientShowType { get; set; } = 0;
 
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int FadeRate { get; set; }
+		public int FadeRate { get; set; } = 0;
 
 		[DefaultValue(4)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int ProductId { get; set; }
+		public int ProductId { get; set; } = 4;
 
 		[DefaultValue("000000")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public string AmbientColor { get; set; }
+		public string AmbientColor { get; set; } = "000000";
 
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int AmbientModeType { get; set; }
+		public int AmbientModeType { get; set; } = 0;
 
-		[DefaultValue(new[]{8, 16, 48, 0, 7, 0})]
-
+		[DefaultValue(new[] {8, 16, 48, 0, 7, 0})]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int[] FlexSetup { get; set; }
-		
+		public int[] FlexSetup { get; set; } = {8, 16, 48, 0, 7, 0};
+
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int SkuSetup { get; set; }
-		
+		public int SkuSetup { get; set; } = 0;
+
 		[DefaultValue("Undefined       ")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public string GroupName { get; set; }
+		public string GroupName { get; set; } = "Undefined       ";
 		
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int GroupNumber { get; set; }
-		
+
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int Mode { get; set; }
-		
+		public int Mode { get; set; } = 0;
+
 		[DefaultValue("Dreamscreen4K")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string DeviceTag { get; set; }
-		
+
 		[DefaultValue("FFFFFF")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public string Saturation { get; set; }
+		public string Saturation { get; set; } = "FFFFFF";
 		
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -101,25 +98,31 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int HdmiInput { get; set; }
-		
-		
+
+
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool HueLifxSettingsReceived { get; set; }
 
-		
+
 		[DefaultValue(1)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int IrEnabled { get; set; }
+		public int IrEnabled { get; set; } = 1;
 
 		
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int IrLearningMode { get; set; }
 
-		[DefaultValue(new byte[]{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})]
+		[DefaultValue(new byte[] {
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0
+		})]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public byte[] IrManifest { get; set; }
+		public byte[] IrManifest { get; set; } = {
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0
+		};
 
 		
 		[DefaultValue(false)]
@@ -131,35 +134,35 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int MicrophoneAudioBroadcastEnabled { get; set; }
 
-		
-		[DefaultValue(new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 0, 0})]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public byte[] SectorData { get; set; }
 
-		
+		[DefaultValue(new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 0, 0})]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public byte[] SectorData { get; set; } = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 0, 0};
+
+
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public string ThingName { get; set; }
+		public string ThingName { get; set; } = "";
 
 		
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int BootState { get; set; }
 
-		
+
 		[DefaultValue(1)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int CecPassthroughEnable { get; set; }
+		public int CecPassthroughEnable { get; set; } = 1;
 
 		
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int CecPowerEnable { get; set; }
 
-		
+
 		[DefaultValue(1)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int CecSwitchingEnable { get; set; }
+		public int CecSwitchingEnable { get; set; } = 1;
 
 		
 		[DefaultValue(0)]
@@ -171,45 +174,45 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public byte HdmiActiveChannels { get; set; }
 
-		
+
 		[DefaultValue("HDMI 1          ")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public string HdmiInputName1 { get; set; }
+		public string HdmiInputName1 { get; set; } = "HDMI 1          ";
 
-		
+
 		[DefaultValue("HDMI 2          ")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public string HdmiInputName2 { get; set; }
+		public string HdmiInputName2 { get; set; } = "HDMI 2          ";
 
-		
+
 		[DefaultValue("HDMI 3          ")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public string HdmiInputName3 { get; set; }
+		public string HdmiInputName3 { get; set; } = "HDMI 3          ";
 
 		
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int HdrToneRemapping { get; set; }
 
-		
+
 		[DefaultValue(1)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int HpdEnable { get; set; }
+		public int HpdEnable { get; set; } = 1;
 
-		
+
 		[DefaultValue(1)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int IndicatorLightAutoOff { get; set; }
+		public int IndicatorLightAutoOff { get; set; } = 1;
 
-		
+
 		[DefaultValue(1)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int LetterboxingEnable { get; set; }
+		public int LetterboxingEnable { get; set; } = 1;
 
-		
+
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int[] MinimumLuminosity { get; set; }
+		public int[] MinimumLuminosity { get; set; } = {0};
 
 		
 		[DefaultValue(0)]
@@ -220,21 +223,21 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int MusicModeType { get; set; }
-		
-		
+
+
 		[DefaultValue(1)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int PillarboxingEnable { get; set; }
+		public int PillarboxingEnable { get; set; } = 1;
 
 		
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int SectorBroadcastControl { get; set; }
 
-		
+
 		[DefaultValue(1)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int SectorBroadcastTiming { get; set; }
+		public int SectorBroadcastTiming { get; set; } = 1;
 
 		
 		[DefaultValue(0)]
@@ -246,19 +249,19 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int VideoFrameDelay { get; set; }
 
-		
+
 		[DefaultValue(15)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public byte Zones { get; set; }
+		public byte Zones { get; set; } = 15;
 
-		
+
 		[DefaultValue(new[] {255, 255, 255})]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int[] ZonesBrightness { get; set; }
-		
+		public int[] ZonesBrightness { get; set; } = {255, 255, 255};
+
 		[DefaultValue(new[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 0, 0})]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public byte[] SectorAssignment { get; set; }
+		public byte[] SectorAssignment { get; set; } = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 0, 0};
 
 		public DreamData() {
 			Name = "Dreamscreen4K";
@@ -282,7 +285,7 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 						propertyInfo.SetValue(_type, k.Value, null);	
 					}
 				} catch (Exception e) {
-					LogUtil.Write("Error setting value while copying...");
+					Log.Debug("Error setting value while copying...");
 				}
 			}
 		}
@@ -306,13 +309,15 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 		public byte[] EncodeState() {
 			switch (DeviceTag) {
 				case "Dreamscreen":
+				case "Dreamscreen4K":
+				case "DreamscreenHD":
 					return Encoders.Dreamscreen.EncodeState(this);
 				case "Connect":
 					return Connect.EncodeState(this);
 				case "SideKick":
 					return SideKick.EncodeState(this);
 				default:
-					LogUtil.Write("Invalid device tag? " + DeviceTag);
+					Log.Debug("Invalid device tag? " + DeviceTag);
 					return new byte[0];
 			}
 			

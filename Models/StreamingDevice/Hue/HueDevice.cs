@@ -18,7 +18,7 @@ using Q42.HueApi.Streaming.Models;
 using Serilog;
 
 namespace Glimmr.Models.StreamingDevice.Hue {
-	public sealed class HueBridge : IStreamingDevice, IDisposable {
+	public sealed class HueDevice : IStreamingDevice, IDisposable {
 		public bool Enable { get; set; }
 		StreamingData IStreamingDevice.Data {
 			get => Data;
@@ -36,7 +36,7 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 		public bool Streaming { get; set; }
 
 
-		public HueBridge(HueData data) {
+		public HueDevice(HueData data) {
 			DataUtil.GetItem<int>("captureMode");
 			Data = data ?? throw new ArgumentNullException(nameof(data));
 			IpAddress = Data.IpAddress;
@@ -67,7 +67,7 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 
 			if (!Data.Enable) return;
             
-			LogUtil.Write("Hue: Starting stream...");
+			Log.Debug("Hue: Starting stream...");
 			SetClient();
 			try {
 				// Make sure we are not already streaming.
@@ -75,7 +75,7 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 				if (Streaming) ResetColors();
 				Streaming = false;
 			} catch (SocketException e) {
-				LogUtil.Write("Socket exception, probably our bridge wasn't streaming. Oh well: " + e.Message);
+				Log.Debug("Socket exception, probably our bridge wasn't streaming. Oh well: " + e.Message);
 			}
 			if (ct == null) throw new ArgumentException("Invalid cancellation token.");
 			// Get our light map and filter for mapped lights
@@ -101,16 +101,16 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 			}
 
 			_entLayer = stream.GetNewLayer(true);
-			LogUtil.Write($"Hue: Stream started: {IpAddress}");
+			Log.Debug($"Hue: Stream started: {IpAddress}");
 			Streaming = true;
 		}
 
 		public void StopStream() {
-			LogUtil.Write($"Hue: Stopping Stream: {IpAddress}...");
+			Log.Debug($"Hue: Stopping Stream: {IpAddress}...");
 			var _ = StopStream(_client, Data);
 			if (Streaming) ResetColors();
 			Streaming = false;
-			LogUtil.Write("Hue: Streaming Stopped.");
+			Log.Debug("Hue: Streaming Stopped.");
 		}
 
 		private void SetClient() {
@@ -141,7 +141,7 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 			Data = newData;
 			IpAddress = Data.IpAddress;
 			Brightness = newData.Brightness;
-			LogUtil.Write(@"Hue: Reloaded bridge: " + IpAddress);
+			Log.Debug(@"Hue: Reloaded bridge: " + IpAddress);
 		}
 
 		/// <summary>
@@ -153,7 +153,7 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 		public void SetColor(List<Color> _, List<Color> colors, double fadeTime = 0) {
 			
 			if (!Streaming) {
-				LogUtil.Write("Hue is not streaming.");
+				Log.Debug("Hue is not streaming.");
 				return;
 			}
 			if (colors == null) {
@@ -192,7 +192,7 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 				}
 
 			} else {
-				LogUtil.Write($@"Hue: Unable to fetch entertainment layer. {IpAddress}");
+				Log.Debug($@"Hue: Unable to fetch entertainment layer. {IpAddress}");
 			}
 		}
 
@@ -206,7 +206,7 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 			if (Data.IpAddress == "0.0.0.0" || Data.User == null || Data.Key == null) {
 				Data.Lights = newLights;
 				Data.Groups = newGroups;
-				LogUtil.Write("No authorization, returning empty lights.");
+				Log.Debug("No authorization, returning empty lights.");
 				return Data;
 			}
 			// Get our client
@@ -220,7 +220,7 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 				newGroups.AddRange(all);
 				Data.Groups = newGroups;
 			} catch (Exception d) {
-				LogUtil.Write("Caught an exception: " + d.Message);    
+				Log.Debug("Caught an exception: " + d.Message);    
 			}
 
 			return Data;
@@ -244,74 +244,74 @@ namespace Glimmr.Models.StreamingDevice.Hue {
             }
             try {
                 var groupId = b.SelectedGroup;
-                LogUtil.Write("HueStream: Selecting group ID: " + groupId);
+                Log.Debug("HueStream: Selecting group ID: " + groupId);
                 if (groupId == null && b.Groups != null && b.Groups.Count > 0) {
                     groupId = b.Groups[0].Id;
                 }
 
                 if (groupId == null) {
-                    LogUtil.Write("HueStream: Group ID is null!");
+                    Log.Debug("HueStream: Group ID is null!");
                     return null;
                 }
                 //Get the entertainment group
-                LogUtil.Write("Grabbing ent group...");
+                Log.Debug("Grabbing ent group...");
                 var group = client.LocalHueClient.GetGroupAsync(groupId).Result;
                 if (group == null) {
-                    LogUtil.Write("Group is null, trying with first group ID.");
+                    Log.Debug("Group is null, trying with first group ID.");
                     var groups = b.Groups;
                     if (groups.Count > 0) {
                         groupId = groups[0].Id;
                         group = client.LocalHueClient.GetGroupAsync(groupId).Result;
                         if (group != null) {
-                            LogUtil.Write(@$"Selected first group: {groupId}");
+                            Log.Debug(@$"Selected first group: {groupId}");
                         } else {
-                            LogUtil.Write(@"Unable to load group, can't connect for streaming.");
+                            Log.Debug(@"Unable to load group, can't connect for streaming.");
                             return null;
                         }
                     }
                 } else {
-                    LogUtil.Write("HueStream: Entertainment Group retrieved...");
+                    Log.Debug("HueStream: Entertainment Group retrieved...");
                 }
 
                 //Create a streaming group
                 if (group != null) {
                     var lights = group.Lights;
-                    LogUtil.Write("HueStream: We have group, mapping lights: " + JsonConvert.SerializeObject(lights));
+                    Log.Debug("HueStream: We have group, mapping lights: " + JsonConvert.SerializeObject(lights));
                     var mappedLights = new List<string>();
                     foreach (var light in lights) {
                         foreach (var ml in from ml in b.MappedLights where ml.Id.ToString() == light where ml.TargetSector != -1 where !mappedLights.Contains(light) select ml) {
-                            LogUtil.Write("Adding mapped ID: " + ml.Id);
+                            Log.Debug("Adding mapped ID: " + ml.Id);
                             mappedLights.Add(light);
                         }
                     }
 
-                    LogUtil.Write("Getting streaming group using ml: " + JsonConvert.SerializeObject(mappedLights));
+                    Log.Debug("Getting streaming group using ml: " + JsonConvert.SerializeObject(mappedLights));
 
                     if (mappedLights.Count == 0) {
-                        LogUtil.Write("No mapped lights, nothing to do.");
+                        Log.Debug("No mapped lights, nothing to do.");
                         return null;
                     }
                     
                     var stream = new StreamingGroup(mappedLights);
-                    LogUtil.Write("Stream Got.");
+                    Log.Debug("Stream Got.");
                     //Connect to the streaming group
                     try {
-                        LogUtil.Write("Connecting...");
+                        Log.Debug("Connecting...");
                         await client.Connect(group.Id);
-                        LogUtil.Write("Connected.");
+                        Log.Debug("Connected.");
                     } catch (Exception e) {
-                        LogUtil.Write("Streaming exception caught: " + e.Message);
+                        Log.Debug("Streaming exception caught: " + e.Message);
                     }
 
                     client.AutoUpdate(stream, ct);
-                    LogUtil.Write("Group setup complete, returning.");
+                    Log.Debug("Group setup complete, returning.");
                     return stream;
                 }
 
-                LogUtil.Write("Uh, the group retrieved is null...");
+                Log.Debug("Uh, the group retrieved is null...");
 
             } catch (SocketException e) {
-                LogUtil.Write("Socket exception occurred, can't return group right now: " + e.Message);
+                Log.Debug("Socket exception occurred, can't return group right now: " + e.Message);
             }
 
             return null;

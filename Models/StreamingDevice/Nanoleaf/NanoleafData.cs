@@ -21,15 +21,15 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 
         [DefaultValue(0)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-        public float X { get; set; }
+        public float X { get; set; } = 0;
 
         [DefaultValue(50)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-        public float Y { get; set; }
+        public float Y { get; set; } = 50;
 
         [DefaultValue(1)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-        public float Scale { get; set; }
+        public float Scale { get; set; } = 1;
 
         [DefaultValue(0)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -107,12 +107,9 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
     [Serializable]
     public class NanoLayout {
         [JsonProperty] public int NumPanels { get; set; }
-        [JsonProperty] public int SideLength { get; set; }
-        [JsonProperty] public List<PanelLayout> PositionData { get; set; }
+        [JsonProperty] public int SideLength { get; set; } = 1;
+        [JsonProperty] public List<PanelLayout> PositionData { get; set; } = new List<PanelLayout>();
 
-        public NanoLayout() {
-            PositionData = new List<PanelLayout>();
-        }
     }
 
     [Serializable]
@@ -122,17 +119,13 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 
         [DefaultValue(10)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-        public int Y { get; set; }
+        public int Y { get; set; } = 10;
 
         [JsonProperty] public int O { get; set; }
 
         [DefaultValue(-1)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-        public int TargetSector { get; set; }
-        
-        [DefaultValue(-1)]
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-        public int TargetSectorV2 { get; set; }
+        public int TargetSector { get; set; } = -1;
 
         [JsonProperty] public int ShapeType { get; set; }
     }

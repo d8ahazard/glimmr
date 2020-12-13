@@ -6,6 +6,7 @@ using Glimmr.Models.Util;
 using LifxNet;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
+using Serilog;
 using Timer = System.Timers.Timer;
 
 namespace Glimmr.Services {
@@ -19,14 +20,14 @@ namespace Glimmr.Services {
 		public DiscoveryService(IHubContext<SocketServer> hubContext, ControlService controlService) {
 			_hubContext = hubContext;
 			_controlService = controlService;
-			_controlService.RescanDeviceEvent += TriggerRefresh;
+			_controlService.DeviceRescanEvent += TriggerRefresh;
 			_controlService.SetModeEvent += ToggleAutoScan;
 			_lifxClient = _controlService.LifxClient;
 		}
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			return Task.Run(async () => {
-				LogUtil.Write("Starting discovery service loop.");
+				Log.Debug("Starting discovery service loop.");
 				StartRefreshTimer();
 				while (!stoppingToken.IsCancellationRequested) {
 					await Task.Delay(1);
@@ -54,7 +55,8 @@ namespace Glimmr.Services {
 		}
 
 		private void TriggerRefresh() {
-			DeviceDiscovery(null, null);
+			Log.Debug("Triggering refresh.");
+			DeviceDiscovery();
 		}
         
 		// Discover...devices?
@@ -65,7 +67,7 @@ namespace Glimmr.Services {
 		}
 		
 		private async void DeviceDiscovery() {
-			LogUtil.Write("Triggering refresh of devices via timer.");
+			Log.Debug("Triggering refresh of devices via timer.");
 			// Trigger a refresh
 			_lifxClient = _controlService.LifxClient;
 			DataUtil.RefreshDevices(_lifxClient, _controlService);

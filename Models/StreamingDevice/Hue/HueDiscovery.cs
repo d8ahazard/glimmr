@@ -19,7 +19,7 @@ namespace Glimmr.Models.StreamingDevice.Hue {
             var output = new List<HueData>();
             var foo = Task.Run(() => Discover(), ct);
             var newBridges = await foo;
-            LogUtil.Write("New bridges: " + JsonConvert.SerializeObject(newBridges));
+            Log.Debug("New bridges: " + JsonConvert.SerializeObject(newBridges));
             var current = DataUtil.GetCollection<HueData>("Dev_Hue");
             foreach (var nb in newBridges) {
                 foreach (var ex in current) {
@@ -50,18 +50,18 @@ namespace Glimmr.Models.StreamingDevice.Hue {
                     .ConfigureAwait(false);
                 return result;
             } catch (HueException) {
-                LogUtil.Write($@"Hue: The link button is not pressed at {bridgeIp}.");
+                Log.Debug($@"Hue: The link button is not pressed at {bridgeIp}.");
             }
             return null;
         }
 
         public static async Task<List<HueData>> Discover(int time = 5) {
-            LogUtil.Write("Hue: Discovery Started.");
+            Log.Debug("Hue: Discovery Started.");
             var output = new List<HueData>();
             try {
                 var discovered = await HueBridgeDiscovery.CompleteDiscoveryAsync(TimeSpan.FromSeconds(time),TimeSpan.FromSeconds(time));
                 output = discovered.Select(bridge => new HueData(bridge)).ToList();
-                LogUtil.Write($"Hue: Discovery complete, found {discovered.Count} devices.");
+                Log.Debug($"Hue: Discovery complete, found {discovered.Count} devices.");
             } catch (Exception e) {
                 Log.Warning("Discovery exception.", e);
                 

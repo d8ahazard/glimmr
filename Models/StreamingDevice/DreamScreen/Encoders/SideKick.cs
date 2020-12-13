@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using Glimmr.Models.Util;
+using Serilog;
 
 #endregion
 
@@ -33,7 +34,7 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen.Encoders {
 		}
 
 		public static byte[] EncodeState(DreamData dd) {
-			LogUtil.Write("Encoding sidekick state.");
+			Log.Debug("Encoding sidekick state.");
 			var response = new List<byte>();
 			response.AddRange(ByteUtils.StringBytePad(dd.Name, 16));
 			response.AddRange(ByteUtils.StringBytePad(dd.GroupName, 16));

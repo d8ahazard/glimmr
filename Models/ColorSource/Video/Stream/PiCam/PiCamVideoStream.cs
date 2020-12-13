@@ -12,6 +12,7 @@ using MMALSharp.Handlers;
 using MMALSharp.Native;
 using MMALSharp.Ports;
 using MMALSharp.Ports.Outputs;
+using Serilog;
 
 namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
     public sealed class PiCamVideoStream : IVideoStream, IDisposable {
@@ -51,7 +52,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
         }
 
         public async Task Start(CancellationToken ct) {
-            LogUtil.Write("Starting Camera...");
+            Log.Debug("Starting Camera...");
             MMALCameraConfig.VideoStabilisation = false;
                 
             var sensorMode = MMALSensorMode.Mode0;
@@ -87,7 +88,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
             using var splitter = new MMALSplitterComponent();
             using var renderer = new MMALNullSinkComponent();
             cam.ConfigureCameraSettings();
-            LogUtil.Write("Cam mode is " + MMALCameraConfig.SensorMode);
+            Log.Debug("Cam mode is " + MMALCameraConfig.SensorMode);
             // Register to the event.
             vidCaptureHandler.MyEmguEvent += OnEmguEventCallback;
 
@@ -105,11 +106,11 @@ namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
             cam.Camera.VideoPort.ConnectTo(splitter);
 
             // Camera warm up time
-            LogUtil.Write("Camera is warming up...");
+            Log.Debug("Camera is warming up...");
             await Task.Delay(2000).ConfigureAwait(false);
-            LogUtil.Write("Camera initialized.");
+            Log.Debug("Camera initialized.");
             await cam.ProcessAsync(cam.Camera.VideoPort, ct).ConfigureAwait(false);
-            LogUtil.Write("Camera closed.");
+            Log.Debug("Camera closed.");
         }
 
         private void OnEmguEventCallback(object sender, EmguEventArgs args) {

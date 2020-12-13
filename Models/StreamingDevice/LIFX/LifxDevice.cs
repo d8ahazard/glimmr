@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Glimmr.Models.Util;
 using LifxNet;
+using Serilog;
 
 namespace Glimmr.Models.StreamingDevice.LIFX {
     public class LifxDevice : IStreamingDevice {
@@ -39,12 +40,12 @@ namespace Glimmr.Models.StreamingDevice.LIFX {
 
         public async void StartStream(CancellationToken ct) {
             if (!Data.Enable) return;
-            LogUtil.Write("Lifx: Starting stream.");
+            Log.Debug("Lifx: Starting stream.");
             var col = new Color {R = 0x00, G = 0x00, B = 0x00};
             Streaming = true;
             await _client.SetLightPowerAsync(B, TimeSpan.Zero, true).ConfigureAwait(false);
             await _client.SetColorAsync(B, col, 2700).ConfigureAwait(false);
-            LogUtil.Write("Lifx: Streaming is active...");
+            Log.Debug("Lifx: Streaming is active...");
             while (!ct.IsCancellationRequested) {
                 Streaming = true;
             }
@@ -60,10 +61,10 @@ namespace Glimmr.Models.StreamingDevice.LIFX {
         public void StopStream() {
             Streaming = false;
             if (_client == null) throw new ArgumentException("Invalid lifx client.");
-            LogUtil.Write("Setting color back the way it was.");
+            Log.Debug("Setting color back the way it was.");
             _client.SetColorAsync(B, Data.Hue, Data.Saturation,Convert.ToUInt16(Data.Brightness), Data.Kelvin, TimeSpan.Zero);
             _client.SetLightPowerAsync(B, TimeSpan.Zero, Data.Power).ConfigureAwait(false);
-            LogUtil.Write("Lifx: Stream stopped.");
+            Log.Debug("Lifx: Stream stopped.");
         }
 
         public void ReloadData() {

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Makaretu.Dns;
+using Serilog;
 
 namespace Glimmr.Models.StreamingDevice.WLED {
     public static class WledDiscovery {
@@ -14,7 +15,7 @@ namespace Glimmr.Models.StreamingDevice.WLED {
             try {
                 existing = DataUtil.GetCollection<WledData>("Dev_Wled");
             } catch (Exception e) {
-                LogUtil.Write("No Led data...");
+                Log.Debug("No Led data...");
             }
 
             if (existing == null) {
@@ -51,12 +52,12 @@ namespace Glimmr.Models.StreamingDevice.WLED {
             };
 
             mDns.Start();
-            LogUtil.Write("WLED: Discovery Started.");
+            Log.Debug("WLED: Discovery Started.");
             await Task.Delay(timeout * 1000);
             mDns.Stop();
             sd.Dispose();
             mDns.Dispose();
-            LogUtil.Write($"WLED: Discovery complete, found {output.Count} devices.");
+            Log.Debug($"WLED: Discovery complete, found {output.Count} devices.");
             return output;
         }
     }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 using System.Runtime.InteropServices;
+using Serilog;
 
 namespace Glimmr.Models.Util {
     public static class DisplayUtil {
@@ -56,7 +57,7 @@ namespace Glimmr.Models.Util {
             var output = p.StandardOutput.ReadToEnd();
             p.WaitForExit();
             p.Dispose();
-            LogUtil.Write("Output from screen check: " + output);
+            Log.Debug("Output from screen check: " + output);
             var r = new Size(0,0);
             try {
                 var match = System.Text.RegularExpressions.Regex.Match(output, @"(\d+)x(\d+)\+0\+0");
@@ -66,7 +67,7 @@ namespace Glimmr.Models.Util {
                     int.Parse(h, CultureInfo.InvariantCulture));
                 Console.WriteLine ("Display Size is {0} x {1}", w, h);
             } catch (FormatException) {
-                LogUtil.Write("Format exception, probably we have no screen.");
+                Log.Debug("Format exception, probably we have no screen.");
             }
 
             return r;

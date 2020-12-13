@@ -11,6 +11,7 @@ using Emgu.CV.Structure;
 using Glimmr.Models.LED;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
+using Serilog;
 
 #endregion
 
@@ -68,7 +69,7 @@ namespace Glimmr.Models.ColorSource.Video {
 		private const int MaxFrameCount = 30;
 
 		public Splitter(LedData ld, int srcWidth, int srcHeight) {
-			LogUtil.Write("Initializing splitter, using LED Data: " + JsonConvert.SerializeObject(ld));
+			Log.Debug("Initializing splitter, using LED Data: " + JsonConvert.SerializeObject(ld));
 			// Set some defaults, this should probably just not be null
 			if (ld != null) {
 				_leftCount = ld.LeftCount;
@@ -92,16 +93,16 @@ namespace Glimmr.Models.ColorSource.Video {
 			_fullCoords = DrawGrid();
 			_fullSectors = DrawSectors();
 			_frameCount = 0;
-			LogUtil.Write("Splitter init complete.");
+			Log.Debug("Splitter init complete.");
 		}
 
 
 		public void Update(Mat inputMat) {
 			_input = inputMat ?? throw new ArgumentException("Invalid input material.");
 			// Don't do anything if there's no frame.
-			//LogUtil.Write("Updating splitter...");
+			//Log.Debug("Updating splitter...");
 			if (_input.IsEmpty) {
-				LogUtil.Write("SPLITTER: NO INPUT.");
+				Log.Debug("SPLITTER: NO INPUT.");
 				return;
 			}
 
@@ -155,7 +156,7 @@ namespace Glimmr.Models.ColorSource.Video {
 
 			_colorsLed = outColorsStrip;
 			_colorsSectors = outColorsSector;
-			//LogUtil.Write("Updated.");
+			//Log.Debug("Updated.");
 		}
 
 
@@ -212,7 +213,7 @@ namespace Glimmr.Models.ColorSource.Video {
 				var n1 = CvInvoke.CountNonZero(t1);
 				t1.Dispose();
 				// If it isn't, we can stop here
-				//LogUtil.Write($"R1 @ {r} is " + n1);                                
+				//Log.Debug($"R1 @ {r} is " + n1);                                
 				if (n1 >= 5) break;
 				// If it is, check the corresponding bottom sector
 				var s2 = new Rectangle(0, r2, _input.Width, checkSize);
@@ -220,7 +221,7 @@ namespace Glimmr.Models.ColorSource.Video {
 				n1 = CvInvoke.CountNonZero(t2);
 				t2.Dispose();
 				// If the bottom is also black, save that value
-				if (n1 <= 5) //LogUtil.Write($"R2 @ {r} is " + n1);
+				if (n1 <= 5) //Log.Debug($"R2 @ {r} is " + n1);
 					cropHorizontal = r + 1;
 				else
 					break;
@@ -236,7 +237,7 @@ namespace Glimmr.Models.ColorSource.Video {
 				var n1 = CvInvoke.CountNonZero(t1);
 				t1.Dispose();
 				// If not, stop here
-				//LogUtil.Write($"N2 @ {c} " + n1);
+				//Log.Debug($"N2 @ {c} " + n1);
 				if (n1 >= 4) break;
 				// Otherwise, do the same for the right side
 				var s2 = new Rectangle(c2, 0, 1, _input.Height);
@@ -264,7 +265,7 @@ namespace Glimmr.Models.ColorSource.Video {
 						// If we have, set the hCrop value and tell program to crop
 						_sectorChanged = true;
 						_hCrop = true;
-						if (!_hCrop) LogUtil.Write($"Enabling horizontal crop for {cropHorizontal} rows.");
+						if (!_hCrop) Log.Debug($"Enabling horizontal crop for {cropHorizontal} rows.");
 					}
 				} else {
 					_hCropCheck = cropHorizontal;
@@ -273,7 +274,7 @@ namespace Glimmr.Models.ColorSource.Video {
 				_hCropCount = -1;
 			}
 
-			//LogUtil.Write($"H crop count, new, check: {_hCropCount}, {cropHorizontal}, {_hCropCheck}");
+			//Log.Debug($"H crop count, new, check: {_hCropCount}, {cropHorizontal}, {_hCropCheck}");
 
 			// If our crop count is lt zero, set it and the crop value to zero
 			if (_hCropCount < 0) {
@@ -283,7 +284,7 @@ namespace Glimmr.Models.ColorSource.Video {
 				if (_hCrop) {
 					_sectorChanged = true;
 					_hCrop = false;
-					LogUtil.Write("Disabling horizontal crop.");
+					Log.Debug("Disabling horizontal crop.");
 				}
 			}
 
@@ -300,7 +301,7 @@ namespace Glimmr.Models.ColorSource.Video {
 						// If we have, set the vCrop value and tell program to crop
 						_sectorChanged = true;
 						_vCrop = true;
-						if (!_vCrop) LogUtil.Write($"Enabling Vertical crop for {cropVertical} rows.");
+						if (!_vCrop) Log.Debug($"Enabling Vertical crop for {cropVertical} rows.");
 					}
 				} else {
 					_vCropCheck = cropVertical;
@@ -309,7 +310,7 @@ namespace Glimmr.Models.ColorSource.Video {
 				_vCropCount = -1;
 			}
 
-			//LogUtil.Write($"vCrop count, new, check: {_vCropCount}, {cropVertical}, {_vCropCheck}");
+			//Log.Debug($"vCrop count, new, check: {_vCropCount}, {cropVertical}, {_vCropCheck}");
 
 			// If our crop count is lt zero, set it and the crop value to zero
 			if (_vCropCount >= 0) return;
@@ -319,7 +320,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			if (!_vCrop) return;
 			_sectorChanged = true;
 			_vCrop = false;
-			LogUtil.Write("Disabling Vertical crop.");
+			Log.Debug("Disabling Vertical crop.");
 		}
 
 

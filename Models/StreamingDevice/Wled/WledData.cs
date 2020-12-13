@@ -4,6 +4,7 @@ using System.Net;
 using Glimmr.Models.LED;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
+using Serilog;
 
 namespace Glimmr.Models.StreamingDevice.WLED {
     public class WledData : StreamingData {
@@ -14,11 +15,6 @@ namespace Glimmr.Models.StreamingDevice.WLED {
         // If in normal mode, set an optional offset, strip direction, horizontal count, and vertical count.
         [JsonProperty] public int Offset { get; set; }
         [JsonProperty] public int StripDirection { get; set; }
-        [JsonProperty] public int TopCount { get; set; }
-        [JsonProperty] public int LeftCount { get; set; }
-        [JsonProperty] public int BottomCount { get; set; }
-        [JsonProperty] public int RightCount { get; set; }
-        // Applicable for both modes
         [JsonProperty] public int LedCount { get; set; }
         [JsonProperty] public List<int> Sectors { get; set; }
         [JsonProperty] public Dictionary<int, int> SubSectors { get; set; }
@@ -41,24 +37,7 @@ namespace Glimmr.Models.StreamingDevice.WLED {
             AutoDisable = true;
             Sectors = new List<int>();
             SubSectors = new Dictionary<int, int>();
-            LedData ld = new LedData(true);
-            try {
-                ld = DataUtil.GetObject<LedData>("LedData");
-            } catch (KeyNotFoundException e) {
-            }
-
-            var capMode = DataUtil.GetItem<int>("captureMode");
-            if (capMode == 0) {
-                LeftCount = ld.VCountDs;
-                TopCount = ld.HCountDs;
-                RightCount = ld.VCountDs;
-                BottomCount = ld.VCountDs;
-            } else {
-                LeftCount = ld.LeftCount;
-                TopCount = ld.TopCount;
-                RightCount = ld.RightCount;
-                BottomCount = ld.BottomCount;
-            }
+            LedData ld = new LedData();
             
             try {
                 var dns = Dns.GetHostEntry(Id + ".local");
@@ -66,7 +45,7 @@ namespace Glimmr.Models.StreamingDevice.WLED {
                     IpAddress = dns.AddressList[0].ToString();
                 }
             } catch (Exception e) {
-                LogUtil.Write("DNS Res ex: " + e.Message);
+                Log.Debug("DNS Res ex: " + e.Message);
             }
 
             using var webClient = new WebClient();
@@ -85,14 +64,7 @@ namespace Glimmr.Models.StreamingDevice.WLED {
         public void CopyExisting(WledData input) {
             if (input == null) throw new ArgumentNullException(nameof(input));
             Offset = input.Offset;
-            TopCount = input.TopCount;
-            LeftCount = input.LeftCount;
-            RightCount = input.RightCount;
-            BottomCount = input.BottomCount;
             Enable = input.Enable;
-            // Probably don't need this, but...ehhh...
-            if (RightCount == 0) RightCount = LeftCount;
-            if (BottomCount == 0) BottomCount = TopCount;
             AutoDisable = input.AutoDisable;
             ControlStrip = input.ControlStrip;
             LedCount = input.LedCount;

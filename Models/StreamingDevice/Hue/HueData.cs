@@ -13,9 +13,24 @@ using Q42.HueApi.Models.Groups;
 namespace Glimmr.Models.StreamingDevice.Hue {
 	[Serializable]
 	public class HueData : StreamingData {
+
+		[JsonProperty] public int GroupNumber { get; set; }
+		[JsonProperty] public string User { get; set; } = "";
+		[JsonProperty] public string Key { get; set; } = "";
+		[JsonProperty] public string GroupName { get; set; } = "";
+		[JsonProperty] public string SelectedGroup { get; set; } = "";
+		
+		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)] 
+		public List<LightMap> MappedLights { get; set; } = new List<LightMap>();
+
+		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+		public List<Group> Groups { get; set; } = new List<Group>();
+
+		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+		public List<LightData> Lights { get; set; } = new List<LightData>();
+		
 		public HueData() {
 			Tag = "HueBridge";
-			MappedLights ??= new List<LightMap>();
 		}
 
 		public HueData(string ip, string id) {
@@ -24,7 +39,6 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 			Brightness = 100;
 			Tag = "HueBridge";
 			Name = "HueBridge - " + id.Substring(0, 4);
-			MappedLights ??= new List<LightMap>();
 		}
 
 		public HueData(LocatedBridge b) {
@@ -60,18 +74,7 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 			Brightness = existing.Brightness;
 		}
 
-		[JsonProperty] public string User { get; set; }
-		[JsonProperty] public string Key { get; set; }
-		[JsonProperty] public string GroupName { get; set; }
-		[JsonProperty] public int GroupNumber { get; set; }
-		[JsonProperty] public string SelectedGroup { get; set; }
-		[JsonProperty] public List<LightMap> MappedLights { get; set; }
-
-		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-		public List<Group> Groups { get; set; }
-
-		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-		public List<LightData> Lights { get; set; }
+		
 	}
 	
 	[Serializable]

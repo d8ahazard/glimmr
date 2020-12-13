@@ -86,7 +86,7 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 
 		public async void StartStream(CancellationToken ct) {
 			if (!Data.Enable) return;
-			LogUtil.Write($@"Nanoleaf: Starting panel: {IpAddress}");
+			Log.Debug($@"Nanoleaf: Starting panel: {IpAddress}");
 			// Turn it on first.
 			//var currentState = NanoSender.SendGetRequest(_basePath).Result;
 			//await NanoSender.SendPutRequest(_basePath, JsonConvert.SerializeObject(new {on = new {value = true}}),
@@ -98,7 +98,7 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 			await SendPutRequest(_basePath, JsonConvert.SerializeObject(new {on = new {value = true}}),
 				"state");
 			await SendPutRequest(_basePath, JsonConvert.SerializeObject(body), "effects");
-			LogUtil.Write("Nanoleaf: Streaming is active...");
+			Log.Debug("Nanoleaf: Streaming is active...");
 			_sending = true;
 			while (!ct.IsCancellationRequested) {
 				Streaming = true;
@@ -111,7 +111,7 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 			Streaming = false;
 			SendPutRequest(_basePath, JsonConvert.SerializeObject(new {on = new {value = false}}), "state")
 				.ConfigureAwait(false);
-			LogUtil.Write($@"Nanoleaf: Stopped panel: {IpAddress}");
+			Log.Debug($@"Nanoleaf: Stopped panel: {IpAddress}");
 
 		}
 
@@ -119,7 +119,7 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 		public void SetColor(List<Color> _, List<Color> colors, double fadeTime = 1) {
 			int ft = (int) fadeTime;
 			if (!Streaming) {
-				LogUtil.Write("Streaming is  not active?");
+				Log.Debug("Streaming is  not active?");
 				return;
 			}
 
@@ -137,7 +137,7 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 			}
 			foreach (var pd in _layout.PositionData) {
 				var id = pd.PanelId;
-				var colorInt = _captureMode == 0 ?  pd.TargetSector - 1 : pd.TargetSectorV2 - 1;
+				var colorInt = pd.TargetSector - 1;
 				if (_streamMode == 2) {
 					byteString.AddRange(ByteUtils.PadInt(id));
 				} else {
@@ -145,7 +145,7 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 				}
 
 				if (pd.TargetSector == -1) continue;
-				//LogUtil.Write("Sector for light " + id + " is " + pd.Sector);
+				//Log.Debug("Sector for light " + id + " is " + pd.Sector);
 				var color = colors[colorInt];
 				if (Brightness < 100) {
 					color = ColorTransformUtil.ClampBrightness(color, Brightness);
@@ -174,9 +174,9 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 			UserToken result = null;
 			try {
 				result = await nanoleaf.CreateTokenAsync().ConfigureAwait(false);
-				LogUtil.Write("Authorized.");
+				Log.Debug("Authorized.");
 			} catch (AggregateException e) {
-				LogUtil.Write("Unauthorized Exception: " + e.Message);
+				Log.Debug("Unauthorized Exception: " + e.Message);
 			}
 
 			nanoleaf.Dispose();
@@ -218,7 +218,7 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
                 using var responseMessage = await _client.GetAsync(uri).ConfigureAwait(false);
                 if (responseMessage.IsSuccessStatusCode)
                     return await responseMessage.Content.ReadAsStringAsync().ConfigureAwait(false);
-                LogUtil.Write("Error contacting nanoleaf: " + responseMessage.Content);
+                Log.Debug("Error contacting nanoleaf: " + responseMessage.Content);
                 HandleNanoleafErrorStatusCodes(responseMessage);
 
                 return await responseMessage.Content.ReadAsStringAsync().ConfigureAwait(false);

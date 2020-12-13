@@ -110,10 +110,10 @@ namespace Glimmr.Models.Util {
             msg.Add(MsgUtils.CalculateCrc(msg.ToArray()));
             if (flag == 0x30 | groupSend) {
                 SendUdpBroadcast(msg.ToArray());
-                //if (cmd != "SUBSCRIBE" && cmd != "COLOR_DATA") LogUtil.Write($"localhost -> 255.255.255.255::{cmd} {flag}-{group}");
+                //if (cmd != "SUBSCRIBE" && cmd != "COLOR_DATA") Log.Debug($"localhost -> 255.255.255.255::{cmd} {flag}-{group}");
             } else {
                 SendUdpUnicast(msg.ToArray(), ep);
-                //if (cmd != "SUBSCRIBE" && cmd != "COLOR_DATA") LogUtil.Write($"localhost -> {ep.Address}::{cmd} {flag}-{group}");
+                //if (cmd != "SUBSCRIBE" && cmd != "COLOR_DATA") Log.Debug($"localhost -> {ep.Address}::{cmd} {flag}-{group}");
             }
         }
 

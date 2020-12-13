@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Linq;
 using Glimmr.Models.Util;
 using rpi_ws281x;
+using Serilog;
 
 namespace Glimmr.Models.LED {
 	public sealed class LedStrip : IDisposable {
@@ -19,7 +20,7 @@ namespace Glimmr.Models.LED {
 		}
 
 		public void Reload(LedData ld) {
-			LogUtil.Write("Setting brightness to " + ld.Brightness);
+			Log.Debug("Setting brightness to " + ld.Brightness);
 			_controller.Brightness = (byte) ld.Brightness;
 			if (_ledCount != ld.LedCount) {
 				_strip?.Dispose();
@@ -29,7 +30,7 @@ namespace Glimmr.Models.LED {
 
 		private void Initialize(LedData ld) {
 			_ld = ld ?? throw new ArgumentException("Invalid LED Data.");
-			LogUtil.Write("Initializing LED Strip, type is " + ld.StripType);
+			Log.Debug("Initializing LED Strip, type is " + ld.StripType);
 			_ledCount = ld.LeftCount + ld.RightCount + ld.TopCount + ld.BottomCount;
 			var stripType = ld.StripType switch {
 				1 => StripType.SK6812W_STRIP,
@@ -39,15 +40,15 @@ namespace Glimmr.Models.LED {
 			};
 			var pin = Pin.Gpio18;
 			if (ld.PinNumber == 13) pin = Pin.Gpio13;
-			LogUtil.Write($@"Count, pin, type: {_ledCount}, {ld.PinNumber}, {(int)stripType}");
+			Log.Debug($@"Count, pin, type: {_ledCount}, {ld.PinNumber}, {(int)stripType}");
 			var settings = Settings.CreateDefaultSettings();
 			_controller = settings.AddController(_ledCount, pin, stripType);
 			try {
 				_strip = new WS281x(settings);
-				LogUtil.Write($@"Strip created using {_ledCount} LEDs.");
+				Log.Debug($@"Strip created using {_ledCount} LEDs.");
                 
 			} catch (DllNotFoundException) {
-				LogUtil.Write("Unable to initialize strips, we're not running on a pi!");
+				Log.Debug("Unable to initialize strips, we're not running on a pi!");
 			}
 		}
 
@@ -71,7 +72,7 @@ namespace Glimmr.Models.LED {
 				if (c3 <= len) colors[c3] = Color.FromArgb(255, 0, 255, 0);
 				if (c4 <= len) colors[c4] = Color.FromArgb(255, 0, 255, 255);
 				colors[len - 1] = Color.FromArgb(255, 255, 255, 255);
-				LogUtil.Write($"Corners at: {c1}, {c2}, {c3}, {c4}");
+				Log.Debug($"Corners at: {c1}, {c2}, {c3}, {c4}");
 			} else {
 				colors[len] = Color.FromArgb(255, 255, 0, 0);
 			}
@@ -87,7 +88,7 @@ namespace Glimmr.Models.LED {
 		}
         
 		public void UpdateAll(List<Color> colors, bool force=false) {
-			//LogUtil.Write("NOT UPDATING.");
+			//Log.Debug("NOT UPDATING.");
 			if (colors == null) throw new ArgumentException("Invalid color input.");
 			if (_testing && !force) return;
 			
@@ -113,16 +114,16 @@ namespace Glimmr.Models.LED {
 				iSource++;
 			}
             
-			_strip.Render();
+			_strip?.Render();
 		}
 
 		public void StopLights() {
-			LogUtil.Write("Stopping LED Strip.");
+			Log.Debug("Stopping LED Strip.");
 			for (var i = 0; i < _ledCount; i++) {
 				_controller.SetLED(i, Color.FromArgb(0, 0, 0, 0));
 			}
-			_strip.Render();
-			LogUtil.Write("LED Strips stopped.");
+			_strip?.Render();
+			Log.Debug("LED Strips stopped.");
 		}
 
         

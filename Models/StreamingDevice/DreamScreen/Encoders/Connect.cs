@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Glimmr.Models.Util;
+using Serilog;
 
 namespace Glimmr.Models.StreamingDevice.Dreamscreen.Encoders {
 	public static class Connect {
@@ -51,7 +52,7 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen.Encoders {
         
 
 		public static byte[] EncodeState(DreamData dd) {
-			LogUtil.Write("Encoding sidekick State.");
+			Log.Debug("Encoding sidekick State.");
 			var response = new List<byte>();
 			response.AddRange(ByteUtils.StringBytePad(dd.Name, 16));
 			response.AddRange(ByteUtils.StringBytePad(dd.GroupName, 16));

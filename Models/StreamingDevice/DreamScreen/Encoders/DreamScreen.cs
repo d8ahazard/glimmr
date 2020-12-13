@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using Glimmr.Models.Util;
+using Newtonsoft.Json;
+using Serilog;
 
 namespace Glimmr.Models.StreamingDevice.Dreamscreen.Encoders {
 	public static class Dreamscreen {
@@ -78,7 +80,7 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen.Encoders {
 				espVersion = RequiredSoloEspFirmwareVersion;
 				picVersion = RequiredSoloPicVersionNumber;
 			}
-			LogUtil.Write("Encoding state for DS.");
+			Log.Debug($"Encoding state for DS: {JsonConvert.SerializeObject(dd)}");
 			var response = new List<byte>();
 			var nByte = ByteUtils.StringBytePad(dd.Name, 16);
 			response.AddRange(nByte);

@@ -18,7 +18,7 @@ using Serilog;
 namespace Glimmr.Models.Util {
 	public static class ControlUtil {
 		public static async void SetCaptureMode(IHubContext<SocketServer> hubContext, int capMode) {
-			LogUtil.Write("Updating capture mode to " + capMode);
+			Log.Debug("Updating capture mode to " + capMode);
 			var curMode = DataUtil.GetItem<int>("CaptureMode");
 			var dev = DataUtil.GetDeviceData();
 			if (curMode == capMode) return;
@@ -33,7 +33,7 @@ namespace Glimmr.Models.Util {
 		}
 
 		private static void SwitchDeviceType(string devType, DreamData curDevice) {
-			LogUtil.Write("Switching type to " + devType);
+			Log.Debug("Switching type to " + devType);
 			curDevice.DeviceTag = devType;
 			DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", curDevice);
 		}
@@ -42,7 +42,7 @@ namespace Glimmr.Models.Util {
 		public static async Task<bool> TriggerReload(IHubContext<SocketServer> hubContext, JObject dData) {
 			if (dData == null) throw new ArgumentException("invalid jObject");
 			if (hubContext == null) throw new ArgumentException("invalid hub context.");
-			LogUtil.Write("Reloading data: " + JsonConvert.SerializeObject(dData));
+			Log.Debug("Reloading data: " + JsonConvert.SerializeObject(dData));
 			var tag = (dData["Tag"] ?? "INVALID").Value<string>();
 			var id = (dData["_id"] ?? "INVALID").Value<string>();
 			dData["Id"] = id;
@@ -54,36 +54,36 @@ namespace Glimmr.Models.Util {
 			try {
 				switch (tag) {
 					case "Wled":
-						LogUtil.Write("Updating wled");
+						Log.Debug("Updating wled");
 						WledData existing = DataUtil.GetCollectionItem<WledData>("Dev_Wled", id);
 						var wData = dData.ToObject<WledData>();
 						if (wData != null) {
 							if (existing.State.info.leds.rgbw != wData.State.info.leds.rgbw)
-								LogUtil.Write("Update rgbw type.");
+								Log.Debug("Update rgbw type.");
 
 							if (existing.State.info.leds.count != wData.State.info.leds.count)
-								LogUtil.Write("Update count type.");
+								Log.Debug("Update count type.");
 
-							if (existing.State.state.bri != wData.Brightness) LogUtil.Write("Update Brightness...");
+							if (existing.State.state.bri != wData.Brightness) Log.Debug("Update Brightness...");
 						}
 
 						DataUtil.InsertCollection<WledData>("Dev_Wled", wData);
 						await hubContext.Clients.All.SendAsync("wledData", wData);
 						break;
 					case "HueBridge":
-						LogUtil.Write("Updating bridge");
+						Log.Debug("Updating bridge");
 						var bData = dData.ToObject<HueData>();
 						DataUtil.InsertCollection<HueData>("Dev_Hue", bData);
 						await hubContext.Clients.All.SendAsync("hueData", bData);
 						break;
 					case "Lifx":
-						LogUtil.Write("Updating lifx bulb");
+						Log.Debug("Updating lifx bulb");
 						var lData = dData.ToObject<LifxData>();
 						DataUtil.InsertCollection<LifxData>("Dev_Lifx", lData);
 						await hubContext.Clients.All.SendAsync("lifxData", lData);
 						break;
 					case "Nanoleaf":
-						LogUtil.Write("Updating nanoleaf");
+						Log.Debug("Updating nanoleaf");
 						var nData = dData.ToObject<NanoleafData>();
 						DataUtil.InsertCollection<NanoleafData>("Dev_Nanoleaf", nData);
 						await hubContext.Clients.All.SendAsync("nanoData", nData);
@@ -103,7 +103,7 @@ namespace Glimmr.Models.Util {
 		public static async void NotifyClients(IHubContext<SocketServer> hc) {
 			if (hc == null) throw new ArgumentNullException(nameof(hc));
 			await hc.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
-			LogUtil.Write("Sent updated store data via socket.");
+			Log.Debug("Sent updated store data via socket.");
 		}
 	}
 }

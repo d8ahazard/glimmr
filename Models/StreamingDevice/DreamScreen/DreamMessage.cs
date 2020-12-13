@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
+using Serilog;
 using Connect = Glimmr.Models.StreamingDevice.Dreamscreen.Encoders.Connect;
 using SideKick = Glimmr.Models.StreamingDevice.Dreamscreen.Encoders.SideKick;
 
@@ -46,10 +47,10 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 
             if (MsgUtils.Commands.ContainsKey(cmd)) {
                 Command = MsgUtils.Commands[cmd];
-                if (Command == "MINIMUM_LUMINOSITY") LogUtil.Write("BYTE STRING: " + byteString);
+                if (Command == "MINIMUM_LUMINOSITY") Log.Debug("BYTE STRING: " + byteString);
 
             } else {
-                LogUtil.Write($@"DSMessage: No matching key in dict for bytes: {cmd}.");
+                Log.Debug($@"DSMessage: No matching key in dict for bytes: {cmd}.");
             }
 
             var dd = new DreamData();
@@ -80,7 +81,7 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
                     dd.Id = from;
                 }
                 else {
-                    LogUtil.Write($@"DSMessage: Device is null from {devType}.");
+                    Log.Debug($@"DSMessage: Device is null from {devType}.");
                 }
 
                 Device = dd;

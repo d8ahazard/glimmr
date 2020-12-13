@@ -23,7 +23,6 @@ namespace Glimmr
 				.Enrich.WithCaller()
 				.WriteTo.Console(outputTemplate: outputTemplate)
 				.MinimumLevel.Debug()
-				.WriteTo.Console()
 				.WriteTo.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: outputTemplate)
 				.CreateLogger();
             
@@ -45,10 +44,10 @@ namespace Glimmr
 				.ConfigureServices(services => {
 					services.AddSignalR();
 					services.AddSingleton<ControlService>();
-					services.AddHostedService<DreamService>();
-					services.AddHostedService<StatService>();
-					services.AddHostedService<DiscoveryService>();
 					services.AddHostedService<ColorService>();
+					services.AddHostedService<DreamService>();
+					services.AddHostedService<DiscoveryService>();
+					services.AddHostedService<StatService>();
 				});
 		}
 	}

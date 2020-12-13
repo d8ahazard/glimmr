@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Makaretu.Dns;
+using Serilog;
 
 namespace Glimmr.Models.StreamingDevice.Nanoleaf {
     public static class NanoleafDiscovery {
@@ -65,12 +66,12 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
             };
 
             mDns.Start();
-            LogUtil.Write("Nano: Discovery Started.");
+            Log.Debug("Nano: Discovery Started.");
             await Task.Delay(timeout * 1000).ConfigureAwait(false);
             mDns.Stop();
             sd.Dispose();
             mDns.Dispose();
-            LogUtil.Write($"Nano: Discovery complete, found {output.Count} devices.");
+            Log.Debug($"Nano: Discovery complete, found {output.Count} devices.");
             return output;
         }
 

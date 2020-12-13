@@ -11,6 +11,7 @@ using Glimmr.Models.Util;
 using LifxNet;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
+using Serilog;
 using Color = System.Drawing.Color;
 
 namespace Glimmr.Services {
@@ -28,14 +29,14 @@ namespace Glimmr.Services {
 			LifxClient = LifxClient.CreateAsync().Result;
 			// Init nano HttpClient
 			NanoClient = new HttpClient();
-            
+			DataUtil.CheckDefaults(LifxClient);
+
 			// Init nano socket
 			NanoSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 			NanoSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 			NanoSocket.EnableBroadcast = false;
 		}
 
-		public event ArgUtils.Action RescanDeviceEvent = delegate { };
 		public event Action<string> DeviceReloadEvent = delegate { };
 
 		public event Action RefreshLedEvent = delegate { };
@@ -59,11 +60,11 @@ namespace Glimmr.Services {
 		
 
 		public void ScanDevices() {
-			RescanDeviceEvent();
+			DeviceRescanEvent();
 		}
 
 		public void SetMode(int mode) {
-			LogUtil.Write("Setting mode: " + mode);
+			Log.Information("Setting mode: " + mode);
 			_hubContext.Clients.All.SendAsync("mode", mode);
 			DataUtil.SetItem<int>("DeviceMode",mode);
 			SetModeEvent(mode);
@@ -119,6 +120,7 @@ namespace Glimmr.Services {
 		}
 
 		public void RescanDevices() {
+			Log.Debug("Triggering rescan.");
 			DeviceRescanEvent();
 		}
 

@@ -30,7 +30,7 @@ namespace Glimmr.Controllers {
 		private bool timerStarted;
 
 		public DreamDataController(IHubContext<SocketServer> hubContext, ControlService controlService) {
-			LogUtil.Write("Initialized ddc with hub context.");
+			Log.Debug("Initialized ddc with hub context.");
 			_hubContext = hubContext;
 			_controlService = controlService;
 		}
@@ -46,14 +46,14 @@ namespace Glimmr.Controllers {
 		// GET: LED TEST
 		[HttpGet("corners")]
 		public IActionResult TestStrip([FromQuery] int len, bool stop = false) {
-			LogUtil.Write("Get got: " + len);
+			Log.Debug("Get got: " + len);
 			_controlService.TestLeds(len, stop, 0);
 			return Ok(len);
 		}
 
 		[HttpGet("offset")]
 		public IActionResult TestStripOffset([FromQuery] int len, bool stop = false) {
-			LogUtil.Write("Get got: " + len);
+			Log.Debug("Get got: " + len);
 			_controlService.TestLeds(len, stop, 1);
 			return Ok(len);
 		}
@@ -64,7 +64,7 @@ namespace Glimmr.Controllers {
 			var id = (dsSetting["Id"] ?? "").Value<string>();
 			var property = (dsSetting["Property"] ?? "").Value<string>();
 			var value = (dsSetting["Value"] ?? "").Value<string>();
-			LogUtil.Write($"We got our stuff: {id}, {property}, {value}");
+			Log.Debug($"We got our stuff: {id}, {property}, {value}");
 			_controlService.SendDreamMessage(property, value, id);
 			ControlUtil.NotifyClients(_hubContext);
 			return Ok();
@@ -98,7 +98,7 @@ namespace Glimmr.Controllers {
 		// POST: api/DreamData/camType
 		[HttpPost("camType")]
 		public IActionResult CamType([FromBody] int cType) {
-			LogUtil.Write("Camera type set to " + cType);
+			Log.Debug("Camera type set to " + cType);
 			DataUtil.SetItem<int>("CamType", cType);
 			ControlUtil.NotifyClients(_hubContext);
 			_controlService.ResetMode();
@@ -108,7 +108,7 @@ namespace Glimmr.Controllers {
 		// POST: api/DreamData/ledData
 		[HttpPost("updateLed")]
 		public IActionResult UpdateLed([FromBody] LedData ld) {
-			LogUtil.Write("Got LD from post: " + JsonConvert.SerializeObject(ld));
+			Log.Debug("Got LD from post: " + JsonConvert.SerializeObject(ld));
 			DataUtil.SetObject("LedData", ld);
 			_controlService.RefreshLedData();
 			_controlService.NotifyClients();
@@ -162,7 +162,7 @@ namespace Glimmr.Controllers {
 		public IActionResult StripType([FromBody] int type) {
 			var ledData = DataUtil.GetCollection<LedData>("ledData").First();
 			ledData.StripType = type;
-			LogUtil.Write("Updating LED Data: " + JsonConvert.SerializeObject(ledData));
+			Log.Debug("Updating LED Data: " + JsonConvert.SerializeObject(ledData));
 			DataUtil.SetObject("LedData", ledData);
 			_controlService.NotifyClients();
 			_controlService.ResetMode();
@@ -173,7 +173,7 @@ namespace Glimmr.Controllers {
 		// POST: api/DreamData/dsIp
 		[HttpPost("dsIp")]
 		public IActionResult PostIp([FromBody] string dsIp) {
-			LogUtil.Write(@"Did it work? " + dsIp);
+			Log.Debug(@"Did it work? " + dsIp);
 			DataUtil.SetItem("DsIp", dsIp);
 			_controlService.NotifyClients();
 			_controlService.ResetMode();
@@ -184,7 +184,7 @@ namespace Glimmr.Controllers {
 		[HttpPost("ambientColor")]
 		public IActionResult PostColor([FromBody] JObject myDevice) {
 			if (myDevice == null) throw new ArgumentException("Invalid argument.");
-			LogUtil.Write(@"Did it work (ambient Color)? " + JsonConvert.SerializeObject(myDevice));
+			Log.Debug(@"Did it work (ambient Color)? " + JsonConvert.SerializeObject(myDevice));
 			var id = (string) myDevice.GetValue("device", StringComparison.InvariantCulture);
 			var value = myDevice.GetValue("color", StringComparison.InvariantCulture);
 			var group = (int) myDevice.GetValue("group", StringComparison.InvariantCulture);
@@ -206,7 +206,7 @@ namespace Glimmr.Controllers {
 		// POST: api/DreamData/dsConnect
 		[HttpPost("ambientMode")]
 		public IActionResult PostAmbientMode([FromBody] JObject myDevice) {
-			LogUtil.Write(@"Did it work (ambient Mode)? " + JsonConvert.SerializeObject(myDevice));
+			Log.Debug(@"Did it work (ambient Mode)? " + JsonConvert.SerializeObject(myDevice));
 			_controlService.SendDreamMessage("ambientModeType", (int) myDevice.GetValue("mode"),
 				(string) myDevice.GetValue("id"));
 
@@ -223,7 +223,7 @@ namespace Glimmr.Controllers {
 		// POST: api/DreamData/dsConnect
 		[HttpPost("ambientShow")]
 		public IActionResult PostShow([FromBody] JObject myDevice) {
-			LogUtil.Write(@"Did it work (ambient Show)? " + JsonConvert.SerializeObject(myDevice));
+			Log.Debug(@"Did it work (ambient Show)? " + JsonConvert.SerializeObject(myDevice));
 			_controlService.SendDreamMessage("ambientScene", myDevice.GetValue("scene"),
 				(string) myDevice.GetValue("id"));
 			//ControlUtil.NotifyClients(_hubContext);
@@ -233,30 +233,31 @@ namespace Glimmr.Controllers {
 		[HttpGet("action")]
 		public IActionResult Action(string action, string value = "") {
 			var message = "Unrecognized action";
-			LogUtil.Write($@"{action} called from Web API.");
+			Log.Debug($@"{action} called from Web API.");
 			switch (action) {
 				case "loadData":
 					_controlService.NotifyClients();
 					return Content(DataUtil.GetStoreSerialized(), "application/json");
 				case "refreshDevices":
+					Log.Debug("Triggering refresh?");
 					// Just trigger dreamclient to refresh devices
 					_controlService.RescanDevices();
 					return new JsonResult("OK");
 				case "authorizeHue": {
-					LogUtil.Write("AuthHue called, for reaal: " + value);
+					Log.Debug("AuthHue called, for reaal: " + value);
 					var doAuth = true;
 					HueData bd = null;
 					if (!string.IsNullOrEmpty(value)) {
 						_hubContext?.Clients.All.SendAsync("hueAuth", "start");
 						bd = DataUtil.GetCollectionItem<HueData>("Dev_Hue", value);
-						LogUtil.Write("BD: " + JsonConvert.SerializeObject(bd));
+						Log.Debug("BD: " + JsonConvert.SerializeObject(bd));
 						if (bd == null) {
-							LogUtil.Write("Null bridge retrieved.");
+							Log.Debug("Null bridge retrieved.");
 							return new JsonResult(null);
 						}
 
 						if (bd.Key != null && bd.User != null) {
-							LogUtil.Write("Bridge is already authorized.");
+							Log.Debug("Bridge is already authorized.");
 							doAuth = false;
 						}
 					} else {
@@ -265,20 +266,20 @@ namespace Glimmr.Controllers {
 					}
 
 					if (!doAuth) {
-						LogUtil.Write("No auth, returning existing data.");
+						Log.Debug("No auth, returning existing data.");
 						return new JsonResult(bd);
 					}
 
-					LogUtil.Write("Trying to retrieve appkey...");
+					Log.Debug("Trying to retrieve appkey...");
 					var appKey = HueDiscovery.CheckAuth(bd.IpAddress).Result;
 					if (appKey == null) {
-						LogUtil.Write("Error retrieving app key.");
+						Log.Debug("Error retrieving app key.");
 						return new JsonResult(bd);
 					}
 
 					bd.Key = appKey.StreamingClientKey;
 					bd.User = appKey.Username;
-					LogUtil.Write("We should be authorized, returning.");
+					Log.Debug("We should be authorized, returning.");
 					DataUtil.InsertCollection<HueData>("Dev_Hue", bd);
 					return new JsonResult(bd);
 				}
@@ -306,25 +307,25 @@ namespace Glimmr.Controllers {
 						if (appKey != null && bd != null) {
 							bd.Token = appKey.Token;
 							bd.RefreshLeaf();
-							LogUtil.Write("Leaf refreshed and set...");
+							Log.Debug("Leaf refreshed and set...");
 						}
 
 						panel.Dispose();
 					}
 
-					LogUtil.Write("Returning.");
+					Log.Debug("Returning.");
 					return new JsonResult(bd);
 				}
 			}
 
-			LogUtil.Write(message);
+			Log.Debug(message);
 			return new JsonResult(message);
 		}
 
 		// GET: api/DreamData/json
 		[HttpGet("json")]
 		public IActionResult GetJson() {
-			LogUtil.Write(@"GetJson Called.");
+			Log.Debug(@"GetJson Called.");
 			var bridgeArray = DataUtil.GetCollection<HueData>("Dev_Hue");
 			if (bridgeArray.Count == 0) {
 				var newBridges = HueDiscovery.Discover().Result;
@@ -339,7 +340,7 @@ namespace Glimmr.Controllers {
 			var tag = (dData["tag"] ?? "INVALID").Value<string>();
 			var id = (dData["id"] ?? "INVALID").Value<string>();
 			var brightness = (dData["brightness"] ?? -1).Value<int>();
-			LogUtil.Write($"Setting brightness for {tag} {id} to {brightness}.");
+			Log.Debug($"Setting brightness for {tag} {id} to {brightness}.");
 			var myDev = DataUtil.GetDeviceData();
 			var ipAddress = myDev.IpAddress;
 			var groupNumber = (byte) myDev.GroupNumber;

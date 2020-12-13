@@ -73,27 +73,26 @@ namespace Glimmr.Services {
             _controlService.SetModeEvent += UpdateMode;
             _controlService.RefreshDreamscreenEvent += Discover;
             Initialize();
-            LogUtil.Write("Initialisation complete.");
+            Log.Debug("Initialisation complete.");
         }
         
         
         // This initializes all of the data in our class and starts function loops
         private void Initialize() {
-            LogUtil.Write("Initializing dream client...");
             _dev = DataUtil.GetDeviceData();
-            LogUtil.Write("Device Data: " + JsonConvert.SerializeObject(_dev));
+            Log.Debug("Device Data: " + JsonConvert.SerializeObject(_dev));
             // Create scene builder
             
             // Get a list of devices
             _devices = new List<DreamData>();
             // Read other variables
-            _devMode = DataUtil.GetItem<int>("DeviceMode");
+            _devMode = DataUtil.GetItem<int>("DeviceMode") ?? 0;
             _ambientMode = DataUtil.GetItem<int>("AmbientMode") ?? 0;
             _ambientShow = DataUtil.GetItem<int>("AmbientShow") ?? 0;
             var ac = DataUtil.GetItem<string>("AmbientColor") ?? "FFFFFF";
             _ambientColor = ColorFromString(ac);
             _brightness = _dev.Brightness;
-            CaptureMode = DataUtil.GetItem("CaptureMode");
+            CaptureMode = DataUtil.GetItem("CaptureMode") ?? 2;
             
             // Set default values
             _prevMode = -1;
@@ -102,7 +101,10 @@ namespace Glimmr.Services {
             _showBuilderStarted = false;
             var devGroup = DataUtil.GetItem<int>("DeviceGroup") ?? 0;
             _group = (byte) devGroup;
-            _targetEndpoint = new IPEndPoint(IPAddress.Parse(DataUtil.GetItem("DsIp")), 8888);
+            var dsIp = DataUtil.GetItem("DsIp");
+            if (!string.IsNullOrEmpty(dsIp)) {
+                _targetEndpoint = new IPEndPoint(IPAddress.Parse(dsIp), 8888);    
+            }
             // Start listening service 
             StartListening();
             // Finally start our normal device behavior
@@ -115,7 +117,7 @@ namespace Glimmr.Services {
                 while (!cancellationToken.IsCancellationRequested) {
                     await Task.Delay(1, cancellationToken);
                 } 
-                LogUtil.Write("DreamClient: Main loop terminated, stopping services...");
+                Log.Information("DreamClient: Main loop terminated, stopping services...");
                 StopServices();
                 // Dispose our DB instance
                 DataUtil.Dispose();
@@ -133,7 +135,7 @@ namespace Glimmr.Services {
             // Reload our device data so we're sure it's fresh
             DataUtil.SetItem<int>("DeviceMode", newMode);
             // Notify web clients of mode change via socket
-            LogUtil.Write($@"Dreamscreen: Updating mode from {_prevMode} to {newMode}.");
+            Log.Information($@"Updating mode from {_prevMode} to {newMode}.");
             _prevMode = newMode;
             _controlService.SetMode(newMode);
         }
@@ -172,6 +174,7 @@ namespace Glimmr.Services {
         }
         
         private void Subscribe() {
+            if (_targetEndpoint == null) return;
             DreamUtil.SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x10, _group, _targetEndpoint);
         }
 
@@ -186,9 +189,9 @@ namespace Glimmr.Services {
                 // Return listen task to kill later
                 _listener.BeginReceive(Recv, null);
             } catch (SocketException e) {
-                Log.Warning("Socket exception: ", e);
+                Log.Warning($"Socket exception: {e.Message}");
             } catch (ObjectDisposedException f) {
-                Log.Warning("Object already disposed: ", f);
+                Log.Warning($"Object already disposed: {f.Message}");
             }
         }
         
@@ -200,7 +203,7 @@ namespace Glimmr.Services {
                 ProcessData(receivedResults, sourceEndPoint);
                 _listener.BeginReceive(Recv, null);
             } catch (ObjectDisposedException) {
-                LogUtil.Write("Object is already disposed.");
+                Log.Warning("Object is already disposed.");
             }
         }
 
@@ -232,15 +235,15 @@ namespace Glimmr.Services {
                     writeDev = true;
                 }
                 if (flag == "41") {
-                    LogUtil.Write($"Flag is 41, we should save settings for {from}.");
+                    Log.Debug($"Flag is 41, we should save settings for {from}.");
                     tDevice = DataUtil.GetCollectionItem<DreamData>("Dev_Dreamscreen", from);
                     if (tDevice != null) writeDev = true;
                 }
                 if (command != null && command != "COLOR_DATA" && command != "SUBSCRIBE" && tDevice != null) {
-                    LogUtil.Write($@"{from} -> {tDevice.IpAddress}::{command} {flag}-{msg.Group}.");
+                    Log.Debug($@"{from} -> {tDevice.IpAddress}::{command} {flag}-{msg.Group}.");
                 }
             } else {
-                LogUtil.Write($@"Invalid message from {from}");
+                Log.Warning($@"Invalid message from {from}");
             }
             switch (command) {
                 case "SUBSCRIBE":
@@ -256,23 +259,23 @@ namespace Glimmr.Services {
                             // Set our count to 3, which is how many tries we get before we stop sending data
                             if (!string.IsNullOrEmpty(from)) {
                                 if (!_subscribers.ContainsKey(from)) {
-                                    LogUtil.Write("Adding new subscriber: " + from);
+                                    Log.Debug("Adding new subscriber: " + from);
                                 }
                                 _subscribers[from] = 3;
                             } else {
-                                LogUtil.Write("Can't add subscriber, from is empty...");
+                                Log.Warning("Can't add subscriber, from is empty...");
                             }
                             
                         }
                     } 
                     break;
                 case "DISCOVERY_START":
-                    LogUtil.Write("Dreamscreen: Starting discovery.");
+                    Log.Debug("Dreamscreen: Starting discovery.");
                     _devices = new List<DreamData>();
                     _discovering = true;
                     break;
                 case "DISCOVERY_STOP":
-                    LogUtil.Write($"Dreamscreen: Discovery complete, found {_devices.Count} devices.");
+                    Log.Debug($"Dreamscreen: Discovery complete, found {_devices.Count} devices.");
                     _discovering = false;
                     foreach (var d in _devices) {
                         DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", d);
@@ -296,13 +299,13 @@ namespace Glimmr.Services {
                             string dsIpCheck = DataUtil.GetItem("DsIp");
                             if (dsIpCheck == "0.0.0.0" &&
                                 msgDevice.Tag.Contains("Dreamscreen", StringComparison.CurrentCulture)) {
-                                LogUtil.Write(@"Setting a target DS IP.");
+                                Log.Debug(@"Setting a target DS IP.");
                                 DataUtil.SetItem("DsIp", from);
                                 _targetEndpoint = replyPoint;
                             }
 
                             if (_discovering) {
-                                LogUtil.Write("Sending request for serial!");
+                                Log.Debug("Sending request for serial!");
                                 DreamUtil.SendUdpWrite(0x01, 0x03, new byte[]{0},0x60,0,replyPoint);
                                 _devices.Add(msgDevice);
                             }
@@ -314,7 +317,7 @@ namespace Glimmr.Services {
                     if (flag == "30") {
                         SendDeviceSerial(replyPoint);
                     } else {
-                        LogUtil.Write("DEVICE SERIAL RETRIEVED: " + JsonConvert.SerializeObject(msg));
+                        Log.Debug("DEVICE SERIAL RETRIEVED: " + JsonConvert.SerializeObject(msg));
                     }
                     
                     break;
@@ -336,7 +339,7 @@ namespace Glimmr.Services {
                 case "BRIGHTNESS":
                     _brightness = payload[0];
                     if (writeState | writeDev) {
-                        LogUtil.Write($@"Setting brightness to {_brightness}.");
+                        Log.Debug($@"Setting brightness to {_brightness}.");
                         tDevice.Brightness = payload[0];
                     }
                     if (writeState) UpdateBrightness(payload[0]);
@@ -351,11 +354,11 @@ namespace Glimmr.Services {
                 case "MODE":
                     if (writeState | writeDev) {
                         tDevice.Mode = payload[0];
-                        LogUtil.Write("UPDATING MODE FROM REMOTE");
+                        Log.Debug("UPDATING MODE FROM REMOTE");
 
-                        LogUtil.Write($@"Updating mode: {tDevice.Mode}.");
+                        Log.Debug($@"Updating mode: {tDevice.Mode}.");
                     } else {
-                        LogUtil.Write("Mode flag set, but we're not doing anything... " + flag);
+                        Log.Debug("Mode flag set, but we're not doing anything... " + flag);
                     }
                     
                     if (writeState) UpdateMode(tDevice.Mode);
@@ -417,7 +420,7 @@ namespace Glimmr.Services {
 
         private async void Discover(CancellationToken ct) {
             try {
-                LogUtil.Write("Discovery started..");
+                Log.Debug("Discovery started..");
                 // Send a custom internal message to self to store discovery results
                 var selfEp = new IPEndPoint(IPAddress.Loopback, 8888);
                 DreamUtil.SendUdpWrite(0x01, 0x0D, new byte[] {0x01}, 0x30, 0x00, selfEp);
@@ -497,7 +500,7 @@ namespace Glimmr.Services {
         private void StopServices() {
             _listener?.Dispose();
             CancelSource(_showBuilderSource, true);
-            LogUtil.Write("All services have been stopped.");
+            Log.Debug("All services have been stopped.");
         }
 
         #region Messaging

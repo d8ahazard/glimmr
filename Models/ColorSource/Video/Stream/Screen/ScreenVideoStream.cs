@@ -6,6 +6,7 @@ using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Glimmr.Models.Util;
+using Serilog;
 
 namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
     public class ScreenVideoStream : IVideoStream, IDisposable
@@ -21,10 +22,10 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
             var width = s.Width;
             var height = s.Height;
             if (width == 0 || height == 0) {
-                LogUtil.Write("We have no screen, returning.");
+                Log.Debug("We have no screen, returning.");
                 return Task.CompletedTask;
             }
-            LogUtil.Write("Starting screen capture, width is " + width + " height is " + height + ".");
+            Log.Debug("Starting screen capture, width is " + width + " height is " + height + ".");
             _bmpScreenCapture = new Bitmap(width, height);
             return Task.Run(() => CaptureScreen(s, ct));
         }
@@ -38,7 +39,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
                 var newMat = _screen.Resize(600, 400, Inter.Nearest);
                 Frame = newMat.Mat;
             }
-            LogUtil.Write("Capture completed?");
+            Log.Debug("Capture completed?");
         }
 
         public void Dispose() {

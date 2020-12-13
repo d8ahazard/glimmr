@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Glimmr.Models.Util;
+using Serilog;
 
 namespace Glimmr.Models.ColorSource.Video.Stream.Hdmi {
     public class HdmiVideoStream : IVideoStream, IDisposable
@@ -20,18 +21,18 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Hdmi {
             _video = new VideoCapture(inputStream, capType);
             _video.SetCaptureProperty(CapProp.FrameWidth, 640);
             _video.SetCaptureProperty(CapProp.FrameHeight, 480);
-            LogUtil.Write("Scaling HDMI to 640x480");
+            Log.Debug("Scaling HDMI to 640x480");
             var foo = _video.CaptureSource.ToString();
             Frame = new Mat();
-            LogUtil.Write("Stream init, capture source is " + foo + ", " + inputStream);            
+            Log.Debug("Stream init, capture source is " + foo + ", " + inputStream);            
         }
 
         private void SetFrame(object sender, EventArgs e) {
             if (_video != null && _video.Ptr != IntPtr.Zero) {
-                //LogUtil.Write("Setting frame??");
+                //Log.Debug("Setting frame??");
                 _video.Read(Frame);
             } else {
-                LogUtil.Write("No frame to set...");
+                Log.Debug("No frame to set...");
             }
         }
 
@@ -45,14 +46,14 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Hdmi {
                     var w = v.Width;
                     var h = v.Height;
                     if (w != 0 && h != 0) {
-                        LogUtil.Write($"Width, height of {i}: {w}, {h}");
+                        Log.Debug($"Width, height of {i}: {w}, {h}");
 
                         output.Add(i);
                     }
 
                     v.Dispose();
                 } catch (Exception e) {
-                    LogUtil.Write("Exception with cam " + i + ": " + e);
+                    Log.Debug("Exception with cam " + i + ": " + e);
                 }
 
                 i++;
@@ -61,10 +62,10 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Hdmi {
         }
 
         public async Task Start(CancellationToken ct) {
-            LogUtil.Write("Starting HDMI stream...");
+            Log.Debug("Starting HDMI stream...");
             _video.ImageGrabbed += SetFrame;
             _video.Start();
-            LogUtil.Write("HDMI Stream started.");
+            Log.Debug("HDMI Stream started.");
         }
 
         public void Dispose() {

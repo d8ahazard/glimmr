@@ -50,7 +50,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 			_devices = new List<AudioData>();
 			string rd = DataUtil.GetItem("RecDev");
 			for (var a = 0; Bass.RecordGetDeviceInfo(a, out var info); a++) {
-				LogUtil.Write("Bass device?" + JsonConvert.SerializeObject(info));
+				Log.Debug("Bass device?" + JsonConvert.SerializeObject(info));
 				if (!info.IsEnabled) continue;
 				try {
 					var ad = new AudioData();
@@ -66,7 +66,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 					rd = info.Name;
 				} else {
 					if (rd != info.Name) continue;
-					LogUtil.Write($"Selecting recording device index {a}: {info.Name}");
+					Log.Debug($"Selecting recording device index {a}: {info.Name}");
 					_recordDeviceIndex = a;
 				}
 			}
@@ -78,7 +78,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 				while (!_token.IsCancellationRequested) {
 				}
 			} else {
-				LogUtil.Write("No recording device available.");
+				Log.Debug("No recording device available.");
 			}
 		}
 
@@ -86,31 +86,31 @@ namespace Glimmr.Models.ColorSource.Audio {
 		}
 
 		private void SetCapVars() {
-			LogUtil.Write("Starting stream with device " + _recordDeviceIndex);
+			Log.Debug("Starting stream with device " + _recordDeviceIndex);
 			var res = Bass.Init(1, 44100, DeviceInitFlags.Stereo);
 			var error = Bass.LastError;
 			// Initialize Recording device.
-			LogUtil.Write("BassInit: " + res + ", " + error);
+			Log.Debug("BassInit: " + res + ", " + error);
 			var init = Bass.RecordInit(1);
 			error = Bass.LastError;
-			LogUtil.Write("RecInit: " + init + ", " + error);
+			Log.Debug("RecInit: " + init + ", " + error);
 			var cRec = Bass.CurrentRecordingDevice = 1;
 			error = Bass.LastError;
-			LogUtil.Write("CRec: " + cRec + ", " + error);
+			Log.Debug("CRec: " + cRec + ", " + error);
 			var info = Bass.RecordingInfo;
 			error = Bass.LastError;
-			LogUtil.Write("Info: " + JsonConvert.SerializeObject(info) + ", " + error);
+			Log.Debug("Info: " + JsonConvert.SerializeObject(info) + ", " + error);
 			_channels = info.Channels == 0 ? 2 : info.Channels;
 			for (var i = 0; i < info.Channels; i++) {
 				Bass.ChannelGetInfo(i, out var cInfo);
-				LogUtil.Write("Channel Info: " + JsonConvert.SerializeObject(cInfo));
+				Log.Debug("Channel Info: " + JsonConvert.SerializeObject(cInfo));
 			}
 
 			_frequency = info.Frequency == 0 ? 48000 : info.Frequency;
-			LogUtil.Write($"Setting channels and frequency to {_channels} and {_frequency}.");
+			Log.Debug($"Setting channels and frequency to {_channels} and {_frequency}.");
 			var record = Bass.RecordStart(_frequency, _channels, BassFlags.Float, Update);
 			error = Bass.LastError;
-			LogUtil.Write($"Record value: {record} ," + error);
+			Log.Debug($"Record value: {record} ," + error);
 		}
 
 		
@@ -122,7 +122,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 		private bool Update(int handle, IntPtr buffer, int length, IntPtr user) {
 			if (!Streaming) return true;
 			if (_token.IsCancellationRequested) {
-				LogUtil.Write("We dun canceled our token.");
+				Log.Debug("We dun canceled our token.");
 				Bass.Free();
 			}
 
@@ -131,7 +131,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 			var fftStereo = new float[3]; // fft data buffer
 			// Get our FFT for "everything"
 			//var channelGetData = Bass.ChannelGetData(handle, fft, (int) DataFlags.FFT256);
-			//LogUtil.Write($"FFT {channelGetData}: " + JsonConvert.SerializeObject(fft));
+			//Log.Debug($"FFT {channelGetData}: " + JsonConvert.SerializeObject(fft));
 			var cData = new Dictionary<int, float>();
 			for (var a = 0; a < samples; a++) {
 				var val = fft[a];
@@ -152,7 +152,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 				_colors[q] = ColorUtil.ColorFromHsv(HueFromAmplitude(amp), 1, value);
 			}
 
-			//LogUtil.Write("Sending something...");
+			//Log.Debug("Sending something...");
 			_cs.SendColors(_colors.ToList(), _colors.ToList());
 			return true;
 		}

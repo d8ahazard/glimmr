@@ -7,6 +7,7 @@ using Glimmr.Models.LED;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Newtonsoft.Json;
+using Serilog;
 using static Glimmr.Models.ColorSource.Ambient.Scenes.SceneBase;
 
 namespace Glimmr.Models.ColorSource.Ambient {
@@ -33,7 +34,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
         public void Initialize() {
             _startInt = 0;
             var startTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-            LogUtil.Write($@"Color builder started, animation time is {_animationTime}...");
+            Log.Debug($@"Color builder started, animation time is {_animationTime}...");
             while (!_ct.IsCancellationRequested) {
                 if (!Streaming) continue;
                 var curTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
@@ -50,7 +51,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
                 _cs.SendColors(ledCols, cols);
             }
 
-            LogUtil.Write($@"DreamScene: Color Builder canceled. {startTime}");
+            Log.Debug($@"DreamScene: Color Builder canceled. {startTime}");
         }
         
         
@@ -92,7 +93,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
         
         public void Refresh() {
-            LedData ld = DataUtil.GetItem<LedData>("LedData");
+            LedData ld = DataUtil.GetObject<LedData>("LedData");
             _ledCount = ld.LedCount;
             _ambientMode = DataUtil.GetItem<int>("AmbientMode") ?? 0;
             _ambientShow = DataUtil.GetItem<int>("AmbientShow") ?? 0;

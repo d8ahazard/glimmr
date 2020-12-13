@@ -23,18 +23,18 @@ namespace Glimmr.Hubs {
 		}
 
 		public Task Mode(int mode) {
-			LogUtil.Write($"WS Mode: {mode}");
+			Log.Debug($"WS Mode: {mode}");
 			_cs.SetMode(mode);
 			return Clients.All.SendAsync("mode", mode);
 		}
 
 		public Task Action(string action, string value) {
-			LogUtil.Write($"WS Action: {action}: " + JsonConvert.SerializeObject(value));
+			Log.Debug($"WS Action: {action}: " + JsonConvert.SerializeObject(value));
 			return Clients.Caller.SendAsync("ack", true);
 		}
 
 		public Task ScanDevices() {
-			LogUtil.Write("Scan called from socket!");
+			Log.Debug("Scan called from socket!");
 			_cs.ScanDevices();
 			return Task.CompletedTask;
 		}
@@ -44,20 +44,20 @@ namespace Glimmr.Hubs {
 		}
 
 		public async void AuthorizeHue(string id) {
-			LogUtil.Write("AuthHue called, for real (socket): " + id);
+			Log.Debug("AuthHue called, for real (socket): " + id);
 			HueData bd;
 			if (!string.IsNullOrEmpty(id)) {
 				await Clients.All.SendAsync("hueAuth", "start");
 				bd = DataUtil.GetCollectionItem<HueData>("Dev_Hue", id);
-				LogUtil.Write("BD: " + JsonConvert.SerializeObject(bd));
+				Log.Debug("BD: " + JsonConvert.SerializeObject(bd));
 				if (bd == null) {
-					LogUtil.Write("Null bridge retrieved.");
+					Log.Debug("Null bridge retrieved.");
 					await Clients.All.SendAsync("hueAuth", "stop");
 					return;
 				}
 
 				if (bd.Key != null && bd.User != null) {
-					LogUtil.Write("Bridge is already authorized.");
+					Log.Debug("Bridge is already authorized.");
 					await Clients.All.SendAsync("hueAuth", "authorized");
 					await Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
 					return;
@@ -68,21 +68,21 @@ namespace Glimmr.Hubs {
 				return;
 			}
 
-			LogUtil.Write("Trying to retrieve appkey...");
+			Log.Debug("Trying to retrieve appkey...");
 			var count = 0;
 			while (count < 30) {
 				count++;
 				try {
 					var appKey = HueDiscovery.CheckAuth(bd.IpAddress).Result;
-					LogUtil.Write("App key retrieved! " + JsonConvert.SerializeObject(appKey));
+					Log.Debug("App key retrieved! " + JsonConvert.SerializeObject(appKey));
 					if (appKey != null) {
 						if (!string.IsNullOrEmpty(appKey.StreamingClientKey)) {
-							LogUtil.Write("Updating bridge?");
+							Log.Debug("Updating bridge?");
 							bd.Key = appKey.StreamingClientKey;
 							bd.User = appKey.Username;
-							LogUtil.Write("Creating new bridge...");
+							Log.Debug("Creating new bridge...");
 							// Need to grab light group stuff here
-							var nhb = new HueBridge(bd);
+							var nhb = new HueDevice(bd);
 							bd = nhb.RefreshData().Result;
 							nhb.Dispose();
 							DataUtil.InsertCollection<HueData>("Dev_Hue", bd);
@@ -91,10 +91,10 @@ namespace Glimmr.Hubs {
 							return;
 						}
 
-						LogUtil.Write("Appkey is null?");
+						Log.Debug("Appkey is null?");
 					}
 
-					LogUtil.Write("Waiting for app key.");
+					Log.Debug("Waiting for app key.");
 				} catch (NullReferenceException e) {
 					Log.Error("Null exception.", e);
 				}
@@ -103,22 +103,22 @@ namespace Glimmr.Hubs {
 				Thread.Sleep(1000);
 			}
 
-			LogUtil.Write("We should be authorized, returning.");
+			Log.Debug("We should be authorized, returning.");
 		}
 
 		public async void UpdateLed(string ld) {
-			LogUtil.Write("This worked: " + JsonConvert.SerializeObject(ld));
+			Log.Debug("This worked: " + JsonConvert.SerializeObject(ld));
 			//DataUtil.SetObject("LedData", ld);
 			//_cs.RefreshDevices();
 		}
 
 		public async void UpdateDevice(string deviceJson) {
 			var device = JObject.Parse(deviceJson);
-			LogUtil.Write("Update device called!");
+			Log.Debug("Update device called!");
 			var tag = (string) device.GetValue("Tag");
 			var id = (string) device.GetValue("_id");
 			device["Id"] = id;
-			LogUtil.Write($"ID and tag are {id} and {tag}.");
+			Log.Debug($"ID and tag are {id} and {tag}.");
 			var updated = false;
 			try {
 				switch (tag) {
@@ -143,18 +143,18 @@ namespace Glimmr.Hubs {
 						updated = true;
 						break;
 					default:
-						LogUtil.Write("Unknown tag: " + tag);
+						Log.Debug("Unknown tag: " + tag);
 						break;
 				}
 			} catch (Exception e) {
-				LogUtil.Write("Well, this is exceptional: " + e.Message);
+				Log.Debug("Well, this is exceptional: " + e.Message);
 			}
 
 			if (updated) {
-				LogUtil.Write("Triggering device refresh for " + id);
+				Log.Debug("Triggering device refresh for " + id);
 				_cs.RefreshDevice(id);
 			} else {
-				LogUtil.Write("Sigh, no update...");
+				Log.Debug("Sigh, no update...");
 			}
 		}
 

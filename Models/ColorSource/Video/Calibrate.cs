@@ -8,6 +8,7 @@ using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
+using Serilog;
 
 namespace Glimmr.Models.ColorSource.Video {
     public static class Calibrate {
@@ -30,7 +31,7 @@ namespace Glimmr.Models.ColorSource.Video {
             // Glob our frames from the static dir, loop for them
             string[] filePaths = Directory.GetFiles(@"/home/dietpi/", "*.jpg");
             var frames = filePaths.Select(path => CvInvoke.Imread(path)).ToList();
-            LogUtil.Write("We have " + frames.Count + " frames.");
+            Log.Debug("We have " + frames.Count + " frames.");
             var fc = 0;
             foreach (var frame in frames) {
                 var grayFrame = new Mat();
@@ -43,7 +44,7 @@ namespace Glimmr.Models.ColorSource.Video {
                     CalibCbType.AdaptiveThresh | CalibCbType.FastCheck | CalibCbType.NormalizeImage);
                 //we use this loop so we can show a colour image rather than a gray:
                 if (boardFound) {
-                    LogUtil.Write("Found board in frame " + fc);
+                    Log.Debug("Found board in frame " + fc);
                     //make measurements more accurate by using FindCornerSubPixel
                     CvInvoke.CornerSubPix(grayFrame, corners, new Size(11, 11), new Size(-1, -1),
                         new MCvTermCriteria(30, 0.1));
@@ -54,7 +55,7 @@ namespace Glimmr.Models.ColorSource.Video {
                 corners = new VectorOfPointF();
             }
 
-            LogUtil.Write("We have " + frameArrayBuffer.Count + " frames to use for mapping.");
+            Log.Debug("We have " + frameArrayBuffer.Count + " frames to use for mapping.");
             // Loop through frames where board was detected
             foreach (var frame in frameArrayBuffer) {
                 var frameVect = new VectorOfPointF();
@@ -85,12 +86,12 @@ namespace Glimmr.Models.ColorSource.Video {
                 frames[0].Size,
                 cameraMatrix, distCoeffs, CalibType.RationalModel, new MCvTermCriteria(30, 0.1), out _rvecs,
                 out _tvecs);
-            LogUtil.Write("Correction error: " + error);
+            Log.Debug("Correction error: " + error);
             var sk = JsonConvert.SerializeObject(cameraMatrix);
             var sd = JsonConvert.SerializeObject(distCoeffs);
 
-            LogUtil.Write("Camera matrix: " + sk);
-            LogUtil.Write("Dist coefficient: " + sd);
+            Log.Debug("Camera matrix: " + sk);
+            Log.Debug("Dist coefficient: " + sd);
             DataUtil.SetItem("K", sk);
             DataUtil.SetItem("D", sd);
         }

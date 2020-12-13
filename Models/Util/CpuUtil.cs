@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using Serilog;
 
 namespace Glimmr.Models.Util {
 	public static class CpuUtil {
@@ -149,7 +150,7 @@ namespace Glimmr.Models.Util {
 				if (_tempMax < temperature)
 					_tempMax = temperature;
 			} catch (Exception ex) {
-				LogUtil.Write("Got me some kind of exception: " + ex.Message);
+				Log.Debug("Got me some kind of exception: " + ex.Message);
 			}
 		}
 	}

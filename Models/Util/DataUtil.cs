@@ -31,31 +31,31 @@ namespace Glimmr.Models.Util {
         }
 
         public static void Dispose() {
-            LogUtil.Write("DISPOSING DATABASE.");
+            Log.Debug("DISPOSING DATABASE.");
             _db?.Commit();
             _db?.Dispose();
         }
 
-        public static void DbDefaults(LifxClient lc) {
+        public static void CheckDefaults(LifxClient lc) {
             var db = GetDb();
             // Check to see if we have our system data object
             var defaultSet = GetItem("DefaultSet");
             if (defaultSet == null || defaultSet == false) {
-                LogUtil.Write("Starting to create defaults.");
+                Log.Warning("Setting default values!");
                 // If not, create it
                 var sd = new SystemData(true);
                 foreach (var v in sd.GetType().GetProperties()) {
-                    LogUtil.Write("Setting: " + v.Name);
+                    Log.Debug("Setting: " + v.Name);
                     SetItem(v.Name, v.GetValue(sd));
                 }
 
-                var dsIp = GetItem("DsIp");
-                var ledData = new LedData(true);
-                var myDevice = new DreamData();
-                myDevice.Id = dsIp;
+                var deviceIp = IpUtil.GetLocalIpAddress();
+                var ledData = new LedData();
+                var myDevice = new DreamData {Id = deviceIp, IpAddress = deviceIp};
+                Log.Debug("Creating default device data: " + JsonConvert.SerializeObject(myDevice));
                 SetObject("LedData", ledData);
                 SetObject("MyDevice", myDevice);
-                LogUtil.Write("Loading first...");
+                Log.Debug("Creating DreamData profile...");
                 // Get/create our collection of Dream devices
                 var d = db.GetCollection<DreamData>("Dev_Dreamscreen");
                 // Create our default device
@@ -66,7 +66,7 @@ namespace Glimmr.Models.Util {
                 // Scan for devices
                 ScanDevices(lc).ConfigureAwait(false);
             } else {
-                LogUtil.Write("Defaults are already set.");
+                Log.Information("Default values are set, continuing.");
             }
         }
        
@@ -80,7 +80,7 @@ namespace Glimmr.Models.Util {
                 output.AddRange(coll.FindAll());
                 return output;
             } catch (Exception e) {
-                LogUtil.Write($@"Get exception for {key}: {e.Message}");
+                Log.Warning($@"Get exception for {key}:", e);
                 return null;
             }
         }
@@ -94,7 +94,7 @@ namespace Glimmr.Models.Util {
                 output.AddRange(coll.FindAll());
                 return output;
             } catch (Exception e) {
-                LogUtil.Write($@"Get exception for {typeof(T)}: {e.Message}");
+                Log.Debug($@"Get exception for {typeof(T)}: {e.Message}");
                 return null;
             }
         }
@@ -118,7 +118,7 @@ namespace Glimmr.Models.Util {
                     return r;
                 
             } catch (Exception e) {
-                LogUtil.Write($@"Get exception for {typeof(T)}: {e.Message}");
+                Log.Debug($@"Get exception for {typeof(T)}: {e.Message}");
                 return null;
             }
         }
@@ -138,22 +138,7 @@ namespace Glimmr.Models.Util {
         }
 
 
-        public static void CheckDefaults(LifxClient lc) {
-            var db = GetDb();
-            var sc = db.GetCollection<SystemData>("system");
-            LogUtil.Write("SC: " + JsonConvert.SerializeObject(sc.ToString()));
-            try {
-                sc.Query().First();
-                LogUtil.Write("We should be set up already.");
-            } catch (InvalidOperationException) {
-                LogUtil.Write("Creating defaults.");
-                DbDefaults(lc);
-            } catch (NullReferenceException) {
-                LogUtil.Write("Creating defaults.");
-                DbDefaults(lc);
-            }
-        }
-
+        
         
         public static string GetDeviceSerial() {
             var serial = string.Empty;
@@ -196,7 +181,7 @@ namespace Glimmr.Models.Util {
                 var bDev4 = coll4.FindById(id);
                 if (bDev4 != null) return bDev4;
             } catch (Exception e) {
-                LogUtil.Write("Exception getting device data");
+                Log.Debug("Exception getting device data");
             }
 
             return null;
@@ -322,13 +307,13 @@ namespace Glimmr.Models.Util {
             var devices = db.GetCollection<DreamData>("Dev_Dreamscreen").FindAll();
             foreach (var dev in devices) {
                 var tsIp = dev.IpAddress;
-                LogUtil.Write("Device IP: " + tsIp);
+                Log.Debug("Device IP: " + tsIp);
                 if (tsIp != dsIp) continue;
-                LogUtil.Write("We have a matching IP");
+                Log.Debug("We have a matching IP");
                 var fs = dev.FlexSetup;
                 var dX = fs[0];
                 var dY = fs[1];
-                LogUtil.Write($@"DX, DY: {dX} {dY}");
+                Log.Debug($@"DX, DY: {dX} {dY}");
                 return (dX, dY);
             }
 
@@ -348,7 +333,7 @@ namespace Glimmr.Models.Util {
             // If the config file doesn't exist locally, we're done
             if (!File.Exists(filePath)) return newPath;
             // Otherwise, move the config to etc
-            LogUtil.Write($@"Moving file from {filePath} to {newPath}");
+            Log.Debug($@"Moving file from {filePath} to {newPath}");
             File.Copy(filePath, newPath);
             File.Delete(filePath);
             return newPath;
@@ -358,7 +343,7 @@ namespace Glimmr.Models.Util {
         public static async void RefreshDevices(LifxClient c, ControlService controlService) {
             var cs = new CancellationTokenSource();
             cs.CancelAfter(30000);
-            LogUtil.Write("Starting scan.");
+            Log.Debug("Starting scan.");
             Scanning = true;
             // Get dream devices
             var ld = new LifxDiscovery(c);
@@ -375,7 +360,7 @@ namespace Glimmr.Models.Util {
                 Log.Warning("Socket exception during discovery: ", f);
             }
 				
-            LogUtil.Write("Refresh complete.");
+            Log.Debug("Refresh complete.");
             try {
                 var leaves = nanoTask.Result;
                 var bridges = bridgeTask.Result;
@@ -390,7 +375,7 @@ namespace Glimmr.Models.Util {
                 foreach (var b in bridges) {
                     var nb = b;
                     if (b.Key !=  null && b.User != null) {
-                        var n = new HueBridge(b);
+                        var n = new HueDevice(b);
                         nb = n.RefreshData().Result;
                         n.Dispose();
                     }
@@ -400,9 +385,9 @@ namespace Glimmr.Models.Util {
                 foreach (var b in bridgeCol.FindAll()) {
                     HueData nb;
                     if (b.Key !=  null && b.User != null) {
-                        var n = new HueBridge(b);
+                        var n = new HueDevice(b);
                         nb = n.RefreshData().Result;
-                        LogUtil.Write("Got me a bridge to update: " + nb.IpAddress);
+                        Log.Debug("Got me a bridge to update: " + nb.IpAddress);
                         bridgeCol.Upsert(nb);
                         n.Dispose();
                     }
@@ -462,7 +447,7 @@ namespace Glimmr.Models.Util {
 
         public static void RefreshPublicIp() {
             var myIp = Dns.GetHostEntry(Dns.GetHostName()).AddressList[0].ToString();
-            LogUtil.Write("My IP Address is :" + myIp);
+            Log.Debug("My IP Address is :" + myIp);
         }
     }
 }

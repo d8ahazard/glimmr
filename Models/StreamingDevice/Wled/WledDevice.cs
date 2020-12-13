@@ -30,7 +30,7 @@ namespace Glimmr.Models.StreamingDevice.WLED {
             _client = new HttpClient();
             _updateColors = new List<Color>();
             Data = wd ?? throw new ArgumentException("Invalid WLED data.");
-            LogUtil.Write("Enabled: " + IsEnabled());
+            Log.Debug("Enabled: " + IsEnabled());
             Id = Data.Id;
             IpAddress = Data.IpAddress;
         }
@@ -52,7 +52,7 @@ namespace Glimmr.Models.StreamingDevice.WLED {
         public void StartStream(CancellationToken ct) {
             if (Streaming) return;
             if (!Data.Enable) return;
-            LogUtil.Write("WLED: Initializing stream.");
+            Log.Debug("WLED: Initializing stream.");
             _stripSender = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             _stripSender.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             _stripSender.Blocking = false;
@@ -65,7 +65,7 @@ namespace Glimmr.Models.StreamingDevice.WLED {
             SendPost(onObj);
             ep = IpUtil.Parse(IpAddress, port);
             Streaming = true;
-            LogUtil.Write("WLED: Streaming started...");
+            Log.Debug("WLED: Streaming started...");
         }
 
        
@@ -79,7 +79,7 @@ namespace Glimmr.Models.StreamingDevice.WLED {
             StopStrip();
             Streaming = false;
             _stripSender?.Dispose();
-            LogUtil.Write("WLED: Stream stopped.");
+            Log.Debug("WLED: Stream stopped.");
         }
 
         private void StopStrip() {
@@ -101,7 +101,7 @@ namespace Glimmr.Models.StreamingDevice.WLED {
         public void SetColor(List<Color> colors, List<Color> _, double fadeTime) {
             if (colors == null) throw new InvalidEnumArgumentException("Colors cannot be null.");
             if (!Streaming) {
-                LogUtil.Write("Not streaming, dumbass: " + Data.Id);
+                Log.Debug("Not streaming, dumbass: " + Data.Id);
                 return;
             }
             colors = TruncateColors(colors);
@@ -120,19 +120,19 @@ namespace Glimmr.Models.StreamingDevice.WLED {
             }
             if (!colorsSet) {
                 colorsSet = true;
-                LogUtil.Write("Sending " + colors.Count + " colors to " + IpAddress);
-                LogUtil.Write("First packet: " + ByteUtils.ByteString(packet.ToArray()));
+                Log.Debug("Sending " + colors.Count + " colors to " + IpAddress);
+                Log.Debug("First packet: " + ByteUtils.ByteString(packet.ToArray()));
             }
 
             if (ep != null) {
                 try {
                     if (ep != null) _stripSender.SendTo(packet.ToArray(), ep);
                 } catch (Exception e) {
-                    LogUtil.Write("Fucking exception, look at that: " + e.Message);        
+                    Log.Debug("Fucking exception, look at that: " + e.Message);        
                 }
             }
              
-            //LogUtil.Write("Sent.");
+            //Log.Debug("Sent.");
         }
 
         private List<Color> TruncateColors(List<Color> input) {
@@ -185,7 +185,7 @@ namespace Glimmr.Models.StreamingDevice.WLED {
         public void ReloadData() {
             var id = Data.Id;
             Data = DataUtil.GetCollectionItem<WledData>("Dev_Wled", id);
-            LogUtil.Write($"Reloaded LED Data for {id}: " + JsonConvert.SerializeObject(Data));
+            Log.Debug($"Reloaded LED Data for {id}: " + JsonConvert.SerializeObject(Data));
         }
 
         public void UpdateCount(int count) {
@@ -256,7 +256,7 @@ namespace Glimmr.Models.StreamingDevice.WLED {
 
             await using var rs = response.GetResponseStream();
             var responseString = await new StreamReader(rs).ReadToEndAsync();
-            LogUtil.Write("We got a response: " + responseString);    
+            Log.Debug("We got a response: " + responseString);    
             response.Dispose();
         }
 

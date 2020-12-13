@@ -63,29 +63,29 @@ namespace Glimmr.Models.ColorSource.Video {
 
 
 		public VideoStream(ColorService cs, CancellationToken camToken) {
-			LogUtil.Write("Initializing stream capture...");
+			Log.Debug("Initializing stream capture...");
 			_targets = new List<VectorOfPoint>();
 			SetCapVars();
 			_vc = GetStream();
 			_vc.Start(camToken);
 			_cancellationToken = camToken;
 			_colorService = cs;
-			LogUtil.Write("Stream capture initialized.");
+			Log.Debug("Stream capture initialized.");
 		}
 
 		public bool Streaming { get; set; }
 
 		public void ToggleSend(bool enable = true) {
 			Streaming = enable;
-			LogUtil.Write("Toggling color send from splitter to " + Streaming);
+			Log.Debug("Toggling color send from splitter to " + Streaming);
 		}
 		
 		public void Initialize() {
-			LogUtil.Write("Beginning video capture process...");
+			Log.Debug("Beginning video capture process...");
 			SetCapVars();
 			var autoEvent = new AutoResetEvent(false);
 			_saveTimer = new Timer(SaveFrame, autoEvent, 5000, 5000);
-			LogUtil.Write($"Starting vid capture task, setting sw and h to {ScaleWidth} and {ScaleHeight}");
+			Log.Debug($"Starting vid capture task, setting sw and h to {ScaleWidth} and {ScaleHeight}");
 			StreamSplitter = new Splitter(_ledData, ScaleWidth, ScaleHeight);
 			while (!_cancellationToken.IsCancellationRequested) {
 				// Save cpu/memory by not doing anything if not sending...
@@ -114,14 +114,14 @@ namespace Glimmr.Models.ColorSource.Video {
 					Log.Warning("Unable to process frame.");
 					continue;
 				}
-				//LogUtil.Write("Updating splitter!");
+				//Log.Debug("Updating splitter!");
 				StreamSplitter.Update(warped);
-				//LogUtil.Write("Updated!");
+				//Log.Debug("Updated!");
 				SourceActive = !StreamSplitter.NoImage;
 				var colors = StreamSplitter.GetColors();
 				var sectors = StreamSplitter.GetSectors();
 				
-				//LogUtil.Write("No, really, sending colors...");
+				//Log.Debug("No, really, sending colors...");
 				_colorService.SendColors(colors, sectors);
 			}
 
@@ -139,14 +139,14 @@ namespace Glimmr.Models.ColorSource.Video {
 			_ledData = DataUtil.GetObject<LedData>("LedData");
 			_captureMode = DataUtil.GetItem<int>("CaptureMode");
 			_camType = DataUtil.GetItem<int>("CamType");
-			LogUtil.Write("Capture mode is " + _captureMode);
+			Log.Debug("Capture mode is " + _captureMode);
 			_srcArea = ScaleWidth * ScaleHeight;
 			_scaleSize = new Size(ScaleWidth, ScaleHeight);
 
 			if (_captureMode == 1) {
 				try {
 					var lt = DataUtil.GetItem<PointF[]>("LockTarget");
-					LogUtil.Write("LT Grabbed? " + JsonConvert.SerializeObject(lt));
+					Log.Debug("LT Grabbed? " + JsonConvert.SerializeObject(lt));
 					if (lt != null) {
 						_lockTarget = new VectorOfPointF(lt);
 						var lC = 0;
@@ -156,7 +156,7 @@ namespace Glimmr.Models.ColorSource.Video {
 						}
 					}
 				} catch (Exception e) {
-					LogUtil.Write("Exception: " + e.Message);
+					Log.Debug("Exception: " + e.Message);
 				}
 
 			}
@@ -165,7 +165,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			// Debugging vars...
 			_showEdged = DataUtil.GetItem<bool>("ShowEdged") ?? false;
 			_showWarped = DataUtil.GetItem<bool>("ShowWarped") ?? false;
-			LogUtil.Write("Start Capture should be running...");
+			Log.Debug("Start Capture should be running...");
 		}
 
 		private IVideoStream GetStream() {
@@ -174,21 +174,21 @@ namespace Glimmr.Models.ColorSource.Video {
 					switch (_camType) {
 						case 0:
 							// 0 = pi module, 1 = web cam, 2 = USB source
-							LogUtil.Write("Loading Pi cam.");
+							Log.Debug("Loading Pi cam.");
 							var camMode = DataUtil.GetItem<int>("CamMode") ?? 1;
 							return new PiCamVideoStream(ScaleWidth, ScaleHeight, camMode);
 						case 1:
-							LogUtil.Write("Loading web cam.");
+							Log.Debug("Loading web cam.");
 							return new WebCamVideoStream(0);
 					}
 
 					return null;
 				case 2:
 					var cams = HdmiVideoStream.ListSources();
-					LogUtil.Write("Loading video capture card." + JsonConvert.SerializeObject(cams));
+					Log.Debug("Loading video capture card." + JsonConvert.SerializeObject(cams));
 					return new HdmiVideoStream(cams[0]);
 				case 3:
-					LogUtil.Write("Loading screen capture.");
+					Log.Debug("Loading screen capture.");
 					return new ScreenVideoStream();
 			}
 
@@ -229,10 +229,10 @@ namespace Glimmr.Models.ColorSource.Video {
 			if (_lockTarget == null) {
 				_lockTarget = FindTarget(scaled);
 				if (_lockTarget != null) {
-					LogUtil.Write("Target hit.");
+					Log.Debug("Target hit.");
 					DataUtil.SetItem<PointF[]>("LockTarget", _lockTarget.ToArray());
 				} else {
-					LogUtil.Write("No target.");
+					Log.Debug("No target.");
 				}
 			}
 

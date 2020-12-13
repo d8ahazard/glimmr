@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using LifxNet;
+using Serilog;
 
 namespace Glimmr.Models.StreamingDevice.LIFX {
     public class LifxDiscovery {
@@ -19,9 +20,9 @@ namespace Glimmr.Models.StreamingDevice.LIFX {
             _bulbs = new List<LightBulb>();
             _client.DeviceDiscovered += Client_DeviceDiscovered;
             _client.StartDeviceDiscovery();
-            LogUtil.Write("Lifx: Discovery started.");
+            Log.Debug("Lifx: Discovery started.");
             await Task.Delay(timeOut * 1000);
-            LogUtil.Write("Discovery completed.");
+            Log.Debug("Discovery completed.");
             _client.StopDeviceDiscovery();
             return _bulbs.Select(GetBulbInfo).ToList();
         }
@@ -42,7 +43,7 @@ namespace Glimmr.Models.StreamingDevice.LIFX {
 
         private void Client_DeviceDiscovered(object sender, LifxClient.DeviceDiscoveryEventArgs e) {
             var bulb = e.Device as LightBulb;
-            LogUtil.Write("Bulb discovered?");
+            Log.Debug("Bulb discovered?");
             _bulbs.Add(bulb);
         }
 

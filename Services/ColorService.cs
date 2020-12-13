@@ -73,12 +73,12 @@ namespace Glimmr.Services {
 			_controlService.RefreshLedEvent += ReloadLedData;
 			_controlService.TestLedEvent += LedTest;
 			_sDevices = new List<IStreamingDevice>();
-			LogUtil.Write("Initialization complete.");
+			Log.Debug("Initialization complete.");
 		}
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			_stopToken = stoppingToken;
-			LogUtil.Write("Starting colorService loop...");
+			Log.Information("Starting colorService loop...");
 			_subscribers = new Dictionary<string, int>();
 			_controlService.DeviceReloadEvent += RefreshDeviceData;
 			_controlService.SetModeEvent += Mode;
@@ -86,20 +86,18 @@ namespace Glimmr.Services {
 			LoadData();
 			// Fire da demo
 			Demo();
-			LogUtil.Write("Starting capture service...");
-			LogUtil.Write("Starting video capture task...");
+			Log.Information("Starting video capture task...");
 			StartVideoStream(stoppingToken);
-			LogUtil.Write("Starting audio capture task...");
+			Log.Information("Done. Starting audio capture task...");
 			StartAudioStream(stoppingToken);
-			LogUtil.Write("Color service tasks started, setting Mode...");
+			Log.Information("Done. Starting ambient builder task...");
 			StartAmbientStream(stoppingToken);
+			Log.Information("All color sources initialized, setting mode.");
 			// Start our initial mode
 			Mode(_deviceMode);
-			LogUtil.Write("All color service tasks started, really executing main loop...");
+			Log.Information("All color services have been initialized.");
 
 			return Task.Run(async () => {
-				// If our control service says so, refresh data on all devices while streaming
-				LogUtil.Write("Control service starting...");
 				while (!stoppingToken.IsCancellationRequested) {
 					CheckAutoDisable();
 					CheckSubscribers();
@@ -107,7 +105,7 @@ namespace Glimmr.Services {
 				}
 
 				StopServices();
-				LogUtil.Write("Color service stopped.");
+				Log.Debug("Color service stopped.");
 				return Task.CompletedTask;
 			});
 		}
@@ -118,14 +116,14 @@ namespace Glimmr.Services {
 				_watch.Reset();
 				if (!_autoDisabled) return;
 				_autoDisabled = false;
-				LogUtil.Write("Auto-enabling stream.");
+				Log.Debug("Auto-enabling stream.");
 				_controlService.SetMode(_deviceMode);
 			} else {
 				if (_autoDisabled) return;
 				if (_deviceMode != 1) return;
 				if (!_watch.IsRunning) _watch.Start();
 				if (_watch.ElapsedMilliseconds > 5000) {
-					LogUtil.Write("Auto-sleeping lights.");
+					Log.Debug("Auto-sleeping lights.");
 					_autoDisabled = true;
 					_deviceMode = 0;
 					DataUtil.SetItem<bool>("AutoDisabled", _autoDisabled);
@@ -169,7 +167,7 @@ namespace Glimmr.Services {
 		}
 
 		private void LoadData() {
-			LogUtil.Write("Loading device data...");
+			Log.Debug("Loading device data...");
 			// Reload main vars
 			_captureMode = DataUtil.GetItem<int>("CaptureMode") ?? 2;
 			_deviceMode = DataUtil.GetItem<int>("DeviceMode") ?? 0;
@@ -179,16 +177,16 @@ namespace Glimmr.Services {
 			_ambientColor = DataUtil.GetItem<string>("AmbientColor") ?? "FFFFFF";
 			_sendTokenSource = new CancellationTokenSource();
 			_captureTokenSource = new CancellationTokenSource();
-			LogUtil.Write("Loading strip");
+			Log.Debug("Loading strip");
 			_ledData = DataUtil.GetObject<LedData>("LedData");
 			try {
 				_strip = new LedStrip(_ledData);
-				LogUtil.Write("Initialized LED strip...");
+				Log.Debug("Initialized LED strip...");
 			} catch (TypeInitializationException e) {
-				LogUtil.Write("Type init error: " + e.Message);
+				Log.Debug("Type init error: " + e.Message);
 			}
 
-			LogUtil.Write("Creating new device lists...");
+			Log.Debug("Creating new device lists...");
 			// Create new lists
 			_sDevices = new List<IStreamingDevice>();
 
@@ -196,8 +194,8 @@ namespace Glimmr.Services {
 			foreach (var bridge in bridgeArray.Where(bridge =>
 				!string.IsNullOrEmpty(bridge.Key) && !string.IsNullOrEmpty(bridge.User) &&
 				bridge.SelectedGroup != "-1")) {
-				LogUtil.Write("Adding Hue device: " + bridge.Id);
-				_sDevices.Add(new HueBridge(bridge));
+				Log.Debug("Adding Hue device: " + bridge.Id);
+				_sDevices.Add(new HueDevice(bridge));
 			}
 
 			// Init leaves
@@ -210,7 +208,7 @@ namespace Glimmr.Services {
 					_nanoSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 					_nanoSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 					_nanoSocket.EnableBroadcast = false;
-					LogUtil.Write("Adding Nano device: " + n.Id);
+					Log.Debug("Adding Nano device: " + n.Id);
 				}
 
 				_sDevices.Add(new NanoleafDevice(n, _nanoSocket, _nanoClient));
@@ -221,46 +219,46 @@ namespace Glimmr.Services {
 			if (lifx != null)
 				foreach (var b in lifx.Where(b => b.TargetSector != -1)) {
 					_lifxClient ??= LifxClient.CreateAsync().Result;
-					LogUtil.Write("Adding Lifx device: " + b.Id);
+					Log.Debug("Adding Lifx device: " + b.Id);
 					_sDevices.Add(new LifxDevice(b, _lifxClient));
 				}
 
 			var wlArray = DataUtil.GetCollection<WledData>("Dev_Wled");
 			foreach (var wl in wlArray) {
-				LogUtil.Write("Adding Wled device: " + wl.Id);
+				Log.Debug("Adding Wled device: " + wl.Id);
 				_sDevices.Add(new WledDevice(wl));
 			}
 
-			LogUtil.Write("Initializing Splitter.");
-			LogUtil.Write("Color Service Data Load Complete...");
+			Log.Debug("Initializing Splitter.");
+			Log.Debug("Color Service Data Load Complete...");
 		}
 
 		private void Demo() {
-			LogUtil.Write("Demo fired...");
+			Log.Debug("Demo fired...");
 			var ledCount = _ledData.LedCount;
-			LogUtil.Write("Running demo on " + ledCount + "Leds");
+			Log.Debug("Running demo on " + ledCount + "Leds");
 			var i = 0;
 			var cols = new Color[ledCount];
 			cols = ColorUtil.EmptyColors(cols);
 			var dcs = new CancellationTokenSource();
 			var wlDict = new List<WledDevice>();
 			var wlCols = new Dictionary<string, Color[]>();
-			LogUtil.Write("Still alive 1, we have " + _sDevices.Count + " streaming devices.");
+			Log.Debug("Still alive 1, we have " + _sDevices.Count + " streaming devices.");
 			foreach (var sd in _sDevices) {
 				var id = sd.Id;
-				LogUtil.Write("Looping sdevice: " + id);
+				Log.Debug("Looping sdevice: " + id);
 				if (string.IsNullOrEmpty(id)) continue;
 				if (!sd.Id.Contains("wled")) continue;
-				LogUtil.Write("Got a wled...");
+				Log.Debug("Got a wled...");
 				if (!sd.IsEnabled()) continue;
-				LogUtil.Write("And it's enabled.");
+				Log.Debug("And it's enabled.");
 				sd.StartStream(dcs.Token);
-				LogUtil.Write("Started stream, netx.");
+				Log.Debug("Started stream, netx.");
 				var wlStrip = (WledDevice) sd;
 				wlDict.Add(wlStrip);
 				var wlCount = wlStrip.Data.LedCount;
 				wlCols[sd.Id] = ColorUtil.EmptyColors(new Color[wlCount]);
-				LogUtil.Write("And saved and stuff...");
+				Log.Debug("And saved and stuff...");
 			}
 
 			while (i < ledCount) {
@@ -269,7 +267,7 @@ namespace Glimmr.Services {
 				var rCol = ColorUtil.Rainbow(progress);
 				// Update our next pixel on the strip with the rainbow color
 				cols[i] = rCol;
-				_strip.UpdateAll(cols.ToList());
+				_strip?.UpdateAll(cols.ToList());
 				// Go through each device in our list of wled devices
 				foreach (var w in wlDict) {
 					// This is the value the color should go at in our array of possible colors
@@ -301,7 +299,7 @@ namespace Glimmr.Services {
 
 			// THEN RIP IT ALL DOWN
 			foreach (var w in wlDict) w.StopStream();
-			_strip.StopLights();
+			_strip?.StopLights();
 			dcs.Dispose();
 		}
 
@@ -310,7 +308,7 @@ namespace Glimmr.Services {
 			try {
 				return new AudioStream(this, _stopToken);
 			} catch (DllNotFoundException e) {
-				LogUtil.Write("Unable to load bass Dll: " + e.Message);
+				Log.Warning("Unable to load bass Dll:", e);
 			}
 			return null;
 		}
@@ -323,7 +321,7 @@ namespace Glimmr.Services {
 				sd.ReloadData();
 				exists = true;
 				if (!sd.IsEnabled()) continue;
-				LogUtil.Write("Restarting streaming device.");
+				Log.Debug("Restarting streaming device.");
 				sd.StartStream(_sendTokenSource.Token);
 			}
 
@@ -331,7 +329,7 @@ namespace Glimmr.Services {
 			var dev = DataUtil.GetDeviceById(id);
 			IStreamingDevice? sda = dev.Tag switch {
 				"Lifx" => new LifxDevice(dev, _lifxClient),
-				"HueBridge" => new HueBridge(dev),
+				"HueBridge" => new HueDevice(dev),
 				"Nanoleaf" => new NanoleafDevice(dev),
 				"Wled" => new WledDevice(dev),
 				"DreamData" => new DreamDevice(dev),
@@ -351,17 +349,16 @@ namespace Glimmr.Services {
 			_ambientMode = DataUtil.GetItem<int>("AmbientMode") ?? 0;
 			_ambientShow = DataUtil.GetItem<int>("AmbientShow") ?? 0;
 			_ambientColor = DataUtil.GetItem<string>("AmbientColor") ?? "FFFFFF";
-			LedData ledData = DataUtil.GetObject<LedData>("LedData") ?? new LedData(true);
+			LedData ledData = DataUtil.GetObject<LedData>("LedData") ?? new LedData();
 			try {
 				_strip?.Reload(ledData);
-				LogUtil.Write("Re-Initialized LED strip...");
+				Log.Debug("Re-Initialized LED strip...");
 			} catch (TypeInitializationException e) {
-				LogUtil.Write("Type init error: " + e.Message);
+				Log.Debug("Type init error: " + e.Message);
 			}
 		}
 
 		private void Mode(int newMode) {
-			LogUtil.Write("We are updating mode to: " + newMode);
 			if (newMode != 0 && _autoDisabled) {
 				_autoDisabled = false;
 				DataUtil.SetItem<bool>("AutoDisabled", _autoDisabled);
@@ -389,6 +386,7 @@ namespace Glimmr.Services {
 					_audioStream?.ToggleSend(false);
 					break;
 			}
+			Log.Information($"Updating device mode to {newMode}.");
 		}
 
 		
@@ -396,18 +394,12 @@ namespace Glimmr.Services {
 			if (_captureMode == 0) {
 				_controlService.TriggerDreamSubscribe();
 			} else {
-				LogUtil.Write("Initializing video stream...");
-				LogUtil.Write("Continuing...");
 				_videoStream = new VideoStream(this, ct);
 				if (_videoStream == null) {
 					Log.Warning("Video stream is null.");
 					return;
 				}
-				LogUtil.Write("Setting video capture task...");
 				Task.Run(async () => _videoStream.Initialize(), ct);
-				LogUtil.Write("Starting video capture task...");
-				//_videoCaptureTask.Start();
-				LogUtil.Write("Video capture task has been started.");
 			}
 		}
 
@@ -421,34 +413,25 @@ namespace Glimmr.Services {
 					Log.Warning("Audio stream is null.");
 					return;
 				}
-
-				LogUtil.Write("Starting audio capture task...");
 				Task.Run(async () => _audioStream.Initialize(), ct);
-				LogUtil.Write("Audio capture task has been started.");
 			}
 		}
 		
 		private void StartAmbientStream(CancellationToken ct) {
 			_ambientStream = new AmbientStream(this, ct); 
-			LogUtil.Write("Starting ambient show builder...");
 			Task.Run(async () => _ambientStream.Initialize(), ct);
-			LogUtil.Write("Audio capture task has been started.");
-			
 		}
 
 		private void StartStream() {
 			if (!_streamStarted) {
-				LogUtil.Write("Starting stream...");
 				foreach (var sd in _sDevices.Where(sd => !sd.Streaming)) {
 					if (!sd.IsEnabled()) continue;
-					LogUtil.Write("Starting device: " + sd.IpAddress);
 					sd.StartStream(_sendTokenSource.Token);
-					LogUtil.Write($"Started device at {sd.IpAddress}.");
 				}
 			}
 
 			_streamStarted = true;
-			if (_streamStarted) LogUtil.Write("Streaming on all devices should now be started...");
+			if (_streamStarted) Log.Information("Streaming on all devices should now be started...");
 		}
 
 		private void StopStream() {
@@ -458,30 +441,25 @@ namespace Glimmr.Services {
 			_strip?.StopLights();
 			foreach (var s in _sDevices.Where(s => s.Streaming)) s.StopStream();
 
-			LogUtil.Write("Stream stopped.");
+			Log.Information("Stream stopped.");
 			_streamStarted = false;
 		}
 
 	
 
 		public void SendColors(List<Color> colors, List<Color> sectors, int fadeTime = 0) {
-			LogUtil.Write("SEND FIRED.");
 			_sendTokenSource ??= new CancellationTokenSource();
 			if (_sendTokenSource.IsCancellationRequested) return;
 			if (!_streamStarted) return;
 			if (!_testingStrip) _strip?.UpdateAll(colors);
 
 			foreach (var sd in _sDevices.Where(sd => sd.IsEnabled())) {
-				//LogUtil.Write("SD: " + sd.Id + " enabled");
 				if (sd.Id.Contains("wled") || sd.Id.Contains("Wled")) {
 					sd.SetColor(colors, null, fadeTime);
 				} else {
-					LogUtil.Write("Setting colors for non wled...");
 					sd.SetColor(null, sectors, fadeTime);
 				}
 			}
-			// We call this so we don't create some dumb loop
-			_controlService.SendColors2(colors, sectors, fadeTime);
 		}
 
 		
@@ -502,7 +480,7 @@ namespace Glimmr.Services {
 				s.Dispose();
 			}
 
-			LogUtil.Write("All services have been stopped.");
+			Log.Information("All services have been stopped.");
 		}
 	}
 }

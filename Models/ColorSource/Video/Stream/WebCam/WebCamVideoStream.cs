@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
 using Glimmr.Models.Util;
+using Serilog;
 
 namespace Glimmr.Models.ColorSource.Video.Stream.WebCam {
     public class WebCamVideoStream : IVideoStream, IDisposable
@@ -16,19 +17,19 @@ namespace Glimmr.Models.ColorSource.Video.Stream.WebCam {
             _video = new VideoCapture(inputStream, capType);
             var foo = _video.CaptureSource.ToString();
             Frame = new Mat();
-            LogUtil.Write("Stream init, capture source is " + foo + ", " + inputStream);            
+            Log.Debug("Stream init, capture source is " + foo + ", " + inputStream);            
         }
 
         private void SetFrame(object sender, EventArgs e) {
             if (_video != null && _video.Ptr != IntPtr.Zero) {
                 _video.Read(Frame);
             } else {
-                LogUtil.Write("No frame to set...");
+                Log.Debug("No frame to set...");
             }
         }
         
         public async Task Start(CancellationToken ct) {
-            LogUtil.Write("WebCam Stream started.");
+            Log.Debug("WebCam Stream started.");
             _video.ImageGrabbed += SetFrame;
             _video.Start();
         }
