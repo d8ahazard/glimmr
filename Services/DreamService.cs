@@ -215,6 +215,7 @@ namespace Glimmr.Services {
             string command = null;
             string flag = null;
             var from = receivedIpEndPoint.Address.ToString();
+            var areYouLocal = from == IpUtil.GetLocalIpAddress();
             var replyPoint = new IPEndPoint(receivedIpEndPoint.Address, 8888);
             var payloadString = string.Empty;
             var payload = Array.Empty<byte>();
@@ -247,13 +248,12 @@ namespace Glimmr.Services {
             }
             switch (command) {
                 case "SUBSCRIBE":
-                    
-                    if (_devMode == 1 || _devMode == 2) {
+                    if (_devMode == 1 || _devMode == 2 && !areYouLocal) {
                         DreamUtil.SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x10, _group, replyPoint);    
                     }
                     
                     // If the device is on and capture mode is not using DS data
-                    if (_devMode != 0 && CaptureMode != 0) {
+                    if (_devMode != 0 && CaptureMode != 0 && !areYouLocal) {
                         // If the device is replying to our sub broadcast
                         if (flag == "60") {
                             // Set our count to 3, which is how many tries we get before we stop sending data
@@ -270,11 +270,13 @@ namespace Glimmr.Services {
                     } 
                     break;
                 case "DISCOVERY_START":
+                    if (!areYouLocal) break;
                     Log.Debug("Dreamscreen: Starting discovery.");
                     _devices = new List<DreamData>();
                     _discovering = true;
                     break;
                 case "DISCOVERY_STOP":
+                    if (!areYouLocal) break;
                     Log.Debug($"Dreamscreen: Discovery complete, found {_devices.Count} devices.");
                     _discovering = false;
                     foreach (var d in _devices) {
@@ -292,7 +294,7 @@ namespace Glimmr.Services {
 
                     break;
                 case "DEVICE_DISCOVERY":
-                    if (flag == "30" && from != "0.0.0.0") {
+                    if (flag == "30" && from != "0.0.0.0" && !areYouLocal) {
                         SendDeviceStatus(replyPoint);
                     } else if (flag == "60") {
                         if (msgDevice != null) {
