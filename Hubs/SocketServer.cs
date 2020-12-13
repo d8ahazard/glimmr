@@ -14,14 +14,8 @@ using Newtonsoft.Json.Linq;
 
 namespace Glimmr.Hubs {
 	public class SocketServer : Hub {
-		public int UserCount;
-		private CancellationTokenSource _ct;
-		private bool _initialized;
-		private bool timerStarted;
-
 		private readonly ControlService _cs;
-		//private readonly IHubContext<SocketServer> _hubContext;
-
+		
 
 		public SocketServer(ControlService cs) {
 			_cs = cs;
@@ -197,20 +191,12 @@ namespace Glimmr.Hubs {
 
 		public override Task OnDisconnectedAsync(Exception exception) {
 			var dc = base.OnDisconnectedAsync(exception);
-			UserCount--;
-			LogUtil.Write("Disconnected: Users " + UserCount);
 			return dc;
 		}
 
 		public override Task OnConnectedAsync() {
 			var bc = base.OnConnectedAsync();
-			UserCount++;
-			LogUtil.Write("User Connected: " + UserCount);
 			return bc;
-		}
-
-		public Task ThrowException() {
-			throw new HubException("Is this better: ");
 		}
 	}
 }
