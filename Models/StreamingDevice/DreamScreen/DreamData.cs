@@ -4,22 +4,22 @@ using System;
 using System.ComponentModel;
 using System.Reflection;
 using System.Runtime.Serialization;
-using Glimmr.Models.StreamingDevice.DreamScreen.Encoders;
+using Glimmr.Models.StreamingDevice.Dreamscreen.Encoders;
 using Glimmr.Models.Util;
 using LiteDB;
 using Newtonsoft.Json;
 
 #endregion
 
-namespace Glimmr.Models.StreamingDevice.DreamScreen {
+namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 	public class DreamData : StreamingData {
-		private const string DeviceTag4K = "DreamScreen4K";
+		private const string DeviceTag4K = "Dreamscreen4K";
 		private static readonly byte[] Required4KEspFirmwareVersion = {1, 6};
 		private static readonly byte[] Required4KPicVersionNumber = {5, 6};
-		private const string DeviceTagHd = "DreamScreen";
+		private const string DeviceTagHd = "Dreamscreen";
 		private static readonly byte[] RequiredHdEspFirmwareVersion = {1, 6};
 		private static readonly byte[] RequiredHdPicVersionNumber = {1, 7};
-		private const string DeviceTagSolo = "DreamScreenSolo";
+		private const string DeviceTagSolo = "DreamscreenSolo";
 		private static readonly byte[] RequiredSoloEspFirmwareVersion = {1, 6};
 		private static readonly byte[] RequiredSoloPicVersionNumber = {6, 2};
 		private static readonly byte[] DefaultSectorAssignment = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 0, 0};
@@ -80,7 +80,7 @@ namespace Glimmr.Models.StreamingDevice.DreamScreen {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int Mode { get; set; }
 		
-		[DefaultValue("DreamScreen4K")]
+		[DefaultValue("Dreamscreen4K")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string DeviceTag { get; set; }
 		
@@ -260,14 +260,14 @@ namespace Glimmr.Models.StreamingDevice.DreamScreen {
 		public byte[] SectorAssignment { get; set; }
 
 		public DreamData() {
-			Name = "DreamScreen4K";
-			Tag = "DreamScreen";
-			DeviceTag = "DreamScreen4K";
+			Name = "Dreamscreen4K";
+			Tag = "Dreamscreen";
+			DeviceTag = "Dreamscreen4K";
 		}
 
 		public DreamData(string devTag) {
-			Name = "DreamScreen4K";
-			Tag = "DreamScreen";
+			Name = "Dreamscreen4K";
+			Tag = "Dreamscreen";
 			DeviceTag = devTag;
 		}
 
@@ -304,8 +304,8 @@ namespace Glimmr.Models.StreamingDevice.DreamScreen {
 
 		public byte[] EncodeState() {
 			switch (DeviceTag) {
-				case "DreamScreen":
-					return Encoders.DreamScreen.EncodeState(this);
+				case "Dreamscreen":
+					return Encoders.Dreamscreen.EncodeState(this);
 				case "Connect":
 					return Connect.EncodeState(this);
 				case "SideKick":

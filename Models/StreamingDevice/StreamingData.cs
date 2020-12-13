@@ -3,8 +3,6 @@ using Newtonsoft.Json;
 
 namespace Glimmr.Models.StreamingDevice {
     public abstract class StreamingData {
-        [JsonProperty]
-        public bool Enable {get;set;}
         
         [JsonProperty]
         public string Name { get; set; }
@@ -21,5 +19,10 @@ namespace Glimmr.Models.StreamingDevice {
         [DefaultValue(255)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public int Brightness { get; set; }
+        
+        [DefaultValue(false)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool Enable {get;set;}
+
     }
 }

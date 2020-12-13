@@ -6,7 +6,7 @@ using Glimmr.Models.Util;
 
 #endregion
 
-namespace Glimmr.Models.StreamingDevice.DreamScreen.Encoders {
+namespace Glimmr.Models.StreamingDevice.Dreamscreen.Encoders {
 	public static class SideKick {
 		public static DreamData ParsePayload(byte[] payload) {
 			var dd = new DreamData();

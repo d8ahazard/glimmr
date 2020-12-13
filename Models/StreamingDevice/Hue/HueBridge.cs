@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 using System.Linq;
-using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
+using Newtonsoft.Json;
 using Q42.HueApi;
 using Q42.HueApi.ColorConverters;
 using Q42.HueApi.ColorConverters.HSB;
@@ -21,24 +21,22 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 		public bool Enable { get; set; }
 		StreamingData IStreamingDevice.Data {
 			get => Data;
-			set => Data = (BridgeData) value;
+			set => Data = (HueData) value;
 		}
 
-		private BridgeData Data { get; set; }
+		private HueData Data { get; set; }
 		private EntertainmentLayer _entLayer;
 		private StreamingHueClient _client;
 		private bool _disposed;
-		private int _captureMode;
 		public int Brightness { get; set; }
 		public string Id { get; set; }
 		public string IpAddress { get; set; }
 		public string Tag { get; set; }
-
 		public bool Streaming { get; set; }
 
 
-		public HueBridge(BridgeData data) {
-			_captureMode = DataUtil.GetItem<int>("captureMode");
+		public HueBridge(HueData data) {
+			DataUtil.GetItem<int>("captureMode");
 			Data = data ?? throw new ArgumentNullException(nameof(data));
 			IpAddress = Data.IpAddress;
 			_disposed = false;
@@ -72,7 +70,7 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 			SetClient();
 			try {
 				// Make sure we are not already streaming.
-				var _ = StreamingSetup.StopStream(_client, Data);
+				var _ = StopStream(_client, Data);
 				if (Streaming) ResetColors();
 				Streaming = false;
 			} catch (SocketException e) {
@@ -83,11 +81,11 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 			// Grab our stream
             
 			// Save previous light state(s) before stopping
-			RefreshData();
-			DataUtil.InsertCollection<BridgeData>("Dev_Hue", Data);
+			await RefreshData();
+			DataUtil.InsertCollection<HueData>("Dev_Hue", Data);
 			StreamingGroup stream;
 			try {
-				stream = StreamingSetup.SetupAndReturnGroup(_client, Data, ct).Result;
+				stream = SetupAndReturnGroup(_client, Data, ct).Result;
 			} catch (Exception e) {
 				LogUtil.Write("SException (Probably tried stopping/starting too quickly): " + e.Message, "WARN");
 				return;
@@ -108,7 +106,7 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 
 		public void StopStream() {
 			LogUtil.Write($"Hue: Stopping Stream: {IpAddress}...");
-			var _ = StreamingSetup.StopStream(_client, Data);
+			var _ = StopStream(_client, Data);
 			if (Streaming) ResetColors();
 			Streaming = false;
 			LogUtil.Write("Hue: Streaming Stopped.");
@@ -137,8 +135,8 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 		}
 
 		public void ReloadData() {
-			var newData = (BridgeData) DataUtil.GetCollectionItem<BridgeData>("Dev_Hue", Id);
-			_captureMode = DataUtil.GetItem<int>("captureMode");
+			var newData = (HueData) DataUtil.GetCollectionItem<HueData>("Dev_Hue", Id);
+			DataUtil.GetItem<int>("captureMode");
 			Data = newData;
 			IpAddress = Data.IpAddress;
 			Brightness = newData.Brightness;
@@ -148,9 +146,10 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 		/// <summary>
 		///     Update lights in entertainment layer
 		/// </summary>
-		/// <param name="colors">An array of 12 colors corresponding to sector data</param>
+		/// <param name="_">LED colors, we don't need this.</param>
+		/// <param name="colors">Sector colors.</param>
 		/// <param name="fadeTime">Optional: how long to fade to next state</param>
-		public void SetColor(List<Color> colors, double fadeTime = 0) {
+		public void SetColor(List<Color> _, List<Color> colors, double fadeTime = 0) {
 			
 			if (!Streaming) {
 				LogUtil.Write("Hue is not streaming.");
@@ -162,18 +161,18 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 			}
 
 			if (_entLayer != null) {
-				var lightMappings = Data.Lights;
+				var lightMappings = Data.MappedLights;
 				foreach (var entLight in _entLayer) {
 					// Get data for our light from map
 					var lightData = lightMappings.SingleOrDefault(item =>
-						item.Id == entLight.Id.ToString(CultureInfo.InvariantCulture));
+						item.Id == entLight.Id);
 					// Return if not mapped
 					if (lightData == null) continue;
 					// Otherwise, get the corresponding sector color
-					var tSector = _captureMode == 0 ? lightData.TargetSector : lightData.TargetSectorV2;
+					var tSector = lightData.TargetSector;
 					var colorInt = tSector - 1;
 					var color = colors[colorInt];
-					var mb = lightData.OverrideBrightness ? lightData.Brightness : Brightness;
+					var mb = lightData.Override ? lightData.Brightness : Brightness;
 					if (mb < 100) {
 						color = ColorTransformUtil.ClampBrightness(color, mb);
 					}
@@ -196,55 +195,9 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 			}
 		}
 
+		
         
-		public async void RefreshData() {
-			// If we have no IP or we're not authorized, return
-			var newLights = new List<LightData>();
-			var newGroups = new List<Group>();
-
-			if (Data.IpAddress == "0.0.0.0" || Data.User == null || Data.Key == null) {
-				Data.Lights = newLights;
-				Data.Groups = newGroups;
-				LogUtil.Write("No authorization, returning empty lights.");
-				return;
-			}
-			// Get our client
-			SetClient();
-			_client.LocalHueClient.Initialize(Data.User);
-			// Get lights
-			var lights = Data.Lights ?? new List<LightData>();
-			try {
-				var res = _client.LocalHueClient.GetLightsAsync().Result;
-				var ld = res.Select(r => new LightData(r)).ToList();
-
-				foreach (var light in ld) {
-					foreach (var ex in lights.Where(ex => ex.Id == light.Id)) {
-						light.TargetSector = ex.TargetSector;
-						light.TargetSectorV2 = ex.TargetSectorV2;
-						if (light.TargetSectorV2 == -1 && light.TargetSector != -1) {
-							light.TargetSectorV2 = ex.TargetSector * 2;
-						}
-						light.Brightness = ex.Brightness;
-						light.OverrideBrightness = ex.OverrideBrightness;
-					}
-
-					newLights.Add(light);
-				}
-
-				Data.Lights = newLights;
-				var all = await _client.LocalHueClient.GetEntertainmentGroups();
-				newGroups.AddRange(all);
-				Data.Groups = newGroups;
-			} catch (AggregateException e) {
-				LogUtil.Write("Aggregate exception: " + e);
-			} catch (HttpRequestException f) {
-				LogUtil.Write("Http Request Exception: " + f);
-			} catch (SocketException g) {
-				LogUtil.Write("Socket Exception: " + g);
-			}
-		}
-        
-		public async Task<BridgeData> RefreshData(int timeout=5) {
+		public async Task<HueData> RefreshData() {
 			// If we have no IP or we're not authorized, return
 			var newLights = new List<LightData>();
 			var newGroups = new List<Group>();
@@ -259,27 +212,9 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 			SetClient();
 			_client.LocalHueClient.Initialize(Data.User);
 			// Get lights
-			var lights = Data.Lights ?? new List<LightData>();
 			try {
 				var res = _client.LocalHueClient.GetLightsAsync().Result;
-				var ld = res.Select(r => new LightData(r)).ToList();
-
-				foreach (var light in ld) {
-					foreach (var ex in lights.Where(ex => ex.Id == light.Id)) {
-						light.TargetSector = ex.TargetSector;
-						light.TargetSectorV2 = ex.TargetSectorV2;
-						if (light.TargetSectorV2 == -1 && light.TargetSector != -1) {
-							light.TargetSectorV2 = ex.TargetSector * 2;
-						}
-
-						light.Brightness = ex.Brightness;
-						light.OverrideBrightness = ex.OverrideBrightness;
-					}
-
-					newLights.Add(light);
-				}
-
-				Data.Lights = newLights;
+				Data.Lights = res.Select(r => new LightData(r)).ToList();
 				var all = await _client.LocalHueClient.GetEntertainmentGroups();
 				newGroups.AddRange(all);
 				Data.Groups = newGroups;
@@ -291,7 +226,95 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 		}
        
 
-       
+       public static async Task StopStream(StreamingHueClient client, HueData b) {
+            if (client == null || b == null) {
+                throw new ArgumentException("Invalid argument.");
+            }
+
+            var id = b.SelectedGroup;
+            await client.LocalHueClient.SetStreamingAsync(id, false).ConfigureAwait(true);
+        }
+
+        public static async Task<StreamingGroup> SetupAndReturnGroup(StreamingHueClient client, HueData b,
+            CancellationToken ct) {
+            
+            if (client == null || b == null) {
+                throw new ArgumentException("Invalid argument.");
+            }
+            try {
+                var groupId = b.SelectedGroup;
+                LogUtil.Write("HueStream: Selecting group ID: " + groupId);
+                if (groupId == null && b.Groups != null && b.Groups.Count > 0) {
+                    groupId = b.Groups[0].Id;
+                }
+
+                if (groupId == null) {
+                    LogUtil.Write("HueStream: Group ID is null!");
+                    return null;
+                }
+                //Get the entertainment group
+                LogUtil.Write("Grabbing ent group...");
+                var group = client.LocalHueClient.GetGroupAsync(groupId).Result;
+                if (group == null) {
+                    LogUtil.Write("Group is null, trying with first group ID.");
+                    var groups = b.Groups;
+                    if (groups.Count > 0) {
+                        groupId = groups[0].Id;
+                        group = client.LocalHueClient.GetGroupAsync(groupId).Result;
+                        if (group != null) {
+                            LogUtil.Write(@$"Selected first group: {groupId}");
+                        } else {
+                            LogUtil.Write(@"Unable to load group, can't connect for streaming.");
+                            return null;
+                        }
+                    }
+                } else {
+                    LogUtil.Write("HueStream: Entertainment Group retrieved...");
+                }
+
+                //Create a streaming group
+                if (group != null) {
+                    var lights = group.Lights;
+                    LogUtil.Write("HueStream: We have group, mapping lights: " + JsonConvert.SerializeObject(lights));
+                    var mappedLights = new List<string>();
+                    foreach (var light in lights) {
+                        foreach (var ml in from ml in b.MappedLights where ml.Id.ToString() == light where ml.TargetSector != -1 where !mappedLights.Contains(light) select ml) {
+                            LogUtil.Write("Adding mapped ID: " + ml.Id);
+                            mappedLights.Add(light);
+                        }
+                    }
+
+                    LogUtil.Write("Getting streaming group using ml: " + JsonConvert.SerializeObject(mappedLights));
+
+                    if (mappedLights.Count == 0) {
+                        LogUtil.Write("No mapped lights, nothing to do.");
+                        return null;
+                    }
+                    
+                    var stream = new StreamingGroup(mappedLights);
+                    LogUtil.Write("Stream Got.");
+                    //Connect to the streaming group
+                    try {
+                        LogUtil.Write("Connecting...");
+                        await client.Connect(group.Id);
+                        LogUtil.Write("Connected.");
+                    } catch (Exception e) {
+                        LogUtil.Write("Streaming exception caught: " + e.Message);
+                    }
+
+                    client.AutoUpdate(stream, ct);
+                    LogUtil.Write("Group setup complete, returning.");
+                    return stream;
+                }
+
+                LogUtil.Write("Uh, the group retrieved is null...");
+
+            } catch (SocketException e) {
+                LogUtil.Write("Socket exception occurred, can't return group right now: " + e.Message);
+            }
+
+            return null;
+        }
         
 
 		public void Dispose() {

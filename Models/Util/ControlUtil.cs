@@ -3,11 +3,11 @@
 using System;
 using System.Threading.Tasks;
 using Glimmr.Hubs;
-using Glimmr.Models.StreamingDevice.DreamScreen;
+using Glimmr.Models.StreamingDevice.Dreamscreen;
 using Glimmr.Models.StreamingDevice.Hue;
 using Glimmr.Models.StreamingDevice.LIFX;
 using Glimmr.Models.StreamingDevice.Nanoleaf;
-using Glimmr.Models.StreamingDevice.WLed;
+using Glimmr.Models.StreamingDevice.WLED;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -23,7 +23,7 @@ namespace Glimmr.Models.Util {
 			if (curMode == capMode) return;
 			DataUtil.SetItem<int>("CaptureMode", capMode);
 			var devType = "SideKick";
-			if (capMode != 0) devType = "DreamScreen4K";
+			if (capMode != 0) devType = "Dreamscreen4K";
 
 			SwitchDeviceType(devType, dev);
 			DataUtil.SetItem<string>("DevType", devType);
@@ -34,7 +34,7 @@ namespace Glimmr.Models.Util {
 		private static void SwitchDeviceType(string devType, DreamData curDevice) {
 			LogUtil.Write("Switching type to " + devType);
 			curDevice.DeviceTag = devType;
-			DataUtil.InsertCollection<DreamData>("Dev_DreamScreen", curDevice);
+			DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", curDevice);
 		}
 
 
@@ -52,10 +52,10 @@ namespace Glimmr.Models.Util {
 			var groupNumber = (byte) myDev.GroupNumber;
 			try {
 				switch (tag) {
-					case "WLed":
+					case "Wled":
 						LogUtil.Write("Updating wled");
-						WLedData existing = DataUtil.GetCollectionItem<WLedData>("Dev_Wled", id);
-						var wData = dData.ToObject<WLedData>();
+						WledData existing = DataUtil.GetCollectionItem<WledData>("Dev_Wled", id);
+						var wData = dData.ToObject<WledData>();
 						if (wData != null) {
 							if (existing.State.info.leds.rgbw != wData.State.info.leds.rgbw)
 								LogUtil.Write("Update rgbw type.");
@@ -66,13 +66,13 @@ namespace Glimmr.Models.Util {
 							if (existing.State.state.bri != wData.Brightness) LogUtil.Write("Update Brightness...");
 						}
 
-						DataUtil.InsertCollection<WLedData>("Dev_Wled", wData);
+						DataUtil.InsertCollection<WledData>("Dev_Wled", wData);
 						await hubContext.Clients.All.SendAsync("wledData", wData);
 						break;
 					case "HueBridge":
 						LogUtil.Write("Updating bridge");
-						var bData = dData.ToObject<BridgeData>();
-						DataUtil.InsertCollection<BridgeData>("Dev_Hue", bData);
+						var bData = dData.ToObject<HueData>();
+						DataUtil.InsertCollection<HueData>("Dev_Hue", bData);
 						await hubContext.Clients.All.SendAsync("hueData", bData);
 						break;
 					case "Lifx":
@@ -81,15 +81,15 @@ namespace Glimmr.Models.Util {
 						DataUtil.InsertCollection<LifxData>("Dev_Lifx", lData);
 						await hubContext.Clients.All.SendAsync("lifxData", lData);
 						break;
-					case "NanoLeaf":
+					case "Nanoleaf":
 						LogUtil.Write("Updating nanoleaf");
-						var nData = dData.ToObject<NanoData>();
-						DataUtil.InsertCollection<NanoData>("Dev_NanoLeaf", nData);
+						var nData = dData.ToObject<NanoleafData>();
+						DataUtil.InsertCollection<NanoleafData>("Dev_Nanoleaf", nData);
 						await hubContext.Clients.All.SendAsync("nanoData", nData);
 						break;
-					case "DreamScreen":
+					case "Dreamscreen":
 						var dsData = dData.ToObject<DreamData>();
-						DataUtil.InsertCollection<DreamData>("Dev_DreamScreen", dsData);
+						DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", dsData);
 						break;
 				}
 			} catch (Exception e) {

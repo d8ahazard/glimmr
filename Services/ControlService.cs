@@ -45,7 +45,7 @@ namespace Glimmr.Services {
 		public event Action<int> SetModeEvent = delegate { };
 		public event Action<int, bool, int> TestLedEvent = delegate { };
 
-		public event Action<CancellationToken> RefreshDreamScreenEvent = delegate { };
+		public event Action<CancellationToken> RefreshDreamscreenEvent = delegate { };
 		public event Action<int> SetAmbientModeEvent = delegate { };
 		public event Action<int> SetAmbientShowEvent = delegate { };
 		public event Action<Color, string, int> SetAmbientColorEvent = delegate { };
@@ -53,13 +53,10 @@ namespace Glimmr.Services {
 
 		public event Action<int, int, byte[], byte, byte, IPEndPoint, bool>  SendUdpWriteEvent = delegate { };
 
-		public event Action<List<Color>, string, int> SendSectorsEvent = delegate { };
 		public event Action<int> SetCaptureModeEvent = delegate { };
-		public event Action<List<Color>> TriggerSendColorsEventDs = delegate { };
-		public event Action<List<Color>, List<Color>> TriggerSendColorsEvent = delegate { };
-		public event Action<List<Color>, List<Color>, List<Color>> TriggerSendColorsEvent2= delegate { };
-
-
+		public event Action<List<Color>, List<Color>, int> TriggerSendColorsEvent = delegate { };
+		public event Action<List<Color>, List<Color>, int> TriggerSendColorsEvent2 = delegate { };
+		
 
 		public void ScanDevices() {
 			RescanDeviceEvent();
@@ -113,10 +110,7 @@ namespace Glimmr.Services {
 			SendDreamMessageEvent(command, message, id);
 		}
 
-		public void SendSectors(List<Color> colors, string id, int group) {
-			SendSectorsEvent(colors, id, group);
-		}
-
+		
 		/// <summary>
 		/// Call this to trigger device refresh
 		/// </summary>
@@ -132,18 +126,16 @@ namespace Glimmr.Services {
 			RefreshLedEvent();
 		}
 
-		public void SendColors(List<Color> c1) {
-			TriggerSendColorsEventDs(c1);
+		// We call this one to send colors to everything, including the color service
+		public void SendColors(List<Color> c1, List<Color> c2, int fadeTime = 0) {
+			TriggerSendColorsEvent(c1, c2, fadeTime);
 		}
 		
-		public void SendColors(List<Color> c1, List<Color> c2) {
-			TriggerSendColorsEvent(c1, c2);
+		// We call this one to send colors to everything except the color service
+		public void SendColors2(List<Color> c1, List<Color> c2, int fadeTime = 0) {
+			TriggerSendColorsEvent2(c1, c2, fadeTime);
 		}
 
-		public void SendColors(List<Color> colors, List<Color> sectors, List<Color> sectorsV2) {
-			TriggerSendColorsEvent2(colors, sectors, sectorsV2);
-		}
-		
 		public void TriggerDreamSubscribe() {
 			DreamSubscribeEvent();
 		}
@@ -172,8 +164,8 @@ namespace Glimmr.Services {
 			SendUdpWriteEvent(p0, p1, p2, mFlag, groupNumber, p5, groupSend);
 		}
 
-		public void RefreshDreamScreen(in CancellationToken csToken) {
-			RefreshDreamScreenEvent(csToken);
+		public void RefreshDreamscreen(in CancellationToken csToken) {
+			RefreshDreamscreenEvent(csToken);
 		}
 
 		

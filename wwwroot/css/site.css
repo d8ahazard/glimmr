@@ -547,21 +547,21 @@ input[type="range"]:active ~ #rangevalue {
     background-position: center;
 }
 
-#iconWrap.DreamScreen {
+#iconWrap.Dreamscreen {
     background-image: url("../img/dreamscreen_icon.png");
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
 }
 
-#iconWrap.DreamScreenSolo {
+#iconWrap.DreamscreenSolo {
     background-image: url("../img/dreamscreensolo_icon.png");
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
 }
 
-#iconWrap.DreamScreen4K {
+#iconWrap.Dreamscreen4K {
     background-image: url("../img/dreamscreen4k_icon.png");
     background-size: contain;
     background-repeat: no-repeat;

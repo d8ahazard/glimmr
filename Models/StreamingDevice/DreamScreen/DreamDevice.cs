@@ -1,15 +1,16 @@
 ﻿#region
 
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Runtime.Serialization;
 using System.Threading;
-using Glimmr.Models.StreamingDevice.DreamScreen.Encoders;
+using Glimmr.Models.Util;
 using Newtonsoft.Json;
 
 #endregion
 
-namespace Glimmr.Models.StreamingDevice.DreamScreen {
+namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 	public class DreamDevice : IStreamingDevice {
 		[DataMember] [JsonProperty] public bool Streaming { get; set; }
 		[DataMember] [JsonProperty] public int Brightness { get; set; }
@@ -27,7 +28,12 @@ namespace Glimmr.Models.StreamingDevice.DreamScreen {
 		public void StopStream() {
 		}
 
-		public void SetColor(List<Color> colors, double fadeTime) {
+		public void SetColor(List<Color> _, List<Color> sectors, double fadeTime) {
+			if (sectors.Count == 28) {
+				sectors = ColorUtil.TruncateColors(sectors);
+				
+			}
+			DreamUtil.SendSectors(sectors, Id, Data.GroupNumber);
 		}
 
 		public void ReloadData() {
@@ -54,5 +60,7 @@ namespace Glimmr.Models.StreamingDevice.DreamScreen {
 		public byte[] EncodeState() {
 			return Data.EncodeState();
 		}
+
+		
 	}
 }

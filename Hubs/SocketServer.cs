@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Glimmr.Models.StreamingDevice.DreamScreen;
+using Glimmr.Models.StreamingDevice.Dreamscreen;
 using Glimmr.Models.StreamingDevice.Hue;
 using Glimmr.Models.StreamingDevice.LIFX;
 using Glimmr.Models.StreamingDevice.Nanoleaf;
-using Glimmr.Models.StreamingDevice.WLed;
+using Glimmr.Models.StreamingDevice.WLED;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.AspNetCore.SignalR;
@@ -50,10 +50,10 @@ namespace Glimmr.Hubs {
 
 		public async void AuthorizeHue(string id) {
 			LogUtil.Write("AuthHue called, for real (socket): " + id);
-			BridgeData bd;
+			HueData bd;
 			if (!string.IsNullOrEmpty(id)) {
 				await Clients.All.SendAsync("hueAuth", "start");
-				bd = DataUtil.GetCollectionItem<BridgeData>("Dev_Hue", id);
+				bd = DataUtil.GetCollectionItem<HueData>("Dev_Hue", id);
 				LogUtil.Write("BD: " + JsonConvert.SerializeObject(bd));
 				if (bd == null) {
 					LogUtil.Write("Null bridge retrieved.");
@@ -88,9 +88,9 @@ namespace Glimmr.Hubs {
 							LogUtil.Write("Creating new bridge...");
 							// Need to grab light group stuff here
 							var nhb = new HueBridge(bd);
-							bd = nhb.RefreshData(5).Result;
+							bd = nhb.RefreshData().Result;
 							nhb.Dispose();
-							DataUtil.InsertCollection<BridgeData>("Dev_Hue", bd);
+							DataUtil.InsertCollection<HueData>("Dev_Hue", bd);
 							await Clients.All.SendAsync("hueAuth", "authorized");
 							await Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
 							return;
@@ -127,9 +127,8 @@ namespace Glimmr.Hubs {
 			var updated = false;
 			try {
 				switch (tag) {
-					case "WLed":
 					case "Wled":
-						DataUtil.InsertCollection<WLedData>("Dev_Wled", device.ToObject<WLedData>());
+						DataUtil.InsertCollection<WledData>("Dev_Wled", device.ToObject<WledData>());
 						updated = true;
 						break;
 					case "Lifx":
@@ -137,15 +136,15 @@ namespace Glimmr.Hubs {
 						updated = true;
 						break;
 					case "HueBridge":
-						DataUtil.InsertCollection<BridgeData>("Dev_Hue", device.ToObject<BridgeData>());
+						DataUtil.InsertCollection<HueData>("Dev_Hue", device.ToObject<HueData>());
 						updated = true;
 						break;
-					case "NanoLeaf":
-						DataUtil.InsertCollection<NanoData>("Dev_NanoLeaf", device.ToObject<NanoData>());
+					case "Nanoleaf":
+						DataUtil.InsertCollection<NanoleafData>("Dev_Nanoleaf", device.ToObject<NanoleafData>());
 						updated = true;
 						break;
-					case "DreamScreen":
-						DataUtil.InsertCollection<DreamData>("Dev_DreamScreen", device.ToObject<DreamData>());
+					case "Dreamscreen":
+						DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", device.ToObject<DreamData>());
 						updated = true;
 						break;
 					default:
@@ -165,7 +164,7 @@ namespace Glimmr.Hubs {
 		}
 
 		public async void AuthorizeNano(string id) {
-			var leaf = DataUtil.GetCollectionItem<NanoData>("Dev_Nano", id);
+			var leaf = DataUtil.GetCollectionItem<NanoleafData>("Dev_Nano", id);
 			bool doAuth = leaf.Token == null;
 			if (doAuth) {
 				await Clients.All.SendAsync("nanoAuth", "authorized");
@@ -173,13 +172,13 @@ namespace Glimmr.Hubs {
 				return;
 			}
 
-			var panel = new NanoGroup(id);
+			var panel = new NanoleafDevice(id);
 			var count = 0;
 			while (count < 30) {
 				var appKey = panel.CheckAuth().Result;
 				if (appKey != null) {
 					leaf.Token = appKey.Token;
-					DataUtil.InsertCollection<NanoData>("Dev_NanoLeaf", leaf);
+					DataUtil.InsertCollection<NanoleafData>("Dev_Nanoleaf", leaf);
 					await Clients.All.SendAsync("nanoAuth", "authorized");
 					await Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
 					panel.Dispose();

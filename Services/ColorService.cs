@@ -9,15 +9,17 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Hubs;
-using Glimmr.Models.CaptureSource.Audio;
-using Glimmr.Models.CaptureSource.Video;
+using Glimmr.Models.ColorSource.Ambient;
+using Glimmr.Models.ColorSource.Audio;
+using Glimmr.Models.ColorSource.Video;
+using Glimmr.Models.ColorSource.Video.Stream;
 using Glimmr.Models.LED;
 using Glimmr.Models.StreamingDevice;
-using Glimmr.Models.StreamingDevice.DreamScreen;
+using Glimmr.Models.StreamingDevice.Dreamscreen;
 using Glimmr.Models.StreamingDevice.Hue;
 using Glimmr.Models.StreamingDevice.LIFX;
 using Glimmr.Models.StreamingDevice.Nanoleaf;
-using Glimmr.Models.StreamingDevice.WLed;
+using Glimmr.Models.StreamingDevice.WLED;
 using Glimmr.Models.Util;
 using LifxNet;
 using Microsoft.AspNetCore.SignalR;
@@ -30,23 +32,24 @@ using Color = System.Drawing.Color;
 namespace Glimmr.Services {
 	// Handles capturing and sending color data
 	public class ColorService : BackgroundService {
-		private IHubContext<SocketServer> _hubContext;
 		private readonly ControlService _controlService;
 		private LedStrip _strip;
 		private VideoStream _videoStream;
 		private AudioStream _audioStream;
+		private AmbientStream _ambientStream;
 		private bool _autoDisabled;
 		private bool _streamStarted;
-		private bool _streamAudio;
 		private CancellationTokenSource _captureTokenSource;
 		private CancellationTokenSource _sendTokenSource;
 
+		// Figure out how to make these generic, non-callable
 		private LifxClient _lifxClient;
 		private HttpClient _nanoClient;
 		private Socket _nanoSocket;
+		
+		private Dictionary<string, int> _subscribers;
 
 		private List<IStreamingDevice> _sDevices;
-		private Dictionary<string, int> _subscribers;
 
 		private int _captureMode;
 		private int _deviceMode;
@@ -57,71 +60,48 @@ namespace Glimmr.Services {
 		private bool _testingStrip;
 		private LedData _ledData;
 		private CancellationToken _stopToken;
+		private Stopwatch _watch;
 
 		
 
-		public ColorService(IHubContext<SocketServer> hubContext, ControlService controlService) {
-			_hubContext = hubContext;
+		public ColorService(ControlService controlService) {
 			_controlService = controlService;
-			_controlService.TriggerSendColorsEventDs += SendColors;
 			_controlService.TriggerSendColorsEvent += SendColors;
-			_controlService.TriggerSendColorsEvent2 += SendColors;
 			_controlService.SetModeEvent += Mode;
 			_controlService.DeviceReloadEvent += RefreshDeviceData;
 			_controlService.RefreshLedEvent += ReloadLedData;
 			_controlService.TestLedEvent += LedTest;
 			_sDevices = new List<IStreamingDevice>();
-			_subscribers = new Dictionary<string, int>();
 			LogUtil.Write("Initialization complete.");
 		}
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			_stopToken = stoppingToken;
 			LogUtil.Write("Starting colorService loop...");
+			_subscribers = new Dictionary<string, int>();
+			_controlService.DeviceReloadEvent += RefreshDeviceData;
+			_controlService.SetModeEvent += Mode;
+			_watch = new Stopwatch();
+			LoadData();
+			// Fire da demo
+			Demo();
+			LogUtil.Write("Starting capture service...");
+			LogUtil.Write("Starting video capture task...");
+			StartVideoStream(stoppingToken);
+			LogUtil.Write("Starting audio capture task...");
+			StartAudioStream(stoppingToken);
+			LogUtil.Write("Color service tasks started, setting Mode...");
+			StartAmbientStream(stoppingToken);
+			// Start our initial mode
+			Mode(_deviceMode);
+			LogUtil.Write("All color service tasks started, really executing main loop...");
+
 			return Task.Run(async () => {
 				// If our control service says so, refresh data on all devices while streaming
 				LogUtil.Write("Control service starting...");
-				_controlService.DeviceReloadEvent += RefreshDeviceData;
-				_controlService.SetModeEvent += Mode;
-				var watch = new Stopwatch();
-				LoadData();
-				// Fire da demo
-				Demo();
-				LogUtil.Write("Starting capture service...");
-				LogUtil.Write("Starting video capture task...");
-				StartVideoCapture(stoppingToken);
-				LogUtil.Write("Starting audio capture task...");
-				StartAudioCapture(stoppingToken);
-				LogUtil.Write("Color service tasks started, setting Mode...");
-				// Start our initial mode
-				Mode(_deviceMode);
-				LogUtil.Write("All color service tasks started, really executing main loop...");
 				while (!stoppingToken.IsCancellationRequested) {
-					if (_videoStream == null) continue;
-					if (_videoStream.SourceActive) {
-						watch.Reset();
-						if (!_autoDisabled) continue;
-						_autoDisabled = false;
-						LogUtil.Write("Auto-enabling stream.");
-						_controlService.SetMode(_deviceMode);
-					} else {
-						if (_autoDisabled) continue;
-						if (_deviceMode != 1) continue;
-						if (!watch.IsRunning) watch.Start();
-						if (watch.ElapsedMilliseconds > 5000) {
-							LogUtil.Write("Auto-sleeping lights.");
-							_autoDisabled = true;
-							_deviceMode = 0;
-							DataUtil.SetItem<bool>("AutoDisabled", _autoDisabled);
-							DataUtil.SetItem<bool>("DeviceMode", _deviceMode);
-							_controlService.SetMode(_deviceMode);
-							watch.Reset();
-						} else {
-							if (watch.ElapsedMilliseconds % 1000 != 0) continue;
-							watch.Reset();
-						}
-					}
-
+					CheckAutoDisable();
+					CheckSubscribers();
 					await Task.Delay(1, stoppingToken);
 				}
 
@@ -129,6 +109,54 @@ namespace Glimmr.Services {
 				LogUtil.Write("Color service stopped.");
 				return Task.CompletedTask;
 			});
+		}
+
+		private void CheckAutoDisable() {
+			if (_videoStream == null) return;
+			if (_videoStream.SourceActive) {
+				_watch.Reset();
+				if (!_autoDisabled) return;
+				_autoDisabled = false;
+				LogUtil.Write("Auto-enabling stream.");
+				_controlService.SetMode(_deviceMode);
+			} else {
+				if (_autoDisabled) return;
+				if (_deviceMode != 1) return;
+				if (!_watch.IsRunning) _watch.Start();
+				if (_watch.ElapsedMilliseconds > 5000) {
+					LogUtil.Write("Auto-sleeping lights.");
+					_autoDisabled = true;
+					_deviceMode = 0;
+					DataUtil.SetItem<bool>("AutoDisabled", _autoDisabled);
+					DataUtil.SetItem<bool>("DeviceMode", _deviceMode);
+					_controlService.SetMode(_deviceMode);
+					_watch.Reset();
+				} else {
+					if (_watch.ElapsedMilliseconds % 1000 != 0) return;
+					_watch.Reset();
+				}
+			}
+			
+		}
+
+		private void CheckSubscribers() {
+			try {
+				// Send our subscribe multicast
+				DreamUtil.SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x30, (byte) _deviceGroup, null, true);
+				// Enumerate all subscribers, check to see that they are still valid
+				var keys = new List<string>(_subscribers.Keys);
+				foreach (var key in keys) {
+					// If the subscribers haven't replied in three messages, remove them, otherwise, count down one
+					if (_subscribers[key] <= 0) {
+						_subscribers.Remove(key);
+					} else {
+						_subscribers[key] -= 1;
+					}
+				}
+			} catch (TaskCanceledException) {
+				_subscribers = new Dictionary<string, int>();
+			}
+
 		}
 
 		private void LedTest(int len, bool stop, int test) {
@@ -152,7 +180,6 @@ namespace Glimmr.Services {
 			_captureTokenSource = new CancellationTokenSource();
 			LogUtil.Write("Loading strip");
 			_ledData = DataUtil.GetObject<LedData>("LedData");
-			var initTasks = new List<Task>();
 			try {
 				_strip = new LedStrip(_ledData);
 				LogUtil.Write("Initialized LED strip...");
@@ -164,7 +191,7 @@ namespace Glimmr.Services {
 			// Create new lists
 			_sDevices = new List<IStreamingDevice>();
 
-			var bridgeArray = DataUtil.GetCollection<BridgeData>("Dev_Hue");
+			var bridgeArray = DataUtil.GetCollection<HueData>("Dev_Hue");
 			foreach (var bridge in bridgeArray.Where(bridge =>
 				!string.IsNullOrEmpty(bridge.Key) && !string.IsNullOrEmpty(bridge.User) &&
 				bridge.SelectedGroup != "-1")) {
@@ -173,7 +200,7 @@ namespace Glimmr.Services {
 			}
 
 			// Init leaves
-			var leaves = DataUtil.GetCollection<NanoData>("Dev_NanoLeaf");
+			var leaves = DataUtil.GetCollection<NanoleafData>("Dev_Nanoleaf");
 			foreach (var n in leaves.Where(n => !string.IsNullOrEmpty(n.Token) && n.Layout != null)) {
 				_nanoClient ??= new HttpClient();
 
@@ -185,7 +212,7 @@ namespace Glimmr.Services {
 					LogUtil.Write("Adding Nano device: " + n.Id);
 				}
 
-				_sDevices.Add(new NanoGroup(n, _nanoClient, _nanoSocket));
+				_sDevices.Add(new NanoleafDevice(n, _nanoSocket, _nanoClient));
 			}
 
 			// Init lifx
@@ -194,20 +221,16 @@ namespace Glimmr.Services {
 				foreach (var b in lifx.Where(b => b.TargetSector != -1)) {
 					_lifxClient ??= LifxClient.CreateAsync().Result;
 					LogUtil.Write("Adding Lifx device: " + b.Id);
-					_sDevices.Add(new LifxBulb(b, _lifxClient));
+					_sDevices.Add(new LifxDevice(b, _lifxClient));
 				}
 
-			var wlArray = DataUtil.GetCollection<WLedData>("Dev_Wled");
+			var wlArray = DataUtil.GetCollection<WledData>("Dev_Wled");
 			foreach (var wl in wlArray) {
 				LogUtil.Write("Adding Wled device: " + wl.Id);
-				_sDevices.Add(new WLedStrip(wl));
+				_sDevices.Add(new WledDevice(wl));
 			}
 
 			LogUtil.Write("Initializing Splitter.");
-			//var hasDs = _subscribers.Count > 0;
-			//var hasSd = _sDevices.Count > 0;
-
-			//_videoStream.Refresh(hasDs, hasSd);
 			LogUtil.Write("Color Service Data Load Complete...");
 		}
 
@@ -219,7 +242,7 @@ namespace Glimmr.Services {
 			var cols = new Color[ledCount];
 			cols = ColorUtil.EmptyColors(cols);
 			var dcs = new CancellationTokenSource();
-			var wlDict = new List<WLedStrip>();
+			var wlDict = new List<WledDevice>();
 			var wlCols = new Dictionary<string, Color[]>();
 			LogUtil.Write("Still alive 1, we have " + _sDevices.Count + " streaming devices.");
 			foreach (var sd in _sDevices) {
@@ -232,7 +255,7 @@ namespace Glimmr.Services {
 				LogUtil.Write("And it's enabled.");
 				sd.StartStream(dcs.Token);
 				LogUtil.Write("Started stream, netx.");
-				var wlStrip = (WLedStrip) sd;
+				var wlStrip = (WledDevice) sd;
 				wlDict.Add(wlStrip);
 				var wlCount = wlStrip.Data.LedCount;
 				wlCols[sd.Id] = ColorUtil.EmptyColors(new Color[wlCount]);
@@ -265,7 +288,7 @@ namespace Glimmr.Services {
 					}
 
 					// RENDER IT
-					w.SetColor(wlCols[w.Id].ToList(), 0);
+					w.SetColor(wlCols[w.Id].ToList(), null, 0);
 				}
 
 				i++;
@@ -306,10 +329,10 @@ namespace Glimmr.Services {
 			if (exists) return;
 			var dev = DataUtil.GetDeviceById(id);
 			IStreamingDevice? sda = dev.Tag switch {
-				"Lifx" => new LifxBulb(dev, _lifxClient),
+				"Lifx" => new LifxDevice(dev, _lifxClient),
 				"HueBridge" => new HueBridge(dev),
-				"NanoLeaf" => new NanoGroup(dev),
-				"WLed" => new WLedStrip(dev),
+				"Nanoleaf" => new NanoleafDevice(dev),
+				"Wled" => new WledDevice(dev),
 				"DreamData" => new DreamDevice(dev),
 				_ => null
 			};
@@ -368,7 +391,7 @@ namespace Glimmr.Services {
 		}
 
 		
-		private void StartVideoCapture(CancellationToken ct) {
+		private void StartVideoStream(CancellationToken ct) {
 			if (_captureMode == 0) {
 				_controlService.TriggerDreamSubscribe();
 			} else {
@@ -380,7 +403,7 @@ namespace Glimmr.Services {
 					return;
 				}
 				LogUtil.Write("Setting video capture task...");
-				Task.Run(async () => _videoStream.StartCapture( _subscribers.Count > 0, _sDevices.Count > 0), ct);
+				Task.Run(async () => _videoStream.Initialize(), ct);
 				LogUtil.Write("Starting video capture task...");
 				//_videoCaptureTask.Start();
 				LogUtil.Write("Video capture task has been started.");
@@ -388,7 +411,7 @@ namespace Glimmr.Services {
 		}
 
 
-		private void StartAudioCapture(CancellationToken ct) {
+		private void StartAudioStream(CancellationToken ct) {
 			if (_captureMode == 0) {
 				_controlService.TriggerDreamSubscribe();
 			} else {
@@ -399,9 +422,17 @@ namespace Glimmr.Services {
 				}
 
 				LogUtil.Write("Starting audio capture task...");
-				Task.Run(async () => _audioStream.StartCapture(), ct);
+				Task.Run(async () => _audioStream.Initialize(), ct);
 				LogUtil.Write("Audio capture task has been started.");
 			}
+		}
+		
+		private void StartAmbientStream(CancellationToken ct) {
+			_ambientStream = new AmbientStream(this, ct); 
+			LogUtil.Write("Starting ambient show builder...");
+			Task.Run(async () => _ambientStream.Initialize(), ct);
+			LogUtil.Write("Audio capture task has been started.");
+			
 		}
 
 		private void StartStream() {
@@ -430,87 +461,29 @@ namespace Glimmr.Services {
 			_streamStarted = false;
 		}
 
+	
 
-		private void SendColors(List<Color> colors) {
-		}
-
-
-		private void SendColors(List<Color> colors, List<Color> sectors) {
+		public void SendColors(List<Color> colors, List<Color> sectors, int fadeTime = 0) {
 			LogUtil.Write("SEND FIRED.");
 			_sendTokenSource ??= new CancellationTokenSource();
 			if (_sendTokenSource.IsCancellationRequested) return;
 			if (!_streamStarted) return;
-
-			var fadeTime = 0;
-
 			if (!_testingStrip) _strip?.UpdateAll(colors);
 
-			foreach (var sd in _sDevices)
-				if (sd.IsEnabled()) {
-					//LogUtil.Write("SD: " + sd.Id + " enabled");
-					if (sd.Id.Contains("wled") || sd.Id.Contains("Wled")) {
-						sd.SetColor(colors, fadeTime);
-					} else {
-						LogUtil.Write("Setting colors for non wled...");
-						sd.SetColor(sectors, fadeTime);
-					}
-				}
-
-			if (_captureMode == 0) return;
-			// If we have subscribers and we're capturing
-			if (_subscribers.Count > 0)
-				LogUtil.Write("We have " + _subscribers.Count + " subscribers: " + _captureMode);
-
-			if (_subscribers.Count > 0 && _captureMode != 0) {
-				var keys = new List<string>(_subscribers.Keys);
-				foreach (var ip in keys) {
-					_controlService.SendSectors(sectors, ip, _deviceGroup);
-					LogUtil.Write("Sent.");
+			foreach (var sd in _sDevices.Where(sd => sd.IsEnabled())) {
+				//LogUtil.Write("SD: " + sd.Id + " enabled");
+				if (sd.Id.Contains("wled") || sd.Id.Contains("Wled")) {
+					sd.SetColor(colors, null, fadeTime);
+				} else {
+					LogUtil.Write("Setting colors for non wled...");
+					sd.SetColor(null, sectors, fadeTime);
 				}
 			}
+			// We call this so we don't create some dumb loop
+			_controlService.SendColors2(colors, sectors, fadeTime);
 		}
 
-		// If we pass in a third set of sectors, use that info instead.
-		public void SendColors(List<Color> colors, List<Color> sectors, List<Color> sectorsV2) {
-			_sendTokenSource ??= new CancellationTokenSource();
-			if (_sendTokenSource.IsCancellationRequested) {
-				LogUtil.Write("Canceled.");
-				return;
-			}
-
-			if (!_streamStarted) {
-				LogUtil.Write("Stream not started.");
-				return;
-			}
-
-			var fadeTime = 0;
-			if (!_testingStrip) {
-				_strip?.UpdateAll(colors);
-			}
-
-			if (sectorsV2.Count == 0 && _sDevices.Count > 0)
-				LogUtil.Write("Sectors are empty!!");
-			else
-				foreach (var sd in _sDevices.Where(sd => sd.IsEnabled())) {
-					if (string.IsNullOrEmpty(sd.Id)) {
-						LogUtil.Write("EMPTY ID: " + JsonConvert.SerializeObject(sd));
-						continue;
-					}
-
-					if (sd.Id.Contains("wled") || sd.Id.Contains("Wled"))
-						sd.SetColor(colors, fadeTime);
-					else
-						sd.SetColor(sectorsV2, fadeTime);
-				}
-
-
-			// If we have subscribers and we're capturing
-			if (_subscribers.Count <= 0 || _captureMode == 0) return;
-			var keys = new List<string>(_subscribers.Keys);
-			foreach (var ip in keys) _controlService.SendSectors(sectors, ip, _deviceGroup);
-		}
-
-
+		
 		private static void CancelSource(CancellationTokenSource target, bool dispose = false) {
 			if (target == null) return;
 			if (!target.IsCancellationRequested) target.CancelAfter(0);

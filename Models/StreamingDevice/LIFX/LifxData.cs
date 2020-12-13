@@ -48,10 +48,6 @@ namespace Glimmr.Models.StreamingDevice.LIFX {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int TargetSector { get; set; }
         
-		[DefaultValue(-1)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int TargetSectorV2 { get; set; }
-        
 		[DefaultValue(100)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int MaxBrightness { get; set; }

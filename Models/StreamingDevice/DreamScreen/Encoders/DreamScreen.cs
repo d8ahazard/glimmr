@@ -2,16 +2,16 @@
 using System.Collections.Generic;
 using Glimmr.Models.Util;
 
-namespace Glimmr.Models.StreamingDevice.DreamScreen.Encoders {
-	public static class DreamScreen {
+namespace Glimmr.Models.StreamingDevice.Dreamscreen.Encoders {
+	public static class Dreamscreen {
 		
-		private const string DeviceTag4K = "DreamScreen4K";
+		private const string DeviceTag4K = "Dreamscreen4K";
 		private static readonly byte[] Required4KEspFirmwareVersion = {1, 6};
 		private static readonly byte[] Required4KPicVersionNumber = {5, 6};
-		private const string DeviceTagHd = "DreamScreen";
+		private const string DeviceTagHd = "Dreamscreen";
 		private static readonly byte[] RequiredHdEspFirmwareVersion = {1, 6};
 		private static readonly byte[] RequiredHdPicVersionNumber = {1, 7};
-		private const string DeviceTagSolo = "DreamScreenSolo";
+		private const string DeviceTagSolo = "DreamscreenSolo";
 		private static readonly byte[] RequiredSoloEspFirmwareVersion = {1, 6};
 		private static readonly byte[] RequiredSoloPicVersionNumber = {6, 2};
 		public static readonly byte[] DefaultSectorAssignment = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 0, 0};
@@ -123,9 +123,9 @@ namespace Glimmr.Models.StreamingDevice.DreamScreen.Encoders {
 			response.Add(ByteUtils.IntByte(dd.PillarboxingEnable));
 			response.Add(ByteUtils.IntByte(dd.HdrToneRemapping));
 			// Device type
-			if (dd.DeviceTag == "DreamScreen")
+			if (dd.DeviceTag == "Dreamscreen")
 				response.Add(0x01);
-			else if (dd.DeviceTag == "DreamScreen4K")
+			else if (dd.DeviceTag == "Dreamscreen4K")
 				response.Add(0x02);
 			else
 				//DS Solo

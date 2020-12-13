@@ -41,7 +41,7 @@ namespace Glimmr.Models {
                 AmbientShow = 0;
                 AmbientColor = "FFFFFF";
                 RecId = 1;
-                DevType = "DreamScreen4K";
+                DevType = "Dreamscreen4K";
                 CamWidth = 1920;
                 CamHeight = 1080;
                 CamType = 1;

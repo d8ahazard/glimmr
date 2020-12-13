@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
-using Connect = Glimmr.Models.StreamingDevice.DreamScreen.Encoders.Connect;
-using SideKick = Glimmr.Models.StreamingDevice.DreamScreen.Encoders.SideKick;
+using Connect = Glimmr.Models.StreamingDevice.Dreamscreen.Encoders.Connect;
+using SideKick = Glimmr.Models.StreamingDevice.Dreamscreen.Encoders.SideKick;
 
-namespace Glimmr.Models.StreamingDevice.DreamScreen {
+namespace Glimmr.Models.StreamingDevice.Dreamscreen {
     [Serializable]
-    public class DreamScreenMessage {
+    public class DreamscreenMessage {
         public string Command { get; }
         public byte C1 { get; }
         public byte C2 { get; }
@@ -26,7 +26,7 @@ namespace Glimmr.Models.StreamingDevice.DreamScreen {
         
         
 
-        public DreamScreenMessage(byte[] bytesIn, string from) {
+        public DreamscreenMessage(byte[] bytesIn, string from) {
             IpAddress = from;
             var byteString = BitConverter.ToString(bytesIn);
             var bytesString = byteString.Split("-");
@@ -66,7 +66,7 @@ namespace Glimmr.Models.StreamingDevice.DreamScreen {
                     case 1:
                     case 2:
                     case 7:
-                        dd = Encoders.DreamScreen.ParsePayload(_payload);
+                        dd = Encoders.Dreamscreen.ParsePayload(_payload);
                         break;
                     case 3:
                         dd = SideKick.ParsePayload(_payload);

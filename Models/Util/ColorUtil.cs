@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 
@@ -14,6 +15,55 @@ namespace Glimmr.Models.Util {
             hue = color.GetHue();
             saturation = max == 0 ? 0 : 1d - 1d * min / max;
             value = max / 255d;
+        }
+        
+        /// <summary>
+        /// Take a 28-color list, and convert down to 12 for DS
+        /// </summary>
+        /// <param name="input">The colors from anywhere else</param>
+        /// <returns>12 colors averaged from those, or something.</returns>
+        public static List<Color> TruncateColors(List<Color> input) {
+            var output = new List<Color> {
+                AverageColors(input[27], input[0], input[1]),
+                AverageColors(input[2], input[3]),
+                AverageColors(input[4], input[5], input[6]),
+                AverageColors(input[7], input[8]),
+                AverageColors(input[9], input[10]),
+                AverageColors(input[11], input[12]),
+                AverageColors(input[13], input[14], input[15]),
+                AverageColors(input[16], input[17]),
+                AverageColors(input[18], input[19], input[20]),
+                AverageColors(input[21], input[22]),
+                AverageColors(input[23], input[24]),
+                AverageColors(input[25], input[26])
+            };
+            return output;
+        }
+		
+		
+        /// <summary>
+        /// Return the average of inputted colors
+        /// </summary>
+        /// <param name="colors"></param>
+        /// <returns></returns>
+        public static Color AverageColors(params Color[] colors) {
+            var inputCount = colors.Length;
+            if (inputCount == 0) return Color.FromArgb(0, 0, 0, 0);
+            var avgG = 0;
+            var avgB = 0;
+            var avgR = 0;
+            var avgA = 0;
+            foreach (var t in colors) {
+                avgG += t.G * t.G;
+                avgB += t.B * t.B;
+                avgR += t.R * t.R;
+                avgA += t.A * t.A;			}
+
+            avgG /= inputCount;
+            avgB /= inputCount;
+            avgR /= inputCount;
+            avgA /= inputCount;
+            return Color.FromArgb((int)Math.Sqrt(avgA), (int)Math.Sqrt(avgR), (int) Math.Sqrt(avgB), (int) Math.Sqrt(avgG));
         }
 
         public static Color ClampAlpha(Color tCol) {

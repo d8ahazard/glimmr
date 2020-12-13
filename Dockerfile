@@ -34,7 +34,7 @@ EXPOSE 1900/udp
 EXPOSE 2100/udp
 # MDNS Discovery
 EXPOSE 5353/udp
-# DreamScreen
+# Dreamscreen
 EXPOSE 8888/udp
 # Lifx
 EXPOSE 56700/udp

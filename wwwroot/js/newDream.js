@@ -353,15 +353,15 @@ function toggleSettingsDiv(target) {
                     case "Lifx":
                         showSettingsLifx();
                         break;
-                    case "DreamScreen":
-                    case "DreamScreen4K":
-                    case "DreamScreenSolo":
+                    case "Dreamscreen":
+                    case "Dreamscreen4K":
+                    case "DreamscreenSolo":
                     case "Sidekick":
                     case "Connect":
-                        showSettingsDreamScreen();
+                        showSettingsDreamscreen();
                         break;
-                    case "NanoLeaf":
-                        showSettingsNanoLeaf();
+                    case "Nanoleaf":
+                        showSettingsNanoleaf();
                         break;
                     case "HueBridge":
                         showSettingsHue();
@@ -397,7 +397,7 @@ function showSettingsLifx() {
     settingsTitle.textContent = "Lifx Settings";
 }
 
-function showSettingsDreamScreen() {
+function showSettingsDreamscreen() {
     settingsTitle.textContent = "DS Settings";
 }
 
@@ -409,7 +409,7 @@ function showSettingsWled() {
     settingsTitle.textContent = "Wled Settings";
 }
 
-function showSettingsNanoLeaf() {
+function showSettingsNanoleaf() {
     settingsTitle.textContent = "Nanoleaf Settings";
 }
 

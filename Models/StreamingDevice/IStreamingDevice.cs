@@ -13,18 +13,18 @@ namespace Glimmr.Models.StreamingDevice {
         
 		public StreamingData Data { get; set; }
         
-		public abstract void StartStream(CancellationToken ct);
+		public void StartStream(CancellationToken ct);
 
-		public abstract void StopStream();
+		public void StopStream();
 
-		public abstract void SetColor(List<Color> colors, double fadeTime);
+		public void SetColor(List<Color> leds, List<Color> sectors, double fadeTime);
 
 		public bool IsEnabled() {
 			return Enable;
 		}
 
-		public abstract void ReloadData();
+		public void ReloadData();
 
-		public abstract void Dispose();
+		public void Dispose();
 	}
 }

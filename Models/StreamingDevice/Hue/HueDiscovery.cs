@@ -14,12 +14,12 @@ using Q42.HueApi.Models.Bridge;
 namespace Glimmr.Models.StreamingDevice.Hue {
     public static class HueDiscovery {
         
-        public static async Task<List<BridgeData>> Refresh(CancellationToken ct) {
-            var output = new List<BridgeData>();
+        public static async Task<List<HueData>> Refresh(CancellationToken ct) {
+            var output = new List<HueData>();
             var foo = Task.Run(() => Discover(), ct);
             var newBridges = await foo;
             LogUtil.Write("New bridges: " + JsonConvert.SerializeObject(newBridges));
-            var current = DataUtil.GetCollection<BridgeData>("Dev_Hue");
+            var current = DataUtil.GetCollection<HueData>("Dev_Hue");
             foreach (var nb in newBridges) {
                 foreach (var ex in current) {
                     if (ex.Id == nb.Id) {
@@ -54,12 +54,12 @@ namespace Glimmr.Models.StreamingDevice.Hue {
             return null;
         }
 
-        public static async Task<List<BridgeData>> Discover(int time = 5) {
+        public static async Task<List<HueData>> Discover(int time = 5) {
             LogUtil.Write("Hue: Discovery Started.");
-            var output = new List<BridgeData>();
+            var output = new List<HueData>();
             try {
                 var discovered = await HueBridgeDiscovery.CompleteDiscoveryAsync(TimeSpan.FromSeconds(time),TimeSpan.FromSeconds(time));
-                output = discovered.Select(bridge => new BridgeData(bridge)).ToList();
+                output = discovered.Select(bridge => new HueData(bridge)).ToList();
                 LogUtil.Write($"Hue: Discovery complete, found {discovered.Count} devices.");
             } catch (TaskCanceledException e) {
                 LogUtil.Write("Discovery exception, task canceled: " + e.Message, "WARN");

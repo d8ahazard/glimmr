@@ -1,0 +1,283 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
+using Glimmr.Models.ColorSource.Video;
+using Glimmr.Models.Util;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
+namespace Glimmr.Models.StreamingDevice.WLED {
+    public class WledDevice : IStreamingDevice, IDisposable
+    {
+        public bool Enable { get; set; }
+        StreamingData IStreamingDevice.Data {
+            get => Data;
+            set => Data = (WledData) value;
+        }
+
+        public WledData Data { get; set; }
+        
+        public WledDevice(WledData wd) {
+            _client = new HttpClient();
+            _updateColors = new List<Color>();
+            Data = wd ?? throw new ArgumentException("Invalid WLED data.");
+            LogUtil.Write("Enabled: " + IsEnabled());
+            Id = Data.Id;
+            IpAddress = Data.IpAddress;
+        }
+
+        public bool Streaming { get; set; }
+        public int Brightness { get; set; }
+        public string Id { get; set; }
+        public string IpAddress { get; set; }
+        public string Tag { get; set; }
+        private Socket _stripSender;
+        private bool _disposed;
+        private bool colorsSet;
+        private static int port = 21324;
+        private IPEndPoint ep;
+        private Splitter appSplitter;
+        private HttpClient _client;
+        private List<Color> _updateColors;
+        
+        public void StartStream(CancellationToken ct) {
+            if (Streaming) return;
+            if (!Data.Enable) return;
+            LogUtil.Write("WLED: Initializing stream.");
+            _stripSender = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            _stripSender.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            _stripSender.Blocking = false;
+            _stripSender.EnableBroadcast = false;
+
+            var onObj = new JObject(
+                new JProperty("on", true),
+                new JProperty("bri", Brightness)
+                );
+            SendPost(onObj);
+            ep = IpUtil.Parse(IpAddress, port);
+            Streaming = true;
+            LogUtil.Write("WLED: Streaming started...");
+        }
+
+       
+
+        public bool IsEnabled() {
+            return Data.Enable;
+        }
+
+        
+        public void StopStream() {
+            StopStrip();
+            Streaming = false;
+            _stripSender?.Dispose();
+            LogUtil.Write("WLED: Stream stopped.");
+        }
+
+        private void StopStrip() {
+            if (!Streaming) return;
+            var packet = new List<byte>();
+            // Set mode to DRGB, dude.
+            packet.Add(ByteUtils.IntByte(2));
+            packet.Add(ByteUtils.IntByte(2));
+            for (var i = 0; i < Data.LedCount; i++) {
+                packet.AddRange(new byte[] {0, 0, 0});
+            }
+            if (ep != null) _stripSender.SendTo(packet.ToArray(), ep);
+            var offObj = new JObject(
+                new JProperty("on", false)
+            );
+            SendPost(offObj);
+        }
+
+        public void SetColor(List<Color> colors, List<Color> _, double fadeTime) {
+            if (colors == null) throw new InvalidEnumArgumentException("Colors cannot be null.");
+            if (!Streaming) {
+                LogUtil.Write("Not streaming, dumbass: " + Data.Id);
+                return;
+            }
+            colors = TruncateColors(colors);
+            if (Data.StripMode == 2) {
+                colors = ShiftColors(colors);
+            }
+            var packet = new List<Byte>();
+            // Set mode to DRGB, dude.
+            var timeByte = 255;
+            packet.Add(ByteUtils.IntByte(2));
+            packet.Add(ByteUtils.IntByte(timeByte));
+            foreach (var color in colors) {
+                packet.Add(ByteUtils.IntByte(color.R));
+                packet.Add(ByteUtils.IntByte(color.G));
+                packet.Add(ByteUtils.IntByte(color.B));
+            }
+            if (!colorsSet) {
+                colorsSet = true;
+                LogUtil.Write("Sending " + colors.Count + " colors to " + IpAddress);
+                LogUtil.Write("First packet: " + ByteUtils.ByteString(packet.ToArray()));
+            }
+
+            if (ep != null) {
+                try {
+                    if (ep != null) _stripSender.SendTo(packet.ToArray(), ep);
+                } catch (Exception e) {
+                    LogUtil.Write("Fucking exception, look at that: " + e.Message);        
+                }
+            }
+             
+            //LogUtil.Write("Sent.");
+        }
+
+        private List<Color> TruncateColors(List<Color> input) {
+            var truncated = new List<Color>();
+            var offset = Data.Offset;
+            var len = Data.LedCount;
+            var loop = false;
+            var loopEnd = 0;
+            // Start at the beginning
+            if (offset + len > input.Count) {
+                loopEnd = offset + len - input.Count;
+                loop = true;
+            }
+
+            for (var i = 0; i < input.Count; i++) {
+                if (loop && i < loopEnd) {
+                    truncated.Add(input[i]);
+                }
+
+                if (i >= offset - 1 && i < offset + len - 1) {
+                    truncated.Add(input[i]);
+                }
+            }
+            return truncated;
+        }
+
+        private static List<Color> ShiftColors(IReadOnlyList<Color> input) {
+            var output = new Color[input.Count];
+            var il = input.Count - 1;
+            for (var i = 0; i < input.Count / 2; i++) {
+                output[i] = input[i];
+                output[il - i] = input[i];
+            }
+            return output.ToList();
+        }
+
+        public void UpdatePixel(int pixelIndex, Color color) {
+            if (_updateColors.Count == 0) {
+                for (var i = 0; i < Data.LedCount; i++) {
+                    _updateColors.Add(Color.FromArgb(0,0,0,0));
+                }
+            }
+
+            if (pixelIndex >= Data.LedCount) return;
+            _updateColors[pixelIndex] = color;
+            SetColor(_updateColors, null, 0);
+        }
+       
+     
+        public void ReloadData() {
+            var id = Data.Id;
+            Data = DataUtil.GetCollectionItem<WledData>("Dev_Wled", id);
+            LogUtil.Write($"Reloaded LED Data for {id}: " + JsonConvert.SerializeObject(Data));
+        }
+
+        public void UpdateCount(int count) {
+            var setting = new Dictionary<string, dynamic>();
+            setting["LC"] = count;
+            SendForm(setting);
+        }
+
+        public void UpdateBrightness(int brightness) {
+            Brightness = brightness;
+            var onObj = new JObject(
+                new JProperty("bri", brightness)
+            );
+            SendPost(onObj);
+        }
+
+        public void UpdateType(bool isRgbw) {
+            var setting = new Dictionary<string, dynamic>();
+            setting["EW"] = isRgbw;
+            SendForm(setting);
+        }
+
+        private async void SendPost(JObject values, string target="/json/state") {
+            Uri uri;
+            if (string.IsNullOrEmpty(IpAddress) && !string.IsNullOrEmpty(Id)) {
+                IpAddress = Id;
+                Data.IpAddress = Id;
+                DataUtil.InsertCollection<WledData>("Dev_Wled", Data);
+            } 
+            try {
+                uri = new Uri("http://" + IpAddress + target);
+            } catch (UriFormatException) {
+                LogUtil.Write("Well, this isn't right: " + IpAddress, "WARN");
+                return;
+            }
+
+            var httpContent = new StringContent(values.ToString());
+            httpContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+            try {
+                await _client.PostAsync(uri, httpContent);
+            } catch (HttpRequestException e) {
+                LogUtil.Write("HTTP Request Exception: " + e.Message, "WARN");
+            }
+
+            httpContent.Dispose();
+        }
+
+        private async void SendForm(Dictionary<string, dynamic> values) {
+            var uri = new Uri("http://" + IpAddress + "settings/leds");
+            var request = (HttpWebRequest)WebRequest.Create(uri);
+            string postData = string.Empty;
+            foreach (string k in values.Keys) {
+                if (string.IsNullOrEmpty(postData)) {
+                    postData = $"?{k}={values[k]}";
+                } else {
+                    postData += $"@{k}={values[k]}";
+                }
+            }
+            var data = Encoding.ASCII.GetBytes(postData);
+            request.Method = "POST";
+            request.ContentType = "application/x-www-form-urlencoded";
+            request.ContentLength = data.Length;
+            await using (var stream = request.GetRequestStream()) {
+                await stream.WriteAsync(data, 0, data.Length);
+            }
+
+            var response = (HttpWebResponse)request.GetResponse();
+
+            await using var rs = response.GetResponseStream();
+            var responseString = await new StreamReader(rs).ReadToEndAsync();
+            LogUtil.Write("We got a response: " + responseString);    
+            response.Dispose();
+        }
+
+        public void Dispose() {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+
+        protected virtual void Dispose(bool disposing) {
+            if (_disposed) {
+                return;
+            }
+
+            if (disposing) {
+                if (Streaming) {
+                    StopStream();
+                    _stripSender?.Dispose();
+                }
+            }
+
+            _disposed = true;
+        }
+    }
+}

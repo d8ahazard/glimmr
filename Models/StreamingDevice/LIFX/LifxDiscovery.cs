@@ -6,9 +6,9 @@ using Glimmr.Models.Util;
 using LifxNet;
 
 namespace Glimmr.Models.StreamingDevice.LIFX {
-    public sealed class LifxDiscovery {
+    public class LifxDiscovery {
         private readonly LifxClient _client;
-        private List<LightBulb> bulbs;
+        private List<LightBulb> _bulbs;
 
         public LifxDiscovery(LifxClient client) {
             _client = client;
@@ -16,14 +16,14 @@ namespace Glimmr.Models.StreamingDevice.LIFX {
 
         public async Task<List<LifxData>> Discover(int timeOut) {
             if (_client == null) return new List<LifxData>();
-            bulbs = new List<LightBulb>();
+            _bulbs = new List<LightBulb>();
             _client.DeviceDiscovered += Client_DeviceDiscovered;
             _client.StartDeviceDiscovery();
             LogUtil.Write("Lifx: Discovery started.");
             await Task.Delay(timeOut * 1000);
             LogUtil.Write("Discovery completed.");
             _client.StopDeviceDiscovery();
-            return bulbs.Select(GetBulbInfo).ToList();
+            return _bulbs.Select(GetBulbInfo).ToList();
         }
 
         public async Task<List<LifxData>> Refresh(CancellationToken ct) {
@@ -43,10 +43,10 @@ namespace Glimmr.Models.StreamingDevice.LIFX {
         private void Client_DeviceDiscovered(object sender, LifxClient.DeviceDiscoveryEventArgs e) {
             var bulb = e.Device as LightBulb;
             LogUtil.Write("Bulb discovered?");
-            bulbs.Add(bulb);
+            _bulbs.Add(bulb);
         }
 
-        public LifxData GetBulbInfo(LightBulb b) {
+        private LifxData GetBulbInfo(LightBulb b) {
             var state = _client.GetLightStateAsync(b).Result;
             var d = new LifxData(b) {
                 Power = _client.GetLightPowerAsync(b).Result,

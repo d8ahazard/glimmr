@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Glimmr.Models.Util;
 
-namespace Glimmr.Models.StreamingDevice.DreamScreen.Encoders {
+namespace Glimmr.Models.StreamingDevice.Dreamscreen.Encoders {
 	public static class Connect {
 
 		public static DreamData ParseePayload(byte[] payload) {

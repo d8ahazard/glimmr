@@ -1,11 +1,26 @@
 ﻿using System;
+using System.ComponentModel;
 using Newtonsoft.Json;
 
 namespace Glimmr.Models.LED {
     [Serializable]
     public class LedData {
         [JsonProperty] public int LedCount { get; set; }
-        [JsonProperty] public int PinNumber { get; set; }
+        
+        [DefaultValue(18)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public int PinNumber { get; set; }
+        
+        [DefaultValue(55)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public int MilliampsPerLed { get; set; }
+        
+        
+        [DefaultValue(800)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public int AblMaxMilliamps { get; set; }
+        
+        [JsonProperty] public bool AutoBrightnessLevel { get; set; }
         [JsonProperty] public int StripType { get; set; }
         [JsonProperty] public int Brightness { get; set; }
         [JsonProperty] public int StartupAnimation { get; set; }
@@ -23,6 +38,7 @@ namespace Glimmr.Models.LED {
 
         public LedData(bool init) {
             if (!init) return;
+            MilliampsPerLed = 55;
             LeftCount = 16;
             TopCount = 24;
             RightCount = 16;
@@ -31,7 +47,7 @@ namespace Glimmr.Models.LED {
             HCountDs = 24;
             LedCount = LeftCount + RightCount + TopCount + BottomCount;
             PinNumber = 18;
-            StripType = 2812;
+            StripType = 0;
             Brightness = 255;
             StartupAnimation = 0;
             FixGamma = true;

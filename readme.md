@@ -147,7 +147,7 @@ Discovery should be auto-triggered when you open the web UI. If devices are miss
 
 ### Configure Glimmr Settings
 Open the side menu, and click the gear icon to access settings.
-Optional capture modes are "DreamScreen (Default)", "Camera", "HDMI", and "Screen Capture".
+Optional capture modes are "Dreamscreen (Default)", "Camera", "HDMI", and "Screen Capture".
 
 Screen capture and HDMI are either WIP or not implemented.
 
@@ -180,7 +180,7 @@ Click the "Save settings" button to submit your configuration.
 
 ## PROFIT
 
-From here, you can use the app normally to control your devices. Open up the DreamScreen mobile app, add new devices if your Glimmr device is not deteced, and then place it in a group with a DS device (If using DS sync mode).
+From here, you can use the app normally to control your devices. Open up the Dreamscreen mobile app, add new devices if your Glimmr device is not deteced, and then place it in a group with a DS device (If using DS sync mode).
 
 To stop synchronization, select the device in the DS app or Glimmr Web UI and set the mode to "Off".
 

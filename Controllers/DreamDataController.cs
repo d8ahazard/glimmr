@@ -244,10 +244,10 @@ namespace Glimmr.Controllers {
 				case "authorizeHue": {
 					LogUtil.Write("AuthHue called, for reaal: " + value);
 					var doAuth = true;
-					BridgeData bd = null;
+					HueData bd = null;
 					if (!string.IsNullOrEmpty(value)) {
 						_hubContext?.Clients.All.SendAsync("hueAuth", "start");
-						bd = DataUtil.GetCollectionItem<BridgeData>("Dev_Hue", value);
+						bd = DataUtil.GetCollectionItem<HueData>("Dev_Hue", value);
 						LogUtil.Write("BD: " + JsonConvert.SerializeObject(bd));
 						if (bd == null) {
 							LogUtil.Write("Null bridge retrieved.");
@@ -278,13 +278,13 @@ namespace Glimmr.Controllers {
 					bd.Key = appKey.StreamingClientKey;
 					bd.User = appKey.Username;
 					LogUtil.Write("We should be authorized, returning.");
-					DataUtil.InsertCollection<BridgeData>("Dev_Hue", bd);
+					DataUtil.InsertCollection<HueData>("Dev_Hue", bd);
 					return new JsonResult(bd);
 				}
 				case "authorizeNano": {
 					var doAuth = true;
-					var leaves = DataUtil.GetCollection<NanoData>("Dev_NanoLeaf");
-					NanoData bd = null;
+					var leaves = DataUtil.GetCollection<NanoleafData>("Dev_Nanoleaf");
+					NanoleafData bd = null;
 					var nanoInt = -1;
 					if (!string.IsNullOrEmpty(value)) {
 						var nanoCount = 0;
@@ -300,7 +300,7 @@ namespace Glimmr.Controllers {
 					}
 
 					if (doAuth) {
-						var panel = new NanoGroup(value);
+						var panel = new NanoleafDevice(value);
 						var appKey = panel.CheckAuth().Result;
 						if (appKey != null && bd != null) {
 							bd.Token = appKey.Token;
@@ -324,10 +324,10 @@ namespace Glimmr.Controllers {
 		[HttpGet("json")]
 		public IActionResult GetJson() {
 			LogUtil.Write(@"GetJson Called.");
-			var bridgeArray = DataUtil.GetCollection<BridgeData>("Dev_Hue");
+			var bridgeArray = DataUtil.GetCollection<HueData>("Dev_Hue");
 			if (bridgeArray.Count == 0) {
 				var newBridges = HueDiscovery.Discover().Result;
-				foreach (var b in newBridges) DataUtil.InsertCollection<BridgeData>("Dev_Hue", b);
+				foreach (var b in newBridges) DataUtil.InsertCollection<HueData>("Dev_Hue", b);
 			}
 
 			return Content(DataUtil.GetStoreSerialized(), "application/json");
@@ -346,9 +346,9 @@ namespace Glimmr.Controllers {
 			var remoteId = "";
 			switch (tag) {
 				case "Hue":
-					var bridge = DataUtil.GetCollectionItem<BridgeData>("Dev_Hue", id);
+					var bridge = DataUtil.GetCollectionItem<HueData>("Dev_Hue", id);
 					bridge.MaxBrightness = brightness;
-					DataUtil.InsertCollection<BridgeData>("Dev_Hue", bridge);
+					DataUtil.InsertCollection<HueData>("Dev_Hue", bridge);
 					sendRemote = true;
 					remoteId = bridge.Id;
 					break;
@@ -359,10 +359,10 @@ namespace Glimmr.Controllers {
 					sendRemote = true;
 					remoteId = bulb.Id;
 					break;
-				case "NanoLeaf":
-					var panel = DataUtil.GetCollectionItem<NanoData>("Dev_NanoLeaf", id);
+				case "Nanoleaf":
+					var panel = DataUtil.GetCollectionItem<NanoleafData>("Dev_Nanoleaf", id);
 					panel.MaxBrightness = brightness;
-					DataUtil.InsertCollection<NanoData>("Dev_Nanoleaf", panel);
+					DataUtil.InsertCollection<NanoleafData>("Dev_Nanoleaf", panel);
 					sendRemote = true;
 					remoteId = panel.Id;
 					break;

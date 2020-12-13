@@ -16,6 +16,7 @@ let nanoAuth = false;
 let refreshing = false;
 let hueGroups;
 let hueLights;
+let hueLightMap;
 let lightMap;
 let hueGroup;
 let hueIp = "";
@@ -491,9 +492,9 @@ function setListeners() {
         let myId = $(this).attr('id').replace("lightMap", "");
         let newVal = $(this).val().toString();
         if (captureMode === 0) {
-            updateLightProperty(myId, "targetSector", newVal);    
+            updateLightProperty(myId, "TargetSector", newVal);    
         } else {
-            updateLightProperty(myId, "targetSectorV2", newVal);
+            updateLightProperty(myId, "TargetSector2", newVal);
         }
         
     });
@@ -801,20 +802,42 @@ function postData(endpoint, payload) {
     });
 }
 
-// Update our stored setting data for various light values
-function updateLightProperty(myId, propertyName, value) {
-    console.log("Updating light " + propertyName + " for " + myId, value);
-    for(let k in hueLights) {
-        if (hueLights.hasOwnProperty(k)) {
-            hueLights[k]["Id"] = parseInt(hueLights[k]["_id"]);
-            if (hueLights[k]["_id"] === myId) {
-                hueLights[k]["Id"] = parseInt(myId);
-                hueLights[k][propertyName] = value;
+function getLightMap(id) {
+    for (let l in hueLightMap) {
+        if (hueLightMap.hasOwnProperty(l)) {
+            if (hueLightMap[l]["_id"] === id) {
+                return hueLightMap[l];
             }
         }
-    }    
-    console.log("Updated light data: ", hueLights);
-    bridges[bridgeInt]["Lights"] = hueLights;
+    }
+    return {
+        _id: id,
+        TargetSector: -1,
+        TargetSector2: -1,
+        Brightness: 255,
+        Override: false
+    };
+}
+
+function setLightMap(map) {
+    for (let l in hueLightMap) {
+        if (hueLightMap.hasOwnProperty(l)) {
+            if (hueLightMap[l]["_id"] === map["_id"]) {
+                hueLightMap[l] = map;
+                return;
+            }
+        }
+    }
+    hueLightMap.push(map);
+}
+
+// Update our stored setting data for various light values
+function updateLightProperty(myId, propertyName, value) {
+    let lm = getLightMap(myId);
+    lm[propertyName] = value;
+    setLightMap(lm);
+    console.log("Updated light data: ", hueLightMap);
+    bridges[bridgeInt]["MappedLights"] = hueLightMap;
     let fGroup = bridges[bridgeInt]["Groups"];
     let nGroup = [];
     for (let g in fGroup) {
@@ -833,6 +856,7 @@ function mapLights() {
     let group = findGroup(hueGroup);
     if (!group) return;
     let lights = hueLights;
+    let lightMap = hueLightMap;
     console.log("Mapping lights: ", lights);
     // Get the main light group
     const lightGroup = document.getElementById("mapSel");
@@ -856,12 +880,26 @@ function mapLights() {
         if (lights.hasOwnProperty(l)) {
             let light = lights[l];
             let id = light['_id'];
+            let map;
+            let brightness = 255;
+            let override = false;
+            let selection = -1;
+            let selectionV2 = -1;
+            
+            for(let m in lightMap) {
+                if (lightMap.hasOwnProperty(m)) {
+                    if (lightMap[m]['_id'] === id) {
+                        map = lightMap[m];
+                        brightness = map["Brightness"];
+                        override = map["Override"];
+                        selection = map["TargetSector"];
+                        selectionV2 = map["TargetSector2"];
+                    }
+                }
+            }
+            
             if ($.inArray(id, ids) !== -1) {
-                const name = light['Name'];
-                let brightness = light["Brightness"];
-                let override = light["OverrideBrightness"];
-                let selection = light["TargetSector"];
-                let selectionV2 = light["TargetSectorV2"];
+                const name = light['Name'];               
 
                 // Create the label for select
                 const label = document.createElement('label');
@@ -1041,8 +1079,8 @@ function buildLists() {
     dsDevs = [];
     let groups = [];
     console.log("Reading datastore...");
-    devices = datastore['Dev_DreamScreen'];
-    leaves = datastore['Dev_NanoLeaf'];
+    devices = datastore['Dev_Dreamscreen'];
+    leaves = datastore['Dev_Nanoleaf'];
     bridges = datastore['Dev_Hue'];
     wleds = datastore['Dev_Wled'];
     deviceData = datastore['MyDevice'][0];
@@ -1060,7 +1098,7 @@ function buildLists() {
     }
     mode = selectCaptureMode(captureMode);
     emulationType = datastore['DevType'][0]["value"];
-    buildDevList(datastore['Dev_DreamScreen']);
+    buildDevList(datastore['Dev_Dreamscreen']);
     setCaptureMode(mode, false);
     console.log("Capmodes set...");
     setMode(deviceData.mode);
@@ -1071,7 +1109,7 @@ function buildLists() {
         let item = $(this)[0];
         if (item === null || item === undefined) return;
         if (item['Id'] === undefined && item['IpAddress'] !== undefined) item['Id'] = item['IpAddress'];
-        if (this["Tag"].includes("DreamScreen")) {
+        if (this["Tag"].includes("Dreamscreen")) {
             console.log("DS");
             let groupNumber = (item['GroupNumber'] === undefined) ? 0 : item['GroupNumber'];
             let groupName = (item['GroupName'] === undefined) ? "undefined" : item['GroupName'];
@@ -1103,7 +1141,7 @@ function buildLists() {
     groups = sortDevices(dsDevs, groups, false, false);
     console.log("DS");
     // Sort nanoleaves
-    groups = sortDevices(leaves, groups, "NanoLeaf", "NanoLeaf");
+    groups = sortDevices(leaves, groups, "Nanoleaf", "Nanoleaf");
     console.log("Nano");
     // Sort bridges
     groups = sortDevices(bridges, groups, "HueBridge", "Hue Bridge");
@@ -1112,7 +1150,7 @@ function buildLists() {
     groups = sortDevices(lifx, groups, "Lifx", "Lifx Bulb");
     console.log("Lifx");
     // Sort wled
-    groups = sortDevices(wleds, groups, "WLed", "Wireless LEDs")
+    groups = sortDevices(wleds, groups, "Wled", "Wireless LEDs")
     console.log("wled");
     dg.html("");
     console.log("Final sorted groups: ", groups);
@@ -1163,7 +1201,7 @@ function appendDeviceGroup(item) {
         let container = $('<ul id="group' + item['_id'] + '" class="nav-list groupList"></ul>');
         $.each(elements, function () {
             let element = $(this)[0];
-            if (element["Tag"].includes("DreamScreen")) {
+            if (element["Tag"].includes("Dreamscreen")) {
                 item.Mode = element.Mode;
                 item.Brightness = element.Brightness;
                 item.Saturation = element.Saturation;
@@ -1239,8 +1277,8 @@ function setCaptureMode(target, post=true) {
     let bc = $('#bottomCount');
     let rc = $('#rightCount');
     $('#stripType').val(stripType);
-    hc.val(topLedCount);
-    vc.val(leftLedCount);
+    hc.val(leftLedCount);
+    vc.val(topLedCount);
     rc.val(rightLedCount);
     bc.val(bottomLedCount);
     hc.parent().addClass("is-filled");
@@ -1287,7 +1325,7 @@ function buildDevList(data) {
         const name = dev.Name;
         const ip = dev["IpAddress"];
         const type = dev["Tag"];
-        if (name !== undefined && ip !== undefined && type.includes("DreamScreen")) {
+        if (name !== undefined && ip !== undefined && type.includes("Dreamscreen")) {
             const selected = (ip === dsIp) ? "selected" : "";
             if (selected !== "") {
                 targetDs = dev;
@@ -1329,9 +1367,9 @@ function showDevicePanel(data) {
         switch (data.Tag) {
             case "SideKick":
             case "Connect":
-            case "DreamScreen":
-            case "DreamScreen4K":
-            case "DreamScreenSolo":
+            case "Dreamscreen":
+            case "Dreamscreen4K":
+            case "DreamscreenSolo":
             case "group":
                 loadDsData(data);
                 modeGroup.hide();
@@ -1342,7 +1380,7 @@ function showDevicePanel(data) {
                 modeGroup.show();
                 if (!resizeTimer) hueCard.slideDown();
                 break;
-            case "NanoLeaf":
+            case "Nanoleaf":
                 loadNanoData(data);
                 modeGroup.show();
                 if (!resizeTimer) nanoCard.slideDown();
@@ -1352,7 +1390,7 @@ function showDevicePanel(data) {
                 modeGroup.show();
                 if (!resizeTimer) lifxCard.slideDown();
                 break;
-            case "WLed":
+            case "Wled":
                 loadWledData(data);
                 modeGroup.show();
                 if (!resizeTimer) wledCard.slideDown();
@@ -1378,16 +1416,16 @@ function reloadDevice() {
         switch (data["Tag"]) {
             case "SideKick":
             case "Connect":
-            case "DreamScreen":
-            case "DreamScreen4K":
-            case "DreamScreenSolo":
+            case "Dreamscreen":
+            case "Dreamscreen4K":
+            case "DreamscreenSolo":
             case "group":
                 loadDsData(data);
                 break;
             case "HueBridge":
                 loadBridgeData(data);
                 break;
-            case "NanoLeaf":
+            case "Nanoleaf":
                 loadNanoData(data);
                 break;
             case "Lifx":
@@ -1486,6 +1524,7 @@ function loadBridgeData(data) {
         }
     }
     hueLights = b["Lights"];
+    hueLightMap = b["MappedLights"];
     hueAuth = (b["User"] !== null && b["Key"] !== null && b["Key"] !== undefined);
     console.log("Hue Auth: ", hueAuth);
     lImg.removeClass('linked unlinked linking');
