@@ -25,6 +25,7 @@ using LifxNet;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
+using Serilog;
 using Color = System.Drawing.Color;
 
 #endregion
@@ -399,7 +400,7 @@ namespace Glimmr.Services {
 				LogUtil.Write("Continuing...");
 				_videoStream = new VideoStream(this, ct);
 				if (_videoStream == null) {
-					LogUtil.Write("Video stream is null.", "WARN");
+					Log.Warning("Video stream is null.");
 					return;
 				}
 				LogUtil.Write("Setting video capture task...");
@@ -417,7 +418,7 @@ namespace Glimmr.Services {
 			} else {
 				_audioStream = GetStream(); 
 				if (_audioStream == null) {
-					LogUtil.Write("Audio stream is null.", "WARN");
+					Log.Warning("Audio stream is null.");
 					return;
 				}
 
@@ -447,7 +448,7 @@ namespace Glimmr.Services {
 			}
 
 			_streamStarted = true;
-			if (_streamStarted) LogUtil.WriteInc("Streaming on all devices should now be started...");
+			if (_streamStarted) LogUtil.Write("Streaming on all devices should now be started...");
 		}
 
 		private void StopStream() {
@@ -457,7 +458,7 @@ namespace Glimmr.Services {
 			_strip?.StopLights();
 			foreach (var s in _sDevices.Where(s => s.Streaming)) s.StopStream();
 
-			LogUtil.WriteDec("Stream stopped.");
+			LogUtil.Write("Stream stopped.");
 			_streamStarted = false;
 		}
 

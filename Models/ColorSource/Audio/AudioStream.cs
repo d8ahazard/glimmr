@@ -6,6 +6,7 @@ using Glimmr.Models.Util;
 using Glimmr.Services;
 using ManagedBass;
 using Newtonsoft.Json;
+using Serilog;
 using Color = System.Drawing.Color;
 
 namespace Glimmr.Models.ColorSource.Audio {
@@ -57,7 +58,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 					DataUtil.InsertCollection<AudioData>("Dev_Audio", ad);
 					_devices.Add(ad);
 				} catch (Exception e) {
-					LogUtil.Write("Error loading devices: " + e.Message, "WARN");
+					Log.Warning("Error loading devices.", e);
 				}
 
 				if (rd == null && a == 0) {

@@ -11,6 +11,7 @@ using Nanoleaf.Client;
 using Nanoleaf.Client.Exceptions;
 using Nanoleaf.Client.Models.Responses;
 using Newtonsoft.Json;
+using Serilog;
 
 namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 	public sealed class NanoleafDevice : IStreamingDevice, IDisposable {
@@ -227,22 +228,11 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
         }
 
         private static void HandleNanoleafErrorStatusCodes(HttpResponseMessage responseMessage) {
-            LogUtil.Write("Error with nano request: " + responseMessage.StatusCode, "ERROR");
-            throw (int) responseMessage.StatusCode switch {
-                400 => new NanoleafHttpException("Error 400: Bad request!"),
-                401 => new NanoleafUnauthorizedException(
-                    $"Error 401: Not authorized! Provided an invalid token for this Aurora. Request path: {responseMessage.RequestMessage.RequestUri.AbsolutePath}"),
-                403 => new NanoleafHttpException("Error 403: Forbidden!"),
-                404 => new NanoleafResourceNotFoundException(
-                    $"Error 404: Resource not found! Request Uri: {responseMessage.RequestMessage.RequestUri.AbsoluteUri}"),
-                422 => new NanoleafHttpException("Error 422: Unprocessable Entity"),
-                500 => new NanoleafHttpException("Error 500: Internal Server Error"),
-                _ => new NanoleafHttpException("ERROR! UNKNOWN ERROR " + (int) responseMessage.StatusCode)
-            };
+	        Log.Warning("Error with nano request: ", responseMessage);
         }
 
 
-		public void Dispose() {
+        public void Dispose() {
 			Dispose(true);
 		}
 

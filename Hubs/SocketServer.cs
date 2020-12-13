@@ -11,6 +11,7 @@ using Glimmr.Services;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Serilog;
 
 namespace Glimmr.Hubs {
 	public class SocketServer : Hub {
@@ -62,7 +63,7 @@ namespace Glimmr.Hubs {
 					return;
 				}
 			} else {
-				LogUtil.Write("Null value.", "WARN");
+				Log.Warning("Null value.");
 				await Clients.All.SendAsync("hueAuth", "stop");
 				return;
 			}
@@ -95,7 +96,7 @@ namespace Glimmr.Hubs {
 
 					LogUtil.Write("Waiting for app key.");
 				} catch (NullReferenceException e) {
-					LogUtil.Write("NULL EXCEPTION: " + e.Message, "WARN");
+					Log.Error("Null exception.", e);
 				}
 
 				await Clients.All.SendAsync("hueAuth", count);

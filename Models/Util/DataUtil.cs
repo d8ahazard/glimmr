@@ -17,11 +17,12 @@ using LifxNet;
 using LiteDB;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Serilog;
 
 namespace Glimmr.Models.Util {
     [Serializable]
     public static class DataUtil {
-        public static bool scanning { get; set; }
+        public static bool Scanning { get; set; }
         private static LiteDatabase _db;
         
         public static LiteDatabase GetDb() {
@@ -227,7 +228,7 @@ namespace Glimmr.Models.Util {
                 var myDevice = GetObject<DreamData>("MyDevice");
                 if (myDevice != null) return myDevice;
             } catch (Exception e) {
-                LogUtil.Write("Exception fetching deviceData: " + e.Message, "WARN");
+                Log.Warning("Exception fetching device data: ", e);
             }
 
             var devIp = IpUtil.GetLocalIpAddress();
@@ -358,7 +359,7 @@ namespace Glimmr.Models.Util {
             var cs = new CancellationTokenSource();
             cs.CancelAfter(30000);
             LogUtil.Write("Starting scan.");
-            scanning = true;
+            Scanning = true;
             // Get dream devices
             var ld = new LifxDiscovery(c);
             var nanoTask = NanoleafDiscovery.Refresh(cs.Token);
@@ -369,9 +370,9 @@ namespace Glimmr.Models.Util {
             try {
                 await Task.WhenAll(nanoTask, bridgeTask, bulbTask, wLedTask);
             } catch (TaskCanceledException e) {
-                LogUtil.Write("Discovery task was canceled before completion: " + e.Message, "WARN");
+                Log.Warning("Discovery task was canceled before completion: ", e);
             } catch (SocketException f) {
-                LogUtil.Write("Socket Exception during discovery: " + f.Message, "WARN");
+                Log.Warning("Socket exception during discovery: ", f);
             }
 				
             LogUtil.Write("Refresh complete.");
@@ -422,13 +423,13 @@ namespace Glimmr.Models.Util {
                 
             }
 
-            scanning = false;
+            Scanning = false;
             cs.Dispose();
         }
 
         public static async Task ScanDevices(LifxClient lc) {
-            if (scanning) return;
-            scanning = true;
+            if (Scanning) return;
+            Scanning = true;
             var db = GetDb();
                 // Get dream devices
                 var ld = new LifxDiscovery(lc);
@@ -455,7 +456,7 @@ namespace Glimmr.Models.Util {
                 devCol.EnsureIndex(x => x.Id);
                 lifxCol.EnsureIndex(x => x.Id);
                 wledCol.EnsureIndex(x => x.Id);
-                scanning = false;
+                Scanning = false;
             
         }
 

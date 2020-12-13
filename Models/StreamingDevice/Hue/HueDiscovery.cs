@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using Q42.HueApi;
 using Q42.HueApi.Interfaces;
 using Q42.HueApi.Models.Bridge;
+using Serilog;
 
 namespace Glimmr.Models.StreamingDevice.Hue {
     public static class HueDiscovery {
@@ -61,14 +62,9 @@ namespace Glimmr.Models.StreamingDevice.Hue {
                 var discovered = await HueBridgeDiscovery.CompleteDiscoveryAsync(TimeSpan.FromSeconds(time),TimeSpan.FromSeconds(time));
                 output = discovered.Select(bridge => new HueData(bridge)).ToList();
                 LogUtil.Write($"Hue: Discovery complete, found {discovered.Count} devices.");
-            } catch (TaskCanceledException e) {
-                LogUtil.Write("Discovery exception, task canceled: " + e.Message, "WARN");
-            } catch (OperationCanceledException e) {
-                LogUtil.Write("Discovery exception, operation canceled: " + e.Message, "WARN");
-            }catch (SocketException f) {
-                LogUtil.Write("Socket exception, task canceled: " + f.Message, "WARN");
-            } catch (HttpRequestException g) {
-                LogUtil.Write("HTTP exception, task canceled: " + g.Message, "WARN");
+            } catch (Exception e) {
+                Log.Warning("Discovery exception.", e);
+                
             }
 
             return output;

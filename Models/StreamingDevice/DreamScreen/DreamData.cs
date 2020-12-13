@@ -8,6 +8,7 @@ using Glimmr.Models.StreamingDevice.Dreamscreen.Encoders;
 using Glimmr.Models.Util;
 using LiteDB;
 using Newtonsoft.Json;
+using Serilog;
 
 #endregion
 
@@ -297,7 +298,7 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 						propertyInfo.SetValue(_type, k.GetValue(_type), null);	
 					}
 				} catch (Exception e) {
-					LogUtil.Write("Error setting value while copying: " + e.Message, "WARN");
+					Log.Warning("Error setting value while copying existing data.", e);
 				}
 			}
 		}

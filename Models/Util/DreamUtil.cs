@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Net;
 using System.Net.Sockets;
+using Serilog;
 
 namespace Glimmr.Models.Util {
 	public static class DreamUtil {
@@ -124,7 +125,7 @@ namespace Glimmr.Models.Util {
                 dreamSender.SendTo(data, ep);
                 dreamSender.Dispose();
             } catch (SocketException e) {
-                LogUtil.Write($"Socket Exception: {e.Message}", "WARN");
+                Log.Warning("Socket exception: ", e);
             }
         }
 
@@ -137,7 +138,7 @@ namespace Glimmr.Models.Util {
                 dreamClient.Send(bytes, bytes.Length, ip);
                 dreamClient.Dispose();
             } catch (SocketException e) {
-                LogUtil.Write($"Socket Exception: {e.Message}", "WARN");
+                Log.Warning("Socket exception: ", e);
             }
         }
 	}

@@ -33,7 +33,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
         public void Initialize() {
             _startInt = 0;
             var startTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-            LogUtil.WriteInc($@"Color builder started, animation time is {_animationTime}...");
+            LogUtil.Write($@"Color builder started, animation time is {_animationTime}...");
             while (!_ct.IsCancellationRequested) {
                 if (!Streaming) continue;
                 var curTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
@@ -50,7 +50,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
                 _cs.SendColors(ledCols, cols);
             }
 
-            LogUtil.WriteDec($@"DreamScene: Color Builder canceled. {startTime}");
+            LogUtil.Write($@"DreamScene: Color Builder canceled. {startTime}");
         }
         
         

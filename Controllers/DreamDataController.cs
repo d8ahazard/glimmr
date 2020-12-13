@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Serilog;
 
 #endregion
 
@@ -259,7 +260,7 @@ namespace Glimmr.Controllers {
 							doAuth = false;
 						}
 					} else {
-						LogUtil.Write("Null value.", "WARN");
+						Log.Warning("Null value.");
 						doAuth = false;
 					}
 

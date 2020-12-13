@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Runtime.InteropServices;
+using Glimmr.Models.Logging;
 using Glimmr.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,14 +13,18 @@ namespace Glimmr
 	public class Program
 	{
 		public static void Main(string[] args) {
+			var outputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}] {Message} (at {Caller}){NewLine}{Exception}";
+
 			var logPath = "/var/log/glimmr/glimmr.log";
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 				logPath = "log\\glimmr.log";
 			}
 			Log.Logger = new LoggerConfiguration()
+				.Enrich.WithCaller()
+				.WriteTo.Console(outputTemplate: outputTemplate)
 				.MinimumLevel.Debug()
 				.WriteTo.Console()
-				.WriteTo.File(logPath, rollingInterval: RollingInterval.Day)
+				.WriteTo.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: outputTemplate)
 				.CreateLogger();
             
 			CreateHostBuilder(args).Build().Run();

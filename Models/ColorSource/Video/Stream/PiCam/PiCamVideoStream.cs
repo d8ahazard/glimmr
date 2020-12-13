@@ -107,9 +107,9 @@ namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
             // Camera warm up time
             LogUtil.Write("Camera is warming up...");
             await Task.Delay(2000).ConfigureAwait(false);
-            LogUtil.WriteInc("Camera initialized.");
+            LogUtil.Write("Camera initialized.");
             await cam.ProcessAsync(cam.Camera.VideoPort, ct).ConfigureAwait(false);
-            LogUtil.WriteDec("Camera closed.");
+            LogUtil.Write("Camera closed.");
         }
 
         private void OnEmguEventCallback(object sender, EmguEventArgs args) {

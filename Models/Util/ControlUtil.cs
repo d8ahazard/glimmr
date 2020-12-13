@@ -11,6 +11,7 @@ using Glimmr.Models.StreamingDevice.WLED;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Serilog;
 
 #endregion
 
@@ -93,7 +94,7 @@ namespace Glimmr.Models.Util {
 						break;
 				}
 			} catch (Exception e) {
-				LogUtil.Write("Got me an exception here: " + e.Message, "WARN");
+				Log.Warning("We have an exception: ", e);
 			}
 
 			return true;

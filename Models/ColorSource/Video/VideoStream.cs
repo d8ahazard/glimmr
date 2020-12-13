@@ -19,6 +19,7 @@ using Glimmr.Models.LED;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Newtonsoft.Json;
+using Serilog;
 
 #endregion
 
@@ -62,7 +63,7 @@ namespace Glimmr.Models.ColorSource.Video {
 
 
 		public VideoStream(ColorService cs, CancellationToken camToken) {
-			LogUtil.WriteInc("Initializing stream capture...");
+			LogUtil.Write("Initializing stream capture...");
 			_targets = new List<VectorOfPoint>();
 			SetCapVars();
 			_vc = GetStream();
@@ -84,7 +85,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			SetCapVars();
 			var autoEvent = new AutoResetEvent(false);
 			_saveTimer = new Timer(SaveFrame, autoEvent, 5000, 5000);
-			LogUtil.WriteInc($"Starting vid capture task, setting sw and h to {ScaleWidth} and {ScaleHeight}");
+			LogUtil.Write($"Starting vid capture task, setting sw and h to {ScaleWidth} and {ScaleHeight}");
 			StreamSplitter = new Splitter(_ledData, ScaleWidth, ScaleHeight);
 			while (!_cancellationToken.IsCancellationRequested) {
 				// Save cpu/memory by not doing anything if not sending...
@@ -94,14 +95,14 @@ namespace Glimmr.Models.ColorSource.Video {
 				var frame = _vc.Frame;
 				if (frame == null) {
 					SourceActive = false;
-					LogUtil.Write("Frame is null, dude.", "WARN");
+					Log.Warning("Frame is null.");
 					continue;
 				}
 
 				if (frame.Cols == 0) {
 					SourceActive = false;
 					if (!_noColumns) {
-						LogUtil.Write("Frame has no columns, dude.", "WARN");
+						Log.Warning("Frame has no columns.");
 						_noColumns = true;
 					}
 					continue;
@@ -110,7 +111,7 @@ namespace Glimmr.Models.ColorSource.Video {
 				var warped = ProcessFrame(frame);
 				if (warped == null) {
 					SourceActive = false;
-					LogUtil.Write("Unable to process frame, Dude.", "WARN");
+					Log.Warning("Unable to process frame.");
 					continue;
 				}
 				//LogUtil.Write("Updating splitter!");
@@ -125,7 +126,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			}
 
 			_saveTimer.Dispose();
-			LogUtil.Write("Capture task completed!", "WARN");
+			Log.Information("Capture task completed.");
 			
 		}
 

@@ -15,6 +15,7 @@ using Q42.HueApi.Models.Groups;
 using Q42.HueApi.Streaming;
 using Q42.HueApi.Streaming.Extensions;
 using Q42.HueApi.Streaming.Models;
+using Serilog;
 
 namespace Glimmr.Models.StreamingDevice.Hue {
 	public sealed class HueBridge : IStreamingDevice, IDisposable {
@@ -60,7 +61,7 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 		/// <param name="ct">A cancellation token.</param>
 		public async void StartStream(CancellationToken ct) {
 			if (Data.Id == null || Data.Key == null || Data.Lights == null || Data.Groups == null) {
-				LogUtil.Write("Bridge is not authorized.","WARN");
+				Log.Warning("Bridge is not authorized.", Data);
 				return;
 			}
 
@@ -87,14 +88,14 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 			try {
 				stream = SetupAndReturnGroup(_client, Data, ct).Result;
 			} catch (Exception e) {
-				LogUtil.Write("SException (Probably tried stopping/starting too quickly): " + e.Message, "WARN");
+				Log.Warning("Exception: ",e);
 				return;
 			}
             
 
 			// This is what we actually need
 			if (stream == null) {
-				LogUtil.Write("Error fetching bridge stream.", "WARN");
+				Log.Warning("Error fetching bridge stream.");
 				Streaming = false;
 				return;
 			}
@@ -156,7 +157,7 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 				return;
 			}
 			if (colors == null) {
-				LogUtil.Write("Error with color array!", "ERROR");
+				Log.Warning("Color array can't be null.");
 				return;
 			}
 

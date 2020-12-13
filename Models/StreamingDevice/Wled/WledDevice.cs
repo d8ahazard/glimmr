@@ -13,6 +13,7 @@ using Glimmr.Models.ColorSource.Video;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Serilog;
 
 namespace Glimmr.Models.StreamingDevice.WLED {
     public class WledDevice : IStreamingDevice, IDisposable
@@ -216,8 +217,8 @@ namespace Glimmr.Models.StreamingDevice.WLED {
             } 
             try {
                 uri = new Uri("http://" + IpAddress + target);
-            } catch (UriFormatException) {
-                LogUtil.Write("Well, this isn't right: " + IpAddress, "WARN");
+            } catch (UriFormatException e) {
+                Log.Warning("URI Format exception: ", e);
                 return;
             }
 
@@ -226,7 +227,7 @@ namespace Glimmr.Models.StreamingDevice.WLED {
             try {
                 await _client.PostAsync(uri, httpContent);
             } catch (HttpRequestException e) {
-                LogUtil.Write("HTTP Request Exception: " + e.Message, "WARN");
+                Log.Warning("HTTP Request Exception: " + e);
             }
 
             httpContent.Dispose();

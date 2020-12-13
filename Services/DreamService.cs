@@ -16,6 +16,7 @@ using LiteDB;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
+using Serilog;
 using Color = System.Drawing.Color;
 
 namespace Glimmr.Services {
@@ -185,9 +186,9 @@ namespace Glimmr.Services {
                 // Return listen task to kill later
                 _listener.BeginReceive(Recv, null);
             } catch (SocketException e) {
-                LogUtil.Write($@"Socket exception: {e.Message}.","WARN");
-            } catch (ObjectDisposedException) {
-                LogUtil.Write("Object Disposed exception caught.","WARN");
+                Log.Warning("Socket exception: ", e);
+            } catch (ObjectDisposedException f) {
+                Log.Warning("Object already disposed: ", f);
             }
         }
         
@@ -427,7 +428,7 @@ namespace Glimmr.Services {
                 DreamUtil.SendUdpWrite(0x01, 0x0E, new byte[] {0x01}, 0x30, 0x00, selfEp);
                 await Task.Delay(500, ct).ConfigureAwait(false);
             } catch (Exception e) {
-                LogUtil.Write("Caught an exception: " + e.Message, "WARN");
+                Log.Warning("Discovery exception: ", e);
             }
         }
 
