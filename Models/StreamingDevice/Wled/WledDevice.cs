@@ -19,6 +19,20 @@ namespace Glimmr.Models.StreamingDevice.WLED {
     public class WledDevice : IStreamingDevice, IDisposable
     {
         public bool Enable { get; set; }
+        public bool Streaming { get; set; }
+        public int Brightness { get; set; }
+        public string Id { get; set; }
+        public string IpAddress { get; set; }
+        public string Tag { get; set; }
+        private bool _disposed;
+        private bool colorsSet;
+        private static int port = 21324;
+        private IPEndPoint ep;
+        private Splitter appSplitter;
+        private List<Color> _updateColors;
+        private HttpClient _httpClient;
+        private UdpClient _udpClient;
+        
         StreamingData IStreamingDevice.Data {
             get => Data;
             set => Data = (WledData) value;
@@ -26,8 +40,9 @@ namespace Glimmr.Models.StreamingDevice.WLED {
 
         public WledData Data { get; set; }
         
-        public WledDevice(WledData wd) {
-            _client = new HttpClient();
+        public WledDevice(WledData wd, UdpClient uc, HttpClient hc) {
+            _udpClient = uc;
+            _httpClient = hc;
             _updateColors = new List<Color>();
             Data = wd ?? throw new ArgumentException("Invalid WLED data.");
             Log.Debug("Enabled: " + IsEnabled());
@@ -35,29 +50,12 @@ namespace Glimmr.Models.StreamingDevice.WLED {
             IpAddress = Data.IpAddress;
         }
 
-        public bool Streaming { get; set; }
-        public int Brightness { get; set; }
-        public string Id { get; set; }
-        public string IpAddress { get; set; }
-        public string Tag { get; set; }
-        private Socket _stripSender;
-        private bool _disposed;
-        private bool colorsSet;
-        private static int port = 21324;
-        private IPEndPoint ep;
-        private Splitter appSplitter;
-        private HttpClient _client;
-        private List<Color> _updateColors;
         
         public void StartStream(CancellationToken ct) {
             if (Streaming) return;
             if (!Data.Enable) return;
             Log.Debug("WLED: Initializing stream.");
-            _stripSender = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            _stripSender.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            _stripSender.Blocking = false;
-            _stripSender.EnableBroadcast = false;
-
+           
             var onObj = new JObject(
                 new JProperty("on", true),
                 new JProperty("bri", Brightness)
@@ -78,7 +76,6 @@ namespace Glimmr.Models.StreamingDevice.WLED {
         public void StopStream() {
             StopStrip();
             Streaming = false;
-            _stripSender?.Dispose();
             Log.Debug("WLED: Stream stopped.");
         }
 
@@ -91,7 +88,7 @@ namespace Glimmr.Models.StreamingDevice.WLED {
             for (var i = 0; i < Data.LedCount; i++) {
                 packet.AddRange(new byte[] {0, 0, 0});
             }
-            if (ep != null) _stripSender.SendTo(packet.ToArray(), ep);
+            if (ep != null) _udpClient.SendAsync(packet.ToArray(), packet.Count, ep);
             var offObj = new JObject(
                 new JProperty("on", false)
             );
@@ -126,7 +123,7 @@ namespace Glimmr.Models.StreamingDevice.WLED {
 
             if (ep != null) {
                 try {
-                    if (ep != null) _stripSender.SendTo(packet.ToArray(), ep);
+                    if (ep != null) _udpClient.SendAsync(packet.ToArray(), packet.Count, ep);
                 } catch (Exception e) {
                     Log.Debug("Fucking exception, look at that: " + e.Message);        
                 }
@@ -225,7 +222,7 @@ namespace Glimmr.Models.StreamingDevice.WLED {
             var httpContent = new StringContent(values.ToString());
             httpContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
             try {
-                await _client.PostAsync(uri, httpContent);
+                await _httpClient.PostAsync(uri, httpContent);
             } catch (HttpRequestException e) {
                 Log.Warning("HTTP Request Exception: " + e);
             }
@@ -274,7 +271,6 @@ namespace Glimmr.Models.StreamingDevice.WLED {
             if (disposing) {
                 if (Streaming) {
                     StopStream();
-                    _stripSender?.Dispose();
                 }
             }
 

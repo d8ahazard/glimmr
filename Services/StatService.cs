@@ -26,7 +26,7 @@ namespace Glimmr.Services {
 					// Sleep for 5s
 					await Task.Delay(5000, stoppingToken);
 				}
-			});
+			}, stoppingToken);
 		}
 	}
 }

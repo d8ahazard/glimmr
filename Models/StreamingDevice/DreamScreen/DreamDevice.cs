@@ -21,6 +21,19 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 		[DataMember] [JsonProperty] public bool Enable { get; set; }
 		[DataMember] [JsonProperty] public DreamData Data { get; set; }
 
+		private DreamUtil _dreamUtil;
+
+		public DreamDevice(DreamData data, DreamUtil util) {
+			Data = data;
+			_dreamUtil = util;
+			Data = data;
+			Brightness = data.Brightness;
+			Id = data.Id;
+			IpAddress = data.IpAddress;
+			Tag = data.Tag;
+			Enable = data.Enable;
+			DeviceTag = data.DeviceTag;
+		}
 
 		public void StartStream(CancellationToken ct) {
 		}
@@ -33,7 +46,7 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 				sectors = ColorUtil.TruncateColors(sectors);
 				
 			}
-			DreamUtil.SendSectors(sectors, Id, Data.GroupNumber);
+			_dreamUtil.SendSectors(sectors, Id, Data.GroupNumber);
 		}
 
 		public void ReloadData() {

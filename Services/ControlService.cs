@@ -19,22 +19,32 @@ namespace Glimmr.Services {
 
 		private IHubContext<SocketServer> _hubContext;
 		public LifxClient LifxClient { get; }
-		public HttpClient NanoClient { get; }
-		public Socket NanoSocket { get; }
+		public HttpClient HttpSender { get; }
+		public UdpClient BroadcastSender { get; }
+		
+		public UdpClient UnicastSender { get; }
 
+		private DreamUtil _dreamUtil;
 
 		public ControlService(IHubContext<SocketServer> hubContext) {
 			_hubContext = hubContext;
 			// Lifx client
 			LifxClient = LifxClient.CreateAsync().Result;
 			// Init nano HttpClient
-			NanoClient = new HttpClient();
+			HttpSender = new HttpClient();
 			DataUtil.CheckDefaults(LifxClient);
-
-			// Init nano socket
-			NanoSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-			NanoSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-			NanoSocket.EnableBroadcast = false;
+			
+			// Init UDP clients
+			BroadcastSender = new UdpClient {Ttl = 128};
+			BroadcastSender.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+			BroadcastSender.Client.EnableBroadcast = true;
+			BroadcastSender.Client.Blocking = false;
+			BroadcastSender.DontFragment = true;
+			
+			UnicastSender = new UdpClient {Ttl = 128};
+			UnicastSender.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+			UnicastSender.Client.Blocking = false;
+			UnicastSender.DontFragment = true;
 		}
 
 		public event Action<string> DeviceReloadEvent = delegate { };
@@ -45,8 +55,8 @@ namespace Glimmr.Services {
 		public event ArgUtils.Action DreamSubscribeEvent = delegate { };
 		public event Action<int> SetModeEvent = delegate { };
 		public event Action<int, bool, int> TestLedEvent = delegate { };
-
 		public event Action<CancellationToken> RefreshDreamscreenEvent = delegate { };
+		public event Action<string> AddSubscriberEvent = delegate { };
 		public event Action<int> SetAmbientModeEvent = delegate { };
 		public event Action<int> SetAmbientShowEvent = delegate { };
 		public event Action<Color, string, int> SetAmbientColorEvent = delegate { };
@@ -72,6 +82,10 @@ namespace Glimmr.Services {
 
 		public void TestLeds(int len, bool stop, int test) {
 			TestLedEvent(len, stop, test);
+		}
+
+		public void AddSubscriber(string ip) {
+			AddSubscriberEvent(ip);
 		}
 		
 		public void ResetMode() {
@@ -156,8 +170,9 @@ namespace Glimmr.Services {
 					await Task.Delay(1, stoppingToken);	
 				}
 				LifxClient?.Dispose();
-				NanoClient?.Dispose();
-				NanoSocket?.Dispose();
+				HttpSender?.Dispose();
+				BroadcastSender?.Dispose();
+				UnicastSender?.Dispose();
 			});
 		}
 

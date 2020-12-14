@@ -45,8 +45,6 @@ namespace Glimmr.Services {
 
 		// Figure out how to make these generic, non-callable
 		private LifxClient _lifxClient;
-		private HttpClient _nanoClient;
-		private Socket _nanoSocket;
 		
 		private Dictionary<string, int> _subscribers;
 
@@ -62,6 +60,7 @@ namespace Glimmr.Services {
 		private LedData _ledData;
 		private CancellationToken _stopToken;
 		private Stopwatch _watch;
+		private DreamUtil _dreamUtil;
 
 		
 
@@ -72,7 +71,9 @@ namespace Glimmr.Services {
 			_controlService.DeviceReloadEvent += RefreshDeviceData;
 			_controlService.RefreshLedEvent += ReloadLedData;
 			_controlService.TestLedEvent += LedTest;
+			_controlService.AddSubscriberEvent += AddSubscriber;
 			_sDevices = new List<IStreamingDevice>();
+			_dreamUtil = new DreamUtil(_controlService.UnicastSender, _controlService.BroadcastSender);
 			Log.Debug("Initialization complete.");
 		}
 
@@ -141,7 +142,7 @@ namespace Glimmr.Services {
 		private void CheckSubscribers() {
 			try {
 				// Send our subscribe multicast
-				DreamUtil.SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x30, (byte) _deviceGroup, null, true);
+				_dreamUtil.SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x30, (byte) _deviceGroup, null, true);
 				// Enumerate all subscribers, check to see that they are still valid
 				var keys = new List<string>(_subscribers.Keys);
 				foreach (var key in keys) {
@@ -155,7 +156,10 @@ namespace Glimmr.Services {
 			} catch (TaskCanceledException) {
 				_subscribers = new Dictionary<string, int>();
 			}
+		}
 
+		private void AddSubscriber(string ip) {
+			_subscribers[ip] = 3;
 		}
 
 		private void LedTest(int len, bool stop, int test) {
@@ -201,17 +205,7 @@ namespace Glimmr.Services {
 			// Init leaves
 			var leaves = DataUtil.GetCollection<NanoleafData>("Dev_Nanoleaf");
 			foreach (var n in leaves.Where(n => !string.IsNullOrEmpty(n.Token) && n.Layout != null)) {
-				_nanoClient ??= new HttpClient();
-
-				// Init nano socket
-				if (_nanoSocket == null) {
-					_nanoSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-					_nanoSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-					_nanoSocket.EnableBroadcast = false;
-					Log.Debug("Adding Nano device: " + n.Id);
-				}
-
-				_sDevices.Add(new NanoleafDevice(n, _nanoSocket, _nanoClient));
+				_sDevices.Add(new NanoleafDevice(n, _controlService.UnicastSender, _controlService.HttpSender));
 			}
 
 			// Init lifx
@@ -226,7 +220,7 @@ namespace Glimmr.Services {
 			var wlArray = DataUtil.GetCollection<WledData>("Dev_Wled");
 			foreach (var wl in wlArray) {
 				Log.Debug("Adding Wled device: " + wl.Id);
-				_sDevices.Add(new WledDevice(wl));
+				_sDevices.Add(new WledDevice(wl, _controlService.UnicastSender, _controlService.HttpSender));
 			}
 
 			Log.Debug("Initializing Splitter.");
@@ -236,7 +230,7 @@ namespace Glimmr.Services {
 		private void Demo() {
 			Log.Debug("Demo fired...");
 			var ledCount = _ledData.LedCount;
-			Log.Debug("Running demo on " + ledCount + "Leds");
+			Log.Debug("Running demo on " + ledCount + "pixels");
 			var i = 0;
 			var cols = new Color[ledCount];
 			cols = ColorUtil.EmptyColors(cols);
@@ -244,21 +238,12 @@ namespace Glimmr.Services {
 			var wlDict = new List<WledDevice>();
 			var wlCols = new Dictionary<string, Color[]>();
 			Log.Debug("Still alive 1, we have " + _sDevices.Count + " streaming devices.");
-			foreach (var sd in _sDevices) {
-				var id = sd.Id;
-				Log.Debug("Looping sdevice: " + id);
-				if (string.IsNullOrEmpty(id)) continue;
-				if (!sd.Id.Contains("wled")) continue;
-				Log.Debug("Got a wled...");
-				if (!sd.IsEnabled()) continue;
-				Log.Debug("And it's enabled.");
+			foreach (var sd in from sd in _sDevices let id = sd.Id where !string.IsNullOrEmpty(id) where sd.Id.Contains("wled") where sd.IsEnabled() select sd) {
 				sd.StartStream(dcs.Token);
-				Log.Debug("Started stream, netx.");
 				var wlStrip = (WledDevice) sd;
 				wlDict.Add(wlStrip);
 				var wlCount = wlStrip.Data.LedCount;
 				wlCols[sd.Id] = ColorUtil.EmptyColors(new Color[wlCount]);
-				Log.Debug("And saved and stuff...");
 			}
 
 			while (i < ledCount) {
@@ -327,12 +312,12 @@ namespace Glimmr.Services {
 
 			if (exists) return;
 			var dev = DataUtil.GetDeviceById(id);
-			IStreamingDevice? sda = dev.Tag switch {
+			IStreamingDevice sda = dev.Tag switch {
 				"Lifx" => new LifxDevice(dev, _lifxClient),
 				"HueBridge" => new HueDevice(dev),
 				"Nanoleaf" => new NanoleafDevice(dev),
-				"Wled" => new WledDevice(dev),
-				"DreamData" => new DreamDevice(dev),
+				"Wled" => new WledDevice(dev, _controlService.UnicastSender, _controlService.HttpSender),
+				"DreamData" => new DreamDevice(dev, _dreamUtil),
 				_ => null
 			};
 
@@ -370,13 +355,15 @@ namespace Glimmr.Services {
 					break;
 				case 1:
 					if (!_streamStarted) StartStream();
-					_videoStream?.ToggleSend();
 					_audioStream?.ToggleSend(false);
+					_ambientStream.ToggleSend(false);
+					_videoStream?.ToggleSend();
 					if (_captureMode == 0) _controlService.TriggerDreamSubscribe();
 					break;
 				case 2: // Audio
 					if (!_streamStarted) StartStream();
 					_videoStream?.ToggleSend(false);
+					_ambientStream?.ToggleSend(false);
 					_audioStream?.ToggleSend();
 					if (_captureMode == 0) _controlService.TriggerDreamSubscribe();
 					break;
@@ -384,6 +371,7 @@ namespace Glimmr.Services {
 					if (!_streamStarted) StartStream();
 					_videoStream?.ToggleSend(false);
 					_audioStream?.ToggleSend(false);
+					_ambientStream?.ToggleSend();
 					break;
 			}
 			Log.Information($"Updating device mode to {newMode}.");
@@ -399,7 +387,7 @@ namespace Glimmr.Services {
 					Log.Warning("Video stream is null.");
 					return;
 				}
-				Task.Run(async () => _videoStream.Initialize(), ct);
+				Task.Run(() => _videoStream.Initialize(), ct);
 			}
 		}
 
@@ -413,13 +401,13 @@ namespace Glimmr.Services {
 					Log.Warning("Audio stream is null.");
 					return;
 				}
-				Task.Run(async () => _audioStream.Initialize(), ct);
+				Task.Run( () => _audioStream.Initialize(), ct);
 			}
 		}
 		
 		private void StartAmbientStream(CancellationToken ct) {
 			_ambientStream = new AmbientStream(this, ct); 
-			Task.Run(async () => _ambientStream.Initialize(), ct);
+			Task.Run( () => _ambientStream.Initialize(), ct);
 		}
 
 		private void StartStream() {

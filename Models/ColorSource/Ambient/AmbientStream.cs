@@ -87,7 +87,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
         }
 
         public bool Streaming { get; set; }
-        public void ToggleSend(bool enable = false) {
+        public void ToggleSend(bool enable = true) {
             Streaming = enable;
         }
 

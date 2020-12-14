@@ -33,7 +33,7 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 		public string Id { get; set; }
 		public string IpAddress { get; set; }
 		public string Tag { get; set; }
-		private readonly Socket _sender;
+		private readonly UdpClient _sender;
 		private readonly HttpClient _client;
 
 		
@@ -47,7 +47,7 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 			_disposed = false;
 		}
 
-		public NanoleafDevice(NanoleafData n, Socket socket, HttpClient client) {
+		public NanoleafDevice(NanoleafData n, UdpClient socket, HttpClient client) {
 			_captureMode = DataUtil.GetItem<int>("captureMode");
 			if (n != null) {
 				SetData(n);
@@ -186,7 +186,7 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 		private void SendUdpUnicast(byte[] data) {
 			if (!_sending) return;
 			var ep = IpUtil.Parse(IpAddress, 60222);
-			if (ep != null) _sender.SendTo(data, ep);
+			if (ep != null) _sender.SendAsync(data, data.Length, ep);
 		}
 
 		public async Task<NanoLayout> GetLayout() {
