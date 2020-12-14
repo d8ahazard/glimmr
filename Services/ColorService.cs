@@ -55,7 +55,7 @@ namespace Glimmr.Services {
 		private int _deviceGroup;
 		private int _ambientMode;
 		private int _ambientShow;
-		private string _ambientColor;
+		private Color _ambientColor;
 		private bool _testingStrip;
 		private LedData _ledData;
 		private CancellationToken _stopToken;
@@ -178,7 +178,7 @@ namespace Glimmr.Services {
 			_deviceGroup = DataUtil.GetItem<int>("DeviceGroup") ?? 0;
 			_ambientMode = DataUtil.GetItem<int>("AmbientMode") ?? 0;
 			_ambientShow = DataUtil.GetItem<int>("AmbientShow") ?? 0;
-			_ambientColor = DataUtil.GetItem<string>("AmbientColor") ?? "FFFFFF";
+			_ambientColor = DataUtil.GetObject<Color>("AmbientColor") ?? Color.FromArgb(255,255,255,255);
 			_sendTokenSource = new CancellationTokenSource();
 			_captureTokenSource = new CancellationTokenSource();
 			Log.Debug("Loading strip");
@@ -333,7 +333,7 @@ namespace Glimmr.Services {
 			_deviceGroup = DataUtil.GetItem<int>("DeviceGroup") ?? 0;
 			_ambientMode = DataUtil.GetItem<int>("AmbientMode") ?? 0;
 			_ambientShow = DataUtil.GetItem<int>("AmbientShow") ?? 0;
-			_ambientColor = DataUtil.GetItem<string>("AmbientColor") ?? "FFFFFF";
+			_ambientColor = DataUtil.GetItem<Color>("AmbientColor") ?? Color.FromArgb(255,255,255,255);
 			LedData ledData = DataUtil.GetObject<LedData>("LedData") ?? new LedData();
 			try {
 				_strip?.Reload(ledData);

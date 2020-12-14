@@ -66,6 +66,9 @@ namespace Glimmr.Models.Util {
                 // Scan for devices
                 ScanDevices(lc).ConfigureAwait(false);
             } else {
+                var myDevice = new DreamData();
+                SetObject("MyDevice", myDevice);
+                SetObject("AmbientColor", System.Drawing.Color.FromArgb(255, 255, 255, 255));
                 Log.Information("Default values are set, continuing.");
             }
         }
@@ -242,7 +245,7 @@ namespace Glimmr.Models.Util {
             var i = GetItem(key);
             if (i == null) {
                 return null;
-            } 
+            }
             return (T) GetItem(key);
         }
         

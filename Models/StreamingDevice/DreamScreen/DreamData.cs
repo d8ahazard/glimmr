@@ -6,9 +6,11 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using Glimmr.Models.StreamingDevice.Dreamscreen.Encoders;
 using Glimmr.Models.Util;
+using LifxNet;
 using LiteDB;
 using Newtonsoft.Json;
 using Serilog;
+using Color = System.Drawing.Color;
 
 #endregion
 
@@ -52,7 +54,7 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 
 		[DefaultValue("000000")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public string AmbientColor { get; set; } = "000000";
+		public Color AmbientColor { get; set; } = Color.FromArgb(255,255,255,255);
 
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -288,6 +290,8 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 					Log.Debug("Error setting value while copying...");
 				}
 			}
+
+			IpAddress = Id;
 		}
 		
 		public void CopyExisting(DreamData d) {
@@ -304,6 +308,7 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 					Log.Warning("Error setting value while copying existing data.", e);
 				}
 			}
+			IpAddress = Id;
 		}
 
 		public byte[] EncodeState() {

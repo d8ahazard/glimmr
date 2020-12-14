@@ -25,7 +25,7 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen.Encoders {
 				dd.GroupNumber = payload[32];
 				dd.Mode = payload[33];
 				dd.Brightness = payload[34];
-				dd.AmbientColor = ByteUtils.ExtractString(payload, 35, 38, true);
+				dd.AmbientColor = ColorUtil.ColorFromHex(ByteUtils.ExtractString(payload, 35, 38, true));
 				dd.Saturation = ByteUtils.ExtractString(payload, 38, 41, true);
 				dd.FadeRate = payload[41];
 				dd.AmbientModeType = payload[59];
@@ -59,7 +59,7 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen.Encoders {
 			response.Add(ByteUtils.IntByte(dd.GroupNumber));
 			response.Add(ByteUtils.IntByte(dd.Mode));
 			response.Add(ByteUtils.IntByte(dd.Brightness));
-			response.AddRange(ByteUtils.StringBytes(dd.AmbientColor));
+			response.AddRange(ByteUtils.StringBytes(ColorUtil.ColorToHex(dd.AmbientColor)));
 			response.AddRange(ByteUtils.StringBytes(dd.Saturation));
 			response.Add(ByteUtils.IntByte(dd.FadeRate));
 			response.Add(ByteUtils.IntByte(dd.AmbientModeType));

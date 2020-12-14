@@ -21,7 +21,7 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 		[DataMember] [JsonProperty] public bool Enable { get; set; }
 		[DataMember] [JsonProperty] public DreamData Data { get; set; }
 
-		private DreamUtil _dreamUtil;
+		private readonly DreamUtil _dreamUtil;
 
 		public DreamDevice(DreamData data, DreamUtil util) {
 			Data = data;
@@ -33,6 +33,7 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 			Tag = data.Tag;
 			Enable = data.Enable;
 			DeviceTag = data.DeviceTag;
+			if (string.IsNullOrEmpty(IpAddress)) IpAddress = Id;
 		}
 
 		public void StartStream(CancellationToken ct) {

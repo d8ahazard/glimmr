@@ -8,19 +8,18 @@ using Serilog;
 
 namespace Glimmr.Models.StreamingDevice.WLED {
     public static class WledDiscovery {
+        private static List<WledData> _discovered;
         
         public static async Task<List<WledData>> Discover(int timeout = 5) {
-            var output = new List<WledData>();
+            _discovered = new List<WledData>();
             var existing = new List<WledData>();
             try {
                 existing = DataUtil.GetCollection<WledData>("Dev_Wled");
             } catch (Exception e) {
-                Log.Debug("No Led data...");
+                Log.Debug("No Led data: " + e.Message);
             }
 
-            if (existing == null) {
-                existing = new List<WledData>();
-            }
+            existing ??= new List<WledData>();
 
             var mDns = new MulticastService();
             var sd = new ServiceDiscovery(mDns);
@@ -42,23 +41,22 @@ namespace Glimmr.Models.StreamingDevice.WLED {
                 
                 foreach (var id in from msg in rr where msg.Type == DnsType.TXT select msg.CanonicalName.Split(".")[0]) {
                     var nData = new WledData(id);
-                    foreach (var ee in existing) {
-                        if (ee.Id == nData.Id) {
-                            nData.CopyExisting(ee);
-                        }
+                    foreach (var ee in existing.Where(ee => ee.Id == nData.Id)) {
+                        nData.CopyExisting(ee);
                     }
                     DataUtil.InsertCollection<WledData>("Dev_Wled", nData);
+                    _discovered.Add(nData);
                 }
             };
 
             mDns.Start();
-            Log.Debug("WLED: Discovery Started.");
+            Log.Debug($"WLED: Discovery Started, timeout is {timeout}.");
             await Task.Delay(timeout * 1000);
             mDns.Stop();
             sd.Dispose();
             mDns.Dispose();
-            Log.Debug($"WLED: Discovery complete, found {output.Count} devices.");
-            return output;
+            Log.Debug($"WLED: Discovery complete, found {_discovered.Count} devices.");
+            return _discovered;
         }
     }
 }

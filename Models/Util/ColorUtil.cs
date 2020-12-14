@@ -16,6 +16,22 @@ namespace Glimmr.Models.Util {
             saturation = max == 0 ? 0 : 1d - 1d * min / max;
             value = max / 255d;
         }
+
+        public static Color ColorFromHex(string input) {
+            if (input.Contains("#")) input = input.Trim('#');
+            var rs = input.Substring(0, 2);
+            var gs = input.Substring(2, 2);
+            var bs = input.Substring(4, 2);
+            var ri = int.Parse(rs, NumberStyles.HexNumber);
+            var gi = int.Parse(gs, NumberStyles.HexNumber);
+            var bi = int.Parse(bs, NumberStyles.HexNumber);
+            var output = Color.FromArgb(255, ri, gi, bi);
+            return output;
+        }
+
+        public static string ColorToHex(Color input) {
+            return input.R.ToString("X2") + input.G.ToString("X2") + input.B.ToString("X2");
+        }
         
         /// <summary>
         /// Take a 28-color list, and convert down to 12 for DS

@@ -61,9 +61,7 @@ namespace Glimmr.Services {
 		public event Action<int> SetAmbientShowEvent = delegate { };
 		public event Action<Color, string, int> SetAmbientColorEvent = delegate { };
 		public event Action<string, dynamic, string> SendDreamMessageEvent = delegate { };
-
 		public event Action<int, int, byte[], byte, byte, IPEndPoint, bool>  SendUdpWriteEvent = delegate { };
-
 		public event Action<int> SetCaptureModeEvent = delegate { };
 		public event Action<List<Color>, List<Color>, int> TriggerSendColorsEvent = delegate { };
 		public event Action<List<Color>, List<Color>, int> TriggerSendColorsEvent2 = delegate { };
@@ -117,7 +115,7 @@ namespace Glimmr.Services {
 
 		public void SetAmbientColor(Color color, string id, int group) {
 			_hubContext.Clients.All.SendAsync("ambientColor", color);
-			DataUtil.SetItem<int>("AmbientColor",color);
+			DataUtil.SetObject("AmbientColor",color);
 			SetAmbientColorEvent(color, id, group);
 		}
 

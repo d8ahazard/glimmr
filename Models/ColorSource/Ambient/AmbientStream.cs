@@ -19,7 +19,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
         private int _ledCount;
         private int _ambientMode;
         private int _ambientShow;
-        private string _ambientColor;
+        private Color _ambientColor;
         private CancellationToken _ct;
         private ColorService _cs;
 
@@ -97,7 +97,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
             _ledCount = ld.LedCount;
             _ambientMode = DataUtil.GetItem<int>("AmbientMode") ?? 0;
             _ambientShow = DataUtil.GetItem<int>("AmbientShow") ?? 0;
-            _ambientColor = DataUtil.GetItem<string>("AmbientColor") ?? "FFFFFF";
+            _ambientColor = DataUtil.GetObject<Color>("AmbientColor") ?? Color.FromArgb(255,255,255,255);
             
             SceneBase scene;
             switch (_ambientShow) {

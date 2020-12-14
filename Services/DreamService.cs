@@ -288,6 +288,7 @@ namespace Glimmr.Services {
                             if (_discovering) {
                                 Log.Debug("Sending request for serial!");
                                 _dreamUtil.SendUdpWrite(0x01, 0x03, new byte[]{0},0x60,0,replyPoint);
+                                msgDevice.IpAddress = from;
                                 _devices.Add(msgDevice);
                             }
                         }
@@ -364,9 +365,9 @@ namespace Glimmr.Services {
                     break;
                 case "AMBIENT_COLOR":
                     if (writeDev | writeState) {
-                        if (tDevice != null) tDevice.AmbientColor = ByteUtils.ByteString(payload);
+                        if (tDevice != null) tDevice.AmbientColor = ColorUtil.ColorFromHex(ByteUtils.ByteString(payload));
                     }
-                    if (writeState && tDevice != null) UpdateAmbientColor(ColorFromString(tDevice.AmbientColor));
+                    if (writeState && tDevice != null) UpdateAmbientColor(tDevice.AmbientColor);
 
                     break;
                 case "SKU_SETUP":

@@ -35,7 +35,7 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen.Encoders {
 			dd.Brightness = payload[34];
 			dd.Zones = payload[35];
 			dd.ZonesBrightness = ByteUtils.ExtractInt(payload, 36, 40);
-			dd.AmbientColor = ByteUtils.ExtractString(payload, 40, 43, true);
+			dd.AmbientColor = ColorUtil.ColorFromHex(ByteUtils.ExtractString(payload, 40, 43, true));
 			dd.Saturation = ByteUtils.ExtractString(payload, 43, 46, true);
 			dd.FlexSetup = ByteUtils.ExtractInt(payload, 46, 52);
 			dd.MusicModeType = payload[52];
@@ -91,7 +91,7 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen.Encoders {
 			response.Add(ByteUtils.IntByte(dd.Brightness));
 			response.Add(dd.Zones);
 			response.AddRange(ByteUtils.IntBytes(dd.ZonesBrightness));
-			response.AddRange(ByteUtils.StringBytes(dd.AmbientColor));
+			response.AddRange(ByteUtils.StringBytes(ColorUtil.ColorToHex(dd.AmbientColor)));
 			response.AddRange(ByteUtils.StringBytes(dd.Saturation));
 			response.AddRange(ByteUtils.IntBytes(dd.FlexSetup));
 			response.Add(ByteUtils.IntByte(dd.MusicModeType));
