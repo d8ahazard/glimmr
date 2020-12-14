@@ -1,5 +1,5 @@
-﻿namespace Glimmr.Models.ColorSource.Ambient.Scenes {
-    public class ScenePop : SceneBase {
+﻿namespace Glimmr.Models.ColorSource.Ambient.Scene {
+    public class ScenePop : IScene {
         public ScenePop() {
             SetColors(new[] {
                 "fe01ff", // Pinky/purple

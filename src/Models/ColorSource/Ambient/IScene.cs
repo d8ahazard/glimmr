@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace Glimmr.Models.ColorSource.Ambient.Scenes {
+namespace Glimmr.Models.ColorSource.Ambient {
     [Serializable]
-    public abstract class SceneBase {
+    public abstract class IScene {
         public enum AnimationMode {
             Linear,
             Reverse,
@@ -17,17 +17,17 @@ namespace Glimmr.Models.ColorSource.Ambient.Scenes {
             Blend
         }
 
-        private string[] colors;
+        private string[] _colors;
         public double AnimationTime { get; protected set; }
         public AnimationMode Mode { get; protected set; }
         public EasingType Easing { get; protected set; }
 
         public string[] GetColors() {
-            return colors;
+            return _colors;
         }
 
         protected void SetColors(string[] value) {
-            colors = value;
+            _colors = value;
         }
     }
 }

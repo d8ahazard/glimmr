@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Threading;
-using Glimmr.Models.ColorSource.Ambient.Scenes;
+using Glimmr.Models.ColorSource.Ambient.Scene;
 using Glimmr.Models.LED;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Newtonsoft.Json;
 using Serilog;
-using static Glimmr.Models.ColorSource.Ambient.Scenes.SceneBase;
+using static Glimmr.Models.ColorSource.Ambient.IScene;
 
 namespace Glimmr.Models.ColorSource.Ambient {
     public class AmbientStream : IColorSource {
@@ -17,15 +18,16 @@ namespace Glimmr.Models.ColorSource.Ambient {
         private AnimationMode _mode;
         private int _startInt;
         private int _ledCount;
-        private int _ambientMode;
         private int _ambientShow;
         private Color _ambientColor;
         private CancellationToken _ct;
         private ColorService _cs;
+        private Stopwatch _watch;
 
 
         
         public AmbientStream(ColorService colorService, in CancellationToken ct) {
+            _watch = new Stopwatch();
             _cs = colorService;
             _ct = ct;
             Refresh();
@@ -33,15 +35,14 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
         public void Initialize() {
             _startInt = 0;
-            var startTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
+            
+            _watch.Start();
             Log.Debug($@"Color builder started, animation time is {_animationTime}...");
             while (!_ct.IsCancellationRequested) {
                 if (!Streaming) continue;
-                var curTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-                var dTime = curTime - startTime;
                 // Check and set colors if time is greater than animation int, then reset time count...
-                if (!(dTime > _animationTime * 1000)) continue;
-                startTime = curTime;
+                if (!(_watch.ElapsedMilliseconds >= _animationTime * 1000)) continue;
+                _watch.Restart();
                 var cols = RefreshColors(_colors);
                 var ledCols = new List<Color>();
                 for (var i = 0; i < _ledCount; i++) {
@@ -50,8 +51,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
                 }
                 _cs.SendColors(ledCols, cols);
             }
-
-            Log.Debug($@"DreamScene: Color Builder canceled. {startTime}");
+            Log.Information("DreamScene: Color Builder canceled.");
         }
         
         
@@ -82,7 +82,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
             if (_startInt > maxColors) _startInt = 0;
 
             if (_startInt < 0) _startInt = maxColors;
-            Console.WriteLine($@"Returning refreshed colors: {JsonConvert.SerializeObject(output)}.");
+            //Console.WriteLine($@"Returning refreshed colors: {JsonConvert.SerializeObject(output)}.");
             return output;
         }
 
@@ -95,53 +95,29 @@ namespace Glimmr.Models.ColorSource.Ambient {
         public void Refresh() {
             LedData ld = DataUtil.GetObject<LedData>("LedData");
             _ledCount = ld.LedCount;
-            _ambientMode = DataUtil.GetItem<int>("AmbientMode") ?? 0;
             _ambientShow = DataUtil.GetItem<int>("AmbientShow") ?? 0;
             _ambientColor = DataUtil.GetObject<Color>("AmbientColor") ?? Color.FromArgb(255,255,255,255);
-            
-            SceneBase scene;
-            switch (_ambientShow) {
-                case -1:
-                    scene = new SceneSolid(_ambientColor);
-                    break;
-                case 0:
-                    scene = new SceneRandom();
-                    break;
-                case 1:
-                    scene = new SceneFire();
-                    break;
-                case 2:
-                    scene = new SceneTwinkle();
-                    break;
-                case 3:
-                    scene = new SceneOcean();
-                    break;
-                case 4:
-                    scene = new SceneRainbow();
-                    break;
-                case 5:
-                    scene = new SceneJuly();
-                    break;
-                case 6:
-                    scene = new SceneHoliday();
-                    break;
-                case 7:
-                    scene = new ScenePop();
-                    break;
-                case 8:
-                    scene = new SceneForest();
-                    break;
-                default:
-                    scene = null;
-                    break;
-            }
+
+            IScene scene = _ambientShow switch {
+                -1 => new SceneSolid(_ambientColor),
+                0 => new SceneRandom(),
+                1 => new SceneFire(),
+                2 => new SceneTwinkle(),
+                3 => new SceneOcean(),
+                4 => new SceneRainbow(),
+                5 => new SceneJuly(),
+                6 => new SceneHoliday(),
+                7 => new ScenePop(),
+                8 => new SceneForest(),
+                _ => null
+            };
 
             if (scene == null) return;
             _colors = scene.GetColors();
             _animationTime = scene.AnimationTime;
             _mode = scene.Mode;
             _startInt = 0;
-            RefreshColors(_colors);
+            _watch.Restart();
         }
     }
 }

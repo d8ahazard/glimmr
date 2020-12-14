@@ -7,7 +7,6 @@ namespace Glimmr.Models {
 		[JsonProperty] public int DeviceGroup { get; set; }
 		[JsonProperty] public int AmbientMode { get; set; }
 		[JsonProperty] public int AmbientShow { get; set; }
-		[JsonProperty] public Color AmbientColor { get; set; } = Color.FromArgb(255, 255, 255, 255);
 		[JsonProperty] public bool DefaultSet { get; set; }
 		[JsonProperty] public bool ShowSource { get; set; }
 		[JsonProperty] public bool AutoDisabled { get; set; }

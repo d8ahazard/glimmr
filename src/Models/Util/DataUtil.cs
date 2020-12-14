@@ -18,6 +18,7 @@ using LiteDB;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
+using Color = System.Drawing.Color;
 
 namespace Glimmr.Models.Util {
     [Serializable]
@@ -55,6 +56,7 @@ namespace Glimmr.Models.Util {
                 Log.Debug("Creating default device data: " + JsonConvert.SerializeObject(myDevice));
                 SetObject("LedData", ledData);
                 SetObject("MyDevice", myDevice);
+                SetObject("AmbientColor", Color.FromArgb(255, 255, 255, 255));
                 Log.Debug("Creating DreamData profile...");
                 // Get/create our collection of Dream devices
                 var d = db.GetCollection<DreamData>("Dev_Dreamscreen");

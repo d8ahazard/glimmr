@@ -1,5 +1,5 @@
-﻿namespace Glimmr.Models.ColorSource.Ambient.Scenes {
-    public class SceneRainbow : SceneBase {
+﻿namespace Glimmr.Models.ColorSource.Ambient.Scene {
+    public class SceneRainbow : IScene {
         public SceneRainbow() {
             SetColors(new[] {
                 "FF0000", // Red

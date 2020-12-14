@@ -1,5 +1,5 @@
-﻿namespace Glimmr.Models.ColorSource.Ambient.Scenes {
-    public class SceneOcean : SceneBase {
+﻿namespace Glimmr.Models.ColorSource.Ambient.Scene {
+    public class SceneOcean : IScene {
         public SceneOcean() {
             SetColors(new[] {
                 "02c676", // Sea Green

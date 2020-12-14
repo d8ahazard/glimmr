@@ -1,5 +1,5 @@
-﻿namespace Glimmr.Models.ColorSource.Ambient.Scenes {
-    public class SceneTwinkle : SceneBase {
+﻿namespace Glimmr.Models.ColorSource.Ambient.Scene {
+    public class SceneTwinkle : IScene {
         public SceneTwinkle() {
             SetColors(new[] {
                 "AAAAAA",

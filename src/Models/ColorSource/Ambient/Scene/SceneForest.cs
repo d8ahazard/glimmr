@@ -1,5 +1,5 @@
-﻿namespace Glimmr.Models.ColorSource.Ambient.Scenes {
-    public class SceneForest : SceneBase {
+﻿namespace Glimmr.Models.ColorSource.Ambient.Scene {
+    public class SceneForest : IScene {
         public SceneForest() {
             SetColors(new[] {
                 "2f6525", // Dark Green

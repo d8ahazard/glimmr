@@ -1,5 +1,5 @@
-﻿namespace Glimmr.Models.ColorSource.Ambient.Scenes {
-    public class SceneRandom : SceneBase {
+﻿namespace Glimmr.Models.ColorSource.Ambient.Scene {
+    public class SceneRandom : IScene {
         public SceneRandom() {
             SetColors(new[] {
                 "f5dd02", // Yellow

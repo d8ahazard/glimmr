@@ -1,5 +1,5 @@
-﻿namespace Glimmr.Models.ColorSource.Ambient.Scenes {
-    public class SceneFire : SceneBase {
+﻿namespace Glimmr.Models.ColorSource.Ambient.Scene {
+    public class SceneFire : IScene {
         public SceneFire() {
             SetColors(new[] {
                 "8a3215", // Orange red

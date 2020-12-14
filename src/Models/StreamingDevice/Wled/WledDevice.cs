@@ -88,7 +88,7 @@ namespace Glimmr.Models.StreamingDevice.WLED {
             for (var i = 0; i < Data.LedCount; i++) {
                 packet.AddRange(new byte[] {0, 0, 0});
             }
-            if (ep != null) _udpClient.SendAsync(packet.ToArray(), packet.Count, ep);
+            if (ep != null) _udpClient?.SendAsync(packet.ToArray(), packet.Count, ep);
             var offObj = new JObject(
                 new JProperty("on", false)
             );
@@ -123,7 +123,7 @@ namespace Glimmr.Models.StreamingDevice.WLED {
 
             if (ep != null) {
                 try {
-                    if (ep != null) _udpClient.SendAsync(packet.ToArray(), packet.Count, ep);
+                    if (ep != null) _udpClient?.SendAsync(packet.ToArray(), packet.Count, ep);
                 } catch (Exception e) {
                     Log.Debug("Fucking exception, look at that: " + e.Message);        
                 }
