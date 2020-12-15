@@ -54,9 +54,9 @@ namespace Glimmr.Models.Util {
                 var ledData = new LedData();
                 var myDevice = new DreamData {Id = deviceIp, IpAddress = deviceIp};
                 Log.Debug("Creating default device data: " + JsonConvert.SerializeObject(myDevice));
-                SetObject("LedData", ledData);
-                SetObject("MyDevice", myDevice);
-                SetObject("AmbientColor", Color.FromArgb(255, 255, 255, 255));
+                SetObject<LedData>("LedData", ledData);
+                SetDeviceData(myDevice);
+                SetObject<Color>("AmbientColor", Color.FromArgb(255, 255, 255, 255));
                 Log.Debug("Creating DreamData profile...");
                 // Get/create our collection of Dream devices
                 var d = db.GetCollection<DreamData>("Dev_Dreamscreen");
@@ -68,10 +68,7 @@ namespace Glimmr.Models.Util {
                 // Scan for devices
                 ScanDevices(lc).ConfigureAwait(false);
             } else {
-                var myDevice = new DreamData();
-                SetObject("MyDevice", myDevice);
-                SetObject("AmbientColor", System.Drawing.Color.FromArgb(255, 255, 255, 255));
-                Log.Information("Default values are set, continuing.");
+                Log.Information("Default values are already set, continuing.");
             }
         }
        
@@ -141,9 +138,6 @@ namespace Glimmr.Models.Util {
                 coll.Upsert(value.Id, value);
                 db.Commit();
         }
-
-
-        
         
         public static string GetDeviceSerial() {
             var serial = string.Empty;
@@ -186,7 +180,7 @@ namespace Glimmr.Models.Util {
                 var bDev4 = coll4.FindById(id);
                 if (bDev4 != null) return bDev4;
             } catch (Exception e) {
-                Log.Debug("Exception getting device data");
+                Log.Debug("Exception getting device data: " + e.Message);
             }
 
             return null;
@@ -218,19 +212,50 @@ namespace Glimmr.Models.Util {
                 var myDevice = GetObject<DreamData>("MyDevice");
                 if (myDevice != null) return myDevice;
             } catch (Exception e) {
-                Log.Warning("Exception fetching device data: ", e);
+                Log.Debug("Caught: " + e.Message);
             }
 
             var devIp = IpUtil.GetLocalIpAddress();
-            var newDevice = new DreamData {Id = devIp};
-            SetObject("MyDevice", newDevice);
+            var newDevice = new DreamData {Id = devIp, IpAddress = devIp};
+            var db = GetDb();
+            var col = db.GetCollection<DreamData>("MyDevice");
+            col.Upsert(newDevice.Id, newDevice);
+            db.Commit();
+            SetDeviceData(newDevice);
             return newDevice;
-            
+        }
+
+        public static void SetDeviceData(DreamData myDevice) {
+            if (string.IsNullOrEmpty(myDevice.Id)) {
+                myDevice.Id = IpUtil.GetLocalIpAddress();
+                myDevice.IpAddress = IpUtil.GetLocalIpAddress();
+            }
+            var values = new[]{"AmbientMode","DeviceMode","AmbientShow","DeviceGroup","GroupName"};
+            var existing = GetDeviceData();
+            foreach (var v in myDevice.GetType().GetProperties()) {
+                if (!values.Contains(v.Name)) continue;
+                foreach (var e in existing.GetType().GetProperties()) {
+                    if (e.Name != v.Name) continue;
+                    if (e.GetValue(existing) != v.GetValue(myDevice)) {
+                        SetItem(v.Name, v.GetValue(myDevice));
+                    }
+                }
+            }
+
+            var db = GetDb();
+            var col = db.GetCollection<DreamData>("MyDevice");
+            col.Upsert(myDevice.Id, myDevice);
+            db.Commit();
         }
 
         public static void SetItem<T>(string key, dynamic value) {
             var db = GetDb();
             var col = db.GetCollection(key);
+            var existing = GetDeviceData();
+            foreach (var e in existing.GetType().GetProperties()) {
+                if (e.Name != key) continue;
+                e.SetValue(existing, value);
+            }
             col.Upsert(0,new BsonDocument { ["value"] = value });
             db.Commit();
         }
@@ -258,38 +283,29 @@ namespace Glimmr.Models.Util {
             db.Commit();
         }
         
-        public static void SetObject(string key, dynamic value) {
-            var db = GetDb();
-            var doc = BsonMapper.Global.ToDocument(value);
-            var col = db.GetCollection(key);
-            col.Upsert(0, doc);
-            db.Commit();
-        }
-
         public static dynamic GetItem(string key) {
             var db = GetDb();
             var col = db.GetCollection(key);
-            foreach(var doc in col.FindAll()) {
-                return doc["value"];
-            }
-
-            return null;
+            return col.FindAll().Select(doc => doc["value"]).FirstOrDefault();
         }
         
         public static dynamic GetObject<T>(string key) {
             var db = GetDb();
             var col = db.GetCollection<T>(key);
             if (col.Count() == 0) return null;
-            try {
                 foreach (var doc in col.FindAll()) {
                     return doc;
                 }
-            } catch (Exception) {
-                
-            }
-
-            return null;
+                return null;
         }
+        
+        public static void SetObject<T>(string key, dynamic value) {
+            var db = GetDb();
+            var col = db.GetCollection<T>(key);
+            col.Upsert(0, value);
+            db.Commit();
+        }
+
 
         
         

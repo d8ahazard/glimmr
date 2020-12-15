@@ -7,8 +7,7 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen.Encoders {
 	public static class Connect {
 
 		public static DreamData ParseePayload(byte[] payload) {
-			DreamData dd = new DreamData();
-			dd.DeviceTag = "Connect";
+			var dd = new DreamData {DeviceTag = "Connect"};
 			if (payload != null) {
 				try {
 					var name = ByteUtils.ExtractString(payload, 0, 16);
@@ -22,13 +21,13 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen.Encoders {
 					Console.WriteLine($@"Index out of range, payload length is {payload.Length}.");
 				}
 
-				dd.GroupNumber = payload[32];
-				dd.Mode = payload[33];
+				dd.DeviceGroup = payload[32];
+				dd.DeviceMode = payload[33];
 				dd.Brightness = payload[34];
-				dd.AmbientColor = ColorUtil.ColorFromHex(ByteUtils.ExtractString(payload, 35, 38, true));
+				dd.AmbientColor = ByteUtils.ExtractString(payload, 35, 38, true);
 				dd.Saturation = ByteUtils.ExtractString(payload, 38, 41, true);
 				dd.FadeRate = payload[41];
-				dd.AmbientModeType = payload[59];
+				dd.AmbientMode = payload[59];
 				dd.AmbientShowType = payload[60];
 				dd.HdmiInput = payload[61];
 				dd.DisplayAnimationEnabled = payload[62];
@@ -36,7 +35,7 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen.Encoders {
 				dd.MicrophoneAudioBroadcastEnabled = payload[64];
 				dd.IrEnabled = payload[65];
 				dd.IrLearningMode = payload[66];
-				dd.IrManifest = ByteUtils.ExtractBytes(payload, 67, 107);
+				dd.IrManifest = ByteUtils.ByteInts(ByteUtils.ExtractBytes(payload, 67, 107));
 				if (payload.Length > 115)
 					try {
 						dd.ThingName = ByteUtils.ExtractString(payload, 115, 178);
@@ -56,13 +55,13 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen.Encoders {
 			var response = new List<byte>();
 			response.AddRange(ByteUtils.StringBytePad(dd.Name, 16));
 			response.AddRange(ByteUtils.StringBytePad(dd.GroupName, 16));
-			response.Add(ByteUtils.IntByte(dd.GroupNumber));
-			response.Add(ByteUtils.IntByte(dd.Mode));
+			response.Add(ByteUtils.IntByte(dd.DeviceGroup));
+			response.Add(ByteUtils.IntByte(dd.DeviceMode));
 			response.Add(ByteUtils.IntByte(dd.Brightness));
-			response.AddRange(ByteUtils.StringBytes(ColorUtil.ColorToHex(dd.AmbientColor)));
+			response.AddRange(ByteUtils.StringBytes(dd.AmbientColor));
 			response.AddRange(ByteUtils.StringBytes(dd.Saturation));
 			response.Add(ByteUtils.IntByte(dd.FadeRate));
-			response.Add(ByteUtils.IntByte(dd.AmbientModeType));
+			response.Add(ByteUtils.IntByte(dd.AmbientMode));
 			response.Add(ByteUtils.IntByte(dd.AmbientShowType));
 			response.Add(ByteUtils.IntByte(dd.HdmiInput));
 			response.Add(ByteUtils.IntByte(dd.DisplayAnimationEnabled));
@@ -70,7 +69,7 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen.Encoders {
 			response.Add(ByteUtils.IntByte(dd.MicrophoneAudioBroadcastEnabled));
 			response.Add(ByteUtils.IntByte(dd.IrEnabled));
 			response.Add(ByteUtils.IntByte(dd.IrLearningMode));
-			response.AddRange(dd.IrManifest);
+			response.AddRange(ByteUtils.IntBytes(dd.IrManifest));
 			response.AddRange(ByteUtils.StringBytePad(dd.ThingName, 63));
 			// Type
 			response.Add(0x04);

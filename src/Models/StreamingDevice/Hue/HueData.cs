@@ -24,7 +24,7 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 		public List<LightMap> MappedLights { get; set; } = new List<LightMap>();
 
 		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-		public List<Group> Groups { get; set; } = new List<Group>();
+		public List<HueGroup> Groups { get; set; } = new List<HueGroup>();
 
 		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
 		public List<LightData> Lights { get; set; } = new List<LightData>();
@@ -44,13 +44,13 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 		public HueData(LocatedBridge b) {
 			if (b == null) throw new ArgumentException("Invalid located bridge.");
 			IpAddress = b.IpAddress;
-			Id = b.BridgeId;
+			Id = IpAddress;
 			Brightness = 100;
-			Name = "Hue Bridge - " + Id.Substring(0, 4);
+			Name = "Hue Bridge - " + Id;
 			User = "";
 			Key = "";
 			SelectedGroup = "-1";
-			Groups = new List<Group>();
+			Groups = new List<HueGroup>();
 			Lights = new List<LightData>();
 			GroupName = "";
 			GroupNumber = -1;
@@ -59,19 +59,10 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 		}
 
 
-		public void CopyBridgeData(HueData existing) {
-			if (existing == null) throw new ArgumentException("Invalid bridge data.");
-			Key = existing.Key;
-			User = existing.User;
-			Enable = existing.Enable;
-			if (Id == null && !string.IsNullOrEmpty(IpAddress)) Id = IpAddress;
-			MappedLights ??= new List<LightMap>();
-			MappedLights = existing.MappedLights;
-			Lights = existing.Lights;
-			Groups = existing.Groups;
-			Name = "Hue Bridge - " + existing.Id.Substring(0, 4);
-			SelectedGroup = existing.SelectedGroup;
-			Brightness = existing.Brightness;
+		public void CopyBridgeData(HueData input) {
+			if (input == null) throw new ArgumentException("Invalid bridge data.");
+			Lights = input.Lights;
+			Groups = input.Groups;
 		}
 
 		
@@ -95,7 +86,16 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 		}
 
 		[JsonProperty] public string Name { get; set; }
-		[JsonProperty] public string Id { get; set; }
+		
+		[JsonProperty] 
+		private string _id;
+		
+		[JsonProperty]
+		public string Id {
+			get => _id;
+			set => _id = value;
+		}
+
 		[JsonProperty] public string Type { get; set; }
 		[JsonProperty] public int Brightness { get; set; }
 		[JsonProperty] public State LastState { get; set; }
@@ -103,11 +103,37 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public int Presence { get; set; }
 		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public int LightLevel { get; set; }
 	}
+
+	[Serializable]
+	public class HueGroup : Group {
+		/// <inheritdoc />
+		public HueGroup() {
+			
+		}
+		public HueGroup(Group g) {
+			Id = g.Id;
+		}
+		
+		[JsonProperty] 
+		private string _id;
+		
+		[JsonProperty]
+		public new string Id {
+			get => _id;
+			set => _id = value;
+		}
+	}
 	
 	[Serializable]
 	public class LightMap {
+		[JsonProperty] 
+		private string _id;
+		
 		[JsonProperty]
-		public int Id { get; set; }
+		public string Id {
+			get => _id;
+			set => _id = value;
+		}
 		
 		[DefaultValue(-1)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]

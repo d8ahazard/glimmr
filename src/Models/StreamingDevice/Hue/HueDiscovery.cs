@@ -20,22 +20,14 @@ namespace Glimmr.Models.StreamingDevice.Hue {
             var foo = Task.Run(() => Discover(), ct);
             var newBridges = await foo;
             Log.Debug("New bridges: " + JsonConvert.SerializeObject(newBridges));
-            var current = DataUtil.GetCollection<HueData>("Dev_Hue");
             foreach (var nb in newBridges) {
-                foreach (var ex in current) {
-                    if (ex.Id == nb.Id) {
-                        nb.CopyBridgeData(ex);
-                    }
+                HueData ex = DataUtil.GetCollectionItem<HueData>("Dev_Hue", nb.Id);
+                if (ex != null) {
+                    ex.CopyBridgeData(nb);
+                    output.Add(ex);
+                } else {
+                    output.Add(nb);   
                 }
-                output.Add(nb);
-            }
-
-            foreach (var ex in current) {
-                var matched = false;
-                foreach (var o in output.Where(o => o.Id == ex.Id)) {
-                    matched = true;
-                }
-                if (!matched) output.Add(ex);
             }
 
             return output;
@@ -55,7 +47,7 @@ namespace Glimmr.Models.StreamingDevice.Hue {
             return null;
         }
 
-        public static async Task<List<HueData>> Discover(int time = 5) {
+        public static async Task<List<HueData>> Discover(int time = 10) {
             Log.Debug("Hue: Discovery Started.");
             var output = new List<HueData>();
             try {
@@ -63,7 +55,7 @@ namespace Glimmr.Models.StreamingDevice.Hue {
                 output = discovered.Select(bridge => new HueData(bridge)).ToList();
                 Log.Debug($"Hue: Discovery complete, found {discovered.Count} devices.");
             } catch (Exception e) {
-                Log.Warning("Discovery exception.", e);
+                Log.Warning("Discovery exception: " + e.Message);
                 
             }
 

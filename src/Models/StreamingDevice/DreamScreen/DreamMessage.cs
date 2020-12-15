@@ -67,18 +67,22 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
                     case 1:
                     case 2:
                     case 7:
+                        Log.Debug("Parsing Dreamscreen.");
                         dd = Encoders.Dreamscreen.ParsePayload(_payload);
                         break;
                     case 3:
+                        Log.Debug("Parsing Sidekick");
                         dd = SideKick.ParsePayload(_payload);
                         break;
                     case 4:
+                        Log.Debug("Parsing Connect");
                         dd = Connect.ParseePayload(_payload);
                         break;
                 }
 
                 if (dd != null) {
                     dd.Id = from;
+                    dd.IpAddress = from;
                 }
                 else {
                     Log.Debug($@"DSMessage: Device is null from {devType}.");

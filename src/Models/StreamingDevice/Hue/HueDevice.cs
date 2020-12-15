@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using AutoMapper;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
 using Q42.HueApi;
@@ -29,11 +30,14 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 		private EntertainmentLayer _entLayer;
 		private StreamingHueClient _client;
 		private bool _disposed;
+		private CancellationToken _ct;
 		public int Brightness { get; set; }
 		public string Id { get; set; }
 		public string IpAddress { get; set; }
 		public string Tag { get; set; }
 		public bool Streaming { get; set; }
+
+		private Task _updateTask;
 
 
 		public HueDevice(HueData data) {
@@ -43,9 +47,11 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 			_disposed = false;
 			Streaming = false;
 			_entLayer = null;
-			Id = data.Id;
+			Id = IpAddress;
 			Tag = data.Tag;
 			Brightness = data.Brightness;
+			if (Data?.User == null || Data?.Key == null || _client != null) return;
+			_client = new StreamingHueClient(Data.IpAddress, Data.User, Data.Key);
 		}
 
         
@@ -59,36 +65,36 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 		///     Set up and create a new streaming layer based on our light map
 		/// </summary>
 		/// <param name="ct">A cancellation token.</param>
-		public async void StartStream(CancellationToken ct) {
-			if (Data.Id == null || Data.Key == null || Data.Lights == null || Data.Groups == null) {
-				Log.Warning("Bridge is not authorized.", Data);
+		public void StartStream(CancellationToken ct) {
+			// Leave if not enabled
+			if (!Data.Enable) return;
+			
+			// Leave if we have no client (not authorized)
+			if (_client == null) {
+				Log.Warning("We have not streaming client, can't start.");
+				return;
+			}
+			
+			// Leave if we have no mapped lights
+			if (Data.MappedLights.Count == 0) {
+				Log.Warning("Bridge has no mapped lights, returning.");
 				return;
 			}
 
-			if (!Data.Enable) return;
-            
-			Log.Debug("Hue: Starting stream...");
-			SetClient();
-			try {
-				// Make sure we are not already streaming.
-				var _ = StopStream(_client, Data);
-				if (Streaming) ResetColors();
-				Streaming = false;
-			} catch (SocketException e) {
-				Log.Debug("Socket exception, probably our bridge wasn't streaming. Oh well: " + e.Message);
+			if (Streaming) {
+				Log.Debug("We are already streaming.");
+				return;
 			}
+			
 			if (ct == null) throw new ArgumentException("Invalid cancellation token.");
-			// Get our light map and filter for mapped lights
-			// Grab our stream
-            
-			// Save previous light state(s) before stopping
-			await RefreshData();
-			DataUtil.InsertCollection<HueData>("Dev_Hue", Data);
+			_ct = ct;
+			
 			StreamingGroup stream;
 			try {
-				stream = SetupAndReturnGroup(_client, Data, ct).Result;
+				stream = SetupAndReturnGroup().Result;
+				Log.Debug("Stream is set.");
 			} catch (Exception e) {
-				Log.Warning("Exception: ",e);
+				Log.Warning("Exception: " + e.Message);
 				return;
 			}
             
@@ -100,6 +106,7 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 				return;
 			}
 
+			Log.Debug("Getting entertainment layer.");
 			_entLayer = stream.GetNewLayer(true);
 			Log.Debug($"Hue: Stream started: {IpAddress}");
 			Streaming = true;
@@ -113,11 +120,7 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 			Log.Debug("Hue: Streaming Stopped.");
 		}
 
-		private void SetClient() {
-			if (Data?.User == null || Data?.Key == null || _client != null) return;
-			_client = new StreamingHueClient(Data.IpAddress, Data.User, Data.Key);
-		}
-
+		
 		private void ResetColors() {
 			foreach (var entLight in _entLayer) {
 				// Get data for our light from map
@@ -125,13 +128,13 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 				var lightData = lightMappings.SingleOrDefault(item =>
 					item.Id == entLight.Id.ToString(CultureInfo.InvariantCulture));
 				if (lightData == null) continue;
-				var sat = lightData.LastState.Saturation;
-				var bri = lightData.LastState.Brightness;
-				var hue = lightData.LastState.Hue;
-				var isOn = lightData.LastState.On;
-				var ll = new List<string> {lightData.Id};
-				var cmd = new LightCommand {Saturation = sat, Brightness = bri, Hue = hue, On = isOn};
-				_client.LocalHueClient.SendCommandAsync(cmd, ll);
+				// var sat = lightData.LastState.Saturation;
+				// var bri = lightData.LastState.Brightness;
+				// var hue = lightData.LastState.Hue;
+				// var isOn = lightData.LastState.On;
+				// var ll = new List<string> {lightData.Id};
+				// var cmd = new LightCommand {Saturation = sat, Brightness = bri, Hue = hue, On = isOn};
+				// _client.LocalHueClient.SendCommandAsync(cmd, ll);
 			}
 		}
 
@@ -151,9 +154,7 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 		/// <param name="colors">Sector colors.</param>
 		/// <param name="fadeTime">Optional: how long to fade to next state</param>
 		public void SetColor(List<Color> _, List<Color> colors, double fadeTime = 0) {
-			
 			if (!Streaming) {
-				Log.Debug("Hue is not streaming.");
 				return;
 			}
 			if (colors == null) {
@@ -161,39 +162,31 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 				return;
 			}
 
-			if (_entLayer != null) {
-				var lightMappings = Data.MappedLights;
-				foreach (var entLight in _entLayer) {
-					// Get data for our light from map
-					var lightData = lightMappings.SingleOrDefault(item =>
-						item.Id == entLight.Id);
-					// Return if not mapped
-					if (lightData == null) continue;
-					// Otherwise, get the corresponding sector color
-					var tSector = lightData.TargetSector;
-					var colorInt = tSector - 1;
-					var color = colors[colorInt];
-					var mb = lightData.Override ? lightData.Brightness : Brightness;
-					if (mb < 100) {
-						color = ColorTransformUtil.ClampBrightness(color, mb);
-					}
-
-					var oColor = new RGBColor(color.R, color.G, color.B);
-
-					// If we're currently using a scene, animate it
-					if (Math.Abs(fadeTime) > 0.00001) {
-						// Our start color is the last color we had}
-						entLight.SetState(CancellationToken.None, oColor, oColor.GetBrightness(),
-							TimeSpan.FromSeconds(fadeTime));
-					} else {
-						// Otherwise, if we're streaming, just set the color
-						entLight.SetState(CancellationToken.None, oColor, oColor.GetBrightness());
-					}
+			if (_entLayer == null) return;
+			var lightMappings = Data.MappedLights;
+			foreach (var entLight in _entLayer) {
+				// Get data for our light from map
+				var lightData = lightMappings.SingleOrDefault(item =>
+					item.Id == entLight.Id.ToString());
+				// Return if not mapped
+				if (lightData == null) continue;
+				// Otherwise, get the corresponding sector color
+				var tSector = lightData.TargetSector;
+				var colorInt = tSector - 1;
+				var color = colors[colorInt];
+				var mb = lightData.Override ? lightData.Brightness : Brightness;
+				var oColor = new RGBColor(color.R, color.G, color.B);
+				// If we're currently using a scene, animate it
+				if (Math.Abs(fadeTime) > 0.01) {
+					// Our start color is the last color we had}
+					entLight.SetState(_ct, oColor, mb,
+						TimeSpan.FromMilliseconds(fadeTime));
+				} else {
+					// Otherwise, if we're streaming, just set the color
+					entLight.SetState(_ct, oColor, mb);
 				}
-
-			} else {
-				Log.Debug($@"Hue: Unable to fetch entertainment layer. {IpAddress}");
 			}
+			
 		}
 
 		
@@ -201,7 +194,7 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 		public async Task<HueData> RefreshData() {
 			// If we have no IP or we're not authorized, return
 			var newLights = new List<LightData>();
-			var newGroups = new List<Group>();
+			var newGroups = new List<HueGroup>();
 
 			if (Data.IpAddress == "0.0.0.0" || Data.User == null || Data.Key == null) {
 				Data.Lights = newLights;
@@ -210,14 +203,16 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 				return Data;
 			}
 			// Get our client
-			SetClient();
 			_client.LocalHueClient.Initialize(Data.User);
 			// Get lights
 			try {
 				var res = _client.LocalHueClient.GetLightsAsync().Result;
 				Data.Lights = res.Select(r => new LightData(r)).ToList();
 				var all = await _client.LocalHueClient.GetEntertainmentGroups();
-				newGroups.AddRange(all);
+				var config = new MapperConfiguration(cfg => cfg.CreateMap<Group, HueGroup>());
+				var mapper = new Mapper(config);
+				newGroups.AddRange(all.Select(g => mapper.Map<HueGroup>(g)));
+				Log.Debug("Groups: " + JsonConvert.SerializeObject(newGroups));
 				Data.Groups = newGroups;
 			} catch (Exception d) {
 				Log.Debug("Caught an exception: " + d.Message);    
@@ -225,9 +220,9 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 
 			return Data;
 		}
-       
 
-       public static async Task StopStream(StreamingHueClient client, HueData b) {
+
+		private static async Task StopStream(StreamingHueClient client, HueData b) {
             if (client == null || b == null) {
                 throw new ArgumentException("Invalid argument.");
             }
@@ -236,80 +231,64 @@ namespace Glimmr.Models.StreamingDevice.Hue {
             await client.LocalHueClient.SetStreamingAsync(id, false).ConfigureAwait(true);
         }
 
-        public static async Task<StreamingGroup> SetupAndReturnGroup(StreamingHueClient client, HueData b,
-            CancellationToken ct) {
+       private async Task<StreamingGroup> SetupAndReturnGroup() {
             
-            if (client == null || b == null) {
-                throw new ArgumentException("Invalid argument.");
+            if (_client == null || Data == null) {
+                Log.Warning("Client or data are null, returning...");
+                return null;
             }
-            try {
-                var groupId = b.SelectedGroup;
-                Log.Debug("HueStream: Selecting group ID: " + groupId);
-                if (groupId == null && b.Groups != null && b.Groups.Count > 0) {
-                    groupId = b.Groups[0].Id;
-                }
+            
+            var groupId = Data.SelectedGroup;
 
-                if (groupId == null) {
-                    Log.Debug("HueStream: Group ID is null!");
+            if (groupId == null) {
+	            Log.Debug("HueStream: Group ID is null!");
+	            return null;
+            }
+            
+            try {
+	            //Get the entertainment group
+                Log.Debug("Grabbing ent group...");
+                var group = _client.LocalHueClient.GetGroupAsync(groupId).Result;
+                if (group == null) {
+                    Log.Warning("Unable to fetch group with ID of " + groupId);
                     return null;
                 }
-                //Get the entertainment group
-                Log.Debug("Grabbing ent group...");
-                var group = client.LocalHueClient.GetGroupAsync(groupId).Result;
-                if (group == null) {
-                    Log.Debug("Group is null, trying with first group ID.");
-                    var groups = b.Groups;
-                    if (groups.Count > 0) {
-                        groupId = groups[0].Id;
-                        group = client.LocalHueClient.GetGroupAsync(groupId).Result;
-                        if (group != null) {
-                            Log.Debug(@$"Selected first group: {groupId}");
-                        } else {
-                            Log.Debug(@"Unable to load group, can't connect for streaming.");
-                            return null;
-                        }
-                    }
-                } else {
-                    Log.Debug("HueStream: Entertainment Group retrieved...");
-                }
+                
+                var lights = group.Lights;
+                var mappedLights = new List<string>();
 
+                Log.Debug("HueStream: Entertainment Group retrieved...");
                 //Create a streaming group
-                if (group != null) {
-                    var lights = group.Lights;
-                    Log.Debug("HueStream: We have group, mapping lights: " + JsonConvert.SerializeObject(lights));
-                    var mappedLights = new List<string>();
-                    foreach (var light in lights) {
-                        foreach (var ml in from ml in b.MappedLights where ml.Id.ToString() == light where ml.TargetSector != -1 where !mappedLights.Contains(light) select ml) {
-                            Log.Debug("Adding mapped ID: " + ml.Id);
-                            mappedLights.Add(light);
-                        }
-                    }
-
-                    Log.Debug("Getting streaming group using ml: " + JsonConvert.SerializeObject(mappedLights));
-
-                    if (mappedLights.Count == 0) {
-                        Log.Debug("No mapped lights, nothing to do.");
-                        return null;
-                    }
-                    
-                    var stream = new StreamingGroup(mappedLights);
-                    Log.Debug("Stream Got.");
-                    //Connect to the streaming group
-                    try {
-                        Log.Debug("Connecting...");
-                        await client.Connect(group.Id);
-                        Log.Debug("Connected.");
-                    } catch (Exception e) {
-                        Log.Debug("Streaming exception caught: " + e.Message);
-                    }
-
-                    client.AutoUpdate(stream, ct);
-                    Log.Debug("Group setup complete, returning.");
-                    return stream;
+                Log.Debug("HueStream: We have group, mapping lights: " + JsonConvert.SerializeObject(lights));
+                foreach (var ml in lights.SelectMany(light => Data.MappedLights.Where(ml => ml.Id.ToString() == light))) {
+	                Log.Debug("Found corresponding light map: " + JsonConvert.SerializeObject(ml));
+	                if (ml.TargetSector != -1) {
+		                mappedLights.Add(ml.Id);
+	                }
                 }
 
-                Log.Debug("Uh, the group retrieved is null...");
+                Log.Debug("Getting streaming group using ml: " + JsonConvert.SerializeObject(mappedLights));
 
+                if (mappedLights.Count == 0) {
+                    Log.Debug("No mapped lights, nothing to do.");
+                    return null;
+                }
+                
+                var stream = new StreamingGroup(mappedLights);
+                Log.Debug("Stream Got.");
+                //Connect to the streaming group
+                try {
+                    Log.Debug("Connecting...");
+                    await _client.Connect(group.Id);
+                    Log.Debug("Connected.");
+                } catch (Exception e) {
+                    Log.Debug("Streaming exception caught: " + e.Message);
+                }
+
+                _updateTask = _client.AutoUpdate(stream, _ct);
+                Log.Debug("Group setup complete, returning.");
+                return stream;
+            
             } catch (SocketException e) {
                 Log.Debug("Socket exception occurred, can't return group right now: " + e.Message);
             }

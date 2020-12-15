@@ -27,10 +27,8 @@ namespace Glimmr.Controllers {
 	public class DreamDataController : ControllerBase {
 		private readonly IHubContext<SocketServer> _hubContext;
 		private readonly ControlService _controlService;
-		private bool timerStarted;
 
 		public DreamDataController(IHubContext<SocketServer> hubContext, ControlService controlService) {
-			Log.Debug("Initialized ddc with hub context.");
 			_hubContext = hubContext;
 			_controlService = controlService;
 		}
@@ -109,7 +107,7 @@ namespace Glimmr.Controllers {
 		[HttpPost("updateLed")]
 		public IActionResult UpdateLed([FromBody] LedData ld) {
 			Log.Debug("Got LD from post: " + JsonConvert.SerializeObject(ld));
-			DataUtil.SetObject("LedData", ld);
+			DataUtil.SetObject<LedData>("LedData", ld);
 			_controlService.RefreshLedData();
 			_controlService.NotifyClients();
 			return Ok(ld);
@@ -130,7 +128,7 @@ namespace Glimmr.Controllers {
 			}
 
 			ledData.LedCount = hCount * 2 + count * 2;
-			DataUtil.SetObject("LedData", ledData);
+			DataUtil.SetObject<LedData>("LedData", ledData);
 			_controlService.NotifyClients();
 			_controlService.ResetMode();
 			return Ok(count);
@@ -151,7 +149,7 @@ namespace Glimmr.Controllers {
 			}
 
 			ledData.LedCount = vCount * 2 + count * 2;
-			DataUtil.SetObject("LedData", ledData);
+			DataUtil.SetObject<LedData>("LedData", ledData);
 			_controlService.NotifyClients();
 			_controlService.ResetMode();
 			return Ok(count);
@@ -163,7 +161,7 @@ namespace Glimmr.Controllers {
 			var ledData = DataUtil.GetCollection<LedData>("ledData").First();
 			ledData.StripType = type;
 			Log.Debug("Updating LED Data: " + JsonConvert.SerializeObject(ledData));
-			DataUtil.SetObject("LedData", ledData);
+			DataUtil.SetObject<LedData>("LedData", ledData);
 			_controlService.NotifyClients();
 			_controlService.ResetMode();
 			return Ok(type);
@@ -192,7 +190,7 @@ namespace Glimmr.Controllers {
 			// If setting this from a group, set it for all devices in that group
 			if (int.TryParse(id, out var idNum)) {
 				var devs = DataUtil.GetDreamDevices();
-				foreach (var dev in devs.Where(dev => dev.GroupNumber == idNum))
+				foreach (var dev in devs.Where(dev => dev.DeviceGroup == idNum))
 					_controlService.SetAmbientColor(color, dev.IpAddress, idNum);
 			} else {
 				// Otherwise, just target the specified device.
@@ -233,7 +231,7 @@ namespace Glimmr.Controllers {
 		[HttpGet("action")]
 		public IActionResult Action(string action, string value = "") {
 			var message = "Unrecognized action";
-			Log.Debug($@"{action} called from Web API.");
+			//Log.Debug($@"{action} called from Web API.");
 			switch (action) {
 				case "loadData":
 					_controlService.NotifyClients();
@@ -343,7 +341,7 @@ namespace Glimmr.Controllers {
 			Log.Debug($"Setting brightness for {tag} {id} to {brightness}.");
 			var myDev = DataUtil.GetDeviceData();
 			var ipAddress = myDev.IpAddress;
-			var groupNumber = (byte) myDev.GroupNumber;
+			var groupNumber = (byte) myDev.DeviceGroup;
 			var sendRemote = false;
 			var remoteId = "";
 			switch (tag) {

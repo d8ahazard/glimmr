@@ -56,9 +56,8 @@ namespace Glimmr.Services {
             _controlService = controlService;
             _controlService.SetCaptureModeEvent += CheckSubscribe;
             _controlService.DreamSubscribeEvent += Subscribe;
-            _controlService.SetModeEvent += UpdateMode;
             _controlService.RefreshDreamscreenEvent += Discover;
-            _dreamUtil = new DreamUtil(_controlService.UnicastSender, _controlService.BroadcastSender);
+            _dreamUtil = new DreamUtil(_controlService.UdpClient);
             Initialize();
             Log.Debug("Initialisation complete.");
         }
@@ -67,25 +66,19 @@ namespace Glimmr.Services {
         // This initializes all of the data in our class and starts function loops
         private void Initialize() {
             _dev = DataUtil.GetDeviceData();
-            Log.Debug("Device Data: " + JsonConvert.SerializeObject(_dev));
-            // Create scene builder
-            
-            // Get a list of devices
-            _devices = new List<DreamData>();
-            // Read other variables
-            _devMode = DataUtil.GetItem<int>("DeviceMode") ?? 0;
-            _ambientMode = DataUtil.GetItem<int>("AmbientMode") ?? 0;
-            _ambientShow = DataUtil.GetItem<int>("AmbientShow") ?? 0;
-            var ac = DataUtil.GetItem<string>("AmbientColor") ?? "FFFFFF";
-            _ambientColor = ColorFromString(ac);
+            _devMode = _dev.DeviceMode;
+            _ambientMode = _dev.AmbientMode;
+            _ambientShow = _dev.AmbientShowType;
+            _ambientColor = ColorFromString(_dev.AmbientColor);
             _brightness = _dev.Brightness;
+            _group = (byte) _dev.DeviceGroup;
             CaptureMode = DataUtil.GetItem("CaptureMode") ?? 2;
             
             // Set default values
             _prevMode = -1;
-            var devGroup = DataUtil.GetItem<int>("DeviceGroup") ?? 0;
-            _group = (byte) devGroup;
             var dsIp = DataUtil.GetItem("DsIp");
+            _devices = new List<DreamData>();
+
             if (!string.IsNullOrEmpty(dsIp)) {
                 _targetEndpoint = new IPEndPoint(IPAddress.Parse(dsIp), 8888);    
             }
@@ -101,8 +94,6 @@ namespace Glimmr.Services {
                 } 
                 Log.Information("DreamClient: Main loop terminated, stopping services...");
                 StopServices();
-                // Dispose our DB instance
-                DataUtil.Dispose();
             }, cancellationToken);
         }
         
@@ -110,16 +101,7 @@ namespace Glimmr.Services {
         // Update our device mode
         private void UpdateMode(int newMode) {
             // If the mode doesn't change, we don't need to do anything
-            _prevMode = DataUtil.GetItem<int>("DeviceMode");
-            if (_prevMode == newMode) {
-                return;
-            }
-            // Reload our device data so we're sure it's fresh
-            DataUtil.SetItem<int>("DeviceMode", newMode);
-            // Notify web clients of mode change via socket
-            Log.Information($@"Updating mode from {_prevMode} to {newMode}.");
-            _prevMode = newMode;
-            _controlService.SetMode(newMode);
+            _devMode = newMode;
         }
 
         private void UpdateAmbientMode(int newMode) {
@@ -197,30 +179,39 @@ namespace Glimmr.Services {
             string command = null;
             string flag = null;
             var from = receivedIpEndPoint.Address.ToString();
-            var areYouLocal = from == IpUtil.GetLocalIpAddress();
+            var areYouLocal = (from == IpUtil.GetLocalIpAddress());
             var replyPoint = new IPEndPoint(receivedIpEndPoint.Address, 8888);
             var payloadString = string.Empty;
             var payload = Array.Empty<byte>();
             DreamData msgDevice = null;
             var writeState = false;
             var writeDev = false;
+            var refreshDevice = false;
             var msg = new DreamscreenMessage(receivedBytes, from);
-            var tDevice = _dev;
+            var tDevice = DataUtil.GetDeviceData();
+            if (string.IsNullOrEmpty(tDevice.IpAddress)) {
+                tDevice.IpAddress = IpUtil.GetLocalIpAddress();
+                DataUtil.SetDeviceData(tDevice);
+            }
             if (msg.IsValid) {
                 payload = msg.GetPayload();
                 payloadString = msg.PayloadString;
                 command = msg.Command;
                 msgDevice = msg.Device;
                 flag = msg.Flags;
-                var groupMatch = msg.Group == _dev.GroupNumber || msg.Group == 255;
+                var groupMatch = msg.Group == _dev.DeviceGroup || msg.Group == 255;
                 if ((flag == "11" || flag == "17" ||flag == "21") && groupMatch) {
                     writeState = true;
                     writeDev = true;
+                    refreshDevice = true;
                 }
                 if (flag == "41") {
                     Log.Debug($"Flag is 41, we should save settings for {from}.");
                     tDevice = DataUtil.GetCollectionItem<DreamData>("Dev_Dreamscreen", from);
-                    if (tDevice != null) writeDev = true;
+                    if (tDevice != null) {
+                        refreshDevice = true;
+                        writeDev = true;
+                    }
                 }
                 if (command != null && command != "COLOR_DATA" && command != "SUBSCRIBE" && tDevice != null) {
                     Log.Debug($@"{from} -> {tDevice.IpAddress}::{command} {flag}-{msg.Group}.");
@@ -231,6 +222,7 @@ namespace Glimmr.Services {
             switch (command) {
                 case "SUBSCRIBE":
                     if (_devMode == 1 || _devMode == 2 && !areYouLocal) {
+                        //Log.Debug("Sending sub message.");
                         _dreamUtil.SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x10, _group, replyPoint);    
                     }
                     
@@ -300,17 +292,25 @@ namespace Glimmr.Services {
                         SendDeviceSerial(replyPoint);
                     } else {
                         Log.Debug("DEVICE SERIAL RETRIEVED: " + JsonConvert.SerializeObject(msg));
+                        var md = DataUtil.GetCollectionItem<DreamData>("Dev_Dreamscreen", from);
+                        if (md != null) {
+                            md.SerialNumber = msg.PayloadString;
+                            DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", md);
+                        }
                     }
                     
                     break;
+                
                 case "GROUP_NAME":
                     var gName = Encoding.ASCII.GetString(payload);
+                    Log.Debug("Setting group name to " + gName);
                     if (writeState | writeDev) tDevice.GroupName = gName;
 
                     break;
                 case "GROUP_NUMBER":
                     int gNum = payload[0];
-                    if (writeState | writeDev) tDevice.GroupNumber = gNum;
+                    Log.Debug("Setting group number to " + gNum);
+                    if (writeState | writeDev) tDevice.DeviceGroup = gNum;
 
                     break;
                 case "NAME":
@@ -334,25 +334,23 @@ namespace Glimmr.Services {
 
                     break;
                 case "MODE":
-                    if (writeState | writeDev) {
-                        tDevice.Mode = payload[0];
-                        Log.Debug("UPDATING MODE FROM REMOTE");
-
-                        Log.Debug($@"Updating mode: {tDevice.Mode}.");
+                    if (writeState | writeDev && !areYouLocal) {
+                        refreshDevice = false;
+                        tDevice.DeviceMode = payload[0];
                     } else {
                         Log.Debug("Mode flag set, but we're not doing anything... " + flag);
                     }
                     
-                    if (writeState) UpdateMode(tDevice.Mode);
+                    if (writeState && !areYouLocal) _controlService.SetMode(tDevice.DeviceMode);
 
                     break;
                 case "AMBIENT_MODE_TYPE":
                     if (writeState | writeDev) {
-                        tDevice.AmbientModeType = payload[0];
+                        tDevice.AmbientMode = payload[0];
                     }
 
                     if (writeState) {
-                        UpdateAmbientMode(tDevice.AmbientModeType);
+                        UpdateAmbientMode(tDevice.AmbientMode);
                     }
 
                     break;
@@ -365,9 +363,9 @@ namespace Glimmr.Services {
                     break;
                 case "AMBIENT_COLOR":
                     if (writeDev | writeState) {
-                        if (tDevice != null) tDevice.AmbientColor = ColorUtil.ColorFromHex(ByteUtils.ByteString(payload));
+                        if (tDevice != null) tDevice.AmbientColor = ByteUtils.ByteString(payload);
                     }
-                    if (writeState && tDevice != null) UpdateAmbientColor(tDevice.AmbientColor);
+                    if (writeState && tDevice != null) UpdateAmbientColor(ColorUtil.ColorFromHex(tDevice.AmbientColor));
 
                     break;
                 case "SKU_SETUP":
@@ -388,14 +386,23 @@ namespace Glimmr.Services {
             }
 
             if (writeState) {
-                DataUtil.SetObject("myDevice", tDevice);
+                DataUtil.SetDeviceData(tDevice);
                 _dev = tDevice;
                 _dreamUtil.SendUdpWrite(msg.C1, msg.C2, msg.GetPayload(), 0x41, (byte)msg.Group, receivedIpEndPoint);
             }
 
-            if (!writeState && !writeDev) return;
+            if (!writeState || !writeDev) return;
             // Notify if the sender was not us
-            if (from != _dev.IpAddress) _controlService.NotifyClients();
+            if (!areYouLocal && refreshDevice) {
+                _controlService.NotifyClients();
+                _controlService.RefreshDevice(tDevice.Id);
+            }
+
+            if (tDevice == null) return;
+            DreamData ex = DataUtil.GetCollectionItem<DreamData>("Dev_Dreamscreen", tDevice.Id);
+            if (ex != null) {
+                tDevice.Enable = ex.Enable;
+            }
             DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", tDevice);
         }
 

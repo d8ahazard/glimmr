@@ -131,7 +131,8 @@ namespace Glimmr.Hubs {
 						updated = true;
 						break;
 					case "HueBridge":
-						DataUtil.InsertCollection<HueData>("Dev_Hue", device.ToObject<HueData>());
+						var dev = device.ToObject<HueData>();
+						DataUtil.InsertCollection<HueData>("Dev_Hue", dev);
 						updated = true;
 						break;
 					case "Nanoleaf":

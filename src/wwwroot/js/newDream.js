@@ -233,7 +233,9 @@ function setSocketListeners() {
 
     websocket.on('olo', function(stuff) {
         stuff = stuff.replace(/\\n/g, '');
-        data.store = JSON.parse(stuff);
+        let parsed = JSON.parse(stuff);
+        console.log("OLO: ", parsed);
+        data.store = parsed;
         loadUi();
     });
 
@@ -353,11 +355,7 @@ function toggleSettingsDiv(target) {
                     case "Lifx":
                         showSettingsLifx();
                         break;
-                    case "Dreamscreen":
-                    case "Dreamscreen4K":
-                    case "DreamscreenSolo":
-                    case "Sidekick":
-                    case "Connect":
+                    case "Dreamscreen":                    
                         showSettingsDreamscreen();
                         break;
                     case "Nanoleaf":
@@ -415,7 +413,7 @@ function showSettingsNanoleaf() {
 
 function setMode(newMode) {
     console.log("Changing mode to ", newMode);
-    data.store["DeviceMode"] = newMode;
+    //data.store["DeviceMode"][0]["value"] = newMode;
     mode = newMode;
     let target;
     switch(mode) {
@@ -484,7 +482,9 @@ function loadDevices() {
             iconCol.classList.add("deviceIconWrap", "col-4");
             let image = document.createElement("img");
             image.classList.add("deviceIcon");
-            image.setAttribute("src", baseUrl + "/img/" + device.Tag.toLowerCase() + "_icon.png");
+            let tag = device.Tag;
+            if (tag === "Dreamscreen") tag = device["DeviceTag"];
+            image.setAttribute("src", baseUrl + "/img/" + tag.toLowerCase() + "_icon.png");
             // Setting Row
             let settingRow = document.createElement("div");
             settingRow.classList.add("row");
@@ -654,7 +654,6 @@ function getCookie(cname) {
 
 function getStoreProperty(name) {
     if (data.store.hasOwnProperty(name)) {
-        console.log("Store has prop: ", name);
         return data.store[name][0]["value"];
     } else {
         console.log("Prop not found: ", name);

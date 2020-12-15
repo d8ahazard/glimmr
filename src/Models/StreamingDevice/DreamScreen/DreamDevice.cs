@@ -5,8 +5,10 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Runtime.Serialization;
 using System.Threading;
+using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
+using Serilog;
 
 #endregion
 
@@ -24,6 +26,7 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 		private readonly DreamUtil _dreamUtil;
 
 		public DreamDevice(DreamData data, DreamUtil util) {
+			Log.Debug($"My group is {data.DeviceGroup}");
 			Data = data;
 			_dreamUtil = util;
 			Data = data;
@@ -37,9 +40,12 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 		}
 
 		public void StartStream(CancellationToken ct) {
+			_dreamUtil.SendMessage("mode", 1, Id);
 		}
 
 		public void StopStream() {
+			Log.Debug("Stopping stream.");
+			_dreamUtil.SendMessage("mode", 0, Id);
 		}
 
 		public void SetColor(List<Color> _, List<Color> sectors, double fadeTime) {
@@ -47,7 +53,7 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 				sectors = ColorUtil.TruncateColors(sectors);
 				
 			}
-			_dreamUtil.SendSectors(sectors, Id, Data.GroupNumber);
+			_dreamUtil.SendSectors(sectors, Id, Data.DeviceGroup);
 		}
 
 		public void ReloadData() {

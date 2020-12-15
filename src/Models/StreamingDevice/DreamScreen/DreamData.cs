@@ -9,6 +9,7 @@ using Glimmr.Models.Util;
 using LifxNet;
 using LiteDB;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Serilog;
 using Color = System.Drawing.Color;
 
@@ -28,7 +29,7 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 		private static readonly byte[] DefaultSectorAssignment = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 0, 0};
 		
 
-		[JsonProperty] public readonly byte[] EspSerialNumber = {0, 0};
+		[JsonProperty] public int[] EspSerialNumber = {0, 0};
 
 		[DefaultValue(new byte[0])]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -54,11 +55,11 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 
 		[DefaultValue("000000")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public Color AmbientColor { get; set; } = Color.FromArgb(255,255,255,255);
+		public string AmbientColor { get; set; } = "FFFFFF";
 
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int AmbientModeType { get; set; } = 0;
+		public int AmbientMode { get; set; } = 0;
 
 		[DefaultValue(new[] {8, 16, 48, 0, 7, 0})]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -71,14 +72,14 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 		[DefaultValue("Undefined       ")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string GroupName { get; set; } = "Undefined       ";
-		
-		[DefaultValue(0)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int GroupNumber { get; set; }
 
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int Mode { get; set; } = 0;
+		public int DeviceGroup { get; set; } = 0;
+
+		[DefaultValue(0)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int DeviceMode { get; set; } = 0;
 
 		[DefaultValue("Dreamscreen4K")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -116,12 +117,12 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int IrLearningMode { get; set; }
 
-		[DefaultValue(new byte[] {
+		[DefaultValue(new [] {
 			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0
 		})]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public byte[] IrManifest { get; set; } = {
+		public int[] IrManifest { get; set; } = {
 			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0
 		};
@@ -137,9 +138,9 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 		public int MicrophoneAudioBroadcastEnabled { get; set; }
 
 
-		[DefaultValue(new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 0, 0})]
+		[DefaultValue(new [] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 0, 0})]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public byte[] SectorData { get; set; } = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 0, 0};
+		public int[] SectorData { get; set; } = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 0, 0};
 
 
 		[DefaultValue("")]
@@ -263,7 +264,7 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 
 		[DefaultValue(new[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 0, 0})]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public byte[] SectorAssignment { get; set; } = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 0, 0};
+		public int[] SectorAssignment { get; set; } = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 0, 0};
 
 		public DreamData() {
 			Name = "Dreamscreen4K";
@@ -277,40 +278,8 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 			DeviceTag = devTag;
 		}
 
-		public void CopyExisting(BsonDocument d) {
-			//Reflect our current class to enum keys
-			var _type = GetType();
-			foreach (var k in d) {
-				try {
-					var propertyInfo = _type.GetProperty(k.Key);
-					if (propertyInfo != null) {
-						propertyInfo.SetValue(_type, k.Value, null);	
-					}
-				} catch (Exception e) {
-					Log.Debug("Error setting value while copying...");
-				}
-			}
-
-			IpAddress = Id;
-		}
 		
-		public void CopyExisting(DreamData d) {
-			//Reflect our current class to enum keys
-			var _type = GetType();
-			var dType = d.GetType();
-			foreach (var k in dType.GetProperties()) {
-				try {
-					var propertyInfo = _type.GetProperty(k.Name);
-					if (propertyInfo != null) {
-						propertyInfo.SetValue(_type, k.GetValue(_type), null);	
-					}
-				} catch (Exception e) {
-					Log.Warning("Error setting value while copying existing data.", e);
-				}
-			}
-			IpAddress = Id;
-		}
-
+		
 		public byte[] EncodeState() {
 			switch (DeviceTag) {
 				case "Dreamscreen":

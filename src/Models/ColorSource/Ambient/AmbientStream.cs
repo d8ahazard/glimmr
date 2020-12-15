@@ -20,9 +20,9 @@ namespace Glimmr.Models.ColorSource.Ambient {
         private int _ledCount;
         private int _ambientShow;
         private Color _ambientColor;
-        private CancellationToken _ct;
-        private ColorService _cs;
-        private Stopwatch _watch;
+        private readonly CancellationToken _ct;
+        private readonly ColorService _cs;
+        private readonly Stopwatch _watch;
 
 
         

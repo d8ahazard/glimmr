@@ -13,7 +13,7 @@ namespace Glimmr
 	public class Program
 	{
 		public static void Main(string[] args) {
-			var outputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}] {Message} (at {Caller}){NewLine}{Exception}";
+			var outputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}]{Caller} {Message}{NewLine}{Exception}";
 
 			var logPath = "/var/log/glimmr/glimmr.log";
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
@@ -36,10 +36,6 @@ namespace Glimmr
 					logging.AddConsole();
 					logging.AddDebug();
 				})
-				.ConfigureWebHostDefaults(webBuilder => {
-					webBuilder.UseStartup<Startup>();
-					webBuilder.UseUrls("http://*","https://*");
-				})
 				// Initialize our dream screen emulator
 				.ConfigureServices(services => {
 					services.AddSignalR();
@@ -48,6 +44,10 @@ namespace Glimmr
 					services.AddHostedService<DreamService>();
 					services.AddHostedService<DiscoveryService>();
 					services.AddHostedService<StatService>();
+				})
+				.ConfigureWebHostDefaults(webBuilder => {
+					webBuilder.UseStartup<Startup>();
+					webBuilder.UseUrls("http://*","https://*");
 				});
 		}
 	}

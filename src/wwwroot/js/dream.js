@@ -6,7 +6,6 @@ let devices = [];
 let dsDevs = [];
 let wleds = [];
 let captureMode = 0;
-let bridgeInt = 0;
 let linking = false;
 let resizeTimer;
 let loadTimer;
@@ -44,7 +43,6 @@ let tvX = 0;
 let tvY = 0;
 let nanoTarget = -1;
 let nanoSector = -1;
-let nanoSectorV2 = -1;
 let mode = 0;
 let ambientMode = 0;
 let ambientShow = 0;
@@ -491,12 +489,7 @@ function setListeners() {
     $(document).on('change', '.mapSelect', function() {
         let myId = $(this).attr('id').replace("lightMap", "");
         let newVal = $(this).val().toString();
-        if (captureMode === 0) {
-            updateLightProperty(myId, "TargetSector", newVal);    
-        } else {
-            updateLightProperty(myId, "TargetSector2", newVal);
-        }
-        
+        updateLightProperty(myId, "TargetSector", newVal);
     });
 
     $(window).on('resize', function(e) {
@@ -660,16 +653,7 @@ function setListeners() {
         }
     });
 
-    $('.lifxRegionV2').click(function() {
-        if (!$(this).hasClass('checked')) {
-            $('.lifxRegionV2').removeClass('checked');
-            $(this).addClass('checked');
-            let val =$(this).data('region');
-            selectedDevice.targetSectorV2 = val;
-            postData("updateDevice", selectedDevice);
-        }
-    });
-
+    
     $('.nanoRegion').click(function() {
         if (!$(this).hasClass('checked')) {
             $('.nanoRegion').removeClass('checked');
@@ -692,35 +676,13 @@ function setListeners() {
         }
     });
 
-    $('.nanoRegionV2').click(function() {
-        if (!$(this).hasClass('checked')) {
-            $('.nanoRegionV2').removeClass('checked');
-            $(this).addClass('checked');
-            let val=$(this).data('region');
-            nanoSectorV2 = val;
-            let sTarget = -1;
-            let sectors = selectedDevice["layout"]["positionData"];
-            for (let q=0; q < sectors.length; q++) {
-                if (sectors[q]["panelId"] === nanoTarget) {
-                    sTarget = q;
-                }
-            }
-
-            if (sTarget !== -1) {
-                selectedDevice["layout"]["positionData"][sTarget]["targetSectorV2"] = nanoSectorV2;
-                postData("updateDevice", selectedDevice);
-            }
-            $('#nanoModal').modal('toggle');
-        }
-    });
-
-
+    
     // On group selection change
     $('.dsGroup').change(function () {
         const id = $(this).val();
         hueGroup = id;
-        bridges[bridgeInt]["SelectedGroup"] = id;
-        postData("updateDevice", bridges[bridgeInt]);
+        selectedDevice["SelectedGroup"] = id;
+        postData("updateDevice", selectedDevice);
         mapLights();
     });
 
@@ -837,8 +799,8 @@ function updateLightProperty(myId, propertyName, value) {
     lm[propertyName] = value;
     setLightMap(lm);
     console.log("Updated light data: ", hueLightMap);
-    bridges[bridgeInt]["MappedLights"] = hueLightMap;
-    let fGroup = bridges[bridgeInt]["Groups"];
+    selectedDevice["MappedLights"] = hueLightMap;
+    let fGroup = selectedDevice["Groups"];
     let nGroup = [];
     for (let g in fGroup) {
         if (fGroup.hasOwnProperty(g)) {
@@ -847,8 +809,9 @@ function updateLightProperty(myId, propertyName, value) {
         }
         
     }
-    bridges[bridgeInt]["Groups"] = nGroup;
-    postData("updateDevice", bridges[bridgeInt]);
+    selectedDevice["Groups"] = nGroup;
+    console.log("Updating bridge: ", selectedDevice);
+    postData("updateDevice", selectedDevice);
 }
 
 // Update our pretty table so we can map the lights
@@ -864,7 +827,6 @@ function mapLights() {
     $('div').remove('.delSel');
     // Clear the light region checked status
     $('.lightRegion').removeClass("checked");
-    $('.lightRegionV2').removeClass("checked");
     // Get the list of lights for the selected group
     if (!group.hasOwnProperty('Lights')) return false;
     const ids = group["Lights"];
@@ -884,7 +846,6 @@ function mapLights() {
             let brightness = 255;
             let override = false;
             let selection = -1;
-            let selectionV2 = -1;
             
             for(let m in lightMap) {
                 if (lightMap.hasOwnProperty(m)) {
@@ -893,7 +854,6 @@ function mapLights() {
                         brightness = map["Brightness"];
                         override = map["Override"];
                         selection = map["TargetSector"];
-                        selectionV2 = map["TargetSector2"];
                     }
                 }
             }
@@ -923,30 +883,19 @@ function mapLights() {
                 } else {
                     // Check our box on the sector square
                     $('.lightRegion[data-region="' + selection +'"]').addClass('checked');
-                    $('.lightRegionV2[data-region="' + selectionV2 +'"]').addClass('checked');
                 }
                 newSelect.appendChild(opt);
 
                 // Add the options for our regions
-                if (captureMode === 0) {
-                    for (let i = 1; i < 13; i++) {
-                        opt = document.createElement("option");
-                        opt.value = (i).toString();
-                        opt.innerHTML = "<BR>" + (i);
-                        // Mark it selected if it's mapped
-                        if (selection === i) opt.setAttribute('selected', 'selected');
-                        newSelect.appendChild(opt);
-                    }
-                } else {
-                    for (let i = 1; i < 29; i++) {
-                        opt = document.createElement("option");
-                        opt.value = (i).toString();
-                        opt.innerHTML = "<BR>" + (i);
-                        // Mark it selected if it's mapped
-                        if (selectionV2 === i) opt.setAttribute('selected', 'selected');
-                        newSelect.appendChild(opt);
-                    }
+                for (let i = 1; i < 29; i++) {
+                    opt = document.createElement("option");
+                    opt.value = (i).toString();
+                    opt.innerHTML = "<BR>" + (i);
+                    // Mark it selected if it's mapped
+                    if (selection === i) opt.setAttribute('selected', 'selected');
+                    newSelect.appendChild(opt);
                 }
+            
                 
                 // Create the div to hold our select
                 const selDiv = document.createElement('div');
@@ -1081,7 +1030,7 @@ function buildLists() {
     console.log("Reading datastore...");
     devices = datastore['Dev_Dreamscreen'];
     leaves = datastore['Dev_Nanoleaf'];
-    bridges = datastore['Dev_Hue'];
+    bridges = datastore['Dev_Hue'];    
     wleds = datastore['Dev_Wled'];
     deviceData = datastore['MyDevice'][0];
     lifx = datastore['Dev_Lifx'];
@@ -1089,13 +1038,7 @@ function buildLists() {
     ledData = datastore['LedData'][0];
     captureMode = datastore['CaptureMode'][0]["value"];
     console.log("CapMode: " + captureMode);
-    if (captureMode === 0) {
-        $('.regions').show();
-        $('.regionsV2').hide();
-    } else {
-        $('.regions').hide();
-        $('.regionsV2').show();
-    }
+    $('.regionsV2').show();
     mode = selectCaptureMode(captureMode);
     emulationType = datastore['DevType'][0]["value"];
     buildDevList(datastore['Dev_Dreamscreen']);
@@ -1518,8 +1461,8 @@ function loadBridgeData(data) {
         if ((hueGroup == -1 && hueGroups.length > 0) || hueGroup === null || hueGroup === undefined) {
             if (hueGroups[0] !== undefined) {
                 hueGroup = hueGroups[0]["_id"];
-                bridges[bridgeInt]["SelectedGroup"] = hueGroup;
-                postData("updateData", bridges[bridgeInt]);
+                selectedDevice["SelectedGroup"] = hueGroup;
+                postData("updateData", selectedDevice);
             }
         }
     }
@@ -1614,8 +1557,6 @@ function loadLifxData(data) {
     hIp.html(data.Id);
     $('.lifxRegion').removeClass('checked');
     $('.lifxRegion[data-region="' + data.TargetSector +'"]').addClass('checked');
-    $('.lifxRegionV2').removeClass('checked');
-    $('.lifxRegionV2[data-region="' + data.TargetSectorV2 +'"]').addClass('checked');
     lBrightness.val(data["Brightness"]);    
 }
 
@@ -1633,8 +1574,6 @@ function loadWledData(data) {
     hIp.html(data.Id);
     $('.wledRegion').removeClass('checked');
     $('.wledRegion[data-region="' + data.TargetSector +'"]').addClass('checked');
-    $('.wledRegionV2').removeClass('checked');
-    $('.wledRegionV2[data-region="' + data.TargetSectorV2 +'"]').addClass('checked');
     $('#whCount').val(data["HCount"]);
     $('#wvCount').val(data["VCount"]);
     let ledCount = data["State"]["info"]["leds"]["count"];
@@ -1800,9 +1739,7 @@ function drawNanoShapes(panel) {
         });
         
         let sectorText = data['TargetSector'];
-        if (captureMode !== 0) {
-            sectorText = data['TargetSectorV2'];
-        }
+        
         let sText2 = new Konva.Text({
             x: x,
             y: y - 35,
@@ -1849,11 +1786,11 @@ function drawNanoShapes(panel) {
                     id: data["panelId"]
                 });
                 poly.on('click', function(){
-                    setNanoMap(data['PanelId'], data['TargetSector'], data['TargetSectorV2']);
+                    setNanoMap(data['PanelId'], data['TargetSector']);
                 });
                 poly.on('tap', function(){
                     console.log("POLY TAP")
-                    setNanoMap(data['PanelId'], data['TargetSector'], data['TargetSectorV2']);
+                    setNanoMap(data['PanelId'], data['TargetSector']);
                 });
                 shapeGroup.add(poly);
                 break;
@@ -1872,10 +1809,10 @@ function drawNanoShapes(panel) {
                     strokeWidth: 4
                 });
                 rect1.on('click', function(){
-                    setNanoMap(data['PanelId'], data['TargetSector'], data['TargetSectorV2']);
+                    setNanoMap(data['PanelId'], data['TargetSector']);
                 });
                 rect1.on('tap', function(){
-                    setNanoMap(data['PanelId'], data['TargetSector'], data['TargetSectorV2']);
+                    setNanoMap(data['PanelId'], data['TargetSector']);
                 });
                 shapeGroup.add(rect1);
                 break;
@@ -1886,11 +1823,11 @@ function drawNanoShapes(panel) {
         sText.offsetX(sText.width() / 2);
         sText2.offsetX(sText2.width() / 2);
         sText.on('click', function(){
-            setNanoMap(data['PanelId'], data['TargetSector'], data['TargetSectorV2']);
+            setNanoMap(data['PanelId'], data['TargetSector']);
             
         });
         sText2.on('click', function(){
-            setNanoMap(data['PanelId'], data['TargetSector'], data['TargetSectorV2']);
+            setNanoMap(data['PanelId'], data['TargetSector']);
         });
         sText.on('tap', function () {
             console.log("Stext tap.")
@@ -1926,19 +1863,14 @@ function drawNanoShapes(panel) {
     cLayer.zIndex(0);
 }
 
-function setNanoMap(id, current, v2) {
+function setNanoMap(id, current) {
     nanoTarget = id;
     nanoSector = current;
-    nanoSectorV2 = v2;
     // Add the options for our regions
     $('.nanoRegion').removeClass('checked');
     if (current !== -1) {
         $('.nanoRegion[data-region="'+current+'"]').addClass("checked");
-    }
-    $('.nanoRegionV2').removeClass('checked');
-    if (v2 !== -1) {
-        $('.nanoRegionV2[data-region="'+v2+'"]').addClass("checked");
-    }
+    }    
     $('#nanoModal').modal({
         show: true
     });

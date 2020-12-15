@@ -369,4 +369,14 @@ namespace Glimmr.Models.Util {
             return Color.FromArgb(r, g, b);
         }
     }
+
+    public static class ColorExtension {  
+        public static Color FromString(this Color color, string str) {
+            return ColorUtil.ColorFromHex(str);
+        }
+
+        public static string ToString(this Color color) {
+            return ColorUtil.ColorToHex(color);
+        }
+    }  
 }

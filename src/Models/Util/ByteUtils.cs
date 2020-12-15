@@ -68,7 +68,11 @@ namespace Glimmr.Models.Util {
             return b;
         }
 
-        // Convert an array of integers to bytes
+        /// <summary>
+        /// Convert an array of integers to an array of bytes
+        /// </summary>
+        /// <param name="toBytes"></param>
+        /// <returns></returns>
         public static byte[] IntBytes(int[] toBytes) {
             //if (toBytes == null) throw new ArgumentException("Invalid input.");
             var output = new byte[toBytes.Length];
@@ -77,6 +81,21 @@ namespace Glimmr.Models.Util {
                 output[c] = Convert.ToByte(i.ToString("X2", Format), 16);
                 c++;
             }
+            return output;
+        }
+
+        
+        /// <summary>
+        /// Convert an array of bytes to an array of integers
+        /// </summary>
+        /// <param name="toInts"></param>
+        /// <returns></returns>
+        public static int[] ByteInts(byte[] toInts) {
+            var output = new int[toInts.Length];
+            for (var i = 0; i < toInts.Length; i++) {
+                output[i] = toInts[i];
+            }
+
             return output;
         }
 
@@ -101,6 +120,15 @@ namespace Glimmr.Models.Util {
             return strOut;
         }
 
+        /// <summary>
+        /// Extract a rang of integers from the specified byte array
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="start"></param>
+        /// <param name="end"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="IndexOutOfRangeException"></exception>
         public static int[] ExtractInt(byte[] input, int start, int end) {
             if (input == null) throw new ArgumentException("Invalid input.");
             var len = end - start;

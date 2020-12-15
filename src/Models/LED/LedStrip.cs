@@ -93,7 +93,7 @@ namespace Glimmr.Models.LED {
 			if (_testing && !force) return;
 			
 			// Thanks, WLED!
-			if (_ld.AutoBrightnessLevel) VoltAdjust(colors);
+			if (true) VoltAdjust(colors);
 
 			var iSource = 0;
 			for (var i = 0; i < _ledCount; i++) {

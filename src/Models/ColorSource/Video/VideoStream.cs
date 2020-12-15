@@ -90,8 +90,10 @@ namespace Glimmr.Models.ColorSource.Video {
 			while (!_cancellationToken.IsCancellationRequested) {
 				// Save cpu/memory by not doing anything if not sending...
 				if (!Streaming) {
+					//Log.Debug("NOT STREAMING.");
 					continue;
 				}
+				
 				var frame = _vc.Frame;
 				if (frame == null) {
 					SourceActive = false;
@@ -114,7 +116,6 @@ namespace Glimmr.Models.ColorSource.Video {
 					Log.Warning("Unable to process frame.");
 					continue;
 				}
-				//Log.Debug("Updating splitter!");
 				StreamSplitter.Update(warped);
 				//Log.Debug("Updated!");
 				SourceActive = !StreamSplitter.NoImage;

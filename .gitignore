@@ -2,6 +2,8 @@
 .vs/*
 bin/*
 obj/*
+src/bin/*
+src/obj/*
 huedream.ini
 *.sln
 huedream.json

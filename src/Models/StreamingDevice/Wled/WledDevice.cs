@@ -223,7 +223,7 @@ namespace Glimmr.Models.StreamingDevice.WLED {
             httpContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
             try {
                 await _httpClient.PostAsync(uri, httpContent);
-            } catch (HttpRequestException e) {
+            } catch (Exception e) {
                 Log.Warning("HTTP Request Exception: " + e);
             }
 

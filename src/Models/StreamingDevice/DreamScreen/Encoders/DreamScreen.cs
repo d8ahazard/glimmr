@@ -20,7 +20,14 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen.Encoders {
 
 		
 		public static DreamData ParsePayload(byte[] payload) {
+			var devType = payload[^1];
 			var dd = new DreamData();
+			dd.DeviceTag = DeviceTag4K;
+			if (devType == 1) {
+				dd.DeviceTag = DeviceTagSolo;
+			} else if (devType == 2) {
+				dd.DeviceTag = DeviceTagHd;
+			}
 			if (payload is null) throw new ArgumentNullException(nameof(payload));
 			if (payload.Length < 132)
 				throw new ArgumentException($"Payload length is too short: {ByteUtils.ByteString(payload)}");
@@ -30,12 +37,12 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen.Encoders {
 			var groupName1 = ByteUtils.ExtractString(payload, 16, 32);
 			if (groupName1.Length == 0) groupName1 = "Group";
 			dd.GroupName = groupName1;
-			dd.GroupNumber = payload[32];
-			dd.Mode = payload[33];
+			dd.DeviceGroup = payload[32];
+			dd.DeviceMode = payload[33];
 			dd.Brightness = payload[34];
 			dd.Zones = payload[35];
 			dd.ZonesBrightness = ByteUtils.ExtractInt(payload, 36, 40);
-			dd.AmbientColor = ColorUtil.ColorFromHex(ByteUtils.ExtractString(payload, 40, 43, true));
+			dd.AmbientColor = ByteUtils.ExtractString(payload, 40, 43, true);
 			dd.Saturation = ByteUtils.ExtractString(payload, 43, 46, true);
 			dd.FlexSetup = ByteUtils.ExtractInt(payload, 46, 52);
 			dd.MusicModeType = payload[52];
@@ -86,12 +93,12 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen.Encoders {
 			response.AddRange(nByte);
 			var gByte = ByteUtils.StringBytePad(dd.GroupName, 16);
 			response.AddRange(gByte);
-			response.Add(ByteUtils.IntByte(dd.GroupNumber));
-			response.Add(ByteUtils.IntByte(dd.Mode));
+			response.Add(ByteUtils.IntByte(dd.DeviceGroup));
+			response.Add(ByteUtils.IntByte(dd.DeviceMode));
 			response.Add(ByteUtils.IntByte(dd.Brightness));
 			response.Add(dd.Zones);
 			response.AddRange(ByteUtils.IntBytes(dd.ZonesBrightness));
-			response.AddRange(ByteUtils.StringBytes(ColorUtil.ColorToHex(dd.AmbientColor)));
+			response.AddRange(ByteUtils.StringBytes(dd.AmbientColor));
 			response.AddRange(ByteUtils.StringBytes(dd.Saturation));
 			response.AddRange(ByteUtils.IntBytes(dd.FlexSetup));
 			response.Add(ByteUtils.IntByte(dd.MusicModeType));

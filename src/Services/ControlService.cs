@@ -17,34 +17,26 @@ using Color = System.Drawing.Color;
 namespace Glimmr.Services {
 	public class ControlService : BackgroundService {
 
-		private IHubContext<SocketServer> _hubContext;
+		private readonly IHubContext<SocketServer> _hubContext;
 		public LifxClient LifxClient { get; }
 		public HttpClient HttpSender { get; }
-		public UdpClient BroadcastSender { get; }
-		
-		public UdpClient UnicastSender { get; }
-
-		private DreamUtil _dreamUtil;
+		public UdpClient UdpClient { get; }
 
 		public ControlService(IHubContext<SocketServer> hubContext) {
 			_hubContext = hubContext;
 			// Lifx client
 			LifxClient = LifxClient.CreateAsync().Result;
 			// Init nano HttpClient
-			HttpSender = new HttpClient();
+			HttpSender = new HttpClient {Timeout = TimeSpan.FromSeconds(2)};
 			DataUtil.CheckDefaults(LifxClient);
 			
 			// Init UDP clients
-			BroadcastSender = new UdpClient {Ttl = 128};
-			BroadcastSender.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-			BroadcastSender.Client.EnableBroadcast = true;
-			BroadcastSender.Client.Blocking = false;
-			BroadcastSender.DontFragment = true;
 			
-			UnicastSender = new UdpClient {Ttl = 128};
-			UnicastSender.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-			UnicastSender.Client.Blocking = false;
-			UnicastSender.DontFragment = true;
+			
+			UdpClient = new UdpClient {Ttl = 128};
+			UdpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+			UdpClient.Client.Blocking = false;
+			UdpClient.DontFragment = true;
 		}
 
 		public event Action<string> DeviceReloadEvent = delegate { };
@@ -115,7 +107,10 @@ namespace Glimmr.Services {
 
 		public void SetAmbientColor(Color color, string id, int group) {
 			_hubContext.Clients.All.SendAsync("ambientColor", color);
-			DataUtil.SetObject("AmbientColor",color);
+			DataUtil.SetObject<Color>("AmbientColor",color);
+			var myDev = DataUtil.GetDeviceData();
+			myDev.AmbientColor = ColorUtil.ColorToHex(color);
+			DataUtil.SetDeviceData(myDev);
 			SetAmbientColorEvent(color, id, group);
 		}
 
@@ -161,16 +156,13 @@ namespace Glimmr.Services {
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			return Task.Run(async () => {
-				var curMode = DataUtil.GetItem("DeviceMode");
-				SetModeEvent(curMode);
-
 				while (!stoppingToken.IsCancellationRequested) {
 					await Task.Delay(1, stoppingToken);	
 				}
 				LifxClient?.Dispose();
 				HttpSender?.Dispose();
-				BroadcastSender?.Dispose();
-				UnicastSender?.Dispose();
+				UdpClient?.Dispose();
+				UdpClient?.Dispose();
 			});
 		}
 

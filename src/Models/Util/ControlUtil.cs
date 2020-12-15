@@ -29,7 +29,6 @@ namespace Glimmr.Models.Util {
 			SwitchDeviceType(devType, dev);
 			DataUtil.SetItem<string>("DevType", devType);
 			await TriggerReload(hubContext, JObject.FromObject(dev));
-			if (dev.Mode == 0) return;
 		}
 
 		private static void SwitchDeviceType(string devType, DreamData curDevice) {
@@ -47,50 +46,50 @@ namespace Glimmr.Models.Util {
 			var id = (dData["_id"] ?? "INVALID").Value<string>();
 			dData["Id"] = id;
 			if (tag == "INVALID" || id == "INVALID") return false;
-			var myDev = DataUtil.GetDeviceData();
-			var ipAddress = myDev.IpAddress;
-			if (ipAddress == (dData["ipAddress"] ?? "INVALID").Value<string>()) DataUtil.SetItem("MyDevice", dData);
-			var groupNumber = (byte) myDev.GroupNumber;
 			try {
 				switch (tag) {
 					case "Wled":
-						Log.Debug("Updating wled");
-						WledData existing = DataUtil.GetCollectionItem<WledData>("Dev_Wled", id);
 						var wData = dData.ToObject<WledData>();
 						if (wData != null) {
-							if (existing.State.info.leds.rgbw != wData.State.info.leds.rgbw)
-								Log.Debug("Update rgbw type.");
-
-							if (existing.State.info.leds.count != wData.State.info.leds.count)
-								Log.Debug("Update count type.");
-
-							if (existing.State.state.bri != wData.Brightness) Log.Debug("Update Brightness...");
+							Log.Debug("Updating wled");
+							DataUtil.InsertCollection<WledData>("Dev_Wled", wData);
+							await hubContext.Clients.All.SendAsync("wledData", wData);
 						}
-
-						DataUtil.InsertCollection<WledData>("Dev_Wled", wData);
-						await hubContext.Clients.All.SendAsync("wledData", wData);
 						break;
 					case "HueBridge":
-						Log.Debug("Updating bridge");
 						var bData = dData.ToObject<HueData>();
-						DataUtil.InsertCollection<HueData>("Dev_Hue", bData);
-						await hubContext.Clients.All.SendAsync("hueData", bData);
+						if (bData != null) {
+							Log.Debug("Updating bridge");
+							DataUtil.InsertCollection<HueData>("Dev_Hue", bData);
+							await hubContext.Clients.All.SendAsync("hueData", bData);
+						}
 						break;
 					case "Lifx":
-						Log.Debug("Updating lifx bulb");
 						var lData = dData.ToObject<LifxData>();
-						DataUtil.InsertCollection<LifxData>("Dev_Lifx", lData);
-						await hubContext.Clients.All.SendAsync("lifxData", lData);
+						if (lData != null) {
+							Log.Debug("Updating lifx bulb");
+							DataUtil.InsertCollection<LifxData>("Dev_Lifx", lData);
+							await hubContext.Clients.All.SendAsync("lifxData", lData);
+						}
 						break;
 					case "Nanoleaf":
-						Log.Debug("Updating nanoleaf");
 						var nData = dData.ToObject<NanoleafData>();
-						DataUtil.InsertCollection<NanoleafData>("Dev_Nanoleaf", nData);
-						await hubContext.Clients.All.SendAsync("nanoData", nData);
+						if (nData != null) {
+							Log.Debug("Updating nanoleaf");
+							DataUtil.InsertCollection<NanoleafData>("Dev_Nanoleaf", nData);
+							await hubContext.Clients.All.SendAsync("nanoData", nData);
+						}
 						break;
 					case "Dreamscreen":
 						var dsData = dData.ToObject<DreamData>();
-						DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", dsData);
+						if (dsData != null) {
+							Log.Debug("Updating Dreamscreen");
+							DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", dsData);
+							if (dsData.IpAddress == IpUtil.GetLocalIpAddress()) {
+								DataUtil.SetDeviceData(dsData);
+							}
+							await hubContext.Clients.All.SendAsync("dreamData", dsData);
+						}
 						break;
 				}
 			} catch (Exception e) {

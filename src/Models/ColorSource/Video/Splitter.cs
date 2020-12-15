@@ -381,7 +381,7 @@ namespace Glimmr.Models.ColorSource.Video {
 		}
 
 
-		private List<Rectangle> DrawSectors(bool v2 = false) {
+		private List<Rectangle> DrawSectors(bool v2 = true) {
 			// How many sectors does each region have?
 			var hOffset = _hCropPixels;
 			var vOffset = _vCropPixels;

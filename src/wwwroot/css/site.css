@@ -243,7 +243,7 @@ background {
     text-align: center;
 }
 
-.regions, .regionsV2 {
+.regions {
     margin-bottom: 25px;
     position: absolute;
     top: -3%;
@@ -400,30 +400,11 @@ input:checked + .slider:before {
 }
 
 .sectorRow, .nanoSectorRow, .lightSectorRow, .lifxSectorRow {
-    height: 33.33%;
-}
-
-.sectorRowV2, .nanoSectorRowV2, .lightSectorRowV2, .lifxSectorRowV2 {
     height: 16.665%;
 }
 
+
 .sectorRegion {
-    background-image: url("../img/sector_unchecked_background.png");
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    padding: 15px;
-    color: white;
-}
-
-.sectorRegion.checked {
-    background-image: url("../img/sector_checked_background.png");
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-}
-
-.sectorRegionV2 {
     background-image: url("../img/sectorV2_unchecked_background.png");
     background-size: contain;
     background-repeat: no-repeat;
@@ -432,7 +413,7 @@ input:checked + .slider:before {
     color: white;
 }
 
-.sectorRegionV2.checked {
+.sectorRegion.checked {
     background-image: url("../img/sectorV2_checked_background.png");
     background-size: contain;
     background-repeat: no-repeat;

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using ManagedBass;
@@ -72,11 +73,19 @@ namespace Glimmr.Models.ColorSource.Audio {
 			}
 		}
 
-		public void Initialize() {
+		public async void Initialize() {
 			if (_recordDeviceIndex != -1) {
-				SetCapVars();
-				while (!_token.IsCancellationRequested) {
+				try {
+					SetCapVars();
+				} catch (BassException e) {
+					Log.Warning("Exception initializing audio device: " + e.Message);
 				}
+				
+
+				while (!_token.IsCancellationRequested) {
+					await Task.Delay(1, CancellationToken.None);
+				}
+				Log.Debug("Audio stream canceled.");
 			} else {
 				Log.Debug("No recording device available.");
 			}
@@ -87,19 +96,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 		private void SetCapVars() {
 			Log.Debug("Starting stream with device " + _recordDeviceIndex);
-			var res = Bass.Init(1, 44100, DeviceInitFlags.Stereo);
-			var error = Bass.LastError;
-			// Initialize Recording device.
-			Log.Debug("BassInit: " + res + ", " + error);
-			var init = Bass.RecordInit(1);
-			error = Bass.LastError;
-			Log.Debug("RecInit: " + init + ", " + error);
-			var cRec = Bass.CurrentRecordingDevice = 1;
-			error = Bass.LastError;
-			Log.Debug("CRec: " + cRec + ", " + error);
 			var info = Bass.RecordingInfo;
-			error = Bass.LastError;
-			Log.Debug("Info: " + JsonConvert.SerializeObject(info) + ", " + error);
 			_channels = info.Channels == 0 ? 2 : info.Channels;
 			for (var i = 0; i < info.Channels; i++) {
 				Bass.ChannelGetInfo(i, out var cInfo);
@@ -107,10 +104,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 			}
 
 			_frequency = info.Frequency == 0 ? 48000 : info.Frequency;
-			Log.Debug($"Setting channels and frequency to {_channels} and {_frequency}.");
-			var record = Bass.RecordStart(_frequency, _channels, BassFlags.Float, Update);
-			error = Bass.LastError;
-			Log.Debug($"Record value: {record} ," + error);
+			Bass.RecordStart(_frequency, _channels, BassFlags.Float, Update);
 		}
 
 		
