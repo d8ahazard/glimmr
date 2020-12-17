@@ -11,13 +11,100 @@
 }
 
 .deviceIcon {
-    width: 60px;
-    height: 60px;
+    max-height: 60px;
 }
 
 .settingBtn {
     width: 60px;
 }
+
+#settingsRow {
+    width: 0;
+    height: 0;
+    overflow: hidden;
+}
+
+area {
+    display: block;
+    cursor: pointer;
+}
+
+.sectorMap {
+    position: absolute;
+    text-align: center;
+    color: white;
+    text-shadow: black;
+    font-size: 16px;
+}
+
+.sector {
+    position: absolute!important;  
+    border: 2px solid black;
+    cursor: pointer;
+}
+
+.sector2 {
+    position: absolute!important;
+    border: 2px solid black;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    cursor: pointer;
+    height: 25px;
+    width: 25px;
+    border-radius: 25px;
+    top: -.75rem;
+    background: black;
+    box-shadow: 0px 2px 10px -2px black(1);
+    position: relative;
+    z-index: 2;
+    box-shadow: 1.1px 1.1px 6.8px rgba(0, 0, 0, 0), 0px 0px 1.1px rgba(13, 13, 13, 0);
+    border: 0px solid #000000;
+    content:"<span class='material-icons'>emoji_objects</span>";
+    background: url("../img/sun.png") #dedede;
+    background-size: 80%;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+input[type="range"]::-webkit-slider-thumb::before {
+    content: '+';
+    position: absolute;
+    top: -10px;
+    left: 0;
+    height: 10px;
+    width: 100%;
+    color: red;
+}
+
+
+input[type="range"] {
+    -webkit-appearance: none;
+    display: block;
+    margin: 0;
+    width: 100%;
+    background: transparent;
+}
+
+input[type="range"]:focus {
+    outline: none;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+    -webkit-appearance: none;
+    width: 100%;
+    color: transparent;
+    height: 10px;
+    background: lightgray;
+    border-radius: 200px;
+    border: none;
+    padding: 5px;
+    box-shadow: 0px 0px 0px rgba(0, 0, 0, 0), 0px 0px 0px rgba(13, 13, 13, 0);
+    background: rgba(69, 69, 69, 0.5);
+    border: 0px solid rgba(0, 0, 0, 0);
+}
+
 
 .fs-1 {
     font-size: 5rem;
@@ -54,4 +141,13 @@
 
 .col-* {
     min-width: 25px;
+}
+
+.myNav {
+    height: 3rem;
+}
+
+.btn-offset {
+    top: -5px;
+    position: relative;
 }

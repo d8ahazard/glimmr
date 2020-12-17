@@ -265,24 +265,20 @@ namespace Glimmr.Services {
 
                     break;
                 case "DEVICE_DISCOVERY":
-                    if (flag == "30" && from != "0.0.0.0" && !areYouLocal) {
+                    Log.Debug("DISCOVERY: " + (flag == "60") + " and " + _discovering + " and " + areYouLocal);
+                    if (flag == "30" && !areYouLocal) {
                         SendDeviceStatus(replyPoint);
-                    } else if (flag == "60") {
+                    } else if (flag == "60" && _discovering && !areYouLocal) {
                         if (msgDevice != null) {
-                            string dsIpCheck = DataUtil.GetItem("DsIp");
-                            if (dsIpCheck == "0.0.0.0" &&
-                                msgDevice.Tag.Contains("Dreamscreen", StringComparison.CurrentCulture)) {
-                                Log.Debug(@"Setting a target DS IP.");
-                                DataUtil.SetItem("DsIp", from);
-                                _targetEndpoint = replyPoint;
-                            }
-
-                            if (_discovering) {
-                                Log.Debug("Sending request for serial!");
-                                _dreamUtil.SendUdpWrite(0x01, 0x03, new byte[]{0},0x60,0,replyPoint);
-                                msgDevice.IpAddress = from;
-                                _devices.Add(msgDevice);
-                            }
+                            _targetEndpoint = replyPoint;
+                            Log.Debug("Sending request for serial!");
+                            msgDevice.IpAddress = from;
+                            DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", msgDevice);
+                            _devices.Add(msgDevice);
+                            _dreamUtil.SendUdpWrite(0x01, 0x03, new byte[]{0},0x60,0,replyPoint);
+                            
+                        } else {
+                            Log.Warning("Message device is null!.");
                         }
                     }
 
@@ -410,6 +406,7 @@ namespace Glimmr.Services {
         private async void Discover(CancellationToken ct) {
             try {
                 Log.Debug("Discovery started..");
+                _discovering = true;
                 // Send a custom internal message to self to store discovery results
                 var selfEp = new IPEndPoint(IPAddress.Loopback, 8888);
                 _dreamUtil.SendUdpWrite(0x01, 0x0D, new byte[] {0x01}, 0x30, 0x00, selfEp);
@@ -419,6 +416,7 @@ namespace Glimmr.Services {
                 await Task.Delay(3000, ct).ConfigureAwait(false);
                 _dreamUtil.SendUdpWrite(0x01, 0x0E, new byte[] {0x01}, 0x30, 0x00, selfEp);
                 await Task.Delay(500, ct).ConfigureAwait(false);
+                _discovering = false;
             } catch (Exception e) {
                 Log.Warning("Discovery exception: ", e);
             }

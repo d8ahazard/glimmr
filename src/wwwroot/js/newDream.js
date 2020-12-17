@@ -8,10 +8,21 @@ let cardRow;
 let settingsTitle;
 let settingsTab;
 let settingsContent;
+// Is a device card expanded?
+let expanded = false;
 // Is our settings window currently open?
 let settingsShown = false;
 // This is the data for the currently shown device in settings
 let deviceData;
+let cardClone;
+let baseCard;
+let closeButton;
+let toggleWidth = 0;
+let toggleHeight = 0;
+let toggleLeft = 0;
+let toggleTop = 0;
+
+let baseUrl;
 
 // We're going to create one object to store our stuff, and add listeners for when values are changed.
 let data = {
@@ -60,7 +71,16 @@ let websocket = new signalR.HubConnectionBuilder()
     .build();
 
 document.addEventListener("DOMContentLoaded", function(){
+    let getUrl = window.location;
+    baseUrl = getUrl .protocol + "//" + getUrl.host;
+    closeButton = document.getElementById("closeBtn");
     settingsRow = document.getElementById("settingsRow");
+    settingsRow.style.position = 'fixed';
+    settingsRow.style.top = "0";
+    settingsRow.style.left = window.innerWidth.toString() + "px";
+    settingsRow.style.width = 0 + 'px';
+    settingsRow.style.height = 0 + 'px';
+
     settingsTab = document.getElementById("settingsTab");
     settingsTitle = document.getElementById("settingsTitle");
     settingsContent = document.getElementById("settingsContent");
@@ -271,30 +291,49 @@ function setListeners() {
     document.addEventListener('click',function(e){
         let target = e.target;
         if (target) {
+            if (target === closeButton || target.parentElement === closeButton) {
+                console.log("Close button");
+                closeCard();
+                return;
+            }
             if (target.classList.contains("devSetting")) {
                 let targetId = target.getAttribute("data-target");
                 let attribute = target.getAttribute("data-attribute");                
                 console.log("Dev setting clicked, we are setting ", attribute, targetId, target.checked);
                 updateDevice(targetId, attribute, target.checked);
-                
+                return;
             }
             
             if (target.classList.contains("settingBtn")  || target.parentElement.classList.contains("settingBtn")) {
                 if (target.parentElement.classList.contains("settingBtn")) target = target.parentElement;
-                console.log("S parent")
-                onCardClick(target);                
+                if (expanded) {
+                    closeCard();
+                    return;
+                } else {
+                    let devId = target.getAttribute("data-target");
+                    for (let i=0; i < data.devices.length; i++) {
+                        if (data.devices[i]) {
+                            if (data.devices[i]["_id"] === devId) {
+                                deviceData = data.devices[i];
+                                console.log("Setting device data: ", deviceData);
+                                break;
+                            }
+                        }
+                    }
+                    onCardClick(target);
+                    return;
+                }
+                
+                                
             }
 
-            if (target.parentElement.classList.contains("settingBtn")) {
-                target.parentElement;
-                console.log("S");
-                onCardClick(target);
-            }
+            
 
             if (target.classList.contains("refreshBtn") || target.parentElement.classList.contains("refreshBtn")) {
                 if (target.parentElement.classList.contains("refreshBtn")) target = target.parentElement;
                 console.log("Refresh clicked!");
                 sendMessage("ScanDevices");
+                return;
             }
 
             if (target.classList.contains("modeBtn") || target.parentElement.classList.contains("modeBtn")) {
@@ -302,12 +341,14 @@ function setListeners() {
                 let newMode = parseInt(target.getAttribute("data-mode"));
                 setMode(newMode);
                 sendMessage("Mode", newMode, false);
+                return;
             }
 
             if (target.classList.contains("mainSettings") || target.parentElement.classList.contains("mainSettings")) {
                 if (target.parentElement.classList.contains("refreshBtn")) target = target.parentElement;
                 console.log("Refresh clicked!");                
                 toggleSettingsDiv(0);
+                return;
             }
             
             if (target.classList.contains("nav-link") || target.parentElement.classList.contains("nav-item")) {
@@ -328,88 +369,19 @@ function setListeners() {
     });
 }
 
-function toggleSettingsDiv(target) {
+async function toggleSettingsDiv(target) {
     let settingsIcon = document.querySelector(".mainSettings span");
     if (!settingsShown) {
         settingsIcon.textContent = "chevron_left";
-        // Load main settings
-        if (target === 0) {
-            console.log("We should be populating main settings.");
-            showSettingsMain();
-        } else {
-            let tDev = null;
-            for (let i=0; i < data.devices.length; i++) {
-                if (data.devices[i]) {
-                    if (data.devices[i]["_id"] === target) {
-                        tDev = data.devices[i];
-                        break;
-                    }
-                }                
-            }
-            if (tDev !== null) {
-                deviceData = tDev;
-                switch(tDev["Tag"]) {
-                    case "Wled":
-                        showSettingsWled();
-                        break;
-                    case "Lifx":
-                        showSettingsLifx();
-                        break;
-                    case "Dreamscreen":                    
-                        showSettingsDreamscreen();
-                        break;
-                    case "Nanoleaf":
-                        showSettingsNanoleaf();
-                        break;
-                    case "HueBridge":
-                        showSettingsHue();
-                        break;
-                    default:
-                        console.log("Unknown device tag: " + tDev["Tag"]);
-                }
-            }
-        }
-        cardRow.classList.add("hide");
-        cardRow.classList.remove("show");
-        settingsRow.classList.add("show");
-        settingsRow.classList.remove("hide");
+        await toggleExpansion(settingsRow, {top: "3rem", left: "0px", width: '100%', height: '100%', padding: "1rem 3rem"});
     } else {
         settingsIcon.textContent = "settings_applications";
-        cardRow.classList.add("show");
-        cardRow.classList.remove("hide");
-        settingsRow.classList.add("hide");
-        settingsRow.classList.remove("show");
-        deviceData = null;
-        settingsTitle.textContent = "";
-        settingsTab.innerHTML = "";
-        settingsContent.innerHTML = "";
+        await toggleExpansion(settingsRow, {top: "0", left: window.innerWidth.toString() + "px", width: '0%', height: '0%', padding: "1rem 3rem"});
     }
     settingsShown = !settingsShown;
-}
-
-function showSettingsMain() {
     settingsTitle.textContent = "Main Settings";
 }
 
-function showSettingsLifx() {
-    settingsTitle.textContent = "Lifx Settings";
-}
-
-function showSettingsDreamscreen() {
-    settingsTitle.textContent = "DS Settings";
-}
-
-function showSettingsHue() {
-    settingsTitle.textContent = "Hue Settings";
-}
-
-function showSettingsWled() {
-    settingsTitle.textContent = "Wled Settings";
-}
-
-function showSettingsNanoleaf() {
-    settingsTitle.textContent = "Nanoleaf Settings";
-}
 
 function setMode(newMode) {
     console.log("Changing mode to ", newMode);
@@ -452,9 +424,7 @@ function loadUi() {
     document.getElementById("cardRow").click();
 }
 
-function loadDevices() {
-    let getUrl = window.location;
-    let baseUrl = getUrl .protocol + "//" + getUrl.host;
+function loadDevices() {    
     let container = $("#cardRow");
     container.innerHTML = "";
     for (let i = 0; i< data.devices.length; i++) {
@@ -465,7 +435,7 @@ function loadDevices() {
             mainDiv.classList.add("card", "m-4", "devCard");
             // Create card body
             let bodyDiv = document.createElement("div");
-            bodyDiv.classList.add("card-body");            
+            bodyDiv.classList.add("card-body", "row");            
             // Create title/subtitle headers
             let title = document.createElement("h5");
             let subTitle = document.createElement("h6");
@@ -475,41 +445,40 @@ function loadDevices() {
             subTitle.textContent = device["IpAddress"];
             // Create icon
             let titleRow = document.createElement("div");
-            titleRow.classList.add("row", "mb-3");
+            titleRow.classList.add("mb-3", "col-12", "titleRow");
             let titleCol = document.createElement("div");
-            titleCol.classList.add("col-8");            
+            titleCol.classList.add("col-8", "titleCol", "exp");            
             let iconCol = document.createElement("div");
-            iconCol.classList.add("deviceIconWrap", "col-4");
+            iconCol.classList.add("iconCol", "exp", "col-4");
             let image = document.createElement("img");
-            image.classList.add("deviceIcon");
+            image.classList.add("deviceIcon", "img-fluid");
             let tag = device.Tag;
             if (tag === "Dreamscreen") tag = device["DeviceTag"];
             image.setAttribute("src", baseUrl + "/img/" + tag.toLowerCase() + "_icon.png");
-            // Setting Row
-            let settingRow = document.createElement("div");
-            settingRow.classList.add("row");
+            
+            // Settings column
+            let settingsCol = document.createElement("div");
+            settingsCol.classList.add("col-12", "settingsCol", "pb-2", "text-center", "exp");
             // Create enabled checkbox
-            let checkDiv = document.createElement("div");
-            checkDiv.classList.add("mt-4", "col-8");
-            let enabled = document.createElement("INPUT");
-            let checkId = device["_id"] + "Enabled";
-            enabled.setAttribute("id", checkId);
-            enabled.setAttribute("type", "checkbox");
-            if (device["Enable"] === true) enabled.setAttribute("checked", "checked");
-            enabled.classList.add("form-check-input", "devSetting", "mr-1");
-            let eLabel = document.createElement("label");
-            enabled.setAttribute("data-target",device["_id"]);
-            enabled.setAttribute("data-attribute","Enable");
-            if (device["Enable"]) enabled.checked = true;
-            eLabel.classList.add("form-check-label");
-            eLabel.setAttribute("for", checkId);
-            eLabel.innerText = "Enable streaming";
-            checkDiv.appendChild(enabled);
-            checkDiv.appendChild(eLabel);
-            settingRow.appendChild(checkDiv);
-            // Create settings button
-            let settingCol = document.createElement("div");
-            settingCol.classList.add("col-4", "pt-2");
+            let enableButton = document.createElement("button");
+            enableButton.classList.add("btn", "btn-outline-secondary", "settingBtn", "pt-2");
+            enableButton.setAttribute("data-target", device["_id"]);
+            // And the icon
+            let eIcon = document.createElement("span");
+            eIcon.classList.add("material-icons", "pt-1");
+            if (device["Enable"]) {
+                eIcon.textContent = "cast_connected";
+                enableButton.classList.add("btn-dark");
+                enableButton.classList.remove("btn-outline-secondary");
+            } else {
+                eIcon.textContent = "cast";
+            }
+            enableButton.appendChild(eIcon);
+             
+            let enableCol = document.createElement("div");
+            enableCol.classList.add("btn-group", "settingsGroup");
+            enableCol.appendChild(enableButton);
+            
             let settingsButton = document.createElement("button");
             settingsButton.classList.add("btn", "btn-outline-secondary", "settingBtn", "pt-2");
             settingsButton.setAttribute("data-target",device["_id"]);
@@ -517,40 +486,37 @@ function loadDevices() {
             sIcon.classList.add("material-icons", "pt-1");
             sIcon.textContent = "settings";
             settingsButton.appendChild(sIcon);
-            settingCol.appendChild(settingsButton);
-            settingRow.appendChild(settingCol);
+            enableCol.appendChild(settingsButton);
+            settingsCol.appendChild(enableCol);
+            // Create settings button
             //Brightness slider
             let brightnessRow = document.createElement("div");
-            brightnessRow.classList.add("row");
-            let bIcon = document.createElement("span");
-            bIcon.classList.add("material-icons");
-            bIcon.textContent = "brightness_low";
+            brightnessRow.classList.add("col-12", "brightRow");
+            
+            // Slider
             let brightnessSlide = document.createElement("input");
             brightnessSlide.setAttribute("type","range");
             brightnessSlide.setAttribute("data-target",device["_id"]);
             brightnessSlide.setAttribute("data-attribute","Brightness");
             brightnessSlide.value = device["Brightness"];
-            brightnessSlide.classList.add("form-input", "w-100");
+            brightnessSlide.classList.add("form-input", "w-100", 'custom-range');
+            
+            // Brightness column
             let brightnessCol = document.createElement("div");
-            brightnessCol.classList.add("col-10", "pt-1");
-            let bLabelCol = create("div");
-            bLabelCol.classList.add("col-2", "material-icons", "fs-5", "pl-2");
-            let bLabel = create("span");
-            bLabel.textContent = "emoji_objects";
+            brightnessCol.classList.add("col-12", "pt-1");
+            
             brightnessCol.appendChild(brightnessSlide);
-            bLabelCol.appendChild(bLabel);
-            brightnessRow.appendChild(bLabelCol);
-            brightnessRow.appendChild(brightnessCol);
+            
 
             // Put it all together
             iconCol.appendChild(image);
             titleCol.appendChild(title);
             titleCol.appendChild(subTitle);
-            titleRow.appendChild(titleCol)
-            titleRow.appendChild(iconCol);
-            bodyDiv.appendChild(titleRow);
-            bodyDiv.appendChild(brightnessRow);
-            bodyDiv.appendChild(settingRow);
+            
+            bodyDiv.appendChild(iconCol);
+            bodyDiv.appendChild(titleCol);
+            bodyDiv.appendChild(settingsCol);
+            bodyDiv.appendChild(brightnessCol);
             mainDiv.appendChild(bodyDiv);
             container.appendChild(mainDiv);
         }         
@@ -668,25 +634,62 @@ const toggleExpansion = (element, to, duration = 350) => {
 						width ${duration}ms ease-in-out,
 						height ${duration}ms ease-in-out,
 						left ${duration}ms ease-in-out,
-						top ${duration}ms ease-in-out
+						top ${duration}ms ease-in-out,
+						padding ${duration}ms ease-in-out,						
+						margin ${duration}ms ease-in-out
 					`;
             element.style.top = to.top;
             element.style.left = to.left;
             element.style.width = to.width;
             element.style.height = to.height;
+            element.style.padding = to.padding;
             
         });
         setTimeout(function(){
-            element.querySelector(".card-body").querySelectorAll(".row").forEach(function(row){
+            let bbGroup = element.querySelector(".settingsGroup");
+            if (expanded) {
+                bbGroup.classList.add("float-right");
+            } else {
+                bbGroup.classList.remove("float-right");
+            }
+            element.querySelector(".card-body").querySelectorAll(".exp").forEach(function(row){
             console.log("Adding to row? ", row);
             row.style.transition = `
 						width ${duration}ms ease-in-out,
 						height ${duration}ms ease-in-out,
 						left ${duration}ms ease-in-out,
-						top ${duration}ms ease-in-out
-					`;
-            row.classList.add("col-6", "d-flex", "justify-content-center");
+						top ${duration}ms ease-in-out,
+						padding ${duration}ms ease-in-out,
+						margin ${duration}ms ease-in-out,
+						order ${duration}ms ease-in-out
+            `;
+            
+            if (row.classList.contains("iconCol")) {
+                if (expanded) {
+                    row.classList.add("col-md-2", "col-lg-1")
+                } else {
+                    row.classList.remove("col-md-2", "col-lg-1")
+                }
+            }
+            
+            if (row.classList.contains("titleCol")) {
+                if (expanded) {
+                    row.classList.add("col-md-4", "col-lg-5")
+                } else {
+                    row.classList.remove("col-md-4", "col-lg-5")
+                }
+            }  
+            
+            if (row.classList.contains("settingsCol")) {
+                if (expanded) {
+                    row.classList.add("col-md-6");
+                } else {
+                    row.classList.remove("col-md-6");
+                }
+            }            
         });
+            
+        
         }, 50);
         
         setTimeout(res, duration);
@@ -695,9 +698,9 @@ const toggleExpansion = (element, to, duration = 350) => {
 
 const fadeContent = (element, opacity, duration = 300) => {
     return new Promise(res => {
-        [...element.children].forEach((child) => {
+        [...element.children, element].forEach((child) => {
             requestAnimationFrame(() => {
-                child.style.transition = `opacity ${duration}ms linear`;
+                child.style.transition = `opacity ${duration}ms ease-in`;
                 child.style.opacity = opacity;
             });
         })
@@ -706,16 +709,22 @@ const fadeContent = (element, opacity, duration = 300) => {
 }
 
 const onCardClick = async (e) => {
+    expanded = true;
     const card = (e.parentElement.parentElement.parentElement.parentElement);
+    baseCard = card;
     // clone the card
     let targetId = e.getAttribute("data-target");
     console.log("Setting button clicked, we are opening ", targetId);
     //toggleSettingsDiv(targetId);
-    const cardClone = card.cloneNode(true);
+    cardClone = card.cloneNode(true);
     cardClone.classList.remove("devCard", "m-4");
     cardClone.classList.add("container-fluid");
     // get the location of the card in the view
     const {top, left, width, height} = card.getBoundingClientRect();
+    toggleWidth = width;
+    toggleHeight = height;
+    toggleTop = top;
+    toggleLeft = left;
     // position the clone on top of the original
     cardClone.style.position = 'fixed';
     cardClone.style.top = top + 'px';
@@ -726,60 +735,229 @@ const onCardClick = async (e) => {
     card.style.opacity = '0';
     // add card to the main container
     document.querySelector(".main").appendChild(cardClone);
-    // create a close button to handle the undo
-    const closeButton = document.createElement('button');
-    // position the close button top corner
-    closeButton.style = `
-				position: fixed;
-				z-index: 10000;
-				top: 0;
-				right: 40px;
-				width: 35px;
-				height: 35px;
-			`;
-    // attach click event to the close button
-    closeButton.classList.add("btn", "btn-clear", "btn-lg");
-    const closeSpan = document.createElement('span');
-    closeSpan.classList.add("material-icons");
-    closeSpan.textContent = "arrow_left";
-    closeButton.appendChild(closeSpan);
-    closeButton.addEventListener('click', async () => {
-        // remove the button on close
-        document.querySelector(".mainSettings").classList.remove('d-none');
-        closeButton.remove();
-        // remove the display style so the original content is displayed right
-        cardClone.style.removeProperty('display');
-        cardClone.style.removeProperty('padding');
-        // show original card content
-        [...cardClone.children].forEach(child => child.style.removeProperty('display'));
-        fadeContent(cardClone, '0');        
-        // shrink the card back to the original position and size
-        await toggleExpansion(cardClone, {top: `${top}px`, left: `${left}px`, width: `${width}px`, height: `${height}px`}, 300)
-        // show the original card again
-        card.style.removeProperty('opacity');
-        // remove the clone card
-        cardClone.remove();
-    });
-    // fade the content away
-    
-    // expand the clone card
-    let topNav = document.getElementById("mainNav");
-    let oh = topNav.offsetHeight;
+    let cardRow = document.getElementById("mainContent");
+    let oh = cardRow.offsetTop;
     console.log("Top offset is " + oh);
-    // fadeContent(cardClone, '0')
-    //     .then(() => {
-    //         [...cardClone.children].forEach(child => child.style.display = 'none');
-    //     });
-    await toggleExpansion(cardClone, {top: oh + "px", left: 0, width: '100%', height: '100%'});
-    //const content = getCardContent(card.textContent, card.dataset.type)
-    // set the display block so the content will follow the normal flow in case the original card is not display block
+    // remove the display style so the original content is displayed right
     cardClone.style.display = 'block';
-    cardClone.style.padding = '0';
-    // append the close button after the expansion is done
-    topNav.appendChild(closeButton);
+    // Expand that bish
+    await toggleExpansion(cardClone, {top: oh + "px", left: 0, width: '100%', height: 'calc(100% - ' + oh + 'px)', padding: "1rem 3rem"}, 250);
+    addCardSettings();
+
+    cardClone.style.overflowY = "scroll";
+
+    // Create settings for our card
     document.querySelector(".mainSettings").classList.add('d-none');
-    //cardClone.insertAdjacentHTML('afterbegin', content);
+    closeButton.classList.remove('d-none');
 };
+
+function addCardSettings() {
+    if (deviceData === undefined) {
+        console.log("NO DEVICE DATA");
+    } else {
+        console.log("Appending card settings.");
+        let createSectors = false;
+        let createLed = false;
+        let createHue = false;
+        let createNano = false;
+        
+        switch(deviceData["Tag"]) {
+            case "Dreamscreen":      
+                createSectors = (deviceData["Tag"] === "Connect" || deviceData["Tag"] === "Sidekick");
+                break;
+            case "HueBridge":
+                if (deviceData["Key"] !== null && deviceData["User"] !== null) {
+                    createHue = true;
+                    createSectors = true;    
+                } else {
+                    
+                }
+                
+                break;
+            case "Lifx":
+                appendImageMap();
+                break;
+            case "Nanoleaf":
+                if (deviceData["Token"] !== null) {
+                    createSectors = true;
+                    createNano = true;    
+                }
+                
+                break;
+            case "Wled":
+                appendImageMap();
+                break;
+            default:
+                console.log("Unknown device tag.");
+                return;
+        }
+        
+        if (createSectors) {
+            
+        }
+        
+        fadeContent(settingsDiv,100, 500);
+    }   
+}
+
+function appendImageMap() {
+    let sepDiv = document.createElement("div");
+    sepDiv.classList.add("dropdown-divider");
+    let settingsDiv = document.createElement("div");
+    settingsDiv.classList.add("deviceSettings", "row", "text-center");
+    let imgDiv = document.createElement("div");
+    imgDiv.id = "mapDiv";
+    let img = document.createElement("img");
+    img.id = "sectorImage";
+    img.classList.add("img-fluid", "col-xl-8", "col-lg-8", "col-md-12");
+    img.src = baseUrl + "/img/sectoring_screen.png";
+    imgDiv.appendChild(img);
+    settingsDiv.append(imgDiv);
+    settingsDiv.style.opacity = "0%";
+    settingsDiv.style.overflow = "scrollY";
+    settingsDiv.style.position = "relative";
+    cardClone.appendChild(sepDiv);
+    cardClone.appendChild(settingsDiv);
+    setTimeout(function() {createSectorMap(imgDiv)}, 200);
+}
+
+function createSectorMap(targetElement) {
+    let img = document.getElementById("sectorImage");
+    let w = img.offsetWidth;
+    let h = img.offsetHeight;
+    let imgL = img.offsetLeft;
+    let imgT = img.offsetTop;
+    let wFactor = w / 1920;
+    let hFactor = h / 1100;
+    let wMargin = 62 * wFactor;
+    let hMargin = 52 * hFactor;
+    let fHeight = (h - hMargin - hMargin) / 6;
+    let fWidth = (w - wMargin - wMargin) / 10;
+    let map = document.createElement("div");
+    map.id = "sectorMap";
+    map.classList.add("sectorMap");
+    map.style.top = imgT + "px";
+    map.style.left = imgL + "px";
+    map.style.width = w + "px";
+    map.style.height = h + "px";
+    console.log("W and h are ", w, h);
+    // Bottom-right, up to top-right
+    let t = 0;
+    let b = 0;
+    let l = 0;
+    let r = 0;
+    for (let i = 0; i < 6; i++) {
+        t = h - hMargin - ((i + 1) * fHeight);
+        b = t + fHeight;
+        l = w - wMargin - fWidth;
+        r = l + fWidth;
+        let sector = i + 1;
+        let s1 = document.createElement("div");
+        s1.classList.add("sector");
+        s1.setAttribute("data-sector", sector.toString());
+        s1.style.position = "absolute";
+        s1.style.top = t.toString() + "px";
+        s1.style.left = l.toString() + "px";
+        s1.style.width = fWidth.toString() + "px";
+        s1.style.height = fHeight.toString() + "px";
+        s1.innerText = sector.toString();
+        map.appendChild(s1);
+    }
+    
+    for (let i = 0; i < 9; i++) {
+        l = w - wMargin - (fWidth * (i + 1));
+        r = l - fWidth;        
+        let sector = i + 6;
+        let s1 = document.createElement("div");
+        s1.classList.add("sector");
+        s1.setAttribute("data-sector", sector.toString());
+        s1.style.position = "absolute";
+        s1.style.top = t.toString() + "px";
+        s1.style.left = l.toString() + "px";
+        s1.style.width = fWidth.toString() + "px";
+        s1.style.height = fHeight.toString() + "px";
+        s1.innerText = sector.toString();
+        map.appendChild(s1);
+    }
+
+    // Left, top-bottom
+    for (let i = 0; i < 5; i++) {
+        t = hMargin + (i * fHeight);
+        b = t + fHeight;
+        l = wMargin;
+        r = l + fWidth;
+        let sector = i + 6 + 9;
+        let s1 = document.createElement("div");
+        s1.classList.add("sector");
+        s1.setAttribute("data-sector", sector.toString());
+        s1.style.position = "absolute";
+        s1.style.top = t.toString() + "px";
+        s1.style.left = l.toString() + "px";
+        s1.style.width = fWidth.toString() + "px";
+        s1.style.height = fHeight.toString() + "px";
+        s1.innerText = sector.toString();
+        map.appendChild(s1);
+    }
+
+    // This one, stupid
+    for (let i = 0; i < 9; i++) {
+        t = h - hMargin - fHeight;
+        b = t + fHeight;
+        l = wMargin + (fWidth * (i));
+        r = l + fWidth;
+        let sector = i + 6 + 9 + 5;
+        let s1 = document.createElement("div");
+        s1.classList.add("sector");
+        s1.setAttribute("data-sector", sector.toString());
+        s1.style.position = "absolute";
+        s1.style.top = t.toString() + "px";
+        s1.style.left = l.toString() + "px";
+        s1.style.width = fWidth.toString() + "px";
+        s1.style.height = fHeight.toString() + "px";
+        s1.innerText = sector.toString();
+        map.appendChild(s1);
+    }
+    
+    let s2 = document.createElement("div");
+    s2.classList.add("sector2");
+    s2.style.position = "absolute";
+    s2.style.top = hMargin + fHeight + "px";
+    s2.style.height = (fHeight * 4) + "px";
+    s2.style.left = wMargin + fWidth + "px";
+    s2.style.width = (fWidth * 8) + "px";
+    s2.style.border = "2px solid black";
+    map.appendChild(s2);
+    targetElement.appendChild(map);    
+}
+
+function createHueMap() {
+    let lights = deviceData["Lights"];
+    let lightMap =deviceData["MappedLights"];
+    let groups = deviceData["Groups"];
+    let selectedGroup = deviceData["SelectedGroup"];
+    // Main container
+    let hueMapRow = document.createElement("div");
+    hueMapRow.classList.add("row");
+    // Group select row
+    let groupSelectCol = document.createElement("div");
+    groupSelectCol.classList.add("col-12");
+    // Group select
+    let groupSelect = document.createElement("select");
+    let defaultOption = document.createElement("option");
+    defaultOption.textContent = "";
+    defaultOption.value = "-1";
+    if (selectedGroup === -1) defaultOption.selected = true;
+    groupSelect.appendChild(defaultOption);
+    for(let i = 0; i < groups.length; i++) {
+        let opt = document.createElement("option");
+        opt.value = groups[i]["_id"];
+        opt.textContent = groups[i]["_id"];
+        if (selectedGroup === groups[i]["_id"]) opt.selected = true;
+        groupSelect.appendChild(opt);
+    }
+    groupSelectCol.appendChild(groupSelect);
+    cardClone.appendChild(groupSelectCol);
+}
 
 function sizeContent() {
     let navDiv = document.getElementById("mainNav");
@@ -792,4 +970,27 @@ function sizeContent() {
     cDiv.style.height = wHeight - navDiv.offsetHeight - footDiv.offsetHeight + "px";
     cDiv.style.width = wWidth + "px";
     console.log("Setting: ", navDiv.offsetHeight, footDiv.offsetHeight);
+    if (expanded) {
+        let oh = document.getElementById("mainContent").offsetTop;
+        toggleExpansion(cardClone, {top: oh + "px", left: 0, width: '100%', height: 'calc(100% - ' + oh + 'px)', padding: "1rem 3rem"}, 250);
+        let imgDiv = document.getElementById("mapDiv");
+        let secMap = document.getElementById("sectorMap");
+        secMap.remove();
+        createSectorMap(imgDiv);
+    }
 }
+
+async function closeCard() {
+    cardClone.style.overflowY = "none";
+    deviceData = undefined;
+    expanded = false;
+    // shrink the card back to the original position and size    
+    await toggleExpansion(cardClone, {top: `${toggleTop}px`, left: `${toggleLeft}px`, width: `${toggleWidth}px`, height: `${toggleHeight}px`, padding: '1rem 1rem'}, 300);
+    // show the original card again
+    document.querySelector(".mainSettings").classList.remove('d-none');
+    document.getElementById("closeBtn").classList.add('d-none');
+
+    baseCard.style.removeProperty('opacity');
+    cardClone.remove();
+}
+
