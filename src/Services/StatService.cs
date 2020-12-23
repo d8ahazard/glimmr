@@ -5,6 +5,7 @@ using Glimmr.Hubs;
 using Glimmr.Models.Util;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
+using Serilog;
 
 namespace Glimmr.Services {
 	public class StatService : BackgroundService
@@ -26,6 +27,8 @@ namespace Glimmr.Services {
 					// Sleep for 5s
 					await Task.Delay(5000, stoppingToken);
 				}
+				Log.Debug("Stopped stat service.");
+				return Task.CompletedTask;
 			}, stoppingToken);
 		}
 	}

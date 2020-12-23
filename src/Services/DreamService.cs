@@ -91,10 +91,16 @@ namespace Glimmr.Services {
             return Task.Run(async () => {
                 while (!cancellationToken.IsCancellationRequested) {
                     await Task.Delay(1, cancellationToken);
-                } 
-                Log.Information("DreamClient: Main loop terminated, stopping services...");
-                StopServices();
+                }
+                return Task.CompletedTask;
             }, cancellationToken);
+        }
+        
+        public override Task StopAsync(CancellationToken cancellationToken) {
+            Log.Debug("Stopping DreamScreen service...");
+            StopServices();
+            Log.Debug("Dreamscreen service stopped.");
+            return base.StopAsync(cancellationToken);
         }
         
         
@@ -477,7 +483,6 @@ namespace Glimmr.Services {
 
         private void StopServices() {
             _listener?.Dispose();
-            Log.Debug("All services have been stopped.");
         }
 
         #region Messaging

@@ -105,6 +105,10 @@ namespace Glimmr.Models.StreamingDevice.WLED {
             if (Data.StripMode == 2) {
                 colors = ShiftColors(colors);
             }
+
+            if (Data.StripDirection == 1) {
+                colors.Reverse();
+            }
             var packet = new List<Byte>();
             // Set mode to DRGB, dude.
             var timeByte = 255;
@@ -135,24 +139,27 @@ namespace Glimmr.Models.StreamingDevice.WLED {
         private List<Color> TruncateColors(List<Color> input) {
             var truncated = new List<Color>();
             var offset = Data.Offset;
+            // Subtract one from our offset because arrays
             var len = Data.LedCount;
-            var loop = false;
-            var loopEnd = 0;
             // Start at the beginning
             if (offset + len > input.Count) {
-                loopEnd = offset + len - input.Count;
-                loop = true;
-            }
-
-            for (var i = 0; i < input.Count; i++) {
-                if (loop && i < loopEnd) {
+                // Set the point where we need to end the loop
+                var offsetLen = offset + len - input.Count;
+                // Where do we start midway?
+                var loopLen = input.Count - offsetLen;
+                for (var i = loopLen - 1; i < input.Count; i++) {
                     truncated.Add(input[i]);
                 }
-
-                if (i >= offset - 1 && i < offset + len - 1) {
+                // Now calculate how many are needed from the front
+                for (var i = 0; i < len - offsetLen; i++) {
                     truncated.Add(input[i]);
                 }
+            } else {
+                for (var i = offset; i < offset + len; i++) {
+                    truncated.Add(input[i]);
+                }    
             }
+
             return truncated;
         }
 

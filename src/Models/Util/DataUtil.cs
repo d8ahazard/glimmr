@@ -32,9 +32,10 @@ namespace Glimmr.Models.Util {
         }
 
         public static void Dispose() {
-            Log.Debug("DISPOSING DATABASE.");
+            Log.Debug("Disposing database...");
             _db?.Commit();
             _db?.Dispose();
+            Log.Debug("Database disposed.");
         }
 
         public static void CheckDefaults(LifxClient lc) {

@@ -30,11 +30,17 @@ namespace Glimmr.Services {
 				Log.Debug("Starting discovery service loop.");
 				StartRefreshTimer();
 				while (!stoppingToken.IsCancellationRequested) {
-					await Task.Delay(1);
+					await Task.Delay(1, stoppingToken);
 				}
+				return Task.CompletedTask;
+			}, stoppingToken);
+		}
 
-				_refreshTimer.Close();
-			});
+		public override Task StopAsync(CancellationToken cancellationToken) {
+			Log.Debug("Stopping discovery service...");
+			_refreshTimer.Close();
+			Log.Debug("Discovery service stopped.");
+			return base.StopAsync(cancellationToken);
 		}
 
 		private void ToggleAutoScan(int mode) {

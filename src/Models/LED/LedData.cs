@@ -9,7 +9,7 @@ namespace Glimmr.Models.LED {
 
         [DefaultValue(18)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-        public int PinNumber { get; set; } = 18;
+        public int GpioNumber { get; set; } = 18;
 
         [DefaultValue(55)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]

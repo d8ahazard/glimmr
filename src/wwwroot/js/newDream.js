@@ -796,7 +796,7 @@ function addCardSettings() {
             
         }
         
-        fadeContent(settingsDiv,100, 500);
+        
     }   
 }
 
@@ -819,6 +819,7 @@ function appendImageMap() {
     cardClone.appendChild(sepDiv);
     cardClone.appendChild(settingsDiv);
     setTimeout(function() {createSectorMap(imgDiv)}, 200);
+    fadeContent(settingsDiv,100, 500);
 }
 
 function createSectorMap(targetElement) {

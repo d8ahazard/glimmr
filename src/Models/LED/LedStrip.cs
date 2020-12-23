@@ -38,10 +38,19 @@ namespace Glimmr.Models.LED {
 				0 => StripType.WS2812_STRIP,
 				_ => StripType.SK6812W_STRIP
 			};
-			var pin = Pin.Gpio18;
-			if (ld.PinNumber == 13) pin = Pin.Gpio13;
-			Log.Debug($@"Count, pin, type: {_ledCount}, {ld.PinNumber}, {(int)stripType}");
+			// 18 = PWM0, 13 = PWM1, 21 = PCM, 10 = SPI0/MOSI
+			var pin = ld.GpioNumber switch {
+				13 => Pin.Gpio13,
+				10 => Pin.Gpio10,
+				21 => Pin.Gpio21,
+				_ => Pin.Gpio18
+			};
+			Log.Debug($@"Count, pin, type: {_ledCount}, {ld.GpioNumber}, {(int)stripType}");
 			var settings = Settings.CreateDefaultSettings();
+			// Hey, look, this is built natively into the LED app
+			if (ld.FixGamma) {
+				settings.SetGammaCorrection(2.8f, 255, 255);
+			}
 			_controller = settings.AddController(_ledCount, pin, stripType);
 			try {
 				_strip = new WS281x(settings);
@@ -102,10 +111,7 @@ namespace Glimmr.Models.LED {
 				}
 
 				var tCol = colors[iSource];
-				if (_ld.FixGamma)  {
-					//tCol = ColorUtil.FixGamma2(tCol);
-				}
-
+				
 				if (_ld.StripType == 1) {
 					tCol = ColorUtil.ClampAlpha(tCol);    
 				}
