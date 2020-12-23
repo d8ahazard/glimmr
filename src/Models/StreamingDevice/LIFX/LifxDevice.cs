@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using Glimmr.Models.Util;
+using Glimmr.Services;
 using LifxNet;
 using Serilog;
 
@@ -26,11 +27,12 @@ namespace Glimmr.Models.StreamingDevice.LIFX {
         public string Tag { get; set; }
 
         private LifxClient _client;
-        
-        public LifxDevice(LifxData d, LifxClient c) {
+
+        public LifxDevice(LifxData d, LifxClient c, ColorService colorService) {
             _captureMode = DataUtil.GetItem<int>("captureMode");
             Data = d ?? throw new ArgumentException("Invalid Data");
             _client = c;
+            colorService.ColorSendEvent += SetColor;
             B = new LightBulb(d.HostName, d.MacAddress, d.Service, (uint)d.Port);
             _targetSector = d.TargetSector - 1;
             Brightness = d.Brightness;
@@ -82,8 +84,10 @@ namespace Glimmr.Models.StreamingDevice.LIFX {
         }
 
         public void SetColor(List<System.Drawing.Color> _, List<System.Drawing.Color> sectors, double fadeTime = 0) {
-            if (!Streaming) return;
-            if (sectors == null || _client == null) throw new ArgumentException("Invalid color inputs.");
+            if (!Streaming || !Enable) return;
+            if (sectors == null || _client == null) {
+                return;
+            }
             var input = sectors[_targetSector];
             if (Brightness < 100) {
                 input = ColorTransformUtil.ClampBrightness(input, Brightness);

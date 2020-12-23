@@ -81,7 +81,7 @@ namespace Glimmr.Models.ColorSource.Video {
 		}
 		
 		public void Initialize() {
-			Log.Debug("Beginning video capture process...");
+			Log.Debug("Initializing video stream...");
 			SetCapVars();
 			var autoEvent = new AutoResetEvent(false);
 			_saveTimer = new Timer(SaveFrame, autoEvent, 5000, 5000);
@@ -116,12 +116,11 @@ namespace Glimmr.Models.ColorSource.Video {
 					Log.Warning("Unable to process frame.");
 					continue;
 				}
+
 				StreamSplitter.Update(warped);
-				//Log.Debug("Updated!");
 				SourceActive = !StreamSplitter.NoImage;
 				var colors = StreamSplitter.GetColors();
 				var sectors = StreamSplitter.GetSectors();
-				
 				//Log.Debug("No, really, sending colors...");
 				_colorService.SendColors(colors, sectors);
 			}

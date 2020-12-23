@@ -7,6 +7,7 @@ using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
+using Glimmr.Services;
 using Newtonsoft.Json;
 using Serilog;
 
@@ -22,12 +23,14 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 		[DataMember] [JsonProperty] public string DeviceTag { get; set; }
 		[DataMember] [JsonProperty] public bool Enable { get; set; }
 		[DataMember] [JsonProperty] public DreamData Data { get; set; }
-
+		
+		
 		private readonly DreamUtil _dreamUtil;
 
-		public DreamDevice(DreamData data, DreamUtil util) {
+		public DreamDevice(DreamData data, DreamUtil util, ColorService colorService) {
 			Log.Debug($"My group is {data.DeviceGroup}");
 			Data = data;
+			colorService.ColorSendEvent += SetColor;
 			_dreamUtil = util;
 			Data = data;
 			Brightness = data.Brightness;
@@ -49,6 +52,8 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 		}
 
 		public void SetColor(List<Color> _, List<Color> sectors, double fadeTime) {
+			if (!Data.Enable) return;
+			if (sectors == null) return;
 			if (sectors.Count == 28) {
 				sectors = ColorUtil.TruncateColors(sectors);
 				

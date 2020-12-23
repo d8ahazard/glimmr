@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading;
 using Glimmr.Models.ColorSource.Video;
 using Glimmr.Models.Util;
+using Glimmr.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
@@ -40,13 +41,15 @@ namespace Glimmr.Models.StreamingDevice.WLED {
 
         public WledData Data { get; set; }
         
-        public WledDevice(WledData wd, UdpClient uc, HttpClient hc) {
+        public WledDevice(WledData wd, UdpClient uc, HttpClient hc, ColorService colorService) {
+            colorService.ColorSendEvent += SetColor;
             _udpClient = uc;
             _httpClient = hc;
             _updateColors = new List<Color>();
             Data = wd ?? throw new ArgumentException("Invalid WLED data.");
             Log.Debug("Enabled: " + IsEnabled());
             Id = Data.Id;
+            Enable = Data.Enable;
             IpAddress = Data.IpAddress;
         }
 
@@ -96,11 +99,13 @@ namespace Glimmr.Models.StreamingDevice.WLED {
         }
 
         public void SetColor(List<Color> colors, List<Color> _, double fadeTime) {
-            if (colors == null) throw new InvalidEnumArgumentException("Colors cannot be null.");
-            if (!Streaming) {
-                Log.Debug("Not streaming, dumbass: " + Data.Id);
+            if (colors == null) {
                 return;
             }
+            if (!Streaming || !Data.Enable) {
+                return;
+            }
+
             colors = TruncateColors(colors);
             if (Data.StripMode == 2) {
                 colors = ShiftColors(colors);

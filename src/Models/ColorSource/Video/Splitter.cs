@@ -106,7 +106,6 @@ namespace Glimmr.Models.ColorSource.Video {
 				return;
 			}
 
-			var outColorsStrip = new List<Color>();
 			var outColorsSector = new List<Color>();
 			if (_frameCount >= 10) {
 				CheckSectors();
@@ -114,7 +113,6 @@ namespace Glimmr.Models.ColorSource.Video {
 			}
 
 			_frameCount++;
-
 			// Only calculate new sectors if the value has changed
 			if (_sectorChanged) {
 				_sectorChanged = false;
@@ -128,26 +126,11 @@ namespace Glimmr.Models.ColorSource.Video {
 				var path = Directory.GetCurrentDirectory();
 				var gMat = new Mat();
 				inputMat.CopyTo(gMat);
-				var colInt = 0;
-				var sectorTarget = _fullCoords;
-				var colorTarget = _colorsLed;
-				foreach (var s in sectorTarget) {
-					var scCol = colorTarget[colInt];
-					var stCol = ColorUtil.ClampAlpha(scCol);
-					var col = new Bgr(stCol).MCvScalar;
-					CvInvoke.Rectangle(gMat, s, col, -1, LineType.AntiAlias);
-					//CvInvoke.Rectangle(gMat, s, white, 1, LineType.AntiAlias);
-					colInt++;
-				}
-
 				gMat.Save(path + "/wwwroot/img/_preview_output.jpg");
 				gMat.Dispose();
 			}
 
-			foreach (var sub in _fullCoords) {
-				var nm = new Mat(_input, sub);
-				outColorsStrip.Add(GetAverage(nm));
-			}
+			var outColorsStrip = _fullCoords.Select(sub => new Mat(_input, sub)).Select(nm => GetAverage(nm)).ToList();
 
 			foreach (var sub in _fullSectors.Select(r => new Mat(_input, r))) {
 				outColorsSector.Add(GetAverage(sub));
@@ -156,7 +139,6 @@ namespace Glimmr.Models.ColorSource.Video {
 
 			_colorsLed = outColorsStrip;
 			_colorsSectors = outColorsSector;
-			//Log.Debug("Updated.");
 		}
 
 

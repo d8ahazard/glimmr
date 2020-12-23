@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Glimmr.Models.Util;
+using Glimmr.Services;
 using Newtonsoft.Json;
 using Q42.HueApi;
 using Q42.HueApi.ColorConverters;
@@ -36,12 +37,18 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 		public string IpAddress { get; set; }
 		public string Tag { get; set; }
 		public bool Streaming { get; set; }
+		private ColorService _cs;
 
 		private Task _updateTask;
+		
 
-
-		public HueDevice(HueData data) {
+		public HueDevice(HueData data, ColorService colorService = null) {
+			
 			DataUtil.GetItem<int>("captureMode");
+			if (colorService != null) {
+				_cs = colorService;
+				_cs.ColorSendEvent += SetColor;
+			} 
 			Data = data ?? throw new ArgumentNullException(nameof(data));
 			IpAddress = Data.IpAddress;
 			_disposed = false;
@@ -154,11 +161,10 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 		/// <param name="colors">Sector colors.</param>
 		/// <param name="fadeTime">Optional: how long to fade to next state</param>
 		public void SetColor(List<Color> _, List<Color> colors, double fadeTime = 0) {
-			if (!Streaming) {
+			if (!Streaming || !Data.Enable) {
 				return;
 			}
 			if (colors == null) {
-				Log.Warning("Color array can't be null.");
 				return;
 			}
 

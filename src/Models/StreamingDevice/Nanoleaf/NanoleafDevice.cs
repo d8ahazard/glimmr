@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
+using Glimmr.Services;
 using Nanoleaf.Client;
 using Nanoleaf.Client.Exceptions;
 using Nanoleaf.Client.Models.Responses;
@@ -47,8 +48,9 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 			_disposed = false;
 		}
 
-		public NanoleafDevice(NanoleafData n, UdpClient socket, HttpClient client) {
+		public NanoleafDevice(NanoleafData n, UdpClient socket, HttpClient client, ColorService colorService) {
 			_captureMode = DataUtil.GetItem<int>("captureMode");
+			colorService.ColorSendEvent += SetColor;
 			if (n != null) {
 				SetData(n);
 				_sender = socket;
@@ -117,12 +119,17 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 
 
 		public void SetColor(List<Color> _, List<Color> colors, double fadeTime = 1) {
-			int ft = (int) fadeTime;
-			if (!Streaming) {
+			if (!Streaming || !Data.Enable) {
 				Log.Debug("Streaming is  not active?");
 				return;
 			}
 
+			if (colors == null) {
+				return;
+			}
+			
+			int ft = (int) fadeTime;
+			
 			var capCount = _captureMode == 0 ? 12 : 28;
             
 			if (colors == null || colors.Count < capCount) {
