@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using Glimmr.Models.StreamingDevice.Yeelight;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Newtonsoft.Json;

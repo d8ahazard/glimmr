@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
+using Glimmr.Models.StreamingDevice.Yeelight;
 
 namespace Glimmr.Models.StreamingDevice {
 	public interface IStreamingDevice {

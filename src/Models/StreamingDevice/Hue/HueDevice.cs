@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
+using Glimmr.Models.StreamingDevice.Yeelight;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Newtonsoft.Json;

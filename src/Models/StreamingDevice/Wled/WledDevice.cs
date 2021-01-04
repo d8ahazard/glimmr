@@ -10,6 +10,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using Glimmr.Models.ColorSource.Video;
+using Glimmr.Models.StreamingDevice.Yeelight;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Newtonsoft.Json;
