@@ -265,7 +265,7 @@ namespace Glimmr.Services {
 			
 			var yeeArray = DataUtil.GetCollection<YeelightData>("Dev_Yeelight");
 			foreach (var yd in yeeArray) {
-				_sDevices.Add(new YeelightDevice(yd));
+				_sDevices.Add(new YeelightDevice(yd, this));
 			}
 
 			Log.Debug("Initializing Splitter.");
