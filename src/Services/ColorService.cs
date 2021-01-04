@@ -16,6 +16,7 @@ using Glimmr.Models.StreamingDevice.Hue;
 using Glimmr.Models.StreamingDevice.LIFX;
 using Glimmr.Models.StreamingDevice.Nanoleaf;
 using Glimmr.Models.StreamingDevice.WLED;
+using Glimmr.Models.StreamingDevice.Yeelight;
 using Glimmr.Models.Util;
 using LifxNet;
 using Microsoft.Extensions.Hosting;
@@ -260,6 +261,11 @@ namespace Glimmr.Services {
 				bridge.SelectedGroup != "-1")) {
 				Log.Debug("Adding Hue device: " + bridge.Id);
 				_sDevices.Add(new HueDevice(bridge));
+			}
+			
+			var yeeArray = DataUtil.GetCollection<YeelightData>("Dev_Yeelight");
+			foreach (var yd in yeeArray) {
+				_sDevices.Add(new YeelightDevice(yd));
 			}
 
 			Log.Debug("Initializing Splitter.");
