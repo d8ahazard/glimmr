@@ -57,7 +57,6 @@ namespace Glimmr.Services {
 		private Dictionary<string, int> _subscribers;
 		private bool _testingStrip;
 		private VideoStream _videoStream;
-		private Stopwatch _watch;
 		public event Action<List<Color>, List<Color>, double> ColorSendEvent = delegate { };
 
 		public ColorService(ControlService controlService) {
@@ -79,7 +78,6 @@ namespace Glimmr.Services {
 			var streamToken = _streamTokenSource.Token;
 			Log.Information("Starting colorService loop...");
 			_subscribers = new Dictionary<string, int>();
-			_watch = new Stopwatch();
 			LoadData();
 			// Fire da demo
 			Log.Information("Starting video capture task...");
@@ -115,53 +113,41 @@ namespace Glimmr.Services {
 
 	
 		private void CheckAutoDisable() {
-			if (_videoStream == null) {
-				return;
-			}
-
-			if (_videoStream.SourceActive) {
-				_watch.Reset();
-				if (!_autoDisabled) {
+			var sourceActive = false;
+			// If we're in video or audio mode, check the source is active...
+			switch (_deviceMode) {
+				case 0:
+				case 3:
+				case 1 when _videoStream == null:
+				case 2 when _audioStream == null :
 					return;
-				}
-
-				_autoDisabled = false;
+				case 1:
+					sourceActive = _videoStream.SourceActive;
+					break;
+				case 2:
+					sourceActive = _audioStream.SourceActive;
+					break;
+			}
+			
+			if (sourceActive) {
+				if (!_autoDisabled) return;
 				Log.Debug("Auto-enabling stream.");
+				_autoDisabled = false;
+				DataUtil.SetItem<bool>("AutoDisabled", _autoDisabled);
 				_controlService.SetModeEvent -= Mode;
 				_controlService.SetMode(_deviceMode);
 				_controlService.SetModeEvent += Mode;
 			} else {
-				if (_autoDisabled) {
-					return;
-				}
-
-				if (_deviceMode != 1) {
-					return;
-				}
-
-				if (!_watch.IsRunning) {
-					_watch.Start();
-				}
-
-				if (_watch.ElapsedMilliseconds > 5000) {
-					Log.Debug("Auto-sleeping lights.");
-					_autoDisabled = true;
-					_deviceMode = 0;
-					DataUtil.SetItem<bool>("AutoDisabled", _autoDisabled);
-					DataUtil.SetItem<bool>("DeviceMode", _deviceMode);
-					_controlService.SetModeEvent -= Mode;
-					_controlService.SetMode(_deviceMode);
-					_controlService.SetModeEvent += Mode;
-					_watch.Reset();
-				} else {
-					if (_watch.ElapsedMilliseconds % 1000 != 0) {
-						return;
-					}
-
-					_watch.Reset();
-				}
+				if (_autoDisabled) return;
+				Log.Debug("Auto-disabling stream.");
+				_autoDisabled = true;
+				DataUtil.SetItem<bool>("AutoDisabled", _autoDisabled);
+				_controlService.SetModeEvent -= Mode;
+				_controlService.SetMode(0);
+				_controlService.SetModeEvent += Mode;
 			}
 		}
+
 
 		private void CheckSubscribers() {
 			try {
@@ -429,7 +415,6 @@ namespace Glimmr.Services {
 			}
 
 			_deviceMode = newMode;
-
 			Log.Information($"Device mode updated to {newMode}.");
 		}
 

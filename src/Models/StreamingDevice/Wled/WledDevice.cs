@@ -127,8 +127,8 @@ namespace Glimmr.Models.StreamingDevice.WLED {
             }
             if (!colorsSet) {
                 colorsSet = true;
-                Log.Debug("Sending " + colors.Count + " colors to " + IpAddress);
-                Log.Debug("First packet: " + ByteUtils.ByteString(packet.ToArray()));
+                //Log.Debug("Sending " + colors.Count + " colors to " + IpAddress);
+                //Log.Debug("First packet: " + ByteUtils.ByteString(packet.ToArray()));
             }
 
             if (ep != null) {

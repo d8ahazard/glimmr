@@ -39,6 +39,7 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 		public string Tag { get; set; }
 		public bool Streaming { get; set; }
 		private ColorService _cs;
+		private StreamingGroup _stream;
 
 		private Task _updateTask;
 		
@@ -60,6 +61,12 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 			Brightness = data.Brightness;
 			if (Data?.User == null || Data?.Key == null || _client != null) return;
 			_client = new StreamingHueClient(Data.IpAddress, Data.User, Data.Key);
+			try {
+				_stream = SetupAndReturnGroup().Result;
+				Log.Debug("Stream is set.");
+			} catch (Exception e) {
+				Log.Warning("Exception: " + e.Message);
+			}
 		}
 
         
@@ -97,25 +104,36 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 			if (ct == null) throw new ArgumentException("Invalid cancellation token.");
 			_ct = ct;
 			
-			StreamingGroup stream;
-			try {
-				stream = SetupAndReturnGroup().Result;
-				Log.Debug("Stream is set.");
-			} catch (Exception e) {
-				Log.Warning("Exception: " + e.Message);
-				return;
-			}
-            
-
 			// This is what we actually need
-			if (stream == null) {
+			if (_stream == null) {
 				Log.Warning("Error fetching bridge stream.");
 				Streaming = false;
 				return;
 			}
+			
+			Log.Debug("Stream Got.");
+			//Connect to the streaming group
+			try {
+				Log.Debug("Connecting...");
+				var groupId = Data.SelectedGroup;
+				Log.Debug("Grabbing ent group...");
+				var group = _client.LocalHueClient.GetGroupAsync(groupId).Result;
+				if (group == null) {
+					Log.Warning("Unable to fetch group with ID of " + groupId);
+					return;
+				}
+
+				_client.Connect(group.Id);
+				Log.Debug("Connected.");
+			} catch (Exception e) {
+				Log.Debug("Streaming exception caught: " + e.Message);
+			}
+
+			_updateTask = _client.AutoUpdate(_stream, _ct);
+			Log.Debug("Group setup complete, returning.");
 
 			Log.Debug("Getting entertainment layer.");
-			_entLayer = stream.GetNewLayer(true);
+			_entLayer = _stream.GetNewLayer(true);
 			Log.Debug($"Hue: Stream started: {IpAddress}");
 			Streaming = true;
 		}
@@ -239,17 +257,11 @@ namespace Glimmr.Models.StreamingDevice.Hue {
         }
 
        private async Task<StreamingGroup> SetupAndReturnGroup() {
-            
-            if (_client == null || Data == null) {
-                Log.Warning("Client or data are null, returning...");
-                return null;
-            }
-            
-            var groupId = Data.SelectedGroup;
+	       var groupId = Data.SelectedGroup;
 
-            if (groupId == null) {
-	            Log.Debug("HueStream: Group ID is null!");
-	            return null;
+            if (_client == null || Data == null || groupId == null) {
+                Log.Warning("Client or data or groupId are null, returning...");
+                return null;
             }
             
             try {
@@ -282,18 +294,7 @@ namespace Glimmr.Models.StreamingDevice.Hue {
                 }
                 
                 var stream = new StreamingGroup(mappedLights);
-                Log.Debug("Stream Got.");
-                //Connect to the streaming group
-                try {
-                    Log.Debug("Connecting...");
-                    await _client.Connect(group.Id);
-                    Log.Debug("Connected.");
-                } catch (Exception e) {
-                    Log.Debug("Streaming exception caught: " + e.Message);
-                }
-
-                _updateTask = _client.AutoUpdate(stream, _ct);
-                Log.Debug("Group setup complete, returning.");
+                
                 return stream;
             
             } catch (SocketException e) {

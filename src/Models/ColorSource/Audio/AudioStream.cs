@@ -14,6 +14,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 	public sealed class AudioStream : IColorSource, IDisposable {
 		
 		public bool Streaming { get; set; }
+		public bool SourceActive { get; set; }
 		
 		private bool _disposed;
 		private List<AudioData> _devices;
@@ -127,15 +128,19 @@ namespace Glimmr.Models.ColorSource.Audio {
 			//var channelGetData = Bass.ChannelGetData(handle, fft, (int) DataFlags.FFT256);
 			//Log.Debug($"FFT {channelGetData}: " + JsonConvert.SerializeObject(fft));
 			var cData = new Dictionary<int, float>();
+			var sa = false;
 			for (var a = 0; a < samples; a++) {
 				var val = fft[a];
 				if (val > 0.01) {
+					sa = true;
 					var amp = val * 100;
 					var freq = FftIndex2Frequency(a, samples, _frequency);
 					if (amp > _max) _max = amp;
 					cData[freq] = amp;
 				}
 			}
+
+			SourceActive = sa;
 
 			// Now get them for the stereo left/right
 			//channelGetData = Bass.ChannelGetData(handle, fftStereo, (int) DataFlags.FFTIndividual);

@@ -14,7 +14,7 @@
     max-height: 60px;
 }
 
-.settingBtn {
+.settingBtn, .enableBtn {
     width: 60px;
 }
 

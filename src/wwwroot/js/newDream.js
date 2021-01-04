@@ -322,9 +322,23 @@ function setListeners() {
                     }
                     onCardClick(target);
                     return;
+                }               
+            }
+
+            if (target.classList.contains("enableBtn")  || target.parentElement.classList.contains("enableBtn")) {
+                if (target.parentElement.classList.contains("enableBtn")) target = target.parentElement;
+                let devId = target.getAttribute("data-target");
+                let devEnabled = target.getAttribute("data-enabled");
+                let icon = target.firstChild;
+                if (devEnabled === "true") {
+                    target.setAttribute("data-enabled","false");
+                    icon.innerText = "cast";
+                } else {
+                    target.setAttribute("data-enabled","true");
+                    icon.innerText = "cast-connected";
                 }
-                
-                                
+                //data.devices[devId]["Enable"] = (devEnabled !== "true");
+                updateDevice(devId,"Enable",(devEnabled !== "true"));
             }
 
             
@@ -402,7 +416,7 @@ function setMode(newMode) {
             target = document.querySelector("[data-mode='3']");
             break;
         default:
-            console.log("I don't know what this is: ", data.store.DeviceMode);
+            console.log("I don't know what this is: ", mode);
             break;
     }
 
@@ -419,6 +433,8 @@ function setMode(newMode) {
 function loadUi() {
     console.log("Loading ui.");
     let mode = getStoreProperty("DeviceMode");
+    let autoDisabled = getStoreProperty("AutoDisabled");
+    if (autoDisabled) mode = 0;
     setMode(mode);
     getDevices();
     document.getElementById("cardRow").click();
@@ -461,8 +477,9 @@ function loadDevices() {
             settingsCol.classList.add("col-12", "settingsCol", "pb-2", "text-center", "exp");
             // Create enabled checkbox
             let enableButton = document.createElement("button");
-            enableButton.classList.add("btn", "btn-outline-secondary", "settingBtn", "pt-2");
+            enableButton.classList.add("btn", "btn-outline-secondary", "enableBtn", "pt-2");
             enableButton.setAttribute("data-target", device["_id"]);
+            enableButton.setAttribute("data-enabled", device["Enable"]);
             // And the icon
             let eIcon = document.createElement("span");
             eIcon.classList.add("material-icons", "pt-1");
@@ -775,6 +792,8 @@ function addCardSettings() {
                 
                 break;
             case "Lifx":
+            case "Yeelight":
+            case "Wled":
                 appendImageMap();
                 break;
             case "Nanoleaf":
@@ -783,9 +802,6 @@ function addCardSettings() {
                     createNano = true;    
                 }
                 
-                break;
-            case "Wled":
-                appendImageMap();
                 break;
             default:
                 console.log("Unknown device tag.");
