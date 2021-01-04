@@ -12,6 +12,7 @@ using Glimmr.Models.StreamingDevice.Hue;
 using Glimmr.Models.StreamingDevice.LIFX;
 using Glimmr.Models.StreamingDevice.Nanoleaf;
 using Glimmr.Models.StreamingDevice.WLED;
+using Glimmr.Models.StreamingDevice.Yeelight;
 using Glimmr.Services;
 using LifxNet;
 using LiteDB;
@@ -372,10 +373,12 @@ namespace Glimmr.Models.Util {
             var nanoTask = NanoleafDiscovery.Refresh(cs.Token);
             var bridgeTask = HueDiscovery.Refresh(cs.Token);
             var wLedTask = WledDiscovery.Discover();
+            var yeeTask = YeelightDiscovery.Discover();
             var bulbTask = ld.Refresh(cs.Token);
+            
             controlService.RefreshDreamscreen(cs.Token);
             try {
-                await Task.WhenAll(nanoTask, bridgeTask, bulbTask, wLedTask);
+                await Task.WhenAll(nanoTask, bridgeTask, bulbTask, wLedTask, yeeTask);
             } catch (TaskCanceledException e) {
                 Log.Warning("Discovery task was canceled before completion: ", e);
             } catch (SocketException f) {
@@ -388,12 +391,14 @@ namespace Glimmr.Models.Util {
                 var bridges = bridgeTask.Result;
                 var bulbs = bulbTask.Result;
                 var wleds = wLedTask.Result;
+                var yees = yeeTask.Result;
                 var db = GetDb();
                 var bridgeCol = db.GetCollection<HueData>("Dev_Hue");
                 var nanoCol = db.GetCollection<NanoleafData>("Dev_Nanoleaf");
                 var devCol = db.GetCollection<DreamData>("Dev_Dreamscreen");
                 var lifxCol = db.GetCollection<LifxData>("Dev_Lifx");
                 var wledCol = db.GetCollection<WledData>("Dev_Wled");
+                var yeeCol = db.GetCollection<YeelightData>("Dev_Yeelight");
                 foreach (var b in bridges) {
                     var nb = b;
                     if (b.Key !=  null && b.User != null) {
@@ -417,11 +422,13 @@ namespace Glimmr.Models.Util {
                 foreach (var n in leaves) nanoCol.Upsert(n);
                 foreach (var b in bulbs) lifxCol.Upsert(b);
                 foreach (var w in wleds) wledCol.Upsert(w);
+                foreach (var y in yees) yeeCol.Upsert(y);
                 bridgeCol.EnsureIndex(x => x.Id);
                 nanoCol.EnsureIndex(x => x.Id);
                 devCol.EnsureIndex(x => x.Id);
                 lifxCol.EnsureIndex(x => x.Id);
                 wledCol.EnsureIndex(x => x.Id);
+                yeeCol.EnsureIndex(x => x.Id);
                 var dsCol = db.GetCollection<DreamData>("Dev_Dreamscreen");
                 dsCol.EnsureIndex(x => x.Id);
             } catch (TaskCanceledException) {

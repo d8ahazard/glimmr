@@ -6,12 +6,12 @@ using Serilog;
 using YeelightAPI;
 
 namespace Glimmr.Models.StreamingDevice.Yeelight {
-	public class YeelightDiscovery {
+	public static class YeelightDiscovery {
 		
-		private	async Task<List<YeelightData>> GetDevicesAsync() {
+		public	static async Task<List<YeelightData>> Discover() {
 			var output = new List<YeelightData>();
 			// Await the asynchronous call to the static API
-			IEnumerable<Device> discoveredDevices = await DeviceLocator.DiscoverAsync();
+			var discoveredDevices = await DeviceLocator.DiscoverAsync();
 			foreach (var dev in discoveredDevices) {
 				Log.Debug("YEE YEE: " + JsonConvert.SerializeObject(dev));
 				var yd = new YeelightData {
