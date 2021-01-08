@@ -11,6 +11,7 @@ then
   echo "Downloading..."
   wget https://dotnetcli.blob.core.windows.net/dotnet/Sdk/master/dotnet-sdk-latest-linux-arm.tar.gz
   sudo mkdir -p /usr/share/dotnet
+  echo "Extracting..."
   sudo tar -zxf dotnet-sdk-latest-linux-arm.tar.gz -C /usr/share/dotnet
   sudo ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
   echo "DONE!"
@@ -27,11 +28,13 @@ if [ ! -f "/usr/bin/dotnet" ]
 fi
 if [ ! -f "/home/glimmrtv/firstrun" ]
  then
+   echo "Beginning first-run setup..."
     #Assign existing hostname to $hostn
     hostn=$(cat /etc/hostname)
     hostn=`cat /etc/hostname | tr -d " \t\n\r"`
-    newhost==glimmr-$(cat /proc/cpuinfo | grep -E "^Serial" | sed "s/.*: 0*//")
-    if [ "$hostn" != "newhost" ]; then
+    serial=$(cat /proc/cpuinfo | grep -E "^Serial" | sed "s/.*: 0*//")
+    newhost=glimmr-"${serial: -4}"
+    if [ "$hostn" != $newhost ]; then
       echo "Changing hostname from $hostn to $newhost..." >&2
       echo $newhost > /etc/hostname
       sudo sed -i "s/127.0.1.1.*$CURRENT_HOSTNAME\$/127.0.1.1\t$NEW_HOSTNAME/g" /etc/hosts
@@ -100,12 +103,20 @@ cp -r /home/glimmrtv/glimmr/lib/arm/* /usr/lib
 
 # Check service start/install
 if systemctl --all --type service | grep -q "$serviceName";then
-  echo "Starting glimmr..."
+  echo "Starting Glimmr service..."
   systemctl daemon-reload
   service glimmr start
   echo "DONE!"
 else  
   echo "$serviceName does NOT exist, installing."
+  cd /tmp
+  #write out current crontab
+  sudo crontab -l > mycron
+  #echo new cron into cron file
+  echo "00 01 * * * /etc/init.d/update_pi.sh" >> mycron
+  #install new cron file
+  crontab mycron
+  rm mycron
   echo "
 [Unit]
 Description=GlimmrTV
