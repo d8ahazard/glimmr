@@ -282,37 +282,37 @@ namespace Glimmr.Controllers {
 					return new JsonResult(bd);
 				}
 				case "authorizeNano": {
-					var doAuth = true;
-					var leaves = DataUtil.GetCollection<NanoleafData>("Dev_Nanoleaf");
-					NanoleafData bd = null;
-					var nanoInt = -1;
+					Log.Debug("Nano auth triggered for " + value);
+					var doAuth = false;
+					NanoleafData dev = null;
 					if (!string.IsNullOrEmpty(value)) {
-						var nanoCount = 0;
-						foreach (var n in leaves) {
-							if (n.IpAddress == value) {
-								bd = n;
-								doAuth = n.Token == null;
-								nanoInt = nanoCount;
+						dev = DataUtil.GetCollectionItem<NanoleafData>("Dev_Nanoleaf", value);
+						if (dev != null) {
+							Log.Debug("Dev found.");
+							if (dev.Token == null) {
+								Log.Debug("Trying auth, no token.");
+								doAuth = true;
 							}
-
-							nanoCount++;
 						}
 					}
 
 					if (doAuth) {
-						var panel = new NanoleafDevice(value);
+						var panel = new NanoleafDevice(dev, _controlService.HttpSender);
 						var appKey = panel.CheckAuth().Result;
-						if (appKey != null && bd != null) {
-							bd.Token = appKey.Token;
-							bd.RefreshLeaf();
+						if (appKey != null) {
+							Log.Debug("Retrieved app key, saving.");
+							dev.Token = appKey.Token;
+							dev.RefreshLeaf();
+							DataUtil.InsertCollection<NanoleafData>("Dev_Nanoleaf", dev);
 							Log.Debug("Leaf refreshed and set...");
+						} else {
+							Log.Debug("No appkey...");
 						}
-
 						panel.Dispose();
 					}
 
 					Log.Debug("Returning.");
-					return new JsonResult(bd);
+					return new JsonResult(dev);
 				}
 			}
 

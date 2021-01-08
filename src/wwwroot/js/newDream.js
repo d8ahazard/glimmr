@@ -21,7 +21,7 @@ let toggleWidth = 0;
 let toggleHeight = 0;
 let toggleLeft = 0;
 let toggleTop = 0;
-
+let posting = false;
 let baseUrl;
 
 // We're going to create one object to store our stuff, and add listeners for when values are changed.

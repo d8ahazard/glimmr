@@ -3,7 +3,11 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
+using System.Net.Http;
+using Glimmr.Models.Util;
 using Newtonsoft.Json;
+using Serilog;
+using Info = Nanoleaf.Client.Models.Responses.Info;
 
 namespace Glimmr.Models.StreamingDevice.Nanoleaf {
     [Serializable]
@@ -52,40 +56,44 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
             }
         }
 
-        // Copy data from an existing leaf into this leaf...don't insert
-        public static NanoleafData CopyExisting(NanoleafData newLeaf, NanoleafData existingLeaf) {
-            if (existingLeaf == null || newLeaf == null) throw new ArgumentException("Invalid nano data!");
-            newLeaf.Token = existingLeaf.Token;
-            newLeaf.X = existingLeaf.X;
-            newLeaf.Y = existingLeaf.Y;
-            newLeaf.Scale = 1;
-            newLeaf.Rotation = existingLeaf.Rotation;
-            newLeaf.Enable = existingLeaf.Enable;
-            if (existingLeaf.Brightness != 0)  newLeaf.Brightness = existingLeaf.Brightness;
-            // Grab the new leaf layout
-            newLeaf.RefreshLeaf();
-            // Merge this data's layout with the existing leaf (copy sector)
-            var newL = MergeLayouts(newLeaf.Layout, existingLeaf.Layout);
-            newLeaf.Layout = newL;
-            newLeaf.Tag = "Nanoleaf";
-            newLeaf.Name ??= newLeaf.Tag;
-            
-            return newLeaf;
+        public NanoleafData(Info dn) {
+            Id = dn.SerialNumber;
+            Name = dn.Name;
+            Version = dn.FirmwareVersion;
+            IpAddress = IpUtil.GetIpFromHost(Name).ToString();
+            Tag = "Nanoleaf";
         }
 
-        private static NanoLayout MergeLayouts(NanoLayout newLayout, NanoLayout existing) {
+        // Copy data from an existing leaf into this leaf...don't insert
+        public NanoleafData CopyExisting(NanoleafData existingLeaf) {
+            if (existingLeaf == null) throw new ArgumentException("Invalid nano data!");
+            Token = existingLeaf.Token;
+            X = existingLeaf.X;
+            Y = existingLeaf.Y;
+            Scale = 1;
+            Rotation = existingLeaf.Rotation;
+            Enable = existingLeaf.Enable;
+            if (existingLeaf.Brightness != 0)  Brightness = existingLeaf.Brightness;
+            // Grab the new leaf layout
+            RefreshLeaf();
+            Tag = "Nanoleaf";
+            
+            return this;
+        }
+
+        private NanoLayout MergeLayout(NanoLayout newLayout) {
             if (newLayout == null) throw new ArgumentException("Invalid argument.");
-            if (existing == null) return newLayout;
+            if (Layout == null) return newLayout;
             var posData = new List<PanelLayout>();
             var output = newLayout;
             
-            if (existing.PositionData == null) {
+            if (Layout.PositionData == null) {
                 return output;
             }
 
             // Loop through each panel in the new position data, find existing info and copy
             foreach (var nl in newLayout.PositionData) {
-                foreach (var el in existing.PositionData.Where(s => s.PanelId == nl.PanelId)) {
+                foreach (var el in Layout.PositionData.Where(s => s.PanelId == nl.PanelId)) {
                     nl.TargetSector = el.TargetSector;
                 }
                 posData.Add(nl);
@@ -95,10 +103,19 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
         }
 
         public void RefreshLeaf() {
-            if (Token == null) return;
-            using var nl = new NanoleafDevice(IpAddress, Token);
+            if (Token == null) {
+                Log.Debug("NO TOKEN!");
+                return;
+            }
+            using var nl = new NanoleafDevice(this, new HttpClient());
             var layout = nl.GetLayout().Result;
-            if (layout != null) Layout = layout;
+            if (layout != null) {
+                Layout = MergeLayout(layout);
+                Log.Debug("No, fucking really. Layout set: " + JsonConvert.SerializeObject(Layout));
+            } else {
+                Log.Debug("Layout is null.");
+            }
+            
             Scale = 1;
         }
 

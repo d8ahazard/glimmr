@@ -6,11 +6,9 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Glimmr.Models.StreamingDevice.Yeelight;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Nanoleaf.Client;
-using Nanoleaf.Client.Exceptions;
 using Nanoleaf.Client.Models.Responses;
 using Newtonsoft.Json;
 using Serilog;
@@ -23,7 +21,6 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 		private int _streamMode;
 		private bool _disposed;
 		private bool _sending;
-		private int _captureMode;
 		public bool Enable { get; set; }
 		StreamingData IStreamingDevice.Data {
 			get => Data;
@@ -41,16 +38,16 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 		
 
 
-		public NanoleafDevice(string ipAddress, string token = "") {
-			_captureMode = DataUtil.GetItem<int>("captureMode");
-			IpAddress = ipAddress;
-			_token = token;
+		public NanoleafDevice(NanoleafData data, HttpClient client) {
+			IpAddress = data.IpAddress;
+			_token = data.Token;
 			_basePath = "http://" + IpAddress + ":16021/api/v1/" + _token;
 			_disposed = false;
+			_client = client;
 		}
 
 		public NanoleafDevice(NanoleafData n, UdpClient socket, HttpClient client, ColorService colorService) {
-			_captureMode = DataUtil.GetItem<int>("captureMode");
+			DataUtil.GetItem<int>("captureMode");
 			colorService.ColorSendEvent += SetColor;
 			if (n != null) {
 				SetData(n);
@@ -69,7 +66,7 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 
 		private void SetData(NanoleafData n) {
 			Data = n;
-			_captureMode = DataUtil.GetItem<int>("captureMode");
+			DataUtil.GetItem<int>("captureMode");
 			IpAddress = n.IpAddress;
 			_token = n.Token;
 			_layout = n.Layout;
@@ -101,12 +98,10 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 			await SendPutRequest(_basePath, JsonConvert.SerializeObject(new {on = new {value = true}}),
 				"state");
 			await SendPutRequest(_basePath, JsonConvert.SerializeObject(body), "effects");
-			Log.Debug("Nanoleaf: Streaming is active...");
-			_sending = true;
+			Streaming = true;
 			while (!ct.IsCancellationRequested) {
-				Streaming = true;
+				
 			}
-			_sending = false;
 			StopStream();
 		}
 
@@ -121,7 +116,6 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 
 		public void SetColor(List<Color> _, List<Color> colors, double fadeTime = 1) {
 			if (!Streaming || !Data.Enable) {
-				Log.Debug("Streaming is  not active?");
 				return;
 			}
 
@@ -129,14 +123,6 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 				return;
 			}
 			
-			int ft = (int) fadeTime;
-			
-			var capCount = _captureMode == 0 ? 12 : 28;
-            
-			if (colors == null || colors.Count < capCount) {
-				throw new ArgumentException("Invalid color list.");
-			}
-
 			var byteString = new List<byte>();
 			if (_streamMode == 2) {
 				byteString.AddRange(ByteUtils.PadInt(_layout.NumPanels));
@@ -152,9 +138,11 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 					byteString.Add(ByteUtils.IntByte(id));
 				}
 
-				if (pd.TargetSector == -1) continue;
-				//Log.Debug("Sector for light " + id + " is " + pd.Sector);
-				var color = colors[colorInt];
+				var color = Color.FromArgb(0, 0, 0, 0);
+				if (pd.TargetSector != -1) {
+					color = colors[colorInt];
+				}
+				
 				if (Brightness < 100) {
 					color = ColorTransformUtil.ClampBrightness(color, Brightness);
 				}
@@ -166,13 +154,9 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 				// White value
 				byteString.AddRange(ByteUtils.PadInt(0, 1));
 				// Pad duration time
-				byteString.AddRange(_streamMode == 2 ? ByteUtils.PadInt(ft) : ByteUtils.PadInt(ft, 1));
+				byteString.AddRange(_streamMode == 2 ? ByteUtils.PadInt((int)fadeTime) : ByteUtils.PadInt((int)fadeTime, 1));
 			}
-
-			Task.Run(() => {
-				SendUdpUnicast(byteString.ToArray());
-			}); 
-                
+			SendUdpUnicast(byteString.ToArray());
 		}
 
 
@@ -192,9 +176,11 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 		}
 
 		private void SendUdpUnicast(byte[] data) {
-			if (!_sending) return;
+			if (_sending) return;
+			_sending = true;
 			var ep = IpUtil.Parse(IpAddress, 60222);
 			if (ep != null) _sender.SendAsync(data, data.Length, ep);
+			_sending = false;
 		}
 
 		public async Task<NanoLayout> GetLayout() {

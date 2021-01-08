@@ -661,15 +661,15 @@ function setListeners() {
             let val=$(this).data('region');
             nanoSector = val;
             let sTarget = -1;
-            let sectors = selectedDevice["layout"]["positionData"];
+            let sectors = selectedDevice["Layout"]["PositionData"];
             for (let q=0; q < sectors.length; q++) {
-                if (sectors[q]["panelId"] === nanoTarget) {
+                if (sectors[q]["PanelId"] === nanoTarget) {
                     sTarget = q;
                 }
             }
             
             if (sTarget !== -1) {
-                selectedDevice["layout"]["positionData"][sTarget]["targetSector"] = nanoSector;
+                selectedDevice["Layout"]["PositionData"][sTarget]["TargetSector"] = nanoSector;
                 postData("updateDevice", selectedDevice);    
             }
             $('#nanoModal').modal('toggle');            
@@ -735,8 +735,8 @@ function checkHueAuth() {
 }
 
 function checkNanoAuth() {
-    $.get("./api/DreamData/action?action=authorizeNano&value=" + nanoIp, function (data) {
-        if (data.token !== null && data.token !== undefined) {
+    $.get("./api/DreamData/action?action=authorizeNano&value=" + selectedDevice["_id"], function (data) {
+        if (data.Token !== null && data.Token !== undefined) {
             nanoAuth = true;
             if (nanoAuth) {
                 loadNanoData(data);
@@ -1520,9 +1520,9 @@ function loadNanoData(data) {
     // Now we've got it.
     let n = data;
     nBrightness.val(n["Brightness"]);
-    nanoIp = n["IpV4Address"];
+    nanoIp = n["IpAddress"];
     
-    hIp.html(n["IpV4Address"]);    
+    hIp.html(n["IpAddress"]);    
     nanoAuth = (n["Token"] !== null && n["Token"] !== undefined);
     lImg.removeClass('linked unlinked linking');
     if (nanoAuth) {
@@ -1699,13 +1699,13 @@ function drawNanoShapes(panel) {
         selectedDevice.X = gX;
         selectedDevice.Y = gY;
         selectedDevice.Scale = 1;
-        selectedDevice.Rotation = shapeGroup.Rotation();
+        selectedDevice.Rotation = shapeGroup.Rotation;
         saveSelectedDevice();
         postData("updateDevice", selectedDevice);
     }
     
-    
-    let positions = layout['positionData'];
+        
+    let positions = layout['PositionData'];
     let minX = 1000;
     let minY = 1000;
     let maxX = 0;
@@ -1714,17 +1714,17 @@ function drawNanoShapes(panel) {
     // Calculate the min/max range for each tile
     for (let i=0; i< positions.length; i++) {
         let data = positions[i];
-        if (data.x < minX) minX = data.x;
-        if ((data.y * -1) < minY) minY = (data.y * -1);
-        if (data.x > maxX) maxX = data.x;
-        if ((data.y * -1) > maxY) maxY = (data.y * -1);
+        if (data.X < minX) minX = data.X;
+        if ((data.Y * -1) < minY) minY = (data.Y * -1);
+        if (data.X > maxX) maxX = data.x;
+        if ((data.Y * -1) > maxY) maxY = (data.Y * -1);
     }
     
     for (let i=0; i < positions.length; i++) {
         let data = positions[i];
-        let shape = data['shapeType'];
-        let x = data.x;
-        let y = data.y;
+        let shape = data['ShapeType'];
+        let x = data.X;
+        let y = data.Y;
         if (mirrorX) x *= -1;
         if (!mirrorY) y *= -1;
         //x += Math.abs(minX / 2);
@@ -1747,7 +1747,7 @@ function drawNanoShapes(panel) {
             fontSize: 30,
             fontFamily: 'Calibri'
         });
-        let o = data['o'];
+        let o = data['O'];
         switch (shape) {
             case 0:
             case 1:

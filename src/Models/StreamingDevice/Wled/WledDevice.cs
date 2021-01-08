@@ -27,6 +27,7 @@ namespace Glimmr.Models.StreamingDevice.WLED {
         public string IpAddress { get; set; }
         public string Tag { get; set; }
         private bool _disposed;
+        private bool _sending;
         private bool colorsSet;
         private static int port = 21324;
         private IPEndPoint ep;
@@ -131,15 +132,24 @@ namespace Glimmr.Models.StreamingDevice.WLED {
                 //Log.Debug("First packet: " + ByteUtils.ByteString(packet.ToArray()));
             }
 
-            if (ep != null) {
-                try {
-                    if (ep != null) _udpClient?.SendAsync(packet.ToArray(), packet.Count, ep);
-                } catch (Exception e) {
-                    Log.Debug("Fucking exception, look at that: " + e.Message);        
-                }
+            if (ep == null) {
+                Log.Debug("No endpoint.");
+                return;
             }
-             
-            //Log.Debug("Sent.");
+
+            if (_sending) {
+                Log.Debug("Already sending...");
+                return;
+            }
+
+            _sending = true;
+            try {
+                _udpClient?.SendAsync(packet.ToArray(), packet.Count, ep);
+            } catch (Exception e) {
+                Log.Debug("Fucking exception, look at that: " + e.Message);        
+            }
+
+            _sending = false;
         }
 
         private List<Color> TruncateColors(List<Color> input) {

@@ -370,7 +370,7 @@ namespace Glimmr.Models.Util {
             Scanning = true;
             // Get dream devices
             var ld = new LifxDiscovery(c);
-            var nanoTask = NanoleafDiscovery.Refresh(cs.Token);
+            var nanoTask = NanoDiscovery.Refresh(cs.Token);
             var bridgeTask = HueDiscovery.Refresh(cs.Token);
             var wLedTask = WledDiscovery.Discover();
             var yeeTask = YeelightDiscovery.Discover();
@@ -447,7 +447,7 @@ namespace Glimmr.Models.Util {
             var db = GetDb();
                 // Get dream devices
                 var ld = new LifxDiscovery(lc);
-                var nanoTask = NanoleafDiscovery.Discover();
+                var nanoTask = NanoDiscovery.Discover();
                 var hueTask = HueDiscovery.Discover();
                 var wLedTask = WledDiscovery.Discover();
                 var bulbTask = ld.Discover(5);

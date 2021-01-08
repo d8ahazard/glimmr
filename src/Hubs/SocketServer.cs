@@ -168,7 +168,7 @@ namespace Glimmr.Hubs {
 				return;
 			}
 
-			var panel = new NanoleafDevice(id);
+			var panel = new NanoleafDevice(leaf, _cs.HttpSender);
 			var count = 0;
 			while (count < 30) {
 				var appKey = panel.CheckAuth().Result;

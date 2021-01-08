@@ -6,10 +6,12 @@
     <UserSecretsId>2513db3e-6259-49c1-8062-41f810f170fa</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>.</DockerfileContext>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="10.1.1" />
+    <PackageReference Include="ClangNet" Version="1.1.0" />
     <PackageReference Include="Emgu.CV" Version="4.4.0.4099" />
     <PackageReference Include="Emgu.CV.Bitmap" Version="4.4.0.4099" />
     <PackageReference Include="Emgu.CV.runtime.raspbian" Version="4.4.0.4099" />
@@ -31,9 +33,11 @@
     <PackageReference Include="Nanoleaf.Core" Version="1.1.7.1" />
     <PackageReference Include="Q42.HueApi" Version="3.16.0" />
     <PackageReference Include="Q42.HueApi.Entertainment" Version="3.15.0" />
+    <PackageReference Include="SealangSharp" Version="3.9.0" />
     <PackageReference Include="Serilog" Version="2.10.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
+    <PackageReference Include="Sichem.Framework" Version="0.3.6.14" />
     <PackageReference Include="System.Net.WebSockets" Version="4.3.0" />
     <PackageReference Include="YeelightAPI" Version="1.10.0" />
     <PackageReference Include="Zeroconf" Version="3.4.2" />
@@ -41,6 +45,10 @@
 
   <ItemGroup>
     <Folder Include="Models\StreamingDevice\Dreamscreen\Encoders" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Include="..\Sichem\Sichem\CRuntime.cs" Link="CRuntime.cs" />
   </ItemGroup>
 
 </Project>

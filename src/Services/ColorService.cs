@@ -309,7 +309,7 @@ namespace Glimmr.Services {
 			var exists = false;
 			foreach (var sd in _sDevices.Where(sd => sd.Id == id)) {
 				Log.Debug("Refreshing data for " + sd.Id);
-				sd.StopStream();
+				if (sd.Tag != "Nanoleaf") sd.StopStream();
 				sd.ReloadData();
 				exists = true;
 				if (!sd.IsEnabled()) {
@@ -317,7 +317,7 @@ namespace Glimmr.Services {
 				}
 
 				Log.Debug("Restarting streaming device.");
-				sd.StartStream(_sendTokenSource.Token);
+				if (sd.Tag != "Nanoleaf") sd.StartStream(_sendTokenSource.Token);
 			}
 
 			if (exists) {

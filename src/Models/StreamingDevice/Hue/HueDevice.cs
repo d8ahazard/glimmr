@@ -59,7 +59,8 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 			Id = IpAddress;
 			Tag = data.Tag;
 			Brightness = data.Brightness;
-			if (Data?.User == null || Data?.Key == null || _client != null) return;
+			// Don't grab streaming group unless we need it
+			if (Data?.User == null || Data?.Key == null || _client != null || colorService == null) return;
 			_client = new StreamingHueClient(Data.IpAddress, Data.User, Data.Key);
 			try {
 				_stream = SetupAndReturnGroup().Result;
@@ -111,12 +112,9 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 				return;
 			}
 			
-			Log.Debug("Stream Got.");
 			//Connect to the streaming group
 			try {
-				Log.Debug("Connecting...");
 				var groupId = Data.SelectedGroup;
-				Log.Debug("Grabbing ent group...");
 				var group = _client.LocalHueClient.GetGroupAsync(groupId).Result;
 				if (group == null) {
 					Log.Warning("Unable to fetch group with ID of " + groupId);
@@ -276,17 +274,11 @@ namespace Glimmr.Models.StreamingDevice.Hue {
                 var lights = group.Lights;
                 var mappedLights = new List<string>();
 
-                Log.Debug("HueStream: Entertainment Group retrieved...");
-                //Create a streaming group
-                Log.Debug("HueStream: We have group, mapping lights: " + JsonConvert.SerializeObject(lights));
                 foreach (var ml in lights.SelectMany(light => Data.MappedLights.Where(ml => ml.Id.ToString() == light))) {
-	                Log.Debug("Found corresponding light map: " + JsonConvert.SerializeObject(ml));
 	                if (ml.TargetSector != -1) {
 		                mappedLights.Add(ml.Id);
 	                }
                 }
-
-                Log.Debug("Getting streaming group using ml: " + JsonConvert.SerializeObject(mappedLights));
 
                 if (mappedLights.Count == 0) {
                     Log.Debug("No mapped lights, nothing to do.");
