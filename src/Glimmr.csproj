@@ -47,8 +47,4 @@
     <Folder Include="Models\StreamingDevice\Dreamscreen\Encoders" />
   </ItemGroup>
   
-  <ItemGroup>
-    <Compile Include="..\Sichem\Sichem\CRuntime.cs" Link="CRuntime.cs" />
-  </ItemGroup>
-
 </Project>
