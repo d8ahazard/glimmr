@@ -40,7 +40,7 @@ namespace Glimmr.Models.LED {
 				1 => StripType.SK6812W_STRIP,
 				2 => StripType.WS2811_STRIP_RBG,
 				0 => StripType.WS2812_STRIP,
-				_ => StripType.SK6812W_STRIP
+				_ => StripType.WS2812_STRIP
 			};
 			// 18 = PWM0, 13 = PWM1, 21 = PCM, 10 = SPI0/MOSI
 			var pin = ld.GpioNumber switch {

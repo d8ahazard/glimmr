@@ -58,11 +58,12 @@ namespace Glimmr.Models.ColorSource.Video {
 		private Timer _saveTimer;
 		private bool _doSave;
 		public bool SourceActive;
+		private ControlService _controlService;
 		private readonly ColorService _colorService;
 		private readonly CancellationToken _cancellationToken;
 
 
-		public VideoStream(ColorService cs, CancellationToken camToken) {
+		public VideoStream(ColorService cs, ControlService controlService, CancellationToken camToken) {
 			Log.Debug("Initializing stream capture...");
 			_targets = new List<VectorOfPoint>();
 			SetCapVars();
@@ -70,6 +71,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			_vc.Start(camToken);
 			_cancellationToken = camToken;
 			_colorService = cs;
+			_controlService = controlService;
 			Log.Debug("Stream capture initialized.");
 		}
 
@@ -79,14 +81,19 @@ namespace Glimmr.Models.ColorSource.Video {
 			Streaming = enable;
 			Log.Debug("Toggling color send from splitter to " + Streaming);
 		}
-		
+
+		public void Initialize(ControlService controlService) {
+			_controlService = controlService;
+			Initialize();
+		}
+
 		public void Initialize() {
 			Log.Debug("Initializing video stream...");
 			SetCapVars();
 			var autoEvent = new AutoResetEvent(false);
 			_saveTimer = new Timer(SaveFrame, autoEvent, 5000, 5000);
 			Log.Debug($"Starting vid capture task, setting sw and h to {ScaleWidth} and {ScaleHeight}");
-			StreamSplitter = new Splitter(_ledData, ScaleWidth, ScaleHeight);
+			StreamSplitter = new Splitter(_ledData, _controlService, ScaleWidth, ScaleHeight);
 			while (!_cancellationToken.IsCancellationRequested) {
 				// Save cpu/memory by not doing anything if not sending...
 				if (!Streaming) {
@@ -123,6 +130,7 @@ namespace Glimmr.Models.ColorSource.Video {
 				var sectors = StreamSplitter.GetSectors();
 				//Log.Debug("No, really, sending colors...");
 				_colorService.SendColors(colors, sectors);
+				
 			}
 
 			_saveTimer.Dispose();
@@ -131,7 +139,7 @@ namespace Glimmr.Models.ColorSource.Video {
 		}
 
 		public void Refresh() {
-			StreamSplitter = new Splitter(_ledData, ScaleWidth, ScaleHeight);
+			StreamSplitter = new Splitter(_ledData, _controlService, ScaleWidth, ScaleHeight);
 		}
 
 
@@ -173,7 +181,7 @@ namespace Glimmr.Models.ColorSource.Video {
 				case 1:
 					switch (_camType) {
 						case 0:
-							// 0 = pi module, 1 = web cam, 2 = USB source
+							// 0 = pi module, 1 = web cam
 							Log.Debug("Loading Pi cam.");
 							var camMode = DataUtil.GetItem<int>("CamMode") ?? 1;
 							return new PiCamVideoStream(ScaleWidth, ScaleHeight, camMode);

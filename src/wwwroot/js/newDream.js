@@ -74,13 +74,7 @@ document.addEventListener("DOMContentLoaded", function(){
     let getUrl = window.location;
     baseUrl = getUrl .protocol + "//" + getUrl.host;
     closeButton = document.getElementById("closeBtn");
-    settingsRow = document.getElementById("settingsRow");
-    settingsRow.style.position = 'fixed';
-    settingsRow.style.top = "0";
-    settingsRow.style.left = window.innerWidth.toString() + "px";
-    settingsRow.style.width = 0 + 'px';
-    settingsRow.style.height = 0 + 'px';
-
+    settingsRow = document.getElementById("settingsRow");    
     settingsTab = document.getElementById("settingsTab");
     settingsTitle = document.getElementById("settingsTitle");
     settingsContent = document.getElementById("settingsContent");
@@ -90,6 +84,10 @@ document.addEventListener("DOMContentLoaded", function(){
     loadUi();
     setListeners();
     sizeContent();
+    let tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    let tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
 });
 
 
@@ -216,6 +214,13 @@ function setSocketListeners() {
     websocket.on("updateDevice", function (device) {
         console.log("New device data " + device);
     });
+    
+    websocket.on("loadPreview", function(){
+        let inputElement = document.getElementById('inputPreview');
+        let croppedElement = document.getElementById('outputPreview');
+        inputElement.src = '../img/_preview_input.jpg?rand=' + Math.random();
+        croppedElement.src = '../img/_preview_output.jpg?rand=' + Math.random(); 
+    });
 
     websocket.on("hueAuth", function (value) {
         console.log("Hue Auth message: " + value);
@@ -288,9 +293,54 @@ function loadSocket() {
 function setListeners() {
     window.addEventListener('resize', sizeContent);
     
+    document.addEventListener('change', function(e) {
+        let target = e.target;
+        let obj = target.getAttribute("data-object");
+        let property = target.getAttribute("data-property");
+        let val = target.value;
+        
+        if (obj !== undefined && property !== undefined && val !== undefined) {
+            data.store[obj][0][property] = val;
+            let pack = data.store[obj][0];
+            if (property === "LeftCount" || property === "RightCount" || property ==="TopCount" || property === "BottomCount") {
+                let lPreview = document.getElementById("sLedPreview");
+                let lImage = document.getElementById("ledImage");
+                createLedMap(lPreview, lImage, pack);
+            }
+            delete pack["_id"];
+            console.log("Sending updated object: ", pack);
+            sendMessage(obj, pack,true);
+        }        
+    });
+    
     document.addEventListener('click',function(e){
         let target = e.target;
         if (target) {
+            if (target.classList.contains("controlBtn")) {
+                let action = target.getAttribute("data-action");
+                let message = "Warning: ";
+                switch (action) {
+                    case "shutdown":
+                        message += "This will shut down the device. You will need to manually turn it back on.";
+                        break;
+                    case "reboot":
+                        message += "This will restart the device.";
+                        break;
+                    case "restart":
+                        message += "This will restart the Glimmr TV Service.";
+                        break;
+                    case "update":
+                        message += "This will update and restart Glimmr TV.";
+                        break;
+                }
+                message += " Would you like to continue?";
+                if (confirm(message)) {
+                    sendMessage("SystemControl", action, false);
+                } else {
+                    console.log(action + " canceled.");
+                }
+                console.log("Control button click");
+            }
             if (target === closeButton || target.parentElement === closeButton) {
                 console.log("Close button");
                 closeCard();
@@ -387,10 +437,13 @@ async function toggleSettingsDiv(target) {
     let settingsIcon = document.querySelector(".mainSettings span");
     if (!settingsShown) {
         settingsIcon.textContent = "chevron_left";
-        await toggleExpansion(settingsRow, {top: "3rem", left: "0px", width: '100%', height: '100%', padding: "1rem 3rem"});
+        settingsRow.classList.remove("d-none");
+        cardRow.classList.add("d-none");
+        loadSettings();        
     } else {
         settingsIcon.textContent = "settings_applications";
-        await toggleExpansion(settingsRow, {top: "0", left: window.innerWidth.toString() + "px", width: '0%', height: '0%', padding: "1rem 3rem"});
+        settingsRow.classList.add("d-none");
+        cardRow.classList.remove("d-none");
     }
     settingsShown = !settingsShown;
     settingsTitle.textContent = "Main Settings";
@@ -438,6 +491,43 @@ function loadUi() {
     setMode(mode);
     getDevices();
     document.getElementById("cardRow").click();
+}
+
+function loadSettings() {
+    loadSettingObject("LedData");
+    loadSettingObject("SystemData");
+    if (data.store == null) return;
+    let ledData = data.store["LedData"];
+    if (ledData !== null) {
+        console.log("Loading LED Data: ", ledData);
+        let lPreview = document.getElementById("sLedPreview");
+        let lImage = document.getElementById("ledImage");
+        createLedMap(lPreview, lImage, ledData[0]);
+    } else {
+        console.log("NO LED DATA");
+    }    
+}
+
+function loadSettingObject(name) {
+    if (data.store == null) {
+        console.log("Store is null?");
+        return;
+    }
+    let sObj = data.store[name];
+    if (sObj == null) {
+        console.log("Object is null!", name);
+    } 
+    let dataProp = sObj[0];
+    console.log("Loading object: ",name, dataProp);
+    for(let prop in dataProp) {
+        if (dataProp.hasOwnProperty(prop)) {
+            let target = document.querySelector('[data-property='+prop+'][data-object="'+name+'"]');
+            if (target !== null && target !== undefined) {
+                target.value = dataProp[prop];                
+                console.log("Setting property with magick.", prop, dataProp[prop]);
+            }
+        }
+    }
 }
 
 function loadDevices() {    
@@ -664,10 +754,12 @@ const toggleExpansion = (element, to, duration = 350) => {
         });
         setTimeout(function(){
             let bbGroup = element.querySelector(".settingsGroup");
-            if (expanded) {
-                bbGroup.classList.add("float-right");
-            } else {
-                bbGroup.classList.remove("float-right");
+            if (bbGroup != undefined) {
+                if (expanded) {
+                    bbGroup.classList.add("float-right");
+                } else {
+                    bbGroup.classList.remove("float-right");
+                }
             }
             element.querySelector(".card-body").querySelectorAll(".exp").forEach(function(row){
             console.log("Adding to row? ", row);
@@ -834,16 +926,18 @@ function appendImageMap() {
     settingsDiv.style.position = "relative";
     cardClone.appendChild(sepDiv);
     cardClone.appendChild(settingsDiv);
-    setTimeout(function() {createSectorMap(imgDiv)}, 200);
+    setTimeout(function() {createSectorMap(imgDiv, document.getElementById("sectorImage"))}, 200);
     fadeContent(settingsDiv,100, 500);
 }
 
-function createSectorMap(targetElement) {
-    let img = document.getElementById("sectorImage");
+function createSectorMap(targetElement, sectorImage) {
+    let img = sectorImage;
     let w = img.offsetWidth;
     let h = img.offsetHeight;
     let imgL = img.offsetLeft;
     let imgT = img.offsetTop;
+    let exMap = targetElement.querySelector("#sectorMap");
+    if (exMap !== null) exMap.remove();
     let wFactor = w / 1920;
     let hFactor = h / 1100;
     let wMargin = 62 * wFactor;
@@ -947,6 +1041,121 @@ function createSectorMap(targetElement) {
     targetElement.appendChild(map);    
 }
 
+function createLedMap(targetElement, sectorImage, ledData) {
+    let img = sectorImage;
+    let w = img.offsetWidth;
+    let h = img.offsetHeight;
+    let imgL = img.offsetLeft;
+    let imgT = img.offsetTop;
+    let exMap = targetElement.querySelector("#ledMap");
+    if (exMap !== null) exMap.remove();
+    let wFactor = w / 1920;
+    let hFactor = h / 1100;
+    let wMargin = 62 * wFactor;
+    let hMargin = 52 * hFactor;
+    let flHeight = (h - hMargin - hMargin) / ledData["LeftCount"];
+    let frHeight = (h - hMargin - hMargin) / ledData["RightCount"];
+    let ftWidth = (w - wMargin - wMargin) / ledData["TopCount"];
+    let fbWidth = (w - wMargin - wMargin) / ledData["BottomCount"];
+    let dHeight = (flHeight + frHeight) / 2;
+    let dWidth = (ftWidth + fbWidth) / 2;
+    let map = document.createElement("div");
+    map.id = "ledMap";
+    map.classList.add("ledMap");
+    map.style.top = imgT + "px";
+    map.style.left = imgL + "px";
+    map.style.width = w + "px";
+    map.style.height = h + "px";
+    console.log("W and h are ", w, h);
+    // Bottom-right, up to top-right
+    let t = 0;
+    let b = 0;
+    let l = 0;
+    let r = 0;
+    let ledCount = 0;
+    for (let i = 0; i < ledData["RightCount"]; i++) {
+        t = h - hMargin - ((i + 1) * frHeight);
+        b = t + frHeight;
+        l = w - wMargin - dWidth;
+        r = l + dWidth;        
+        let s1 = document.createElement("div");
+        s1.classList.add("sector");
+        s1.setAttribute("data-sector", ledCount.toString());
+        s1.style.position = "absolute";
+        s1.style.top = t.toString() + "px";
+        s1.style.left = l.toString() + "px";
+        s1.style.width = fbWidth.toString() + "px";
+        s1.style.height = frHeight.toString() + "px";
+        s1.setAttribute("data-bs-toggle", "tooltip");
+        s1.setAttribute("data-bs-placement", "top");
+        s1.setAttribute("title", ledCount.toString());
+        map.appendChild(s1);
+        ledCount++;
+    }
+
+    for (let i = 0; i < ledData["TopCount"] - 1; i++) {
+        l = w - wMargin - (ftWidth * (i + 1));
+        r = l - ftWidth;
+        let s1 = document.createElement("div");
+        s1.classList.add("sector");
+        s1.setAttribute("data-sector", ledCount.toString());
+        s1.style.position = "absolute";
+        s1.style.top = t.toString() + "px";
+        s1.style.left = l.toString() + "px";
+        s1.style.width = ftWidth.toString() + "px";
+        s1.style.height = frHeight.toString() + "px";
+        s1.setAttribute("data-bs-toggle", "tooltip");
+        s1.setAttribute("data-bs-placement", "top");
+        s1.setAttribute("title", ledCount.toString());
+        map.appendChild(s1);
+        ledCount++;
+    }
+
+    // Left, top-bottom
+    for (let i = 0; i < ledData["LeftCount"] - 1; i++) {
+        t = hMargin + (i * flHeight);
+        b = t + flHeight;
+        l = wMargin;
+        r = l + dWidth;
+        let s1 = document.createElement("div");
+        s1.classList.add("sector");
+        s1.setAttribute("data-sector", ledCount.toString());
+        s1.style.position = "absolute";
+        s1.style.top = t.toString() + "px";
+        s1.style.left = l.toString() + "px";
+        s1.style.width = dWidth.toString() + "px";
+        s1.style.height = flHeight.toString() + "px";
+        s1.setAttribute("data-bs-toggle", "tooltip");
+        s1.setAttribute("data-bs-placement", "top");
+        s1.setAttribute("title", ledCount.toString());
+        map.appendChild(s1);
+        ledCount++;
+    }
+
+    // This one, stupid
+    for (let i = 0; i < ledData["BottomCount"]; i++) {
+        t = h - hMargin - dHeight;
+        b = t + dHeight;
+        l = wMargin + (fbWidth * (i));
+        r = l + fbWidth;
+        let s1 = document.createElement("div");
+        s1.classList.add("sector");
+        s1.setAttribute("data-sector", ledCount.toString());
+        s1.style.position = "absolute";
+        s1.style.top = t.toString() + "px";
+        s1.style.left = l.toString() + "px";
+        s1.style.width = fbWidth.toString() + "px";
+        s1.style.height = dHeight.toString() + "px";
+        s1.setAttribute("data-bs-toggle", "tooltip");
+        s1.setAttribute("data-bs-placement", "top");
+        s1.setAttribute("title", ledCount.toString());
+        map.appendChild(s1);
+        ledCount++;
+    }
+    targetElement.appendChild(map);
+}
+
+
 function createHueMap() {
     let lights = deviceData["Lights"];
     let lightMap =deviceData["MappedLights"];
@@ -993,7 +1202,10 @@ function sizeContent() {
         let imgDiv = document.getElementById("mapDiv");
         let secMap = document.getElementById("sectorMap");
         secMap.remove();
-        createSectorMap(imgDiv);
+        createSectorMap(imgDiv, document.getElementById("sectorImage"));
+    }
+    if (settingsShown) {
+        loadSettings();
     }
 }
 

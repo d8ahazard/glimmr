@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Glimmr.Models;
+using Glimmr.Models.LED;
 using Glimmr.Models.StreamingDevice.Dreamscreen;
 using Glimmr.Models.StreamingDevice.Hue;
 using Glimmr.Models.StreamingDevice.LIFX;
@@ -110,6 +112,37 @@ namespace Glimmr.Hubs {
 			Log.Debug("This worked: " + JsonConvert.SerializeObject(ld));
 			//DataUtil.SetObject("LedData", ld);
 			//_cs.RefreshDevices();
+		}
+
+		public async void SystemData(string sd) {
+			var sdd = JObject.Parse(sd);
+			var sd2 = sdd.ToObject<SystemData>();
+			DataUtil.SetObject<SystemData>("SystemData", sd2);
+		}
+		
+		public async void LedData(string ld) {
+			Log.Debug("Updating LED Data.");
+			var ldd = JObject.Parse(ld);
+			var ld2 = ldd.ToObject<LedData>();
+			DataUtil.SetObject<LedData>("LedData", ld2);
+		}
+
+		public void SystemControl(string action) {
+			Log.Debug("Action triggered: " + action);
+			switch (action) {
+				case "restart":
+					SystemUtil.Restart();
+					break;
+				case "shutdown":
+					SystemUtil.Shutdown();
+					break;
+				case "reboot":
+					SystemUtil.Reboot();
+					break;
+				case "update":
+					SystemUtil.Update();
+					break;
+			}
 		}
 
 		public async void UpdateDevice(string deviceJson) {

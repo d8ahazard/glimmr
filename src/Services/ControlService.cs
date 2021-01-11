@@ -67,6 +67,10 @@ namespace Glimmr.Services {
 			SetModeEvent(mode);
 		}
 
+		public void TriggerImageUpdate() {
+			_hubContext.Clients.All.SendAsync("loadPreview");
+		}
+
 		public void TestLeds(int len, bool stop, int test) {
 			TestLedEvent(len, stop, test);
 		}

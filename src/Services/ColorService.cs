@@ -264,17 +264,25 @@ namespace Glimmr.Services {
 			var ledCount = _ledData.LedCount;
 			Log.Debug("Running demo on " + ledCount + "pixels");
 			var i = 0;
+			var k = 0;
 			var cols = new Color[ledCount];
+			var secs = new Color[28];
 			cols = ColorUtil.EmptyColors(cols);
-			Log.Debug("Still alive 1, we have " + _sDevices.Count + " streaming devices.");
+			secs = ColorUtil.EmptyColors(secs);
 			
 			while (i < ledCount) {
 				var pi = i * 1.0f;
 				var progress = pi / ledCount;
 				var rCol = ColorUtil.Rainbow(progress);
 				// Update our next pixel on the strip with the rainbow color
+				if (progress >= .0357f * k) {
+					Log.Debug($"Progress is {progress}, kval is " + .0357f * k);
+					secs[k] = rCol;
+					k++;
+				}
+
 				cols[i] = rCol;
-				SendColors(cols.ToList(), null);
+				SendColors(cols.ToList(), secs.ToList());
 				i++;
 				Thread.Sleep(2);
 			}
@@ -424,13 +432,13 @@ namespace Glimmr.Services {
 				_controlService.TriggerDreamSubscribe();
 			} else {
 				Log.Debug("Creating video stream...");
-				_videoStream = new VideoStream(this, ct);
+				_videoStream = new VideoStream(this, _controlService, ct);
 				if (_videoStream == null) {
 					Log.Warning("Video stream is null.");
 					return;
 				}
 
-				Task.Run(() => _videoStream.Initialize(), ct);
+				Task.Run(() => _videoStream.Initialize(_controlService), ct);
 				Log.Debug("Video stream created.");
 			}
 		}

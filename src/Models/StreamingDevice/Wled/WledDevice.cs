@@ -247,7 +247,7 @@ namespace Glimmr.Models.StreamingDevice.WLED {
             try {
                 await _httpClient.PostAsync(uri, httpContent);
             } catch (Exception e) {
-                Log.Warning("HTTP Request Exception: " + e);
+                Log.Warning("HTTP Request Exception...");
             }
 
             httpContent.Dispose();

@@ -41,17 +41,12 @@ namespace Glimmr.Models.Util {
 
         public static void CheckDefaults(LifxClient lc) {
             var db = GetDb();
-            // Check to see if we have our system data object
-            var defaultSet = GetItem("DefaultSet");
-            if (defaultSet == null || defaultSet == false) {
+            var sObj = GetObject<SystemData>("SystemData");
+            if (sObj == null) {
+                var sd = new SystemData {DefaultSet = true};
+                SetObject<SystemData>("SystemData",sd);
                 Log.Warning("Setting default values!");
                 // If not, create it
-                var sd = new SystemData(true);
-                foreach (var v in sd.GetType().GetProperties()) {
-                    Log.Debug("Setting: " + v.Name);
-                    SetItem(v.Name, v.GetValue(sd));
-                }
-
                 var deviceIp = IpUtil.GetLocalIpAddress();
                 var ledData = new LedData();
                 var myDevice = new DreamData {Id = deviceIp, IpAddress = deviceIp};
@@ -250,26 +245,33 @@ namespace Glimmr.Models.Util {
             db.Commit();
         }
 
-        public static void SetItem<T>(string key, dynamic value) {
+        public static void SetItem(string key, dynamic value) {
             var db = GetDb();
-            var col = db.GetCollection(key);
-            var existing = GetDeviceData();
-            foreach (var e in existing.GetType().GetProperties()) {
+            // See if it's a system property
+            var sd = GetObject<SystemData>("SystemData");
+            var saveSd = false;
+            var saveDd = false;
+            foreach (var e in sd.GetType().GetProperties()) {
                 if (e.Name != key) continue;
-                e.SetValue(existing, value);
+                saveSd = true;
+                e.SetValue(sd, value);
             }
-            col.Upsert(0,new BsonDocument { ["value"] = value });
-            db.Commit();
-        }
-        
-        public static void SetInt(string key, int value) {
-            var db = GetDb();
-            var col = db.GetCollection(key);
-            col.Upsert(0,new BsonDocument { ["value"] = value });
-            db.Commit();
-        }
 
-        
+            if (saveSd) {
+                SetObject<SystemData>("SystemData", sd);
+            } else {
+                var dd = GetDeviceData();
+                foreach (var e in dd.GetType().GetProperties()) {
+                    if (e.Name != key) continue;
+                    saveDd = true;
+                    e.SetValue(dd, value);
+                }
+                if (saveDd) SetDeviceData(dd);
+            }
+
+            if (saveSd || saveDd) db.Commit();
+        }
+       
         public static dynamic GetItem<T>(string key) {
             var i = GetItem(key);
             if (i == null) {
@@ -278,27 +280,39 @@ namespace Glimmr.Models.Util {
             return (T) GetItem(key);
         }
         
-        public static void SetItem(string key, dynamic value) {
-            var db = GetDb();
-            var col = db.GetCollection(key);
-            col.Upsert(0, new BsonDocument { ["value"] = value });
-            db.Commit();
+        public static void SetItem<T>(string key, dynamic value) {
+            SetItem(key, value);
         }
         
         public static dynamic GetItem(string key) {
-            var db = GetDb();
-            var col = db.GetCollection(key);
-            return col.FindAll().Select(doc => doc["value"]).FirstOrDefault();
+            var sd = GetObject<SystemData>("SystemData");
+            foreach (var e in sd.GetType().GetProperties()) {
+                if (e.Name != key) continue;
+                return e.GetValue(sd);
+            }
+
+            var dd = GetDeviceData();
+            foreach (var e in dd.GetType().GetProperties()) {
+                if (e.Name != key) continue;
+                return e.GetValue(dd);
+            }
+
+            return null;
         }
         
         public static dynamic GetObject<T>(string key) {
-            var db = GetDb();
-            var col = db.GetCollection<T>(key);
-            if (col.Count() == 0) return null;
+            try {
+                var db = GetDb();
+                var col = db.GetCollection<T>(key);
+                if (col.Count() == 0) return null;
                 foreach (var doc in col.FindAll()) {
                     return doc;
                 }
-                return null;
+            } catch (Exception e) {
+                
+            }
+
+            return null;
         }
         
         public static void SetObject<T>(string key, dynamic value) {

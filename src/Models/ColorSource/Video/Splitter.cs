@@ -10,6 +10,7 @@ using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Glimmr.Models.LED;
 using Glimmr.Models.Util;
+using Glimmr.Services;
 using Newtonsoft.Json;
 using Serilog;
 
@@ -67,9 +68,11 @@ namespace Glimmr.Models.ColorSource.Video {
 		public bool DoSave;
 		public bool NoImage;
 		private const int MaxFrameCount = 30;
+		private ControlService _controlService;
 
-		public Splitter(LedData ld, int srcWidth, int srcHeight) {
+		public Splitter(LedData ld, ControlService controlService, int srcWidth, int srcHeight) {
 			Log.Debug("Initializing splitter, using LED Data: " + JsonConvert.SerializeObject(ld));
+			_controlService = controlService;
 			// Set some defaults, this should probably just not be null
 			if (ld != null) {
 				_leftCount = ld.LeftCount;
@@ -128,6 +131,7 @@ namespace Glimmr.Models.ColorSource.Video {
 				inputMat.CopyTo(gMat);
 				gMat.Save(path + "/wwwroot/img/_preview_output.jpg");
 				gMat.Dispose();
+				_controlService.TriggerImageUpdate();
 			}
 
 			var outColorsStrip = _fullCoords.Select(sub => new Mat(_input, sub)).Select(nm => GetAverage(nm)).ToList();

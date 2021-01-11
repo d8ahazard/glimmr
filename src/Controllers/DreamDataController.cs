@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using Glimmr.Hubs;
+using Glimmr.Models;
 using Glimmr.Models.LED;
 using Glimmr.Models.StreamingDevice.Hue;
 using Glimmr.Models.StreamingDevice.LIFX;
@@ -227,6 +228,42 @@ namespace Glimmr.Controllers {
 			//ControlUtil.NotifyClients(_hubContext);
 			return Ok(myDevice);
 		}
+		
+		[HttpPost("systemData")]
+		public IActionResult SystemData(SystemData sd) {
+			Log.Debug("Updating system data.");
+			DataUtil.SetObject<SystemData>("SystemData", sd);
+			return Ok(sd);
+		}
+		
+		[HttpPost("ledData")]
+		public IActionResult LedData(LedData ld) {
+			Log.Debug("Updating LED Data.");
+			DataUtil.SetObject<LedData>("LedData", ld);
+			return Ok(ld);
+		}
+
+		[HttpPost("systemControl")]
+		public IActionResult SystemControl(string action) {
+			Log.Debug("Action triggered: " + action);
+			switch (action) {
+				case "restart":
+					SystemUtil.Restart();
+					break;
+				case "shutdown":
+					SystemUtil.Shutdown();
+					break;
+				case "reboot":
+					SystemUtil.Reboot();
+					break;
+				case "update":
+					SystemUtil.Update();
+					break;
+			}
+
+			return Ok(action);
+		}
+
 
 		[HttpGet("action")]
 		public IActionResult Action(string action, string value = "") {

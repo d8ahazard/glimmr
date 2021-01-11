@@ -73,16 +73,13 @@ if not exist %file% (
     git stash && git fetch && git pull
 )
 
-cd %~dp0src/
+cd %~dp0../src/
 net stop GlimmrTV
 echo Publishing for windows
 set version=1.1.0
-dotnet build Glimmr.csproj /p:DeployOnBuild=true /p:PublishProfile=Windows
-echo copying bass.dll from %~dp0src\build\win\bass.dll to %~dp0x64\bass.dll
-copy %~dp0src\build\win\bass.dll %~dp0x64\bass.dll
-mkdir %~dp0wwwroot
-xcopy %~dp0src\bin\publish\Glimmr-windows\* %~dp0\ /s /i /y
-xcopy %~dp0src\wwwroot\* %~dp0wwwroot\ /s /i /y
+dotnet publish .\src\Glimmr.csproj /p:PublishProfile=Windows -o .\bin\
+echo copying bass.dll from .\lib\win\bass.dll to .\bin\bass.dll
+copy .\lib\win\bass.dll .\bin\bass.dll
 net start GlimmrTV
 pause
 if errorlevel 0 goto installService

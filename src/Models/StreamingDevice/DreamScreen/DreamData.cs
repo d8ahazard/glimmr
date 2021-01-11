@@ -30,6 +30,7 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 		
 
 		[JsonProperty] public int[] EspSerialNumber = {0, 0};
+		[JsonProperty] public string SerialNumber = "123ABC";
 
 		[DefaultValue(new byte[0])]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]

@@ -294,7 +294,7 @@ namespace Glimmr.Services {
                         SendDeviceSerial(replyPoint);
                     } else {
                         Log.Debug("DEVICE SERIAL RETRIEVED: " + JsonConvert.SerializeObject(msg));
-                        var md = DataUtil.GetCollectionItem<DreamData>("Dev_Dreamscreen", from);
+                        DreamData md = DataUtil.GetCollectionItem<DreamData>("Dev_Dreamscreen", from);
                         if (md != null) {
                             md.SerialNumber = msg.PayloadString;
                             DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", md);
