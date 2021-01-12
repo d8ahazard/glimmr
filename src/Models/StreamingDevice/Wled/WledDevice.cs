@@ -163,9 +163,12 @@ namespace Glimmr.Models.StreamingDevice.WLED {
                 var offsetLen = offset + len - input.Count;
                 // Where do we start midway?
                 var loopLen = input.Count - offsetLen;
-                for (var i = loopLen - 1; i < input.Count; i++) {
-                    truncated.Add(input[i]);
+                if (loopLen > 0) {
+                    for (var i = loopLen - 1; i < input.Count; i++) {
+                        truncated.Add(input[i]);
+                    }
                 }
+
                 // Now calculate how many are needed from the front
                 for (var i = 0; i < len - offsetLen; i++) {
                     truncated.Add(input[i]);
