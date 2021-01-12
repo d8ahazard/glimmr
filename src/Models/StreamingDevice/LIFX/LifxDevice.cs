@@ -18,6 +18,7 @@ namespace Glimmr.Models.StreamingDevice.LIFX {
         public LifxData Data { get; set; }
         private LightBulb B { get; }
         public bool Streaming { get; set; }
+        public bool Testing { get; set; }
 
         private int _targetSector;
         
@@ -55,7 +56,13 @@ namespace Glimmr.Models.StreamingDevice.LIFX {
 
             StopStream();
         }
-        
+
+        public void FlashColor(System.Drawing.Color color) {
+            var nC = new Color {R = color.R, G = color.G, B = color.B};
+            var fadeSpan = TimeSpan.FromSeconds(0);
+            _client.SetColorAsync(B, nC, 7500, fadeSpan);
+        }
+
         public bool IsEnabled() {
             return Data.Enable;
         }
@@ -85,7 +92,7 @@ namespace Glimmr.Models.StreamingDevice.LIFX {
         }
 
         public void SetColor(List<System.Drawing.Color> _, List<System.Drawing.Color> sectors, double fadeTime = 0) {
-            if (!Streaming || !Enable) return;
+            if (!Streaming || !Enable || Testing) return;
             if (sectors == null || _client == null) {
                 return;
             }

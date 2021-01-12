@@ -12,6 +12,7 @@
 
 .deviceIcon {
     max-height: 60px;
+    cursor: pointer;
 }
 
 .settingBtn, .enableBtn {
@@ -163,4 +164,8 @@ input[type="range"]::-webkit-slider-runnable-track {
 .btn-offset {
     top: -5px;
     position: relative;
+}
+
+#nanoPreviewWrap {
+    width: 95%;
 }

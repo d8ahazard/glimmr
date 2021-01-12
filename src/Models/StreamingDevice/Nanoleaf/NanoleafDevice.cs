@@ -28,6 +28,7 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 		}
 
 		public NanoleafData Data { get; set; }
+		public bool Testing { get; set; }
 		public int Brightness { get; set; }
 		public string Id { get; set; }
 		public string IpAddress { get; set; }
@@ -76,7 +77,34 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 			_basePath = "http://" + IpAddress + ":16021/api/v1/" + _token;
 			Id = n.Id;
 		}
-        
+
+		public void FlashColor(Color color) {
+			var byteString = new List<byte>();
+			if (_streamMode == 2) {
+				byteString.AddRange(ByteUtils.PadInt(_layout.NumPanels));
+			} else {
+				byteString.Add(ByteUtils.IntByte(_layout.NumPanels));
+			}
+			foreach (var pd in _layout.PositionData) {
+				var id = pd.PanelId;
+				if (_streamMode == 2) {
+					byteString.AddRange(ByteUtils.PadInt(id));
+				} else {
+					byteString.Add(ByteUtils.IntByte(id));
+				} 
+				
+				// Add rgb values
+				byteString.Add(ByteUtils.IntByte(color.R));
+				byteString.Add(ByteUtils.IntByte(color.G));
+				byteString.Add(ByteUtils.IntByte(color.B));
+				// White value
+				byteString.AddRange(ByteUtils.PadInt(0, 1));
+				// Pad duration time
+				byteString.AddRange(_streamMode == 2 ? ByteUtils.PadInt(0) : ByteUtils.PadInt(0, 1));
+			}
+			SendUdpUnicast(byteString.ToArray());
+		}
+
 		public bool IsEnabled() {
 			return Data.Enable;
 		}
@@ -115,7 +143,7 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 
 
 		public void SetColor(List<Color> _, List<Color> colors, double fadeTime = 1) {
-			if (!Streaming || !Data.Enable) {
+			if (!Streaming || !Data.Enable || Testing) {
 				return;
 			}
 

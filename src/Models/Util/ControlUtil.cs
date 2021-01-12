@@ -8,6 +8,7 @@ using Glimmr.Models.StreamingDevice.Hue;
 using Glimmr.Models.StreamingDevice.LIFX;
 using Glimmr.Models.StreamingDevice.Nanoleaf;
 using Glimmr.Models.StreamingDevice.WLED;
+using Glimmr.Services;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -104,5 +105,7 @@ namespace Glimmr.Models.Util {
 			await hc.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
 			Log.Debug("Sent updated store data via socket.");
 		}
+
+		
 	}
 }

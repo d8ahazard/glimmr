@@ -517,7 +517,7 @@ function setListeners() {
         console.log("MyDevId: ", deviceData["IpAddress"]);
         if (selectedDevice["_id"] === deviceData["IpAddress"]) {
             ledData["Brightness"] = $(this).val();
-            postData("updateLed",ledData);
+            postData("ledData",ledData);
         }
         postData('updateDevice', selectedDevice);
     });
@@ -724,7 +724,7 @@ function toggleAmbientSection() {
 
 // This gets called in loop by hue auth to see if we've linked our bridge.
 function checkHueAuth() {    
-    $.get("./api/DreamData/action?action=authorizeHue&value=" + hueIp, function (data) {
+    $.get("./api/DreamData/authorizeHue?value=" + hueIp, function (data) {
         if (data.key !== null && data.key !== undefined) {
             hueAuth = true;
             if (hueAuth) {
@@ -735,7 +735,7 @@ function checkHueAuth() {
 }
 
 function checkNanoAuth() {
-    $.get("./api/DreamData/action?action=authorizeNano&value=" + selectedDevice["_id"], function (data) {
+    $.get("./api/DreamData/authorizeNano?value=" + selectedDevice["_id"], function (data) {
         if (data.Token !== null && data.Token !== undefined) {
             nanoAuth = true;
             if (nanoAuth) {
@@ -746,16 +746,17 @@ function checkNanoAuth() {
 }
 
 // Post settings data in chunks for deserialization
-function postData(endpoint, payload) {
+function postData(endpoint, payload, stringify=true) {
     if (posting) {
         console.log("Already posting?");
         return;
     }
+    let pl = stringify ? JSON.stringify(payload) : payload;
     $.ajax({
         url: "./api/DreamData/" + endpoint,
         dataType: "json",
         contentType: "application/json;",
-        data: JSON.stringify(payload),
+        data: payload,
         success: function(data) {
             console.log(`Posting to ${endpoint}`, endpoint, data);
             postResult = data;
@@ -995,16 +996,14 @@ function saveSelectedDevice() {
 
 
 function loadData() {
-    if (socketLoaded) {
-        $.get("./api/DreamData/action?action=loadData");
-    } else {
-        $.get("./api/DreamData/action?action=loadData", function (data) {
-            console.log("Dream data: ", data);
-            datastore = data;
-            buildLists();
-            RefreshData();
-        });
-    }
+    $.get("./api/DreamData/loadData", function (data) {
+        data = data.replace(/\\n/g, '');
+        let obj = JSON.parse(data);
+        console.log("Dream data: ", obj);
+        datastore = obj;
+        buildLists();
+        RefreshData();
+    });   
 }
 
 function RefreshData() {
@@ -1012,9 +1011,9 @@ function RefreshData() {
         refreshing = true;
         console.log("Refreshing data.");
         if (socketLoaded) {
-            $.get("./api/DreamData/action?action=refreshDevices");            
+            $.get("./api/DreamData/scanDevices");            
         } else {
-            $.get("./api/DreamData/action?action=refreshDevices", function (data) {
+            $.get("./api/DreamData/refreshDevices", function (data) {
                 datastore = data;
                 buildLists();
                 refreshing = false;

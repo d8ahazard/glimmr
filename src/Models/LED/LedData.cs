@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 namespace Glimmr.Models.LED {
     [Serializable]
     public class LedData {
-        [JsonProperty] public int LedCount { get; set; }
+        [JsonProperty] public int LedCount => LeftCount + RightCount + TopCount + BottomCount;
 
         [DefaultValue(18)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -32,13 +32,6 @@ namespace Glimmr.Models.LED {
         [JsonProperty] public int HCountDs { get; set; } = 40;
         [JsonProperty] public bool FixGamma { get; set; } = true;
 
-        public LedData() {
-            UpdateLedCount();
-        }
-
-        private void UpdateLedCount() {
-            LedCount = LeftCount + RightCount + TopCount + BottomCount;
-        }
-
+        
     }
 }

@@ -15,7 +15,7 @@ namespace Glimmr.Models.LED {
 		private WS281x _strip;
 		private Controller _controller;
 		private LedData _ld;
-		private bool _testing;
+		public bool Testing { get; set; }
 		public float CurrentMilliamps { get; set; }
 		
 		public LedStrip(LedData ld, ColorService colorService) {
@@ -67,7 +67,7 @@ namespace Glimmr.Models.LED {
 
         
 		public void StartTest(int len, int test) {
-			_testing = true;
+			Testing = true;
 			var lc = len;
 			if (len < _ledCount) {
 				lc = _ledCount;
@@ -95,7 +95,7 @@ namespace Glimmr.Models.LED {
 
         
 		public void StopTest() {
-			_testing = false;
+			Testing = false;
 			var mt = ColorUtil.EmptyColors(new Color[_ld.LedCount]);
 			UpdateAll(mt.ToList(), true);
 		}
@@ -107,7 +107,7 @@ namespace Glimmr.Models.LED {
 		public void UpdateAll(List<Color> colors, bool force=false) {
 			//Log.Debug("NOT UPDATING.");
 			if (colors == null) throw new ArgumentException("Invalid color input.");
-			if (_testing && !force) return;
+			if (Testing && !force) return;
 			
 			// Thanks, WLED!
 			if (true) colors = VoltAdjust(colors);

@@ -20,6 +20,7 @@ using Glimmr.Models.StreamingDevice.Yeelight;
 using Glimmr.Models.Util;
 using LifxNet;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 using Serilog;
 using Color = System.Drawing.Color;
 
@@ -44,6 +45,9 @@ namespace Glimmr.Services {
 		private int _devModePrevious;
 		private LedData _ledData;
 
+		private string _deviceFlashId;
+		private bool flashDevice;
+
 		// Figure out how to make these generic, non-callable
 		private LifxClient _lifxClient;
 
@@ -67,11 +71,13 @@ namespace Glimmr.Services {
 			_controlService.RefreshLedEvent += ReloadLedData;
 			_controlService.TestLedEvent += LedTest;
 			_controlService.AddSubscriberEvent += AddSubscriber;
+			_controlService.FlashDeviceEvent += FlashDevice;
+			_controlService.FlashSectorEvent += FlashSector;
 			_sDevices = new List<IStreamingDevice>();
 			_dreamUtil = new DreamUtil(_controlService.UdpClient);
 			Log.Debug("Initialization complete.");
 		}
-
+		
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			_stopToken = stoppingToken;
 			_streamTokenSource = new CancellationTokenSource();
@@ -111,6 +117,119 @@ namespace Glimmr.Services {
 			return base.StopAsync(cancellationToken);
 		}
 
+		private void FlashDevice(string devId) {
+			var disable = false;
+			var ts = new CancellationTokenSource();
+			var lc = _ledData.LedCount;
+			var bColor = Color.FromArgb(0, 0, 0, 0);
+			var rColor = Color.FromArgb(255, 255, 0, 0);
+			foreach (var sd in _sDevices.Where(sd => sd.Id == devId)) {
+				sd.Testing = true;
+				Log.Debug("Flashing device: " + devId);
+				if (!sd.Streaming) {
+					disable = true;
+					sd.StartStream(ts.Token);
+				}
+				sd.FlashColor(rColor);
+				Thread.Sleep(500);
+				sd.FlashColor(bColor);
+				Thread.Sleep(500);
+				sd.FlashColor(rColor);
+				Thread.Sleep(500);
+				sd.FlashColor(bColor);
+				sd.Testing = false;
+				if (!disable) {
+					continue;
+				}
+
+				sd.StopStream();
+				ts.Cancel();
+				ts.Dispose();
+			}
+		}
+
+		private void FlashSector(int sector) {
+			Log.Debug("No, really, flashing sector: " + sector);
+			var count = _ledData.LeftCount + _ledData.RightCount + _ledData.TopCount + _ledData.BottomCount;
+			var rCount = _ledData.RightCount / 6;
+			var tCount = _ledData.TopCount / 10;
+			var lCount = _ledData.LeftCount / 6;
+			var bCount = _ledData.BottomCount / 10;
+			
+			// Start/end values, with optional second for sector 1
+			var s0 = 0;
+			var e0 = 0;
+			
+			var colors = new Color[count];
+			colors = ColorUtil.EmptyColors(colors);
+			
+			// Right leds
+			if (sector >= 1 && sector <= 6) {
+				e0 = sector * rCount;
+				s0 = e0 - rCount;
+				for (var i = s0; i < e0; i++) {
+					colors[i] = Color.FromArgb(255, 255, 0, 0);
+				}
+			}
+			
+			// Top leds
+			if (sector >= 6 && sector <= 15) {
+				var sec = sector - 5;
+				e0 = sec * tCount;
+				e0 += _ledData.LeftCount;
+				s0 = e0 - tCount;
+				for (var i = s0; i < e0; i++) {
+					colors[i] = Color.FromArgb(255, 255, 0, 0);
+				}
+			}
+			
+			// Left leds
+			if (sector >= 15 && sector <= 20) {
+				var sec = sector - 14;
+				e0 = sec * lCount;
+				e0 += _ledData.RightCount + _ledData.TopCount;
+				s0 = e0 - lCount;
+				for (var i = s0; i < e0; i++) {
+					colors[i] = Color.FromArgb(255, 255, 0, 0);
+				}
+			}
+			
+			// Bottom leds
+			if (sector >= 20 && sector <= 28) {
+				var sec = sector - 19;
+				e0 = sec * bCount;
+				e0 += _ledData.RightCount + _ledData.LeftCount + _ledData.TopCount;
+				s0 = e0 - bCount;
+				for (var i = s0; i < e0; i++) {
+					colors[i] = Color.FromArgb(255, 255, 0, 0);
+				}
+			}
+			
+			// Also bottom
+			if (sector == 1) {
+				s0 = count - bCount;
+				e0 = count;
+				for (var i = s0; i < e0; i++) {
+					colors[i] = Color.FromArgb(255, 255, 0, 0);
+				}
+			}
+
+			var black = ColorUtil.EmptyColors(new Color[count]);
+			if (_strip == null) {
+				return;
+			}
+
+			_strip.Testing = true;
+			_strip.UpdateAll(colors.ToList(), true);
+			Thread.Sleep(500);
+			_strip.UpdateAll(black.ToList(), true);
+			Thread.Sleep(500);
+			_strip.UpdateAll(colors.ToList(), true);
+			Thread.Sleep(1000);
+			_strip.UpdateAll(black.ToList(), true);
+			_strip.Testing = false;
+
+		}
 	
 		private void CheckAutoDisable() {
 			var sourceActive = false;
@@ -191,7 +310,7 @@ namespace Glimmr.Services {
 			Log.Debug("Loading device data...");
 			// Reload main vars
 			var dev = DataUtil.GetDeviceData();
-			_deviceMode = dev.DeviceMode;
+			_deviceMode = DataUtil.GetItem("DeviceMode");
 			_devModePrevious = -1;
 			_ambientMode = dev.AmbientMode;
 			_ambientShow = dev.AmbientShowType;

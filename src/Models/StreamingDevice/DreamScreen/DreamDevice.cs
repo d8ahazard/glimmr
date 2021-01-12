@@ -17,6 +17,7 @@ using Serilog;
 namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 	public class DreamDevice : IStreamingDevice {
 		[DataMember] [JsonProperty] public bool Streaming { get; set; }
+		public bool Testing { get; set; }
 		[DataMember] [JsonProperty] public int Brightness { get; set; }
 		[DataMember] [JsonProperty] public string Id { get; set; }
 		[DataMember] [JsonProperty] public string IpAddress { get; set; }
@@ -53,13 +54,17 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 		}
 
 		public void SetColor(List<Color> _, List<Color> sectors, double fadeTime) {
-			if (!Data.Enable) return;
+			if (!Data.Enable || Testing) return;
 			if (sectors == null) return;
 			if (sectors.Count == 28) {
 				sectors = ColorUtil.TruncateColors(sectors);
 				
 			}
 			_dreamUtil.SendSectors(sectors, Id, Data.DeviceGroup);
+		}
+
+		public void FlashColor(Color color) {
+			
 		}
 
 		public void ReloadData() {

@@ -22,6 +22,7 @@ namespace Glimmr.Models.StreamingDevice.WLED {
     {
         public bool Enable { get; set; }
         public bool Streaming { get; set; }
+        public bool Testing { get; set; }
         public int Brightness { get; set; }
         public string Id { get; set; }
         public string IpAddress { get; set; }
@@ -71,7 +72,25 @@ namespace Glimmr.Models.StreamingDevice.WLED {
             Log.Debug("WLED: Streaming started...");
         }
 
-       
+
+        public void FlashColor(Color color) {
+            var packet = new List<Byte>();
+            // Set mode to DRGB, dude.
+            var timeByte = 255;
+            packet.Add(ByteUtils.IntByte(2));
+            packet.Add(ByteUtils.IntByte(timeByte));
+            for (var i = 0; i < Data.LedCount; i++) {
+                packet.Add(color.R);
+                packet.Add(color.G);
+                packet.Add(color.B);
+            }
+            
+            try {
+                _udpClient?.SendAsync(packet.ToArray(), packet.Count, ep);
+            } catch (Exception e) {
+                Log.Debug("Fucking exception, look at that: " + e.Message);        
+            }
+        }
 
         public bool IsEnabled() {
             return Data.Enable;
@@ -104,7 +123,7 @@ namespace Glimmr.Models.StreamingDevice.WLED {
             if (colors == null) {
                 return;
             }
-            if (!Streaming || !Data.Enable) {
+            if (!Streaming || !Data.Enable || Testing) {
                 return;
             }
 
@@ -128,8 +147,6 @@ namespace Glimmr.Models.StreamingDevice.WLED {
             }
             if (!colorsSet) {
                 colorsSet = true;
-                //Log.Debug("Sending " + colors.Count + " colors to " + IpAddress);
-                //Log.Debug("First packet: " + ByteUtils.ByteString(packet.ToArray()));
             }
 
             if (ep == null) {

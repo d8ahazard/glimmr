@@ -9,6 +9,7 @@ using YeelightAPI;
 namespace Glimmr.Models.StreamingDevice.Yeelight {
 	public class YeelightDevice : IStreamingDevice {
 		public bool Streaming { get; set; }
+		public bool Testing { get; set; }
 		public int Brightness { get; set; }
 		public string Id { get; set; }
 		public string IpAddress { get; set; }
@@ -44,11 +45,15 @@ namespace Glimmr.Models.StreamingDevice.Yeelight {
 		}
 
 		public void SetColor(List<Color> _, List<Color> sectors, double fadeTime) {
-			if (!Streaming || _data.TargetSector == -1) {
+			if (!Streaming || _data.TargetSector == -1 || Testing) {
 				return;
 			}
 
 			var col = sectors[_data.TargetSector];
+			_yeeDevice.SetRGBColor(col.R, col.G, col.B);
+		}
+
+		public void FlashColor(Color col) {
 			_yeeDevice.SetRGBColor(col.R, col.G, col.B);
 		}
 

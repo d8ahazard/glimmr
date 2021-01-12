@@ -7,13 +7,10 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
-using Glimmr.Models.StreamingDevice.Yeelight;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Newtonsoft.Json;
-using Q42.HueApi;
 using Q42.HueApi.ColorConverters;
-using Q42.HueApi.ColorConverters.HSB;
 using Q42.HueApi.Models.Groups;
 using Q42.HueApi.Streaming;
 using Q42.HueApi.Streaming.Extensions;
@@ -33,6 +30,7 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 		private StreamingHueClient _client;
 		private bool _disposed;
 		private CancellationToken _ct;
+		public bool Testing { get; set; }
 		public int Brightness { get; set; }
 		public string Id { get; set; }
 		public string IpAddress { get; set; }
@@ -70,9 +68,29 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 			}
 		}
 
-        
 
-        
+		public void FlashColor(Color color) {
+			if (_entLayer == null) return;
+			foreach (var entLight in _entLayer) {
+				// Get data for our light from map
+				var oColor = new RGBColor(color.R, color.G, color.B);
+				// If we're currently using a scene, animate it
+					entLight.SetState(_ct, oColor, 255);
+			}
+		}
+		
+		public void FlashLight(Color color, int lightId) {
+			if (_entLayer == null) return;
+			foreach (var entLight in _entLayer) {
+				if (lightId == entLight.Id) {
+					// Get data for our light from map
+					var oColor = new RGBColor(color.R, color.G, color.B);
+					// If we're currently using a scene, animate it
+					entLight.SetState(_ct, oColor, 255);	
+				}
+			}
+		}
+
 		public bool IsEnabled() {
 			return Data.Enable;
 		}
@@ -178,7 +196,7 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 		/// <param name="colors">Sector colors.</param>
 		/// <param name="fadeTime">Optional: how long to fade to next state</param>
 		public void SetColor(List<Color> _, List<Color> colors, double fadeTime = 0) {
-			if (!Streaming || !Data.Enable) {
+			if (!Streaming || !Data.Enable || Testing) {
 				return;
 			}
 			if (colors == null) {
@@ -209,7 +227,6 @@ namespace Glimmr.Models.StreamingDevice.Hue {
 					entLight.SetState(_ct, oColor, mb);
 				}
 			}
-			
 		}
 
 		

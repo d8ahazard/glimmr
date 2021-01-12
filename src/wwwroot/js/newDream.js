@@ -10,6 +10,10 @@ let settingsTab;
 let settingsContent;
 // Is a device card expanded?
 let expanded = false;
+// Do we have a LED map?
+let drawLedMap = false;
+// Do we have a Sector map?
+let drawSectorMap = false;
 // Is our settings window currently open?
 let settingsShown = false;
 // This is the data for the currently shown device in settings
@@ -304,12 +308,16 @@ function setListeners() {
         }
         
         if (obj !== undefined && property !== undefined && val !== undefined) {
+            console.log("Trying to set: ", obj, property, val);
             data.store[obj][0][property] = val;
             let pack = data.store[obj][0];
             if (property === "LeftCount" || property === "RightCount" || property ==="TopCount" || property === "BottomCount") {
                 let lPreview = document.getElementById("sLedPreview");
                 let lImage = document.getElementById("ledImage");
                 createLedMap(lPreview, lImage, pack);
+            }
+            if (property === "Theme") {
+                loadTheme(val);
             }
             delete pack["_id"];
             console.log("Sending updated object: ", pack);
@@ -350,6 +358,26 @@ function setListeners() {
                 closeCard();
                 return;
             }
+            if (target.classList.contains("sector") || target.parentElement.classList.contains("sector")) {
+                if (target.parentElement.classList.contains("sector")) {
+                    target = target.parentElement;
+                }
+                let sector = target.getAttribute("data-sector");
+                console.log("Sector click: ", target, sector);
+                let sectors = document.querySelectorAll(".sector");
+                for (let i=0; i<sectors.length; i++) {
+                    sectors[i].classList.remove("checked");
+                }
+                target.classList.add("checked");
+                sendMessage("flashSector", parseInt(sector), false);
+            }
+            
+            if (target.classList.contains("deviceIcon")) {
+                let targetId = target.getAttribute("data-device");
+                console.log("Device icon clicked: " + targetId);
+                sendMessage("flashDevice", targetId, false);
+            }
+            
             if (target.classList.contains("devSetting")) {
                 let targetId = target.getAttribute("data-target");
                 let attribute = target.getAttribute("data-attribute");                
@@ -493,19 +521,36 @@ function loadUi() {
     let autoDisabled = getStoreProperty("AutoDisabled");
     if (data.store["SystemData"] !== null && data.store["SystemData"] !== undefined) {
         let theme = data.store["SystemData"][0]["Theme"];
-        if (theme === "dark") {
-            console.log("APPENDING DA DARK THEME.");
-            let newSS=document.createElement('link');
-            newSS.rel='stylesheet';
-            newSS.href='/css/dark.css';
-            document.getElementsByTagName("head")[0].appendChild(newSS);
-        }    
+        loadTheme(theme);    
     }
     
     if (autoDisabled) mode = 0;
     setMode(mode);
     getDevices();
     document.getElementById("cardRow").click();
+}
+
+function loadTheme(theme) {
+    console.log("Loading theme...", theme);
+    let head = document.getElementsByTagName("head")[0];
+    if (theme === "light") {
+        let last = head.lastChild;
+        console.log("LAST: ", last);
+        if (last.href !== undefined) {
+            if (!last.href.includes("site")) {
+                console.log("Deleting?");
+                last.parentNode.removeChild(last);
+            }
+        }
+        
+    } else {
+        let newSS=document.createElement('link');
+        newSS.rel='stylesheet';
+        newSS.href='/css/' + theme + '.css';
+        document.getElementsByTagName("head")[0].appendChild(newSS);    
+    }
+    
+    
 }
 
 function loadSettings() {
@@ -578,6 +623,7 @@ function loadDevices() {
             iconCol.classList.add("iconCol", "exp", "col-4");
             let image = document.createElement("img");
             image.classList.add("deviceIcon", "img-fluid");
+            image.setAttribute("data-device", device["_id"]);
             let tag = device.Tag;
             if (tag === "Dreamscreen") tag = device["DeviceTag"];
             image.setAttribute("src", baseUrl + "/img/" + tag.toLowerCase() + "_icon.png");
@@ -687,15 +733,7 @@ function loadData() {
     let getUrl = window.location;
     let baseUrl = getUrl .protocol + "//" + getUrl.host;
     console.log("URL Base: " + baseUrl);    
-    if (socketLoaded) {
-        loadCalled = true;
-        doGet(baseUrl + "/api/DreamData/action?action=loadData");
-    } else {
-        doGet(baseUrl + "/api/DreamData/action?action=loadData", function (newData) {
-            console.log("Loading dream data from /GET: ", newData);
-            data.store = newData;
-        });
-    }
+    sendMessage("LoadData");
 }
 
 function RefreshData() {
@@ -885,23 +923,16 @@ function addCardSettings() {
         console.log("NO DEVICE DATA");
     } else {
         console.log("Appending card settings.");
-        let createSectors = false;
-        let createLed = false;
-        let createHue = false;
-        let createNano = false;
         
         switch(deviceData["Tag"]) {
             case "Dreamscreen":      
-                createSectors = (deviceData["Tag"] === "Connect" || deviceData["Tag"] === "Sidekick");
+                drawSectorMap = (deviceData["Tag"] === "Connect" || deviceData["Tag"] === "Sidekick");
                 break;
             case "HueBridge":
                 if (deviceData["Key"] !== null && deviceData["User"] !== null) {
-                    createHue = true;
-                    createSectors = true;    
-                } else {
-                    
-                }
-                
+                    createHueMap();
+                    drawSectorMap = true;    
+                } 
                 break;
             case "Lifx":
             case "Yeelight":
@@ -910,17 +941,15 @@ function addCardSettings() {
                 break;
             case "Nanoleaf":
                 if (deviceData["Token"] !== null) {
-                    createSectors = true;
-                    createNano = true;    
-                }
-                
+                    drawNanoShapes(deviceData);
+                }                
                 break;
             default:
                 console.log("Unknown device tag.");
                 return;
         }
         
-        if (createSectors) {
+        if (drawSectorMap) {
             
         }
         
@@ -1205,6 +1234,228 @@ function createHueMap() {
     cardClone.appendChild(groupSelectCol);
 }
 
+function drawNanoShapes(panel) {
+    let settingsDiv = document.createElement("div");
+    settingsDiv.id = "settingsDiv";
+    settingsDiv.classList.add("deviceSettings", "row", "text-center");
+    settingsDiv.style.opacity = "0%";
+    settingsDiv.style.overflow = "scrollY";
+    settingsDiv.style.position = "relative";
+    cardClone.appendChild(settingsDiv);
+
+    // Get window width
+    let width = window.innerWidth;
+    let height = width * .5625;
+
+    // Get layout data from panel
+    let mirrorX = panel['MirrorX'];
+    let mirrorY = panel['MirrorY'];
+    let layout = panel['Layout'];
+    let sideLength = layout['SideLength'];
+
+    // Create our stage
+    let stage = new Konva.Stage({
+        container: 'settingsDiv',
+        width: width,
+        height: height
+    });
+
+    // Shape layer
+    let cLayer = new Konva.Layer();
+    stage.add(cLayer);
+
+    let positions = layout['PositionData'];
+    let minX = 1000;
+    let minY = 1000;
+    let maxX = 0;
+    let maxY = 0;
+
+    // Calculate the min/max range for each tile
+    for (let i=0; i< positions.length; i++) {
+        let data = positions[i];
+        if (data.X < minX) minX = data.X;
+        if ((data.Y * -1) < minY) minY = (data.Y * -1);
+        if (data.X > maxX) maxX = data.X;
+        if ((data.Y * -1) > maxY) maxY = (data.Y * -1);
+    }
+    let wX = maxX - minX;
+    let wY = maxY - minY;
+    let scaleXY = 1;
+    if (wX > width || wY > height) {
+        scaleXY = .5;
+        console.log("Scaling to half.");
+        maxX *= scaleXY;
+        maxY *= scaleXY;
+        minX *= scaleXY;
+        minY *= scaleXY;
+    }
+    let x0 = (width - maxX - minX) / 2;
+    let y0 = (height - maxY - minY) / 2;
+    console.log("WTF: ", x0, y0);
+    //x0 /= scaleXY;
+    // Group for the shapes
+    let shapeGroup = new Konva.Group({
+        rotation: 0,
+        draggable: false,
+        x: x0,
+        y: y0,
+        scale: {
+            x: scaleXY,
+            y: scaleXY
+        }
+    });
+
+    cLayer.add(shapeGroup);
+    cLayer.draw();
+
+    
+    for (let i=0; i < positions.length; i++) {
+        let data = positions[i];
+        let shape = data['ShapeType'];
+        let x = data.X;
+        let y = data.Y;
+        if (mirrorX) x *= -1;
+        if (!mirrorY) y *= -1;
+        
+        let sText = new Konva.Text({
+            x: x,
+            y: y,
+            text: data["PanelId"],
+            fontSize: 30,
+            listening: false,
+            fontFamily: 'Calibri'
+        });
+
+        let sectorText = data['TargetSector'];
+
+        let sText2 = new Konva.Text({
+            x: x,
+            y: y - 35,
+            text: sectorText,
+            fontSize: 30,
+            listening: false,
+            fontFamily: 'Calibri'
+        });
+        let o = data['O'];
+        switch (shape) {
+            case 0:
+            case 1:
+                y = (data.y * -1) + Math.abs(minY);
+                let invert = false;
+                if (o === 60 || o === 180 || o === 300) {
+                    invert = true;
+                }
+
+                let angle = (2*Math.PI)/3;
+                // Calculate our overall height based on side length
+                let h = sideLength * (Math.sqrt(3)/2);
+                h *= 2;
+                let halfHeight = h / 2;
+                let ha = angle / 4;
+                let a0 = ha;
+                let a1 = angle + ha;
+                let a2 = (angle * 2) + ha;
+                let x0 = halfHeight * Math.cos(a0) + x;
+                let x1 = halfHeight * Math.cos(a1) + x;
+                let x2 = halfHeight * Math.cos(a2) + x;
+                let y0 = (halfHeight * Math.sin(a0) + y) - halfHeight;
+                let y1 = halfHeight * Math.sin(a1) + y - halfHeight;
+                let y2 = halfHeight * Math.sin(a2) + y + h;
+                if (!invert) {
+                    y0 = halfHeight * Math.sin(a0) + y;
+                    y1 = halfHeight * Math.sin(a1) + y;
+                    y2 = halfHeight * Math.sin(a2) + y;
+                }
+                let poly = new Konva.Line({
+                    points: [x0, y0, x1, y1, x2, y2],
+                    fill: 'white',
+                    stroke: 'black',
+                    strokeWidth: 5,
+                    closed: true,
+                    id: data["panelId"]
+                });
+                poly.on('click', function(){
+                    setNanoMap(data['PanelId'], data['TargetSector']);
+                });
+                poly.on('tap', function(){
+                    console.log("POLY TAP")
+                    setNanoMap(data['PanelId'], data['TargetSector']);
+                });
+                shapeGroup.add(poly);
+                break;
+            case 2:
+            case 3:
+            case 4:
+                let tx = x - (sideLength / 2);
+                let ty = y - (sideLength / 2);
+                let rect1 = new Konva.Rect({
+                    x: tx,
+                    y: ty,
+                    width: sideLength,
+                    height: sideLength,
+                    fill: 'white',
+                    stroke: 'black',
+                    strokeWidth: 4
+                });
+                rect1.on('click', function(){
+                    setNanoMap(data['PanelId'], data['TargetSector']);
+                });
+                rect1.on('tap', function(){
+                    setNanoMap(data['PanelId'], data['TargetSector']);
+                });
+                shapeGroup.add(rect1);
+                break;
+            case 5:
+                console.log("Draw a power supply??");
+                break;
+        }
+        sText.offsetX(sText.width() / 2);
+        sText2.offsetX(sText2.width() / 2);
+        
+        shapeGroup.add(sText);
+        shapeGroup.add(sText2);
+    }
+
+    let container = document.querySelector('#settingsDiv');
+
+    // now we need to fit stage into parent
+    let containerWidth = container.offsetWidth;
+    // to do this we need to scale the stage
+    let scale = containerWidth / width;
+
+    stage.width(width * scale);
+    stage.height(height * scale);
+    stage.scale({ x: scale, y: scale });
+    //shapeGroup.scale = scale;
+    stage.draw();
+    
+    cLayer.draw();
+    cLayer.zIndex(0);
+    
+    fadeContent(settingsDiv,100, 500);
+}
+
+function setNanoMap(id, current) {
+    nanoTarget = id;
+    nanoSector = current;
+    let nanoRegion = document.querySelectorAll(".nanoRegion");
+    for (let i=0; i < nanoRegion.length; i++) {
+        let obj = nanoRegion[i];
+        obj.classList.remove("checked");
+    }
+    
+    if (current !== -1) {
+        document.querySelector('.nanoRegion[data-region="'+current+'"]').classList.add("checked");
+    }
+
+    let myModal = new bootstrap.Modal(document.getElementById('nanoModal'));
+    let wrap = document.getElementById("nanoPreviewWrap");
+    let img = document.getElementById("nanoPreview");    
+    myModal.show();
+    createSectorMap(wrap, img);
+}
+
+
 function sizeContent() {
     let navDiv = document.getElementById("mainNav");
     let footDiv = document.getElementById("footer");
@@ -1221,8 +1472,13 @@ function sizeContent() {
         toggleExpansion(cardClone, {top: oh + "px", left: 0, width: '100%', height: 'calc(100% - ' + oh + 'px)', padding: "1rem 3rem"}, 250);
         let imgDiv = document.getElementById("mapDiv");
         let secMap = document.getElementById("sectorMap");
-        secMap.remove();
-        createSectorMap(imgDiv, document.getElementById("sectorImage"));
+        if (secMap !== null) secMap.remove();
+        if (drawSectorMap) createSectorMap(imgDiv, document.getElementById("sectorImage"));
+        if (deviceData["Tag"] === "Nanoleaf" && deviceData["Token"] !== null) {
+            console.log("Redrawing nanoshapes.");
+            document.getElementById("settingsDiv").remove();
+            drawNanoShapes(deviceData);
+        }
     }
     if (settingsShown) {
         loadSettings();
@@ -1232,6 +1488,8 @@ function sizeContent() {
 async function closeCard() {
     cardClone.style.overflowY = "none";
     deviceData = undefined;
+    drawSectorMap = false;
+    drawLedMap = false;    
     expanded = false;
     // shrink the card back to the original position and size    
     await toggleExpansion(cardClone, {top: `${toggleTop}px`, left: `${toggleLeft}px`, width: `${toggleWidth}px`, height: `${toggleHeight}px`, padding: '1rem 1rem'}, 300);

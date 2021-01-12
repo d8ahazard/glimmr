@@ -6,6 +6,7 @@ using Glimmr.Models.StreamingDevice.Yeelight;
 namespace Glimmr.Models.StreamingDevice {
 	public interface IStreamingDevice {
 		public bool Streaming { get; set; }
+		public bool Testing { get; set; }
 		public int Brightness { get; set; }
 		public string Id { get; set; }
 		public string IpAddress { get; set; }
@@ -19,6 +20,8 @@ namespace Glimmr.Models.StreamingDevice {
 		public void StopStream();
 
 		public void SetColor(List<Color> leds, List<Color> sectors, double fadeTime);
+
+		public void FlashColor(Color color);
 
 		public bool IsEnabled() {
 			return Enable;

@@ -399,6 +399,14 @@ namespace Glimmr.Models.Util {
 
             return ColorFromHsv(h, s, v);
         }
+
+        public static Color[] FillArray(Color input, int len) {
+	        var output = new Color[len];
+	        for (var i = 0; i < len; i++) {
+		        output[i] = input;
+	        }
+	        return output;
+        }
         
         public static bool IsBlack(Color color, int min = 5) {
             return color.R < min && color.G < min && color.B < min;
