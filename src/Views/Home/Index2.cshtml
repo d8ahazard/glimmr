@@ -61,8 +61,26 @@
                                             <!-- System prefs -->
                                             <div class="row border justify-content-center pb-5">
                                                 <div class="col-12 headerCol">General</div>
+                                                <div class="col-12 col-md-6 col-xl-3 justify-content-center form-group">
+                                                    <label class="form-label">System Control</label>
+                                                    <div class="btn-group form-control">
+                                                        <div class="btn btn-lg btn-secondary controlBtn" data-action="shutdown" data-bs-toggle="tooltip" data-bs-placement="top" title="Shutdown">
+                                                            <span class="material-icons">power_settings_new</span>
+                                                        </div>
+                                                        <div class="btn btn-lg btn-secondary controlBtn" data-action="reboot" data-bs-toggle="tooltip" data-bs-placement="top" title="Reboot">
+                                                            <span class="material-icons">settings_power</span>
+                                                        </div>
+                                                        <div class="btn btn-lg btn-secondary controlBtn" data-action="restart" data-bs-toggle="tooltip" data-bs-placement="top" title="Restart Glimmr TV Service">
+                                                            <span class="material-icons">sync</span>
+                                                        </div>
+                                                        <div class="btn btn-lg btn-secondary controlBtn" data-action="update" data-bs-toggle="tooltip" data-bs-placement="top" title="Update Glimmr TV">
+                                                            <span class="material-icons">system_update_alt</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
                                                 <!-- Time zone -->
-                                                <div class="col-12 col-md-6 align-self-center form-group">
+                                                <div class="col-12 col-md-6 col-xl-3 align-self-center form-group">
                                                     <label>Time Zone</label>
                                                     <select name="timezone" data-object="SystemData" data-property="TimeZone" class="systemSetting form-control">
                                                         <option></option>
@@ -150,7 +168,7 @@
                                                         <option value="Pacific/Tongatapu">(GMT+13:00) Nuku'alofa</option>
                                                     </select>
                                                 </div>
-                                                <div class="col-12 col-md-6 align-self-center form-group">
+                                                <div class="col-12 col-md-6 col-xl-3 align-self-center form-group">
                                                     <!-- Update branch -->
                                                     <label>Update Branch</label>
                                                     <select class="systemSetting form-control" data-object="SystemData" data-property="UpdateBranch">
@@ -159,116 +177,97 @@
                                                     </select>
                                                 </div>
                                                 <!-- Auto-update -->
-                                                <div class="col-12 col-sm-6 mt-2 mb-2 align-self-center form-group">
+                                                <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center form-group">
                                                     <label class="form-check-label">Automatically Install Updates</label>
                                                     <input type="checkbox" class="form-check-input" data-object="SystemData" data-property="AutoUpdate"/>
                                                 </div>
-                                                <div class="col-12 justify-content-center">
-                                                    <label class="headerCol">System Control</label>
+                                            </div>
+                                                                                       
+                                                <!-- Capture Mode -->
+                                            <div class="row border justify-content-center pb-5">
+                                                <div class="col-12 headerCol">Capture Preferences</div>
+                                                <div class="col-12 col-md-6 col-xl-3">
+                                                    <label class="form-label">Capture Mode</label>
+                                                    <select class="form-control" data-object="SystemData" data-property="CaptureMode">
+                                                        <option value="0">DreamScreen</option>
+                                                        <option value="1">Camera</option>
+                                                        <option value="2">HDMI</option>
+                                                        <option value="3">Screen Capture</option>
+                                                    </select>
                                                 </div>
-                                                <div class="col-12 justify-content-center">
-                                                    <div class="btn-group">
-                                                        <div class="btn btn-lg btn-secondary controlBtn" data-action="shutdown" data-bs-toggle="tooltip" data-bs-placement="top" title="Shutdown">
-                                                            <span class="material-icons">power_settings_new</span>
+                                                <div class="col-12 col-md-6 col-xl-3 capGroup form-group" data-mode="0">
+                                                    <label class="form-label">Target DreamScreen</label>
+                                                    <select class="form-control" data-object="SystemData" data-property="TargetDs">
+                                                        <option value=""></option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-12 col-md-6 col-xl-3 capGroup" data-mode="1">
+                                                    <label class="form-label">Camera Type</label>
+                                                    <select class="form-control" data-object="SystemData" data-property="CamType">
+                                                        <option value="0">Raspberry Pi Camera</option>
+                                                        <option value="1">USB Web Camera</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-12 col-md-6 col-xl-3 capGroup" data-mode="2">
+                                                    
+                                                </div>
+                                                <div class="col-12 col-md-6 col-xl-3 capGroup" data-mode="3">
+                                                    
+                                                </div>
+                                            </div>
+                                            <!-- Capture Preview -->
+                                            <div class="row border justify-content-center pb-5">
+                                                    <div class="col-12 headerCol">Preview</div>
+                                                    <div class="col-6">
+                                                        <div class="col-12 titleCol">Input</div>
+                                                        <div class="col-12">
+                                                            <img id="inputPreview" class="prevImg img-fluid" alt="Input preview." src="~/img/no_preview.jpg"/>
                                                         </div>
-                                                        <div class="btn btn-lg btn-secondary controlBtn" data-action="reboot" data-bs-toggle="tooltip" data-bs-placement="top" title="Reboot">
-                                                            <span class="material-icons">settings_power</span>
-                                                        </div>
-                                                        <div class="btn btn-lg btn-secondary controlBtn" data-action="restart" data-bs-toggle="tooltip" data-bs-placement="top" title="Restart Glimmr TV Service">
-                                                            <span class="material-icons">sync</span>
-                                                        </div>
-                                                        <div class="btn btn-lg btn-secondary controlBtn" data-action="update" data-bs-toggle="tooltip" data-bs-placement="top" title="Update Glimmr TV">
-                                                            <span class="material-icons">system_update_alt</span>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <div class="col-12 titleCol">Output</div>
+                                                        <div class="col-12">
+                                                            <img id="outputPreview" class="prevImg img-fluid" alt="Output preview." src="~/img/no_preview.jpg"/>
                                                         </div>
                                                     </div>
                                                 </div>
-                                        </div>
-                                                                                   
-                                            <!-- Capture Mode -->
-                                        <div class="row border justify-content-center pb-5">
-                                            <div class="col-12 headerCol">Capture Preferences</div>
-                                            <div class="col-12 col-md-6">
-                                                <label class="form-label">Capture Mode</label>
-                                                <select class="form-control" data-object="SystemData" data-property="CaptureMode">
-                                                    <option value="0">DreamScreen</option>
-                                                    <option value="1">Camera</option>
-                                                    <option value="2">HDMI</option>
-                                                    <option value="3">Screen Capture</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-12 col-md-6 capGroup form-group" data-mode="0">
-                                                <label class="form-label">Target DreamScreen</label>
-                                                <select class="form-control" data-object="SystemData" data-property="TargetDs">
-                                                    <option value=""></option>
-                                                </select>
-                                            </div>
-                                            <div class="col-12 col-md-6 capGroup" data-mode="1">
-                                                <label class="form-label">Camera Type</label>
-                                                <select class="form-control" data-object="SystemData" data-property="CamType">
-                                                    <option value="0">Raspberry Pi Camera</option>
-                                                    <option value="1">USB Web Camera</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-12 col-md-6 capGroup" data-mode="2">
-                                                
-                                            </div>
-                                            <div class="col-12 col-md-6 capGroup" data-mode="3">
-                                                
-                                            </div>
-                                        </div>
-                                        <!-- Capture Preview -->
-                                        <div class="row border justify-content-center pb-5">
-                                                <div class="col-12 headerCol">Preview</div>
-                                                <div class="col-6">
-                                                    <div class="col-12 titleCol">Input</div>
-                                                    <div class="col-12">
-                                                        <img id="inputPreview" class="prevImg img-fluid" alt="Input preview." src="~/img/no_preview.jpg"/>
-                                                    </div>
+                                                <!-- LED Prefs -->
+                                            <div class="row border justify-content-center pb-5">
+                                                <div class="col-12 headerCol">LED Preferences</div>
+                                                <div class="col-12 col-md-6 col-xl-3 form-group">
+                                                    <label class="form-label">LED Type</label>
+                                                    <select data-object="LedData" data-property="StripType" class="form-control">
+                                                        <option value="0">WS2812B</option>
+                                                        <option value="1">SK6812W (RGB+W)</option>
+                                                        <option value="2">WS2811</option>
+                                                    </select>
                                                 </div>
-                                                <div class="col-6">
-                                                    <div class="col-12 titleCol">Output</div>
-                                                    <div class="col-12">
-                                                        <img id="outputPreview" class="prevImg img-fluid" alt="Output preview." src="~/img/no_preview.jpg"/>
-                                                    </div>
+                                                <div class="col-12 col-md-6 col-xl-3 form-group">
+                                                    <label class="form-label">Maximum Brightness</label>
+                                                    <input type="number" min="0" max="255" class="form-control" data-object="LedData"
+                                                           data-property="Brightness"/>
+                                                </div>
+                                                <div class="col-12 col-md-6 col-xl-3 form-group">
+                                                    <label class="form-label">Maximum Milliamps</label>
+                                                    <input type="number" min="0" class="form-control" data-object="LedData"
+                                                               data-property="AblMaxMilliamps"/>
+                                                </div>
+                                                <div class="col-12 col-md-6 col-xl-3 form-group">
+                                                    <label class="form-label">Milliamps per LED</label>
+                                                    <input type="number" min="0" class="form-control" data-object="LedData"
+                                                           data-property="MilliampsPerLed"/>
+                                                </div>
+                                                <div class="col-12 col-md-6 col-xl-3 form-group">
+                                                    <label class="form-check-label">Enable Auto-Brightness</label>
+                                                    <input class="form-control form-check-input" type="checkbox" data-object="LedData"
+                                                           data-property="AutoBrightnessLevel"/>
                                                 </div>
                                             </div>
-                                            <!-- LED Prefs -->
-                                        <div class="row border justify-content-center pb-5">
-                                            <div class="col-12 headerCol">LED Preferences</div>
-                                            <div class="col-12 col-md-6 form-group">
-                                                <label class="form-label">LED Type</label>
-                                                <select data-object="LedData" data-property="StripType" class="form-control">
-                                                    <option value="0">WS2812B</option>
-                                                    <option value="1">SK6812W (RGB+W)</option>
-                                                    <option value="2">WS2811</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-12 col-md-6 form-group">
-                                                <label class="form-label">Maximum Brightness</label>
-                                                <input type="number" min="0" max="255" class="form-control" data-object="LedData"
-                                                       data-property="Brightness"/>
-                                            </div>
-                                            <div class="col-12 col-md-6 form-group">
-                                                <label class="form-label">Maximum Milliamps</label>
-                                                <input type="number" min="0" class="form-control" data-object="LedData"
-                                                           data-property="AblMaxMilliamps"/>
-                                            </div>
-                                            <div class="col-12 col-md-6 form-group">
-                                                <label class="form-label">Milliamps per LED</label>
-                                                <input type="number" min="0" class="form-control" data-object="LedData"
-                                                       data-property="MilliampsPerLed"/>
-                                            </div>
-                                            <div class="col-12 col-md-6 form-group">
-                                                <label class="form-check-label">Enable Auto-Brightness</label>
-                                                <input class="form-control form-check-input" type="checkbox" data-object="LedData"
-                                                       data-property="AutoBrightnessLevel"/>
-                                            </div>
-                                        </div>
-                                        <div class="row border justify-content-center pb-5">
+                                            <div class="row border justify-content-center pb-5">
                                                 <div class="col-12 titleCol">LED Counts</div>
                                                 <!-- Top count -->
-                                                <div class="col-3"></div>
-                                                <div class="col-6 align-self-center">
+                                                <div class="col-5"></div>
+                                                <div class="col-2 align-self-center">
                                                     <div class="input-group mb-3">
                                                         <div class="input-group-prepend">
                                                             <span class="input-group-text" id="ledCountTop">Top</span>
@@ -276,9 +275,9 @@
                                                         <input type="text" class="form-control ledCount" data-property="TopCount" data-object="LedData" aria-label="Top" aria-describedby="ledCountTop">
                                                     </div>
                                                 </div>
-                                                <div class="col-3"></div>
+                                                <div class="col-5"></div>
                                                 <!-- Left count -->
-                                                <div class="col-3">
+                                                <div class="col-2">
                                                     <div class="input-group mb-3">
                                                         <div class="input-group-prepend">
                                                             <span class="input-group-text" id="ledCountLeft">Left</span>
@@ -287,11 +286,11 @@
                                                     </div>
                                                 </div>
                                                 <!-- Preview -->
-                                                <div class="col-6" id="sLedPreview">
+                                                <div class="col-8" id="sLedPreview">
                                                     <img id="ledImage" class="img-fluid" src="~/img/sectoring_screen.png" alt="ledImage">
                                                 </div>
                                                 <!-- Right count -->
-                                                <div class="col-3">
+                                                <div class="col-2">
                                                     <div class="input-group mb-3">
                                                         <div class="input-group-prepend">
                                                             <span class="input-group-text" id="ledCountRight">Right</span>
@@ -299,9 +298,9 @@
                                                         <input type="text" class="form-control ledCount" data-property="RightCount" data-object="LedData" aria-label="Right" aria-describedby="ledCountRight">
                                                     </div>
                                                 </div>
-                                                <div class="col-3"></div>
+                                                <div class="col-5"></div>
                                                 <!-- Bottom count -->
-                                                <div class="col-6 align-self-center">
+                                                <div class="col-2 align-self-center">
                                                     <div class="input-group mb-3">
                                                         <div class="input-group-prepend">
                                                             <span class="input-group-text" id="ledCountBottom">Bottom</span>
@@ -309,7 +308,7 @@
                                                         <input type="text" class="form-control ledCount" data-property="BottomCount" data-object="LedData" aria-label="Bottom" aria-describedby="ledCountBottom">
                                                     </div>
                                                 </div>
-                                                <div class="col-3"></div>
+                                                <div class="col-5"></div>
                                             </div>
                                         </div>
                                     </div>
