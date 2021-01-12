@@ -296,8 +296,12 @@ function setListeners() {
     document.addEventListener('change', function(e) {
         let target = e.target;
         let obj = target.getAttribute("data-object");
-        let property = target.getAttribute("data-property");
+        let property = target.getAttribute("data-property");        
         let val = target.value;
+        if (target.type && target.type ==="checkbox") {
+            val = target.checked;
+            console.log("Checkbox value is " + val);
+        }
         
         if (obj !== undefined && property !== undefined && val !== undefined) {
             data.store[obj][0][property] = val;
@@ -487,6 +491,17 @@ function loadUi() {
     console.log("Loading ui.");
     let mode = getStoreProperty("DeviceMode");
     let autoDisabled = getStoreProperty("AutoDisabled");
+    if (data.store["SystemData"] !== null && data.store["SystemData"] !== undefined) {
+        let theme = data.store["SystemData"][0]["Theme"];
+        if (theme === "dark") {
+            console.log("APPENDING DA DARK THEME.");
+            let newSS=document.createElement('link');
+            newSS.rel='stylesheet';
+            newSS.href='/css/dark.css';
+            document.getElementsByTagName("head")[0].appendChild(newSS);
+        }    
+    }
+    
     if (autoDisabled) mode = 0;
     setMode(mode);
     getDevices();
@@ -523,10 +538,15 @@ function loadSettingObject(name) {
         if (dataProp.hasOwnProperty(prop)) {
             let target = document.querySelector('[data-property='+prop+'][data-object="'+name+'"]');
             if (target !== null && target !== undefined) {
-                target.value = dataProp[prop];                
+                let value = dataProp[prop];
+                if (value === true) {
+                    target.setAttribute('checked',"true");
+                } else {
+                    target.value = dataProp[prop];    
+                }                                
                 console.log("Setting property with magick.", prop, dataProp[prop]);
-            }
-        }
+            }            
+        }        
     }
 }
 

@@ -34,6 +34,10 @@ namespace Glimmr.Models {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string UpdateBranch { get; set; } = "main";
 		
+		[DefaultValue("dark")]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public string Theme { get; set; } = "dark";
+		
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool AutoUpdate { get; set; }
