@@ -166,6 +166,35 @@ input[type="range"]::-webkit-slider-runnable-track {
     position: relative;
 }
 
+.linkDiv {
+    position: relative;
+    border: 1px solid #888888;
+    border-radius: 20px;
+}
+
+.linkImg {
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    position: absolute;
+    height: 30px;
+    width: 30px;
+    bottom: 5px;
+    left: 5px;
+}
+
+.linkImg.linked {
+    background-image: url("../img/check_overlay.png");
+}
+
+.linkImg.unlinked {
+    background-image: url("../img/x_overlay.png");
+}
+
+.linkImg.linking {
+    background-image: url("../img/link_overlay.png");
+}
+
 #nanoPreviewWrap {
     width: 95%;
 }

@@ -1,10 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <!-- Material Design for Bootstrap fonts and icons -->
+    <title>@ViewData["Title"]</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons">
     <link rel="apple-touch-icon" sizes="57x57" href="/apple-icon-57x57.png">
     <link rel="apple-touch-icon" sizes="60x60" href="/apple-icon-60x60.png">
@@ -24,47 +21,24 @@
     <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
     <meta name="theme-color" content="#ffffff">
     <title>@ViewData["Title"] - Glimmr</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" asp-append-version="true"/>
-    <link rel="stylesheet" href="~/css/bootstrap-material-design.css" asp-append-version="true"/>
-    <link rel="stylesheet" href="~/css/subjx.css" asp-append-version="true"/>
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
-    <link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="~/css/classic.min.css"/> <!-- 'classic' theme -->
-    <style>
-        
-    </style>
+    <link href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" rel="stylesheet"/>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet"/>
+    <!-- Material Icons -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <!-- Bootstrap 5 -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="~/css/site2.css" asp-append-version="true"/>
 </head>
 <body>
-<script>
-function listenForDoubleClick(element) {
-  element.contentEditable = true;
-  console.log("DBLCLICK");
-  setTimeout(function() {
-    if (document.activeElement !== element) {
-      element.contentEditable = false;
-    }
-  }, 300);
-}
-</script>
-@RenderBody()
-<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
-        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
-        crossorigin="anonymous"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
-        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
-        crossorigin="anonymous"></script>
-<script src="~/lib/progressbar/progressbar.js"></script>
 
-<script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
-<script src="~/js/bootstrap-material-design.min.js" asp-append-version="true"></script>
-<script src="~/js/subjx.js" asp-append-version="true"></script>
+@RenderBody()
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/konva@4.0.0/konva.min.js"></script>
 <script src="~/js/signalr/dist/browser/signalr.js"></script>
 <script src="~/js/pickr.min.js"></script>
-<script src="~/js/site.js" asp-append-version="true"></script>
-<script src="~/js/jquery-sortable-lists-mobile.min.js"></script>
-<script src="./js/dream.js" type="text/javascript" asp-append-version="true"></script>
+<script src="~/js/newDream.js" type="text/javascript" asp-append-version="true"></script>
 @RenderSection("Scripts", false)
+
 </body>
 </html>

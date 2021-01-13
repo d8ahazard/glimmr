@@ -18,6 +18,7 @@ let drawSectorMap = false;
 let settingsShown = false;
 // This is the data for the currently shown device in settings
 let deviceData;
+let listenersSet;
 let cardClone;
 let baseCard;
 let closeButton;
@@ -85,13 +86,7 @@ document.addEventListener("DOMContentLoaded", function(){
     cardRow = document.getElementById("cardRow");
     setSocketListeners();
     loadSocket();
-    loadUi();
-    setListeners();
-    sizeContent();
-    let tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-    let tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl)
-    })
+    
 });
 
 
@@ -113,43 +108,33 @@ function sendMessage(endpoint, sData, encode=true) {
             });
         }
     } else {
-        postData(endpoint, data);
+        doPost(endpoint, data);
     }
-}
-
-// Fallback sending method if socket is disabled
-function postData(endpoint, payload) {
-    if (posting) {
-        console.log("Already posting?");
-        return;
-    }
-    $.ajax({
-        url: "./api/DreamData/" + endpoint,
-        dataType: "json",
-        contentType: "application/json;",
-        data: JSON.stringify(payload),
-        success: function(data) {
-            console.log(`Posting to ${endpoint}`, endpoint, data);
-            postResult = data;
-        },
-        type: 'POST'
-    });
 }
 
 function doPost(endpoint, payload) {
+    let url = baseUrl + "/api/DreamData/" + endpoint;
     if (posting) {
         console.log("Already posting?");
         return;
     }
     let xhttp = new XMLHttpRequest();
-    console.log(`Posting to ${endpoint}`, endpoint, data);
+    console.log(`Posting to ` + url, data);
 
+    
+    xhttp.open("POST", url, true);
     xhttp.onreadystatechange = function() {
-            if (this.readyState === 4 && this.status === 200) {
-                postResult = this.json;
+        if (this.readyState === 4 && this.status === 200) {
+            postResult = this.json;
+            if (endpoint === "loadData") {
+                let stuff = postResult.replace(/\\n/g, '');
+                let parsed = JSON.parse(stuff);
+                console.log("OLO: ", parsed);
+                data.store = parsed;
+                loadUi();
             }
+        }
     };
-    xhttp.open("POST", endpoint, true);
     xhttp.setRequestHeader("Content-Type", "application/json");
     xhttp.send(JSON.stringify(payload));
     xhttp.send();    
@@ -222,8 +207,8 @@ function setSocketListeners() {
     websocket.on("loadPreview", function(){
         let inputElement = document.getElementById('inputPreview');
         let croppedElement = document.getElementById('outputPreview');
-        inputElement.src = '../img/_preview_input.jpg?rand=' + Math.random();
-        croppedElement.src = '../img/_preview_output.jpg?rand=' + Math.random(); 
+        inputElement.src = './img/_preview_input.jpg?rand=' + Math.random();
+        croppedElement.src = './img/_preview_output.jpg?rand=' + Math.random(); 
     });
 
     websocket.on("hueAuth", function (value) {
@@ -257,7 +242,6 @@ function setSocketListeners() {
     websocket.on('open', function() {
         console.log("Socket connected (onOpen).");
         socketLoaded = true;
-        loadData();
     });
 
     websocket.on('olo', function(stuff) {
@@ -271,6 +255,7 @@ function setSocketListeners() {
     websocket.onclose(function() {
         console.log("Socket Disconnected...");
         socketLoaded = false;
+        showSocketError();
         let i = 0;
         let intr = setInterval(function() {
             loadSocket();
@@ -286,11 +271,17 @@ function loadSocket() {
     websocket.start().then(function () {
         console.log("Socket connected.");
         socketLoaded = true;
-        loadData();
+        let errModal = new bootstrap.Modal(document.getElementById('errorModal'));
+        errModal.hide();
     }).catch(function (err) {
-        console.error("Socket connection error: ", err.toString());
-        loadData();
+        console.log("Socket connection error: ", err.toString());
+        showSocketError();
     });
+}
+
+function showSocketError() {
+    let errModal = new bootstrap.Modal(document.getElementById('errorModal'));    
+    errModal.show();
 }
 
 // Set all of the various listeners our page may use
@@ -363,13 +354,7 @@ function setListeners() {
                     target = target.parentElement;
                 }
                 let sector = target.getAttribute("data-sector");
-                console.log("Sector click: ", target, sector);
-                let sectors = document.querySelectorAll(".sector");
-                for (let i=0; i<sectors.length; i++) {
-                    sectors[i].classList.remove("checked");
-                }
-                target.classList.add("checked");
-                sendMessage("flashSector", parseInt(sector), false);
+                updateDeviceSector(sector, target);
             }
             
             if (target.classList.contains("deviceIcon")) {
@@ -482,7 +467,18 @@ async function toggleSettingsDiv(target) {
 }
 
 
-function setMode(newMode) {
+function updateDeviceSector(sector, target) {
+    console.log("Sector click: ", sector, target);
+    let sectors = document.querySelectorAll(".sector");
+    for (let i=0; i<sectors.length; i++) {
+        sectors[i].classList.remove("checked");
+    }
+    target.classList.add("checked");
+    sendMessage("flashSector", parseInt(sector), false);
+}
+
+
+function setMode(newMode) {    
     console.log("Changing mode to ", newMode);
     //data.store["DeviceMode"][0]["value"] = newMode;
     mode = newMode;
@@ -517,7 +513,7 @@ function setMode(newMode) {
 
 function loadUi() {
     console.log("Loading ui.");
-    let mode = getStoreProperty("DeviceMode");
+    let mode = getStoreProperty("DeviceMode"); 
     let autoDisabled = getStoreProperty("AutoDisabled");
     if (data.store["SystemData"] !== null && data.store["SystemData"] !== undefined) {
         let theme = data.store["SystemData"][0]["Theme"];
@@ -527,6 +523,14 @@ function loadUi() {
     if (autoDisabled) mode = 0;
     setMode(mode);
     getDevices();
+    if (!listenersSet) {
+        setListeners();
+        let tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        let tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    }
+    sizeContent();
     document.getElementById("cardRow").click();
 }
 
@@ -640,9 +644,7 @@ function loadDevices() {
             let eIcon = document.createElement("span");
             eIcon.classList.add("material-icons", "pt-1");
             if (device["Enable"]) {
-                eIcon.textContent = "cast_connected";
-                enableButton.classList.add("btn-dark");
-                enableButton.classList.remove("btn-outline-secondary");
+                eIcon.textContent = "cast_connected";                
             } else {
                 eIcon.textContent = "cast";
             }
@@ -784,11 +786,26 @@ function getCookie(cname) {
 }
 
 function getStoreProperty(name) {
+    let store = data.store;
+    if (store === null) return null;
+    let sysData = store["SystemData"];
+    let ledData = store["LedData"];
+    if (sysData !== undefined && sysData[0] !== undefined) {
+        if (sysData[0].hasOwnProperty(name)) {
+            return sysData[0][name];
+        }
+    }
+
+    if (ledData !== undefined && ledData[0] !== undefined) {
+        if (ledData[0].hasOwnProperty(name)) {
+            return ledData[0][name];
+        }
+    }
+
     if (data.store.hasOwnProperty(name)) {
         return data.store[name][0]["value"];
-    } else {
-        console.log("Prop not found: ", name);
     }
+    
     return null;
 }
 
@@ -923,7 +940,28 @@ function addCardSettings() {
         console.log("NO DEVICE DATA");
     } else {
         console.log("Appending card settings.");
+        let sepDiv = document.createElement("div");
+        sepDiv.classList.add("dropdown-divider");
         
+        let settingsDiv = document.createElement("div");
+        settingsDiv.classList.add("deviceSettings", "row", "text-center");
+        settingsDiv.id = "deviceSettings";
+        //settingsDiv.style.opacity = "0%";
+        settingsDiv.style.overflow = "scrollY";
+        settingsDiv.style.position = "relative";
+        let linkCol = document.createElement("div");
+        let mapCol = document.createElement("div");
+        linkCol.classList.add("col-12", "row", "justify-content-center");
+        mapCol.classList.add("col-12");
+        linkCol.id = "linkCol";
+        mapCol.id = "mapCol";
+        settingsDiv.appendChild(linkCol);
+        settingsDiv.appendChild(mapCol);
+
+        cardClone.appendChild(sepDiv);
+        cardClone.appendChild(settingsDiv);
+        
+        //fadeContent(settingsDiv,100, 500);
         switch(deviceData["Tag"]) {
             case "Dreamscreen":      
                 drawSectorMap = (deviceData["Tag"] === "Connect" || deviceData["Tag"] === "Sidekick");
@@ -941,8 +979,11 @@ function addCardSettings() {
                 break;
             case "Nanoleaf":
                 if (deviceData["Token"] !== null) {
+                    drawLinkPane("nanoleaf", true);
                     drawNanoShapes(deviceData);
-                }                
+                } else {
+                    drawLinkPane("nanoleaf", false);
+                }
                 break;
             default:
                 console.log("Unknown device tag.");
@@ -957,11 +998,22 @@ function addCardSettings() {
     }   
 }
 
+function drawLinkPane(type, linked) {
+    let div = document.createElement("div");
+    div.classList.add("col-8", "col-sm-6", "col-md-4", "col-lg-3", "col-xl-2", "linkDiv");
+    let img = document.createElement("img");
+    img.classList.add("img-fluid");
+    img.src = "./img/" + type + "_icon.png";
+    let linkImg = document.createElement("img");
+    linkImg.classList.add("linkImg");
+    linkImg.classList.add(linked ? "linked" : "unlinked");
+    div.appendChild(img);
+    div.appendChild(linkImg);
+    console.log("No, really, appending: ", div);
+    document.getElementById("linkCol").appendChild(div);
+}
+
 function appendImageMap() {
-    let sepDiv = document.createElement("div");
-    sepDiv.classList.add("dropdown-divider");
-    let settingsDiv = document.createElement("div");
-    settingsDiv.classList.add("deviceSettings", "row", "text-center");
     let imgDiv = document.createElement("div");
     imgDiv.id = "mapDiv";
     let img = document.createElement("img");
@@ -969,14 +1021,10 @@ function appendImageMap() {
     img.classList.add("img-fluid", "col-xl-8", "col-lg-8", "col-md-12");
     img.src = baseUrl + "/img/sectoring_screen.png";
     imgDiv.appendChild(img);
+    let settingsDiv = document.getElementById("mapCol");    
     settingsDiv.append(imgDiv);
-    settingsDiv.style.opacity = "0%";
-    settingsDiv.style.overflow = "scrollY";
-    settingsDiv.style.position = "relative";
-    cardClone.appendChild(sepDiv);
-    cardClone.appendChild(settingsDiv);
     setTimeout(function() {createSectorMap(imgDiv, document.getElementById("sectorImage"))}, 200);
-    fadeContent(settingsDiv,100, 500);
+
 }
 
 function createSectorMap(targetElement, sectorImage) {
@@ -1204,7 +1252,6 @@ function createLedMap(targetElement, sectorImage, ledData) {
     targetElement.appendChild(map);
 }
 
-
 function createHueMap() {
     let lights = deviceData["Lights"];
     let lightMap =deviceData["MappedLights"];
@@ -1235,14 +1282,7 @@ function createHueMap() {
 }
 
 function drawNanoShapes(panel) {
-    let settingsDiv = document.createElement("div");
-    settingsDiv.id = "settingsDiv";
-    settingsDiv.classList.add("deviceSettings", "row", "text-center");
-    settingsDiv.style.opacity = "0%";
-    settingsDiv.style.overflow = "scrollY";
-    settingsDiv.style.position = "relative";
-    cardClone.appendChild(settingsDiv);
-
+    
     // Get window width
     let width = window.innerWidth;
     let height = width * .5625;
@@ -1255,7 +1295,7 @@ function drawNanoShapes(panel) {
 
     // Create our stage
     let stage = new Konva.Stage({
-        container: 'settingsDiv',
+        container: 'mapCol',
         width: width,
         height: height
     });
@@ -1416,7 +1456,7 @@ function drawNanoShapes(panel) {
         shapeGroup.add(sText2);
     }
 
-    let container = document.querySelector('#settingsDiv');
+    let container = document.getElementById('mapCol');
 
     // now we need to fit stage into parent
     let containerWidth = container.offsetWidth;
@@ -1430,9 +1470,7 @@ function drawNanoShapes(panel) {
     stage.draw();
     
     cLayer.draw();
-    cLayer.zIndex(0);
-    
-    fadeContent(settingsDiv,100, 500);
+    cLayer.zIndex(0);    
 }
 
 function setNanoMap(id, current) {
@@ -1476,7 +1514,7 @@ function sizeContent() {
         if (drawSectorMap) createSectorMap(imgDiv, document.getElementById("sectorImage"));
         if (deviceData["Tag"] === "Nanoleaf" && deviceData["Token"] !== null) {
             console.log("Redrawing nanoshapes.");
-            document.getElementById("settingsDiv").remove();
+            document.querySelector(".konvajs-content").remove();
             drawNanoShapes(deviceData);
         }
     }

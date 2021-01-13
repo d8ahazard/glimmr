@@ -92,6 +92,7 @@ namespace Glimmr.Hubs {
 		}
 
 		public override Task OnConnectedAsync() {
+			Clients.Caller.SendAsync("olo", DataUtil.GetStoreSerialized());
 			var bc = base.OnConnectedAsync();
 			return bc;
 		}

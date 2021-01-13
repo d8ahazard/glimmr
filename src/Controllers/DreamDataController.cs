@@ -38,8 +38,8 @@ namespace Glimmr.Controllers {
 			return new JsonResult(DataUtil.GetStoreSerialized());
 		}
 
-		[HttpGet("loadData")]
-		public IActionResult LoadData() {
+		[HttpPost("loadData")]
+		public IActionResult LoadData([FromBody] JObject foo) {
 			return new JsonResult(DataUtil.GetStoreSerialized());
 		}
 

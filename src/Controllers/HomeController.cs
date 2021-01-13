@@ -8,11 +8,7 @@ namespace Glimmr.Controllers {
             return View();
         }
         
-        public IActionResult ConnectHue() {
-            return View();
-        }
-        
-        public IActionResult Index2() {
+        public IActionResult Index_old() {
             return View();
         }
         
