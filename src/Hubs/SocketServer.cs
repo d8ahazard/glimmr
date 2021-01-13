@@ -85,6 +85,11 @@ namespace Glimmr.Hubs {
 			_cs.FlashSector(sector);
 		}
 
+		public void FlashLed(int led) {
+			Log.Debug("Get got: " + led);
+			_cs.TestLeds(led);
+		}
+
 		
 		public override Task OnDisconnectedAsync(Exception exception) {
 			var dc = base.OnDisconnectedAsync(exception);

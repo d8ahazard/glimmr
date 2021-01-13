@@ -52,7 +52,7 @@ namespace Glimmr.Services {
 		public event Action DeviceRescanEvent = delegate { };
 		public event ArgUtils.Action DreamSubscribeEvent = delegate { };
 		public event Action<int> SetModeEvent = delegate { };
-		public event Action<int, bool, int> TestLedEvent = delegate { };
+		public event Action<int> TestLedEvent = delegate { };
 		public event Action<CancellationToken> RefreshDreamscreenEvent = delegate { };
 		public event Action<string> AddSubscriberEvent = delegate { };
 		public event Action<int> SetAmbientModeEvent = delegate { };
@@ -145,8 +145,8 @@ namespace Glimmr.Services {
 			HubContext.Clients.All.SendAsync("loadPreview");
 		}
 
-		public void TestLeds(int len, bool stop, int test) {
-			TestLedEvent(len, stop, test);
+		public void TestLeds(int led) {
+			TestLedEvent(led);
 		}
 
 		public void AddSubscriber(string ip) {

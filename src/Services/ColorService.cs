@@ -297,13 +297,8 @@ namespace Glimmr.Services {
 			_subscribers[ip] = 3;
 		}
 
-		private void LedTest(int len, bool stop, int test) {
-			_testingStrip = stop;
-			if (stop) {
-				_strip.StopTest();
-			} else {
-				_strip.StartTest(len, test);
-			}
+		private void LedTest(int led) {
+			_strip.StartTest(led);
 		}
 
 		private void LoadData() {

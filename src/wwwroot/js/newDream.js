@@ -28,7 +28,7 @@ let toggleLeft = 0;
 let toggleTop = 0;
 let posting = false;
 let baseUrl;
-
+let errModal = new bootstrap.Modal(document.getElementById('errorModal'));
 // We're going to create one object to store our stuff, and add listeners for when values are changed.
 let data = {
     storeInternal: [],
@@ -270,8 +270,7 @@ function loadSocket() {
     console.log("Trying to connect to socket...");
     websocket.start().then(function () {
         console.log("Socket connected.");
-        socketLoaded = true;
-        let errModal = new bootstrap.Modal(document.getElementById('errorModal'));
+        socketLoaded = true;        
         errModal.hide();
     }).catch(function (err) {
         console.log("Socket connection error: ", err.toString());
@@ -280,7 +279,6 @@ function loadSocket() {
 }
 
 function showSocketError() {
-    let errModal = new bootstrap.Modal(document.getElementById('errorModal'));    
     errModal.show();
 }
 
@@ -355,6 +353,15 @@ function setListeners() {
                 }
                 let sector = target.getAttribute("data-sector");
                 updateDeviceSector(sector, target);
+            }
+
+            if (target.classList.contains("led") || target.parentElement.classList.contains("led")) {
+                if (target.parentElement.classList.contains("led")) {
+                    target = target.parentElement;
+                }
+                let sector = target.getAttribute("data-sector");
+                console.log("Flashing LED " + sector);
+                sendMessage("flashLed", parseInt(sector), false);
             }
             
             if (target.classList.contains("deviceIcon")) {
@@ -1176,7 +1183,7 @@ function createLedMap(targetElement, sectorImage, ledData) {
         l = w - wMargin - dWidth;
         r = l + dWidth;        
         let s1 = document.createElement("div");
-        s1.classList.add("sector");
+        s1.classList.add("led");
         s1.setAttribute("data-sector", ledCount.toString());
         s1.style.position = "absolute";
         s1.style.top = t.toString() + "px";
@@ -1194,7 +1201,7 @@ function createLedMap(targetElement, sectorImage, ledData) {
         l = w - wMargin - (ftWidth * (i + 1));
         r = l - ftWidth;
         let s1 = document.createElement("div");
-        s1.classList.add("sector");
+        s1.classList.add("led");
         s1.setAttribute("data-sector", ledCount.toString());
         s1.style.position = "absolute";
         s1.style.top = t.toString() + "px";
@@ -1215,7 +1222,7 @@ function createLedMap(targetElement, sectorImage, ledData) {
         l = wMargin;
         r = l + dWidth;
         let s1 = document.createElement("div");
-        s1.classList.add("sector");
+        s1.classList.add("led");
         s1.setAttribute("data-sector", ledCount.toString());
         s1.style.position = "absolute";
         s1.style.top = t.toString() + "px";
@@ -1236,7 +1243,7 @@ function createLedMap(targetElement, sectorImage, ledData) {
         l = wMargin + (fbWidth * (i));
         r = l + fbWidth;
         let s1 = document.createElement("div");
-        s1.classList.add("sector");
+        s1.classList.add("led");
         s1.setAttribute("data-sector", ledCount.toString());
         s1.style.position = "absolute";
         s1.style.top = t.toString() + "px";

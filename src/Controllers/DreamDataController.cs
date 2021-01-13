@@ -114,18 +114,11 @@ namespace Glimmr.Controllers {
 			return Ok(sector);
 		}
 		
-		// GET: LED TEST
-		[HttpGet("corners")]
-		public IActionResult TestStrip([FromQuery] int len, bool stop = false) {
+		
+		[HttpPost("flashLed")]
+		public IActionResult TestStripOffset([FromBody] int len) {
 			Log.Debug("Get got: " + len);
-			_controlService.TestLeds(len, stop, 0);
-			return Ok(len);
-		}
-
-		[HttpGet("offset")]
-		public IActionResult TestStripOffset([FromQuery] int len, bool stop = false) {
-			Log.Debug("Get got: " + len);
-			_controlService.TestLeds(len, stop, 1);
+			_controlService.TestLeds(len);
 			return Ok(len);
 		}
 

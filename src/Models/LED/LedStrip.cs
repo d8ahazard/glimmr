@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Threading;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using rpi_ws281x;
@@ -66,31 +67,26 @@ namespace Glimmr.Models.LED {
 		}
 
         
-		public void StartTest(int len, int test) {
+		public void StartTest(int len) {
 			Testing = true;
 			var lc = len;
 			if (len < _ledCount) {
 				lc = _ledCount;
 			}
 			var colors = new Color[lc];
+			var black = new Color[lc];
 			colors = ColorUtil.EmptyColors(colors);
-
-			if (test == 0) {
-				var c1 = _ld.LeftCount - 1;
-				var c2 = _ld.LeftCount + _ld.TopCount - 1;
-				var c3 = _ld.LeftCount + _ld.TopCount + _ld.LeftCount - 1;
-				var c4 = _ld.LeftCount * 2 + _ld.TopCount * 2 - 1;
-				colors[c1] = Color.FromArgb(255, 0, 0, 255);
-				if (c2 <= len) colors[c2] = Color.FromArgb(255, 255, 0, 0);
-				if (c3 <= len) colors[c3] = Color.FromArgb(255, 0, 255, 0);
-				if (c4 <= len) colors[c4] = Color.FromArgb(255, 0, 255, 255);
-				colors[len - 1] = Color.FromArgb(255, 255, 255, 255);
-				Log.Debug($"Corners at: {c1}, {c2}, {c3}, {c4}");
-			} else {
-				colors[len] = Color.FromArgb(255, 255, 0, 0);
-			}
-
+			black = ColorUtil.EmptyColors(black);
+			colors[len] = Color.FromArgb(255, 255, 0, 0);
+			Testing = true;
 			UpdateAll(colors.ToList(), true);
+			Thread.Sleep(500);
+			UpdateAll(black.ToList(), true);
+			Thread.Sleep(500);
+			UpdateAll(colors.ToList(), true);
+			Thread.Sleep(1000);
+			UpdateAll(black.ToList(), true);
+			Testing = false;
 		}
 
         
