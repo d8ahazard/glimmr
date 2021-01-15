@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Threading;
@@ -8,20 +7,24 @@ using Glimmr.Models.Util;
 using Glimmr.Services;
 using rpi_ws281x;
 using Serilog;
-using ColorUtil = Glimmr.Models.Util.ColorUtil;
 
 namespace Glimmr.Models.LED {
 	public sealed class LedStrip : IDisposable {
-		private int _ledCount;
-		private WS281x _strip;
-		private Controller _controller;
-		private LedData _ld;
 		public bool Testing { get; set; }
 		public float CurrentMilliamps { get; set; }
-		
+		private Controller _controller;
+		private LedData _ld;
+		private int _ledCount;
+		private WS281x _strip;
+
 		public LedStrip(LedData ld, ColorService colorService) {
 			colorService.ColorSendEvent += UpdateAll;
 			Initialize(ld);
+		}
+
+
+		public void Dispose() {
+			_strip?.Dispose();
 		}
 
 		public void Reload(LedData ld) {
@@ -50,29 +53,30 @@ namespace Glimmr.Models.LED {
 				21 => Pin.Gpio21,
 				_ => Pin.Gpio18
 			};
-			Log.Debug($@"Count, pin, type: {_ledCount}, {ld.GpioNumber}, {(int)stripType}");
+			Log.Debug($@"Count, pin, type: {_ledCount}, {ld.GpioNumber}, {(int) stripType}");
 			var settings = Settings.CreateDefaultSettings();
 			// Hey, look, this is built natively into the LED app
 			if (ld.FixGamma) {
 				settings.SetGammaCorrection(2.8f, 255, 255);
 			}
+
 			_controller = settings.AddController(_ledCount, pin, stripType);
 			try {
 				_strip = new WS281x(settings);
 				Log.Debug($@"Strip created using {_ledCount} LEDs.");
-                
 			} catch (DllNotFoundException) {
 				Log.Debug("Unable to initialize strips, we're not running on a pi!");
 			}
 		}
 
-        
+
 		public void StartTest(int len) {
 			Testing = true;
 			var lc = len;
 			if (len < _ledCount) {
 				lc = _ledCount;
 			}
+
 			var colors = new Color[lc];
 			var black = new Color[lc];
 			colors = ColorUtil.EmptyColors(colors);
@@ -89,7 +93,7 @@ namespace Glimmr.Models.LED {
 			Testing = false;
 		}
 
-        
+
 		public void StopTest() {
 			Testing = false;
 			var mt = ColorUtil.EmptyColors(new Color[_ld.LedCount]);
@@ -99,14 +103,21 @@ namespace Glimmr.Models.LED {
 		private void UpdateAll(List<Color> colors, List<Color> sectors, double fadeTime) {
 			UpdateAll(colors);
 		}
-		
-		public void UpdateAll(List<Color> colors, bool force=false) {
+
+		public void UpdateAll(List<Color> colors, bool force = false) {
 			//Log.Debug("NOT UPDATING.");
-			if (colors == null) throw new ArgumentException("Invalid color input.");
-			if (Testing && !force) return;
-			
+			if (colors == null) {
+				throw new ArgumentException("Invalid color input.");
+			}
+
+			if (Testing && !force) {
+				return;
+			}
+
 			// Thanks, WLED!
-			if (true) colors = VoltAdjust(colors);
+			if (true) {
+				colors = VoltAdjust(colors);
+			}
 
 			var iSource = 0;
 			for (var i = 0; i < _ledCount; i++) {
@@ -115,31 +126,25 @@ namespace Glimmr.Models.LED {
 				}
 
 				var tCol = colors[iSource];
-				
+
 				if (_ld.StripType == 1) {
-					tCol = ColorUtil.ClampAlpha(tCol);    
+					tCol = ColorUtil.ClampAlpha(tCol);
 				}
 
 				_controller.SetLED(i, tCol);
 				iSource++;
 			}
-            
+
 			_strip?.Render();
 		}
 
 		public void StopLights() {
 			Log.Debug("Stopping LED Strip.");
-			
+
 			_strip?.Reset();
 			Log.Debug("LED Strips stopped.");
 		}
 
-        
-
-		public void Dispose() {
-			_strip?.Dispose();
-		}
-        
 		private List<Color> VoltAdjust(List<Color> input) {
 			//power limit calculation
 			//each LED can draw up 195075 "power units" (approx. 53mA)
@@ -150,11 +155,13 @@ namespace Glimmr.Models.LED {
 			var ablMaxMilliamps = 3200;
 			var length = input.Count;
 			var output = input;
-			if (ablMaxMilliamps > 149 && actualMilliampsPerLed > 0) { //0 mA per LED and too low numbers turn off calculation
-  
+			if (ablMaxMilliamps > 149 && actualMilliampsPerLed > 0) {
+				//0 mA per LED and too low numbers turn off calculation
+
 				var puPerMilliamp = 195075 / actualMilliampsPerLed;
 				var powerBudget = ablMaxMilliamps * puPerMilliamp; //100mA for ESP power
-				if (powerBudget > puPerMilliamp * length) { //each LED uses about 1mA in standby, exclude that from power budget
+				if (powerBudget > puPerMilliamp * length) {
+					//each LED uses about 1mA in standby, exclude that from power budget
 					powerBudget -= puPerMilliamp * length;
 				} else {
 					powerBudget = 0;
@@ -162,21 +169,24 @@ namespace Glimmr.Models.LED {
 
 				var powerSum = 0;
 
-				for (var i = 0; i < length; i++) { //sum up the usage of each LED
+				for (var i = 0; i < length; i++) {
+					//sum up the usage of each LED
 					var c = input[i];
 					powerSum += c.R + c.G + c.B + c.A;
 				}
 
-				if (_ld.StripType == 1) { //RGBW led total output with white LEDs enabled is still 50mA, so each channel uses less
+				if (_ld.StripType == 1) {
+					//RGBW led total output with white LEDs enabled is still 50mA, so each channel uses less
 					powerSum *= 3;
 					powerSum >>= 2; //same as /= 4
 				}
 
 				var powerSum0 = powerSum;
 				powerSum *= defaultBrightness;
-    
-				if (powerSum > powerBudget) { //scale brightness down to stay in current limit
-					var scale = powerBudget / (float)powerSum;
+
+				if (powerSum > powerBudget) {
+					//scale brightness down to stay in current limit
+					var scale = powerBudget / (float) powerSum;
 					var scaleI = scale * 255;
 					var scaleB = scaleI > 255 ? 255 : scaleI;
 					var newBri = scale8(defaultBrightness, scaleB);
@@ -192,6 +202,7 @@ namespace Glimmr.Models.LED {
 						output = ColorUtil.ClampBrightness(input, defaultBrightness);
 					}
 				}
+
 				CurrentMilliamps += length; //add standby power back to estimate
 			} else {
 				CurrentMilliamps = 0;

@@ -205,6 +205,8 @@ function setSocketListeners() {
     });
     
     websocket.on("loadPreview", function(){
+        // If our preview isn't visible, there's no reason to pull data
+        if (!settingsShown) return;
         let inputElement = document.getElementById('inputPreview');
         let croppedElement = document.getElementById('outputPreview');
         inputElement.src = './img/_preview_input.jpg?rand=' + Math.random();

@@ -150,71 +150,9 @@ namespace Glimmr.Services {
 
 		private void FlashSector(int sector) {
 			Log.Debug("No, really, flashing sector: " + sector);
-			var count = _ledData.LeftCount + _ledData.RightCount + _ledData.TopCount + _ledData.BottomCount;
-			var rCount = _ledData.RightCount / 6;
-			var tCount = _ledData.TopCount / 10;
-			var lCount = _ledData.LeftCount / 6;
-			var bCount = _ledData.BottomCount / 10;
-			
-			// Start/end values, with optional second for sector 1
-			var s0 = 0;
-			var e0 = 0;
-			
-			var colors = new Color[count];
-			colors = ColorUtil.EmptyColors(colors);
-			
-			// Right leds
-			if (sector >= 1 && sector <= 6) {
-				e0 = sector * rCount;
-				s0 = e0 - rCount;
-				for (var i = s0; i < e0; i++) {
-					colors[i] = Color.FromArgb(255, 255, 0, 0);
-				}
-			}
-			
-			// Top leds
-			if (sector >= 6 && sector <= 15) {
-				var sec = sector - 5;
-				e0 = sec * tCount;
-				e0 += _ledData.LeftCount;
-				s0 = e0 - tCount;
-				for (var i = s0; i < e0; i++) {
-					colors[i] = Color.FromArgb(255, 255, 0, 0);
-				}
-			}
-			
-			// Left leds
-			if (sector >= 15 && sector <= 20) {
-				var sec = sector - 14;
-				e0 = sec * lCount;
-				e0 += _ledData.RightCount + _ledData.TopCount;
-				s0 = e0 - lCount;
-				for (var i = s0; i < e0; i++) {
-					colors[i] = Color.FromArgb(255, 255, 0, 0);
-				}
-			}
-			
-			// Bottom leds
-			if (sector >= 20 && sector <= 28) {
-				var sec = sector - 19;
-				e0 = sec * bCount;
-				e0 += _ledData.RightCount + _ledData.LeftCount + _ledData.TopCount;
-				s0 = e0 - bCount;
-				for (var i = s0; i < e0; i++) {
-					colors[i] = Color.FromArgb(255, 255, 0, 0);
-				}
-			}
-			
-			// Also bottom
-			if (sector == 1) {
-				s0 = count - bCount;
-				e0 = count;
-				for (var i = s0; i < e0; i++) {
-					colors[i] = Color.FromArgb(255, 255, 0, 0);
-				}
-			}
-
-			var black = ColorUtil.EmptyColors(new Color[count]);
+			var col = Color.FromArgb(255, 255, 0, 0);
+			var colors = ColorUtil.AddLedColor(new Color[_ledData.LedCount],sector, col,_ledData);
+			var black = ColorUtil.EmptyColors(new Color[_ledData.LedCount]);
 			if (_strip == null) {
 				return;
 			}
@@ -244,6 +182,7 @@ namespace Glimmr.Services {
 					sourceActive = _videoStream.SourceActive;
 					break;
 				case 2:
+					return;
 					sourceActive = _audioStream.SourceActive;
 					break;
 			}
@@ -390,7 +329,6 @@ namespace Glimmr.Services {
 				var rCol = ColorUtil.Rainbow(progress);
 				// Update our next pixel on the strip with the rainbow color
 				if (progress >= .0357f * k) {
-					Log.Debug($"Progress is {progress}, kval is " + .0357f * k);
 					secs[k] = rCol;
 					k++;
 				}

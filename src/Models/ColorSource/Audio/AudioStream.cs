@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Emgu.CV.Saliency;
+using Glimmr.Models.LED;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using ManagedBass;
 using Newtonsoft.Json;
+using Q42.HueApi.ColorConverters.HSB;
 using Serilog;
 using Color = System.Drawing.Color;
 
@@ -26,18 +30,25 @@ namespace Glimmr.Models.ColorSource.Audio {
 		private readonly CancellationToken _token;
 		private readonly List<Color> _colors;
 		private readonly ColorService _cs;
-
+		private LedData _ledData;
+		private AudioMap _map;
 
 		public AudioStream(ColorService cs, CancellationToken cancellationToken) {
 			_cs = cs;
 			_token = cancellationToken;
 			_colors = new List<Color>();
-			for (var i = 0; i < 12; i++) _colors.Add(Color.Black);
-
+			_ledData = DataUtil.GetObject<LedData>("LedData");
+			for (var i = 0; i < 28; i++) _colors.Add(Color.Black);
+			
 			_devices = new List<AudioData>();
+			_map = new AudioMap(0);
 			_recordDeviceIndex = -1;
 			_sensitivity = DataUtil.GetItem("Sensitivity") ?? 5;
 			LoadDevices();
+		}
+
+		public void UpdateLedData() {
+			_ledData = DataUtil.GetObject<LedData>("LedData");
 		}
 
 		private static float Limit(float value, int inclusiveMinimum, int inclusiveMaximum) {
@@ -52,7 +63,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 			_devices = new List<AudioData>();
 			string rd = DataUtil.GetItem("RecDev");
 			for (var a = 0; Bass.RecordGetDeviceInfo(a, out var info); a++) {
-				Log.Debug("Bass device?" + JsonConvert.SerializeObject(info));
+				Log.Debug("Audio device: " + JsonConvert.SerializeObject(info));
 				if (!info.IsEnabled) continue;
 				try {
 					var ad = new AudioData();
@@ -76,13 +87,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 		public async void Initialize() {
 			if (_recordDeviceIndex != -1) {
-				try {
-					SetCapVars();
-				} catch (BassException e) {
-					Log.Warning("Exception initializing audio device: " + e.Message);
-				}
 				
-
 				while (!_token.IsCancellationRequested) {
 					await Task.Delay(1, CancellationToken.None);
 				}
@@ -95,23 +100,24 @@ namespace Glimmr.Models.ColorSource.Audio {
 		public void Refresh() {
 		}
 
-		private void SetCapVars() {
+		
+		
+
+		public void ToggleSend(bool enable = true) {
+			Streaming = enable;
+			if (!enable) return;
 			Log.Debug("Starting stream with device " + _recordDeviceIndex);
+			Bass.RecordInit(_recordDeviceIndex);
 			var info = Bass.RecordingInfo;
-			_channels = info.Channels == 0 ? 2 : info.Channels;
-			for (var i = 0; i < info.Channels; i++) {
+			Log.Debug("Recording info: " + JsonConvert.SerializeObject(info));
+			_channels = 2;
+			for (var i = 0; i < _channels; i++) {
 				Bass.ChannelGetInfo(i, out var cInfo);
 				Log.Debug("Channel Info: " + JsonConvert.SerializeObject(cInfo));
 			}
 
 			_frequency = info.Frequency == 0 ? 48000 : info.Frequency;
 			Bass.RecordStart(_frequency, _channels, BassFlags.Float, Update);
-		}
-
-		
-
-		public void ToggleSend(bool enable = true) {
-			Streaming = enable;
 		}
 
 		private bool Update(int handle, IntPtr buffer, int length, IntPtr user) {
@@ -121,39 +127,74 @@ namespace Glimmr.Models.ColorSource.Audio {
 				Bass.Free();
 			}
 
-			var samples = 256;
+			var boost = 2;
+			var samples = 1024;
 			var fft = new float[samples]; // fft data buffer
-			var fftStereo = new float[3]; // fft data buffer
 			// Get our FFT for "everything"
-			//var channelGetData = Bass.ChannelGetData(handle, fft, (int) DataFlags.FFT256);
-			//Log.Debug($"FFT {channelGetData}: " + JsonConvert.SerializeObject(fft));
-			var cData = new Dictionary<int, float>();
+			var channelGetData = Bass.ChannelGetData(handle, fft, (int) DataFlags.FFT1024 | (int) DataFlags.FFTIndividual);
+			var lData = new Dictionary<int, float>();
+			var rData = new Dictionary<int, float>();
 			var sa = false;
-			for (var a = 0; a < samples; a++) {
-				var val = fft[a];
-				if (val > 0.01) {
-					sa = true;
-					var amp = val * 100;
-					var freq = FftIndex2Frequency(a, samples, _frequency);
-					if (amp > _max) _max = amp;
-					cData[freq] = amp;
-				}
+			// LeftL
+			var realIndex = 1;
+			for (var a = 0; a < samples; a+= 2) {
+				var val = fft[a] * boost;
+				val = FlattenValue(val);
+				var amp = val;
+				var freq = FftIndex2Frequency(realIndex, samples / 2, _frequency);
+				if (amp > _max) _max = amp;
+				lData[freq] = amp;
+				realIndex++;
 			}
 
-			SourceActive = sa;
-
-			// Now get them for the stereo left/right
-			//channelGetData = Bass.ChannelGetData(handle, fftStereo, (int) DataFlags.FFTIndividual);
-			var amps = SortChannels(cData, fftStereo);
-			for (var q = 0; q < amps.Length; q++) {
-				var amp = amps[q];
-				var value = amp > 0 ? 1 : 0;
-				_colors[q] = ColorUtil.ColorFromHsv(HueFromAmplitude(amp), 1, value);
+			realIndex = 1;
+			for (var a = 1; a < samples; a+=2) {
+				var val = fft[a] * boost;
+				val = FlattenValue(val);
+				var amp = val;
+				var freq = FftIndex2Frequency(realIndex, samples / 2, _frequency);
+				if (amp > _max) _max = amp;
+				rData[freq] = amp;
+				realIndex++;
 			}
 
-			//Log.Debug("Sending something...");
-			_cs.SendColors(_colors.ToList(), _colors.ToList());
+			
+			var lAmps = SortChannels(lData);
+			var rAmps = SortChannels(rData);
+
+			SourceActive = lAmps.Count != 0 || rAmps.Count != 0;
+
+			var colors = _map.MapColors(lAmps, rAmps, 28);
+			
+			var ledCols = ColorUtil.SectorsToleds(colors.ToList(), _ledData);
+			//Log.Debug("Colors: " + JsonConvert.SerializeObject(ledCols));
+
+			_cs.SendColors(ledCols, colors.ToList());
 			return true;
+		}
+
+		private float FlattenValue(float input) {
+			if (input < .001) {
+				return 0;
+			}
+
+			if (input < .1) {
+				return .3f;
+			}
+			
+			if (input < .3) {
+				return .5f;
+			}
+
+			if (input < .7) {
+				return .75f;
+			}
+			
+			if (input < .75) {
+				return 1f;
+			}
+			
+			return 1;
 		}
 
 		#region intColors
@@ -162,74 +203,20 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 		#region floatColors
 
-		private float[] SortChannels(Dictionary<int, float> cData, float[] stereo) {
-			//     Sub-bass	20 to 60 Hz
-			//     Bass	60 to 250 Hz
-			//     Low midrange	250 to 500 Hz
-			//     Midrange	500 Hz to 2 kHz
-			//     Upper midrange	2 to 4 kHz
-			//     Presence	4 to 6 kHz
-			//     Brilliance	6 to 20 kHz
-
-			var subRange = new List<float>();
-			var bassRange = new List<float>();
-			var lowMidRange = new List<float>();
-			var midRange = new List<float>();
-			var highMidRange = new List<float>();
-			var highRange = new List<float>();
-
-			var cValues = new Dictionary<string, float>();
-
-			foreach (var val in cData)
-				switch (0) {
-					case 0 when val.Key < 60:
-						subRange.Add(val.Value);
-						break;
-					case 0 when val.Key > 60 && val.Key <= 350:
-						bassRange.Add(val.Value);
-						break;
-					case 0 when val.Key > 350 && val.Key <= 2000:
-						lowMidRange.Add(val.Value);
-						break;
-					case 0 when val.Key > 2000 && val.Key <= 8000:
-						highMidRange.Add(val.Value);
-						break;
-					case 0 when val.Key > 8000:
-						highRange.Add(val.Value);
-						break;
+		private Dictionary<int, KeyValuePair<float, float>> SortChannels(Dictionary<int, float> cData) {
+			
+			var cValues = new Dictionary<int, KeyValuePair<float,float>>();
+			var steps = new[] {30, 60, 125, 250, 500, 1000, 2000};
+			foreach (var step in steps) {
+				var stepMax = 0;
+				foreach (var (frequency, amplitude) in cData) {
+					if (frequency >= step && frequency < step * 2 && amplitude > stepMax) {
+						var avg = (frequency - step) / step;
+						cValues[step] = new KeyValuePair<float, float>(avg, amplitude);
+					}
 				}
-
-			cValues["sub"] = subRange.Count > 0 ? (int) subRange.Average() : 0;
-			cValues["bass"] = bassRange.Count > 0 ? (int) bassRange.Average() : 000;
-			cValues["lMid"] = lowMidRange.Count > 0 ? (int) lowMidRange.Average() : 000;
-			cValues["hMid"] = highMidRange.Count > 0 ? (int) highMidRange.Average() : 000;
-			cValues["high"] = highRange.Count > 0 ? (int) highRange.Average() : 000;
-			cValues["l"] = stereo[0] * 100;
-			cValues["c"] = stereo[1] * 100;
-			cValues["r"] = stereo[2] * 100;
-			var sectors = new float[12];
-			sectors[0] = cValues["bass"] + cValues["r"];
-			sectors[1] = cValues["lMid"] + cValues["r"];
-			sectors[2] = cValues["hMid"] + cValues["r"];
-			sectors[3] = cValues["hMid"] + cValues["c"];
-			sectors[4] = cValues["high"];
-			sectors[5] = cValues["hMid"] + cValues["c"];
-			sectors[6] = cValues["hMid"] + cValues["l"];
-			sectors[7] = cValues["lMid"] + cValues["l"];
-			sectors[8] = cValues["bass"] + cValues["l"];
-			sectors[9] = cValues["bass"] + cValues["c"];
-			sectors[10] = cValues["sub"];
-			sectors[11] = cValues["bass"] + cValues["r"];
-
-			var output = new float[12];
-			for (var l = 0; l < 12; l++) {
-				var v = sectors[l] - _sensitivity;
-				v = Limit(v, 0, 60);
-				output[l] = v;
 			}
-
-			//ConsoleView(output);
-			return output;
+			return cValues;
 		}
 
 
@@ -303,5 +290,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 			_disposed = true;
 		}
+
+		
 	}
 }

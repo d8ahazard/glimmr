@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
+using System.Linq;
+using Glimmr.Models.LED;
 using Serilog;
 
 namespace Glimmr.Models.Util {
@@ -486,7 +488,89 @@ namespace Glimmr.Models.Util {
             byte b = (byte) (color.B * amount + backColor.B * (1 - amount));
             return Color.FromArgb(r, g, b);
         }
+
+        public static List<Color> SectorsToleds(List<Color> ints, LedData ledData) {
+	        var count = ledData.LeftCount + ledData.RightCount + ledData.TopCount + ledData.BottomCount;
+			
+	        // Start/end values, with optional second for sector 1
+	     	
+	        var colors = new Color[count];
+	        colors = EmptyColors(colors);
+
+	        for (var i = 0; i < ints.Count; i++) {
+		        colors = AddLedColor(colors, i, ints[i], ledData);
+	        }
+	        
+	        return colors.ToList();
+        }
+
+        public static Color[] AddLedColor(Color[] colors, int sector, Color color, LedData ledData) {
+	        int s0;
+	        int e0;
+	        
+	        var count = ledData.LeftCount + ledData.RightCount + ledData.TopCount + ledData.BottomCount;
+	        var rCount = ledData.RightCount / 6;
+	        var tCount = ledData.TopCount / 10;
+	        var lCount = ledData.LeftCount / 6;
+	        var bCount = ledData.BottomCount / 10;
+
+
+	        if (sector >= 1 && sector <= 6) {
+		        e0 = sector * rCount;
+		        s0 = e0 - rCount;
+		        for (var i = s0; i < e0; i++) {
+			        colors[i] = color;
+		        }
+	        }
+
+	        // Top leds
+	        if (sector >= 6 && sector <= 15) {
+		        var sec = sector - 5;
+		        e0 = sec * tCount;
+		        e0 += ledData.LeftCount;
+		        s0 = e0 - tCount;
+		        for (var i = s0; i < e0; i++) {
+			        colors[i] = color;
+		        }
+	        }
+
+	        // Left leds
+	        if (sector >= 15 && sector <= 20) {
+		        var sec = sector - 14;
+		        e0 = sec * lCount;
+		        e0 += ledData.RightCount + ledData.TopCount;
+		        s0 = e0 - lCount;
+		        for (var i = s0; i < e0; i++) {
+			        colors[i] = color;
+		        }
+	        }
+
+	        // Bottom leds
+	        if (sector >= 20 && sector <= 28) {
+		        var sec = sector - 19;
+		        e0 = sec * bCount;
+		        e0 += ledData.RightCount + ledData.LeftCount + ledData.TopCount;
+		        s0 = e0 - bCount;
+		        for (var i = s0; i < e0; i++) {
+			        colors[i] = color;
+		        }
+	        }
+
+	        // Also bottom
+	        if (sector == 1) {
+		        s0 = count - bCount;
+		        e0 = count;
+		        for (var i = s0; i < e0; i++) {
+			        colors[i] = color;
+		        }
+	        }
+
+	        return colors;
+        }
+        
     }
+    
+    
 
     public static class ColorExtension {  
         public static Color FromString(this Color color, string str) {
