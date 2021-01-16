@@ -69,6 +69,7 @@ namespace Glimmr.Services {
 			_controlService.SetModeEvent += Mode;
 			_controlService.DeviceReloadEvent += RefreshDeviceData;
 			_controlService.RefreshLedEvent += ReloadLedData;
+			_controlService.RefreshSystemEvent += ReloadSystemData;
 			_controlService.TestLedEvent += LedTest;
 			_controlService.AddSubscriberEvent += AddSubscriber;
 			_controlService.FlashDeviceEvent += FlashDevice;
@@ -419,6 +420,11 @@ namespace Glimmr.Services {
 			} catch (TypeInitializationException e) {
 				Log.Debug("Type init error: " + e.Message);
 			}
+		}
+
+		private void ReloadSystemData() {
+			_videoStream?.Refresh();
+			_audioStream?.Refresh();
 		}
 
 		private void Mode(int newMode) {

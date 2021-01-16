@@ -9,6 +9,8 @@ using Glimmr.Models.LED;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using ManagedBass;
+
+using Microsoft.VisualBasic.CompilerServices;
 using Newtonsoft.Json;
 using Q42.HueApi.ColorConverters.HSB;
 using Serilog;
@@ -25,43 +27,35 @@ namespace Glimmr.Models.ColorSource.Audio {
 		private int _recordDeviceIndex;
 		private int _channels;
 		private int _frequency;
-		private readonly int _sensitivity;
 		private float _max;
 		private readonly CancellationToken _token;
-		private readonly List<Color> _colors;
 		private readonly ColorService _cs;
 		private LedData _ledData;
+		private SystemData _sd;
 		private AudioMap _map;
+		
 
 		public AudioStream(ColorService cs, CancellationToken cancellationToken) {
 			_cs = cs;
 			_token = cancellationToken;
-			_colors = new List<Color>();
-			_ledData = DataUtil.GetObject<LedData>("LedData");
-			for (var i = 0; i < 28; i++) _colors.Add(Color.Black);
-			
-			_devices = new List<AudioData>();
-			_map = new AudioMap(0);
-			_recordDeviceIndex = -1;
-			_sensitivity = DataUtil.GetItem("Sensitivity") ?? 5;
+			LoadData();
 			LoadDevices();
 		}
 
-		public void UpdateLedData() {
+		private void LoadData() {
+			Log.Debug("Reloading audio data");
 			_ledData = DataUtil.GetObject<LedData>("LedData");
+			_sd = DataUtil.GetObject<SystemData>("SystemData");
+			_devices = DataUtil.GetCollection<AudioData>("Dev_Audio") ?? new List<AudioData>();
+			_map = new AudioMap(_sd.AudioMap);
+			_recordDeviceIndex = -1;
+			
 		}
-
-		private static float Limit(float value, int inclusiveMinimum, int inclusiveMaximum) {
-			if (value < inclusiveMinimum) return inclusiveMinimum;
-			if (value > inclusiveMaximum) return inclusiveMaximum;
-			return value;
-		}
-
 
 		private void LoadDevices() {
 			Bass.Init();
-			_devices = new List<AudioData>();
 			string rd = DataUtil.GetItem("RecDev");
+			_devices = new List<AudioData>();
 			for (var a = 0; Bass.RecordGetDeviceInfo(a, out var info); a++) {
 				Log.Debug("Audio device: " + JsonConvert.SerializeObject(info));
 				if (!info.IsEnabled) continue;
@@ -83,6 +77,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 					_recordDeviceIndex = a;
 				}
 			}
+			_devices = DataUtil.GetCollection<AudioData>("Dev_Audio") ?? new List<AudioData>();
 		}
 
 		public async void Initialize() {
@@ -98,6 +93,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 		}
 
 		public void Refresh() {
+			LoadData();
 		}
 
 		
@@ -105,7 +101,10 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 		public void ToggleSend(bool enable = true) {
 			Streaming = enable;
-			if (!enable) return;
+			if (!enable) {
+				Bass.Free();
+				return;
+			};
 			Log.Debug("Starting stream with device " + _recordDeviceIndex);
 			Bass.RecordInit(_recordDeviceIndex);
 			var info = Bass.RecordingInfo;
@@ -127,69 +126,62 @@ namespace Glimmr.Models.ColorSource.Audio {
 				Bass.Free();
 			}
 
-			var boost = 2;
-			var samples = 1024;
+			var samples = 4096;
 			var fft = new float[samples]; // fft data buffer
 			// Get our FFT for "everything"
-			var channelGetData = Bass.ChannelGetData(handle, fft, (int) DataFlags.FFT1024 | (int) DataFlags.FFTIndividual);
+			Bass.ChannelGetData(handle, fft, (int) DataFlags.FFT4096 | (int) DataFlags.FFTIndividual);
 			var lData = new Dictionary<int, float>();
 			var rData = new Dictionary<int, float>();
-			var sa = false;
-			// LeftL
-			var realIndex = 1;
+			var realIndex = 0;
+			
 			for (var a = 0; a < samples; a+= 2) {
-				var val = fft[a] * boost;
+				var val = fft[a] * 2;
 				val = FlattenValue(val);
+				if (val <= 0.001f) continue;
 				var amp = val;
-				var freq = FftIndex2Frequency(realIndex, samples / 2, _frequency);
-				if (amp > _max) _max = amp;
+				var freq = FftIndex2Frequency(realIndex, samples /2, _frequency);
 				lData[freq] = amp;
 				realIndex++;
 			}
-
-			realIndex = 1;
-			for (var a = 1; a < samples; a+=2) {
-				var val = fft[a] * boost;
+			
+			realIndex = 0;
+			for (var a = 1; a < samples; a+= 2) {
+				var val = fft[a] * 2;
 				val = FlattenValue(val);
+				if (val <= 0.001f) continue;
 				var amp = val;
-				var freq = FftIndex2Frequency(realIndex, samples / 2, _frequency);
-				if (amp > _max) _max = amp;
+				var freq = FftIndex2Frequency(realIndex, samples /2, _frequency);
 				rData[freq] = amp;
 				realIndex++;
 			}
 
+			//Log.Debug($"Ldata {quadLen}: " + JsonConvert.SerializeObject(lData));
 			
 			var lAmps = SortChannels(lData);
 			var rAmps = SortChannels(rData);
-
 			SourceActive = lAmps.Count != 0 || rAmps.Count != 0;
 
 			var colors = _map.MapColors(lAmps, rAmps, 28);
-			
 			var ledCols = ColorUtil.SectorsToleds(colors.ToList(), _ledData);
-			//Log.Debug("Colors: " + JsonConvert.SerializeObject(ledCols));
-
+			
 			_cs.SendColors(ledCols, colors.ToList());
 			return true;
 		}
 
 		private float FlattenValue(float input) {
-			if (input < .001) {
+			// Drop anything that's not at least .01
+			if (input < .075) {
 				return 0;
 			}
 
-			if (input < .1) {
-				return .3f;
-			}
-			
 			if (input < .3) {
 				return .5f;
 			}
-
-			if (input < .7) {
+			
+			if (input < .5) {
 				return .75f;
 			}
-			
+
 			if (input < .75) {
 				return 1f;
 			}
@@ -208,13 +200,40 @@ namespace Glimmr.Models.ColorSource.Audio {
 			var cValues = new Dictionary<int, KeyValuePair<float,float>>();
 			var steps = new[] {30, 60, 125, 250, 500, 1000, 2000};
 			foreach (var step in steps) {
-				var stepMax = 0;
+				var next = step == 60 ? 125 : step * 2;
+				float range = next - step;
+				var stepMax = 0f;
+				var freq2 = new KeyValuePair<int,float>();
 				foreach (var (frequency, amplitude) in cData) {
-					if (frequency >= step && frequency < step * 2 && amplitude > stepMax) {
-						var avg = (frequency - step) / step;
-						cValues[step] = new KeyValuePair<float, float>(avg, amplitude);
+					if (frequency < step || frequency >= next) {
+						continue;
+					}
+
+					if (amplitude > stepMax) {
+						stepMax = amplitude;
 					}
 				}
+
+				var frequencies = new List<float>();
+				foreach (var (frequency, amplitude) in cData) {
+					if (frequency < step || frequency >= next) {
+						continue;
+					}
+					if (amplitude != stepMax) {
+						continue;
+					}
+
+					var avg = (frequency - step) / range;
+					frequencies.Add(avg);
+				}
+
+				if (frequencies.Count <= 0) {
+					continue;
+				}
+
+				var sum = frequencies.Sum();
+				sum /= frequencies.Count;
+				cValues[step] = new KeyValuePair<float, float>(sum, stepMax);
 			}
 			return cValues;
 		}
@@ -253,7 +272,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 		private void LogColor(float amplitude, string separator = "") {
 			var hue = HueFromAmplitude(amplitude);
 			var value = amplitude > 0 ? 1 : 0;
-			Console.ForegroundColor = ColorFromSystem(ColorUtil.ColorFromHsv(hue, 1, value));
+			Console.ForegroundColor = ColorFromSystem(ColorUtil.HsvToColor(hue, 1, value));
 			Console.Write($@"{amplitude:F2}{separator}");
 		}
 

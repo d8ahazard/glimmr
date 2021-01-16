@@ -320,7 +320,50 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="tab-pane fade" id="audioTab" role="tabpanel" aria-labelledby="audio-tab">...</div>
+                                    <div class="tab-pane fade" id="audioTab" role="tabpanel" aria-labelledby="audio-tab">
+                                        <div class="container-fluid">
+                                            <div class="row border justify-content-center pb-5">
+                                                <div class="col-12 headerCol">Music Mode</div>
+                                                <div class="col-12 col-md-6 col-xl-3 justify-content-center form-group">
+                                                    <label class="form-label">Input Device</label>
+                                                    <select class="form-control" data-object="SystemData" data-property="RecDev" id="RecDev">
+                                                        
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="row border justify-content-center pb-5">
+                                                <div class="col-12 col-md-6 col-xl-3 justify-content-center form-group">
+                                                    <label class="form-label">Sector Map</label>
+                                                    <select class="form-control" data-object="SystemData" data-property="AudioMap">
+                                                        <option value="Bottom">Bottom</option>
+                                                        <option value="Top">Top</option>
+                                                        <option value="Center">Center</option>
+                                                        <option value="Middle">Middle</option>
+                                                        <option value="Corners">Corners</option>
+                                                    </select>
+                                                    <img class="img-fluid" id="audioMapImg" alt="Audio Map Image" src=""/>
+                                                </div>
+                                                <div class="col-12 col-md-6 col-xl-3 justify-content-center form-group">
+                                                    <div class="col-12 justify-content-center form-group">
+                                                        <label class="form-label">Rotation Speed</label>
+                                                        <input class="form-control" data-object="SystemData" data-property="AudioRotationSpeed" type="number" min=".99" max=".99" step=".01"/>
+                                                    </div>
+                                                    <div class="col-12 justify-content-center form-group">
+                                                        <label class="form-label">Rotation Sensitivity</label>
+                                                        <input class="form-control" data-object="SystemData" data-property="AudioRotationSensitivity" type="number" min="-.99" max=".99" step=".01"/>
+                                                    </div>
+                                                    <div class="col-12 justify-content-center form-group">
+                                                        <label class="form-label">Rotation Lower Limit</label>
+                                                        <input class="form-control" data-object="SystemData" data-property="AudioRotationLower" type="number" min="0" max="1" step=".01"/>
+                                                    </div>
+                                                    <div class="col-12 justify-content-center form-group">
+                                                        <label class="form-label">Rotation Upper Limit</label>
+                                                        <input class="form-control" data-object="SystemData" data-property="AudioRotationUpper" type="number" min="0" max="1" step=".01"/>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <div class="tab-pane fade" id="systemTab" role="tabpanel" aria-labelledby="system-tab">...</div>
                                 </div>
                             </div>

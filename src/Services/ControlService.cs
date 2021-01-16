@@ -46,9 +46,8 @@ namespace Glimmr.Services {
 		}
 
 		public event Action<string> DeviceReloadEvent = delegate { };
-
 		public event Action RefreshLedEvent = delegate { };
-
+		public event Action RefreshSystemEvent = delegate { };
 		public event Action DeviceRescanEvent = delegate { };
 		public event ArgUtils.Action DreamSubscribeEvent = delegate { };
 		public event Action<int> SetModeEvent = delegate { };
@@ -310,6 +309,7 @@ namespace Glimmr.Services {
 		}
 
 		public void UpdateSystem(SystemData sd) {
+			RefreshSystemEvent();
 			DataUtil.SetObject<SystemData>("SystemData", sd);
 		}
 

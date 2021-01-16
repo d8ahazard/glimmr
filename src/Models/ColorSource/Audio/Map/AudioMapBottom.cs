@@ -37,6 +37,7 @@ namespace Glimmr.Models.ColorSource.Audio.Map {
 
 		public float MinColorRange { get; set; } = 0;
 		public float MaxColorRange { get; set; } = 1;
-		public float RotationSpeed { get; }
+		public float RotationSpeed { get; } = .005f;
+		public float RotationThreshold { get; } = 1f;
 	}
 }

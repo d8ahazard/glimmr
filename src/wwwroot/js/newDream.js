@@ -310,6 +310,10 @@ function setListeners() {
             if (property === "Theme") {
                 loadTheme(val);
             }
+            if (property === "AudioMap") {
+                let mapImg = document.getElementById("audioMapImg");
+                mapImg.setAttribute("src","./img/MusicMode" + val + ".png");
+            }
             delete pack["_id"];
             console.log("Sending updated object: ", pack);
             sendMessage(obj, pack,true);
@@ -483,6 +487,23 @@ function updateDeviceSector(sector, target) {
         sectors[i].classList.remove("checked");
     }
     target.classList.add("checked");
+    let dev = deviceData;
+    if (dev["Tag"] === "Nanoleaf") {
+        console.log("DEV: ", dev);
+        let layout = dev["Layout"];
+        let positions = layout["PositionData"];
+        
+        for(let i=0; i < positions.length; i++) {
+            if (positions[i]["PanelId"] === nanoTarget) {
+                positions[i]["TargetSector"] = sector;
+            }    
+        }
+        layout["PositionData"] = positions;
+        dev["Layout"] = layout;
+        drawNanoShapes(dev);
+        updateDevice(dev["_id"],"Layout", layout);
+    }
+    
     sendMessage("flashSector", parseInt(sector), false);
 }
 
@@ -526,7 +547,33 @@ function loadUi() {
     let autoDisabled = getStoreProperty("AutoDisabled");
     if (data.store["SystemData"] !== null && data.store["SystemData"] !== undefined) {
         let theme = data.store["SystemData"][0]["Theme"];
-        loadTheme(theme);    
+        loadTheme(theme);
+    }
+    
+    if (data.store["Dev_Audio"] !== null || data.store["Dev_Audio"] !== undefined) {
+        let recList = document.getElementById("RecDev");
+        for (let i = 0; i < recList.options.length; i++) {
+            recList.options[i] = null;
+        }
+        let recDevs = data.store["Dev_Audio"];
+        console.log("Rec Devs: ", recDevs);
+        let recDev = getStoreProperty("RecDev");
+        for (let i = 0; i < recDevs.length; i++) {
+            console.log("Adding dev");
+            let dev = recDevs[i];
+            let opt = document.createElement("option");
+            opt.value = dev["_id"];
+            opt.innerText = dev["_id"];
+            if (opt.value === recDev) opt.selected = true;
+            recList.options.add(opt);
+        }
+    } else {
+        console.log("No recording devices found.");
+    }
+    let sectorMap = getStoreProperty("AudioMap");
+    if (sectorMap !== null && sectorMap !== undefined) {
+        let mapImg = document.getElementById("audioMapImg");
+        mapImg.setAttribute("src","./img/MusicMode" + sectorMap + ".png");
     }
     
     if (autoDisabled) mode = 0;

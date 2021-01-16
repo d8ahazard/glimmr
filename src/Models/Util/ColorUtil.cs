@@ -259,7 +259,14 @@ namespace Glimmr.Models.Util {
 			}
 		}
        
-        public static Color ColorFromHsv(double hue, double saturation, double value) {
+        /// <summary>
+        /// Convert HSV values to color
+        /// </summary>
+        /// <param name="hue">0-360</param>
+        /// <param name="saturation">0-1</param>
+        /// <param name="value">0-1</param>
+        /// <returns></returns>
+        public static Color HsvToColor(double hue, double saturation, double value) {
             var hi = Convert.ToInt32(Math.Floor(hue / 60)) % 6;
             var f = hue / 60 - Math.Floor(hue / 60);
 
@@ -399,7 +406,7 @@ namespace Glimmr.Models.Util {
                 s = 1.0;
             }
 
-            return ColorFromHsv(h, s, v);
+            return HsvToColor(h, s, v);
         }
 
         public static Color[] FillArray(Color input, int len) {
@@ -423,7 +430,7 @@ namespace Glimmr.Models.Util {
                 v = 1.0;
             }
 
-            return ColorFromHsv(h, s, v);
+            return HsvToColor(h, s, v);
         }
         
         public static Color Rainbow(float progress) {

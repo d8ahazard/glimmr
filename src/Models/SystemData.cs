@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Drawing;
+using Glimmr.Models.ColorSource.Audio;
 using Newtonsoft.Json;
 
 namespace Glimmr.Models {
@@ -58,14 +59,6 @@ namespace Glimmr.Models {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool EnableAutoDisable { get; set; } = true;
 		
-		[DefaultValue(.01f)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public float AudioThreshold { get; set; } = .01f;
-		
-		[DefaultValue(1)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int Sensitivity { get; set; }
-		
 		[DefaultValue(1)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int CamType { get; set; } = 1;
@@ -97,6 +90,31 @@ namespace Glimmr.Models {
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string RecDev { get; set; }
+		
+		[DefaultValue(.01f)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public float AudioThreshold { get; set; } = .01f;
+
+		[DefaultValue(ColorSource.Audio.AudioMap.MapType.Bottom)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public AudioMap.MapType AudioMap { get; set; } = ColorSource.Audio.AudioMap.MapType.Bottom;
+		
+		[DefaultValue(.0f)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public float AudioRotationSensitivity { get; set; }
+		
+		[DefaultValue(.0f)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public float AudioRotationSpeed { get; set; }
+		
+		[DefaultValue(.0f)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public float AudioRotationLower { get; set; }
+
+		[DefaultValue(1f)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public float AudioRotationUpper { get; set; } = 1f;
+
 		
 		//TODO: Make getter for this always retrieve same value used by setup script
 		[DefaultValue("")]

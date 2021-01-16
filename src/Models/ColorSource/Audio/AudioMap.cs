@@ -4,6 +4,7 @@ using System.Drawing;
 using Glimmr.Models.ColorSource.Audio.Map;
 using Glimmr.Models.Util;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Serilog;
 
 namespace Glimmr.Models.ColorSource.Audio {
 	public class AudioMap {
@@ -12,15 +13,16 @@ namespace Glimmr.Models.ColorSource.Audio {
 			Top,
 			Center,
 			Middle,
-			Corners,
-			Cool,
-			Warm,
-			Rotating
+			Corners
 		}
 
-		public float RotationSpeed;
+		private float _rotationSpeed;
 		private float _rotation;
-
+		private float _rotationThreshold;
+		private float _rotationUpper = 1;
+		private float _rotationLower;
+		
+		private bool triggered;
 		private IAudioMap map;
 
 		public AudioMap(MapType type, float speed = 0) {
@@ -28,35 +30,44 @@ namespace Glimmr.Models.ColorSource.Audio {
 				throw new ArgumentException("Invalid rotation speed, value must be within -1 and 1.");
 			}
 			UpdateMap(type);
-			RotationSpeed = speed;
 		}
 
 		public Color[] MapColors(Dictionary<int, KeyValuePair<float, float>> lChannel, Dictionary<int, KeyValuePair<float, float>> rChannel, int len) {
 			var output = new Color[len];
+			triggered = false;
 			output = ColorUtil.EmptyColors(output);
-			foreach (var l in lChannel) {
-				var sector = map.LeftSectors[l.Key];
-				var hue = RotateHue(l.Value.Key, _rotation);
-				var brightness = l.Value.Value;
-				output[sector] = ColorUtil.HsbToColor(hue, 1, brightness);
+			foreach (var (frequency, (hue, brightness)) in lChannel) {
+				var targetHue = RotateHue(hue, _rotation);
+				if (brightness >= _rotationThreshold && !triggered) triggered = true;
+				foreach (var (tSector, tFrequency) in map.LeftSectors) {
+					if (frequency == tFrequency) {
+						output[tSector] = ColorUtil.HsvToColor(targetHue * 360, 1, brightness);
+					}
+				}
 			}
-			foreach (var r in rChannel) {
-				var sector = map.LeftSectors[r.Key];
-				var hue = RotateHue(r.Value.Key, _rotation);
-				var brightness = r.Value.Value;
-				output[sector] = ColorUtil.HsbToColor(hue, 1, brightness);
+			
+			foreach (var (frequency, (hue, brightness)) in rChannel) {
+				var targetHue = RotateHue(hue, _rotation);
+				if (brightness >= _rotationThreshold && !triggered) triggered = true;
+				foreach (var (tSector, tFrequency) in map.RightSectors) {
+					if (frequency == tFrequency) {
+						output[tSector] = ColorUtil.HsvToColor(targetHue * 360, 1, brightness);
+					}
+				}
 			}
 
 			// If a rotation is set, we will rotate our hue by this amount
-			_rotation += RotationSpeed;
-			if (_rotation > 1) {
-				_rotation -= 1;
+			if (triggered) {
+				_rotation += _rotationSpeed;
+				if (_rotation > 1) {
+					_rotation = _rotationSpeed;
+				}
+
+				if (_rotation < 0) {
+					_rotation = 1 - _rotationSpeed;
+				}
 			}
 
-			if (_rotation < 0) {
-				_rotation = 1 + _rotation;
-			}
-			
 			return output;
 		}
 
@@ -71,9 +82,15 @@ namespace Glimmr.Models.ColorSource.Audio {
 				case MapType.Middle:
 					map = new AudioMapMiddle();
 					break;
+				case MapType.Corners:
+					map = new AudioMapCorners();
+					break;
 			}
 
-			RotationSpeed = map.RotationSpeed;
+			SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
+			_rotationSpeed = sd.AudioRotationSpeed;
+			_rotation = sd.AudioRotationSpeed;
+			_rotationThreshold = sd.AudioRotationSensitivity;
 		}
 
 		private static float RotateHue(float hue, float rotation) {
