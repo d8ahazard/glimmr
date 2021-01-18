@@ -15,6 +15,8 @@ namespace Glimmr.Models.LED {
 		private Controller _controller;
 		private LedData _ld;
 		private int _ledCount;
+		private bool _fixGamma;
+		private bool _enableAbl;
 		private WS281x _strip;
 
 		public LedStrip(LedData ld, ColorService colorService) {
@@ -28,9 +30,9 @@ namespace Glimmr.Models.LED {
 		}
 
 		public void Reload(LedData ld) {
-			Log.Debug("Setting brightness to " + ld.Brightness);
+			_ld = ld;
 			_controller.Brightness = (byte) ld.Brightness;
-			if (_ledCount != ld.LedCount) {
+			if (_ledCount != ld.LedCount && _fixGamma != ld.FixGamma) {
 				_strip?.Dispose();
 				Initialize(ld);
 			}
@@ -40,6 +42,7 @@ namespace Glimmr.Models.LED {
 			_ld = ld ?? throw new ArgumentException("Invalid LED Data.");
 			Log.Debug("Initializing LED Strip, type is " + ld.StripType);
 			_ledCount = ld.LeftCount + ld.RightCount + ld.TopCount + ld.BottomCount;
+			_fixGamma = ld.FixGamma;
 			var stripType = ld.StripType switch {
 				1 => StripType.SK6812W_STRIP,
 				2 => StripType.WS2811_STRIP_RBG,
@@ -56,7 +59,7 @@ namespace Glimmr.Models.LED {
 			Log.Debug($@"Count, pin, type: {_ledCount}, {ld.GpioNumber}, {(int) stripType}");
 			var settings = Settings.CreateDefaultSettings();
 			// Hey, look, this is built natively into the LED app
-			if (ld.FixGamma) {
+			if (_fixGamma) {
 				settings.SetGammaCorrection(2.8f, 255, 255);
 			}
 
@@ -115,7 +118,7 @@ namespace Glimmr.Models.LED {
 			}
 
 			// Thanks, WLED!
-			if (true) {
+			if (_ld.AutoBrightnessLevel) {
 				colors = VoltAdjust(colors);
 			}
 
@@ -150,9 +153,9 @@ namespace Glimmr.Models.LED {
 			//each LED can draw up 195075 "power units" (approx. 53mA)
 			//one PU is the power it takes to have 1 channel 1 step brighter per brightness step
 			//so A=2,R=255,G=0,B=0 would use 510 PU per LED (1mA is about 3700 PU)
-			var actualMilliampsPerLed = 25;
+			var actualMilliampsPerLed = _ld.MilliampsPerLed; // 20
 			var defaultBrightness = _ld.Brightness;
-			var ablMaxMilliamps = 3200;
+			var ablMaxMilliamps = _ld.AblMaxMilliamps; // 4500
 			var length = input.Count;
 			var output = input;
 			if (ablMaxMilliamps > 149 && actualMilliampsPerLed > 0) {

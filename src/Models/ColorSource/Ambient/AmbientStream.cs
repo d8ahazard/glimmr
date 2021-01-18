@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Glimmr.Models.ColorSource.Ambient.Scene;
 using Glimmr.Models.LED;
 using Glimmr.Models.Util;
@@ -23,6 +25,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
         private readonly CancellationToken _ct;
         private readonly ColorService _cs;
         private readonly Stopwatch _watch;
+        private TimeSpan waitSpan;
 
 
         
@@ -33,23 +36,22 @@ namespace Glimmr.Models.ColorSource.Ambient {
             Refresh();
         }
 
-        public void Initialize() {
+        public async void Initialize(CancellationToken ct) {
             _startInt = 0;
-            
-            _watch.Start();
             Log.Debug($@"Color builder started, animation time is {_animationTime}...");
-            while (!_ct.IsCancellationRequested) {
+            while (!ct.IsCancellationRequested) {
                 if (!Streaming) continue;
-                // Check and set colors if time is greater than animation int, then reset time count...
-                if (!(_watch.ElapsedMilliseconds >= _animationTime * 1000)) continue;
-                _watch.Restart();
                 var cols = RefreshColors(_colors);
                 var ledCols = new List<Color>();
                 for (var i = 0; i < _ledCount; i++) {
                     var r = i / _ledCount * cols.Count;
                     ledCols.Add(cols[r]);
                 }
+
+                Colors = ledCols;
+                Sectors = cols;
                 _cs.SendColors(ledCols, cols);
+                await Task.Delay(waitSpan, ct);
             }
             Log.Information("DreamScene: Color Builder canceled.");
         }
@@ -94,6 +96,8 @@ namespace Glimmr.Models.ColorSource.Ambient {
         
         public void Refresh() {
             LedData ld = DataUtil.GetObject<LedData>("LedData");
+            Colors = ColorUtil.EmptyList(ld.LedCount);
+            Sectors = ColorUtil.EmptyList(28);
             _ledCount = ld.LedCount;
             _ambientShow = DataUtil.GetItem<int>("AmbientShow") ?? 0;
             _ambientColor = DataUtil.GetObject<Color>("AmbientColor") ?? Color.FromArgb(255,255,255,255);
@@ -117,7 +121,10 @@ namespace Glimmr.Models.ColorSource.Ambient {
             _animationTime = scene.AnimationTime;
             _mode = scene.Mode;
             _startInt = 0;
-            _watch.Restart();
+            waitSpan = TimeSpan.FromMilliseconds(_animationTime * 1000);
         }
+
+        public List<Color> Colors { get; private set; }
+        public List<Color> Sectors { get; private set; }
     }
 }

@@ -17,6 +17,7 @@
             <div class="btn btn-clear modeBtn" data-mode="0"><span class="material-icons">power_off</span></div>
             <div class="btn btn-clear modeBtn" data-mode="1"><span class="material-icons">tv</span></div>
             <div class="btn btn-clear modeBtn" data-mode="2"><span class="material-icons">music_note</span></div>
+            <div class="btn btn-clear modeBtn" data-mode="4"><span class="material-icons">music_video</span></div>
             <div class="btn btn-clear modeBtn" data-mode="3"><span class="material-icons">color_lens</span></div>
         </div>
         <div class="btn-group btn-group-lg myNav float-right">
@@ -225,20 +226,28 @@
                                             </div>
                                             <!-- Capture Preview -->
                                             <div class="row border justify-content-center pb-5">
-                                                    <div class="col-12 headerCol">Preview</div>
-                                                    <div class="col-6">
+                                                <div class="col-12 headerCol">Preview</div>
+                                                <div class="col-6">
                                                         <div class="col-12 titleCol">Input</div>
                                                         <div class="col-12">
                                                             <img id="inputPreview" class="prevImg img-fluid" alt="Input preview." src="~/img/no_preview.jpg"/>
                                                         </div>
                                                     </div>
-                                                    <div class="col-6">
-                                                        <div class="col-12 titleCol">Output</div>
-                                                        <div class="col-12">
-                                                            <img id="outputPreview" class="prevImg img-fluid" alt="Output preview." src="~/img/no_preview.jpg"/>
-                                                        </div>
+                                                <div class="col-6">
+                                                    <div class="col-12 titleCol">Output</div>
+                                                    <div class="col-12">
+                                                        <img id="outputPreview" class="prevImg img-fluid" alt="Output preview." src="~/img/no_preview.jpg"/>
                                                     </div>
                                                 </div>
+                                                <div class="col-12 col-md-6 col-xl-3 form-group">
+                                                    <label class="form-label">Preview Mode</label>
+                                                    <select data-object="SystemData" data-property="PreviewMode" class="form-control">
+                                                        <option value="0">None</option>
+                                                        <option value="1">LED</option>
+                                                        <option value="2">Sectors</option>
+                                                    </select>
+                                                </div>
+                                            </div>
                                                 <!-- LED Prefs -->
                                             <div class="row border justify-content-center pb-5">
                                                 <div class="col-12 headerCol">LED Preferences</div>
@@ -267,8 +276,13 @@
                                                 </div>
                                                 <div class="col-12 col-md-6 col-xl-3 form-group">
                                                     <label class="form-check-label">Enable Auto-Brightness</label>
-                                                    <input class="form-control form-check-input" type="checkbox" data-object="LedData"
+                                                    <input class="form-check-input" type="checkbox" data-object="LedData"
                                                            data-property="AutoBrightnessLevel"/>
+                                                </div>
+                                                <div class="col-12 col-md-6 col-xl-3 form-group">
+                                                    <label class="form-check-label">Fix Gamma</label>
+                                                    <input class="form-check-control" type="checkbox" data-object="LedData"
+                                                           data-property="FixGamma"/>
                                                 </div>
                                             </div>
                                             <div class="row border justify-content-center pb-5">

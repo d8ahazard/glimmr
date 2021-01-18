@@ -111,7 +111,6 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
             var layout = nl.GetLayout().Result;
             if (layout != null) {
                 Layout = MergeLayout(layout);
-                Log.Debug("No, fucking really. Layout set: " + JsonConvert.SerializeObject(Layout));
             } else {
                 Log.Debug("Layout is null.");
             }

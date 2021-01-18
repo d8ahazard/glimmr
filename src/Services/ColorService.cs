@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.ColorSource.Ambient;
 using Glimmr.Models.ColorSource.Audio;
+using Glimmr.Models.ColorSource.AudioVideo;
 using Glimmr.Models.ColorSource.Video;
 using Glimmr.Models.LED;
 using Glimmr.Models.StreamingDevice;
@@ -31,7 +32,7 @@ namespace Glimmr.Services {
 	public class ColorService : BackgroundService {
 		private readonly ControlService _controlService;
 		private readonly DreamUtil _dreamUtil;
-		private Color _ambientColor;
+		private string _ambientColor;
 		private int _ambientMode;
 		private int _ambientShow;
 		private AmbientStream _ambientStream;
@@ -61,6 +62,9 @@ namespace Glimmr.Services {
 		private Dictionary<string, int> _subscribers;
 		private bool _testingStrip;
 		private VideoStream _videoStream;
+		private AudioVideoStream _avStream;
+
+		private bool Initializing;
 		public event Action<List<Color>, List<Color>, double> ColorSendEvent = delegate { };
 
 		public ColorService(ControlService controlService) {
@@ -82,17 +86,14 @@ namespace Glimmr.Services {
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			_stopToken = stoppingToken;
 			_streamTokenSource = new CancellationTokenSource();
-			var streamToken = _streamTokenSource.Token;
 			Log.Information("Starting colorService loop...");
 			_subscribers = new Dictionary<string, int>();
 			LoadData();
-			// Fire da demo
+			_videoStream = new VideoStream(this,_controlService,stoppingToken);
+			_audioStream = GetStream(stoppingToken);
+			_avStream = new AudioVideoStream(this, _audioStream, _videoStream);
+			
 			Log.Information("Starting video capture task...");
-			StartVideoStream(streamToken);
-			Log.Information("Done. Starting audio capture task...");
-			StartAudioStream(streamToken);
-			Log.Information("Done. Starting ambient builder task...");
-			StartAmbientStream(streamToken);
 			// Start our initial mode
 			Demo();
 			Log.Information($"All color sources initialized, setting mode to {_deviceMode}.");
@@ -101,7 +102,7 @@ namespace Glimmr.Services {
 
 			return Task.Run(async () => {
 				while (!stoppingToken.IsCancellationRequested) {
-					CheckAutoDisable();
+					// CheckAutoDisable();
 					CheckSubscribers();
 					await Task.Delay(5000, stoppingToken);
 				}
@@ -177,7 +178,7 @@ namespace Glimmr.Services {
 				case 0:
 				case 3:
 				case 1 when _videoStream == null:
-				case 2 when _audioStream == null :
+				case 2 when _audioStream == null:
 					return;
 				case 1:
 					sourceActive = _videoStream.SourceActive;
@@ -249,7 +250,7 @@ namespace Glimmr.Services {
 			_devModePrevious = -1;
 			_ambientMode = dev.AmbientMode;
 			_ambientShow = dev.AmbientShowType;
-			_ambientColor = ColorUtil.ColorFromHex(dev.AmbientColor);
+			_ambientColor = dev.AmbientColor;
 			_deviceGroup = (byte) dev.DeviceGroup;
 			_captureMode = DataUtil.GetItem<int>("CaptureMode") ?? 2;
 			_sendTokenSource = new CancellationTokenSource();
@@ -342,12 +343,13 @@ namespace Glimmr.Services {
 
 			// Finally show off our hard work
 			Thread.Sleep(500);
+			
 		}
 
 
 		private AudioStream GetStream(CancellationToken ct) {
 			try {
-				return new AudioStream(this, ct);
+				return new AudioStream(this);
 			} catch (DllNotFoundException e) {
 				Log.Warning("Unable to load bass Dll:", e);
 			}
@@ -412,7 +414,7 @@ namespace Glimmr.Services {
 			_deviceGroup = DataUtil.GetItem<int>("DeviceGroup") ?? 0;
 			_ambientMode = DataUtil.GetItem<int>("AmbientMode") ?? 0;
 			_ambientShow = DataUtil.GetItem<int>("AmbientShow") ?? 0;
-			_ambientColor = DataUtil.GetItem<Color>("AmbientColor") ?? Color.FromArgb(255, 255, 255, 255);
+			_ambientColor = DataUtil.GetItem<string>("AmbientColor") ?? Color.FromArgb(255, 255, 255, 255);
 			LedData ledData = DataUtil.GetObject<LedData>("LedData") ?? new LedData();
 			try {
 				_strip?.Reload(ledData);
@@ -428,97 +430,77 @@ namespace Glimmr.Services {
 		}
 
 		private void Mode(int newMode) {
-			
+			Initializing = true;
 			_devModePrevious = newMode;
 			_deviceMode = newMode;
 			if (newMode != 0 && _autoDisabled) {
 				_autoDisabled = false;
 				DataUtil.SetItem<bool>("AutoDisabled", _autoDisabled);
 			}
+			
+			if (_streamStarted && newMode == 0) {
+				StopStream();
+			}
 
+			CancelSource(_streamTokenSource);
+			_streamTokenSource = new CancellationTokenSource();
+			
 			switch (newMode) {
-				case 0:
-					if (_streamStarted) {
-						StopStream();
-					}
-
-					break;
 				case 1:
-					if (!_streamStarted) {
-						StartStream();
-					}
-
-					_videoStream?.ToggleSend();
-					_audioStream?.ToggleSend(false);
-					_ambientStream.ToggleSend(false);
-					if (_captureMode == 0) {
-						_controlService.TriggerDreamSubscribe();
-					}
-
+					StartVideoStream(_streamTokenSource.Token);
 					break;
 				case 2: // Audio
-					if (!_streamStarted) {
-						StartStream();
-					}
-
-					_videoStream?.ToggleSend(false);
-					_ambientStream?.ToggleSend(false);
-					_audioStream?.ToggleSend();
-					if (_captureMode == 0) {
-						_controlService.TriggerDreamSubscribe();
-					}
-
+					StartAudioStream(_streamTokenSource.Token);
 					break;
 				case 3: // Ambient
-					if (!_streamStarted) {
-						StartStream();
-					}
-
-					_videoStream?.ToggleSend(false);
-					_audioStream?.ToggleSend(false);
-					_ambientStream?.ToggleSend();
+					StartAmbientStream(_streamTokenSource.Token);
+					break;
+				case 4: // A/V mode :D
+					StartAvStream(_streamTokenSource.Token);
 					break;
 			}
 
+			if (newMode != 0 && !_streamStarted) {
+				StartStream();
+			}
 			_deviceMode = newMode;
+			Initializing = false;
 			Log.Information($"Device mode updated to {newMode}.");
 		}
 
 
-		private void StartVideoStream(CancellationToken ct) {
+		private void StartVideoStream(CancellationToken ct, bool sendColors = true) {
 			if (_captureMode == 0) {
 				_controlService.TriggerDreamSubscribe();
 			} else {
-				Log.Debug("Creating video stream...");
-				_videoStream = new VideoStream(this, _controlService, ct);
-				if (_videoStream == null) {
-					Log.Warning("Video stream is null.");
-					return;
-				}
-
-				Task.Run(() => _videoStream.Initialize(_controlService), ct);
-				Log.Debug("Video stream created.");
+				Log.Debug("Starting video stream...");
+				if (_videoStream != null) _videoStream.SendColors = sendColors;
+				Task.Run(() => _videoStream?.Initialize(ct), ct);
+				Log.Debug("Video stream started.");
 			}
 		}
 
 
-		private void StartAudioStream(CancellationToken ct) {
+		private void StartAudioStream(CancellationToken ct, bool sendColors = true) {
 			if (_captureMode == 0) {
 				_controlService.TriggerDreamSubscribe();
 			} else {
-				_audioStream = GetStream(ct);
-				if (_audioStream == null) {
-					Log.Warning("Audio stream is null.");
-					return;
-				}
-
-				Task.Run(() => _audioStream.Initialize(), ct);
+				Log.Debug("Starting audio stream...");
+				if (_audioStream != null) _audioStream.SendColors = sendColors;
+				Task.Run(() => _audioStream?.Initialize(ct), ct);
+				Log.Debug("Audio stream started.");
 			}
+		}
+
+		private void StartAvStream(CancellationToken ct) {
+			StartAudioStream(ct, false);
+			StartVideoStream(ct, false);
+			Task.Run(() => _avStream.Initialize(ct), ct);
+			Log.Debug("AV Stream started?");
 		}
 
 		private void StartAmbientStream(CancellationToken ct) {
-			_ambientStream = new AmbientStream(this, ct);
-			Task.Run(() => _ambientStream.Initialize(), CancellationToken.None);
+			Task.Run(() => _ambientStream.Initialize(ct), ct);
 		}
 
 		private void StartStream() {
@@ -548,8 +530,6 @@ namespace Glimmr.Services {
 				return;
 			}
 
-			_videoStream?.ToggleSend(false);
-			_audioStream?.ToggleSend(false);
 			_strip?.StopLights();
 			foreach (var s in _sDevices.Where(s => s.Streaming)) {
 				s.StopStream();
@@ -563,6 +543,7 @@ namespace Glimmr.Services {
 		public void SendColors(List<Color> colors, List<Color> sectors, int fadeTime = 0) {
 			_sendTokenSource ??= new CancellationTokenSource();
 			if (_sendTokenSource.IsCancellationRequested) {
+				Log.Debug("Send token is canceled.");
 				return;
 			}
 
@@ -570,7 +551,7 @@ namespace Glimmr.Services {
 				Log.Debug("Stream not started.");
 				return;
 			}
-			
+
 			ColorSendEvent(colors, sectors, fadeTime);
 		}
 

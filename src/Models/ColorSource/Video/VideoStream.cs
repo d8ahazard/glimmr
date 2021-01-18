@@ -26,6 +26,10 @@ using Serilog;
 namespace Glimmr.Models.ColorSource.Video {
 	public sealed class VideoStream : IColorSource {
 		
+		public List<Color> Colors { get; private set; }
+		public List<Color> Sectors { get; private set; }
+		public bool SendColors { get; set; }
+		
 		// Scaling variables
 		private const int ScaleHeight = 480;
 		private const int ScaleWidth = 640;
@@ -75,31 +79,16 @@ namespace Glimmr.Models.ColorSource.Video {
 			Log.Debug("Stream capture initialized.");
 		}
 
-		public bool Streaming { get; set; }
-
-		public void ToggleSend(bool enable = true) {
-			Streaming = enable;
-			Log.Debug("Toggling color send from splitter to " + Streaming);
-		}
-
-		public void Initialize(ControlService controlService) {
-			_controlService = controlService;
-			Initialize();
-		}
-
-		public void Initialize() {
+		
+		public void Initialize(CancellationToken ct) {
 			Log.Debug("Initializing video stream...");
 			SetCapVars();
 			var autoEvent = new AutoResetEvent(false);
 			_saveTimer = new Timer(SaveFrame, autoEvent, 5000, 5000);
-			Log.Debug($"Starting vid capture task, setting sw and h to {ScaleWidth} and {ScaleHeight}");
-			StreamSplitter = new Splitter(_ledData, _controlService, ScaleWidth, ScaleHeight);
-			while (!_cancellationToken.IsCancellationRequested) {
+			Log.Debug($"Starting vid capture task...");
+			StreamSplitter = new Splitter(_ledData, _controlService);
+			while (!ct.IsCancellationRequested) {
 				// Save cpu/memory by not doing anything if not sending...
-				if (!Streaming) {
-					//Log.Debug("NOT STREAMING.");
-					continue;
-				}
 				
 				var frame = _vc.Frame;
 				if (frame == null) {
@@ -126,10 +115,10 @@ namespace Glimmr.Models.ColorSource.Video {
 
 				StreamSplitter.Update(warped);
 				SourceActive = !StreamSplitter.NoImage;
-				var colors = StreamSplitter.GetColors();
-				var sectors = StreamSplitter.GetSectors();
+				Colors = StreamSplitter.GetColors();
+				Sectors = StreamSplitter.GetSectors();
 				//Log.Debug("No, really, sending colors...");
-				_colorService.SendColors(colors, sectors);
+				if (SendColors) _colorService.SendColors(Colors, Sectors);
 				
 			}
 
@@ -139,12 +128,14 @@ namespace Glimmr.Models.ColorSource.Video {
 		}
 
 		public void Refresh() {
-			StreamSplitter = new Splitter(_ledData, _controlService, ScaleWidth, ScaleHeight);
+			StreamSplitter.Refresh();
 		}
 
 
 		private void SetCapVars() {
 			_ledData = DataUtil.GetObject<LedData>("LedData");
+			Colors = ColorUtil.EmptyList(_ledData.LedCount);
+			Sectors = ColorUtil.EmptyList(28);
 			_captureMode = DataUtil.GetItem<int>("CaptureMode");
 			_camType = DataUtil.GetItem<int>("CamType");
 			Log.Debug("Capture mode is " + _captureMode);
@@ -375,5 +366,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			PointF[] outPut = {tl, tr, br, bl};
 			return outPut;
 		}
+
+		
 	}
 }

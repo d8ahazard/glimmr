@@ -51,7 +51,6 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen.Encoders {
         
 
 		public static byte[] EncodeState(DreamData dd) {
-			Log.Debug("Encoding sidekick State.");
 			var response = new List<byte>();
 			response.AddRange(ByteUtils.StringBytePad(dd.Name, 16));
 			response.AddRange(ByteUtils.StringBytePad(dd.GroupName, 16));

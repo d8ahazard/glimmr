@@ -10,5 +10,11 @@ namespace Glimmr.Models.StreamingDevice.Yeelight {
 		[DefaultValue(255)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int Brightness { get; set; }
+
+		public void CopyExisting(YeelightData existing) {
+			TargetSector = existing.TargetSector;
+			Brightness = existing.Brightness;
+			Enable = existing.Enable;
+		}
 	}
 }

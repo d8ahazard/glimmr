@@ -286,6 +286,7 @@ function showSocketError() {
 
 // Set all of the various listeners our page may use
 function setListeners() {
+    listenersSet = true;
     window.addEventListener('resize', sizeContent);
     
     document.addEventListener('change', function(e) {
@@ -296,6 +297,10 @@ function setListeners() {
         if (target.type && target.type ==="checkbox") {
             val = target.checked;
             console.log("Checkbox value is " + val);
+        }
+        
+        if (property === "PreviewMode") {
+            val = parseInt(val);
         }
         
         if (obj !== undefined && property !== undefined && val !== undefined) {
@@ -512,25 +517,8 @@ function setMode(newMode) {
     console.log("Changing mode to ", newMode);
     //data.store["DeviceMode"][0]["value"] = newMode;
     mode = newMode;
-    let target;
-    switch(mode) {
-        case 0:
-            target = document.querySelector("[data-mode='0']");
-            break;
-        case 1:
-            target = document.querySelector("[data-mode='1']");
-            break;
-        case 2:
-            target = document.querySelector("[data-mode='2']");
-            break;
-        case 3:
-            target = document.querySelector("[data-mode='3']");
-            break;
-        default:
-            console.log("I don't know what this is: ", mode);
-            break;
-    }
-
+    let target = document.querySelector("[data-mode='"+mode+"']");
+    
     let others = document.querySelectorAll(".modeBtn");
     for (let i=0; i< others.length; i++) {
         if (others[i]) {
@@ -558,14 +546,16 @@ function loadUi() {
         let recDevs = data.store["Dev_Audio"];
         console.log("Rec Devs: ", recDevs);
         let recDev = getStoreProperty("RecDev");
-        for (let i = 0; i < recDevs.length; i++) {
-            console.log("Adding dev");
-            let dev = recDevs[i];
-            let opt = document.createElement("option");
-            opt.value = dev["_id"];
-            opt.innerText = dev["_id"];
-            if (opt.value === recDev) opt.selected = true;
-            recList.options.add(opt);
+        if (recDevs !== null && recDevs !== undefined) {
+            for (let i = 0; i < recDevs.length; i++) {
+                console.log("Adding dev");
+                let dev = recDevs[i];
+                let opt = document.createElement("option");
+                opt.value = dev["_id"];
+                opt.innerText = dev["_id"];
+                if (opt.value === recDev) opt.selected = true;
+                recList.options.add(opt);
+            }
         }
     } else {
         console.log("No recording devices found.");

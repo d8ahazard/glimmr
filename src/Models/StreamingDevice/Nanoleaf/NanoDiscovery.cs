@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using DeviceDiscovery.Models;
+using Glimmr.Models.StreamingDevice.Dreamscreen;
 using Glimmr.Models.Util;
 using ISocketLite.PCL.Exceptions;
 using Makaretu.Dns;
@@ -75,38 +76,22 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
                 }
 
                 if (!string.IsNullOrEmpty(nData.IpAddress) && !string.IsNullOrEmpty(nData.Id)) {
-                    output.Add(nData);
-                    Log.Debug("ADDING NANOLEAF: " + JsonConvert.SerializeObject(nData));
+                    var existing = DataUtil.GetCollectionItem<NanoleafData>("Dev_Nanoleaf", nData.Id);
+                    if (existing != null) {
+                        nData.CopyExisting(existing);
+                    }
+                    DataUtil.InsertCollection<NanoleafData>("Dev_Nanoleaf", nData);
                 }
             
         }
         
-        public static async Task<List<NanoleafData>> Discover(int timeout = 5) {
-            output = new List<NanoleafData>();
+        public static async Task Discover(int timeout = 5) {
             mDns.Start();
-            Log.Debug("Nano: Discovery Started.");
+            Log.Debug("Nano: Discovery started...");
             await Task.Delay(timeout * 1000).ConfigureAwait(false);
             mDns.Stop();
-            Log.Debug($"Nano: Discovery complete, found {output.Count} devices.");
-            return output;
+            Log.Debug("Nano: Discovery Complete.");
         }
 
-        
-        public static async Task<List<NanoleafData>> Refresh(CancellationToken ct) {
-            var foo = Task.Run(() => Discover(), ct);
-            var output2 = new List<NanoleafData>();
-            var newLeaves = await foo;
-            foreach (var nl in newLeaves) {
-                var ex = DataUtil.GetCollectionItem<NanoleafData>("Dev_Nanoleaf", nl.Id);
-                var cp = nl;
-                if (ex != null) {
-                    Log.Debug("Copying existing leaf stuff...");
-                    cp = nl.CopyExisting(ex);
-                }
-                DataUtil.InsertCollection<NanoleafData>("Dev_Nanoleaf", cp);
-                output2.Add(cp);
-            }
-            return output2;
-        }
     }
 }

@@ -13,24 +13,6 @@ using Serilog;
 namespace Glimmr.Models.StreamingDevice.Hue {
     public static class HueDiscovery {
         
-        public static async Task<List<HueData>> Refresh(CancellationToken ct) {
-            var output = new List<HueData>();
-            var foo = Task.Run(() => Discover(), ct);
-            var newBridges = await foo;
-            Log.Debug("New bridges: " + JsonConvert.SerializeObject(newBridges));
-            foreach (var nb in newBridges) {
-                HueData ex = DataUtil.GetCollectionItem<HueData>("Dev_Hue", nb.Id);
-                if (ex != null) {
-                    ex.CopyBridgeData(nb);
-                    output.Add(ex);
-                } else {
-                    output.Add(nb);   
-                }
-            }
-
-            return output;
-        }
-        
         public static async Task<RegisterEntertainmentResult> CheckAuth(string bridgeIp) {
             try {
                 ILocalHueClient client = new LocalHueClient(bridgeIp);
@@ -45,19 +27,30 @@ namespace Glimmr.Models.StreamingDevice.Hue {
             return null;
         }
 
-        public static async Task<List<HueData>> Discover(int time = 10) {
-            Log.Debug("Hue: Discovery Started.");
-            var output = new List<HueData>();
+        public static async Task Discover(int timeOut=5) {
+            Log.Debug("Hue: Discovery started...");
             try {
-                var discovered = await HueBridgeDiscovery.CompleteDiscoveryAsync(TimeSpan.FromSeconds(time),TimeSpan.FromSeconds(time));
-                output = discovered.Select(bridge => new HueData(bridge)).ToList();
-                Log.Debug($"Hue: Discovery complete, found {discovered.Count} devices.");
+                var span = TimeSpan.FromSeconds(timeOut);
+                var discovered = await HueBridgeDiscovery.CompleteDiscoveryAsync(span, span);
+                var output = discovered.Select(bridge => new HueData(bridge)).ToList();
+                foreach (var dev in output) {
+                    var copy = dev;
+                    var existing = DataUtil.GetCollectionItem<HueData>("Dev_Hue", dev.Id);
+                    if (existing != null) {
+                        copy.CopyBridgeData(existing);
+                        if (copy.Key !=  null && copy.User != null) {
+                            var n = new HueDevice(copy);
+                            copy = n.RefreshData().Result;
+                            n.Dispose();
+                        }
+                    }
+                    DataUtil.InsertCollection<HueData>("Dev_Hue", copy);
+                }
             } catch (Exception e) {
-                Log.Warning("Discovery exception: " + e.Message);
-                
+                Log.Warning("Hue: Discovery exception: " + e.Message);
             }
 
-            return output;
+            Log.Debug("Hue: Discovery complete.");
         }
 
 

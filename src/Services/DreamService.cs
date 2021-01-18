@@ -185,7 +185,7 @@ namespace Glimmr.Services {
             string command = null;
             string flag = null;
             var from = receivedIpEndPoint.Address.ToString();
-            var areYouLocal = (from == IpUtil.GetLocalIpAddress());
+            var areYouLocal = from == IpUtil.GetLocalIpAddress();
             var replyPoint = new IPEndPoint(receivedIpEndPoint.Address, 8888);
             var payloadString = string.Empty;
             var payload = Array.Empty<byte>();
@@ -212,7 +212,7 @@ namespace Glimmr.Services {
                     refreshDevice = true;
                 }
                 if (flag == "41") {
-                    Log.Debug($"Flag is 41, we should save settings for {from}.");
+                    //Log.Debug($"Flag is 41, we should save settings for {from}.");
                     tDevice = DataUtil.GetCollectionItem<DreamData>("Dev_Dreamscreen", from);
                     if (tDevice != null) {
                         refreshDevice = true;
@@ -220,7 +220,7 @@ namespace Glimmr.Services {
                     }
                 }
                 if (command != null && command != "COLOR_DATA" && command != "SUBSCRIBE" && tDevice != null) {
-                    Log.Debug($@"{from} -> {tDevice.IpAddress}::{command} {flag}-{msg.Group}.");
+                    //Log.Debug($@"{from} -> {tDevice.IpAddress}::{command} {flag}-{msg.Group}.");
                 }
             } else {
                 Log.Warning($@"Invalid message from {from}");
@@ -271,13 +271,11 @@ namespace Glimmr.Services {
 
                     break;
                 case "DEVICE_DISCOVERY":
-                    Log.Debug("DISCOVERY: " + (flag == "60") + " and " + _discovering + " and " + areYouLocal);
                     if (flag == "30" && !areYouLocal) {
                         SendDeviceStatus(replyPoint);
                     } else if (flag == "60" && _discovering && !areYouLocal) {
                         if (msgDevice != null) {
                             _targetEndpoint = replyPoint;
-                            Log.Debug("Sending request for serial!");
                             msgDevice.IpAddress = from;
                             DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", msgDevice);
                             _devices.Add(msgDevice);
@@ -293,7 +291,6 @@ namespace Glimmr.Services {
                     if (flag == "30") {
                         SendDeviceSerial(replyPoint);
                     } else {
-                        Log.Debug("DEVICE SERIAL RETRIEVED: " + JsonConvert.SerializeObject(msg));
                         DreamData md = DataUtil.GetCollectionItem<DreamData>("Dev_Dreamscreen", from);
                         if (md != null) {
                             md.SerialNumber = msg.PayloadString;
@@ -411,7 +408,7 @@ namespace Glimmr.Services {
 
         private async void Discover(CancellationToken ct) {
             try {
-                Log.Debug("Discovery started..");
+                Log.Debug("Dreamscreen: Discovery started...");
                 _discovering = true;
                 // Send a custom internal message to self to store discovery results
                 var selfEp = new IPEndPoint(IPAddress.Loopback, 8888);
@@ -423,9 +420,11 @@ namespace Glimmr.Services {
                 _dreamUtil.SendUdpWrite(0x01, 0x0E, new byte[] {0x01}, 0x30, 0x00, selfEp);
                 await Task.Delay(500, ct).ConfigureAwait(false);
                 _discovering = false;
+                Log.Debug("Dreamscreen: Discovery complete.");
             } catch (Exception e) {
                 Log.Warning("Discovery exception: ", e);
             }
+            
         }
 
         

@@ -292,6 +292,12 @@ namespace Glimmr.Models.Util {
             }
         }
 
+        public static Color SetBrightness(Color input, float brightness) {
+	        var hsb = ColorToHsb(input);
+	        if (input.R == 0 && input.G == 0 && input.B == 0) return input;
+	        return HsbToColor(hsb[0], hsb[1], brightness);
+        }
+
         public static double[] ColorToHsb(Color rgb) {
             // normalize red, green and blue values
             var r = rgb.R / 255.0;
@@ -454,6 +460,14 @@ namespace Glimmr.Models.Util {
             }
 
             return input;
+        }
+        
+        public static List<Color> EmptyList(int size) {
+	        var output = new List<Color>();
+	        for (var i = 0; i < size; i++) {
+		        output.Add(Color.FromArgb(0, 0, 0, 0));
+	        }
+	        return output;
         }
 
 

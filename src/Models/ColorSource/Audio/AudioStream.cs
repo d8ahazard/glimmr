@@ -13,15 +13,15 @@ using ManagedBass;
 using Microsoft.VisualBasic.CompilerServices;
 using Newtonsoft.Json;
 using Q42.HueApi.ColorConverters.HSB;
+using rpi_ws281x;
 using Serilog;
 using Color = System.Drawing.Color;
 
 namespace Glimmr.Models.ColorSource.Audio {
 	public sealed class AudioStream : IColorSource, IDisposable {
 		
-		public bool Streaming { get; set; }
 		public bool SourceActive { get; set; }
-		
+		public bool SendColors { get; set; }
 		private bool _disposed;
 		private List<AudioData> _devices;
 		private int _recordDeviceIndex;
@@ -33,26 +33,25 @@ namespace Glimmr.Models.ColorSource.Audio {
 		private LedData _ledData;
 		private SystemData _sd;
 		private AudioMap _map;
+
+		public List<Color> Colors { get; private set; }
+		public List<Color> Sectors { get; private set; }
 		
 
-		public AudioStream(ColorService cs, CancellationToken cancellationToken) {
+		public AudioStream(ColorService cs) {
 			_cs = cs;
-			_token = cancellationToken;
-			LoadData();
-			LoadDevices();
 		}
 
 		private void LoadData() {
 			Log.Debug("Reloading audio data");
 			_ledData = DataUtil.GetObject<LedData>("LedData");
+			Colors = ColorUtil.EmptyList(_ledData.LedCount);
+			Sectors = ColorUtil.EmptyList(28);
 			_sd = DataUtil.GetObject<SystemData>("SystemData");
 			_devices = DataUtil.GetCollection<AudioData>("Dev_Audio") ?? new List<AudioData>();
 			_map = new AudioMap(_sd.AudioMap);
 			_recordDeviceIndex = -1;
 			
-		}
-
-		private void LoadDevices() {
 			Bass.Init();
 			string rd = DataUtil.GetItem("RecDev");
 			_devices = new List<AudioData>();
@@ -79,114 +78,96 @@ namespace Glimmr.Models.ColorSource.Audio {
 			}
 			_devices = DataUtil.GetCollection<AudioData>("Dev_Audio") ?? new List<AudioData>();
 		}
-
-		public async void Initialize() {
+		
+		public async void Initialize(CancellationToken ct) {
+			LoadData();
 			if (_recordDeviceIndex != -1) {
-				
-				while (!_token.IsCancellationRequested) {
+				Log.Debug("Starting stream with device " + _recordDeviceIndex);
+				Bass.RecordInit(_recordDeviceIndex);
+				Bass.RecordStart(48000, 5, BassFlags.Float, Update);
+				while (!ct.IsCancellationRequested) {
 					await Task.Delay(1, CancellationToken.None);
 				}
+
 				Log.Debug("Audio stream canceled.");
+				Bass.RecordFree();
 			} else {
 				Log.Debug("No recording device available.");
 			}
 		}
 
+		
 		public void Refresh() {
 			LoadData();
 		}
 
 		
-		
-
-		public void ToggleSend(bool enable = true) {
-			Streaming = enable;
-			if (!enable) {
-				Bass.Free();
-				return;
-			};
-			Log.Debug("Starting stream with device " + _recordDeviceIndex);
-			Bass.RecordInit(_recordDeviceIndex);
-			var info = Bass.RecordingInfo;
-			Log.Debug("Recording info: " + JsonConvert.SerializeObject(info));
-			_channels = 2;
-			for (var i = 0; i < _channels; i++) {
-				Bass.ChannelGetInfo(i, out var cInfo);
-				Log.Debug("Channel Info: " + JsonConvert.SerializeObject(cInfo));
-			}
-
-			_frequency = info.Frequency == 0 ? 48000 : info.Frequency;
-			Bass.RecordStart(_frequency, _channels, BassFlags.Float, Update);
-		}
-
 		private bool Update(int handle, IntPtr buffer, int length, IntPtr user) {
-			if (!Streaming) return true;
-			if (_token.IsCancellationRequested) {
-				Log.Debug("We dun canceled our token.");
-				Bass.Free();
-			}
-
-			var samples = 4096;
+			var samples = 2048 * 5;
 			var fft = new float[samples]; // fft data buffer
 			// Get our FFT for "everything"
 			Bass.ChannelGetData(handle, fft, (int) DataFlags.FFT4096 | (int) DataFlags.FFTIndividual);
 			var lData = new Dictionary<int, float>();
 			var rData = new Dictionary<int, float>();
+			var cData = new Dictionary<int, float>();
 			var realIndex = 0;
+			var iCount = 0;
 			
-			for (var a = 0; a < samples; a+= 2) {
-				var val = fft[a] * 2;
-				val = FlattenValue(val);
-				if (val <= 0.001f) continue;
-				var amp = val;
-				var freq = FftIndex2Frequency(realIndex, samples /2, _frequency);
-				lData[freq] = amp;
-				realIndex++;
-			}
-			
-			realIndex = 0;
-			for (var a = 1; a < samples; a+= 2) {
-				var val = fft[a] * 2;
-				val = FlattenValue(val);
-				if (val <= 0.001f) continue;
-				var amp = val;
-				var freq = FftIndex2Frequency(realIndex, samples /2, _frequency);
-				rData[freq] = amp;
-				realIndex++;
-			}
+			for (var a = 0; a < samples; a++) {
+				var val = FlattenValue(fft[a]);
+				var freq = FftIndex2Frequency(realIndex, 4096, 48000);
+				if (val <= .01) {
+					continue;
+				}
 
-			//Log.Debug($"Ldata {quadLen}: " + JsonConvert.SerializeObject(lData));
+				switch (iCount) {
+					case 0:
+						lData[freq] = val;
+						break;
+					case 1:
+						rData[freq] = val;
+						break;
+					case 2:
+						cData[freq] = val;
+						break;
+				}
+
+				iCount++;
+				
+				if (iCount < 5) {
+					continue;
+				}
+
+				iCount = 0;
+				realIndex++;
+			}
 			
+
+			//Log.Debug("LDATA: " + JsonConvert.SerializeObject(lData));
+
 			var lAmps = SortChannels(lData);
 			var rAmps = SortChannels(rData);
+			Sectors = ColorUtil.EmptyList(Sectors.Count);
+			Colors = ColorUtil.EmptyList(Colors.Count);
 			SourceActive = lAmps.Count != 0 || rAmps.Count != 0;
-
-			var colors = _map.MapColors(lAmps, rAmps, 28);
-			var ledCols = ColorUtil.SectorsToleds(colors.ToList(), _ledData);
-			
-			_cs.SendColors(ledCols, colors.ToList());
+			Sectors = _map.MapColors(lAmps, rAmps, 28).ToList();
+			Colors = ColorUtil.SectorsToleds(Sectors.ToList(), _ledData);
+			if (SendColors) {
+				_cs.SendColors(Colors, Sectors);
+			}
 			return true;
 		}
 
 		private float FlattenValue(float input) {
+			input *= 2;
 			// Drop anything that's not at least .01
 			if (input < .075) {
 				return 0;
 			}
-
-			if (input < .3) {
-				return .5f;
-			}
 			
-			if (input < .5) {
-				return .75f;
-			}
-
-			if (input < .75) {
-				return 1f;
-			}
-			
-			return 1;
+			input += .55f;
+			if (input > 1) input = 1;
+			return input;
 		}
 
 		#region intColors

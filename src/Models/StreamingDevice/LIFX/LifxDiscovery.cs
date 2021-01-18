@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using LifxNet;
 using Serilog;
@@ -9,42 +6,30 @@ using Serilog;
 namespace Glimmr.Models.StreamingDevice.LIFX {
     public class LifxDiscovery {
         private readonly LifxClient _client;
-        private List<LightBulb> _bulbs;
-
+        
         public LifxDiscovery(LifxClient client) {
             _client = client;
         }
 
-        public async Task<List<LifxData>> Discover(int timeOut) {
-            if (_client == null) return new List<LifxData>();
-            _bulbs = new List<LightBulb>();
+        public async Task Discover(int timeOut = 5) {
+            if (_client == null) return;
+            Log.Debug("Lifx: Discovery started.");
             _client.DeviceDiscovered += Client_DeviceDiscovered;
             _client.StartDeviceDiscovery();
-            Log.Debug("Lifx: Discovery started.");
             await Task.Delay(timeOut * 1000);
-            Log.Debug("Discovery completed.");
             _client.StopDeviceDiscovery();
-            return _bulbs.Select(GetBulbInfo).ToList();
+            Log.Debug("Lifx: Discovery complete.");
         }
-
-        public async Task<List<LifxData>> Refresh(CancellationToken ct) {
-            var foo = Task.Run(() => Discover(5), ct);
-            var b = await foo;
-            foreach (var bulb in b) {
-                var existing = DataUtil.GetCollectionItem<LifxData>("Dev_Lifx", bulb.MacAddressString);
-                if (existing != null) {
-                    bulb.TargetSector = existing.TargetSector;
-                    bulb.Brightness = existing.Brightness;
-                }
-                DataUtil.InsertCollection<LifxData>("Dev_Lifx", bulb);
-            }
-            return DataUtil.GetCollection<LifxData>("Dev_Lifx");
-        }
-
+        
         private void Client_DeviceDiscovered(object sender, LifxClient.DeviceDiscoveryEventArgs e) {
             var bulb = e.Device as LightBulb;
-            Log.Debug("Bulb discovered?");
-            _bulbs.Add(bulb);
+            var ld = GetBulbInfo(bulb);
+            var existing = DataUtil.GetCollectionItem<LifxData>("Dev_Lifx", ld.MacAddressString);
+            if (existing != null) {
+                ld.TargetSector = existing.TargetSector;
+                ld.Brightness = existing.Brightness;
+            }
+            DataUtil.InsertCollection<LifxData>("Dev_Lifx", ld);
         }
 
         private LifxData GetBulbInfo(LightBulb b) {

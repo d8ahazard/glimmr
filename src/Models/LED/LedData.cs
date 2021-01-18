@@ -18,7 +18,7 @@ namespace Glimmr.Models.LED {
 
         [DefaultValue(800)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-        public int AblMaxMilliamps { get; set; } = 800;
+        public int AblMaxMilliamps { get; set; } = 3000;
         
         [JsonProperty] public bool AutoBrightnessLevel { get; set; }
         [JsonProperty] public int StripType { get; set; }

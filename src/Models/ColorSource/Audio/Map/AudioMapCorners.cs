@@ -11,12 +11,12 @@ namespace Glimmr.Models.ColorSource.Audio.Map {
 			{18, 125},
 			{12, 250},
 			{21, 250},
-			{11, 1000},
-			{22, 1000},
+			{11, 500},
+			{22, 500},
 			{16, 1000},
 			{17, 1000},
-			{10, 2000},
-			{23, 2000}
+			{10, 1000},
+			{23, 1000}
 		};
 		public Dictionary<int, int> RightSectors { get; set; } = new Dictionary<int, int> {
 			{0, 30},
@@ -27,12 +27,12 @@ namespace Glimmr.Models.ColorSource.Audio.Map {
 			{1, 125},
 			{7, 250},
 			{26, 250},
-			{3, 1000},
-			{2, 1000},
+			{3, 500},
+			{2, 500},
 			{8, 1000},
 			{25, 1000},
-			{9, 2000},
-			{24, 2000}
+			{9, 1000},
+			{24, 1000}
 		};
 		
 		public float MinColorRange { get; set; }

@@ -81,6 +81,7 @@ namespace Glimmr.Services {
 			Thread.Sleep(5000);
 			// Notify all clients to refresh data
 			await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+			Log.Debug("Discovery done.");
 		}
 	}
 }

@@ -19,14 +19,11 @@ using Serilog;
 namespace Glimmr.Models.ColorSource.Video {
 	public class Splitter {
 		private Mat _input;
-		private readonly int _leftCount;
-		private readonly int _topCount;
-		private readonly int _rightCount;
-		private readonly int _bottomCount;
-		private readonly int _sourceWidth;
-
-		private readonly int _sourceHeight;
-
+		private int _leftCount;
+		private int _topCount;
+		private int _rightCount;
+		private int _bottomCount;
+		
 		private List<Rectangle> _fullCoords;
 		private List<Rectangle> _fullSectors;
 
@@ -57,6 +54,7 @@ namespace Glimmr.Models.ColorSource.Video {
 		private readonly float _borderWidth;
 
 		private readonly float _borderHeight;
+		private int _previewMode;
 
 		// The current crop mode?
 		private List<Color> _colorsLed;
@@ -68,9 +66,12 @@ namespace Glimmr.Models.ColorSource.Video {
 		public bool DoSave;
 		public bool NoImage;
 		private const int MaxFrameCount = 30;
-		private ControlService _controlService;
+		private const int ScaleHeight = 480;
+		private const int ScaleWidth = 640;
 
-		public Splitter(LedData ld, ControlService controlService, int srcWidth, int srcHeight) {
+		private readonly ControlService _controlService;
+
+		public Splitter(LedData ld, ControlService controlService) {
 			Log.Debug("Initializing splitter, using LED Data: " + JsonConvert.SerializeObject(ld));
 			_controlService = controlService;
 			// Set some defaults, this should probably just not be null
@@ -78,12 +79,9 @@ namespace Glimmr.Models.ColorSource.Video {
 				_leftCount = ld.LeftCount;
 				_topCount = ld.TopCount;
 				_rightCount = ld.RightCount == 0 ? _leftCount : ld.RightCount;
-
 				_bottomCount = ld.BottomCount == 0 ? _topCount : ld.BottomCount;
 			}
 
-			_sourceWidth = srcWidth;
-			_sourceHeight = srcHeight;
 			// Set desired width of capture region to 15% total image
 			_borderWidth = 10;
 			_borderHeight = 10;
@@ -93,6 +91,8 @@ namespace Glimmr.Models.ColorSource.Video {
 			_minBrightness = 90;
 			_saturationBoost = .2f;
 			// Get sectors
+			
+			
 			_fullCoords = DrawGrid();
 			_fullSectors = DrawSectors();
 			_frameCount = 0;
@@ -123,17 +123,7 @@ namespace Glimmr.Models.ColorSource.Video {
 				_fullSectors = DrawSectors();
 			}
 
-			// Save a preview image if desired
-			if (DoSave) {
-				DoSave = false;
-				var path = Directory.GetCurrentDirectory();
-				var gMat = new Mat();
-				inputMat.CopyTo(gMat);
-				gMat.Save(path + "/wwwroot/img/_preview_output.jpg");
-				gMat.Dispose();
-				_controlService.TriggerImageUpdate();
-			}
-
+			
 			var outColorsStrip = _fullCoords.Select(sub => new Mat(_input, sub)).Select(nm => GetAverage(nm)).ToList();
 
 			foreach (var sub in _fullSectors.Select(r => new Mat(_input, r))) {
@@ -143,20 +133,43 @@ namespace Glimmr.Models.ColorSource.Video {
 
 			_colorsLed = outColorsStrip;
 			_colorsSectors = outColorsSector;
+			
+			// Save a preview image if desired
+			if (!DoSave) {
+				return;
+			}
+
+			DoSave = false;
+			var path = Directory.GetCurrentDirectory();
+			var gMat = new Mat();
+			inputMat.CopyTo(gMat);
+			var colBlack = new Bgr(Color.FromArgb(0,0,0,0)).MCvScalar;
+			if (_previewMode == 1) {
+				for (var i = 0; i < _fullCoords.Count; i++) {
+					var col = new Bgr(_colorsLed[i]).MCvScalar;
+					CvInvoke.Rectangle(gMat,_fullCoords[i], col, -1, LineType.AntiAlias);
+					CvInvoke.Rectangle(gMat,_fullCoords[i],colBlack, 1, LineType.AntiAlias);
+				}
+			}
+
+			if (_previewMode == 2) {
+				for (var i = 0; i < _fullSectors.Count; i++) {
+					var s = _fullSectors[i];
+					var col = new Bgr(_colorsSectors[i]).MCvScalar;
+					CvInvoke.Rectangle(gMat,s, col, -1, LineType.AntiAlias);
+					CvInvoke.Rectangle(gMat,s, colBlack, 1, LineType.AntiAlias);
+					var cInt = i + 1;
+					var tPoint = new Point(s.X, s.Y + 30);
+					CvInvoke.PutText(gMat, cInt.ToString(), tPoint, FontFace.HersheySimplex, 1.0, colBlack);
+				}	
+			}
+			gMat.Save(path + "/wwwroot/img/_preview_output.jpg");
+			gMat.Dispose();
+			_controlService.TriggerImageUpdate();
+
 		}
 
-
-		private static Color GetAverage2(Mat sInput) {
-			var outColor = Color.Black;
-			if (sInput.Cols == 0) return outColor;
-			var colors = CvInvoke.Mean(sInput);
-			var cB = (int) colors.V0;
-			var cG = (int) colors.V1;
-			var cR = (int) colors.V2;
-			outColor = Color.FromArgb(cR, cG, cB);
-			return outColor;
-		}
-
+		
 		private static Color GetAverage(Mat sInput) {
 			var output = sInput.ToImage<Bgr, byte>();
 			var avg = output.GetAverage();
@@ -319,50 +332,57 @@ namespace Glimmr.Models.ColorSource.Video {
 			var tTop = hOffset;
 
 			// Bottom Region
-			var bBottom = _sourceHeight - hOffset;
+			var bBottom = ScaleHeight - hOffset;
 			var bTop = bBottom - _borderHeight;
 
 			// Left Column Border
 			var lLeft = vOffset;
 
 			// Right Column Border
-			var rRight = _sourceWidth - vOffset;
+			var rRight = ScaleWidth - vOffset;
 			var rLeft = rRight - _borderWidth;
 
 			// Steps
-			var widthTop = (float) _sourceWidth / _topCount;
-			var widthBottom = (float) _sourceWidth / _bottomCount;
-			var heightLeft = (float) _sourceHeight / _leftCount;
-			var heightRight = (float) _sourceHeight / _rightCount;
+			var widthTop = (float) ScaleWidth / _topCount;
+			var widthBottom = (float) ScaleWidth / _bottomCount;
+			var heightLeft = (float) ScaleHeight / _leftCount;
+			var heightRight = (float) ScaleHeight / _rightCount;
 
 			// Calc right regions, bottom to top
-			var pos = _sourceHeight - heightRight;
-			while (pos > 0) {
+			float pos = ScaleHeight - heightRight;
+			while (pos >= 0) {
 				output.Add(new Rectangle((int) rLeft, (int) pos, (int) _borderWidth, (int) heightRight));
 				pos -= heightRight;
 			}
 
+			if (pos > -.002) {
+				output.Add(new Rectangle((int) rLeft, 0, (int) _borderWidth, (int) heightRight));
+			}
+			
 			// Calc top regions, from right to left
-			pos = _sourceWidth - widthTop;
-			while (pos > 0) {
+			pos = ScaleWidth - widthTop;
+			while (pos >= 0) {
 				output.Add(new Rectangle((int) pos, tTop, (int) widthTop, (int) _borderHeight));
 				pos -= widthTop;
 			}
-
+			if (pos > -.002) {
+				output.Add(new Rectangle(0, tTop, (int) widthTop, (int) _borderHeight));
+			}
+			
 			// Calc left regions (top to bottom)
 			pos = 0;
-			while (pos <= _sourceHeight - heightLeft) {
+			while (pos < ScaleHeight) {
 				output.Add(new Rectangle(lLeft, (int) pos, (int) _borderWidth, (int) heightLeft));
 				pos += heightLeft;
 			}
-
+			
 			// Calc bottom regions (L-R)
 			pos = 0;
-			while (pos <= _sourceWidth - widthBottom) {
+			while (pos < ScaleWidth) {
 				output.Add(new Rectangle((int) pos, (int) bTop, (int) widthBottom, (int) _borderHeight));
 				pos += widthBottom;
 			}
-
+			
 			return output;
 		}
 
@@ -383,14 +403,14 @@ namespace Glimmr.Models.ColorSource.Video {
 			var fs = new List<Rectangle>();
 			// Calculate heights, minus offset for boxing
 			// Individual segment sizes
-			var sectorWidth = (_sourceWidth - hOffset * 2) / hSectorCount;
-			var sectorHeight = (_sourceHeight - vOffset * 2) / vSectorCount;
+			var sectorWidth = (ScaleWidth - hOffset * 2) / hSectorCount;
+			var sectorHeight = (ScaleHeight - vOffset * 2) / vSectorCount;
 			// These are based on the border/strip values
 			// Minimum limits for top, bottom, left, right            
 			var minTop = vOffset;
-			var minBot = _sourceHeight - vOffset - sectorHeight;
+			var minBot = ScaleHeight - vOffset - sectorHeight;
 			var minLeft = hOffset;
-			var minRight = _sourceWidth - hOffset - sectorWidth;
+			var minRight = ScaleWidth - hOffset - sectorWidth;
 			// Calc right regions, bottom to top
 			var step = vSectorCount - 1;
 			while (step >= 0) {
@@ -427,6 +447,16 @@ namespace Glimmr.Models.ColorSource.Video {
 		}
 
 		public void Refresh() {
+			SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
+			_previewMode = sd.PreviewMode;
+			Log.Debug("Preview mode set to: " + _previewMode);
+			LedData ld = DataUtil.GetObject<LedData>("LedData");
+			_leftCount = ld.LeftCount;
+			_topCount = ld.TopCount;
+			_rightCount = ld.RightCount;
+			_bottomCount = ld.BottomCount;
+			_fullCoords = DrawGrid();
+			_fullSectors = DrawSectors();
 		}
 	}
 }

@@ -75,6 +75,10 @@ namespace Glimmr.Models {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int SaturationBoost { get; set; }
 		
+		[DefaultValue(0)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int PreviewMode { get; set; }
+		
 		[DefaultValue(1)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int RecId { get; set; } = 1;

@@ -8,8 +8,8 @@ using YeelightAPI;
 namespace Glimmr.Models.StreamingDevice.Yeelight {
 	public static class YeelightDiscovery {
 		
-		public	static async Task<List<YeelightData>> Discover() {
-			var output = new List<YeelightData>();
+		public	static async Task Discover() {
+			Log.Debug("Yeelight: Discovery started...");
 			// Await the asynchronous call to the static API
 			var discoveredDevices = await DeviceLocator.DiscoverAsync();
 			foreach (var dev in discoveredDevices) {
@@ -17,9 +17,15 @@ namespace Glimmr.Models.StreamingDevice.Yeelight {
 				var yd = new YeelightData {
 					Id = dev.Id, IpAddress = IpUtil.GetIpFromHost(dev.Hostname).ToString(), Name = dev.Name
 				};
-				output.Add(yd);
+				var existing = DataUtil.GetCollectionItem<YeelightData>("Dev_Yeelight", dev.Id);
+				if (existing != null) {
+					yd.CopyExisting(existing);
+				}
+
+				DataUtil.InsertCollection<YeelightData>("Dev_Yeelight", dev);
 			}
-			return output;
+
+			Log.Debug("Yeelight: Discovery complete.");
 		}
 	}
 }
