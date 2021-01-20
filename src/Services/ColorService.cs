@@ -2,10 +2,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Glimmr.Models;
 using Glimmr.Models.ColorSource.Ambient;
 using Glimmr.Models.ColorSource.Audio;
 using Glimmr.Models.ColorSource.AudioVideo;
@@ -21,9 +21,10 @@ using Glimmr.Models.StreamingDevice.Yeelight;
 using Glimmr.Models.Util;
 using LifxNet;
 using Microsoft.Extensions.Hosting;
-using Newtonsoft.Json;
 using Serilog;
 using Color = System.Drawing.Color;
+
+// ReSharper disable All
 
 #endregion
 
@@ -32,22 +33,14 @@ namespace Glimmr.Services {
 	public class ColorService : BackgroundService {
 		private readonly ControlService _controlService;
 		private readonly DreamUtil _dreamUtil;
-		private string _ambientColor;
-		private int _ambientMode;
-		private int _ambientShow;
 		private AmbientStream _ambientStream;
 		private AudioStream _audioStream;
-		private bool _autoDisabled;
-
-		private int _captureMode;
 		private CancellationTokenSource _captureTokenSource;
+		private bool _autoDisabled;
+		private int _captureMode;
 		private int _deviceGroup;
 		private int _deviceMode;
-		private int _devModePrevious;
-		private LedData _ledData;
-
-		private string _deviceFlashId;
-		private bool flashDevice;
+		private SystemData _systemData;
 
 		// Figure out how to make these generic, non-callable
 		private LifxClient _lifxClient;
@@ -57,14 +50,12 @@ namespace Glimmr.Services {
 		private CancellationTokenSource _streamTokenSource;
 		private CancellationToken _stopToken;
 		private bool _streamStarted;
-		private LedStrip _strip;
+		private List<LedStrip> _strips;
 
 		private Dictionary<string, int> _subscribers;
-		private bool _testingStrip;
 		private VideoStream _videoStream;
 		private AudioVideoStream _avStream;
 
-		private bool Initializing;
 		public event Action<List<Color>, List<Color>, double> ColorSendEvent = delegate { };
 
 		public ColorService(ControlService controlService) {
@@ -89,6 +80,7 @@ namespace Glimmr.Services {
 			Log.Information("Starting colorService loop...");
 			_subscribers = new Dictionary<string, int>();
 			LoadData();
+			_ambientStream = new AmbientStream(this,stoppingToken);
 			_videoStream = new VideoStream(this,_controlService,stoppingToken);
 			_audioStream = GetStream(stoppingToken);
 			_avStream = new AudioVideoStream(this, _audioStream, _videoStream);
@@ -122,7 +114,12 @@ namespace Glimmr.Services {
 		private void FlashDevice(string devId) {
 			var disable = false;
 			var ts = new CancellationTokenSource();
-			var lc = _ledData.LedCount;
+			try {
+				var lc = _systemData.LedCount;
+			} catch (Exception) {
+				var lc = 300;
+			}
+
 			var bColor = Color.FromArgb(0, 0, 0, 0);
 			var rColor = Color.FromArgb(255, 255, 0, 0);
 			foreach (var sd in _sDevices.Where(sd => sd.Id == devId)) {
@@ -153,22 +150,23 @@ namespace Glimmr.Services {
 		private void FlashSector(int sector) {
 			Log.Debug("No, really, flashing sector: " + sector);
 			var col = Color.FromArgb(255, 255, 0, 0);
-			var colors = ColorUtil.AddLedColor(new Color[_ledData.LedCount],sector, col,_ledData);
-			var black = ColorUtil.EmptyColors(new Color[_ledData.LedCount]);
-			if (_strip == null) {
+			var colors = ColorUtil.AddLedColor(new Color[_systemData.LedCount],sector, col,_systemData);
+			var black = ColorUtil.EmptyColors(new Color[_systemData.LedCount]);
+			if (_strips.Count == null) {
 				return;
 			}
 
-			_strip.Testing = true;
-			_strip.UpdateAll(colors.ToList(), true);
-			Thread.Sleep(500);
-			_strip.UpdateAll(black.ToList(), true);
-			Thread.Sleep(500);
-			_strip.UpdateAll(colors.ToList(), true);
-			Thread.Sleep(1000);
-			_strip.UpdateAll(black.ToList(), true);
-			_strip.Testing = false;
-
+			foreach (var _strip in _strips) {
+				_strip.Testing = true;
+				_strip.UpdateAll(colors.ToList(), true);
+				Thread.Sleep(500);
+				_strip.UpdateAll(black.ToList(), true);
+				Thread.Sleep(500);
+				_strip.UpdateAll(colors.ToList(), true);
+				Thread.Sleep(1000);
+				_strip.UpdateAll(black.ToList(), true);
+				_strip.Testing = false;	
+			}
 		}
 	
 		private void CheckAutoDisable() {
@@ -239,7 +237,9 @@ namespace Glimmr.Services {
 		}
 
 		private void LedTest(int led) {
-			_strip.StartTest(led);
+			foreach (var _strip in _strips) {
+				_strip.StartTest(led);	
+			}
 		}
 
 		private void LoadData() {
@@ -247,18 +247,19 @@ namespace Glimmr.Services {
 			// Reload main vars
 			var dev = DataUtil.GetDeviceData();
 			_deviceMode = DataUtil.GetItem("DeviceMode");
-			_devModePrevious = -1;
-			_ambientMode = dev.AmbientMode;
-			_ambientShow = dev.AmbientShowType;
-			_ambientColor = dev.AmbientColor;
 			_deviceGroup = (byte) dev.DeviceGroup;
 			_captureMode = DataUtil.GetItem<int>("CaptureMode") ?? 2;
 			_sendTokenSource = new CancellationTokenSource();
 			_captureTokenSource = new CancellationTokenSource();
 			Log.Debug("Loading strip");
-			_ledData = DataUtil.GetObject<LedData>("LedData");
+			_systemData = DataUtil.GetObject<SystemData>("SystemData");
+			var ledDatas = DataUtil.GetCollection<LedData>("LedData");
+			_strips = new List<LedStrip>();
 			try {
-				_strip = new LedStrip(_ledData, this);
+				foreach (var ld in ledDatas) {
+					var strip = new LedStrip(ld, this);
+					_strips.Add(strip);
+				}
 				Log.Debug("Initialized LED strip...");
 			} catch (TypeInitializationException e) {
 				Log.Debug("Type init error: " + e.Message);
@@ -316,7 +317,12 @@ namespace Glimmr.Services {
 		private void Demo() {
 			StartStream();
 			Log.Debug("Demo fired...");
-			var ledCount = _ledData.LedCount;
+			var ledCount = 300;
+			try {
+				ledCount = _systemData.LedCount;
+			} catch (Exception) {
+				
+			}
 			Log.Debug("Running demo on " + ledCount + "pixels");
 			var i = 0;
 			var k = 0;
@@ -412,12 +418,14 @@ namespace Glimmr.Services {
 			_captureMode = DataUtil.GetItem<int>("CaptureMode") ?? 2;
 			_deviceMode = DataUtil.GetItem<int>("DeviceMode") ?? 0;
 			_deviceGroup = DataUtil.GetItem<int>("DeviceGroup") ?? 0;
-			_ambientMode = DataUtil.GetItem<int>("AmbientMode") ?? 0;
-			_ambientShow = DataUtil.GetItem<int>("AmbientShow") ?? 0;
-			_ambientColor = DataUtil.GetItem<string>("AmbientColor") ?? Color.FromArgb(255, 255, 255, 255);
-			LedData ledData = DataUtil.GetObject<LedData>("LedData") ?? new LedData();
 			try {
-				_strip?.Reload(ledData);
+				foreach (var _strip in _strips) {
+					var ledData = DataUtil.GetCollectionItem<LedData>("LedData", _strip.Id);
+					if (ledData != null) {
+						_strip?.Reload(ledData);	
+					}
+				}
+				
 				Log.Debug("Re-Initialized LED strip...");
 			} catch (TypeInitializationException e) {
 				Log.Debug("Type init error: " + e.Message);
@@ -430,8 +438,6 @@ namespace Glimmr.Services {
 		}
 
 		private void Mode(int newMode) {
-			Initializing = true;
-			_devModePrevious = newMode;
 			_deviceMode = newMode;
 			if (newMode != 0 && _autoDisabled) {
 				_autoDisabled = false;
@@ -458,13 +464,15 @@ namespace Glimmr.Services {
 				case 4: // A/V mode :D
 					StartAvStream(_streamTokenSource.Token);
 					break;
+				case 5:
+					// Nothing to do, this tells the app to get data from DreamService
+					break;
 			}
 
 			if (newMode != 0 && !_streamStarted) {
 				StartStream();
 			}
 			_deviceMode = newMode;
-			Initializing = false;
 			Log.Information($"Device mode updated to {newMode}.");
 		}
 
@@ -530,7 +538,10 @@ namespace Glimmr.Services {
 				return;
 			}
 
-			_strip?.StopLights();
+			foreach (var _strip in _strips) {
+				_strip?.StopLights();	
+			}
+			
 			foreach (var s in _sDevices.Where(s => s.Streaming)) {
 				s.StopStream();
 			}
@@ -575,8 +586,10 @@ namespace Glimmr.Services {
 			CancelSource(_captureTokenSource, true);
 			CancelSource(_sendTokenSource, true);
 			Thread.Sleep(500);
-			_strip?.StopLights();
-			_strip?.Dispose();
+			foreach (var _strip in _strips) {
+				_strip?.StopLights();
+				_strip?.Dispose();
+			}
 			Log.Information("Strips disposed...");
 			foreach (var s in _sDevices) {
 				if (s.Streaming) {

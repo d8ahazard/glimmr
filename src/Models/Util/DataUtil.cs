@@ -48,10 +48,8 @@ namespace Glimmr.Models.Util {
                 Log.Warning("Setting default values!");
                 // If not, create it
                 var deviceIp = IpUtil.GetLocalIpAddress();
-                var ledData = new LedData();
                 var myDevice = new DreamData {Id = deviceIp, IpAddress = deviceIp};
                 Log.Debug("Creating default device data: " + JsonConvert.SerializeObject(myDevice));
-                SetObject<LedData>("LedData", ledData);
                 SetDeviceData(myDevice);
                 SetObject<Color>("AmbientColor", Color.FromArgb(255, 255, 255, 255));
                 Log.Debug("Creating DreamData profile...");
@@ -66,6 +64,27 @@ namespace Glimmr.Models.Util {
                 RefreshDevices(lc,null);
             } else {
                 Log.Information("Default values are already set, continuing.");
+            }
+
+            var ledData = GetCollection<LedData>("LedData");
+            if (ledData == null || ledData.Count != 3) {
+                Log.Debug("Creating LED Data");
+                var l1 = new LedData();
+                var l2 = new LedData();
+                var l3 = new LedData();
+                l1.Count = 0;
+                l2.Count = 0;
+                l3.Count = 0;
+                l1.GpioNumber = 18;
+                l2.GpioNumber = 19;
+                l3.GpioNumber = 10;
+                l1.Id = "0";
+                l2.Id = "1";
+                l3.Id = "2";
+                
+                InsertCollection<LedData>("LedData", l1);
+                InsertCollection<LedData>("LedData", l2);
+                InsertCollection<LedData>("LedData", l3);
             }
         }
        
@@ -99,12 +118,16 @@ namespace Glimmr.Models.Util {
         }
         //fixed
         public static List<T> GetCollection<T>(string key) where T : class {
-
-            var db = GetDb();
-            var coll = db.GetCollection<T>(key);
             var output = new List<T>();
-            if (coll == null) return output;
-            output.AddRange(coll.FindAll());
+            try {
+                var db = GetDb();
+                var coll = db.GetCollection<T>(key);
+                if (coll == null) return output;
+                output.AddRange(coll.FindAll());
+            } catch (Exception e) {
+                
+            }
+
             return output;
             
         }

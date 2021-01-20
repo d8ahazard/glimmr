@@ -1,5 +1,6 @@
 ﻿#region
 
+using System.Collections.Generic;
 using System.Threading;
 using Glimmr.Models;
 using Glimmr.Models.LED;
@@ -47,9 +48,6 @@ namespace Glimmr.Controllers {
 		[HttpPost("ambientShow")]
 		public IActionResult PostShow([FromBody] JObject myDevice) {
 			Log.Debug(@"Did it work (ambient Show)? " + JsonConvert.SerializeObject(myDevice));
-			_controlService.SendDreamMessage("ambientScene", myDevice.GetValue("scene"),
-				(string) myDevice.GetValue("id"));
-			//ControlUtil.NotifyClients(_hubContext);
 			return Ok(myDevice);
 		}
 
@@ -118,7 +116,7 @@ namespace Glimmr.Controllers {
 		[HttpPost("flashLed")]
 		public IActionResult TestStripOffset([FromBody] int len) {
 			Log.Debug("Get got: " + len);
-			_controlService.TestLeds(len);
+			_controlService.TestLights(len);
 			return Ok(len);
 		}
 

@@ -30,7 +30,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 		private float _max;
 		private readonly CancellationToken _token;
 		private readonly ColorService _cs;
-		private LedData _ledData;
 		private SystemData _sd;
 		private AudioMap _map;
 
@@ -40,19 +39,20 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 		public AudioStream(ColorService cs) {
 			_cs = cs;
+			Bass.Init();
 		}
 
 		private void LoadData() {
 			Log.Debug("Reloading audio data");
-			_ledData = DataUtil.GetObject<LedData>("LedData");
-			Colors = ColorUtil.EmptyList(_ledData.LedCount);
-			Sectors = ColorUtil.EmptyList(28);
 			_sd = DataUtil.GetObject<SystemData>("SystemData");
+			Colors = ColorUtil.EmptyList(_sd.LedCount);
+			Sectors = ColorUtil.EmptyList(28);
+
 			_devices = DataUtil.GetCollection<AudioData>("Dev_Audio") ?? new List<AudioData>();
 			_map = new AudioMap(_sd.AudioMap);
 			_recordDeviceIndex = -1;
 			
-			Bass.Init();
+			
 			string rd = DataUtil.GetItem("RecDev");
 			_devices = new List<AudioData>();
 			for (var a = 0; Bass.RecordGetDeviceInfo(a, out var info); a++) {
@@ -151,7 +151,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 			Colors = ColorUtil.EmptyList(Colors.Count);
 			SourceActive = lAmps.Count != 0 || rAmps.Count != 0;
 			Sectors = _map.MapColors(lAmps, rAmps, 28).ToList();
-			Colors = ColorUtil.SectorsToleds(Sectors.ToList(), _ledData);
+			Colors = ColorUtil.SectorsToleds(Sectors.ToList(), _sd);
 			if (SendColors) {
 				_cs.SendColors(Colors, Sectors);
 			}

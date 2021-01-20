@@ -18,6 +18,7 @@ namespace Glimmr.Models.LED {
 		private bool _fixGamma;
 		private bool _enableAbl;
 		private WS281x _strip;
+		public string Id;
 
 		public LedStrip(LedData ld, ColorService colorService) {
 			colorService.ColorSendEvent += UpdateAll;
@@ -32,7 +33,7 @@ namespace Glimmr.Models.LED {
 		public void Reload(LedData ld) {
 			_ld = ld;
 			_controller.Brightness = (byte) ld.Brightness;
-			if (_ledCount != ld.LedCount && _fixGamma != ld.FixGamma) {
+			if (_ledCount != ld.Count && _fixGamma != ld.FixGamma) {
 				_strip?.Dispose();
 				Initialize(ld);
 			}
@@ -40,8 +41,9 @@ namespace Glimmr.Models.LED {
 
 		private void Initialize(LedData ld) {
 			_ld = ld ?? throw new ArgumentException("Invalid LED Data.");
+			Id = ld.Id;
 			Log.Debug("Initializing LED Strip, type is " + ld.StripType);
-			_ledCount = ld.LeftCount + ld.RightCount + ld.TopCount + ld.BottomCount;
+			_ledCount = ld.Count;
 			_fixGamma = ld.FixGamma;
 			var stripType = ld.StripType switch {
 				1 => StripType.SK6812W_STRIP,
@@ -51,9 +53,9 @@ namespace Glimmr.Models.LED {
 			};
 			// 18 = PWM0, 13 = PWM1, 21 = PCM, 10 = SPI0/MOSI
 			var pin = ld.GpioNumber switch {
-				13 => Pin.Gpio13,
+				19 => Pin.Gpio19,
 				10 => Pin.Gpio10,
-				21 => Pin.Gpio21,
+				18 => Pin.Gpio18,
 				_ => Pin.Gpio18
 			};
 			Log.Debug($@"Count, pin, type: {_ledCount}, {ld.GpioNumber}, {(int) stripType}");
@@ -99,7 +101,7 @@ namespace Glimmr.Models.LED {
 
 		public void StopTest() {
 			Testing = false;
-			var mt = ColorUtil.EmptyColors(new Color[_ld.LedCount]);
+			var mt = ColorUtil.EmptyColors(new Color[_ld.Count]);
 			UpdateAll(mt.ToList(), true);
 		}
 

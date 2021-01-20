@@ -125,5 +125,36 @@ namespace Glimmr.Models {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string Serial { get; set; }
 
+		// Values for general LED settings
+		[DefaultValue(0)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int LedCount => LeftCount + RightCount + TopCount + BottomCount;
+		
+		[DefaultValue(24)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int LeftCount { get; set;} = 24;
+		
+		[DefaultValue(24)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int RightCount { get; set; } = 24;
+		
+		[DefaultValue(40)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int TopCount { get; set; } = 40;
+		
+		[DefaultValue(40)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int BottomCount { get; set; } = 40;
+		
+		[DefaultValue(24)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		
+		public int VCountDs { get; set; } = 24;
+		
+		[DefaultValue(40)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int HCountDs { get; set; } = 40;
+
+
 	}
 }

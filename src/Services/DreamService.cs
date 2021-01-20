@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
 using System.Net;
@@ -9,15 +8,15 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Hubs;
-using Glimmr.Models.ColorSource.Ambient;
+using Glimmr.Models;
 using Glimmr.Models.StreamingDevice.Dreamscreen;
 using Glimmr.Models.Util;
-using LiteDB;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Serilog;
 using Color = System.Drawing.Color;
+// ReSharper disable All
 
 namespace Glimmr.Services {
     public class DreamService : BackgroundService {
@@ -32,19 +31,14 @@ namespace Glimmr.Services {
         private bool _discovering;
         private int _brightness;
         private DreamData _dev;
-        private DreamUtil _dreamUtil;
+        private SystemData _sd;
+        private readonly DreamUtil _dreamUtil;
         
         // Our functional values
         private int _devMode;
 
         private IPEndPoint _listenEndPoint;
         private UdpClient _listener;
-
-        
-        // Used by our loops to know when to update?
-        private int _prevMode;
-
-        
         
         // Value used to save where we're replying to
         private IPEndPoint _targetEndpoint;
@@ -54,9 +48,10 @@ namespace Glimmr.Services {
         public DreamService(IHubContext<SocketServer> hubContext, ControlService controlService) {
             _hubContext = hubContext;
             _controlService = controlService;
-            _controlService.SetCaptureModeEvent += CheckSubscribe;
             _controlService.DreamSubscribeEvent += Subscribe;
             _controlService.RefreshDreamscreenEvent += Discover;
+            _controlService.RefreshSystemEvent += RefreshSystemData;
+            _controlService.SetModeEvent += UpdateMode;
             _dreamUtil = new DreamUtil(_controlService.UdpClient);
             Initialize();
             Log.Debug("Initialisation complete.");
@@ -65,23 +60,8 @@ namespace Glimmr.Services {
         
         // This initializes all of the data in our class and starts function loops
         private void Initialize() {
-            _dev = DataUtil.GetDeviceData();
-            _devMode = _dev.DeviceMode;
-            _ambientMode = _dev.AmbientMode;
-            _ambientShow = _dev.AmbientShowType;
-            _ambientColor = ColorFromString(_dev.AmbientColor);
-            _brightness = _dev.Brightness;
-            _group = (byte) _dev.DeviceGroup;
-            CaptureMode = DataUtil.GetItem("CaptureMode") ?? 2;
-            
-            // Set default values
-            _prevMode = -1;
-            var dsIp = DataUtil.GetItem("DsIp");
             _devices = new List<DreamData>();
-
-            if (!string.IsNullOrEmpty(dsIp)) {
-                _targetEndpoint = new IPEndPoint(IPAddress.Parse(dsIp), 8888);    
-            }
+            RefreshSystemData();
             // Start listening service 
             StartListening();
         }
@@ -102,6 +82,22 @@ namespace Glimmr.Services {
             Log.Debug("Dreamscreen service stopped.");
             return base.StopAsync(cancellationToken);
         }
+
+        private void RefreshSystemData() {
+            _dev = DataUtil.GetDeviceData();
+            _sd = DataUtil.GetObject<SystemData>("SystemData");
+            _devMode = _sd.DeviceMode;
+            _ambientMode = _sd.AmbientMode;
+            _ambientShow = _sd.AmbientShow;
+            _ambientColor = ColorFromString(_sd.AmbientColor);
+            _brightness = _dev.Brightness;
+            _group = (byte) _dev.DeviceGroup;
+            CaptureMode = _sd.CaptureMode;
+            
+            if (!string.IsNullOrEmpty(_sd.DsIp)) {
+                _targetEndpoint = new IPEndPoint(IPAddress.Parse(_sd.DsIp), 8888);    
+            }
+        }
         
         
         // Update our device mode
@@ -113,17 +109,20 @@ namespace Glimmr.Services {
         private void UpdateAmbientMode(int newMode) {
             // If nothing has changed, do nothing
             _hubContext.Clients.All.SendAsync("ambientMode", newMode);
-            _controlService.SetAmbientMode(newMode);
+            _sd.AmbientMode = newMode;
+            DataUtil.SetObject<SystemData>("SystemData", _sd);
         }
 
         
         
         private void UpdateAmbientColor(Color aColor) {
-            _controlService.SetAmbientColor(aColor, "-1", -1);
+            _sd.AmbientColor = aColor.ToString();
+            DataUtil.SetObject<SystemData>("SystemData", _sd);
         }
 
         private void UpdateAmbientShow(int newShow) {
-            _controlService.SetAmbientShow(newShow);
+            _sd.AmbientShow = newShow;
+            DataUtil.SetObject<SystemData>("SystemData", _sd);
         }
 
         private void UpdateBrightness(int newBrightness) {
@@ -181,7 +180,18 @@ namespace Glimmr.Services {
 
         private void ProcessData(byte[] receivedBytes, IPEndPoint receivedIpEndPoint) {
             // Convert data to ASCII and print in console
-            if (!MsgUtils.CheckCrc(receivedBytes)) return;
+            var f1 = receivedBytes[4];
+            var f2 = receivedBytes[5];
+            var setValid = false;
+            if (!MsgUtils.CheckCrc(receivedBytes)) {
+                if (f1 == 5 && f2 == 22) {
+                    setValid = true;
+                } else {
+                    Log.Debug("INVALID CRC");
+                    return;    
+                }
+                
+            }
             string command = null;
             string flag = null;
             var from = receivedIpEndPoint.Address.ToString();
@@ -199,7 +209,7 @@ namespace Glimmr.Services {
                 tDevice.IpAddress = IpUtil.GetLocalIpAddress();
                 DataUtil.SetDeviceData(tDevice);
             }
-            if (msg.IsValid) {
+            if (msg.IsValid || setValid) {
                 payload = msg.GetPayload();
                 payloadString = msg.PayloadString;
                 command = msg.Command;
@@ -267,6 +277,17 @@ namespace Glimmr.Services {
                         var colors = colorData.Select(ColorFromString).ToList();
                         colors = ShiftColors(colors);
                         _controlService.SendColors(colors, colors);
+                    }
+                    break;
+                case "COLOR_DATA_V2":
+                    refreshDevice = false;
+                    if (_devMode == 5) {
+                        var colorData2 = ByteUtils.SplitHex(payloadString, 6); // Swap this with payload
+                        var colors2 = colorData2.Select(ColorFromString).ToList();
+                        var sectors = colors2.GetRange(0, 84);
+                        var leds = colors2.GetRange(83, colors2.Count - 84);
+                        Log.Debug("Sectorrrs: " + JsonConvert.SerializeObject(sectors));
+                        if (_devMode == 5) _controlService.SendColors(leds, sectors);
                     }
 
                     break;

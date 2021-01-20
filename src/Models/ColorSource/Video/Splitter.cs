@@ -52,8 +52,8 @@ namespace Glimmr.Models.ColorSource.Video {
 
 		// The width of the border to crop from for LEDs
 		private readonly float _borderWidth;
-
 		private readonly float _borderHeight;
+		
 		private int _previewMode;
 
 		// The current crop mode?
@@ -71,15 +71,15 @@ namespace Glimmr.Models.ColorSource.Video {
 
 		private readonly ControlService _controlService;
 
-		public Splitter(LedData ld, ControlService controlService) {
-			Log.Debug("Initializing splitter, using LED Data: " + JsonConvert.SerializeObject(ld));
+		public Splitter(SystemData sd, ControlService controlService) {
+			Log.Debug("Initializing splitter, using LED Data: " + JsonConvert.SerializeObject(sd));
 			_controlService = controlService;
 			// Set some defaults, this should probably just not be null
-			if (ld != null) {
-				_leftCount = ld.LeftCount;
-				_topCount = ld.TopCount;
-				_rightCount = ld.RightCount == 0 ? _leftCount : ld.RightCount;
-				_bottomCount = ld.BottomCount == 0 ? _topCount : ld.BottomCount;
+			if (sd != null) {
+				_leftCount = sd.LeftCount;
+				_topCount = sd.TopCount;
+				_rightCount = sd.RightCount == 0 ? _leftCount : sd.RightCount;
+				_bottomCount = sd.BottomCount == 0 ? _topCount : sd.BottomCount;
 			}
 
 			// Set desired width of capture region to 15% total image
@@ -450,11 +450,10 @@ namespace Glimmr.Models.ColorSource.Video {
 			SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
 			_previewMode = sd.PreviewMode;
 			Log.Debug("Preview mode set to: " + _previewMode);
-			LedData ld = DataUtil.GetObject<LedData>("LedData");
-			_leftCount = ld.LeftCount;
-			_topCount = ld.TopCount;
-			_rightCount = ld.RightCount;
-			_bottomCount = ld.BottomCount;
+			_leftCount = sd.LeftCount;
+			_topCount = sd.TopCount;
+			_rightCount = sd.RightCount;
+			_bottomCount = sd.BottomCount;
 			_fullCoords = DrawGrid();
 			_fullSectors = DrawSectors();
 		}

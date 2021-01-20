@@ -95,10 +95,10 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
         
         public void Refresh() {
-            LedData ld = DataUtil.GetObject<LedData>("LedData");
-            Colors = ColorUtil.EmptyList(ld.LedCount);
+            SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
+            Colors = ColorUtil.EmptyList(sd.LedCount);
             Sectors = ColorUtil.EmptyList(28);
-            _ledCount = ld.LedCount;
+            _ledCount = sd.LedCount;
             _ambientShow = DataUtil.GetItem<int>("AmbientShow") ?? 0;
             _ambientColor = DataUtil.GetObject<Color>("AmbientColor") ?? Color.FromArgb(255,255,255,255);
 

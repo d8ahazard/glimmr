@@ -18,7 +18,7 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 		private readonly ColorService _cs;
 		private readonly VideoStream _vs;
 		private readonly AudioStream _as;
-		private LedData _ledData;
+		private SystemData _systemData;
 		public AudioVideoStream(ColorService cs, AudioStream aus, VideoStream vs) {
 			_cs = cs;
 			_as = aus;
@@ -64,8 +64,8 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 
 		
 		public void Refresh() {
-			_ledData = DataUtil.GetObject<LedData>("LedData");
-			Colors = ColorUtil.EmptyList(_ledData.LedCount);
+			_systemData = DataUtil.GetObject<SystemData>("SystemData");
+			Colors = ColorUtil.EmptyList(_systemData.LedCount);
 			Sectors = ColorUtil.EmptyList(28);
 		}
 		

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models;
@@ -33,10 +34,6 @@ namespace Glimmr.Hubs {
 			Log.Debug("Scan called from socket!");
 			_cs.ScanDevices();
 			return Task.CompletedTask;
-		}
-
-		public void AmbientShow(int show, string deviceId) {
-			_cs.SetAmbientShow(show, deviceId);
 		}
 		
 		public async void AuthorizeHue(string id) {
@@ -88,7 +85,7 @@ namespace Glimmr.Hubs {
 
 		public void FlashLed(int led) {
 			Log.Debug("Get got: " + led);
-			_cs.TestLeds(led);
+			_cs.TestLights(led);
 		}
 
 		

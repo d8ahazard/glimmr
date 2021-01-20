@@ -510,8 +510,8 @@ namespace Glimmr.Models.Util {
             return Color.FromArgb(r, g, b);
         }
 
-        public static List<Color> SectorsToleds(List<Color> ints, LedData ledData) {
-	        var count = ledData.LeftCount + ledData.RightCount + ledData.TopCount + ledData.BottomCount;
+        public static List<Color> SectorsToleds(List<Color> ints, SystemData systemData) {
+	        var count = systemData.LeftCount + systemData.RightCount + systemData.TopCount + systemData.BottomCount;
 			
 	        // Start/end values, with optional second for sector 1
 	     	
@@ -519,21 +519,21 @@ namespace Glimmr.Models.Util {
 	        colors = EmptyColors(colors);
 
 	        for (var i = 0; i < ints.Count; i++) {
-		        colors = AddLedColor(colors, i, ints[i], ledData);
+		        colors = AddLedColor(colors, i, ints[i], systemData);
 	        }
 	        
 	        return colors.ToList();
         }
 
-        public static Color[] AddLedColor(Color[] colors, int sector, Color color, LedData ledData) {
+        public static Color[] AddLedColor(Color[] colors, int sector, Color color, SystemData systemData) {
 	        int s0;
 	        int e0;
 	        
-	        var count = ledData.LeftCount + ledData.RightCount + ledData.TopCount + ledData.BottomCount;
-	        var rCount = ledData.RightCount / 6;
-	        var tCount = ledData.TopCount / 10;
-	        var lCount = ledData.LeftCount / 6;
-	        var bCount = ledData.BottomCount / 10;
+	        var count = systemData.LeftCount + systemData.RightCount + systemData.TopCount + systemData.BottomCount;
+	        var rCount = systemData.RightCount / 6;
+	        var tCount = systemData.TopCount / 10;
+	        var lCount = systemData.LeftCount / 6;
+	        var bCount = systemData.BottomCount / 10;
 
 
 	        if (sector >= 1 && sector <= 6) {
@@ -548,7 +548,7 @@ namespace Glimmr.Models.Util {
 	        if (sector >= 6 && sector <= 15) {
 		        var sec = sector - 5;
 		        e0 = sec * tCount;
-		        e0 += ledData.LeftCount;
+		        e0 += systemData.LeftCount;
 		        s0 = e0 - tCount;
 		        for (var i = s0; i < e0; i++) {
 			        colors[i] = color;
@@ -559,7 +559,7 @@ namespace Glimmr.Models.Util {
 	        if (sector >= 15 && sector <= 20) {
 		        var sec = sector - 14;
 		        e0 = sec * lCount;
-		        e0 += ledData.RightCount + ledData.TopCount;
+		        e0 += systemData.RightCount + systemData.TopCount;
 		        s0 = e0 - lCount;
 		        for (var i = s0; i < e0; i++) {
 			        colors[i] = color;
@@ -570,7 +570,7 @@ namespace Glimmr.Models.Util {
 	        if (sector >= 20 && sector <= 28) {
 		        var sec = sector - 19;
 		        e0 = sec * bCount;
-		        e0 += ledData.RightCount + ledData.LeftCount + ledData.TopCount;
+		        e0 += systemData.RightCount + systemData.LeftCount + systemData.TopCount;
 		        s0 = e0 - bCount;
 		        for (var i = s0; i < e0; i++) {
 			        colors[i] = color;

@@ -292,7 +292,8 @@ function setListeners() {
     document.addEventListener('change', function(e) {
         let target = e.target;
         let obj = target.getAttribute("data-object");
-        let property = target.getAttribute("data-property");        
+        let property = target.getAttribute("data-property");
+        let id = target.getAttribute("data-id");
         let val = target.value;
         if (target.type && target.type ==="checkbox") {
             val = target.checked;
@@ -302,11 +303,27 @@ function setListeners() {
         if (property === "PreviewMode") {
             val = parseInt(val);
         }
-        
+        let pack;
         if (obj !== undefined && property !== undefined && val !== undefined) {
             console.log("Trying to set: ", obj, property, val);
-            data.store[obj][0][property] = val;
-            let pack = data.store[obj][0];
+            if (id !== null && id !== undefined) {
+                let strips = data.store[obj];
+                for(let i=0; i < strips.length; i++) {
+                    let strip = strips[i];
+                    if (strip["_id"] === id) {
+                        strip[property] = val;
+                        strip["Id"] = id;
+                        strips[i] = strip;
+                        pack = strip;
+                    }
+                }
+                data.store[obj] = strips;
+            } else {
+                data.store[obj][0][property] = val;
+                pack = data.store[obj][0];
+            }
+            
+            
             if (property === "LeftCount" || property === "RightCount" || property ==="TopCount" || property === "BottomCount") {
                 let lPreview = document.getElementById("sLedPreview");
                 let lImage = document.getElementById("ledImage");
@@ -517,8 +534,7 @@ function setMode(newMode) {
     console.log("Changing mode to ", newMode);
     //data.store["DeviceMode"][0]["value"] = newMode;
     mode = newMode;
-    let target = document.querySelector("[data-mode='"+mode+"']");
-    
+    let target = document.querySelector("[data-mode='"+mode+"']");    
     let others = document.querySelectorAll(".modeBtn");
     for (let i=0; i< others.length; i++) {
         if (others[i]) {
@@ -604,34 +620,48 @@ function loadTheme(theme) {
 }
 
 function loadSettings() {
-    loadSettingObject("LedData");
-    loadSettingObject("SystemData");
     if (data.store == null) return;
     let ledData = data.store["LedData"];
-    if (ledData !== null) {
-        console.log("Loading LED Data: ", ledData);
+    let systemData = data.store["SystemData"][0];
+    if (ledData !== null && ledData !== undefined) {
+        for(let i=0; i < 4; i++) {
+            loadSettingObject(ledData[i]);
+        }    
+    }
+    
+    if (systemData !== null && systemData !== undefined) {
+        loadSettingObject(systemData);
+        console.log("Loading System Data: ", systemData);
         let lPreview = document.getElementById("sLedPreview");
         let lImage = document.getElementById("ledImage");
-        createLedMap(lPreview, lImage, ledData[0]);
+        createLedMap(lPreview, lImage, systemData);
     } else {
         console.log("NO LED DATA");
     }    
 }
 
-function loadSettingObject(name) {
-    if (data.store == null) {
-        console.log("Store is null?");
+function loadSettingObject(obj) {
+    if (obj == null) {
+        console.log("Object is null?");
         return;
     }
-    let sObj = data.store[name];
-    if (sObj == null) {
-        console.log("Object is null!", name);
-    } 
-    let dataProp = sObj[0];
-    console.log("Loading object: ",name, dataProp);
+    let dataProp = obj;
+    let id = obj["_id"];
+    let name = "";
+    if (obj.hasOwnProperty("GpioNumber")) {
+        name = "LedData";
+    } else {
+        name = "SystemData";
+    }
+    console.log("Loading object: ",name, dataProp, id);
     for(let prop in dataProp) {
         if (dataProp.hasOwnProperty(prop)) {
             let target = document.querySelector('[data-property='+prop+'][data-object="'+name+'"]');
+            if (obj.hasOwnProperty("GpioNumber")) {
+                target = document.querySelector('[data-property='+prop+'][data-object="'+name+'"][data-id="'+id+'"]');
+                console.log("Target: ", target);
+            }
+            
             if (target !== null && target !== undefined) {
                 let value = dataProp[prop];
                 if (value === true) {

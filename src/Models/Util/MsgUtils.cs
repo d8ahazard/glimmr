@@ -117,7 +117,8 @@ namespace Glimmr.Models.Util {
             {"0511", "SET_IR_LEARNING_MODE"},
             {"0513", "SET_IR_MANIFEST_ENTRY"},
             {"0520", "SET_EMAIL_ADDRESS"},
-            {"0521", "SET_THING_NAME"}
+            {"0521", "SET_THING_NAME"},
+            {"0516", "COLOR_DATA_V2"}
         };
 
         
@@ -185,10 +186,20 @@ namespace Glimmr.Models.Util {
             for (byte counter = 0; counter < size; counter = (byte) (counter + 1))
                 crc = Crc8Table[(byte) (data[counter] ^ crc) & 255];
 
-            if (crc == checkCrc) return true;
+            return crc == checkCrc;
+        }
 
-            Console.WriteLine($@"CRC Check failed, expected {crc} got {checkCrc}.");
-            return false;
+        public static byte GetCrc(byte[] data) {
+            if (data is null) throw new ArgumentNullException(nameof(data));
+
+            var checkCrc = data[^1];
+            data = data.Take(data.Length - 1).ToArray();
+            var size = (byte) (data[1] + 1);
+            byte crc = 0;
+            for (byte counter = 0; counter < size; counter = (byte) (counter + 1))
+                crc = Crc8Table[(byte) (data[counter] ^ crc) & 255];
+
+            return crc;
         }
     }
 }

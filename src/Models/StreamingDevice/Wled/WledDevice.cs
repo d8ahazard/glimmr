@@ -130,11 +130,13 @@ namespace Glimmr.Models.StreamingDevice.WLED {
             colors = TruncateColors(colors);
             if (Data.StripMode == 2) {
                 colors = ShiftColors(colors);
+            } else {
+                if (Data.StripDirection == 1) {
+                    colors.Reverse();
+                }
             }
 
-            if (Data.StripDirection == 1) {
-                colors.Reverse();
-            }
+            
             var packet = new List<Byte>();
             // Set mode to DRGB, dude.
             var timeByte = 255;
@@ -174,6 +176,7 @@ namespace Glimmr.Models.StreamingDevice.WLED {
             var offset = Data.Offset;
             // Subtract one from our offset because arrays
             var len = Data.LedCount;
+            if (Data.StripMode == 2) len /= 2;
             // Start at the beginning
             if (offset + len > input.Count) {
                 // Set the point where we need to end the loop
@@ -199,13 +202,24 @@ namespace Glimmr.Models.StreamingDevice.WLED {
             return truncated;
         }
 
-        private static List<Color> ShiftColors(IReadOnlyList<Color> input) {
-            var output = new Color[input.Count];
-            var il = input.Count - 1;
-            for (var i = 0; i < input.Count / 2; i++) {
-                output[i] = input[i];
-                output[il - i] = input[i];
+        private List<Color> ShiftColors(IReadOnlyList<Color> input) {
+            var output = new Color[input.Count * 2];
+            var il = output.Length - 1;
+            if (Data.StripDirection == 0) {
+                for (var i = 0; i < input.Count; i++) {
+                    output[i] = input[i];
+                    output[il - i] = input[i];
+                }
+            } else {
+                var l = 0;
+                for (var i = input.Count - 1; i >= 0; i--) {
+                    output[i] = input[l];
+                    output[il - i] = input[l];
+                    l++;
+                }
             }
+
+
             return output.ToList();
         }
 

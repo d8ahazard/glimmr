@@ -11,12 +11,12 @@ using Timer = System.Timers.Timer;
 
 namespace Glimmr.Services {
 	public class DiscoveryService : BackgroundService {
-		private IHubContext<SocketServer> _hubContext;
+		private readonly IHubContext<SocketServer> _hubContext;
 		// CONTROL SERVICE CONTROLS ALL
 		private readonly ControlService _controlService;
 		private Timer _refreshTimer;
 		private LifxClient _lifxClient;
-		private bool isStreaming;
+		private bool _isStreaming;
 		public DiscoveryService(IHubContext<SocketServer> hubContext, ControlService controlService) {
 			_hubContext = hubContext;
 			_controlService = controlService;
@@ -44,7 +44,7 @@ namespace Glimmr.Services {
 		}
 
 		private void ToggleAutoScan(int mode) {
-			isStreaming = mode != 0;
+			_isStreaming = mode != 0;
 		}
 		
 		private void StartRefreshTimer(bool refreshNow = false) {
@@ -67,7 +67,7 @@ namespace Glimmr.Services {
         
 		// Discover...devices?
 		private void DeviceDiscovery(object sender, ElapsedEventArgs elapsedEventArgs) {
-			if (!isStreaming) {
+			if (!_isStreaming) {
 				DeviceDiscovery();
 			}
 		}

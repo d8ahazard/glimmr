@@ -52,7 +52,7 @@ namespace Glimmr.Models.ColorSource.Video {
 		private int _captureMode;
 		private int _srcArea;
 
-		private LedData _ledData;
+		private SystemData _systemData;
 
 		// Video source and splitter
 		private readonly IVideoStream _vc;
@@ -86,7 +86,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			var autoEvent = new AutoResetEvent(false);
 			_saveTimer = new Timer(SaveFrame, autoEvent, 5000, 5000);
 			Log.Debug($"Starting vid capture task...");
-			StreamSplitter = new Splitter(_ledData, _controlService);
+			StreamSplitter = new Splitter(_systemData, _controlService);
 			while (!ct.IsCancellationRequested) {
 				// Save cpu/memory by not doing anything if not sending...
 				
@@ -128,13 +128,13 @@ namespace Glimmr.Models.ColorSource.Video {
 		}
 
 		public void Refresh() {
-			StreamSplitter.Refresh();
+			StreamSplitter?.Refresh();
 		}
 
 
 		private void SetCapVars() {
-			_ledData = DataUtil.GetObject<LedData>("LedData");
-			Colors = ColorUtil.EmptyList(_ledData.LedCount);
+			_systemData = DataUtil.GetObject<SystemData>("SystemData");
+			Colors = ColorUtil.EmptyList(_systemData.LedCount);
 			Sectors = ColorUtil.EmptyList(28);
 			_captureMode = DataUtil.GetItem<int>("CaptureMode");
 			_camType = DataUtil.GetItem<int>("CamType");

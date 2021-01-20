@@ -32,10 +32,14 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
             var byteString = BitConverter.ToString(bytesIn);
             var bytesString = byteString.Split("-");
             var magic = bytesString[0];
+            C1 = bytesIn[4];
+            C2 = bytesIn[5];
+
             if (!MsgUtils.CheckCrc(bytesIn) || magic != "FC" || bytesString.Length < 7) {
-                //throw new ArgumentException($"Invalid message format: {magic}");
-                IsValid = false;
-                return;
+                if (C1 != 5 || C2 != 22) {
+                    IsValid = false;
+                    return;    
+                }
             }
 
             Len = bytesIn[1];

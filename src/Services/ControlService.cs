@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
@@ -28,10 +28,10 @@ namespace Glimmr.Services {
 		public HttpClient HttpSender { get; }
 		public LifxClient LifxClient { get; }
 		public UdpClient UdpClient { get; }
-		public readonly IHubContext<SocketServer> HubContext;
+		private readonly IHubContext<SocketServer> _hubContext;
 
 		public ControlService(IHubContext<SocketServer> hubContext) {
-			HubContext = hubContext;
+			_hubContext = hubContext;
 			// Lifx client
 			LifxClient = LifxClient.CreateAsync().Result;
 			// Init nano HttpClient
@@ -54,17 +54,10 @@ namespace Glimmr.Services {
 		public event Action<int> TestLedEvent = delegate { };
 		public event Action<CancellationToken> RefreshDreamscreenEvent = delegate { };
 		public event Action<string> AddSubscriberEvent = delegate { };
-		public event Action<int> SetAmbientModeEvent = delegate { };
-		public event Action<int> SetAmbientShowEvent = delegate { };
 		public event Action<string> FlashDeviceEvent = delegate { };
 		public event Action<int> FlashSectorEvent = delegate { };
-		public event Action<Color, string, int> SetAmbientColorEvent = delegate { };
-		public event Action<string, dynamic, string> SendDreamMessageEvent = delegate { };
-		public event Action<int, int, byte[], byte, byte, IPEndPoint, bool> SendUdpWriteEvent = delegate { };
-		public event Action<int> SetCaptureModeEvent = delegate { };
 		public event Action<List<Color>, List<Color>, int> TriggerSendColorsEvent = delegate { };
-		public event Action<List<Color>, List<Color>, int> TriggerSendColorsEvent2 = delegate { };
-
+		
 
 		public void ScanDevices() {
 			DeviceRescanEvent();
@@ -72,7 +65,7 @@ namespace Glimmr.Services {
 
 		public void SetMode(int mode) {
 			Log.Information("Setting mode: " + mode);
-			HubContext.Clients.All.SendAsync("mode", mode);
+			_hubContext.Clients.All.SendAsync("mode", mode);
 			DataUtil.SetItem<int>("DeviceMode", mode);
 			SetModeEvent(mode);
 		}
@@ -81,28 +74,28 @@ namespace Glimmr.Services {
 			Log.Debug("AuthHue called, for real (socket): " + id);
 			HueData bd;
 			if (!string.IsNullOrEmpty(id)) {
-				await HubContext.Clients.All.SendAsync("hueAuth", "start");
+				await _hubContext.Clients.All.SendAsync("hueAuth", "start");
 				bd = DataUtil.GetCollectionItem<HueData>("Dev_Hue", id);
 				Log.Debug("BD: " + JsonConvert.SerializeObject(bd));
 				if (bd == null) {
 					Log.Debug("Null bridge retrieved.");
-					await HubContext.Clients.All.SendAsync("hueAuth", "stop");
+					await _hubContext.Clients.All.SendAsync("hueAuth", "stop");
 					return;
 				}
 
 				if (bd.Key != null && bd.User != null) {
 					Log.Debug("Bridge is already authorized.");
-					await HubContext.Clients.All.SendAsync("hueAuth", "authorized");
-					await HubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+					await _hubContext.Clients.All.SendAsync("hueAuth", "authorized");
+					await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
 					return;
 				}
 			} else {
 				Log.Warning("Null value.");
-				await HubContext.Clients.All.SendAsync("hueAuth", "stop");
+				await _hubContext.Clients.All.SendAsync("hueAuth", "stop");
 				return;
 			}
 
-			Log.Debug("Trying to retrieve appkey...");
+			Log.Debug("Trying to retrieve app key...");
 			var count = 0;
 			while (count < 30) {
 				count++;
@@ -120,20 +113,20 @@ namespace Glimmr.Services {
 							bd = nhb.RefreshData().Result;
 							nhb.Dispose();
 							DataUtil.InsertCollection<HueData>("Dev_Hue", bd);
-							await HubContext.Clients.All.SendAsync("hueAuth", "authorized");
-							await HubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+							await _hubContext.Clients.All.SendAsync("hueAuth", "authorized");
+							await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
 							return;
 						}
 
-						Log.Debug("Appkey is null?");
+						Log.Debug("App key is null?");
 					}
 
 					Log.Debug("Waiting for app key.");
-				} catch (NullReferenceException e) {
-					Log.Error("Null exception.", e);
+				} catch (NullReferenceException) {
+					Log.Error("Null exception.");
 				}
 
-				await HubContext.Clients.All.SendAsync("hueAuth", count);
+				await _hubContext.Clients.All.SendAsync("hueAuth", count);
 				Thread.Sleep(1000);
 			}
 
@@ -141,67 +134,15 @@ namespace Glimmr.Services {
 		}
 
 		public void TriggerImageUpdate() {
-			HubContext.Clients.All.SendAsync("loadPreview");
+			_hubContext.Clients.All.SendAsync("loadPreview");
 		}
 
-		public void TestLeds(int led) {
+		public void TestLights(int led) {
 			TestLedEvent(led);
 		}
 
 		public void AddSubscriber(string ip) {
 			AddSubscriberEvent(ip);
-		}
-
-		public void ResetMode() {
-			var curMode = DataUtil.GetItem("DeviceMode");
-			if (curMode == 0) {
-				return;
-			}
-
-			SetMode(0);
-			Thread.Sleep(1000);
-			SetMode(curMode);
-		}
-
-
-		public void SetCaptureMode(int mode) {
-			HubContext.Clients.All.SendAsync("captureMode", mode);
-			DataUtil.SetItem<int>("CaptureMode", mode);
-			SetCaptureModeEvent(mode);
-		}
-
-		public void SetAmbientMode(int mode, string deviceId = null) {
-			HubContext.Clients.All.SendAsync("ambientMode", mode, deviceId);
-			if (deviceId == "127.0.0.1" || deviceId == null) {
-				DataUtil.SetItem<int>("AmbientMode", mode);
-				SetAmbientModeEvent(mode);	
-			} else {
-				// Send dream message changing ambient mode
-			}
-			
-		}
-
-		public void SetAmbientShow(int show, string deviceId = null) {
-			HubContext.Clients.All.SendAsync("ambientShow", show, deviceId);
-			if (deviceId == "127.0.0.1" || deviceId == null) {
-				DataUtil.SetItem<int>("AmbientShow", show);
-				SetAmbientShowEvent(show);	
-			} else {
-				// Send dream message
-			}
-		}
-
-		public void SetAmbientColor(Color color, string id, int group) {
-			HubContext.Clients.All.SendAsync("ambientColor", color);
-			DataUtil.SetObject<Color>("AmbientColor", color);
-			var myDev = DataUtil.GetDeviceData();
-			myDev.AmbientColor = ColorUtil.ColorToHex(color);
-			DataUtil.SetDeviceData(myDev);
-			SetAmbientColorEvent(color, id, group);
-		}
-
-		public void SendDreamMessage(string command, dynamic message, string id) {
-			SendDreamMessageEvent(command, message, id);
 		}
 
 
@@ -212,12 +153,8 @@ namespace Glimmr.Services {
 			DeviceReloadEvent(id);
 		}
 
-		public void RescanDevices() {
-			Log.Debug("Triggering rescan.");
-			DeviceRescanEvent();
-		}
 
-		public void RefreshLedData() {
+		private void RefreshLedData() {
 			RefreshLedEvent();
 		}
 
@@ -226,18 +163,14 @@ namespace Glimmr.Services {
 			TriggerSendColorsEvent(c1, c2, fadeTime);
 		}
 
-		// We call this one to send colors to everything except the color service
-		public void SendColors2(List<Color> c1, List<Color> c2, int fadeTime = 0) {
-			TriggerSendColorsEvent2(c1, c2, fadeTime);
-		}
-
+		
 		public void TriggerDreamSubscribe() {
 			DreamSubscribeEvent();
 		}
 
 
 		public async void NotifyClients() {
-			await HubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+			await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
 		}
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
@@ -259,12 +192,7 @@ namespace Glimmr.Services {
 			return base.StopAsync(cancellationToken);
 		}
 
-
-		public void SendUdpWrite(int p0, int p1, byte[] p2, byte mFlag, byte groupNumber, IPEndPoint p5,
-			bool groupSend = false) {
-			SendUdpWriteEvent(p0, p1, p2, mFlag, groupNumber, p5, groupSend);
-		}
-
+		
 		public void RefreshDreamscreen(in CancellationToken csToken) {
 			RefreshDreamscreenEvent(csToken);
 		}
@@ -273,8 +201,8 @@ namespace Glimmr.Services {
 			var leaf = DataUtil.GetCollectionItem<NanoleafData>("Dev_Nano", id);
 			bool doAuth = leaf.Token == null;
 			if (doAuth) {
-				await HubContext.Clients.All.SendAsync("nanoAuth", "authorized");
-				await HubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+				await _hubContext.Clients.All.SendAsync("nanoAuth", "authorized");
+				await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
 				return;
 			}
 
@@ -285,30 +213,38 @@ namespace Glimmr.Services {
 				if (appKey != null) {
 					leaf.Token = appKey.Token;
 					DataUtil.InsertCollection<NanoleafData>("Dev_Nanoleaf", leaf);
-					await HubContext.Clients.All.SendAsync("nanoAuth", "authorized");
-					await HubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+					await _hubContext.Clients.All.SendAsync("nanoAuth", "authorized");
+					await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
 					panel.Dispose();
 					return;
 				}
 
-				await HubContext.Clients.All.SendAsync("nanoAuth", count);
+				await _hubContext.Clients.All.SendAsync("nanoAuth", count);
 				Thread.Sleep(1000);
 				count++;
 			}
 
-			await HubContext.Clients.All.SendAsync("nanoAuth", "stop");
+			await _hubContext.Clients.All.SendAsync("nanoAuth", "stop");
 
 			panel.Dispose();
 		}
 
 		public void UpdateLed(LedData ld) {
 			Log.Debug("Got LD from post: " + JsonConvert.SerializeObject(ld));
-			DataUtil.SetObject<LedData>("LedData", ld);
+			DataUtil.InsertCollection<LedData>("LedData", ld);
 			RefreshLedData();
 			NotifyClients();
 		}
 
 		public void UpdateSystem(SystemData sd) {
+			SystemData oldSd = DataUtil.GetObject<SystemData>("SystemData");
+			if (oldSd.LedCount != sd.LedCount) {
+				var leds = DataUtil.GetCollection<LedData>("LedData");
+				foreach (var led in leds.Where(led => led.Count == 0)) {
+					led.Count = sd.LedCount;
+					DataUtil.InsertCollection<LedData>("LedData", led);
+				}
+			}
 			RefreshSystemEvent();
 			DataUtil.SetObject<SystemData>("SystemData", sd);
 		}
@@ -378,7 +314,6 @@ namespace Glimmr.Services {
 		}
 
 		public void FlashDevice(string deviceId) {
-			Log.Debug("We got us some flashin' to do.");
 			FlashDeviceEvent(deviceId);
 		}
 
