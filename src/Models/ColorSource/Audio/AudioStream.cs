@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV.Saliency;
-using Glimmr.Models.LED;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using ManagedBass;

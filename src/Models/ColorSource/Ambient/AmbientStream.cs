@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.ColorSource.Ambient.Scene;
-using Glimmr.Models.LED;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Newtonsoft.Json;

@@ -8,7 +8,6 @@ using System.Linq;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
-using Glimmr.Models.LED;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Newtonsoft.Json;

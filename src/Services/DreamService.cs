@@ -9,7 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Hubs;
 using Glimmr.Models;
-using Glimmr.Models.StreamingDevice.Dreamscreen;
+using Glimmr.Models.ColorTarget.DreamScreen;
 using Glimmr.Models.Util;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;

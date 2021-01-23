@@ -15,7 +15,6 @@ using Glimmr.Models.ColorSource.Video.Stream.Hdmi;
 using Glimmr.Models.ColorSource.Video.Stream.PiCam;
 using Glimmr.Models.ColorSource.Video.Stream.Screen;
 using Glimmr.Models.ColorSource.Video.Stream.WebCam;
-using Glimmr.Models.LED;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Newtonsoft.Json;

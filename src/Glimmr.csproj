@@ -44,7 +44,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Models\StreamingDevice\Dreamscreen\Encoders" />
+    <Folder Include="Models\ColorTarget\Dreamscreen\Encoders" />
   </ItemGroup>
   
 </Project>

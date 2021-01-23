@@ -3,11 +3,11 @@
 using System;
 using System.Threading.Tasks;
 using Glimmr.Hubs;
-using Glimmr.Models.StreamingDevice.Dreamscreen;
-using Glimmr.Models.StreamingDevice.Hue;
-using Glimmr.Models.StreamingDevice.LIFX;
-using Glimmr.Models.StreamingDevice.Nanoleaf;
-using Glimmr.Models.StreamingDevice.WLED;
+using Glimmr.Models.ColorTarget.DreamScreen;
+using Glimmr.Models.ColorTarget.Hue;
+using Glimmr.Models.ColorTarget.LIFX;
+using Glimmr.Models.ColorTarget.Nanoleaf;
+using Glimmr.Models.ColorTarget.Wled;
 using Glimmr.Services;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;

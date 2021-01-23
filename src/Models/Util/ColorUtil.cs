@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 using System.Linq;
-using Glimmr.Models.LED;
 using Serilog;
 
 namespace Glimmr.Models.Util {
@@ -35,10 +34,12 @@ namespace Glimmr.Models.Util {
         public static List<Color> ClampBrightness(List<Color> input, float maxBrightness) {
             var output = new List<Color>();
             var max = maxBrightness / 255;
-            foreach (var c in input) {
+            for (var i = 0; i < input.Count; i++) {
+	            var c = input[i];
 	            var cB = c.GetBrightness();
 	            output.Add(cB > max ? HsbToColor(c.GetHue(), c.GetSaturation(), max, c.A) : c);
             }
+
             return output;
         }
 
@@ -82,11 +83,13 @@ namespace Glimmr.Models.Util {
             var avgB = 0;
             var avgR = 0;
             var avgA = 0;
-            foreach (var t in colors) {
-                avgG += t.G * t.G;
-                avgB += t.B * t.B;
-                avgR += t.R * t.R;
-                avgA += t.A * t.A;			}
+            for (var i = 0; i < colors.Length; i++) {
+	            var t = colors[i];
+	            avgG += t.G * t.G;
+	            avgB += t.B * t.B;
+	            avgR += t.R * t.R;
+	            avgA += t.A * t.A;
+            }
 
             avgG /= inputCount;
             avgB /= inputCount;

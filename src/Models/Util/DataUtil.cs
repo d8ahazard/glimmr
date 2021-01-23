@@ -6,13 +6,13 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Glimmr.Models.LED;
-using Glimmr.Models.StreamingDevice.Dreamscreen;
-using Glimmr.Models.StreamingDevice.Hue;
-using Glimmr.Models.StreamingDevice.LIFX;
-using Glimmr.Models.StreamingDevice.Nanoleaf;
-using Glimmr.Models.StreamingDevice.WLED;
-using Glimmr.Models.StreamingDevice.Yeelight;
+using Glimmr.Models.ColorTarget.DreamScreen;
+using Glimmr.Models.ColorTarget.Hue;
+using Glimmr.Models.ColorTarget.LED;
+using Glimmr.Models.ColorTarget.LIFX;
+using Glimmr.Models.ColorTarget.Nanoleaf;
+using Glimmr.Models.ColorTarget.Wled;
+using Glimmr.Models.ColorTarget.Yeelight;
 using Glimmr.Services;
 using LifxNet;
 using LiteDB;
@@ -180,6 +180,10 @@ namespace Glimmr.Models.Util {
         public static dynamic GetDeviceById(string id) {
             var db = GetDb();
             try {
+                var coll0 = db.GetCollection<NanoleafData>("LedData");
+                var bDev0 = coll0.FindById(id);
+                if (bDev0 != null) return bDev0;
+                
                 var coll = db.GetCollection<HueData>("Dev_Hue");
                 var bDev = coll.FindById(id);
                 if (bDev != null) return bDev;
