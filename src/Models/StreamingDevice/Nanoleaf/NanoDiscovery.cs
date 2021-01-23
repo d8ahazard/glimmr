@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using DeviceDiscovery.Models;
@@ -73,12 +74,24 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
 
                 if (string.IsNullOrEmpty(nData.IpAddress) && !string.IsNullOrEmpty(nData.Hostname)) {
                     nData.IpAddress = nData.Hostname;
+                    
                 }
 
                 if (!string.IsNullOrEmpty(nData.IpAddress) && !string.IsNullOrEmpty(nData.Id)) {
                     var existing = DataUtil.GetCollectionItem<NanoleafData>("Dev_Nanoleaf", nData.Id);
                     if (existing != null) {
                         nData.CopyExisting(existing);
+                    }
+                    if (nData.Token == null) {
+                        Log.Debug("NO TOKEN!");
+                        return;
+                    }
+                    using var nl = new NanoleafDevice(nData, new HttpClient());
+                    var layout = nl.GetLayout().Result;
+                    if (layout != null) {
+                        nData.MergeLayout(layout);
+                    } else {
+                        Log.Debug("Layout is null.");
                     }
                     DataUtil.InsertCollection<NanoleafData>("Dev_Nanoleaf", nData);
                 }

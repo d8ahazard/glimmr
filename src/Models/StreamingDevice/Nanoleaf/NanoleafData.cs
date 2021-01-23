@@ -23,22 +23,7 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
         [JsonProperty] public int Mode { get; set; }
         [JsonProperty] public NanoLayout Layout { get; set; }
 
-        [DefaultValue(0)]
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-        public float X { get; set; } = 0;
-
-        [DefaultValue(50)]
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-        public float Y { get; set; } = 50;
-
-        [DefaultValue(1)]
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-        public float Scale { get; set; } = 1;
-
-        [DefaultValue(0)]
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-        public float Rotation { get; set; }
-
+       
         [DefaultValue(false)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool MirrorX { get; set; }
@@ -76,10 +61,6 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
         public NanoleafData CopyExisting(NanoleafData existingLeaf) {
             if (existingLeaf == null) throw new ArgumentException("Invalid nano data!");
             Token = existingLeaf.Token;
-            X = existingLeaf.X;
-            Y = existingLeaf.Y;
-            Scale = 1;
-            Rotation = existingLeaf.Rotation;
             Enable = existingLeaf.Enable;
             if (existingLeaf.Brightness != 0)  Brightness = existingLeaf.Brightness;
             // Grab the new leaf layout
@@ -89,41 +70,24 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
             return this;
         }
 
-        private NanoLayout MergeLayout(NanoLayout newLayout) {
+        public void MergeLayout(NanoLayout newLayout) {
             if (newLayout == null) throw new ArgumentException("Invalid argument.");
-            if (Layout == null) return newLayout;
-            var posData = new List<PanelLayout>();
-            var output = newLayout;
-            
-            if (Layout.PositionData == null) {
-                return output;
+            if (Layout == null) {
+                Layout = newLayout;
+                return;
             }
 
+            var posData = new PanelLayout[newLayout.PositionData.Length];
             // Loop through each panel in the new position data, find existing info and copy
-            foreach (var nl in newLayout.PositionData) {
+            for (var i = 0; i < newLayout.PositionData.Length; i++) {
+                var nl = newLayout.PositionData[i];
                 foreach (var el in Layout.PositionData.Where(s => s.PanelId == nl.PanelId)) {
                     nl.TargetSector = el.TargetSector;
                 }
-                posData.Add(nl);
+                posData[i] = nl;
             }
-            output.PositionData = posData;
-            return output;
-        }
 
-        public void RefreshLeaf() {
-            if (Token == null) {
-                Log.Debug("NO TOKEN!");
-                return;
-            }
-            using var nl = new NanoleafDevice(this, new HttpClient());
-            var layout = nl.GetLayout().Result;
-            if (layout != null) {
-                Layout = MergeLayout(layout);
-            } else {
-                Log.Debug("Layout is null.");
-            }
-            
-            Scale = 1;
+            Layout.PositionData = posData;
         }
 
         
@@ -132,7 +96,7 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
     public class NanoLayout {
         [JsonProperty] public int NumPanels { get; set; }
         [JsonProperty] public int SideLength { get; set; } = 1;
-        [JsonProperty] public List<PanelLayout> PositionData { get; set; } = new List<PanelLayout>();
+        [JsonProperty] public PanelLayout[] PositionData { get; set; } = Array.Empty<PanelLayout>();
 
     }
 
