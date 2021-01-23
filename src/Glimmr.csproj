@@ -12,12 +12,12 @@
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="10.1.1" />
     <PackageReference Include="ClangNet" Version="1.1.0" />
+    <PackageReference Include="digitalhigh.rpi-ws281x-csharp" Version="1.1.4" />
     <PackageReference Include="Emgu.CV" Version="4.4.0.4099" />
     <PackageReference Include="Emgu.CV.Bitmap" Version="4.4.0.4099" />
     <PackageReference Include="Emgu.CV.runtime.raspbian" Version="4.4.0.4099" />
     <PackageReference Include="Emgu.CV.runtime.ubuntu" Version="4.4.0.4099" />
     <PackageReference Include="Emgu.CV.runtime.windows" Version="4.4.0.4099" />
-    <PackageReference Include="kenssamson.rpi-ws281x-csharp" Version="1.1.0" />
     <PackageReference Include="LifxNet" Version="2.2.0" />
     <PackageReference Include="LiteDB" Version="5.0.9" />
     <PackageReference Include="Makaretu.Dns.Multicast" Version="0.27.0" />

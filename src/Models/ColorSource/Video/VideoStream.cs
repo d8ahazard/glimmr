@@ -72,6 +72,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			_targets = new List<VectorOfPoint>();
 			SetCapVars();
 			_vc = GetStream();
+			if (_vc == null) return;
 			_vc.Start(camToken);
 			_cancellationToken = camToken;
 			_colorService = cs;
@@ -184,8 +185,8 @@ namespace Glimmr.Models.ColorSource.Video {
 					return null;
 				case 2:
 					var cams = HdmiVideoStream.ListSources();
-					Log.Debug("Loading video capture card." + JsonConvert.SerializeObject(cams));
-					return new HdmiVideoStream(cams[0]);
+					return cams.Length != 0 ? new HdmiVideoStream(cams[0]) : null;
+					
 				case 3:
 					Log.Debug("Loading screen capture.");
 					return new ScreenVideoStream();

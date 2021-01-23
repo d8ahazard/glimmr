@@ -118,6 +118,10 @@ namespace Glimmr.Models {
 		[DefaultValue(1f)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public float AudioRotationUpper { get; set; } = 1f;
+		
+		[DefaultValue(.5f)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public float AudioGain { get; set; } = .5f;
 
 		
 		//TODO: Make getter for this always retrieve same value used by setup script

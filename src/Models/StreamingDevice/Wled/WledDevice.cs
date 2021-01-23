@@ -50,7 +50,6 @@ namespace Glimmr.Models.StreamingDevice.WLED {
             _httpClient = hc;
             _updateColors = new List<Color>();
             Data = wd ?? throw new ArgumentException("Invalid WLED data.");
-            Log.Debug("Enabled: " + IsEnabled());
             Id = Data.Id;
             Enable = Data.Enable;
             IpAddress = Data.IpAddress;
@@ -60,8 +59,6 @@ namespace Glimmr.Models.StreamingDevice.WLED {
         public void StartStream(CancellationToken ct) {
             if (Streaming) return;
             if (!Data.Enable) return;
-            Log.Debug("WLED: Initializing stream.");
-           
             var onObj = new JObject(
                 new JProperty("on", true),
                 new JProperty("bri", Brightness)
@@ -69,7 +66,6 @@ namespace Glimmr.Models.StreamingDevice.WLED {
             SendPost(onObj);
             ep = IpUtil.Parse(IpAddress, port);
             Streaming = true;
-            Log.Debug("WLED: Streaming started...");
         }
 
 

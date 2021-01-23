@@ -92,13 +92,13 @@ document.addEventListener("DOMContentLoaded", function(){
 
 // Send a message to the server, websocket or not
 function sendMessage(endpoint, sData, encode=true) {
-    if (encode && sData !== null && sData !== undefined) sData = JSON.stringify(sData);
+    if (encode && isValid(sData)) sData = JSON.stringify(sData);
     // Set a .5s timeout so that responses from sent messages aren't loaded
     loadTimeout = setTimeout(function(){
         loadTimeout = null;
     },500);
     if (socketLoaded) {
-        if (sData !== null && sData !== undefined) {
+        if (isValid(sData)) {
             websocket.invoke(endpoint, sData).catch(function (err) {
                 return console.error("Fuck: ", err);
             });
@@ -304,9 +304,9 @@ function setListeners() {
             val = parseInt(val);
         }
         let pack;
-        if (obj !== undefined && property !== undefined && val !== undefined) {
+        if (isValid(obj) && isValid(property) && isValid(val)) {
             console.log("Trying to set: ", obj, property, val);
-            if (id !== null && id !== undefined) {
+            if (isValid(id)) {
                 let strips = data.store[obj];
                 for(let i=0; i < strips.length; i++) {
                     let strip = strips[i];
@@ -375,12 +375,33 @@ function setListeners() {
                 closeCard();
                 return;
             }
+            
             if (target.classList.contains("sector") || target.parentElement.classList.contains("sector")) {
                 if (target.parentElement.classList.contains("sector")) {
                     target = target.parentElement;
                 }
                 let sector = target.getAttribute("data-sector");
                 updateDeviceSector(sector, target);
+            }
+
+            if (target.classList.contains("linkDiv") || target.parentElement.classList.contains("linkDiv")) {
+                if (target.parentElement.classList.contains("linkDiv")) {
+                    target = target.parentElement;
+                }
+                let linked = target.getAttribute("data-linked");
+                if (linked === "false") {
+                    let devId = deviceData["_id"];
+                    console.log("We should try linking device: " + devId);
+                    let type = target.getAttribute("data-type");    
+                    if (type === "NanoLeaf") {
+                        sendMessage("AuthorizeNano",devId,false);
+                    } else {
+                        sendMessage("AuthorizeHue",devId,false);
+                    }
+                } 
+                
+                
+                
             }
 
             if (target.classList.contains("led") || target.parentElement.classList.contains("led")) {
@@ -457,6 +478,42 @@ function setListeners() {
                 let newMode = parseInt(target.getAttribute("data-mode"));
                 setMode(newMode);
                 sendMessage("Mode", newMode, false);
+                return;
+            }
+
+            if (target.classList.contains("ledCtl") || target.parentElement.classList.contains("ledCtl")) {
+                console.log("LED CTRL CLICK");
+                if (target.parentElement.classList.contains("ledCtl")) target = target.parentElement;
+                let action = target.getAttribute("data-function");
+                let id = target.getAttribute("data-id");                
+                let ledData = data.store["LedData"];
+                if (isValid(ledData)) {
+                    let led = getObj(ledData, "_id", id); 
+                    if (isValid(led)) {
+                        if (action === "test") {
+                            sendMessage("DemoLed", id.toString(), false);
+                        } else {
+                            led["Enable"] = (action === "enable");
+                            let t1 = document.querySelector('[data-id="'+id+'"][data-function="enable"]');
+                            let t2 = document.querySelector('[data-id="'+id+'"][data-function="disable"]');
+                            if (action === "enable") {
+                                t1.classList.add("active");
+                                t2.classList.remove("active");
+                            } else {
+                                t2.classList.add("active");
+                                t1.classList.remove("active");
+                            }
+                        }
+                        data.store["LedData"] = setObj(ledData, "_id", id, led);
+                        led["Id"] = led["_id"];
+                        sendMessage("LedData", led, true);
+                    } else {
+                        console.log("Invalid led")
+                    }                    
+                } else {
+                    console.log("Invalid led data");
+                }
+                
                 return;
             }
 
@@ -541,20 +598,19 @@ function setMode(newMode) {
             others[i].classList.remove("active");
         }
     }
-    if (target != null) target.classList.add("active");
-
+    if (target != null) target.classList.add("active");        
 }
 
 function loadUi() {
     console.log("Loading ui.");
     let mode = getStoreProperty("DeviceMode"); 
     let autoDisabled = getStoreProperty("AutoDisabled");
-    if (data.store["SystemData"] !== null && data.store["SystemData"] !== undefined) {
+    if (isValid(data.store["SystemData"])) {
         let theme = data.store["SystemData"][0]["Theme"];
         loadTheme(theme);
     }
     
-    if (data.store["Dev_Audio"] !== null || data.store["Dev_Audio"] !== undefined) {
+    if (isValid(data.store["Dev_Audio"])) {
         let recList = document.getElementById("RecDev");
         for (let i = 0; i < recList.options.length; i++) {
             recList.options[i] = null;
@@ -562,7 +618,7 @@ function loadUi() {
         let recDevs = data.store["Dev_Audio"];
         console.log("Rec Devs: ", recDevs);
         let recDev = getStoreProperty("RecDev");
-        if (recDevs !== null && recDevs !== undefined) {
+        if (isValid(recDevs)) {
             for (let i = 0; i < recDevs.length; i++) {
                 console.log("Adding dev");
                 let dev = recDevs[i];
@@ -577,7 +633,7 @@ function loadUi() {
         console.log("No recording devices found.");
     }
     let sectorMap = getStoreProperty("AudioMap");
-    if (sectorMap !== null && sectorMap !== undefined) {
+    if (isValid(sectorMap)) {
         let mapImg = document.getElementById("audioMapImg");
         mapImg.setAttribute("src","./img/MusicMode" + sectorMap + ".png");
     }
@@ -602,7 +658,7 @@ function loadTheme(theme) {
     if (theme === "light") {
         let last = head.lastChild;
         console.log("LAST: ", last);
-        if (last.href !== undefined) {
+        if (isValid(last.href)) {
             if (!last.href.includes("site")) {
                 console.log("Deleting?");
                 last.parentNode.removeChild(last);
@@ -623,13 +679,13 @@ function loadSettings() {
     if (data.store == null) return;
     let ledData = data.store["LedData"];
     let systemData = data.store["SystemData"][0];
-    if (ledData !== null && ledData !== undefined) {
+    if (isValid(ledData)) {
         for(let i=0; i < 4; i++) {
             loadSettingObject(ledData[i]);
         }    
     }
     
-    if (systemData !== null && systemData !== undefined) {
+    if (isValid(systemData)) {
         loadSettingObject(systemData);
         console.log("Loading System Data: ", systemData);
         let lPreview = document.getElementById("sLedPreview");
@@ -661,8 +717,20 @@ function loadSettingObject(obj) {
                 target = document.querySelector('[data-property='+prop+'][data-object="'+name+'"][data-id="'+id+'"]');
                 console.log("Target: ", target);
             }
+
+            if (prop === "Enable") {
+                let value = dataProp[prop];
+                console.log("Enableprop: ", value, id);
+                if (value) {
+                    target = document.querySelector('[data-id="'+id+'"][data-function="enable"]');
+                    target.classList.add("active");
+                } else {
+                    target = document.querySelector('[data-id="'+id+'"][data-function="disable"]');
+                    target.classList.add("active");
+                }
+            }
             
-            if (target !== null && target !== undefined) {
+            if (isValid(target)) {
                 let value = dataProp[prop];
                 if (value === true) {
                     target.setAttribute('checked',"true");
@@ -774,6 +842,38 @@ function loadDevices() {
     }
 }
 
+function isValid(toCheck) {
+    return (toCheck !== null && toCheck !== undefined);
+}
+
+function getObj(group, key, val) {
+    if (isValid(group)) {
+        for(let i=0; i < group.length; i++) {
+            let obj = group[i];
+            if (obj.hasOwnProperty(key)) {
+                if (obj[key] === val) {
+                    return obj;
+                }
+            }
+        }
+    }
+    return null;
+}
+
+function setObj(group, key, val, obj) {
+    if (isValid(group)) {
+        for(let i=0; i < group.length; i++) {
+            let ex = group[i];
+            if (ex.hasOwnProperty(key)) {
+                if (ex[key] === val) {
+                    group[i] = obj;
+                }
+            }
+        }
+    }
+    return group;
+}
+
 
 function getDevices() {
     let d = [];
@@ -863,18 +963,12 @@ function getCookie(cname) {
 
 function getStoreProperty(name) {
     let store = data.store;
-    if (store === null) return null;
+    if (!isValid(store)) return null;
     let sysData = store["SystemData"];
-    let ledData = store["LedData"];
-    if (sysData !== undefined && sysData[0] !== undefined) {
+    if (isValid(sysData) && isValid(sysData[0])) {
+        if (name === "SystemData") return sysData[0];
         if (sysData[0].hasOwnProperty(name)) {
             return sysData[0][name];
-        }
-    }
-
-    if (ledData !== undefined && ledData[0] !== undefined) {
-        if (ledData[0].hasOwnProperty(name)) {
-            return ledData[0][name];
         }
     }
 
@@ -1043,7 +1137,7 @@ function addCardSettings() {
                 drawSectorMap = (deviceData["Tag"] === "Connect" || deviceData["Tag"] === "Sidekick");
                 break;
             case "HueBridge":
-                if (deviceData["Key"] !== null && deviceData["User"] !== null) {
+                if (isValid(deviceData["Key"]) && isValid(deviceData["User"])) {
                     createHueMap();
                     drawSectorMap = true;    
                 } 
@@ -1054,7 +1148,7 @@ function addCardSettings() {
                 appendImageMap();
                 break;
             case "Nanoleaf":
-                if (deviceData["Token"] !== null) {
+                if (isValid(deviceData["Token"])) {
                     drawLinkPane("nanoleaf", true);
                     drawNanoShapes(deviceData);
                 } else {
@@ -1077,6 +1171,9 @@ function addCardSettings() {
 function drawLinkPane(type, linked) {
     let div = document.createElement("div");
     div.classList.add("col-8", "col-sm-6", "col-md-4", "col-lg-3", "col-xl-2", "linkDiv");
+    div.setAttribute("data-type",type);
+    div.setAttribute("data-id", deviceData["_id"]);
+    div.setAttribute("data-linked",linked);
     let img = document.createElement("img");
     img.classList.add("img-fluid");
     img.src = "./img/" + type + "_icon.png";
@@ -1110,7 +1207,7 @@ function createSectorMap(targetElement, sectorImage) {
     let imgL = img.offsetLeft;
     let imgT = img.offsetTop;
     let exMap = targetElement.querySelector("#sectorMap");
-    if (exMap !== null) exMap.remove();
+    if (isValid(exMap)) exMap.remove();
     let wFactor = w / 1920;
     let hFactor = h / 1100;
     let wMargin = 62 * wFactor;
@@ -1221,7 +1318,7 @@ function createLedMap(targetElement, sectorImage, ledData) {
     let imgL = img.offsetLeft;
     let imgT = img.offsetTop;
     let exMap = targetElement.querySelector("#ledMap");
-    if (exMap !== null) exMap.remove();
+    if (isValid(exMap)) exMap.remove();
     let wFactor = w / 1920;
     let hFactor = h / 1100;
     let wMargin = 62 * wFactor;
@@ -1586,9 +1683,9 @@ function sizeContent() {
         toggleExpansion(cardClone, {top: oh + "px", left: 0, width: '100%', height: 'calc(100% - ' + oh + 'px)', padding: "1rem 3rem"}, 250);
         let imgDiv = document.getElementById("mapDiv");
         let secMap = document.getElementById("sectorMap");
-        if (secMap !== null) secMap.remove();
+        if (isValid(secMap)) secMap.remove();
         if (drawSectorMap) createSectorMap(imgDiv, document.getElementById("sectorImage"));
-        if (deviceData["Tag"] === "Nanoleaf" && deviceData["Token"] !== null) {
+        if (deviceData["Tag"] === "Nanoleaf" && isValid(deviceData["Token"])) {
             console.log("Redrawing nanoshapes.");
             document.querySelector(".konvajs-content").remove();
             drawNanoShapes(deviceData);

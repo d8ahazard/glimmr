@@ -286,8 +286,7 @@ namespace Glimmr.Services {
                         var colors2 = colorData2.Select(ColorFromString).ToList();
                         var sectors = colors2.GetRange(0, 84);
                         var leds = colors2.GetRange(83, colors2.Count - 84);
-                        Log.Debug("Sectorrrs: " + JsonConvert.SerializeObject(sectors));
-                        if (_devMode == 5) _controlService.SendColors(leds, sectors);
+                        _controlService.SendColors(leds, sectors);
                     }
 
                     break;

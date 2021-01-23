@@ -28,6 +28,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 		private int _channels;
 		private int _frequency;
 		private float _max;
+		private float _gain;
 		private readonly CancellationToken _token;
 		private readonly ColorService _cs;
 		private SystemData _sd;
@@ -45,6 +46,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 		private void LoadData() {
 			Log.Debug("Reloading audio data");
 			_sd = DataUtil.GetObject<SystemData>("SystemData");
+			_gain = _sd.AudioGain;
 			Colors = ColorUtil.EmptyList(_sd.LedCount);
 			Sectors = ColorUtil.EmptyList(28);
 
@@ -84,7 +86,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 			if (_recordDeviceIndex != -1) {
 				Log.Debug("Starting stream with device " + _recordDeviceIndex);
 				Bass.RecordInit(_recordDeviceIndex);
-				Bass.RecordStart(48000, 5, BassFlags.Float, Update);
+				Bass.RecordStart(48000, 2, BassFlags.Float, Update);
 				while (!ct.IsCancellationRequested) {
 					await Task.Delay(1, CancellationToken.None);
 				}
@@ -103,43 +105,29 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 		
 		private bool Update(int handle, IntPtr buffer, int length, IntPtr user) {
-			var samples = 2048 * 5;
+			var samples = 2048 * 2;
 			var fft = new float[samples]; // fft data buffer
 			// Get our FFT for "everything"
 			Bass.ChannelGetData(handle, fft, (int) DataFlags.FFT4096 | (int) DataFlags.FFTIndividual);
 			var lData = new Dictionary<int, float>();
 			var rData = new Dictionary<int, float>();
-			var cData = new Dictionary<int, float>();
 			var realIndex = 0;
-			var iCount = 0;
 			
 			for (var a = 0; a < samples; a++) {
 				var val = FlattenValue(fft[a]);
 				var freq = FftIndex2Frequency(realIndex, 4096, 48000);
 				if (val <= .01) {
-					continue;
+					//continue;
 				}
 
-				switch (iCount) {
-					case 0:
-						lData[freq] = val;
-						break;
-					case 1:
-						rData[freq] = val;
-						break;
-					case 2:
-						cData[freq] = val;
-						break;
+				if (a % 1 == 0) {
+					lData[freq] = val;
 				}
 
-				iCount++;
-				
-				if (iCount < 5) {
-					continue;
+				if (a % 2 == 0) {
+					rData[freq] = val;
+					realIndex++;
 				}
-
-				iCount = 0;
-				realIndex++;
 			}
 			
 
@@ -159,13 +147,12 @@ namespace Glimmr.Models.ColorSource.Audio {
 		}
 
 		private float FlattenValue(float input) {
-			input *= 2;
 			// Drop anything that's not at least .01
 			if (input < .075) {
 				return 0;
 			}
-			
-			input += .55f;
+
+			input += _gain;
 			if (input > 1) input = 1;
 			return input;
 		}

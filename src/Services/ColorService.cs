@@ -21,6 +21,7 @@ using Glimmr.Models.StreamingDevice.Yeelight;
 using Glimmr.Models.Util;
 using LifxNet;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 using Serilog;
 using Color = System.Drawing.Color;
 
@@ -45,18 +46,20 @@ namespace Glimmr.Services {
 		// Figure out how to make these generic, non-callable
 		private LifxClient _lifxClient;
 
-		private List<IStreamingDevice> _sDevices;
+		private IStreamingDevice[] _sDevices;
+		private LedStrip[] _strips;
+
 		private CancellationTokenSource _sendTokenSource;
 		private CancellationTokenSource _streamTokenSource;
 		private CancellationToken _stopToken;
 		private bool _streamStarted;
-		private List<LedStrip> _strips;
-
+		
 		private Dictionary<string, int> _subscribers;
 		private VideoStream _videoStream;
 		private AudioVideoStream _avStream;
 
 		public event Action<List<Color>, List<Color>, double> ColorSendEvent = delegate { };
+		public event Action<List<Color>, string> SegmentTestEvent = delegate { };
 
 		public ColorService(ControlService controlService) {
 			_controlService = controlService;
@@ -69,7 +72,7 @@ namespace Glimmr.Services {
 			_controlService.AddSubscriberEvent += AddSubscriber;
 			_controlService.FlashDeviceEvent += FlashDevice;
 			_controlService.FlashSectorEvent += FlashSector;
-			_sDevices = new List<IStreamingDevice>();
+			_controlService.DemoLedEvent += Demo;
 			_dreamUtil = new DreamUtil(_controlService.UdpClient);
 			Log.Debug("Initialization complete.");
 		}
@@ -122,28 +125,31 @@ namespace Glimmr.Services {
 
 			var bColor = Color.FromArgb(0, 0, 0, 0);
 			var rColor = Color.FromArgb(255, 255, 0, 0);
-			foreach (var sd in _sDevices.Where(sd => sd.Id == devId)) {
-				sd.Testing = true;
-				Log.Debug("Flashing device: " + devId);
-				if (!sd.Streaming) {
-					disable = true;
-					sd.StartStream(ts.Token);
-				}
-				sd.FlashColor(rColor);
-				Thread.Sleep(500);
-				sd.FlashColor(bColor);
-				Thread.Sleep(500);
-				sd.FlashColor(rColor);
-				Thread.Sleep(500);
-				sd.FlashColor(bColor);
-				sd.Testing = false;
-				if (!disable) {
-					continue;
-				}
+			for (var i = 0; i < _sDevices.Length; i++) {
+				if (_sDevices[i].Id == devId) {
+					var sd = _sDevices[i];
+					sd.Testing = true;
+					Log.Debug("Flashing device: " + devId);
+					if (!sd.Streaming) {
+						disable = true;
+						sd.StartStream(ts.Token);
+					}
+					sd.FlashColor(rColor);
+					Thread.Sleep(500);
+					sd.FlashColor(bColor);
+					Thread.Sleep(500);
+					sd.FlashColor(rColor);
+					Thread.Sleep(500);
+					sd.FlashColor(bColor);
+					sd.Testing = false;
+					if (!disable) {
+						continue;
+					}
 
-				sd.StopStream();
-				ts.Cancel();
-				ts.Dispose();
+					sd.StopStream();
+					ts.Cancel();
+					ts.Dispose();
+				}
 			}
 		}
 
@@ -152,20 +158,39 @@ namespace Glimmr.Services {
 			var col = Color.FromArgb(255, 255, 0, 0);
 			var colors = ColorUtil.AddLedColor(new Color[_systemData.LedCount],sector, col,_systemData);
 			var black = ColorUtil.EmptyColors(new Color[_systemData.LedCount]);
-			if (_strips.Count == null) {
-				return;
+			foreach (var _strip in _strips) {
+				if (_strip != null) {
+					_strip.Testing = true;
+				}
+			}
+			
+			foreach (var _strip in _strips) {
+				if (_strip != null) {
+					_strip.UpdateAll(colors.ToList(), true);
+				}
 			}
 
+			Thread.Sleep(500);
+			
 			foreach (var _strip in _strips) {
-				_strip.Testing = true;
-				_strip.UpdateAll(colors.ToList(), true);
-				Thread.Sleep(500);
-				_strip.UpdateAll(black.ToList(), true);
-				Thread.Sleep(500);
-				_strip.UpdateAll(colors.ToList(), true);
-				Thread.Sleep(1000);
-				_strip.UpdateAll(black.ToList(), true);
-				_strip.Testing = false;	
+				if (_strip != null) {
+					_strip.UpdateAll(black.ToList(), true);
+				}
+			}
+			
+			foreach (var _strip in _strips) {
+				if (_strip != null) {
+					_strip.UpdateAll(colors.ToList(), true);
+				}
+			}
+			
+			Thread.Sleep(1000);
+			
+			foreach (var _strip in _strips) {
+				if (_strip != null) {
+					_strip.UpdateAll(black.ToList(), true);
+					_strip.Testing = false;
+				}
 			}
 		}
 	
@@ -253,32 +278,27 @@ namespace Glimmr.Services {
 			_captureTokenSource = new CancellationTokenSource();
 			Log.Debug("Loading strip");
 			_systemData = DataUtil.GetObject<SystemData>("SystemData");
-			var ledDatas = DataUtil.GetCollection<LedData>("LedData");
-			_strips = new List<LedStrip>();
-			try {
-				foreach (var ld in ledDatas) {
-					var strip = new LedStrip(ld, this);
-					_strips.Add(strip);
-				}
-				Log.Debug("Initialized LED strip...");
-			} catch (TypeInitializationException e) {
-				Log.Debug("Type init error: " + e.Message);
-			}
-
+			var ledData = DataUtil.GetCollectionItem<LedData>("LedData", "0");
+			var ledData2 = DataUtil.GetCollectionItem<LedData>("LedData", "1");
+			var ledData3 = DataUtil.GetCollectionItem<LedData>("LedData", "2");
+			_strips = new LedStrip[3];
+			Log.Debug("Initialized LED strip: " + JsonConvert.SerializeObject(ledData));
+			_strips[0] = new LedStrip(ledData, this);
+			//_strips.Add(new LedStrip(ledData2, this));
+			//_strips.Add(new LedStrip(ledData3,this));
 			Log.Debug("Creating new device lists...");
 			// Create new lists
-			_sDevices = new List<IStreamingDevice>();
+			var sDevs = new List<IStreamingDevice>();
 
 			// Init leaves
 			var leaves = DataUtil.GetCollection<NanoleafData>("Dev_Nanoleaf");
 			foreach (var n in leaves.Where(n => !string.IsNullOrEmpty(n.Token) && n.Layout != null)) {
-				_sDevices.Add(new NanoleafDevice(n, _controlService.UdpClient, _controlService.HttpSender, this));
+				sDevs.Add(new NanoleafDevice(n, _controlService.UdpClient, _controlService.HttpSender, this));
 			}
 
 			var dsDevs = DataUtil.GetCollection<DreamData>("Dev_Dreamscreen");
 			foreach (var ds in dsDevs) {
-				Log.Debug("ADDING DREAM DEVICE: " + ds.Id);
-				_sDevices.Add(new DreamDevice(ds, _dreamUtil, this));
+				sDevs.Add(new DreamDevice(ds, _dreamUtil, this));
 			}
 
 			// Init lifx
@@ -286,15 +306,13 @@ namespace Glimmr.Services {
 			if (lifx != null) {
 				foreach (var b in lifx.Where(b => b.TargetSector != -1)) {
 					_lifxClient ??= LifxClient.CreateAsync().Result;
-					Log.Debug("Adding Lifx device: " + b.Id);
-					_sDevices.Add(new LifxDevice(b, _lifxClient, this));
+					sDevs.Add(new LifxDevice(b, _lifxClient, this));
 				}
 			}
 
 			var wlArray = DataUtil.GetCollection<WledData>("Dev_Wled");
 			foreach (var wl in wlArray) {
-				Log.Debug("Adding Wled device: " + wl.Id);
-				_sDevices.Add(new WledDevice(wl, _controlService.UdpClient, _controlService.HttpSender, this));
+				sDevs.Add(new WledDevice(wl, _controlService.UdpClient, _controlService.HttpSender, this));
 			}
 
 			var bridgeArray = DataUtil.GetCollection<HueData>("Dev_Hue");
@@ -302,20 +320,19 @@ namespace Glimmr.Services {
 				!string.IsNullOrEmpty(bridge.Key) && !string.IsNullOrEmpty(bridge.User) &&
 				bridge.SelectedGroup != "-1")) {
 				Log.Debug("Adding Hue device: " + bridge.Id);
-				_sDevices.Add(new HueDevice(bridge));
+				sDevs.Add(new HueDevice(bridge));
 			}
 			
 			var yeeArray = DataUtil.GetCollection<YeelightData>("Dev_Yeelight");
 			foreach (var yd in yeeArray) {
-				_sDevices.Add(new YeelightDevice(yd, this));
+				sDevs.Add(new YeelightDevice(yd, this));
 			}
 
-			Log.Debug("Initializing Splitter.");
-			Log.Debug("Color Service Data Load Complete...");
+			_sDevices = sDevs.ToArray();
 		}
 
-		private void Demo() {
-			StartStream();
+		private void Demo(string stripId = "") {
+			if (String.IsNullOrEmpty(stripId)) StartStream();
 			Log.Debug("Demo fired...");
 			var ledCount = 300;
 			try {
@@ -323,7 +340,7 @@ namespace Glimmr.Services {
 			} catch (Exception) {
 				
 			}
-			Log.Debug("Running demo on " + ledCount + "pixels");
+			Log.Debug("Running demo on " + ledCount + "total pixels.");
 			var i = 0;
 			var k = 0;
 			var cols = new Color[ledCount];
@@ -342,14 +359,18 @@ namespace Glimmr.Services {
 				}
 
 				cols[i] = rCol;
-				SendColors(cols.ToList(), secs.ToList());
+				if (String.IsNullOrEmpty(stripId)) {
+					SendColors(cols.ToList(), secs.ToList());	
+				} else {
+					SegmentTestEvent(cols.ToList(), stripId);
+				}
+				
 				i++;
 				Thread.Sleep(2);
 			}
 
 			// Finally show off our hard work
 			Thread.Sleep(500);
-			
 		}
 
 
@@ -410,8 +431,10 @@ namespace Glimmr.Services {
 				return;
 			}
 
+			var sDevs = _sDevices.ToList();
 			sda.StartStream(_sendTokenSource.Token);
-			_sDevices.Add(sda);
+			sDevs.Add(sda);
+			_sDevices = sDevs.ToArray();
 		}
 
 		private void ReloadLedData() {
@@ -420,13 +443,8 @@ namespace Glimmr.Services {
 			_deviceGroup = DataUtil.GetItem<int>("DeviceGroup") ?? 0;
 			try {
 				foreach (var _strip in _strips) {
-					var ledData = DataUtil.GetCollectionItem<LedData>("LedData", _strip.Id);
-					if (ledData != null) {
-						_strip?.Reload(ledData);	
-					}
+					_strip?.Reload();
 				}
-				
-				Log.Debug("Re-Initialized LED strip...");
 			} catch (TypeInitializationException e) {
 				Log.Debug("Type init error: " + e.Message);
 			}
@@ -514,13 +532,11 @@ namespace Glimmr.Services {
 		private void StartStream() {
 			if (!_streamStarted) {
 				_streamStarted = true;
-				Log.Information("Starting stream.");
+				Log.Information("Starting streaming devices...");
 				foreach (var sd in _sDevices.Where(sd => !sd.Streaming)) {
 					if (!sd.IsEnabled()) {
 						continue;
 					}
-
-					Log.Debug($"Starting stream for {sd.Tag} with ID {sd.Id}.");
 					sd.StartStream(_sendTokenSource.Token);
 				}
 			} else {

@@ -312,6 +312,19 @@
 <!-- LED Prefs -->
 <div class="row border justify-content-center pb-5">
     <div class="col-12 headerCol">LED 1 Preferences</div>
+    <div class="col-12 form-group">
+        <div class="btn-group-lg">
+            <div class="btn btn-clear ledCtl" data-id="0" data-function="enable" data-toggle="tooltip" data-placement="top" title="Enable LED Segment">
+                <span class="material-icons">brightness_high</span>            
+            </div>
+            <div class="btn btn-clear ledCtl" data-id="0" data-function="disable" data-toggle="tooltip" data-placement="top" title="Disable LED Segment">
+                <span class="material-icons">brightness_low</span>
+            </div>
+            <div class="btn btn-clear ledCtl" data-id="0" data-function="test" data-toggle="tooltip" data-placement="top" title="Demo LED Segment">
+                <span class="material-icons">flash_on</span>            
+            </div>
+        </div>
+    </div>
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">LED Type</label>
         <select data-object="LedData" data-property="StripType" data-id="0" class="form-control">
@@ -358,6 +371,19 @@
 </div>
 <div class="row border justify-content-center pb-5">
     <div class="col-12 headerCol">LED 2 Preferences</div>
+    <div class="col-12 form-group">
+            <div class="btn-group-lg">
+                <div class="btn btn-clear ledCtl" data-id="1" data-function="enable" data-toggle="tooltip" data-placement="top" title="Enable LED Segment">
+                    <span class="material-icons">brightness_high</span>            
+                </div>
+                <div class="btn btn-clear ledCtl" data-id="1" data-function="disable" data-toggle="tooltip" data-placement="top" title="Disable LED Segment">
+                    <span class="material-icons">brightness_low</span>
+                </div>
+                <div class="btn btn-clear ledCtl" data-id="1" data-function="test" data-toggle="tooltip" data-placement="top" title="Demo LED Segment">
+                    <span class="material-icons">flash_on</span>            
+                </div>
+            </div>
+        </div>
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">LED Type</label>
         <select data-object="LedData" data-property="StripType" data-id="1" class="form-control">
@@ -369,7 +395,7 @@
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">LED Count</label>
         <input type="number" min="0" max="255" class="form-control" data-object="LedData"
-               data-property="LedCount" data-id="1"/>
+               data-property="Count" data-id="1"/>
     </div>
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">LED Offset</label>
@@ -404,6 +430,19 @@
 </div>
 <div class="row border justify-content-center pb-5">
     <div class="col-12 headerCol">LED 3 Preferences</div>
+    <div class="col-12 form-group">
+            <div class="btn-group-lg">
+                <div class="btn btn-clear ledCtl" data-id="2" data-function="enable" data-toggle="tooltip" data-placement="top" title="Enable LED Segment">
+                    <span class="material-icons">brightness_high</span>            
+                </div>
+                <div class="btn btn-clear ledCtl" data-id="2" data-function="disable" data-toggle="tooltip" data-placement="top" title="Disable LED Segment">
+                    <span class="material-icons">brightness_low</span>
+                </div>
+                <div class="btn btn-clear ledCtl" data-id="2" data-function="test" data-toggle="tooltip" data-placement="top" title="Demo LED Segment">
+                    <span class="material-icons">flash_on</span>            
+                </div>
+            </div>
+        </div>
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">LED Type</label>
         <select data-object="LedData" data-property="StripType" data-id="2" class="form-control">
@@ -415,7 +454,7 @@
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">LED Count</label>
         <input type="number" min="0" max="255" class="form-control" data-object="LedData"
-               data-property="LedCount" data-id="2"/>
+               data-property="Count" data-id="2"/>
     </div>
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">LED Offset</label>
@@ -490,6 +529,10 @@
                 <div class="col-12 justify-content-center form-group">
                     <label class="form-label">Rotation Upper Limit</label>
                     <input class="form-control" data-object="SystemData" data-property="AudioRotationUpper" type="number" min="0" max="1" step=".01"/>
+                </div>
+                <div class="col-12 justify-content-center form-group">
+                    <label class="form-label">Audio Gain</label>
+                    <input class="form-control" data-object="SystemData" data-property="AudioGain" type="number" min="0" max="5" step=".1"/>
                 </div>
             </div>
         </div>

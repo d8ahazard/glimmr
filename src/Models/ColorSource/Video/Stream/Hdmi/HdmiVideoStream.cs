@@ -47,7 +47,6 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Hdmi {
                     var h = v.Height;
                     if (w != 0 && h != 0) {
                         Log.Debug($"Width, height of {i}: {w}, {h}");
-
                         output.Add(i);
                     }
 

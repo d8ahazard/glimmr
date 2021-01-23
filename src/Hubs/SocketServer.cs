@@ -66,6 +66,11 @@ namespace Glimmr.Hubs {
 			_cs.UpdateLed(ldd);
 		}
 
+		public async void DemoLed(string id) {
+			Log.Debug("We should demo a strip here.");
+			_cs.DemoLed(id);
+		}
+
 		public void SystemControl(string action) {
 			_cs.SystemControl(action);
 		}

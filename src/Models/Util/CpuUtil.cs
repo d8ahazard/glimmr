@@ -15,7 +15,7 @@ namespace Glimmr.Models.Util {
 		private static float _loadAvg15;
 		private static string _upTime;
 		private static string[] _throttledState;
-		private const StringComparison _sc = StringComparison.InvariantCulture;
+		private const StringComparison Sc = StringComparison.InvariantCulture;
 		
 		private static readonly string[] StringTable = {
 			"Soft Temperature Limit has occurred", //19
@@ -126,7 +126,7 @@ namespace Glimmr.Models.Util {
 			var processResult = process.StandardOutput.ReadToEnd().Trim();
 			process.WaitForExit();
 			process.Dispose();
-			var loadAverages = processResult.Substring(processResult.IndexOf("average: ", _sc) + 9).Split(',');
+			var loadAverages = processResult.Substring(processResult.IndexOf("average: ", Sc) + 9).Split(',');
 			float.TryParse(loadAverages[0], out _loadAvg1);
 			float.TryParse(loadAverages[1], out _loadAvg5);
 			float.TryParse(loadAverages[2], out _loadAvg15);

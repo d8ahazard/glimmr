@@ -54,6 +54,11 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
                 var hc = string.GetHashCode(IpAddress, StringComparison.InvariantCulture);
                 Name = "Nanoleaf - " + (string) hc.ToString(CultureInfo.InvariantCulture).Substring(0, 4);
             }
+
+            if (Layout == null) {
+                Layout = new NanoLayout();
+            }
+            
         }
 
         public NanoleafData(Info dn) {
@@ -62,6 +67,9 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
             Version = dn.FirmwareVersion;
             IpAddress = IpUtil.GetIpFromHost(Name).ToString();
             Tag = "Nanoleaf";
+            if (Layout == null) {
+                Layout = new NanoLayout();
+            }
         }
 
         // Copy data from an existing leaf into this leaf...don't insert
@@ -75,7 +83,7 @@ namespace Glimmr.Models.StreamingDevice.Nanoleaf {
             Enable = existingLeaf.Enable;
             if (existingLeaf.Brightness != 0)  Brightness = existingLeaf.Brightness;
             // Grab the new leaf layout
-            RefreshLeaf();
+            MergeLayout(existingLeaf.Layout);
             Tag = "Nanoleaf";
             
             return this;

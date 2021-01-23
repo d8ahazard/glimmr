@@ -30,7 +30,6 @@ namespace Glimmr.Models.StreamingDevice.Dreamscreen {
 		private readonly DreamUtil _dreamUtil;
 
 		public DreamDevice(DreamData data, DreamUtil util, ColorService colorService) {
-			Log.Debug($"My group is {data.DeviceGroup}");
 			Data = data;
 			colorService.ColorSendEvent += SetColor;
 			_dreamUtil = util;

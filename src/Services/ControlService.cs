@@ -37,7 +37,7 @@ namespace Glimmr.Services {
 			// Init nano HttpClient
 			HttpSender = new HttpClient();
 			DataUtil.CheckDefaults(LifxClient);
-			// Init UDP clients
+			// Init UDP client
 
 			UdpClient = new UdpClient {Ttl = 128};
 			UdpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
@@ -56,6 +56,8 @@ namespace Glimmr.Services {
 		public event Action<string> AddSubscriberEvent = delegate { };
 		public event Action<string> FlashDeviceEvent = delegate { };
 		public event Action<int> FlashSectorEvent = delegate { };
+		
+		public event Action<string> DemoLedEvent = delegate { };
 		public event Action<List<Color>, List<Color>, int> TriggerSendColorsEvent = delegate { };
 		
 
@@ -319,6 +321,10 @@ namespace Glimmr.Services {
 
 		public void FlashSector(in int sector) {
 			FlashSectorEvent(sector);
+		}
+
+		public void DemoLed(string id) {
+			DemoLedEvent(id);
 		}
 	}
 }

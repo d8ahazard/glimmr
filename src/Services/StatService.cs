@@ -25,7 +25,7 @@ namespace Glimmr.Services {
 					// Send it to everybody
 					await _hubContext.Clients.All.SendAsync("cpuData", cd, stoppingToken);
 					// Sleep for 5s
-					await Task.Delay(5000, stoppingToken);
+					await Task.Delay(30000, stoppingToken);
 				}
 				Log.Debug("Stopped stat service.");
 				return Task.CompletedTask;
