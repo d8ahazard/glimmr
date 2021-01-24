@@ -1144,16 +1144,13 @@ function addCardSettings() {
                 break;
             case "Lifx":
             case "Yeelight":
-            case "Wled":
                 appendImageMap();
                 break;
+            case "Wled":
+                appendWledSettings();
+                break;
             case "Nanoleaf":
-                if (isValid(deviceData["Token"])) {
-                    drawLinkPane("nanoleaf", true);
-                    drawNanoShapes(deviceData);
-                } else {
-                    drawLinkPane("nanoleaf", false);
-                }
+                appendNanoSettings();
                 break;
             default:
                 console.log("Unknown device tag.");
@@ -1166,6 +1163,20 @@ function addCardSettings() {
         
         
     }   
+}
+
+function appendWledSettings() {
+    appendImageMap();
+    
+}
+
+function appendNanoSettings() {
+    if (isValid(deviceData["Token"])) {
+        drawLinkPane("nanoleaf", true);
+        drawNanoShapes(deviceData);
+    } else {
+        drawLinkPane("nanoleaf", false);
+    }
 }
 
 function drawLinkPane(type, linked) {
