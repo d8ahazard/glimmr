@@ -28,6 +28,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 		private int _frequency;
 		private float _max;
 		private float _gain;
+		private float _min = .015f;
 		private readonly CancellationToken _token;
 		private readonly ColorService _cs;
 		private SystemData _sd;
@@ -48,7 +49,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 			_gain = _sd.AudioGain;
 			Colors = ColorUtil.EmptyList(_sd.LedCount);
 			Sectors = ColorUtil.EmptyList(28);
-
+			_min = _sd.AudioMin;
 			_devices = DataUtil.GetCollection<AudioData>("Dev_Audio") ?? new List<AudioData>();
 			_map = new AudioMap(_sd.AudioMap);
 			_recordDeviceIndex = -1;
@@ -147,7 +148,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 		private float FlattenValue(float input) {
 			// Drop anything that's not at least .01
-			if (input < .075) {
+			if (input < _min) {
 				return 0;
 			}
 

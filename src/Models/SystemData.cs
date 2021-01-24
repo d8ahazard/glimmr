@@ -122,6 +122,10 @@ namespace Glimmr.Models {
 		[DefaultValue(.5f)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public float AudioGain { get; set; } = .5f;
+		
+		[DefaultValue(.025f)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public float AudioMin { get; set; } = .025f;
 
 		
 		//TODO: Make getter for this always retrieve same value used by setup script

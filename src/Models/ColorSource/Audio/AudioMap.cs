@@ -23,6 +23,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 		private float _rotationLower;
 		
 		private bool triggered;
+		
 		private IAudioMap map;
 
 		public AudioMap(MapType type, float speed = 0) {
@@ -85,22 +86,37 @@ namespace Glimmr.Models.ColorSource.Audio {
 				case MapType.Corners:
 					map = new AudioMapCorners();
 					break;
+				case MapType.Center:
+					map = new AudioMapCenter();
+					break;
+				default:
+					map = new AudioMapBottom();
+					break;
 			}
 
 			SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
 			_rotationSpeed = sd.AudioRotationSpeed;
 			_rotation = sd.AudioRotationSpeed;
 			_rotationThreshold = sd.AudioRotationSensitivity;
+			_rotationLower = sd.AudioRotationLower;
+			_rotationUpper = sd.AudioRotationUpper;
 		}
 
-		private static float RotateHue(float hue, float rotation) {
+		private float RotateHue(float hue, float rotation) {
 			var output = hue + rotation;
 			if (output > 1) {
-				return 1 - output;
+				output = 1 - output;
 			}
 
 			if (output < 0) {
-				return 1 + output;
+				output = 1 + output;
+			}
+			
+			if (_rotationLower < _rotationUpper) {
+				var range = _rotationUpper - _rotationLower;
+				//.3f
+				var adjusted = range * output;
+				output = _rotationLower + adjusted;
 			}
 
 			return output;
