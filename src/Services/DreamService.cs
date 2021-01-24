@@ -15,7 +15,6 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Color = System.Drawing.Color;
-// ReSharper disable All
 
 namespace Glimmr.Services {
     public class DreamService : BackgroundService {

@@ -39,7 +39,7 @@ namespace Glimmr.Services {
 			DataUtil.CheckDefaults(LifxClient);
 			// Init UDP client
 
-			UdpClient = new UdpClient {Ttl = 128};
+			UdpClient = new UdpClient {Ttl = 5};
 			UdpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 			UdpClient.Client.Blocking = false;
 			UdpClient.DontFragment = true;

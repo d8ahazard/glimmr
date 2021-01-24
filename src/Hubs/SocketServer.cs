@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models;
 using Glimmr.Models.ColorTarget.LED;
@@ -29,12 +28,12 @@ namespace Glimmr.Hubs {
 			return Task.CompletedTask;
 		}
 		
-		public void AuthorizeHue(string id) {
-			_cs.AuthorizeHue(id);
+		public async Task AuthorizeHue(string id) {
+			await _cs.AuthorizeHue(id);
 		}
 		
-		public void AuthorizeNano(string id) {
-			_cs.AuthorizeNano(id);
+		public async Task AuthorizeNano(string id) {
+			await _cs.AuthorizeNano(id);
 		}
 
 		private CpuData GetStats(CancellationToken token) {
@@ -77,25 +76,21 @@ namespace Glimmr.Hubs {
 			_cs.FlashDevice(deviceId);
 		}
 
-		public void FlashSector(int sector) {
+		public Task FlashSector(int sector) {
 			_cs.FlashSector(sector);
+			return Task.CompletedTask;
 		}
 
-		public void FlashLed(int led) {
+		public Task FlashLed(int led) {
 			Log.Debug("Get got: " + led);
 			_cs.TestLights(led);
+			return Task.CompletedTask;
 		}
 
-		
-		public override Task OnDisconnectedAsync(Exception exception) {
-			var dc = base.OnDisconnectedAsync(exception);
-			return dc;
-		}
 
 		public override Task OnConnectedAsync() {
 			Clients.Caller.SendAsync("olo", DataUtil.GetStoreSerialized());
-			var bc = base.OnConnectedAsync();
-			return bc;
+			return base.OnConnectedAsync();
 		}
 	}
 }
