@@ -11,19 +11,16 @@
 
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="10.1.1" />
-    <PackageReference Include="ClangNet" Version="1.1.0" />
-    <PackageReference Include="digitalhigh.rpi-ws281x-csharp" Version="1.1.4" />
-    <PackageReference Include="Emgu.CV" Version="4.4.0.4099" />
-    <PackageReference Include="Emgu.CV.Bitmap" Version="4.4.0.4099" />
-    <PackageReference Include="Emgu.CV.runtime.raspbian" Version="4.4.0.4099" />
-    <PackageReference Include="Emgu.CV.runtime.ubuntu" Version="4.4.0.4099" />
-    <PackageReference Include="Emgu.CV.runtime.windows" Version="4.4.0.4099" />
+    <PackageReference Include="digitalhigh.rpi-ws281x-csharp" Version="1.1.4" Condition="$(RuntimeIdentifier) == 'linux-arm'"/>
+    <PackageReference Include="Emgu.CV" Version="4.5.1.4349" />
+    <PackageReference Include="Emgu.CV.Bitmap" Version="4.5.1.4349" />
+    <PackageReference Include="Emgu.CV.runtime.linux-arm" Version="4.5.1.4349" Condition="$(RuntimeIdentifier) == 'linux-arm'" />
+    <PackageReference Include="Emgu.CV.runtime.ubuntu.20.04-x64" Version="4.5.1.4349" Condition="$(RuntimeIdentifier) == 'linux-x64'"/>
+    <PackageReference Include="Emgu.CV.runtime.windows" Version="4.5.1.4349" Condition="$(RuntimeIdentifier) == 'win-x64'"/>
     <PackageReference Include="LifxNet" Version="2.2.0" />
     <PackageReference Include="LiteDB" Version="5.0.9" />
     <PackageReference Include="Makaretu.Dns.Multicast" Version="0.27.0" />
     <PackageReference Include="ManagedBass" Version="3.0.0" />
-    <PackageReference Include="ManagedBass.Ac3" Version="3.0.0" />
-    <PackageReference Include="ManagedBass.Dts" Version="0.1.1" />
     <PackageReference Include="Microsoft.AspNet.SignalR.Client" Version="2.4.1" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="5.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="5.0.1" />
@@ -33,11 +30,9 @@
     <PackageReference Include="Nanoleaf.Core" Version="1.1.7.1" />
     <PackageReference Include="Q42.HueApi" Version="3.16.0" />
     <PackageReference Include="Q42.HueApi.Entertainment" Version="3.15.0" />
-    <PackageReference Include="SealangSharp" Version="3.9.0" />
     <PackageReference Include="Serilog" Version="2.10.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
-    <PackageReference Include="Sichem.Framework" Version="0.3.6.14" />
     <PackageReference Include="System.Net.WebSockets" Version="4.3.0" />
     <PackageReference Include="YeelightAPI" Version="1.10.0" />
     <PackageReference Include="Zeroconf" Version="3.4.2" />
