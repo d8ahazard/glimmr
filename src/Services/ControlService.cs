@@ -72,7 +72,7 @@ namespace Glimmr.Services {
 			SetModeEvent(mode);
 		}
 
-		public async void AuthorizeHue(string id) {
+		public async Task AuthorizeHue(string id) {
 			Log.Debug("AuthHue called, for real (socket): " + id);
 			HueData bd;
 			if (!string.IsNullOrEmpty(id)) {
@@ -171,7 +171,7 @@ namespace Glimmr.Services {
 		}
 
 
-		public async void NotifyClients() {
+		public async Task NotifyClients() {
 			await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
 		}
 
@@ -199,7 +199,7 @@ namespace Glimmr.Services {
 			RefreshDreamscreenEvent(csToken);
 		}
 
-		public async void AuthorizeNano(string id) {
+		public async Task AuthorizeNano(string id) {
 			var leaf = DataUtil.GetCollectionItem<NanoleafData>("Dev_Nano", id);
 			bool doAuth = leaf.Token == null;
 			if (doAuth) {

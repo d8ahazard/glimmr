@@ -71,7 +71,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			_disposed = false;
 		}
 		
-		public async void StartStream(CancellationToken ct) {
+		public void StartStream(CancellationToken ct) {
 			if (!Enable || Streaming) return;
 			Streaming = true;
 
@@ -80,13 +80,10 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			var body = new
 				{write = new {command = "display", animType = "extControl", extControlVersion = controlVersion}};
 
-			await SendPutRequest(_basePath, JsonConvert.SerializeObject(new {on = new {value = true}}),
-				"state");
-			await SendPutRequest(_basePath, JsonConvert.SerializeObject(body), "effects");
-			while (!ct.IsCancellationRequested) {
-				
-			}
-			StopStream();
+			_ = SendPutRequest(_basePath, JsonConvert.SerializeObject(new {on = new {value = true}}),
+				"state").Result;
+			_ = SendPutRequest(_basePath, JsonConvert.SerializeObject(body), "effects").Result;
+			
 		}
 
 		public void StopStream() {

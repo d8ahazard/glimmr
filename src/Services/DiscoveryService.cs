@@ -52,11 +52,11 @@ namespace Glimmr.Services {
         
 		// Discover...devices?
 		
-		private async void DeviceDiscovery() {
+		private async Task DeviceDiscovery() {
 			Log.Debug("Triggering refresh of devices via timer.");
 			// Trigger a refresh
 			_lifxClient = _controlService.LifxClient;
-			DataUtil.RefreshDevices(_lifxClient, _controlService);
+			await DataUtil.RefreshDevices(_lifxClient, _controlService);
 			// Sleep for 5s for it to finish
 			await Task.Delay(5000);
 			// Notify all clients to refresh data

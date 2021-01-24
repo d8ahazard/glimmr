@@ -247,7 +247,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             SendForm(setting);
         }
 
-        private async void SendPost(JObject values, string target="/json/state") {
+        private void SendPost(JObject values, string target="/json/state") {
             Uri uri;
             if (string.IsNullOrEmpty(IpAddress) && !string.IsNullOrEmpty(Id)) {
                 IpAddress = Id;
@@ -264,7 +264,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             var httpContent = new StringContent(values.ToString());
             httpContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
             try {
-                await _httpClient.PostAsync(uri, httpContent);
+               _httpClient.PostAsync(uri, httpContent);
             } catch (Exception e) {
                 Log.Warning("HTTP Request Exception...");
             }
@@ -272,7 +272,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             httpContent.Dispose();
         }
 
-        private async void SendForm(Dictionary<string, dynamic> values) {
+        private void SendForm(Dictionary<string, dynamic> values) {
             var uri = new Uri("http://" + IpAddress + "settings/leds");
             var request = (HttpWebRequest)WebRequest.Create(uri);
             string postData = string.Empty;
@@ -287,14 +287,14 @@ namespace Glimmr.Models.ColorTarget.Wled {
             request.Method = "POST";
             request.ContentType = "application/x-www-form-urlencoded";
             request.ContentLength = data.Length;
-            await using (var stream = request.GetRequestStream()) {
-                await stream.WriteAsync(data, 0, data.Length);
+            using (var stream = request.GetRequestStream()) {
+                stream.WriteAsync(data, 0, data.Length);
             }
 
             var response = (HttpWebResponse)request.GetResponse();
 
-            await using var rs = response.GetResponseStream();
-            var responseString = await new StreamReader(rs).ReadToEndAsync();
+            using var rs = response.GetResponseStream();
+            var responseString = new StreamReader(rs).ReadToEndAsync();
             Log.Debug("We got a response: " + responseString);    
             response.Dispose();
         }

@@ -29,7 +29,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
             Refresh();
         }
 
-        public async void StartStream(CancellationToken ct) {
+        public void StartStream(CancellationToken ct) {
             _startInt = 0;
             Log.Debug($@"Color builder started, animation time is {_animationTime}...");
             SendTask = Task.Run(async () => {

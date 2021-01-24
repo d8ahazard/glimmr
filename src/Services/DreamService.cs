@@ -425,7 +425,7 @@ namespace Glimmr.Services {
         }
 
 
-        private async void Discover(CancellationToken ct) {
+        private void Discover(CancellationToken ct) {
             try {
                 Log.Debug("Dreamscreen: Discovery started...");
                 _discovering = true;
@@ -435,9 +435,9 @@ namespace Glimmr.Services {
                 // Send our notification to actually discover
                 var msg = new byte[] {0xFC, 0x05, 0xFF, 0x30, 0x01, 0x0A, 0x2A};
                 _dreamUtil.SendUdpMessage(msg);
-                await Task.Delay(3000, ct).ConfigureAwait(false);
+                Task.Delay(3000, ct).ConfigureAwait(false);
                 _dreamUtil.SendUdpWrite(0x01, 0x0E, new byte[] {0x01}, 0x30, 0x00, selfEp);
-                await Task.Delay(500, ct).ConfigureAwait(false);
+                Task.Delay(500, ct).ConfigureAwait(false);
                 _discovering = false;
                 Log.Debug("Dreamscreen: Discovery complete.");
             } catch (Exception e) {

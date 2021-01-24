@@ -24,7 +24,7 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 			_vs = vs;
 		}
 
-		public async void StartStream(CancellationToken ct) {
+		public void StartStream(CancellationToken ct) {
 			Refresh();
 			SendTask = Task.Run(async () => {
 				while (!ct.IsCancellationRequested) {

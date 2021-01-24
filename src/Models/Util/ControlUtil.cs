@@ -17,7 +17,7 @@ using Serilog;
 
 namespace Glimmr.Models.Util {
 	public static class ControlUtil {
-		public static async void SetCaptureMode(IHubContext<SocketServer> hubContext, int capMode) {
+		public static async Task SetCaptureMode(IHubContext<SocketServer> hubContext, int capMode) {
 			Log.Debug("Updating capture mode to " + capMode);
 			var curMode = DataUtil.GetItem<int>("CaptureMode");
 			var dev = DataUtil.GetDeviceData();
@@ -99,9 +99,9 @@ namespace Glimmr.Models.Util {
 			return true;
 		}
 
-		public static async void NotifyClients(IHubContext<SocketServer> hc) {
+		public static void NotifyClients(IHubContext<SocketServer> hc) {
 			if (hc == null) throw new ArgumentNullException(nameof(hc));
-			await hc.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+			hc.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
 			Log.Debug("Sent updated store data via socket.");
 		}
 

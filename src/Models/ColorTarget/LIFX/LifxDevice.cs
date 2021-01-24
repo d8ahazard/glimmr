@@ -41,19 +41,15 @@ namespace Glimmr.Models.ColorTarget.LIFX {
             IpAddress = d.IpAddress;
         }
 
-        public async void StartStream(CancellationToken ct) {
+        public void StartStream(CancellationToken ct) {
             if (!Data.Enable) return;
             Log.Debug("Lifx: Starting stream.");
             var col = new Color {R = 0x00, G = 0x00, B = 0x00};
             Streaming = true;
-            await _client.SetLightPowerAsync(B, TimeSpan.Zero, true).ConfigureAwait(false);
-            await _client.SetColorAsync(B, col, 2700).ConfigureAwait(false);
+            _client.SetLightPowerAsync(B, TimeSpan.Zero, true).ConfigureAwait(false);
+            _client.SetColorAsync(B, col, 2700).ConfigureAwait(false);
             Log.Debug("Lifx: Streaming is active...");
-            while (!ct.IsCancellationRequested) {
-                Streaming = true;
-            }
-
-            StopStream();
+            Streaming = true;
         }
 
         public void FlashColor(System.Drawing.Color color) {

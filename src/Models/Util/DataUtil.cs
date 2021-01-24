@@ -404,7 +404,7 @@ namespace Glimmr.Models.Util {
         }
 
 
-        public static async void RefreshDevices(LifxClient c, ControlService controlService = null) {
+        public static async Task RefreshDevices(LifxClient c, ControlService controlService = null) {
             var cs = new CancellationTokenSource();
             cs.CancelAfter(30000);
             Log.Debug("Starting Device Discovery...");
