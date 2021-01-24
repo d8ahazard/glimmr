@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel;
-using System.Drawing;
 using Glimmr.Models.ColorSource.Audio;
 using Newtonsoft.Json;
 

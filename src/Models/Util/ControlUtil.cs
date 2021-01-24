@@ -8,7 +8,6 @@ using Glimmr.Models.ColorTarget.Hue;
 using Glimmr.Models.ColorTarget.LIFX;
 using Glimmr.Models.ColorTarget.Nanoleaf;
 using Glimmr.Models.ColorTarget.Wled;
-using Glimmr.Services;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;

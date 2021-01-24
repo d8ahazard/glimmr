@@ -6,7 +6,6 @@ using System.Drawing;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Newtonsoft.Json;
 using Serilog;
 
 namespace Glimmr.Models.ColorSource.AudioVideo {
@@ -18,44 +17,54 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 		private readonly VideoStream _vs;
 		private readonly AudioStream _as;
 		private SystemData _systemData;
+		private Task SendTask;
 		public AudioVideoStream(ColorService cs, AudioStream aus, VideoStream vs) {
 			_cs = cs;
 			_as = aus;
 			_vs = vs;
 		}
 
-		public async void Initialize(CancellationToken ct) {
+		public async void StartStream(CancellationToken ct) {
 			Refresh();
-			while (!ct.IsCancellationRequested) {
-				var vCols = _vs.Colors;
-				var vSecs = _vs.Sectors;
-				var aCols = _as.Colors;
-				var aSecs = _as.Sectors;
-				if (vCols.Count == 0 || vCols.Count != aCols.Count || vSecs.Count == 0 || vSecs.Count != aSecs.Count) {
-					Log.Debug($"AV Splitter is still warming up {aCols.Count}, {aSecs.Count}, {vCols.Count}, {vSecs.Count}");
-					continue;
-				}
-				var oCols = new List<Color>();
-				var oSecs = new List<Color>();
-				for (var i = 0; i < vCols.Count; i++) {
-					var aCol = aCols[i];
-					var vCol = vCols[i];
-					oCols.Add(ColorUtil.SetBrightness(vCol, aCol.GetBrightness()));
-				}
-				
-				for (var i = 0; i < vSecs.Count; i++) {
-					var aCol = aSecs[i];
-					var vCol = vSecs[i];
-					oSecs.Add(ColorUtil.SetBrightness(vCol, aCol.GetBrightness()));
-				}
+			SendTask = Task.Run(async () => {
+				while (!ct.IsCancellationRequested) {
+					var vCols = _vs.Colors;
+					var vSecs = _vs.Sectors;
+					var aCols = _as.Colors;
+					var aSecs = _as.Sectors;
+					if (vCols.Count == 0 || vCols.Count != aCols.Count || vSecs.Count == 0 ||
+					    vSecs.Count != aSecs.Count) {
+						Log.Debug(
+							$"AV Splitter is still warming up {aCols.Count}, {aSecs.Count}, {vCols.Count}, {vSecs.Count}");
+						continue;
+					}
 
-				Colors = oCols;
-				Sectors = oSecs;
-				_cs.SendColors(oCols, oSecs);
-				await Task.Delay(16, CancellationToken.None);
-			}
+					var oCols = new List<Color>();
+					var oSecs = new List<Color>();
+					for (var i = 0; i < vCols.Count; i++) {
+						var aCol = aCols[i];
+						var vCol = vCols[i];
+						oCols.Add(ColorUtil.SetBrightness(vCol, aCol.GetBrightness()));
+					}
+
+					for (var i = 0; i < vSecs.Count; i++) {
+						var aCol = aSecs[i];
+						var vCol = vSecs[i];
+						oSecs.Add(ColorUtil.SetBrightness(vCol, aCol.GetBrightness()));
+					}
+
+					Colors = oCols;
+					Sectors = oSecs;
+					_cs.SendColors(oCols, oSecs);
+					await Task.Delay(16, CancellationToken.None);
+				}
+			}, ct);
 		}
-		
+
+		public void StopStream() {
+			//throw new System.NotImplementedException();
+		}
+
 		public void ToggleSend(bool enable = false) {
 			Streaming = enable;
 		}

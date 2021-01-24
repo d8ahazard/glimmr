@@ -1,18 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Emgu.CV.Saliency;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using ManagedBass;
-
-using Microsoft.VisualBasic.CompilerServices;
 using Newtonsoft.Json;
-using Q42.HueApi.ColorConverters.HSB;
-using rpi_ws281x;
 using Serilog;
 using Color = System.Drawing.Color;
 
@@ -24,15 +18,12 @@ namespace Glimmr.Models.ColorSource.Audio {
 		private bool _disposed;
 		private List<AudioData> _devices;
 		private int _recordDeviceIndex;
-		private int _channels;
-		private int _frequency;
-		private float _max;
 		private float _gain;
 		private float _min = .015f;
-		private readonly CancellationToken _token;
 		private readonly ColorService _cs;
 		private SystemData _sd;
 		private AudioMap _map;
+		private Task _sendTask;
 
 		public List<Color> Colors { get; private set; }
 		public List<Color> Sectors { get; private set; }
@@ -81,24 +72,25 @@ namespace Glimmr.Models.ColorSource.Audio {
 			_devices = DataUtil.GetCollection<AudioData>("Dev_Audio") ?? new List<AudioData>();
 		}
 		
-		public async void Initialize(CancellationToken ct) {
+		public void StartStream(CancellationToken ct) {
 			LoadData();
 			if (_recordDeviceIndex != -1) {
 				Log.Debug("Starting stream with device " + _recordDeviceIndex);
 				Bass.RecordInit(_recordDeviceIndex);
 				Bass.RecordStart(48000, 2, BassFlags.Float, Update);
-				while (!ct.IsCancellationRequested) {
-					await Task.Delay(1, CancellationToken.None);
-				}
-
-				Log.Debug("Audio stream canceled.");
-				Bass.RecordFree();
 			} else {
 				Log.Debug("No recording device available.");
 			}
 		}
 
-		
+		public void StopStream() {
+			//throw new NotImplementedException();
+			if (_recordDeviceIndex != -1) {
+				Bass.Free();	
+			}
+		}
+
+
 		public void Refresh() {
 			LoadData();
 		}
@@ -129,9 +121,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 					realIndex++;
 				}
 			}
-			
-
-			//Log.Debug("LDATA: " + JsonConvert.SerializeObject(lData));
 
 			var lAmps = SortChannels(lData);
 			var rAmps = SortChannels(rData);
@@ -171,7 +160,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 				var next = step == 60 ? 125 : step * 2;
 				float range = next - step;
 				var stepMax = 0f;
-				var freq2 = new KeyValuePair<int,float>();
 				foreach (var (frequency, amplitude) in cData) {
 					if (frequency < step || frequency >= next) {
 						continue;
@@ -187,7 +175,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 					if (frequency < step || frequency >= next) {
 						continue;
 					}
-					if (amplitude != stepMax) {
+					if (Math.Abs(amplitude - stepMax) > float.MinValue) {
 						continue;
 					}
 
@@ -207,43 +195,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 		}
 
 
-		private void ConsoleView(IReadOnlyList<float> input) {
-			Console.Clear();
-			Console.SetCursorPosition(0, 0);
-			LogColor(input[6], "|");
-			LogColor(input[5], "|");
-			LogColor(input[4], "|");
-			LogColor(input[3], "|");
-			LogColor(input[3]);
-
-			Console.WriteLine();
-			LogColor(input[7], "|");
-			Console.ForegroundColor = ConsoleColor.White;
-			Console.Write($@"    {_max:F2}    |");
-			LogColor(input[2]);
-			Console.WriteLine();
-			LogColor(input[8], "|");
-			LogColor(input[9], "|");
-			LogColor(input[10], "|");
-			LogColor(input[11], "|");
-			LogColor(input[0]);
-			Console.WriteLine();
-		}
-
-		private static float HueFromAmplitude(float input) {
-			var point = input / 24 * 360;
-			if (point > 360) point = 360;
-			//if (input == 0) point = 0;
-			return point;
-		}
-
-		private void LogColor(float amplitude, string separator = "") {
-			var hue = HueFromAmplitude(amplitude);
-			var value = amplitude > 0 ? 1 : 0;
-			Console.ForegroundColor = ColorFromSystem(ColorUtil.HsvToColor(hue, 1, value));
-			Console.Write($@"{amplitude:F2}{separator}");
-		}
-
 		#endregion
 
 
@@ -257,16 +208,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 			GC.SuppressFinalize(this);
 		}
 
-
-		private static ConsoleColor ColorFromSystem(Color input) {
-			if (input.R > (input.G + input.B) / 2) return ConsoleColor.Red;
-
-			if (input.G > (input.R + input.B) / 2) return ConsoleColor.Green;
-
-			if (input.B > (input.R + input.G) / 2) return ConsoleColor.Blue;
-
-			return ConsoleColor.White;
-		}
 
 		private void Dispose(bool disposing) {
 			if (_disposed) return;

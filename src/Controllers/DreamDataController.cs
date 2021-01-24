@@ -1,6 +1,5 @@
 ﻿#region
 
-using System.Collections.Generic;
 using System.Threading;
 using Glimmr.Models;
 using Glimmr.Models.ColorTarget.LED;
@@ -85,7 +84,7 @@ namespace Glimmr.Controllers {
 
 		[HttpPost("systemControl")]
 		public IActionResult SysControl([FromBody] string action) {
-			_controlService.SystemControl(action);
+			ControlService.SystemControl(action);
 			return Ok(action);
 		}
 		

@@ -38,7 +38,11 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
 		
 
-
+		/// <summary>
+		/// Use this for discovery only 
+		/// </summary>
+		/// <param name="data">NL Data</param>
+		/// <param name="client">Client to discover with</param>
 		public NanoleafDevice(NanoleafData data, HttpClient client) {
 			IpAddress = data.IpAddress;
 			_token = data.Token;
@@ -46,7 +50,15 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			_disposed = false;
 			_client = client;
 		}
+		
 
+		/// <summary>
+		/// Use this for sending color data to the panel
+		/// </summary>
+		/// <param name="n"></param>
+		/// <param name="socket"></param>
+		/// <param name="client"></param>
+		/// <param name="colorService"></param>
 		public NanoleafDevice(NanoleafData n, UdpClient socket, HttpClient client, ColorService colorService) {
 			DataUtil.GetItem<int>("captureMode");
 			colorService.ColorSendEvent += SetColor;
@@ -58,67 +70,12 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
 			_disposed = false;
 		}
-
-
-		public void ReloadData() {
-			var newData = DataUtil.GetCollectionItem<NanoleafData>("Dev_Nanoleaf", Id);
-			SetData(newData);
-		}
-
-		private void SetData(NanoleafData n) {
-			Data = n;
-			DataUtil.GetItem<int>("captureMode");
-			IpAddress = n.IpAddress;
-			_token = n.Token;
-			_layout = n.Layout;
-			Brightness = n.Brightness;
-			var nanoType = n.Type;
-			_streamMode = nanoType == "NL29" ? 2 : 1;
-			_basePath = "http://" + IpAddress + ":16021/api/v1/" + _token;
-			Id = n.Id;
-		}
-
-		public void FlashColor(Color color) {
-			var byteString = new List<byte>();
-			if (_streamMode == 2) {
-				byteString.AddRange(ByteUtils.PadInt(_layout.NumPanels));
-			} else {
-				byteString.Add(ByteUtils.IntByte(_layout.NumPanels));
-			}
-			foreach (var pd in _layout.PositionData) {
-				var id = pd.PanelId;
-				if (_streamMode == 2) {
-					byteString.AddRange(ByteUtils.PadInt(id));
-				} else {
-					byteString.Add(ByteUtils.IntByte(id));
-				} 
-				
-				// Add rgb values
-				byteString.Add(ByteUtils.IntByte(color.R));
-				byteString.Add(ByteUtils.IntByte(color.G));
-				byteString.Add(ByteUtils.IntByte(color.B));
-				// White value
-				byteString.AddRange(ByteUtils.PadInt(0, 1));
-				// Pad duration time
-				byteString.AddRange(_streamMode == 2 ? ByteUtils.PadInt(0) : ByteUtils.PadInt(0, 1));
-			}
-			SendUdpUnicast(byteString.ToArray());
-		}
-
-		public bool IsEnabled() {
-			return Data.Enable;
-		}
-
-        
-		public bool Streaming { get; set; }
-
+		
 		public async void StartStream(CancellationToken ct) {
-			if (!Data.Enable) return;
+			if (!Enable || Streaming) return;
+			Streaming = true;
+
 			Log.Debug($@"Nanoleaf: Starting panel: {IpAddress}");
-			// Turn it on first.
-			//var currentState = NanoSender.SendGetRequest(_basePath).Result;
-			//await NanoSender.SendPutRequest(_basePath, JsonConvert.SerializeObject(new {on = new {value = true}}),
-			//"state");
 			var controlVersion = "v" + _streamMode;
 			var body = new
 				{write = new {command = "display", animType = "extControl", extControlVersion = controlVersion}};
@@ -126,7 +83,6 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			await SendPutRequest(_basePath, JsonConvert.SerializeObject(new {on = new {value = true}}),
 				"state");
 			await SendPutRequest(_basePath, JsonConvert.SerializeObject(body), "effects");
-			Streaming = true;
 			while (!ct.IsCancellationRequested) {
 				
 			}
@@ -134,6 +90,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		}
 
 		public void StopStream() {
+			if (!Streaming || !Enable) return;
 			Streaming = false;
 			SendPutRequest(_basePath, JsonConvert.SerializeObject(new {on = new {value = false}}), "state")
 				.ConfigureAwait(false);
@@ -143,7 +100,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
 
 		public void SetColor(List<Color> _, List<Color> colors, double fadeTime = 1) {
-			if (!Streaming || !Data.Enable || Testing) {
+			if (!Streaming || !Enable || Testing) {
 				return;
 			}
 
@@ -187,6 +144,62 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			SendUdpUnicast(byteString.ToArray());
 		}
 
+
+
+		public void ReloadData() {
+			var newData = DataUtil.GetCollectionItem<NanoleafData>("Dev_Nanoleaf", Id);
+			SetData(newData);
+		}
+
+		private void SetData(NanoleafData n) {
+			Data = n;
+			DataUtil.GetItem<int>("captureMode");
+			IpAddress = n.IpAddress;
+			_token = n.Token;
+			_layout = n.Layout;
+			Brightness = n.Brightness;
+			var nanoType = n.Type;
+			Enable = n.Enable;
+			_streamMode = nanoType == "NL29" ? 2 : 1;
+			_basePath = "http://" + IpAddress + ":16021/api/v1/" + _token;
+			Id = n.Id;
+		}
+
+		public void FlashColor(Color color) {
+			var byteString = new List<byte>();
+			if (_streamMode == 2) {
+				byteString.AddRange(ByteUtils.PadInt(_layout.NumPanels));
+			} else {
+				byteString.Add(ByteUtils.IntByte(_layout.NumPanels));
+			}
+			foreach (var pd in _layout.PositionData) {
+				var id = pd.PanelId;
+				if (_streamMode == 2) {
+					byteString.AddRange(ByteUtils.PadInt(id));
+				} else {
+					byteString.Add(ByteUtils.IntByte(id));
+				} 
+				
+				// Add rgb values
+				byteString.Add(ByteUtils.IntByte(color.R));
+				byteString.Add(ByteUtils.IntByte(color.G));
+				byteString.Add(ByteUtils.IntByte(color.B));
+				// White value
+				byteString.AddRange(ByteUtils.PadInt(0, 1));
+				// Pad duration time
+				byteString.AddRange(_streamMode == 2 ? ByteUtils.PadInt(0) : ByteUtils.PadInt(0, 1));
+			}
+			SendUdpUnicast(byteString.ToArray());
+		}
+
+		public bool IsEnabled() {
+			return Enable;
+		}
+
+        
+		public bool Streaming { get; set; }
+
+		
 
      
 		public async Task<UserToken> CheckAuth() {

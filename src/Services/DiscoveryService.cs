@@ -1,7 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Hubs;
-using Glimmr.Models.ColorTarget;
 using Glimmr.Models.Util;
 using LifxNet;
 using Microsoft.AspNetCore.SignalR;

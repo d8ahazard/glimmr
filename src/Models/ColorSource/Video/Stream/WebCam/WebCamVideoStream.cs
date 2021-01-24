@@ -2,7 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
-using Glimmr.Models.Util;
 using Serilog;
 
 namespace Glimmr.Models.ColorSource.Video.Stream.WebCam {

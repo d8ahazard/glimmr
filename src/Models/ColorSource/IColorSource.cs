@@ -4,7 +4,8 @@ using System.Threading;
 
 namespace Glimmr.Models.ColorSource {
 	public interface IColorSource {
-		public abstract void Initialize(CancellationToken ct);
+		public abstract void StartStream(CancellationToken ct);
+		public abstract void StopStream();
 		public abstract void Refresh();
 		
 		public List<Color> Colors { get; }

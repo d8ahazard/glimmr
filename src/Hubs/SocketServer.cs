@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models;
@@ -7,7 +6,6 @@ using Glimmr.Models.ColorTarget.LED;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.AspNetCore.SignalR;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
 
@@ -67,7 +65,7 @@ namespace Glimmr.Hubs {
 		}
 
 		public void SystemControl(string action) {
-			_cs.SystemControl(action);
+			ControlService.SystemControl(action);
 		}
 
 		public void UpdateDevice(string deviceJson) {

@@ -58,11 +58,12 @@ namespace Glimmr.Models.ColorTarget.LED {
 		}
 
 		public void StopStream() {
-			if (Streaming) {
-				_strip?.Reset();
-				_strip?.Dispose();
-				Streaming = false;
-			}
+			if (!Streaming) return;
+
+			StopLights();
+			_strip?.Reset();
+			_strip?.Dispose();
+			Streaming = false;
 		}
 
 		

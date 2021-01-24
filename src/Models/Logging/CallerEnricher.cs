@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Linq;
 using Serilog;
 using Serilog.Configuration;
 using Serilog.Core;

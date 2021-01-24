@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Runtime.InteropServices;
 using Glimmr.Models.Logging;
 using Glimmr.Services;

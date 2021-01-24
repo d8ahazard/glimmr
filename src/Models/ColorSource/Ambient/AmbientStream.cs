@@ -2,13 +2,11 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.ColorSource.Ambient.Scene;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Newtonsoft.Json;
 using Serilog;
 using static Glimmr.Models.ColorSource.Ambient.IScene;
 
@@ -21,41 +19,43 @@ namespace Glimmr.Models.ColorSource.Ambient {
         private int _ledCount;
         private int _ambientShow;
         private Color _ambientColor;
-        private readonly CancellationToken _ct;
         private readonly ColorService _cs;
-        private readonly Stopwatch _watch;
         private TimeSpan waitSpan;
-
+        private Task SendTask;
 
         
         public AmbientStream(ColorService colorService, in CancellationToken ct) {
-            _watch = new Stopwatch();
             _cs = colorService;
-            _ct = ct;
             Refresh();
         }
 
-        public async void Initialize(CancellationToken ct) {
+        public async void StartStream(CancellationToken ct) {
             _startInt = 0;
             Log.Debug($@"Color builder started, animation time is {_animationTime}...");
-            while (!ct.IsCancellationRequested) {
-                if (!Streaming) continue;
-                var cols = RefreshColors(_colors);
-                var ledCols = new List<Color>();
-                for (var i = 0; i < _ledCount; i++) {
-                    var r = i / _ledCount * cols.Count;
-                    ledCols.Add(cols[r]);
-                }
+            SendTask = Task.Run(async () => {
+                while (!ct.IsCancellationRequested) {
+                    if (!Streaming) continue;
+                    var cols = RefreshColors(_colors);
+                    var ledCols = new List<Color>();
+                    for (var i = 0; i < _ledCount; i++) {
+                        var r = i / _ledCount * cols.Count;
+                        ledCols.Add(cols[r]);
+                    }
 
-                Colors = ledCols;
-                Sectors = cols;
-                _cs.SendColors(ledCols, cols);
-                await Task.Delay(waitSpan, ct);
-            }
+                    Colors = ledCols;
+                    Sectors = cols;
+                    _cs.SendColors(ledCols, cols);
+                    await Task.Delay(waitSpan, ct);
+                }
+            }, ct);
             Log.Information("DreamScene: Color Builder canceled.");
         }
-        
-        
+
+        public void StopStream() {
+            //throw new NotImplementedException();
+        }
+
+
         private List<Color> RefreshColors(string[] input) {
             var output = new List<Color>();
             var maxColors = input.Length - 1;

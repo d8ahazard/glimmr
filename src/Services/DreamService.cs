@@ -13,7 +13,6 @@ using Glimmr.Models.ColorTarget.DreamScreen;
 using Glimmr.Models.Util;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
-using Newtonsoft.Json;
 using Serilog;
 using Color = System.Drawing.Color;
 // ReSharper disable All

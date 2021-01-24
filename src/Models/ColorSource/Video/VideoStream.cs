@@ -6,6 +6,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -64,6 +65,7 @@ namespace Glimmr.Models.ColorSource.Video {
 		private ControlService _controlService;
 		private readonly ColorService _colorService;
 		private readonly CancellationToken _cancellationToken;
+		private Task SendTask;
 
 
 		public VideoStream(ColorService cs, ControlService controlService, CancellationToken camToken) {
@@ -80,51 +82,57 @@ namespace Glimmr.Models.ColorSource.Video {
 		}
 
 		
-		public void Initialize(CancellationToken ct) {
+		public void StartStream(CancellationToken ct) {
 			Log.Debug("Initializing video stream...");
 			SetCapVars();
 			var autoEvent = new AutoResetEvent(false);
 			_saveTimer = new Timer(SaveFrame, autoEvent, 5000, 5000);
 			Log.Debug($"Starting vid capture task...");
 			StreamSplitter = new Splitter(_systemData, _controlService);
-			while (!ct.IsCancellationRequested) {
-				// Save cpu/memory by not doing anything if not sending...
+			SendTask = Task.Run(() => {
+				while (!ct.IsCancellationRequested) {
+					// Save cpu/memory by not doing anything if not sending...
 				
-				var frame = _vc.Frame;
-				if (frame == null) {
-					SourceActive = false;
-					Log.Warning("Frame is null.");
-					continue;
-				}
-
-				if (frame.Cols == 0) {
-					SourceActive = false;
-					if (!_noColumns) {
-						Log.Warning("Frame has no columns.");
-						_noColumns = true;
+					var frame = _vc.Frame;
+					if (frame == null) {
+						SourceActive = false;
+						Log.Warning("Frame is null.");
+						continue;
 					}
-					continue;
-				}
 
-				var warped = ProcessFrame(frame);
-				if (warped == null) {
-					SourceActive = false;
-					Log.Warning("Unable to process frame.");
-					continue;
-				}
+					if (frame.Cols == 0) {
+						SourceActive = false;
+						if (!_noColumns) {
+							Log.Warning("Frame has no columns.");
+							_noColumns = true;
+						}
+						continue;
+					}
 
-				StreamSplitter.Update(warped);
-				SourceActive = !StreamSplitter.NoImage;
-				Colors = StreamSplitter.GetColors();
-				Sectors = StreamSplitter.GetSectors();
-				//Log.Debug("No, really, sending colors...");
-				if (SendColors) _colorService.SendColors(Colors, Sectors);
+					var warped = ProcessFrame(frame);
+					if (warped == null) {
+						SourceActive = false;
+						Log.Warning("Unable to process frame.");
+						continue;
+					}
+
+					StreamSplitter.Update(warped);
+					SourceActive = !StreamSplitter.NoImage;
+					Colors = StreamSplitter.GetColors();
+					Sectors = StreamSplitter.GetSectors();
+					//Log.Debug("No, really, sending colors...");
+					if (SendColors) _colorService.SendColors(Colors, Sectors);
 				
-			}
+				}
 
+			}, ct);
 			_saveTimer.Dispose();
 			Log.Information("Capture task completed.");
 			
+		}
+
+		public void StopStream() {
+			throw new NotImplementedException();
 		}
 
 		public void Refresh() {

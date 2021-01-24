@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using Glimmr.Models.ColorSource.Audio.Map;
 using Glimmr.Models.Util;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Serilog;
 
 namespace Glimmr.Models.ColorSource.Audio {
 	public class AudioMap {

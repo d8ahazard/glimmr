@@ -251,7 +251,7 @@ namespace Glimmr.Services {
 			DataUtil.SetObject<SystemData>("SystemData", sd);
 		}
 
-		public void SystemControl(string action) {
+		public static void SystemControl(string action) {
 			Log.Debug("Action triggered: " + action);
 			switch (action) {
 				case "restart":
