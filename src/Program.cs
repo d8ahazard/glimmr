@@ -23,7 +23,7 @@ namespace Glimmr
 				.Enrich.WithCaller()
 				.WriteTo.Console(outputTemplate: outputTemplate)
 				.MinimumLevel.Debug()
-				.WriteTo.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: outputTemplate)
+				.WriteTo.File(logPath, rollingInterval: RollingInterval.Hour, outputTemplate: outputTemplate)
 				.CreateLogger();
             
 			CreateHostBuilder(args).Build().Run();
