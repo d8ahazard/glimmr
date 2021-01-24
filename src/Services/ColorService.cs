@@ -47,8 +47,7 @@ namespace Glimmr.Services {
 		private LifxClient _lifxClient;
 
 		private IStreamingDevice[] _sDevices;
-		private LedDevice[] _strips;
-
+		
 		private CancellationTokenSource _sendTokenSource;
 		private CancellationTokenSource _streamTokenSource;
 		private CancellationToken _stopToken;
@@ -158,13 +157,19 @@ namespace Glimmr.Services {
 			var col = Color.FromArgb(255, 255, 0, 0);
 			var colors = ColorUtil.AddLedColor(new Color[_systemData.LedCount],sector, col,_systemData);
 			var black = ColorUtil.EmptyColors(new Color[_systemData.LedCount]);
-			foreach (var _strip in _strips) {
+			var strips = new List<LedDevice>();
+			for (var i = 0; i < _sDevices.Length; i++) {
+				if (_sDevices[i].Tag == "Led") {
+					strips.Add((LedDevice)_sDevices[i]);
+				}
+			}
+			foreach (var _strip in strips) {
 				if (_strip != null) {
 					_strip.Testing = true;
 				}
 			}
 			
-			foreach (var _strip in _strips) {
+			foreach (var _strip in strips) {
 				if (_strip != null) {
 					_strip.SetColor(colors.ToList(), true);
 				}
@@ -172,13 +177,13 @@ namespace Glimmr.Services {
 
 			Thread.Sleep(500);
 			
-			foreach (var _strip in _strips) {
+			foreach (var _strip in strips) {
 				if (_strip != null) {
 					_strip.SetColor(black.ToList(), true);
 				}
 			}
 			
-			foreach (var _strip in _strips) {
+			foreach (var _strip in strips) {
 				if (_strip != null) {
 					_strip.SetColor(colors.ToList(), true);
 				}
@@ -186,7 +191,7 @@ namespace Glimmr.Services {
 			
 			Thread.Sleep(1000);
 			
-			foreach (var _strip in _strips) {
+			foreach (var _strip in strips) {
 				if (_strip != null) {
 					_strip.SetColor(black.ToList(), true);
 					_strip.Testing = false;
@@ -207,8 +212,7 @@ namespace Glimmr.Services {
 					sourceActive = _videoStream.SourceActive;
 					break;
 				case 2:
-					return;
-					sourceActive = _audioStream.SourceActive;
+					//sourceActive = _audioStream.SourceActive;
 					break;
 			}
 			
@@ -262,7 +266,13 @@ namespace Glimmr.Services {
 		}
 
 		private void LedTest(int led) {
-			foreach (var _strip in _strips) {
+			var strips = new List<LedDevice>();
+			for (var i = 0; i < _sDevices.Length; i++) {
+				if (_sDevices[i].Tag == "Led") {
+					strips.Add((LedDevice)_sDevices[i]);
+				}
+			}
+			foreach (var _strip in strips) {
 				_strip.StartTest(led);	
 			}
 		}
@@ -496,7 +506,7 @@ namespace Glimmr.Services {
 			} else {
 				Log.Debug("Starting video stream...");
 				if (_videoStream != null) _videoStream.SendColors = sendColors;
-				Task.Run(() => _videoStream?.Initialize(ct), ct);
+				Task.Run(() => _videoStream?.StartStream(ct), ct);
 				Log.Debug("Video stream started.");
 			}
 		}
@@ -508,7 +518,7 @@ namespace Glimmr.Services {
 			} else {
 				Log.Debug("Starting audio stream...");
 				if (_audioStream != null) _audioStream.SendColors = sendColors;
-				Task.Run(() => _audioStream?.Initialize(ct), ct);
+				Task.Run(() => _audioStream?.StartStream(ct), ct);
 				Log.Debug("Audio stream started.");
 			}
 		}
@@ -516,12 +526,12 @@ namespace Glimmr.Services {
 		private void StartAvStream(CancellationToken ct) {
 			StartAudioStream(ct, false);
 			StartVideoStream(ct, false);
-			Task.Run(() => _avStream.Initialize(ct), ct);
+			Task.Run(() => _avStream.StartStream(ct), ct);
 			Log.Debug("AV Stream started?");
 		}
 
 		private void StartAmbientStream(CancellationToken ct) {
-			Task.Run(() => _ambientStream.Initialize(ct), ct);
+			Task.Run(() => _ambientStream.StartStream(ct), ct);
 		}
 
 		private void StartStream() {
@@ -548,10 +558,6 @@ namespace Glimmr.Services {
 				return;
 			}
 
-			foreach (var _strip in _strips) {
-				_strip?.StopLights();	
-			}
-			
 			foreach (var s in _sDevices.Where(s => s.Streaming)) {
 				s.StopStream();
 			}
@@ -596,10 +602,6 @@ namespace Glimmr.Services {
 			CancelSource(_captureTokenSource, true);
 			CancelSource(_sendTokenSource, true);
 			Thread.Sleep(500);
-			foreach (var _strip in _strips) {
-				_strip?.StopLights();
-				_strip?.Dispose();
-			}
 			Log.Information("Strips disposed...");
 			foreach (var s in _sDevices) {
 				if (s.Streaming) {
