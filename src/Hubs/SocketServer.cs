@@ -31,11 +31,11 @@ namespace Glimmr.Hubs {
 			return Task.CompletedTask;
 		}
 		
-		public async void AuthorizeHue(string id) {
+		public void AuthorizeHue(string id) {
 			_cs.AuthorizeHue(id);
 		}
 		
-		public async void AuthorizeNano(string id) {
+		public void AuthorizeNano(string id) {
 			_cs.AuthorizeNano(id);
 		}
 
@@ -48,20 +48,20 @@ namespace Glimmr.Hubs {
 		}
 
 		
-		public async void SystemData(string sd) {
+		public void SystemData(string sd) {
 			Log.Debug("Updating system data.");
 			var sdd = JObject.Parse(sd);
 			var sd2 = sdd.ToObject<SystemData>();
 			_cs.UpdateSystem(sd2);
 		}
 		
-		public async void LedData(string ld) {
+		public void LedData(string ld) {
 			Log.Debug("Updating LED Data.");
 			var ldd = JObject.Parse(ld).ToObject<LedData>();
 			_cs.UpdateLed(ldd);
 		}
 
-		public async void DemoLed(string id) {
+		public void DemoLed(string id) {
 			Log.Debug("We should demo a strip here.");
 			_cs.DemoLed(id);
 		}
@@ -70,12 +70,12 @@ namespace Glimmr.Hubs {
 			_cs.SystemControl(action);
 		}
 
-		public async void UpdateDevice(string deviceJson) {
+		public void UpdateDevice(string deviceJson) {
 			var device = JObject.Parse(deviceJson);
 			_cs.UpdateDevice(device);
 		}
 
-		public async void FlashDevice(string deviceId) {
+		public void FlashDevice(string deviceId) {
 			_cs.FlashDevice(deviceId);
 		}
 
