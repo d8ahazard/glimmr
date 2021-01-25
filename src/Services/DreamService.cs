@@ -47,7 +47,7 @@ namespace Glimmr.Services {
             _hubContext = hubContext;
             _controlService = controlService;
             _controlService.DreamSubscribeEvent += Subscribe;
-            _controlService.RefreshDreamscreenEvent += Discover;
+            _controlService.RefreshDreamscreenEvent += token => Discover(token).ConfigureAwait(false);
             _controlService.RefreshSystemEvent += RefreshSystemData;
             _controlService.SetModeEvent += UpdateMode;
             _dreamUtil = new DreamUtil(_controlService.UdpClient);
@@ -99,9 +99,10 @@ namespace Glimmr.Services {
         
         
         // Update our device mode
-        private void UpdateMode(int newMode) {
+        private Task UpdateMode(object o, DynamicEventArgs eventArgs) {
             // If the mode doesn't change, we don't need to do anything
-            _devMode = newMode;
+            _devMode = eventArgs.P1;
+            return Task.CompletedTask;
         }
 
         private void UpdateAmbientMode(int newMode) {
@@ -136,13 +137,10 @@ namespace Glimmr.Services {
             return ColorTranslator.FromHtml("#" + inputString);
         }
       
-        private void CheckSubscribe(int captureMode) {
-            if (captureMode == 0) Subscribe();
-        }
         
         private void Subscribe() {
             if (_targetEndpoint == null) return;
-            _dreamUtil.SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x10, _group, _targetEndpoint);
+            _dreamUtil.SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x10, _group, _targetEndpoint).ConfigureAwait(false);
         }
 
         private void StartListening() {
@@ -237,7 +235,7 @@ namespace Glimmr.Services {
                 case "SUBSCRIBE":
                     if (_devMode == 1 || _devMode == 2 && !areYouLocal) {
                         //Log.Debug("Sending sub message.");
-                        _dreamUtil.SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x10, _group, replyPoint);    
+                        _dreamUtil.SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x10, _group, replyPoint).ConfigureAwait(false);    
                     }
                     
                     // If the device is on and capture mode is not using DS data
@@ -297,7 +295,7 @@ namespace Glimmr.Services {
                             msgDevice.IpAddress = from;
                             DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", msgDevice);
                             _devices.Add(msgDevice);
-                            _dreamUtil.SendUdpWrite(0x01, 0x03, new byte[]{0},0x60,0,replyPoint);
+                            _dreamUtil.SendUdpWrite(0x01, 0x03, new byte[]{0},0x60,0,replyPoint).ConfigureAwait(false);
                             
                         } else {
                             Log.Warning("Message device is null!.");
@@ -321,23 +319,23 @@ namespace Glimmr.Services {
                 case "GROUP_NAME":
                     var gName = Encoding.ASCII.GetString(payload);
                     Log.Debug("Setting group name to " + gName);
-                    if (writeState | writeDev) tDevice.GroupName = gName;
+                    if (tDevice != null && writeState | writeDev) tDevice.GroupName = gName;
 
                     break;
                 case "GROUP_NUMBER":
                     int gNum = payload[0];
                     Log.Debug("Setting group number to " + gNum);
-                    if (writeState | writeDev) tDevice.DeviceGroup = gNum;
+                    if (tDevice != null && writeState | writeDev) tDevice.DeviceGroup = gNum;
 
                     break;
                 case "NAME":
                     var dName = Encoding.ASCII.GetString(payload);
-                    if (writeState | writeDev) tDevice.Name = dName;
+                    if (tDevice != null && writeState | writeDev) tDevice.Name = dName;
 
                     break;
                 case "BRIGHTNESS":
                     _brightness = payload[0];
-                    if (writeState | writeDev) {
+                    if (tDevice != null && writeState | writeDev) {
                         Log.Debug($@"Setting brightness to {_brightness}.");
                         tDevice.Brightness = payload[0];
                     }
@@ -345,34 +343,34 @@ namespace Glimmr.Services {
 
                     break;
                 case "SATURATION":
-                    if (writeState | writeDev) {
+                    if (tDevice != null && writeState | writeDev) {
                         tDevice.Saturation = ByteUtils.ByteString(payload);
                     }
 
                     break;
                 case "MODE":
-                    if (writeState | writeDev && !areYouLocal) {
+                    if (tDevice != null && writeState | writeDev && !areYouLocal) {
                         refreshDevice = false;
                         tDevice.DeviceMode = payload[0];
                     } else {
                         Log.Debug("Mode flag set, but we're not doing anything... " + flag);
                     }
                     
-                    if (writeState && !areYouLocal) _controlService.SetMode(tDevice.DeviceMode);
+                    if (tDevice != null && writeState && !areYouLocal) _controlService.SetMode(tDevice.DeviceMode).ConfigureAwait(false);
 
                     break;
                 case "AMBIENT_MODE_TYPE":
-                    if (writeState | writeDev) {
+                    if (tDevice != null && writeState | writeDev) {
                         tDevice.AmbientMode = payload[0];
                     }
 
-                    if (writeState) {
+                    if (writeState && tDevice != null) {
                         UpdateAmbientMode(tDevice.AmbientMode);
                     }
 
                     break;
                 case "AMBIENT_SCENE":
-                    if (writeState | writeDev) {
+                    if (tDevice != null && writeState | writeDev) {
                         _ambientShow = payload[0];
                         tDevice.AmbientShowType = _ambientShow;
                     }
@@ -386,13 +384,13 @@ namespace Glimmr.Services {
 
                     break;
                 case "SKU_SETUP":
-                    if (writeState | writeDev) {
+                    if (tDevice != null && writeState | writeDev) {
                         tDevice.SkuSetup = payload[0];
                     }
 
                     break;
                 case "FLEX_SETUP":
-                    if (writeState | writeDev) {
+                    if (tDevice != null && writeState | writeDev) {
                         int[] fSetup = payload.Select(x => (int) x).ToArray();
                         tDevice.FlexSetup = fSetup;
                     }
@@ -405,14 +403,14 @@ namespace Glimmr.Services {
             if (writeState) {
                 DataUtil.SetDeviceData(tDevice);
                 _dev = tDevice;
-                _dreamUtil.SendUdpWrite(msg.C1, msg.C2, msg.GetPayload(), 0x41, (byte)msg.Group, receivedIpEndPoint);
+                _dreamUtil.SendUdpWrite(msg.C1, msg.C2, msg.GetPayload(), 0x41, (byte)msg.Group, receivedIpEndPoint).ConfigureAwait(false);
             }
 
-            if (!writeState || !writeDev) return;
+            if (!writeState) return;
             // Notify if the sender was not us
             if (!areYouLocal && refreshDevice) {
-                _controlService.NotifyClients();
-                _controlService.RefreshDevice(tDevice.Id);
+                _controlService.NotifyClients().ConfigureAwait(false);
+                if (tDevice != null) _controlService.RefreshDevice(tDevice.Id);
             }
 
             if (tDevice == null) return;
@@ -424,23 +422,23 @@ namespace Glimmr.Services {
         }
 
 
-        private void Discover(CancellationToken ct) {
+        private async Task Discover(CancellationToken ct) {
             try {
                 Log.Debug("Dreamscreen: Discovery started...");
                 _discovering = true;
                 // Send a custom internal message to self to store discovery results
                 var selfEp = new IPEndPoint(IPAddress.Loopback, 8888);
-                _dreamUtil.SendUdpWrite(0x01, 0x0D, new byte[] {0x01}, 0x30, 0x00, selfEp);
+                await _dreamUtil.SendUdpWrite(0x01, 0x0D, new byte[] {0x01}, 0x30, 0x00, selfEp);
                 // Send our notification to actually discover
                 var msg = new byte[] {0xFC, 0x05, 0xFF, 0x30, 0x01, 0x0A, 0x2A};
-                _dreamUtil.SendUdpMessage(msg);
-                Task.Delay(3000, ct).ConfigureAwait(false);
-                _dreamUtil.SendUdpWrite(0x01, 0x0E, new byte[] {0x01}, 0x30, 0x00, selfEp);
-                Task.Delay(500, ct).ConfigureAwait(false);
+                await _dreamUtil.SendUdpMessage(msg);
+                await Task.Delay(3000, ct).ConfigureAwait(false);
+                await _dreamUtil.SendUdpWrite(0x01, 0x0E, new byte[] {0x01}, 0x30, 0x00, selfEp);
+                await Task.Delay(500, ct).ConfigureAwait(false);
                 _discovering = false;
                 Log.Debug("Dreamscreen: Discovery complete.");
             } catch (Exception e) {
-                Log.Warning("Discovery exception: ", e);
+                Log.Warning("Discovery exception: " + e.Message);
             }
             
         }

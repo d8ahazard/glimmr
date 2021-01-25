@@ -69,14 +69,15 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 
 
-		public void FlashColor(Color color) {
-			if (_entLayer == null) return;
+		public Task FlashColor(Color color) {
+			if (_entLayer == null) return Task.CompletedTask;
 			foreach (var entLight in _entLayer) {
 				// Get data for our light from map
 				var oColor = new RGBColor(color.R, color.G, color.B);
 				// If we're currently using a scene, animate it
 					entLight.SetState(_ct, oColor, 255);
 			}
+			return Task.CompletedTask;
 		}
 		
 		public void FlashLight(Color color, int lightId) {
@@ -99,7 +100,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		///     Set up and create a new streaming layer based on our light map
 		/// </summary>
 		/// <param name="ct">A cancellation token.</param>
-		public void StartStream(CancellationToken ct) {
+		public async Task StartStream(CancellationToken ct) {
 			// Leave if not enabled
 			if (!Data.Enable) return;
 			
@@ -133,13 +134,13 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			//Connect to the streaming group
 			try {
 				var groupId = Data.SelectedGroup;
-				var group = _client.LocalHueClient.GetGroupAsync(groupId).Result;
+				var group = await _client.LocalHueClient.GetGroupAsync(groupId);
 				if (group == null) {
 					Log.Warning("Unable to fetch group with ID of " + groupId);
 					return;
 				}
 
-				_client.Connect(group.Id);
+				await _client.Connect(group.Id);
 				Log.Debug("Connected.");
 			} catch (Exception e) {
 				Log.Debug("Streaming exception caught: " + e.Message);
@@ -154,9 +155,9 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Streaming = true;
 		}
 
-		public void StopStream() {
+		public async Task StopStream() {
 			Log.Debug($"Hue: Stopping Stream: {IpAddress}...");
-			var _ = StopStream(_client, Data);
+			await StopStream(_client, Data);
 			if (Streaming) ResetColors();
 			Streaming = false;
 			Log.Debug("Hue: Streaming Stopped.");
@@ -180,31 +181,30 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			}
 		}
 
-		public void ReloadData() {
+		public Task ReloadData() {
 			var newData = (HueData) DataUtil.GetCollectionItem<HueData>("Dev_Hue", Id);
 			DataUtil.GetItem<int>("captureMode");
 			Data = newData;
 			IpAddress = Data.IpAddress;
 			Brightness = newData.Brightness;
 			Log.Debug(@"Hue: Reloaded bridge: " + IpAddress);
+			return Task.CompletedTask;
 		}
 
 		/// <summary>
 		///     Update lights in entertainment layer
 		/// </summary>
-		/// <param name="_">LED colors, we don't need this.</param>
-		/// <param name="colors">Sector colors.</param>
-		/// <param name="fadeTime">Optional: how long to fade to next state</param>
-		public void SetColor(List<Color> _, List<Color> colors, double fadeTime = 0) {
-			if (!Streaming || !Data.Enable || Testing) {
-				return;
-			}
-			if (colors == null) {
+		/// <param name="o">Sender.</param>
+		/// <param name="dynamicEventArgs">Args containing the usual color data...</param>
+		public async Task SetColor(object o, DynamicEventArgs dynamicEventArgs) {
+			if (!Streaming || !Data.Enable || Testing || _entLayer == null) {
 				return;
 			}
 
-			if (_entLayer == null) return;
+			var colors = (List<Color>) dynamicEventArgs.P2;
+			float fadeTime = dynamicEventArgs.P3;
 			var lightMappings = Data.MappedLights;
+			
 			foreach (var entLight in _entLayer) {
 				// Get data for our light from map
 				var lightData = lightMappings.SingleOrDefault(item =>
@@ -227,6 +227,8 @@ namespace Glimmr.Models.ColorTarget.Hue {
 					entLight.SetState(_ct, oColor, mb);
 				}
 			}
+
+			await Task.FromResult(true);
 		}
 
 		

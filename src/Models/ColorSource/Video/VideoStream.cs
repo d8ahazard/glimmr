@@ -64,8 +64,6 @@ namespace Glimmr.Models.ColorSource.Video {
 		public bool SourceActive;
 		private ControlService _controlService;
 		private readonly ColorService _colorService;
-		private readonly CancellationToken _cancellationToken;
-		private Task SendTask;
 
 
 		public VideoStream(ColorService cs, ControlService controlService, CancellationToken camToken) {
@@ -75,7 +73,6 @@ namespace Glimmr.Models.ColorSource.Video {
 			_vc = GetStream();
 			if (_vc == null) return;
 			_vc.Start(camToken);
-			_cancellationToken = camToken;
 			_colorService = cs;
 			_controlService = controlService;
 			Log.Debug("Stream capture initialized.");
@@ -89,7 +86,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			_saveTimer = new Timer(SaveFrame, autoEvent, 5000, 5000);
 			Log.Debug($"Starting vid capture task...");
 			StreamSplitter = new Splitter(_systemData, _controlService);
-			SendTask = Task.Run(() => {
+			Task.Run(async () => {
 				while (!ct.IsCancellationRequested) {
 					// Save cpu/memory by not doing anything if not sending...
 				
@@ -121,7 +118,7 @@ namespace Glimmr.Models.ColorSource.Video {
 					Colors = StreamSplitter.GetColors();
 					Sectors = StreamSplitter.GetSectors();
 					//Log.Debug("No, really, sending colors...");
-					if (SendColors) _colorService.SendColors(Colors, Sectors);
+					if (SendColors) await _colorService.SendColors(this, new DynamicEventArgs(Colors, Sectors));
 				
 				}
 

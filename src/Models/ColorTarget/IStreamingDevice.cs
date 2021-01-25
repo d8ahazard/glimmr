@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Glimmr.Models.ColorTarget {
 	public interface IStreamingDevice {
@@ -14,19 +16,19 @@ namespace Glimmr.Models.ColorTarget {
         
 		public StreamingData Data { get; set; }
         
-		public void StartStream(CancellationToken ct);
+		public Task StartStream(CancellationToken ct);
 
-		public void StopStream();
+		public Task StopStream();
 
-		public void SetColor(List<Color> leds, List<Color> sectors, double fadeTime);
+		public Task SetColor(Object o, DynamicEventArgs args);
 
-		public void FlashColor(Color color);
+		public Task FlashColor(Color color);
 
 		public bool IsEnabled() {
 			return Enable;
 		}
 
-		public void ReloadData();
+		public Task ReloadData();
 
 		public void Dispose();
 	}

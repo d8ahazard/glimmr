@@ -31,6 +31,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.WebCam {
             Log.Debug("WebCam Stream started.");
             _video.ImageGrabbed += SetFrame;
             _video.Start();
+            await Task.FromResult(true);
         }
 
         public Mat Frame { get; set; }

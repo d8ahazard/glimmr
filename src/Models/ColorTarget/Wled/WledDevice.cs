@@ -8,7 +8,7 @@ using System.Net.Http;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using Glimmr.Models.ColorSource.Video;
+using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Newtonsoft.Json;
@@ -26,14 +26,11 @@ namespace Glimmr.Models.ColorTarget.Wled {
         public string IpAddress { get; set; }
         public string Tag { get; set; }
         private bool _disposed;
-        private bool _sending;
-        private bool colorsSet;
         private static int port = 21324;
-        private IPEndPoint ep;
-        private Splitter appSplitter;
-        private List<Color> _updateColors;
-        private HttpClient _httpClient;
-        private UdpClient _udpClient;
+        private IPEndPoint _ep;
+        private readonly List<Color> _updateColors;
+        private readonly HttpClient _httpClient;
+        private readonly UdpClient _udpClient;
         
         StreamingData IStreamingDevice.Data {
             get => Data;
@@ -54,20 +51,20 @@ namespace Glimmr.Models.ColorTarget.Wled {
         }
 
         
-        public void StartStream(CancellationToken ct) {
+        public async Task StartStream(CancellationToken ct) {
             if (Streaming) return;
             if (!Data.Enable) return;
             var onObj = new JObject(
                 new JProperty("on", true),
                 new JProperty("bri", Brightness)
                 );
-            SendPost(onObj);
-            ep = IpUtil.Parse(IpAddress, port);
+            await SendPost(onObj);
+            _ep = IpUtil.Parse(IpAddress, port);
             Streaming = true;
         }
 
 
-        public void FlashColor(Color color) {
+        public async Task FlashColor(Color color) {
             var packet = new List<Byte>();
             // Set mode to DRGB, dude.
             var timeByte = 255;
@@ -80,7 +77,10 @@ namespace Glimmr.Models.ColorTarget.Wled {
             }
             
             try {
-                _udpClient?.SendAsync(packet.ToArray(), packet.Count, ep);
+                if (_udpClient != null) {
+                    await _udpClient.SendAsync(packet.ToArray(), packet.Count, _ep);    
+                }
+                
             } catch (Exception e) {
                 Log.Debug("Fucking exception, look at that: " + e.Message);        
             }
@@ -91,13 +91,13 @@ namespace Glimmr.Models.ColorTarget.Wled {
         }
 
         
-        public void StopStream() {
-            StopStrip();
+        public async Task StopStream() {
+            await StopStrip();
             Streaming = false;
             Log.Debug("WLED: Stream stopped.");
         }
 
-        private void StopStrip() {
+        private async Task StopStrip() {
             if (!Streaming) return;
             var packet = new List<byte>();
             // Set mode to DRGB, dude.
@@ -106,21 +106,20 @@ namespace Glimmr.Models.ColorTarget.Wled {
             for (var i = 0; i < Data.LedCount; i++) {
                 packet.AddRange(new byte[] {0, 0, 0});
             }
-            if (ep != null) _udpClient?.SendAsync(packet.ToArray(), packet.Count, ep);
+            if (_ep != null) _udpClient?.SendAsync(packet.ToArray(), packet.Count, _ep);
             var offObj = new JObject(
                 new JProperty("on", false)
             );
-            SendPost(offObj);
+            await SendPost(offObj);
         }
 
-        public void SetColor(List<Color> colors, List<Color> _, double fadeTime) {
-            if (colors == null) {
-                return;
-            }
+        public async Task SetColor(object o, DynamicEventArgs dynamicEventArgs) {
+            
             if (!Streaming || !Data.Enable || Testing) {
                 return;
             }
 
+            var colors = dynamicEventArgs.P1;
             colors = TruncateColors(colors);
             if (Data.StripMode == 2) {
                 colors = ShiftColors(colors);
@@ -144,13 +143,13 @@ namespace Glimmr.Models.ColorTarget.Wled {
                 pInt += 3;
             }
 
-            if (ep == null) {
+            if (_ep == null) {
                 Log.Debug("No endpoint.");
                 return;
             }
 
             try {
-                _udpClient?.SendAsync(packet.ToArray(), packet.Length, ep);
+                if (_udpClient != null) await _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep);
             } catch (Exception e) {
                 Log.Debug("Exception: " + e.Message);        
             }
@@ -208,7 +207,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             return output.ToList();
         }
 
-        public void UpdatePixel(int pixelIndex, Color color) {
+        public async Task UpdatePixel(int pixelIndex, Color color) {
             if (_updateColors.Count == 0) {
                 for (var i = 0; i < Data.LedCount; i++) {
                     _updateColors.Add(Color.FromArgb(0,0,0,0));
@@ -217,37 +216,38 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
             if (pixelIndex >= Data.LedCount) return;
             _updateColors[pixelIndex] = color;
-            SetColor(_updateColors, null, 0);
+            await SetColor(this, new DynamicEventArgs(_updateColors, null, 0));
         }
        
      
-        public void ReloadData() {
+        public Task ReloadData() {
             var id = Data.Id;
             Data = DataUtil.GetCollectionItem<WledData>("Dev_Wled", id);
             Log.Debug($"Reloaded LED Data for {id}: " + JsonConvert.SerializeObject(Data));
+            return Task.CompletedTask;
         }
 
-        public void UpdateCount(int count) {
+        public async Task UpdateCount(int count) {
             var setting = new Dictionary<string, dynamic>();
             setting["LC"] = count;
-            SendForm(setting);
+            await SendForm(setting);
         }
 
-        public void UpdateBrightness(int brightness) {
+        public async Task UpdateBrightness(int brightness) {
             Brightness = brightness;
             var onObj = new JObject(
                 new JProperty("bri", brightness)
             );
-            SendPost(onObj);
+            await SendPost(onObj);
         }
 
-        public void UpdateType(bool isRgbw) {
+        public async Task UpdateType(bool isRgbw) {
             var setting = new Dictionary<string, dynamic>();
             setting["EW"] = isRgbw;
-            SendForm(setting);
+            await SendForm(setting);
         }
 
-        private void SendPost(JObject values, string target="/json/state") {
+        private async Task SendPost(JObject values, string target="/json/state") {
             Uri uri;
             if (string.IsNullOrEmpty(IpAddress) && !string.IsNullOrEmpty(Id)) {
                 IpAddress = Id;
@@ -257,22 +257,22 @@ namespace Glimmr.Models.ColorTarget.Wled {
             try {
                 uri = new Uri("http://" + IpAddress + target);
             } catch (UriFormatException e) {
-                Log.Warning("URI Format exception: ", e);
+                Log.Warning("URI Format exception: " + e.Message);
                 return;
             }
 
             var httpContent = new StringContent(values.ToString());
             httpContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
             try {
-               _httpClient.PostAsync(uri, httpContent);
+               await _httpClient.PostAsync(uri, httpContent);
             } catch (Exception e) {
-                Log.Warning("HTTP Request Exception...");
+                Log.Warning("HTTP Request Exception: " + e.Message);
             }
 
             httpContent.Dispose();
         }
 
-        private void SendForm(Dictionary<string, dynamic> values) {
+        private async Task SendForm(Dictionary<string, dynamic> values) {
             var uri = new Uri("http://" + IpAddress + "settings/leds");
             var request = (HttpWebRequest)WebRequest.Create(uri);
             string postData = string.Empty;
@@ -287,13 +287,13 @@ namespace Glimmr.Models.ColorTarget.Wled {
             request.Method = "POST";
             request.ContentType = "application/x-www-form-urlencoded";
             request.ContentLength = data.Length;
-            using (var stream = request.GetRequestStream()) {
-                stream.WriteAsync(data, 0, data.Length);
+            await using (var stream = request.GetRequestStream()) {
+                await stream.WriteAsync(data.AsMemory(0, data.Length));
             }
 
             var response = (HttpWebResponse)request.GetResponse();
 
-            using var rs = response.GetResponseStream();
+            await using var rs = response.GetResponseStream();
             var responseString = new StreamReader(rs).ReadToEndAsync();
             Log.Debug("We got a response: " + responseString);    
             response.Dispose();

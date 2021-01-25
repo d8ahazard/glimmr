@@ -44,7 +44,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
                     Colors = ledCols;
                     Sectors = cols;
-                    _cs.SendColors(ledCols, cols);
+                    await _cs.SendColors(this, new DynamicEventArgs(ledCols, cols));
                     await Task.Delay(waitSpan, ct);
                 }
             }, ct);

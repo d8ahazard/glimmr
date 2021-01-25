@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
+using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using YeelightAPI;
@@ -30,37 +31,40 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			cs.ColorSendEvent += SetColor;
 			 
 		}
-		public void StartStream(CancellationToken ct) {
-			Streaming = _yeeDevice.Connect().Result;
+		public async Task StartStream(CancellationToken ct) {
+			Streaming = await _yeeDevice.Connect();
 		}
 
-		public void StopStream() {
+		public Task StopStream() {
 			if (!Streaming) {
-				return;
+				return Task.CompletedTask;
 			}
 
 			_yeeDevice.Disconnect();
 			Streaming = false;
+			return Task.CompletedTask;
 		}
 
-		public void SetColor(List<Color> _, List<Color> sectors, double fadeTime) {
+		public async Task SetColor(object o, DynamicEventArgs dynamicEventArgs) {
 			if (!Streaming || _data.TargetSector == -1 || Testing) {
 				return;
 			}
 
+			var sectors = dynamicEventArgs.P2;
 			var col = sectors[_data.TargetSector];
-			_yeeDevice.SetRGBColor(col.R, col.G, col.B);
+			await _yeeDevice.SetRGBColor(col.R, col.G, col.B);
 		}
 
-		public void FlashColor(Color col) {
-			_yeeDevice.SetRGBColor(col.R, col.G, col.B);
+		public async Task FlashColor(Color col) {
+			await _yeeDevice.SetRGBColor(col.R, col.G, col.B);
 		}
 
-		public void ReloadData() {
+		public Task ReloadData() {
 			Streaming = false;
 			_yeeDevice.Dispose();
 			_data = DataUtil.GetCollectionItem<YeelightData>("Dev_Yeelight", _data.Id);
 			_yeeDevice = new Device(_data.IpAddress);
+			return Task.CompletedTask;
 		}
 
 		public void Dispose() {

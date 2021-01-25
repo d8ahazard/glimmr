@@ -56,13 +56,14 @@ namespace Glimmr.Services {
 		private Dictionary<string, int> _subscribers;
 		private VideoStream _videoStream;
 		private AudioVideoStream _avStream;
+		private Task _subscribeTask;
 
-		public event Action<List<Color>, List<Color>, double> ColorSendEvent = delegate { };
+		public AsyncEvent<DynamicEventArgs> ColorSendEvent;
 		public event Action<List<Color>, string> SegmentTestEvent = delegate { };
 
 		public ColorService(ControlService controlService) {
 			_controlService = controlService;
-			_controlService.TriggerSendColorsEvent += SendColors;
+			_controlService.TriggerSendColorEvent += SendColors;
 			_controlService.SetModeEvent += Mode;
 			_controlService.DeviceReloadEvent += RefreshDeviceData;
 			_controlService.RefreshLedEvent += ReloadLedData;
@@ -76,7 +77,7 @@ namespace Glimmr.Services {
 			Log.Debug("Initialization complete.");
 		}
 		
-		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
+		protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
 			_stopToken = stoppingToken;
 			_streamTokenSource = new CancellationTokenSource();
 			Log.Information("Starting colorService loop...");
@@ -89,15 +90,15 @@ namespace Glimmr.Services {
 			
 			Log.Information("Starting video capture task...");
 			// Start our initial mode
-			Demo();
+			await Demo(this, new DynamicEventArgs());
 			Log.Information($"All color sources initialized, setting mode to {_deviceMode}.");
-			Mode(_deviceMode);
+			await Mode(this, new DynamicEventArgs(_deviceMode));
 			Log.Information("All color services have been initialized.");
 
-			return Task.Run(async () => {
+			_subscribeTask = Task.Run(async () => {
 				while (!stoppingToken.IsCancellationRequested) {
 					// CheckAutoDisable();
-					CheckSubscribers();
+					await CheckSubscribers();
 					await Task.Delay(5000, stoppingToken);
 				}
 				return Task.CompletedTask;
@@ -116,10 +117,11 @@ namespace Glimmr.Services {
 		private void FlashDevice(string devId) {
 			var disable = false;
 			var ts = new CancellationTokenSource();
+			var lc = 300;
 			try {
-				var lc = _systemData.LedCount;
+				lc = _systemData.LedCount;
 			} catch (Exception) {
-				var lc = 300;
+				
 			}
 
 			var bColor = Color.FromArgb(0, 0, 0, 0);
@@ -199,7 +201,7 @@ namespace Glimmr.Services {
 			}
 		}
 	
-		private void CheckAutoDisable() {
+		private async Task CheckAutoDisable() {
 			var sourceActive = false;
 			// If we're in video or audio mode, check the source is active...
 			switch (_deviceMode) {
@@ -222,7 +224,7 @@ namespace Glimmr.Services {
 				_autoDisabled = false;
 				DataUtil.SetItem<bool>("AutoDisabled", _autoDisabled);
 				_controlService.SetModeEvent -= Mode;
-				_controlService.SetMode(_deviceMode);
+				await _controlService.SetMode(_deviceMode);
 				_controlService.SetModeEvent += Mode;
 			} else {
 				if (_autoDisabled) return;
@@ -230,15 +232,15 @@ namespace Glimmr.Services {
 				_autoDisabled = true;
 				DataUtil.SetItem<bool>("AutoDisabled", _autoDisabled);
 				_controlService.SetModeEvent -= Mode;
-				_controlService.SetMode(0);
+				await _controlService.SetMode(0);
 				_controlService.SetModeEvent += Mode;
 			}
 		}
 
 
-		private void CheckSubscribers() {
+		private async Task CheckSubscribers() {
 			try {
-				_dreamUtil.SendBroadcastMessage(_deviceGroup);
+				await _dreamUtil.SendBroadcastMessage(_deviceGroup);
 				// Enumerate all subscribers, check to see that they are still valid
 				var keys = new List<string>(_subscribers.Keys);
 				foreach (var key in keys) {
@@ -340,7 +342,8 @@ namespace Glimmr.Services {
 			_sDevices = sDevs.ToArray();
 		}
 
-		private void Demo(string stripId = "") {
+		private async Task Demo(object o, DynamicEventArgs dynamicEventArgs) {
+			var stripId = dynamicEventArgs.P1;
 			if (String.IsNullOrEmpty(stripId)) StartStream();
 			Log.Debug("Demo fired...");
 			var ledCount = 300;
@@ -369,7 +372,7 @@ namespace Glimmr.Services {
 
 				cols[i] = rCol;
 				if (String.IsNullOrEmpty(stripId)) {
-					SendColors(cols.ToList(), secs.ToList());	
+					await SendColors(this, new DynamicEventArgs(cols.ToList(), secs.ToList()));	
 				} else {
 					SegmentTestEvent(cols.ToList(), stripId);
 				}
@@ -460,7 +463,8 @@ namespace Glimmr.Services {
 			_audioStream?.Refresh();
 		}
 
-		private void Mode(int newMode) {
+		private Task Mode(object o, DynamicEventArgs dynamicEventArgs) {
+			int newMode = dynamicEventArgs.P1;
 			_deviceMode = newMode;
 			if (newMode != 0 && _autoDisabled) {
 				_autoDisabled = false;
@@ -497,6 +501,7 @@ namespace Glimmr.Services {
 			}
 			_deviceMode = newMode;
 			Log.Information($"Device mode updated to {newMode}.");
+			return Task.CompletedTask;
 		}
 
 
@@ -567,7 +572,7 @@ namespace Glimmr.Services {
 		}
 
 
-		public void SendColors(List<Color> colors, List<Color> sectors, int fadeTime = 0) {
+		public async Task SendColors(object o, DynamicEventArgs args) {
 			_sendTokenSource ??= new CancellationTokenSource();
 			if (_sendTokenSource.IsCancellationRequested) {
 				Log.Debug("Send token is canceled.");
@@ -578,8 +583,8 @@ namespace Glimmr.Services {
 				Log.Debug("Stream not started.");
 				return;
 			}
-
-			ColorSendEvent(colors, sectors, fadeTime);
+			
+			await ColorSendEvent.InvokeAsync(this, new DynamicEventArgs(args.P1, args.P2, args.P3));
 		}
 
 

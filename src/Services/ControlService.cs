@@ -50,26 +50,28 @@ namespace Glimmr.Services {
 		public event Action RefreshSystemEvent = delegate { };
 		public event Action DeviceRescanEvent = delegate { };
 		public event ArgUtils.Action DreamSubscribeEvent = delegate { };
-		public event Action<int> SetModeEvent = delegate { };
+		
+		public AsyncEvent<DynamicEventArgs> SetModeEvent;
 		public event Action<int> TestLedEvent = delegate { };
 		public event Action<CancellationToken> RefreshDreamscreenEvent = delegate { };
 		public event Action<string> AddSubscriberEvent = delegate { };
 		public event Action<string> FlashDeviceEvent = delegate { };
 		public event Action<int> FlashSectorEvent = delegate { };
+
+		public AsyncEvent<DynamicEventArgs> DemoLedEvent;
 		
-		public event Action<string> DemoLedEvent = delegate { };
-		public event Action<List<Color>, List<Color>, int> TriggerSendColorsEvent = delegate { };
+		public AsyncEvent<DynamicEventArgs> TriggerSendColorEvent;
 		
 
 		public void ScanDevices() {
 			DeviceRescanEvent();
 		}
 
-		public void SetMode(int mode) {
+		public async Task SetMode(int mode) {
 			Log.Information("Setting mode: " + mode);
-			_hubContext.Clients.All.SendAsync("mode", mode);
+			await _hubContext.Clients.All.SendAsync("mode", mode);
 			DataUtil.SetItem<int>("DeviceMode", mode);
-			SetModeEvent(mode);
+			await SetModeEvent.InvokeAsync(null, new DynamicEventArgs(mode));
 		}
 
 		public async Task AuthorizeHue(string id) {
@@ -161,8 +163,8 @@ namespace Glimmr.Services {
 		}
 
 		// We call this one to send colors to everything, including the color service
-		public void SendColors(List<Color> c1, List<Color> c2, int fadeTime = 0) {
-			TriggerSendColorsEvent(c1, c2, fadeTime);
+		public async void SendColors(List<Color> c1, List<Color> c2, int fadeTime = 0) {
+			await TriggerSendColorEvent.InvokeAsync(this, new DynamicEventArgs(c1, c2, fadeTime));
 		}
 
 		
@@ -323,8 +325,8 @@ namespace Glimmr.Services {
 			FlashSectorEvent(sector);
 		}
 
-		public void DemoLed(string id) {
-			DemoLedEvent(id);
+		public async Task DemoLed(string id) {
+			await DemoLedEvent.InvokeAsync(this, new DynamicEventArgs(id));
 		}
 	}
 }

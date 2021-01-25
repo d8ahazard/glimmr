@@ -130,7 +130,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 			Sectors = _map.MapColors(lAmps, rAmps, 28).ToList();
 			Colors = ColorUtil.SectorsToleds(Sectors.ToList(), _sd);
 			if (SendColors) {
-				_cs.SendColors(Colors, Sectors);
+				_cs.SendColors(this, new DynamicEventArgs(Colors, Sectors)).ConfigureAwait(false);
 			}
 			return true;
 		}

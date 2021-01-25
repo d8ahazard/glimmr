@@ -71,7 +71,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			_disposed = false;
 		}
 		
-		public void StartStream(CancellationToken ct) {
+		public async Task StartStream(CancellationToken ct) {
 			if (!Enable || Streaming) return;
 			Streaming = true;
 
@@ -80,30 +80,30 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			var body = new
 				{write = new {command = "display", animType = "extControl", extControlVersion = controlVersion}};
 
-			_ = SendPutRequest(_basePath, JsonConvert.SerializeObject(new {on = new {value = true}}),
-				"state").Result;
-			_ = SendPutRequest(_basePath, JsonConvert.SerializeObject(body), "effects").Result;
+			await SendPutRequest(_basePath, JsonConvert.SerializeObject(new {on = new {value = true}}),
+				"state");
+			await SendPutRequest(_basePath, JsonConvert.SerializeObject(body), "effects");
 			
 		}
 
-		public void StopStream() {
+		public async Task StopStream() {
 			if (!Streaming || !Enable) return;
 			Streaming = false;
-			SendPutRequest(_basePath, JsonConvert.SerializeObject(new {on = new {value = false}}), "state")
+			await SendPutRequest(_basePath, JsonConvert.SerializeObject(new {on = new {value = false}}), "state")
 				.ConfigureAwait(false);
 			Log.Debug($@"Nanoleaf: Stopped panel: {IpAddress}");
 
 		}
 
 
-		public void SetColor(List<Color> _, List<Color> colors, double fadeTime = 1) {
+		public async Task SetColor(object o, DynamicEventArgs dynamicEventArgs) {
 			if (!Streaming || !Enable || Testing) {
 				return;
 			}
 
-			if (colors == null) {
-				return;
-			}
+			var colors = dynamicEventArgs.P2;
+			var fadeTime = dynamicEventArgs.P3;
+			if (fadeTime == null) fadeTime = 0;
 			
 			var byteString = new List<byte>();
 			if (_streamMode == 2) {
@@ -138,14 +138,15 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				// Pad duration time
 				byteString.AddRange(_streamMode == 2 ? ByteUtils.PadInt((int)fadeTime) : ByteUtils.PadInt((int)fadeTime, 1));
 			}
-			SendUdpUnicast(byteString.ToArray());
+			await SendUdpUnicastAsync(byteString.ToArray());
 		}
 
 
 
-		public void ReloadData() {
+		public Task ReloadData() {
 			var newData = DataUtil.GetCollectionItem<NanoleafData>("Dev_Nanoleaf", Id);
 			SetData(newData);
+			return Task.CompletedTask;
 		}
 
 		private void SetData(NanoleafData n) {
@@ -162,7 +163,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			Id = n.Id;
 		}
 
-		public void FlashColor(Color color) {
+		public async Task FlashColor(Color color) {
 			var byteString = new List<byte>();
 			if (_streamMode == 2) {
 				byteString.AddRange(ByteUtils.PadInt(_layout.NumPanels));
@@ -186,7 +187,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				// Pad duration time
 				byteString.AddRange(_streamMode == 2 ? ByteUtils.PadInt(0) : ByteUtils.PadInt(0, 1));
 			}
-			SendUdpUnicast(byteString.ToArray());
+			await SendUdpUnicastAsync(byteString.ToArray());
 		}
 
 		public bool IsEnabled() {
@@ -213,11 +214,11 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			return result;
 		}
 
-		private void SendUdpUnicast(byte[] data) {
+		private async Task SendUdpUnicastAsync(byte[] data) {
 			if (_sending) return;
 			_sending = true;
 			var ep = IpUtil.Parse(IpAddress, 60222);
-			if (ep != null) _sender.SendAsync(data, data.Length, ep);
+			if (ep != null) await _sender.SendAsync(data, data.Length, ep);
 			_sending = false;
 		}
 

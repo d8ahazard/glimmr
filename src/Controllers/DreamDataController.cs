@@ -1,6 +1,7 @@
 ﻿#region
 
 using System.Threading;
+using System.Threading.Tasks;
 using Glimmr.Models;
 using Glimmr.Models.ColorTarget.LED;
 using Glimmr.Models.Util;
@@ -24,9 +25,9 @@ namespace Glimmr.Controllers {
 
 		// POST: api/DreamData/mode
 		[HttpPost("mode")]
-		public IActionResult DevMode([FromBody] int mode) {
+		public async Task<IActionResult> DevMode([FromBody] int mode) {
 			Log.Debug("Mode set to: " + mode);
-			_controlService.SetMode(mode);
+			await _controlService.SetMode(mode);
 			return Ok(mode);
 		}
 		
@@ -51,14 +52,14 @@ namespace Glimmr.Controllers {
 		}
 
 		[HttpGet("authorizeHue")]
-		public IActionResult AuthorizeHue([FromQuery] string id) {
-			_controlService.AuthorizeHue(id);
+		public async Task<IActionResult> AuthorizeHue([FromQuery] string id) {
+			await _controlService.AuthorizeHue(id);
 			return Ok(id);
 		}
 		
 		[HttpGet("authorizeNano")]
-		public IActionResult AuthorizeNano([FromQuery] string id) {
-			_controlService.AuthorizeNano(id);
+		public async Task<IActionResult> AuthorizeNano([FromQuery] string id) {
+			await _controlService.AuthorizeNano(id);
 			return Ok(id);
 		}
 

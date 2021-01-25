@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Runtime.Serialization;
 using System.Threading;
+using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Newtonsoft.Json;
@@ -40,30 +41,32 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			if (string.IsNullOrEmpty(IpAddress)) IpAddress = Id;
 		}
 
-		public void StartStream(CancellationToken ct) {
-			_dreamUtil.SendMessage("mode", 1, Id);
+		public async Task StartStream(CancellationToken ct) {
+			await _dreamUtil.SendMessage("mode", 1, Id);
 		}
 
-		public void StopStream() {
+		public async Task StopStream() {
 			Log.Debug("Stopping stream.");
-			_dreamUtil.SendMessage("mode", 0, Id);
+			await _dreamUtil.SendMessage("mode", 0, Id);
 		}
 
-		public void SetColor(List<Color> _, List<Color> sectors, double fadeTime) {
+		public async Task SetColor(object o, DynamicEventArgs dynamicEventArgs) {
 			if (!Data.Enable || Testing) return;
-			if (sectors == null) return;
+
+			var sectors = dynamicEventArgs.P2;
 			if (sectors.Count == 28) {
 				sectors = ColorUtil.TruncateColors(sectors);
 				
 			}
-			_dreamUtil.SendSectors(sectors, Id, Data.DeviceGroup);
+			await _dreamUtil.SendSectors(sectors, Id, Data.DeviceGroup);
 		}
 
-		public void FlashColor(Color color) {
-			
+		public Task FlashColor(Color color) {
+			return Task.CompletedTask;
 		}
 
-		public void ReloadData() {
+		public Task ReloadData() {
+			return Task.CompletedTask;
 		}
 
 		public void Dispose() {

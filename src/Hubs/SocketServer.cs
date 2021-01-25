@@ -17,9 +17,9 @@ namespace Glimmr.Hubs {
 			_cs = cs;
 		}
 
-		public void Mode(int mode) {
+		public async Task Mode(int mode) {
 			Log.Debug("Mode set to: " + mode);
-			_cs.SetMode(mode);
+			await _cs.SetMode(mode);
 		}
 		
 		public Task ScanDevices() {
@@ -58,9 +58,9 @@ namespace Glimmr.Hubs {
 			_cs.UpdateLed(ldd);
 		}
 
-		public void DemoLed(string id) {
+		public async Task DemoLed(string id) {
 			Log.Debug("We should demo a strip here.");
-			_cs.DemoLed(id);
+			await _cs.DemoLed(id);
 		}
 
 		public void SystemControl(string action) {

@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using Serilog;
 
 namespace Glimmr.Models.Util {
@@ -17,7 +18,7 @@ namespace Glimmr.Models.Util {
             _broadcastAddress = new IPEndPoint(IPAddress.Parse("255.255.255.255"), 8888);
         }
         
-		 public void SendSectors(List<Color> sectors, string id, int group) {
+		 public async Task SendSectors(List<Color> sectors, string id, int group) {
             if (sectors == null) throw new InvalidEnumArgumentException("Invalid sector list.");
             const byte flag = 0x3D;
             const byte c1 = 0x03;
@@ -29,14 +30,14 @@ namespace Glimmr.Models.Util {
                 p.Add(ByteUtils.IntByte(col.B));
             }
             var ep = new IPEndPoint(IPAddress.Parse(id), 8888);
-            SendUdpWrite(c1, c2, p.ToArray(), flag, (byte) group, ep);
+            await SendUdpWrite(c1, c2, p.ToArray(), flag, (byte) group, ep);
         }
 
-         public void SendBroadcastMessage(int groupId) {
-             SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x30, (byte) groupId);
+         public async Task SendBroadcastMessage(int groupId) {
+             await SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x30, (byte) groupId);
          }
         
-        public void SetAmbientColor(Color color, string id, int group) {
+        public async Task SetAmbientColor(Color color, string id, int group) {
             if (color == null) throw new InvalidEnumArgumentException("Invalid sector list.");
             byte flag = 0x11;
             byte c1 = 0x03;
@@ -46,9 +47,9 @@ namespace Glimmr.Models.Util {
             p.Add(ByteUtils.IntByte(color.G));
             p.Add(ByteUtils.IntByte(color.B));
             var ep = new IPEndPoint(IPAddress.Parse(id), 8888);
-            SendUdpWrite(c1, c2, p.ToArray(), flag, (byte) group, ep);
+            await SendUdpWrite(c1, c2, p.ToArray(), flag, (byte) group, ep);
         }
-        public void SendMessage(string command, dynamic value, string id) {
+        public async Task SendMessage(string command, dynamic value, string id) {
             var dev = DataUtil.GetDreamDevice(id);
             byte flag = 0x11;
             byte c1 = 0x03;
@@ -101,11 +102,11 @@ namespace Glimmr.Models.Util {
 
             if (send) {
                 var ep = new IPEndPoint(IPAddress.Parse(dev.IpAddress), 8888);
-                SendUdpWrite(c1, c2, payload, flag, (byte) dev.DeviceGroup, ep);
+                await SendUdpWrite(c1, c2, payload, flag, (byte) dev.DeviceGroup, ep);
             }
         }
 
-        public void SendUdpWrite(byte command1, byte command2, byte[] payload, byte flag = 17, byte group = 0,
+        public async Task SendUdpWrite(byte command1, byte command2, byte[] payload, byte flag = 17, byte group = 0,
             IPEndPoint ep = null) {
             if (payload is null) throw new ArgumentNullException(nameof(payload));
             // If we don't specify an endpoint...talk to self
@@ -128,18 +129,18 @@ namespace Glimmr.Models.Util {
             msg.AddRange(payload);
             // CRC
             msg.Add(MsgUtils.CalculateCrc(msg.ToArray()));
-            SendUdpMessage(msg.ToArray(), ep);
+            await SendUdpMessage(msg.ToArray(), ep);
         }
 
-        public void SendUdpMessage(byte[] data, IPEndPoint ep = null) {
+        public async Task SendUdpMessage(byte[] data, IPEndPoint ep = null) {
             try {
                 if (ep == null) {
-                    _udpClient.SendAsync(data, data.Length, _broadcastAddress);
+                    await _udpClient.SendAsync(data, data.Length, _broadcastAddress);
                 } else {
-                    _udpClient.SendAsync(data, data.Length, ep);
+                    await _udpClient.SendAsync(data, data.Length, ep);
                 }
             } catch (SocketException e) {
-                Log.Warning("Socket exception: ", e);
+                Log.Warning("Socket exception: " + e.Message);
             }
         }
     }

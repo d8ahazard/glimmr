@@ -1,6 +1,8 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Hubs;
+using Glimmr.Models;
 using Glimmr.Models.Util;
 using LifxNet;
 using Microsoft.AspNetCore.SignalR;
@@ -27,7 +29,7 @@ namespace Glimmr.Services {
 				Log.Debug("Starting discovery service loop.");
 				
 				while (!stoppingToken.IsCancellationRequested) {
-					await Task.Delay(600000, stoppingToken);
+					await Task.Delay(TimeSpan.FromMinutes(60), stoppingToken);
 					Log.Debug("Auto-refreshing devices...");
 					if (!_streaming) TriggerRefresh();
 				}
@@ -40,8 +42,9 @@ namespace Glimmr.Services {
 			return base.StopAsync(cancellationToken);
 		}
 
-		private void UpdateMode(int mode) {
-			_streaming = mode != 0;
+		private Task UpdateMode(object o, DynamicEventArgs dynamicEventArgs) {
+			_streaming = dynamicEventArgs.P1 != 0;
+			return Task.CompletedTask;
 		}
 
 

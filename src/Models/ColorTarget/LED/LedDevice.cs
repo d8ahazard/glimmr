@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Newtonsoft.Json;
@@ -37,12 +38,18 @@ namespace Glimmr.Models.ColorTarget.LED {
 			_cs.ColorSendEvent += SetColor;
 			LoadData(ld);
 		}
-		
-		public void StartStream(CancellationToken ct) {
+
+		public async Task SetColor(object arg1, DynamicEventArgs arg2) {
+			var colors = arg2.P1;
+			SetColor(colors);
+			await Task.FromResult(true);
+		}
+
+		public Task StartStream(CancellationToken ct) {
 			Log.Debug("Starting LED stream...");
 			if (!Enable || Streaming) {
 				Log.Debug("Returning, disabled or already streaming.");
-				return;
+				return Task.CompletedTask;
 			}
 
 			var settings = LoadLedData(Data);
@@ -55,20 +62,23 @@ namespace Glimmr.Models.ColorTarget.LED {
 				Log.Debug("Unable to initialize strips, or something.");
 				Streaming = false;
 			}
+			return Task.CompletedTask;
 		}
 
-		public void StopStream() {
-			if (!Streaming) return;
+		public Task StopStream() {
+			if (!Streaming) return Task.CompletedTask;
 
 			StopLights();
 			_strip?.Reset();
 			_strip?.Dispose();
 			Streaming = false;
+			return Task.CompletedTask;
 		}
 
 		
-		public void FlashColor(Color color) {
+		public Task FlashColor(Color color) {
 			_strip?.SetAll(color);
+			return Task.CompletedTask;
 		}
 
 		private void LoadData(LedData ld) {
@@ -82,14 +92,15 @@ namespace Glimmr.Models.ColorTarget.LED {
 			if (Enable) _strip?.Dispose();
 		}
 
-		public void ReloadData() {
+		public Task ReloadData() {
 			var ld = DataUtil.GetCollectionItem<LedData>("LedData", Id);
-			if (ld == null) return;
+			if (ld == null) return Task.CompletedTask;
 			Log.Debug("Reloading ledData: " + JsonConvert.SerializeObject(ld));
 			Log.Debug("Old LED Data: " + JsonConvert.SerializeObject(Data));
 			if (Data.Brightness != ld.Brightness) _strip.SetBrightness(ld.Brightness);
 			if (Data.Count != ld.Count) _strip.SetLedCount(ld.Count);
 			LoadData(ld);
+			return Task.CompletedTask;
 		}
 
 	
@@ -153,9 +164,6 @@ namespace Glimmr.Models.ColorTarget.LED {
 			SetColor(mt.ToList(), true);
 		}
 
-		public void SetColor(List<Color> colors, List<Color> sectors, double fadeTime) {
-			SetColor(colors);
-		}
 		
 		private void UpdateStrip(List<Color> colors, string id) {
 			if (id == Id) {
