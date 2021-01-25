@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 using Serilog;
 
 namespace Glimmr.Models.Util {
@@ -40,10 +41,10 @@ namespace Glimmr.Models.Util {
 			"Under-voltage detected"
 		};
 
-		public static CpuData GetStats() {
-			_throttledState = GetThrottledState();
-			var temp = GetTemperature();
-			GetProcessAverage();
+		public static async Task<CpuData> GetStats() {
+			_throttledState = await GetThrottledState();
+			var temp = await GetTemperature();
+			await GetProcessAverage();
 			TemperatureSetMinMax(temp);
 			var cd = new CpuData {
 				TempCurrent = temp,
@@ -59,7 +60,7 @@ namespace Glimmr.Models.Util {
 			return cd;
 		}
 
-		private static float GetTemperature() {
+		private static async Task<float> GetTemperature() {
 			// bash command / opt / vc / bin / vcgencmd measure_temp
 			var process = new Process {
 				StartInfo = new ProcessStartInfo {
@@ -71,14 +72,14 @@ namespace Glimmr.Models.Util {
 				}
 			};
 			process.Start();
-			var result = process.StandardOutput.ReadToEnd();
-			process.WaitForExit();
+			var result = await process.StandardOutput.ReadToEndAsync();
+			await process.WaitForExitAsync();
 			process.Dispose();
 			var res = result.Split("=")[1].Split("'")[0];
 			return float.TryParse(res, out var temperature) ? temperature : 0.0f;
 		}
 
-		private static string[] GetThrottledState() {
+		private static async Task<string[]> GetThrottledState() {
 			var process = new Process {
 				StartInfo = new ProcessStartInfo {
 					FileName = "/bin/bash",
@@ -89,8 +90,8 @@ namespace Glimmr.Models.Util {
 				}
 			};
 			process.Start();
-			var result = process.StandardOutput.ReadToEnd();
-			process.WaitForExit();
+			var result = await process.StandardOutput.ReadToEndAsync();
+			await process.WaitForExitAsync();
 			process.Dispose();
 			result = result.Trim();
 			var split = result.Split("x")[1];
@@ -113,7 +114,7 @@ namespace Glimmr.Models.Util {
 			return output;
 		}
 
-		private static void GetProcessAverage() {
+		private static async Task GetProcessAverage() {
 			var process = new Process {
 				StartInfo = new ProcessStartInfo {
 					FileName = "/usr/bin/uptime",
@@ -123,8 +124,8 @@ namespace Glimmr.Models.Util {
 				}
 			};
 			process.Start();
-			var processResult = process.StandardOutput.ReadToEnd().Trim();
-			process.WaitForExit();
+			var processResult = (await process.StandardOutput.ReadToEndAsync()).Trim();
+			await process.WaitForExitAsync();
 			process.Dispose();
 			var loadAverages = processResult.Substring(processResult.IndexOf("average: ", Sc) + 9).Split(',');
 			float.TryParse(loadAverages[0], out _loadAvg1);

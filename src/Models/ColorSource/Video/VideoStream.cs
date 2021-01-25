@@ -234,7 +234,7 @@ namespace Glimmr.Models.ColorSource.Video {
 				_lockTarget = FindTarget(scaled);
 				if (_lockTarget != null) {
 					Log.Debug("Target hit.");
-					DataUtil.SetItem<PointF[]>("LockTarget", _lockTarget.ToArray());
+					DataUtil.SetItem("LockTarget", _lockTarget.ToArray());
 				} else {
 					Log.Debug("No target.");
 				}

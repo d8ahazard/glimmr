@@ -145,17 +145,17 @@ namespace Glimmr.Models.Util {
             }
         }
         //fixed
-        public static void InsertCollection<T>(string key, dynamic value) where T: class {
+        public static async Task InsertCollection<T>(string key, dynamic value) where T: class {
             var db = GetDb();
             var coll = db.GetCollection<T>(key);
-            coll.Upsert(value.Id, value);
+            await coll.Upsert(value.Id, value);
             db.Commit();
         }
         //fixed
-        public static void InsertCollection(string key, dynamic value) {
+        public static async Task InsertCollection(string key, dynamic value) {
                 var db = GetDb();
                 var coll = db.GetCollection(key);
-                coll.Upsert(value.Id, value);
+                await coll.Upsert(value.Id, value);
                 db.Commit();
         }
         
@@ -305,10 +305,6 @@ namespace Glimmr.Models.Util {
                 return null;
             }
             return (T) GetItem(key);
-        }
-        
-        public static void SetItem<T>(string key, dynamic value) {
-            SetItem(key, value);
         }
         
         public static dynamic GetItem(string key) {

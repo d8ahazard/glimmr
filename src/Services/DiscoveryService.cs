@@ -31,7 +31,7 @@ namespace Glimmr.Services {
 				while (!stoppingToken.IsCancellationRequested) {
 					await Task.Delay(TimeSpan.FromMinutes(60), stoppingToken);
 					Log.Debug("Auto-refreshing devices...");
-					if (!_streaming) TriggerRefresh();
+					if (!_streaming) await TriggerRefresh(this, null);
 				}
 				return Task.CompletedTask;
 			}, stoppingToken);
@@ -48,9 +48,9 @@ namespace Glimmr.Services {
 		}
 
 
-		private void TriggerRefresh() {
+		private async Task TriggerRefresh(object o, DynamicEventArgs dynamicEventArgs) {
 			Log.Debug("Triggering refresh.");
-			DeviceDiscovery();
+			await DeviceDiscovery();
 		}
         
 		// Discover...devices?

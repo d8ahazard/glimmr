@@ -22,37 +22,37 @@ namespace Glimmr.Models.Util {
 			var curMode = DataUtil.GetItem<int>("CaptureMode");
 			var dev = DataUtil.GetDeviceData();
 			if (curMode == capMode) return;
-			DataUtil.SetItem<int>("CaptureMode", capMode);
+			DataUtil.SetItem("CaptureMode", capMode);
 			var devType = "SideKick";
 			if (capMode != 0) devType = "Dreamscreen4K";
 
-			SwitchDeviceType(devType, dev);
-			DataUtil.SetItem<string>("DevType", devType);
+			await SwitchDeviceType(devType, dev);
+			DataUtil.SetItem("DevType", devType);
 			await TriggerReload(hubContext, JObject.FromObject(dev));
 		}
 
-		private static void SwitchDeviceType(string devType, DreamData curDevice) {
+		private static async Task SwitchDeviceType(string devType, DreamData curDevice) {
 			Log.Debug("Switching type to " + devType);
 			curDevice.DeviceTag = devType;
-			DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", curDevice);
+			await DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", curDevice);
 		}
 
 
-		public static async Task<bool> TriggerReload(IHubContext<SocketServer> hubContext, JObject dData) {
+		public static async Task TriggerReload(IHubContext<SocketServer> hubContext, JObject dData) {
 			if (dData == null) throw new ArgumentException("invalid jObject");
 			if (hubContext == null) throw new ArgumentException("invalid hub context.");
 			Log.Debug("Reloading data: " + JsonConvert.SerializeObject(dData));
 			var tag = (dData["Tag"] ?? "INVALID").Value<string>();
 			var id = (dData["_id"] ?? "INVALID").Value<string>();
 			dData["Id"] = id;
-			if (tag == "INVALID" || id == "INVALID") return false;
+			if (tag == "INVALID" || id == "INVALID") return;
 			try {
 				switch (tag) {
 					case "Wled":
 						var wData = dData.ToObject<WledData>();
 						if (wData != null) {
 							Log.Debug("Updating wled");
-							DataUtil.InsertCollection<WledData>("Dev_Wled", wData);
+							await DataUtil.InsertCollection<WledData>("Dev_Wled", wData);
 							await hubContext.Clients.All.SendAsync("wledData", wData);
 						}
 						break;
@@ -60,7 +60,7 @@ namespace Glimmr.Models.Util {
 						var bData = dData.ToObject<HueData>();
 						if (bData != null) {
 							Log.Debug("Updating bridge");
-							DataUtil.InsertCollection<HueData>("Dev_Hue", bData);
+							await DataUtil.InsertCollection<HueData>("Dev_Hue", bData);
 							await hubContext.Clients.All.SendAsync("hueData", bData);
 						}
 						break;
@@ -68,7 +68,7 @@ namespace Glimmr.Models.Util {
 						var lData = dData.ToObject<LifxData>();
 						if (lData != null) {
 							Log.Debug("Updating lifx bulb");
-							DataUtil.InsertCollection<LifxData>("Dev_Lifx", lData);
+							await DataUtil.InsertCollection<LifxData>("Dev_Lifx", lData);
 							await hubContext.Clients.All.SendAsync("lifxData", lData);
 						}
 						break;
@@ -76,7 +76,7 @@ namespace Glimmr.Models.Util {
 						var nData = dData.ToObject<NanoleafData>();
 						if (nData != null) {
 							Log.Debug("Updating nanoleaf");
-							DataUtil.InsertCollection<NanoleafData>("Dev_Nanoleaf", nData);
+							await DataUtil.InsertCollection<NanoleafData>("Dev_Nanoleaf", nData);
 							await hubContext.Clients.All.SendAsync("nanoData", nData);
 						}
 						break;
@@ -84,7 +84,7 @@ namespace Glimmr.Models.Util {
 						var dsData = dData.ToObject<DreamData>();
 						if (dsData != null) {
 							Log.Debug("Updating Dreamscreen");
-							DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", dsData);
+							await DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", dsData);
 							if (dsData.IpAddress == IpUtil.GetLocalIpAddress()) {
 								DataUtil.SetDeviceData(dsData);
 							}
@@ -95,13 +95,11 @@ namespace Glimmr.Models.Util {
 			} catch (Exception e) {
 				Log.Warning("We have an exception: ", e);
 			}
-
-			return true;
 		}
 
-		public static void NotifyClients(IHubContext<SocketServer> hc) {
+		public static async Task NotifyClients(IHubContext<SocketServer> hc) {
 			if (hc == null) throw new ArgumentNullException(nameof(hc));
-			hc.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+			await hc.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
 			Log.Debug("Sent updated store data via socket.");
 		}
 

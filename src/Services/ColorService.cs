@@ -114,7 +114,8 @@ namespace Glimmr.Services {
 			return base.StopAsync(cancellationToken);
 		}
 
-		private void FlashDevice(string devId) {
+		private Task FlashDevice(object o, DynamicEventArgs dynamicEventArgs) {
+			var devId = dynamicEventArgs.P1;
 			var disable = false;
 			var ts = new CancellationTokenSource();
 			var lc = 300;
@@ -152,9 +153,12 @@ namespace Glimmr.Services {
 					ts.Dispose();
 				}
 			}
+
+			return Task.CompletedTask;
 		}
 
-		private void FlashSector(int sector) {
+		private async Task FlashSector(object o, DynamicEventArgs dynamicEventArgs) {
+			var sector = dynamicEventArgs.P1;
 			Log.Debug("No, really, flashing sector: " + sector);
 			var col = Color.FromArgb(255, 255, 0, 0);
 			var colors = ColorUtil.AddLedColor(new Color[_systemData.LedCount],sector, col,_systemData);
@@ -173,7 +177,7 @@ namespace Glimmr.Services {
 			
 			foreach (var _strip in strips) {
 				if (_strip != null) {
-					_strip.SetColor(colors.ToList(), true);
+					await _strip.SetColor(colors.ToList(), true);
 				}
 			}
 
@@ -222,7 +226,7 @@ namespace Glimmr.Services {
 				if (!_autoDisabled) return;
 				Log.Debug("Auto-enabling stream.");
 				_autoDisabled = false;
-				DataUtil.SetItem<bool>("AutoDisabled", _autoDisabled);
+				DataUtil.SetItem("AutoDisabled", _autoDisabled);
 				_controlService.SetModeEvent -= Mode;
 				await _controlService.SetMode(_deviceMode);
 				_controlService.SetModeEvent += Mode;
@@ -230,7 +234,7 @@ namespace Glimmr.Services {
 				if (_autoDisabled) return;
 				Log.Debug("Auto-disabling stream.");
 				_autoDisabled = true;
-				DataUtil.SetItem<bool>("AutoDisabled", _autoDisabled);
+				DataUtil.SetItem("AutoDisabled", _autoDisabled);
 				_controlService.SetModeEvent -= Mode;
 				await _controlService.SetMode(0);
 				_controlService.SetModeEvent += Mode;
@@ -267,7 +271,8 @@ namespace Glimmr.Services {
 			_subscribers[ip] = 3;
 		}
 
-		private void LedTest(int led) {
+		private async Task LedTest(object o, DynamicEventArgs dynamicEventArgs) {
+			var led = dynamicEventArgs.P1;
 			var strips = new List<LedDevice>();
 			for (var i = 0; i < _sDevices.Length; i++) {
 				if (_sDevices[i].Tag == "Led") {
@@ -275,7 +280,7 @@ namespace Glimmr.Services {
 				}
 			}
 			foreach (var _strip in strips) {
-				_strip.StartTest(led);	
+				await _strip.StartTest(led);	
 			}
 		}
 
@@ -397,7 +402,8 @@ namespace Glimmr.Services {
 		}
 
 
-		private void RefreshDeviceData(string id) {
+		private async Task RefreshDeviceData(object o, DynamicEventArgs dynamicEventArgs) {
+			var id = dynamicEventArgs.P1;
 			if (string.IsNullOrEmpty(id)) {
 				Log.Warning("Can't refresh null device: " + id);
 			}
@@ -412,14 +418,14 @@ namespace Glimmr.Services {
 			for (var i = 0; i < _sDevices.Length; i++) {
 				if (_sDevices[i].Id == id) {
 					var sd = _sDevices[i];
-					if (sd.Tag != "Nanoleaf") sd.StopStream();
-					sd.ReloadData();
+					if (sd.Tag != "Nanoleaf") await sd.StopStream();
+					await sd.ReloadData();
 					if (!sd.IsEnabled()) {
 						return;
 					}
 					exists = true;
 					Log.Debug("Restarting streaming device.");
-					if (sd.Tag != "Nanoleaf") sd.StartStream(_sendTokenSource.Token);
+					if (sd.Tag != "Nanoleaf") await sd.StartStream(_sendTokenSource.Token);
 					break;
 				}
 			}
@@ -447,7 +453,7 @@ namespace Glimmr.Services {
 			}
 
 			var sDevs = _sDevices.ToList();
-			sda.StartStream(_sendTokenSource.Token);
+			await sda.StartStream(_sendTokenSource.Token);
 			sDevs.Add(sda);
 			_sDevices = sDevs.ToArray();
 		}
@@ -468,7 +474,7 @@ namespace Glimmr.Services {
 			_deviceMode = newMode;
 			if (newMode != 0 && _autoDisabled) {
 				_autoDisabled = false;
-				DataUtil.SetItem<bool>("AutoDisabled", _autoDisabled);
+				DataUtil.SetItem("AutoDisabled", _autoDisabled);
 			}
 			
 			if (_streamStarted && newMode == 0) {

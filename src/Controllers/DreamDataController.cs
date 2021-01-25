@@ -33,8 +33,8 @@ namespace Glimmr.Controllers {
 		
 		// POST: api/DreamData/refreshDevices
 		[HttpPost("scanDevices")]
-		public IActionResult ScanDevices() {
-			_controlService.ScanDevices();
+		public async Task<IActionResult> ScanDevices() {
+			await _controlService.ScanDevices();
 			Thread.Sleep(5000);
 			return new JsonResult(DataUtil.GetStoreSerialized());
 		}
@@ -71,15 +71,15 @@ namespace Glimmr.Controllers {
 		
 		// POST: api/DreamData/ledData
 		[HttpPost("ledData")]
-		public IActionResult UpdateLed([FromBody] LedData ld) {
-			_controlService.UpdateLed(ld);
+		public async Task<IActionResult> UpdateLed([FromBody] LedData ld) {
+			await _controlService.UpdateLed(ld);
 			return Ok(ld);
 		}
 		
 		// POST: api/DreamData/ledData
 		[HttpPost("systemData")]
-		public IActionResult UpdateSystem([FromBody] SystemData ld) {
-			_controlService.UpdateSystem(ld);
+		public async Task<IActionResult> UpdateSystem([FromBody] SystemData ld) {
+			await _controlService.UpdateSystem(ld);
 			return Ok(ld);
 		}
 
@@ -91,32 +91,32 @@ namespace Glimmr.Controllers {
 		
 		// POST: api/DreamData/updateDevice
 		[HttpPost("updateDevice")]
-		public IActionResult UpdateDevice([FromBody] string dData) {
+		public async Task<IActionResult> UpdateDevice([FromBody] string dData) {
 			var dObj = JObject.Parse(dData);
 			Log.Debug("Update device fired: " + JsonConvert.SerializeObject(dObj));
-			_controlService.UpdateDevice(dObj);
+			await _controlService.UpdateDevice(dObj);
 			return Ok(dObj);
 		}
 		
 		// POST: api/DreamData/flashDevice
 		[HttpPost("flashDevice")]
-		public IActionResult FlashDevice([FromBody] string deviceId) {
-			_controlService.FlashDevice(deviceId);
+		public async Task<IActionResult> FlashDevice([FromBody] string deviceId) {
+			await _controlService.FlashDevice(deviceId);
 			return Ok(deviceId);
 		}
 		
 		// POST: api/DreamData/flashSector
 		[HttpPost("flashSector")]
-		public IActionResult FlashSector([FromBody] int sector) {
-			_controlService.FlashSector(sector);
+		public async Task<IActionResult> FlashSector([FromBody] int sector) {
+			await _controlService.FlashSector(sector);
 			return Ok(sector);
 		}
 		
 		
 		[HttpPost("flashLed")]
-		public IActionResult TestStripOffset([FromBody] int len) {
+		public async Task<IActionResult> TestStripOffset([FromBody] int len) {
 			Log.Debug("Get got: " + len);
-			_controlService.TestLights(len);
+			await _controlService.TestLights(len);
 			return Ok(len);
 		}
 

@@ -22,10 +22,9 @@ namespace Glimmr.Hubs {
 			await _cs.SetMode(mode);
 		}
 		
-		public Task ScanDevices() {
+		public async Task ScanDevices() {
 			Log.Debug("Scan called from socket!");
-			_cs.ScanDevices();
-			return Task.CompletedTask;
+			await _cs.ScanDevices();
 		}
 		
 		public async Task AuthorizeHue(string id) {
@@ -36,26 +35,26 @@ namespace Glimmr.Hubs {
 			await _cs.AuthorizeNano(id);
 		}
 
-		private CpuData GetStats(CancellationToken token) {
-			return CpuUtil.GetStats();
+		private async Task<CpuData> GetStats(CancellationToken token) {
+			return await CpuUtil.GetStats();
 		}
 
-		public void LoadData() {
-			Clients.Caller.SendAsync("olo", DataUtil.GetStoreSerialized());
+		public async Task LoadData() {
+			await Clients.Caller.SendAsync("olo", DataUtil.GetStoreSerialized());
 		}
 
 		
-		public void SystemData(string sd) {
+		public async Task SystemData(string sd) {
 			Log.Debug("Updating system data.");
 			var sdd = JObject.Parse(sd);
 			var sd2 = sdd.ToObject<SystemData>();
-			_cs.UpdateSystem(sd2);
+			await _cs.UpdateSystem(sd2);
 		}
 		
-		public void LedData(string ld) {
+		public async Task LedData(string ld) {
 			Log.Debug("Updating LED Data.");
 			var ldd = JObject.Parse(ld).ToObject<LedData>();
-			_cs.UpdateLed(ldd);
+			await _cs.UpdateLed(ldd);
 		}
 
 		public async Task DemoLed(string id) {
@@ -63,28 +62,26 @@ namespace Glimmr.Hubs {
 			await _cs.DemoLed(id);
 		}
 
-		public void SystemControl(string action) {
-			ControlService.SystemControl(action);
+		public async Task SystemControl(string action) {
+			await ControlService.SystemControl(action);
 		}
 
-		public void UpdateDevice(string deviceJson) {
+		public async Task UpdateDevice(string deviceJson) {
 			var device = JObject.Parse(deviceJson);
-			_cs.UpdateDevice(device);
+			await _cs.UpdateDevice(device);
 		}
 
-		public void FlashDevice(string deviceId) {
-			_cs.FlashDevice(deviceId);
+		public async Task FlashDevice(string deviceId) {
+			await _cs.FlashDevice(deviceId);
 		}
 
-		public Task FlashSector(int sector) {
-			_cs.FlashSector(sector);
-			return Task.CompletedTask;
+		public async Task FlashSector(int sector) {
+			await _cs.FlashSector(sector);
 		}
 
-		public Task FlashLed(int led) {
+		public async Task FlashLed(int led) {
 			Log.Debug("Get got: " + led);
-			_cs.TestLights(led);
-			return Task.CompletedTask;
+			await _cs.TestLights(led);
 		}
 
 

@@ -37,6 +37,7 @@ namespace Glimmr.Models.ColorTarget.LED {
 			_cs.SegmentTestEvent += UpdateStrip;
 			_cs.ColorSendEvent += SetColor;
 			LoadData(ld);
+			CreateStrip();
 		}
 
 		public async Task SetColor(object arg1, DynamicEventArgs arg2) {
@@ -45,13 +46,7 @@ namespace Glimmr.Models.ColorTarget.LED {
 			await Task.FromResult(true);
 		}
 
-		public Task StartStream(CancellationToken ct) {
-			Log.Debug("Starting LED stream...");
-			if (!Enable || Streaming) {
-				Log.Debug("Returning, disabled or already streaming.");
-				return Task.CompletedTask;
-			}
-
+		private void CreateStrip() {
 			var settings = LoadLedData(Data);
 			// Hey, look, this is built natively into the LED app
 			try {
@@ -62,15 +57,22 @@ namespace Glimmr.Models.ColorTarget.LED {
 				Log.Debug("Unable to initialize strips, or something.");
 				Streaming = false;
 			}
+		}
+
+		public Task StartStream(CancellationToken ct) {
+			Log.Debug("Starting LED stream...");
+			if (!Enable || Streaming) {
+				Log.Debug("Returning, disabled or already streaming.");
+				return Task.CompletedTask;
+			}
+
+			
 			return Task.CompletedTask;
 		}
 
 		public Task StopStream() {
 			if (!Streaming) return Task.CompletedTask;
-
 			StopLights();
-			_strip?.Reset();
-			_strip?.Dispose();
 			Streaming = false;
 			return Task.CompletedTask;
 		}
@@ -89,7 +91,7 @@ namespace Glimmr.Models.ColorTarget.LED {
 
 		
 		public void Dispose() {
-			if (Enable) _strip?.Dispose();
+			_strip?.Dispose();
 		}
 
 		public Task ReloadData() {
@@ -238,7 +240,7 @@ namespace Glimmr.Models.ColorTarget.LED {
 
 		public void StopLights() {
 			Log.Debug("Stopping LED Strip.");
-
+			_strip?.SetAll(Color.FromArgb(0,0,0));
 			_strip?.Reset();
 			Log.Debug("LED Strips stopped.");
 		}

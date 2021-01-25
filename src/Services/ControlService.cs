@@ -45,32 +45,35 @@ namespace Glimmr.Services {
 			UdpClient.DontFragment = true;
 		}
 
-		public event Action<string> DeviceReloadEvent = delegate { };
+		public AsyncEvent<DynamicEventArgs> DeviceReloadEvent;
 		public event Action RefreshLedEvent = delegate { };
 		public event Action RefreshSystemEvent = delegate { };
-		public event Action DeviceRescanEvent = delegate { };
+		public AsyncEvent<DynamicEventArgs> DeviceRescanEvent;
 		public event ArgUtils.Action DreamSubscribeEvent = delegate { };
 		
 		public AsyncEvent<DynamicEventArgs> SetModeEvent;
-		public event Action<int> TestLedEvent = delegate { };
+
+		public AsyncEvent<DynamicEventArgs> TestLedEvent;
 		public event Action<CancellationToken> RefreshDreamscreenEvent = delegate { };
 		public event Action<string> AddSubscriberEvent = delegate { };
-		public event Action<string> FlashDeviceEvent = delegate { };
-		public event Action<int> FlashSectorEvent = delegate { };
-
+		
+		public AsyncEvent<DynamicEventArgs> FlashDeviceEvent;
+		
+		public AsyncEvent<DynamicEventArgs> FlashSectorEvent;
+		
 		public AsyncEvent<DynamicEventArgs> DemoLedEvent;
 		
 		public AsyncEvent<DynamicEventArgs> TriggerSendColorEvent;
 		
 
-		public void ScanDevices() {
-			DeviceRescanEvent();
+		public async Task ScanDevices() {
+			await DeviceRescanEvent.InvokeAsync(this,null);
 		}
 
 		public async Task SetMode(int mode) {
 			Log.Information("Setting mode: " + mode);
 			await _hubContext.Clients.All.SendAsync("mode", mode);
-			DataUtil.SetItem<int>("DeviceMode", mode);
+			DataUtil.SetItem("DeviceMode", mode);
 			await SetModeEvent.InvokeAsync(null, new DynamicEventArgs(mode));
 		}
 
@@ -116,7 +119,7 @@ namespace Glimmr.Services {
 							var nhb = new HueDevice(bd);
 							bd = nhb.RefreshData().Result;
 							nhb.Dispose();
-							DataUtil.InsertCollection<HueData>("Dev_Hue", bd);
+							await DataUtil.InsertCollection<HueData>("Dev_Hue", bd);
 							await _hubContext.Clients.All.SendAsync("hueAuth", "authorized");
 							await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
 							return;
@@ -141,8 +144,8 @@ namespace Glimmr.Services {
 			_hubContext.Clients.All.SendAsync("loadPreview");
 		}
 
-		public void TestLights(int led) {
-			TestLedEvent(led);
+		public async Task TestLights(int led) {
+			await TestLedEvent.InvokeAsync(this, new DynamicEventArgs(led));
 		}
 
 		public void AddSubscriber(string ip) {
@@ -153,8 +156,8 @@ namespace Glimmr.Services {
 		/// <summary>
 		///     Call this to trigger device refresh
 		/// </summary>
-		public void RefreshDevice(string id) {
-			DeviceReloadEvent(id);
+		public async Task RefreshDevice(string id) {
+			await DeviceReloadEvent.InvokeAsync(this, new DynamicEventArgs(id));
 		}
 
 
@@ -233,27 +236,27 @@ namespace Glimmr.Services {
 			panel.Dispose();
 		}
 
-		public void UpdateLed(LedData ld) {
+		public async Task UpdateLed(LedData ld) {
 			Log.Debug("Got LD from post: " + JsonConvert.SerializeObject(ld));
-			DataUtil.InsertCollection<LedData>("LedData", ld);
+			await DataUtil.InsertCollection<LedData>("LedData", ld);
 			RefreshLedData();
-			NotifyClients();
+			await NotifyClients();
 		}
 
-		public void UpdateSystem(SystemData sd) {
+		public async Task UpdateSystem(SystemData sd) {
 			SystemData oldSd = DataUtil.GetObject<SystemData>("SystemData");
 			if (oldSd.LedCount != sd.LedCount) {
 				var leds = DataUtil.GetCollection<LedData>("LedData");
 				foreach (var led in leds.Where(led => led.Count == 0)) {
 					led.Count = sd.LedCount;
-					DataUtil.InsertCollection<LedData>("LedData", led);
+					await DataUtil.InsertCollection<LedData>("LedData", led);
 				}
 			}
 			RefreshSystemEvent();
 			DataUtil.SetObject<SystemData>("SystemData", sd);
 		}
 
-		public static void SystemControl(string action) {
+		public static Task SystemControl(string action) {
 			Log.Debug("Action triggered: " + action);
 			switch (action) {
 				case "restart":
@@ -269,9 +272,10 @@ namespace Glimmr.Services {
 					SystemUtil.Update();
 					break;
 			}
+			return Task.CompletedTask;
 		}
 
-		public void UpdateDevice(JObject device) {
+		public async Task UpdateDevice(JObject device) {
 			Log.Debug("Update device called!");
 			var tag = (string) device.GetValue("Tag");
 			var id = (string) device.GetValue("_id");
@@ -281,24 +285,24 @@ namespace Glimmr.Services {
 			try {
 				switch (tag) {
 					case "Wled":
-						DataUtil.InsertCollection<WledData>("Dev_Wled", device.ToObject<WledData>());
+						await DataUtil.InsertCollection<WledData>("Dev_Wled", device.ToObject<WledData>());
 						updated = true;
 						break;
 					case "Lifx":
-						DataUtil.InsertCollection<LifxData>("Dev_Lifx", device.ToObject<LifxData>());
+						await DataUtil.InsertCollection<LifxData>("Dev_Lifx", device.ToObject<LifxData>());
 						updated = true;
 						break;
 					case "HueBridge":
 						var dev = device.ToObject<HueData>();
-						DataUtil.InsertCollection<HueData>("Dev_Hue", dev);
+						await DataUtil.InsertCollection<HueData>("Dev_Hue", dev);
 						updated = true;
 						break;
 					case "Nanoleaf":
-						DataUtil.InsertCollection<NanoleafData>("Dev_Nanoleaf", device.ToObject<NanoleafData>());
+						await DataUtil.InsertCollection<NanoleafData>("Dev_Nanoleaf", device.ToObject<NanoleafData>());
 						updated = true;
 						break;
 					case "Dreamscreen":
-						DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", device.ToObject<DreamData>());
+						await DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", device.ToObject<DreamData>());
 						updated = true;
 						break;
 					default:
@@ -311,18 +315,18 @@ namespace Glimmr.Services {
 
 			if (updated) {
 				Log.Debug("Triggering device refresh for " + id);
-				RefreshDevice(id);
+				await RefreshDevice(id);
 			} else {
 				Log.Debug("Sigh, no update...");
 			}
 		}
 
-		public void FlashDevice(string deviceId) {
-			FlashDeviceEvent(deviceId);
+		public async Task FlashDevice(string deviceId) {
+			await FlashDeviceEvent.InvokeAsync(this, new DynamicEventArgs(deviceId));
 		}
 
-		public void FlashSector(in int sector) {
-			FlashSectorEvent(sector);
+		public async Task FlashSector(int sector) {
+			await FlashSectorEvent.InvokeAsync(this, new DynamicEventArgs(sector));
 		}
 
 		public async Task DemoLed(string id) {
