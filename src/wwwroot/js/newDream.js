@@ -97,6 +97,7 @@ function sendMessage(endpoint, sData, encode=true) {
     loadTimeout = setTimeout(function(){
         loadTimeout = null;
     },500);
+    console.log("Sending message: " + endpoint);
     if (socketLoaded) {
         if (isValid(sData)) {
             websocket.invoke(endpoint, sData).catch(function (err) {

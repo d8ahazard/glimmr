@@ -21,7 +21,7 @@ namespace Glimmr.Services {
 					// If not linux, do nothing
 					if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) continue;
 					// Get cpu data
-					var cd = CpuUtil.GetStats();
+					var cd = await CpuUtil.GetStats();
 					// Send it to everybody
 					await _hubContext.Clients.All.SendAsync("cpuData", cd, stoppingToken);
 					// Sleep for 5s

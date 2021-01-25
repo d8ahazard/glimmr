@@ -346,10 +346,6 @@ namespace Glimmr.Models.Util {
         }
 
 
-        
-        
-        
-        
         public static List<DreamData> GetDreamDevices() {
             var dd = GetDb();
             var devs = dd.GetCollection<DreamData>("Dev_Dreamscreen");

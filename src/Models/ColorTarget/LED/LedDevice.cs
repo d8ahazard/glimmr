@@ -238,10 +238,10 @@ namespace Glimmr.Models.ColorTarget.LED {
 			return truncated;
 		}
 
-		public void StopLights() {
+		private void StopLights() {
 			Log.Debug("Stopping LED Strip.");
 			_strip?.SetAll(Color.FromArgb(0,0,0));
-			_strip?.Reset();
+			//_strip?.Reset();
 			Log.Debug("LED Strips stopped.");
 		}
 

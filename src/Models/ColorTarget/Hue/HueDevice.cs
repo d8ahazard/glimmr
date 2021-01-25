@@ -313,20 +313,17 @@ namespace Glimmr.Models.ColorTarget.Hue {
         
 
 		public void Dispose() {
-			Dispose(true).ConfigureAwait(true);
+			Dispose(true);
 		}
 
 
-		private async Task Dispose(bool disposing) {
+		private void Dispose(bool disposing) {
 			if (_disposed) {
 				return;
 			}
 
 			if (disposing) {
-				if (Streaming) {
-					await StopStream();
-					_client.Dispose();
-				}
+				_client.Dispose();
 			}
 
 			_disposed = true;

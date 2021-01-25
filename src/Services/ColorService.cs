@@ -108,7 +108,6 @@ namespace Glimmr.Services {
 		public override Task StopAsync(CancellationToken cancellationToken) {
 			Log.Debug("Stopping color service...");
 			StopServices();
-			// Do this after stopping everything, or issues...
 			DataUtil.Dispose();
 			Log.Debug("Color service stopped.");
 			return base.StopAsync(cancellationToken);
@@ -298,13 +297,6 @@ namespace Glimmr.Services {
 			Log.Debug("Creating new device lists...");
 			// Create new lists
 			var sDevs = new List<IStreamingDevice>();
-			var ledData = DataUtil.GetCollectionItem<LedData>("LedData", "0");
-			//var ledData2 = DataUtil.GetCollectionItem<LedData>("LedData", "1");
-			//var ledData3 = DataUtil.GetCollectionItem<LedData>("LedData", "2");
-			Log.Debug("Initialized LED strip: " + JsonConvert.SerializeObject(ledData));
-			//_strips.Add(new LedStrip(ledData2, this));
-			//_strips.Add(new LedStrip(ledData3,this));
-			sDevs.Add(new LedDevice(ledData, this));
 			
 			// Init leaves
 			var leaves = DataUtil.GetCollection<NanoleafData>("Dev_Nanoleaf");
@@ -344,6 +336,13 @@ namespace Glimmr.Services {
 				sDevs.Add(new YeelightDevice(yd, this));
 			}
 
+			var ledData = DataUtil.GetCollectionItem<LedData>("LedData", "0");
+			//var ledData2 = DataUtil.GetCollectionItem<LedData>("LedData", "1");
+			//var ledData3 = DataUtil.GetCollectionItem<LedData>("LedData", "2");
+			Log.Debug("Initialized LED strip: " + JsonConvert.SerializeObject(ledData));
+			//_strips.Add(new LedStrip(ledData2, this));
+			//_strips.Add(new LedStrip(ledData3,this));
+			sDevs.Add(new LedDevice(ledData, this));
 			_sDevices = sDevs.ToArray();
 		}
 
@@ -469,7 +468,7 @@ namespace Glimmr.Services {
 			_audioStream?.Refresh();
 		}
 
-		private Task Mode(object o, DynamicEventArgs dynamicEventArgs) {
+		private async Task Mode(object o, DynamicEventArgs dynamicEventArgs) {
 			int newMode = dynamicEventArgs.P1;
 			_deviceMode = newMode;
 			if (newMode != 0 && _autoDisabled) {
@@ -478,7 +477,7 @@ namespace Glimmr.Services {
 			}
 			
 			if (_streamStarted && newMode == 0) {
-				StopStream();
+				await StopStream();
 			}
 
 			CancelSource(_streamTokenSource);
@@ -507,7 +506,6 @@ namespace Glimmr.Services {
 			}
 			_deviceMode = newMode;
 			Log.Information($"Device mode updated to {newMode}.");
-			return Task.CompletedTask;
 		}
 
 
@@ -564,15 +562,23 @@ namespace Glimmr.Services {
 			}
 		}
 
-		private void StopStream() {
+		private async Task StopStream() {
 			if (!_streamStarted) {
 				return;
 			}
 
+			var streamers = new List<IStreamingDevice>();
 			foreach (var s in _sDevices.Where(s => s.Streaming)) {
-				s.StopStream();
+				streamers.Add(s);
 			}
-
+			await Task.WhenAll(streamers.Select(i => {
+				try {
+					return i.StopStream();
+				} catch (Exception e) {
+					Log.Warning("Well, this is exceptional: " + e.Message);
+					return Task.CompletedTask;
+				}
+			}));
 			Log.Information("Stream stopped.");
 			_streamStarted = false;
 		}
@@ -612,14 +618,14 @@ namespace Glimmr.Services {
 			Log.Information("Stopping services...");
 			CancelSource(_captureTokenSource, true);
 			CancelSource(_sendTokenSource, true);
-			Thread.Sleep(500);
-			Log.Information("Strips disposed...");
 			foreach (var s in _sDevices) {
-				if (s.Streaming) {
+				try {
 					Log.Information("Stopping device: " + s.Id);
 					s.StopStream();
+					s.Dispose();
+				} catch (Exception e) {
+					Log.Warning("Caught exception: " + e.Message);
 				}
-				s.Dispose();
 			}
 
 			Log.Information("All services have been stopped.");
