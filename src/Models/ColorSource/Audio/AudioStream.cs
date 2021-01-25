@@ -23,7 +23,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 		private readonly ColorService _cs;
 		private SystemData _sd;
 		private AudioMap _map;
-		private Task _sendTask;
 
 		public List<Color> Colors { get; private set; }
 		public List<Color> Sectors { get; private set; }
@@ -34,7 +33,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 			Bass.Init();
 		}
 
-		private void LoadData() {
+		private async Task LoadData() {
 			Log.Debug("Reloading audio data");
 			_sd = DataUtil.GetObject<SystemData>("SystemData");
 			_gain = _sd.AudioGain;
@@ -54,10 +53,10 @@ namespace Glimmr.Models.ColorSource.Audio {
 				try {
 					var ad = new AudioData();
 					ad.ParseDevice(info);
-					DataUtil.InsertCollection<AudioData>("Dev_Audio", ad);
+					await DataUtil.InsertCollection<AudioData>("Dev_Audio", ad);
 					_devices.Add(ad);
 				} catch (Exception e) {
-					Log.Warning("Error loading devices.", e);
+					Log.Warning("Error loading devices: " + e.Message);
 				}
 
 				if (rd == null && a == 0) {
@@ -73,7 +72,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 		}
 		
 		public void StartStream(CancellationToken ct) {
-			LoadData();
+			LoadData().ConfigureAwait(true);
 			if (_recordDeviceIndex != -1) {
 				Log.Debug("Starting stream with device " + _recordDeviceIndex);
 				Bass.RecordInit(_recordDeviceIndex);
@@ -86,13 +85,13 @@ namespace Glimmr.Models.ColorSource.Audio {
 		public void StopStream() {
 			//throw new NotImplementedException();
 			if (_recordDeviceIndex != -1) {
-				Bass.Free();	
+				Bass.Free();
 			}
 		}
 
 
 		public void Refresh() {
-			LoadData();
+			LoadData().ConfigureAwait(true);
 		}
 
 		
@@ -205,7 +204,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 		public void Dispose() {
 			Dispose(true);
-			GC.SuppressFinalize(this);
 		}
 
 
@@ -213,7 +211,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 			if (_disposed) return;
 
 			if (disposing) {
-				//ac?.Dispose();
 			}
 
 			_disposed = true;

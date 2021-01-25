@@ -64,6 +64,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Hdmi {
             _video.ImageGrabbed += SetFrame;
             _video.Start();
             Log.Debug("HDMI Stream started.");
+            await Task.FromResult(true);
         }
 
         public void Dispose() {

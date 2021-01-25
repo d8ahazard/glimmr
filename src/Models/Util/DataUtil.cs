@@ -39,7 +39,7 @@ namespace Glimmr.Models.Util {
             Log.Debug("Database disposed.");
         }
 
-        public static void CheckDefaults(LifxClient lc) {
+        public static async Task CheckDefaults(LifxClient lc) {
             var db = GetDb();
             var sObj = GetObject<SystemData>("SystemData");
             if (sObj == null) {
@@ -61,7 +61,7 @@ namespace Glimmr.Models.Util {
                 d.EnsureIndex(x => x.Id);
                 db.Commit();
                 // Scan for devices
-                RefreshDevices(lc,null);
+                await RefreshDevices(lc,null);
             } else {
                 Log.Information("Default values are already set, continuing.");
             }
@@ -82,9 +82,9 @@ namespace Glimmr.Models.Util {
                 l2.Id = "1";
                 l3.Id = "2";
                 
-                InsertCollection<LedData>("LedData", l1);
-                InsertCollection<LedData>("LedData", l2);
-                InsertCollection<LedData>("LedData", l3);
+                await InsertCollection<LedData>("LedData", l1);
+                await InsertCollection<LedData>("LedData", l2);
+                await InsertCollection<LedData>("LedData", l3);
             }
         }
        
@@ -125,7 +125,7 @@ namespace Glimmr.Models.Util {
                 if (coll == null) return output;
                 output.AddRange(coll.FindAll());
             } catch (Exception e) {
-                
+                Log.Warning("Exception: " + e.Message);
             }
 
             return output;
@@ -332,7 +332,7 @@ namespace Glimmr.Models.Util {
                     return doc;
                 }
             } catch (Exception e) {
-                
+                Log.Warning("Exception: " + e.Message);
             }
 
             return null;

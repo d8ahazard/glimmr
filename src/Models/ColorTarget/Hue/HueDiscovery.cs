@@ -41,7 +41,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
                             n.Dispose();
                         }
                     }
-                    DataUtil.InsertCollection<HueData>("Dev_Hue", copy);
+                    await DataUtil.InsertCollection<HueData>("Dev_Hue", copy);
                 }
             } catch (Exception e) {
                 Log.Warning("Hue: Discovery exception: " + e.Message);

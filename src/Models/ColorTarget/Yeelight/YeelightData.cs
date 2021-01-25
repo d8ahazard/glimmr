@@ -7,10 +7,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int TargetSector { get; set; }
 		
-		[DefaultValue(255)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int Brightness { get; set; }
-
+		
 		public void CopyExisting(YeelightData existing) {
 			TargetSector = existing.TargetSector;
 			Brightness = existing.Brightness;

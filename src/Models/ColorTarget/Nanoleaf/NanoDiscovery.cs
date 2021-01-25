@@ -8,25 +8,23 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Nanoleaf {
     public static class NanoDiscovery {
-        private static ServiceDiscovery sd;
-        private static MulticastService mDns;
+        private static MulticastService _mDns;
 
         static NanoDiscovery() {
-            sd = new ServiceDiscovery();
-            mDns = new MulticastService();
-            mDns.NetworkInterfaceDiscovered += (s, e) => {
+            var sd = new ServiceDiscovery();
+            _mDns = new MulticastService();
+            _mDns.NetworkInterfaceDiscovered += (s, e) => {
                 // Ask for the name of all services.
                 sd.QueryServiceInstances("_nanoleafapi._tcp");
             };
             
-            sd.ServiceDiscovered += (s, serviceName) => { mDns.SendQuery(serviceName, type: DnsType.PTR); };
+            sd.ServiceDiscovered += (s, serviceName) => { _mDns.SendQuery(serviceName, type: DnsType.PTR); };
             sd.ServiceInstanceDiscovered += ParseInstance;
 
         }
 
-        private static void ParseInstance(object? o, ServiceInstanceDiscoveryEventArgs e) {
-            
-                var name = e.ServiceInstanceName.ToString();
+        private static void ParseInstance(object o, ServiceInstanceDiscoveryEventArgs e) {
+            var name = e.ServiceInstanceName.ToString();
                 var nData = new NanoleafData {IpAddress = string.Empty};
                 if (!name.Contains("nanoleafapi", StringComparison.InvariantCulture)) return;
                 foreach (var msg in e.Message.AdditionalRecords) {
@@ -82,16 +80,16 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
                     } else {
                         Log.Debug("Layout is null.");
                     }
-                    DataUtil.InsertCollection<NanoleafData>("Dev_Nanoleaf", nData);
+                    DataUtil.InsertCollection<NanoleafData>("Dev_Nanoleaf", nData).ConfigureAwait(false);
                 }
             
         }
         
         public static async Task Discover(int timeout = 5) {
-            mDns.Start();
+            _mDns.Start();
             Log.Debug("Nano: Discovery started...");
             await Task.Delay(timeout * 1000).ConfigureAwait(false);
-            mDns.Stop();
+            _mDns.Stop();
             Log.Debug("Nano: Discovery Complete.");
         }
 

@@ -27,7 +27,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 		private HueData Data { get; set; }
 		private EntertainmentLayer _entLayer;
-		private StreamingHueClient _client;
+		private readonly StreamingHueClient _client;
 		private bool _disposed;
 		private CancellationToken _ct;
 		public bool Testing { get; set; }
@@ -36,18 +36,15 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		public string IpAddress { get; set; }
 		public string Tag { get; set; }
 		public bool Streaming { get; set; }
-		private ColorService _cs;
-		private StreamingGroup _stream;
+		private readonly StreamingGroup _stream;
 
 		private Task _updateTask;
 		
 
 		public HueDevice(HueData data, ColorService colorService = null) {
-			
 			DataUtil.GetItem<int>("captureMode");
 			if (colorService != null) {
-				_cs = colorService;
-				_cs.ColorSendEvent += SetColor;
+				colorService.ColorSendEvent += SetColor;
 			} 
 			Data = data ?? throw new ArgumentNullException(nameof(data));
 			IpAddress = Data.IpAddress;
@@ -121,7 +118,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				return;
 			}
 			
-			if (ct == null) throw new ArgumentException("Invalid cancellation token.");
 			_ct = ct;
 			
 			// This is what we actually need
@@ -284,7 +280,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
             try {
 	            //Get the entertainment group
                 Log.Debug("Grabbing ent group...");
-                var group = _client.LocalHueClient.GetGroupAsync(groupId).Result;
+                var group = await _client.LocalHueClient.GetGroupAsync(groupId);
                 if (group == null) {
                     Log.Warning("Unable to fetch group with ID of " + groupId);
                     return null;
@@ -317,18 +313,18 @@ namespace Glimmr.Models.ColorTarget.Hue {
         
 
 		public void Dispose() {
-			Dispose(true);
+			Dispose(true).ConfigureAwait(true);
 		}
 
 
-		private void Dispose(bool disposing) {
+		private async Task Dispose(bool disposing) {
 			if (_disposed) {
 				return;
 			}
 
 			if (disposing) {
 				if (Streaming) {
-					StopStream();
+					await StopStream();
 					_client.Dispose();
 				}
 			}

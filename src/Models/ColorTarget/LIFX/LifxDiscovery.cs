@@ -29,7 +29,7 @@ namespace Glimmr.Models.ColorTarget.LIFX {
                 ld.TargetSector = existing.TargetSector;
                 ld.Brightness = existing.Brightness;
             }
-            DataUtil.InsertCollection<LifxData>("Dev_Lifx", ld);
+            DataUtil.InsertCollection<LifxData>("Dev_Lifx", ld).ConfigureAwait(false);
         }
 
         private LifxData GetBulbInfo(LightBulb b) {

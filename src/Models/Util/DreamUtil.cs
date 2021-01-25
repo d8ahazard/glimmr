@@ -38,23 +38,18 @@ namespace Glimmr.Models.Util {
          }
         
         public async Task SetAmbientColor(Color color, string id, int group) {
-            if (color == null) throw new InvalidEnumArgumentException("Invalid sector list.");
-            byte flag = 0x11;
+            const byte flag = 0x11;
             byte c1 = 0x03;
             byte c2 = 0x05;
-            var p = new List<byte>();
-            p.Add(ByteUtils.IntByte(color.R));
-            p.Add(ByteUtils.IntByte(color.G));
-            p.Add(ByteUtils.IntByte(color.B));
+            var p = new List<byte> {ByteUtils.IntByte(color.R), ByteUtils.IntByte(color.G), ByteUtils.IntByte(color.B)};
             var ep = new IPEndPoint(IPAddress.Parse(id), 8888);
             await SendUdpWrite(c1, c2, p.ToArray(), flag, (byte) group, ep);
         }
         public async Task SendMessage(string command, dynamic value, string id) {
             var dev = DataUtil.GetDreamDevice(id);
-            byte flag = 0x11;
+            const byte flag = 0x11;
             byte c1 = 0x03;
             byte c2 = 0x00;
-            int v;
             var send = false;
             var payload = Array.Empty<byte>();
             var cFlags = MsgUtils.CommandBytes[command];
@@ -70,7 +65,7 @@ namespace Glimmr.Models.Util {
                     break;
                 case "minimumLuminosity":
                     c2 = 0x0C;
-                    v = int.Parse(value);
+                    int v = int.Parse(value);
                     payload = new[] {ByteUtils.IntByte(v), ByteUtils.IntByte(v), ByteUtils.IntByte(v)};
                     send = true;
                     break;

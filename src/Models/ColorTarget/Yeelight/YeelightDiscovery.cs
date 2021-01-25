@@ -7,7 +7,7 @@ using YeelightAPI;
 namespace Glimmr.Models.ColorTarget.Yeelight {
 	public static class YeelightDiscovery {
 		
-		public	static async Task Discover() {
+		public static async Task Discover() {
 			Log.Debug("Yeelight: Discovery started...");
 			// Await the asynchronous call to the static API
 			var discoveredDevices = await DeviceLocator.DiscoverAsync();
@@ -21,7 +21,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 					yd.CopyExisting(existing);
 				}
 
-				DataUtil.InsertCollection<YeelightData>("Dev_Yeelight", dev);
+				await DataUtil.InsertCollection<YeelightData>("Dev_Yeelight", dev);
 			}
 
 			Log.Debug("Yeelight: Discovery complete.");

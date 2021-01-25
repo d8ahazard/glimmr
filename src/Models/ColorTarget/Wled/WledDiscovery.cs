@@ -8,7 +8,6 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Wled {
     public static class WledDiscovery {
-        private static List<WledData> _discovered;
         
         public static async Task Discover(int timeout = 5) {
             Log.Debug("WLED: Discovery started...");
@@ -44,7 +43,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
                 if (existing != null) {
                     nData.CopyExisting(existing);
                 }
-                DataUtil.InsertCollection<WledData>("Dev_Wled", nData);
+                DataUtil.InsertCollection<WledData>("Dev_Wled", nData).ConfigureAwait(false);
             }
         }
     }

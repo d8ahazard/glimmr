@@ -36,7 +36,7 @@ namespace Glimmr.Services {
 			LifxClient = LifxClient.CreateAsync().Result;
 			// Init nano HttpClient
 			HttpSender = new HttpClient();
-			DataUtil.CheckDefaults(LifxClient);
+			DataUtil.CheckDefaults(LifxClient).ConfigureAwait(true);
 			// Init UDP client
 
 			UdpClient = new UdpClient {Ttl = 5};

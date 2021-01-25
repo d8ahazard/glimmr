@@ -252,7 +252,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             if (string.IsNullOrEmpty(IpAddress) && !string.IsNullOrEmpty(Id)) {
                 IpAddress = Id;
                 Data.IpAddress = Id;
-                DataUtil.InsertCollection<WledData>("Dev_Wled", Data);
+                await DataUtil.InsertCollection<WledData>("Dev_Wled", Data);
             } 
             try {
                 uri = new Uri("http://" + IpAddress + target);
@@ -300,19 +300,19 @@ namespace Glimmr.Models.ColorTarget.Wled {
         }
 
         public void Dispose() {
-            Dispose(true);
+            Dispose(true).ConfigureAwait(true);
             GC.SuppressFinalize(this);
         }
 
 
-        protected virtual void Dispose(bool disposing) {
+        protected virtual async Task Dispose(bool disposing) {
             if (_disposed) {
                 return;
             }
 
             if (disposing) {
                 if (Streaming) {
-                    StopStream();
+                    await StopStream();
                 }
             }
 

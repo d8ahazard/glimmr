@@ -59,9 +59,6 @@ namespace Glimmr.Models.ColorSource.Video {
 		private List<Color> _colorsLed;
 		private List<Color> _colorsSectors;
 		private int _frameCount;
-		private readonly float _brightBoost;
-		private readonly float _saturationBoost;
-		private readonly int _minBrightness;
 		public bool DoSave;
 		public bool NoImage;
 		private const int MaxFrameCount = 30;
@@ -84,14 +81,8 @@ namespace Glimmr.Models.ColorSource.Video {
 			// Set desired width of capture region to 15% total image
 			_borderWidth = 10;
 			_borderHeight = 10;
-			// Set default box mode to zero, no boxing
-			// Set brightness boost, min brightness, sat boost...
-			_brightBoost = 0;
-			_minBrightness = 90;
-			_saturationBoost = .2f;
+			
 			// Get sectors
-			
-			
 			_fullCoords = DrawGrid();
 			_fullSectors = DrawSectors();
 			_frameCount = 0;

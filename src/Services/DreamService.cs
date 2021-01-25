@@ -165,7 +165,7 @@ namespace Glimmr.Services {
             try {
                 var sourceEndPoint = new IPEndPoint(IPAddress.Any, 8888);
                 var receivedResults = _listener.EndReceive(res, ref sourceEndPoint);
-                ProcessData(receivedResults, sourceEndPoint);
+                ProcessData(receivedResults, sourceEndPoint).ConfigureAwait(false);
                 _listener.BeginReceive(Recv, null);
             } catch (ObjectDisposedException) {
                 Log.Warning("Object is already disposed.");
@@ -174,7 +174,7 @@ namespace Glimmr.Services {
 
        
 
-        private void ProcessData(byte[] receivedBytes, IPEndPoint receivedIpEndPoint) {
+        private async Task ProcessData(byte[] receivedBytes, IPEndPoint receivedIpEndPoint) {
             // Convert data to ASCII and print in console
             var f1 = receivedBytes[4];
             var f2 = receivedBytes[5];
@@ -235,7 +235,7 @@ namespace Glimmr.Services {
                 case "SUBSCRIBE":
                     if (_devMode == 1 || _devMode == 2 && !areYouLocal) {
                         //Log.Debug("Sending sub message.");
-                        _dreamUtil.SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x10, _group, replyPoint).ConfigureAwait(false);    
+                        await _dreamUtil.SendUdpWrite(0x01, 0x0C, new byte[] {0x01}, 0x10, _group, replyPoint).ConfigureAwait(false);    
                     }
                     
                     // If the device is on and capture mode is not using DS data
@@ -263,7 +263,7 @@ namespace Glimmr.Services {
                     Log.Debug($"Dreamscreen: Discovery complete, found {_devices.Count} devices.");
                     _discovering = false;
                     foreach (var d in _devices) {
-                        DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", d);
+                        await DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", d);
                     }
                     
                     break;
@@ -288,14 +288,14 @@ namespace Glimmr.Services {
                     break;
                 case "DEVICE_DISCOVERY":
                     if (flag == "30" && !areYouLocal) {
-                        SendDeviceStatus(replyPoint);
+                        await SendDeviceStatus(replyPoint);
                     } else if (flag == "60" && _discovering && !areYouLocal) {
                         if (msgDevice != null) {
                             _targetEndpoint = replyPoint;
                             msgDevice.IpAddress = from;
-                            DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", msgDevice);
+                            await DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", msgDevice);
                             _devices.Add(msgDevice);
-                            _dreamUtil.SendUdpWrite(0x01, 0x03, new byte[]{0},0x60,0,replyPoint).ConfigureAwait(false);
+                            await _dreamUtil.SendUdpWrite(0x01, 0x03, new byte[]{0},0x60,0,replyPoint).ConfigureAwait(false);
                             
                         } else {
                             Log.Warning("Message device is null!.");
@@ -305,12 +305,12 @@ namespace Glimmr.Services {
                     break;
                 case "GET_SERIAL":
                     if (flag == "30") {
-                        SendDeviceSerial(replyPoint);
+                        await SendDeviceSerial(replyPoint);
                     } else {
                         DreamData md = DataUtil.GetCollectionItem<DreamData>("Dev_Dreamscreen", from);
                         if (md != null) {
                             md.SerialNumber = msg.PayloadString;
-                            DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", md);
+                            await DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", md).ConfigureAwait(false);
                         }
                     }
                     
@@ -356,7 +356,7 @@ namespace Glimmr.Services {
                         Log.Debug("Mode flag set, but we're not doing anything... " + flag);
                     }
                     
-                    if (tDevice != null && writeState && !areYouLocal) _controlService.SetMode(tDevice.DeviceMode).ConfigureAwait(false);
+                    if (tDevice != null && writeState && !areYouLocal) await _controlService.SetMode(tDevice.DeviceMode).ConfigureAwait(false);
 
                     break;
                 case "AMBIENT_MODE_TYPE":
@@ -403,14 +403,14 @@ namespace Glimmr.Services {
             if (writeState) {
                 DataUtil.SetDeviceData(tDevice);
                 _dev = tDevice;
-                _dreamUtil.SendUdpWrite(msg.C1, msg.C2, msg.GetPayload(), 0x41, (byte)msg.Group, receivedIpEndPoint).ConfigureAwait(false);
+                await _dreamUtil.SendUdpWrite(msg.C1, msg.C2, msg.GetPayload(), 0x41, (byte)msg.Group, receivedIpEndPoint).ConfigureAwait(false);
             }
 
             if (!writeState) return;
             // Notify if the sender was not us
             if (!areYouLocal && refreshDevice) {
-                _controlService.NotifyClients().ConfigureAwait(false);
-                if (tDevice != null) _controlService.RefreshDevice(tDevice.Id);
+                await _controlService.NotifyClients().ConfigureAwait(false);
+                if (tDevice != null) await _controlService.RefreshDevice(tDevice.Id);
             }
 
             if (tDevice == null) return;
@@ -418,7 +418,7 @@ namespace Glimmr.Services {
             if (ex != null) {
                 tDevice.Enable = ex.Enable;
             }
-            DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", tDevice);
+            await DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", tDevice);
         }
 
 
@@ -444,15 +444,15 @@ namespace Glimmr.Services {
         }
 
         
-        private void SendDeviceStatus(IPEndPoint src) {
+        private async Task SendDeviceStatus(IPEndPoint src) {
             var dss = DataUtil.GetDeviceData();
             var payload = dss.EncodeState();
-            _dreamUtil.SendUdpWrite(0x01, 0x0A, payload, 0x60, _group, src);
+            await _dreamUtil.SendUdpWrite(0x01, 0x0A, payload, 0x60, _group, src);
         }
         
-        private void SendDeviceSerial(IPEndPoint src) {
+        private async Task SendDeviceSerial(IPEndPoint src) {
             var serial = DataUtil.GetDeviceSerial();
-            _dreamUtil.SendUdpWrite(0x01, 0x03, ByteUtils.StringBytes(serial), 0x60, _group, src);
+            await _dreamUtil.SendUdpWrite(0x01, 0x03, ByteUtils.StringBytes(serial), 0x60, _group, src);
         }
 
         /// <summary>
