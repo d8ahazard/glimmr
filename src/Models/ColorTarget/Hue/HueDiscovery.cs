@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Q42.HueApi;
@@ -8,7 +9,11 @@ using Q42.HueApi.Models.Bridge;
 using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Hue {
-    public static class HueDiscovery {
+    public class HueDiscovery {
+        private readonly BridgeLocator _bridgeLocator;
+        public HueDiscovery() {
+            _bridgeLocator = new LocalNetworkScanBridgeLocator();
+        }
         
         public static async Task<RegisterEntertainmentResult> CheckAuth(string bridgeIp) {
             try {
@@ -24,32 +29,30 @@ namespace Glimmr.Models.ColorTarget.Hue {
             return null;
         }
 
-        public static async Task Discover(int timeOut=5) {
+        public async Task Discover(CancellationToken ct) {
             Log.Debug("Hue: Discovery started...");
             try {
-                var span = TimeSpan.FromSeconds(timeOut);
-                var discovered = await HueBridgeDiscovery.CompleteDiscoveryAsync(span, span);
+                var discovered = await _bridgeLocator.LocateBridgesAsync(ct);
                 var output = discovered.Select(bridge => new HueData(bridge)).ToList();
                 foreach (var dev in output) {
                     var copy = dev;
                     var existing = DataUtil.GetCollectionItem<HueData>("Dev_Hue", dev.Id);
                     if (existing != null) {
                         copy.CopyBridgeData(existing);
-                        if (copy.Key !=  null && copy.User != null) {
+                        if (copy.Key != null && copy.User != null) {
                             var n = new HueDevice(copy);
                             copy = n.RefreshData().Result;
                             n.Dispose();
                         }
                     }
+
                     await DataUtil.InsertCollection<HueData>("Dev_Hue", copy);
                 }
             } catch (Exception e) {
-                Log.Warning("Hue: Discovery exception: " + e.Message);
+                Log.Debug("Hue discovery exception: " + e.Message);
             }
 
             Log.Debug("Hue: Discovery complete.");
         }
-
-
     }
 }

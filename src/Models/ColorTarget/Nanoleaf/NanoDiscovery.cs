@@ -1,18 +1,20 @@
 ﻿using System;
 using System.Globalization;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
+using Glimmr.Services;
 using Makaretu.Dns;
 using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Nanoleaf {
-    public static class NanoDiscovery {
-        private static MulticastService _mDns;
+    public class NanoDiscovery {
+        private readonly MulticastService _mDns;
 
-        static NanoDiscovery() {
+        public NanoDiscovery(ControlService cs) {
             var sd = new ServiceDiscovery();
-            _mDns = new MulticastService();
+            _mDns = cs.MulticastService;
             _mDns.NetworkInterfaceDiscovered += (s, e) => {
                 // Ask for the name of all services.
                 sd.QueryServiceInstances("_nanoleafapi._tcp");
@@ -20,7 +22,16 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
             
             sd.ServiceDiscovered += (s, serviceName) => { _mDns.SendQuery(serviceName, type: DnsType.PTR); };
             sd.ServiceInstanceDiscovered += ParseInstance;
-
+        }
+        
+        public async Task Discover(CancellationToken ct) {
+            _mDns.Start();
+            Log.Debug("Nano: Discovery started...");
+            while (!ct.IsCancellationRequested) {
+                await Task.Delay(TimeSpan.FromSeconds(1), CancellationToken.None);
+            }
+            _mDns.Stop();
+            Log.Debug("Nano: Discovery Complete.");
         }
 
         private static void ParseInstance(object o, ServiceInstanceDiscoveryEventArgs e) {
@@ -84,14 +95,5 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
                 }
             
         }
-        
-        public static async Task Discover(int timeout = 5) {
-            _mDns.Start();
-            Log.Debug("Nano: Discovery started...");
-            await Task.Delay(timeout * 1000).ConfigureAwait(false);
-            _mDns.Stop();
-            Log.Debug("Nano: Discovery Complete.");
-        }
-
     }
 }

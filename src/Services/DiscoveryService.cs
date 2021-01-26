@@ -3,8 +3,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Hubs;
 using Glimmr.Models;
+using Glimmr.Models.ColorTarget.Hue;
+using Glimmr.Models.ColorTarget.LIFX;
+using Glimmr.Models.ColorTarget.Nanoleaf;
+using Glimmr.Models.ColorTarget.Wled;
+using Glimmr.Models.ColorTarget.Yeelight;
 using Glimmr.Models.Util;
-using LifxNet;
+using ISocketLite.PCL.Exceptions;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -12,16 +17,23 @@ using Serilog;
 namespace Glimmr.Services {
 	public class DiscoveryService : BackgroundService {
 		private readonly IHubContext<SocketServer> _hubContext;
-		// CONTROL SERVICE CONTROLS ALL
 		private readonly ControlService _controlService;
-		private LifxClient _lifxClient;
 		private bool _streaming;
+		private readonly YeelightDiscovery _yeelightDiscovery;
+		private readonly WledDiscovery _wledDiscovery;
+		private readonly NanoDiscovery _nanoDiscovery;
+		private readonly LifxDiscovery _lifxDiscovery;
+		private readonly HueDiscovery _hueDiscovery;
 		public DiscoveryService(IHubContext<SocketServer> hubContext, ControlService controlService) {
 			_hubContext = hubContext;
 			_controlService = controlService;
 			_controlService.DeviceRescanEvent += TriggerRefresh;
 			_controlService.SetModeEvent += UpdateMode;
-			_lifxClient = _controlService.LifxClient;
+			_hueDiscovery = new HueDiscovery();
+			_yeelightDiscovery = new YeelightDiscovery();
+			_lifxDiscovery = new LifxDiscovery(_controlService);
+			_nanoDiscovery = new NanoDiscovery(_controlService);
+			_wledDiscovery = new WledDiscovery(_controlService);
 		}
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
@@ -53,17 +65,35 @@ namespace Glimmr.Services {
 			await DeviceDiscovery();
 		}
         
-		// Discover...devices?
-		
-		private async Task DeviceDiscovery() {
+		private async Task DeviceDiscovery(int timeout=10) {
 			Log.Debug("Triggering refresh of devices via timer.");
 			// Trigger a refresh
-			_lifxClient = _controlService.LifxClient;
-			await DataUtil.RefreshDevices(_lifxClient, _controlService);
-			// Sleep for 5s for it to finish
-			await Task.Delay(5000);
+			var cs = new CancellationTokenSource();
+			cs.CancelAfter(TimeSpan.FromSeconds(timeout));
+			Log.Debug("Starting Device Discovery...");
+			// Get dream devices
+			var lifxTask = _lifxDiscovery.Discover(cs.Token);
+			var nanoTask = _nanoDiscovery.Discover(cs.Token);
+			var bridgeTask = _hueDiscovery.Discover(cs.Token);
+			var wLedTask = _wledDiscovery.Discover(cs.Token);
+			var yeeTask = _yeelightDiscovery.Discover(cs.Token);
+			_controlService.RefreshDreamscreen(cs.Token);
+			try {
+				await Task.WhenAll(nanoTask, bridgeTask, lifxTask, wLedTask, yeeTask);
+			} catch (SocketException f) {
+				Log.Warning("Socket exception during discovery: " + f.Message);
+			}
+				
+			Log.Debug("All devices should now be refreshed.");
+			nanoTask.Dispose();
+			bridgeTask.Dispose();
+			wLedTask.Dispose();
+			yeeTask.Dispose();
+			lifxTask.Dispose();
+			cs.Dispose();
+
 			// Notify all clients to refresh data
-			await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+			await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized(), CancellationToken.None);
 		}
 	}
 }

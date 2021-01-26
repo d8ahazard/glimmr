@@ -46,7 +46,7 @@ namespace Glimmr
 				})
 				.ConfigureWebHostDefaults(webBuilder => {
 					webBuilder.UseStartup<Startup>();
-					webBuilder.UseUrls("http://*","https://*");
+					webBuilder.UseUrls("http://*");
 				});
 		}
 	}

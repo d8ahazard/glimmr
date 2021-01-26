@@ -16,6 +16,7 @@ using Glimmr.Models.ColorTarget.Nanoleaf;
 using Glimmr.Models.ColorTarget.Wled;
 using Glimmr.Models.Util;
 using LifxNet;
+using Makaretu.Dns;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
@@ -28,6 +29,7 @@ namespace Glimmr.Services {
 		public HttpClient HttpSender { get; }
 		public LifxClient LifxClient { get; }
 		public UdpClient UdpClient { get; }
+		public MulticastService MulticastService { get; }
 		private readonly IHubContext<SocketServer> _hubContext;
 
 		public ControlService(IHubContext<SocketServer> hubContext) {
@@ -36,13 +38,15 @@ namespace Glimmr.Services {
 			LifxClient = LifxClient.CreateAsync().Result;
 			// Init nano HttpClient
 			HttpSender = new HttpClient();
-			DataUtil.CheckDefaults(LifxClient).ConfigureAwait(true);
 			// Init UDP client
 
 			UdpClient = new UdpClient {Ttl = 5};
 			UdpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 			UdpClient.Client.Blocking = false;
 			UdpClient.DontFragment = true;
+			MulticastService = new MulticastService();
+			DataUtil.CheckDefaults(this).ConfigureAwait(true);
+
 		}
 
 		public AsyncEvent<DynamicEventArgs> DeviceReloadEvent;
@@ -72,6 +76,9 @@ namespace Glimmr.Services {
 
 		public async Task SetMode(int mode) {
 			Log.Information("Setting mode: " + mode);
+			if (mode != 0) {
+				DataUtil.SetItem("PreviousMode", mode);
+			}
 			await _hubContext.Clients.All.SendAsync("mode", mode);
 			DataUtil.SetItem("DeviceMode", mode);
 			await SetModeEvent.InvokeAsync(null, new DynamicEventArgs(mode));
@@ -252,8 +259,9 @@ namespace Glimmr.Services {
 					await DataUtil.InsertCollection<LedData>("LedData", led);
 				}
 			}
-			RefreshSystemEvent();
+			
 			DataUtil.SetObject<SystemData>("SystemData", sd);
+			RefreshSystemEvent();
 		}
 
 		public static Task SystemControl(string action) {

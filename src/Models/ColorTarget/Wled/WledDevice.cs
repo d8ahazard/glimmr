@@ -102,11 +102,11 @@ namespace Glimmr.Models.ColorTarget.Wled {
             var packet = new List<byte>();
             // Set mode to DRGB, dude.
             packet.Add(ByteUtils.IntByte(2));
-            packet.Add(ByteUtils.IntByte(2));
+            packet.Add(ByteUtils.IntByte(255));
             for (var i = 0; i < Data.LedCount; i++) {
                 packet.AddRange(new byte[] {0, 0, 0});
             }
-            if (_ep != null) _udpClient?.SendAsync(packet.ToArray(), packet.Count, _ep);
+            
             var offObj = new JObject(
                 new JProperty("on", false)
             );
@@ -264,7 +264,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             var httpContent = new StringContent(values.ToString());
             httpContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
             try {
-               await _httpClient.PostAsync(uri, httpContent);
+                await _httpClient.PostAsync(uri, httpContent);
             } catch (Exception e) {
                 Log.Warning("HTTP Request Exception: " + e.Message);
             }

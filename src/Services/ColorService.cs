@@ -97,7 +97,7 @@ namespace Glimmr.Services {
 
 			_subscribeTask = Task.Run(async () => {
 				while (!stoppingToken.IsCancellationRequested) {
-					// CheckAutoDisable();
+					await CheckAutoDisable();
 					await CheckSubscribers();
 					await Task.Delay(5000, stoppingToken);
 				}

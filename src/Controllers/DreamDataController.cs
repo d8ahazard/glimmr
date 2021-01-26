@@ -23,6 +23,35 @@ namespace Glimmr.Controllers {
 			_controlService = controlService;
 		}
 
+		[HttpGet("")]
+		public IActionResult DefaultAction() {
+			var sd = DataUtil.GetObject<SystemData>("SystemData");
+			return new JsonResult(sd);
+		}
+		
+		[HttpGet("brightness")]
+		public async Task<IActionResult> SetBrightness([FromQuery] int value) {
+			Log.Debug("Setting brightness: " + value);
+			SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
+			sd.Brightness = value;
+			await _controlService.UpdateSystem(sd);
+			return Ok(value);
+		}
+		
+		[HttpGet("toggleMode")]
+		public async Task<IActionResult> ToggleMode() {
+			SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
+			var prev = sd.PreviousMode;
+			var mode = sd.DeviceMode;
+			if (mode == 0) {
+				await _controlService.SetMode(prev);	
+			} else {
+				await _controlService.SetMode(0);
+			}
+			
+			return Ok();
+		}
+
 		// POST: api/DreamData/mode
 		[HttpPost("mode")]
 		public async Task<IActionResult> DevMode([FromBody] int mode) {

@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
-using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.ColorTarget.DreamScreen;
 using Glimmr.Models.ColorTarget.Hue;
@@ -12,9 +10,7 @@ using Glimmr.Models.ColorTarget.LED;
 using Glimmr.Models.ColorTarget.LIFX;
 using Glimmr.Models.ColorTarget.Nanoleaf;
 using Glimmr.Models.ColorTarget.Wled;
-using Glimmr.Models.ColorTarget.Yeelight;
 using Glimmr.Services;
-using LifxNet;
 using LiteDB;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -39,7 +35,7 @@ namespace Glimmr.Models.Util {
             Log.Debug("Database disposed.");
         }
 
-        public static async Task CheckDefaults(LifxClient lc) {
+        public static async Task CheckDefaults(ControlService cs) {
             var db = GetDb();
             var sObj = GetObject<SystemData>("SystemData");
             if (sObj == null) {
@@ -60,8 +56,6 @@ namespace Glimmr.Models.Util {
                 d.Upsert(myDevice.Id, myDevice);
                 d.EnsureIndex(x => x.Id);
                 db.Commit();
-                // Scan for devices
-                await RefreshDevices(lc,null);
             } else {
                 Log.Information("Default values are already set, continuing.");
             }
@@ -393,38 +387,6 @@ namespace Glimmr.Models.Util {
             File.Copy(filePath, newPath);
             File.Delete(filePath);
             return newPath;
-        }
-
-
-        public static async Task RefreshDevices(LifxClient c, ControlService controlService = null) {
-            var cs = new CancellationTokenSource();
-            cs.CancelAfter(30000);
-            Log.Debug("Starting Device Discovery...");
-            Scanning = true;
-            // Get dream devices
-            var ld = new LifxDiscovery(c);
-            var nanoTask = NanoDiscovery.Discover();
-            var bridgeTask = HueDiscovery.Discover();
-            var wLedTask = WledDiscovery.Discover();
-            var yeeTask = YeelightDiscovery.Discover();
-            var bulbTask = ld.Discover();
-            controlService?.RefreshDreamscreen(cs.Token);
-            try {
-                await Task.WhenAll(nanoTask, bridgeTask, bulbTask, wLedTask, yeeTask);
-            } catch (TaskCanceledException e) {
-                Log.Warning("Discovery task was canceled before completion: ", e);
-            } catch (SocketException f) {
-                Log.Warning("Socket exception during discovery: ", f);
-            }
-				
-            Log.Debug("All devices should now be refreshed.");
-            Scanning = false;
-            nanoTask.Dispose();
-            bridgeTask.Dispose();
-            wLedTask.Dispose();
-            yeeTask.Dispose();
-            bulbTask.Dispose();
-            cs.Dispose();
         }
 
         public static void RefreshPublicIp() {

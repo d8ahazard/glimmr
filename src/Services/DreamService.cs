@@ -426,15 +426,12 @@ namespace Glimmr.Services {
             try {
                 Log.Debug("Dreamscreen: Discovery started...");
                 _discovering = true;
-                // Send a custom internal message to self to store discovery results
-                var selfEp = new IPEndPoint(IPAddress.Loopback, 8888);
-                await _dreamUtil.SendUdpWrite(0x01, 0x0D, new byte[] {0x01}, 0x30, 0x00, selfEp);
                 // Send our notification to actually discover
                 var msg = new byte[] {0xFC, 0x05, 0xFF, 0x30, 0x01, 0x0A, 0x2A};
                 await _dreamUtil.SendUdpMessage(msg);
-                await Task.Delay(3000, ct).ConfigureAwait(false);
-                await _dreamUtil.SendUdpWrite(0x01, 0x0E, new byte[] {0x01}, 0x30, 0x00, selfEp);
-                await Task.Delay(500, ct).ConfigureAwait(false);
+                while (!ct.IsCancellationRequested) {
+                    await Task.Delay(TimeSpan.FromSeconds(1), ct);
+                }
                 _discovering = false;
                 Log.Debug("Dreamscreen: Discovery complete.");
             } catch (Exception e) {

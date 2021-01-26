@@ -1,16 +1,21 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
 using Serilog;
 using YeelightAPI;
 
 namespace Glimmr.Models.ColorTarget.Yeelight {
-	public static class YeelightDiscovery {
+	public class YeelightDiscovery {
+
+		public YeelightDiscovery() {
+			
+		}
 		
-		public static async Task Discover() {
+		public async Task Discover(CancellationToken ct) {
 			Log.Debug("Yeelight: Discovery started...");
 			// Await the asynchronous call to the static API
-			var discoveredDevices = await DeviceLocator.DiscoverAsync();
+			var discoveredDevices = await DeviceLocator.DiscoverAsync(ct);
 			foreach (var dev in discoveredDevices) {
 				Log.Debug("YEE YEE: " + JsonConvert.SerializeObject(dev));
 				var yd = new YeelightData {
