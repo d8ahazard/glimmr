@@ -12,6 +12,7 @@ using Glimmr.Models.ColorTarget.Nanoleaf;
 using Glimmr.Models.ColorTarget.Wled;
 using Glimmr.Services;
 using LiteDB;
+using Microsoft.AspNetCore.Authentication;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
@@ -142,14 +143,14 @@ namespace Glimmr.Models.Util {
         public static async Task InsertCollection<T>(string key, dynamic value) where T: class {
             var db = GetDb();
             var coll = db.GetCollection<T>(key);
-            await coll.Upsert(value.Id, value);
+            await Task.FromResult(coll.Upsert(value.Id, value));
             db.Commit();
         }
         //fixed
         public static async Task InsertCollection(string key, dynamic value) {
                 var db = GetDb();
                 var coll = db.GetCollection(key);
-                await coll.Upsert(value.Id, value);
+                await Task.FromResult(coll.Upsert(value.Id, value));
                 db.Commit();
         }
         

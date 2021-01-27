@@ -124,7 +124,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             if (Data.StripMode == 2) {
                 colors = ShiftColors(colors);
             } else {
-                if (Data.StripDirection == 1) {
+                if (Data.ReverseStrip) {
                     colors.Reverse();
                 }
             }
@@ -189,7 +189,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
         private List<Color> ShiftColors(IReadOnlyList<Color> input) {
             var output = new Color[input.Count * 2];
             var il = output.Length - 1;
-            if (Data.StripDirection == 0) {
+            if (!Data.ReverseStrip) {
                 for (var i = 0; i < input.Count; i++) {
                     output[i] = input[i];
                     output[il - i] = input[i];

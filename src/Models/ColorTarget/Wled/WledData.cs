@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Net;
 using Glimmr.Models.ColorTarget.LED;
 using Glimmr.Models.Util;
@@ -14,7 +15,10 @@ namespace Glimmr.Models.ColorTarget.Wled {
         [JsonProperty] public int StripMode { get; set; }
         // If in normal mode, set an optional offset, strip direction, horizontal count, and vertical count.
         [JsonProperty] public int Offset { get; set; }
-        [JsonProperty] public int StripDirection { get; set; }
+        
+        [DefaultValue(false)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool ReverseStrip { get; set; }
         [JsonProperty] public int LedCount { get; set; }
         [JsonProperty] public List<int> Sectors { get; set; }
         [JsonProperty] public Dictionary<int, int> SubSectors { get; set; }
@@ -69,7 +73,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             ControlStrip = input.ControlStrip;
             LedCount = input.LedCount;
             Brightness = input.Brightness;
-            StripDirection = input.StripDirection;
+            ReverseStrip = input.ReverseStrip;
             StripMode = input.StripMode;
             if (Id != null) Name = StringUtil.UppercaseFirst(Id);
         }

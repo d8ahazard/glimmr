@@ -25,6 +25,10 @@
     margin-bottom: 5px;
 }
 
+.highLed {
+    background-color: red;
+}
+
 .titleCol {
     font-size: 22px;
 }

@@ -199,9 +199,16 @@
         </select>
     </div>
     <!-- Auto-update -->
-    <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center form-group">
+    <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center form-check">
         <label class="form-check-label">Automatically Install Updates</label>
         <input type="checkbox" class="form-check-input" data-object="SystemData" data-property="AutoUpdate"/>
+        <div class="form-text">Updates will automatically be installed at 1:00AM every day.</div>
+    </div>
+    <!-- Auto-update -->
+    <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center form-check">
+        <label class="form-check-label">Automatically Disable Streaming</label>
+        <input type="checkbox" class="form-check-input" data-object="SystemData" data-property="EnableAutoDisable"/>
+        <div class="form-text">Allow Glimmr to automatically disable control of lights when no input is detected.</div>
     </div>
 </div>
 
@@ -216,6 +223,7 @@
             <option value="2">HDMI</option>
             <option value="3">Screen Capture</option>
         </select>
+        <div class="form-text">Select your desired input source.</div>
     </div>
     <div class="col-12 col-md-6 col-xl-3 capGroup form-group" data-mode="0">
         <label class="form-label">Target DreamScreen</label>
@@ -358,12 +366,12 @@
         <input type="number" min="0" class="form-control" data-object="LedData"
                data-property="MilliampsPerLed" data-id="0"/>
     </div>
-    <div class="col-12 col-md-6 col-xl-3 form-group">
+    <div class="col-12 col-md-6 col-xl-3 form-check">
         <label class="form-check-label">Enable Auto-Brightness</label>
         <input class="form-check-input" type="checkbox" data-object="LedData"
                data-property="AutoBrightnessLevel" data-id="0"/>
     </div>
-    <div class="col-12 col-md-6 col-xl-3 form-group">
+    <div class="col-12 col-md-6 col-xl-3 form-check">
         <label class="form-check-label">Fix Gamma</label>
         <input class="form-check-control" type="checkbox" data-object="LedData"
                data-property="FixGamma" data-id="0"/>
@@ -417,12 +425,12 @@
         <input type="number" min="0" class="form-control" data-object="LedData"
                data-property="MilliampsPerLed" data-id="1"/>
     </div>
-    <div class="col-12 col-md-6 col-xl-3 form-group">
+    <div class="col-12 col-md-6 col-xl-3 form-check">
         <label class="form-check-label">Enable Auto-Brightness</label>
         <input class="form-check-input" type="checkbox" data-object="LedData"
                data-property="AutoBrightnessLevel" data-id="1"/>
     </div>
-    <div class="col-12 col-md-6 col-xl-3 form-group">
+    <div class="col-12 col-md-6 col-xl-3 form-check">
         <label class="form-check-label">Fix Gamma</label>
         <input class="form-check-control" type="checkbox" data-object="LedData"
                data-property="FixGamma" data-id="1"/>

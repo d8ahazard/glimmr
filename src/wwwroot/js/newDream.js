@@ -156,6 +156,11 @@ function setSocketListeners() {
 
     websocket.on("mode", function (mode) {
         console.log("Socket has set mode to " + mode);
+        let modeBtns = document.querySelectorAll(".modeBtn");
+        for (let i=0; i < modeBtns.length; i++) {
+            modeBtns[i].classList.remove("active");
+            if (modeBtns[i].getAttribute("data-mode") === mode.toString()) modeBtns[i].classList.add("active");
+        }
     });
 
     websocket.on("cpuData", function (cpuData) {
@@ -320,11 +325,18 @@ function setListeners() {
                 }
                 data.store[obj] = strips;
             } else {
-                data.store[obj][0][property] = val;
-                pack = data.store[obj][0];
+                if (target.classList.contains("devSetting")) {
+                    updateDevice(obj, property, val);  
+                    loadDeviceData();
+                } else {
+                    data.store[obj][0][property] = val;
+                    pack = data.store[obj][0];
+                    delete pack["_id"];
+                    console.log("Sending updated object: ", pack);
+                    sendMessage(obj, pack,true);
+                }                
             }
-            
-            
+                        
             if (property === "LeftCount" || property === "RightCount" || property ==="TopCount" || property === "BottomCount") {
                 let lPreview = document.getElementById("sLedPreview");
                 let lImage = document.getElementById("ledImage");
@@ -337,9 +349,7 @@ function setListeners() {
                 let mapImg = document.getElementById("audioMapImg");
                 mapImg.setAttribute("src","./img/MusicMode" + val + ".png");
             }
-            delete pack["_id"];
-            console.log("Sending updated object: ", pack);
-            sendMessage(obj, pack,true);
+            
         }        
     });
     
@@ -444,7 +454,7 @@ function setListeners() {
                             }
                         }
                     }
-                    onCardClick(target);
+                    showDeviceCard(target);
                     return;
                 }               
             }
@@ -893,6 +903,7 @@ function getDevices() {
 }
 
 function updateDevice(id, property, value) {
+    if (deviceData["_id"] === id) deviceData[property] = value;
     for(let i = 0; i< data.devices.length; i++) {
         let device = data.devices[i];
         if (device["_id"] === id) {
@@ -1008,7 +1019,6 @@ const toggleExpansion = (element, to, duration = 350) => {
                 }
             }
             element.querySelector(".card-body").querySelectorAll(".exp").forEach(function(row){
-            console.log("Adding to row? ", row);
             row.style.transition = `
 						width ${duration}ms ease-in-out,
 						height ${duration}ms ease-in-out,
@@ -1063,7 +1073,7 @@ const fadeContent = (element, opacity, duration = 300) => {
     })
 }
 
-const onCardClick = async (e) => {
+const showDeviceCard = async (e) => {
     expanded = true;
     const card = (e.parentElement.parentElement.parentElement.parentElement);
     baseCard = card;
@@ -1104,7 +1114,42 @@ const onCardClick = async (e) => {
     // Create settings for our card
     document.querySelector(".mainSettings").classList.add('d-none');
     closeButton.classList.remove('d-none');
+    loadDeviceData();
 };
+
+function loadDeviceData() {
+    let settingsDiv = document.getElementById("deviceSettings");
+    settingsDiv.innerHTML = "";
+    //fadeContent(settingsDiv,100, 500);
+    switch(deviceData["Tag"]) {
+        case "Dreamscreen":
+            drawSectorMap = (deviceData["Tag"] === "Connect" || deviceData["Tag"] === "Sidekick");
+            break;
+        case "HueBridge":
+            if (isValid(deviceData["Key"]) && isValid(deviceData["User"])) {
+                createHueMap();
+                drawSectorMap = true;
+            }
+            break;
+        case "Lifx":
+        case "Yeelight":
+            appendSectorMap();
+            break;
+        case "Wled":
+            appendWledSettings();
+            break;
+        case "Nanoleaf":
+            appendNanoSettings();
+            break;
+        default:
+            console.log("Unknown device tag.");
+            return;
+    }
+
+    if (drawSectorMap) {
+
+    }
+}
 
 function addCardSettings() {
     if (deviceData === undefined) {
@@ -1132,43 +1177,125 @@ function addCardSettings() {
         cardClone.appendChild(sepDiv);
         cardClone.appendChild(settingsDiv);
         
-        //fadeContent(settingsDiv,100, 500);
-        switch(deviceData["Tag"]) {
-            case "Dreamscreen":      
-                drawSectorMap = (deviceData["Tag"] === "Connect" || deviceData["Tag"] === "Sidekick");
-                break;
-            case "HueBridge":
-                if (isValid(deviceData["Key"]) && isValid(deviceData["User"])) {
-                    createHueMap();
-                    drawSectorMap = true;    
-                } 
-                break;
-            case "Lifx":
-            case "Yeelight":
-                appendImageMap();
-                break;
-            case "Wled":
-                appendWledSettings();
-                break;
-            case "Nanoleaf":
-                appendNanoSettings();
-                break;
-            default:
-                console.log("Unknown device tag.");
-                return;
-        }
-        
-        if (drawSectorMap) {
-            
-        }
-        
-        
     }   
 }
 
-function appendWledSettings() {
-    appendImageMap();
+function appendWledSettings() {    
+    let container = document.createElement("div");
+    container.classList.add("container");
+    let row = document.createElement("div");
+    row.classList.add("row", "border", "justify-content-center", "pb-5");
+    let header = document.createElement("div");
+    header.classList.add("col-12", "headerCol");
+    row.appendChild(header);
+    let id = deviceData["_id"];
+    let elem = new SettingElement("LED Count", "number", id, "LedCount", deviceData["LedCount"]);
+    elem.isDevice = true;
+    let se = createSettingElement(elem);
+    row.appendChild(se);
+
+    elem = new SettingElement("Offset", "number", id, "Offset", deviceData["Offset"]);
+    elem.minLimit = 0;
+    elem.maxLimit = 10000;
+    elem.isDevice = true;
+    se = createSettingElement(elem);
+    row.appendChild(se);
+    elem = new SettingElement("Strip Mode", "select", id, "StripMode", deviceData["StripMode"]);
+    elem.options = [
+        {value: 0, text: "Normal"},
+        {value: 1,text: "Sectored"},
+        {value: 2,text: "Loop (Play Bar)"}
+    ];
+    elem.isDevice = true;
+    se = createSettingElement(elem);
+    row.appendChild(se);
+    elem = new SettingElement("Reverse Strip Direction", "check", id, "ReverseStrip", deviceData["ReverseStrip"]);
+    elem.isDevice = true;
+    se = createSettingElement(elem);
+    row.appendChild(se);
+    container.appendChild(row);
+    let ds = document.getElementById("deviceSettings");    
+    ds.appendChild(container);
+    drawLedMap = true;
+    appendLedMap(deviceData["LedCount"], deviceData["Offset"], deviceData["ReverseStrip"]);    
+}
+
+function createSettingElement(settingElement) {
+    let group = document.createElement("div");
+    group.classList.add("col-12", "col-md-6", "col-xl-3", "justify-content-center", "form-group");
+    let label = document.createElement("label");   
+    label.innerText = settingElement.descrption;
+    let element;
     
+    switch(settingElement.type) {
+        case "check":
+            element = document.createElement("input");
+            element.type = "checkbox";
+            element.checked = settingElement.value;
+            break;
+        case "select":
+            element = document.createElement("select");
+            if (isValid(settingElement.options)) {
+                for (let i=0; i < settingElement.options.length; i++) {
+                    let opt = settingElement.options[i];
+                    let option = document.createElement("option");
+                    option.value = opt.value;
+                    option.innerText = opt.text;
+                    element.appendChild(option);
+                }
+            }
+            element.value = settingElement.value;
+            break;
+        case "number":
+            element = document.createElement("input");
+            element.type = "number";
+            element.min = settingElement.minValue;
+            element.max = settingElement.maxValue;
+            element.step = settingElement.increment;
+            element.value = settingElement.value;
+            break;
+        case "text":
+            element = document.createElement("input");
+            element.type = "text";
+            break;
+    }
+    if (settingElement.type === "check") {
+        label.classList.add("form-check-label");
+        group.classList.add("form-check");
+        if (isValid(element)) element.classList.add("form-check-input");
+    } else {
+        label.classList.add("form-label");
+        if (isValid(element)) element.classList.add("form-input");
+    }
+    
+    group.appendChild(label);
+    if (isValid(element)) {       
+        if (settingElement.isDevice) { 
+            element.classList.add("devSetting");            
+        }
+        element.setAttribute("data-property", settingElement.property);
+        element.setAttribute("data-object", settingElement.object);
+        if (isValid(settingElement.id)) {
+            element.setAttribute("data-id", settingElement.id);
+        }
+        group.append(element);
+    }
+    return group;
+}
+
+function SettingElement(description, type, object, property, value, hint, minLimit, maxLimit, increment, options, id, isDevice) {
+    this.descrption = description;
+    this.type = type;
+    this.object = object;
+    this.property = property ?? {};
+    this.hint = hint ?? "";
+    this.minLimit = minLimit ?? 0;
+    this.maxLimit = maxLimit ?? 255;
+    this.increment = increment ?? 1;
+    this.options = options;
+    this.id = id;
+    this.value = value;
+    this.isDevice = isDevice ?? false;
 }
 
 function appendNanoSettings() {
@@ -1198,7 +1325,7 @@ function drawLinkPane(type, linked) {
     document.getElementById("linkCol").appendChild(div);
 }
 
-function appendImageMap() {
+function appendSectorMap() {
     let imgDiv = document.createElement("div");
     imgDiv.id = "mapDiv";
     let img = document.createElement("img");
@@ -1206,10 +1333,24 @@ function appendImageMap() {
     img.classList.add("img-fluid", "col-xl-8", "col-lg-8", "col-md-12");
     img.src = baseUrl + "/img/sectoring_screen.png";
     imgDiv.appendChild(img);
-    let settingsDiv = document.getElementById("mapCol");    
+    let settingsDiv = document.getElementById("deviceSettings");    
     settingsDiv.append(imgDiv);
     setTimeout(function() {createSectorMap(imgDiv, document.getElementById("sectorImage"))}, 200);
 
+}
+
+function appendLedMap() {
+    let imgDiv = document.createElement("div");
+    imgDiv.id = "mapDiv";
+    let img = document.createElement("img");
+    img.id = "sectorImage";
+    img.classList.add("img-fluid", "col-xl-8", "col-lg-8", "col-md-12");
+    img.src = baseUrl + "/img/sectoring_screen.png";
+    imgDiv.appendChild(img);
+    let settingsDiv = document.getElementById("deviceSettings");
+    settingsDiv.append(imgDiv);
+    let systemData = data.store["SystemData"][0];
+    setTimeout(function() {createLedMap(imgDiv, document.getElementById("sectorImage"),systemData, deviceData)}, 200);
 }
 
 function createSectorMap(targetElement, sectorImage) {
@@ -1323,7 +1464,24 @@ function createSectorMap(targetElement, sectorImage) {
     targetElement.appendChild(map);    
 }
 
-function createLedMap(targetElement, sectorImage, ledData) {
+function createLedMap(targetElement, sectorImage, ledData, devData) {
+    let range1;
+    let range2;
+    if (isValid(devData)) {
+        let count = devData["LedCount"];
+        let offset = devData["Offset"];
+        let mode = devData["StripMode"];
+        let total = ledData["LedCount"];
+        let diff = 0;
+        if (isValid(mode) && mode === 2) count /=2;
+        let len = offset + count;
+        if (len >= total) {
+            diff = len - total;
+            range2 = range(diff);
+        }
+        range1 = range(count-diff, offset);
+        console.log("Ranges: ", range1, range2);
+    }
     let img = sectorImage;
     let w = img.offsetWidth;
     let h = img.offsetHeight;
@@ -1362,6 +1520,8 @@ function createLedMap(targetElement, sectorImage, ledData) {
         r = l + dWidth;        
         let s1 = document.createElement("div");
         s1.classList.add("led");
+        if (isValid(range1) && range1.includes(ledCount)) s1.classList.add("highLed");
+        if (isValid(range2) && range2.includes(ledCount)) s1.classList.add("highLed");
         s1.setAttribute("data-sector", ledCount.toString());
         s1.style.position = "absolute";
         s1.style.top = t.toString() + "px";
@@ -1380,6 +1540,8 @@ function createLedMap(targetElement, sectorImage, ledData) {
         r = l - ftWidth;
         let s1 = document.createElement("div");
         s1.classList.add("led");
+        if (isValid(range1) && range1.includes(ledCount)) s1.classList.add("highLed");
+        if (isValid(range2) && range2.includes(ledCount)) s1.classList.add("highLed");
         s1.setAttribute("data-sector", ledCount.toString());
         s1.style.position = "absolute";
         s1.style.top = t.toString() + "px";
@@ -1401,6 +1563,8 @@ function createLedMap(targetElement, sectorImage, ledData) {
         r = l + dWidth;
         let s1 = document.createElement("div");
         s1.classList.add("led");
+        if (isValid(range1) && range1.includes(ledCount)) s1.classList.add("highLed");
+        if (isValid(range2) && range2.includes(ledCount)) s1.classList.add("highLed");
         s1.setAttribute("data-sector", ledCount.toString());
         s1.style.position = "absolute";
         s1.style.top = t.toString() + "px";
@@ -1422,6 +1586,8 @@ function createLedMap(targetElement, sectorImage, ledData) {
         r = l + fbWidth;
         let s1 = document.createElement("div");
         s1.classList.add("led");
+        if (isValid(range1) && range1.includes(ledCount)) s1.classList.add("highLed");
+        if (isValid(range2) && range2.includes(ledCount)) s1.classList.add("highLed");
         s1.setAttribute("data-sector", ledCount.toString());
         s1.style.position = "absolute";
         s1.style.top = t.toString() + "px";
@@ -1435,6 +1601,10 @@ function createLedMap(targetElement, sectorImage, ledData) {
         ledCount++;
     }
     targetElement.appendChild(map);
+}
+
+function range(size, startAt = 0) {
+    return [...Array(size).keys()].map(i => i + startAt);
 }
 
 function createHueMap() {
@@ -1697,6 +1867,7 @@ function sizeContent() {
         let secMap = document.getElementById("sectorMap");
         if (isValid(secMap)) secMap.remove();
         if (drawSectorMap) createSectorMap(imgDiv, document.getElementById("sectorImage"));
+        if (drawLedMap) appendLedMap(deviceData["LedCount"], deviceData["Offset"], deviceData["ReverseStrip"]);
         if (deviceData["Tag"] === "Nanoleaf" && isValid(deviceData["Token"])) {
             console.log("Redrawing nanoshapes.");
             document.querySelector(".konvajs-content").remove();
