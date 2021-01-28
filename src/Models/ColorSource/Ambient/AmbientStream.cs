@@ -31,22 +31,20 @@ namespace Glimmr.Models.ColorSource.Ambient {
         public void StartStream(CancellationToken ct) {
             _startInt = 0;
             Log.Debug($@"Color builder started, animation time is {_animationTime}...");
-            SendTask = Task.Run(async () => {
-                while (!ct.IsCancellationRequested) {
-                    if (!Streaming) continue;
-                    var cols = RefreshColors(_colors);
-                    var ledCols = new List<Color>();
-                    for (var i = 0; i < _ledCount; i++) {
-                        var r = i / _ledCount * cols.Count;
-                        ledCols.Add(cols[r]);
-                    }
-
-                    Colors = ledCols;
-                    Sectors = cols;
-                    await _cs.SendColors(this, new DynamicEventArgs(ledCols, cols));
-                    await Task.Delay(waitSpan, ct);
+            while (!ct.IsCancellationRequested) {
+                if (!Streaming) continue;
+                var cols = RefreshColors(_colors);
+                var ledCols = new List<Color>();
+                for (var i = 0; i < _ledCount; i++) {
+                    var r = i / _ledCount * cols.Count;
+                    ledCols.Add(cols[r]);
                 }
-            }, ct);
+
+                Colors = ledCols;
+                Sectors = cols;
+                _cs.SendColors(this, new DynamicEventArgs(ledCols, cols)).ConfigureAwait(true);
+                Task.Delay(waitSpan, ct);
+            }
             Log.Information("DreamScene: Color Builder canceled.");
         }
 

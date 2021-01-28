@@ -28,14 +28,13 @@ namespace Glimmr.Models.ColorTarget.LED {
 		public LedData Data;
 		
 		private int _ledCount;
-		private ColorService _cs;
 		private WS281x _strip;
 
 		
 		public LedDevice(LedData ld, ColorService colorService) {
-			_cs = colorService;
-			_cs.SegmentTestEvent += UpdateStrip;
-			_cs.ColorSendEvent += SetColor;
+			var cs = colorService;
+			cs.SegmentTestEvent += UpdateStrip;
+			cs.ColorSendEvent += SetColor;
 			LoadData(ld);
 			CreateStrip();
 		}
@@ -66,12 +65,12 @@ namespace Glimmr.Models.ColorTarget.LED {
 				return Task.CompletedTask;
 			}
 
+			Streaming = true;
 			
 			return Task.CompletedTask;
 		}
 
 		public Task StopStream() {
-			if (!Streaming) return Task.CompletedTask;
 			StopLights();
 			Streaming = false;
 			return Task.CompletedTask;
@@ -91,6 +90,7 @@ namespace Glimmr.Models.ColorTarget.LED {
 
 		
 		public void Dispose() {
+			_strip?.Reset();
 			_strip?.Dispose();
 		}
 
@@ -240,8 +240,7 @@ namespace Glimmr.Models.ColorTarget.LED {
 
 		private void StopLights() {
 			Log.Debug("Stopping LED Strip.");
-			_strip?.SetAll(Color.FromArgb(0,0,0));
-			//_strip?.Reset();
+			_strip?.SetAll(Color.FromArgb(0,0,0,0));
 			Log.Debug("LED Strips stopped.");
 		}
 

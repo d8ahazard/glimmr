@@ -590,7 +590,71 @@ namespace Glimmr.Models.Util {
 
 	        return colors;
         }
-        
+
+        public static List<Color> LedsToSectors(List<Color> ledColors, SystemData sd) {
+	        var rightColors = ledColors.GetRange(0, sd.RightCount);
+	        var topColors = ledColors.GetRange(sd.RightCount-1, sd.TopCount);
+	        var leftColors = ledColors.GetRange(sd.TopCount - 1, sd.LeftCount);
+	        var bottomColors = ledColors.GetRange(sd.LeftCount - 1, sd.BottomCount);
+	        float rStep = rightColors.Count / 6;
+	        float tStep = topColors.Count / 10;
+	        float lStep = leftColors.Count / 6;
+	        float bStep = bottomColors.Count / 10;
+	        var output = new List<Color>();
+	        var toAvg = new List<Color>();
+	        // Add the last range of colors from the bottom to sector 0
+	        for(var i=bottomColors.Count - 1 - bStep; i < bottomColors.Count; i++) toAvg.Add(bottomColors[(int)i]);
+	        var idx = 0;
+	        while (idx < rightColors.Count && output.Count < 7) {
+		        foreach (var t in rightColors)
+			        toAvg.Add(t);
+				
+		        // On the last sector, don't average it so we can add the bit from the next corner
+		        if (idx % lStep == 0 && output.Count < 6) {
+			        output.Add(AverageColors(toAvg.ToArray()));
+			        toAvg = new List<Color>();
+		        }
+		        idx++;
+	        }
+	        
+	        idx = 0;
+	        while (idx < topColors.Count && output.Count < 17) {
+		        foreach (var t in topColors)
+			        toAvg.Add(t);
+
+		        if (idx % lStep == 0 && output.Count < 16) {
+			        output.Add(AverageColors(toAvg.ToArray()));
+			        toAvg = new List<Color>();
+		        }
+		        idx++;
+	        }
+	        
+	        idx = 0;
+	        while (idx < leftColors.Count && output.Count < 23) {
+		        foreach (var t in leftColors)
+			        toAvg.Add(t);
+
+		        if (idx % lStep == 0 && output.Count < 22) {
+			        output.Add(AverageColors(toAvg.ToArray()));
+			        toAvg = new List<Color>();
+		        }
+		        idx++;
+	        }
+	        
+	        idx = 0;
+	        while (idx < bottomColors.Count && output.Count < 29) {
+		        foreach (var t in leftColors)
+			        toAvg.Add(t);
+
+		        if (idx % lStep == 0) {
+			        output.Add(AverageColors(toAvg.ToArray()));
+			        toAvg = new List<Color>();
+		        }
+		        idx++;
+	        }
+
+	        return output;
+        }
     }
     
     

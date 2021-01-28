@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Sockets;
@@ -31,6 +32,9 @@ namespace Glimmr.Services {
 		public UdpClient UdpClient { get; }
 		public MulticastService MulticastService { get; }
 		private readonly IHubContext<SocketServer> _hubContext;
+		private int _tickCount;
+		private Stopwatch _watch;
+		private int _time;
 
 		public ControlService(IHubContext<SocketServer> hubContext) {
 			_hubContext = hubContext;
@@ -38,6 +42,7 @@ namespace Glimmr.Services {
 			LifxClient = LifxClient.CreateAsync().Result;
 			// Init nano HttpClient
 			HttpSender = new HttpClient();
+			HttpSender.Timeout = TimeSpan.FromSeconds(3);
 			// Init UDP client
 
 			UdpClient = new UdpClient {Ttl = 5};
@@ -46,7 +51,7 @@ namespace Glimmr.Services {
 			UdpClient.DontFragment = true;
 			MulticastService = new MulticastService();
 			DataUtil.CheckDefaults(this).ConfigureAwait(true);
-
+			_watch = new Stopwatch();
 		}
 
 		public AsyncEvent<DynamicEventArgs> DeviceReloadEvent;
@@ -77,7 +82,10 @@ namespace Glimmr.Services {
 		public async Task SetMode(int mode) {
 			Log.Information("Setting mode: " + mode);
 			if (mode != 0) {
+				if (!_watch.IsRunning) _watch.Restart();
 				DataUtil.SetItem("PreviousMode", mode);
+			} else {
+				if (_watch.IsRunning) _watch.Stop();
 			}
 			await _hubContext.Clients.All.SendAsync("mode", mode);
 			DataUtil.SetItem("DeviceMode", mode);
@@ -173,8 +181,18 @@ namespace Glimmr.Services {
 		}
 
 		// We call this one to send colors to everything, including the color service
-		public async void SendColors(List<Color> c1, List<Color> c2, int fadeTime = 0) {
+		public async Task SendColors(List<Color> c1, List<Color> c2, int fadeTime = 0) {
 			await TriggerSendColorEvent.InvokeAsync(this, new DynamicEventArgs(c1, c2, fadeTime));
+			if (_tickCount % 60 == 0) {
+				_tickCount = 1;
+				var elapsed = _watch.ElapsedMilliseconds / 1000;
+				_watch.Restart();
+				if (elapsed != 0) {
+					var fps = 60 / elapsed;
+					//Log.Debug("Frame rate is appx " + fps + ", delta is " + elapsed);	
+				}
+			}
+			_tickCount++;
 		}
 
 		

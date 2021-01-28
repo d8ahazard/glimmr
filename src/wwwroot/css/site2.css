@@ -33,6 +33,10 @@
     font-size: 22px;
 }
 
+.btn-clear * {
+    pointer-events: none;
+}
+
 
 area {
     display: block;
@@ -142,6 +146,10 @@ input[type="range"]::-webkit-slider-runnable-track {
 .btn-clear.active {
     color: white;
     background-color: black;
+}
+
+.btn-clear:hover {
+    background-color: gray;
 }
 
 .btn-clear.btn-lg, .btn-clear.btn-lg > span {

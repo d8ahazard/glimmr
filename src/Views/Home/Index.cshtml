@@ -78,16 +78,16 @@
     <div class="col-12 col-md-6 col-xl-3 justify-content-center form-group">
         <label class="form-label">System Control</label>
         <div class="btn-group form-control">
-            <div class="btn btn-lg btn-secondary controlBtn" data-action="shutdown" data-bs-toggle="tooltip" data-bs-placement="top" title="Shutdown">
+            <div class="btn btn-lg btn-clear controlBtn" data-action="shutdown" data-bs-toggle="tooltip" data-bs-placement="top" title="Shutdown">
                 <span class="material-icons">power_settings_new</span>
             </div>
-            <div class="btn btn-lg btn-secondary controlBtn" data-action="reboot" data-bs-toggle="tooltip" data-bs-placement="top" title="Reboot">
+            <div class="btn btn-lg btn-clear controlBtn" data-action="reboot" data-bs-toggle="tooltip" data-bs-placement="top" title="Reboot">
                 <span class="material-icons">settings_power</span>
             </div>
-            <div class="btn btn-lg btn-secondary controlBtn" data-action="restart" data-bs-toggle="tooltip" data-bs-placement="top" title="Restart Glimmr TV Service">
+            <div class="btn btn-lg btn-clear controlBtn" data-action="restart" data-bs-toggle="tooltip" data-bs-placement="top" title="Restart Glimmr TV Service">
                 <span class="material-icons">sync</span>
             </div>
-            <div class="btn btn-lg btn-secondary controlBtn" data-action="update" data-bs-toggle="tooltip" data-bs-placement="top" title="Update Glimmr TV">
+            <div class="btn btn-lg btn-clear controlBtn" data-action="update" data-bs-toggle="tooltip" data-bs-placement="top" title="Update Glimmr TV">
                 <span class="material-icons">system_update_alt</span>
             </div>
         </div>
@@ -202,13 +202,13 @@
     <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center form-check">
         <label class="form-check-label">Automatically Install Updates</label>
         <input type="checkbox" class="form-check-input" data-object="SystemData" data-property="AutoUpdate"/>
-        <div class="form-text">Updates will automatically be installed at 1:00AM every day.</div>
+        <div class="form-text">Updates will be installed at 1:00AM every day when enabled.</div>
     </div>
     <!-- Auto-update -->
     <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center form-check">
         <label class="form-check-label">Automatically Disable Streaming</label>
         <input type="checkbox" class="form-check-input" data-object="SystemData" data-property="EnableAutoDisable"/>
-        <div class="form-text">Allow Glimmr to automatically disable control of lights when no input is detected.</div>
+        <div class="form-text">Automatically disable control of lights when no input is detected.</div>
     </div>
 </div>
 
@@ -272,6 +272,7 @@
 
 <div class="row border justify-content-center pb-5">
     <div class="col-12 titleCol">LED Counts</div>
+    <div class="col-12 form-text">Enter the total number of LEDs around the perimerter of your screen.</div>
     <!-- Top count -->
     <div class="col-5"></div>
     <div class="col-2 align-self-center">
@@ -284,7 +285,7 @@
     </div>
     <div class="col-5"></div>
     <!-- Left count -->
-    <div class="col-2">
+    <div class="col-3 col-md-2">
         <div class="input-group mb-3">
             <div class="input-group-prepend">
                 <span class="input-group-text" id="ledCountLeft">Left</span>
@@ -293,11 +294,11 @@
         </div>
     </div>
     <!-- Preview -->
-    <div class="col-8" id="sLedPreview">
+    <div class="col-6 col-md-8" id="sLedPreview">
         <img id="ledImage" class="img-fluid" src="~/img/sectoring_screen.png" alt="ledImage">
     </div>
     <!-- Right count -->
-    <div class="col-2">
+    <div class="col-3 col-md-2">
         <div class="input-group mb-3">
             <div class="input-group-prepend">
                 <span class="input-group-text" id="ledCountRight">Right</span>

@@ -106,7 +106,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             for (var i = 0; i < Data.LedCount; i++) {
                 packet.AddRange(new byte[] {0, 0, 0});
             }
-            
+            await _udpClient.SendAsync(packet.ToArray(), packet.Count, _ep).ConfigureAwait(false);
             var offObj = new JObject(
                 new JProperty("on", false)
             );
@@ -149,7 +149,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             }
 
             try {
-                if (_udpClient != null) await _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep);
+                await _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep);
             } catch (Exception e) {
                 Log.Debug("Exception: " + e.Message);        
             }

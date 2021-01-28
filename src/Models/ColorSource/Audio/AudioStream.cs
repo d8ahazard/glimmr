@@ -30,7 +30,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 		public AudioStream(ColorService cs) {
 			_cs = cs;
-			Bass.Init();
 		}
 
 		private async Task LoadData() {
@@ -73,10 +72,21 @@ namespace Glimmr.Models.ColorSource.Audio {
 		
 		public void StartStream(CancellationToken ct) {
 			LoadData().ConfigureAwait(true);
+			Bass.Init();
 			if (_recordDeviceIndex != -1) {
 				Log.Debug("Starting stream with device " + _recordDeviceIndex);
 				Bass.RecordInit(_recordDeviceIndex);
+				Bass.RecordSetInput(_recordDeviceIndex, InputFlags.On, 1);
 				Bass.RecordStart(48000, 2, BassFlags.Float, Update);
+				while (!ct.IsCancellationRequested) {
+					Task.Delay(1,ct);
+				}
+				if (_recordDeviceIndex != -1) {
+					Bass.Free();
+					Bass.RecordFree();
+				}
+
+				Log.Debug("Audio stream canceled.");
 			} else {
 				Log.Debug("No recording device available.");
 			}
@@ -84,9 +94,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 		public void StopStream() {
 			//throw new NotImplementedException();
-			if (_recordDeviceIndex != -1) {
-				Bass.Free();
-			}
+			
 		}
 
 

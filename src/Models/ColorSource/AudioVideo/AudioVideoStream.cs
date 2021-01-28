@@ -26,39 +26,37 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 
 		public void StartStream(CancellationToken ct) {
 			Refresh();
-			SendTask = Task.Run(async () => {
-				while (!ct.IsCancellationRequested) {
-					var vCols = _vs.Colors;
-					var vSecs = _vs.Sectors;
-					var aCols = _as.Colors;
-					var aSecs = _as.Sectors;
-					if (vCols.Count == 0 || vCols.Count != aCols.Count || vSecs.Count == 0 ||
-					    vSecs.Count != aSecs.Count) {
-						Log.Debug(
-							$"AV Splitter is still warming up {aCols.Count}, {aSecs.Count}, {vCols.Count}, {vSecs.Count}");
-						continue;
-					}
-
-					var oCols = new List<Color>();
-					var oSecs = new List<Color>();
-					for (var i = 0; i < vCols.Count; i++) {
-						var aCol = aCols[i];
-						var vCol = vCols[i];
-						oCols.Add(ColorUtil.SetBrightness(vCol, aCol.GetBrightness()));
-					}
-
-					for (var i = 0; i < vSecs.Count; i++) {
-						var aCol = aSecs[i];
-						var vCol = vSecs[i];
-						oSecs.Add(ColorUtil.SetBrightness(vCol, aCol.GetBrightness()));
-					}
-
-					Colors = oCols;
-					Sectors = oSecs;
-					await _cs.SendColors(this, new DynamicEventArgs(oCols, oSecs));
-					await Task.Delay(16, CancellationToken.None);
+			while (!ct.IsCancellationRequested) {
+				var vCols = _vs.Colors;
+				var vSecs = _vs.Sectors;
+				var aCols = _as.Colors;
+				var aSecs = _as.Sectors;
+				if (vCols.Count == 0 || vCols.Count != aCols.Count || vSecs.Count == 0 ||
+				    vSecs.Count != aSecs.Count) {
+					Log.Debug(
+						$"AV Splitter is still warming up {aCols.Count}, {aSecs.Count}, {vCols.Count}, {vSecs.Count}");
+					continue;
 				}
-			}, ct);
+
+				var oCols = new List<Color>();
+				var oSecs = new List<Color>();
+				for (var i = 0; i < vCols.Count; i++) {
+					var aCol = aCols[i];
+					var vCol = vCols[i];
+					oCols.Add(ColorUtil.SetBrightness(vCol, aCol.GetBrightness()));
+				}
+
+				for (var i = 0; i < vSecs.Count; i++) {
+					var aCol = aSecs[i];
+					var vCol = vSecs[i];
+					oSecs.Add(ColorUtil.SetBrightness(vCol, aCol.GetBrightness()));
+				}
+
+				Colors = oCols;
+				Sectors = oSecs;
+				_cs.SendColors(this, new DynamicEventArgs(oCols, oSecs)).ConfigureAwait(true);
+				Task.Delay(16, CancellationToken.None);
+			}
 		}
 
 		public void StopStream() {

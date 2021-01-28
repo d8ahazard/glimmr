@@ -75,6 +75,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			_vc.Start(camToken);
 			_colorService = cs;
 			_controlService = controlService;
+			StreamSplitter = new Splitter(_systemData, _controlService);
 			Log.Debug("Stream capture initialized.");
 		}
 
@@ -84,52 +85,47 @@ namespace Glimmr.Models.ColorSource.Video {
 			SetCapVars();
 			var autoEvent = new AutoResetEvent(false);
 			_saveTimer = new Timer(SaveFrame, autoEvent, 5000, 5000);
-			Log.Debug($"Starting vid capture task...");
-			StreamSplitter = new Splitter(_systemData, _controlService);
-			Task.Run(async () => {
-				while (!ct.IsCancellationRequested) {
-					// Save cpu/memory by not doing anything if not sending...
+			Log.Debug("Starting vid capture task...");
+			while (!ct.IsCancellationRequested) {
+				// Save cpu/memory by not doing anything if not sending...
 				
-					var frame = _vc.Frame;
-					if (frame == null) {
-						SourceActive = false;
-						Log.Warning("Frame is null.");
-						continue;
-					}
-
-					if (frame.Cols == 0) {
-						SourceActive = false;
-						if (!_noColumns) {
-							Log.Warning("Frame has no columns.");
-							_noColumns = true;
-						}
-						continue;
-					}
-
-					var warped = ProcessFrame(frame);
-					if (warped == null) {
-						SourceActive = false;
-						Log.Warning("Unable to process frame.");
-						continue;
-					}
-
-					StreamSplitter.Update(warped);
-					SourceActive = !StreamSplitter.NoImage;
-					Colors = StreamSplitter.GetColors();
-					Sectors = StreamSplitter.GetSectors();
-					//Log.Debug("No, really, sending colors...");
-					if (SendColors) await _colorService.SendColors(this, new DynamicEventArgs(Colors, Sectors));
-				
+				var frame = _vc.Frame;
+				if (frame == null) {
+					SourceActive = false;
+					Log.Warning("Frame is null.");
+					continue;
 				}
 
-			}, ct);
+				if (frame.Cols == 0) {
+					SourceActive = false;
+					if (!_noColumns) {
+						Log.Warning("Frame has no columns.");
+						_noColumns = true;
+					}
+					continue;
+				}
+
+				var warped = ProcessFrame(frame);
+				if (warped == null) {
+					SourceActive = false;
+					Log.Warning("Unable to process frame.");
+					continue;
+				}
+
+				StreamSplitter.Update(warped);
+				SourceActive = !StreamSplitter.NoImage;
+				Colors = StreamSplitter.GetColors();
+				Sectors = StreamSplitter.GetSectors();
+				//Log.Debug("No, really, sending colors...");
+				if (SendColors) _colorService.SendColors(this, new DynamicEventArgs(Colors, Sectors)).ConfigureAwait(true);
+				
+			}
 			_saveTimer.Dispose();
 			Log.Information("Capture task completed.");
-			
 		}
 
 		public void StopStream() {
-			throw new NotImplementedException();
+			
 		}
 
 		public void Refresh() {

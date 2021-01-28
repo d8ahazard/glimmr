@@ -278,11 +278,10 @@ namespace Glimmr.Services {
                 case "COLOR_DATA_V2":
                     refreshDevice = false;
                     if (_devMode == 5) {
-                        var colorData2 = ByteUtils.SplitHex(payloadString, 6); // Swap this with payload
-                        var colors2 = colorData2.Select(ColorFromString).ToList();
-                        var sectors = colors2.GetRange(0, 84);
-                        var leds = colors2.GetRange(83, colors2.Count - 84);
-                        _controlService.SendColors(leds, sectors);
+                        var colorData = ByteUtils.SplitHex(payloadString, 6); // Swap this with payload
+                        var ledColors = colorData.Select(ColorFromString).ToList();
+                        var sectorColors = ColorUtil.LedsToSectors(ledColors, _sd);
+                        _controlService.SendColors(ledColors, sectorColors);
                     }
 
                     break;

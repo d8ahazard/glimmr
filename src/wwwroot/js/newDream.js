@@ -156,11 +156,7 @@ function setSocketListeners() {
 
     websocket.on("mode", function (mode) {
         console.log("Socket has set mode to " + mode);
-        let modeBtns = document.querySelectorAll(".modeBtn");
-        for (let i=0; i < modeBtns.length; i++) {
-            modeBtns[i].classList.remove("active");
-            if (modeBtns[i].getAttribute("data-mode") === mode.toString()) modeBtns[i].classList.add("active");
-        }
+        setMode(mode);
     });
 
     websocket.on("cpuData", function (cpuData) {
@@ -355,8 +351,8 @@ function setListeners() {
     
     document.addEventListener('click',function(e){
         let target = e.target;
-        if (target) {
-            if (target.classList.contains("controlBtn")) {
+        switch(true) {
+            case target.classList.contains("controlBtn"):
                 let action = target.getAttribute("data-action");
                 let message = "Warning: ";
                 switch (action) {
@@ -380,163 +376,77 @@ function setListeners() {
                     console.log(action + " canceled.");
                 }
                 console.log("Control button click");
-            }
-            if (target === closeButton || target.parentElement === closeButton) {
-                console.log("Close button");
+                break;
+            case target === closeButton:
                 closeCard();
-                return;
-            }
-            
-            if (target.classList.contains("sector") || target.parentElement.classList.contains("sector")) {
-                if (target.parentElement.classList.contains("sector")) {
-                    target = target.parentElement;
-                }
-                let sector = target.getAttribute("data-sector");
-                updateDeviceSector(sector, target);
-            }
-
-            if (target.classList.contains("linkDiv") || target.parentElement.classList.contains("linkDiv")) {
-                if (target.parentElement.classList.contains("linkDiv")) {
-                    target = target.parentElement;
-                }
-                let linked = target.getAttribute("data-linked");
-                if (linked === "false") {
+                break;
+            case target.classList.contains("sector"):
+                let val = target.getAttribute("data-sector");
+                updateDeviceSector(val, target);
+                break;
+            case target.classList.contains("linkDiv"):                
+                if (target.getAttribute("data-linked") === "false") {
                     let devId = deviceData["_id"];
-                    console.log("We should try linking device: " + devId);
-                    let type = target.getAttribute("data-type");    
-                    if (type === "NanoLeaf") {
-                        sendMessage("AuthorizeNano",devId,false);
-                    } else {
-                        sendMessage("AuthorizeHue",devId,false);
-                    }
-                } 
-                
-                
-                
-            }
-
-            if (target.classList.contains("led") || target.parentElement.classList.contains("led")) {
-                if (target.parentElement.classList.contains("led")) {
-                    target = target.parentElement;
+                    let type = target.getAttribute("data-type");
+                    let mesg = type === "Nanoleaf" ? "AuthorizeNano" : "AuthorizeHue";
+                    sendMessage(mesg, devId,false);                    
                 }
+                break;
+            case target.classList.contains("led"):
                 let sector = target.getAttribute("data-sector");
                 console.log("Flashing LED " + sector);
                 sendMessage("flashLed", parseInt(sector), false);
-            }
-            
-            if (target.classList.contains("deviceIcon")) {
+                break;
+            case target.classList.contains("deviceIcon"):
                 let targetId = target.getAttribute("data-device");
-                console.log("Device icon clicked: " + targetId);
                 sendMessage("flashDevice", targetId, false);
-            }
-            
-            if (target.classList.contains("devSetting")) {
-                let targetId = target.getAttribute("data-target");
-                let attribute = target.getAttribute("data-attribute");                
-                console.log("Dev setting clicked, we are setting ", attribute, targetId, target.checked);
-                updateDevice(targetId, attribute, target.checked);
-                return;
-            }
-            
-            if (target.classList.contains("settingBtn")  || target.parentElement.classList.contains("settingBtn")) {
-                if (target.parentElement.classList.contains("settingBtn")) target = target.parentElement;
+                break;
+            case target.classList.contains("devSetting"):
+                let devId = target.getAttribute("data-target");
+                let attribute = target.getAttribute("data-attribute");
+                console.log("Dev setting clicked, we are setting ", attribute, devId, target.checked);
+                updateDevice(devId, attribute, target.checked);
+                break;
+            case target.classList.contains("settingBtn"):
                 if (expanded) {
                     closeCard();
-                    return;
                 } else {
                     let devId = target.getAttribute("data-target");
-                    for (let i=0; i < data.devices.length; i++) {
-                        if (data.devices[i]) {
-                            if (data.devices[i]["_id"] === devId) {
-                                deviceData = data.devices[i];
-                                console.log("Setting device data: ", deviceData);
-                                break;
-                            }
-                        }
-                    }
+                    deviceData = findDevice(devId);
                     showDeviceCard(target);
-                    return;
-                }               
-            }
-
-            if (target.classList.contains("enableBtn")  || target.parentElement.classList.contains("enableBtn")) {
-                if (target.parentElement.classList.contains("enableBtn")) target = target.parentElement;
-                let devId = target.getAttribute("data-target");
-                let devEnabled = target.getAttribute("data-enabled");
-                let icon = target.firstChild;
-                if (devEnabled === "true") {
-                    target.setAttribute("data-enabled","false");
-                    icon.innerText = "cast";
-                } else {
-                    target.setAttribute("data-enabled","true");
-                    icon.innerText = "cast-connected";
                 }
-                //data.devices[devId]["Enable"] = (devEnabled !== "true");
-                updateDevice(devId,"Enable",(devEnabled !== "true"));
-            }
-
-            
-
-            if (target.classList.contains("refreshBtn") || target.parentElement.classList.contains("refreshBtn")) {
-                if (target.parentElement.classList.contains("refreshBtn")) target = target.parentElement;
-                console.log("Refresh clicked!");
+                break;
+                case target.classList.contains("enableBtn"):
+                    let dId = target.getAttribute("data-target");
+                    let devEnabled = target.getAttribute("data-enabled");
+                    let icon = target.firstChild;
+                    if (devEnabled === "true") {
+                        target.setAttribute("data-enabled","false");
+                        icon.innerText = "cast";
+                    } else {
+                        target.setAttribute("data-enabled","true");
+                        icon.innerText = "cast-connected";
+                    }
+                    //data.devices[devId]["Enable"] = (devEnabled !== "true");
+                    updateDevice(dId,"Enable",(devEnabled !== "true"));
+                break;
+            case target.classList.contains("refreshBtn"):
                 sendMessage("ScanDevices");
-                return;
-            }
-
-            if (target.classList.contains("modeBtn") || target.parentElement.classList.contains("modeBtn")) {
-                if (target.parentElement.classList.contains("modeBtn")) target = target.parentElement;
+                break;
+            case target.classList.contains("modeBtn"):
                 let newMode = parseInt(target.getAttribute("data-mode"));
                 setMode(newMode);
                 sendMessage("Mode", newMode, false);
-                return;
-            }
-
-            if (target.classList.contains("ledCtl") || target.parentElement.classList.contains("ledCtl")) {
-                console.log("LED CTRL CLICK");
-                if (target.parentElement.classList.contains("ledCtl")) target = target.parentElement;
-                let action = target.getAttribute("data-function");
-                let id = target.getAttribute("data-id");                
-                let ledData = data.store["LedData"];
-                if (isValid(ledData)) {
-                    let led = getObj(ledData, "_id", id); 
-                    if (isValid(led)) {
-                        if (action === "test") {
-                            sendMessage("DemoLed", id.toString(), false);
-                        } else {
-                            led["Enable"] = (action === "enable");
-                            let t1 = document.querySelector('[data-id="'+id+'"][data-function="enable"]');
-                            let t2 = document.querySelector('[data-id="'+id+'"][data-function="disable"]');
-                            if (action === "enable") {
-                                t1.classList.add("active");
-                                t2.classList.remove("active");
-                            } else {
-                                t2.classList.add("active");
-                                t1.classList.remove("active");
-                            }
-                        }
-                        data.store["LedData"] = setObj(ledData, "_id", id, led);
-                        led["Id"] = led["_id"];
-                        sendMessage("LedData", led, true);
-                    } else {
-                        console.log("Invalid led")
-                    }                    
-                } else {
-                    console.log("Invalid led data");
-                }
-                
-                return;
-            }
-
-            if (target.classList.contains("mainSettings") || target.parentElement.classList.contains("mainSettings")) {
-                if (target.parentElement.classList.contains("refreshBtn")) target = target.parentElement;
-                console.log("Refresh clicked!");                
+                break;
+            case target.classList.contains("ledCtl"):
+                let lAction = target.getAttribute("data-function");
+                let id = target.getAttribute("data-id");
+                ledAction(lAction, id);
+                break;
+            case target.classList.contains("mainSettings"):
                 toggleSettingsDiv(0);
-                return;
-            }
-            
-            if (target.classList.contains("nav-link") || target.parentElement.classList.contains("nav-item")) {
-                if (target.classList.contains("nav-item")) target = target.firstChild;
+                break;
+            case target.classList.contains("nav-link"):
                 let cDiv = target.getAttribute("href");
                 let fadePanes = document.querySelectorAll(".tab-pane");
                 for (let i=0; i < fadePanes.length; i++) {
@@ -547,10 +457,39 @@ function setListeners() {
                     }
                 }
                 document.querySelector(cDiv).classList.add("show", "active");
-            }
+                break;
         }
-        
     });
+}
+
+function ledAction(action, id) {
+    let ledData = data.store["LedData"];
+    if (isValid(ledData)) {
+        let led = getObj(ledData, "_id", id);
+        if (isValid(led)) {
+            if (action === "test") {
+                sendMessage("DemoLed", id.toString(), false);
+            } else {
+                led["Enable"] = (action === "enable");
+                let t1 = document.querySelector('[data-id="'+id+'"][data-function="enable"]');
+                let t2 = document.querySelector('[data-id="'+id+'"][data-function="disable"]');
+                if (action === "enable") {
+                    t1.classList.add("active");
+                    t2.classList.remove("active");
+                } else {
+                    t2.classList.add("active");
+                    t1.classList.remove("active");
+                }
+            }
+            data.store["LedData"] = setObj(ledData, "_id", id, led);
+            led["Id"] = led["_id"];
+            sendMessage("LedData", led, true);
+        } else {
+            console.log("Invalid led")
+        }
+    } else {
+        console.log("Invalid led data");
+    }
 }
 
 async function toggleSettingsDiv(target) {
@@ -772,7 +711,16 @@ function loadDevices() {
             title.classList.add("card-title");
             subTitle.classList.add("card-subtitle", "mb2", "text-muted");
             title.textContent = device.Name;
-            subTitle.textContent = device["IpAddress"];
+            
+            if (device["Tag"] === "Wled") {
+                let a = document.createElement("a");
+                a.href = "http://" + device["IpAddress"];
+                a.innerText = device["IpAddress"];
+                a.target = "_blank";
+                subTitle.appendChild(a);
+            } else {
+                subTitle.textContent = device["IpAddress"];
+            }
             // Create icon
             let titleRow = document.createElement("div");
             titleRow.classList.add("mb-3", "col-12", "titleRow");
@@ -782,6 +730,9 @@ function loadDevices() {
             iconCol.classList.add("iconCol", "exp", "col-4");
             let image = document.createElement("img");
             image.classList.add("deviceIcon", "img-fluid");
+            image.setAttribute("data-bs-toggle", "tooltip");
+            image.setAttribute("data-bs-placement", "top");
+            image.setAttribute("data-title", "Flash/locate device");
             image.setAttribute("data-device", device["_id"]);
             let tag = device.Tag;
             if (tag === "Dreamscreen") tag = device["DeviceTag"];
@@ -792,7 +743,7 @@ function loadDevices() {
             settingsCol.classList.add("col-12", "settingsCol", "pb-2", "text-center", "exp");
             // Create enabled checkbox
             let enableButton = document.createElement("button");
-            enableButton.classList.add("btn", "btn-outline-secondary", "enableBtn", "pt-2");
+            enableButton.classList.add("btn", "btn-outline-secondary", "btn-clear", "enableBtn", "pt-2");
             enableButton.setAttribute("data-target", device["_id"]);
             enableButton.setAttribute("data-enabled", device["Enable"]);
             // And the icon
@@ -810,7 +761,7 @@ function loadDevices() {
             enableCol.appendChild(enableButton);
             
             let settingsButton = document.createElement("button");
-            settingsButton.classList.add("btn", "btn-outline-secondary", "settingBtn", "pt-2");
+            settingsButton.classList.add("btn", "btn-outline-secondary", "btn-clear", "settingBtn", "pt-2");
             settingsButton.setAttribute("data-target",device["_id"]);
             let sIcon = document.createElement("span");
             sIcon.classList.add("material-icons", "pt-1");
@@ -903,17 +854,39 @@ function getDevices() {
 }
 
 function updateDevice(id, property, value) {
-    if (deviceData["_id"] === id) deviceData[property] = value;
-    for(let i = 0; i< data.devices.length; i++) {
-        let device = data.devices[i];
-        if (device["_id"] === id) {
-            if (device.hasOwnProperty(property)) {
-                console.log("Device property " + property + "exists, setting to " + value);
-                device[property] = value;
-                sendMessage("updateDevice", device);
-                data.devices[i] = device;
-            } else {
-                console.log("Device has no property for " + property);
+    let dev;
+    if (deviceData["_id"] === id) {
+        dev = deviceData;
+    } else {
+        dev = findDevice(id);
+    }
+    if (isValid(dev) && dev.hasOwnProperty(property)) {
+        dev[property] = value;
+        saveDevice(dev);
+        sendMessage("updateDevice", dev);
+
+    }    
+}
+
+// Find device by id in datastore
+function findDevice(id) {
+    for (let i=0; i < data.devices.length; i++) {
+        if (data.devices[i]) {
+            if (data.devices[i]["_id"] === id) {
+                return data.devices[i];
+            }
+        }
+    }
+    return null;
+}
+
+// Save device by id in datastore
+function saveDevice(deviceData) {
+    for(let i=0; i < data.devices.length; i++) {
+        if (data.devices[i]) {
+            if(data.devices[i]["_id"] === deviceData["_id"]) {
+                data.devices[i] = deviceData;
+                return;
             }
         }
     }
@@ -1011,7 +984,7 @@ const toggleExpansion = (element, to, duration = 350) => {
         });
         setTimeout(function(){
             let bbGroup = element.querySelector(".settingsGroup");
-            if (bbGroup != undefined) {
+            if (isValid(bbGroup)) {
                 if (expanded) {
                     bbGroup.classList.add("float-right");
                 } else {

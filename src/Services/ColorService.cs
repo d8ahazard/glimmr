@@ -210,14 +210,13 @@ namespace Glimmr.Services {
 			switch (_deviceMode) {
 				case 0:
 				case 3:
+				case 4:
+				case 5:
+				case 2:
 				case 1 when _videoStream == null:
-				case 2 when _audioStream == null:
 					return;
 				case 1:
 					sourceActive = _videoStream.SourceActive;
-					break;
-				case 2:
-					//sourceActive = _audioStream.SourceActive;
 					break;
 			}
 			
@@ -230,7 +229,7 @@ namespace Glimmr.Services {
 				await _controlService.SetMode(_deviceMode);
 				_controlService.SetModeEvent += Mode;
 			} else {
-				if (_autoDisabled) return;
+				if (_autoDisabled || _deviceMode == 2) return;
 				Log.Debug("Auto-disabling stream.");
 				_autoDisabled = true;
 				DataUtil.SetItem("AutoDisabled", _autoDisabled);
@@ -480,7 +479,8 @@ namespace Glimmr.Services {
 				await StopStream();
 			}
 
-			CancelSource(_streamTokenSource);
+			_streamTokenSource?.Cancel();
+			_streamTokenSource?.Dispose();
 			_streamTokenSource = new CancellationTokenSource();
 			
 			switch (newMode) {
@@ -515,7 +515,7 @@ namespace Glimmr.Services {
 			} else {
 				Log.Debug("Starting video stream...");
 				if (_videoStream != null) _videoStream.SendColors = sendColors;
-				Task.Run(() => _videoStream?.StartStream(ct), ct);
+				Task.Run(() => _videoStream?.StartStream(ct));
 				Log.Debug("Video stream started.");
 			}
 		}
@@ -527,7 +527,7 @@ namespace Glimmr.Services {
 			} else {
 				Log.Debug("Starting audio stream...");
 				if (_audioStream != null) _audioStream.SendColors = sendColors;
-				Task.Run(() => _audioStream?.StartStream(ct), ct);
+				Task.Run(() => _audioStream?.StartStream(ct), CancellationToken.None);
 				Log.Debug("Audio stream started.");
 			}
 		}
@@ -535,12 +535,12 @@ namespace Glimmr.Services {
 		private void StartAvStream(CancellationToken ct) {
 			StartAudioStream(ct, false);
 			StartVideoStream(ct, false);
-			Task.Run(() => _avStream.StartStream(ct), ct);
+			Task.Run(() => _avStream.StartStream(ct), CancellationToken.None);
 			Log.Debug("AV Stream started?");
 		}
 
 		private void StartAmbientStream(CancellationToken ct) {
-			Task.Run(() => _ambientStream.StartStream(ct), ct);
+			Task.Run(() => _ambientStream.StartStream(ct), CancellationToken.None);
 		}
 
 		private void StartStream() {
@@ -566,7 +566,7 @@ namespace Glimmr.Services {
 			if (!_streamStarted) {
 				return;
 			}
-
+			_streamStarted = false;
 			var streamers = new List<IStreamingDevice>();
 			foreach (var s in _sDevices.Where(s => s.Streaming)) {
 				streamers.Add(s);
@@ -580,7 +580,7 @@ namespace Glimmr.Services {
 				}
 			}));
 			Log.Information("Stream stopped.");
-			_streamStarted = false;
+			
 		}
 
 
@@ -592,7 +592,7 @@ namespace Glimmr.Services {
 			}
 
 			if (!_streamStarted) {
-				Log.Debug("Stream not started.");
+				//Log.Debug("Stream not started.");
 				return;
 			}
 			
