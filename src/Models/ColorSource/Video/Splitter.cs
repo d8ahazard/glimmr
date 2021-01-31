@@ -62,8 +62,8 @@ namespace Glimmr.Models.ColorSource.Video {
 		public bool DoSave;
 		public bool NoImage;
 		private const int MaxFrameCount = 30;
-		private const int ScaleHeight = 480;
-		private const int ScaleWidth = 640;
+		private const int ScaleHeight = DisplayUtil.CaptureHeight;
+		private const int ScaleWidth = DisplayUtil.CaptureWidth;
 
 		private readonly ControlService _controlService;
 
@@ -98,8 +98,7 @@ namespace Glimmr.Models.ColorSource.Video {
 				Log.Debug("SPLITTER: NO INPUT.");
 				return;
 			}
-
-			var outColorsSector = new List<Color>();
+			
 			if (_frameCount >= 10) {
 				CheckSectors();
 				_frameCount = 0;
@@ -113,16 +112,22 @@ namespace Glimmr.Models.ColorSource.Video {
 				_fullSectors = DrawSectors();
 			}
 
-			
-			var outColorsStrip = _fullCoords.Select(sub => new Mat(_input, sub)).Select(nm => GetAverage(nm)).ToList();
-
-			foreach (var sub in _fullSectors.Select(r => new Mat(_input, r))) {
-				outColorsSector.Add(GetAverage(sub));
+			var ledColors = new List<Color>();
+			for (var i = 0; i < _fullCoords.Count; i++) {
+				var sub = new Mat(_input, _fullCoords[i]);
+				ledColors.Add(GetAverage(sub));
 				sub.Dispose();
 			}
 
-			_colorsLed = outColorsStrip;
-			_colorsSectors = outColorsSector;
+			var sectorColors = new List<Color>();
+			for (var i = 0; i < _fullSectors.Count; i++) {
+				var sub = new Mat(_input, _fullSectors[i]);
+				sectorColors.Add(GetAverage(sub));
+				sub.Dispose();
+			}
+
+			_colorsLed = ledColors;
+			_colorsSectors = sectorColors;
 			
 			// Save a preview image if desired
 			if (!DoSave) {
@@ -156,7 +161,6 @@ namespace Glimmr.Models.ColorSource.Video {
 			gMat.Save(path + "/wwwroot/img/_preview_output.jpg");
 			gMat.Dispose();
 			_controlService.TriggerImageUpdate();
-
 		}
 
 		

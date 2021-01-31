@@ -17,6 +17,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
         private int _startInt;
         private int _ledCount;
         private int _ambientShow;
+        private int _deviceMode;
         private Color _ambientColor;
         private readonly ColorService _cs;
         private TimeSpan waitSpan;
@@ -32,7 +33,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
             _startInt = 0;
             Log.Debug($@"Color builder started, animation time is {_animationTime}...");
             while (!ct.IsCancellationRequested) {
-                if (!Streaming) continue;
+                if (!Streaming || _deviceMode != 3) continue;
                 var cols = RefreshColors(_colors);
                 var ledCols = new List<Color>();
                 for (var i = 0; i < _ledCount; i++) {
@@ -49,6 +50,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
         }
 
         public void StopStream() {
+            Streaming = false;
             //throw new NotImplementedException();
         }
 
@@ -95,6 +97,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
             Colors = ColorUtil.EmptyList(sd.LedCount);
             Sectors = ColorUtil.EmptyList(28);
             _ledCount = sd.LedCount;
+            _deviceMode = sd.DeviceMode;
             _ambientShow = DataUtil.GetItem<int>("AmbientShow") ?? 0;
             _ambientColor = DataUtil.GetObject<Color>("AmbientColor") ?? Color.FromArgb(255,255,255,255);
 

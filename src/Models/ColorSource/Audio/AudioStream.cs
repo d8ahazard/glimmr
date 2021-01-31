@@ -30,6 +30,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 		public AudioStream(ColorService cs) {
 			_cs = cs;
+			Bass.Init();
 		}
 
 		private async Task LoadData() {
@@ -72,12 +73,15 @@ namespace Glimmr.Models.ColorSource.Audio {
 		
 		public void StartStream(CancellationToken ct) {
 			LoadData().ConfigureAwait(true);
-			Bass.Init();
+			_recordDeviceIndex = 1;
 			if (_recordDeviceIndex != -1) {
 				Log.Debug("Starting stream with device " + _recordDeviceIndex);
 				Bass.RecordInit(_recordDeviceIndex);
 				Bass.RecordSetInput(_recordDeviceIndex, InputFlags.On, 1);
 				Bass.RecordStart(48000, 2, BassFlags.Float, Update);
+				DeviceInfo info2 = new DeviceInfo();
+				Bass.RecordGetDeviceInfo(_recordDeviceIndex, out info2);
+				Log.Debug("Loaded: " + JsonConvert.SerializeObject(info2));
 				while (!ct.IsCancellationRequested) {
 					Task.Delay(1,ct);
 				}
@@ -133,7 +137,11 @@ namespace Glimmr.Models.ColorSource.Audio {
 			var rAmps = SortChannels(rData);
 			Sectors = ColorUtil.EmptyList(Sectors.Count);
 			Colors = ColorUtil.EmptyList(Colors.Count);
+			var prev = SourceActive;
 			SourceActive = lAmps.Count != 0 || rAmps.Count != 0;
+			if (prev != SourceActive && prev == false) {
+				Log.Debug("Audio input detected!");
+			}
 			Sectors = _map.MapColors(lAmps, rAmps, 28).ToList();
 			Colors = ColorUtil.SectorsToleds(Sectors.ToList(), _sd);
 			if (SendColors) {

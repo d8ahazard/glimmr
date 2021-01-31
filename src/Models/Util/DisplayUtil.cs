@@ -8,6 +8,9 @@ using Serilog;
 namespace Glimmr.Models.Util {
     public static class DisplayUtil {
 
+        public const int CaptureWidth = 640;
+        public const int CaptureHeight = 480;
+
         public static Size GetDisplaySize() {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
                 return GetWindowsDisplaySize();

@@ -57,6 +57,7 @@ namespace Glimmr.Services {
 		private VideoStream _videoStream;
 		private AudioVideoStream _avStream;
 		private Task _subscribeTask;
+		private Task _streamTask;
 
 		public AsyncEvent<DynamicEventArgs> ColorSendEvent;
 		public event Action<List<Color>, string> SegmentTestEvent = delegate { };
@@ -77,7 +78,7 @@ namespace Glimmr.Services {
 			Log.Debug("Initialization complete.");
 		}
 		
-		protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
+		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			_stopToken = stoppingToken;
 			_streamTokenSource = new CancellationTokenSource();
 			Log.Information("Starting colorService loop...");
@@ -88,29 +89,28 @@ namespace Glimmr.Services {
 			_audioStream = GetStream(stoppingToken);
 			_avStream = new AudioVideoStream(this, _audioStream, _videoStream);
 			
-			Log.Information("Starting video capture task...");
-			// Start our initial mode
-			await Demo(this, new DynamicEventArgs());
-			Log.Information($"All color sources initialized, setting mode to {_deviceMode}.");
-			await Mode(this, new DynamicEventArgs(_deviceMode));
 			Log.Information("All color services have been initialized.");
+			return Task.Run(async () => {
+				Log.Information("Starting video capture task...");
+				// Start our initial mode
+				await Demo(this, new DynamicEventArgs());
+				Log.Information($"All color sources initialized, setting mode to {_deviceMode}.");
+				await Mode(this, new DynamicEventArgs(_deviceMode)).ConfigureAwait(true);
 
-			_subscribeTask = Task.Run(async () => {
 				while (!stoppingToken.IsCancellationRequested) {
 					await CheckAutoDisable();
 					await CheckSubscribers();
 					await Task.Delay(5000, stoppingToken);
 				}
-				return Task.CompletedTask;
-			}, _stopToken);
+			}, CancellationToken.None);
 		}
 
-		public override Task StopAsync(CancellationToken cancellationToken) {
+		public override async Task StopAsync(CancellationToken cancellationToken) {
 			Log.Debug("Stopping color service...");
-			StopServices();
+			await StopServices();
 			DataUtil.Dispose();
 			Log.Debug("Color service stopped.");
-			return base.StopAsync(cancellationToken);
+			await base.StopAsync(cancellationToken);
 		}
 
 		private Task FlashDevice(object o, DynamicEventArgs dynamicEventArgs) {
@@ -480,7 +480,16 @@ namespace Glimmr.Services {
 			}
 
 			_streamTokenSource?.Cancel();
-			_streamTokenSource?.Dispose();
+			if (_streamTask != null && !_streamTask.IsCompleted) {
+				try {
+					await (_streamTask);
+				} catch (TaskCanceledException) {
+
+				} finally {
+					_streamTokenSource?.Dispose();
+				}
+			}
+
 			_streamTokenSource = new CancellationTokenSource();
 			
 			switch (newMode) {
@@ -515,7 +524,7 @@ namespace Glimmr.Services {
 			} else {
 				Log.Debug("Starting video stream...");
 				if (_videoStream != null) _videoStream.SendColors = sendColors;
-				Task.Run(() => _videoStream?.StartStream(ct));
+				_streamTask = Task.Run(() => _videoStream?.StartStream(ct));
 				Log.Debug("Video stream started.");
 			}
 		}
@@ -527,7 +536,7 @@ namespace Glimmr.Services {
 			} else {
 				Log.Debug("Starting audio stream...");
 				if (_audioStream != null) _audioStream.SendColors = sendColors;
-				Task.Run(() => _audioStream?.StartStream(ct), CancellationToken.None);
+				_streamTask = Task.Run(() => _audioStream?.StartStream(ct));
 				Log.Debug("Audio stream started.");
 			}
 		}
@@ -535,12 +544,12 @@ namespace Glimmr.Services {
 		private void StartAvStream(CancellationToken ct) {
 			StartAudioStream(ct, false);
 			StartVideoStream(ct, false);
-			Task.Run(() => _avStream.StartStream(ct), CancellationToken.None);
+			_streamTask = Task.Run(() => _avStream.StartStream(ct));
 			Log.Debug("AV Stream started?");
 		}
 
 		private void StartAmbientStream(CancellationToken ct) {
-			Task.Run(() => _ambientStream.StartStream(ct), CancellationToken.None);
+			_streamTask = Task.Run(() => _ambientStream.StartStream(ct));
 		}
 
 		private void StartStream() {
@@ -585,6 +594,7 @@ namespace Glimmr.Services {
 
 
 		public async Task SendColors(object o, DynamicEventArgs args) {
+			//if (o.GetType().FullName != "Glimmr.Models.ColorSource.Video.VideoStream") Log.Debug("Send called by " + o.GetType().FullName);
 			_sendTokenSource ??= new CancellationTokenSource();
 			if (_sendTokenSource.IsCancellationRequested) {
 				Log.Debug("Send token is canceled.");
@@ -614,14 +624,24 @@ namespace Glimmr.Services {
 			}
 		}
 
-		private void StopServices() {
+		private async Task StopServices() {
 			Log.Information("Stopping services...");
 			CancelSource(_captureTokenSource, true);
+			_streamTokenSource?.Cancel();
+			if (_streamTask != null && !_streamTask.IsCompleted) {
+				try {
+					await (_streamTask);
+				} catch (TaskCanceledException) {
+
+				} finally {
+					_streamTokenSource?.Dispose();
+				}
+			}
 			CancelSource(_sendTokenSource, true);
 			foreach (var s in _sDevices) {
 				try {
 					Log.Information("Stopping device: " + s.Id);
-					s.StopStream();
+					await s.StopStream();
 					s.Dispose();
 				} catch (Exception e) {
 					Log.Warning("Caught exception: " + e.Message);

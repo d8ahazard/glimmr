@@ -324,29 +324,40 @@ function setListeners() {
                 if (target.classList.contains("devSetting")) {
                     updateDevice(obj, property, val);  
                     loadDeviceData();
+                    return;
                 } else {
                     data.store[obj][0][property] = val;
                     pack = data.store[obj][0];
                     delete pack["_id"];
                     console.log("Sending updated object: ", pack);
                     sendMessage(obj, pack,true);
-                }                
+                    return;
+                }
             }
                         
             if (property === "LeftCount" || property === "RightCount" || property ==="TopCount" || property === "BottomCount") {
                 let lPreview = document.getElementById("sLedPreview");
                 let lImage = document.getElementById("ledImage");
                 createLedMap(lPreview, lImage, pack);
+                return;
             }
             if (property === "Theme") {
                 loadTheme(val);
+                return;
             }
             if (property === "AudioMap") {
                 let mapImg = document.getElementById("audioMapImg");
                 mapImg.setAttribute("src","./img/MusicMode" + val + ".png");
+                return;
             }
             
-        }        
+        }   
+        obj = target.getAttribute("data-target");
+        property = target.getAttribute("data-attribute");
+        if (isValid(obj) && isValid(property) && isValid(val)) {
+            
+            updateDevice(obj, property, val);
+        }
     });
     
     document.addEventListener('click',function(e){
@@ -553,10 +564,11 @@ function setMode(newMode) {
 
 function loadUi() {
     console.log("Loading ui.");
-    let mode = getStoreProperty("DeviceMode"); 
+    let mode = 0; 
     let autoDisabled = getStoreProperty("AutoDisabled");
     if (isValid(data.store["SystemData"])) {
         let theme = data.store["SystemData"][0]["Theme"];
+        mode = data.store["SystemData"][0]["Mode"];
         loadTheme(theme);
     }
     

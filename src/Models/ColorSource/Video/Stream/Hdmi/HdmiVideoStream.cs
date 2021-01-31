@@ -14,13 +14,14 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Hdmi {
         private bool _disposed;
 
         
-        public HdmiVideoStream(int inputStream) {
+        public HdmiVideoStream(int inputStream, int width, int height) {
             var capType = VideoCapture.API.DShow;
             capType = VideoCapture.API.V4L;
-            _video = new VideoCapture(inputStream, capType);
-            _video.SetCaptureProperty(CapProp.FrameWidth, 640);
-            _video.SetCaptureProperty(CapProp.FrameHeight, 480);
-            Log.Debug("Scaling HDMI to 640x480");
+            _video = new VideoCapture(inputStream);
+            _video.SetCaptureProperty(CapProp.FrameWidth, width);
+            _video.SetCaptureProperty(CapProp.FrameHeight, height);
+            //_video.SetCaptureProperty(CapProp.Fra)
+            Log.Debug($"Scaling HDMI to {width}x{height}");
             var foo = _video.CaptureSource.ToString();
             Frame = new Mat();
             Log.Debug("Stream init, capture source is " + foo + ", " + inputStream);            

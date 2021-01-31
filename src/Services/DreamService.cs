@@ -52,7 +52,6 @@ namespace Glimmr.Services {
             _controlService.SetModeEvent += UpdateMode;
             _dreamUtil = new DreamUtil(_controlService.UdpClient);
             Initialize();
-            Log.Debug("Initialisation complete.");
         }
         
         
@@ -66,6 +65,7 @@ namespace Glimmr.Services {
 
         // This is called because it's a service. I thought I needed this, maybe I don't...
         protected override Task ExecuteAsync(CancellationToken cancellationToken) {
+            Log.Debug("DreamService initialized.");
             return Task.Run(async () => {
                 while (!cancellationToken.IsCancellationRequested) {
                     await Task.Delay(1, cancellationToken);

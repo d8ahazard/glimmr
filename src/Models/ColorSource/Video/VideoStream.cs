@@ -6,7 +6,6 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -31,9 +30,9 @@ namespace Glimmr.Models.ColorSource.Video {
 		public bool SendColors { get; set; }
 		
 		// Scaling variables
-		private const int ScaleHeight = 480;
-		private const int ScaleWidth = 640;
-		
+		private const int ScaleHeight = DisplayUtil.CaptureHeight;
+		private const int ScaleWidth = DisplayUtil.CaptureWidth;
+
 		private Size _scaleSize;
 
 		// Debug options
@@ -62,7 +61,6 @@ namespace Glimmr.Models.ColorSource.Video {
 		private Timer _saveTimer;
 		private bool _doSave;
 		public bool SourceActive;
-		private ControlService _controlService;
 		private readonly ColorService _colorService;
 
 
@@ -74,8 +72,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			if (_vc == null) return;
 			_vc.Start(camToken);
 			_colorService = cs;
-			_controlService = controlService;
-			StreamSplitter = new Splitter(_systemData, _controlService);
+			StreamSplitter = new Splitter(_systemData, controlService);
 			Log.Debug("Stream capture initialized.");
 		}
 
@@ -114,10 +111,12 @@ namespace Glimmr.Models.ColorSource.Video {
 
 				StreamSplitter.Update(warped);
 				SourceActive = !StreamSplitter.NoImage;
-				Colors = StreamSplitter.GetColors();
-				Sectors = StreamSplitter.GetSectors();
+				var c1 = StreamSplitter.GetColors();
+				Colors = c1;
+				var c2 = StreamSplitter.GetSectors();
+				Sectors = c2;
 				//Log.Debug("No, really, sending colors...");
-				if (SendColors) _colorService.SendColors(this, new DynamicEventArgs(Colors, Sectors)).ConfigureAwait(true);
+				if (SendColors) _colorService.SendColors(this, new DynamicEventArgs(c1, c2)).ConfigureAwait(true);
 				
 			}
 			_saveTimer.Dispose();
@@ -185,7 +184,7 @@ namespace Glimmr.Models.ColorSource.Video {
 					return null;
 				case 2:
 					var cams = HdmiVideoStream.ListSources();
-					return cams.Length != 0 ? new HdmiVideoStream(cams[0]) : null;
+					return cams.Length != 0 ? new HdmiVideoStream(cams[0], ScaleWidth, ScaleHeight) : null;
 					
 				case 3:
 					Log.Debug("Loading screen capture.");

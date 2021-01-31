@@ -16,6 +16,7 @@ namespace Glimmr.Services {
 			_hubContext = hubContext;
 		}
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
+			Log.Debug("StatService initialized.");
 			return Task.Run(async () => {
 				while (!stoppingToken.IsCancellationRequested) {
 					// If not linux, do nothing

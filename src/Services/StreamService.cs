@@ -18,6 +18,7 @@ namespace Glimmr.Services {
 		public StreamService(ControlService cs) {
 			_cs = cs;
 			_cs.RefreshSystemEvent += Refresh;
+			_cs.SetModeEvent += Mode;
 			_uc = new UdpClient(8889) {Ttl = 5};
 			_uc.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 			_uc.Client.Blocking = false;
@@ -26,16 +27,26 @@ namespace Glimmr.Services {
 			_devMode = sd.DeviceMode;
 		}
 
-		protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-			
-			Log.Debug("Starting udp listener...");
-			while(!stoppingToken.IsCancellationRequested) {
-				var receivedResult = await _uc.ReceiveAsync();
-				var bytes = receivedResult.Buffer;
-				await ProcessFrame(bytes);
-			}
+		private Task Mode(object arg1, DynamicEventArgs arg2) {
+			_devMode = arg2.P1;
+			return Task.CompletedTask;
+		}
 
-			Log.Debug("UDP Receiver canceled...");
+		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
+			
+			Log.Debug("Stream service initialized.");
+			return Task.Run(async () => {
+				while (!stoppingToken.IsCancellationRequested) {
+					if (_devMode != 5) {
+						await Task.Delay(1, stoppingToken);
+					} else {
+						var receivedResult = await _uc.ReceiveAsync();
+						var bytes = receivedResult.Buffer;
+						await ProcessFrame(bytes);
+					}
+				}
+				Log.Debug("UDP Receiver canceled...");
+			}, stoppingToken);
 		}
 		
 		public override Task StopAsync(CancellationToken stoppingToken) {
@@ -44,7 +55,7 @@ namespace Glimmr.Services {
 			return Task.CompletedTask;
 		}
 
-		private async Task ProcessFrame(byte[] data) {
+		private async Task ProcessFrame(IReadOnlyList<byte> data) {
 			var flag = data[0];
 			var time = data[1];
 			if (flag != 2) {
@@ -72,6 +83,8 @@ namespace Glimmr.Services {
 
 		private void Refresh() {
 			_devMode = DataUtil.GetItem("DeviceMode");
+			SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
+			_devMode = sd.DeviceMode;
 		}
 	}
 }
