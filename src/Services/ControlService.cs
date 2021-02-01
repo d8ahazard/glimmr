@@ -42,7 +42,7 @@ namespace Glimmr.Services {
 			LifxClient = LifxClient.CreateAsync().Result;
 			// Init nano HttpClient
 			HttpSender = new HttpClient();
-			HttpSender.Timeout = TimeSpan.FromSeconds(3);
+			HttpSender.Timeout = TimeSpan.FromSeconds(5);
 			// Init UDP client
 
 			UdpClient = new UdpClient {Ttl = 5};
@@ -181,18 +181,8 @@ namespace Glimmr.Services {
 		}
 
 		// We call this one to send colors to everything, including the color service
-		public async Task SendColors(List<Color> c1, List<Color> c2, int fadeTime = 0) {
-			await TriggerSendColorEvent.InvokeAsync(this, new DynamicEventArgs(c1, c2, fadeTime));
-			if (_tickCount % 60 == 0) {
-				_tickCount = 1;
-				var elapsed = _watch.ElapsedMilliseconds / 1000;
-				_watch.Restart();
-				if (elapsed != 0) {
-					var fps = 60 / elapsed;
-					//Log.Debug("Frame rate is appx " + fps + ", delta is " + elapsed);	
-				}
-			}
-			_tickCount++;
+		public Task SendColors(List<Color> c1, List<Color> c2, int fadeTime = 0) {
+			return TriggerSendColorEvent.InvokeAsync(this, new DynamicEventArgs(c1, c2, fadeTime));
 		}
 
 		

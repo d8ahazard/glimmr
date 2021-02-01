@@ -56,7 +56,6 @@ namespace Glimmr.Services {
 		private Dictionary<string, int> _subscribers;
 		private VideoStream _videoStream;
 		private AudioVideoStream _avStream;
-		private Task _subscribeTask;
 		private Task _streamTask;
 
 		public AsyncEvent<DynamicEventArgs> ColorSendEvent;
@@ -524,7 +523,7 @@ namespace Glimmr.Services {
 			} else {
 				Log.Debug("Starting video stream...");
 				if (_videoStream != null) _videoStream.SendColors = sendColors;
-				_streamTask = Task.Run(() => _videoStream?.StartStream(ct));
+				_streamTask = Task.Run(() => _videoStream?.StartStream(ct), CancellationToken.None);
 				Log.Debug("Video stream started.");
 			}
 		}
@@ -536,7 +535,7 @@ namespace Glimmr.Services {
 			} else {
 				Log.Debug("Starting audio stream...");
 				if (_audioStream != null) _audioStream.SendColors = sendColors;
-				_streamTask = Task.Run(() => _audioStream?.StartStream(ct));
+				_streamTask = Task.Run(() => _audioStream?.StartStream(ct), CancellationToken.None);
 				Log.Debug("Audio stream started.");
 			}
 		}
@@ -544,12 +543,12 @@ namespace Glimmr.Services {
 		private void StartAvStream(CancellationToken ct) {
 			StartAudioStream(ct, false);
 			StartVideoStream(ct, false);
-			_streamTask = Task.Run(() => _avStream.StartStream(ct));
+			_streamTask = Task.Run(() => _avStream.StartStream(ct), CancellationToken.None);
 			Log.Debug("AV Stream started?");
 		}
 
 		private void StartAmbientStream(CancellationToken ct) {
-			_streamTask = Task.Run(() => _ambientStream.StartStream(ct));
+			_streamTask = Task.Run(() => _ambientStream.StartStream(ct), CancellationToken.None);
 		}
 
 		private void StartStream() {
@@ -587,26 +586,26 @@ namespace Glimmr.Services {
 					Log.Warning("Well, this is exceptional: " + e.Message);
 					return Task.CompletedTask;
 				}
-			}));
+			})).ConfigureAwait(false);
 			Log.Information("Stream stopped.");
 			
 		}
 
 
-		public async Task SendColors(object o, DynamicEventArgs args) {
+		public Task SendColors(object o, DynamicEventArgs args) {
 			//if (o.GetType().FullName != "Glimmr.Models.ColorSource.Video.VideoStream") Log.Debug("Send called by " + o.GetType().FullName);
 			_sendTokenSource ??= new CancellationTokenSource();
 			if (_sendTokenSource.IsCancellationRequested) {
 				Log.Debug("Send token is canceled.");
-				return;
+				return Task.CompletedTask;
 			}
 
 			if (!_streamStarted) {
 				//Log.Debug("Stream not started.");
-				return;
+				return Task.CompletedTask;
 			}
 			
-			await ColorSendEvent.InvokeAsync(this, new DynamicEventArgs(args.P1, args.P2, args.P3));
+			return ColorSendEvent.InvokeAsync(this, new DynamicEventArgs(args.P1, args.P2, args.P3));
 		}
 
 

@@ -39,10 +39,10 @@ namespace Glimmr.Models.ColorTarget.LED {
 			CreateStrip();
 		}
 
-		public async Task SetColor(object arg1, DynamicEventArgs arg2) {
+		public Task SetColor(object arg1, DynamicEventArgs arg2) {
 			var colors = arg2.P1;
 			SetColor(colors);
-			await Task.FromResult(true);
+			return Task.CompletedTask;
 		}
 
 		private void CreateStrip() {
