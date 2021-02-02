@@ -77,7 +77,7 @@ namespace Glimmr.Services {
 				var secIdx = colors.Count - 28;
 				var ledColors = colors.GetRange(0, secIdx);
 				var sectorColors = colors.Skip(secIdx).ToList();
-				await _cs.SendColors(ledColors, sectorColors);
+				_cs.SendColors(ledColors, sectorColors);
 			}
 		}
 

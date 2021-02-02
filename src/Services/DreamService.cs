@@ -134,7 +134,14 @@ namespace Glimmr.Services {
         }
 
         private static Color ColorFromString(string inputString) {
-            return ColorTranslator.FromHtml("#" + inputString);
+            var output = Color.FromArgb(0, 0, 0, 0);
+            try {
+                output = ColorTranslator.FromHtml("#" + inputString);
+            } catch (Exception) {
+                // ignored
+            }
+
+            return output;
         }
       
         

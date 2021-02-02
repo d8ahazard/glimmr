@@ -96,15 +96,11 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		}
 
 
-		public async Task SetColor(object o, DynamicEventArgs dynamicEventArgs) {
+		public void SetColor(List<Color> list, List<Color> colors, int fadeTime) {
 			if (!Streaming || !Enable || Testing) {
 				return;
 			}
 
-			var colors = dynamicEventArgs.P2;
-			var fadeTime = dynamicEventArgs.P3;
-			if (fadeTime == null) fadeTime = 0;
-			
 			var byteString = new List<byte>();
 			if (_streamMode == 2) {
 				byteString.AddRange(ByteUtils.PadInt(_layout.NumPanels));
@@ -138,7 +134,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				// Pad duration time
 				byteString.AddRange(_streamMode == 2 ? ByteUtils.PadInt((int)fadeTime) : ByteUtils.PadInt((int)fadeTime, 1));
 			}
-			await SendUdpUnicastAsync(byteString.ToArray());
+			SendUdpUnicastAsync(byteString.ToArray());
 		}
 
 

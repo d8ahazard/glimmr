@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
@@ -87,10 +88,10 @@ namespace Glimmr.Models.ColorTarget.LIFX {
             
         }
 
-        public async Task SetColor(object o, DynamicEventArgs dynamicEventArgs) {
+        public void SetColor(List<System.Drawing.Color> colors, List<System.Drawing.Color> list, int arg3) {
             if (!Streaming || !Enable || Testing) return;
-            var sectors = dynamicEventArgs.P2;
-            var fadeTime = dynamicEventArgs.P3;
+            var sectors = list;
+            var fadeTime = arg3;
             if (sectors == null || _client == null) {
                 return;
             }
@@ -100,7 +101,7 @@ namespace Glimmr.Models.ColorTarget.LIFX {
             }
             var nC = new Color {R = input.R, G = input.G, B = input.B};
             var fadeSpan = TimeSpan.FromSeconds(fadeTime);
-            await _client.SetColorAsync(B, nC, 7500, fadeSpan);
+            _client.SetColorAsync(B, nC, 7500, fadeSpan);
         }
 
         

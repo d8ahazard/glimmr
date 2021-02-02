@@ -99,7 +99,12 @@ namespace Glimmr.Models.ColorTarget.LED {
 			if (ld == null) return Task.CompletedTask;
 			Log.Debug("Reloading ledData: " + JsonConvert.SerializeObject(ld));
 			Log.Debug("Old LED Data: " + JsonConvert.SerializeObject(Data));
-			if (Data.Brightness != ld.Brightness) _strip.SetBrightness(ld.Brightness);
+			var con = _strip.GetController();
+			if (Data.Brightness != ld.Brightness) con.Brightness = (byte) Brightness;
+			//con.LEDCount = _ledCount;
+			if (Data.Brightness != ld.Brightness) {
+				_strip.SetBrightness(ld.Brightness);
+			}
 			if (Data.Count != ld.Count) _strip.SetLedCount(ld.Count);
 			LoadData(ld);
 			return Task.CompletedTask;
@@ -108,7 +113,8 @@ namespace Glimmr.Models.ColorTarget.LED {
 	
 
 		private Settings LoadLedData(LedData ld) {
-			var settings = Settings.CreateDefaultSettings(ld.FixGamma);
+			var settings = Settings.CreateDefaultSettings();
+			if (!ld.FixGamma) settings.SetGammaCorrection(0, 0, 0);
 			Id = ld.Id;
 			Log.Debug("Initializing LED Strip, type is " + ld.StripType);
 			var stripType = ld.StripType switch {
@@ -173,6 +179,10 @@ namespace Glimmr.Models.ColorTarget.LED {
 			}
 		}
 
+		public void SetColor(List<Color> colors, List<Color> sectors, int fadeTime) {
+			SetColor(colors, true);
+		}
+
 		public void SetColor(List<Color> colors, bool force = false, string id="") {
 			if (colors == null) {
 				throw new ArgumentException("Invalid color input.");
@@ -199,8 +209,7 @@ namespace Glimmr.Models.ColorTarget.LED {
 					if (Data.StripType == 1) {
 						tCol = ColorUtil.ClampAlpha(tCol);
 					}
-
-					_strip?.SetLed(i, tCol);
+					_strip.SetLed(i,tCol);
 					iSource++;
 				}
 			}
@@ -289,16 +298,16 @@ namespace Glimmr.Models.ColorTarget.LED {
 					var scaleI = scale * 255;
 					var scaleB = scaleI > 255 ? 255 : scaleI;
 					var newBri = scale8(defaultBrightness, scaleB);
-					//_strip.SetBrightness((int)newBri);
+					_strip.SetBrightness((int)newBri);
 					//Log.Debug($"Scaling brightness to {newBri / 255}.");
 					CurrentMilliamps = powerSum0 * newBri / puPerMilliamp;
 					if (newBri < defaultBrightness) {
-						output = ColorUtil.ClampBrightness(input, newBri);
+						//output = ColorUtil.ClampBrightness(input, newBri);
 					}
 				} else {
 					CurrentMilliamps = (float) powerSum / puPerMilliamp;
 					if (defaultBrightness < 255) {
-						output = ColorUtil.ClampBrightness(input, defaultBrightness);
+						_strip.SetBrightness(defaultBrightness);
 					}
 				}
 
@@ -306,7 +315,7 @@ namespace Glimmr.Models.ColorTarget.LED {
 			} else {
 				CurrentMilliamps = 0;
 				if (defaultBrightness < 255) {
-					output = ColorUtil.ClampBrightness(input, defaultBrightness);
+					_strip.SetBrightness(defaultBrightness);
 				}
 			}
 

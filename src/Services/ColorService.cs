@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,11 +37,11 @@ namespace Glimmr.Services {
 		private readonly DreamUtil _dreamUtil;
 		private AmbientStream _ambientStream;
 		private AudioStream _audioStream;
-		private CancellationTokenSource _captureTokenSource;
 		private bool _autoDisabled;
 		private int _captureMode;
 		private int _deviceGroup;
 		private int _deviceMode;
+		private float _fps;
 		private SystemData _systemData;
 
 		// Figure out how to make these generic, non-callable
@@ -48,8 +49,13 @@ namespace Glimmr.Services {
 
 		private IStreamingDevice[] _sDevices;
 		
+		// Token for the color target
 		private CancellationTokenSource _sendTokenSource;
+		
+		// Token for the color source
 		private CancellationTokenSource _streamTokenSource;
+		// Generates a token every time we send colors, and expires super-fast
+		private CancellationTokenSource _castTokenSource;
 		private CancellationToken _stopToken;
 		private bool _streamStarted;
 		
@@ -57,8 +63,11 @@ namespace Glimmr.Services {
 		private VideoStream _videoStream;
 		private AudioVideoStream _avStream;
 		private Task _streamTask;
+		private int _tickCount;
+		private Stopwatch _watch;
+		private int _time;
 
-		public AsyncEvent<DynamicEventArgs> ColorSendEvent;
+		public event Action<List<Color>, List<Color>, int> ColorSendEvent = delegate {};
 		public event Action<List<Color>, string> SegmentTestEvent = delegate { };
 
 		public ColorService(ControlService controlService) {
@@ -79,6 +88,7 @@ namespace Glimmr.Services {
 		
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			_stopToken = stoppingToken;
+			_watch = new Stopwatch();
 			_streamTokenSource = new CancellationTokenSource();
 			Log.Information("Starting colorService loop...");
 			_subscribers = new Dictionary<string, int>();
@@ -289,7 +299,6 @@ namespace Glimmr.Services {
 			_deviceGroup = (byte) dev.DeviceGroup;
 			_captureMode = DataUtil.GetItem<int>("CaptureMode") ?? 2;
 			_sendTokenSource = new CancellationTokenSource();
-			_captureTokenSource = new CancellationTokenSource();
 			Log.Debug("Loading strip");
 			_systemData = DataUtil.GetObject<SystemData>("SystemData");
 			Log.Debug("Creating new device lists...");
@@ -374,7 +383,7 @@ namespace Glimmr.Services {
 
 				cols[i] = rCol;
 				if (String.IsNullOrEmpty(stripId)) {
-					await SendColors(this, new DynamicEventArgs(cols.ToList(), secs.ToList()));	
+					SendColors(cols.ToList(), secs.ToList(), 0);	
 				} else {
 					SegmentTestEvent(cols.ToList(), stripId);
 				}
@@ -464,6 +473,27 @@ namespace Glimmr.Services {
 		private void ReloadSystemData() {
 			_videoStream?.Refresh();
 			_audioStream?.Refresh();
+			var sd = _systemData;
+			_systemData = DataUtil.GetObject<SystemData>("SystemData");
+
+			var refreshAmbient = false;
+			if (sd.AmbientColor != _systemData.AmbientColor) {
+				refreshAmbient = true;
+			}
+
+			if (sd.AmbientMode != _systemData.AmbientMode) {
+				refreshAmbient = true;
+			}
+
+			if (sd.AmbientShow != _systemData.AmbientShow) {
+				refreshAmbient = true;
+			}
+
+			if (refreshAmbient) {
+				Log.Debug("Refreshing ambient stream...");
+				_ambientStream?.Refresh();
+			}
+			
 		}
 
 		private async Task Mode(object o, DynamicEventArgs dynamicEventArgs) {
@@ -478,10 +508,12 @@ namespace Glimmr.Services {
 				await StopStream();
 			}
 
-			_streamTokenSource?.Cancel();
 			if (_streamTask != null && !_streamTask.IsCompleted) {
 				try {
+					_streamTokenSource.Cancel();
+					Log.Debug("Killing streaming task...");
 					await (_streamTask);
+					Log.Debug("Stream task killed.");
 				} catch (TaskCanceledException) {
 
 				} finally {
@@ -588,24 +620,22 @@ namespace Glimmr.Services {
 				}
 			})).ConfigureAwait(false);
 			Log.Information("Stream stopped.");
-			
 		}
 
 
-		public Task SendColors(object o, DynamicEventArgs args) {
-			//if (o.GetType().FullName != "Glimmr.Models.ColorSource.Video.VideoStream") Log.Debug("Send called by " + o.GetType().FullName);
+		public void SendColors(List<Color> colors, List<Color> sectors, int fadeTime) {
 			_sendTokenSource ??= new CancellationTokenSource();
 			if (_sendTokenSource.IsCancellationRequested) {
 				Log.Debug("Send token is canceled.");
-				return Task.CompletedTask;
+				return;
 			}
 
 			if (!_streamStarted) {
-				//Log.Debug("Stream not started.");
-				return Task.CompletedTask;
+				return;
 			}
 			
-			return ColorSendEvent.InvokeAsync(this, new DynamicEventArgs(args.P1, args.P2, args.P3));
+			
+			ColorSendEvent(colors, sectors, fadeTime);
 		}
 
 
@@ -625,11 +655,11 @@ namespace Glimmr.Services {
 
 		private async Task StopServices() {
 			Log.Information("Stopping services...");
-			CancelSource(_captureTokenSource, true);
 			_streamTokenSource?.Cancel();
 			if (_streamTask != null && !_streamTask.IsCompleted) {
 				try {
-					await (_streamTask);
+					await Task.Delay(3);
+					_streamTask.Dispose();
 				} catch (TaskCanceledException) {
 
 				} finally {

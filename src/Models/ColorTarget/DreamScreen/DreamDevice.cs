@@ -1,5 +1,6 @@
 ﻿#region
 
+using System.Collections.Generic;
 using System.Drawing;
 using System.Runtime.Serialization;
 using System.Threading;
@@ -49,10 +50,9 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			await _dreamUtil.SendMessage("mode", 0, Id);
 		}
 
-		public async Task SetColor(object o, DynamicEventArgs dynamicEventArgs) {
+		public async void SetColor(List<Color> colors, List<Color> sectors, int arg3) {
 			if (!Data.Enable || Testing) return;
 
-			var sectors = dynamicEventArgs.P2;
 			if (sectors.Count == 28) {
 				sectors = ColorUtil.TruncateColors(sectors);
 				

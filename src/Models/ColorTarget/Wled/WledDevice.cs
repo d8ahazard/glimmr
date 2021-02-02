@@ -113,13 +113,13 @@ namespace Glimmr.Models.ColorTarget.Wled {
             await SendPost(offObj);
         }
 
-        public async Task SetColor(object o, DynamicEventArgs dynamicEventArgs) {
+        public void SetColor(List<Color> list, List<Color> colors1, int arg3) {
             
             if (!Streaming || !Data.Enable || Testing) {
                 return;
             }
 
-            var colors = dynamicEventArgs.P1;
+            var colors = list;
             colors = TruncateColors(colors);
             if (Data.StripMode == 2) {
                 colors = ShiftColors(colors);
@@ -149,7 +149,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             }
 
             try {
-                await _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep);
+                _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep);
             } catch (Exception e) {
                 Log.Debug("Exception: " + e.Message);        
             }
@@ -216,7 +216,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
             if (pixelIndex >= Data.LedCount) return;
             _updateColors[pixelIndex] = color;
-            await SetColor(this, new DynamicEventArgs(_updateColors, null, 0));
+            SetColor(_updateColors, null, 0);
+            await Task.FromResult(true);
         }
        
      

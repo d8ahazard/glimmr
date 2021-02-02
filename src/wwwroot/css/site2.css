@@ -152,6 +152,13 @@ input[type="range"]::-webkit-slider-runnable-track {
     background-color: gray;
 }
 
+#ambientNav {
+    position: fixed;
+    height: 48px;
+    top: 48px;
+    width: 100%;
+}
+
 .btn-clear.btn-lg, .btn-clear.btn-lg > span {
     font-size: 30px;
 }

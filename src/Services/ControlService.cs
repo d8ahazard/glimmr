@@ -32,9 +32,6 @@ namespace Glimmr.Services {
 		public UdpClient UdpClient { get; }
 		public MulticastService MulticastService { get; }
 		private readonly IHubContext<SocketServer> _hubContext;
-		private int _tickCount;
-		private Stopwatch _watch;
-		private int _time;
 
 		public ControlService(IHubContext<SocketServer> hubContext) {
 			_hubContext = hubContext;
@@ -51,7 +48,6 @@ namespace Glimmr.Services {
 			UdpClient.DontFragment = true;
 			MulticastService = new MulticastService();
 			DataUtil.CheckDefaults(this).ConfigureAwait(true);
-			_watch = new Stopwatch();
 		}
 
 		public AsyncEvent<DynamicEventArgs> DeviceReloadEvent;
@@ -72,7 +68,7 @@ namespace Glimmr.Services {
 		
 		public AsyncEvent<DynamicEventArgs> DemoLedEvent;
 		
-		public AsyncEvent<DynamicEventArgs> TriggerSendColorEvent;
+		public event Action<List<Color>, List<Color>, int> TriggerSendColorEvent = delegate { };
 		
 
 		public async Task ScanDevices() {
@@ -82,10 +78,7 @@ namespace Glimmr.Services {
 		public async Task SetMode(int mode) {
 			Log.Information("Setting mode: " + mode);
 			if (mode != 0) {
-				if (!_watch.IsRunning) _watch.Restart();
 				DataUtil.SetItem("PreviousMode", mode);
-			} else {
-				if (_watch.IsRunning) _watch.Stop();
 			}
 			await _hubContext.Clients.All.SendAsync("mode", mode);
 			DataUtil.SetItem("DeviceMode", mode);
@@ -181,8 +174,8 @@ namespace Glimmr.Services {
 		}
 
 		// We call this one to send colors to everything, including the color service
-		public Task SendColors(List<Color> c1, List<Color> c2, int fadeTime = 0) {
-			return TriggerSendColorEvent.InvokeAsync(this, new DynamicEventArgs(c1, c2, fadeTime));
+		public void SendColors(List<Color> c1, List<Color> c2, int fadeTime = 0) {
+			TriggerSendColorEvent(c1, c2, fadeTime);
 		}
 
 		

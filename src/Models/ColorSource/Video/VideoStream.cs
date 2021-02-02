@@ -116,7 +116,10 @@ namespace Glimmr.Models.ColorSource.Video {
 				var c2 = StreamSplitter.GetSectors();
 				Sectors = c2;
 				//Log.Debug("No, really, sending colors...");
-				if (SendColors) _colorService.SendColors(this, new DynamicEventArgs(c1, c2)).ConfigureAwait(true);
+				if (SendColors) {
+					//_colorService.SendColors(this, new DynamicEventArgs(c1, c2)).ConfigureAwait(true);
+					_colorService.SendColors(Colors, Sectors, 0);
+				}
 				
 			}
 			_saveTimer.Dispose();

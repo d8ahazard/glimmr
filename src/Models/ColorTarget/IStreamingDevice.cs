@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,7 +20,7 @@ namespace Glimmr.Models.ColorTarget {
 
 		public Task StopStream();
 
-		public Task SetColor(Object o, DynamicEventArgs args);
+		public void SetColor(List<Color> colors, List<Color> sectors, int fadeTime);
 
 		public Task FlashColor(Color color);
 

@@ -54,7 +54,8 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 
 				Colors = oCols;
 				Sectors = oSecs;
-				_cs.SendColors(this, new DynamicEventArgs(oCols, oSecs)).ConfigureAwait(true);
+				//_cs.SendColors(this, new DynamicEventArgs(oCols, oSecs)).ConfigureAwait(true);
+				_cs.SendColors(Colors, Sectors, 0);
 				Task.Delay(16, CancellationToken.None);
 			}
 		}

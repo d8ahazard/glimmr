@@ -188,17 +188,16 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 
 		/// <summary>
-		///     Update lights in entertainment layer
+		/// Update lites in entertainment group...
 		/// </summary>
-		/// <param name="o">Sender.</param>
-		/// <param name="dynamicEventArgs">Args containing the usual color data...</param>
-		public async Task SetColor(object o, DynamicEventArgs dynamicEventArgs) {
+		/// <param name="list"></param>
+		/// <param name="colors"></param>
+		/// <param name="fadeTime"></param>
+		public void SetColor(List<Color> list, List<Color> colors, int fadeTime) {
 			if (!Streaming || !Data.Enable || Testing || _entLayer == null) {
 				return;
 			}
 
-			var colors = (List<Color>) dynamicEventArgs.P2;
-			float fadeTime = dynamicEventArgs.P3;
 			var lightMappings = Data.MappedLights;
 			
 			foreach (var entLight in _entLayer) {
@@ -223,8 +222,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 					entLight.SetState(_ct, oColor, mb);
 				}
 			}
-
-			await Task.FromResult(true);
 		}
 
 		

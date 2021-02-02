@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System.Collections.Generic;
+using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
@@ -44,14 +45,13 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			return Task.CompletedTask;
 		}
 
-		public async Task SetColor(object o, DynamicEventArgs dynamicEventArgs) {
+		public void SetColor(List<Color> colors, List<Color> sectors, int arg3) {
 			if (!Streaming || _data.TargetSector == -1 || Testing) {
 				return;
 			}
 
-			var sectors = dynamicEventArgs.P2;
 			var col = sectors[_data.TargetSector];
-			await _yeeDevice.SetRGBColor(col.R, col.G, col.B);
+			_yeeDevice.SetRGBColor(col.R, col.G, col.B);
 		}
 
 		public async Task FlashColor(Color col) {

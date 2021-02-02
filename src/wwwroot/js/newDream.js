@@ -8,6 +8,7 @@ let cardRow;
 let settingsTitle;
 let settingsTab;
 let settingsContent;
+let newColor;
 // Is a device card expanded?
 let expanded = false;
 // Do we have a LED map?
@@ -28,6 +29,7 @@ let toggleLeft = 0;
 let toggleTop = 0;
 let posting = false;
 let baseUrl;
+let pickr;
 let errModal = new bootstrap.Modal(document.getElementById('errorModal'));
 // We're going to create one object to store our stuff, and add listeners for when values are changed.
 let data = {
@@ -84,10 +86,71 @@ document.addEventListener("DOMContentLoaded", function(){
     settingsTitle = document.getElementById("settingsTitle");
     settingsContent = document.getElementById("settingsContent");
     cardRow = document.getElementById("cardRow");
+    pickr = Pickr.create({
+        el: '.pickrBtn',
+        theme: 'nano', // or 'monolith', or 'nano'
+        swatches: [
+            'rgba(255, 0, 0, 1)',
+            'rgba(255, 128, 0, 1)',
+            'rgba(255, 255, 0, 1)',
+            'rgb(128,255,0)',
+            'rgb(0,255,128)',
+            'rgb(0,255,255)',
+            'rgba(0, 0, 255, 1)',
+            'rgba(128, 0, 255, 1)',
+            'rgba(255, 0, 255, 1)',
+            'rgb(255,0,128)'
+        ],
+
+        components: {
+            // Main components
+            preview: true,
+            opacity: false,
+            hue: true,
+
+            // Input / output Options
+            interaction: {
+                hex: true
+            }
+        }
+    });
+    pickr.on('change', (color, source, instance) => {
+        let col = color.toRGBA();
+        newColor = rgbToHex(col[0], col[1], col[2]);
+    }).on('changestop', (source, instance) => {
+        console.log('Event: "change"', newColor, source, instance);
+        if (isValid(data.store["SystemData"])) {
+            data.store["SystemData"][0]["AmbientColor"] = newColor;
+            data.store["SystemData"][0]["AmbientShow"] = -1;
+            let asSelect = document.getElementById("AmbientShow");
+            asSelect.value = "-1";
+            pickr.setColor("#" + newColor);
+            console.log("Sending: ", data.store["SystemData"][0]);
+            sendMessage("SystemData",data.store["SystemData"][0]);
+        }
+    }).on('swatchselect', (color, instance) => {
+        let col = color.toRGBA();
+        newColor = rgbToHex(col[0], col[1], col[2]);
+        if (isValid(data.store["SystemData"])) {            
+            data.store["SystemData"][0]["AmbientColor"] = newColor;
+            data.store["SystemData"][0]["AmbientShow"] = -1;
+            let asSelect = document.getElementById("AmbientShow");
+            asSelect.value = "-1";
+            pickr.setColor("#" + newColor);
+            console.log("Sending: ", data.store["SystemData"][0]);
+            sendMessage("SystemData",data.store["SystemData"][0]);
+        }
+    });
     setSocketListeners();
     loadSocket();
     
 });
+
+function rgbToHex(r, g, b) {
+    return ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
+
+
 
 
 // Send a message to the server, websocket or not
@@ -559,7 +622,16 @@ function setMode(newMode) {
             others[i].classList.remove("active");
         }
     }
-    if (target != null) target.classList.add("active");        
+    if (target != null) target.classList.add("active");
+    let ambientNav = document.getElementById("ambientNav");
+    if (mode === 3) {
+        ambientNav.classList.add("show");
+        ambientNav.classList.remove("hide");
+    } else {
+        ambientNav.classList.add("hide");
+        ambientNav.classList.remove("show");        
+    }
+    sizeContent();
 }
 
 function loadUi() {
@@ -567,9 +639,13 @@ function loadUi() {
     let mode = 0; 
     let autoDisabled = getStoreProperty("AutoDisabled");
     if (isValid(data.store["SystemData"])) {
-        let theme = data.store["SystemData"][0]["Theme"];
-        mode = data.store["SystemData"][0]["Mode"];
+        let sd = data.store["SystemData"][0];
+        console.log("Loading system data: ", sd);
+        let theme = sd["Theme"];
+        mode = sd["DeviceMode"];
+        setMode(mode);
         loadTheme(theme);
+        pickr.setColor("#" + sd["AmbientColor"]);
     }
     
     if (isValid(data.store["Dev_Audio"])) {
@@ -1838,12 +1914,18 @@ function sizeContent() {
     let navDiv = document.getElementById("mainNav");
     let footDiv = document.getElementById("footer");
     let cDiv = document.getElementById("mainContent");
+    let colorDiv = document.getElementById("ambientNav");
     let wHeight = window.innerHeight;
     let wWidth = window.innerWidth;
+    let ambientOffset = 0;
+    if (mode === 3) {
+        ambientOffset = 48; 
+    }
     cDiv.style.position = "fixed";
-    cDiv.style.top = navDiv.offsetHeight + "px";
-    cDiv.style.height = wHeight - navDiv.offsetHeight - footDiv.offsetHeight + "px";
+    cDiv.style.top = navDiv.offsetHeight + ambientOffset + "px";
+    cDiv.style.height = wHeight - navDiv.offsetHeight - footDiv.offsetHeight - ambientOffset + "px";
     cDiv.style.width = wWidth + "px";
+    colorDiv.style.width = wWidth + "px";
     console.log("Setting: ", navDiv.offsetHeight, footDiv.offsetHeight);
     if (expanded) {
         let oh = document.getElementById("mainContent").offsetTop;
