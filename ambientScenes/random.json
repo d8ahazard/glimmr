@@ -1,1 +1,17 @@
-﻿{"Colors":["f5dd02","00fcff","FFFFFF","FF0000","00FF00","0000FF","a500c3"],"AnimationTime":10.0,"EasingTime": 3,"Mode":3,"Easing":2, "Name": "Random", "Id": 0}
+﻿{
+  "Colors": [
+    "f5dd02",
+    "00fcff",
+    "FFFFFF",
+    "FF0000",
+    "00FF00",
+    "0000FF",
+    "a500c3"
+  ],
+  "AnimationTime": 10,
+  "EasingTime": 3,
+  "Mode": 3,
+  "Easing": 2,
+  "Name": "Random",
+  "Id": 0
+}

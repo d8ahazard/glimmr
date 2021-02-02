@@ -1,1 +1,15 @@
-﻿{"Colors":["fe01ff","b847ff","827dff","3db8f6","11e5f6"],"AnimationTime":10.0, "EasingTime": 2, "Mode":0,"Easing":2,"Name": "Pop", "Id": 7}
+﻿{
+  "Colors": [
+    "fe01ff",
+    "b847ff",
+    "827dff",
+    "3db8f6",
+    "11e5f6"
+  ],
+  "AnimationTime": 10,
+  "EasingTime": 2,
+  "Mode": 0,
+  "Easing": 2,
+  "Name": "Pop",
+  "Id": 7
+}

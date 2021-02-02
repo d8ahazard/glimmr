@@ -1,1 +1,9 @@
-﻿{"Colors":[],"AnimationTime":2,"Mode":2,"Easing":2, "EasingTime": 2,"Name": "Solid", "Id": -1}
+﻿{
+  "Colors": [],
+  "AnimationTime": 2,
+  "Mode": 2,
+  "Easing": 2,
+  "EasingTime": 2,
+  "Name": "Solid",
+  "Id": -1
+}

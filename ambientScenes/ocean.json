@@ -1,1 +1,15 @@
-﻿{"Colors":["02c676","2dbee7","aaaaaa","00beff","00a763"],"AnimationTime":5.0, "EasingTime": 2.5, "Mode":0,"Easing":2,"Name": "Ocean", "Id": 3}
+﻿{
+  "Colors": [
+    "02c676",
+    "2dbee7",
+    "aaaaaa",
+    "00beff",
+    "00a763"
+  ],
+  "AnimationTime": 5,
+  "EasingTime": 2.5,
+  "Mode": 0,
+  "Easing": 2,
+  "Name": "Ocean",
+  "Id": 3
+}

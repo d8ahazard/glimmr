@@ -1,1 +1,13 @@
-﻿{"Colors":["AAAAAA","000000", "FFFFFF"],"AnimationTime":1.0, "EasingTime": 0.1,"Mode":2,"Easing":2,"Name": "Twinkle", "Id": 2}
+﻿{
+  "Colors": [
+    "AAAAAA",
+    "000000",
+    "FFFFFF"
+  ],
+  "AnimationTime": 1,
+  "EasingTime": 0.1,
+  "Mode": 2,
+  "Easing": 2,
+  "Name": "Twinkle",
+  "Id": 2
+}
