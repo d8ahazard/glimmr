@@ -4,27 +4,37 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
-using Glimmr.Models.ColorSource.Ambient.Scene;
 using Glimmr.Models.Util;
 using Glimmr.Services;
+using Newtonsoft.Json;
 using Serilog;
-using static Glimmr.Models.ColorSource.Ambient.IScene;
 
 namespace Glimmr.Models.ColorSource.Ambient {
     public class AmbientStream : IColorSource {
         private double _animationTime;
+        private double _easingTime;
         private string[] _colors;
         private AnimationMode _mode;
         private int _startInt;
         private int _ledCount;
         private int _ambientShow;
         private int _deviceMode;
-        private Color _ambientColor;
+        private string _ambientColor;
         private readonly ColorService _cs;
         private TimeSpan _waitSpan;
         private Stopwatch _watch;
         private Task _sendTask;
+        private JsonLoader _loader;
+        private List<AmbientScene> _scenes;
+        private bool _reloaded;
 
+        public enum AnimationMode {
+            Linear = 0,
+            Reverse = 1,
+            Random = 2,
+            RandomAll = 3,
+            LinearAll = 4
+        }
         
         public AmbientStream(ColorService colorService, in CancellationToken ct) {
             _cs = colorService;
@@ -41,18 +51,26 @@ namespace Glimmr.Models.ColorSource.Ambient {
             var next = RefreshColors(_colors);
             // Load this one for fading
             while (!ct.IsCancellationRequested) {
-                var diff = (_animationTime * 1000) - _watch.ElapsedMilliseconds;
+                var diff = _animationTime  - _watch.ElapsedMilliseconds;
                 var sectors = new List<Color>();
-                if (diff > 0) {
-                    var avg = diff / (_animationTime * 1000);
+                if (diff > 0 && diff <= _easingTime) {
+                    var avg = diff / _easingTime;
                     for (var i = 0; i < current.Count; i++) {
                         sectors.Add(FadeColor(current[i], next[i], avg));
                     }
                 } else {
-                    current = next;
-                    next = RefreshColors(_colors);
-                    sectors = current;
-                    _watch.Restart();
+                    if (diff <= 0 || _reloaded) {
+                        Log.Debug("Reloading...");
+                        current = next;
+                        next = RefreshColors(_colors);
+                        sectors = current;
+                        _watch.Restart();
+                        _reloaded = false;
+                        Log.Debug("Reloaded...");
+                    } else {
+                        sectors = current;
+
+                    }    
                 }
 
                 var leds = SplitColors(sectors);
@@ -141,29 +159,24 @@ namespace Glimmr.Models.ColorSource.Ambient {
             SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
             _ledCount = sd.LedCount;
             _deviceMode = sd.DeviceMode;
-            _ambientShow = DataUtil.GetItem<int>("AmbientShow") ?? 0;
-            _ambientColor = DataUtil.GetObject<Color>("AmbientColor") ?? Color.FromArgb(255,255,255,255);
-            
-            IScene scene = _ambientShow switch {
-                -1 => new SceneSolid(_ambientColor),
-                0 => new SceneRandom(),
-                1 => new SceneFire(),
-                2 => new SceneTwinkle(),
-                3 => new SceneOcean(),
-                4 => new SceneRainbow(),
-                5 => new SceneJuly(),
-                6 => new SceneHoliday(),
-                7 => new ScenePop(),
-                8 => new SceneForest(),
-                _ => null
-            };
+            _ambientShow = sd.AmbientShow;
+            _ambientColor = sd.AmbientColor;
+            _loader = new JsonLoader("ambientScenes");
+            _scenes = _loader.LoadFiles<AmbientScene>();
+            AmbientScene scene = new AmbientScene();
+            foreach (var s in _scenes) {
+                if (s.Id == _ambientShow) {
+                    scene = s;
+                }
+            }
 
-            if (scene == null) return;
-            _colors = scene.GetColors();
-            _animationTime = scene.AnimationTime;
-            _mode = scene.Mode;
+            if (_ambientShow == -1) scene.Colors = new[] {_ambientColor};
+            _colors = scene.Colors;
+            _animationTime = scene.AnimationTime * 1000;
+            _easingTime = scene.EasingTime * 1000;
+            _mode = (AnimationMode) scene.Mode;
             _startInt = 0;
-            _watch.Restart();
+            _reloaded = true;
             Log.Debug($"Ambient scene: {_ambientShow}, {_ambientColor}, {_animationTime}");
         }
 

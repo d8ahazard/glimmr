@@ -97,7 +97,7 @@ namespace Glimmr.Models.ColorTarget.LIFX {
             }
             var input = sectors[_targetSector];
             if (Brightness < 100) {
-                input = ColorTransformUtil.ClampBrightness(input, Brightness);
+                input = ColorUtil.ClampBrightness(input, Brightness);
             }
             var nC = new Color {R = input.R, G = input.G, B = input.B};
             var fadeSpan = TimeSpan.FromSeconds(fadeTime);

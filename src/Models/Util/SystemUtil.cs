@@ -1,5 +1,8 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
+using Emgu.Util;
 using Serilog;
 
 namespace Glimmr.Models.Util {
@@ -39,6 +42,24 @@ namespace Glimmr.Models.Util {
 			} else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 				Process.Start("shutdown", "/s /t 0");
 			}
+		}
+
+		public static string GetUserDir() {
+			var userDir = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+			if (userDir == String.Empty && RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+				userDir = "/etc/";
+			}
+			var fullPath = Path.Combine(userDir, "Glimmr");
+			if (!Directory.Exists(fullPath)) {
+				try {
+					var res = Directory.CreateDirectory(fullPath);
+					return fullPath;
+				} catch (Exception e) {
+					Log.Warning("Exception creating userdata dir: " + e.Message);
+					return String.Empty;
+				}
+			}
+			return String.Empty;
 		}
 	}
 }

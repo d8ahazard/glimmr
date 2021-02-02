@@ -638,12 +638,28 @@ function loadUi() {
     console.log("Loading ui.");
     let mode = 0; 
     let autoDisabled = getStoreProperty("AutoDisabled");
+    
     if (isValid(data.store["SystemData"])) {
         let sd = data.store["SystemData"][0];
         console.log("Loading system data: ", sd);
         let theme = sd["Theme"];
         mode = sd["DeviceMode"];
         setMode(mode);
+        if (isValid(data.store["AmbientScenes"])) {
+            let scenes = data.store["AmbientScenes"];
+            let ambientMode = sd["AmbientShow"];
+            scenes.sort((a, b) => (a.Id > b.Id) ? 1 : -1);
+            let sceneSelector = document.getElementById("AmbientShow");
+            sceneSelector.innerHTML = "";
+            for(let i=0; i < scenes.length; i++) {
+                let opt = document.createElement("option");
+                opt.value = scenes[i]["Id"];
+                opt.innerText = scenes[i]["Name"];
+                if (opt.value === ambientMode) opt.selected = true;
+                sceneSelector.appendChild(opt);
+            }
+            sceneSelector.value = ambientMode;
+        }
         loadTheme(theme);
         pickr.setColor("#" + sd["AmbientColor"]);
     }
@@ -1168,8 +1184,18 @@ const showDeviceCard = async (e) => {
     cardClone.style.display = 'block';
     // Expand that bish
     await toggleExpansion(cardClone, {top: oh + "px", left: 0, width: '100%', height: 'calc(100% - ' + oh + 'px)', padding: "1rem 3rem"}, 250);
-    addCardSettings();
-
+    
+    console.log("Appending card settings.");
+    let sepDiv = document.createElement("div");
+    sepDiv.classList.add("dropdown-divider");
+    let settingsDiv = document.createElement("div");
+    settingsDiv.classList.add("deviceSettings", "row", "text-center");
+    settingsDiv.id = "deviceSettings";
+    //settingsDiv.style.opacity = "0%";
+    settingsDiv.style.overflow = "scrollY";
+    settingsDiv.style.position = "relative";
+    cardClone.appendChild(sepDiv);
+    cardClone.appendChild(settingsDiv);
     cardClone.style.overflowY = "scroll";
 
     // Create settings for our card
@@ -1181,6 +1207,15 @@ const showDeviceCard = async (e) => {
 function loadDeviceData() {
     let settingsDiv = document.getElementById("deviceSettings");
     settingsDiv.innerHTML = "";
+    let linkCol = document.createElement("div");
+    let mapCol = document.createElement("div");
+    linkCol.classList.add("col-12", "row", "justify-content-center");
+    mapCol.classList.add("col-12");
+    linkCol.id = "linkCol";
+    mapCol.id = "mapCol";
+    settingsDiv.appendChild(linkCol);
+    settingsDiv.appendChild(mapCol);
+
     //fadeContent(settingsDiv,100, 500);
     switch(deviceData["Tag"]) {
         case "Dreamscreen":
@@ -1212,34 +1247,7 @@ function loadDeviceData() {
     }
 }
 
-function addCardSettings() {
-    if (deviceData === undefined) {
-        console.log("NO DEVICE DATA");
-    } else {
-        console.log("Appending card settings.");
-        let sepDiv = document.createElement("div");
-        sepDiv.classList.add("dropdown-divider");
-        
-        let settingsDiv = document.createElement("div");
-        settingsDiv.classList.add("deviceSettings", "row", "text-center");
-        settingsDiv.id = "deviceSettings";
-        //settingsDiv.style.opacity = "0%";
-        settingsDiv.style.overflow = "scrollY";
-        settingsDiv.style.position = "relative";
-        let linkCol = document.createElement("div");
-        let mapCol = document.createElement("div");
-        linkCol.classList.add("col-12", "row", "justify-content-center");
-        mapCol.classList.add("col-12");
-        linkCol.id = "linkCol";
-        mapCol.id = "mapCol";
-        settingsDiv.appendChild(linkCol);
-        settingsDiv.appendChild(mapCol);
 
-        cardClone.appendChild(sepDiv);
-        cardClone.appendChild(settingsDiv);
-        
-    }   
-}
 
 function appendWledSettings() {    
     let container = document.createElement("div");
@@ -1383,7 +1391,7 @@ function drawLinkPane(type, linked) {
     div.appendChild(img);
     div.appendChild(linkImg);
     console.log("No, really, appending: ", div);
-    document.getElementById("linkCol").appendChild(div);
+    document.getElementById("deviceSettings").appendChild(div);
 }
 
 function appendSectorMap() {

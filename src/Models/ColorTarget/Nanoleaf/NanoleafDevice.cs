@@ -122,7 +122,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				}
 				
 				if (Brightness < 100) {
-					color = ColorTransformUtil.ClampBrightness(color, Brightness);
+					color = ColorUtil.ClampBrightness(color, Brightness);
 				}
 
 				// Add rgb values

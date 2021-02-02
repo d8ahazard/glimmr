@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Glimmr.Models.ColorSource.Ambient;
 using Glimmr.Models.ColorTarget.DreamScreen;
 using Glimmr.Models.ColorTarget.Hue;
 using Glimmr.Models.ColorTarget.LED;
@@ -222,7 +223,8 @@ namespace Glimmr.Models.Util {
                 }
                 output[col] = lList;
             }
-
+            var jl = new JsonLoader("ambientScenes");
+            output["AmbientScenes"] = jl.LoadDynamic<AmbientScene>();
             return JsonConvert.SerializeObject(output);
         }
 

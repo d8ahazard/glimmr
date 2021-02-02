@@ -6,19 +6,19 @@ using Newtonsoft.Json;
 
 namespace Glimmr.Models.Util {
     public static class IpUtil {
-        public static IPEndPoint Parse(string endpointstring, int defaultport) {
-            if (string.IsNullOrEmpty(endpointstring)
-                || endpointstring.Trim().Length == 0) {
+        public static IPEndPoint Parse(string endpoint, int portIn) {
+            if (string.IsNullOrEmpty(endpoint)
+                || endpoint.Trim().Length == 0) {
                 throw new ArgumentException("Endpoint descriptor may not be empty.");
             }
 
-            if (defaultport != -1 &&
-                (defaultport < IPEndPoint.MinPort
-                 || defaultport > IPEndPoint.MaxPort)) {
-                throw new ArgumentException(string.Format("Invalid default port '{0}'", defaultport));
+            if (portIn != -1 &&
+                (portIn < IPEndPoint.MinPort
+                 || portIn > IPEndPoint.MaxPort)) {
+                throw new ArgumentException(string.Format("Invalid default port '{0}'", portIn));
             }
 
-            string[] values = endpointstring.Split(new[] {':'});
+            string[] values = endpoint.Split(new[] {':'});
             IPAddress ipaddy;
             int port;
 
@@ -27,7 +27,7 @@ namespace Glimmr.Models.Util {
             {
                 if (values.Length == 1)
                     //no port is specified, default
-                    port = defaultport;
+                    port = portIn;
                 else
                     port = GetPort(values[1]);
 
@@ -44,15 +44,15 @@ namespace Glimmr.Models.Util {
                     port = GetPort(values[values.Length - 1]);
                 } else //[a:b:c] or a:b:c
                 {
-                    ipaddy = IPAddress.Parse(endpointstring);
-                    port = defaultport;
+                    ipaddy = IPAddress.Parse(endpoint);
+                    port = portIn;
                 }
             } else {
-                throw new FormatException(string.Format("Invalid endpoint ipaddress '{0}'", endpointstring));
+                throw new FormatException(string.Format("Invalid endpoint ipaddress '{0}'", endpoint));
             }
 
             if (port == -1)
-                throw new ArgumentException(string.Format("No port specified: '{0}'", endpointstring));
+                throw new ArgumentException(string.Format("No port specified: '{0}'", endpoint));
 
             return new IPEndPoint(ipaddy, port);
         }

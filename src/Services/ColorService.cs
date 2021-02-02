@@ -512,7 +512,8 @@ namespace Glimmr.Services {
 				try {
 					_streamTokenSource.Cancel();
 					Log.Debug("Killing streaming task...");
-					await (_streamTask);
+					await (Task.Delay(1));
+					_streamTask.Dispose();
 					Log.Debug("Stream task killed.");
 				} catch (TaskCanceledException) {
 

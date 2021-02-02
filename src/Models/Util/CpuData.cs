@@ -22,8 +22,5 @@ namespace Glimmr.Models.Util {
 		public float LoadAvg15 { get; set; }
 		[JsonProperty]
 		public string Uptime { get; set; }
-		public CpuData() {
-			
-		}
 	}
 }
