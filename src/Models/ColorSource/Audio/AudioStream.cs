@@ -33,7 +33,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 		public AudioStream(ColorService cs) {
 			_cs = cs;
 			_cs.AddStream("audio", this);
-			//Bass.Init();
+			Bass.Init();
 		}
 		
 		protected override Task ExecuteAsync(CancellationToken ct) {
