@@ -1,12 +1,15 @@
 ﻿{
   "Colors": [
-    "FF0000",
-    "000000",
-    "0000FF",
-    "000000"
+    "#FF0000",
+    "#0000FF",
+    "#FFFFFF",
+    "#000000",
+    "#FF0000",
+    "#0000FF",
+    "#FFFFFF"
   ],
-  "AnimationTime": 10,
-  "EasingTime": 1,
+  "AnimationTime": 7,
+  "EasingTime": 0.2,
   "Mode": 0,
   "Easing": 2,
   "Name": "Independence",

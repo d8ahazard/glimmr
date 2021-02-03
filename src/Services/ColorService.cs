@@ -37,6 +37,9 @@ namespace Glimmr.Services {
 		private readonly DreamUtil _dreamUtil;
 		private AmbientStream _ambientStream;
 		private AudioStream _audioStream;
+		private VideoStream _videoStream;
+		private AudioVideoStream _avStream;
+
 		private bool _autoDisabled;
 		private int _captureMode;
 		private int _deviceGroup;
@@ -55,14 +58,10 @@ namespace Glimmr.Services {
 		// Token for the color source
 		private CancellationTokenSource _streamTokenSource;
 		// Generates a token every time we send colors, and expires super-fast
-		private CancellationTokenSource _castTokenSource;
 		private CancellationToken _stopToken;
 		private bool _streamStarted;
 		
 		private Dictionary<string, int> _subscribers;
-		private VideoStream _videoStream;
-		private AudioVideoStream _avStream;
-		private Task _streamTask;
 		private int _tickCount;
 		private Stopwatch _watch;
 		private int _time;
@@ -93,15 +92,10 @@ namespace Glimmr.Services {
 			Log.Information("Starting colorService loop...");
 			_subscribers = new Dictionary<string, int>();
 			LoadData();
-			_ambientStream = new AmbientStream(this,stoppingToken);
-			_videoStream = new VideoStream(this,_controlService,stoppingToken);
-			_audioStream = GetStream(stoppingToken);
-			_avStream = new AudioVideoStream(this, _audioStream, _videoStream);
 			
 			Log.Information("All color services have been initialized.");
 			return Task.Run(async () => {
-				Log.Information("Starting video capture task...");
-				// Start our initial mode
+				Log.Debug("Running demo...");
 				await Demo(this, new DynamicEventArgs());
 				Log.Information($"All color sources initialized, setting mode to {_deviceMode}.");
 				await Mode(this, new DynamicEventArgs(_deviceMode)).ConfigureAwait(true);
@@ -120,6 +114,34 @@ namespace Glimmr.Services {
 			DataUtil.Dispose();
 			Log.Debug("Color service stopped.");
 			await base.StopAsync(cancellationToken);
+		}
+
+		public void AddStream(string name, BackgroundService stream) {
+			switch (name) {
+				case "audio":
+					_audioStream = (AudioStream) stream;
+					break;
+				case "video":
+					_videoStream = (VideoStream) stream;
+					break;
+				case "av":
+					_avStream = (AudioVideoStream) stream;
+					break;
+				case "ambient":
+					_ambientStream = (AmbientStream) stream;
+					break;
+			}
+		}
+
+		public BackgroundService GetStream(string name) {
+			switch (name) {
+				case "audio":
+					return _audioStream;
+				case "video":
+					return _videoStream;
+			}
+
+			return null;
 		}
 
 		private Task FlashDevice(object o, DynamicEventArgs dynamicEventArgs) {
@@ -389,23 +411,14 @@ namespace Glimmr.Services {
 				}
 				
 				i++;
-				Thread.Sleep(2);
 			}
 
 			// Finally show off our hard work
-			Thread.Sleep(500);
+			await Task.Delay(500);
 		}
 
 
-		private AudioStream GetStream(CancellationToken ct) {
-			try {
-				return new AudioStream(this);
-			} catch (DllNotFoundException e) {
-				Log.Warning("Unable to load bass Dll:", e);
-			}
-
-			return null;
-		}
+		
 
 
 		private async Task RefreshDeviceData(object o, DynamicEventArgs dynamicEventArgs) {
@@ -505,43 +518,47 @@ namespace Glimmr.Services {
 			}
 			
 			if (_streamStarted && newMode == 0) {
+				Log.Debug("Awaiting stream stop...");
 				await StopStream();
+				Log.Debug("Done.");
 			}
-
-			if (_streamTask != null && !_streamTask.IsCompleted) {
-				try {
-					_streamTokenSource.Cancel();
-					Log.Debug("Killing streaming task...");
-					await (Task.Delay(1));
-					_streamTask.Dispose();
-					Log.Debug("Stream task killed.");
-				} catch (TaskCanceledException) {
-
-				} finally {
-					_streamTokenSource?.Dispose();
-				}
-			}
-
-			_streamTokenSource = new CancellationTokenSource();
 			
 			switch (newMode) {
 				case 1:
-					StartVideoStream(_streamTokenSource.Token);
+					_audioStream.ToggleStream();
+					_ambientStream.ToggleStream();
+					_avStream.ToggleStream();
+					_videoStream.ToggleStream(true);
 					break;
 				case 2: // Audio
-					StartAudioStream(_streamTokenSource.Token);
+					_ambientStream.ToggleStream();
+					_avStream.ToggleStream();
+					_videoStream.ToggleStream();
+					_audioStream.ToggleStream(true);
 					break;
 				case 3: // Ambient
-					StartAmbientStream(_streamTokenSource.Token);
+					_audioStream.ToggleStream();
+					_avStream.ToggleStream();
+					_videoStream.ToggleStream();
+					_ambientStream.ToggleStream(true);
 					break;
 				case 4: // A/V mode :D
-					StartAvStream(_streamTokenSource.Token);
+					_ambientStream.ToggleStream(false);
+					_audioStream.ToggleStream(true);
+					_audioStream.SendColors = false;
+					_videoStream.ToggleStream(true);
+					_videoStream.SendColors = false;
+					_avStream.ToggleStream(true);
 					break;
 				case 5:
+					_audioStream.ToggleStream();
+					_avStream.ToggleStream();
+					_videoStream.ToggleStream();
+					_ambientStream.ToggleStream();
 					// Nothing to do, this tells the app to get data from DreamService
 					break;
 			}
-
+			
 			if (newMode != 0 && !_streamStarted) {
 				StartStream();
 			}
@@ -550,39 +567,6 @@ namespace Glimmr.Services {
 		}
 
 
-		private void StartVideoStream(CancellationToken ct, bool sendColors = true) {
-			if (_captureMode == 0) {
-				_controlService.TriggerDreamSubscribe();
-			} else {
-				Log.Debug("Starting video stream...");
-				if (_videoStream != null) _videoStream.SendColors = sendColors;
-				_streamTask = Task.Run(() => _videoStream?.StartStream(ct), CancellationToken.None);
-				Log.Debug("Video stream started.");
-			}
-		}
-
-
-		private void StartAudioStream(CancellationToken ct, bool sendColors = true) {
-			if (_captureMode == 0) {
-				_controlService.TriggerDreamSubscribe();
-			} else {
-				Log.Debug("Starting audio stream...");
-				if (_audioStream != null) _audioStream.SendColors = sendColors;
-				_streamTask = Task.Run(() => _audioStream?.StartStream(ct), CancellationToken.None);
-				Log.Debug("Audio stream started.");
-			}
-		}
-
-		private void StartAvStream(CancellationToken ct) {
-			StartAudioStream(ct, false);
-			StartVideoStream(ct, false);
-			_streamTask = Task.Run(() => _avStream.StartStream(ct), CancellationToken.None);
-			Log.Debug("AV Stream started?");
-		}
-
-		private void StartAmbientStream(CancellationToken ct) {
-			_streamTask = Task.Run(() => _ambientStream.StartStream(ct), CancellationToken.None);
-		}
 
 		private void StartStream() {
 			if (!_streamStarted) {
@@ -657,16 +641,10 @@ namespace Glimmr.Services {
 		private async Task StopServices() {
 			Log.Information("Stopping services...");
 			_streamTokenSource?.Cancel();
-			if (_streamTask != null && !_streamTask.IsCompleted) {
-				try {
-					await Task.Delay(3);
-					_streamTask.Dispose();
-				} catch (TaskCanceledException) {
-
-				} finally {
-					_streamTokenSource?.Dispose();
-				}
-			}
+			_avStream.ToggleStream();
+			_audioStream.ToggleStream();
+			_videoStream.ToggleStream();
+			_ambientStream.ToggleStream();
 			CancelSource(_sendTokenSource, true);
 			foreach (var s in _sDevices) {
 				try {

@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
-using Emgu.Util;
 using Serilog;
 
 namespace Glimmr.Models.Util {
@@ -10,7 +9,7 @@ namespace Glimmr.Models.Util {
 		public static void Reboot() {
 			Log.Debug("Rebooting");
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-				Process.Start("reboot");
+				Process.Start("shutdown", "-r now");
 			} else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 				Process.Start("shutdown", "/r /t 0");
 			}

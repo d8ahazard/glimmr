@@ -6,6 +6,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -17,17 +18,23 @@ using Glimmr.Models.ColorSource.Video.Stream.Screen;
 using Glimmr.Models.ColorSource.Video.Stream.WebCam;
 using Glimmr.Models.Util;
 using Glimmr.Services;
+using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Serilog;
 
 #endregion
 
 namespace Glimmr.Models.ColorSource.Video {
-	public sealed class VideoStream : IColorSource {
+	public sealed class VideoStream : BackgroundService {
 		
 		public List<Color> Colors { get; private set; }
 		public List<Color> Sectors { get; private set; }
+		// should we send them to devices?
 		public bool SendColors { get; set; }
+		
+		// Should we be processing?
+
+		private bool _enable;
 		
 		// Scaling variables
 		private const int ScaleHeight = DisplayUtil.CaptureHeight;
@@ -44,7 +51,7 @@ namespace Glimmr.Models.ColorSource.Video {
 		private PointF[] _vectors;
 		private VectorOfPointF _lockTarget;
 
-		private readonly List<VectorOfPoint> _targets;
+		private List<VectorOfPoint> _targets;
 
 		// Loaded data
 		private int _camType;
@@ -54,82 +61,95 @@ namespace Glimmr.Models.ColorSource.Video {
 		private SystemData _systemData;
 
 		// Video source and splitter
-		private readonly IVideoStream _vc;
+		private IVideoStream _vc;
 		private Splitter StreamSplitter { get; set; }
 
 		// Timer and bool for saving sample frames
 		private Timer _saveTimer;
 		private bool _doSave;
+		
+		// Is content detected?
 		public bool SourceActive;
 		private readonly ColorService _colorService;
+		private readonly ControlService _controlService;
 
 
-		public VideoStream(ColorService cs, ControlService controlService, CancellationToken camToken) {
-			Log.Debug("Initializing stream capture...");
+		public VideoStream(ColorService cs, ControlService controlService) {
+			_colorService = cs;
+			_controlService = controlService;
+			_colorService.AddStream("video", this);
+		}
+
+		private void Initialize(CancellationToken ct) {
+			Log.Debug("Initializing video stream...");
+			var autoEvent = new AutoResetEvent(false);
+			_saveTimer = new Timer(SaveFrame, autoEvent, 5000, 5000);
 			_targets = new List<VectorOfPoint>();
 			SetCapVars();
 			_vc = GetStream();
 			if (_vc == null) return;
-			_vc.Start(camToken);
-			_colorService = cs;
-			StreamSplitter = new Splitter(_systemData, controlService);
+			_vc.Start(ct);
+			StreamSplitter = new Splitter(_systemData, _controlService);
 			Log.Debug("Stream capture initialized.");
 		}
 
+		public void ToggleStream(bool enable = false) {
+			_enable = enable;
+			SendColors = true;
+		}
+
 		
-		public void StartStream(CancellationToken ct) {
-			Log.Debug("Initializing video stream...");
-			SetCapVars();
-			var autoEvent = new AutoResetEvent(false);
-			_saveTimer = new Timer(SaveFrame, autoEvent, 5000, 5000);
-			Log.Debug("Starting vid capture task...");
-			while (!ct.IsCancellationRequested) {
-				// Save cpu/memory by not doing anything if not sending...
-				
-				var frame = _vc.Frame;
-				if (frame == null) {
-					SourceActive = false;
-					Log.Warning("Frame is null.");
-					continue;
-				}
-
-				if (frame.Cols == 0) {
-					SourceActive = false;
-					if (!_noColumns) {
-						Log.Warning("Frame has no columns.");
-						_noColumns = true;
+		protected override Task ExecuteAsync(CancellationToken ct) {
+			Initialize(ct);
+			Log.Debug("Starting video stream...");
+			return Task.Run(async () => {
+				while (!ct.IsCancellationRequested) {
+					// Save cpu/memory by not doing anything if not sending...
+					if (!_enable) {
+						await Task.Delay(1, ct);
+						continue;
 					}
-					continue;
-				}
-
-				var warped = ProcessFrame(frame);
-				if (warped == null) {
-					SourceActive = false;
-					Log.Warning("Unable to process frame.");
-					continue;
-				}
-
-				StreamSplitter.Update(warped);
-				SourceActive = !StreamSplitter.NoImage;
-				var c1 = StreamSplitter.GetColors();
-				Colors = c1;
-				var c2 = StreamSplitter.GetSectors();
-				Sectors = c2;
-				//Log.Debug("No, really, sending colors...");
-				if (SendColors) {
-					//_colorService.SendColors(this, new DynamicEventArgs(c1, c2)).ConfigureAwait(true);
-					_colorService.SendColors(Colors, Sectors, 0);
-				}
 				
-			}
-			_saveTimer.Dispose();
-			Log.Information("Capture task completed.");
+					var frame = _vc.Frame;
+					if (frame == null) {
+						SourceActive = false;
+						Log.Warning("Frame is null.");
+						continue;
+					}
+
+					if (frame.Cols == 0) {
+						SourceActive = false;
+						if (!_noColumns) {
+							Log.Warning("Frame has no columns.");
+							_noColumns = true;
+						}
+
+						continue;
+					}
+
+					var warped = ProcessFrame(frame);
+					if (warped == null) {
+						SourceActive = false;
+						Log.Warning("Unable to process frame.");
+						continue;
+					}
+
+					StreamSplitter.Update(warped);
+					SourceActive = !StreamSplitter.NoImage;
+					var c1 = StreamSplitter.GetColors();
+					Colors = c1;
+					var c2 = StreamSplitter.GetSectors();
+					Sectors = c2;
+					if (SendColors) {
+						_colorService.SendColors(Colors, Sectors, 0);
+					}
+				}
+				await _saveTimer.DisposeAsync();
+				Log.Information("Capture task completed.");
+			}, CancellationToken.None);
 		}
 
-		public void StopStream() {
-			
-		}
-
+		
 		public void Refresh() {
 			StreamSplitter?.Refresh();
 		}

@@ -26,8 +26,17 @@ namespace Glimmr.Models {
 			var dirIndex = 0;
 			var fCount = 0;
 			foreach (var dir in _directories.Where(Directory.Exists)) {
+				foreach(var file in Directory.EnumerateFiles(dir)) {
+					if (file.Contains(".json")) {
+						try {
+							var data = JsonConvert.DeserializeObject<JObject>(File.ReadAllText(file));
+							output.Add(data);
+						} catch (Exception e) {
+							Log.Warning($"Parse exception for {file}: " + e.Message);
+						}
+					}
+				}
 				try {
-					output.AddRange(from file in Directory.EnumerateFiles(dir) where file.Contains(".json") select JsonConvert.DeserializeObject<JObject>(File.ReadAllText(file)));
 
 					// Loop through project files, which have an ID. Count, then add to non-proj files to increment ID
 					foreach (var o in output) {

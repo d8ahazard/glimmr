@@ -1,13 +1,14 @@
 ﻿{
   "Colors": [
-    "02c676",
-    "2dbee7",
-    "aaaaaa",
-    "00beff",
-    "00a763"
+    "#02c676",
+    "#2dbee7",
+    "#aaaaaa",
+    "#00beff",
+    "#004afc",
+    "#00d780"
   ],
   "AnimationTime": 5,
-  "EasingTime": 2.5,
+  "EasingTime": 3.5,
   "Mode": 0,
   "Easing": 2,
   "Name": "Ocean",

@@ -6,11 +6,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Newtonsoft.Json;
+using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace Glimmr.Models.ColorSource.Ambient {
-    public class AmbientStream : IColorSource {
+    public class AmbientStream : BackgroundService {
+
+        private bool _enable;
         private double _animationTime;
         private double _easingTime;
         private string[] _colors;
@@ -18,17 +20,14 @@ namespace Glimmr.Models.ColorSource.Ambient {
         private int _startInt;
         private int _ledCount;
         private int _ambientShow;
-        private int _deviceMode;
         private string _ambientColor;
         private readonly ColorService _cs;
-        private TimeSpan _waitSpan;
-        private Stopwatch _watch;
-        private Task _sendTask;
+        private readonly Stopwatch _watch;
         private JsonLoader _loader;
         private List<AmbientScene> _scenes;
         private bool _reloaded;
 
-        public enum AnimationMode {
+        private enum AnimationMode {
             Linear = 0,
             Reverse = 1,
             Random = 2,
@@ -36,50 +35,51 @@ namespace Glimmr.Models.ColorSource.Ambient {
             LinearAll = 4
         }
         
-        public AmbientStream(ColorService colorService, in CancellationToken ct) {
+        public AmbientStream(ColorService colorService) {
             _cs = colorService;
+            _cs.AddStream("ambient", this);
             _watch = new Stopwatch();
             Refresh();
         }
 
-        public void StartStream(CancellationToken ct) {
-            _startInt = 0;
-            Streaming = true;
-            _watch.Restart();
-            // Load two arrays of colors, which we will use for the actual fade values
-            var current = RefreshColors(_colors);
-            var next = RefreshColors(_colors);
-            // Load this one for fading
-            while (!ct.IsCancellationRequested) {
-                var diff = _animationTime  - _watch.ElapsedMilliseconds;
-                var sectors = new List<Color>();
-                if (diff > 0 && diff <= _easingTime) {
-                    var avg = diff / _easingTime;
-                    for (var i = 0; i < current.Count; i++) {
-                        sectors.Add(FadeColor(current[i], next[i], avg));
-                    }
-                } else {
-                    if (diff <= 0 || _reloaded) {
-                        Log.Debug("Reloading...");
-                        current = next;
-                        next = RefreshColors(_colors);
-                        sectors = current;
-                        _watch.Restart();
-                        _reloaded = false;
-                        Log.Debug("Reloaded...");
+        protected override Task ExecuteAsync(CancellationToken ct) {
+            return Task.Run(async () => {
+                _startInt = 0;
+                _watch.Restart();
+                // Load two arrays of colors, which we will use for the actual fade values
+                var current = RefreshColors(_colors);
+                var next = RefreshColors(_colors);
+                // Load this one for fading
+                while (!ct.IsCancellationRequested) {
+                    if (!_enable) continue;
+                    var diff = _animationTime  - _watch.ElapsedMilliseconds;
+                    var sectors = new List<Color>();
+                    if (diff > 0 && diff <= _easingTime) {
+                        var avg = diff / _easingTime;
+                        for (var i = 0; i < current.Count; i++) {
+                            sectors.Add(FadeColor(current[i], next[i], avg));
+                        }
                     } else {
-                        sectors = current;
+                        if (diff <= 0 || _reloaded) {
+                            current = next;
+                            next = RefreshColors(_colors);
+                            sectors = current;
+                            _watch.Restart();
+                            _reloaded = false;
+                        } else {
+                            sectors = current;
+                        }    
+                    }
 
-                    }    
+                    var leds = SplitColors(sectors);
+                    Colors = leds;
+                    Sectors = sectors;
+                    _cs.SendColors(Colors, Sectors,0);
+                    await Task.FromResult(true);
                 }
-
-                var leds = SplitColors(sectors);
-                Colors = leds;
-                Sectors = sectors;
-                _cs.SendColors(Colors, Sectors,0);
-            }
-            _watch.Stop();
-            Log.Information("DreamScene: Color Builder canceled.");
+                _watch.Stop();
+                Log.Information("DreamScene: Color Builder canceled.");
+            });
         }
 
         private List<Color> SplitColors(List<Color> input) {
@@ -110,9 +110,8 @@ namespace Glimmr.Models.ColorSource.Ambient {
             return Color.FromArgb(255, r1, g1, b1);
         }
 
-        public void StopStream() {
-            Streaming = false;
-            //throw new NotImplementedException();
+        public void ToggleStream(bool enable = false) {
+            _enable = enable;
         }
 
 
@@ -126,7 +125,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
             if (_mode == AnimationMode.LinearAll) {
                 for (var i = 0; i < 28; i++) {
-                    output.Add(ColorTranslator.FromHtml("#" + input[colorCount]));
+                    output.Add(ColorTranslator.FromHtml(input[colorCount]));
                 }
                 _startInt++;
             } else {
@@ -135,7 +134,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
                     if (_mode == AnimationMode.Random) col1 = new Random().Next(0, maxColors);
                     while (col1 > maxColors) col1 -= maxColors;
                     if (_mode == AnimationMode.RandomAll) col1 = allRand;
-                    output.Add(ColorTranslator.FromHtml("#" + input[col1]));
+                    output.Add(ColorTranslator.FromHtml(input[col1]));
                 }
             }
 
@@ -149,16 +148,10 @@ namespace Glimmr.Models.ColorSource.Ambient {
             return output;
         }
 
-        public bool Streaming { get; set; }
-        public void ToggleSend(bool enable = true) {
-            Streaming = enable;
-        }
-
         
         public void Refresh() {
             SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
             _ledCount = sd.LedCount;
-            _deviceMode = sd.DeviceMode;
             _ambientShow = sd.AmbientShow;
             _ambientColor = sd.AmbientColor;
             _loader = new JsonLoader("ambientScenes");
@@ -170,7 +163,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
                 }
             }
 
-            if (_ambientShow == -1) scene.Colors = new[] {_ambientColor};
+            if (_ambientShow == -1) scene.Colors = new[] {"#" + _ambientColor};
             _colors = scene.Colors;
             _animationTime = scene.AnimationTime * 1000;
             _easingTime = scene.EasingTime * 1000;
@@ -182,5 +175,6 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
         public List<Color> Colors { get; private set; }
         public List<Color> Sectors { get; private set; }
+        
     }
 }

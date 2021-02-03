@@ -1,13 +1,20 @@
 ﻿{
   "Colors": [
-    "FF0000",
-    "00FF00",
-    "FF0000"
+    "#00FF00",
+    "#FF0000",
+    "#00FF00",
+    "#FF0000",
+    "#00FF00",
+    "#FF0000",
+    "#00FF00",
+    "#FF0000",
+    "#00FF00",
+    "#FF0000"
   ],
-  "AnimationTime": 3,
-  "Mode": 2,
-  "Easing": 2,
+  "AnimationTime": 1,
+  "Mode": 0,
+  "Easing": 0.1,
   "Name": "Christmas",
   "Id": 6,
-  "EasingTime": 0.25
+  "EasingTime": 0
 }

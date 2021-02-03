@@ -6,15 +6,17 @@ using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using ManagedBass;
+using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Serilog;
 using Color = System.Drawing.Color;
 
 namespace Glimmr.Models.ColorSource.Audio {
-	public sealed class AudioStream : IColorSource, IDisposable {
+	public sealed class AudioStream : BackgroundService {
 		
 		public bool SourceActive { get; set; }
 		public bool SendColors { get; set; }
+		private bool _enable;
 		private bool _disposed;
 		private List<AudioData> _devices;
 		private int _recordDeviceIndex;
@@ -30,8 +32,49 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 		public AudioStream(ColorService cs) {
 			_cs = cs;
-			Bass.Init();
+			_cs.AddStream("audio", this);
+			//Bass.Init();
 		}
+		
+		protected override Task ExecuteAsync(CancellationToken ct) {
+			Log.Debug("Starting audio stream...");
+			return Task.Run(async () => {
+				await LoadData();
+				if (_recordDeviceIndex != -1) {
+					Log.Debug("Starting stream with device " + _recordDeviceIndex);
+					
+					if (!Bass.RecordInit(_recordDeviceIndex)){
+						Log.Warning("Recording init error: " + Bass.LastError);
+					} else {
+						Bass.RecordGetInfo(out var info);
+						Log.Debug("Info: " + JsonConvert.SerializeObject(info));
+					}
+
+					
+					var recInt = Bass.RecordStart(48000, 2, BassFlags.Default, Update);
+					Bass.ChannelPlay(recInt);
+					Log.Debug("Record start int: " + recInt);
+					Log.Debug("Error check: " + Bass.LastError);
+					// DeviceInfo info2 = new DeviceInfo();
+					// Bass.RecordGetDeviceInfo(_recordDeviceIndex, out info2);
+					// Log.Debug("Loaded: " + JsonConvert.SerializeObject(info2));
+				}
+				while (!ct.IsCancellationRequested) {
+					await Task.Delay(1,ct);
+				}
+
+				Bass.Free();
+				Bass.RecordFree();
+			}, CancellationToken.None);
+		}
+		
+		public void ToggleStream(bool enable = false) {
+			if (enable) {
+				SendColors = true;
+			}
+			_enable = enable;
+		}
+
 
 		private async Task LoadData() {
 			Log.Debug("Reloading audio data");
@@ -71,36 +114,8 @@ namespace Glimmr.Models.ColorSource.Audio {
 			_devices = DataUtil.GetCollection<AudioData>("Dev_Audio") ?? new List<AudioData>();
 		}
 		
-		public void StartStream(CancellationToken ct) {
-			LoadData().ConfigureAwait(true);
-			_recordDeviceIndex = 1;
-			if (_recordDeviceIndex != -1) {
-				Log.Debug("Starting stream with device " + _recordDeviceIndex);
-				Bass.RecordInit(_recordDeviceIndex);
-				Bass.RecordSetInput(_recordDeviceIndex, InputFlags.On, 1);
-				Bass.RecordStart(48000, 2, BassFlags.Float, Update);
-				DeviceInfo info2 = new DeviceInfo();
-				Bass.RecordGetDeviceInfo(_recordDeviceIndex, out info2);
-				Log.Debug("Loaded: " + JsonConvert.SerializeObject(info2));
-				while (!ct.IsCancellationRequested) {
-					Task.Delay(1,ct);
-				}
-				if (_recordDeviceIndex != -1) {
-					Bass.Free();
-					Bass.RecordFree();
-				}
-
-				Log.Debug("Audio stream canceled.");
-			} else {
-				Log.Debug("No recording device available.");
-			}
-		}
-
-		public void StopStream() {
-			//throw new NotImplementedException();
-			
-		}
-
+		
+		
 
 		public void Refresh() {
 			LoadData().ConfigureAwait(true);
@@ -108,6 +123,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 		
 		private bool Update(int handle, IntPtr buffer, int length, IntPtr user) {
+			if (!_enable) return true;
 			var samples = 2048 * 2;
 			var fft = new float[samples]; // fft data buffer
 			// Get our FFT for "everything"
@@ -115,7 +131,8 @@ namespace Glimmr.Models.ColorSource.Audio {
 			var lData = new Dictionary<int, float>();
 			var rData = new Dictionary<int, float>();
 			var realIndex = 0;
-			
+			//Log.Debug("Updating: " + JsonConvert.SerializeObject(fft));
+
 			for (var a = 0; a < samples; a++) {
 				var val = FlattenValue(fft[a]);
 				var freq = FftIndex2Frequency(realIndex, 4096, 48000);

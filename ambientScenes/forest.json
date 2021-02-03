@@ -1,12 +1,13 @@
 ﻿{
   "Colors": [
-    "2f6525",
-    "0cac00",
-    "89bc09",
-    "2e1209"
+    "#107200",
+    "#0cac00",
+    "#3fbc09",
+    "#9da201",
+    "#4c1200"
   ],
   "AnimationTime": 2.5,
-  "EasingTime": 1,
+  "EasingTime": 2,
   "Mode": 2,
   "Easing": 2,
   "Name": "Forest",

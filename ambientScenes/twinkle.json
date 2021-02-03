@@ -1,8 +1,9 @@
 ﻿{
   "Colors": [
-    "AAAAAA",
-    "000000",
-    "FFFFFF"
+    "#AAAAAA",
+    "#000000",
+    "#FFFFFF",
+    "#AAAAAA"
   ],
   "AnimationTime": 1,
   "EasingTime": 0.1,

@@ -1,17 +1,17 @@
 ﻿{
-  "Colors": [
-    "FF0000",
-    "ff00ff",
-    "7f00ff",
-    "4b0082",
-    "0000FF",
-    "00ffff",
-    "00FF00",
-    "fff200",
-    "ff7e00"
+  "Colors": [    
+    "#ff00ff",
+    "#7f00ff",
+    "#4b0080",
+    "#0000ff",
+    "#00ffff",
+    "#00ff00",
+    "#fff200",
+    "#ff7e00",
+    "#FF0000"
   ],
   "AnimationTime": 5,
-  "EasingTime": 3,
+  "EasingTime": 5,
   "Mode": 0,
   "Easing": 2,
   "Name": "Rainbow",

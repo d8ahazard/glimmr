@@ -1,4 +1,8 @@
 using System.Runtime.InteropServices;
+using Glimmr.Models.ColorSource.Ambient;
+using Glimmr.Models.ColorSource.Audio;
+using Glimmr.Models.ColorSource.AudioVideo;
+using Glimmr.Models.ColorSource.Video;
 using Glimmr.Models.Logging;
 using Glimmr.Services;
 using Microsoft.AspNetCore.Hosting;
@@ -39,7 +43,12 @@ namespace Glimmr
 				.ConfigureServices(services => {
 					services.AddSignalR();
 					services.AddSingleton<ControlService>();
-					services.AddHostedService<ColorService>();
+					services.AddSingleton<ColorService>();
+					services.AddHostedService(services => (ColorService) services.GetService<ColorService>());
+					services.AddHostedService<VideoStream>();
+					services.AddHostedService<AudioStream>();
+					services.AddHostedService<AudioVideoStream>();
+					services.AddHostedService<AmbientStream>();
 					services.AddHostedService<DreamService>();
 					services.AddHostedService<StreamService>();
 					services.AddHostedService<DiscoveryService>();
