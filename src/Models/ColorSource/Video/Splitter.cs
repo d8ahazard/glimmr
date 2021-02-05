@@ -22,6 +22,8 @@ namespace Glimmr.Models.ColorSource.Video {
 		private int _topCount;
 		private int _rightCount;
 		private int _bottomCount;
+		private int _vSectors;
+		private int _hSectors;
 		
 		private List<Rectangle> _fullCoords;
 		private List<Rectangle> _fullSectors;
@@ -76,6 +78,8 @@ namespace Glimmr.Models.ColorSource.Video {
 				_topCount = sd.TopCount;
 				_rightCount = sd.RightCount == 0 ? _leftCount : sd.RightCount;
 				_bottomCount = sd.BottomCount == 0 ? _topCount : sd.BottomCount;
+				_hSectors = sd.HSectors;
+				_vSectors = sd.VSectors;
 			}
 
 			// Set desired width of capture region to 15% total image
@@ -167,6 +171,7 @@ namespace Glimmr.Models.ColorSource.Video {
 		private static Color GetAverage(Mat sInput) {
 			var output = sInput.ToImage<Bgr, byte>();
 			var avg = output.GetAverage();
+			if (avg.Red < 6 && avg.Green < 6 && avg.Blue < 6) return Color.FromArgb(0, 0, 0, 0);
 			return Color.FromArgb(255, (int) avg.Red, (int) avg.Green, (int) avg.Blue);
 		}
 
@@ -381,24 +386,18 @@ namespace Glimmr.Models.ColorSource.Video {
 		}
 
 
-		private List<Rectangle> DrawSectors(bool v2 = true) {
+		private List<Rectangle> DrawSectors() {
 			// How many sectors does each region have?
 			var hOffset = _hCropPixels;
 			var vOffset = _vCropPixels;
-			var vSectorCount = 3;
-			var hSectorCount = 5;
-
-			if (v2) {
-				vSectorCount *= 2;
-				hSectorCount *= 2;
-			}
-
+			if (_hSectors == 0) _hSectors = 10;
+			if (_vSectors == 0) _vSectors = 6;
 			// This is where we're saving our output
 			var fs = new List<Rectangle>();
 			// Calculate heights, minus offset for boxing
 			// Individual segment sizes
-			var sectorWidth = (ScaleWidth - hOffset * 2) / hSectorCount;
-			var sectorHeight = (ScaleHeight - vOffset * 2) / vSectorCount;
+			var sectorWidth = (ScaleWidth - hOffset * 2) / _hSectors;
+			var sectorHeight = (ScaleHeight - vOffset * 2) / _vSectors;
 			// These are based on the border/strip values
 			// Minimum limits for top, bottom, left, right            
 			var minTop = vOffset;
@@ -406,7 +405,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			var minLeft = hOffset;
 			var minRight = ScaleWidth - hOffset - sectorWidth;
 			// Calc right regions, bottom to top
-			var step = vSectorCount - 1;
+			var step = _vSectors - 1;
 			while (step >= 0) {
 				var ord = step * sectorHeight + vOffset;
 				fs.Add(new Rectangle(minRight, ord, sectorWidth, sectorHeight));
@@ -414,7 +413,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			}
 
 			// Calc top regions, from right to left, skipping top-right corner (total horizontal sectors minus one)
-			step = hSectorCount - 2;
+			step = _hSectors - 2;
 			while (step >= 0) {
 				var ord = step * sectorWidth + hOffset;
 				fs.Add(new Rectangle(ord, minTop, sectorWidth, sectorHeight));
@@ -423,7 +422,7 @@ namespace Glimmr.Models.ColorSource.Video {
 
 			step = 1;
 			// Calc left regions (top to bottom), skipping top-left
-			while (step <= vSectorCount - 1) {
+			while (step <= _vSectors - 1) {
 				var ord = step * sectorHeight + vOffset;
 				fs.Add(new Rectangle(minLeft, ord, sectorWidth, sectorHeight));
 				step++;
@@ -431,7 +430,7 @@ namespace Glimmr.Models.ColorSource.Video {
 
 			step = 1;
 			// Calc bottom center regions (L-R)
-			while (step <= hSectorCount - 2) {
+			while (step <= _hSectors - 2) {
 				var ord = step * sectorWidth + hOffset;
 				fs.Add(new Rectangle(ord, minBot, sectorWidth, sectorHeight));
 				step += 1;
@@ -448,6 +447,10 @@ namespace Glimmr.Models.ColorSource.Video {
 			_topCount = sd.TopCount;
 			_rightCount = sd.RightCount;
 			_bottomCount = sd.BottomCount;
+			_hSectors = sd.HSectors;
+			_vSectors = sd.VSectors;
+			if (_hSectors == 0) _hSectors = 10;
+			if (_vSectors == 0) _vSectors = 6;
 			_fullCoords = DrawGrid();
 			_fullSectors = DrawSectors();
 		}

@@ -174,6 +174,15 @@ namespace Glimmr.Models {
 		[DefaultValue(40)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int HCountDs { get; set; } = 40;
+		
+		[DefaultValue(10)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		
+		public int HSectors { get; set; } = 10;
+		
+		[DefaultValue(6)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int VSectors { get; set; } = 6;
 
 
 	}

@@ -11,8 +11,8 @@
   ],
   "AnimationTime": 0.5,
   "EasingTime": 0.5,
-  "Mode": 0,
-  "Easing": 2,
+  "Mode": 2,
+  "Easing": 0,
   "Name": "Fire",
   "Id": "1"
 }

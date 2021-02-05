@@ -310,7 +310,7 @@
     </div>
     <div class="col-5"></div>
     <!-- Left count -->
-    <div class="col-3 col-md-2">
+    <div class="col-3">
         <div class="input-group mb-3">
             <div class="input-group-prepend">
                 <span class="input-group-text" id="ledCountLeft">Left</span>
@@ -319,11 +319,11 @@
         </div>
     </div>
     <!-- Preview -->
-    <div class="col-6 col-md-8" id="sLedPreview">
+    <div class="col-6" id="sLedPreview">
         <img id="ledImage" class="img-fluid" src="~/img/sectoring_screen.png" alt="ledImage">
     </div>
     <!-- Right count -->
-    <div class="col-3 col-md-2">
+    <div class="col-3">
         <div class="input-group mb-3">
             <div class="input-group-prepend">
                 <span class="input-group-text" id="ledCountRight">Right</span>
@@ -342,6 +342,36 @@
         </div>
     </div>
     <div class="col-5"></div>
+</div>
+
+<div class="row border justify-content-center pb-5">
+    <div class="col-12 titleCol">Sector Counts</div>
+    <div class="col-12 form-text">Enter the number of vertical and horizontal sectors. You will need to re-map your sectors for devices after this.</div>
+    <!-- Top count -->
+    <div class="col-5"></div>
+    <div class="col-2 align-self-center">
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <span class="input-group-text" id="hSectorCount">Horizontal</span>
+            </div>
+            <input type="text" class="form-control ledCount" data-property="HSectors" data-object="SystemData" aria-label="Top" aria-describedby="ledCountTop">
+        </div>
+    </div>
+    <div class="col-5"></div>
+    <!-- Left count -->
+    <div class="col-3">
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <span class="input-group-text" id="vSectorCount">Vertical</span>
+            </div>
+            <input type="text" class="form-control ledCount" data-property="VSectors" data-object="SystemData" aria-label="Left" aria-describedby="ledCountLeft">
+        </div>
+    </div>
+    <!-- Preview -->
+    <div class="col-6" id="sectorPreview">
+        <img id="sectorImage" class="img-fluid" src="~/img/sectoring_screen.png" alt="ledImage">
+    </div>
+    
 </div>
 <!-- LED Prefs -->
 <div class="row border justify-content-center pb-5">

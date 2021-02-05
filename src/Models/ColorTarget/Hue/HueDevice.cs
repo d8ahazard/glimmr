@@ -209,6 +209,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				// Otherwise, get the corresponding sector color
 				var tSector = lightData.TargetSector;
 				var colorInt = tSector - 1;
+				if (colorInt >= colors.Count) continue;
 				var color = colors[colorInt];
 				var mb = lightData.Override ? lightData.Brightness : Brightness;
 				var oColor = new RGBColor(color.R, color.G, color.B);

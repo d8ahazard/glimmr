@@ -46,7 +46,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		}
 
 		public void SetColor(List<Color> colors, List<Color> sectors, int arg3) {
-			if (!Streaming || _data.TargetSector == -1 || Testing) {
+			if (!Streaming || _data.TargetSector == -1 || Testing || _data.TargetSector >= sectors.Count) {
 				return;
 			}
 

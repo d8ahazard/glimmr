@@ -6,10 +6,10 @@
     "#9da201",
     "#4c1200"
   ],
-  "AnimationTime": 2.5,
-  "EasingTime": 2,
+  "AnimationTime": 7,
+  "EasingTime": 4,
   "Mode": 2,
-  "Easing": 2,
+  "Easing": 0,
   "Name": "Forest",
   "Id": 8
 }

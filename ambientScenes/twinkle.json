@@ -5,10 +5,10 @@
     "#FFFFFF",
     "#AAAAAA"
   ],
-  "AnimationTime": 1,
-  "EasingTime": 0.1,
+  "AnimationTime": 0.75,
+  "EasingTime": 0.75,
   "Mode": 2,
-  "Easing": 2,
+  "Easing": 0,
   "Name": "Twinkle",
   "Id": 2
 }

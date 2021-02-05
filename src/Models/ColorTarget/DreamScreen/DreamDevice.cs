@@ -53,7 +53,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		public async void SetColor(List<Color> colors, List<Color> sectors, int arg3) {
 			if (!Data.Enable || Testing) return;
 
-			if (sectors.Count == 28) {
+			if (sectors.Count != 12) {
 				sectors = ColorUtil.TruncateColors(sectors);
 				
 			}

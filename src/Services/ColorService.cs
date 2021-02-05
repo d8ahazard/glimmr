@@ -380,36 +380,41 @@ namespace Glimmr.Services {
 			if (String.IsNullOrEmpty(stripId)) StartStream();
 			Log.Debug("Demo fired...");
 			var ledCount = 300;
+			var sectorCount = ((_systemData.VSectors + _systemData.HSectors) * 2) - 4;
 			try {
 				ledCount = _systemData.LedCount;
 			} catch (Exception) {
 				
 			}
-			Log.Debug("Running demo on " + ledCount + "total pixels.");
+			Log.Debug("Running demo on " + ledCount + $"total pixels, {sectorCount} sectors.");
 			var i = 0;
 			var k = 0;
-			var cols = new Color[ledCount];
-			var secs = new Color[28];
-			cols = ColorUtil.EmptyColors(cols);
-			secs = ColorUtil.EmptyColors(secs);
-			
+			var cols = new List<Color>();
+			var secs = new List<Color>();
+			cols = ColorUtil.EmptyList(ledCount);
+			secs = ColorUtil.EmptyList(sectorCount);
+			int degs = ledCount / sectorCount;
 			while (i < ledCount) {
 				var pi = i * 1.0f;
 				var progress = pi / ledCount;
 				var rCol = ColorUtil.Rainbow(progress);
 				// Update our next pixel on the strip with the rainbow color
-				if (progress >= .0357f * k) {
+				if (i % degs == 0 && k < sectorCount) {
 					secs[k] = rCol;
 					k++;
 				}
-
+				
 				cols[i] = rCol;
 				if (String.IsNullOrEmpty(stripId)) {
-					SendColors(cols.ToList(), secs.ToList(), 0);	
+					try {
+						SendColors(cols.ToList(), secs.ToList(), 0);
+					} catch (Exception e) {
+						Log.Warning("SEND EXCEPTION: " + JsonConvert.SerializeObject(e));
+					}
 				} else {
 					SegmentTestEvent(cols.ToList(), stripId);
 				}
-				
+
 				i++;
 			}
 

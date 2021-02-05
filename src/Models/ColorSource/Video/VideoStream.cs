@@ -158,7 +158,8 @@ namespace Glimmr.Models.ColorSource.Video {
 		private void SetCapVars() {
 			_systemData = DataUtil.GetObject<SystemData>("SystemData");
 			Colors = ColorUtil.EmptyList(_systemData.LedCount);
-			Sectors = ColorUtil.EmptyList(28);
+			var sectorSize = (_systemData.VSectors * 2) + (_systemData.HSectors * 2) - 4; 
+			Sectors = ColorUtil.EmptyList(sectorSize);
 			_captureMode = DataUtil.GetItem<int>("CaptureMode");
 			_camType = DataUtil.GetItem<int>("CamType");
 			Log.Debug("Capture mode is " + _captureMode);

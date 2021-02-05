@@ -143,7 +143,9 @@ document.addEventListener("DOMContentLoaded", function(){
     });
     setSocketListeners();
     loadSocket();
-    
+    setTimeout(function() {
+        new Image().src = "../img/sectoring_screen.png";
+    }, 1000);
 });
 
 function rgbToHex(r, g, b) {
@@ -401,7 +403,9 @@ function setListeners() {
             if (property === "LeftCount" || property === "RightCount" || property ==="TopCount" || property === "BottomCount") {
                 let lPreview = document.getElementById("sLedPreview");
                 let lImage = document.getElementById("ledImage");
-                createLedMap(lPreview, lImage, pack);
+                setTimeout(function(){
+                    createLedMap(lPreview, lImage, pack);
+                }, 500);
                 return;
             }
             if (property === "Theme") {
@@ -744,7 +748,12 @@ function loadSettings() {
         console.log("Loading System Data: ", systemData);
         let lPreview = document.getElementById("sLedPreview");
         let lImage = document.getElementById("ledImage");
-        createLedMap(lPreview, lImage, systemData);
+        let sPreview = document.getElementById("sectorPreview");
+        let sImage = document.getElementById("sectorImage");
+        setTimeout(function(){
+            createLedMap(lPreview, lImage, systemData);
+            createSectorMap(sPreview, sImage);
+        },500);
     } else {
         console.log("NO LED DATA");
     }    
@@ -822,6 +831,9 @@ function loadDevices() {
                 a.innerText = device["IpAddress"];
                 a.target = "_blank";
                 subTitle.appendChild(a);
+                let count = document.createElement("span");
+                count.innerText = " (" + device["LedCount"] + ")";
+                subTitle.appendChild(count);
             } else {
                 subTitle.textContent = device["IpAddress"];
             }
@@ -1409,6 +1421,8 @@ function appendSectorMap() {
 }
 
 function appendLedMap() {
+    let mapDiv = document.getElementById("mapDiv");
+    mapDiv.remove();
     let imgDiv = document.createElement("div");
     imgDiv.id = "mapDiv";
     let img = document.createElement("img");
@@ -1419,23 +1433,26 @@ function appendLedMap() {
     let settingsDiv = document.getElementById("deviceSettings");
     settingsDiv.append(imgDiv);
     let systemData = data.store["SystemData"][0];
-    setTimeout(function() {createLedMap(imgDiv, document.getElementById("sectorImage"),systemData, deviceData)}, 200);
+    setTimeout(function() {createLedMap(imgDiv, document.getElementById("sectorImage"),systemData, deviceData)}, 500);
 }
 
-function createSectorMap(targetElement, sectorImage) {
+function createSectorMap(targetElement, sectorImage, regionName) {
     let img = sectorImage;
     let w = img.offsetWidth;
     let h = img.offsetHeight;
     let imgL = img.offsetLeft;
     let imgT = img.offsetTop;
     let exMap = targetElement.querySelector("#sectorMap");
+    let systemData = data.store["SystemData"][0];
+    let vCount = systemData["VSectors"];
+    let hCount = systemData["HSectors"];
     if (isValid(exMap)) exMap.remove();
     let wFactor = w / 1920;
     let hFactor = h / 1100;
     let wMargin = 62 * wFactor;
     let hMargin = 52 * hFactor;
-    let fHeight = (h - hMargin - hMargin) / 6;
-    let fWidth = (w - wMargin - wMargin) / 10;
+    let fHeight = (h - hMargin - hMargin) / vCount;
+    let fWidth = (w - wMargin - wMargin) / hCount;
     let map = document.createElement("div");
     map.id = "sectorMap";
     map.classList.add("sectorMap");
@@ -1449,14 +1466,15 @@ function createSectorMap(targetElement, sectorImage) {
     let b = 0;
     let l = 0;
     let r = 0;
-    for (let i = 0; i < 6; i++) {
+    let sector = 1;
+    for (let i = 0; i < vCount; i++) {
         t = h - hMargin - ((i + 1) * fHeight);
         b = t + fHeight;
         l = w - wMargin - fWidth;
         r = l + fWidth;
-        let sector = i + 1;
         let s1 = document.createElement("div");
         s1.classList.add("sector");
+        if (isValid(regionName)) s1.classList.add(regionName + "Region");
         s1.setAttribute("data-sector", sector.toString());
         s1.style.position = "absolute";
         s1.style.top = t.toString() + "px";
@@ -1465,14 +1483,15 @@ function createSectorMap(targetElement, sectorImage) {
         s1.style.height = fHeight.toString() + "px";
         s1.innerText = sector.toString();
         map.appendChild(s1);
+        sector++;
     }
     
-    for (let i = 0; i < 9; i++) {
+    for (let i = 1; i < hCount - 1; i++) {
         l = w - wMargin - (fWidth * (i + 1));
         r = l - fWidth;        
-        let sector = i + 6;
         let s1 = document.createElement("div");
         s1.classList.add("sector");
+        if (isValid(regionName)) s1.classList.add(regionName + "Region");
         s1.setAttribute("data-sector", sector.toString());
         s1.style.position = "absolute";
         s1.style.top = t.toString() + "px";
@@ -1481,17 +1500,18 @@ function createSectorMap(targetElement, sectorImage) {
         s1.style.height = fHeight.toString() + "px";
         s1.innerText = sector.toString();
         map.appendChild(s1);
+        sector++;
     }
 
     // Left, top-bottom
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < vCount - 1; i++) {
         t = hMargin + (i * fHeight);
         b = t + fHeight;
         l = wMargin;
         r = l + fWidth;
-        let sector = i + 6 + 9;
         let s1 = document.createElement("div");
         s1.classList.add("sector");
+        if (isValid(regionName)) s1.classList.add(regionName + "Region");
         s1.setAttribute("data-sector", sector.toString());
         s1.style.position = "absolute";
         s1.style.top = t.toString() + "px";
@@ -1500,15 +1520,15 @@ function createSectorMap(targetElement, sectorImage) {
         s1.style.height = fHeight.toString() + "px";
         s1.innerText = sector.toString();
         map.appendChild(s1);
+        sector++;
     }
 
     // This one, stupid
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < hCount - 1; i++) {
         t = h - hMargin - fHeight;
         b = t + fHeight;
         l = wMargin + (fWidth * (i));
         r = l + fWidth;
-        let sector = i + 6 + 9 + 5;
         let s1 = document.createElement("div");
         s1.classList.add("sector");
         s1.setAttribute("data-sector", sector.toString());
@@ -1519,6 +1539,7 @@ function createSectorMap(targetElement, sectorImage) {
         s1.style.height = fHeight.toString() + "px";
         s1.innerText = sector.toString();
         map.appendChild(s1);
+        sector++;
     }
     
     let s2 = document.createElement("div");
@@ -1548,6 +1569,7 @@ function createLedMap(targetElement, sectorImage, ledData, devData) {
             diff = len - total;
             range2 = range(diff);
         }
+        console.log("CDO", count, diff, offset);
         range1 = range(count-diff, offset);
         console.log("Ranges: ", range1, range2);
     }
@@ -1900,21 +1922,23 @@ function drawNanoShapes(panel) {
 function setNanoMap(id, current) {
     nanoTarget = id;
     nanoSector = current;
+    
+    let myModal = new bootstrap.Modal(document.getElementById('nanoModal'));
+    let wrap = document.getElementById("nanoPreviewWrap");
+    let img = document.getElementById("nanoPreview");    
+    myModal.show();
+    createSectorMap(wrap, img, "nano");
+
     let nanoRegion = document.querySelectorAll(".nanoRegion");
     for (let i=0; i < nanoRegion.length; i++) {
         let obj = nanoRegion[i];
         obj.classList.remove("checked");
     }
-    
+
     if (current !== -1) {
         document.querySelector('.nanoRegion[data-region="'+current+'"]').classList.add("checked");
     }
 
-    let myModal = new bootstrap.Modal(document.getElementById('nanoModal'));
-    let wrap = document.getElementById("nanoPreviewWrap");
-    let img = document.getElementById("nanoPreview");    
-    myModal.show();
-    createSectorMap(wrap, img);
 }
 
 

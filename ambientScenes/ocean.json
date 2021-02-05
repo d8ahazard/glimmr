@@ -10,7 +10,7 @@
   "AnimationTime": 5,
   "EasingTime": 3.5,
   "Mode": 0,
-  "Easing": 2,
+  "Easing": 0,
   "Name": "Ocean",
   "Id": 3
 }

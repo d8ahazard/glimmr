@@ -49,25 +49,19 @@ namespace Glimmr.Models.Util {
         }
         
         /// <summary>
-        /// Take a 28-color list, and convert down to 12 for DS
+        /// Take a n-color list, and convert down to 12 for DS
         /// </summary>
         /// <param name="input">The colors from anywhere else</param>
         /// <returns>12 colors averaged from those, or something.</returns>
         public static List<Color> TruncateColors(List<Color> input) {
-            var output = new List<Color> {
-                AverageColors(input[27], input[0], input[1]),
-                AverageColors(input[2], input[3]),
-                AverageColors(input[4], input[5], input[6]),
-                AverageColors(input[7], input[8]),
-                AverageColors(input[9], input[10]),
-                AverageColors(input[11], input[12]),
-                AverageColors(input[13], input[14], input[15]),
-                AverageColors(input[16], input[17]),
-                AverageColors(input[18], input[19], input[20]),
-                AverageColors(input[21], input[22]),
-                AverageColors(input[23], input[24]),
-                AverageColors(input[25], input[26])
-            };
+	        var indices = input.Count / 12;
+	        var output = new List<Color>();
+	        for (var i = 0; i < 12; i++) {
+		        double idx = i * indices;
+		        idx = Math.Floor(idx);
+		        if (idx >= input.Count) idx = input.Count - 1;
+		        output.Add(input[(int)idx]);
+	        }
             return output;
         }
 		
@@ -532,15 +526,17 @@ namespace Glimmr.Models.Util {
         public static Color[] AddLedColor(Color[] colors, int sector, Color color, SystemData systemData) {
 	        int s0;
 	        int e0;
-	        
+
+	        int vs = systemData.VSectors;
+	        int hs = systemData.HSectors;
 	        var count = systemData.LeftCount + systemData.RightCount + systemData.TopCount + systemData.BottomCount;
-	        var rCount = systemData.RightCount / 6;
-	        var tCount = systemData.TopCount / 10;
-	        var lCount = systemData.LeftCount / 6;
-	        var bCount = systemData.BottomCount / 10;
+	        var rCount = systemData.RightCount / vs;
+	        var tCount = systemData.TopCount / hs;
+	        var lCount = systemData.LeftCount / vs;
+	        var bCount = systemData.BottomCount / hs;
 
 
-	        if (sector >= 1 && sector <= 6) {
+	        if (sector >= 1 && sector <= vs) {
 		        e0 = sector * rCount;
 		        s0 = e0 - rCount;
 		        for (var i = s0; i < e0; i++) {
@@ -549,7 +545,7 @@ namespace Glimmr.Models.Util {
 	        }
 
 	        // Top leds
-	        if (sector >= 6 && sector <= 15) {
+	        if (sector >= vs && sector <= vs + hs - 1 ) {
 		        var sec = sector - 5;
 		        e0 = sec * tCount;
 		        e0 += systemData.LeftCount;
@@ -560,8 +556,8 @@ namespace Glimmr.Models.Util {
 	        }
 
 	        // Left leds
-	        if (sector >= 15 && sector <= 20) {
-		        var sec = sector - 14;
+	        if (sector >= vs + hs - 1 && sector <= vs + hs + vs - 2) {
+		        var sec = sector - vs + hs + vs;
 		        e0 = sec * lCount;
 		        e0 += systemData.RightCount + systemData.TopCount;
 		        s0 = e0 - lCount;
@@ -571,8 +567,8 @@ namespace Glimmr.Models.Util {
 	        }
 
 	        // Bottom leds
-	        if (sector >= 20 && sector <= 28) {
-		        var sec = sector - 19;
+	        if (sector >= vs + hs + vs - 2 && sector <= vs + hs + vs + hs - 4) {
+		        var sec = sector - vs + hs + vs - 2;
 		        e0 = sec * bCount;
 		        e0 += systemData.RightCount + systemData.LeftCount + systemData.TopCount;
 		        s0 = e0 - bCount;
@@ -598,21 +594,21 @@ namespace Glimmr.Models.Util {
 	        var topColors = ledColors.GetRange(sd.RightCount-1, sd.TopCount);
 	        var leftColors = ledColors.GetRange(sd.TopCount - 1, sd.LeftCount);
 	        var bottomColors = ledColors.GetRange(sd.LeftCount - 1, sd.BottomCount);
-	        float rStep = rightColors.Count / 6;
-	        float tStep = topColors.Count / 10;
-	        float lStep = leftColors.Count / 6;
-	        float bStep = bottomColors.Count / 10;
+	        float rStep = rightColors.Count / sd.VSectors;
+	        float tStep = topColors.Count / sd.HSectors;
+	        float lStep = leftColors.Count / sd.VSectors;
+	        float bStep = bottomColors.Count / sd.HSectors;
 	        var output = new List<Color>();
 	        var toAvg = new List<Color>();
 	        // Add the last range of colors from the bottom to sector 0
 	        for(var i=bottomColors.Count - 1 - bStep; i < bottomColors.Count; i++) toAvg.Add(bottomColors[(int)i]);
 	        var idx = 0;
-	        while (idx < rightColors.Count && output.Count < 7) {
+	        while (idx < rightColors.Count && output.Count <= sd.VSectors) {
 		        foreach (var t in rightColors)
 			        toAvg.Add(t);
 				
 		        // On the last sector, don't average it so we can add the bit from the next corner
-		        if (idx % lStep == 0 && output.Count < 6) {
+		        if (idx % lStep == 0 && output.Count < sd.VSectors) {
 			        output.Add(AverageColors(toAvg.ToArray()));
 			        toAvg = new List<Color>();
 		        }
@@ -620,11 +616,11 @@ namespace Glimmr.Models.Util {
 	        }
 	        
 	        idx = 0;
-	        while (idx < topColors.Count && output.Count < 17) {
+	        while (idx < topColors.Count && output.Count < sd.VSectors + sd.HSectors + 1) {
 		        foreach (var t in topColors)
 			        toAvg.Add(t);
 
-		        if (idx % lStep == 0 && output.Count < 16) {
+		        if (idx % lStep == 0 && output.Count < sd.VSectors + sd.HSectors + 1) {
 			        output.Add(AverageColors(toAvg.ToArray()));
 			        toAvg = new List<Color>();
 		        }
@@ -632,7 +628,7 @@ namespace Glimmr.Models.Util {
 	        }
 	        
 	        idx = 0;
-	        while (idx < leftColors.Count && output.Count < 23) {
+	        while (idx < leftColors.Count && output.Count < sd.VSectors + sd.HSectors + sd.VSectors - 2) {
 		        foreach (var t in leftColors)
 			        toAvg.Add(t);
 
@@ -644,7 +640,7 @@ namespace Glimmr.Models.Util {
 	        }
 	        
 	        idx = 0;
-	        while (idx < bottomColors.Count && output.Count < 29) {
+	        while (idx < bottomColors.Count && output.Count < sd.VSectors + sd.HSectors + sd.VSectors + sd.HSectors - 4) {
 		        foreach (var t in leftColors)
 			        toAvg.Add(t);
 

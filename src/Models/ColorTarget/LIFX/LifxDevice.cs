@@ -77,7 +77,7 @@ namespace Glimmr.Models.ColorTarget.LIFX {
             var newData = DataUtil.GetCollectionItem<LifxData>("Dev_Lifx", Id);
             _captureMode = DataUtil.GetItem<int>("captureMode");
             Data = newData;
-            var targetSector = _captureMode == 0 ? newData.TargetSector : newData.TargetSectorV2;
+            var targetSector = newData.TargetSector;
             _targetSector = targetSector - 1;
             Brightness = newData.MaxBrightness;
             Id = newData.Id;
@@ -95,6 +95,8 @@ namespace Glimmr.Models.ColorTarget.LIFX {
             if (sectors == null || _client == null) {
                 return;
             }
+
+            if (_targetSector >= sectors.Count) return;
             var input = sectors[_targetSector];
             if (Brightness < 100) {
                 input = ColorUtil.ClampBrightness(input, Brightness);

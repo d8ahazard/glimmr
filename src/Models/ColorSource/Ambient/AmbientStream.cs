@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
+using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
@@ -15,9 +17,10 @@ namespace Glimmr.Models.ColorSource.Ambient {
         private bool _enable;
         private double _animationTime;
         private double _easingTime;
+        private EasingMode _easingMode;
         private string[] _colors;
         private AnimationMode _mode;
-        private int _startInt;
+        private int _colorIndex;
         private int _ledCount;
         private int _ambientShow;
         private string _ambientColor;
@@ -26,7 +29,19 @@ namespace Glimmr.Models.ColorSource.Ambient {
         private JsonLoader _loader;
         private List<AmbientScene> _scenes;
         private bool _reloaded;
+        private int _sectorCount;
+        private Random _random;
+        private List<Color> _currentColors;
+        private List<Color> _nextColors;
 
+        
+        /// <summary>
+        /// Linear - Each color from the list of colors is assigned to a sector, and the order is incremented by 1 each update
+        /// Reverse - Same as linear, but the order is decremented each update
+        /// Random - A random color will be assigned to each sector every update
+        /// RandomAll - One random color will be selected and applied to all sectors each update
+        /// LinearAll - One color will be selected and applied to all tiles, with the color incremented each update
+        /// </summary>
         private enum AnimationMode {
             Linear = 0,
             Reverse = 1,
@@ -34,41 +49,68 @@ namespace Glimmr.Models.ColorSource.Ambient {
             RandomAll = 3,
             LinearAll = 4
         }
+
+        private enum EasingMode {
+            Blend = 0,
+            FadeIn = 1,
+            FadeOut = 2,
+            FadeInOut = 3
+        }
         
         public AmbientStream(ColorService colorService) {
             _cs = colorService;
             _cs.AddStream("ambient", this);
             _watch = new Stopwatch();
+            _random = new Random();
             Refresh();
         }
 
         protected override Task ExecuteAsync(CancellationToken ct) {
             return Task.Run(async () => {
-                _startInt = 0;
-                _watch.Restart();
-                // Load two arrays of colors, which we will use for the actual fade values
-                var current = RefreshColors(_colors);
-                var next = RefreshColors(_colors);
+                
                 // Load this one for fading
                 while (!ct.IsCancellationRequested) {
                     if (!_enable) continue;
                     var diff = _animationTime  - _watch.ElapsedMilliseconds;
                     var sectors = new List<Color>();
+                    
                     if (diff > 0 && diff <= _easingTime) {
                         var avg = diff / _easingTime;
-                        for (var i = 0; i < current.Count; i++) {
-                            sectors.Add(FadeColor(current[i], next[i], avg));
+                        for (var i = 0; i < _currentColors.Count; i++) {
+                            switch (_easingMode) {
+                                case EasingMode.Blend:
+                                    sectors.Add(BlendColor(_currentColors[i], _nextColors[i], avg));
+                                    break;
+                                case EasingMode.FadeIn:
+                                    sectors.Add(FadeIn(_currentColors[i], avg));
+                                    break;
+                                case EasingMode.FadeOut:
+                                    sectors.Add(FadeOut(_currentColors[i], avg));
+                                    break;
+                                case EasingMode.FadeInOut:
+                                    sectors.Add(FadeInOut(_nextColors[i], avg));
+                                    break;
+                            }
                         }
+                    } else if (diff <= 0) {
+                        switch (_easingMode) {
+                            case EasingMode.Blend:
+                            case EasingMode.FadeOut:
+                                _currentColors = _nextColors;
+                                _nextColors = RefreshColors(_colors);
+                                sectors = _currentColors;
+                                break;
+                            case EasingMode.FadeIn:
+                            case EasingMode.FadeInOut:
+                                _currentColors = _nextColors;
+                                _nextColors = RefreshColors(_colors);
+                                sectors = ColorUtil.EmptyList(_currentColors.Count);
+                                break;
+                        }
+                        
+                        _watch.Restart();
                     } else {
-                        if (diff <= 0 || _reloaded) {
-                            current = next;
-                            next = RefreshColors(_colors);
-                            sectors = current;
-                            _watch.Restart();
-                            _reloaded = false;
-                        } else {
-                            sectors = current;
-                        }    
+                        sectors = _currentColors;
                     }
 
                     var leds = SplitColors(sectors);
@@ -100,7 +142,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
         }
 
         
-        private Color FadeColor(Color target, Color dest, double percent) {
+        private static Color BlendColor(Color target, Color dest, double percent) {
             var r1 =(int) ((target.R - dest.R) * percent) + dest.R;
             var g1 =(int) ((target.G - dest.G) * percent) + dest.G;
             var b1 =(int) ((target.B - dest.B) * percent) + dest.B;
@@ -110,6 +152,22 @@ namespace Glimmr.Models.ColorSource.Ambient {
             return Color.FromArgb(255, r1, g1, b1);
         }
 
+        private static Color FadeOut(Color target, double percent) {
+            return BlendColor(target, Color.FromArgb(255, 0, 0, 0), percent);
+        }
+
+        private static Color FadeIn(Color target, double percent) {
+            return BlendColor(Color.FromArgb(255, 0, 0, 0), target, percent);
+        }
+
+        private static Color FadeInOut(Color target, double percent) {
+            if (percent <= .5) {
+                return FadeOut(target, percent * 2);
+            }
+            var pct = (percent - .5) * 2;
+            return FadeIn(target, pct);
+        }
+
         public void ToggleStream(bool enable = false) {
             _enable = enable;
         }
@@ -117,59 +175,88 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
         private List<Color> RefreshColors(string[] input) {
             var output = new List<Color>();
-            var maxColors = input.Length - 1;
-            var colorCount = _startInt;
-            var col1 = _startInt;
-            var allRand = new Random().Next(0, maxColors);
-            
-
-            if (_mode == AnimationMode.LinearAll) {
-                for (var i = 0; i < 28; i++) {
-                    output.Add(ColorTranslator.FromHtml(input[colorCount]));
-                }
-                _startInt++;
-            } else {
-                for (var i = 0; i < 28; i++) {
-                    col1 = i + col1;
-                    if (_mode == AnimationMode.Random) col1 = new Random().Next(0, maxColors);
-                    while (col1 > maxColors) col1 -= maxColors;
-                    if (_mode == AnimationMode.RandomAll) col1 = allRand;
-                    output.Add(ColorTranslator.FromHtml(input[col1]));
-                }
+            var max = input.Length;
+            var rand = _random.Next(0, max);
+            switch (_mode) {
+                case AnimationMode.Linear:
+                    for (var i = 0; i < _sectorCount; i++) {
+                        output.Add(ColorTranslator.FromHtml(input[_colorIndex]));
+                        _colorIndex = CycleInt(_colorIndex, max);
+                    }
+                    _colorIndex = CycleInt(_colorIndex, max);
+                    break;
+                case AnimationMode.Reverse:
+                    for (var i = 0; i < _sectorCount; i++) {
+                        output.Add(ColorTranslator.FromHtml(input[_colorIndex]));
+                        _colorIndex = CycleInt(_colorIndex, max, true);
+                    }
+                    break;
+                case AnimationMode.Random:
+                    for (var i = 0; i < _sectorCount; i++) {
+                        output.Add(ColorTranslator.FromHtml(input[rand]));
+                        rand = _random.Next(0, max);
+                    }
+                    break;
+                case AnimationMode.RandomAll:
+                    for (var i = 0; i < _sectorCount; i++) {
+                        output.Add(ColorTranslator.FromHtml(input[rand]));
+                    }
+                    break;
+                case AnimationMode.LinearAll:
+                    for (var i = 0; i < _sectorCount; i++) {
+                        output.Add(ColorTranslator.FromHtml(input[_colorIndex]));
+                    }
+                    _colorIndex = CycleInt(_colorIndex, max);
+                    break;
+                default:
+                    Log.Debug("Unknown animation mode: " + _mode);
+                    break;
             }
 
-            if (_mode == AnimationMode.Linear) _startInt++;
-
-            if (_mode == AnimationMode.Reverse) _startInt--;
-            if (_startInt > maxColors) _startInt = 0;
-
-            if (_startInt < 0) _startInt = maxColors;
-            //Console.WriteLine($@"Returning refreshed colors: {JsonConvert.SerializeObject(output)}.");
             return output;
+        }
+
+        private static int CycleInt(int input, int max, bool reverse = false) {
+            if (reverse) {
+                input--;
+            } else {
+                input++;
+            }
+
+            if (input >= max) input = 0;
+            if (input < 0) input = max;
+            return input;
+        }
+
+        private void LoadScene() {
+            _colorIndex = 0;
+            _watch.Restart();
+            // Load two arrays of colors, which we will use for the actual fade values
+            _currentColors = RefreshColors(_colors);
+            _nextColors = RefreshColors(_colors);
         }
 
         
         public void Refresh() {
             SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
+            _sectorCount = (sd.VSectors + sd.HSectors) * 2 - 4;
             _ledCount = sd.LedCount;
             _ambientShow = sd.AmbientShow;
             _ambientColor = sd.AmbientColor;
             _loader = new JsonLoader("ambientScenes");
             _scenes = _loader.LoadFiles<AmbientScene>();
             AmbientScene scene = new AmbientScene();
-            foreach (var s in _scenes) {
-                if (s.Id == _ambientShow) {
-                    scene = s;
-                }
+            foreach (var s in _scenes.Where(s => s.Id == _ambientShow)) {
+                scene = s;
             }
 
             if (_ambientShow == -1) scene.Colors = new[] {"#" + _ambientColor};
             _colors = scene.Colors;
             _animationTime = scene.AnimationTime * 1000;
             _easingTime = scene.EasingTime * 1000;
+            _easingMode = (EasingMode) scene.Easing;
             _mode = (AnimationMode) scene.Mode;
-            _startInt = 0;
-            _reloaded = true;
+            LoadScene();
             Log.Debug($"Ambient scene: {_ambientShow}, {_ambientColor}, {_animationTime}");
         }
 

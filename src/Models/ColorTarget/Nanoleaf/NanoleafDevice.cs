@@ -117,8 +117,10 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				}
 
 				var color = Color.FromArgb(0, 0, 0, 0);
-				if (pd.TargetSector != -1) {
+				if (pd.TargetSector != -1 && colorInt < colors.Count) {
 					color = colors[colorInt];
+				} else {
+					Log.Debug($"We have {colors.Count} colors and ts is {colorInt}");
 				}
 				
 				if (Brightness < 100) {
