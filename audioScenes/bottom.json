@@ -1,21 +1,21 @@
 ﻿{
-  "LowRange": [
-    0.0,
-    0.332
-  ],
-  "MidRange": [
-    0.333,
-    0.665
-  ],
-  "HighRange": [
-    0.666,
-    1.0
-  ],
+  "LowRange": {
+    "Min": 0,
+    "Max": 0.332
+  },
+  "MidRange": {
+    "Min": 0.333,
+    "Max": 0.665
+  },
+  "HighRange": {
+    "Min": 0.666,
+    "Max": 1
+  },
   "MirrorRange": false,
   "RotationLower": 0,
   "RotationUpper": 1,
-  "RotationSpeed": 0.1,
+  "RotationSpeed": 0.01,
   "RotationThreshold": 0.75,
-  "Name": "Bottom",
-  "Id": 0
+  "Id": 1,
+  "Name": "Bottom"
 }
