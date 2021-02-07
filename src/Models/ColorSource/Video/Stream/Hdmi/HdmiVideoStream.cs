@@ -15,8 +15,6 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Hdmi {
 
         
         public HdmiVideoStream(int inputStream, int width, int height) {
-            var capType = VideoCapture.API.DShow;
-            capType = VideoCapture.API.V4L;
             _video = new VideoCapture(inputStream);
             _video.SetCaptureProperty(CapProp.FrameWidth, width);
             _video.SetCaptureProperty(CapProp.FrameHeight, height);

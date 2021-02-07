@@ -57,7 +57,6 @@ namespace Glimmr.Services {
 
 		private async Task ProcessFrame(IReadOnlyList<byte> data) {
 			var flag = data[0];
-			var time = data[1];
 			if (flag != 2) {
 				Log.Debug("Flag is invalid.");
 			}
@@ -78,6 +77,7 @@ namespace Glimmr.Services {
 				var ledColors = colors.GetRange(0, secIdx);
 				var sectorColors = colors.Skip(secIdx).ToList();
 				_cs.SendColors(ledColors, sectorColors);
+				await Task.FromResult(true);
 			}
 		}
 

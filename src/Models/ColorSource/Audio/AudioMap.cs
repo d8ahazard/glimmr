@@ -21,10 +21,8 @@ namespace Glimmr.Models.ColorSource.Audio {
 		private RangeF _midRange;
 		private List<int> _rightSectors;
 		private List<int> _leftSectors;
-		private bool _mirrorRange;
-		private bool triggered;
-		private AudioScene _scene;
-		private JsonLoader _loader;
+		private bool _triggered;
+		private readonly JsonLoader _loader;
 		
 		public AudioMap() {
 			_loader = new JsonLoader("audioScenes");
@@ -38,7 +36,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 			// Total number of sectors
 			var len = (_hSectors + _vSectors) * 2 - 4;
 			var output = new Color[len];
-			triggered = false;
+			_triggered = false;
 			output = ColorUtil.EmptyColors(output);
 			var freqRange = lChannel.Keys.ToArray();
 			var freqCount = freqRange.Length;
@@ -58,7 +56,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 			}
 			foreach (var (frequency, (hue, brightness)) in lChannel) {
 				var targetHue = RotateHue(hue, _rotation);
-				if (brightness >= _rotationThreshold && !triggered) triggered = true;
+				if (brightness >= _rotationThreshold && !_triggered) _triggered = true;
 				// foreach (var (tSector, tFrequency) in map.LeftSectors) {
 				// 	if (frequency == tFrequency) {
 				// 		output[tSector] = ColorUtil.HsvToColor(targetHue * 360, 1, brightness);
@@ -68,7 +66,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 			
 			foreach (var (frequency, (hue, brightness)) in rChannel) {
 				var targetHue = RotateHue(hue, _rotation);
-				if (brightness >= _rotationThreshold && !triggered) triggered = true;
+				if (brightness >= _rotationThreshold && !_triggered) _triggered = true;
 				// foreach (var (tSector, tFrequency) in map.RightSectors) {
 				// 	if (frequency == tFrequency) {
 				// 		output[tSector] = ColorUtil.HsvToColor(targetHue * 360, 1, brightness);
@@ -77,7 +75,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 			}
 
 			// If a rotation is set, we will rotate our hue by this amount
-			if (triggered) {
+			if (_triggered) {
 				_rotation += _rotationSpeed;
 				if (_rotation > 1) {
 					_rotation = _rotationSpeed;
@@ -91,7 +89,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 			return output;
 		}
 
-		public void Refresh() {
+		private void Refresh() {
 			SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
 			var id = sd.AudioMap;
 			_hSectors = sd.HSectors;
@@ -131,7 +129,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 				_highRange = am.HighRange;
 				_midRange = am.MidRange;
 				_lowRange = am.LowRange;
-				_mirrorRange = am.MirrorRange;
 			} catch (Exception e) {
 				Log.Debug("Exception updating map: " + e.Message);
 			}

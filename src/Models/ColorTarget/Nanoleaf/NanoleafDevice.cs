@@ -134,9 +134,9 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				// White value
 				byteString.AddRange(ByteUtils.PadInt(0, 1));
 				// Pad duration time
-				byteString.AddRange(_streamMode == 2 ? ByteUtils.PadInt((int)fadeTime) : ByteUtils.PadInt((int)fadeTime, 1));
+				byteString.AddRange(_streamMode == 2 ? ByteUtils.PadInt(fadeTime) : ByteUtils.PadInt(fadeTime, 1));
 			}
-			SendUdpUnicastAsync(byteString.ToArray());
+			SendUdpUnicastAsync(byteString.ToArray()).ConfigureAwait(false);
 		}
 
 

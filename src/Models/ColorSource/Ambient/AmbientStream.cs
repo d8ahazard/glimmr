@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
@@ -28,9 +27,8 @@ namespace Glimmr.Models.ColorSource.Ambient {
         private readonly Stopwatch _watch;
         private JsonLoader _loader;
         private List<AmbientScene> _scenes;
-        private bool _reloaded;
         private int _sectorCount;
-        private Random _random;
+        private readonly Random _random;
         private List<Color> _currentColors;
         private List<Color> _nextColors;
 

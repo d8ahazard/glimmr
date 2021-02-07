@@ -44,7 +44,7 @@ namespace Glimmr.Services {
 		private int _captureMode;
 		private int _deviceGroup;
 		private int _deviceMode;
-		private float _fps;
+		//private float _fps;
 		private SystemData _systemData;
 
 		// Figure out how to make these generic, non-callable
@@ -62,9 +62,9 @@ namespace Glimmr.Services {
 		private bool _streamStarted;
 		
 		private Dictionary<string, int> _subscribers;
-		private int _tickCount;
+		//private int _tickCount;
 		private Stopwatch _watch;
-		private int _time;
+		//private int _time;
 
 		public event Action<List<Color>, List<Color>, int> ColorSendEvent = delegate {};
 		public event Action<List<Color>, string> SegmentTestEvent = delegate { };

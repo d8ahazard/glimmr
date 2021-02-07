@@ -9,7 +9,6 @@ using ManagedBass;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Serilog;
-using ManagedBass;
 using Color = System.Drawing.Color;
 
 namespace Glimmr.Models.ColorSource.Audio {
@@ -18,7 +17,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 		public bool SourceActive { get; set; }
 		public bool SendColors { get; set; }
 		private bool _enable;
-		private bool _disposed;
 		private List<AudioData> _devices;
 		private int _recordDeviceIndex;
 		private int _sectorCount;
@@ -255,22 +253,5 @@ namespace Glimmr.Models.ColorSource.Audio {
 		private static int FftIndex2Frequency(int index, int length, int sampleRate) {
 			return index * sampleRate / length;
 		}
-
-
-		public void Dispose() {
-			Dispose(true);
-		}
-
-
-		private void Dispose(bool disposing) {
-			if (_disposed) return;
-
-			if (disposing) {
-			}
-
-			_disposed = true;
-		}
-
-		
 	}
 }
