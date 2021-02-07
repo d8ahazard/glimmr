@@ -45,8 +45,8 @@ namespace Glimmr
 					services.AddSingleton<ControlService>();
 					services.AddSingleton<ColorService>();
 					services.AddHostedService(services => (ColorService) services.GetService<ColorService>());
-					services.AddHostedService<VideoStream>();
 					services.AddHostedService<AudioStream>();
+					services.AddHostedService<VideoStream>();
 					services.AddHostedService<AudioVideoStream>();
 					services.AddHostedService<AmbientStream>();
 					services.AddHostedService<DreamService>();

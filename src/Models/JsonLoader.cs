@@ -66,5 +66,19 @@ namespace Glimmr.Models {
 
 			return output;
 		}
+
+		public dynamic GetItem<T>(dynamic id) {
+			var files = LoadFiles<JObject>();
+			foreach (var f in files) {
+				if (!f.TryGetValue("Id", out var check)) {
+					continue;
+				}
+
+				if (check == id) {
+					return f.ToObject<T>();
+				}
+			}
+			return null;
+		}
 	}
 }

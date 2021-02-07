@@ -111,9 +111,9 @@ namespace Glimmr.Models {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public float AudioThreshold { get; set; } = .01f;
 
-		[DefaultValue(ColorSource.Audio.AudioMap.MapType.Bottom)]
+		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public AudioMap.MapType AudioMap { get; set; } = ColorSource.Audio.AudioMap.MapType.Bottom;
+		public int AudioMap { get; set; } = 0;
 		
 		[DefaultValue(.0f)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]

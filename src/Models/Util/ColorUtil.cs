@@ -526,7 +526,7 @@ namespace Glimmr.Models.Util {
         public static Color[] AddLedColor(Color[] colors, int sector, Color color, SystemData systemData) {
 	        int s0;
 	        int e0;
-
+			
 	        int vs = systemData.VSectors;
 	        int hs = systemData.HSectors;
 	        var count = systemData.LeftCount + systemData.RightCount + systemData.TopCount + systemData.BottomCount;
@@ -540,7 +540,7 @@ namespace Glimmr.Models.Util {
 		        e0 = sector * rCount;
 		        s0 = e0 - rCount;
 		        for (var i = s0; i < e0; i++) {
-			        colors[i] = color;
+			        if (i < colors.Length) colors[i] = color;
 		        }
 	        }
 
@@ -551,7 +551,7 @@ namespace Glimmr.Models.Util {
 		        e0 += systemData.LeftCount;
 		        s0 = e0 - tCount;
 		        for (var i = s0; i < e0; i++) {
-			        colors[i] = color;
+			        if (i < colors.Length) colors[i] = color;
 		        }
 	        }
 
@@ -562,7 +562,7 @@ namespace Glimmr.Models.Util {
 		        e0 += systemData.RightCount + systemData.TopCount;
 		        s0 = e0 - lCount;
 		        for (var i = s0; i < e0; i++) {
-			        colors[i] = color;
+			        if (i < colors.Length) colors[i] = color;
 		        }
 	        }
 
@@ -573,7 +573,7 @@ namespace Glimmr.Models.Util {
 		        e0 += systemData.RightCount + systemData.LeftCount + systemData.TopCount;
 		        s0 = e0 - bCount;
 		        for (var i = s0; i < e0; i++) {
-			        colors[i] = color;
+			        if (i < colors.Length) colors[i] = color;
 		        }
 	        }
 
@@ -582,7 +582,7 @@ namespace Glimmr.Models.Util {
 		        s0 = count - bCount;
 		        e0 = count;
 		        for (var i = s0; i < e0; i++) {
-			        colors[i] = color;
+			        if (i < colors.Length) colors[i] = color;
 		        }
 	        }
 

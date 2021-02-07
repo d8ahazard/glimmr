@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace Glimmr.Models.ColorTarget {
 	public interface IStreamingDevice {
@@ -31,5 +32,8 @@ namespace Glimmr.Models.ColorTarget {
 		public Task ReloadData();
 
 		public void Dispose();
+		
+		[JsonProperty]
+		public DateTime LastSeen => DateTime.Now;
 	}
 }

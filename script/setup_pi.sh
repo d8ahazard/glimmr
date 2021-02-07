@@ -1,5 +1,5 @@
 #!/bin/bash
-BRANCH=${1:-master}
+BRANCH=${1:master}
 # Add user if not exist
 id -u glimmrtv &>/dev/null || useradd -m glimmrtv
 usermod -aG sudo glimmrtv 
@@ -51,7 +51,7 @@ if [ ! -f "/home/glimmrtv/firstrun" ]
     echo "DONE!"
     # Moar Cleanup
     echo "More cleanup..."
-    # sudo apt-get -y remove x264 libx264-dev
+    # sudo apt-get -y remove x264 libx264-dev pulseaudio
     echo "done" > "/home/glimmrtv/firstrun"
 fi
 
@@ -99,7 +99,8 @@ dotnet publish ./src/Glimmr.csproj /p:PublishProfile=LinuxARM -o ./bin/
 echo "DONE."
 # Copy necessary libraries
 echo "Copying libs..."
-cp -r /home/glimmrtv/glimmr/lib/arm/* /usr/lib
+cp -r /home/glimmrtv/glimmr/lib/bass.dll /home/glimmr/glimmrtv/bin/bass.dll
+cp -r /home/glimmrtv/glimmr/lib/arm/* /home/glimmr/glimmrtv/bin
 
 # Check service start/install
 if systemctl --all --type service | grep -q "$serviceName";then

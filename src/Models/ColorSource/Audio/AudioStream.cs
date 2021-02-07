@@ -9,6 +9,7 @@ using ManagedBass;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Serilog;
+using ManagedBass;
 using Color = System.Drawing.Color;
 
 namespace Glimmr.Models.ColorSource.Audio {
@@ -34,31 +35,42 @@ namespace Glimmr.Models.ColorSource.Audio {
 		public AudioStream(ColorService cs) {
 			_cs = cs;
 			_cs.AddStream("audio", this);
-			Bass.Init();
+			
 		}
 		
 		protected override Task ExecuteAsync(CancellationToken ct) {
 			Log.Debug("Starting audio stream...");
 			return Task.Run(async () => {
 				await LoadData();
+				Log.Debug("Bass init...");
+				Bass.Init(_recordDeviceIndex);
+				Log.Debug("Done");
 				if (_recordDeviceIndex != -1) {
 					Log.Debug("Starting stream with device " + _recordDeviceIndex);
 					
 					if (!Bass.RecordInit(_recordDeviceIndex)){
 						Log.Warning("Recording init error: " + Bass.LastError);
-					} else {
-						Bass.RecordGetInfo(out var info);
-						Log.Debug("Info: " + JsonConvert.SerializeObject(info));
 					}
 
-					
-					var recInt = Bass.RecordStart(48000, 2, BassFlags.Default, Update);
-					Bass.ChannelPlay(recInt);
+					var channels = 2;
+					var info = Bass.RecordingInfo;
+					Log.Debug("Recording info: " + JsonConvert.SerializeObject(info));
+
+					for (var i = 0; i < channels; i++) {
+						Bass.ChannelGetInfo(i, out var cInfo);
+						Log.Debug("Channel Info: " + JsonConvert.SerializeObject(cInfo));
+					}
+
+					var frequency = info.Frequency == 0 ? 48000 : info.Frequency;
+					Bass.RecordGetInfo(out var info2);
+					Log.Debug("Info: " + JsonConvert.SerializeObject(info2));
+
+					var recInt = Bass.RecordStart(frequency, channels, BassFlags.Default, Update);
+					//Bass.ChannelPlay(recInt);
 					Log.Debug("Record start int: " + recInt);
 					Log.Debug("Error check: " + Bass.LastError);
-					// DeviceInfo info2 = new DeviceInfo();
-					// Bass.RecordGetDeviceInfo(_recordDeviceIndex, out info2);
-					// Log.Debug("Loaded: " + JsonConvert.SerializeObject(info2));
+					Bass.RecordGetDeviceInfo(_recordDeviceIndex, out var info3);
+					Log.Debug("Loaded: " + JsonConvert.SerializeObject(info3));
 				}
 				while (!ct.IsCancellationRequested) {
 					await Task.Delay(1,ct);
@@ -86,7 +98,9 @@ namespace Glimmr.Models.ColorSource.Audio {
 			Sectors = ColorUtil.EmptyList(_sectorCount);
 			_min = _sd.AudioMin;
 			_devices = DataUtil.GetCollection<AudioData>("Dev_Audio") ?? new List<AudioData>();
-			_map = new AudioMap(_sd.AudioMap);
+			_map = new AudioMap();
+			var scene = new AudioScene();
+			Log.Debug("AudioScene: " + JsonConvert.SerializeObject(scene));
 			_recordDeviceIndex = -1;
 			
 			
@@ -158,10 +172,15 @@ namespace Glimmr.Models.ColorSource.Audio {
 			Colors = ColorUtil.EmptyList(Colors.Count);
 			var prev = SourceActive;
 			SourceActive = lAmps.Count != 0 || rAmps.Count != 0;
-			if (prev != SourceActive && prev == false) {
-				Log.Debug("Audio input detected!");
+			if (prev != SourceActive) {
+				
 			}
-			Sectors = _map.MapColors(lAmps, rAmps, _sectorCount).ToList();
+			if (SourceActive) {
+				Log.Debug("Audio input detected!");
+			} else {
+				//Log.Debug("No audio input...");
+			}
+			Sectors = _map.MapColors(lAmps, rAmps).ToList();
 			Colors = ColorUtil.SectorsToleds(Sectors.ToList(), _sd);
 			if (SendColors) {
 				//_cs.SendColors(this, new DynamicEventArgs(Colors, Sectors)).ConfigureAwait(false);

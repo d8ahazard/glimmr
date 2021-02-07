@@ -166,7 +166,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             if (Data.StripMode == 2) len /= 2;
             
             for (var i = offset; i < offset + len; i++) {
-                output.Add(doubled[i]);
+                if (i < doubled.Count) output.Add(doubled[i]);
             }
 
             return output;
