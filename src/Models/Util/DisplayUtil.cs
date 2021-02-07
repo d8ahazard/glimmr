@@ -34,7 +34,10 @@ namespace Glimmr.Models.Util {
         private static Size GetWindowsDisplaySize() {
             var width = GetSystemMetrics(SystemMetric.VirtualScreenWidth);
             var height = GetSystemMetrics(SystemMetric.VirtualScreenHeight);
-            var currentDpi = (int)Microsoft.Win32.Registry.GetValue("HKEY_CURRENT_USER\\Control Panel\\Desktop\\WindowMetrics", "AppliedDPI", 0);
+            var currentDpi = 0;
+            #if NETFX_CORE
+                currentDpi = (int)Microsoft.Win32.Registry.GetValue("HKEY_CURRENT_USER\\Control Panel\\Desktop\\WindowMetrics", "AppliedDPI", 0);
+            #endif
             var scaleTable = new Dictionary<int, float> {
                 [96] = 1.00f,
                 [120] = 1.25f,
