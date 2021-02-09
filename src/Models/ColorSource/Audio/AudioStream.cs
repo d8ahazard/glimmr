@@ -59,6 +59,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 		
 		public void ToggleStream(bool enable = false) {
 			if (enable) {
+				Refresh();
 				SendColors = true;
 				Bass.ChannelPlay(_handle);
 			} else {
@@ -79,11 +80,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 			_min = _sd.AudioMin;
 			_devices = DataUtil.GetCollection<AudioData>("Dev_Audio") ?? new List<AudioData>();
 			_map = new AudioMap();
-			var scene = new AudioScene();
-			Log.Debug("AudioScene: " + JsonConvert.SerializeObject(scene));
 			_recordDeviceIndex = -1;
-			
-			
 			string rd = DataUtil.GetItem("RecDev");
 			_devices = new List<AudioData>();
 			for (var a = 0; Bass.RecordGetDeviceInfo(a, out var info); a++) {
@@ -131,10 +128,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 			for (var a = 0; a < samples; a++) {
 				var val = FlattenValue(fft[a]);
 				var freq = FftIndex2Frequency(realIndex, 4096 / 2, 48000);
-				if (val <= .01) {
-					continue;
-				}
-
+				
 				if (a % 1 == 0) {
 					lData[freq] = val;
 				}
@@ -145,18 +139,10 @@ namespace Glimmr.Models.ColorSource.Audio {
 				}
 			}
 
-			var lAmps = SortChannels(lData);
-			var rAmps = SortChannels(rData);
 			Sectors = ColorUtil.EmptyList(Sectors.Count);
 			Colors = ColorUtil.EmptyList(Colors.Count);
-			var prev = SourceActive;
-			//Log.Debug("Lamps: " + JsonConvert.SerializeObject(lAmps));
-			SourceActive = lAmps.Count != 0 || rAmps.Count != 0;
-			if (prev != SourceActive) {
-				
-			}
 			
-			Sectors = _map.MapColors(lAmps, rAmps).ToList();
+			Sectors = _map.MapColors(lData, rData).ToList();
 			Colors = ColorUtil.SectorsToleds(Sectors.ToList(), _sd);
 			if (SendColors) {
 				//_cs.SendColors(this, new DynamicEventArgs(Colors, Sectors)).ConfigureAwait(false);
@@ -182,50 +168,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 		#region floatColors
 
-		private Dictionary<int, KeyValuePair<float, float>> SortChannels(Dictionary<int, float> cData) {
-			
-			var cValues = new Dictionary<int, KeyValuePair<float,float>>();
-			var steps = new[] {30, 60, 125, 250, 500, 1000, 2000};
-			foreach (var step in steps) {
-				var next = step == 60 ? 125 : step * 2;
-				float range = next - step;
-				var stepMax = 0f;
-				foreach (var (frequency, amplitude) in cData) {
-					if (frequency < step || frequency >= next) {
-						continue;
-					}
-
-					if (amplitude > stepMax) {
-						stepMax = amplitude;
-					}
-				}
-
-				var frequencies = new List<float>();
-				foreach (var (frequency, amplitude) in cData) {
-					if (frequency < step || frequency >= next) {
-						continue;
-					}
-					if (amplitude != stepMax) {
-						continue;
-					}
-
-					var avg = (frequency - step) / range;
-					frequencies.Add(avg);
-				}
-
-				if (frequencies.Count <= 0) {
-					cValues[step] = new KeyValuePair<float, float>(0, 0);
-				} else {
-					var sum = frequencies.Sum();
-					sum /= frequencies.Count;
-					cValues[step] = new KeyValuePair<float, float>(sum, stepMax);
-				}
-
-				
-			}
-			return cValues;
-		}
-
+		
 
 		#endregion
 

@@ -113,7 +113,7 @@ namespace Glimmr.Models {
 
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int AudioMap { get; set; } = 0;
+		public int AudioMap { get; set; }
 		
 		[DefaultValue(.0f)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]

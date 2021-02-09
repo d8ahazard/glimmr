@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 using System.Linq;
+using Serilog;
 
 namespace Glimmr.Models.Util {
     public static class ColorUtil {
@@ -506,6 +507,24 @@ namespace Glimmr.Models.Util {
             byte g = (byte) (color.G * amount + backColor.G * (1 - amount));
             byte b = (byte) (color.B * amount + backColor.B * (1 - amount));
             return Color.FromArgb(r, g, b);
+        }
+
+        public static float HueFromFrequency(int frequency) {
+	        
+	        var start = 16;
+	        if (frequency < start) frequency = start;
+	        var end = start * 2;
+	        const int max = 10000;
+	        while (end < frequency && start < max) {
+		        start *= 2;
+		        end *= 2;
+	        }
+	        if (frequency >= start) {
+		        var pct = (float) (frequency - start) / start;
+		        return pct;
+	        }
+
+	        return 1;
         }
 
         public static List<Color> SectorsToleds(List<Color> ints, SystemData sd) {

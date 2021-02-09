@@ -67,7 +67,8 @@ namespace Glimmr.Models {
 			return output;
 		}
 
-		public dynamic GetItem<T>(dynamic id) {
+		public dynamic GetItem<T>(dynamic id, bool getDefault = false) {
+			
 			var files = LoadFiles<JObject>();
 			foreach (var f in files) {
 				if (!f.TryGetValue("Id", out var check)) {
@@ -77,6 +78,16 @@ namespace Glimmr.Models {
 				if (check == id) {
 					return f.ToObject<T>();
 				}
+			}
+
+			if (getDefault) return GetDefault<T>();
+			return null;
+		}
+
+		public dynamic GetDefault<T>() {
+			var files = LoadFiles<T>();
+			if (files.Count != 0) {
+				return files[0];
 			}
 			return null;
 		}

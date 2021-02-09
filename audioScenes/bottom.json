@@ -12,10 +12,10 @@
     "Max": 1
   },
   "MirrorRange": false,
-  "RotationLower": 0,
-  "RotationUpper": 1,
-  "RotationSpeed": 0.01,
-  "RotationThreshold": 0.75,
-  "Id": 1,
+  "RotationLower": 0.3,
+  "RotationUpper": 0.5,
+  "RotationSpeed": 0.005,
+  "RotationThreshold": 0.85,
+  "Id": 0,
   "Name": "Bottom"
 }
