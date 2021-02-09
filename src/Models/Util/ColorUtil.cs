@@ -508,19 +508,33 @@ namespace Glimmr.Models.Util {
             return Color.FromArgb(r, g, b);
         }
 
-        public static List<Color> SectorsToleds(List<Color> ints, SystemData systemData) {
-	        var count = systemData.LeftCount + systemData.RightCount + systemData.TopCount + systemData.BottomCount;
-			
-	        // Start/end values, with optional second for sector 1
-	     	
-	        var colors = new Color[count];
-	        colors = EmptyColors(colors);
-
+        public static List<Color> SectorsToleds(List<Color> ints, SystemData sd) {
+	        var output = new List<Color>();
+	        // We're going to duplicate the "corner" color values so they evenly map to LED colors
+	        var shifted = new List<Color>();
+	        var ledCount = sd.LedCount;
+	        var tr = sd.VSectors - 1;
+	        var tl = tr + sd.HSectors - 1;
+	        var bl = tl + sd.VSectors - 1;
 	        for (var i = 0; i < ints.Count; i++) {
-		        colors = AddLedColor(colors, i, ints[i], systemData);
+		        shifted.Add(ints[i]);
+		        if (i == tr || i == tl || i == bl) shifted.Add(ints[i]);
 	        }
-	        
-	        return colors.ToList();
+			shifted.Add(ints[0]);
+			
+			// How many LEDs per shifted sector?
+			var step = (int) Math.Floor(ledCount / shifted.Count * 1.0f);
+			var sector = 0;
+	        for (var i=0; i < ledCount; i++) {
+		        if (i % step == 0) {
+			        sector++;
+		        }
+
+		        if (sector >= ints.Count) sector = ints.Count - 1;
+		        output.Add(ints[sector]);
+	        }
+
+	        return output;
         }
 
         public static Color[] AddLedColor(Color[] colors, int sector, Color color, SystemData systemData) {
@@ -535,8 +549,12 @@ namespace Glimmr.Models.Util {
 	        var lCount = systemData.LeftCount / vs;
 	        var bCount = systemData.BottomCount / hs;
 
+	        var rightLimit = vs;
+	        var topLimit = vs + hs - 1;
+	        var leftLimit = vs + hs + vs - 2;
+	        var bottomLimit = vs + hs + vs + hs - 3;
 
-	        if (sector >= 1 && sector <= vs) {
+	        if (sector >= 1 && sector <= rightLimit) {
 		        e0 = sector * rCount;
 		        s0 = e0 - rCount;
 		        for (var i = s0; i < e0; i++) {
@@ -545,8 +563,8 @@ namespace Glimmr.Models.Util {
 	        }
 
 	        // Top leds
-	        if (sector >= vs && sector <= vs + hs - 1 ) {
-		        var sec = sector - 5;
+	        if (sector >= leftLimit && sector <= topLimit ) {
+		        var sec = sector - leftLimit;
 		        e0 = sec * tCount;
 		        e0 += systemData.LeftCount;
 		        s0 = e0 - tCount;
@@ -556,8 +574,8 @@ namespace Glimmr.Models.Util {
 	        }
 
 	        // Left leds
-	        if (sector >= vs + hs - 1 && sector <= vs + hs + vs - 2) {
-		        var sec = sector - vs + hs + vs;
+	        if (sector >= topLimit && sector <= rightLimit) {
+		        var sec = sector - topLimit;
 		        e0 = sec * lCount;
 		        e0 += systemData.RightCount + systemData.TopCount;
 		        s0 = e0 - lCount;
@@ -567,8 +585,8 @@ namespace Glimmr.Models.Util {
 	        }
 
 	        // Bottom leds
-	        if (sector >= vs + hs + vs - 2 && sector <= vs + hs + vs + hs - 4) {
-		        var sec = sector - vs + hs + vs - 2;
+	        if (sector >= rightLimit && sector <= bottomLimit) {
+		        var sec = sector - rightLimit;
 		        e0 = sec * bCount;
 		        e0 += systemData.RightCount + systemData.LeftCount + systemData.TopCount;
 		        s0 = e0 - bCount;

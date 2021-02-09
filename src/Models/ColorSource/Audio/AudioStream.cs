@@ -155,11 +155,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 			if (prev != SourceActive) {
 				
 			}
-			if (SourceActive) {
-				Log.Debug("Audio input detected!");
-			} else {
-				//Log.Debug("No audio input...");
-			}
+			
 			Sectors = _map.MapColors(lAmps, rAmps).ToList();
 			Colors = ColorUtil.SectorsToleds(Sectors.ToList(), _sd);
 			if (SendColors) {
@@ -218,13 +214,14 @@ namespace Glimmr.Models.ColorSource.Audio {
 				}
 
 				if (frequencies.Count <= 0) {
-					continue;
+					cValues[step] = new KeyValuePair<float, float>(0, 0);
+				} else {
+					var sum = frequencies.Sum();
+					sum /= frequencies.Count;
+					cValues[step] = new KeyValuePair<float, float>(sum, stepMax);
 				}
 
-				var sum = frequencies.Sum();
-				sum /= frequencies.Count;
-				Log.Debug("Setting " + step + " to " + sum);
-				cValues[step] = new KeyValuePair<float, float>(sum, stepMax);
+				
 			}
 			return cValues;
 		}
