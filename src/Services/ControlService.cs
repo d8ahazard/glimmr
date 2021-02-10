@@ -51,7 +51,7 @@ namespace Glimmr.Services {
 		}
 
 		public AsyncEvent<DynamicEventArgs> DeviceReloadEvent;
-		public event Action RefreshLedEvent = delegate { };
+		public AsyncEvent<DynamicEventArgs> RefreshLedEvent;
 		public event Action RefreshSystemEvent = delegate { };
 		public AsyncEvent<DynamicEventArgs> DeviceRescanEvent;
 		public event ArgUtils.Action DreamSubscribeEvent = delegate { };
@@ -169,8 +169,8 @@ namespace Glimmr.Services {
 		}
 
 
-		private void RefreshLedData() {
-			RefreshLedEvent();
+		private async Task RefreshLedData(string ldId) {
+			await RefreshLedEvent.InvokeAsync(this, new DynamicEventArgs(ldId));
 		}
 
 		// We call this one to send colors to everything, including the color service
@@ -247,7 +247,7 @@ namespace Glimmr.Services {
 		public async Task UpdateLed(LedData ld) {
 			Log.Debug("Got LD from post: " + JsonConvert.SerializeObject(ld));
 			await DataUtil.InsertCollection<LedData>("LedData", ld);
-			RefreshLedData();
+			RefreshLedData(ld.Id);
 			await NotifyClients();
 		}
 

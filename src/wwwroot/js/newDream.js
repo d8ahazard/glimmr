@@ -382,9 +382,11 @@ function setListeners() {
                         strip["Id"] = id;
                         strips[i] = strip;
                         pack = strip;
+                        sendMessage(obj, pack,true);
                     }
                 }
                 data.store[obj] = strips;
+                
             } else {
                 if (target.classList.contains("devSetting")) {
                     updateDevice(obj, property, val);  

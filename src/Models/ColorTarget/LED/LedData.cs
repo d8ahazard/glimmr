@@ -12,12 +12,12 @@ namespace Glimmr.Models.ColorTarget.LED {
 
         [DefaultValue(55)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-        public int MilliampsPerLed { get; set; } = 55;
+        public int MilliampsPerLed { get; set; } = 25;
 
 
         [DefaultValue(2000)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-        public int AblMaxMilliamps { get; set; } = 2000;
+        public int AblMaxMilliamps { get; set; } = 5000;
         
         [JsonProperty] public bool AutoBrightnessLevel { get; set; }
         [JsonProperty] public int StripType { get; set; }

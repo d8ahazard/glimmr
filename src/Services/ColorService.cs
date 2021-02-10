@@ -482,10 +482,16 @@ namespace Glimmr.Services {
 			_sDevices = sDevs.ToArray();
 		}
 
-		private void ReloadLedData() {
-			_captureMode = DataUtil.GetItem<int>("CaptureMode") ?? 2;
-			_deviceMode = DataUtil.GetItem<int>("DeviceMode") ?? 0;
-			_deviceGroup = DataUtil.GetItem<int>("DeviceGroup") ?? 0;
+		private Task ReloadLedData(object o, DynamicEventArgs dynamicEventArgs) {
+			string ledId = dynamicEventArgs.P1;
+			Log.Debug($"We should be reloading {ledId}");
+			foreach (var dev in _sDevices) {
+				if (dev.Id == ledId) {
+					Log.Debug($"Found our device: {dev.Tag}");
+					dev.ReloadData();
+				}
+			}
+			return Task.CompletedTask;
 		}
 
 		private void ReloadSystemData() {

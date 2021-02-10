@@ -28,14 +28,19 @@ namespace Glimmr.Models.ColorTarget.LED {
 		public LedData Data;
 		
 		private int _ledCount;
+		private int _offset;
+		private bool _enableAbl;
 		private WS281x _strip;
 
+		
 		
 		public LedDevice(LedData ld, ColorService colorService) {
 			var cs = colorService;
 			cs.SegmentTestEvent += UpdateStrip;
 			cs.ColorSendEvent += SetColor;
-			LoadData(ld);
+			Data = ld;
+			Id = Data.Id;
+			ReloadData();
 			CreateStrip();
 		}
 
@@ -82,12 +87,7 @@ namespace Glimmr.Models.ColorTarget.LED {
 			return Task.CompletedTask;
 		}
 
-		private void LoadData(LedData ld) {
-			Data = ld;
-			_ledCount = Data.Count;
-			Enable = Data.Enable;
-		}
-
+		
 		
 		public void Dispose() {
 			_strip?.Reset();
@@ -99,14 +99,15 @@ namespace Glimmr.Models.ColorTarget.LED {
 			if (ld == null) return Task.CompletedTask;
 			Log.Debug("Reloading ledData: " + JsonConvert.SerializeObject(ld));
 			Log.Debug("Old LED Data: " + JsonConvert.SerializeObject(Data));
-			var con = _strip.GetController();
-			if (Data.Brightness != ld.Brightness) con.Brightness = (byte) Brightness;
 			//con.LEDCount = _ledCount;
-			if (Data.Brightness != ld.Brightness) {
-				_strip.SetBrightness(ld.Brightness);
-			}
+			if (Data.Brightness != ld.Brightness) _strip.SetBrightness(ld.Brightness);
 			if (Data.Count != ld.Count) _strip.SetLedCount(ld.Count);
-			LoadData(ld);
+			Data = ld;
+			_ledCount = Data.Count;
+			_enableAbl = Data.AutoBrightnessLevel;
+			if (!_enableAbl) _strip.SetBrightness(ld.Brightness);
+			_offset = Data.Offset;
+			Enable = Data.Enable;
 			return Task.CompletedTask;
 		}
 
@@ -115,7 +116,6 @@ namespace Glimmr.Models.ColorTarget.LED {
 		private Settings LoadLedData(LedData ld) {
 			var settings = Settings.CreateDefaultSettings();
 			if (!ld.FixGamma) settings.SetGammaCorrection(0, 0, 0);
-			Id = ld.Id;
 			Log.Debug("Initializing LED Strip, type is " + ld.StripType);
 			var stripType = ld.StripType switch {
 				1 => StripType.SK6812W_STRIP,
@@ -137,7 +137,7 @@ namespace Glimmr.Models.ColorTarget.LED {
 			Log.Debug($@"Count, pin, type: {_ledCount}, {pin}, {(int) stripType}");
 			
 			settings.AddController(_ledCount, pin, stripType);
-			
+			Data = ld;
 			return settings;
 		}
 
@@ -197,10 +197,11 @@ namespace Glimmr.Models.ColorTarget.LED {
 
 			if (string.IsNullOrEmpty(id) || id == Data.Id) {
 				render = true;
-				var offset = Data.Offset;
-				var c1 = TruncateColors(colors, _ledCount, offset);
-				if (Data.AutoBrightnessLevel) {
+				var c1 = TruncateColors(colors, _ledCount, _offset);
+				if (_enableAbl) {
 					c1 = VoltAdjust(c1, Data);
+				} else {
+					Log.Debug("Noabl");
 				}
 
 				for (var i = 0; i < Data.Count; i++) {
