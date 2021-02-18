@@ -14,6 +14,8 @@ namespace Glimmr.Services {
 		private readonly ControlService _cs;
 		private readonly UdpClient _uc;
 		private int _devMode;
+		private int _sectorCount;
+		
 
 		public StreamService(ControlService cs) {
 			_cs = cs;
@@ -25,10 +27,12 @@ namespace Glimmr.Services {
 			_uc.DontFragment = true;
 			SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
 			_devMode = sd.DeviceMode;
+			_sectorCount = (sd.HSectors + sd.VSectors) * 2 - 4;
 		}
 
 		private Task Mode(object arg1, DynamicEventArgs arg2) {
 			_devMode = arg2.P1;
+			Log.Debug($"Mode updated to {_devMode}");
 			return Task.CompletedTask;
 		}
 
@@ -73,7 +77,7 @@ namespace Glimmr.Services {
 					colors.Add(col);
 				}
 
-				var secIdx = colors.Count - 28;
+				var secIdx = colors.Count - _sectorCount;
 				var ledColors = colors.GetRange(0, secIdx);
 				var sectorColors = colors.Skip(secIdx).ToList();
 				_cs.SendColors(ledColors, sectorColors);
@@ -85,6 +89,7 @@ namespace Glimmr.Services {
 			_devMode = DataUtil.GetItem("DeviceMode");
 			SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
 			_devMode = sd.DeviceMode;
+			_sectorCount = (sd.HSectors + sd.VSectors) * 2 - 4;
 		}
 	}
 }

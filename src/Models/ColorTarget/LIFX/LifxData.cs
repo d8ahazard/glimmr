@@ -28,6 +28,22 @@ namespace Glimmr.Models.ColorTarget.LIFX {
 		[DefaultValue(100)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int MaxBrightness { get; set; } = 255;
+		
+		[DefaultValue(false)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public bool HasMultiZone { get; set; }
+		
+		[DefaultValue(8)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int MultiZoneCount { get; set; }
+		
+		[DefaultValue(0)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int ProductId { get; set; }
+		
+		[DefaultValue(false)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public bool MultiZoneV2 { get; set; }
 		public LifxData() {
 			Tag = "Lifx";
 			if (Id == null && MacAddressString != null) {

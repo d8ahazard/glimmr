@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 using Serilog;
 
 namespace Glimmr.Models.ColorSource.Ambient {
@@ -173,6 +174,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
         private List<Color> RefreshColors(string[] input) {
             var output = new List<Color>();
+            if (input == null) return ColorUtil.EmptyList(5);
             var max = input.Length;
             var rand = _random.Next(0, max);
             switch (_mode) {
@@ -243,11 +245,13 @@ namespace Glimmr.Models.ColorSource.Ambient {
             _ambientColor = sd.AmbientColor;
             _loader = new JsonLoader("ambientScenes");
             _scenes = _loader.LoadFiles<AmbientScene>();
+            Log.Debug($"Scenes {_ambientShow}: " + JsonConvert.SerializeObject(_scenes));
             AmbientScene scene = new AmbientScene();
             foreach (var s in _scenes.Where(s => s.Id == _ambientShow)) {
                 scene = s;
             }
 
+            Log.Debug("Scene: " + JsonConvert.SerializeObject(scene));
             if (_ambientShow == -1) scene.Colors = new[] {"#" + _ambientColor};
             _colors = scene.Colors;
             _animationTime = scene.AnimationTime * 1000;

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Sockets;
@@ -35,17 +34,15 @@ namespace Glimmr.Services {
 
 		public ControlService(IHubContext<SocketServer> hubContext) {
 			_hubContext = hubContext;
-			// Lifx client
-			LifxClient = LifxClient.CreateAsync().Result;
 			// Init nano HttpClient
-			HttpSender = new HttpClient();
-			HttpSender.Timeout = TimeSpan.FromSeconds(5);
+			HttpSender = new HttpClient {Timeout = TimeSpan.FromSeconds(5)};
 			// Init UDP client
-
 			UdpClient = new UdpClient {Ttl = 5};
 			UdpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 			UdpClient.Client.Blocking = false;
 			UdpClient.DontFragment = true;
+			// Lifx client
+			LifxClient = LifxClient.CreateAsync().Result;
 			MulticastService = new MulticastService();
 			DataUtil.CheckDefaults(this).ConfigureAwait(true);
 		}
@@ -247,7 +244,7 @@ namespace Glimmr.Services {
 		public async Task UpdateLed(LedData ld) {
 			Log.Debug("Got LD from post: " + JsonConvert.SerializeObject(ld));
 			await DataUtil.InsertCollection<LedData>("LedData", ld);
-			RefreshLedData(ld.Id);
+			await RefreshLedData(ld.Id);
 			await NotifyClients();
 		}
 

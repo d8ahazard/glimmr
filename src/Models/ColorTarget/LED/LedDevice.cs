@@ -100,12 +100,14 @@ namespace Glimmr.Models.ColorTarget.LED {
 			Log.Debug("Reloading ledData: " + JsonConvert.SerializeObject(ld));
 			Log.Debug("Old LED Data: " + JsonConvert.SerializeObject(Data));
 			//con.LEDCount = _ledCount;
-			if (Data.Brightness != ld.Brightness) _strip.SetBrightness(ld.Brightness);
-			if (Data.Count != ld.Count) _strip.SetLedCount(ld.Count);
 			Data = ld;
 			_ledCount = Data.Count;
 			_enableAbl = Data.AutoBrightnessLevel;
-			if (!_enableAbl) _strip.SetBrightness(ld.Brightness);
+			if (_strip != null) {
+				if (Data.Brightness != ld.Brightness) _strip.SetBrightness(ld.Brightness);
+				if (Data.Count != ld.Count) _strip.SetLedCount(ld.Count);
+				if (!_enableAbl) _strip.SetBrightness(ld.Brightness);
+			}
 			_offset = Data.Offset;
 			Enable = Data.Enable;
 			return Task.CompletedTask;
@@ -210,7 +212,7 @@ namespace Glimmr.Models.ColorTarget.LED {
 					if (Data.StripType == 1) {
 						tCol = ColorUtil.ClampAlpha(tCol);
 					}
-					_strip.SetLed(i,tCol);
+					_strip?.SetLed(i,tCol);
 					iSource++;
 				}
 			}
@@ -299,7 +301,7 @@ namespace Glimmr.Models.ColorTarget.LED {
 					var scaleI = scale * 255;
 					var scaleB = scaleI > 255 ? 255 : scaleI;
 					var newBri = scale8(defaultBrightness, scaleB);
-					_strip.SetBrightness((int)newBri);
+					_strip?.SetBrightness((int)newBri);
 					//Log.Debug($"Scaling brightness to {newBri / 255}.");
 					CurrentMilliamps = powerSum0 * newBri / puPerMilliamp;
 					if (newBri < defaultBrightness) {
@@ -308,7 +310,7 @@ namespace Glimmr.Models.ColorTarget.LED {
 				} else {
 					CurrentMilliamps = (float) powerSum / puPerMilliamp;
 					if (defaultBrightness < 255) {
-						_strip.SetBrightness(defaultBrightness);
+						_strip?.SetBrightness(defaultBrightness);
 					}
 				}
 
@@ -316,7 +318,7 @@ namespace Glimmr.Models.ColorTarget.LED {
 			} else {
 				CurrentMilliamps = 0;
 				if (defaultBrightness < 255) {
-					_strip.SetBrightness(defaultBrightness);
+					_strip?.SetBrightness(defaultBrightness);
 				}
 			}
 

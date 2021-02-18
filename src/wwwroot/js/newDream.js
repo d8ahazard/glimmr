@@ -382,6 +382,7 @@ function setListeners() {
                         strip["Id"] = id;
                         strips[i] = strip;
                         pack = strip;
+                        console.log("Updating LED data, huzzah!");
                         sendMessage(obj, pack,true);
                     }
                 }

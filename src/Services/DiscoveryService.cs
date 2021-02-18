@@ -65,7 +65,7 @@ namespace Glimmr.Services {
 			await DeviceDiscovery();
 		}
         
-		private async Task DeviceDiscovery(int timeout=10) {
+		private async Task DeviceDiscovery(int timeout=15) {
 			Log.Debug("Triggering refresh of devices via timer.");
 			// Trigger a refresh
 			var cs = new CancellationTokenSource();
@@ -81,7 +81,7 @@ namespace Glimmr.Services {
 			try {
 				await Task.WhenAll(nanoTask, bridgeTask, lifxTask, wLedTask, yeeTask);
 			} catch (SocketException f) {
-				Log.Warning("Socket exception during discovery: " + f.Message);
+				Log.Warning("Exception during discovery: " + f.Message);
 			}
 				
 			Log.Debug("All devices should now be refreshed.");

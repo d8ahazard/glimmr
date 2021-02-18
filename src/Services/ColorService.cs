@@ -342,7 +342,7 @@ namespace Glimmr.Services {
 			var lifx = DataUtil.GetCollection<LifxData>("Dev_Lifx");
 			if (lifx != null) {
 				foreach (var b in lifx.Where(b => b.TargetSector != -1)) {
-					_lifxClient ??= LifxClient.CreateAsync().Result;
+					_lifxClient = _controlService.LifxClient;
 					sDevs.Add(new LifxDevice(b, _lifxClient, this));
 				}
 			}
@@ -484,10 +484,8 @@ namespace Glimmr.Services {
 
 		private Task ReloadLedData(object o, DynamicEventArgs dynamicEventArgs) {
 			string ledId = dynamicEventArgs.P1;
-			Log.Debug($"We should be reloading {ledId}");
 			foreach (var dev in _sDevices) {
 				if (dev.Id == ledId) {
-					Log.Debug($"Found our device: {dev.Tag}");
 					dev.ReloadData();
 				}
 			}
@@ -514,7 +512,6 @@ namespace Glimmr.Services {
 			}
 
 			if (refreshAmbient) {
-				Log.Debug("Refreshing ambient stream...");
 				_ambientStream?.Refresh();
 			}
 			
@@ -528,11 +525,7 @@ namespace Glimmr.Services {
 				DataUtil.SetItem("AutoDisabled", _autoDisabled);
 			}
 			
-			if (_streamStarted && newMode == 0) {
-				Log.Debug("Awaiting stream stop...");
-				await StopStream();
-				Log.Debug("Done.");
-			}
+			if (_streamStarted && newMode == 0) await StopStream();
 			
 			switch (newMode) {
 				case 1:
@@ -570,9 +563,7 @@ namespace Glimmr.Services {
 					break;
 			}
 			
-			if (newMode != 0 && !_streamStarted) {
-				StartStream();
-			}
+			if (newMode != 0 && !_streamStarted) StartStream();
 			_deviceMode = newMode;
 			Log.Information($"Device mode updated to {newMode}.");
 		}
@@ -604,9 +595,7 @@ namespace Glimmr.Services {
 			}
 			_streamStarted = false;
 			var streamers = new List<IStreamingDevice>();
-			foreach (var s in _sDevices.Where(s => s.Streaming)) {
-				streamers.Add(s);
-			}
+			foreach (var s in _sDevices.Where(s => s.Streaming)) streamers.Add(s);
 			await Task.WhenAll(streamers.Select(i => {
 				try {
 					return i.StopStream();
@@ -626,27 +615,18 @@ namespace Glimmr.Services {
 				return;
 			}
 
-			if (!_streamStarted) {
-				return;
-			}
-			
-			
+			if (!_streamStarted) return;
+
 			ColorSendEvent(colors, sectors, fadeTime);
 		}
 
 
 		private static void CancelSource(CancellationTokenSource target, bool dispose = false) {
-			if (target == null) {
-				return;
-			}
+			if (target == null) return;
 
-			if (!target.IsCancellationRequested) {
-				target.CancelAfter(0);
-			}
+			if (!target.IsCancellationRequested) target.CancelAfter(0);
 
-			if (dispose) {
-				target.Dispose();
-			}
+			if (dispose) target.Dispose();
 		}
 
 		private async Task StopServices() {
@@ -666,7 +646,6 @@ namespace Glimmr.Services {
 					Log.Warning("Caught exception: " + e.Message);
 				}
 			}
-
 			Log.Information("All services have been stopped.");
 		}
 	}

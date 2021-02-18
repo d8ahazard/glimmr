@@ -45,19 +45,27 @@ namespace Glimmr.Models.Util {
 
 		public static string GetUserDir() {
 			var userDir = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-			if (userDir == String.Empty && RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+				Log.Debug("Platform is linux.");
 				userDir = "/etc/";
 			}
+
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) Log.Debug("Platform is Windows");
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) Log.Debug("Platform is OSX");
 			var fullPath = Path.Combine(userDir, "Glimmr");
+			Log.Debug("Fullpath is " + fullPath);
 			if (!Directory.Exists(fullPath)) {
 				try {
 					var res = Directory.CreateDirectory(fullPath);
+					Log.Debug("Returning: " + fullPath);
 					return fullPath;
 				} catch (Exception e) {
 					Log.Warning("Exception creating userdata dir: " + e.Message);
 					return String.Empty;
 				}
 			}
+
+			if (Directory.Exists(fullPath)) return fullPath;
 			return String.Empty;
 		}
 	}

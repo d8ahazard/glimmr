@@ -35,14 +35,18 @@ namespace Glimmr.Models.ColorSource.Audio {
 			_cs = cs;
 			_cs.AddStream("audio", this);
 			LoadData().ConfigureAwait(true);
-			Log.Debug("Bass init...");
-			Bass.RecordInit(_recordDeviceIndex);
-			Log.Debug("Done");
-			Log.Debug("Starting stream with device " + _recordDeviceIndex);
-			_handle = Bass.RecordStart(48000, 2, BassFlags.Float, Update);
-			Log.Debug("Error check: " + Bass.LastError);
-			Bass.RecordGetDeviceInfo(_recordDeviceIndex, out var info3);
-			Log.Debug("Loaded: " + JsonConvert.SerializeObject(info3));
+			try {
+				Log.Debug("Bass init...");
+				Bass.RecordInit(_recordDeviceIndex);
+				Log.Debug("Done");
+				Log.Debug("Starting stream with device " + _recordDeviceIndex);
+				_handle = Bass.RecordStart(48000, 2, BassFlags.Float, Update);
+				Log.Debug("Error check: " + Bass.LastError);
+				Bass.RecordGetDeviceInfo(_recordDeviceIndex, out var info3);
+				Log.Debug("Loaded: " + JsonConvert.SerializeObject(info3));
+			} catch (DllNotFoundException) {
+				Log.Warning("Bass not found, nothing to do...");
+			}
 		}
 		
 		protected override Task ExecuteAsync(CancellationToken ct) {

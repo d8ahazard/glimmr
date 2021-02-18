@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Glimmr.Models.ColorSource.Ambient;
 using Glimmr.Models.ColorSource.Audio;
@@ -22,6 +23,10 @@ namespace Glimmr
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 				logPath = "log\\glimmr.log";
 			}
+			
+			var tr1 = new TextWriterTraceListener(System.Console.Out);
+			Trace.Listeners.Add(tr1);
+
 			Log.Logger = new LoggerConfiguration()
 				.Enrich.WithCaller()
 				.WriteTo.Console(outputTemplate: outputTemplate)
@@ -35,6 +40,7 @@ namespace Glimmr
 		private static IHostBuilder CreateHostBuilder(string[] args) {
 			return Host.CreateDefaultBuilder(args)
 				.ConfigureLogging((hostingContext, logging) => {
+					logging.ClearProviders();
 					logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
 					logging.AddConsole();
 					logging.AddDebug();

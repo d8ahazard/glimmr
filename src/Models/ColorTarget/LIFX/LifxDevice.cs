@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using LifxNet;
 using Serilog;
+using Color = System.Drawing.Color;
+//using LifxColor = LifxNet.Color;
 
 namespace Glimmr.Models.ColorTarget.LIFX {
     public class LifxDevice : IStreamingDevice {
@@ -21,17 +24,15 @@ namespace Glimmr.Models.ColorTarget.LIFX {
         public bool Testing { get; set; }
 
         private int _targetSector;
-        
-        private int _captureMode;
         public int Brightness { get; set; }
         public string Id { get; set; }
         public string IpAddress { get; set; }
         public string Tag { get; set; }
 
-        private LifxClient _client;
+        private readonly LifxClient _client;
 
         public LifxDevice(LifxData d, LifxClient c, ColorService colorService) {
-            _captureMode = DataUtil.GetItem<int>("captureMode");
+            DataUtil.GetItem<int>("captureMode");
             Data = d ?? throw new ArgumentException("Invalid Data");
             _client = c;
             colorService.ColorSendEvent += SetColor;
@@ -45,7 +46,8 @@ namespace Glimmr.Models.ColorTarget.LIFX {
         public async Task StartStream(CancellationToken ct) {
             if (!Data.Enable) return;
             Log.Debug("Lifx: Starting stream.");
-            var col = new Color {R = 0x00, G = 0x00, B = 0x00};
+            var col = new LifxColor(0, 0, 0);
+            //var col = new LifxColor {R = 0, B = 0, G = 0};
             Streaming = true;
             await _client.SetLightPowerAsync(B, TimeSpan.Zero, true).ConfigureAwait(false);
             await _client.SetColorAsync(B, col, 2700).ConfigureAwait(false);
@@ -53,8 +55,9 @@ namespace Glimmr.Models.ColorTarget.LIFX {
             Streaming = true;
         }
 
-        public async Task FlashColor(System.Drawing.Color color) {
-            var nC = new Color {R = color.R, G = color.G, B = color.B};
+        public async Task FlashColor(Color color) {
+            var nC = new LifxColor(color);
+            //var nC = new LifxColor {R = color.R, B = color.B, G = color.G};
             var fadeSpan = TimeSpan.FromSeconds(0);
             await _client.SetColorAsync(B, nC, 7500, fadeSpan);
         }
@@ -75,7 +78,7 @@ namespace Glimmr.Models.ColorTarget.LIFX {
 
         public Task ReloadData() {
             var newData = DataUtil.GetCollectionItem<LifxData>("Dev_Lifx", Id);
-            _captureMode = DataUtil.GetItem<int>("captureMode");
+            DataUtil.GetItem<int>("captureMode");
             Data = newData;
             var targetSector = newData.TargetSector;
             _targetSector = targetSector - 1;
@@ -88,7 +91,7 @@ namespace Glimmr.Models.ColorTarget.LIFX {
             
         }
 
-        public void SetColor(List<System.Drawing.Color> colors, List<System.Drawing.Color> list, int arg3) {
+        public void SetColor(List<Color> colors, List<Color> list, int arg3) {
             if (!Streaming || !Enable || Testing) return;
             var sectors = list;
             var fadeTime = arg3;
@@ -99,9 +102,11 @@ namespace Glimmr.Models.ColorTarget.LIFX {
             if (_targetSector >= sectors.Count) return;
             var input = sectors[_targetSector];
             if (Brightness < 100) {
-                input = ColorUtil.ClampBrightness(input, Brightness);
+                //input = ColorUtil.ClampBrightness(input, Brightness);
             }
-            var nC = new Color {R = input.R, G = input.G, B = input.B};
+            var nC = new LifxColor(input);
+            //var nC = new LifxColor {R = input.R, B = input.B, G = input.G};
+
             var fadeSpan = TimeSpan.FromSeconds(fadeTime);
             _client.SetColorAsync(B, nC, 7500, fadeSpan);
         }
