@@ -100,6 +100,7 @@ echo "DONE."
 # Copy necessary libraries
 echo "Copying libs..."
 cp -r /home/glimmrtv/glimmr/lib/bass.dll /usr/lib/bass.dll
+cp -r /home/glimmrtv/glimmr/lib/LifxNet.dll /usr/lib/LifxNet.dll
 cp -r /home/glimmrtv/glimmr/lib/arm/* /usr/lib
 
 # Check service start/install
