@@ -17,6 +17,7 @@ using Glimmr.Models.ColorTarget.Hue;
 using Glimmr.Models.ColorTarget.LED;
 using Glimmr.Models.ColorTarget.LIFX;
 using Glimmr.Models.ColorTarget.Nanoleaf;
+using Glimmr.Models.ColorTarget.Razer;
 using Glimmr.Models.ColorTarget.Wled;
 using Glimmr.Models.ColorTarget.Yeelight;
 using Glimmr.Models.Util;
@@ -372,6 +373,7 @@ namespace Glimmr.Services {
 			//_strips.Add(new LedStrip(ledData2, this));
 			//_strips.Add(new LedStrip(ledData3,this));
 			sDevs.Add(new LedDevice(ledData, this));
+			sDevs.Add(new RazerDevice(this));
 			_sDevices = sDevs.ToArray();
 		}
 

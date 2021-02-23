@@ -10,6 +10,8 @@ by editing this MSBuild file. In order to learn more about this please visit htt
   </PropertyGroup>
   <ItemGroup>
     <_CustomFiles Include="$(MSBuildProjectDirectory)/build/x64/*" />
+	<_CustomFiles Include="$(MSBuildProjectDirectory)/ambientScenes/*" />
+	<_CustomFiles Include="$(MSBuildProjectDirectory)/audioScenes/*" />
     <DotNetPublishFiles Include="@(_CustomFiles)">
       <DestinationRelativePath>%(RecursiveDir)%(Filename)%(Extension)</DestinationRelativePath>
     </DotNetPublishFiles>

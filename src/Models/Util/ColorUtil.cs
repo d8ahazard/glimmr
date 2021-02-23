@@ -65,6 +65,22 @@ namespace Glimmr.Models.Util {
 	        }
             return output;
         }
+        
+        
+        public static List<Color> TruncateColors(List<Color> input, int offset, int len) {
+	        var output = new List<Color>();
+            
+	        // Instead of doing dumb crap, just make our list of colors loop around
+	        var doubled = input;
+	        doubled.AddRange(input);
+	        
+	        for (var i = offset; i < offset + len; i++) {
+		        if (i < doubled.Count) output.Add(doubled[i]);
+	        }
+
+	        return output;
+        }
+        
 		
 		
         /// <summary>

@@ -31,6 +31,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
         private readonly List<Color> _updateColors;
         private readonly HttpClient _httpClient;
         private readonly UdpClient _udpClient;
+        private int _offset;
+        private int _len;
         
         StreamingData IStreamingDevice.Data {
             get => Data;
@@ -48,6 +50,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
             Id = Data.Id;
             Enable = Data.Enable;
             IpAddress = Data.IpAddress;
+            _offset = Data.Offset;
+            _len = Data.LedCount;
         }
 
         
@@ -120,7 +124,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             }
 
             var colors = list;
-            colors = TruncateColors(colors);
+            colors = ColorUtil.TruncateColors(colors,_offset, _len);
             if (Data.StripMode == 2) {
                 colors = ShiftColors(colors);
             } else {
@@ -155,25 +159,10 @@ namespace Glimmr.Models.ColorTarget.Wled {
             }
         }
 
-        private List<Color> TruncateColors(List<Color> input) {
-            var output = new List<Color>();
-            var offset = Data.Offset;
-            var len = Data.LedCount;
-            
-            // Instead of doing dumb crap, just make our list of colors loop around
-            var doubled = input;
-            doubled.AddRange(input);
-            if (Data.StripMode == 2) len /= 2;
-            
-            for (var i = offset; i < offset + len; i++) {
-                if (i < doubled.Count) output.Add(doubled[i]);
-            }
-
-            return output;
-        }
+        
 
         private List<Color> ShiftColors(IReadOnlyList<Color> input) {
-            var output = new Color[input.Count * 2];
+            var output = new Color[input.Count];
             var il = output.Length - 1;
             if (!Data.ReverseStrip) {
                 for (var i = 0; i < input.Count; i++) {
@@ -210,6 +199,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
         public Task ReloadData() {
             var id = Data.Id;
             Data = DataUtil.GetCollectionItem<WledData>("Dev_Wled", id);
+            _offset = Data.Offset;
+            _len = Data.LedCount;
             Log.Debug($"Reloaded LED Data for {id}: " + JsonConvert.SerializeObject(Data));
             return Task.CompletedTask;
         }

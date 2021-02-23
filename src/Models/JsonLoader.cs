@@ -15,7 +15,7 @@ namespace Glimmr.Models {
 		public JsonLoader(string path) {
 			var appDir = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
 			_directories = new List<string>();
-			var appPath = Path.Join(appDir, "..", path);
+			var appPath = Path.Join(appDir, path);
 			_directories.Add(appPath);
 			var userPath = Path.Join(SystemUtil.GetUserDir(), path);
 			if (!Directory.Exists(userPath)) {
@@ -26,6 +26,7 @@ namespace Glimmr.Models {
 				}
 			}
 			if (Directory.Exists(userPath)) _directories.Add(userPath);
+			Log.Debug("Directories: " + JsonConvert.SerializeObject(_directories));
 		}
 
 		public List<T> LoadFiles<T>() {
