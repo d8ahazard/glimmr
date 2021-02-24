@@ -8,12 +8,12 @@ using Makaretu.Dns;
 using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Wled {
-    public class WledDiscovery {
+    public class WledDiscovery : ColorDiscovery, IColorDiscovery {
 
         private MulticastService _mDns;
         private bool _discovering;
         private bool _stopDiscovery;
-        public WledDiscovery(ControlService cs) {
+        public WledDiscovery(ControlService cs) : base(cs) {
             _mDns = cs.MulticastService;
             var sd = new ServiceDiscovery(_mDns);
             _mDns.NetworkInterfaceDiscovered += (s, e) => {
@@ -26,7 +26,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             };
 
             sd.ServiceInstanceDiscovered += WledDiscovered;
-
+            DeviceTag = "Wled";
         }
         
         public async Task Discover(CancellationToken ct) {

@@ -13,7 +13,7 @@ using Serilog;
 #endregion
 
 namespace Glimmr.Models.ColorTarget.DreamScreen {
-	public class DreamDevice : IStreamingDevice {
+	public class DreamDevice : IColorTarget {
 		[DataMember] [JsonProperty] public bool Streaming { get; set; }
 		public bool Testing { get; set; }
 		[DataMember] [JsonProperty] public int Brightness { get; set; }
@@ -71,7 +71,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		public void Dispose() {
 		}
 
-		StreamingData IStreamingDevice.Data {
+		StreamingData IColorTarget.Data {
 			get => Data;
 			set => Data = (DreamData) value;
 		}

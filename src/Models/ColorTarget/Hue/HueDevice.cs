@@ -18,9 +18,9 @@ using Q42.HueApi.Streaming.Models;
 using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Hue {
-	public sealed class HueDevice : IStreamingDevice, IDisposable {
+	public sealed class HueDevice : IColorTarget, IDisposable {
 		public bool Enable { get; set; }
-		StreamingData IStreamingDevice.Data {
+		StreamingData IColorTarget.Data {
 			get => Data;
 			set => Data = (HueData) value;
 		}

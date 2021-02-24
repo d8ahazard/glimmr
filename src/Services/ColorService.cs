@@ -51,7 +51,7 @@ namespace Glimmr.Services {
 		// Figure out how to make these generic, non-callable
 		private LifxClient _lifxClient;
 
-		private IStreamingDevice[] _sDevices;
+		private IColorTarget[] _sDevices;
 		
 		// Token for the color target
 		private CancellationTokenSource _sendTokenSource;
@@ -326,7 +326,7 @@ namespace Glimmr.Services {
 			_systemData = DataUtil.GetObject<SystemData>("SystemData");
 			Log.Debug("Creating new device lists...");
 			// Create new lists
-			var sDevs = new List<IStreamingDevice>();
+			var sDevs = new List<IColorTarget>();
 			
 			// Init leaves
 			var leaves = DataUtil.GetCollection<NanoleafData>("Dev_Nanoleaf");
@@ -462,7 +462,7 @@ namespace Glimmr.Services {
 
 			var dev = DataUtil.GetDeviceById(id);
 			Log.Debug("Tag: " + dev.Tag);
-			IStreamingDevice sda = dev.Tag switch {
+			IColorTarget sda = dev.Tag switch {
 				"Lifx" => new LifxDevice(dev, _lifxClient, this),
 				"HueBridge" => new HueDevice(dev, this),
 				"Nanoleaf" => new NanoleafDevice(dev, _controlService.UdpClient, _controlService.HttpSender, this),
@@ -596,7 +596,7 @@ namespace Glimmr.Services {
 				return;
 			}
 			_streamStarted = false;
-			var streamers = new List<IStreamingDevice>();
+			var streamers = new List<IColorTarget>();
 			foreach (var s in _sDevices.Where(s => s.Streaming)) streamers.Add(s);
 			await Task.WhenAll(streamers.Select(i => {
 				try {

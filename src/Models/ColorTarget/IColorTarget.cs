@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace Glimmr.Models.ColorTarget {
-	public interface IStreamingDevice {
+	public interface IColorTarget {
 		public bool Streaming { get; set; }
 		public bool Testing { get; set; }
 		public int Brightness { get; set; }
@@ -35,5 +35,9 @@ namespace Glimmr.Models.ColorTarget {
 		
 		[JsonProperty]
 		public DateTime LastSeen => DateTime.Now;
+	}
+
+	public class ColorTarget {
+		
 	}
 }

@@ -16,7 +16,7 @@ using Newtonsoft.Json.Linq;
 using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Wled {
-    public class WledDevice : IStreamingDevice, IDisposable
+    public class WledDevice : IColorTarget, IDisposable
     {
         public bool Enable { get; set; }
         public bool Streaming { get; set; }
@@ -34,7 +34,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
         private int _offset;
         private int _len;
         
-        StreamingData IStreamingDevice.Data {
+        StreamingData IColorTarget.Data {
             get => Data;
             set => Data = (WledData) value;
         }

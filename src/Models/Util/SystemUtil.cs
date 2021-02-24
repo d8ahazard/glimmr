@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
+using Glimmr.Models.ColorTarget;
 using Serilog;
 
 namespace Glimmr.Models.Util {
@@ -67,6 +70,24 @@ namespace Glimmr.Models.Util {
 
 			if (Directory.Exists(fullPath)) return fullPath;
 			return String.Empty;
+		}
+		
+		public static List<string> GetDiscoverables() {
+			return AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetTypes())
+				.Where(x => typeof(IColorDiscovery).IsAssignableFrom(x) && !x.IsInterface && !x.IsAbstract)
+				.Select(x => x.FullName).ToList();
+		}
+		
+		public static List<string> GetColorTargets() {
+			return AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetTypes())
+				.Where(x => typeof(IColorTarget).IsAssignableFrom(x) && !x.IsInterface && !x.IsAbstract)
+				.Select(x=>x.Name).ToList();
+		}
+		
+		public static List<string> GetColorSources() {
+			return AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetTypes())
+				.Where(x => typeof(IColorTarget).IsAssignableFrom(x) && !x.IsInterface && !x.IsAbstract)
+				.Select(x=>x.Name).ToList();
 		}
 	}
 }

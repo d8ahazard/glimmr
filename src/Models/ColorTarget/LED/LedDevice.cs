@@ -12,7 +12,7 @@ using Serilog;
 using ColorUtil = Glimmr.Models.Util.ColorUtil;
 
 namespace Glimmr.Models.ColorTarget.LED {
-	public class LedDevice : IStreamingDevice {
+	public class LedDevice : IColorTarget {
 		public bool Streaming { get; set; }
 		public bool Testing { get; set; }
 		public int Brightness { get; set; }
@@ -20,7 +20,7 @@ namespace Glimmr.Models.ColorTarget.LED {
 		public string IpAddress { get; set; }
 		public string Tag { get; set; }
 		public bool Enable { get; set; }
-		StreamingData IStreamingDevice.Data {
+		StreamingData IColorTarget.Data {
 			get => Data;
 			set => Data = (LedData) value;
 		}

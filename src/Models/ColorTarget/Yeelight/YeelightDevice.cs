@@ -7,7 +7,7 @@ using Glimmr.Services;
 using YeelightAPI;
 
 namespace Glimmr.Models.ColorTarget.Yeelight {
-	public class YeelightDevice : IStreamingDevice {
+	public class YeelightDevice : IColorTarget {
 		public bool Streaming { get; set; }
 		public bool Testing { get; set; }
 		public int Brightness { get; set; }
@@ -18,7 +18,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 		private YeelightData _data;
 		
-		StreamingData IStreamingDevice.Data {
+		StreamingData IColorTarget.Data {
 			get => _data;
 			set => _data = (YeelightData) value;
 		}

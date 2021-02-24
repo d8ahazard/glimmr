@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Hubs;
 using Glimmr.Models;
+using Glimmr.Models.ColorTarget;
 using Glimmr.Models.ColorTarget.Hue;
 using Glimmr.Models.ColorTarget.LIFX;
 using Glimmr.Models.ColorTarget.Nanoleaf;
@@ -12,6 +15,7 @@ using Glimmr.Models.Util;
 using ISocketLite.PCL.Exceptions;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 using Serilog;
 
 namespace Glimmr.Services {
@@ -24,16 +28,25 @@ namespace Glimmr.Services {
 		private readonly NanoDiscovery _nanoDiscovery;
 		private readonly LifxDiscovery _lifxDiscovery;
 		private readonly HueDiscovery _hueDiscovery;
+		private List<IColorDiscovery> _discoverables;
 		public DiscoveryService(IHubContext<SocketServer> hubContext, ControlService controlService) {
 			_hubContext = hubContext;
 			_controlService = controlService;
 			_controlService.DeviceRescanEvent += TriggerRefresh;
 			_controlService.SetModeEvent += UpdateMode;
-			_hueDiscovery = new HueDiscovery();
-			_yeelightDiscovery = new YeelightDiscovery();
+			_hueDiscovery = new HueDiscovery(_controlService);
+			_yeelightDiscovery = new YeelightDiscovery(_controlService);
 			_lifxDiscovery = new LifxDiscovery(_controlService);
 			_nanoDiscovery = new NanoDiscovery(_controlService);
 			_wledDiscovery = new WledDiscovery(_controlService);
+			var classnames = SystemUtil.GetDiscoverables();
+			_discoverables = new List<IColorDiscovery>();
+			Log.Debug("Adding discovery classes: " + JsonConvert.SerializeObject(_discoverables));
+			foreach (var c in classnames) {
+				Log.Debug("C: " + c);
+				var dev = (IColorDiscovery) Activator.CreateInstance(Type.GetType(c)!, _controlService);
+				_discoverables.Add(dev);
+			}
 		}
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
@@ -71,25 +84,40 @@ namespace Glimmr.Services {
 			var cs = new CancellationTokenSource();
 			cs.CancelAfter(TimeSpan.FromSeconds(timeout));
 			Log.Debug("Starting Device Discovery...");
-			// Get dream devices
-			var lifxTask = _lifxDiscovery.Discover(cs.Token);
-			var nanoTask = _nanoDiscovery.Discover(cs.Token);
-			var bridgeTask = _hueDiscovery.Discover(cs.Token);
-			var wLedTask = _wledDiscovery.Discover(cs.Token);
-			var yeeTask = _yeelightDiscovery.Discover(cs.Token);
-			_controlService.RefreshDreamscreen(cs.Token);
-			try {
-				await Task.WhenAll(nanoTask, bridgeTask, lifxTask, wLedTask, yeeTask);
-			} catch (SocketException f) {
-				Log.Warning("Exception during discovery: " + f.Message);
+			var tasks = new List<Task>();
+			foreach (var disco in _discoverables) {
+				tasks.Add(disco.Discover(cs.Token));
 			}
+
+			try {
+				await Task.WhenAll(tasks);
+			} catch (Exception e) {
+				Log.Warning("Exception during discovery: " + e.Message);
+			} finally {
+				foreach (var task in tasks) {
+					task.Dispose();
+				}
+			}
+			//
+			// // Get dream devices
+			// var lifxTask = _lifxDiscovery.Discover(cs.Token);
+			// var nanoTask = _nanoDiscovery.Discover(cs.Token);
+			// var bridgeTask = _hueDiscovery.Discover(cs.Token);
+			// var wLedTask = _wledDiscovery.Discover(cs.Token);
+			// var yeeTask = _yeelightDiscovery.Discover(cs.Token);
+			// _controlService.RefreshDreamscreen(cs.Token);
+			// try {
+			// 	await Task.WhenAll(nanoTask, bridgeTask, lifxTask, wLedTask, yeeTask);
+			// } catch (SocketException f) {
+			// 	Log.Warning("Exception during discovery: " + f.Message);
+			// }
 				
 			Log.Debug("All devices should now be refreshed.");
-			nanoTask.Dispose();
-			bridgeTask.Dispose();
-			wLedTask.Dispose();
-			yeeTask.Dispose();
-			lifxTask.Dispose();
+			// nanoTask.Dispose();
+			// bridgeTask.Dispose();
+			// wLedTask.Dispose();
+			// yeeTask.Dispose();
+			// lifxTask.Dispose();
 			cs.Dispose();
 
 			// Notify all clients to refresh data

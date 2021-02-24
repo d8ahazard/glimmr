@@ -121,6 +121,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 		
 		private bool Update(int handle, IntPtr buffer, int length, IntPtr user) {
 			if (!_enable) return true;
+			if (_map == null) return false;
 			var samples = 2048 * 2;
 			var fft = new float[samples]; // fft data buffer
 			// Get our FFT for "everything"

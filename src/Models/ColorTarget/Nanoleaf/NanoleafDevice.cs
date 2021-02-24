@@ -14,7 +14,7 @@ using Newtonsoft.Json;
 using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Nanoleaf {
-	public sealed class NanoleafDevice : IStreamingDevice, IDisposable {
+	public sealed class NanoleafDevice : IColorTarget, IDisposable {
 		private string _token;
 		private string _basePath;
 		private NanoLayout _layout;
@@ -22,7 +22,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		private bool _disposed;
 		private bool _sending;
 		public bool Enable { get; set; }
-		StreamingData IStreamingDevice.Data {
+		StreamingData IColorTarget.Data {
 			get => Data;
 			set => Data = (NanoleafData) value;
 		}

@@ -10,13 +10,14 @@ using Newtonsoft.Json;
 using Serilog;
 
 namespace Glimmr.Models.ColorTarget.LIFX {
-    public class LifxDiscovery {
+    public class LifxDiscovery : ColorDiscovery, IColorDiscovery {
         private readonly LifxClient _client;
         private List<LifxData> _existing;
         
-        public LifxDiscovery(ControlService cs) {
+        public LifxDiscovery(ControlService cs) : base(cs) {
             _client = cs.LifxClient;
             _client.DeviceDiscovered += Client_DeviceDiscovered;
+            DeviceTag = "Lifx";
         }
 
         public async Task Discover(CancellationToken ct) {

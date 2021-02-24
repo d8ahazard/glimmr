@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
@@ -15,7 +16,7 @@ using Glimmr.Services;
 using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Razer {
-	public class RazerDevice:IStreamingDevice {
+	public class RazerDevice:IColorTarget {
 		public bool Streaming { get; set; }
 		public bool Testing { get; set; }
 		public int Brightness { get; set; }
@@ -26,12 +27,12 @@ namespace Glimmr.Models.ColorTarget.Razer {
 		
 		private RazerData _data;
 		
-		StreamingData IStreamingDevice.Data {
+		StreamingData IColorTarget.Data {
 			get => _data;
 			set => _data = (RazerData) value;
 		}
 		
-		private readonly IChroma _chroma;
+		private IChroma _chroma;
 
 		private const int MaxKeyboardRows = KeyboardConstants.MaxRows;
 		private const int MaxKeyboardCols = KeyboardConstants.MaxColumns;
@@ -44,14 +45,7 @@ namespace Glimmr.Models.ColorTarget.Razer {
 
 
 		public RazerDevice(ColorService controlService) {
-			Enable = true;
-			_chroma = ColoreProvider.CreateNativeAsync().Result;
-			_data = DataUtil.GetObject<RazerData>("RazerData");
-			if (_data == null) {
-				_data = new RazerData();
-				DataUtil.SetObject<RazerData>("RazerData",_data);
-			}
-			
+			ReloadData();
 			controlService.ColorSendEvent += SetColor;
 			Log.Debug("Razer device created.");
 		}
@@ -67,7 +61,7 @@ namespace Glimmr.Models.ColorTarget.Razer {
 		}
 
 		public void SetColor(List<Color> colors, List<Color> sectors, int fadeTime) {
-			if (!Streaming) return;
+			if (!Streaming || !Enable) return;
 			var mouseMap = CreateMouseMap(colors);
 			var mousepadMap = CreateMousepadMap(colors);
 			var kbMap = CreateKeyboardMap(colors);
@@ -86,12 +80,25 @@ namespace Glimmr.Models.ColorTarget.Razer {
 		}
 
 		public Task ReloadData() {
-			DataUtil.GetObject<SystemData>("SystemData");
+			Enable = true;
+			try {
+				_chroma = ColoreProvider.CreateNativeAsync().Result;
+			} catch (Exception e) {
+				Log.Warning("Exception initializing Razer: " + e.Message);
+				Enable = false;
+				return Task.CompletedTask;
+			}
+
+			_data = DataUtil.GetObject<RazerData>("RazerData");
+			if (_data == null) {
+				_data = new RazerData();
+				DataUtil.SetObject<RazerData>("RazerData",_data);
+			}
 			return Task.CompletedTask;
 		}
 
 		public void Dispose() {
-			_chroma.Dispose();
+			_chroma?.Dispose();
 		}
 
 		private CustomKeyboardEffect CreateKeyboardMap(List<Color> colors) {

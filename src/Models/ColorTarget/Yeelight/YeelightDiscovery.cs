@@ -1,15 +1,18 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
+using Glimmr.Services;
 using Newtonsoft.Json;
 using Serilog;
 using YeelightAPI;
 
 namespace Glimmr.Models.ColorTarget.Yeelight {
-	public class YeelightDiscovery {
+	public class YeelightDiscovery : ColorDiscovery, IColorDiscovery {
 
-		public YeelightDiscovery() {
-			
+		private ControlService _controlService;
+		public YeelightDiscovery(ControlService controlService) : base(controlService) {
+			_controlService = controlService;
+			DeviceTag = "Yeelight";
 		}
 		
 		public async Task Discover(CancellationToken ct) {

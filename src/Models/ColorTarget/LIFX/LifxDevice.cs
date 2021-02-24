@@ -11,9 +11,9 @@ using Color = System.Drawing.Color;
 //using LifxColor = LifxNet.Color;
 
 namespace Glimmr.Models.ColorTarget.LIFX {
-    public class LifxDevice : IStreamingDevice {
+    public class LifxDevice : IColorTarget {
         public bool Enable { get; set; }
-        StreamingData IStreamingDevice.Data {
+        StreamingData IColorTarget.Data {
             get => Data;
             set => Data = (LifxData) value;
         }

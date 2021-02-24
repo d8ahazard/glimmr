@@ -143,11 +143,9 @@ namespace Glimmr.Models.ColorSource.Audio {
 				_highRange = am.HighRange;
 				_midRange = am.MidRange;
 				_lowRange = am.LowRange;
-				Log.Debug("Still alive2");
 			} catch (Exception e) {
 				Log.Warning("Exception: " + e.Message);
 			}
-			Log.Debug("Still alive 3");
 			_hSectors = sd.HSectors;
 			_vSectors = sd.VSectors;
 			var len = (_hSectors + _vSectors) * 2 - 4;

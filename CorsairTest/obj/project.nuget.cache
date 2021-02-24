@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "z2ZeF49E/UupYYJcakJMmg0kzW2kSbltg/2Jc89wTukd85UZmOGJqOdLHKGLDAQ+YYjEPWKjx36pQIpD72Nffw==",
+  "success": true,
+  "projectFilePath": "E:\\Dev\\Glimmr\\CorsairTest\\CorsairTest.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\d8aha\\.nuget\\packages\\cuesdk.net\\3.0.361.1\\cuesdk.net.3.0.361.1.nupkg.sha512",
+    "C:\\Users\\d8aha\\.nuget\\packages\\newtonsoft.json\\12.0.3\\newtonsoft.json.12.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}

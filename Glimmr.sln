@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.30711.63
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Glimmr", "./src/Glimmr.csproj", "{FDF342C5-295B-4198-9D86-8AC0DF53898D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CorsairTest", "CorsairTest\CorsairTest.csproj", "{6D5A45F7-59A1-474C-BB4E-FDB820332AA0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{FDF342C5-295B-4198-9D86-8AC0DF53898D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FDF342C5-295B-4198-9D86-8AC0DF53898D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FDF342C5-295B-4198-9D86-8AC0DF53898D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6D5A45F7-59A1-474C-BB4E-FDB820332AA0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D5A45F7-59A1-474C-BB4E-FDB820332AA0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6D5A45F7-59A1-474C-BB4E-FDB820332AA0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6D5A45F7-59A1-474C-BB4E-FDB820332AA0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
