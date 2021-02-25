@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Glimmr.Models.ColorSource.Ambient;
+using Glimmr.Models.ColorTarget;
 using Glimmr.Models.ColorTarget.DreamScreen;
 using Glimmr.Models.ColorTarget.Hue;
 using Glimmr.Models.ColorTarget.LED;
@@ -153,6 +154,57 @@ namespace Glimmr.Models.Util {
                 var coll = db.GetCollection(key);
                 await Task.FromResult(coll.Upsert(value.Id, value));
                 db.Commit();
+        }
+
+        public static List<IColorTargetData> GetDevices() {
+            return GetObject<List<IColorTargetData>>("Devices");
+        }
+        
+        public static List<T> GetDevices<T>(string tag) where T : class {
+            var devs = GetObject<List<IColorTargetData>>("Devices");
+            var output = new List<T>();
+            foreach (var d in devs) {
+                if (d.Tag == tag) {
+                    output.Add((T)d);
+                }
+            }
+            return output;
+        }
+
+        public static dynamic GetDevice<T>(string id) where T : class {
+            var devs = GetObject<List<IColorTargetData>>("Devices");
+            foreach (var d in devs) {
+                if (d.Id == id) {
+                    return (T)d;
+                }
+            }
+            return null;
+        }
+
+
+        public static dynamic GetDevice(string id) {
+            var devs = GetObject<List<IColorTargetData>>("Devices");
+            foreach (var d in devs) {
+                if (d.Id == id) {
+                    return d;
+                }
+            }
+            return null;
+        }
+
+        public static void AddDevice(dynamic device) {
+            var devices = GetDevices();
+            var merged = false;
+            for (var i = 0; i < devices.Count; i++) {
+                if (devices[i].Id != device.Id) {
+                    continue;
+                }
+
+                devices[i] = device;
+                merged = true;
+            }
+            if (!merged) devices.Add(device);
+            SetObject<List<IColorTargetData>>("Devices", devices);
         }
         
         public static string GetDeviceSerial() {
