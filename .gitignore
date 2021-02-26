@@ -2,6 +2,8 @@
 .vs/*
 bin/*
 obj/*
+CorsairTest/bin/*
+CorsairTest/obj/*
 src/bin/*
 src/obj/*
 huedream.ini
