@@ -11,7 +11,7 @@ using Serilog;
 
 
 namespace Glimmr.Models.ColorTarget.Corsair {
-	public class CorsairDevice : IColorTarget {
+	public class CorsairDevice : ColorTarget, IColorTarget {
 		public bool Streaming { get; set; }
 		public bool Testing { get; set; }
 		public int Brightness { get; set; }
@@ -19,14 +19,14 @@ namespace Glimmr.Models.ColorTarget.Corsair {
 		public string IpAddress { get; set; }
 		public string Tag { get; set; }
 		public bool Enable { get; set; }
-		public StreamingData Data { get; set; }
+		public IColorTargetData Data { get; set; }
 		private Dictionary<CorsairDeviceType, CorsairLedPositions> _devices;
 		
 		private int _bottomStart;
 		private int _bottomCount;
 		
 
-		public CorsairDevice(ColorService colorService) {
+		public CorsairDevice(IColorTargetData data, ColorService colorService) : base(colorService) {
 			try {
 				ReloadData();
 				colorService.ColorSendEvent += SetColor;

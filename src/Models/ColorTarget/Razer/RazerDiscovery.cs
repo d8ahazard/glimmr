@@ -6,7 +6,7 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.Razer {
 	public class RazerDiscovery : ColorDiscovery, IColorDiscovery {
 		
-		public RazerDiscovery(ControlService controlService) : base(controlService) {
+		public RazerDiscovery(ColorService colorService) : base(colorService) {
 			DeviceTag = "Razer";
 		}
 		
@@ -19,5 +19,7 @@ namespace Glimmr.Models.ColorTarget.Razer {
 
 			Log.Debug("Razer: Discovery complete.");
 		}
+
+		public override string DeviceTag { get; set; }
 	}
 }

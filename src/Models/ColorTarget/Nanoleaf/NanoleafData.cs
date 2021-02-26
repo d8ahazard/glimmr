@@ -8,7 +8,7 @@ using Info = Nanoleaf.Client.Models.Responses.Info;
 
 namespace Glimmr.Models.ColorTarget.Nanoleaf {
     [Serializable]
-    public class NanoleafData : StreamingData {
+    public class NanoleafData : IColorTargetData {
         [JsonProperty] public string IpV6Address { get; set; }
         [JsonProperty] public string Hostname { get; set; }
         [JsonProperty] public int Port { get; set; }
@@ -55,7 +55,10 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
         }
 
         // Copy data from an existing leaf into this leaf...don't insert
-        public NanoleafData CopyExisting(NanoleafData existingLeaf) {
+        public string LastSeen { get; set; }
+
+        public void CopyExisting(IColorTargetData data) {
+            NanoleafData existingLeaf = (NanoleafData) data;
             if (existingLeaf == null) throw new ArgumentException("Invalid nano data!");
             Token = existingLeaf.Token;
             Enable = existingLeaf.Enable;
@@ -63,8 +66,6 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
             // Grab the new leaf layout
             MergeLayout(existingLeaf.Layout);
             Tag = "Nanoleaf";
-            
-            return this;
         }
 
         public void MergeLayout(NanoLayout newLayout) {
@@ -89,6 +90,13 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
             Layout.PositionData = posData;
         }
 
+
+        public string Name { get; set; }
+        public string Id { get; set; }
+        public string Tag { get; set; }
+        public string IpAddress { get; set; }
+        public int Brightness { get; set; }
+        public bool Enable { get; set; }
         
     }
     [Serializable]

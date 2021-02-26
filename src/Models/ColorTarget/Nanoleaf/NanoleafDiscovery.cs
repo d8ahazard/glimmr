@@ -11,10 +11,12 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.Nanoleaf {
     public class NanoDiscovery : ColorDiscovery, IColorDiscovery {
     private readonly MulticastService _mDns;
+    private ControlService _controlService;
 
-    public NanoDiscovery(ControlService cs) : base(cs) {
+    public NanoDiscovery(ColorService cs) : base(cs) {
         var sd = new ServiceDiscovery();
-        _mDns = cs.MulticastService;
+        _controlService = cs.ControlService;
+        _mDns = cs.ControlService.MulticastService;
         _mDns.NetworkInterfaceDiscovered += (s, e) => {
             // Ask for the name of all services.
             sd.QueryServiceInstances("_nanoleafapi._tcp");
@@ -36,7 +38,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
         Log.Debug("Nano: Discovery complete.");
     }
 
-    private static void ParseInstance(object o, ServiceInstanceDiscoveryEventArgs e) {
+    private void ParseInstance(object o, ServiceInstanceDiscoveryEventArgs e) {
         var name = e.ServiceInstanceName.ToString();
         var nData = new NanoleafData {IpAddress = string.Empty};
         if (!name.Contains("nanoleafapi", StringComparison.InvariantCulture)) return;
@@ -77,28 +79,10 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
         }
 
-        if (!string.IsNullOrEmpty(nData.IpAddress) && !string.IsNullOrEmpty(nData.Id)) {
-            var existing = DataUtil.GetCollectionItem<NanoleafData>("Dev_Nanoleaf", nData.Id);
-            if (existing != null) {
-                nData.CopyExisting(existing);
-            }
-
-            if (nData.Token == null) {
-                Log.Debug("NO TOKEN!");
-                return;
-            }
-
-            using var nl = new NanoleafDevice(nData, new HttpClient());
-            var layout = nl.GetLayout().Result;
-            if (layout != null) {
-                nData.MergeLayout(layout);
-            } else {
-                Log.Debug("Layout is null.");
-            }
-
-            DataUtil.InsertCollection<NanoleafData>("Dev_Nanoleaf", nData).ConfigureAwait(false);
-        }
+        _controlService.AddDevice(nData).ConfigureAwait(true);
 
     }
+
+    public override string DeviceTag { get; set; }
     }
 }

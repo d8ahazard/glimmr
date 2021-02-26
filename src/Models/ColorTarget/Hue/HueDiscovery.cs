@@ -11,31 +11,33 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Hue {
     public class HueDiscovery : ColorDiscovery, IColorDiscovery {
-        private readonly BridgeLocator _bridgeLocator;
-        public HueDiscovery(ControlService controlService) : base(controlService) {
-            _bridgeLocator = new LocalNetworkScanBridgeLocator();
+        private readonly BridgeLocator _bridgeLocatorHttp;
+
+        private readonly BridgeLocator _bridgeLocatorSsdp;
+        private readonly BridgeLocator _bridgeLocatorMdns;
+        private readonly ControlService _controlService;
+        public HueDiscovery(ColorService colorService) : base(colorService) {
+            _bridgeLocatorHttp = new HttpBridgeLocator();
+            _bridgeLocatorMdns = new MdnsBridgeLocator();
+            _bridgeLocatorSsdp = new SsdpBridgeLocator();
+            _bridgeLocatorHttp.BridgeFound += DeviceFound;
+            _bridgeLocatorMdns.BridgeFound += DeviceFound;
+            _bridgeLocatorSsdp.BridgeFound += DeviceFound;
             DeviceTag = "Hue";
+            _controlService = colorService.ControlService;
         }
-        
+
+        private void DeviceFound(IBridgeLocator sender, LocatedBridge locatedbridge) {
+            var data = new HueData(locatedbridge);
+            _controlService.AddDevice(data).ConfigureAwait(true);
+        }
+
         public async Task Discover(CancellationToken ct) {
             Log.Debug("Hue: Discovery started...");
             try {
-                var discovered = await _bridgeLocator.LocateBridgesAsync(ct);
-                var output = discovered.Select(bridge => new HueData(bridge)).ToList();
-                foreach (var dev in output) {
-                    var copy = dev;
-                    var existing = DataUtil.GetCollectionItem<HueData>("Dev_Hue", dev.Id);
-                    if (existing != null) {
-                        copy.CopyBridgeData(existing);
-                        if (copy.Key != null && copy.User != null) {
-                            var n = new HueDevice(copy);
-                            copy = n.RefreshData().Result;
-                            n.Dispose();
-                        }
-                    }
-
-                    await DataUtil.InsertCollection<HueData>("Dev_Hue", copy);
-                }
+                await Task.WhenAll(_bridgeLocatorHttp.LocateBridgesAsync(ct), _bridgeLocatorMdns.LocateBridgesAsync(ct),
+                    _bridgeLocatorSsdp.LocateBridgesAsync(ct));
+                
             } catch (Exception e) {
                 Log.Debug("Hue discovery exception: " + e.Message);
             }
@@ -56,6 +58,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
             }
             return null;
         }
-        
+
+        public override string DeviceTag { get; set; }
     }
 }

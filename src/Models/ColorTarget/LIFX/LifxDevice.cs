@@ -11,9 +11,9 @@ using Color = System.Drawing.Color;
 //using LifxColor = LifxNet.Color;
 
 namespace Glimmr.Models.ColorTarget.LIFX {
-    public class LifxDevice : IColorTarget {
+    public class LifxDevice : ColorTarget, IColorTarget {
         public bool Enable { get; set; }
-        StreamingData IColorTarget.Data {
+        IColorTargetData IColorTarget.Data {
             get => Data;
             set => Data = (LifxData) value;
         }
@@ -31,10 +31,10 @@ namespace Glimmr.Models.ColorTarget.LIFX {
 
         private readonly LifxClient _client;
 
-        public LifxDevice(LifxData d, LifxClient c, ColorService colorService) {
+        public LifxDevice(LifxData d, ColorService colorService) : base(colorService) {
             DataUtil.GetItem<int>("captureMode");
             Data = d ?? throw new ArgumentException("Invalid Data");
-            _client = c;
+            _client = colorService.ControlService.GetAgent<LifxClient>();
             colorService.ColorSendEvent += SetColor;
             B = new LightBulb(d.HostName, d.MacAddress, d.Service, (uint)d.Port);
             _targetSector = d.TargetSector - 1;

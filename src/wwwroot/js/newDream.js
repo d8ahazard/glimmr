@@ -959,7 +959,7 @@ function setObj(group, key, val, obj) {
 function getDevices() {
     let d = [];
     for (const [key, value] of Object.entries(data.store)) {
-        if (key.includes("Dev_") && key !== "Dev_Audio") {
+        if (key === "Devices") {
             for (let i = 0; i < value.length; i++) {
                 if (value.hasOwnProperty(i)) {
                     d.push(value[i]);

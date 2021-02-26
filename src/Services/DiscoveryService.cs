@@ -1,18 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text.Json.Serialization;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Hubs;
 using Glimmr.Models;
 using Glimmr.Models.ColorTarget;
-using Glimmr.Models.ColorTarget.Hue;
-using Glimmr.Models.ColorTarget.LIFX;
-using Glimmr.Models.ColorTarget.Nanoleaf;
-using Glimmr.Models.ColorTarget.Wled;
-using Glimmr.Models.ColorTarget.Yeelight;
 using Glimmr.Models.Util;
-using ISocketLite.PCL.Exceptions;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
@@ -21,30 +15,19 @@ using Serilog;
 namespace Glimmr.Services {
 	public class DiscoveryService : BackgroundService {
 		private readonly IHubContext<SocketServer> _hubContext;
-		private readonly ControlService _controlService;
 		private bool _streaming;
-		private readonly YeelightDiscovery _yeelightDiscovery;
-		private readonly WledDiscovery _wledDiscovery;
-		private readonly NanoDiscovery _nanoDiscovery;
-		private readonly LifxDiscovery _lifxDiscovery;
-		private readonly HueDiscovery _hueDiscovery;
-		private List<IColorDiscovery> _discoverables;
-		public DiscoveryService(IHubContext<SocketServer> hubContext, ControlService controlService) {
+		private readonly List<IColorDiscovery> _discoverables;
+		public DiscoveryService(IHubContext<SocketServer> hubContext, ColorService colorService) {
 			_hubContext = hubContext;
-			_controlService = controlService;
-			_controlService.DeviceRescanEvent += TriggerRefresh;
-			_controlService.SetModeEvent += UpdateMode;
-			_hueDiscovery = new HueDiscovery(_controlService);
-			_yeelightDiscovery = new YeelightDiscovery(_controlService);
-			_lifxDiscovery = new LifxDiscovery(_controlService);
-			_nanoDiscovery = new NanoDiscovery(_controlService);
-			_wledDiscovery = new WledDiscovery(_controlService);
+			var controlService1 = colorService.ControlService;
+			controlService1.DeviceRescanEvent += TriggerRefresh;
+			controlService1.SetModeEvent += UpdateMode;
 			var classnames = SystemUtil.GetDiscoverables();
 			_discoverables = new List<IColorDiscovery>();
-			Log.Debug("Adding discovery classes: " + JsonConvert.SerializeObject(_discoverables));
+			Log.Debug("Adding discovery classes...");
 			foreach (var c in classnames) {
 				Log.Debug("C: " + c);
-				var dev = (IColorDiscovery) Activator.CreateInstance(Type.GetType(c)!, _controlService);
+				var dev = (IColorDiscovery) Activator.CreateInstance(Type.GetType(c)!, colorService);
 				_discoverables.Add(dev);
 			}
 		}
@@ -77,6 +60,7 @@ namespace Glimmr.Services {
 			Log.Debug("Triggering refresh.");
 			await DeviceDiscovery();
 		}
+
         
 		private async Task DeviceDiscovery(int timeout=15) {
 			Log.Debug("Triggering refresh of devices via timer.");
@@ -84,10 +68,7 @@ namespace Glimmr.Services {
 			var cs = new CancellationTokenSource();
 			cs.CancelAfter(TimeSpan.FromSeconds(timeout));
 			Log.Debug("Starting Device Discovery...");
-			var tasks = new List<Task>();
-			foreach (var disco in _discoverables) {
-				tasks.Add(disco.Discover(cs.Token));
-			}
+			var tasks = _discoverables.Select(disco => Task.Run(() =>disco.Discover(cs.Token))).ToList();
 
 			try {
 				await Task.WhenAll(tasks);
@@ -98,26 +79,8 @@ namespace Glimmr.Services {
 					task.Dispose();
 				}
 			}
-			//
-			// // Get dream devices
-			// var lifxTask = _lifxDiscovery.Discover(cs.Token);
-			// var nanoTask = _nanoDiscovery.Discover(cs.Token);
-			// var bridgeTask = _hueDiscovery.Discover(cs.Token);
-			// var wLedTask = _wledDiscovery.Discover(cs.Token);
-			// var yeeTask = _yeelightDiscovery.Discover(cs.Token);
-			// _controlService.RefreshDreamscreen(cs.Token);
-			// try {
-			// 	await Task.WhenAll(nanoTask, bridgeTask, lifxTask, wLedTask, yeeTask);
-			// } catch (SocketException f) {
-			// 	Log.Warning("Exception during discovery: " + f.Message);
-			// }
 				
 			Log.Debug("All devices should now be refreshed.");
-			// nanoTask.Dispose();
-			// bridgeTask.Dispose();
-			// wLedTask.Dispose();
-			// yeeTask.Dispose();
-			// lifxTask.Dispose();
 			cs.Dispose();
 
 			// Notify all clients to refresh data

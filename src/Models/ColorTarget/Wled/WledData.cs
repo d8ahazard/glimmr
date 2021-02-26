@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Wled {
-    public class WledData : StreamingData {
+    public class WledData : IColorTargetData {
         // 0 = normal
         // 1 = all to one sector
         // 2 = Sub sectors
@@ -65,7 +65,10 @@ namespace Glimmr.Models.ColorTarget.Wled {
             }
         }
 
-        public void CopyExisting(WledData input) {
+        public string LastSeen { get; set; }
+
+        public void CopyExisting(IColorTargetData data) {
+            var input = (WledData) data;
             if (input == null) throw new ArgumentNullException(nameof(input));
             Offset = input.Offset;
             Enable = input.Enable;
@@ -77,6 +80,14 @@ namespace Glimmr.Models.ColorTarget.Wled {
             StripMode = input.StripMode;
             if (Id != null) Name = StringUtil.UppercaseFirst(Id);
         }
+
+        public string Name { get; set; }
+        public string Id { get; set; }
+        public string Tag { get; set; }
+        public string IpAddress { get; set; }
+        public int Brightness { get; set; }
+        public bool Enable { get; set; }
+        
     }
     
     public class Ccnf    {

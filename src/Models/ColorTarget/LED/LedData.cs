@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 namespace Glimmr.Models.ColorTarget.LED {
     [Serializable]
-    public class LedData : StreamingData {
+    public class LedData : IColorTargetData {
 
         [DefaultValue(18)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -34,11 +34,30 @@ namespace Glimmr.Models.ColorTarget.LED {
         [DefaultValue(true)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool FixGamma { get; set; } = true;
-        
+
+        public string Name { get; set; }
+        public string Id { get; set; }
+
         [DefaultValue("Led")]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-        public new string Tag { get; set; } = "Led";
-        
-        
+        public string Tag { get; set; } = "Led";
+
+        public string IpAddress { get; set; }
+        public int Brightness { get; set; }
+        public bool Enable { get; set; }
+        public string LastSeen { get; set; }
+
+        public void CopyExisting(IColorTargetData data) {
+            var ld = (LedData) data;
+            Offset = ld.Offset;
+            Count = ld.Count;
+            GpioNumber = ld.GpioNumber;
+            FixGamma = ld.FixGamma;
+            MilliampsPerLed = ld.MilliampsPerLed;
+            AblMaxMilliamps = ld.AblMaxMilliamps;
+            Name = ld.Name;
+            Brightness = ld.Brightness;
+            Enable = ld.Enable;
+        }
     }
 }

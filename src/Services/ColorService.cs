@@ -12,6 +12,7 @@ using Glimmr.Models.ColorSource.Audio;
 using Glimmr.Models.ColorSource.AudioVideo;
 using Glimmr.Models.ColorSource.Video;
 using Glimmr.Models.ColorTarget;
+using Glimmr.Models.ColorTarget.Corsair;
 using Glimmr.Models.ColorTarget.DreamScreen;
 using Glimmr.Models.ColorTarget.Hue;
 using Glimmr.Models.ColorTarget.LED;
@@ -34,7 +35,7 @@ using Color = System.Drawing.Color;
 namespace Glimmr.Services {
 	// Handles capturing and sending color data
 	public class ColorService : BackgroundService {
-		private readonly ControlService _controlService;
+		public ControlService ControlService { get; }
 		private readonly DreamUtil _dreamUtil;
 		private AmbientStream _ambientStream;
 		private AudioStream _audioStream;
@@ -71,18 +72,17 @@ namespace Glimmr.Services {
 		public event Action<List<Color>, string> SegmentTestEvent = delegate { };
 
 		public ColorService(ControlService controlService) {
-			_controlService = controlService;
-			_controlService.TriggerSendColorEvent += SendColors;
-			_controlService.SetModeEvent += Mode;
-			_controlService.DeviceReloadEvent += RefreshDeviceData;
-			_controlService.RefreshLedEvent += ReloadLedData;
-			_controlService.RefreshSystemEvent += ReloadSystemData;
-			_controlService.TestLedEvent += LedTest;
-			_controlService.AddSubscriberEvent += AddSubscriber;
-			_controlService.FlashDeviceEvent += FlashDevice;
-			_controlService.FlashSectorEvent += FlashSector;
-			_controlService.DemoLedEvent += Demo;
-			_dreamUtil = new DreamUtil(_controlService.UdpClient);
+			ControlService = controlService;
+			ControlService.TriggerSendColorEvent += SendColors;
+			ControlService.SetModeEvent += Mode;
+			ControlService.DeviceReloadEvent += RefreshDeviceData;
+			ControlService.RefreshLedEvent += ReloadLedData;
+			ControlService.RefreshSystemEvent += ReloadSystemData;
+			ControlService.TestLedEvent += LedTest;
+			ControlService.AddSubscriberEvent += AddSubscriber;
+			ControlService.FlashDeviceEvent += FlashDevice;
+			ControlService.FlashSectorEvent += FlashSector;
+			ControlService.DemoLedEvent += Demo;
 			Log.Debug("Initialization complete.");
 		}
 		
@@ -257,17 +257,17 @@ namespace Glimmr.Services {
 				Log.Debug("Auto-enabling stream.");
 				_autoDisabled = false;
 				DataUtil.SetItem("AutoDisabled", _autoDisabled);
-				_controlService.SetModeEvent -= Mode;
-				await _controlService.SetMode(_deviceMode);
-				_controlService.SetModeEvent += Mode;
+				ControlService.SetModeEvent -= Mode;
+				await ControlService.SetMode(_deviceMode);
+				ControlService.SetModeEvent += Mode;
 			} else {
 				if (_autoDisabled || _deviceMode == 2) return;
 				Log.Debug("Auto-disabling stream.");
 				_autoDisabled = true;
 				DataUtil.SetItem("AutoDisabled", _autoDisabled);
-				_controlService.SetModeEvent -= Mode;
-				await _controlService.SetMode(0);
-				_controlService.SetModeEvent += Mode;
+				ControlService.SetModeEvent -= Mode;
+				await ControlService.SetMode(0);
+				ControlService.SetModeEvent += Mode;
 			}
 		}
 
@@ -327,45 +327,30 @@ namespace Glimmr.Services {
 			Log.Debug("Creating new device lists...");
 			// Create new lists
 			var sDevs = new List<IColorTarget>();
-			
-			// Init leaves
-			var leaves = DataUtil.GetCollection<NanoleafData>("Dev_Nanoleaf");
-			foreach (var n in leaves.Where(n => !string.IsNullOrEmpty(n.Token) && n.Layout != null)) {
-				sDevs.Add(new NanoleafDevice(n, _controlService.UdpClient, _controlService.HttpSender, this));
-			}
-
-			var dsDevs = DataUtil.GetCollection<DreamData>("Dev_Dreamscreen");
-			foreach (var ds in dsDevs) {
-				sDevs.Add(new DreamDevice(ds, _dreamUtil, this));
-			}
-
-			// Init lifx
-			var lifx = DataUtil.GetCollection<LifxData>("Dev_Lifx");
-			if (lifx != null) {
-				foreach (var b in lifx.Where(b => b.TargetSector != -1)) {
-					_lifxClient = _controlService.LifxClient;
-					sDevs.Add(new LifxDevice(b, _lifxClient, this));
+			var classes = SystemUtil.GetColorTargets();
+			var deviceData = DataUtil.GetCollection<dynamic>("Devices");
+			foreach (var c in classes) {
+				try {
+					Log.Debug("Loading class: " + c);
+					var tag = c.Replace("Device", "");
+					var dataName = c.Replace("Device", "Data");
+					tag = c.Replace("Glimmr.Models.ColorTarget.", "");
+					tag = tag.Split(".")[0];
+					foreach (var device in deviceData) {
+						if (device.Tag == tag) {
+							var args = new object[] {device, this};
+							var obj = (IColorTarget) Activator.CreateInstance(Type.GetType(c)!, args);
+							sDevs.Add(obj);
+						}
+					}
+					
+				} catch (Exception e) {
+					Log.Warning("Exception: " + e.Message);
 				}
 			}
 
-			var wlArray = DataUtil.GetCollection<WledData>("Dev_Wled");
-			foreach (var wl in wlArray) {
-				sDevs.Add(new WledDevice(wl, _controlService.UdpClient, _controlService.HttpSender, this));
-			}
-
-			var bridgeArray = DataUtil.GetCollection<HueData>("Dev_Hue");
-			foreach (var bridge in bridgeArray.Where(bridge =>
-				!string.IsNullOrEmpty(bridge.Key) && !string.IsNullOrEmpty(bridge.User) &&
-				bridge.SelectedGroup != "-1")) {
-				Log.Debug("Adding Hue device: " + bridge.Id);
-				sDevs.Add(new HueDevice(bridge));
-			}
+			Log.Debug("We have a total of " + sDevs.Count + " devices.");
 			
-			var yeeArray = DataUtil.GetCollection<YeelightData>("Dev_Yeelight");
-			foreach (var yd in yeeArray) {
-				sDevs.Add(new YeelightDevice(yd, this));
-			}
-
 			var ledData = DataUtil.GetCollectionItem<LedData>("LedData", "0");
 			//var ledData2 = DataUtil.GetCollectionItem<LedData>("LedData", "1");
 			//var ledData3 = DataUtil.GetCollectionItem<LedData>("LedData", "2");
@@ -373,7 +358,7 @@ namespace Glimmr.Services {
 			//_strips.Add(new LedStrip(ledData2, this));
 			//_strips.Add(new LedStrip(ledData3,this));
 			sDevs.Add(new LedDevice(ledData, this));
-			sDevs.Add(new RazerDevice(this));
+			//sDevs.Add(new RazerDevice(this));
 			_sDevices = sDevs.ToArray();
 		}
 
@@ -460,18 +445,8 @@ namespace Glimmr.Services {
 				return;
 			}
 
-			var dev = DataUtil.GetDeviceById(id);
-			Log.Debug("Tag: " + dev.Tag);
-			IColorTarget sda = dev.Tag switch {
-				"Lifx" => new LifxDevice(dev, _lifxClient, this),
-				"HueBridge" => new HueDevice(dev, this),
-				"Nanoleaf" => new NanoleafDevice(dev, _controlService.UdpClient, _controlService.HttpSender, this),
-				"Wled" => new WledDevice(dev, _controlService.UdpClient, _controlService.HttpSender, this),
-				"Dreamscreen" => new DreamDevice(dev, _dreamUtil, this),
-				"Led" => new LedDevice(dev,this),
-				null => null,
-				_ => null
-			};
+			var dev = DataUtil.GetDevice(id);
+			IColorTarget sda = GetDevice(dev);
 
 			// If our device is a real boy, start it and add it
 			if (sda == null) {
@@ -492,6 +467,24 @@ namespace Glimmr.Services {
 				}
 			}
 			return Task.CompletedTask;
+		}
+
+		private IColorTarget GetDevice(dynamic dev) {
+			Log.Debug("Tag: " + dev.Tag);
+			IColorTarget sda = dev.Tag switch {
+				"Lifx" => new LifxDevice(dev, this),
+				"Hue" => new HueDevice(dev, this),
+				"Nanoleaf" => new NanoleafDevice(dev, this),
+				"Wled" => new WledDevice(dev, this),
+				"Dreamscreen" => new DreamDevice(dev, this),
+				"Led" => new LedDevice(dev,this),
+				"Yeelight" => new YeelightDevice(dev,this),
+				"Corsair" => new CorsairDevice(dev,this),
+				"Razer" => new RazerDevice(dev,this),
+				null => null,
+				_ => null
+			};
+			return sda;
 		}
 
 		private void ReloadSystemData() {

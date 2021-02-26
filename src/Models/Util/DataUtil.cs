@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -12,6 +13,7 @@ using Glimmr.Models.ColorTarget.LED;
 using Glimmr.Models.ColorTarget.LIFX;
 using Glimmr.Models.ColorTarget.Nanoleaf;
 using Glimmr.Models.ColorTarget.Wled;
+using Glimmr.Models.ColorTarget.Yeelight;
 using Glimmr.Services;
 using LiteDB;
 using Microsoft.AspNetCore.Authentication;
@@ -40,17 +42,18 @@ namespace Glimmr.Models.Util {
 
         public static async Task CheckDefaults(ControlService cs) {
             var db = GetDb();
+            await MigrateDevices();
             var sObj = GetObject<SystemData>("SystemData");
             if (sObj == null) {
                 var sd = new SystemData {DefaultSet = true};
-                SetObject<SystemData>("SystemData",sd);
+                await SetObjectAsync<SystemData>("SystemData",sd);
                 Log.Warning("Setting default values!");
                 // If not, create it
                 var deviceIp = IpUtil.GetLocalIpAddress();
                 var myDevice = new DreamData {Id = deviceIp, IpAddress = deviceIp};
                 Log.Debug("Creating default device data: " + JsonConvert.SerializeObject(myDevice));
                 SetDeviceData(myDevice);
-                SetObject<Color>("AmbientColor", Color.FromArgb(255, 255, 255, 255));
+                await SetObjectAsync<Color>("AmbientColor", Color.FromArgb(255, 255, 255, 255));
                 Log.Debug("Creating DreamData profile...");
                 // Get/create our collection of Dream devices
                 var d = db.GetCollection<DreamData>("Dev_Dreamscreen");
@@ -83,6 +86,32 @@ namespace Glimmr.Models.Util {
                 await InsertCollection<LedData>("LedData", l2);
                 await InsertCollection<LedData>("LedData", l3);
             }
+        }
+
+        private static async Task MigrateDevices() {
+            var db = GetDb();
+            var lifx = db.GetCollection<LifxData>("Dev_Lifx");
+            var nano = db.GetCollection<LifxData>("Dev_Nanoleaf");
+            var ds = db.GetCollection<LifxData>("Dev_Dreamscreen");
+            var yee = db.GetCollection<YeelightData>("Dev_Yeelight");
+            var hue = db.GetCollection<HueData>("Dev_Hue");
+            var wled = db.GetCollection<WledData>("Dev_Wled");
+            
+            var devs = new dynamic[] {lifx, nano, ds, yee, hue, wled};
+            
+            foreach (var col in devs) {
+                if (col == null) {
+                    continue;
+                }
+
+                foreach (var dev in col.FindAll.toArray()) {
+                    await AddDeviceAsync(dev);
+                }
+                db.DropCollection(col.Name);
+            }
+
+            db.Commit();
+
         }
        
         //fixed
@@ -156,14 +185,15 @@ namespace Glimmr.Models.Util {
                 db.Commit();
         }
 
-        public static List<IColorTargetData> GetDevices() {
-            return GetObject<List<IColorTargetData>>("Devices");
+        public static ILiteCollection<dynamic> GetDevices() {
+            var db = GetDb();
+            return db.GetCollection<dynamic>("Devices");
         }
         
         public static List<T> GetDevices<T>(string tag) where T : class {
-            var devs = GetObject<List<IColorTargetData>>("Devices");
+            var devs = GetDevices();
             var output = new List<T>();
-            foreach (var d in devs) {
+            foreach (var d in devs.FindAll()) {
                 if (d.Tag == tag) {
                     output.Add((T)d);
                 }
@@ -172,8 +202,8 @@ namespace Glimmr.Models.Util {
         }
 
         public static dynamic GetDevice<T>(string id) where T : class {
-            var devs = GetObject<List<IColorTargetData>>("Devices");
-            foreach (var d in devs) {
+            var devs = GetDevices();
+            foreach (var d in devs.FindAll()) {
                 if (d.Id == id) {
                     return (T)d;
                 }
@@ -183,8 +213,8 @@ namespace Glimmr.Models.Util {
 
 
         public static dynamic GetDevice(string id) {
-            var devs = GetObject<List<IColorTargetData>>("Devices");
-            foreach (var d in devs) {
+            var devs = GetDevices();
+            foreach (var d in devs.FindAll()) {
                 if (d.Id == id) {
                     return d;
                 }
@@ -192,19 +222,26 @@ namespace Glimmr.Models.Util {
             return null;
         }
 
-        public static void AddDevice(dynamic device) {
-            var devices = GetDevices();
-            var merged = false;
-            for (var i = 0; i < devices.Count; i++) {
+        
+        public static async Task AddDeviceAsync(dynamic device) {
+            var db = GetDb();
+            var devs = db.GetCollection<dynamic>("Devices");
+            var devices = devs.FindAll().ToArray();
+            for (var i = 0; i < devices.Length; i++) {
                 if (devices[i].Id != device.Id) {
                     continue;
                 }
 
-                devices[i] = device;
-                merged = true;
+                IColorTargetData dev = devices[i];
+                var newDev = (IColorTargetData) device;
+                newDev.CopyExisting(dev);
+                device = newDev;
             }
-            if (!merged) devices.Add(device);
-            SetObject<List<IColorTargetData>>("Devices", devices);
+            device.LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
+            devs.Upsert(device);
+            db.Commit();
+            Log.Debug("Done.");
+            await Task.FromResult(true);
         }
         
         public static string GetDeviceSerial() {
@@ -265,6 +302,7 @@ namespace Glimmr.Models.Util {
             var cols = db.GetCollectionNames();
             var output = new Dictionary<string, List<dynamic>>();
             foreach (var col in cols) {
+                if (col.Contains("Dev_") && !col.Contains("_Audio")) continue;
                 var collection = db.GetCollection(col);
                 var list = collection.FindAll().ToList();
                 var lList = new List<dynamic>();
@@ -391,6 +429,17 @@ namespace Glimmr.Models.Util {
             var db = GetDb();
             var col = db.GetCollection<T>(key);
             col.Upsert(0, value);
+            db.Commit();
+        }
+        
+        public static async Task SetObjectAsync<T>(string key, dynamic value) {
+            var db = GetDb();
+            Log.Debug("Getting col");
+            var col = db.GetCollection<T>(key);
+            Log.Debug("Upserting: " + JsonConvert.SerializeObject(value));
+            col.Upsert(0, value);
+            Log.Debug("Committing.");
+            await Task.FromResult(true);
             db.Commit();
         }
 

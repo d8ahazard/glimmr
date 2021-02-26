@@ -2,6 +2,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Globalization;
 using Glimmr.Models.ColorTarget.DreamScreen.Encoders;
 using Newtonsoft.Json;
 using Serilog;
@@ -9,7 +10,7 @@ using Serilog;
 #endregion
 
 namespace Glimmr.Models.ColorTarget.DreamScreen {
-	public class DreamData : StreamingData {
+	public class DreamData : IColorTargetData {
 		private const string DeviceTag4K = "Dreamscreen4K";
 		private static readonly byte[] Required4KEspFirmwareVersion = {1, 6};
 		private static readonly byte[] Required4KPicVersionNumber = {5, 6};
@@ -288,6 +289,19 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 					Log.Debug("Invalid device tag? " + DeviceTag);
 					return new byte[0];
 			}
+			
+		}
+
+		public string Name { get; set; }
+		public string Id { get; set; }
+		public string Tag { get; set; }
+		public string IpAddress { get; set; }
+		public int Brightness { get; set; }
+		public bool Enable { get; set; }
+		
+		public string LastSeen { get; set; }
+
+		public void CopyExisting(IColorTargetData data) {
 			
 		}
 	}

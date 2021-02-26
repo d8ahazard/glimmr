@@ -12,7 +12,7 @@ using Q42.HueApi.Models.Groups;
 
 namespace Glimmr.Models.ColorTarget.Hue {
 	[Serializable]
-	public class HueData : StreamingData {
+	public class HueData : IColorTargetData {
 
 		[JsonProperty] public int GroupNumber { get; set; }
 		[JsonProperty] public string User { get; set; } = "";
@@ -30,15 +30,15 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		public List<LightData> Lights { get; set; } = new List<LightData>();
 		
 		public HueData() {
-			Tag = "HueBridge";
+			Tag = "Hue";
 		}
 
 		public HueData(string ip, string id) {
 			IpAddress = ip;
 			Id = id;
 			Brightness = 100;
-			Tag = "HueBridge";
-			Name = "HueBridge - " + id.Substring(0, 4);
+			Tag = "Hue";
+			Name = "Hue Bridge - " + id.Substring(0, 4);
 		}
 
 		public HueData(LocatedBridge b) {
@@ -54,18 +54,27 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Lights = new List<LightData>();
 			GroupName = "";
 			GroupNumber = -1;
-			Tag = "HueBridge";
+			Tag = "Hue";
 			MappedLights ??= new List<LightMap>();
 		}
 
 
-		public void CopyBridgeData(HueData input) {
+		public string LastSeen { get; set; }
+
+		public void CopyExisting(IColorTargetData data) {
+			var input = (HueData) data;
 			if (input == null) throw new ArgumentException("Invalid bridge data.");
 			Lights = input.Lights;
 			Groups = input.Groups;
 		}
 
-		
+
+		public string Name { get; set; }
+		public string Id { get; set; }
+		public string Tag { get; set; }
+		public string IpAddress { get; set; }
+		public int Brightness { get; set; }
+		public bool Enable { get; set; }
 	}
 	
 	[Serializable]

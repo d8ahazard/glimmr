@@ -81,7 +81,13 @@ namespace Glimmr.Models.Util {
 		public static List<string> GetColorTargets() {
 			return AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetTypes())
 				.Where(x => typeof(IColorTarget).IsAssignableFrom(x) && !x.IsInterface && !x.IsAbstract)
-				.Select(x=>x.Name).ToList();
+				.Select(x=>x.FullName).ToList();
+		}
+		
+		public static List<string> GetColorTargetAgents() {
+			return AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetTypes())
+				.Where(x => typeof(IColorTargetAgent).IsAssignableFrom(x) && !x.IsInterface && !x.IsAbstract)
+				.Select(x=>x.FullName).ToList();
 		}
 		
 		public static List<string> GetColorSources() {

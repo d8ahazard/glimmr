@@ -10,8 +10,8 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 	public class YeelightDiscovery : ColorDiscovery, IColorDiscovery {
 
 		private ControlService _controlService;
-		public YeelightDiscovery(ControlService controlService) : base(controlService) {
-			_controlService = controlService;
+		public YeelightDiscovery(ColorService colorService) : base(colorService) {
+			_controlService = colorService.ControlService;
 			DeviceTag = "Yeelight";
 		}
 		
@@ -24,15 +24,12 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 				var yd = new YeelightData {
 					Id = dev.Id, IpAddress = IpUtil.GetIpFromHost(dev.Hostname).ToString(), Name = dev.Name
 				};
-				var existing = DataUtil.GetCollectionItem<YeelightData>("Dev_Yeelight", dev.Id);
-				if (existing != null) {
-					yd.CopyExisting(existing);
-				}
-
-				await DataUtil.InsertCollection<YeelightData>("Dev_Yeelight", dev);
+				await _controlService.AddDevice(yd);
 			}
 
 			Log.Debug("Yeelight: Discovery complete.");
 		}
+
+		public override string DeviceTag { get; set; }
 	}
 }

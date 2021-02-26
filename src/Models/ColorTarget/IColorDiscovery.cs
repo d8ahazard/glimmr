@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Services;
 
@@ -11,12 +12,13 @@ namespace Glimmr.Models.ColorTarget {
 	}
 
 	public abstract class ColorDiscovery {
-		private ControlService _controlService;
-		public string DeviceTag { get; set; }
-		public string DeviceClass { get; }
+		public abstract string DeviceTag { get; set; }
+		public ControlService ControlService { get; set; }
+		public ColorService ColorService { get; set; }
 
-		protected ColorDiscovery(ControlService controlService) {
-			_controlService = controlService;
+		protected ColorDiscovery(ColorService colorService) {
+			ColorService = colorService;
+			ControlService = colorService.ControlService;
 		}
 		
 	}

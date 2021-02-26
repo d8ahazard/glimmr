@@ -13,8 +13,10 @@ namespace Glimmr.Models.ColorTarget.Wled {
         private MulticastService _mDns;
         private bool _discovering;
         private bool _stopDiscovery;
-        public WledDiscovery(ControlService cs) : base(cs) {
-            _mDns = cs.MulticastService;
+        private ControlService _controlService;
+        public WledDiscovery(ColorService cs) : base(cs) {
+            _mDns = cs.ControlService.MulticastService;
+            _controlService = cs.ControlService;
             var sd = new ServiceDiscovery(_mDns);
             _mDns.NetworkInterfaceDiscovered += (s, e) => {
                 // Ask for the name of all services.
@@ -52,14 +54,12 @@ namespace Glimmr.Models.ColorTarget.Wled {
             
             foreach (var id in from msg in rr where msg.Type == DnsType.TXT select msg.CanonicalName.Split(".")[0]) {
                 var nData = new WledData(id);
-                var existing = DataUtil.GetCollectionItem<WledData>("Dev_Wled", nData.Id);
-                if (existing != null) {
-                    nData.CopyExisting(existing);
-                }
-                DataUtil.InsertCollection<WledData>("Dev_Wled", nData).ConfigureAwait(false);
+                _controlService.AddDevice(nData).ConfigureAwait(true);
             }
 
             if (_stopDiscovery) _discovering = false;
         }
+
+        public override string DeviceTag { get; set; }
     }
 }

@@ -3,6 +3,7 @@
 using System;
 using System.Threading.Tasks;
 using Glimmr.Hubs;
+using Glimmr.Models.ColorTarget;
 using Glimmr.Models.ColorTarget.DreamScreen;
 using Glimmr.Models.ColorTarget.Hue;
 using Glimmr.Models.ColorTarget.LIFX;
@@ -56,7 +57,7 @@ namespace Glimmr.Models.Util {
 							await hubContext.Clients.All.SendAsync("wledData", wData);
 						}
 						break;
-					case "HueBridge":
+					case "Hue":
 						var bData = dData.ToObject<HueData>();
 						if (bData != null) {
 							Log.Debug("Updating bridge");
@@ -103,6 +104,9 @@ namespace Glimmr.Models.Util {
 			Log.Debug("Sent updated store data via socket.");
 		}
 
+		public static async Task AddDevice(IColorTargetData data) {
+			
+		}
 		
 	}
 }

@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Glimmr.Models.Util;
 using Glimmr.Services;
 using LifxNet;
 using Newtonsoft.Json;
@@ -12,17 +9,17 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.LIFX {
     public class LifxDiscovery : ColorDiscovery, IColorDiscovery {
         private readonly LifxClient _client;
-        private List<LifxData> _existing;
+        private ControlService _controlService;
         
-        public LifxDiscovery(ControlService cs) : base(cs) {
-            _client = cs.LifxClient;
+        public LifxDiscovery(ColorService cs) : base(cs) {
+            _client = cs.ControlService.GetAgent<LifxClient>();
             _client.DeviceDiscovered += Client_DeviceDiscovered;
+            _controlService = cs.ControlService;
             DeviceTag = "Lifx";
         }
 
         public async Task Discover(CancellationToken ct) {
             if (_client == null) return;
-            _existing = DataUtil.GetCollection<LifxData>("Dev_Lifx");
             Log.Debug("Lifx: Discovery started.");
             _client.StartDeviceDiscovery();
             while (!ct.IsCancellationRequested) {
@@ -36,14 +33,7 @@ namespace Glimmr.Models.ColorTarget.LIFX {
             var bulb = e.Device as LightBulb;
             Log.Debug("Device found: " + JsonConvert.SerializeObject(bulb));
             var ld = await GetBulbInfo(bulb);
-            Log.Debug("Bulb info got: " + JsonConvert.SerializeObject(bulb));
-            foreach (var dev in _existing.Where(dev => dev.Id == ld.Id)) {
-                ld.TargetSector = dev.TargetSector;
-                ld.Brightness = dev.Brightness;
-            }
-
-            Log.Debug("Inserting lifx device: " + JsonConvert.SerializeObject(ld));
-            await DataUtil.InsertCollection<LifxData>("Dev_Lifx", ld);
+            await _controlService.AddDevice(ld);
         }
 
         private async Task<LifxData> GetBulbInfo(LightBulb b) {
@@ -87,5 +77,7 @@ namespace Glimmr.Models.ColorTarget.LIFX {
             Log.Debug("Discovered lifx device: " + JsonConvert.SerializeObject(d));
             return d;
         }
+
+        public override string DeviceTag { get; set; }
     }
 }

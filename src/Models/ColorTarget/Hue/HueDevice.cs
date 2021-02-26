@@ -18,9 +18,9 @@ using Q42.HueApi.Streaming.Models;
 using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Hue {
-	public sealed class HueDevice : IColorTarget, IDisposable {
+	public sealed class HueDevice : ColorTarget, IColorTarget, IDisposable {
 		public bool Enable { get; set; }
-		StreamingData IColorTarget.Data {
+		IColorTargetData IColorTarget.Data {
 			get => Data;
 			set => Data = (HueData) value;
 		}
@@ -40,8 +40,8 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 		private Task _updateTask;
 		
-
-		public HueDevice(HueData data, ColorService colorService = null) {
+		
+		public HueDevice(HueData data, ColorService colorService) : base(colorService) {
 			DataUtil.GetItem<int>("captureMode");
 			if (colorService != null) {
 				colorService.ColorSendEvent += SetColor;
@@ -56,6 +56,27 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Brightness = data.Brightness;
 			// Don't grab streaming group unless we need it
 			if (Data?.User == null || Data?.Key == null || _client != null || colorService == null) return;
+			_client = new StreamingHueClient(Data.IpAddress, Data.User, Data.Key);
+			try {
+				_stream = SetupAndReturnGroup().Result;
+				Log.Debug("Stream is set.");
+			} catch (Exception e) {
+				Log.Warning("Exception: " + e.Message);
+			}
+		}
+
+		public HueDevice(HueData data) : base() {
+			DataUtil.GetItem<int>("captureMode");
+			Data = data ?? throw new ArgumentNullException(nameof(data));
+			IpAddress = Data.IpAddress;
+			_disposed = false;
+			Streaming = false;
+			_entLayer = null;
+			Id = IpAddress;
+			Tag = data.Tag;
+			Brightness = data.Brightness;
+			// Don't grab streaming group unless we need it
+			if (Data?.User == null || Data?.Key == null || _client != null) return;
 			_client = new StreamingHueClient(Data.IpAddress, Data.User, Data.Key);
 			try {
 				_stream = SetupAndReturnGroup().Result;

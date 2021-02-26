@@ -13,7 +13,10 @@ namespace Glimmr.Models.ColorTarget.Corsair {
 			Log.Debug("Corsair: Discovery complete.");
 		}
 
-		public CorsairDiscovery(ControlService controlService) : base(controlService) {
-			DeviceTag = "Corsair";		}
+		public CorsairDiscovery(ColorService colorService) : base(colorService) {
+			DeviceTag = "Corsair";
+		}
+
+		public override string DeviceTag { get; set; }
 	}
 }

@@ -7,7 +7,7 @@ using Glimmr.Services;
 using YeelightAPI;
 
 namespace Glimmr.Models.ColorTarget.Yeelight {
-	public class YeelightDevice : IColorTarget {
+	public class YeelightDevice : ColorTarget, IColorTarget {
 		public bool Streaming { get; set; }
 		public bool Testing { get; set; }
 		public int Brightness { get; set; }
@@ -18,15 +18,16 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 		private YeelightData _data;
 		
-		StreamingData IColorTarget.Data {
+		IColorTargetData IColorTarget.Data {
 			get => _data;
 			set => _data = (YeelightData) value;
 		}
 
 		private Device _yeeDevice;
 
-		public YeelightDevice(YeelightData yd, ColorService cs) {
+		public YeelightDevice(YeelightData yd, ColorService cs) : base(cs) {
 			_data = yd;
+			Tag = _data.Tag;
 			_yeeDevice = new Device(yd.IpAddress);
 			cs.ColorSendEvent += SetColor;
 			 

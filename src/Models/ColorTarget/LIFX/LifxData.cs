@@ -6,16 +6,16 @@ using LiteDB;
 using Newtonsoft.Json;
 
 namespace Glimmr.Models.ColorTarget.LIFX {
-	public class LifxData : StreamingData {
+	public class LifxData : IColorTargetData {
 		[BsonCtor] [JsonProperty] public string HostName { get; internal set; }
         
 		[JsonProperty] public byte Service { get; internal set; }
 		[JsonProperty] public int Port { get; internal set; }
-		[JsonProperty] internal DateTime LastSeen { get; set; }
 		[JsonProperty] public byte[] MacAddress { get; internal set; }
 
 		[JsonProperty] public string MacAddressString { get; internal set; }
 
+		[JsonProperty] public int Offset { get; set; }
 		[JsonProperty] public ushort Hue { get; set; }
 		[JsonProperty] public ushort Saturation { get; set; }
 		[JsonProperty] public ushort Kelvin { get; set; }
@@ -67,7 +67,22 @@ namespace Glimmr.Models.ColorTarget.LIFX {
 			if (Id != null) Name = "Lifx - " + Id.Substring(0, 4);
 		}
 
-		
+		public string LastSeen { get; set; }
 
+		public void CopyExisting(IColorTargetData data) {
+			var ld = (LifxData) data;
+			Brightness = ld.Brightness;
+			Enable = ld.Enable;
+			TargetSector = ld.TargetSector;
+			Offset = ld.Offset;
+		}
+
+
+		public string Name { get; set; }
+		public string Id { get; set; }
+		public string Tag { get; set; }
+		public string IpAddress { get; set; }
+		public int Brightness { get; set; }
+		public bool Enable { get; set; }
 	}
 }

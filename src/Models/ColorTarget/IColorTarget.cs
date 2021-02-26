@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
+using Glimmr.Services;
 using Newtonsoft.Json;
 
 namespace Glimmr.Models.ColorTarget {
@@ -15,7 +16,7 @@ namespace Glimmr.Models.ColorTarget {
 		public string Tag { get; set; }
 		public bool Enable { get; set; }
         
-		public StreamingData Data { get; set; }
+		public IColorTargetData Data { get; set; }
         
 		public Task StartStream(CancellationToken ct);
 
@@ -37,7 +38,16 @@ namespace Glimmr.Models.ColorTarget {
 		public DateTime LastSeen => DateTime.Now;
 	}
 
-	public class ColorTarget {
-		
+	public abstract class ColorTarget {
+		public ColorService ColorService { get; }
+		public ControlService ControlService { get; }
+		protected ColorTarget(ColorService cs) {
+			ColorService = cs;
+			ControlService = cs.ControlService;
+		}
+
+		protected ColorTarget() {
+			
+		}
 	}
 }

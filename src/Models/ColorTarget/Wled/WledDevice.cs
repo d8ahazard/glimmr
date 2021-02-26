@@ -16,7 +16,7 @@ using Newtonsoft.Json.Linq;
 using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Wled {
-    public class WledDevice : IColorTarget, IDisposable
+    public class WledDevice : ColorTarget, IColorTarget, IDisposable
     {
         public bool Enable { get; set; }
         public bool Streaming { get; set; }
@@ -34,17 +34,17 @@ namespace Glimmr.Models.ColorTarget.Wled {
         private int _offset;
         private int _len;
         
-        StreamingData IColorTarget.Data {
+        IColorTargetData IColorTarget.Data {
             get => Data;
             set => Data = (WledData) value;
         }
 
         public WledData Data { get; set; }
         
-        public WledDevice(WledData wd, UdpClient uc, HttpClient hc, ColorService colorService) {
-            colorService.ColorSendEvent += SetColor;
-            _udpClient = uc;
-            _httpClient = hc;
+        public WledDevice(WledData wd, ColorService colorService) : base(colorService) {
+            ColorService.ColorSendEvent += SetColor;
+            _udpClient = ColorService.ControlService.UdpClient;
+            _httpClient = ColorService.ControlService.HttpSender;
             _updateColors = new List<Color>();
             Data = wd ?? throw new ArgumentException("Invalid WLED data.");
             Id = Data.Id;

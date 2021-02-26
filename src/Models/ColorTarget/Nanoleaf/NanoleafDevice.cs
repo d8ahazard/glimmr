@@ -14,7 +14,7 @@ using Newtonsoft.Json;
 using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Nanoleaf {
-	public sealed class NanoleafDevice : IColorTarget, IDisposable {
+	public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
 		private string _token;
 		private string _basePath;
 		private NanoLayout _layout;
@@ -22,7 +22,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		private bool _disposed;
 		private bool _sending;
 		public bool Enable { get; set; }
-		StreamingData IColorTarget.Data {
+		IColorTargetData IColorTarget.Data {
 			get => Data;
 			set => Data = (NanoleafData) value;
 		}
@@ -36,19 +36,15 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		private readonly UdpClient _sender;
 		private readonly HttpClient _client;
 
-		
+		public NanoleafDevice(NanoleafData n, ControlService cs) {
+			DataUtil.GetItem<int>("captureMode");
+			if (n != null) {
+				SetData(n);
+				_sender = cs.UdpClient;
+				_client = cs.HttpSender;
+			}
 
-		/// <summary>
-		/// Use this for discovery only 
-		/// </summary>
-		/// <param name="data">NL Data</param>
-		/// <param name="client">Client to discover with</param>
-		public NanoleafDevice(NanoleafData data, HttpClient client) {
-			IpAddress = data.IpAddress;
-			_token = data.Token;
-			_basePath = "http://" + IpAddress + ":16021/api/v1/" + _token;
 			_disposed = false;
-			_client = client;
 		}
 		
 
@@ -56,16 +52,14 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		/// Use this for sending color data to the panel
 		/// </summary>
 		/// <param name="n"></param>
-		/// <param name="socket"></param>
-		/// <param name="client"></param>
 		/// <param name="colorService"></param>
-		public NanoleafDevice(NanoleafData n, UdpClient socket, HttpClient client, ColorService colorService) {
+		public NanoleafDevice(NanoleafData n, ColorService colorService) : base(colorService) {
 			DataUtil.GetItem<int>("captureMode");
 			colorService.ColorSendEvent += SetColor;
 			if (n != null) {
 				SetData(n);
-				_sender = socket;
-				_client = client;
+				_sender = colorService.ControlService.UdpClient;
+				_client = colorService.ControlService.HttpSender;
 			}
 
 			_disposed = false;

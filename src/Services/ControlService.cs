@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Common.Logging.Configuration;
 using Glimmr.Hubs;
 using Glimmr.Models;
+using Glimmr.Models.ColorTarget;
 using Glimmr.Models.ColorTarget.DreamScreen;
 using Glimmr.Models.ColorTarget.Hue;
 using Glimmr.Models.ColorTarget.LED;
@@ -15,7 +16,6 @@ using Glimmr.Models.ColorTarget.LIFX;
 using Glimmr.Models.ColorTarget.Nanoleaf;
 using Glimmr.Models.ColorTarget.Wled;
 using Glimmr.Models.Util;
-using LifxNet;
 using Makaretu.Dns;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
@@ -27,12 +27,15 @@ using Color = System.Drawing.Color;
 namespace Glimmr.Services {
 	public class ControlService : BackgroundService {
 		public HttpClient HttpSender { get; }
-		public LifxClient LifxClient { get; }
 		public UdpClient UdpClient { get; }
 		public MulticastService MulticastService { get; }
 		private readonly IHubContext<SocketServer> _hubContext;
+		private readonly List<dynamic> _agents;
 
 		public ControlService(IHubContext<SocketServer> hubContext) {
+			_agents = new List<dynamic>();
+			LoadAgents();
+
 			_hubContext = hubContext;
 			// Init nano HttpClient
 			HttpSender = new HttpClient {Timeout = TimeSpan.FromSeconds(5)};
@@ -42,8 +45,9 @@ namespace Glimmr.Services {
 			UdpClient.Client.Blocking = false;
 			UdpClient.DontFragment = true;
 			// Lifx client
-			LifxClient = LifxClient.CreateAsync().Result;
 			MulticastService = new MulticastService();
+			// Dynamically load agents
+			
 			DataUtil.CheckDefaults(this).ConfigureAwait(true);
 		}
 
@@ -66,7 +70,26 @@ namespace Glimmr.Services {
 		public AsyncEvent<DynamicEventArgs> DemoLedEvent;
 		
 		public event Action<List<Color>, List<Color>, int> TriggerSendColorEvent = delegate { };
-		
+
+		public dynamic GetAgent<T>() {
+			foreach (var agent in _agents) {
+				if (agent.GetType() == typeof(T)) {
+					return agent;
+				}
+			}
+			return null;
+		}
+
+		private void LoadAgents() {
+			var types = SystemUtil.GetColorTargetAgents();
+			foreach (var c in types) {
+				Log.Debug("Creating agent gen: " + c);
+				var agentMaker = (IColorTargetAgent) Activator.CreateInstance(Type.GetType(c)!);
+				var agent = agentMaker?.CreateAgent(this);
+				Log.Debug("Adding agent: " + agent?.GetType());
+				if (agent != null) _agents.Add(agent);
+			}
+		}
 
 		public async Task ScanDevices() {
 			await DeviceRescanEvent.InvokeAsync(this,null);
@@ -196,10 +219,19 @@ namespace Glimmr.Services {
 
 		public override Task StopAsync(CancellationToken cancellationToken) {
 			Log.Debug("Stopping control service...");
-			LifxClient?.Dispose();
 			HttpSender?.Dispose();
 			UdpClient?.Dispose();
-			UdpClient?.Dispose();
+			MulticastService?.Dispose();
+			foreach (dynamic agent in _agents) {
+				try {
+					var type = agent.GetType();
+					if (type.GetMethod("Dispose") != null) {
+						agent.Dispose();
+					}
+				} catch {
+					// Ignored
+				}
+			}
 			Log.Debug("Control service stopped.");
 			return base.StopAsync(cancellationToken);
 		}
@@ -207,6 +239,11 @@ namespace Glimmr.Services {
 		
 		public void RefreshDreamscreen(in CancellationToken csToken) {
 			RefreshDreamscreenEvent(csToken);
+		}
+
+		public async Task AddDevice(IColorTargetData data) {
+			await DataUtil.AddDeviceAsync(data);
+			Log.Debug("Device added...");
 		}
 
 		public async Task AuthorizeNano(string id) {
@@ -218,7 +255,7 @@ namespace Glimmr.Services {
 				return;
 			}
 
-			var panel = new NanoleafDevice(leaf, HttpSender);
+			var panel = new NanoleafDevice(leaf, this);
 			var count = 0;
 			while (count < 30) {
 				var appKey = panel.CheckAuth().Result;
@@ -251,9 +288,11 @@ namespace Glimmr.Services {
 		public async Task UpdateSystem(SystemData sd) {
 			SystemData oldSd = DataUtil.GetObject<SystemData>("SystemData");
 			if (oldSd.LedCount != sd.LedCount) {
-				var leds = DataUtil.GetCollection<LedData>("LedData");
-				foreach (var led in leds.Where(led => led.Count == 0)) {
-					led.Count = sd.LedCount;
+				var leds = DataUtil.GetDevices<LedData>("Led");
+				
+				foreach (var colorTargetData in leds.Where(led => led.Count == 0)) {
+					var led = colorTargetData;
+					led.Count = sd .LedCount;
 					await DataUtil.InsertCollection<LedData>("LedData", led);
 				}
 			}
@@ -298,7 +337,7 @@ namespace Glimmr.Services {
 						await DataUtil.InsertCollection<LifxData>("Dev_Lifx", device.ToObject<LifxData>());
 						updated = true;
 						break;
-					case "HueBridge":
+					case "Hue":
 						var dev = device.ToObject<HueData>();
 						await DataUtil.InsertCollection<HueData>("Dev_Hue", dev);
 						updated = true;

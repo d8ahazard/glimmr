@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
@@ -16,7 +15,7 @@ using Glimmr.Services;
 using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Razer {
-	public class RazerDevice:IColorTarget {
+	public class RazerDevice : ColorTarget, IColorTarget {
 		public bool Streaming { get; set; }
 		public bool Testing { get; set; }
 		public int Brightness { get; set; }
@@ -27,7 +26,7 @@ namespace Glimmr.Models.ColorTarget.Razer {
 		
 		private RazerData _data;
 		
-		StreamingData IColorTarget.Data {
+		IColorTargetData IColorTarget.Data {
 			get => _data;
 			set => _data = (RazerData) value;
 		}
@@ -44,9 +43,10 @@ namespace Glimmr.Models.ColorTarget.Razer {
 		private const int MaxKeypadColumns = KeypadConstants.MaxColumns;
 
 
-		public RazerDevice(ColorService controlService) {
+		public RazerDevice(RazerData data, ColorService colorService) : base(colorService) {
 			ReloadData();
-			controlService.ColorSendEvent += SetColor;
+			colorService.ColorSendEvent += SetColor;
+			_chroma = colorService.ControlService.GetAgent<IChroma>();
 			Log.Debug("Razer device created.");
 		}
 		
@@ -62,16 +62,30 @@ namespace Glimmr.Models.ColorTarget.Razer {
 
 		public void SetColor(List<Color> colors, List<Color> sectors, int fadeTime) {
 			if (!Streaming || !Enable) return;
-			var mouseMap = CreateMouseMap(colors);
-			var mousepadMap = CreateMousepadMap(colors);
-			var kbMap = CreateKeyboardMap(colors);
-			var kpMap = CreateKeypadMap(colors);
-			var headsetMap = CreateHeadsetMap(colors);
-			_chroma.Mousepad.SetCustomAsync(mousepadMap).ConfigureAwait(false);
-			_chroma.Keyboard.SetCustomAsync(kbMap).ConfigureAwait(false);
-			_chroma.Keypad.SetCustomAsync(kpMap).ConfigureAwait(false);
-			_chroma.Headset.SetCustomAsync(headsetMap).ConfigureAwait(false);
-			_chroma.Mouse.SetGridAsync(mouseMap).ConfigureAwait(false);
+			switch (_data.DeviceTag) {
+				case "Mouse":
+					var mouseMap = CreateMouseMap(colors);
+					_chroma.Mouse.SetGridAsync(mouseMap).ConfigureAwait(false);
+					break;
+				case "Mousepad":
+					var mousepadMap = CreateMousepadMap(colors);
+					_chroma.Mousepad.SetCustomAsync(mousepadMap).ConfigureAwait(false);
+					break;
+				case "Keyboard":
+					var kbMap = CreateKeyboardMap(colors);
+					_chroma.Keyboard.SetCustomAsync(kbMap).ConfigureAwait(false);
+					break;
+				case "Keypad":
+					var kpMap = CreateKeypadMap(colors);
+					_chroma.Keypad.SetCustomAsync(kpMap).ConfigureAwait(false);
+					break;
+				case "Headset":
+					var headsetMap = CreateHeadsetMap(colors);
+					_chroma.Headset.SetCustomAsync(headsetMap).ConfigureAwait(false);
+					break;
+			}
+			
+
 		}
 
 		public Task FlashColor(Color color) {
