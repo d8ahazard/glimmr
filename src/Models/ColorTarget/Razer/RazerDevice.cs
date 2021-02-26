@@ -25,6 +25,8 @@ namespace Glimmr.Models.ColorTarget.Razer {
 		public bool Enable { get; set; }
 		
 		private RazerData _data;
+
+		private bool _hasChroma;
 		
 		IColorTargetData IColorTarget.Data {
 			get => _data;
@@ -47,7 +49,13 @@ namespace Glimmr.Models.ColorTarget.Razer {
 			ReloadData();
 			colorService.ColorSendEvent += SetColor;
 			_chroma = colorService.ControlService.GetAgent<IChroma>();
-			Log.Debug("Razer device created.");
+			if (_chroma == null) {
+				Enable = false;
+				Log.Debug("No chroma agent, OS is not Windows.");
+			} else {
+				_hasChroma = true;
+				Log.Debug("Razer device created.");	
+			}
 		}
 		
 		public Task StartStream(CancellationToken ct) {
@@ -61,7 +69,7 @@ namespace Glimmr.Models.ColorTarget.Razer {
 		}
 
 		public void SetColor(List<Color> colors, List<Color> sectors, int fadeTime) {
-			if (!Streaming || !Enable) return;
+			if (!Streaming || !Enable || !_hasChroma) return;
 			switch (_data.DeviceTag) {
 				case "Mouse":
 					var mouseMap = CreateMouseMap(colors);
@@ -89,19 +97,12 @@ namespace Glimmr.Models.ColorTarget.Razer {
 		}
 
 		public Task FlashColor(Color color) {
-			_chroma.SetAllAsync(new ColoreColor(color.R, color.G, color.B));
+			_chroma?.SetAllAsync(new ColoreColor(color.R, color.G, color.B));
 			return Task.CompletedTask;
 		}
 
 		public Task ReloadData() {
 			Enable = true;
-			try {
-				_chroma = ColoreProvider.CreateNativeAsync().Result;
-			} catch (Exception e) {
-				Log.Warning("Exception initializing Razer: " + e.Message);
-				Enable = false;
-				return Task.CompletedTask;
-			}
 
 			_data = DataUtil.GetObject<RazerData>("RazerData");
 			if (_data == null) {
