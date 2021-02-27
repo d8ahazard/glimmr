@@ -214,8 +214,8 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		/// <param name="list"></param>
 		/// <param name="colors"></param>
 		/// <param name="fadeTime"></param>
-		public void SetColor(List<Color> list, List<Color> colors, int fadeTime) {
-			if (!Streaming || !Data.Enable || Testing || _entLayer == null) {
+		public void SetColor(List<Color> list, List<Color> colors, int fadeTime, bool force=false) {
+			if (!Streaming || !Data.Enable || _entLayer == null || Testing && !force) {
 				return;
 			}
 

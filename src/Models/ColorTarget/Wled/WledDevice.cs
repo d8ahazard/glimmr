@@ -86,9 +86,10 @@ namespace Glimmr.Models.ColorTarget.Wled {
                 }
                 
             } catch (Exception e) {
-                Log.Debug("Fucking exception, look at that: " + e.Message);        
+                Log.Debug("Exception, look at that: " + e.Message);        
             }
         }
+
 
         public bool IsEnabled() {
             return Data.Enable;
@@ -117,9 +118,9 @@ namespace Glimmr.Models.ColorTarget.Wled {
             await SendPost(offObj);
         }
 
-        public void SetColor(List<Color> list, List<Color> colors1, int arg3) {
+        public void SetColor(List<Color> list, List<Color> colors1, int arg3, bool force=false) {
             
-            if (!Streaming || !Data.Enable || Testing) {
+            if (!Streaming || !Data.Enable || Testing && !force) {
                 return;
             }
 
@@ -132,7 +133,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
                     colors.Reverse();
                 }
             }
-
 
             var packet = new Byte[2 + colors.Count * 3];
             // Set mode to DRGB, dude.

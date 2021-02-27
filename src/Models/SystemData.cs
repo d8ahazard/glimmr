@@ -187,6 +187,10 @@ namespace Glimmr.Models {
 		[DefaultValue(true)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool AutoRemoveDevices { get; set; } = true;
+		
+		[DefaultValue(0)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int SectorCount => HSectors + HSectors + VSectors + VSectors - 4; 
 
 		// How many days to wait to auto-remove not-seen devices.
 		[DefaultValue(1)]

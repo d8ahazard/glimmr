@@ -15,6 +15,7 @@ using Glimmr.Models.ColorTarget.Nanoleaf;
 using Glimmr.Models.ColorTarget.Wled;
 using Glimmr.Models.ColorTarget.Yeelight;
 using Glimmr.Services;
+using LifxNet;
 using LiteDB;
 using Microsoft.AspNetCore.Authentication;
 using Newtonsoft.Json;
@@ -40,54 +41,7 @@ namespace Glimmr.Models.Util {
             Log.Debug("Database disposed.");
         }
 
-        public static async Task CheckDefaults(ControlService cs) {
-            var db = GetDb();
-            await MigrateDevices();
-            var sObj = GetObject<SystemData>("SystemData");
-            if (sObj == null) {
-                var sd = new SystemData {DefaultSet = true};
-                await SetObjectAsync<SystemData>("SystemData",sd);
-                Log.Warning("Setting default values!");
-                // If not, create it
-                var deviceIp = IpUtil.GetLocalIpAddress();
-                var myDevice = new DreamData {Id = deviceIp, IpAddress = deviceIp};
-                Log.Debug("Creating default device data: " + JsonConvert.SerializeObject(myDevice));
-                SetDeviceData(myDevice);
-                await SetObjectAsync<Color>("AmbientColor", Color.FromArgb(255, 255, 255, 255));
-                Log.Debug("Creating DreamData profile...");
-                // Get/create our collection of Dream devices
-                var d = db.GetCollection<DreamData>("Dev_Dreamscreen");
-                // Create our default device
-                // Save it
-                d.Upsert(myDevice.Id, myDevice);
-                d.EnsureIndex(x => x.Id);
-                db.Commit();
-            } else {
-                Log.Information("Default values are already set, continuing.");
-            }
-
-            var ledData = GetCollection<LedData>("LedData");
-            if (ledData == null || ledData.Count != 3) {
-                Log.Debug("Creating LED Data");
-                var l1 = new LedData();
-                var l2 = new LedData();
-                var l3 = new LedData();
-                l1.Count = 0;
-                l2.Count = 0;
-                l3.Count = 0;
-                l1.GpioNumber = 18;
-                l2.GpioNumber = 19;
-                l3.GpioNumber = 10;
-                l1.Id = "0";
-                l2.Id = "1";
-                l3.Id = "2";
-                
-                await InsertCollection<LedData>("LedData", l1);
-                await InsertCollection<LedData>("LedData", l2);
-                await InsertCollection<LedData>("LedData", l3);
-            }
-        }
-
+        
         private static async Task MigrateDevices() {
             var db = GetDb();
             var lifx = db.GetCollection<LifxData>("Dev_Lifx");
@@ -228,12 +182,12 @@ namespace Glimmr.Models.Util {
             var devs = db.GetCollection<dynamic>("Devices");
             var devices = devs.FindAll().ToArray();
             for (var i = 0; i < devices.Length; i++) {
-                if (devices[i].Id != device.Id) {
+                if (devices[i].Id != device.Id.ToString()) {
                     continue;
                 }
 
                 IColorTargetData dev = devices[i];
-                var newDev = (IColorTargetData) device;
+                var newDev = device;
                 newDev.CopyExisting(dev);
                 device = newDev;
             }
@@ -309,12 +263,23 @@ namespace Glimmr.Models.Util {
                 foreach (var l in list) {
                     var jObj = LiteDB.JsonSerializer.Serialize(l);
                     var json = JObject.Parse(jObj);
+                    if (col == "Devices") {
+                        Log.Debug("Trying to fix devices...");
+                        try {
+                            dynamic dev = Activator.CreateInstance(Type.GetType(json.GetValue("_type").ToString()));
+                            json["KeyProperties"] = JToken.FromObject(dev.KeyProperties);
+                        } catch (Exception e) {
+                            Log.Debug("Exception: " + e.Message);
+                        }
+                    }
                     lList.Add(json);
                 }
+
                 output[col] = lList;
             }
             var jl = new JsonLoader("ambientScenes");
             output["AmbientScenes"] = jl.LoadDynamic<AmbientScene>();
+            //Log.Debug("Returning serialized store: " + JsonConvert.SerializeObject(output));
             return JsonConvert.SerializeObject(output);
         }
 
@@ -414,15 +379,38 @@ namespace Glimmr.Models.Util {
             try {
                 var db = GetDb();
                 var col = db.GetCollection<T>(key);
-                if (col.Count() == 0) return null;
-                foreach (var doc in col.FindAll()) {
-                    return doc;
+                if (col.Count() != 0) {
+                    foreach (var doc in col.FindAll()) {
+                        return doc;
+                    }
                 }
             } catch (Exception e) {
                 Log.Warning("Exception: " + e.Message);
             }
 
+            if (key == "SystemData") {
+                Log.Debug("Creating new system data...");
+                var sd = CreateSystemData();
+                return sd;
+            }
             return null;
+        }
+
+        private static SystemData CreateSystemData() {
+            var sd = new SystemData {DefaultSet = true};
+            Log.Debug("Object setting...");
+            SetObject<SystemData>("SystemData",sd);
+            Log.Warning("Setting default values!");
+            // If not, create it
+            var deviceIp = IpUtil.GetLocalIpAddress();
+            var myDevice = new DreamData {Id = deviceIp, IpAddress = deviceIp};
+            Log.Debug("Creating default device data: " + JsonConvert.SerializeObject(myDevice));
+            SetDeviceData(myDevice);
+            SetObject<Color>("AmbientColor", Color.FromArgb(255, 255, 255, 255));
+            Log.Debug("Migrating devices");
+            MigrateDevices().ConfigureAwait(true);
+            Log.Debug("Done.");
+            return sd;
         }
         
         public static void SetObject<T>(string key, dynamic value) {
@@ -496,6 +484,11 @@ namespace Glimmr.Models.Util {
         public static void RefreshPublicIp() {
             var myIp = Dns.GetHostEntry(Dns.GetHostName()).AddressList[0].ToString();
             Log.Debug("My IP Address is :" + myIp);
+        }
+
+        public static object GetDevices<T>() {
+            var devs = GetDevices().FindAll();
+            return devs.Where(dev => dev.GetType() == typeof(T)).Cast<T>().ToList();
         }
     }
 }

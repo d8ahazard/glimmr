@@ -90,8 +90,8 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		}
 
 
-		public void SetColor(List<Color> list, List<Color> colors, int fadeTime) {
-			if (!Streaming || !Enable || Testing) {
+		public void SetColor(List<Color> list, List<Color> colors, int fadeTime, bool force = false) {
+			if (!Streaming || !Enable || Testing && !force) {
 				return;
 			}
 

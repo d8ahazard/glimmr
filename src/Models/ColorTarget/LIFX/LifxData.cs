@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using Glimmr.Models.Util;
 using LifxNet;
@@ -76,6 +77,10 @@ namespace Glimmr.Models.ColorTarget.LIFX {
 			TargetSector = ld.TargetSector;
 			Offset = ld.Offset;
 		}
+
+		public SettingsProperty[] KeyProperties { get; set; } = {
+			new SettingsProperty("TargetSector", "sectormap", "Target Sector")
+		};
 
 
 		public string Name { get; set; }

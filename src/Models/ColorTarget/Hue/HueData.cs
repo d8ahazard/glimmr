@@ -68,6 +68,10 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Groups = input.Groups;
 		}
 
+		public SettingsProperty[] KeyProperties { get; set; } = {
+			new("custom", "hue", "")
+		};
+
 
 		public string Name { get; set; }
 		public string Id { get; set; }
@@ -154,6 +158,9 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		
+		
 		public bool Override { get; set; }
+		
 	}
 }

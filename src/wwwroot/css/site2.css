@@ -195,6 +195,11 @@ input[type="range"]::-webkit-slider-runnable-track {
     position: relative;
     border: 1px solid #888888;
     border-radius: 20px;
+    cursor: pointer;
+}
+
+.linkDiv * {
+    pointer-events: none;
 }
 
 .linkImg {

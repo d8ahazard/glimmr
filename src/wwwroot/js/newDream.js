@@ -162,15 +162,15 @@ function sendMessage(endpoint, sData, encode=true) {
     loadTimeout = setTimeout(function(){
         loadTimeout = null;
     },500);
-    console.log("Sending message: " + endpoint);
+    console.log("Sending message: " + endpoint, sData);
     if (socketLoaded) {
         if (isValid(sData)) {
             websocket.invoke(endpoint, sData).catch(function (err) {
-                return console.error("Fuck: ", err);
+                return console.error("Error: ", err);
             });
         } else {
             websocket.invoke(endpoint).catch(function (err) {
-                return console.error("Fuck: ", err);
+                return console.error("Error: ", err);
             });
         }
     } else {
@@ -314,6 +314,7 @@ function setSocketListeners() {
     });
 
     websocket.on('olo', function(stuff) {
+        console.log("Incoming data string: " + stuff);
         stuff = stuff.replace(/\\n/g, '');
         let parsed = JSON.parse(stuff);
         console.log("OLO: ", parsed);
@@ -391,7 +392,7 @@ function setListeners() {
             } else {
                 if (target.classList.contains("devSetting")) {
                     updateDevice(obj, property, val);  
-                    loadDeviceData();
+                    createDeviceSettings();
                     return;
                 } else {
                     data.store[obj][0][property] = val;
@@ -465,7 +466,7 @@ function setListeners() {
                 let val = target.getAttribute("data-sector");
                 updateDeviceSector(val, target);
                 break;
-            case target.classList.contains("linkDiv"):                
+            case target.classList.contains("linkDiv"):
                 if (target.getAttribute("data-linked") === "false") {
                     let devId = deviceData["_id"];
                     let type = target.getAttribute("data-type");
@@ -506,8 +507,9 @@ function setListeners() {
                         icon.innerText = "cast";
                     } else {
                         target.setAttribute("data-enabled","true");
-                        icon.innerText = "cast-connected";
+                        icon.innerText = "cast_connected";
                     }
+                    deviceData = findDevice(dId);
                     //data.devices[devId]["Enable"] = (devEnabled !== "true");
                     updateDevice(dId,"Enable",(devEnabled !== "true"));
                 break;
@@ -957,23 +959,19 @@ function setObj(group, key, val, obj) {
 
 
 function getDevices() {
-    let d = [];
-    for (const [key, value] of Object.entries(data.store)) {
-        if (key === "Devices") {
-            for (let i = 0; i < value.length; i++) {
-                if (value.hasOwnProperty(i)) {
-                    d.push(value[i]);
-                }
-            }
-        }
+    let d = data.store["Devices"];
+    if (isValid(d)) {
+        d.sort((a, b) => (a.Name > b.Name) ? 1 : -1);
+        console.log("Devices: ", d);
+        data.devices = d;
+    } else {
+        sendMessage("ScanDevices");
     }
-    d.sort((a, b) => (a.Name > b.Name) ? 1 : -1);
-    console.log("Devices: ", d);
-    data.devices = d;
 }
 
 function updateDevice(id, property, value) {
     let dev;
+    console.log("Device: ", deviceData);
     if (deviceData["_id"] === id) {
         dev = deviceData;
     } else {
@@ -982,7 +980,7 @@ function updateDevice(id, property, value) {
     if (isValid(dev) && dev.hasOwnProperty(property)) {
         dev[property] = value;
         saveDevice(dev);
-        sendMessage("updateDevice", dev);
+        sendMessage("updateDevice", dev, true);
 
     }    
 }
@@ -1216,10 +1214,10 @@ const showDeviceCard = async (e) => {
     // Create settings for our card
     document.querySelector(".mainSettings").classList.add('d-none');
     closeButton.classList.remove('d-none');
-    loadDeviceData();
+    createDeviceSettings();
 };
 
-function loadDeviceData() {
+function createDeviceSettings() {
     let settingsDiv = document.getElementById("deviceSettings");
     settingsDiv.innerHTML = "";
     let linkCol = document.createElement("div");
@@ -1230,79 +1228,69 @@ function loadDeviceData() {
     mapCol.id = "mapCol";
     settingsDiv.appendChild(linkCol);
     settingsDiv.appendChild(mapCol);
+    console.log("Loading device data: ", deviceData);   
+    let props = deviceData["KeyProperties"];
+    if (isValid(props)) {
+        let container = document.createElement("div");
+        container.classList.add("container");
+        let id = deviceData["_id"];
+        let row = document.createElement("div");
+        row.classList.add("row", "border", "justify-content-center", "pb-5");
+        let header = document.createElement("div");
+        header.classList.add("col-12", "headerCol");
+        row.appendChild(header);
 
-    //fadeContent(settingsDiv,100, 500);
-    switch(deviceData["Tag"]) {
-        case "Dreamscreen":
-            drawSectorMap = (deviceData["Tag"] === "Connect" || deviceData["Tag"] === "Sidekick");
-            break;
-        case "HueBridge":
-            if (isValid(deviceData["Key"]) && isValid(deviceData["User"])) {
-                createHueMap();
-                drawSectorMap = true;
+        for (let i =0; i < props.length; i++) {
+            
+            let prop = props[i];
+            let propertyName = prop["ValueName"];
+            let elem, se;
+            let value = deviceData[propertyName];
+            console.log("Loading prop: ", prop, value);
+
+            switch(prop["ValueType"]) {
+                case "text":
+                    elem = new SettingElement(prop["ValueLabel"], "text", id, propertyName, value);
+                    elem.isDevice = true;
+                    break;
+                case "number":
+                    elem = new SettingElement(prop["ValueLabel"], "number", id, propertyName, value);
+                    elem.isDevice = true;
+                    break;
+                case "check":
+                    elem = new SettingElement(prop["ValueLabel"], "check", id, propertyName, value);
+                    elem.isDevice = true;
+                    break;
+                case "ledmap":
+                    drawLedMap = true;
+                    appendLedMap(deviceData["LedCount"], deviceData["Offset"], deviceData["ReverseStrip"]);
+                    break;
+                case "select":
+                    elem = new SettingElement(prop["ValueLabel"], "select", id, propertyName, value);
+                    elem.options = prop["Options"];
+                    break;
+                case "sectormap":
+                    appendSectorMap();
+                    break;
+                case "nanoleaf":
+                    appendNanoSettings();
+                    break;
+                case "hue":
+                    appendHueSettings();
+                    break;
             }
-            break;
-        case "Lifx":
-        case "Yeelight":
-            appendSectorMap();
-            break;
-        case "Wled":
-            appendWledSettings();
-            break;
-        case "Nanoleaf":
-            appendNanoSettings();
-            break;
-        default:
-            console.log("Unknown device tag.");
-            return;
-    }
-
-    if (drawSectorMap) {
-
+            if (isValid(elem)) {
+                elem.isDevice = true;
+                se = createSettingElement(elem);
+                row.appendChild(se);
+            }
+        }
+        container.appendChild(row);
+        let ds = document.getElementById("deviceSettings");
+        ds.appendChild(container);
     }
 }
 
-
-
-function appendWledSettings() {    
-    let container = document.createElement("div");
-    container.classList.add("container");
-    let row = document.createElement("div");
-    row.classList.add("row", "border", "justify-content-center", "pb-5");
-    let header = document.createElement("div");
-    header.classList.add("col-12", "headerCol");
-    row.appendChild(header);
-    let id = deviceData["_id"];
-    let elem = new SettingElement("LED Count", "number", id, "LedCount", deviceData["LedCount"]);
-    elem.isDevice = true;
-    let se = createSettingElement(elem);
-    row.appendChild(se);
-
-    elem = new SettingElement("Offset", "number", id, "Offset", deviceData["Offset"]);
-    elem.minLimit = 0;
-    elem.maxLimit = 10000;
-    elem.isDevice = true;
-    se = createSettingElement(elem);
-    row.appendChild(se);
-    elem = new SettingElement("Strip Mode", "select", id, "StripMode", deviceData["StripMode"]);
-    elem.options = [
-        {value: 0, text: "Normal"},
-        {value: 1,text: "Sectored"},
-        {value: 2,text: "Loop (Play Bar)"}
-    ];
-    elem.isDevice = true;
-    se = createSettingElement(elem);
-    row.appendChild(se);
-    elem = new SettingElement("Reverse Strip Direction", "check", id, "ReverseStrip", deviceData["ReverseStrip"]);
-    elem.isDevice = true;
-    se = createSettingElement(elem);
-    row.appendChild(se);
-    container.appendChild(row);
-    let ds = document.getElementById("deviceSettings");    
-    ds.appendChild(container);
-    drawLedMap = true;
-    appendLedMap(deviceData["LedCount"], deviceData["Offset"], deviceData["ReverseStrip"]);    
-}
 
 function createSettingElement(settingElement) {
     let group = document.createElement("div");
@@ -1320,11 +1308,12 @@ function createSettingElement(settingElement) {
         case "select":
             element = document.createElement("select");
             if (isValid(settingElement.options)) {
-                for (let i=0; i < settingElement.options.length; i++) {
-                    let opt = settingElement.options[i];
+                for (const [key, value] of Object.entries(settingElement.options)) {
+                    console.log(`${key}: ${value}`);
                     let option = document.createElement("option");
-                    option.value = opt.value;
-                    option.innerText = opt.text;
+                    option.value = key.toString();
+                    option.innerText = value.toString();
+                    if (key.toString() === settingElement.value.toString()) option.selected = true;
                     element.appendChild(option);
                 }
             }
@@ -1341,6 +1330,7 @@ function createSettingElement(settingElement) {
         case "text":
             element = document.createElement("input");
             element.type = "text";
+            element.value = settingElement.value;
             break;
     }
     if (settingElement.type === "check") {
@@ -1391,7 +1381,21 @@ function appendNanoSettings() {
     }
 }
 
+function appendHueSettings() {
+    if (isValid(deviceData["Key"])) {
+        drawLinkPane("hue", true);
+        createHueMap();
+    } else {
+        drawLinkPane("hue", false);
+    }
+}
+
 function drawLinkPane(type, linked) {
+    let wrap = document.createElement("div");
+    wrap.classList.add("row", "col-12", "justify-content-center");
+    let header = document.createElement("div");
+    header.classList.add("header");
+    header.innerText = linked ? "Device is linked" : "Click here to link";
     let div = document.createElement("div");
     div.classList.add("col-8", "col-sm-6", "col-md-4", "col-lg-3", "col-xl-2", "linkDiv");
     div.setAttribute("data-type",type);
@@ -1405,8 +1409,10 @@ function drawLinkPane(type, linked) {
     linkImg.classList.add(linked ? "linked" : "unlinked");
     div.appendChild(img);
     div.appendChild(linkImg);
+    wrap.appendChild(header);
+    wrap.appendChild(div);    
     console.log("No, really, appending: ", div);
-    document.getElementById("deviceSettings").appendChild(div);
+    document.getElementById("deviceSettings").appendChild(wrap);
 }
 
 function appendSectorMap() {
@@ -1425,7 +1431,7 @@ function appendSectorMap() {
 
 function appendLedMap() {
     let mapDiv = document.getElementById("mapDiv");
-    mapDiv.remove();
+    if (isValid(mapDiv)) mapDiv.remove();
     let imgDiv = document.createElement("div");
     imgDiv.id = "mapDiv";
     let img = document.createElement("img");
@@ -1436,7 +1442,7 @@ function appendLedMap() {
     let settingsDiv = document.getElementById("deviceSettings");
     settingsDiv.append(imgDiv);
     let systemData = data.store["SystemData"][0];
-    setTimeout(function() {createLedMap(imgDiv, document.getElementById("sectorImage"),systemData, deviceData)}, 500);
+    setTimeout(function() {createLedMap(imgDiv, img ,systemData, deviceData)}, 500);
 }
 
 function createSectorMap(targetElement, sectorImage, regionName) {

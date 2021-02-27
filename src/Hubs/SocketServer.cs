@@ -1,10 +1,12 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models;
 using Glimmr.Models.ColorTarget.LED;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.AspNetCore.SignalR;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
 
@@ -68,7 +70,12 @@ namespace Glimmr.Hubs {
 
 		public async Task UpdateDevice(string deviceJson) {
 			var device = JObject.Parse(deviceJson);
-			await _cs.UpdateDevice(device);
+			dynamic devObject = device.ToObject(Type.GetType(device.GetValue("_type")?.ToString()!)!);
+			if (devObject != null) {
+				devObject.Id = device["_id"]?.ToString();
+				Log.Debug("Incoming: " + JsonConvert.SerializeObject(devObject));
+				await _cs.UpdateDevice(devObject);
+			}
 		}
 
 		public async Task FlashDevice(string deviceId) {

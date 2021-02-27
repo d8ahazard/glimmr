@@ -68,7 +68,7 @@ namespace Glimmr.Services {
 		private Stopwatch _watch;
 		//private int _time;
 
-		public event Action<List<Color>, List<Color>, int> ColorSendEvent = delegate {};
+		public event Action<List<Color>, List<Color>, int, bool> ColorSendEvent = delegate {};
 		public event Action<List<Color>, string> SegmentTestEvent = delegate { };
 
 		public ColorService(ControlService controlService) {
@@ -193,50 +193,54 @@ namespace Glimmr.Services {
 			Log.Debug("No, really, flashing sector: " + sector);
 			var col = Color.FromArgb(255, 255, 0, 0);
 			var colors = ColorUtil.AddLedColor(new Color[_systemData.LedCount],sector, col,_systemData);
-			var black = ColorUtil.EmptyColors(new Color[_systemData.LedCount]);
-			var strips = new List<LedDevice>();
+			var sectorCount = ((_systemData.HSectors + _systemData.VSectors) * 2) - 4;
+			var sectors = ColorUtil.EmptyColors(new Color[sectorCount]);
+			if (sector < sectorCount) sectors[sector] = col;
+			var black = ColorUtil.EmptyList(_systemData.LedCount);
+			var blackSectors = ColorUtil.EmptyList(sectorCount);
+			var devices = new List<IColorTarget>();
 			for (var i = 0; i < _sDevices.Length; i++) {
-				if (_sDevices[i].Tag == "Led") {
-					strips.Add((LedDevice)_sDevices[i]);
+				if (_sDevices[i].Enable) {
+					devices.Add((LedDevice)_sDevices[i]);
 				}
 			}
-			foreach (var _strip in strips) {
+			foreach (var _strip in devices) {
 				if (_strip != null) {
 					_strip.Testing = true;
 				}
 			}
 			
-			foreach (var _strip in strips) {
+			foreach (var _strip in devices) {
 				if (_strip != null) {
-					await _strip.SetColor(colors.ToList(), true);
+					await _strip.SetColor(colors.ToList(), sectors.ToList(), 0);
 				}
 			}
 
 			Thread.Sleep(500);
 			
-			foreach (var _strip in strips) {
+			foreach (var _strip in devices) {
 				if (_strip != null) {
-					_strip.SetColor(black.ToList(), true);
+					_strip.SetColor(black,blackSectors, 0);
 				}
 			}
 			
-			foreach (var _strip in strips) {
+			foreach (var _strip in devices) {
 				if (_strip != null) {
-					_strip.SetColor(colors.ToList(), true);
+					_strip.SetColor(colors.ToList(), sectors.ToList(), 0);
 				}
 			}
 			
 			Thread.Sleep(1000);
 			
-			foreach (var _strip in strips) {
+			foreach (var _strip in devices) {
 				if (_strip != null) {
-					_strip.SetColor(black.ToList(), true);
+					_strip.SetColor(black, blackSectors, 0);
 					_strip.Testing = false;
 				}
 			}
 		}
 	
-		private async Task CheckAutoDisable() {
+		private async Task CheckAutoDisable() { 
 			var sourceActive = false;
 			// If we're in video or audio mode, check the source is active...
 			switch (_deviceMode) {
@@ -302,16 +306,37 @@ namespace Glimmr.Services {
 		}
 
 		private async Task LedTest(object o, DynamicEventArgs dynamicEventArgs) {
-			var led = dynamicEventArgs.P1;
-			var strips = new List<LedDevice>();
+			int led = dynamicEventArgs.P1;
+			var strips = new List<IColorTarget>();
 			for (var i = 0; i < _sDevices.Length; i++) {
-				if (_sDevices[i].Tag == "Led") {
-					strips.Add((LedDevice)_sDevices[i]);
+				if (_sDevices[i].Enable == true) {
+					strips.Add((IColorTarget)_sDevices[i]);
 				}
 			}
-			foreach (var _strip in strips) {
-				await _strip.StartTest(led);	
+
+			var colors = ColorUtil.EmptyList(_systemData.LedCount);
+			var blackColors = colors;
+			colors[led] = Color.FromArgb(255, 0, 0);
+			var sectors = ColorUtil.LedsToSectors(colors, _systemData);
+			var blackSectors = ColorUtil.EmptyList(_systemData.SectorCount);
+			foreach (var dev in _sDevices) {
+				dev.Testing = true;
+				dev.SetColor(colors, sectors,0,true);
 			}
+			await Task.Delay(500);
+			foreach (var dev in _sDevices) {
+				dev.SetColor(blackColors, blackSectors,0,true);
+			}
+			await Task.Delay(500);
+			foreach (var dev in _sDevices) {
+				dev.SetColor(colors, sectors,0,true);
+			}
+			await Task.Delay(500);
+			foreach (var dev in _sDevices) {
+				dev.SetColor(blackColors, blackSectors,0,true);
+				dev.Testing = false;
+			}
+
 		}
 
 		private void LoadData() {
@@ -350,15 +375,6 @@ namespace Glimmr.Services {
 			}
 
 			Log.Debug("We have a total of " + sDevs.Count + " devices.");
-			
-			var ledData = DataUtil.GetCollectionItem<LedData>("LedData", "0");
-			//var ledData2 = DataUtil.GetCollectionItem<LedData>("LedData", "1");
-			//var ledData3 = DataUtil.GetCollectionItem<LedData>("LedData", "2");
-			Log.Debug("Initialized LED strip: " + JsonConvert.SerializeObject(ledData));
-			//_strips.Add(new LedStrip(ledData2, this));
-			//_strips.Add(new LedStrip(ledData3,this));
-			sDevs.Add(new LedDevice(ledData, this));
-			//sDevs.Add(new RazerDevice(this));
 			_sDevices = sDevs.ToArray();
 		}
 
@@ -612,7 +628,7 @@ namespace Glimmr.Services {
 
 			if (!_streamStarted) return;
 
-			ColorSendEvent(colors, sectors, fadeTime);
+			ColorSendEvent(colors, sectors, fadeTime, false);
 		}
 
 

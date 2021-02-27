@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.ComponentModel;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
@@ -32,6 +32,11 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			Brightness = yd.Brightness;
 			Enable = yd.Enable;
 			TargetSector = yd.TargetSector;
+			
 		}
+
+		public SettingsProperty[] KeyProperties { get; set; } = {
+			new("TargetSector","sectormap", "Target Sector")
+		};
 	}
 }

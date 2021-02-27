@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
@@ -67,6 +68,10 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
             MergeLayout(existingLeaf.Layout);
             Tag = "Nanoleaf";
         }
+
+        public SettingsProperty[] KeyProperties { get; set; } = {
+            new("custom", "nanoleaf", "")
+        };
 
         public void MergeLayout(NanoLayout newLayout) {
             if (newLayout == null) throw new ArgumentException("Invalid argument.");

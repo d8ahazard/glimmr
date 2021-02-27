@@ -91,8 +91,8 @@ namespace Glimmr.Models.ColorTarget.LIFX {
             
         }
 
-        public void SetColor(List<Color> colors, List<Color> list, int arg3) {
-            if (!Streaming || !Enable || Testing) return;
+        public void SetColor(List<Color> colors, List<Color> list, int arg3, bool force=false) {
+            if (!Streaming || !Enable || Testing && !force) return;
             var sectors = list;
             var fadeTime = arg3;
             if (sectors == null || _client == null) {

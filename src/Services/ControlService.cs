@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Sockets;
@@ -9,20 +10,15 @@ using Common.Logging.Configuration;
 using Glimmr.Hubs;
 using Glimmr.Models;
 using Glimmr.Models.ColorTarget;
-using Glimmr.Models.ColorTarget.DreamScreen;
 using Glimmr.Models.ColorTarget.Hue;
 using Glimmr.Models.ColorTarget.LED;
-using Glimmr.Models.ColorTarget.LIFX;
 using Glimmr.Models.ColorTarget.Nanoleaf;
-using Glimmr.Models.ColorTarget.Wled;
 using Glimmr.Models.Util;
 using Makaretu.Dns;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Serilog;
-using Color = System.Drawing.Color;
 
 namespace Glimmr.Services {
 	public class ControlService : BackgroundService {
@@ -33,9 +29,6 @@ namespace Glimmr.Services {
 		private readonly List<dynamic> _agents;
 
 		public ControlService(IHubContext<SocketServer> hubContext) {
-			_agents = new List<dynamic>();
-			LoadAgents();
-
 			_hubContext = hubContext;
 			// Init nano HttpClient
 			HttpSender = new HttpClient {Timeout = TimeSpan.FromSeconds(5)};
@@ -44,11 +37,12 @@ namespace Glimmr.Services {
 			UdpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 			UdpClient.Client.Blocking = false;
 			UdpClient.DontFragment = true;
-			// Lifx client
-			MulticastService = new MulticastService();
-			// Dynamically load agents
 			
-			DataUtil.CheckDefaults(this).ConfigureAwait(true);
+			MulticastService = new MulticastService();
+			
+			// Dynamically load agents
+			_agents = new List<dynamic>();
+			LoadAgents();
 		}
 
 		public AsyncEvent<DynamicEventArgs> DeviceReloadEvent;
@@ -290,9 +284,9 @@ namespace Glimmr.Services {
 			if (oldSd.LedCount != sd.LedCount) {
 				var leds = DataUtil.GetDevices<LedData>("Led");
 				
-				foreach (var colorTargetData in leds.Where(led => led.Count == 0)) {
+				foreach (var colorTargetData in leds.Where(led => led.LedCount == 0)) {
 					var led = colorTargetData;
-					led.Count = sd .LedCount;
+					led.LedCount = sd .LedCount;
 					await DataUtil.InsertCollection<LedData>("LedData", led);
 				}
 			}
@@ -320,50 +314,11 @@ namespace Glimmr.Services {
 			return Task.CompletedTask;
 		}
 
-		public async Task UpdateDevice(JObject device) {
-			Log.Debug("Update device called!");
-			var tag = (string) device.GetValue("Tag");
-			var id = (string) device.GetValue("_id");
-			device["Id"] = id;
-			Log.Debug($"ID and tag are {id} and {tag}.");
-			var updated = false;
-			try {
-				switch (tag) {
-					case "Wled":
-						await DataUtil.InsertCollection<WledData>("Dev_Wled", device.ToObject<WledData>());
-						updated = true;
-						break;
-					case "Lifx":
-						await DataUtil.InsertCollection<LifxData>("Dev_Lifx", device.ToObject<LifxData>());
-						updated = true;
-						break;
-					case "Hue":
-						var dev = device.ToObject<HueData>();
-						await DataUtil.InsertCollection<HueData>("Dev_Hue", dev);
-						updated = true;
-						break;
-					case "Nanoleaf":
-						await DataUtil.InsertCollection<NanoleafData>("Dev_Nanoleaf", device.ToObject<NanoleafData>());
-						updated = true;
-						break;
-					case "Dreamscreen":
-						await DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", device.ToObject<DreamData>());
-						updated = true;
-						break;
-					default:
-						Log.Debug("Unknown tag: " + tag);
-						break;
-				}
-			} catch (Exception e) {
-				Log.Debug("Well, this is exceptional: " + e.Message);
-			}
-
-			if (updated) {
-				Log.Debug("Triggering device refresh for " + id);
-				await RefreshDevice(id);
-			} else {
-				Log.Debug("Sigh, no update...");
-			}
+		public async Task UpdateDevice(dynamic device) {
+			Log.Debug("Update device called: " + JsonConvert.SerializeObject(device));
+			await DataUtil.AddDeviceAsync(device);
+			await RefreshDevice(device.Id);
+			
 		}
 
 		public async Task FlashDevice(string deviceId) {

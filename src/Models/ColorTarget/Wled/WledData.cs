@@ -31,6 +31,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             Tag = "Wled";
             Name ??= Tag;
             if (Id != null) Name = StringUtil.UppercaseFirst(Id);
+            
         }
         public WledData(string id) {
             Id = id;
@@ -79,8 +80,23 @@ namespace Glimmr.Models.ColorTarget.Wled {
             ReverseStrip = input.ReverseStrip;
             StripMode = input.StripMode;
             if (Id != null) Name = StringUtil.UppercaseFirst(Id);
+
         }
 
+        public SettingsProperty[] KeyProperties { get; set; } = {
+            new("ledmap","ledmap",""),
+            new("Offset","text", "Strip Offset"),
+            new("LedCount","text", "Led Count"),
+            new("StripMode", "select", "Strip Mode", new Dictionary<string, string> {
+               ["0"] = "Normal",
+               ["1"] = "Sectored",
+               ["2"] = "Loop (Play Bar)"
+            }),
+            new("ReverseStrip","check", "Reverse Strip Direction")
+        };
+
+        [JsonProperty]
+        
         public string Name { get; set; }
         public string Id { get; set; }
         public string Tag { get; set; }

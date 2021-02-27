@@ -46,9 +46,11 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			return Task.CompletedTask;
 		}
 
-		public void SetColor(List<Color> colors, List<Color> sectors, int arg3) {
-			if (!Streaming || _data.TargetSector == -1 || Testing || _data.TargetSector >= sectors.Count) {
-				return;
+		public void SetColor(List<Color> colors, List<Color> sectors, int arg3, bool force=false) {
+			if (!force) {
+				if (!Streaming || _data.TargetSector == -1 || Testing && !force || _data.TargetSector >= sectors.Count) {
+					return;
+				}
 			}
 
 			var col = sectors[_data.TargetSector];
@@ -58,6 +60,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		public async Task FlashColor(Color col) {
 			await _yeeDevice.SetRGBColor(col.R, col.G, col.B);
 		}
+
 
 		public Task ReloadData() {
 			Streaming = false;

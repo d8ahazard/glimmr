@@ -239,6 +239,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
         
         public void Refresh() {
             SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
+            Log.Debug("SystemData: " + JsonConvert.SerializeObject(sd));
             _sectorCount = (sd.VSectors + sd.HSectors) * 2 - 4;
             _ledCount = sd.LedCount;
             _ambientShow = sd.AmbientShow;

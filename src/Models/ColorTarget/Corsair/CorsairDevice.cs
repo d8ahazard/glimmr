@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,7 +19,6 @@ namespace Glimmr.Models.ColorTarget.Corsair {
 		public string Tag { get; set; }
 		public bool Enable { get; set; }
 		public IColorTargetData Data { get; set; }
-		private Dictionary<CorsairDeviceType, CorsairLedPositions> _devices;
 		
 		private int _bottomStart;
 		private int _bottomCount;
@@ -46,8 +44,8 @@ namespace Glimmr.Models.ColorTarget.Corsair {
 			return Task.CompletedTask;
 		}
 
-		public void SetColor(List<Color> colors, List<Color> sectors, int fadeTime) {
-			if (!Streaming) return;
+		public void SetColor(List<Color> colors, List<Color> sectors, int fadeTime, bool force = false) {
+			if (!Streaming || Testing && !force) return;
 			
 		}
 
@@ -82,7 +80,7 @@ namespace Glimmr.Models.ColorTarget.Corsair {
 					var info = CUESDK.CorsairGetDeviceInfo(i);
 					
 					var layout = CUESDK.CorsairGetLedPositionsByDeviceIndex(i);
-					_devices[info.type] = layout;
+					//_devices[info.type] = layout;
 				}
 			}
 			SystemData sd = DataUtil.GetObject<SystemData>("SystemData");

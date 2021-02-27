@@ -68,8 +68,8 @@ namespace Glimmr.Models.ColorTarget.Razer {
 			return Task.CompletedTask;
 		}
 
-		public void SetColor(List<Color> colors, List<Color> sectors, int fadeTime) {
-			if (!Streaming || !Enable || !_hasChroma) return;
+		public void SetColor(List<Color> colors, List<Color> sectors, int fadeTime, bool force = false) {
+			if (!Streaming || !Enable || !_hasChroma || Testing && !force) return;
 			switch (_data.DeviceTag) {
 				case "Mouse":
 					var mouseMap = CreateMouseMap(colors);
@@ -117,7 +117,7 @@ namespace Glimmr.Models.ColorTarget.Razer {
 		}
 
 		private CustomKeyboardEffect CreateKeyboardMap(List<Color> colors) {
-			var source = ColorUtil.TruncateColors(colors, _data.KeyboardOffset, MaxKeyboardCols);
+			var source = ColorUtil.TruncateColors(colors, _data.Offset, MaxKeyboardCols);
 			var keyboardGrid = CustomKeyboardEffect.Create();
 
 			// Set the Key in the second row and the fifth column to Red
@@ -131,7 +131,7 @@ namespace Glimmr.Models.ColorTarget.Razer {
 		}
 		
 		private CustomKeypadEffect CreateKeypadMap(List<Color> colors) {
-			var source = ColorUtil.TruncateColors(colors, _data.KeypadOffset, MaxKeypadColumns);
+			var source = ColorUtil.TruncateColors(colors, _data.Offset, MaxKeypadColumns);
 			var keypadGrid = CustomKeypadEffect.Create();
 			// Set the Key in the second row and the fifth column to Red
 			for (var x=0; x < MaxKeypadColumns; x++) {
@@ -143,7 +143,7 @@ namespace Glimmr.Models.ColorTarget.Razer {
 		}
 
 		private CustomMousepadEffect CreateMousepadMap(List<Color> colors) {
-			var source = ColorUtil.TruncateColors(colors, _data.MousePadOffset, MaxMousepadLeds);
+			var source = ColorUtil.TruncateColors(colors, _data.Offset, MaxMousepadLeds);
 			var mousepadGrid = CustomMousepadEffect.Create();
 			for (var x = 0; x < MaxMousepadLeds; x++) {
 				mousepadGrid[x] = new ColoreColor(source[x].R, source[x].G, source[x].B);
@@ -152,7 +152,7 @@ namespace Glimmr.Models.ColorTarget.Razer {
 		}
 		
 		private CustomHeadsetEffect CreateHeadsetMap(List<Color> colors) {
-			var source = ColorUtil.TruncateColors(colors, _data.HeadsetOffset, MaxHeadsetLeds);
+			var source = ColorUtil.TruncateColors(colors, _data.Offset, MaxHeadsetLeds);
 			var headsetGrid = CustomHeadsetEffect.Create();
 			for (var x = 0; x < MaxHeadsetLeds; x++) {
 				headsetGrid[x] = new ColoreColor(source[x].R, source[x].G, source[x].B);
@@ -161,7 +161,7 @@ namespace Glimmr.Models.ColorTarget.Razer {
 		}
 
 		private CustomMouseEffect CreateMouseMap(List<Color> colors) {
-			var source = ColorUtil.TruncateColors(colors, _data.MouseOffset, MaxMouseColumns);
+			var source = ColorUtil.TruncateColors(colors, _data.Offset, MaxMouseColumns);
 			var mouseGrid = CustomMouseEffect.Create();
 			for (var x = 0; x < MaxMouseColumns; x++) {
 				for (var y = 0; y < MaxMouseRows; y++) {

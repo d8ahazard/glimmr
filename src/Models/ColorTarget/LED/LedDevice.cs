@@ -12,7 +12,7 @@ using Serilog;
 using ColorUtil = Glimmr.Models.Util.ColorUtil;
 
 namespace Glimmr.Models.ColorTarget.LED {
-	public class LedDevice : IColorTarget {
+	public class LedDevice : ColorTarget, IColorTarget {
 		public bool Streaming { get; set; }
 		public bool Testing { get; set; }
 		public int Brightness { get; set; }
@@ -33,23 +33,17 @@ namespace Glimmr.Models.ColorTarget.LED {
 		private WS281x _strip;
 
 		
-		
-		public LedDevice(LedData ld, ColorService colorService) {
+		public LedDevice(LedData ld, ColorService colorService) : base(colorService) {
 			var cs = colorService;
-			cs.SegmentTestEvent += UpdateStrip;
 			cs.ColorSendEvent += SetColor;
 			Data = ld;
 			Id = Data.Id;
 			ReloadData();
 			CreateStrip();
 		}
+		
 
-		public Task SetColor(object arg1, DynamicEventArgs arg2) {
-			var colors = arg2.P1;
-			SetColor(colors);
-			return Task.CompletedTask;
-		}
-
+		
 		private void CreateStrip() {
 			var settings = LoadLedData(Data);
 			// Hey, look, this is built natively into the LED app
@@ -101,11 +95,11 @@ namespace Glimmr.Models.ColorTarget.LED {
 			Log.Debug("Old LED Data: " + JsonConvert.SerializeObject(Data));
 			//con.LEDCount = _ledCount;
 			Data = ld;
-			_ledCount = Data.Count;
+			_ledCount = Data.LedCount;
 			_enableAbl = Data.AutoBrightnessLevel;
 			if (_strip != null) {
 				if (Data.Brightness != ld.Brightness) _strip.SetBrightness(ld.Brightness);
-				if (Data.Count != ld.Count) _strip.SetLedCount(ld.Count);
+				if (Data.LedCount != ld.Count) _strip.SetLedCount(ld.Count);
 				if (!_enableAbl) _strip.SetBrightness(ld.Brightness);
 			}
 			_offset = Data.Offset;
@@ -142,85 +136,31 @@ namespace Glimmr.Models.ColorTarget.LED {
 			Data = ld;
 			return settings;
 		}
-
-
-		public void StartTest(int len) {
-			Testing = true;
-			var lc = len;
-			if (len < _ledCount) {
-				lc = _ledCount;
-			}
-
-			var colors = new Color[lc];
-			var black = new Color[lc];
-			colors = ColorUtil.EmptyColors(colors);
-			black = ColorUtil.EmptyColors(black);
-			colors[len] = Color.FromArgb(255, 255, 0, 0);
-			Testing = true;
-			SetColor(colors.ToList(), true);
-			Thread.Sleep(500);
-			SetColor(black.ToList(), true);
-			Thread.Sleep(500);
-			SetColor(colors.ToList(), true);
-			Thread.Sleep(1000);
-			SetColor(black.ToList(), true);
-			Testing = false;
-		}
-
-
-		public void StopTest() {
-			Testing = false;
-			var mt = ColorUtil.EmptyColors(new Color[Data.Count]);
-			SetColor(mt.ToList(), true);
-		}
-
 		
-		private void UpdateStrip(List<Color> colors, string id) {
-			if (id == Id) {
-				SetColor(colors, true);
-			}
-		}
-
-		public void SetColor(List<Color> colors, List<Color> sectors, int fadeTime) {
-			SetColor(colors, true);
-		}
-
-		public void SetColor(List<Color> colors, bool force = false, string id="") {
+		public void SetColor(List<Color> colors, List<Color> sectors, int fadeTime, bool force=false) {
 			if (colors == null) {
 				throw new ArgumentException("Invalid color input.");
 			}
 
-			if ((Testing && !force) || !Enable) {
+			if (Testing && !force || !Enable) {
 				return;
 			}
 
-			var render = false;
-			var iSource = 0;
-
-			if (string.IsNullOrEmpty(id) || id == Data.Id) {
-				render = true;
-				var c1 = TruncateColors(colors, _ledCount, _offset);
-				if (_enableAbl) {
-					c1 = VoltAdjust(c1, Data);
-				} else {
-					Log.Debug("Noabl");
-				}
-
-				for (var i = 0; i < Data.Count; i++) {
-					if (iSource >= c1.Count) iSource = 0;
-					var tCol = c1[iSource];
-					if (Data.StripType == 1) {
-						tCol = ColorUtil.ClampAlpha(tCol);
-					}
-					_strip?.SetLed(i,tCol);
-					iSource++;
-				}
+			var c1 = TruncateColors(colors, _ledCount, _offset);
+			if (_enableAbl) {
+				c1 = VoltAdjust(c1, Data);
 			}
 
-			if (render) {
-				_strip?.Render();
+			for (var i = 0; i < c1.Count; i++) {
+				var tCol = c1[i];
+				if (Data.StripType == 1) {
+					tCol = ColorUtil.ClampAlpha(tCol);
+				}
+				_strip?.SetLed(i,tCol);
 			}
+			_strip?.Render();
 		}
+
 		
 		private static List<Color> TruncateColors(List<Color> input, int len, int offset) {
 			var truncated = new List<Color>();

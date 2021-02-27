@@ -1,8 +1,8 @@
 ﻿#region
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
-using System.Globalization;
 using Glimmr.Models.ColorTarget.DreamScreen.Encoders;
 using Newtonsoft.Json;
 using Serilog;
@@ -304,5 +304,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		public void CopyExisting(IColorTargetData data) {
 			
 		}
+
+		public SettingsProperty[] KeyProperties { get; set; }
 	}
 }

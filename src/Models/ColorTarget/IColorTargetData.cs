@@ -1,36 +1,40 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using Newtonsoft.Json;
+using rpi_ws281x;
 
 namespace Glimmr.Models.ColorTarget {
     public interface IColorTargetData {
-
-        [DefaultValue("")]
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public string Name { get; set; }
-
-        [DefaultValue("")]
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public string Id { get; set; }
-        
-        [JsonProperty]
         public string Tag { get; set; }
-        
-        [JsonProperty] 
         public string IpAddress { get; set; }
-
-        [DefaultValue(255)]
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public int Brightness { get; set; }
-
-        [DefaultValue(false)]
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool Enable { get; set; }
-        
-        [DefaultValue("")]
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public string LastSeen { get; set; }
-
         public void CopyExisting(IColorTargetData data);
+        [JsonProperty]
+        public SettingsProperty[] KeyProperties { get; set; }
+    }
+
+    [Serializable]
+    public class SettingsProperty {
+        [JsonProperty] public string ValueName;
+        [JsonProperty] public string ValueType;
+        [JsonProperty] public string ValueLabel;
+        [JsonProperty] public string ValueMax { get; set; }
+        [JsonProperty] public string ValueMin { get; set; }
+        [JsonProperty] public string ValueStep { get; set; }
+        [JsonProperty] public Dictionary<string, string> Options;
+
+        public SettingsProperty(){}
+
+        public SettingsProperty(string name, string type, string label, Dictionary<string,string> options = null) {
+            ValueName = name;
+            ValueType = type;
+            ValueLabel = label;
+            Options = options ?? new Dictionary<string, string>();
+        }
     }
 }

@@ -29,13 +29,18 @@ namespace Glimmr.Models.ColorTarget.LED {
         
         [DefaultValue(300)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-        public int Count { get; set; } = 300;
+        public int LedCount { get; set; } = 300;
         
         [DefaultValue(true)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool FixGamma { get; set; } = true;
 
-        public string Name { get; set; }
+        [JsonProperty]
+        public string Name {
+            get => $"LED {Id} - GPIO {GpioNumber}";
+            set { }
+        }
+
         public string Id { get; set; }
 
         [DefaultValue("Led")]
@@ -50,14 +55,26 @@ namespace Glimmr.Models.ColorTarget.LED {
         public void CopyExisting(IColorTargetData data) {
             var ld = (LedData) data;
             Offset = ld.Offset;
-            Count = ld.Count;
+            LedCount = ld.LedCount;
             GpioNumber = ld.GpioNumber;
             FixGamma = ld.FixGamma;
             MilliampsPerLed = ld.MilliampsPerLed;
             AblMaxMilliamps = ld.AblMaxMilliamps;
-            Name = ld.Name;
             Brightness = ld.Brightness;
             Enable = ld.Enable;
+            AutoBrightnessLevel = ld.AutoBrightnessLevel;
         }
+        
+        [JsonProperty]
+        public SettingsProperty[] KeyProperties { get; set; } = {
+            new("ledmap","ledmap",""),
+            new("Offset", "text", "Led Offset"),
+            new("LedCount", "text", "Led Count"),
+            new("FixGamma", "check", "Fix Gamma"),
+            new("AutoBrightnessLevel", "check", "Enable Auto Brightness"),
+            new("MilliampsPerLed", "text", "Milliamps per led"),
+            new("AblMaxMilliamps", "text", "Total Max Milliamps")
+        };
+
     }
 }

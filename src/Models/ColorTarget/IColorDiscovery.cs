@@ -5,10 +5,8 @@ using Glimmr.Services;
 
 namespace Glimmr.Models.ColorTarget {
 	public interface IColorDiscovery {
-		
-		public async Task Discover(CancellationToken ct) {
-			await Task.FromResult(true);
-		}
+
+		public Task Discover(CancellationToken ct);
 	}
 
 	public abstract class ColorDiscovery {
