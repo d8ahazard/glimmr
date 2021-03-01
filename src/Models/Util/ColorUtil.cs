@@ -71,11 +71,13 @@ namespace Glimmr.Models.Util {
 	        var output = new List<Color>();
             
 	        // Instead of doing dumb crap, just make our list of colors loop around
-	        var doubled = input;
-	        doubled.AddRange(input);
+	        var doubled = new List<Color>();
+	        while (doubled.Count < offset + len) {
+		        doubled.AddRange(input);
+	        }
 	        
 	        for (var i = offset; i < offset + len; i++) {
-		        if (i < doubled.Count) output.Add(doubled[i]);
+		        output.Add(doubled[i]);
 	        }
 
 	        return output;
@@ -481,6 +483,14 @@ namespace Glimmr.Models.Util {
 	        var output = new List<Color>();
 	        for (var i = 0; i < size; i++) {
 		        output.Add(Color.FromArgb(0, 0, 0, 0));
+	        }
+	        return output;
+        }
+        
+        public static List<Color> EmptyList(int size, Color color) {
+	        var output = new List<Color>();
+	        for (var i = 0; i < size; i++) {
+		        output.Add(color);
 	        }
 	        return output;
         }

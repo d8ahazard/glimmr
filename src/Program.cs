@@ -24,8 +24,8 @@ namespace Glimmr
 				logPath = "log\\glimmr.log";
 			}
 			
-			var tr1 = new TextWriterTraceListener(System.Console.Out);
-			Trace.Listeners.Add(tr1);
+			// var tr1 = new TextWriterTraceListener(System.Console.Out);
+			// Trace.Listeners.Add(tr1);
 
 			Log.Logger = new LoggerConfiguration()
 				.Enrich.WithCaller()

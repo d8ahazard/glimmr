@@ -6,13 +6,13 @@ using LifxNet;
 using Newtonsoft.Json;
 using Serilog;
 
-namespace Glimmr.Models.ColorTarget.LIFX {
+namespace Glimmr.Models.ColorTarget.Lifx {
     public class LifxDiscovery : ColorDiscovery, IColorDiscovery {
         private readonly LifxClient _client;
         private ControlService _controlService;
         
         public LifxDiscovery(ColorService cs) : base(cs) {
-            _client = cs.ControlService.GetAgent<LifxClient>();
+            _client = cs.ControlService.GetAgent("LifxAgent");
             _client.DeviceDiscovered += Client_DeviceDiscovered;
             _controlService = cs.ControlService;
             DeviceTag = "Lifx";
@@ -26,7 +26,7 @@ namespace Glimmr.Models.ColorTarget.LIFX {
                 await Task.Delay(TimeSpan.FromSeconds(1), CancellationToken.None);
             }
             _client.StopDeviceDiscovery();
-            Log.Debug("Lifx: Discovery complete: " + JsonConvert.SerializeObject(_client.Devices));
+            Log.Debug("Lifx: Discovery complete.");
         }
         
         private async void Client_DeviceDiscovered(object sender, LifxClient.DeviceDiscoveryEventArgs e) {

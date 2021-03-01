@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Glimmr.Models.ColorTarget;
+using MMALSharp.Ports.Outputs;
 using Serilog;
 
 namespace Glimmr.Models.Util {
@@ -72,28 +73,22 @@ namespace Glimmr.Models.Util {
 			return String.Empty;
 		}
 		
-		public static List<string> GetDiscoverables() {
-			return AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetTypes())
-				.Where(x => typeof(IColorDiscovery).IsAssignableFrom(x) && !x.IsInterface && !x.IsAbstract)
-				.Select(x => x.FullName).ToList();
-		}
-		
-		public static List<string> GetColorTargets() {
-			return AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetTypes())
-				.Where(x => typeof(IColorTarget).IsAssignableFrom(x) && !x.IsInterface && !x.IsAbstract)
-				.Select(x=>x.FullName).ToList();
-		}
-		
-		public static List<string> GetColorTargetAgents() {
-			return AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetTypes())
-				.Where(x => typeof(IColorTargetAgent).IsAssignableFrom(x) && !x.IsInterface && !x.IsAbstract)
-				.Select(x=>x.FullName).ToList();
-		}
-		
-		public static List<string> GetColorSources() {
-			return AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetTypes())
-				.Where(x => typeof(IColorTarget).IsAssignableFrom(x) && !x.IsInterface && !x.IsAbstract)
-				.Select(x=>x.Name).ToList();
+		public static List<string> GetClasses<T>() {
+			var output = new List<string>();
+			foreach (var ad in AppDomain.CurrentDomain.GetAssemblies()) {
+				try {
+					var types = ad.GetTypes();
+					foreach (var type in types) {
+						if (typeof(T).IsAssignableFrom(type) && !type.IsInterface && !type.IsAbstract) {
+							output.Add(type.FullName);
+						}
+					}
+				} catch (Exception) {
+					// Ignored
+				}
+			}
+
+			return output;
 		}
 	}
 }

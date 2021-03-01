@@ -198,7 +198,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
      
         public Task ReloadData() {
             var id = Data.Id;
-            Data = DataUtil.GetCollectionItem<WledData>("Dev_Wled", id);
+            Data = DataUtil.GetDevice<WledData>(id);
             _offset = Data.Offset;
             _len = Data.LedCount;
             Log.Debug($"Reloaded LED Data for {id}: " + JsonConvert.SerializeObject(Data));

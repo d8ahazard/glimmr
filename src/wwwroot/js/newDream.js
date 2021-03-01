@@ -791,10 +791,10 @@ function loadSettingObject(obj) {
                 console.log("Enableprop: ", value, id);
                 if (value) {
                     target = document.querySelector('[data-id="'+id+'"][data-function="enable"]');
-                    target.classList.add("active");
+                    if (isValid(target))target.classList.add("active");
                 } else {
                     target = document.querySelector('[data-id="'+id+'"][data-function="disable"]');
-                    target.classList.add("active");
+                    if (isValid(target))target.classList.add("active");
                 }
             }
             
@@ -856,8 +856,10 @@ function loadDevices() {
             image.setAttribute("data-title", "Flash/locate device");
             image.setAttribute("data-device", device["_id"]);
             let tag = device.Tag;
-            if (tag === "Dreamscreen") tag = device["DeviceTag"];
-            image.setAttribute("src", baseUrl + "/img/" + tag.toLowerCase() + "_icon.png");
+            if (isValid(tag)) {
+                if (tag === "Dreamscreen") tag = device["DeviceTag"];
+                image.setAttribute("src", baseUrl + "/img/" + tag.toLowerCase() + "_icon.png");
+            }
             
             // Settings column
             let settingsCol = document.createElement("div");
@@ -972,7 +974,7 @@ function getDevices() {
 function updateDevice(id, property, value) {
     let dev;
     console.log("Device: ", deviceData);
-    if (deviceData["_id"] === id) {
+    if (isValid(deviceData) && deviceData["_id"] === id) {
         dev = deviceData;
     } else {
         dev = findDevice(id);
@@ -1565,23 +1567,21 @@ function createSectorMap(targetElement, sectorImage, regionName) {
 
 function createLedMap(targetElement, sectorImage, ledData, devData) {
     let range1;
-    let range2;
+    let sd = getStoreProperty("SystemData");
+    console.log("System data: ",sd);
+    
     if (isValid(devData)) {
         let count = devData["LedCount"];
         let offset = devData["Offset"];
         let mode = devData["StripMode"];
-        let total = ledData["LedCount"];
+        let total = sd["LedCount"];
         let diff = 0;
         if (isValid(mode) && mode === 2) count /=2;
-        let len = offset + count;
-        if (len >= total) {
-            diff = len - total;
-            range2 = range(diff);
-        }
-        console.log("CDO", count, diff, offset);
-        range1 = range(count-diff, offset);
-        console.log("Ranges: ", range1, range2);
+        console.log("T O C", total, offset, count);
+        range1 = range(total, offset, count);
+        console.log("Range: ", range1);
     }
+    
     let img = sectorImage;
     let w = img.offsetWidth;
     let h = img.offsetHeight;
@@ -1621,7 +1621,6 @@ function createLedMap(targetElement, sectorImage, ledData, devData) {
         let s1 = document.createElement("div");
         s1.classList.add("led");
         if (isValid(range1) && range1.includes(ledCount)) s1.classList.add("highLed");
-        if (isValid(range2) && range2.includes(ledCount)) s1.classList.add("highLed");
         s1.setAttribute("data-sector", ledCount.toString());
         s1.style.position = "absolute";
         s1.style.top = t.toString() + "px";
@@ -1641,7 +1640,6 @@ function createLedMap(targetElement, sectorImage, ledData, devData) {
         let s1 = document.createElement("div");
         s1.classList.add("led");
         if (isValid(range1) && range1.includes(ledCount)) s1.classList.add("highLed");
-        if (isValid(range2) && range2.includes(ledCount)) s1.classList.add("highLed");
         s1.setAttribute("data-sector", ledCount.toString());
         s1.style.position = "absolute";
         s1.style.top = t.toString() + "px";
@@ -1664,7 +1662,6 @@ function createLedMap(targetElement, sectorImage, ledData, devData) {
         let s1 = document.createElement("div");
         s1.classList.add("led");
         if (isValid(range1) && range1.includes(ledCount)) s1.classList.add("highLed");
-        if (isValid(range2) && range2.includes(ledCount)) s1.classList.add("highLed");
         s1.setAttribute("data-sector", ledCount.toString());
         s1.style.position = "absolute";
         s1.style.top = t.toString() + "px";
@@ -1687,7 +1684,6 @@ function createLedMap(targetElement, sectorImage, ledData, devData) {
         let s1 = document.createElement("div");
         s1.classList.add("led");
         if (isValid(range1) && range1.includes(ledCount)) s1.classList.add("highLed");
-        if (isValid(range2) && range2.includes(ledCount)) s1.classList.add("highLed");
         s1.setAttribute("data-sector", ledCount.toString());
         s1.style.position = "absolute";
         s1.style.top = t.toString() + "px";
@@ -1703,8 +1699,27 @@ function createLedMap(targetElement, sectorImage, ledData, devData) {
     targetElement.appendChild(map);
 }
 
-function range(size, startAt = 0) {
-    return [...Array(size).keys()].map(i => i + startAt);
+function range(total, offset = 0, ledCount) {
+    let Oint = parseInt(offset);
+    let tSize = parseInt(ledCount) + Oint;
+    console.log("Size: ", tSize);
+    if (tSize > ledCount) {
+        let s1 = total - tSize;
+        console.log("S1, t, s", s1, total, tSize);
+        let s2 = total - s1 - 1;
+        console.log("Making big array", s1, s2);
+
+        let r1 = [...Array(s1).keys()].map(i => i);
+        console.log("R1: ",r1);
+        let r2 = [...Array(s2).keys()].map(i => i + Oint);
+        console.log("R2: ",r2);
+        return r1.concat(r2);
+    } else {
+        return [...Array(ledCount).keys()].map(i => i + offset);    
+    }
+    
+    
+    return 
 }
 
 function createHueMap() {

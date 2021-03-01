@@ -16,13 +16,14 @@ namespace Glimmr.Services {
 	public class DiscoveryService : BackgroundService {
 		private readonly IHubContext<SocketServer> _hubContext;
 		private bool _streaming;
+		private bool _discovering;
 		private readonly List<IColorDiscovery> _discoverables;
 		public DiscoveryService(IHubContext<SocketServer> hubContext, ColorService colorService) {
 			_hubContext = hubContext;
 			var controlService1 = colorService.ControlService;
 			controlService1.DeviceRescanEvent += TriggerRefresh;
 			controlService1.SetModeEvent += UpdateMode;
-			var classnames = SystemUtil.GetDiscoverables();
+			var classnames = SystemUtil.GetClasses<IColorDiscovery>();
 			_discoverables = new List<IColorDiscovery>();
 			Log.Debug("Adding discovery classes...");
 			foreach (var c in classnames) {
@@ -63,6 +64,8 @@ namespace Glimmr.Services {
 
         
 		private async Task DeviceDiscovery(int timeout=15) {
+			if (_discovering) return;
+			_discovering = true;
 			Log.Debug("Triggering refresh of devices via timer.");
 			// Trigger a refresh
 			var cs = new CancellationTokenSource();
@@ -78,11 +81,12 @@ namespace Glimmr.Services {
 				foreach (var task in tasks) {
 					task.Dispose();
 				}
+				cs.Dispose();
+
 			}
 				
 			Log.Debug("All devices should now be refreshed.");
-			cs.Dispose();
-
+			_discovering = false;
 			// Notify all clients to refresh data
 			await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized(), CancellationToken.None);
 		}

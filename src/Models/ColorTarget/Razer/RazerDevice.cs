@@ -48,7 +48,7 @@ namespace Glimmr.Models.ColorTarget.Razer {
 		public RazerDevice(RazerData data, ColorService colorService) : base(colorService) {
 			ReloadData();
 			colorService.ColorSendEvent += SetColor;
-			_chroma = colorService.ControlService.GetAgent<IChroma>();
+			_chroma = colorService.ControlService.GetAgent("RazerAgent");
 			if (_chroma == null) {
 				Enable = false;
 				Log.Debug("No chroma agent, OS is not Windows.");

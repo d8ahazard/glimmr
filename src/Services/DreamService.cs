@@ -31,6 +31,8 @@ namespace Glimmr.Services {
         private DreamData _dev;
         private SystemData _sd;
         private readonly DreamUtil _dreamUtil;
+        private Dictionary<string, int> _subscribers;
+
         
         // Our functional values
         private int _devMode;
@@ -50,7 +52,9 @@ namespace Glimmr.Services {
             _controlService.RefreshDreamscreenEvent += token => Discover(token).ConfigureAwait(false);
             _controlService.RefreshSystemEvent += RefreshSystemData;
             _controlService.SetModeEvent += UpdateMode;
+            _controlService.AddSubscriberEvent += AddSubscriber;
             _dreamUtil = new DreamUtil(_controlService.UdpClient);
+            _subscribers = new Dictionary<string, int>();
             Initialize();
         }
         
@@ -62,14 +66,21 @@ namespace Glimmr.Services {
             // Start listening service 
             StartListening();
         }
+        
+        private void AddSubscriber(string ip) {
+            if (!_subscribers.ContainsKey(ip)) {
+                _controlService.EnableDevice(ip);
+
+                Log.Debug("ADDING SUBSCRIBER: " + ip);
+            }
+            _subscribers[ip] = 3;
+        }
 
         // This is called because it's a service. I thought I needed this, maybe I don't...
         protected override Task ExecuteAsync(CancellationToken cancellationToken) {
             Log.Debug("DreamService initialized.");
             return Task.Run(async () => {
-                while (!cancellationToken.IsCancellationRequested) {
-                    await Task.Delay(1, cancellationToken);
-                }
+                await CheckSubscribers(cancellationToken);
                 return Task.CompletedTask;
             }, cancellationToken);
         }
@@ -496,6 +507,28 @@ namespace Glimmr.Services {
                 input[0]
             };
             return output;
+        }
+        
+        private async Task CheckSubscribers(CancellationToken ct) {
+            while (!ct.IsCancellationRequested) {
+                try {
+                    await _dreamUtil.SendBroadcastMessage(_dev.DeviceGroup);
+                    // Enumerate all subscribers, check to see that they are still valid
+                    var keys = new List<string>(_subscribers.Keys);
+                    foreach (var key in keys) {
+                        // If the subscribers haven't replied in three messages, remove them, otherwise, count down one
+                        if (_subscribers[key] <= 0) {
+                            _subscribers.Remove(key);
+                        } else {
+                            _subscribers[key] -= 1;
+                        }
+                    }
+                } catch (TaskCanceledException) {
+                    _subscribers = new Dictionary<string, int>();
+                }	
+                await Task.Delay(5000, ct);
+            }
+			
         }
 
 

@@ -139,7 +139,9 @@ namespace Glimmr.Models.ColorSource.Video {
 			}
 
 			DoSave = false;
+			
 			var path = Directory.GetCurrentDirectory();
+			var fullPath = Path.Join(path, "wwwroot", "img", "_preview_output.jpg");
 			var gMat = new Mat();
 			inputMat.CopyTo(gMat);
 			var colBlack = new Bgr(Color.FromArgb(0,0,0,0)).MCvScalar;
@@ -162,7 +164,8 @@ namespace Glimmr.Models.ColorSource.Video {
 					CvInvoke.PutText(gMat, cInt.ToString(), tPoint, FontFace.HersheySimplex, 1.0, colBlack);
 				}	
 			}
-			gMat.Save(path + "/wwwroot/img/_preview_output.jpg");
+
+			gMat.Save(fullPath);
 			gMat.Dispose();
 			_controlService.TriggerImageUpdate();
 		}

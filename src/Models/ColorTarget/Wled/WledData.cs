@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Net;
-using Glimmr.Models.ColorTarget.LED;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
 using Serilog;
@@ -42,7 +41,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
             AutoDisable = true;
             Sectors = new List<int>();
             SubSectors = new Dictionary<int, int>();
-            LedData ld = new LedData();
             
             try {
                 var dns = Dns.GetHostEntry(Id + ".local");

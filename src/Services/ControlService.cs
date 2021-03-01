@@ -11,7 +11,7 @@ using Glimmr.Hubs;
 using Glimmr.Models;
 using Glimmr.Models.ColorTarget;
 using Glimmr.Models.ColorTarget.Hue;
-using Glimmr.Models.ColorTarget.LED;
+using Glimmr.Models.ColorTarget.Led;
 using Glimmr.Models.ColorTarget.Nanoleaf;
 using Glimmr.Models.Util;
 using Makaretu.Dns;
@@ -26,7 +26,7 @@ namespace Glimmr.Services {
 		public UdpClient UdpClient { get; }
 		public MulticastService MulticastService { get; }
 		private readonly IHubContext<SocketServer> _hubContext;
-		private readonly List<dynamic> _agents;
+		private readonly Dictionary<string,dynamic> _agents;
 
 		public ControlService(IHubContext<SocketServer> hubContext) {
 			_hubContext = hubContext;
@@ -41,7 +41,7 @@ namespace Glimmr.Services {
 			MulticastService = new MulticastService();
 			
 			// Dynamically load agents
-			_agents = new List<dynamic>();
+			_agents = new Dictionary<string, dynamic>();
 			LoadAgents();
 		}
 
@@ -63,26 +63,47 @@ namespace Glimmr.Services {
 		
 		public AsyncEvent<DynamicEventArgs> DemoLedEvent;
 		
-		public event Action<List<Color>, List<Color>, int> TriggerSendColorEvent = delegate { };
+		public event Action<List<Color>, List<Color>, int, bool> TriggerSendColorEvent = delegate { };
 
-		public dynamic GetAgent<T>() {
-			foreach (var agent in _agents) {
-				if (agent.GetType() == typeof(T)) {
-					return agent;
+		public dynamic GetAgent(string classType) {
+			foreach (var agentData in _agents) {
+				Log.Debug($"Checking {agentData.Key} against {classType}");
+				if (agentData.Key == classType) {
+					Log.Debug($"Returning {classType}.");
+					return agentData.Value;
 				}
 			}
+			Log.Warning($"Error finding agent of type {classType}.");
 			return null;
 		}
 
 		private void LoadAgents() {
-			var types = SystemUtil.GetColorTargetAgents();
+			var types = SystemUtil.GetClasses<IColorTargetAgent>();
 			foreach (var c in types) {
-				Log.Debug("Creating agent gen: " + c);
+				var parts = c.Split(".");
+				var shortClass = parts[^1];
+				Log.Debug("Creating agent: " + c);
 				var agentMaker = (IColorTargetAgent) Activator.CreateInstance(Type.GetType(c)!);
-				var agent = agentMaker?.CreateAgent(this);
-				Log.Debug("Adding agent: " + agent?.GetType());
-				if (agent != null) _agents.Add(agent);
+				if (agentMaker == null) {
+					Log.Debug("Agent is null!");
+				} else {
+					var agent = agentMaker?.CreateAgent(this);
+					if (agent != null) {
+						Log.Debug($"Adding agent: {c}, {shortClass}");
+						_agents[shortClass] = agent;
+					} else {
+						Log.Debug("Agent is null!");
+					}
+				}
+				
 			}
+		}
+
+		public async Task EnableDevice(string devId) {
+			var dev = DataUtil.GetDevice(devId);
+			dev.Enable = true;
+			await DataUtil.AddDeviceAsync(dev);
+			await DeviceReloadEvent.InvokeAsync(this, new DynamicEventArgs(devId));
 		}
 
 		public async Task ScanDevices() {
@@ -188,8 +209,8 @@ namespace Glimmr.Services {
 		}
 
 		// We call this one to send colors to everything, including the color service
-		public void SendColors(List<Color> c1, List<Color> c2, int fadeTime = 0) {
-			TriggerSendColorEvent(c1, c2, fadeTime);
+		public void SendColors(List<Color> c1, List<Color> c2, int fadeTime = 0, bool force=false) {
+			TriggerSendColorEvent(c1, c2, fadeTime, force);
 		}
 
 		

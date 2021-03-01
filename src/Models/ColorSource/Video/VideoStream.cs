@@ -124,6 +124,7 @@ namespace Glimmr.Models.ColorSource.Video {
 							_noColumns = true;
 						}
 
+						Log.Debug("NO COLUMNS");
 						continue;
 					}
 
@@ -233,12 +234,16 @@ namespace Glimmr.Models.ColorSource.Video {
 				output = input;
 
 			// Save a preview frame every 5 seconds
-			if (_doSave) {
-				_doSave = false;
-				StreamSplitter.DoSave = true;
-				var path = Directory.GetCurrentDirectory();
-				input?.Save(path + "/wwwroot/img/_preview_input.jpg");
+			if (!_doSave) {
+				return output;
 			}
+
+			Log.Debug("Trying to save...");
+			_doSave = false;
+			StreamSplitter.DoSave = true;
+			var path = Directory.GetCurrentDirectory();
+			var fullPath = Path.Join(path, "wwwroot", "img", "_preview_input.jpg");
+			input?.Save(fullPath);
 
 			return output;
 		}

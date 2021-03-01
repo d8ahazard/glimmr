@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Corsair.CUE.SDK;
@@ -18,16 +19,26 @@ namespace Glimmr.Models.ColorTarget.Corsair {
 		public string IpAddress { get; set; }
 		public string Tag { get; set; }
 		public bool Enable { get; set; }
-		public IColorTargetData Data { get; set; }
+		IColorTargetData IColorTarget.Data {
+			get => Data;
+			set => Data = (CorsairData) value;
+		}
+
+		private CorsairData Data { get; set; }
 		
-		private int _bottomStart;
-		private int _bottomCount;
+		private List<List<CorsairLedPosition>> _sortedPositions;
+
+		private CorsairLedPositions _layout;
 		
 
 		public CorsairDevice(IColorTargetData data, ColorService colorService) : base(colorService) {
 			try {
+				Log.Debug("Creating corsair device...");
+				Data = (CorsairData) data;
+				Id = Data.Id;
 				ReloadData();
 				colorService.ColorSendEvent += SetColor;
+				Log.Debug("Corsair device created...");
 
 			} catch (Exception e) {
 				Log.Debug("Exception: " + e.Message);
@@ -35,6 +46,7 @@ namespace Glimmr.Models.ColorTarget.Corsair {
 			
 		}
 		public Task StartStream(CancellationToken ct) {
+			Log.Debug("Enabling corsair stream...");
 			if (!Streaming) Streaming = true;
 			return Task.CompletedTask;
 		}
@@ -45,52 +57,69 @@ namespace Glimmr.Models.ColorTarget.Corsair {
 		}
 
 		public void SetColor(List<Color> colors, List<Color> sectors, int fadeTime, bool force = false) {
-			if (!Streaming || Testing && !force) return;
-			
-		}
-
-		public void UpdateKeyboard(List<Color> colors) {
-			var source = ColorUtil.TruncateColors(colors, 0, 10);
-		}
-
-		public void UpdateMouse(List<Color> colors) {
-			
-		}
-
-		public void UpdateMouseMat(List<Color> colors) {
+			if (!Streaming || Testing && !force) {
+				return;
+			}
+			var toSend = BuildColors(colors);
+			CUESDK.CorsairSetLedsColorsBufferByDeviceIndex(Data.DeviceIndex, toSend.Count, toSend.ToArray());
+			CUESDK.CorsairSetLedsColorsFlushBufferAsync(null, null);
 			
 		}
 		
-		public void UpdateHeadset(List<Color> colors) {
-			
-		}
-		
-		public void UpdateHeadsetStand(List<Color> colors) {
-			
-		}
 
 		public Task FlashColor(Color color) {
+			var colors = ColorUtil.EmptyList(Data.LedCount, color);
+			var toSend = BuildColors(colors);
+			CUESDK.CorsairSetLedsColorsBufferByDeviceIndex(Data.DeviceIndex, toSend.Count, toSend.ToArray());
+			CUESDK.CorsairSetLedsColorsFlushBufferAsync(null, null);
 			return Task.CompletedTask;
 		}
 
 		public Task ReloadData() {
-			var devs = CUESDK.CorsairGetDeviceCount();
-			if (devs > 0) {
-				for (var i = 0; i < devs; i++) {
-					var info = CUESDK.CorsairGetDeviceInfo(i);
-					
-					var layout = CUESDK.CorsairGetLedPositionsByDeviceIndex(i);
-					//_devices[info.type] = layout;
-				}
-			}
-			SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
-			_bottomStart = sd.RightCount + sd.LeftCount + sd.TopCount;
-			_bottomCount = sd.BottomCount;
+			Data = DataUtil.GetDevice<CorsairData>(Id);
+			_layout = CUESDK.CorsairGetLedPositionsByDeviceIndex(Data.DeviceIndex);
+			BuildLayout();
 			return Task.CompletedTask;
 		}
 
+		private void BuildLayout() {
+			var count = _layout.numberOfLeds;
+			var ordered = new Dictionary<double, List<CorsairLedPosition>>();
+			// Loop over positions, sort by left value
+			for (var i = 0; i < count; i++) {
+				var ld = _layout.pLedPosition[i];
+				var list = new List<CorsairLedPosition>();
+				if (ordered.ContainsKey(ld.left)) {
+					list = ordered[ld.left];
+				}
+				list.Add(ld);
+				ordered[ld.left] = list;
+			}
+			// Sort entire list so it's left-right
+			var foo = new Dictionary<double, List<CorsairLedPosition>>(ordered.OrderBy(o=>o.Key).ToList());
+			_sortedPositions = foo.Values.ToList();
+		}
+
+		private List<CorsairLedColor> BuildColors(List<Color> colors) {
+			var output = new List<CorsairLedColor>();
+			var cData = ColorUtil.TruncateColors(colors, Data.Offset, _sortedPositions.Count);
+			if (Data.Reverse) cData.Reverse();
+			var i = 0;
+			foreach (var pos in _sortedPositions) {
+				var col = cData[i];
+				foreach (var led in pos) {
+					var nc = new CorsairLedColor {r = col.R, g = col.G, b = col.B, ledId = led.ledId};
+					output.Add(nc);
+				}
+
+				i++;
+			}
+
+			return output;
+		}
+		
 		public void Dispose() {
-			
+				
 		}
 	}
 }

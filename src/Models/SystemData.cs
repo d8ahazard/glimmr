@@ -196,6 +196,10 @@ namespace Glimmr.Models {
 		[DefaultValue(1)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int AutoRemoveDevicesAfter { get; set; } = 1;
+		
+		[DefaultValue(false)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public bool TestRazer { get; set; }
 
 	}
 }

@@ -10,7 +10,7 @@ using Serilog;
 using Color = System.Drawing.Color;
 //using LifxColor = LifxNet.Color;
 
-namespace Glimmr.Models.ColorTarget.LIFX {
+namespace Glimmr.Models.ColorTarget.Lifx {
     public class LifxDevice : ColorTarget, IColorTarget {
         public bool Enable { get; set; }
         IColorTargetData IColorTarget.Data {
@@ -34,7 +34,7 @@ namespace Glimmr.Models.ColorTarget.LIFX {
         public LifxDevice(LifxData d, ColorService colorService) : base(colorService) {
             DataUtil.GetItem<int>("captureMode");
             Data = d ?? throw new ArgumentException("Invalid Data");
-            _client = colorService.ControlService.GetAgent<LifxClient>();
+            _client = colorService.ControlService.GetAgent("LifxAgent");
             colorService.ColorSendEvent += SetColor;
             B = new LightBulb(d.HostName, d.MacAddress, d.Service, (uint)d.Port);
             _targetSector = d.TargetSector - 1;

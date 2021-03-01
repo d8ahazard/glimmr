@@ -3,7 +3,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models;
-using Glimmr.Models.ColorTarget.LED;
+using Glimmr.Models.ColorTarget.Led;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.AspNetCore.Mvc;

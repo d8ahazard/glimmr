@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
@@ -11,7 +10,7 @@ using rpi_ws281x;
 using Serilog;
 using ColorUtil = Glimmr.Models.Util.ColorUtil;
 
-namespace Glimmr.Models.ColorTarget.LED {
+namespace Glimmr.Models.ColorTarget.Led {
 	public class LedDevice : ColorTarget, IColorTarget {
 		public bool Streaming { get; set; }
 		public bool Testing { get; set; }
@@ -36,6 +35,7 @@ namespace Glimmr.Models.ColorTarget.LED {
 		public LedDevice(LedData ld, ColorService colorService) : base(colorService) {
 			var cs = colorService;
 			cs.ColorSendEvent += SetColor;
+			Log.Debug("Loaded data: " + JsonConvert.SerializeObject(ld));
 			Data = ld;
 			Id = Data.Id;
 			ReloadData();
@@ -90,16 +90,18 @@ namespace Glimmr.Models.ColorTarget.LED {
 
 		public Task ReloadData() {
 			var ld = DataUtil.GetCollectionItem<LedData>("LedData", Id);
+			SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
 			if (ld == null) return Task.CompletedTask;
 			Log.Debug("Reloading ledData: " + JsonConvert.SerializeObject(ld));
 			Log.Debug("Old LED Data: " + JsonConvert.SerializeObject(Data));
 			//con.LEDCount = _ledCount;
 			Data = ld;
 			_ledCount = Data.LedCount;
+			if (_ledCount > sd.LedCount) _ledCount = sd.LedCount;
 			_enableAbl = Data.AutoBrightnessLevel;
 			if (_strip != null) {
 				if (Data.Brightness != ld.Brightness) _strip.SetBrightness(ld.Brightness);
-				if (Data.LedCount != ld.Count) _strip.SetLedCount(ld.Count);
+				if (Data.LedCount != ld.LedCount) _strip.SetLedCount(ld.LedCount);
 				if (!_enableAbl) _strip.SetBrightness(ld.Brightness);
 			}
 			_offset = Data.Offset;
@@ -128,8 +130,7 @@ namespace Glimmr.Models.ColorTarget.LED {
 				13 => Pin.Gpio13,
 				_ => Pin.Gpio18
 			};
-
-
+			
 			Log.Debug($@"Count, pin, type: {_ledCount}, {pin}, {(int) stripType}");
 			
 			settings.AddController(_ledCount, pin, stripType);
@@ -142,7 +143,8 @@ namespace Glimmr.Models.ColorTarget.LED {
 				throw new ArgumentException("Invalid color input.");
 			}
 
-			if (Testing && !force || !Enable) {
+			if (!Streaming || !Enable || (Testing && !force)) {
+				//Log.Debug("Not enabled or no force");
 				return;
 			}
 
@@ -161,7 +163,6 @@ namespace Glimmr.Models.ColorTarget.LED {
 			_strip?.Render();
 		}
 
-		
 		private static List<Color> TruncateColors(List<Color> input, int len, int offset) {
 			var truncated = new List<Color>();
 			// Subtract one from our offset because arrays

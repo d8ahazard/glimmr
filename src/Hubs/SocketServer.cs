@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models;
-using Glimmr.Models.ColorTarget.LED;
+using Glimmr.Models.ColorTarget.Led;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.AspNetCore.SignalR;
@@ -93,7 +93,12 @@ namespace Glimmr.Hubs {
 
 
 		public override Task OnConnectedAsync() {
-			Clients.Caller.SendAsync("olo", DataUtil.GetStoreSerialized());
+			try {
+				Clients.Caller.SendAsync("olo", DataUtil.GetStoreSerialized());
+			} catch (Exception) {
+				// Ignooored
+			}
+
 			return base.OnConnectedAsync();
 		}
 	}

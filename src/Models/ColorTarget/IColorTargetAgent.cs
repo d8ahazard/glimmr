@@ -1,5 +1,7 @@
-﻿using Glimmr.Services;
-using Q42.HueApi;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Glimmr.Services;
 
 namespace Glimmr.Models.ColorTarget {
 	/// <summary>
@@ -9,7 +11,7 @@ namespace Glimmr.Models.ColorTarget {
 	///
 	/// It is up to the device implementing ColorTarget to find the agent on instantiation
 	/// </summary>
-	public interface IColorTargetAgent {
+	public interface IColorTargetAgent : IDisposable {
 		public dynamic CreateAgent(ControlService cs);
 	}
 }

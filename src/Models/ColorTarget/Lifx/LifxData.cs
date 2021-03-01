@@ -6,7 +6,7 @@ using LifxNet;
 using LiteDB;
 using Newtonsoft.Json;
 
-namespace Glimmr.Models.ColorTarget.LIFX {
+namespace Glimmr.Models.ColorTarget.Lifx {
 	public class LifxData : IColorTargetData {
 		[BsonCtor] [JsonProperty] public string HostName { get; internal set; }
         

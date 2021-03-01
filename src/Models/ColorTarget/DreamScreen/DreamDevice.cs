@@ -2,6 +2,7 @@
 
 using System.Collections.Generic;
 using System.Drawing;
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,12 +26,15 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		[DataMember] [JsonProperty] public DreamData Data { get; set; }
 		
 		
+		
 		private readonly DreamUtil _dreamUtil;
+
+		private Task _subTask;
 
 		public DreamDevice(DreamData data, ColorService colorService) {
 			Data = data;
 			colorService.ColorSendEvent += SetColor;
-			_dreamUtil = colorService.ControlService.GetAgent<DreamUtil>();
+			_dreamUtil = colorService.ControlService.GetAgent("DreamAgent");
 			Data = data;
 			Brightness = data.Brightness;
 			Id = data.Id;
@@ -44,10 +48,13 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		public async Task StartStream(CancellationToken ct) {
 			await _dreamUtil.SendMessage("mode", 1, Id);
 		}
+		
+		
 
 		public async Task StopStream() {
 			Log.Debug("Stopping stream.");
 			await _dreamUtil.SendMessage("mode", 0, Id);
+			_subTask?.Dispose();
 		}
 
 		public async void SetColor(List<Color> colors, List<Color> sectors, int arg3, bool force = false) {

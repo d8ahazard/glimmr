@@ -6,7 +6,7 @@ using Glimmr.Hubs;
 using Glimmr.Models.ColorTarget;
 using Glimmr.Models.ColorTarget.DreamScreen;
 using Glimmr.Models.ColorTarget.Hue;
-using Glimmr.Models.ColorTarget.LIFX;
+using Glimmr.Models.ColorTarget.Lifx;
 using Glimmr.Models.ColorTarget.Nanoleaf;
 using Glimmr.Models.ColorTarget.Wled;
 using Microsoft.AspNetCore.SignalR;

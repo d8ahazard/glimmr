@@ -2,7 +2,7 @@
 using System.ComponentModel;
 using Newtonsoft.Json;
 
-namespace Glimmr.Models.ColorTarget.LED {
+namespace Glimmr.Models.ColorTarget.Led {
     [Serializable]
     public class LedData : IColorTargetData {
 

@@ -9,15 +9,10 @@ using Glimmr.Models.ColorSource.Ambient;
 using Glimmr.Models.ColorTarget;
 using Glimmr.Models.ColorTarget.DreamScreen;
 using Glimmr.Models.ColorTarget.Hue;
-using Glimmr.Models.ColorTarget.LED;
-using Glimmr.Models.ColorTarget.LIFX;
-using Glimmr.Models.ColorTarget.Nanoleaf;
+using Glimmr.Models.ColorTarget.Lifx;
 using Glimmr.Models.ColorTarget.Wled;
 using Glimmr.Models.ColorTarget.Yeelight;
-using Glimmr.Services;
-using LifxNet;
 using LiteDB;
-using Microsoft.AspNetCore.Authentication;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
@@ -26,7 +21,6 @@ using Color = System.Drawing.Color;
 namespace Glimmr.Models.Util {
     [Serializable]
     public static class DataUtil {
-        public static bool Scanning { get; set; }
         private static LiteDatabase _db;
         
         public static LiteDatabase GetDb() {
@@ -185,11 +179,9 @@ namespace Glimmr.Models.Util {
                 if (devices[i].Id != device.Id.ToString()) {
                     continue;
                 }
-
+                
                 IColorTargetData dev = devices[i];
-                var newDev = device;
-                newDev.CopyExisting(dev);
-                device = newDev;
+                dev.CopyExisting(device);
             }
             device.LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
             devs.Upsert(device);
@@ -215,40 +207,19 @@ namespace Glimmr.Models.Util {
             return serial;
         }
 
-
-        public static dynamic GetDeviceById(string id) {
+        public static void DeleteDevice(string deviceId) {
             var db = GetDb();
             try {
-                var coll0 = db.GetCollection<NanoleafData>("LedData");
-                var bDev0 = coll0.FindById(id);
-                if (bDev0 != null) return bDev0;
-                
-                var coll = db.GetCollection<HueData>("Dev_Hue");
-                var bDev = coll.FindById(id);
-                if (bDev != null) return bDev;
-
-                var coll1 = db.GetCollection<LifxData>("Dev_Lifx");
-                var bDev1 = coll1.FindById(id);
-                if (bDev1 != null) return bDev1;
-
-                var coll2 = db.GetCollection<NanoleafData>("Dev_Nanoleaf");
-                var bDev2 = coll2.FindById(id);
-                if (bDev2 != null) return bDev2;
-
-                var coll3 = db.GetCollection<WledData>("Dev_Wled");
-                var bDev3 = coll3.FindById(id);
-                if (bDev3 != null) return bDev3;
-
-                var coll4 = db.GetCollection<NanoleafData>("Dev_Dreamscreen");
-                var bDev4 = coll4.FindById(id);
-                if (bDev4 != null) return bDev4;
-            } catch (Exception e) {
-                Log.Debug("Exception getting device data: " + e.Message);
+                var devs = db.GetCollection<dynamic>("Devices");
+                devs.Delete(deviceId);
+                db.Commit();
+                Log.Debug($"Device {deviceId} deleted.");
+            } catch (Exception) {
+                //ignored
             }
-
-            return null;
-
         }
+
+      
 
         
         public static string GetStoreSerialized() {
@@ -264,7 +235,6 @@ namespace Glimmr.Models.Util {
                     var jObj = LiteDB.JsonSerializer.Serialize(l);
                     var json = JObject.Parse(jObj);
                     if (col == "Devices") {
-                        Log.Debug("Trying to fix devices...");
                         try {
                             dynamic dev = Activator.CreateInstance(Type.GetType(json.GetValue("_type").ToString()));
                             json["KeyProperties"] = JToken.FromObject(dev.KeyProperties);

@@ -12,17 +12,7 @@ using Glimmr.Models.ColorSource.Audio;
 using Glimmr.Models.ColorSource.AudioVideo;
 using Glimmr.Models.ColorSource.Video;
 using Glimmr.Models.ColorTarget;
-using Glimmr.Models.ColorTarget.Corsair;
-using Glimmr.Models.ColorTarget.DreamScreen;
-using Glimmr.Models.ColorTarget.Hue;
-using Glimmr.Models.ColorTarget.LED;
-using Glimmr.Models.ColorTarget.LIFX;
-using Glimmr.Models.ColorTarget.Nanoleaf;
-using Glimmr.Models.ColorTarget.Razer;
-using Glimmr.Models.ColorTarget.Wled;
-using Glimmr.Models.ColorTarget.Yeelight;
 using Glimmr.Models.Util;
-using LifxNet;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Serilog;
@@ -36,7 +26,6 @@ namespace Glimmr.Services {
 	// Handles capturing and sending color data
 	public class ColorService : BackgroundService {
 		public ControlService ControlService { get; }
-		private readonly DreamUtil _dreamUtil;
 		private AmbientStream _ambientStream;
 		private AudioStream _audioStream;
 		private VideoStream _videoStream;
@@ -50,8 +39,7 @@ namespace Glimmr.Services {
 		private SystemData _systemData;
 
 		// Figure out how to make these generic, non-callable
-		private LifxClient _lifxClient;
-
+		
 		private IColorTarget[] _sDevices;
 		
 		// Token for the color target
@@ -62,15 +50,10 @@ namespace Glimmr.Services {
 		// Generates a token every time we send colors, and expires super-fast
 		private CancellationToken _stopToken;
 		private bool _streamStarted;
-		
-		private Dictionary<string, int> _subscribers;
-		//private int _tickCount;
 		private Stopwatch _watch;
-		//private int _time;
-
+		
 		public event Action<List<Color>, List<Color>, int, bool> ColorSendEvent = delegate {};
-		public event Action<List<Color>, string> SegmentTestEvent = delegate { };
-
+		
 		public ColorService(ControlService controlService) {
 			ControlService = controlService;
 			ControlService.TriggerSendColorEvent += SendColors;
@@ -79,7 +62,6 @@ namespace Glimmr.Services {
 			ControlService.RefreshLedEvent += ReloadLedData;
 			ControlService.RefreshSystemEvent += ReloadSystemData;
 			ControlService.TestLedEvent += LedTest;
-			ControlService.AddSubscriberEvent += AddSubscriber;
 			ControlService.FlashDeviceEvent += FlashDevice;
 			ControlService.FlashSectorEvent += FlashSector;
 			ControlService.DemoLedEvent += Demo;
@@ -91,7 +73,6 @@ namespace Glimmr.Services {
 			_watch = new Stopwatch();
 			_streamTokenSource = new CancellationTokenSource();
 			Log.Information("Starting colorService loop...");
-			_subscribers = new Dictionary<string, int>();
 			LoadData();
 			
 			Log.Information("All color services have been initialized.");
@@ -103,7 +84,6 @@ namespace Glimmr.Services {
 
 				while (!stoppingToken.IsCancellationRequested) {
 					await CheckAutoDisable();
-					await CheckSubscribers();
 					await Task.Delay(5000, stoppingToken);
 				}
 			}, CancellationToken.None);
@@ -201,7 +181,7 @@ namespace Glimmr.Services {
 			var devices = new List<IColorTarget>();
 			for (var i = 0; i < _sDevices.Length; i++) {
 				if (_sDevices[i].Enable) {
-					devices.Add((LedDevice)_sDevices[i]);
+					devices.Add((IColorTarget)_sDevices[i]);
 				}
 			}
 			foreach (var _strip in devices) {
@@ -275,36 +255,7 @@ namespace Glimmr.Services {
 			}
 		}
 
-
-		private async Task CheckSubscribers() {
-			try {
-				await _dreamUtil.SendBroadcastMessage(_deviceGroup);
-				// Enumerate all subscribers, check to see that they are still valid
-				var keys = new List<string>(_subscribers.Keys);
-				foreach (var key in keys) {
-					// If the subscribers haven't replied in three messages, remove them, otherwise, count down one
-					if (_subscribers[key] <= 0) {
-						_subscribers.Remove(key);
-					} else {
-						_subscribers[key] -= 1;
-					}
-				}
-			} catch (TaskCanceledException) {
-				_subscribers = new Dictionary<string, int>();
-			}
-		}
-
-		private void AddSubscriber(string ip) {
-			if (!_subscribers.ContainsKey(ip)) {
-				foreach (var t in _sDevices.Where(t => t.Id == ip)) {
-					t.Enable = true;
-				}
-
-				Log.Debug("ADDING SUBSCRIBER: " + ip);
-			}
-			_subscribers[ip] = 3;
-		}
-
+		
 		private async Task LedTest(object o, DynamicEventArgs dynamicEventArgs) {
 			int led = dynamicEventArgs.P1;
 			var strips = new List<IColorTarget>();
@@ -352,8 +303,9 @@ namespace Glimmr.Services {
 			Log.Debug("Creating new device lists...");
 			// Create new lists
 			var sDevs = new List<IColorTarget>();
-			var classes = SystemUtil.GetColorTargets();
+			var classes = SystemUtil.GetClasses<IColorTarget>();
 			var deviceData = DataUtil.GetCollection<dynamic>("Devices");
+			var enabled = 0;
 			foreach (var c in classes) {
 				try {
 					Log.Debug("Loading class: " + c);
@@ -361,8 +313,11 @@ namespace Glimmr.Services {
 					var dataName = c.Replace("Device", "Data");
 					tag = c.Replace("Glimmr.Models.ColorTarget.", "");
 					tag = tag.Split(".")[0];
+					Log.Debug("Tag: " + tag);
 					foreach (var device in deviceData) {
-						if (device.Tag == tag) {
+						if (device.Tag == tag && device.Tag != "Corsair") {
+							Log.Debug("Loading dev data: " + JsonConvert.SerializeObject(device));
+							if (device.Enable) enabled++;
 							var args = new object[] {device, this};
 							var obj = (IColorTarget) Activator.CreateInstance(Type.GetType(c)!, args);
 							sDevs.Add(obj);
@@ -374,24 +329,22 @@ namespace Glimmr.Services {
 				}
 			}
 
-			Log.Debug("We have a total of " + sDevs.Count + " devices.");
+			Log.Debug("We have a total of " + sDevs.Count + $" devices, {enabled} are enabled.");
 			_sDevices = sDevs.ToArray();
 		}
 
 		private async Task Demo(object o, DynamicEventArgs dynamicEventArgs) {
-			var stripId = dynamicEventArgs.P1;
-			if (String.IsNullOrEmpty(stripId)) StartStream();
+			StartStream();
 			Log.Debug("Demo fired...");
 			var ledCount = 300;
-			var sectorCount = ((_systemData.VSectors + _systemData.HSectors) * 2) - 4;
+			var sectorCount = _systemData.SectorCount;
 			try {
 				ledCount = _systemData.LedCount;
 			} catch (Exception) {
 				
 			}
-			Log.Debug("Running demo on " + ledCount + $"total pixels, {sectorCount} sectors.");
+			Log.Debug("Running demo on " + ledCount + $"leds, {sectorCount} sectors.");
 			var i = 0;
-			var k = 0;
 			var cols = new List<Color>();
 			var secs = new List<Color>();
 			cols = ColorUtil.EmptyList(ledCount);
@@ -401,22 +354,15 @@ namespace Glimmr.Services {
 				var pi = i * 1.0f;
 				var progress = pi / ledCount;
 				var rCol = ColorUtil.Rainbow(progress);
-				// Update our next pixel on the strip with the rainbow color
-				if (i % degs == 0 && k < sectorCount) {
-					secs[k] = rCol;
-					k++;
+				secs = ColorUtil.LedsToSectors(cols, _systemData);
+				cols[i] = rCol;
+				
+				try {
+					SendColors(cols, secs, 0, true);
+				} catch (Exception e) {
+					Log.Warning("SEND EXCEPTION: " + JsonConvert.SerializeObject(e));
 				}
 				
-				cols[i] = rCol;
-				if (String.IsNullOrEmpty(stripId)) {
-					try {
-						SendColors(cols.ToList(), secs.ToList(), 0);
-					} catch (Exception e) {
-						Log.Warning("SEND EXCEPTION: " + JsonConvert.SerializeObject(e));
-					}
-				} else {
-					SegmentTestEvent(cols.ToList(), stripId);
-				}
 
 				i++;
 			}
@@ -442,37 +388,64 @@ namespace Glimmr.Services {
 			}
 
 			var exists = false;
-			for (var i = 0; i < _sDevices.Length; i++) {
-				if (_sDevices[i].Id == id) {
-					var sd = _sDevices[i];
-					if (sd.Tag != "Nanoleaf") await sd.StopStream();
-					await sd.ReloadData();
-					if (!sd.IsEnabled()) {
+			foreach (var dev in _sDevices) {
+				if (dev.Id == id) {
+					await dev.StopStream();
+					await dev.ReloadData();
+					if (!dev.IsEnabled()) {
 						return;
 					}
+
 					exists = true;
-					Log.Debug("Restarting streaming device.");
-					if (sd.Tag != "Nanoleaf") await sd.StartStream(_sendTokenSource.Token);
-					break;
+					await dev.StartStream(_sendTokenSource.Token);
 				}
 			}
+			
 			
 			if (exists) {
 				return;
 			}
 
-			var dev = DataUtil.GetDevice(id);
-			IColorTarget sda = GetDevice(dev);
-
+			
+			var sda = DataUtil.GetDevice(id);
+			
 			// If our device is a real boy, start it and add it
 			if (sda == null) {
 				return;
 			}
 
-			var sDevs = _sDevices.ToList();
+			var newDev = CreateDevice(sda);
 			await sda.StartStream(_sendTokenSource.Token);
+
+			var sDevs = _sDevices.ToList();
 			sDevs.Add(sda);
 			_sDevices = sDevs.ToArray();
+		}
+
+		private dynamic CreateDevice(dynamic devData) {
+			var classes = SystemUtil.GetClasses<IColorTarget>();
+			var deviceData = DataUtil.GetCollection<dynamic>("Devices");
+			foreach (var c in classes) {
+				try {
+					Log.Debug("Loading class: " + c);
+					var tag = c.Replace("Device", "");
+					var dataName = c.Replace("Device", "Data");
+					tag = c.Replace("Glimmr.Models.ColorTarget.", "");
+					tag = tag.Split(".")[0];
+					Log.Debug("Tag: " + tag);
+					if (devData.Tag == tag) {
+						var args = new object[] {devData, this};
+						var obj = (IColorTarget) Activator.CreateInstance(Type.GetType(c)!, args);
+						return obj;
+					}
+					
+					
+				} catch (Exception e) {
+					Log.Warning("Exception: " + e.Message);
+				}
+			}
+
+			return null;
 		}
 
 		private Task ReloadLedData(object o, DynamicEventArgs dynamicEventArgs) {
@@ -485,24 +458,7 @@ namespace Glimmr.Services {
 			return Task.CompletedTask;
 		}
 
-		private IColorTarget GetDevice(dynamic dev) {
-			Log.Debug("Tag: " + dev.Tag);
-			IColorTarget sda = dev.Tag switch {
-				"Lifx" => new LifxDevice(dev, this),
-				"Hue" => new HueDevice(dev, this),
-				"Nanoleaf" => new NanoleafDevice(dev, this),
-				"Wled" => new WledDevice(dev, this),
-				"Dreamscreen" => new DreamDevice(dev, this),
-				"Led" => new LedDevice(dev,this),
-				"Yeelight" => new YeelightDevice(dev,this),
-				"Corsair" => new CorsairDevice(dev,this),
-				"Razer" => new RazerDevice(dev,this),
-				null => null,
-				_ => null
-			};
-			return sda;
-		}
-
+		
 		private void ReloadSystemData() {
 			_videoStream?.Refresh();
 			_audioStream?.Refresh();
@@ -585,11 +541,10 @@ namespace Glimmr.Services {
 			if (!_streamStarted) {
 				_streamStarted = true;
 				Log.Information("Starting streaming devices...");
-				for (var i = 0; i < _sDevices.Length; i++) {
-					if (_sDevices[i].Enable) {
-						_sDevices[i].StartStream(_sendTokenSource.Token);
-					}
+				foreach (var sdev in _sDevices) {
+					sdev.StartStream(_sendTokenSource.Token);
 				}
+
 			} else {
 				Log.Debug("Streaming already started.");
 			}
@@ -619,16 +574,19 @@ namespace Glimmr.Services {
 		}
 
 
-		public void SendColors(List<Color> colors, List<Color> sectors, int fadeTime) {
+		public void SendColors(List<Color> colors, List<Color> sectors, int fadeTime, bool force = false) {
 			_sendTokenSource ??= new CancellationTokenSource();
 			if (_sendTokenSource.IsCancellationRequested) {
 				Log.Debug("Send token is canceled.");
 				return;
 			}
 
-			if (!_streamStarted) return;
+			if (!_streamStarted) {
+				Log.Debug("Stream not started...");
+				return;
+			}
 
-			ColorSendEvent(colors, sectors, fadeTime, false);
+			ColorSendEvent(colors, sectors, fadeTime, force);
 		}
 
 

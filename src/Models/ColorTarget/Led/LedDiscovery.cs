@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 
-namespace Glimmr.Models.ColorTarget.LED {
+namespace Glimmr.Models.ColorTarget.Led {
 	public class LedDiscovery : ColorDiscovery, IColorDiscovery {
 		
 		public async Task Discover(CancellationToken ct) {
