@@ -1,26 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Net.Http;
-using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Nanoleaf.Client;
-using Nanoleaf.Client.Models.Responses;
 using Newtonsoft.Json;
 using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Nanoleaf {
 	public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
-		private string _token;
-		private string _basePath;
 		private NanoLayout _layout;
-		private int _streamMode;
 		private bool _disposed;
-		private bool _sending;
 		public bool Enable { get; set; }
 		IColorTargetData IColorTarget.Data {
 			get => Data;
@@ -33,15 +25,17 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		public string Id { get; set; }
 		public string IpAddress { get; set; }
 		public string Tag { get; set; }
-		private readonly UdpClient _sender;
-		private readonly HttpClient _client;
+		private bool _wasOn;
+		private readonly NanoleafClient _nanoleafClient;
+		private readonly NanoleafStreamingClient _streamingClient;
 
 		public NanoleafDevice(NanoleafData n, ControlService cs) {
 			DataUtil.GetItem<int>("captureMode");
 			if (n != null) {
 				SetData(n);
-				_sender = cs.UdpClient;
-				_client = cs.HttpSender;
+				var streamMode = n.Type == "NL29" ? 2 : 1;
+				_nanoleafClient = new NanoleafClient(n.Hostname, n.Token, cs.HttpSender);
+				_streamingClient = new NanoleafStreamingClient(n.IpAddress, streamMode, cs.UdpClient);
 			}
 
 			_disposed = false;
@@ -58,8 +52,10 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			colorService.ColorSendEvent += SetColor;
 			if (n != null) {
 				SetData(n);
-				_sender = colorService.ControlService.UdpClient;
-				_client = colorService.ControlService.HttpSender;
+				var streamMode = n.Type == "NL29" ? 2 : 1;
+				var cs = ColorService.ControlService;
+				_nanoleafClient = new NanoleafClient(n.IpAddress, n.Token);
+				_streamingClient = new NanoleafStreamingClient(n.IpAddress,streamMode,cs.UdpClient);
 			}
 
 			_disposed = false;
@@ -70,23 +66,17 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			Streaming = true;
 
 			Log.Debug($@"Nanoleaf: Starting panel: {IpAddress}");
-			var controlVersion = "v" + _streamMode;
-			var body = new
-				{write = new {command = "display", animType = "extControl", extControlVersion = controlVersion}};
-
-			await SendPutRequest(_basePath, JsonConvert.SerializeObject(new {on = new {value = true}}),
-				"state");
-			await SendPutRequest(_basePath, JsonConvert.SerializeObject(body), "effects");
-			
+			_wasOn = await _nanoleafClient.GetPowerStatusAsync();
+			//if (!_wasOn) await _nanoleafClient.TurnOnAsync();
+			//await _nanoleafClient.SetBrightnessAsync(100);
+			await _nanoleafClient.StartExternalAsync();
 		}
 
 		public async Task StopStream() {
 			if (!Streaming || !Enable) return;
 			Streaming = false;
-			await SendPutRequest(_basePath, JsonConvert.SerializeObject(new {on = new {value = false}}), "state")
-				.ConfigureAwait(false);
+			if (!_wasOn) await _nanoleafClient.TurnOffAsync();
 			Log.Debug($@"Nanoleaf: Stopped panel: {IpAddress}");
-
 		}
 
 
@@ -95,48 +85,23 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				return;
 			}
 
-			var byteString = new List<byte>();
-			if (_streamMode == 2) {
-				byteString.AddRange(ByteUtils.PadInt(_layout.NumPanels));
-			} else {
-				byteString.Add(ByteUtils.IntByte(_layout.NumPanels));
+			var cols = new Dictionary<int, Color>();
+			foreach (var p in _layout.NanoPositionData) {
+				var color = Color.FromArgb(0, 0, 0);
+				if (p.TargetSector != -1) {
+					color = colors[p.TargetSector];
+				}
+				cols[p.PanelId] = color;
 			}
-			foreach (var pd in _layout.PositionData) {
-				var id = pd.PanelId;
-				var colorInt = pd.TargetSector - 1;
-				if (_streamMode == 2) {
-					byteString.AddRange(ByteUtils.PadInt(id));
-				} else {
-					byteString.Add(ByteUtils.IntByte(id));
-				}
 
-				var color = Color.FromArgb(0, 0, 0, 0);
-				if (pd.TargetSector != -1 && colorInt < colors.Count) {
-					color = colors[colorInt];
-				} else {
-					Log.Debug($"We have {colors.Count} colors and ts is {colorInt}");
-				}
-				
-				if (Brightness < 100) {
-					color = ColorUtil.ClampBrightness(color, Brightness);
-				}
-
-				// Add rgb values
-				byteString.Add(ByteUtils.IntByte(color.R));
-				byteString.Add(ByteUtils.IntByte(color.G));
-				byteString.Add(ByteUtils.IntByte(color.B));
-				// White value
-				byteString.AddRange(ByteUtils.PadInt(0, 1));
-				// Pad duration time
-				byteString.AddRange(_streamMode == 2 ? ByteUtils.PadInt(fadeTime) : ByteUtils.PadInt(fadeTime, 1));
-			}
-			SendUdpUnicastAsync(byteString.ToArray()).ConfigureAwait(false);
+			//Log.Debug("Sending: " + JsonConvert.SerializeObject(cols));
+			_streamingClient.SetColorAsync(cols, fadeTime).ConfigureAwait(false);
 		}
 
 
 
 		public Task ReloadData() {
-			var newData = DataUtil.GetCollectionItem<NanoleafData>("Dev_Nanoleaf", Id);
+			var newData = DataUtil.GetDevice<NanoleafData>(Id);
 			SetData(newData);
 			return Task.CompletedTask;
 		}
@@ -145,41 +110,18 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			Data = n;
 			DataUtil.GetItem<int>("captureMode");
 			IpAddress = n.IpAddress;
-			_token = n.Token;
 			_layout = n.Layout;
 			Brightness = n.Brightness;
-			var nanoType = n.Type;
 			Enable = n.Enable;
-			_streamMode = nanoType == "NL29" ? 2 : 1;
-			_basePath = "http://" + IpAddress + ":16021/api/v1/" + _token;
 			Id = n.Id;
 		}
 
 		public async Task FlashColor(Color color) {
-			var byteString = new List<byte>();
-			if (_streamMode == 2) {
-				byteString.AddRange(ByteUtils.PadInt(_layout.NumPanels));
-			} else {
-				byteString.Add(ByteUtils.IntByte(_layout.NumPanels));
-			}
+			var cols = new Dictionary<int, Color>();
 			foreach (var pd in _layout.PositionData) {
-				var id = pd.PanelId;
-				if (_streamMode == 2) {
-					byteString.AddRange(ByteUtils.PadInt(id));
-				} else {
-					byteString.Add(ByteUtils.IntByte(id));
-				} 
-				
-				// Add rgb values
-				byteString.Add(ByteUtils.IntByte(color.R));
-				byteString.Add(ByteUtils.IntByte(color.G));
-				byteString.Add(ByteUtils.IntByte(color.B));
-				// White value
-				byteString.AddRange(ByteUtils.PadInt(0, 1));
-				// Pad duration time
-				byteString.AddRange(_streamMode == 2 ? ByteUtils.PadInt(0) : ByteUtils.PadInt(0, 1));
+				cols[pd.PanelId] = color;
 			}
-			await SendUdpUnicastAsync(byteString.ToArray());
+			await _streamingClient.SetColorAsync(cols, 0);
 		}
 
 		public bool IsEnabled() {
@@ -191,70 +133,11 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
 		
 
-     
-		public async Task<UserToken> CheckAuth() {
-			var nanoleaf = new NanoleafClient(IpAddress);
-			UserToken result = null;
-			try {
-				result = await nanoleaf.CreateTokenAsync().ConfigureAwait(false);
-				Log.Debug("Authorized.");
-			} catch (AggregateException e) {
-				Log.Debug("Unauthorized Exception: " + e.Message);
-			}
-
-			nanoleaf.Dispose();
-			return result;
-		}
-
-		private async Task SendUdpUnicastAsync(byte[] data) {
-			if (_sending) return;
-			_sending = true;
-			var ep = IpUtil.Parse(IpAddress, 60222);
-			if (ep != null) await _sender.SendAsync(data, data.Length, ep);
-			_sending = false;
-		}
-
+		
 		public async Task<NanoLayout> GetLayout() {
-			if (string.IsNullOrEmpty(_token)) return null;
-			var fLayout = await SendGetRequest(_basePath, "panelLayout/layout").ConfigureAwait(false);
-			var lObject = JsonConvert.DeserializeObject<NanoLayout>(fLayout);
-			return lObject;
+			var layout = await _nanoleafClient.GetLayoutAsync();
+			return new NanoLayout(layout);
 		}
-
-		private async Task<string> SendPutRequest(string basePath, string json, string path = "") {
-            var authorizedPath = new Uri(basePath + "/" + path);
-            try {
-                using var content = new StringContent(json, Encoding.UTF8, "application/json");
-                using var responseMessage = await _client.PutAsync(authorizedPath, content).ConfigureAwait(false);
-                if (!responseMessage.IsSuccessStatusCode) {
-                    HandleNanoleafErrorStatusCodes(responseMessage);
-                }
-
-                return await responseMessage.Content.ReadAsStringAsync().ConfigureAwait(false);
-            } catch (HttpRequestException) {
-                return null;
-            }
-        }
-
-        private async Task<string> SendGetRequest(string basePath, string path = "") {
-            var authorizedPath = basePath + "/" + path;
-            var uri = new Uri(authorizedPath);
-            try {
-                using var responseMessage = await _client.GetAsync(uri).ConfigureAwait(false);
-                if (responseMessage.IsSuccessStatusCode)
-                    return await responseMessage.Content.ReadAsStringAsync().ConfigureAwait(false);
-                Log.Debug("Error contacting nanoleaf: " + responseMessage.Content);
-                HandleNanoleafErrorStatusCodes(responseMessage);
-
-                return await responseMessage.Content.ReadAsStringAsync().ConfigureAwait(false);
-            } catch (HttpRequestException) {
-                return null;
-            }
-        }
-
-        private static void HandleNanoleafErrorStatusCodes(HttpResponseMessage responseMessage) {
-	        Log.Warning("Error with nano request: ", responseMessage);
-        }
 
 
         public void Dispose() {

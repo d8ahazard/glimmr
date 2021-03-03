@@ -178,6 +178,17 @@ input[type="range"]::-webkit-slider-runnable-track {
     overflow-x: hidden;
 }
 
+#CircleBar {
+    margin: auto;
+    width: 50%;
+    height: 50%;
+    top: 25%;
+    left: 25%;
+    background: transparent !important;
+    position: absolute;
+    z-index: 5;
+}
+
 .col-* {
     min-width: 25px;
 }

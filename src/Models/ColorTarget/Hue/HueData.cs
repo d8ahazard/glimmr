@@ -16,7 +16,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 		[JsonProperty] public int GroupNumber { get; set; }
 		[JsonProperty] public string User { get; set; } = "";
-		[JsonProperty] public string Key { get; set; } = "";
+		[JsonProperty] public string Token { get; set; } = "";
 		[JsonProperty] public string GroupName { get; set; } = "";
 		[JsonProperty] public string SelectedGroup { get; set; } = "";
 		
@@ -48,7 +48,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Brightness = 100;
 			Name = "Hue Bridge - " + Id;
 			User = "";
-			Key = "";
+			Token = "";
 			SelectedGroup = "-1";
 			Groups = new List<HueGroup>();
 			Lights = new List<LightData>();
@@ -61,11 +61,13 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 		public string LastSeen { get; set; }
 
-		public void CopyExisting(IColorTargetData data) {
+		public void UpdateFromDiscovered(IColorTargetData data) {
 			var input = (HueData) data;
 			if (input == null) throw new ArgumentException("Invalid bridge data.");
 			Lights = input.Lights;
 			Groups = input.Groups;
+			IpAddress = input.IpAddress;
+			Name = "Hue Bridge" + input.IpAddress;
 		}
 
 		public SettingsProperty[] KeyProperties { get; set; } = {
@@ -79,6 +81,18 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		public string IpAddress { get; set; }
 		public int Brightness { get; set; }
 		public bool Enable { get; set; }
+
+		public void AddGroups(IReadOnlyCollection<Group> groups) {
+			foreach (var group in groups) {
+				Groups.Add(new HueGroup(group));
+			}
+		}
+
+		public void AddLights(IEnumerable<Light> lights) {
+			foreach (var light in lights) {
+				Lights.Add(new LightData(light));
+			}
+		}
 	}
 	
 	[Serializable]

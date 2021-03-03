@@ -29,7 +29,7 @@
     <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.9" />
     <PackageReference Include="MMALSharp" Version="0.6.0" />
-    <PackageReference Include="Nanoleaf.Core" Version="1.1.7.1" />
+    <PackageReference Include="Nanoleaf.Core" Version="1.1.7.3" />
     <PackageReference Include="Q42.HueApi" Version="3.17.0" />
     <PackageReference Include="Q42.HueApi.Entertainment" Version="3.15.0" />
     <PackageReference Include="Serilog" Version="2.10.0" />

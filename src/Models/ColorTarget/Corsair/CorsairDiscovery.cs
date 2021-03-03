@@ -11,10 +11,7 @@ namespace Glimmr.Models.ColorTarget.Corsair {
 		private ControlService _controlService;
 		public async Task Discover(CancellationToken ct) {
 			Log.Debug("Corsair: Discovery started...");
-			FindDevices();
-			while (!ct.IsCancellationRequested) {
-				await Task.Delay(1,ct);
-			}
+			await FindDevices();
 			Log.Debug("Corsair: Discovery complete.");
 		}
 
@@ -25,18 +22,18 @@ namespace Glimmr.Models.ColorTarget.Corsair {
 
 		public override string DeviceTag { get; set; }
 
-		private void FindDevices() {
+		private async Task FindDevices() {
 			var devs = CUESDK.CorsairGetDeviceCount();
 			Log.Debug("Device count: " + devs);
 			if (devs > 0) {
 				for (var i = 0; i < devs; i++) {
 					var info = CUESDK.CorsairGetDeviceInfo(i);
-					var layout = CUESDK.CorsairGetLedPositionsByDeviceIndex(i);
+					//var layout = CUESDK.CorsairGetLedPositionsByDeviceIndex(i);
 					//_devices[info.type] = layout;
 					Log.Debug("Adding corsair device...");
 					var dev = new CorsairData(i,info);
 					Log.Debug("Device found: " + JsonConvert.SerializeObject(dev));
-					_controlService.AddDevice(dev).ConfigureAwait(true);
+					await _controlService.AddDevice(dev);
 				}
 			}
 		}

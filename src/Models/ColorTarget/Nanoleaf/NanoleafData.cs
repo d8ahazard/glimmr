@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using Glimmr.Models.Util;
+using Nanoleaf.Client.Models.Responses;
 using Newtonsoft.Json;
 using Info = Nanoleaf.Client.Models.Responses.Info;
 
@@ -58,12 +59,9 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
         // Copy data from an existing leaf into this leaf...don't insert
         public string LastSeen { get; set; }
 
-        public void CopyExisting(IColorTargetData data) {
-            NanoleafData existingLeaf = (NanoleafData) data;
+        public void UpdateFromDiscovered(IColorTargetData data) {
+            var existingLeaf = (NanoleafData) data;
             if (existingLeaf == null) throw new ArgumentException("Invalid nano data!");
-            Token = existingLeaf.Token;
-            Enable = existingLeaf.Enable;
-            if (existingLeaf.Brightness != 0)  Brightness = existingLeaf.Brightness;
             // Grab the new leaf layout
             MergeLayout(existingLeaf.Layout);
             Tag = "Nanoleaf";
@@ -80,11 +78,11 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
                 return;
             }
 
-            var posData = new PanelLayout[newLayout.PositionData.Length];
+            var posData = new NanoPanelLayout[newLayout.PositionData.Length];
             // Loop through each panel in the new position data, find existing info and copy
-            for (var i = 0; i < newLayout.PositionData.Length; i++) {
-                var nl = newLayout.PositionData[i];
-                foreach (var el in Layout.PositionData.Where(s => s.PanelId == nl.PanelId)) {
+            for (var i = 0; i < newLayout.NanoPositionData.Length; i++) {
+                var nl = newLayout.NanoPositionData[i];
+                foreach (var el in Layout.NanoPositionData.Where(s => s.PanelId == nl.PanelId)) {
                     nl.TargetSector = el.TargetSector;
                 }
                 posData[i] = nl;
@@ -92,7 +90,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
             Layout.NumPanels = newLayout.NumPanels;
             Layout.SideLength = newLayout.SideLength;
-            Layout.PositionData = posData;
+            Layout.NanoPositionData = posData;
         }
 
 
@@ -105,28 +103,36 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
         
     }
     [Serializable]
-    public class NanoLayout {
-        [JsonProperty] public int NumPanels { get; set; }
-        [JsonProperty] public int SideLength { get; set; } = 1;
-        [JsonProperty] public PanelLayout[] PositionData { get; set; } = Array.Empty<PanelLayout>();
+    public class NanoLayout : Layout {
+        [JsonProperty] public NanoPanelLayout[] NanoPositionData { get; set; } = Array.Empty<NanoPanelLayout>();
+
+        public NanoLayout() {
+        }
+        public NanoLayout(Layout layout) {
+            NumPanels = layout.NumPanels;
+            SideLength = layout.SideLength;
+            PositionData = layout.PositionData;
+            NanoPositionData = PositionData.Select(pos => new NanoPanelLayout(pos)).ToArray();
+        }
 
     }
 
     [Serializable]
-    public class PanelLayout {
-        [JsonProperty] public int PanelId { get; set; }
-        [JsonProperty] public int X { get; set; }
-
-        [DefaultValue(10)]
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-        public int Y { get; set; } = 10;
-
-        [JsonProperty] public int O { get; set; }
+    public class NanoPanelLayout : PanelLayout {
 
         [DefaultValue(-1)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public int TargetSector { get; set; } = -1;
 
-        [JsonProperty] public int ShapeType { get; set; }
+        public NanoPanelLayout() {
+            
+        }
+        public NanoPanelLayout(PanelLayout layout) {
+            PanelId = layout.PanelId;
+            X = layout.X;
+            Y = layout.Y;
+            O = layout.O;
+            ShapeType = layout.ShapeType;
+        }
     }
 }

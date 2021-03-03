@@ -52,17 +52,8 @@ namespace Glimmr.Models.ColorTarget.Led {
         public bool Enable { get; set; }
         public string LastSeen { get; set; }
 
-        public void CopyExisting(IColorTargetData data) {
-            var ld = (LedData) data;
-            Offset = ld.Offset;
-            LedCount = ld.LedCount;
-            GpioNumber = ld.GpioNumber;
-            FixGamma = ld.FixGamma;
-            MilliampsPerLed = ld.MilliampsPerLed;
-            AblMaxMilliamps = ld.AblMaxMilliamps;
-            Brightness = ld.Brightness;
-            Enable = ld.Enable;
-            AutoBrightnessLevel = ld.AutoBrightnessLevel;
+        public void UpdateFromDiscovered(IColorTargetData data) {
+                        
         }
         
         [JsonProperty]

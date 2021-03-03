@@ -10,9 +10,7 @@ using Common.Logging.Configuration;
 using Glimmr.Hubs;
 using Glimmr.Models;
 using Glimmr.Models.ColorTarget;
-using Glimmr.Models.ColorTarget.Hue;
 using Glimmr.Models.ColorTarget.Led;
-using Glimmr.Models.ColorTarget.Nanoleaf;
 using Glimmr.Models.Util;
 using Makaretu.Dns;
 using Microsoft.AspNetCore.SignalR;
@@ -27,6 +25,7 @@ namespace Glimmr.Services {
 		public MulticastService MulticastService { get; }
 		private readonly IHubContext<SocketServer> _hubContext;
 		private readonly Dictionary<string,dynamic> _agents;
+		public ColorService ColorService { get; set; }
 
 		public ControlService(IHubContext<SocketServer> hubContext) {
 			_hubContext = hubContext;
@@ -87,7 +86,7 @@ namespace Glimmr.Services {
 				if (agentMaker == null) {
 					Log.Debug("Agent is null!");
 				} else {
-					var agent = agentMaker?.CreateAgent(this);
+					var agent = agentMaker.CreateAgent(this);
 					if (agent != null) {
 						Log.Debug($"Adding agent: {c}, {shortClass}");
 						_agents[shortClass] = agent;
@@ -120,69 +119,62 @@ namespace Glimmr.Services {
 			await SetModeEvent.InvokeAsync(null, new DynamicEventArgs(mode));
 		}
 
-		public async Task AuthorizeHue(string id) {
-			Log.Debug("AuthHue called, for real (socket): " + id);
-			HueData bd;
-			if (!string.IsNullOrEmpty(id)) {
-				await _hubContext.Clients.All.SendAsync("hueAuth", "start");
-				bd = DataUtil.GetCollectionItem<HueData>("Dev_Hue", id);
-				Log.Debug("BD: " + JsonConvert.SerializeObject(bd));
-				if (bd == null) {
-					Log.Debug("Null bridge retrieved.");
-					await _hubContext.Clients.All.SendAsync("hueAuth", "stop");
-					return;
-				}
-
-				if (bd.Key != null && bd.User != null) {
-					Log.Debug("Bridge is already authorized.");
-					await _hubContext.Clients.All.SendAsync("hueAuth", "authorized");
-					await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+		public async Task AuthorizeDevice(string id) {
+			var data = DataUtil.GetDevice(id);
+			if (data != null) {
+				if (string.IsNullOrEmpty(data.Token)) {
+					Log.Debug("Starting auth check...");
+					await _hubContext.Clients.All.SendAsync("auth", "start");
+				} else {
+					Log.Debug("Device is already authorized...");
+					await _hubContext.Clients.All.SendAsync("auth", "authorized");
 					return;
 				}
 			} else {
-				Log.Warning("Null value.");
-				await _hubContext.Clients.All.SendAsync("hueAuth", "stop");
+				Log.Debug("Device is null: " + id);
+				await _hubContext.Clients.All.SendAsync("auth", "error");
 				return;
 			}
 
-			Log.Debug("Trying to retrieve app key...");
-			var count = 0;
-			while (count < 30) {
-				count++;
-				try {
-					var appKey = HueDiscovery.CheckAuth(bd.IpAddress).Result;
-					Log.Debug("App key retrieved! " + JsonConvert.SerializeObject(appKey));
-					if (appKey != null) {
-						if (!string.IsNullOrEmpty(appKey.StreamingClientKey)) {
-							Log.Debug("Updating bridge?");
-							bd.Key = appKey.StreamingClientKey;
-							bd.User = appKey.Username;
-							Log.Debug("Creating new bridge...");
-							// Need to grab light group stuff here
-							var nhb = new HueDevice(bd);
-							bd = nhb.RefreshData().Result;
-							nhb.Dispose();
-							await DataUtil.InsertCollection<HueData>("Dev_Hue", bd);
-							await _hubContext.Clients.All.SendAsync("hueAuth", "authorized");
-							await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
-							return;
-						}
-
-						Log.Debug("App key is null?");
-					}
-
-					Log.Debug("Waiting for app key.");
-				} catch (NullReferenceException) {
-					Log.Error("Null exception.");
+			
+			var disco = SystemUtil.GetClasses<IColorTargetAuth>();
+			dynamic dev = null;
+			foreach (var d in disco) {
+				var baseStr = d.ToLower().Split(".")[^2];
+				Log.Debug("Checking " + baseStr + " against " + data.Tag.ToLower());
+				if (baseStr == data.Tag.ToLower()) {
+					Log.Debug("Trying to create activator...");
+					dev = Activator.CreateInstance(Type.GetType(d)!,ColorService);
 				}
-
-				await _hubContext.Clients.All.SendAsync("hueAuth", count);
-				Thread.Sleep(1000);
+				if (dev != null) break;
 			}
 
-			Log.Debug("We should be authorized, returning.");
+			if (dev != null && dev.GetType().GetMethod("CheckAuthAsync") != null) {
+				Log.Debug("We have a valid activator, starting...");
+				var count = 0;
+				while (count < 30) {
+					try {
+						var activated = await dev.CheckAuthAsync(data);
+						if (!string.IsNullOrEmpty(activated.Token)) {
+							Log.Debug("Device is activated!");
+							await DataUtil.AddDeviceAsync(activated, false);
+							await _hubContext.Clients.All.SendAsync("auth", "authorized",count);
+							return;
+						}
+					} catch (Exception e) {
+						Log.Debug("Error: " + e.Message);
+					}
+					await Task.Delay(1000);
+					count++;
+					await _hubContext.Clients.All.SendAsync("auth", "update",count);
+				}	
+			} else {
+				Log.Debug("Error creating activator!");
+				await _hubContext.Clients.All.SendAsync("auth", "error");
+			}
 		}
 
+		
 		public void TriggerImageUpdate() {
 			_hubContext.Clients.All.SendAsync("loadPreview");
 		}
@@ -204,10 +196,7 @@ namespace Glimmr.Services {
 		}
 
 
-		private async Task RefreshLedData(string ldId) {
-			await RefreshLedEvent.InvokeAsync(this, new DynamicEventArgs(ldId));
-		}
-
+		
 		// We call this one to send colors to everything, including the color service
 		public void SendColors(List<Color> c1, List<Color> c2, int fadeTime = 0, bool force=false) {
 			TriggerSendColorEvent(c1, c2, fadeTime, force);
@@ -258,48 +247,11 @@ namespace Glimmr.Services {
 
 		public async Task AddDevice(IColorTargetData data) {
 			await DataUtil.AddDeviceAsync(data);
-			Log.Debug("Device added...");
 		}
 
-		public async Task AuthorizeNano(string id) {
-			var leaf = DataUtil.GetCollectionItem<NanoleafData>("Dev_Nano", id);
-			bool doAuth = leaf.Token == null;
-			if (doAuth) {
-				await _hubContext.Clients.All.SendAsync("nanoAuth", "authorized");
-				await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
-				return;
-			}
+		
 
-			var panel = new NanoleafDevice(leaf, this);
-			var count = 0;
-			while (count < 30) {
-				var appKey = panel.CheckAuth().Result;
-				if (appKey != null) {
-					leaf.Token = appKey.Token;
-					DataUtil.InsertCollection<NanoleafData>("Dev_Nanoleaf", leaf);
-					await _hubContext.Clients.All.SendAsync("nanoAuth", "authorized");
-					await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
-					panel.Dispose();
-					return;
-				}
-
-				await _hubContext.Clients.All.SendAsync("nanoAuth", count);
-				Thread.Sleep(1000);
-				count++;
-			}
-
-			await _hubContext.Clients.All.SendAsync("nanoAuth", "stop");
-
-			panel.Dispose();
-		}
-
-		public async Task UpdateLed(LedData ld) {
-			Log.Debug("Got LD from post: " + JsonConvert.SerializeObject(ld));
-			await DataUtil.InsertCollection<LedData>("LedData", ld);
-			await RefreshLedData(ld.Id);
-			await NotifyClients();
-		}
-
+		
 		public async Task UpdateSystem(SystemData sd) {
 			SystemData oldSd = DataUtil.GetObject<SystemData>("SystemData");
 			if (oldSd.LedCount != sd.LedCount) {
@@ -312,7 +264,7 @@ namespace Glimmr.Services {
 				}
 			}
 			
-			DataUtil.SetObject<SystemData>("SystemData", sd);
+			await DataUtil.SetObjectAsync<SystemData>("SystemData", sd);
 			RefreshSystemEvent();
 		}
 
@@ -335,9 +287,10 @@ namespace Glimmr.Services {
 			return Task.CompletedTask;
 		}
 
-		public async Task UpdateDevice(dynamic device) {
+		public async Task UpdateDevice(dynamic device, bool merge=true) {
 			Log.Debug("Update device called: " + JsonConvert.SerializeObject(device));
-			await DataUtil.AddDeviceAsync(device);
+			await DataUtil.AddDeviceAsync(device, merge);
+			await _hubContext.Clients.All.SendAsync("device",(IColorTargetData) device);
 			await RefreshDevice(device.Id);
 			
 		}

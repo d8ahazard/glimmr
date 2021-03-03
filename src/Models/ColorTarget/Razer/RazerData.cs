@@ -32,7 +32,7 @@ namespace Glimmr.Models.ColorTarget.Razer {
 			DeviceTag = info.Type.ToString();
 			_type = info.Type;
 		}
-		public void CopyExisting(IColorTargetData existing) {
+		public void UpdateFromDiscovered(IColorTargetData existing) {
 			var rd = (RazerData) existing;
 			DeviceTag = rd.DeviceTag;
 		}

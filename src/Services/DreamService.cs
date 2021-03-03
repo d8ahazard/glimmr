@@ -69,7 +69,7 @@ namespace Glimmr.Services {
         
         private void AddSubscriber(string ip) {
             if (!_subscribers.ContainsKey(ip)) {
-                _controlService.EnableDevice(ip);
+                _controlService.EnableDevice(ip).ConfigureAwait(false);
 
                 Log.Debug("ADDING SUBSCRIBER: " + ip);
             }

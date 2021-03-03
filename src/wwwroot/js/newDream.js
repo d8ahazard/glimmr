@@ -30,6 +30,7 @@ let toggleTop = 0;
 let posting = false;
 let baseUrl;
 let pickr;
+let bar;
 let errModal = new bootstrap.Modal(document.getElementById('errorModal'));
 // We're going to create one object to store our stuff, and add listeners for when values are changed.
 let data = {
@@ -141,6 +142,7 @@ document.addEventListener("DOMContentLoaded", function(){
             sendMessage("SystemData",data.store["SystemData"][0]);
         }
     });
+    
     setSocketListeners();
     loadSocket();
     setTimeout(function() {
@@ -280,33 +282,40 @@ function setSocketListeners() {
         croppedElement.src = './img/_preview_output.jpg?rand=' + Math.random(); 
     });
 
-    websocket.on("hueAuth", function (value) {
-        console.log("Hue Auth message: " + value);
-        
-        switch (value) {
+    websocket.on("auth", function (value1, value2) {
+        console.log("Auth message: " + value1);
+        let cb = document.getElementById("CircleBar");        
+        switch (value1) {
             case "start":
+                bar.animate(0);
+                cb.classList.remove("hide");
+                console.log("Auth start...");
+                break;
+            case "error":
+                console.log("Auth error...");
+                cb.classList.add("hide");
                 break;
             case "stop":
+                console.log("Auth stop...");
+                cb.classList.add("hide");
+                break;
+            case "update":
+                console.log("Tick is " + value2);
+                bar.animate(value2/30);
+                if (value2 === 30) cb.classList.add("hide");
+                break;
             case "authorized":
+                console.log("Auth success!");
+                let led = document.querySelector(".linkImg");
+                led.classList.remove("unlinked");
+                led.classList.add("linked");
+                cb.classList.add("hide");
                 break;
             default:
                 break;
         }
     });
 
-    websocket.on("authorizeNano", function (value) {
-        console.log("Nano Auth message: " + value);
-        switch (value) {
-            case "start":
-                break;
-            case "stop":
-                break;
-            case "authorized":
-                break;
-            default:
-                break;
-        }
-    });
 
     websocket.on('open', function() {
         console.log("Socket connected (onOpen).");
@@ -320,6 +329,23 @@ function setSocketListeners() {
         console.log("OLO: ", parsed);
         data.store = parsed;
         loadUi();
+    });
+
+    websocket.on('device', function(stuff) {
+        console.log("Incoming device data: ", stuff);
+        for(let i=0; i<data.store.devices.length; i++) {
+           let dev = data.store.devices[i];
+           if (dev["_id"] === stuff["_id"]) {
+               console.log("Device updated: ",stuff);
+           }
+           if (deviceData["_id"] === stuff["_id"]) {
+               console.log("Updating selected deviceData:",stuff);
+               deviceData = stuff;
+               if (settingsShown) createDeviceSettings();
+           }
+           
+        }
+        loadDevices();
     });
 
     websocket.onclose(function() {
@@ -469,9 +495,7 @@ function setListeners() {
             case target.classList.contains("linkDiv"):
                 if (target.getAttribute("data-linked") === "false") {
                     let devId = deviceData["_id"];
-                    let type = target.getAttribute("data-type");
-                    let mesg = type === "Nanoleaf" ? "AuthorizeNano" : "AuthorizeHue";
-                    sendMessage(mesg, devId,false);                    
+                    sendMessage("AuthorizeDevice", devId,false);                    
                 }
                 break;
             case target.classList.contains("led"):
@@ -603,14 +627,14 @@ function updateDeviceSector(sector, target) {
     if (dev["Tag"] === "Nanoleaf") {
         console.log("DEV: ", dev);
         let layout = dev["Layout"];
-        let positions = layout["PositionData"];
+        let positions = layout["NanoPositionData"];
         
         for(let i=0; i < positions.length; i++) {
             if (positions[i]["PanelId"] === nanoTarget) {
                 positions[i]["TargetSector"] = sector;
             }    
         }
-        layout["PositionData"] = positions;
+        layout["NanoPositionData"] = positions;
         dev["Layout"] = layout;
         drawNanoShapes(dev);
         updateDevice(dev["_id"],"Layout", layout);
@@ -1409,12 +1433,27 @@ function drawLinkPane(type, linked) {
     let linkImg = document.createElement("img");
     linkImg.classList.add("linkImg");
     linkImg.classList.add(linked ? "linked" : "unlinked");
+    let circle = document.createElement("div");
+    circle.classList.add("hide");
+    circle.id = "CircleBar";
     div.appendChild(img);
     div.appendChild(linkImg);
+    div.appendChild(circle);
     wrap.appendChild(header);
     wrap.appendChild(div);    
     console.log("No, really, appending: ", div);
-    document.getElementById("deviceSettings").appendChild(wrap);
+    document.getElementById("linkCol").appendChild(wrap);
+    bar = new ProgressBar.Circle("#CircleBar", {
+        strokeWidth: 15,
+        easing: 'easeInOut',
+        duration: 0,
+        color: '#0000FF',
+        trailColor: '#eee',
+        trailWidth: 0,
+        svgStyle: null,
+        value: 1
+    });
+
 }
 
 function appendSectorMap() {
@@ -1774,7 +1813,7 @@ function drawNanoShapes(panel) {
     let cLayer = new Konva.Layer();
     stage.add(cLayer);
 
-    let positions = layout['PositionData'];
+    let positions = layout['NanoPositionData'];
     let minX = 1000;
     let minY = 1000;
     let maxX = 0;

@@ -3,7 +3,7 @@ using Corsair.CUE.SDK;
 using Glimmr.Services;
 
 namespace Glimmr.Models.ColorTarget.Corsair {
-	public class CorsairAgent {
+	public class CorsairAgent : IColorTargetAgent {
 		public dynamic CreateAgent(ControlService cs) {
 			try {
 				CUESDK.CorsairPerformProtocolHandshake();

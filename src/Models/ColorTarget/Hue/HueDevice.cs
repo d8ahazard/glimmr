@@ -55,8 +55,8 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Tag = data.Tag;
 			Brightness = data.Brightness;
 			// Don't grab streaming group unless we need it
-			if (Data?.User == null || Data?.Key == null || _client != null || colorService == null) return;
-			_client = new StreamingHueClient(Data.IpAddress, Data.User, Data.Key);
+			if (Data?.User == null || Data?.Token == null || _client != null || colorService == null) return;
+			_client = new StreamingHueClient(Data.IpAddress, Data.User, Data.Token);
 			try {
 				_stream = SetupAndReturnGroup().Result;
 				Log.Debug("Stream is set.");
@@ -76,8 +76,8 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Tag = data.Tag;
 			Brightness = data.Brightness;
 			// Don't grab streaming group unless we need it
-			if (Data?.User == null || Data?.Key == null || _client != null) return;
-			_client = new StreamingHueClient(Data.IpAddress, Data.User, Data.Key);
+			if (Data?.User == null || Data?.Token == null || _client != null) return;
+			_client = new StreamingHueClient(Data.IpAddress, Data.User, Data.Token);
 			try {
 				_stream = SetupAndReturnGroup().Result;
 				Log.Debug("Stream is set.");
@@ -253,7 +253,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			var newLights = new List<LightData>();
 			var newGroups = new List<HueGroup>();
 
-			if (Data.IpAddress == "0.0.0.0" || Data.User == null || Data.Key == null) {
+			if (Data.IpAddress == "0.0.0.0" || Data.User == null || Data.Token == null) {
 				Data.Lights = newLights;
 				Data.Groups = newGroups;
 				Log.Debug("No authorization, returning empty lights.");

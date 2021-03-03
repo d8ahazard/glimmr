@@ -36,13 +36,12 @@ namespace Glimmr.Models.ColorTarget.Corsair {
 			DeviceIndex = id;
 		}
 
-		public void CopyExisting(IColorTargetData data) {
+		public void UpdateFromDiscovered(IColorTargetData data) {
 			var cd = (CorsairData) data;
-			Id = cd.Id;
-			Brightness = cd.Brightness;
-			Enable = cd.Enable;
-			Offset = cd.Offset;
-			Reverse = cd.Reverse;
+			Name = cd.Name;
+			LedCount = cd.LedCount;
+			DeviceTag = cd.DeviceTag;
+			DeviceIndex = cd.DeviceIndex;
 		}
 
 		

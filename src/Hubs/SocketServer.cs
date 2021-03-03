@@ -29,14 +29,10 @@ namespace Glimmr.Hubs {
 			await _cs.ScanDevices();
 		}
 		
-		public async Task AuthorizeHue(string id) {
-			await _cs.AuthorizeHue(id);
+		public async Task AuthorizeDevice(string id) {
+			await _cs.AuthorizeDevice(id);
 		}
 		
-		public async Task AuthorizeNano(string id) {
-			await _cs.AuthorizeNano(id);
-		}
-
 		private async Task<CpuData> GetStats(CancellationToken token) {
 			return await CpuUtil.GetStats();
 		}
@@ -53,12 +49,6 @@ namespace Glimmr.Hubs {
 			await _cs.UpdateSystem(sd2);
 		}
 		
-		public async Task LedData(string ld) {
-			Log.Debug("Updating LED Data.");
-			var ldd = JObject.Parse(ld).ToObject<LedData>();
-			await _cs.UpdateLed(ldd);
-		}
-
 		public async Task DemoLed(string id) {
 			Log.Debug("We should demo a strip here.");
 			await _cs.DemoLed(id);
@@ -74,7 +64,7 @@ namespace Glimmr.Hubs {
 			if (devObject != null) {
 				devObject.Id = device["_id"]?.ToString();
 				Log.Debug("Incoming: " + JsonConvert.SerializeObject(devObject));
-				await _cs.UpdateDevice(devObject);
+				await _cs.UpdateDevice(devObject, false);
 			}
 		}
 

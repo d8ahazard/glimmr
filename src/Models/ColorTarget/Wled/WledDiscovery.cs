@@ -10,10 +10,10 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.Wled {
     public class WledDiscovery : ColorDiscovery, IColorDiscovery {
 
-        private MulticastService _mDns;
+        private readonly MulticastService _mDns;
         private bool _discovering;
         private bool _stopDiscovery;
-        private ControlService _controlService;
+        private readonly ControlService _controlService;
         public WledDiscovery(ColorService cs) : base(cs) {
             _mDns = cs.ControlService.MulticastService;
             _controlService = cs.ControlService;
@@ -24,7 +24,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             };
 
             sd.ServiceDiscovered += (s, serviceName) => {
-                _mDns.SendQuery(serviceName, type: DnsType.PTR);
+                if (!_stopDiscovery) _mDns.SendQuery(serviceName, type: DnsType.PTR);
             };
 
             sd.ServiceInstanceDiscovered += WledDiscovered;
@@ -33,17 +33,19 @@ namespace Glimmr.Models.ColorTarget.Wled {
         
         public async Task Discover(CancellationToken ct) {
             Log.Debug("WLED: Discovery started...");
-            
-            _mDns.Start();
-            _discovering = true;
-            while (!ct.IsCancellationRequested) {
-                await Task.Delay(TimeSpan.FromSeconds(1), CancellationToken.None);
+
+            try {
+                _mDns.Start();
+                while (!ct.IsCancellationRequested) {
+                    await Task.Delay(TimeSpan.FromSeconds(1), CancellationToken.None);
+                }
+
+                _stopDiscovery = true;
+                _mDns.Stop();
+            } catch {
+                // Ignore collection modified exception
             }
-            _stopDiscovery = true;
-            while (_discovering) {
-                await Task.Delay(TimeSpan.FromSeconds(1), CancellationToken.None);
-            }
-            _mDns.Stop();
+
             Log.Debug("WLED: Discovery complete.");
         }
 
@@ -54,7 +56,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             
             foreach (var id in from msg in rr where msg.Type == DnsType.TXT select msg.CanonicalName.Split(".")[0]) {
                 var nData = new WledData(id);
-                _controlService.AddDevice(nData).ConfigureAwait(true);
+                _controlService.AddDevice(nData).ConfigureAwait(false);
             }
 
             if (_stopDiscovery) _discovering = false;

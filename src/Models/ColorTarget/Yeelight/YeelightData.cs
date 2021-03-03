@@ -27,7 +27,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		public bool Enable { get; set; }
 		public string LastSeen { get; set; }
 
-		public void CopyExisting(IColorTargetData existing) {
+		public void UpdateFromDiscovered(IColorTargetData existing) {
 			var yd = (YeelightData) existing;
 			Brightness = yd.Brightness;
 			Enable = yd.Enable;

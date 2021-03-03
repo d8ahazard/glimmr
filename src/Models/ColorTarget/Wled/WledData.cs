@@ -66,7 +66,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
         public string LastSeen { get; set; }
 
-        public void CopyExisting(IColorTargetData data) {
+        public void UpdateFromDiscovered(IColorTargetData data) {
             var input = (WledData) data;
             if (input == null) throw new ArgumentNullException(nameof(input));
             Offset = input.Offset;

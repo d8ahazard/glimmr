@@ -80,30 +80,18 @@ namespace Glimmr.Controllers {
 			return Ok(myDevice);
 		}
 
-		[HttpGet("authorizeHue")]
-		public async Task<IActionResult> AuthorizeHue([FromQuery] string id) {
-			await _controlService.AuthorizeHue(id);
+		[HttpGet("authorizeDevice")]
+		public async Task<IActionResult> AuthorizeDevice([FromQuery] string id) {
+			await _controlService.AuthorizeDevice(id);
 			return Ok(id);
 		}
 		
-		[HttpGet("authorizeNano")]
-		public async Task<IActionResult> AuthorizeNano([FromQuery] string id) {
-			await _controlService.AuthorizeNano(id);
-			return Ok(id);
-		}
-
 		[HttpGet("getStats")]
 
 		public IActionResult GetStats() {
 			return Ok(CpuUtil.GetStats());
 		}
 		
-		// POST: api/DreamData/ledData
-		[HttpPost("ledData")]
-		public async Task<IActionResult> UpdateLed([FromBody] LedData ld) {
-			await _controlService.UpdateLed(ld);
-			return Ok(ld);
-		}
 		
 		// POST: api/DreamData/ledData
 		[HttpPost("systemData")]
@@ -123,7 +111,7 @@ namespace Glimmr.Controllers {
 		public async Task<IActionResult> UpdateDevice([FromBody] string dData) {
 			var dObj = JObject.Parse(dData);
 			Log.Debug("Update device fired: " + JsonConvert.SerializeObject(dObj));
-			await _controlService.UpdateDevice(dObj);
+			await _controlService.UpdateDevice(dObj, false);
 			return Ok(dObj);
 		}
 		

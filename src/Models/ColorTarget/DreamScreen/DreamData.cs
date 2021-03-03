@@ -301,7 +301,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		
 		public string LastSeen { get; set; }
 
-		public void CopyExisting(IColorTargetData data) {
+		public void UpdateFromDiscovered(IColorTargetData data) {
 			
 		}
 

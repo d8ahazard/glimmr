@@ -171,22 +171,25 @@ namespace Glimmr.Models.Util {
         }
 
         
-        public static async Task AddDeviceAsync(dynamic device) {
+        public static async Task AddDeviceAsync(dynamic device, bool merge=true) {
             var db = GetDb();
             var devs = db.GetCollection<dynamic>("Devices");
-            var devices = devs.FindAll().ToArray();
-            for (var i = 0; i < devices.Length; i++) {
-                if (devices[i].Id != device.Id.ToString()) {
-                    continue;
+            if (merge) {
+                var devices = devs.FindAll().ToArray();
+                foreach (var t in devices) {
+                    if (t.Id != device.Id.ToString()) {
+                        continue;
+                    }
+
+                    IColorTargetData dev = t;
+                    dev.UpdateFromDiscovered(device);
+                    device = dev;
                 }
-                
-                IColorTargetData dev = devices[i];
-                dev.CopyExisting(device);
             }
+
             device.LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
             devs.Upsert(device);
             db.Commit();
-            Log.Debug("Done.");
             await Task.FromResult(true);
         }
         

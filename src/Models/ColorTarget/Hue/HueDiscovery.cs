@@ -10,9 +10,8 @@ using Q42.HueApi.Models.Bridge;
 using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Hue {
-    public class HueDiscovery : ColorDiscovery, IColorDiscovery {
+    public class HueDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth {
         private readonly BridgeLocator _bridgeLocatorHttp;
-
         private readonly BridgeLocator _bridgeLocatorSsdp;
         private readonly BridgeLocator _bridgeLocatorMdns;
         private readonly ControlService _controlService;
@@ -29,7 +28,20 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
         private void DeviceFound(IBridgeLocator sender, LocatedBridge locatedbridge) {
             var data = new HueData(locatedbridge);
-            _controlService.AddDevice(data).ConfigureAwait(true);
+            HueData dev = DataUtil.GetDevice<HueData>(data.Id);
+            if (dev != null && !string.IsNullOrEmpty(dev.Token)) {
+                var client = new LocalHueClient(data.IpAddress, _controlService.HttpSender);
+                try {
+                    client.Initialize(dev.Token);
+                    var groups = client.GetGroupsAsync().Result;
+                    var lights = client.GetLightsAsync().Result;
+                    data.AddGroups(groups);
+                    data.AddLights(lights);
+                } catch (Exception e) {
+                    Log.Debug("Exception: " + e.Message);
+                }
+            } 
+            _controlService.AddDevice(data).ConfigureAwait(false);
         }
 
         public async Task Discover(CancellationToken ct) {
@@ -45,20 +57,33 @@ namespace Glimmr.Models.ColorTarget.Hue {
             Log.Debug("Hue: Discovery complete.");
         }
         
-        public static async Task<RegisterEntertainmentResult> CheckAuth(string bridgeIp) {
+        public static async Task<dynamic> CheckAuth(dynamic devData) {
             try {
-                ILocalHueClient client = new LocalHueClient(bridgeIp);
+                ILocalHueClient client = new LocalHueClient(devData.IpAddress);
                 //Make sure the user has pressed the button on the bridge before calling RegisterAsync
                 //It will throw an LinkButtonNotPressedException if the user did not press the button
-                var result = await client.RegisterAsync("Glimmr", Environment.MachineName, true)
-                    .ConfigureAwait(false);
-                return result;
+                var result = await client.RegisterAsync("Glimmr", Environment.MachineName, true);
+                if (result == null) {
+                    return devData;
+                }
+
+                if (string.IsNullOrEmpty(result.Username) || string.IsNullOrEmpty(result.StreamingClientKey)) {
+                    return devData;
+                }
+
+                devData.Token = result.StreamingClientKey;
+                devData.User = result.Username;
+
+                return devData;
             } catch (HueException) {
-                Log.Debug($@"Hue: The link button is not pressed at {bridgeIp}.");
+                Log.Debug($@"Hue: The link button is not pressed at {devData.IpAddress}.");
             }
-            return null;
+            return devData;
         }
 
         public override string DeviceTag { get; set; }
+        Task<dynamic> IColorTargetAuth.CheckAuthAsync(dynamic deviceData) {
+            return CheckAuth(deviceData);
+        }
     }
 }

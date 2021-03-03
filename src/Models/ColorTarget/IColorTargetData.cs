@@ -13,7 +13,7 @@ namespace Glimmr.Models.ColorTarget {
         public int Brightness { get; set; }
         public bool Enable { get; set; }
         public string LastSeen { get; set; }
-        public void CopyExisting(IColorTargetData data);
+        public void UpdateFromDiscovered(IColorTargetData data);
         [JsonProperty]
         public SettingsProperty[] KeyProperties { get; set; }
     }

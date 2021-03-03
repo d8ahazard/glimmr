@@ -56,6 +56,7 @@ namespace Glimmr.Services {
 		
 		public ColorService(ControlService controlService) {
 			ControlService = controlService;
+			ControlService.ColorService = this;
 			ControlService.TriggerSendColorEvent += SendColors;
 			ControlService.SetModeEvent += Mode;
 			ControlService.DeviceReloadEvent += RefreshDeviceData;
@@ -315,7 +316,7 @@ namespace Glimmr.Services {
 					tag = tag.Split(".")[0];
 					Log.Debug("Tag: " + tag);
 					foreach (var device in deviceData) {
-						if (device.Tag == tag && device.Tag != "Corsair") {
+						if (device.Tag == tag) {
 							Log.Debug("Loading dev data: " + JsonConvert.SerializeObject(device));
 							if (device.Enable) enabled++;
 							var args = new object[] {device, this};
@@ -418,7 +419,7 @@ namespace Glimmr.Services {
 			await sda.StartStream(_sendTokenSource.Token);
 
 			var sDevs = _sDevices.ToList();
-			sDevs.Add(sda);
+			sDevs.Add(newDev);
 			_sDevices = sDevs.ToArray();
 		}
 
@@ -582,7 +583,6 @@ namespace Glimmr.Services {
 			}
 
 			if (!_streamStarted) {
-				Log.Debug("Stream not started...");
 				return;
 			}
 
