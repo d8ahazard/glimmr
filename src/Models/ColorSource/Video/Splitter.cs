@@ -70,7 +70,6 @@ namespace Glimmr.Models.ColorSource.Video {
 		private readonly ControlService _controlService;
 
 		public Splitter(SystemData sd, ControlService controlService) {
-			Log.Debug("Initializing splitter, using LED Data: " + JsonConvert.SerializeObject(sd));
 			_controlService = controlService;
 			// Set some defaults, this should probably just not be null
 			if (sd != null) {

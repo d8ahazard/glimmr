@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
@@ -7,6 +8,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using WindowsDisplayAPI;
+using Newtonsoft.Json;
 using Serilog;
 
 namespace Glimmr.Models.Util {
@@ -107,7 +109,7 @@ namespace Glimmr.Models.Util {
         [DllImport("User32.dll")]
         public static extern int EnumDisplayDevices(string lpDevice, int iDevNum, ref DisplayDevice lpDisplayDevice, int dwFlags);
 
-        public static Size GetDisplaySize() {
+        public static Rectangle GetDisplaySize() {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
                 return GetWindowsDisplaySize();
             }
@@ -116,20 +118,19 @@ namespace Glimmr.Models.Util {
                 return GetLinuxDisplaySize();
             }
 
-            return new Size(0, 0);
+            return new Rectangle();
         }
 
         private enum SystemMetric {
             VirtualScreenWidth = 78, // CXVIRTUALSCREEN 0x0000004E 
-            VirtualScreenHeight = 79, // CYVIRTUALSCREEN 0x0000004F
-            MonitorCount = 80,
+            VirtualScreenHeight = 79 // CYVIRTUALSCREEN 0x0000004F
         }
 
         [DllImport("user32.dll")]
         private static extern int GetSystemMetrics(SystemMetric metric);
         
 
-        private static Size GetWindowsDisplaySize() {
+        private static Size GetWindowsDisplaySize2() {
             var width = GetSystemMetrics(SystemMetric.VirtualScreenWidth);
             var height = GetSystemMetrics(SystemMetric.VirtualScreenHeight);
             var currentDpi = 0;
@@ -153,11 +154,48 @@ namespace Glimmr.Models.Util {
             return new Size((int) tWidth, (int) tHeight);
         }
 
+        private static Rectangle GetWindowsDisplaySize() {
+            var left = 0;
+            var right = 0;
+            var top = 0;
+            var bottom = 0;
+            var width = 0;
+            var height = 0;
+            // Enumerate system display devices
+            var devIdx = 0;
+            while (true) {
+                var deviceData = new DisplayDevice{cb = Marshal.SizeOf(typeof(DisplayDevice))};
+                if (EnumDisplayDevices(null, devIdx, ref deviceData, 0) != 0) {
+                    // Get the position and size of this particular display device
+                    var devMode = new DEVMODE();
+                    if (EnumDisplaySettings(deviceData.DeviceName, ENUM_CURRENT_SETTINGS, ref devMode)) {
+                            // Update the virtual screen dimensions
+                            left = Math.Min(left, devMode.dmPositionX);
+                            top = Math.Min(top, devMode.dmPositionY);
+                            right = Math.Max(right, devMode.dmPositionX + devMode.dmPelsWidth);
+                            bottom = Math.Max(bottom, devMode.dmPositionY + devMode.dmPelsHeight);
+                            width = left - right;
+                            height = top - bottom;
+                        
+                    }
+                    devIdx++;
+                }
+                else
+                    break;
+            }
+
+            width = Math.Abs(width);
+            height = Math.Abs(height);
+            var rect = new Rectangle(left, top, width, height);
+            Log.Debug("Rect: " + JsonConvert.SerializeObject(rect));
+            return rect;
+        }
+
         public static List<DisplayAdapter> GetMonitorInfo() {
             return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? DisplayAdapter.GetDisplayAdapters().ToList() : null;
         }
         
-        private static Size GetLinuxDisplaySize() {
+        private static Rectangle GetLinuxDisplaySize() {
             var p = new Process {
                 StartInfo = {UseShellExecute = false, RedirectStandardOutput = true, FileName = "xrandr"}
             };
@@ -166,12 +204,12 @@ namespace Glimmr.Models.Util {
             p.WaitForExit();
             p.Dispose();
             Log.Debug("Output from screen check: " + output);
-            var r = new Size(0,0);
+            var r = new Rectangle();
             try {
                 var match = Regex.Match(output, @"(\d+)x(\d+)\+0\+0");
                 var w = match.Groups[1].Value;
                 var h = match.Groups[2].Value;
-                r = new Size(int.Parse(w, CultureInfo.InvariantCulture),
+                r = new Rectangle(0,0,int.Parse(w, CultureInfo.InvariantCulture),
                     int.Parse(h, CultureInfo.InvariantCulture));
                 Console.WriteLine ("Display Size is {0} x {1}", w, h);
             } catch (FormatException) {
@@ -179,6 +217,71 @@ namespace Glimmr.Models.Util {
             }
 
             return r;
+        }
+
+        public static List<MonitorInfo> GetMonitors() {
+            var monitors = new List<MonitorInfo>();
+            var devIdx = 0;
+            while (true) {
+                var deviceData = new DisplayDevice {cb = Marshal.SizeOf(typeof(DisplayDevice))};
+                if (EnumDisplayDevices(null, devIdx, ref deviceData, 0) != 0) {
+                    // Get the position and size of this particular display device
+                    var devMode = new DEVMODE();
+                    if (EnumDisplaySettings(deviceData.DeviceName, ENUM_CURRENT_SETTINGS, ref devMode)) {
+                                  JsonConvert.SerializeObject(devMode);
+                        monitors.Add(new MonitorInfo(deviceData, devMode));
+                    }
+                    devIdx++;
+                } else {
+                    break;
+                }
+            }
+            return monitors;
+        }
+    }
+
+    [Serializable]
+    public class MonitorInfo {
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        [DefaultValue("")]
+        public string DeviceName { get; set; }
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        [DefaultValue("")]
+        public string DeviceString { get; set; }
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        [DefaultValue("")]
+        public string Id { get; set; }
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        [DefaultValue("")]
+        public string DeviceKey { get; set; }
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        [DefaultValue(0)]
+        public int DmPositionX { get; set; }
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        [DefaultValue(0)]
+        public int DmPositionY { get; set; }
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        [DefaultValue(0)]
+        public int DmPelsWidth { get; set; }
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        [DefaultValue(0)]
+        public int DmPelsHeight { get; set; }
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        [DefaultValue(true)]
+        public bool Enable { get; set; }
+
+        public MonitorInfo() {
+        }
+        public MonitorInfo(DisplayUtil.DisplayDevice device, DisplayUtil.DEVMODE mode) {
+            DeviceName = device.DeviceName;
+            DeviceString = device.DeviceString;
+            Id = device.DeviceID;
+            DeviceKey = device.DeviceKey;
+            DmPositionX = mode.dmPositionX;
+            DmPositionY = mode.dmPositionY;
+            DmPelsHeight = mode.dmPelsHeight;
+            DmPelsWidth = mode.dmPelsWidth;
+            Enable = false;
         }
     }
 }

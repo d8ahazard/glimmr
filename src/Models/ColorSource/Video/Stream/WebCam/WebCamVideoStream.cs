@@ -34,6 +34,12 @@ namespace Glimmr.Models.ColorSource.Video.Stream.WebCam {
             await Task.FromResult(true);
         }
 
+        public Task Stop() {
+            _video.Stop();
+            Dispose();
+            return Task.CompletedTask;
+        }
+
         public Mat Frame { get; set; }
 
         public void Dispose() {

@@ -1,5 +1,10 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.Runtime.InteropServices;
 using Glimmr.Models.ColorSource.Audio;
+using Glimmr.Models.Util;
 using Newtonsoft.Json;
 
 namespace Glimmr.Models {
@@ -200,6 +205,21 @@ namespace Glimmr.Models {
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool TestRazer { get; set; }
+
+		// Screen capture mode. 0="region", 1="monitor". 1 is only available for windows users.
+		[DefaultValue(0)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int ScreenCapMode { get; set; }
+		
+		[DefaultValue(false)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public static bool IsWindows => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
+		// Full screen region
+		[JsonProperty] public static Rectangle MonitorRegion =>DisplayUtil.GetDisplaySize();
+		
+		// Selected screen region
+		[JsonProperty] public Rectangle CaptureRegion { get; set; }
 
 	}
 }

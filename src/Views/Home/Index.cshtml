@@ -263,12 +263,35 @@
             <option value="1">USB Web Camera</option>
         </select>
     </div>
+    
+    <div class="col-12 col-md-6 col-xl-3 capGroup" data-mode="3" id="CapModeSelectRow">
+        <label class="form-label">Screen Capture Mode</label>
+        <select class="form-select" data-object="SystemData"
+                data-property="ScreenCapMode" id="ScreenCapMode">
+            <option value="0">Region</option>
+            <option value="1">Monitor</option>
+        </select>
+        <div class="form-text">Select the screen capture mode.</div>
+    </div>
+    
+    <div class="col-12 col-md-6 col-xl-3 capGroup" data-mode="3" id="MonitorSelectRow">
+        <label class="form-label">Monitor Selection</label>
+        <select class="form-select" multiple aria-label="multimonitor" data-object="SystemData"
+                data-property="SelectedMonitors" id="monitorSelect">
+        </select>
+        <div class="form-text">Select the target monitor(s) to capture.</div>
+    </div>
+    
+    <div class="col-12 col-md-6 col-xl-3 capGroup" data-mode="3" id="RegionSelectRow">
+            <label class="form-label">Region Selection</label>
+        <div id="RegionSelect"></div>
+            <div class="form-text">Select the target region to capture.</div>
+        </div>
+    
     <div class="col-12 col-md-6 col-xl-3 capGroup" data-mode="2">
 
     </div>
-    <div class="col-12 col-md-6 col-xl-3 capGroup" data-mode="3">
-
-    </div>
+    
 </div>
 <!-- Capture Preview -->
 <div class="row border justify-content-center pb-5">

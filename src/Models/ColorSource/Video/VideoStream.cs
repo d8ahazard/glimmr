@@ -72,18 +72,30 @@ namespace Glimmr.Models.ColorSource.Video {
 		public bool SourceActive;
 		private readonly ColorService _colorService;
 		private readonly ControlService _controlService;
+		private CancellationToken _cancellationToken;
 
 
 		public VideoStream(ColorService cs, ControlService controlService) {
 			_colorService = cs;
 			_controlService = controlService;
+			_controlService.RefreshSystemEvent += RefreshSystem;
 			_colorService.AddStream("video", this);
 		}
 
+		private void RefreshSystem() {
+			var wasEnabled = _enable;
+			if (_enable) _enable = false;
+			_vc.Stop();
+			StreamSplitter.Refresh();
+			Initialize(_cancellationToken);
+			if (wasEnabled) _enable = true;
+		}
+
 		private void Initialize(CancellationToken ct) {
+			_cancellationToken = ct;
 			Log.Debug("Initializing video stream...");
 			var autoEvent = new AutoResetEvent(false);
-			_saveTimer = new Timer(SaveFrame, autoEvent, 5000, 5000);
+			_saveTimer = new Timer(SaveFrame, autoEvent, 0, 10000);
 			_targets = new List<VectorOfPoint>();
 			SetCapVars();
 			_vc = GetStream();
@@ -238,7 +250,6 @@ namespace Glimmr.Models.ColorSource.Video {
 				return output;
 			}
 
-			Log.Debug("Trying to save...");
 			_doSave = false;
 			StreamSplitter.DoSave = true;
 			var path = Directory.GetCurrentDirectory();

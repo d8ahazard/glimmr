@@ -58,14 +58,16 @@ namespace Glimmr.Models.ColorTarget.Razer {
 			}
 		}
 		
-		public Task StartStream(CancellationToken ct) {
+		public async Task StartStream(CancellationToken ct) {
+			if (!Enable) return;
 			if (!Streaming) Streaming = true;
-			return Task.CompletedTask;
+			await Task.FromResult(true);
 		}
 
-		public Task StopStream() {
+		public async Task StopStream() {
+			if (!Enable) return;
 			if (Streaming) Streaming = false;
-			return Task.CompletedTask;
+			await FlashColor(Color.FromArgb(0, 0, 0));
 		}
 
 		public void SetColor(List<Color> colors, List<Color> sectors, int fadeTime, bool force = false) {

@@ -53,6 +53,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			_entLayer = null;
 			Id = IpAddress;
 			Tag = data.Tag;
+			Enable = data.Enable;
 			Brightness = data.Brightness;
 			// Don't grab streaming group unless we need it
 			if (Data?.User == null || Data?.Token == null || _client != null || colorService == null) return;
@@ -65,7 +66,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			}
 		}
 
-		public HueDevice(HueData data) : base() {
+		public HueDevice(HueData data) {
 			DataUtil.GetItem<int>("captureMode");
 			Data = data ?? throw new ArgumentNullException(nameof(data));
 			IpAddress = Data.IpAddress;
@@ -88,6 +89,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 
 		public Task FlashColor(Color color) {
+			if (!Enable) return Task.CompletedTask;
 			if (_entLayer == null) return Task.CompletedTask;
 			foreach (var entLight in _entLayer) {
 				// Get data for our light from map
@@ -99,6 +101,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 		
 		public void FlashLight(Color color, int lightId) {
+			if (!Enable) return;
 			if (_entLayer == null) return;
 			foreach (var entLight in _entLayer) {
 				if (lightId == entLight.Id) {
@@ -111,7 +114,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 
 		public bool IsEnabled() {
-			return Data.Enable;
+			return Enable;
 		}
 
 		/// <summary>
@@ -120,7 +123,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		/// <param name="ct">A cancellation token.</param>
 		public async Task StartStream(CancellationToken ct) {
 			// Leave if not enabled
-			if (!Data.Enable) return;
+			if (Enable) return;
 			
 			// Leave if we have no client (not authorized)
 			if (_client == null) {
@@ -173,7 +176,9 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 
 		public async Task StopStream() {
+			if (!Enable) return;
 			Log.Debug($"Hue: Stopping Stream: {IpAddress}...");
+			await FlashColor(Color.FromArgb(0, 0, 0));
 			await StopStream(_client, Data);
 			if (Streaming) ResetColors();
 			Streaming = false;
@@ -204,6 +209,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Data = newData;
 			IpAddress = Data.IpAddress;
 			Brightness = newData.Brightness;
+			Enable = Data.Enable;
 			Log.Debug(@"Hue: Reloaded bridge: " + IpAddress);
 			return Task.CompletedTask;
 		}

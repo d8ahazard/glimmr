@@ -112,6 +112,11 @@ namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
             Log.Debug("Camera closed.");
         }
 
+        public Task Stop() {
+            Dispose();
+            return Task.CompletedTask;
+        }
+
         private void OnEmguEventCallback(object sender, EmguEventArgs args) {
             var input = new Image<Bgr, byte>(capWidth, capHeight);
             input.Bytes = args.ImageData;
@@ -123,12 +128,14 @@ namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
 
 
         private void Dispose(bool disposing) {
-            if (!disposedValue) {
-                if (disposing) {
-                    cam.Cleanup();
-                }
-                disposedValue = true;
+            if (disposedValue) {
+                return;
             }
+
+            if (disposing) {
+                cam.Cleanup();
+            }
+            disposedValue = true;
         }
 
         public void Dispose() {

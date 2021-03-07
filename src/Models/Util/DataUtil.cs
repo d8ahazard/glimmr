@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Glimmr.Models.ColorSource.Ambient;
+using Glimmr.Models.ColorSource.Audio;
 using Glimmr.Models.ColorTarget;
 using Glimmr.Models.ColorTarget.DreamScreen;
 using Glimmr.Models.ColorTarget.Hue;
@@ -133,15 +134,29 @@ namespace Glimmr.Models.Util {
                 db.Commit();
         }
 
-        public static ILiteCollection<dynamic> GetDevices() {
+        public static List<dynamic> GetDevices() {
             var db = GetDb();
-            return db.GetCollection<dynamic>("Devices");
+            var devs =  db.GetCollection("Devices").FindAll().ToArray();
+            var devices = db.GetCollection<dynamic>("Devices").FindAll().ToArray();
+            var output = new List<dynamic>();
+            foreach (var device in devices) {
+                foreach (var dev in devs) {
+                    var json = LiteDB.JsonSerializer.Serialize(dev);
+                    var jObj = JObject.Parse(json);
+                    if (jObj.GetValue("_id") == device.Id) {
+                        dynamic donor = Activator.CreateInstance(Type.GetType(jObj.GetValue("_type").ToString()));
+                        device.KeyProperties = donor?.KeyProperties;
+                        output.Add(device);
+                    }
+                }
+            }
+            return output;
         }
         
         public static List<T> GetDevices<T>(string tag) where T : class {
             var devs = GetDevices();
             var output = new List<T>();
-            foreach (var d in devs.FindAll()) {
+            foreach (var d in devs) {
                 if (d.Tag == tag) {
                     output.Add((T)d);
                 }
@@ -151,25 +166,16 @@ namespace Glimmr.Models.Util {
 
         public static dynamic GetDevice<T>(string id) where T : class {
             var devs = GetDevices();
-            foreach (var d in devs.FindAll()) {
-                if (d.Id == id) {
-                    return (T)d;
-                }
-            }
-            return null;
+            return (from d in devs where d.Id == id select (T) d).FirstOrDefault();
         }
 
 
         public static dynamic GetDevice(string id) {
             var devs = GetDevices();
-            foreach (var d in devs.FindAll()) {
-                if (d.Id == id) {
-                    return d;
-                }
-            }
-            return null;
+            return devs.FirstOrDefault(d => d.Id == id);
         }
 
+        
         
         public static async Task AddDeviceAsync(dynamic device, bool merge=true) {
             var db = GetDb();
@@ -226,32 +232,38 @@ namespace Glimmr.Models.Util {
 
         
         public static string GetStoreSerialized() {
-            var db = GetDb();
-            var cols = db.GetCollectionNames();
-            var output = new Dictionary<string, List<dynamic>>();
-            foreach (var col in cols) {
-                if (col.Contains("Dev_") && !col.Contains("_Audio")) continue;
-                var collection = db.GetCollection(col);
-                var list = collection.FindAll().ToList();
-                var lList = new List<dynamic>();
-                foreach (var l in list) {
-                    var jObj = LiteDB.JsonSerializer.Serialize(l);
-                    var json = JObject.Parse(jObj);
-                    if (col == "Devices") {
-                        try {
-                            dynamic dev = Activator.CreateInstance(Type.GetType(json.GetValue("_type").ToString()));
-                            json["KeyProperties"] = JToken.FromObject(dev.KeyProperties);
-                        } catch (Exception e) {
-                            Log.Debug("Exception: " + e.Message);
-                        }
+            var output = new Dictionary<string, dynamic>();
+            SystemData sd = GetObject<SystemData>("SystemData");
+            DreamData dev = GetObject<DreamData>("MyDevice");
+            var audio = GetCollection<AudioData>("Dev_Audio");
+            var devices = GetDevices();
+            var mons = DisplayUtil.GetMonitors();
+            var exMons = GetCollection<MonitorInfo>("Dev_Video");
+            var oMons = new List<MonitorInfo>();
+            Log.Debug("Ex Mons: " + JsonConvert.SerializeObject(oMons));
+            foreach (var mon in mons) {
+                var exists = false;
+                foreach (var cMon in exMons) {
+                    if (mon.Id == cMon.Id) {
+                        Log.Debug("Adding existing mon: " + JsonConvert.SerializeObject(cMon));
+                        oMons.Add(cMon);
+                        exists = true;
                     }
-                    lList.Add(json);
                 }
 
-                output[col] = lList;
+                if (!exists) {
+                    Log.Debug("Adding sys mon: " + JsonConvert.SerializeObject(mon));
+                    oMons.Add(mon);
+                }
             }
             var jl = new JsonLoader("ambientScenes");
+            output["SystemData"] = sd;
+            output["Devices"] = devices;
+            output["MyDevice"] = dev;
+            output["Dev_Audio"] = audio;
+            output["Dev_Video"] = oMons;
             output["AmbientScenes"] = jl.LoadDynamic<AmbientScene>();
+            output["AudioScenes"] = jl.LoadDynamic<AudioScene>();
             //Log.Debug("Returning serialized store: " + JsonConvert.SerializeObject(output));
             return JsonConvert.SerializeObject(output);
         }
@@ -370,7 +382,7 @@ namespace Glimmr.Models.Util {
         }
 
         private static SystemData CreateSystemData() {
-            var sd = new SystemData {DefaultSet = true};
+            var sd = new SystemData {DefaultSet = true, CaptureRegion = DisplayUtil.GetDisplaySize()};
             Log.Debug("Object setting...");
             SetObject<SystemData>("SystemData",sd);
             Log.Warning("Setting default values!");
@@ -460,7 +472,7 @@ namespace Glimmr.Models.Util {
         }
 
         public static object GetDevices<T>() {
-            var devs = GetDevices().FindAll();
+            var devs = GetDevices();
             return devs.Where(dev => dev.GetType() == typeof(T)).Cast<T>().ToList();
         }
     }

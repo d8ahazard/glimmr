@@ -36,14 +36,14 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			Streaming = await _yeeDevice.Connect();
 		}
 
-		public Task StopStream() {
+		public async Task StopStream() {
 			if (!Streaming) {
-				return Task.CompletedTask;
+				return;
 			}
-
+			if (!Enable) return;
+			await FlashColor(Color.FromArgb(0, 0, 0));
 			_yeeDevice.Disconnect();
 			Streaming = false;
-			return Task.CompletedTask;
 		}
 
 		public void SetColor(List<Color> colors, List<Color> sectors, int arg3, bool force=false) {

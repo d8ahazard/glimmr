@@ -239,20 +239,17 @@ namespace Glimmr.Models.ColorSource.Ambient {
         
         public void Refresh() {
             SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
-            Log.Debug("SystemData: " + JsonConvert.SerializeObject(sd));
             _sectorCount = (sd.VSectors + sd.HSectors) * 2 - 4;
             _ledCount = sd.LedCount;
             _ambientShow = sd.AmbientShow;
             _ambientColor = sd.AmbientColor;
             _loader = new JsonLoader("ambientScenes");
             _scenes = _loader.LoadFiles<AmbientScene>();
-            Log.Debug($"Scenes {_ambientShow}: " + JsonConvert.SerializeObject(_scenes));
             AmbientScene scene = new AmbientScene();
             foreach (var s in _scenes.Where(s => s.Id == _ambientShow)) {
                 scene = s;
             }
 
-            Log.Debug("Scene: " + JsonConvert.SerializeObject(scene));
             if (_ambientShow == -1) scene.Colors = new[] {"#" + _ambientColor};
             _colors = scene.Colors;
             _animationTime = scene.AnimationTime * 1000;
@@ -260,7 +257,6 @@ namespace Glimmr.Models.ColorSource.Ambient {
             _easingMode = (EasingMode) scene.Easing;
             _mode = (AnimationMode) scene.Mode;
             LoadScene();
-            Log.Debug($"Ambient scene: {_ambientShow}, {_ambientColor}, {_animationTime}");
         }
 
         public List<Color> Colors { get; private set; }

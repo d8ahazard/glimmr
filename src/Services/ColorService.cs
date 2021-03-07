@@ -82,7 +82,7 @@ namespace Glimmr.Services {
 				await Demo(this, new DynamicEventArgs());
 				Log.Information($"All color sources initialized, setting mode to {_deviceMode}.");
 				await Mode(this, new DynamicEventArgs(_deviceMode)).ConfigureAwait(true);
-
+				Log.Debug("Mode set...");
 				while (!stoppingToken.IsCancellationRequested) {
 					await CheckAutoDisable();
 					await Task.Delay(5000, stoppingToken);
@@ -126,7 +126,7 @@ namespace Glimmr.Services {
 			return null;
 		}
 
-		private Task FlashDevice(object o, DynamicEventArgs dynamicEventArgs) {
+		private async Task FlashDevice(object o, DynamicEventArgs dynamicEventArgs) {
 			var devId = dynamicEventArgs.P1;
 			var disable = false;
 			var ts = new CancellationTokenSource();
@@ -146,27 +146,25 @@ namespace Glimmr.Services {
 					Log.Debug("Flashing device: " + devId);
 					if (!sd.Streaming) {
 						disable = true;
-						sd.StartStream(ts.Token);
+						await sd.StartStream(ts.Token);
 					}
-					sd.FlashColor(rColor);
+					await sd.FlashColor(rColor);
 					Thread.Sleep(500);
-					sd.FlashColor(bColor);
+					await sd.FlashColor(bColor);
 					Thread.Sleep(500);
-					sd.FlashColor(rColor);
+					await sd.FlashColor(rColor);
 					Thread.Sleep(500);
-					sd.FlashColor(bColor);
+					await sd.FlashColor(bColor);
 					sd.Testing = false;
 					if (!disable) {
 						continue;
 					}
 
-					sd.StopStream();
+					await sd.StopStream();
 					ts.Cancel();
 					ts.Dispose();
 				}
 			}
-
-			return Task.CompletedTask;
 		}
 
 		private async Task FlashSector(object o, DynamicEventArgs dynamicEventArgs) {
@@ -292,20 +290,17 @@ namespace Glimmr.Services {
 		}
 
 		private void LoadData() {
-			Log.Debug("Loading device data...");
 			// Reload main vars
 			var dev = DataUtil.GetDeviceData();
 			_deviceMode = DataUtil.GetItem("DeviceMode");
 			_deviceGroup = (byte) dev.DeviceGroup;
 			_captureMode = DataUtil.GetItem<int>("CaptureMode") ?? 2;
 			_sendTokenSource = new CancellationTokenSource();
-			Log.Debug("Loading strip");
 			_systemData = DataUtil.GetObject<SystemData>("SystemData");
-			Log.Debug("Creating new device lists...");
 			// Create new lists
 			var sDevs = new List<IColorTarget>();
 			var classes = SystemUtil.GetClasses<IColorTarget>();
-			var deviceData = DataUtil.GetCollection<dynamic>("Devices");
+			var deviceData = DataUtil.GetDevices();
 			var enabled = 0;
 			foreach (var c in classes) {
 				try {
@@ -314,10 +309,8 @@ namespace Glimmr.Services {
 					var dataName = c.Replace("Device", "Data");
 					tag = c.Replace("Glimmr.Models.ColorTarget.", "");
 					tag = tag.Split(".")[0];
-					Log.Debug("Tag: " + tag);
 					foreach (var device in deviceData) {
 						if (device.Tag == tag) {
-							Log.Debug("Loading dev data: " + JsonConvert.SerializeObject(device));
 							if (device.Enable) enabled++;
 							var args = new object[] {device, this};
 							var obj = (IColorTarget) Activator.CreateInstance(Type.GetType(c)!, args);
@@ -335,7 +328,7 @@ namespace Glimmr.Services {
 		}
 
 		private async Task Demo(object o, DynamicEventArgs dynamicEventArgs) {
-			StartStream();
+			await StartStream();
 			Log.Debug("Demo fired...");
 			var ledCount = 300;
 			var sectorCount = _systemData.SectorCount;
@@ -351,23 +344,27 @@ namespace Glimmr.Services {
 			cols = ColorUtil.EmptyList(ledCount);
 			secs = ColorUtil.EmptyList(sectorCount);
 			int degs = ledCount / sectorCount;
-			while (i < ledCount) {
-				var pi = i * 1.0f;
-				var progress = pi / ledCount;
-				var rCol = ColorUtil.Rainbow(progress);
-				secs = ColorUtil.LedsToSectors(cols, _systemData);
-				cols[i] = rCol;
-				
-				try {
-					SendColors(cols, secs, 0, true);
-				} catch (Exception e) {
-					Log.Warning("SEND EXCEPTION: " + JsonConvert.SerializeObject(e));
-				}
-				
+			try {
+				while (i < ledCount) {
+					var pi = i * 1.0f;
+					var progress = pi / ledCount;
+					var rCol = ColorUtil.Rainbow(progress);
+					secs = ColorUtil.LedsToSectors(cols, _systemData);
+					cols[i] = rCol;
 
-				i++;
+					try {
+						SendColors(cols, secs, 0);
+					} catch (Exception e) {
+						Log.Warning("SEND EXCEPTION: " + JsonConvert.SerializeObject(e));
+					}
+
+					i++;
+				}
+			} catch (Exception f) {
+				Log.Warning("Outer demo exception: " + f.Message);
 			}
 
+			Log.Debug("Done demoing, dude...");
 			// Finally show off our hard work
 			await Task.Delay(500);
 		}
@@ -398,7 +395,7 @@ namespace Glimmr.Services {
 					}
 
 					exists = true;
-					await dev.StartStream(_sendTokenSource.Token);
+					await dev.StartStream(_sendTokenSource.Token).ConfigureAwait(false);
 				}
 			}
 			
@@ -416,7 +413,7 @@ namespace Glimmr.Services {
 			}
 
 			var newDev = CreateDevice(sda);
-			await sda.StartStream(_sendTokenSource.Token);
+			await sda.StartStream(_sendTokenSource.Token).ConfigureAwait(false);
 
 			var sDevs = _sDevices.ToList();
 			sDevs.Add(newDev);
@@ -531,29 +528,28 @@ namespace Glimmr.Services {
 					break;
 			}
 			
-			if (newMode != 0 && !_streamStarted) StartStream();
+			if (newMode != 0 && !_streamStarted) await StartStream();
 			_deviceMode = newMode;
 			Log.Information($"Device mode updated to {newMode}.");
 		}
 
 
 
-		private void StartStream() {
+		private Task StartStream() {
 			if (!_streamStarted) {
 				_streamStarted = true;
 				Log.Information("Starting streaming devices...");
 				foreach (var sdev in _sDevices) {
 					sdev.StartStream(_sendTokenSource.Token);
 				}
-
 			} else {
 				Log.Debug("Streaming already started.");
 			}
-			
 
 			if (_streamStarted) {
 				Log.Information("Streaming on all devices should now be started...");
 			}
+			return Task.CompletedTask;
 		}
 
 		private async Task StopStream() {
@@ -600,6 +596,7 @@ namespace Glimmr.Services {
 
 		private async Task StopServices() {
 			Log.Information("Stopping services...");
+			await StopStream();
 			_streamTokenSource?.Cancel();
 			_avStream.ToggleStream();
 			_audioStream.ToggleStream();
@@ -608,8 +605,7 @@ namespace Glimmr.Services {
 			CancelSource(_sendTokenSource, true);
 			foreach (var s in _sDevices) {
 				try {
-					Log.Information("Stopping device: " + s.Id);
-					await s.StopStream();
+					Log.Debug("Disposing: " + s.Id);
 					s.Dispose();
 				} catch (Exception e) {
 					Log.Warning("Caught exception: " + e.Message);

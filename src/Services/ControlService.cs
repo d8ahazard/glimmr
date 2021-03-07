@@ -119,20 +119,20 @@ namespace Glimmr.Services {
 			await SetModeEvent.InvokeAsync(null, new DynamicEventArgs(mode));
 		}
 
-		public async Task AuthorizeDevice(string id) {
+		public async Task AuthorizeDevice(string id, IClientProxy clientProxy = null) {
 			var data = DataUtil.GetDevice(id);
 			if (data != null) {
 				if (string.IsNullOrEmpty(data.Token)) {
 					Log.Debug("Starting auth check...");
-					await _hubContext.Clients.All.SendAsync("auth", "start");
+					if (clientProxy != null) await clientProxy.SendAsync("auth", "start");
 				} else {
 					Log.Debug("Device is already authorized...");
-					await _hubContext.Clients.All.SendAsync("auth", "authorized");
+					if (clientProxy != null) await clientProxy.SendAsync("auth", "authorized");
 					return;
 				}
 			} else {
 				Log.Debug("Device is null: " + id);
-				await _hubContext.Clients.All.SendAsync("auth", "error");
+				if (clientProxy != null) await clientProxy.SendAsync("auth", "error");
 				return;
 			}
 
@@ -158,19 +158,19 @@ namespace Glimmr.Services {
 						if (!string.IsNullOrEmpty(activated.Token)) {
 							Log.Debug("Device is activated!");
 							await DataUtil.AddDeviceAsync(activated, false);
-							await _hubContext.Clients.All.SendAsync("auth", "authorized",count);
+							if (clientProxy != null) await clientProxy.SendAsync("auth", "authorized");
 							return;
 						}
 					} catch (Exception e) {
-						Log.Debug("Error: " + e.Message);
+						Log.Debug("Error: " + e.Message + " at " + e.StackTrace);
 					}
 					await Task.Delay(1000);
 					count++;
-					await _hubContext.Clients.All.SendAsync("auth", "update",count);
+					if (clientProxy != null) await clientProxy.SendAsync("auth", "update", count);
 				}	
 			} else {
 				Log.Debug("Error creating activator!");
-				await _hubContext.Clients.All.SendAsync("auth", "error");
+				if (clientProxy != null) await clientProxy.SendAsync("auth", "error");
 			}
 		}
 

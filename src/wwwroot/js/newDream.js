@@ -121,25 +121,25 @@ document.addEventListener("DOMContentLoaded", function(){
     }).on('changestop', (source, instance) => {
         console.log('Event: "change"', newColor, source, instance);
         if (isValid(data.store["SystemData"])) {
-            data.store["SystemData"][0]["AmbientColor"] = newColor;
-            data.store["SystemData"][0]["AmbientShow"] = -1;
+            data.store["SystemData"]["AmbientColor"] = newColor;
+            data.store["SystemData"]["AmbientShow"] = -1;
             let asSelect = document.getElementById("AmbientShow");
             asSelect.value = "-1";
             pickr.setColor("#" + newColor);
-            console.log("Sending: ", data.store["SystemData"][0]);
-            sendMessage("SystemData",data.store["SystemData"][0]);
+            console.log("Sending: ", data.store["SystemData"]);
+            sendMessage("SystemData",data.store["SystemData"]);
         }
     }).on('swatchselect', (color, instance) => {
         let col = color.toRGBA();
         newColor = rgbToHex(col[0], col[1], col[2]);
         if (isValid(data.store["SystemData"])) {            
-            data.store["SystemData"][0]["AmbientColor"] = newColor;
-            data.store["SystemData"][0]["AmbientShow"] = -1;
+            data.store["SystemData"]["AmbientColor"] = newColor;
+            data.store["SystemData"]["AmbientShow"] = -1;
             let asSelect = document.getElementById("AmbientShow");
             asSelect.value = "-1";
             pickr.setColor("#" + newColor);
-            console.log("Sending: ", data.store["SystemData"][0]);
-            sendMessage("SystemData",data.store["SystemData"][0]);
+            console.log("Sending: ", data.store["SystemData"]);
+            sendMessage("SystemData",data.store["SystemData"]);
         }
     });
     
@@ -164,7 +164,6 @@ function sendMessage(endpoint, sData, encode=true) {
     loadTimeout = setTimeout(function(){
         loadTimeout = null;
     },500);
-    console.log("Sending message: " + endpoint, sData);
     if (socketLoaded) {
         if (isValid(sData)) {
             websocket.invoke(endpoint, sData).catch(function (err) {
@@ -323,7 +322,6 @@ function setSocketListeners() {
     });
 
     websocket.on('olo', function(stuff) {
-        console.log("Incoming data string: " + stuff);
         stuff = stuff.replace(/\\n/g, '');
         let parsed = JSON.parse(stuff);
         console.log("OLO: ", parsed);
@@ -332,13 +330,12 @@ function setSocketListeners() {
     });
 
     websocket.on('device', function(stuff) {
-        console.log("Incoming device data: ", stuff);
-        for(let i=0; i<data.store.devices.length; i++) {
-           let dev = data.store.devices[i];
-           if (dev["_id"] === stuff["_id"]) {
+        for(let i=0; i<data.store.Devices.length; i++) {
+           let dev = data.store.Devices[i];
+           if (dev["Id"] === stuff["Id"]) {
                console.log("Device updated: ",stuff);
            }
-           if (deviceData["_id"] === stuff["_id"]) {
+           if (deviceData["Id"] === stuff["Id"]) {
                console.log("Updating selected deviceData:",stuff);
                deviceData = stuff;
                if (settingsShown) createDeviceSettings();
@@ -393,10 +390,11 @@ function setListeners() {
             val = target.checked;
             console.log("Checkbox value is " + val);
         }
-        
-        if (property === "PreviewMode") {
+
+        if (property === "CaptureMode" || property === "ScreenCapMode" || property === "PreviewMode") {
             val = parseInt(val);
         }
+        
         let pack;
         if (isValid(obj) && isValid(property) && isValid(val)) {
             console.log("Trying to set: ", obj, property, val);
@@ -404,7 +402,7 @@ function setListeners() {
                 let strips = data.store[obj];
                 for(let i=0; i < strips.length; i++) {
                     let strip = strips[i];
-                    if (strip["_id"] === id) {
+                    if (strip["Id"] === id) {
                         strip[property] = val;
                         strip["Id"] = id;
                         strips[i] = strip;
@@ -421,12 +419,28 @@ function setListeners() {
                     createDeviceSettings();
                     return;
                 } else {
-                    data.store[obj][0][property] = val;
-                    pack = data.store[obj][0];
-                    delete pack["_id"];
-                    console.log("Sending updated object: ", pack);
-                    sendMessage(obj, pack,true);
-                    return;
+                    if (property === "SelectedMonitors") {
+                        let mons = data.store["Dev_Video"];
+                        for (let m=0; m < mons.length; m++) {
+                            let mon = mons[m];
+                            for(let i=0; i< target.options.length; i++) {
+                                if (target.options[i].value === mon["Id"])
+                                    mons[m]["Enable"] = target.options[i].selected;                                
+                            }    
+                        }
+                        data.store["Dev_Video"] = mons;
+                        console.log("Updating monitor selections: ", mons);
+                        sendMessage("Monitors",mons,true);
+                    } else {
+                        data.store[obj][property] = val;
+                        pack = data.store[obj];
+                        if (property === "CaptureMode") {
+                            updateCaptureUi(pack);
+                        }
+                        console.log("Sending updated object: ", pack);
+                        sendMessage(obj, pack,true);
+                        return;    
+                    }                    
                 }
             }
                         
@@ -494,7 +508,7 @@ function setListeners() {
                 break;
             case target.classList.contains("linkDiv"):
                 if (target.getAttribute("data-linked") === "false") {
-                    let devId = deviceData["_id"];
+                    let devId = deviceData["Id"];
                     sendMessage("AuthorizeDevice", devId,false);                    
                 }
                 break;
@@ -572,7 +586,7 @@ function setListeners() {
 function ledAction(action, id) {
     let ledData = data.store["LedData"];
     if (isValid(ledData)) {
-        let led = getObj(ledData, "_id", id);
+        let led = getObj(ledData, "Id", id);
         if (isValid(led)) {
             if (action === "test") {
                 sendMessage("DemoLed", id.toString(), false);
@@ -588,8 +602,8 @@ function ledAction(action, id) {
                     t1.classList.remove("active");
                 }
             }
-            data.store["LedData"] = setObj(ledData, "_id", id, led);
-            led["Id"] = led["_id"];
+            data.store["LedData"] = setObj(ledData, "Id", id, led);
+            led["Id"] = led["Id"];
             sendMessage("LedData", led, true);
         } else {
             console.log("Invalid led")
@@ -637,7 +651,7 @@ function updateDeviceSector(sector, target) {
         layout["NanoPositionData"] = positions;
         dev["Layout"] = layout;
         drawNanoShapes(dev);
-        updateDevice(dev["_id"],"Layout", layout);
+        updateDevice(dev["Id"],"Layout", layout);
     }
     
     sendMessage("flashSector", parseInt(sector), false);
@@ -673,7 +687,7 @@ function loadUi() {
     let autoDisabled = getStoreProperty("AutoDisabled");
     
     if (isValid(data.store["SystemData"])) {
-        let sd = data.store["SystemData"][0];
+        let sd = data.store["SystemData"];
         console.log("Loading system data: ", sd);
         let theme = sd["Theme"];
         mode = sd["DeviceMode"];
@@ -710,8 +724,8 @@ function loadUi() {
                 console.log("Adding dev");
                 let dev = recDevs[i];
                 let opt = document.createElement("option");
-                opt.value = dev["_id"];
-                opt.innerText = dev["_id"];
+                opt.value = dev["Id"];
+                opt.innerText = dev["Id"];
                 if (opt.value === recDev) opt.selected = true;
                 recList.options.add(opt);
             }
@@ -765,15 +779,50 @@ function loadTheme(theme) {
 function loadSettings() {
     if (data.store == null) return;
     let ledData = data.store["LedData"];
-    let systemData = data.store["SystemData"][0];
+    let systemData = data.store["SystemData"];
     if (isValid(ledData)) {
         for(let i=0; i < 4; i++) {
             loadSettingObject(ledData[i]);
         }    
     }
+
+
+    let monitors = data.store["Dev_Video"];
+    if (isValid(monitors) && monitors.length) {
+        let monList = document.getElementById("monitorSelect");
+        let length = monList.options.length;
+        for (let i = length-1; i >= 0; i--) {
+            monList.options[i] = null;
+        }
+        
+        console.log("Adding monitors: ", monitors);
+        let vals = [];
+        for(let i=0; i < monitors.length; i++) {
+            let opt = document.createElement("option");
+            opt.value = monitors[i]["Id"];
+            opt.innerText = monitors[i]["DeviceString"];
+            monList.appendChild(opt);
+            if (monitors[i]["Enable"]) {
+                console.log("This options *should* be selected.");
+                vals.push(monitors[i]["Id"]);
+            }            
+        }
+        console.log("VALS: ", vals);
+        for (const option of document.querySelectorAll('#monitorSelect option')) {
+            const value = option.value;
+            if (vals.indexOf(value) !== -1) {
+                console.log("Selecting " + value);
+                option.setAttribute('selected', 'selected');
+            } else {
+                console.log("Clearing " + value);
+                option.removeAttribute('selected');
+            }
+        }
+    }
     
     if (isValid(systemData)) {
         loadSettingObject(systemData);
+        updateCaptureUi(systemData);
         console.log("Loading System Data: ", systemData);
         let lPreview = document.getElementById("sLedPreview");
         let lImage = document.getElementById("ledImage");
@@ -785,7 +834,61 @@ function loadSettings() {
         },500);
     } else {
         console.log("NO LED DATA");
-    }    
+    }   
+    
+}
+
+function updateCaptureUi(systemData) {
+    let capGroups = document.querySelectorAll(".capGroup");
+    let mode = systemData["CaptureMode"].toString();
+    for (let i=0; i < capGroups.length; i++) {
+        let group = capGroups[i];
+        let groupMode = group.getAttribute("data-mode");
+        console.log("Checking ",groupMode, mode);
+        if (groupMode === mode) {
+            console.log("Showing group " + i);
+            group.classList.add("show");
+            group.classList.remove("hide");
+            
+        } else {
+            console.log("Hiding group " + i);
+            group.classList.add("hide");
+            group.classList.remove("show");
+        }
+    }
+
+    let capSelect = document.getElementById("CapModeSelectRow");
+    let monRow = document.getElementById("MonitorSelectRow");
+    let regionRow = document.getElementById("RegionSelectRow");
+    let target = document.getElementById("ScreenCapMode");
+    if (systemData["IsWindows"]) {
+        let capSelection = systemData["ScreenCapMode"];
+        console.log("We are windows...", capSelection);
+
+        target.value = capSelection;
+        if (capSelection === 1) {
+            console.log("Monitor setup...")
+            monRow.classList.add("show");
+            monRow.classList.remove("hide");
+            regionRow.classList.add("hide");
+            regionRow.classList.remove("show");
+        } else {
+            monRow.classList.add("hide");
+            monRow.classList.remove("show");
+            regionRow.classList.add("show");
+            regionRow.classList.remove("hide");
+        }
+        capSelect.classList.add("show");
+        capSelect.classList.remove("hide");
+    } else {
+        monRow.classList.add("hide");
+        monRow.classList.remove("show");
+        regionRow.classList.add("hide");
+        regionRow.classList.remove("show");
+        capSelect.classList.add("hide");
+        capSelect.classList.remove("show");
+    }
+
 }
 
 function loadSettingObject(obj) {
@@ -794,16 +897,12 @@ function loadSettingObject(obj) {
         return;
     }
     let dataProp = obj;
-    let id = obj["_id"];
-    let name = "";
-    if (obj.hasOwnProperty("GpioNumber")) {
-        name = "LedData";
-    } else {
-        name = "SystemData";
-    }
+    let id = obj["Id"];
+    let name = "SystemData";
     console.log("Loading object: ",name, dataProp, id);
     for(let prop in dataProp) {
         if (dataProp.hasOwnProperty(prop)) {
+            let value = dataProp[prop];
             let target = document.querySelector('[data-property='+prop+'][data-object="'+name+'"]');
             if (obj.hasOwnProperty("GpioNumber")) {
                 target = document.querySelector('[data-property='+prop+'][data-object="'+name+'"][data-id="'+id+'"]');
@@ -811,7 +910,6 @@ function loadSettingObject(obj) {
             }
 
             if (prop === "Enable") {
-                let value = dataProp[prop];
                 console.log("Enableprop: ", value, id);
                 if (value) {
                     target = document.querySelector('[data-id="'+id+'"][data-function="enable"]');
@@ -822,10 +920,11 @@ function loadSettingObject(obj) {
                 }
             }
             
-            if (isValid(target)) {
-                let value = dataProp[prop];
+            
+            
+            if (isValid(target) && prop !== "SelectedMonitors" && prop !== "ScreenCapMode") {
                 if (value === true) {
-                    target.setAttribute('checked',"true");
+                    target.setAttribute('checked', "true");
                 } else {
                     target.value = dataProp[prop];    
                 }                                
@@ -878,7 +977,7 @@ function loadDevices() {
             image.setAttribute("data-bs-toggle", "tooltip");
             image.setAttribute("data-bs-placement", "top");
             image.setAttribute("data-title", "Flash/locate device");
-            image.setAttribute("data-device", device["_id"]);
+            image.setAttribute("data-device", device["Id"]);
             let tag = device.Tag;
             if (isValid(tag)) {
                 if (tag === "Dreamscreen") tag = device["DeviceTag"];
@@ -891,7 +990,7 @@ function loadDevices() {
             // Create enabled checkbox
             let enableButton = document.createElement("button");
             enableButton.classList.add("btn", "btn-outline-secondary", "btn-clear", "enableBtn", "pt-2");
-            enableButton.setAttribute("data-target", device["_id"]);
+            enableButton.setAttribute("data-target", device["Id"]);
             enableButton.setAttribute("data-enabled", device["Enable"]);
             // And the icon
             let eIcon = document.createElement("span");
@@ -909,7 +1008,7 @@ function loadDevices() {
             
             let settingsButton = document.createElement("button");
             settingsButton.classList.add("btn", "btn-outline-secondary", "btn-clear", "settingBtn", "pt-2");
-            settingsButton.setAttribute("data-target",device["_id"]);
+            settingsButton.setAttribute("data-target",device["Id"]);
             let sIcon = document.createElement("span");
             sIcon.classList.add("material-icons", "pt-1");
             sIcon.textContent = "settings";
@@ -924,7 +1023,7 @@ function loadDevices() {
             // Slider
             let brightnessSlide = document.createElement("input");
             brightnessSlide.setAttribute("type","range");
-            brightnessSlide.setAttribute("data-target",device["_id"]);
+            brightnessSlide.setAttribute("data-target",device["Id"]);
             brightnessSlide.setAttribute("data-attribute","Brightness");
             brightnessSlide.value = device["Brightness"];
             brightnessSlide.classList.add("form-input", "w-100", 'custom-range');
@@ -998,7 +1097,7 @@ function getDevices() {
 function updateDevice(id, property, value) {
     let dev;
     console.log("Device: ", deviceData);
-    if (isValid(deviceData) && deviceData["_id"] === id) {
+    if (isValid(deviceData) && deviceData["Id"] === id) {
         dev = deviceData;
     } else {
         dev = findDevice(id);
@@ -1015,7 +1114,7 @@ function updateDevice(id, property, value) {
 function findDevice(id) {
     for (let i=0; i < data.devices.length; i++) {
         if (data.devices[i]) {
-            if (data.devices[i]["_id"] === id) {
+            if (data.devices[i]["Id"] === id) {
                 return data.devices[i];
             }
         }
@@ -1027,7 +1126,7 @@ function findDevice(id) {
 function saveDevice(deviceData) {
     for(let i=0; i < data.devices.length; i++) {
         if (data.devices[i]) {
-            if(data.devices[i]["_id"] === deviceData["_id"]) {
+            if(data.devices[i]["Id"] === deviceData["Id"]) {
                 data.devices[i] = deviceData;
                 return;
             }
@@ -1094,14 +1193,14 @@ function getStoreProperty(name) {
     if (!isValid(store)) return null;
     let sysData = store["SystemData"];
     if (isValid(sysData) && isValid(sysData[0])) {
-        if (name === "SystemData") return sysData[0];
-        if (sysData[0].hasOwnProperty(name)) {
-            return sysData[0][name];
+        if (name === "SystemData") return sysData;
+        if (sysData.hasOwnProperty(name)) {
+            return sysData[name];
         }
     }
 
     if (data.store.hasOwnProperty(name)) {
-        return data.store[name][0]["value"];
+        return data.store[name]["value"];
     }
     
     return null;
@@ -1259,7 +1358,7 @@ function createDeviceSettings() {
     if (isValid(props)) {
         let container = document.createElement("div");
         container.classList.add("container");
-        let id = deviceData["_id"];
+        let id = deviceData["Id"];
         let row = document.createElement("div");
         row.classList.add("row", "border", "justify-content-center", "pb-5");
         let header = document.createElement("div");
@@ -1425,7 +1524,7 @@ function drawLinkPane(type, linked) {
     let div = document.createElement("div");
     div.classList.add("col-8", "col-sm-6", "col-md-4", "col-lg-3", "col-xl-2", "linkDiv");
     div.setAttribute("data-type",type);
-    div.setAttribute("data-id", deviceData["_id"]);
+    div.setAttribute("data-id", deviceData["Id"]);
     div.setAttribute("data-linked",linked);
     let img = document.createElement("img");
     img.classList.add("img-fluid");
@@ -1482,7 +1581,7 @@ function appendLedMap() {
     imgDiv.appendChild(img);
     let settingsDiv = document.getElementById("deviceSettings");
     settingsDiv.append(imgDiv);
-    let systemData = data.store["SystemData"][0];
+    let systemData = data.store["SystemData"];
     setTimeout(function() {createLedMap(imgDiv, img ,systemData, deviceData)}, 500);
 }
 
@@ -1493,7 +1592,7 @@ function createSectorMap(targetElement, sectorImage, regionName) {
     let imgL = img.offsetLeft;
     let imgT = img.offsetTop;
     let exMap = targetElement.querySelector("#sectorMap");
-    let systemData = data.store["SystemData"][0];
+    let systemData = data.store["SystemData"];
     let vCount = systemData["VSectors"];
     let hCount = systemData["HSectors"];
     if (isValid(exMap)) exMap.remove();
@@ -1606,7 +1705,7 @@ function createSectorMap(targetElement, sectorImage, regionName) {
 
 function createLedMap(targetElement, sectorImage, ledData, devData) {
     let range1;
-    let sd = getStoreProperty("SystemData");
+    let sd = data.store.SystemData;
     console.log("System data: ",sd);
     
     if (isValid(devData)) {
@@ -1781,9 +1880,9 @@ function createHueMap() {
     groupSelect.appendChild(defaultOption);
     for(let i = 0; i < groups.length; i++) {
         let opt = document.createElement("option");
-        opt.value = groups[i]["_id"];
-        opt.textContent = groups[i]["_id"];
-        if (selectedGroup === groups[i]["_id"]) opt.selected = true;
+        opt.value = groups[i]["Id"];
+        opt.textContent = groups[i]["Id"];
+        if (selectedGroup === groups[i]["Id"]) opt.selected = true;
         groupSelect.appendChild(opt);
     }
     groupSelectCol.appendChild(groupSelect);

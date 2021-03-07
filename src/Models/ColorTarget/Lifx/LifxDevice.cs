@@ -41,10 +41,11 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             Brightness = d.Brightness;
             Id = d.Id;
             IpAddress = d.IpAddress;
+            Enable = Data.Enable;
         }
 
         public async Task StartStream(CancellationToken ct) {
-            if (!Data.Enable) return;
+            if (!Enable) return;
             Log.Debug("Lifx: Starting stream.");
             var col = new LifxColor(0, 0, 0);
             //var col = new LifxColor {R = 0, B = 0, G = 0};
@@ -63,15 +64,15 @@ namespace Glimmr.Models.ColorTarget.Lifx {
         }
 
         public bool IsEnabled() {
-            return Data.Enable;
+            return Enable;
         }
 
         
         public async Task StopStream() {
+            if (!Enable) return;
             Streaming = false;
             if (_client == null) throw new ArgumentException("Invalid lifx client.");
-            Log.Debug("Setting color back the way it was.");
-            await _client.SetColorAsync(B, Data.Hue, Data.Saturation,Convert.ToUInt16(Data.Brightness), Data.Kelvin, TimeSpan.Zero);
+            await FlashColor(Color.FromArgb(0, 0, 0));
             await _client.SetLightPowerAsync(B, TimeSpan.Zero, Data.Power).ConfigureAwait(false);
             Log.Debug("Lifx: Stream stopped.");
         }
@@ -84,6 +85,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             _targetSector = targetSector - 1;
             Brightness = newData.MaxBrightness;
             Id = newData.Id;
+            Enable = Data.Enable;
             return Task.CompletedTask;
         }
 

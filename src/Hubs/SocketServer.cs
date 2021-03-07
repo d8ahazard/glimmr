@@ -1,8 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models;
-using Glimmr.Models.ColorTarget.Led;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.AspNetCore.SignalR;
@@ -30,7 +30,8 @@ namespace Glimmr.Hubs {
 		}
 		
 		public async Task AuthorizeDevice(string id) {
-			await _cs.AuthorizeDevice(id);
+			var sender = Clients.Caller;
+			await _cs.AuthorizeDevice(id, sender);
 		}
 		
 		private async Task<CpuData> GetStats(CancellationToken token) {
@@ -60,11 +61,21 @@ namespace Glimmr.Hubs {
 
 		public async Task UpdateDevice(string deviceJson) {
 			var device = JObject.Parse(deviceJson);
-			dynamic devObject = device.ToObject(Type.GetType(device.GetValue("_type")?.ToString()!)!);
+			var tag = device.GetValue("Tag").ToString();
+			var className = "Glimmr.Models.ColorTarget." + tag + "." + tag + "Data";
+			dynamic devObject = device.ToObject(Type.GetType(className));
 			if (devObject != null) {
-				devObject.Id = device["_id"]?.ToString();
 				Log.Debug("Incoming: " + JsonConvert.SerializeObject(devObject));
 				await _cs.UpdateDevice(devObject, false);
+			}
+		}
+
+		public async Task Monitors(string deviceArray) {
+			Log.Debug("Mon string: " + deviceArray);
+			var monitors = JsonConvert.DeserializeObject<List<MonitorInfo>>(deviceArray);
+			foreach (var mon in monitors) {
+				Log.Debug("Inserting monitor: " + JsonConvert.SerializeObject(mon));
+				await DataUtil.InsertCollection<MonitorInfo>("Dev_Video", mon);
 			}
 		}
 

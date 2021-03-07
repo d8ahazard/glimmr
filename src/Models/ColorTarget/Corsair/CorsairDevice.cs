@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Corsair.CUE.SDK;
 using Glimmr.Models.Util;
 using Glimmr.Services;
+using Newtonsoft.Json;
 using Serilog;
 
 
@@ -45,15 +46,17 @@ namespace Glimmr.Models.ColorTarget.Corsair {
 			}
 			
 		}
-		public Task StartStream(CancellationToken ct) {
+		public async Task StartStream(CancellationToken ct) {
+			if (!Enable) return;
 			Log.Debug("Enabling corsair stream...");
 			if (!Streaming) Streaming = true;
-			return Task.CompletedTask;
+			await Task.FromResult(true);
 		}
 
-		public Task StopStream() {
+		public async Task StopStream() {
+			if (!Enable) return;
+			await FlashColor(Color.FromArgb(0, 0, 0));
 			if (Streaming) Streaming = false;
-			return Task.CompletedTask;
 		}
 
 		public void SetColor(List<Color> colors, List<Color> sectors, int fadeTime, bool force = false) {
@@ -61,9 +64,11 @@ namespace Glimmr.Models.ColorTarget.Corsair {
 				return;
 			}
 			var toSend = BuildColors(colors);
+			//Log.Debug("Colors: " + JsonConvert.SerializeObject(toSend));
 			CUESDK.CorsairSetLedsColorsBufferByDeviceIndex(Data.DeviceIndex, toSend.Count, toSend.ToArray());
-			CUESDK.CorsairSetLedsColorsFlushBufferAsync(null, null);
-			
+			//Log.Debug($"Buffer {Data.DeviceIndex} set.");
+			CUESDK.CorsairSetLedsColorsFlushBuffer();
+			//Log.Debug("Flushing...");
 		}
 		
 
@@ -71,13 +76,14 @@ namespace Glimmr.Models.ColorTarget.Corsair {
 			var colors = ColorUtil.EmptyList(Data.LedCount, color);
 			var toSend = BuildColors(colors);
 			CUESDK.CorsairSetLedsColorsBufferByDeviceIndex(Data.DeviceIndex, toSend.Count, toSend.ToArray());
-			CUESDK.CorsairSetLedsColorsFlushBufferAsync(null, null);
+			CUESDK.CorsairSetLedsColorsFlushBuffer();
 			return Task.CompletedTask;
 		}
 
 		public Task ReloadData() {
 			Data = DataUtil.GetDevice<CorsairData>(Id);
 			_layout = CUESDK.CorsairGetLedPositionsByDeviceIndex(Data.DeviceIndex);
+			Enable = Data.Enable;
 			BuildLayout();
 			return Task.CompletedTask;
 		}

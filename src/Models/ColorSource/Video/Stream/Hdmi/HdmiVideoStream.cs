@@ -66,6 +66,12 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Hdmi {
             await Task.FromResult(true);
         }
 
+        public Task Stop() {
+            _video.Stop();
+            Dispose();
+            return Task.CompletedTask;
+        }
+
         public void Dispose() {
             if (_disposed) return;
             _disposed = true;

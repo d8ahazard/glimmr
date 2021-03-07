@@ -97,26 +97,16 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
         
         public async Task StopStream() {
-            await StopStrip();
+            if (!Enable) return;
+            await FlashColor(Color.FromArgb(0, 0, 0));
             Streaming = false;
             Log.Debug("WLED: Stream stopped.");
-        }
-
-        private async Task StopStrip() {
-            if (!Streaming) return;
-            var packet = new List<byte>();
-            // Set mode to DRGB, dude.
-            packet.Add(ByteUtils.IntByte(2));
-            packet.Add(ByteUtils.IntByte(255));
-            for (var i = 0; i < Data.LedCount; i++) {
-                packet.AddRange(new byte[] {0, 0, 0});
-            }
-            await _udpClient.SendAsync(packet.ToArray(), packet.Count, _ep).ConfigureAwait(false);
             var offObj = new JObject(
                 new JProperty("on", false)
             );
             await SendPost(offObj);
         }
+
 
         public void SetColor(List<Color> list, List<Color> colors1, int arg3, bool force=false) {
             

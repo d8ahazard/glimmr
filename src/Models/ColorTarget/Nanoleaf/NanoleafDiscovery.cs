@@ -103,14 +103,14 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
         public override string DeviceTag { get; set; }
 
         public async Task<dynamic> CheckAuthAsync(dynamic deviceData) {
-            var nanoleaf = new NanoleafClient(deviceData.IpAddress, "", _controlService.HttpSender);
+            var nanoleaf = new NanoleafClient(deviceData.IpAddress, "");
             try {
                 var result = await nanoleaf.CreateTokenAsync();
                 Log.Debug("Authorized.");
                 if (!string.IsNullOrEmpty(result.Token)) {
                     deviceData.Token = result.Token;
                     nanoleaf.Dispose();
-                    nanoleaf = new NanoleafClient(deviceData.IpAddress, result.Token, _controlService.HttpSender);
+                    nanoleaf = new NanoleafClient(deviceData.IpAddress, result.Token);
                     var layout = await nanoleaf.GetLayoutAsync();
                     deviceData.Layout = new NanoLayout(layout);
                     Log.Debug("New nano info: " + JsonConvert.SerializeObject(deviceData));
