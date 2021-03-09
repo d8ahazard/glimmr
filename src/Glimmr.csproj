@@ -14,6 +14,7 @@
     <PackageReference Include="Colore" Version="6.0.0-rc0014" />
     <PackageReference Include="CUESDK.NET" Version="3.0.361.1" />
     <PackageReference Include="digitalhigh.rpi-ws281x-csharp" Version="1.1.5.1" />
+    <PackageReference Include="DirectShowLib" Version="1.0.0" />
     <PackageReference Include="Emgu.CV" Version="4.5.1.4349" />
     <PackageReference Include="Emgu.CV.Bitmap" Version="4.5.1.4349" />
     <PackageReference Include="Emgu.CV.runtime.linux-arm" Version="4.5.1.4349" Condition="$(RuntimeIdentifier) == 'linux-arm'" />

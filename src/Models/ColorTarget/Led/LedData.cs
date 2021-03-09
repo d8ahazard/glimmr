@@ -53,7 +53,7 @@ namespace Glimmr.Models.ColorTarget.Led {
         public string LastSeen { get; set; }
 
         public void UpdateFromDiscovered(IColorTargetData data) {
-                        
+            
         }
         
         [JsonProperty]

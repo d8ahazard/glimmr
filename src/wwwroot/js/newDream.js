@@ -28,9 +28,11 @@ let toggleHeight = 0;
 let toggleLeft = 0;
 let toggleTop = 0;
 let posting = false;
+let loading = false;
 let baseUrl;
 let pickr;
 let bar;
+let croppr;
 let errModal = new bootstrap.Modal(document.getElementById('errorModal'));
 // We're going to create one object to store our stuff, and add listeners for when values are changed.
 let data = {
@@ -142,7 +144,18 @@ document.addEventListener("DOMContentLoaded", function(){
             sendMessage("SystemData",data.store["SystemData"]);
         }
     });
-    
+
+    croppr = new Croppr('#croppr', {
+        onCropEnd: function(data) {
+            console.log(data.x, data.y, data.width, data.height);
+            if (!loading) {
+                let sd = getStoreProperty("SystemData");
+                sd["CaptureRegion"] = data.x.toString() + ", " + data.y.toString() + ", " + data.width.toString() + ", " + data.height.toString();
+                setStoreProperty("SystemData",sd);
+                sendMessage("SystemData", sd);
+            }
+        }
+    });
     setSocketListeners();
     loadSocket();
     setTimeout(function() {
@@ -277,8 +290,10 @@ function setSocketListeners() {
         if (!settingsShown) return;
         let inputElement = document.getElementById('inputPreview');
         let croppedElement = document.getElementById('outputPreview');
+        let screen = document.getElementById("croppr");
         inputElement.src = './img/_preview_input.jpg?rand=' + Math.random();
-        croppedElement.src = './img/_preview_output.jpg?rand=' + Math.random(); 
+        croppedElement.src = './img/_preview_output.jpg?rand=' + Math.random();
+        croppr.source = "./img/_preview_screen.jpg?rand=" + Math.random();
     });
 
     websocket.on("auth", function (value1, value2) {
@@ -828,6 +843,33 @@ function loadSettings() {
         let lImage = document.getElementById("ledImage");
         let sPreview = document.getElementById("sectorPreview");
         let sImage = document.getElementById("sectorImage");
+        let rect = systemData["CaptureRegion"].split(", ");
+        let sRect = systemData["MonitorRegion"].split(", ");
+        let crop = document.querySelector(".croppr-image");
+        let cw = 0;
+        let ch = 0;
+        if (isValid(crop)) {
+            cw = crop.width;
+            ch = crop.height;
+        }
+        //console.log("Rect: ", rect, crop.width, crop.height);
+        let x = parseInt(rect[0]);
+        let y = parseInt(rect[1]);
+        let w = parseInt(rect[2]);
+        let h = parseInt(rect[3]);
+        let sw = parseInt(sRect[2]);
+        let sh = parseInt(sRect[3]);
+        let scale = cw / sw;
+        let hscale = ch /sh;
+        x = x * scale;
+        y = y * hscale;
+        w = w * scale;
+        h = h * hscale;
+        console.log("Scalez: ",x,y,w,h);
+        loading = true;
+        if (isValid(croppr) && isValid(crop)) croppr.resizeTo(w, h)
+            .moveTo(x, y);
+        loading = false;
         setTimeout(function(){
             createLedMap(lPreview, lImage, systemData);
             createSectorMap(sPreview, sImage);
@@ -841,6 +883,15 @@ function loadSettings() {
 function updateCaptureUi(systemData) {
     let capGroups = document.querySelectorAll(".capGroup");
     let mode = systemData["CaptureMode"].toString();
+    let camMode = systemData["CamType"].toString();
+    let usbIdx = systemData["UsbSelection"].toString();
+    let capSelect = document.getElementById("CapModeSelectRow");
+    let monRow = document.getElementById("MonitorSelectRow");
+    let regionRow = document.getElementById("RegionSelectRow");
+    let usbRow = document.getElementById("UsbSelectRow");
+    let usbSel = document.getElementById("UsbSelect");
+    let target = document.getElementById("ScreenCapMode");
+
     for (let i=0; i < capGroups.length; i++) {
         let group = capGroups[i];
         let groupMode = group.getAttribute("data-mode");
@@ -857,10 +908,30 @@ function updateCaptureUi(systemData) {
         }
     }
 
-    let capSelect = document.getElementById("CapModeSelectRow");
-    let monRow = document.getElementById("MonitorSelectRow");
-    let regionRow = document.getElementById("RegionSelectRow");
-    let target = document.getElementById("ScreenCapMode");
+    if (isValid(usbSel.options)) {
+        for (let i = 0; i < usbSel.options.length; i++) {
+            usbSel.options[i] = null;
+        }
+    }
+    let usbDevs = data.store["Dev_Usb"];
+    
+    for (const [key, value] of Object.entries(usbDevs)) {
+        console.log("Appending usb: ",key,value, usbDevs);
+        let opt = document.createElement("option");
+        opt.value = key.toString();
+        opt.innerText = value.toString();
+        if (opt.value === usbIdx) opt.selected = true;
+        usbSel.appendChild(opt);
+    }
+    
+    if (mode === "2" || (mode === "1" && camMode === "1")) {
+        usbRow.classList.add("show");
+        usbRow.classList.remove("hide");
+    } else {
+        usbRow.classList.add("hide");
+        usbRow.classList.remove("show");
+    }
+    
     if (systemData["IsWindows"]) {
         let capSelection = systemData["ScreenCapMode"];
         console.log("We are windows...", capSelection);
@@ -881,6 +952,12 @@ function updateCaptureUi(systemData) {
         capSelect.classList.add("show");
         capSelect.classList.remove("hide");
     } else {
+        regionRow.classList.add("show");
+        regionRow.classList.remove("hide");
+        capSelect.classList.add("show");
+        capSelect.classList.remove("hide");
+    }
+    if (mode !== "3") {
         monRow.classList.add("hide");
         monRow.classList.remove("show");
         regionRow.classList.add("hide");
@@ -888,7 +965,6 @@ function updateCaptureUi(systemData) {
         capSelect.classList.add("hide");
         capSelect.classList.remove("show");
     }
-
 }
 
 function loadSettingObject(obj) {
@@ -980,7 +1056,7 @@ function loadDevices() {
             image.setAttribute("data-device", device["Id"]);
             let tag = device.Tag;
             if (isValid(tag)) {
-                if (tag === "Dreamscreen") tag = device["DeviceTag"];
+                if (tag === "Dreamscreen" || tag === "Lifx") tag = device["DeviceTag"];
                 image.setAttribute("src", baseUrl + "/img/" + tag.toLowerCase() + "_icon.png");
             }
             
@@ -1200,10 +1276,18 @@ function getStoreProperty(name) {
     }
 
     if (data.store.hasOwnProperty(name)) {
-        return data.store[name]["value"];
+        return data.store[name];
     }
     
     return null;
+}
+
+function setStoreProperty(name, value) {
+    let store = data.store;
+    if (!isValid(store)) return;
+    if (data.store.hasOwnProperty(name)) {
+        data.store[name] = value;
+    }
 }
 
 const toggleExpansion = (element, to, duration = 350) => {
@@ -2087,7 +2171,7 @@ function setNanoMap(id, current) {
     
     let myModal = new bootstrap.Modal(document.getElementById('nanoModal'));
     let wrap = document.getElementById("nanoPreviewWrap");
-    let img = document.getElementById("nanoPreview");    
+    let img = document.getElementById("nanoPreview");
     myModal.show();
     createSectorMap(wrap, img, "nano");
 

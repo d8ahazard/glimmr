@@ -237,10 +237,15 @@ namespace Glimmr.Models.Util {
             DreamData dev = GetObject<DreamData>("MyDevice");
             var audio = GetCollection<AudioData>("Dev_Audio");
             var devices = GetDevices();
+            Log.Debug("Getting da store...");
             var mons = DisplayUtil.GetMonitors();
+            Log.Debug("Getting mons...");
             var exMons = GetCollection<MonitorInfo>("Dev_Video");
+            Log.Debug("Got ex mons...");
             var oMons = new List<MonitorInfo>();
             Log.Debug("Ex Mons: " + JsonConvert.SerializeObject(oMons));
+            var caps = SystemUtil.ListUsb();
+            Log.Debug("Caps: " + JsonConvert.SerializeObject(caps));
             foreach (var mon in mons) {
                 var exists = false;
                 foreach (var cMon in exMons) {
@@ -262,6 +267,7 @@ namespace Glimmr.Models.Util {
             output["MyDevice"] = dev;
             output["Dev_Audio"] = audio;
             output["Dev_Video"] = oMons;
+            output["Dev_Usb"] = caps;
             output["AmbientScenes"] = jl.LoadDynamic<AmbientScene>();
             output["AudioScenes"] = jl.LoadDynamic<AudioScene>();
             //Log.Debug("Returning serialized store: " + JsonConvert.SerializeObject(output));

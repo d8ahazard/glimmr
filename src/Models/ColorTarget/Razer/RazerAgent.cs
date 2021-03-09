@@ -1,6 +1,8 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
 using Colore;
 using Glimmr.Services;
+using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Razer {
 	public class RazerAgent : IColorTargetAgent {
@@ -8,14 +10,17 @@ namespace Glimmr.Models.ColorTarget.Razer {
 		private IChroma _chroma;
 		public dynamic CreateAgent(ControlService cs) {
 			if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return null;
-			_chroma = ColoreProvider.CreateNativeAsync().Result;
-			
-			return _chroma;
+			try {
+				_chroma = ColoreProvider.CreateNativeAsync().Result;
+			} catch (Exception e) {
+				Log.Debug("Chroma init error, probably no SDK installed...");
+			}
 
+			return _chroma;
 		}
 
 		public void Dispose() {
-			_chroma.Dispose();
+			_chroma?.Dispose();
 		}
 	}
 }

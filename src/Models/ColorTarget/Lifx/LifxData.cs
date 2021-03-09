@@ -12,7 +12,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		[JsonProperty] public byte Service { get; internal set; }
 		[JsonProperty] public int Port { get; internal set; }
 		[JsonProperty] public byte[] MacAddress { get; internal set; }
-
+		[JsonProperty] public string DeviceTag { get; internal set; }
 		[JsonProperty] public string MacAddressString { get; internal set; }
 
 		[JsonProperty] public int Offset { get; set; }
@@ -44,6 +44,8 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool MultiZoneV2 { get; set; }
+		
+		[JsonProperty] public TileLayout Layout { get; set; }
 		public LifxData() {
 			Tag = "Lifx";
 			if (Id == null && MacAddressString != null) {
@@ -72,6 +74,13 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		public void UpdateFromDiscovered(IColorTargetData data) {
 			var ld = (LifxData) data;
 			Brightness = ld.Brightness;
+			IpAddress = data.IpAddress;
+			Layout?.MergeLayout(ld.Layout);
+			MultiZoneCount = ld.MultiZoneCount;
+			HostName = ld.HostName;
+			IpAddress = ld.IpAddress;
+			MacAddress = ld.MacAddress;
+			DeviceTag = ld.DeviceTag;
 		}
 
 		public SettingsProperty[] KeyProperties { get; set; } = {

@@ -12,10 +12,9 @@ using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using Glimmr.Models.ColorSource.Video.Stream;
-using Glimmr.Models.ColorSource.Video.Stream.Hdmi;
 using Glimmr.Models.ColorSource.Video.Stream.PiCam;
 using Glimmr.Models.ColorSource.Video.Stream.Screen;
-using Glimmr.Models.ColorSource.Video.Stream.WebCam;
+using Glimmr.Models.ColorSource.Video.Stream.Usb;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.Extensions.Hosting;
@@ -85,7 +84,8 @@ namespace Glimmr.Models.ColorSource.Video {
 		private void RefreshSystem() {
 			var wasEnabled = _enable;
 			if (_enable) _enable = false;
-			_vc.Stop();
+			_vc?.Stop();
+			
 			StreamSplitter.Refresh();
 			Initialize(_cancellationToken);
 			if (wasEnabled) _enable = true;
@@ -99,7 +99,10 @@ namespace Glimmr.Models.ColorSource.Video {
 			_targets = new List<VectorOfPoint>();
 			SetCapVars();
 			_vc = GetStream();
-			if (_vc == null) return;
+			if (_vc == null) {
+				Log.Warning("Video capture is null!");
+				return;
+			}
 			_vc.Start(ct);
 			StreamSplitter = new Splitter(_systemData, _controlService);
 			Log.Debug("Stream capture initialized.");
@@ -136,7 +139,7 @@ namespace Glimmr.Models.ColorSource.Video {
 							_noColumns = true;
 						}
 
-						Log.Debug("NO COLUMNS");
+						//Log.Debug("NO COLUMNS");
 						continue;
 					}
 
@@ -211,17 +214,15 @@ namespace Glimmr.Models.ColorSource.Video {
 						case 0:
 							// 0 = pi module, 1 = web cam
 							Log.Debug("Loading Pi cam.");
-							var camMode = DataUtil.GetItem<int>("CamMode") ?? 1;
-							return new PiCamVideoStream(ScaleWidth, ScaleHeight, camMode);
+							return new PiCamVideoStream();
 						case 1:
 							Log.Debug("Loading web cam.");
-							return new WebCamVideoStream(0);
+							return new UsbVideoStream();
 					}
 
 					return null;
 				case 2:
-					var cams = HdmiVideoStream.ListSources();
-					return cams.Length != 0 ? new HdmiVideoStream(cams[0], ScaleWidth, ScaleHeight) : null;
+					return new UsbVideoStream();
 					
 				case 3:
 					Log.Debug("Loading screen capture.");
@@ -232,7 +233,10 @@ namespace Glimmr.Models.ColorSource.Video {
 		}
 
 		private void SaveFrame(object sender) {
-			if (!_doSave) _doSave = true;
+			if (!_doSave) {
+				_doSave = true;
+				_vc?.SaveFrame();
+			}
 		}
 
 		

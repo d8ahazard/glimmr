@@ -14,6 +14,7 @@ namespace Glimmr.Models.ColorTarget.Razer {
 	public class RazerDiscovery : ColorDiscovery, IColorDiscovery {
 		private IChroma _chroma;
 		private ControlService _controlService;
+		private bool _hasChroma;
 		
 		public RazerDiscovery(ColorService colorService) : base(colorService) {
 			DeviceTag = "Razer";
@@ -39,16 +40,18 @@ namespace Glimmr.Models.ColorTarget.Razer {
 							Environment.Is64BitOperatingSystem
 								? "The Razer SDK (RzChromaSDK64.dll) Could not be found on this computer. Uninstall any previous versions of Razer SDK & Synapse and then reinstall Razer Synapse."
 								: "The Razer SDK (RzChromaSDK.dll) Could not be found on this computer. Uninstall any previous versions of Razer SDK & Synapse and then reinstall Razer Synapse.");
-
+						_hasChroma = false;
 						return;
 					}
 
+					
 					//_chroma = await ColoreProvider.CreateNativeAsync();
 
 					Log.Debug(@"Razer SDK Loaded (" + _chroma.Version + ")");
 
 				} catch (Exception e) {
 					if (e.InnerException != null) Log.Debug(e.InnerException.ToString());
+					return;
 				}
 
 				var devices = new Dictionary<Guid, DeviceInfo>();

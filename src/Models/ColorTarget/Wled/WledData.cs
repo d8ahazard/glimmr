@@ -69,14 +69,10 @@ namespace Glimmr.Models.ColorTarget.Wled {
         public void UpdateFromDiscovered(IColorTargetData data) {
             var input = (WledData) data;
             if (input == null) throw new ArgumentNullException(nameof(input));
-            Offset = input.Offset;
-            Enable = input.Enable;
             AutoDisable = input.AutoDisable;
             ControlStrip = input.ControlStrip;
             LedCount = input.LedCount;
-            Brightness = input.Brightness;
-            ReverseStrip = input.ReverseStrip;
-            StripMode = input.StripMode;
+            IpAddress = data.IpAddress;
             if (Id != null) Name = StringUtil.UppercaseFirst(Id);
 
         }

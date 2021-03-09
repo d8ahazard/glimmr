@@ -76,6 +76,11 @@ namespace Glimmr.Models {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool EnableAutoDisable { get; set; } = true;
 		
+		// USB index to use for cam/HDMI
+		[DefaultValue(0)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int UsbSelection { get; set; }
+		
 		[DefaultValue(1)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int CamType { get; set; } = 1;

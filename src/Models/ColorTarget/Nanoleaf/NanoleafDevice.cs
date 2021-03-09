@@ -11,7 +11,7 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Nanoleaf {
 	public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
-		private NanoLayout _layout;
+		private TileLayout _layout;
 		private bool _disposed;
 		public bool Enable { get; set; }
 		IColorTargetData IColorTarget.Data {
@@ -87,7 +87,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			}
 
 			var cols = new Dictionary<int, Color>();
-			foreach (var p in _layout.NanoPositionData) {
+			foreach (var p in _layout.PositionData) {
 				var color = Color.FromArgb(0, 0, 0);
 				if (p.TargetSector != -1) {
 					color = colors[p.TargetSector];
@@ -135,9 +135,9 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		
 
 		
-		public async Task<NanoLayout> GetLayout() {
+		public async Task<TileLayout> GetLayout() {
 			var layout = await _nanoleafClient.GetLayoutAsync();
-			return new NanoLayout(layout);
+			return new TileLayout(layout);
 		}
 
 

@@ -302,7 +302,9 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		public string LastSeen { get; set; }
 
 		public void UpdateFromDiscovered(IColorTargetData data) {
-			
+			var dd = (DreamData) data;
+			IpAddress = data.IpAddress;
+			DeviceTag = dd.IpAddress;
 		}
 
 		public SettingsProperty[] KeyProperties { get; set; }

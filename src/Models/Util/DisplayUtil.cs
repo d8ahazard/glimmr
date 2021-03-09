@@ -130,30 +130,7 @@ namespace Glimmr.Models.Util {
         private static extern int GetSystemMetrics(SystemMetric metric);
         
 
-        private static Size GetWindowsDisplaySize2() {
-            var width = GetSystemMetrics(SystemMetric.VirtualScreenWidth);
-            var height = GetSystemMetrics(SystemMetric.VirtualScreenHeight);
-            var currentDpi = 0;
-            #if NETFX_CORE
-                currentDpi = (int)Microsoft.Win32.Registry.GetValue("HKEY_CURRENT_USER\\Control Panel\\Desktop\\WindowMetrics", "AppliedDPI", 0);
-            #endif
-            var scaleTable = new Dictionary<int, float> {
-                [96] = 1.00f,
-                [120] = 1.25f,
-                [144] = 1.50f,
-                [192] = 2.00f,
-                [240] = 2.50f,
-                [288] = 3.00f,
-                [384] = 4.00f,
-                [480] = 5.00f
-            };
-            var newScale = 1.00f;
-            if (scaleTable.ContainsKey(currentDpi)) newScale = scaleTable[currentDpi];
-            var tWidth = width * newScale;
-            var tHeight = height * newScale;
-            return new Size((int) tWidth, (int) tHeight);
-        }
-
+        
         private static Rectangle GetWindowsDisplaySize() {
             var left = 0;
             var right = 0;
@@ -187,7 +164,6 @@ namespace Glimmr.Models.Util {
             width = Math.Abs(width);
             height = Math.Abs(height);
             var rect = new Rectangle(left, top, width, height);
-            Log.Debug("Rect: " + JsonConvert.SerializeObject(rect));
             return rect;
         }
 
@@ -221,6 +197,7 @@ namespace Glimmr.Models.Util {
 
         public static List<MonitorInfo> GetMonitors() {
             var monitors = new List<MonitorInfo>();
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return monitors;
             var devIdx = 0;
             while (true) {
                 var deviceData = new DisplayDevice {cb = Marshal.SizeOf(typeof(DisplayDevice))};

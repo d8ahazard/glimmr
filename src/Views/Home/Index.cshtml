@@ -250,6 +250,12 @@
         </select>
         <div class="form-text">Select your desired input source.</div>
     </div>
+    <div class="col-12 col-md-6 col-xl-3 capGroup form-group" id="UsbSelectRow">
+        <label class="form-label">USB Selection</label>
+        <select class="form-control" data-object="SystemData" data-property="UsbSelection" id="UsbSelect">
+            <option value=""></option>
+        </select>
+    </div>
     <div class="col-12 col-md-6 col-xl-3 capGroup form-group" data-mode="0">
         <label class="form-label">Target DreamScreen</label>
         <select class="form-control" data-object="SystemData" data-property="TargetDs">
@@ -282,9 +288,11 @@
         <div class="form-text">Select the target monitor(s) to capture.</div>
     </div>
     
-    <div class="col-12 col-md-6 col-xl-3 capGroup" data-mode="3" id="RegionSelectRow">
+    <div class="col-12 col-md-9 capGroup" data-mode="3" id="RegionSelectRow">
             <label class="form-label">Region Selection</label>
-        <div id="RegionSelect"></div>
+        <div id="RegionSelect">
+            <img class="img-fluid" src="/img/_preview_screen.jpg" alt="Screen Preview" id="croppr"></img>
+        </div>
             <div class="form-text">Select the target region to capture.</div>
         </div>
     

@@ -9,7 +9,7 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.Lifx {
     public class LifxDiscovery : ColorDiscovery, IColorDiscovery {
         private readonly LifxClient _client;
-        private ControlService _controlService;
+        private readonly ControlService _controlService;
         
         public LifxDiscovery(ColorService cs) : base(cs) {
             _client = cs.ControlService.GetAgent("LifxAgent");
@@ -43,26 +43,38 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             var ver = await _client.GetDeviceVersionAsync(b);
             Log.Debug("Lifx Version got: " + JsonConvert.SerializeObject(ver));
             var hasMulti = false;
-            var v2 = false;
+            var extended = false;
             var zoneCount = 0;
+            var tag = DeviceTag;
             // Set multi zone stuff
             if (ver.Product == 31 || ver.Product == 32 || ver.Product == 38) {
+                tag = ver.Product == 38 ? "LifxBeam" : "LifxZ";
                 hasMulti = true;
                 if (ver.Product != 31) {
-                    var fw = _client.GetDeviceHostFirmwareAsync(b).Result;
-                    if (fw.Version >= 1532997580) {
-                        v2 = true;
+                    Log.Debug("Checking firmware version...");
+                    if (ver.Version >= 1532997580) {
+                        extended = true;
                     }
+
+                    Log.Debug("FW VERSION: " + ver.Version);
                 }
 
-                // var zoneData = _client.GetColorZonesAsync(b, 0, 8).Result;
-                // if (zoneData is StateZoneResponse s1) {
-                //     zoneCount = s1.Count;
-                // } else {
-                //     var s = (StateMultiZoneResponse) zoneData;
-                //     zoneCount = s.Count;
-                // }
+                if (extended) {
+                    var zones = await _client.GetExtendedColorZonesAsync(b);
+                    Log.Debug("Zones: " + JsonConvert.SerializeObject(zones));
+                    zoneCount = zones.Count;
+                } else {
+                    // Original device only supports eight zones?
+                    var zones = await _client.GetColorZonesAsync(b, 0, 8);
+                    Log.Debug("Zones: " + JsonConvert.SerializeObject(zones));
+                    zoneCount = zones.Count;
+                }
+
+                Log.Debug("Zone count: " + zoneCount);
+
             }
+
+            
             var d = new LifxData(b) {
                 Power = state.IsOn,
                 Hue = state.Hue,
@@ -71,9 +83,23 @@ namespace Glimmr.Models.ColorTarget.Lifx {
                 Kelvin = state.Kelvin,
                 TargetSector = -1,
                 HasMultiZone = hasMulti,
-                MultiZoneV2 = v2,
+                MultiZoneV2 = extended,
                 MultiZoneCount = zoneCount
             };
+            
+            if (ver.Product == 55) {
+                tag = "LifxTile";
+                Log.Debug("This is a tile.");
+                try {
+                    var tData = _client.GetDeviceChainAsync(b).Result;
+                    Log.Debug("Chain received.");
+                    d.Layout = new TileLayout(tData);
+                } catch (Exception e) {
+                    Log.Debug("Chain exception: " + e.Message);
+                }
+            }
+
+            d.DeviceTag = tag;
             Log.Debug("Discovered lifx device: " + JsonConvert.SerializeObject(d));
             return d;
         }

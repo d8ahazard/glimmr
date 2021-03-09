@@ -112,7 +112,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
                     nanoleaf.Dispose();
                     nanoleaf = new NanoleafClient(deviceData.IpAddress, result.Token);
                     var layout = await nanoleaf.GetLayoutAsync();
-                    deviceData.Layout = new NanoLayout(layout);
+                    deviceData.Layout = new TileLayout(layout);
                     Log.Debug("New nano info: " + JsonConvert.SerializeObject(deviceData));
                 }
             } catch (AggregateException e) {

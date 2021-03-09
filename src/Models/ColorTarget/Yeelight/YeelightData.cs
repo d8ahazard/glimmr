@@ -29,10 +29,9 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 		public void UpdateFromDiscovered(IColorTargetData existing) {
 			var yd = (YeelightData) existing;
-			Brightness = yd.Brightness;
-			Enable = yd.Enable;
-			TargetSector = yd.TargetSector;
-			
+			Name = existing.Name;
+			IpAddress = existing.IpAddress;
+
 		}
 
 		public SettingsProperty[] KeyProperties { get; set; } = {
