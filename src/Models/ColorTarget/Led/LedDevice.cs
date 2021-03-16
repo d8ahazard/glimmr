@@ -54,11 +54,11 @@ namespace Glimmr.Models.ColorTarget.Led {
 		}
 
 		public async Task StartStream(CancellationToken ct) {
-			Log.Debug("Starting LED stream...");
 			if (!Enable) return;
-			
+			Log.Debug($"Starting LED stream for LED {Id}...");
 			Streaming = true;
-			await Task.FromResult(true);
+			await Task.FromResult(Streaming);
+			Log.Debug("LED stream started.");
 		}
 
 		public async Task StopStream() {

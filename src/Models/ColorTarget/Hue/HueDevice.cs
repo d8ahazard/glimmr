@@ -123,8 +123,8 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		/// <param name="ct">A cancellation token.</param>
 		public async Task StartStream(CancellationToken ct) {
 			// Leave if not enabled
-			if (Enable) return;
-			
+			if (!Enable) return;
+			Log.Debug($"Hue: Starting stream at  {IpAddress}...");
 			// Leave if we have no client (not authorized)
 			if (_client == null) {
 				Log.Warning("We have not streaming client, can't start.");
@@ -167,11 +167,8 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			}
 
 			_updateTask = _client.AutoUpdate(_stream, _ct);
-			Log.Debug("Group setup complete, returning.");
-
-			Log.Debug("Getting entertainment layer.");
 			_entLayer = _stream.GetNewLayer(true);
-			Log.Debug($"Hue: Stream started: {IpAddress}");
+			Log.Debug($"Hue: Stream started.");
 			Streaming = true;
 		}
 

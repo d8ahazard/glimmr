@@ -58,6 +58,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
         public async Task StartStream(CancellationToken ct) {
             if (Streaming) return;
             if (!Data.Enable) return;
+            Log.Debug($"WLED: Starting stream at {IpAddress}...");
             var onObj = new JObject(
                 new JProperty("on", true),
                 new JProperty("bri", Brightness)
@@ -65,6 +66,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             await SendPost(onObj);
             _ep = IpUtil.Parse(IpAddress, port);
             Streaming = true;
+            Log.Debug("WLED: Stream started.");
         }
 
 

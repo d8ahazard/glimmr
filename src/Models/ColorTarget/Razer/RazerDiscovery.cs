@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -50,6 +51,7 @@ namespace Glimmr.Models.ColorTarget.Razer {
 					Log.Debug(@"Razer SDK Loaded (" + _chroma.Version + ")");
 
 				} catch (Exception e) {
+					Log.Warning("Razer issue: " + e.Message);
 					if (e.InnerException != null) Log.Debug(e.InnerException.ToString());
 					return;
 				}
@@ -60,6 +62,8 @@ namespace Glimmr.Models.ColorTarget.Razer {
 				                                      BindingFlags.Static |
 				                                      BindingFlags.FlattenHierarchy)
 					.ToList();
+
+				Log.Debug("Enumerating " + props.Count + " devices.");
 				foreach (var prop in props) {
 					var guid = prop.GetValue(null)?.ToString();
 					if (guid == null) {

@@ -65,11 +65,13 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			if (!Enable || Streaming) return;
 			Streaming = true;
 
-			Log.Debug($@"Nanoleaf: Starting panel: {IpAddress}");
+			Log.Debug($@"Nanoleaf: Starting stream at {IpAddress}...");
 			_wasOn = await _nanoleafClient.GetPowerStatusAsync();
-			//if (!_wasOn) await _nanoleafClient.TurnOnAsync();
-			//await _nanoleafClient.SetBrightnessAsync(100);
-			await _nanoleafClient.StartExternalAsync();
+			Log.Debug("Power status: " + _wasOn);
+			if (!_wasOn) await _nanoleafClient.TurnOnAsync();
+			await _nanoleafClient.SetBrightnessAsync(100);
+			_nanoleafClient.StartExternalAsync().ConfigureAwait(false);
+			Log.Debug("Panel started.");
 		}
 
 		public async Task StopStream() {
@@ -90,12 +92,11 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			foreach (var p in _layout.PositionData) {
 				var color = Color.FromArgb(0, 0, 0);
 				if (p.TargetSector != -1) {
-					color = colors[p.TargetSector];
+					color = colors[p.TargetSector - 1];
 				}
 				cols[p.PanelId] = color;
 			}
 
-			//Log.Debug("Sending: " + JsonConvert.SerializeObject(cols));
 			_streamingClient.SetColorAsync(cols, fadeTime).ConfigureAwait(false);
 		}
 

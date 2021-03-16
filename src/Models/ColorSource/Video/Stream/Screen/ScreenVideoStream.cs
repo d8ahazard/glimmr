@@ -65,7 +65,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
             var mode = sd.ScreenCapMode;
             _screenDims = DisplayUtil.GetDisplaySize();
             if (mode == 0) {
-                var rect = sd.CaptureRegion;
+                var rect = _screenDims;
                 if (!RectContains(_screenDims, rect)) {
                     Log.Debug("Selected capture rect is outside of screen!");
                     return;
@@ -103,22 +103,26 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
         private void CaptureScreen(CancellationToken ct) {
             Log.Debug("Screen capture started...");
             while (!ct.IsCancellationRequested && _capturing) {
-                var g = Graphics.FromImage(_bmpScreenCapture);
-                g.CopyFromScreen(_left, _top, 0, 0, _bmpScreenCapture.Size, CopyPixelOperation.SourceCopy);
-                _screen = _bmpScreenCapture.ToImage<Bgr, byte>();
-                if (_doSave) {
-                    var fullScreenCapture = new Bitmap(_screenDims.Width, _screenDims.Height);
-                    var f = Graphics.FromImage(fullScreenCapture);
-                    f.CopyFromScreen(_screenDims.Left, _screenDims.Top, 0, 0, fullScreenCapture.Size, CopyPixelOperation.SourceCopy);
-                    var fullscreen = fullScreenCapture.ToImage<Bgr, byte>();
-                    var path = Directory.GetCurrentDirectory();
-                    var fullPath = Path.Join(path, "wwwroot", "img", "_preview_screen.jpg");
-                    var fMat = new Mat();
-                    fullscreen.Mat.CopyTo(fMat);
-                    fMat.Save(fullPath);
-                    fMat.Dispose();
-                    fullScreenCapture.Dispose();
+                using (var g = Graphics.FromImage(_bmpScreenCapture)) {
+                    g.CopyFromScreen(_left, _top, 0, 0, _bmpScreenCapture.Size, CopyPixelOperation.SourceCopy);
+                    _screen = _bmpScreenCapture.ToImage<Bgr, byte>();
+                    if (_doSave) {
+                        var fullScreenCapture = new Bitmap(_screenDims.Width, _screenDims.Height);
+                        var f = Graphics.FromImage(fullScreenCapture);
+                        f.CopyFromScreen(_screenDims.Left, _screenDims.Top, 0, 0, fullScreenCapture.Size,
+                            CopyPixelOperation.SourceCopy);
+                        var fullscreen = fullScreenCapture.ToImage<Bgr, byte>();
+                        var path = Directory.GetCurrentDirectory();
+                        var fullPath = Path.Join(path, "wwwroot", "img", "_preview_screen.jpg");
+                        var fMat = new Mat();
+                        fullscreen.Mat.CopyTo(fMat);
+                        fMat.Save(fullPath);
+                        fMat.Dispose();
+                        fullScreenCapture.Dispose();
+                    }
+                    g.Flush();
                 }
+
                 var newMat = _screen.Resize(DisplayUtil.CaptureWidth, DisplayUtil.CaptureHeight, Inter.Nearest);
                 Frame = newMat.Mat;
             }

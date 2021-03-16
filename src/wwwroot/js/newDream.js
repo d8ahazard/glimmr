@@ -656,14 +656,14 @@ function updateDeviceSector(sector, target) {
     if (dev["Tag"] === "Nanoleaf") {
         console.log("DEV: ", dev);
         let layout = dev["Layout"];
-        let positions = layout["NanoPositionData"];
+        let positions = layout["PositionData"];
         
         for(let i=0; i < positions.length; i++) {
             if (positions[i]["PanelId"] === nanoTarget) {
                 positions[i]["TargetSector"] = sector;
             }    
         }
-        layout["NanoPositionData"] = positions;
+        layout["PositionData"] = positions;
         dev["Layout"] = layout;
         drawNanoShapes(dev);
         updateDevice(dev["Id"],"Layout", layout);
@@ -1056,7 +1056,7 @@ function loadDevices() {
             image.setAttribute("data-device", device["Id"]);
             let tag = device.Tag;
             if (isValid(tag)) {
-                if (tag === "Dreamscreen" || tag === "Lifx") tag = device["DeviceTag"];
+                if (isValid(device["DeviceTag"]) && (tag === "Dreamscreen" || tag === "Lifx")) tag = device["DeviceTag"];
                 image.setAttribute("src", baseUrl + "/img/" + tag.toLowerCase() + "_icon.png");
             }
             
@@ -1996,7 +1996,7 @@ function drawNanoShapes(panel) {
     let cLayer = new Konva.Layer();
     stage.add(cLayer);
 
-    let positions = layout['NanoPositionData'];
+    let positions = layout['PositionData'];
     let minX = 1000;
     let minY = 1000;
     let maxX = 0;
