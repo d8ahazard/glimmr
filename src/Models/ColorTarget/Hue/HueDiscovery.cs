@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
@@ -56,8 +55,8 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
             Log.Debug("Hue: Discovery complete.");
         }
-        
-        public static async Task<dynamic> CheckAuth(dynamic devData) {
+
+        public async Task<dynamic> CheckAuthAsync(dynamic devData) {
             try {
                 ILocalHueClient client = new LocalHueClient(devData.IpAddress);
                 //Make sure the user has pressed the button on the bridge before calling RegisterAsync
@@ -82,8 +81,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
         }
 
         public override string DeviceTag { get; set; }
-        Task<dynamic> IColorTargetAuth.CheckAuthAsync(dynamic deviceData) {
-            return CheckAuth(deviceData);
-        }
+        
+        
     }
 }
