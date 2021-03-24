@@ -75,7 +75,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 
 		private async Task LoadData() {
-			Log.Debug("Reloading audio data");
 			_sd = DataUtil.GetObject<SystemData>("SystemData");
 			_sectorCount = (_sd.VSectors + _sd.HSectors) * 2 - 4;
 			_gain = _sd.AudioGain;
@@ -88,7 +87,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 			string rd = DataUtil.GetItem("RecDev");
 			_devices = new List<AudioData>();
 			for (var a = 0; Bass.RecordGetDeviceInfo(a, out var info); a++) {
-				Log.Debug("Audio device: " + JsonConvert.SerializeObject(info));
 				if (!info.IsEnabled) continue;
 				try {
 					var ad = new AudioData();
@@ -104,7 +102,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 					rd = info.Name;
 				} else {
 					if (rd != info.Name) continue;
-					Log.Debug($"Selecting recording device index {a}: {info.Name}");
 					_recordDeviceIndex = a;
 				}
 			}

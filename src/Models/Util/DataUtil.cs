@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 using Glimmr.Models.ColorSource.Ambient;
 using Glimmr.Models.ColorSource.Audio;
@@ -25,8 +24,7 @@ namespace Glimmr.Models.Util {
         private static LiteDatabase _db;
         
         public static LiteDatabase GetDb() {
-            if (_db == null) _db = new LiteDatabase(@"./store.db");
-            return _db;
+            return _db ??= new LiteDatabase(@"./store.db");
         }
 
         public static void Dispose() {
@@ -152,6 +150,12 @@ namespace Glimmr.Models.Util {
             }
             return output;
         }
+
+        public static void RemoveDevice(string id) {
+            var db = GetDb();
+            var devs = db.GetCollection("Devices");
+            devs.Delete(id);
+        }
         
         public static List<T> GetDevices<T>(string tag) where T : class {
             var devs = GetDevices();
@@ -237,27 +241,20 @@ namespace Glimmr.Models.Util {
             DreamData dev = GetObject<DreamData>("MyDevice");
             var audio = GetCollection<AudioData>("Dev_Audio");
             var devices = GetDevices();
-            Log.Debug("Getting da store...");
             var mons = DisplayUtil.GetMonitors();
-            Log.Debug("Getting mons...");
             var exMons = GetCollection<MonitorInfo>("Dev_Video");
-            Log.Debug("Got ex mons...");
             var oMons = new List<MonitorInfo>();
-            Log.Debug("Ex Mons: " + JsonConvert.SerializeObject(oMons));
             var caps = SystemUtil.ListUsb();
-            Log.Debug("Caps: " + JsonConvert.SerializeObject(caps));
             foreach (var mon in mons) {
                 var exists = false;
                 foreach (var cMon in exMons) {
                     if (mon.Id == cMon.Id) {
-                        Log.Debug("Adding existing mon: " + JsonConvert.SerializeObject(cMon));
                         oMons.Add(cMon);
                         exists = true;
                     }
                 }
 
                 if (!exists) {
-                    Log.Debug("Adding sys mon: " + JsonConvert.SerializeObject(mon));
                     oMons.Add(mon);
                 }
             }
@@ -270,7 +267,6 @@ namespace Glimmr.Models.Util {
             output["Dev_Usb"] = caps;
             output["AmbientScenes"] = jl.LoadDynamic<AmbientScene>();
             output["AudioScenes"] = jl.LoadDynamic<AudioScene>();
-            //Log.Debug("Returning serialized store: " + JsonConvert.SerializeObject(output));
             return JsonConvert.SerializeObject(output);
         }
 
@@ -413,11 +409,8 @@ namespace Glimmr.Models.Util {
         
         public static async Task SetObjectAsync<T>(string key, dynamic value) {
             var db = GetDb();
-            Log.Debug("Getting col");
             var col = db.GetCollection<T>(key);
-            Log.Debug("Upserting: " + JsonConvert.SerializeObject(value));
             col.Upsert(0, value);
-            Log.Debug("Committing.");
             await Task.FromResult(true);
             db.Commit();
         }
@@ -440,13 +433,10 @@ namespace Glimmr.Models.Util {
             var devices = db.GetCollection<DreamData>("Dev_Dreamscreen").FindAll();
             foreach (var dev in devices) {
                 var tsIp = dev.IpAddress;
-                Log.Debug("Device IP: " + tsIp);
                 if (tsIp != dsIp) continue;
-                Log.Debug("We have a matching IP");
                 var fs = dev.FlexSetup;
                 var dX = fs[0];
                 var dY = fs[1];
-                Log.Debug($@"DX, DY: {dX} {dY}");
                 return (dX, dY);
             }
 
@@ -466,20 +456,12 @@ namespace Glimmr.Models.Util {
             // If the config file doesn't exist locally, we're done
             if (!File.Exists(filePath)) return newPath;
             // Otherwise, move the config to etc
-            Log.Debug($@"Moving file from {filePath} to {newPath}");
             File.Copy(filePath, newPath);
             File.Delete(filePath);
             return newPath;
         }
 
-        public static void RefreshPublicIp() {
-            var myIp = Dns.GetHostEntry(Dns.GetHostName()).AddressList[0].ToString();
-            Log.Debug("My IP Address is :" + myIp);
-        }
-
-        public static object GetDevices<T>() {
-            var devs = GetDevices();
-            return devs.Where(dev => dev.GetType() == typeof(T)).Cast<T>().ToList();
-        }
+        
+        
     }
 }

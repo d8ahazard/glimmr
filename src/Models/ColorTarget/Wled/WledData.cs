@@ -79,8 +79,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
         public SettingsProperty[] KeyProperties { get; set; } = {
             new("ledmap","ledmap",""),
-            new("Offset","text", "Strip Offset"),
-            new("LedCount","text", "Led Count"),
+            new("Offset","number", "Strip Offset"),
+            new("LedCount","number", "Led Count"),
             new("StripMode", "select", "Strip Mode", new Dictionary<string, string> {
                ["0"] = "Normal",
                ["1"] = "Sectored",

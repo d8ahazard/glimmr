@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Nanoleaf.Client;
-using Newtonsoft.Json;
 using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Nanoleaf {
@@ -92,8 +91,14 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			foreach (var p in _layout.PositionData) {
 				var color = Color.FromArgb(0, 0, 0);
 				if (p.TargetSector != -1) {
-					color = colors[p.TargetSector - 1];
+					var target = p.TargetSector - 1;
+					if (target < colors.Count) {
+						color = colors[target];
+					} else {
+						Log.Warning($"Error, trying to map {target} when count is only {colors.Count}.");	
+					}
 				}
+				
 				cols[p.PanelId] = color;
 			}
 

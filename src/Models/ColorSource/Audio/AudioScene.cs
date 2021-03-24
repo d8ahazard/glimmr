@@ -1,6 +1,4 @@
-using System.ComponentModel;
 using Emgu.CV.Structure;
-using Newtonsoft.Json;
 
 namespace Glimmr.Models.ColorSource.Audio {
 	public struct AudioScene {

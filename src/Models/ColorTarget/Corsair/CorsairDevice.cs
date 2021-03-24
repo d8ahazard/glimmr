@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Corsair.CUE.SDK;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Newtonsoft.Json;
 using Serilog;
 
 

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using LifxNet;
+using LifxNetPlus;
 using Newtonsoft.Json;
 
 namespace Glimmr.Models.ColorTarget {

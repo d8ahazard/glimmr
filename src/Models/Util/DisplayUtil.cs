@@ -213,6 +213,7 @@ namespace Glimmr.Models.Util {
                     break;
                 }
             }
+
             return monitors;
         }
     }
@@ -260,5 +261,6 @@ namespace Glimmr.Models.Util {
             DmPelsWidth = mode.dmPelsWidth;
             Enable = false;
         }
+
     }
 }

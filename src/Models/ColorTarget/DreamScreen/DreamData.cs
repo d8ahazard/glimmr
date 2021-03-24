@@ -1,7 +1,6 @@
 ﻿#region
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using Glimmr.Models.ColorTarget.DreamScreen.Encoders;
 using Newtonsoft.Json;

@@ -3,7 +3,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models;
-using Glimmr.Models.ColorTarget.Led;
+using Glimmr.Models.ColorTarget.Glimmr;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -24,9 +24,16 @@ namespace Glimmr.Controllers {
 		}
 
 		[HttpGet("")]
-		public IActionResult DefaultAction() {
+		public static IActionResult DefaultAction() {
 			var sd = DataUtil.GetObject<SystemData>("SystemData");
 			return new JsonResult(sd);
+		}
+
+		[HttpGet("json")]
+		public JsonResult GetJson() {
+			SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
+			var glimmrData = new GlimmrData(sd);
+			return new JsonResult(glimmrData);
 		}
 		
 		[HttpGet("brightness")]

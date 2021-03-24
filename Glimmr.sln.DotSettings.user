@@ -4,6 +4,7 @@
   &lt;Assembly Path="C:\Users\d8aha\.nuget\packages\nanoleaf.core\1.1.7.1\lib\netcoreapp2.0\Nanoleaf.Client.dll" /&gt;&#xD;
   &lt;Assembly Path="C:\Users\d8aha\.nuget\packages\colore\5.2.0\lib\net35\Corale.Colore.dll" /&gt;&#xD;
 &lt;/AssemblyExplorer&gt;</s:String>
+	<s:Boolean x:Key="/Default/UserDictionary/Words/=discoverables/@EntryIndexedValue">True</s:Boolean>
 	
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=Dreamscreen/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=Enricher/@EntryIndexedValue">True</s:Boolean>

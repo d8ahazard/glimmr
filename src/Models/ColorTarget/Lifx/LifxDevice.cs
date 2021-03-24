@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using LifxNet;
+using LifxNetPlus;
 using Serilog;
 using Color = System.Drawing.Color;
-//using LifxColor = LifxNet.Color;
 
 namespace Glimmr.Models.ColorTarget.Lifx {
     public class LifxDevice : ColorTarget, IColorTarget {
@@ -50,7 +48,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             var col = new LifxColor(0, 0, 0);
             //var col = new LifxColor {R = 0, B = 0, G = 0};
             Streaming = true;
-            await _client.SetLightPowerAsync(B, TimeSpan.Zero, true).ConfigureAwait(false);
+            await _client.SetLightPowerAsync(B, true).ConfigureAwait(false);
             await _client.SetColorAsync(B, col, 2700).ConfigureAwait(false);
             Log.Debug("Lifx: Streaming is active...");
             Streaming = true;
@@ -59,8 +57,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
         public async Task FlashColor(Color color) {
             var nC = new LifxColor(color);
             //var nC = new LifxColor {R = color.R, B = color.B, G = color.G};
-            var fadeSpan = TimeSpan.FromSeconds(0);
-            await _client.SetColorAsync(B, nC, 7500, fadeSpan);
+            await _client.SetColorAsync(B, nC);
         }
 
         public bool IsEnabled() {
@@ -73,7 +70,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             Streaming = false;
             if (_client == null) throw new ArgumentException("Invalid lifx client.");
             await FlashColor(Color.FromArgb(0, 0, 0));
-            await _client.SetLightPowerAsync(B, TimeSpan.Zero, Data.Power).ConfigureAwait(false);
+            await _client.SetLightPowerAsync(B, Data.Power).ConfigureAwait(false);
             Log.Debug("Lifx: Stream stopped.");
         }
 
@@ -110,7 +107,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             //var nC = new LifxColor {R = input.R, B = input.B, G = input.G};
 
             var fadeSpan = TimeSpan.FromSeconds(fadeTime);
-            _client.SetColorAsync(B, nC, 7500, fadeSpan);
+            _client.SetColorAsync(B, nC);
         }
 
         

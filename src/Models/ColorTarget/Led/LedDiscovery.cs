@@ -1,6 +1,5 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Glimmr.Models.Util;
 using Glimmr.Services;
 
 namespace Glimmr.Models.ColorTarget.Led {

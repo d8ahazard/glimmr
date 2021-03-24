@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
-using System.Linq;
 using Glimmr.Models.Util;
-using LifxNet;
-using Nanoleaf.Client.Models.Responses;
 using Newtonsoft.Json;
 using Info = Nanoleaf.Client.Models.Responses.Info;
 

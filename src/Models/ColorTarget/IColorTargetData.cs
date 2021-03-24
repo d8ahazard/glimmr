@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using Newtonsoft.Json;
-using rpi_ws281x;
 
 namespace Glimmr.Models.ColorTarget {
     public interface IColorTargetData {

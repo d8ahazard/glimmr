@@ -22,7 +22,7 @@ namespace Glimmr.Models.Util {
 			"Soft Temperature Limit has occurred", //19
 			"Throttling has occurred",
 			"Arm frequency capping has occurred",
-			"Under volting has occurred",
+			"Under volt has occurred",
 			"",//15
 			"",
 			"",
@@ -61,7 +61,7 @@ namespace Glimmr.Models.Util {
 		}
 
 		private static async Task<float> GetTemperature() {
-			// bash command / opt / vc / bin / vcgencmd measure_temp
+			// bash command / opt / vc / bin / vc gen cmd measure_temp
 			var process = new Process {
 				StartInfo = new ProcessStartInfo {
 					FileName = "/bin/bash",
@@ -139,11 +139,7 @@ namespace Glimmr.Models.Util {
 		
 		private static void TemperatureSetMinMax(float temperature) {
 			try {
-				if (_tempAverage == 0.0)
-					_tempAverage = temperature;
-				else
-					_tempAverage = temperature;
-				
+				_tempAverage = temperature;
 
 				if (_tempMin > temperature)
 					_tempMin = temperature;

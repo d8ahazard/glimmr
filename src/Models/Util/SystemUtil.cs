@@ -2,13 +2,10 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using DirectShowLib;
 using Emgu.CV;
-using Glimmr.Models.ColorTarget;
-using MMALSharp.Ports.Outputs;
 using Newtonsoft.Json;
 using Serilog;
 

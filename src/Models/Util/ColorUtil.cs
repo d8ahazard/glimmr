@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
-using System.Linq;
-using Serilog;
 
 namespace Glimmr.Models.Util {
     public static class ColorUtil {
@@ -309,10 +307,35 @@ namespace Glimmr.Models.Util {
             }
         }
 
-        public static Color SetBrightness(Color input, float brightness) {
-	        var hsb = ColorToHsb(input);
-	        if (input.R == 0 && input.G == 0 && input.B == 0) return input;
-	        return HsbToColor(hsb[0], hsb[1], brightness);
+        public static Color SetBrightness(Color color, float brightness) {
+	        // var hsb = ColorToHsb(input);
+	        if (brightness == 0) return Color.FromArgb(0, 0, 0);
+	        // return HsbToColor(hsb[0], hsb[1], brightness);
+	        var red = (float)color.R;
+	        var green = (float)color.G;
+	        var blue = (float)color.B;
+
+	        var existing = color.GetBrightness();
+	        if (existing > brightness) {
+		        var diff = existing - brightness;
+		        red -= diff;
+		        green -= diff;
+		        blue -= diff;
+		        red = Math.Max(red, 0);
+		        green = Math.Max(green, 0);
+		        blue = Math.Max(blue, 0);
+	        }
+	        
+	        if (existing < brightness) {
+		        var diff = brightness - existing;
+		        red += diff;
+		        green += diff;
+		        blue += diff;
+		        red = Math.Min(red, 255);
+		        green = Math.Min(green, 255);
+		        blue = Math.Min(blue, 255);
+	        }
+	        return Color.FromArgb(color.A, (int)red, (int)green, (int)blue);
         }
 
         public static double[] ColorToHsb(Color rgb) {
@@ -664,14 +687,17 @@ namespace Glimmr.Models.Util {
 	        var output = new List<Color>();
 	        var toAvg = new List<Color>();
 	        // Add the last range of colors from the bottom to sector 0
-	        for(var i=bottomColors.Count - 1 - bStep; i < bottomColors.Count; i++) toAvg.Add(bottomColors[(int)i]);
+	        for (var i = bottomColors.Count - 1 - bStep; i < bottomColors.Count; i++) {
+		        toAvg.Add(bottomColors[(int)i]);
+	        }
+	        
 	        var idx = 0;
 	        while (idx < rightColors.Count && output.Count <= sd.VSectors) {
 		        foreach (var t in rightColors)
 			        toAvg.Add(t);
 				
 		        // On the last sector, don't average it so we can add the bit from the next corner
-		        if (idx % lStep == 0 && output.Count < sd.VSectors) {
+		        if (idx % rStep == 0 && output.Count < sd.VSectors) {
 			        output.Add(AverageColors(toAvg.ToArray()));
 			        toAvg = new List<Color>();
 		        }
@@ -679,11 +705,10 @@ namespace Glimmr.Models.Util {
 	        }
 	        
 	        idx = 0;
-	        while (idx < topColors.Count && output.Count < sd.VSectors + sd.HSectors + 1) {
-		        foreach (var t in topColors)
-			        toAvg.Add(t);
+	        while (idx < topColors.Count && output.Count < sd.VSectors + sd.HSectors - 1) {
+		        foreach (var t in topColors) toAvg.Add(t);
 
-		        if (idx % lStep == 0 && output.Count < sd.VSectors + sd.HSectors + 1) {
+		        if (idx % tStep == 0) {
 			        output.Add(AverageColors(toAvg.ToArray()));
 			        toAvg = new List<Color>();
 		        }
@@ -695,7 +720,7 @@ namespace Glimmr.Models.Util {
 		        foreach (var t in leftColors)
 			        toAvg.Add(t);
 
-		        if (idx % lStep == 0 && output.Count < 22) {
+		        if (idx % lStep == 0) {
 			        output.Add(AverageColors(toAvg.ToArray()));
 			        toAvg = new List<Color>();
 		        }
@@ -703,11 +728,11 @@ namespace Glimmr.Models.Util {
 	        }
 	        
 	        idx = 0;
-	        while (idx < bottomColors.Count && output.Count < sd.VSectors + sd.HSectors + sd.VSectors + sd.HSectors - 4) {
-		        foreach (var t in leftColors)
+	        while (idx < bottomColors.Count && output.Count < sd.SectorCount) {
+		        foreach (var t in bottomColors)
 			        toAvg.Add(t);
 
-		        if (idx % lStep == 0) {
+		        if (idx % bStep == 0) {
 			        output.Add(AverageColors(toAvg.ToArray()));
 			        toAvg = new List<Color>();
 		        }

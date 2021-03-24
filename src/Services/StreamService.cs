@@ -5,7 +5,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using System.Drawing;
+using System.Net;
 using Glimmr.Models;
+using Makaretu.Dns;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
@@ -40,6 +42,12 @@ namespace Glimmr.Services {
 			
 			Log.Debug("Stream service initialized.");
 			return Task.Run(async () => {
+				var hostname = Dns.GetHostName();
+				var addr = new List<IPAddress>();
+				addr.Add(IPAddress.Parse(IpUtil.GetLocalIpAddress()));
+				var service = new ServiceProfile(hostname, "_glimmr._tcp", 8889, addr);
+				var sd = new ServiceDiscovery();
+				sd.Advertise(service);
 				while (!stoppingToken.IsCancellationRequested) {
 					if (_devMode != 5) {
 						await Task.Delay(1, stoppingToken);
@@ -49,6 +57,7 @@ namespace Glimmr.Services {
 						await ProcessFrame(bytes);
 					}
 				}
+				sd.Dispose();
 				Log.Debug("UDP Receiver canceled...");
 			}, stoppingToken);
 		}
@@ -64,7 +73,7 @@ namespace Glimmr.Services {
 			if (flag != 2) {
 				Log.Debug("Flag is invalid.");
 			}
-
+			
 			var bytes = data.Skip(2).ToArray();
 			var colors = new List<Color>();
 			if (_devMode == 5) {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using Glimmr.Models.Util;
-using LifxNet;
+using LifxNetPlus;
 using LiteDB;
 using Newtonsoft.Json;
 

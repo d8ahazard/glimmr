@@ -30,15 +30,12 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		public List<LightData> Lights { get; set; } = new List<LightData>();
 		
 		public HueData() {
-			Tag = "Hue";
 		}
 
 		public HueData(string ip, string id) {
 			IpAddress = ip;
 			Id = id;
 			Brightness = 100;
-			Tag = "Hue";
-			Name = "Hue Bridge - " + id.Substring(0, 4);
 		}
 
 		public HueData(LocatedBridge b) {
@@ -46,7 +43,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			IpAddress = b.IpAddress;
 			Id = IpAddress;
 			Brightness = 100;
-			Name = "Hue Bridge - " + Id;
 			User = "";
 			Token = "";
 			SelectedGroup = "-1";
@@ -54,7 +50,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Lights = new List<LightData>();
 			GroupName = "";
 			GroupNumber = -1;
-			Tag = "Hue";
 			MappedLights ??= new List<LightMap>();
 		}
 
@@ -67,7 +62,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Lights = input.Lights;
 			Groups = input.Groups;
 			IpAddress = input.IpAddress;
-			Name = "Hue Bridge" + input.IpAddress;
 		}
 
 		public SettingsProperty[] KeyProperties { get; set; } = {
@@ -75,14 +69,14 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		};
 
 
-		public string Name { get; set; }
+		public string Name { get; set; } = "Hue Bridge";
 		public string Id { get; set; }
-		public string Tag { get; set; }
+		public string Tag { get; set; } = "Hue";
 		public string IpAddress { get; set; }
 		public int Brightness { get; set; }
 		public bool Enable { get; set; }
 
-		public void AddGroups(IReadOnlyCollection<Group> groups) {
+		public void AddGroups(IEnumerable<Group> groups) {
 			foreach (var group in groups) {
 				Groups.Add(new HueGroup(group));
 			}

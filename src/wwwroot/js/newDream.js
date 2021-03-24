@@ -71,7 +71,6 @@ data.registerStoreListener(function(val) {
 });
 
 data.registerDevicesListener(function(val) {
-    console.log("Devices have been updated: ", val);
     loadDevices();
 });
 
@@ -209,7 +208,6 @@ function doPost(endpoint, payload) {
             if (endpoint === "loadData") {
                 let stuff = postResult.replace(/\\n/g, '');
                 let parsed = JSON.parse(stuff);
-                console.log("OLO: ", parsed);
                 data.store = parsed;
                 loadUi();
             }
@@ -413,6 +411,9 @@ function setListeners() {
         let pack;
         if (isValid(obj) && isValid(property) && isValid(val)) {
             console.log("Trying to set: ", obj, property, val);
+            let numVal = parseInt(val);
+            if (!isNaN(numVal)) val = numVal; 
+            
             if (isValid(id)) {
                 let strips = data.store[obj];
                 for(let i=0; i < strips.length; i++) {
@@ -674,7 +675,6 @@ function updateDeviceSector(sector, target) {
 
 
 function setMode(newMode) {    
-    console.log("Changing mode to ", newMode);
     //data.store["DeviceMode"][0]["value"] = newMode;
     mode = newMode;
     let target = document.querySelector("[data-mode='"+mode+"']");    
@@ -703,7 +703,6 @@ function loadUi() {
     
     if (isValid(data.store["SystemData"])) {
         let sd = data.store["SystemData"];
-        console.log("Loading system data: ", sd);
         let theme = sd["Theme"];
         mode = sd["DeviceMode"];
         setMode(mode);
@@ -732,7 +731,6 @@ function loadUi() {
             recList.options[i] = null;
         }
         let recDevs = data.store["Dev_Audio"];
-        console.log("Rec Devs: ", recDevs);
         let recDev = getStoreProperty("RecDev");
         if (isValid(recDevs)) {
             for (let i = 0; i < recDevs.length; i++) {
@@ -934,8 +932,7 @@ function updateCaptureUi(systemData) {
     
     if (systemData["IsWindows"]) {
         let capSelection = systemData["ScreenCapMode"];
-        console.log("We are windows...", capSelection);
-
+        
         target.value = capSelection;
         if (capSelection === 1) {
             console.log("Monitor setup...")
@@ -1029,7 +1026,7 @@ function loadDevices() {
             subTitle.classList.add("card-subtitle", "mb2", "text-muted");
             title.textContent = device.Name;
             
-            if (device["Tag"] === "Wled") {
+            if (device["Tag"] === "Wled" || device["Tag"] === "Glimmr") {
                 let a = document.createElement("a");
                 a.href = "http://" + device["IpAddress"];
                 a.innerText = device["IpAddress"];
@@ -1163,7 +1160,6 @@ function getDevices() {
     let d = data.store["Devices"];
     if (isValid(d)) {
         d.sort((a, b) => (a.Name > b.Name) ? 1 : -1);
-        console.log("Devices: ", d);
         data.devices = d;
     } else {
         sendMessage("ScanDevices");
@@ -1377,9 +1373,6 @@ const showDeviceCard = async (e) => {
     const card = (e.parentElement.parentElement.parentElement.parentElement);
     baseCard = card;
     // clone the card
-    let targetId = e.getAttribute("data-target");
-    console.log("Setting button clicked, we are opening ", targetId);
-    //toggleSettingsDiv(targetId);
     cardClone = card.cloneNode(true);
     cardClone.classList.remove("devCard", "m-4");
     cardClone.classList.add("container-fluid");
@@ -1401,13 +1394,11 @@ const showDeviceCard = async (e) => {
     document.querySelector(".main").appendChild(cardClone);
     let cardRow = document.getElementById("mainContent");
     let oh = cardRow.offsetTop;
-    console.log("Top offset is " + oh);
     // remove the display style so the original content is displayed right
     cardClone.style.display = 'block';
     // Expand that bish
     await toggleExpansion(cardClone, {top: oh + "px", left: 0, width: '100%', height: 'calc(100% - ' + oh + 'px)', padding: "1rem 3rem"}, 250);
     
-    console.log("Appending card settings.");
     let sepDiv = document.createElement("div");
     sepDiv.classList.add("dropdown-divider");
     let settingsDiv = document.createElement("div");
@@ -1455,8 +1446,7 @@ function createDeviceSettings() {
             let propertyName = prop["ValueName"];
             let elem, se;
             let value = deviceData[propertyName];
-            console.log("Loading prop: ", prop, value);
-
+            
             switch(prop["ValueType"]) {
                 case "text":
                     elem = new SettingElement(prop["ValueLabel"], "text", id, propertyName, value);
@@ -1518,7 +1508,6 @@ function createSettingElement(settingElement) {
             element = document.createElement("select");
             if (isValid(settingElement.options)) {
                 for (const [key, value] of Object.entries(settingElement.options)) {
-                    console.log(`${key}: ${value}`);
                     let option = document.createElement("option");
                     option.value = key.toString();
                     option.innerText = value.toString();
@@ -1624,7 +1613,6 @@ function drawLinkPane(type, linked) {
     div.appendChild(circle);
     wrap.appendChild(header);
     wrap.appendChild(div);    
-    console.log("No, really, appending: ", div);
     document.getElementById("linkCol").appendChild(wrap);
     bar = new ProgressBar.Circle("#CircleBar", {
         strokeWidth: 15,
@@ -1693,7 +1681,6 @@ function createSectorMap(targetElement, sectorImage, regionName) {
     map.style.left = imgL + "px";
     map.style.width = w + "px";
     map.style.height = h + "px";
-    console.log("W and h are ", w, h);
     // Bottom-right, up to top-right
     let t = 0;
     let b = 0;
@@ -1790,18 +1777,14 @@ function createSectorMap(targetElement, sectorImage, regionName) {
 function createLedMap(targetElement, sectorImage, ledData, devData) {
     let range1;
     let sd = data.store.SystemData;
-    console.log("System data: ",sd);
     
     if (isValid(devData)) {
         let count = devData["LedCount"];
         let offset = devData["Offset"];
         let mode = devData["StripMode"];
         let total = sd["LedCount"];
-        let diff = 0;
         if (isValid(mode) && mode === 2) count /=2;
-        console.log("T O C", total, offset, count);
-        range1 = range(total, offset, count);
-        console.log("Range: ", range1);
+        range1 = ranges(total, offset, count);
     }
     
     let img = sectorImage;
@@ -1828,7 +1811,6 @@ function createLedMap(targetElement, sectorImage, ledData, devData) {
     map.style.left = imgL + "px";
     map.style.width = w + "px";
     map.style.height = h + "px";
-    console.log("W and h are ", w, h);
     // Bottom-right, up to top-right
     let t = 0;
     let b = 0;
@@ -1921,28 +1903,19 @@ function createLedMap(targetElement, sectorImage, ledData, devData) {
     targetElement.appendChild(map);
 }
 
-function range(total, offset = 0, ledCount) {
-    let Oint = parseInt(offset);
-    let tSize = parseInt(ledCount) + Oint;
-    console.log("Size: ", tSize);
-    if (tSize > ledCount) {
-        let s1 = total - tSize;
-        console.log("S1, t, s", s1, total, tSize);
-        let s2 = total - s1 - 1;
-        console.log("Making big array", s1, s2);
-
-        let r1 = [...Array(s1).keys()].map(i => i);
-        console.log("R1: ",r1);
-        let r2 = [...Array(s2).keys()].map(i => i + Oint);
-        console.log("R2: ",r2);
-        return r1.concat(r2);
-    } else {
-        return [...Array(ledCount).keys()].map(i => i + offset);    
+function ranges(ledCount, offset, total) {
+    let range = [];
+    while (range.length < offset + total) {
+        for (let i = 0; i < ledCount; i++) {
+            range.push(i);
+        }        
     }
-    
-    
-    return 
+    console.log("Full range: ", range);
+    let sliced = range.slice(offset, total + offset);
+    console.log("Sliced: ", sliced);
+    return sliced;
 }
+
 
 function createHueMap() {
     let lights = deviceData["Lights"];
@@ -2204,7 +2177,6 @@ function sizeContent() {
     cDiv.style.height = wHeight - navDiv.offsetHeight - footDiv.offsetHeight - ambientOffset + "px";
     cDiv.style.width = wWidth + "px";
     colorDiv.style.width = wWidth + "px";
-    console.log("Setting: ", navDiv.offsetHeight, footDiv.offsetHeight);
     if (expanded) {
         let oh = document.getElementById("mainContent").offsetTop;
         toggleExpansion(cardClone, {top: oh + "px", left: 0, width: '100%', height: 'calc(100% - ' + oh + 'px)', padding: "1rem 3rem"}, 250);

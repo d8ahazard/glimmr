@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,8 +9,8 @@ using Glimmr.Models;
 using Glimmr.Models.ColorTarget;
 using Glimmr.Models.Util;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.Extensions.Hosting;
-using Newtonsoft.Json;
 using Serilog;
 
 namespace Glimmr.Services {
@@ -59,19 +60,30 @@ namespace Glimmr.Services {
 
 		private async Task TriggerRefresh(object o, DynamicEventArgs dynamicEventArgs) {
 			Log.Debug("Triggering refresh.");
-			await DeviceDiscovery();
+			var cs = new CancellationTokenSource();
+			cs.CancelAfter(TimeSpan.FromSeconds(10));
+			await DeviceDiscovery(cs.Token);
+			var devs = DataUtil.GetDevices();
+			foreach (var dev in devs) {
+				var device = (IColorTargetData) dev;
+				var lastSeen = DateTime.Parse(device.LastSeen, CultureInfo.InvariantCulture);
+				if (DateTime.Now - lastSeen >= TimeSpan.FromDays(7)) {
+					Log.Debug("Purging old device: " + device.Id);
+					DataUtil.DeleteDevice(device.Id);
+				} 
+			}
+			cs.Dispose();
 		}
 
         
-		private async Task DeviceDiscovery(int timeout=15) {
+		private async Task DeviceDiscovery(CancellationToken token) {
 			if (_discovering) return;
 			_discovering = true;
 			Log.Debug("Triggering refresh of devices via timer.");
 			// Trigger a refresh
-			var cs = new CancellationTokenSource();
-			cs.CancelAfter(TimeSpan.FromSeconds(timeout));
+			
 			Log.Debug("Starting Device Discovery...");
-			var tasks = _discoverables.Select(disco => Task.Run(() =>disco.Discover(cs.Token))).ToList();
+			var tasks = _discoverables.Select(disco => Task.Run(() =>disco.Discover(token), token)).ToList();
 
 			try {
 				await Task.WhenAll(tasks);
@@ -81,8 +93,6 @@ namespace Glimmr.Services {
 				foreach (var task in tasks) {
 					task.Dispose();
 				}
-				cs.Dispose();
-
 			}
 				
 			Log.Debug("All devices should now be refreshed.");

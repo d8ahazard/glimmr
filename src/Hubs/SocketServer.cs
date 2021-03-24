@@ -77,6 +77,8 @@ namespace Glimmr.Hubs {
 				Log.Debug("Inserting monitor: " + JsonConvert.SerializeObject(mon));
 				await DataUtil.InsertCollection<MonitorInfo>("Dev_Video", mon);
 			}
+
+			await _cs.UpdateSystem();
 		}
 
 		public async Task FlashDevice(string deviceId) {

@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Glimmr.Models.ColorSource.Ambient {
+﻿namespace Glimmr.Models.ColorSource.Ambient {
 	public struct AmbientScene {
 		public string[] Colors;
 		public float AnimationTime;

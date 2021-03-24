@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Corsair.CUE.SDK;
+﻿using Corsair.CUE.SDK;
 using Newtonsoft.Json;
 using Serilog;
 

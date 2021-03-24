@@ -3,6 +3,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using Newtonsoft.Json;
+using Serilog;
 
 namespace Glimmr.Models.Util {
     public static class IpUtil {
@@ -15,52 +16,49 @@ namespace Glimmr.Models.Util {
             if (portIn != -1 &&
                 (portIn < IPEndPoint.MinPort
                  || portIn > IPEndPoint.MaxPort)) {
-                throw new ArgumentException(string.Format("Invalid default port '{0}'", portIn));
+                throw new ArgumentException($"Invalid default port '{portIn}'");
             }
 
             string[] values = endpoint.Split(new[] {':'});
-            IPAddress ipaddy;
+            IPAddress ipAddress;
             int port;
 
-            //check if we have an IPv6 or ports
-            if (values.Length <= 2) // ipv4 or hostname
-            {
-                if (values.Length == 1)
-                    //no port is specified, default
-                    port = portIn;
-                else
-                    port = GetPort(values[1]);
+            switch (values.Length) {
+                //check if we have an IPv6 or ports
+                // ipv4 or hostname
+                case <= 2: {
+                    port = values.Length == 1 ? portIn : GetPort(values[1]);
 
-                //try to use the address as IPv4, otherwise get hostname
-                if (!IPAddress.TryParse(values[0], out ipaddy))
-                    ipaddy = GetIpFromHost(values[0]);
-                if (ipaddy == null) return null;
-            } else if (values.Length > 2) //ipv6
-            {
-                //could [a:b:c]:d
-                if (values[0].StartsWith("[") && values[values.Length - 2].EndsWith("]")) {
-                    string ipaddressstring = string.Join(":", values.Take(values.Length - 1).ToArray());
-                    ipaddy = IPAddress.Parse(ipaddressstring);
-                    port = GetPort(values[values.Length - 1]);
-                } else //[a:b:c] or a:b:c
-                {
-                    ipaddy = IPAddress.Parse(endpoint);
-                    port = portIn;
+                    //try to use the address as IPv4, otherwise get hostname
+                    if (!IPAddress.TryParse(values[0], out ipAddress))
+                        ipAddress = GetIpFromHost(values[0]);
+                    if (ipAddress == null) return null;
+                    break;
                 }
-            } else {
-                throw new FormatException(string.Format("Invalid endpoint ipaddress '{0}'", endpoint));
+                //ipv6
+                //could [a:b:c]:d
+                case > 2 when values[0].StartsWith("[") && values[^2].EndsWith("]"): {
+                    var ipString
+                        = string.Join(":", values.Take(values.Length - 1).ToArray());
+                    ipAddress = IPAddress.Parse(ipString);
+                    port = GetPort(values[^1]);
+                    break;
+                }
+                //[a:b:c] or a:b:c
+                case > 2:
+                    ipAddress = IPAddress.Parse(endpoint);
+                    port = portIn;
+                    break;
             }
 
             if (port == -1)
-                throw new ArgumentException(string.Format("No port specified: '{0}'", endpoint));
+                throw new ArgumentException($"No port specified: '{endpoint}'");
 
-            return new IPEndPoint(ipaddy, port);
+            return new IPEndPoint(ipAddress, port);
         }
 
         private static int GetPort(string p) {
-            int port;
-
-            if (!int.TryParse(p, out port)
+            if (!int.TryParse(p, out var port)
                 || port < IPEndPoint.MinPort
                 || port > IPEndPoint.MaxPort) {
                 throw new FormatException($@"Invalid end point port '{p}'");
@@ -71,12 +69,32 @@ namespace Glimmr.Models.Util {
 
         public static IPAddress GetIpFromHost(string p) {
             if (string.IsNullOrEmpty(p)) return null;
-            var hosts = Dns.GetHostAddresses(p);
+            try {
+                var hosts = Dns.GetHostAddresses(p);
 
-            if (hosts == null || hosts.Length == 0)
-                throw new ArgumentException(string.Format("Host not found: {0}", p));
+                // Use the first address like always if found
+                if (hosts.Length > 0) {
+                    return hosts[0];
+                }
 
-            return hosts[0];
+                // If not, try this
+                var dns = Dns.GetHostEntry(p);
+                if (dns.AddressList.Length > 0) {
+                    return dns.AddressList[0];
+                }
+                
+                // If still no dice, try getting appending .local
+                dns = Dns.GetHostEntry(p + ".local");
+                if (dns.AddressList.Length > 0) {
+                    return dns.AddressList[0];
+                }
+                
+                
+            } catch (Exception e) {
+                Log.Debug("DNS Res ex: " + e.Message);
+            }
+
+            return null;
         }
 
        

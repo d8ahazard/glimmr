@@ -63,7 +63,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
                 new JProperty("on", true),
                 new JProperty("bri", Brightness)
                 );
-            await SendPost(onObj);
+            SendPost(onObj);
             _ep = IpUtil.Parse(IpAddress, port);
             Streaming = true;
             Log.Debug("WLED: Stream started.");
@@ -234,7 +234,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             var httpContent = new StringContent(values.ToString());
             httpContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
             try {
-                await _httpClient.PostAsync(uri, httpContent);
+                _httpClient.PostAsync(uri, httpContent).ConfigureAwait(false);
             } catch (Exception e) {
                 Log.Warning("HTTP Request Exception: " + e.Message);
             }

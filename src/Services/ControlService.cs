@@ -252,19 +252,22 @@ namespace Glimmr.Services {
 		
 
 		
-		public async Task UpdateSystem(SystemData sd) {
+		public async Task UpdateSystem(SystemData sd = null) {
 			SystemData oldSd = DataUtil.GetObject<SystemData>("SystemData");
-			if (oldSd.LedCount != sd.LedCount) {
-				var leds = DataUtil.GetDevices<LedData>("Led");
-				
-				foreach (var colorTargetData in leds.Where(led => led.LedCount == 0)) {
-					var led = colorTargetData;
-					led.LedCount = sd .LedCount;
-					await DataUtil.InsertCollection<LedData>("LedData", led);
+			if (sd != null) {
+				if (oldSd.LedCount != sd.LedCount) {
+					var leds = DataUtil.GetDevices<LedData>("Led");
+
+					foreach (var colorTargetData in leds.Where(led => led.LedCount == 0)) {
+						var led = colorTargetData;
+						led.LedCount = sd.LedCount;
+						await DataUtil.InsertCollection<LedData>("LedData", led);
+					}
 				}
+
+				await DataUtil.SetObjectAsync<SystemData>("SystemData", sd);
 			}
-			
-			await DataUtil.SetObjectAsync<SystemData>("SystemData", sd);
+
 			RefreshSystemEvent();
 		}
 

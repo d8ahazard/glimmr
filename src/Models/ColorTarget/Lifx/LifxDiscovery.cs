@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Services;
-using LifxNet;
+using LifxNetPlus;
 using Newtonsoft.Json;
 using Serilog;
 
@@ -37,11 +37,11 @@ namespace Glimmr.Models.ColorTarget.Lifx {
         }
 
         private async Task<LifxData> GetBulbInfo(LightBulb b) {
-            Log.Debug("Getting state...");
+            Log.Debug($"Getting state for {b.HostName}...");
             var state = await _client.GetLightStateAsync(b);
-            Log.Debug("State retrieved: " + JsonConvert.SerializeObject(state));
+            Log.Debug($"State retrieved for {b.HostName}: " + JsonConvert.SerializeObject(state));
             var ver = await _client.GetDeviceVersionAsync(b);
-            Log.Debug("Lifx Version got: " + JsonConvert.SerializeObject(ver));
+            Log.Debug($"Lifx Version got for {b.HostName}: " + JsonConvert.SerializeObject(ver));
             var hasMulti = false;
             var extended = false;
             var zoneCount = 0;
@@ -71,10 +71,8 @@ namespace Glimmr.Models.ColorTarget.Lifx {
                 }
 
                 Log.Debug("Zone count: " + zoneCount);
-
             }
 
-            
             var d = new LifxData(b) {
                 Power = state.IsOn,
                 Hue = state.Hue,
@@ -87,7 +85,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
                 MultiZoneCount = zoneCount
             };
             
-            if (ver.Product == 55) {
+            if (ver.Product == 55 || ver.Product == 101) {
                 tag = "LifxTile";
                 Log.Debug("This is a tile.");
                 try {
@@ -98,7 +96,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
                     Log.Debug("Chain exception: " + e.Message);
                 }
             }
-
+            
             d.DeviceTag = tag;
             Log.Debug("Discovered lifx device: " + JsonConvert.SerializeObject(d));
             return d;

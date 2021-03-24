@@ -11,7 +11,7 @@ namespace Glimmr.Models.Util {
 	public class DreamUtil {
 
         private readonly UdpClient _udpClient;
-        private IPEndPoint _broadcastAddress;
+        private readonly IPEndPoint _broadcastAddress;
 
         public DreamUtil(UdpClient udp) {
             _udpClient = udp;

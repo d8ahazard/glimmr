@@ -1,5 +1,5 @@
 ﻿using Glimmr.Services;
-using LifxNet;
+using LifxNetPlus;
 
 namespace Glimmr.Models.ColorTarget.Lifx {
 	public class LifxAgent : IColorTargetAgent {

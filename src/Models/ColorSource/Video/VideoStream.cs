@@ -128,7 +128,7 @@ namespace Glimmr.Models.ColorSource.Video {
 					var frame = _vc.Frame;
 					if (frame == null) {
 						SourceActive = false;
-						Log.Warning("Frame is null.");
+						//Log.Warning("Frame is null.");
 						continue;
 					}
 

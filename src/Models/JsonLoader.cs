@@ -26,7 +26,7 @@ namespace Glimmr.Models {
 				}
 			}
 			if (Directory.Exists(userPath)) _directories.Add(userPath);
-			Log.Debug("Directories: " + JsonConvert.SerializeObject(_directories));
+			//Log.Debug("Directories: " + JsonConvert.SerializeObject(_directories));
 		}
 
 		public List<T> LoadFiles<T>() {
@@ -38,13 +38,14 @@ namespace Glimmr.Models {
 					if (file.Contains(".json")) {
 						try {
 							var data = JsonConvert.DeserializeObject<JObject>(File.ReadAllText(file));
-							if (dirIndex != 0) {
-								if ((int) data.GetValue("Id") == 0 && (string) data.GetValue("Name") != "Random") {
-									data["Id"] = fCount;
+							if (data != null) {
+								if (dirIndex != 0) {
+									if ((int) data.GetValue("Id") == 0 && (string) data.GetValue("Name") != "Random") {
+										data["Id"] = fCount;
+									}
 								}
+								output.Add(data.ToObject<T>());
 							}
-
-							output.Add(data.ToObject<T>());
 						} catch (Exception e) {
 							Log.Warning($"Parse exception for {file}: " + e.Message);
 						}
