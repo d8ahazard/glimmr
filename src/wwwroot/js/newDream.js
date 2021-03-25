@@ -403,7 +403,16 @@ function setListeners() {
             val = target.checked;
             console.log("Checkbox value is " + val);
         }
-
+        if (target.classList.contains("lightProperty")) {
+            console.log("Updating light property.");
+            let id = target.getAttribute("data-id");
+            let property = target.getAttribute("data-property");
+            let numVal = parseInt(val);
+            if (!isNaN(numVal)) val = numVal;
+            updateLightProperty(id, property, val);
+            return;
+        }
+        
         if (property === "CaptureMode" || property === "ScreenCapMode" || property === "PreviewMode") {
             val = parseInt(val);
         }
@@ -671,6 +680,56 @@ function updateDeviceSector(sector, target) {
     }
     
     sendMessage("flashSector", parseInt(sector), false);
+}
+
+function updateLightProperty(myId, propertyName, value) {
+    let lm = getLightMap(myId);
+    lm[propertyName] = value;
+    console.log("Updated lm: ", lm);
+    setLightMap(lm);
+    let fGroup = deviceData["Groups"];
+    let nGroup = [];
+    for (let g in fGroup) {
+        if (fGroup.hasOwnProperty(g)) {
+            fGroup[g]["Id"] = fGroup[g]["_id"];
+            nGroup.push(fGroup[g]);
+        }
+
+    }
+    console.log("Updating bridge: ", deviceData);
+    updateDevice(deviceData["Id"],"Groups", nGroup);    
+}
+
+function getLightMap(id) {
+    let hueLightMap = deviceData["MappedLights"];
+    for (let l in hueLightMap) {
+        if (hueLightMap.hasOwnProperty(l)) {
+            if (hueLightMap[l]["_id"] === id) {
+                return hueLightMap[l];
+            }
+        }
+    }
+    return {
+        _id: id,
+        TargetSector: -1,
+        TargetSector2: -1,
+        Brightness: 255,
+        Override: false
+    };
+}
+
+function setLightMap(map) {
+    let hueLightMap = deviceData["MappedLights"];
+    for (let l in hueLightMap) {
+        if (hueLightMap.hasOwnProperty(l)) {
+            if (hueLightMap[l]["_id"] === map["_id"]) {
+                hueLightMap[l] = map;
+                return;
+            }
+        }
+    }
+    hueLightMap.push(map);
+    updateDevice(deviceData["_id"],"MappedLights", hueLightMap);
 }
 
 
@@ -1168,9 +1227,10 @@ function getDevices() {
 
 function updateDevice(id, property, value) {
     let dev;
-    console.log("Device: ", deviceData);
+    let isLoaded = false;
     if (isValid(deviceData) && deviceData["Id"] === id) {
         dev = deviceData;
+        isLoaded = true;
     } else {
         dev = findDevice(id);
     }
@@ -1178,8 +1238,14 @@ function updateDevice(id, property, value) {
         dev[property] = value;
         saveDevice(dev);
         sendMessage("updateDevice", dev, true);
-
     }    
+    if (isLoaded) {
+        deviceData = dev;
+        if(expanded) {
+            createDeviceSettings();
+        }
+        
+    }
 }
 
 // Find device by id in datastore
@@ -1580,8 +1646,9 @@ function appendNanoSettings() {
 }
 
 function appendHueSettings() {
-    if (isValid(deviceData["Key"])) {
+    if (isValid(deviceData["Token"])) {
         drawLinkPane("hue", true);
+        appendSectorMap();
         createHueMap();
     } else {
         drawLinkPane("hue", false);
@@ -1631,14 +1698,18 @@ function appendSectorMap() {
     let imgDiv = document.createElement("div");
     imgDiv.id = "mapDiv";
     let img = document.createElement("img");
+    let exSect = document.getElementById("sectorImage");
+    if (isValid(exSect)) exSect.remove();
     img.id = "sectorImage";
     img.classList.add("img-fluid", "col-xl-8", "col-lg-8", "col-md-12");
     img.src = baseUrl + "/img/sectoring_screen.png";
+    img.addEventListener("load", function() {
+        console.log("image has loaded");
+        setTimeout(function() {createSectorMap(imgDiv, document.getElementById("sectorImage"))}, 500);
+    });
     imgDiv.appendChild(img);
-    let settingsDiv = document.getElementById("deviceSettings");    
+    let settingsDiv = document.getElementById("deviceSettings");
     settingsDiv.append(imgDiv);
-    setTimeout(function() {createSectorMap(imgDiv, document.getElementById("sectorImage"))}, 200);
-
 }
 
 function appendLedMap() {
@@ -1663,6 +1734,7 @@ function createSectorMap(targetElement, sectorImage, regionName) {
     let h = img.offsetHeight;
     let imgL = img.offsetLeft;
     let imgT = img.offsetTop;
+    console.log("Img dims: ",w,h,imgL,imgT, img);
     let exMap = targetElement.querySelector("#sectorMap");
     let systemData = data.store["SystemData"];
     let vCount = systemData["VSectors"];
@@ -1705,10 +1777,10 @@ function createSectorMap(targetElement, sectorImage, regionName) {
         map.appendChild(s1);
         sector++;
     }
-    
+
     for (let i = 1; i < hCount - 1; i++) {
         l = w - wMargin - (fWidth * (i + 1));
-        r = l - fWidth;        
+        r = l - fWidth;
         let s1 = document.createElement("div");
         s1.classList.add("sector");
         if (isValid(regionName)) s1.classList.add(regionName + "Region");
@@ -1761,7 +1833,7 @@ function createSectorMap(targetElement, sectorImage, regionName) {
         map.appendChild(s1);
         sector++;
     }
-    
+
     let s2 = document.createElement("div");
     s2.classList.add("sector2");
     s2.style.position = "absolute";
@@ -1771,7 +1843,25 @@ function createSectorMap(targetElement, sectorImage, regionName) {
     s2.style.width = (fWidth * 8) + "px";
     s2.style.border = "2px solid black";
     map.appendChild(s2);
-    targetElement.appendChild(map);    
+    targetElement.appendChild(map);
+    if (isValid(deviceData) && expanded) {
+        let mappedLights;
+        if (isValid(deviceData["MappedLights"])) {
+            mappedLights = deviceData["MappedLights"];            
+        }
+        if (isValid(mappedLights)) {
+            for(let i =0; i < mappedLights.length; i++) {
+                let lMap = mappedLights[i];
+                let target = lMap["TargetSector"];
+                let id = lMap["_id"];
+                let targetDiv = document.querySelector('.sector[data-sector="'+target+'"]');
+                if (isValid(targetDiv)) {
+                    console.log("Checking sector " + target);
+                    targetDiv.classList.add("checked");
+                }
+            }
+        }
+    }
 }
 
 function createLedMap(targetElement, sectorImage, ledData, devData) {
@@ -1918,10 +2008,19 @@ function ranges(ledCount, offset, total) {
 
 
 function createHueMap() {
-    let lights = deviceData["Lights"];
-    let lightMap =deviceData["MappedLights"];
-    let groups = deviceData["Groups"];
+    let settingsDiv = document.getElementById("deviceSettings");
     let selectedGroup = deviceData["SelectedGroup"];
+
+    let groups = deviceData["Groups"];
+    let group;
+    for(let i=0; i < groups.length; i++) {
+        let sg = groups[i];
+        if (sg["Id"] === selectedGroup.toString()) {
+            group = sg;
+            console.log("Group: ",group);
+        }
+    }
+    
     // Main container
     let hueMapRow = document.createElement("div");
     hueMapRow.classList.add("row");
@@ -1930,21 +2029,172 @@ function createHueMap() {
     groupSelectCol.classList.add("col-12");
     // Group select
     let groupSelect = document.createElement("select");
+    groupSelect.setAttribute("data-property", "SelectedGroup");
+    groupSelect.setAttribute("data-object", deviceData["Id"]);
+    groupSelect.classList.add("devSetting");
     let defaultOption = document.createElement("option");
     defaultOption.textContent = "";
     defaultOption.value = "-1";
     if (selectedGroup === -1) defaultOption.selected = true;
+    
     groupSelect.appendChild(defaultOption);
+    groupSelect.id = "HueGroup";
     for(let i = 0; i < groups.length; i++) {
         let opt = document.createElement("option");
         opt.value = groups[i]["Id"];
-        opt.textContent = groups[i]["Id"];
-        if (selectedGroup === groups[i]["Id"]) opt.selected = true;
+        opt.innerText = groups[i]["name"];
+        if (selectedGroup.toString() === groups[i]["Id"]) opt.selected = true;
         groupSelect.appendChild(opt);
     }
     groupSelectCol.appendChild(groupSelect);
-    cardClone.appendChild(groupSelectCol);
+    settingsDiv.appendChild(groupSelectCol);
+
+    if (!isValid(group)) {
+        console.log("No group, returning.");
+        return;        
+    }
+
+    let lights = deviceData['Lights'];
+    let lightMap = deviceData['MappedLights'];
+    console.log("Mapping lights: ", lights);
+    // Get the main light group
+    let lightGroup = document.createElement("div");
+    lightGroup.classList.add("row");
+    if (!group.hasOwnProperty('lights')) return false;
+    const ids = group["lights"];
+
+    // Sort our lights by name
+    lights = lights.sort(function (a, b) {
+        if (!a.hasOwnProperty('Name') || !b.hasOwnProperty('Name')) return false;
+        return a.Name.localeCompare(b.Name);
+    });
+    console.log("Sorted lights: " + lights);
+    // Loop through our list of all lights
+    for (let l in lights) {
+        if (lights.hasOwnProperty(l)) {
+            let light = lights[l];
+            let id = light['_id'];
+            let map;
+            let brightness = 255;
+            let override = false;
+            let selection = -1;
+
+            for(let m in lightMap) {
+                if (lightMap.hasOwnProperty(m)) {
+                    if (lightMap[m]['_id'] === id) {
+                        map = lightMap[m];
+                        brightness = map["Brightness"];
+                        override = map["Override"];
+                        selection = map["TargetSector"];                                           
+                    }
+                }
+            }
+
+            if (ids.includes(id)) {
+                const name = light['Name'];
+                // Create the label for select
+                const label = document.createElement('label');
+                label.innerHTML = name + ":";
+                label.setAttribute("for", "lightMap" + id);
+
+                // Create a select for this light
+                const newSelect = document.createElement('select');
+                newSelect.className = "lightProperty form-control text-dark bg-light";
+                newSelect.setAttribute('data-id', id);
+                newSelect.setAttribute('data-property',"TargetSector");
+
+                // Create the blank "unmapped" option
+                let opt = document.createElement("option");
+                opt.value = "-1";
+                opt.innerHTML = "";
+
+                // Set it to selected if we don't have a mapping
+                if (selection === -1) {
+                    opt.setAttribute('selected', 'selected');
+                }
+                newSelect.appendChild(opt);
+
+                // Add the options for our regions
+                for (let i = 1; i < 29; i++) {
+                    opt = document.createElement("option");
+                    opt.value = (i).toString();
+                    opt.innerHTML = "<BR>" + (i);
+                    // Mark it selected if it's mapped
+                    if (selection === i) opt.setAttribute('selected', 'selected');
+                    newSelect.appendChild(opt);
+                }
+
+
+                // Create the div to hold our select
+                const selDiv = document.createElement('div');
+                selDiv.className += "form-group";
+                selDiv.appendChild(label);
+                selDiv.appendChild(newSelect);
+
+                // Create label for brightness
+                const brightLabel = document.createElement('label');
+                brightLabel.innerHTML = "Brightness: ";
+                brightLabel.setAttribute('for', 'brightness' + id);
+
+                // Create the brightness slider
+                const newRange = document.createElement("input");
+                newRange.className = "form-control lightProperty";
+                newRange.setAttribute("type", "range");
+                newRange.setAttribute('data-id', id);
+                newRange.setAttribute('data-property',"Brightness");
+                newRange.setAttribute('name', 'brightness' + id);
+                newRange.setAttribute('min', "0");
+                newRange.setAttribute('max', "100");
+                newRange.setAttribute('value', brightness.toString());
+                newRange.setAttribute('data-id', id);
+                newRange.setAttribute('data-property',"Brightness");
+
+                // Create container div for brightness slider
+                const rangeDiv = document.createElement('div');
+                rangeDiv.className += "form-group";
+                rangeDiv.appendChild(brightLabel);
+                rangeDiv.appendChild(newRange);
+
+                // Create label for override check
+                const checkLabel = document.createElement('label');
+                checkLabel.innerHTML = "Override";
+                checkLabel.className += "form-check-label";
+                checkLabel.setAttribute('for', 'overrideBrightness' + id);
+
+                // Create a checkbox
+                const newCheck = document.createElement("input");
+                newCheck.className += "overrideBright form-check-input lightProperty";
+                newCheck.setAttribute('data-id', id);
+                newCheck.setAttribute('data-property',"Override");
+                newCheck.setAttribute("type", "checkbox");
+                if (override) newCheck.setAttribute("checked", 'checked');
+
+                // Create the div to hold the checkbox
+                const chkDiv = document.createElement('div');
+                chkDiv.className += "form-check";
+                chkDiv.appendChild(newCheck);
+                chkDiv.appendChild(checkLabel);
+
+                // Create the div for the other divs
+                const lightDiv = document.createElement('div');
+                lightDiv.className += "delSel col-12 col-md-6 col-xl-3 justify-content-center form-group";
+                lightDiv.id = id;
+                lightDiv.setAttribute('data-name', name);
+                lightDiv.setAttribute('data-id', id);
+                lightDiv.appendChild(selDiv);
+                lightDiv.appendChild(chkDiv);
+                lightDiv.appendChild(rangeDiv);
+
+                // Add it to our document
+                lightGroup.appendChild(lightDiv);                
+            }
+        }
+    }
+    settingsDiv.appendChild(lightGroup);
+    
+    // $('.delSel').bootstrapMaterialDesign();
 }
+
 
 function drawNanoShapes(panel) {
     
@@ -2178,18 +2428,7 @@ function sizeContent() {
     cDiv.style.width = wWidth + "px";
     colorDiv.style.width = wWidth + "px";
     if (expanded) {
-        let oh = document.getElementById("mainContent").offsetTop;
-        toggleExpansion(cardClone, {top: oh + "px", left: 0, width: '100%', height: 'calc(100% - ' + oh + 'px)', padding: "1rem 3rem"}, 250);
-        let imgDiv = document.getElementById("mapDiv");
-        let secMap = document.getElementById("sectorMap");
-        if (isValid(secMap)) secMap.remove();
-        if (drawSectorMap) createSectorMap(imgDiv, document.getElementById("sectorImage"));
-        if (drawLedMap) appendLedMap(deviceData["LedCount"], deviceData["Offset"], deviceData["ReverseStrip"]);
-        if (deviceData["Tag"] === "Nanoleaf" && isValid(deviceData["Token"])) {
-            console.log("Redrawing nanoshapes.");
-            document.querySelector(".konvajs-content").remove();
-            drawNanoShapes(deviceData);
-        }
+        createDeviceSettings();
     }
     if (settingsShown) {
         loadSettings();

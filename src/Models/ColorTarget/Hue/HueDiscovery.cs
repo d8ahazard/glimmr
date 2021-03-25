@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
+using Newtonsoft.Json;
 using Q42.HueApi;
 using Q42.HueApi.Interfaces;
 using Q42.HueApi.Models.Bridge;
@@ -27,20 +29,32 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
         private void DeviceFound(IBridgeLocator sender, LocatedBridge locatedbridge) {
             var data = new HueData(locatedbridge);
+            data = UpdateDeviceData(data);
+            _controlService.AddDevice(data).ConfigureAwait(false);
+        }
+
+        private static HueData UpdateDeviceData(HueData data) {
+            // Check for existing device
             HueData dev = DataUtil.GetDevice<HueData>(data.Id);
             if (dev != null && !string.IsNullOrEmpty(dev.Token)) {
-                var client = new LocalHueClient(data.IpAddress, _controlService.HttpSender);
+                Log.Debug($"Updating bridge: {data.IpAddress}");
+                var client = new LocalHueClient(data.IpAddress, dev.User, dev.Token);
                 try {
-                    client.Initialize(dev.Token);
+                    Log.Debug("Client is initialized?");
                     var groups = client.GetGroupsAsync().Result;
                     var lights = client.GetLightsAsync().Result;
+                    Log.Debug("Groups: " + JsonConvert.SerializeObject(groups));
+                    Log.Debug("Lights: " + JsonConvert.SerializeObject(lights));
                     data.AddGroups(groups);
                     data.AddLights(lights);
+                    dev.UpdateFromDiscovered(data);
+                    data = dev;
+                    Log.Debug("Final device: " + JsonConvert.SerializeObject(data));
                 } catch (Exception e) {
-                    Log.Debug("Exception: " + e.Message);
+                    Log.Warning("Exception: " + e.Message);
                 }
-            } 
-            _controlService.AddDevice(data).ConfigureAwait(false);
+            }
+            return data;
         }
 
         public async Task Discover(CancellationToken ct) {
@@ -72,7 +86,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
                 devData.Token = result.StreamingClientKey;
                 devData.User = result.Username;
-
+                devData = UpdateDeviceData(devData);
                 return devData;
             } catch (HueException) {
                 Log.Debug($@"Hue: The link button is not pressed at {devData.IpAddress}.");

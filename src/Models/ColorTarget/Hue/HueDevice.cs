@@ -201,7 +201,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 
 		public Task ReloadData() {
-			var newData = (HueData) DataUtil.GetCollectionItem<HueData>("Dev_Hue", Id);
+			var newData = (HueData) DataUtil.GetDevice(Id);
 			DataUtil.GetItem<int>("captureMode");
 			Data = newData;
 			IpAddress = Data.IpAddress;

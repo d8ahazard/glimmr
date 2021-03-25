@@ -239,6 +239,13 @@ input[type="range"]::-webkit-slider-runnable-track {
     background-image: url("../img/link_overlay.png");
 }
 
+.sector.checked {
+    background-image: url("../img/sectorV2_checked_background.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
 #nanoPreviewWrap {
     width: 95%;
 }

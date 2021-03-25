@@ -62,6 +62,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Lights = input.Lights;
 			Groups = input.Groups;
 			IpAddress = input.IpAddress;
+			
 		}
 
 		public SettingsProperty[] KeyProperties { get; set; } = {
@@ -106,7 +107,8 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			ModelId = l.ModelId;
 		}
 
-		[JsonProperty] public string Name { get; set; }
+		[JsonProperty] 
+		public string Name { get; set; }
 		
 		[JsonProperty] 
 		private string _id;
@@ -117,12 +119,18 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			set => _id = value;
 		}
 
-		[JsonProperty] public string Type { get; set; }
-		[JsonProperty] public int Brightness { get; set; }
-		[JsonProperty] public State LastState { get; set; }
-		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public string ModelId { get; set; }
-		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public int Presence { get; set; }
-		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public int LightLevel { get; set; }
+		[JsonProperty] 
+		public string Type { get; set; }
+		[JsonProperty] 
+		public int Brightness { get; set; }
+		[JsonProperty] 
+		public State LastState { get; set; }
+		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)] 
+		public string ModelId { get; set; }
+		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)] 
+		public int Presence { get; set; }
+		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)] 
+		public int LightLevel { get; set; }
 	}
 
 	[Serializable]
@@ -133,6 +141,9 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 		public HueGroup(Group g) {
 			Id = g.Id;
+			Name = g.Name;
+			Lights = g.Lights;
+			Type = g.Type;
 		}
 		
 		[JsonProperty] 
@@ -166,8 +177,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		
-		
 		public bool Override { get; set; }
 		
 	}
