@@ -32,6 +32,9 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
             var byteString = BitConverter.ToString(bytesIn);
             var bytesString = byteString.Split("-");
             var magic = bytesString[0];
+            Len = bytesIn[1];
+            Group = bytesIn[2];
+            Flags = bytesString[3];
             C1 = bytesIn[4];
             C2 = bytesIn[5];
 
@@ -42,9 +45,6 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
                 }
             }
 
-            Len = bytesIn[1];
-            Group = bytesIn[2];
-            Flags = bytesString[3];
             C1 = bytesIn[4];
             C2 = bytesIn[5];
             var cmd = bytesString[4] + bytesString[5];

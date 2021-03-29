@@ -2,5 +2,6 @@
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ActiveDebugProfile>Docker</ActiveDebugProfile>
+    <NameOfLastUsedPublishProfile>E:\Dev\Glimmr\src\Properties\PublishProfiles\Windows.pubxml</NameOfLastUsedPublishProfile>
   </PropertyGroup>
 </Project>

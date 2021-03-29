@@ -86,7 +86,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			if (_enable) _enable = false;
 			_vc?.Stop();
 			
-			StreamSplitter.Refresh();
+			StreamSplitter?.Refresh();
 			Initialize(_cancellationToken);
 			if (wasEnabled) _enable = true;
 		}

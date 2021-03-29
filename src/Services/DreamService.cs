@@ -190,8 +190,6 @@ namespace Glimmr.Services {
             }
         }
 
-       
-
         private async Task ProcessData(byte[] receivedBytes, IPEndPoint receivedIpEndPoint) {
             // Convert data to ASCII and print in console
             var f1 = receivedBytes[4];

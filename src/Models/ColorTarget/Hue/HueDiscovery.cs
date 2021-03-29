@@ -23,7 +23,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
             _bridgeLocatorHttp.BridgeFound += DeviceFound;
             _bridgeLocatorMdns.BridgeFound += DeviceFound;
             _bridgeLocatorSsdp.BridgeFound += DeviceFound;
-            DeviceTag = "Hue";
             _controlService = colorService.ControlService;
         }
 
@@ -37,19 +36,14 @@ namespace Glimmr.Models.ColorTarget.Hue {
             // Check for existing device
             HueData dev = DataUtil.GetDevice<HueData>(data.Id);
             if (dev != null && !string.IsNullOrEmpty(dev.Token)) {
-                Log.Debug($"Updating bridge: {data.IpAddress}");
                 var client = new LocalHueClient(data.IpAddress, dev.User, dev.Token);
                 try {
-                    Log.Debug("Client is initialized?");
                     var groups = client.GetGroupsAsync().Result;
                     var lights = client.GetLightsAsync().Result;
-                    Log.Debug("Groups: " + JsonConvert.SerializeObject(groups));
-                    Log.Debug("Lights: " + JsonConvert.SerializeObject(lights));
                     data.AddGroups(groups);
                     data.AddLights(lights);
                     dev.UpdateFromDiscovered(data);
                     data = dev;
-                    Log.Debug("Final device: " + JsonConvert.SerializeObject(data));
                 } catch (Exception e) {
                     Log.Warning("Exception: " + e.Message);
                 }
@@ -94,8 +88,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
             return devData;
         }
 
-        public override string DeviceTag { get; set; }
-        
-        
+        public override string DeviceTag { get; set; } = "Hue";
     }
 }

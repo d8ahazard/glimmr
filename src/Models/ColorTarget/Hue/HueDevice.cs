@@ -10,6 +10,7 @@ using AutoMapper;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Newtonsoft.Json;
+using Q42.HueApi;
 using Q42.HueApi.ColorConverters;
 using Q42.HueApi.Models.Groups;
 using Q42.HueApi.Streaming;
@@ -175,28 +176,32 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		public async Task StopStream() {
 			if (!Enable) return;
 			Log.Debug($"Hue: Stopping Stream: {IpAddress}...");
-			await FlashColor(Color.FromArgb(0, 0, 0));
-			await StopStream(_client, Data);
-			if (Streaming) ResetColors();
+			await FlashColor(Color.FromArgb(0, 0, 0)).ConfigureAwait(false);
+			Log.Debug("Flashed");
+			await StopStream(_client, Data).ConfigureAwait(false);
+			Log.Debug("Stopped?");
+			if (Streaming) ResetColors().ConfigureAwait(false);
+			Log.Debug("Reset");
 			Streaming = false;
+			await Task.FromResult(true);
 			Log.Debug("Hue: Streaming Stopped.");
 		}
 
 		
-		private void ResetColors() {
+		private async Task ResetColors() {
 			foreach (var entLight in _entLayer) {
 				// Get data for our light from map
 				var lightMappings = Data.Lights;
 				var lightData = lightMappings.SingleOrDefault(item =>
 					item.Id == entLight.Id.ToString(CultureInfo.InvariantCulture));
 				if (lightData == null) continue;
-				// var sat = lightData.LastState.Saturation;
-				// var bri = lightData.LastState.Brightness;
-				// var hue = lightData.LastState.Hue;
-				// var isOn = lightData.LastState.On;
-				// var ll = new List<string> {lightData.Id};
-				// var cmd = new LightCommand {Saturation = sat, Brightness = bri, Hue = hue, On = isOn};
-				// _client.LocalHueClient.SendCommandAsync(cmd, ll);
+				var sat = lightData.LastState.Saturation;
+				var bri = lightData.LastState.Brightness;
+				var hue = lightData.LastState.Hue;
+				var isOn = lightData.LastState.On;
+				var ll = new List<string> {lightData.Id};
+				var cmd = new LightCommand {Saturation = sat, Brightness = bri, Hue = hue, On = isOn};
+				_client.LocalHueClient.SendCommandAsync(cmd, ll).ConfigureAwait(false);
 			}
 		}
 

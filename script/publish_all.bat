@@ -1,18 +1,33 @@
 @echo off
 IF [%1] == [] GOTO Error
 set version=%~1
-dotnet build Glimmr.csproj /p:DeployOnBuild=true /p:PublishProfile=Linux
-dotnet build Glimmr.csproj /p:DeployOnBuild=true /p:PublishProfile=LinuxARM
-dotnet build Glimmr.csproj /p:DeployOnBuild=true /p:PublishProfile=Windows
-dotnet build Glimmr.csproj /p:DeployOnBuild=true /p:PublishProfile=WindowsARM
-dotnet build Glimmr.csproj /p:DeployOnBuild=true /p:PublishProfile=OSX
 
-cd .\bin\publish
-7z a -ttar -so -an -r .\Glimmr-linux\* | 7z a -si Glimmr-linux-%version%.tgz
-7z a -ttar -so -an -r .\Glimmr-linux-arm\* | 7z a -si Glimmr-linux-arm-%version%.tgz
-7z a -tzip -r Glimmr-windows-%version%.zip .\Glimmr-windows\*
-7z a -tzip -r Glimmr-windows-arm-%version%.zip .\Glimmr-windows-arm\*
-7z a -tzip -r Glimmr-osx-%version%.zip .\Glimmr-osx\*
+
+@echo off
+
+for %%x in (
+	Linux
+	LinuxARM
+	Windows
+	WindowsARM
+	OSX
+) do (
+	echo Building %%x
+	dotnet publish -c Release ..\src\Glimmr.csproj /p:PublishProfile=%%x -o ..\src\bin\%%x
+	if exist "..\lib\%%x" xcopy /y ..\lib\%%x\* ..\src\bin\%%x\
+	if not exist "..\src\bin\ambientScenes" mkdir ..\src\bin\%%x\ambientScenes
+	if not exist "..\src\bin\audioScenes" mkdir ..\src\bin\%%x\audioScenes
+	xcopy /y ..\ambientScenes\* ..\src\bin\%%x\ambientScenes\
+	xcopy /y ..\audioScenes\* ..\src\bin\%%x\audioScenes\	
+)
+
+:Archive
+cd ..\src\bin\
+%~dp07z.exe a -ttar -so -an -r .\LinuxARM\* | %~dp07z a -si Glimmr-linux-arm-%version%.tgz
+%~dp07z.exe a -ttar -so -an -r .\Linux\* | %~dp07z a -si Glimmr-linux-%version%.tgz
+%~dp07z.exe a -tzip -r Glimmr-windows-%version%.zip .\Windows\*
+%~dp07z.exe a -tzip -r Glimmr-windows-arm-%version%.zip .\WindowsARM\*
+%~dp07z.exe a -tzip -r Glimmr-osx-%version%.zip .\OSX\*
 GOTO End
 
 :Error

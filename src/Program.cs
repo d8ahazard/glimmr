@@ -55,7 +55,6 @@ namespace Glimmr
 					services.AddHostedService<VideoStream>();
 					services.AddHostedService<AudioVideoStream>();
 					services.AddHostedService<AmbientStream>();
-					services.AddHostedService<DreamService>();
 					services.AddHostedService<StreamService>();
 					services.AddHostedService<DiscoveryService>();
 					services.AddHostedService<StatService>();

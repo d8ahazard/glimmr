@@ -33,6 +33,7 @@ let baseUrl;
 let pickr;
 let bar;
 let croppr;
+let leftCount, rightCount, topCount, bottomCount, hSectors, vSectors;
 let errModal = new bootstrap.Modal(document.getElementById('errorModal'));
 // We're going to create one object to store our stuff, and add listeners for when values are changed.
 let data = {
@@ -66,7 +67,7 @@ data.registerStoreListener(function(val) {
     console.log("Datastore has been updated: ", val);
     if (loadTimeout === null || loadCalled) {
         loadCalled = false;
-        loadUi();
+        loadUi();        
     }
 });
 
@@ -166,8 +167,91 @@ function rgbToHex(r, g, b) {
     return ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 }
 
+function loadCounts() {
+    let sd = data.store["SystemData"];
+    leftCount = 0;
+    rightCount = 0;
+    topCount = 0;
+    bottomCount = 0;
+    hSectors = 5;
+    vSectors = 3;
+
+    if (!isValid(sd)) return;
+    let capMode = sd["CaptureMode"];
+    let target = sd["DsIp"];
+
+    console.log("Loading counts...");
+    let devs = data.store["Devices"];
+    console.log("Devs got: ", devs);
+    let devSelect = document.getElementById("targetDs");
+    if (isValid(devSelect)) {
+        for (let i = 0; i < devSelect.options.length; i++) {
+            devSelect.options[i] = null;
+        }
+    }
+    
+    if (isValid(devs)) {
+        for (let i = 0; i < devs.length; i++) {
+            let dev = devs[i];
+            if (dev["Tag"] === "Dreamscreen" && dev["DeviceTag"].includes("Dreamscreen")) {
+                console.log("Adding DS", dev);
+                let opt = document.createElement("option");
+                opt.value = dev["Id"];
+                opt.innerText = dev["Name"] + " - " + dev["Id"];
+                devSelect.appendChild(opt);
+            }
+        }
+    }
+    
+    
+    let lSel = document.querySelector('[data-property="LeftCount"][data-object="SystemData"]');
+    let rSel = document.querySelector('[data-property="RightCount"][data-object="SystemData"]');
+    let tSel = document.querySelector('[data-property="TopCount"][data-object="SystemData"]');
+    let bSel = document.querySelector('[data-property="BottomCount"][data-object="SystemData"]');
 
 
+    lSel.disabled = capMode === 0;
+    rSel.disabled = capMode === 0;
+    tSel.disabled = capMode === 0;
+    bSel.disabled = capMode === 0;
+    // If using DS capture, set static/dev LED counts.
+    if (capMode === 0) {
+        
+        // If a target is set, try to load the flex settings
+        console.log("Target: ", target);
+        if (isValid(target)) {
+            let dev;
+            for (let i=0; i < devs.length; i++) {                
+                if (devs[i]["Id"] === target) {
+                    dev = devs[i];
+                }                
+            }
+            console.log("DEV: ", dev);
+            if (isValid(dev)) {
+                let flex = dev["FlexSetup"];
+                console.log("FLEX: ", flex);
+                if (isValid(flex)) {
+                    console.log("Loading flex!: ", flex);
+                    leftCount = flex[0];
+                    rightCount = flex[0];
+                    topCount = flex[1];
+                    bottomCount = flex[1];
+                }
+            }
+        }
+    } else {
+        leftCount = sd["LeftCount"];
+        rightCount = sd["RightCount"];
+        topCount = sd["TopCount"];
+        bottomCount = sd["BottomCount"];
+        hSectors = sd["HSectors"];
+        vSectors = sd["VSectors"];
+    }
+    lSel.value = leftCount;
+    rSel.value = rightCount;
+    tSel.value = topCount;
+    bSel.value = bottomCount;
+}
 
 // Send a message to the server, websocket or not
 function sendMessage(endpoint, sData, encode=true) {
@@ -421,7 +505,7 @@ function setListeners() {
         if (isValid(obj) && isValid(property) && isValid(val)) {
             console.log("Trying to set: ", obj, property, val);
             let numVal = parseInt(val);
-            if (!isNaN(numVal)) val = numVal; 
+            if (!isNaN(numVal) && property !== "DsIp") val = numVal; 
             
             if (isValid(id)) {
                 let strips = data.store[obj];
@@ -756,6 +840,7 @@ function setMode(newMode) {
 }
 
 function loadUi() {
+    loadCounts();
     console.log("Loading ui.");
     let mode = 0; 
     let autoDisabled = getStoreProperty("AutoDisabled");
@@ -895,6 +980,7 @@ function loadSettings() {
     if (isValid(systemData)) {
         loadSettingObject(systemData);
         updateCaptureUi(systemData);
+        loadCounts();
         console.log("Loading System Data: ", systemData);
         let lPreview = document.getElementById("sLedPreview");
         let lImage = document.getElementById("ledImage");
@@ -1250,10 +1336,10 @@ function updateDevice(id, property, value) {
 
 // Find device by id in datastore
 function findDevice(id) {
-    for (let i=0; i < data.devices.length; i++) {
-        if (data.devices[i]) {
-            if (data.devices[i]["Id"] === id) {
-                return data.devices[i];
+    for (let i=0; i < data.store.Devices.length; i++) {
+        if (data.store.Devices[i]) {
+            if (data.store.Devices[i]["Id"] === id) {
+                return data.store.Devices[i];
             }
         }
     }
@@ -1736,16 +1822,13 @@ function createSectorMap(targetElement, sectorImage, regionName) {
     let imgT = img.offsetTop;
     console.log("Img dims: ",w,h,imgL,imgT, img);
     let exMap = targetElement.querySelector("#sectorMap");
-    let systemData = data.store["SystemData"];
-    let vCount = systemData["VSectors"];
-    let hCount = systemData["HSectors"];
     if (isValid(exMap)) exMap.remove();
     let wFactor = w / 1920;
     let hFactor = h / 1100;
     let wMargin = 62 * wFactor;
     let hMargin = 52 * hFactor;
-    let fHeight = (h - hMargin - hMargin) / vCount;
-    let fWidth = (w - wMargin - wMargin) / hCount;
+    let fHeight = (h - hMargin - hMargin) / vSectors;
+    let fWidth = (w - wMargin - wMargin) / hSectors;
     let map = document.createElement("div");
     map.id = "sectorMap";
     map.classList.add("sectorMap");
@@ -1759,7 +1842,7 @@ function createSectorMap(targetElement, sectorImage, regionName) {
     let l = 0;
     let r = 0;
     let sector = 1;
-    for (let i = 0; i < vCount; i++) {
+    for (let i = 0; i < vSectors; i++) {
         t = h - hMargin - ((i + 1) * fHeight);
         b = t + fHeight;
         l = w - wMargin - fWidth;
@@ -1778,7 +1861,7 @@ function createSectorMap(targetElement, sectorImage, regionName) {
         sector++;
     }
 
-    for (let i = 1; i < hCount - 1; i++) {
+    for (let i = 1; i < hSectors - 1; i++) {
         l = w - wMargin - (fWidth * (i + 1));
         r = l - fWidth;
         let s1 = document.createElement("div");
@@ -1796,7 +1879,7 @@ function createSectorMap(targetElement, sectorImage, regionName) {
     }
 
     // Left, top-bottom
-    for (let i = 0; i < vCount - 1; i++) {
+    for (let i = 0; i < vSectors - 1; i++) {
         t = hMargin + (i * fHeight);
         b = t + fHeight;
         l = wMargin;
@@ -1816,7 +1899,7 @@ function createSectorMap(targetElement, sectorImage, regionName) {
     }
 
     // This one, stupid
-    for (let i = 0; i < hCount - 1; i++) {
+    for (let i = 0; i < hSectors - 1; i++) {
         t = h - hMargin - fHeight;
         b = t + fHeight;
         l = wMargin + (fWidth * (i));
@@ -1864,14 +1947,14 @@ function createSectorMap(targetElement, sectorImage, regionName) {
     }
 }
 
-function createLedMap(targetElement, sectorImage, ledData, devData) {
+function createLedMap(targetElement, sectorImage) {
     let range1;
-    let sd = data.store.SystemData;
+    let sd = data.store["SystemData"];
     
-    if (isValid(devData)) {
-        let count = devData["LedCount"];
-        let offset = devData["Offset"];
-        let mode = devData["StripMode"];
+    if (isValid(deviceData)) {
+        let count = deviceData["LedCount"];
+        let offset = deviceData["Offset"];
+        let mode = deviceData["StripMode"];
         let total = sd["LedCount"];
         if (isValid(mode) && mode === 2) count /=2;
         range1 = ranges(total, offset, count);
@@ -1888,10 +1971,10 @@ function createLedMap(targetElement, sectorImage, ledData, devData) {
     let hFactor = h / 1100;
     let wMargin = 62 * wFactor;
     let hMargin = 52 * hFactor;
-    let flHeight = (h - hMargin - hMargin) / ledData["LeftCount"];
-    let frHeight = (h - hMargin - hMargin) / ledData["RightCount"];
-    let ftWidth = (w - wMargin - wMargin) / ledData["TopCount"];
-    let fbWidth = (w - wMargin - wMargin) / ledData["BottomCount"];
+    let flHeight = (h - hMargin - hMargin) / leftCount;
+    let frHeight = (h - hMargin - hMargin) / rightCount;
+    let ftWidth = (w - wMargin - wMargin) / topCount;
+    let fbWidth = (w - wMargin - wMargin) / bottomCount;
     let dHeight = (flHeight + frHeight) / 2;
     let dWidth = (ftWidth + fbWidth) / 2;
     let map = document.createElement("div");
@@ -1907,7 +1990,7 @@ function createLedMap(targetElement, sectorImage, ledData, devData) {
     let l = 0;
     let r = 0;
     let ledCount = 0;
-    for (let i = 0; i < ledData["RightCount"]; i++) {
+    for (let i = 0; i < rightCount; i++) {
         t = h - hMargin - ((i + 1) * frHeight);
         b = t + frHeight;
         l = w - wMargin - dWidth;
@@ -1928,7 +2011,7 @@ function createLedMap(targetElement, sectorImage, ledData, devData) {
         ledCount++;
     }
 
-    for (let i = 0; i < ledData["TopCount"] - 1; i++) {
+    for (let i = 0; i < topCount - 1; i++) {
         l = w - wMargin - (ftWidth * (i + 1));
         r = l - ftWidth;
         let s1 = document.createElement("div");
@@ -1948,7 +2031,7 @@ function createLedMap(targetElement, sectorImage, ledData, devData) {
     }
 
     // Left, top-bottom
-    for (let i = 0; i < ledData["LeftCount"] - 1; i++) {
+    for (let i = 0; i < leftCount - 1; i++) {
         t = hMargin + (i * flHeight);
         b = t + flHeight;
         l = wMargin;
@@ -1970,7 +2053,7 @@ function createLedMap(targetElement, sectorImage, ledData, devData) {
     }
 
     // This one, stupid
-    for (let i = 0; i < ledData["BottomCount"]; i++) {
+    for (let i = 0; i < bottomCount; i++) {
         t = h - hMargin - dHeight;
         b = t + dHeight;
         l = wMargin + (fbWidth * (i));
