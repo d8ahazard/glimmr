@@ -146,6 +146,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
             try {
                 _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep);
+                ColorService.Counter.Tick(Id);
             } catch (Exception e) {
                 Log.Debug("Exception: " + e.Message);        
             }

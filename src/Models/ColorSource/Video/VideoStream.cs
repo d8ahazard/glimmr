@@ -11,6 +11,7 @@ using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
+using Glimmr.Enums;
 using Glimmr.Models.ColorSource.Video.Stream;
 using Glimmr.Models.ColorSource.Video.Stream.PiCam;
 using Glimmr.Models.ColorSource.Video.Stream.Screen;
@@ -54,7 +55,7 @@ namespace Glimmr.Models.ColorSource.Video {
 
 		// Loaded data
 		private int _camType;
-		private int _captureMode;
+		private CaptureMode _captureMode;
 		private int _srcArea;
 
 		private SystemData _systemData;
@@ -176,13 +177,13 @@ namespace Glimmr.Models.ColorSource.Video {
 			Colors = ColorUtil.EmptyList(_systemData.LedCount);
 			var sectorSize = (_systemData.VSectors * 2) + (_systemData.HSectors * 2) - 4; 
 			Sectors = ColorUtil.EmptyList(sectorSize);
-			_captureMode = DataUtil.GetItem<int>("CaptureMode");
+			_captureMode = (CaptureMode) DataUtil.GetItem<int>("CaptureMode");
 			_camType = DataUtil.GetItem<int>("CamType");
 			Log.Debug("Capture mode is " + _captureMode);
 			_srcArea = ScaleWidth * ScaleHeight;
 			_scaleSize = new Size(ScaleWidth, ScaleHeight);
 
-			if (_captureMode == 1) {
+			if (_captureMode == CaptureMode.Camera) {
 				try {
 					var lt = DataUtil.GetItem<PointF[]>("LockTarget");
 					Log.Debug("LT Grabbed? " + JsonConvert.SerializeObject(lt));
@@ -209,7 +210,7 @@ namespace Glimmr.Models.ColorSource.Video {
 
 		private IVideoStream GetStream() {
 			switch (_captureMode) {
-				case 1:
+				case CaptureMode.Camera:
 					switch (_camType) {
 						case 0:
 							// 0 = pi module, 1 = web cam
@@ -221,10 +222,10 @@ namespace Glimmr.Models.ColorSource.Video {
 					}
 
 					return null;
-				case 2:
+				case CaptureMode.Hdmi:
 					return new UsbVideoStream();
 					
-				case 3:
+				case CaptureMode.Screen:
 					Log.Debug("Loading screen capture.");
 					return new ScreenVideoStream();
 			}
@@ -243,7 +244,7 @@ namespace Glimmr.Models.ColorSource.Video {
 		private Mat ProcessFrame(Mat input) {
 			Mat output;
 			// If we need to crop our image...do it.
-			if (_captureMode == 1 && _camType != 2) // Crop our camera frame if the input is a camera
+			if (_captureMode == CaptureMode.Camera && _camType != 2) // Crop our camera frame if the input is a camera
 				output = CamFrame(input);
 			// Otherwise, just return the input.
 			else
@@ -342,7 +343,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			return output;
 		}
 
-		private VectorOfPointF CountTargets(List<VectorOfPoint> inputT) {
+		private VectorOfPointF CountTargets(IReadOnlyCollection<VectorOfPoint> inputT) {
 			VectorOfPointF output = null;
 			var x1 = 0;
 			var x2 = 0;

@@ -1,11 +1,12 @@
-﻿using Glimmr.Models.Util;
+﻿using DreamScreenNet;
+using Glimmr.Models.Util;
 using Glimmr.Services;
 
 namespace Glimmr.Models.ColorTarget.DreamScreen {
 	public class DreamAgent : IColorTargetAgent {
-		private DreamUtil _du;
+		private DreamScreenClient _du;
 		public dynamic CreateAgent(ControlService cs) {
-			_du = new DreamUtil(cs.UdpClient);
+			_du = new DreamScreenClient(cs.UdpClient);
 			return _du;
 		}
 

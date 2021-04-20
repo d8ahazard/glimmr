@@ -2,9 +2,12 @@
 
 using System.Collections.Generic;
 using System.Drawing;
+using System.Net;
 using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using DreamScreenNet;
+using DreamScreenNet.Enum;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Newtonsoft.Json;
@@ -13,7 +16,7 @@ using Serilog;
 #endregion
 
 namespace Glimmr.Models.ColorTarget.DreamScreen {
-	public class DreamDevice : ColorTarget, IColorTarget {
+	public class DreamScreenDevice : ColorTarget, IColorTarget {
 		[DataMember] [JsonProperty] public bool Streaming { get; set; }
 		public bool Testing { get; set; }
 		[DataMember] [JsonProperty] public int Brightness { get; set; }
@@ -22,48 +25,48 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		[DataMember] [JsonProperty] public string Tag { get; set; }
 		[DataMember] [JsonProperty] public string DeviceTag { get; set; }
 		[DataMember] [JsonProperty] public bool Enable { get; set; }
-		[DataMember] [JsonProperty] public DreamData Data { get; set; }
-		
-		
-		
-		private readonly DreamUtil _dreamUtil;
+		[DataMember] [JsonProperty] public DreamScreenData ScreenData { get; set; }
 
+		private DreamScreenClient _client;
+		private IPAddress myIp;
+		
+		
 		private Task _subTask;
 
-		public DreamDevice(DreamData data, ColorService colorService) {
-			Data = data;
+		public DreamScreenDevice(DreamScreenData screenData, ColorService colorService) {
+			ScreenData = screenData;
 			colorService.ColorSendEvent += SetColor;
-			_dreamUtil = colorService.ControlService.GetAgent("DreamAgent");
-			Data = data;
-			Brightness = data.Brightness;
-			Id = data.Id;
-			IpAddress = data.IpAddress;
-			Tag = data.Tag;
-			Enable = data.Enable;
-			DeviceTag = data.DeviceTag;
+			_client = colorService.ControlService.GetAgent("DreamAgent");
+			ScreenData = screenData;
+			Brightness = screenData.Brightness;
+			Id = screenData.Id;
+			IpAddress = screenData.IpAddress;
+			Tag = screenData.Tag;
+			Enable = screenData.Enable;
+			DeviceTag = screenData.DeviceTag;
 			if (string.IsNullOrEmpty(IpAddress)) IpAddress = Id;
+			myIp = IPAddress.Parse(IpAddress);
 		}
 
 		public async Task StartStream(CancellationToken ct) {
-			await _dreamUtil.SendMessage("mode", 1, Id);
+			await _client.SetMode(DeviceMode.Video, myIp, ScreenData.GroupNumber);
 		}
 		
-		
-
 		public async Task StopStream() {
 			Log.Debug("Stopping stream.");
-			await _dreamUtil.SendMessage("mode", 0, Id);
+			await _client.SetMode(DeviceMode.Off, myIp, ScreenData.GroupNumber);
 			_subTask?.Dispose();
 		}
 
 		public async void SetColor(List<Color> colors, List<Color> sectors, int arg3, bool force = false) {
-			if (!Data.Enable || Testing && !force) return;
+			if (!ScreenData.Enable || Testing && !force) return;
 
 			if (sectors.Count != 12) {
 				sectors = ColorUtil.TruncateColors(sectors);
 				
 			}
-			await _dreamUtil.SendSectors(sectors, Id, Data.DeviceGroup);
+			await _client.SendColors(myIp, ScreenData.GroupNumber, sectors).ConfigureAwait(false);
+			ColorService.Counter.Tick(Id);
 		}
 
 		public Task FlashColor(Color color) {
@@ -78,22 +81,22 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		}
 
 		IColorTargetData IColorTarget.Data {
-			get => Data;
-			set => Data = (DreamData) value;
+			get => ScreenData;
+			set => ScreenData = (DreamScreenData) value;
 		}
 
-		public DreamDevice(DreamData data) {
-			Data = data;
-			Brightness = data.Brightness;
-			Id = data.Id;
-			IpAddress = data.IpAddress;
-			Tag = data.Tag;
-			Enable = data.Enable;
-			DeviceTag = data.DeviceTag;
+		public DreamScreenDevice(DreamScreenData screenData) {
+			ScreenData = screenData;
+			Brightness = screenData.Brightness;
+			Id = screenData.Id;
+			IpAddress = screenData.IpAddress;
+			Tag = screenData.Tag;
+			Enable = screenData.Enable;
+			DeviceTag = screenData.DeviceTag;
 		}
 
 		public byte[] EncodeState() {
-			return Data.EncodeState();
+			return ScreenData.EncodeState();
 		}
 
 		

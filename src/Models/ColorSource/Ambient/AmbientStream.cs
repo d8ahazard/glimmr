@@ -65,7 +65,6 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
         protected override Task ExecuteAsync(CancellationToken ct) {
             return Task.Run(async () => {
-                
                 // Load this one for fading
                 while (!ct.IsCancellationRequested) {
                     if (!_enable) continue;

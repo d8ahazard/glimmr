@@ -157,6 +157,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 				_strip?.SetLed(i,tCol);
 			}
 			_strip?.Render();
+			ColorService.Counter.Tick(Id);
 		}
 
 		private static List<Color> TruncateColors(List<Color> input, int len, int offset) {

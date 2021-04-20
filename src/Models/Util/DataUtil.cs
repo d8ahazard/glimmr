@@ -238,7 +238,7 @@ namespace Glimmr.Models.Util {
         public static string GetStoreSerialized() {
             var output = new Dictionary<string, dynamic>();
             SystemData sd = GetObject<SystemData>("SystemData");
-            DreamData dev = GetObject<DreamData>("MyDevice");
+            DreamScreenData dev = GetObject<DreamScreenData>("MyDevice");
             var audio = GetCollection<AudioData>("Dev_Audio");
             var devices = GetDevices();
             var mons = DisplayUtil.GetMonitors();
@@ -270,53 +270,12 @@ namespace Glimmr.Models.Util {
             return JsonConvert.SerializeObject(output);
         }
 
-        public static DreamData GetDeviceData() {
-            try {
-                var myDevice = GetObject<DreamData>("MyDevice");
-                if (myDevice != null) return myDevice;
-            } catch (Exception e) {
-                Log.Debug("Caught: " + e.Message);
-            }
-
-            var devIp = IpUtil.GetLocalIpAddress();
-            var newDevice = new DreamData {Id = devIp, IpAddress = devIp};
-            var db = GetDb();
-            var col = db.GetCollection<DreamData>("MyDevice");
-            col.Upsert(newDevice.Id, newDevice);
-            db.Commit();
-            SetDeviceData(newDevice);
-            return newDevice;
-        }
-
-        public static void SetDeviceData(DreamData myDevice) {
-            if (string.IsNullOrEmpty(myDevice.Id)) {
-                myDevice.Id = IpUtil.GetLocalIpAddress();
-                myDevice.IpAddress = IpUtil.GetLocalIpAddress();
-            }
-            var values = new[]{"AmbientMode","DeviceMode","AmbientShow","DeviceGroup","GroupName"};
-            var existing = GetDeviceData();
-            foreach (var v in myDevice.GetType().GetProperties()) {
-                if (!values.Contains(v.Name)) continue;
-                foreach (var e in existing.GetType().GetProperties()) {
-                    if (e.Name != v.Name) continue;
-                    if (e.GetValue(existing) != v.GetValue(myDevice)) {
-                        SetItem(v.Name, v.GetValue(myDevice));
-                    }
-                }
-            }
-
-            var db = GetDb();
-            var col = db.GetCollection<DreamData>("MyDevice");
-            col.Upsert(myDevice.Id, myDevice);
-            db.Commit();
-        }
-
+     
         public static void SetItem(string key, dynamic value) {
             var db = GetDb();
             // See if it's a system property
             var sd = GetObject<SystemData>("SystemData");
             var saveSd = false;
-            var saveDd = false;
             foreach (var e in sd.GetType().GetProperties()) {
                 if (e.Name != key) continue;
                 saveSd = true;
@@ -324,18 +283,10 @@ namespace Glimmr.Models.Util {
             }
 
             if (saveSd) {
-                SetObject<SystemData>("SystemData", sd);
-            } else {
-                var dd = GetDeviceData();
-                foreach (var e in dd.GetType().GetProperties()) {
-                    if (e.Name != key) continue;
-                    saveDd = true;
-                    e.SetValue(dd, value);
-                }
-                if (saveDd) SetDeviceData(dd);
+                SetObject<SystemData>(sd);
             }
 
-            if (saveSd || saveDd) db.Commit();
+            if (saveSd) db.Commit();
         }
        
         public static dynamic GetItem<T>(string key) {
@@ -352,13 +303,6 @@ namespace Glimmr.Models.Util {
                 if (e.Name != key) continue;
                 return e.GetValue(sd);
             }
-
-            var dd = GetDeviceData();
-            foreach (var e in dd.GetType().GetProperties()) {
-                if (e.Name != key) continue;
-                return e.GetValue(dd);
-            }
-
             return null;
         }
         
@@ -386,29 +330,22 @@ namespace Glimmr.Models.Util {
         private static SystemData CreateSystemData() {
             var sd = new SystemData {DefaultSet = true, CaptureRegion = DisplayUtil.GetDisplaySize()};
             Log.Debug("Object setting...");
-            SetObject<SystemData>("SystemData",sd);
-            Log.Warning("Setting default values!");
-            // If not, create it
-            var deviceIp = IpUtil.GetLocalIpAddress();
-            var myDevice = new DreamData {Id = deviceIp, IpAddress = deviceIp};
-            Log.Debug("Creating default device data: " + JsonConvert.SerializeObject(myDevice));
-            SetDeviceData(myDevice);
-            SetObject<Color>("AmbientColor", Color.FromArgb(255, 255, 255, 255));
-            Log.Debug("Migrating devices");
-            MigrateDevices().ConfigureAwait(true);
+            SetObject<SystemData>("SystemData");
             Log.Debug("Done.");
             return sd;
         }
         
-        public static void SetObject<T>(string key, dynamic value) {
+        public static void SetObject<T>(dynamic value) {
             var db = GetDb();
+            var key = typeof(T).Name;
             var col = db.GetCollection<T>(key);
             col.Upsert(0, value);
             db.Commit();
         }
         
-        public static async Task SetObjectAsync<T>(string key, dynamic value) {
+        public static async Task SetObjectAsync<T>(dynamic value) {
             var db = GetDb();
+            var key = typeof(T).Name;
             var col = db.GetCollection<T>(key);
             col.Upsert(0, value);
             await Task.FromResult(true);
@@ -416,33 +353,7 @@ namespace Glimmr.Models.Util {
         }
 
 
-        public static List<DreamData> GetDreamDevices() {
-            var dd = GetDb();
-            var devs = dd.GetCollection<DreamData>("Dev_Dreamscreen");
-            var dl = devs.FindAll();
-            return dl.ToList();
-        }
-
-        public static DreamData GetDreamDevice(string id) {
-            return GetDreamDevices().FirstOrDefault(dev => dev.Id == id);
-        }
-
-        public static (int, int) GetTargetLights() {
-            var db = GetDb();
-            var dsIp = GetItem("DsIp");
-            var devices = db.GetCollection<DreamData>("Dev_Dreamscreen").FindAll();
-            foreach (var dev in devices) {
-                var tsIp = dev.IpAddress;
-                if (tsIp != dsIp) continue;
-                var fs = dev.FlexSetup;
-                var dX = fs[0];
-                var dY = fs[1];
-                return (dX, dY);
-            }
-
-            return (0, 0);
-        }
-
+        
         /// <summary>
         ///     Determine if config path is local, or docker
         /// </summary>

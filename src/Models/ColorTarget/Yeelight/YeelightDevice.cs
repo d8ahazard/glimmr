@@ -55,6 +55,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 			var col = sectors[_data.TargetSector];
 			_yeeDevice.SetRGBColor(col.R, col.G, col.B);
+			ColorService.Counter.Tick(Id);
 		}
 
 		public async Task FlashColor(Color col) {

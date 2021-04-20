@@ -103,6 +103,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			}
 
 			_streamingClient.SetColorAsync(cols, fadeTime).ConfigureAwait(false);
+			ColorService.Counter.Tick(Id);
 		}
 
 

@@ -21,21 +21,18 @@ namespace Glimmr.Models.Util {
 		public static async Task SetCaptureMode(IHubContext<SocketServer> hubContext, int capMode) {
 			Log.Debug("Updating capture mode to " + capMode);
 			var curMode = DataUtil.GetItem<int>("CaptureMode");
-			var dev = DataUtil.GetDeviceData();
 			if (curMode == capMode) return;
 			DataUtil.SetItem("CaptureMode", capMode);
 			var devType = "SideKick";
 			if (capMode != 0) devType = "Dreamscreen4K";
 
-			await SwitchDeviceType(devType, dev);
 			DataUtil.SetItem("DevType", devType);
-			await TriggerReload(hubContext, JObject.FromObject(dev));
 		}
 
-		private static async Task SwitchDeviceType(string devType, DreamData curDevice) {
+		private static async Task SwitchDeviceType(string devType, DreamScreenData curDevice) {
 			Log.Debug("Switching type to " + devType);
 			curDevice.DeviceTag = devType;
-			await DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", curDevice);
+			await DataUtil.InsertCollection<DreamScreenData>("Dev_Dreamscreen", curDevice);
 		}
 
 
@@ -82,13 +79,10 @@ namespace Glimmr.Models.Util {
 						}
 						break;
 					case "Dreamscreen":
-						var dsData = dData.ToObject<DreamData>();
+						var dsData = dData.ToObject<DreamScreenData>();
 						if (dsData != null) {
 							Log.Debug("Updating Dreamscreen");
-							await DataUtil.InsertCollection<DreamData>("Dev_Dreamscreen", dsData);
-							if (dsData.IpAddress == IpUtil.GetLocalIpAddress()) {
-								DataUtil.SetDeviceData(dsData);
-							}
+							await DataUtil.InsertCollection<DreamScreenData>("Dev_Dreamscreen", dsData);
 							await hubContext.Clients.All.SendAsync("dreamData", dsData);
 						}
 						break;

@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Glimmr.Enums;
 using Glimmr.Hubs;
 using Glimmr.Models.Util;
 using Microsoft.AspNetCore.SignalR;
@@ -12,23 +13,36 @@ namespace Glimmr.Services {
 	public class StatService : BackgroundService
 	{
 		private readonly IHubContext<SocketServer> _hubContext;
-		public StatService(IHubContext<SocketServer> hubContext)
-		{
+		private readonly ColorService _colorService;
+		private int count;
+		public StatService(IHubContext<SocketServer> hubContext, ColorService colorService) {
 			_hubContext = hubContext;
+			_colorService = colorService;
+			count = 0;
 		}
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			Log.Debug("StatService initialized.");
 			return Task.Run(async () => {
 				try {
 					while (!stoppingToken.IsCancellationRequested) {
-						// If not linux, do nothing
-						if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) return Task.CompletedTask;
-						// Get cpu data
-						var cd = await CpuUtil.GetStats();
-						// Send it to everybody
-						await _hubContext.Clients.All.SendAsync("cpuData", cd, stoppingToken);
 						// Sleep for 5s
-						await Task.Delay(30000, stoppingToken);
+						await Task.Delay(5000, stoppingToken);
+						if (count >= 6) {
+							count = 0;
+							if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) continue;	
+							var cd = await CpuUtil.GetStats();
+							// Send it to everybody
+
+							await _hubContext.Clients.All.SendAsync("cpuData", cd, stoppingToken);
+							count = 0;
+						}
+						count++;
+						if (_colorService.DeviceMode != DeviceMode.Off) {
+							Log.Debug("Sending framerates...");
+							await _hubContext.Clients.All.SendAsync("frames", _colorService.Counter.Rates(), stoppingToken).ConfigureAwait(false);
+							Log.Debug("Sent");
+						}
+						
 					}
 				} catch (Exception e) {
 					Log.Debug("Exception during init: " + e.Message);

@@ -6,10 +6,12 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Glimmr.Enums;
 using Glimmr.Models;
 using Glimmr.Models.ColorSource.Ambient;
 using Glimmr.Models.ColorSource.Audio;
 using Glimmr.Models.ColorSource.AudioVideo;
+using Glimmr.Models.ColorSource.DreamScreen;
 using Glimmr.Models.ColorSource.Video;
 using Glimmr.Models.ColorTarget;
 using Glimmr.Models.Util;
@@ -30,11 +32,12 @@ namespace Glimmr.Services {
 		private AudioStream _audioStream;
 		private VideoStream _videoStream;
 		private AudioVideoStream _avStream;
+		private DreamScreenStream _dreamStream;
 
 		private bool _autoDisabled;
-		private int _captureMode;
-		private int _deviceGroup;
-		private int _deviceMode;
+		private CaptureMode _captureMode;
+		private const int DeviceGroup = 20;
+		public DeviceMode DeviceMode;
 		//private float _fps;
 		private SystemData _systemData;
 
@@ -53,6 +56,8 @@ namespace Glimmr.Services {
 		private Stopwatch _watch;
 		
 		public event Action<List<Color>, List<Color>, int, bool> ColorSendEvent = delegate {};
+
+		public FrameCounter Counter;
 		
 		public ColorService(ControlService controlService) {
 			ControlService = controlService;
@@ -66,6 +71,7 @@ namespace Glimmr.Services {
 			ControlService.FlashDeviceEvent += FlashDevice;
 			ControlService.FlashSectorEvent += FlashSector;
 			ControlService.DemoLedEvent += Demo;
+			Counter = new FrameCounter(this);
 			Log.Debug("Initialization complete.");
 		}
 		
@@ -80,8 +86,8 @@ namespace Glimmr.Services {
 			return Task.Run(async () => {
 				Log.Debug("Running demo...");
 				await Demo(this, new DynamicEventArgs());
-				Log.Information($"All color sources initialized, setting mode to {_deviceMode}.");
-				await Mode(this, new DynamicEventArgs(_deviceMode)).ConfigureAwait(true);
+				Log.Information($"All color sources initialized, setting mode to {DeviceMode}.");
+				await Mode(this, new DynamicEventArgs(DeviceMode)).ConfigureAwait(true);
 				Log.Debug("Mode set...");
 				while (!stoppingToken.IsCancellationRequested) {
 					await CheckAutoDisable();
@@ -111,6 +117,9 @@ namespace Glimmr.Services {
 					break;
 				case "ambient":
 					_ambientStream = (AmbientStream) stream;
+					break;
+				case "dreamscreen":
+					_dreamStream = (DreamScreenStream) stream;
 					break;
 			}
 		}
@@ -222,17 +231,9 @@ namespace Glimmr.Services {
 		private async Task CheckAutoDisable() { 
 			var sourceActive = false;
 			// If we're in video or audio mode, check the source is active...
-			switch (_deviceMode) {
-				case 0:
-				case 3:
-				case 4:
-				case 5:
-				case 2:
-				case 1 when _videoStream == null:
-					return;
-				case 1:
-					sourceActive = _videoStream.SourceActive;
-					break;
+			if (DeviceMode == DeviceMode.Video && _videoStream != null) {
+				sourceActive = _videoStream.SourceActive;
+
 			}
 			
 			if (sourceActive) {
@@ -241,10 +242,10 @@ namespace Glimmr.Services {
 				_autoDisabled = false;
 				DataUtil.SetItem("AutoDisabled", _autoDisabled);
 				ControlService.SetModeEvent -= Mode;
-				await ControlService.SetMode(_deviceMode);
+				await ControlService.SetMode((int)DeviceMode);
 				ControlService.SetModeEvent += Mode;
 			} else {
-				if (_autoDisabled || _deviceMode == 2) return;
+				if (_autoDisabled || DeviceMode != DeviceMode.Video) return;
 				Log.Debug("Auto-disabling stream.");
 				_autoDisabled = true;
 				DataUtil.SetItem("AutoDisabled", _autoDisabled);
@@ -291,10 +292,8 @@ namespace Glimmr.Services {
 
 		private void LoadData() {
 			// Reload main vars
-			var dev = DataUtil.GetDeviceData();
-			_deviceMode = DataUtil.GetItem("DeviceMode");
-			_deviceGroup = (byte) dev.DeviceGroup;
-			_captureMode = DataUtil.GetItem<int>("CaptureMode") ?? 2;
+			DeviceMode = (DeviceMode) DataUtil.GetItem<int>("DeviceMode");
+			_captureMode =(CaptureMode) (DataUtil.GetItem<int>("CaptureMode") ?? 2);
 			_sendTokenSource = new CancellationTokenSource();
 			_systemData = DataUtil.GetObject<SystemData>("SystemData");
 			// Create new lists
@@ -381,8 +380,6 @@ namespace Glimmr.Services {
 
 			if (id == IpUtil.GetLocalIpAddress()) {
 				Log.Debug("This is our system data...");
-				var myDev = DataUtil.GetDeviceData();
-				_deviceGroup = myDev.DeviceGroup;
 			}
 
 			var exists = false;
@@ -483,8 +480,8 @@ namespace Glimmr.Services {
 		}
 
 		private async Task Mode(object o, DynamicEventArgs dynamicEventArgs) {
-			int newMode = dynamicEventArgs.P1;
-			_deviceMode = newMode;
+			DeviceMode newMode = (DeviceMode) dynamicEventArgs.P1;
+			DeviceMode = newMode;
 			if (newMode != 0 && _autoDisabled) {
 				_autoDisabled = false;
 				DataUtil.SetItem("AutoDisabled", _autoDisabled);
@@ -493,25 +490,25 @@ namespace Glimmr.Services {
 			if (_streamStarted && newMode == 0) await StopStream();
 			
 			switch (newMode) {
-				case 1:
+				case DeviceMode.Video:
 					_audioStream.ToggleStream();
 					_ambientStream.ToggleStream();
 					_avStream.ToggleStream();
 					_videoStream.ToggleStream(true);
 					break;
-				case 2: // Audio
+				case DeviceMode.Audio: // Audio
 					_ambientStream.ToggleStream();
 					_avStream.ToggleStream();
 					_videoStream.ToggleStream();
 					_audioStream.ToggleStream(true);
 					break;
-				case 3: // Ambient
+				case DeviceMode.Ambient: // Ambient
 					_audioStream.ToggleStream();
 					_avStream.ToggleStream();
 					_videoStream.ToggleStream();
 					_ambientStream.ToggleStream(true);
 					break;
-				case 4: // A/V mode :D
+				case DeviceMode.AudioVideo: // A/V mode :D
 					_ambientStream.ToggleStream(false);
 					_audioStream.ToggleStream(true);
 					_audioStream.SendColors = false;
@@ -519,17 +516,21 @@ namespace Glimmr.Services {
 					_videoStream.SendColors = false;
 					_avStream.ToggleStream(true);
 					break;
-				case 5:
+				case DeviceMode.Streaming:
 					_audioStream.ToggleStream();
 					_avStream.ToggleStream();
 					_videoStream.ToggleStream();
 					_ambientStream.ToggleStream();
+					if (_captureMode == CaptureMode.DreamScreen) {
+						Log.Debug("Starting sub...");
+						_dreamStream?.ToggleStream(true);
+					}
 					// Nothing to do, this tells the app to get data from DreamService
 					break;
 			}
 			
 			if (newMode != 0 && !_streamStarted) await StartStream();
-			_deviceMode = newMode;
+			DeviceMode = newMode;
 			Log.Information($"Device mode updated to {newMode}.");
 		}
 

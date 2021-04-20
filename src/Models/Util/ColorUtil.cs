@@ -576,14 +576,17 @@ namespace Glimmr.Models.Util {
 	        return 1;
         }
 
-        public static List<Color> SectorsToleds(List<Color> ints, SystemData sd) {
+        public static List<Color> SectorsToleds(List<Color> ints, int hSectors = -1, int vSectors = -1) {
+	        SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
 	        var output = new List<Color>();
 	        // We're going to duplicate the "corner" color values so they evenly map to LED colors
 	        var shifted = new List<Color>();
-	        var ledCount = sd.LedCount;
-	        var tr = sd.VSectors - 1;
-	        var tl = tr + sd.HSectors - 1;
-	        var bl = tl + sd.VSectors - 1;
+	        if (hSectors == -1) hSectors = sd.HSectors;
+	        if (vSectors == -1) vSectors = sd.VSectors;
+	        float ledCount = sd.LedCount;
+	        var tr = vSectors - 1;
+	        var tl = tr + hSectors - 1;
+	        var bl = tl + vSectors - 1;
 	        for (var i = 0; i < ints.Count; i++) {
 		        shifted.Add(ints[i]);
 		        if (i == tr || i == tl || i == bl) shifted.Add(ints[i]);

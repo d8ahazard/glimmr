@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using Glimmr.Models.ColorSource.Ambient;
 using Glimmr.Models.ColorSource.Audio;
 using Glimmr.Models.ColorSource.AudioVideo;
+using Glimmr.Models.ColorSource.DreamScreen;
 using Glimmr.Models.ColorSource.Video;
 using Glimmr.Models.Logging;
 using Glimmr.Services;
@@ -55,6 +56,7 @@ namespace Glimmr
 					services.AddHostedService<VideoStream>();
 					services.AddHostedService<AudioVideoStream>();
 					services.AddHostedService<AmbientStream>();
+					services.AddHostedService<DreamScreenStream>();
 					services.AddHostedService<StreamService>();
 					services.AddHostedService<DiscoveryService>();
 					services.AddHostedService<StatService>();

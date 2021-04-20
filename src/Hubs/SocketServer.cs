@@ -38,6 +38,11 @@ namespace Glimmr.Hubs {
 			return await CpuUtil.GetStats();
 		}
 
+		private async Task<string> GetFrames() {
+			await Task.FromResult(true);
+			return JsonConvert.SerializeObject(_cs.ColorService.Counter.Rates());
+		}
+
 		public async Task LoadData() {
 			await Clients.Caller.SendAsync("olo", DataUtil.GetStoreSerialized());
 		}

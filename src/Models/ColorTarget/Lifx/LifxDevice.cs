@@ -108,6 +108,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
             var fadeSpan = TimeSpan.FromSeconds(fadeTime);
             _client.SetColorAsync(B, nC);
+            ColorService.Counter.Tick(Id);
         }
 
         

@@ -167,9 +167,9 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				Log.Debug("Streaming exception caught: " + e.Message);
 			}
 
-			_updateTask = _client.AutoUpdate(_stream, _ct);
+			await _client.AutoUpdate(_stream, _ct).ConfigureAwait(false);
 			_entLayer = _stream.GetNewLayer(true);
-			Log.Debug($"Hue: Stream started.");
+			Log.Debug("Hue: Stream started.");
 			Streaming = true;
 		}
 
@@ -180,7 +180,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Log.Debug("Flashed");
 			await StopStream(_client, Data).ConfigureAwait(false);
 			Log.Debug("Stopped?");
-			if (Streaming) ResetColors().ConfigureAwait(false);
+			if (Streaming) await ResetColors();
 			Log.Debug("Reset");
 			Streaming = false;
 			await Task.FromResult(true);
@@ -201,7 +201,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				var isOn = lightData.LastState.On;
 				var ll = new List<string> {lightData.Id};
 				var cmd = new LightCommand {Saturation = sat, Brightness = bri, Hue = hue, On = isOn};
-				_client.LocalHueClient.SendCommandAsync(cmd, ll).ConfigureAwait(false);
+				await _client.LocalHueClient.SendCommandAsync(cmd, ll);
 			}
 		}
 
@@ -222,6 +222,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		/// <param name="list"></param>
 		/// <param name="colors"></param>
 		/// <param name="fadeTime"></param>
+		/// <param name="force"></param>
 		public void SetColor(List<Color> list, List<Color> colors, int fadeTime, bool force=false) {
 			if (!Streaming || !Data.Enable || _entLayer == null || Testing && !force) {
 				return;
@@ -252,6 +253,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 					entLight.SetState(_ct, oColor, mb);
 				}
 			}
+			ColorService.Counter.Tick(Id);
 		}
 
 		

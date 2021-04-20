@@ -1,4 +1,5 @@
 ﻿let socketLoaded = false;
+let frameInt;
 let loadTimeout;
 let loadCalled;
 // Row for settings and device cards divs
@@ -193,11 +194,12 @@ function loadCounts() {
     if (isValid(devs)) {
         for (let i = 0; i < devs.length; i++) {
             let dev = devs[i];
-            if (dev["Tag"] === "Dreamscreen" && dev["DeviceTag"].includes("Dreamscreen")) {
-                console.log("Adding DS", dev);
+            if (dev["Tag"] === "DreamScreen" && dev["DeviceTag"].includes("Dreamscreen")) {
+                console.log("Adding DS option", dev);
                 let opt = document.createElement("option");
                 opt.value = dev["Id"];
                 opt.innerText = dev["Name"] + " - " + dev["Id"];
+                if (opt.value === target) opt.selected = true;
                 devSelect.appendChild(opt);
             }
         }
@@ -415,7 +417,7 @@ function setSocketListeners() {
 
     websocket.on('open', function() {
         console.log("Socket connected (onOpen).");
-        socketLoaded = true;
+        socketLoaded = true;        
     });
 
     websocket.on('olo', function(stuff) {
@@ -424,6 +426,10 @@ function setSocketListeners() {
         console.log("OLO: ", parsed);
         data.store = parsed;
         loadUi();
+    });
+    
+    websocket.on('frames', function(stuff) {
+        console.log("frame Stuff: ", stuff);       
     });
 
     websocket.on('device', function(stuff) {
@@ -1158,6 +1164,7 @@ function loadDevices() {
     for (let i = 0; i< data.devices.length; i++) {
         if (data.devices.hasOwnProperty(i)) {
             let device = data.devices[i];
+            if (device.Tag === "DreamScreen" && device["DeviceTag"].includes("Dreamscreen")) continue;
             // Create main card
             let mainDiv = document.createElement("div");
             mainDiv.classList.add("card", "m-4", "devCard");

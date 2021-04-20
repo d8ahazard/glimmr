@@ -265,7 +265,7 @@ namespace Glimmr.Services {
 					}
 				}
 
-				await DataUtil.SetObjectAsync<SystemData>("SystemData", sd);
+				await DataUtil.SetObjectAsync<SystemData>(sd);
 			}
 
 			RefreshSystemEvent();

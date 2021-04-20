@@ -128,6 +128,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 
             try {
                 _udpClient.SendAsync(packet.ToArray(), packet.Count, _ep);
+                ColorService.Counter.Tick(Id);
             } catch (Exception e) {
                 Log.Debug("Exception: " + e.Message);        
             }
