@@ -62,13 +62,13 @@ echo Installing dotnet binaries.
 powershell %~dp0dotnet-install.ps1 -Channel 5.0
 
 :installGlimmr
-set file="%~dp0src"
+set file="%~dp0../src"
 
 if not exist %file% (
     echo Cloning repository    
-    git clone https://github.com/d8ahazard/glimmr %~dp0src/
+    git clone -- branch dev https://github.com/d8ahazard/glimmr %~dp0../src/
 ) else (
-	cd %~dp0src/
+	cd %~dp0../src/
 	echo Dir already exists %file%
     git stash && git fetch && git pull
 )
@@ -79,8 +79,7 @@ echo Publishing for windows
 set version=1.1.0
 dotnet publish .\src\Glimmr.csproj /p:PublishProfile=Windows -o .\bin\
 echo copying bass.dll from .\lib\win\bass.dll to .\bin\bass.dll
-copy .\lib\win\bass.dll .\bin\bass.dll
-copy .\lib\win\LifxNet.dll .\bin\LifxNet.dll
+copy %~dp0..\lib\Windows\bass.dll %~dp0..src\bin\Windows\bass.dll
 net start GlimmrTV
 pause
 if errorlevel 0 goto installService
