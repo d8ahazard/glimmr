@@ -28,10 +28,8 @@ namespace Glimmr.Models.Util {
         }
 
         public static void Dispose() {
-            Log.Debug("Disposing database...");
             _db?.Commit();
             _db?.Dispose();
-            Log.Debug("Database disposed.");
         }
 
         
@@ -85,7 +83,7 @@ namespace Glimmr.Models.Util {
                 output.AddRange(coll.FindAll());
                 return output;
             } catch (Exception e) {
-                Log.Debug($@"Get exception for {typeof(T)}: {e.Message}");
+                Log.Warning($@"Get exception for {typeof(T)}: {e.Message}");
                 return null;
             }
         }
@@ -113,7 +111,7 @@ namespace Glimmr.Models.Util {
                     return r;
                 
             } catch (Exception e) {
-                Log.Debug($@"Get exception for {typeof(T)}: {e.Message}");
+                Log.Warning($@"Get exception for {typeof(T)}: {e.Message}");
                 return null;
             }
         }
@@ -320,7 +318,6 @@ namespace Glimmr.Models.Util {
             }
 
             if (key == "SystemData") {
-                Log.Debug("Creating new system data...");
                 var sd = CreateSystemData();
                 return sd;
             }
@@ -329,9 +326,7 @@ namespace Glimmr.Models.Util {
 
         private static SystemData CreateSystemData() {
             var sd = new SystemData {DefaultSet = true, CaptureRegion = DisplayUtil.GetDisplaySize()};
-            Log.Debug("Object setting...");
             SetObject<SystemData>("SystemData");
-            Log.Debug("Done.");
             return sd;
         }
         

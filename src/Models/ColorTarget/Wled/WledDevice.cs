@@ -63,7 +63,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
                 new JProperty("on", true),
                 new JProperty("bri", Brightness)
                 );
-            SendPost(onObj);
+            await SendPost(onObj);
             _ep = IpUtil.Parse(IpAddress, port);
             Streaming = true;
             Log.Debug("WLED: Stream started.");

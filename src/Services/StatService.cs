@@ -38,17 +38,15 @@ namespace Glimmr.Services {
 						}
 						count++;
 						if (_colorService.DeviceMode != DeviceMode.Off) {
-							Log.Debug("Sending framerates...");
-							await _hubContext.Clients.All.SendAsync("frames", _colorService.Counter.Rates(), stoppingToken).ConfigureAwait(false);
-							Log.Debug("Sent");
+							_hubContext.Clients.All.SendAsync("frames", _colorService.Counter.Rates(), stoppingToken).ConfigureAwait(false);
 						}
 						
 					}
 				} catch (Exception e) {
-					Log.Debug("Exception during init: " + e.Message);
+					Log.Warning("Exception during init: " + e.Message);
 				}
 
-				Log.Debug("Stopped stat service.");
+				Log.Information("Stopped stat service.");
 				return Task.CompletedTask;
 			}, stoppingToken);
 		}

@@ -128,7 +128,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Log.Debug($"Hue: Starting stream at  {IpAddress}...");
 			// Leave if we have no client (not authorized)
 			if (_client == null) {
-				Log.Warning("We have not streaming client, can't start.");
+				Log.Warning("We have no streaming client, can't start.");
 				return;
 			}
 			
@@ -167,7 +167,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				Log.Debug("Streaming exception caught: " + e.Message);
 			}
 
-			await _client.AutoUpdate(_stream, _ct).ConfigureAwait(false);
+			_client.AutoUpdate(_stream, _ct).ConfigureAwait(false);
 			_entLayer = _stream.GetNewLayer(true);
 			Log.Debug("Hue: Stream started.");
 			Streaming = true;
@@ -176,11 +176,11 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		public async Task StopStream() {
 			if (!Enable) return;
 			Log.Debug($"Hue: Stopping Stream: {IpAddress}...");
-			await FlashColor(Color.FromArgb(0, 0, 0)).ConfigureAwait(false);
+			FlashColor(Color.FromArgb(0, 0, 0)).ConfigureAwait(false);
 			Log.Debug("Flashed");
-			await StopStream(_client, Data).ConfigureAwait(false);
+			StopStream(_client, Data).ConfigureAwait(false);
 			Log.Debug("Stopped?");
-			if (Streaming) await ResetColors();
+			if (Streaming) ResetColors().ConfigureAwait(false);
 			Log.Debug("Reset");
 			Streaming = false;
 			await Task.FromResult(true);

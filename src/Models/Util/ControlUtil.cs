@@ -19,7 +19,6 @@ using Serilog;
 namespace Glimmr.Models.Util {
 	public static class ControlUtil {
 		public static async Task SetCaptureMode(IHubContext<SocketServer> hubContext, int capMode) {
-			Log.Debug("Updating capture mode to " + capMode);
 			var curMode = DataUtil.GetItem<int>("CaptureMode");
 			if (curMode == capMode) return;
 			DataUtil.SetItem("CaptureMode", capMode);
@@ -30,7 +29,6 @@ namespace Glimmr.Models.Util {
 		}
 
 		private static async Task SwitchDeviceType(string devType, DreamScreenData curDevice) {
-			Log.Debug("Switching type to " + devType);
 			curDevice.DeviceTag = devType;
 			await DataUtil.InsertCollection<DreamScreenData>("Dev_Dreamscreen", curDevice);
 		}
@@ -39,63 +37,14 @@ namespace Glimmr.Models.Util {
 		public static async Task TriggerReload(IHubContext<SocketServer> hubContext, JObject dData) {
 			if (dData == null) throw new ArgumentException("invalid jObject");
 			if (hubContext == null) throw new ArgumentException("invalid hub context.");
-			Log.Debug("Reloading data: " + JsonConvert.SerializeObject(dData));
-			var tag = (dData["Tag"] ?? "INVALID").Value<string>();
-			var id = (dData["_id"] ?? "INVALID").Value<string>();
-			dData["Id"] = id;
-			if (tag == "INVALID" || id == "INVALID") return;
-			try {
-				switch (tag) {
-					case "Wled":
-						var wData = dData.ToObject<WledData>();
-						if (wData != null) {
-							Log.Debug("Updating wled");
-							await DataUtil.InsertCollection<WledData>("Dev_Wled", wData);
-							await hubContext.Clients.All.SendAsync("wledData", wData);
-						}
-						break;
-					case "Hue":
-						var bData = dData.ToObject<HueData>();
-						if (bData != null) {
-							Log.Debug("Updating bridge");
-							await DataUtil.InsertCollection<HueData>("Dev_Hue", bData);
-							await hubContext.Clients.All.SendAsync("hueData", bData);
-						}
-						break;
-					case "Lifx":
-						var lData = dData.ToObject<LifxData>();
-						if (lData != null) {
-							Log.Debug("Updating lifx bulb");
-							await DataUtil.InsertCollection<LifxData>("Dev_Lifx", lData);
-							await hubContext.Clients.All.SendAsync("lifxData", lData);
-						}
-						break;
-					case "Nanoleaf":
-						var nData = dData.ToObject<NanoleafData>();
-						if (nData != null) {
-							Log.Debug("Updating nanoleaf");
-							await DataUtil.InsertCollection<NanoleafData>("Dev_Nanoleaf", nData);
-							await hubContext.Clients.All.SendAsync("nanoData", nData);
-						}
-						break;
-					case "Dreamscreen":
-						var dsData = dData.ToObject<DreamScreenData>();
-						if (dsData != null) {
-							Log.Debug("Updating Dreamscreen");
-							await DataUtil.InsertCollection<DreamScreenData>("Dev_Dreamscreen", dsData);
-							await hubContext.Clients.All.SendAsync("dreamData", dsData);
-						}
-						break;
-				}
-			} catch (Exception e) {
-				Log.Warning("We have an exception: ", e);
-			}
+			var dO = dData.ToObject<IColorTargetData>();
+			await DataUtil.AddDeviceAsync(dO);
+			await hubContext.Clients.All.SendAsync("Device", dO);
 		}
 
 		public static async Task NotifyClients(IHubContext<SocketServer> hc) {
 			if (hc == null) throw new ArgumentNullException(nameof(hc));
 			await hc.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
-			Log.Debug("Sent updated store data via socket.");
 		}
 
 		public static async Task AddDevice(IColorTargetData data) {

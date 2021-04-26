@@ -50,6 +50,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
         private void WledDiscovered(object sender, ServiceInstanceDiscoveryEventArgs e) {
             var name = e.ServiceInstanceName.ToString();
+            Log.Debug($"WLED: Found - {name}");
             if (!name.Contains("wled", StringComparison.InvariantCulture)) return;
             var rr = e.Message.AdditionalRecords;
             

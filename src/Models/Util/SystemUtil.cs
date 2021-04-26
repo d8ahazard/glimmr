@@ -51,18 +51,15 @@ namespace Glimmr.Models.Util {
 		public static string GetUserDir() {
 			var userDir = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-				Log.Debug("Platform is linux.");
 				userDir = "/etc/";
 			}
 
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) Log.Debug("Platform is Windows");
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) Log.Debug("Platform is OSX");
 			var fullPath = Path.Combine(userDir, "Glimmr");
-			Log.Debug("Full path is " + fullPath);
 			if (!Directory.Exists(fullPath)) {
 				try {
 					Directory.CreateDirectory(fullPath);
-					Log.Debug("Returning: " + fullPath);
 					return fullPath;
 				} catch (Exception e) {
 					Log.Warning("Exception creating userdata dir: " + e.Message);
@@ -103,8 +100,6 @@ namespace Glimmr.Models.Util {
 					var h = v.Height;
 					
 					if (w != 0 && h != 0) {
-						Log.Debug($"Width, height of {i}: {w}, {h}");
-						
 						output[i] = GetDeviceName(i).Result;
 					}
 
@@ -147,7 +142,6 @@ namespace Glimmr.Models.Util {
 				var devices = new List<DsDevice>(DsDevice.GetDevicesOfCat(FilterCategory.VideoInputDevice));
 				var idx = 0;
 				foreach (var device in devices) {
-					Log.Debug("Adding cap dev: " + JsonConvert.SerializeObject(device));
 					cams[idx] = device.Name;
 					idx++;
 				}

@@ -26,9 +26,7 @@ namespace Glimmr.Services {
 			controlService1.SetModeEvent += UpdateMode;
 			var classnames = SystemUtil.GetClasses<IColorDiscovery>();
 			_discoverables = new List<IColorDiscovery>();
-			Log.Debug("Adding discovery classes...");
 			foreach (var c in classnames) {
-				Log.Debug("C: " + c);
 				var dev = (IColorDiscovery) Activator.CreateInstance(Type.GetType(c)!, colorService);
 				_discoverables.Add(dev);
 			}
@@ -36,11 +34,11 @@ namespace Glimmr.Services {
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			return Task.Run(async () => {
-				Log.Debug("Starting discovery service loop.");
+				Log.Information("Starting discovery service loop...");
 				
 				while (!stoppingToken.IsCancellationRequested) {
 					await Task.Delay(TimeSpan.FromMinutes(60), stoppingToken);
-					Log.Debug("Auto-refreshing devices...");
+					Log.Information("Auto-refreshing devices...");
 					if (!_streaming) await TriggerRefresh(this, null);
 				}
 				return Task.CompletedTask;
@@ -48,7 +46,7 @@ namespace Glimmr.Services {
 		}
 
 		public override Task StopAsync(CancellationToken cancellationToken) {
-			Log.Debug("Discovery service stopped.");
+			Log.Information("Discovery service stopped.");
 			return base.StopAsync(cancellationToken);
 		}
 
@@ -59,7 +57,6 @@ namespace Glimmr.Services {
 
 
 		private async Task TriggerRefresh(object o, DynamicEventArgs dynamicEventArgs) {
-			Log.Debug("Triggering refresh.");
 			var cs = new CancellationTokenSource();
 			cs.CancelAfter(TimeSpan.FromSeconds(10));
 			await DeviceDiscovery(cs.Token);
@@ -68,7 +65,6 @@ namespace Glimmr.Services {
 				var device = (IColorTargetData) dev;
 				var lastSeen = DateTime.Parse(device.LastSeen, CultureInfo.InvariantCulture);
 				if (DateTime.Now - lastSeen >= TimeSpan.FromDays(7)) {
-					Log.Debug("Purging old device: " + device.Id);
 					DataUtil.DeleteDevice(device.Id);
 				} 
 			}
@@ -79,10 +75,6 @@ namespace Glimmr.Services {
 		private async Task DeviceDiscovery(CancellationToken token) {
 			if (_discovering) return;
 			_discovering = true;
-			Log.Debug("Triggering refresh of devices via timer.");
-			// Trigger a refresh
-			
-			Log.Debug("Starting Device Discovery...");
 			var tasks = _discoverables.Select(disco => Task.Run(() =>disco.Discover(token), token)).ToList();
 
 			try {
@@ -95,7 +87,7 @@ namespace Glimmr.Services {
 				}
 			}
 				
-			Log.Debug("All devices should now be refreshed.");
+			Log.Information("All devices should now be refreshed.");
 			_discovering = false;
 			// Notify all clients to refresh data
 			await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized(), CancellationToken.None);

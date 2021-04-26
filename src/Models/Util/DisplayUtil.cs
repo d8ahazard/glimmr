@@ -179,7 +179,6 @@ namespace Glimmr.Models.Util {
             var output = p.StandardOutput.ReadToEnd();
             p.WaitForExit();
             p.Dispose();
-            Log.Debug("Output from screen check: " + output);
             var r = new Rectangle();
             try {
                 var match = Regex.Match(output, @"(\d+)x(\d+)\+0\+0");
@@ -189,7 +188,7 @@ namespace Glimmr.Models.Util {
                     int.Parse(h, CultureInfo.InvariantCulture));
                 Console.WriteLine ("Display Size is {0} x {1}", w, h);
             } catch (FormatException) {
-                Log.Debug("Format exception, probably we have no screen.");
+                //Log.Debug("Format exception, probably we have no screen.");
             }
 
             return r;

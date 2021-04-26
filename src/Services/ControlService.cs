@@ -66,9 +66,7 @@ namespace Glimmr.Services {
 
 		public dynamic GetAgent(string classType) {
 			foreach (var agentData in _agents) {
-				Log.Debug($"Checking {agentData.Key} against {classType}");
 				if (agentData.Key == classType) {
-					Log.Debug($"Returning {classType}.");
 					return agentData.Value;
 				}
 			}
@@ -81,17 +79,16 @@ namespace Glimmr.Services {
 			foreach (var c in types) {
 				var parts = c.Split(".");
 				var shortClass = parts[^1];
-				Log.Debug("Creating agent: " + c);
+				Log.Information("Creating agent: " + c);
 				var agentMaker = (IColorTargetAgent) Activator.CreateInstance(Type.GetType(c)!);
 				if (agentMaker == null) {
-					Log.Debug("Agent is null!");
+					Log.Warning("Agent is null!");
 				} else {
 					var agent = agentMaker.CreateAgent(this);
 					if (agent != null) {
-						Log.Debug($"Adding agent: {c}, {shortClass}");
 						_agents[shortClass] = agent;
 					} else {
-						Log.Debug("Agent is null!");
+						Log.Warning("Agent is null!");
 					}
 				}
 				
@@ -123,15 +120,15 @@ namespace Glimmr.Services {
 			var data = DataUtil.GetDevice(id);
 			if (data != null) {
 				if (string.IsNullOrEmpty(data.Token)) {
-					Log.Debug("Starting auth check...");
+					Log.Information("Starting auth check...");
 					if (clientProxy != null) await clientProxy.SendAsync("auth", "start");
 				} else {
-					Log.Debug("Device is already authorized...");
+					Log.Information("Device is already authorized...");
 					if (clientProxy != null) await clientProxy.SendAsync("auth", "authorized");
 					return;
 				}
 			} else {
-				Log.Debug("Device is null: " + id);
+				Log.Warning("Device is null: " + id);
 				if (clientProxy != null) await clientProxy.SendAsync("auth", "error");
 				return;
 			}
@@ -141,35 +138,32 @@ namespace Glimmr.Services {
 			dynamic dev = null;
 			foreach (var d in disco) {
 				var baseStr = d.ToLower().Split(".")[^2];
-				Log.Debug("Checking " + baseStr + " against " + data.Tag.ToLower());
 				if (baseStr == data.Tag.ToLower()) {
-					Log.Debug("Trying to create activator...");
 					dev = Activator.CreateInstance(Type.GetType(d)!,ColorService);
 				}
 				if (dev != null) break;
 			}
 
 			if (dev != null && dev.GetType().GetMethod("CheckAuthAsync") != null) {
-				Log.Debug("We have a valid activator, starting...");
 				var count = 0;
 				while (count < 30) {
 					try {
 						var activated = await dev.CheckAuthAsync(data);
 						if (!string.IsNullOrEmpty(activated.Token)) {
-							Log.Debug("Device is activated!");
+							Log.Information("Device is activated!");
 							await DataUtil.AddDeviceAsync(activated, false);
 							if (clientProxy != null) await clientProxy.SendAsync("auth", "authorized");
 							return;
 						}
 					} catch (Exception e) {
-						Log.Debug("Error: " + e.Message + " at " + e.StackTrace);
+						Log.Warning("Error: " + e.Message + " at " + e.StackTrace);
 					}
 					await Task.Delay(1000);
 					count++;
 					if (clientProxy != null) await clientProxy.SendAsync("auth", "update", count);
 				}	
 			} else {
-				Log.Debug("Error creating activator!");
+				Log.Warning("Error creating activator!");
 				if (clientProxy != null) await clientProxy.SendAsync("auth", "error");
 			}
 		}
@@ -222,7 +216,7 @@ namespace Glimmr.Services {
 		}
 
 		public override Task StopAsync(CancellationToken cancellationToken) {
-			Log.Debug("Stopping control service...");
+			Log.Information("Stopping control service...");
 			HttpSender?.Dispose();
 			UdpClient?.Dispose();
 			MulticastService?.Dispose();
@@ -236,7 +230,7 @@ namespace Glimmr.Services {
 					// Ignored
 				}
 			}
-			Log.Debug("Control service stopped.");
+			Log.Information("Control service stopped.");
 			return base.StopAsync(cancellationToken);
 		}
 
@@ -272,7 +266,6 @@ namespace Glimmr.Services {
 		}
 
 		public static Task SystemControl(string action) {
-			Log.Debug("Action triggered: " + action);
 			switch (action) {
 				case "restart":
 					SystemUtil.Restart();
@@ -291,7 +284,6 @@ namespace Glimmr.Services {
 		}
 
 		public async Task UpdateDevice(dynamic device, bool merge=true) {
-			Log.Debug("Update device called: " + JsonConvert.SerializeObject(device));
 			await DataUtil.AddDeviceAsync(device, merge);
 			await _hubContext.Clients.All.SendAsync("device",(IColorTargetData) device);
 			await RefreshDevice(device.Id);

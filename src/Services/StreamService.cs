@@ -34,13 +34,12 @@ namespace Glimmr.Services {
 
 		private Task Mode(object arg1, DynamicEventArgs arg2) {
 			_devMode = arg2.P1;
-			Log.Debug($"Mode updated to {_devMode}");
 			return Task.CompletedTask;
 		}
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			
-			Log.Debug("Stream service initialized.");
+			Log.Information("Stream service initialized.");
 			return Task.Run(async () => {
 				var hostname = Dns.GetHostName();
 				var addr = new List<IPAddress>();
@@ -58,7 +57,6 @@ namespace Glimmr.Services {
 					}
 				}
 				sd.Dispose();
-				Log.Debug("UDP Receiver canceled...");
 			}, stoppingToken);
 		}
 		
@@ -71,7 +69,7 @@ namespace Glimmr.Services {
 		private async Task ProcessFrame(IReadOnlyList<byte> data) {
 			var flag = data[0];
 			if (flag != 2) {
-				Log.Debug("Flag is invalid.");
+				Log.Warning("Flag is invalid!");
 			}
 			
 			var bytes = data.Skip(2).ToArray();

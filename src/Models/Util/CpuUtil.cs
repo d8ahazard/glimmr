@@ -147,7 +147,7 @@ namespace Glimmr.Models.Util {
 				if (_tempMax < temperature)
 					_tempMax = temperature;
 			} catch (Exception ex) {
-				Log.Debug("Got me some kind of exception: " + ex.Message);
+				Log.Warning("Got me some kind of exception: " + ex.Message);
 			}
 		}
 	}
