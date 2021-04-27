@@ -81,8 +81,8 @@ namespace Glimmr.Models.Util {
 							output.Add(type.FullName);
 						}
 					}
-				} catch (Exception) {
-					// Ignored
+				} catch (Exception e) {
+					Log.Warning("Exception listing types: " + e.Message);
 				}
 			}
 

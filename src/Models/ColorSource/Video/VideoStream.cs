@@ -173,7 +173,7 @@ namespace Glimmr.Models.ColorSource.Video {
 
 
 		private void SetCapVars() {
-			_systemData = DataUtil.GetObject<SystemData>("SystemData");
+			_systemData = DataUtil.GetSystemData();
 			Colors = ColorUtil.EmptyList(_systemData.LedCount);
 			var sectorSize = (_systemData.VSectors * 2) + (_systemData.HSectors * 2) - 4; 
 			Sectors = ColorUtil.EmptyList(sectorSize);

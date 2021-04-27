@@ -440,7 +440,7 @@ namespace Glimmr.Models.ColorSource.Video {
 		}
 
 		public void Refresh() {
-			SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
+			SystemData sd = DataUtil.GetSystemData();
 			_previewMode = sd.PreviewMode;
 			Log.Debug("Preview mode set to: " + _previewMode);
 			_leftCount = sd.LeftCount;

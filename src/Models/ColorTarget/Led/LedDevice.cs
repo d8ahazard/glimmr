@@ -81,7 +81,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 		public Task ReloadData() {
 			var ld = DataUtil.GetDevice<LedData>(Id);
-			SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
+			SystemData sd = DataUtil.GetSystemData();
 			if (ld == null) {
 				Log.Warning("No LED Data");
 				return Task.CompletedTask;
@@ -103,9 +103,9 @@ namespace Glimmr.Models.ColorTarget.Led {
 				return Task.CompletedTask;
 			}
 
-			if (Data.Brightness != ld.Brightness) _strip.SetBrightness(ld.Brightness);
+			if (Data.Brightness != ld.Brightness) _strip.SetBrightness(ld.Brightness/100 * 255);
 			if (Data.LedCount != ld.LedCount) _strip.SetLedCount(ld.LedCount);
-			if (!_enableAbl) _strip.SetBrightness(ld.Brightness);
+			if (!_enableAbl) _strip.SetBrightness(ld.Brightness / 100 * 255);
 			return Task.CompletedTask;
 		}
 
@@ -200,7 +200,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			//one PU is the power it takes to have 1 channel 1 step brighter per brightness step
 			//so A=2,R=255,G=0,B=0 would use 510 PU per LED (1mA is about 3700 PU)
 			var actualMilliampsPerLed = ld.MilliampsPerLed; // 20
-			var defaultBrightness = ld.Brightness;
+			int defaultBrightness = (int) (ld.Brightness / 100f * 255);
 			var ablMaxMilliamps = ld.AblMaxMilliamps; // 4500
 			var length = input.Count;
 			var output = input;

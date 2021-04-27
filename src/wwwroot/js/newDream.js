@@ -511,7 +511,7 @@ function setListeners() {
         if (isValid(obj) && isValid(property) && isValid(val)) {
             console.log("Trying to set: ", obj, property, val);
             let numVal = parseInt(val);
-            if (!isNaN(numVal) && property !== "DsIp") val = numVal; 
+            if (!isNaN(numVal) && property !== "DsIp" && property !== "OpenRgbIp") val = numVal; 
             
             if (isValid(id)) {
                 let strips = data.store[obj];

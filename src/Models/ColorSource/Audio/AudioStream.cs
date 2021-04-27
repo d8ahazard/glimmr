@@ -75,7 +75,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 
 		private async Task LoadData() {
-			_sd = DataUtil.GetObject<SystemData>("SystemData");
+			_sd = DataUtil.GetSystemData();
 			_sectorCount = (_sd.VSectors + _sd.HSectors) * 2 - 4;
 			_gain = _sd.AudioGain;
 			Colors = ColorUtil.EmptyList(_sd.LedCount);

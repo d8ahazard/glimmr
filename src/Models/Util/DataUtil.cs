@@ -16,7 +16,6 @@ using LiteDB;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
-using Color = System.Drawing.Color;
 
 namespace Glimmr.Models.Util {
     [Serializable]
@@ -132,17 +131,28 @@ namespace Glimmr.Models.Util {
 
         public static List<dynamic> GetDevices() {
             var db = GetDb();
-            var devs =  db.GetCollection("Devices").FindAll().ToArray();
-            var devices = db.GetCollection<dynamic>("Devices").FindAll().ToArray();
+            var devs = new BsonDocument[0];
+            var devices = new dynamic[0];
+            try {
+                devs = db.GetCollection("Devices").FindAll().ToArray();
+                devices = db.GetCollection<dynamic>("Devices").FindAll().ToArray();
+            } catch (Exception) {
+                // Ignore
+            }
+
             var output = new List<dynamic>();
             foreach (var device in devices) {
                 foreach (var dev in devs) {
-                    var json = LiteDB.JsonSerializer.Serialize(dev);
-                    var jObj = JObject.Parse(json);
-                    if (jObj.GetValue("_id") == device.Id) {
-                        dynamic donor = Activator.CreateInstance(Type.GetType(jObj.GetValue("_type").ToString()));
-                        device.KeyProperties = donor?.KeyProperties;
-                        output.Add(device);
+                    try {
+                        var json = LiteDB.JsonSerializer.Serialize(dev);
+                        var jObj = JObject.Parse(json);
+                        if (jObj.GetValue("_id") == device.Id) {
+                            dynamic donor = Activator.CreateInstance(Type.GetType(jObj.GetValue("_type").ToString()));
+                            device.KeyProperties = donor?.KeyProperties;
+                            output.Add(device);
+                        }
+                    } catch (Exception e) {
+                        Log.Warning("Exception: " + e.Message);
                     }
                 }
             }
@@ -235,8 +245,7 @@ namespace Glimmr.Models.Util {
         
         public static string GetStoreSerialized() {
             var output = new Dictionary<string, dynamic>();
-            SystemData sd = GetObject<SystemData>("SystemData");
-            DreamScreenData dev = GetObject<DreamScreenData>("MyDevice");
+            SystemData sd = GetSystemData();
             var audio = GetCollection<AudioData>("Dev_Audio");
             var devices = GetDevices();
             var mons = DisplayUtil.GetMonitors();
@@ -259,7 +268,6 @@ namespace Glimmr.Models.Util {
             var jl = new JsonLoader("ambientScenes");
             output["SystemData"] = sd;
             output["Devices"] = devices;
-            output["MyDevice"] = dev;
             output["Dev_Audio"] = audio;
             output["Dev_Video"] = oMons;
             output["Dev_Usb"] = caps;
@@ -272,7 +280,7 @@ namespace Glimmr.Models.Util {
         public static void SetItem(string key, dynamic value) {
             var db = GetDb();
             // See if it's a system property
-            var sd = GetObject<SystemData>("SystemData");
+            var sd = GetSystemData();
             var saveSd = false;
             foreach (var e in sd.GetType().GetProperties()) {
                 if (e.Name != key) continue;
@@ -296,7 +304,7 @@ namespace Glimmr.Models.Util {
         }
         
         public static dynamic GetItem(string key) {
-            var sd = GetObject<SystemData>("SystemData");
+            var sd = GetSystemData();
             foreach (var e in sd.GetType().GetProperties()) {
                 if (e.Name != key) continue;
                 return e.GetValue(sd);
@@ -317,16 +325,22 @@ namespace Glimmr.Models.Util {
                 Log.Warning("Exception: " + e.Message);
             }
 
-            if (key == "SystemData") {
-                var sd = CreateSystemData();
-                return sd;
-            }
             return null;
         }
 
-        private static SystemData CreateSystemData() {
+        public static SystemData GetSystemData() {
+            var db = GetDb();
+            var col = db.GetCollection<SystemData>("SystemData");
+            if (col.Count() != 0) {
+                foreach (var doc in col.FindAll()) {
+                    return doc;
+                }
+            }
+
+            Log.Debug("Creating new SD");
             var sd = new SystemData {DefaultSet = true, CaptureRegion = DisplayUtil.GetDisplaySize()};
-            SetObject<SystemData>("SystemData");
+            col.Upsert(0,sd);
+    
             return sd;
         }
         
@@ -342,7 +356,7 @@ namespace Glimmr.Models.Util {
             var db = GetDb();
             var key = typeof(T).Name;
             var col = db.GetCollection<T>(key);
-            col.Upsert(0, value);
+            col.Upsert("0", value);
             await Task.FromResult(true);
             db.Commit();
         }

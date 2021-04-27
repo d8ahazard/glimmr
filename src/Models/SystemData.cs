@@ -109,6 +109,14 @@ namespace Glimmr.Models {
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string DsIp { get; set; }
+
+		[DefaultValue("127.0.0.1")]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public string OpenRgbIp { get; set; } = "127.0.0.1";
+
+		[DefaultValue(6742)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int OpenRgbPort { get; set; } = 6742;
 		
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]

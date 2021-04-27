@@ -74,7 +74,7 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 
 		
 		public void Refresh() {
-			_systemData = DataUtil.GetObject<SystemData>("SystemData");
+			_systemData = DataUtil.GetSystemData();
 			Colors = ColorUtil.EmptyList(_systemData.LedCount);
 			Sectors = ColorUtil.EmptyList(28);
 		}

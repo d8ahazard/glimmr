@@ -25,13 +25,13 @@ namespace Glimmr.Controllers {
 
 		[HttpGet("")]
 		public static IActionResult DefaultAction() {
-			var sd = DataUtil.GetObject<SystemData>("SystemData");
+			var sd = DataUtil.GetSystemData();
 			return new JsonResult(sd);
 		}
 
 		[HttpGet("json")]
 		public JsonResult GetJson() {
-			SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
+			SystemData sd = DataUtil.GetSystemData();
 			var glimmrData = new GlimmrData(sd);
 			return new JsonResult(glimmrData);
 		}
@@ -39,7 +39,7 @@ namespace Glimmr.Controllers {
 		[HttpGet("brightness")]
 		public async Task<IActionResult> SetBrightness([FromQuery] int value) {
 			Log.Debug("Setting brightness: " + value);
-			SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
+			SystemData sd = DataUtil.GetSystemData();
 			sd.Brightness = value;
 			await _controlService.UpdateSystem(sd);
 			return Ok(value);
@@ -47,7 +47,7 @@ namespace Glimmr.Controllers {
 		
 		[HttpGet("toggleMode")]
 		public async Task<IActionResult> ToggleMode() {
-			SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
+			SystemData sd = DataUtil.GetSystemData();
 			var prev = sd.PreviousMode;
 			var mode = sd.DeviceMode;
 			if (mode == 0) {

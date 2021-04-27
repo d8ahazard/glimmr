@@ -113,6 +113,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
                     var leds = SplitColors(sectors);
                     Colors = leds;
                     Sectors = sectors;
+                    Log.Debug("Sending colors...");
                     _cs.SendColors(Colors, Sectors,0);
                     await Task.FromResult(true);
                 }
@@ -236,7 +237,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
         
         public void Refresh() {
-            SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
+            var sd = DataUtil.GetSystemData();
             _sectorCount = (sd.VSectors + sd.HSectors) * 2 - 4;
             _ledCount = sd.LedCount;
             _ambientShow = sd.AmbientShow;

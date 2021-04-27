@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using DreamScreenNet;
 using DreamScreenNet.Enum;
-using Glimmr.Models.ColorTarget.DreamScreen;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.Extensions.Hosting;
@@ -15,7 +14,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 		private readonly ColorService _cs;
 		private readonly DreamScreenClient _client;
 		private IPAddress _targetDreamScreen;
-		private int _targetGroup;
+		private const int TargetGroup = 20;
 		private bool _enable;
 
 		public DreamScreenStream(ColorService colorService) {
@@ -37,7 +36,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 		}
 
 		private void ProcessCommand(object? sender, DreamScreenClient.MessageEventArgs e) {
-			if (e.Response.Group == _targetGroup) {
+			if (e.Response.Group == TargetGroup) {
 				Log.Debug("Incoming command from target DS: " + e.Response.Type);
 				switch (e.Response.Type) {
 					case MessageType.Mode:
@@ -56,17 +55,16 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 						break;
 				}
 			} else {
-				Log.Debug($"{_targetGroup} command from " + e.Response.Target);
+				Log.Debug($"{TargetGroup} command from " + e.Response.Target);
 			}
 		}
 
 		private void Refresh() {
-			SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
+			SystemData sd = DataUtil.GetSystemData();
 			var dsIp = sd.DsIp;
-			DreamScreenData dev = DataUtil.GetDevice(dsIp);
-			if (dsIp != null && dev != null) {
+			
+			if (!string.IsNullOrEmpty(dsIp)) {
 				_targetDreamScreen = IPAddress.Parse(dsIp);
-				_targetGroup = dev.GroupNumber;
 			}
 		}
 

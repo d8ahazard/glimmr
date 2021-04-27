@@ -176,13 +176,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		public async Task StopStream() {
 			if (!Enable) return;
 			Log.Debug($"Hue: Stopping Stream: {IpAddress}...");
-			FlashColor(Color.FromArgb(0, 0, 0)).ConfigureAwait(false);
-			Log.Debug("Flashed");
 			StopStream(_client, Data).ConfigureAwait(false);
-			Log.Debug("Stopped?");
-			if (Streaming) ResetColors().ConfigureAwait(false);
-			Log.Debug("Reset");
-			Streaming = false;
 			await Task.FromResult(true);
 			Log.Debug("Hue: Streaming Stopped.");
 		}

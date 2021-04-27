@@ -98,7 +98,10 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 						Log.Warning($"Error, trying to map {target} when count is only {colors.Count}.");	
 					}
 				}
-				
+
+				if (Data.Brightness < 100) {
+					color = ColorUtil.ClampBrightness(color, Data.Brightness);
+				}
 				cols[p.PanelId] = color;
 			}
 

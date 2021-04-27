@@ -27,7 +27,7 @@ namespace Glimmr.Services {
 			_uc.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 			_uc.Client.Blocking = false;
 			_uc.DontFragment = true;
-			SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
+			SystemData sd = DataUtil.GetSystemData();
 			_devMode = sd.DeviceMode;
 			_sectorCount = (sd.HSectors + sd.VSectors) * 2 - 4;
 		}
@@ -94,7 +94,7 @@ namespace Glimmr.Services {
 
 		private void Refresh() {
 			_devMode = DataUtil.GetItem("DeviceMode");
-			SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
+			SystemData sd = DataUtil.GetSystemData();
 			_devMode = sd.DeviceMode;
 			_sectorCount = (sd.HSectors + sd.VSectors) * 2 - 4;
 		}

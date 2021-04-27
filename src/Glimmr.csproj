@@ -30,6 +30,7 @@
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.9" />
     <PackageReference Include="MMALSharp" Version="0.6.0" />
     <PackageReference Include="Nanoleaf.Core" Version="2.0.0" />
+    <PackageReference Include="OpenRGB.NET" Version="1.6.0" />
     <PackageReference Include="Q42.HueApi" Version="3.18.1" />
     <PackageReference Include="Q42.HueApi.Entertainment" Version="3.18.1" />
     <PackageReference Include="Serilog" Version="2.10.0" />
@@ -45,6 +46,57 @@
 
   <ItemGroup>
     <Folder Include="Models\ColorTarget\Dreamscreen\Encoders" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\ambientScenes\chase.json">
+      <Link>ambientScenes\chase.json</Link>
+    </Content>
+    <Content Include="..\ambientScenes\christmas.json">
+      <Link>ambientScenes\christmas.json</Link>
+    </Content>
+    <Content Include="..\ambientScenes\colorFlow.json">
+      <Link>ambientScenes\colorFlow.json</Link>
+    </Content>
+    <Content Include="..\ambientScenes\devs.json">
+      <Link>ambientScenes\devs.json</Link>
+    </Content>
+    <Content Include="..\ambientScenes\emergency.json">
+      <Link>ambientScenes\emergency.json</Link>
+    </Content>
+    <Content Include="..\ambientScenes\fire.json">
+      <Link>ambientScenes\fire.json</Link>
+    </Content>
+    <Content Include="..\ambientScenes\forest.json">
+      <Link>ambientScenes\forest.json</Link>
+    </Content>
+    <Content Include="..\ambientScenes\independence.json">
+      <Link>ambientScenes\independence.json</Link>
+    </Content>
+    <Content Include="..\ambientScenes\ocean.json">
+      <Link>ambientScenes\ocean.json</Link>
+    </Content>
+    <Content Include="..\ambientScenes\pop.json">
+      <Link>ambientScenes\pop.json</Link>
+    </Content>
+    <Content Include="..\ambientScenes\rainbow.json">
+      <Link>ambientScenes\rainbow.json</Link>
+    </Content>
+    <Content Include="..\ambientScenes\random.json">
+      <Link>ambientScenes\random.json</Link>
+    </Content>
+    <Content Include="..\ambientScenes\solid.json">
+      <Link>ambientScenes\solid.json</Link>
+    </Content>
+    <Content Include="..\ambientScenes\test.json">
+      <Link>ambientScenes\test.json</Link>
+    </Content>
+    <Content Include="..\ambientScenes\twinkle.json">
+      <Link>ambientScenes\twinkle.json</Link>
+    </Content>
+    <Content Include="..\audioScenes\bottom.json">
+      <Link>audioScenes\bottom.json</Link>
+    </Content>
   </ItemGroup>
   
 </Project>

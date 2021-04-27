@@ -577,7 +577,7 @@ namespace Glimmr.Models.Util {
         }
 
         public static List<Color> SectorsToleds(List<Color> ints, int hSectors = -1, int vSectors = -1) {
-	        SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
+	        SystemData sd = DataUtil.GetSystemData();
 	        var output = new List<Color>();
 	        // We're going to duplicate the "corner" color values so they evenly map to LED colors
 	        var shifted = new List<Color>();
@@ -750,6 +750,7 @@ namespace Glimmr.Models.Util {
         /// and optionally specifies the output Alpha.
         /// </summary>
         /// <param name="color">The color to transform.</param>
+        /// <param name="maxBrightness">Value between 0-100</param>
         public static Color ClampBrightness(Color color, double maxBrightness) {
 	        double bClamp = maxBrightness * .01;
 	        double[] hsl = RgBtoHsb(color);

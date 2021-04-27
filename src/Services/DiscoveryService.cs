@@ -80,7 +80,7 @@ namespace Glimmr.Services {
 			try {
 				await Task.WhenAll(tasks);
 			} catch (Exception e) {
-				Log.Warning("Exception during discovery: " + e.Message);
+				Log.Warning("Exception during discovery: " + e.StackTrace);
 			} finally {
 				foreach (var task in tasks) {
 					task.Dispose();

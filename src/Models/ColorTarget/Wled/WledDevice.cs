@@ -42,7 +42,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
         public WledData Data { get; set; }
         
         public WledDevice(WledData wd, ColorService colorService) : base(colorService) {
-            ColorService.ColorSendEvent += SetColor;
+            colorService.ColorSendEvent += SetColor;
             _udpClient = ColorService.ControlService.UdpClient;
             _httpClient = ColorService.ControlService.HttpSender;
             _updateColors = new List<Color>();
@@ -55,6 +55,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
         }
 
         
+
         public async Task StartStream(CancellationToken ct) {
             if (Streaming) return;
             if (!Data.Enable) return;

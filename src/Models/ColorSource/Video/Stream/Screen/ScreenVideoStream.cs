@@ -79,7 +79,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 
 
 		private void SetDimensions() {
-			SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
+			SystemData sd = DataUtil.GetSystemData();
 			_screenDims = DisplayUtil.GetDisplaySize();
 			var rect = _screenDims;
 			if (!RectContains(_screenDims, rect)) {

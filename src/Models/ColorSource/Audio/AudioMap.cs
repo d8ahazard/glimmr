@@ -124,7 +124,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 		}
 
 		private void Refresh() {
-			SystemData sd = DataUtil.GetObject<SystemData>("SystemData");
+			SystemData sd = DataUtil.GetSystemData();
 			var id = sd.AudioMap;
 			dynamic am = _loader.GetItem<AudioScene>(id, true);
 			_highRange = new RangeF(0.666f, 1f);

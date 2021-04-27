@@ -6,7 +6,6 @@ using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Common.Logging.Configuration;
 using Glimmr.Hubs;
 using Glimmr.Models;
 using Glimmr.Models.ColorTarget;
@@ -24,7 +23,7 @@ namespace Glimmr.Services {
 		public UdpClient UdpClient { get; }
 		public MulticastService MulticastService { get; }
 		private readonly IHubContext<SocketServer> _hubContext;
-		private readonly Dictionary<string,dynamic> _agents;
+		private Dictionary<string,dynamic> _agents;
 		public ColorService ColorService { get; set; }
 
 		public ControlService(IHubContext<SocketServer> hubContext) {
@@ -40,7 +39,6 @@ namespace Glimmr.Services {
 			MulticastService = new MulticastService();
 			
 			// Dynamically load agents
-			_agents = new Dictionary<string, dynamic>();
 			LoadAgents();
 		}
 
@@ -48,14 +46,11 @@ namespace Glimmr.Services {
 		public AsyncEvent<DynamicEventArgs> RefreshLedEvent;
 		public event Action RefreshSystemEvent = delegate { };
 		public AsyncEvent<DynamicEventArgs> DeviceRescanEvent;
-		public event ArgUtils.Action DreamSubscribeEvent = delegate { };
-		
+
 		public AsyncEvent<DynamicEventArgs> SetModeEvent;
 
 		public AsyncEvent<DynamicEventArgs> TestLedEvent;
-		public event Action<CancellationToken> RefreshDreamscreenEvent = delegate { };
-		public event Action<string> AddSubscriberEvent = delegate { };
-		
+
 		public AsyncEvent<DynamicEventArgs> FlashDeviceEvent;
 		
 		public AsyncEvent<DynamicEventArgs> FlashSectorEvent;
@@ -75,7 +70,19 @@ namespace Glimmr.Services {
 		}
 
 		private void LoadAgents() {
+			Log.Information("Creating agents...");
+			if (_agents != null) {
+				foreach (var a in _agents.Values) {
+					try {
+						a.Dispose();
+					} catch (Exception) {
+						
+					}
+				}
+			}
+			_agents = new Dictionary<string, dynamic>();
 			var types = SystemUtil.GetClasses<IColorTargetAgent>();
+			Log.Information("Types: " + JsonConvert.SerializeObject(types));
 			foreach (var c in types) {
 				var parts = c.Split(".");
 				var shortClass = parts[^1];
@@ -91,7 +98,6 @@ namespace Glimmr.Services {
 						Log.Warning("Agent is null!");
 					}
 				}
-				
 			}
 		}
 
@@ -177,10 +183,6 @@ namespace Glimmr.Services {
 			await TestLedEvent.InvokeAsync(this, new DynamicEventArgs(led));
 		}
 
-		public void AddSubscriber(string ip) {
-			AddSubscriberEvent(ip);
-		}
-
 
 		/// <summary>
 		///     Call this to trigger device refresh
@@ -198,7 +200,6 @@ namespace Glimmr.Services {
 
 		
 		public void TriggerDreamSubscribe() {
-			DreamSubscribeEvent();
 		}
 
 
@@ -234,10 +235,6 @@ namespace Glimmr.Services {
 			return base.StopAsync(cancellationToken);
 		}
 
-		
-		public void RefreshDreamscreen(in CancellationToken csToken) {
-			RefreshDreamscreenEvent(csToken);
-		}
 
 		public async Task AddDevice(IColorTargetData data) {
 			await DataUtil.AddDeviceAsync(data);
@@ -247,7 +244,7 @@ namespace Glimmr.Services {
 
 		
 		public async Task UpdateSystem(SystemData sd = null) {
-			SystemData oldSd = DataUtil.GetObject<SystemData>("SystemData");
+			SystemData oldSd = DataUtil.GetSystemData();
 			if (sd != null) {
 				if (oldSd.LedCount != sd.LedCount) {
 					var leds = DataUtil.GetDevices<LedData>("Led");
@@ -259,7 +256,12 @@ namespace Glimmr.Services {
 					}
 				}
 
-				await DataUtil.SetObjectAsync<SystemData>(sd);
+				
+				DataUtil.SetObject<SystemData>(sd);
+				if (oldSd.OpenRgbIp != sd.OpenRgbIp || oldSd.OpenRgbPort != sd.OpenRgbPort) {
+					LoadAgents();
+				}
+
 			}
 
 			RefreshSystemEvent();

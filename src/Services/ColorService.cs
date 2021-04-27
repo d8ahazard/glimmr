@@ -291,7 +291,7 @@ namespace Glimmr.Services {
 			DeviceMode = (DeviceMode) DataUtil.GetItem<int>("DeviceMode");
 			_captureMode =(CaptureMode) (DataUtil.GetItem<int>("CaptureMode") ?? 2);
 			_sendTokenSource = new CancellationTokenSource();
-			_systemData = DataUtil.GetObject<SystemData>("SystemData");
+			_systemData = DataUtil.GetSystemData();
 			// Create new lists
 			var sDevs = new List<IColorTarget>();
 			var classes = SystemUtil.GetClasses<IColorTarget>();
@@ -306,6 +306,8 @@ namespace Glimmr.Services {
 					foreach (var device in deviceData) {
 						if (device.Tag == tag) {
 							if (device.Enable) enabled++;
+							Log.Debug($"Creating {device.Tag}: {device.Id}");
+
 							var args = new object[] {device, this};
 							var obj = (IColorTarget) Activator.CreateInstance(Type.GetType(c)!, args);
 							sDevs.Add(obj);
@@ -342,7 +344,7 @@ namespace Glimmr.Services {
 					int sector = (int) Math.Round(progress * sectorCount);
 					var rCol = ColorUtil.Rainbow(progress);
 					cols[i] = rCol;
-					secs[sector] = rCol;
+					if (sector > secs.Count) secs[sector] = rCol;
 
 					try {
 						SendColors(cols, secs, 0);
@@ -406,7 +408,7 @@ namespace Glimmr.Services {
 
 		private dynamic CreateDevice(dynamic devData) {
 			var classes = SystemUtil.GetClasses<IColorTarget>();
-			var deviceData = DataUtil.GetCollection<dynamic>("Devices");
+			var deviceData = DataUtil.GetDevices();
 			foreach (var c in classes) {
 				try {
 					var tag = c.Replace("Device", "");
@@ -414,6 +416,7 @@ namespace Glimmr.Services {
 					tag = c.Replace("Glimmr.Models.ColorTarget.", "");
 					tag = tag.Split(".")[0];
 					if (devData.Tag == tag) {
+						Log.Debug($"Creating {devData.Tag}: {devData.Id}");
 						var args = new object[] {devData, this};
 						var obj = (IColorTarget) Activator.CreateInstance(Type.GetType(c)!, args);
 						return obj;
@@ -443,7 +446,7 @@ namespace Glimmr.Services {
 			_videoStream?.Refresh();
 			_audioStream?.Refresh();
 			var sd = _systemData;
-			_systemData = DataUtil.GetObject<SystemData>("SystemData");
+			_systemData = DataUtil.GetSystemData();
 
 			var refreshAmbient = false;
 			if (sd.AmbientColor != _systemData.AmbientColor) {
