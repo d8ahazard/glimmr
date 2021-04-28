@@ -15,7 +15,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			DeviceTag = "Yeelight";
 		}
 		
-		public async Task Discover(CancellationToken ct) {
+		public async Task Discover(CancellationToken ct, int timeout) {
 			Log.Debug("Yeelight: Discovery started...");
 			// Await the asynchronous call to the static API
 			var discoveredDevices = await DeviceLocator.DiscoverAsync(ct);

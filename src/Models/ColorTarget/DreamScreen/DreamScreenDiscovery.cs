@@ -13,13 +13,12 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		}
 
 		public override string DeviceTag { get; set; }
-		public async Task Discover(CancellationToken ct) {
+		public async Task Discover(CancellationToken ct, int timeout) {
 			_client.DeviceDiscovered += DevFound;
 			_client.StartDeviceDiscovery();
-			while (!ct.IsCancellationRequested) {
-				await Task.Delay(1, ct);
-			}
+			await Task.Delay(timeout);
 			_client.StopDeviceDiscovery();
+			_client.DeviceDiscovered -= DevFound;
 		}
 
 		private void DevFound(object? sender, DreamScreenClient.DeviceDiscoveryEventArgs e) {

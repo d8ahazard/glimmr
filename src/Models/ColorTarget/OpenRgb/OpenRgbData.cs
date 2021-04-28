@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
 using OpenRGB.NET.Enums;
@@ -27,6 +26,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			LedCount = dev.Leds.Length;
 			//Modes = dev.Modes.ToList();
 			Tag = "OpenRgb";
+			Brightness = 255;
 		}
 
 		[DefaultValue("")]
@@ -124,7 +124,18 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 
 		public void UpdateFromDiscovered(IColorTargetData data) {
-			
+			var dev = (OpenRgbData) data;
+			Name = dev.Name;
+			Vendor = dev.Vendor;
+			Type = dev.Type;
+			//Zones = dev.Zones.ToList();
+			Description = dev.Description;
+			Version = dev.Version;
+			Serial = dev.Serial;
+			Location = dev.Location;
+			ActiveModeIndex = dev.ActiveModeIndex;
+			LedCount = dev.LedCount;
+
 		}
 	}
 }

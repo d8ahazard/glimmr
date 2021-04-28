@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Net.Http;
@@ -22,6 +23,7 @@ namespace Glimmr.Services {
 		public HttpClient HttpSender { get; }
 		public UdpClient UdpClient { get; }
 		public MulticastService MulticastService { get; }
+		public ServiceDiscovery ServiceDiscovery { get; }
 		private readonly IHubContext<SocketServer> _hubContext;
 		private Dictionary<string,dynamic> _agents;
 		public ColorService ColorService { get; set; }
@@ -37,6 +39,7 @@ namespace Glimmr.Services {
 			UdpClient.DontFragment = true;
 			
 			MulticastService = new MulticastService();
+			ServiceDiscovery = new ServiceDiscovery(MulticastService);
 			
 			// Dynamically load agents
 			LoadAgents();
@@ -286,10 +289,10 @@ namespace Glimmr.Services {
 		}
 
 		public async Task UpdateDevice(dynamic device, bool merge=true) {
+			Log.Debug($"Adding {device.Tag}...");
 			await DataUtil.AddDeviceAsync(device, merge);
 			await _hubContext.Clients.All.SendAsync("device",(IColorTargetData) device);
 			await RefreshDevice(device.Id);
-			
 		}
 
 		public async Task FlashDevice(string deviceId) {

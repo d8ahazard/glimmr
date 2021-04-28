@@ -14,7 +14,20 @@ namespace Glimmr.Models {
 		[DefaultValue(255)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int Brightness { get; set; }
+		
+		[DefaultValue(10)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int DiscoveryTimeout { get; set; }
+		
+		[DefaultValue(60)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int AutoDiscoveryFrequency { get; set; }
 
+		[DefaultValue(15)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int CropDelay { get; set; }
+
+		
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int DeviceMode { get; set; }
@@ -72,6 +85,14 @@ namespace Glimmr.Models {
 		[DefaultValue(true)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool EnableAutoDisable { get; set; } = true;
+		
+		[DefaultValue(true)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public bool EnableLetterBox { get; set; } = true;
+		
+		[DefaultValue(true)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public bool EnablePillarBox { get; set; } = true;
 		
 		// USB index to use for cam/HDMI
 		[DefaultValue(0)]

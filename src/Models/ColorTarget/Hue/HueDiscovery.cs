@@ -51,7 +51,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
             return data;
         }
 
-        public async Task Discover(CancellationToken ct) {
+        public async Task Discover(CancellationToken ct, int timeout) {
             Log.Debug("Hue: Discovery started...");
             try {
                 await Task.WhenAll(_bridgeLocatorHttp.LocateBridgesAsync(ct), _bridgeLocatorMdns.LocateBridgesAsync(ct),

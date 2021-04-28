@@ -5,7 +5,7 @@ using Glimmr.Services;
 namespace Glimmr.Models.ColorTarget.Led {
 	public class LedDiscovery : ColorDiscovery, IColorDiscovery {
 		
-		public async Task Discover(CancellationToken ct) {
+		public async Task Discover(CancellationToken ct, int timeout) {
 			
 			var ld0 = new LedData {Id = "0", Brightness = 255, GpioNumber = 18};
 			var ld1 = new LedData {Id = "1", Brightness = 255, GpioNumber = 19};
@@ -14,9 +14,6 @@ namespace Glimmr.Models.ColorTarget.Led {
 			await ControlService.AddDevice(ld0);
 			await ControlService.AddDevice(ld1);
 			await ControlService.AddDevice(ld2);
-			while (!ct.IsCancellationRequested) {
-				await Task.Delay(1, ct);
-			}
 		}
 
 		public override string DeviceTag { get; set; }

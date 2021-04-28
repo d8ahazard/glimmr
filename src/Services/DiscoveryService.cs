@@ -9,7 +9,6 @@ using Glimmr.Models;
 using Glimmr.Models.ColorTarget;
 using Glimmr.Models.Util;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
@@ -18,26 +17,41 @@ namespace Glimmr.Services {
 		private readonly IHubContext<SocketServer> _hubContext;
 		private bool _streaming;
 		private bool _discovering;
+		private int _discoveryInterval;
 		private readonly List<IColorDiscovery> _discoverables;
+		private CancellationTokenSource _syncSource;
+		private CancellationTokenSource _mergeSource;
+		private CancellationToken _stopToken;
+		
 		public DiscoveryService(IHubContext<SocketServer> hubContext, ColorService colorService) {
 			_hubContext = hubContext;
-			var controlService1 = colorService.ControlService;
-			controlService1.DeviceRescanEvent += TriggerRefresh;
-			controlService1.SetModeEvent += UpdateMode;
+			var controlService = colorService.ControlService;
+			controlService.DeviceRescanEvent += TriggerRefresh;
+			controlService.SetModeEvent += UpdateMode;
+			controlService.RefreshSystemEvent += RefreshSystem;
+			_discoveryInterval = DataUtil.GetItem<int>("AutoDiscoveryFrequency");
 			var classnames = SystemUtil.GetClasses<IColorDiscovery>();
 			_discoverables = new List<IColorDiscovery>();
+			_syncSource = new CancellationTokenSource();
 			foreach (var c in classnames) {
 				var dev = (IColorDiscovery) Activator.CreateInstance(Type.GetType(c)!, colorService);
 				_discoverables.Add(dev);
 			}
 		}
 
+		private void RefreshSystem() {
+			_syncSource.Cancel();
+			_mergeSource = CancellationTokenSource.CreateLinkedTokenSource(_syncSource.Token, _stopToken);
+			_discoveryInterval = DataUtil.GetItem<int>("AutoDiscoveryFrequency");
+		}
+
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
+			_stopToken = stoppingToken;
+			_mergeSource = CancellationTokenSource.CreateLinkedTokenSource(_syncSource.Token, _stopToken);
 			return Task.Run(async () => {
 				Log.Information("Starting discovery service loop...");
-				
 				while (!stoppingToken.IsCancellationRequested) {
-					await Task.Delay(TimeSpan.FromMinutes(60), stoppingToken);
+					await Task.Delay(TimeSpan.FromMinutes(_discoveryInterval), _mergeSource.Token);
 					Log.Information("Auto-refreshing devices...");
 					if (!_streaming) await TriggerRefresh(this, null);
 				}
@@ -58,8 +72,9 @@ namespace Glimmr.Services {
 
 		private async Task TriggerRefresh(object o, DynamicEventArgs dynamicEventArgs) {
 			var cs = new CancellationTokenSource();
-			cs.CancelAfter(TimeSpan.FromSeconds(10));
-			await DeviceDiscovery(cs.Token);
+			var sd = DataUtil.GetSystemData();
+			cs.CancelAfter(TimeSpan.FromSeconds(sd.DiscoveryTimeout));
+			await DeviceDiscovery(cs.Token, sd.DiscoveryTimeout);
 			var devs = DataUtil.GetDevices();
 			foreach (var dev in devs) {
 				var device = (IColorTargetData) dev;
@@ -72,10 +87,10 @@ namespace Glimmr.Services {
 		}
 
         
-		private async Task DeviceDiscovery(CancellationToken token) {
+		private async Task DeviceDiscovery(CancellationToken token, int timeout) {
 			if (_discovering) return;
 			_discovering = true;
-			var tasks = _discoverables.Select(disco => Task.Run(() =>disco.Discover(token), token)).ToList();
+			var tasks = _discoverables.Select(disco => Task.Run(() =>disco.Discover(token, timeout), CancellationToken.None)).ToList();
 
 			try {
 				await Task.WhenAll(tasks);

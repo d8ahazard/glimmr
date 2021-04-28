@@ -18,13 +18,11 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             DeviceTag = "Lifx";
         }
 
-        public async Task Discover(CancellationToken ct) {
+        public async Task Discover(CancellationToken ct, int timeout) {
             if (_client == null) return;
             Log.Debug("Lifx: Discovery started.");
             _client.StartDeviceDiscovery();
-            while (!ct.IsCancellationRequested) {
-                await Task.Delay(TimeSpan.FromSeconds(1), CancellationToken.None);
-            }
+            await Task.Delay(TimeSpan.FromSeconds(timeout), CancellationToken.None);
             _client.StopDeviceDiscovery();
             Log.Debug("Lifx: Discovery complete.");
         }

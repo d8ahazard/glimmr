@@ -229,12 +229,20 @@
         <input type="checkbox" class="form-check-input" data-object="SystemData" data-property="AutoUpdate"/>
         <div class="form-text">Updates will be installed at 1:00AM every day when enabled.</div>
     </div>
-    <!-- Auto-update -->
+    
+    <!-- Discovery time -->
     <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center form-check">
-        <label class="form-check-label">Automatically Disable Streaming</label>
-        <input type="checkbox" class="form-check-input" data-object="SystemData" data-property="EnableAutoDisable"/>
-        <div class="form-text">Automatically disable control of lights when no input is detected.</div>
+        <label class="form-label">Discovery Time</label>
+        <input class="form-control" data-object="SystemData" data-property="DiscoveryTimeout" type="number" min="1" max="60" step="1"/>
+        <div class="form-text">Amount of time (in seconds) to allow for discovery.</div>
     </div>
+    
+    <!-- Auto discovery frequency time -->
+        <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center form-check">
+            <label class="form-label">Discovery Time</label>
+            <input class="form-control" data-object="SystemData" data-property="AutoDiscoveryFrequency" type="number" min="1" max="60" step="1"/>
+            <div class="form-text">Interval (in minutes) in which Auto Discovery is run.</div>
+        </div>
 </div>
 
 <!-- Capture Mode -->
@@ -299,6 +307,35 @@
     <div class="col-12 col-md-6 col-xl-3 capGroup" data-mode="2">
 
     </div>
+    
+    <!-- Auto-disable -->
+    <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center form-check">
+        <label class="form-check-label">Automatically Disable Streaming</label>
+        <input type="checkbox" class="form-check-input" data-object="SystemData" data-property="EnableAutoDisable"/>
+        <div class="form-text">Automatically disable control of lights when no input is detected.</div>
+    </div>
+    
+    <!-- Letterboxing enable -->
+    <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center form-check">
+        <label class="form-check-label">Enable Letterbox Cropping</label>
+        <input type="checkbox" class="form-check-input" data-object="SystemData" data-property="EnableLetterBox"/>
+        <div class="form-text">Automatically crop black sectors from the top and bottom of the screen.</div>
+    </div>
+    
+    <!-- Pillarboxing enable -->
+    <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center form-check">
+        <label class="form-check-label">Enable Pillarbox Cropping</label>
+        <input type="checkbox" class="form-check-input" data-object="SystemData" data-property="EnablePillarBox"/>
+        <div class="form-text">Automatically crop black sectors from the left and right sides of the screen.</div>
+    </div>
+    
+    <!-- Crop time -->
+    <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center form-check">
+        <label class="form-label">Cropping Delay</label>
+        <input class="form-control" data-object="SystemData" data-property="CropDelay" type="number" min="1" max="60" step="1"/>
+        <div class="form-text">How long to wait before cropping the picture.</div>
+    </div>
+
     
 </div>
 <!-- Capture Preview -->

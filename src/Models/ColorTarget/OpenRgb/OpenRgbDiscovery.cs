@@ -21,7 +21,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			LoadData();
 		}
 
-		public async Task Discover(CancellationToken ct) {
+		public async Task Discover(CancellationToken ct, int timeout) {
 			if (!_client.Connected) _client.Connect();
 			
 			if (_client.Connected) {
@@ -29,7 +29,6 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 				var idx = 0;
 				foreach (var dev in devs) {
 					var rd = new OpenRgbData(dev) {Id = "OpenRgb" + idx, DeviceId = idx};
-					Log.Debug("OpenRGB device found: " + JsonConvert.SerializeObject(rd));
 					await _cs.UpdateDevice(rd).ConfigureAwait(false);
 					idx++;
 				}

@@ -10,8 +10,8 @@ using Glimmr.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Serilog;
+using Serilog.Events;
 
 namespace Glimmr
 {
@@ -32,7 +32,9 @@ namespace Glimmr
 				.Enrich.WithCaller()
 				.WriteTo.Console(outputTemplate: outputTemplate)
 				.MinimumLevel.Debug()
-				.WriteTo.File(logPath, rollingInterval: RollingInterval.Hour, outputTemplate: outputTemplate)
+				.MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+				.Enrich.FromLogContext()
+				.WriteTo.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: outputTemplate)
 				.CreateLogger();
             
 			CreateHostBuilder(args).Build().Run();
@@ -40,13 +42,7 @@ namespace Glimmr
 
 		private static IHostBuilder CreateHostBuilder(string[] args) {
 			return Host.CreateDefaultBuilder(args)
-				.ConfigureLogging((hostingContext, logging) => {
-					logging.ClearProviders();
-					logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
-					logging.AddConsole();
-					logging.AddDebug();
-				})
-				// Initialize our dream screen emulator
+				.UseSerilog()
 				.ConfigureServices(services => {
 					services.AddSignalR();
 					services.AddSingleton<ControlService>();

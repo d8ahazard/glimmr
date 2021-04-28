@@ -10,37 +10,39 @@ namespace Glimmr.Models.ColorTarget.Wled {
     public class WledDiscovery : ColorDiscovery, IColorDiscovery {
 
         private readonly MulticastService _mDns;
+        private readonly ServiceDiscovery _sd;
         private bool _discovering;
         private bool _stopDiscovery;
         private readonly ControlService _controlService;
         public WledDiscovery(ColorService cs) : base(cs) {
             _mDns = cs.ControlService.MulticastService;
             _controlService = cs.ControlService;
-            var sd = new ServiceDiscovery(_mDns);
-            _mDns.NetworkInterfaceDiscovered += (s, e) => {
-                // Ask for the name of all services.
-                sd.QueryServiceInstances("_wled._tcp");
-            };
-
-            sd.ServiceDiscovered += (s, serviceName) => {
-                if (!_stopDiscovery) _mDns.SendQuery(serviceName, type: DnsType.PTR);
-            };
-
-            sd.ServiceInstanceDiscovered += WledDiscovered;
+            _sd = _controlService.ServiceDiscovery;
             DeviceTag = "Wled";
         }
-        
-        public async Task Discover(CancellationToken ct) {
+
+        private void ServiceDiscovered(object? sender, DomainName serviceName) {
+            if (!_stopDiscovery) _mDns.SendQuery(serviceName, type: DnsType.PTR);
+        }
+
+        private void InterfaceDiscovered(object? sender, NetworkInterfaceEventArgs e) {
+            _sd.QueryServiceInstances("_wled._tcp");
+        }
+
+        public async Task Discover(CancellationToken ct, int timeout) {
             Log.Debug("WLED: Discovery started...");
 
             try {
                 _mDns.Start();
-                while (!ct.IsCancellationRequested) {
-                    await Task.Delay(TimeSpan.FromSeconds(1), CancellationToken.None);
-                }
-
+                _mDns.NetworkInterfaceDiscovered += InterfaceDiscovered;
+                _sd.ServiceDiscovered += ServiceDiscovered;
+                _sd.ServiceInstanceDiscovered += WledDiscovered;
+                await Task.Delay(TimeSpan.FromSeconds(timeout), CancellationToken.None);
+                _mDns.NetworkInterfaceDiscovered -= InterfaceDiscovered;
+                _sd.ServiceDiscovered -= ServiceDiscovered;
+                _sd.ServiceInstanceDiscovered -= WledDiscovered;
+                //_mDns.Stop();
                 _stopDiscovery = true;
-                _mDns.Stop();
             } catch {
                 // Ignore collection modified exception
             }

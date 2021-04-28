@@ -12,34 +12,39 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.Nanoleaf {
     public class NanoleafDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth {
         private readonly MulticastService _mDns;
+        private readonly ServiceDiscovery _sd;
         private readonly ControlService _controlService;
 
         public NanoleafDiscovery(ColorService cs) : base(cs) {
-            var sd = new ServiceDiscovery();
             _controlService = cs.ControlService;
-            _mDns = cs.ControlService.MulticastService;
-            _mDns.NetworkInterfaceDiscovered += (s, e) => {
-                // Ask for the name of all services.
-                sd.QueryServiceInstances("_nanoleafapi._tcp");
-            };
-
-            sd.ServiceDiscovered += (s, serviceName) => { _mDns.SendQuery(serviceName, type: DnsType.PTR); };
-            sd.ServiceInstanceDiscovered += ParseInstance;
+            _mDns = _controlService.MulticastService;
+            _sd = _controlService.ServiceDiscovery;
             DeviceTag = "Nanoleaf";
         }
 
-        public async Task Discover(CancellationToken ct) {
+        private void InterfaceDiscovered(object? sender, NetworkInterfaceEventArgs e) {
+            _sd.QueryServiceInstances("_nanoleafapi._tcp");
+        }
+
+        private void ServiceDiscovered(object? sender, DomainName serviceName) {
+            _mDns.SendQuery(serviceName, type: DnsType.PTR);
+        }
+
+        public async Task Discover(CancellationToken ct, int timeout) {
+            _mDns.NetworkInterfaceDiscovered += InterfaceDiscovered;
+            _sd.ServiceDiscovered += ServiceDiscovered;
+            _sd.ServiceInstanceDiscovered += NanoleafDiscovered;
             _mDns.Start();
             Log.Debug("Nano: Discovery started...");
-            while (!ct.IsCancellationRequested) {
-                await Task.Delay(TimeSpan.FromSeconds(1), CancellationToken.None);
-            }
-
-            _mDns.Stop();
+            await Task.Delay(TimeSpan.FromSeconds(timeout), CancellationToken.None);
+            _mDns.NetworkInterfaceDiscovered -= InterfaceDiscovered;
+            _sd.ServiceDiscovered -= ServiceDiscovered;
+            _sd.ServiceInstanceDiscovered -= NanoleafDiscovered;
+            //_mDns.Stop();
             Log.Debug("Nano: Discovery complete.");
         }
 
-        private void ParseInstance(object o, ServiceInstanceDiscoveryEventArgs e) {
+        private void NanoleafDiscovered(object o, ServiceInstanceDiscoveryEventArgs e) {
             var name = e.ServiceInstanceName.ToString();
             var nData = new NanoleafData {IpAddress = string.Empty};
             if (!name.Contains("nanoleafapi", StringComparison.InvariantCulture)) return;

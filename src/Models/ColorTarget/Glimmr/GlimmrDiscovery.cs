@@ -12,41 +12,42 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
     public class GlimmrDiscovery : ColorDiscovery, IColorDiscovery {
 
         private readonly MulticastService _mDns;
-        private bool _discovering;
+        private readonly ServiceDiscovery _sd;
         private bool _stopDiscovery;
         private readonly ControlService _controlService;
         public GlimmrDiscovery(ColorService cs) : base(cs) {
-            _mDns = cs.ControlService.MulticastService;
             _controlService = cs.ControlService;
-            var sd = new ServiceDiscovery(_mDns);
-            _mDns.NetworkInterfaceDiscovered += (s, e) => {
-                // Ask for the name of all services.
-                sd.QueryServiceInstances("_glimmr._tcp");
-            };
-
-            sd.ServiceDiscovered += (s, serviceName) => {
-                if (!_stopDiscovery) _mDns.SendQuery(serviceName, type: DnsType.PTR);
-            };
-
-            sd.ServiceInstanceDiscovered += GlimmrDiscovered;
+            _mDns = _controlService.MulticastService;
+            _sd = _controlService.ServiceDiscovery;
         }
-        
-        public async Task Discover(CancellationToken ct) {
+
+        private void ServiceDiscovered(object? sender, DomainName serviceName) {
+            if (!_stopDiscovery) _mDns.SendQuery(serviceName, type: DnsType.PTR);
+        }
+
+        private void InterfaceDiscovered(object? sender, NetworkInterfaceEventArgs e) {
+            _sd.QueryServiceInstances("_glimmr._tcp");
+        }
+
+        public async Task Discover(CancellationToken ct, int timeout) {
             Log.Debug("Glimmr: Discovery started...");
 
             try {
+                _mDns.NetworkInterfaceDiscovered += InterfaceDiscovered;
+                _sd.ServiceDiscovered += ServiceDiscovered;
+                _sd.ServiceInstanceDiscovered += GlimmrDiscovered;
                 _mDns.Start();
-                while (!ct.IsCancellationRequested) {
-                    await Task.Delay(TimeSpan.FromSeconds(1), CancellationToken.None);
-                }
-
+                await Task.Delay(TimeSpan.FromSeconds(timeout), CancellationToken.None);
+                _mDns.NetworkInterfaceDiscovered -= InterfaceDiscovered;
+                _sd.ServiceDiscovered -= ServiceDiscovered;
+                _sd.ServiceInstanceDiscovered -= GlimmrDiscovered;
                 _stopDiscovery = true;
-                _mDns.Stop();
+                //_mDns.Stop();
             } catch {
                 // Ignore collection modified exception
             }
 
-            Log.Debug("Glimmr: Discovery complete.");
+            Log.Debug("Glimmr: Discovery complete...");
         }
 
         private void GlimmrDiscovered(object sender, ServiceInstanceDiscoveryEventArgs e) {
@@ -56,16 +57,14 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
             foreach (var id in from msg in rr where msg.Type == DnsType.A select msg.CanonicalName) {
                 var split = id.Split(".")[0];
                 var ip = IpUtil.GetIpFromHost(split);
-                if (ip.ToString() != IpUtil.GetLocalIpAddress()) {
+                if (ip.ToString() != IpUtil.GetLocalIpAddress() && !string.Equals(split, Environment.MachineName, StringComparison.CurrentCultureIgnoreCase)) {
                     var nData = new GlimmrData(split);
                     Log.Debug($"Adding new glimmr {id}: " + JsonConvert.SerializeObject(nData));
                     _controlService.AddDevice(nData).ConfigureAwait(false);
                 } else {
-                    Log.Debug("Skipping self.");
+                    Log.Debug("Skipping self...");
                 }
             }
-
-            if (_stopDiscovery) _discovering = false;
         }
 
         public override string DeviceTag { get; set; } = "Glimmr";
