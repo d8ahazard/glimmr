@@ -6,7 +6,7 @@
 Create a directory where you want Glimmr to reside.
 
 Download this script, save it into the directory you created, and run it.
-https://raw.githubusercontent.com/d8ahazard/glimmr/master/setup_win.bat
+https://raw.githubusercontent.com/d8ahazard/glimmr/dev/setup_win.bat
 
 
 ### Raspberry Pi
@@ -65,7 +65,8 @@ Save the file, and you're ready to go! Insert the SD card in your pi, power it o
 ### Linux
 Execute the following command:
 ```
-bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/master/setup_linux.sh)
+sudo su
+bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/dev/setup_linux.sh)
 ```
 You may want to reboot your computer after exectution if it's a first-time install...
 
