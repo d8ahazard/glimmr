@@ -27,6 +27,9 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		private bool _wasOn;
 		private readonly NanoleafClient _nanoleafClient;
 		private readonly NanoleafStreamingClient _streamingClient;
+		
+		private List<List<Color>> _frameBuffer;
+		private int _frameDelay;
 
 		public NanoleafDevice(NanoleafData n, ControlService cs) {
 			DataUtil.GetItem<int>("captureMode");
@@ -62,6 +65,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		
 		public async Task StartStream(CancellationToken ct) {
 			if (!Enable || Streaming) return;
+			_frameBuffer = new List<List<Color>>();
 			Streaming = true;
 
 			Log.Debug($@"Nanoleaf: Starting stream at {IpAddress}...");
@@ -82,9 +86,16 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		}
 
 
-		public void SetColor(List<Color> list, List<Color> colors, int fadeTime, bool force = false) {
+		public void SetColor(List<Color> list, List<Color> sectors, int fadeTime, bool force = false) {
 			if (!Streaming || !Enable || Testing && !force) {
 				return;
+			}
+			
+			if (_frameDelay > 0) {
+				_frameBuffer.Add(sectors);
+				if (_frameBuffer.Count < _frameDelay) return; // Just buffer till we reach our count
+				sectors = _frameBuffer[0];
+				_frameBuffer.RemoveAt(0);	
 			}
 
 			var cols = new Dictionary<int, Color>();
@@ -92,10 +103,10 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				var color = Color.FromArgb(0, 0, 0);
 				if (p.TargetSector != -1) {
 					var target = p.TargetSector - 1;
-					if (target < colors.Count) {
-						color = colors[target];
+					if (target < sectors.Count) {
+						color = sectors[target];
 					} else {
-						Log.Warning($"Error, trying to map {target} when count is only {colors.Count}.");	
+						Log.Warning($"Error, trying to map {target} when count is only {sectors.Count}.");	
 					}
 				}
 
@@ -118,6 +129,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		}
 
 		private void SetData(NanoleafData n) {
+			var od = Data;
 			Data = n;
 			DataUtil.GetItem<int>("captureMode");
 			IpAddress = n.IpAddress;
@@ -125,6 +137,9 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			Brightness = n.Brightness;
 			Enable = n.Enable;
 			Id = n.Id;
+			_frameDelay = Data.FrameDelay;
+			_frameBuffer = new List<List<Color>>();
+
 		}
 
 		public async Task FlashColor(Color color) {

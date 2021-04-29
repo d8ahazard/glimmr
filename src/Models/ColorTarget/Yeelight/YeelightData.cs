@@ -23,18 +23,18 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		public string Tag { get; set; }
 		public string IpAddress { get; set; }
 		public int Brightness { get; set; }
+		public int FrameDelay { get; set; }
 		public bool Enable { get; set; }
 		public string LastSeen { get; set; }
 
 		public void UpdateFromDiscovered(IColorTargetData existing) {
-			var yd = (YeelightData) existing;
 			Name = existing.Name;
 			IpAddress = existing.IpAddress;
-
 		}
 
 		public SettingsProperty[] KeyProperties { get; set; } = {
-			new("TargetSector","sectormap", "Target Sector")
+			new("TargetSector","sectormap", "Target Sector"),
+			new("FrameDelay", "text", "Frame Delay")
 		};
 	}
 }

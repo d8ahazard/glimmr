@@ -32,6 +32,10 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
         private int _len;
         private int _sectorCount;
         
+        private List<List<Color>> _frameBuffer;
+        private List<List<Color>> _frameBuffer2;
+        private int _frameDelay;
+        
         IColorTargetData IColorTarget.Data {
             get => Data;
             set => Data = (GlimmrData) value;
@@ -59,6 +63,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
             Log.Debug($"Glimmr: Starting stream at {IpAddress}...");
             await SendPost("mode", 5);
             _ep = IpUtil.Parse(IpAddress, port);
+            _frameBuffer = new List<List<Color>>();
             Streaming = true;
             Log.Debug("Glimmr: Stream started.");
         }
@@ -111,6 +116,16 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
                 Log.Debug("No endpoint.");
                 return;
             }
+            
+            if (_frameDelay > 0) {
+                _frameBuffer.Add(leds);
+                _frameBuffer2.Add(sectors);
+                if (_frameBuffer.Count < _frameDelay) return; // Just buffer till we reach our count
+                leds = _frameBuffer[0];
+                sectors = _frameBuffer2[0];
+                _frameBuffer.RemoveAt(0);
+                _frameBuffer2.RemoveAt(0);
+            }
 
             var packet = new List<byte>();
             packet.Add(ByteUtils.IntByte(2));
@@ -155,6 +170,9 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
             var id = Data.Id;
             Data = DataUtil.GetDevice<GlimmrData>(id);
             _len = Data.LedCount;
+            _frameDelay = Data.FrameDelay;
+            _frameBuffer = new List<List<Color>>();
+            _frameBuffer2 = new List<List<Color>>();
             Log.Debug($"Reloaded LED Data for {id}: " + JsonConvert.SerializeObject(Data));
             return Task.CompletedTask;
         }

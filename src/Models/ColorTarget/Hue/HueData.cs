@@ -66,7 +66,8 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 
 		public SettingsProperty[] KeyProperties { get; set; } = {
-			new("custom", "hue", "")
+			new("custom", "hue", ""),
+			new("FrameDelay", "text", "Frame Delay")
 		};
 
 
@@ -75,6 +76,8 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		public string Tag { get; set; } = "Hue";
 		public string IpAddress { get; set; }
 		public int Brightness { get; set; }
+		
+		public int FrameDelay { get; set; }
 		public bool Enable { get; set; }
 
 		public void AddGroups(IEnumerable<Group> groups) {

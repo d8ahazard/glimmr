@@ -73,7 +73,6 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 		public void UpdateFromDiscovered(IColorTargetData data) {
 			var ld = (LifxData) data;
-			Brightness = ld.Brightness;
 			IpAddress = data.IpAddress;
 			Layout?.MergeLayout(ld.Layout);
 			MultiZoneCount = ld.MultiZoneCount;
@@ -84,7 +83,8 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		}
 
 		public SettingsProperty[] KeyProperties { get; set; } = {
-			new("TargetSector", "sectormap", "Target Sector")
+			new("TargetSector", "sectormap", "Target Sector"),
+			new("FrameDelay", "text", "Frame Delay")
 		};
 
 
@@ -93,6 +93,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		public string Tag { get; set; }
 		public string IpAddress { get; set; }
 		public int Brightness { get; set; }
+		public int FrameDelay { get; set; }
 		public bool Enable { get; set; }
 	}
 }

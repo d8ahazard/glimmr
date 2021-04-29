@@ -66,7 +66,8 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
         }
 
         public SettingsProperty[] KeyProperties { get; set; } = {
-            new("custom", "nanoleaf", "")
+            new("custom", "nanoleaf", ""),
+            new("FrameDelay", "text", "Frame Delay")
         };
 
       
@@ -77,6 +78,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
         public string Tag { get; set; }
         public string IpAddress { get; set; }
         public int Brightness { get; set; }
+        public int FrameDelay { get; set; }
         public bool Enable { get; set; }
         
     }

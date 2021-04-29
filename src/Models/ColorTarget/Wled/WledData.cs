@@ -86,7 +86,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
                ["1"] = "Sectored",
                ["2"] = "Loop (Play Bar)"
             }),
-            new("ReverseStrip","check", "Reverse Strip Direction")
+            new("ReverseStrip","check", "Reverse Strip Direction"),
+            new("FrameDelay", "text", "Frame Delay")
         };
 
         [JsonProperty]
@@ -96,6 +97,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
         public string Tag { get; set; }
         public string IpAddress { get; set; }
         public int Brightness { get; set; }
+        
+        public int FrameDelay { get; set; }
         public bool Enable { get; set; }
         
     }

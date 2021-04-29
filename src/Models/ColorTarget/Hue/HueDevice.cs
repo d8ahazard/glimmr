@@ -38,10 +38,11 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		public string Tag { get; set; }
 		public bool Streaming { get; set; }
 		private readonly StreamingGroup _stream;
+		
+		private List<List<Color>> _frameBuffer;
+		private int _frameDelay;
 
-		private Task _updateTask;
-		
-		
+
 		public HueDevice(HueData data, ColorService colorService) : base(colorService) {
 			DataUtil.GetItem<int>("captureMode");
 			if (colorService != null) {
@@ -170,6 +171,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			_client.AutoUpdate(_stream, _ct).ConfigureAwait(false);
 			_entLayer = _stream.GetNewLayer(true);
 			Log.Debug("Hue: Stream started.");
+			_frameBuffer = new List<List<Color>>();
 			Streaming = true;
 		}
 
@@ -177,6 +179,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			if (!Enable) return;
 			Log.Debug($"Hue: Stopping Stream: {IpAddress}...");
 			StopStream(_client, Data).ConfigureAwait(false);
+			Streaming = false;
 			await Task.FromResult(true);
 			Log.Debug("Hue: Streaming Stopped.");
 		}
@@ -206,6 +209,8 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			IpAddress = Data.IpAddress;
 			Brightness = newData.Brightness;
 			Enable = Data.Enable;
+			_frameDelay = Data.FrameDelay;
+			_frameBuffer = new List<List<Color>>();
 			Log.Debug(@"Hue: Reloaded bridge: " + IpAddress);
 			return Task.CompletedTask;
 		}
@@ -214,12 +219,19 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		/// Update lites in entertainment group...
 		/// </summary>
 		/// <param name="list"></param>
-		/// <param name="colors"></param>
+		/// <param name="sectors"></param>
 		/// <param name="fadeTime"></param>
 		/// <param name="force"></param>
-		public void SetColor(List<Color> list, List<Color> colors, int fadeTime, bool force=false) {
+		public void SetColor(List<Color> list, List<Color> sectors, int fadeTime, bool force=false) {
 			if (!Streaming || !Data.Enable || _entLayer == null || Testing && !force) {
 				return;
+			}
+			
+			if (_frameDelay > 0) {
+				_frameBuffer.Add(sectors);
+				if (_frameBuffer.Count < _frameDelay) return; // Just buffer till we reach our count
+				sectors = _frameBuffer[0];
+				_frameBuffer.RemoveAt(0);	
 			}
 
 			var lightMappings = Data.MappedLights;
@@ -233,8 +245,8 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				// Otherwise, get the corresponding sector color
 				var tSector = lightData.TargetSector;
 				var colorInt = tSector - 1;
-				if (colorInt >= colors.Count) continue;
-				var color = colors[colorInt];
+				if (colorInt >= sectors.Count) continue;
+				var color = sectors[colorInt];
 				var mb = lightData.Override ? lightData.Brightness : Brightness;
 				var oColor = new RGBColor(color.R, color.G, color.B);
 				// If we're currently using a scene, animate it

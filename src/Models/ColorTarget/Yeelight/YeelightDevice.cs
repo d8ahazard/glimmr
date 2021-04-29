@@ -18,6 +18,10 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 		private YeelightData _data;
 		
+		private List<List<Color>> _frameBuffer;
+		private ColorService _cs;
+		private int _frameDelay;
+		
 		IColorTargetData IColorTarget.Data {
 			get => _data;
 			set => _data = (YeelightData) value;
@@ -30,9 +34,11 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			Tag = _data.Tag;
 			_yeeDevice = new Device(yd.IpAddress);
 			cs.ColorSendEvent += SetColor;
-			 
+			_cs = cs;
+
 		}
 		public async Task StartStream(CancellationToken ct) {
+			_frameBuffer = new List<List<Color>>();
 			Streaming = await _yeeDevice.Connect();
 		}
 
@@ -47,6 +53,13 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		}
 
 		public void SetColor(List<Color> colors, List<Color> sectors, int arg3, bool force=false) {
+			if (_frameDelay > 0) {
+				_frameBuffer.Add(sectors);
+				if (_frameBuffer.Count < _frameDelay) return; // Just buffer till we reach our count
+				sectors = _frameBuffer[0];
+				_frameBuffer.RemoveAt(0);	
+			}
+			
 			if (!force) {
 				if (!Streaming || _data.TargetSector == -1 || Testing && !force || _data.TargetSector >= sectors.Count) {
 					return;
@@ -64,12 +77,16 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 
 		public Task ReloadData() {
-			Streaming = false;
 			_yeeDevice.Dispose();
 			_data = DataUtil.GetCollectionItem<YeelightData>("Dev_Yeelight", _data.Id);
 			_yeeDevice = new Device(_data.IpAddress);
+			_frameDelay = _data.FrameDelay;
+			_frameBuffer = new List<List<Color>>();
+			Brightness = _data.Brightness;
+			Enable = _data.Enable;
 			return Task.CompletedTask;
 		}
+
 
 		public void Dispose() {
 			_yeeDevice.Dispose();

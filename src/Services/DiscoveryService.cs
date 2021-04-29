@@ -30,6 +30,7 @@ namespace Glimmr.Services {
 			controlService.SetModeEvent += UpdateMode;
 			controlService.RefreshSystemEvent += RefreshSystem;
 			_discoveryInterval = DataUtil.GetItem<int>("AutoDiscoveryFrequency");
+			if (_discoveryInterval < 15) _discoveryInterval = 15;
 			var classnames = SystemUtil.GetClasses<IColorDiscovery>();
 			_discoverables = new List<IColorDiscovery>();
 			_syncSource = new CancellationTokenSource();
@@ -43,6 +44,7 @@ namespace Glimmr.Services {
 			_syncSource.Cancel();
 			_mergeSource = CancellationTokenSource.CreateLinkedTokenSource(_syncSource.Token, _stopToken);
 			_discoveryInterval = DataUtil.GetItem<int>("AutoDiscoveryFrequency");
+			if (_discoveryInterval < 15) _discoveryInterval = 15;
 		}
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
@@ -73,8 +75,10 @@ namespace Glimmr.Services {
 		private async Task TriggerRefresh(object o, DynamicEventArgs dynamicEventArgs) {
 			var cs = new CancellationTokenSource();
 			var sd = DataUtil.GetSystemData();
-			cs.CancelAfter(TimeSpan.FromSeconds(sd.DiscoveryTimeout));
-			await DeviceDiscovery(cs.Token, sd.DiscoveryTimeout);
+			var timeout = sd.DiscoveryTimeout;
+			if (timeout < 3) timeout = 3;
+			cs.CancelAfter(TimeSpan.FromSeconds(timeout));
+			await DeviceDiscovery(cs.Token, timeout);
 			var devs = DataUtil.GetDevices();
 			foreach (var dev in devs) {
 				var device = (IColorTargetData) dev;

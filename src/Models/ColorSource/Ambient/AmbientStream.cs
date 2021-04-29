@@ -67,10 +67,13 @@ namespace Glimmr.Models.ColorSource.Ambient {
             return Task.Run(async () => {
                 // Load this one for fading
                 while (!ct.IsCancellationRequested) {
-                    if (!_enable) continue;
-                    var diff = _animationTime  - _watch.ElapsedMilliseconds;
+                    if (!_enable) {
+                        continue;
+                    }
+
+                    var elapsed = _watch.ElapsedMilliseconds;
+                    var diff = _animationTime - elapsed;
                     var sectors = new List<Color>();
-                    
                     if (diff > 0 && diff <= _easingTime) {
                         var avg = diff / _easingTime;
                         for (var i = 0; i < _currentColors.Count; i++) {
@@ -104,7 +107,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
                                 sectors = ColorUtil.EmptyList(_currentColors.Count);
                                 break;
                         }
-                        
+
                         _watch.Restart();
                     } else {
                         sectors = _currentColors;
@@ -113,7 +116,6 @@ namespace Glimmr.Models.ColorSource.Ambient {
                     var leds = SplitColors(sectors);
                     Colors = leds;
                     Sectors = sectors;
-                    Log.Debug("Sending colors...");
                     _cs.SendColors(Colors, Sectors,0);
                     await Task.FromResult(true);
                 }
@@ -124,9 +126,16 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
         private List<Color> SplitColors(List<Color> input) {
             var output = new List<Color>();
-            var tot = Math.Ceiling((float)(_ledCount / input.Count));
+            var inF = (float) input.Count;
+            var tot = (int) (_ledCount / inF);
+            var ci = 0;
             foreach (var color in input) {
-                output.AddRange(FillList(color, (int)tot));
+                output.AddRange(FillList(color, tot));
+                if (ci == input.Count - 1 && output.Count < _ledCount) {
+                    var missing = _ledCount - output.Count;
+                    output.AddRange(FillList(color,missing));
+                }
+                ci++;
             }
             return output;
         }
@@ -246,6 +255,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
             _scenes = _loader.LoadFiles<AmbientScene>();
             AmbientScene scene = new AmbientScene();
             foreach (var s in _scenes.Where(s => s.Id == _ambientShow)) {
+                Log.Debug($"Loading scene: {s.Id}");
                 scene = s;
             }
 

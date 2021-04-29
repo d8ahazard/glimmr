@@ -310,10 +310,17 @@
     
     <!-- Auto-disable -->
     <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center form-check">
-        <label class="form-check-label">Automatically Disable Streaming</label>
+        <label class="form-check-label">Automatically Sleep Lights</label>
         <input type="checkbox" class="form-check-input" data-object="SystemData" data-property="EnableAutoDisable"/>
         <div class="form-text">Automatically disable control of lights when no input is detected.</div>
     </div>
+    
+     <!-- Auto-disable interval -->
+        <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center form-check">
+            <label class="form-label">Auto-Disable Delay</label>
+            <input type="number" class="form-input" data-object="SystemData" data-property="AutoDisableDelay" min="0" max="3000"/>
+            <div class="form-text">Amount of time (in seconds) the input signal to Glimmr must be "off" before auto-disabling.</div>
+        </div>
     
     <!-- Letterboxing enable -->
     <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center form-check">

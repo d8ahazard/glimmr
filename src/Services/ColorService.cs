@@ -34,7 +34,9 @@ namespace Glimmr.Services {
 		private AudioVideoStream _avStream;
 		private DreamScreenStream _dreamStream;
 
+		private bool _setAutoDisable;
 		private bool _autoDisabled;
+		private int _autoDisableDelay;
 		private CaptureMode _captureMode;
 		private const int DeviceGroup = 20;
 		public DeviceMode DeviceMode;
@@ -80,7 +82,6 @@ namespace Glimmr.Services {
 			_streamTokenSource = new CancellationTokenSource();
 			Log.Information("Starting colorService loop...");
 			LoadData();
-			
 			Log.Information("All color services have been initialized.");
 			return Task.Run(async () => {
 				await Demo(this, new DynamicEventArgs());
@@ -88,7 +89,21 @@ namespace Glimmr.Services {
 				await Mode(this, new DynamicEventArgs(DeviceMode)).ConfigureAwait(true);
 				while (!stoppingToken.IsCancellationRequested) {
 					await CheckAutoDisable();
-					await Task.Delay(5000, stoppingToken);
+					if (_setAutoDisable) {
+						if(!_watch.IsRunning) _watch.Restart();
+						if (_watch.ElapsedMilliseconds >= _autoDisableDelay * 1000) {
+							_autoDisabled = true;
+							_setAutoDisable = false;
+							DataUtil.SetItem("AutoDisabled", _autoDisabled);
+							ControlService.SetModeEvent -= Mode;
+							await ControlService.SetMode(0);
+							ControlService.SetModeEvent += Mode;
+							Log.Information("Auto-disabling stream.");
+							_watch.Reset();
+						}
+					} else {
+						_watch.Reset();
+					}
 				}
 			}, CancellationToken.None);
 		}
@@ -229,7 +244,9 @@ namespace Glimmr.Services {
 			// If we're in video or audio mode, check the source is active...
 			if (DeviceMode == DeviceMode.Video && _videoStream != null) {
 				sourceActive = _videoStream.SourceActive;
-
+			} else {
+				//todo: Add proper source checks for other media. 
+				sourceActive = true;
 			}
 			
 			if (sourceActive) {
@@ -240,14 +257,11 @@ namespace Glimmr.Services {
 				ControlService.SetModeEvent -= Mode;
 				await ControlService.SetMode((int)DeviceMode);
 				ControlService.SetModeEvent += Mode;
+				_watch.Reset();
+				_setAutoDisable = false;
 			} else {
 				if (_autoDisabled || DeviceMode != DeviceMode.Video) return;
-				Log.Information("Auto-disabling stream.");
-				_autoDisabled = true;
-				DataUtil.SetItem("AutoDisabled", _autoDisabled);
-				ControlService.SetModeEvent -= Mode;
-				await ControlService.SetMode(0);
-				ControlService.SetModeEvent += Mode;
+				_setAutoDisable = true;
 			}
 		}
 
@@ -374,14 +388,12 @@ namespace Glimmr.Services {
 			var exists = false;
 			foreach (var dev in _sDevices) {
 				if (dev.Id == id) {
-					await dev.StopStream();
 					await dev.ReloadData();
 					if (!dev.IsEnabled()) {
 						return;
 					}
 
 					exists = true;
-					await dev.StartStream(_sendTokenSource.Token).ConfigureAwait(false);
 				}
 			}
 			
@@ -464,7 +476,13 @@ namespace Glimmr.Services {
 			if (refreshAmbient) {
 				_ambientStream?.Refresh();
 			}
-			
+
+			_autoDisableDelay = sd.AutoDisableDelay;
+			if (_autoDisableDelay < 1) {
+				_autoDisableDelay = 10;
+				
+			}
+
 		}
 
 		private async Task Mode(object o, DynamicEventArgs dynamicEventArgs) {

@@ -20,6 +20,8 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		private readonly ColorService _colorService;
 		private readonly OpenRGBClient _client;
 
+		private List<List<Color>> _frameBuffer;
+		private int _frameDelay;
 		
 		IColorTargetData IColorTarget.Data {
 			get => Data;
@@ -46,6 +48,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 				Streaming = true;
 				_client.SetMode(Data.DeviceId,0);
 				Log.Information("OpenRGB: Stream started.");
+				_frameBuffer = new List<List<Color>>();
 			}
 			return Task.CompletedTask;
 		}
@@ -67,6 +70,14 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			} 
 			var toSend = ColorUtil.TruncateColors(colors, Data.Offset, Data.LedCount);
 			if (Data.Rotation == 180) toSend.Reverse();
+			
+			if (_frameDelay > 0) {
+				_frameBuffer.Add(toSend);
+				if (_frameBuffer.Count < _frameDelay) return; // Just buffer till we reach our count
+				toSend = _frameBuffer[0];
+				_frameBuffer.RemoveAt(0);	
+			}
+
 			var converted = toSend.Select(col => new OpenRGB.NET.Models.Color(col.R, col.G, col.B)).ToList();
 			_client.UpdateLeds(Data.DeviceId,converted.ToArray());
 			_colorService.Counter.Tick(Id);
@@ -77,6 +88,10 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		}
 
 		public Task ReloadData() {
+			Data = DataUtil.GetDevice(Id);
+			Enable = Data.Enable;
+			_frameDelay = Data.FrameDelay;
+			_frameBuffer = new List<List<Color>>();
 			return Task.CompletedTask;
 		}
 

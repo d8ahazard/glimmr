@@ -26,6 +26,8 @@ namespace Glimmr.Models {
 		[DefaultValue(15)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int CropDelay { get; set; }
+		
+		
 
 		
 		[DefaultValue(0)]
@@ -85,6 +87,10 @@ namespace Glimmr.Models {
 		[DefaultValue(true)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool EnableAutoDisable { get; set; } = true;
+		
+		[DefaultValue(30)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int AutoDisableDelay { get; set; }
 		
 		[DefaultValue(true)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]

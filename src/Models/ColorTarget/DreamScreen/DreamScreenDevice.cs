@@ -27,11 +27,11 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		[DataMember] [JsonProperty] public bool Enable { get; set; }
 		[DataMember] [JsonProperty] public DreamScreenData ScreenData { get; set; }
 
-		private DreamScreenClient _client;
-		private IPAddress myIp;
+		private readonly DreamScreenClient _client;
+		private readonly IPAddress _myIp;
+		private List<List<Color>> _frameBuffer;
+		private int _frameDelay;
 		
-		
-		private Task _subTask;
 
 		public DreamScreenDevice(DreamScreenData screenData, ColorService colorService) {
 			ScreenData = screenData;
@@ -45,17 +45,17 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			Enable = screenData.Enable;
 			DeviceTag = screenData.DeviceTag;
 			if (string.IsNullOrEmpty(IpAddress)) IpAddress = Id;
-			myIp = IPAddress.Parse(IpAddress);
+			_myIp = IPAddress.Parse(IpAddress);
 		}
 
 		public async Task StartStream(CancellationToken ct) {
-			await _client.SetMode(DeviceMode.Video, myIp, ScreenData.GroupNumber);
+			_frameBuffer = new List<List<Color>>();
+			await _client.SetMode(DeviceMode.Video, _myIp, ScreenData.GroupNumber);
 		}
 		
 		public async Task StopStream() {
 			Log.Debug("Stopping stream.");
-			await _client.SetMode(DeviceMode.Off, myIp, ScreenData.GroupNumber);
-			_subTask?.Dispose();
+			await _client.SetMode(DeviceMode.Off, _myIp, ScreenData.GroupNumber);
 		}
 
 		public async void SetColor(List<Color> colors, List<Color> sectors, int arg3, bool force = false) {
@@ -65,7 +65,15 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 				sectors = ColorUtil.TruncateColors(sectors);
 				
 			}
-			await _client.SendColors(myIp, ScreenData.GroupNumber, sectors).ConfigureAwait(false);
+			
+			if (_frameDelay > 0) {
+				_frameBuffer.Add(sectors);
+				if (_frameBuffer.Count < _frameDelay) return; // Just buffer till we reach our count
+				sectors = _frameBuffer[0];
+				_frameBuffer.RemoveAt(0);	
+			}
+			
+			await _client.SendColors(_myIp, ScreenData.GroupNumber, sectors).ConfigureAwait(false);
 			ColorService.Counter.Tick(Id);
 		}
 

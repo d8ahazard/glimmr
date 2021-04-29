@@ -9,6 +9,7 @@ namespace Glimmr.Models.ColorTarget {
         public string Tag { get; set; }
         public string IpAddress { get; set; }
         public int Brightness { get; set; }
+        public int FrameDelay { get; set; }
         public bool Enable { get; set; }
         public string LastSeen { get; set; }
         public void UpdateFromDiscovered(IColorTargetData data);

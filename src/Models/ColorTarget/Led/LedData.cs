@@ -49,6 +49,8 @@ namespace Glimmr.Models.ColorTarget.Led {
 
         public string IpAddress { get; set; }
         public int Brightness { get; set; }
+        
+        public int FrameDelay { get; set; }
         public bool Enable { get; set; }
         public string LastSeen { get; set; }
 
@@ -64,7 +66,8 @@ namespace Glimmr.Models.ColorTarget.Led {
             new("FixGamma", "check", "Fix Gamma"),
             new("AutoBrightnessLevel", "check", "Enable Auto Brightness"),
             new("MilliampsPerLed", "text", "Milliamps per led"),
-            new("AblMaxMilliamps", "text", "Total Max Milliamps")
+            new("AblMaxMilliamps", "text", "Total Max Milliamps"),
+            new("FrameDelay", "text", "Frame Delay")
         };
 
     }

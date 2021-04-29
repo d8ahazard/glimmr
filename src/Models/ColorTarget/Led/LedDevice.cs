@@ -29,6 +29,9 @@ namespace Glimmr.Models.ColorTarget.Led {
 		private int _offset;
 		private bool _enableAbl;
 		private WS281x _strip;
+		
+		private List<List<Color>> _frameBuffer;
+		private int _frameDelay;
 
 		
 		public LedDevice(LedData ld, ColorService colorService) : base(colorService) {
@@ -54,6 +57,8 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 		public async Task StartStream(CancellationToken ct) {
 			if (!Enable) return;
+			_frameBuffer = new List<List<Color>>();
+
 			Log.Debug($"Starting LED stream for LED {Id}...");
 			Streaming = true;
 			await Task.FromResult(Streaming);
@@ -92,6 +97,8 @@ namespace Glimmr.Models.ColorTarget.Led {
 			if (_ledCount > sd.LedCount) _ledCount = sd.LedCount;
 			_enableAbl = Data.AutoBrightnessLevel;
 			_offset = Data.Offset;
+			_frameDelay = Data.FrameDelay;
+			_frameBuffer = new List<List<Color>>();
 
 			if (Enable) {
 				CreateStrip();
@@ -147,6 +154,13 @@ namespace Glimmr.Models.ColorTarget.Led {
 			var c1 = TruncateColors(colors, _ledCount, _offset);
 			if (_enableAbl) {
 				c1 = VoltAdjust(c1, Data);
+			}
+			
+			if (_frameDelay > 0) {
+				_frameBuffer.Add(c1);
+				if (_frameBuffer.Count < _frameDelay) return; // Just buffer till we reach our count
+				c1 = _frameBuffer[0];
+				_frameBuffer.RemoveAt(0);	
 			}
 
 			for (var i = 0; i < c1.Count; i++) {

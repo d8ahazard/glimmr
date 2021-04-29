@@ -34,6 +34,9 @@ namespace Glimmr.Models.ColorTarget.Wled {
         private int _offset;
         private int _len;
         
+        private List<List<Color>> _frameBuffer;
+        private int _frameDelay;
+        
         IColorTargetData IColorTarget.Data {
             get => Data;
             set => Data = (WledData) value;
@@ -59,6 +62,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
         public async Task StartStream(CancellationToken ct) {
             if (Streaming) return;
             if (!Data.Enable) return;
+            _frameBuffer = new List<List<Color>>();
             Log.Debug($"WLED: Starting stream at {IpAddress}...");
             var onObj = new JObject(
                 new JProperty("on", true),
@@ -116,7 +120,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
             if (!Streaming || !Data.Enable || Testing && !force) {
                 return;
             }
-
             var colors = list;
             colors = ColorUtil.TruncateColors(colors,_offset, _len);
             if (Data.StripMode == 2) {
@@ -125,6 +128,13 @@ namespace Glimmr.Models.ColorTarget.Wled {
                 if (Data.ReverseStrip) {
                     colors.Reverse();
                 }
+            }
+
+            if (_frameDelay > 0) {
+                _frameBuffer.Add(colors);
+                if (_frameBuffer.Count < _frameDelay) return; // Just buffer till we reach our count
+                colors = _frameBuffer[0];
+                _frameBuffer.RemoveAt(0);	
             }
 
             var packet = new Byte[2 + colors.Count * 3];
@@ -195,6 +205,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
             Data = DataUtil.GetDevice<WledData>(id);
             _offset = Data.Offset;
             _len = Data.LedCount;
+            _frameDelay = Data.FrameDelay;
+            _frameBuffer = new List<List<Color>>();
             Log.Debug($"Reloaded LED Data for {id}: " + JsonConvert.SerializeObject(Data));
             return Task.CompletedTask;
         }

@@ -28,6 +28,9 @@ namespace Glimmr.Models.ColorTarget.Lifx {
         public string Tag { get; set; }
 
         private readonly LifxClient _client;
+        
+        private List<List<Color>> _frameBuffer;
+        private int _frameDelay;
 
         public LifxDevice(LifxData d, ColorService colorService) : base(colorService) {
             DataUtil.GetItem<int>("captureMode");
@@ -47,6 +50,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             Log.Debug("Lifx: Starting stream.");
             var col = new LifxColor(0, 0, 0);
             //var col = new LifxColor {R = 0, B = 0, G = 0};
+            _frameBuffer = new List<List<Color>>();
             Streaming = true;
             await _client.SetLightPowerAsync(B, true).ConfigureAwait(false);
             await _client.SetColorAsync(B, col, 2700).ConfigureAwait(false);
@@ -83,6 +87,8 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             Brightness = newData.MaxBrightness;
             Id = newData.Id;
             Enable = Data.Enable;
+            _frameDelay = Data.FrameDelay;
+            _frameBuffer = new List<List<Color>>();
             return Task.CompletedTask;
         }
 
@@ -93,12 +99,19 @@ namespace Glimmr.Models.ColorTarget.Lifx {
         public void SetColor(List<Color> colors, List<Color> list, int arg3, bool force=false) {
             if (!Streaming || !Enable || Testing && !force) return;
             var sectors = list;
-            var fadeTime = arg3;
             if (sectors == null || _client == null) {
                 return;
             }
 
             if (_targetSector >= sectors.Count) return;
+            
+            if (_frameDelay > 0) {
+                _frameBuffer.Add(sectors);
+                if (_frameBuffer.Count < _frameDelay) return; // Just buffer till we reach our count
+                sectors = _frameBuffer[0];
+                _frameBuffer.RemoveAt(0);	
+            }
+            
             var input = sectors[_targetSector];
             if (Brightness < 100) {
                 //input = ColorUtil.ClampBrightness(input, Brightness);
@@ -106,7 +119,6 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             var nC = new LifxColor(input);
             //var nC = new LifxColor {R = input.R, B = input.B, G = input.G};
 
-            var fadeSpan = TimeSpan.FromSeconds(fadeTime);
             _client.SetColorAsync(B, nC);
             ColorService.Counter.Tick(Id);
         }
