@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using LifxNetPlus;
+using Microsoft.VisualBasic.CompilerServices;
 using Serilog;
 using Color = System.Drawing.Color;
 
@@ -84,7 +85,12 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             Data = newData;
             var targetSector = newData.TargetSector;
             _targetSector = targetSector - 1;
+            var oldBrightness = Brightness;
             Brightness = newData.MaxBrightness;
+            if (oldBrightness != Brightness) {
+                var bri = Brightness / 100 * 255;
+                _client.SetBrightnessAsync(B, (ushort) bri);
+            }
             Id = newData.Id;
             Enable = Data.Enable;
             _frameDelay = Data.FrameDelay;
@@ -113,9 +119,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             }
             
             var input = sectors[_targetSector];
-            if (Brightness < 100) {
-                //input = ColorUtil.ClampBrightness(input, Brightness);
-            }
+            
             var nC = new LifxColor(input);
             //var nC = new LifxColor {R = input.R, B = input.B, G = input.G};
 

@@ -96,6 +96,17 @@ namespace Glimmr.Models.Util {
 
             return null;
         }
+        
+        public static string GetHostFromIp(string ipAddress) {
+            try {
+                var entry = Dns.GetHostEntry(ipAddress);
+                return entry.HostName;
+            } catch (Exception ex) {
+                Log.Warning("Unable to resolve hostname for " + ipAddress +": " + ex.Message);
+            }
+
+            return null;
+        }
 
        
         public static string GetLocalIpAddress() {

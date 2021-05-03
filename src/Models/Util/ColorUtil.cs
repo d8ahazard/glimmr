@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
+using System.Linq;
 
 namespace Glimmr.Models.Util {
     public static class ColorUtil {
@@ -31,16 +32,14 @@ namespace Glimmr.Models.Util {
             return output;
         }
 
+        /// <summary>
+        /// Restrict the maximum brightness of a list of colors
+        /// </summary>
+        /// <param name="input">The color list to limit.</param>
+        /// <param name="maxBrightness">Maximum brightness from 0-100</param>
+        /// <returns></returns>
         public static List<Color> ClampBrightness(List<Color> input, float maxBrightness) {
-            var output = new List<Color>();
-            var max = maxBrightness / 255;
-            for (var i = 0; i < input.Count; i++) {
-	            var c = input[i];
-	            var cB = c.GetBrightness();
-	            output.Add(cB > max ? HsbToColor(c.GetHue(), c.GetSaturation(), max, c.A) : c);
-            }
-
-            return output;
+	        return input.Select(c => ClampBrightness(c, maxBrightness)).ToList();
         }
 
         public static string ColorToHex(Color input) {

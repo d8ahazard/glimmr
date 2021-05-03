@@ -98,7 +98,7 @@ namespace Glimmr.Services {
 							ControlService.SetModeEvent -= Mode;
 							await ControlService.SetMode(0);
 							ControlService.SetModeEvent += Mode;
-							Log.Information("Auto-disabling stream.");
+							Log.Information($"Auto-disabling stream {_watch.ElapsedMilliseconds} vs {_autoDisableDelay * 1000}.");
 							_watch.Reset();
 						}
 					} else {
@@ -306,6 +306,7 @@ namespace Glimmr.Services {
 			_captureMode =(CaptureMode) (DataUtil.GetItem<int>("CaptureMode") ?? 2);
 			_sendTokenSource = new CancellationTokenSource();
 			_systemData = DataUtil.GetSystemData();
+			_autoDisableDelay = _systemData.AutoDisableDelay;
 			// Create new lists
 			var sDevs = new List<IColorTarget>();
 			var classes = SystemUtil.GetClasses<IColorTarget>();
@@ -321,15 +322,14 @@ namespace Glimmr.Services {
 						if (device.Tag == tag) {
 							if (device.Enable) enabled++;
 							Log.Debug($"Creating {device.Tag}: {device.Id}");
-
 							var args = new object[] {device, this};
 							var obj = (IColorTarget) Activator.CreateInstance(Type.GetType(c)!, args);
 							sDevs.Add(obj);
 						}
 					}
 					
-				} catch (Exception e) {
-					Log.Warning("Exception: " + e.Message);
+				} catch (InvalidCastException e) {
+					Log.Warning("Exception: " + e.Message + " at " + e.StackTrace);
 				}
 			}
 
@@ -383,25 +383,18 @@ namespace Glimmr.Services {
 			var id = dynamicEventArgs.P1;
 			if (string.IsNullOrEmpty(id)) {
 				Log.Warning("Can't refresh null device: " + id);
+			} else {
+				Log.Debug("Refreshing device: " + id);
 			}
 		
-			var exists = false;
 			foreach (var dev in _sDevices) {
-				if (dev.Id == id) {
+				Log.Debug($"Checking {dev.Data.Id} against {id}");
+				if (dev.Data.Id == id) {
+					Log.Debug("Reloading device: " + id);
 					await dev.ReloadData();
-					if (!dev.IsEnabled()) {
-						return;
-					}
-
-					exists = true;
+					return;
 				}
 			}
-			
-			
-			if (exists) {
-				return;
-			}
-
 			
 			var sda = DataUtil.GetDevice(id);
 			

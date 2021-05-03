@@ -433,14 +433,18 @@ function setSocketListeners() {
     });
 
     websocket.on('device', function(stuff) {
-        for(let i=0; i<data.store.Devices.length; i++) {
-           let dev = data.store.Devices[i];
-           if (dev["Id"] === stuff["Id"]) {
+        stuff["Id"] = stuff["id"];
+        console.log("Device data: ", stuff);
+        for(let i=0; i<data.devices.length; i++) {
+           let dev = data.devices[i];
+           if (dev["Id"] === stuff["id"]) {
                console.log("Device updated: ",stuff);
+               data.devices[i] = mergeDeviceData(dev,stuff);
            }
-           if (deviceData["Id"] === stuff["Id"]) {
-               console.log("Updating selected deviceData:",stuff);
-               deviceData = stuff;
+           
+           if (isValid(deviceData) && deviceData["Id"] === stuff["id"]) {
+               console.log("Updating selected deviceData:",stuff);               
+               deviceData = mergeDeviceData(deviceData,stuff);
                if (settingsShown) createDeviceSettings();
            }
            
@@ -458,6 +462,18 @@ function setSocketListeners() {
             if (++i >= 100 || socketLoaded) clearInterval(intr);
         }, 5000);
     })
+}
+
+function mergeDeviceData(existing, newDev) {
+    let clone = existing;
+    for (const [key, value] of Object.entries(existing)) {
+        for (const [nKey, nValue] of Object.entries(newDev)) {
+            if (key.toLowerCase() === nKey.toLowerCase()) {
+                clone[key] = nValue;        
+            }
+        }
+    }
+    return clone;
 }
 
 // Initialize our websocket
@@ -1250,6 +1266,8 @@ function loadDevices() {
             brightnessSlide.setAttribute("type","range");
             brightnessSlide.setAttribute("data-target",device["Id"]);
             brightnessSlide.setAttribute("data-attribute","Brightness");
+            brightnessSlide.setAttribute("min", "0");
+            brightnessSlide.setAttribute("max", "100");
             brightnessSlide.value = device["Brightness"];
             brightnessSlide.classList.add("form-input", "w-100", 'custom-range');
             
@@ -1343,10 +1361,10 @@ function updateDevice(id, property, value) {
 
 // Find device by id in datastore
 function findDevice(id) {
-    for (let i=0; i < data.store.Devices.length; i++) {
-        if (data.store.Devices[i]) {
-            if (data.store.Devices[i]["Id"] === id) {
-                return data.store.Devices[i];
+    for (let i=0; i < data.devices.length; i++) {
+        if (data.devices[i]) {
+            if (data.devices[i]["Id"] === id) {
+                return data.devices[i];
             }
         }
     }
@@ -1621,7 +1639,7 @@ function createDeviceSettings() {
                     break;
                 case "ledmap":
                     drawLedMap = true;
-                    appendLedMap(deviceData["LedCount"], deviceData["Offset"], deviceData["ReverseStrip"]);
+                    appendLedMap();
                     break;
                 case "select":
                     elem = new SettingElement(prop["ValueLabel"], "select", id, propertyName, value);

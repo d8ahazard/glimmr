@@ -50,9 +50,9 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		/// <param name="n"></param>
 		/// <param name="colorService"></param>
 		public NanoleafDevice(NanoleafData n, ColorService colorService) : base(colorService) {
-			DataUtil.GetItem<int>("captureMode");
 			colorService.ColorSendEvent += SetColor;
 			if (n != null) {
+				Data = n;
 				SetData(n);
 				var streamMode = n.Type == "NL29" ? 2 : 1;
 				var cs = ColorService.ControlService;
@@ -71,9 +71,9 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			Log.Debug($@"Nanoleaf: Starting stream at {IpAddress}...");
 			_wasOn = await _nanoleafClient.GetPowerStatusAsync();
 			Log.Debug("Power status: " + _wasOn);
-			if (!_wasOn) await _nanoleafClient.TurnOnAsync();
-			await _nanoleafClient.SetBrightnessAsync(100);
-			_nanoleafClient.StartExternalAsync().ConfigureAwait(false);
+			if (!_wasOn) _nanoleafClient.TurnOnAsync();
+			_nanoleafClient.SetBrightnessAsync((int)(Brightness / 100f * 255));
+			_nanoleafClient.StartExternalAsync();
 			Log.Debug("Panel started.");
 		}
 
@@ -110,9 +110,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 					}
 				}
 
-				if (Data.Brightness < 100) {
-					color = ColorUtil.ClampBrightness(color, Data.Brightness);
-				}
+				
 				cols[p.PanelId] = color;
 			}
 
@@ -129,12 +127,15 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		}
 
 		private void SetData(NanoleafData n) {
-			var od = Data;
+			var oldBrightness = Data.Brightness;
 			Data = n;
 			DataUtil.GetItem<int>("captureMode");
 			IpAddress = n.IpAddress;
 			_layout = n.Layout;
 			Brightness = n.Brightness;
+			if (oldBrightness != Brightness) {
+				_nanoleafClient.SetBrightnessAsync(Brightness);
+			}
 			Enable = n.Enable;
 			Id = n.Id;
 			_frameDelay = Data.FrameDelay;

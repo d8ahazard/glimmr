@@ -1,18 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Wled {
@@ -51,10 +47,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
             _updateColors = new List<Color>();
             Data = wd ?? throw new ArgumentException("Invalid WLED data.");
             Id = Data.Id;
-            Enable = Data.Enable;
-            IpAddress = Data.IpAddress;
-            _offset = Data.Offset;
-            _len = Data.LedCount;
+            Brightness = Data.Brightness;
+            ReloadData();
         }
 
         
@@ -64,13 +58,9 @@ namespace Glimmr.Models.ColorTarget.Wled {
             if (!Data.Enable) return;
             _frameBuffer = new List<List<Color>>();
             Log.Debug($"WLED: Starting stream at {IpAddress}...");
-            var onObj = new JObject(
-                new JProperty("on", true),
-                new JProperty("bri", Brightness)
-                );
-            await SendPost(onObj);
             _ep = IpUtil.Parse(IpAddress, port);
             Streaming = true;
+            UpdateLightState(Streaming).ConfigureAwait(false);
             Log.Debug("WLED: Stream started.");
         }
 
@@ -108,10 +98,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             await FlashColor(Color.FromArgb(0, 0, 0));
             Streaming = false;
             Log.Debug("WLED: Stream stopped.");
-            var offObj = new JObject(
-                new JProperty("on", false)
-            );
-            await SendPost(offObj);
+            await UpdateLightState(Streaming).ConfigureAwait(false);
         }
 
 
@@ -201,87 +188,31 @@ namespace Glimmr.Models.ColorTarget.Wled {
        
      
         public Task ReloadData() {
-            var id = Data.Id;
-            Data = DataUtil.GetDevice<WledData>(id);
+            var oldBrightness = Brightness;
+            Data = DataUtil.GetDevice<WledData>(Id);
             _offset = Data.Offset;
+            Brightness = Data.Brightness;
+            IpAddress = Data.IpAddress;
+            if (oldBrightness != Brightness) {
+                Log.Debug($"Brightness has changed!! {oldBrightness} {Brightness}");
+                UpdateLightState(Streaming).ConfigureAwait(false);
+            } else {
+                Log.Debug($"Nothing to update for brightness {oldBrightness} {Brightness}");
+            }
             _len = Data.LedCount;
             _frameDelay = Data.FrameDelay;
             _frameBuffer = new List<List<Color>>();
-            Log.Debug($"Reloaded LED Data for {id}: " + JsonConvert.SerializeObject(Data));
             return Task.CompletedTask;
         }
 
-        public async Task UpdateCount(int count) {
-            var setting = new Dictionary<string, dynamic>();
-            setting["LC"] = count;
-            await SendForm(setting);
+        public async Task UpdateLightState(bool on) {
+            var url = "http://" + IpAddress + "/win";
+            url += "&T=" + (on ? "1" : "0");
+            url += "&A=" + (int)(Brightness / 100f * 255);
+            Log.Debug("GETTIN: " + url);
+            await _httpClient.GetAsync(url).ConfigureAwait(false);
         }
 
-        public async Task UpdateBrightness(int brightness) {
-            Brightness = brightness;
-            var onObj = new JObject(
-                new JProperty("bri", brightness)
-            );
-            await SendPost(onObj);
-        }
-
-        public async Task UpdateType(bool isRgbw) {
-            var setting = new Dictionary<string, dynamic>();
-            setting["EW"] = isRgbw;
-            await SendForm(setting);
-        }
-
-        private async Task SendPost(JObject values, string target="/json/state") {
-            Uri uri;
-            if (string.IsNullOrEmpty(IpAddress) && !string.IsNullOrEmpty(Id)) {
-                IpAddress = Id;
-                Data.IpAddress = Id;
-                await DataUtil.InsertCollection<WledData>("Dev_Wled", Data);
-            } 
-            try {
-                uri = new Uri("http://" + IpAddress + target);
-            } catch (UriFormatException e) {
-                Log.Warning("URI Format exception: " + e.Message);
-                return;
-            }
-
-            var httpContent = new StringContent(values.ToString());
-            httpContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-            try {
-                _httpClient.PostAsync(uri, httpContent).ConfigureAwait(false);
-            } catch (Exception e) {
-                Log.Warning("HTTP Request Exception: " + e.Message);
-            }
-
-            httpContent.Dispose();
-        }
-
-        private async Task SendForm(Dictionary<string, dynamic> values) {
-            var uri = new Uri("http://" + IpAddress + "settings/leds");
-            var request = (HttpWebRequest)WebRequest.Create(uri);
-            string postData = string.Empty;
-            foreach (string k in values.Keys) {
-                if (string.IsNullOrEmpty(postData)) {
-                    postData = $"?{k}={values[k]}";
-                } else {
-                    postData += $"@{k}={values[k]}";
-                }
-            }
-            var data = Encoding.ASCII.GetBytes(postData);
-            request.Method = "POST";
-            request.ContentType = "application/x-www-form-urlencoded";
-            request.ContentLength = data.Length;
-            await using (var stream = request.GetRequestStream()) {
-                await stream.WriteAsync(data.AsMemory(0, data.Length));
-            }
-
-            var response = (HttpWebResponse)request.GetResponse();
-
-            await using var rs = response.GetResponseStream();
-            var responseString = new StreamReader(rs).ReadToEndAsync();
-            Log.Debug("We got a response: " + responseString);    
-            response.Dispose();
-        }
 
         public void Dispose() {
             Dispose(true).ConfigureAwait(true);

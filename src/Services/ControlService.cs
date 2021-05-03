@@ -289,7 +289,7 @@ namespace Glimmr.Services {
 		}
 
 		public async Task UpdateDevice(dynamic device, bool merge=true) {
-			Log.Debug($"Adding {device.Tag}...");
+			Log.Debug($"Updating {device.Tag}...");
 			await DataUtil.AddDeviceAsync(device, merge);
 			await _hubContext.Clients.All.SendAsync("device",(IColorTargetData) device);
 			await RefreshDevice(device.Id);
