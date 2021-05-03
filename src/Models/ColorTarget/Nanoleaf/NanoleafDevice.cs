@@ -81,7 +81,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			if (!Enable) return;
 			await FlashColor(Color.FromArgb(0, 0, 0));
 			Streaming = false;
-			await _nanoleafClient.TurnOffAsync();
+			if (_wasOn) _nanoleafClient.TurnOffAsync();
 			Log.Debug($@"Nanoleaf: Stopped panel: {IpAddress}");
 		}
 
