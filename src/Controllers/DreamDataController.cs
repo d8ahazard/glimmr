@@ -24,7 +24,7 @@ namespace Glimmr.Controllers {
 		}
 
 		[HttpGet("")]
-		public static IActionResult DefaultAction() {
+		public JsonResult GetSystemData() {
 			var sd = DataUtil.GetSystemData();
 			return new JsonResult(sd);
 		}
