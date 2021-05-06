@@ -73,23 +73,28 @@ namespace Glimmr.Models.Util {
                 var hosts = Dns.GetHostAddresses(p);
 
                 // Use the first address like always if found
-                if (hosts.Length > 0) {
-                    return hosts[0];
+                foreach (var host in hosts) {
+                    if (host.AddressFamily == AddressFamily.InterNetwork) {
+                        return host;
+                    }
                 }
-
+                
                 // If not, try this
                 var dns = Dns.GetHostEntry(p);
-                if (dns.AddressList.Length > 0) {
-                    return dns.AddressList[0];
+                foreach (var host in dns.AddressList) {
+                    if (host.AddressFamily == AddressFamily.InterNetwork) {
+                        return host;
+                    }
                 }
                 
                 // If still no dice, try getting appending .local
                 dns = Dns.GetHostEntry(p + ".local");
-                if (dns.AddressList.Length > 0) {
-                    return dns.AddressList[0];
+                foreach (var host in dns.AddressList) {
+                    if (host.AddressFamily == AddressFamily.InterNetwork) {
+                        return host;
+                    }
                 }
-                
-                
+
             } catch (Exception e) {
                 Log.Debug("DNS Res ex: " + e.Message);
             }

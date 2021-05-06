@@ -221,6 +221,7 @@ namespace Glimmr.Services {
 					var now = DateTime.Now.TimeOfDay;
 
 					if (now > start && now < end) {
+						Log.Information("Triggering system update.");
 						SystemUtil.Update();
 					}
 				}

@@ -221,12 +221,10 @@
                                 <div class="row border justify-content-center pb-5">
                                     <div class="col-12 headerCol">Updates</div>
                                     <!-- Auto-update -->
-                                    <div class="col-12 row mt-2 mb-2 justify-content-center pb-4">
-                                        <div class="col-12 col-md-6 col-xl-3 form-check align-self-center">
-                                            <label class="form-check-label">Automatically Install Updates</label>
-                                            <input type="checkbox" class="form-check-input" data-object="SystemData" data-property="AutoUpdate"/>
-                                            <div class="form-text">Updates will be installed at 1:00AM every day when enabled.</div>
-                                        </div>
+                                    <div class="col-12 col-md-6 col-xl-3 form-check align-self-center mt-2 justify-content-center pb-4">
+                                        <label class="form-check-label">Automatically Install Updates</label>
+                                        <input type="checkbox" class="form-check-input" data-object="SystemData" data-property="AutoUpdate"/>
+                                        <div class="form-text">Updates will be installed at 1:00AM every day when enabled.</div>
                                     </div>
                                     <!-- Auto-update time -->
                                     <div class="col-12 col-md-6 col-xl-3 align-self-center form-group">
@@ -235,15 +233,6 @@
                                
                                         </select>
                                         <div class="form-text">What time Glimmr should check for and auto-install updates (if enabled).</div>
-                                    </div>
-                                    <!-- Update branch -->
-                                    <div class="col-12 col-md-6 col-xl-3 align-self-center form-group">
-                                        <label>Update Branch</label>
-                                        <select class="systemSetting form-control" data-object="SystemData" data-property="UpdateBranch">
-                                            <option value="main">Main</option>
-                                            <option value="dev">Dev</option>
-                                        </select>
-                                        <div class="form-text">Which branch from Github updates will be pulled from (if enabled).</div>
                                     </div>
                                 </div>
                                     <div class="row border justify-content-center pb-5">

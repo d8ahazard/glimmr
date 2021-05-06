@@ -439,6 +439,7 @@ function setSocketListeners() {
         }
         if (idx !== -1) data.devices.splice(idx, 1);
         let devCard = document.querySelector('.devCard[data-id="'+id+'"]');
+        devCard.remove();
     });
     
     websocket.on('frames', function(stuff) {
@@ -1282,9 +1283,11 @@ function loadDevices() {
                 a.innerText = device["IpAddress"];
                 a.target = "_blank";
                 subTitle.appendChild(a);
-                let count = document.createElement("span");
-                count.innerText = " (" + device["LedCount"] + ")";
-                subTitle.appendChild(count);
+                if (device["Tag"] === "Wled") {
+                    let count = document.createElement("span");
+                    count.innerText = " (" + device["LedCount"] + ")";
+                    subTitle.appendChild(count);
+                }
             } else {
                 subTitle.textContent = device["IpAddress"];
             }
