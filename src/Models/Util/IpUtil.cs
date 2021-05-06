@@ -19,7 +19,7 @@ namespace Glimmr.Models.Util {
                 throw new ArgumentException($"Invalid default port '{portIn}'");
             }
 
-            string[] values = endpoint.Split(new[] {':'});
+            var values = endpoint.Split(new[] {':'});
             IPAddress ipAddress;
             int port;
 
@@ -97,17 +97,6 @@ namespace Glimmr.Models.Util {
             return null;
         }
         
-        public static string GetHostFromIp(string ipAddress) {
-            try {
-                var entry = Dns.GetHostEntry(ipAddress);
-                return entry.HostName;
-            } catch (Exception ex) {
-                Log.Warning("Unable to resolve hostname for " + ipAddress +": " + ex.Message);
-            }
-
-            return null;
-        }
-
        
         public static string GetLocalIpAddress() {
             var host = Dns.GetHostEntry(Dns.GetHostName());

@@ -61,7 +61,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			}
 			
 			if (!force) {
-				if (!Streaming || _data.TargetSector == -1 || Testing && !force || _data.TargetSector >= sectors.Count) {
+				if (!Streaming || _data.TargetSector == -1 || Testing || _data.TargetSector >= sectors.Count) {
 					return;
 				}
 			}

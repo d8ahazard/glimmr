@@ -9,7 +9,7 @@ using YeelightAPI;
 namespace Glimmr.Models.ColorTarget.Yeelight {
 	public class YeelightDiscovery : ColorDiscovery, IColorDiscovery {
 
-		private ControlService _controlService;
+		private readonly ControlService _controlService;
 		public YeelightDiscovery(ColorService colorService) : base(colorService) {
 			_controlService = colorService.ControlService;
 			DeviceTag = "Yeelight";

@@ -55,7 +55,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 					int channelIndex;
 					if (!lSteps.Contains(sector)) {
 						lSteps.Add(sector);
-						KeyValuePair<int, float> note = HighNote(lChannel, sector, _leftSectors.Count);
+						var note = HighNote(lChannel, sector, _leftSectors.Count);
 						if (note.Value >= _rotationThreshold && !triggered) triggered = true;
 						var targetHue = RotateHue(ColorUtil.HueFromFrequency(note.Key));
 						var sectorInt = _leftSectors.ElementAt(sector);
@@ -69,7 +69,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 					sector = (int) Math.Floor(_rightSectors.Count * i);
 					if (!rSteps.Contains(sector)) {
 						rSteps.Add(sector);
-						KeyValuePair<int, float> note = HighNote(lChannel, sector, _rightSectors.Count);
+						var note = HighNote(lChannel, sector, _rightSectors.Count);
 						if (note.Value >= _rotationThreshold && !triggered) triggered = true;
 						var targetHue = RotateHue(ColorUtil.HueFromFrequency(note.Key));
 						var sectorInt = _rightSectors.ElementAt(sector);
@@ -124,9 +124,9 @@ namespace Glimmr.Models.ColorSource.Audio {
 		}
 
 		private void Refresh() {
-			SystemData sd = DataUtil.GetSystemData();
+			var sd = DataUtil.GetSystemData();
 			var id = sd.AudioMap;
-			dynamic am = _loader.GetItem<AudioScene>(id, true);
+			var am = _loader.GetItem<AudioScene>(id, true);
 			_highRange = new RangeF(0.666f, 1f);
 			_midRange = new RangeF(0.333f, 0.665f);
 			_lowRange = new RangeF(0f, 0.332f);

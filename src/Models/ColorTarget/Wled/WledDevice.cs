@@ -9,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Newtonsoft.Json.Linq;
 using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Wled {
@@ -62,14 +61,13 @@ namespace Glimmr.Models.ColorTarget.Wled {
             _ep = IpUtil.Parse(IpAddress, port);
             Streaming = true;
             await FlashColor(Color.Black);
-            UpdateLightState(Streaming, Brightness).ConfigureAwait(false);
+            UpdateLightState(Streaming).ConfigureAwait(false);
             Log.Debug("WLED: Stream started.");
         }
 
         
         public async Task FlashColor(Color color) {
             var packet = new List<Byte>();
-            // Set mode to DRGB, dude.
             packet.Add(ByteUtils.IntByte(2));
             packet.Add(ByteUtils.IntByte(10));
             for (var i = 0; i < Data.LedCount; i++) {
@@ -139,15 +137,14 @@ namespace Glimmr.Models.ColorTarget.Wled {
             }
 
             var packet = new Byte[2 + colors.Count * 3];
-            // Set mode to DRGB, dude.
             var timeByte = 255;
             packet[0] = ByteUtils.IntByte(2);
             packet[1] = ByteUtils.IntByte(timeByte);
             var pInt = 2;
-            for (var i = 0; i < colors.Count; i++) {
-                packet[pInt] = ByteUtils.IntByte(colors[i].R);
-                packet[pInt + 1] = ByteUtils.IntByte(colors[i].G);
-                packet[pInt + 2] = ByteUtils.IntByte(colors[i].B);
+            foreach (var t in colors) {
+                packet[pInt] = ByteUtils.IntByte(t.R);
+                packet[pInt + 1] = ByteUtils.IntByte(t.G);
+                packet[pInt + 2] = ByteUtils.IntByte(t.B);
                 pInt += 3;
             }
 
@@ -209,7 +206,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             IpAddress = Data.IpAddress;
             if (oldBrightness != Brightness) {
                 Log.Debug($"Brightness has changed!! {oldBrightness} {Brightness}");
-                UpdateLightState(Streaming, Brightness).ConfigureAwait(false);
+                UpdateLightState(Streaming).ConfigureAwait(false);
             } else {
                 Log.Debug($"Nothing to update for brightness {oldBrightness} {Brightness}");
             }
@@ -219,38 +216,11 @@ namespace Glimmr.Models.ColorTarget.Wled {
             return Task.CompletedTask;
         }
 
-        public async Task UpdateLightState(bool on, int bri) {
+        public async Task UpdateLightState(bool on) {
             var url = "http://" + IpAddress + "/win";
             url += "&T=" + (on ? "1" : "0");
             url += "&A=" + (int)(Brightness / 100f * 255);
-            Log.Debug("GETTIN: " + url);
             await _httpClient.GetAsync(url).ConfigureAwait(false);
-        }
-
-        private async Task SendPost(JObject values, string target = "/json") {
-            Uri uri;
-            if (string.IsNullOrEmpty(IpAddress) && !string.IsNullOrEmpty(Id)) {
-                IpAddress = Id;
-                Data.IpAddress = Id;
-                await DataUtil.InsertCollection<WledData>("Dev_Wled", Data);
-            }
-
-            try {
-                uri = new Uri("http://" + IpAddress + target);
-            } catch (UriFormatException e) {
-                Log.Warning("URI Format exception: " + e.Message);
-                return;
-            }
-
-            var httpContent = new StringContent(values.ToString());
-            httpContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-            try {
-                _httpClient.PostAsync(uri, httpContent).ConfigureAwait(false);
-            } catch (Exception e) {
-                Log.Warning("HTTP Request Exception: " + e.Message);
-            }
-
-            httpContent.Dispose();
         }
 
 

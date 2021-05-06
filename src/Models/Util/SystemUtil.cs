@@ -6,7 +6,6 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using DirectShowLib;
 using Emgu.CV;
-using Newtonsoft.Json;
 using Serilog;
 
 namespace Glimmr.Models.Util {

@@ -6,7 +6,7 @@ using Serilog.Core;
 using Serilog.Events;
 
 namespace Glimmr.Models.Logging {
-	class CallerEnricher : ILogEventEnricher {
+	internal class CallerEnricher : ILogEventEnricher {
 		public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory) {
 			var skip = 3;
 			while (true) {
@@ -17,13 +17,14 @@ namespace Glimmr.Models.Logging {
 				}
 
 				var method = stack.GetMethod();
-				if (method.DeclaringType.Assembly != typeof(Log).Assembly) {
+				if (method != null && method.DeclaringType != null && method.DeclaringType.Assembly != typeof(Log).Assembly) {
 					var mName = method.DeclaringType.Name;
 					var name = method.Name;
 					if (method.Name == "MoveNext") {
 						name = mName;
-						mName = method.DeclaringType.DeclaringType.Name;
-						if (mName == "") mName = method.DeclaringType.Name;
+						if (method.DeclaringType.DeclaringType != null) {
+							mName = method.DeclaringType.DeclaringType.Name;	
+						}
 					}
 
 					if (name.Contains("<") && name.Contains(">")) {

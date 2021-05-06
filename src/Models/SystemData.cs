@@ -70,9 +70,9 @@ namespace Glimmr.Models {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool AutoUpdate { get; set; }
 		
-		[DefaultValue("2")]
+		[DefaultValue(2)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public string AutoUpdateTime { get; set; }
+		public int AutoUpdateTime { get; set; }
 		
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]

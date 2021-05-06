@@ -350,12 +350,12 @@ namespace Glimmr.Services {
 			var secs = new List<Color>();
 			cols = ColorUtil.EmptyList(ledCount);
 			secs = ColorUtil.EmptyList(sectorCount);
-			int degs = ledCount / sectorCount;
+			var degs = ledCount / sectorCount;
 			try {
 				while (i < ledCount) {
 					var pi = i * 1.0f;
 					var progress = pi / ledCount;
-					int sector = (int) Math.Round(progress * sectorCount);
+					var sector = (int) Math.Round(progress * sectorCount);
 					var rCol = ColorUtil.Rainbow(progress);
 					cols[i] = rCol;
 					if (sector > secs.Count) secs[sector] = rCol;
@@ -479,7 +479,7 @@ namespace Glimmr.Services {
 		}
 
 		private async Task Mode(object o, DynamicEventArgs dynamicEventArgs) {
-			DeviceMode newMode = (DeviceMode) dynamicEventArgs.P1;
+			var newMode = (DeviceMode) dynamicEventArgs.P1;
 			DeviceMode = newMode;
 			if (newMode != 0 && _autoDisabled) {
 				_autoDisabled = false;

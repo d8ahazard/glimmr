@@ -8,30 +8,18 @@ using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Glimmr.Models.Util;
 using Serilog;
-using SharpDX.Direct3D11;
-using SharpDX.DXGI;
-using Device = SharpDX.Direct3D11.Device;
 
 namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 	public class ScreenVideoStream : IVideoStream, IDisposable {
-		public int Size { get; private set; }
-		private Adapter _adapter;
 		private Bitmap _bmpScreenCapture;
-		private int _bottom;
 		private bool _capturing;
-		private Device _device;
 		private bool _doSave;
 		private int _height;
 		private int _left;
 
-		private byte[] _previousScreen;
-		private int _right;
-		private bool _run, _init;
-
 
 		private Image<Bgr, byte> _screen;
 		private Rectangle _screenDims;
-		private Texture2D _screenTexture;
 		private int _top;
 		private int _width;
 
@@ -79,7 +67,6 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 
 
 		private void SetDimensions() {
-			SystemData sd = DataUtil.GetSystemData();
 			_screenDims = DisplayUtil.GetDisplaySize();
 			var rect = _screenDims;
 			if (!RectContains(_screenDims, rect)) {

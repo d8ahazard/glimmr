@@ -4,10 +4,8 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
-using WindowsDisplayAPI;
 using Newtonsoft.Json;
 using Serilog;
 
@@ -24,7 +22,7 @@ namespace Glimmr.Models.Util {
            Angle90 = 1
         }
         
-        [Flags()]
+        [Flags]
         public enum DisplayDeviceStateFlags : int
         {
             /// <summary>The device is part of the desktop.</summary>
@@ -167,10 +165,6 @@ namespace Glimmr.Models.Util {
             return rect;
         }
 
-        public static List<DisplayAdapter> GetMonitorInfo() {
-            return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? DisplayAdapter.GetDisplayAdapters().ToList() : null;
-        }
-        
         private static Rectangle GetLinuxDisplaySize() {
             var p = new Process {
                 StartInfo = {UseShellExecute = false, RedirectStandardOutput = true, FileName = "xrandr"}

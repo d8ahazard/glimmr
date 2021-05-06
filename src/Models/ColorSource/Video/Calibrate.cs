@@ -29,7 +29,7 @@ namespace Glimmr.Models.ColorSource.Video {
             var distCoeffs = new Mat(8, 1, DepthType.Cv64F, 1);
 
             // Glob our frames from the static dir, loop for them
-            string[] filePaths = Directory.GetFiles(@"/home/dietpi/", "*.jpg");
+            var filePaths = Directory.GetFiles(@"/home/dietpi/", "*.jpg");
             var frames = filePaths.Select(path => CvInvoke.Imread(path)).ToList();
             Log.Debug("We have " + frames.Count + " frames.");
             var fc = 0;
@@ -68,8 +68,8 @@ namespace Glimmr.Models.ColorSource.Video {
 
                 //Fill our objects list with the real world measurements for the intrinsic calculations
                 var objectList = new List<MCvPoint3D32f>();
-                for (int i = 0; i < height; i++) {
-                    for (int j = 0; j < width; j++) {
+                for (var i = 0; i < height; i++) {
+                    for (var j = 0; j < width; j++) {
                         objectList.Add(new MCvPoint3D32f(j * squareSize, i * squareSize, 0.0F));
                     }
                 }
@@ -82,7 +82,7 @@ namespace Glimmr.Models.ColorSource.Video {
 
             //our error should be as close to 0 as possible
 
-            double error = CvInvoke.CalibrateCamera(cornersObjectList.ToArray(), cornersPointsList.ToArray(),
+            var error = CvInvoke.CalibrateCamera(cornersObjectList.ToArray(), cornersPointsList.ToArray(),
                 frames[0].Size,
                 cameraMatrix, distCoeffs, CalibType.RationalModel, new MCvTermCriteria(30, 0.1), out _rvecs,
                 out _tvecs);

@@ -7,11 +7,6 @@ using System.Threading.Tasks;
 using Glimmr.Models.ColorSource.Ambient;
 using Glimmr.Models.ColorSource.Audio;
 using Glimmr.Models.ColorTarget;
-using Glimmr.Models.ColorTarget.DreamScreen;
-using Glimmr.Models.ColorTarget.Hue;
-using Glimmr.Models.ColorTarget.Lifx;
-using Glimmr.Models.ColorTarget.Wled;
-using Glimmr.Models.ColorTarget.Yeelight;
 using LiteDB;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -38,32 +33,6 @@ namespace Glimmr.Models.Util {
         }
 
         
-        private static async Task MigrateDevices() {
-            var db = GetDb();
-            var lifx = db.GetCollection<LifxData>("Dev_Lifx");
-            var nano = db.GetCollection<LifxData>("Dev_Nanoleaf");
-            var ds = db.GetCollection<LifxData>("Dev_Dreamscreen");
-            var yee = db.GetCollection<YeelightData>("Dev_Yeelight");
-            var hue = db.GetCollection<HueData>("Dev_Hue");
-            var wled = db.GetCollection<WledData>("Dev_Wled");
-            
-            var devs = new dynamic[] {lifx, nano, ds, yee, hue, wled};
-            
-            foreach (var col in devs) {
-                if (col == null) {
-                    continue;
-                }
-
-                foreach (var dev in col.FindAll.toArray()) {
-                    await AddDeviceAsync(dev);
-                }
-                db.DropCollection(col.Name);
-            }
-
-            db.Commit();
-
-        }
-       
         //fixed
         public static List<dynamic> GetCollection(string key) {
             try {
@@ -74,7 +43,7 @@ namespace Glimmr.Models.Util {
                 output.AddRange(coll.FindAll());
                 return output;
             } catch (Exception e) {
-                Log.Warning($@"Get exception for {key}:", e);
+                Log.Warning($@"Get exception for {key}:", e.Message);
                 return null;
             }
         }
@@ -153,9 +122,12 @@ namespace Glimmr.Models.Util {
                         var json = LiteDB.JsonSerializer.Serialize(dev);
                         var jObj = JObject.Parse(json);
                         if (jObj.GetValue("_id") == device.Id) {
-                            dynamic donor = Activator.CreateInstance(Type.GetType(jObj.GetValue("_type").ToString()));
-                            device.KeyProperties = donor?.KeyProperties;
-                            output.Add(device);
+                            var type = jObj.GetValue("_type");
+                            if (type != null) {
+                                dynamic donor = Activator.CreateInstance(Type.GetType(type.ToString()));
+                                device.KeyProperties = donor?.KeyProperties;
+                                output.Add(device);    
+                            }
                         }
                     } catch (Exception e) {
                         Log.Warning("Exception: " + e.Message);
@@ -226,7 +198,7 @@ namespace Glimmr.Models.Util {
             }
 
             if (string.IsNullOrEmpty(serial)) {
-                Random rd = new Random();
+                var rd = new Random();
                 serial = "12091" + rd.Next(0, 9) + rd.Next(0, 9) + rd.Next(0, 9);
                 SetItem("Serial", serial);
             }
@@ -301,7 +273,7 @@ namespace Glimmr.Models.Util {
         
         public static string GetStoreSerialized() {
             var output = new Dictionary<string, dynamic>();
-            SystemData sd = GetSystemData();
+            var sd = GetSystemData();
             var audio = GetCollection<AudioData>("Dev_Audio");
             var devices = GetDevices();
             var mons = DisplayUtil.GetMonitors();

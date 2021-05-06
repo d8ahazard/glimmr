@@ -35,7 +35,7 @@ namespace Glimmr.Controllers {
 
 		[HttpGet("json")]
 		public JsonResult GetJson() {
-			SystemData sd = DataUtil.GetSystemData();
+			var sd = DataUtil.GetSystemData();
 			var glimmrData = new GlimmrData(sd);
 			return new JsonResult(glimmrData);
 		}
@@ -43,7 +43,7 @@ namespace Glimmr.Controllers {
 		[HttpGet("brightness")]
 		public async Task<IActionResult> SetBrightness([FromQuery] int value) {
 			Log.Debug("Setting brightness: " + value);
-			SystemData sd = DataUtil.GetSystemData();
+			var sd = DataUtil.GetSystemData();
 			sd.Brightness = value;
 			await _controlService.UpdateSystem(sd);
 			return Ok(value);
@@ -51,7 +51,7 @@ namespace Glimmr.Controllers {
 
 		[HttpGet("toggleMode")]
 		public async Task<IActionResult> ToggleMode() {
-			SystemData sd = DataUtil.GetSystemData();
+			var sd = DataUtil.GetSystemData();
 			var prev = sd.PreviousMode;
 			var mode = sd.DeviceMode;
 			if (mode == 0) {
@@ -73,7 +73,7 @@ namespace Glimmr.Controllers {
 
 		[HttpPost("DbUpload")]
 		public async Task<IActionResult> ImportDb(List<IFormFile> files) {
-			long size = files.Sum(f => f.Length);
+			var size = files.Sum(f => f.Length);
 
 			var filePaths = new List<string>();
 			foreach (var formFile in files) {

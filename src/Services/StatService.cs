@@ -14,11 +14,11 @@ namespace Glimmr.Services {
 	{
 		private readonly IHubContext<SocketServer> _hubContext;
 		private readonly ColorService _colorService;
-		private int count;
+		private int _count;
 		public StatService(IHubContext<SocketServer> hubContext, ColorService colorService) {
 			_hubContext = hubContext;
 			_colorService = colorService;
-			count = 0;
+			_count = 0;
 		}
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			Log.Debug("StatService initialized.");
@@ -27,18 +27,18 @@ namespace Glimmr.Services {
 					while (!stoppingToken.IsCancellationRequested) {
 						// Sleep for 5s
 						await Task.Delay(5000, stoppingToken);
-						if (count >= 6) {
-							count = 0;
+						if (_count >= 6) {
+							_count = 0;
 							if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) continue;	
 							var cd = await CpuUtil.GetStats();
 							// Send it to everybody
 
 							await _hubContext.Clients.All.SendAsync("cpuData", cd, stoppingToken);
-							count = 0;
+							_count = 0;
 						}
-						count++;
+						_count++;
 						if (_colorService.DeviceMode != DeviceMode.Off) {
-							_hubContext.Clients.All.SendAsync("frames", _colorService.Counter.Rates(), stoppingToken).ConfigureAwait(false);
+							await _hubContext.Clients.All.SendAsync("frames", _colorService.Counter.Rates(), stoppingToken).ConfigureAwait(false);
 						}
 						
 					}

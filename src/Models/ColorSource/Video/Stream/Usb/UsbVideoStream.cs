@@ -44,7 +44,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
         public Task Refresh() {
             _video?.Stop();
             _video?.Dispose();
-            SystemData sd = DataUtil.GetSystemData();
+            var sd = DataUtil.GetSystemData();
             var devs = SystemUtil.ListUsb();
             var inputStream = sd.UsbSelection;
             _video = new VideoCapture(inputStream);

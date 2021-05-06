@@ -6,7 +6,7 @@ namespace Glimmr.Models.Util {
             if (string.IsNullOrEmpty(s)) {
                 return string.Empty;
             }
-            char[] a = s.ToCharArray();
+            var a = s.ToCharArray();
             a[0] = char.ToUpper(a[0],CultureInfo.InvariantCulture);
             return new string(a);
         }

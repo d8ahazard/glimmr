@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Net.Http;
@@ -27,6 +26,7 @@ namespace Glimmr.Services {
 		private readonly IHubContext<SocketServer> _hubContext;
 		private Dictionary<string,dynamic> _agents;
 		public ColorService ColorService { get; set; }
+		private SystemData _sd;
 
 		public ControlService(IHubContext<SocketServer> hubContext) {
 			_hubContext = hubContext;
@@ -37,7 +37,6 @@ namespace Glimmr.Services {
 			UdpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 			UdpClient.Client.Blocking = false;
 			UdpClient.DontFragment = true;
-			
 			MulticastService = new MulticastService();
 			ServiceDiscovery = new ServiceDiscovery(MulticastService);
 			
@@ -63,9 +62,9 @@ namespace Glimmr.Services {
 		public event Action<List<Color>, List<Color>, int, bool> TriggerSendColorEvent = delegate { };
 
 		public dynamic GetAgent(string classType) {
-			foreach (var agentData in _agents) {
-				if (agentData.Key == classType) {
-					return agentData.Value;
+			foreach (var (key, value) in _agents) {
+				if (key == classType) {
+					return value;
 				}
 			}
 			Log.Warning($"Error finding agent of type {classType}.");
@@ -79,7 +78,7 @@ namespace Glimmr.Services {
 					try {
 						a.Dispose();
 					} catch (Exception) {
-						
+						//ignored
 					}
 				}
 			}
@@ -190,7 +189,7 @@ namespace Glimmr.Services {
 		/// <summary>
 		///     Call this to trigger device refresh
 		/// </summary>
-		public async Task RefreshDevice(string id) {
+		private async Task RefreshDevice(string id) {
 			await DeviceReloadEvent.InvokeAsync(this, new DynamicEventArgs(id));
 		}
 
@@ -202,9 +201,7 @@ namespace Glimmr.Services {
 		}
 
 		
-		public void TriggerDreamSubscribe() {
-		}
-
+		
 
 		public async Task NotifyClients() {
 			await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
@@ -212,8 +209,20 @@ namespace Glimmr.Services {
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			return Task.Run(async () => {
+				_sd = DataUtil.GetSystemData();
 				while (!stoppingToken.IsCancellationRequested) {
-					await Task.Delay(1, stoppingToken);
+					await Task.Delay(60000, stoppingToken);
+					if (!_sd.AutoUpdate) {
+						continue;
+					}
+
+					var start = new TimeSpan(_sd.AutoUpdateTime, 0, 0); //10 o'clock
+					var end = new TimeSpan(_sd.AutoUpdateTime, 1, 0); //12 o'clock
+					var now = DateTime.Now.TimeOfDay;
+
+					if (now > start && now < end) {
+						SystemUtil.Update();
+					}
 				}
 				return Task.CompletedTask;
 			}, stoppingToken);
@@ -247,7 +256,7 @@ namespace Glimmr.Services {
 
 		
 		public async Task UpdateSystem(SystemData sd = null) {
-			SystemData oldSd = DataUtil.GetSystemData();
+			var oldSd = DataUtil.GetSystemData();
 			if (sd != null) {
 				if (oldSd.LedCount != sd.LedCount) {
 					var leds = DataUtil.GetDevices<LedData>("Led");
@@ -259,14 +268,13 @@ namespace Glimmr.Services {
 					}
 				}
 
-				
-				DataUtil.SetObject<SystemData>(sd);
+				await DataUtil.SetObjectAsync<SystemData>(sd);
 				if (oldSd.OpenRgbIp != sd.OpenRgbIp || oldSd.OpenRgbPort != sd.OpenRgbPort) {
 					LoadAgents();
 				}
-
 			}
 
+			_sd = sd;
 			RefreshSystemEvent();
 		}
 

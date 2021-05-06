@@ -388,7 +388,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			var heightRight = (float) ScaleHeight / _rightCount;
 
 			// Calc right regions, bottom to top
-			float pos = ScaleHeight - heightRight;
+			var pos = ScaleHeight - heightRight;
 			while (pos >= 0) {
 				output.Add(new Rectangle((int) rLeft, (int) pos, (int) _borderWidth, (int) heightRight));
 				pos -= heightRight;
@@ -480,7 +480,7 @@ namespace Glimmr.Models.ColorSource.Video {
 		}
 
 		public void Refresh() {
-			SystemData sd = DataUtil.GetSystemData();
+			var sd = DataUtil.GetSystemData();
 			_previewMode = sd.PreviewMode;
 			Log.Debug("Preview mode set to: " + _previewMode);
 			_leftCount = sd.LeftCount;

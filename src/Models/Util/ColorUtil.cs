@@ -2,16 +2,14 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
-using System.Linq;
 
 namespace Glimmr.Models.Util {
     public static class ColorUtil {
-        private static double tolerance
+        private static double Tolerance
             => 0.000000000000001;
-        
-        
 
-        public static void ColorToHSV(Color color, out double hue, out double saturation, out double value) {
+
+        private static void ColorToHsv(Color color, out double hue, out double saturation, out double value) {
             int max = Math.Max(color.R, Math.Max(color.G, color.B));
             int min = Math.Min(color.R, Math.Min(color.G, color.B));
 
@@ -20,32 +18,6 @@ namespace Glimmr.Models.Util {
             value = max / 255d;
         }
 
-        public static Color ColorFromHex(string input) {
-            if (input.Contains("#")) input = input.Trim('#');
-            var rs = input.Substring(0, 2);
-            var gs = input.Substring(2, 2);
-            var bs = input.Substring(4, 2);
-            var ri = int.Parse(rs, NumberStyles.HexNumber);
-            var gi = int.Parse(gs, NumberStyles.HexNumber);
-            var bi = int.Parse(bs, NumberStyles.HexNumber);
-            var output = Color.FromArgb(255, ri, gi, bi);
-            return output;
-        }
-
-        /// <summary>
-        /// Restrict the maximum brightness of a list of colors
-        /// </summary>
-        /// <param name="input">The color list to limit.</param>
-        /// <param name="maxBrightness">Maximum brightness from 0-100</param>
-        /// <returns></returns>
-        public static List<Color> ClampBrightness(List<Color> input, float maxBrightness) {
-	        return input.Select(c => ClampBrightness(c, maxBrightness)).ToList();
-        }
-
-        public static string ColorToHex(Color input) {
-            return input.R.ToString("X2") + input.G.ToString("X2") + input.B.ToString("X2");
-        }
-        
         /// <summary>
         /// Take a n-color list, and convert down to 12 for DS
         /// </summary>
@@ -87,15 +59,14 @@ namespace Glimmr.Models.Util {
         /// </summary>
         /// <param name="colors"></param>
         /// <returns></returns>
-        public static Color AverageColors(params Color[] colors) {
+        private static Color AverageColors(params Color[] colors) {
             var inputCount = colors.Length;
             if (inputCount == 0) return Color.FromArgb(0, 0, 0, 0);
             var avgG = 0;
             var avgB = 0;
             var avgR = 0;
             var avgA = 0;
-            for (var i = 0; i < colors.Length; i++) {
-	            var t = colors[i];
+            foreach (var t in colors) {
 	            avgG += t.G * t.G;
 	            avgB += t.B * t.B;
 	            avgR += t.R * t.R;
@@ -149,130 +120,7 @@ namespace Glimmr.Models.Util {
             return Color.FromArgb(wO, rO, gO, bO);
         }
 
-        
-        public static Color ClampAlpha2(Color tCol) {
-            var rI = tCol.R;
-            var gI = tCol.G;
-            var bI = tCol.B;
-            int tM = Math.Max(rI, Math.Max(gI, bI));
-            int tm = Math.Min(rI, Math.Min(gI, bI));
-            //If the maximum value is 0, immediately return pure black.
-            //if(tM == 0) { return Color.FromArgb(0, 0, 0,0); }
-            if (tm >= 255 && rI + gI + bI >= 255) {
-                tm = 128;
-            }
-            return Color.FromArgb(tm, rI, gI, bI);
-        }
 
-        public static int ColorTemperature(Color input) {
-            // Get difference between red and blue
-            var diff = input.B - input.R;
-            // Pad it +255 to adjust to 0
-            diff += 255;
-            // What percentage is it?
-            return diff / 255 * 13500 + 1500;
-            
-        }
-        
-        public static Color FromAhsb(int alpha, float hue, float saturation, float brightness)
-		{
-			if (0 > alpha
-			    || 255 < alpha)
-			{
-				throw new ArgumentOutOfRangeException(
-					"alpha",
-					alpha,
-					"Value must be within a range of 0 - 255.");
-			}
-
-			if (0f > hue
-			    || 360f < hue)
-			{
-				throw new ArgumentOutOfRangeException(
-					"hue",
-					hue,
-					"Value must be within a range of 0 - 360.");
-			}
-
-			if (0f > saturation
-			    || 1f < saturation)
-			{
-				throw new ArgumentOutOfRangeException(
-					"saturation",
-					saturation,
-					"Value must be within a range of 0 - 1.");
-			}
-
-			if (0f > brightness
-			    || 1f < brightness)
-			{
-				throw new ArgumentOutOfRangeException(
-					"brightness",
-					brightness,
-					"Value must be within a range of 0 - 1.");
-			}
-
-			if (0 == saturation)
-			{
-				return Color.FromArgb(
-					alpha,
-					Convert.ToInt32(brightness * 255),
-					Convert.ToInt32(brightness * 255),
-					Convert.ToInt32(brightness * 255));
-			}
-
-			float fMax, fMid, fMin;
-			int iSextant, iMax, iMid, iMin;
-
-			if (0.5 < brightness)
-			{
-				fMax = brightness - brightness * saturation + saturation;
-				fMin = brightness + brightness * saturation - saturation;
-			}
-			else
-			{
-				fMax = brightness + brightness * saturation;
-				fMin = brightness - brightness * saturation;
-			}
-
-			iSextant = (int)Math.Floor(hue / 60f);
-			if (300f <= hue)
-			{
-				hue -= 360f;
-			}
-
-			hue /= 60f;
-			hue -= 2f * (float)Math.Floor((iSextant + 1f) % 6f / 2f);
-			if (0 == iSextant % 2)
-			{
-				fMid = hue * (fMax - fMin) + fMin;
-			}
-			else
-			{
-				fMid = fMin - hue * (fMax - fMin);
-			}
-
-			iMax = Convert.ToInt32(fMax * 255);
-			iMid = Convert.ToInt32(fMid * 255);
-			iMin = Convert.ToInt32(fMin * 255);
-
-			switch (iSextant)
-			{
-				case 1:
-					return Color.FromArgb(alpha, iMid, iMax, iMin);
-				case 2:
-					return Color.FromArgb(alpha, iMin, iMax, iMid);
-				case 3:
-					return Color.FromArgb(alpha, iMin, iMid, iMax);
-				case 4:
-					return Color.FromArgb(alpha, iMid, iMin, iMax);
-				case 5:
-					return Color.FromArgb(alpha, iMax, iMin, iMid);
-				default:
-					return Color.FromArgb(alpha, iMax, iMid, iMin);
-			}
-		}
-       
         /// <summary>
         /// Convert HSV values to color
         /// </summary>
@@ -380,24 +228,24 @@ namespace Glimmr.Models.Util {
             b = Math.Max(0D, Math.Min(1D, b));
             a = Math.Max(0, Math.Min(255, a));
 
-            double r = 0D;
-            double g = 0D;
-            double bl = 0D;
+            var r = 0D;
+            var g = 0D;
+            var bl = 0D;
 
-            if (Math.Abs(s) < tolerance)
+            if (Math.Abs(s) < Tolerance)
                 r = g = bl = b;
             else {
                 // the argb wheel consists of 6 sectors. Figure out which sector
                 // you're in.
-                double sectorPos = h / 60D;
-                int sectorNumber = (int) Math.Floor(sectorPos);
+                var sectorPos = h / 60D;
+                var sectorNumber = (int) Math.Floor(sectorPos);
                 // get the fractional part of the sector
-                double fractionalSector = sectorPos - sectorNumber;
+                var fractionalSector = sectorPos - sectorNumber;
 
                 // calculate values for the three axes of the argb.
-                double p = b * (1D - s);
-                double q = b * (1D - s * fractionalSector);
-                double t = b * (1D - s * (1D - fractionalSector));
+                var p = b * (1D - s);
+                var q = b * (1D - s * fractionalSector);
+                var t = b * (1D - s * (1D - fractionalSector));
 
                 // assign the fractional colors to r, g, and b based on the sector
                 // the angle is in.
@@ -443,17 +291,6 @@ namespace Glimmr.Models.Util {
         }
 
 
-        public static Color BoostSaturation(Color input, float boost) {
-            ColorToHSV(input, out var h, out var s, out var v);
-            if (s + boost <= 1.0) {
-                s += boost;
-            } else {
-                s = 1.0;
-            }
-
-            return HsvToColor(h, s, v);
-        }
-
         public static Color[] FillArray(Color input, int len) {
 	        var output = new Color[len];
 	        for (var i = 0; i < len; i++) {
@@ -467,7 +304,7 @@ namespace Glimmr.Models.Util {
         }
 
         public static Color AdjustBrightness(Color input, float boost) {
-            ColorToHSV(input, out var h, out var s, out var v);
+            ColorToHsv(input, out var h, out var s, out var v);
             if (v + boost <= 1.0) {
                 v += boost;
                 //s -= boost;
@@ -508,14 +345,6 @@ namespace Glimmr.Models.Util {
 	        }
 	        return output;
         }
-        
-        public static List<Color> EmptyList(int size, Color color) {
-	        var output = new List<Color>();
-	        for (var i = 0; i < size; i++) {
-		        output.Add(color);
-	        }
-	        return output;
-        }
 
 
         public static Color FixGamma(Color input) {
@@ -540,23 +369,6 @@ namespace Glimmr.Models.Util {
             return Color.FromArgb(gammas[input.A], gammas[input.R], gammas[input.G], gammas[input.B]);
         }
 
-        public static Color FixGamma2(Color input) {
-            var w = ByteUtils.IntByte(input.A) >> 24;
-            var r = ByteUtils.IntByte(input.R) >> 16;
-            var g = ByteUtils.IntByte(input.G) >> 8;
-            var b = input.B;
-            var shifted = Color.FromArgb(w, r, g, b);
-            shifted = FixGamma(shifted);
-            return Color.FromArgb(shifted.A << 24, shifted.R << 16, shifted.G << 8, shifted.B);
-        }
-
-        public static Color Blend(this Color color, Color backColor, double amount) {
-            byte r = (byte) (color.R * amount + backColor.R * (1 - amount));
-            byte g = (byte) (color.G * amount + backColor.G * (1 - amount));
-            byte b = (byte) (color.B * amount + backColor.B * (1 - amount));
-            return Color.FromArgb(r, g, b);
-        }
-
         public static float HueFromFrequency(int frequency) {
 	        
 	        var start = 16;
@@ -576,7 +388,7 @@ namespace Glimmr.Models.Util {
         }
 
         public static List<Color> SectorsToleds(List<Color> ints, int hSectors = -1, int vSectors = -1) {
-	        SystemData sd = DataUtil.GetSystemData();
+	        var sd = DataUtil.GetSystemData();
 	        var output = new List<Color>();
 	        // We're going to duplicate the "corner" color values so they evenly map to LED colors
 	        var shifted = new List<Color>();
@@ -611,8 +423,8 @@ namespace Glimmr.Models.Util {
 	        int s0;
 	        int e0;
 			
-	        int vs = systemData.VSectors;
-	        int hs = systemData.HSectors;
+	        var vs = systemData.VSectors;
+	        var hs = systemData.HSectors;
 	        var count = systemData.LeftCount + systemData.RightCount + systemData.TopCount + systemData.BottomCount;
 	        var rCount = systemData.RightCount / vs;
 	        var tCount = systemData.TopCount / hs;
@@ -682,10 +494,10 @@ namespace Glimmr.Models.Util {
 	        var topColors = ledColors.GetRange(sd.RightCount-1, sd.TopCount);
 	        var leftColors = ledColors.GetRange(sd.TopCount - 1, sd.LeftCount);
 	        var bottomColors = ledColors.GetRange(sd.LeftCount - 1, sd.BottomCount);
-	        float rStep = rightColors.Count / sd.VSectors;
-	        float tStep = topColors.Count / sd.HSectors;
-	        float lStep = leftColors.Count / sd.VSectors;
-	        float bStep = bottomColors.Count / sd.HSectors;
+	        var rStep = (float) rightColors.Count / sd.VSectors;
+	        var tStep = (float) topColors.Count / sd.HSectors;
+	        var lStep = (float) leftColors.Count / sd.VSectors;
+	        var bStep = (float) bottomColors.Count / sd.HSectors;
 	        var output = new List<Color>();
 	        var toAvg = new List<Color>();
 	        // Add the last range of colors from the bottom to sector 0
@@ -731,8 +543,7 @@ namespace Glimmr.Models.Util {
 	        
 	        idx = 0;
 	        while (idx < bottomColors.Count && output.Count < sd.SectorCount) {
-		        foreach (var t in bottomColors)
-			        toAvg.Add(t);
+		        toAvg.AddRange(bottomColors);
 
 		        if (idx % bStep == 0) {
 			        output.Add(AverageColors(toAvg.ToArray()));
@@ -743,148 +554,5 @@ namespace Glimmr.Models.Util {
 
 	        return output;
         }
-
-        /// <summary>
-        /// Multiplies the Color's Luminance or Brightness by the argument;
-        /// and optionally specifies the output Alpha.
-        /// </summary>
-        /// <param name="color">The color to transform.</param>
-        /// <param name="maxBrightness">Value between 0-100</param>
-        public static Color ClampBrightness(Color color, double maxBrightness) {
-	        double bClamp = maxBrightness * .01;
-	        double[] hsl = RgBtoHsb(color);
-	        if (Math.Abs(hsl[2]) > bClamp) {
-		        hsl[2] = bClamp;
-		        return HsBtoRgb(hsl[0], hsl[1], hsl[2], color.A);
-	        }
-	        return color;
-        }
-
-        /// <summary>
-        /// Converts HSB to RGB, with a specified output Alpha.
-        /// Arguments are limited to the defined range:
-        /// does not raise exceptions.
-        /// </summary>
-        /// <param name="h">Hue, must be in [0, 360].</param>
-        /// <param name="s">Saturation, must be in [0, 1].</param>
-        /// <param name="b">Brightness, must be in [0, 1].</param>
-        /// <param name="a">Output Alpha, must be in [0, 255].</param>
-        public static Color HsBtoRgb(double h, double s, double b, int a = 255) {
-	        h = Math.Max(0D, Math.Min(360D, h));
-	        s = Math.Max(0D, Math.Min(1D, s));
-	        b = Math.Max(0D, Math.Min(1D, b));
-	        a = Math.Max(0, Math.Min(255, a));
-
-	        double r = 0D;
-	        double g = 0D;
-	        double bl = 0D;
-
-	        if (Math.Abs(s) < tolerance)
-		        r = g = bl = b;
-	        else {
-		        // the argb wheel consists of 6 sectors. Figure out which sector
-		        // you're in.
-		        double sectorPos = h / 60D;
-		        int sectorNumber = (int) Math.Floor(sectorPos);
-		        // get the fractional part of the sector
-		        double fractionalSector = sectorPos - sectorNumber;
-
-		        // calculate values for the three axes of the argb.
-		        double p = b * (1D - s);
-		        double q = b * (1D - s * fractionalSector);
-		        double t = b * (1D - s * (1D - fractionalSector));
-
-		        // assign the fractional colors to r, g, and b based on the sector
-		        // the angle is in.
-		        switch (sectorNumber) {
-			        case 0:
-				        r = b;
-				        g = t;
-				        bl = p;
-				        break;
-			        case 1:
-				        r = q;
-				        g = b;
-				        bl = p;
-				        break;
-			        case 2:
-				        r = p;
-				        g = b;
-				        bl = t;
-				        break;
-			        case 3:
-				        r = p;
-				        g = q;
-				        bl = b;
-				        break;
-			        case 4:
-				        r = t;
-				        g = p;
-				        bl = b;
-				        break;
-			        case 5:
-				        r = b;
-				        g = p;
-				        bl = q;
-				        break;
-		        }
-	        }
-
-	        return Color.FromArgb(
-		        a,
-		        Math.Max(0, Math.Min(255, Convert.ToInt32(double.Parse($"{r * 255D:0.00}")))),
-		        Math.Max(0, Math.Min(255, Convert.ToInt32(double.Parse($"{g * 255D:0.00}")))),
-		        Math.Max(0, Math.Min(255, Convert.ToInt32(double.Parse($"{bl * 250D:0.00}")))));
-        }
-
-        /// <summary>
-        /// Converts RGB to HSB. Alpha is ignored.
-        /// Output is: { H: [0, 360], S: [0, 1], B: [0, 1] }.
-        /// </summary>
-        /// <param name="color">The color to convert.</param>
-        public static double[] RgBtoHsb(Color color) {
-	        // normalize red, green and blue values
-	        double r = color.R / 255D;
-	        double g = color.G / 255D;
-	        double b = color.B / 255D;
-
-	        // conversion start
-	        double max = Math.Max(r, Math.Max(g, b));
-	        double min = Math.Min(r, Math.Min(g, b));
-
-	        double h = 0D;
-	        if (Math.Abs(max - r) < tolerance
-	            && g >= b)
-		        h = 60D * (g - b) / (max - min);
-	        else if (Math.Abs(max - r) < tolerance
-	                 && g < b)
-		        h = 60D * (g - b) / (max - min) + 360D;
-	        else if (Math.Abs(max - g) < tolerance)
-		        h = 60D * (b - r) / (max - min) + 120D;
-	        else if (Math.Abs(max - b) < tolerance)
-		        h = 60D * (r - g) / (max - min) + 240D;
-
-	        double s = Math.Abs(max) < tolerance
-		        ? 0D
-		        : 1D - min / max;
-
-	        return new[] {
-		        Math.Max(0D, Math.Min(360D, h)),
-		        Math.Max(0D, Math.Min(1D, s)),
-		        Math.Max(0D, Math.Min(1D, max))
-	        };
-        }
     }
-    
-    
-
-    public static class ColorExtension {  
-        public static Color FromString(this Color color, string str) {
-            return ColorUtil.ColorFromHex(str);
-        }
-
-        public static string ToString(this Color color) {
-            return ColorUtil.ColorToHex(color);
-        }
-    }  
 }

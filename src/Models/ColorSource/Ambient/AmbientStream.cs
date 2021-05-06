@@ -253,7 +253,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
             _ambientColor = sd.AmbientColor;
             _loader = new JsonLoader("ambientScenes");
             _scenes = _loader.LoadFiles<AmbientScene>();
-            AmbientScene scene = new AmbientScene();
+            var scene = new AmbientScene();
             foreach (var s in _scenes.Where(s => s.Id == _ambientShow)) {
                 Log.Debug($"Loading scene: {s.Id}");
                 scene = s;

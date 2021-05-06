@@ -558,7 +558,7 @@ function setListeners() {
             return;
         }
         
-        if (property === "CaptureMode" || property === "ScreenCapMode" || property === "PreviewMode") {
+        if (property === "CaptureMode" || property === "ScreenCapMode" || property === "PreviewMode" || property === "AutoUpdateTime") {
             val = parseInt(val);            
         }
         
@@ -1014,7 +1014,7 @@ function loadTheme(theme) {
 function loadSettings() {
     let ledData = data.store["LedData"];
     let systemData = data.store["SystemData"];
-    let updateTime = systemData["AutoUpdateTime"];
+    let updateTime = systemData["AutoUpdateTime"].toString();
     let timeSelect = document.getElementById("AutoUpdateTime");
     if (isValid(timeSelect)) {
         let length = timeSelect.options.length;
@@ -1029,6 +1029,7 @@ function loadSettings() {
                 let opt = document.createElement("option");
                 opt.value = hourval.toString();
                 opt.innerText = hour + " " + string;
+                if (hourval.toString === updateTime) opt.selected = true;
                 timeSelect.options.add(opt);
                 hourval++;
             }

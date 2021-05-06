@@ -60,7 +60,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 		}
 
 		private void Refresh() {
-			SystemData sd = DataUtil.GetSystemData();
+			var sd = DataUtil.GetSystemData();
 			var dsIp = sd.DsIp;
 			
 			if (!string.IsNullOrEmpty(dsIp)) {
