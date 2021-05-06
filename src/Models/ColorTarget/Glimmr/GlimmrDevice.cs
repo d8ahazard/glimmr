@@ -16,6 +16,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
     public class GlimmrDevice : ColorTarget, IColorTarget, IDisposable
     {
         public bool Enable { get; set; }
+        public bool Online { get; set; }
         public bool Streaming { get; set; }
         public bool Testing { get; set; }
         public int Brightness { get; set; }
@@ -53,12 +54,13 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
             Enable = Data.Enable;
             IpAddress = Data.IpAddress;
             _len = Data.LedCount;
+            Online = SystemUtil.IsOnline(IpAddress);
             _sectorCount = Data.BottomSectorCount + Data.LeftSectorCount + Data.RightSectorCount + Data.TopSectorCount;
         }
 
         
         public async Task StartStream(CancellationToken ct) {
-            if (Streaming) return;
+            if (Streaming || !Online) return;
             if (!Data.Enable) return;
             Log.Debug($"Glimmr: Starting stream at {IpAddress}...");
             await SendPost("mode", 5);
@@ -173,6 +175,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
             _frameDelay = Data.FrameDelay;
             _frameBuffer = new List<List<Color>>();
             _frameBuffer2 = new List<List<Color>>();
+            Online = SystemUtil.IsOnline(IpAddress);
             Log.Debug($"Reloaded LED Data for {id}: " + JsonConvert.SerializeObject(Data));
             return Task.CompletedTask;
         }

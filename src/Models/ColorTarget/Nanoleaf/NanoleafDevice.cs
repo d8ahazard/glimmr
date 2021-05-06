@@ -13,6 +13,8 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		private TileLayout _layout;
 		private bool _disposed;
 		public bool Enable { get; set; }
+		public bool Online { get; set; }
+
 		IColorTargetData IColorTarget.Data {
 			get => Data;
 			set => Data = (NanoleafData) value;
@@ -64,7 +66,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		}
 		
 		public async Task StartStream(CancellationToken ct) {
-			if (!Enable || Streaming) return;
+			if (!Enable || Streaming || !Online) return;
 			_frameBuffer = new List<List<Color>>();
 			Streaming = true;
 
@@ -140,6 +142,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			Id = n.Id;
 			_frameDelay = Data.FrameDelay;
 			_frameBuffer = new List<List<Color>>();
+			Online = SystemUtil.IsOnline(IpAddress);
 
 		}
 

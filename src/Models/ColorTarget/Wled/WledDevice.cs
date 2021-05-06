@@ -15,6 +15,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
     public class WledDevice : ColorTarget, IColorTarget, IDisposable
     {
         public bool Enable { get; set; }
+        public bool Online { get; set; }
         public bool Streaming { get; set; }
         public bool Testing { get; set; }
         public int Brightness { get; set; }
@@ -55,13 +56,13 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
         public async Task StartStream(CancellationToken ct) {
             if (Streaming) return;
-            if (!Data.Enable) return;
+            if (!Data.Enable || !Online) return;
             _frameBuffer = new List<List<Color>>();
             Log.Debug($"WLED: Starting stream at {IpAddress}...");
             _ep = IpUtil.Parse(IpAddress, port);
             Streaming = true;
             await FlashColor(Color.Black);
-            UpdateLightState(Streaming).ConfigureAwait(false);
+            await UpdateLightState(Streaming).ConfigureAwait(false);
             Log.Debug("WLED: Stream started.");
         }
 
@@ -213,6 +214,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             _len = Data.LedCount;
             _frameDelay = Data.FrameDelay;
             _frameBuffer = new List<List<Color>>();
+            Online = SystemUtil.IsOnline(IpAddress);
             return Task.CompletedTask;
         }
 

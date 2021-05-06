@@ -25,6 +25,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		[DataMember] [JsonProperty] public string Tag { get; set; }
 		[DataMember] [JsonProperty] public string DeviceTag { get; set; }
 		[DataMember] [JsonProperty] public bool Enable { get; set; }
+		public bool Online { get; set; }
 		[DataMember] [JsonProperty] public DreamScreenData ScreenData { get; set; }
 
 		private readonly DreamScreenClient _client;
@@ -44,11 +45,14 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			Tag = screenData.Tag;
 			Enable = screenData.Enable;
 			DeviceTag = screenData.DeviceTag;
+			Online = SystemUtil.IsOnline(IpAddress);
+			_frameDelay = screenData.FrameDelay;
 			if (string.IsNullOrEmpty(IpAddress)) IpAddress = Id;
 			_myIp = IPAddress.Parse(IpAddress);
 		}
 
 		public async Task StartStream(CancellationToken ct) {
+			if (!Online) return;
 			_frameBuffer = new List<List<Color>>();
 			await _client.SetMode(DeviceMode.Video, _myIp, ScreenData.GroupNumber);
 		}
@@ -82,6 +86,11 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		}
 
 		public Task ReloadData() {
+			ScreenData = DataUtil.GetDevice(Id);
+			Online = SystemUtil.IsOnline(IpAddress);
+			_frameDelay = ScreenData.FrameDelay;
+			Enable = ScreenData.Enable;
+			
 			return Task.CompletedTask;
 		}
 

@@ -2,11 +2,14 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
+using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using DirectShowLib;
 using Emgu.CV;
 using Serilog;
+using SharpDX.Text;
 
 namespace Glimmr.Models.Util {
 	public static class SystemUtil {
@@ -17,6 +20,21 @@ namespace Glimmr.Models.Util {
 			} else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 				Process.Start("shutdown", "/r /t 0");
 			}
+		}
+
+		public static bool IsOnline(string target) {
+			var pingSender = new Ping ();
+
+			// Create a buffer of 32 bytes of data to be transmitted.
+			const string data = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+			const int timeout = 1;
+
+			var buffer = Encoding.ASCII.GetBytes (data);
+			var options = new PingOptions (64, true);
+
+			// Send the request.
+			var reply = pingSender.Send(target, timeout, buffer, options);
+			return reply != null && reply.Status == IPStatus.Success;
 		}
 
 		public static void Update() {

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Drawing;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
@@ -15,6 +16,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		public string IpAddress { get; set; }
 		public string Tag { get; set; }
 		public bool Enable { get; set; }
+		public bool Online { get; set; }
 
 		private YeelightData _data;
 		
@@ -35,10 +37,12 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			_yeeDevice = new Device(yd.IpAddress);
 			cs.ColorSendEvent += SetColor;
 			_cs = cs;
+			Online = SystemUtil.IsOnline(IpAddress);
 
 		}
 		public async Task StartStream(CancellationToken ct) {
 			_frameBuffer = new List<List<Color>>();
+			if (!Online) return;
 			Streaming = await _yeeDevice.Connect();
 		}
 

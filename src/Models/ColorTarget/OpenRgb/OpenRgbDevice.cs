@@ -17,9 +17,9 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		public string IpAddress { get; set; }
 		public string Tag { get; set; }
 		public bool Enable { get; set; }
+		public bool Online { get; set; }
 		private readonly ColorService _colorService;
 		private readonly OpenRGBClient _client;
-
 		private List<List<Color>> _frameBuffer;
 		private int _frameDelay;
 		
@@ -41,7 +41,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		}
 		
 		public Task StartStream(CancellationToken ct) {
-			if (_client == null) return Task.CompletedTask;
+			if (_client == null || !Online) return Task.CompletedTask;
 			
 			if (_client.Connected && Enable) {
 				Log.Information("OpenRGB: Starting stream...");
@@ -92,6 +92,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			Enable = Data.Enable;
 			_frameDelay = Data.FrameDelay;
 			_frameBuffer = new List<List<Color>>();
+			Online = SystemUtil.IsOnline(Data.IpAddress);
 			return Task.CompletedTask;
 		}
 

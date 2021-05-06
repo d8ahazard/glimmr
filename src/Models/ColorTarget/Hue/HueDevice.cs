@@ -21,6 +21,8 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.Hue {
 	public sealed class HueDevice : ColorTarget, IColorTarget, IDisposable {
 		public bool Enable { get; set; }
+		public bool Online { get; set; }
+
 		IColorTargetData IColorTarget.Data {
 			get => Data;
 			set => Data = (HueData) value;
@@ -57,6 +59,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Tag = data.Tag;
 			Enable = data.Enable;
 			Brightness = data.Brightness;
+			Online = SystemUtil.IsOnline(IpAddress);
 			// Don't grab streaming group unless we need it
 			if (Data?.User == null || Data?.Token == null || _client != null || colorService == null) return;
 			_client = new StreamingHueClient(Data.IpAddress, Data.User, Data.Token);
@@ -125,7 +128,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		/// <param name="ct">A cancellation token.</param>
 		public async Task StartStream(CancellationToken ct) {
 			// Leave if not enabled
-			if (!Enable) return;
+			if (!Enable || !Online) return;
 			Log.Debug($"Hue: Starting stream at  {IpAddress}...");
 			// Leave if we have no client (not authorized)
 			if (_client == null) {
@@ -211,6 +214,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Enable = Data.Enable;
 			_frameDelay = Data.FrameDelay;
 			_frameBuffer = new List<List<Color>>();
+			Online = SystemUtil.IsOnline(IpAddress);
 			Log.Debug(@"Hue: Reloaded bridge: " + IpAddress);
 			return Task.CompletedTask;
 		}

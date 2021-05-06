@@ -12,6 +12,8 @@ using Color = System.Drawing.Color;
 namespace Glimmr.Models.ColorTarget.Lifx {
     public class LifxDevice : ColorTarget, IColorTarget {
         public bool Enable { get; set; }
+        public bool Online { get; set; }
+
         IColorTargetData IColorTarget.Data {
             get => Data;
             set => Data = (LifxData) value;
@@ -44,10 +46,11 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             Id = d.Id;
             IpAddress = d.IpAddress;
             Enable = Data.Enable;
+            Online = SystemUtil.IsOnline(IpAddress);
         }
 
         public async Task StartStream(CancellationToken ct) {
-            if (!Enable) return;
+            if (!Enable || !Online) return;
             Log.Debug("Lifx: Starting stream.");
             var col = new LifxColor(0, 0, 0);
             //var col = new LifxColor {R = 0, B = 0, G = 0};
@@ -83,6 +86,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             var newData = DataUtil.GetCollectionItem<LifxData>("Dev_Lifx", Id);
             DataUtil.GetItem<int>("captureMode");
             Data = newData;
+            IpAddress = Data.IpAddress;
             var targetSector = newData.TargetSector;
             _targetSector = targetSector - 1;
             var oldBrightness = Brightness;
@@ -95,6 +99,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             Enable = Data.Enable;
             _frameDelay = Data.FrameDelay;
             _frameBuffer = new List<List<Color>>();
+            Online = SystemUtil.IsOnline(IpAddress);
             return Task.CompletedTask;
         }
 
