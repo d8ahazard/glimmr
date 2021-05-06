@@ -306,5 +306,10 @@ namespace Glimmr.Services {
 		public async Task DemoLed(string id) {
 			await DemoLedEvent.InvokeAsync(this, new DynamicEventArgs(id));
 		}
+
+		public async Task RemoveDevice(string id) {
+			DataUtil.RemoveDevice(id);
+			await _hubContext.Clients.All.SendAsync("deleteDevice", id);
+		}
 	}
 }

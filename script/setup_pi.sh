@@ -100,11 +100,10 @@ echo "DONE."
 # Copy necessary libraries
 echo "Copying libs..."
 cp -r /home/glimmrtv/glimmr/lib/bass.dll /usr/lib/bass.dll
-cp -r /home/glimmrtv/glimmr/lib/LifxNet.dll /usr/lib/LifxNet.dll
 cp -r /home/glimmrtv/glimmr/lib/arm/* /usr/lib
 
-cp -r /home/glimmrtv/glimmr/ambientScenes /bin/ambientScenes
-cp -r /home/glimmrtv/glimmr/audioScenes /bin/audioScenes
+cp -r /home/glimmrtv/glimmr/src/ambientScenes /bin/ambientScenes
+cp -r /home/glimmrtv/glimmr/src/audioScenes /bin/audioScenes
 
 # Check service start/install
 if systemctl --all --type service | grep -q "$serviceName";then

@@ -47,7 +47,11 @@ namespace Glimmr.Hubs {
 			await Clients.Caller.SendAsync("olo", DataUtil.GetStoreSerialized());
 		}
 
-		
+		public async Task DeleteDevice(string id) {
+			Log.Debug("Deleting device: " + id);
+			await _cs.RemoveDevice(id);
+		}
+
 		public async Task SystemData(string sd) {
 			Log.Debug("Updating system data.");
 			var sdd = JObject.Parse(sd);

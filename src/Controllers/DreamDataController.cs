@@ -1,11 +1,15 @@
 ﻿#region
 
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models;
 using Glimmr.Models.ColorTarget.Glimmr;
 using Glimmr.Models.Util;
 using Glimmr.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -35,7 +39,7 @@ namespace Glimmr.Controllers {
 			var glimmrData = new GlimmrData(sd);
 			return new JsonResult(glimmrData);
 		}
-		
+
 		[HttpGet("brightness")]
 		public async Task<IActionResult> SetBrightness([FromQuery] int value) {
 			Log.Debug("Setting brightness: " + value);
@@ -44,19 +48,63 @@ namespace Glimmr.Controllers {
 			await _controlService.UpdateSystem(sd);
 			return Ok(value);
 		}
-		
+
 		[HttpGet("toggleMode")]
 		public async Task<IActionResult> ToggleMode() {
 			SystemData sd = DataUtil.GetSystemData();
 			var prev = sd.PreviousMode;
 			var mode = sd.DeviceMode;
 			if (mode == 0) {
-				await _controlService.SetMode(prev);	
+				await _controlService.SetMode(prev);
 			} else {
 				await _controlService.SetMode(0);
 			}
-			
+
 			return Ok();
+		}
+		
+		[HttpGet("DbDownload")]
+		public FileResult DbDownload() {
+			var dbPath = DataUtil.ExportSettings();
+			var fileBytes = System.IO.File.ReadAllBytes(dbPath);
+			var fileName = Path.GetFileName(dbPath);
+			return File(fileBytes, System.Net.Mime.MediaTypeNames.Application.Octet, fileName);
+		} 
+
+		[HttpPost("DbUpload")]
+		public async Task<IActionResult> ImportDb(List<IFormFile> files) {
+			long size = files.Sum(f => f.Length);
+
+			var filePaths = new List<string>();
+			foreach (var formFile in files) {
+				if (formFile.Length > 0) {
+					// full path to file in temp location
+					var filePath =
+						Path.GetTempFileName(); //we are using Temp file name just for the example. Add your own file path.
+					filePaths.Add(filePath);
+					using (var stream = new FileStream(filePath, FileMode.Create)) {
+						await formFile.CopyToAsync(stream);
+					}
+				}
+			}
+
+			var imported = false;
+			if (filePaths.Count != 1) {
+				Log.Warning("Error, we should only have one DB file!");
+			} else {
+				Log.Debug("We have a db, restoring.");
+				if (DataUtil.ImportSettings(filePaths[0])) {
+					Log.Debug("Import was successful!");
+					imported = true;
+				} else {
+					Log.Debug("Import failed!!");
+				}
+			}
+
+			if (imported) await _controlService.NotifyClients();
+			// process uploaded files
+			// Don't rely on or trust the FileName property without validation.
+			return Ok(new {count = files.Count, size, filePaths, imported});
 		}
 
 		// POST: api/DreamData/mode
@@ -66,7 +114,7 @@ namespace Glimmr.Controllers {
 			await _controlService.SetMode(mode);
 			return Ok(mode);
 		}
-		
+
 		// POST: api/DreamData/refreshDevices
 		[HttpPost("scanDevices")]
 		public async Task<IActionResult> ScanDevices() {
@@ -92,14 +140,13 @@ namespace Glimmr.Controllers {
 			await _controlService.AuthorizeDevice(id);
 			return Ok(id);
 		}
-		
-		[HttpGet("getStats")]
 
+		[HttpGet("getStats")]
 		public IActionResult GetStats() {
 			return Ok(CpuUtil.GetStats());
 		}
-		
-		
+
+
 		// POST: api/DreamData/ledData
 		[HttpPost("systemData")]
 		public async Task<IActionResult> UpdateSystem([FromBody] SystemData ld) {
@@ -112,7 +159,7 @@ namespace Glimmr.Controllers {
 			ControlService.SystemControl(action);
 			return Ok(action);
 		}
-		
+
 		// POST: api/DreamData/updateDevice
 		[HttpPost("updateDevice")]
 		public async Task<IActionResult> UpdateDevice([FromBody] string dData) {
@@ -121,22 +168,22 @@ namespace Glimmr.Controllers {
 			await _controlService.UpdateDevice(dObj, false);
 			return Ok(dObj);
 		}
-		
+
 		// POST: api/DreamData/flashDevice
 		[HttpPost("flashDevice")]
 		public async Task<IActionResult> FlashDevice([FromBody] string deviceId) {
 			await _controlService.FlashDevice(deviceId);
 			return Ok(deviceId);
 		}
-		
+
 		// POST: api/DreamData/flashSector
 		[HttpPost("flashSector")]
 		public async Task<IActionResult> FlashSector([FromBody] int sector) {
 			await _controlService.FlashSector(sector);
 			return Ok(sector);
 		}
-		
-		
+
+
 		[HttpPost("flashLed")]
 		public async Task<IActionResult> TestStripOffset([FromBody] int len) {
 			Log.Debug("Get got: " + len);
@@ -144,7 +191,7 @@ namespace Glimmr.Controllers {
 			return Ok(len);
 		}
 
-		
+
 		[HttpPost("systemControl")]
 		public IActionResult SystemControl(string action) {
 			Log.Debug("Action triggered: " + action);

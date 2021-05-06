@@ -21,8 +21,14 @@ namespace Glimmr.Models.Util {
     [Serializable]
     public static class DataUtil {
         private static LiteDatabase _db;
+
+        private static bool _dbLocked;
         
         public static LiteDatabase GetDb() {
+            while (_dbLocked) {
+                Log.Debug("Awaiting export...");
+                Task.Delay(TimeSpan.FromMilliseconds(50));
+            }
             return _db ??= new LiteDatabase(@"./store.db");
         }
 
@@ -240,7 +246,57 @@ namespace Glimmr.Models.Util {
             }
         }
 
-      
+
+        public static string ExportSettings() {
+            var dbPath = "./store.db";
+            var userDir = SystemUtil.GetUserDir();
+            var stamp = DateTime.Now.ToString("yyyyMMddHHmm");
+            var outFile = Path.Combine(userDir, $"store_{stamp}_.db");
+            var output = string.Empty;
+            _dbLocked = true;
+            _db.Commit();
+            _db.Dispose();
+            try {
+                File.Copy(dbPath, outFile);
+                output = outFile;
+            } catch (Exception) {
+                //ignored
+            }
+            _db = new LiteDatabase(dbPath);
+            _dbLocked = false;
+            return output;
+        }
+        
+        public static bool ImportSettings(string newPath) {
+            var dbPath = "./store.db";
+            var userDir = SystemUtil.GetUserDir();
+            var stamp = DateTime.Now.ToString("yyyyMMddHHmm");
+            var outFile = Path.Combine(userDir, $"store_{stamp}_.db");
+            // lock DB so we don't get issues
+            _dbLocked = true;
+            _db.Commit();
+            _db.Dispose();
+            try {
+                File.Copy(dbPath, outFile);
+            } catch (Exception d) {
+                Log.Warning("Exception backing up DB: " + d.Message);
+            }
+
+            if (File.Exists(outFile) && File.Exists(newPath)) {
+                Log.Debug($"DB backed up to {outFile}, importing new DB.");
+                try {
+                    File.Copy(newPath, dbPath,true);
+                    _db = new LiteDatabase(dbPath);
+                    _dbLocked = false;
+                    return true;
+                } catch (Exception e) {
+                    Log.Warning("Exception copying file: " + e.Message);
+                }
+            }
+            _db = new LiteDatabase(dbPath);
+            _dbLocked = false;
+            return false;
+        }
 
         
         public static string GetStoreSerialized() {

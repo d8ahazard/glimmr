@@ -16,6 +16,10 @@ a {
     display: none;
 }
 
+.fade:not(.show) {
+    display: none;
+}
+
 .btn-primary {
     color: #fff;
     background-color: #1b6ec2;

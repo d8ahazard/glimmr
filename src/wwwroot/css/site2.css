@@ -10,9 +10,26 @@
     width: 18rem;
 }
 
+.fade:not(.show) {
+    display: none;
+}
+
 .deviceIcon {
     max-height: 60px;
     cursor: pointer;
+}
+
+@keyframes rotation {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(359deg);
+    }
+}
+
+.rotate {
+    animation: rotation 2s infinite linear;
 }
 
 .settingBtn, .enableBtn {
@@ -20,8 +37,7 @@
 }
 
 .headerCol {
-    font-size: 28px;
-    font-weight: bold;
+    font-size: 26px;
     margin-bottom: 5px;
 }
 

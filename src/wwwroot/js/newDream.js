@@ -35,6 +35,7 @@ let pickr;
 let bar;
 let croppr;
 let leftCount, rightCount, topCount, bottomCount, hSectors, vSectors;
+let refreshTimer;
 let errModal = new bootstrap.Modal(document.getElementById('errorModal'));
 // We're going to create one object to store our stuff, and add listeners for when values are changed.
 let data = {
@@ -428,6 +429,18 @@ function setSocketListeners() {
         loadUi();
     });
     
+    websocket.on('deleteDevice', function(id) {
+       console.log("Removing device...");
+        let idx = -1;
+        for(let i = 0; i < data.devices.length; i++) {
+            if (data.devices[i].Id === id) {
+                idx = i;
+            }
+        }
+        if (idx !== -1) data.devices.splice(idx, 1);
+        let devCard = document.querySelector('.devCard[data-id="'+id+'"]');
+    });
+    
     websocket.on('frames', function(stuff) {
         console.log("frame Stuff: ", stuff);       
     });
@@ -490,8 +503,34 @@ function loadSocket() {
     });
 }
 
+function downloadDb() {
+    let link = document.createElement("a");
+    // If you don't know the name or want to use
+    // the webserver default set name = ''
+    link.setAttribute('download', name);
+    link.href = "/api/DreamData/DbDownload";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+}
+
 function showSocketError() {
     errModal.show();
+}
+
+function TriggerRefresh() {
+    let sd = data.store["SystemData"];
+    let refreshIcon = document.getElementById("refreshIcon");
+    if (refreshTimer == null) {
+        if (!isValid(sd)) return;
+        refreshIcon.classList.add("rotate");
+        sendMessage("ScanDevices");
+        refreshTimer = setTimeout(function() {
+            refreshIcon.classList.remove("rotate");
+            refreshTimer = null;
+        }, sd["DiscoveryTimeout"] * 1000);
+    }
+    
 }
 
 // Set all of the various listeners our page may use
@@ -520,7 +559,7 @@ function setListeners() {
         }
         
         if (property === "CaptureMode" || property === "ScreenCapMode" || property === "PreviewMode") {
-            val = parseInt(val);
+            val = parseInt(val);            
         }
         
         let pack;
@@ -565,8 +604,8 @@ function setListeners() {
                     } else {
                         data.store[obj][property] = val;
                         pack = data.store[obj];
-                        if (property === "CaptureMode") {
-                            updateCaptureUi(pack);
+                        if (property === "ScreenCapMode" || property === "CaptureMode") {
+                            updateCaptureUi();
                         }
                         console.log("Sending updated object: ", pack);
                         sendMessage(obj, pack,true);
@@ -604,114 +643,131 @@ function setListeners() {
     
     document.addEventListener('click',function(e){
         let target = e.target;
-        switch(true) {
-            case target.classList.contains("controlBtn"):
-                let action = target.getAttribute("data-action");
-                let message = "Warning: ";
-                switch (action) {
-                    case "shutdown":
-                        message += "This will shut down the device. You will need to manually turn it back on.";
-                        break;
-                    case "reboot":
-                        message += "This will restart the device.";
-                        break;
-                    case "restart":
-                        message += "This will restart the Glimmr TV Service.";
-                        break;
-                    case "update":
-                        message += "This will update and restart Glimmr TV.";
-                        break;
-                }
-                message += " Would you like to continue?";
-                if (confirm(message)) {
-                    sendMessage("SystemControl", action, false);
-                } else {
-                    console.log(action + " canceled.");
-                }
-                console.log("Control button click");
-                break;
-            case target === closeButton:
-                closeCard();
-                break;
-            case target.classList.contains("sector"):
-                let val = target.getAttribute("data-sector");
-                updateDeviceSector(val, target);
-                break;
-            case target.classList.contains("linkDiv"):
-                if (target.getAttribute("data-linked") === "false") {
-                    let devId = deviceData["Id"];
-                    sendMessage("AuthorizeDevice", devId,false);                    
-                }
-                break;
-            case target.classList.contains("led"):
-                let sector = target.getAttribute("data-sector");
-                console.log("Flashing LED " + sector);
-                sendMessage("flashLed", parseInt(sector), false);
-                break;
-            case target.classList.contains("deviceIcon"):
-                let targetId = target.getAttribute("data-device");
-                sendMessage("flashDevice", targetId, false);
-                break;
-            case target.classList.contains("devSetting"):
-                let devId = target.getAttribute("data-target");
-                let attribute = target.getAttribute("data-attribute");
-                console.log("Dev setting clicked, we are setting ", attribute, devId, target.checked);
-                updateDevice(devId, attribute, target.checked);
-                break;
-            case target.classList.contains("settingBtn"):
-                if (expanded) {
-                    closeCard();
-                } else {
-                    let devId = target.getAttribute("data-target");
-                    deviceData = findDevice(devId);
-                    showDeviceCard(target);
-                }
-                break;
-                case target.classList.contains("enableBtn"):
-                    let dId = target.getAttribute("data-target");
-                    let devEnabled = target.getAttribute("data-enabled");
-                    let icon = target.firstChild;
-                    if (devEnabled === "true") {
-                        target.setAttribute("data-enabled","false");
-                        icon.innerText = "cast";
-                    } else {
-                        target.setAttribute("data-enabled","true");
-                        icon.innerText = "cast_connected";
-                    }
-                    deviceData = findDevice(dId);
-                    //data.devices[devId]["Enable"] = (devEnabled !== "true");
-                    updateDevice(dId,"Enable",(devEnabled !== "true"));
-                break;
-            case target.classList.contains("refreshBtn"):
-                sendMessage("ScanDevices");
-                break;
-            case target.classList.contains("modeBtn"):
-                let newMode = parseInt(target.getAttribute("data-mode"));
-                setMode(newMode);
-                sendMessage("Mode", newMode, false);
-                break;
-            case target.classList.contains("ledCtl"):
-                let lAction = target.getAttribute("data-function");
-                let id = target.getAttribute("data-id");
-                ledAction(lAction, id);
-                break;
-            case target.classList.contains("mainSettings"):
-                toggleSettingsDiv(0);
-                break;
-            case target.classList.contains("nav-link"):
-                let cDiv = target.getAttribute("href");
-                let fadePanes = document.querySelectorAll(".tab-pane");
-                for (let i=0; i < fadePanes.length; i++) {
-                    if (fadePanes[i]) {
-                        if (fadePanes[i].classList.contains("show")) {
-                            fadePanes[i].classList.remove("show", "active");
-                        }
-                    }
-                }
-                document.querySelector(cDiv).classList.add("show", "active");
-                break;
-        }
+        handleClick(target);
     });
+}
+
+function handleClick(target) {
+    switch(true) {
+        case target.classList.contains("controlBtn"):
+            let action = target.getAttribute("data-action");
+            let message = "Warning: ";
+            switch (action) {
+                case "shutdown":
+                    message += "This will shut down the device. You will need to manually turn it back on.";
+                    break;
+                case "reboot":
+                    message += "This will restart the device.";
+                    break;
+                case "restart":
+                    message += "This will restart the Glimmr TV Service.";
+                    break;
+                case "update":
+                    message += "This will update and restart Glimmr TV.";
+                    break;
+            }
+            message += " Would you like to continue?";
+            if (confirm(message)) {
+                sendMessage("SystemControl", action, false);
+            } else {
+                console.log(action + " canceled.");
+            }
+            console.log("Control button click");
+            break;
+        case target === closeButton:
+            closeCard();
+            break;
+        case target.classList.contains("sector"):
+            let val = target.getAttribute("data-sector");
+            updateDeviceSector(val, target);
+            break;
+        case target.classList.contains("linkDiv"):
+            if (target.getAttribute("data-linked") === "false") {
+                let devId = deviceData["Id"];
+                sendMessage("AuthorizeDevice", devId,false);
+            }
+            break;
+        case target.classList.contains("led"):
+            let sector = target.getAttribute("data-sector");
+            console.log("Flashing LED " + sector);
+            sendMessage("flashLed", parseInt(sector), false);
+            break;
+        case target.classList.contains("deviceIcon"):
+            let targetId = target.getAttribute("data-device");
+            sendMessage("flashDevice", targetId, false);
+            break;
+        case target.classList.contains("devSetting"):
+            let devId = target.getAttribute("data-target");
+            let attribute = target.getAttribute("data-attribute");
+            console.log("Dev setting clicked, we are setting ", attribute, devId, target.checked);
+            updateDevice(devId, attribute, target.checked);
+            break;
+        case target.classList.contains("removeDevice"):
+            console.log("Device removal fired.");
+            let deviceId = deviceData["Id"];
+            let devName = deviceData["Name"];
+            if (confirm('Warning! The device named ' + devName + " will have all settings removed. Do you want to continue?")) {
+                let res = closeCard();
+                sendMessage("DeleteDevice", deviceId, false);
+                console.log('Deleting device.');
+            } else {
+                console.log('Device deletion canceled.');
+            }
+            break;
+        case target.classList.contains("settingBtn"):
+            if (expanded) {
+                closeCard();
+            } else {
+                let devId = target.getAttribute("data-target");
+                deviceData = findDevice(devId);
+                showDeviceCard(target);
+            }
+            break;
+        case target.classList.contains("enableBtn"):
+            let dId = target.getAttribute("data-target");
+            let devEnabled = target.getAttribute("data-enabled");
+            let icon = target.firstChild;
+            if (devEnabled === "true") {
+                target.setAttribute("data-enabled","false");
+                icon.innerText = "cast";
+            } else {
+                target.setAttribute("data-enabled","true");
+                icon.innerText = "cast_connected";
+            }
+            deviceData = findDevice(dId);
+            //data.devices[devId]["Enable"] = (devEnabled !== "true");
+            updateDevice(dId,"Enable",(devEnabled !== "true"));
+            break;
+        case target.classList.contains("refreshBtn"):
+            TriggerRefresh();
+            break;
+        case target.classList.contains("modeBtn"):
+            let newMode = parseInt(target.getAttribute("data-mode"));
+            setMode(newMode);
+            sendMessage("Mode", newMode, false);
+            break;
+        case target.classList.contains("ledCtl"):
+            let lAction = target.getAttribute("data-function");
+            let id = target.getAttribute("data-id");
+            ledAction(lAction, id);
+            break;
+        case target.classList.contains("mainSettings"):
+            toggleSettingsDiv(0);
+            break;
+        case target.classList.contains("nav-link"):
+            let cDiv = target.getAttribute("href");
+            let fadePanes = document.querySelectorAll(".tab-pane");
+            for (let i=0; i < fadePanes.length; i++) {
+                if (fadePanes[i]) {
+                    if (fadePanes[i].classList.contains("show")) {
+                        fadePanes[i].classList.remove("show", "active");
+                    }
+                }
+            }
+            document.querySelector(cDiv).classList.add("show", "active");
+            loadSettings();
+            break;
+    }
 }
 
 function ledAction(action, id) {
@@ -956,9 +1012,31 @@ function loadTheme(theme) {
 }
 
 function loadSettings() {
-    if (data.store == null) return;
     let ledData = data.store["LedData"];
     let systemData = data.store["SystemData"];
+    let updateTime = systemData["AutoUpdateTime"];
+    let timeSelect = document.getElementById("AutoUpdateTime");
+    if (isValid(timeSelect)) {
+        let length = timeSelect.options.length;
+        for (let i = length-1; i >= 0; i--) {
+            timeSelect.options[i] = null;
+        }
+        
+        let hourval = 0;
+        for (let ampm = 0; ampm < 2; ampm++) {
+            for (let hour=0; hour < 12; hour++) {
+                let string = (ampm === 1) ? "AM" : "PM";
+                let opt = document.createElement("option");
+                opt.value = hourval.toString();
+                opt.innerText = hour + " " + string;
+                timeSelect.options.add(opt);
+                hourval++;
+            }
+        }   
+    }
+    
+    let capTab = document.getElementById("capture-tab");
+    if (data.store == null) return;
     if (isValid(ledData)) {
         for(let i=0; i < 4; i++) {
             loadSettingObject(ledData[i]);
@@ -1001,7 +1079,7 @@ function loadSettings() {
     
     if (isValid(systemData)) {
         loadSettingObject(systemData);
-        updateCaptureUi(systemData);
+        updateCaptureUi();
         loadCounts();
         console.log("Loading System Data: ", systemData);
         let lPreview = document.getElementById("sLedPreview");
@@ -1032,10 +1110,10 @@ function loadSettings() {
         h = h * hscale;
         console.log("Scalez: ",x,y,w,h);
         loading = true;
-        if (isValid(croppr) && isValid(crop)) croppr.resizeTo(w, h)
+        if (isValid(croppr) && isValid(crop) && capTab.classList.contains("active")) croppr.resizeTo(w, h)
             .moveTo(x, y);
         loading = false;
-        setTimeout(function(){
+        if (capTab.classList.contains("active")) setTimeout(function(){
             createLedMap(lPreview, lImage, systemData);
             createSectorMap(sPreview, sImage);
         },500);
@@ -1045,7 +1123,9 @@ function loadSettings() {
     
 }
 
-function updateCaptureUi(systemData) {
+function updateCaptureUi() {
+    let systemData = data.store["SystemData"];
+    if (!isValid(systemData)) return;
     let capGroups = document.querySelectorAll(".capGroup");
     let mode = systemData["CaptureMode"].toString();
     let camMode = systemData["CamType"].toString();
@@ -1184,6 +1264,7 @@ function loadDevices() {
             // Create main card
             let mainDiv = document.createElement("div");
             mainDiv.classList.add("card", "m-4", "devCard");
+            mainDiv.setAttribute("data-id",device.Id);
             // Create card body
             let bodyDiv = document.createElement("div");
             bodyDiv.classList.add("card-body", "row");            
@@ -1235,7 +1316,7 @@ function loadDevices() {
             enableButton.setAttribute("data-enabled", device["Enable"]);
             // And the icon
             let eIcon = document.createElement("span");
-            eIcon.classList.add("material-icons", "pt-1");
+            eIcon.classList.add("material-icons");
             if (device["Enable"]) {
                 eIcon.textContent = "cast_connected";                
             } else {
@@ -1244,14 +1325,14 @@ function loadDevices() {
             enableButton.appendChild(eIcon);
              
             let enableCol = document.createElement("div");
-            enableCol.classList.add("btn-group", "settingsGroup");
+            enableCol.classList.add("btn-group", "settingsGroup", "pt-4");
             enableCol.appendChild(enableButton);
             
             let settingsButton = document.createElement("button");
             settingsButton.classList.add("btn", "btn-outline-secondary", "btn-clear", "settingBtn", "pt-2");
             settingsButton.setAttribute("data-target",device["Id"]);
             let sIcon = document.createElement("span");
-            sIcon.classList.add("material-icons", "pt-1");
+            sIcon.classList.add("material-icons");
             sIcon.textContent = "settings";
             settingsButton.appendChild(sIcon);
             enableCol.appendChild(settingsButton);
@@ -1269,7 +1350,7 @@ function loadDevices() {
             brightnessSlide.setAttribute("min", "0");
             brightnessSlide.setAttribute("max", "100");
             brightnessSlide.value = device["Brightness"];
-            brightnessSlide.classList.add("form-input", "w-100", 'custom-range');
+            brightnessSlide.classList.add("form-control", "w-100", 'custom-range');
             
             // Brightness column
             let brightnessCol = document.createElement("div");
@@ -1661,7 +1742,15 @@ function createDeviceSettings() {
                 row.appendChild(se);
             }
         }
+        
         container.appendChild(row);
+        if (deviceData.Tag !== "Led") {
+            let removeBtn = new SettingElement("Remove device", "button", id, "removeDevice", id);
+            let row2 = document.createElement("div");
+            row2.classList.add("row", "border", "justify-content-center", "pb-5");
+            row2.appendChild(createSettingElement(removeBtn));
+            container.appendChild(row2);
+        }
         let ds = document.getElementById("deviceSettings");
         ds.appendChild(container);
     }
@@ -1707,6 +1796,15 @@ function createSettingElement(settingElement) {
             element.type = "text";
             element.value = settingElement.value;
             break;
+        case "button":
+            label.classList.add("pt-5");
+            element = document.createElement("div");
+            element.classList.add("btn", "btn-danger", "removeDevice");
+            let icon = document.createElement("span");
+            icon.classList.add("material-icons");
+            icon.textContent = "delete";
+            element.appendChild(icon);
+            break;
     }
     if (settingElement.type === "check") {
         label.classList.add("form-check-label");
@@ -1714,7 +1812,7 @@ function createSettingElement(settingElement) {
         if (isValid(element)) element.classList.add("form-check-input");
     } else {
         label.classList.add("form-label");
-        if (isValid(element)) element.classList.add("form-input");
+        if (isValid(element)) element.classList.add("form-control");
     }
     
     group.appendChild(label);
