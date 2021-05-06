@@ -1,7 +1,6 @@
 @echo off
 cd ..
 git stash && git fetch && git pull
-cd ./src
 net stop GlimmrTV
 echo Publishing for windows
 set version=1.1.0
