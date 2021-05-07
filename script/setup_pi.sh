@@ -72,13 +72,13 @@ if [ ! -d "/home/glimmrtv/glimmr" ]
  # Clone glimmr
   echo "Cloning glimmr"
   git clone -b $BRANCH https://github.com/d8ahazard/glimmr /home/glimmrtv/glimmr
-  # Install update script to init.d 
-  sudo chmod 777 /home/glimmrtv/glimmr/update_pi.sh
-  sudo ln -s /home/glimmrtv/glimmr/update_pi.sh /etc/init.d/update_glimmr.sh
+  # Install update script to init.d   
+  sudo cp /home/glimmrtv/glimmr/script/update_pi.sh /etc/init.d/update_pi.sh
+  sudo chmod 777 /etc/init.d/update_pi.sh
 else
   echo "Source exists, updating..."
   cd /home/glimmrtv/glimmr || exit
-  git stash && git fetch && git pull
+  git fetch && git pull
 fi
 
 cd /home/glimmrtv/glimmr || exit
@@ -100,7 +100,7 @@ echo "DONE."
 # Copy necessary libraries
 echo "Copying libs..."
 cp -r /home/glimmrtv/glimmr/lib/bass.dll /usr/lib/bass.dll
-cp -r /home/glimmrtv/glimmr/lib/arm/* /usr/lib
+cp -r /home/glimmrtv/glimmr/lib/LinuxARM/* /usr/lib
 
 cp -r /home/glimmrtv/glimmr/src/ambientScenes /bin/ambientScenes
 cp -r /home/glimmrtv/glimmr/src/audioScenes /bin/audioScenes

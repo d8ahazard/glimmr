@@ -608,7 +608,7 @@ function setListeners() {
                         if (property === "ScreenCapMode" || property === "CaptureMode") {
                             updateCaptureUi();
                         }
-                        console.log("Sending updated object: ", pack);
+                        console.log("Sending updated object: ", obj, pack);
                         sendMessage(obj, pack,true);
                         return;    
                     }                    

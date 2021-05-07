@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Net;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -34,13 +33,15 @@ namespace Glimmr.Models.Util {
 
 			// Send the request.
 			var reply = pingSender.Send(target, timeout, buffer, options);
-			return reply != null && reply.Status == IPStatus.Success;
+			var isOnline = reply != null && reply.Status == IPStatus.Success;
+			if (!isOnline) Log.Information("Device " + target + " is offline.");
+			return isOnline;
 		}
 
 		public static void Update() {
 			Log.Debug("Updating");
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-				Process.Start("/bin/bash","/etc/init.d/update_glimmr.sh");
+				Process.Start("/bin/bash","/etc/init.d/update_pi.sh");
 			} else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 				Process.Start("../script/update_win.bat");
 			}
