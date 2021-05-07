@@ -4,7 +4,7 @@ set installDir=%installDir:"=%
 git
 if errorlevel 0 goto installGlimmr
 echo "Downloading git exe"
-set url=https://github.com/git-for-windows/git/releases/download/v2.26.2.windows.1/Git-2.26.2-64-bit.exe
+set url=https://github.com/git-for-windows/git/releases/download/v2.31.1.windows.1/Git-2.31.1-64-bit.exe
 set file=git_install.exe
 certutil -urlcache -split -f %url% %file%
 set url=https://dot.net/v1/dotnet-install.ps1
