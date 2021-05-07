@@ -26,8 +26,8 @@ if '%errorlevel%' NEQ '0' (
 :gotAdmin
 echo We have admin permissions, checking git installation
 
-set installDir="C:\Program Files\Git"
-set glimmrDir="C:\Program Files\Glimmr"
+set installDir=C:\Progra~1\Git
+set glimmrDir=C:\Progra~1\Glimmr
 set installDir=%installDir:"=%
 git >nul 2>&1
 if errorlevel 0 goto installGlimmr
@@ -81,35 +81,36 @@ if %errorLevel% == 0 (
 echo "Pre-requisites are good, installing Glimmr."
 pause
 set file="%glimmrDir%\bin\Glimmr.exe"
-
+echo checking for %file%
 if not exist %file% (
-	rd /s /q %glimmrDir%
+	rd /s /q "%glimmrDir%"
     echo Cloning repository    
-    git clone --branch dev https://github.com/d8ahazard/glimmr %glimmrDir%
+    git clone --branch dev https://github.com/d8ahazard/glimmr "%glimmrDir%"
 ) else (
 	cd %glimmrDir%
 	echo Dir already exists %file%
     git stash && git fetch && git pull
 )
 
-cd %glimmrDir%
+cd "%glimmrDir%"
 net stop GlimmrTV
 echo Publishing for windows
 set version=1.1.0
-%localappdata%\Microsoft\dotnet\dotnet publish %glimmrDir%\src\Glimmr.csproj /p:PublishProfile=Windows -o %glimmrDir%\bin\
-echo copying bass.dll from .\lib\win\bass.dll to .\bin\bass.dll
-copy %glimmrDir%\lib\Windows\bass.dll %glimmrDir%\bin\Windows\bass.dll
+%localappdata%\Microsoft\dotnet\dotnet publish "%glimmrDir%\src\Glimmr.csproj" /p:PublishProfile=Windows -o "%glimmrDir%\bin\"
+echo copy %glimmrDir%\lib\Windows\bass.dll %glimmrDir%\bin\bass.dll
+copy %glimmrDir%\lib\Windows\bass.dll %glimmrDir%\bin\bass.dll
 net start GlimmrTV
 pause
 if errorlevel 0 goto installService
 goto noInstall
 :installService
 echo Installing glimmr service...
-nssm install glimmr "%glimmrDir%\bin\glimmr.exe"
-nssm set glimmr AppDirectory %glimmrDir%\bin
-nssm set glimmr DisplayName GlimmrTV
-nssm set glimmr Description Glimmr TV Ambient Lighting Service
-nssm set glimmr Start SERVICE_AUTO_START
+"%glimmrDir%\script\nssm.exe" install glimmr "%glimmrDir%\bin\Glimmr.exe"
+"%glimmrDir%\script\nssm.exe" set glimmr AppDirectory %glimmrDir%\bin
+"%glimmrDir%\script\nssm.exe" set glimmr DisplayName GlimmrTV
+"%glimmrDir%\script\nssm.exe" set glimmr Description Glimmr TV Ambient Lighting Service
+"%glimmrDir%\script\nssm.exe" set glimmr Start SERVICE_AUTO_START
+net start glimmr
 goto EOF
 :noInstall
 echo Service installation skipped.

@@ -366,7 +366,7 @@ namespace Glimmr.Models.Util {
             }
 
             Log.Debug("Creating new SD");
-            var sd = new SystemData {DefaultSet = true, CaptureRegion = DisplayUtil.GetDisplaySize()};
+            var sd = new SystemData(true);
             col.Upsert(0,sd);
     
             return sd;
