@@ -7,6 +7,7 @@ using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using DreamScreenNet;
+using DreamScreenNet.Devices;
 using DreamScreenNet.Enum;
 using Glimmr.Models.Util;
 using Glimmr.Services;
@@ -27,12 +28,11 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		[DataMember] [JsonProperty] public bool Enable { get; set; }
 		public bool Online { get; set; }
 		[DataMember] [JsonProperty] public DreamScreenData ScreenData { get; set; }
-
+		
 		private readonly DreamScreenClient _client;
-		private readonly IPAddress _myIp;
 		private List<List<Color>> _frameBuffer;
 		private int _frameDelay;
-		
+		private readonly DreamDevice _dev;
 
 		public DreamScreenDevice(DreamScreenData screenData, ColorService colorService) {
 			ScreenData = screenData;
@@ -48,18 +48,19 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			Online = SystemUtil.IsOnline(IpAddress);
 			_frameDelay = screenData.FrameDelay;
 			if (string.IsNullOrEmpty(IpAddress)) IpAddress = Id;
-			_myIp = IPAddress.Parse(IpAddress);
+			var myIp = IPAddress.Parse(IpAddress);
+			_dev = new DreamDevice(Tag) {IpAddress = myIp, DeviceGroup = screenData.GroupNumber};
 		}
 
 		public async Task StartStream(CancellationToken ct) {
 			if (!Online) return;
 			_frameBuffer = new List<List<Color>>();
-			await _client.SetMode(DeviceMode.Video, _myIp, ScreenData.GroupNumber);
+			await _client.SetMode(_dev, DeviceMode.Video);
 		}
 		
 		public async Task StopStream() {
 			Log.Debug("Stopping stream.");
-			await _client.SetMode(DeviceMode.Off, _myIp, ScreenData.GroupNumber);
+			await _client.SetMode(_dev, DeviceMode.Off);
 		}
 
 		public async void SetColor(List<Color> colors, List<Color> sectors, int arg3, bool force = false) {
@@ -77,7 +78,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 				_frameBuffer.RemoveAt(0);	
 			}
 			
-			await _client.SendColors(_myIp, ScreenData.GroupNumber, sectors).ConfigureAwait(false);
+			await _client.SendColors(_dev, sectors).ConfigureAwait(false);
 			ColorService.Counter.Tick(Id);
 		}
 

@@ -29,7 +29,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			Brightness = dev.Brightness;
 			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 			GroupNumber = dev.DeviceGroup;
-			DeviceTag = dev.DeviceTag;
+			DeviceTag = dev.Type.ToString();
 		}
 		public void UpdateFromDiscovered(IColorTargetData data) {
 			var dData = (DreamScreenData) data;

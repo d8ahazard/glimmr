@@ -1,15 +1,41 @@
 @echo off
+
+dotnet --info >nul 2>&1
+if errorlevel 0 goto CheckAdmin
+REM We need to run this *WITHOUT* admin
+echo Installing dotnet binaries, path is %~dp0.
+set url=https://dot.net/v1/dotnet-install.ps1
+set file=%~dp0dotnet-install.ps1
+powershell Invoke-WebRequest -Uri %url% -OutFile %file%
+
+powershell %~dp0dotnet-install.ps1 -Channel 5.0
+pause
+
+:CheckAdmin
+:: BatchGotAdmin
+:-------------------------------------
+REM  --> Check for permissions
+>nul 2>&1 "%SYSTEMROOT%\system32\cacls.exe" "%SYSTEMROOT%\system32\config\system"
+
+REM --> If error flag set, we do not have admin.
+if '%errorlevel%' NEQ '0' (
+    echo Please re-run this script as an administrator...
+    pause
+	goto EOF
+)
+:gotAdmin
+echo We have admin permissions, checking git installation
+
 set installDir="C:\Program Files\Git"
+set glimmrDir="C:\Program Files\Glimmr"
 set installDir=%installDir:"=%
-git
+git >nul 2>&1
 if errorlevel 0 goto installGlimmr
 echo "Downloading git exe"
 set url=https://github.com/git-for-windows/git/releases/download/v2.31.1.windows.1/Git-2.31.1-64-bit.exe
-set file=git_install.exe
-certutil -urlcache -split -f %url% %file%
-set url=https://dot.net/v1/dotnet-install.ps1
-set file=dotnet-install.ps1
-certutil -urlcache -split -f %url% %file%
+set file=%~dp0Git-2.31.1-64-bit.exe
+powershell Invoke-WebRequest -Uri %url% -OutFile %file%
+
 (
     echo [Setup]
     echo Lang=default
@@ -29,12 +55,6 @@ certutil -urlcache -split -f %url% %file%
     echo EnableBuiltinDifftool=Disabled
 ) > config.inf
 
-set file="%~dp0git.exe"
-
-if [%file%]==[] (
-    echo Error finding "git*.exe" install executable. File may not exist or is not named with the "git" prefix.
-    exit /b 2
-)
 
 echo Installing git.
 %file% /VERYSILENT /LOADINF="config.inf"
@@ -56,41 +76,41 @@ if %errorLevel% == 0 (
     exit /b 0
 )
 
-dotnet
-if errorlevel 0 goto installGlimmr
-echo Installing dotnet binaries.
-powershell %~dp0dotnet-install.ps1 -Channel 5.0
 
 :installGlimmr
-set file="%~dp0../src"
+echo "Pre-requisites are good, installing Glimmr."
+pause
+set file="%glimmrDir%\bin\Glimmr.exe"
 
 if not exist %file% (
+	rd /s /q %glimmrDir%
     echo Cloning repository    
-    git clone -- branch dev https://github.com/d8ahazard/glimmr %~dp0../src/
+    git clone --branch dev https://github.com/d8ahazard/glimmr %glimmrDir%
 ) else (
-	cd %~dp0../src/
+	cd %glimmrDir%
 	echo Dir already exists %file%
     git stash && git fetch && git pull
 )
 
-cd %~dp0../src/
+cd %glimmrDir%
 net stop GlimmrTV
 echo Publishing for windows
 set version=1.1.0
-dotnet publish .\src\Glimmr.csproj /p:PublishProfile=Windows -o .\bin\
+%localappdata%\Microsoft\dotnet\dotnet publish %glimmrDir%\src\Glimmr.csproj /p:PublishProfile=Windows -o %glimmrDir%\bin\
 echo copying bass.dll from .\lib\win\bass.dll to .\bin\bass.dll
-copy %~dp0..\lib\Windows\bass.dll %~dp0..src\bin\Windows\bass.dll
+copy %glimmrDir%\lib\Windows\bass.dll %glimmrDir%\bin\Windows\bass.dll
 net start GlimmrTV
 pause
 if errorlevel 0 goto installService
 goto noInstall
 :installService
 echo Installing glimmr service...
-nssm install glimmr "%~dp0glimmr.exe"
-nssm set glimmr AppDirectory %~dp0
+nssm install glimmr "%glimmrDir%\bin\glimmr.exe"
+nssm set glimmr AppDirectory %glimmrDir%\bin
 nssm set glimmr DisplayName GlimmrTV
 nssm set glimmr Description Glimmr TV Ambient Lighting Service
 nssm set glimmr Start SERVICE_AUTO_START
 goto EOF
 :noInstall
 echo Service installation skipped.
+:EOF
