@@ -66,7 +66,9 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		}
 		
 		public async Task StartStream(CancellationToken ct) {
-			if (!Enable || Streaming || !Online) return;
+			if (!Enable || Streaming) return;
+			Online = SystemUtil.IsOnline(IpAddress);
+			if (!Online) return;
 			_frameBuffer = new List<List<Color>>();
 			Streaming = true;
 
@@ -80,7 +82,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		}
 
 		public async Task StopStream() {
-			if (!Enable) return;
+			if (!Enable || !Online) return;
 			await FlashColor(Color.FromArgb(0, 0, 0));
 			Streaming = false;
 			if (_wasOn) _nanoleafClient.TurnOffAsync();
@@ -142,8 +144,6 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			Id = n.Id;
 			_frameDelay = Data.FrameDelay;
 			_frameBuffer = new List<List<Color>>();
-			Online = SystemUtil.IsOnline(IpAddress);
-
 		}
 
 		public async Task FlashColor(Color color) {

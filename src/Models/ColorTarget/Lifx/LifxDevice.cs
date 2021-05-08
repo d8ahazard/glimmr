@@ -50,7 +50,9 @@ namespace Glimmr.Models.ColorTarget.Lifx {
         }
 
         public async Task StartStream(CancellationToken ct) {
-            if (!Enable || !Online) return;
+            if (!Enable) return;
+            Online = SystemUtil.IsOnline(IpAddress);
+            if (!Online) return;
             Log.Debug("Lifx: Starting stream.");
             var col = new LifxColor(0, 0, 0);
             //var col = new LifxColor {R = 0, B = 0, G = 0};
@@ -74,7 +76,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
         
         public async Task StopStream() {
-            if (!Enable) return;
+            if (!Enable || !Online) return;
             Streaming = false;
             if (_client == null) throw new ArgumentException("Invalid lifx client.");
             await FlashColor(Color.FromArgb(0, 0, 0));
@@ -99,7 +101,6 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             Enable = Data.Enable;
             _frameDelay = Data.FrameDelay;
             _frameBuffer = new List<List<Color>>();
-            Online = SystemUtil.IsOnline(IpAddress);
             return Task.CompletedTask;
         }
 

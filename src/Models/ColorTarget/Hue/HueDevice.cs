@@ -128,7 +128,9 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		/// <param name="ct">A cancellation token.</param>
 		public async Task StartStream(CancellationToken ct) {
 			// Leave if not enabled
-			if (!Enable || !Online) return;
+			if (!Enable) return;
+			Online = SystemUtil.IsOnline(IpAddress);
+			if (!Online) return;
 			Log.Debug($"Hue: Starting stream at  {IpAddress}...");
 			// Leave if we have no client (not authorized)
 			if (_client == null) {
@@ -179,7 +181,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 
 		public async Task StopStream() {
-			if (!Enable) return;
+			if (!Enable || !Online) return;
 			Log.Debug($"Hue: Stopping Stream: {IpAddress}...");
 			StopStream(_client, Data).ConfigureAwait(false);
 			Streaming = false;
@@ -214,7 +216,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Enable = Data.Enable;
 			_frameDelay = Data.FrameDelay;
 			_frameBuffer = new List<List<Color>>();
-			Online = SystemUtil.IsOnline(IpAddress);
 			Log.Debug(@"Hue: Reloaded bridge: " + IpAddress);
 			return Task.CompletedTask;
 		}

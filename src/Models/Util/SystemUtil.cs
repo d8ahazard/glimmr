@@ -22,7 +22,7 @@ namespace Glimmr.Models.Util {
 		}
 
 		public static bool IsOnline(string target) {
-			return true;
+			if (target == "127.0.0.1" || target == "localhost") return true;
 			var pingSender = new Ping ();
 
 			// Create a buffer of 32 bytes of data to be transmitted.

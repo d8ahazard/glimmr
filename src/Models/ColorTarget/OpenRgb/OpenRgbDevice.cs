@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Threading;
@@ -41,9 +42,18 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		}
 		
 		public Task StartStream(CancellationToken ct) {
-			if (_client == null || !Online) return Task.CompletedTask;
-			
-			if (_client.Connected && Enable) {
+			if (_client == null || !Enable) return Task.CompletedTask;
+			Online = SystemUtil.IsOnline(IpAddress);
+
+			if (!_client.Connected) {
+				try {
+					_client.Connect();
+				} catch (Exception e) {
+					Log.Debug("Exception connecting client.");
+				}
+			}
+
+			if (_client.Connected) {
 				Log.Information("OpenRGB: Starting stream...");
 				Streaming = true;
 				_client.SetMode(Data.DeviceId,0);
@@ -53,15 +63,17 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			return Task.CompletedTask;
 		}
 
-		public Task StopStream() {
-			if (_client == null) return Task.CompletedTask;
+		public async Task StopStream() {
+			if (_client == null) return;
+			if (!_client.Connected || !Enable || !Online) return;
+			
 			var output = new OpenRGB.NET.Models.Color[Data.LedCount];
 			for (var i = 0; i < output.Length; i++) {
 				output[i] = new OpenRGB.NET.Models.Color();
 			}
 			_client.UpdateLeds(Data.DeviceId,output);
+			await Task.FromResult(true);
 			Streaming = false;
-			return Task.CompletedTask;
 		}
 
 		public void SetColor(List<Color> colors, List<Color> sectors, int fadeTime, bool force = false) {
@@ -92,7 +104,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			Enable = Data.Enable;
 			_frameDelay = Data.FrameDelay;
 			_frameBuffer = new List<List<Color>>();
-			Online = SystemUtil.IsOnline(Data.IpAddress);
+			IpAddress = Data.IpAddress;
 			return Task.CompletedTask;
 		}
 

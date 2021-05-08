@@ -56,7 +56,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
         public async Task StartStream(CancellationToken ct) {
             if (Streaming) return;
-            if (!Data.Enable || !Online) return;
+            if (!Enable) return;
+            Online = SystemUtil.IsOnline(IpAddress);
             _frameBuffer = new List<List<Color>>();
             Log.Debug($"WLED: Starting stream at {IpAddress}...");
             _ep = IpUtil.Parse(IpAddress, port);
@@ -94,7 +95,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
         
         public async Task StopStream() {
-            if (!Data.Enable) return;
+            if (!Data.Enable || !Online) return;
             Log.Debug("WLED: Stopping stream...");
             var packet = new List<byte> {ByteUtils.IntByte(2), ByteUtils.IntByte(1)};
             for (var i = 0; i < Data.LedCount * 3; i++) {
@@ -117,9 +118,11 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
         public void SetColor(List<Color> list, List<Color> colors1, int arg3, bool force=false) {
             
-            if (!Streaming || !Data.Enable || Testing && !force) {
+            if (!Streaming || !Enable || Testing && !force) {
                 return;
             }
+
+            if (!Online) return;
             var colors = list;
             colors = ColorUtil.TruncateColors(colors,_offset, _len);
             if (Data.StripMode == 2) {
@@ -205,6 +208,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             _offset = Data.Offset;
             Brightness = Data.Brightness;
             IpAddress = Data.IpAddress;
+            Enable = Data.Enable;
             if (oldBrightness != Brightness) {
                 Log.Debug($"Brightness has changed!! {oldBrightness} {Brightness}");
                 UpdateLightState(Streaming).ConfigureAwait(false);

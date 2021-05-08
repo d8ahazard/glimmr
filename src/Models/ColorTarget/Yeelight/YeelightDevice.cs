@@ -37,26 +37,27 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			_yeeDevice = new Device(yd.IpAddress);
 			cs.ColorSendEvent += SetColor;
 			_cs = cs;
-			Online = SystemUtil.IsOnline(IpAddress);
 
 		}
 		public async Task StartStream(CancellationToken ct) {
+			if (!Enable) return;
 			_frameBuffer = new List<List<Color>>();
+			Online = SystemUtil.IsOnline(IpAddress);
 			if (!Online) return;
 			Streaming = await _yeeDevice.Connect();
 		}
 
 		public async Task StopStream() {
-			if (!Streaming) {
+			if (!Streaming || !Online || !Enable) {
 				return;
 			}
-			if (!Enable) return;
 			await FlashColor(Color.FromArgb(0, 0, 0));
 			_yeeDevice.Disconnect();
 			Streaming = false;
 		}
 
 		public void SetColor(List<Color> colors, List<Color> sectors, int arg3, bool force=false) {
+			if (!Streaming || !Enable) return;
 			if (_frameDelay > 0) {
 				_frameBuffer.Add(sectors);
 				if (_frameBuffer.Count < _frameDelay) return; // Just buffer till we reach our count

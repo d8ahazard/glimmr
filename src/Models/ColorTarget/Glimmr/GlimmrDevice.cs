@@ -60,8 +60,9 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 
         
         public async Task StartStream(CancellationToken ct) {
-            if (Streaming || !Online) return;
-            if (!Data.Enable) return;
+            if (Streaming || !Enable) return;
+            Online = SystemUtil.IsOnline(IpAddress);
+            if (!Online) return;
             Log.Debug($"Glimmr: Starting stream at {IpAddress}...");
             await SendPost("mode", 5);
             _ep = IpUtil.Parse(IpAddress, port);
@@ -100,7 +101,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 
         
         public async Task StopStream() {
-            if (!Enable) return;
+            if (!Enable || !Online) return;
             await FlashColor(Color.FromArgb(0, 0, 0));
             Streaming = false;
             Log.Debug("Glimmr: Stream stopped.");
@@ -110,9 +111,11 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 
         public void SetColor(List<Color> leds, List<Color> sectors, int arg3, bool force=false) {
             
-            if (!Streaming || !Data.Enable || Testing && !force) {
+            if (!Streaming || !Enable || Testing && !force) {
                 return;
             }
+
+            if (!Online) return;
             
             if (_ep == null) {
                 Log.Debug("No endpoint.");
@@ -175,7 +178,8 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
             _frameDelay = Data.FrameDelay;
             _frameBuffer = new List<List<Color>>();
             _frameBuffer2 = new List<List<Color>>();
-            Online = SystemUtil.IsOnline(IpAddress);
+            IpAddress = Data.IpAddress;
+            Enable = Data.Enable;
             Log.Debug($"Reloaded LED Data for {id}: " + JsonConvert.SerializeObject(Data));
             return Task.CompletedTask;
         }

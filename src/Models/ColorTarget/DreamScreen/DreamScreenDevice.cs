@@ -45,7 +45,6 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			Tag = screenData.Tag;
 			Enable = screenData.Enable;
 			DeviceTag = screenData.DeviceTag;
-			Online = SystemUtil.IsOnline(IpAddress);
 			_frameDelay = screenData.FrameDelay;
 			if (string.IsNullOrEmpty(IpAddress)) IpAddress = Id;
 			var myIp = IPAddress.Parse(IpAddress);
@@ -53,12 +52,15 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		}
 
 		public async Task StartStream(CancellationToken ct) {
+			if (!Enable) return;
+			Online = SystemUtil.IsOnline(IpAddress);
 			if (!Online) return;
 			_frameBuffer = new List<List<Color>>();
 			await _client.SetMode(_dev, DeviceMode.Video);
 		}
 		
 		public async Task StopStream() {
+			if (!Enable || !Online) return;
 			Log.Debug("Stopping stream.");
 			await _client.SetMode(_dev, DeviceMode.Off);
 		}
