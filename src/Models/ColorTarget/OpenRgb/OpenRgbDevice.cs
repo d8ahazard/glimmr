@@ -37,6 +37,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			Id = Data.Id;
 			Enable = data.Enable;
 			cs.ColorSendEvent += SetColor;
+			IpAddress = Data.IpAddress;
 			_colorService = cs;
 			_client = cs.ControlService.GetAgent("OpenRgbAgent");
 		}

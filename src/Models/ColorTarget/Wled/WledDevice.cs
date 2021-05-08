@@ -57,7 +57,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
         public async Task StartStream(CancellationToken ct) {
             if (Streaming) return;
             if (!Enable) return;
-            Online = SystemUtil.IsOnline(IpAddress);
+            Online = true;
             _frameBuffer = new List<List<Color>>();
             Log.Debug($"WLED: Starting stream at {IpAddress}...");
             _ep = IpUtil.Parse(IpAddress, port);
@@ -218,7 +218,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             _len = Data.LedCount;
             _frameDelay = Data.FrameDelay;
             _frameBuffer = new List<List<Color>>();
-            Online = SystemUtil.IsOnline(IpAddress);
+            Online = true;
             return Task.CompletedTask;
         }
 
