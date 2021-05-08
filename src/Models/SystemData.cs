@@ -6,17 +6,15 @@ using Newtonsoft.Json;
 
 namespace Glimmr.Models {
 	public class SystemData {
-		public SystemData(bool setDefaults) {
-			if (setDefaults) {
-				Brightness = 255;
-				DiscoveryTimeout = 10;
-				AutoDiscoveryFrequency = 60;
-				CropDelay = 15;
-				DeviceMode = 0;
-				AutoUpdateTime = 2;
-				CaptureRegion = DisplayUtil.GetDisplaySize();
-				DefaultSet = true;
-			}
+		public void SetDefaults() {
+			Brightness = 255;
+			DiscoveryTimeout = 10;
+			AutoDiscoveryFrequency = 60;
+			CropDelay = 15;
+			DeviceMode = 0;
+			AutoUpdateTime = 2;
+			CaptureRegion = DisplayUtil.GetDisplaySize();
+			DefaultSet = true;
 		}
 
 		[DefaultValue("")]

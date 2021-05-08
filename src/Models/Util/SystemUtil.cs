@@ -22,19 +22,27 @@ namespace Glimmr.Models.Util {
 		}
 
 		public static bool IsOnline(string target) {
+			return true;
 			var pingSender = new Ping ();
 
 			// Create a buffer of 32 bytes of data to be transmitted.
 			const string data = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-			const int timeout = 1;
+			const int timeout = 3;
 
 			var buffer = Encoding.ASCII.GetBytes (data);
 			var options = new PingOptions (64, true);
+			var isOnline = false;
+			try {
 
-			// Send the request.
-			var reply = pingSender.Send(target, timeout, buffer, options);
-			var isOnline = reply != null && reply.Status == IPStatus.Success;
+				// Send the request.
+				var reply = pingSender.Send(target, timeout, buffer, options);
+				isOnline = reply != null && reply.Status == IPStatus.Success;
+			} catch (Exception e) {
+				Log.Debug("Ping error: " + e.Message);
+			}
+
 			if (!isOnline) Log.Information("Device " + target + " is offline.");
+			
 			return isOnline;
 		}
 
@@ -72,8 +80,6 @@ namespace Glimmr.Models.Util {
 				userDir = "/etc/";
 			}
 
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) Log.Debug("Platform is Windows");
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) Log.Debug("Platform is OSX");
 			var fullPath = Path.Combine(userDir, "Glimmr");
 			if (!Directory.Exists(fullPath)) {
 				try {

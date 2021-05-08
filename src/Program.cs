@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
 using Glimmr.Models.ColorSource.Ambient;
 using Glimmr.Models.ColorSource.Audio;
@@ -6,6 +7,7 @@ using Glimmr.Models.ColorSource.AudioVideo;
 using Glimmr.Models.ColorSource.DreamScreen;
 using Glimmr.Models.ColorSource.Video;
 using Glimmr.Models.Logging;
+using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,10 +21,12 @@ namespace Glimmr
 	{
 		public static void Main(string[] args) {
 			var outputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}]{Caller} {Message}{NewLine}{Exception}";
-
 			var logPath = "/var/log/glimmr/glimmr.log";
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-				logPath = "log\\glimmr.log";
+				var userPath = SystemUtil.GetUserDir();
+				var logDir = Path.Combine(userPath, "log");
+				if (!Directory.Exists(logDir)) Directory.CreateDirectory(logDir);
+				logPath = Path.Combine(userPath, "log", "glimmr.log");
 			}
 			
 			var tr1 = new TextWriterTraceListener(System.Console.Out);

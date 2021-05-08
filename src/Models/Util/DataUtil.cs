@@ -24,7 +24,17 @@ namespace Glimmr.Models.Util {
                 Log.Debug("Awaiting export...");
                 Task.Delay(TimeSpan.FromMilliseconds(50));
             }
-            return _db ??= new LiteDatabase(@"./store.db");
+
+            var userPath = SystemUtil.GetUserDir();
+            userPath = Path.Join(userPath, "store.db");
+            
+            if (File.Exists("./store.db")) {
+                Log.Information($"Migrating existing datastore to {userPath}.");
+                File.Copy("./store.db",userPath);
+                File.Delete("./store.db");
+            }
+            
+            return _db ??= new LiteDatabase(userPath);
         }
 
         public static void Dispose() {
@@ -358,17 +368,24 @@ namespace Glimmr.Models.Util {
 
         public static SystemData GetSystemData() {
             var db = GetDb();
+            
             var col = db.GetCollection<SystemData>("SystemData");
-            if (col.Count() != 0) {
-                foreach (var doc in col.FindAll()) {
-                    return doc;
+            try {
+                if (col.Count() != 0) {
+                    var cols = col.FindAll().ToList();
+                    foreach (var sda in cols) {
+                        return sda;
+                    }
+                    
                 }
+            } catch (Exception e) {
+                Log.Warning("Exception: " + e.Message + " at " + e.StackTrace);
             }
 
             Log.Debug("Creating new SD");
-            var sd = new SystemData(true);
+            var sd = new SystemData();
+            sd.SetDefaults();
             col.Upsert(0,sd);
-    
             return sd;
         }
         
