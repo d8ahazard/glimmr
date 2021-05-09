@@ -22,6 +22,8 @@ namespace Glimmr.Models.Util {
 		}
 
 		public static bool IsOnline(string target) {
+			// F this stuff...
+			return true;
 			if (string.IsNullOrEmpty(target)) {
 				Log.Debug("Target is empty");
 				return true;
