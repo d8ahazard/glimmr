@@ -86,7 +86,18 @@ namespace Glimmr.Models.ColorSource.Video {
 			var wasEnabled = _enable;
 			if (_enable) _enable = false;
 			_vc?.Stop();
-			
+			var prevCapMode = _captureMode;
+			SetCapVars();
+			if (prevCapMode != _captureMode) {
+				Log.Debug("Resetting capture mode?");
+				_vc.Stop();
+				_vc = GetStream();
+				if (_vc == null) {
+					Log.Warning("Video capture is null!");
+					return;
+				}
+				_vc.Start(_cancellationToken);
+			}
 			StreamSplitter?.Refresh();
 			Initialize(_cancellationToken);
 			if (wasEnabled) _enable = true;

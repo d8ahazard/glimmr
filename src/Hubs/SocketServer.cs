@@ -53,9 +53,9 @@ namespace Glimmr.Hubs {
 		}
 
 		public async Task SystemData(string sd) {
-			Log.Debug("Updating system data.");
 			var sdd = JObject.Parse(sd);
 			var sd2 = sdd.ToObject<SystemData>();
+			Log.Debug("Updating system data: " + JsonConvert.SerializeObject(sd2));
 			await _cs.UpdateSystem(sd2);
 		}
 		

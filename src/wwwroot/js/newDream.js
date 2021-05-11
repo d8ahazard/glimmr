@@ -1024,17 +1024,23 @@ function loadSettings() {
         }
         
         let hourval = 0;
+        let timeText = document.getElementById("updateTime");
         for (let ampm = 0; ampm < 2; ampm++) {
             for (let hour=0; hour < 12; hour++) {
-                let string = (ampm === 1) ? "AM" : "PM";
+                let string = (ampm === 0) ? "AM" : "PM";
                 let opt = document.createElement("option");
                 opt.value = hourval.toString();
-                opt.innerText = hour + " " + string;
-                if (hourval.toString === updateTime) opt.selected = true;
+                let hourText = hour === 0 ? 12 : hour;
+                opt.innerText = hourText + " " + string;
+                if (hourval.toString === updateTime) {
+                    opt.selected = true;
+                }
                 timeSelect.options.add(opt);
                 hourval++;
             }
-        }   
+        }
+
+        timeText.innerHTML = "Updates will be installed at "+updateTime.toString()+":00"+ampm+" every day when enabled.";
     }
     
     let capTab = document.getElementById("capture-tab");

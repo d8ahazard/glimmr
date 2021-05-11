@@ -473,9 +473,10 @@ namespace Glimmr.Services {
 			_autoDisableDelay = sd.AutoDisableDelay;
 			if (_autoDisableDelay < 1) {
 				_autoDisableDelay = 10;
-				
 			}
 
+			var prevCapMode = _captureMode;
+			_captureMode = (CaptureMode) sd.CaptureMode;
 		}
 
 		private async Task Mode(object o, DynamicEventArgs dynamicEventArgs) {

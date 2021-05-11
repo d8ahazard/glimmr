@@ -259,23 +259,24 @@ namespace Glimmr.Services {
 		public async Task UpdateSystem(SystemData sd = null) {
 			var oldSd = DataUtil.GetSystemData();
 			if (sd != null) {
+				DataUtil.SetObject<SystemData>(sd);
+				_sd = sd;
 				if (oldSd.LedCount != sd.LedCount) {
 					var leds = DataUtil.GetDevices<LedData>("Led");
 
 					foreach (var colorTargetData in leds.Where(led => led.LedCount == 0)) {
 						var led = colorTargetData;
 						led.LedCount = sd.LedCount;
-						await DataUtil.InsertCollection<LedData>("LedData", led);
+						await DataUtil.AddDeviceAsync(led);
 					}
 				}
 
-				await DataUtil.SetObjectAsync<SystemData>(sd);
 				if (oldSd.OpenRgbIp != sd.OpenRgbIp || oldSd.OpenRgbPort != sd.OpenRgbPort) {
 					LoadAgents();
 				}
 			}
 
-			_sd = sd;
+			
 			RefreshSystemEvent();
 		}
 
