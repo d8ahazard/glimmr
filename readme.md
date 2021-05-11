@@ -3,18 +3,17 @@
 ## Installation
 
 ### Windows
-Create a directory where you want Glimmr to reside.
-
-Download this script, save it into the directory you created, and run it.
-https://raw.githubusercontent.com/d8ahazard/glimmr/dev/setup_win.bat
+Open a Powershell window, execute the following command:
+```
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_win.ps1'))
+```
 
 
 ### Raspberry Pi
 Execute the following command:
 ```
-bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/master/setup_pi.sh)
+bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/dev/setup_pi.sh)
 ```
-You may want to reboot your computer after exectution if it's a first-time install...
 
 *Alternatively*, you can flash a custom image directly to your pi from here:
 
@@ -141,7 +140,7 @@ Container images are configured using parameters passed at runtime (such as thos
 &nbsp;
 ## Application Usage
 
-Once installed, access the Web UI at `<your-ip>:5699`.
+Once installed, access the Web UI at `<your-ip>`.
 
 ### Discover Devices
 Discovery should be auto-triggered when you open the web UI. If devices are missing, you can open the side menu and then click the + icon to trigger a rescan. Discovered devices will automatically be added to the side menu.
