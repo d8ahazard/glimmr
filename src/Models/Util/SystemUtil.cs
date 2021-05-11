@@ -86,6 +86,10 @@ namespace Glimmr.Models.Util {
 				userDir = "/etc/";
 			}
 
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+				userDir = "C:\\ProgramData\\";
+			}
+
 			var fullPath = Path.Combine(userDir, "Glimmr");
 			if (!Directory.Exists(fullPath)) {
 				try {
