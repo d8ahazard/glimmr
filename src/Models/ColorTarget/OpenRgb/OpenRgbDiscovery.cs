@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,7 +23,13 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		}
 
 		public async Task Discover(CancellationToken ct, int timeout) {
-			if (!_client.Connected) _client.Connect();
+			if (!_client.Connected)
+				try {
+					_client.Connect();
+				} catch (Exception e) {
+					Log.Debug("Error connecting to client, probably it doesn't exist.");
+					return;
+				}
 			
 			if (_client.Connected) {
 				var devs = _client.GetAllControllerData();

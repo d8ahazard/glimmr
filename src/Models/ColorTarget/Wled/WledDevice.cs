@@ -62,8 +62,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
             Log.Debug($"WLED: Starting stream at {IpAddress}...");
             _ep = IpUtil.Parse(IpAddress, port);
             Streaming = true;
-            await FlashColor(Color.Black);
-            await UpdateLightState(Streaming).ConfigureAwait(false);
+            FlashColor(Color.Black).ConfigureAwait(false);
+            UpdateLightState(Streaming).ConfigureAwait(false);
             Log.Debug("WLED: Stream started.");
         }
 
@@ -104,7 +104,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             
             try {
                 if (_udpClient != null) {
-                    await _udpClient.SendAsync(packet.ToArray(), packet.Count, _ep);    
+                    _udpClient.SendAsync(packet.ToArray(), packet.Count, _ep).ConfigureAwait(false);    
                 }
                 
             } catch (Exception e) {
@@ -112,6 +112,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             }
         
             Streaming = false;
+            await Task.FromResult(true);
             Log.Debug("WLED: Stream stopped.");
         }
 
