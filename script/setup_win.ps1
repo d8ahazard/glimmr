@@ -100,7 +100,7 @@ If( -not (Test-Path -Path $glimmrPath) ){
     Write-Host "Cloning Glimmr repository.";
     Invoke-Expression "& '$gitPath' clone --branch dev $glimmrRepo $glimmrPath";
 } else {
-    cd $glimmrPath; 
+    Set-Location -path "C:\program files\glimmr"; 
     Write-Host "Glimmr repo already exists...";
     Invoke-Expression "& '$gitPath' stash";
     Invoke-Expression "& '$gitPath' fetch";
