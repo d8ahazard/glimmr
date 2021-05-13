@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
@@ -25,6 +26,10 @@ namespace Glimmr.Models.ColorTarget.Lifx {
         public bool Testing { get; set; }
 
         private int _targetSector;
+        private bool _hasMulti;
+        private int _multizoneCount;
+        private int _offset;
+        private bool _reverseStrip;
         public int Brightness { get; set; }
         public string Id { get; set; }
         public string IpAddress { get; set; }
@@ -38,6 +43,10 @@ namespace Glimmr.Models.ColorTarget.Lifx {
         public LifxDevice(LifxData d, ColorService colorService) : base(colorService) {
             DataUtil.GetItem<int>("captureMode");
             Data = d ?? throw new ArgumentException("Invalid Data");
+            _hasMulti = d.HasMultiZone;
+            _offset = d.Offset;
+            _reverseStrip = d.ReverseStrip;
+            if (_hasMulti) _multizoneCount = d.MultiZoneCount;
             _client = colorService.ControlService.GetAgent("LifxAgent");
             colorService.ColorSendEvent += SetColor;
             B = new LightBulb(d.HostName, d.MacAddress, d.Service, (uint)d.Port);
@@ -110,6 +119,35 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
         public void SetColor(List<Color> colors, List<Color> list, int arg3, bool force=false) {
             if (!Streaming || !Enable || Testing && !force) return;
+            if (_hasMulti) {
+                SetColorMulti(colors);
+            } else {
+                SetColorSingle(list);
+            }
+            ColorService.Counter.Tick(Id);
+        }
+
+        private void SetColorMulti(List<Color> colors) {
+            if (colors == null || _client == null) {
+                Log.Warning("Null client or no colors!");
+                return;
+            }
+
+            var output = ColorUtil.TruncateColors(colors, _offset, _multizoneCount);
+            if (_reverseStrip) output.Reverse();
+            if (_frameDelay > 0) {
+                _frameBuffer.Add(output);
+                if (_frameBuffer.Count < _frameDelay) return; // Just buffer till we reach our count
+                output = _frameBuffer[0];
+                _frameBuffer.RemoveAt(0);
+            }
+
+            var cols = output.Select(col => new LifxColor(col)).ToList();
+            _client.SetExtendedColorZonesAsync(B, cols);
+        }
+
+        private void SetColorSingle(List<Color> list) {
+            
             var sectors = list;
             if (sectors == null || _client == null) {
                 return;
@@ -132,7 +170,6 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             _client.SetColorAsync(B, nC);
             ColorService.Counter.Tick(Id);
         }
-
         
     }
 }

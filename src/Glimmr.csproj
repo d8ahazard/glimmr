@@ -19,7 +19,7 @@
     <PackageReference Include="Emgu.CV.runtime.linux-arm" Version="4.5.1.4349" Condition="$(RuntimeIdentifier) == 'linux-arm'" />
     <PackageReference Include="Emgu.CV.runtime.ubuntu.20.04-x64" Version="4.5.1.4349" Condition="$(RuntimeIdentifier) == 'linux-x64'" />
     <PackageReference Include="Emgu.CV.runtime.windows" Version="4.5.1.4349" Condition="$(RuntimeIdentifier) == 'win-x64'" />
-    <PackageReference Include="LifxNetPlus" Version="1.1.0" />
+    <PackageReference Include="LifxNetPlus" Version="1.1.1" />
     <PackageReference Include="LiteDB" Version="5.0.10" />
     <PackageReference Include="Makaretu.Dns.Multicast" Version="0.27.0" />
     <PackageReference Include="ManagedBass" Version="3.0.0" />

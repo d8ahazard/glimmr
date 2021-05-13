@@ -46,6 +46,8 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		public bool MultiZoneV2 { get; set; }
 		
 		[JsonProperty] public TileLayout Layout { get; set; }
+		
+		
 		public LifxData() {
 			Tag = "Lifx";
 			if (Id == null && MacAddressString != null) {
@@ -53,6 +55,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			}
 			Name ??= Tag;
 			if (Id != null && Id.Length > 4) Name = "Lifx - " + Id.Substring(0, 4);
+			SetKeyProperties();
 		}
 
 		public LifxData(LightBulb b) {
@@ -67,27 +70,43 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			MacAddressString = b.MacAddressName;
 			Id = MacAddressString;
 			if (Id != null) Name = "Lifx - " + Id.Substring(0, 4);
+			SetKeyProperties();
 		}
 
 		public string LastSeen { get; set; }
+
+		private void SetKeyProperties() {
+			if (HasMultiZone) {
+				KeyProperties = new SettingsProperty[]{
+					new("ledmap","ledmap",""),
+					new("Offset", "number", "Offset"),
+					new("Reverse Direction", "check", "ReverseStrip"),
+					new("FrameDelay", "text", "Frame Delay")
+				};
+			} else {
+				KeyProperties = new SettingsProperty[] {
+					new("TargetSector", "sectormap", "Target Sector"),
+					new("FrameDelay", "text", "Frame Delay")
+				};
+			}
+		}
 
 		public void UpdateFromDiscovered(IColorTargetData data) {
 			var ld = (LifxData) data;
 			IpAddress = data.IpAddress;
 			Layout?.MergeLayout(ld.Layout);
 			MultiZoneCount = ld.MultiZoneCount;
+			HasMultiZone = ld.HasMultiZone;
 			HostName = ld.HostName;
 			IpAddress = ld.IpAddress;
 			MacAddress = ld.MacAddress;
 			DeviceTag = ld.DeviceTag;
+			SetKeyProperties();
 		}
 
-		public SettingsProperty[] KeyProperties { get; set; } = {
-			new("TargetSector", "sectormap", "Target Sector"),
-			new("FrameDelay", "text", "Frame Delay")
-		};
+		public SettingsProperty[] KeyProperties { get; set; }
 
-
+		
 		public string Name { get; set; }
 		public string Id { get; set; }
 		public string Tag { get; set; }
@@ -95,5 +114,6 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		public int Brightness { get; set; }
 		public int FrameDelay { get; set; }
 		public bool Enable { get; set; }
+		public bool ReverseStrip { get; set; }
 	}
 }

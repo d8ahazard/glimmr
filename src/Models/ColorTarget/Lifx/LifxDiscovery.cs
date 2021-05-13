@@ -60,7 +60,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
                 if (extended) {
                     var zones = await _client.GetExtendedColorZonesAsync(b);
                     Log.Debug("Zones: " + JsonConvert.SerializeObject(zones));
-                    zoneCount = zones.Count;
+                    zoneCount = zones.ZonesCount;
                 } else {
                     // Original device only supports eight zones?
                     var zones = await _client.GetColorZonesAsync(b, 0, 8);
