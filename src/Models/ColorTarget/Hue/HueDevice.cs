@@ -40,10 +40,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		public string Tag { get; set; }
 		public bool Streaming { get; set; }
 		private readonly StreamingGroup _stream;
-		
-		private List<List<Color>> _frameBuffer;
-		private int _frameDelay;
-
 
 		public HueDevice(HueData data, ColorService colorService) : base(colorService) {
 			DataUtil.GetItem<int>("captureMode");
@@ -173,17 +169,16 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				Log.Debug("Streaming exception caught: " + e.Message);
 			}
 
-			_client.AutoUpdate(_stream, _ct).ConfigureAwait(false);
+			await _client.AutoUpdate(_stream, _ct).ConfigureAwait(false);
 			_entLayer = _stream.GetNewLayer(true);
 			Log.Debug("Hue: Stream started.");
-			_frameBuffer = new List<List<Color>>();
 			Streaming = true;
 		}
 
 		public async Task StopStream() {
 			if (!Enable || !Online) return;
 			Log.Debug($"Hue: Stopping Stream: {IpAddress}...");
-			StopStream(_client, Data).ConfigureAwait(false);
+			await StopStream(_client, Data).ConfigureAwait(false);
 			Streaming = false;
 			await Task.FromResult(true);
 			Log.Debug("Hue: Streaming Stopped.");
@@ -214,8 +209,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			IpAddress = Data.IpAddress;
 			Brightness = newData.Brightness;
 			Enable = Data.Enable;
-			_frameDelay = Data.FrameDelay;
-			_frameBuffer = new List<List<Color>>();
 			Log.Debug(@"Hue: Reloaded bridge: " + IpAddress);
 			return Task.CompletedTask;
 		}
@@ -232,13 +225,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				return;
 			}
 			
-			if (_frameDelay > 0) {
-				_frameBuffer.Add(sectors);
-				if (_frameBuffer.Count < _frameDelay) return; // Just buffer till we reach our count
-				sectors = _frameBuffer[0];
-				_frameBuffer.RemoveAt(0);	
-			}
-
 			var lightMappings = Data.MappedLights;
 			
 			foreach (var entLight in _entLayer) {
@@ -307,7 +293,8 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
             var id = b.SelectedGroup;
             await client.LocalHueClient.SetStreamingAsync(id, false).ConfigureAwait(true);
-        }
+            Log.Debug("Hue: Stream stopped.");
+		}
 
        private async Task<StreamingGroup> SetupAndReturnGroup() {
 	       var groupId = Data.SelectedGroup;

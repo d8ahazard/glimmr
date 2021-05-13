@@ -49,23 +49,23 @@ namespace Glimmr.Hubs {
 
 		public async Task DeleteDevice(string id) {
 			Log.Debug("Deleting device: " + id);
-			await _cs.RemoveDevice(id);
+			await _cs.RemoveDevice(id).ConfigureAwait(false);
 		}
 
 		public async Task SystemData(string sd) {
 			var sdd = JObject.Parse(sd);
 			var sd2 = sdd.ToObject<SystemData>();
 			Log.Debug("Updating system data: " + JsonConvert.SerializeObject(sd2));
-			await _cs.UpdateSystem(sd2);
+			await _cs.UpdateSystem(sd2).ConfigureAwait(false);
 		}
 		
 		public async Task DemoLed(string id) {
 			Log.Debug("We should demo a strip here.");
-			await _cs.DemoLed(id);
+			await _cs.DemoLed(id).ConfigureAwait(false);
 		}
 
 		public async Task SystemControl(string action) {
-			await ControlService.SystemControl(action);
+			await ControlService.SystemControl(action).ConfigureAwait(false);
 		}
 
 		public async Task UpdateDevice(string deviceJson) {
@@ -75,7 +75,7 @@ namespace Glimmr.Hubs {
 			dynamic devObject = device.ToObject(Type.GetType(className));
 			if (devObject != null) {
 				Log.Debug("Incoming: " + JsonConvert.SerializeObject(devObject));
-				await _cs.UpdateDevice(devObject, false);
+				await _cs.UpdateDevice(devObject, false).ConfigureAwait(false);
 			}
 		}
 

@@ -225,6 +225,8 @@ namespace Glimmr.Services {
 						SystemUtil.Update();
 					}
 				}
+
+				Log.Debug("Control service stopped.");
 				return Task.CompletedTask;
 			}, stoppingToken);
 		}

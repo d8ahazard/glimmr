@@ -20,9 +20,6 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 		private YeelightData _data;
 		
-		private List<List<Color>> _frameBuffer;
-		private ColorService _cs;
-		private int _frameDelay;
 		
 		IColorTargetData IColorTarget.Data {
 			get => _data;
@@ -36,12 +33,9 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			Tag = _data.Tag;
 			_yeeDevice = new Device(yd.IpAddress);
 			cs.ColorSendEvent += SetColor;
-			_cs = cs;
-
 		}
 		public async Task StartStream(CancellationToken ct) {
 			if (!Enable) return;
-			_frameBuffer = new List<List<Color>>();
 			Online = SystemUtil.IsOnline(IpAddress);
 			if (!Online) return;
 			Streaming = await _yeeDevice.Connect();
@@ -51,19 +45,13 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			if (!Streaming || !Online || !Enable) {
 				return;
 			}
-			await FlashColor(Color.FromArgb(0, 0, 0));
+			await FlashColor(Color.FromArgb(0, 0, 0)).ConfigureAwait(false);
 			_yeeDevice.Disconnect();
 			Streaming = false;
 		}
 
 		public void SetColor(List<Color> colors, List<Color> sectors, int arg3, bool force=false) {
 			if (!Streaming || !Enable) return;
-			if (_frameDelay > 0) {
-				_frameBuffer.Add(sectors);
-				if (_frameBuffer.Count < _frameDelay) return; // Just buffer till we reach our count
-				sectors = _frameBuffer[0];
-				_frameBuffer.RemoveAt(0);	
-			}
 			
 			if (!force) {
 				if (!Streaming || _data.TargetSector == -1 || Testing || _data.TargetSector >= sectors.Count) {
@@ -72,12 +60,12 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			}
 
 			var col = sectors[_data.TargetSector];
-			_yeeDevice.SetRGBColor(col.R, col.G, col.B);
+			_yeeDevice.SetRGBColor(col.R, col.G, col.B).ConfigureAwait(false);
 			ColorService.Counter.Tick(Id);
 		}
 
 		public async Task FlashColor(Color col) {
-			await _yeeDevice.SetRGBColor(col.R, col.G, col.B);
+			await _yeeDevice.SetRGBColor(col.R, col.G, col.B).ConfigureAwait(false);
 		}
 
 
@@ -85,8 +73,6 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			_yeeDevice.Dispose();
 			_data = DataUtil.GetCollectionItem<YeelightData>("Dev_Yeelight", _data.Id);
 			_yeeDevice = new Device(_data.IpAddress);
-			_frameDelay = _data.FrameDelay;
-			_frameBuffer = new List<List<Color>>();
 			Brightness = _data.Brightness;
 			Enable = _data.Enable;
 			return Task.CompletedTask;

@@ -31,8 +31,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
         private int _offset;
         private int _len;
         
-        private List<List<Color>> _frameBuffer;
-        private int _frameDelay;
         
         IColorTargetData IColorTarget.Data {
             get => Data;
@@ -58,12 +56,11 @@ namespace Glimmr.Models.ColorTarget.Wled {
             if (Streaming) return;
             if (!Enable) return;
             Online = true;
-            _frameBuffer = new List<List<Color>>();
             Log.Debug($"WLED: Starting stream at {IpAddress}...");
             _ep = IpUtil.Parse(IpAddress, port);
             Streaming = true;
-            FlashColor(Color.Black).ConfigureAwait(false);
-            UpdateLightState(Streaming).ConfigureAwait(false);
+            await FlashColor(Color.Black).ConfigureAwait(false);
+            await UpdateLightState(Streaming).ConfigureAwait(false);
             Log.Debug("WLED: Stream started.");
         }
 
@@ -80,7 +77,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             
             try {
                 if (_udpClient != null) {
-                    await _udpClient.SendAsync(packet.ToArray(), packet.Count, _ep);    
+                    await _udpClient.SendAsync(packet.ToArray(), packet.Count, _ep).ConfigureAwait(false);    
                 }
                 
             } catch (Exception e) {
@@ -104,7 +101,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             
             try {
                 if (_udpClient != null) {
-                    _udpClient.SendAsync(packet.ToArray(), packet.Count, _ep).ConfigureAwait(false);    
+                    await _udpClient.SendAsync(packet.ToArray(), packet.Count, _ep).ConfigureAwait(false);    
                 }
                 
             } catch (Exception e) {
@@ -112,7 +109,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
             }
         
             Streaming = false;
-            await Task.FromResult(true);
             Log.Debug("WLED: Stream stopped.");
         }
 
@@ -134,13 +130,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
                 }
             }
 
-            if (_frameDelay > 0) {
-                _frameBuffer.Add(colors);
-                if (_frameBuffer.Count < _frameDelay) return; // Just buffer till we reach our count
-                colors = _frameBuffer[0];
-                _frameBuffer.RemoveAt(0);	
-            }
-
             var packet = new Byte[2 + colors.Count * 3];
             var timeByte = 255;
             packet[0] = ByteUtils.IntByte(2);
@@ -159,7 +148,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             }
 
             try {
-                _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep);
+                _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep).ConfigureAwait(false);
                 ColorService.Counter.Tick(Id);
             } catch (Exception e) {
                 Log.Debug("Exception: " + e.Message);        
@@ -217,8 +206,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
                 Log.Debug($"Nothing to update for brightness {oldBrightness} {Brightness}");
             }
             _len = Data.LedCount;
-            _frameDelay = Data.FrameDelay;
-            _frameBuffer = new List<List<Color>>();
             Online = true;
             return Task.CompletedTask;
         }

@@ -3,7 +3,9 @@ using System.ComponentModel;
 using Glimmr.Models.Util;
 using LifxNetPlus;
 using LiteDB;
+using Native;
 using Newtonsoft.Json;
+using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Lifx {
 	public class LifxData : IColorTargetData {
@@ -37,6 +39,13 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int MultiZoneCount { get; set; }
 		
+		[DefaultValue(82)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int LedCount {
+			get => MultiZoneCount;
+			set => MultiZoneCount = value;
+		}
+		
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int ProductId { get; set; }
@@ -55,7 +64,6 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			}
 			Name ??= Tag;
 			if (Id != null && Id.Length > 4) Name = "Lifx - " + Id.Substring(0, 4);
-			SetKeyProperties();
 		}
 
 		public LifxData(LightBulb b) {
@@ -70,27 +78,11 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			MacAddressString = b.MacAddressName;
 			Id = MacAddressString;
 			if (Id != null) Name = "Lifx - " + Id.Substring(0, 4);
-			SetKeyProperties();
 		}
 
 		public string LastSeen { get; set; }
 
-		private void SetKeyProperties() {
-			if (HasMultiZone) {
-				KeyProperties = new SettingsProperty[]{
-					new("ledmap","ledmap",""),
-					new("Offset", "number", "Offset"),
-					new("Reverse Direction", "check", "ReverseStrip"),
-					new("FrameDelay", "text", "Frame Delay")
-				};
-			} else {
-				KeyProperties = new SettingsProperty[] {
-					new("TargetSector", "sectormap", "Target Sector"),
-					new("FrameDelay", "text", "Frame Delay")
-				};
-			}
-		}
-
+		
 		public void UpdateFromDiscovered(IColorTargetData data) {
 			var ld = (LifxData) data;
 			IpAddress = data.IpAddress;
@@ -101,12 +93,32 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			IpAddress = ld.IpAddress;
 			MacAddress = ld.MacAddress;
 			DeviceTag = ld.DeviceTag;
-			SetKeyProperties();
 		}
 
-		public SettingsProperty[] KeyProperties { get; set; }
+		public SettingsProperty[] KeyProperties {
+			get => Kps();
+			set => _keyProperties = value;
+		}
 
-		
+		private SettingsProperty[] _keyProperties;
+
+		private SettingsProperty[] Kps() {
+			if (HasMultiZone) {
+				return new SettingsProperty[]{
+					new("ledmap","ledmap",""),
+					new("Offset", "number", "Offset"),
+					new("Reverse Direction", "check", "ReverseStrip"),
+					new("FrameDelay", "text", "Frame Delay")
+				};
+			}
+
+			return new SettingsProperty[] {
+				new("TargetSector", "sectormap", "Target Sector"),
+				new("FrameDelay", "text", "Frame Delay")
+			};
+		}
+
+
 		public string Name { get; set; }
 		public string Id { get; set; }
 		public string Tag { get; set; }

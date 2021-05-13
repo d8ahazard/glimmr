@@ -30,8 +30,6 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		[DataMember] [JsonProperty] public DreamScreenData ScreenData { get; set; }
 		
 		private readonly DreamScreenClient _client;
-		private List<List<Color>> _frameBuffer;
-		private int _frameDelay;
 		private readonly DreamDevice _dev;
 
 		public DreamScreenDevice(DreamScreenData screenData, ColorService colorService) {
@@ -45,7 +43,6 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			Tag = screenData.Tag;
 			Enable = screenData.Enable;
 			DeviceTag = screenData.DeviceTag;
-			_frameDelay = screenData.FrameDelay;
 			if (string.IsNullOrEmpty(IpAddress)) IpAddress = Id;
 			var myIp = IPAddress.Parse(IpAddress);
 			_dev = new DreamDevice(Tag) {IpAddress = myIp, DeviceGroup = screenData.GroupNumber};
@@ -55,7 +52,6 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			if (!Enable) return;
 			Online = SystemUtil.IsOnline(IpAddress);
 			if (!Online) return;
-			_frameBuffer = new List<List<Color>>();
 			await _client.SetMode(_dev, DeviceMode.Video);
 		}
 		
@@ -70,14 +66,6 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 
 			if (sectors.Count != 12) {
 				sectors = ColorUtil.TruncateColors(sectors);
-				
-			}
-			
-			if (_frameDelay > 0) {
-				_frameBuffer.Add(sectors);
-				if (_frameBuffer.Count < _frameDelay) return; // Just buffer till we reach our count
-				sectors = _frameBuffer[0];
-				_frameBuffer.RemoveAt(0);	
 			}
 			
 			await _client.SendColors(_dev, sectors).ConfigureAwait(false);
@@ -91,7 +79,6 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		public Task ReloadData() {
 			ScreenData = DataUtil.GetDevice(Id);
 			Online = SystemUtil.IsOnline(IpAddress);
-			_frameDelay = ScreenData.FrameDelay;
 			Enable = ScreenData.Enable;
 			
 			return Task.CompletedTask;

@@ -1039,7 +1039,11 @@ function loadSettings() {
                 hourval++;
             }
         }
-
+        let ampm = "AM";
+        if (updateTime > 12) {
+            updateTime -= 12;
+            ampm = "PM";
+        }
         timeText.innerHTML = "Updates will be installed at "+updateTime.toString()+":00"+ampm+" every day when enabled.";
     }
     

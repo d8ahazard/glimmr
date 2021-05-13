@@ -37,9 +37,6 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
         private readonly LifxClient _client;
         
-        private List<List<Color>> _frameBuffer;
-        private int _frameDelay;
-
         public LifxDevice(LifxData d, ColorService colorService) : base(colorService) {
             DataUtil.GetItem<int>("captureMode");
             Data = d ?? throw new ArgumentException("Invalid Data");
@@ -60,23 +57,20 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
         public async Task StartStream(CancellationToken ct) {
             if (!Enable) return;
-            Online = SystemUtil.IsOnline(IpAddress);
-            if (!Online) return;
             Log.Debug("Lifx: Starting stream.");
             var col = new LifxColor(0, 0, 0);
             //var col = new LifxColor {R = 0, B = 0, G = 0};
-            _frameBuffer = new List<List<Color>>();
+            _client.SetLightPowerAsync(B, true);
+            _client.SetColorAsync(B, col, 2700);
+            Log.Debug($"Lifx: Streaming is active, {_hasMulti} {_multizoneCount}");
             Streaming = true;
-            await _client.SetLightPowerAsync(B, true).ConfigureAwait(false);
-            await _client.SetColorAsync(B, col, 2700).ConfigureAwait(false);
-            Log.Debug("Lifx: Streaming is active...");
-            Streaming = true;
+            await Task.FromResult(Streaming);
         }
 
         public async Task FlashColor(Color color) {
             var nC = new LifxColor(color);
             //var nC = new LifxColor {R = color.R, B = color.B, G = color.G};
-            await _client.SetColorAsync(B, nC);
+            await _client.SetColorAsync(B, nC).ConfigureAwait(false);
         }
 
         public bool IsEnabled() {
@@ -88,8 +82,9 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             if (!Enable || !Online) return;
             Streaming = false;
             if (_client == null) throw new ArgumentException("Invalid lifx client.");
-            await FlashColor(Color.FromArgb(0, 0, 0));
-            await _client.SetLightPowerAsync(B, Data.Power).ConfigureAwait(false);
+            FlashColor(Color.FromArgb(0, 0, 0)).ConfigureAwait(false);
+            _client.SetLightPowerAsync(B, Data.Power).ConfigureAwait(false);
+            await Task.FromResult(true);
             Log.Debug("Lifx: Stream stopped.");
         }
 
@@ -97,6 +92,11 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             var newData = DataUtil.GetCollectionItem<LifxData>("Dev_Lifx", Id);
             DataUtil.GetItem<int>("captureMode");
             Data = newData;
+            _hasMulti = Data.HasMultiZone;
+            _offset = Data.Offset;
+            _reverseStrip = Data.ReverseStrip;
+            if (_hasMulti) _multizoneCount = Data.MultiZoneCount;
+
             IpAddress = Data.IpAddress;
             var targetSector = newData.TargetSector;
             _targetSector = targetSector - 1;
@@ -104,12 +104,10 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             Brightness = newData.MaxBrightness;
             if (oldBrightness != Brightness) {
                 var bri = Brightness / 100 * 255;
-                _client.SetBrightnessAsync(B, (ushort) bri);
+                _client.SetBrightnessAsync(B, (ushort) bri).ConfigureAwait(false);
             }
             Id = newData.Id;
             Enable = Data.Enable;
-            _frameDelay = Data.FrameDelay;
-            _frameBuffer = new List<List<Color>>();
             return Task.CompletedTask;
         }
 
@@ -135,15 +133,10 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
             var output = ColorUtil.TruncateColors(colors, _offset, _multizoneCount);
             if (_reverseStrip) output.Reverse();
-            if (_frameDelay > 0) {
-                _frameBuffer.Add(output);
-                if (_frameBuffer.Count < _frameDelay) return; // Just buffer till we reach our count
-                output = _frameBuffer[0];
-                _frameBuffer.RemoveAt(0);
-            }
+            
 
             var cols = output.Select(col => new LifxColor(col)).ToList();
-            _client.SetExtendedColorZonesAsync(B, cols);
+            _client.SetExtendedColorZonesAsync(B, cols).ConfigureAwait(false);
         }
 
         private void SetColorSingle(List<Color> list) {
@@ -155,19 +148,12 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
             if (_targetSector >= sectors.Count) return;
             
-            if (_frameDelay > 0) {
-                _frameBuffer.Add(sectors);
-                if (_frameBuffer.Count < _frameDelay) return; // Just buffer till we reach our count
-                sectors = _frameBuffer[0];
-                _frameBuffer.RemoveAt(0);	
-            }
-            
             var input = sectors[_targetSector];
             
             var nC = new LifxColor(input);
             //var nC = new LifxColor {R = input.R, B = input.B, G = input.G};
 
-            _client.SetColorAsync(B, nC);
+            _client.SetColorAsync(B, nC).ConfigureAwait(false);
             ColorService.Counter.Tick(Id);
         }
         

@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -74,8 +75,11 @@ namespace Glimmr.Models.ColorSource.Video {
 		private readonly ControlService _controlService;
 		private CancellationToken _cancellationToken;
 
+		private Stopwatch _frameWatch;
+
 
 		public VideoStream(ColorService cs, ControlService controlService) {
+			_frameWatch = new Stopwatch();
 			_colorService = cs;
 			_controlService = controlService;
 			_controlService.RefreshSystemEvent += RefreshSystem;
@@ -131,6 +135,14 @@ namespace Glimmr.Models.ColorSource.Video {
 			Log.Debug("Starting video stream...");
 			return Task.Run(async () => {
 				while (!ct.IsCancellationRequested) {
+					// if (!_frameWatch.IsRunning) _frameWatch.Start();
+					// if (_frameWatch.Elapsed < TimeSpan.FromMilliseconds(16.6666666)) {
+					// 	Log.Debug("Frame watch: " + _frameWatch.ElapsedMilliseconds);
+					// 	return;
+					// } else {
+					// 	Log.Debug("Resetting watch...");
+					// }
+					// _frameWatch.Restart();
 					// Save cpu/memory by not doing anything if not sending...
 					if (!_enable) {
 						await Task.Delay(1, ct);
@@ -154,7 +166,8 @@ namespace Glimmr.Models.ColorSource.Video {
 						//Log.Debug("NO COLUMNS");
 						continue;
 					}
-
+					
+					
 					var warped = ProcessFrame(frame);
 					if (warped == null) {
 						SourceActive = false;

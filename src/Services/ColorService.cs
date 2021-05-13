@@ -56,6 +56,7 @@ namespace Glimmr.Services {
 		private CancellationToken _stopToken;
 		private bool _streamStarted;
 		private Stopwatch _watch;
+		private Stopwatch _frameWatch;
 		
 		public event Action<List<Color>, List<Color>, int, bool> ColorSendEvent = delegate {};
 
@@ -79,6 +80,7 @@ namespace Glimmr.Services {
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			_stopToken = stoppingToken;
 			_watch = new Stopwatch();
+			_frameWatch = new Stopwatch();
 			_streamTokenSource = new CancellationTokenSource();
 			Log.Information("Starting colorService loop...");
 			LoadData();
@@ -580,7 +582,17 @@ namespace Glimmr.Services {
 				return;
 			}
 
-			ColorSendEvent(colors, sectors, fadeTime, force);
+			if (!_frameWatch.IsRunning) {
+				_frameWatch.Start();
+			}
+
+			if (_frameWatch.Elapsed >= TimeSpan.FromMilliseconds(16.66666)) {
+				_frameWatch.Restart();
+				ColorSendEvent(colors, sectors, fadeTime, force);	
+			}
+			
+
+			
 		}
 
 
@@ -594,7 +606,9 @@ namespace Glimmr.Services {
 
 		private async Task StopServices() {
 			Log.Information("Stopping services...");
-			await StopStream();
+			await StopStream().ConfigureAwait(false);
+			_watch.Stop();
+			_frameWatch.Stop();
 			_streamTokenSource?.Cancel();
 			_avStream.ToggleStream();
 			_audioStream.ToggleStream();
