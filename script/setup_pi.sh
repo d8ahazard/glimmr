@@ -1,5 +1,4 @@
 #!/bin/bash
-BRANCH=${1:master}
 # Add user if not exist
 id -u glimmrtv &>/dev/null || useradd -m glimmrtv
 usermod -aG sudo glimmrtv 
@@ -71,7 +70,7 @@ if [ ! -d "/home/glimmrtv/glimmr" ]
  then
  # Clone glimmr
   echo "Cloning glimmr"
-  git clone -b $BRANCH https://github.com/d8ahazard/glimmr /home/glimmrtv/glimmr
+  git clone -b dev https://github.com/d8ahazard/glimmr /home/glimmrtv/glimmr
   # Install update script to init.d   
   sudo cp /home/glimmrtv/glimmr/script/update_pi.sh /etc/init.d/update_pi.sh
   sudo chmod 777 /etc/init.d/update_pi.sh
