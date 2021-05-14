@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
@@ -126,7 +127,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
 
 		public Task ReloadData() {
-			var newData = DataUtil.GetDevice<NanoleafData>(Id);
+			var newData = DataUtil.GetDevice(Id);
 			SetData(newData);
 			return Task.CompletedTask;
 		}

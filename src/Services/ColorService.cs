@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -176,7 +177,7 @@ namespace Glimmr.Services {
 		private async Task FlashSector(object o, DynamicEventArgs dynamicEventArgs) {
 			var sector = dynamicEventArgs.P1;
 			var col = Color.FromArgb(255, 255, 0, 0);
-			var colors = ColorUtil.AddLedColor(new Color[_systemData.LedCount],sector, col,_systemData);
+			Color[] colors = ColorUtil.AddLedColor(new Color[_systemData.LedCount],sector, col,_systemData);
 			var sectorCount = ((_systemData.HSectors + _systemData.VSectors) * 2) - 4;
 			var sectors = ColorUtil.EmptyColors(new Color[sectorCount]);
 			if (sector < sectorCount) sectors[sector] = col;
@@ -196,7 +197,7 @@ namespace Glimmr.Services {
 			
 			foreach (var _strip in devices) {
 				if (_strip != null) {
-					await _strip.SetColor(colors.ToList(), sectors.ToList(), 0);
+					_strip.SetColor(colors.ToList(), sectors.ToList(), 0);
 				}
 			}
 
@@ -376,7 +377,7 @@ namespace Glimmr.Services {
 				Log.Debug($"Checking {dev.Data.Id} against {id}");
 				if (dev.Data.Id == id) {
 					Log.Debug("Reloading device: " + id);
-					await dev.ReloadData();
+					await dev.ReloadData().ConfigureAwait(false);
 					return;
 				}
 			}
@@ -518,7 +519,7 @@ namespace Glimmr.Services {
 
 			if (_frameWatch.Elapsed >= _frameSpan) {
 				_frameWatch.Restart();
-				ColorSendEvent(colors, sectors, fadeTime, force);	
+				ColorSendEvent(colors, sectors, fadeTime, force);
 			}
 			
 

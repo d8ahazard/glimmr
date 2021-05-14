@@ -48,6 +48,10 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
             var name = e.ServiceInstanceName.ToString();
             var nData = new NanoleafData {IpAddress = string.Empty};
             if (!name.Contains("nanoleafapi", StringComparison.InvariantCulture)) return;
+            var devName = name.Split(".")[0];
+            devName = devName.Substring(Math.Max(0, devName.Length - 3));
+            devName = $"Canvas {devName}";
+            nData.Name = devName;
             foreach (var msg in e.Message.AdditionalRecords) {
                 try {
                     switch (msg.Type) {
@@ -55,7 +59,6 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
                             var aString = msg.ToString();
                             var aValues = aString.Split(" ");
                             nData.IpAddress = aValues[4];
-                            nData.Name = aValues[0].Split(".")[0];
                             break;
                         case DnsType.TXT:
                             var txtString = msg.ToString();
@@ -69,8 +72,6 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
                             var mString = msg.ToString();
                             var mValues = mString.Split(" ");
                             nData.IpV6Address = mValues[4];
-                            // Remove rest of FQDN
-                            nData.Name = mValues[0].Split(".")[0];
                             break;
                         case DnsType.SRV:
                             var sString = msg.ToString();
@@ -89,18 +90,21 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
                 nData.IpAddress = nData.Hostname;
             }
 
-            NanoleafData ex = DataUtil.GetDevice(nData.Id);
-            if (!string.IsNullOrEmpty(ex.Token)) {
-                nData.Token = ex.Token;
-                try {
-                    var nd = new NanoleafDevice(nData, _controlService.ColorService);
-                    var layout = nd.GetLayout().Result;
-                    nd.Dispose();
-                    nData.Layout = layout;
-                } catch (Exception f) {
-                    Log.Debug("Exception: " + e.Message);
+            NanoleafData ex = DataUtil.GetDevice<NanoleafData>(nData.Id);
+            if (ex != null) {
+                if (!string.IsNullOrEmpty(ex.Token)) {
+                    nData.Token = ex.Token;
+                    try {
+                        var nd = new NanoleafDevice(nData, _controlService.ColorService);
+                        var layout = nd.GetLayout().Result;
+                        nd.Dispose();
+                        nData.Layout = layout;
+                    } catch (Exception f) {
+                        Log.Debug("Exception: " + f.Message);
+                    }
                 }
             }
+
             _controlService.AddDevice(nData).ConfigureAwait(true);
 
         }

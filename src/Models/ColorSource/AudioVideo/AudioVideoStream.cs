@@ -70,6 +70,10 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 
 		public void ToggleStream(bool enable = false) {
 			_enable = enable;
+			if (!enable) {
+				return;
+			}
+
 			_vs.ToggleStream(true);
 			_vs.SendColors = false;
 			_as.ToggleStream(true);

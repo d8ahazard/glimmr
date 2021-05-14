@@ -119,6 +119,7 @@ namespace Glimmr.Models.ColorSource.Video {
 				return;
 			}
 			_vc.Start(ct);
+			SendColors = true;
 			StreamSplitter = new Splitter(_systemData, _controlService);
 			Log.Debug("Stream capture initialized.");
 		}

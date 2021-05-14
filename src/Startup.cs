@@ -22,6 +22,10 @@ namespace Glimmr
         {
             services.AddControllersWithViews();
             services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.PropertyNamingPolicy = null;
+                })
                 .AddNewtonsoftJson();
         }
 

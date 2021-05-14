@@ -446,17 +446,19 @@ function setSocketListeners() {
         console.log("frame Stuff: ", stuff);       
     });
 
-    websocket.on('device', function(stuff) {
+    websocket.on('device', function(dData) {
+        dData = dData.replace(/\\n/g, '');
+        let stuff = JSON.parse(dData);
         stuff["Id"] = stuff["id"];
-        console.log("Device data: ", stuff);
+        console.log("Device data retrieved: ", stuff);
         for(let i=0; i<data.devices.length; i++) {
            let dev = data.devices[i];
-           if (dev["Id"] === stuff["id"]) {
+           if (dev["Id"] === stuff["Id"]) {
                console.log("Device updated: ",stuff);
                data.devices[i] = mergeDeviceData(dev,stuff);
            }
            
-           if (isValid(deviceData) && deviceData["Id"] === stuff["id"]) {
+           if (isValid(deviceData) && deviceData["Id"] === stuff["Id"]) {
                console.log("Updating selected deviceData:",stuff);               
                deviceData = mergeDeviceData(deviceData,stuff);
                if (settingsShown) createDeviceSettings();
@@ -481,9 +483,10 @@ function setSocketListeners() {
 function mergeDeviceData(existing, newDev) {
     let clone = existing;
     for (const [key, value] of Object.entries(existing)) {
+        let titleKey = key[0].toUpperCase() + key.substring(1);
         for (const [nKey, nValue] of Object.entries(newDev)) {
             if (key.toLowerCase() === nKey.toLowerCase()) {
-                clone[key] = nValue;        
+                clone[titleKey] = nValue;        
             }
         }
     }
@@ -828,8 +831,9 @@ function updateDeviceSector(sector, target) {
     let dev = deviceData;
     if (dev["Tag"] === "Nanoleaf") {
         console.log("DEV: ", dev);
-        let layout = dev["Layout"];
+        let layout = dev["Layout"];        
         let positions = layout["PositionData"];
+        
         
         for(let i=0; i < positions.length; i++) {
             if (positions[i]["PanelId"] === nanoTarget) {
@@ -2466,8 +2470,9 @@ function drawNanoShapes(panel) {
     }
     let x0 = (width - maxX - minX) / 2;
     let y0 = (height - maxY - minY) / 2;
+    
     console.log("WTF: ", x0, y0);
-    //x0 /= scaleXY;
+    
     // Group for the shapes
     let shapeGroup = new Konva.Group({
         rotation: 0,
@@ -2480,13 +2485,12 @@ function drawNanoShapes(panel) {
         }
     });
 
-    cLayer.add(shapeGroup);
-    cLayer.draw();
-
+    
     
     for (let i=0; i < positions.length; i++) {
         let data = positions[i];
         let shape = data['ShapeType'];
+        sideLength = data["SideLength"];
         let x = data.X;
         let y = data.Y;
         if (mirrorX) x *= -1;
@@ -2512,6 +2516,7 @@ function drawNanoShapes(panel) {
             fontFamily: 'Calibri'
         });
         let o = data['O'];
+        // Draw each individual shape
         switch (shape) {
             case 0:
             case 1:
@@ -2547,9 +2552,10 @@ function drawNanoShapes(panel) {
                     stroke: 'black',
                     strokeWidth: 5,
                     closed: true,
-                    id: data["panelId"]
+                    id: data["PanelId"]
                 });
                 poly.on('click', function(){
+                    console.log("POLY CLICK");
                     setNanoMap(data['PanelId'], data['TargetSector']);
                 });
                 poly.on('tap', function(){
@@ -2573,11 +2579,13 @@ function drawNanoShapes(panel) {
                     strokeWidth: 4
                 });
                 rect1.on('click', function(){
+                    console.log("RECT CLICK:", data);
                     setNanoMap(data['PanelId'], data['TargetSector']);
                 });
                 rect1.on('tap', function(){
                     setNanoMap(data['PanelId'], data['TargetSector']);
                 });
+                console.log("Adding shape: ", rect1);
                 shapeGroup.add(rect1);
                 break;
             case 5:
@@ -2590,7 +2598,9 @@ function drawNanoShapes(panel) {
         shapeGroup.add(sText);
         shapeGroup.add(sText2);
     }
-
+    // Add to our canvas layer and draw
+    cLayer.add(shapeGroup);
+    
     let container = document.getElementById('mapCol');
 
     // now we need to fit stage into parent
@@ -2602,9 +2612,11 @@ function drawNanoShapes(panel) {
     stage.height(height * scale);
     stage.scale({ x: scale, y: scale });
     //shapeGroup.scale = scale;
+    console.log("Drawing stage: ", stage);
     stage.draw();
     
     cLayer.draw();
+    //console.log("Clayer drawn: ", cLayer);
     cLayer.zIndex(0);    
 }
 
@@ -2625,7 +2637,8 @@ function setNanoMap(id, current) {
     }
 
     if (current !== -1) {
-        document.querySelector('.nanoRegion[data-region="'+current+'"]').classList.add("checked");
+        console.log("Looking for " + current);
+        document.querySelector('.sector[data-sector="'+current+'"]').classList.add("checked");
     }
 
 }

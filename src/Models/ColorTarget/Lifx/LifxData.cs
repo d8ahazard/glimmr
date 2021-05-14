@@ -107,7 +107,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				return new SettingsProperty[]{
 					new("ledmap","ledmap",""),
 					new("Offset", "number", "Offset"),
-					new("Reverse Direction", "check", "ReverseStrip"),
+					new("ReverseStrip", "check", "Reverse Direction"),
 					new("FrameDelay", "text", "Frame Delay")
 				};
 			}

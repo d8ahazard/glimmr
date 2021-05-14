@@ -35,11 +35,8 @@ namespace Glimmr.Models.ColorTarget.Lifx {
         }
 
         private async Task<LifxData> GetBulbInfo(LightBulb b) {
-            Log.Debug($"Getting state for {b.HostName}...");
             var state = await _client.GetLightStateAsync(b);
-            Log.Debug($"State retrieved for {b.HostName}: " + JsonConvert.SerializeObject(state));
             var ver = await _client.GetDeviceVersionAsync(b);
-            Log.Debug($"Lifx Version got for {b.HostName}: " + JsonConvert.SerializeObject(ver));
             var hasMulti = false;
             var extended = false;
             var zoneCount = 0;
@@ -49,26 +46,19 @@ namespace Glimmr.Models.ColorTarget.Lifx {
                 tag = ver.Product == 38 ? "LifxBeam" : "LifxZ";
                 hasMulti = true;
                 if (ver.Product != 31) {
-                    Log.Debug("Checking firmware version...");
                     if (ver.Version >= 1532997580) {
                         extended = true;
                     }
-
-                    Log.Debug("FW VERSION: " + ver.Version);
                 }
 
                 if (extended) {
                     var zones = await _client.GetExtendedColorZonesAsync(b);
-                    Log.Debug("Zones: " + JsonConvert.SerializeObject(zones));
                     zoneCount = zones.ZonesCount;
                 } else {
                     // Original device only supports eight zones?
                     var zones = await _client.GetColorZonesAsync(b, 0, 8);
-                    Log.Debug("Zones: " + JsonConvert.SerializeObject(zones));
                     zoneCount = zones.Count;
                 }
-
-                Log.Debug("Zone count: " + zoneCount);
             }
 
             var d = new LifxData(b) {
@@ -85,10 +75,8 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             
             if (ver.Product == 55 || ver.Product == 101) {
                 tag = "LifxTile";
-                Log.Debug("This is a tile.");
                 try {
                     var tData = _client.GetDeviceChainAsync(b).Result;
-                    Log.Debug("Chain received.");
                     d.Layout = new TileLayout(tData);
                 } catch (Exception e) {
                     Log.Debug("Chain exception: " + e.Message);

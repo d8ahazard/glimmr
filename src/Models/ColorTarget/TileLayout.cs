@@ -2,15 +2,22 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using Glimmr.Enums;
 using LifxNetPlus;
 using Newtonsoft.Json;
 
 namespace Glimmr.Models.ColorTarget {
 	[Serializable]
         public class TileLayout {
+            [JsonProperty]
             public int NumPanels { get; set; }
+            [JsonProperty]
+
             public int SideLength { get; set; }
+            [JsonProperty]
+
             public TileData[] PositionData { get; set; }
+            
             public TileLayout() {
             }
             public TileLayout(global::Nanoleaf.Client.Models.Responses.Layout layout) {
@@ -59,12 +66,25 @@ namespace Glimmr.Models.ColorTarget {
             [DefaultValue(-1)]
             [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
             public int TargetSector { get; set; } = -1;
+            [JsonProperty]
+
             public int PanelId { get; set; }
+            [JsonProperty]
+
             public int X { get; set; }
+            [JsonProperty]
+
             public int Y { get; set; }
+            [JsonProperty]
+
             public int O { get; set; }
-            
+            [JsonProperty]
+
             public int ShapeType { get; set; }
+            [JsonProperty]
+
+            
+            public int SideLength { get; set; }
     
             public TileData() {}
             
@@ -73,6 +93,7 @@ namespace Glimmr.Models.ColorTarget {
                 Y = (int) t.UserY;
                 PanelId = index;
                 ShapeType = 2;
+                SetSideLength();
             }
             
             public TileData(global::Nanoleaf.Client.Models.Responses.PanelLayout layout) {
@@ -81,6 +102,30 @@ namespace Glimmr.Models.ColorTarget {
                 Y = layout.Y;
                 O = layout.O;
                 ShapeType = layout.ShapeType;
+                SetSideLength();
+            }
+
+            private void SetSideLength() {
+                switch ((ShapeType) ShapeType) {
+                    case Enums.ShapeType.Square:
+                    case Enums.ShapeType.ControlSquareMaster:
+                    case Enums.ShapeType.ControlSquarePassive:
+                        SideLength = (int) ShapeSize.Square;
+                        break;
+                    case Enums.ShapeType.Triangle:
+                        SideLength = (int) ShapeSize.Triangle;
+                        break;
+                    case Enums.ShapeType.HexagonShapes:
+                    case Enums.ShapeType.MiniTriangleShapes:
+                        SideLength = (int) ShapeSize.HexagonShapes;
+                        break;
+                    case Enums.ShapeType.TriangleShapes:
+                        SideLength = (int) ShapeSize.TriangleShapes;
+                        break;
+                    default:
+                        SideLength = 0;
+                        break;
+                }
             }
         }
 }

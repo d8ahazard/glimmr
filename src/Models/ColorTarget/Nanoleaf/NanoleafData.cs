@@ -62,6 +62,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
             // Grab the new leaf layout
             Layout.MergeLayout(existingLeaf.Layout);
             Tag = "Nanoleaf";
+            Name = data.Name;
             IpAddress = data.IpAddress;
         }
 
