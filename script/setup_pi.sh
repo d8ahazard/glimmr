@@ -94,7 +94,7 @@ fi
 
 # Build latest version
 echo "Building glimmr..."
-dotnet publish ../src/Glimmr.csproj /p:PublishProfile=LinuxARM -o ../bin/
+dotnet publish /home/glimmrtv/glimmr/src/Glimmr.csproj /p:PublishProfile=LinuxARM -o /home/glimmrtv/glimmr/bin/
 echo "DONE."
 # Copy necessary libraries
 echo "Copying libs..."
