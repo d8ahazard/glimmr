@@ -7,10 +7,11 @@ using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using DeviceMode = Glimmr.Enums.DeviceMode;
 using IPAddress = System.Net.IPAddress;
 
 namespace Glimmr.Models.ColorSource.DreamScreen {
-	public class DreamScreenStream : BackgroundService {
+	public class DreamScreenStream : BackgroundService, IColorSource {
 		private readonly ColorService _cs;
 		private readonly DreamScreenClient _client;
 		private IPAddress _targetDreamScreen;
@@ -19,10 +20,9 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 
 		public DreamScreenStream(ColorService colorService) {
 			_cs = colorService;
-			_cs.AddStream("dreamscreen", this);
+			_cs.AddStream(DeviceMode.DreamScreen, this);
 			_client = _cs.ControlService.GetAgent("DreamAgent");
 			_client.CommandReceived += ProcessCommand;
-			Refresh();
 		}
 
 		public void ToggleStream(bool enable) {
@@ -59,14 +59,15 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 			}
 		}
 
-		private void Refresh() {
-			var sd = DataUtil.GetSystemData();
-			var dsIp = sd.DsIp;
+		public void Refresh(SystemData systemData) {
+			var dsIp = systemData.DsIp;
 			
 			if (!string.IsNullOrEmpty(dsIp)) {
 				_targetDreamScreen = IPAddress.Parse(dsIp);
 			}
 		}
+
+		public bool SourceActive { get; set; }
 
 		protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
 			_client.ColorsReceived += UpdateColors;

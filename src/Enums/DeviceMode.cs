@@ -5,6 +5,7 @@
 		Audio = 2,
 		AudioVideo = 4,
 		Ambient = 3,
-		Streaming = 5
+		Streaming = 5,
+		DreamScreen = 6
 	}
 }

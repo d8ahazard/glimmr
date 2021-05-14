@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Enums;
 using Glimmr.Models;
+using Glimmr.Models.ColorSource;
 using Glimmr.Models.ColorSource.Ambient;
 using Glimmr.Models.ColorSource.Audio;
 using Glimmr.Models.ColorSource.AudioVideo;
@@ -28,18 +29,14 @@ namespace Glimmr.Services {
 	// Handles capturing and sending color data
 	public class ColorService : BackgroundService {
 		public ControlService ControlService { get; }
-		private AmbientStream _ambientStream;
-		private AudioStream _audioStream;
-		private VideoStream _videoStream;
-		private AudioVideoStream _avStream;
-		private DreamScreenStream _dreamStream;
-
+		public DeviceMode DeviceMode;
+		private Dictionary<DeviceMode, IColorSource> _streams;
+		
 		private bool _setAutoDisable;
 		private bool _autoDisabled;
 		private int _autoDisableDelay;
 		private CaptureMode _captureMode;
 		private const int DeviceGroup = 20;
-		public DeviceMode DeviceMode;
 		//private float _fps;
 		private SystemData _systemData;
 
@@ -57,12 +54,16 @@ namespace Glimmr.Services {
 		private bool _streamStarted;
 		private Stopwatch _watch;
 		private Stopwatch _frameWatch;
+		private TimeSpan _frameSpan;
 		
 		public event Action<List<Color>, List<Color>, int, bool> ColorSendEvent = delegate {};
 
 		public FrameCounter Counter;
 		
 		public ColorService(ControlService controlService) {
+			_frameSpan = TimeSpan.FromMilliseconds(1000f / 60);
+			_systemData = DataUtil.GetSystemData();
+			_streams = new Dictionary<DeviceMode, IColorSource>();
 			ControlService = controlService;
 			ControlService.ColorService = this;
 			ControlService.TriggerSendColorEvent += SendColors;
@@ -93,7 +94,7 @@ namespace Glimmr.Services {
 					await CheckAutoDisable();
 					if (_setAutoDisable) {
 						if(!_watch.IsRunning) _watch.Restart();
-						if (_watch.ElapsedMilliseconds >= _autoDisableDelay * 1000) {
+						if (_watch.ElapsedMilliseconds >= _autoDisableDelay * 1000f) {
 							_autoDisabled = true;
 							_setAutoDisable = false;
 							DataUtil.SetItem("AutoDisabled", _autoDisabled);
@@ -106,6 +107,8 @@ namespace Glimmr.Services {
 					} else {
 						_watch.Reset();
 					}
+
+					await Task.Delay(500, stoppingToken);
 				}
 			}, CancellationToken.None);
 		}
@@ -118,34 +121,14 @@ namespace Glimmr.Services {
 			await base.StopAsync(cancellationToken);
 		}
 
-		public void AddStream(string name, BackgroundService stream) {
-			switch (name) {
-				case "audio":
-					_audioStream = (AudioStream) stream;
-					break;
-				case "video":
-					_videoStream = (VideoStream) stream;
-					break;
-				case "av":
-					_avStream = (AudioVideoStream) stream;
-					break;
-				case "ambient":
-					_ambientStream = (AmbientStream) stream;
-					break;
-				case "dreamscreen":
-					_dreamStream = (DreamScreenStream) stream;
-					break;
-			}
+		public void AddStream(DeviceMode mode, BackgroundService stream) {
+			_streams[mode] = (IColorSource) stream;
+			
+			_streams[mode].Refresh(_systemData);
 		}
 
-		public BackgroundService GetStream(string name) {
-			switch (name) {
-				case "audio":
-					return _audioStream;
-				case "video":
-					return _videoStream;
-			}
-
+		public BackgroundService GetStream(DeviceMode name) {
+			if (_streams.ContainsKey(name)) return (BackgroundService)_streams[name];
 			return null;
 		}
 
@@ -244,8 +227,8 @@ namespace Glimmr.Services {
 		private async Task CheckAutoDisable() { 
 			var sourceActive = false;
 			// If we're in video or audio mode, check the source is active...
-			if (DeviceMode == DeviceMode.Video && _videoStream != null) {
-				sourceActive = _videoStream.SourceActive;
+			if (DeviceMode == DeviceMode.Video && _streams[DeviceMode.Video] != null) {
+				sourceActive = _streams[DeviceMode.Video].SourceActive;
 			} else {
 				//todo: Add proper source checks for other media. 
 				sourceActive = true;
@@ -450,28 +433,11 @@ namespace Glimmr.Services {
 
 		
 		private void ReloadSystemData() {
-			_videoStream?.Refresh();
-			_audioStream?.Refresh();
 			var sd = _systemData;
 			_systemData = DataUtil.GetSystemData();
-
-			var refreshAmbient = false;
-			if (sd.AmbientColor != _systemData.AmbientColor) {
-				refreshAmbient = true;
+			foreach (var stream in _streams.Values) {
+				stream.Refresh(_systemData);
 			}
-
-			if (sd.AmbientMode != _systemData.AmbientMode) {
-				refreshAmbient = true;
-			}
-
-			if (sd.AmbientShow != _systemData.AmbientShow) {
-				refreshAmbient = true;
-			}
-
-			if (refreshAmbient) {
-				_ambientStream?.Refresh();
-			}
-
 			_autoDisableDelay = sd.AutoDisableDelay;
 			if (_autoDisableDelay < 1) {
 				_autoDisableDelay = 10;
@@ -490,45 +456,9 @@ namespace Glimmr.Services {
 			}
 			
 			if (_streamStarted && newMode == 0) await StopStream();
-			
-			switch (newMode) {
-				case DeviceMode.Video:
-					_audioStream.ToggleStream();
-					_ambientStream.ToggleStream();
-					_avStream.ToggleStream();
-					_videoStream.ToggleStream(true);
-					break;
-				case DeviceMode.Audio: // Audio
-					_ambientStream.ToggleStream();
-					_avStream.ToggleStream();
-					_videoStream.ToggleStream();
-					_audioStream.ToggleStream(true);
-					break;
-				case DeviceMode.Ambient: // Ambient
-					_audioStream.ToggleStream();
-					_avStream.ToggleStream();
-					_videoStream.ToggleStream();
-					_ambientStream.ToggleStream(true);
-					break;
-				case DeviceMode.AudioVideo: // A/V mode :D
-					_ambientStream.ToggleStream(false);
-					_audioStream.ToggleStream(true);
-					_audioStream.SendColors = false;
-					_videoStream.ToggleStream(true);
-					_videoStream.SendColors = false;
-					_avStream.ToggleStream(true);
-					break;
-				case DeviceMode.Streaming:
-					_audioStream.ToggleStream();
-					_avStream.ToggleStream();
-					_videoStream.ToggleStream();
-					_ambientStream.ToggleStream();
-					if (_captureMode == CaptureMode.DreamScreen) {
-						Log.Information("Starting dreamStream subscription...");
-						_dreamStream?.ToggleStream(true);
-					}
-					// Nothing to do, this tells the app to get data from DreamService
-					break;
+
+			foreach (var stream in _streams) {
+				stream.Value.ToggleStream(stream.Key == newMode);
 			}
 			
 			if (newMode != 0 && !_streamStarted) await StartStream();
@@ -586,7 +516,7 @@ namespace Glimmr.Services {
 				_frameWatch.Start();
 			}
 
-			if (_frameWatch.Elapsed >= TimeSpan.FromMilliseconds(16.66666)) {
+			if (_frameWatch.Elapsed >= _frameSpan) {
 				_frameWatch.Restart();
 				ColorSendEvent(colors, sectors, fadeTime, force);	
 			}
@@ -610,10 +540,9 @@ namespace Glimmr.Services {
 			_watch.Stop();
 			_frameWatch.Stop();
 			_streamTokenSource?.Cancel();
-			_avStream.ToggleStream();
-			_audioStream.ToggleStream();
-			_videoStream.ToggleStream();
-			_ambientStream.ToggleStream();
+			foreach (var stream in _streams) {
+				stream.Value.ToggleStream(false);
+			}
 			CancelSource(_sendTokenSource, true);
 			foreach (var s in _sDevices) {
 				try {

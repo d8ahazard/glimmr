@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using LifxNetPlus;
-using Microsoft.VisualBasic.CompilerServices;
 using Serilog;
 using Color = System.Drawing.Color;
 
@@ -36,8 +35,10 @@ namespace Glimmr.Models.ColorTarget.Lifx {
         public string Tag { get; set; }
 
         private readonly LifxClient _client;
+        private TimeSpan _frameSpan;
         
         public LifxDevice(LifxData d, ColorService colorService) : base(colorService) {
+            _frameSpan = TimeSpan.FromMilliseconds(1000f/60);
             DataUtil.GetItem<int>("captureMode");
             Data = d ?? throw new ArgumentException("Invalid Data");
             _hasMulti = d.HasMultiZone;
@@ -89,7 +90,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
         }
 
         public Task ReloadData() {
-            var newData = DataUtil.GetCollectionItem<LifxData>("Dev_Lifx", Id);
+            var newData = DataUtil.GetDevice<LifxData>(Id);
             DataUtil.GetItem<int>("captureMode");
             Data = newData;
             _hasMulti = Data.HasMultiZone;

@@ -30,7 +30,7 @@ namespace Glimmr.Models.Util {
             
             if (File.Exists("./store.db")) {
                 Log.Information($"Migrating existing datastore to {userPath}.");
-                File.Copy("./store.db",userPath);
+                if (!File.Exists(userPath)) File.Copy("./store.db",userPath,false);
                 File.Delete("./store.db");
             }
             

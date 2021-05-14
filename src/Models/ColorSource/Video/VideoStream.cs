@@ -26,7 +26,7 @@ using Serilog;
 #endregion
 
 namespace Glimmr.Models.ColorSource.Video {
-	public sealed class VideoStream : BackgroundService {
+	public sealed class VideoStream : BackgroundService, IColorSource {
 		
 		public List<Color> Colors { get; private set; }
 		public List<Color> Sectors { get; private set; }
@@ -70,7 +70,6 @@ namespace Glimmr.Models.ColorSource.Video {
 		private bool _doSave;
 		
 		// Is content detected?
-		public bool SourceActive;
 		private readonly ColorService _colorService;
 		private readonly ControlService _controlService;
 		private CancellationToken _cancellationToken;
@@ -78,12 +77,12 @@ namespace Glimmr.Models.ColorSource.Video {
 		private Stopwatch _frameWatch;
 
 
-		public VideoStream(ColorService cs, ControlService controlService) {
+		public VideoStream(ControlService controlService) {
 			_frameWatch = new Stopwatch();
-			_colorService = cs;
+			_colorService = controlService.ColorService;
 			_controlService = controlService;
 			_controlService.RefreshSystemEvent += RefreshSystem;
-			_colorService.AddStream("video", this);
+			_colorService.AddStream(DeviceMode.Video, this);
 		}
 
 		private void RefreshSystem() {
@@ -135,15 +134,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			Log.Debug("Starting video stream...");
 			return Task.Run(async () => {
 				while (!ct.IsCancellationRequested) {
-					// if (!_frameWatch.IsRunning) _frameWatch.Start();
-					// if (_frameWatch.Elapsed < TimeSpan.FromMilliseconds(16.6666666)) {
-					// 	Log.Debug("Frame watch: " + _frameWatch.ElapsedMilliseconds);
-					// 	return;
-					// } else {
-					// 	Log.Debug("Resetting watch...");
-					// }
-					// _frameWatch.Restart();
-					// Save cpu/memory by not doing anything if not sending...
+					
 					if (!_enable) {
 						await Task.Delay(1, ct);
 						continue;
@@ -191,9 +182,11 @@ namespace Glimmr.Models.ColorSource.Video {
 		}
 
 		
-		public void Refresh() {
+		public void Refresh(SystemData systemData) {
 			StreamSplitter?.Refresh();
 		}
+
+		public bool SourceActive { get; set; }
 
 
 		private void SetCapVars() {

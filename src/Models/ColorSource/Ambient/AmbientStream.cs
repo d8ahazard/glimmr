@@ -5,13 +5,14 @@ using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace Glimmr.Models.ColorSource.Ambient {
-    public class AmbientStream : BackgroundService {
+    public class AmbientStream : BackgroundService, IColorSource {
 
         private bool _enable;
         private double _animationTime;
@@ -32,7 +33,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
         private List<Color> _currentColors;
         private List<Color> _nextColors;
 
-        
+
         /// <summary>
         /// Linear - Each color from the list of colors is assigned to a sector, and the order is incremented by 1 each update
         /// Reverse - Same as linear, but the order is decremented each update
@@ -56,11 +57,11 @@ namespace Glimmr.Models.ColorSource.Ambient {
         }
         
         public AmbientStream(ColorService colorService) {
-            _cs = colorService;
-            _cs.AddStream("ambient", this);
             _watch = new Stopwatch();
             _random = new Random();
-            Refresh();
+            _cs = colorService;
+            _cs.AddStream(DeviceMode.Ambient, this);
+            
         }
 
         protected override Task ExecuteAsync(CancellationToken ct) {
@@ -74,6 +75,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
                     var elapsed = _watch.ElapsedMilliseconds;
                     var diff = _animationTime - elapsed;
                     var sectors = new List<Color>();
+                    // If we're between rotations, blend/fade the colors as desired
                     if (diff > 0 && diff <= _easingTime) {
                         var avg = diff / _easingTime;
                         for (var i = 0; i < _currentColors.Count; i++) {
@@ -92,6 +94,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
                                     break;
                             }
                         }
+                        // If our time has elapsed, restart the watch 
                     } else if (diff <= 0) {
                         switch (_easingMode) {
                             case EasingMode.Blend:
@@ -107,7 +110,6 @@ namespace Glimmr.Models.ColorSource.Ambient {
                                 sectors = ColorUtil.EmptyList(_currentColors.Count);
                                 break;
                         }
-
                         _watch.Restart();
                     } else {
                         sectors = _currentColors;
@@ -245,8 +247,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
         }
 
         
-        public void Refresh() {
-            var sd = DataUtil.GetSystemData();
+        public void Refresh(SystemData sd) {
             _sectorCount = (sd.VSectors + sd.HSectors) * 2 - 4;
             _ledCount = sd.LedCount;
             _ambientShow = sd.AmbientShow;
@@ -267,6 +268,8 @@ namespace Glimmr.Models.ColorSource.Ambient {
             _mode = (AnimationMode) scene.Mode;
             LoadScene();
         }
+
+        public bool SourceActive { get; set; }
 
         public List<Color> Colors { get; private set; }
         public List<Color> Sectors { get; private set; }

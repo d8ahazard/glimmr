@@ -4,13 +4,14 @@ using Glimmr.Models.ColorSource.Audio;
 using Glimmr.Models.ColorSource.Video;
 using System.Drawing;
 using System.Threading.Tasks;
+using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace Glimmr.Models.ColorSource.AudioVideo {
-	public class AudioVideoStream : BackgroundService {
+	public class AudioVideoStream : BackgroundService, IColorSource {
 		private bool _enable;
 		public List<Color> Colors { get; private set; }
 		public List<Color> Sectors { get; private set; }
@@ -21,13 +22,12 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 
 		public AudioVideoStream(ColorService cs) {
 			_cs = cs;
-			_cs.AddStream("av", this);
-			_as = (AudioStream) _cs.GetStream("audio");
-			_vs = (VideoStream) _cs.GetStream("video");
+			_cs.AddStream(DeviceMode.AudioVideo, this);
+			_as = (AudioStream) _cs.GetStream(DeviceMode.Audio);
+			_vs = (VideoStream) _cs.GetStream(DeviceMode.Video);
 		}
 
 		protected override Task ExecuteAsync(CancellationToken ct) {
-			Refresh();
 			Log.Debug("Starting av stream...");
 			return Task.Run(async () => {
 				while (!ct.IsCancellationRequested) {
@@ -70,15 +70,19 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 
 		public void ToggleStream(bool enable = false) {
 			_enable = enable;
+			_vs.ToggleStream(true);
+			_vs.SendColors = false;
+			_as.ToggleStream(true);
+			_as.SendColors = false;
 		}
 
 		
-		public void Refresh() {
-			_systemData = DataUtil.GetSystemData();
+		public void Refresh(SystemData systemData) {
+			_systemData = systemData;
 			Colors = ColorUtil.EmptyList(_systemData.LedCount);
 			Sectors = ColorUtil.EmptyList(28);
 		}
-		
-		
+
+		public bool SourceActive { get; set; }
 	}
 }

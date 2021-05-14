@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using ManagedBass;
@@ -12,18 +13,19 @@ using Serilog;
 using Color = System.Drawing.Color;
 
 namespace Glimmr.Models.ColorSource.Audio {
-	public sealed class AudioStream : BackgroundService {
+	public sealed class AudioStream : BackgroundService, IColorSource {
 		
 		public bool SourceActive { get; set; }
 		public bool SendColors { get; set; }
 		private bool _enable;
+		private bool _hasDll;
 		private List<AudioData> _devices;
 		private int _recordDeviceIndex;
 		private int _sectorCount;
 		private float _gain;
 		private float _min = .015f;
 		private readonly ColorService _cs;
-		private readonly int _handle;
+		private int _handle;
 		private SystemData _sd;
 		private AudioMap _map;
 
@@ -33,20 +35,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 		public AudioStream(ColorService cs) {
 			_cs = cs;
-			_cs.AddStream("audio", this);
-			LoadData().ConfigureAwait(true);
-			try {
-				Log.Debug("Bass init...");
-				Bass.RecordInit(_recordDeviceIndex);
-				Log.Debug("Done");
-				Log.Debug("Starting stream with device " + _recordDeviceIndex);
-				_handle = Bass.RecordStart(48000, 2, BassFlags.Float, Update);
-				Log.Debug("Error check: " + Bass.LastError);
-				Bass.RecordGetDeviceInfo(_recordDeviceIndex, out var info3);
-				Log.Debug("Loaded: " + JsonConvert.SerializeObject(info3));
-			} catch (DllNotFoundException) {
-				Log.Warning("Bass not found, nothing to do...");
-			}
+			_cs.AddStream(DeviceMode.Audio, this);
 		}
 		
 		protected override Task ExecuteAsync(CancellationToken ct) {
@@ -62,8 +51,8 @@ namespace Glimmr.Models.ColorSource.Audio {
 		}
 		
 		public void ToggleStream(bool enable = false) {
+			if (!_hasDll) return;
 			if (enable) {
-				Refresh();
 				SendColors = true;
 				Bass.ChannelPlay(_handle);
 			} else {
@@ -75,7 +64,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 
 		private async Task LoadData() {
-			_sd = DataUtil.GetSystemData();
 			_sectorCount = (_sd.VSectors + _sd.HSectors) * 2 - 4;
 			_gain = _sd.AudioGain;
 			Colors = ColorUtil.EmptyList(_sd.LedCount);
@@ -111,8 +99,24 @@ namespace Glimmr.Models.ColorSource.Audio {
 		
 		
 
-		public void Refresh() {
+		public void Refresh(SystemData systemData) {
+			_sd = systemData;
 			LoadData().ConfigureAwait(true);
+			try {
+				Log.Debug("Bass init...");
+				Bass.RecordInit(_recordDeviceIndex);
+				Log.Debug("Done");
+				Log.Debug("Starting stream with device " + _recordDeviceIndex);
+				_handle = Bass.RecordStart(48000, 2, BassFlags.Float, Update);
+				Log.Debug("Error check: " + Bass.LastError);
+				Bass.RecordGetDeviceInfo(_recordDeviceIndex, out var info3);
+				Log.Debug("Loaded: " + JsonConvert.SerializeObject(info3));
+				_hasDll = true;
+			} catch (DllNotFoundException) {
+				Log.Warning("Bass not found, nothing to do...");
+				_hasDll = false;
+			}
+			
 		}
 
 		
