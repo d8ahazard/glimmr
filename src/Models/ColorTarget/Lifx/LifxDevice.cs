@@ -44,7 +44,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             _hasMulti = d.HasMultiZone;
             _offset = d.Offset;
             _reverseStrip = d.ReverseStrip;
-            if (_hasMulti) _multizoneCount = d.MultiZoneCount;
+            if (_hasMulti) _multizoneCount = d.LedCount;
             _client = colorService.ControlService.GetAgent("LifxAgent");
             colorService.ColorSendEvent += SetColor;
             B = new LightBulb(d.HostName, d.MacAddress, d.Service, (uint)d.Port);
@@ -96,13 +96,13 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             _hasMulti = Data.HasMultiZone;
             _offset = Data.Offset;
             _reverseStrip = Data.ReverseStrip;
-            if (_hasMulti) _multizoneCount = Data.MultiZoneCount;
+            if (_hasMulti) _multizoneCount = Data.LedCount;
 
             IpAddress = Data.IpAddress;
             var targetSector = newData.TargetSector;
             _targetSector = targetSector - 1;
             var oldBrightness = Brightness;
-            Brightness = newData.MaxBrightness;
+            Brightness = newData.Brightness;
             if (oldBrightness != Brightness) {
                 var bri = Brightness / 100 * 255;
                 _client.SetBrightnessAsync(B, (ushort) bri).ConfigureAwait(false);
@@ -131,12 +131,35 @@ namespace Glimmr.Models.ColorTarget.Lifx {
                 Log.Warning("Null client or no colors!");
                 return;
             }
+            var shifted = new List<Color>();
 
             var output = ColorUtil.TruncateColors(colors, _offset, _multizoneCount);
+            if (Brightness < 100) {
+                var diff = Brightness / 100f;
+                foreach (var rgb in output) {
+                    var r = Math.Clamp(rgb.R * diff, 0, 255);
+                    var g = Math.Clamp(rgb.G * diff, 0, 255);
+                    var b = Math.Clamp(rgb.B * diff, 0, 255);
+                    shifted.Add(Color.FromArgb((int)r, (int)g, (int)b));
+                }
+                output = shifted;
+            }
             if (_reverseStrip) output.Reverse();
-            
+            var i = 0;
+            shifted = new List<Color>();
 
+            foreach (var col in output) {
+                if (i == 0) {
+                    shifted.Add(col);
+                    i = 1;
+                } else {
+                    i = 0;
+                }
+            }
+
+            output = shifted;
             var cols = output.Select(col => new LifxColor(col)).ToList();
+            
             _client.SetExtendedColorZonesAsync(B, cols).ConfigureAwait(false);
         }
 

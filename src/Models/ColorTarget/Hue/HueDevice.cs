@@ -169,18 +169,18 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				Log.Debug("Streaming exception caught: " + e.Message);
 			}
 
-			await _client.AutoUpdate(_stream, _ct).ConfigureAwait(false);
+			_client.AutoUpdate(_stream, _ct).ConfigureAwait(false);
 			_entLayer = _stream.GetNewLayer(true);
 			Log.Debug("Hue: Stream started.");
 			Streaming = true;
 		}
 
 		public async Task StopStream() {
-			if (!Enable || !Online) return;
+			if (!Enable || !Online || !Streaming) return;
 			Log.Debug($"Hue: Stopping Stream: {IpAddress}...");
-			await StopStream(_client, Data).ConfigureAwait(false);
+			// YOU NEED TO AWAIT THIS, STUPID.
+			await StopStream(_client, Data);
 			Streaming = false;
-			await Task.FromResult(true);
 			Log.Debug("Hue: Streaming Stopped.");
 		}
 

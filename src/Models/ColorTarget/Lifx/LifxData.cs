@@ -42,8 +42,8 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		[DefaultValue(82)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int LedCount {
-			get => MultiZoneCount;
-			set => MultiZoneCount = value;
+			get => MultiZoneCount * 2;
+			set => MultiZoneCount = value / 2;
 		}
 		
 		[DefaultValue(0)]
