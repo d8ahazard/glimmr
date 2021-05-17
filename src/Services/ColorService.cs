@@ -459,7 +459,13 @@ namespace Glimmr.Services {
 			if (_streamStarted && newMode == 0) await StopStream();
 
 			foreach (var stream in _streams) {
-				stream.Value.ToggleStream(stream.Key == newMode);
+				if (newMode == DeviceMode.Video && 
+				    stream.Key == DeviceMode.DreamScreen &&
+				    (CaptureMode)_systemData.CaptureMode == CaptureMode.DreamScreen) {
+					stream.Value.ToggleStream(true);
+				} else {
+					stream.Value.ToggleStream(stream.Key == newMode);	
+				}
 			}
 			
 			if (newMode != 0 && !_streamStarted) await StartStream();
@@ -517,7 +523,7 @@ namespace Glimmr.Services {
 				_frameWatch.Start();
 			}
 
-			if (_frameWatch.Elapsed >= _frameSpan) {
+			if (_frameWatch.Elapsed >= _frameSpan || force) {
 				_frameWatch.Restart();
 				ColorSendEvent(colors, sectors, fadeTime, force);
 			}
