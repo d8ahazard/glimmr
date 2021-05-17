@@ -55,7 +55,7 @@ namespace Glimmr.Models.Util {
 		public static void Update() {
 			Log.Debug("Updating");
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-				Process.Start("/bin/bash","/etc/init.d/update_pi.sh");
+				Process.Start("/bin/bash","/home/glimmrtv/glimmr/script/update_pi.sh");
 			} else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 				Process.Start("../script/update_win.bat");
 			}
