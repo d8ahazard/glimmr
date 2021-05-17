@@ -193,6 +193,7 @@ function loadCounts() {
     }
     
     if (isValid(devs)) {
+        console.log("Looping devs...");
         for (let i = 0; i < devs.length; i++) {
             let dev = devs[i];
             console.log("Checking dev: ", dev);
