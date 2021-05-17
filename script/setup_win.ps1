@@ -107,7 +107,7 @@ If( -not (Test-Path -Path $glimmrPath) ){
     Invoke-Expression "& '$gitPath' pull";
 }
 
-If( -not (Test-Path -Path $glimmrBinPath) ){
+If(Test-Path -Path $glimmrPath) ){
     Write-Host "Compiling Glimmr...";
     $projectPath = "$glimmrPath\src\Glimmr.csproj";
     $outPath = "$glimmrPath\bin";    
