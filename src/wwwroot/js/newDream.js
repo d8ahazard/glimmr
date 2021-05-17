@@ -195,7 +195,7 @@ function loadCounts() {
     if (isValid(devs)) {
         for (let i = 0; i < devs.length; i++) {
             let dev = devs[i];
-            if (dev["Tag"] === "DreamScreen" && dev["DeviceTag"].includes("Dreamscreen")) {
+            if (dev["Tag"] === "DreamScreen" && dev["DeviceTag"].includes("DreamScreen")) {
                 console.log("Adding DS option", dev);
                 let opt = document.createElement("option");
                 opt.value = dev["Id"];
