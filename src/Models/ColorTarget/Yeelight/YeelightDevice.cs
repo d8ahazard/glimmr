@@ -39,6 +39,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		public YeelightDevice(YeelightData yd, ColorService cs) : base(cs) {
 			_data = yd;
 			Tag = _data.Tag;
+			Enable = _data.Enable;
 			_yeeDevice = new Device(yd.IpAddress);
 			Log.Debug("Created new yeedevice at " + yd.IpAddress);
 			cs.ColorSendEvent += SetColor;
