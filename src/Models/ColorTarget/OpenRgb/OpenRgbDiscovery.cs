@@ -23,25 +23,29 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		}
 
 		public async Task Discover(CancellationToken ct, int timeout) {
-			if (_client == null) return;
-			if (!_client.Connected) {
-				try {
-					_client.Connect();
-				} catch (Exception e) {
-					Log.Debug("Error connecting to client, probably it doesn't exist.");
-					return;
+			try {
+				if (_client == null) return;
+				if (!_client.Connected) {
+					try {
+						_client.Connect();
+					} catch (Exception e) {
+						Log.Debug("Error connecting to client, probably it doesn't exist.");
+						return;
+					}
 				}
-			}
 
-			if (_client == null) return;
-			if (_client.Connected) {
-				var devs = _client.GetAllControllerData();
-				var idx = 0;
-				foreach (var dev in devs) {
-					var rd = new OpenRgbData(dev) {Id = "OpenRgb" + idx, DeviceId = idx};
-					await _cs.UpdateDevice(rd).ConfigureAwait(false);
-					idx++;
+				if (_client == null) return;
+				if (_client.Connected) {
+					var devs = _client.GetAllControllerData();
+					var idx = 0;
+					foreach (var dev in devs) {
+						var rd = new OpenRgbData(dev) {Id = "OpenRgb" + idx, DeviceId = idx};
+						await _cs.UpdateDevice(rd).ConfigureAwait(false);
+						idx++;
+					}
 				}
+			} catch (Exception f) {
+				Log.Warning("Exception: " + f.Message + " at " + f.StackTrace);
 			}
 		}
 
