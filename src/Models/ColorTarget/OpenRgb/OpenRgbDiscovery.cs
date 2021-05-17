@@ -23,6 +23,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		}
 
 		public async Task Discover(CancellationToken ct, int timeout) {
+			if (_client == null) return;
 			if (!_client.Connected) {
 				try {
 					_client.Connect();
