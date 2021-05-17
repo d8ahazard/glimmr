@@ -94,7 +94,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 
 		public Task ReloadData() {
-			_yeeDevice.Dispose();
+			_yeeDevice?.Dispose();
 			_data = DataUtil.GetCollectionItem<YeelightData>("Dev_Yeelight", _data.Id);
 			_yeeDevice = new Device(_data.IpAddress);
 			Brightness = _data.Brightness;
