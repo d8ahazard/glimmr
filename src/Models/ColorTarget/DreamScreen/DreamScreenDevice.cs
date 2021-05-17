@@ -8,11 +8,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using DreamScreenNet;
 using DreamScreenNet.Devices;
-using DreamScreenNet.Enum;
+using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Newtonsoft.Json;
 using Serilog;
+using DeviceMode = DreamScreenNet.Enum.DeviceMode;
 
 #endregion
 
@@ -31,11 +32,17 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		
 		private readonly DreamScreenClient _client;
 		private readonly DreamDevice _dev;
+		private readonly ColorService _colorService;
+
+		private int _sectorCount;
+		private CaptureMode _capMode;
 
 		public DreamScreenDevice(DreamScreenData screenData, ColorService colorService) {
 			ScreenData = screenData;
+			_colorService = colorService;
 			colorService.ColorSendEvent += SetColor;
 			_client = colorService.ControlService.GetAgent("DreamAgent");
+			colorService.ControlService.RefreshSystemEvent += RefreshSystem;
 			ScreenData = screenData;
 			Brightness = screenData.Brightness;
 			Id = screenData.Id;
@@ -46,6 +53,13 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			if (string.IsNullOrEmpty(IpAddress)) IpAddress = Id;
 			var myIp = IPAddress.Parse(IpAddress);
 			_dev = new DreamDevice(Tag) {IpAddress = myIp, DeviceGroup = screenData.GroupNumber};
+			RefreshSystem();
+		}
+		
+		private void RefreshSystem() {
+			var sd = DataUtil.GetSystemData();
+			_capMode = (CaptureMode) sd.CaptureMode;
+			_sectorCount = sd.SectorCount;
 		}
 
 		public async Task StartStream(CancellationToken ct) {
@@ -69,7 +83,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			}
 			
 			await _client.SendColors(_dev, sectors).ConfigureAwait(false);
-			ColorService.Counter.Tick(Id);
+			_colorService.Counter.Tick(Id);
 		}
 
 		public Task FlashColor(Color color) {
@@ -80,7 +94,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			ScreenData = DataUtil.GetDevice(Id);
 			Online = SystemUtil.IsOnline(IpAddress);
 			Enable = ScreenData.Enable;
-			
+			RefreshSystem();
 			return Task.CompletedTask;
 		}
 

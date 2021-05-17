@@ -19,6 +19,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			Log.Debug("Yeelight: Discovery started...");
 			// Await the asynchronous call to the static API
 			var discoveredDevices = await DeviceLocator.DiscoverAsync(ct);
+			Log.Debug("Found yeelight devices: " + JsonConvert.SerializeObject(discoveredDevices));
 			foreach (var dev in discoveredDevices) {
 				Log.Debug("YEE YEE: " + JsonConvert.SerializeObject(dev));
 				var yd = new YeelightData {

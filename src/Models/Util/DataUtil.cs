@@ -18,6 +18,8 @@ namespace Glimmr.Models.Util {
         private static LiteDatabase _db;
 
         private static bool _dbLocked;
+
+        private static SystemData _systemData;
         
         public static LiteDatabase GetDb() {
             while (_dbLocked) {
@@ -318,7 +320,7 @@ namespace Glimmr.Models.Util {
         public static void SetItem(string key, dynamic value) {
             var db = GetDb();
             // See if it's a system property
-            var sd = GetSystemData();
+            var sd = _systemData;
             var saveSd = false;
             foreach (var e in sd.GetType().GetProperties()) {
                 if (e.Name != key) continue;
@@ -327,7 +329,7 @@ namespace Glimmr.Models.Util {
             }
 
             if (saveSd) {
-                SetObject<SystemData>(sd);
+                SetSystemData(sd);
             }
 
             if (saveSd) db.Commit();
@@ -367,6 +369,11 @@ namespace Glimmr.Models.Util {
         }
 
         public static SystemData GetSystemData() {
+            if (_systemData == null) CacheSystemData();
+            return _systemData;
+        }
+
+        private static void CacheSystemData() {
             var db = GetDb();
             
             var col = db.GetCollection<SystemData>("SystemData");
@@ -374,7 +381,8 @@ namespace Glimmr.Models.Util {
                 if (col.Count() != 0) {
                     var cols = col.FindAll().ToList();
                     foreach (var sda in cols) {
-                        return sda;
+                        _systemData = sda;
+                        return;
                     }
                     
                 }
@@ -386,8 +394,18 @@ namespace Glimmr.Models.Util {
             var sd = new SystemData();
             sd.SetDefaults();
             col.Upsert(0,sd);
-            return sd;
+            _systemData = sd;
         }
+
+        public static void SetSystemData(SystemData value) {
+            var db = GetDb();
+            var col = db.GetCollection<SystemData>("SystemData");
+            col.Upsert(0, value);
+            db.Commit();
+            _systemData = value;
+        }
+        
+        
         
         public static void SetObject<T>(dynamic value) {
             var db = GetDb();

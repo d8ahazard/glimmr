@@ -228,7 +228,7 @@ namespace Glimmr.Services {
 		private async Task CheckAutoDisable() { 
 			var sourceActive = false;
 			// If we're in video or audio mode, check the source is active...
-			if (DeviceMode == DeviceMode.Video && _streams[DeviceMode.Video] != null) {
+			if (DeviceMode == DeviceMode.Video && _streams[DeviceMode.Video] != null && _captureMode != CaptureMode.DreamScreen) {
 				sourceActive = _streams[DeviceMode.Video].SourceActive;
 			} else {
 				//todo: Add proper source checks for other media. 
@@ -342,12 +342,12 @@ namespace Glimmr.Services {
 					var pi = i * 1.0f;
 					var progress = pi / ledCount;
 					var sector = (int) Math.Round(progress * sectorCount);
+					Log.Debug("Sector is " + sector);
 					var rCol = ColorUtil.Rainbow(progress);
 					cols[i] = rCol;
 					if (sector > secs.Count) secs[sector] = rCol;
-
 					try {
-						SendColors(cols, secs, 0);
+						SendColors(cols, secs, 0, true);
 					} catch (Exception e) {
 						Log.Warning("SEND EXCEPTION: " + JsonConvert.SerializeObject(e));
 					}
@@ -374,7 +374,6 @@ namespace Glimmr.Services {
 			}
 		
 			foreach (var dev in _sDevices) {
-				Log.Debug($"Checking {dev.Data.Id} against {id}");
 				if (dev.Data.Id == id) {
 					Log.Debug("Reloading device: " + id);
 					await dev.ReloadData().ConfigureAwait(false);

@@ -29,7 +29,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
         
         private async void Client_DeviceDiscovered(object sender, LifxClient.DeviceDiscoveryEventArgs e) {
             var bulb = e.Device as LightBulb;
-            Log.Debug("Device found: " + JsonConvert.SerializeObject(bulb));
+            //Log.Debug("Device found: " + JsonConvert.SerializeObject(bulb));
             var ld = await GetBulbInfo(bulb);
             await _controlService.AddDevice(ld);
         }
@@ -84,7 +84,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             }
             
             d.DeviceTag = tag;
-            Log.Debug("Discovered lifx device: " + JsonConvert.SerializeObject(d));
+            //Log.Debug("Discovered lifx device: " + JsonConvert.SerializeObject(d));
             return d;
         }
 

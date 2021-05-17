@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DreamScreenNet;
 using DreamScreenNet.Enum;
+using Glimmr.Models.ColorTarget.DreamScreen;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.Extensions.Hosting;
@@ -23,6 +24,27 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 			_cs.AddStream(DeviceMode.DreamScreen, this);
 			_client = _cs.ControlService.GetAgent("DreamAgent");
 			_client.CommandReceived += ProcessCommand;
+			_cs.ControlService.RefreshSystemEvent += RefreshSd;
+			RefreshSd();
+		}
+
+		private void RefreshSd() {
+			var systemData = DataUtil.GetSystemData();
+			var dsIp = systemData.DsIp;
+			if (string.IsNullOrEmpty(dsIp)) {
+				var devs = DataUtil.GetDevices();
+				foreach (var dd in from dev in devs where dev.Tag == "DreamScreen" select (DreamScreenData) dev into dd where dd.DeviceTag.Contains("DreamScreen") select dd) {
+					Log.Debug("No target set, setting to " + dd.IpAddress);
+					systemData.DsIp = dd.IpAddress;
+					DataUtil.SetSystemData(systemData);
+					dsIp = dd.IpAddress;
+					break;
+				}
+			}
+			
+			if (!string.IsNullOrEmpty(dsIp)) {
+				_targetDreamScreen = IPAddress.Parse(dsIp);
+			}
 		}
 
 		public void ToggleStream(bool enable) {

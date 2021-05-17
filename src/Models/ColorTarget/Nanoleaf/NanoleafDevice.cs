@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
+using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Nanoleaf.Client;
@@ -34,18 +35,8 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		private List<List<Color>> _frameBuffer;
 		private int _frameDelay;
 
-		public NanoleafDevice(NanoleafData n, ControlService cs) {
-			DataUtil.GetItem<int>("captureMode");
-			if (n != null) {
-				SetData(n);
-				var streamMode = n.Type == "NL29" ? 2 : 1;
-				_nanoleafClient = new NanoleafClient(n.Hostname, n.Token, cs.HttpSender);
-				_streamingClient = new NanoleafStreamingClient(n.IpAddress, streamMode, cs.UdpClient);
-			}
-
-			_disposed = false;
-		}
-		
+		private int _sectorCount;
+		private CaptureMode _capMode;
 
 		/// <summary>
 		/// Use this for sending color data to the panel
@@ -59,11 +50,18 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				SetData(n);
 				var streamMode = n.Type == "NL29" ? 2 : 1;
 				var cs = ColorService.ControlService;
+				cs.RefreshSystemEvent += RefreshSystem;
 				_nanoleafClient = new NanoleafClient(n.IpAddress, n.Token);
 				_streamingClient = new NanoleafStreamingClient(n.IpAddress,streamMode,cs.UdpClient);
 			}
 
 			_disposed = false;
+		}
+		
+		private void RefreshSystem() {
+			var sd = DataUtil.GetSystemData();
+			_capMode = (CaptureMode) sd.CaptureMode;
+			_sectorCount = sd.SectorCount;
 		}
 		
 		public async Task StartStream(CancellationToken ct) {
@@ -75,7 +73,6 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
 			Log.Debug($@"Nanoleaf: Starting stream at {IpAddress}...");
 			_wasOn = await _nanoleafClient.GetPowerStatusAsync();
-			Log.Debug("Power status: " + _wasOn);
 			if (!_wasOn) await _nanoleafClient.TurnOnAsync().ConfigureAwait(false);
 			await _nanoleafClient.SetBrightnessAsync((int)(Brightness / 100f * 255)).ConfigureAwait(false);
 			await _nanoleafClient.StartExternalAsync().ConfigureAwait(false);
@@ -108,9 +105,15 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			foreach (var p in _layout.PositionData) {
 				var color = Color.FromArgb(0, 0, 0);
 				if (p.TargetSector != -1) {
-					var target = p.TargetSector - 1;
+					var target = p.TargetSector - 1f;
+					// Maaaaaaaagic!
+					if (_capMode == CaptureMode.DreamScreen) {
+						var tPct = target / _sectorCount;
+						target = tPct * 12;
+						target = Math.Min(target, 11);
+					}
 					if (target < sectors.Count) {
-						color = sectors[target];
+						color = sectors[(int)target];
 					} else {
 						Log.Warning($"Error, trying to map {target} when count is only {sectors.Count}.");	
 					}
@@ -133,6 +136,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		}
 
 		private void SetData(NanoleafData n) {
+			RefreshSystem();
 			var oldBrightness = Data.Brightness;
 			Data = n;
 			DataUtil.GetItem<int>("captureMode");

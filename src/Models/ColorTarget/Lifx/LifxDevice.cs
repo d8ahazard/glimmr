@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using LifxNetPlus;
@@ -24,7 +26,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
         public bool Streaming { get; set; }
         public bool Testing { get; set; }
 
-        private int _targetSector;
+        private int _target;
         private bool _hasMulti;
         private int _multizoneCount;
         private int _offset;
@@ -36,6 +38,9 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
         private readonly LifxClient _client;
         private TimeSpan _frameSpan;
+
+        private CaptureMode _capMode;
+        private int _sectorCount;
         
         public LifxDevice(LifxData d, ColorService colorService) : base(colorService) {
             _frameSpan = TimeSpan.FromMilliseconds(1000f/60);
@@ -47,13 +52,21 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             if (_hasMulti) _multizoneCount = d.LedCount;
             _client = colorService.ControlService.GetAgent("LifxAgent");
             colorService.ColorSendEvent += SetColor;
+            colorService.ControlService.RefreshSystemEvent += RefreshSystem;
             B = new LightBulb(d.HostName, d.MacAddress, d.Service, (uint)d.Port);
-            _targetSector = d.TargetSector - 1;
+            _target = d.TargetSector - 1;
             Brightness = d.Brightness;
             Id = d.Id;
             IpAddress = d.IpAddress;
             Enable = Data.Enable;
             Online = SystemUtil.IsOnline(IpAddress);
+            RefreshSystem();
+        }
+
+        private void RefreshSystem() {
+            var sd = DataUtil.GetSystemData();
+            _capMode = (CaptureMode) sd.CaptureMode;
+            _sectorCount = sd.SectorCount;
         }
 
         public async Task StartStream(CancellationToken ct) {
@@ -73,6 +86,8 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             //var nC = new LifxColor {R = color.R, B = color.B, G = color.G};
             await _client.SetColorAsync(B, nC).ConfigureAwait(false);
         }
+        
+        
 
         public bool IsEnabled() {
             return Enable;
@@ -100,7 +115,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
             IpAddress = Data.IpAddress;
             var targetSector = newData.TargetSector;
-            _targetSector = targetSector - 1;
+            _target = targetSector - 1;
             var oldBrightness = Brightness;
             Brightness = newData.Brightness;
             if (oldBrightness != Brightness) {
@@ -170,9 +185,14 @@ namespace Glimmr.Models.ColorTarget.Lifx {
                 return;
             }
 
-            if (_targetSector >= sectors.Count) return;
+            if (_capMode == CaptureMode.DreamScreen) {
+                var tPct = _target / _sectorCount;
+                _target = tPct * 12;
+                _target = Math.Min(_target, 11);
+            }
+            if (_target >= sectors.Count) return;
             
-            var input = sectors[_targetSector];
+            var input = sectors[_target];
             
             var nC = new LifxColor(input);
             //var nC = new LifxColor {R = input.R, B = input.B, G = input.G};

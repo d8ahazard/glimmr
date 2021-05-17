@@ -261,7 +261,7 @@ namespace Glimmr.Services {
 		public async Task UpdateSystem(SystemData sd = null) {
 			var oldSd = DataUtil.GetSystemData();
 			if (sd != null) {
-				DataUtil.SetObject<SystemData>(sd);
+				DataUtil.SetSystemData(sd);
 				_sd = sd;
 				if (oldSd.LedCount != sd.LedCount) {
 					var leds = DataUtil.GetDevices<LedData>("Led");

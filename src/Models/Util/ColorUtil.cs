@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
+using System.Linq;
+using Serilog;
 
 namespace Glimmr.Models.Util {
     public static class ColorUtil {
@@ -390,33 +392,105 @@ namespace Glimmr.Models.Util {
         public static List<Color> SectorsToleds(List<Color> ints, int hSectors = -1, int vSectors = -1) {
 	        var sd = DataUtil.GetSystemData();
 	        var output = new List<Color>();
-	        // We're going to duplicate the "corner" color values so they evenly map to LED colors
-	        var shifted = new List<Color>();
-	        if (hSectors == -1) hSectors = sd.HSectors;
-	        if (vSectors == -1) vSectors = sd.VSectors;
-	        float ledCount = sd.LedCount;
-	        var tr = vSectors - 1;
-	        var tl = tr + hSectors - 1;
-	        var bl = tl + vSectors - 1;
-	        for (var i = 0; i < ints.Count; i++) {
-		        shifted.Add(ints[i]);
-		        if (i == tr || i == tl || i == bl) shifted.Add(ints[i]);
+	        if (ints.Count == 12) {
+		        hSectors = 5;
+		        vSectors = 3;
 	        }
-			shifted.Add(ints[0]);
-			
-			// How many LEDs per shifted sector?
-			var step = (int) Math.Floor(ledCount / shifted.Count * 1.0f);
-			var sector = 0;
-	        for (var i=0; i < ledCount; i++) {
-		        if (i % step == 0) {
-			        sector++;
+	        if (ints.Count < hSectors + hSectors + vSectors + vSectors - 4) {
+		        Log.Warning("Error, can't convert sectors to LEDs, we have less sectors than we should.");
+		        return EmptyList(hSectors + hSectors + vSectors + vSectors);
+	        }
+	        
+	        // Right sectors
+	        var col = Color.FromArgb(0, 0, 0);
+	        var count = sd.RightCount / vSectors;
+	        var start = 0;
+	        for (var i = start; i < vSectors; i++) {
+		        col = ints[i];
+		        for (var c = 0; c < count; c++) {
+			        output.Add(col);
 		        }
-
-		        if (sector >= ints.Count) sector = ints.Count - 1;
-		        output.Add(ints[sector]);
+		        start++;
+	        }
+	        
+	        // Check that we have the right amount, else add more because division
+	        var diff = sd.RightCount - output.Count;
+	        if (diff > 0) {
+		        for (var d = 0; d < diff; d++) {
+			        output.Add(col);
+		        }
 	        }
 
+	        // Decrement one since our sectors share corners
+	        start -= 1;
+	        
+	        // Top sectors
+	        count = sd.TopCount / hSectors;
+	        for (var i = start; i < hSectors; i++) {
+		        col = ints[i];
+		        for (var c = 0; c < count; c++) {
+			        output.Add(col);
+		        }
+		        start++;
+	        }
+	        
+	        // Decrement one since our sectors share corners
+	        start -= 1;
+	        
+	        // Check that we have the right amount, else add more because division
+	        diff = sd.RightCount + sd.TopCount - output.Count;
+	        if (diff > 0) {
+		        for (var d = 0; d < diff; d++) {
+			        output.Add(col);
+		        }
+	        }
+	        
+	        // Left sectors
+	        count = sd.LeftCount / vSectors;
+	        for (var i = start; i < vSectors; i++) {
+		        col = ints[i];
+		        for (var c = 0; c < count; c++) {
+			        output.Add(col);
+		        }
+		        start++;
+	        }
+	        
+	        // Decrement one since our sectors share corners
+	        start -= 1;
+	        
+	        // Check that we have the right amount, else add more because division
+	        diff = sd.RightCount + sd.TopCount + sd.LedCount - output.Count;
+	        if (diff > 0) {
+		        for (var d = 0; d < diff; d++) {
+			        output.Add(col);
+		        }
+	        }
+
+	        
+	        // Bottom sectors - Skip one sector at the end, because that's the first one.
+	        count = sd.BottomCount / hSectors;
+	        for (var i = start; i < hSectors -1; i++) {
+		        col = ints[i];
+		        for (var c = 0; c < count; c++) {
+			        output.Add(col);
+		        }
+		        start++;
+	        }
+	        
+	        // Check that we have the right amount, else add more because division
+	        diff = sd.LedCount - output.Count;
+	        if (diff > 0) {
+		        for (var d = 0; d < diff; d++) {
+			        output.Add(col);
+		        }
+	        }
+
+	        if (output.Count < sd.LedCount) {
+		        Log.Warning($"Warning, count mismatch: {output.Count} vs {sd.LedCount}");
+	        }
 	        return output;
+	        
+	        
         }
 
         public static Color[] AddLedColor(Color[] colors, int sector, Color color, SystemData systemData) {

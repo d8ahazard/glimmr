@@ -96,7 +96,7 @@ namespace Glimmr.Models.Util {
                 }
 
             } catch (Exception e) {
-                Log.Debug("DNS Res ex: " + e.Message);
+                Log.Debug($"Exception for {p}: " + e.Message);
             }
 
             return null;
