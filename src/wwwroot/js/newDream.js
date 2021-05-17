@@ -848,6 +848,8 @@ function updateDeviceSector(sector, target) {
         dev["Layout"] = layout;
         drawNanoShapes(dev);
         updateDevice(dev["Id"],"Layout", layout);
+    } else {
+        updateDevice(dev["Id"],"TargetSector",sector);
     }
     
     sendMessage("flashSector", parseInt(sector), false);
@@ -2062,15 +2064,15 @@ function createSectorMap(targetElement, sectorImage, regionName) {
         sector++;
     }
 
-    let s2 = document.createElement("div");
-    s2.classList.add("sector2");
-    s2.style.position = "absolute";
-    s2.style.top = hMargin + fHeight + "px";
-    s2.style.height = (fHeight * 4) + "px";
-    s2.style.left = wMargin + fWidth + "px";
-    s2.style.width = (fWidth * 8) + "px";
-    s2.style.border = "2px solid black";
-    map.appendChild(s2);
+    // let s2 = document.createElement("div");
+    // s2.classList.add("sector2");
+    // s2.style.position = "absolute";
+    // s2.style.top = hMargin + fHeight + "px";
+    // s2.style.height = (fHeight * 4) + "px";
+    // s2.style.left = wMargin + fWidth + "px";
+    // s2.style.width = (fWidth * 8) + "px";
+    // s2.style.border = "2px solid black";
+    // map.appendChild(s2);
     targetElement.appendChild(map);
     if (isValid(deviceData) && expanded) {
         let mappedLights;
