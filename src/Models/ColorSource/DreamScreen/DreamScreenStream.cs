@@ -100,7 +100,6 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 		}
 
 		private void UpdateColors(object? sender, DreamScreenClient.DeviceColorEventArgs e) {
-			Log.Debug("Updating colors!");
 			var colors = e.Colors;
 			var ledColors = ColorUtil.SectorsToleds(colors.ToList(),5,3);
 			_cs.SendColors(ledColors, colors.ToList(),0);

@@ -93,8 +93,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 				target = tPct * 12;
 				target = Math.Min(target, 11);
 			}
-			Log.Debug($"YEE: setting color for {target}");
-
+		
 			var col = sectors[target];
 			if (target >= sectors.Count) return;
 			_yeeDevice.SetRGBColor(col.R, col.G, col.B).ConfigureAwait(false);
