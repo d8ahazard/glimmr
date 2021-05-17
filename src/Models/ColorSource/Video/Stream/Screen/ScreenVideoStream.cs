@@ -70,6 +70,8 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 		private void SetDimensions() {
 			_screenDims = DisplayUtil.GetDisplaySize();
 			var rect = _screenDims;
+			_width = 0;
+			_height = 0;
 			if (!RectContains(_screenDims, rect)) {
 				Log.Debug("Selected capture rect is outside of screen!");
 				return;
