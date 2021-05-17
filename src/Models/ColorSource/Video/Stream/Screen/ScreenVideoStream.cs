@@ -11,42 +11,43 @@ using Serilog;
 
 namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 	public class ScreenVideoStream : IVideoStream, IDisposable {
-		private Bitmap _bmpScreenCapture;
 		private bool _capturing;
 		private bool _doSave;
 		private int _height;
 		private int _left;
 
 
-		private Image<Bgr, byte> _screen;
 		private Rectangle _screenDims;
 		private int _top;
 		private int _width;
 
 		public void Dispose() {
-			_bmpScreenCapture?.Dispose();
-			_screen?.Dispose();
 			GC.SuppressFinalize(this);
 		}
 
 		public Mat Frame { get; set; }
 
 		public Task Start(CancellationToken ct) {
-			
-			SetDimensions();
-			_bmpScreenCapture = new Bitmap(_width, _height);
-			
-			if (_width == 0 || _height == 0) {
-				Log.Debug("We have no screen, returning.");
+
+			try {
+				SetDimensions();
+				
+				if (_width == 0 || _height == 0) {
+					Log.Debug("We have no screen, returning.");
+					return Task.CompletedTask;
+				}
+
+				_doSave = true;
+
+				Log.Debug("Starting screen capture, width is " + _width + " height is " + _height + ".");
+
+				_capturing = true;
+				return Task.Run(() => CaptureScreen(ct));
+			} catch (Exception e) {
+				Log.Warning("Exception, can't start screen cap: " + e.Message);
+				_capturing = false;
 				return Task.CompletedTask;
 			}
-
-			_doSave = true;
-
-			Log.Debug("Starting screen capture, width is " + _width + " height is " + _height + ".");
-
-			_capturing = true;
-			return Task.Run(() => CaptureScreen(ct));
 		}
 
 		public Task Stop() {
@@ -93,14 +94,14 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 			Log.Debug("Screen capture started...");
 			
 				while (!ct.IsCancellationRequested && _capturing) {
-					using (var g = Graphics.FromImage(_bmpScreenCapture)) {
-						g.CopyFromScreen(_left, _top, 0, 0, _bmpScreenCapture.Size, CopyPixelOperation.SourceCopy);
-						_screen = _bmpScreenCapture.ToImage<Bgr, byte>();
+					var bcs = new Bitmap(_width, _height);
+					using (var g = Graphics.FromImage(bcs)) {
+						g.CopyFromScreen(_left, _top, 0, 0, bcs.Size, CopyPixelOperation.SourceCopy);
+						var sc = bcs.ToImage<Bgr, byte>();
 						g.Flush();
+						var newMat = sc.Resize(DisplayUtil.CaptureWidth, DisplayUtil.CaptureHeight, Inter.Nearest);
+						Frame = newMat.Mat;
 					}
-
-					var newMat = _screen.Resize(DisplayUtil.CaptureWidth, DisplayUtil.CaptureHeight, Inter.Nearest);
-					Frame = newMat.Mat;
 				}
 			
 
