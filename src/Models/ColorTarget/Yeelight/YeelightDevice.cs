@@ -25,6 +25,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		private YeelightData _data;
 
 		private CaptureMode _capMode;
+		private ColorService _colorService;
 
 		private int _sectorCount;
 		
@@ -44,6 +45,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			Log.Debug("Created new yeedevice at " + yd.IpAddress);
 			cs.ColorSendEvent += SetColor;
 			cs.ControlService.RefreshSystemEvent += RefreshSystem;
+			_colorService = cs;
 			RefreshSystem();
 		}
 
@@ -95,7 +97,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			var col = sectors[target];
 			if (target >= sectors.Count) return;
 			_yeeDevice.SetRGBColor(col.R, col.G, col.B).ConfigureAwait(false);
-			ColorService.Counter.Tick(Id);
+			_colorService.Counter.Tick(Id);
 		}
 
 		public async Task FlashColor(Color col) {
