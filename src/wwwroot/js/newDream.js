@@ -1967,6 +1967,8 @@ function createSectorMap(targetElement, sectorImage, regionName) {
     let h = img.offsetHeight;
     let imgL = img.offsetLeft;
     let imgT = img.offsetTop;
+    let selected = deviceData["TargetSector"];
+    if (!isValid(selected)) selected = -1;
     console.log("Img dims: ",w,h,imgL,imgT, img);
     let exMap = targetElement.querySelector("#sectorMap");
     if (isValid(exMap)) exMap.remove();
@@ -1997,6 +1999,7 @@ function createSectorMap(targetElement, sectorImage, regionName) {
         let s1 = document.createElement("div");
         s1.classList.add("sector");
         if (isValid(regionName)) s1.classList.add(regionName + "Region");
+        if (sector === selected) s1.classList.add("checked");
         s1.setAttribute("data-sector", sector.toString());
         s1.style.position = "absolute";
         s1.style.top = t.toString() + "px";
