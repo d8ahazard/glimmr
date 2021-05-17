@@ -206,6 +206,8 @@ function loadCounts() {
                 devSelect.appendChild(opt);
             }
         }
+    } else {
+        console.log("Devs invalid?");
     }
     
     
