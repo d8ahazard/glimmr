@@ -24,18 +24,23 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 		public async Task Discover(CancellationToken ct, int timeout) {
 			try {
-				if (_client == null) return;
+				Log.Debug("Disco started...");
+				if (_client == null) {
+					Log.Debug("No client.");
+					return;
+				}
 				if (!_client.Connected) {
 					try {
+						Log.Debug("Trying connection...");
 						_client.Connect();
 					} catch (Exception e) {
-						Log.Debug("Error connecting to client, probably it doesn't exist.");
+						Log.Debug("Error connecting to client, probably it doesn't exist: " + e.Message);
 						return;
 					}
 				}
 
-				if (_client == null) return;
 				if (_client.Connected) {
+					Log.Debug("Client connected.");
 					var devs = _client.GetAllControllerData();
 					var idx = 0;
 					foreach (var dev in devs) {
