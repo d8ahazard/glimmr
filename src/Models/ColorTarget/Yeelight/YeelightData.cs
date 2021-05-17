@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 
 namespace Glimmr.Models.ColorTarget.Yeelight {
 	public class YeelightData : IColorTargetData {
+		
 		[DefaultValue(-1)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int TargetSector { get; set; }

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
+using Serilog;
 using YeelightAPI;
 
 namespace Glimmr.Models.ColorTarget.Yeelight {
@@ -39,6 +40,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			_data = yd;
 			Tag = _data.Tag;
 			_yeeDevice = new Device(yd.IpAddress);
+			Log.Debug("Created new yeedevice at " + yd.IpAddress);
 			cs.ColorSendEvent += SetColor;
 			cs.ControlService.RefreshSystemEvent += RefreshSystem;
 			RefreshSystem();
@@ -51,16 +53,22 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		}
 
 		public async Task StartStream(CancellationToken ct) {
-			if (!Enable) return;
-			Online = SystemUtil.IsOnline(IpAddress);
-			if (!Online) return;
+			if (!Enable) {
+				Log.Warning("YEE: Not enabled!");
+				return;
+			}
+			//Online = SystemUtil.IsOnline(IpAddress);
+			//if (!Online) return;
 			Streaming = await _yeeDevice.Connect();
+			if (Streaming) Log.Debug("YEE: Stream started!");
 		}
 
 		public async Task StopStream() {
-			if (!Streaming || !Online || !Enable) {
+			if (!Streaming || !Enable) {
 				return;
 			}
+
+			Log.Debug("YEE: Resetting...");
 			await FlashColor(Color.FromArgb(0, 0, 0)).ConfigureAwait(false);
 			_yeeDevice.Disconnect();
 			Streaming = false;
@@ -81,6 +89,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 				target = tPct * 12;
 				target = Math.Min(target, 11);
 			}
+			Log.Debug($"YEE: setting color for {target}");
 
 			var col = sectors[target];
 			if (target >= sectors.Count) return;
