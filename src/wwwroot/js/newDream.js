@@ -195,12 +195,13 @@ function loadCounts() {
     if (isValid(devs)) {
         for (let i = 0; i < devs.length; i++) {
             let dev = devs[i];
+            console.log("Checking dev: ", dev);
             if (dev["Tag"] === "DreamScreen" && dev["DeviceTag"].includes("DreamScreen")) {
                 console.log("Adding DS option", dev);
                 let opt = document.createElement("option");
                 opt.value = dev["Id"];
                 opt.innerText = dev["Name"] + " - " + dev["Id"];
-                if (opt.value === target) opt.selected = true;
+                if (isValid(target) && opt.value === target) opt.selected = true;
                 devSelect.appendChild(opt);
             }
         }
