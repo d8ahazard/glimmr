@@ -50,7 +50,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 		public void ToggleStream(bool enable) {
 			_enable = enable;
 			if (_enable) {
-				Log.Debug("Target is " + _targetDreamScreen);
+				Log.Debug("Target is " + _targetDreamScreen + " group is " + TargetGroup);
 				_client.StartSubscribing(_targetDreamScreen);
 			} else {
 				_client.StopSubscribing();
@@ -100,6 +100,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 		}
 
 		private void UpdateColors(object? sender, DreamScreenClient.DeviceColorEventArgs e) {
+			Log.Debug("Updating colors!");
 			var colors = e.Colors;
 			var ledColors = ColorUtil.SectorsToleds(colors.ToList(),5,3);
 			_cs.SendColors(ledColors, colors.ToList(),0);
