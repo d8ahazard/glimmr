@@ -67,7 +67,9 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			await _yeeDevice.Connect();
 			var ip = IpUtil.GetLocalIpAddress();
 			if (!string.IsNullOrEmpty(ip)) {
+				Log.Debug("Creating stream task?");
 				_streamTask = _yeeDevice.StartMusicMode(ip);
+				Log.Debug("Task created!");
 				Streaming = true;
 			}
 			
@@ -81,9 +83,14 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 			Log.Debug("YEE: Resetting...");
 			await FlashColor(Color.FromArgb(0, 0, 0)).ConfigureAwait(false);
+			Log.Debug("YEE: Stopping music mode...");
 			await _yeeDevice.StopMusicMode();
+			Log.Debug("Yee: Stopped!");
+			if (_streamTask.IsCompleted) Log.Debug("Stream task is completed.");
 			_yeeDevice.Disconnect();
+			Log.Debug("Disconnected!");
 			Streaming = false;
+			Log.Debug("YEE: Streaming stopped.");
 		}
 
 		public void SetColor(List<Color> colors, List<Color> sectors, int arg3, bool force=false) {
