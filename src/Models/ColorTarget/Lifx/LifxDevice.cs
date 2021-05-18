@@ -43,6 +43,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
         private int _sectorCount;
         
         public LifxDevice(LifxData d, ColorService colorService) : base(colorService) {
+            RefreshSystem();
             _frameSpan = TimeSpan.FromMilliseconds(1000f/60);
             DataUtil.GetItem<int>("captureMode");
             Data = d ?? throw new ArgumentException("Invalid Data");
@@ -55,12 +56,16 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             colorService.ControlService.RefreshSystemEvent += RefreshSystem;
             B = new LightBulb(d.HostName, d.MacAddress, d.Service, (uint)d.Port);
             _target = d.TargetSector - 1;
+            if (_capMode == CaptureMode.DreamScreen && _target > -1) {
+                var tPct = _target / _sectorCount;
+                _target = tPct * 12;
+                _target = Math.Min(_target, 11);
+            }
             Brightness = d.Brightness;
             Id = d.Id;
             IpAddress = d.IpAddress;
             Enable = Data.Enable;
             Online = SystemUtil.IsOnline(IpAddress);
-            RefreshSystem();
         }
 
         private void RefreshSystem() {
@@ -185,11 +190,6 @@ namespace Glimmr.Models.ColorTarget.Lifx {
                 return;
             }
 
-            if (_capMode == CaptureMode.DreamScreen) {
-                var tPct = _target / _sectorCount;
-                _target = tPct * 12;
-                _target = Math.Min(_target, 11);
-            }
             if (_target >= sectors.Count) return;
             
             var input = sectors[_target];

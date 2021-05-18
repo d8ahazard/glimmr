@@ -22,11 +22,13 @@ namespace Glimmr.Models.ColorTarget.Wled {
         }
 
         private void ServiceDiscovered(object? sender, DomainName serviceName) {
+            Log.Debug("Querying: " + serviceName);
             if (!_stopDiscovery) _mDns.SendQuery(serviceName, type: DnsType.PTR);
         }
 
         private void InterfaceDiscovered(object? sender, NetworkInterfaceEventArgs e) {
             _sd.QueryServiceInstances("_wled._tcp");
+            _sd.QueryServiceInstances("_arduino._tcp");
         }
 
         public async Task Discover(CancellationToken ct, int timeout) {
@@ -37,6 +39,10 @@ namespace Glimmr.Models.ColorTarget.Wled {
                 _mDns.NetworkInterfaceDiscovered += InterfaceDiscovered;
                 _sd.ServiceDiscovered += ServiceDiscovered;
                 _sd.ServiceInstanceDiscovered += WledDiscovered;
+                _sd.QueryServiceInstances("_wled._tcp");
+                _sd.QueryServiceInstances("_arduino._tcp");
+                _mDns.SendQuery("_arduino._tcp", type: DnsType.PTR);
+                _mDns.SendQuery("_wled._tcp", type: DnsType.PTR);
                 await Task.Delay(TimeSpan.FromSeconds(timeout), CancellationToken.None);
                 _mDns.NetworkInterfaceDiscovered -= InterfaceDiscovered;
                 _sd.ServiceDiscovered -= ServiceDiscovered;
@@ -52,7 +58,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
         private void WledDiscovered(object sender, ServiceInstanceDiscoveryEventArgs e) {
             var name = e.ServiceInstanceName.ToString();
-            if (!name.Contains("wled", StringComparison.InvariantCulture)) return;
+            Log.Debug("NAME: " + name);
+            if (!name.Contains("wled", StringComparison.InvariantCulture) && !name.Contains("arduino")) return;
             var rr = e.Message.AdditionalRecords;
             
             foreach (var id in from msg in rr where msg.Type == DnsType.TXT select msg.CanonicalName.Split(".")[0]) {

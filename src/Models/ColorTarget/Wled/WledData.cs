@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Net;
+using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
 using Serilog;
@@ -24,6 +25,10 @@ namespace Glimmr.Models.ColorTarget.Wled {
         [JsonProperty] public WledStateData State { get; set; }
         [JsonProperty] public bool ControlStrip { get; set; }
         [JsonProperty] public bool AutoDisable { get; set; }
+        
+        [DefaultValue(-1)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public int TargetSector { get; set; }
         
         
         public WledData() {
@@ -59,7 +64,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
                 State = jsonObj;
                 LedCount = jsonObj.info.leds.count;
                 Brightness = jsonObj.state.bri;
-            } catch (Exception) {
+            } catch (Exception e) {
                 
             }
         }
@@ -76,19 +81,44 @@ namespace Glimmr.Models.ColorTarget.Wled {
             if (Id != null) Name = StringUtil.UppercaseFirst(Id);
 
         }
+        
+        private SettingsProperty[] Kps() {
+            if ((StripMode) StripMode == Enums.StripMode.Single) {
+                return new SettingsProperty[] {
+                    new ("sectormap", "sectormap", ""),
+                    new ("LedCount", "number", "Led Count"),
+                    new ("StripMode", "select", "Strip Mode", new Dictionary<string, string> {
+                        ["0"] = "Normal",
+                        ["1"] = "Sectored",
+                        ["2"] = "Loop (Play Bar)",
+                        ["3"] = "Single Color"
+                    }),
+                    new ("ReverseStrip", "check", "Reverse Strip Direction"),
+                    new ("FrameDelay", "text", "Frame Delay")
+                };
+            }
 
-        public SettingsProperty[] KeyProperties { get; set; } = {
-            new("ledmap","ledmap",""),
-            new("Offset","number", "Strip Offset"),
-            new("LedCount","number", "Led Count"),
-            new("StripMode", "select", "Strip Mode", new Dictionary<string, string> {
-               ["0"] = "Normal",
-               ["1"] = "Sectored",
-               ["2"] = "Loop (Play Bar)"
-            }),
-            new("ReverseStrip","check", "Reverse Strip Direction"),
-            new("FrameDelay", "text", "Frame Delay")
-        };
+            return new SettingsProperty[] {
+                new("ledmap", "ledmap", ""),
+                new("Offset", "number", "Strip Offset"),
+                new("LedCount", "number", "Led Count"),
+                new("StripMode", "select", "Strip Mode", new Dictionary<string, string> {
+                    ["0"] = "Normal",
+                    ["1"] = "Sectored",
+                    ["2"] = "Loop (Play Bar)",
+                    ["3"] = "Single Color"
+                }),
+                new("ReverseStrip", "check", "Reverse Strip Direction"),
+                new("FrameDelay", "text", "Frame Delay")
+            };
+        }
+
+        private SettingsProperty[] _keyProperties;
+
+        public SettingsProperty[] KeyProperties {
+            get => Kps();
+            set => _keyProperties = value;
+        }
 
         [JsonProperty]
         

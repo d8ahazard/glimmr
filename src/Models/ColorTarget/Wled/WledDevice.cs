@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Serilog;
@@ -22,6 +23,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
         public string Id { get; set; }
         public string IpAddress { get; set; }
         public string Tag { get; set; }
+        
         private bool _disposed;
         private static int port = 21324;
         private IPEndPoint _ep;
@@ -29,8 +31,11 @@ namespace Glimmr.Models.ColorTarget.Wled {
         private readonly HttpClient _httpClient;
         private readonly UdpClient _udpClient;
         private int _offset;
-        private int _len;
-        
+        private int _ledCount;
+        private int _targetSector;
+        private StripMode _stripMode;
+        private CaptureMode _captureMode;
+        private int _sectorCount;
         
         IColorTargetData IColorTarget.Data {
             get => Data;
@@ -41,6 +46,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
         
         public WledDevice(WledData wd, ColorService colorService) : base(colorService) {
             colorService.ColorSendEvent += SetColor;
+            colorService.ControlService.RefreshSystemEvent += RefreshSystem;
             _udpClient = ColorService.ControlService.UdpClient;
             _httpClient = ColorService.ControlService.HttpSender;
             _updateColors = new List<Color>();
@@ -50,7 +56,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
             ReloadData();
         }
 
-        
+       
+
 
         public async Task StartStream(CancellationToken ct) {
             if (Streaming) return;
@@ -119,14 +126,23 @@ namespace Glimmr.Models.ColorTarget.Wled {
                 return;
             }
 
-            if (!Online) return;
             var colors = list;
-            colors = ColorUtil.TruncateColors(colors,_offset, _len);
-            if (Data.StripMode == 2) {
-                colors = ShiftColors(colors);
+
+            if (!Online) return;
+            if (_stripMode == StripMode.Single) {
+                if (_targetSector >= colors1.Count || _targetSector == -1) {
+                    return;
+                }
+                colors = ColorUtil.FillArray(colors1[_targetSector], _ledCount).ToList();                
             } else {
-                if (Data.ReverseStrip) {
-                    colors.Reverse();
+
+                colors = ColorUtil.TruncateColors(colors, _offset, _ledCount);
+                if (_stripMode == StripMode.Loop) {
+                    colors = ShiftColors(colors);
+                } else {
+                    if (Data.ReverseStrip) {
+                        colors.Reverse();
+                    }
                 }
             }
 
@@ -190,22 +206,38 @@ namespace Glimmr.Models.ColorTarget.Wled {
             SetColor(_updateColors, null, 0);
             await Task.FromResult(true);
         }
-       
+
+        public void RefreshSystem() {
+            ReloadData();
+        }
      
         public Task ReloadData() {
+            var sd = DataUtil.GetSystemData();
+            _captureMode = (CaptureMode) sd.CaptureMode;
+            _sectorCount = sd.SectorCount;
             var oldBrightness = Brightness;
             Data = DataUtil.GetDevice<WledData>(Id);
             _offset = Data.Offset;
             Brightness = Data.Brightness;
             IpAddress = Data.IpAddress;
             Enable = Data.Enable;
+            _stripMode = (StripMode) Data.StripMode;
+            _targetSector = Data.TargetSector;
+            if (_targetSector != -1) {
+                if (_captureMode == CaptureMode.DreamScreen) {
+                    var tPct = _targetSector / _sectorCount;
+                    _targetSector = tPct * 12;
+                    _targetSector = Math.Min(_targetSector, 11);
+                }
+            }
+
             if (oldBrightness != Brightness) {
                 Log.Debug($"Brightness has changed!! {oldBrightness} {Brightness}");
                 UpdateLightState(Streaming).ConfigureAwait(false);
             } else {
                 Log.Debug($"Nothing to update for brightness {oldBrightness} {Brightness}");
             }
-            _len = Data.LedCount;
+            _ledCount = Data.LedCount;
             Online = true;
             return Task.CompletedTask;
         }
