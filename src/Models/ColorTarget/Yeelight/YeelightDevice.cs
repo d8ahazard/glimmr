@@ -71,6 +71,8 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 				_streamTask = _yeeDevice.StartMusicMode(ip);
 				Log.Debug("Task created!");
 				Streaming = true;
+			} else {
+				Log.Debug("Can't get local IP: " + ip);
 			}
 			
 			if (Streaming) Log.Debug("YEE: Stream started!");
