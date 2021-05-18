@@ -104,11 +104,27 @@ namespace Glimmr.Models.Util {
         
        
         public static string GetLocalIpAddress() {
-            var host = Dns.GetHostEntry(Dns.GetHostName());
-            foreach (var ip in host.AddressList)
-                if (ip.AddressFamily == AddressFamily.InterNetwork)
-                    return ip.ToString();
-            throw new Exception("No network adapters found in " + JsonConvert.SerializeObject(host));
+            var res = "";
+            try {
+                var hostName = Dns.GetHostName();
+                Log.Debug("LOCAL HOSTNAME: " + hostName);
+                if (!string.IsNullOrEmpty(hostName)) {
+                    var host = Dns.GetHostEntry(hostName);
+                    foreach (var ip in host.AddressList) {
+                        if (ip.AddressFamily != AddressFamily.InterNetwork) {
+                            continue;
+                        }
+
+                        res = ip.ToString();
+                        break;
+                    }
+                }
+            } catch (Exception e) {
+                Log.Warning("Exception getting host IP: " + e.Message);
+            }
+
+            Log.Debug("IP Should be: " + res);
+            return res;
         }
        
     }
