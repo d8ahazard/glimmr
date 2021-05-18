@@ -342,7 +342,6 @@ namespace Glimmr.Services {
 					var pi = i * 1.0f;
 					var progress = pi / ledCount;
 					var sector = (int) Math.Round(progress * sectorCount);
-					Log.Debug("Sector is " + sector);
 					var rCol = ColorUtil.Rainbow(progress);
 					cols[i] = rCol;
 					if (sector > secs.Count) secs[sector] = rCol;

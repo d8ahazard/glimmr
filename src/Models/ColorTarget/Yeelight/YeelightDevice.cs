@@ -42,7 +42,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		public YeelightDevice(YeelightData yd, ColorService cs) : base(cs) {
 			_data = yd;
 			Id = _data.Id;
-			LoadData().ConfigureAwait(true);
+			LoadData();
 			Log.Debug("Created new yeedevice at " + yd.IpAddress);
 			cs.ColorSendEvent += SetColor;
 			cs.ControlService.RefreshSystemEvent += RefreshSystem;
@@ -121,7 +121,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			await _yeeDevice.SetRGBColor(col.R, col.G, col.B).ConfigureAwait(false);
 		}
 
-		private async Task LoadData() {
+		private void LoadData() {
 			RefreshSystem();
 			var prevIp = IpAddress;
 			var restart = false;
@@ -130,7 +130,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 				Log.Debug("Restarting yee device...");
 				if (Streaming) {
 					restart = true;
-					await StopStream();
+					StopStream().ConfigureAwait(true);
 					_yeeDevice?.Dispose();
 				}
 			}
@@ -142,7 +142,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			Enable = _data.Enable;
 
 			_yeeDevice ??= new Device(IpAddress);
-			if (restart) await StartStream(CancellationToken.None);
+			if (restart) StartStream(CancellationToken.None).ConfigureAwait(true);
 		}
 
 
