@@ -7,6 +7,8 @@ using Serilog;
 
 namespace Glimmr.Models.Util {
     public static class IpUtil {
+
+        private static string _localIp;
         public static IPEndPoint Parse(string endpoint, int portIn) {
             if (string.IsNullOrEmpty(endpoint)
                 || endpoint.Trim().Length == 0) {
@@ -104,6 +106,7 @@ namespace Glimmr.Models.Util {
         
        
         public static string GetLocalIpAddress() {
+            if (!string.IsNullOrEmpty(_localIp)) return _localIp;
             var res = "";
             var hostName = Dns.GetHostName();
             try {
@@ -145,6 +148,7 @@ namespace Glimmr.Models.Util {
             }
 
             Log.Debug("IP Should be: " + res);
+            _localIp = res;
             return res;
         }
        
