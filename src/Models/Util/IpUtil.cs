@@ -105,9 +105,30 @@ namespace Glimmr.Models.Util {
        
         public static string GetLocalIpAddress() {
             var res = "";
+            var hostName = Dns.GetHostName();
             try {
-                var hostName = Dns.GetHostName();
+                
                 Log.Debug("LOCAL HOSTNAME: " + hostName);
+                if (!string.IsNullOrEmpty(hostName)) {
+                    var host = Dns.GetHostEntry(hostName);
+                    foreach (var ip in host.AddressList) {
+                        if (ip.AddressFamily != AddressFamily.InterNetwork) {
+                            continue;
+                        }
+
+                        res = ip.ToString();
+                        break;
+                    }
+                }
+                
+            } catch (Exception e) {
+                Log.Warning("Exception getting host IP: " + e.Message);
+            }
+            
+            try {
+
+                hostName += ".local";
+                Log.Debug("LOCAL HOSTNAME2: " + hostName);
                 if (!string.IsNullOrEmpty(hostName)) {
                     var host = Dns.GetHostEntry(hostName);
                     foreach (var ip in host.AddressList) {
