@@ -121,6 +121,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			Tag = _data.Tag;
 			Id = _data.Id;
 			Brightness = _data.Brightness;
+			Enable = _data.Enable;
 
 			_yeeDevice ??= new Device(IpAddress);
 			if (restart) await StartStream(CancellationToken.None);
