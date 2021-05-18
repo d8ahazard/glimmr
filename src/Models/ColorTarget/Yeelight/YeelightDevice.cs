@@ -121,7 +121,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		
 			var col = sectors[(int)target];
 			if (target >= sectors.Count) return;
-			var min = Math.Max(col.R, Math.Max(col.G, col.B));
+			int min = Math.Max(col.R, Math.Max(col.G, col.B)) / 255 * 100;
 			_yeeDevice.SetRGBColor(col.R, col.G, col.B).ConfigureAwait(false);
 			_yeeDevice.SetBrightness(min);
 			_colorService.Counter.Tick(Id);
