@@ -58,14 +58,18 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 		
 		public async Task StartStream(CancellationToken ct) {
+			Log.Debug("Startstream called!");
 			if (!Enable) {
 				Log.Warning("YEE: Not enabled!");
 				return;
 			}
 			//Online = SystemUtil.IsOnline(IpAddress);
 			//if (!Online) return;
+			Log.Debug("Connecting.");
 			await _yeeDevice.Connect();
+			Log.Debug("Connected.");
 			var ip = IpUtil.GetLocalIpAddress();
+			Log.Debug("Trying to start music: " + ip);
 			if (!string.IsNullOrEmpty(ip)) {
 				Log.Debug("Creating stream task?");
 				_streamTask = _yeeDevice.StartMusicMode(ip);
@@ -74,8 +78,12 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			} else {
 				Log.Debug("Can't get local IP: " + ip);
 			}
-			
-			if (Streaming) Log.Debug("YEE: Stream started!");
+
+			if (Streaming) {
+				Log.Debug("YEE: Stream started!");
+			} else {
+				Log.Debug("Streaming was not started..." + Enable);
+			}
 		}
 
 		public async Task StopStream() {
@@ -143,6 +151,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 			_yeeDevice ??= new Device(IpAddress);
 			if (restart) StartStream(CancellationToken.None).ConfigureAwait(true);
+			Log.Debug("YEE: Data reloaded: " + Enable);
 		}
 
 
