@@ -73,9 +73,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
         
         public async Task FlashColor(Color color) {
-            var packet = new List<Byte>();
-            packet.Add(ByteUtils.IntByte(2));
-            packet.Add(ByteUtils.IntByte(10));
+            var packet = new List<byte> {ByteUtils.IntByte(2), ByteUtils.IntByte(10)};
             for (var i = 0; i < Data.LedCount; i++) {
                 packet.Add(color.R);
                 packet.Add(color.G);
@@ -121,7 +119,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 
         public void SetColor(List<Color> list, List<Color> colors1, int arg3, bool force=false) {
-            
             if (!Streaming || !Enable || Testing && !force) {
                 return;
             }
@@ -152,9 +149,9 @@ namespace Glimmr.Models.ColorTarget.Wled {
             packet[1] = ByteUtils.IntByte(timeByte);
             var pInt = 2;
             foreach (var t in colors) {
-                packet[pInt] = ByteUtils.IntByte(t.R);
-                packet[pInt + 1] = ByteUtils.IntByte(t.G);
-                packet[pInt + 2] = ByteUtils.IntByte(t.B);
+                packet[pInt] = t.R;
+                packet[pInt + 1] = t.G;
+                packet[pInt + 2] = t.B;
                 pInt += 3;
             }
 
@@ -243,9 +240,11 @@ namespace Glimmr.Models.ColorTarget.Wled {
         }
 
         public async Task UpdateLightState(bool on) {
+            var scaledBright = (Brightness / 100f) * 255;
             var url = "http://" + IpAddress + "/win";
             url += "&T=" + (on ? "1" : "0");
-            url += "&A=" + (int)(Brightness / 100f * 255);
+            url += "&A=" + (int) scaledBright;
+            Log.Debug($"ScaledBright: {scaledBright} for {url}");
             await _httpClient.GetAsync(url).ConfigureAwait(false);
         }
 
