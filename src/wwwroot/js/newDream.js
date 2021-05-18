@@ -1967,9 +1967,9 @@ function createSectorMap(targetElement, sectorImage, regionName) {
     let h = img.offsetHeight;
     let imgL = img.offsetLeft;
     let imgT = img.offsetTop;
-    let selected = parseInt(deviceData["TargetSector"]);
+    let selected = deviceData["TargetSector"];
     if (!isValid(selected)) selected = -1;
-    console.log("Img dims: ",w,h,imgL,imgT, img);
+    console.log("Img dims: ",w,h,imgL,imgT, img, selected);
     let exMap = targetElement.querySelector("#sectorMap");
     if (isValid(exMap)) exMap.remove();
     let wFactor = w / 1920;
@@ -1999,7 +1999,7 @@ function createSectorMap(targetElement, sectorImage, regionName) {
         let s1 = document.createElement("div");
         s1.classList.add("sector");
         if (isValid(regionName)) s1.classList.add(regionName + "Region");
-        if (sector === selected) s1.classList.add("checked");
+        if (sector.toString() === selected.toString()) s1.classList.add("checked");
         s1.setAttribute("data-sector", sector.toString());
         s1.style.position = "absolute";
         s1.style.top = t.toString() + "px";
@@ -2016,6 +2016,7 @@ function createSectorMap(targetElement, sectorImage, regionName) {
         r = l - fWidth;
         let s1 = document.createElement("div");
         s1.classList.add("sector");
+        if (sector.toString() === selected.toString()) s1.classList.add("checked");
         if (isValid(regionName)) s1.classList.add(regionName + "Region");
         s1.setAttribute("data-sector", sector.toString());
         s1.style.position = "absolute";
@@ -2036,6 +2037,7 @@ function createSectorMap(targetElement, sectorImage, regionName) {
         r = l + fWidth;
         let s1 = document.createElement("div");
         s1.classList.add("sector");
+        if (sector.toString() === selected.toString()) s1.classList.add("checked");
         if (isValid(regionName)) s1.classList.add(regionName + "Region");
         s1.setAttribute("data-sector", sector.toString());
         s1.style.position = "absolute";
@@ -2056,6 +2058,7 @@ function createSectorMap(targetElement, sectorImage, regionName) {
         r = l + fWidth;
         let s1 = document.createElement("div");
         s1.classList.add("sector");
+        if (sector.toString() === selected.toString()) s1.classList.add("checked");
         s1.setAttribute("data-sector", sector.toString());
         s1.style.position = "absolute";
         s1.style.top = t.toString() + "px";

@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
-using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Enums;
@@ -25,8 +24,10 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		private YeelightData _data;
 
 		private CaptureMode _capMode;
-		private ColorService _colorService;
+		private readonly ColorService _colorService;
+		//private Socket _yeeSocket;
 
+		private int _targetSector;
 		private int _sectorCount;
 		
 		
@@ -39,15 +40,13 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 		public YeelightDevice(YeelightData yd, ColorService cs) : base(cs) {
 			_data = yd;
-			Tag = _data.Tag;
-			Enable = _data.Enable;
 			Id = _data.Id;
-			_yeeDevice = new Device(yd.IpAddress);
+			LoadData().ConfigureAwait(true);
 			Log.Debug("Created new yeedevice at " + yd.IpAddress);
 			cs.ColorSendEvent += SetColor;
 			cs.ControlService.RefreshSystemEvent += RefreshSystem;
 			_colorService = cs;
-			RefreshSystem();
+			//_yeeSocket = cs.ControlService.YeeSocket;
 		}
 
 		private void RefreshSystem() {
@@ -82,19 +81,19 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			if (!Streaming || !Enable) return;
 			
 			if (!force) {
-				if (!Streaming || _data.TargetSector == -1 || Testing) {
+				if (!Streaming || _targetSector == -1 || Testing) {
 					return;
 				}
 			}
 
-			var target = _data.TargetSector;
+			var target = _targetSector * 1f;
 			if (_capMode == CaptureMode.DreamScreen) {
-				var tPct = target / _sectorCount;
-				target = tPct * 12;
+				float tPct = target / _sectorCount;
+				target =(int) (tPct * 12f);
 				target = Math.Min(target, 11);
 			}
 		
-			var col = sectors[target];
+			var col = sectors[(int)target];
 			if (target >= sectors.Count) return;
 			_yeeDevice.SetRGBColor(col.R, col.G, col.B).ConfigureAwait(false);
 			_colorService.Counter.Tick(Id);
@@ -104,14 +103,32 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			await _yeeDevice.SetRGBColor(col.R, col.G, col.B).ConfigureAwait(false);
 		}
 
+		private async Task LoadData() {
+			RefreshSystem();
+			var prevIp = IpAddress;
+			var restart = false;
+			IpAddress = _data.IpAddress;
+			if (!string.IsNullOrEmpty(prevIp) && prevIp != IpAddress) {
+				Log.Debug("Restarting yee device...");
+				if (Streaming) {
+					restart = true;
+					await StopStream();
+					_yeeDevice?.Dispose();
+				}
+			}
+			
+			_targetSector = _data.TargetSector;
+			Tag = _data.Tag;
+			Id = _data.Id;
+			Brightness = _data.Brightness;
+
+			_yeeDevice ??= new Device(IpAddress);
+			if (restart) await StartStream(CancellationToken.None);
+		}
+
 
 		public Task ReloadData() {
-			_yeeDevice?.Dispose();
-			_data = DataUtil.GetDevice<YeelightData>(_data.Id);
-			_yeeDevice = new Device(_data.IpAddress);
-			Brightness = _data.Brightness;
-			Enable = _data.Enable;
-			RefreshSystem();
+			_data = DataUtil.GetDevice<YeelightData>(Id);
 			return Task.CompletedTask;
 		}
 
