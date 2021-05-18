@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,7 +26,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 		private CaptureMode _capMode;
 		private readonly ColorService _colorService;
-		//private Socket _yeeSocket;
+		private Task _streamTask;
 
 		private int _targetSector;
 		private int _sectorCount;
@@ -46,7 +47,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			cs.ColorSendEvent += SetColor;
 			cs.ControlService.RefreshSystemEvent += RefreshSystem;
 			_colorService = cs;
-			//_yeeSocket = cs.ControlService.YeeSocket;
+			
 		}
 
 		private void RefreshSystem() {
@@ -55,6 +56,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			_sectorCount = sd.SectorCount;
 		}
 
+		
 		public async Task StartStream(CancellationToken ct) {
 			if (!Enable) {
 				Log.Warning("YEE: Not enabled!");
@@ -62,7 +64,13 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			}
 			//Online = SystemUtil.IsOnline(IpAddress);
 			//if (!Online) return;
-			Streaming = await _yeeDevice.Connect();
+			await _yeeDevice.Connect();
+			var ip = IpUtil.GetLocalIpAddress();
+			if (!string.IsNullOrEmpty(ip)) {
+				_streamTask = _yeeDevice.StartMusicMode(ip);
+				Streaming = true;
+			}
+			
 			if (Streaming) Log.Debug("YEE: Stream started!");
 		}
 
@@ -73,6 +81,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 			Log.Debug("YEE: Resetting...");
 			await FlashColor(Color.FromArgb(0, 0, 0)).ConfigureAwait(false);
+			await _yeeDevice.StopMusicMode();
 			_yeeDevice.Disconnect();
 			Streaming = false;
 		}
