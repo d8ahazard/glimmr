@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -20,9 +21,8 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		public string IpAddress { get; set; }
 		public string Tag { get; set; }
 		public bool Enable { get; set; }
-		public bool Online { get; set; }
-
-		private YeelightData _data;
+		
+		public YeelightData Data;
 
 		private CaptureMode _capMode;
 		private readonly ColorService _colorService;
@@ -33,28 +33,25 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		
 		
 		IColorTargetData IColorTarget.Data {
-			get => _data;
-			set => _data = (YeelightData) value;
+			get => Data;
+			set => Data = (YeelightData) value;
 		}
 
 		private Device _yeeDevice;
 
 		public YeelightDevice(YeelightData yd, ColorService cs) : base(cs) {
-			_data = yd;
-			Id = _data.Id;
+			Data = yd;
+			Id = Data.Id;
 			LoadData();
 			Log.Debug("Created new yeedevice at " + yd.IpAddress);
 			cs.ColorSendEvent += SetColor;
-			cs.ControlService.RefreshSystemEvent += RefreshSystem;
 			_colorService = cs;
 			
+			Data.LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
+			DataUtil.AddDeviceAsync(Data, false).ConfigureAwait(false);
 		}
 
-		private void RefreshSystem() {
-			var sd = DataUtil.GetSystemData();
-			_capMode = (CaptureMode) sd.CaptureMode;
-			_sectorCount = sd.SectorCount;
-		}
+		
 
 		
 		public async Task StartStream(CancellationToken ct) {
@@ -63,8 +60,8 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 				Log.Warning("YEE: Not enabled!");
 				return;
 			}
-			//Online = SystemUtil.IsOnline(IpAddress);
-			//if (!Online) return;
+			_targetSector = ColorUtil.CheckDsSectors(Data.TargetSector);
+
 			Log.Debug("Connecting.");
 			await _yeeDevice.Connect();
 			Log.Debug("Connected.");
@@ -112,15 +109,8 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 				}
 			}
 
-			var target = _targetSector * 1f;
-			if (_capMode == CaptureMode.DreamScreen) {
-				float tPct = target / _sectorCount;
-				target =(int) (tPct * 12f);
-				target = Math.Min(target, 11);
-			}
-		
-			var col = sectors[(int)target];
-			if (target >= sectors.Count) return;
+			var col = sectors[_targetSector];
+			if (_targetSector >= sectors.Count) return;
 			int min = Math.Max(col.R, Math.Max(col.G, col.B)) / 255 * 100;
 			_yeeDevice.SetRGBColor(col.R, col.G, col.B).ConfigureAwait(false);
 			_yeeDevice.SetBrightness(min);
@@ -132,10 +122,9 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		}
 
 		private void LoadData() {
-			RefreshSystem();
 			var prevIp = IpAddress;
 			var restart = false;
-			IpAddress = _data.IpAddress;
+			IpAddress = Data.IpAddress;
 			if (!string.IsNullOrEmpty(prevIp) && prevIp != IpAddress) {
 				Log.Debug("Restarting yee device...");
 				if (Streaming) {
@@ -145,11 +134,11 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 				}
 			}
 			
-			_targetSector = _data.TargetSector;
-			Tag = _data.Tag;
-			Id = _data.Id;
-			Brightness = _data.Brightness;
-			Enable = _data.Enable;
+			_targetSector = ColorUtil.CheckDsSectors(Data.TargetSector);
+			Tag = Data.Tag;
+			Id = Data.Id;
+			Brightness = Data.Brightness;
+			Enable = Data.Enable;
 
 			_yeeDevice ??= new Device(IpAddress);
 			if (restart) StartStream(CancellationToken.None).ConfigureAwait(true);
@@ -158,7 +147,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 
 		public Task ReloadData() {
-			_data = DataUtil.GetDevice<YeelightData>(Id);
+			Data = DataUtil.GetDevice<YeelightData>(Id);
 			return Task.CompletedTask;
 		}
 

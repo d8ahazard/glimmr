@@ -18,8 +18,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 		public string IpAddress { get; set; }
 		public string Tag { get; set; }
 		public bool Enable { get; set; }
-		public bool Online { get; set; }
-
+		
 		IColorTargetData IColorTarget.Data {
 			get => Data;
 			set => Data = (LedData) value;

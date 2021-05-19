@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
-using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using LifxNetPlus;
@@ -14,8 +12,7 @@ using Color = System.Drawing.Color;
 namespace Glimmr.Models.ColorTarget.Lifx {
     public class LifxDevice : ColorTarget, IColorTarget {
         public bool Enable { get; set; }
-        public bool Online { get; set; }
-
+        
         IColorTargetData IColorTarget.Data {
             get => Data;
             set => Data = (LifxData) value;
@@ -26,7 +23,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
         public bool Streaming { get; set; }
         public bool Testing { get; set; }
 
-        private int _target;
+        private int _targetSector;
         private bool _hasMulti;
         private int _multizoneCount;
         private int _offset;
@@ -37,14 +34,9 @@ namespace Glimmr.Models.ColorTarget.Lifx {
         public string Tag { get; set; }
 
         private readonly LifxClient _client;
-        private TimeSpan _frameSpan;
-
-        private CaptureMode _capMode;
-        private int _sectorCount;
+        
         
         public LifxDevice(LifxData d, ColorService colorService) : base(colorService) {
-            RefreshSystem();
-            _frameSpan = TimeSpan.FromMilliseconds(1000f/60);
             DataUtil.GetItem<int>("captureMode");
             Data = d ?? throw new ArgumentException("Invalid Data");
             _hasMulti = d.HasMultiZone;
@@ -53,29 +45,21 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             if (_hasMulti) _multizoneCount = d.LedCount;
             _client = colorService.ControlService.GetAgent("LifxAgent");
             colorService.ColorSendEvent += SetColor;
-            colorService.ControlService.RefreshSystemEvent += RefreshSystem;
             B = new LightBulb(d.HostName, d.MacAddress, d.Service, (uint)d.Port);
-            _target = d.TargetSector - 1;
-            if (_capMode == CaptureMode.DreamScreen && _target > -1) {
-                var tPct = _target / _sectorCount;
-                _target = tPct * 12;
-                _target = Math.Min(_target, 11);
-            }
+            _targetSector = Data.TargetSector - 1;
+            _targetSector = ColorUtil.CheckDsSectors(_targetSector);
             Brightness = d.Brightness;
             Id = d.Id;
             IpAddress = d.IpAddress;
             Enable = Data.Enable;
-            Online = SystemUtil.IsOnline(IpAddress);
         }
 
-        private void RefreshSystem() {
-            var sd = DataUtil.GetSystemData();
-            _capMode = (CaptureMode) sd.CaptureMode;
-            _sectorCount = sd.SectorCount;
-        }
-
+       
         public async Task StartStream(CancellationToken ct) {
             if (!Enable) return;
+            // Recalculate target sector before starting stream, just in case.
+            _targetSector = Data.TargetSector - 1;
+            _targetSector = ColorUtil.CheckDsSectors(_targetSector);
             Log.Debug("Lifx: Starting stream.");
             var col = new LifxColor(0, 0, 0);
             //var col = new LifxColor {R = 0, B = 0, G = 0};
@@ -100,7 +84,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
         
         public async Task StopStream() {
-            if (!Enable || !Online) return;
+            if (!Enable) return;
             Streaming = false;
             if (_client == null) throw new ArgumentException("Invalid lifx client.");
             FlashColor(Color.FromArgb(0, 0, 0)).ConfigureAwait(false);
@@ -120,7 +104,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
             IpAddress = Data.IpAddress;
             var targetSector = newData.TargetSector;
-            _target = targetSector - 1;
+            _targetSector = targetSector - 1;
             var oldBrightness = Brightness;
             Brightness = newData.Brightness;
             if (oldBrightness != Brightness) {
@@ -154,33 +138,41 @@ namespace Glimmr.Models.ColorTarget.Lifx {
             var shifted = new List<Color>();
 
             var output = ColorUtil.TruncateColors(colors, _offset, _multizoneCount);
-            if (Brightness < 100) {
-                var diff = Brightness / 100f;
-                foreach (var rgb in output) {
-                    var r = Math.Clamp(rgb.R * diff, 0, 255);
-                    var g = Math.Clamp(rgb.G * diff, 0, 255);
-                    var b = Math.Clamp(rgb.B * diff, 0, 255);
-                    shifted.Add(Color.FromArgb((int)r, (int)g, (int)b));
-                }
-                output = shifted;
-            }
+            
             if (_reverseStrip) output.Reverse();
             var i = 0;
             shifted = new List<Color>();
 
             foreach (var col in output) {
                 if (i == 0) {
-                    shifted.Add(col);
+                    shifted.Add(ColorUtil.FixGamma(col));
                     i = 1;
                 } else {
                     i = 0;
                 }
             }
 
-            output = shifted;
-            var cols = output.Select(col => new LifxColor(col)).ToList();
-            
+            var cols = new List<LifxColor>();
+            foreach (var c in shifted) {
+                if (Brightness < 100) {
+                    var bFactor = Brightness / 100f;
+                    ColorUtil.ColorToHsv(c, out var h, out var s, out var v);
+                    v *= bFactor;
+                    s = scaleSaturation(s);
+                    cols.Add(new LifxColor(h,s,v,3500d));
+                } else {
+                    cols.Add(new LifxColor(c));
+                }
+            }
             _client.SetExtendedColorZonesAsync(B, cols).ConfigureAwait(false);
+        }
+
+        private double scaleSaturation(double input) {
+            if (input >= 1d) return input;
+            var diff = 1d - input;
+            diff *= 3;
+            input -= diff;
+            return Math.Max(input, 0d);
         }
 
         private void SetColorSingle(List<Color> list) {
@@ -190,9 +182,9 @@ namespace Glimmr.Models.ColorTarget.Lifx {
                 return;
             }
 
-            if (_target >= sectors.Count) return;
+            if (_targetSector >= sectors.Count) return;
             
-            var input = sectors[_target];
+            var input = sectors[_targetSector];
             
             var nC = new LifxColor(input);
             //var nC = new LifxColor {R = input.R, B = input.B, G = input.G};

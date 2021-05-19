@@ -21,6 +21,8 @@ namespace Glimmr.Services {
 	public class ControlService : BackgroundService {
 		public HttpClient HttpSender { get; }
 		public UdpClient UdpClient { get; }
+		public Socket TcpSocket { get; }
+
 		public MulticastService MulticastService { get; }
 		public ServiceDiscovery ServiceDiscovery { get; }
 		private readonly IHubContext<SocketServer> _hubContext;
@@ -39,8 +41,9 @@ namespace Glimmr.Services {
 			UdpClient.DontFragment = true;
 			MulticastService = new MulticastService();
 			ServiceDiscovery = new ServiceDiscovery(MulticastService);
-			
+			TcpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 			// Dynamically load agents
+			ColorUtil.SetSystemData();
 			LoadAgents();
 		}
 
@@ -278,7 +281,7 @@ namespace Glimmr.Services {
 				}
 			}
 
-			
+			ColorUtil.SetSystemData();
 			RefreshSystemEvent();
 		}
 

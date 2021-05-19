@@ -4,11 +4,9 @@ using System.Drawing;
 using System.Globalization;
 using System.Linq;
 using System.Net.Sockets;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
-using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Newtonsoft.Json;
@@ -23,8 +21,7 @@ using Group = Q42.HueApi.Models.Groups.Group;
 namespace Glimmr.Models.ColorTarget.Hue {
 	public sealed class HueDevice : ColorTarget, IColorTarget, IDisposable {
 		public bool Enable { get; set; }
-		public bool Online { get; set; }
-
+		
 		IColorTargetData IColorTarget.Data {
 			get => Data;
 			set => Data = (HueData) value;
@@ -43,13 +40,10 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		public bool Streaming { get; set; }
 		private readonly StreamingGroup _stream;
 
-		private int _sectorCount;
-		private CaptureMode _capMode;
-
+		
 		public HueDevice(HueData data, ColorService colorService) : base(colorService) {
 			DataUtil.GetItem<int>("captureMode");
 			colorService.ColorSendEvent += SetColor;
-			colorService.ControlService.RefreshSystemEvent += RefreshSystem;
 			Data = data ?? throw new ArgumentNullException(nameof(data));
 			_disposed = false;
 			Streaming = false;
@@ -57,6 +51,8 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Id = Data.Id;
 			// Don't grab streaming group unless we need it
 			if (Data?.User == null || Data?.Token == null || _client != null) return;
+			
+			Enable = Data.Enable;
 			_client = new StreamingHueClient(Data.IpAddress, Data.User, Data.Token);
 			try {
 				_stream = SetupAndReturnGroup().Result;
@@ -66,11 +62,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			}
 		}
 
-		private void RefreshSystem() {
-			var sd = DataUtil.GetSystemData();
-			_capMode = (CaptureMode) sd.CaptureMode;
-			_sectorCount = sd.SectorCount;
-		}
+		
 		public HueDevice(HueData data) {
 			DataUtil.GetItem<int>("captureMode");
 			Data = data ?? throw new ArgumentNullException(nameof(data));
@@ -78,6 +70,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			_disposed = false;
 			Streaming = false;
 			_entLayer = null;
+			SetData();
 			Id = IpAddress;
 			Tag = data.Tag;
 			Brightness = data.Brightness;
@@ -129,8 +122,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		public async Task StartStream(CancellationToken ct) {
 			// Leave if not enabled
 			if (!Enable) return;
-			Online = SystemUtil.IsOnline(IpAddress);
-			if (!Online) return;
+			
 			Log.Debug($"Hue: Starting stream at  {IpAddress}...");
 			// Leave if we have no client (not authorized)
 			if (_client == null) {
@@ -180,7 +172,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 
 		public async Task StopStream() {
-			if (!Enable || !Online || !Streaming) return;
+			if (!Enable || !Streaming) return;
 			Log.Debug($"Hue: Stopping Stream: {IpAddress}...");
 			// YOU NEED TO AWAIT THIS, STUPID.
 			await StopStream(_client, Data);
@@ -218,8 +210,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Tag = Data.Tag;
 			Enable = Data.Enable;
 			Brightness = Data.Brightness;
-			Online = SystemUtil.IsOnline(IpAddress);
-			RefreshSystem();
 			Log.Debug(@"Hue: Reloaded bridge: " + IpAddress);
 		}
 
@@ -246,11 +236,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				// Otherwise, get the corresponding sector color
 				var tSector = lightData.TargetSector;
 				var target = tSector - 1;
-				if (_capMode == CaptureMode.DreamScreen) {
-					var tPct = target / _sectorCount;
-					target = tPct * 12;
-					target = Math.Min(target, 11);
-				}
+				target = ColorUtil.CheckDsSectors(target);
 				if (target >= sectors.Count) continue;
 				var color = sectors[target];
 				var mb = lightData.Override ? lightData.Brightness : Brightness;

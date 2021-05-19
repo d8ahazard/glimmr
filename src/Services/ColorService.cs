@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Enums;
@@ -478,7 +479,11 @@ namespace Glimmr.Services {
 				_streamStarted = true;
 				Log.Information("Starting streaming devices...");
 				foreach (var sdev in _sDevices) {
-					sdev.StartStream(_sendTokenSource.Token);
+					if (SystemUtil.IsOnline(sdev.Data.IpAddress) || sdev.Data.Tag == "Led") {
+						sdev.StartStream(_sendTokenSource.Token);
+					} else {
+						Log.Debug("Device " + sdev.Data.Id + " is offline.");
+					}
 				}
 			}
 			

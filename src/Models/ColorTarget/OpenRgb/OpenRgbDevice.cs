@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,7 +19,6 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		public string IpAddress { get; set; }
 		public string Tag { get; set; }
 		public bool Enable { get; set; }
-		public bool Online { get; set; }
 		private readonly ColorService _colorService;
 		private readonly OpenRGBClient _client;
 		
@@ -42,8 +42,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		
 		public Task StartStream(CancellationToken ct) {
 			if (_client == null || !Enable) return Task.CompletedTask;
-			Online = SystemUtil.IsOnline(IpAddress);
-
+			
 			if (!_client.Connected) {
 				try {
 					_client.Connect();
@@ -64,7 +63,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 		public async Task StopStream() {
 			if (_client == null) return;
-			if (!_client.Connected || !Enable || !Online) return;
+			if (!_client.Connected || !Enable) return;
 			Log.Debug("OpenRGB: Stopping stream...");
 			var output = new OpenRGB.NET.Models.Color[Data.LedCount];
 			for (var i = 0; i < output.Length; i++) {

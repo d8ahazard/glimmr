@@ -1967,7 +1967,8 @@ function createSectorMap(targetElement, sectorImage, regionName) {
     let h = img.offsetHeight;
     let imgL = img.offsetLeft;
     let imgT = img.offsetTop;
-    let selected = deviceData["TargetSector"];
+    let selected = -1;
+    if (isValid(deviceData)) selected = deviceData["TargetSector"];
     if (!isValid(selected)) selected = -1;
     console.log("Img dims: ",w,h,imgL,imgT, img, selected);
     let exMap = targetElement.querySelector("#sectorMap");

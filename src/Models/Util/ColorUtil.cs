@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 using System.Linq;
+using Glimmr.Enums;
 using Serilog;
 
 namespace Glimmr.Models.Util {
@@ -10,8 +11,10 @@ namespace Glimmr.Models.Util {
         private static double Tolerance
             => 0.000000000000001;
 
+        private static CaptureMode _captureMode;
+        private static int _sectorCount;
 
-        private static void ColorToHsv(Color color, out double hue, out double saturation, out double value) {
+        public static void ColorToHsv(Color color, out double hue, out double saturation, out double value) {
             int max = Math.Max(color.R, Math.Max(color.G, color.B));
             int min = Math.Min(color.R, Math.Min(color.G, color.B));
 
@@ -314,6 +317,7 @@ namespace Glimmr.Models.Util {
                 v = 1.0;
             }
 
+            if (v < 0) v = 0;
             return HsvToColor(h, s, v);
         }
         
@@ -627,6 +631,26 @@ namespace Glimmr.Models.Util {
 	        }
 
 	        return output;
+        }
+
+        public static int CheckDsSectors(int target) {
+	        float t = target + 1;
+	        if (_captureMode == CaptureMode.DreamScreen && target != -1) {
+		        if (target != 0) {
+			        var tPct = t / _sectorCount;
+			        t = tPct * 12f;
+			        t = Math.Min(t, 12f);
+			        target = (int) t - 1;
+		        }
+	        }
+
+	        return target;
+        }
+
+        public static void SetSystemData() {
+	        var sd = DataUtil.GetSystemData();
+	        _captureMode = (CaptureMode) sd.CaptureMode;
+	        _sectorCount = sd.SectorCount;
         }
     }
 }

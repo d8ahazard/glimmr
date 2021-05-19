@@ -22,34 +22,30 @@ namespace Glimmr.Models.Util {
 		}
 
 		public static bool IsOnline(string target) {
-			// F this stuff...
-			return true;
 			if (string.IsNullOrEmpty(target)) {
 				Log.Debug("Target is empty");
 				return true;
 			}
 			if (target == "127.0.0.1" || target == "localhost") return true;
-			var pingSender = new Ping ();
+			var pingable = false;
+			Ping pinger = null;
 
-			// Create a buffer of 32 bytes of data to be transmitted.
-			const string data = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-			const int timeout = 3;
-
-			var buffer = Encoding.ASCII.GetBytes (data);
-			var options = new PingOptions (64, true);
-			var isOnline = false;
-			try {
-
-				// Send the request.
-				var reply = pingSender.Send(target, timeout, buffer, options);
-				isOnline = reply != null && reply.Status == IPStatus.Success;
-			} catch (Exception e) {
-				Log.Debug("Ping error: " + e.Message);
+			try
+			{
+				pinger = new Ping();
+				var reply = pinger.Send(target);
+				if (reply != null) {
+					pingable = reply.Status == IPStatus.Success;
+				}
+			}
+			catch (PingException) {
+				//ignore
+			}
+			finally {
+				pinger?.Dispose();
 			}
 
-			if (!isOnline) Log.Information("Device " + target + " is offline.");
-			
-			return isOnline;
+			return pingable;
 		}
 
 		public static void Update() {

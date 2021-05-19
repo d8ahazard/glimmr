@@ -110,7 +110,6 @@ namespace Glimmr.Models.Util {
             var res = "";
             var hostName = Dns.GetHostName();
             try {
-                
                 Log.Debug("LOCAL HOSTNAME: " + hostName);
                 if (!string.IsNullOrEmpty(hostName)) {
                     var host = Dns.GetHostEntry(hostName);

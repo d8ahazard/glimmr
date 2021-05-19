@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
@@ -16,8 +17,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
     public class GlimmrDevice : ColorTarget, IColorTarget, IDisposable
     {
         public bool Enable { get; set; }
-        public bool Online { get; set; }
-        public bool Streaming { get; set; }
+         public bool Streaming { get; set; }
         public bool Testing { get; set; }
         public int Brightness { get; set; }
         public string Id { get; set; }
@@ -31,7 +31,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
         private readonly UdpClient _udpClient;
         private int _offset;
         private int _len;
-        private int _sectorCount;
+        
         
         IColorTargetData IColorTarget.Data {
             get => Data;
@@ -50,15 +50,12 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
             Enable = Data.Enable;
             IpAddress = Data.IpAddress;
             _len = Data.LedCount;
-            Online = SystemUtil.IsOnline(IpAddress);
-            _sectorCount = Data.BottomSectorCount + Data.LeftSectorCount + Data.RightSectorCount + Data.TopSectorCount;
+            
         }
 
         
         public async Task StartStream(CancellationToken ct) {
             if (Streaming || !Enable) return;
-            Online = SystemUtil.IsOnline(IpAddress);
-            if (!Online) return;
             Log.Debug($"Glimmr: Starting stream at {IpAddress}...");
             await SendPost("mode", 5).ConfigureAwait(false);
             _ep = IpUtil.Parse(IpAddress, port);
@@ -96,7 +93,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 
         
         public async Task StopStream() {
-            if (!Enable || !Online) return;
+            if (!Enable) return;
             await FlashColor(Color.FromArgb(0, 0, 0));
             Streaming = false;
             Log.Debug("Glimmr: Stream stopped.");
@@ -109,9 +106,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
             if (!Streaming || !Enable || Testing && !force) {
                 return;
             }
-
-            if (!Online) return;
-            
+ 
             if (_ep == null) {
                 Log.Debug("No endpoint.");
                 return;

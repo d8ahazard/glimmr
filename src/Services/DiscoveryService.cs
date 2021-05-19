@@ -83,9 +83,16 @@ namespace Glimmr.Services {
 			foreach (var dev in devs) {
 				var device = (IColorTargetData) dev;
 				var lastSeen = DateTime.Parse(device.LastSeen, CultureInfo.InvariantCulture);
-				if (DateTime.Now - lastSeen >= TimeSpan.FromDays(7)) {
-					DataUtil.DeleteDevice(device.Id);
-				} 
+				if (DateTime.Now - lastSeen < TimeSpan.FromDays(7)) {
+					continue;
+				}
+
+				bool online = SystemUtil.IsOnline(dev.IpAddress);
+				if (online) {
+					dev.LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
+					DataUtil.AddDeviceAsync(dev);
+				}
+				DataUtil.DeleteDevice(device.Id);
 			}
 			cs.Dispose();
 		}

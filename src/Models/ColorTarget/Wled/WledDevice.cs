@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -16,7 +17,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
     public class WledDevice : ColorTarget, IColorTarget, IDisposable
     {
         public bool Enable { get; set; }
-        public bool Online { get; set; }
         public bool Streaming { get; set; }
         public bool Testing { get; set; }
         public int Brightness { get; set; }
@@ -62,7 +62,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
         public async Task StartStream(CancellationToken ct) {
             if (Streaming) return;
             if (!Enable) return;
-            Online = true;
+            _targetSector = ColorUtil.CheckDsSectors(Data.TargetSector);
+
             Log.Debug($"WLED: Starting stream at {IpAddress}...");
             _ep = IpUtil.Parse(IpAddress, port);
             Streaming = true;
@@ -97,7 +98,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
         
         public async Task StopStream() {
-            if (!Data.Enable || !Online) return;
+            if (!Data.Enable) return;
             Log.Debug("WLED: Stopping stream...");
             var packet = new List<byte> {ByteUtils.IntByte(2), ByteUtils.IntByte(1)};
             for (var i = 0; i < Data.LedCount * 3; i++) {
@@ -125,7 +126,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
             var colors = list;
 
-            if (!Online) return;
             if (_stripMode == StripMode.Single) {
                 if (_targetSector >= colors1.Count || _targetSector == -1) {
                     return;
@@ -219,14 +219,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             IpAddress = Data.IpAddress;
             Enable = Data.Enable;
             _stripMode = (StripMode) Data.StripMode;
-            _targetSector = Data.TargetSector;
-            if (_targetSector != -1) {
-                if (_captureMode == CaptureMode.DreamScreen) {
-                    var tPct = _targetSector / _sectorCount;
-                    _targetSector = tPct * 12;
-                    _targetSector = Math.Min(_targetSector, 11);
-                }
-            }
+            _targetSector = ColorUtil.CheckDsSectors(Data.TargetSector);
 
             if (oldBrightness != Brightness) {
                 Log.Debug($"Brightness has changed!! {oldBrightness} {Brightness}");
@@ -235,7 +228,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
                 Log.Debug($"Nothing to update for brightness {oldBrightness} {Brightness}");
             }
             _ledCount = Data.LedCount;
-            Online = true;
             return Task.CompletedTask;
         }
 
