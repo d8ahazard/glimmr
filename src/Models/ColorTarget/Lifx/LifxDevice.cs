@@ -98,8 +98,9 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				return;
 			}
 
-			FlashColor(Color.FromArgb(0, 0, 0)).ConfigureAwait(false);
-			_client.SetLightPowerAsync(B, Data.Power).ConfigureAwait(false);
+			Log.Information($"{Data.Tag}::Stopping stream.: {Data.Id}...");
+			await FlashColor(Color.FromArgb(0, 0, 0)).ConfigureAwait(false);
+			_client.SetLightPowerAsync(B, false).ConfigureAwait(false);
 			await Task.FromResult(true);
 			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
 		}
@@ -153,8 +154,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				return;
 			}
 
-			var shifted = new List<Color>();
-
+			
 			var output = ColorUtil.TruncateColors(colors, _offset, _multizoneCount);
 
 			if (_reverseStrip) {
@@ -162,7 +162,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			}
 
 			var i = 0;
-			shifted = new List<Color>();
+			var shifted = new List<Color>();
 
 			foreach (var col in output) {
 				if (i == 0) {
@@ -177,28 +177,20 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			foreach (var c in shifted) {
 				if (Brightness < 100) {
 					var bFactor = Brightness / 100f;
-					ColorUtil.ColorToHsv(c, out var h, out var s, out var v);
-					v *= bFactor;
-					s = scaleSaturation(s);
-					cols.Add(new LifxColor(h, s, v, 3500d));
+					var h = c.GetHue();
+					var s = c.GetSaturation();
+					var b = c.GetBrightness();
+					b *= bFactor;
+					cols.Add(new LifxColor(h, s, b, 3500d));
 				} else {
 					cols.Add(new LifxColor(c));
 				}
 			}
 
-			_client.SetExtendedColorZonesAsync(B, cols).ConfigureAwait(false);
+			_client.SetExtendedColorZonesAsync(B, cols,5).ConfigureAwait(false);
 		}
 
-		private double scaleSaturation(double input) {
-			if (input >= 1d) {
-				return input;
-			}
-
-			var diff = 1d - input;
-			diff *= 3;
-			input -= diff;
-			return Math.Max(input, 0d);
-		}
+		
 
 		private void SetColorSingle(List<Color> list) {
 			var sectors = list;
