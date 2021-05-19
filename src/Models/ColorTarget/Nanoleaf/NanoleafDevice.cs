@@ -15,8 +15,6 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		private readonly NanoleafStreamingClient _streamingClient;
 		private bool _disposed;
 
-		private List<List<Color>> _frameBuffer;
-		private int _frameDelay;
 		private TileLayout _layout;
 		private bool _wasOn;
 
@@ -60,7 +58,6 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			}
 
 			Log.Information($"{Data.Tag}::Starting stream: {Data.Id}...");
-			_frameBuffer = new List<List<Color>>();
 			Streaming = true;
 			_wasOn = await _nanoleafClient.GetPowerStatusAsync();
 			if (!_wasOn) {
@@ -90,16 +87,6 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		public void SetColor(List<Color> list, List<Color> sectors, int fadeTime, bool force = false) {
 			if (!Streaming || !Enable || Testing && !force) {
 				return;
-			}
-
-			if (_frameDelay > 0) {
-				_frameBuffer.Add(sectors);
-				if (_frameBuffer.Count < _frameDelay) {
-					return; // Just buffer till we reach our count
-				}
-
-				sectors = _frameBuffer[0];
-				_frameBuffer.RemoveAt(0);
 			}
 
 			var cols = new Dictionary<int, Color>();
@@ -164,8 +151,6 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
 			Enable = n.Enable;
 			Id = n.Id;
-			_frameDelay = Data.FrameDelay;
-			_frameBuffer = new List<List<Color>>();
 		}
 
 
