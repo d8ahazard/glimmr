@@ -8,22 +8,22 @@ using Serilog;
 
 namespace Glimmr.Models.Util {
 	public static class CpuUtil {
-		private static double _tempMin = 10000.0d;
-		private static double _tempMax;
-		private static double _tempAverage;
-		private static float _loadAvg1;
-		private static float _loadAvg5;
-		private static float _loadAvg15;
-		private static string _upTime;
-		private static string[] _throttledState;
 		private const StringComparison Sc = StringComparison.InvariantCulture;
-		
+		private static float _loadAvg1;
+		private static float _loadAvg15;
+		private static float _loadAvg5;
+		private static double _tempAverage;
+		private static double _tempMax;
+		private static double _tempMin = 10000.0d;
+		private static string[] _throttledState;
+		private static string _upTime;
+
 		private static readonly string[] StringTable = {
 			"Soft Temperature Limit has occurred", //19
 			"Throttling has occurred",
 			"Arm frequency capping has occurred",
 			"Under volt has occurred",
-			"",//15
+			"", //15
 			"",
 			"",
 			"",
@@ -34,7 +34,7 @@ namespace Glimmr.Models.Util {
 			"",
 			"",
 			"",
-			"",//3
+			"", //3
 			"Soft temperature limit active",
 			"Currently throttled",
 			"ARM frequency capped",
@@ -68,7 +68,7 @@ namespace Glimmr.Models.Util {
 					Arguments = "-c \"/opt/vc/bin/vcgencmd measure_temp\"",
 					RedirectStandardOutput = true,
 					UseShellExecute = false,
-					CreateNoWindow = true,
+					CreateNoWindow = true
 				}
 			};
 			process.Start();
@@ -86,7 +86,7 @@ namespace Glimmr.Models.Util {
 					Arguments = "-c \"/opt/vc/bin/vcgencmd get_throttled\"",
 					RedirectStandardOutput = true,
 					UseShellExecute = false,
-					CreateNoWindow = true,
+					CreateNoWindow = true
 				}
 			};
 			process.Start();
@@ -96,19 +96,21 @@ namespace Glimmr.Models.Util {
 			result = result.Trim();
 			var split = result.Split("x")[1];
 			var bin = Hex2Bin(split);
-			var messages = new List<String>();
+			var messages = new List<string>();
 			for (var i = 0; i < bin.Length; i++) {
 				if (bin[i].ToString(CultureInfo.InvariantCulture) == "1") {
 					messages.Add(StringTable[i]);
 				}
 			}
+
 			return messages.ToArray();
 		}
 
 		private static string Hex2Bin(string hexString) {
 			var output = string.Join(string.Empty,
 				hexString.Select(
-					c => Convert.ToString(Convert.ToInt32(c.ToString(CultureInfo.InvariantCulture), 16), 2).PadLeft(4, '0')
+					c => Convert.ToString(Convert.ToInt32(c.ToString(CultureInfo.InvariantCulture), 16), 2)
+						.PadLeft(4, '0')
 				)
 			);
 			return output;
@@ -120,7 +122,7 @@ namespace Glimmr.Models.Util {
 					FileName = "/usr/bin/uptime",
 					RedirectStandardOutput = true,
 					UseShellExecute = false,
-					CreateNoWindow = true,
+					CreateNoWindow = true
 				}
 			};
 			process.Start();
@@ -135,17 +137,17 @@ namespace Glimmr.Models.Util {
 		}
 
 
-		
-		
 		private static void TemperatureSetMinMax(float temperature) {
 			try {
 				_tempAverage = temperature;
 
-				if (_tempMin > temperature)
+				if (_tempMin > temperature) {
 					_tempMin = temperature;
+				}
 
-				if (_tempMax < temperature)
+				if (_tempMax < temperature) {
 					_tempMax = temperature;
+				}
 			} catch (Exception ex) {
 				Log.Warning("Got me some kind of exception: " + ex.Message);
 			}

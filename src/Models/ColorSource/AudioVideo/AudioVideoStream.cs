@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
-using System.Threading;
-using Glimmr.Models.ColorSource.Audio;
-using Glimmr.Models.ColorSource.Video;
 using System.Drawing;
+using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Enums;
+using Glimmr.Models.ColorSource.Audio;
+using Glimmr.Models.ColorSource.Video;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.Extensions.Hosting;
@@ -12,12 +12,12 @@ using Serilog;
 
 namespace Glimmr.Models.ColorSource.AudioVideo {
 	public class AudioVideoStream : BackgroundService, IColorSource {
-		private bool _enable;
 		public List<Color> Colors { get; private set; }
 		public List<Color> Sectors { get; private set; }
+		private readonly AudioStream _as;
 		private readonly ColorService _cs;
 		private readonly VideoStream _vs;
-		private readonly AudioStream _as;
+		private bool _enable;
 		private SystemData _systemData;
 
 		public AudioVideoStream(ColorService cs) {
@@ -27,11 +27,36 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 			_vs = (VideoStream) _cs.GetStream(DeviceMode.Video);
 		}
 
+
+		public void ToggleStream(bool enable = false) {
+			_enable = enable;
+			if (!enable) {
+				return;
+			}
+
+			_vs.ToggleStream(true);
+			_vs.SendColors = false;
+			_as.ToggleStream(true);
+			_as.SendColors = false;
+		}
+
+
+		public void Refresh(SystemData systemData) {
+			_systemData = systemData;
+			Colors = ColorUtil.EmptyList(_systemData.LedCount);
+			Sectors = ColorUtil.EmptyList(28);
+		}
+
+		public bool SourceActive { get; set; }
+
 		protected override Task ExecuteAsync(CancellationToken ct) {
 			Log.Debug("Starting av stream service...");
 			return Task.Run(async () => {
 				while (!ct.IsCancellationRequested) {
-					if (!_enable) continue;
+					if (!_enable) {
+						continue;
+					}
+
 					var vCols = _vs.Colors;
 					var vSecs = _vs.Sectors;
 					var aCols = _as.Colors;
@@ -63,31 +88,9 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 					_cs.SendColors(Colors, Sectors, 0);
 					await Task.Delay(1, CancellationToken.None);
 				}
+
 				Log.Debug("AV stream service stopped.");
 			}, CancellationToken.None);
 		}
-
-		
-
-		public void ToggleStream(bool enable = false) {
-			_enable = enable;
-			if (!enable) {
-				return;
-			}
-
-			_vs.ToggleStream(true);
-			_vs.SendColors = false;
-			_as.ToggleStream(true);
-			_as.SendColors = false;
-		}
-
-		
-		public void Refresh(SystemData systemData) {
-			_systemData = systemData;
-			Colors = ColorUtil.EmptyList(_systemData.LedCount);
-			Sectors = ColorUtil.EmptyList(28);
-		}
-
-		public bool SourceActive { get; set; }
 	}
 }

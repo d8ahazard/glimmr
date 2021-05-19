@@ -8,20 +8,12 @@ using DreamScreenNet.Devices;
 
 namespace Glimmr.Models.ColorTarget.DreamScreen {
 	public class DreamScreenData : IColorTargetData {
-		public string Name { get; set; }
-		public string Id { get; set; }
-		public string Tag { get; set; } = "DreamScreen";
-		public string IpAddress { get; set; }
-		public int Brightness { get; set; }
-		
-		public int FrameDelay { get; set; }
-		public bool Enable { get; set; }
-		public string LastSeen { get; set; }
 		public int GroupNumber { get; set; }
 		public string DeviceTag { get; set; }
 
-		public DreamScreenData(){}
-		
+		public DreamScreenData() {
+		}
+
 		public DreamScreenData(DreamDevice dev) {
 			Name = dev.Name;
 			Id = dev.IpAddress.ToString();
@@ -31,6 +23,17 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			GroupNumber = dev.DeviceGroup;
 			DeviceTag = dev.Type.ToString();
 		}
+
+		public string Name { get; set; }
+		public string Id { get; set; }
+		public string Tag { get; set; } = "DreamScreen";
+		public string IpAddress { get; set; }
+		public int Brightness { get; set; }
+
+		public int FrameDelay { get; set; }
+		public bool Enable { get; set; }
+		public string LastSeen { get; set; }
+
 		public void UpdateFromDiscovered(IColorTargetData data) {
 			var dData = (DreamScreenData) data;
 			Brightness = data.Brightness;

@@ -4,26 +4,26 @@ using System.Drawing;
 using System.Linq;
 using Emgu.CV.Structure;
 using Glimmr.Models.Util;
-using Newtonsoft.Json;
 using Serilog;
 
 namespace Glimmr.Models.ColorSource.Audio {
 	public class AudioMap {
-		private int _vSectors;
-		private int _hSectors;
-		private float _rotationSpeed;
-		private float _rotation;
-		private float _rotationThreshold;
-		private float _rotationUpper = 1;
-		private float _rotationLower;
+		private readonly JsonLoader _loader;
 		private RangeF _highRange;
+		private int _hSectors;
+		private List<int> _leftSectors;
 		private RangeF _lowRange;
 		private RangeF _midRange;
 		private List<int> _rightSectors;
-		private List<int> _leftSectors;
+		private float _rotation;
+		private float _rotationLower;
+		private float _rotationSpeed;
+		private float _rotationThreshold;
+		private float _rotationUpper = 1;
 		private bool _triggered;
-		private readonly JsonLoader _loader;
+		private int _vSectors;
 		private float maxVal;
+
 		public AudioMap() {
 			_loader = new JsonLoader("audioScenes");
 			Refresh();
@@ -55,33 +55,41 @@ namespace Glimmr.Models.ColorSource.Audio {
 					if (!lSteps.Contains(sector)) {
 						lSteps.Add(sector);
 						var note = HighNote(lChannel, sector, _leftSectors.Count);
-						if (note.Value >= _rotationThreshold && !triggered) triggered = true;
+						if (note.Value >= _rotationThreshold && !triggered) {
+							triggered = true;
+						}
+
 						var targetHue = RotateHue(ColorUtil.HueFromFrequency(note.Key));
 						var sectorInt = _leftSectors.ElementAt(sector);
 						if (note.Value > maxVal) {
 							maxVal = note.Value;
 						}
+
 						output[sectorInt] = ColorUtil.HsvToColor(targetHue * 360, 1, note.Value);
 					}
+
 					sector = (int) Math.Floor(_rightSectors.Count * i);
 					if (!rSteps.Contains(sector)) {
 						rSteps.Add(sector);
 						var note = HighNote(lChannel, sector, _rightSectors.Count);
-						if (note.Value >= _rotationThreshold && !triggered) triggered = true;
+						if (note.Value >= _rotationThreshold && !triggered) {
+							triggered = true;
+						}
+
 						var targetHue = RotateHue(ColorUtil.HueFromFrequency(note.Key));
 						var sectorInt = _rightSectors.ElementAt(sector);
 						if (note.Value > maxVal) {
 							maxVal = note.Value;
 							Log.Debug("Max is " + maxVal);
 						}
+
 						output[sectorInt] = ColorUtil.HsvToColor(targetHue * 360, 1, note.Value);
 					}
 				}
-			
 			}
 
 			_triggered = triggered;
-			
+
 			return output;
 		}
 
@@ -93,14 +101,20 @@ namespace Glimmr.Models.ColorSource.Audio {
 			var amp = 0f;
 			var frequency = 0;
 			foreach (var d in stuff) {
-				if (d.Key < minFrequency) continue;
-				if (d.Key >= minFrequency * 2) continue;
-				
+				if (d.Key < minFrequency) {
+					continue;
+				}
+
+				if (d.Key >= minFrequency * 2) {
+					continue;
+				}
+
 				if (d.Value > amp) {
 					amp = d.Value;
 					frequency = d.Key;
 				}
 			}
+
 			return new KeyValuePair<int, float>(frequency, amp);
 		}
 
@@ -116,7 +130,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 			}
 
 			return max / 2;
-		
 		}
 
 		private void Refresh() {
@@ -129,7 +142,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 			_rotationSpeed = 0;
 			_rotationUpper = 1;
 			_rotationLower = 0;
-			
+
 			try {
 				_rotationSpeed = am.RotationSpeed;
 				_rotationLower = am.RotationLower;
@@ -141,21 +154,30 @@ namespace Glimmr.Models.ColorSource.Audio {
 			} catch (Exception e) {
 				Log.Warning("Exception: " + e.Message);
 			}
+
 			_hSectors = sd.HSectors;
 			_vSectors = sd.VSectors;
 			var len = (_hSectors + _vSectors) * 2 - 4;
 			var rightStart = len - _hSectors / 2 + 1;
 			var rightEnd = _vSectors + _hSectors / 2 - 2;
-			
+
 			_rightSectors = new List<int>();
 			// Start of left range from bottom mid
-			for (var i = rightStart; i < len; i++) _rightSectors.Add(i);
+			for (var i = rightStart; i < len; i++) {
+				_rightSectors.Add(i);
+			}
+
 			// Rest of left range from 0 up to top mid
-			for (var i = 0; i <= rightEnd; i++ ) _rightSectors.Add(i);
+			for (var i = 0; i <= rightEnd; i++) {
+				_rightSectors.Add(i);
+			}
+
 			_leftSectors = new List<int>();
 			var leftEnd = _vSectors + _hSectors / 2 - 1;
 			var leftStart = len - _hSectors / 2;
-			for (var i = leftStart; i >= leftEnd; i--) _leftSectors.Add(i);
+			for (var i = leftStart; i >= leftEnd; i--) {
+				_leftSectors.Add(i);
+			}
 		}
 
 		private float RotateHue(float hue) {
@@ -180,7 +202,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 			}
 
 			output += _rotation;
-			
+
 			if (output > 1) {
 				output = 1 - output;
 			}
@@ -188,11 +210,9 @@ namespace Glimmr.Models.ColorSource.Audio {
 			if (output < 0) {
 				output = 1 + output;
 			}
-			
-			
+
 
 			return output;
 		}
-		
 	}
 }

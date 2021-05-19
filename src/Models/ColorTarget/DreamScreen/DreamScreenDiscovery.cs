@@ -4,19 +4,19 @@ using System.Threading.Tasks;
 using DreamScreenNet;
 using Glimmr.Services;
 using Newtonsoft.Json;
-using Org.BouncyCastle.Crypto.Digests;
 using Serilog;
 
 namespace Glimmr.Models.ColorTarget.DreamScreen {
 	public class DreamScreenDiscovery : ColorDiscovery, IColorDiscovery {
-		private DreamScreenClient _client;
-		private ControlService _cs;
+		public override string DeviceTag { get; set; }
+		private readonly DreamScreenClient _client;
+		private readonly ControlService _cs;
+
 		public DreamScreenDiscovery(ColorService colorService) : base(colorService) {
 			_client = colorService.ControlService.GetAgent("DreamAgent");
 			_cs = colorService.ControlService;
 		}
 
-		public override string DeviceTag { get; set; }
 		public async Task Discover(CancellationToken ct, int timeout) {
 			Log.Debug("DS: Starting discovery...");
 			_client.DeviceDiscovered += DevFound;

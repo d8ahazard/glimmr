@@ -7,31 +7,18 @@ using Glimmr.Models.Util;
 using Glimmr.Services;
 using rpi_ws281x;
 using Serilog;
-using ColorUtil = Glimmr.Models.Util.ColorUtil;
 
 namespace Glimmr.Models.ColorTarget.Led {
 	public class LedDevice : ColorTarget, IColorTarget {
-		public bool Streaming { get; set; }
-		public bool Testing { get; set; }
-		public int Brightness { get; set; }
-		public string Id { get; set; }
-		public string IpAddress { get; set; }
-		public string Tag { get; set; }
-		public bool Enable { get; set; }
-		
-		IColorTargetData IColorTarget.Data {
-			get => Data;
-			set => Data = (LedData) value;
-		}
 		public float CurrentMilliamps { get; set; }
 		public LedData Data;
-		
+		private bool _enableAbl;
+
 		private int _ledCount;
 		private int _offset;
-		private bool _enableAbl;
 		private WS281x _strip;
-		
-		
+
+
 		public LedDevice(LedData ld, ColorService colorService) : base(colorService) {
 			var cs = colorService;
 			cs.ColorSendEvent += SetColor;
@@ -39,22 +26,25 @@ namespace Glimmr.Models.ColorTarget.Led {
 			Id = Data.Id;
 			ReloadData();
 		}
-		
 
-		
-		private void CreateStrip() {
-			var settings = LoadLedData(Data);
-			// Hey, look, this is built natively into the LED app
-			try {
-				_strip = new WS281x(settings);
-				Streaming = true;
-			} catch (Exception) {
-				Streaming = false;
-			}
+		public bool Streaming { get; set; }
+		public bool Testing { get; set; }
+		public int Brightness { get; set; }
+		public string Id { get; set; }
+		public string IpAddress { get; set; }
+		public string Tag { get; set; }
+		public bool Enable { get; set; }
+
+		IColorTargetData IColorTarget.Data {
+			get => Data;
+			set => Data = (LedData) value;
 		}
 
 		public async Task StartStream(CancellationToken ct) {
-			if (!Enable) return;
+			if (!Enable) {
+				return;
+			}
+
 			Log.Information($"{Data.Tag}::Starting stream: {Data.Id}...");
 			Streaming = true;
 			await Task.FromResult(Streaming);
@@ -62,20 +52,22 @@ namespace Glimmr.Models.ColorTarget.Led {
 		}
 
 		public async Task StopStream() {
-			if (!Enable) return;
+			if (!Enable) {
+				return;
+			}
+
 			await StopLights().ConfigureAwait(false);
 			Streaming = false;
 			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
 		}
 
-		
+
 		public Task FlashColor(Color color) {
 			_strip?.SetAll(color);
 			return Task.CompletedTask;
 		}
 
-		
-		
+
 		public void Dispose() {
 			_strip?.Reset();
 			_strip?.Dispose();
@@ -88,15 +80,20 @@ namespace Glimmr.Models.ColorTarget.Led {
 				Log.Warning("No LED Data");
 				return Task.CompletedTask;
 			}
+
 			Data = ld;
 			if (Id == "2" || Id == "1") {
 				Enable = false;
 				Streaming = false;
 				return Task.CompletedTask;
 			}
+
 			Enable = Data.Enable;
 			_ledCount = Data.LedCount;
-			if (_ledCount > sd.LedCount) _ledCount = sd.LedCount;
+			if (_ledCount > sd.LedCount) {
+				_ledCount = sd.LedCount;
+			}
+
 			_enableAbl = Data.AutoBrightnessLevel;
 			_offset = Data.Offset;
 
@@ -110,24 +107,74 @@ namespace Glimmr.Models.ColorTarget.Led {
 				return Task.CompletedTask;
 			}
 
-			if (Data.Brightness != ld.Brightness) _strip.SetBrightness(ld.Brightness/100 * 255);
-			if (Data.LedCount != ld.LedCount) _strip.SetLedCount(ld.LedCount);
-			if (!_enableAbl) _strip.SetBrightness(ld.Brightness / 100 * 255);
+			if (Data.Brightness != ld.Brightness) {
+				_strip.SetBrightness(ld.Brightness / 100 * 255);
+			}
+
+			if (Data.LedCount != ld.LedCount) {
+				_strip.SetLedCount(ld.LedCount);
+			}
+
+			if (!_enableAbl) {
+				_strip.SetBrightness(ld.Brightness / 100 * 255);
+			}
+
 			return Task.CompletedTask;
 		}
 
-	
+		public void SetColor(List<Color> colors, List<Color> sectors, int fadeTime, bool force = false) {
+			if (colors == null) {
+				throw new ArgumentException("Invalid color input.");
+			}
+
+			if (!Streaming || !Enable || Testing && !force) {
+				return;
+			}
+
+			var c1 = TruncateColors(colors, _ledCount, _offset);
+			if (_enableAbl) {
+				c1 = VoltAdjust(c1, Data);
+			}
+
+			for (var i = 0; i < c1.Count; i++) {
+				var tCol = c1[i];
+				if (Data.StripType == 1) {
+					tCol = ColorUtil.ClampAlpha(tCol);
+				}
+
+				_strip?.SetLed(i, tCol);
+			}
+
+			_strip?.Render();
+			ColorService.Counter.Tick(Id);
+		}
+
+
+		private void CreateStrip() {
+			var settings = LoadLedData(Data);
+			// Hey, look, this is built natively into the LED app
+			try {
+				_strip = new WS281x(settings);
+				Streaming = true;
+			} catch (Exception) {
+				Streaming = false;
+			}
+		}
+
 
 		private Settings LoadLedData(LedData ld) {
 			var settings = Settings.CreateDefaultSettings();
-			if (!ld.FixGamma) settings.SetGammaCorrection(0, 0, 0);
+			if (!ld.FixGamma) {
+				settings.SetGammaCorrection(0, 0, 0);
+			}
+
 			var stripType = ld.StripType switch {
 				1 => StripType.SK6812W_STRIP,
 				2 => StripType.WS2811_STRIP_RBG,
 				0 => StripType.WS2812_STRIP,
 				_ => StripType.WS2812_STRIP
 			};
-			
+
 			// 18 = PWM0, 13 = PWM1, 21 = PCM, 10 = SPI0/MOSI
 			var pin = ld.GpioNumber switch {
 				19 => Pin.Gpio19,
@@ -136,35 +183,10 @@ namespace Glimmr.Models.ColorTarget.Led {
 				13 => Pin.Gpio13,
 				_ => Pin.Gpio18
 			};
-			
+
 			settings.AddController(_ledCount, pin, stripType);
 			Data = ld;
 			return settings;
-		}
-		
-		public void SetColor(List<Color> colors, List<Color> sectors, int fadeTime, bool force=false) {
-			if (colors == null) {
-				throw new ArgumentException("Invalid color input.");
-			}
-
-			if (!Streaming || !Enable || (Testing && !force)) {
-				return;
-			}
-
-			var c1 = TruncateColors(colors, _ledCount, _offset);
-			if (_enableAbl) {
-				c1 = VoltAdjust(c1, Data);
-			}
-			
-			for (var i = 0; i < c1.Count; i++) {
-				var tCol = c1[i];
-				if (Data.StripType == 1) {
-					tCol = ColorUtil.ClampAlpha(tCol);
-				}
-				_strip?.SetLed(i,tCol);
-			}
-			_strip?.Render();
-			ColorService.Counter.Tick(Id);
 		}
 
 		private static List<Color> TruncateColors(List<Color> input, int len, int offset) {
@@ -189,15 +211,18 @@ namespace Glimmr.Models.ColorTarget.Led {
 			} else {
 				for (var i = offset; i < offset + len; i++) {
 					truncated.Add(input[i]);
-				}    
+				}
 			}
 
 			return truncated;
 		}
 
 		private async Task StopLights() {
-			if (!Enable) return;
-			_strip?.SetAll(Color.FromArgb(0,0,0,0));
+			if (!Enable) {
+				return;
+			}
+
+			_strip?.SetAll(Color.FromArgb(0, 0, 0, 0));
 			await Task.FromResult(true);
 		}
 
@@ -246,7 +271,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 					var scaleI = scale * 255;
 					var scaleB = scaleI > 255 ? 255 : scaleI;
 					var newBri = scale8(defaultBrightness, scaleB);
-					_strip?.SetBrightness((int)newBri);
+					_strip?.SetBrightness((int) newBri);
 					CurrentMilliamps = powerSum0 * newBri / puPerMilliamp;
 					if (newBri < defaultBrightness) {
 						//output = ColorUtil.ClampBrightness(input, newBri);

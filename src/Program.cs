@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -15,21 +16,22 @@ using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
 
-namespace Glimmr
-{
-	public class Program
-	{
+namespace Glimmr {
+	public class Program {
 		public static void Main(string[] args) {
 			var outputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}]{Caller} {Message}{NewLine}{Exception}";
 			var logPath = "/var/log/glimmr/glimmr.log";
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 				var userPath = SystemUtil.GetUserDir();
 				var logDir = Path.Combine(userPath, "log");
-				if (!Directory.Exists(logDir)) Directory.CreateDirectory(logDir);
+				if (!Directory.Exists(logDir)) {
+					Directory.CreateDirectory(logDir);
+				}
+
 				logPath = Path.Combine(userPath, "log", "glimmr.log");
 			}
-			
-			var tr1 = new TextWriterTraceListener(System.Console.Out);
+
+			var tr1 = new TextWriterTraceListener(Console.Out);
 			//Trace.Listeners.Add(tr1);
 
 			Log.Logger = new LoggerConfiguration()
@@ -40,7 +42,7 @@ namespace Glimmr
 				.Enrich.FromLogContext()
 				.WriteTo.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: outputTemplate)
 				.CreateLogger();
-            
+
 			CreateHostBuilder(args).Build().Run();
 		}
 
@@ -50,9 +52,13 @@ namespace Glimmr
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 				var userPath = SystemUtil.GetUserDir();
 				var logDir = Path.Combine(userPath, "log");
-				if (!Directory.Exists(logDir)) Directory.CreateDirectory(logDir);
+				if (!Directory.Exists(logDir)) {
+					Directory.CreateDirectory(logDir);
+				}
+
 				logPath = Path.Combine(userPath, "log", "glimmr.log");
 			}
+
 			return Host.CreateDefaultBuilder(args)
 				.UseSerilog((hostingContext, loggerConfiguration) => loggerConfiguration
 					.Enrich.WithCaller()
@@ -60,9 +66,8 @@ namespace Glimmr
 					.Enrich.FromLogContext()
 					.Filter.ByExcluding(c => c.MessageTemplate.Text.Contains("Request"))
 					.Filter.ByExcluding(c => c.MessageTemplate.Text.Contains("SerilogLogger"))
-
 					.WriteTo.Console(outputTemplate: outputTemplate)
-					.WriteTo.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: outputTemplate))         
+					.WriteTo.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: outputTemplate))
 				.ConfigureServices(services => {
 					services.AddSignalR();
 					services.AddSingleton<ControlService>();

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+
 // ReSharper disable MemberCanBePrivate.Global
 
 namespace Glimmr.Models {
@@ -15,7 +16,9 @@ namespace Glimmr.Models {
 
 		public static AsyncEvent<TEventArgs> operator +(
 			AsyncEvent<TEventArgs> e, Func<object, TEventArgs, Task> callback) {
-			if (callback == null) throw new NullReferenceException("callback is null");
+			if (callback == null) {
+				throw new NullReferenceException("callback is null");
+			}
 
 			//Note: Thread safety issue- if two threads register to the same event (on the first time, i.e when it is null)
 			//they could get a different instance, so whoever was first will be overridden.
@@ -31,8 +34,13 @@ namespace Glimmr.Models {
 
 		public static AsyncEvent<TEventArgs> operator -(
 			AsyncEvent<TEventArgs> e, Func<object, TEventArgs, Task> callback) {
-			if (callback == null) throw new NullReferenceException("callback is null");
-			if (e == null) return null;
+			if (callback == null) {
+				throw new NullReferenceException("callback is null");
+			}
+
+			if (e == null) {
+				return null;
+			}
 
 			lock (e._locker) {
 				e._invocationList.Remove(callback);

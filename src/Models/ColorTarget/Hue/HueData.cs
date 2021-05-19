@@ -13,22 +13,22 @@ using Q42.HueApi.Models.Groups;
 namespace Glimmr.Models.ColorTarget.Hue {
 	[Serializable]
 	public class HueData : IColorTargetData {
-
 		[JsonProperty] public int GroupNumber { get; set; }
-		[JsonProperty] public string User { get; set; } = "";
-		[JsonProperty] public string Token { get; set; } = "";
+
+		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+		public List<HueGroup> Groups { get; set; } = new();
+
+		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+		public List<LightData> Lights { get; set; } = new();
+
+		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+		public List<LightMap> MappedLights { get; set; } = new();
+
 		[JsonProperty] public string GroupName { get; set; } = "";
 		[JsonProperty] public string SelectedGroup { get; set; } = "";
-		
-		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)] 
-		public List<LightMap> MappedLights { get; set; } = new List<LightMap>();
+		[JsonProperty] public string Token { get; set; } = "";
+		[JsonProperty] public string User { get; set; } = "";
 
-		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-		public List<HueGroup> Groups { get; set; } = new List<HueGroup>();
-
-		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-		public List<LightData> Lights { get; set; } = new List<LightData>();
-		
 		public HueData() {
 		}
 
@@ -39,7 +39,10 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 
 		public HueData(LocatedBridge b) {
-			if (b == null) throw new ArgumentException("Invalid located bridge.");
+			if (b == null) {
+				throw new ArgumentException("Invalid located bridge.");
+			}
+
 			IpAddress = b.IpAddress;
 			Id = IpAddress;
 			Brightness = 100;
@@ -58,11 +61,13 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 		public void UpdateFromDiscovered(IColorTargetData data) {
 			var input = (HueData) data;
-			if (input == null) throw new ArgumentException("Invalid bridge data.");
+			if (input == null) {
+				throw new ArgumentException("Invalid bridge data.");
+			}
+
 			Lights = input.Lights;
 			Groups = input.Groups;
 			IpAddress = input.IpAddress;
-			
 		}
 
 		public SettingsProperty[] KeyProperties { get; set; } = {
@@ -76,7 +81,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		public string Tag { get; set; } = "Hue";
 		public string IpAddress { get; set; }
 		public int Brightness { get; set; }
-		
+
 		public int FrameDelay { get; set; }
 		public bool Enable { get; set; }
 
@@ -92,9 +97,34 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			}
 		}
 	}
-	
+
 	[Serializable]
 	public class LightData {
+		[JsonProperty] public int Brightness { get; set; }
+
+		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+		public int LightLevel { get; set; }
+
+		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+		public int Presence { get; set; }
+
+		[JsonProperty] public State LastState { get; set; }
+
+		[JsonProperty]
+		public string Id {
+			get => _id;
+			set => _id = value;
+		}
+
+		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+		public string ModelId { get; set; }
+
+		[JsonProperty] public string Name { get; set; }
+
+		[JsonProperty] public string Type { get; set; }
+
+		[JsonProperty] private string _id;
+
 		public LightData() {
 			Name = string.Empty;
 			Type = string.Empty;
@@ -103,84 +133,59 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 
 		public LightData(Light l) {
-			if (l == null) return;
+			if (l == null) {
+				return;
+			}
+
 			Name = l.Name;
 			Id = l.Id;
 			Type = l.Type;
 			ModelId = l.ModelId;
 		}
-
-		[JsonProperty] 
-		public string Name { get; set; }
-		
-		[JsonProperty] 
-		private string _id;
-		
-		[JsonProperty]
-		public string Id {
-			get => _id;
-			set => _id = value;
-		}
-
-		[JsonProperty] 
-		public string Type { get; set; }
-		[JsonProperty] 
-		public int Brightness { get; set; }
-		[JsonProperty] 
-		public State LastState { get; set; }
-		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)] 
-		public string ModelId { get; set; }
-		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)] 
-		public int Presence { get; set; }
-		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)] 
-		public int LightLevel { get; set; }
 	}
 
 	[Serializable]
 	public class HueGroup : Group {
+		[JsonProperty]
+		public new string Id {
+			get => _id;
+			set => _id = value;
+		}
+
+		[JsonProperty] private string _id;
+
 		/// <inheritdoc />
 		public HueGroup() {
-			
 		}
+
 		public HueGroup(Group g) {
 			Id = g.Id;
 			Name = g.Name;
 			Lights = g.Lights;
 			Type = g.Type;
 		}
-		
-		[JsonProperty] 
-		private string _id;
-		
-		[JsonProperty]
-		public new string Id {
-			get => _id;
-			set => _id = value;
-		}
 	}
-	
+
 	[Serializable]
 	public class LightMap {
-		[JsonProperty] 
-		private string _id;
-		
+		[DefaultValue(false)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public bool Override { get; set; }
+
+		[DefaultValue(255)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int Brightness { get; set; }
+
+		[DefaultValue(-1)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int TargetSector { get; set; }
+
 		[JsonProperty]
 		public string Id {
 			get => _id;
 			set => _id = value;
 		}
-		
-		[DefaultValue(-1)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int TargetSector { get; set; }
-		
-		[DefaultValue(255)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int Brightness { get; set; }
-		
-		[DefaultValue(false)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public bool Override { get; set; }
-		
+
+		[JsonProperty] private string _id;
 	}
 }

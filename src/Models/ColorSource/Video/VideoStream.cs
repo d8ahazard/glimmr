@@ -20,61 +20,60 @@ using Glimmr.Models.ColorSource.Video.Stream.Usb;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.Extensions.Hosting;
-using Newtonsoft.Json;
 using Serilog;
 
 #endregion
 
 namespace Glimmr.Models.ColorSource.Video {
 	public sealed class VideoStream : BackgroundService, IColorSource {
-		
-		public List<Color> Colors { get; private set; }
-		public List<Color> Sectors { get; private set; }
 		// should we send them to devices?
 		public bool SendColors { get; set; }
-		
-		// Should we be processing?
 
-		private bool _enable;
-		
+		public List<Color> Colors { get; private set; }
+		public List<Color> Sectors { get; private set; }
+		private Splitter StreamSplitter { get; set; }
+
 		// Scaling variables
 		private const int ScaleHeight = DisplayUtil.CaptureHeight;
 		private const int ScaleWidth = DisplayUtil.CaptureWidth;
 
-		private Size _scaleSize;
-
-		// Debug options
-		private bool _noColumns;
-		private bool _showEdged;
-		private bool _showWarped;
-
-		// Source stuff
-		private PointF[] _vectors;
-		private VectorOfPointF _lockTarget;
-
-		private List<VectorOfPoint> _targets;
+		// Is content detected?
+		private readonly ColorService _colorService;
+		private readonly ControlService _controlService;
 
 		// Loaded data
 		private int _camType;
+		private CancellationToken _cancellationToken;
 		private CaptureMode _captureMode;
+		private bool _doSave;
+
+		// Should we be processing?
+
+		private bool _enable;
+
+		private Stopwatch _frameWatch;
+		private VectorOfPointF _lockTarget;
+
+		// Debug options
+		private bool _noColumns;
+
+		// Timer and bool for saving sample frames
+		private Timer _saveTimer;
+
+		private Size _scaleSize;
+		private bool _showEdged;
+		private bool _showWarped;
 		private int _srcArea;
 
 		private SystemData _systemData;
 
+		private List<VectorOfPoint> _targets;
+
 		// Video source and splitter
 		private IVideoStream _vc;
-		private Splitter StreamSplitter { get; set; }
 
-		// Timer and bool for saving sample frames
-		private Timer _saveTimer;
-		private bool _doSave;
-		
-		// Is content detected?
-		private readonly ColorService _colorService;
-		private readonly ControlService _controlService;
-		private CancellationToken _cancellationToken;
-
-		private Stopwatch _frameWatch;
+		// Source stuff
+		private PointF[] _vectors;
 
 
 		public VideoStream(ControlService controlService) {
@@ -85,9 +84,24 @@ namespace Glimmr.Models.ColorSource.Video {
 			_colorService.AddStream(DeviceMode.Video, this);
 		}
 
+		public void ToggleStream(bool enable = false) {
+			_enable = enable;
+			SendColors = true;
+		}
+
+
+		public void Refresh(SystemData systemData) {
+			StreamSplitter?.Refresh();
+		}
+
+		public bool SourceActive { get; set; }
+
 		private void RefreshSystem() {
 			var wasEnabled = _enable;
-			if (_enable) _enable = false;
+			if (_enable) {
+				_enable = false;
+			}
+
 			_vc?.Stop();
 			var prevCapMode = _captureMode;
 			SetCapVars();
@@ -98,11 +112,15 @@ namespace Glimmr.Models.ColorSource.Video {
 					Log.Information("We have no video source.");
 					return;
 				}
+
 				_vc.Start(_cancellationToken);
 			}
+
 			StreamSplitter?.Refresh();
 			Initialize(_cancellationToken);
-			if (wasEnabled) _enable = true;
+			if (wasEnabled) {
+				_enable = true;
+			}
 		}
 
 		private void Initialize(CancellationToken ct) {
@@ -116,28 +134,23 @@ namespace Glimmr.Models.ColorSource.Video {
 				Log.Information("We have no video source, returning.");
 				return;
 			}
+
 			_vc.Start(ct);
 			SendColors = true;
 			StreamSplitter = new Splitter(_systemData, _controlService);
 		}
 
-		public void ToggleStream(bool enable = false) {
-			_enable = enable;
-			SendColors = true;
-		}
 
-		
 		protected override Task ExecuteAsync(CancellationToken ct) {
 			Log.Debug("Starting video stream service...");
 			Initialize(ct);
 			return Task.Run(async () => {
 				while (!ct.IsCancellationRequested) {
-					
 					if (!_enable) {
 						await Task.Delay(1, ct);
 						continue;
 					}
-				
+
 					var frame = _vc.Frame;
 					if (frame == null) {
 						SourceActive = false;
@@ -155,8 +168,8 @@ namespace Glimmr.Models.ColorSource.Video {
 						//Log.Debug("NO COLUMNS");
 						continue;
 					}
-					
-					
+
+
 					var warped = ProcessFrame(frame);
 					if (warped == null) {
 						SourceActive = false;
@@ -174,23 +187,17 @@ namespace Glimmr.Models.ColorSource.Video {
 						_colorService.SendColors(Colors, Sectors, 0);
 					}
 				}
+
 				await _saveTimer.DisposeAsync();
 				Log.Information("Video stream service stopped.");
 			}, CancellationToken.None);
 		}
 
-		
-		public void Refresh(SystemData systemData) {
-			StreamSplitter?.Refresh();
-		}
-
-		public bool SourceActive { get; set; }
-
 
 		private void SetCapVars() {
 			_systemData = DataUtil.GetSystemData();
 			Colors = ColorUtil.EmptyList(_systemData.LedCount);
-			var sectorSize = (_systemData.VSectors * 2) + (_systemData.HSectors * 2) - 4; 
+			var sectorSize = _systemData.VSectors * 2 + _systemData.HSectors * 2 - 4;
 			Sectors = ColorUtil.EmptyList(sectorSize);
 			_captureMode = (CaptureMode) DataUtil.GetItem<int>("CaptureMode");
 			_camType = DataUtil.GetItem<int>("CamType");
@@ -211,9 +218,11 @@ namespace Glimmr.Models.ColorSource.Video {
 				} catch (Exception e) {
 					Log.Debug("Exception: " + e.Message);
 				}
-
 			}
-			_vectors = new PointF[] {new Point(0, 0), new Point(ScaleWidth, 0), new Point(ScaleWidth, ScaleHeight), new Point(0, ScaleHeight)};
+
+			_vectors = new PointF[] {
+				new Point(0, 0), new Point(ScaleWidth, 0), new Point(ScaleWidth, ScaleHeight), new Point(0, ScaleHeight)
+			};
 
 			// Debugging vars...
 			_showEdged = DataUtil.GetItem<bool>("ShowEdged") ?? false;
@@ -237,7 +246,7 @@ namespace Glimmr.Models.ColorSource.Video {
 				case CaptureMode.Hdmi:
 					Log.Debug("Loading usb stream.");
 					return new UsbVideoStream();
-					
+
 				case CaptureMode.Screen:
 					Log.Debug("Loading screen capture.");
 					return new ScreenVideoStream();
@@ -253,15 +262,18 @@ namespace Glimmr.Models.ColorSource.Video {
 			}
 		}
 
-		
+
 		private Mat ProcessFrame(Mat input) {
 			Mat output;
 			// If we need to crop our image...do it.
 			if (_captureMode == CaptureMode.Camera && _camType != 2) // Crop our camera frame if the input is a camera
+			{
 				output = CamFrame(input);
+			}
 			// Otherwise, just return the input.
-			else
+			else {
 				output = input;
+			}
 
 			// Save a preview frame every 5 seconds
 			if (!_doSave) {
@@ -299,7 +311,10 @@ namespace Glimmr.Models.ColorSource.Video {
 				var warpMat = CvInvoke.GetPerspectiveTransform(dPoints, _vectors);
 				output = new Mat();
 				CvInvoke.WarpPerspective(scaled, output, warpMat, _scaleSize);
-				if (_showWarped) CvInvoke.Imshow("Warped", warpMat);
+				if (_showWarped) {
+					CvInvoke.Imshow("Warped", warpMat);
+				}
+
 				warpMat.Dispose();
 			}
 
@@ -325,7 +340,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			const double cannyThresholdLinking = 200.0;
 			CvInvoke.Canny(blurred, cannyEdges, cannyThreshold, cannyThresholdLinking);
 			blurred.Dispose();
-			
+
 			// Get contours
 			using (var contours = new VectorOfVectorOfPoint()) {
 				CvInvoke.FindContours(cannyEdges, contours, null, RetrType.List,
@@ -337,9 +352,15 @@ namespace Glimmr.Models.ColorSource.Video {
 					using var contour = contours[i];
 					CvInvoke.ApproxPolyDP(contour, approxContour, CvInvoke.ArcLength(contour, true) * 0.02,
 						true);
-					if (approxContour.Size != 4) continue;
+					if (approxContour.Size != 4) {
+						continue;
+					}
+
 					var cntArea = CvInvoke.ContourArea(approxContour);
-					if (!(cntArea / _srcArea > .15)) continue;
+					if (!(cntArea / _srcArea > .15)) {
+						continue;
+					}
+
 					var pointOut = new VectorOfPointF(SortPoints(approxContour));
 					_targets.Add(VPointFToVPoint(pointOut));
 				}
@@ -388,12 +409,16 @@ namespace Glimmr.Models.ColorSource.Video {
 				y3 /= iCount;
 				y4 /= iCount;
 
-				PointF[] avgPoints = {new PointF(x1, y1), new PointF(x2, y2), new PointF(x3, y3), new PointF(x4, y4)};
+				PointF[] avgPoints = {new(x1, y1), new(x2, y2), new(x3, y3), new(x4, y4)};
 				var avgVector = new VectorOfPointF(avgPoints);
-				if (iCount > 20) output = avgVector;
+				if (iCount > 20) {
+					output = avgVector;
+				}
 			}
 
-			if (iCount > 200) _targets.RemoveRange(0, 150);
+			if (iCount > 200) {
+				_targets.RemoveRange(0, 150);
+			}
 
 			return output;
 		}
@@ -401,7 +426,10 @@ namespace Glimmr.Models.ColorSource.Video {
 		private static VectorOfPoint VPointFToVPoint(VectorOfPointF input) {
 			var ta = input.ToArray();
 			var pIn = new Point[input.Size];
-			for (var i = 0; i < ta.Length; i++) pIn[i] = new Point((int) ta[i].X, (int) ta[i].Y);
+			for (var i = 0; i < ta.Length; i++) {
+				pIn[i] = new Point((int) ta[i].X, (int) ta[i].Y);
+			}
+
 			return new VectorOfPoint(pIn);
 		}
 
@@ -409,7 +437,10 @@ namespace Glimmr.Models.ColorSource.Video {
 		private static PointF[] SortPoints(VectorOfPoint wTarget) {
 			var ta = wTarget.ToArray();
 			var pIn = new PointF[wTarget.Size];
-			for (var i = 0; i < ta.Length; i++) pIn[i] = ta[i];
+			for (var i = 0; i < ta.Length; i++) {
+				pIn[i] = ta[i];
+			}
+
 			// Order points?
 			var tPoints = pIn.OrderBy(p => p.Y);
 			var vPoints = pIn.OrderByDescending(p => p.Y);
@@ -424,7 +455,5 @@ namespace Glimmr.Models.ColorSource.Video {
 			PointF[] outPut = {tl, tr, br, bl};
 			return outPut;
 		}
-
-		
 	}
 }

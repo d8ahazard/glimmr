@@ -1,12 +1,12 @@
 ﻿using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Glimmr.Models.Util;
-using System.Drawing;
-using System.Net;
 using Glimmr.Models;
+using Glimmr.Models.Util;
 using Makaretu.Dns;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -17,7 +17,7 @@ namespace Glimmr.Services {
 		private readonly UdpClient _uc;
 		private int _devMode;
 		private int _sectorCount;
-		
+
 
 		public StreamService(ControlService cs) {
 			_cs = cs;
@@ -38,7 +38,6 @@ namespace Glimmr.Services {
 		}
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
-			
 			Log.Information("Stream service initialized.");
 			return Task.Run(async () => {
 				var hostname = Dns.GetHostName();
@@ -55,10 +54,11 @@ namespace Glimmr.Services {
 						await ProcessFrame(bytes);
 					}
 				}
+
 				sd.Dispose();
 			}, stoppingToken);
 		}
-		
+
 		public override Task StopAsync(CancellationToken stoppingToken) {
 			_uc.Close();
 			_uc.Dispose();
@@ -70,7 +70,7 @@ namespace Glimmr.Services {
 			if (flag != 2) {
 				Log.Warning("Flag is invalid!");
 			}
-			
+
 			var bytes = data.Skip(2).ToArray();
 			var colors = new List<Color>();
 			if (_devMode == 5) {

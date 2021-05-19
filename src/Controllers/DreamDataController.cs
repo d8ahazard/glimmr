@@ -3,6 +3,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models;
@@ -62,14 +63,14 @@ namespace Glimmr.Controllers {
 
 			return Ok();
 		}
-		
+
 		[HttpGet("DbDownload")]
 		public FileResult DbDownload() {
 			var dbPath = DataUtil.ExportSettings();
 			var fileBytes = System.IO.File.ReadAllBytes(dbPath);
 			var fileName = Path.GetFileName(dbPath);
-			return File(fileBytes, System.Net.Mime.MediaTypeNames.Application.Octet, fileName);
-		} 
+			return File(fileBytes, MediaTypeNames.Application.Octet, fileName);
+		}
 
 		[HttpPost("DbUpload")]
 		public async Task<IActionResult> ImportDb(List<IFormFile> files) {
@@ -101,7 +102,10 @@ namespace Glimmr.Controllers {
 				}
 			}
 
-			if (imported) await _controlService.NotifyClients();
+			if (imported) {
+				await _controlService.NotifyClients();
+			}
+
 			// process uploaded files
 			// Don't rely on or trust the FileName property without validation.
 			return Ok(new {count = files.Count, size, filePaths, imported});

@@ -2,20 +2,14 @@
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using OpenRGB.NET;
-using Serilog;
 
 namespace Glimmr.Models.ColorTarget.OpenRgb {
 	public class OpenRgbAgent : IColorTargetAgent {
-		private OpenRGBClient _client;
 		public string Ip { get; set; }
+		private OpenRGBClient _client;
 		private int _port;
-			
-		public void Dispose() {
-			
-		}
 
-		public OpenRgbAgent() {
-			
+		public void Dispose() {
 		}
 
 		public dynamic CreateAgent(ControlService cs) {

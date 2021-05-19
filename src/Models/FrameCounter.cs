@@ -8,13 +8,17 @@ using Glimmr.Services;
 
 namespace Glimmr.Models {
 	public class FrameCounter : IDisposable {
-		private Dictionary<string, int> _ticks;
 		private readonly Stopwatch _stopwatch;
-		
+		private Dictionary<string, int> _ticks;
+
 		public FrameCounter(ColorService cs) {
 			_ticks = new Dictionary<string, int>();
 			_stopwatch = new Stopwatch();
 			cs.ControlService.SetModeEvent += Mode;
+		}
+
+		public void Dispose() {
+			_stopwatch.Stop();
 		}
 
 		private Task Mode(object arg1, DynamicEventArgs arg2) {
@@ -25,6 +29,7 @@ namespace Glimmr.Models {
 			} else {
 				_stopwatch.Stop();
 			}
+
 			return Task.CompletedTask;
 		}
 
@@ -43,10 +48,6 @@ namespace Glimmr.Models {
 
 			var avg = _ticks[id] / (_stopwatch.ElapsedMilliseconds / 1000);
 			return (int) avg;
-		}
-
-		public void Dispose() {
-			_stopwatch.Stop();
 		}
 
 		public Dictionary<string, long> Rates() {

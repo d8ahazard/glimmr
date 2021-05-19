@@ -17,13 +17,14 @@ namespace Glimmr.Models.Logging {
 				}
 
 				var method = stack.GetMethod();
-				if (method != null && method.DeclaringType != null && method.DeclaringType.Assembly != typeof(Log).Assembly) {
+				if (method != null && method.DeclaringType != null &&
+				    method.DeclaringType.Assembly != typeof(Log).Assembly) {
 					var mName = method.DeclaringType.Name;
 					var name = method.Name;
 					if (method.Name == "MoveNext") {
 						name = mName;
 						if (method.DeclaringType.DeclaringType != null) {
-							mName = method.DeclaringType.DeclaringType.Name;	
+							mName = method.DeclaringType.DeclaringType.Name;
 						}
 					}
 
@@ -38,6 +39,7 @@ namespace Glimmr.Models.Logging {
 						var pTo = mName.LastIndexOf(">", StringComparison.Ordinal);
 						mName = mName.Substring(pFrom, pTo - pFrom);
 					}
+
 					var caller =
 						$"[{mName}][{name}]";
 					logEvent.AddPropertyIfAbsent(new LogEventProperty("Caller", new ScalarValue(caller)));
@@ -49,7 +51,7 @@ namespace Glimmr.Models.Logging {
 		}
 	}
 
-	static class LoggerCallerEnrichmentConfiguration {
+	internal static class LoggerCallerEnrichmentConfiguration {
 		public static LoggerConfiguration WithCaller(this LoggerEnrichmentConfiguration enrichmentConfiguration) {
 			return enrichmentConfiguration.With<CallerEnricher>();
 		}

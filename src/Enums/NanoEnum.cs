@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Glimmr.Enums {
+﻿namespace Glimmr.Enums {
 	public enum ShapeType {
 		Triangle = 0,
 		Rhythm = 1,
@@ -24,5 +22,4 @@ namespace Glimmr.Enums {
 		MiniTriangleShapes = 67,
 		ShapesController = 0
 	}
-	
 }

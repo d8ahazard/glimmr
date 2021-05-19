@@ -2,15 +2,15 @@
 
 namespace Glimmr.Models.ColorSource.Audio {
 	public class AudioData {
+		public bool IsDefault { get; set; }
+		public bool IsEnabled { get; set; }
+		public bool IsInitialized { get; set; }
+		public bool IsLoopback { get; set; }
+		public DeviceType Type { get; set; }
+		public string Driver { get; set; }
 
 		public string Id { get; set; }
-		public string Name { get; set; } 
-		public string Driver { get; set; } 
-		public bool IsDefault { get; set; } 
-		public bool IsEnabled { get; set; } 
-		public bool IsInitialized { get; set; } 
-		public bool IsLoopback { get; set; } 
-		public DeviceType Type { get; set; }
+		public string Name { get; set; }
 
 		public void ParseDevice(DeviceInfo input) {
 			Name = input.Name;
@@ -23,6 +23,4 @@ namespace Glimmr.Models.ColorSource.Audio {
 			Type = input.Type;
 		}
 	}
-	
-	
 }

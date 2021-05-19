@@ -19,15 +19,29 @@ using Serilog;
 
 namespace Glimmr.Services {
 	public class ControlService : BackgroundService {
+		public ColorService ColorService { get; set; }
 		public HttpClient HttpSender { get; }
-		public UdpClient UdpClient { get; }
-		public Socket TcpSocket { get; }
 
 		public MulticastService MulticastService { get; }
 		public ServiceDiscovery ServiceDiscovery { get; }
+		public Socket TcpSocket { get; }
+		public UdpClient UdpClient { get; }
 		private readonly IHubContext<SocketServer> _hubContext;
-		private Dictionary<string,dynamic> _agents;
-		public ColorService ColorService { get; set; }
+
+		public AsyncEvent<DynamicEventArgs> DemoLedEvent;
+
+		public AsyncEvent<DynamicEventArgs> DeviceReloadEvent;
+		public AsyncEvent<DynamicEventArgs> DeviceRescanEvent;
+
+		public AsyncEvent<DynamicEventArgs> FlashDeviceEvent;
+
+		public AsyncEvent<DynamicEventArgs> FlashSectorEvent;
+		public AsyncEvent<DynamicEventArgs> RefreshLedEvent;
+
+		public AsyncEvent<DynamicEventArgs> SetModeEvent;
+
+		public AsyncEvent<DynamicEventArgs> TestLedEvent;
+		private Dictionary<string, dynamic> _agents;
 		private SystemData _sd;
 
 		public ControlService(IHubContext<SocketServer> hubContext) {
@@ -61,21 +75,8 @@ namespace Glimmr.Services {
 			LoadAgents();
 		}
 
-		public AsyncEvent<DynamicEventArgs> DeviceReloadEvent;
-		public AsyncEvent<DynamicEventArgs> RefreshLedEvent;
 		public event Action RefreshSystemEvent = delegate { };
-		public AsyncEvent<DynamicEventArgs> DeviceRescanEvent;
 
-		public AsyncEvent<DynamicEventArgs> SetModeEvent;
-
-		public AsyncEvent<DynamicEventArgs> TestLedEvent;
-
-		public AsyncEvent<DynamicEventArgs> FlashDeviceEvent;
-		
-		public AsyncEvent<DynamicEventArgs> FlashSectorEvent;
-		
-		public AsyncEvent<DynamicEventArgs> DemoLedEvent;
-		
 		public event Action<List<Color>, List<Color>, int, bool> TriggerSendColorEvent = delegate { };
 
 		public dynamic GetAgent(string classType) {
@@ -84,6 +85,7 @@ namespace Glimmr.Services {
 					return value;
 				}
 			}
+
 			Log.Warning($"Error finding agent of type {classType}.");
 			return null;
 		}
@@ -98,6 +100,7 @@ namespace Glimmr.Services {
 					}
 				}
 			}
+
 			_agents = new Dictionary<string, dynamic>();
 			var types = SystemUtil.GetClasses<IColorTargetAgent>();
 			foreach (var c in types) {
@@ -126,7 +129,7 @@ namespace Glimmr.Services {
 		}
 
 		public async Task ScanDevices() {
-			await DeviceRescanEvent.InvokeAsync(this,null);
+			await DeviceRescanEvent.InvokeAsync(this, null);
 		}
 
 		public async Task SetMode(int mode) {
@@ -134,6 +137,7 @@ namespace Glimmr.Services {
 			if (mode != 0) {
 				DataUtil.SetItem("PreviousMode", mode);
 			}
+
 			await _hubContext.Clients.All.SendAsync("mode", mode);
 			DataUtil.SetItem("DeviceMode", mode);
 			await SetModeEvent.InvokeAsync(null, new DynamicEventArgs(mode));
@@ -144,27 +148,38 @@ namespace Glimmr.Services {
 			if (data != null) {
 				if (string.IsNullOrEmpty(data.Token)) {
 					Log.Information("Starting auth check...");
-					if (clientProxy != null) await clientProxy.SendAsync("auth", "start");
+					if (clientProxy != null) {
+						await clientProxy.SendAsync("auth", "start");
+					}
 				} else {
 					Log.Information("Device is already authorized...");
-					if (clientProxy != null) await clientProxy.SendAsync("auth", "authorized");
+					if (clientProxy != null) {
+						await clientProxy.SendAsync("auth", "authorized");
+					}
+
 					return;
 				}
 			} else {
 				Log.Warning("Device is null: " + id);
-				if (clientProxy != null) await clientProxy.SendAsync("auth", "error");
+				if (clientProxy != null) {
+					await clientProxy.SendAsync("auth", "error");
+				}
+
 				return;
 			}
 
-			
+
 			var disco = SystemUtil.GetClasses<IColorTargetAuth>();
 			dynamic dev = null;
 			foreach (var d in disco) {
 				var baseStr = d.ToLower().Split(".")[^2];
 				if (baseStr == data.Tag.ToLower()) {
-					dev = Activator.CreateInstance(Type.GetType(d)!,ColorService);
+					dev = Activator.CreateInstance(Type.GetType(d)!, ColorService);
 				}
-				if (dev != null) break;
+
+				if (dev != null) {
+					break;
+				}
 			}
 
 			if (dev != null && dev.GetType().GetMethod("CheckAuthAsync") != null) {
@@ -175,23 +190,31 @@ namespace Glimmr.Services {
 						if (!string.IsNullOrEmpty(activated.Token)) {
 							Log.Information("Device is activated!");
 							await DataUtil.AddDeviceAsync(activated, false);
-							if (clientProxy != null) await clientProxy.SendAsync("auth", "authorized");
+							if (clientProxy != null) {
+								await clientProxy.SendAsync("auth", "authorized");
+							}
+
 							return;
 						}
 					} catch (Exception e) {
 						Log.Warning("Error: " + e.Message + " at " + e.StackTrace);
 					}
+
 					await Task.Delay(1000);
 					count++;
-					if (clientProxy != null) await clientProxy.SendAsync("auth", "update", count);
-				}	
+					if (clientProxy != null) {
+						await clientProxy.SendAsync("auth", "update", count);
+					}
+				}
 			} else {
 				Log.Warning("Error creating activator!");
-				if (clientProxy != null) await clientProxy.SendAsync("auth", "error");
+				if (clientProxy != null) {
+					await clientProxy.SendAsync("auth", "error");
+				}
 			}
 		}
 
-		
+
 		public void TriggerImageUpdate() {
 			_hubContext.Clients.All.SendAsync("loadPreview");
 		}
@@ -209,14 +232,11 @@ namespace Glimmr.Services {
 		}
 
 
-		
 		// We call this one to send colors to everything, including the color service
-		public void SendColors(List<Color> c1, List<Color> c2, int fadeTime = 0, bool force=false) {
+		public void SendColors(List<Color> c1, List<Color> c2, int fadeTime = 0, bool force = false) {
 			TriggerSendColorEvent(c1, c2, fadeTime, force);
 		}
 
-		
-		
 
 		public async Task NotifyClients() {
 			await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
@@ -261,6 +281,7 @@ namespace Glimmr.Services {
 					// Ignored
 				}
 			}
+
 			Log.Information("Control service stopped.");
 			return base.StopAsync(cancellationToken);
 		}
@@ -270,9 +291,7 @@ namespace Glimmr.Services {
 			await DataUtil.AddDeviceAsync(data);
 		}
 
-		
 
-		
 		public async Task UpdateSystem(SystemData sd = null) {
 			var oldSd = DataUtil.GetSystemData();
 			if (sd != null) {
@@ -312,13 +331,14 @@ namespace Glimmr.Services {
 					SystemUtil.Update();
 					break;
 			}
+
 			return Task.CompletedTask;
 		}
 
-		public async Task UpdateDevice(dynamic device, bool merge=true) {
+		public async Task UpdateDevice(dynamic device, bool merge = true) {
 			Log.Debug($"Updating {device.Tag}...");
 			await DataUtil.AddDeviceAsync(device, merge);
-			await _hubContext.Clients.All.SendAsync("device",JsonConvert.SerializeObject((IColorTargetData) device));
+			await _hubContext.Clients.All.SendAsync("device", JsonConvert.SerializeObject((IColorTargetData) device));
 			await RefreshDevice(device.Id);
 		}
 

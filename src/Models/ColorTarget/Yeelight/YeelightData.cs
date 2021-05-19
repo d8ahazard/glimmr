@@ -4,7 +4,6 @@ using Newtonsoft.Json;
 
 namespace Glimmr.Models.ColorTarget.Yeelight {
 	public class YeelightData : IColorTargetData {
-		
 		[DefaultValue(-1)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int TargetSector { get; set; }
@@ -12,8 +11,11 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		public YeelightData() {
 			Tag = "Yeelight";
 			Name ??= Tag;
-			if (Id != null) Name = StringUtil.UppercaseFirst(Id);
+			if (Id != null) {
+				Name = StringUtil.UppercaseFirst(Id);
+			}
 		}
+
 		public YeelightData(string id) {
 			Id = id;
 			Tag = "Yeelight";
@@ -34,7 +36,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		}
 
 		public SettingsProperty[] KeyProperties { get; set; } = {
-			new("TargetSector","sectormap", "Target Sector"),
+			new("TargetSector", "sectormap", "Target Sector"),
 			new("FrameDelay", "text", "Frame Delay")
 		};
 	}

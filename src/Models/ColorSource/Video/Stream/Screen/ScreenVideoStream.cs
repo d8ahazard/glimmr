@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Drawing;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
@@ -28,10 +27,9 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 		public Mat Frame { get; set; }
 
 		public Task Start(CancellationToken ct) {
-
 			try {
 				SetDimensions();
-				
+
 				if (_width == 0 || _height == 0) {
 					Log.Debug("We have no screen, returning.");
 					return Task.CompletedTask;
@@ -81,7 +79,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 			_top = rect.Top;
 			_width = rect.Width;
 			_height = rect.Height;
-			
+
 
 			_width = Math.Abs(_width);
 			_height = Math.Abs(_height);
@@ -94,18 +92,18 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 
 		private void CaptureScreen(CancellationToken ct) {
 			Log.Debug("Screen capture started...");
-			
-				while (!ct.IsCancellationRequested && _capturing) {
-					var bcs = new Bitmap(_width, _height);
-					using (var g = Graphics.FromImage(bcs)) {
-						g.CopyFromScreen(_left, _top, 0, 0, bcs.Size, CopyPixelOperation.SourceCopy);
-						var sc = bcs.ToImage<Bgr, byte>();
-						g.Flush();
-						var newMat = sc.Resize(DisplayUtil.CaptureWidth, DisplayUtil.CaptureHeight, Inter.Nearest);
-						Frame = newMat.Mat;
-					}
+
+			while (!ct.IsCancellationRequested && _capturing) {
+				var bcs = new Bitmap(_width, _height);
+				using (var g = Graphics.FromImage(bcs)) {
+					g.CopyFromScreen(_left, _top, 0, 0, bcs.Size, CopyPixelOperation.SourceCopy);
+					var sc = bcs.ToImage<Bgr, byte>();
+					g.Flush();
+					var newMat = sc.Resize(DisplayUtil.CaptureWidth, DisplayUtil.CaptureHeight, Inter.Nearest);
+					Frame = newMat.Mat;
 				}
-			
+			}
+
 
 			Log.Debug("Capture completed?");
 		}

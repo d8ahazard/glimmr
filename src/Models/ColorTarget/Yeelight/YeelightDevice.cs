@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
-using System.Net;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Enums;
@@ -14,28 +12,15 @@ using YeelightAPI;
 
 namespace Glimmr.Models.ColorTarget.Yeelight {
 	public class YeelightDevice : ColorTarget, IColorTarget {
-		public bool Streaming { get; set; }
-		public bool Testing { get; set; }
-		public int Brightness { get; set; }
-		public string Id { get; set; }
-		public string IpAddress { get; set; }
-		public string Tag { get; set; }
-		public bool Enable { get; set; }
-		
+		private readonly ColorService _colorService;
+
 		public YeelightData Data;
 
 		private CaptureMode _capMode;
-		private readonly ColorService _colorService;
+		private int _sectorCount;
 		private Task _streamTask;
 
 		private int _targetSector;
-		private int _sectorCount;
-		
-		
-		IColorTargetData IColorTarget.Data {
-			get => Data;
-			set => Data = (YeelightData) value;
-		}
 
 		private Device _yeeDevice;
 
@@ -46,19 +31,32 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			Log.Debug("Created new yeedevice at " + yd.IpAddress);
 			cs.ColorSendEvent += SetColor;
 			_colorService = cs;
-			
+
 			Data.LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 			DataUtil.AddDeviceAsync(Data, false).ConfigureAwait(false);
 		}
 
-		
+		public bool Streaming { get; set; }
+		public bool Testing { get; set; }
+		public int Brightness { get; set; }
+		public string Id { get; set; }
+		public string IpAddress { get; set; }
+		public string Tag { get; set; }
+		public bool Enable { get; set; }
 
-		
+
+		IColorTargetData IColorTarget.Data {
+			get => Data;
+			set => Data = (YeelightData) value;
+		}
+
+
 		public async Task StartStream(CancellationToken ct) {
 			if (!Enable) {
 				Log.Warning("YEE: Not enabled!");
 				return;
 			}
+
 			Log.Information($"{Data.Tag}::Starting stream: {Data.Id}...");
 			_targetSector = ColorUtil.CheckDsSectors(Data.TargetSector);
 
@@ -86,9 +84,11 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
 		}
 
-		public void SetColor(List<Color> colors, List<Color> sectors, int arg3, bool force=false) {
-			if (!Streaming || !Enable) return;
-			
+		public void SetColor(List<Color> colors, List<Color> sectors, int arg3, bool force = false) {
+			if (!Streaming || !Enable) {
+				return;
+			}
+
 			if (!force) {
 				if (!Streaming || _targetSector == -1 || Testing) {
 					return;
@@ -96,8 +96,11 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			}
 
 			var col = sectors[_targetSector];
-			if (_targetSector >= sectors.Count) return;
-			int min = Math.Max(col.R, Math.Max(col.G, col.B)) / 255 * 100;
+			if (_targetSector >= sectors.Count) {
+				return;
+			}
+
+			var min = Math.Max(col.R, Math.Max(col.G, col.B)) / 255 * 100;
 			_yeeDevice.SetRGBColor(col.R, col.G, col.B).ConfigureAwait(false);
 			_yeeDevice.SetBrightness(min);
 			_colorService.Counter.Tick(Id);
@@ -105,6 +108,17 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 		public async Task FlashColor(Color col) {
 			await _yeeDevice.SetRGBColor(col.R, col.G, col.B).ConfigureAwait(false);
+		}
+
+
+		public Task ReloadData() {
+			Data = DataUtil.GetDevice<YeelightData>(Id);
+			return Task.CompletedTask;
+		}
+
+
+		public void Dispose() {
+			_yeeDevice.Dispose();
 		}
 
 		private void LoadData() {
@@ -119,7 +133,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 					_yeeDevice?.Dispose();
 				}
 			}
-			
+
 			_targetSector = ColorUtil.CheckDsSectors(Data.TargetSector);
 			Tag = Data.Tag;
 			Id = Data.Id;
@@ -127,19 +141,11 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			Enable = Data.Enable;
 
 			_yeeDevice ??= new Device(IpAddress);
-			if (restart) StartStream(CancellationToken.None).ConfigureAwait(true);
+			if (restart) {
+				StartStream(CancellationToken.None).ConfigureAwait(true);
+			}
+
 			Log.Debug("YEE: Data reloaded: " + Enable);
-		}
-
-
-		public Task ReloadData() {
-			Data = DataUtil.GetDevice<YeelightData>(Id);
-			return Task.CompletedTask;
-		}
-
-
-		public void Dispose() {
-			_yeeDevice.Dispose();
 		}
 	}
 }

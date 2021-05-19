@@ -25,7 +25,11 @@ namespace Glimmr.Models {
 					Log.Debug("Directory creation exception: " + e.Message);
 				}
 			}
-			if (Directory.Exists(userPath)) _directories.Add(userPath);
+
+			if (Directory.Exists(userPath)) {
+				_directories.Add(userPath);
+			}
+
 			//Log.Debug("Directories: " + JsonConvert.SerializeObject(_directories));
 		}
 
@@ -34,7 +38,7 @@ namespace Glimmr.Models {
 			var dirIndex = 0;
 			var fCount = 50;
 			foreach (var dir in _directories.Where(Directory.Exists)) {
-				foreach(var file in Directory.EnumerateFiles(dir)) {
+				foreach (var file in Directory.EnumerateFiles(dir)) {
 					if (file.Contains(".json")) {
 						try {
 							var data = JsonConvert.DeserializeObject<JObject>(File.ReadAllText(file));
@@ -44,14 +48,17 @@ namespace Glimmr.Models {
 										data["Id"] = fCount;
 									}
 								}
+
 								output.Add(data.ToObject<T>());
 							}
 						} catch (Exception e) {
 							Log.Warning($"Parse exception for {file}: " + e.Message);
 						}
 					}
+
 					fCount++;
 				}
+
 				dirIndex++;
 			}
 
@@ -69,7 +76,6 @@ namespace Glimmr.Models {
 		}
 
 		public dynamic GetItem<T>(dynamic id, bool getDefault = false) {
-			
 			var files = LoadFiles<JObject>();
 			foreach (var f in files) {
 				if (!f.TryGetValue("Id", out var check)) {
@@ -89,6 +95,7 @@ namespace Glimmr.Models {
 			if (files.Count != 0) {
 				return files[0];
 			}
+
 			return null;
 		}
 	}

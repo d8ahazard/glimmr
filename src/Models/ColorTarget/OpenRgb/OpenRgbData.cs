@@ -7,12 +7,65 @@ using OpenRGB.NET.Models;
 
 namespace Glimmr.Models.ColorTarget.OpenRgb {
 	public class OpenRgbData : IColorTargetData {
+		[DefaultValue(DeviceType.Ledstrip)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+
+		public DeviceType Type { get; set; }
+
+		[DefaultValue(0)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int ActiveModeIndex { get; set; }
+
+		[DefaultValue(0)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+
+		public int DeviceId { get; set; }
+
+		[DefaultValue(0)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+
+		public int LedCount { get; set; }
+
+		[DefaultValue(0)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+
+		public int Offset { get; set; }
+
+		[DefaultValue(0)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+
+		public int Rotation { get; set; }
+
+		[DefaultValue("")]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+
+		public string Description { get; set; }
+
+		[DefaultValue("")]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public string Location { get; set; }
+
+		[DefaultValue("")]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public string Serial { get; set; }
+
+
+		[DefaultValue("Unknown")]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public string Vendor { get; set; }
+
+		[DefaultValue("")]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public string Version { get; set; }
 
 		public OpenRgbData() {
 			Tag = "OpenRgb";
 			Name ??= Tag;
-			if (Id != null) Name = StringUtil.UppercaseFirst(Id);
+			if (Id != null) {
+				Name = StringUtil.UppercaseFirst(Id);
+			}
 		}
+
 		public OpenRgbData(Device dev) {
 			Name = dev.Name;
 			Vendor = dev.Vendor;
@@ -33,36 +86,16 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string Name { get; set; }
 
-		
+
 		public string Id { get; set; }
-		
-		[DefaultValue(0)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
-		public int DeviceId { get; set; }
-		
-		[DefaultValue(0)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-
-		public int LedCount { get; set; }
-		
 		public int FrameDelay { get; set; }
-
-		[DefaultValue(0)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-
-		public int Offset { get; set; } = 0;
-		
-		[DefaultValue(0)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-
-		public int Rotation { get; set; } = 0;
 
 		[DefaultValue("OpenRgb")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
 		public string Tag { get; set; }
-		
+
 		[DefaultValue("127.0.0.1")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
@@ -71,51 +104,20 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		[DefaultValue(255)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
-		
+
 		public int Brightness { get; set; }
-		
+
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
 		public bool Enable { get; set; }
+
 		public string LastSeen { get; set; }
-		
-		[DefaultValue(DeviceType.Ledstrip)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
-		public DeviceType Type { get; set; }
 
-		
-		
-		[DefaultValue("Unknown")]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public string Vendor { get; set; }
-
-		[DefaultValue("")]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-
-		public string Description { get; set; }
-
-		[DefaultValue("")]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public string Version { get; set; }
-
-		[DefaultValue("")]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public string Serial { get; set; }
-
-		[DefaultValue("")]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public string Location { get; set; }
-
-		[DefaultValue(0)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int ActiveModeIndex { get; set; }
-
-		
 		public SettingsProperty[] KeyProperties { get; set; } = {
-			new("ledmap","ledmap",""),
-			new("Offset","number", "Strip Offset"),
+			new("ledmap", "ledmap", ""),
+			new("Offset", "number", "Strip Offset"),
 			new("Rotation", "select", "Rotation", new Dictionary<string, string> {
 				["0"] = "Normal",
 				["90"] = "90 Degrees",
@@ -138,7 +140,6 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			Location = dev.Location;
 			ActiveModeIndex = dev.ActiveModeIndex;
 			LedCount = dev.LedCount;
-
 		}
 	}
 }

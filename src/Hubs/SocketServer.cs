@@ -13,7 +13,7 @@ using Serilog;
 namespace Glimmr.Hubs {
 	public class SocketServer : Hub {
 		private readonly ControlService _cs;
-		
+
 
 		public SocketServer(ControlService cs) {
 			_cs = cs;
@@ -23,17 +23,17 @@ namespace Glimmr.Hubs {
 			Log.Debug("Mode set to: " + mode);
 			await _cs.SetMode(mode);
 		}
-		
+
 		public async Task ScanDevices() {
 			Log.Debug("Scan called from socket!");
 			await _cs.ScanDevices();
 		}
-		
+
 		public async Task AuthorizeDevice(string id) {
 			var sender = Clients.Caller;
 			await _cs.AuthorizeDevice(id, sender);
 		}
-		
+
 		private async Task<CpuData> GetStats(CancellationToken token) {
 			return await CpuUtil.GetStats();
 		}
@@ -58,7 +58,7 @@ namespace Glimmr.Hubs {
 			Log.Debug("Updating system data: " + JsonConvert.SerializeObject(sd2));
 			await _cs.UpdateSystem(sd2).ConfigureAwait(false);
 		}
-		
+
 		public async Task DemoLed(string id) {
 			Log.Debug("We should demo a strip here.");
 			await _cs.DemoLed(id).ConfigureAwait(false);

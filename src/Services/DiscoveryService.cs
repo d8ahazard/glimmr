@@ -14,15 +14,15 @@ using Serilog;
 
 namespace Glimmr.Services {
 	public class DiscoveryService : BackgroundService {
+		private readonly List<IColorDiscovery> _discoverables;
 		private readonly IHubContext<SocketServer> _hubContext;
-		private bool _streaming;
 		private bool _discovering;
 		private int _discoveryInterval;
-		private readonly List<IColorDiscovery> _discoverables;
-		private CancellationTokenSource _syncSource;
 		private CancellationTokenSource _mergeSource;
 		private CancellationToken _stopToken;
-		
+		private bool _streaming;
+		private readonly CancellationTokenSource _syncSource;
+
 		public DiscoveryService(IHubContext<SocketServer> hubContext, ColorService colorService) {
 			_hubContext = hubContext;
 			var controlService = colorService.ControlService;
@@ -30,7 +30,10 @@ namespace Glimmr.Services {
 			controlService.SetModeEvent += UpdateMode;
 			controlService.RefreshSystemEvent += RefreshSystem;
 			_discoveryInterval = DataUtil.GetItem<int>("AutoDiscoveryFrequency");
-			if (_discoveryInterval < 15) _discoveryInterval = 15;
+			if (_discoveryInterval < 15) {
+				_discoveryInterval = 15;
+			}
+
 			var classnames = SystemUtil.GetClasses<IColorDiscovery>();
 			_discoverables = new List<IColorDiscovery>();
 			_syncSource = new CancellationTokenSource();
@@ -44,7 +47,9 @@ namespace Glimmr.Services {
 			_syncSource.Cancel();
 			_mergeSource = CancellationTokenSource.CreateLinkedTokenSource(_syncSource.Token, _stopToken);
 			_discoveryInterval = DataUtil.GetItem<int>("AutoDiscoveryFrequency");
-			if (_discoveryInterval < 15) _discoveryInterval = 15;
+			if (_discoveryInterval < 15) {
+				_discoveryInterval = 15;
+			}
 		}
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
@@ -55,8 +60,11 @@ namespace Glimmr.Services {
 				while (!stoppingToken.IsCancellationRequested) {
 					await Task.Delay(TimeSpan.FromMinutes(_discoveryInterval), _mergeSource.Token);
 					Log.Information("Auto-refreshing devices...");
-					if (!_streaming) await TriggerRefresh(this, null);
+					if (!_streaming) {
+						await TriggerRefresh(this, null);
+					}
 				}
+
 				return Task.CompletedTask;
 			}, stoppingToken);
 		}
@@ -76,7 +84,10 @@ namespace Glimmr.Services {
 			var cs = new CancellationTokenSource();
 			var sd = DataUtil.GetSystemData();
 			var timeout = sd.DiscoveryTimeout;
-			if (timeout < 3) timeout = 3;
+			if (timeout < 3) {
+				timeout = 3;
+			}
+
 			cs.CancelAfter(TimeSpan.FromSeconds(timeout));
 			await DeviceDiscovery(cs.Token, timeout);
 			var devs = DataUtil.GetDevices();
@@ -92,16 +103,22 @@ namespace Glimmr.Services {
 					dev.LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 					DataUtil.AddDeviceAsync(dev);
 				}
+
 				DataUtil.DeleteDevice(device.Id);
 			}
+
 			cs.Dispose();
 		}
 
-        
+
 		private async Task DeviceDiscovery(CancellationToken token, int timeout) {
-			if (_discovering) return;
+			if (_discovering) {
+				return;
+			}
+
 			_discovering = true;
-			var tasks = _discoverables.Select(disco => Task.Run(() =>disco.Discover(token, timeout), CancellationToken.None)).ToList();
+			var tasks = _discoverables
+				.Select(disco => Task.Run(() => disco.Discover(token, timeout), CancellationToken.None)).ToList();
 
 			try {
 				await Task.WhenAll(tasks);
@@ -112,7 +129,7 @@ namespace Glimmr.Services {
 					task.Dispose();
 				}
 			}
-				
+
 			Log.Information("All devices should now be refreshed.");
 			_discovering = false;
 			// Notify all clients to refresh data

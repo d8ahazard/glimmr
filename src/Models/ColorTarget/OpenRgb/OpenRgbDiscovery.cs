@@ -8,11 +8,11 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.OpenRgb {
 	public class OpenRgbDiscovery : ColorDiscovery, IColorDiscovery {
-
-		private OpenRGBClient _client;
 		public override string DeviceTag { get; set; } = "OpenRgb";
-		private ControlService _cs;
-		
+
+		private readonly OpenRGBClient _client;
+		private readonly ControlService _cs;
+
 		public OpenRgbDiscovery(ColorService colorService) : base(colorService) {
 			_client = colorService.ControlService.GetAgent("OpenRgbAgent");
 			_cs = colorService.ControlService;
@@ -27,6 +27,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 					Log.Debug("No client.");
 					return;
 				}
+
 				if (!_client.Connected) {
 					try {
 						Log.Debug("Trying connection...");

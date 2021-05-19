@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using DirectShowLib;
 using Emgu.CV;
 using Serilog;
-using SharpDX.Text;
 
 namespace Glimmr.Models.Util {
 	public static class SystemUtil {
@@ -25,22 +24,23 @@ namespace Glimmr.Models.Util {
 			if (string.IsNullOrEmpty(target)) {
 				return false;
 			}
-			if (target == "127.0.0.1" || target == "localhost") return true;
+
+			if (target == "127.0.0.1" || target == "localhost") {
+				return true;
+			}
+
 			var pingable = false;
 			Ping pinger = null;
 
-			try
-			{
+			try {
 				pinger = new Ping();
 				var reply = pinger.Send(target);
 				if (reply != null) {
 					pingable = reply.Status == IPStatus.Success;
 				}
-			}
-			catch (PingException) {
+			} catch (PingException) {
 				//ignore
-			}
-			finally {
+			} finally {
 				pinger?.Dispose();
 			}
 
@@ -50,7 +50,7 @@ namespace Glimmr.Models.Util {
 		public static void Update() {
 			Log.Debug("Updating");
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-				Process.Start("/bin/bash","/home/glimmrtv/glimmr/script/update_pi.sh");
+				Process.Start("/bin/bash", "/home/glimmrtv/glimmr/script/update_pi.sh");
 			} else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 				Process.Start("../script/update_win.bat");
 			}
@@ -96,10 +96,13 @@ namespace Glimmr.Models.Util {
 				}
 			}
 
-			if (Directory.Exists(fullPath)) return fullPath;
-			return String.Empty;
+			if (Directory.Exists(fullPath)) {
+				return fullPath;
+			}
+
+			return string.Empty;
 		}
-		
+
 		public static List<string> GetClasses<T>() {
 			var output = new List<string>();
 			foreach (var ad in AppDomain.CurrentDomain.GetAssemblies()) {
@@ -127,7 +130,7 @@ namespace Glimmr.Models.Util {
 					var v = new VideoCapture(i); // Will crash if not available, hence try/catch.
 					var w = v.Width;
 					var h = v.Height;
-					
+
 					if (w != 0 && h != 0) {
 						output[i] = GetDeviceName(i).Result;
 					}
@@ -139,9 +142,10 @@ namespace Glimmr.Models.Util {
 
 				i++;
 			}
+
 			return output;
 		}
-		
+
 		private static async Task<string> GetDeviceName(int index) {
 			var process = new Process {
 				StartInfo = new ProcessStartInfo {
@@ -149,7 +153,7 @@ namespace Glimmr.Models.Util {
 					Arguments = $"-c \"cat /sys/class/video4linux/video{index}/name\"",
 					RedirectStandardOutput = true,
 					UseShellExecute = false,
-					CreateNoWindow = true,
+					CreateNoWindow = true
 				}
 			};
 			process.Start();
@@ -164,7 +168,7 @@ namespace Glimmr.Models.Util {
 		}
 
 
-		private static Dictionary<int,string> ListUsbWindows() {
+		private static Dictionary<int, string> ListUsbWindows() {
 			var cams = new Dictionary<int, string>();
 
 			try {
@@ -174,10 +178,9 @@ namespace Glimmr.Models.Util {
 					cams[idx] = device.Name;
 					idx++;
 				}
-
 			} catch (Exception e) {
 				Log.Warning("Exception fetching USB devices: " + e.Message);
-			} 
+			}
 
 
 			return cams;
