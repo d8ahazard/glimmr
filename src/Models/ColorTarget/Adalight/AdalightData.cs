@@ -1,7 +1,9 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using Newtonsoft.Json;
 
 namespace Glimmr.Models.ColorTarget.Adalight {
+	[Serializable]
 	public class AdalightData : IColorTargetData {
 		
 		[DefaultValue(false)]
@@ -44,10 +46,16 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool ReverseStrip { get; set; }
 
+		public AdalightData() {
+			
+		}
+
 		public AdalightData(int port) {
 			Port = port;
 			Name = $"Adalight - COM{port}";
 			Id = Name;
+			Brightness = 100;
+			Speed = 115200;
 		}
 		public void UpdateFromDiscovered(IColorTargetData data) {
 			
