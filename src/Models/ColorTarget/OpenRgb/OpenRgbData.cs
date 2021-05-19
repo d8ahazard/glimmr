@@ -89,7 +89,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 		public string Id { get; set; }
 
-		public int FrameDelay { get; set; }
+		
 
 		[DefaultValue("OpenRgb")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -123,8 +123,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 				["90"] = "90 Degrees",
 				["180"] = "180 Degrees (Mirror)",
 				["270"] = "270 Degrees"
-			}),
-			new("FrameDelay", "text", "Frame Delay")
+			})
 		};
 
 

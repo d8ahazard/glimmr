@@ -109,7 +109,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		public string IpAddress { get; set; }
 		public int Brightness { get; set; }
 
-		public int FrameDelay { get; set; }
+		
 		public bool Enable { get; set; }
 
 		private SettingsProperty[] Kps() {
@@ -124,7 +124,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 						["3"] = "Single Color"
 					}),
 					new("ReverseStrip", "check", "Reverse Strip Direction"),
-					new("FrameDelay", "text", "Frame Delay")
+					
 				};
 			}
 
@@ -138,8 +138,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
 					["2"] = "Loop (Play Bar)",
 					["3"] = "Single Color"
 				}),
-				new("ReverseStrip", "check", "Reverse Strip Direction"),
-				new("FrameDelay", "text", "Frame Delay")
+				new("ReverseStrip", "check", "Reverse Strip Direction")
+				
 			};
 		}
 	}

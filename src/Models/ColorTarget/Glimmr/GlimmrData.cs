@@ -83,7 +83,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		}
 
 		public SettingsProperty[] KeyProperties { get; set; } = {
-			new("FrameDelay", "text", "Frame Delay")
+			
 		};
 
 		[JsonProperty] public string Name { get; set; }
@@ -93,7 +93,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		public string IpAddress { get; set; }
 		public int Brightness { get; set; }
 
-		public int FrameDelay { get; set; }
+		
 		public bool Enable { get; set; }
 	}
 }

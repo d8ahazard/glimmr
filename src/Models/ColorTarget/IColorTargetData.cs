@@ -6,7 +6,7 @@ namespace Glimmr.Models.ColorTarget {
 	public interface IColorTargetData {
 		public bool Enable { get; set; }
 		public int Brightness { get; set; }
-		public int FrameDelay { get; set; }
+		
 
 		[JsonProperty] public SettingsProperty[] KeyProperties { get; set; }
 

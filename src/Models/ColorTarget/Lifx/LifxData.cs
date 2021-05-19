@@ -116,7 +116,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		public string Tag { get; set; }
 		public string IpAddress { get; set; }
 		public int Brightness { get; set; }
-		public int FrameDelay { get; set; }
+		
 		public bool Enable { get; set; }
 
 		private SettingsProperty[] Kps() {
@@ -124,14 +124,12 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				return new SettingsProperty[] {
 					new("ledmap", "ledmap", ""),
 					new("Offset", "number", "Offset"),
-					new("ReverseStrip", "check", "Reverse Direction"),
-					new("FrameDelay", "text", "Frame Delay")
+					new("ReverseStrip", "check", "Reverse Direction")
 				};
 			}
 
 			return new SettingsProperty[] {
-				new("TargetSector", "sectormap", "Target Sector"),
-				new("FrameDelay", "text", "Frame Delay")
+				new("TargetSector", "sectormap", "Target Sector")
 			};
 		}
 	}

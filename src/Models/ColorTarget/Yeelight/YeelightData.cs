@@ -26,7 +26,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		public string Tag { get; set; }
 		public string IpAddress { get; set; }
 		public int Brightness { get; set; }
-		public int FrameDelay { get; set; }
+		
 		public bool Enable { get; set; }
 		public string LastSeen { get; set; }
 
@@ -36,8 +36,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		}
 
 		public SettingsProperty[] KeyProperties { get; set; } = {
-			new("TargetSector", "sectormap", "Target Sector"),
-			new("FrameDelay", "text", "Frame Delay")
+			new("TargetSector", "sectormap", "Target Sector")
 		};
 	}
 }
