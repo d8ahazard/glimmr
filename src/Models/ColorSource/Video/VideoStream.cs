@@ -92,11 +92,10 @@ namespace Glimmr.Models.ColorSource.Video {
 			var prevCapMode = _captureMode;
 			SetCapVars();
 			if (prevCapMode != _captureMode) {
-				Log.Debug("Resetting capture mode?");
 				_vc.Stop();
 				_vc = GetStream();
 				if (_vc == null) {
-					Log.Warning("Video capture is null!");
+					Log.Information("We have no video source.");
 					return;
 				}
 				_vc.Start(_cancellationToken);
@@ -108,20 +107,18 @@ namespace Glimmr.Models.ColorSource.Video {
 
 		private void Initialize(CancellationToken ct) {
 			_cancellationToken = ct;
-			Log.Debug("Initializing video stream...");
 			var autoEvent = new AutoResetEvent(false);
 			_saveTimer = new Timer(SaveFrame, autoEvent, 0, 10000);
 			_targets = new List<VectorOfPoint>();
 			SetCapVars();
 			_vc = GetStream();
 			if (_vc == null) {
-				Log.Warning("Video capture is null!");
+				Log.Information("We have no video source, returning.");
 				return;
 			}
 			_vc.Start(ct);
 			SendColors = true;
 			StreamSplitter = new Splitter(_systemData, _controlService);
-			Log.Debug("Stream capture initialized.");
 		}
 
 		public void ToggleStream(bool enable = false) {
@@ -131,8 +128,8 @@ namespace Glimmr.Models.ColorSource.Video {
 
 		
 		protected override Task ExecuteAsync(CancellationToken ct) {
+			Log.Debug("Starting video stream service...");
 			Initialize(ct);
-			Log.Debug("Starting video stream...");
 			return Task.Run(async () => {
 				while (!ct.IsCancellationRequested) {
 					
@@ -178,7 +175,7 @@ namespace Glimmr.Models.ColorSource.Video {
 					}
 				}
 				await _saveTimer.DisposeAsync();
-				Log.Information("Capture task completed.");
+				Log.Information("Video stream service stopped.");
 			}, CancellationToken.None);
 		}
 
@@ -197,14 +194,12 @@ namespace Glimmr.Models.ColorSource.Video {
 			Sectors = ColorUtil.EmptyList(sectorSize);
 			_captureMode = (CaptureMode) DataUtil.GetItem<int>("CaptureMode");
 			_camType = DataUtil.GetItem<int>("CamType");
-			Log.Debug("Capture mode is " + _captureMode);
 			_srcArea = ScaleWidth * ScaleHeight;
 			_scaleSize = new Size(ScaleWidth, ScaleHeight);
 
 			if (_captureMode == CaptureMode.Camera) {
 				try {
 					var lt = DataUtil.GetItem<PointF[]>("LockTarget");
-					Log.Debug("LT Grabbed? " + JsonConvert.SerializeObject(lt));
 					if (lt != null) {
 						_lockTarget = new VectorOfPointF(lt);
 						var lC = 0;
@@ -223,7 +218,6 @@ namespace Glimmr.Models.ColorSource.Video {
 			// Debugging vars...
 			_showEdged = DataUtil.GetItem<bool>("ShowEdged") ?? false;
 			_showWarped = DataUtil.GetItem<bool>("ShowWarped") ?? false;
-			Log.Debug("Start Capture should be running...");
 		}
 
 		private IVideoStream GetStream() {
@@ -241,6 +235,7 @@ namespace Glimmr.Models.ColorSource.Video {
 
 					return null;
 				case CaptureMode.Hdmi:
+					Log.Debug("Loading usb stream.");
 					return new UsbVideoStream();
 					
 				case CaptureMode.Screen:

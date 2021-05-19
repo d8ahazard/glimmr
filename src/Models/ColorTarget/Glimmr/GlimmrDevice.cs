@@ -56,11 +56,11 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
         
         public async Task StartStream(CancellationToken ct) {
             if (Streaming || !Enable) return;
-            Log.Debug($"Glimmr: Starting stream at {IpAddress}...");
+            Log.Information($"{Data.Tag}::Starting stream: {Data.Id}...");
             await SendPost("mode", 5).ConfigureAwait(false);
             _ep = IpUtil.Parse(IpAddress, port);
             Streaming = true;
-            Log.Debug("Glimmr: Stream started.");
+            Log.Information($"{Data.Tag}::Stream started: {Data.Id}.");
         }
 
 
@@ -96,8 +96,8 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
             if (!Enable) return;
             await FlashColor(Color.FromArgb(0, 0, 0));
             Streaming = false;
-            Log.Debug("Glimmr: Stream stopped.");
             await SendPost("mode", 0);
+            Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
         }
 
 

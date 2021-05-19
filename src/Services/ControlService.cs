@@ -31,6 +31,20 @@ namespace Glimmr.Services {
 		private SystemData _sd;
 
 		public ControlService(IHubContext<SocketServer> hubContext) {
+			var text = @"
+
+ (                                            (    (      *      *    (     
+ )\ )   )            )                 (      )\ ) )\ ) (  `   (  `   )\ )  
+(()/(( /(   ) (   ( /((        (  (    )\ )  (()/((()/( )\))(  )\))( (()/(  
+ /(_))\()| /( )(  )\())\  (    )\))(  (()/(   /(_))/(_)|(_)()\((_)()\ /(_)) 
+(_))(_))/)(_)|()\(_))((_) )\ )((_))\   /(_))_(_)) (_)) (_()((_|_()((_|_))   
+/ __| |_((_)_ ((_) |_ (_)_(_/( (()(_) (_)) __| |  |_ _||  \/  |  \/  | _ \  
+\__ \  _/ _` | '_|  _|| | ' \)) _` |    | (_ | |__ | | | |\/| | |\/| |   /  
+|___/\__\__,_|_|  \__||_|_||_|\__, |     \___|____|___||_|  |_|_|  |_|_|_\  
+                              |___/                                         
+
+";
+			Log.Debug(text);
 			_hubContext = hubContext;
 			// Init nano HttpClient
 			HttpSender = new HttpClient {Timeout = TimeSpan.FromSeconds(5)};
@@ -75,7 +89,6 @@ namespace Glimmr.Services {
 		}
 
 		private void LoadAgents() {
-			Log.Information("Creating agents...");
 			if (_agents != null) {
 				foreach (var a in _agents.Values) {
 					try {
@@ -87,20 +100,19 @@ namespace Glimmr.Services {
 			}
 			_agents = new Dictionary<string, dynamic>();
 			var types = SystemUtil.GetClasses<IColorTargetAgent>();
-			Log.Information("Types: " + JsonConvert.SerializeObject(types));
 			foreach (var c in types) {
 				var parts = c.Split(".");
 				var shortClass = parts[^1];
 				Log.Information("Creating agent: " + c);
 				var agentMaker = (IColorTargetAgent) Activator.CreateInstance(Type.GetType(c)!);
 				if (agentMaker == null) {
-					Log.Warning("Agent is null!");
+					Log.Warning($"Agent maker for {c} is null!");
 				} else {
 					var agent = agentMaker.CreateAgent(this);
 					if (agent != null) {
 						_agents[shortClass] = agent;
 					} else {
-						Log.Warning("Agent is null!");
+						Log.Information($"Agent {c} is null.");
 					}
 				}
 			}

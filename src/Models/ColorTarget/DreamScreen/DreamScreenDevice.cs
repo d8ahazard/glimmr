@@ -51,19 +51,22 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		
 	
 		public async Task StartStream(CancellationToken ct) {
+			if (!Enable) return;
+			Log.Information($"{Data.Tag}::Starting stream: {Data.Id}...");
 			if (Data.DeviceTag.Contains("DreamScreen")) {
 				Log.Warning("Error, you can't send colors to a dreamscreen.");
 				Enable = false;
 				return;
 			}
-			if (!Enable) return;
+			
 			await _client.SetMode(_dev, DeviceMode.Video);
+			Log.Information($"{Data.Tag}::Stream started: {Data.Id}.");
 		}
 		
 		public async Task StopStream() {
 			if (!Enable) return;
-			Log.Debug("Stopping stream.");
 			await _client.SetMode(_dev, DeviceMode.Off);
+			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
 		}
 
 		public async void SetColor(List<Color> colors, List<Color> sectors, int arg3, bool force = false) {

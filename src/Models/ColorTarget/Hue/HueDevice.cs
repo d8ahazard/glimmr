@@ -49,6 +49,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Streaming = false;
 			_entLayer = null;
 			Id = Data.Id;
+			ReloadData();
 			// Don't grab streaming group unless we need it
 			if (Data?.User == null || Data?.Token == null || _client != null) return;
 			
@@ -56,7 +57,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			_client = new StreamingHueClient(Data.IpAddress, Data.User, Data.Token);
 			try {
 				_stream = SetupAndReturnGroup().Result;
-				Log.Debug("Stream is set.");
 			} catch (Exception e) {
 				Log.Warning("Exception: " + e.Message);
 			}
@@ -123,7 +123,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			// Leave if not enabled
 			if (!Enable) return;
 			
-			Log.Debug($"Hue: Starting stream at  {IpAddress}...");
+			Log.Information($"{Data.Tag}::Starting stream: {Data.Id}...");
 			// Leave if we have no client (not authorized)
 			if (_client == null) {
 				Log.Warning("We have no streaming client, can't start.");
@@ -167,17 +167,16 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 			_client.AutoUpdate(_stream, _ct).ConfigureAwait(false);
 			_entLayer = _stream.GetNewLayer(true);
-			Log.Debug("Hue: Stream started.");
+			Log.Information($"{Data.Tag}::Stream started: {Data.Id}");
 			Streaming = true;
 		}
 
 		public async Task StopStream() {
 			if (!Enable || !Streaming) return;
-			Log.Debug($"Hue: Stopping Stream: {IpAddress}...");
 			// YOU NEED TO AWAIT THIS, STUPID.
 			await StopStream(_client, Data);
 			Streaming = false;
-			Log.Debug("Hue: Streaming Stopped.");
+			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
 		}
 
 		
@@ -210,7 +209,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Tag = Data.Tag;
 			Enable = Data.Enable;
 			Brightness = Data.Brightness;
-			Log.Debug(@"Hue: Reloaded bridge: " + IpAddress);
 		}
 
 		/// <summary>
@@ -294,7 +292,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
             var id = b.SelectedGroup;
             await client.LocalHueClient.SetStreamingAsync(id, false).ConfigureAwait(true);
-            Log.Debug("Hue: Stream stopped.");
 		}
 
        private async Task<StreamingGroup> SetupAndReturnGroup() {
@@ -307,7 +304,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
             
             try {
 	            //Get the entertainment group
-                Log.Debug("Grabbing ent group...");
                 var group = await _client.LocalHueClient.GetGroupAsync(groupId);
                 if (group == null) {
                     Log.Warning("Unable to fetch group with ID of " + groupId);
@@ -324,7 +320,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
                 }
 
                 if (mappedLights.Count == 0) {
-                    Log.Debug("No mapped lights, nothing to do.");
                     return null;
                 }
                 

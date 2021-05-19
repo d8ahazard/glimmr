@@ -50,7 +50,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 		public void ToggleStream(bool enable) {
 			_enable = enable;
 			if (_enable) {
-				Log.Debug("Target is " + _targetDreamScreen + " group is " + TargetGroup);
+				Log.Debug("Starting DS stream, Target is " + _targetDreamScreen + " group is " + TargetGroup);
 				_client.StartSubscribing(_targetDreamScreen);
 			} else {
 				_client.StopSubscribing();
@@ -63,7 +63,6 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 				switch (e.Response.Type) {
 					case MessageType.Mode:
 						var mode = e.Response.Payload.GetUint8();
-						Log.Debug("New mode is " + mode);
 						_cs.ControlService.SetMode(mode).ConfigureAwait(false);
 						break;
 					case MessageType.Brightness:
@@ -92,10 +91,12 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 		public bool SourceActive { get; set; }
 
 		protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
+			Log.Debug("Starting DS stream service...");
 			_client.ColorsReceived += UpdateColors;
 			while (!stoppingToken.IsCancellationRequested) {
 				await Task.Delay(1, stoppingToken);
 			}
+			Log.Debug("DS stream service stopped.");
 			_client.StopSubscribing();
 		}
 

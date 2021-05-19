@@ -39,7 +39,12 @@ namespace Glimmr.Models.ColorSource.Audio {
 		}
 		
 		protected override Task ExecuteAsync(CancellationToken ct) {
-			Log.Debug("Starting audio stream...");
+			if (!_hasDll) {
+				Log.Debug("Audio stream unavailable, no bass.dll found.");
+				return Task.CompletedTask;
+			}
+
+			Log.Debug("Starting audio stream service...");
 			return Task.Run(async () => {
 				while (!ct.IsCancellationRequested) {
 					await Task.Delay(1,ct);
@@ -47,6 +52,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 				Bass.ChannelStop(_handle);
 				Bass.Free();
 				Bass.RecordFree();
+				Log.Debug("Audio stream service stopped.");
 			}, CancellationToken.None);
 		}
 		
@@ -103,17 +109,12 @@ namespace Glimmr.Models.ColorSource.Audio {
 			_sd = systemData;
 			LoadData().ConfigureAwait(true);
 			try {
-				Log.Debug("Bass init...");
 				Bass.RecordInit(_recordDeviceIndex);
-				Log.Debug("Done");
-				Log.Debug("Starting stream with device " + _recordDeviceIndex);
 				_handle = Bass.RecordStart(48000, 2, BassFlags.Float, Update);
-				Log.Debug("Error check: " + Bass.LastError);
 				Bass.RecordGetDeviceInfo(_recordDeviceIndex, out var info3);
-				Log.Debug("Loaded: " + JsonConvert.SerializeObject(info3));
 				_hasDll = true;
 			} catch (DllNotFoundException) {
-				Log.Warning("Bass not found, nothing to do...");
+				Log.Warning("Bass.dll not found, nothing to do...");
 				_hasDll = false;
 			}
 			

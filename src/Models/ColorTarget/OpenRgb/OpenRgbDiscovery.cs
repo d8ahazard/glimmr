@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Diagnostics;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Newtonsoft.Json;
 using OpenRGB.NET;
 using Serilog;
 
@@ -24,6 +21,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 		public async Task Discover(CancellationToken ct, int timeout) {
 			try {
+				var ip = (string) DataUtil.GetItem<string>("OpenRgbIp");
 				Log.Debug("Disco started...");
 				if (_client == null) {
 					Log.Debug("No client.");
@@ -44,7 +42,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 					var devs = _client.GetAllControllerData();
 					var idx = 0;
 					foreach (var dev in devs) {
-						var rd = new OpenRgbData(dev) {Id = "OpenRgb" + idx, DeviceId = idx};
+						var rd = new OpenRgbData(dev) {Id = "OpenRgb" + idx, DeviceId = idx, IpAddress = ip};
 						await _cs.UpdateDevice(rd).ConfigureAwait(false);
 						idx++;
 					}

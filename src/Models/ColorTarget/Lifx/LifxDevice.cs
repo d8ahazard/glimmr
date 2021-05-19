@@ -57,17 +57,17 @@ namespace Glimmr.Models.ColorTarget.Lifx {
        
         public async Task StartStream(CancellationToken ct) {
             if (!Enable) return;
+            Log.Information($"{Data.Tag}::Starting stream: {Data.Id}...");
             // Recalculate target sector before starting stream, just in case.
             _targetSector = Data.TargetSector - 1;
             _targetSector = ColorUtil.CheckDsSectors(_targetSector);
-            Log.Debug("Lifx: Starting stream.");
             var col = new LifxColor(0, 0, 0);
             //var col = new LifxColor {R = 0, B = 0, G = 0};
             _client.SetLightPowerAsync(B, true);
             _client.SetColorAsync(B, col, 2700);
-            Log.Debug($"Lifx: Streaming is active, {_hasMulti} {_multizoneCount}");
             Streaming = true;
             await Task.FromResult(Streaming);
+            Log.Information($"{Data.Tag}::Stream started: {Data.Id}.");
         }
 
         public async Task FlashColor(Color color) {
@@ -86,11 +86,11 @@ namespace Glimmr.Models.ColorTarget.Lifx {
         public async Task StopStream() {
             if (!Enable) return;
             Streaming = false;
-            if (_client == null) throw new ArgumentException("Invalid lifx client.");
+            if (_client == null) return;
             FlashColor(Color.FromArgb(0, 0, 0)).ConfigureAwait(false);
             _client.SetLightPowerAsync(B, Data.Power).ConfigureAwait(false);
             await Task.FromResult(true);
-            Log.Debug("Lifx: Stream stopped.");
+            Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
         }
 
         public Task ReloadData() {

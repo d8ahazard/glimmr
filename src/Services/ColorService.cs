@@ -81,13 +81,12 @@ namespace Glimmr.Services {
 		}
 		
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
+			Log.Information("Starting color service...");
 			_stopToken = stoppingToken;
 			_watch = new Stopwatch();
 			_frameWatch = new Stopwatch();
 			_streamTokenSource = new CancellationTokenSource();
-			Log.Information("Starting colorService loop...");
 			LoadData();
-			Log.Information("All color services have been initialized.");
 			return Task.Run(async () => {
 				await Demo(this, new DynamicEventArgs());
 				Log.Information($"All color sources initialized, setting mode to {DeviceMode}.");
@@ -479,11 +478,13 @@ namespace Glimmr.Services {
 				_streamStarted = true;
 				Log.Information("Starting streaming devices...");
 				foreach (var sdev in _sDevices) {
-					if (SystemUtil.IsOnline(sdev.Data.IpAddress) || sdev.Data.Tag == "Led") {
-						sdev.StartStream(_sendTokenSource.Token);
-					} else {
-						Log.Debug("Device " + sdev.Data.Id + " is offline.");
+					if (sdev.Data.Tag != "Led") {
+						if (!SystemUtil.IsOnline(sdev.Data.IpAddress)) {
+							Log.Debug($"Device {sdev.Data.Tag} at {sdev.Data.Id} is offline.");
+							continue;
+						}
 					}
+					sdev.StartStream(_sendTokenSource.Token);
 				}
 			}
 			

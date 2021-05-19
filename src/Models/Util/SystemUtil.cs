@@ -23,8 +23,7 @@ namespace Glimmr.Models.Util {
 
 		public static bool IsOnline(string target) {
 			if (string.IsNullOrEmpty(target)) {
-				Log.Debug("Target is empty");
-				return true;
+				return false;
 			}
 			if (target == "127.0.0.1" || target == "localhost") return true;
 			var pingable = false;

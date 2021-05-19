@@ -52,10 +52,10 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			}
 
 			if (_client.Connected) {
-				Log.Information("OpenRGB: Starting stream...");
+				Log.Information($"{Data.Tag}::Starting stream: {Data.Id}...");
 				Streaming = true;
 				_client.SetMode(Data.DeviceId,0);
-				Log.Information("OpenRGB: Stream started.");
+				Log.Information($"{Data.Tag}::Stream started: {Data.Id}.");
 				
 			}
 			return Task.CompletedTask;
@@ -64,7 +64,6 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		public async Task StopStream() {
 			if (_client == null) return;
 			if (!_client.Connected || !Enable) return;
-			Log.Debug("OpenRGB: Stopping stream...");
 			var output = new OpenRGB.NET.Models.Color[Data.LedCount];
 			for (var i = 0; i < output.Length; i++) {
 				output[i] = new OpenRGB.NET.Models.Color();
@@ -72,7 +71,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			_client.UpdateLeds(Data.DeviceId,output);
 			await Task.FromResult(true);
 			Streaming = false;
-			Log.Debug("OpenRGB: Stream stopped.");
+			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
 		}
 
 		public void SetColor(List<Color> colors, List<Color> sectors, int fadeTime, bool force = false) {

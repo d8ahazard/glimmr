@@ -62,14 +62,13 @@ namespace Glimmr.Models.ColorTarget.Wled {
         public async Task StartStream(CancellationToken ct) {
             if (Streaming) return;
             if (!Enable) return;
+            Log.Information($"{Data.Tag}::Starting stream: {Data.Id}...");
             _targetSector = ColorUtil.CheckDsSectors(Data.TargetSector);
-
-            Log.Debug($"WLED: Starting stream at {IpAddress}...");
             _ep = IpUtil.Parse(IpAddress, port);
             Streaming = true;
             await FlashColor(Color.Black).ConfigureAwait(false);
             await UpdateLightState(Streaming).ConfigureAwait(false);
-            Log.Debug("WLED: Stream started.");
+            Log.Information($"{Data.Tag}::Stream started: {Data.Id}.");
         }
 
         
@@ -99,7 +98,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
         
         public async Task StopStream() {
             if (!Data.Enable) return;
-            Log.Debug("WLED: Stopping stream...");
             var packet = new List<byte> {ByteUtils.IntByte(2), ByteUtils.IntByte(1)};
             for (var i = 0; i < Data.LedCount * 3; i++) {
                 packet.Add(0);
@@ -115,7 +113,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
             }
         
             Streaming = false;
-            Log.Debug("WLED: Stream stopped.");
+            Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
         }
 
 
@@ -224,19 +222,16 @@ namespace Glimmr.Models.ColorTarget.Wled {
             if (oldBrightness != Brightness) {
                 Log.Debug($"Brightness has changed!! {oldBrightness} {Brightness}");
                 UpdateLightState(Streaming).ConfigureAwait(false);
-            } else {
-                Log.Debug($"Nothing to update for brightness {oldBrightness} {Brightness}");
             }
             _ledCount = Data.LedCount;
             return Task.CompletedTask;
         }
 
-        public async Task UpdateLightState(bool on) {
-            var scaledBright = (Brightness / 100f) * 255;
+        private async Task UpdateLightState(bool on) {
+            var scaledBright = Brightness / 100f * 255;
             var url = "http://" + IpAddress + "/win";
             url += "&T=" + (on ? "1" : "0");
             url += "&A=" + (int) scaledBright;
-            Log.Debug($"ScaledBright: {scaledBright} for {url}");
             await _httpClient.GetAsync(url).ConfigureAwait(false);
         }
 

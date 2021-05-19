@@ -65,6 +65,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
         }
 
         protected override Task ExecuteAsync(CancellationToken ct) {
+            Log.Debug("Starting ambient stream service...");
             return Task.Run(async () => {
                 // Load this one for fading
                 while (!ct.IsCancellationRequested) {
@@ -122,7 +123,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
                     await Task.FromResult(true);
                 }
                 _watch.Stop();
-                Log.Information("DreamScene: Color Builder canceled.");
+                Log.Information("Ambient stream service stopped.");
             });
         }
 
@@ -256,7 +257,6 @@ namespace Glimmr.Models.ColorSource.Ambient {
             _scenes = _loader.LoadFiles<AmbientScene>();
             var scene = new AmbientScene();
             foreach (var s in _scenes.Where(s => s.Id == _ambientShow)) {
-                Log.Debug($"Loading scene: {s.Id}");
                 scene = s;
             }
 

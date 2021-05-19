@@ -55,31 +55,22 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 		
 		public async Task StartStream(CancellationToken ct) {
-			Log.Debug("Startstream called!");
 			if (!Enable) {
 				Log.Warning("YEE: Not enabled!");
 				return;
 			}
+			Log.Information($"{Data.Tag}::Starting stream: {Data.Id}...");
 			_targetSector = ColorUtil.CheckDsSectors(Data.TargetSector);
 
-			Log.Debug("Connecting.");
 			await _yeeDevice.Connect();
-			Log.Debug("Connected.");
 			var ip = IpUtil.GetLocalIpAddress();
-			Log.Debug("Trying to start music: " + ip);
 			if (!string.IsNullOrEmpty(ip)) {
-				Log.Debug("Creating stream task?");
 				_streamTask = _yeeDevice.StartMusicMode(ip);
-				Log.Debug("Task created!");
 				Streaming = true;
-			} else {
-				Log.Debug("Can't get local IP: " + ip);
 			}
 
 			if (Streaming) {
-				Log.Debug("YEE: Stream started!");
-			} else {
-				Log.Debug("Streaming was not started..." + Enable);
+				Log.Information($"{Data.Tag}::Stream started: {Data.Id}.");
 			}
 		}
 
@@ -88,16 +79,11 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 				return;
 			}
 
-			Log.Debug("YEE: Resetting...");
 			await FlashColor(Color.FromArgb(0, 0, 0)).ConfigureAwait(false);
-			Log.Debug("YEE: Stopping music mode...");
 			await _yeeDevice.StopMusicMode();
-			Log.Debug("Yee: Stopped!");
-			if (_streamTask.IsCompleted) Log.Debug("Stream task is completed.");
 			_yeeDevice.Disconnect();
-			Log.Debug("Disconnected!");
 			Streaming = false;
-			Log.Debug("YEE: Streaming stopped.");
+			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
 		}
 
 		public void SetColor(List<Color> colors, List<Color> sectors, int arg3, bool force=false) {

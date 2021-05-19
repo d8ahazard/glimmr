@@ -27,7 +27,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 		public AudioMap() {
 			_loader = new JsonLoader("audioScenes");
 			Refresh();
-			Log.Debug("Map got.");
 		}
 
 		public Color[] MapColors(Dictionary<int, float> lChannel, Dictionary<int, float> rChannel) {
@@ -61,9 +60,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 						var sectorInt = _leftSectors.ElementAt(sector);
 						if (note.Value > maxVal) {
 							maxVal = note.Value;
-							Log.Debug("Max is " + maxVal);
 						}
-						//Log.Debug($"Mapping {note.Key} l to " + sectorInt);
 						output[sectorInt] = ColorUtil.HsvToColor(targetHue * 360, 1, note.Value);
 					}
 					sector = (int) Math.Floor(_rightSectors.Count * i);
@@ -73,7 +70,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 						if (note.Value >= _rotationThreshold && !triggered) triggered = true;
 						var targetHue = RotateHue(ColorUtil.HueFromFrequency(note.Key));
 						var sectorInt = _rightSectors.ElementAt(sector);
-						//Log.Debug($"Mapping {note.Key} l to " + sectorInt);
 						if (note.Value > maxVal) {
 							maxVal = note.Value;
 							Log.Debug("Max is " + maxVal);
@@ -133,8 +129,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 			_rotationSpeed = 0;
 			_rotationUpper = 1;
 			_rotationLower = 0;
-			Log.Debug("Scene loaded: " + JsonConvert.SerializeObject(am));
-
+			
 			try {
 				_rotationSpeed = am.RotationSpeed;
 				_rotationLower = am.RotationLower;
@@ -157,12 +152,10 @@ namespace Glimmr.Models.ColorSource.Audio {
 			for (var i = rightStart; i < len; i++) _rightSectors.Add(i);
 			// Rest of left range from 0 up to top mid
 			for (var i = 0; i <= rightEnd; i++ ) _rightSectors.Add(i);
-			Log.Debug("Rdone");
 			_leftSectors = new List<int>();
 			var leftEnd = _vSectors + _hSectors / 2 - 1;
 			var leftStart = len - _hSectors / 2;
 			for (var i = leftStart; i >= leftEnd; i--) _leftSectors.Add(i);
-			Log.Debug("Rdone");
 		}
 
 		private float RotateHue(float hue) {

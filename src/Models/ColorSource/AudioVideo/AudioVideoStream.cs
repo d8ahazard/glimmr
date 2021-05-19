@@ -28,7 +28,7 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 		}
 
 		protected override Task ExecuteAsync(CancellationToken ct) {
-			Log.Debug("Starting av stream...");
+			Log.Debug("Starting av stream service...");
 			return Task.Run(async () => {
 				while (!ct.IsCancellationRequested) {
 					if (!_enable) continue;
@@ -63,6 +63,7 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 					_cs.SendColors(Colors, Sectors, 0);
 					await Task.Delay(1, CancellationToken.None);
 				}
+				Log.Debug("AV stream service stopped.");
 			}, CancellationToken.None);
 		}
 
