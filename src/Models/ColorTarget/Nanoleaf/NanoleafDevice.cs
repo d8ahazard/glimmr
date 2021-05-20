@@ -31,6 +31,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				Data = n;
 				SetData(n);
 				var streamMode = n.Type == "NL29" || n.Type == "NL42" ? 2 : 1;
+				Log.Debug($"Creating streaming agent with mode {streamMode}.");
 				var cs = ColorService.ControlService;
 				_nanoleafClient = new NanoleafClient(n.IpAddress, n.Token);
 				_streamingClient = new NanoleafStreamingClient(n.IpAddress, streamMode, cs.UdpClient);
@@ -63,14 +64,15 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			_wasOn = await _nanoleafClient.GetPowerStatusAsync();
 			if (!_wasOn) {
 				Log.Debug("Updating nano client power...");
-				await _nanoleafClient.TurnOnAsync().ConfigureAwait(false);
+				await _nanoleafClient.TurnOnAsync();
 				Log.Debug("Updated...");
 			}
 
-			Log.Debug("Setting brightness...");
-			await _nanoleafClient.SetBrightnessAsync((int) (Brightness / 100f * 255)).ConfigureAwait(false);
-			Log.Debug("Starting external...");
-			await _nanoleafClient.StartExternalAsync().ConfigureAwait(false);
+			Log.Debug($"Setting brightness to {Brightness}.");
+			await _nanoleafClient.SetBrightnessAsync((int) (Brightness / 100f * 255));
+			string streamMode = "v" + Data.Type == "NL29" || Data.Type == "NL42" ? "2" : "1";
+			Log.Debug($"Starting external with mode: {streamMode}");
+			await _nanoleafClient.StartExternalAsync(streamMode);
 			Log.Information($"{Data.Tag}::Stream started: {Data.Id}.");
 		}
 
