@@ -67,7 +67,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 			Name ??= Tag;
 			if (Id != null && Id.Length > 4) {
-				Name = "Lifx - " + Id.Substring(0, 4);
+				Name = "Lifx - " + Id.Substring(Id.Length - 5, 5);
 			}
 		}
 
@@ -86,7 +86,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			MacAddressString = b.MacAddressName;
 			Id = MacAddressString;
 			if (Id != null) {
-				Name = "Lifx - " + Id.Substring(0, 4);
+				Name = "Lifx - " + Id.Substring(Id.Length - 5, 5);
 			}
 		}
 
@@ -103,6 +103,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			IpAddress = ld.IpAddress;
 			MacAddress = ld.MacAddress;
 			DeviceTag = ld.DeviceTag;
+			Name = "Lifx - " + Id.Substring(Id.Length - 5, 5);
 		}
 
 		public SettingsProperty[] KeyProperties {
