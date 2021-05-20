@@ -44,6 +44,8 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		public string Tag { get; set; }
 		public bool Enable { get; set; }
 
+		private bool _isOn;
+
 
 		IColorTargetData IColorTarget.Data {
 			get => Data;
@@ -100,9 +102,22 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 				return;
 			}
 
-			var min = Math.Max(col.R, Math.Max(col.G, col.B)) / 255 * 100;
 			_yeeDevice.SetRGBColor(col.R, col.G, col.B).ConfigureAwait(false);
-			_yeeDevice.SetBrightness(min);
+			var bri = col.GetBrightness() * 100;
+			if (bri <= 10f) {
+				if (_isOn) {
+					_isOn = false;
+					_yeeDevice.SetPower(false);
+				}
+			} else {
+				if (!_isOn) {
+					_isOn = true;
+					_yeeDevice.SetPower();
+				}
+				_yeeDevice.SetRGBColor(col.R, col.G, col.B).ConfigureAwait(false);
+				_yeeDevice.BackgroundSetBrightness((int)bri);
+			}
+			
 			_colorService.Counter.Tick(Id);
 		}
 
