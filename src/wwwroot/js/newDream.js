@@ -1399,7 +1399,7 @@ function loadDevices() {
 }
 
 function isValid(toCheck) {
-    return (toCheck !== null && toCheck !== undefined);
+    return (toCheck !== null && toCheck !== undefined && toCheck !== "");
 }
 
 function getObj(group, key, val) {

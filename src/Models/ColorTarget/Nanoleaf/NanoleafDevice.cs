@@ -119,8 +119,10 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
 		public async Task FlashColor(Color color) {
 			var cols = new Dictionary<int, Color>();
-			foreach (var pd in _layout.PositionData) {
-				cols[pd.PanelId] = color;
+			if (_layout.PositionData != null) {
+				foreach (var pd in _layout.PositionData) {
+					cols[pd.PanelId] = color;
+				}
 			}
 
 			await _streamingClient.SetColorAsync(cols);
