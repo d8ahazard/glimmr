@@ -19,6 +19,11 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		[JsonProperty] public int GroupNumber { get; set; }
 		[JsonProperty] public int Mode { get; set; }
 		[JsonProperty] public int Port { get; set; }
+
+		[DefaultValue(0)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public float Rotation { get; set; }
+		
 		[JsonProperty] public string GroupName { get; set; }
 		[JsonProperty] public string Hostname { get; set; }
 		[JsonProperty] public string IpV6Address { get; set; }
@@ -26,6 +31,15 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		[JsonProperty] public string Type { get; set; }
 		[JsonProperty] public string Version { get; set; }
 		[JsonProperty] public TileLayout Layout { get; set; }
+		
+		public string Name { get; set; }
+		public string Id { get; set; }
+		public string Tag { get; set; }
+		public string IpAddress { get; set; }
+		public int Brightness { get; set; }
+		
+		public bool Enable { get; set; }
+		
 
 		public NanoleafData() {
 			Tag = "Nanoleaf";
@@ -72,12 +86,6 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		};
 
 
-		public string Name { get; set; }
-		public string Id { get; set; }
-		public string Tag { get; set; }
-		public string IpAddress { get; set; }
-		public int Brightness { get; set; }
-		
-		public bool Enable { get; set; }
+
 	}
 }

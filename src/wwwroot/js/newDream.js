@@ -1713,6 +1713,7 @@ function createDeviceSettings() {
     console.log("Loading device data: ", deviceData);   
     let props = deviceData["KeyProperties"];
     if (isValid(props)) {
+        console.log("No, really, loading props...");
         let container = document.createElement("div");
         container.classList.add("container");
         let id = deviceData["Id"];
@@ -1721,6 +1722,11 @@ function createDeviceSettings() {
         let header = document.createElement("div");
         header.classList.add("col-12", "headerCol");
         row.appendChild(header);
+        console.log("TAG IS " + deviceData["DeviceTag"]);
+        if (deviceData["DeviceTag"] === "LifxBeam") {
+            console.log("Appending beam map.");
+            appendBeamMap();
+        }
 
         for (let i =0; i < props.length; i++) {
             
@@ -1924,6 +1930,27 @@ function drawLinkPane(type, linked) {
         svgStyle: null,
         value: 1
     });
+}
+
+function appendBeamMap() {
+    let settingsDiv = document.getElementById("deviceSettings");
+    let count = deviceData["MultiZoneCount"];
+    let total = 0;
+    let beamCount = 0;
+    let cornerCount = 0;
+    for(let i = 0; i < count; i++) {
+        if (total === 10) {
+            beamCount++;
+            total = 0;
+        }
+        let remainder = count - (beamCount * 10);
+        if (remainder < 10) {
+            cornerCount = remainder;
+        }
+        total++;
+    }
+    console.log("We should have " + beamCount + " beams, " + cornerCount + " corners.");
+
 
 }
 
@@ -2438,23 +2465,16 @@ function drawNanoShapes(panel) {
     // Get window width
     let width = window.innerWidth;
     let height = width * .5625;
-
+    if (height > 800) height = 800;
+    let rotation = panel['Rotation'];
+    if (!isValid(rotation)) rotation = 0;
     // Get layout data from panel
     let mirrorX = panel['MirrorX'];
     let mirrorY = panel['MirrorY'];
     let layout = panel['Layout'];
     let sideLength = layout['SideLength'];
 
-    // Create our stage
-    let stage = new Konva.Stage({
-        container: 'mapCol',
-        width: width,
-        height: height
-    });
-
-    // Shape layer
-    let cLayer = new Konva.Layer();
-    stage.add(cLayer);
+   
 
     let positions = layout['PositionData'];
     let minX = 1000;
@@ -2473,7 +2493,7 @@ function drawNanoShapes(panel) {
     let wX = maxX - minX;
     let wY = maxY - minY;
     let scaleXY = 1;
-    if (wX > width || wY > height) {
+    if (wX + 50 >= width) {
         scaleXY = .5;
         console.log("Scaling to half.");
         maxX *= scaleXY;
@@ -2481,6 +2501,19 @@ function drawNanoShapes(panel) {
         minX *= scaleXY;
         minY *= scaleXY;
     }
+    height = wY + 200;
+
+    // Create our stage
+    let stage = new Konva.Stage({
+        container: 'mapCol',
+        width: width,
+        height: height
+    });
+
+    // Shape layer
+    let cLayer = new Konva.Layer();
+    stage.add(cLayer);
+    
     let x0 = (width - maxX - minX) / 2;
     let y0 = (height - maxY - minY) / 2;
     
@@ -2488,7 +2521,7 @@ function drawNanoShapes(panel) {
     
     // Group for the shapes
     let shapeGroup = new Konva.Group({
-        rotation: 0,
+        rotation: rotation,
         draggable: false,
         x: x0,
         y: y0,
@@ -2496,11 +2529,10 @@ function drawNanoShapes(panel) {
             x: scaleXY,
             y: scaleXY
         }
-    });
-
-    
+    });    
     
     for (let i=0; i < positions.length; i++) {
+        let shapeDrawing;
         let data = positions[i];
         let shape = data['ShapeType'];
         sideLength = data["SideLength"];
@@ -2530,19 +2562,43 @@ function drawNanoShapes(panel) {
         });
         let o = data['O'];
         // Draw each individual shape
+        console.log("Shape type is " + shape);
         switch (shape) {
+            // Hexagon
+            case 7:
+                const hexA = 2 * Math.PI / 6;
+                let r = sideLength;
+                let points = [];
+                for (let i = 0; i < 6; i++) {
+                    let px = x + r * Math.cos(hexA * i);
+                    let py = y + r * Math.sin(hexA * i);
+                    points.push(px);
+                    points.push(py);
+                }
+                shapeDrawing = new Konva.Line({
+                    points: points,
+                    fill: 'white',
+                    stroke: 'black',
+                    strokeWidth: 5,
+                    closed: true,
+                    id: data["PanelId"]
+                });                
+                break;
+            // Triangles
             case 0:
             case 1:
-                y = (data.y * -1) + Math.abs(minY);
+            case 8:
+            case 9:
+                //y = (data.y * -1) + Math.abs(minY);
                 let invert = false;
-                if (o === 60 || o === 180 || o === 300) {
+                if (o === 60 || o === 180 || o === 300 || o === 540) {
                     invert = true;
                 }
 
                 let angle = (2*Math.PI)/3;
                 // Calculate our overall height based on side length
-                let h = sideLength * (Math.sqrt(3)/2);
-                h *= 2;
+                let h = sideLength;
+                //h *= 2;
                 let halfHeight = h / 2;
                 let ha = angle / 4;
                 let a0 = ha;
@@ -2559,30 +2615,23 @@ function drawNanoShapes(panel) {
                     y1 = halfHeight * Math.sin(a1) + y;
                     y2 = halfHeight * Math.sin(a2) + y;
                 }
-                let poly = new Konva.Line({
+                shapeDrawing = new Konva.Line({
                     points: [x0, y0, x1, y1, x2, y2],
                     fill: 'white',
                     stroke: 'black',
                     strokeWidth: 5,
                     closed: true,
+                    rotation: rotation,
                     id: data["PanelId"]
-                });
-                poly.on('click', function(){
-                    console.log("POLY CLICK");
-                    setNanoMap(data['PanelId'], data['TargetSector']);
-                });
-                poly.on('tap', function(){
-                    console.log("POLY TAP")
-                    setNanoMap(data['PanelId'], data['TargetSector']);
-                });
-                shapeGroup.add(poly);
+                });                
                 break;
+            // Squares
             case 2:
             case 3:
             case 4:
                 let tx = x - (sideLength / 2);
                 let ty = y - (sideLength / 2);
-                let rect1 = new Konva.Rect({
+                shapeDrawing = new Konva.Rect({
                     x: tx,
                     y: ty,
                     width: sideLength,
@@ -2591,27 +2640,46 @@ function drawNanoShapes(panel) {
                     stroke: 'black',
                     strokeWidth: 4
                 });
-                rect1.on('click', function(){
-                    console.log("RECT CLICK:", data);
-                    setNanoMap(data['PanelId'], data['TargetSector']);
-                });
-                rect1.on('tap', function(){
-                    setNanoMap(data['PanelId'], data['TargetSector']);
-                });
-                console.log("Adding shape: ", rect1);
-                shapeGroup.add(rect1);
+                
                 break;
             case 5:
                 console.log("Draw a power supply??");
                 break;
         }
+        if (isValid(shapeDrawing)) {
+            shapeDrawing.on('click', function () {
+                console.log("RECT CLICK:", data);
+                setNanoMap(data['PanelId'], data['TargetSector']);
+            });
+            shapeDrawing.on('tap', function () {
+                setNanoMap(data['PanelId'], data['TargetSector']);
+            });
+            console.log("Adding shape: ", shapeDrawing);
+
+            shapeGroup.add(shapeDrawing);
+        }
         sText.offsetX(sText.width() / 2);
         sText2.offsetX(sText2.width() / 2);
+        sText.rotation(360 - rotation);
+        sText2.rotation(360 - rotation);
         
         shapeGroup.add(sText);
         shapeGroup.add(sText2);
     }
     // Add to our canvas layer and draw
+    let tr = new Konva.Transformer({
+        nodes: [shapeGroup],
+        resizeEnabled: false,
+        rotateEnabled: true,
+        rotateAnchorOffset: 20
+    });
+
+    shapeGroup.on('transformend', function () {
+        console.log('transform end: ', shapeGroup.rotation());
+        updateDevice(deviceData["Id"], "Rotation", shapeGroup.rotation());
+    });
+    cLayer.add(tr);
+    tr.nodes([shapeGroup]);
     cLayer.add(shapeGroup);
     
     let container = document.getElementById('mapCol');
