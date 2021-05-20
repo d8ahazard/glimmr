@@ -30,7 +30,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			if (n != null) {
 				Data = n;
 				SetData(n);
-				var streamMode = n.Type == "NL29" ? 2 : 1;
+				var streamMode = n.Type == "NL29" || n.Type == "NL42" ? 2 : 1;
 				var cs = ColorService.ControlService;
 				_nanoleafClient = new NanoleafClient(n.IpAddress, n.Token);
 				_streamingClient = new NanoleafStreamingClient(n.IpAddress, streamMode, cs.UdpClient);
