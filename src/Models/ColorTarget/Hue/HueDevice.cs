@@ -165,6 +165,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				Log.Debug("Connected.");
 			} catch (Exception e) {
 				Log.Debug("Streaming exception caught: " + e.Message + " at " + e.StackTrace);
+				return;
 			}
 
 			_client.AutoUpdate(_stream, _ct).ConfigureAwait(false);

@@ -60,17 +60,23 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			SubSectors = new Dictionary<int, int>();
 
 			try {
-				var dns = Dns.GetHostEntry(Id + ".local");
+				var dns = Dns.GetHostEntry(Id);
 				if (dns.AddressList.Length > 0) {
 					IpAddress = dns.AddressList[0].ToString();
+				} else {
+					dns = Dns.GetHostEntry(Id + ".local");
+					if (dns.AddressList.Length > 0) {
+						IpAddress = dns.AddressList[0].ToString();
+					}
 				}
+
 			} catch (Exception e) {
 				Log.Debug("DNS Res ex: " + e.Message);
 			}
 
 			using var webClient = new WebClient();
 			try {
-				var url = "http://" + Id + ".local/json";
+				var url = "http://" + IpAddress + "/json";
 				var jsonData = webClient.DownloadString(url);
 				var jsonObj = JsonConvert.DeserializeObject<WledStateData>(jsonData);
 				State = jsonObj;

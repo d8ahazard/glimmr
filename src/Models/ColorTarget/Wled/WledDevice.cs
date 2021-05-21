@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
+using Newtonsoft.Json;
 using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Wled {
@@ -49,6 +50,9 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		public string IpAddress { get; set; }
 		public string Tag { get; set; }
 
+		private bool _wasOn;
+		private int _lastBri;
+
 		IColorTargetData IColorTarget.Data {
 			get => Data;
 			set => Data = (WledData) value;
@@ -64,11 +68,20 @@ namespace Glimmr.Models.ColorTarget.Wled {
 				return;
 			}
 
+			Log.Debug("Getting state...");
+			var state = await GetLightState();
+			if (state != null) {
+				Log.Debug("WLED: Current state: " + JsonConvert.SerializeObject(state));
+				_wasOn = state.state.on;
+				_lastBri = state.state.bri;
+			}
+			
+
 			Log.Information($"{Data.Tag}::Starting stream: {Data.Id}...");
 			_targetSector = ColorUtil.CheckDsSectors(Data.TargetSector);
 			_ep = IpUtil.Parse(IpAddress, port);
 			Streaming = true;
-			await FlashColor(Color.Black).ConfigureAwait(false);
+			//await FlashColor(Color.Black).ConfigureAwait(false);
 			await UpdateLightState(Streaming).ConfigureAwait(false);
 			Log.Information($"{Data.Tag}::Stream started: {Data.Id}.");
 		}
@@ -101,21 +114,10 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			if (!Data.Enable) {
 				return;
 			}
-
-			var packet = new List<byte> {ByteUtils.IntByte(2), ByteUtils.IntByte(1)};
-			for (var i = 0; i < Data.LedCount * 3; i++) {
-				packet.Add(0);
-			}
-
-			try {
-				if (_udpClient != null) {
-					await _udpClient.SendAsync(packet.ToArray(), packet.Count, _ep).ConfigureAwait(false);
-				}
-			} catch (Exception e) {
-				Log.Debug("Exception, look at that: " + e.Message);
-			}
+		
 
 			Streaming = false;
+			await UpdateLightState(_wasOn, _lastBri).ConfigureAwait(false);
 			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
 		}
 
@@ -239,12 +241,38 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			ReloadData();
 		}
 
-		private async Task UpdateLightState(bool on) {
-			var scaledBright = Brightness / 100f * 255;
+		private async Task UpdateLightState(bool on, int bri = -1) {
+			var scaledBright = bri == -1 ? Brightness / 100f * 255 : bri;
 			var url = "http://" + IpAddress + "/win";
 			url += "&T=" + (on ? "1" : "0");
 			url += "&A=" + (int) scaledBright;
 			await _httpClient.GetAsync(url).ConfigureAwait(false);
+		}
+		
+		private async Task<WledStateData?> GetLightState() {
+			var url = "http://" + IpAddress + "/json/";
+			Log.Debug("URL is " + url);
+			var res = await _httpClient.GetAsync(url);
+			res.EnsureSuccessStatusCode();
+			if (res.Content is object && res.Content.Headers.ContentType.MediaType == "application/json")
+			{
+				var contentStream = await res.Content.ReadAsStreamAsync();
+
+				try
+				{
+					return await System.Text.Json.JsonSerializer.DeserializeAsync<WledStateData>(contentStream, new System.Text.Json.JsonSerializerOptions { IgnoreNullValues = true, PropertyNameCaseInsensitive = true });
+				}
+				catch (JsonException) // Invalid JSON
+				{
+					Console.WriteLine("Invalid JSON.");
+				}                
+			}
+			else
+			{
+				Console.WriteLine("HTTP Response was invalid and cannot be deserialised.");
+			}
+
+			return null;
 		}
 
 

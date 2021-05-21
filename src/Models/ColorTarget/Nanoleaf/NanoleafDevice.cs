@@ -62,17 +62,22 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			Log.Information($"{Data.Tag}::Starting stream: {Data.Id}...");
 			Streaming = true;
 			_wasOn = await _nanoleafClient.GetPowerStatusAsync();
+			await _nanoleafClient.StartExternalAsync().ConfigureAwait(false);
 			if (!_wasOn) {
-				Log.Debug("Updating nano client power...");
-				await _nanoleafClient.TurnOnAsync();
+				Log.Debug("Turning on nano panel...");
+				await _nanoleafClient.TurnOnAsync().ConfigureAwait(false);
 				Log.Debug("Updated...");
+			} else {
+				Log.Debug("Device was already on?");
 			}
+			
+			
 
 			Log.Debug($"Setting brightness to {Brightness}.");
-			await _nanoleafClient.SetBrightnessAsync((int) (Brightness / 100f * 255));
-			string streamMode = "v" + Data.Type == "NL29" || Data.Type == "NL42" ? "2" : "1";
-			Log.Debug($"Starting external with mode: {streamMode}");
-			await _nanoleafClient.StartExternalAsync(streamMode);
+			await _nanoleafClient.SetBrightnessAsync((int) (Brightness / 100f * 255)).ConfigureAwait(false);
+			//string streamMode = "v" + Data.Type == "NL29" || Data.Type == "NL42" ? "2" : "1";
+			//Log.Debug($"Starting external with mode: {streamMode}");
+			
 			Log.Information($"{Data.Tag}::Stream started: {Data.Id}.");
 		}
 
@@ -81,7 +86,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				return;
 			}
 
-			await FlashColor(Color.FromArgb(0, 0, 0));
+			await FlashColor(Color.FromArgb(0, 0, 0)).ConfigureAwait(false);
 			Streaming = false;
 			if (_wasOn) {
 				await _nanoleafClient.TurnOffAsync().ConfigureAwait(false);

@@ -12,7 +12,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		public string DeviceTag { get; set; }
 
 		public DreamScreenData() {
-			if (DeviceTag.Contains("DreamScreen")) Enable = false;
+			//if (DeviceTag.Contains("DreamScreen")) Enable = false;
 		}
 
 		public DreamScreenData(DreamDevice dev) {

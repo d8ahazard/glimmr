@@ -118,7 +118,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			}
 
 			if (nData.Type == "NL22") {
-				nData.Name = $"Rythm {devName}";
+				nData.Name = $"Rhythm {devName}";
 			}
 			
 			if (string.IsNullOrEmpty(nData.IpAddress) && !string.IsNullOrEmpty(nData.Hostname)) {
@@ -139,6 +139,8 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 					}
 				}
 			}
+
+			Log.Debug("UPDATING: " + JsonConvert.SerializeObject(nData));
 
 			_controlService.AddDevice(nData).ConfigureAwait(true);
 		}
