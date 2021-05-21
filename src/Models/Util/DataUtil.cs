@@ -307,6 +307,7 @@ namespace Glimmr.Models.Util {
 			var audio = GetCollection<AudioData>("Dev_Audio");
 			var devices = GetDevices();
 			var mons = DisplayUtil.GetMonitors();
+			Log.Debug("Final list of monitors: " + JsonConvert.SerializeObject(mons));
 			var exMons = GetCollection<MonitorInfo>("Dev_Video");
 			var oMons = new List<MonitorInfo>();
 			var caps = SystemUtil.ListUsb();

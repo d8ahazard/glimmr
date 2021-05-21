@@ -6,6 +6,7 @@ using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Glimmr.Models.Util;
+using Newtonsoft.Json;
 using Serilog;
 
 namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
@@ -55,6 +56,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 		}
 
 		public Task Refresh() {
+			Log.Debug("Refreshing...");
 			SetDimensions();
 			return Task.CompletedTask;
 		}
@@ -83,6 +85,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 
 			_width = Math.Abs(_width);
 			_height = Math.Abs(_height);
+			Log.Debug("Screen capture dimensions set: " + JsonConvert.SerializeObject(rect));
 		}
 
 		private static bool RectContains(Rectangle outer, Rectangle inner) {
@@ -103,7 +106,6 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 					Frame = newMat.Mat;
 				}
 			}
-
 
 			Log.Debug("Capture completed?");
 		}

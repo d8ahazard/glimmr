@@ -7,6 +7,7 @@ using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
+using Serilog;
 
 namespace Glimmr.Models.Util {
 	public static class DisplayUtil {
@@ -80,12 +81,13 @@ namespace Glimmr.Models.Util {
 			var height = 0;
 			// Enumerate system display devices
 			var devIdx = 0;
-			while (true) {
+			while (devIdx < 20) {
 				var deviceData = new DisplayDevice {cb = Marshal.SizeOf(typeof(DisplayDevice))};
 				if (EnumDisplayDevices(null, devIdx, ref deviceData, 0) != 0) {
 					// Get the position and size of this particular display device
 					var devMode = new DEVMODE();
 					if (EnumDisplaySettings(deviceData.DeviceName, ENUM_CURRENT_SETTINGS, ref devMode)) {
+						Log.Debug("Enumerating monitor: " + deviceData.DeviceName);
 						// Update the virtual screen dimensions
 						left = Math.Min(left, devMode.dmPositionX);
 						top = Math.Min(top, devMode.dmPositionY);
@@ -93,11 +95,13 @@ namespace Glimmr.Models.Util {
 						bottom = Math.Max(bottom, devMode.dmPositionY + devMode.dmPelsHeight);
 						width = left - right;
 						height = top - bottom;
+					} else {
+						Log.Debug("Unable to enum display settings.");
 					}
 
 					devIdx++;
 				} else {
-					break;
+					Log.Debug("No display device at index " + devIdx);
 				}
 			}
 
@@ -137,7 +141,7 @@ namespace Glimmr.Models.Util {
 			}
 
 			var devIdx = 0;
-			while (true) {
+			while (devIdx < 20) {
 				var deviceData = new DisplayDevice {cb = Marshal.SizeOf(typeof(DisplayDevice))};
 				if (EnumDisplayDevices(null, devIdx, ref deviceData, 0) != 0) {
 					// Get the position and size of this particular display device
@@ -145,11 +149,13 @@ namespace Glimmr.Models.Util {
 					if (EnumDisplaySettings(deviceData.DeviceName, ENUM_CURRENT_SETTINGS, ref devMode)) {
 						JsonConvert.SerializeObject(devMode);
 						monitors.Add(new MonitorInfo(deviceData, devMode));
+					} else {
+						Log.Debug("Unable to enum " + deviceData.DeviceName);
 					}
 
 					devIdx++;
 				} else {
-					break;
+					Log.Debug("No device at index " + devIdx);
 				}
 			}
 
