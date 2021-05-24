@@ -371,7 +371,11 @@ namespace Glimmr.Services {
 			foreach (var dev in _sDevices) {
 				if (dev.Data.Id == id) {
 					Log.Debug("Reloading device: " + id);
+					var wasStreaming = dev.Streaming;
 					await dev.ReloadData().ConfigureAwait(false);
+					if (DeviceMode != DeviceMode.Off && dev.Data.Enable && !dev.Streaming) {
+						await dev.StartStream(_sendTokenSource.Token).ConfigureAwait(false);
+					}
 					return;
 				}
 			}

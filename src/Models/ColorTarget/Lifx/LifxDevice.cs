@@ -100,7 +100,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 			Log.Information($"{Data.Tag}::Stopping stream.: {Data.Id}...");
 			await FlashColor(Color.FromArgb(0, 0, 0)).ConfigureAwait(false);
-			_client.SetLightPowerAsync(B, false).ConfigureAwait(false);
+			await _client.SetLightPowerAsync(B, false).ConfigureAwait(false);
 			await Task.FromResult(true);
 			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
 		}
@@ -166,7 +166,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 			foreach (var col in output) {
 				if (i == 0) {
-					shifted.Add(ColorUtil.FixGamma(col));
+					shifted.Add(col);
 					i = 1;
 				} else {
 					i = 0;
@@ -175,7 +175,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 			var cols = new List<LifxColor>();
 			foreach (var c in shifted) {
-				if (Brightness < 100) {
+				if (false) {
 					var bFactor = Brightness / 100f;
 					var h = c.GetHue();
 					var s = c.GetSaturation();
@@ -183,11 +183,14 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 					b *= bFactor;
 					cols.Add(new LifxColor(h, s, b, 3500d));
 				} else {
+					//Log.Debug("Adding " + c.R + " " + c.G + " " + c.B);
 					cols.Add(new LifxColor(c));
 				}
 			}
 
+			//Log.Debug("Sending...");
 			_client.SetExtendedColorZonesAsync(B, cols,5).ConfigureAwait(false);
+			//Log.Debug("Scent");
 		}
 
 		

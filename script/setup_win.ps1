@@ -67,6 +67,8 @@ If(-Not $installed) {
 
     Start-Process -FilePath $outfile -ArgumentList "/install","/quiet","/norestart" -Wait
     Remove-Item -Path $outfile -Force
+    Write-Host "'$software' should now be installed.";
+    $dotNetPath = (get-command dotnet.exe -ErrorAction SilentlyContinue).Path;
 } else {
 	Write-Host "'$software' is installed."
 }

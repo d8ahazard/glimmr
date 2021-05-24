@@ -81,7 +81,7 @@ namespace Glimmr.Models.Util {
 			var height = 0;
 			// Enumerate system display devices
 			var devIdx = 0;
-			while (devIdx < 20) {
+			while (true) {
 				var deviceData = new DisplayDevice {cb = Marshal.SizeOf(typeof(DisplayDevice))};
 				if (EnumDisplayDevices(null, devIdx, ref deviceData, 0) != 0) {
 					// Get the position and size of this particular display device
@@ -101,7 +101,7 @@ namespace Glimmr.Models.Util {
 
 					devIdx++;
 				} else {
-					Log.Debug("No display device at index " + devIdx);
+					break;
 				}
 			}
 
@@ -141,7 +141,7 @@ namespace Glimmr.Models.Util {
 			}
 
 			var devIdx = 0;
-			while (devIdx < 20) {
+			while (true) {
 				var deviceData = new DisplayDevice {cb = Marshal.SizeOf(typeof(DisplayDevice))};
 				if (EnumDisplayDevices(null, devIdx, ref deviceData, 0) != 0) {
 					// Get the position and size of this particular display device
@@ -149,13 +149,11 @@ namespace Glimmr.Models.Util {
 					if (EnumDisplaySettings(deviceData.DeviceName, ENUM_CURRENT_SETTINGS, ref devMode)) {
 						JsonConvert.SerializeObject(devMode);
 						monitors.Add(new MonitorInfo(deviceData, devMode));
-					} else {
-						Log.Debug("Unable to enum " + deviceData.DeviceName);
 					}
 
 					devIdx++;
 				} else {
-					Log.Debug("No device at index " + devIdx);
+					break;
 				}
 			}
 

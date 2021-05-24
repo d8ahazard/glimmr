@@ -46,43 +46,33 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			}
 		}
 
-		public WledData(string id) {
+		public WledData(string id, string ipaddress) {
 			Id = id;
 			Tag = "Wled";
 			Name ??= Tag;
-			if (Id != null) {
-				Name = StringUtil.UppercaseFirst(Id);
-			}
-
+			IpAddress = ipaddress;
 			ControlStrip = false;
 			AutoDisable = true;
 			Sectors = new List<int>();
 			SubSectors = new Dictionary<int, int>();
-
-			try {
-				var dns = Dns.GetHostEntry(Id);
-				if (dns.AddressList.Length > 0) {
-					IpAddress = dns.AddressList[0].ToString();
-				} else {
-					dns = Dns.GetHostEntry(Id + ".local");
-					if (dns.AddressList.Length > 0) {
-						IpAddress = dns.AddressList[0].ToString();
-					}
-				}
-
-			} catch (Exception e) {
-				Log.Debug("DNS Res ex: " + e.Message);
-			}
-
+			Log.Debug("Creating: " + id + " from " + ipaddress);
 			using var webClient = new WebClient();
 			try {
 				var url = "http://" + IpAddress + "/json";
+				Log.Debug("Grabbing state from " + url);
 				var jsonData = webClient.DownloadString(url);
+				Log.Debug("Got?");
 				var jsonObj = JsonConvert.DeserializeObject<WledStateData>(jsonData);
+				Log.Debug("And decoded...");
 				State = jsonObj;
+				if (jsonObj == null) {
+					return;
+				}
+
 				LedCount = jsonObj.info.leds.count;
 				Brightness = jsonObj.state.bri;
 			} catch (Exception e) {
+				Log.Debug("Yeah, here's your problem, smart guy: " + e.Message);
 			}
 		}
 
