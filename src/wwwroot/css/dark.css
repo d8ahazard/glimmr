@@ -6,6 +6,9 @@
     color: #8f8f8f !important;
 }
 
+.fixed-bottom {
+    background-color: rgb(27, 30, 30) !important;
+}
 
 .bg-light {
     background: #1c1c1c !important;

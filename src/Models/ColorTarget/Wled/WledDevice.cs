@@ -71,7 +71,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			Log.Debug("Getting state...");
 			var state = await GetLightState();
 			if (state != null) {
-				Log.Debug("WLED: Current state: " + JsonConvert.SerializeObject(state));
 				_wasOn = state.state.on;
 				_lastBri = state.state.bri;
 			}
@@ -81,7 +80,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			_targetSector = ColorUtil.CheckDsSectors(Data.TargetSector);
 			_ep = IpUtil.Parse(IpAddress, port);
 			Streaming = true;
-			//await FlashColor(Color.Black).ConfigureAwait(false);
 			await UpdateLightState(Streaming).ConfigureAwait(false);
 			Log.Information($"{Data.Tag}::Stream started: {Data.Id}.");
 		}
@@ -117,7 +115,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		
 
 			Streaming = false;
-			await UpdateLightState(_wasOn, _lastBri).ConfigureAwait(false);
+			UpdateLightState(_wasOn, _lastBri).ConfigureAwait(false);
+			await Task.FromResult(true);
 			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
 		}
 

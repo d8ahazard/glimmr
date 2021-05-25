@@ -10,6 +10,19 @@
     width: 18rem;
 }
 
+#footer {
+    height: 54px;    
+}
+
+.fixed-bottom {
+    background-color: rgb(207, 227, 227) !important;
+}
+
+.beamItem {
+    border: 1px solid grey;
+}
+
+
 .fade:not(.show) {
     display: none;
 }
@@ -47,6 +60,10 @@
 
 .titleCol {
     font-size: 22px;
+}
+
+div.btn-clear {
+    height: 48px;
 }
 
 .btn-clear * {

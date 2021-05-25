@@ -36,6 +36,7 @@ let bar;
 let croppr;
 let leftCount, rightCount, topCount, bottomCount, hSectors, vSectors;
 let refreshTimer;
+let fpsCounter;
 let errModal = new bootstrap.Modal(document.getElementById('errorModal'));
 // We're going to create one object to store our stuff, and add listeners for when values are changed.
 let data = {
@@ -85,6 +86,7 @@ let websocket = new signalR.HubConnectionBuilder()
 document.addEventListener("DOMContentLoaded", function(){
     let getUrl = window.location;
     baseUrl = getUrl .protocol + "//" + getUrl.host;
+    fpsCounter = document.getElementById("fps");
     closeButton = document.getElementById("closeBtn");
     settingsRow = document.getElementById("settingsRow");    
     settingsTab = document.getElementById("settingsTab");
@@ -429,7 +431,8 @@ function setSocketListeners() {
     });
     
     websocket.on('frames', function(stuff) {
-        console.log("frame counts: ", stuff);       
+        //console.log("frame counts: ", stuff); 
+        fpsCounter.innerText = stuff['source'] + "FPS"; 
     });
 
     websocket.on('device', function(dData) {
@@ -1254,14 +1257,16 @@ function loadDevices() {
                 a.href = "http://" + device["IpAddress"];
                 a.innerText = device["IpAddress"];
                 a.target = "_blank";
-                subTitle.appendChild(a);
-                if (device["Tag"] === "Wled") {
-                    let count = document.createElement("span");
-                    count.innerText = " (" + device["LedCount"] + ")";
-                    subTitle.appendChild(count);
-                }
+                subTitle.appendChild(a);                
             } else {
                 subTitle.textContent = device["IpAddress"];
+            }
+            
+            if (device.hasOwnProperty("MultiZoneCount") || device.hasOwnProperty("LedCount")) {
+                let val = (device.hasOwnProperty("MultiZoneCount")) ? device["MultiZoneCount"] : device["LedCount"];
+                let count = document.createElement("span");
+                count.innerText = " (" + val + ")";
+                subTitle.appendChild(count);                
             }
             // Create icon
             let titleRow = document.createElement("div");
@@ -1351,7 +1356,8 @@ function loadDevices() {
 }
 
 function isValid(toCheck) {
-    return (toCheck !== null && toCheck !== undefined && toCheck !== "");
+    return !(toCheck === null || toCheck === undefined || toCheck === "");
+    
 }
 
 function getObj(group, key, val) {
@@ -1743,6 +1749,7 @@ function createSettingElement(settingElement) {
     switch(settingElement.type) {
         case "check":
             element = document.createElement("input");
+            element.classList.add("form-check");
             element.type = "checkbox";
             element.checked = settingElement.value;
             break;
@@ -1775,7 +1782,7 @@ function createSettingElement(settingElement) {
         case "button":
             label.classList.add("pt-5");
             element = document.createElement("div");
-            element.classList.add("btn", "btn-danger", "removeDevice");
+            element.classList.add("btn", "btn-clear", "btn-danger", "removeDevice");
             let icon = document.createElement("span");
             icon.classList.add("material-icons");
             icon.textContent = "delete";
@@ -1880,21 +1887,142 @@ function drawLinkPane(type, linked) {
 
 function appendBeamMap() {
     let settingsDiv = document.getElementById("deviceSettings");
-    let count = deviceData["MultiZoneCount"];
-    let total = 0;
-    let beamCount = 0;
-    let cornerCount = 0;
-    for(let i = 0; i < count; i++) {
-        if (total === 10) {
-            beamCount++;
-            total = 0;
+    let beamDiv = document.getElementById("beamDiv");
+    if (isValid(beamDiv)) beamDiv.remove();
+    
+    if (deviceData.hasOwnProperty("BeamLayout")) {
+        let beamLayout = deviceData["BeamLayout"];
+        if (isValid(beamLayout)) {
+            console.log("Appending beamLayout: " , beamLayout);
+
+            let beams = beamLayout["Beams"];
+            let corners = beamLayout["Corners"];
+            let items = [];
+            if (isValid(beams)) {
+                if (beams.length > 0) {
+                    for (let i = 0; i < beams.length; i++) {
+                        items.push(beams[i]);
+                    }
+                }
+            }
+            if (isValid(corners)) {
+                if (corners.length > 0) {
+                    for (let i = 0; i < corners.length; i++) {
+                        items.push(corners[i]);
+                    }
+                }
+            }
+            if (items.length > 0) {
+                let beamDiv = document.createElement("div");
+                beamDiv.id = "BeamDiv";
+                beamDiv.classList.add("sortable");
+                items.sort((a, b) => (a["Position"] > b["Position"]) ? 1 : -1);
+                console.log("ITEMS: ", items);
+                for (let i = 0; i < items.length; i++) {
+                    let item = items[i];
+                    console.log("ITEM: ", item);
+                    let orientation = item["Orientation"];
+                    let position = item["Position"];
+                    let offset = item["Offset"];
+                    let repeat = item["Repeat"];
+                    let count = item["LedCount"];
+                    console.log("Count is " + count + " pos is " + position);
+                    let itemDiv = document.createElement("div");
+                    itemDiv.classList.add("beamItem");
+                    itemDiv.classList.add("col-12", "row", "justify-content-center", "form-group", "mb-5");
+                    let nameLabel = document.createElement("div");
+                    nameLabel.classList.add("col-12", "headerCol");
+                    nameLabel.innerText = (count === 1 ? "Corner" : "Beam") + " " + position;
+                    itemDiv.appendChild(nameLabel);
+                    // Rotation selection
+                    let sGroup = document.createElement("div");
+                    sGroup.classList.add("form-group","col-12", "col-md-6", "col-lg-3")
+                    
+                    let label = document.createElement("label");
+                    label.innerText = "Rotation";
+                    label.classList.add("form-label");
+                    let oSelect = document.createElement("select");
+                    oSelect.classList.add("form-control", "beam-control");
+                    oSelect.setAttribute("data-position",position);
+                    oSelect.setAttribute("data-beamProperty","Orientation")
+                    let opts = [0,90,180, 270];
+                    for (let o = 0; o < opts.length; o++) {
+                        let rot = opts[o];
+                        let opt = document.createElement("option");
+                        if (orientation === rot) opt.selected = true;
+                        opt.value = rot.toString();
+                        opt.innerText = rot.toString();
+                        oSelect.appendChild(opt);
+                    }
+                   
+                    
+                    sGroup.appendChild(label);
+                    sGroup.appendChild(oSelect);
+                    itemDiv.appendChild(sGroup);
+                    
+                    let oGroup = document.createElement("div");
+                    oGroup.classList.add("form-group","col-12", "col-md-6", "col-lg-3")
+                    
+                    // Offset
+                    let label2 = document.createElement("label");
+                    label2.innerText = "Offset";
+                    label2.classList.add("form-label");
+                    let offsetText = document.createElement("input");
+                    offsetText.type = "number";
+                    offsetText.classList.add("form-control", "beam-control");
+                    offsetText.setAttribute("data-position",position);
+                    offsetText.setAttribute("data-beamProperty","Or")
+
+                    oGroup.appendChild(label2);
+                    oGroup.appendChild(offsetText);
+                    itemDiv.appendChild(oGroup);
+
+                    // Repeat
+                    let rGroup = document.createElement("div");
+                    rGroup.classList.add("form-group","col-12", "col-md-6", "col-lg-3")
+                    
+                    let checkDiv1 = document.createElement("div");
+                    checkDiv1.classList.add("form-check");
+                    let label3 = document.createElement("label");
+                    label3.innerText = "Repeat";
+                    label3.classList.add("form-check-label");
+                    let rCheck = document.createElement("input");
+                    rCheck.type = "checkbox";
+                    rCheck.setAttribute("data-position",position);
+                    rCheck.setAttribute("data-beamProperty","Repeat")
+                    checkDiv1.appendChild(rCheck);
+                    checkDiv1.appendChild(label3);
+                    
+                    rGroup.appendChild(checkDiv1);
+                    itemDiv.appendChild(rGroup);
+
+                    // Reverse
+                    let rGroup2 = document.createElement("div");
+                    rGroup2.classList.add("form-group","col-12", "col-md-6", "col-lg-3")
+                    
+                    let checkDiv2 = document.createElement("div");
+                    checkDiv2.classList.add("form-check");
+                    let label4 = document.createElement("label");
+                    label4.innerText = "Reverse Direction";
+                    label4.classList.add("form-check-label");
+                    let rCheck2 = document.createElement("input");
+                    rCheck2.type = "checkbox";
+                    rCheck2.setAttribute("data-position",position);
+                    rCheck2.setAttribute("data-beamProperty","Reverse")
+                    checkDiv2.appendChild(rCheck2);
+                    checkDiv2.appendChild(label4);
+
+                    rGroup2.appendChild(checkDiv2);
+                    itemDiv.appendChild(rGroup2);
+                    beamDiv.appendChild(itemDiv);
+                }
+                settingsDiv.appendChild(beamDiv);
+
+                sortable(".sortable");
+            }
+            
         }
-        let remainder = count - (beamCount * 10);
-        if (remainder < 10) {
-            cornerCount = remainder;
-        }
-        total++;
-    }    
+    }
 }
 
 function appendSectorMap() {

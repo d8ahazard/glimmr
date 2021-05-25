@@ -68,14 +68,12 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 		private void WledDiscovered(object sender, ServiceInstanceDiscoveryEventArgs e) {
 			var name = e.ServiceInstanceName.ToString();
-			var foo = e.Message;
 			if (!name.Contains("wled", StringComparison.InvariantCulture)) {
 				return;
 			}
 
-			//Log.Debug("msg: " + foo);
 			name = name.Split(".")[0];
-			Log.Debug("Name: " + name);
+			//Log.Debug("Name: " + name);
 
 			if (_ids.Contains(name)) {
 				return;
@@ -88,7 +86,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 				
 				foreach (var msg in rr) {
-					Log.Debug("Msg: " + msg.Name);
+					//Log.Debug("Msg: " + msg.Name);
 					// Extract IP
 					if (msg.Type == DnsType.A) {
 						ip = msg.ToString().Split(" ").Last();
@@ -99,11 +97,11 @@ namespace Glimmr.Models.ColorTarget.Wled {
 						id = msg.ToString().Split("=")[1];
 					}
 				}
-				Log.Debug("Creating new WLED...");
+				//Log.Debug("Creating new WLED...");
 				if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(ip)) {
-					var nData = new WledData(id, ip);
+					var nData = new WledData(id, ip) {Name = name};
 
-					Log.Debug("WLED found: " + JsonConvert.SerializeObject(nData));
+					//Log.Debug("WLED found: " + JsonConvert.SerializeObject(nData));
 					_controlService.AddDevice(nData).ConfigureAwait(false);
 					_ids.Add(id);
 				} else {

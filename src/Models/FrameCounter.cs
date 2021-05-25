@@ -12,7 +12,7 @@ namespace Glimmr.Models {
 		private Dictionary<string, int> _ticks;
 
 		public FrameCounter(ColorService cs) {
-			_ticks = new Dictionary<string, int>();
+			_ticks = new Dictionary<string, int> {["source"] = 0};
 			_stopwatch = new Stopwatch();
 			cs.ControlService.SetModeEvent += Mode;
 		}
@@ -25,7 +25,7 @@ namespace Glimmr.Models {
 			var newMode = (DeviceMode) arg2.P1;
 			if (newMode != DeviceMode.Off) {
 				_stopwatch.Restart();
-				_ticks = new Dictionary<string, int>();
+				_ticks = new Dictionary<string, int> {["source"] = 0};
 			} else {
 				_stopwatch.Stop();
 			}
@@ -34,11 +34,19 @@ namespace Glimmr.Models {
 		}
 
 		public void Tick(string id) {
+			// Make sure watch is running
+			if (!_stopwatch.IsRunning) _stopwatch.Start();
+			// Clear our cache every minute so we don't wind up with massive stored values over time
+			if (_stopwatch.Elapsed > TimeSpan.FromMinutes(1)) {
+				_stopwatch.Restart();
+				_ticks = new Dictionary<string, int> {["source"] = 0};
+			}
 			if (_ticks.Keys.Contains(id)) {
 				_ticks[id]++;
 			} else {
-				_ticks[id] = 1;
+				_ticks[id] = 0;
 			}
+			
 		}
 
 		public int Rate(string id) {

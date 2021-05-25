@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using Q42.HueApi;
 using Q42.HueApi.Models.Bridge;
 using Q42.HueApi.Models.Groups;
+using Serilog;
 
 #endregion
 
@@ -28,6 +29,14 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		[JsonProperty] public string SelectedGroup { get; set; } = "";
 		[JsonProperty] public string Token { get; set; } = "";
 		[JsonProperty] public string User { get; set; } = "";
+		
+		
+		public string Name { get; set; }
+		public string Id { get; set; }
+		public string Tag { get; set; } = "Hue";
+		public string IpAddress { get; set; }
+		public int Brightness { get; set; }
+		public bool Enable { get; set; }
 
 		public HueData() {
 		}
@@ -36,6 +45,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			IpAddress = ip;
 			Id = id;
 			Brightness = 100;
+			Name = "Hue - " + Id.Substring(Id.Length - 5, 4);
 		}
 
 		public HueData(LocatedBridge b) {
@@ -44,7 +54,8 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			}
 
 			IpAddress = b.IpAddress;
-			Id = IpAddress;
+			Id = b.BridgeId;
+			Log.Debug("Id should be " + Id);
 			Brightness = 100;
 			User = "";
 			Token = "";
@@ -53,6 +64,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Lights = new List<LightData>();
 			GroupName = "";
 			GroupNumber = -1;
+			Name = "Hue - " + Id.Substring(Id.Length - 5, 4);
 			MappedLights ??= new List<LightMap>();
 		}
 
@@ -68,6 +80,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Lights = input.Lights;
 			Groups = input.Groups;
 			IpAddress = input.IpAddress;
+			Name = "Hue - " + Id.Substring(Id.Length - 5, 4);
 		}
 
 		public SettingsProperty[] KeyProperties { get; set; } = {
@@ -75,14 +88,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		};
 
 
-		public string Name { get; set; } = "Hue Bridge";
-		public string Id { get; set; }
-		public string Tag { get; set; } = "Hue";
-		public string IpAddress { get; set; }
-		public int Brightness { get; set; }
-
-		
-		public bool Enable { get; set; }
 
 		public void AddGroups(IEnumerable<Group> groups) {
 			foreach (var group in groups) {

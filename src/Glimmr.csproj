@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AdalightNet" Version="1.0.0" />
+    <PackageReference Include="AdalightNet" Version="1.0.1" />
     <PackageReference Include="AutoMapper" Version="10.1.1" />
     <PackageReference Include="digitalhigh.rpi-ws281x-csharp" Version="1.1.5.1" />
     <PackageReference Include="DirectShowLib" Version="1.0.0" />

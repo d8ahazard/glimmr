@@ -97,6 +97,9 @@ namespace Glimmr.Models.ColorSource.Video {
 		public bool SourceActive { get; set; }
 
 		private void RefreshSystem() {
+			var prevSd = _systemData;
+			_systemData = DataUtil.GetSystemData();
+
 			var wasEnabled = _enable;
 			if (_enable) {
 				_enable = false;
@@ -104,23 +107,28 @@ namespace Glimmr.Models.ColorSource.Video {
 
 			_vc?.Stop();
 			var prevCapMode = _captureMode;
-			SetCapVars();
 			if (prevCapMode != _captureMode) {
-				_vc.Stop();
 				_vc = GetStream();
 				if (_vc == null) {
 					Log.Information("We have no video source.");
 					return;
 				}
-
 				_vc.Start(_cancellationToken);
 			}
 
-			StreamSplitter?.Refresh();
-			Initialize(_cancellationToken);
-			if (wasEnabled) {
-				_enable = true;
+			var mode = (DeviceMode)_systemData.DeviceMode;
+			var prevMode = (DeviceMode)prevSd.DeviceMode;
+			if (mode == DeviceMode.Video && prevMode == DeviceMode.Video) {
+				if (_systemData.SectorCount != prevSd.SectorCount || _systemData.LedCount != prevSd.LedCount) {
+					StreamSplitter?.Refresh();
+					Initialize(_cancellationToken);	
+				}	
+				
+				if (wasEnabled) {
+					_enable = true;
+				}	
 			}
+			
 		}
 
 		private void Initialize(CancellationToken ct) {

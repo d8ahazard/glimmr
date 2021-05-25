@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
@@ -72,6 +73,15 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		private static HueData UpdateDeviceData(HueData data) {
 			// Check for existing device
 			HueData dev = DataUtil.GetDevice<HueData>(data.Id);
+			HueData dev2 = DataUtil.GetDevice<HueData>(data.IpAddress);
+			// Migrate new ID
+			if (dev2 != null && dev == null) {
+				Log.Debug("Migrating hue bridge from ID " + data.IpAddress + " to " + data.Id);
+				DataUtil.DeleteDevice(data.IpAddress);
+				dev = dev2;
+				dev.Id = data.Id;
+			}
+			
 			if (dev != null && !string.IsNullOrEmpty(dev.Token)) {
 				var client = new LocalHueClient(data.IpAddress, dev.User, dev.Token);
 				try {

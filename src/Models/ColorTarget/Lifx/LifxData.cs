@@ -143,28 +143,27 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			
 			BeamLayout = new BeamLayout();
 
-			var posCount = 0;
-			for (var i = 0; i < beamCount; i++) {
-				var beam = new Beam(i);
-				foreach (var b in curBeams) {
-					if (b.Position == i) {
-						beam = b;
-					}		
+			var posCount = beamCount;
+			if (beamCount > curBeams.Count) {
+				BeamLayout.Beams = curBeams;
+				var diff = beamCount - curBeams.Count;
+				for (var i = 0; i < diff; i++) {
+					var idx = curBeams.Count;
+					BeamLayout.Beams.Add(new Beam(idx));
+					posCount = idx;
 				}
-
-				var skip = false;
-				foreach (var c in curCorners.Where(c => c.Position == i)) {
-					skip = true;
-					BeamLayout.Corners.Add(c);
+			} else if (beamCount < curBeams.Count) {
+				for (var i = 0; i < beamCount; i++) {
+					BeamLayout.Beams.Add(curBeams[i]);
 				}
-				if (!skip) BeamLayout.Beams.Add(beam);
-				posCount++;
+			} else if (beamCount == curBeams.Count) {
+				BeamLayout.Beams = curBeams;
 			}
 
 			for (var c = 0; c < cornerCount; c++) {
-				var corner = new Corner(posCount, beamCount * 10);
+				var corner = new Corner(posCount, beamCount * 10 + posCount);
 				var skip = false;
-				foreach (var ec in curCorners.Where(ec => ec.Position == c)) {
+				foreach (var ec in curCorners.Where(ec => ec.Id == posCount)) {
 					skip = true;
 					BeamLayout.Corners.Add(ec);
 				}
@@ -234,6 +233,9 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		public int Offset { get; set; }
 		
 		[JsonProperty]
+		public int Id { get; set; }
+		
+		[JsonProperty]
 		public bool Reverse { get; set; }
 		
 		[JsonProperty]
@@ -250,6 +252,9 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 	[Serializable]
 	public class Corner {
+		[JsonProperty]
+		public int Id { get; set; }
+		
 		[JsonProperty]
 		public int Orientation { get; set; }
 		[JsonProperty]

@@ -564,21 +564,27 @@
 </div>
 <nav class="container-fluid fixed-bottom" id="footer">
     <div class="fixed-bottom">
-        <div id="tempDiv" class="d-inline-block">
-            <span class="material-icons d-inline-block statIcon">toys</span>
-            <div id="temperature" class="d-inline-block mb-2"></div>
-        </div>
-        <div id="cpuDiv" class="d-inline-block">
-            <span class="material-icons d-inline-block statIcon">multiline_chart</span>
-            <div id="cpuPct" class="d-inline-block mb-2"></div>
-        </div>
-        <div id="throttleDiv" class="d-inline-block">
-            <span class="material-icons d-inline-block statIcon" id="overIcon"></span>
-        </div>
-        <div class="btn btn-sm btn-clear float-right refreshBtn">
+        
+        <div class="btn btn-sm btn-clear float-right refreshBtn mr-4">
             <span class="material-icons fs-1" id="refreshIcon">refresh</span>
         </div>
     </div>
+    <div id="statDiv" class="mt-1">
+                <div id="fpsDiv" class="d-inline-block">
+                    <div id="fps" class="d-inline-block mb-2"></div>
+                </div>
+                <div id="tempDiv" class="d-inline-block">
+                    <span class="material-icons d-inline-block statIcon">toys</span>
+                    <div id="temperature" class="d-inline-block mb-2"></div>
+                </div>
+                <div id="cpuDiv" class="d-inline-block">
+                    <span class="material-icons d-inline-block statIcon">multiline_chart</span>
+                    <div id="cpuPct" class="d-inline-block mb-2"></div>
+                </div>
+                <div id="throttleDiv" class="d-inline-block">
+                    <span class="material-icons d-inline-block statIcon" id="overIcon"></span>
+                </div>
+            </div>
 </nav>
 <div class="modal" tabindex="-1" id="nanoModal" role="dialog">
     <div class="modal-dialog modal-lg" role="document">

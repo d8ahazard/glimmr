@@ -127,8 +127,6 @@ namespace Glimmr.Models.ColorSource.Video {
 				return;
 			}
 
-			_controlService.ColorService.Counter.Tick("Splitter");
-
 			// Check sectors once per second
 			if (_frameWatch.Elapsed >= TimeSpan.FromSeconds(1)) {
 				CheckSectors();

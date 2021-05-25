@@ -140,8 +140,6 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				}
 			}
 
-			Log.Debug("UPDATING: " + JsonConvert.SerializeObject(nData));
-
 			_controlService.AddDevice(nData).ConfigureAwait(true);
 		}
 	}

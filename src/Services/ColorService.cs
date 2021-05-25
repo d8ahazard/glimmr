@@ -60,6 +60,7 @@ namespace Glimmr.Services {
 			_systemData = DataUtil.GetSystemData();
 			_streams = new Dictionary<DeviceMode, IColorSource>();
 			ControlService = controlService;
+			Counter = new FrameCounter(this);
 			ControlService.ColorService = this;
 			ControlService.TriggerSendColorEvent += SendColors;
 			ControlService.SetModeEvent += Mode;
@@ -70,7 +71,6 @@ namespace Glimmr.Services {
 			ControlService.FlashDeviceEvent += FlashDevice;
 			ControlService.FlashSectorEvent += FlashSector;
 			ControlService.DemoLedEvent += Demo;
-			Counter = new FrameCounter(this);
 		}
 
 		public event Action<List<Color>, List<Color>, int, bool> ColorSendEvent = delegate { };
@@ -455,7 +455,7 @@ namespace Glimmr.Services {
 			}
 
 			if (_streamStarted && newMode == 0) await StopStream();
-
+			
 			foreach (var stream in _streams) {
 				if (newMode == DeviceMode.Video &&
 				    stream.Key == DeviceMode.DreamScreen &&
@@ -531,6 +531,7 @@ namespace Glimmr.Services {
 
 			if (_frameWatch.Elapsed >= _frameSpan || force) {
 				_frameWatch.Restart();
+				Counter.Tick("source");
 				ColorSendEvent(colors, sectors, fadeTime, force);
 			}
 		}

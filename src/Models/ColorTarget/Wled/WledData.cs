@@ -55,15 +55,11 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			AutoDisable = true;
 			Sectors = new List<int>();
 			SubSectors = new Dictionary<int, int>();
-			Log.Debug("Creating: " + id + " from " + ipaddress);
 			using var webClient = new WebClient();
 			try {
 				var url = "http://" + IpAddress + "/json";
-				Log.Debug("Grabbing state from " + url);
 				var jsonData = webClient.DownloadString(url);
-				Log.Debug("Got?");
 				var jsonObj = JsonConvert.DeserializeObject<WledStateData>(jsonData);
-				Log.Debug("And decoded...");
 				State = jsonObj;
 				if (jsonObj == null) {
 					return;
@@ -88,9 +84,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			ControlStrip = input.ControlStrip;
 			LedCount = input.LedCount;
 			IpAddress = data.IpAddress;
-			if (Id != null) {
-				Name = StringUtil.UppercaseFirst(Id);
-			}
+			Name = StringUtil.UppercaseFirst(input.Name);
 		}
 
 		public SettingsProperty[] KeyProperties {

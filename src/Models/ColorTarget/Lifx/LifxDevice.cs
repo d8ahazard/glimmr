@@ -20,6 +20,14 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		private bool _reverseStrip;
 
 		private int _targetSector;
+		
+		public bool Streaming { get; set; }
+		public bool Testing { get; set; }
+		public int Brightness { get; set; }
+		private double _scaledBrightness;
+		public string Id { get; set; }
+		public string IpAddress { get; set; }
+		public string Tag { get; set; }
 
 
 		public LifxDevice(LifxData d, ColorService colorService) : base(colorService) {
@@ -38,6 +46,8 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			_targetSector = Data.TargetSector - 1;
 			_targetSector = ColorUtil.CheckDsSectors(_targetSector);
 			Brightness = d.Brightness;
+			_scaledBrightness = Brightness / 100d;
+			Log.Debug("Scaled bright is " + _scaledBrightness);
 			Id = d.Id;
 			IpAddress = d.IpAddress;
 			Enable = Data.Enable;
@@ -50,14 +60,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			set => Data = (LifxData) value;
 		}
 
-		public bool Streaming { get; set; }
-		public bool Testing { get; set; }
-		public int Brightness { get; set; }
-		public string Id { get; set; }
-		public string IpAddress { get; set; }
-		public string Tag { get; set; }
-
-
+		
 		public async Task StartStream(CancellationToken ct) {
 			if (!Enable) {
 				return;
@@ -99,8 +102,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			}
 
 			Log.Information($"{Data.Tag}::Stopping stream.: {Data.Id}...");
-			await FlashColor(Color.FromArgb(0, 0, 0)).ConfigureAwait(false);
-			await _client.SetLightPowerAsync(B, false).ConfigureAwait(false);
+			_client.SetLightPowerAsync(B, false).ConfigureAwait(false);
 			await Task.FromResult(true);
 			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
 		}
@@ -121,6 +123,8 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			_targetSector = targetSector - 1;
 			var oldBrightness = Brightness;
 			Brightness = newData.Brightness;
+			_scaledBrightness = Brightness / 100d;
+			Log.Debug("Scaled is " + _scaledBrightness);
 			if (oldBrightness != Brightness) {
 				var bri = Brightness / 100 * 255;
 				_client.SetBrightnessAsync(B, (ushort) bri).ConfigureAwait(false);
@@ -175,17 +179,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 			var cols = new List<LifxColor>();
 			foreach (var c in shifted) {
-				if (false) {
-					var bFactor = Brightness / 100f;
-					var h = c.GetHue();
-					var s = c.GetSaturation();
-					var b = c.GetBrightness();
-					b *= bFactor;
-					cols.Add(new LifxColor(h, s, b, 3500d));
-				} else {
-					//Log.Debug("Adding " + c.R + " " + c.G + " " + c.B);
-					cols.Add(new LifxColor(c));
-				}
+				cols.Add(new LifxColor(c, _scaledBrightness));
 			}
 
 			//Log.Debug("Sending...");
