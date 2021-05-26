@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
+using System.Linq;
 using Glimmr.Enums;
 using Serilog;
 
@@ -43,18 +44,32 @@ namespace Glimmr.Models.Util {
 			return output;
 		}
 
+		public static List<Color> SectorToSquare(List<Color> input) {
+			return input;
+		}
 
-		public static List<Color> TruncateColors(List<Color> input, int offset, int len) {
-			var output = new List<Color>();
+		public static Color[] TruncateColors(List<Color> input, int offset, int len) {
+			var output = new Color[len];
 
 			// Instead of doing dumb crap, just make our list of colors loop around
-			var doubled = new List<Color>();
-			while (doubled.Count < offset + len) {
-				doubled.AddRange(input);
+			var total = len + offset;
+			var doubled = new Color[total];
+			var c = 0;
+			while (c < total) {
+				foreach (var col in input) {
+					if (c < total) {
+						doubled[c] = col;
+					} else {
+						break;
+					}
+					c++;
+				}
 			}
 
-			for (var i = offset; i < offset + len; i++) {
-				output.Add(doubled[i]);
+			var idx = 0;
+			for (var i = offset; i < total; i++) {
+				output[idx] = doubled[i];
+				idx++;
 			}
 
 			return output;
@@ -337,7 +352,7 @@ namespace Glimmr.Models.Util {
 		}
 
 
-		public static Color[] FillArray(Color input, int len) {
+		public static IEnumerable<Color> FillArray(Color input, int len) {
 			var output = new Color[len];
 			for (var i = 0; i < len; i++) {
 				output[i] = input;
@@ -390,7 +405,7 @@ namespace Glimmr.Models.Util {
 		}
 
 		public static List<Color> EmptyList(int size) {
-			var output = new List<Color>();
+			var output = new List<Color>(size);
 			for (var i = 0; i < size; i++) {
 				output.Add(Color.FromArgb(0, 0, 0, 0));
 			}

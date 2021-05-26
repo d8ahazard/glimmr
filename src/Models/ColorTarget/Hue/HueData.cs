@@ -123,6 +123,10 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
 		public string ModelId { get; set; }
 
+		[DefaultValue(false)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public bool HasStreaming { get; set; }
+
 		[JsonProperty] public string Name { get; set; }
 
 		[JsonProperty] public string Type { get; set; }
@@ -145,6 +149,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Id = l.Id;
 			Type = l.Type;
 			ModelId = l.ModelId;
+			HasStreaming = l.Capabilities.Streaming.Renderer;
 		}
 	}
 

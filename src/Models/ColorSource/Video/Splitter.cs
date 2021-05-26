@@ -5,11 +5,14 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Glimmr.Models.Util;
 using Glimmr.Services;
+using Newtonsoft.Json;
 using Serilog;
 
 #endregion
@@ -29,17 +32,18 @@ namespace Glimmr.Models.ColorSource.Video {
 		private int _bottomCount;
 
 		// The current crop mode?
-		private List<Color> _colorsLed;
-		private List<Color> _colorsSectors;
+		private Color[] _colorsLed;
+		private Color[] _colorsSectors;
 		private int _cropDelay;
 
 		// Loaded settings
 		private bool _cropLetter;
 		private bool _cropPillar;
+		private bool _useCenter;
 		private readonly Stopwatch _frameWatch;
 
-		private List<Rectangle> _fullCoords;
-		private List<Rectangle> _fullSectors;
+		private Rectangle[] _fullCoords;
+		private Rectangle[] _fullSectors;
 		private bool _hCrop;
 		private int _hCropCheck;
 		private int _hCropCount;
@@ -47,6 +51,9 @@ namespace Glimmr.Models.ColorSource.Video {
 		private int _hSectors;
 		private Mat _input;
 		private int _leftCount;
+
+		private int _ledCount;
+		private int _sectorCount;
 
 		private int _previewMode;
 		private int _rightCount;
@@ -68,32 +75,27 @@ namespace Glimmr.Models.ColorSource.Video {
 		private int _vSectors;
 
 
-		public Splitter(SystemData sd, ControlService controlService) {
+		public Splitter(ControlService controlService) {
 			_frameWatch = new Stopwatch();
 			_frameWatch.Start();
 			_controlService = controlService;
 			_controlService.RefreshSystemEvent += RefreshSystem;
-			// Set some defaults, this should probably just not be null
-			if (sd != null) {
-				_leftCount = sd.LeftCount;
-				_topCount = sd.TopCount;
-				_rightCount = sd.RightCount == 0 ? _leftCount : sd.RightCount;
-				_bottomCount = sd.BottomCount == 0 ? _topCount : sd.BottomCount;
-				_hSectors = sd.HSectors;
-				_vSectors = sd.VSectors;
-				_cropDelay = sd.CropDelay;
-				_cropLetter = sd.EnableLetterBox;
-				_cropPillar = sd.EnablePillarBox;
-			}
-
+			_controlService.SetModeEvent += LogMode;
+			RefreshSystem();
 			// Set desired width of capture region to 15% total image
 			_borderWidth = 10;
 			_borderHeight = 10;
-
+			Log.Debug($"LED, sector counts: {_ledCount}, {_sectorCount}");
 			// Get sectors
 			_fullCoords = DrawGrid();
 			_fullSectors = DrawSectors();
 			Log.Debug("Splitter init complete.");
+		}
+
+		private Task LogMode(object arg1, DynamicEventArgs arg2) {
+			Log.Debug($"Mode change, counts: {_fullSectors.Length} and {_fullCoords.Length}");
+			Log.Debug("Sectors: " + JsonConvert.SerializeObject(_fullSectors));
+			return Task.CompletedTask;
 		}
 
 		private void RefreshSystem() {
@@ -107,6 +109,12 @@ namespace Glimmr.Models.ColorSource.Video {
 			_cropDelay = sd.CropDelay;
 			_cropLetter = sd.EnableLetterBox;
 			_cropPillar = sd.EnablePillarBox;
+			_useCenter = sd.UseCenter;
+			_ledCount = sd.LedCount;
+			_sectorCount = sd.SectorCount;
+			if (_ledCount == 0) _ledCount = 200;
+			if (_sectorCount == 0) _sectorCount = 12;
+
 			// Start our stopwatches for cropping if they were previously disabled
 			if (_cropLetter || _cropPillar && !_frameWatch.IsRunning) {
 				_frameWatch.Restart();
@@ -140,17 +148,17 @@ namespace Glimmr.Models.ColorSource.Video {
 				_fullSectors = DrawSectors();
 			}
 
-			var ledColors = new List<Color>();
-			for (var i = 0; i < _fullCoords.Count; i++) {
+			var ledColors = new Color[_ledCount];
+			for (var i = 0; i < _fullCoords.Length; i++) {
 				var sub = new Mat(_input, _fullCoords[i]);
-				ledColors.Add(GetAverage(sub));
+				ledColors[i] = GetAverage(sub);
 				sub.Dispose();
 			}
 
-			var sectorColors = new List<Color>();
-			for (var i = 0; i < _fullSectors.Count; i++) {
+			var sectorColors = new Color[_sectorCount];
+			for (var i = 0; i < _fullSectors.Length; i++) {
 				var sub = new Mat(_input, _fullSectors[i]);
-				sectorColors.Add(GetAverage(sub));
+				sectorColors[i] = GetAverage(sub);
 				sub.Dispose();
 			}
 
@@ -170,7 +178,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			inputMat.CopyTo(gMat);
 			var colBlack = new Bgr(Color.FromArgb(0, 0, 0, 0)).MCvScalar;
 			if (_previewMode == 1) {
-				for (var i = 0; i < _fullCoords.Count; i++) {
+				for (var i = 0; i < _fullCoords.Length; i++) {
 					var col = new Bgr(_colorsLed[i]).MCvScalar;
 					CvInvoke.Rectangle(gMat, _fullCoords[i], col, -1, LineType.AntiAlias);
 					CvInvoke.Rectangle(gMat, _fullCoords[i], colBlack, 1, LineType.AntiAlias);
@@ -178,7 +186,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			}
 
 			if (_previewMode == 2) {
-				for (var i = 0; i < _fullSectors.Count; i++) {
+				for (var i = 0; i < _fullSectors.Length; i++) {
 					var s = _fullSectors[i];
 					var col = new Bgr(_colorsSectors[i]).MCvScalar;
 					CvInvoke.Rectangle(gMat, s, col, -1, LineType.AntiAlias);
@@ -206,11 +214,11 @@ namespace Glimmr.Models.ColorSource.Video {
 		}
 
 		public List<Color> GetColors() {
-			return _colorsLed;
+			return _colorsLed.ToList();
 		}
 
 		public List<Color> GetSectors() {
-			return _colorsSectors;
+			return _colorsSectors.ToList();
 		}
 
 		private void CheckSectors() {
@@ -237,7 +245,6 @@ namespace Glimmr.Models.ColorSource.Video {
 				return;
 			}
 
-			var lMin = int.MaxValue;
 			if (_cropLetter) {
 				for (var r = 0; r <= _input.Height / 4; r += checkSize) {
 					// Define top position of bottom section
@@ -315,8 +322,6 @@ namespace Glimmr.Models.ColorSource.Video {
 
 			_hCropCheck = cropHorizontal;
 
-			//Log.Debug($"HCC {_hCropCount}, check {_hCropCheck}, hccount {_hCropCount}, current {cropHorizontal}");
-
 			if (_cropPillar && cropVertical != 0) {
 				if (Math.Abs(cropVertical - _vCropCheck) <= 4) {
 					_vCropCount++;
@@ -370,10 +375,10 @@ namespace Glimmr.Models.ColorSource.Video {
 			       input2.B <= blackLevel && input2.G <= blackLevel;
 		}
 
-		private List<Rectangle> DrawGrid() {
+		private Rectangle[] DrawGrid() {
 			var vOffset = _vCropPixels;
 			var hOffset = _hCropPixels;
-			var output = new List<Rectangle>();
+			var output = new Rectangle[_ledCount];
 
 			// Top Region
 			var tTop = hOffset;
@@ -397,45 +402,89 @@ namespace Glimmr.Models.ColorSource.Video {
 
 			// Calc right regions, bottom to top
 			var pos = ScaleHeight - heightRight;
+			var idx = 0;
 			while (pos >= 0) {
-				output.Add(new Rectangle((int) rLeft, (int) pos, (int) _borderWidth, (int) heightRight));
+				output[idx] = new Rectangle((int) rLeft, (int) pos, (int) _borderWidth, (int) heightRight);
 				pos -= heightRight;
+				idx++;
 			}
 
 			if (pos > -.002) {
-				output.Add(new Rectangle((int) rLeft, 0, (int) _borderWidth, (int) heightRight));
+				output[idx] = new Rectangle((int) rLeft, 0, (int) _borderWidth, (int) heightRight);
+				idx++;
 			}
 
 			// Calc top regions, from right to left
 			pos = ScaleWidth - widthTop;
 			while (pos >= 0) {
-				output.Add(new Rectangle((int) pos, tTop, (int) widthTop, (int) _borderHeight));
+				output[idx] = new Rectangle((int) pos, tTop, (int) widthTop, (int) _borderHeight);
+				idx++;
 				pos -= widthTop;
 			}
 
 			if (pos > -.002) {
-				output.Add(new Rectangle(0, tTop, (int) widthTop, (int) _borderHeight));
+				output[idx] = new Rectangle(0, tTop, (int) widthTop, (int) _borderHeight);
+				idx++;
 			}
 
 			// Calc left regions (top to bottom)
 			pos = 0;
 			while (pos < ScaleHeight) {
-				output.Add(new Rectangle(lLeft, (int) pos, (int) _borderWidth, (int) heightLeft));
+				output[idx] = new Rectangle(lLeft, (int) pos, (int) _borderWidth, (int) heightLeft);
 				pos += heightLeft;
+				idx++;
 			}
 
 			// Calc bottom regions (L-R)
 			pos = 0;
 			while (pos < ScaleWidth) {
-				output.Add(new Rectangle((int) pos, (int) bTop, (int) widthBottom, (int) _borderHeight));
+				output[idx] = new Rectangle((int) pos, (int) bTop, (int) widthBottom, (int) _borderHeight);
 				pos += widthBottom;
+				idx++;
 			}
 
 			return output;
 		}
 
 
-		private List<Rectangle> DrawSectors() {
+		private Rectangle[] DrawCenterSectors() {
+			var hOffset = _hCropPixels;
+			var vOffset = _vCropPixels;
+			if (_hSectors == 0) {
+				_hSectors = 10;
+			}
+
+			if (_vSectors == 0) {
+				_vSectors = 6;
+			}
+			
+			// This is where we're saving our output
+			var fs = new Rectangle[_sectorCount];
+			// Calculate heights, minus offset for boxing
+			// Individual segment sizes
+			var sectorWidth = (ScaleWidth - hOffset * 2) / _hSectors;
+			var sectorHeight = (ScaleHeight - vOffset * 2) / _vSectors;
+			// These are based on the border/strip values
+			// Minimum limits for top, bottom, left, right            
+			var top = ScaleHeight - vOffset - sectorHeight;
+			var idx = 0;
+			for (var v = _vSectors; v > 0; v--) {
+				var left = ScaleWidth - hOffset - sectorWidth;
+				for (var h = _hSectors; h > 0; h--) {
+					fs[idx] = new Rectangle(left, top, sectorWidth, sectorHeight);
+					idx++;
+					left -= sectorWidth;
+				}
+				top -= sectorHeight;
+			}
+
+			return fs;
+		}
+
+		private Rectangle[] DrawSectors() {
+			if (_useCenter) {
+				return DrawCenterSectors();
+			}
 			// How many sectors does each region have?
 			var hOffset = _hCropPixels;
 			var vOffset = _vCropPixels;
@@ -448,8 +497,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			}
 
 			// This is where we're saving our output
-			var fs = new List<Rectangle>();
-			// Calculate heights, minus offset for boxing
+			var fs = new Rectangle[_sectorCount];
 			// Individual segment sizes
 			var sectorWidth = (ScaleWidth - hOffset * 2) / _hSectors;
 			var sectorHeight = (ScaleHeight - vOffset * 2) / _vSectors;
@@ -460,10 +508,12 @@ namespace Glimmr.Models.ColorSource.Video {
 			var minLeft = hOffset;
 			var minRight = ScaleWidth - hOffset - sectorWidth;
 			// Calc right regions, bottom to top
+			var idx = 0;
 			var step = _vSectors - 1;
 			while (step >= 0) {
 				var ord = step * sectorHeight + vOffset;
-				fs.Add(new Rectangle(minRight, ord, sectorWidth, sectorHeight));
+				fs[idx] = new Rectangle(minRight, ord, sectorWidth, sectorHeight);
+				idx++;
 				step--;
 			}
 
@@ -471,7 +521,8 @@ namespace Glimmr.Models.ColorSource.Video {
 			step = _hSectors - 2;
 			while (step >= 0) {
 				var ord = step * sectorWidth + hOffset;
-				fs.Add(new Rectangle(ord, minTop, sectorWidth, sectorHeight));
+				fs[idx] = new Rectangle(ord, minTop, sectorWidth, sectorHeight);
+				idx++;
 				step--;
 			}
 
@@ -479,7 +530,8 @@ namespace Glimmr.Models.ColorSource.Video {
 			// Calc left regions (top to bottom), skipping top-left
 			while (step <= _vSectors - 1) {
 				var ord = step * sectorHeight + vOffset;
-				fs.Add(new Rectangle(minLeft, ord, sectorWidth, sectorHeight));
+				fs[idx] = new Rectangle(minLeft, ord, sectorWidth, sectorHeight);
+				idx++;
 				step++;
 			}
 
@@ -487,7 +539,8 @@ namespace Glimmr.Models.ColorSource.Video {
 			// Calc bottom center regions (L-R)
 			while (step <= _hSectors - 2) {
 				var ord = step * sectorWidth + hOffset;
-				fs.Add(new Rectangle(ord, minBot, sectorWidth, sectorHeight));
+				fs[idx] = new Rectangle(ord, minBot, sectorWidth, sectorHeight);
+				idx++;
 				step += 1;
 			}
 
@@ -504,6 +557,8 @@ namespace Glimmr.Models.ColorSource.Video {
 			_bottomCount = sd.BottomCount;
 			_hSectors = sd.HSectors;
 			_vSectors = sd.VSectors;
+			_ledCount = sd.LedCount;
+			_sectorCount = sd.SectorCount;
 			if (_hSectors == 0) {
 				_hSectors = 10;
 			}
@@ -511,9 +566,13 @@ namespace Glimmr.Models.ColorSource.Video {
 			if (_vSectors == 0) {
 				_vSectors = 6;
 			}
-
+			
+			_sectorChanged = true;
+			_fullCoords = new Rectangle[_ledCount];
+			_fullSectors = new Rectangle[_sectorCount];
 			_fullCoords = DrawGrid();
 			_fullSectors = DrawSectors();
+			
 		}
 	}
 }

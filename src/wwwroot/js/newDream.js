@@ -35,6 +35,7 @@ let pickr;
 let bar;
 let croppr;
 let leftCount, rightCount, topCount, bottomCount, hSectors, vSectors;
+let useCenter;
 let refreshTimer;
 let fpsCounter;
 let errModal = new bootstrap.Modal(document.getElementById('errorModal'));
@@ -241,6 +242,7 @@ let devs = data.store["Devices"];
         bottomCount = sd["BottomCount"];
         hSectors = sd["HSectors"];
         vSectors = sd["VSectors"];
+        useCenter = sd["UseCenter"];
     }
     lSel.value = leftCount;
     rSel.value = rightCount;
@@ -2058,7 +2060,7 @@ function appendLedMap() {
     setTimeout(function() {createLedMap(imgDiv, img ,systemData, deviceData)}, 500);
 }
 
-function createSectorMap(targetElement, sectorImage, regionName) {
+function createSectorCenter(targetElement, sectorImage, regionName) {
     let img = sectorImage;
     let w = img.offsetWidth;
     let h = img.offsetHeight;
@@ -2067,8 +2069,78 @@ function createSectorMap(targetElement, sectorImage, regionName) {
     let selected = -1;
     if (isValid(deviceData)) selected = deviceData["TargetSector"];
     if (!isValid(selected)) selected = -1;
+    let wFactor = w / 1920;
+    let hFactor = h / 1100;
+    let wMargin = 62 * wFactor;
+    let hMargin = 52 * hFactor;
+    let fHeight = (h - hMargin - hMargin) / vSectors;
+    let fWidth = (w - wMargin - wMargin) / hSectors;
+    let map = document.createElement("div");
+    map.id = "sectorMap";
+    map.classList.add("sectorMap");
+    map.style.top = imgT + "px";
+    map.style.left = imgL + "px";
+    map.style.width = w + "px";
+    map.style.height = h + "px";
+    // Bottom-right, rtl, bottom to top
+    let t = hFactor - hMargin - fHeight + h;
+    let sector = 1;
+    for (let v = vSectors; v > 0; v--) {
+        let l = wFactor - wMargin - fWidth + w;
+        for (let h = hSectors; h > 0; h--) {
+            let s1 = document.createElement("div");
+            s1.classList.add("sector");
+            if (isValid(regionName)) s1.classList.add(regionName + "Region");
+            if (sector.toString() === selected.toString()) s1.classList.add("checked");
+            s1.setAttribute("data-sector", sector.toString());
+            s1.style.position = "absolute";
+            s1.style.top = t.toString() + "px";
+            s1.style.left = l.toString() + "px";
+            s1.style.width = fWidth.toString() + "px";
+            s1.style.height = fHeight.toString() + "px";
+            s1.innerText = sector.toString();
+            map.appendChild(s1);
+            sector++;
+            l -= fWidth;
+        }
+        t -= fHeight;
+    }
+    targetElement.appendChild(map);
+    if (isValid(deviceData) && expanded) {
+        let mappedLights;
+        if (isValid(deviceData["MappedLights"])) {
+            mappedLights = deviceData["MappedLights"];
+        }
+        if (isValid(mappedLights)) {
+            for(let i =0; i < mappedLights.length; i++) {
+                let lMap = mappedLights[i];
+                let target = lMap["TargetSector"];
+                let id = lMap["_id"];
+                let targetDiv = document.querySelector('.sector[data-sector="'+target+'"]');
+                if (isValid(targetDiv)) {
+                    targetDiv.classList.add("checked");
+                }
+            }
+        }
+    }
+}
+
+function createSectorMap(targetElement, sectorImage, regionName) {
     let exMap = targetElement.querySelector("#sectorMap");
     if (isValid(exMap)) exMap.remove();
+
+    if (useCenter) {
+        createSectorCenter(targetElement, sectorImage, regionName);
+        return;
+    }
+    let img = sectorImage;
+    let w = img.offsetWidth;
+    let h = img.offsetHeight;
+    let imgL = img.offsetLeft;
+    let imgT = img.offsetTop;
+    let selected = -1;
+    if (isValid(deviceData)) selected = deviceData["TargetSector"];
+    if (!isValid(selected)) selected = -1;
     let wFactor = w / 1920;
     let hFactor = h / 1100;
     let wMargin = 62 * wFactor;

@@ -25,11 +25,10 @@ namespace Glimmr.Models {
 			var newMode = (DeviceMode) arg2.P1;
 			if (newMode != DeviceMode.Off) {
 				_stopwatch.Restart();
-				_ticks = new Dictionary<string, int> {["source"] = 0};
 			} else {
 				_stopwatch.Stop();
 			}
-
+			_ticks = new Dictionary<string, int> {["source"] = 0};
 			return Task.CompletedTask;
 		}
 

@@ -81,7 +81,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		}
 
 		public async Task StopStream() {
-			if (!Enable) {
+			if (!Streaming) {
 				return;
 			}
 

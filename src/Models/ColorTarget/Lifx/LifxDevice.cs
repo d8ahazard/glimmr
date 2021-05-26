@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using LifxNetPlus;
 using Serilog;
+using Q42.HueApi.ColorConverters.HSB;
 
 namespace Glimmr.Models.ColorTarget.Lifx {
 	public class LifxDevice : ColorTarget, IColorTarget {
@@ -20,6 +22,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		private bool _reverseStrip;
 
 		private int _targetSector;
+		private ColorConverter _conv;
 		
 		public bool Streaming { get; set; }
 		public bool Testing { get; set; }
@@ -92,7 +95,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 
 		public async Task StopStream() {
-			if (!Enable) {
+			if (!Streaming) {
 				return;
 			}
 
@@ -102,6 +105,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			}
 
 			Log.Information($"{Data.Tag}::Stopping stream.: {Data.Id}...");
+			_client.SetColorAsync(B, new LifxColor(Color.FromArgb(0,0,0))).ConfigureAwait(false);
 			_client.SetLightPowerAsync(B, false).ConfigureAwait(false);
 			await Task.FromResult(true);
 			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
@@ -158,8 +162,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				return;
 			}
 
-			
-			var output = ColorUtil.TruncateColors(colors, _offset, _multizoneCount);
+			var output = ColorUtil.TruncateColors(colors, _offset, _multizoneCount).ToList();
 
 			if (_reverseStrip) {
 				output.Reverse();
@@ -168,20 +171,16 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			var i = 0;
 			var shifted = new List<Color>();
 
+			var cols = new List<LifxColor>();
+
 			foreach (var col in output) {
 				if (i == 0) {
-					shifted.Add(col);
+					cols.Add(new LifxColor(col, _scaledBrightness));
 					i = 1;
 				} else {
 					i = 0;
 				}
 			}
-
-			var cols = new List<LifxColor>();
-			foreach (var c in shifted) {
-				cols.Add(new LifxColor(c, _scaledBrightness));
-			}
-
 			//Log.Debug("Sending...");
 			_client.SetExtendedColorZonesAsync(B, cols,5).ConfigureAwait(false);
 			//Log.Debug("Scent");

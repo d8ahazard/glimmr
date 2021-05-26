@@ -6,17 +6,21 @@
     left: 0;
 }
 
+#statDiv {
+    z-index: 2000;
+    position: relative;
+    width: 250px;
+}
+
 .devCard {
     width: 18rem;
 }
 
 #footer {
-    height: 54px;    
+    height: 54px;
+    background-color: rgb(171, 171, 171) !important;
 }
 
-.fixed-bottom {
-    background-color: rgb(207, 227, 227) !important;
-}
 
 .beamItem {
     border: 1px solid grey;

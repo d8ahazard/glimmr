@@ -75,7 +75,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		}
 
 		public async Task StopStream() {
-			if (!Streaming || !Enable) {
+			if (!Streaming) {
 				return;
 			}
 

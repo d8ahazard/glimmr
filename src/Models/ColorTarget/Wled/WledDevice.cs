@@ -60,21 +60,9 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 
 		public async Task StartStream(CancellationToken ct) {
-			if (Streaming) {
+			if (Streaming || !Enable) {
 				return;
 			}
-
-			if (!Enable) {
-				return;
-			}
-
-			Log.Debug("Getting state...");
-			var state = await GetLightState();
-			if (state != null) {
-				_wasOn = state.state.on;
-				_lastBri = state.state.bri;
-			}
-			
 
 			Log.Information($"{Data.Tag}::Starting stream: {Data.Id}...");
 			_targetSector = ColorUtil.CheckDsSectors(Data.TargetSector);
@@ -109,12 +97,13 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 
 		public async Task StopStream() {
-			if (!Data.Enable) {
+			if (!Streaming) {
 				return;
 			}
 		
 
 			Streaming = false;
+			FlashColor(Color.Black).ConfigureAwait(false);
 			UpdateLightState(_wasOn, _lastBri).ConfigureAwait(false);
 			await Task.FromResult(true);
 			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
@@ -135,7 +124,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 				colors = ColorUtil.FillArray(colors1[_targetSector], _ledCount).ToList();
 			} else {
-				colors = ColorUtil.TruncateColors(colors, _offset, _ledCount);
+				colors = ColorUtil.TruncateColors(colors, _offset, _ledCount).ToList();
 				if (_stripMode == StripMode.Loop) {
 					colors = ShiftColors(colors);
 				} else {

@@ -374,8 +374,15 @@ namespace Glimmr.Services {
 					var wasStreaming = dev.Streaming;
 					await dev.ReloadData().ConfigureAwait(false);
 					if (DeviceMode != DeviceMode.Off && dev.Data.Enable && !dev.Streaming) {
-						await dev.StartStream(_sendTokenSource.Token).ConfigureAwait(false);
+						dev.StartStream(_sendTokenSource.Token).ConfigureAwait(false);
 					}
+					
+					if (DeviceMode != DeviceMode.Off && !dev.Data.Enable && dev.Streaming) {
+						Log.Debug("Stopping disabled device: " + dev.Id);
+						dev.StopStream().ConfigureAwait(false);
+					}
+
+					await Task.FromResult(true);
 					return;
 				}
 			}
@@ -477,6 +484,9 @@ namespace Glimmr.Services {
 				_streamStarted = true;
 				Log.Information("Starting streaming devices...");
 				foreach (var sdev in _sDevices) {
+					if (sdev.Data == null) {
+						Log.Debug("SET DEV DATA: " + sdev.Id);
+					}
 					if (sdev.Data.Tag != "Led") {
 						if (!SystemUtil.IsOnline(sdev.Data.IpAddress)) {
 							Log.Debug($"Device {sdev.Data.Tag} at {sdev.Data.Id} is offline.");

@@ -52,7 +52,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 		}
 
 		public async Task StopStream() {
-			if (!Enable) {
+			if (!Streaming) {
 				return;
 			}
 

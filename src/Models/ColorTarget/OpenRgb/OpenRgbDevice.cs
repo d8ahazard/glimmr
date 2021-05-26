@@ -67,7 +67,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 				return;
 			}
 
-			if (!_client.Connected || !Enable) {
+			if (!_client.Connected || !Streaming) {
 				return;
 			}
 

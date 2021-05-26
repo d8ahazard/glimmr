@@ -27,6 +27,10 @@ namespace Glimmr.Models {
 
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public bool UseCenter { get; set; }
+
+		[DefaultValue(false)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool DefaultSet { get; set; }
 
 		[DefaultValue(true)]
@@ -192,7 +196,12 @@ namespace Glimmr.Models {
 
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int SectorCount => HSectors + HSectors + VSectors + VSectors - 4;
+		public int SectorCount {
+			get {
+				if (UseCenter) return HSectors * VSectors;
+				return HSectors + HSectors + VSectors + VSectors - 4;
+			}
+		}
 
 		[DefaultValue(40)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]

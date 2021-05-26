@@ -82,7 +82,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		}
 
 		public async Task StopStream() {
-			if (!Enable) {
+			if (!Streaming) {
 				return;
 			}
 

@@ -92,7 +92,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 
 
 		public async Task StopStream() {
-			if (!Enable) {
+			if (!Streaming) {
 				return;
 			}
 

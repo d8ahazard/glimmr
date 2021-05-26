@@ -145,7 +145,7 @@ namespace Glimmr.Models.ColorSource.Video {
 
 			_vc.Start(ct);
 			SendColors = true;
-			StreamSplitter = new Splitter(_systemData, _controlService);
+			StreamSplitter = new Splitter(_controlService);
 		}
 
 

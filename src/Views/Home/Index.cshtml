@@ -491,6 +491,12 @@
                     <input type="text" class="form-control ledCount" data-property="VSectors" data-object="SystemData" aria-label="Left" aria-describedby="ledCountLeft">
                 </div>
             </div>
+             <!-- CENTER MODE! -->
+            <div class="col-12 col-md-6 col-xl-3 form-check align-self-center mt-2 justify-content-center pb-4">
+               <label class="form-check-label">Use Center of Screen for Sectors</label>
+               <input type="checkbox" class="form-check-input" data-object="SystemData" data-property="UseCenter"/>
+               <div class="form-text">Sectors will be captured in order from right-left, bottom-top.</div>
+            </div>
             <!-- Preview -->
             <div class="col-6" id="sectorPreview">
                 <img id="sectorImage" class="img-fluid" src="~/img/sectoring_screen.png" alt="ledImage">

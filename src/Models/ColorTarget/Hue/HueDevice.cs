@@ -175,7 +175,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 
 		public async Task StopStream() {
-			if (!Enable || !Streaming) {
+			if (!Streaming) {
 				return;
 			}
 

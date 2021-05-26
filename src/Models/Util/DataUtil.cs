@@ -21,6 +21,7 @@ namespace Glimmr.Models.Util {
 		private static bool _dbLocked;
 
 		private static SystemData _systemData;
+		private static List<dynamic> _devices;
 
 		public static LiteDatabase GetDb() {
 			while (_dbLocked) {
@@ -132,7 +133,7 @@ namespace Glimmr.Models.Util {
 			db.Commit();
 		}
 
-		public static List<dynamic> GetDevices() {
+		private static void CacheDevices() {
 			var db = GetDb();
 			var devs = new BsonDocument[0];
 			var devices = new dynamic[0];
@@ -143,7 +144,7 @@ namespace Glimmr.Models.Util {
 				// Ignore
 			}
 
-			var output = new List<dynamic>();
+			var output = new List<dynamic>(devices.Length);
 			foreach (var device in devices) {
 				foreach (var dev in devs) {
 					try {
@@ -163,7 +164,14 @@ namespace Glimmr.Models.Util {
 				}
 			}
 
-			return output;
+			_devices = output;
+		}
+
+		public static List<dynamic> GetDevices() {
+			if (_devices == null) {
+				CacheDevices();
+			}
+			return _devices;
 		}
 
 		public static void RemoveDevice(string id) {
@@ -215,6 +223,7 @@ namespace Glimmr.Models.Util {
 			device.LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 			devs.Upsert(device);
 			db.Commit();
+			CacheDevices();
 			await Task.FromResult(true);
 		}
 
