@@ -23,6 +23,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 		private int _targetSector;
 		private ColorConverter _conv;
+		private BeamLayout _beamLayout;
 		
 		public bool Streaming { get; set; }
 		public bool Testing { get; set; }
@@ -40,7 +41,12 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			_offset = d.Offset;
 			_reverseStrip = d.ReverseStrip;
 			if (_hasMulti) {
-				_multizoneCount = d.LedCount;
+				_multizoneCount = d.MultiZoneCount;
+				_beamLayout = d.BeamLayout;
+				if (_beamLayout == null && _multizoneCount != 0) {
+					d.GenerateBeamLayout();
+					_beamLayout = d.BeamLayout;
+				}
 			}
 
 			_client = colorService.ControlService.GetAgent("LifxAgent");
@@ -120,6 +126,10 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			_reverseStrip = Data.ReverseStrip;
 			if (_hasMulti) {
 				_multizoneCount = Data.LedCount;
+				if (_beamLayout == null && _multizoneCount != 0) {
+					Data.GenerateBeamLayout();
+					_beamLayout = Data.BeamLayout;
+				}
 			}
 
 			IpAddress = Data.IpAddress;
@@ -157,20 +167,22 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		}
 
 		private void SetColorMulti(List<Color> colors) {
-			if (colors == null || _client == null) {
-				Log.Warning("Null client or no colors!");
+			if (_client == null || _beamLayout == null) {
+				Log.Warning("Null client or no layout!");
 				return;
 			}
 
-			var output = ColorUtil.TruncateColors(colors, _offset, _multizoneCount).ToList();
-
-			if (_reverseStrip) {
-				output.Reverse();
+			var output = new List<Color>();
+			foreach (var segment in _beamLayout.Segments) {
+				var len = segment.LedCount;
+				if (segment.Repeat) len = 1;
+				var segColors = ColorUtil.TruncateColors(colors, segment.Offset, len * 2);
+				if (segment.Reverse) segColors = segColors.Reverse().ToArray();
+				output.AddRange(segColors);
 			}
-
+			
 			var i = 0;
-			var shifted = new List<Color>();
-
+			
 			var cols = new List<LifxColor>();
 
 			foreach (var col in output) {

@@ -542,6 +542,20 @@ function setListeners() {
         if (target.type && target.type ==="checkbox") {
             val = target.checked;
         }
+        
+        if (target.classList.contains("beam-control")) {
+            let pos = parseInt(target.getAttribute("data-position"));
+            let prop = target.getAttribute("data-beamproperty");
+            let val;
+            if (prop === "Orientation" || prop === "Offset") {
+                val = target.value;
+                if (prop === "Orientation") val = parseInt(val);
+            } else {
+                val = target.checked;
+            }
+            updateBeamProperty(pos, prop, val);
+            
+        }
         if (target.classList.contains("lightProperty")) {
             let id = target.getAttribute("data-id");
             let property = target.getAttribute("data-property");
@@ -849,6 +863,23 @@ function updateLightProperty(myId, propertyName, value) {
 
     }
     updateDevice(deviceData["Id"],"Groups", nGroup);    
+}
+
+function updateBeamProperty(beamPos, propertyName, value) {
+    let id = deviceData["Id"];
+    let beamLayout = deviceData["BeamLayout"];
+    let beams = beamLayout["Segments"];
+    for(let i=0; i < beams.length; i++) {
+        let beam = beams[i];
+        if (beam["Position"] === beamPos) {
+            beam[propertyName] = value;
+            beams[i] = beam;
+        }
+    }
+
+    beamLayout["Segments"] = beams;
+    console.log("Updating beam " + id, propertyName, value);
+    updateDevice(id,"BeamLayout", beamLayout);
 }
 
 function getLightMap(id) {
@@ -1678,10 +1709,7 @@ function createDeviceSettings() {
         let header = document.createElement("div");
         header.classList.add("col-12", "headerCol");
         row.appendChild(header);
-        if (deviceData["DeviceTag"] === "LifxBeam") {
-            appendBeamMap();
-        }
-
+        
         for (let i =0; i < props.length; i++) {
             
             let prop = props[i];
@@ -1705,6 +1733,11 @@ function createDeviceSettings() {
                 case "ledmap":
                     drawLedMap = true;
                     appendLedMap();
+                    break;
+                case "beamMap":
+                    drawLedMap = true;
+                    appendBeamLedMap();
+                    appendBeamMap();
                     break;
                 case "select":
                     elem = new SettingElement(prop["ValueLabel"], "select", id, propertyName, value);
@@ -1887,6 +1920,31 @@ function drawLinkPane(type, linked) {
     });
 }
 
+function updateBeamLayout(items) {
+    let beamLayout = deviceData["BeamLayout"];
+    if (isValid(beamLayout)) {
+        console.log("Appending beamLayout: ", beamLayout);
+        let existing = beamLayout["Segments"];
+        let sorted = [];
+        for (let i=0; i < items.length; i++) {
+            let pos = parseInt(items[i].getAttribute("data-position"));
+            for(let ex = 0; ex < existing.length; ex++) {
+                if (existing[ex]["Position"] === pos) {
+                    console.log("Adding: ", existing[ex]);
+                    sorted.push(existing[ex]);
+                }
+            }
+        }
+        beamLayout["Segments"] = [];
+        for (let i = 0; i < sorted.length; i++) {
+            let seg = sorted[i];
+            seg["Position"] = i;
+            beamLayout["Segments"].push(seg);
+        }        
+        updateDevice(deviceData["Id"], "BeamLayout", beamLayout);
+    }
+}
+
 function appendBeamMap() {
     let settingsDiv = document.getElementById("deviceSettings");
     let beamDiv = document.getElementById("beamDiv");
@@ -1896,24 +1954,7 @@ function appendBeamMap() {
         let beamLayout = deviceData["BeamLayout"];
         if (isValid(beamLayout)) {
             console.log("Appending beamLayout: " , beamLayout);
-
-            let beams = beamLayout["Beams"];
-            let corners = beamLayout["Corners"];
-            let items = [];
-            if (isValid(beams)) {
-                if (beams.length > 0) {
-                    for (let i = 0; i < beams.length; i++) {
-                        items.push(beams[i]);
-                    }
-                }
-            }
-            if (isValid(corners)) {
-                if (corners.length > 0) {
-                    for (let i = 0; i < corners.length; i++) {
-                        items.push(corners[i]);
-                    }
-                }
-            }
+            let items = beamLayout["Segments"];
             if (items.length > 0) {
                 let beamDiv = document.createElement("div");
                 beamDiv.id = "BeamDiv";
@@ -1922,48 +1963,34 @@ function appendBeamMap() {
                 console.log("ITEMS: ", items);
                 for (let i = 0; i < items.length; i++) {
                     let item = items[i];
-                    console.log("ITEM: ", item);
-                    let orientation = item["Orientation"];
                     let position = item["Position"];
                     let offset = item["Offset"];
                     let repeat = item["Repeat"];
+                    let reverse = item["Reverse"];
                     let count = item["LedCount"];
-                    console.log("Count is " + count + " pos is " + position);
                     let itemDiv = document.createElement("div");
                     itemDiv.classList.add("beamItem");
+                    itemDiv.setAttribute("data-position",position);
+                    if (count === 1) {
+                        itemDiv.setAttribute("data-type", "corner");
+                    } else {
+                        itemDiv.setAttribute("data-type", "beam");
+                    }                    
                     itemDiv.classList.add("col-12", "row", "justify-content-center", "form-group", "mb-5");
+                    
+                    // drag handle
+                    let dragHandle = document.createElement("span");
+                    dragHandle.classList.add("material-icons", "dragHandle");
+                    dragHandle.innerText = "drag_handle";
+                    itemDiv.appendChild(dragHandle);
+                    
                     let nameLabel = document.createElement("div");
                     nameLabel.classList.add("col-12", "headerCol");
                     nameLabel.innerText = (count === 1 ? "Corner" : "Beam") + " " + position;
                     itemDiv.appendChild(nameLabel);
-                    // Rotation selection
-                    let sGroup = document.createElement("div");
-                    sGroup.classList.add("form-group","col-12", "col-md-6", "col-lg-3")
-                    
-                    let label = document.createElement("label");
-                    label.innerText = "Rotation";
-                    label.classList.add("form-label");
-                    let oSelect = document.createElement("select");
-                    oSelect.classList.add("form-control", "beam-control");
-                    oSelect.setAttribute("data-position",position);
-                    oSelect.setAttribute("data-beamProperty","Orientation")
-                    let opts = [0,90,180, 270];
-                    for (let o = 0; o < opts.length; o++) {
-                        let rot = opts[o];
-                        let opt = document.createElement("option");
-                        if (orientation === rot) opt.selected = true;
-                        opt.value = rot.toString();
-                        opt.innerText = rot.toString();
-                        oSelect.appendChild(opt);
-                    }
-                   
-                    
-                    sGroup.appendChild(label);
-                    sGroup.appendChild(oSelect);
-                    itemDiv.appendChild(sGroup);
                     
                     let oGroup = document.createElement("div");
-                    oGroup.classList.add("form-group","col-12", "col-md-6", "col-lg-3")
+                    oGroup.classList.add("form-group","col-12", "col-md-6", "col-lg-3");
                     
                     // Offset
                     let label2 = document.createElement("label");
@@ -1971,12 +1998,13 @@ function appendBeamMap() {
                     label2.classList.add("form-label");
                     let offsetText = document.createElement("input");
                     offsetText.type = "number";
+                    offsetText.value = offset;
                     offsetText.classList.add("form-control", "beam-control");
                     offsetText.setAttribute("data-position",position);
-                    offsetText.setAttribute("data-beamProperty","Or")
+                    offsetText.setAttribute("data-beamProperty","Offset");
 
-                    oGroup.appendChild(label2);
                     oGroup.appendChild(offsetText);
+                    oGroup.appendChild(label2);
                     itemDiv.appendChild(oGroup);
 
                     // Repeat
@@ -1990,6 +2018,8 @@ function appendBeamMap() {
                     label3.classList.add("form-check-label");
                     let rCheck = document.createElement("input");
                     rCheck.type = "checkbox";
+                    if (repeat) rCheck.checked = true;
+                    rCheck.classList.add("form-check", "form-check-input", "beam-control");
                     rCheck.setAttribute("data-position",position);
                     rCheck.setAttribute("data-beamProperty","Repeat")
                     checkDiv1.appendChild(rCheck);
@@ -2008,7 +2038,9 @@ function appendBeamMap() {
                     label4.innerText = "Reverse Direction";
                     label4.classList.add("form-check-label");
                     let rCheck2 = document.createElement("input");
+                    rCheck2.classList.add("form-check", "form-check-input", "beam-control");
                     rCheck2.type = "checkbox";
+                    if (reverse) rCheck2.checked = true;
                     rCheck2.setAttribute("data-position",position);
                     rCheck2.setAttribute("data-beamProperty","Reverse")
                     checkDiv2.appendChild(rCheck2);
@@ -2021,6 +2053,10 @@ function appendBeamMap() {
                 settingsDiv.appendChild(beamDiv);
 
                 sortable(".sortable");
+                sortable('.sortable')[0].addEventListener('sortupdate', function(e) {
+                    let items = e.detail.destination.items;
+                    updateBeamLayout(items);
+                });
             }
             
         }
@@ -2058,6 +2094,22 @@ function appendLedMap() {
     settingsDiv.append(imgDiv);
     let systemData = data.store["SystemData"];
     setTimeout(function() {createLedMap(imgDiv, img ,systemData, deviceData)}, 500);
+}
+
+function appendBeamLedMap() {
+    let mapDiv = document.getElementById("mapDiv");
+    if (isValid(mapDiv)) mapDiv.remove();
+    let imgDiv = document.createElement("div");
+    imgDiv.id = "mapDiv";
+    let img = document.createElement("img");
+    img.id = "sectorImage";
+    img.classList.add("img-fluid", "col-xl-8", "col-lg-8", "col-md-12");
+    img.src = baseUrl + "/img/sectoring_screen.png";
+    imgDiv.appendChild(img);
+    let settingsDiv = document.getElementById("deviceSettings");
+    settingsDiv.append(imgDiv);
+    let systemData = data.store["SystemData"];
+    setTimeout(function() {createBeamLedMap(imgDiv, img ,systemData, deviceData)}, 500);
 }
 
 function createSectorCenter(targetElement, sectorImage, regionName) {
@@ -2268,6 +2320,174 @@ function createSectorMap(targetElement, sectorImage, regionName) {
     }
 }
 
+function createBeamLedMap(targetElement, sectorImage) {
+    let sd = data.store["SystemData"];
+    let colorClasses = [
+        "ledRed",
+        "ledOrange",
+        "ledYellow",
+        "ledGreen",
+        "ledBlue",
+        "ledIndigo",
+        "ledViolet",
+        "ledRed",
+        "ledOrange",
+        "ledYellow",
+        "ledGreen",
+        "LedBlue",
+        "ledIndigo",
+        "ledViolet"
+    ]; 
+
+    if (!isValid(deviceData)) {
+        console.log("Invalid device data...");
+    }
+    
+    let beamLayout = deviceData["BeamLayout"];
+    let segments = beamLayout["Segments"];
+    let total = sd["LedCount"];
+    let rangeList = [];
+    for (let s = 0; s < segments.length; s++) {
+        let offset = segments[s]["Offset"];
+        let len = segments[s]["LedCount"];
+        if (segments[s]["Repeat"]) len = 1;
+        len *= 2;
+        rangeList.push(ranges(total, offset, len));
+    }
+    console.log("Range list: ", rangeList);
+    
+    let img = sectorImage;
+    let w = img.offsetWidth;
+    let h = img.offsetHeight;
+    let imgL = img.offsetLeft;
+    let imgT = img.offsetTop;
+    let exMap = targetElement.querySelector("#ledMap");
+    if (isValid(exMap)) exMap.remove();
+    let wFactor = w / 1920;
+    let hFactor = h / 1100;
+    let wMargin = 62 * wFactor;
+    let hMargin = 52 * hFactor;
+    let flHeight = (h - hMargin - hMargin) / leftCount;
+    let frHeight = (h - hMargin - hMargin) / rightCount;
+    let ftWidth = (w - wMargin - wMargin) / topCount;
+    let fbWidth = (w - wMargin - wMargin) / bottomCount;
+    let dHeight = (flHeight + frHeight) / 2;
+    let dWidth = (ftWidth + fbWidth) / 2;
+    let map = document.createElement("div");
+    map.id = "ledMap";
+    map.classList.add("ledMap");
+    map.style.top = imgT + "px";
+    map.style.left = imgL + "px";
+    map.style.width = w + "px";
+    map.style.height = h + "px";
+    // Bottom-right, up to top-right
+    let t = 0;
+    let b = 0;
+    let l = 0;
+    let r = 0;
+    let ledCount = 0;
+    for (let i = 0; i < rightCount; i++) {
+        t = h - hMargin - ((i + 1) * frHeight);
+        b = t + frHeight;
+        l = w - wMargin - dWidth;
+        r = l + dWidth;
+        let s1 = document.createElement("div");
+        s1.classList.add("led");
+        for(let r=0; r < rangeList.length; r++) {
+            let colClass = colorClasses[r];
+            let range = rangeList[r];
+            if (range.includes(ledCount)) s1.classList.add(colClass);
+        }
+        s1.setAttribute("data-sector", ledCount.toString());
+        s1.style.position = "absolute";
+        s1.style.top = t.toString() + "px";
+        s1.style.left = l.toString() + "px";
+        s1.style.width = fbWidth.toString() + "px";
+        s1.style.height = frHeight.toString() + "px";
+        s1.setAttribute("data-bs-toggle", "tooltip");
+        s1.setAttribute("data-bs-placement", "top");
+        s1.setAttribute("title", ledCount.toString());
+        map.appendChild(s1);
+        ledCount++;
+    }
+
+    for (let i = 0; i < topCount - 1; i++) {
+        l = w - wMargin - (ftWidth * (i + 1));
+        r = l - ftWidth;
+        let s1 = document.createElement("div");
+        s1.classList.add("led");
+        for(let r=0; r < rangeList.length; r++) {
+            let colClass = colorClasses[r];
+            let range = rangeList[r];
+            if (range.includes(ledCount)) s1.classList.add(colClass);
+        }
+        s1.setAttribute("data-sector", ledCount.toString());
+        s1.style.position = "absolute";
+        s1.style.top = t.toString() + "px";
+        s1.style.left = l.toString() + "px";
+        s1.style.width = ftWidth.toString() + "px";
+        s1.style.height = frHeight.toString() + "px";
+        s1.setAttribute("data-bs-toggle", "tooltip");
+        s1.setAttribute("data-bs-placement", "top");
+        s1.setAttribute("title", ledCount.toString());
+        map.appendChild(s1);
+        ledCount++;
+    }
+
+    // Left, top-bottom
+    for (let i = 0; i < leftCount - 1; i++) {
+        t = hMargin + (i * flHeight);
+        b = t + flHeight;
+        l = wMargin;
+        r = l + dWidth;
+        let s1 = document.createElement("div");
+        s1.classList.add("led");
+        for(let r=0; r < rangeList.length; r++) {
+            let colClass = colorClasses[r];
+            let range = rangeList[r];
+            if (range.includes(ledCount)) s1.classList.add(colClass);
+        }
+        s1.setAttribute("data-sector", ledCount.toString());
+        s1.style.position = "absolute";
+        s1.style.top = t.toString() + "px";
+        s1.style.left = l.toString() + "px";
+        s1.style.width = dWidth.toString() + "px";
+        s1.style.height = flHeight.toString() + "px";
+        s1.setAttribute("data-bs-toggle", "tooltip");
+        s1.setAttribute("data-bs-placement", "top");
+        s1.setAttribute("title", ledCount.toString());
+        map.appendChild(s1);
+        ledCount++;
+    }
+
+    // This one, stupid
+    for (let i = 0; i < bottomCount; i++) {
+        t = h - hMargin - dHeight;
+        b = t + dHeight;
+        l = wMargin + (fbWidth * (i));
+        r = l + fbWidth;
+        let s1 = document.createElement("div");
+        s1.classList.add("led");
+        for(let r=0; r < rangeList.length; r++) {
+            let colClass = colorClasses[r];
+            let range = rangeList[r];
+            if (range.includes(ledCount)) s1.classList.add(colClass);
+        }
+        s1.setAttribute("data-sector", ledCount.toString());
+        s1.style.position = "absolute";
+        s1.style.top = t.toString() + "px";
+        s1.style.left = l.toString() + "px";
+        s1.style.width = fbWidth.toString() + "px";
+        s1.style.height = dHeight.toString() + "px";
+        s1.setAttribute("data-bs-toggle", "tooltip");
+        s1.setAttribute("data-bs-placement", "top");
+        s1.setAttribute("title", ledCount.toString());
+        map.appendChild(s1);
+        ledCount++;
+    }
+    targetElement.appendChild(map);
+}
+
 function createLedMap(targetElement, sectorImage) {
     let range1;
     let sd = data.store["SystemData"];
@@ -2404,8 +2624,7 @@ function ranges(ledCount, offset, total) {
             range.push(i);
         }        
     }
-    let sliced = range.slice(offset, total + offset);
-    return sliced;
+    return range.slice(offset, total + offset);
 }
 
 

@@ -62,6 +62,34 @@
     background-color: red;
 }
 
+.ledRed {
+    background-color: red;
+}
+
+.ledOrange {
+    background-color: orange;
+}
+
+.ledYellow {
+    background-color: yellow;
+}
+
+.ledGreen {
+    background-color: green;
+}
+
+.ledBlue {
+    background-color: blue;
+}
+
+.ledIndigo {
+    background-color: indigo;
+}
+
+.ledViolet {
+    background-color: violet;
+}
+
 .titleCol {
     font-size: 22px;
 }
@@ -95,6 +123,15 @@ area {
     margin: 0;
 }
 
+.dragHandle {
+    position: relative;
+    left: -46%;
+    top: 50px;
+}
+
+.beamItem {
+    position: relative;
+}
 
 .sector {
     position: absolute!important;  

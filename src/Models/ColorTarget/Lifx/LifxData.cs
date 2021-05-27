@@ -106,6 +106,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			MultiZoneCount = ld.MultiZoneCount;
 			HasMultiZone = ld.HasMultiZone;
 			if (HasMultiZone && (omz != MultiZoneCount || BeamLayout == null)) {
+				Log.Debug("Generating beam layout.");
 				GenerateBeamLayout();
 			}
 			Log.Debug("ZOnecount is + " + MultiZoneCount);
@@ -116,11 +117,12 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			Name = "Lifx - " + Id.Substring(Id.Length - 5, 5);
 		}
 
-		private void GenerateBeamLayout() {
+		public void GenerateBeamLayout() {
 			Log.Debug("Generating new beam layout.");
 			var total = 0;
 			var beamCount = 0;
 			var cornerCount = 0;
+			
 			for (var i = 0; i < MultiZoneCount; i++) {
 				if (total == 10) {
 					beamCount++;
@@ -133,49 +135,24 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				}
 				total++;
 			}
-			
-			var curBeams = new List<Beam>();
-			var curCorners = new List<Corner>();
-			if (BeamLayout != null) {
-				curBeams = BeamLayout.Beams;
-				curCorners = BeamLayout.Corners;
-			}
-			
+
 			BeamLayout = new BeamLayout();
-
-			var posCount = beamCount;
-			if (beamCount > curBeams.Count) {
-				BeamLayout.Beams = curBeams;
-				var diff = beamCount - curBeams.Count;
-				for (var i = 0; i < diff; i++) {
-					var idx = curBeams.Count;
-					BeamLayout.Beams.Add(new Beam(idx));
-					posCount = idx;
-				}
-			} else if (beamCount < curBeams.Count) {
-				for (var i = 0; i < beamCount; i++) {
-					BeamLayout.Beams.Add(curBeams[i]);
-				}
-			} else if (beamCount == curBeams.Count) {
-				BeamLayout.Beams = curBeams;
+			var sortSegments = new List<Segment>();
+			var offset = 0;
+			for (var i = 0; i < beamCount; i++) {
+				BeamLayout.Segments.Add(new Segment(i,10,offset));
+			}
+			for (var i = 0; i < cornerCount; i++) {
+				BeamLayout.Segments.Add(new Segment(i,1));
+			}
+			
+			for (var i = 0; i < BeamLayout.Segments.Count; i++) {
+				var elem = BeamLayout.Segments[i];
+				elem.Position = i;
+				sortSegments.Add(elem);
 			}
 
-			for (var c = 0; c < cornerCount; c++) {
-				var corner = new Corner(posCount, beamCount * 10 + posCount);
-				var skip = false;
-				foreach (var ec in curCorners.Where(ec => ec.Id == posCount)) {
-					skip = true;
-					BeamLayout.Corners.Add(ec);
-				}
-				
-				foreach (var b in curBeams.Where(b => b.Position == c)) {
-					skip = true;
-				}
-
-				if (!skip) BeamLayout.Corners.Add(corner);
-
-				posCount++;
-			}
+			BeamLayout.Segments = sortSegments;
 		}
 
 		public SettingsProperty[] KeyProperties {
@@ -195,9 +172,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		private SettingsProperty[] Kps() {
 			if (HasMultiZone) {
 				return new SettingsProperty[] {
-					new("ledmap", "ledmap", ""),
-					new("Offset", "number", "Offset"),
-					new("ReverseStrip", "check", "Reverse Direction")
+					new("beamMap", "beamMap", "")
 				};
 			}
 
@@ -210,24 +185,19 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 	[Serializable]
 	public class BeamLayout {
 		[JsonProperty]
-		public List<Beam> Beams { get; set; }
-		[JsonProperty]
-		public List<Corner> Corners { get; set; }
-
+		public List<Segment> Segments { get; set; }
+		
 		public BeamLayout() {
-			Beams = new List<Beam>();
-			Corners = new List<Corner>();
+			Segments = new List<Segment>();
 		}
 	}
 
 	[Serializable]
-	public class Beam {
-		[JsonProperty]
-		public int Orientation { get; set; }
+	public class Segment {
 		[JsonProperty]
 		public int Position { get; set; }
 		[JsonProperty]
-		public int LedCount { get; set; } = 10;
+		public int LedCount { get; set; }
 
 		[JsonProperty]
 		public int Offset { get; set; }
@@ -241,35 +211,12 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		[JsonProperty]
 		public bool Repeat { get; set; }
 
-		public Beam(int position, int orientation = 0) {
+		public Segment(int position, int ledCount = 10, int offset = 0) {
 			Position = position;
-			Orientation = orientation;
-			Offset = position * 10;
+			Offset = offset;
+			LedCount = ledCount;
 			Reverse = false;
 			Repeat = false;
 		}
 	}
-
-	[Serializable]
-	public class Corner {
-		[JsonProperty]
-		public int Id { get; set; }
-		
-		[JsonProperty]
-		public int Orientation { get; set; }
-		[JsonProperty]
-		public int Position { get; set; }
-		[JsonProperty]
-		public int LedCount { get; set; } = 1;
-		
-		[JsonProperty]
-		public int Offset { get; set; }
-
-		public Corner(int position, int offset, int orientation = 0) {
-			Position = position;
-			Orientation = orientation;
-			Offset = offset;
-		}
-	}
-
 }
