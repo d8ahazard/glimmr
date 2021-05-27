@@ -70,13 +70,14 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				Power = state.IsOn,
 				Hue = state.Hue,
 				Saturation = state.Saturation,
-				Brightness = state.Brightness,
+				Brightness = 100,
 				Kelvin = state.Kelvin,
 				TargetSector = -1,
 				HasMultiZone = hasMulti,
 				MultiZoneV2 = extended,
 				MultiZoneCount = zoneCount
 			};
+			if (hasMulti && zoneCount != 0) d.GenerateBeamLayout();
 			Log.Debug("ZOnecount is + " + d.MultiZoneCount);
 
 			if (ver.Product == 55 || ver.Product == 101) {

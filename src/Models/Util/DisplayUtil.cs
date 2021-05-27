@@ -95,8 +95,6 @@ namespace Glimmr.Models.Util {
 						bottom = Math.Max(bottom, devMode.dmPositionY + devMode.dmPelsHeight);
 						width = left - right;
 						height = top - bottom;
-					} else {
-						Log.Debug("Unable to enum display settings.");
 					}
 
 					devIdx++;

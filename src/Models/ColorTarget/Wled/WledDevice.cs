@@ -68,7 +68,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			_targetSector = ColorUtil.CheckDsSectors(Data.TargetSector);
 			_ep = IpUtil.Parse(IpAddress, port);
 			Streaming = true;
-			await UpdateLightState(Streaming).ConfigureAwait(false);
+			await UpdateLightState(Streaming);
+			FlashColor(Color.Black).ConfigureAwait(false);
 			Log.Information($"{Data.Tag}::Stream started: {Data.Id}.");
 		}
 
@@ -230,10 +231,12 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		}
 
 		private async Task UpdateLightState(bool on, int bri = -1) {
-			var scaledBright = bri == -1 ? Brightness / 100f * 255 : bri;
+			var scaledBright = bri == -1 ? (Brightness / 100f) * 255f : bri;
+			if (scaledBright > 255) scaledBright = 255;
 			var url = "http://" + IpAddress + "/win";
 			url += "&T=" + (on ? "1" : "0");
 			url += "&A=" + (int) scaledBright;
+			Log.Debug("LightstateUrl: " + url);
 			await _httpClient.GetAsync(url).ConfigureAwait(false);
 		}
 		

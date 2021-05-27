@@ -2099,8 +2099,15 @@ function appendLedMap() {
 function appendBeamLedMap() {
     let mapDiv = document.getElementById("mapDiv");
     if (isValid(mapDiv)) mapDiv.remove();
+    
     let imgDiv = document.createElement("div");
     imgDiv.id = "mapDiv";
+
+    let noteDiv = document.createElement("div");
+    noteDiv.classList.add("col-12", "subtitle");
+    noteDiv.innerHTML = "Note: Lifx beams are spaced so that 10 LEDs/beam equal 20 LEDs within Glimmr.";
+
+    imgDiv.appendChild(noteDiv);
     let img = document.createElement("img");
     img.id = "sectorImage";
     img.classList.add("img-fluid", "col-xl-8", "col-lg-8", "col-md-12");

@@ -105,6 +105,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			var omz = MultiZoneCount;
 			MultiZoneCount = ld.MultiZoneCount;
 			HasMultiZone = ld.HasMultiZone;
+			Log.Debug($"Has multi, omz, mzc {HasMultiZone}, {omz}, {MultiZoneCount}");
 			if (HasMultiZone && (omz != MultiZoneCount || BeamLayout == null)) {
 				Log.Debug("Generating beam layout.");
 				GenerateBeamLayout();
@@ -137,22 +138,18 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			}
 
 			BeamLayout = new BeamLayout();
-			var sortSegments = new List<Segment>();
 			var offset = 0;
+			total = 0;
 			for (var i = 0; i < beamCount; i++) {
-				BeamLayout.Segments.Add(new Segment(i,10,offset));
+				BeamLayout.Segments.Add(new Segment(total,10,offset));
+				total++;
+				offset += 20;
 			}
 			for (var i = 0; i < cornerCount; i++) {
-				BeamLayout.Segments.Add(new Segment(i,1));
+				BeamLayout.Segments.Add(new Segment(total,1, offset));
+				total++;
+				offset += 2;
 			}
-			
-			for (var i = 0; i < BeamLayout.Segments.Count; i++) {
-				var elem = BeamLayout.Segments[i];
-				elem.Position = i;
-				sortSegments.Add(elem);
-			}
-
-			BeamLayout.Segments = sortSegments;
 		}
 
 		public SettingsProperty[] KeyProperties {

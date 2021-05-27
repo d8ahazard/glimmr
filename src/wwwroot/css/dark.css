@@ -10,6 +10,10 @@
     background-color: rgb(27, 30, 30) !important;
 }
 
+.text-dark {
+    color: rgb(243 243 243) !important;
+}
+
 .bg-light {
     background: #1c1c1c !important;
 }

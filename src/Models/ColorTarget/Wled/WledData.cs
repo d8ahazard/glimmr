@@ -66,7 +66,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 				}
 
 				LedCount = jsonObj.info.leds.count;
-				Brightness = jsonObj.state.bri;
+				Brightness = (int)(jsonObj.state.bri / 255f * 100);
 			} catch (Exception e) {
 				Log.Debug("Yeah, here's your problem, smart guy: " + e.Message);
 			}

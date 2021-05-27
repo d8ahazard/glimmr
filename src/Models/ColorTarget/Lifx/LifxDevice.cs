@@ -175,12 +175,18 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			var output = new List<Color>();
 			foreach (var segment in _beamLayout.Segments) {
 				var len = segment.LedCount;
-				if (segment.Repeat) len = 1;
 				var segColors = ColorUtil.TruncateColors(colors, segment.Offset, len * 2);
-				if (segment.Reverse) segColors = segColors.Reverse().ToArray();
+				if (segment.Repeat) {
+					var col = segColors[0];
+					for (var c = 0; c < len * 2; c++) {
+						segColors[c] = col;
+					}
+				}
+				
+				if (segment.Reverse && !segment.Repeat) segColors = segColors.Reverse().ToArray();
 				output.AddRange(segColors);
 			}
-			
+
 			var i = 0;
 			
 			var cols = new List<LifxColor>();
@@ -193,6 +199,8 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 					i = 0;
 				}
 			}
+
+			//if (true) cols.Reverse();
 			//Log.Debug("Sending...");
 			_client.SetExtendedColorZonesAsync(B, cols,5).ConfigureAwait(false);
 			//Log.Debug("Scent");
