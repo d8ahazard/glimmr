@@ -65,7 +65,7 @@ Save the file, and you're ready to go! Insert the SD card in your pi, power it o
 Execute the following command:
 ```
 sudo su
-bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/dev/setup_linux.sh)
+bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_linux.sh)
 ```
 You may want to reboot your computer after exectution if it's a first-time install...
 
