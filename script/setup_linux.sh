@@ -1,6 +1,7 @@
 #!/bin/bash
 # Add user if not exist
-id -u glimmrtv &>/dev/null || useradd -m glimmrtv 
+id -u glimmrtv &>/dev/null || useradd -m glimmrtv
+usermod -aG sudo glimmrtv 
 cd /home/glimmrtv || exit
 # Check dotnet installation
 if [ ! -d "/opt/dotnet" ]
@@ -22,14 +23,17 @@ if [ ! -d "/home/glimmrtv/glimmr" ]
 then
 # Clone glimmr
   echo "Cloning glimmr"
-  git clone -b dev https://github.com/d8ahazard/glimmr /home/glimmrtv/glimmr/src
+  git clone -b dev https://github.com/d8ahazard/glimmr /home/glimmrtv/glimmr
+  # Install update script to init.d   
+  sudo cp /home/glimmrtv/glimmr/script/update_pi.sh /etc/init.d/update_pi.sh
+  sudo chmod 777 /etc/init.d/update_pi.sh
 else
   echo "Source exists, updating..."
-  cd /home/glimmrtv/glimmr/src || exit
-  git stash && git fetch && git pull
+  cd /home/glimmrtv/glimmr || exit
+  git fetch && git pull
 fi
 
-cd /home/glimmrtv/glimmr/src || exit
+cd /home/glimmrtv/glimmr || exit
 
 # Check for service stop
 serviceName="glimmr"
@@ -43,17 +47,19 @@ fi
 
 # Build latest version
 echo "Building glimmr..."
-dotnet build Glimmr.csproj /p:PublishProfile=LinuxARM
-cp -r /home/glimmrtv/glimmr/src/bin/debug/netcoreapp3.1/linux-arm/* /home/glimmrtv/glimmr/
-cp -r /home/glimmrtv/glimmr/src/wwwroot/ /home/glimmrtv/glimmr/wwwroot/
+dotnet publish /home/glimmrtv/glimmr/src/Glimmr.csproj /p:PublishProfile=Linux -o /home/glimmrtv/glimmr/bin/
 echo "DONE."
 # Copy necessary libraries
 echo "Copying libs..."
-cp -r /home/glimmrtv/glimmr/src/build/arm /usr/lib
+cp -r /home/glimmrtv/glimmr/lib/bass.dll /usr/lib/bass.dll
+cp -r /home/glimmrtv/glimmr/lib/Linux/* /usr/lib
+
+cp -r /home/glimmrtv/glimmr/src/ambientScenes /bin/ambientScenes
+cp -r /home/glimmrtv/glimmr/src/audioScenes /bin/audioScenes
 
 # Check service start/install
 if systemctl --all --type service | grep -q "$serviceName";then
-  echo "Starting glimmr..."
+  echo "Starting Glimmr service..."
   systemctl daemon-reload
   service glimmr start
   echo "DONE!"
@@ -69,8 +75,8 @@ RemainAfterExit=yes
 StandardOutput=tty
 Restart=always
 User=root
-WorkingDirectory=/home/glimmrtv/glimmr
-ExecStart=/home/glimmrtv/glimmr/Glimmr
+WorkingDirectory=/home/glimmrtv/glimmr/bin
+ExecStart=/home/glimmrtv/glimmr/bin/Glimmr
 
 
 [Install]
