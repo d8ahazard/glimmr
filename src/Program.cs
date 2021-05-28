@@ -13,6 +13,7 @@ using Glimmr.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 using Serilog;
 using Serilog.Events;
 
@@ -64,15 +65,14 @@ namespace Glimmr {
 					.Enrich.WithCaller()
 					.MinimumLevel.Debug()
 					.Enrich.FromLogContext()
-					.Filter.ByExcluding(c => c.MessageTemplate.Text.Contains("Request"))
-					.Filter.ByExcluding(c => c.MessageTemplate.Text.Contains("SerilogLogger"))
+					.Filter.ByExcluding(c => JsonConvert.SerializeObject(c).Contains("SerilogLogger"))
 					.WriteTo.Console(outputTemplate: outputTemplate)
 					.WriteTo.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: outputTemplate))
 				.ConfigureServices(services => {
 					services.AddSignalR();
 					services.AddSingleton<ControlService>();
 					services.AddSingleton<ColorService>();
-					services.AddHostedService(services => (ColorService) services.GetService<ColorService>());
+					services.AddHostedService(serviceProvider => (ColorService) serviceProvider.GetService<ColorService>());
 					services.AddHostedService<AudioStream>();
 					services.AddHostedService<VideoStream>();
 					services.AddHostedService<AudioVideoStream>();

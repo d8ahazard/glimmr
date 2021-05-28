@@ -132,8 +132,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 						sectors = _currentColors;
 					}
 
-					var leds = SplitColors(sectors);
-					_ledColors = leds;
+					_ledColors = SplitColors(sectors);
 					_sectorColors = sectors;
 					_cs.SendColors(_ledColors.ToList(), _sectorColors.ToList(), 0);
 					await Task.FromResult(true);
@@ -144,9 +143,9 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			}, CancellationToken.None);
 		}
 
-		private Color[] SplitColors(Color[] input) {
+		private Color[] SplitColors(IReadOnlyList<Color> input) {
 			var output = new Color[_ledCount];
-			var inF = (float) input.Length;
+			var inF = (float) input.Count;
 			var tot = (int) (_ledCount / inF);
 			var ci = 0;
 			var idx = 0;
@@ -154,7 +153,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			for (var l = 0; l < _ledCount; l++) {
 				if (idx >= tot) {
 					color = input[ci];
-					if (ci < input.Length -1) ci++;
+					if (ci < input.Count -1) ci++;
 				}
 
 				output[l] = color;
