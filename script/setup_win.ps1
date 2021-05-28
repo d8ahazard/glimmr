@@ -98,7 +98,7 @@ if($service -ne $null) {
     Invoke-Expression "$nssm $param";    
 }
 
-Stop-Process -name "GlimmrTray";
+Stop-Process -name "Glimmr" -ErrorAction SilentlyContinue;
 
 $glimmrPath = "C:\Progra~1\Glimmr";
 $glimmrBinPath = "C:\Progra~1\Glimmr\bin\Glimmr.exe";
@@ -127,6 +127,19 @@ If( -not (Test-Path -Path $glimmrPath) ){
     $outPath = "$glimmrPath\bin";    
     Invoke-Expression "& '$dotNetPath' build $projectPath -o $outPath";
 }
+$dirPath = $env:USERPROFILE + "\AppData\Roaming\Microsoft\Windows\Start Menu\Programs";
+$dirPath2 = $dirPath + "\Glimmr\";
+Write-Host "Creating $dirPath"; 
+
+$objShell = New-Object -ComObject ("WScript.Shell");
+$objShortCut = $objShell.CreateShortcut($dirPath + "\Startup" + "\GlimmrTray.lnk");
+$objShortCut.TargetPath=$glimmrBinPath;
+$objShortCut.Save();
+New-Item -Path $dirPath -Name "Glimmr" -ItemType "directory" -ErrorAction SilentlyContinue
+New-Item -Path $dirPath2 -Name "Glimmr" -ItemType "directory" -ErrorAction SilentlyContinue
+$objShortCut2 = $objShell.CreateShortcut($dirPath2 + "\GlimmrTray.lnk");
+$objShortCut2.TargetPath=$glimmrBinPath;
+$objShortCut2.Save();
 
 Write-Host "Glimmr has been installed, launching tray!";
 Start-Process -FilePath "C:\program files\Glimmr\bin\GlimmrTray.exe";
