@@ -7,8 +7,9 @@
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>.</DockerfileContext>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ApplicationIcon>appIcon.ico</ApplicationIcon>
   </PropertyGroup>
-
+  
   <ItemGroup>
     <PackageReference Include="AdalightNet" Version="1.0.1" />
     <PackageReference Include="AutoMapper" Version="10.1.1" />

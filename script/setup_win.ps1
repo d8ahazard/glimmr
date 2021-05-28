@@ -91,8 +91,14 @@ if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 $service = Get-Service -Name glimmr -ErrorAction SilentlyContinue
 
 if($service -ne $null) {
-    Stop-Service -Name "glimmr"
+    Stop-Service -Name "glimmr";
+    Write-Host "Removing glimmr service.";
+    $nssm = 'C:\progra~1\Glimmr\script\nssm.exe';
+    $param = 'remove glimmr';
+    Invoke-Expression "$nssm $param";    
 }
+
+Stop-Process -name "GlimmrTray";
 
 $glimmrPath = "C:\Progra~1\Glimmr";
 $glimmrBinPath = "C:\Progra~1\Glimmr\bin\Glimmr.exe";
@@ -117,26 +123,11 @@ If( -not (Test-Path -Path $glimmrPath) ){
     $outPath = "$glimmrPath\bin";    
     Invoke-Expression "& '$dotNetPath' publish $projectPath /p:PublishProfile=Windows -o $outPath";
     Copy-Item "$glimmrPath\lib\Windows\bass.dll" "$outPath\bass.dll";
+    $projectPath = "$glimmrPath\GlimmrTray\GlimmrTray.csproj";
+    $outPath = "$glimmrPath\bin";    
+    Invoke-Expression "& '$dotNetPath' build $projectPath -o $outPath";
 }
 
-if($service -ne $null) {
-    Write-Host "Restarting glimmr...";
-    Start-Service -Name "glimmr"    
-} else {
-    Write-Host "Creating Glimmr Service...";
-    $nssm = 'C:\progra~1\Glimmr\script\nssm.exe';
-    $param = 'install glimmr "C:\progra~1\glimmr\bin\Glimmr.exe"';
-    Invoke-Expression "$nssm $param";
-    $param = 'set glimmr AppDirectory "C:\progra~1\glimmr\bin\"';
-    Invoke-Expression "$nssm $param";
-    $param = 'set glimmr DisplayName GlimmrTV';
-    Invoke-Expression "$nssm $param";
-    $param = 'set glimmr Description Glimmr TV Ambient Lighting Service';
-    Invoke-Expression "$nssm $param";
-    $param = 'set glimmr Start SERVICE_AUTO_START';
-    Invoke-Expression "$nssm $param";    
-    pause
-} 
-Start-Service -Name "glimmr"
-Write-Host "Glimmr has been installed!"
+Write-Host "Glimmr has been installed, launching tray!";
+Start-Process -FilePath "C:\program files\Glimmr\bin\GlimmrTray.exe";
 pause
