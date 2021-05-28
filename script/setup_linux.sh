@@ -7,15 +7,8 @@ if [ ! -d "/opt/dotnet" ]
 then 
   echo "Installing dotnet."
   echo "Downloading..."
-  wget https://dotnetcli.blob.core.windows.net/dotnet/Sdk/master/dotnet-sdk-latest-linux.tar.gz
-  sudo mkdir -p /usr/share/dotnet
-  sudo tar -zxf dotnet-sdk-latest-linux.tar.gz -C /usr/share/dotnet
-  sudo ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
-  echo "DONE!"
-  # Cleanup
-  echo "Cleanup..."
-  rm -rf ./dotnet-sdk-latest-linux-arm.tar.gz
-  echo "DONE!"
+  curl -s https://dot.net/v1/dotnet-install.sh
+  echo "DONE!"  
 fi
 
 cd /opt/dotnet || exit
