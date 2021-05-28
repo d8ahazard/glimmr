@@ -7,7 +7,7 @@ if [ ! -d "/opt/dotnet" ]
 then 
   echo "Installing dotnet."
   echo "Downloading..."
-  curl -s https://dot.net/v1/dotnet-install.sh
+  curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel Current --install-dir /opt/dotnet
   echo "DONE!"  
 fi
 
@@ -17,9 +17,6 @@ echo "Installing dependencies..."
 sudo apt-get -y update && apt-get -y upgrade
 sudo apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa libdc1394-22 libtesseract-dev scons icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libatlas-base-dev gfortran libopengl-dev git gcc xauth
 echo "DONE!"
-# Moar Cleanup
-echo "More cleanup..."
-sudo apt-get -y remove x264 libx264-dev
 
 if [ ! -d "/home/glimmrtv/glimmr" ]
 then
