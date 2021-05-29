@@ -80,7 +80,7 @@ StandardOutput=tty
 Restart=always
 User=root
 WorkingDirectory=/home/glimmrtv/glimmr/bin
-ExecStart=/home/glimmrtv/glimmr/bin/Glimmr
+ExecStart=/opt/dotnet/dotnet /home/glimmrtv/glimmr/bin/Glimmr.dll
 
 
 [Install]
