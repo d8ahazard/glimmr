@@ -62,21 +62,9 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			Log.Information($"{Data.Tag}::Starting stream: {Data.Id}...");
 			Streaming = true;
 			_wasOn = await _nanoleafClient.GetPowerStatusAsync();
-			await _nanoleafClient.StartExternalAsync().ConfigureAwait(false);
-			if (!_wasOn) {
-				Log.Debug("Turning on nano panel...");
-				await _nanoleafClient.TurnOnAsync().ConfigureAwait(false);
-				Log.Debug("Updated...");
-			} else {
-				Log.Debug("Device was already on?");
-			}
-			
-			
-
-			Log.Debug($"Setting brightness to {Brightness}.");
+			await _nanoleafClient.TurnOnAsync().ConfigureAwait(false);
 			await _nanoleafClient.SetBrightnessAsync((int) (Brightness / 100f * 255)).ConfigureAwait(false);
-			//string streamMode = "v" + Data.Type == "NL29" || Data.Type == "NL42" ? "2" : "1";
-			//Log.Debug($"Starting external with mode: {streamMode}");
+			await _nanoleafClient.StartExternalAsync();
 			
 			Log.Information($"{Data.Tag}::Stream started: {Data.Id}.");
 		}
@@ -109,7 +97,6 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 					target = ColorUtil.CheckDsSectors(target);
 					if (target < sectors.Count) {
 						color = sectors[target];
-						if (!_logged) Log.Debug("Mapping sector " + target + " for " + p.PanelId);
 					} else {
 						Log.Warning($"Error, trying to map {target} when count is only {sectors.Count}.");
 					}
