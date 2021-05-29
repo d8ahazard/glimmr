@@ -1,6 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Glimmr.Models.Util;
 using Glimmr.Services;
 
 namespace Glimmr.Models.ColorTarget.Led {
@@ -11,8 +12,10 @@ namespace Glimmr.Models.ColorTarget.Led {
 		}
 
 		public async Task Discover(CancellationToken ct, int timeout) {
-			if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-				return;
+			if (!SystemUtil.IsRaspberryPi()) {
+				DataUtil.DeleteDevice("0");
+				DataUtil.DeleteDevice("1");
+				DataUtil.DeleteDevice("2");
 			}
 
 			var ld0 = new LedData {Id = "0", Brightness = 255, GpioNumber = 18};

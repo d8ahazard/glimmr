@@ -47,6 +47,10 @@ namespace Glimmr.Models.Util {
 			return pingable;
 		}
 
+		public static bool IsRaspberryPi() {
+			return File.Exists("/usr/bin/raspi-config");
+		}
+
 		public static void Update() {
 			Log.Debug("Updating");
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
