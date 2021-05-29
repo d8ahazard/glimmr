@@ -13,11 +13,7 @@ namespace Glimmr.Models.Util {
 	public static class SystemUtil {
 		public static void Reboot() {
 			Log.Debug("Rebooting");
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-				Process.Start("shutdown", "-r now");
-			} else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-				Process.Start("shutdown", "/r /t 0");
-			}
+			Process.Start("shutdown", RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "/r /t 0" : "-r now");
 		}
 
 		public static bool IsOnline(string target) {
@@ -53,20 +49,21 @@ namespace Glimmr.Models.Util {
 
 		public static void Update() {
 			Log.Debug("Updating");
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-				Process.Start("/bin/bash", "/home/glimmrtv/glimmr/script/update_pi.sh");
-			} else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 				Process.Start("../script/update_win.bat");
+			} else {
+				Process.Start("/bin/bash", "/home/glimmrtv/glimmr/script/update_pi.sh");
 			}
 		}
 
 		public static void Restart() {
-			Log.Debug("Restarting glimmr");
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+			Log.Debug("Restarting glimmr.");
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+				var path = AppDomain.CurrentDomain.BaseDirectory;
+				path = Path.Join(path, "..", "script", "restart_win.ps1");
+				Process.Start("powershell", path);
+			} else {
 				Process.Start("service", "glimmr restart");
-			} else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-				Process.Start("net", "stop glimmr");
-				Process.Start("net", "start glimmr");
 			}
 		}
 
@@ -80,14 +77,7 @@ namespace Glimmr.Models.Util {
 		}
 
 		public static string GetUserDir() {
-			var userDir = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-				userDir = "/etc/";
-			}
-
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-				userDir = "C:\\ProgramData\\";
-			}
+			var userDir = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "C:\\ProgramData\\" : "/etc/";
 
 			var fullPath = Path.Combine(userDir, "Glimmr");
 			if (!Directory.Exists(fullPath)) {
