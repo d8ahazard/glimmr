@@ -18,9 +18,9 @@ echo "Installing dependencies..."
 # Add extra repos for users on Ubuntu 20- for libjasper-dev
 sudo add-apt-repository "deb http://security.ubuntu.com/ubuntu xenial-security main"
 # Add extra repos for users on Ubuntu 20- for libqtgui4 libqt4-test
-sudo add-apt-repository ppa:rock-core/qt4
+sudo add-apt-repository ppa:rock-core/qt4 -y
 sudo apt-get -y update && apt-get -y upgrade
-sudo apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa libdc1394-22 libtesseract-dev scons icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libatlas-base-dev gfortran libopengl-dev git gcc xauth avahi-daemon x11-xserver-utils
+sudo apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa libdc1394-22 libtesseract-dev scons icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libatlas-base-dev gfortran libopengl-dev git gcc xauth avahi-daemon x11-xserver-utils libopencv-dev python3-opencv
 echo "DONE!"
 
 if [ ! -d "/home/glimmrtv/glimmr" ]
