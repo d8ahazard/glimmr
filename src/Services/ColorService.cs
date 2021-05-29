@@ -83,7 +83,7 @@ namespace Glimmr.Services {
 			_streamTokenSource = new CancellationTokenSource();
 			LoadData();
 			return Task.Run(async () => {
-				await Demo(this, new DynamicEventArgs());
+				await Demo(this, new DynamicEventArgs()).ConfigureAwait(false);
 				Log.Information($"All color sources initialized, setting mode to {DeviceMode}.");
 				await Mode(this, new DynamicEventArgs(DeviceMode)).ConfigureAwait(true);
 				while (!stoppingToken.IsCancellationRequested) {
@@ -340,10 +340,10 @@ namespace Glimmr.Services {
 				while (i < ledCount) {
 					var pi = i * 1.0f;
 					var progress = pi / ledCount;
-					var sector = (int) Math.Round(progress * sectorCount);
+					var sector = (int) Math.Round(progress * (float)sectorCount);
 					var rCol = ColorUtil.Rainbow(progress);
 					cols[i] = rCol;
-					if (sector > secs.Count) secs[sector] = rCol;
+					if (sector < secs.Count) secs[sector] = rCol;
 					try {
 						SendColors(cols, secs, 0, true);
 					} catch (Exception e) {
