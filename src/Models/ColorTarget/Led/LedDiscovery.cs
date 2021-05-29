@@ -16,6 +16,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 				DataUtil.DeleteDevice("0");
 				DataUtil.DeleteDevice("1");
 				DataUtil.DeleteDevice("2");
+				return;
 			}
 
 			var ld0 = new LedData {Id = "0", Brightness = 255, GpioNumber = 18};
