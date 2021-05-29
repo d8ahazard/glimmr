@@ -80,7 +80,6 @@ namespace Glimmr.Models.ColorSource.Video {
 			_frameWatch.Start();
 			_controlService = controlService;
 			_controlService.RefreshSystemEvent += RefreshSystem;
-			_controlService.SetModeEvent += LogMode;
 			RefreshSystem();
 			// Set desired width of capture region to 15% total image
 			_borderWidth = 10;
@@ -92,12 +91,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			Log.Debug("Splitter init complete.");
 		}
 
-		private Task LogMode(object arg1, DynamicEventArgs arg2) {
-			Log.Debug($"Mode change, counts: {_fullSectors.Length} and {_fullCoords.Length}");
-			Log.Debug("Sectors: " + JsonConvert.SerializeObject(_fullSectors));
-			return Task.CompletedTask;
-		}
-
+		
 		private void RefreshSystem() {
 			var sd = DataUtil.GetSystemData();
 			_leftCount = sd.LeftCount;
