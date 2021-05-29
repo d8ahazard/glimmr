@@ -52,11 +52,11 @@ namespace Glimmr.Models.Util {
 			DataUtil.ExportSettings();
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 				Process.Start("../script/update_win.bat");
-			}
-			else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-				Process.Start("/bin/bash", "/home/glimmrtv/glimmr/script/update_linux.sh");
 			} else {
-				Process.Start("/bin/bash", "/home/glimmrtv/glimmr/script/update_pi.sh");
+				Process.Start("/bin/bash",
+					IsRaspberryPi()
+						? "/home/glimmrtv/glimmr/script/update_pi.sh"
+						: "/home/glimmrtv/glimmr/script/update_linux.sh");
 			}
 		}
 
