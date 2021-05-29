@@ -49,6 +49,7 @@ namespace Glimmr.Models.Util {
 
 		public static void Update() {
 			Log.Debug("Updating");
+			DataUtil.ExportSettings();
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 				Process.Start("../script/update_win.bat");
 			} else {

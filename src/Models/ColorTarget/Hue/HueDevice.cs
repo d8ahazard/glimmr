@@ -63,6 +63,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				return;
 			}
 
+			Log.Debug($"Creating client: {IpAddress}, {_user}, {_token}");
 			_client = new StreamingHueClient(IpAddress, _user, _token);
 			try {
 				_stream = SetupAndReturnGroup().Result;
@@ -172,6 +173,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				return;
 			}
 
+			Log.Debug("Setting autoUpdate...");
 			_client.AutoUpdate(_stream, _ct).ConfigureAwait(false);
 			_entLayer = _stream.GetNewLayer(true);
 			Log.Information($"{Data.Tag}::Stream started: {Data.Id}");
@@ -294,12 +296,17 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 		
 		public async Task StopStream() {
-			if (!Streaming) {
+			if (!Enable) {
 				return;
 			}
 
-			
-			await _client.LocalHueClient.SetStreamingAsync(_selectedGroup, false);
+
+			try {
+				await _client.LocalHueClient.SetStreamingAsync(_selectedGroup, false);
+			} catch (Exception) {
+				// ignored
+			}
+
 			Streaming = false;
 		}
 
