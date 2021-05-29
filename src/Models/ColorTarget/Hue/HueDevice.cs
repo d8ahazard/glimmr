@@ -53,6 +53,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			DataUtil.GetItem<int>("captureMode");
 			colorService.ColorSendEvent += SetColor;
 			Data = data;
+			Id = Data.Id;
 			_disposed = false;
 			Streaming = false;
 			_entLayer = null;
@@ -180,6 +181,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		
 
 		public Task ReloadData() {
+			Log.Debug("Reloading Hue data...");
 			Data = DataUtil.GetDevice<HueData>(Id);
 			SetData();
 			return Task.CompletedTask;
@@ -279,7 +281,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 		private void SetData() {
 			IpAddress = Data.IpAddress;
-			Id = IpAddress;
 			Tag = Data.Tag;
 			_user = Data.User;
 			_token = Data.Token;
