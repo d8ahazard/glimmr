@@ -52,7 +52,7 @@ echo "DONE."
 # Copy necessary libraries
 echo "Copying libs..."
 cp -r /home/glimmrtv/glimmr/lib/bass.dll /usr/lib/bass.dll
-cp -r /home/glimmrtv/glimmr/lib/Linux/* /usr/lib
+cp -r /home/glimmrtv/glimmr/lib/linux/* /usr/lib
 
 cp -r /home/glimmrtv/glimmr/src/ambientScenes /bin/ambientScenes
 cp -r /home/glimmrtv/glimmr/src/audioScenes /bin/audioScenes
