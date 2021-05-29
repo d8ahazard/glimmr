@@ -2,7 +2,7 @@
 log=$(ls -t /var/log/glimmr/glimmr* | head -1)
 
 #Stop service
-systemctl stop glimmr
+service glimmr stop
 echo "SERVICE STOPPED!" >> $log
 
 # Fetch changes from github repo
@@ -19,4 +19,4 @@ chmod 777 ./script/*.sh
 echo "Restarting..." >> $log
 
 # Restart Service
-systemctl start glimmr
+service glimmr start
