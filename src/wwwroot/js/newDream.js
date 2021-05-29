@@ -2667,6 +2667,7 @@ function createHueMap() {
     groupSelect.appendChild(defaultOption);
     groupSelect.id = "HueGroup";
     for(let i = 0; i < groups.length; i++) {
+        if (groups[i]['type'] !== "Entertainment") continue;
         let opt = document.createElement("option");
         opt.value = groups[i]["Id"];
         opt.innerText = groups[i]["name"];
@@ -2740,7 +2741,8 @@ function createHueMap() {
                 newSelect.appendChild(opt);
 
                 // Add the options for our regions
-                for (let i = 1; i < 29; i++) {
+                let sectorCount = data.store["SystemData"]["SectorCount"];
+                for (let i = 1; i < sectorCount; i++) {
                     opt = document.createElement("option");
                     opt.value = (i).toString();
                     opt.innerHTML = "<BR>" + (i);
