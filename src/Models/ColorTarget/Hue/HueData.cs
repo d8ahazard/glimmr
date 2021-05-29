@@ -41,13 +41,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		public HueData() {
 		}
 
-		public HueData(string ip, string id) {
-			IpAddress = ip;
-			Id = id;
-			Brightness = 100;
-			Name = "Hue - " + Id.Substring(Id.Length - 5, 4);
-		}
-
 		public HueData(LocatedBridge b) {
 			if (b == null) {
 				throw new ArgumentException("Invalid located bridge.");
@@ -55,6 +48,12 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 			IpAddress = b.IpAddress;
 			Id = b.BridgeId;
+			if (Id.Length > 12) {
+				Log.Debug("Truncating ID: " + Id);
+				var left = Id.Substring(0, 6);
+				var right = Id.Substring(Id.Length - 6, 5);
+				Id = left + right;
+			}
 			Log.Debug("Id should be " + Id);
 			Brightness = 100;
 			User = "";
