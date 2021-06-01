@@ -51,7 +51,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			if (Id.Length > 12) {
 				Log.Debug("Truncating ID: " + Id);
 				var left = Id.Substring(0, 6);
-				var right = Id.Substring(Id.Length - 6, 5);
+				var right = Id.Substring(Id.Length - 6);
 				Id = left + right;
 			}
 			Log.Debug("Id should be " + Id);
