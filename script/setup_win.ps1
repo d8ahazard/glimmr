@@ -79,28 +79,20 @@ If( -not (Test-Path -Path $dotNetPath) ){
     Write-Host "Dotnet found at $dotNetPath";
 }
 
-$software="https://dotnet.microsoft.com/download/dotnet-framework/thank-you/net472-developer-pack-offline-installer";
+$software = "Microsoft .NET Framework Framework 4.7.2 SDK";
 
-$software = "Microsoft .NET Framework Developer Pack 4.7.2 (x64)";
-$ver = (Get-ItemProperty "HKLM:\Software\Microsoft\NET Framework Setup\NDP\v4\Full\" -name "Release" -ErrorAction SilentlyContinue);
-$installed =  $ver.Release -ge 461808
-
-If(-Not $installed) {
-	Write-Host "'$software' is NOT installed.";
-    $URL="https://dotnet.microsoft.com/download/dotnet-framework/thank-you/net472-developer-pack-offline-installer";
-    $outfile = "C:\temp\dotNetDevPack.exe"
-    Invoke-WebRequest -Uri $URL -OutFile $outfile
-     
-    If( -not (Test-Path -Path $outfile) ){
-        Throw "Download failed"
-    }
-
-    Start-Process -FilePath $outfile -ArgumentList "/passive","/norestart" -Wait
-    Remove-Item -Path $outfile -Force
-    Write-Host "'$software' should now be installed.";
-} else {
-	Write-Host "'$software' is installed at $dotNetPath."
+Write-Host "'$software' is NOT installed.";
+$URL="https://dotnet.microsoft.com/download/dotnet-framework/thank-you/net472-developer-pack-offline-installer";
+$outfile = "C:\temp\dotNetDevPack.exe"
+Invoke-WebRequest -Uri $URL -OutFile $outfile
+ 
+If( -not (Test-Path -Path $outfile) ){
+    Throw "Download failed"
 }
+
+Start-Process -FilePath $outfile -ArgumentList "/passive","/norestart" -Wait
+Remove-Item -Path $outfile -Force
+Write-Host "'$software' should now be installed.";
 
 
 # Self-elevate the script if required
