@@ -70,7 +70,7 @@ If(-Not $installed) {
     Write-Host "'$software' should now be installed.";
     $dotNetPath = (get-command dotnet.exe -ErrorAction SilentlyContinue).Path;
 } else {
-	Write-Host "'$software' is installed."
+	Write-Host "'$software' is installed at $dotNetPath."
 }
 
 If( -not (Test-Path -Path $dotNetPath) ){
@@ -90,15 +90,6 @@ if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 
 $service = Get-Service -Name glimmr -ErrorAction SilentlyContinue
 
-if($service -ne $null) {
-    Stop-Service -Name "glimmr";
-    Write-Host "Removing glimmr service.";
-    $nssm = 'C:\progra~1\Glimmr\script\nssm.exe';
-    $param = 'remove glimmr';
-    Invoke-Expression "$nssm $param";    
-}
-
-Stop-Process -name "Glimmr" -ErrorAction SilentlyContinue;
 
 $glimmrPath = "C:\Progra~1\Glimmr";
 $glimmrBinPath = "C:\Progra~1\Glimmr\bin\Glimmr.exe";
@@ -107,7 +98,28 @@ $glimmrRepo = "https://github.com/d8ahazard/glimmr";
 If( -not (Test-Path -Path $glimmrPath) ){
     Write-Host "Cloning Glimmr repository.";
     Invoke-Expression "& '$gitPath' clone --branch dev $glimmrRepo $glimmrPath";
+    
+    if($service -ne $null) {
+        Stop-Service -Name "glimmr";
+        Write-Host "Removing glimmr service.";
+        $nssm = 'C:\progra~1\Glimmr\script\nssm.exe';
+        $param = 'remove glimmr';
+        Invoke-Expression "$nssm $param";    
+    }
+    
+    Stop-Process -name "Glimmr" -ErrorAction SilentlyContinue;
+
 } else {
+    if($service -ne $null) {
+        Stop-Service -Name "glimmr";
+        Write-Host "Removing glimmr service.";
+        $nssm = 'C:\progra~1\Glimmr\script\nssm.exe';
+        $param = 'remove glimmr';
+        Invoke-Expression "$nssm $param";    
+    }
+    
+    Stop-Process -name "Glimmr" -ErrorAction SilentlyContinue;
+
     Set-Location -path "C:\program files\glimmr"; 
     Write-Host "Glimmr repo already exists...";
     Invoke-Expression "& '$gitPath' stash";
@@ -116,7 +128,7 @@ If( -not (Test-Path -Path $glimmrPath) ){
 }
 
 If( -not (Test-Path -Path $glimmrPath) ){
-    
+    Write-Host "Glimmr path doesn't exist...something went wrong.";
 } else {
     Write-Host "Compiling Glimmr...";
     $projectPath = "$glimmrPath\src\Glimmr.csproj";
