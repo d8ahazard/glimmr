@@ -151,9 +151,7 @@ If( -not (Test-Path -Path $glimmrPath) ){
     $outPath = "$glimmrPath\bin";    
     Invoke-Expression "& '$dotNetPath' publish $projectPath /p:PublishProfile=Windows -o $outPath";
     Copy-Item "$glimmrPath\lib\Windows\bass.dll" "$outPath\bass.dll";
-    $projectPath = "$glimmrPath\GlimmrTray\GlimmrTray.csproj";
-    Write-Host "Compiling Glimmr Tray...";
-    Invoke-Expression "& '$dotNetPath' build $projectPath -o $outPath";
+    Copy-Item "$glimmrPath\lib\Windows\GlimmrTray.exe" "$outPath\GlimmrTray.exe";
 }
 $dirPath = $env:USERPROFILE + "\AppData\Roaming\Microsoft\Windows\Start Menu\Programs";
 $dirPath2 = $dirPath + "\Glimmr\";
