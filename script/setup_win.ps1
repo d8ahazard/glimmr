@@ -79,22 +79,6 @@ If( -not (Test-Path -Path $dotNetPath) ){
     Write-Host "Dotnet found at $dotNetPath";
 }
 
-$software = "Microsoft .NET Framework Framework 4.7.2 SDK";
-
-Write-Host "'$software' is NOT installed.";
-$URL="https://dotnet.microsoft.com/download/dotnet-framework/thank-you/net472-developer-pack-offline-installer";
-$outfile = "C:\temp\dotNetDevPack.exe"
-Invoke-WebRequest -Uri $URL -OutFile $outfile
- 
-If( -not (Test-Path -Path $outfile) ){
-    Throw "Download failed"
-}
-
-Start-Process -FilePath $outfile -ArgumentList "/passive","/norestart" -Wait
-Remove-Item -Path $outfile -Force
-Write-Host "'$software' should now be installed.";
-
-
 # Self-elevate the script if required
 if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')) {
  if ([int](Get-CimInstance -Class Win32_OperatingSystem | Select-Object -ExpandProperty BuildNumber) -ge 6000) {
