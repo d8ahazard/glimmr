@@ -60,6 +60,8 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				devData.Token = result.StreamingClientKey;
 				devData.User = result.Username;
 				devData = UpdateDeviceData(devData);
+				devData.Token = result.StreamingClientKey;
+				devData.User = result.Username;
 				return devData;
 			} catch (HueException) {
 				Log.Debug($@"Hue: The link button is not pressed at {devData.IpAddress}.");
@@ -77,14 +79,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		private static HueData UpdateDeviceData(HueData data) {
 			// Check for existing device
 			HueData dev = DataUtil.GetDevice<HueData>(data.Id);
-			HueData dev2 = DataUtil.GetDevice<HueData>(data.IpAddress);
-			// Migrate new ID
-			if (dev2 != null && dev == null) {
-				Log.Debug("Migrating hue bridge from ID " + data.IpAddress + " to " + data.Id);
-				DataUtil.DeleteDevice(data.IpAddress);
-				dev = dev2;
-				dev.Id = data.Id;
-			}
 			
 			if (dev != null && !string.IsNullOrEmpty(dev.Token)) {
 				var client = new LocalHueClient(data.IpAddress, dev.User, dev.Token);
@@ -94,7 +88,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 					data.AddGroups(groups);
 					data.AddLights(lights);
 					dev.UpdateFromDiscovered(data);
-					data = dev;
+					return dev;
 				} catch (Exception e) {
 					Log.Warning("Exception: " + e.Message);
 				}

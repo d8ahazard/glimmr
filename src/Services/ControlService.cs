@@ -189,7 +189,7 @@ namespace Glimmr.Services {
 						var activated = await dev.CheckAuthAsync(data);
 						if (!string.IsNullOrEmpty(activated.Token)) {
 							Log.Information("Device is activated!");
-							await DataUtil.AddDeviceAsync(activated, false);
+							await DataUtil.AddDeviceAsync(activated, true);
 							if (clientProxy != null) {
 								await clientProxy.SendAsync("auth", "authorized");
 							}
