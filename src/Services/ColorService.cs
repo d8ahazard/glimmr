@@ -568,7 +568,7 @@ namespace Glimmr.Services {
 			CancelSource(_sendTokenSource, true);
 			foreach (var s in _sDevices) {
 				try {
-					s.Dispose();
+					s?.Dispose();
 				} catch (Exception e) {
 					Log.Warning("Caught exception: " + e.Message);
 				}
