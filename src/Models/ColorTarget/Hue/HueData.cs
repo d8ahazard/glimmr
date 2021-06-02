@@ -76,9 +76,10 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				throw new ArgumentException("Invalid bridge data.");
 			}
 
-			if (input.Token != null) {
+			if (!string.IsNullOrEmpty(input.Token)) {
 				Token = input.Token;
 				User = input.User;
+				Log.Debug("Updating token and user to " + Token + " and " + User);
 			}
 
 			Lights = input.Lights;

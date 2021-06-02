@@ -39,7 +39,8 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Log.Debug("Hue: Discovery complete.");
 		}
 
-		public async Task<dynamic> CheckAuthAsync(dynamic devData) {
+		public async Task<dynamic> CheckAuthAsync(dynamic dev) {
+			var devData = (HueData) dev;
 			try {
 				ILocalHueClient client = new LocalHueClient(devData.IpAddress);
 				//Make sure the user has pressed the button on the bridge before calling RegisterAsync
