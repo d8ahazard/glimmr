@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
+using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Led {
 	public class LedDiscovery : ColorDiscovery, IColorDiscovery {
@@ -16,6 +17,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 				DataUtil.DeleteDevice("0");
 				DataUtil.DeleteDevice("1");
 				DataUtil.DeleteDevice("2");
+				Log.Debug("No, really, this is not a pi, we shouldn't be creating GPIO stuff here.");
 				return;
 			}
 

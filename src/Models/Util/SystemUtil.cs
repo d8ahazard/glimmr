@@ -44,7 +44,14 @@ namespace Glimmr.Models.Util {
 		}
 
 		public static bool IsRaspberryPi() {
-			return File.Exists("/usr/bin/raspi-config");
+			var path = "/usr/bin/raspi-config";
+			if (File.Exists(path)) {
+				Log.Debug("Raspi-config found at " + path);
+				return true;
+			}
+
+			Log.Debug("Raspi-config was NOT found at " + path);
+			return false;
 		}
 
 		public static void Update() {
