@@ -45,7 +45,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				//Make sure the user has pressed the button on the bridge before calling RegisterAsync
 				//It will throw an LinkButtonNotPressedException if the user did not press the button
 				var devName = Environment.MachineName;
-				if (devName.Length > 19) devName = devName.Substring(0, 19);
+				if (devName.Length > 19) devName = devName.Substring(0, 18);
 				var result = await client.RegisterAsync("Glimmr", devName, true);
 				if (result == null) {
 					return devData;
