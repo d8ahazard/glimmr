@@ -2,6 +2,7 @@
 .vs/*
 */bin/*
 */obj/*
+./bin/*
 CorsairTest/bin/*
 CorsairTest/obj/*
 src/bin/*
