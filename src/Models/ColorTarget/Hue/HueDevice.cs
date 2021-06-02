@@ -309,6 +309,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 			try {
 				await _client.LocalHueClient.SetStreamingAsync(_selectedGroup, false);
+				_client.Close();
 			} catch (Exception) {
 				// ignored
 			}
