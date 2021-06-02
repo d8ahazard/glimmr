@@ -132,6 +132,7 @@ Restart=always
 User=root
 WorkingDirectory=/home/glimmrtv/glimmr/bin
 ExecStart=/home/glimmrtv/glimmr/bin/Glimmr
+KillMode=process
 
 
 [Install]

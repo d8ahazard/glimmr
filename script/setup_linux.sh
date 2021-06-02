@@ -90,7 +90,7 @@ Restart=always
 User=root
 WorkingDirectory=/home/glimmrtv/glimmr/bin
 ExecStart=/opt/dotnet/dotnet /home/glimmrtv/glimmr/bin/Glimmr.dll
-
+KillMode=process
 
 [Install]
 WantedBy=multi-user.target
