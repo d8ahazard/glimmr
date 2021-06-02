@@ -46,6 +46,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				//It will throw an LinkButtonNotPressedException if the user did not press the button
 				var devName = Environment.MachineName;
 				if (devName.Length > 19) devName = devName.Substring(0, 18);
+				Log.Debug("Using device name for registration: " + devName);
 				var result = await client.RegisterAsync("Glimmr", devName, true);
 				if (result == null) {
 					return devData;
