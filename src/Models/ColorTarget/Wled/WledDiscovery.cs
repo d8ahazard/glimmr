@@ -38,8 +38,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
 				_sd.ServiceDiscovered += ServiceDiscovered;
 				_sd.ServiceInstanceDiscovered += WledDiscovered;
 				_sd.QueryServiceInstances("_wled._tcp");
-				//_sd.QueryServiceInstances("_arduino._tcp");
-				//_mDns.SendQuery("_arduino._tcp", type: DnsType.PTR);
 				_mDns.SendQuery("_wled._tcp", type: DnsType.PTR);
 				await Task.Delay(TimeSpan.FromSeconds(timeout), CancellationToken.None);
 				_mDns.NetworkInterfaceDiscovered -= InterfaceDiscovered;
@@ -67,6 +65,9 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		}
 
 		private void WledDiscovered(object sender, ServiceInstanceDiscoveryEventArgs e) {
+			var foo = e.Message;
+			if (!foo.ToString().Contains("_wled")) return;
+			Log.Debug("MSG: " + foo.ToString());
 			var name = e.ServiceInstanceName.ToString();
 			
 			if (name.Contains(".local")) name = name.Split(".")[0];
