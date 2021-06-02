@@ -20,7 +20,7 @@ sudo add-apt-repository "deb http://security.ubuntu.com/ubuntu xenial-security m
 # Add extra repos for users on Ubuntu 20- for libqtgui4 libqt4-test
 sudo add-apt-repository ppa:rock-core/qt4 -y
 sudo apt-get -y update && apt-get -y upgrade
-sudo apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa libdc1394-22 libtesseract-dev scons icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libatlas-base-dev gfortran libopengl-dev git gcc xauth avahi-daemon x11-xserver-utils libopencv-dev python3-opencv
+sudo apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa libdc1394-22 libtesseract-dev scons icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libatlas-base-dev gfortran libopengl-dev git gcc xauth avahi-daemon x11-xserver-utils libopencv-dev python3-opencv unzip
 echo "DONE!"
 
 if [ ! -d "/home/glimmrtv/glimmr" ]
@@ -53,6 +53,13 @@ fi
 echo "Building glimmr..."
 /opt/dotnet/dotnet publish /home/glimmrtv/glimmr/src/Glimmr.csproj /p:PublishProfile=Linux -o /home/glimmrtv/glimmr/bin/
 echo "DONE."
+
+#Get libcvextern.so
+cd /home/glimmrtv/glimmr/lib/linux/libcvextern || exit
+unzip 4.5.1.4349
+sudo cp /home/glimmrtv/glimmr/lib/linux/libcvextern/runtimes/ubuntu.20.04-x64/native/libcvextern.so /home/glimmrtv/glimmr/lib/linux/libcvextern.so
+sudo rm -r /home/glimmrtv/glimmr/lib/linux/libcvextern
+
 # Copy necessary libraries
 echo "Copying libs..."
 cp -r /home/glimmrtv/glimmr/lib/bass.dll /usr/lib/bass.dll
