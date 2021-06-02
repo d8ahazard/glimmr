@@ -194,6 +194,7 @@ namespace Glimmr.Services {
 								await clientProxy.SendAsync("auth", "authorized");
 							}
 
+							await _hubContext.Clients.All.SendAsync("device", JsonConvert.SerializeObject((IColorTargetData) dev));
 							return;
 						}
 					} catch (Exception e) {
