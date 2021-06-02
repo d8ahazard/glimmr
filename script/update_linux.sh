@@ -1,5 +1,5 @@
 #!/bin/bash
-log=$(ls -t /var/log/glimmr/glimmrupdatelog* | head -1)
+log=$(ls -t /var/log/glimmr/glimmr* | head -1)
 
 #Stop service
 echo "Stopping glimmr..." >> $log
