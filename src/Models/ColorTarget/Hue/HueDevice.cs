@@ -168,6 +168,12 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 				await _client.Connect(group.Id);
 				Log.Debug("Connected.");
+			}catch (SocketException s) {
+				if (s.Message.Contains("already connected")) {
+					Log.Debug("Client is already connected.");
+				} else {
+					return;
+				}
 			} catch (Exception e) {
 				Log.Debug("Streaming exception caught: " + e.Message + " at " + e.StackTrace);
 				return;
