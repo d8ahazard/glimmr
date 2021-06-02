@@ -2,12 +2,13 @@
 log=$(ls -t /var/log/glimmr/glimmrupdatelog* | head -1)
 
 #Stop service
+echo "Stopping glimmr..." >> $log
 service glimmr stop
 echo "SERVICE STOPPED!" >> $log
 
 # Fetch changes from github repo
 cd /home/glimmrtv/glimmr || exit
-git fetch && git pull
+git fetch && git pull >> $log
 
 # Build latest version
 echo "Building glimmr..." >> $log
@@ -15,7 +16,6 @@ echo "Building glimmr..." >> $log
 echo "DONE." >> $log
 
 #Give all scripts full permission
-chmod 777 ./script/*.sh
 echo "Restarting..." >> $log
 
 # Restart Service
