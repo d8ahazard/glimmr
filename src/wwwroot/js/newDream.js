@@ -123,28 +123,30 @@ document.addEventListener("DOMContentLoaded", function(){
         }
     });
     pickr.on('change', (color, source, instance) => {
-        let col = color.toRGBA();
-        newColor = rgbToHex(col[0], col[1], col[2]);
+        let col = color.toHEXA();
+        console.log("COL: ", col);
+        newColor = col[0] + col[1] + col[2];
     }).on('changestop', (source, instance) => {
-        if (isValid(data.store["SystemData"])) {
-            data.store["SystemData"]["AmbientColor"] = newColor;
-            data.store["SystemData"]["AmbientShow"] = -1;
-            let asSelect = document.getElementById("AmbientShow");
-            asSelect.value = "-1";
-            pickr.setColor("#" + newColor);
-            sendMessage("SystemData",data.store["SystemData"]);
-        }
+        let sd = getStoreProperty("SystemData");
+        sd["AmbientColor"] = newColor;
+        sd["AmbientShow"] = -1;
+        let asSelect = document.getElementById("AmbientShow");
+        asSelect.value = "-1";
+        pickr.setColor("#" + newColor);
+        setStoreProperty("SystemData",sd);
+        sendMessage("SystemData",sd);
+        
     }).on('swatchselect', (color, instance) => {
-        let col = color.toRGBA();
-        newColor = rgbToHex(col[0], col[1], col[2]);
-        if (isValid(data.store["SystemData"])) {            
-            data.store["SystemData"]["AmbientColor"] = newColor;
-            data.store["SystemData"]["AmbientShow"] = -1;
-            let asSelect = document.getElementById("AmbientShow");
-            asSelect.value = "-1";
-            pickr.setColor("#" + newColor);
-            sendMessage("SystemData",data.store["SystemData"]);
-        }
+        let col = color.toHEXA();
+        newColor = col[0] + col[1] + col[2];
+        let sd = getStoreProperty("SystemData");
+        sd["AmbientColor"] = newColor;
+        sd["AmbientShow"] = -1;
+        let asSelect = document.getElementById("AmbientShow");
+        asSelect.value = "-1";
+        pickr.setColor("#" + newColor);
+        setStoreProperty("SystemData",sd);
+        sendMessage("SystemData",sd);        
     });
 
     croppr = new Croppr('#croppr', {
@@ -215,8 +217,7 @@ let devs = data.store["Devices"];
     tSel.disabled = capMode === 0;
     bSel.disabled = capMode === 0;
     // If using DS capture, set static/dev LED counts.
-    if (capMode === 0) {
-        
+    if (capMode === 0) {        
         // If a target is set, try to load the flex settings
         if (isValid(target)) {
             let dev;
@@ -259,6 +260,7 @@ function sendMessage(endpoint, sData, encode=true) {
     },500);
     if (socketLoaded) {
         if (isValid(sData)) {
+            console.log("Sending to " + endpoint, sData);
             websocket.invoke(endpoint, sData).catch(function (err) {
                 return console.error("Error: ", err);
             });
