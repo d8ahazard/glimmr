@@ -5,10 +5,10 @@ ENV ASPNETCORE_URLS=http://+:5699
 WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/sdk:5.0-focal-amd64 AS build
-COPY linux-packages.sh .
+COPY linux-docker-packages.sh .
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y software-properties-common
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install wget
-RUN ./linux-packages.sh
+RUN ./linux-docker-packages.sh
 
 #Create directory for libcvextern to download into / be unziped in
 WORKDIR /linux-libcvextern
