@@ -10,13 +10,20 @@ add-apt-repository ppa:rock-core/qt4 -y
 apt-get -y update && apt-get -y upgrade
 
 apt-get -y install libgtk-3-dev
+apt-get -y install build-essential
+apt-get -y install libgstreamer1.0-dev
+apt-get -y install cmake-curses-gui
+apt-get -y install ocl-icd-dev
+apt-get -y install freeglut3-dev
+apt-get -y install libgeotiff-dev
+apt-get -y install libusb-1.0-0-dev
 apt-get -y install libhdf5-dev
 apt-get -y install libatlas-base-dev
 apt-get -y install libjasper-dev
 apt-get -y install libqtgui4
 apt-get -y install libqt4-test
 apt-get -y install libglu1-mesa
-apt-get -y install libdc1394-22
+apt-get -y install libdc1394-22-dev
 apt-get -y install libtesseract-dev
 apt-get -y install scons
 apt-get -y install icu-devtools
