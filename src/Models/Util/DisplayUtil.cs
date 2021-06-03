@@ -121,20 +121,22 @@ namespace Glimmr.Models.Util {
 				p.WaitForExit();
 				p.Dispose();
 			} catch (Win32Exception e) {
-				Log.Debug("Error running xrandr...possibly docker?");
+				Log.Warning("Error running xrandr...possibly docker: " + e.Message);
 			}
 
-			if (!string.IsNullOrEmpty(output)) {
-				try {
-					var match = Regex.Match(output, @"(\d+)x(\d+)\+0\+0");
-					var w = match.Groups[1].Value;
-					var h = match.Groups[2].Value;
-					r = new Rectangle(0, 0, int.Parse(w, CultureInfo.InvariantCulture),
-						int.Parse(h, CultureInfo.InvariantCulture));
-					Console.WriteLine("Display Size is {0} x {1}", w, h);
-				} catch (FormatException) {
-					//Log.Debug("Format exception, probably we have no screen.");
-				}
+			if (string.IsNullOrEmpty(output)) {
+				return r;
+			}
+
+			try {
+				var match = Regex.Match(output, @"(\d+)x(\d+)\+0\+0");
+				var w = match.Groups[1].Value;
+				var h = match.Groups[2].Value;
+				r = new Rectangle(0, 0, int.Parse(w, CultureInfo.InvariantCulture),
+					int.Parse(h, CultureInfo.InvariantCulture));
+				Console.WriteLine("Display Size is {0} x {1}", w, h);
+			} catch (FormatException) {
+				//Log.Debug("Format exception, probably we have no screen.");
 			}
 			return r;
 		}
