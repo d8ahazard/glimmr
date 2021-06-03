@@ -1,2 +1,2 @@
-Stop-Process -name "Glimmr" -ErrorAction SilentlyContinue;
-Start-Process -FilePath "C:\program files\Glimmr\bin\GlimmrTray.exe";
+taskkill /IM GlimmrTray.exe
+taskkill /IM Glimmr.exe
