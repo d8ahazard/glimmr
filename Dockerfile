@@ -24,18 +24,10 @@ RUN cp libcvextern.so /usr/lib/
 WORKDIR /
 RUN rm -r /linux-libcvextern
 
-#Build Emugcv for Ubuntu 20.04
-WORKDIR /mnt/emgu_repo
-RUN git clone https://github.com/emgucv/emgucv emgucv
-WORKDIR /mnt/emgu_repo/emgucv
-RUN git submodule update --init --recursive
-WORKDIR /mnt/emgu_repo/emgucv/platforms/ubuntu/20.04
-RUN apt-get update && apt-get -y install sudo
-RUN ./cmake_configure
-
 #Copy over all files from repo to /glimmr directory in image + copy over linux lib files
 WORKDIR /glimmr
 COPY . .
+COPY ["pkg", "/root/pkg"]
 COPY ["/lib/linux", "/root/"]
 COPY ["/lib/linux", "/usr/lib/"]
 COPY ["./NuGet.Config", "~/.nuget/packages"]
