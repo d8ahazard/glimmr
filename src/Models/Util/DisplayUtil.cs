@@ -110,25 +110,32 @@ namespace Glimmr.Models.Util {
 		}
 
 		private static Rectangle GetLinuxDisplaySize() {
-			var p = new Process {
-				StartInfo = {UseShellExecute = false, RedirectStandardOutput = true, FileName = "xrandr"}
-			};
-			p.Start();
-			var output = p.StandardOutput.ReadToEnd();
-			p.WaitForExit();
-			p.Dispose();
 			var r = new Rectangle();
+			var output = string.Empty;
 			try {
-				var match = Regex.Match(output, @"(\d+)x(\d+)\+0\+0");
-				var w = match.Groups[1].Value;
-				var h = match.Groups[2].Value;
-				r = new Rectangle(0, 0, int.Parse(w, CultureInfo.InvariantCulture),
-					int.Parse(h, CultureInfo.InvariantCulture));
-				Console.WriteLine("Display Size is {0} x {1}", w, h);
-			} catch (FormatException) {
-				//Log.Debug("Format exception, probably we have no screen.");
+				var p = new Process {
+					StartInfo = {UseShellExecute = false, RedirectStandardOutput = true, FileName = "xrandr"}
+				};
+				p.Start();
+				output = p.StandardOutput.ReadToEnd();
+				p.WaitForExit();
+				p.Dispose();
+			} catch (Win32Exception e) {
+				Log.Debug("Error running xrandr...possibly docker?");
 			}
 
+			if (!string.IsNullOrEmpty(output)) {
+				try {
+					var match = Regex.Match(output, @"(\d+)x(\d+)\+0\+0");
+					var w = match.Groups[1].Value;
+					var h = match.Groups[2].Value;
+					r = new Rectangle(0, 0, int.Parse(w, CultureInfo.InvariantCulture),
+						int.Parse(h, CultureInfo.InvariantCulture));
+					Console.WriteLine("Display Size is {0} x {1}", w, h);
+				} catch (FormatException) {
+					//Log.Debug("Format exception, probably we have no screen.");
+				}
+			}
 			return r;
 		}
 
