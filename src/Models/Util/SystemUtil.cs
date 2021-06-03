@@ -65,11 +65,9 @@ namespace Glimmr.Models.Util {
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 				Process.Start("../script/update_win.bat");
 			} else {
-				var cmd = IsRaspberryPi()
-					? "/home/glimmrtv/glimmr/script/update_pi.sh &"
-					: "/home/glimmrtv/glimmr/script/update_linux.sh &";
+				var cmd = "/home/glimmrtv/glimmr/script/update_linux.sh &";
 				Log.Debug("Update command should be: " + cmd);
-				Process.Start("/bin/bash",cmd);
+				Process.Start("/bin/bash",cmd);	
 			}
 		}
 
