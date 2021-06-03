@@ -74,6 +74,9 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				throw new ArgumentException("Invalid nano data!");
 			}
 
+			if (!string.IsNullOrEmpty(existingLeaf.Token)) {
+				Token = existingLeaf.Token;
+			}
 			// Grab the new leaf layout
 			Layout.MergeLayout(existingLeaf.Layout);
 			Tag = "Nanoleaf";

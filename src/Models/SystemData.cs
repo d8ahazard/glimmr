@@ -17,9 +17,9 @@ namespace Glimmr.Models {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool AutoDisabled { get; set; }
 
-		[DefaultValue(true)]
+		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public bool AutoRemoveDevices { get; set; } = true;
+		public bool AutoRemoveDevices { get; set; }
 
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -102,9 +102,9 @@ namespace Glimmr.Models {
 		public int AutoDiscoveryFrequency { get; set; }
 
 		// How many days to wait to auto-remove not-seen devices.
-		[DefaultValue(1)]
+		[DefaultValue(7)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int AutoRemoveDevicesAfter { get; set; } = 1;
+		public int AutoRemoveDevicesAfter { get; set; } = 7;
 
 		[DefaultValue(2)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]

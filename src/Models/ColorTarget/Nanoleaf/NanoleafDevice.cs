@@ -61,11 +61,11 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
 			Log.Information($"{Data.Tag}::Starting stream: {Data.Id}...");
 			Streaming = true;
-			_wasOn = await _nanoleafClient.GetPowerStatusAsync();
-			await _nanoleafClient.TurnOnAsync().ConfigureAwait(false);
-			await _nanoleafClient.SetBrightnessAsync((int) (Brightness / 100f * 255)).ConfigureAwait(false);
-			await _nanoleafClient.StartExternalAsync();
+			//_wasOn = await _nanoleafClient.GetPowerStatusAsync();
 			
+			await _nanoleafClient.TurnOnAsync();
+			_nanoleafClient.SetBrightnessAsync((int) (Brightness / 100f * 255)).ConfigureAwait(false);
+			await _nanoleafClient.StartExternalAsync();
 			Log.Information($"{Data.Tag}::Stream started: {Data.Id}.");
 		}
 
@@ -76,16 +76,14 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
 			await FlashColor(Color.FromArgb(0, 0, 0)).ConfigureAwait(false);
 			Streaming = false;
-			if (_wasOn) {
-				await _nanoleafClient.TurnOffAsync().ConfigureAwait(false);
-			}
-
+			
+			await _nanoleafClient.TurnOffAsync().ConfigureAwait(false);
 			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
 		}
 
 
 		public void SetColor(List<Color> list, List<Color> sectors, int fadeTime, bool force = false) {
-			if (!Streaming || !Enable || (Testing && !force)) {
+			if (!Streaming || !Enable || Testing && !force) {
 				return;
 			}
 			

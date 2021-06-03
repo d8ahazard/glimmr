@@ -250,9 +250,22 @@
         <input class="form-control" data-object="SystemData" data-property="AutoDiscoveryFrequency" type="number" min="1" max="60" step="1"/>
         <div class="form-text">Interval (in minutes) in which Auto Discovery is run.</div>
     </div>
+    
+    <div class="col-12 headerCol">Auto-Delete</div>
+    <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center form-check">
+        <label class="form-check-label">Automatically Delete Old Devices</label>
+        <input type="checkbox" class="form-check-input" data-object="SystemData" data-property="AutoRemoveDevices"/>
+        <div class="form-text">Auto remove devices not seen during discovery after the specified time.</div>
+    </div>
+    <!-- Auto discovery frequency time -->
+    <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center">
+        <label class="form-label">Auto-Delete Interval</label>
+        <input class="form-control" data-object="SystemData" data-property="AutoRemoveDevices" type="number" min="1" max="60" step="1"/>
+        <div class="form-text">Interval (in days) after which old devices will be removed.</div>
+    </div>
 </div>
 <div class="row border justify-content-center pb-5">
-    <div class="col-12 headerCol">Auto-disable</div>
+    <div class="col-12 headerCol">Auto-Disable</div>
     <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center form-check">
         <label class="form-check-label">Automatically Sleep Lights</label>
         <input type="checkbox" class="form-check-input" data-object="SystemData" data-property="EnableAutoDisable"/>
@@ -263,7 +276,7 @@
     <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center form-check">
         <label class="form-label">Auto-Disable Delay</label>
         <input type="number" class="form-input" data-object="SystemData" data-property="AutoDisableDelay" min="0" max="3000"/>
-        <div class="form-text">Amount of time (in seconds) the input signal to Glimmr must be "off" before auto-disabling.</div>
+        <div class="form-text">Amount of time (in seconds) for Glimmr to have no input before auto-disabling.</div>
     </div>
 </div>
 <div class="row border justify-content-center pb-5">

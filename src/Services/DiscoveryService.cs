@@ -87,14 +87,15 @@ namespace Glimmr.Services {
 			if (timeout < 3) {
 				timeout = 3;
 			}
-
+			
 			cs.CancelAfter(TimeSpan.FromSeconds(timeout));
 			await DeviceDiscovery(cs.Token, timeout);
 			var devs = DataUtil.GetDevices();
+			if (!sd.AutoRemoveDevices) return;
 			foreach (var dev in devs) {
 				var device = (IColorTargetData) dev;
 				var lastSeen = DateTime.Parse(device.LastSeen, CultureInfo.InvariantCulture);
-				if (DateTime.Now - lastSeen < TimeSpan.FromDays(7)) {
+				if (DateTime.Now - lastSeen < TimeSpan.FromDays(sd.AutoRemoveDevicesAfter)) {
 					continue;
 				}
 
@@ -106,7 +107,6 @@ namespace Glimmr.Services {
 
 				DataUtil.DeleteDevice(device.Id);
 			}
-
 			cs.Dispose();
 		}
 
