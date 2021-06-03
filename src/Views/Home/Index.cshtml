@@ -251,7 +251,6 @@
         <div class="form-text">Interval (in minutes) in which Auto Discovery is run.</div>
     </div>
     
-    <div class="col-12 headerCol">Auto-Delete</div>
     <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center form-check">
         <label class="form-check-label">Automatically Delete Old Devices</label>
         <input type="checkbox" class="form-check-input" data-object="SystemData" data-property="AutoRemoveDevices"/>
@@ -260,7 +259,7 @@
     <!-- Auto discovery frequency time -->
     <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center">
         <label class="form-label">Auto-Delete Interval</label>
-        <input class="form-control" data-object="SystemData" data-property="AutoRemoveDevices" type="number" min="1" max="60" step="1"/>
+        <input class="form-control" data-object="SystemData" data-property="AutoRemoveDevicesAfter" type="number" min="1" max="60" step="1"/>
         <div class="form-text">Interval (in days) after which old devices will be removed.</div>
     </div>
 </div>
