@@ -31,7 +31,6 @@ WORKDIR /mnt/emgu_repo/emgucv
 RUN git submodule update --init --recursive
 WORKDIR /mnt/emgu_repo/emgucv/platforms/ubuntu/20.04
 RUN apt-get update && apt-get -y install sudo
-RUN `cat ./apt_install_dependency | grep -Ev "\#\!"` -y
 RUN ./cmake_configure
 
 #Copy over all files from repo to /glimmr directory in image + copy over linux lib files
