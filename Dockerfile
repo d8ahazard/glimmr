@@ -1,24 +1,42 @@
 #See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
 
-FROM mcr.microsoft.com/dotnet/aspnet:5.0-buster-slim AS base
+FROM mcr.microsoft.com/dotnet/aspnet:5.0-focal-amd64 AS base
 ENV ASPNETCORE_URLS=http://+:5699
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/sdk:5.0-buster-slim AS build
-WORKDIR /src
-COPY ["Glimmr.csproj", ""]
-COPY ["pkg", "/root/pkg"]
-COPY ["build/linux", "/root/"]
-COPY ["build/linux", "/usr/lib/"]
-COPY ["NuGet.Config", "~/.nuget/packages"]
-RUN dotnet restore --source "/root/pkg" --source "https://api.nuget.org/v3/index.json" --source "https://www.myget.org/F/mmalsharp/api/v3/index.json"
-RUN dotnet restore "./Glimmr.csproj"
+FROM mcr.microsoft.com/dotnet/sdk:5.0-focal-amd64 AS build
+COPY linux-packages.sh .
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y software-properties-common
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y install wget
+RUN ./linux-packages.sh
+
+#Create directory for libcvextern to download into / be unziped in
+WORKDIR /linux-libcvextern
+RUN wget https://www.nuget.org/api/v2/package/Emgu.CV.runtime.ubuntu.20.04-x64/4.5.1.4349
+RUN unzip 4.5.1.4349
+
+WORKDIR ./runtimes/ubuntu.20.04-x64/native
+RUN cp libcvextern.so /root/
+RUN cp libcvextern.so /usr/lib/
+
+#Remove downloaded libcvextern directory/package once it is copied over
+WORKDIR /
+RUN rm -r /linux-libcvextern
+
+#Copy over all files from repo to /glimmr directory in image + copy over linux lib files
+WORKDIR /glimmr
 COPY . .
-WORKDIR "/src/."
-RUN dotnet build "Glimmr.csproj" -c Release -o /app/build
+COPY ["/lib/linux", "/root/"]
+COPY ["/lib/linux", "/usr/lib/"]
+COPY ["./NuGet.Config", "~/.nuget/packages"]
+
+WORKDIR /glimmr/src
+RUN dotnet restore --source "https://api.nuget.org/v3/index.json" --source "https://www.myget.org/F/mmalsharp/api/v3/index.json"
+RUN dotnet restore "Glimmr.csproj"
+RUN dotnet build "Glimmr.csproj" -c Release /p:PublishProfile=Linux -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "Glimmr.csproj" -c Release -o /app/publish
+RUN dotnet publish "Glimmr.csproj" -c Release /p:PublishProfile=Linux -o /app/publish
 
 FROM base AS final
 WORKDIR /app
@@ -40,4 +58,3 @@ EXPOSE 8888/udp
 EXPOSE 56700/udp
 # Nanoleaf
 EXPOSE 60222/udp
-
