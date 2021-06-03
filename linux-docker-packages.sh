@@ -39,3 +39,5 @@ apt-get -y install x11-xserver-utils
 apt-get -y install libopencv-dev
 apt-get -y install python3-opencv
 apt-get -y install unzip
+apt-get -y install nvidia-cuda-dev
+apt-get -y install nvidia-cuda-toolkit
