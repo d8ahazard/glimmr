@@ -15,6 +15,7 @@ RUN ./linux-docker-packages.sh
 WORKDIR /linux-libcvextern
 RUN wget https://www.nuget.org/api/v2/package/Emgu.CV.runtime.ubuntu.20.04-x64/4.5.1.4349
 RUN unzip 4.5.1.4349
+RUN mkdir -p /root/pkg
 RUN wget https://www.nuget.org/api/v2/package/Emgu.CV.runtime.ubuntu.20.04-x64/4.5.1.4349 -O /root/pkg/emgu.cv.runtime.ubuntu.20.04-x64.4.5.1.4349.nupkg
 
 WORKDIR ./runtimes/ubuntu.20.04-x64/native
