@@ -6,6 +6,7 @@ WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/sdk:5.0-focal-amd64 AS build
 COPY linux-docker-packages.sh .
+RUN chmod 777 linux-docker-packages.sh
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y software-properties-common
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install wget
 RUN ./linux-docker-packages.sh
