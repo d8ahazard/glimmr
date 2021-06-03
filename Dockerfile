@@ -2,9 +2,6 @@
 
 FROM mcr.microsoft.com/dotnet/aspnet:5.0-focal-amd64 AS base
 ENV ASPNETCORE_URLS=http://+:5699
-WORKDIR /app
-
-FROM mcr.microsoft.com/dotnet/sdk:5.0-focal-amd64 AS build
 COPY linux-docker-packages.sh .
 RUN chmod 777 linux-docker-packages.sh
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y software-properties-common
@@ -33,6 +30,10 @@ COPY ["pkg", "/root/pkg"]
 COPY ["/lib/linux", "/root/"]
 COPY ["/lib/linux", "/usr/lib/"]
 COPY ["./NuGet.Config", "~/.nuget/packages"]
+
+WORKDIR /app
+
+FROM mcr.microsoft.com/dotnet/sdk:5.0-focal-amd64 AS build
 
 WORKDIR /glimmr/src
 RUN dotnet restore --source "https://api.nuget.org/v3/index.json" --source "https://www.myget.org/F/mmalsharp/api/v3/index.json"
