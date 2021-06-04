@@ -31,7 +31,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		public OpenRgbDevice(OpenRgbData data, ColorService cs) {
 			Id = data.Id;
 			Data = data;
-			LoadData();
+			ReloadData();
 			cs.ColorSendEvent += SetColor;
 			_colorService = cs;
 			_client = cs.ControlService.GetAgent("OpenRgbAgent");
