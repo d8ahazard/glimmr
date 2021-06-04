@@ -1,7 +1,6 @@
 #See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
 
 FROM mcr.microsoft.com/dotnet/aspnet:5.0-focal-amd64 AS base
-ENV ASPNETCORE_URLS=http://+:5699
 COPY linux-docker-packages.sh .
 RUN chmod 777 linux-docker-packages.sh
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y software-properties-common
@@ -35,7 +34,11 @@ WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/sdk:5.0-focal-amd64 AS build
 
+WORKDIR /glimmr
+COPY --from=base /glimmr .
+
 WORKDIR /glimmr/src
+
 RUN dotnet restore --source "https://api.nuget.org/v3/index.json" --source "https://www.myget.org/F/mmalsharp/api/v3/index.json"
 RUN dotnet restore "Glimmr.csproj"
 RUN dotnet build "Glimmr.csproj" -c Release /p:PublishProfile=Linux -o /app/build
@@ -46,6 +49,7 @@ RUN dotnet publish "Glimmr.csproj" -c Release /p:PublishProfile=Linux -o /app/pu
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+ENV ASPNETCORE_URLS=http://+:5699
 ENTRYPOINT ["dotnet", "Glimmr.dll"]
 VOLUME /etc/glimmr
 # Web UI
