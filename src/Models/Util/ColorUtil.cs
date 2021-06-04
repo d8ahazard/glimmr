@@ -722,16 +722,18 @@ namespace Glimmr.Models.Util {
 
 		public static int CheckDsSectors(int target) {
 			float t = target + 1;
+			var output = target;
 			if (_captureMode == CaptureMode.DreamScreen && target != -1) {
 				if (target != 0) {
 					var tPct = t / _sectorCount;
 					t = tPct * 12f;
 					t = Math.Min(t, 12f);
-					target = (int) t - 1;
+					output = (int) t - 1;
 				}
 			}
 
-			return target;
+			Log.Debug($"Mapping sector {target} to {output}");
+			return output;
 		}
 
 		public static void SetSystemData() {
