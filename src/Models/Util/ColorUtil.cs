@@ -721,6 +721,7 @@ namespace Glimmr.Models.Util {
 		}
 
 		public static int CheckDsSectors(int target) {
+			SetSystemData();
 			float t = target + 1;
 			var output = target;
 			if (_captureMode == CaptureMode.DreamScreen && target != -1) {
