@@ -480,8 +480,6 @@ namespace Glimmr.Models.Util {
 				for (var c = 0; c < count; c++) {
 					output.Add(col);
 				}
-
-				start++;
 			}
 
 			// Check that we have the right amount, else add more because division
@@ -493,22 +491,17 @@ namespace Glimmr.Models.Util {
 			}
 
 			// Decrement one since our sectors share corners
-			start -= 1;
+			start = vSectors - 1;
 
 			// Top sectors
 			count = sd.TopCount / hSectors;
-			for (var i = start; i < hSectors; i++) {
+			for (var i = start; i < start + hSectors; i++) {
 				col = ints[i];
 				for (var c = 0; c < count; c++) {
 					output.Add(col);
 				}
-
-				start++;
 			}
-
-			// Decrement one since our sectors share corners
-			start -= 1;
-
+			
 			// Check that we have the right amount, else add more because division
 			diff = sd.RightCount + sd.TopCount - output.Count;
 			if (diff > 0) {
@@ -517,19 +510,16 @@ namespace Glimmr.Models.Util {
 				}
 			}
 
+			start = vSectors + hSectors - 2;
+
 			// Left sectors
 			count = sd.LeftCount / vSectors;
-			for (var i = start; i < vSectors; i++) {
+			for (var i = start; i < start + vSectors; i++) {
 				col = ints[i];
 				for (var c = 0; c < count; c++) {
 					output.Add(col);
 				}
-
-				start++;
 			}
-
-			// Decrement one since our sectors share corners
-			start -= 1;
 
 			// Check that we have the right amount, else add more because division
 			diff = sd.RightCount + sd.TopCount + sd.LedCount - output.Count;
@@ -539,16 +529,21 @@ namespace Glimmr.Models.Util {
 				}
 			}
 
+			start = vSectors + hSectors + vSectors - 3;
 
 			// Bottom sectors - Skip one sector at the end, because that's the first one.
 			count = sd.BottomCount / hSectors;
-			for (var i = start; i < hSectors - 1; i++) {
+			for (var i = start; i < start + hSectors - 1; i++) {
 				col = ints[i];
 				for (var c = 0; c < count; c++) {
 					output.Add(col);
 				}
-
-				start++;
+			}
+			
+			// Add sector 0 to end
+			col = ints[0];
+			for (var c = 0; c < count; c++) {
+				output.Add(col);
 			}
 
 			// Check that we have the right amount, else add more because division
