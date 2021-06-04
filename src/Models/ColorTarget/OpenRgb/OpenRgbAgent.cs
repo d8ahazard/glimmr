@@ -6,22 +6,27 @@ using OpenRGB.NET;
 namespace Glimmr.Models.ColorTarget.OpenRgb {
 	public class OpenRgbAgent : IColorTargetAgent {
 		public string Ip { get; set; }
-		private OpenRGBClient _client;
+		private OpenRGBClient? _client;
 		private int _port;
 
 		public void Dispose() {
 		}
 
 		public dynamic CreateAgent(ControlService cs) {
+			cs.RefreshSystemEvent += LoadClient;
+			LoadClient();
+			return _client;
+		}
+
+		private void LoadClient() {
 			var ip = (string) DataUtil.GetItem<string>("OpenRgbIp");
 			var port = (int) DataUtil.GetItem<int>("OpenRgbPort");
 			if (ip == Ip && port == _port && _client != null) {
-				return _client;
+				return;
 			}
-
+			
 			Ip = ip;
 			_port = port;
-
 			_client?.Dispose();
 			try {
 				_client = new OpenRGBClient(Ip, _port, "Glimmr");
@@ -30,7 +35,8 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 				// ignored
 			}
 
-			return _client;
+
+
 		}
 	}
 }

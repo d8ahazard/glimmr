@@ -12,20 +12,6 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.OpenRgb {
 	public class OpenRgbDevice : ColorTarget, IColorTarget {
 		public OpenRgbData Data { get; set; }
-		private readonly OpenRGBClient _client;
-		private readonly ColorService _colorService;
-
-
-		public OpenRgbDevice(OpenRgbData data, ColorService cs) {
-			Data = data;
-			Id = Data.Id;
-			Enable = data.Enable;
-			cs.ColorSendEvent += SetColor;
-			IpAddress = Data.IpAddress;
-			_colorService = cs;
-			_client = cs.ControlService.GetAgent("OpenRgbAgent");
-		}
-
 		public bool Streaming { get; set; }
 		public bool Testing { get; set; }
 		public int Brightness { get; set; }
@@ -34,6 +20,24 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		public string Tag { get; set; }
 		public bool Enable { get; set; }
 
+		private int _offset;
+		private int _ledCount;
+
+		private readonly OpenRGBClient _client;
+		private readonly ColorService _colorService;
+		
+
+
+		public OpenRgbDevice(OpenRgbData data, ColorService cs) {
+			Id = data.Id;
+			Data = data;
+			LoadData();
+			cs.ColorSendEvent += SetColor;
+			_colorService = cs;
+			_client = cs.ControlService.GetAgent("OpenRgbAgent");
+		}
+
+		
 		IColorTargetData IColorTarget.Data {
 			get => Data;
 			set => Data = (OpenRgbData) value;
@@ -89,7 +93,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 			var toSend = ColorUtil.TruncateColors(colors, Data.Offset, Data.LedCount);
 			if (Data.Rotation == 180) {
-				toSend.Reverse();
+				toSend = toSend.Reverse().ToArray();
 			}
 
 			var converted = toSend.Select(col => new OpenRGB.NET.Models.Color(col.R, col.G, col.B)).ToList();
@@ -103,9 +107,14 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 		public Task ReloadData() {
 			Data = DataUtil.GetDevice(Id);
+			return Task.CompletedTask;
+		}
+
+		private void LoadData() {
 			Enable = Data.Enable;
 			IpAddress = Data.IpAddress;
-			return Task.CompletedTask;
+			_offset = Data.Offset;
+			_ledCount = Data.LedCount;
 		}
 
 		public void Dispose() {
