@@ -38,9 +38,9 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 
 		public void UpdateFromDiscovered(IColorTargetData data) {
 			var dData = (DreamScreenData) data;
-			Brightness = data.Brightness;
+			Brightness = dData.Brightness;
 			LastSeen = data.LastSeen;
-			GroupNumber = dData.Brightness;
+			GroupNumber = dData.GroupNumber;
 			DeviceTag = dData.DeviceTag;
 			if (DeviceTag.Contains("DreamScreen")) Enable = false;
 		}

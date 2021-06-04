@@ -3,6 +3,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using DreamScreenNet;
+using DreamScreenNet.Devices;
 using DreamScreenNet.Enum;
 using Glimmr.Models.ColorTarget.DreamScreen;
 using Glimmr.Models.Util;
@@ -17,7 +18,8 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 		private readonly DreamScreenClient _client;
 		private readonly ColorService _cs;
 		private bool _enable;
-		private IPAddress _targetDreamScreen;
+		private IPAddress? _targetDreamScreen;
+		private DreamDevice? _dDev;
 
 		public DreamScreenStream(ColorService colorService) {
 			_cs = colorService;
@@ -32,6 +34,8 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 			_enable = enable;
 			if (_enable) {
 				Log.Debug("Starting DS stream, Target is " + _targetDreamScreen + " group is " + TargetGroup);
+				_client.SetMode(_dDev, DreamScreenNet.Enum.DeviceMode.Off);
+				_client.SetMode(_dDev, DreamScreenNet.Enum.DeviceMode.Video);
 				_client.StartSubscribing(_targetDreamScreen);
 			} else {
 				_client.StopSubscribing();
@@ -51,6 +55,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 		private void RefreshSd() {
 			var systemData = DataUtil.GetSystemData();
 			var dsIp = systemData.DsIp;
+			// If our DS IP is null, pick one.
 			if (string.IsNullOrEmpty(dsIp)) {
 				var devs = DataUtil.GetDevices();
 				foreach (var dd in from dev in devs
@@ -68,16 +73,28 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 			}
 
 			if (!string.IsNullOrEmpty(dsIp)) {
+				var dsData = (DreamScreenData) DataUtil.GetDevice<DreamScreenData>(dsIp);
+				if (dsData != null) {
+					_dDev = new DreamDevice {DeviceGroup = dsData.GroupNumber};
+					_dDev.Type = dsData.DeviceTag switch {
+						"DreamScreenHd" => DeviceType.DreamScreenHd,
+						"DreamScreen4K" => DeviceType.DreamScreen4K,
+						"DreamScreenSolo" => DeviceType.DreamScreenSolo,
+						_ => _dDev.Type
+					};
+					_dDev.IpAddress = IPAddress.Parse(dsData.IpAddress);
+				}
 				_targetDreamScreen = IPAddress.Parse(dsIp);
 			}
 		}
 
 		private void ProcessCommand(object? sender, DreamScreenClient.MessageEventArgs e) {
-			if (e.Response.Group == TargetGroup) {
-				Log.Debug("Incoming command from target DS: " + e.Response.Type);
+			Log.Debug("Incoming command from DS: " + e.Response.Type);
+			if (e.Response.Group == TargetGroup || e.Response.Group == _dDev.DeviceGroup) {
 				switch (e.Response.Type) {
 					case MessageType.Mode:
-						var mode = e.Response.Payload.GetUint8();
+						var mode = int.Parse(e.Response.Payload.ToString());
+						Log.Debug("Toggle mode: " + mode);
 						_cs.ControlService.SetMode(mode).ConfigureAwait(false);
 						break;
 					case MessageType.Brightness:
@@ -91,7 +108,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 						break;
 				}
 			} else {
-				Log.Debug($"{TargetGroup} command from " + e.Response.Target);
+				Log.Debug($"{TargetGroup} doesn't match {e.Response.Group} or {_dDev.DeviceGroup} command from " + e.Response.Target);
 			}
 		}
 
@@ -109,6 +126,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 		private void UpdateColors(object? sender, DreamScreenClient.DeviceColorEventArgs e) {
 			var colors = e.Colors;
 			var ledColors = ColorUtil.SectorsToleds(colors.ToList(), 5, 3);
+			_cs.Counter.Tick("Dreamscreen");
 			_cs.SendColors(ledColors, colors.ToList(), 0);
 		}
 	}

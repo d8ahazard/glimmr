@@ -732,8 +732,6 @@ namespace Glimmr.Models.Util {
 					output = (int) t - 1;
 				}
 			}
-
-			Log.Debug($"Mapping sector {target} to {output}");
 			return output;
 		}
 

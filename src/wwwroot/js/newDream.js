@@ -435,7 +435,7 @@ function setSocketListeners() {
     });
     
     websocket.on('frames', function(stuff) {
-        //console.log("frame counts: ", stuff); 
+        console.log("frame counts: ", stuff); 
         fpsCounter.innerText = stuff['source'] + "FPS"; 
     });
 

@@ -67,7 +67,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		private void WledDiscovered(object sender, ServiceInstanceDiscoveryEventArgs e) {
 			var foo = e.Message;
 			if (!foo.ToString().Contains("_wled")) return;
-			Log.Debug("MSG: " + foo.ToString());
 			var name = e.ServiceInstanceName.ToString();
 			
 			if (name.Contains(".local")) name = name.Split(".")[0];
