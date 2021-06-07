@@ -442,6 +442,10 @@ namespace Glimmr.Models.Util {
 			var col = db.GetCollection<SystemData>("SystemData");
 			if (value.HSectors == 0) value.HSectors = 5;
 			if (value.VSectors == 0) value.HSectors = 3;
+			if (value.LeftCount == 0) value.LeftCount = 24;
+			if (value.RightCount == 0) value.LeftCount = 24;
+			if (value.TopCount == 0) value.TopCount = 40;
+			if (value.BottomCount == 0) value.BottomCount = 40;
 			col.Upsert(0, value);
 			db.Commit();
 			_systemData = value;
