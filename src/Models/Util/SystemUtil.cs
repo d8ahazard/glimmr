@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using DirectShowLib;
 using Emgu.CV;
+using Newtonsoft.Json;
 using Serilog;
 
 namespace Glimmr.Models.Util {
@@ -133,7 +134,7 @@ namespace Glimmr.Models.Util {
 		private static Dictionary<int, string> ListUsbLinux() {
 			var i = 0;
 			var output = new Dictionary<int, string>();
-			while (i < 10) {
+			while (i < 20) {
 				try {
 					// Check if video stream is available.
 					var v = new VideoCapture(i); // Will crash if not available, hence try/catch.
@@ -173,7 +174,9 @@ namespace Glimmr.Models.Util {
 		}
 
 		public static Dictionary<int, string> ListUsb() {
-			return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ListUsbWindows() : ListUsbLinux();
+			var devs = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ListUsbWindows() : ListUsbLinux();
+			Log.Debug("Available USB Devices: " + JsonConvert.SerializeObject(devs));
+			return devs;
 		}
 
 
