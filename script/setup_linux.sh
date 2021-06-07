@@ -129,7 +129,7 @@ then
   cd /home/glimmrtv/glimmr/lib/linux/libcvextern || exit
   sudo wget https://www.nuget.org/api/v2/package/Emgu.CV.runtime.ubuntu.20.04-x64/4.5.1.4349
   unzip 4.5.1.4349
-  sudo cp /home/glimmrtv/glimmr/lib/linux/libcvextern/runtimes/ubuntu.20.04-x64/native/libcvextern.so /home/glimmrtv/glimmr/lib/LinuxARM/libcvextern.so
+  sudo cp /home/glimmrtv/glimmr/lib/linux/libcvextern/runtimes/ubuntu.20.04-x64/native/libcvextern.so /home/glimmrtv/glimmr/lib/Linux/libcvextern.so
   sudo rm -r /home/glimmrtv/glimmr/lib/linux/libcvextern
 fi
 
