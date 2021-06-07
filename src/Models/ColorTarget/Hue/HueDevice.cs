@@ -48,6 +48,8 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		private string _token;
 		private List<LightMap> _lightMappings;
 
+		private Task _updateTask;
+
 
 		public HueDevice(HueData data, ColorService colorService) : base(colorService) {
 			DataUtil.GetItem<int>("captureMode");
@@ -180,7 +182,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			}
 
 			Log.Debug("Setting autoUpdate...");
-			_client.AutoUpdate(_stream, _ct).ConfigureAwait(false);
+			_updateTask = _client.AutoUpdate(_stream, _ct);
 			_entLayer = _stream.GetNewLayer(true);
 			Log.Information($"{Data.Tag}::Stream started: {Data.Id}");
 			Streaming = true;
@@ -309,6 +311,8 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 			try {
 				await _client.LocalHueClient.SetStreamingAsync(_selectedGroup, false);
+				if (!_updateTask.IsCompleted) _updateTask.Dispose();	
+				
 				//_client.Close();
 			} catch (Exception) {
 				// ignored
