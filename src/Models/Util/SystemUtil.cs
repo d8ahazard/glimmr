@@ -140,7 +140,7 @@ namespace Glimmr.Models.Util {
 			while (i < 20) {
 				try {
 					// Check if video stream is available.
-					var v = new VideoCapture(i,VideoCapture.API.V4L2); // Will crash if not available, hence try/catch.
+					var v = new VideoCapture(i); // Will crash if not available, hence try/catch.
 					var w = v.Width;
 					var h = v.Height;
 
