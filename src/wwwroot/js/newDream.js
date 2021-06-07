@@ -182,7 +182,7 @@ function loadCounts() {
     if (!isValid(sd)) return;
     let capMode = sd["CaptureMode"];
     let target = sd["DsIp"];
-let devs = data.store["Devices"];
+    let devs = data.store["Devices"];
     let devSelect = document.getElementById("targetDs");
     if (isValid(devSelect)) {
         for (let i = 0; i < devSelect.options.length; i++) {
@@ -212,39 +212,17 @@ let devs = data.store["Devices"];
     let bSel = document.querySelector('[data-property="BottomCount"][data-object="SystemData"]');
 
 
-    lSel.disabled = capMode === 0;
-    rSel.disabled = capMode === 0;
-    tSel.disabled = capMode === 0;
-    bSel.disabled = capMode === 0;
+    
     // If using DS capture, set static/dev LED counts.
-    if (capMode === 0) {        
-        // If a target is set, try to load the flex settings
-        if (isValid(target)) {
-            let dev;
-            for (let i=0; i < devs.length; i++) {                
-                if (devs[i]["Id"] === target) {
-                    dev = devs[i];
-                }                
-            }
-            if (isValid(dev)) {
-                let flex = dev["FlexSetup"];
-                if (isValid(flex)) {
-                    leftCount = flex[0];
-                    rightCount = flex[0];
-                    topCount = flex[1];
-                    bottomCount = flex[1];
-                }
-            }
-        }
-    } else {
-        leftCount = sd["LeftCount"];
-        rightCount = sd["RightCount"];
-        topCount = sd["TopCount"];
-        bottomCount = sd["BottomCount"];
-        hSectors = sd["HSectors"];
-        vSectors = sd["VSectors"];
-        useCenter = sd["UseCenter"];
-    }
+    
+    leftCount = sd["LeftCount"];
+    rightCount = sd["RightCount"];
+    topCount = sd["TopCount"];
+    bottomCount = sd["BottomCount"];
+    hSectors = sd["HSectors"];
+    vSectors = sd["VSectors"];
+    useCenter = sd["UseCenter"];
+    
     lSel.value = leftCount;
     rSel.value = rightCount;
     tSel.value = topCount;
