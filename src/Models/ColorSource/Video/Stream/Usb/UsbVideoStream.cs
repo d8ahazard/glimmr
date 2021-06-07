@@ -32,6 +32,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 
 		public async Task Start(CancellationToken ct) {
 			Log.Debug("Starting USB Stream...");
+			Refresh();
 			_video.ImageGrabbed += SetFrame;
 			_video.Start();
 			await Task.FromResult(true);
@@ -50,12 +51,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 			var sd = DataUtil.GetSystemData();
 			var devs = SystemUtil.ListUsb();
 			var inputStream = sd.UsbSelection;
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-				_video = new VideoCapture(inputStream, VideoCapture.API.V4L2);	
-			} else {
-				_video = new VideoCapture(inputStream, VideoCapture.API.DShow);	
-			}
-			//_video = new VideoCapture(inputStream);
+			_video = new VideoCapture(inputStream);
 			_video.SetCaptureProperty(CapProp.FrameWidth, DisplayUtil.CaptureWidth);
 			_video.SetCaptureProperty(CapProp.FrameHeight, DisplayUtil.CaptureHeight);
 			var srcName = _video.CaptureSource.ToString();

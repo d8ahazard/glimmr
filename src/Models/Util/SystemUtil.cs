@@ -7,11 +7,14 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using DirectShowLib;
 using Emgu.CV;
+using Glimmr.Enums;
 using Newtonsoft.Json;
 using Serilog;
+using DeviceMode = DreamScreenNet.Enum.DeviceMode;
 
 namespace Glimmr.Models.Util {
 	public static class SystemUtil {
+		private static Dictionary<int, string>? _usbDevices;
 		public static void Reboot() {
 			Log.Debug("Rebooting");
 			Process.Start("shutdown", RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "/r /t 0" : "-r now");
@@ -174,9 +177,18 @@ namespace Glimmr.Models.Util {
 		}
 
 		public static Dictionary<int, string> ListUsb() {
-			var devs = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ListUsbWindows() : ListUsbLinux();
-			Log.Debug("Available USB Devices: " + JsonConvert.SerializeObject(devs));
-			return devs;
+			var sd = DataUtil.GetSystemData();
+			if (_usbDevices == null) {
+				_usbDevices = new Dictionary<int, string>();
+				_usbDevices = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ListUsbWindows() : ListUsbLinux();
+			}
+			if ((DeviceMode) sd.DeviceMode == DeviceMode.Video && (
+				(CaptureMode) sd.CaptureMode == CaptureMode.Camera ||
+				(CaptureMode) sd.CaptureMode == CaptureMode.Hdmi)) {
+				
+			}
+			Log.Debug("Available USB Devices: " + JsonConvert.SerializeObject(_usbDevices));
+			return _usbDevices;
 		}
 
 
