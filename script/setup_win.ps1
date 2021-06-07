@@ -137,25 +137,19 @@ If( -not (Test-Path -Path $glimmrPath) ){
     Copy-Item "$glimmrPath\lib\Windows\bass.dll" "$outPath\bass.dll";
     Copy-Item "$glimmrPath\lib\Windows\GlimmrTray.exe" "$outPath\GlimmrTray.exe";
 }
+
+$glimmrPath = "C:\Progra~1\Glimmr";
+$glimmrBinPath = "C:\Progra~1\Glimmr\bin\Glimmr.exe";
+$glimmrRepo = "https://github.com/d8ahazard/glimmr";
+
 $dirPath = $env:USERPROFILE + "\AppData\Roaming\Microsoft\Windows\Start Menu\Programs";
 $dirPath2 = $dirPath + "\Glimmr\";
-Write-Host "Creating $dirPath"; 
 
-$objShell = New-Object -ComObject ("WScript.Shell");
-$objShortCut = $objShell.CreateShortcut($dirPath + "\Startup" + "\GlimmrTray.lnk");
-$objShortCut.TargetPath=$glimmrBinPath;
-$objShortCut.Save();
-$bytes = [System.IO.File]::ReadAllBytes($dirPath + "\Startup" + "\GlimmrTray.lnk")
-$bytes[0x15] = $bytes[0x15] -bor 0x20 #set byte 21 (0x15) bit 6 (0x20) ON
-[System.IO.File]::WriteAllBytes($dirPath + "\Startup" + "\GlimmrTray.lnk", $bytes)
 New-Item -Path $dirPath -Name "Glimmr" -ItemType "directory" -ErrorAction SilentlyContinue
 New-Item -Path $dirPath2 -Name "Glimmr" -ItemType "directory" -ErrorAction SilentlyContinue
-$objShortCut2 = $objShell.CreateShortcut($dirPath2 + "\GlimmrTray.lnk");
-$objShortCut2.TargetPath=$glimmrBinPath;
-$objShortCut2.Save();
-$bytes = [System.IO.File]::ReadAllBytes($dirPath2 + "\GlimmrTray.lnk")
-$bytes[0x15] = $bytes[0x15] -bor 0x20 #set byte 21 (0x15) bit 6 (0x20) ON
-[System.IO.File]::WriteAllBytes($dirPath2 + "\GlimmrTray.lnk", $bytes)
+Copy-Item "$glimmrPath\script\GlimmrTray.lnk" "$dirPath2";
+Copy-Item "$glimmrPath\script\GlimmrTray.lnk" "$dirPath" + "\Startup";
+
 
 Write-Host "Glimmr has been installed, launching tray!";
 Start-Process -FilePath "C:\program files\Glimmr\bin\GlimmrTray.exe";

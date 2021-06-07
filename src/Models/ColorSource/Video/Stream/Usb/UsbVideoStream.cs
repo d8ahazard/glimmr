@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Glimmr.Models.Util;
+using Microsoft.AspNetCore.Razor.Language;
 using Serilog;
 
 namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
@@ -48,7 +50,12 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 			var sd = DataUtil.GetSystemData();
 			var devs = SystemUtil.ListUsb();
 			var inputStream = sd.UsbSelection;
-			_video = new VideoCapture(inputStream);
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+				_video = new VideoCapture(inputStream, VideoCapture.API.V4L2);	
+			} else {
+				_video = new VideoCapture(inputStream, VideoCapture.API.DShow);	
+			}
+			//_video = new VideoCapture(inputStream);
 			_video.SetCaptureProperty(CapProp.FrameWidth, DisplayUtil.CaptureWidth);
 			_video.SetCaptureProperty(CapProp.FrameHeight, DisplayUtil.CaptureHeight);
 			var srcName = _video.CaptureSource.ToString();
