@@ -30,6 +30,8 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
 		private bool _enable;
 		private int _ledCount;
+		private int _hCount;
+		private int _vCount;
 		private JsonLoader _loader;
 		private AnimationMode _mode;
 		private Color[] _nextColors;
@@ -57,6 +59,8 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			_ledCount = sd.LedCount;
 			_ambientShow = sd.AmbientShow;
 			_ambientColor = sd.AmbientColor;
+			_hCount = sd.HSectors;
+			_vCount = sd.VSectors;
 			_loader = new JsonLoader("ambientScenes");
 			_scenes = _loader.LoadFiles<AmbientScene>();
 			var scene = new AmbientScene();
@@ -132,7 +136,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 						sectors = _currentColors;
 					}
 
-					_ledColors = SplitColors(sectors);
+					_ledColors = ColorUtil.SectorsToleds(sectors.ToList(), _hCount, _vCount).ToArray();
 					_sectorColors = sectors;
 					_cs.SendColors(_ledColors.ToList(), _sectorColors.ToList(), 0);
 					await Task.FromResult(true);

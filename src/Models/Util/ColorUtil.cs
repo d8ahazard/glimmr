@@ -460,7 +460,7 @@ namespace Glimmr.Models.Util {
 
 		public static List<Color> SectorsToleds(List<Color> ints, int hSectors = -1, int vSectors = -1) {
 			var sd = DataUtil.GetSystemData();
-			var output = new List<Color>();
+			var output = new Color[sd.LedCount];
 			if (ints.Count == 12) {
 				hSectors = 5;
 				vSectors = 3;
@@ -475,18 +475,21 @@ namespace Glimmr.Models.Util {
 			var col = Color.FromArgb(0, 0, 0);
 			var count = sd.RightCount / vSectors;
 			var start = 0;
+			var total = 0;
 			for (var i = start; i < vSectors; i++) {
 				col = ints[i];
 				for (var c = 0; c < count; c++) {
-					output.Add(col);
+					output[total] = col;
+					total++;
 				}
 			}
 
 			// Check that we have the right amount, else add more because division
-			var diff = sd.RightCount - output.Count;
+			var diff = sd.RightCount - total;
 			if (diff > 0) {
 				for (var d = 0; d < diff; d++) {
-					output.Add(col);
+					output[total] = col;
+					total++;
 				}
 			}
 
@@ -498,15 +501,17 @@ namespace Glimmr.Models.Util {
 			for (var i = start; i < start + hSectors; i++) {
 				col = ints[i];
 				for (var c = 0; c < count; c++) {
-					output.Add(col);
+					output[total] = col;
+					total++;
 				}
 			}
 			
 			// Check that we have the right amount, else add more because division
-			diff = sd.RightCount + sd.TopCount - output.Count;
+			diff = sd.RightCount + sd.TopCount - total;
 			if (diff > 0) {
 				for (var d = 0; d < diff; d++) {
-					output.Add(col);
+					output[total] = col;
+					total++;
 				}
 			}
 
@@ -517,15 +522,17 @@ namespace Glimmr.Models.Util {
 			for (var i = start; i < start + vSectors; i++) {
 				col = ints[i];
 				for (var c = 0; c < count; c++) {
-					output.Add(col);
+					output[total] = col;
+					total++;
 				}
 			}
 
 			// Check that we have the right amount, else add more because division
-			diff = sd.RightCount + sd.TopCount + sd.LedCount - output.Count;
+			diff = sd.RightCount + sd.TopCount + sd.LeftCount - total;
 			if (diff > 0) {
 				for (var d = 0; d < diff; d++) {
-					output.Add(col);
+					output[total] = col;
+					total++;
 				}
 			}
 
@@ -536,29 +543,29 @@ namespace Glimmr.Models.Util {
 			for (var i = start; i < start + hSectors - 1; i++) {
 				col = ints[i];
 				for (var c = 0; c < count; c++) {
-					output.Add(col);
+					output[total] = col;
+					total++;
 				}
 			}
 			
 			// Add sector 0 to end
 			col = ints[0];
 			for (var c = 0; c < count; c++) {
-				output.Add(col);
+				output[total] = col;
+				total++;
 			}
 
 			// Check that we have the right amount, else add more because division
-			diff = sd.LedCount - output.Count;
+			diff = sd.LedCount - total;
 			if (diff > 0) {
 				for (var d = 0; d < diff; d++) {
-					output.Add(col);
+					output[total] = col;
+					total++;
 				}
 			}
 
-			if (output.Count < sd.LedCount) {
-				Log.Warning($"Warning, count mismatch: {output.Count} vs {sd.LedCount}");
-			}
-
-			return output;
+			
+			return output.ToList();
 		}
 
 		public static Color[] AddLedColor(Color[] colors, int sector, Color color, SystemData systemData) {
