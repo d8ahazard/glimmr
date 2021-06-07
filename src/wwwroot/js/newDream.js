@@ -2902,6 +2902,7 @@ function drawNanoShapes(panel) {
         let y = data.Y;
         if (mirrorX) x *= -1;
         if (!mirrorY) y *= -1;
+        if (shape === 12) continue;
         
         let sText = new Konva.Text({
             x: x,

@@ -27,32 +27,21 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 
 		public DreamScreenDevice(DreamScreenData data, ColorService colorService) {
 			Data = data;
+			Id = data.Id;
 			_colorService = colorService;
 			colorService.ColorSendEvent += SetColor;
 			_client = colorService.ControlService.GetAgent("DreamAgent");
-			Data = data;
-			Brightness = data.Brightness;
-			Id = data.Id;
-			IpAddress = data.IpAddress;
-			Tag = data.Tag;
-			Enable = data.Enable;
-			DeviceTag = data.DeviceTag;
-			if (string.IsNullOrEmpty(IpAddress)) {
-				IpAddress = Id;
-			}
-
+			IpAddress = Data.IpAddress;
+			DeviceTag = Data.DeviceTag;
+			LoadData();
 			var myIp = IPAddress.Parse(IpAddress);
-			_dev = new DreamDevice(Tag) {IpAddress = myIp, DeviceGroup = data.GroupNumber};
+			_dev = new DreamDevice(DeviceTag) {IpAddress = myIp, DeviceGroup = data.GroupNumber};
 		}
 
 		public DreamScreenDevice(DreamScreenData data) {
 			Data = data;
-			Brightness = data.Brightness;
 			Id = data.Id;
-			IpAddress = data.IpAddress;
-			Tag = data.Tag;
-			Enable = data.Enable;
-			DeviceTag = data.DeviceTag;
+			LoadData();
 		}
 
 		[DataMember] [JsonProperty] public bool Streaming { get; set; }
@@ -108,8 +97,23 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 
 		public Task ReloadData() {
 			Data = DataUtil.GetDevice(Id);
-			Enable = Data.Enable;
+			
 			return Task.CompletedTask;
+		}
+
+		private void LoadData() {
+			Enable = Data.Enable;
+			Brightness = Data.Brightness;
+			Id = Data.Id;
+			IpAddress = Data.IpAddress;
+			Tag = Data.Tag;
+			Enable = Data.Enable;
+			DeviceTag = Data.DeviceTag;
+			if (DeviceTag.Contains("DreamScreen") && Enable) Enable = false;
+			if (string.IsNullOrEmpty(IpAddress)) {
+				IpAddress = Id;
+			}
+			
 		}
 
 		public void Dispose() {

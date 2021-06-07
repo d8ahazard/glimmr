@@ -26,8 +26,19 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 			_cs.AddStream(DeviceMode.DreamScreen, this);
 			_client = _cs.ControlService.GetAgent("DreamAgent");
 			_client.CommandReceived += ProcessCommand;
+			_client.SubscriptionRequested += SubRequested;
 			_cs.ControlService.RefreshSystemEvent += RefreshSd;
 			RefreshSd();
+		}
+
+		private void SubRequested(object? sender, DreamScreenClient.DeviceSubscriptionEventArgs e) {
+			if (_enable) {
+				if (Equals(e.Target, _targetDreamScreen)) {
+					Log.Debug("Incoming sub request from target!" + e.Target);
+				} else {
+					Log.Debug("incoming sub request, but it's not from our target: " + e.Target);
+				}
+			}
 		}
 
 		public void ToggleStream(bool enable) {
@@ -37,6 +48,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 				_client.SetMode(_dDev, DreamScreenNet.Enum.DeviceMode.Off);
 				_client.SetMode(_dDev, DreamScreenNet.Enum.DeviceMode.Video);
 				_client.StartSubscribing(_targetDreamScreen);
+				Log.Debug("DS Stream should be started...");
 			} else {
 				_client.StopSubscribing();
 			}

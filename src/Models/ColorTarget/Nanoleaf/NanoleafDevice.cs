@@ -89,6 +89,10 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			
 			var cols = new Dictionary<int, Color>();
 			foreach (var p in _layout.PositionData) {
+				if (p.ShapeType == 12) {
+					continue;
+				}
+
 				var color = Color.FromArgb(0, 0, 0);
 				if (p.TargetSector != -1) {
 					var target = p.TargetSector - 1;
@@ -99,8 +103,6 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 						Log.Warning($"Error, trying to map {target} when count is only {sectors.Count}.");
 					}
 				}
-
-
 				cols[p.PanelId] = color;
 			}
 
