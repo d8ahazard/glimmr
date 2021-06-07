@@ -440,6 +440,8 @@ namespace Glimmr.Models.Util {
 		public static void SetSystemData(SystemData value) {
 			var db = GetDb();
 			var col = db.GetCollection<SystemData>("SystemData");
+			if (value.HSectors == 0) value.HSectors = 5;
+			if (value.VSectors == 0) value.HSectors = 3;
 			col.Upsert(0, value);
 			db.Commit();
 			_systemData = value;
