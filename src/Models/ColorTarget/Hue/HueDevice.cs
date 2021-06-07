@@ -307,7 +307,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			if (!Enable) {
 				return;
 			}
-
+			Log.Information($"{Data.Tag}::Starting stream... {Data.Id}");
 
 			try {
 				_client.LocalHueClient.SetStreamingAsync(_selectedGroup, false).ConfigureAwait(false);
@@ -319,6 +319,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			}
 
 			Streaming = false;
+			Log.Information($"{Data.Tag}::Stream stopped. {Data.Id}");
 		}
 
 		private async Task<StreamingGroup> SetupAndReturnGroup() {
