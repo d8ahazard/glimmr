@@ -46,3 +46,4 @@ apt-get -y install x11-xserver-utils
 apt-get -y install libopencv-dev
 apt-get -y install python3-opencv
 apt-get -y install unzip
+curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel Current --install-dir /opt/dotnet
