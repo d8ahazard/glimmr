@@ -133,6 +133,12 @@ then
   sudo rm -r /home/glimmrtv/glimmr/lib/linux/libcvextern
 fi
 
+#Add user to video group
+if [ $PUBPROFILE = "Linux"]
+then
+  sudo usermod -a -G video $USER
+fi
+
 if [ $PUBPROFILE = "LinuxARM"]
 then
   echo "Installing libs for emgu.cv (Linux x64)"
