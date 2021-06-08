@@ -22,7 +22,8 @@ echo "Beginning Glimmr setup/update for $PUBPROFILE"
 # Add user if not exist, set up necessary groups
 id -u glimmrtv &>/dev/null || useradd -m glimmrtv
 usermod -aG sudo glimmrtv 
-usermod -aG video glimmrtv 
+usermod -aG video glimmrtv
+usermod -aG video $USER
 cd /home/glimmrtv || exit
 
 # Check dotnet installation
