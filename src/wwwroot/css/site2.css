@@ -12,6 +12,15 @@
     width: 250px;
 }
 
+#mapCol {
+    position: relative;
+}
+
+#sectorPreview, #sectorMap, #ledMap {
+    background:url("../img/sectoring_screen.png");
+    background-size: 100% 100%;;
+}
+
 .devCard {
     width: 18rem;
 }
@@ -109,7 +118,6 @@ area {
 }
 
 .sectorMap, .ledMap {
-    position: absolute;
     text-align: center;
     color: white;
     text-shadow: black;
@@ -320,6 +328,12 @@ input[type="range"]::-webkit-slider-runnable-track {
     background-position: center;
 }
 
-#nanoPreviewWrap {
+#nanoPreviewWrap, #mapWrap, #sLedWrap, #sectorWrap {
     width: 95%;
+    position: relative;
+    margin: 0 auto;
+}
+
+#sectorPreview, #ledPreview, #sLedPreview {
+    position: relative;
 }

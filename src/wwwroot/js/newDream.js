@@ -601,11 +601,9 @@ function setListeners() {
             }
                         
             if (property === "LeftCount" || property === "RightCount" || property ==="TopCount" || property === "BottomCount") {
-                let lPreview = document.getElementById("sLedPreview");
-                let lImage = document.getElementById("ledImage");
-                setTimeout(function(){
-                    createLedMap(lPreview, lImage, pack);
-                }, 500);
+                let lPreview = document.getElementById("sLedWrap");
+                createLedMap(lPreview);
+                
                 return;
             }
             if (property === "Theme") {
@@ -1083,10 +1081,8 @@ function loadSettings() {
         updateCaptureUi();
         loadCounts();
         console.log("Loading System Data: ", systemData);
-        let lPreview = document.getElementById("sLedPreview");
-        let lImage = document.getElementById("ledImage");
-        let sPreview = document.getElementById("sectorPreview");
-        let sImage = document.getElementById("sectorImage");
+        let lPreview = document.getElementById("sLedWrap");
+        let sPreview = document.getElementById("sectorWrap");
         let rect = systemData["CaptureRegion"].split(", ");
         let sRect = systemData["MonitorRegion"].split(", ");
         let crop = document.querySelector(".croppr-image");
@@ -1113,8 +1109,8 @@ function loadSettings() {
             .moveTo(x, y);
         loading = false;
         if (capTab.classList.contains("active")) setTimeout(function(){
-            createLedMap(lPreview, lImage, systemData);
-            createSectorMap(sPreview, sImage);
+            createLedMap(lPreview);
+            createSectorMap(sPreview);
         },500);
     } else {
         console.log("NO LED DATA");
@@ -1672,10 +1668,13 @@ function createDeviceSettings() {
     settingsDiv.innerHTML = "";
     let linkCol = document.createElement("div");
     let mapCol = document.createElement("div");
+    let mapWrap = document.createElement("div");
     linkCol.classList.add("col-12", "row", "justify-content-center");
     mapCol.classList.add("col-12");
+    mapWrap.id = "mapWrap";
     linkCol.id = "linkCol";
     mapCol.id = "mapCol";
+    mapCol.appendChild(mapWrap);
     settingsDiv.appendChild(linkCol);
     settingsDiv.appendChild(mapCol);
     console.log("Loading device data: ", deviceData);   
@@ -1855,7 +1854,8 @@ function appendNanoSettings() {
 function appendHueSettings() {
     if (isValid(deviceData["Token"])) {
         drawLinkPane("hue", true);
-        appendSectorMap();
+        let mapCol = document.getElementById("mapWrap");
+        createSectorMap(mapCol);
         createHueMap();
     } else {
         drawLinkPane("hue", false);
@@ -2044,72 +2044,39 @@ function appendBeamMap() {
 }
 
 function appendSectorMap() {
-    let imgDiv = document.createElement("div");
-    imgDiv.id = "mapDiv";
-    let img = document.createElement("img");
-    let exSect = document.getElementById("sectorImage");
-    if (isValid(exSect)) exSect.remove();
-    img.id = "sectorImage";
-    img.classList.add("img-fluid", "col-xl-8", "col-lg-8", "col-md-12");
-    img.src = baseUrl + "/img/sectoring_screen.png";
-    img.addEventListener("load", function() {
-        setTimeout(function() {createSectorMap(imgDiv, document.getElementById("sectorImage"))}, 500);
-    });
-    imgDiv.appendChild(img);
-    let settingsDiv = document.getElementById("deviceSettings");
-    settingsDiv.append(imgDiv);
+    let mapDiv = document.getElementById("mapWrap");
+    createSectorMap(mapDiv);    
 }
 
 function appendLedMap() {
-    let mapDiv = document.getElementById("mapDiv");
-    if (isValid(mapDiv)) mapDiv.remove();
-    let imgDiv = document.createElement("div");
-    imgDiv.id = "mapDiv";
-    let img = document.createElement("img");
-    img.id = "sectorImage";
-    img.classList.add("img-fluid", "col-xl-8", "col-lg-8", "col-md-12");
-    img.src = baseUrl + "/img/sectoring_screen.png";
-    imgDiv.appendChild(img);
-    let settingsDiv = document.getElementById("deviceSettings");
-    settingsDiv.append(imgDiv);
-    let systemData = data.store["SystemData"];
-    setTimeout(function() {createLedMap(imgDiv, img ,systemData, deviceData)}, 500);
+    let mapDiv = document.getElementById("mapWrap");
+    createLedMap(mapDiv);    
 }
 
 function appendBeamLedMap() {
-    let mapDiv = document.getElementById("mapDiv");
-    if (isValid(mapDiv)) mapDiv.remove();
-    
-    let imgDiv = document.createElement("div");
-    imgDiv.id = "mapDiv";
-
+    let mapDiv = document.getElementById("mapCol");
     let noteDiv = document.createElement("div");
     noteDiv.classList.add("col-12", "subtitle");
     noteDiv.innerHTML = "Note: Lifx beams are spaced so that 10 LEDs/beam equal 20 LEDs within Glimmr.";
 
-    imgDiv.appendChild(noteDiv);
-    let img = document.createElement("img");
-    img.id = "sectorImage";
-    img.classList.add("img-fluid", "col-xl-8", "col-lg-8", "col-md-12");
-    img.src = baseUrl + "/img/sectoring_screen.png";
-    imgDiv.appendChild(img);
-    let settingsDiv = document.getElementById("deviceSettings");
-    settingsDiv.append(imgDiv);
-    let systemData = data.store["SystemData"];
-    setTimeout(function() {createBeamLedMap(imgDiv, img ,systemData, deviceData)}, 500);
+    mapDiv.appendChild(noteDiv);
+    createBeamLedMap();
 }
 
-function createSectorCenter(targetElement, sectorImage, regionName) {
-    let img = sectorImage;
-    let w = img.offsetWidth;
-    let h = img.offsetHeight;
-    let imgL = img.offsetLeft;
-    let imgT = img.offsetTop;
+function createSectorCenter(targetElement, regionName) {
+    let tgt = targetElement;
+    let cs = getComputedStyle(tgt);
+    let paddingX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+    let borderX = parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
+    let w = tgt.offsetWidth - paddingX - borderX;
+    let h = (w / 16) * 9;
+    let imgL = tgt.offsetLeft;
+    let imgT = tgt.offsetTop;
     let selected = -1;
     if (isValid(deviceData)) selected = deviceData["TargetSector"];
     if (!isValid(selected)) selected = -1;
     let wFactor = w / 1920;
-    let hFactor = h / 1100;
+    let hFactor = h / 1080;
     let wMargin = 62 * wFactor;
     let hMargin = 52 * hFactor;
     let fHeight = (h - hMargin - hMargin) / vSectors;
@@ -2164,24 +2131,27 @@ function createSectorCenter(targetElement, sectorImage, regionName) {
     }
 }
 
-function createSectorMap(targetElement, sectorImage, regionName) {
+function createSectorMap(targetElement, regionName) {
     let exMap = targetElement.querySelector("#sectorMap");
     if (isValid(exMap)) exMap.remove();
 
     if (useCenter) {
-        createSectorCenter(targetElement, sectorImage, regionName);
+        createSectorCenter(targetElement, regionName);
         return;
     }
-    let img = sectorImage;
-    let w = img.offsetWidth;
-    let h = img.offsetHeight;
-    let imgL = img.offsetLeft;
-    let imgT = img.offsetTop;
+    let tgt = targetElement;
+    let cs = getComputedStyle(tgt);
+    let paddingX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+    let borderX = parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
+    let w = tgt.offsetWidth - paddingX - borderX;
+    let h = (w / 16) * 9; 
+    let imgL = tgt.offsetLeft;
+    let imgT = tgt.offsetTop;
     let selected = -1;
     if (isValid(deviceData)) selected = deviceData["TargetSector"];
     if (!isValid(selected)) selected = -1;
     let wFactor = w / 1920;
-    let hFactor = h / 1100;
+    let hFactor = h / 1080;
     let wMargin = 62 * wFactor;
     let hMargin = 52 * hFactor;
     let fHeight = (h - hMargin - hMargin) / vSectors;
@@ -2307,7 +2277,9 @@ function createSectorMap(targetElement, sectorImage, regionName) {
     }
 }
 
-function createBeamLedMap(targetElement, sectorImage) {
+function createBeamLedMap() {
+    let targetElement = document.getElementById("mapWrap");
+
     let sd = data.store["SystemData"];
     let colorClasses = [
         "ledRed",
@@ -2343,11 +2315,10 @@ function createBeamLedMap(targetElement, sectorImage) {
     }
     console.log("Range list: ", rangeList);
     
-    let img = sectorImage;
-    let w = img.offsetWidth;
-    let h = img.offsetHeight;
-    let imgL = img.offsetLeft;
-    let imgT = img.offsetTop;
+    let w = targetElement.offsetWidth;
+    let h = (w / 16) * 9;
+    let imgL = targetElement.offsetLeft;
+    let imgT = targetElement.offsetTop;
     let exMap = targetElement.querySelector("#ledMap");
     if (isValid(exMap)) exMap.remove();
     let wFactor = w / 1920;
@@ -2475,7 +2446,7 @@ function createBeamLedMap(targetElement, sectorImage) {
     targetElement.appendChild(map);
 }
 
-function createLedMap(targetElement, sectorImage) {
+function createLedMap(targetElement) {
     let range1;
     let sd = data.store["SystemData"];
     
@@ -2488,15 +2459,19 @@ function createLedMap(targetElement, sectorImage) {
         range1 = ranges(total, offset, count);
     }
     
-    let img = sectorImage;
-    let w = img.offsetWidth;
-    let h = img.offsetHeight;
-    let imgL = img.offsetLeft;
-    let imgT = img.offsetTop;
+    let tgt = targetElement
+    let cs = getComputedStyle(tgt);
+    let paddingX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+    let borderX = parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
+    let w = tgt.offsetWidth - paddingX - borderX;
+    
+    let h = (w / 16) * 9;
+    let imgL = tgt.offsetLeft;
+    let imgT = tgt.offsetTop;
     let exMap = targetElement.querySelector("#ledMap");
     if (isValid(exMap)) exMap.remove();
     let wFactor = w / 1920;
-    let hFactor = h / 1100;
+    let hFactor = h / 1080;
     let wMargin = 62 * wFactor;
     let hMargin = 52 * hFactor;
     let flHeight = (h - hMargin - hMargin) / leftCount;
@@ -3043,9 +3018,8 @@ function setNanoMap(id, current) {
     
     let myModal = new bootstrap.Modal(document.getElementById('nanoModal'));
     let wrap = document.getElementById("nanoPreviewWrap");
-    let img = document.getElementById("nanoPreview");
     myModal.show();
-    createSectorMap(wrap, img, "nano");
+    createSectorMap(wrap, "nano");
 
     let nanoRegion = document.querySelectorAll(".nanoRegion");
     for (let i=0; i < nanoRegion.length; i++) {
