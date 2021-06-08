@@ -593,6 +593,13 @@ function setListeners() {
                         if (property === "ScreenCapMode" || property === "CaptureMode") {
                             updateCaptureUi();
                         }
+                        if (property === "UseCenter" || property === "HSectors" || property === "VSectors") {
+                            if (property === "UseCenter") useCenter = val;
+                            if (property === "HSectors") hSectors = val;
+                            if (property === "VSectors") vSectors = val;
+                            let sPreview = document.getElementById("sectorWrap");
+                            createSectorMap(sPreview);
+                        }
                         console.log("Sending updated object: ", obj, pack);
                         sendMessage(obj, pack,true);
                         return;    
@@ -2063,7 +2070,11 @@ function appendBeamLedMap() {
     createBeamLedMap();
 }
 
+
 function createSectorCenter(targetElement, regionName) {
+    let exMap = targetElement.querySelector("#sectorMap");
+    if (isValid(exMap)) exMap.remove();
+
     let tgt = targetElement;
     let cs = getComputedStyle(tgt);
     let paddingX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
@@ -2132,13 +2143,13 @@ function createSectorCenter(targetElement, regionName) {
 }
 
 function createSectorMap(targetElement, regionName) {
-    let exMap = targetElement.querySelector("#sectorMap");
-    if (isValid(exMap)) exMap.remove();
-
     if (useCenter) {
         createSectorCenter(targetElement, regionName);
         return;
     }
+    let exMap = targetElement.querySelector("#sectorMap");
+    if (isValid(exMap)) exMap.remove();
+
     let tgt = targetElement;
     let cs = getComputedStyle(tgt);
     let paddingX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
