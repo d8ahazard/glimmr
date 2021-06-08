@@ -19,9 +19,10 @@ fi
 
 echo "Beginning Glimmr setup/update for $PUBPROFILE"
 
-# Add user if not exist
+# Add user if not exist, set up necessary groups
 id -u glimmrtv &>/dev/null || useradd -m glimmrtv
 usermod -aG sudo glimmrtv 
+usermod -aG video glimmrtv 
 cd /home/glimmrtv || exit
 
 # Check dotnet installation
@@ -131,12 +132,6 @@ then
   unzip 4.5.1.4349
   sudo cp /home/glimmrtv/glimmr/lib/linux/libcvextern/runtimes/ubuntu.20.04-x64/native/libcvextern.so /home/glimmrtv/glimmr/lib/Linux/libcvextern.so
   sudo rm -r /home/glimmrtv/glimmr/lib/linux/libcvextern
-fi
-
-#Add user to video group
-if [ $PUBPROFILE = "Linux"]
-then
-  sudo usermod -a -G video $USER
 fi
 
 if [ $PUBPROFILE = "LinuxARM"]
