@@ -49,6 +49,7 @@ RUN dotnet publish "Glimmr.csproj" -c Release /p:PublishProfile=Linux -o /app/pu
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+RUN ln -s /var/log/glimmr/ /etc/glimmr/log/
 ENV ASPNETCORE_URLS=http://+:5699
 ENTRYPOINT ["dotnet", "Glimmr.dll"]
 VOLUME /etc/glimmr
