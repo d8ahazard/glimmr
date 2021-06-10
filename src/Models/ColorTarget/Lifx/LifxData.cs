@@ -19,8 +19,6 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		public bool MultiZoneV2 { get; set; }
 
 		[JsonProperty] public bool Power { get; set; }
-		public bool ReverseStrip { get; set; }
-
 		[JsonProperty] public byte Service { get; internal set; }
 		[JsonProperty] public byte[] MacAddress { get; internal set; }
 
@@ -39,7 +37,6 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int MultiZoneCount { get; set; }
 
-		[JsonProperty] public int Offset { get; set; }
 		[JsonProperty] public int Port { get; internal set; }
 
 		[DefaultValue(0)]

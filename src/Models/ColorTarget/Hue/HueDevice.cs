@@ -6,13 +6,11 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using AutoMapper;
+using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Newtonsoft.Json;
 using Q42.HueApi;
 using Q42.HueApi.ColorConverters;
-using Q42.HueApi.Models.Groups;
 using Q42.HueApi.Streaming;
 using Q42.HueApi.Streaming.Extensions;
 using Q42.HueApi.Streaming.Models;
@@ -49,11 +47,13 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		private List<LightMap> _lightMappings;
 
 		private Task _updateTask;
+		private Dictionary<string, int> _targets;
 
 
 		public HueDevice(HueData data, ColorService colorService) : base(colorService) {
 			DataUtil.GetItem<int>("captureMode");
 			colorService.ColorSendEvent += SetColor;
+			colorService.ControlService.RefreshSystemEvent += SetData;
 			Data = data;
 			Id = Data.Id;
 			_disposed = false;
@@ -208,8 +208,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			if (!Streaming || !Enable || _entLayer == null || Testing && !force) {
 				return;
 			}
-
-			
+		
 			foreach (var entLight in _entLayer) {
 				// Get data for our light from map
 				var lightData = _lightMappings.SingleOrDefault(item =>
@@ -220,9 +219,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				}
 
 				// Otherwise, get the corresponding sector color
-				var tSector = lightData.TargetSector;
-				var target = tSector - 1;
-				target = ColorUtil.CheckDsSectors(target);
+				var target = _targets[entLight.Id.ToString()];
 				if (target >= sectors.Count) {
 					continue;
 				}
@@ -290,6 +287,8 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 
 		private void SetData() {
+			var sd = DataUtil.GetSystemData();
+			_targets = new Dictionary<string, int>();
 			IpAddress = Data.IpAddress;
 			Tag = Data.Tag;
 			_user = Data.User;
@@ -298,6 +297,12 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Brightness = Data.Brightness;
 			_lights = Data.Lights;
 			_lightMappings = Data.MappedLights;
+			foreach (var ld in _lightMappings) {
+				var target = ld.TargetSector;
+				if ((CaptureMode) sd.CaptureMode == CaptureMode.DreamScreen) target = ColorUtil.CheckDsSectors(target);
+				if (sd.UseCenter) target = ColorUtil.FindEdge(target + 1);
+				_targets[ld.Id] = target;
+			}
 			Enable = Data.Enable;
 			_selectedGroup = Data.SelectedGroup;
 		}

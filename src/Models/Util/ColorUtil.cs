@@ -4,6 +4,8 @@ using System.Drawing;
 using System.Globalization;
 using System.Linq;
 using Glimmr.Enums;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Bson.Converters;
 using Serilog;
 
 namespace Glimmr.Models.Util {
@@ -13,6 +15,10 @@ namespace Glimmr.Models.Util {
 
 		private static CaptureMode _captureMode;
 		private static int _sectorCount;
+		private static int _hCount;
+		private static int _vCount;
+		private static DeviceMode _deviceMode;
+		private static bool _useCenter;
 
 		public static void ColorToHsv(Color color, out double hue, out double saturation, out double value) {
 			double max = Math.Max(color.R, Math.Max(color.G, color.B));
@@ -413,6 +419,191 @@ namespace Glimmr.Models.Util {
 			return output;
 		}
 
+		public static int FindEdge(int sector) {
+			Log.Debug("Finding edge for " + sector);
+			SetSystemData();
+			if (_deviceMode == DeviceMode.Video || !_useCenter) {
+				return sector;
+			}
+			// First, create arrays of values that are on the edge
+			var total = _hCount * _vCount;
+			// Increment by 1 to use real numbers, versus array numbers...
+			//sector += 1;
+			// Corners
+			const int br = 1;
+			var bl = _hCount;
+			var tl = total;
+			var tr = total - _hCount + 1;
+			
+			var bottom = new List<int>();
+			for (var i = 2; i < _hCount; i++) {
+				bottom.Add(i);
+			}
+			
+			var left = new List<int>();
+			for (var i = 2; i < _vCount; i++) {
+				left.Add(i * _hCount);
+			}
+			
+			Log.Debug("Lefts: " + JsonConvert.SerializeObject(left));
+
+			
+			var top = new List<int>();
+			for (var i = _hCount * (_vCount - 1) + 2; i < total; i++) {
+				top.Add(i);
+			}
+
+			var right = new List<int>();
+			for (var i = 1; i < _vCount -1; i++) {
+				right.Add(i * _hCount + 1);
+			}
+
+			var sectorMap = new Dictionary<int, int>();
+			var dIdx = 1;
+			sectorMap[1] = dIdx;
+			dIdx++;
+			
+			foreach (var num in right) {
+				sectorMap[num] = dIdx;
+				dIdx++;
+			}
+
+			sectorMap[tr] = dIdx;
+			dIdx++;
+			
+			foreach (var num in top) {
+				sectorMap[num] = dIdx;
+				dIdx++;
+			}
+			
+			sectorMap[tl] = dIdx;
+			dIdx++;
+
+			foreach (var num in left.ToArray().Reverse()) {
+				sectorMap[num] = dIdx;
+				dIdx++;
+			}
+			
+			sectorMap[bl] = dIdx;
+			dIdx++;
+			
+			foreach (var num in bottom.ToArray().Reverse()) {
+				sectorMap[num] = dIdx;
+				dIdx++;
+			}
+			
+
+			var lDist = _hCount;
+			var rDist = _hCount;
+			var tDist = _vCount;
+			var bDist = _vCount;
+			
+			var ln = 0;
+			var rn = 0;
+			var bn = 0;
+			var tn = 0;
+
+			
+			for (var i = 1; i < _vCount / 2; i++) {
+				tn = sector + _hCount * i;
+				if (top.Contains(tn)) {
+					tDist = i;
+				}
+			}
+			
+			for (var i = 1; i < _vCount / 2; i++) {
+				bn = sector - _hCount * i;
+				Log.Debug("BN: " + bn);
+				if (bottom.Contains(bn)) {
+					bDist = i;
+					break;
+				}
+			}
+			
+			for (var i = 1; i < _hCount / 2; i++) {
+				ln = sector + i;
+				if (left.Contains(ln)) {
+					lDist = i;
+					break;
+				}
+			}
+			
+			for (var i = 1; i < _hCount / 2; i++) {
+				rn = sector - i;
+				if (right.Contains(ln)) {
+					rDist = i;
+					break;
+				}
+			}
+
+			var minH = Math.Min(lDist, rDist);
+			var minV = Math.Min(tDist, bDist);
+			Log.Debug("SectorMap: " + JsonConvert.SerializeObject(sectorMap));
+			foreach (var num in new[] {tr, tl, br, bl}) {
+				if (sector == num) {
+					Log.Debug("Sector is in a corner: " + sector);
+					return sectorMap[num];
+				}
+			}
+
+			foreach (var arr in new[] {left, right, top, bottom}) {
+				foreach (var num in arr) {
+					if (sector == num) {
+						return sectorMap[num];
+					}
+				}
+			}
+			
+			// bottom-right
+			if (minV == bDist && minH == rDist && minV == minH) {
+				return sectorMap[br];
+			}
+			
+			
+			// Bottom-left
+			if (minV == bDist && minH == lDist && minV == minH) {
+				return sectorMap[bl];
+			}
+
+			
+			// top-left
+			if (minV == tDist && minH == lDist && minV == minH) {
+				return sectorMap[tl];
+			}
+
+			
+			// top-right
+			if (minV == tDist && minH == rDist && minV == minH) {
+				return sectorMap[tr];
+			}
+
+			
+			if (minH == rDist && minH < minV) {
+				return sectorMap[rn];
+			}
+			
+			
+			// bottom
+			if (minV == bDist && minV < minH) {
+				return sectorMap[bn];
+			}
+			
+			
+			// left
+			if (minH == lDist && minH < minV) {
+				return sectorMap[ln];
+			}
+			
+			
+			// top
+			if (minV == tDist && minV < minH) {
+				return sectorMap[tn];
+			}
+			
+			
+			return br;
+		}
+
 
 		public static Color FixGamma(Color input) {
 			int[] gammas = {
@@ -724,6 +915,7 @@ namespace Glimmr.Models.Util {
 
 		public static int CheckDsSectors(int target) {
 			SetSystemData();
+			// Append 1 here so target is not zero, and we can get the proper value from "real" sectors
 			float t = target + 1;
 			var output = target;
 			if (_captureMode == CaptureMode.DreamScreen && target != -1) {
@@ -740,7 +932,11 @@ namespace Glimmr.Models.Util {
 		public static void SetSystemData() {
 			var sd = DataUtil.GetSystemData();
 			_captureMode = (CaptureMode) sd.CaptureMode;
+			_deviceMode = (DeviceMode) sd.DeviceMode;
+			_useCenter = sd.UseCenter;
 			_sectorCount = sd.SectorCount;
+			_hCount = sd.HSectors;
+			_vCount = sd.VSectors;
 		}
 	}
 }

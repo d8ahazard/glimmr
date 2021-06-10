@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
+using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Nanoleaf.Client;
@@ -18,6 +19,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		private TileLayout _layout;
 		private bool _wasOn;
 		private bool _logged;
+		private Dictionary<int, int> _targets;
 
 
 		/// <summary>
@@ -29,10 +31,11 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			colorService.ColorSendEvent += SetColor;
 			if (n != null) {
 				Data = n;
-				SetData(n);
+				SetData();
 				var streamMode = n.Type == "NL29" || n.Type == "NL42" ? 2 : 1;
 				Log.Debug($"Creating streaming agent with mode {streamMode}.");
 				var cs = ColorService.ControlService;
+				cs.RefreshSystemEvent += SetData;
 				_nanoleafClient = new NanoleafClient(n.IpAddress, n.Token);
 				_streamingClient = new NanoleafStreamingClient(n.IpAddress, streamMode, cs.UdpClient);
 			}
@@ -55,10 +58,11 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
 
 		public async Task StartStream(CancellationToken ct) {
+			
 			if (!Enable || Streaming) {
 				return;
 			}
-
+			SetData();
 			Log.Information($"{Data.Tag}::Starting stream: {Data.Id}...");
 			Streaming = true;
 			//_wasOn = await _nanoleafClient.GetPowerStatusAsync();
@@ -88,22 +92,17 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			}
 			
 			var cols = new Dictionary<int, Color>();
-			foreach (var p in _layout.PositionData) {
-				if (p.ShapeType == 12) {
-					continue;
-				}
-
+			foreach (var p in _targets) {
 				var color = Color.FromArgb(0, 0, 0);
-				if (p.TargetSector != -1) {
-					var target = p.TargetSector - 1;
-					target = ColorUtil.CheckDsSectors(target);
+				if (p.Value != -1) {
+					var target = p.Value;
 					if (target < sectors.Count) {
 						color = sectors[target];
 					} else {
-						Log.Warning($"Error, trying to map {target} when count is only {sectors.Count}.");
+						//Log.Warning($"Error, trying to map {target} when count is only {sectors.Count}.");
 					}
 				}
-				cols[p.PanelId] = color;
+				cols[p.Key] = color;
 			}
 
 			if (!_logged) Log.Debug("Definitely setting colors for nanoleaf!");
@@ -118,7 +117,8 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
 		public Task ReloadData() {
 			var newData = DataUtil.GetDevice(Id);
-			SetData(newData);
+			Data = newData;
+			SetData();
 			return Task.CompletedTask;
 		}
 
@@ -145,19 +145,39 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			Dispose(true);
 		}
 
-		private void SetData(NanoleafData n) {
+		private void SetData() {
+			var sd = DataUtil.GetSystemData();
 			var oldBrightness = Data.Brightness;
-			Data = n;
 			DataUtil.GetItem<int>("captureMode");
-			IpAddress = n.IpAddress;
-			_layout = n.Layout;
-			Brightness = n.Brightness;
+			IpAddress = Data.IpAddress;
+			_layout = Data.Layout;
+			_targets = new Dictionary<int, int>();
+			
+			Brightness = Data.Brightness;
 			if (oldBrightness != Brightness) {
 				_nanoleafClient.SetBrightnessAsync(Brightness);
 			}
 
-			Enable = n.Enable;
-			Id = n.Id;
+			Enable = Data.Enable;
+			Id = Data.Id;
+			if (!Enable) return;
+			foreach (var p in _layout.PositionData) {
+				if (p.ShapeType == 12) {
+					continue;
+				}
+
+				if (p.TargetSector != -1) {
+					var target = p.TargetSector;
+					var sTarget = target;
+					if ((CaptureMode) sd.CaptureMode == CaptureMode.DreamScreen) target = ColorUtil.CheckDsSectors(target);
+					if (sd.UseCenter) target = ColorUtil.FindEdge(target);
+					_targets[p.PanelId] = target - 1;
+					Log.Debug($"Mapped {sTarget} to {target}");
+				} else {
+					_targets[p.PanelId] = -1;	
+				}
+				
+			}
 		}
 
 

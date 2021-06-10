@@ -55,7 +55,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 		}
 
 		public void Refresh(SystemData sd) {
-			_sectorCount = sd.SectorCount;
+			_sectorCount = sd.HSectors + sd.VSectors + sd.HSectors + sd.VSectors - 4;
 			_ledCount = sd.LedCount;
 			_ambientShow = sd.AmbientShow;
 			_ambientColor = sd.AmbientColor;
@@ -147,26 +147,6 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			}, CancellationToken.None);
 		}
 
-		private Color[] SplitColors(IReadOnlyList<Color> input) {
-			var output = new Color[_ledCount];
-			var inF = (float) input.Count;
-			var tot = (int) (_ledCount / inF);
-			var ci = 0;
-			var idx = 0;
-			var color = input[0];
-			for (var l = 0; l < _ledCount; l++) {
-				if (idx >= tot) {
-					color = input[ci];
-					if (ci < input.Count -1) ci++;
-				}
-
-				output[l] = color;
-				idx++;
-			}
-			return output;
-		}
-
-		
 
 		private static Color BlendColor(Color target, Color dest, double percent) {
 			var r1 = (int) ((target.R - dest.R) * percent) + dest.R;

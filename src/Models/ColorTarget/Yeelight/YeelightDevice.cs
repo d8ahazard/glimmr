@@ -137,6 +137,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		}
 
 		private void LoadData() {
+			var sd = DataUtil.GetSystemData();
 			var prevIp = IpAddress;
 			var restart = false;
 			IpAddress = Data.IpAddress;
@@ -149,7 +150,10 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 				}
 			}
 
-			_targetSector = ColorUtil.CheckDsSectors(Data.TargetSector);
+			var target = Data.TargetSector;
+			if ((CaptureMode) sd.CaptureMode == CaptureMode.DreamScreen) target = ColorUtil.CheckDsSectors(target);
+			if (sd.UseCenter) target = ColorUtil.FindEdge(target + 1);
+			_targetSector = target;
 			Tag = Data.Tag;
 			Id = Data.Id;
 			Brightness = Data.Brightness;

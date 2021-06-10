@@ -140,6 +140,7 @@ namespace Glimmr.Services {
 
 			await _hubContext.Clients.All.SendAsync("mode", mode);
 			DataUtil.SetItem("DeviceMode", mode);
+			ColorUtil.SetSystemData();
 			await SetModeEvent.InvokeAsync(null, new DynamicEventArgs(mode));
 		}
 
