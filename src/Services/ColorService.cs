@@ -487,7 +487,7 @@ namespace Glimmr.Services {
 					if (sdev.Data == null) {
 						Log.Debug("SET DEV DATA: " + sdev.Id);
 					}
-					if (sdev.Data.Tag != "Led" && sdev.Tag != "Adalight" && sdev.Data.Enable) {
+					if (sdev.Data.Tag != "Led" && sdev.Data.Tag != "Adalight" && sdev.Data.Enable) {
 						if (!SystemUtil.IsOnline(sdev.Data.IpAddress)) {
 							Log.Debug($"Device {sdev.Data.Tag} at {sdev.Data.Id} is offline.");
 							continue;
