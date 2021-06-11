@@ -138,12 +138,12 @@ fi
 if [ $PUBPROFILE = "LinuxARM"]
 then
   echo "Installing libs for emgu.cv (Linux x64)"
-  sudo mkdir /home/glimmrtv/glimmr/lib/linux/libcvextern
-  cd /home/glimmrtv/glimmr/lib/linux/libcvextern || exit
+  sudo mkdir /home/glimmrtv/glimmr/lib/LinuxARM/libcvextern
+  cd /home/glimmrtv/glimmr/lib/LinuxARM/libcvextern || exit
   sudo wget https://www.nuget.org/api/v2/package/Emgu.CV.runtime.linux-arm/4.5.1.4349
   unzip 4.5.1.4349
-  sudo cp /home/glimmrtv/glimmr/lib/linux/libcvextern/runtimes/linux-arm/native/libcvextern.so /home/glimmrtv/glimmr/lib/LinuxARM/libcvextern.so
-  sudo rm -r /home/glimmrtv/glimmr/lib/linux/libcvextern
+  sudo cp /home/glimmrtv/glimmr/lib/LinuxARM/libcvextern/runtimes/linux-arm/native/libcvextern.so /home/glimmrtv/glimmr/lib/LinuxARM/libcvextern.so
+  sudo rm -r /home/glimmrtv/glimmr/lib/LinuxARM/libcvextern
 fi
 
 # Copy necessary libraries
