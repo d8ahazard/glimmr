@@ -32,7 +32,7 @@ cd /home/glimmrtv/glimmr || exit
 git fetch && git pull >> $log
 
 # Build latest version
-echo "Building glimmr..." >> $log
+echo "Building glimmr using profile $PUBPROFILE..." >> $log
 /opt/dotnet/dotnet publish /home/glimmrtv/glimmr/src/Glimmr.csproj /p:PublishProfile=$PUBPROFILE -o /home/glimmrtv/glimmr/bin/
 if [ -d "/home/glimmrtv/glimmr/lib/$PUBPROFILE/" ]
   then
