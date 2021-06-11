@@ -13,6 +13,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 		}
 
 		public async Task Discover(CancellationToken ct, int timeout) {
+			
 			if (!SystemUtil.IsRaspberryPi()) {
 				DataUtil.DeleteDevice("0");
 				DataUtil.DeleteDevice("1");

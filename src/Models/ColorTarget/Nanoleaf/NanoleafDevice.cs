@@ -113,7 +113,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			}
 
 			if (!_logged) Log.Debug("Definitely setting colors for nanoleaf!");
-			_streamingClient.SetColorAsync(cols, fadeTime).ConfigureAwait(false);
+			_streamingClient.SetColorAsync(cols, 1).ConfigureAwait(false);
 			if (!_logged) {
 				Log.Debug("SENT");
 				_logged = true;

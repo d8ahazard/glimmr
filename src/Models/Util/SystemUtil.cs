@@ -48,6 +48,7 @@ namespace Glimmr.Models.Util {
 		}
 
 		public static bool IsRaspberryPi() {
+			if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) return false;
 			Process process = new() {
 				StartInfo = {
 					FileName = "cat",

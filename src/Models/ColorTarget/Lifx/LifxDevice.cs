@@ -93,6 +93,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			_client.SetColorAsync(B, new LifxColor(Color.FromArgb(0,0,0))).ConfigureAwait(false);
 			// Awaiting this breaks things, leave it alone...
 			_client.SetLightPowerAsync(B, false).ConfigureAwait(false);
+			_client.SetLightPowerAsync(B, false).ConfigureAwait(false);
 			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
 		}
 
@@ -111,6 +112,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			_hasMulti = Data.HasMultiZone;
 			if (_hasMulti) {
 				_multizoneCount = Data.LedCount;
+				_beamLayout = Data.BeamLayout;
 				if (_beamLayout == null && _multizoneCount != 0) {
 					Data.GenerateBeamLayout();
 					_beamLayout = Data.BeamLayout;
