@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,6 +21,24 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		private bool _wasOn;
 		private bool _logged;
 		private Dictionary<int, int> _targets;
+		private Stopwatch _frameWatch;
+		public bool Enable { get; set; }
+		
+		
+		public bool Testing { get; set; }
+		public int Brightness { get; set; }
+		public string Id { get; set; }
+		public string IpAddress { get; set; }
+		public string Tag { get; set; }
+		public bool Streaming { get; set; }
+
+		IColorTargetData IColorTarget.Data {
+			get => Data;
+			set => Data = (NanoleafData) value;
+		}
+
+
+
 
 
 		/// <summary>
@@ -29,44 +48,30 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		/// <param name="colorService"></param>
 		public NanoleafDevice(NanoleafData n, ColorService colorService) : base(colorService) {
 			colorService.ColorSendEvent += SetColor;
-			if (n != null) {
-				Data = n;
-				SetData();
-				var streamMode = n.Type == "NL29" || n.Type == "NL42" ? 2 : 1;
-				Log.Debug($"Creating streaming agent with mode {streamMode}.");
-				var cs = ColorService.ControlService;
-				cs.RefreshSystemEvent += SetData;
-				_nanoleafClient = new NanoleafClient(n.IpAddress, n.Token);
-				_streamingClient = new NanoleafStreamingClient(n.IpAddress, streamMode, cs.UdpClient);
-			}
-
+			Data = n;
+			SetData();
+			var streamMode = n.Type == "NL29" || n.Type == "NL42" ? 2 : 1;
+			Log.Debug($"Creating streaming agent with mode {streamMode}.");
+			var cs = ColorService.ControlService;
+			cs.RefreshSystemEvent += SetData;
+			_nanoleafClient = new NanoleafClient(n.IpAddress, n.Token);
+			_streamingClient = new NanoleafStreamingClient(n.IpAddress, streamMode, cs.UdpClient);
+			_frameWatch = new Stopwatch();
 			_disposed = false;
 		}
 
-		public bool Enable { get; set; }
-
-		IColorTargetData IColorTarget.Data {
-			get => Data;
-			set => Data = (NanoleafData) value;
-		}
-
-		public bool Testing { get; set; }
-		public int Brightness { get; set; }
-		public string Id { get; set; }
-		public string IpAddress { get; set; }
-		public string Tag { get; set; }
-
-
+		
 		public async Task StartStream(CancellationToken ct) {
 			
 			if (!Enable || Streaming) {
 				return;
 			}
-			SetData();
 			Log.Information($"{Data.Tag}::Starting stream: {Data.Id}...");
+
+			SetData();
 			Streaming = true;
 			//_wasOn = await _nanoleafClient.GetPowerStatusAsync();
-			
+			if (!_frameWatch.IsRunning) _frameWatch.Restart();			
 			await _nanoleafClient.TurnOnAsync();
 			_nanoleafClient.SetBrightnessAsync((int) (Brightness / 100f * 255)).ConfigureAwait(false);
 			await _nanoleafClient.StartExternalAsync();
@@ -80,7 +85,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
 			await FlashColor(Color.FromArgb(0, 0, 0)).ConfigureAwait(false);
 			Streaming = false;
-			
+			if (_frameWatch.IsRunning) _frameWatch.Reset();
 			await _nanoleafClient.TurnOffAsync().ConfigureAwait(false);
 			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
 		}
@@ -90,7 +95,9 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			if (!Streaming || !Enable || Testing && !force) {
 				return;
 			}
-			
+
+			if (_frameWatch.ElapsedMilliseconds < 100) return;
+			_frameWatch.Restart();
 			var cols = new Dictionary<int, Color>();
 			foreach (var p in _targets) {
 				var color = Color.FromArgb(0, 0, 0);
@@ -138,7 +145,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		}
 
 
-		public bool Streaming { get; set; }
+		
 
 
 		public void Dispose() {
