@@ -50,11 +50,12 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			
 		}
 
-		public AdalightData(int port) {
+		public AdalightData(int port, int ledCount) {
 			Port = port;
 			Name = $"Adalight - COM{port}";
 			Id = Name;
 			Brightness = 100;
+			LedCount = ledCount;
 			Speed = 115200;
 		}
 		public void UpdateFromDiscovered(IColorTargetData data) {

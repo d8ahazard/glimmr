@@ -17,7 +17,11 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 				try {
 					var devs = AdalightNet.Adalight.FindDevices();
 					foreach (var dev in devs) {
-						_controlService.AddDevice(new AdalightData(dev)).ConfigureAwait(false);
+						var count = dev.Value.Key;
+						var bri = dev.Value.Value;
+						var data = new AdalightData(dev.Key, count);
+						if (bri != 0) data.Brightness = bri;
+						_controlService.AddDevice(data).ConfigureAwait(false);
 					}
 				} catch (Exception e) {
 					Log.Debug("Exception: " + e.Message);

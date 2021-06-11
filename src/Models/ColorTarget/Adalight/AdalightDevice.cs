@@ -61,7 +61,12 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 		}
 
 		public void SetColor(List<Color> colors, List<Color> sectors, int fadeTime, bool force = false) {
-			if (!Enable || !Streaming || !force) return;
+			if (!Enable || !Streaming || Testing && !force) {
+				if (!Enable) Log.Debug("Not enabled");
+				if (!Streaming) Log.Debug("Not streaming.");
+				if (!force) Log.Debug("No force");
+				return;
+			}
 			var toSend = ColorUtil.TruncateColors(colors, _offset, _ledCount).ToList();
 			if (_reverseStrip) toSend.Reverse();
 			_adalight.UpdateColors(toSend);
@@ -86,7 +91,10 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 				Streaming = false;
 				_adalight = new AdalightNet.Adalight(_port, _ledCount, _baud);
 				if (wasStreaming) Streaming = _adalight.Connect();
+			}
 
+			if (_adalight != null && _adalight.Connected) {
+				_adalight.UpdateBrightness(Brightness);
 			}
 			return Task.CompletedTask;
 		}
