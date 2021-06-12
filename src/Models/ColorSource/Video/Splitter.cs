@@ -431,7 +431,7 @@ namespace Glimmr.Models.ColorSource.Video {
 
 			// Calc bottom regions (L-R)
 			pos = 0;
-			while (pos < ScaleWidth) {
+			while (pos < ScaleWidth && idx < _ledCount) {
 				output[idx] = new Rectangle((int) pos, (int) bTop, (int) widthBottom, (int) _borderHeight);
 				pos += widthBottom;
 				idx++;
