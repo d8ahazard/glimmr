@@ -2567,7 +2567,7 @@ function createLedMap(targetElement) {
     }
 
     // This one, stupid
-    for (let i = 0; i < bottomCount; i++) {
+    for (let i = 0; i < bottomCount - 1; i++) {
         t = h - hMargin - dHeight;
         b = t + dHeight;
         l = wMargin + (fbWidth * (i));

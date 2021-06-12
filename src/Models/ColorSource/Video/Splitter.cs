@@ -395,51 +395,54 @@ namespace Glimmr.Models.ColorSource.Video {
 			var heightRight = (float) ScaleHeight / _rightCount;
 
 			// Calc right regions, bottom to top
-			var pos = ScaleHeight - heightRight;
 			var idx = 0;
-			var requiredIdx = _rightCount - 1;
-			while (pos >= 0) {
+			var pos = ScaleHeight - heightRight;
+			
+			for (var i = 0; i < _rightCount; i++) {
+				if (pos < 0) pos = 0;
 				output[idx] = new Rectangle((int) rLeft, (int) pos, (int) _borderWidth, (int) heightRight);
 				pos -= heightRight;
 				idx++;
 			}
-
-			if (pos > -.002 || idx != requiredIdx) {
-				output[idx] = new Rectangle((int) rLeft, 0, (int) _borderWidth, (int) heightRight);
-				idx++;
-			}
-
-			requiredIdx += _topCount;
+			
 			// Calc top regions, from right to left
 			pos = ScaleWidth - widthTop;
-			while (pos >= 0) {
+
+			for (var i = 0; i < _topCount - 1; i++) {
+				if (pos < 0) pos = 0;
 				output[idx] = new Rectangle((int) pos, tTop, (int) widthTop, (int) _borderHeight);
 				idx++;
 				pos -= widthTop;
 			}
-
-			if (pos > -.002 || idx != requiredIdx) {
-				output[idx] = new Rectangle(0, tTop, (int) widthTop, (int) _borderHeight);
-				idx++;
-			}
-
+			
 			// Calc left regions (top to bottom)
 			pos = 0;
-			requiredIdx += _leftCount;
-			while (pos < ScaleHeight && idx != requiredIdx) {
+
+			for (var i = 0; i < _leftCount - 1; i++) {
+				if (pos > ScaleWidth) pos = ScaleWidth;
 				output[idx] = new Rectangle(lLeft, (int) pos, (int) _borderWidth, (int) heightLeft);
 				pos += heightLeft;
-				idx++;
+				idx++;	
 			}
 
 			// Calc bottom regions (L-R)
 			pos = 0;
-			while (pos < ScaleWidth && idx < _ledCount) {
+
+			for (var i = 0; i < _bottomCount - 1; i++) {
+				if (idx >= _ledCount) continue;
+				if (pos > ScaleHeight) pos = ScaleHeight;
 				output[idx] = new Rectangle((int) pos, (int) bTop, (int) widthBottom, (int) _borderHeight);
 				pos += widthBottom;
 				idx++;
 			}
 
+			if (output.Length != _ledCount) {
+				Log.Warning($"Warning: Led count is {output.Length}, but should be {_ledCount}");
+			} else {
+				Log.Information($"Created {output.Length} led regions!");
+			}
+			
+			
 			return output;
 		}
 
