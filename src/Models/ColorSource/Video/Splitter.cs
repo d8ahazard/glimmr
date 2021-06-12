@@ -397,17 +397,19 @@ namespace Glimmr.Models.ColorSource.Video {
 			// Calc right regions, bottom to top
 			var pos = ScaleHeight - heightRight;
 			var idx = 0;
+			var requiredIdx = _rightCount - 1;
 			while (pos >= 0) {
 				output[idx] = new Rectangle((int) rLeft, (int) pos, (int) _borderWidth, (int) heightRight);
 				pos -= heightRight;
 				idx++;
 			}
 
-			if (pos > -.002) {
+			if (pos > -.002 || idx != requiredIdx) {
 				output[idx] = new Rectangle((int) rLeft, 0, (int) _borderWidth, (int) heightRight);
 				idx++;
 			}
 
+			requiredIdx += _topCount;
 			// Calc top regions, from right to left
 			pos = ScaleWidth - widthTop;
 			while (pos >= 0) {
@@ -416,14 +418,15 @@ namespace Glimmr.Models.ColorSource.Video {
 				pos -= widthTop;
 			}
 
-			if (pos > -.002) {
+			if (pos > -.002 || idx != requiredIdx) {
 				output[idx] = new Rectangle(0, tTop, (int) widthTop, (int) _borderHeight);
 				idx++;
 			}
 
 			// Calc left regions (top to bottom)
 			pos = 0;
-			while (pos < ScaleHeight) {
+			requiredIdx += _leftCount;
+			while (pos < ScaleHeight && idx != requiredIdx) {
 				output[idx] = new Rectangle(lLeft, (int) pos, (int) _borderWidth, (int) heightLeft);
 				pos += heightLeft;
 				idx++;
