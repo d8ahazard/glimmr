@@ -2460,9 +2460,9 @@ function createBeamLedMap() {
 function createLedMap(targetElement) {
     let range1;
     let sd = data.store["SystemData"];
-    
+    let count = 0;
     if (isValid(deviceData)) {
-        let count = deviceData["LedCount"];
+        count = deviceData["LedCount"];
         let offset = deviceData["Offset"];
         let mode = deviceData["StripMode"];
         let total = sd["LedCount"];
@@ -2520,7 +2520,11 @@ function createLedMap(targetElement) {
         s1.style.height = frHeight.toString() + "px";
         s1.setAttribute("data-bs-toggle", "tooltip");
         s1.setAttribute("data-bs-placement", "top");
-        s1.setAttribute("title", ledCount.toString());
+        if (i === 0) {
+            s1.setAttribute("title", sd["LedCount"].toString() + "/" + (ledCount).toString());
+        } else {
+            s1.setAttribute("title", ledCount.toString());    
+        }        
         map.appendChild(s1);
         ledCount++;
     }
@@ -2539,7 +2543,12 @@ function createLedMap(targetElement) {
         s1.style.height = frHeight.toString() + "px";
         s1.setAttribute("data-bs-toggle", "tooltip");
         s1.setAttribute("data-bs-placement", "top");
-        s1.setAttribute("title", ledCount.toString());
+        if (i === 0) {
+            s1.setAttribute("title", ledCount.toString() + "/" + (ledCount + 1).toString());
+            ledCount++;
+        } else {
+            s1.setAttribute("title", ledCount.toString());
+        }
         map.appendChild(s1);
         ledCount++;
     }
@@ -2561,7 +2570,12 @@ function createLedMap(targetElement) {
         s1.style.height = flHeight.toString() + "px";
         s1.setAttribute("data-bs-toggle", "tooltip");
         s1.setAttribute("data-bs-placement", "top");
-        s1.setAttribute("title", ledCount.toString());
+        if (i === 0) {
+            s1.setAttribute("title", ledCount.toString() + "/" + (ledCount + 1).toString());
+            ledCount++;
+        } else {
+            s1.setAttribute("title", ledCount.toString());
+        }
         map.appendChild(s1);
         ledCount++;
     }
@@ -2583,7 +2597,12 @@ function createLedMap(targetElement) {
         s1.style.height = dHeight.toString() + "px";
         s1.setAttribute("data-bs-toggle", "tooltip");
         s1.setAttribute("data-bs-placement", "top");
-        s1.setAttribute("title", ledCount.toString());
+        if (i === 0) {
+            s1.setAttribute("title", ledCount.toString() + "/" + (ledCount + 1).toString());
+            ledCount++;
+        } else {
+            s1.setAttribute("title", ledCount.toString());
+        }
         map.appendChild(s1);
         ledCount++;
     }

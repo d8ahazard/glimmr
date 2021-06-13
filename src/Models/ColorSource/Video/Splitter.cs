@@ -403,6 +403,11 @@ namespace Glimmr.Models.ColorSource.Video {
 				output[idx] = new Rectangle((int) rLeft, (int) pos, (int) _borderWidth, (int) heightRight);
 				pos -= heightRight;
 				idx++;
+				if (i == 0) {
+					// Duplicate top-right value?
+					output[idx] = output[idx - 1];
+					idx++;
+				}
 			}
 			
 			// Calc top regions, from right to left
@@ -413,7 +418,13 @@ namespace Glimmr.Models.ColorSource.Video {
 				output[idx] = new Rectangle((int) pos, tTop, (int) widthTop, (int) _borderHeight);
 				idx++;
 				pos -= widthTop;
+				if (i == 0) {
+					// Duplicate top-left value?
+					output[idx] = output[idx - 1];
+					idx++;
+				}
 			}
+			
 			
 			// Calc left regions (top to bottom)
 			pos = 0;
@@ -422,9 +433,14 @@ namespace Glimmr.Models.ColorSource.Video {
 				if (pos > ScaleWidth) pos = ScaleWidth;
 				output[idx] = new Rectangle(lLeft, (int) pos, (int) _borderWidth, (int) heightLeft);
 				pos += heightLeft;
-				idx++;	
+				idx++;
+				if (i == 0) {
+					// Duplicate top-left value?
+					output[idx] = output[idx - 1];
+					idx++;
+				}
 			}
-
+			
 			// Calc bottom regions (L-R)
 			pos = 0;
 
@@ -434,6 +450,11 @@ namespace Glimmr.Models.ColorSource.Video {
 				output[idx] = new Rectangle((int) pos, (int) bTop, (int) widthBottom, (int) _borderHeight);
 				pos += widthBottom;
 				idx++;
+				if (i == 0) {
+					// Duplicate bottom-left value?
+					output[idx] = output[idx - 1];
+					idx++;
+				}
 			}
 
 			if (output.Length != _ledCount) {

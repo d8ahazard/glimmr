@@ -155,7 +155,7 @@ namespace Glimmr.Models {
 		// Values for general LED settings
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int LedCount => LeftCount + RightCount + TopCount + BottomCount - 4;
+		public int LedCount => LeftCount + RightCount + TopCount + BottomCount;
 
 		[DefaultValue(24)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
