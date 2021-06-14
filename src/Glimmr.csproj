@@ -14,7 +14,7 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="AdalightNet" Version="1.0.3" />
+    <PackageReference Include="AdalightNet" Version="1.0.4" />
     <PackageReference Include="AutoMapper" Version="10.1.1" />
     <PackageReference Include="digitalhigh.rpi-ws281x-csharp" Version="1.1.5.1" />
     <PackageReference Include="DirectShowLib" Version="1.0.0" />
@@ -29,14 +29,14 @@
     <PackageReference Include="Makaretu.Dns.Multicast" Version="0.27.0" />
     <PackageReference Include="ManagedBass" Version="3.0.0" />
     <PackageReference Include="Microsoft.AspNet.SignalR.Client" Version="2.4.2" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="5.0.6" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="5.0.6" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="5.0.7" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="5.0.7" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.9" />
     <PackageReference Include="MMALSharp" Version="0.6.0" />
     <PackageReference Include="Nanoleaf.Core" Version="2.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="OpenRGB.NET" Version="1.6.0" />
+    <PackageReference Include="OpenRGB.NET" Version="1.7.0" />
     <PackageReference Include="Q42.HueApi" Version="3.18.1" />
     <PackageReference Include="Q42.HueApi.Entertainment" Version="3.18.1" />
     <PackageReference Include="Serilog" Version="2.10.0" />

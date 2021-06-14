@@ -106,7 +106,11 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			_baud = Data.Speed;
 			_port = Data.Port;
 			Enable = Data.Enable;
-			Brightness = Data.Brightness;
+			if (Data.Brightness == 0) {
+				Brightness = 0;
+			} else {
+				Brightness = Data.Brightness / 100 * 255;	
+			}
 		}
 
 		public void Dispose() {
