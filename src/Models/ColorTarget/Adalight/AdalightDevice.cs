@@ -109,7 +109,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			if (Data.Brightness == 0) {
 				Brightness = 0;
 			} else {
-				Brightness = Data.Brightness / 100 * 255;	
+				Brightness = (int) (Data.Brightness / 100f * 255);	
 			}
 		}
 
