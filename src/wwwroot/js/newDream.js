@@ -2375,7 +2375,11 @@ function createBeamLedMap() {
         s1.style.height = frHeight.toString() + "px";
         s1.setAttribute("data-bs-toggle", "tooltip");
         s1.setAttribute("data-bs-placement", "top");
-        s1.setAttribute("title", ledCount.toString());
+        if (i === 0) {
+            s1.setAttribute("title", sd["LedCount"].toString() + "/" + (ledCount).toString());
+        } else {
+            s1.setAttribute("title", ledCount.toString());
+        }
         map.appendChild(s1);
         ledCount++;
     }
@@ -2398,7 +2402,11 @@ function createBeamLedMap() {
         s1.style.height = frHeight.toString() + "px";
         s1.setAttribute("data-bs-toggle", "tooltip");
         s1.setAttribute("data-bs-placement", "top");
-        s1.setAttribute("title", ledCount.toString());
+        if (i === 0) {
+            s1.setAttribute("title", ledCount.toString() + "/" + (ledCount + 1).toString());
+        } else {
+            s1.setAttribute("title", ledCount.toString());
+        }
         map.appendChild(s1);
         ledCount++;
     }
@@ -2424,7 +2432,11 @@ function createBeamLedMap() {
         s1.style.height = flHeight.toString() + "px";
         s1.setAttribute("data-bs-toggle", "tooltip");
         s1.setAttribute("data-bs-placement", "top");
-        s1.setAttribute("title", ledCount.toString());
+        if (i === 0) {
+            s1.setAttribute("title", ledCount.toString() + "/" + (ledCount + 1).toString());
+        } else {
+            s1.setAttribute("title", ledCount.toString());
+        }
         map.appendChild(s1);
         ledCount++;
     }
@@ -2450,7 +2462,11 @@ function createBeamLedMap() {
         s1.style.height = dHeight.toString() + "px";
         s1.setAttribute("data-bs-toggle", "tooltip");
         s1.setAttribute("data-bs-placement", "top");
-        s1.setAttribute("title", ledCount.toString());
+        if (i === 0) {
+            s1.setAttribute("title", ledCount.toString() + "/" + (ledCount + 1).toString());
+        } else {
+            s1.setAttribute("title", ledCount.toString());
+        }
         map.appendChild(s1);
         ledCount++;
     }
@@ -2618,7 +2634,6 @@ function ranges(ledCount, offset, total) {
     }
     return range.slice(offset, total + offset);
 }
-
 
 function createHueMap() {
     let settingsDiv = document.getElementById("deviceSettings");
@@ -2806,7 +2821,6 @@ function createHueMap() {
     
     // $('.delSel').bootstrapMaterialDesign();
 }
-
 
 function drawNanoShapes(panel) {
     
@@ -3062,7 +3076,6 @@ function setNanoMap(id, current) {
     }
 
 }
-
 
 function sizeContent() {
     let navDiv = document.getElementById("mainNav");

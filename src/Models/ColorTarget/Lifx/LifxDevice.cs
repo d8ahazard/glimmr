@@ -18,6 +18,8 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		private readonly LifxClient _client;
 		private bool _hasMulti;
 		private int _multizoneCount;
+		private int[] _gammaTableR;
+		private int[] _gammaTableBG;
 		
 		private int _targetSector;
 		private ColorConverter _conv;
@@ -97,6 +99,17 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
 		}
 
+		private int[] GenerateGammaTable(double gamma = 2.3) {
+			const int maxIn = 255;
+			const int maxOut = 255; // Top end of OUTPUT range
+			var output = new int[256];
+			for(var i=0; i<=maxIn; i++) {
+				output[i] = (int)(Math.Pow((float) i / maxIn, gamma) * maxOut + 0.5);
+			}
+			return output;
+		}
+		
+
 		public Task ReloadData() {
 			var newData = DataUtil.GetDevice<LifxData>(Id);
 			Data = newData;
@@ -113,6 +126,8 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			if (_hasMulti) {
 				_multizoneCount = Data.LedCount;
 				_beamLayout = Data.BeamLayout;
+				_gammaTableR = GenerateGammaTable(1.8);
+				_gammaTableBG = GenerateGammaTable(1.4);
 				if (_beamLayout == null && _multizoneCount != 0) {
 					Data.GenerateBeamLayout();
 					_beamLayout = Data.BeamLayout;
@@ -179,10 +194,12 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			var i = 0;
 			
 			var cols = new List<LifxColor>();
-
 			foreach (var col in output) {
 				if (i == 0) {
-					cols.Add(new LifxColor(col, _scaledBrightness));
+					var ar = _gammaTableR[col.R];
+					var ag = _gammaTableBG[col.G];
+					var ab = _gammaTableBG[col.B];
+					cols.Add(new LifxColor(Color.FromArgb(ar,ag,ab), _scaledBrightness));
 					i = 1;
 				} else {
 					i = 0;
