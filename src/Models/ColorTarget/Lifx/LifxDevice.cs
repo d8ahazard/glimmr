@@ -143,7 +143,6 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			var oldBrightness = Brightness;
 			Brightness = Data.Brightness;
 			_scaledBrightness = Brightness / 100d;
-			Log.Debug("Scaled is " + _scaledBrightness);
 			if (oldBrightness != Brightness) {
 				var bri = Brightness / 100 * 255;
 				_client.SetBrightnessAsync(B, (ushort) bri).ConfigureAwait(false);

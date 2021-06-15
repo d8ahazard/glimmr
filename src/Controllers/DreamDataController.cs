@@ -157,6 +157,13 @@ namespace Glimmr.Controllers {
 			await _controlService.UpdateSystem(ld);
 			return Ok(ld);
 		}
+		
+		// POST: api/DreamData/ledData
+		[HttpPost("startStream")]
+		public async Task<IActionResult> StartStream([FromBody] GlimmrData gd) {
+			await _controlService.StartStream(gd);
+			return Ok(gd);
+		}
 
 		[HttpPost("systemControl")]
 		public IActionResult SysControl([FromBody] string action) {

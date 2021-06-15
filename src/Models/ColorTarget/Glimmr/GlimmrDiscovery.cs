@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
@@ -61,18 +62,23 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			}
 
 			var rr = e.Message.AdditionalRecords;
-			foreach (var id in from msg in rr where msg.Type == DnsType.A select msg.CanonicalName) {
-				var split = id.Split(".")[0];
-				var ip = IpUtil.GetIpFromHost(split);
-				if (ip.ToString() != IpUtil.GetLocalIpAddress() && !string.Equals(split, Environment.MachineName,
-					StringComparison.CurrentCultureIgnoreCase)) {
-					var nData = new GlimmrData(split);
-					Log.Debug($"Adding new glimmr {id}: " + JsonConvert.SerializeObject(nData));
-					_controlService.AddDevice(nData).ConfigureAwait(false);
-				} else {
-					Log.Debug("Skipping self...");
+			foreach (var msg in rr) {
+				if (msg.Type == DnsType.A) {
+					var ipString = msg.ToString().Split(" ").Last();
+					Log.Debug($"MSG for {ipString}: " + msg.ToString());
+					var hostname = msg.CanonicalName.Split(".")[0];
+					var ip = IPAddress.Parse(ipString);
+					if (ip.ToString() != IpUtil.GetLocalIpAddress() && !string.Equals(hostname, Environment.MachineName,
+						StringComparison.CurrentCultureIgnoreCase)) {
+						var nData = new GlimmrData(hostname, ip);
+						Log.Debug($"Adding new glimmr {hostname}: " + JsonConvert.SerializeObject(nData));
+						_controlService.AddDevice(nData).ConfigureAwait(false);
+					} else {
+						Log.Debug("Skipping self...");
+					}		
 				}
 			}
+			
 		}
 	}
 }

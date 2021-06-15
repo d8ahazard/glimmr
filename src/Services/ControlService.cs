@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Glimmr.Hubs;
 using Glimmr.Models;
 using Glimmr.Models.ColorTarget;
+using Glimmr.Models.ColorTarget.Glimmr;
 using Glimmr.Models.ColorTarget.Led;
 using Glimmr.Models.Util;
 using Makaretu.Dns;
@@ -29,6 +30,8 @@ namespace Glimmr.Services {
 		private readonly IHubContext<SocketServer> _hubContext;
 
 		public AsyncEvent<DynamicEventArgs> DemoLedEvent;
+		
+		public AsyncEvent<DynamicEventArgs> StartStreamEvent;
 
 		public AsyncEvent<DynamicEventArgs> DeviceReloadEvent;
 		public AsyncEvent<DynamicEventArgs> DeviceRescanEvent;
@@ -359,6 +362,10 @@ namespace Glimmr.Services {
 		public async Task RemoveDevice(string id) {
 			DataUtil.RemoveDevice(id);
 			await _hubContext.Clients.All.SendAsync("deleteDevice", id);
+		}
+
+		public async Task StartStream(GlimmrData gd) {
+			await StartStreamEvent.InvokeAsync(this, new DynamicEventArgs(gd));
 		}
 	}
 }

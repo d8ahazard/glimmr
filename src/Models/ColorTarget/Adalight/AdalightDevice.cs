@@ -62,9 +62,6 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 
 		public void SetColor(List<Color> colors, List<Color> sectors, int fadeTime, bool force = false) {
 			if (!Enable || !Streaming || Testing && !force) {
-				if (!Enable) Log.Debug("Not enabled");
-				if (!Streaming) Log.Debug("Not streaming.");
-				if (!force) Log.Debug("No force");
 				return;
 			}
 			var toSend = ColorUtil.TruncateColors(colors, _offset, _ledCount).ToList();

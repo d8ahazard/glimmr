@@ -102,12 +102,9 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			var omz = MultiZoneCount;
 			MultiZoneCount = ld.MultiZoneCount;
 			HasMultiZone = ld.HasMultiZone;
-			Log.Debug($"Has multi, omz, mzc {HasMultiZone}, {omz}, {MultiZoneCount}");
 			if (HasMultiZone && (omz != MultiZoneCount || BeamLayout == null)) {
-				Log.Debug("Generating beam layout.");
 				GenerateBeamLayout();
 			}
-			Log.Debug("ZOnecount is + " + MultiZoneCount);
 			HostName = ld.HostName;
 			IpAddress = ld.IpAddress;
 			MacAddress = ld.MacAddress;
@@ -116,7 +113,6 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		}
 
 		public void GenerateBeamLayout() {
-			Log.Debug("Generating new beam layout.");
 			var total = 0;
 			var beamCount = 0;
 			var cornerCount = 0;

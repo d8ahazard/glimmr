@@ -57,12 +57,10 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				if (extended) {
 					var zones = await _client.GetExtendedColorZonesAsync(b);
 					zoneCount = zones.ZonesCount;
-					Log.Debug("ZOnecount is + " + zoneCount);
 				} else {
 					// Original device only supports eight zones?
 					var zones = await _client.GetColorZonesAsync(b, 0, 8);
 					zoneCount = zones.Count;
-					Log.Debug("ZOnecount is + " + zoneCount);
 				}
 			}
 
@@ -78,7 +76,6 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				MultiZoneCount = zoneCount
 			};
 			if (hasMulti && zoneCount != 0) d.GenerateBeamLayout();
-			Log.Debug("ZOnecount is + " + d.MultiZoneCount);
 
 			if (ver.Product == 55 || ver.Product == 101) {
 				tag = "LifxTile";

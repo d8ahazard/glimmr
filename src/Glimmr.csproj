@@ -18,7 +18,7 @@
     <PackageReference Include="AutoMapper" Version="10.1.1" />
     <PackageReference Include="digitalhigh.rpi-ws281x-csharp" Version="1.1.5.1" />
     <PackageReference Include="DirectShowLib" Version="1.0.0" />
-    <PackageReference Include="DreamScreenNet" Version="1.0.1" />
+    <PackageReference Include="DreamScreenNet" Version="1.0.3" />
     <PackageReference Include="Emgu.CV" Version="4.5.1.4349" />
     <PackageReference Include="Emgu.CV.Bitmap" Version="4.5.1.4349" />
     <PackageReference Include="Emgu.CV.runtime.linux-arm" Version="4.5.1.4349" Condition="$(RuntimeIdentifier) == 'linux-arm'" />

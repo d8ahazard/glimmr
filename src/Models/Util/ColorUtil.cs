@@ -17,6 +17,10 @@ namespace Glimmr.Models.Util {
 		private static int _sectorCount;
 		private static int _hCount;
 		private static int _vCount;
+		private static int _leftCount;
+		private static int _rightCount;
+		private static int _topCount;
+		private static int _bottomCount;
 		private static DeviceMode _deviceMode;
 		private static bool _useCenter;
 
@@ -913,6 +917,53 @@ namespace Glimmr.Models.Util {
 			return output;
 		}
 
+		// Resize a color array
+		public static Color[] ResizeColors(Color[] input, int[] dimensions) {
+			SetSystemData();
+			var newCount = dimensions[0] + dimensions[1] + dimensions[2] + dimensions[3];
+			var output = new Color[newCount];
+			var factor = (float) dimensions[0] / _rightCount;
+			var idx = 0;
+			var start = 0;
+			var required = _rightCount;
+			for (var i = start; i < required; i++) {
+				var step = (int) (i * factor);
+				output[idx] = input[step];
+				Log.Debug($"Mapping {idx} to {step}");
+				idx++;
+			}
+
+			start = required;
+			required += _topCount;
+			for (var i = start; i < required; i++) {
+				var step = (int) (i * factor);
+				output[idx] = input[step];
+				Log.Debug($"Mapping {idx} to {step}");
+				idx++;
+			}
+			
+			start = required;
+			required += _leftCount;
+			for (var i = start; i < required; i++) {
+				var step = (int) (i * factor);
+				output[idx] = input[step];
+				Log.Debug($"Mapping {idx} to {step}");
+				idx++;
+			}
+			
+			start = required;
+			required += _bottomCount;
+			for (var i = start; i < required; i++) {
+				var step = (int) (i * factor);
+				output[idx] = input[step];
+				Log.Debug($"Mapping {idx} to {step}");
+				idx++;
+			}
+			
+			
+			return input;
+		}
+
 		public static int CheckDsSectors(int target) {
 			SetSystemData();
 			// Append 1 here so target is not zero, and we can get the proper value from "real" sectors
@@ -937,6 +988,50 @@ namespace Glimmr.Models.Util {
 			_sectorCount = sd.SectorCount;
 			_hCount = sd.HSectors;
 			_vCount = sd.VSectors;
+			_leftCount = sd.LeftCount;
+			_rightCount = sd.RightCount;
+			_topCount = sd.TopCount;
+			_bottomCount = sd.BottomCount;
+
+		}
+
+		public static List<Color> MirrorColors(List<Color> input, int[] dimensions) {
+			var rightColors = new Color[dimensions[0]];
+			var topColors = new Color[dimensions[1]];
+			var leftColors = new Color[dimensions[2]];
+			var bottomColors = new Color[dimensions[3]];
+			
+			var rightStart = 0;
+			var rightSize = dimensions[0];
+			
+			var topStart = rightSize - 1;
+			var topSize = dimensions[1];
+
+			var leftStart = topStart + topSize;
+			var leftSize = dimensions[2];
+			
+			var bottomStart = leftStart + leftSize - 1;
+			var bottomSize = dimensions[3];
+			
+			for (var i = rightStart; i < rightSize; i++) {
+				rightColors[i] = input[i];
+			}
+			var idx = 0;
+			for (var i = topStart; i < topSize; i++) {
+				rightColors[idx] = input[i];
+				idx++;
+			}
+
+			idx = 0;
+			for (var i = leftStart; i < leftSize; i++) {
+				leftColors[idx] = input[i];
+				idx++;
+			}
+			for (var i = rightStart; i < rightSize; i++) {
+				input[i] = leftColors[i];
+			}
+
+			return input;
 		}
 	}
 }

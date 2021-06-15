@@ -5,20 +5,19 @@ using Newtonsoft.Json;
 
 namespace Glimmr.Models.ColorTarget.Glimmr {
 	public class GlimmrData : IColorTargetData {
-		[JsonProperty] public int BottomCount { get; set; }
-
-		[JsonProperty] public int BottomSectorCount { get; set; }
-
-		[JsonProperty] public int LedCount { get; set; }
-		[JsonProperty] public int LeftCount { get; set; }
-
-		[JsonProperty] public int LeftSectorCount { get; set; }
-		[JsonProperty] public int RightCount { get; set; }
-
-		[JsonProperty] public int RightSectorCount { get; set; }
+		
+		[JsonProperty] public bool MirrorHorizontal { get; set; }
 		[JsonProperty] public int TopCount { get; set; }
+		[JsonProperty] public int BottomCount { get; set; }
+		[JsonProperty] public int LeftCount { get; set; }
+		[JsonProperty] public int RightCount { get; set; }
+		[JsonProperty] public int HCount { get; set; }
+		[JsonProperty] public int VCount { get; set; }
+		[JsonProperty] public int LedCount { get; set; }
+		[JsonProperty] public bool UseCenter { get; set; }
 
-		[JsonProperty] public int TopSectorCount { get; set; }
+		
+		
 
 
 		public GlimmrData() {
@@ -29,7 +28,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			}
 		}
 
-		public GlimmrData(string id) {
+		public GlimmrData(string id, IPAddress ip) {
 			Id = id;
 			Tag = "Glimmr";
 			Name ??= Tag;
@@ -37,11 +36,11 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 				Name = StringUtil.UppercaseFirst(Id);
 			}
 
-			IpAddress = IpUtil.GetIpFromHost(id).ToString();
+			IpAddress = ip.ToString();
 
 			using var webClient = new WebClient();
 			try {
-				var url = "http://" + Id + "/json";
+				var url = "http://" + IpAddress + "/json";
 				var jsonData = webClient.DownloadString(url);
 				var sd = JsonConvert.DeserializeObject<GlimmrData>(jsonData);
 				if (sd != null) {
@@ -51,6 +50,9 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 					TopCount = sd.TopCount;
 					BottomCount = sd.BottomCount;
 					Brightness = sd.Brightness;
+					HCount = sd.HCount;
+					VCount = sd.VCount;
+					UseCenter = sd.UseCenter;
 				}
 			} catch (Exception) {
 			}
@@ -83,7 +85,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		}
 
 		public SettingsProperty[] KeyProperties { get; set; } = {
-			
+			new("Mirror Horizontal", "check", "Mirror LED Colors")
 		};
 
 		[JsonProperty] public string Name { get; set; }

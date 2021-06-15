@@ -23,7 +23,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		private int _offset;
 		private int _ledCount;
 
-		private readonly OpenRGBClient _client;
+		private OpenRGBClient _client;
 		private readonly ColorService _colorService;
 		
 
@@ -31,10 +31,10 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		public OpenRgbDevice(OpenRgbData data, ColorService cs) {
 			Id = data.Id;
 			Data = data;
-			ReloadData();
 			cs.ColorSendEvent += SetColor;
 			_colorService = cs;
 			_client = cs.ControlService.GetAgent("OpenRgbAgent");
+			LoadData();
 		}
 
 		
@@ -52,7 +52,18 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 				try {
 					_client.Connect();
 				} catch (Exception e) {
-					Log.Debug("Exception connecting client.");
+					Log.Debug("Exception connecting client: " + e.Message);
+				}
+
+				try
+				{
+					_client.Dispose();
+					_client = _colorService.ControlService.GetAgent("OpenRgbAgent");
+					_client.Connect();
+				}
+				catch
+				{
+					// Ignored
 				}
 			}
 
@@ -98,6 +109,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 			var converted = toSend.Select(col => new OpenRGB.NET.Models.Color(col.R, col.G, col.B)).ToList();
 			_client.UpdateLeds(Data.DeviceId, converted.ToArray());
+		
 			_colorService.Counter.Tick(Id);
 		}
 
@@ -115,6 +127,8 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			IpAddress = Data.IpAddress;
 			_offset = Data.Offset;
 			_ledCount = Data.LedCount;
+			var dev = _client.GetControllerData(Data.DeviceId);
+			_ledCount = dev.Leds.Length;
 		}
 
 		public void Dispose() {

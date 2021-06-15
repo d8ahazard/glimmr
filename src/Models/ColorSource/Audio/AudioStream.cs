@@ -57,7 +57,9 @@ namespace Glimmr.Models.ColorSource.Audio {
 		public void Refresh(SystemData systemData) {
 			_sd = systemData;
 			LoadData().ConfigureAwait(true);
-			try {
+			try
+			{
+				Log.Debug("Loading audio stream with index " + _recordDeviceIndex);
 				Bass.RecordInit(_recordDeviceIndex);
 				_handle = Bass.RecordStart(48000, 2, BassFlags.Float, Update);
 				Bass.RecordGetDeviceInfo(_recordDeviceIndex, out var info3);
