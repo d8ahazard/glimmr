@@ -306,6 +306,7 @@ namespace Glimmr.Services {
 					tag = tag.Split(".")[0];
 					foreach (var device in deviceData) {
 						if (device.Tag == tag) {
+							if (tag == "Led" && device.Id == "2") continue;
 							if (device.Enable) enabled++;
 							Log.Debug($"Creating {device.Tag}: {device.Id}");
 							var args = new object[] {device, this};
