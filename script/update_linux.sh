@@ -7,12 +7,12 @@ if [ -f "/usr/bin/raspi-config" ]
 fi
 
 unameOut="$(uname -s)"
-if [ $unameOut = "Darwin" ]
+if [ $unameOut == "Darwin" ]
   then
     PUBPROFILE="OSX"
 fi
 
-if [ $unameOut = "FreeBSD" ]
+if [ $unameOut == "FreeBSD" ]
   then
     PUBPROFILE="Portable"
 fi

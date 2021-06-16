@@ -82,11 +82,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			}
 
 			Data = ld;
-			if (Id == "2" || Id == "1") {
-				Enable = false;
-				Streaming = false;
-				return Task.CompletedTask;
-			}
+			
 
 			Enable = Data.Enable;
 			_ledCount = Data.LedCount;
