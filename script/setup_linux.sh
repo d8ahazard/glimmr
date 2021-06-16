@@ -173,7 +173,7 @@ StandardOutput=tty
 Restart=always
 User=root
 WorkingDirectory=/home/glimmrtv/glimmr/bin
-ExecStart= sudo /opt/dotnet/dotnet /home/glimmrtv/glimmr/bin/Glimmr.dll
+ExecStart=sudo /opt/dotnet/dotnet /home/glimmrtv/glimmr/bin/Glimmr.dll
 KillMode=process
 
 [Install]
