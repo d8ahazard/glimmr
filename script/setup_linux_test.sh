@@ -4,6 +4,7 @@ PUBPROFILE="Linux";
 if [ -f "/usr/bin/raspi-config" ] 
   then
     PUBPROFILE="LinuxARM"
+	echo "Setting publish profile to Raspi."
 fi
 
 unameOut="$(uname -s)"
@@ -40,7 +41,7 @@ cd /opt/dotnet || exit
 if [ ! -f "/home/glimmrtv/firstrun" ]
 then
   echo "Starting first-run setup..."
-  if [ $PUBPROFILE = "LinuxARM" ] 
+  if [ $PUBPROFILE == "LinuxARM" ] 
   then
     echo "Installing Linux-ARM dependencies..."
     # Install dependencies
@@ -72,7 +73,7 @@ then
     echo "Raspi first-config is done!"
   fi
 
-  if [ $PUBPROFILE = "Linux" ] 
+  if [ $PUBPROFILE == "Linux" ] 
   then
       echo "Installing Linux (x64) dependencies..."
       # Add extra repos for users on Ubuntu 20- for libjasper-dev
@@ -83,7 +84,7 @@ then
       sudo apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa libdc1394-22 libtesseract-dev scons icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libatlas-base-dev gfortran libopengl-dev git gcc xauth avahi-daemon x11-xserver-utils libopencv-dev python3-opencv unzip
       echo "DONE!"
   fi
-  if [ $PUBPROFILE = "OSX" ]
+  if [ $PUBPROFILE == "OSX" ]
   then
     echo "Hey there, I see you're trying to run this on OSX. You should leave a comment in the github issues section so we can fill this out!"
   fi
@@ -124,7 +125,7 @@ echo "DONE."
 chmod -R 777 /home/glimmrtv/glimmr/bin
 
 #Get libcvextern.so
-if [ $PUBPROFILE = "Linux" ]
+if [ $PUBPROFILE == "Linux" ]
 then
   echo "Installing libs for emgu.cv (Linux x64)"
   sudo mkdir /home/glimmrtv/glimmr/lib/linux/libcvextern
@@ -135,16 +136,6 @@ then
   sudo rm -r /home/glimmrtv/glimmr/lib/linux/libcvextern
 fi
 
-if [ $PUBPROFILE = "LinuxARM" ]
-then
-  echo "Installing libs for emgu.cv (Linux x64)"
-  sudo mkdir /home/glimmrtv/glimmr/lib/LinuxARM/libcvextern
-  cd /home/glimmrtv/glimmr/lib/LinuxARM/libcvextern || exit
-  sudo wget https://www.nuget.org/api/v2/package/Emgu.CV.runtime.linux-arm/4.5.1.4349
-  unzip 4.5.1.4349
-  sudo cp /home/glimmrtv/glimmr/lib/LinuxARM/libcvextern/runtimes/linux-arm/native/libcvextern.so /home/glimmrtv/glimmr/lib/LinuxARM/libcvextern.so
-  sudo rm -r /home/glimmrtv/glimmr/lib/LinuxARM/libcvextern
-fi
 
 # Copy necessary libraries
 echo "Copying libs..."
