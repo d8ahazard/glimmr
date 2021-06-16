@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Net;
@@ -10,12 +11,14 @@ using Glimmr.Models.ColorTarget.Glimmr;
 using Glimmr.Models.Util;
 using Makaretu.Dns;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 using Serilog;
 
 namespace Glimmr.Services {
 	public class StreamService : BackgroundService {
 		private readonly ControlService _cs;
 		private readonly UdpClient _uc;
+		private bool _loaded;
 		private int _devMode;
 		private int _sectorCount;
 		private int _ledCount;
@@ -38,7 +41,6 @@ namespace Glimmr.Services {
 			_uc.DontFragment = true;
 			var sd = DataUtil.GetSystemData();
 			_devMode = sd.DeviceMode;
-			_sectorCount = (sd.HSectors + sd.VSectors) * 2 - 4;
 		}
 
 		private void RefreshSd() {
@@ -47,17 +49,15 @@ namespace Glimmr.Services {
 
 		private async Task StartStream(object arg1, DynamicEventArgs arg2) {
 			GlimmrData gd = arg2.P1;
+			_sd = DataUtil.GetSystemData();
 			_dimensions = new[] {gd.RightCount, gd.TopCount, gd.LeftCount, gd.BottomCount};
-			_sectorDimensions = new[] {gd.VCount, gd.HCount, gd.VCount, gd.HCount};
+			_sectorDimensions = new[] {gd.VCount, gd.HCount};
+			Log.Debug("Dimensions: " + JsonConvert.SerializeObject(_dimensions));
 			_useCenter = gd.UseCenter;
 			_mirrorHorizontal = gd.MirrorHorizontal;
-			if (_useCenter) {
-				_sectorCount = gd.HCount * gd.VCount;
-			} else {
-				_sectorCount = gd.HCount + gd.HCount + gd.VCount + gd.VCount - 4;	
-			}
-
+			_sectorCount = gd.SectorCount;
 			_ledCount = gd.LedCount;
+			_loaded = true;
 			
 			await _cs.SetMode(5);
 		}
@@ -79,6 +79,7 @@ namespace Glimmr.Services {
 					if (_devMode != 5) {
 						await Task.Delay(1, stoppingToken);
 					} else {
+						if (!_loaded) continue;
 						var receivedResult = await _uc.ReceiveAsync();
 						var bytes = receivedResult.Buffer;
 						await ProcessFrame(bytes);
@@ -102,39 +103,52 @@ namespace Glimmr.Services {
 			}
 
 			var bytes = data.Skip(2).ToArray();
-			var colors = new List<Color>();
+			var colors = new Color[_ledCount];
+			var sectors = new Color[_sectorCount];
 			if (_devMode == 5) {
+				var colIdx = 0;
 				for (var i = 0; i < bytes.Length; i += 3) {
 					if (i + 2 >= bytes.Length) {
 						continue;
 					}
 
 					var col = Color.FromArgb(255, bytes[i], bytes[i + 1], bytes[i + 2]);
-					colors.Add(col);
+					if (colIdx < _ledCount) {
+						colors[colIdx] = col;
+					} else {
+						var sIdx = colIdx - _ledCount;
+						sectors[sIdx] = col;
+					}
+					colIdx++;
 				}
 
-				var secIdx = colors.Count - _sectorCount;
-				var ledColors = colors.GetRange(0, secIdx);
-				var sectorColors = colors.Skip(secIdx).ToList();
-				if (_sd.LedCount != _ledCount) ledColors = ColorUtil.ResizeColors(ledColors.ToArray(), _dimensions).ToList();
-				if (!_useCenter && !_sd.UseCenter) {
-					sectorColors = ColorUtil.ResizeColors(sectorColors.ToArray(), _sectorDimensions).ToList();
+				if (_sd.LedCount != _ledCount) {
+					//colors = ColorUtil.ResizeColors(colors, _dimensions).ToArray();
 				}
 
+				if (!_useCenter && _sd.SectorCount != _sectorCount) {
+					//sectors = ColorUtil.ResizeSectors(sectors, _sectorDimensions).ToArray();
+				}
+
+				var ledColors = colors.ToList();
+				var sectorColors = sectors.ToList();
 				if (_mirrorHorizontal) {
 					sectorColors.Reverse();
 					ledColors.Reverse();
 				}
+
 				_cs.SendColors(ledColors, sectorColors);
 				await Task.FromResult(true);
+			} else {
+				Log.Debug("Devmode is incorrect.");
 			}
+			
 		}
 
 		private void Refresh() {
 			_devMode = DataUtil.GetItem("DeviceMode");
 			var sd = DataUtil.GetSystemData();
 			_devMode = sd.DeviceMode;
-			_sectorCount = (sd.HSectors + sd.VSectors) * 2 - 4;
 		}
 	}
 }

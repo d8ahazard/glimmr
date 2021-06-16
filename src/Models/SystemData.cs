@@ -143,10 +143,7 @@ namespace Glimmr.Models {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int DiscoveryTimeout { get; set; }
 
-		[DefaultValue(40)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int HCountDs { get; set; } = 40;
-
+		
 		[DefaultValue(10)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
@@ -212,11 +209,7 @@ namespace Glimmr.Models {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int UsbSelection { get; set; }
 
-		[DefaultValue(24)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-
-		public int VCountDs { get; set; } = 24;
-
+		
 		[DefaultValue(6)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int VSectors { get; set; } = 6;

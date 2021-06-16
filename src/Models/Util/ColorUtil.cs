@@ -23,6 +23,7 @@ namespace Glimmr.Models.Util {
 		private static int _bottomCount;
 		private static DeviceMode _deviceMode;
 		private static bool _useCenter;
+		private static int _ledCount;
 
 		public static void ColorToHsv(Color color, out double hue, out double saturation, out double value) {
 			double max = Math.Max(color.R, Math.Max(color.G, color.B));
@@ -919,49 +920,117 @@ namespace Glimmr.Models.Util {
 
 		// Resize a color array
 		public static Color[] ResizeColors(Color[] input, int[] dimensions) {
-			SetSystemData();
-			var newCount = dimensions[0] + dimensions[1] + dimensions[2] + dimensions[3];
-			var output = new Color[newCount];
-			var factor = (float) dimensions[0] / _rightCount;
-			var idx = 0;
-			var start = 0;
-			var required = _rightCount;
-			for (var i = start; i < required; i++) {
-				var step = (int) (i * factor);
-				output[idx] = input[step];
-				Log.Debug($"Mapping {idx} to {step}");
-				idx++;
+			var output = new Color[_ledCount];
+
+			try {
+				SetSystemData();
+				var factor = (float) dimensions[0] / _rightCount;
+				var idx = 0;
+				var start = 0;
+				var required = _rightCount;
+				for (var i = start; i < required; i++) {
+					var step = (int) (idx * factor);
+					if (step >= input.Length) step = input.Length - 1;
+					output[idx] = input[step];
+					idx++;
+				}
+
+				start = required;
+				required += _topCount;
+				factor = (float) dimensions[1] / _topCount;
+				for (var i = start; i < required; i++) {
+					var step = (int) (idx * factor);
+					if (step >= input.Length) step = input.Length - 1;
+					output[idx] = input[step];
+					idx++;
+				}
+
+				start = required;
+				required += _leftCount;
+				factor = (float) dimensions[2] / _leftCount;
+				for (var i = start; i < required; i++) {
+					var step = (int) (idx * factor);
+					if (step >= input.Length) step = input.Length - 1;
+					output[idx] = input[step];
+					idx++;
+				}
+
+				start = required;
+				required += _bottomCount;
+				factor = (float) dimensions[3] / _bottomCount;
+				for (var i = start; i < required; i++) {
+					var step = (int) (idx * factor);
+					if (step >= input.Length) step = input.Length - 1;
+					output[idx] = input[step];
+					idx++;
+				}
+			} catch (Exception e) {
+				Log.Debug($"Exception {e.Message}: " + e.StackTrace);
 			}
 
-			start = required;
-			required += _topCount;
-			for (var i = start; i < required; i++) {
-				var step = (int) (i * factor);
-				output[idx] = input[step];
-				Log.Debug($"Mapping {idx} to {step}");
-				idx++;
+			return output;
+		}
+		
+		public static Color[] ResizeSectors(Color[] input, int[] dimensions) {
+			var output = new Color[_sectorCount];
+
+			try {
+				SetSystemData();
+				// Positions of corners in input
+				var iBr = 0;
+				var iTr = dimensions[0] - 1;
+				var iTl = dimensions[0] + dimensions[1] - 1;
+				var iBl = dimensions[0] + dimensions[1] + dimensions[0] - 1;
+
+				// Positions of output corners
+				var oBr = 0;
+				var oTr = _vCount - 1;
+				var oTl = _vCount + _hCount - 2;
+				var oBl = _vCount + _hCount + _vCount - 3;
+
+				var vFactor = (float) dimensions[0] / _vCount;
+				var hFactor = (float) dimensions[1] / _hCount;
+				
+				// Set bottom-right
+				output[0] = input[iBr];
+				
+				// Mid-right sectors
+				for (var i = oBr + 1; i < oTr; i++) {
+					var tgt = (int)(i * vFactor);
+					//Log.Debug($"Mapping {i} to {tgt}");
+					output[i] = input[tgt];
+				}
+
+				output[oTr] = input[iTr];
+				
+				for (var i = oTr + 1; i < oTl; i++) {
+					var tgt = (int)(i * hFactor);
+					//Log.Debug($"Mapping {i} to {tgt}");
+					output[i] = input[tgt];
+				}
+				
+				output[oTl] = input[iTl];
+				
+				for (var i = oTl + 1; i < oBl; i++) {
+					var tgt = (int)(i * vFactor);
+					//Log.Debug($"Mapping {i} to {tgt}");
+					output[i] = input[tgt];
+				}
+				
+				output[oBl] = input[iBl];
+				
+				for (var i = oBl + 1; i < _sectorCount; i++) {
+					var tgt = (int)(i * hFactor);
+					if (tgt >= _sectorCount) tgt = _sectorCount - 1; 
+					//Log.Debug($"Mapping {i} to {tgt}");
+					output[i] = input[tgt];
+				}
+
+			} catch (Exception e) {
+				Log.Debug($"Exception {e.Message}: " + e.StackTrace);
 			}
-			
-			start = required;
-			required += _leftCount;
-			for (var i = start; i < required; i++) {
-				var step = (int) (i * factor);
-				output[idx] = input[step];
-				Log.Debug($"Mapping {idx} to {step}");
-				idx++;
-			}
-			
-			start = required;
-			required += _bottomCount;
-			for (var i = start; i < required; i++) {
-				var step = (int) (i * factor);
-				output[idx] = input[step];
-				Log.Debug($"Mapping {idx} to {step}");
-				idx++;
-			}
-			
-			
-			return input;
+
+			return output;
 		}
 
 		public static int CheckDsSectors(int target) {
@@ -992,6 +1061,7 @@ namespace Glimmr.Models.Util {
 			_rightCount = sd.RightCount;
 			_topCount = sd.TopCount;
 			_bottomCount = sd.BottomCount;
+			_ledCount = sd.LedCount;
 
 		}
 

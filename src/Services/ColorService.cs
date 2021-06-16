@@ -539,7 +539,7 @@ namespace Glimmr.Services {
 				_frameWatch.Start();
 			}
 
-			if (_frameWatch.Elapsed >= _frameSpan || force) {
+			if (_frameWatch.Elapsed >= _frameSpan || force || DeviceMode == DeviceMode.Streaming) {
 				_frameWatch.Restart();
 				Counter.Tick("source");
 				ColorSendEvent(colors, sectors, fadeTime, force);

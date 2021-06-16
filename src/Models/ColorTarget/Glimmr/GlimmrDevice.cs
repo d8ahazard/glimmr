@@ -4,7 +4,9 @@ using System.Drawing;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
@@ -57,7 +59,9 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			}
 
 			Log.Information($"{Data.Tag}::Starting stream: {Data.Id}...");
-			await SendPost("mode", 5).ConfigureAwait(false);
+			var sd = DataUtil.GetSystemData();
+			var glimmrData = new GlimmrData(sd);
+			await SendPost("startStream", JsonConvert.SerializeObject(glimmrData)).ConfigureAwait(false);
 			_ep = IpUtil.Parse(IpAddress, port);
 			Streaming = true;
 			Log.Information($"{Data.Tag}::Stream started: {Data.Id}.");
@@ -98,7 +102,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 
 			await FlashColor(Color.FromArgb(0, 0, 0));
 			Streaming = false;
-			await SendPost("mode", 0);
+			await SendPost("mode", 0.ToString());
 			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
 		}
 
@@ -171,7 +175,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		}
 
 
-		private async Task SendPost(string target, int value) {
+		private async Task SendPost(string target, string value) {
 			Uri uri;
 			if (string.IsNullOrEmpty(IpAddress) && !string.IsNullOrEmpty(Id)) {
 				IpAddress = Id;
@@ -180,21 +184,22 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 
 			try {
 				uri = new Uri("http://" + IpAddress + "/api/DreamData/" + target);
-				Log.Debug($"Posting to {uri}");
+				Log.Debug($"Posting to {uri}: " + value);
 			} catch (UriFormatException e) {
 				Log.Warning("URI Format exception: " + e.Message);
 				return;
 			}
 
-			var httpContent = new StringContent(value.ToString());
-			httpContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+			
+			var stringContent = new StringContent(value, Encoding.UTF8, "application/json");
 			try {
-				await _httpClient.PostAsync(uri, httpContent);
+				var res = _httpClient.PostAsync(uri, stringContent).Result;
+				Log.Debug("Resposne: " + res.StatusCode);
 			} catch (Exception e) {
 				Log.Warning("HTTP Request Exception: " + e.Message);
 			}
 
-			httpContent.Dispose();
+			stringContent.Dispose();
 		}
 
 

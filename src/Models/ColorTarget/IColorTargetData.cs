@@ -8,7 +8,8 @@ namespace Glimmr.Models.ColorTarget {
 		public int Brightness { get; set; }
 		
 
-		[JsonProperty] public SettingsProperty[] KeyProperties { get; set; }
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] 
+		public SettingsProperty[] KeyProperties { get; set; }
 
 		public string Id { get; set; }
 		public string IpAddress { get; set; }
@@ -20,21 +21,24 @@ namespace Glimmr.Models.ColorTarget {
 
 	[Serializable]
 	public class SettingsProperty {
-		[JsonProperty] public string ValueMax { get; set; }
-		[JsonProperty] public string ValueMin { get; set; }
-		[JsonProperty] public string ValueStep { get; set; }
-		[JsonProperty] public Dictionary<string, string> Options;
-		[JsonProperty] public string ValueLabel;
-		[JsonProperty] public string ValueName;
-		[JsonProperty] public string ValueType;
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public string ValueMax { get; set; }
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public string ValueMin { get; set; }
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public string ValueStep { get; set; }
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public Dictionary<string, string> Options;
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public string ValueLabel;
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public string ValueName;
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public string ValueType;
 
 		public SettingsProperty() {
 		}
 
-		public SettingsProperty(string name, string type, string label, Dictionary<string, string> options = null) {
+		public SettingsProperty(string name, string type, string label, Dictionary<string, string>? options = null) {
 			ValueName = name;
 			ValueType = type;
 			ValueLabel = label;
+			ValueMax = "100";
+			ValueMin = "0";
+			ValueStep = "1";
 			Options = options ?? new Dictionary<string, string>();
 		}
 	}
