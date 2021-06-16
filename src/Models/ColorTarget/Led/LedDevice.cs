@@ -5,8 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
+using rpi_ws281x;
 using Serilog;
-using ws281x.Net;
 
 namespace Glimmr.Models.ColorTarget.Led {
 	public class LedDevice : ColorTarget, IColorTarget {
@@ -16,7 +16,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 		private int _ledCount;
 		private int _offset;
-		private Neopixel _strip;
+		private WS281x _strip;
 
 
 		public LedDevice(LedData ld, ColorService colorService) : base(colorService) {
@@ -63,21 +63,13 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 
 		public Task FlashColor(Color color) {
-			for (var i = 0; i < _ledCount; i++)
-			{
-				_strip.SetPixelColor(i, color);
-			}
-			_strip.Show();
+			_strip?.SetAll(color);
 			return Task.CompletedTask;
 		}
 
 
 		public void Dispose() {
-			for (var i = 0; i < _ledCount; i++)
-			{
-				_strip.SetPixelColor(i, Color.Black);
-			}
-			_strip.Show();
+			_strip?.Reset();
 			_strip?.Dispose();
 		}
 
@@ -120,9 +112,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			}
 
 			if (Data.LedCount != ld.LedCount) {
-				StopLights();
-				_strip?.Dispose();
-				CreateStrip();
+				_strip.SetLedCount(ld.LedCount);
 			}
 
 			if (!_enableAbl) {
@@ -152,37 +142,53 @@ namespace Glimmr.Models.ColorTarget.Led {
 					tCol = ColorUtil.ClampAlpha(tCol);
 				}
 
-				_strip?.SetPixelColor(i, tCol);
+				_strip?.SetLed(i, tCol);
 			}
 
-			_strip?.Show();
+			_strip?.Render();
 			ColorService.Counter.Tick(Id);
 		}
 
 
 		private void CreateStrip() {
-			var wasStreaming = Streaming;
-			Streaming = false;
-			var stripType = Data.StripType switch {
-				1 => rpi_ws281x.SK6812W_STRIP,
-				2 => rpi_ws281x.WS2811_STRIP_RBG,
-				0 => rpi_ws281x.WS2812_STRIP,
-				_ => rpi_ws281x.WS2812_STRIP
-			};
-
-			var channel = 0;
-			if (Data.GpioNumber == 19) channel = 1;
+			var settings = LoadLedData(Data);
 			// Hey, look, this is built natively into the LED app
 			try {
-				_strip = new Neopixel(_ledCount, Data.GpioNumber,stripType,8000000U, 10,false,(byte)Brightness,channel);
-				if (wasStreaming) Streaming = true;
+				_strip = new WS281x(settings);
+				Streaming = true;
 			} catch (Exception) {
 				Streaming = false;
 			}
 		}
 
 
-	
+		private Settings LoadLedData(LedData ld) {
+			var settings = Settings.CreateDefaultSettings();
+			if (!ld.FixGamma) {
+				settings.SetGammaCorrection(0, 0, 0);
+			}
+
+			var stripType = ld.StripType switch {
+				1 => StripType.SK6812W_STRIP,
+				2 => StripType.WS2811_STRIP_RBG,
+				0 => StripType.WS2812_STRIP,
+				_ => StripType.WS2812_STRIP
+			};
+
+			// 18 = PWM0, 13 = PWM1, 21 = PCM, 10 = SPI0/MOSI
+			var pin = ld.GpioNumber switch {
+				19 => Pin.Gpio19,
+				10 => Pin.Gpio10,
+				18 => Pin.Gpio18,
+				13 => Pin.Gpio13,
+				_ => Pin.Gpio18
+			};
+
+			settings.AddController(_ledCount, pin, stripType);
+			Data = ld;
+			return settings;
+		}
+
 		private static List<Color> TruncateColors(List<Color> input, int len, int offset) {
 			var truncated = new List<Color>();
 			// Subtract one from our offset because arrays
@@ -216,9 +222,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 				return;
 			}
 
-			for (var i = 0; i < _ledCount; i++) {
-				_strip.SetPixelColor(i,Color.Black);
-			}
+			_strip?.SetAll(Color.FromArgb(0, 0, 0, 0));
 			await Task.FromResult(true);
 		}
 
@@ -267,7 +271,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 					var scaleI = scale * 255;
 					var scaleB = scaleI > 255 ? 255 : scaleI;
 					var newBri = scale8(defaultBrightness, scaleB);
-					_strip?.SetBrightness((byte) newBri);
+					_strip?.SetBrightness((int) newBri);
 					CurrentMilliamps = powerSum0 * newBri / puPerMilliamp;
 					if (newBri < defaultBrightness) {
 						//output = ColorUtil.ClampBrightness(input, newBri);
@@ -275,7 +279,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 				} else {
 					CurrentMilliamps = (float) powerSum / puPerMilliamp;
 					if (defaultBrightness < 255) {
-						_strip?.SetBrightness((byte)defaultBrightness);
+						_strip?.SetBrightness(defaultBrightness);
 					}
 				}
 
@@ -283,7 +287,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			} else {
 				CurrentMilliamps = 0;
 				if (defaultBrightness < 255) {
-					_strip?.SetBrightness((byte)defaultBrightness);
+					_strip?.SetBrightness(defaultBrightness);
 				}
 			}
 
