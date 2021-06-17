@@ -22,7 +22,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 				return;
 			}
 
-			var ld0 = new LedData {Id = "0", Brightness = 255, GpioNumber = 18};
+			var ld0 = new LedData {Id = "0", Brightness = 255, GpioNumber = 18, Enable = true};
 			var ld1 = new LedData {Id = "1", Brightness = 255, GpioNumber = 19};
 
 			await ControlService.AddDevice(ld0);

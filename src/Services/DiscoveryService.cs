@@ -56,6 +56,11 @@ namespace Glimmr.Services {
 			_stopToken = stoppingToken;
 			_mergeSource = CancellationTokenSource.CreateLinkedTokenSource(_syncSource.Token, _stopToken);
 			return Task.Run(async () => {
+				var devs = DataUtil.GetDevices();
+				if (devs.Count == 0) {
+					Log.Debug("No devices, scanning...");
+					TriggerRefresh(null, null);
+				}
 				Log.Information("Starting discovery service loop...");
 				while (!stoppingToken.IsCancellationRequested) {
 					await Task.Delay(TimeSpan.FromMinutes(_discoveryInterval), _mergeSource.Token);

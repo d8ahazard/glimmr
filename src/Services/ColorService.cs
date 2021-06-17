@@ -577,5 +577,30 @@ namespace Glimmr.Services {
 
 			Log.Information("All services have been stopped.");
 		}
+
+		public void StopDevice(string id, bool remove = false) {
+			var devs = new List<IColorTarget>();
+			for (var i = 0; i < _sDevices.Length; i++) {
+				var dev = _sDevices[i];
+				if (dev.Id == id) {
+					if (dev.Enable && dev.Streaming) {
+						dev.StopStream();
+					}
+					dev.Enable = false;
+					if (!remove) {
+						devs.Add(dev);
+					} else {
+						dev.Dispose();
+					}
+				} else {
+					devs.Add(dev);
+				}
+				
+				
+			}
+			foreach (var dev in _sDevices) {
+				
+			}
+		}
 	}
 }

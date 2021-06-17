@@ -62,6 +62,19 @@ namespace Glimmr.Services {
 
 ";
 			Log.Debug(text);
+			_sd = DataUtil.GetSystemData();
+			var devs = DataUtil.GetDevices();
+			if (devs.Count == 0) {
+				if (SystemUtil.IsRaspberryPi()) {
+					var ld0 = new LedData {Id = "0", Brightness = 255, GpioNumber = 18, Enable = true};
+					var ld1 = new LedData {Id = "1", Brightness = 255, GpioNumber = 19};
+					DataUtil.AddDeviceAsync(ld0);
+					DataUtil.AddDeviceAsync(ld1);
+				}
+			}
+				
+			// Now we can load stuff
+			LoadAgents();
 			_hubContext = hubContext;
 			// Init nano HttpClient
 			HttpSender = new HttpClient {Timeout = TimeSpan.FromSeconds(5)};
@@ -75,7 +88,7 @@ namespace Glimmr.Services {
 			TcpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 			// Dynamically load agents
 			ColorUtil.SetSystemData();
-			LoadAgents();
+			
 		}
 
 		public event Action RefreshSystemEvent = delegate { };
@@ -249,7 +262,6 @@ namespace Glimmr.Services {
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			return Task.Run(async () => {
-				_sd = DataUtil.GetSystemData();
 				while (!stoppingToken.IsCancellationRequested) {
 					await Task.Delay(60000, stoppingToken);
 					if (!_sd.AutoUpdate) {
@@ -360,6 +372,7 @@ namespace Glimmr.Services {
 		}
 
 		public async Task RemoveDevice(string id) {
+			ColorService.StopDevice(id, true);
 			DataUtil.RemoveDevice(id);
 			await _hubContext.Clients.All.SendAsync("deleteDevice", id);
 		}

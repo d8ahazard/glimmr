@@ -1062,7 +1062,6 @@ namespace Glimmr.Models.Util {
 			_topCount = sd.TopCount;
 			_bottomCount = sd.BottomCount;
 			_ledCount = sd.LedCount;
-
 		}
 
 		public static List<Color> MirrorColors(List<Color> input, int[] dimensions) {

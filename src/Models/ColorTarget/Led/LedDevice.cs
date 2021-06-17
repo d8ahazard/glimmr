@@ -23,20 +23,19 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 		public LedDevice(LedData ld, ColorService colorService) : base(colorService) {
 			var cs = colorService;
-			_ws = cs.ControlService.GetAgent("LedAgent");
-			
+			LedAgent agent = cs.ControlService.GetAgent("LedAgent");
+			_ws = agent.Ws281x;
 			cs.ColorSendEvent += SetColor;
 			Data = ld;
 			Id = Data.Id;
 			_controllerId = int.Parse(Id);
 			if (Id == "0") {
-				_controller = _ws.GetController();
+				_controller = agent.Controller0;
 			}
 
 			if (Id == "1") {
-				_controller = _ws.GetController(ControllerType.PWM1);
+				_controller = agent.Controller1;
 			}
-			
 			
 			ReloadData();
 		}
@@ -77,23 +76,18 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 
 		public Task FlashColor(Color color) {
-			_controller?.SetAll(color);
+			_controller.SetAll(color);
 			return Task.CompletedTask;
 		}
 
 
 		public void Dispose() {
-			_controller?.Reset();
+			_controller.Reset();
 		}
 
 		public Task ReloadData() {
 			var ld = DataUtil.GetDevice<LedData>(Id);
 			var sd = DataUtil.GetSystemData();
-			if (Id == "2") {
-				Enable = false;
-				Streaming = false;
-				return Task.CompletedTask;
-			}
 			
 			if (ld == null) {
 				Log.Warning("No LED Data");
@@ -147,7 +141,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 					tCol = ColorUtil.ClampAlpha(tCol);
 				}
 
-				_controller?.SetLED(i, tCol);
+				_controller.SetLED(i, tCol);
 			}
 
 			_ws.Render();
@@ -192,6 +186,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			}
 
 			_controller.Reset();
+			_ws.Render();
 			await Task.FromResult(true);
 		}
 

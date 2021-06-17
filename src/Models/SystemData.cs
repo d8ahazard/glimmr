@@ -110,9 +110,9 @@ namespace Glimmr.Models {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int AutoUpdateTime { get; set; }
 
-		[DefaultValue(40)]
+		[DefaultValue(96)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int BottomCount { get; set; } = 40;
+		public int BottomCount { get; set; } = 96;
 
 		[DefaultValue(255)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -154,9 +154,9 @@ namespace Glimmr.Models {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int LedCount => LeftCount + RightCount + TopCount + BottomCount;
 
-		[DefaultValue(24)]
+		[DefaultValue(54)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int LeftCount { get; set; } = 24;
+		public int LeftCount { get; set; } = 54;
 
 		[DefaultValue(255)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -178,9 +178,9 @@ namespace Glimmr.Models {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int RecId { get; set; } = 1;
 
-		[DefaultValue(24)]
+		[DefaultValue(54)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int RightCount { get; set; } = 24;
+		public int RightCount { get; set; } = 54;
 
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -200,9 +200,9 @@ namespace Glimmr.Models {
 			}
 		}
 
-		[DefaultValue(40)]
+		[DefaultValue(96)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int TopCount { get; set; } = 40;
+		public int TopCount { get; set; } = 96;
 
 		// USB index to use for cam/HDMI
 		[DefaultValue(0)]
