@@ -7,12 +7,12 @@ if [ -f "/usr/bin/raspi-config" ]
 fi
 
 unameOut="$(uname -s)"
-if [ $unameOut = "Darwin" ]
+if [ "$unameOut" == "Darwin" ]
   then
     PUBPROFILE="OSX"
 fi
 
-if [ $unameOut = "FreeBSD" ]
+if [ "$unameOut" == "FreeBSD" ]
   then
     PUBPROFILE="Portable"
 fi
@@ -40,12 +40,12 @@ cd /opt/dotnet || exit
 if [ ! -f "/home/glimmrtv/firstrun" ]
 then
   echo "Starting first-run setup..."
-  if [ $PUBPROFILE == "LinuxARM" ] 
+  if [ "$PUBPROFILE" == "LinuxARM" ] 
   then
     echo "Installing Linux-ARM dependencies..."
     # Install dependencies
     sudo apt-get -y update && apt-get -y upgrade
-    sudo apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa libdc1394-22 libtesseract-dev scons icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libatlas-base-dev gfortran libopengl-dev git gcc xauth avahi-daemon x11-xserver-utils
+    sudo apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa libdc1394-22 libtesseract-dev scons icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libatlas-base-dev gfortran libopengl-dev git gcc xauth avahi-daemon x11-xserver-utils libtiff5-dev libgeotiff-dev libgtk-3-dev libgstreamer1.0-dev libavcodec-dev libswscale-dev libavformat-dev libopenexr-dev libjasper-dev libdc1394-22-dev libv4l-dev libeigen3-dev libopengl-dev cmake-curses-gui freeglut3-dev
     
     #Assign existing hostname to $hostn
     hostn=$(cat /etc/hostname)
@@ -72,7 +72,7 @@ then
     echo "Raspi first-config is done!"
   fi
 
-  if [ $PUBPROFILE == "Linux" ] 
+  if [ "$PUBPROFILE" == "Linux" ] 
   then
       echo "Installing Linux (x64) dependencies..."
       # Add extra repos for users on Ubuntu 20- for libjasper-dev
@@ -83,7 +83,7 @@ then
       sudo apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa libdc1394-22 libtesseract-dev scons icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libatlas-base-dev gfortran libopengl-dev git gcc xauth avahi-daemon x11-xserver-utils libopencv-dev python3-opencv unzip
       echo "DONE!"
   fi
-  if [ $PUBPROFILE == "OSX" ]
+  if [ "$PUBPROFILE" == "OSX" ]
   then
     echo "Hey there, I see you're trying to run this on OSX. You should leave a comment in the github issues section so we can fill this out!"
   fi
@@ -119,12 +119,13 @@ fi
 
 # Build latest version
 echo "Building glimmr..."
+/opt/dotnet/dotnet restore /home/glimmrtv/glimmr/src/Glimmr.csproj
 /opt/dotnet/dotnet publish /home/glimmrtv/glimmr/src/Glimmr.csproj /p:PublishProfile=$PUBPROFILE -o /home/glimmrtv/glimmr/bin/
 echo "DONE."
 chmod -R 777 /home/glimmrtv/glimmr/bin
 
 #Get libcvextern.so
-if [ $PUBPROFILE == "Linux" ]
+if [ "$PUBPROFILE" == "Linux" ]
 then
   echo "Installing libs for emgu.cv (Linux x64)"
   sudo mkdir /home/glimmrtv/glimmr/lib/linux/libcvextern
@@ -133,17 +134,6 @@ then
   unzip 4.5.1.4349
   sudo cp /home/glimmrtv/glimmr/lib/linux/libcvextern/runtimes/ubuntu.20.04-x64/native/libcvextern.so /home/glimmrtv/glimmr/lib/Linux/libcvextern.so
   sudo rm -r /home/glimmrtv/glimmr/lib/linux/libcvextern
-fi
-
-if [ $PUBPROFILE == "LinuxARM" ]
-then
-  echo "Installing libs for emgu.cv (Linux x64)"
-  sudo mkdir /home/glimmrtv/glimmr/lib/LinuxARM/libcvextern
-  cd /home/glimmrtv/glimmr/lib/LinuxARM/libcvextern || exit
-  sudo wget https://www.nuget.org/api/v2/package/Emgu.CV.runtime.linux-arm/4.5.1.4349
-  unzip 4.5.1.4349
-  sudo cp /home/glimmrtv/glimmr/lib/LinuxARM/libcvextern/runtimes/linux-arm/native/libcvextern.so /home/glimmrtv/glimmr/lib/LinuxARM/libcvextern.so
-  sudo rm -r /home/glimmrtv/glimmr/lib/LinuxARM/libcvextern
 fi
 
 # Copy necessary libraries
