@@ -70,7 +70,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 				return;
 			}
 
-			await StopLights().ConfigureAwait(false);
+			await StopLights();
 			Streaming = false;
 			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
 		}
@@ -191,7 +191,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 				return;
 			}
 
-			_controller.SetAll(Color.FromArgb(0, 0, 0, 0));
+			_controller.Reset();
 			await Task.FromResult(true);
 		}
 

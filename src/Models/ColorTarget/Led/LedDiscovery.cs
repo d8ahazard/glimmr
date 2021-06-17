@@ -13,22 +13,20 @@ namespace Glimmr.Models.ColorTarget.Led {
 		}
 
 		public async Task Discover(CancellationToken ct, int timeout) {
-			
+			DataUtil.DeleteDevice("2");
+
 			if (!SystemUtil.IsRaspberryPi()) {
 				DataUtil.DeleteDevice("0");
 				DataUtil.DeleteDevice("1");
-				DataUtil.DeleteDevice("2");
 				Log.Debug("No, really, this is not a pi, we shouldn't be creating GPIO stuff here.");
 				return;
 			}
 
 			var ld0 = new LedData {Id = "0", Brightness = 255, GpioNumber = 18};
 			var ld1 = new LedData {Id = "1", Brightness = 255, GpioNumber = 19};
-			var ld2 = new LedData {Id = "2", Brightness = 255, GpioNumber = 10};
 
 			await ControlService.AddDevice(ld0);
 			await ControlService.AddDevice(ld1);
-			await ControlService.AddDevice(ld2);
 		}
 	}
 }
