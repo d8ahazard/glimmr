@@ -34,7 +34,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 		public LedDevice(LedData ld, ColorService colorService) : base(colorService) {
 			var cs = colorService;
 			_agent = cs.ControlService.GetAgent("LedAgent");
-			_ws = _agent.Ws281x;
+			_ws = _agent.Ws281X;
 			cs.ColorSendEvent += SetColor;
 			Data = ld;
 			Id = Data.Id;

@@ -46,7 +46,7 @@ then
     # Install dependencies
     sudo apt-get -y update && apt-get -y upgrade
     sudo apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa libdc1394-22 libtesseract-dev scons icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libatlas-base-dev gfortran libopengl-dev git gcc xauth avahi-daemon x11-xserver-utils libtiff5-dev libgeotiff-dev libgtk-3-dev libgstreamer1.0-dev libavcodec-dev libswscale-dev libavformat-dev libopenexr-dev libjasper-dev libdc1394-22-dev libv4l-dev libeigen3-dev libopengl-dev cmake-curses-gui freeglut3-dev
-    
+    echo "gpio=19=op,a5" >> /boot/config.txt
     #Assign existing hostname to $hostn
     hostn=$(cat /etc/hostname)
     hostn=`cat /etc/hostname | tr -d " \t\n\r"`
