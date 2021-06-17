@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
@@ -17,29 +18,10 @@ namespace Glimmr.Models.ColorTarget.Led {
 		private int _ledCount;
 		private int _offset;
 		private readonly int _controllerId;
+		private LedAgent _agent;
 		private readonly Controller _controller;
 		private readonly WS281x _ws;
-
-
-		public LedDevice(LedData ld, ColorService colorService) : base(colorService) {
-			var cs = colorService;
-			LedAgent agent = cs.ControlService.GetAgent("LedAgent");
-			_ws = agent.Ws281x;
-			cs.ColorSendEvent += SetColor;
-			Data = ld;
-			Id = Data.Id;
-			_controllerId = int.Parse(Id);
-			if (Id == "0") {
-				_controller = agent.Controller0;
-			}
-
-			if (Id == "1") {
-				_controller = agent.Controller1;
-			}
-			
-			ReloadData();
-		}
-
+		
 		public bool Streaming { get; set; }
 		public bool Testing { get; set; }
 		public int Brightness { get; set; }
@@ -47,6 +29,28 @@ namespace Glimmr.Models.ColorTarget.Led {
 		public string IpAddress { get; set; }
 		public string Tag { get; set; }
 		public bool Enable { get; set; }
+
+
+		public LedDevice(LedData ld, ColorService colorService) : base(colorService) {
+			var cs = colorService;
+			_agent = cs.ControlService.GetAgent("LedAgent");
+			_ws = _agent.Ws281x;
+			cs.ColorSendEvent += SetColor;
+			Data = ld;
+			Id = Data.Id;
+			_controllerId = int.Parse(Id);
+			if (Id == "0") {
+				_controller = _ws.GetController();
+			}
+
+			if (Id == "1") {
+				_controller = _ws.GetController(ControllerType.PWM1);
+			}
+			
+			ReloadData();
+		}
+
+	
 
 		IColorTargetData IColorTarget.Data {
 			get => Data;
@@ -68,10 +72,10 @@ namespace Glimmr.Models.ColorTarget.Led {
 			if (!Streaming) {
 				return;
 			}
-
-			await StopLights();
-			Streaming = false;
+			Log.Information($"{Data.Tag}::Stopping stream. {Data.Id}.");
+			StopLights();
 			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
+			Streaming = false;
 		}
 
 
@@ -95,9 +99,8 @@ namespace Glimmr.Models.ColorTarget.Led {
 			}
 
 			Data = ld;
-			
-
 			Enable = Data.Enable;
+			_agent.ToggleStrip(_controllerId, Enable);
 			_ledCount = Data.LedCount;
 			if (_ledCount > sd.LedCount) {
 				_ledCount = sd.LedCount;
@@ -130,12 +133,12 @@ namespace Glimmr.Models.ColorTarget.Led {
 				return;
 			}
 
-			var c1 = TruncateColors(colors, _ledCount, _offset);
+			var c1 = ColorUtil.TruncateColors(colors, _offset, _ledCount);
 			if (_enableAbl) {
 				c1 = VoltAdjust(c1, Data);
 			}
 
-			for (var i = 0; i < c1.Count; i++) {
+			for (var i = 0; i < c1.Length; i++) {
 				var tCol = c1[i];
 				if (Data.StripType == 1) {
 					tCol = ColorUtil.ClampAlpha(tCol);
@@ -144,7 +147,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 				_controller.SetLED(i, tCol);
 			}
 
-			_ws.Render();
+			_agent.Update(_controllerId);
 			ColorService.Counter.Tick(Id);
 		}
 
@@ -152,45 +155,23 @@ namespace Glimmr.Models.ColorTarget.Led {
 		
 
 		
-		private static List<Color> TruncateColors(List<Color> input, int len, int offset) {
-			var truncated = new List<Color>();
-			// Subtract one from our offset because arrays
-			// Start at the beginning
-			if (offset + len > input.Count) {
-				// Set the point where we need to end the loop
-				var offsetLen = offset + len - input.Count;
-				// Where do we start midway?
-				var loopLen = input.Count - offsetLen;
-				if (loopLen > 0) {
-					for (var i = loopLen - 1; i < input.Count; i++) {
-						truncated.Add(input[i]);
-					}
-				}
-
-				// Now calculate how many are needed from the front
-				for (var i = 0; i < len - offsetLen; i++) {
-					truncated.Add(input[i]);
-				}
-			} else {
-				for (var i = offset; i < offset + len; i++) {
-					truncated.Add(input[i]);
-				}
-			}
-
-			return truncated;
-		}
-
 		private async Task StopLights() {
 			if (!Enable) {
 				return;
 			}
 
-			_controller.Reset();
-			_ws.Render();
+			Log.Debug("Setting...");
+			for (var i = 0; i < _ledCount; i++) {
+				_controller.SetLED(i, Color.FromArgb(0,0,0,0));
+			}
+
+			Log.Debug("Rendering...");
+			_agent.Update(_controllerId);
+			Log.Debug("Rendered...");
 			await Task.FromResult(true);
 		}
 
-		private List<Color> VoltAdjust(List<Color> input, LedData ld) {
+		private Color[] VoltAdjust(Color[] input, LedData ld) {
 			//power limit calculation
 			//each LED can draw up 195075 "power units" (approx. 53mA)
 			//one PU is the power it takes to have 1 channel 1 step brighter per brightness step
@@ -198,7 +179,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			var actualMilliampsPerLed = ld.MilliampsPerLed; // 20
 			var defaultBrightness = (int) (ld.Brightness / 100f * 255);
 			var ablMaxMilliamps = ld.AblMaxMilliamps; // 4500
-			var length = input.Count;
+			var length = input.Length;
 			var output = input;
 			if (ablMaxMilliamps > 149 && actualMilliampsPerLed > 0) {
 				//0 mA per LED and too low numbers turn off calculation
