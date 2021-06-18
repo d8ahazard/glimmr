@@ -16,6 +16,7 @@ using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Serilog;
 using Serilog.Events;
+using Serilog.Sinks.SystemConsole.Themes;
 
 namespace Glimmr {
 	public class Program {
@@ -37,14 +38,15 @@ namespace Glimmr {
 
 			Log.Logger = new LoggerConfiguration()
 				.Enrich.WithCaller()
-				.WriteTo.Console(outputTemplate: outputTemplate)
+				.WriteTo.Console(outputTemplate: outputTemplate, theme: SystemConsoleTheme.Literate)
 				.MinimumLevel.Debug()
 				.MinimumLevel.Override("Microsoft", LogEventLevel.Information)
 				.Enrich.FromLogContext()
-				.WriteTo.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: outputTemplate)
+				.WriteTo.Async(a => a.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: outputTemplate))
 				.CreateLogger();
 
 			CreateHostBuilder(args).Build().Run();
+			Log.CloseAndFlush();
 		}
 
 		private static IHostBuilder CreateHostBuilder(string[] args) {
@@ -67,7 +69,7 @@ namespace Glimmr {
 					.Enrich.FromLogContext()
 					.Filter.ByExcluding(c => JsonConvert.SerializeObject(c).Contains("SerilogLogger"))
 					.WriteTo.Console(outputTemplate: outputTemplate)
-					.WriteTo.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: outputTemplate))
+					.WriteTo.Async(a=>a.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: outputTemplate)))
 				.ConfigureServices(services => {
 					services.AddSignalR();
 					services.AddSingleton<ControlService>();
