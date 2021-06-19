@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
@@ -97,7 +98,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 			Log.Debug("Screen capture started...");
 
 			while (!ct.IsCancellationRequested && _capturing) {
-				var bcs = new Bitmap(_width, _height);
+				var bcs = new Bitmap(_width, _height,PixelFormat.Format24bppRgb);
 				using (var g = Graphics.FromImage(bcs)) {
 					g.CopyFromScreen(_left, _top, 0, 0, bcs.Size, CopyPixelOperation.SourceCopy);
 					var sc = bcs.ToImage<Bgr, byte>();
