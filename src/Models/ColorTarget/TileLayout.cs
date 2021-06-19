@@ -14,7 +14,7 @@ namespace Glimmr.Models.ColorTarget {
 
 		[JsonProperty] public int SideLength { get; set; }
 
-		[JsonProperty] public TileData[] PositionData { get; set; }
+		[JsonProperty] public TileData[]? PositionData { get; set; }
 
 		public TileLayout() {
 		}
@@ -42,8 +42,12 @@ namespace Glimmr.Models.ColorTarget {
 				throw new ArgumentException("Invalid argument.");
 			}
 
-			if (PositionData == null) {
+			if (PositionData == null && newLayout.PositionData != null) {
 				PositionData = newLayout.PositionData;
+				return;
+			}
+
+			if (newLayout.PositionData == null || PositionData == null) {
 				return;
 			}
 
@@ -61,6 +65,8 @@ namespace Glimmr.Models.ColorTarget {
 			NumPanels = newLayout.NumPanels;
 			SideLength = newLayout.SideLength;
 			PositionData = posData;
+
+
 		}
 	}
 

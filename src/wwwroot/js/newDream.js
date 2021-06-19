@@ -1253,7 +1253,7 @@ function loadDevices() {
     for (let i = 0; i< data.devices.length; i++) {
         if (data.devices.hasOwnProperty(i)) {
             let device = data.devices[i];
-            if (device.Tag === "DreamScreen" && device["DeviceTag"].includes("Dreamscreen")) continue;
+            if (device.Tag === "DreamScreen" && device["DeviceTag"].includes("DreamScreen")) continue;
             // Create main card
             let mainDiv = document.createElement("div");
             mainDiv.classList.add("card", "m-4", "devCard");
