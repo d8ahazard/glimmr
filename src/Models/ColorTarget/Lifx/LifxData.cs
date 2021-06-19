@@ -1,12 +1,14 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using Glimmr.Models.Util;
 using LifxNetPlus;
 using LiteDB;
 using Newtonsoft.Json;
-using Serilog;
+
+#endregion
 
 namespace Glimmr.Models.ColorTarget.Lifx {
 	public class LifxData : IColorTargetData {
@@ -55,7 +57,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		[JsonProperty] public ushort Hue { get; set; }
 		[JsonProperty] public ushort Kelvin { get; set; }
 		[JsonProperty] public ushort Saturation { get; set; }
-		
+
 		[JsonProperty] public BeamLayout BeamLayout { get; set; }
 
 		private SettingsProperty[] _keyProperties;
@@ -97,7 +99,11 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 		public void UpdateFromDiscovered(IColorTargetData data) {
 			var ld = (LifxData) data;
-			IpAddress = data.IpAddress;
+			HostName = ld.HostName;
+			IpAddress = ld.IpAddress;
+			MacAddress = ld.MacAddress;
+			DeviceTag = ld.DeviceTag;
+			Name = DeviceTag + " - " + Id.Substring(Id.Length - 5, 5);
 			Layout?.MergeLayout(ld.Layout);
 			var omz = MultiZoneCount;
 			MultiZoneCount = ld.MultiZoneCount;
@@ -105,18 +111,13 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			if (HasMultiZone && (omz != MultiZoneCount || BeamLayout == null)) {
 				GenerateBeamLayout();
 			}
-			HostName = ld.HostName;
-			IpAddress = ld.IpAddress;
-			MacAddress = ld.MacAddress;
-			DeviceTag = ld.DeviceTag;
-			Name = "Lifx - " + Id.Substring(Id.Length - 5, 5);
 		}
 
 		public void GenerateBeamLayout() {
 			var total = 0;
 			var beamCount = 0;
 			var cornerCount = 0;
-			
+
 			for (var i = 0; i < MultiZoneCount; i++) {
 				if (total == 10) {
 					beamCount++;
@@ -127,6 +128,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				if (remainder < 10) {
 					cornerCount = remainder;
 				}
+
 				total++;
 			}
 
@@ -134,12 +136,13 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			var offset = 0;
 			total = 0;
 			for (var i = 0; i < beamCount; i++) {
-				BeamLayout.Segments.Add(new Segment(total,10,offset));
+				BeamLayout.Segments.Add(new Segment(total, 10, offset));
 				total++;
 				offset += 20;
 			}
+
 			for (var i = 0; i < cornerCount; i++) {
-				BeamLayout.Segments.Add(new Segment(total,1, offset));
+				BeamLayout.Segments.Add(new Segment(total, 1, offset));
 				total++;
 				offset += 2;
 			}
@@ -156,7 +159,6 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		public string Tag { get; set; }
 		public string IpAddress { get; set; }
 		public int Brightness { get; set; }
-		
 		public bool Enable { get; set; }
 
 		private SettingsProperty[] Kps() {
@@ -171,12 +173,11 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			};
 		}
 	}
-	
+
 	[Serializable]
 	public class BeamLayout {
-		[JsonProperty]
-		public List<Segment> Segments { get; set; }
-		
+		[JsonProperty] public List<Segment> Segments { get; set; }
+
 		public BeamLayout() {
 			Segments = new List<Segment>();
 		}
@@ -184,22 +185,16 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 	[Serializable]
 	public class Segment {
-		[JsonProperty]
-		public int Position { get; set; }
-		[JsonProperty]
-		public int LedCount { get; set; }
+		[JsonProperty] public int Position { get; set; }
+		[JsonProperty] public int LedCount { get; set; }
 
-		[JsonProperty]
-		public int Offset { get; set; }
-		
-		[JsonProperty]
-		public int Id { get; set; }
-		
-		[JsonProperty]
-		public bool Reverse { get; set; }
-		
-		[JsonProperty]
-		public bool Repeat { get; set; }
+		[JsonProperty] public int Offset { get; set; }
+
+		[JsonProperty] public int Id { get; set; }
+
+		[JsonProperty] public bool Reverse { get; set; }
+
+		[JsonProperty] public bool Repeat { get; set; }
 
 		public Segment(int position, int ledCount = 10, int offset = 0) {
 			Position = position;

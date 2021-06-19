@@ -1278,7 +1278,7 @@ function loadDevices() {
                 subTitle.textContent = device["IpAddress"];
             }
             
-            if (device.hasOwnProperty("MultiZoneCount") || device.hasOwnProperty("LedCount")) {
+            if ((device.hasOwnProperty("MultiZoneCount") || device.hasOwnProperty("LedCount")) && device.DeviceTag !== "Lifx Bulb") {
                 let val = (device.hasOwnProperty("MultiZoneCount")) ? device["MultiZoneCount"] : device["LedCount"];
                 let count = document.createElement("span");
                 count.innerText = " (" + val + ")";
@@ -1300,7 +1300,7 @@ function loadDevices() {
             let tag = device.Tag;
             if (isValid(tag)) {
                 if (isValid(device["DeviceTag"]) && (tag === "Dreamscreen" || tag === "Lifx")) tag = device["DeviceTag"];
-                image.setAttribute("src", baseUrl + "/img/" + tag.toLowerCase() + "_icon.png");
+                image.setAttribute("src", baseUrl + "/img/" + tag.toLowerCase().replace(" ","") + "_icon.png");
             }
             
             // Settings column

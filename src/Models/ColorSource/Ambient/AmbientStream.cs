@@ -23,7 +23,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 		private int _ambientShow;
 		private double _animationTime;
 		private int _colorIndex;
-		private string[] _colors;
+		private Color[] _sceneColors;
 		private Color[] _currentColors;
 		private EasingMode _easingMode;
 		private double _easingTime;
@@ -32,6 +32,11 @@ namespace Glimmr.Models.ColorSource.Ambient {
 		private int _ledCount;
 		private int _hCount;
 		private int _vCount;
+		private int _leftCount;
+		private int _rightCount;
+		private int _topCount;
+		private int _bottomCount;
+		
 		private JsonLoader _loader;
 		private AnimationMode _mode;
 		private Color[] _nextColors;
@@ -61,6 +66,10 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			_ambientColor = sd.AmbientColor;
 			_hCount = sd.HSectors;
 			_vCount = sd.VSectors;
+			_leftCount = sd.LeftCount;
+			_rightCount = sd.RightCount;
+			_topCount = sd.TopCount;
+			_bottomCount = sd.BottomCount;
 			_loader = new JsonLoader("ambientScenes");
 			_scenes = _loader.LoadFiles<AmbientScene>();
 			var scene = new AmbientScene();
@@ -72,7 +81,11 @@ namespace Glimmr.Models.ColorSource.Ambient {
 				scene.Colors = new[] {"#" + _ambientColor};
 			}
 
-			_colors = scene.Colors;
+			var colorStrings = scene.Colors;
+			_sceneColors = new Color[colorStrings.Length];
+			for (var i = 0; i < _sceneColors.Length; i++) {
+				_sceneColors[i] = ColorTranslator.FromHtml(colorStrings[i]);
+			}
 			_animationTime = scene.AnimationTime * 1000;
 			_easingTime = scene.EasingTime * 1000;
 			_easingMode = (EasingMode) scene.Easing;
@@ -121,13 +134,13 @@ namespace Glimmr.Models.ColorSource.Ambient {
 							case EasingMode.Blend:
 							case EasingMode.FadeOut:
 								_currentColors = _nextColors;
-								_nextColors = RefreshColors(_colors);
+								_nextColors = RefreshColors(_sceneColors);
 								sectors = _currentColors;
 								break;
 							case EasingMode.FadeIn:
 							case EasingMode.FadeInOut:
 								_currentColors = _nextColors;
-								_nextColors = RefreshColors(_colors);
+								_nextColors = RefreshColors(_sceneColors);
 								sectors = ColorUtil.EmptyColors(sectors);
 								break;
 						}
@@ -176,9 +189,9 @@ namespace Glimmr.Models.ColorSource.Ambient {
 		}
 
 
-		private Color[] RefreshColors(string[] input) {
+		private Color[] RefreshColors(Color[] input) {
 			var output = new Color[_sectorCount];
-			if (input == null) {
+			if (input.Length == 0) {
 				return ColorUtil.EmptyColors(output);
 			}
 
@@ -187,34 +200,34 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			switch (_mode) {
 				case AnimationMode.Linear:
 					for (var i = 0; i < _sectorCount; i++) {
-						output[i] = ColorTranslator.FromHtml(input[_colorIndex]);
+						output[i] = input[_colorIndex];
 						_colorIndex = CycleInt(_colorIndex, max);
 					}
 					_colorIndex = CycleInt(_colorIndex, max);
 					break;
 				case AnimationMode.Reverse:
 					for (var i = 0; i < _sectorCount; i++) {
-						output[i] = ColorTranslator.FromHtml(input[_colorIndex]);
+						output[i] = input[_colorIndex];
 						_colorIndex = CycleInt(_colorIndex, max, true);
 					}
 
 					break;
 				case AnimationMode.Random:
 					for (var i = 0; i < _sectorCount; i++) {
-						output[i] = ColorTranslator.FromHtml(input[rand]);
+						output[i] = input[rand];
 						rand = _random.Next(0, max);
 					}
 
 					break;
 				case AnimationMode.RandomAll:
 					for (var i = 0; i < _sectorCount; i++) {
-						output[i] = ColorTranslator.FromHtml(input[rand]);
+						output[i] = input[rand];
 					}
 
 					break;
 				case AnimationMode.LinearAll:
 					for (var i = 0; i < _sectorCount; i++) {
-						output[i] = ColorTranslator.FromHtml(input[_colorIndex]);
+						output[i] = input[_colorIndex];
 					}
 
 					_colorIndex = CycleInt(_colorIndex, max);
@@ -249,8 +262,8 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			_colorIndex = 0;
 			_watch.Restart();
 			// Load two arrays of colors, which we will use for the actual fade values
-			_currentColors = RefreshColors(_colors);
-			_nextColors = RefreshColors(_colors);
+			_currentColors = RefreshColors(_sceneColors);
+			_nextColors = RefreshColors(_sceneColors);
 			Log.Debug($"Loaded, color len is {_currentColors.Length}");
 		}
 

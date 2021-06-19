@@ -15,7 +15,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			_client = cs.ControlService.GetAgent("LifxAgent");
 			_client.DeviceDiscovered += Client_DeviceDiscovered;
 			_controlService = cs.ControlService;
-			DeviceTag = "Lifx";
+			DeviceTag = "Lifx Bulb";
 		}
 
 		public async Task Discover(CancellationToken ct, int timeout) {
@@ -46,7 +46,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			var tag = DeviceTag;
 			// Set multi zone stuff
 			if (ver.Product == 31 || ver.Product == 32 || ver.Product == 38) {
-				tag = ver.Product == 38 ? "LifxBeam" : "LifxZ";
+				tag = ver.Product == 38 ? "Lifx Beam" : "Lifx Z";
 				hasMulti = true;
 				if (ver.Product != 31) {
 					if (ver.Version >= 1532997580) {
@@ -78,7 +78,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			if (hasMulti && zoneCount != 0) d.GenerateBeamLayout();
 
 			if (ver.Product == 55 || ver.Product == 101) {
-				tag = "LifxTile";
+				tag = "Lifx Tile";
 				try {
 					var tData = _client.GetDeviceChainAsync(b).Result;
 					d.Layout = new TileLayout(tData);
