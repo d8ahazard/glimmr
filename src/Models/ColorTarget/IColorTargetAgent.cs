@@ -9,6 +9,6 @@ namespace Glimmr.Models.ColorTarget {
 	///     It is up to the device implementing ColorTarget to find the agent on instantiation
 	/// </summary>
 	public interface IColorTargetAgent : IDisposable {
-		public dynamic CreateAgent(ControlService cs);
+		public dynamic? CreateAgent(ControlService cs);
 	}
 }

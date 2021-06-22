@@ -1,4 +1,4 @@
-﻿using System.Threading;
+﻿using System;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using rpi_ws281x;
@@ -6,8 +6,8 @@ using rpi_ws281x;
 namespace Glimmr.Models.ColorTarget.Led {
 	public class LedAgent : IColorTargetAgent {
 		public WS281x? Ws281X { get; set; }
-		public Controller Controller0 { get; set; }
-		public Controller Controller1 { get; set; }
+		private Controller? _controller0;
+		private Controller? _controller1;
 
 		private bool _update0;
 		private bool _update1;
@@ -15,12 +15,21 @@ namespace Glimmr.Models.ColorTarget.Led {
 		private bool _use1;
 		
 		public void Dispose() {
+			GC.SuppressFinalize(this);
 			Ws281X?.Dispose();
 		}
 
 		public void ToggleStrip(int controllerId, bool use = true) {
-			if (controllerId == 0) _use0 = use;
-			if (controllerId == 1) _use1 = use;
+			switch (controllerId) {
+				case 0:
+					_use0 = use;
+					if (!use) _controller0?.Reset();
+					break;
+				case 1:
+					_use1 = use;
+					if (!use) _controller1?.Reset();
+					break;
+			}
 		}
 
 		public void Update(int controllerId) {
@@ -38,7 +47,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			}
 		}
 		
-		public dynamic CreateAgent(ControlService cs) {
+		public dynamic? CreateAgent(ControlService cs) {
 			if (!SystemUtil.IsRaspberryPi()) return null;
 			LedData d0 = DataUtil.GetDevice<LedData>("0");
 			LedData d1 = DataUtil.GetDevice<LedData>("1");
@@ -57,8 +66,8 @@ namespace Glimmr.Models.ColorTarget.Led {
 				_ => StripType.WS2812_STRIP
 			};
 
-			Controller0 = settings.AddController(ControllerType.PWM0, d0.LedCount, stripType0,(byte) d0.Brightness);
-			Controller1 = settings.AddController(ControllerType.PWM1, d1.LedCount, stripType1,(byte) d1.Brightness);
+			_controller0 = settings.AddController(ControllerType.PWM0, d0.LedCount, stripType0,(byte) d0.Brightness);
+			_controller1 = settings.AddController(ControllerType.PWM1, d1.LedCount, stripType1,(byte) d1.Brightness);
 			Ws281X = new WS281x(settings);
 			return this;
 		}

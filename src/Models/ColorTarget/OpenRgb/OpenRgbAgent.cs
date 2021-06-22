@@ -10,9 +10,10 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		private int _port;
 
 		public void Dispose() {
+			_client?.Dispose();
 		}
 
-		public dynamic CreateAgent(ControlService cs) {
+		public dynamic? CreateAgent(ControlService cs) {
 			cs.RefreshSystemEvent += LoadClient;
 			LoadClient();
 			return _client;
