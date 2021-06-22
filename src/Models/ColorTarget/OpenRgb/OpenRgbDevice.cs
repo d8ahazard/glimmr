@@ -23,7 +23,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		private int _offset;
 		private int _ledCount;
 
-		private OpenRGBClient _client;
+		private OpenRGBClient? _client;
 		private readonly ColorService _colorService;
 		
 
@@ -64,6 +64,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 				catch
 				{
 					// Ignored
+					
 				}
 			}
 
@@ -127,8 +128,11 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			IpAddress = Data.IpAddress;
 			_offset = Data.Offset;
 			_ledCount = Data.LedCount;
-			var dev = _client.GetControllerData(Data.DeviceId);
-			_ledCount = dev.Leds.Length;
+			if (_client != null) {
+				var dev = _client.GetControllerData(Data.DeviceId);
+				_ledCount = dev.Leds.Length;
+			}
+			
 		}
 
 		public void Dispose() {
