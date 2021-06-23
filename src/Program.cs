@@ -33,7 +33,7 @@ namespace Glimmr {
 				logPath = Path.Combine(userPath, "log", "glimmr.log");
 			}
 
-			var tr1 = new TextWriterTraceListener(Console.Out);
+			//var tr1 = new TextWriterTraceListener(Console.Out);
 			//Trace.Listeners.Add(tr1);
 
 			Log.Logger = new LoggerConfiguration()

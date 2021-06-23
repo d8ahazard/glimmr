@@ -18,7 +18,7 @@ namespace Glimmr.Services {
 		private readonly IHubContext<SocketServer> _hubContext;
 		private bool _discovering;
 		private int _discoveryInterval;
-		private CancellationTokenSource _mergeSource;
+		private CancellationTokenSource? _mergeSource;
 		private CancellationToken _stopToken;
 		private bool _streaming;
 		private readonly CancellationTokenSource _syncSource;
@@ -38,8 +38,14 @@ namespace Glimmr.Services {
 			_discoverables = new List<IColorDiscovery>();
 			_syncSource = new CancellationTokenSource();
 			foreach (var c in classnames) {
-				var dev = (IColorDiscovery) Activator.CreateInstance(Type.GetType(c)!, colorService);
+				var obj = Activator.CreateInstance(Type.GetType(c)!, colorService);
+				if (obj == null) {
+					continue;
+				}
+
+				var dev = (IColorDiscovery) obj;
 				_discoverables.Add(dev);
+
 			}
 		}
 
@@ -57,9 +63,9 @@ namespace Glimmr.Services {
 			_mergeSource = CancellationTokenSource.CreateLinkedTokenSource(_syncSource.Token, _stopToken);
 			return Task.Run(async () => {
 				var devs = DataUtil.GetDevices();
-				if (devs.Count == 0) {
+				if (devs.Count == 0 || SystemUtil.IsRaspberryPi() && devs.Count == 2) {
 					Log.Debug("No devices, scanning...");
-					TriggerRefresh(null, null);
+					await TriggerRefresh(null, null).ConfigureAwait(false);
 				}
 				Log.Information("Starting discovery service loop...");
 				while (!stoppingToken.IsCancellationRequested) {
@@ -85,7 +91,7 @@ namespace Glimmr.Services {
 		}
 
 
-		private async Task TriggerRefresh(object o, DynamicEventArgs dynamicEventArgs) {
+		private async Task TriggerRefresh(object? o, DynamicEventArgs? dynamicEventArgs) {
 			var cs = new CancellationTokenSource();
 			var sd = DataUtil.GetSystemData();
 			var timeout = sd.DiscoveryTimeout;

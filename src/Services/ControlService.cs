@@ -25,7 +25,6 @@ namespace Glimmr.Services {
 
 		public MulticastService MulticastService { get; }
 		public ServiceDiscovery ServiceDiscovery { get; }
-		public Socket TcpSocket { get; }
 		public UdpClient UdpClient { get; }
 		private readonly IHubContext<SocketServer> _hubContext;
 
@@ -44,10 +43,13 @@ namespace Glimmr.Services {
 		public AsyncEvent<DynamicEventArgs> SetModeEvent;
 
 		public AsyncEvent<DynamicEventArgs> TestLedEvent;
+		
 		private Dictionary<string, dynamic> _agents;
 		private SystemData _sd;
 
+#pragma warning disable 8618
 		public ControlService(IHubContext<SocketServer> hubContext) {
+#pragma warning restore 8618
 			var text = @"
 
  (                                            (    (      *      *    (     
@@ -68,11 +70,11 @@ namespace Glimmr.Services {
 				if (SystemUtil.IsRaspberryPi()) {
 					var ld0 = new LedData {Id = "0", Brightness = 255, GpioNumber = 18, Enable = true};
 					var ld1 = new LedData {Id = "1", Brightness = 255, GpioNumber = 19};
-					DataUtil.AddDeviceAsync(ld0);
-					DataUtil.AddDeviceAsync(ld1);
+					DataUtil.AddDeviceAsync(ld0).ConfigureAwait(false);
+					DataUtil.AddDeviceAsync(ld1).ConfigureAwait(false);
 				}
 			}
-				
+			_agents = new Dictionary<string, dynamic>();
 			// Now we can load stuff
 			LoadAgents();
 			_hubContext = hubContext;
@@ -85,7 +87,6 @@ namespace Glimmr.Services {
 			UdpClient.DontFragment = true;
 			MulticastService = new MulticastService();
 			ServiceDiscovery = new ServiceDiscovery(MulticastService);
-			TcpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 			// Dynamically load agents
 			ColorUtil.SetSystemData();
 			
@@ -95,7 +96,7 @@ namespace Glimmr.Services {
 
 		public event Action<List<Color>, List<Color>, int, bool> TriggerSendColorEvent = delegate { };
 
-		public dynamic GetAgent(string classType) {
+		public dynamic? GetAgent(string classType) {
 			foreach (var (key, value) in _agents) {
 				if (key == classType) {
 					return value;
@@ -107,38 +108,42 @@ namespace Glimmr.Services {
 		}
 
 		private void LoadAgents() {
-			if (_agents != null) {
-				foreach (var a in _agents.Values) {
-					try {
-						a.Dispose();
-					} catch (Exception) {
-						//ignored
-					}
+			foreach (var a in _agents.Values) {
+				try {
+					a.Dispose();
+				} catch (Exception) {
+					//ignored
 				}
 			}
-
+		
 			_agents = new Dictionary<string, dynamic>();
 			var types = SystemUtil.GetClasses<IColorTargetAgent>();
 			foreach (var c in types) {
 				var parts = c.Split(".");
 				var shortClass = parts[^1];
 				Log.Information("Creating agent: " + c);
-				var agentMaker = (IColorTargetAgent) Activator.CreateInstance(Type.GetType(c)!);
-				if (agentMaker == null) {
-					Log.Warning($"Agent maker for {c} is null!");
-				} else {
-					var agent = agentMaker.CreateAgent(this);
-					if (agent != null) {
-						_agents[shortClass] = agent;
+				try {
+					dynamic? agentCheck = Activator.CreateInstance(Type.GetType(c)!);
+					if (agentCheck == null) {
+						Log.Warning($"Agent maker for {c} is null!");
 					} else {
-						Log.Information($"Agent {c} is null.");
+						var agentMaker = (IColorTargetAgent) agentCheck; 
+						var agent = agentMaker.CreateAgent(this);
+						if (agent != null) {
+							_agents[shortClass] = agent;
+						} else {
+							Log.Information($"Agent {c} is null.");
+						}
 					}
+				} catch (Exception e) {
+					Log.Debug("Agent creation error: " + e.Message);
 				}
 			}
 		}
 
 		public async Task EnableDevice(string devId) {
 			var dev = DataUtil.GetDevice(devId);
+			if (dev == null) return;
 			dev.Enable = true;
 			await DataUtil.AddDeviceAsync(dev);
 			await DeviceReloadEvent.InvokeAsync(this, new DynamicEventArgs(devId));
@@ -160,7 +165,7 @@ namespace Glimmr.Services {
 			await SetModeEvent.InvokeAsync(null, new DynamicEventArgs(mode));
 		}
 
-		public async Task AuthorizeDevice(string id, IClientProxy clientProxy = null) {
+		public async Task AuthorizeDevice(string id, IClientProxy? clientProxy = null) {
 			var data = DataUtil.GetDevice(id);
 			if (data != null) {
 				if (string.IsNullOrEmpty(data.Token)) {
@@ -187,7 +192,7 @@ namespace Glimmr.Services {
 
 
 			var disco = SystemUtil.GetClasses<IColorTargetAuth>();
-			dynamic dev = null;
+			dynamic? dev = null;
 			foreach (var d in disco) {
 				var baseStr = d.ToLower().Split(".")[^2];
 				if (baseStr == data.Tag.ToLower()) {
@@ -272,10 +277,12 @@ namespace Glimmr.Services {
 					var end = new TimeSpan(_sd.AutoUpdateTime, 1, 0); //12 o'clock
 					var now = DateTime.Now.TimeOfDay;
 
-					if (now > start && now < end) {
-						Log.Information("Triggering system update.");
-						SystemUtil.Update();
+					if (now <= start || now >= end) {
+						continue;
 					}
+
+					Log.Information("Triggering system update.");
+					SystemUtil.Update();
 				}
 
 				Log.Debug("Control service stopped.");
@@ -285,9 +292,9 @@ namespace Glimmr.Services {
 
 		public override Task StopAsync(CancellationToken cancellationToken) {
 			Log.Information("Stopping control service...");
-			HttpSender?.Dispose();
-			UdpClient?.Dispose();
-			MulticastService?.Dispose();
+			HttpSender.Dispose();
+			UdpClient.Dispose();
+			MulticastService.Dispose();
 			foreach (dynamic agent in _agents) {
 				try {
 					var type = agent.GetType();
@@ -309,7 +316,7 @@ namespace Glimmr.Services {
 		}
 
 
-		public async Task UpdateSystem(SystemData sd = null) {
+		public async Task UpdateSystem(SystemData? sd = null) {
 			var oldSd = DataUtil.GetSystemData();
 			if (sd != null) {
 				DataUtil.SetSystemData(sd);

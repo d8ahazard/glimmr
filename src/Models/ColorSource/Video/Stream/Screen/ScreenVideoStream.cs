@@ -73,11 +73,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 			var rect = _screenDims;
 			_width = 0;
 			_height = 0;
-			if (!RectContains(_screenDims, rect)) {
-				Log.Debug("Selected capture rect is outside of screen!");
-				return;
-			}
-
+			
 			_left = rect.Left;
 			_top = rect.Top;
 			_width = rect.Width;
@@ -89,11 +85,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 			Log.Debug("Screen capture dimensions set: " + JsonConvert.SerializeObject(rect));
 		}
 
-		private static bool RectContains(Rectangle outer, Rectangle inner) {
-			return outer.Left <= inner.Left && outer.Right >= inner.Right && outer.Top <= inner.Top &&
-			       outer.Bottom >= inner.Bottom;
-		}
-
+		
 		private void CaptureScreen(CancellationToken ct) {
 			Log.Debug("Screen capture started...");
 

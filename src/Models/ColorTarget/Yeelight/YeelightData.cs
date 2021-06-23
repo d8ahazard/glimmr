@@ -1,4 +1,6 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
+using System.Globalization;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
 
@@ -8,28 +10,47 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int TargetSector { get; set; }
 
-		public YeelightData() {
-			Tag = "Yeelight";
-			Name ??= Tag;
-			if (Id != null) {
-				Name = StringUtil.UppercaseFirst(Id);
-			}
-		}
+		[DefaultValue("")]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
-		public YeelightData(string id) {
-			Id = id;
-			Tag = "Yeelight";
-		}
+		public string Name { get; set; } = "";
 
-		public string Name { get; set; }
-		public string Id { get; set; }
-		public string Tag { get; set; }
-		public string IpAddress { get; set; }
-		public int Brightness { get; set; }
+		[DefaultValue("")]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+
+		public string Id { get; set; } = "";
+
+		[DefaultValue("Yeelight")]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+
+		public string Tag { get; set; } = "Yeelight";
+
+		[DefaultValue("")]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+
+		public string IpAddress { get; set; } = "";
+
+		[DefaultValue(255)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+
+		public int Brightness { get; set; } = 255;
 		
 		public bool Enable { get; set; }
 		public string LastSeen { get; set; }
 
+
+		public YeelightData() {
+			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
+			if (!string.IsNullOrEmpty(Id)) Name = StringUtil.UppercaseFirst(Id);
+		}
+
+		public YeelightData(string id) {
+			Id = id;
+			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
+			if (!string.IsNullOrEmpty(Id)) Name = StringUtil.UppercaseFirst(Id);
+		}
+
+		
 		public void UpdateFromDiscovered(IColorTargetData existing) {
 			Name = existing.Name;
 			IpAddress = existing.IpAddress;

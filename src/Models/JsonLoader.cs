@@ -44,12 +44,17 @@ namespace Glimmr.Models {
 							var data = JsonConvert.DeserializeObject<JObject>(File.ReadAllText(file));
 							if (data != null) {
 								if (dirIndex != 0) {
-									if ((int) data.GetValue("Id") == 0 && (string) data.GetValue("Name") != "Random") {
-										data["Id"] = fCount;
+									var id = data.GetValue("Id");
+									var name = data.GetValue("Name");
+									if (id != null && name != null) {
+										if ((int) id == 0 && (string) name! != "Random") {
+											data["Id"] = fCount;
+										}
 									}
 								}
 
-								output.Add(data.ToObject<T>());
+								var obj = data.ToObject<T>();
+								if (obj != null) output.Add(obj);
 							}
 						} catch (Exception e) {
 							Log.Warning($"Parse exception for {file}: " + e.Message);
@@ -66,16 +71,11 @@ namespace Glimmr.Models {
 		}
 
 		public List<dynamic> LoadDynamic<T>() {
-			var output = new List<dynamic>();
 			var files = LoadFiles<T>();
-			foreach (var f in files) {
-				output.Add((dynamic) f);
-			}
-
-			return output;
+			return files.Where(f => f != null).Cast<dynamic>().ToList();
 		}
 
-		public dynamic GetItem<T>(dynamic id, bool getDefault = false) {
+		public dynamic? GetItem<T>(dynamic id, bool getDefault = false) {
 			var files = LoadFiles<JObject>();
 			foreach (var f in files) {
 				if (!f.TryGetValue("Id", out var check)) {
@@ -90,7 +90,7 @@ namespace Glimmr.Models {
 			return getDefault ? GetDefault<T>() : null;
 		}
 
-		private dynamic GetDefault<T>() {
+		private dynamic? GetDefault<T>() {
 			var files = LoadFiles<T>();
 			if (files.Count != 0) {
 				return files[0];

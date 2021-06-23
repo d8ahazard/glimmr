@@ -1,23 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Services;
 using Makaretu.Dns;
-using Newtonsoft.Json;
 using Serilog;
-using IPAddress = Org.BouncyCastle.Utilities.Net.IPAddress;
 
 namespace Glimmr.Models.ColorTarget.Wled {
 	public class WledDiscovery : ColorDiscovery, IColorDiscovery {
-		public override string DeviceTag { get; set; }
+		public override string DeviceTag { get; set; } = "Wled";
 		private readonly ControlService _controlService;
 
 		private readonly MulticastService _mDns;
 		private readonly ServiceDiscovery _sd;
-		private bool _discovering;
 		private bool _stopDiscovery;
 		private List<string> _ids;
 
@@ -25,7 +21,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			_mDns = cs.ControlService.MulticastService;
 			_controlService = cs.ControlService;
 			_sd = _controlService.ServiceDiscovery;
-			DeviceTag = "Wled";
+			_ids = new List<string>();
 		}
 
 		public async Task Discover(CancellationToken ct, int timeout) {
@@ -107,13 +103,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			} catch (Exception p) {
 				Log.Warning("Exception: " + p.Message);
 			}
-
-			
-
-			if (_stopDiscovery) {
-				_discovering = false;
-			}
-			
 		}
 	}
 }

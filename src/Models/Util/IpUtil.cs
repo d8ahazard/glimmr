@@ -6,9 +6,9 @@ using Serilog;
 
 namespace Glimmr.Models.Util {
 	public static class IpUtil {
-		private static string _localIp;
+		private static string? _localIp;
 
-		public static IPEndPoint Parse(string endpoint, int portIn) {
+		public static IPEndPoint? Parse(string endpoint, int portIn) {
 			if (string.IsNullOrEmpty(endpoint)
 			    || endpoint.Trim().Length == 0) {
 				throw new ArgumentException("Endpoint descriptor may not be empty.");
@@ -21,7 +21,7 @@ namespace Glimmr.Models.Util {
 			}
 
 			var values = endpoint.Split(new[] {':'});
-			IPAddress ipAddress;
+			IPAddress? ipAddress;
 			int port;
 
 			switch (values.Length) {
@@ -33,10 +33,6 @@ namespace Glimmr.Models.Util {
 					//try to use the address as IPv4, otherwise get hostname
 					if (!IPAddress.TryParse(values[0], out ipAddress)) {
 						ipAddress = GetIpFromHost(values[0]);
-					}
-
-					if (ipAddress == null) {
-						return null;
 					}
 
 					break;
@@ -61,7 +57,7 @@ namespace Glimmr.Models.Util {
 				throw new ArgumentException($"No port specified: '{endpoint}'");
 			}
 
-			return new IPEndPoint(ipAddress, port);
+			return ipAddress != null ? new IPEndPoint(ipAddress, port) : null;
 		}
 
 		private static int GetPort(string p) {
@@ -74,7 +70,7 @@ namespace Glimmr.Models.Util {
 			return port;
 		}
 
-		public static IPAddress GetIpFromHost(string p) {
+		public static IPAddress? GetIpFromHost(string p) {
 			if (string.IsNullOrEmpty(p)) {
 				return null;
 			}
@@ -109,7 +105,7 @@ namespace Glimmr.Models.Util {
 			}
 			
 			try {
-			// If still no dice, try getting appending .local
+				// If still no dice, try getting appending .local
 				var dns = Dns.GetHostEntry(p + ".local");
 				foreach (var host in dns.AddressList) {
 					if (host.AddressFamily == AddressFamily.InterNetwork) {

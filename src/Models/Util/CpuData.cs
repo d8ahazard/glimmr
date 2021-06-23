@@ -18,8 +18,8 @@ namespace Glimmr.Models.Util {
 
 		[JsonProperty] public float TempMin { get; set; }
 
-		[JsonProperty] public string Uptime { get; set; }
+		[JsonProperty] public string? Uptime { get; set; }
 
-		[JsonProperty] public string[] ThrottledState { get; set; }
+		[JsonProperty] public string[]? ThrottledState { get; set; }
 	}
 }

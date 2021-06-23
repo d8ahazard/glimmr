@@ -53,7 +53,7 @@ namespace Glimmr.Models.Util {
 		public static extern bool EnumDisplaySettings(string deviceName, int modeNum, ref DEVMODE devMode);
 
 		[DllImport("User32.dll")]
-		public static extern int EnumDisplayDevices(string lpDevice, int iDevNum, ref DisplayDevice lpDisplayDevice,
+		public static extern int EnumDisplayDevices(string? lpDevice, int iDevNum, ref DisplayDevice lpDisplayDevice,
 			int dwFlags);
 
 		public static Rectangle GetDisplaySize() {

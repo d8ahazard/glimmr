@@ -8,13 +8,12 @@ using YeelightAPI;
 
 namespace Glimmr.Models.ColorTarget.Yeelight {
 	public class YeelightDiscovery : ColorDiscovery, IColorDiscovery {
-		public override string DeviceTag { get; set; }
+		public override string DeviceTag { get; set; } = "Yeelight";
 
 		private readonly ControlService _controlService;
 
 		public YeelightDiscovery(ColorService colorService) : base(colorService) {
 			_controlService = colorService.ControlService;
-			DeviceTag = "Yeelight";
 		}
 
 		public async Task Discover(CancellationToken ct, int timeout) {
@@ -24,8 +23,10 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			Log.Debug("Found yeelight devices: " + JsonConvert.SerializeObject(discoveredDevices));
 			foreach (var dev in discoveredDevices) {
 				Log.Debug("YEE YEE: " + JsonConvert.SerializeObject(dev));
+				var ip = IpUtil.GetIpFromHost(dev.Hostname);
+				var ipString = ip == null ? "" : ip.ToString(); 
 				var yd = new YeelightData {
-					Id = dev.Id, IpAddress = IpUtil.GetIpFromHost(dev.Hostname).ToString(), Name = dev.Name
+					Id = dev.Id, IpAddress = ipString, Name = dev.Name
 				};
 				await _controlService.AddDevice(yd);
 			}

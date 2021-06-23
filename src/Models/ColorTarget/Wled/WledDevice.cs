@@ -20,13 +20,11 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		private readonly HttpClient _httpClient;
 		private readonly UdpClient _udpClient;
 		private readonly List<Color> _updateColors;
-		private CaptureMode _captureMode;
 
 		private bool _disposed;
 		private IPEndPoint _ep;
 		private int _ledCount;
 		private int _offset;
-		private int _sectorCount;
 		private StripMode _stripMode;
 		private int _targetSector;
 
@@ -83,9 +81,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			}
 
 			try {
-				if (_udpClient != null) {
-					await _udpClient.SendAsync(packet.ToArray(), packet.Count, _ep).ConfigureAwait(false);
-				}
+				await _udpClient.SendAsync(packet.ToArray(), packet.Count, _ep);
+				
 			} catch (Exception e) {
 				Log.Debug("Exception, look at that: " + e.Message);
 			}
@@ -104,8 +101,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		
 
 			Streaming = false;
-			FlashColor(Color.Black).ConfigureAwait(false);
-			UpdateLightState(_wasOn, _lastBri).ConfigureAwait(false);
+			await FlashColor(Color.Black).ConfigureAwait(false);
+			await UpdateLightState(_wasOn, _lastBri).ConfigureAwait(false);
 			await Task.FromResult(true);
 			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
 		}
@@ -162,8 +159,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 		public Task ReloadData() {
 			var sd = DataUtil.GetSystemData();
-			_captureMode = (CaptureMode) sd.CaptureMode;
-			_sectorCount = sd.SectorCount;
 			var oldBrightness = Brightness;
 			Data = DataUtil.GetDevice<WledData>(Id);
 			_offset = Data.Offset;
@@ -237,7 +232,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			url += "&T=" + (on ? "1" : "0");
 			url += "&A=" + (int) scaledBright;
 			Log.Debug("LightstateUrl: " + url);
-			await _httpClient.GetAsync(url);
+			await _httpClient.GetAsync(url).ConfigureAwait(false);
 		}
 		
 		private async Task<WledStateData?> GetLightState() {

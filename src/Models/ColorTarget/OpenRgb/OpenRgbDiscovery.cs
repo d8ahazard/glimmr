@@ -15,6 +15,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 		public OpenRgbDiscovery(ColorService colorService) : base(colorService) {
 			_client = colorService.ControlService.GetAgent("OpenRgbAgent");
+			if (_client == null) return;
 			_cs = colorService.ControlService;
 			LoadData();
 		}

@@ -29,10 +29,6 @@ namespace Glimmr.Models.ColorTarget {
 		public Task FlashColor(Color color);
 
 
-		public bool IsEnabled() {
-			return Enable;
-		}
-
 		public Task ReloadData();
 
 		public void Dispose();

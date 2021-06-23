@@ -1,6 +1,4 @@
-﻿#region
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -16,9 +14,7 @@ using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Serilog;
 
-// ReSharper disable All
 
-#endregion
 
 namespace Glimmr.Services {
 	// Handles capturing and sending color data
@@ -56,6 +52,12 @@ namespace Glimmr.Services {
 		private Stopwatch _watch;
 
 		public ColorService(ControlService controlService) {
+			Log.Information("Starting color service...");
+			_watch = new Stopwatch();
+			_frameWatch = new Stopwatch();
+			_streamTokenSource = new CancellationTokenSource();
+			_sendTokenSource = new CancellationTokenSource();
+			_sDevices = Array.Empty<IColorTarget>();
 			_frameSpan = TimeSpan.FromMilliseconds(1000f / 60);
 			_systemData = DataUtil.GetSystemData();
 			_streams = new Dictionary<DeviceMode, IColorSource>();
@@ -76,14 +78,10 @@ namespace Glimmr.Services {
 		public event Action<List<Color>, List<Color>, int, bool> ColorSendEvent = delegate { };
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
-			Log.Information("Starting color service...");
 			_stopToken = stoppingToken;
-			_watch = new Stopwatch();
-			_frameWatch = new Stopwatch();
-			_streamTokenSource = new CancellationTokenSource();
 			LoadData();
 			return Task.Run(async () => {
-				await Demo(this, new DynamicEventArgs()).ConfigureAwait(false);
+				await Demo(this, null).ConfigureAwait(false);
 				Log.Information($"All color sources initialized, setting mode to {DeviceMode}.");
 				await Mode(this, new DynamicEventArgs(DeviceMode)).ConfigureAwait(true);
 				while (!stoppingToken.IsCancellationRequested) {
@@ -124,7 +122,7 @@ namespace Glimmr.Services {
 			_streams[mode].Refresh(_systemData);
 		}
 
-		public BackgroundService GetStream(DeviceMode name) {
+		public BackgroundService? GetStream(DeviceMode name) {
 			if (_streams.ContainsKey(name)) return (BackgroundService) _streams[name];
 			return null;
 		}
@@ -198,7 +196,7 @@ namespace Glimmr.Services {
 				}
 			}
 
-			Thread.Sleep(500);
+			await Task.Delay(500);
 
 			foreach (var _strip in devices) {
 				if (_strip != null) {
@@ -212,7 +210,7 @@ namespace Glimmr.Services {
 				}
 			}
 
-			Thread.Sleep(1000);
+			await Task.Delay(1000);
 
 			foreach (var _strip in devices) {
 				if (_strip != null) {
@@ -310,8 +308,11 @@ namespace Glimmr.Services {
 							if (device.Enable) enabled++;
 							Log.Debug($"Creating {device.Tag}: {device.Id}");
 							var args = new object[] {device, this};
-							var obj = (IColorTarget) Activator.CreateInstance(Type.GetType(c)!, args);
-							sDevs.Add(obj);
+							dynamic? obj = Activator.CreateInstance(Type.GetType(c)!, args);
+							if (obj != null) {
+								var dObj = (IColorTarget) obj;
+								sDevs.Add(dObj);
+							}
 						}
 					}
 				} catch (InvalidCastException e) {
@@ -322,7 +323,7 @@ namespace Glimmr.Services {
 			_sDevices = sDevs.ToArray();
 		}
 
-		private async Task Demo(object o, DynamicEventArgs dynamicEventArgs) {
+		private async Task Demo(object o, DynamicEventArgs? dynamicEventArgs) {
 			await StartStream();
 			var ledCount = 300;
 			var sectorCount = _systemData.SectorCount;
@@ -375,15 +376,13 @@ namespace Glimmr.Services {
 					var wasStreaming = dev.Streaming;
 					await dev.ReloadData().ConfigureAwait(false);
 					if (DeviceMode != DeviceMode.Off && dev.Data.Enable && !dev.Streaming) {
-						dev.StartStream(_sendTokenSource.Token).ConfigureAwait(false);
+						await dev.StartStream(_sendTokenSource.Token).ConfigureAwait(false);
 					}
 					
 					if (DeviceMode != DeviceMode.Off && !dev.Data.Enable && dev.Streaming) {
 						Log.Debug("Stopping disabled device: " + dev.Id);
-						dev.StopStream().ConfigureAwait(false);
+						await dev.StopStream().ConfigureAwait(false);
 					}
-
-					await Task.FromResult(true);
 					return;
 				}
 			}
@@ -403,7 +402,7 @@ namespace Glimmr.Services {
 			_sDevices = sDevs.ToArray();
 		}
 
-		private dynamic CreateDevice(dynamic devData) {
+		private dynamic? CreateDevice(dynamic devData) {
 			var classes = SystemUtil.GetClasses<IColorTarget>();
 			var deviceData = DataUtil.GetDevices();
 			foreach (var c in classes) {
@@ -415,7 +414,7 @@ namespace Glimmr.Services {
 					if (devData.Tag == tag) {
 						Log.Debug($"Creating {devData.Tag}: {devData.Id}");
 						var args = new object[] {devData, this};
-						var obj = (IColorTarget) Activator.CreateInstance(Type.GetType(c)!, args);
+						dynamic? obj = Activator.CreateInstance(Type.GetType(c)!, args);
 						return obj;
 					}
 				} catch (Exception e) {
@@ -487,14 +486,14 @@ namespace Glimmr.Services {
 				foreach (var sdev in _sDevices) {
 					if (sdev.Data == null) {
 						Log.Debug("SET DEV DATA: " + sdev.Id);
-					}
-					if (sdev.Data.Tag != "Led" && sdev.Data.Tag != "Adalight" && sdev.Data.Enable) {
-						if (!SystemUtil.IsOnline(sdev.Data.IpAddress)) {
-							Log.Debug($"Device {sdev.Data.Tag} at {sdev.Data.Id} is offline.");
-							continue;
+					} else {
+						if (sdev.Data.Tag != "Led" && sdev.Data.Tag != "Adalight" && sdev.Data.Enable) {
+							if (!SystemUtil.IsOnline(sdev.Data.IpAddress)) {
+								Log.Debug($"Device {sdev.Data.Tag} at {sdev.Data.Id} is offline.");
+								continue;
+							}
 						}
 					}
-
 					sdev.StartStream(_sendTokenSource.Token);
 				}
 			}

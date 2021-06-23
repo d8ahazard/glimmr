@@ -30,18 +30,16 @@ namespace Glimmr.Models.Util {
 			}
 
 			var pingable = false;
-			Ping pinger = null;
+			Ping? ping = null;
 
 			try {
-				pinger = new Ping();
-				var reply = pinger.Send(target);
-				if (reply != null) {
-					pingable = reply.Status == IPStatus.Success;
-				}
+				ping = new Ping();
+				var reply = ping.Send(target);
+				pingable = reply.Status == IPStatus.Success;
 			} catch (PingException) {
 				//ignore
 			} finally {
-				pinger?.Dispose();
+				ping?.Dispose();
 			}
 
 			return pingable;
@@ -110,11 +108,7 @@ namespace Glimmr.Models.Util {
 				}
 			}
 
-			if (Directory.Exists(fullPath)) {
-				return fullPath;
-			}
-
-			return string.Empty;
+			return Directory.Exists(fullPath) ? fullPath : string.Empty;
 		}
 
 		public static List<string> GetClasses<T>() {
@@ -123,9 +117,10 @@ namespace Glimmr.Models.Util {
 				try {
 					var types = ad.GetTypes();
 					foreach (var type in types) {
-						if (typeof(T).IsAssignableFrom(type) && !type.IsInterface && !type.IsAbstract) {
-							output.Add(type.FullName);
+						if (!typeof(T).IsAssignableFrom(type) || type.IsInterface || type.IsAbstract) {
+							continue;
 						}
+						if (type.FullName != null) output.Add(type.FullName);
 					}
 				} catch (Exception e) {
 					Log.Warning("Exception listing types: " + e.Message);
@@ -138,7 +133,7 @@ namespace Glimmr.Models.Util {
 		private static Dictionary<int, string> ListUsbLinux() {
 			var i = 0;
 			var output = new Dictionary<int, string>();
-			while (i < 20) {
+			while (i < 10) {
 				try {
 					// Check if video stream is available.
 					var v = new VideoCapture(i); // Will crash if not available, hence try/catch.

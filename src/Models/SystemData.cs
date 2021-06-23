@@ -146,7 +146,6 @@ namespace Glimmr.Models {
 		
 		[DefaultValue(10)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-
 		public int HSectors { get; set; } = 10;
 
 		// Values for general LED settings
@@ -225,15 +224,15 @@ namespace Glimmr.Models {
 
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public string DsIp { get; set; }
+		public string DsIp { get; set; } = "";
 
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public string GroupName { get; set; }
+		public string GroupName { get; set; } = "";
 
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public string Name { get; set; }
+		public string Name { get; set; } = "";
 
 		[DefaultValue("127.0.0.1")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -241,13 +240,13 @@ namespace Glimmr.Models {
 
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public string RecDev { get; set; }
+		public string RecDev { get; set; } = "";
 
 
 		//TODO: Make getter for this always retrieve same value used by setup script
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public string Serial { get; set; }
+		public string Serial { get; set; } = "";
 
 		[DefaultValue("dark")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]

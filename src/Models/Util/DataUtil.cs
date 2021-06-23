@@ -20,7 +20,7 @@ namespace Glimmr.Models.Util {
 
 		private static bool _dbLocked;
 
-		private static SystemData _systemData;
+		private static SystemData? _systemData;
 		private static List<dynamic> _devices;
 
 		public static LiteDatabase GetDb() {
@@ -408,13 +408,14 @@ namespace Glimmr.Models.Util {
 
 		public static SystemData GetSystemData() {
 			if (_systemData == null) {
-				CacheSystemData();
+				return CacheSystemData();
 			}
 
 			return _systemData;
+			
 		}
 
-		private static void CacheSystemData() {
+		private static SystemData CacheSystemData() {
 			var db = GetDb();
 
 			var col = db.GetCollection<SystemData>("SystemData");
@@ -423,7 +424,7 @@ namespace Glimmr.Models.Util {
 					var cols = col.FindAll().ToList();
 					foreach (var sda in cols) {
 						_systemData = sda;
-						return;
+						return _systemData;
 					}
 				}
 			} catch (Exception e) {
@@ -435,6 +436,7 @@ namespace Glimmr.Models.Util {
 			sd.SetDefaults();
 			col.Upsert(0, sd);
 			_systemData = sd;
+			return sd;
 		}
 
 		public static void SetSystemData(SystemData value) {

@@ -16,26 +16,12 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 		public YeelightData Data;
 
-		private CaptureMode _capMode;
-		private int _sectorCount;
-		private Task _streamTask;
+		private Task? _streamTask;
 
 		private int _targetSector;
 
 		private Device _yeeDevice;
-
-		public YeelightDevice(YeelightData yd, ColorService cs) : base(cs) {
-			Data = yd;
-			Id = Data.Id;
-			LoadData();
-			Log.Debug("Created new yeedevice at " + yd.IpAddress);
-			cs.ColorSendEvent += SetColor;
-			_colorService = cs;
-
-			Data.LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
-			DataUtil.AddDeviceAsync(Data, false).ConfigureAwait(false);
-		}
-
+		
 		public bool Streaming { get; set; }
 		public bool Testing { get; set; }
 		public int Brightness { get; set; }
@@ -46,6 +32,23 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 		private bool _isOn;
 
+
+		public YeelightDevice(YeelightData yd, ColorService cs) : base(cs) {
+			Data = yd;
+			Id = Data.Id;
+			Tag = Data.Tag;
+			IpAddress = Data.IpAddress;
+			LoadData();
+			Log.Debug("Created new yee device at " + yd.IpAddress);
+			cs.ColorSendEvent += SetColor;
+			_colorService = cs;
+
+			Data.LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
+			DataUtil.AddDeviceAsync(Data, false).ConfigureAwait(false);
+			_yeeDevice = new Device(IpAddress);
+		}
+
+		
 
 		IColorTargetData IColorTarget.Data {
 			get => Data;
@@ -83,6 +86,9 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			await _yeeDevice.StopMusicMode();
 			_yeeDevice.Disconnect();
 			Streaming = false;
+			if (_streamTask != null) {
+				if (!_streamTask.IsCompleted) _streamTask.Dispose();
+			}
 			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
 		}
 
@@ -127,7 +133,8 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 
 		public Task ReloadData() {
-			Data = DataUtil.GetDevice<YeelightData>(Id);
+			var dd = DataUtil.GetDevice<YeelightData>(Id);
+			Data = dd ?? Data;
 			return Task.CompletedTask;
 		}
 
@@ -146,7 +153,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 				if (Streaming) {
 					restart = true;
 					StopStream().ConfigureAwait(true);
-					_yeeDevice?.Dispose();
+					_yeeDevice.Dispose();
 				}
 			}
 
@@ -159,7 +166,6 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			Brightness = Data.Brightness;
 			Enable = Data.Enable;
 
-			_yeeDevice ??= new Device(IpAddress);
 			if (restart) {
 				StartStream(CancellationToken.None).ConfigureAwait(true);
 			}

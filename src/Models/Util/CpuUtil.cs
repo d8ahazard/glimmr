@@ -15,8 +15,8 @@ namespace Glimmr.Models.Util {
 		private static double _tempAverage;
 		private static double _tempMax;
 		private static double _tempMin = 10000.0d;
-		private static string[] _throttledState;
-		private static string _upTime;
+		private static string[]? _throttledState;
+		private static string? _upTime;
 
 		private static readonly string[] StringTable = {
 			"Soft Temperature Limit has occurred", //19

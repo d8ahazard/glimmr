@@ -5,7 +5,6 @@ using System.Globalization;
 using System.Linq;
 using Glimmr.Enums;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Bson.Converters;
 using Serilog;
 
 namespace Glimmr.Models.Util {
@@ -25,7 +24,7 @@ namespace Glimmr.Models.Util {
 		private static bool _useCenter;
 		private static int _ledCount;
 
-		public static void ColorToHsv(Color color, out double hue, out double saturation, out double value) {
+		private static void ColorToHsv(Color color, out double hue, out double saturation, out double value) {
 			double max = Math.Max(color.R, Math.Max(color.G, color.B));
 			double min = Math.Min(color.R, Math.Min(color.G, color.B));
 
@@ -983,7 +982,6 @@ namespace Glimmr.Models.Util {
 				var iBl = dimensions[0] + dimensions[1] + dimensions[0] - 1;
 
 				// Positions of output corners
-				var oBr = 0;
 				var oTr = _vCount - 1;
 				var oTl = _vCount + _hCount - 2;
 				var oBl = _vCount + _hCount + _vCount - 3;
@@ -995,7 +993,7 @@ namespace Glimmr.Models.Util {
 				output[0] = input[iBr];
 				
 				// Mid-right sectors
-				for (var i = oBr + 1; i < oTr; i++) {
+				for (var i = 1; i < oTr; i++) {
 					var tgt = (int)(i * vFactor);
 					//Log.Debug($"Mapping {i} to {tgt}");
 					output[i] = input[tgt];
@@ -1062,45 +1060,6 @@ namespace Glimmr.Models.Util {
 			_topCount = sd.TopCount;
 			_bottomCount = sd.BottomCount;
 			_ledCount = sd.LedCount;
-		}
-
-		public static List<Color> MirrorColors(List<Color> input, int[] dimensions) {
-			var rightColors = new Color[dimensions[0]];
-			var topColors = new Color[dimensions[1]];
-			var leftColors = new Color[dimensions[2]];
-			var bottomColors = new Color[dimensions[3]];
-			
-			var rightStart = 0;
-			var rightSize = dimensions[0];
-			
-			var topStart = rightSize - 1;
-			var topSize = dimensions[1];
-
-			var leftStart = topStart + topSize;
-			var leftSize = dimensions[2];
-			
-			var bottomStart = leftStart + leftSize - 1;
-			var bottomSize = dimensions[3];
-			
-			for (var i = rightStart; i < rightSize; i++) {
-				rightColors[i] = input[i];
-			}
-			var idx = 0;
-			for (var i = topStart; i < topSize; i++) {
-				rightColors[idx] = input[i];
-				idx++;
-			}
-
-			idx = 0;
-			for (var i = leftStart; i < leftSize; i++) {
-				leftColors[idx] = input[i];
-				idx++;
-			}
-			for (var i = rightStart; i < rightSize; i++) {
-				input[i] = leftColors[i];
-			}
-
-			return input;
 		}
 	}
 }

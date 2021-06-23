@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Net;
@@ -11,7 +10,6 @@ using Glimmr.Models.ColorTarget.Glimmr;
 using Glimmr.Models.Util;
 using Makaretu.Dns;
 using Microsoft.Extensions.Hosting;
-using Newtonsoft.Json;
 using Serilog;
 
 namespace Glimmr.Services {
@@ -22,8 +20,6 @@ namespace Glimmr.Services {
 		private int _devMode;
 		private int _sectorCount;
 		private int _ledCount;
-		private int[] _dimensions;
-		private int[] _sectorDimensions;
 		private bool _useCenter;
 		private bool _mirrorHorizontal;
 		private SystemData _sd;
@@ -41,6 +37,7 @@ namespace Glimmr.Services {
 			_uc.DontFragment = true;
 			var sd = DataUtil.GetSystemData();
 			_devMode = sd.DeviceMode;
+			_sd = sd;
 		}
 
 		private void RefreshSd() {
@@ -50,9 +47,6 @@ namespace Glimmr.Services {
 		private async Task StartStream(object arg1, DynamicEventArgs arg2) {
 			GlimmrData gd = arg2.P1;
 			_sd = DataUtil.GetSystemData();
-			_dimensions = new[] {gd.RightCount, gd.TopCount, gd.LeftCount, gd.BottomCount};
-			_sectorDimensions = new[] {gd.VCount, gd.HCount};
-			Log.Debug("Dimensions: " + JsonConvert.SerializeObject(_dimensions));
 			_useCenter = gd.UseCenter;
 			_mirrorHorizontal = gd.MirrorHorizontal;
 			_sectorCount = gd.SectorCount;
@@ -140,7 +134,7 @@ namespace Glimmr.Services {
 				_cs.SendColors(ledColors, sectorColors);
 				await Task.FromResult(true);
 			} else {
-				Log.Debug("Devmode is incorrect.");
+				Log.Debug("Dev mode is incorrect.");
 			}
 			
 		}
