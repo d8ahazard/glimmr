@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Net;
@@ -6,6 +8,8 @@ using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
 using Serilog;
+
+#endregion
 
 namespace Glimmr.Models.ColorTarget.Wled {
 	public class WledData : IColorTargetData {
@@ -66,7 +70,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 				}
 
 				LedCount = jsonObj.info.leds.count;
-				Brightness = (int)(jsonObj.state.bri / 255f * 100);
+				Brightness = (int) (jsonObj.state.bri / 255f * 100);
 			} catch (Exception e) {
 				Log.Debug("Yeah, here's your problem, smart guy: " + e.Message);
 			}
@@ -99,7 +103,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		public string IpAddress { get; set; }
 		public int Brightness { get; set; }
 
-		
+
 		public bool Enable { get; set; }
 
 		private SettingsProperty[] Kps() {
@@ -113,8 +117,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 						["2"] = "Loop (Play Bar)",
 						["3"] = "Single Color"
 					}),
-					new("ReverseStrip", "check", "Reverse Strip Direction"),
-					
+					new("ReverseStrip", "check", "Reverse Strip Direction")
 				};
 			}
 
@@ -129,7 +132,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
 					["3"] = "Single Color"
 				}),
 				new("ReverseStrip", "check", "Reverse Strip Direction")
-				
 			};
 		}
 	}

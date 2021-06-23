@@ -12,6 +12,8 @@ using Newtonsoft.Json;
 
 namespace Glimmr.Models.ColorTarget.Lifx {
 	public class LifxData : IColorTargetData {
+		[JsonProperty] public BeamLayout BeamLayout { get; set; }
+
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool HasMultiZone { get; set; }
@@ -57,8 +59,6 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		[JsonProperty] public ushort Hue { get; set; }
 		[JsonProperty] public ushort Kelvin { get; set; }
 		[JsonProperty] public ushort Saturation { get; set; }
-
-		[JsonProperty] public BeamLayout BeamLayout { get; set; }
 
 		private SettingsProperty[] _keyProperties;
 
@@ -113,6 +113,19 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			}
 		}
 
+		public SettingsProperty[] KeyProperties {
+			get => Kps();
+			set => _keyProperties = value;
+		}
+
+
+		public string Name { get; set; }
+		public string Id { get; set; }
+		public string Tag { get; set; }
+		public string IpAddress { get; set; }
+		public int Brightness { get; set; }
+		public bool Enable { get; set; }
+
 		public void GenerateBeamLayout() {
 			var total = 0;
 			var beamCount = 0;
@@ -148,19 +161,6 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			}
 		}
 
-		public SettingsProperty[] KeyProperties {
-			get => Kps();
-			set => _keyProperties = value;
-		}
-
-
-		public string Name { get; set; }
-		public string Id { get; set; }
-		public string Tag { get; set; }
-		public string IpAddress { get; set; }
-		public int Brightness { get; set; }
-		public bool Enable { get; set; }
-
 		private SettingsProperty[] Kps() {
 			if (HasMultiZone) {
 				return new SettingsProperty[] {
@@ -185,16 +185,15 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 	[Serializable]
 	public class Segment {
-		[JsonProperty] public int Position { get; set; }
-		[JsonProperty] public int LedCount { get; set; }
-
-		[JsonProperty] public int Offset { get; set; }
-
-		[JsonProperty] public int Id { get; set; }
+		[JsonProperty] public bool Repeat { get; set; }
 
 		[JsonProperty] public bool Reverse { get; set; }
 
-		[JsonProperty] public bool Repeat { get; set; }
+		[JsonProperty] public int Id { get; set; }
+		[JsonProperty] public int LedCount { get; set; }
+
+		[JsonProperty] public int Offset { get; set; }
+		[JsonProperty] public int Position { get; set; }
 
 		public Segment(int position, int ledCount = 10, int offset = 0) {
 			Position = position;

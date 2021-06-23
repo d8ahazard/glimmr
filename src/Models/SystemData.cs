@@ -1,8 +1,12 @@
-﻿using System.ComponentModel;
+﻿#region
+
+using System.ComponentModel;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
+
+#endregion
 
 namespace Glimmr.Models {
 	public class SystemData {
@@ -27,10 +31,6 @@ namespace Glimmr.Models {
 
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public bool UseCenter { get; set; }
-
-		[DefaultValue(false)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool DefaultSet { get; set; }
 
 		[DefaultValue(true)]
@@ -52,6 +52,10 @@ namespace Glimmr.Models {
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool TestRazer { get; set; }
+
+		[DefaultValue(false)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public bool UseCenter { get; set; }
 
 		[DefaultValue(.5f)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -143,7 +147,7 @@ namespace Glimmr.Models {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int DiscoveryTimeout { get; set; }
 
-		
+
 		[DefaultValue(10)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int HSectors { get; set; } = 10;
@@ -194,7 +198,10 @@ namespace Glimmr.Models {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int SectorCount {
 			get {
-				if (UseCenter) return HSectors * VSectors;
+				if (UseCenter) {
+					return HSectors * VSectors;
+				}
+
 				return HSectors + HSectors + VSectors + VSectors - 4;
 			}
 		}
@@ -208,7 +215,7 @@ namespace Glimmr.Models {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int UsbSelection { get; set; }
 
-		
+
 		[DefaultValue(6)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int VSectors { get; set; } = 6;

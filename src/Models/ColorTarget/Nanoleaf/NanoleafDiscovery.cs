@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,6 +10,8 @@ using Makaretu.Dns;
 using Nanoleaf.Client;
 using Newtonsoft.Json;
 using Serilog;
+
+#endregion
 
 namespace Glimmr.Models.ColorTarget.Nanoleaf {
 	public class NanoleafDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth {
@@ -112,7 +116,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			if (nData.Type == "NL42") {
 				nData.Name = $"Shape {devName}";
 			}
-			
+
 			if (nData.Type == "NL29") {
 				nData.Name = $"Canvas {devName}";
 			}
@@ -120,7 +124,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			if (nData.Type == "NL22") {
 				nData.Name = $"Rhythm {devName}";
 			}
-			
+
 			if (string.IsNullOrEmpty(nData.IpAddress) && !string.IsNullOrEmpty(nData.Hostname)) {
 				nData.IpAddress = nData.Hostname;
 			}

@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -7,20 +9,14 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
 
+#endregion
+
 namespace GlimmrTray {
 	internal static class Program {
-		private delegate void WinEventDelegate(IntPtr hWinEventHook, uint eventType,
-			IntPtr window, int idObject, int idChild, uint dwEventThread, uint eventTime);
-
-		[DllImport("user32.dll")]
-		private static extern IntPtr SetWinEventHook(uint eventMin, uint eventMax, IntPtr
-				modWinEventProc, WinEventDelegate winEventProc, uint idProcess,
-			uint idThread, uint dwFlags);
-
-		[DllImport("user32.dll")]
-		private static extern bool UnhookWinEvent(IntPtr hWinEventHook);
-
 		private const uint EventSystemMinimizeStart = 0x0016;
+
+		private const int SwHide = 0;
+		private const int SwShow = 5;
 		private const uint WinEventOutOfContext = 0;
 
 		private static IntPtr _procId;
@@ -29,6 +25,14 @@ namespace GlimmrTray {
 		// Need to ensure delegate is not collected while we're using it,
 		// storing it in a class field is simplest way to do this.
 		private static readonly WinEventDelegate ProcDelegate = WinEventProc;
+
+		[DllImport("user32.dll")]
+		private static extern IntPtr SetWinEventHook(uint eventMin, uint eventMax, IntPtr
+				modWinEventProc, WinEventDelegate winEventProc, uint idProcess,
+			uint idThread, uint dwFlags);
+
+		[DllImport("user32.dll")]
+		private static extern bool UnhookWinEvent(IntPtr hWinEventHook);
 
 		private static void Main() {
 			if (true) {
@@ -144,9 +148,6 @@ namespace GlimmrTray {
 		[DllImport("user32.dll")]
 		private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
-		private const int SwHide = 0;
-		private const int SwShow = 5;
-
 		private static void SwitchWindow(IntPtr hWnd) {
 			var success = ShowWindow(hWnd, SwHide);
 			if (success) {
@@ -158,6 +159,9 @@ namespace GlimmrTray {
 		}
 
 		[DllImport("kernel32.dll")]
-		static extern IntPtr GetConsoleWindow();
+		private static extern IntPtr GetConsoleWindow();
+
+		private delegate void WinEventDelegate(IntPtr hWinEventHook, uint eventType,
+			IntPtr window, int idObject, int idChild, uint dwEventThread, uint eventTime);
 	}
 }

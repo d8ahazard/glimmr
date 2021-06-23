@@ -1,7 +1,8 @@
+#region
+
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
@@ -9,26 +10,20 @@ using Glimmr.Services;
 using rpi_ws281x;
 using Serilog;
 
+#endregion
+
 namespace Glimmr.Models.ColorTarget.Led {
 	public class LedDevice : ColorTarget, IColorTarget {
 		private float CurrentMilliamps { get; set; }
+		private readonly Controller _controller;
+		private readonly int _controllerId;
+		private readonly WS281x _ws;
 		public LedData Data;
+		private readonly LedAgent _agent;
 		private bool _enableAbl;
 
 		private int _ledCount;
 		private int _offset;
-		private readonly int _controllerId;
-		private LedAgent _agent;
-		private readonly Controller _controller;
-		private readonly WS281x _ws;
-		
-		public bool Streaming { get; set; }
-		public bool Testing { get; set; }
-		public int Brightness { get; set; }
-		public string Id { get; set; }
-		public string IpAddress { get; set; }
-		public string Tag { get; set; }
-		public bool Enable { get; set; }
 
 
 		public LedDevice(LedData ld, ColorService colorService) : base(colorService) {
@@ -46,11 +41,18 @@ namespace Glimmr.Models.ColorTarget.Led {
 			if (Id == "1") {
 				_controller = _ws.GetController(ControllerType.PWM1);
 			}
-			
+
 			ReloadData();
 		}
 
-	
+		public bool Streaming { get; set; }
+		public bool Testing { get; set; }
+		public int Brightness { get; set; }
+		public string Id { get; set; }
+		public string IpAddress { get; set; }
+		public string Tag { get; set; }
+		public bool Enable { get; set; }
+
 
 		IColorTargetData IColorTarget.Data {
 			get => Data;
@@ -72,6 +74,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			if (!Streaming) {
 				return;
 			}
+
 			Log.Information($"{Data.Tag}::Stopping stream. {Data.Id}.");
 			StopLights();
 			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
@@ -92,7 +95,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 		public Task ReloadData() {
 			var ld = DataUtil.GetDevice<LedData>(Id);
 			var sd = DataUtil.GetSystemData();
-			
+
 			if (ld == null) {
 				Log.Warning("No LED Data");
 				return Task.CompletedTask;
@@ -112,7 +115,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			if (!Enable) {
 				return Task.CompletedTask;
 			}
-			
+
 			if (Data.Brightness != ld.Brightness && !_enableAbl) {
 				_ws.SetBrightness(ld.Brightness / 100 * 255, _controllerId);
 			}
@@ -152,9 +155,6 @@ namespace Glimmr.Models.ColorTarget.Led {
 		}
 
 
-		
-
-		
 		private async Task StopLights() {
 			if (!Enable) {
 				return;
@@ -162,7 +162,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 			Log.Debug("Setting...");
 			for (var i = 0; i < _ledCount; i++) {
-				_controller.SetLED(i, Color.FromArgb(0,0,0,0));
+				_controller.SetLED(i, Color.FromArgb(0, 0, 0, 0));
 			}
 
 			Log.Debug("Rendering...");

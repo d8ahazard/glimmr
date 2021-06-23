@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -14,7 +16,7 @@ using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Serilog;
 
-
+#endregion
 
 namespace Glimmr.Services {
 	// Handles capturing and sending color data
@@ -27,8 +29,8 @@ namespace Glimmr.Services {
 		private bool _autoDisabled;
 		private int _autoDisableDelay;
 		private CaptureMode _captureMode;
-		private TimeSpan _frameSpan;
-		private Stopwatch _frameWatch;
+		private readonly TimeSpan _frameSpan;
+		private readonly Stopwatch _frameWatch;
 
 		// Figure out how to make these generic, non-callable
 
@@ -41,15 +43,15 @@ namespace Glimmr.Services {
 
 		// Generates a token every time we send colors, and expires super-fast
 		private CancellationToken _stopToken;
-		private Dictionary<DeviceMode, IColorSource> _streams;
+		private readonly Dictionary<DeviceMode, IColorSource> _streams;
 		private bool _streamStarted;
 
 		// Token for the color source
-		private CancellationTokenSource _streamTokenSource;
+		private readonly CancellationTokenSource _streamTokenSource;
 
 		//private float _fps;
 		private SystemData _systemData;
-		private Stopwatch _watch;
+		private readonly Stopwatch _watch;
 
 		public ColorService(ControlService controlService) {
 			Log.Information("Starting color service...");
@@ -87,7 +89,10 @@ namespace Glimmr.Services {
 				while (!stoppingToken.IsCancellationRequested) {
 					await CheckAutoDisable();
 					if (_setAutoDisable) {
-						if (!_watch.IsRunning) _watch.Restart();
+						if (!_watch.IsRunning) {
+							_watch.Restart();
+						}
+
 						if (_watch.ElapsedMilliseconds >= _autoDisableDelay * 1000f) {
 							_autoDisabled = true;
 							_setAutoDisable = false;
@@ -123,7 +128,10 @@ namespace Glimmr.Services {
 		}
 
 		public BackgroundService? GetStream(DeviceMode name) {
-			if (_streams.ContainsKey(name)) return (BackgroundService) _streams[name];
+			if (_streams.ContainsKey(name)) {
+				return (BackgroundService) _streams[name];
+			}
+
 			return null;
 		}
 
@@ -172,15 +180,18 @@ namespace Glimmr.Services {
 			var sector = dynamicEventArgs.P1;
 			var col = Color.FromArgb(255, 255, 0, 0);
 			Color[] colors = ColorUtil.AddLedColor(new Color[_systemData.LedCount], sector, col, _systemData);
-			var sectorCount = ((_systemData.HSectors + _systemData.VSectors) * 2) - 4;
+			var sectorCount = (_systemData.HSectors + _systemData.VSectors) * 2 - 4;
 			var sectors = ColorUtil.EmptyColors(new Color[sectorCount]);
-			if (sector < sectorCount) sectors[sector] = col;
+			if (sector < sectorCount) {
+				sectors[sector] = col;
+			}
+
 			var black = ColorUtil.EmptyList(_systemData.LedCount);
 			var blackSectors = ColorUtil.EmptyList(sectorCount);
 			var devices = new List<IColorTarget>();
 			for (var i = 0; i < _sDevices.Length; i++) {
 				if (_sDevices[i].Enable) {
-					devices.Add((IColorTarget) _sDevices[i]);
+					devices.Add(_sDevices[i]);
 				}
 			}
 
@@ -232,7 +243,10 @@ namespace Glimmr.Services {
 			}
 
 			if (sourceActive) {
-				if (!_autoDisabled) return;
+				if (!_autoDisabled) {
+					return;
+				}
+
 				Log.Information("Auto-enabling stream.");
 				_autoDisabled = false;
 				DataUtil.SetItem("AutoDisabled", _autoDisabled);
@@ -242,7 +256,10 @@ namespace Glimmr.Services {
 				_watch.Reset();
 				_setAutoDisable = false;
 			} else {
-				if (_autoDisabled || DeviceMode != DeviceMode.Video) return;
+				if (_autoDisabled || DeviceMode != DeviceMode.Video) {
+					return;
+				}
+
 				_setAutoDisable = true;
 			}
 		}
@@ -252,8 +269,8 @@ namespace Glimmr.Services {
 			int led = dynamicEventArgs.P1;
 			var strips = new List<IColorTarget>();
 			for (var i = 0; i < _sDevices.Length; i++) {
-				if (_sDevices[i].Enable == true) {
-					strips.Add((IColorTarget) _sDevices[i]);
+				if (_sDevices[i].Enable) {
+					strips.Add(_sDevices[i]);
 				}
 			}
 
@@ -304,8 +321,14 @@ namespace Glimmr.Services {
 					tag = tag.Split(".")[0];
 					foreach (var device in deviceData) {
 						if (device.Tag == tag) {
-							if (tag == "Led" && device.Id == "2") continue;
-							if (device.Enable) enabled++;
+							if (tag == "Led" && device.Id == "2") {
+								continue;
+							}
+
+							if (device.Enable) {
+								enabled++;
+							}
+
 							Log.Debug($"Creating {device.Tag}: {device.Id}");
 							var args = new object[] {device, this};
 							dynamic? obj = Activator.CreateInstance(Type.GetType(c)!, args);
@@ -342,10 +365,13 @@ namespace Glimmr.Services {
 				while (i < ledCount) {
 					var pi = i * 1.0f;
 					var progress = pi / ledCount;
-					var sector = (int) Math.Round(progress * (float)sectorCount);
+					var sector = (int) Math.Round(progress * sectorCount);
 					var rCol = ColorUtil.Rainbow(progress);
 					cols[i] = rCol;
-					if (sector < secs.Count) secs[sector] = rCol;
+					if (sector < secs.Count) {
+						secs[sector] = rCol;
+					}
+
 					try {
 						SendColors(cols, secs, 0, true);
 					} catch (Exception e) {
@@ -378,11 +404,12 @@ namespace Glimmr.Services {
 					if (DeviceMode != DeviceMode.Off && dev.Data.Enable && !dev.Streaming) {
 						await dev.StartStream(_sendTokenSource.Token).ConfigureAwait(false);
 					}
-					
+
 					if (DeviceMode != DeviceMode.Off && !dev.Data.Enable && dev.Streaming) {
 						Log.Debug("Stopping disabled device: " + dev.Id);
 						await dev.StopStream().ConfigureAwait(false);
 					}
+
 					return;
 				}
 			}
@@ -461,8 +488,10 @@ namespace Glimmr.Services {
 				DataUtil.SetItem("AutoDisabled", _autoDisabled);
 			}
 
-			if (_streamStarted && newMode == 0) await StopStream();
-			
+			if (_streamStarted && newMode == 0) {
+				await StopStream();
+			}
+
 			foreach (var stream in _streams) {
 				if (newMode == DeviceMode.Video &&
 				    stream.Key == DeviceMode.DreamScreen &&
@@ -473,7 +502,10 @@ namespace Glimmr.Services {
 				}
 			}
 
-			if (newMode != 0 && !_streamStarted) await StartStream();
+			if (newMode != 0 && !_streamStarted) {
+				await StartStream();
+			}
+
 			DeviceMode = newMode;
 			Log.Information($"Device mode updated to {newMode}.");
 		}
@@ -494,6 +526,7 @@ namespace Glimmr.Services {
 							}
 						}
 					}
+
 					sdev.StartStream(_sendTokenSource.Token);
 				}
 			}
@@ -512,7 +545,10 @@ namespace Glimmr.Services {
 
 			_streamStarted = false;
 			var streamers = new List<IColorTarget>();
-			foreach (var s in _sDevices.Where(s => s.Streaming)) streamers.Add(s);
+			foreach (var s in _sDevices.Where(s => s.Streaming)) {
+				streamers.Add(s);
+			}
+
 			await Task.WhenAll(streamers.Select(i => {
 				try {
 					return i.StopStream();
@@ -548,11 +584,17 @@ namespace Glimmr.Services {
 
 
 		private static void CancelSource(CancellationTokenSource target, bool dispose = false) {
-			if (target == null) return;
+			if (target == null) {
+				return;
+			}
 
-			if (!target.IsCancellationRequested) target.CancelAfter(0);
+			if (!target.IsCancellationRequested) {
+				target.CancelAfter(0);
+			}
 
-			if (dispose) target.Dispose();
+			if (dispose) {
+				target.Dispose();
+			}
 		}
 
 		private async Task StopServices() {
@@ -585,6 +627,7 @@ namespace Glimmr.Services {
 					if (dev.Enable && dev.Streaming) {
 						dev.StopStream();
 					}
+
 					dev.Enable = false;
 					if (!remove) {
 						devs.Add(dev);
@@ -594,11 +637,9 @@ namespace Glimmr.Services {
 				} else {
 					devs.Add(dev);
 				}
-				
-				
 			}
+
 			foreach (var dev in _sDevices) {
-				
 			}
 		}
 	}

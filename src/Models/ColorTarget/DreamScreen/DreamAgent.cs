@@ -1,5 +1,9 @@
-﻿using DreamScreenNet;
+﻿#region
+
+using DreamScreenNet;
 using Glimmr.Services;
+
+#endregion
 
 namespace Glimmr.Models.ColorTarget.DreamScreen {
 	public class DreamAgent : IColorTargetAgent {

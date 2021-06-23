@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Threading;
@@ -9,6 +11,8 @@ using Emgu.CV.Structure;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
 using Serilog;
+
+#endregion
 
 namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 	public class ScreenVideoStream : IVideoStream, IDisposable {
@@ -73,7 +77,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 			var rect = _screenDims;
 			_width = 0;
 			_height = 0;
-			
+
 			_left = rect.Left;
 			_top = rect.Top;
 			_width = rect.Width;
@@ -85,12 +89,12 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 			Log.Debug("Screen capture dimensions set: " + JsonConvert.SerializeObject(rect));
 		}
 
-		
+
 		private void CaptureScreen(CancellationToken ct) {
 			Log.Debug("Screen capture started...");
 
 			while (!ct.IsCancellationRequested && _capturing) {
-				var bcs = new Bitmap(_width, _height,PixelFormat.Format24bppRgb);
+				var bcs = new Bitmap(_width, _height, PixelFormat.Format24bppRgb);
 				using (var g = Graphics.FromImage(bcs)) {
 					g.CopyFromScreen(_left, _top, 0, 0, bcs.Size, CopyPixelOperation.SourceCopy);
 					var sc = bcs.ToImage<Bgr, byte>();

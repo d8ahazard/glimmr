@@ -1,12 +1,14 @@
-﻿using System;
-using System.Runtime.InteropServices;
+﻿#region
+
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Glimmr.Models.Util;
-using Microsoft.AspNetCore.Razor.Language;
 using Serilog;
+
+#endregion
 
 namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 	public class UsbVideoStream : IVideoStream, IDisposable {

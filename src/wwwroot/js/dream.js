@@ -550,7 +550,7 @@ function setListeners() {
     });
     
     $(document).on('change', '.ledCount', function() {
-        console.log("LED COUNT CHANGE.")
+        console.log("LED COUNT CHANGE.");
         let lCount = $(this).val();
         let type = $(this).data('type');
         switch(type) {
@@ -1092,7 +1092,7 @@ function buildLists() {
     groups = sortDevices(lifx, groups, "Lifx", "Lifx Bulb");
     console.log("Lifx");
     // Sort wled
-    groups = sortDevices(wleds, groups, "Wled", "Wireless LEDs")
+    groups = sortDevices(wleds, groups, "Wled", "Wireless LEDs");
     console.log("wled");
     dg.html("");
     console.log("Final sorted groups: ", groups);
@@ -1203,7 +1203,7 @@ function setCaptureMode(target, post=true) {
     } else if (ledData.hasOwnProperty("TopCount") && ledData.hasOwnProperty("LeftCount")) {
         topCount = ledData.TopCount;
         leftCount = ledData.LeftCount;
-        rightCount = ledData["RightCount"]
+        rightCount = ledData["RightCount"];
         bottomCount = ledData["BottomCount"];        
     }
     if (rightCount === 0) rightCount = leftCount;
@@ -1788,7 +1788,7 @@ function drawNanoShapes(panel) {
                     setNanoMap(data['PanelId'], data['TargetSector']);
                 });
                 poly.on('tap', function(){
-                    console.log("POLY TAP")
+                    console.log("POLY TAP");
                     setNanoMap(data['PanelId'], data['TargetSector']);
                 });
                 shapeGroup.add(poly);

@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -12,9 +14,12 @@ using Newtonsoft.Json;
 using Serilog;
 using DeviceMode = DreamScreenNet.Enum.DeviceMode;
 
+#endregion
+
 namespace Glimmr.Models.Util {
 	public static class SystemUtil {
 		private static Dictionary<int, string>? _usbDevices;
+
 		public static void Reboot() {
 			Log.Debug("Rebooting");
 			Process.Start("shutdown", RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "/r /t 0" : "-r now");
@@ -46,7 +51,10 @@ namespace Glimmr.Models.Util {
 		}
 
 		public static bool IsRaspberryPi() {
-			if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) return false;
+			if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+				return false;
+			}
+
 			Process process = new() {
 				StartInfo = {
 					FileName = "cat",
@@ -70,7 +78,7 @@ namespace Glimmr.Models.Util {
 			} else {
 				var cmd = "/home/glimmrtv/glimmr/script/update_linux.sh &";
 				Log.Debug("Update command should be: " + cmd);
-				Process.Start("/bin/bash",cmd);	
+				Process.Start("/bin/bash", cmd);
 			}
 		}
 
@@ -120,7 +128,10 @@ namespace Glimmr.Models.Util {
 						if (!typeof(T).IsAssignableFrom(type) || type.IsInterface || type.IsAbstract) {
 							continue;
 						}
-						if (type.FullName != null) output.Add(type.FullName);
+
+						if (type.FullName != null) {
+							output.Add(type.FullName);
+						}
 					}
 				} catch (Exception e) {
 					Log.Warning("Exception listing types: " + e.Message);
@@ -178,11 +189,12 @@ namespace Glimmr.Models.Util {
 				_usbDevices = new Dictionary<int, string>();
 				_usbDevices = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ListUsbWindows() : ListUsbLinux();
 			}
+
 			if ((DeviceMode) sd.DeviceMode == DeviceMode.Video && (
 				(CaptureMode) sd.CaptureMode == CaptureMode.Camera ||
 				(CaptureMode) sd.CaptureMode == CaptureMode.Hdmi)) {
-				
 			}
+
 			Log.Debug("Available USB Devices: " + JsonConvert.SerializeObject(_usbDevices));
 			return _usbDevices;
 		}

@@ -1,8 +1,12 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using Serilog;
+
+#endregion
 
 namespace Glimmr.Models.Util {
 	public static class IpUtil {
@@ -75,15 +79,12 @@ namespace Glimmr.Models.Util {
 				return null;
 			}
 
-			try
-			{
+			try {
 				var hosts = Dns.GetHostAddresses(p);
 
 				// Use the first address like always if found
-				foreach (var host in hosts)
-				{
-					if (host.AddressFamily == AddressFamily.InterNetwork)
-					{
+				foreach (var host in hosts) {
+					if (host.AddressFamily == AddressFamily.InterNetwork) {
 						return host;
 					}
 				}
@@ -95,15 +96,14 @@ namespace Glimmr.Models.Util {
 				// If not, try this
 				var dns = Dns.GetHostEntry(p);
 				foreach (var host in dns.AddressList) {
-					if (host.AddressFamily == AddressFamily.InterNetwork)
-					{
+					if (host.AddressFamily == AddressFamily.InterNetwork) {
 						return host;
 					}
 				}
 			} catch {
 				// ignored
 			}
-			
+
 			try {
 				// If still no dice, try getting appending .local
 				var dns = Dns.GetHostEntry(p + ".local");

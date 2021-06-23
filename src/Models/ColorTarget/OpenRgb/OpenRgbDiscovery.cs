@@ -1,10 +1,14 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using OpenRGB.NET;
 using Serilog;
+
+#endregion
 
 namespace Glimmr.Models.ColorTarget.OpenRgb {
 	public class OpenRgbDiscovery : ColorDiscovery, IColorDiscovery {
@@ -15,7 +19,10 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 		public OpenRgbDiscovery(ColorService colorService) : base(colorService) {
 			_client = colorService.ControlService.GetAgent("OpenRgbAgent");
-			if (_client == null) return;
+			if (_client == null) {
+				return;
+			}
+
 			_cs = colorService.ControlService;
 			LoadData();
 		}

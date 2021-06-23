@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
@@ -16,38 +18,27 @@ using Q42.HueApi.Streaming.Extensions;
 using Q42.HueApi.Streaming.Models;
 using Serilog;
 
+#endregion
+
 namespace Glimmr.Models.ColorTarget.Hue {
 	public sealed class HueDevice : ColorTarget, IColorTarget, IDisposable {
 		private HueData Data { get; set; }
-		public bool Enable { get; set; }
-
-		IColorTargetData IColorTarget.Data {
-			get => Data;
-			set => Data = (HueData) value;
-		}
-
-		public bool Testing { get; set; }
-		public int Brightness { get; set; }
-		public string Id { get; set; }
-		public string IpAddress { get; set; }
-		public string Tag { get; set; }
-		public bool Streaming { get; set; }
-
-		private string _selectedGroup;
-
-		private List<LightData> _lights;
 
 		private readonly StreamingHueClient _client;
 		private readonly StreamingGroup _stream;
 		private CancellationToken _ct;
 		private bool _disposed;
 		private EntertainmentLayer _entLayer;
-		private string _user;
-		private string _token;
 		private List<LightMap> _lightMappings;
 
-		private Task _updateTask;
+		private List<LightData> _lights;
+
+		private string _selectedGroup;
 		private Dictionary<string, int> _targets;
+		private string _token;
+
+		private Task _updateTask;
+		private string _user;
 
 
 		public HueDevice(HueData data, ColorService colorService) : base(colorService) {
@@ -82,7 +73,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			_disposed = false;
 			Streaming = false;
 			_entLayer = null;
-			
+
 			// Don't grab streaming group unless we need it
 			if (Data?.User == null || Data?.Token == null || _client != null) {
 				return;
@@ -97,7 +88,19 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			}
 		}
 
-		
+		public bool Enable { get; set; }
+
+		IColorTargetData IColorTarget.Data {
+			get => Data;
+			set => Data = (HueData) value;
+		}
+
+		public bool Testing { get; set; }
+		public int Brightness { get; set; }
+		public string Id { get; set; }
+		public string IpAddress { get; set; }
+		public string Tag { get; set; }
+		public bool Streaming { get; set; }
 
 
 		public Task FlashColor(Color color) {
@@ -117,10 +120,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			}
 
 			return Task.CompletedTask;
-		}
-
-		public bool IsEnabled() {
-			return Enable;
 		}
 
 		/// <summary>
@@ -170,7 +169,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 				await _client.Connect(group.Id);
 				Log.Debug("Connected.");
-			}catch (SocketException s) {
+			} catch (SocketException s) {
 				if (s.Message.Contains("already connected")) {
 					Log.Debug("Client is already connected.");
 				} else {
@@ -188,7 +187,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Streaming = true;
 		}
 
-		
 
 		public Task ReloadData() {
 			Log.Debug("Reloading Hue data...");
@@ -208,7 +206,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			if (!Streaming || !Enable || _entLayer == null || Testing && !force) {
 				return;
 			}
-		
+
 			foreach (var entLight in _entLayer) {
 				// Get data for our light from map
 				var lightData = _lightMappings.SingleOrDefault(item =>
@@ -246,6 +244,33 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Dispose(true);
 		}
 
+
+		public async Task StopStream() {
+			if (!Enable) {
+				return;
+			}
+
+			Log.Information($"{Data.Tag}::Starting stream... {Data.Id}");
+
+			try {
+				_client.LocalHueClient.SetStreamingAsync(_selectedGroup, false).ConfigureAwait(false);
+				if (!_updateTask.IsCompleted) {
+					_updateTask.Dispose();
+				}
+
+				//_client.Close();
+			} catch (Exception) {
+				// ignored
+			}
+
+			Streaming = false;
+			Log.Information($"{Data.Tag}::Stream stopped. {Data.Id}");
+		}
+
+		public bool IsEnabled() {
+			return Enable;
+		}
+
 		public void FlashLight(Color color, int lightId) {
 			if (!Enable) {
 				return;
@@ -269,7 +294,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		private async Task ResetColors() {
 			foreach (var entLight in _entLayer) {
 				// Get data for our light from map
-				
+
 				var lightData = _lights.SingleOrDefault(item =>
 					item.Id == entLight.Id.ToString(CultureInfo.InvariantCulture));
 				if (lightData == null) {
@@ -299,36 +324,22 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			_lightMappings = Data.MappedLights;
 			foreach (var ld in _lightMappings) {
 				var target = ld.TargetSector;
-				if ((CaptureMode) sd.CaptureMode == CaptureMode.DreamScreen) target = ColorUtil.CheckDsSectors(target);
-				if (sd.UseCenter) target = ColorUtil.FindEdge(target + 1);
+				if ((CaptureMode) sd.CaptureMode == CaptureMode.DreamScreen) {
+					target = ColorUtil.CheckDsSectors(target);
+				}
+
+				if (sd.UseCenter) {
+					target = ColorUtil.FindEdge(target + 1);
+				}
+
 				_targets[ld.Id] = target;
 			}
+
 			Enable = Data.Enable;
 			_selectedGroup = Data.SelectedGroup;
 		}
 
-		
-		public async Task StopStream() {
-			if (!Enable) {
-				return;
-			}
-			Log.Information($"{Data.Tag}::Starting stream... {Data.Id}");
-
-			try {
-				_client.LocalHueClient.SetStreamingAsync(_selectedGroup, false).ConfigureAwait(false);
-				if (!_updateTask.IsCompleted) _updateTask.Dispose();	
-				
-				//_client.Close();
-			} catch (Exception) {
-				// ignored
-			}
-
-			Streaming = false;
-			Log.Information($"{Data.Tag}::Stream stopped. {Data.Id}");
-		}
-
 		private async Task<StreamingGroup> SetupAndReturnGroup() {
-
 			if (_client == null || Data == null || _selectedGroup == null) {
 				Log.Warning("Client or data or groupId are null, returning...");
 				return null;

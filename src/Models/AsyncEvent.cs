@@ -1,6 +1,10 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+
+#endregion
 
 namespace Glimmr.Models {
 	public class AsyncEvent<TEventArgs> where TEventArgs : DynamicEventArgs {
@@ -23,7 +27,7 @@ namespace Glimmr.Models {
 			//A solution for that would be to switch to a public constructor and use it, but then we'll 'lose' the similar syntax to c# events             
 
 			e ??= new AsyncEvent<TEventArgs>();
-			
+
 			lock (e._locker) {
 				e._invocationList.Add(callback);
 			}
@@ -56,13 +60,16 @@ namespace Glimmr.Models {
 
 			foreach (var callback in tmpInvocationList) {
 				//Assuming we want a serial invocation, for a parallel invocation we can use Task.WhenAll instead
-				if (sender != null && eventArgs != null) await callback(sender, eventArgs);
+				if (sender != null && eventArgs != null) {
+					await callback(sender, eventArgs);
+				}
 			}
 		}
 	}
 
 	public class DynamicEventArgs : EventArgs {
 		public dynamic P1 { get; }
+
 		public DynamicEventArgs(dynamic input) {
 			P1 = input;
 		}

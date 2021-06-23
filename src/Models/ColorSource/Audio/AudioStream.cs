@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -10,6 +12,8 @@ using Glimmr.Services;
 using ManagedBass;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+
+#endregion
 
 namespace Glimmr.Models.ColorSource.Audio {
 	public sealed class AudioStream : BackgroundService, IColorSource {
@@ -57,8 +61,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 		public void Refresh(SystemData systemData) {
 			_sd = systemData;
 			LoadData().ConfigureAwait(true);
-			try
-			{
+			try {
 				Log.Debug("Loading audio stream with index " + _recordDeviceIndex);
 				Bass.RecordInit(_recordDeviceIndex);
 				_handle = Bass.RecordStart(48000, 2, BassFlags.Float, Update);

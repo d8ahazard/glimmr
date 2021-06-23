@@ -1,5 +1,9 @@
-﻿using Glimmr.Services;
+﻿#region
+
+using Glimmr.Services;
 using LifxNetPlus;
+
+#endregion
 
 namespace Glimmr.Models.ColorTarget.Lifx {
 	public class LifxAgent : IColorTargetAgent {

@@ -113,22 +113,22 @@ namespace Glimmr.Models.ColorSource.Video {
 					Log.Information("We have no video source.");
 					return;
 				}
+
 				_vc.Start(_cancellationToken);
 			}
 
-			var mode = (DeviceMode)_systemData.DeviceMode;
-			var prevMode = (DeviceMode)prevSd.DeviceMode;
+			var mode = (DeviceMode) _systemData.DeviceMode;
+			var prevMode = (DeviceMode) prevSd.DeviceMode;
 			if (mode == DeviceMode.Video && prevMode == DeviceMode.Video) {
 				if (_systemData.SectorCount != prevSd.SectorCount || _systemData.LedCount != prevSd.LedCount) {
 					StreamSplitter?.Refresh();
-					Initialize(_cancellationToken);	
-				}	
-				
+					Initialize(_cancellationToken);
+				}
+
 				if (wasEnabled) {
 					_enable = true;
-				}	
+				}
 			}
-			
 		}
 
 		private void Initialize(CancellationToken ct) {

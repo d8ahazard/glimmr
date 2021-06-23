@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -7,6 +9,8 @@ using Glimmr.Services;
 using Makaretu.Dns;
 using Serilog;
 
+#endregion
+
 namespace Glimmr.Models.ColorTarget.Wled {
 	public class WledDiscovery : ColorDiscovery, IColorDiscovery {
 		public override string DeviceTag { get; set; } = "Wled";
@@ -14,8 +18,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 		private readonly MulticastService _mDns;
 		private readonly ServiceDiscovery _sd;
-		private bool _stopDiscovery;
 		private List<string> _ids;
+		private bool _stopDiscovery;
 
 		public WledDiscovery(ColorService cs) : base(cs) {
 			_mDns = cs.ControlService.MulticastService;
@@ -62,10 +66,15 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 		private void WledDiscovered(object sender, ServiceInstanceDiscoveryEventArgs e) {
 			var foo = e.Message;
-			if (!foo.ToString().Contains("_wled")) return;
+			if (!foo.ToString().Contains("_wled")) {
+				return;
+			}
+
 			var name = e.ServiceInstanceName.ToString();
-			
-			if (name.Contains(".local")) name = name.Split(".")[0];
+
+			if (name.Contains(".local")) {
+				name = name.Split(".")[0];
+			}
 			//Log.Debug("Name: " + name);
 
 			if (_ids.Contains(name)) {
@@ -77,7 +86,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 				var ip = string.Empty;
 				var id = string.Empty;
 
-				
+
 				foreach (var msg in rr) {
 					//Log.Debug("Msg: " + msg.Name);
 					// Extract IP
@@ -90,6 +99,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 						id = msg.ToString().Split("=")[1];
 					}
 				}
+
 				//Log.Debug("Creating new WLED...");
 				if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(ip)) {
 					var nData = new WledData(id, ip) {Name = name};

@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -8,6 +10,8 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using Serilog;
+
+#endregion
 
 namespace Glimmr.Models.Util {
 	public static class DisplayUtil {
@@ -138,6 +142,7 @@ namespace Glimmr.Models.Util {
 			} catch (FormatException) {
 				//Log.Debug("Format exception, probably we have no screen.");
 			}
+
 			return r;
 		}
 

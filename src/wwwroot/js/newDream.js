@@ -65,7 +65,7 @@ let data = {
     registerDevicesListener: function(listener) {
         this.devicesListener = listener;
     }
-}
+};
 
 data.registerStoreListener(function(val) {
     console.log("Datastore has been updated: ", val);
@@ -982,7 +982,7 @@ function loadUi() {
     getDevices();
     if (!listenersSet) {
         setListeners();
-        let tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        let tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         let tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl)
         });
@@ -1607,7 +1607,7 @@ const toggleExpansion = (element, to, duration = 350) => {
         
         setTimeout(res, duration);
     })
-}
+};
 
 const fadeContent = (element, opacity, duration = 300) => {
     return new Promise(res => {
@@ -1616,10 +1616,10 @@ const fadeContent = (element, opacity, duration = 300) => {
                 child.style.transition = `opacity ${duration}ms ease-in`;
                 child.style.opacity = opacity;
             });
-        })
+        });
         setTimeout(res, duration);
     })
-}
+};
 
 const showDeviceCard = async (e) => {
     expanded = true;
@@ -1996,7 +1996,7 @@ function appendBeamMap() {
 
                     // Repeat
                     let rGroup = document.createElement("div");
-                    rGroup.classList.add("form-group","col-12", "col-md-6", "col-lg-3")
+                    rGroup.classList.add("form-group","col-12", "col-md-6", "col-lg-3");
                     
                     let checkDiv1 = document.createElement("div");
                     checkDiv1.classList.add("form-check");
@@ -2008,7 +2008,7 @@ function appendBeamMap() {
                     if (repeat) rCheck.checked = true;
                     rCheck.classList.add("form-check", "form-check-input", "beam-control");
                     rCheck.setAttribute("data-position",position);
-                    rCheck.setAttribute("data-beamProperty","Repeat")
+                    rCheck.setAttribute("data-beamProperty","Repeat");
                     checkDiv1.appendChild(rCheck);
                     checkDiv1.appendChild(label3);
                     
@@ -2017,7 +2017,7 @@ function appendBeamMap() {
 
                     // Reverse
                     let rGroup2 = document.createElement("div");
-                    rGroup2.classList.add("form-group","col-12", "col-md-6", "col-lg-3")
+                    rGroup2.classList.add("form-group","col-12", "col-md-6", "col-lg-3");
                     
                     let checkDiv2 = document.createElement("div");
                     checkDiv2.classList.add("form-check");
@@ -2029,7 +2029,7 @@ function appendBeamMap() {
                     rCheck2.type = "checkbox";
                     if (reverse) rCheck2.checked = true;
                     rCheck2.setAttribute("data-position",position);
-                    rCheck2.setAttribute("data-beamProperty","Reverse")
+                    rCheck2.setAttribute("data-beamProperty","Reverse");
                     checkDiv2.appendChild(rCheck2);
                     checkDiv2.appendChild(label4);
 
@@ -2486,7 +2486,7 @@ function createLedMap(targetElement) {
         range1 = ranges(total, offset, count);
     }
     
-    let tgt = targetElement
+    let tgt = targetElement;
     let cs = getComputedStyle(tgt);
     let paddingX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
     let borderX = parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);

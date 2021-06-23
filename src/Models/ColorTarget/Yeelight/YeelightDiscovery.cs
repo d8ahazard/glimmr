@@ -1,10 +1,14 @@
-﻿using System.Threading;
+﻿#region
+
+using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Newtonsoft.Json;
 using Serilog;
 using YeelightAPI;
+
+#endregion
 
 namespace Glimmr.Models.ColorTarget.Yeelight {
 	public class YeelightDiscovery : ColorDiscovery, IColorDiscovery {
@@ -24,7 +28,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			foreach (var dev in discoveredDevices) {
 				Log.Debug("YEE YEE: " + JsonConvert.SerializeObject(dev));
 				var ip = IpUtil.GetIpFromHost(dev.Hostname);
-				var ipString = ip == null ? "" : ip.ToString(); 
+				var ipString = ip == null ? "" : ip.ToString();
 				var yd = new YeelightData {
 					Id = dev.Id, IpAddress = ipString, Name = dev.Name
 				};

@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -9,39 +11,40 @@ using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.Extensions.Hosting;
-using Q42.HueApi.Streaming.Models;
 using Serilog;
+
+#endregion
 
 namespace Glimmr.Models.ColorSource.Ambient {
 	public class AmbientStream : BackgroundService, IColorSource {
-		private Color[] _ledColors;
-		private Color[] _sectorColors;
 		private readonly ColorService _cs;
 		private readonly Random _random;
 		private readonly Stopwatch _watch;
 		private string _ambientColor;
 		private int _ambientShow;
 		private double _animationTime;
+		private int _bottomCount;
 		private int _colorIndex;
-		private Color[] _sceneColors;
 		private Color[] _currentColors;
 		private EasingMode _easingMode;
 		private double _easingTime;
 
 		private bool _enable;
-		private int _ledCount;
 		private int _hCount;
-		private int _vCount;
+		private Color[] _ledColors;
+		private int _ledCount;
 		private int _leftCount;
-		private int _rightCount;
-		private int _topCount;
-		private int _bottomCount;
-		
+
 		private JsonLoader _loader;
 		private AnimationMode _mode;
 		private Color[] _nextColors;
+		private int _rightCount;
+		private Color[] _sceneColors;
 		private List<AmbientScene> _scenes;
+		private Color[] _sectorColors;
 		private int _sectorCount;
+		private int _topCount;
+		private int _vCount;
 
 		public AmbientStream(ColorService colorService) {
 			_watch = new Stopwatch();
@@ -52,11 +55,6 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
 		public void ToggleStream(bool enable = false) {
 			_enable = enable;
-		}
-
-		private void LoadSystem() {
-			var sd = DataUtil.GetSystemData();
-			Refresh(sd);
 		}
 
 		public void Refresh(SystemData sd) {
@@ -86,15 +84,21 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			for (var i = 0; i < _sceneColors.Length; i++) {
 				_sceneColors[i] = ColorTranslator.FromHtml(colorStrings[i]);
 			}
+
 			_animationTime = scene.AnimationTime * 1000;
 			_easingTime = scene.EasingTime * 1000;
 			_easingMode = (EasingMode) scene.Easing;
 			_mode = (AnimationMode) scene.Mode;
-			
+
 			LoadScene();
 		}
 
 		public bool SourceActive { get; set; }
+
+		private void LoadSystem() {
+			var sd = DataUtil.GetSystemData();
+			Refresh(sd);
+		}
 
 		protected override Task ExecuteAsync(CancellationToken ct) {
 			Log.Debug("Starting ambient stream service...");
@@ -128,6 +132,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 									break;
 							}
 						}
+
 						// If our time has elapsed, restart the watch 
 					} else if (diff <= 0) {
 						switch (_easingMode) {
@@ -144,6 +149,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 								sectors = ColorUtil.EmptyColors(sectors);
 								break;
 						}
+
 						_watch.Restart();
 					} else {
 						sectors = _currentColors;
@@ -203,6 +209,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 						output[i] = input[_colorIndex];
 						_colorIndex = CycleInt(_colorIndex, max);
 					}
+
 					_colorIndex = CycleInt(_colorIndex, max);
 					break;
 				case AnimationMode.Reverse:
@@ -268,14 +275,14 @@ namespace Glimmr.Models.ColorSource.Ambient {
 		}
 
 
-        /// <summary>
-        ///     Linear - Each color from the list of colors is assigned to a sector, and the order is incremented by 1 each update
-        ///     Reverse - Same as linear, but the order is decremented each update
-        ///     Random - A random color will be assigned to each sector every update
-        ///     RandomAll - One random color will be selected and applied to all sectors each update
-        ///     LinearAll - One color will be selected and applied to all tiles, with the color incremented each update
-        /// </summary>
-        private enum AnimationMode {
+		/// <summary>
+		///     Linear - Each color from the list of colors is assigned to a sector, and the order is incremented by 1 each update
+		///     Reverse - Same as linear, but the order is decremented each update
+		///     Random - A random color will be assigned to each sector every update
+		///     RandomAll - One random color will be selected and applied to all sectors each update
+		///     LinearAll - One color will be selected and applied to all tiles, with the color incremented each update
+		/// </summary>
+		private enum AnimationMode {
 			Linear = 0,
 			Reverse = 1,
 			Random = 2,

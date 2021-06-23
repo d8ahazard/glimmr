@@ -1,5 +1,9 @@
-﻿using System;
+﻿#region
+
+using System;
 using Glimmr.Services;
+
+#endregion
 
 namespace Glimmr.Models.ColorTarget {
 	/// <summary>

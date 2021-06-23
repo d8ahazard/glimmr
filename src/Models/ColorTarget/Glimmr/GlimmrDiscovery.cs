@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -8,6 +10,8 @@ using Glimmr.Services;
 using Makaretu.Dns;
 using Newtonsoft.Json;
 using Serilog;
+
+#endregion
 
 namespace Glimmr.Models.ColorTarget.Glimmr {
 	public class GlimmrDiscovery : ColorDiscovery, IColorDiscovery {
@@ -65,7 +69,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			foreach (var msg in rr) {
 				if (msg.Type == DnsType.A) {
 					var ipString = msg.ToString().Split(" ").Last();
-					Log.Debug($"MSG for {ipString}: " + msg.ToString());
+					Log.Debug($"MSG for {ipString}: " + msg);
 					var hostname = msg.CanonicalName.Split(".")[0];
 					var ip = IPAddress.Parse(ipString);
 					if (ip.ToString() != IpUtil.GetLocalIpAddress() && !string.Equals(hostname, Environment.MachineName,
@@ -75,10 +79,9 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 						_controlService.AddDevice(nData).ConfigureAwait(false);
 					} else {
 						Log.Debug("Skipping self...");
-					}		
+					}
 				}
 			}
-			
 		}
 	}
 }

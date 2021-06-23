@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿#region
+
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,14 +14,16 @@ using Microsoft.Extensions.Hosting;
 using Serilog;
 using DeviceMode = Glimmr.Enums.DeviceMode;
 
+#endregion
+
 namespace Glimmr.Models.ColorSource.DreamScreen {
 	public class DreamScreenStream : BackgroundService, IColorSource {
 		private const int TargetGroup = 20;
 		private readonly DreamScreenClient _client;
 		private readonly ColorService _cs;
+		private DreamDevice? _dDev;
 		private bool _enable;
 		private IPAddress? _targetDreamScreen;
-		private DreamDevice? _dDev;
 
 		public DreamScreenStream(ColorService colorService) {
 			_cs = colorService;
@@ -29,16 +33,6 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 			_client.SubscriptionRequested += SubRequested;
 			_cs.ControlService.RefreshSystemEvent += RefreshSd;
 			RefreshSd();
-		}
-
-		private void SubRequested(object? sender, DreamScreenClient.DeviceSubscriptionEventArgs e) {
-			if (_enable) {
-				if (Equals(e.Target, _targetDreamScreen)) {
-					Log.Debug("Incoming sub request from target!" + e.Target);
-				} else {
-					Log.Debug("incoming sub request, but it's not from our target: " + e.Target);
-				}
-			}
 		}
 
 		public void ToggleStream(bool enable) {
@@ -63,6 +57,16 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 		}
 
 		public bool SourceActive { get; set; }
+
+		private void SubRequested(object? sender, DreamScreenClient.DeviceSubscriptionEventArgs e) {
+			if (_enable) {
+				if (Equals(e.Target, _targetDreamScreen)) {
+					Log.Debug("Incoming sub request from target!" + e.Target);
+				} else {
+					Log.Debug("incoming sub request, but it's not from our target: " + e.Target);
+				}
+			}
+		}
 
 		private void RefreshSd() {
 			var systemData = DataUtil.GetSystemData();
@@ -96,6 +100,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 					};
 					_dDev.IpAddress = IPAddress.Parse(dsData.IpAddress);
 				}
+
 				_targetDreamScreen = IPAddress.Parse(dsIp);
 			}
 		}
@@ -120,7 +125,8 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 						break;
 				}
 			} else {
-				Log.Debug($"{TargetGroup} doesn't match {e.Response.Group} or {_dDev.DeviceGroup} command from " + e.Response.Target);
+				Log.Debug($"{TargetGroup} doesn't match {e.Response.Group} or {_dDev.DeviceGroup} command from " +
+				          e.Response.Target);
 			}
 		}
 

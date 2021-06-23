@@ -1,10 +1,14 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Glimmr.Enums;
 using Glimmr.Services;
+
+#endregion
 
 namespace Glimmr.Models {
 	public class FrameCounter : IDisposable {
@@ -28,24 +32,28 @@ namespace Glimmr.Models {
 			} else {
 				_stopwatch.Stop();
 			}
+
 			_ticks = new Dictionary<string, int> {["source"] = 0};
 			return Task.CompletedTask;
 		}
 
 		public void Tick(string id) {
 			// Make sure watch is running
-			if (!_stopwatch.IsRunning) _stopwatch.Start();
+			if (!_stopwatch.IsRunning) {
+				_stopwatch.Start();
+			}
+
 			// Clear our cache every minute so we don't wind up with massive stored values over time
 			if (_stopwatch.Elapsed > TimeSpan.FromMinutes(1)) {
 				_stopwatch.Restart();
 				_ticks = new Dictionary<string, int> {["source"] = 0};
 			}
+
 			if (_ticks.Keys.Contains(id)) {
 				_ticks[id]++;
 			} else {
 				_ticks[id] = 0;
 			}
-			
 		}
 
 		public int Rate(string id) {

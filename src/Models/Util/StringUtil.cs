@@ -1,4 +1,8 @@
-﻿using System.Globalization;
+﻿#region
+
+using System.Globalization;
+
+#endregion
 
 namespace Glimmr.Models.Util {
 	public static class StringUtil {

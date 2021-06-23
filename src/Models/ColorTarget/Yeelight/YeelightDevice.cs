@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
@@ -10,27 +12,21 @@ using Glimmr.Services;
 using Serilog;
 using YeelightAPI;
 
+#endregion
+
 namespace Glimmr.Models.ColorTarget.Yeelight {
 	public class YeelightDevice : ColorTarget, IColorTarget {
 		private readonly ColorService _colorService;
 
 		public YeelightData Data;
 
+		private bool _isOn;
+
 		private Task? _streamTask;
 
 		private int _targetSector;
 
-		private Device _yeeDevice;
-		
-		public bool Streaming { get; set; }
-		public bool Testing { get; set; }
-		public int Brightness { get; set; }
-		public string Id { get; set; }
-		public string IpAddress { get; set; }
-		public string Tag { get; set; }
-		public bool Enable { get; set; }
-
-		private bool _isOn;
+		private readonly Device _yeeDevice;
 
 
 		public YeelightDevice(YeelightData yd, ColorService cs) : base(cs) {
@@ -48,7 +44,14 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			_yeeDevice = new Device(IpAddress);
 		}
 
-		
+		public bool Streaming { get; set; }
+		public bool Testing { get; set; }
+		public int Brightness { get; set; }
+		public string Id { get; set; }
+		public string IpAddress { get; set; }
+		public string Tag { get; set; }
+		public bool Enable { get; set; }
+
 
 		IColorTargetData IColorTarget.Data {
 			get => Data;
@@ -87,8 +90,11 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			_yeeDevice.Disconnect();
 			Streaming = false;
 			if (_streamTask != null) {
-				if (!_streamTask.IsCompleted) _streamTask.Dispose();
+				if (!_streamTask.IsCompleted) {
+					_streamTask.Dispose();
+				}
 			}
+
 			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
 		}
 
@@ -120,10 +126,11 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 					_isOn = true;
 					_yeeDevice.SetPower();
 				}
+
 				_yeeDevice.SetRGBColor(col.R, col.G, col.B).ConfigureAwait(false);
-				_yeeDevice.BackgroundSetBrightness((int)bri);
+				_yeeDevice.BackgroundSetBrightness((int) bri);
 			}
-			
+
 			_colorService.Counter.Tick(Id);
 		}
 
@@ -158,8 +165,14 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			}
 
 			var target = Data.TargetSector;
-			if ((CaptureMode) sd.CaptureMode == CaptureMode.DreamScreen) target = ColorUtil.CheckDsSectors(target);
-			if (sd.UseCenter) target = ColorUtil.FindEdge(target + 1);
+			if ((CaptureMode) sd.CaptureMode == CaptureMode.DreamScreen) {
+				target = ColorUtil.CheckDsSectors(target);
+			}
+
+			if (sd.UseCenter) {
+				target = ColorUtil.FindEdge(target + 1);
+			}
+
 			_targetSector = target;
 			Tag = Data.Tag;
 			Id = Data.Id;

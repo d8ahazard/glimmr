@@ -1,6 +1,10 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.ComponentModel;
 using Newtonsoft.Json;
+
+#endregion
 
 namespace Glimmr.Models.ColorTarget.Led {
 	[Serializable]
@@ -50,7 +54,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 		public string IpAddress { get; set; }
 		public int Brightness { get; set; }
 
-		
+
 		public bool Enable { get; set; }
 		public string LastSeen { get; set; }
 

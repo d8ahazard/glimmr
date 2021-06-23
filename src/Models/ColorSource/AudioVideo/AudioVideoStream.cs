@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿#region
+
+using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,6 +11,8 @@ using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+
+#endregion
 
 namespace Glimmr.Models.ColorSource.AudioVideo {
 	public class AudioVideoStream : BackgroundService, IColorSource {

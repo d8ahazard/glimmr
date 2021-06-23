@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -13,15 +15,17 @@ using Newtonsoft.Json.Linq;
 using Serilog;
 using JsonSerializer = LiteDB.JsonSerializer;
 
+#endregion
+
 namespace Glimmr.Models.Util {
 	[Serializable]
 	public static class DataUtil {
 		private static LiteDatabase _db;
 
 		private static bool _dbLocked;
+		private static List<dynamic> _devices;
 
 		private static SystemData? _systemData;
-		private static List<dynamic> _devices;
 
 		public static LiteDatabase GetDb() {
 			while (_dbLocked) {
@@ -171,6 +175,7 @@ namespace Glimmr.Models.Util {
 			if (_devices == null) {
 				CacheDevices();
 			}
+
 			return _devices;
 		}
 
@@ -412,7 +417,6 @@ namespace Glimmr.Models.Util {
 			}
 
 			return _systemData;
-			
 		}
 
 		private static SystemData CacheSystemData() {
@@ -442,12 +446,30 @@ namespace Glimmr.Models.Util {
 		public static void SetSystemData(SystemData value) {
 			var db = GetDb();
 			var col = db.GetCollection<SystemData>("SystemData");
-			if (value.HSectors == 0) value.HSectors = 5;
-			if (value.VSectors == 0) value.HSectors = 3;
-			if (value.LeftCount == 0) value.LeftCount = 24;
-			if (value.RightCount == 0) value.LeftCount = 24;
-			if (value.TopCount == 0) value.TopCount = 40;
-			if (value.BottomCount == 0) value.BottomCount = 40;
+			if (value.HSectors == 0) {
+				value.HSectors = 5;
+			}
+
+			if (value.VSectors == 0) {
+				value.HSectors = 3;
+			}
+
+			if (value.LeftCount == 0) {
+				value.LeftCount = 24;
+			}
+
+			if (value.RightCount == 0) {
+				value.LeftCount = 24;
+			}
+
+			if (value.TopCount == 0) {
+				value.TopCount = 40;
+			}
+
+			if (value.BottomCount == 0) {
+				value.BottomCount = 40;
+			}
+
 			col.Upsert(0, value);
 			db.Commit();
 			_systemData = value;
@@ -472,12 +494,12 @@ namespace Glimmr.Models.Util {
 		}
 
 
-        /// <summary>
-        ///     Determine if config path is local, or docker
-        /// </summary>
-        /// <param name="filePath">Config file to check</param>
-        /// <returns>Modified path to config file</returns>
-        private static string GetConfigPath(string filePath) {
+		/// <summary>
+		///     Determine if config path is local, or docker
+		/// </summary>
+		/// <param name="filePath">Config file to check</param>
+		/// <returns>Modified path to config file</returns>
+		private static string GetConfigPath(string filePath) {
 			// If no etc dir, return normal path
 			if (!Directory.Exists("/etc/glimmr")) {
 				return filePath;

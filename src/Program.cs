@@ -1,5 +1,5 @@
-using System;
-using System.Diagnostics;
+#region
+
 using System.IO;
 using System.Runtime.InteropServices;
 using Glimmr.Models.ColorSource.Ambient;
@@ -17,6 +17,8 @@ using Newtonsoft.Json;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
+
+#endregion
 
 namespace Glimmr {
 	public class Program {
@@ -42,7 +44,8 @@ namespace Glimmr {
 				.MinimumLevel.Debug()
 				.MinimumLevel.Override("Microsoft", LogEventLevel.Information)
 				.Enrich.FromLogContext()
-				.WriteTo.Async(a => a.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: outputTemplate))
+				.WriteTo.Async(a =>
+					a.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: outputTemplate))
 				.CreateLogger();
 
 			CreateHostBuilder(args).Build().Run();
@@ -69,12 +72,14 @@ namespace Glimmr {
 					.Enrich.FromLogContext()
 					.Filter.ByExcluding(c => JsonConvert.SerializeObject(c).Contains("SerilogLogger"))
 					.WriteTo.Console(outputTemplate: outputTemplate)
-					.WriteTo.Async(a=>a.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: outputTemplate)))
+					.WriteTo.Async(a =>
+						a.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: outputTemplate)))
 				.ConfigureServices(services => {
 					services.AddSignalR();
 					services.AddSingleton<ControlService>();
 					services.AddSingleton<ColorService>();
-					services.AddHostedService(serviceProvider => (ColorService) serviceProvider.GetService<ColorService>());
+					services.AddHostedService(serviceProvider =>
+						(ColorService) serviceProvider.GetService<ColorService>());
 					services.AddHostedService<AudioStream>();
 					services.AddHostedService<VideoStream>();
 					services.AddHostedService<AudioVideoStream>();

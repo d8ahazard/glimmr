@@ -1,9 +1,12 @@
-﻿using System.Runtime.InteropServices;
+﻿#region
+
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Serilog;
+
+#endregion
 
 namespace Glimmr.Models.ColorTarget.Led {
 	public class LedDiscovery : ColorDiscovery, IColorDiscovery {

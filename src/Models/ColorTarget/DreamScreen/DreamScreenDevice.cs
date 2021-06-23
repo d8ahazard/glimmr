@@ -97,8 +97,16 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 
 		public Task ReloadData() {
 			Data = DataUtil.GetDevice(Id);
-			
+
 			return Task.CompletedTask;
+		}
+
+		public void Dispose() {
+		}
+
+		IColorTargetData IColorTarget.Data {
+			get => Data;
+			set => Data = (DreamScreenData) value;
 		}
 
 		private void LoadData() {
@@ -109,19 +117,13 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			Tag = Data.Tag;
 			Enable = Data.Enable;
 			DeviceTag = Data.DeviceTag;
-			if (DeviceTag.Contains("DreamScreen") && Enable) Enable = false;
+			if (DeviceTag.Contains("DreamScreen") && Enable) {
+				Enable = false;
+			}
+
 			if (string.IsNullOrEmpty(IpAddress)) {
 				IpAddress = Id;
 			}
-			
-		}
-
-		public void Dispose() {
-		}
-
-		IColorTargetData IColorTarget.Data {
-			get => Data;
-			set => Data = (DreamScreenData) value;
 		}
 
 		public byte[] EncodeState() {

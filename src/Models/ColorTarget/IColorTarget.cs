@@ -1,10 +1,14 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Services;
 using Newtonsoft.Json;
+
+#endregion
 
 namespace Glimmr.Models.ColorTarget {
 	public interface IColorTarget {

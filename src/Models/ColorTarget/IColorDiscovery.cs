@@ -1,6 +1,10 @@
-﻿using System.Threading;
+﻿#region
+
+using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Services;
+
+#endregion
 
 namespace Glimmr.Models.ColorTarget {
 	public interface IColorDiscovery {
@@ -8,9 +12,9 @@ namespace Glimmr.Models.ColorTarget {
 	}
 
 	public abstract class ColorDiscovery {
-		private ColorService ColorService { get; set; }
 		public ControlService ControlService { get; set; }
 		public abstract string DeviceTag { get; set; }
+		private ColorService ColorService { get; }
 
 		protected ColorDiscovery(ColorService colorService) {
 			ColorService = colorService;

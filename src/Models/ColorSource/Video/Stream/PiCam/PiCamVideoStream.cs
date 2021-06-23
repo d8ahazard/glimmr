@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
@@ -13,6 +15,8 @@ using MMALSharp.Native;
 using MMALSharp.Ports;
 using MMALSharp.Ports.Outputs;
 using Serilog;
+
+#endregion
 
 namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
 	public sealed class PiCamVideoStream : IVideoStream, IDisposable {

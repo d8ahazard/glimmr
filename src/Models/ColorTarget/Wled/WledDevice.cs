@@ -1,17 +1,22 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Newtonsoft.Json;
 using Serilog;
+using JsonException = Newtonsoft.Json.JsonException;
+
+#endregion
 
 namespace Glimmr.Models.ColorTarget.Wled {
 	public class WledDevice : ColorTarget, IColorTarget, IDisposable {
@@ -23,10 +28,13 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 		private bool _disposed;
 		private IPEndPoint _ep;
+		private int _lastBri;
 		private int _ledCount;
 		private int _offset;
 		private StripMode _stripMode;
 		private int _targetSector;
+
+		private bool _wasOn;
 
 		public WledDevice(WledData wd, ColorService colorService) : base(colorService) {
 			colorService.ColorSendEvent += SetColor;
@@ -47,9 +55,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		public string Id { get; set; }
 		public string IpAddress { get; set; }
 		public string Tag { get; set; }
-
-		private bool _wasOn;
-		private int _lastBri;
 
 		IColorTargetData IColorTarget.Data {
 			get => Data;
@@ -82,15 +87,9 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 			try {
 				await _udpClient.SendAsync(packet.ToArray(), packet.Count, _ep);
-				
 			} catch (Exception e) {
 				Log.Debug("Exception, look at that: " + e.Message);
 			}
-		}
-
-
-		public bool IsEnabled() {
-			return Data.Enable;
 		}
 
 
@@ -98,7 +97,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			if (!Streaming) {
 				return;
 			}
-		
+
 
 			Streaming = false;
 			await FlashColor(Color.Black).ConfigureAwait(false);
@@ -184,6 +183,11 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		}
 
 
+		public bool IsEnabled() {
+			return Data.Enable;
+		}
+
+
 		private List<Color> ShiftColors(IReadOnlyList<Color> input) {
 			var output = new Color[input.Count];
 			var il = output.Length - 1;
@@ -227,34 +231,33 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 		private async Task UpdateLightState(bool on, int bri = -1) {
 			var scaledBright = bri == -1 ? Brightness / 100f * 255f : bri;
-			if (scaledBright > 255) scaledBright = 255;
+			if (scaledBright > 255) {
+				scaledBright = 255;
+			}
+
 			var url = "http://" + IpAddress + "/win";
 			url += "&T=" + (on ? "1" : "0");
 			url += "&A=" + (int) scaledBright;
 			Log.Debug("LightstateUrl: " + url);
 			await _httpClient.GetAsync(url).ConfigureAwait(false);
 		}
-		
+
 		private async Task<WledStateData?> GetLightState() {
 			var url = "http://" + IpAddress + "/json/";
 			Log.Debug("URL is " + url);
 			var res = await _httpClient.GetAsync(url);
 			res.EnsureSuccessStatusCode();
-			if (res.Content is object && res.Content.Headers.ContentType.MediaType == "application/json")
-			{
+			if (res.Content is object && res.Content.Headers.ContentType.MediaType == "application/json") {
 				var contentStream = await res.Content.ReadAsStreamAsync();
 
-				try
-				{
-					return await System.Text.Json.JsonSerializer.DeserializeAsync<WledStateData>(contentStream, new System.Text.Json.JsonSerializerOptions { IgnoreNullValues = true, PropertyNameCaseInsensitive = true });
-				}
-				catch (JsonException) // Invalid JSON
+				try {
+					return await JsonSerializer.DeserializeAsync<WledStateData>(contentStream,
+						new JsonSerializerOptions {IgnoreNullValues = true, PropertyNameCaseInsensitive = true});
+				} catch (JsonException) // Invalid JSON
 				{
 					Console.WriteLine("Invalid JSON.");
-				}                
-			}
-			else
-			{
+				}
+			} else {
 				Console.WriteLine("HTTP Response was invalid and cannot be deserialised.");
 			}
 

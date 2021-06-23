@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,6 +9,8 @@ using Glimmr.Models.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
+
+#endregion
 
 namespace Glimmr.Models {
 	public class JsonLoader {
@@ -54,7 +58,9 @@ namespace Glimmr.Models {
 								}
 
 								var obj = data.ToObject<T>();
-								if (obj != null) output.Add(obj);
+								if (obj != null) {
+									output.Add(obj);
+								}
 							}
 						} catch (Exception e) {
 							Log.Warning($"Parse exception for {file}: " + e.Message);

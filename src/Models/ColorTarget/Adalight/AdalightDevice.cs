@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿#region
+
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Threading;
@@ -7,27 +9,18 @@ using Glimmr.Models.Util;
 using Glimmr.Services;
 using Serilog;
 
+#endregion
+
 namespace Glimmr.Models.ColorTarget.Adalight {
 	public class AdalightDevice : ColorTarget, IColorTarget {
-		public bool Enable { get; set; }
-		public bool Streaming { get; set; }
-		public bool Testing { get; set; }
-		public int Brightness { get; set; }
-		public string Id { get; set; }
-		public string IpAddress { get; set; }
-		public string Tag { get; set; }
-		
+		public AdalightData Data { get; set; }
+		private AdalightNet.Adalight _adalight;
+
 		private int _baud;
 		private int _ledCount;
-		private bool _reverseStrip;
 		private int _offset;
 		private int _port;
-		public AdalightData Data { get; set; }
-		IColorTargetData IColorTarget.Data {
-			get => Data;
-			set => Data = (AdalightData) value;
-		}
-		private AdalightNet.Adalight _adalight;
+		private bool _reverseStrip;
 
 		public AdalightDevice(AdalightData data, ColorService cs) {
 			Id = data.Id;
@@ -36,7 +29,20 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			cs.ColorSendEvent += SetColor;
 			_adalight = new AdalightNet.Adalight(_port, _ledCount, _baud);
 		}
-		
+
+		public bool Enable { get; set; }
+		public bool Streaming { get; set; }
+		public bool Testing { get; set; }
+		public int Brightness { get; set; }
+		public string Id { get; set; }
+		public string IpAddress { get; set; }
+		public string Tag { get; set; }
+
+		IColorTargetData IColorTarget.Data {
+			get => Data;
+			set => Data = (AdalightData) value;
+		}
+
 		public async Task StartStream(CancellationToken ct) {
 			if (Streaming || !Enable) {
 				return;
@@ -50,7 +56,10 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 		}
 
 		public async Task StopStream() {
-			if (!Streaming) return;
+			if (!Streaming) {
+				return;
+			}
+
 			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
 			var blacks = ColorUtil.EmptyList(_ledCount);
 			_adalight.UpdateColors(blacks);
@@ -64,8 +73,12 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			if (!Enable || !Streaming || Testing && !force) {
 				return;
 			}
+
 			var toSend = ColorUtil.TruncateColors(colors, _offset, _ledCount).ToList();
-			if (_reverseStrip) toSend.Reverse();
+			if (_reverseStrip) {
+				toSend.Reverse();
+			}
+
 			_adalight.UpdateColors(toSend);
 		}
 
@@ -84,16 +97,26 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			if (oldBaud != _baud || oldPort != _port || oldCount != _ledCount) {
 				Log.Debug("Reloading connection to adalight!");
 				var wasStreaming = Streaming;
-				if (Streaming) _adalight.Disconnect();
+				if (Streaming) {
+					_adalight.Disconnect();
+				}
+
 				Streaming = false;
 				_adalight = new AdalightNet.Adalight(_port, _ledCount, _baud);
-				if (wasStreaming) Streaming = _adalight.Connect();
+				if (wasStreaming) {
+					Streaming = _adalight.Connect();
+				}
 			}
 
 			if (_adalight != null && _adalight.Connected) {
 				_adalight.UpdateBrightness(Brightness);
 			}
+
 			return Task.CompletedTask;
+		}
+
+		public void Dispose() {
+			_adalight.Dispose();
 		}
 
 		private void LoadData() {
@@ -106,12 +129,8 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			if (Data.Brightness == 0) {
 				Brightness = 0;
 			} else {
-				Brightness = (int) (Data.Brightness / 100f * 255);	
+				Brightness = (int) (Data.Brightness / 100f * 255);
 			}
-		}
-
-		public void Dispose() {
-			_adalight.Dispose();
 		}
 	}
 }

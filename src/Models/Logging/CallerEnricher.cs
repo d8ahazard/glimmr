@@ -1,9 +1,13 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Diagnostics;
 using Serilog;
 using Serilog.Configuration;
 using Serilog.Core;
 using Serilog.Events;
+
+#endregion
 
 namespace Glimmr.Models.Logging {
 	internal class CallerEnricher : ILogEventEnricher {

@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿#region
+
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Net;
@@ -12,17 +14,19 @@ using Makaretu.Dns;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
+#endregion
+
 namespace Glimmr.Services {
 	public class StreamService : BackgroundService {
 		private readonly ControlService _cs;
 		private readonly UdpClient _uc;
-		private bool _loaded;
 		private int _devMode;
-		private int _sectorCount;
 		private int _ledCount;
-		private bool _useCenter;
+		private bool _loaded;
 		private bool _mirrorHorizontal;
 		private SystemData _sd;
+		private int _sectorCount;
+		private bool _useCenter;
 
 
 		public StreamService(ControlService cs) {
@@ -52,7 +56,7 @@ namespace Glimmr.Services {
 			_sectorCount = gd.SectorCount;
 			_ledCount = gd.LedCount;
 			_loaded = true;
-			
+
 			await _cs.SetMode(5);
 		}
 
@@ -73,7 +77,10 @@ namespace Glimmr.Services {
 					if (_devMode != 5) {
 						await Task.Delay(1, stoppingToken);
 					} else {
-						if (!_loaded) continue;
+						if (!_loaded) {
+							continue;
+						}
+
 						var receivedResult = await _uc.ReceiveAsync();
 						var bytes = receivedResult.Buffer;
 						await ProcessFrame(bytes);
@@ -113,6 +120,7 @@ namespace Glimmr.Services {
 						var sIdx = colIdx - _ledCount;
 						sectors[sIdx] = col;
 					}
+
 					colIdx++;
 				}
 
@@ -136,7 +144,6 @@ namespace Glimmr.Services {
 			} else {
 				Log.Debug("Dev mode is incorrect.");
 			}
-			
 		}
 
 		private void Refresh() {

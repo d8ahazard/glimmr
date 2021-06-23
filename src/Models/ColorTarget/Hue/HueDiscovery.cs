@@ -1,5 +1,6 @@
-﻿using System;
-using System.Data.Common;
+﻿#region
+
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
@@ -8,6 +9,8 @@ using Q42.HueApi;
 using Q42.HueApi.Interfaces;
 using Q42.HueApi.Models.Bridge;
 using Serilog;
+
+#endregion
 
 namespace Glimmr.Models.ColorTarget.Hue {
 	public class HueDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth {
@@ -46,7 +49,10 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				//Make sure the user has pressed the button on the bridge before calling RegisterAsync
 				//It will throw an LinkButtonNotPressedException if the user did not press the button
 				var devName = Environment.MachineName;
-				if (devName.Length > 19) devName = devName.Substring(0, 18);
+				if (devName.Length > 19) {
+					devName = devName.Substring(0, 18);
+				}
+
 				Log.Debug("Using device name for registration: " + devName);
 				var result = await client.RegisterAsync("Glimmr", devName, true);
 				if (result == null) {
@@ -79,7 +85,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		private static HueData UpdateDeviceData(HueData data) {
 			// Check for existing device
 			HueData dev = DataUtil.GetDevice<HueData>(data.Id);
-			
+
 			if (dev != null && !string.IsNullOrEmpty(dev.Token)) {
 				var client = new LocalHueClient(data.IpAddress, dev.User, dev.Token);
 				try {

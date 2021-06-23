@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -9,23 +11,17 @@ using Glimmr.Services;
 using OpenRGB.NET;
 using Serilog;
 
+#endregion
+
 namespace Glimmr.Models.ColorTarget.OpenRgb {
 	public class OpenRgbDevice : ColorTarget, IColorTarget {
 		public OpenRgbData Data { get; set; }
-		public bool Streaming { get; set; }
-		public bool Testing { get; set; }
-		public int Brightness { get; set; }
-		public string Id { get; set; }
-		public string IpAddress { get; set; }
-		public string Tag { get; set; }
-		public bool Enable { get; set; }
-
-		private int _offset;
-		private int _ledCount;
+		private readonly ColorService _colorService;
 
 		private OpenRGBClient? _client;
-		private readonly ColorService _colorService;
-		
+		private int _ledCount;
+
+		private int _offset;
 
 
 		public OpenRgbDevice(OpenRgbData data, ColorService cs) {
@@ -37,7 +33,15 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			LoadData();
 		}
 
-		
+		public bool Streaming { get; set; }
+		public bool Testing { get; set; }
+		public int Brightness { get; set; }
+		public string Id { get; set; }
+		public string IpAddress { get; set; }
+		public string Tag { get; set; }
+		public bool Enable { get; set; }
+
+
 		IColorTargetData IColorTarget.Data {
 			get => Data;
 			set => Data = (OpenRgbData) value;
@@ -55,16 +59,12 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 					Log.Debug("Exception connecting client: " + e.Message);
 				}
 
-				try
-				{
+				try {
 					_client.Dispose();
 					_client = _colorService.ControlService.GetAgent("OpenRgbAgent");
 					_client.Connect();
-				}
-				catch
-				{
+				} catch {
 					// Ignored
-					
 				}
 			}
 
@@ -110,7 +110,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 			var converted = toSend.Select(col => new OpenRGB.NET.Models.Color(col.R, col.G, col.B)).ToList();
 			_client.UpdateLeds(Data.DeviceId, converted.ToArray());
-		
+
 			_colorService.Counter.Tick(Id);
 		}
 
@@ -123,6 +123,9 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			return Task.CompletedTask;
 		}
 
+		public void Dispose() {
+		}
+
 		private void LoadData() {
 			Enable = Data.Enable;
 			IpAddress = Data.IpAddress;
@@ -132,10 +135,6 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 				var dev = _client.GetControllerData(Data.DeviceId);
 				_ledCount = dev.Leds.Length;
 			}
-			
-		}
-
-		public void Dispose() {
 		}
 	}
 }

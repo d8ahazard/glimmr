@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
@@ -7,22 +9,25 @@ using Glimmr.Enums;
 using Newtonsoft.Json;
 using Serilog;
 
+#endregion
+
 namespace Glimmr.Models.Util {
 	public static class ColorUtil {
 		private static double Tolerance
 			=> 0.000000000000001;
 
+		private static int _bottomCount;
+
 		private static CaptureMode _captureMode;
-		private static int _sectorCount;
+		private static DeviceMode _deviceMode;
 		private static int _hCount;
-		private static int _vCount;
+		private static int _ledCount;
 		private static int _leftCount;
 		private static int _rightCount;
+		private static int _sectorCount;
 		private static int _topCount;
-		private static int _bottomCount;
-		private static DeviceMode _deviceMode;
 		private static bool _useCenter;
-		private static int _ledCount;
+		private static int _vCount;
 
 		private static void ColorToHsv(Color color, out double hue, out double saturation, out double value) {
 			double max = Math.Max(color.R, Math.Max(color.G, color.B));
@@ -72,6 +77,7 @@ namespace Glimmr.Models.Util {
 					} else {
 						break;
 					}
+
 					c++;
 				}
 			}
@@ -429,6 +435,7 @@ namespace Glimmr.Models.Util {
 			if (_deviceMode == DeviceMode.Video || !_useCenter) {
 				return sector;
 			}
+
 			// First, create arrays of values that are on the edge
 			var total = _hCount * _vCount;
 			// Increment by 1 to use real numbers, versus array numbers...
@@ -438,27 +445,27 @@ namespace Glimmr.Models.Util {
 			var bl = _hCount;
 			var tl = total;
 			var tr = total - _hCount + 1;
-			
+
 			var bottom = new List<int>();
 			for (var i = 2; i < _hCount; i++) {
 				bottom.Add(i);
 			}
-			
+
 			var left = new List<int>();
 			for (var i = 2; i < _vCount; i++) {
 				left.Add(i * _hCount);
 			}
-			
+
 			Log.Debug("Lefts: " + JsonConvert.SerializeObject(left));
 
-			
+
 			var top = new List<int>();
 			for (var i = _hCount * (_vCount - 1) + 2; i < total; i++) {
 				top.Add(i);
 			}
 
 			var right = new List<int>();
-			for (var i = 1; i < _vCount -1; i++) {
+			for (var i = 1; i < _vCount - 1; i++) {
 				right.Add(i * _hCount + 1);
 			}
 
@@ -466,7 +473,7 @@ namespace Glimmr.Models.Util {
 			var dIdx = 1;
 			sectorMap[1] = dIdx;
 			dIdx++;
-			
+
 			foreach (var num in right) {
 				sectorMap[num] = dIdx;
 				dIdx++;
@@ -474,12 +481,12 @@ namespace Glimmr.Models.Util {
 
 			sectorMap[tr] = dIdx;
 			dIdx++;
-			
+
 			foreach (var num in top) {
 				sectorMap[num] = dIdx;
 				dIdx++;
 			}
-			
+
 			sectorMap[tl] = dIdx;
 			dIdx++;
 
@@ -487,34 +494,34 @@ namespace Glimmr.Models.Util {
 				sectorMap[num] = dIdx;
 				dIdx++;
 			}
-			
+
 			sectorMap[bl] = dIdx;
 			dIdx++;
-			
+
 			foreach (var num in bottom.ToArray().Reverse()) {
 				sectorMap[num] = dIdx;
 				dIdx++;
 			}
-			
+
 
 			var lDist = _hCount;
 			var rDist = _hCount;
 			var tDist = _vCount;
 			var bDist = _vCount;
-			
+
 			var ln = 0;
 			var rn = 0;
 			var bn = 0;
 			var tn = 0;
 
-			
+
 			for (var i = 1; i < _vCount / 2; i++) {
 				tn = sector + _hCount * i;
 				if (top.Contains(tn)) {
 					tDist = i;
 				}
 			}
-			
+
 			for (var i = 1; i < _vCount / 2; i++) {
 				bn = sector - _hCount * i;
 				Log.Debug("BN: " + bn);
@@ -523,7 +530,7 @@ namespace Glimmr.Models.Util {
 					break;
 				}
 			}
-			
+
 			for (var i = 1; i < _hCount / 2; i++) {
 				ln = sector + i;
 				if (left.Contains(ln)) {
@@ -531,7 +538,7 @@ namespace Glimmr.Models.Util {
 					break;
 				}
 			}
-			
+
 			for (var i = 1; i < _hCount / 2; i++) {
 				rn = sector - i;
 				if (right.Contains(ln)) {
@@ -557,54 +564,54 @@ namespace Glimmr.Models.Util {
 					}
 				}
 			}
-			
+
 			// bottom-right
 			if (minV == bDist && minH == rDist && minV == minH) {
 				return sectorMap[br];
 			}
-			
-			
+
+
 			// Bottom-left
 			if (minV == bDist && minH == lDist && minV == minH) {
 				return sectorMap[bl];
 			}
 
-			
+
 			// top-left
 			if (minV == tDist && minH == lDist && minV == minH) {
 				return sectorMap[tl];
 			}
 
-			
+
 			// top-right
 			if (minV == tDist && minH == rDist && minV == minH) {
 				return sectorMap[tr];
 			}
 
-			
+
 			if (minH == rDist && minH < minV) {
 				return sectorMap[rn];
 			}
-			
-			
+
+
 			// bottom
 			if (minV == bDist && minV < minH) {
 				return sectorMap[bn];
 			}
-			
-			
+
+
 			// left
 			if (minH == lDist && minH < minV) {
 				return sectorMap[ln];
 			}
-			
-			
+
+
 			// top
 			if (minV == tDist && minV < minH) {
 				return sectorMap[tn];
 			}
-			
-			
+
+
 			return br;
 		}
 
@@ -700,7 +707,7 @@ namespace Glimmr.Models.Util {
 					total++;
 				}
 			}
-			
+
 			// Check that we have the right amount, else add more because division
 			diff = sd.RightCount + sd.TopCount - total;
 			if (diff > 0) {
@@ -742,7 +749,7 @@ namespace Glimmr.Models.Util {
 					total++;
 				}
 			}
-			
+
 			// Add sector 0 to end
 			col = ints[0];
 			for (var c = 0; c < count; c++) {
@@ -759,7 +766,7 @@ namespace Glimmr.Models.Util {
 				}
 			}
 
-			
+
 			return output.ToList();
 		}
 
@@ -929,7 +936,10 @@ namespace Glimmr.Models.Util {
 				var required = _rightCount;
 				for (var i = start; i < required; i++) {
 					var step = (int) (idx * factor);
-					if (step >= input.Length) step = input.Length - 1;
+					if (step >= input.Length) {
+						step = input.Length - 1;
+					}
+
 					output[idx] = input[step];
 					idx++;
 				}
@@ -939,7 +949,10 @@ namespace Glimmr.Models.Util {
 				factor = (float) dimensions[1] / _topCount;
 				for (var i = start; i < required; i++) {
 					var step = (int) (idx * factor);
-					if (step >= input.Length) step = input.Length - 1;
+					if (step >= input.Length) {
+						step = input.Length - 1;
+					}
+
 					output[idx] = input[step];
 					idx++;
 				}
@@ -949,7 +962,10 @@ namespace Glimmr.Models.Util {
 				factor = (float) dimensions[2] / _leftCount;
 				for (var i = start; i < required; i++) {
 					var step = (int) (idx * factor);
-					if (step >= input.Length) step = input.Length - 1;
+					if (step >= input.Length) {
+						step = input.Length - 1;
+					}
+
 					output[idx] = input[step];
 					idx++;
 				}
@@ -959,7 +975,10 @@ namespace Glimmr.Models.Util {
 				factor = (float) dimensions[3] / _bottomCount;
 				for (var i = start; i < required; i++) {
 					var step = (int) (idx * factor);
-					if (step >= input.Length) step = input.Length - 1;
+					if (step >= input.Length) {
+						step = input.Length - 1;
+					}
+
 					output[idx] = input[step];
 					idx++;
 				}
@@ -969,7 +988,7 @@ namespace Glimmr.Models.Util {
 
 			return output;
 		}
-		
+
 		public static Color[] ResizeSectors(Color[] input, int[] dimensions) {
 			var output = new Color[_sectorCount];
 
@@ -988,42 +1007,44 @@ namespace Glimmr.Models.Util {
 
 				var vFactor = (float) dimensions[0] / _vCount;
 				var hFactor = (float) dimensions[1] / _hCount;
-				
+
 				// Set bottom-right
 				output[0] = input[iBr];
-				
+
 				// Mid-right sectors
 				for (var i = 1; i < oTr; i++) {
-					var tgt = (int)(i * vFactor);
+					var tgt = (int) (i * vFactor);
 					//Log.Debug($"Mapping {i} to {tgt}");
 					output[i] = input[tgt];
 				}
 
 				output[oTr] = input[iTr];
-				
+
 				for (var i = oTr + 1; i < oTl; i++) {
-					var tgt = (int)(i * hFactor);
-					//Log.Debug($"Mapping {i} to {tgt}");
-					output[i] = input[tgt];
-				}
-				
-				output[oTl] = input[iTl];
-				
-				for (var i = oTl + 1; i < oBl; i++) {
-					var tgt = (int)(i * vFactor);
-					//Log.Debug($"Mapping {i} to {tgt}");
-					output[i] = input[tgt];
-				}
-				
-				output[oBl] = input[iBl];
-				
-				for (var i = oBl + 1; i < _sectorCount; i++) {
-					var tgt = (int)(i * hFactor);
-					if (tgt >= _sectorCount) tgt = _sectorCount - 1; 
+					var tgt = (int) (i * hFactor);
 					//Log.Debug($"Mapping {i} to {tgt}");
 					output[i] = input[tgt];
 				}
 
+				output[oTl] = input[iTl];
+
+				for (var i = oTl + 1; i < oBl; i++) {
+					var tgt = (int) (i * vFactor);
+					//Log.Debug($"Mapping {i} to {tgt}");
+					output[i] = input[tgt];
+				}
+
+				output[oBl] = input[iBl];
+
+				for (var i = oBl + 1; i < _sectorCount; i++) {
+					var tgt = (int) (i * hFactor);
+					if (tgt >= _sectorCount) {
+						tgt = _sectorCount - 1;
+					}
+
+					//Log.Debug($"Mapping {i} to {tgt}");
+					output[i] = input[tgt];
+				}
 			} catch (Exception e) {
 				Log.Debug($"Exception {e.Message}: " + e.StackTrace);
 			}
@@ -1044,6 +1065,7 @@ namespace Glimmr.Models.Util {
 					output = (int) t - 1;
 				}
 			}
+
 			return output;
 		}
 

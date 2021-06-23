@@ -1,9 +1,13 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Services;
 using LifxNetPlus;
 using Serilog;
+
+#endregion
 
 namespace Glimmr.Models.ColorTarget.Lifx {
 	public class LifxDiscovery : ColorDiscovery, IColorDiscovery {
@@ -75,7 +79,9 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				MultiZoneV2 = extended,
 				MultiZoneCount = zoneCount
 			};
-			if (hasMulti && zoneCount != 0) d.GenerateBeamLayout();
+			if (hasMulti && zoneCount != 0) {
+				d.GenerateBeamLayout();
+			}
 
 			if (ver.Product == 55 || ver.Product == 101) {
 				tag = "Lifx Tile";

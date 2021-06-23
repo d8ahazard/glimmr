@@ -1,16 +1,22 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Services;
 using Serilog;
 
+#endregion
+
 namespace Glimmr.Models.ColorTarget.Adalight {
 	public class AdalightDiscovery : ColorDiscovery, IColorDiscovery {
+		public override string DeviceTag { get; set; } = "Adalight";
 		private readonly ControlService _controlService;
-		
+
 		public AdalightDiscovery(ColorService cs) : base(cs) {
 			_controlService = cs.ControlService;
 		}
+
 		public async Task Discover(CancellationToken ct, int timeout) {
 			Log.Debug("Adalight: Discovery started.");
 			var discoTask = Task.Run(() => {
@@ -36,10 +42,13 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 						} catch (Exception e) {
 							Log.Debug("Discovery exception: " + e.Message + " at " + e.StackTrace);
 						}
-						
-						
+
+
 						var data = new AdalightData(dev.Key, count);
-						if (bri != 0) data.Brightness = bri;
+						if (bri != 0) {
+							data.Brightness = bri;
+						}
+
 						_controlService.AddDevice(data).ConfigureAwait(false);
 					}
 				} catch (Exception e) {
@@ -49,7 +58,5 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			await discoTask;
 			Log.Debug("Adalight: Discovery complete.");
 		}
-
-		public override string DeviceTag { get; set; } = "Adalight";
 	}
 }

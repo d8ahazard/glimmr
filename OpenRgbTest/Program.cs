@@ -1,8 +1,12 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Linq;
 using Newtonsoft.Json;
 using OpenRGB.NET;
 using OpenRGB.NET.Models;
+
+#endregion
 
 namespace OpenRgbTest {
 	internal class Program {

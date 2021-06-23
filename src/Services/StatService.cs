@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,6 +10,8 @@ using Glimmr.Models.Util;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+
+#endregion
 
 namespace Glimmr.Services {
 	public class StatService : BackgroundService {

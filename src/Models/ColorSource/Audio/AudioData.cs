@@ -1,4 +1,8 @@
-﻿using ManagedBass;
+﻿#region
+
+using ManagedBass;
+
+#endregion
 
 namespace Glimmr.Models.ColorSource.Audio {
 	public class AudioData {

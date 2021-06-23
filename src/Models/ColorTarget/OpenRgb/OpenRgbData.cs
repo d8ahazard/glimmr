@@ -1,9 +1,13 @@
-﻿using System.Collections.Generic;
+﻿#region
+
+using System.Collections.Generic;
 using System.ComponentModel;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
 using OpenRGB.NET.Enums;
 using OpenRGB.NET.Models;
+
+#endregion
 
 namespace Glimmr.Models.ColorTarget.OpenRgb {
 	public class OpenRgbData : IColorTargetData {
@@ -89,7 +93,6 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 		public string Id { get; set; }
 
-		
 
 		[DefaultValue("OpenRgb")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]

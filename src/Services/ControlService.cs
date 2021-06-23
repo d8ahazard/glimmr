@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -18,6 +20,8 @@ using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Serilog;
 
+#endregion
+
 namespace Glimmr.Services {
 	public class ControlService : BackgroundService {
 		public ColorService ColorService { get; set; }
@@ -29,8 +33,6 @@ namespace Glimmr.Services {
 		private readonly IHubContext<SocketServer> _hubContext;
 
 		public AsyncEvent<DynamicEventArgs> DemoLedEvent;
-		
-		public AsyncEvent<DynamicEventArgs> StartStreamEvent;
 
 		public AsyncEvent<DynamicEventArgs> DeviceReloadEvent;
 		public AsyncEvent<DynamicEventArgs> DeviceRescanEvent;
@@ -42,8 +44,10 @@ namespace Glimmr.Services {
 
 		public AsyncEvent<DynamicEventArgs> SetModeEvent;
 
+		public AsyncEvent<DynamicEventArgs> StartStreamEvent;
+
 		public AsyncEvent<DynamicEventArgs> TestLedEvent;
-		
+
 		private Dictionary<string, dynamic> _agents;
 		private SystemData _sd;
 
@@ -74,6 +78,7 @@ namespace Glimmr.Services {
 					DataUtil.AddDeviceAsync(ld1).ConfigureAwait(false);
 				}
 			}
+
 			_agents = new Dictionary<string, dynamic>();
 			// Now we can load stuff
 			LoadAgents();
@@ -89,7 +94,6 @@ namespace Glimmr.Services {
 			ServiceDiscovery = new ServiceDiscovery(MulticastService);
 			// Dynamically load agents
 			ColorUtil.SetSystemData();
-			
 		}
 
 		public event Action RefreshSystemEvent = delegate { };
@@ -115,7 +119,7 @@ namespace Glimmr.Services {
 					//ignored
 				}
 			}
-		
+
 			_agents = new Dictionary<string, dynamic>();
 			var types = SystemUtil.GetClasses<IColorTargetAgent>();
 			foreach (var c in types) {
@@ -127,7 +131,7 @@ namespace Glimmr.Services {
 					if (agentCheck == null) {
 						Log.Warning($"Agent maker for {c} is null!");
 					} else {
-						var agentMaker = (IColorTargetAgent) agentCheck; 
+						var agentMaker = (IColorTargetAgent) agentCheck;
 						var agent = agentMaker.CreateAgent(this);
 						if (agent != null) {
 							_agents[shortClass] = agent;
@@ -143,7 +147,10 @@ namespace Glimmr.Services {
 
 		public async Task EnableDevice(string devId) {
 			var dev = DataUtil.GetDevice(devId);
-			if (dev == null) return;
+			if (dev == null) {
+				return;
+			}
+
 			dev.Enable = true;
 			await DataUtil.AddDeviceAsync(dev);
 			await DeviceReloadEvent.InvokeAsync(this, new DynamicEventArgs(devId));
@@ -216,7 +223,8 @@ namespace Glimmr.Services {
 								await clientProxy.SendAsync("auth", "authorized");
 							}
 
-							await _hubContext.Clients.All.SendAsync("device", JsonConvert.SerializeObject((IColorTargetData) activated));
+							await _hubContext.Clients.All.SendAsync("device",
+								JsonConvert.SerializeObject((IColorTargetData) activated));
 							return;
 						}
 					} catch (Exception e) {

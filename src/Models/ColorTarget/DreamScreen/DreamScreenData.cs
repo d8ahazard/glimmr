@@ -23,7 +23,9 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 			GroupNumber = dev.DeviceGroup;
 			DeviceTag = dev.Type.ToString();
-			if (DeviceTag.Contains("DreamScreen")) Enable = false;
+			if (DeviceTag.Contains("DreamScreen")) {
+				Enable = false;
+			}
 		}
 
 		public string Name { get; set; }
@@ -32,7 +34,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		public string IpAddress { get; set; }
 		public int Brightness { get; set; }
 
-		
+
 		public bool Enable { get; set; }
 		public string LastSeen { get; set; }
 
@@ -42,11 +44,12 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			LastSeen = data.LastSeen;
 			GroupNumber = dData.GroupNumber;
 			DeviceTag = dData.DeviceTag;
-			if (DeviceTag.Contains("DreamScreen")) Enable = false;
+			if (DeviceTag.Contains("DreamScreen")) {
+				Enable = false;
+			}
 		}
 
 		public SettingsProperty[] KeyProperties { get; set; } = {
-			
 		};
 
 		public byte[] EncodeState() {

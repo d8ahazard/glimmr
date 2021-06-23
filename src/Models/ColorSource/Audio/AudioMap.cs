@@ -1,10 +1,14 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using Emgu.CV.Structure;
 using Glimmr.Models.Util;
 using Serilog;
+
+#endregion
 
 namespace Glimmr.Models.ColorSource.Audio {
 	public class AudioMap {

@@ -1,6 +1,10 @@
-﻿using System.Diagnostics;
+﻿#region
+
+using System.Diagnostics;
 using Glimmr.Models;
 using Microsoft.AspNetCore.Mvc;
+
+#endregion
 
 namespace Glimmr.Controllers {
 	public class HomeController : Controller {

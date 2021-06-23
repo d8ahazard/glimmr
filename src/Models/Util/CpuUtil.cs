@@ -1,10 +1,14 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Serilog;
+
+#endregion
 
 namespace Glimmr.Models.Util {
 	public static class CpuUtil {

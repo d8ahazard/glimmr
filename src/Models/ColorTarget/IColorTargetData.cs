@@ -1,14 +1,18 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+
+#endregion
 
 namespace Glimmr.Models.ColorTarget {
 	public interface IColorTargetData {
 		public bool Enable { get; set; }
 		public int Brightness { get; set; }
-		
 
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] 
+
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
 		public SettingsProperty[] KeyProperties { get; set; }
 
 		public string Id { get; set; }
@@ -21,13 +25,26 @@ namespace Glimmr.Models.ColorTarget {
 
 	[Serializable]
 	public class SettingsProperty {
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public string ValueMax { get; set; }
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public string ValueMin { get; set; }
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public string ValueStep { get; set; }
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public Dictionary<string, string> Options;
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public string ValueLabel;
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public string ValueName;
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public string ValueType;
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+		public string ValueMax { get; set; }
+
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+		public string ValueMin { get; set; }
+
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+		public string ValueStep { get; set; }
+
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+		public Dictionary<string, string> Options;
+
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+		public string ValueLabel;
+
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+		public string ValueName;
+
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+		public string ValueType;
 
 		public SettingsProperty() {
 		}

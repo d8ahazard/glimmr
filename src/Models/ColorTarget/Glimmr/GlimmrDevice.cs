@@ -1,10 +1,10 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -13,6 +13,8 @@ using Glimmr.Models.Util;
 using Glimmr.Services;
 using Newtonsoft.Json;
 using Serilog;
+
+#endregion
 
 namespace Glimmr.Models.ColorTarget.Glimmr {
 	public class GlimmrDevice : ColorTarget, IColorTarget, IDisposable {
@@ -90,11 +92,6 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		}
 
 
-		public bool IsEnabled() {
-			return Data.Enable;
-		}
-
-
 		public async Task StopStream() {
 			if (!Streaming) {
 				return;
@@ -158,6 +155,11 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		}
 
 
+		public bool IsEnabled() {
+			return Data.Enable;
+		}
+
+
 		public async Task UpdatePixel(int pixelIndex, Color color) {
 			if (_updateColors.Count == 0) {
 				for (var i = 0; i < Data.LedCount; i++) {
@@ -190,7 +192,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 				return;
 			}
 
-			
+
 			var stringContent = new StringContent(value, Encoding.UTF8, "application/json");
 			try {
 				var res = _httpClient.PostAsync(uri, stringContent).Result;

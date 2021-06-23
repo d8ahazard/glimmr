@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -10,28 +12,23 @@ using Glimmr.Services;
 using LifxNetPlus;
 using Serilog;
 
+#endregion
+
 namespace Glimmr.Models.ColorTarget.Lifx {
 	public class LifxDevice : ColorTarget, IColorTarget {
 		public LifxData Data { get; set; }
 		private LightBulb B { get; }
 
 		private readonly LifxClient _client;
+		private BeamLayout _beamLayout;
+		private ColorConverter _conv;
+		private int[] _gammaTableBG;
+		private int[] _gammaTableR;
 		private bool _hasMulti;
 		private int _multizoneCount;
-		private int[] _gammaTableR;
-		private int[] _gammaTableBG;
-		
-		private int _targetSector;
-		private ColorConverter _conv;
-		private BeamLayout _beamLayout;
-		
-		public bool Streaming { get; set; }
-		public bool Testing { get; set; }
-		public int Brightness { get; set; }
 		private double _scaledBrightness;
-		public string Id { get; set; }
-		public string IpAddress { get; set; }
-		public string Tag { get; set; }
+
+		private int _targetSector;
 
 
 		public LifxDevice(LifxData d, ColorService colorService) : base(colorService) {
@@ -45,6 +42,13 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			LoadData();
 		}
 
+		public bool Streaming { get; set; }
+		public bool Testing { get; set; }
+		public int Brightness { get; set; }
+		public string Id { get; set; }
+		public string IpAddress { get; set; }
+		public string Tag { get; set; }
+
 		public bool Enable { get; set; }
 
 		IColorTargetData IColorTarget.Data {
@@ -52,7 +56,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			set => Data = (LifxData) value;
 		}
 
-		
+
 		public async Task StartStream(CancellationToken ct) {
 			if (!Enable) {
 				return;
@@ -76,11 +80,6 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		}
 
 
-		public bool IsEnabled() {
-			return Enable;
-		}
-
-
 		public async Task StopStream() {
 			if (!Streaming) {
 				return;
@@ -92,64 +91,19 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			}
 
 			Log.Information($"{Data.Tag}::Stopping stream.: {Data.Id}...");
-			_client.SetColorAsync(B, new LifxColor(Color.FromArgb(0,0,0))).ConfigureAwait(false);
+			_client.SetColorAsync(B, new LifxColor(Color.FromArgb(0, 0, 0))).ConfigureAwait(false);
 			// Awaiting this breaks things, leave it alone...
 			_client.SetLightPowerAsync(B, false).ConfigureAwait(false);
 			_client.SetLightPowerAsync(B, false).ConfigureAwait(false);
 			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
 		}
 
-		private int[] GenerateGammaTable(double gamma = 2.3) {
-			const int maxIn = 255;
-			const int maxOut = 255; // Top end of OUTPUT range
-			var output = new int[256];
-			for(var i=0; i<=maxIn; i++) {
-				output[i] = (int)(Math.Pow((float) i / maxIn, gamma) * maxOut + 0.5);
-			}
-			return output;
-		}
-		
 
 		public Task ReloadData() {
 			var newData = DataUtil.GetDevice<LifxData>(Id);
 			Data = newData;
 			LoadData();
 			return Task.CompletedTask;
-		}
-
-		private void LoadData() {
-			var sd = DataUtil.GetSystemData();
-
-			DataUtil.GetItem<int>("captureMode");
-
-			_hasMulti = Data.HasMultiZone;
-			if (_hasMulti) {
-				_multizoneCount = Data.LedCount;
-				_beamLayout = Data.BeamLayout;
-				_gammaTableR = GenerateGammaTable(1.8);
-				_gammaTableBG = GenerateGammaTable(1.4);
-				if (_beamLayout == null && _multizoneCount != 0) {
-					Data.GenerateBeamLayout();
-					_beamLayout = Data.BeamLayout;
-				}
-			} else {
-				var target = Data.TargetSector;
-				if ((CaptureMode) sd.CaptureMode == CaptureMode.DreamScreen) target = ColorUtil.CheckDsSectors(target);
-				if (sd.UseCenter) target = ColorUtil.FindEdge(target + 1);
-				_targetSector = target;
-			}
-
-			IpAddress = Data.IpAddress;
-			var oldBrightness = Brightness;
-			Brightness = Data.Brightness;
-			_scaledBrightness = Brightness / 100d;
-			if (oldBrightness != Brightness) {
-				var bri = Brightness / 100 * 255;
-				_client.SetBrightnessAsync(B, (ushort) bri).ConfigureAwait(false);
-			}
-
-			Id = Data.Id;
-			Enable = Data.Enable;
 		}
 
 		public void Dispose() {
@@ -169,6 +123,63 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			ColorService.Counter.Tick(Id);
 		}
 
+
+		public bool IsEnabled() {
+			return Enable;
+		}
+
+		private int[] GenerateGammaTable(double gamma = 2.3) {
+			const int maxIn = 255;
+			const int maxOut = 255; // Top end of OUTPUT range
+			var output = new int[256];
+			for (var i = 0; i <= maxIn; i++) {
+				output[i] = (int) (Math.Pow((float) i / maxIn, gamma) * maxOut + 0.5);
+			}
+
+			return output;
+		}
+
+		private void LoadData() {
+			var sd = DataUtil.GetSystemData();
+
+			DataUtil.GetItem<int>("captureMode");
+
+			_hasMulti = Data.HasMultiZone;
+			if (_hasMulti) {
+				_multizoneCount = Data.LedCount;
+				_beamLayout = Data.BeamLayout;
+				_gammaTableR = GenerateGammaTable(1.8);
+				_gammaTableBG = GenerateGammaTable(1.4);
+				if (_beamLayout == null && _multizoneCount != 0) {
+					Data.GenerateBeamLayout();
+					_beamLayout = Data.BeamLayout;
+				}
+			} else {
+				var target = Data.TargetSector;
+				if ((CaptureMode) sd.CaptureMode == CaptureMode.DreamScreen) {
+					target = ColorUtil.CheckDsSectors(target);
+				}
+
+				if (sd.UseCenter) {
+					target = ColorUtil.FindEdge(target + 1);
+				}
+
+				_targetSector = target;
+			}
+
+			IpAddress = Data.IpAddress;
+			var oldBrightness = Brightness;
+			Brightness = Data.Brightness;
+			_scaledBrightness = Brightness / 100d;
+			if (oldBrightness != Brightness) {
+				var bri = Brightness / 100 * 255;
+				_client.SetBrightnessAsync(B, (ushort) bri).ConfigureAwait(false);
+			}
+
+			Id = Data.Id;
+			Enable = Data.Enable;
+		}
+
 		private void SetColorMulti(List<Color> colors) {
 			if (_client == null || _beamLayout == null) {
 				Log.Warning("Null client or no layout!");
@@ -185,29 +196,32 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 						segColors[c] = col;
 					}
 				}
-				
-				if (segment.Reverse && !segment.Repeat) segColors = segColors.Reverse().ToArray();
+
+				if (segment.Reverse && !segment.Repeat) {
+					segColors = segColors.Reverse().ToArray();
+				}
+
 				output.AddRange(segColors);
 			}
 
 			var i = 0;
-			
+
 			var cols = new List<LifxColor>();
 			foreach (var col in output) {
 				if (i == 0) {
 					var ar = _gammaTableR[col.R];
 					var ag = _gammaTableBG[col.G];
 					var ab = _gammaTableBG[col.B];
-					cols.Add(new LifxColor(Color.FromArgb(ar,ag,ab), _scaledBrightness));
+					cols.Add(new LifxColor(Color.FromArgb(ar, ag, ab), _scaledBrightness));
 					i = 1;
 				} else {
 					i = 0;
 				}
 			}
-			_client.SetExtendedColorZonesAsync(B, cols,5).ConfigureAwait(false);
+
+			_client.SetExtendedColorZonesAsync(B, cols, 5).ConfigureAwait(false);
 		}
 
-		
 
 		private void SetColorSingle(List<Color> list) {
 			var sectors = list;

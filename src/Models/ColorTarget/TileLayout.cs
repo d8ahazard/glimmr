@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -6,6 +8,8 @@ using Glimmr.Enums;
 using LifxNetPlus;
 using Nanoleaf.Client.Models.Responses;
 using Newtonsoft.Json;
+
+#endregion
 
 namespace Glimmr.Models.ColorTarget {
 	[Serializable]
@@ -65,8 +69,6 @@ namespace Glimmr.Models.ColorTarget {
 			NumPanels = newLayout.NumPanels;
 			SideLength = newLayout.SideLength;
 			PositionData = posData;
-
-
 		}
 	}
 

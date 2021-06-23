@@ -1,7 +1,11 @@
-﻿using System;
+﻿#region
+
+using System;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using OpenRGB.NET;
+
+#endregion
 
 namespace Glimmr.Models.ColorTarget.OpenRgb {
 	public class OpenRgbAgent : IColorTargetAgent {
@@ -25,7 +29,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			if (ip == Ip && port == _port && _client != null) {
 				return;
 			}
-			
+
 			Ip = ip;
 			_port = port;
 			_client?.Dispose();
@@ -35,9 +39,6 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			} catch (Exception) {
 				// ignored
 			}
-
-
-
 		}
 	}
 }

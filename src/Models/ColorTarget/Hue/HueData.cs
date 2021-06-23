@@ -29,14 +29,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		[JsonProperty] public string SelectedGroup { get; set; } = "";
 		[JsonProperty] public string Token { get; set; } = "";
 		[JsonProperty] public string User { get; set; } = "";
-		
-		
-		public string Name { get; set; }
-		public string Id { get; set; }
-		public string Tag { get; set; } = "Hue";
-		public string IpAddress { get; set; }
-		public int Brightness { get; set; }
-		public bool Enable { get; set; }
 
 		public HueData() {
 		}
@@ -54,6 +46,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				var right = Id.Substring(Id.Length - 6);
 				Id = left + right;
 			}
+
 			Log.Debug("Id should be " + Id);
 			Brightness = 100;
 			User = "";
@@ -66,6 +59,14 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Name = "Hue - " + Id.Substring(Id.Length - 5, 4);
 			MappedLights ??= new List<LightMap>();
 		}
+
+
+		public string Name { get; set; }
+		public string Id { get; set; }
+		public string Tag { get; set; } = "Hue";
+		public string IpAddress { get; set; }
+		public int Brightness { get; set; }
+		public bool Enable { get; set; }
 
 
 		public string LastSeen { get; set; }
@@ -93,7 +94,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		};
 
 
-
 		public void AddGroups(IEnumerable<Group> groups) {
 			foreach (var group in groups) {
 				Groups.Add(new HueGroup(group));
@@ -109,6 +109,10 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 	[Serializable]
 	public class LightData {
+		[DefaultValue(false)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public bool HasStreaming { get; set; }
+
 		[JsonProperty] public int Brightness { get; set; }
 
 		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
@@ -127,10 +131,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
 		public string ModelId { get; set; }
-
-		[DefaultValue(false)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public bool HasStreaming { get; set; }
 
 		[JsonProperty] public string Name { get; set; }
 

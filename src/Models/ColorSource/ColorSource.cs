@@ -1,5 +1,9 @@
-﻿using System.Threading;
+﻿#region
+
+using System.Threading;
 using Glimmr.Services;
+
+#endregion
 
 namespace Glimmr.Models.ColorSource {
 	public abstract class ColorSource {

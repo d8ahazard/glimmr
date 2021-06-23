@@ -1,4 +1,8 @@
+#region
+
 using Emgu.CV.Structure;
+
+#endregion
 
 namespace Glimmr.Models.ColorSource.Audio {
 	public struct AudioScene {

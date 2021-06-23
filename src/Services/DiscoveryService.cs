@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -12,16 +14,18 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
+#endregion
+
 namespace Glimmr.Services {
 	public class DiscoveryService : BackgroundService {
 		private readonly List<IColorDiscovery> _discoverables;
 		private readonly IHubContext<SocketServer> _hubContext;
+		private readonly CancellationTokenSource _syncSource;
 		private bool _discovering;
 		private int _discoveryInterval;
 		private CancellationTokenSource? _mergeSource;
 		private CancellationToken _stopToken;
 		private bool _streaming;
-		private readonly CancellationTokenSource _syncSource;
 
 		public DiscoveryService(IHubContext<SocketServer> hubContext, ColorService colorService) {
 			_hubContext = hubContext;
@@ -45,7 +49,6 @@ namespace Glimmr.Services {
 
 				var dev = (IColorDiscovery) obj;
 				_discoverables.Add(dev);
-
 			}
 		}
 
@@ -67,6 +70,7 @@ namespace Glimmr.Services {
 					Log.Debug("No devices, scanning...");
 					await TriggerRefresh(null, null).ConfigureAwait(false);
 				}
+
 				Log.Information("Starting discovery service loop...");
 				while (!stoppingToken.IsCancellationRequested) {
 					await Task.Delay(TimeSpan.FromMinutes(_discoveryInterval), _mergeSource.Token);
@@ -98,11 +102,14 @@ namespace Glimmr.Services {
 			if (timeout < 3) {
 				timeout = 3;
 			}
-			
+
 			cs.CancelAfter(TimeSpan.FromSeconds(timeout));
 			await DeviceDiscovery(cs.Token, timeout);
 			var devs = DataUtil.GetDevices();
-			if (!sd.AutoRemoveDevices) return;
+			if (!sd.AutoRemoveDevices) {
+				return;
+			}
+
 			foreach (var dev in devs) {
 				var device = (IColorTargetData) dev;
 				var lastSeen = DateTime.Parse(device.LastSeen, CultureInfo.InvariantCulture);
@@ -118,6 +125,7 @@ namespace Glimmr.Services {
 
 				DataUtil.DeleteDevice(device.Id);
 			}
+
 			cs.Dispose();
 		}
 

@@ -1,10 +1,14 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using DreamScreenNet;
 using Glimmr.Services;
 using Newtonsoft.Json;
 using Serilog;
+
+#endregion
 
 namespace Glimmr.Models.ColorTarget.DreamScreen {
 	public class DreamScreenDiscovery : ColorDiscovery, IColorDiscovery {

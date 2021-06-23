@@ -6,13 +6,11 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Newtonsoft.Json;
 using Serilog;
 
 #endregion
@@ -27,6 +25,7 @@ namespace Glimmr.Models.ColorSource.Video {
 		private readonly float _borderWidth;
 
 		private readonly ControlService _controlService;
+		private readonly Stopwatch _frameWatch;
 		public bool DoSave;
 		public bool NoImage;
 		private int _bottomCount;
@@ -39,8 +38,6 @@ namespace Glimmr.Models.ColorSource.Video {
 		// Loaded settings
 		private bool _cropLetter;
 		private bool _cropPillar;
-		private bool _useCenter;
-		private readonly Stopwatch _frameWatch;
 
 		private Rectangle[] _fullCoords;
 		private Rectangle[] _fullSectors;
@@ -50,10 +47,9 @@ namespace Glimmr.Models.ColorSource.Video {
 		private int _hCropPixels;
 		private int _hSectors;
 		private Mat _input;
-		private int _leftCount;
 
 		private int _ledCount;
-		private int _sectorCount;
+		private int _leftCount;
 
 		private int _previewMode;
 		private int _rightCount;
@@ -61,7 +57,9 @@ namespace Glimmr.Models.ColorSource.Video {
 
 		// Set this when the sector changes
 		private bool _sectorChanged;
+		private int _sectorCount;
 		private int _topCount;
+		private bool _useCenter;
 
 		// Are we cropping right now?
 		private bool _vCrop;
@@ -91,7 +89,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			Log.Debug("Splitter init complete.");
 		}
 
-		
+
 		private void RefreshSystem() {
 			var sd = DataUtil.GetSystemData();
 			_leftCount = sd.LeftCount;
@@ -106,8 +104,13 @@ namespace Glimmr.Models.ColorSource.Video {
 			_useCenter = sd.UseCenter;
 			_ledCount = sd.LedCount;
 			_sectorCount = sd.SectorCount;
-			if (_ledCount == 0) _ledCount = 200;
-			if (_sectorCount == 0) _sectorCount = 12;
+			if (_ledCount == 0) {
+				_ledCount = 200;
+			}
+
+			if (_sectorCount == 0) {
+				_sectorCount = 12;
+			}
 
 			// Start our stopwatches for cropping if they were previously disabled
 			if (_cropLetter || _cropPillar && !_frameWatch.IsRunning) {
@@ -397,9 +400,12 @@ namespace Glimmr.Models.ColorSource.Video {
 			// Calc right regions, bottom to top
 			var idx = 0;
 			var pos = ScaleHeight - heightRight;
-			
+
 			for (var i = 0; i < _rightCount; i++) {
-				if (pos < 0) pos = 0;
+				if (pos < 0) {
+					pos = 0;
+				}
+
 				output[idx] = new Rectangle((int) rLeft, (int) pos, (int) _borderWidth, (int) heightRight);
 				pos -= heightRight;
 				idx++;
@@ -409,12 +415,15 @@ namespace Glimmr.Models.ColorSource.Video {
 					idx++;
 				}
 			}
-			
+
 			// Calc top regions, from right to left
 			pos = ScaleWidth - widthTop;
 
 			for (var i = 0; i < _topCount - 1; i++) {
-				if (pos < 0) pos = 0;
+				if (pos < 0) {
+					pos = 0;
+				}
+
 				output[idx] = new Rectangle((int) pos, tTop, (int) widthTop, (int) _borderHeight);
 				idx++;
 				pos -= widthTop;
@@ -424,13 +433,16 @@ namespace Glimmr.Models.ColorSource.Video {
 					idx++;
 				}
 			}
-			
-			
+
+
 			// Calc left regions (top to bottom)
 			pos = 0;
 
 			for (var i = 0; i < _leftCount - 1; i++) {
-				if (pos > ScaleWidth) pos = ScaleWidth;
+				if (pos > ScaleWidth) {
+					pos = ScaleWidth;
+				}
+
 				output[idx] = new Rectangle(lLeft, (int) pos, (int) _borderWidth, (int) heightLeft);
 				pos += heightLeft;
 				idx++;
@@ -440,13 +452,19 @@ namespace Glimmr.Models.ColorSource.Video {
 					idx++;
 				}
 			}
-			
+
 			// Calc bottom regions (L-R)
 			pos = 0;
 
 			for (var i = 0; i < _bottomCount - 1; i++) {
-				if (idx >= _ledCount) continue;
-				if (pos > ScaleHeight) pos = ScaleHeight;
+				if (idx >= _ledCount) {
+					continue;
+				}
+
+				if (pos > ScaleHeight) {
+					pos = ScaleHeight;
+				}
+
 				output[idx] = new Rectangle((int) pos, (int) bTop, (int) widthBottom, (int) _borderHeight);
 				pos += widthBottom;
 				idx++;
@@ -462,8 +480,8 @@ namespace Glimmr.Models.ColorSource.Video {
 			} else {
 				Log.Information($"Created {output.Length} led regions!");
 			}
-			
-			
+
+
 			return output;
 		}
 
@@ -478,7 +496,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			if (_vSectors == 0) {
 				_vSectors = 6;
 			}
-			
+
 			// This is where we're saving our output
 			var fs = new Rectangle[_sectorCount];
 			// Calculate heights, minus offset for boxing
@@ -496,6 +514,7 @@ namespace Glimmr.Models.ColorSource.Video {
 					idx++;
 					left -= sectorWidth;
 				}
+
 				top -= sectorHeight;
 			}
 
@@ -506,6 +525,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			if (_useCenter) {
 				return DrawCenterSectors();
 			}
+
 			// How many sectors does each region have?
 			var hOffset = _hCropPixels;
 			var vOffset = _vCropPixels;
@@ -587,13 +607,12 @@ namespace Glimmr.Models.ColorSource.Video {
 			if (_vSectors == 0) {
 				_vSectors = 6;
 			}
-			
+
 			_sectorChanged = true;
 			_fullCoords = new Rectangle[_ledCount];
 			_fullSectors = new Rectangle[_sectorCount];
 			_fullCoords = DrawGrid();
 			_fullSectors = DrawSectors();
-			
 		}
 	}
 }
