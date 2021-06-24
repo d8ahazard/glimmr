@@ -12,6 +12,8 @@
 **/*.dbmdl
 **/*.jfm
 **/azds.yaml
+**/GlimmrTray
+**/OpenRgbTest
 **/bin
 **/charts
 **/docker-compose*

@@ -3,24 +3,69 @@
 ## Installation
 
 ### Windows
-Create a directory where you want Glimmr to reside.
-
-Download this script, save it into the directory you created, and run it.
-https://raw.githubusercontent.com/d8ahazard/glimmr/master/setup_win.bat
+Open a Powershell window, execute the following command:
+```
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_win.ps1'))
+```
 
 
 ### Raspberry Pi
 Execute the following command:
 ```
-bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/master/setup_pi.sh)
+bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_pi.sh)
 ```
-You may want to reboot your computer after exectution if it's a first-time install...
+
+*Alternatively*, you can flash a custom image directly to your pi from here:
+
+https://mega.nz/folder/brR31IKS#B7EI5KTr24ZwXdpdeG6pTw 
+
+You will need to use "BalenaEtcher", a free software for flashing the image.
+
+https://www.balena.io/etcher/
+
+Once Balena is installed and loaded, select the image file you downloaded from above, and make sure your 
+micro SD card is connected to your computer. Select the SD card, and click "Flash" to begin.
+
+Once the image is flashed, there are two more things you want to do.
+
+The computer should have recognized the boot partition of the SD card and loaded it, most likely as 
+drive D:. Find and open this folder.
+
+Once opened, create two files.
+
+The first is just an empty text file called "ssh". This is not required, but when created, will
+enable you to remotely connect to your pi via Putty or other SSH client. If you don't know what this
+means or have no use for it, skip this.
+
+Secondly, create a file called "wpa_supplicant.conf". This is the configuration for your wireless network, 
+and is probably something you'll want to do.
+
+Open this file in notepad++ or another text editor, and paste the below text:
+
+```
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+update_config=1
+country=<Insert 2 letter ISO 3166-1 country code here>
+
+network={
+ ssid="<Name of your wireless LAN>"
+ psk="<Password for your wireless LAN>"
+}
+```
+
+Once pasted, edit the file accordingly. Replace <Inset 2 letter ISO...> with US, UK, whatever your country code is.
+
+Replace <Name of your wireless LAN> with your network name, keeping the quotes.
+Replace <Password for your wireless LAN> with your network password, again, keeping the quotes.
+
+Save the file, and you're ready to go! Insert the SD card in your pi, power it on, and enjoy!
 
 
 ### Linux
 Execute the following command:
 ```
-bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/master/setup_linux.sh)
+sudo su
+bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_linux.sh)
 ```
 You may want to reboot your computer after exectution if it's a first-time install...
 
@@ -39,7 +84,8 @@ docker create \
   -p 8888:8888/udp \ 
   -p 56700:56700/udp \ 
   -p 60222:60222/udp \ 
-  -p 5699:5699 \
+  -p 80:5699 \
+  -p 443:5670 \
   --network="bridge" \
   --restart unless-stopped \
   digitalhigh/glimmr
@@ -94,14 +140,14 @@ Container images are configured using parameters passed at runtime (such as thos
 &nbsp;
 ## Application Usage
 
-Once installed, access the Web UI at `<your-ip>:5699`.
+Once installed, access the Web UI at `<your-ip>`.
 
 ### Discover Devices
 Discovery should be auto-triggered when you open the web UI. If devices are missing, you can open the side menu and then click the + icon to trigger a rescan. Discovered devices will automatically be added to the side menu.
 
 ### Configure Glimmr Settings
 Open the side menu, and click the gear icon to access settings.
-Optional capture modes are "DreamScreen (Default)", "Camera", "HDMI", and "Screen Capture".
+Optional capture modes are "Dreamscreen (Default)", "Camera", "HDMI", and "Screen Capture".
 
 Screen capture and HDMI are either WIP or not implemented.
 
@@ -134,7 +180,7 @@ Click the "Save settings" button to submit your configuration.
 
 ## PROFIT
 
-From here, you can use the app normally to control your devices. Open up the DreamScreen mobile app, add new devices if your Glimmr device is not deteced, and then place it in a group with a DS device (If using DS sync mode).
+From here, you can use the app normally to control your devices. Open up the Dreamscreen mobile app, add new devices if your Glimmr device is not deteced, and then place it in a group with a DS device (If using DS sync mode).
 
 To stop synchronization, select the device in the DS app or Glimmr Web UI and set the mode to "Off".
 

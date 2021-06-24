@@ -1,0 +1,15 @@
+﻿{
+  "Colors": [
+    "#107200",
+    "#0cac00",
+    "#3fbc09",
+    "#9da201",
+    "#4c1200"
+  ],
+  "AnimationTime": 7,
+  "EasingTime": 4,
+  "Mode": 2,
+  "Easing": 0,
+  "Name": "Forest",
+  "Id": 8
+}

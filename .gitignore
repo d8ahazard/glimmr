@@ -1,12 +1,18 @@
 .idea/*
 .vs/*
-bin/*
-obj/*
+*/bin/*
+*/obj/*
+./bin/*
+CorsairTest/bin/*
+CorsairTest/obj/*
+src/bin/*
+src/obj/*
+packages/*
 huedream.ini
-*.sln
 huedream.json
 huedream.json.bk
 store.json*
+store.db*
 CodeGraphData/*
 log/*
 backup/*
@@ -16,3 +22,5 @@ wwwroot/img/_preview_input.jpg
 wwwroot/img/_preview_output.jpg
 copyPi.bat
 publish_pi.bat
+store-log.db
+script/publish_pi2.bat

@@ -1,0 +1,13 @@
+﻿# Default ignored files
+/shelf/
+/workspace.xml
+# Rider ignored files
+/projectSettingsUpdater.xml
+/modules.xml
+/contentModel.xml
+/.idea.GlimmrTray.iml
+# Datasource local storage ignored files
+/../../../../../../../:\Dev\Glimmr\GlimmrTray\.idea\.idea.GlimmrTray.dir\.idea/dataSources/
+/dataSources.local.xml
+# Editor-based HTTP Client requests
+/httpRequests/
