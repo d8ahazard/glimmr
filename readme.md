@@ -237,6 +237,18 @@ For docker...just recreate the container. :)
 Ambient Scenes and music mode *are* now implemented. I still have some work to do with Mic detection, but the functionality exists.
 Not all settings for DS devices in the Web UI are implemented...but the video and advanced settings should now be working properly.
 
+Logs are stored to the following location(s):
+Windows - %appdata%\Glimmr\log
+Linux - /var/log/Glimmr/
+
+Glimmr storage DB and scenes are stored in the following location(s):
+Windows - %appdata%\Glimmr\
+Linux - /etc/Glimmr
+
+The application is installed to the following location(s):
+Windows - C:\program files\Glimmr\bin
+Linux - /home/glimmrtv/glimmr/bin
+
 ## THANKS!
 Mad props to Greg F. for all the support, and Dr. Ackula for all the help and testing.
 
