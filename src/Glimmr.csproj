@@ -68,5 +68,10 @@
   <ItemGroup>
     <Content Remove="Models\ColorTarget\DreamScreen\Encoders\**" />
   </ItemGroup>
+
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="wwwroot\lib\croppr\croppr.min.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\lib\croppr\croppr.min.js" />
+  </ItemGroup>
   
 </Project>
