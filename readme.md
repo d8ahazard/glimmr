@@ -6,8 +6,13 @@
 Open a Powershell window, execute the following command:
 ```
 iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_win.ps1'))
-```
 
+```
+Once the script is done running, you should now have a "GlimmrTray" application in your start menu.
+
+Click this to launch Glimmr, minimize the console window to have it stored in the tray.
+
+Note: Glimmr/GlimmrTray *MUST* be run as administrator in order for screen capture to work.
 
 ### Raspberry Pi
 Execute the following command:
@@ -26,39 +31,19 @@ https://www.balena.io/etcher/
 Once Balena is installed and loaded, select the image file you downloaded from above, and make sure your 
 micro SD card is connected to your computer. Select the SD card, and click "Flash" to begin.
 
-Once the image is flashed, there are two more things you want to do.
+Once flashing is done - simply insert the SD card into your pi and boot it up.
 
-The computer should have recognized the boot partition of the SD card and loaded it, most likely as 
-drive D:. Find and open this folder.
+If using the custom RasPi image, it is configured to use the Comitup service to create an access point which
+you can connect to to configure your Glimmr's wifi settings. Once the pi is booted, use a phone or laptop and 
+connect to the access point "Comitup-XXX" or "Glimmr-XXX" (WIP). Once connected, you should be prompted to select
+a local wifi network and enter a password. Make a note of the name of the access point.
 
-Once opened, create two files.
+Once wifi is configured, reconnect to your home wifi, and enter http://glimmr-xxx into a browser, where the -xxx is
+the same as the access point.
 
-The first is just an empty text file called "ssh". This is not required, but when created, will
-enable you to remotely connect to your pi via Putty or other SSH client. If you don't know what this
-means or have no use for it, skip this.
+Note: Glimmr is installed as a service, and can be stopped/started by running "sudo service glimmr start"
+or "sudo service glimmr stop" respectively.
 
-Secondly, create a file called "wpa_supplicant.conf". This is the configuration for your wireless network, 
-and is probably something you'll want to do.
-
-Open this file in notepad++ or another text editor, and paste the below text:
-
-```
-ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-update_config=1
-country=<Insert 2 letter ISO 3166-1 country code here>
-
-network={
- ssid="<Name of your wireless LAN>"
- psk="<Password for your wireless LAN>"
-}
-```
-
-Once pasted, edit the file accordingly. Replace <Inset 2 letter ISO...> with US, UK, whatever your country code is.
-
-Replace <Name of your wireless LAN> with your network name, keeping the quotes.
-Replace <Password for your wireless LAN> with your network password, again, keeping the quotes.
-
-Save the file, and you're ready to go! Insert the SD card in your pi, power it on, and enjoy!
 
 
 ### Linux
@@ -68,6 +53,9 @@ sudo su
 bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_linux.sh)
 ```
 You may want to reboot your computer after exectution if it's a first-time install...
+
+Note: Glimmr is installed as a service, and can be stopped/started by running "sudo service glimmr start"
+or "sudo service glimmr stop" respectively.
 
 
 ### docker
@@ -117,7 +105,7 @@ services:
   	- 5699:5699
 ```
 
-## Parameters
+#### Parameters
 
 Container images are configured using parameters passed at runtime (such as those above). These parameters are separated by a colon and indicate `<external>:<internal>` respectively. For example, `-p 8080:80` would expose port `80` from inside the container to be accessible from the host's IP on port `8080` outside the container.
 
@@ -140,32 +128,57 @@ Container images are configured using parameters passed at runtime (such as thos
 &nbsp;
 ## Application Usage
 
-Once installed, access the Web UI at `<your-ip>`.
+Once installed, access the Web UI at `<your-ip>` from a web browser.
+
+Alternatively, you can use the [Glimmr Mobile app](https://github.com/d8ahazard/GlimmrMobile/releases/tag/1.0) (Android, UWP).
 
 ### Discover Devices
-Discovery should be auto-triggered when you open the web UI. If devices are missing, you can open the side menu and then click the + icon to trigger a rescan. Discovered devices will automatically be added to the side menu.
+Discovery should be auto-triggered when the application runs for the first time.
+
+If devices are missing or you want to re-scan, the refresh button is in the lower-right corner
+of the web UI.
 
 ### Configure Glimmr Settings
-Open the side menu, and click the gear icon to access settings.
-Optional capture modes are "Dreamscreen (Default)", "Camera", "HDMI", and "Screen Capture".
+To configure system, capture, and audio preferences, click the gear icon in the top-right corner
+of the screen. 
 
-Screen capture and HDMI are either WIP or not implemented.
+### Configure Adalight Devices
+NOTE: It is *highly* recommended to use my [custom Adalight Sketch](https://github.com/d8ahazard/adalight-FastLED-Plus), as it provides
+additional features and controls that help better integrate with Glimmr, including auto-detection
+of brightness and LED count, adjusting brightness during runtime, and gamma correction.
 
-If using the default Dreamscreen mode and you have more than one DS device, you can select the "target" dreamscreen to use color data from here. LED counts here should not be edited, as they are auto-populated. I should really just make sure that's disabled if this is selected.
+If you're not using my sketch, you will need to specify your strip's LED count. 
 
-If using a camera, it is assumed that you are using a raspberry Pi to power your LED strips. You will need to manually input the proper number of vertical and horizontal LED's in order for everything to work correctly. You can also select the camera type to use - either Raspberry Pi camera or Webcam. I need to implement auto enumeration of USB devices for easier camera selection, for now, it just assumes input cam device 1 is the target.
+You can also specify an offset (number of pixels to skip before displaying LED colors), baud rate, 
+and whether or not to reverse the order of the colors sent to your device.
 
 ### Configure your Lifx Bulbs
 Select your discovered bulb in the Web UI. Click the desired sector to map your bulb to that sector. Repeat for all bulbs.
 
+### Configure your Lifx Beams
+Select your discovered beam in the Web UI. A layout will be auto-generated based on the number of "pixels" your beam has.
+
+However, Beams cannot specify the order segments are in (where corners are located), so you will need to manually
+order these in the Web UI. Drag-and-drop to re-order. Numbers are arbitrary, and only there to help understand
+what you're looking at.
+
+For beams, the internal LEDs are spaced so that 1 beam pixel occurs roughly ever 2 pixels in a 60 LED/M strip.
+
+Each segment has several options:
+Offset: Where to start from around the frame.
+Repeat: Should the color at the offset pixel be repeated for the entire segment.
+Mirror: Reverse the direction of colors sent to the segment.
+
+
 ### Configure Your Nanoleaf Panels
 Select your Nano device in the web UI. Click the "Click here to link..." button. Press and hold the power button on your nanoleaf panel until the Web UI shows "linked".
 
-Once linked, your panel layout will be shown in the Web UI. Drag it around to set the position in relation to the screen, and your lights will be auto-mapped to the proper sectors.
+Once linked, your panel layout will be shown in the Web UI (I suck, so you may need to reload the page for now). Drag it around to set the position in relation to the screen, and your lights will be auto-mapped to the proper sectors.
 
+Click each panel in the UI to open the sector selection UI. Click a sector to map that panel to it.
 
 ### Configure Your Hue Bridge
-Select your Hue Bridge in the web UI. Click the "Click here to link..." button. Within 30 seconds, press the link button on your Hue Bridge. The Web UI should update to show that the bridge has been linked.
+Select your Hue Bridge in the web UI. Click the "Click here to link..." button. Within 30 seconds, press the link button on your Hue Bridge. The Web UI should update to show that the bridge has been linked - if not, reload the page.
 
 #### Create A Hue Entertainment Group!! (NEW)
 Go into your hue app. In the side menu, select "Entertainment areas".
@@ -175,6 +188,34 @@ Create a new entertainment area and configure it with your lights as they are in
 #### Configure Hue Light Mappings
 Back in the glimmr web UI, reload the page, then select your hue bridge, and select the newly created entertainment group from the drop-down.
 For each light you wish to map, select the sector in the dropdown that corresponds to the sector you wish to map to.
+
+If no entertainment groups are showing and you're linked already, use the refresh button to re-scan entertainment 
+groups and light settings.
+
+#### Configure WLED
+NOTE: There is a "bug" with the WLED software that causes discovery to fail under some
+circumstances. If Glimmr does not find your WLED devices, reboot them, and then under
+WLED settings -> "Security and Updates", scroll down and UNCHECK "Enable ArduinoOTA".
+This will fix discovery for your WLED devices.
+
+
+WLED devices have several different options and display modes.
+
+"Normal" mode matches up the WLED strip to the perimeter of the screen using the LED counts
+specified in the Glimmr capture settings. You can specify an offset, which will skip that many
+LEDs from the "total" around the screen. You can also specify to reverse the direction of the colors
+if the strip is positioned opposite of the screen.
+
+"Loop (Play Bar)" mode is similar to "Normal", but assumes that the LEDs are in some sort of U-shape,
+where there are two pixels for a strip that correspond to a segment of the screen.
+
+"Sectored" currently does nothing, as I haven't implemented it yet.
+
+"Single Color" assumes that you have a small number of LEDs in a close area, and you want all of 
+those LEDs to display the same color. The color being displayed will be whatever the strip's offset
+is set to.
+
+
 
 Click the "Save settings" button to submit your configuration.
 
@@ -188,14 +229,18 @@ To start synchronization, select the GROUP in the DS app, (or device in Glimmr W
 
 
 ## UPDATING
-For windows/linux/raspi, just re-run the setup script you executed to install Glimmr, and it will automatically download the latest source from github, stop services, compile the code from source, copy into place, and restart services. 
-
+Click the update button under settings-> general.
 For docker...just recreate the container. :)
 
 ## NOTES
 
 Ambient Scenes and music mode *are* now implemented. I still have some work to do with Mic detection, but the functionality exists.
 Not all settings for DS devices in the Web UI are implemented...but the video and advanced settings should now be working properly.
+
+## THANKS!
+Mad props to Greg F. for all the support, and Dr. Ackula for all the help and testing.
+
+Much love to all of my other supporters/fans/stalkers.
 
 ## Buy me a beer
 
