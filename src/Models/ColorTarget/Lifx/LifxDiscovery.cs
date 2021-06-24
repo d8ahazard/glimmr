@@ -37,14 +37,14 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		}
 
 		private async void Client_DeviceDiscovered(object sender, LifxClient.DeviceDiscoveryEventArgs e) {
-			var bulb = e.Device as LightBulb;
+			var bulb = e.Device;
 			if (bulb == null) return;
 			//Log.Debug("Device found: " + JsonConvert.SerializeObject(bulb));
 			var ld = await GetBulbInfo(bulb);
 			if (ld != null) await _controlService.AddDevice(ld);
 		}
 
-		private async Task<LifxData?> GetBulbInfo(LightBulb b) {
+		private async Task<LifxData?> GetBulbInfo(Device b) {
 			if (_client == null) return null;
 			var state = await _client.GetLightStateAsync(b);
 			var ver = await _client.GetDeviceVersionAsync(b);

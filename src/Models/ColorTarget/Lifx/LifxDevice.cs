@@ -17,7 +17,7 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.Lifx {
 	public class LifxDevice : ColorTarget, IColorTarget {
 		private LifxData _data;
-		private LightBulb B { get; }
+		private Device B { get; }
 
 		private readonly LifxClient? _client;
 		private BeamLayout? _beamLayout;
@@ -53,7 +53,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			_client = colorService.ControlService.GetAgent("LifxAgent");
 			colorService.ColorSendEvent += SetColor;
 			colorService.ControlService.RefreshSystemEvent += LoadData;
-			B = new LightBulb(d.HostName, d.MacAddress, d.Service, (uint) d.Port);
+			B = new Device(d.HostName, d.MacAddress, d.Service, (uint) d.Port);
 			LoadData();
 		}
 
@@ -97,7 +97,11 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			}
 
 			Log.Information($"{_data.Tag}::Stopping stream.: {_data.Id}...");
-			await _client.SetLightPowerAsync(B, false).ConfigureAwait(false);
+			var col = new LifxColor(0, 0, 0);
+			
+			//var col = new LifxColor {R = 0, B = 0, G = 0};
+			_client.SetLightPowerAsync(B, false).ConfigureAwait(false);
+			await _client.SetColorAsync(B, col, 2700).ConfigureAwait(false);
 			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 

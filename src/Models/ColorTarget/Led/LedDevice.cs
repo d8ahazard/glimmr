@@ -165,14 +165,11 @@ namespace Glimmr.Models.ColorTarget.Led {
 				return;
 			}
 
-			Log.Debug("Setting...");
 			for (var i = 0; i < _ledCount; i++) {
 				_controller?.SetLED(i, Color.FromArgb(0, 0, 0, 0));
 			}
 
-			Log.Debug("Rendering...");
 			_agent?.Update(_controllerId);
-			Log.Debug("Rendered...");
 			await Task.FromResult(true);
 		}
 

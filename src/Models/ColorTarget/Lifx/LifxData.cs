@@ -65,7 +65,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		public string Id { get; set; } = "";
 		public string Tag { get; set; }
 		public string IpAddress { get; set; } = "";
-		public int Brightness { get; set; } = 255;
+		public int Brightness { get; set; }
 		public bool Enable { get; set; }
 
 
@@ -76,9 +76,10 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			BeamLayout = new BeamLayout();
 			DeviceTag = "Lifx Bulb";
 			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
+			Brightness = 255;
 		}
 
-		public LifxData(LightBulb b) {
+		public LifxData(Device b) {
 			Tag = "Lifx";
 			Name ??= Tag;
 			HostName = b.HostName;
@@ -100,6 +101,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			BeamLayout = new BeamLayout();
 			Layout = new TileLayout();
 			DeviceTag = "Lifx Bulb";
+			Brightness = 255;
 			Name = "Lifx - " + Id.Substring(Id.Length - 5, 5);
 			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 			Kps();

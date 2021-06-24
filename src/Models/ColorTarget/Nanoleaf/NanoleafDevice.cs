@@ -77,8 +77,8 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				_frameWatch.Restart();
 			}
 
-			await _nanoleafClient.TurnOnAsync();
-			await _nanoleafClient.SetBrightnessAsync((int) (Brightness / 100f * 255)).ConfigureAwait(false);
+			//await _nanoleafClient.TurnOnAsync();
+			//await _nanoleafClient.SetBrightnessAsync((int) (Brightness / 100f * 255));
 			await _nanoleafClient.StartExternalAsync();
 			Log.Information($"{_data.Tag}::Stream started: {_data.Id}.");
 		}

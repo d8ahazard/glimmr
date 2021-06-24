@@ -218,7 +218,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			var url = "http://" + IpAddress + "/win";
 			url += "&T=" + (on ? "1" : "0");
 			url += "&A=" + (int) scaledBright;
-			Log.Debug("Light state Url: " + url);
 			await _httpClient.GetAsync(url).ConfigureAwait(false);
 		}
 
