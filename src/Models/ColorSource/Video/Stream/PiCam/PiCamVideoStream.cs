@@ -21,52 +21,28 @@ using Serilog;
 namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
 	public sealed class PiCamVideoStream : IVideoStream, IDisposable {
 		private readonly MMALCamera _cam;
-		private readonly int _camMode = 1;
-		private readonly int _capHeight = DisplayUtil.CaptureHeight;
-		private readonly int _capWidth = DisplayUtil.CaptureWidth;
+		private const int CapHeight = DisplayUtil.CaptureHeight;
+		private const int CapWidth = DisplayUtil.CaptureWidth;
+		public Mat Frame { get; set; }
+
 
 		public PiCamVideoStream() {
 			_cam = MMALCamera.Instance;
+			Frame = new Mat();
 		}
 
 		public Task SaveFrame() {
 			return Task.CompletedTask;
 		}
 
-		public Mat Frame { get; set; }
-
+		
 		public async Task Start(CancellationToken ct) {
 			Log.Debug("Starting Camera...");
 			MMALCameraConfig.VideoStabilisation = false;
 
-			var sensorMode = MMALSensorMode.Mode0;
-			switch (_camMode) {
-				case 1:
-					sensorMode = MMALSensorMode.Mode1;
-					break;
-				case 2:
-					sensorMode = MMALSensorMode.Mode2;
-					break;
-				case 3:
-					sensorMode = MMALSensorMode.Mode3;
-					break;
-				case 4:
-					sensorMode = MMALSensorMode.Mode4;
-					break;
-				case 5:
-					sensorMode = MMALSensorMode.Mode5;
-					break;
-				case 6:
-					sensorMode = MMALSensorMode.Mode6;
-					break;
-				case 7:
-					sensorMode = MMALSensorMode.Mode7;
-					break;
-			}
-
-			MMALCameraConfig.SensorMode = sensorMode;
+			MMALCameraConfig.SensorMode = MMALSensorMode.Mode1;
 			MMALCameraConfig.ExposureMode = MMAL_PARAM_EXPOSUREMODE_T.MMAL_PARAM_EXPOSUREMODE_BACKLIGHT;
-			MMALCameraConfig.VideoResolution = new Resolution(_capWidth, _capHeight);
+			MMALCameraConfig.VideoResolution = new Resolution(CapWidth, CapHeight);
 			MMALCameraConfig.VideoFramerate = new MMAL_RATIONAL_T(60, 1);
 
 			using var vidCaptureHandler = new EmguInMemoryCaptureHandler();
@@ -79,12 +55,12 @@ namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
 
 			// We are instructing the splitter to do a format conversion to BGR24.
 			var splitterPortConfig =
-				new MMALPortConfig(MMALEncoding.BGR24, MMALEncoding.BGR24, _capWidth, _capHeight, null);
+				new MMALPortConfig(MMALEncoding.BGR24, MMALEncoding.BGR24, CapWidth, CapHeight, null);
 
 			// By default in MMALSharp, the Video port outputs using proprietary communication (Opaque) with a YUV420 pixel format.
 			// Changes to this are done via MMALCameraConfig.VideoEncoding and MMALCameraConfig.VideoSub format.                
 			splitter.ConfigureInputPort(
-				new MMALPortConfig(MMALEncoding.OPAQUE, MMALEncoding.I420, _capWidth, _capHeight, null),
+				new MMALPortConfig(MMALEncoding.OPAQUE, MMALEncoding.I420, CapWidth, CapHeight, null),
 				_cam.Camera.VideoPort, null);
 
 			// We then use the splitter config object we constructed earlier. We then tell this output port to use our capture handler to record data.
@@ -95,7 +71,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
 
 			// Camera warm up time
 			Log.Debug("Camera is warming up...");
-			await Task.Delay(2000).ConfigureAwait(false);
+			await Task.Delay(2000,ct);
 			Log.Debug("Camera initialized.");
 			await _cam.ProcessAsync(_cam.Camera.VideoPort, ct).ConfigureAwait(false);
 			Log.Debug("Camera closed.");
@@ -111,7 +87,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
 		}
 
 		private void OnEmguEventCallback(object sender, EmguEventArgs args) {
-			var input = new Image<Bgr, byte>(_capWidth, _capHeight);
+			var input = new Image<Bgr, byte>(CapWidth, CapHeight);
 			input.Bytes = args.ImageData;
 			Frame = input.Mat;
 			input.Dispose();

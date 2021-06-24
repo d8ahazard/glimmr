@@ -18,41 +18,39 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Glimmr {
 	public class GlimmrDevice : ColorTarget, IColorTarget, IDisposable {
-		public GlimmrData Data { get; set; }
-		private static readonly int port = 8889;
+		private GlimmrData _data;
+		private const int Port = 8889;
 		private readonly HttpClient _httpClient;
 		private readonly UdpClient _udpClient;
 		private readonly List<Color> _updateColors;
 		private bool _disposed;
-		private IPEndPoint _ep;
-		private int _len;
-		private int _offset;
-
-		public GlimmrDevice(GlimmrData wd, ColorService colorService) : base(colorService) {
-			ColorService.ColorSendEvent += SetColor;
-			_udpClient = ColorService.ControlService.UdpClient;
-			_httpClient = ColorService.ControlService.HttpSender;
-			_updateColors = new List<Color>();
-			Data = wd ?? throw new ArgumentException("Invalid Glimmr data.");
-			Id = Data.Id;
-			Enable = Data.Enable;
-			IpAddress = Data.IpAddress;
-			_len = Data.LedCount;
-		}
-
+		private IPEndPoint? _ep;
 		public bool Enable { get; set; }
 		public bool Streaming { get; set; }
 		public bool Testing { get; set; }
 		public int Brightness { get; set; }
 		public string Id { get; set; }
 		public string IpAddress { get; set; }
-		public string Tag { get; set; }
+		public string Tag { get; set; } = "Glimmr";
 
 
 		IColorTargetData IColorTarget.Data {
-			get => Data;
-			set => Data = (GlimmrData) value;
+			get => _data;
+			set => _data = (GlimmrData) value;
 		}
+
+		public GlimmrDevice(GlimmrData wd, ColorService colorService) : base(colorService) {
+			colorService.ColorSendEvent += SetColor;
+			_udpClient = colorService.ControlService.UdpClient;
+			_httpClient = colorService.ControlService.HttpSender;
+			_updateColors = new List<Color>();
+			_data = wd ?? throw new ArgumentException("Invalid Glimmr data.");
+			Id = _data.Id;
+			Enable = _data.Enable;
+			IpAddress = _data.IpAddress;
+		}
+
+		
 
 
 		public async Task StartStream(CancellationToken ct) {
@@ -60,23 +58,23 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 				return;
 			}
 
-			Log.Information($"{Data.Tag}::Starting stream: {Data.Id}...");
+			Log.Information($"{_data.Tag}::Starting stream: {_data.Id}...");
 			var sd = DataUtil.GetSystemData();
 			var glimmrData = new GlimmrData(sd);
 			await SendPost("startStream", JsonConvert.SerializeObject(glimmrData)).ConfigureAwait(false);
-			_ep = IpUtil.Parse(IpAddress, port);
+			_ep = IpUtil.Parse(IpAddress, Port);
 			Streaming = true;
-			Log.Information($"{Data.Tag}::Stream started: {Data.Id}.");
+			Log.Information($"{_data.Tag}::Stream started: {_data.Id}.");
 		}
 
 
 		public async Task FlashColor(Color color) {
 			var packet = new List<byte>();
-			// Set mode to DRGB, dude.
-			var timeByte = 255;
+			// Set mode to D-RGB, dude.
+			const int timeByte = 255;
 			packet.Add(ByteUtils.IntByte(2));
 			packet.Add(ByteUtils.IntByte(timeByte));
-			for (var i = 0; i < Data.LedCount; i++) {
+			for (var i = 0; i < _data.LedCount; i++) {
 				packet.Add(color.R);
 				packet.Add(color.G);
 				packet.Add(color.B);
@@ -100,7 +98,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			await FlashColor(Color.FromArgb(0, 0, 0));
 			Streaming = false;
 			await SendPost("mode", 0.ToString());
-			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
+			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
 
@@ -114,9 +112,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 				return;
 			}
 
-			var packet = new List<byte>();
-			packet.Add(ByteUtils.IntByte(2));
-			packet.Add(ByteUtils.IntByte(255));
+			var packet = new List<byte> {ByteUtils.IntByte(2), ByteUtils.IntByte(255)};
 			foreach (var color in leds) {
 				packet.Add(ByteUtils.IntByte(color.R));
 				packet.Add(ByteUtils.IntByte(color.G));
@@ -131,7 +127,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 
 			try {
 				_udpClient.SendAsync(packet.ToArray(), packet.Count, _ep).ConfigureAwait(false);
-				ColorService.Counter.Tick(Id);
+				ColorService?.Counter.Tick(Id);
 			} catch (Exception e) {
 				Log.Debug("Exception: " + e.Message);
 			}
@@ -139,12 +135,13 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 
 
 		public Task ReloadData() {
-			var id = Data.Id;
-			Data = DataUtil.GetDevice<GlimmrData>(id);
-			_len = Data.LedCount;
-			IpAddress = Data.IpAddress;
-			Enable = Data.Enable;
-			Log.Debug($"Reloaded LED Data for {id}: " + JsonConvert.SerializeObject(Data));
+			var id = _data.Id;
+			var dev = DataUtil.GetDevice<GlimmrData>(id);
+			if (dev == null) return Task.CompletedTask;
+			_data = dev;
+			IpAddress = _data.IpAddress;
+			Enable = _data.Enable;
+			Log.Debug($"Reloaded LED Data for {id}: " + JsonConvert.SerializeObject(_data));
 			return Task.CompletedTask;
 		}
 
@@ -156,23 +153,23 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 
 
 		public bool IsEnabled() {
-			return Data.Enable;
+			return _data.Enable;
 		}
 
 
 		public async Task UpdatePixel(int pixelIndex, Color color) {
 			if (_updateColors.Count == 0) {
-				for (var i = 0; i < Data.LedCount; i++) {
+				for (var i = 0; i < _data.LedCount; i++) {
 					_updateColors.Add(Color.FromArgb(0, 0, 0, 0));
 				}
 			}
 
-			if (pixelIndex >= Data.LedCount) {
+			if (pixelIndex >= _data.LedCount) {
 				return;
 			}
 
 			_updateColors[pixelIndex] = color;
-			SetColor(_updateColors, null, 0);
+			SetColor(_updateColors, _updateColors, 0);
 			await Task.FromResult(true);
 		}
 
@@ -181,7 +178,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			Uri uri;
 			if (string.IsNullOrEmpty(IpAddress) && !string.IsNullOrEmpty(Id)) {
 				IpAddress = Id;
-				Data.IpAddress = Id;
+				_data.IpAddress = Id;
 			}
 
 			try {
@@ -195,8 +192,8 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 
 			var stringContent = new StringContent(value, Encoding.UTF8, "application/json");
 			try {
-				var res = _httpClient.PostAsync(uri, stringContent).Result;
-				Log.Debug("Resposne: " + res.StatusCode);
+				var res = await _httpClient.PostAsync(uri, stringContent);
+				Log.Debug("Response: " + res.StatusCode);
 			} catch (Exception e) {
 				Log.Warning("HTTP Request Exception: " + e.Message);
 			}

@@ -19,7 +19,7 @@ using DeviceMode = Glimmr.Enums.DeviceMode;
 namespace Glimmr.Models.ColorSource.DreamScreen {
 	public class DreamScreenStream : BackgroundService, IColorSource {
 		private const int TargetGroup = 20;
-		private readonly DreamScreenClient _client;
+		private readonly DreamScreenClient? _client;
 		private readonly ColorService _cs;
 		private DreamDevice? _dDev;
 		private bool _enable;
@@ -28,14 +28,18 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 		public DreamScreenStream(ColorService colorService) {
 			_cs = colorService;
 			_cs.AddStream(DeviceMode.DreamScreen, this);
-			_client = _cs.ControlService.GetAgent("DreamAgent");
-			_client.CommandReceived += ProcessCommand;
-			_client.SubscriptionRequested += SubRequested;
+			var client = _cs.ControlService.GetAgent("DreamAgent");
+			if (client != null) {
+				_client = client;
+				_client.CommandReceived += ProcessCommand;
+				_client.SubscriptionRequested += SubRequested;
+			}
 			_cs.ControlService.RefreshSystemEvent += RefreshSd;
 			RefreshSd();
 		}
 
 		public void ToggleStream(bool enable) {
+			if (_client == null || _dDev == null || _targetDreamScreen == null) return;
 			_enable = enable;
 			if (_enable) {
 				Log.Debug("Starting DS stream, Target is " + _targetDreamScreen + " group is " + TargetGroup);
@@ -89,7 +93,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 			}
 
 			if (!string.IsNullOrEmpty(dsIp)) {
-				var dsData = (DreamScreenData) DataUtil.GetDevice<DreamScreenData>(dsIp);
+				var dsData = DataUtil.GetDevice<DreamScreenData>(dsIp);
 				if (dsData != null) {
 					_dDev = new DreamDevice {DeviceGroup = dsData.GroupNumber};
 					_dDev.Type = dsData.DeviceTag switch {
@@ -107,6 +111,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 
 		private void ProcessCommand(object? sender, DreamScreenClient.MessageEventArgs e) {
 			Log.Debug("Incoming command from DS: " + e.Response.Type);
+			if (_dDev == null) return;
 			if (e.Response.Group == TargetGroup || e.Response.Group == _dDev.DeviceGroup) {
 				switch (e.Response.Type) {
 					case MessageType.Mode:
@@ -131,6 +136,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 		}
 
 		protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
+			if (_client == null) return;
 			Log.Debug("Starting DS stream service...");
 			_client.ColorsReceived += UpdateColors;
 			while (!stoppingToken.IsCancellationRequested) {

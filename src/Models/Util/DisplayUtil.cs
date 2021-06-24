@@ -28,7 +28,7 @@ namespace Glimmr.Models.Util {
 			MirroringDriver = 0x8,
 
 			/// <summary>The device is VGA compatible.</summary>
-			VGACompatible = 0x16,
+			VgaCompatible = 0x16,
 
 			/// <summary>The device is removable; it cannot be the primary display.</summary>
 			Removable = 0x20,
@@ -50,8 +50,7 @@ namespace Glimmr.Models.Util {
 
 		public const int CaptureWidth = 640;
 
-		public const int ENUM_CURRENT_SETTINGS = -1;
-		private const int ENUM_REGISTRY_SETTINGS = -2;
+		private const int EnumCurrentSettings = -1;
 
 		[DllImport("user32.dll")]
 		public static extern bool EnumDisplaySettings(string deviceName, int modeNum, ref DEVMODE devMode);
@@ -72,9 +71,6 @@ namespace Glimmr.Models.Util {
 			return new Rectangle();
 		}
 
-		[DllImport("user32.dll")]
-		private static extern int GetSystemMetrics(SystemMetric metric);
-
 
 		private static Rectangle GetWindowsDisplaySize() {
 			var left = 0;
@@ -90,7 +86,7 @@ namespace Glimmr.Models.Util {
 				if (EnumDisplayDevices(null, devIdx, ref deviceData, 0) != 0) {
 					// Get the position and size of this particular display device
 					var devMode = new DEVMODE();
-					if (EnumDisplaySettings(deviceData.DeviceName, ENUM_CURRENT_SETTINGS, ref devMode)) {
+					if (EnumDisplaySettings(deviceData.DeviceName, EnumCurrentSettings, ref devMode)) {
 						Log.Debug("Enumerating monitor: " + deviceData.DeviceName);
 						// Update the virtual screen dimensions
 						left = Math.Min(left, devMode.dmPositionX);
@@ -158,7 +154,7 @@ namespace Glimmr.Models.Util {
 				if (EnumDisplayDevices(null, devIdx, ref deviceData, 0) != 0) {
 					// Get the position and size of this particular display device
 					var devMode = new DEVMODE();
-					if (EnumDisplaySettings(deviceData.DeviceName, ENUM_CURRENT_SETTINGS, ref devMode)) {
+					if (EnumDisplaySettings(deviceData.DeviceName, EnumCurrentSettings, ref devMode)) {
 						JsonConvert.SerializeObject(devMode);
 						monitors.Add(new MonitorInfo(deviceData, devMode));
 					}
@@ -177,65 +173,57 @@ namespace Glimmr.Models.Util {
 			[MarshalAs(UnmanagedType.U4)] public int cb;
 
 			[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-			public string DeviceName;
+			public readonly string DeviceName;
 
 			[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
-			public string DeviceString;
+			public readonly string DeviceString;
 
-			[MarshalAs(UnmanagedType.U4)] public DisplayDeviceStateFlags StateFlags;
-
-			[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
-			public string DeviceID;
+			[MarshalAs(UnmanagedType.U4)] public readonly DisplayDeviceStateFlags StateFlags;
 
 			[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
-			public string DeviceKey;
+			public readonly string DeviceID;
+
+			[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+			public readonly string DeviceKey;
 		}
 
 		[StructLayout(LayoutKind.Sequential)]
 		public struct DEVMODE {
-			private const int CCHDEVICENAME = 0x20;
-			private const int CCHFORMNAME = 0x20;
+			[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 0x20)]
+			public readonly string dmDeviceName;
+
+			public readonly short dmSpecVersion;
+			public readonly short dmDriverVersion;
+			public readonly short dmSize;
+			public readonly short dmDriverExtra;
+			public readonly int dmFields;
+			public readonly int dmPositionX;
+			public readonly int dmPositionY;
+			public readonly ScreenOrientation dmDisplayOrientation;
+			public readonly int dmDisplayFixedOutput;
+			public readonly short dmColor;
+			public readonly short dmDuplex;
+			public readonly short dmYResolution;
+			public readonly short dmTTOption;
+			public readonly short dmCollate;
 
 			[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 0x20)]
-			public string dmDeviceName;
+			public readonly string dmFormName;
 
-			public short dmSpecVersion;
-			public short dmDriverVersion;
-			public short dmSize;
-			public short dmDriverExtra;
-			public int dmFields;
-			public int dmPositionX;
-			public int dmPositionY;
-			public ScreenOrientation dmDisplayOrientation;
-			public int dmDisplayFixedOutput;
-			public short dmColor;
-			public short dmDuplex;
-			public short dmYResolution;
-			public short dmTTOption;
-			public short dmCollate;
-
-			[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 0x20)]
-			public string dmFormName;
-
-			public short dmLogPixels;
-			public int dmBitsPerPel;
-			public int dmPelsWidth;
-			public int dmPelsHeight;
-			public int dmDisplayFlags;
-			public int dmDisplayFrequency;
-			public int dmICMMethod;
-			public int dmICMIntent;
-			public int dmMediaType;
-			public int dmDitherType;
-			public int dmReserved1;
-			public int dmReserved2;
-			public int dmPanningWidth;
-			public int dmPanningHeight;
-		}
-
-		private enum SystemMetric {
-			VirtualScreenWidth = 78, // CXVIRTUALSCREEN 0x0000004E 
-			VirtualScreenHeight = 79 // CYVIRTUALSCREEN 0x0000004F
+			public readonly short dmLogPixels;
+			public readonly int dmBitsPerPel;
+			public readonly int dmPelsWidth;
+			public readonly int dmPelsHeight;
+			public readonly int dmDisplayFlags;
+			public readonly int dmDisplayFrequency;
+			public readonly int dmICMMethod;
+			public readonly int dmICMIntent;
+			public readonly int dmMediaType;
+			public readonly int dmDitherType;
+			public readonly int dmReserved1;
+			public readonly int dmReserved2;
+			public readonly int dmPanningWidth;
+			public readonly int dmPanningHeight;
 		}
 	}
 
@@ -263,19 +251,19 @@ namespace Glimmr.Models.Util {
 
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		[DefaultValue("")]
-		public string DeviceKey { get; set; }
+		public string? DeviceKey { get; set; }
 
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		[DefaultValue("")]
-		public string DeviceName { get; set; }
+		public string? DeviceName { get; set; }
 
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		[DefaultValue("")]
-		public string DeviceString { get; set; }
+		public string? DeviceString { get; set; }
 
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		[DefaultValue("")]
-		public string Id { get; set; }
+		public string? Id { get; set; }
 
 		public MonitorInfo() {
 		}

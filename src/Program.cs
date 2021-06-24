@@ -21,9 +21,9 @@ using Serilog.Sinks.SystemConsole.Themes;
 #endregion
 
 namespace Glimmr {
-	public class Program {
+	public static class Program {
 		public static void Main(string[] args) {
-			var outputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}]{Caller} {Message}{NewLine}{Exception}";
+			const string outputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}]{Caller} {Message}{NewLine}{Exception}";
 			var logPath = "/var/log/glimmr/glimmr.log";
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 				var userPath = SystemUtil.GetUserDir();
@@ -66,7 +66,7 @@ namespace Glimmr {
 			}
 
 			return Host.CreateDefaultBuilder(args)
-				.UseSerilog((hostingContext, loggerConfiguration) => loggerConfiguration
+				.UseSerilog((_, loggerConfiguration) => loggerConfiguration
 					.Enrich.WithCaller()
 					.MinimumLevel.Debug()
 					.Enrich.FromLogContext()
@@ -79,7 +79,7 @@ namespace Glimmr {
 					services.AddSingleton<ControlService>();
 					services.AddSingleton<ColorService>();
 					services.AddHostedService(serviceProvider =>
-						(ColorService) serviceProvider.GetService<ColorService>());
+						serviceProvider.GetService<ColorService>());
 					services.AddHostedService<AudioStream>();
 					services.AddHostedService<VideoStream>();
 					services.AddHostedService<AudioVideoStream>();

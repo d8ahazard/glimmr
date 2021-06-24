@@ -33,7 +33,6 @@ let loading = false;
 let baseUrl;
 let pickr;
 let bar;
-let croppr;
 let leftCount, rightCount, topCount, bottomCount, hSectors, vSectors;
 let useCenter;
 let refreshTimer;
@@ -149,16 +148,6 @@ document.addEventListener("DOMContentLoaded", function(){
         sendMessage("SystemData",sd);        
     });
 
-    croppr = new Croppr('#croppr', {
-        onCropEnd: function(data) {
-            if (!loading) {
-                let sd = getStoreProperty("SystemData");
-                sd["CaptureRegion"] = data.x.toString() + ", " + data.y.toString() + ", " + data.width.toString() + ", " + data.height.toString();
-                setStoreProperty("SystemData",sd);
-                sendMessage("SystemData", sd);
-            }
-        }
-    });
     setSocketListeners();
     loadSocket();
     setTimeout(function() {
@@ -346,10 +335,8 @@ function setSocketListeners() {
         if (!settingsShown) return;
         let inputElement = document.getElementById('inputPreview');
         let croppedElement = document.getElementById('outputPreview');
-        let screen = document.getElementById("croppr");
         inputElement.src = './img/_preview_input.jpg?rand=' + Math.random();
-        croppedElement.src = './img/_preview_output.jpg?rand=' + Math.random();
-        croppr.source = "./img/_preview_screen.jpg?rand=" + Math.random();
+        croppedElement.src = './img/_preview_output.jpg?rand=' + Math.random();        
     });
 
     websocket.on("auth", function (value1, value2) {
@@ -817,7 +804,6 @@ function updateDeviceSector(sector, target) {
     if (dev["Tag"] === "Nanoleaf") {
         let layout = dev["Layout"];        
         let positions = layout["PositionData"];      
-        
         for(let i=0; i < positions.length; i++) {
             if (positions[i]["PanelId"] === nanoTarget) {
                 positions[i]["TargetSector"] = sector;
@@ -1090,32 +1076,7 @@ function loadSettings() {
         console.log("Loading System Data: ", systemData);
         let lPreview = document.getElementById("sLedWrap");
         let sPreview = document.getElementById("sectorWrap");
-        let rect = systemData["CaptureRegion"].split(", ");
-        let sRect = systemData["MonitorRegion"].split(", ");
-        let crop = document.querySelector(".croppr-image");
-        let cw = 0;
-        let ch = 0;
-        if (isValid(crop)) {
-            cw = crop.width;
-            ch = crop.height;
-        }
-        let x = parseInt(rect[0]);
-        let y = parseInt(rect[1]);
-        let w = parseInt(rect[2]);
-        let h = parseInt(rect[3]);
-        let sw = parseInt(sRect[2]);
-        let sh = parseInt(sRect[3]);
-        let scale = cw / sw;
-        let hscale = ch /sh;
-        x = x * scale;
-        y = y * hscale;
-        w = w * scale;
-        h = h * hscale;
-        loading = true;
-        if (isValid(croppr) && isValid(crop) && capTab.classList.contains("active")) croppr.resizeTo(w, h)
-            .moveTo(x, y);
-        loading = false;
-        if (capTab.classList.contains("active")) setTimeout(function(){
+        setTimeout(function(){
             createLedMap(lPreview);
             createSectorMap(sPreview);
         },500);
@@ -1132,9 +1093,6 @@ function updateCaptureUi() {
     let mode = systemData["CaptureMode"].toString();
     let camMode = systemData["CamType"].toString();
     let usbIdx = systemData["UsbSelection"].toString();
-    let capSelect = document.getElementById("CapModeSelectRow");
-    let monRow = document.getElementById("MonitorSelectRow");
-    let regionRow = document.getElementById("RegionSelectRow");
     let usbRow = document.getElementById("UsbSelectRow");
     let usbSel = document.getElementById("UsbSelect");
     let target = document.getElementById("ScreenCapMode");
@@ -1173,38 +1131,6 @@ function updateCaptureUi() {
     } else {
         usbRow.classList.add("hide");
         usbRow.classList.remove("show");
-    }
-    
-    if (systemData["IsWindows"]) {
-        let capSelection = systemData["ScreenCapMode"];
-        
-        target.value = capSelection;
-        if (capSelection === 1) {
-            monRow.classList.add("show");
-            monRow.classList.remove("hide");
-            regionRow.classList.add("hide");
-            regionRow.classList.remove("show");
-        } else {
-            monRow.classList.add("hide");
-            monRow.classList.remove("show");
-            regionRow.classList.add("show");
-            regionRow.classList.remove("hide");
-        }
-        capSelect.classList.add("show");
-        capSelect.classList.remove("hide");
-    } else {
-        regionRow.classList.add("show");
-        regionRow.classList.remove("hide");
-        capSelect.classList.add("show");
-        capSelect.classList.remove("hide");
-    }
-    if (mode !== "3") {
-        monRow.classList.add("hide");
-        monRow.classList.remove("show");
-        regionRow.classList.add("hide");
-        regionRow.classList.remove("show");
-        capSelect.classList.add("hide");
-        capSelect.classList.remove("show");
     }
 }
 
@@ -1850,7 +1776,7 @@ function SettingElement(description, type, object, property, value, hint, minLim
 }
 
 function appendNanoSettings() {
-    if (isValid(deviceData["Token"])) {
+    if (isValid(deviceData["Token"]) && isValid(deviceData["Layout"]["PositionData"])) {
         drawLinkPane("nanoleaf", true);
         drawNanoShapes(deviceData);
     } else {
@@ -2834,6 +2760,7 @@ function drawNanoShapes(panel) {
     let mirrorX = panel['MirrorX'];
     let mirrorY = panel['MirrorY'];
     let layout = panel['Layout'];
+    if (!isValid(layout)) return;
     let sideLength = layout['SideLength'];
 
    

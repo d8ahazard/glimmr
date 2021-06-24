@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -10,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
-using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using Glimmr.Enums;
 using Glimmr.Models.ColorSource.Video.Stream;
@@ -31,7 +29,7 @@ namespace Glimmr.Models.ColorSource.Video {
 
 		public List<Color> Colors { get; private set; }
 		public List<Color> Sectors { get; private set; }
-		private Splitter StreamSplitter { get; set; }
+		private Splitter? StreamSplitter { get; }
 
 		// Scaling variables
 		private const int ScaleHeight = DisplayUtil.CaptureHeight;
@@ -39,7 +37,6 @@ namespace Glimmr.Models.ColorSource.Video {
 
 		// Is content detected?
 		private readonly ColorService _colorService;
-		private readonly ControlService _controlService;
 
 		// Loaded data
 		private int _camType;
@@ -51,37 +48,41 @@ namespace Glimmr.Models.ColorSource.Video {
 
 		private bool _enable;
 
-		private Stopwatch _frameWatch;
-		private VectorOfPointF _lockTarget;
+		private VectorOfPointF? _lockTarget;
 
 		// Debug options
 		private bool _noColumns;
 
 		// Timer and bool for saving sample frames
-		private Timer _saveTimer;
+		private readonly Timer _saveTimer;
 
 		private Size _scaleSize;
-		private bool _showEdged;
-		private bool _showWarped;
 		private int _srcArea;
 
 		private SystemData _systemData;
 
-		private List<VectorOfPoint> _targets;
+		private readonly List<VectorOfPoint> _targets;
 
 		// Video source and splitter
-		private IVideoStream _vc;
+		private IVideoStream? _vc;
 
 		// Source stuff
 		private PointF[] _vectors;
 
 
 		public VideoStream(ControlService controlService) {
-			_frameWatch = new Stopwatch();
+			Colors = new List<Color>();
+			Sectors = new List<Color>();
+			_vectors = Array.Empty<PointF>();
+			_systemData = DataUtil.GetSystemData();
 			_colorService = controlService.ColorService;
-			_controlService = controlService;
-			_controlService.RefreshSystemEvent += RefreshSystem;
+			ControlService controlService1 = controlService;
+			controlService1.RefreshSystemEvent += RefreshSystem;
 			_colorService.AddStream(DeviceMode.Video, this);
+			var autoEvent = new AutoResetEvent(false);
+			_saveTimer = new Timer(SaveFrame, autoEvent, 0, 10000);
+			_targets = new List<VectorOfPoint>();
+			StreamSplitter = new Splitter(controlService1);
 		}
 
 		public void ToggleStream(bool enable = false) {
@@ -107,6 +108,7 @@ namespace Glimmr.Models.ColorSource.Video {
 
 			_vc?.Stop();
 			var prevCapMode = _captureMode;
+			_captureMode = (CaptureMode) _systemData.CaptureMode;
 			if (prevCapMode != _captureMode) {
 				_vc = GetStream();
 				if (_vc == null) {
@@ -133,19 +135,14 @@ namespace Glimmr.Models.ColorSource.Video {
 
 		private void Initialize(CancellationToken ct) {
 			_cancellationToken = ct;
-			var autoEvent = new AutoResetEvent(false);
-			_saveTimer = new Timer(SaveFrame, autoEvent, 0, 10000);
-			_targets = new List<VectorOfPoint>();
 			SetCapVars();
 			_vc = GetStream();
 			if (_vc == null) {
 				Log.Information("We have no video source, returning.");
 				return;
 			}
-
 			_vc.Start(ct);
 			SendColors = true;
-			StreamSplitter = new Splitter(_controlService);
 		}
 
 
@@ -159,7 +156,7 @@ namespace Glimmr.Models.ColorSource.Video {
 						continue;
 					}
 
-					var frame = _vc.Frame;
+					var frame = _vc?.Frame;
 					if (frame == null) {
 						SourceActive = false;
 						//Log.Warning("Frame is null.");
@@ -185,8 +182,9 @@ namespace Glimmr.Models.ColorSource.Video {
 						continue;
 					}
 
-					StreamSplitter.Update(warped);
-					SourceActive = !StreamSplitter.NoImage;
+					StreamSplitter?.Update(warped);
+					if (StreamSplitter == null) return;
+					SourceActive =  !StreamSplitter.NoImage;
 					var c1 = StreamSplitter.GetColors();
 					Colors = c1;
 					var c2 = StreamSplitter.GetSectors();
@@ -207,7 +205,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			Colors = ColorUtil.EmptyList(_systemData.LedCount);
 			var sectorSize = _systemData.VSectors * 2 + _systemData.HSectors * 2 - 4;
 			Sectors = ColorUtil.EmptyList(sectorSize);
-			_captureMode = (CaptureMode) DataUtil.GetItem<int>("CaptureMode");
+			_captureMode = (CaptureMode) _systemData.CaptureMode;
 			_camType = DataUtil.GetItem<int>("CamType");
 			_srcArea = ScaleWidth * ScaleHeight;
 			_scaleSize = new Size(ScaleWidth, ScaleHeight);
@@ -231,13 +229,9 @@ namespace Glimmr.Models.ColorSource.Video {
 			_vectors = new PointF[] {
 				new Point(0, 0), new Point(ScaleWidth, 0), new Point(ScaleWidth, ScaleHeight), new Point(0, ScaleHeight)
 			};
-
-			// Debugging vars...
-			_showEdged = DataUtil.GetItem<bool>("ShowEdged") ?? false;
-			_showWarped = DataUtil.GetItem<bool>("ShowWarped") ?? false;
 		}
 
-		private IVideoStream GetStream() {
+		private IVideoStream? GetStream() {
 			switch (_captureMode) {
 				case CaptureMode.Camera:
 					switch (_camType) {
@@ -263,16 +257,19 @@ namespace Glimmr.Models.ColorSource.Video {
 			return null;
 		}
 
-		private void SaveFrame(object sender) {
-			if (!_doSave) {
-				_doSave = true;
-				_vc?.SaveFrame();
+		private void SaveFrame(object? sender) {
+			if (_doSave) {
+				return;
 			}
+
+			_doSave = true;
+			_vc?.SaveFrame();
 		}
 
 
-		private Mat ProcessFrame(Mat input) {
-			Mat output;
+		private Mat? ProcessFrame(Mat? input) {
+			if (input == null) return input;
+			Mat? output;
 			// If we need to crop our image...do it.
 			if (_captureMode == CaptureMode.Camera && _camType != 2) // Crop our camera frame if the input is a camera
 			{
@@ -289,17 +286,17 @@ namespace Glimmr.Models.ColorSource.Video {
 			}
 
 			_doSave = false;
-			StreamSplitter.DoSave = true;
+			if (StreamSplitter != null) StreamSplitter.DoSave = true;
 			var path = Directory.GetCurrentDirectory();
 			var fullPath = Path.Join(path, "wwwroot", "img", "_preview_input.jpg");
-			input?.Save(fullPath);
+			input.Save(fullPath);
 
 			return output;
 		}
 
 
-		private Mat CamFrame(Mat input) {
-			Mat output = null;
+		private Mat? CamFrame(Mat input) {
+			Mat? output = null;
 			var scaled = input.Clone();
 
 			// If we don't have a target, find one
@@ -319,10 +316,6 @@ namespace Glimmr.Models.ColorSource.Video {
 				var warpMat = CvInvoke.GetPerspectiveTransform(dPoints, _vectors);
 				output = new Mat();
 				CvInvoke.WarpPerspective(scaled, output, warpMat, _scaleSize);
-				if (_showWarped) {
-					CvInvoke.Imshow("Warped", warpMat);
-				}
-
 				warpMat.Dispose();
 			}
 
@@ -331,7 +324,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			return output;
 		}
 
-		private VectorOfPointF FindTarget(Mat input) {
+		private VectorOfPointF? FindTarget(Mat input) {
 			var cannyEdges = new Mat();
 			var uImage = new Mat();
 			var gray = new Mat();
@@ -372,12 +365,6 @@ namespace Glimmr.Models.ColorSource.Video {
 					var pointOut = new VectorOfPointF(SortPoints(approxContour));
 					_targets.Add(VPointFToVPoint(pointOut));
 				}
-
-				if (_showEdged) {
-					var color = new MCvScalar(255, 255, 0);
-					CvInvoke.DrawContours(input, contours, -1, color);
-					CvInvoke.Imshow("Edged", cannyEdges);
-				}
 			}
 
 			var output = CountTargets(_targets);
@@ -385,8 +372,8 @@ namespace Glimmr.Models.ColorSource.Video {
 			return output;
 		}
 
-		private VectorOfPointF CountTargets(IReadOnlyCollection<VectorOfPoint> inputT) {
-			VectorOfPointF output = null;
+		private VectorOfPointF? CountTargets(IReadOnlyCollection<VectorOfPoint> inputT) {
+			VectorOfPointF? output = null;
 			var x1 = 0;
 			var x2 = 0;
 			var x3 = 0;
@@ -456,10 +443,12 @@ namespace Glimmr.Models.ColorSource.Video {
 			var vvPoints = vPoints.Take(2);
 			vtPoints = vtPoints.OrderBy(p => p.X);
 			vvPoints = vvPoints.OrderByDescending(p => p.X);
-			var tl = vtPoints.ElementAt(0);
-			var tr = vtPoints.ElementAt(1);
-			var br = vvPoints.ElementAt(0);
-			var bl = vvPoints.ElementAt(1);
+			var pointFs = vtPoints as PointF[] ?? vtPoints.ToArray();
+			var tl = pointFs[0];
+			var tr = pointFs[1];
+			var enumerable = vvPoints as PointF[] ?? vvPoints.ToArray();
+			var br = enumerable[0];
+			var bl = enumerable[1];
 			PointF[] outPut = {tl, tr, br, bl};
 			return outPut;
 		}

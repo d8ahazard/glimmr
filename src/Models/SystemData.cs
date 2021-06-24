@@ -1,9 +1,7 @@
 ﻿#region
 
 using System.ComponentModel;
-using System.Drawing;
 using System.Runtime.InteropServices;
-using Glimmr.Models.Util;
 using Newtonsoft.Json;
 
 #endregion
@@ -13,9 +11,6 @@ namespace Glimmr.Models {
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public static bool IsWindows => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-
-		// Full screen region
-		[JsonProperty] public static Rectangle MonitorRegion => DisplayUtil.GetDisplaySize();
 
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -189,7 +184,7 @@ namespace Glimmr.Models {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int SaturationBoost { get; set; }
 
-		// Screen capture mode. 0="region", 1="monitor". 1 is only available for windows users.
+		// Screen capture mode. 0="region", 1="monitor".
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int ScreenCapMode { get; set; }
@@ -219,9 +214,6 @@ namespace Glimmr.Models {
 		[DefaultValue(6)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int VSectors { get; set; } = 6;
-
-		// Selected screen region
-		[JsonProperty] public Rectangle CaptureRegion { get; set; }
 
 		[JsonProperty] public string AmbientColor { get; set; } = "FFFFFF";
 
@@ -270,7 +262,6 @@ namespace Glimmr.Models {
 			CropDelay = 15;
 			DeviceMode = 0;
 			AutoUpdateTime = 2;
-			CaptureRegion = DisplayUtil.GetDisplaySize();
 			DefaultSet = true;
 		}
 	}

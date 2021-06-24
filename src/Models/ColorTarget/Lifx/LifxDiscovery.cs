@@ -11,15 +11,17 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Lifx {
 	public class LifxDiscovery : ColorDiscovery, IColorDiscovery {
-		public override string DeviceTag { get; set; }
-		private readonly LifxClient _client;
+		public override string DeviceTag { get; set; } = "Lifx Bulb";
+		private readonly LifxClient? _client;
 		private readonly ControlService _controlService;
 
 		public LifxDiscovery(ColorService cs) : base(cs) {
-			_client = cs.ControlService.GetAgent("LifxAgent");
+			var client = cs.ControlService.GetAgent("LifxAgent");
+			_controlService = cs.ControlService;
+			if (client == null) return;
+			_client = client;
 			_client.DeviceDiscovered += Client_DeviceDiscovered;
 			_controlService = cs.ControlService;
-			DeviceTag = "Lifx Bulb";
 		}
 
 		public async Task Discover(CancellationToken ct, int timeout) {
@@ -36,12 +38,14 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 		private async void Client_DeviceDiscovered(object sender, LifxClient.DeviceDiscoveryEventArgs e) {
 			var bulb = e.Device as LightBulb;
+			if (bulb == null) return;
 			//Log.Debug("Device found: " + JsonConvert.SerializeObject(bulb));
 			var ld = await GetBulbInfo(bulb);
-			await _controlService.AddDevice(ld);
+			if (ld != null) await _controlService.AddDevice(ld);
 		}
 
-		private async Task<LifxData> GetBulbInfo(LightBulb b) {
+		private async Task<LifxData?> GetBulbInfo(LightBulb b) {
+			if (_client == null) return null;
 			var state = await _client.GetLightStateAsync(b);
 			var ver = await _client.GetDeviceVersionAsync(b);
 			var hasMulti = false;

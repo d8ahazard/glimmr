@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+#pragma warning disable 8603
 
 #endregion
 
@@ -35,8 +36,8 @@ namespace Glimmr.Models {
 			return e;
 		}
 
-		public static AsyncEvent<TEventArgs>? operator -(
-			AsyncEvent<TEventArgs>? e, Func<object, TEventArgs, Task> callback) {
+		public static AsyncEvent<TEventArgs> operator -(
+			AsyncEvent<TEventArgs> e, Func<object, TEventArgs, Task> callback) {
 			if (callback == null) {
 				throw new NullReferenceException("callback is null");
 			}
@@ -52,7 +53,7 @@ namespace Glimmr.Models {
 			return e;
 		}
 
-		public async Task InvokeAsync(object? sender, TEventArgs? eventArgs) {
+		public async Task InvokeAsync(object sender, TEventArgs eventArgs) {
 			List<Func<object, TEventArgs, Task>> tmpInvocationList;
 			lock (_locker) {
 				tmpInvocationList = new List<Func<object, TEventArgs, Task>>(_invocationList);

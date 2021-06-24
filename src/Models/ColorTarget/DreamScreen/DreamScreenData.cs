@@ -8,11 +8,19 @@ using DreamScreenNet.Devices;
 
 namespace Glimmr.Models.ColorTarget.DreamScreen {
 	public class DreamScreenData : IColorTargetData {
-		public int GroupNumber { get; set; }
-		public string DeviceTag { get; set; }
+		public int GroupNumber { get; private set; }
+		public string DeviceTag { get; private set; } = "DreamScreen";
+		public string Name { get; set; } = "DreamScreen";
+		public string Id { get; set; } = "";
+		public string Tag { get; set; } = "DreamScreen";
+		public string IpAddress { get; set; } = "";
+		public int Brightness { get; set; } = 255;
+
+		public bool Enable { get; set; }
+		public string LastSeen { get; set; }
 
 		public DreamScreenData() {
-			//if (DeviceTag.Contains("DreamScreen")) Enable = false;
+			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 		}
 
 		public DreamScreenData(DreamDevice dev) {
@@ -28,15 +36,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			}
 		}
 
-		public string Name { get; set; }
-		public string Id { get; set; }
-		public string Tag { get; set; } = "DreamScreen";
-		public string IpAddress { get; set; }
-		public int Brightness { get; set; }
-
-
-		public bool Enable { get; set; }
-		public string LastSeen { get; set; }
+	
 
 		public void UpdateFromDiscovered(IColorTargetData data) {
 			var dData = (DreamScreenData) data;
@@ -51,9 +51,5 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 
 		public SettingsProperty[] KeyProperties { get; set; } = {
 		};
-
-		public byte[] EncodeState() {
-			throw new NotImplementedException();
-		}
 	}
 }

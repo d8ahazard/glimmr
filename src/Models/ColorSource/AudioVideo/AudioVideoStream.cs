@@ -16,19 +16,25 @@ using Serilog;
 
 namespace Glimmr.Models.ColorSource.AudioVideo {
 	public class AudioVideoStream : BackgroundService, IColorSource {
-		public List<Color> Colors { get; private set; }
-		public List<Color> Sectors { get; private set; }
-		private readonly AudioStream _as;
+		private List<Color> _colors;
+		private List<Color> _sectors;
 		private readonly ColorService _cs;
-		private readonly VideoStream _vs;
+		private readonly VideoStream? _vs;
+		private readonly AudioStream? _as;
+
 		private bool _enable;
 		private SystemData _systemData;
 
 		public AudioVideoStream(ColorService cs) {
 			_cs = cs;
 			_cs.AddStream(DeviceMode.AudioVideo, this);
-			_as = (AudioStream) _cs.GetStream(DeviceMode.Audio);
-			_vs = (VideoStream) _cs.GetStream(DeviceMode.Video);
+			var aS = _cs.GetStream(DeviceMode.Audio);
+			var vS = _cs.GetStream(DeviceMode.Video);
+			if (aS != null) _as = (AudioStream) aS; 
+			if (vS != null) _vs = (VideoStream) vS;
+			_colors = new List<Color>();
+			_sectors = new List<Color>();
+			_systemData = DataUtil.GetSystemData();
 		}
 
 
@@ -38,17 +44,19 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 				return;
 			}
 
-			_vs.ToggleStream(true);
-			_vs.SendColors = false;
-			_as.ToggleStream(true);
-			_as.SendColors = false;
+			if (_vs != null && _as != null) {
+				_vs.ToggleStream(true);
+				_vs.SendColors = false;
+				_as.ToggleStream(true);
+				_as.SendColors = false;
+			}
 		}
 
 
 		public void Refresh(SystemData systemData) {
 			_systemData = systemData;
-			Colors = ColorUtil.EmptyList(_systemData.LedCount);
-			Sectors = ColorUtil.EmptyList(28);
+			_colors = ColorUtil.EmptyList(_systemData.LedCount);
+			_sectors = ColorUtil.EmptyList(28);
 		}
 
 		public bool SourceActive { get; set; }
@@ -57,9 +65,10 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 			Log.Debug("Starting av stream service...");
 			return Task.Run(async () => {
 				while (!ct.IsCancellationRequested) {
-					if (!_enable) {
+					if (!_enable || _vs == null || _as == null) {
 						continue;
 					}
+					
 
 					var vCols = _vs.Colors;
 					var vSecs = _vs.Sectors;
@@ -86,10 +95,10 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 						oSecs.Add(ColorUtil.SetBrightness(vCol, aCol.GetBrightness()));
 					}
 
-					Colors = oCols;
-					Sectors = oSecs;
+					_colors = oCols;
+					_sectors = oSecs;
 					//_cs.SendColors(this, new DynamicEventArgs(oCols, oSecs)).ConfigureAwait(true);
-					_cs.SendColors(Colors, Sectors, 0);
+					_cs.SendColors(_colors, _sectors, 0);
 					await Task.Delay(1, CancellationToken.None);
 				}
 

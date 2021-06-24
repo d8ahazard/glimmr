@@ -84,20 +84,22 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 		private static HueData UpdateDeviceData(HueData data) {
 			// Check for existing device
-			HueData dev = DataUtil.GetDevice<HueData>(data.Id);
+			var dev = DataUtil.GetDevice<HueData>(data.Id);
 
-			if (dev != null && !string.IsNullOrEmpty(dev.Token)) {
-				var client = new LocalHueClient(data.IpAddress, dev.User, dev.Token);
-				try {
-					var groups = client.GetGroupsAsync().Result;
-					var lights = client.GetLightsAsync().Result;
-					data.AddGroups(groups);
-					data.AddLights(lights);
-					dev.UpdateFromDiscovered(data);
-					return dev;
-				} catch (Exception e) {
-					Log.Warning("Exception: " + e.Message);
-				}
+			if (dev == null || string.IsNullOrEmpty(dev.Token)) {
+				return data;
+			}
+
+			var client = new LocalHueClient(data.IpAddress, dev.User, dev.Token);
+			try {
+				var groups = client.GetGroupsAsync().Result;
+				var lights = client.GetLightsAsync().Result;
+				data.AddGroups(groups);
+				data.AddLights(lights);
+				dev.UpdateFromDiscovered(data);
+				return dev;
+			} catch (Exception e) {
+				Log.Warning("Exception: " + e.Message);
 			}
 
 			return data;

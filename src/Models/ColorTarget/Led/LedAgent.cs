@@ -9,7 +9,7 @@ using rpi_ws281x;
 
 namespace Glimmr.Models.ColorTarget.Led {
 	public class LedAgent : IColorTargetAgent {
-		public WS281x? Ws281X { get; set; }
+		public WS281x? Ws281X { get; private set; }
 		private Controller? _controller0;
 		private Controller? _controller1;
 
@@ -28,8 +28,9 @@ namespace Glimmr.Models.ColorTarget.Led {
 				return null;
 			}
 
-			LedData d0 = DataUtil.GetDevice<LedData>("0");
-			LedData d1 = DataUtil.GetDevice<LedData>("1");
+			LedData? d0 = DataUtil.GetDevice<LedData>("0");
+			LedData? d1 = DataUtil.GetDevice<LedData>("1");
+			if (d0 == null || d1 == null) return null;
 			var settings = Settings.CreateDefaultSettings();
 			var stripType0 = d0.StripType switch {
 				1 => StripType.SK6812W_STRIP,

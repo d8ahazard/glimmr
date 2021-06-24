@@ -7,44 +7,39 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Serilog;
-using JsonException = Newtonsoft.Json.JsonException;
 
 #endregion
 
 namespace Glimmr.Models.ColorTarget.Wled {
 	public class WledDevice : ColorTarget, IColorTarget, IDisposable {
-		public WledData Data { get; set; }
+		private WledData _data;
 		private static readonly int port = 21324;
 		private readonly HttpClient _httpClient;
 		private readonly UdpClient _udpClient;
-		private readonly List<Color> _updateColors;
 
 		private bool _disposed;
-		private IPEndPoint _ep;
-		private int _lastBri;
+		private IPEndPoint? _ep;
 		private int _ledCount;
 		private int _offset;
 		private StripMode _stripMode;
 		private int _targetSector;
 
-		private bool _wasOn;
-
 		public WledDevice(WledData wd, ColorService colorService) : base(colorService) {
 			colorService.ColorSendEvent += SetColor;
+			ColorService = colorService;
 			colorService.ControlService.RefreshSystemEvent += RefreshSystem;
 			_udpClient = ColorService.ControlService.UdpClient;
 			_httpClient = ColorService.ControlService.HttpSender;
-			_updateColors = new List<Color>();
-			Data = wd ?? throw new ArgumentException("Invalid WLED data.");
-			Id = Data.Id;
-			Brightness = Data.Brightness;
+			_data = wd ?? throw new ArgumentException("Invalid WLED data.");
+			Id = _data.Id;
+			IpAddress = _data.IpAddress;
+			Brightness = _data.Brightness;
 			ReloadData();
 		}
 
@@ -54,11 +49,11 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		public int Brightness { get; set; }
 		public string Id { get; set; }
 		public string IpAddress { get; set; }
-		public string Tag { get; set; }
+		public string Tag { get; set; } = "Wled";
 
 		IColorTargetData IColorTarget.Data {
-			get => Data;
-			set => Data = (WledData) value;
+			get => _data;
+			set => _data = (WledData) value;
 		}
 
 
@@ -67,19 +62,20 @@ namespace Glimmr.Models.ColorTarget.Wled {
 				return;
 			}
 
-			Log.Information($"{Data.Tag}::Starting stream: {Data.Id}...");
-			_targetSector = ColorUtil.CheckDsSectors(Data.TargetSector);
+			Log.Information($"{_data.Tag}::Starting stream: {_data.Id}...");
+			_targetSector = ColorUtil.CheckDsSectors(_data.TargetSector);
 			_ep = IpUtil.Parse(IpAddress, port);
+			if (_ep == null) return;
 			Streaming = true;
 			await FlashColor(Color.Red);
 			await UpdateLightState(Streaming);
-			Log.Information($"{Data.Tag}::Stream started: {Data.Id}.");
+			Log.Information($"{_data.Tag}::Stream started: {_data.Id}.");
 		}
 
 
 		public async Task FlashColor(Color color) {
 			var packet = new List<byte> {ByteUtils.IntByte(2), ByteUtils.IntByte(10)};
-			for (var i = 0; i < Data.LedCount; i++) {
+			for (var i = 0; i < _data.LedCount; i++) {
 				packet.Add(color.R);
 				packet.Add(color.G);
 				packet.Add(color.B);
@@ -101,9 +97,9 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 			Streaming = false;
 			await FlashColor(Color.Black).ConfigureAwait(false);
-			await UpdateLightState(_wasOn, _lastBri).ConfigureAwait(false);
+			await UpdateLightState(false).ConfigureAwait(false);
 			await Task.FromResult(true);
-			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
+			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
 
@@ -125,7 +121,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 				if (_stripMode == StripMode.Loop) {
 					colors = ShiftColors(colors);
 				} else {
-					if (Data.ReverseStrip) {
+					if (_data.ReverseStrip) {
 						colors.Reverse();
 					}
 				}
@@ -150,29 +146,29 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 			try {
 				_udpClient.SendAsync(packet.ToArray(), packet.Length, _ep).ConfigureAwait(false);
-				ColorService.Counter.Tick(Id);
+				ColorService?.Counter.Tick(Id);
 			} catch (Exception e) {
 				Log.Debug("Exception: " + e.Message);
 			}
 		}
 
 		public Task ReloadData() {
-			var sd = DataUtil.GetSystemData();
 			var oldBrightness = Brightness;
-			Data = DataUtil.GetDevice<WledData>(Id);
-			_offset = Data.Offset;
-			Brightness = Data.Brightness;
-			IpAddress = Data.IpAddress;
-			Enable = Data.Enable;
-			_stripMode = (StripMode) Data.StripMode;
-			_targetSector = ColorUtil.CheckDsSectors(Data.TargetSector);
+			var dev = DataUtil.GetDevice<WledData>(Id);
+			if (dev != null) _data = dev;
+			_offset = _data.Offset;
+			Brightness = _data.Brightness;
+			IpAddress = _data.IpAddress;
+			Enable = _data.Enable;
+			_stripMode = (StripMode) _data.StripMode;
+			_targetSector = ColorUtil.CheckDsSectors(_data.TargetSector);
 
 			if (oldBrightness != Brightness) {
 				Log.Debug($"Brightness has changed!! {oldBrightness} {Brightness}");
 				UpdateLightState(Streaming).ConfigureAwait(false);
 			}
 
-			_ledCount = Data.LedCount;
+			_ledCount = _data.LedCount;
 			return Task.CompletedTask;
 		}
 
@@ -184,14 +180,14 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 
 		public bool IsEnabled() {
-			return Data.Enable;
+			return _data.Enable;
 		}
 
 
 		private List<Color> ShiftColors(IReadOnlyList<Color> input) {
 			var output = new Color[input.Count];
 			var il = output.Length - 1;
-			if (!Data.ReverseStrip) {
+			if (!_data.ReverseStrip) {
 				for (var i = 0; i < input.Count; i++) {
 					output[i] = input[i];
 					output[il - i] = input[i];
@@ -209,23 +205,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			return output.ToList();
 		}
 
-		public async Task UpdatePixel(int pixelIndex, Color color) {
-			if (_updateColors.Count == 0) {
-				for (var i = 0; i < Data.LedCount; i++) {
-					_updateColors.Add(Color.FromArgb(0, 0, 0, 0));
-				}
-			}
-
-			if (pixelIndex >= Data.LedCount) {
-				return;
-			}
-
-			_updateColors[pixelIndex] = color;
-			SetColor(_updateColors, null, 0);
-			await Task.FromResult(true);
-		}
-
-		public void RefreshSystem() {
+		private void RefreshSystem() {
 			ReloadData();
 		}
 
@@ -238,31 +218,31 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			var url = "http://" + IpAddress + "/win";
 			url += "&T=" + (on ? "1" : "0");
 			url += "&A=" + (int) scaledBright;
-			Log.Debug("LightstateUrl: " + url);
+			Log.Debug("Light state Url: " + url);
 			await _httpClient.GetAsync(url).ConfigureAwait(false);
 		}
 
-		private async Task<WledStateData?> GetLightState() {
-			var url = "http://" + IpAddress + "/json/";
-			Log.Debug("URL is " + url);
-			var res = await _httpClient.GetAsync(url);
-			res.EnsureSuccessStatusCode();
-			if (res.Content is object && res.Content.Headers.ContentType.MediaType == "application/json") {
-				var contentStream = await res.Content.ReadAsStreamAsync();
-
-				try {
-					return await JsonSerializer.DeserializeAsync<WledStateData>(contentStream,
-						new JsonSerializerOptions {IgnoreNullValues = true, PropertyNameCaseInsensitive = true});
-				} catch (JsonException) // Invalid JSON
-				{
-					Console.WriteLine("Invalid JSON.");
-				}
-			} else {
-				Console.WriteLine("HTTP Response was invalid and cannot be deserialised.");
-			}
-
-			return null;
-		}
+		// private async Task<WledStateData?> GetLightState() {
+		// 	var url = "http://" + IpAddress + "/json/";
+		// 	Log.Debug("URL is " + url);
+		// 	var res = await _httpClient.GetAsync(url);
+		// 	res.EnsureSuccessStatusCode();
+		// 	if (res.Content != null && res.Content.Headers.ContentType?.MediaType == "application/json") {
+		// 		var contentStream = await res.Content.ReadAsStreamAsync();
+		//
+		// 		try {
+		// 			return await JsonSerializer.DeserializeAsync<WledStateData>(contentStream,
+		// 				new JsonSerializerOptions {IgnoreNullValues = true, PropertyNameCaseInsensitive = true});
+		// 		} catch (JsonException) // Invalid JSON
+		// 		{
+		// 			Console.WriteLine("Invalid JSON.");
+		// 		}
+		// 	} else {
+		// 		Console.WriteLine("HTTP Response was invalid and cannot be de-serialised.");
+		// 	}
+		//
+		// 	return null;
+		// }
 
 
 		protected virtual async Task Dispose(bool disposing) {

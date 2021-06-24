@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Globalization;
 using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
@@ -11,7 +10,6 @@ using System.Threading.Tasks;
 using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Q42.HueApi;
 using Q42.HueApi.ColorConverters;
 using Q42.HueApi.Streaming;
 using Q42.HueApi.Streaming.Extensions;
@@ -24,28 +22,45 @@ namespace Glimmr.Models.ColorTarget.Hue {
 	public sealed class HueDevice : ColorTarget, IColorTarget, IDisposable {
 		private HueData Data { get; set; }
 
-		private readonly StreamingHueClient _client;
-		private readonly StreamingGroup _stream;
+		private readonly StreamingHueClient? _client;
+		private readonly StreamingGroup? _stream;
+		private EntertainmentLayer? _entLayer;
+		private string? _token;
+		private string? _user;
+
 		private CancellationToken _ct;
 		private bool _disposed;
-		private EntertainmentLayer _entLayer;
 		private List<LightMap> _lightMappings;
-
-		private List<LightData> _lights;
-
-		private string _selectedGroup;
+		private string? _selectedGroup;
 		private Dictionary<string, int> _targets;
-		private string _token;
+		private Task? _updateTask;
+		public bool Enable { get; set; }
 
-		private Task _updateTask;
-		private string _user;
+		IColorTargetData IColorTarget.Data {
+			get => Data;
+			set => Data = (HueData) value;
+		}
+
+		public bool Testing { get; set; }
+		public int Brightness { get; set; }
+		public string Id { get; set; }
+		public string IpAddress { get; set; }
+		public string Tag { get; set; } = "Hue";
+		public bool Streaming { get; set; }
 
 
 		public HueDevice(HueData data, ColorService colorService) : base(colorService) {
-			DataUtil.GetItem<int>("captureMode");
+			Data = data;
+			_targets = new Dictionary<string, int>();
+			IpAddress = Data.IpAddress;
+			Tag = Data.Tag;
+			_user = Data.User;
+			_token = Data.Token;
+			Enable = Data.Enable;
+			Brightness = Data.Brightness;
+			_lightMappings = Data.MappedLights;
 			colorService.ColorSendEvent += SetColor;
 			colorService.ControlService.RefreshSystemEvent += SetData;
-			Data = data;
 			Id = Data.Id;
 			_disposed = false;
 			Streaming = false;
@@ -69,13 +84,17 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		public HueDevice(HueData data) {
 			DataUtil.GetItem<int>("captureMode");
 			Data = data;
+			_lightMappings = Data.MappedLights;
+			Id = Data.Id;
+			IpAddress = Data.IpAddress;
+			_targets = new Dictionary<string, int>();
 			SetData();
 			_disposed = false;
 			Streaming = false;
 			_entLayer = null;
 
 			// Don't grab streaming group unless we need it
-			if (Data?.User == null || Data?.Token == null || _client != null) {
+			if (_user == null || _token == null || _client != null) {
 				return;
 			}
 
@@ -88,20 +107,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			}
 		}
 
-		public bool Enable { get; set; }
-
-		IColorTargetData IColorTarget.Data {
-			get => Data;
-			set => Data = (HueData) value;
-		}
-
-		public bool Testing { get; set; }
-		public int Brightness { get; set; }
-		public string Id { get; set; }
-		public string IpAddress { get; set; }
-		public string Tag { get; set; }
-		public bool Streaming { get; set; }
-
+		
 
 		public Task FlashColor(Color color) {
 			if (!Enable) {
@@ -161,6 +167,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 			//Connect to the streaming group
 			try {
+				if (_selectedGroup == null) return;
 				var group = await _client.LocalHueClient.GetGroupAsync(_selectedGroup);
 				if (group == null) {
 					Log.Warning("Unable to fetch group with ID of " + _selectedGroup);
@@ -190,7 +197,9 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 		public Task ReloadData() {
 			Log.Debug("Reloading Hue data...");
-			Data = DataUtil.GetDevice<HueData>(Id);
+			var dev = DataUtil.GetDevice<HueData>(Id);
+			if (dev == null) return Task.CompletedTask;
+			Data = dev;
 			SetData();
 			return Task.CompletedTask;
 		}
@@ -236,7 +245,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				}
 			}
 
-			ColorService.Counter.Tick(Id);
+			ColorService?.Counter.Tick(Id);
 		}
 
 
@@ -253,8 +262,9 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Log.Information($"{Data.Tag}::Starting stream... {Data.Id}");
 
 			try {
-				_client.LocalHueClient.SetStreamingAsync(_selectedGroup, false).ConfigureAwait(false);
-				if (!_updateTask.IsCompleted) {
+				if (_client == null || _selectedGroup == null) return;
+				await _client.LocalHueClient.SetStreamingAsync(_selectedGroup, false).ConfigureAwait(false);
+				if (_updateTask != null && !_updateTask.IsCompleted) {
 					_updateTask.Dispose();
 				}
 
@@ -291,26 +301,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 
 
-		private async Task ResetColors() {
-			foreach (var entLight in _entLayer) {
-				// Get data for our light from map
-
-				var lightData = _lights.SingleOrDefault(item =>
-					item.Id == entLight.Id.ToString(CultureInfo.InvariantCulture));
-				if (lightData == null) {
-					continue;
-				}
-
-				var sat = lightData.LastState.Saturation;
-				var bri = lightData.LastState.Brightness;
-				var hue = lightData.LastState.Hue;
-				var isOn = lightData.LastState.On;
-				var ll = new List<string> {lightData.Id};
-				var cmd = new LightCommand {Saturation = sat, Brightness = bri, Hue = hue, On = isOn};
-				await _client.LocalHueClient.SendCommandAsync(cmd, ll);
-			}
-		}
-
 		private void SetData() {
 			var sd = DataUtil.GetSystemData();
 			_targets = new Dictionary<string, int>();
@@ -320,7 +310,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			_token = Data.Token;
 			Enable = Data.Enable;
 			Brightness = Data.Brightness;
-			_lights = Data.Lights;
 			_lightMappings = Data.MappedLights;
 			foreach (var ld in _lightMappings) {
 				var target = ld.TargetSector;
@@ -339,7 +328,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			_selectedGroup = Data.SelectedGroup;
 		}
 
-		private async Task<StreamingGroup> SetupAndReturnGroup() {
+		private async Task<StreamingGroup?> SetupAndReturnGroup() {
 			if (_client == null || Data == null || _selectedGroup == null) {
 				Log.Warning("Client or data or groupId are null, returning...");
 				return null;
@@ -384,7 +373,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			}
 
 			if (disposing) {
-				_client.Dispose();
+				_client?.Dispose();
 			}
 
 			_disposed = true;

@@ -37,6 +37,11 @@ namespace Glimmr.Models.ColorSource.Audio {
 		public AudioStream(ColorService cs) {
 			_cs = cs;
 			_cs.AddStream(DeviceMode.Audio, this);
+			Colors = new List<Color>();
+			Sectors = new List<Color>();
+			_devices = new List<AudioData>();
+			_map = new AudioMap();
+			_sd = DataUtil.GetSystemData();
 		}
 
 		public bool SourceActive { get; set; }
@@ -65,7 +70,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 				Log.Debug("Loading audio stream with index " + _recordDeviceIndex);
 				Bass.RecordInit(_recordDeviceIndex);
 				_handle = Bass.RecordStart(48000, 2, BassFlags.Float, Update);
-				Bass.RecordGetDeviceInfo(_recordDeviceIndex, out var info3);
+				Bass.RecordGetDeviceInfo(_recordDeviceIndex, out _);
 				_hasDll = true;
 			} catch (DllNotFoundException) {
 				Log.Warning("Bass.dll not found, nothing to do...");
@@ -94,6 +99,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 
 		private async Task LoadData() {
+			var sd = DataUtil.GetSystemData();
 			_sectorCount = (_sd.VSectors + _sd.HSectors) * 2 - 4;
 			_gain = _sd.AudioGain;
 			Colors = ColorUtil.EmptyList(_sd.LedCount);
@@ -102,7 +108,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 			_devices = DataUtil.GetCollection<AudioData>("Dev_Audio") ?? new List<AudioData>();
 			_map = new AudioMap();
 			_recordDeviceIndex = -1;
-			string rd = DataUtil.GetItem("RecDev");
+			string rd = sd.RecDev;
 			_devices = new List<AudioData>();
 			for (var a = 0; Bass.RecordGetDeviceInfo(a, out var info); a++) {
 				if (!info.IsEnabled) {

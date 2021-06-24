@@ -26,9 +26,11 @@ namespace Glimmr.Models.ColorSource.Audio {
 		private float _rotationUpper = 1;
 		private bool _triggered;
 		private int _vSectors;
-		private float maxVal;
+		private float _maxVal;
 
 		public AudioMap() {
+			_leftSectors = new List<int>();
+			_rightSectors = new List<int>();
 			_loader = new JsonLoader("audioScenes");
 			Refresh();
 		}
@@ -55,7 +57,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 				var rSteps = new List<int>();
 				for (var i = rangeStart; i < rangeEnd; i += step) {
 					var sector = (int) Math.Floor(_leftSectors.Count * i);
-					int channelIndex;
 					if (!lSteps.Contains(sector)) {
 						lSteps.Add(sector);
 						var note = HighNote(lChannel, sector, _leftSectors.Count);
@@ -65,8 +66,8 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 						var targetHue = RotateHue(ColorUtil.HueFromFrequency(note.Key));
 						var sectorInt = _leftSectors.ElementAt(sector);
-						if (note.Value > maxVal) {
-							maxVal = note.Value;
+						if (note.Value > _maxVal) {
+							_maxVal = note.Value;
 						}
 
 						output[sectorInt] = ColorUtil.HsvToColor(targetHue * 360, 1, note.Value);
@@ -82,9 +83,9 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 						var targetHue = RotateHue(ColorUtil.HueFromFrequency(note.Key));
 						var sectorInt = _rightSectors.ElementAt(sector);
-						if (note.Value > maxVal) {
-							maxVal = note.Value;
-							Log.Debug("Max is " + maxVal);
+						if (note.Value > _maxVal) {
+							_maxVal = note.Value;
+							Log.Debug("Max is " + _maxVal);
 						}
 
 						output[sectorInt] = ColorUtil.HsvToColor(targetHue * 360, 1, note.Value);
@@ -139,14 +140,13 @@ namespace Glimmr.Models.ColorSource.Audio {
 		private void Refresh() {
 			var sd = DataUtil.GetSystemData();
 			var id = sd.AudioMap;
-			var am = _loader.GetItem<AudioScene>(id, true);
+			var am = _loader.GetItem(id);
 			_highRange = new RangeF(0.666f, 1f);
 			_midRange = new RangeF(0.333f, 0.665f);
 			_lowRange = new RangeF(0f, 0.332f);
 			_rotationSpeed = 0;
 			_rotationUpper = 1;
 			_rotationLower = 0;
-
 			try {
 				_rotationSpeed = am.RotationSpeed;
 				_rotationLower = am.RotationLower;

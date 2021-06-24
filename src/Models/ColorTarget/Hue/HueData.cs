@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using Newtonsoft.Json;
 using Q42.HueApi;
 using Q42.HueApi.Models.Bridge;
@@ -29,11 +30,22 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		[JsonProperty] public string SelectedGroup { get; set; } = "";
 		[JsonProperty] public string Token { get; set; } = "";
 		[JsonProperty] public string User { get; set; } = "";
+		[JsonProperty] public string Name { get; set; } = "";
+		[JsonProperty] public string Id { get; set; } = "";
+		[JsonProperty] public string Tag { get; set; } = "Hue";
+		[JsonProperty] public string IpAddress { get; set; } = "";
+		[JsonProperty] public int Brightness { get; set; } = 255;
+		[JsonProperty] public bool Enable { get; set; }
+
+
+		public string LastSeen { get; set; }
 
 		public HueData() {
+			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 		}
 
 		public HueData(LocatedBridge b) {
+			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 			if (b == null) {
 				throw new ArgumentException("Invalid located bridge.");
 			}
@@ -61,15 +73,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 
 
-		public string Name { get; set; }
-		public string Id { get; set; }
-		public string Tag { get; set; } = "Hue";
-		public string IpAddress { get; set; }
-		public int Brightness { get; set; }
-		public bool Enable { get; set; }
-
-
-		public string LastSeen { get; set; }
+		
 
 		public void UpdateFromDiscovered(IColorTargetData data) {
 			var input = (HueData) data;
@@ -121,7 +125,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
 		public int Presence { get; set; }
 
-		[JsonProperty] public State LastState { get; set; }
+		[JsonProperty] public State? LastState { get; set; }
 
 		[JsonProperty]
 		public string Id {
@@ -130,19 +134,21 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 
 		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-		public string ModelId { get; set; }
+		public string ModelId { get; set; } = "";
 
-		[JsonProperty] public string Name { get; set; }
+		[JsonProperty] public string Name { get; set; } = "";
 
-		[JsonProperty] public string Type { get; set; }
+		[JsonProperty] public string Type { get; set; } = "";
 
-		[JsonProperty] private string _id;
+		[JsonProperty] private string _id = "";
 
 		public LightData() {
 			Name = string.Empty;
 			Type = string.Empty;
 			Id = string.Empty;
 			ModelId = string.Empty;
+			LastState = new State();
+			_id = string.Empty;
 		}
 
 		public LightData(Light l) {
@@ -150,6 +156,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				return;
 			}
 
+			LastState = new State();
 			Name = l.Name;
 			Id = l.Id;
 			Type = l.Type;
@@ -166,7 +173,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			set => _id = value;
 		}
 
-		[JsonProperty] private string _id;
+		[JsonProperty] private string _id = "";
 
 		/// <inheritdoc />
 		public HueGroup() {
@@ -200,6 +207,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			set => _id = value;
 		}
 
-		[JsonProperty] private string _id;
+		[JsonProperty] private string _id = "";
 	}
 }

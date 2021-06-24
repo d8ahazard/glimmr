@@ -20,12 +20,10 @@ using JsonSerializer = LiteDB.JsonSerializer;
 namespace Glimmr.Models.Util {
 	[Serializable]
 	public static class DataUtil {
-		private static LiteDatabase _db;
-
 		private static bool _dbLocked;
-		private static List<dynamic> _devices;
-
-		private static SystemData? _systemData;
+		private static List<dynamic> _devices = new();
+		private static LiteDatabase _db = GetDb();
+		private static SystemData _systemData = CacheSystemData();
 
 		public static LiteDatabase GetDb() {
 			while (_dbLocked) {
@@ -49,13 +47,13 @@ namespace Glimmr.Models.Util {
 		}
 
 		public static void Dispose() {
-			_db?.Commit();
-			_db?.Dispose();
+			_db.Commit();
+			_db.Dispose();
 		}
 
 
 		//fixed
-		public static List<dynamic> GetCollection(string key) {
+		public static List<dynamic>? GetCollection(string key) {
 			try {
 				var db = GetDb();
 				var coll = db.GetCollection(key);
@@ -73,7 +71,7 @@ namespace Glimmr.Models.Util {
 		}
 
 		//fixed
-		public static List<T> GetCollection<T>() where T : class {
+		public static List<T>? GetCollection<T>() where T : class {
 			try {
 				var db = GetDb();
 				var coll = db.GetCollection<T>();
@@ -109,7 +107,7 @@ namespace Glimmr.Models.Util {
 		}
 
 		//fixed
-		public static dynamic GetCollectionItem<T>(string key, string value) where T : new() {
+		public static dynamic? GetCollectionItem<T>(string key, string value) where T : new() {
 			try {
 				var db = GetDb();
 				var coll = db.GetCollection<T>(key);
@@ -154,14 +152,27 @@ namespace Glimmr.Models.Util {
 					try {
 						var json = JsonSerializer.Serialize(dev);
 						var jObj = JObject.Parse(json);
-						if (jObj.GetValue("_id") == device.Id) {
-							var type = jObj.GetValue("_type");
-							if (type != null) {
-								dynamic donor = Activator.CreateInstance(Type.GetType(type.ToString()));
-								device.KeyProperties = donor?.KeyProperties;
-								output.Add(device);
-							}
+						if (jObj.GetValue("_id") != device.Id) {
+							continue;
 						}
+
+						var type = jObj.GetValue("_type");
+						if (type == null) {
+							continue;
+						}
+
+						var typeType = Type.GetType(type.ToString());
+						if (typeType == null) {
+							continue;
+						}
+
+						dynamic? donor = Activator.CreateInstance(typeType);
+						if (donor == null) {
+							continue;
+						}
+
+						device.KeyProperties = donor.KeyProperties;
+						output.Add(device);
 					} catch (Exception e) {
 						Log.Warning("Exception: " + e.Message);
 					}
@@ -176,7 +187,7 @@ namespace Glimmr.Models.Util {
 				CacheDevices();
 			}
 
-			return _devices;
+			return _devices ?? new List<dynamic>();
 		}
 
 		public static void RemoveDevice(string id) {
@@ -197,13 +208,13 @@ namespace Glimmr.Models.Util {
 			return output;
 		}
 
-		public static dynamic GetDevice<T>(string id) where T : class {
+		public static dynamic? GetDevice<T>(string id) where T : class {
 			var devs = GetDevices();
 			return (from d in devs where d.Id == id select (T) d).FirstOrDefault();
 		}
 
 
-		public static dynamic GetDevice(string id) {
+		public static dynamic? GetDevice(string id) {
 			var devs = GetDevices();
 			return devs.FirstOrDefault(d => d.Id == id);
 		}
@@ -373,16 +384,15 @@ namespace Glimmr.Models.Util {
 			}
 		}
 
-		public static dynamic GetItem<T>(string key) {
+		public static dynamic? GetItem<T>(string key) {
 			var i = GetItem(key);
 			if (i == null) {
 				return null;
 			}
-
-			return (T) GetItem(key);
+			return (T) i;
 		}
 
-		public static dynamic GetItem(string key) {
+		public static dynamic? GetItem(string key) {
 			var sd = GetSystemData();
 			foreach (var e in sd.GetType().GetProperties()) {
 				if (e.Name != key) {
@@ -395,7 +405,7 @@ namespace Glimmr.Models.Util {
 			return null;
 		}
 
-		public static dynamic GetObject<T>(string key) {
+		public static dynamic? GetObject<T>(string key) {
 			try {
 				var db = GetDb();
 				var col = db.GetCollection<T>(key);

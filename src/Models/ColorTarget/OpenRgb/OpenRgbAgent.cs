@@ -9,7 +9,7 @@ using OpenRGB.NET;
 
 namespace Glimmr.Models.ColorTarget.OpenRgb {
 	public class OpenRgbAgent : IColorTargetAgent {
-		public string Ip { get; set; }
+		private string Ip { get; set; } = "";
 		private OpenRGBClient? _client;
 		private int _port;
 
@@ -24,8 +24,9 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		}
 
 		private void LoadClient() {
-			var ip = (string) DataUtil.GetItem<string>("OpenRgbIp");
-			var port = (int) DataUtil.GetItem<int>("OpenRgbPort");
+			var sd = DataUtil.GetSystemData();
+			var ip = sd.OpenRgbIp;
+			var port = sd.OpenRgbPort;
 			if (ip == Ip && port == _port && _client != null) {
 				return;
 			}

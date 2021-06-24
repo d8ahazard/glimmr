@@ -157,7 +157,7 @@ namespace Glimmr.Services {
 		}
 
 		public async Task ScanDevices() {
-			await DeviceRescanEvent.InvokeAsync(this, null);
+			await DeviceRescanEvent.InvokeAsync(this, new DynamicEventArgs("foo"));
 		}
 
 		public async Task SetMode(int mode) {
@@ -169,7 +169,7 @@ namespace Glimmr.Services {
 			await _hubContext.Clients.All.SendAsync("mode", mode);
 			DataUtil.SetItem("DeviceMode", mode);
 			ColorUtil.SetSystemData();
-			await SetModeEvent.InvokeAsync(null, new DynamicEventArgs(mode));
+			await SetModeEvent.InvokeAsync(this, new DynamicEventArgs(mode));
 		}
 
 		public async Task AuthorizeDevice(string id, IClientProxy? clientProxy = null) {

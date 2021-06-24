@@ -12,8 +12,8 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.DreamScreen {
 	public class DreamScreenDiscovery : ColorDiscovery, IColorDiscovery {
-		public override string DeviceTag { get; set; }
-		private readonly DreamScreenClient _client;
+		public override string DeviceTag { get; set; } = "DreamScreen";
+		private readonly DreamScreenClient? _client;
 		private readonly ControlService _cs;
 
 		public DreamScreenDiscovery(ColorService colorService) : base(colorService) {
@@ -22,6 +22,10 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		}
 
 		public async Task Discover(CancellationToken ct, int timeout) {
+			if (_client == null) {
+				Log.Warning("DS Client is null...this is bad.");
+				return;
+			}
 			Log.Debug("DS: Starting discovery...");
 			_client.DeviceDiscovered += DevFound;
 			_client.StartDeviceDiscovery();

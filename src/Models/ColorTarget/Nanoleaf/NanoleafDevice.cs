@@ -16,16 +16,27 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Nanoleaf {
 	public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
-		public NanoleafData Data { get; set; }
+		private NanoleafData _data;
+		public bool Enable { get; set; }
+		public bool Testing { get; set; }
+		public int Brightness { get; set; } = 255;
+		public string Id { get; set; } = "";
+		public string IpAddress { get; set; } = "";
+		public string Tag { get; set; } = "Nanoleaf";
+		public bool Streaming { get; set; }
+
+		IColorTargetData IColorTarget.Data {
+			get => _data;
+			set => _data = (NanoleafData) value;
+		}
 		private readonly NanoleafClient _nanoleafClient;
 		private readonly NanoleafStreamingClient _streamingClient;
 		private bool _disposed;
 		private readonly Stopwatch _frameWatch;
 
-		private TileLayout _layout;
+		private TileLayout? _layout;
 		private bool _logged;
 		private Dictionary<int, int> _targets;
-		private bool _wasOn;
 
 
 		/// <summary>
@@ -35,7 +46,9 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		/// <param name="colorService"></param>
 		public NanoleafDevice(NanoleafData n, ColorService colorService) : base(colorService) {
 			colorService.ColorSendEvent += SetColor;
-			Data = n;
+			ColorService = colorService;
+			_targets = new Dictionary<int, int>();
+			_data = n;
 			SetData();
 			var streamMode = n.Type == "NL29" || n.Type == "NL42" ? 2 : 1;
 			Log.Debug($"Creating streaming agent with mode {streamMode}.");
@@ -47,20 +60,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			_disposed = false;
 		}
 
-		public bool Enable { get; set; }
-
-
-		public bool Testing { get; set; }
-		public int Brightness { get; set; }
-		public string Id { get; set; }
-		public string IpAddress { get; set; }
-		public string Tag { get; set; }
-		public bool Streaming { get; set; }
-
-		IColorTargetData IColorTarget.Data {
-			get => Data;
-			set => Data = (NanoleafData) value;
-		}
+		
 
 
 		public async Task StartStream(CancellationToken ct) {
@@ -68,7 +68,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				return;
 			}
 
-			Log.Information($"{Data.Tag}::Starting stream: {Data.Id}...");
+			Log.Information($"{_data.Tag}::Starting stream: {_data.Id}...");
 
 			SetData();
 			Streaming = true;
@@ -78,9 +78,9 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			}
 
 			await _nanoleafClient.TurnOnAsync();
-			_nanoleafClient.SetBrightnessAsync((int) (Brightness / 100f * 255)).ConfigureAwait(false);
+			await _nanoleafClient.SetBrightnessAsync((int) (Brightness / 100f * 255)).ConfigureAwait(false);
 			await _nanoleafClient.StartExternalAsync();
-			Log.Information($"{Data.Tag}::Stream started: {Data.Id}.");
+			Log.Information($"{_data.Tag}::Stream started: {_data.Id}.");
 		}
 
 		public async Task StopStream() {
@@ -95,7 +95,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			}
 
 			await _nanoleafClient.TurnOffAsync().ConfigureAwait(false);
-			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
+			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
 
@@ -132,19 +132,21 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				_logged = true;
 			}
 
-			ColorService.Counter.Tick(Id);
+			ColorService?.Counter.Tick(Id);
 		}
 
 
 		public Task ReloadData() {
 			var newData = DataUtil.GetDevice(Id);
-			Data = newData;
+			if (newData == null) return Task.CompletedTask;
+			_data = newData;
 			SetData();
 			return Task.CompletedTask;
 		}
 
 		public async Task FlashColor(Color color) {
 			var cols = new Dictionary<int, Color>();
+			if (_layout == null) return;
 			if (_layout.PositionData != null) {
 				foreach (var pd in _layout.PositionData) {
 					cols[pd.PanelId] = color;
@@ -165,20 +167,24 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
 		private void SetData() {
 			var sd = DataUtil.GetSystemData();
-			var oldBrightness = Data.Brightness;
+			var oldBrightness = _data.Brightness;
 			DataUtil.GetItem<int>("captureMode");
-			IpAddress = Data.IpAddress;
-			_layout = Data.Layout;
+			IpAddress = _data.IpAddress;
+			_layout = _data.Layout;
 			_targets = new Dictionary<int, int>();
 
-			Brightness = Data.Brightness;
+			Brightness = _data.Brightness;
 			if (oldBrightness != Brightness) {
 				_nanoleafClient.SetBrightnessAsync(Brightness);
 			}
 
-			Enable = Data.Enable;
-			Id = Data.Id;
+			Enable = _data.Enable;
+			Id = _data.Id;
 			if (!Enable) {
+				return;
+			}
+
+			if (_layout?.PositionData == null) {
 				return;
 			}
 

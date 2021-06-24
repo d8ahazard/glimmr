@@ -15,7 +15,7 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Nanoleaf {
 	public class NanoleafDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth {
-		public override string DeviceTag { get; set; }
+		public override string DeviceTag { get; set; } = "Nanoleaf";
 		private readonly ControlService _controlService;
 		private readonly MulticastService _mDns;
 		private readonly ServiceDiscovery _sd;
@@ -24,7 +24,6 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			_controlService = cs.ControlService;
 			_mDns = _controlService.MulticastService;
 			_sd = _controlService.ServiceDiscovery;
-			DeviceTag = "Nanoleaf";
 		}
 
 		public async Task Discover(CancellationToken ct, int timeout) {
@@ -54,8 +53,8 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 					deviceData.Layout = new TileLayout(layout);
 					Log.Debug("New nano info: " + JsonConvert.SerializeObject(deviceData));
 				}
-			} catch (AggregateException e) {
-				Log.Debug("Unauthorized Exception: " + e.Message);
+			} catch (Exception e) {
+				Log.Debug("DISCOVERY Exception: " + e.Message);
 			}
 
 			nanoleaf.Dispose();
@@ -96,11 +95,6 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 							nData.Type = txtValues[4].Replace("md=", string.Empty, StringComparison.InvariantCulture);
 							nData.Id = txtValues[3].Replace("id=", string.Empty, StringComparison.InvariantCulture);
 							break;
-						case DnsType.AAAA:
-							var mString = msg.ToString();
-							var mValues = mString.Split(" ");
-							nData.IpV6Address = mValues[4];
-							break;
 						case DnsType.SRV:
 							var sString = msg.ToString();
 							var sValues = sString.Split(" ");
@@ -129,7 +123,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				nData.IpAddress = nData.Hostname;
 			}
 
-			NanoleafData ex = DataUtil.GetDevice<NanoleafData>(nData.Id);
+			NanoleafData? ex = DataUtil.GetDevice<NanoleafData>(nData.Id);
 			if (ex != null) {
 				if (!string.IsNullOrEmpty(ex.Token)) {
 					nData.Token = ex.Token;

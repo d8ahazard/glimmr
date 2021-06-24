@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models;
 using Glimmr.Models.Util;
@@ -38,15 +37,6 @@ namespace Glimmr.Hubs {
 			await _cs.AuthorizeDevice(id, sender);
 		}
 
-		private async Task<CpuData> GetStats(CancellationToken token) {
-			return await CpuUtil.GetStats();
-		}
-
-		private async Task<string> GetFrames() {
-			await Task.FromResult(true);
-			return JsonConvert.SerializeObject(_cs.ColorService.Counter.Rates());
-		}
-
 		public async Task LoadData() {
 			await Clients.Caller.SendAsync("olo", DataUtil.GetStoreSerialized());
 		}
@@ -74,18 +64,23 @@ namespace Glimmr.Hubs {
 
 		public async Task UpdateDevice(string deviceJson) {
 			var device = JObject.Parse(deviceJson);
-			var tag = device.GetValue("Tag").ToString();
+			var cTag = device.GetValue("Tag");
+			if (cTag == null) return;  
+			var tag = cTag.ToString();
 			var className = "Glimmr.Models.ColorTarget." + tag + "." + tag + "Data";
-			dynamic devObject = device.ToObject(Type.GetType(className));
-			if (devObject != null) {
-				Log.Debug("Incoming: " + JsonConvert.SerializeObject(devObject));
-				await _cs.UpdateDevice(devObject, false).ConfigureAwait(false);
+			var typeName = Type.GetType(className);
+			if (typeName != null) {
+				dynamic? devObject = device.ToObject(typeName);
+				if (devObject != null) {
+					await _cs.UpdateDevice(devObject, false).ConfigureAwait(false);
+				}	
 			}
 		}
 
 		public async Task Monitors(string deviceArray) {
 			Log.Debug("Mon string: " + deviceArray);
 			var monitors = JsonConvert.DeserializeObject<List<MonitorInfo>>(deviceArray);
+			if (monitors == null) return;
 			foreach (var mon in monitors) {
 				Log.Debug("Inserting monitor: " + JsonConvert.SerializeObject(mon));
 				await DataUtil.InsertCollection<MonitorInfo>("Dev_Video", mon);
@@ -112,7 +107,7 @@ namespace Glimmr.Hubs {
 			try {
 				Clients.Caller.SendAsync("olo", DataUtil.GetStoreSerialized());
 			} catch (Exception) {
-				// Ignooored
+				// Ignored
 			}
 
 			return base.OnConnectedAsync();

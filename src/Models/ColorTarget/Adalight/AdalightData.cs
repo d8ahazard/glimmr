@@ -2,6 +2,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Globalization;
 using Newtonsoft.Json;
 
 #endregion
@@ -29,7 +30,22 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int Speed { get; set; }
 
+		public string Id { get; set; }
+		public string IpAddress { get; set; }
+		public string LastSeen { get; set; }
+		public string Name { get; set; }
+		public string Tag { get; set; } = "Adalight";
+
+
 		public AdalightData() {
+			Port = 3;
+			Name = $"Adalight - COM{Port}";
+			Id = Name;
+			Brightness = 100;
+			LedCount = 0;
+			Speed = 115200;
+			IpAddress = "localhost";
+			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 		}
 
 		public AdalightData(int port, int ledCount) {
@@ -39,6 +55,8 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			Brightness = 100;
 			LedCount = ledCount;
 			Speed = 115200;
+			IpAddress = "localhost";
+			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 		}
 
 		[DefaultValue(false)]
@@ -57,12 +75,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			new("ReverseStrip", "check", "Reverse Strip")
 		};
 
-		public string Id { get; set; }
-		public string IpAddress { get; set; }
-		public string LastSeen { get; set; }
-		public string Name { get; set; }
-		public string Tag { get; set; } = "Adalight";
-
+		
 		public void UpdateFromDiscovered(IColorTargetData data) {
 		}
 	}

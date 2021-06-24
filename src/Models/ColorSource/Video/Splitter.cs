@@ -46,7 +46,7 @@ namespace Glimmr.Models.ColorSource.Video {
 		private int _hCropCount;
 		private int _hCropPixels;
 		private int _hSectors;
-		private Mat _input;
+		private Mat? _input;
 
 		private int _ledCount;
 		private int _leftCount;
@@ -74,6 +74,8 @@ namespace Glimmr.Models.ColorSource.Video {
 
 
 		public Splitter(ControlService controlService) {
+			_colorsLed = Array.Empty<Color>();
+			_colorsSectors = Array.Empty<Color>();
 			_frameWatch = new Stopwatch();
 			_frameWatch.Start();
 			_controlService = controlService;
@@ -219,6 +221,7 @@ namespace Glimmr.Models.ColorSource.Video {
 		}
 
 		private void CheckSectors() {
+			if (_input == null) return;
 			// If nothing to crop, just leave
 			if (!_cropLetter && !_cropPillar) {
 				return;

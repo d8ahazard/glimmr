@@ -22,9 +22,7 @@ namespace Glimmr.Services {
 	// Handles capturing and sending color data
 	public class ColorService : BackgroundService {
 		public ControlService ControlService { get; }
-		private const int DeviceGroup = 20;
-
-		public FrameCounter Counter;
+		public readonly FrameCounter Counter;
 		public DeviceMode DeviceMode;
 		private bool _autoDisabled;
 		private int _autoDisableDelay;
@@ -42,7 +40,6 @@ namespace Glimmr.Services {
 		private bool _setAutoDisable;
 
 		// Generates a token every time we send colors, and expires super-fast
-		private CancellationToken _stopToken;
 		private readonly Dictionary<DeviceMode, IColorSource> _streams;
 		private bool _streamStarted;
 
@@ -80,7 +77,6 @@ namespace Glimmr.Services {
 		public event Action<List<Color>, List<Color>, int, bool> ColorSendEvent = delegate { };
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
-			_stopToken = stoppingToken;
 			LoadData();
 			return Task.Run(async () => {
 				await Demo(this, null).ConfigureAwait(false);
@@ -139,40 +135,41 @@ namespace Glimmr.Services {
 			var devId = dynamicEventArgs.P1;
 			var disable = false;
 			var ts = new CancellationTokenSource();
-			var lc = 300;
 			try {
-				lc = _systemData.LedCount;
 			} catch (Exception) {
+				// Ignored
 			}
 
 			var bColor = Color.FromArgb(0, 0, 0, 0);
 			var rColor = Color.FromArgb(255, 255, 0, 0);
-			for (var i = 0; i < _sDevices.Length; i++) {
-				if (_sDevices[i].Id == devId) {
-					var sd = _sDevices[i];
-					sd.Testing = true;
-					Log.Information("Flashing device: " + devId);
-					if (!sd.Streaming) {
-						disable = true;
-						await sd.StartStream(ts.Token);
-					}
-
-					await sd.FlashColor(rColor);
-					Thread.Sleep(500);
-					await sd.FlashColor(bColor);
-					Thread.Sleep(500);
-					await sd.FlashColor(rColor);
-					Thread.Sleep(500);
-					await sd.FlashColor(bColor);
-					sd.Testing = false;
-					if (!disable) {
-						continue;
-					}
-
-					await sd.StopStream();
-					ts.Cancel();
-					ts.Dispose();
+			foreach (var t in _sDevices) {
+				if (t.Id != devId) {
+					continue;
 				}
+
+				var sd = t;
+				sd.Testing = true;
+				Log.Information("Flashing device: " + devId);
+				if (!sd.Streaming) {
+					disable = true;
+					await sd.StartStream(ts.Token);
+				}
+
+				await sd.FlashColor(rColor);
+				Thread.Sleep(500);
+				await sd.FlashColor(bColor);
+				Thread.Sleep(500);
+				await sd.FlashColor(rColor);
+				Thread.Sleep(500);
+				await sd.FlashColor(bColor);
+				sd.Testing = false;
+				if (!disable) {
+					continue;
+				}
+
+				await sd.StopStream();
+				ts.Cancel();
+				ts.Dispose();
 			}
 		}
 
@@ -189,50 +186,40 @@ namespace Glimmr.Services {
 			var black = ColorUtil.EmptyList(_systemData.LedCount);
 			var blackSectors = ColorUtil.EmptyList(sectorCount);
 			var devices = new List<IColorTarget>();
-			for (var i = 0; i < _sDevices.Length; i++) {
-				if (_sDevices[i].Enable) {
-					devices.Add(_sDevices[i]);
+			foreach (var t in _sDevices) {
+				if (t.Enable) {
+					devices.Add(t);
 				}
 			}
 
-			foreach (var _strip in devices) {
-				if (_strip != null) {
-					_strip.Testing = true;
-				}
+			foreach (var strip in devices.Where(strip => strip != null)) {
+				strip.Testing = true;
 			}
 
-			foreach (var _strip in devices) {
-				if (_strip != null) {
-					_strip.SetColor(colors.ToList(), sectors.ToList(), 0);
-				}
+			foreach (var strip in devices) {
+				strip?.SetColor(colors.ToList(), sectors.ToList(), 0);
 			}
 
 			await Task.Delay(500);
 
-			foreach (var _strip in devices) {
-				if (_strip != null) {
-					_strip.SetColor(black, blackSectors, 0);
-				}
+			foreach (var strip in devices) {
+				strip?.SetColor(black, blackSectors, 0);
 			}
 
-			foreach (var _strip in devices) {
-				if (_strip != null) {
-					_strip.SetColor(colors.ToList(), sectors.ToList(), 0);
-				}
+			foreach (var strip in devices) {
+				strip?.SetColor(colors.ToList(), sectors.ToList(), 0);
 			}
 
 			await Task.Delay(1000);
 
-			foreach (var _strip in devices) {
-				if (_strip != null) {
-					_strip.SetColor(black, blackSectors, 0);
-					_strip.Testing = false;
-				}
+			foreach (var strip in devices.Where(strip => strip != null)) {
+				strip.SetColor(black, blackSectors, 0);
+				strip.Testing = false;
 			}
 		}
 
 		private async Task CheckAutoDisable() {
-			var sourceActive = false;
+			bool sourceActive;
 			// If we're in video or audio mode, check the source is active...
 			if (DeviceMode == DeviceMode.Video && _streams[DeviceMode.Video] != null &&
 			    _captureMode != CaptureMode.DreamScreen) {
@@ -267,13 +254,6 @@ namespace Glimmr.Services {
 
 		private async Task LedTest(object o, DynamicEventArgs dynamicEventArgs) {
 			int led = dynamicEventArgs.P1;
-			var strips = new List<IColorTarget>();
-			for (var i = 0; i < _sDevices.Length; i++) {
-				if (_sDevices[i].Enable) {
-					strips.Add(_sDevices[i]);
-				}
-			}
-
 			var colors = ColorUtil.EmptyList(_systemData.LedCount);
 			var blackColors = colors;
 			colors[led] = Color.FromArgb(255, 0, 0);
@@ -302,8 +282,9 @@ namespace Glimmr.Services {
 		}
 
 		private void LoadData() {
+			var sd = DataUtil.GetSystemData();
 			// Reload main vars
-			DeviceMode = (DeviceMode) DataUtil.GetItem<int>("DeviceMode");
+			DeviceMode = (DeviceMode) sd.DeviceMode;
 			_captureMode = (CaptureMode) (DataUtil.GetItem<int>("CaptureMode") ?? 2);
 			_sendTokenSource = new CancellationTokenSource();
 			_systemData = DataUtil.GetSystemData();
@@ -312,30 +293,20 @@ namespace Glimmr.Services {
 			var sDevs = new List<IColorTarget>();
 			var classes = SystemUtil.GetClasses<IColorTarget>();
 			var deviceData = DataUtil.GetDevices();
-			var enabled = 0;
 			foreach (var c in classes) {
 				try {
-					var tag = c.Replace("Device", "");
-					var dataName = c.Replace("Device", "Data");
-					tag = c.Replace("Glimmr.Models.ColorTarget.", "");
+					var tag = c.Replace("Glimmr.Models.ColorTarget.", "");
 					tag = tag.Split(".")[0];
-					foreach (var device in deviceData) {
-						if (device.Tag == tag) {
-							if (tag == "Led" && device.Id == "2") {
-								continue;
-							}
+					foreach (var device in deviceData.Where(device => device.Tag == tag).Where(device => tag != "Led" || device.Id != "2")) {
+						if (device.Enable) {
+						}
 
-							if (device.Enable) {
-								enabled++;
-							}
-
-							Log.Debug($"Creating {device.Tag}: {device.Id}");
-							var args = new object[] {device, this};
-							dynamic? obj = Activator.CreateInstance(Type.GetType(c)!, args);
-							if (obj != null) {
-								var dObj = (IColorTarget) obj;
-								sDevs.Add(dObj);
-							}
+						Log.Debug($"Creating {device.Tag}: {device.Id}");
+						var args = new object[] {device, this};
+						dynamic? obj = Activator.CreateInstance(Type.GetType(c)!, args);
+						if (obj != null) {
+							var dObj = (IColorTarget) obj;
+							sDevs.Add(dObj);
 						}
 					}
 				} catch (InvalidCastException e) {
@@ -353,14 +324,12 @@ namespace Glimmr.Services {
 			try {
 				ledCount = _systemData.LedCount;
 			} catch (Exception) {
+				// ignored 
 			}
 
 			var i = 0;
-			var cols = new List<Color>();
-			var secs = new List<Color>();
-			cols = ColorUtil.EmptyList(ledCount);
-			secs = ColorUtil.EmptyList(sectorCount);
-			var degs = ledCount / sectorCount;
+			var cols = ColorUtil.EmptyList(ledCount);
+			var secs = ColorUtil.EmptyList(sectorCount);
 			try {
 				while (i < ledCount) {
 					var pi = i * 1.0f;
@@ -399,7 +368,6 @@ namespace Glimmr.Services {
 			foreach (var dev in _sDevices) {
 				if (dev.Data.Id == id) {
 					Log.Debug("Reloading device: " + id);
-					var wasStreaming = dev.Streaming;
 					await dev.ReloadData().ConfigureAwait(false);
 					if (DeviceMode != DeviceMode.Off && dev.Data.Enable && !dev.Streaming) {
 						await dev.StartStream(_sendTokenSource.Token).ConfigureAwait(false);
@@ -431,19 +399,18 @@ namespace Glimmr.Services {
 
 		private dynamic? CreateDevice(dynamic devData) {
 			var classes = SystemUtil.GetClasses<IColorTarget>();
-			var deviceData = DataUtil.GetDevices();
 			foreach (var c in classes) {
 				try {
-					var tag = c.Replace("Device", "");
-					var dataName = c.Replace("Device", "Data");
-					tag = c.Replace("Glimmr.Models.ColorTarget.", "");
+					string tag = c.Replace("Glimmr.Models.ColorTarget.", "");
 					tag = tag.Split(".")[0];
-					if (devData.Tag == tag) {
-						Log.Debug($"Creating {devData.Tag}: {devData.Id}");
-						var args = new object[] {devData, this};
-						dynamic? obj = Activator.CreateInstance(Type.GetType(c)!, args);
-						return obj;
+					if (devData.Tag != tag) {
+						continue;
 					}
+
+					Log.Debug($"Creating {devData.Tag}: {devData.Id}");
+					var args = new object[] {devData, this};
+					dynamic? obj = Activator.CreateInstance(Type.GetType(c)!, args);
+					return obj;
 				} catch (Exception e) {
 					Log.Warning("Exception: " + e.Message);
 				}
@@ -476,7 +443,6 @@ namespace Glimmr.Services {
 				_autoDisableDelay = 10;
 			}
 
-			var prevCapMode = _captureMode;
 			_captureMode = (CaptureMode) sd.CaptureMode;
 		}
 
@@ -515,19 +481,19 @@ namespace Glimmr.Services {
 			if (!_streamStarted) {
 				_streamStarted = true;
 				Log.Information("Starting streaming devices...");
-				foreach (var sdev in _sDevices) {
-					if (sdev.Data == null) {
-						Log.Debug("SET DEV DATA: " + sdev.Id);
+				foreach (var sDev in _sDevices) {
+					if (sDev.Data == null) {
+						Log.Debug("SET DEV DATA: " + sDev.Id);
 					} else {
-						if (sdev.Data.Tag != "Led" && sdev.Data.Tag != "Adalight" && sdev.Data.Enable) {
-							if (!SystemUtil.IsOnline(sdev.Data.IpAddress)) {
-								Log.Debug($"Device {sdev.Data.Tag} at {sdev.Data.Id} is offline.");
+						if (sDev.Data.Tag != "Led" && sDev.Data.Tag != "Adalight" && sDev.Data.Enable) {
+							if (!SystemUtil.IsOnline(sDev.Data.IpAddress)) {
+								Log.Debug($"Device {sDev.Data.Tag} at {sDev.Data.Id} is offline.");
 								continue;
 							}
 						}
 					}
 
-					sdev.StartStream(_sendTokenSource.Token);
+					sDev.StartStream(_sendTokenSource.Token);
 				}
 			}
 
@@ -602,7 +568,7 @@ namespace Glimmr.Services {
 			await StopStream().ConfigureAwait(false);
 			_watch.Stop();
 			_frameWatch.Stop();
-			_streamTokenSource?.Cancel();
+			_streamTokenSource.Cancel();
 			foreach (var stream in _streams) {
 				stream.Value.ToggleStream(false);
 			}
@@ -610,7 +576,7 @@ namespace Glimmr.Services {
 			CancelSource(_sendTokenSource, true);
 			foreach (var s in _sDevices) {
 				try {
-					s?.Dispose();
+					s.Dispose();
 				} catch (Exception e) {
 					Log.Warning("Caught exception: " + e.Message);
 				}
@@ -621,8 +587,7 @@ namespace Glimmr.Services {
 
 		public void StopDevice(string id, bool remove = false) {
 			var devs = new List<IColorTarget>();
-			for (var i = 0; i < _sDevices.Length; i++) {
-				var dev = _sDevices[i];
+			foreach (var dev in _sDevices) {
 				if (dev.Id == id) {
 					if (dev.Enable && dev.Streaming) {
 						dev.StopStream();
@@ -639,8 +604,7 @@ namespace Glimmr.Services {
 				}
 			}
 
-			foreach (var dev in _sDevices) {
-			}
+			_sDevices = devs.ToArray();
 		}
 	}
 }

@@ -13,8 +13,7 @@ using Serilog;
 namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 	public class UsbVideoStream : IVideoStream, IDisposable {
 		private bool _disposed;
-		private bool _doSave;
-		private VideoCapture _video;
+		private VideoCapture? _video;
 
 
 		public UsbVideoStream() {
@@ -34,15 +33,15 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 
 		public async Task Start(CancellationToken ct) {
 			Log.Debug("Starting USB Stream...");
-			Refresh();
+			await Refresh();
+			if (_video == null) return;
 			_video.ImageGrabbed += SetFrame;
 			_video.Start();
-			await Task.FromResult(true);
 			Log.Debug("USB Stream started.");
 		}
 
 		public Task Stop() {
-			_video.Stop();
+			_video?.Stop();
 			Dispose();
 			return Task.CompletedTask;
 		}
@@ -62,16 +61,14 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 			}
 
 			Log.Debug("Stream init, capture source is " + srcName + ", " + inputStream);
-			_doSave = false;
 			return Task.CompletedTask;
 		}
 
 		public Task SaveFrame() {
-			_doSave = true;
 			return Task.CompletedTask;
 		}
 
-		public Mat Frame { get; set; }
+		public Mat Frame { get; }
 
 		private void SetFrame(object sender, EventArgs e) {
 			if (_video != null && _video.Ptr != IntPtr.Zero) {
@@ -87,7 +84,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 			}
 
 			Frame.Dispose();
-			_video.Dispose();
+			_video?.Dispose();
 		}
 	}
 }

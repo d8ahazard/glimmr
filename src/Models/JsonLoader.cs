@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Glimmr.Models.ColorSource.Audio;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -81,7 +82,7 @@ namespace Glimmr.Models {
 			return files.Where(f => f != null).Cast<dynamic>().ToList();
 		}
 
-		public dynamic? GetItem<T>(dynamic id, bool getDefault = false) {
+		public AudioScene GetItem(dynamic id) {
 			var files = LoadFiles<JObject>();
 			foreach (var f in files) {
 				if (!f.TryGetValue("Id", out var check)) {
@@ -89,20 +90,20 @@ namespace Glimmr.Models {
 				}
 
 				if (check == id) {
-					return f.ToObject<T>();
+					return f.ToObject<AudioScene>();
 				}
 			}
 
-			return getDefault ? GetDefault<T>() : null;
+			return GetDefault();
 		}
 
-		private dynamic? GetDefault<T>() {
-			var files = LoadFiles<T>();
+		private dynamic GetDefault() {
+			var files = LoadFiles<AudioScene>();
 			if (files.Count != 0) {
 				return files[0];
 			}
 
-			return null;
+			return new AudioScene();
 		}
 	}
 }

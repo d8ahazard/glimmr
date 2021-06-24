@@ -30,7 +30,6 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 
 		public async Task Discover(CancellationToken ct, int timeout) {
 			Log.Debug("Glimmr: Discovery started...");
-
 			try {
 				_mDns.NetworkInterfaceDiscovered += InterfaceDiscovered;
 				_sd.ServiceDiscovered += ServiceDiscovered;

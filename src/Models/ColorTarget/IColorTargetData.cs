@@ -26,27 +26,28 @@ namespace Glimmr.Models.ColorTarget {
 	[Serializable]
 	public class SettingsProperty {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-		public string ValueMax { get; set; }
+		public string ValueMax { get; set; } = "100";
 
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-		public string ValueMin { get; set; }
+		public string ValueMin { get; set; } = "0";
 
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-		public string ValueStep { get; set; }
+		public string ValueStep { get; set; } = "1";
 
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
 		public Dictionary<string, string> Options;
 
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-		public string ValueLabel;
+		public string ValueLabel { get; set; } = "";
 
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-		public string ValueName;
+		public string ValueName { get; set; } = "";
 
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-		public string ValueType;
+		public string ValueType { get; set; } = "";
 
 		public SettingsProperty() {
+			Options = new Dictionary<string, string>();
 		}
 
 		public SettingsProperty(string name, string type, string label, Dictionary<string, string>? options = null) {

@@ -15,24 +15,9 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.OpenRgb {
 	public class OpenRgbDevice : ColorTarget, IColorTarget {
-		public OpenRgbData Data { get; set; }
+		private OpenRgbData _data;
 		private readonly ColorService _colorService;
-
 		private OpenRGBClient? _client;
-		private int _ledCount;
-
-		private int _offset;
-
-
-		public OpenRgbDevice(OpenRgbData data, ColorService cs) {
-			Id = data.Id;
-			Data = data;
-			cs.ColorSendEvent += SetColor;
-			_colorService = cs;
-			_client = cs.ControlService.GetAgent("OpenRgbAgent");
-			LoadData();
-		}
-
 		public bool Streaming { get; set; }
 		public bool Testing { get; set; }
 		public int Brightness { get; set; }
@@ -40,13 +25,23 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		public string IpAddress { get; set; }
 		public string Tag { get; set; }
 		public bool Enable { get; set; }
-
-
 		IColorTargetData IColorTarget.Data {
-			get => Data;
-			set => Data = (OpenRgbData) value;
+			get => _data;
+			set => _data = (OpenRgbData) value;
 		}
 
+		public OpenRgbDevice(OpenRgbData data, ColorService cs) {
+			Id = data.Id;
+			_data = data;
+			IpAddress = _data.IpAddress;
+			Tag = _data.Tag;
+			cs.ColorSendEvent += SetColor;
+			_colorService = cs;
+			_client = cs.ControlService.GetAgent("OpenRgbAgent");
+			LoadData();
+		}
+
+		
 		public Task StartStream(CancellationToken ct) {
 			if (_client == null || !Enable) {
 				return Task.CompletedTask;
@@ -62,17 +57,17 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 				try {
 					_client.Dispose();
 					_client = _colorService.ControlService.GetAgent("OpenRgbAgent");
-					_client.Connect();
+					_client?.Connect();
 				} catch {
 					// Ignored
 				}
 			}
 
-			if (_client.Connected) {
-				Log.Information($"{Data.Tag}::Starting stream: {Data.Id}...");
+			if (_client != null && _client.Connected) {
+				Log.Information($"{_data.Tag}::Starting stream: {_data.Id}...");
 				Streaming = true;
-				_client.SetMode(Data.DeviceId, 0);
-				Log.Information($"{Data.Tag}::Stream started: {Data.Id}.");
+				_client.SetMode(_data.DeviceId, 0);
+				Log.Information($"{_data.Tag}::Stream started: {_data.Id}.");
 			}
 
 			return Task.CompletedTask;
@@ -87,15 +82,15 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 				return;
 			}
 
-			var output = new OpenRGB.NET.Models.Color[Data.LedCount];
+			var output = new OpenRGB.NET.Models.Color[_data.LedCount];
 			for (var i = 0; i < output.Length; i++) {
 				output[i] = new OpenRGB.NET.Models.Color();
 			}
 
-			_client.UpdateLeds(Data.DeviceId, output);
+			_client.UpdateLeds(_data.DeviceId, output);
 			await Task.FromResult(true);
 			Streaming = false;
-			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
+			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
 		public void SetColor(List<Color> colors, List<Color> sectors, int fadeTime, bool force = false) {
@@ -103,13 +98,13 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 				return;
 			}
 
-			var toSend = ColorUtil.TruncateColors(colors, Data.Offset, Data.LedCount);
-			if (Data.Rotation == 180) {
+			var toSend = ColorUtil.TruncateColors(colors, _data.Offset, _data.LedCount);
+			if (_data.Rotation == 180) {
 				toSend = toSend.Reverse().ToArray();
 			}
 
 			var converted = toSend.Select(col => new OpenRGB.NET.Models.Color(col.R, col.G, col.B)).ToList();
-			_client.UpdateLeds(Data.DeviceId, converted.ToArray());
+			_client?.UpdateLeds(_data.DeviceId, converted.ToArray());
 
 			_colorService.Counter.Tick(Id);
 		}
@@ -119,7 +114,8 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		}
 
 		public Task ReloadData() {
-			Data = DataUtil.GetDevice(Id);
+			var dev = DataUtil.GetDevice(Id);
+			if (dev != null) _data = dev; 
 			return Task.CompletedTask;
 		}
 
@@ -127,14 +123,8 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		}
 
 		private void LoadData() {
-			Enable = Data.Enable;
-			IpAddress = Data.IpAddress;
-			_offset = Data.Offset;
-			_ledCount = Data.LedCount;
-			if (_client != null) {
-				var dev = _client.GetControllerData(Data.DeviceId);
-				_ledCount = dev.Leds.Length;
-			}
+			Enable = _data.Enable;
+			IpAddress = _data.IpAddress;
 		}
 	}
 }

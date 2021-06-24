@@ -12,6 +12,19 @@ using Newtonsoft.Json;
 namespace Glimmr.Models.ColorTarget.Nanoleaf {
 	[Serializable]
 	public class NanoleafData : IColorTargetData {
+		
+		
+		public string Name { get; set; }
+		public string Id { get; set; } = "";
+		public string Tag { get; set; }
+		public string IpAddress { get; set; } = "";
+		public int Brightness { get; set; }
+
+		public bool Enable { get; set; }
+
+		// Copy data from an existing leaf into this leaf...don't insert
+		public string LastSeen { get; set; }
+
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool MirrorX { get; set; }
@@ -27,17 +40,15 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		[JsonProperty] public int GroupNumber { get; set; }
 		[JsonProperty] public int Mode { get; set; }
 		[JsonProperty] public int Port { get; set; }
-
-		[JsonProperty] public string GroupName { get; set; }
-		[JsonProperty] public string Hostname { get; set; }
-		[JsonProperty] public string IpV6Address { get; set; }
-		[JsonProperty] public string Token { get; set; }
-		[JsonProperty] public string Type { get; set; }
-		[JsonProperty] public string Version { get; set; }
+		[JsonProperty] public string Hostname { get; set; } = "";
+		[JsonProperty] public string Token { get; set; } = "";
+		[JsonProperty] public string Type { get; set; } = "";
+		[JsonProperty] public string Version { get; set; } = "";
 		[JsonProperty] public TileLayout Layout { get; set; }
 
 
 		public NanoleafData() {
+			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 			Tag = "Nanoleaf";
 			Name ??= Tag;
 			if (IpAddress != null) {
@@ -45,32 +56,19 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				Name = "Nanoleaf - " + hc.ToString(CultureInfo.InvariantCulture).Substring(0, 4);
 			}
 
-			if (Layout == null) {
-				Layout = new TileLayout();
-			}
+			Layout ??= new TileLayout();
 		}
 
 		public NanoleafData(Info dn) {
+			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 			Id = dn.SerialNumber;
 			Name = dn.Name;
 			Version = dn.FirmwareVersion;
-			IpAddress = IpUtil.GetIpFromHost(Name).ToString();
+			var hostIp = IpUtil.GetIpFromHost(Name);
+			IpAddress = hostIp == null ? "" : hostIp.ToString(); 
 			Tag = "Nanoleaf";
-			if (Layout == null) {
-				Layout = new TileLayout();
-			}
+			Layout ??= new TileLayout();
 		}
-
-		public string Name { get; set; }
-		public string Id { get; set; }
-		public string Tag { get; set; }
-		public string IpAddress { get; set; }
-		public int Brightness { get; set; }
-
-		public bool Enable { get; set; }
-
-		// Copy data from an existing leaf into this leaf...don't insert
-		public string LastSeen { get; set; }
 
 		public void UpdateFromDiscovered(IColorTargetData data) {
 			var existingLeaf = (NanoleafData) data;

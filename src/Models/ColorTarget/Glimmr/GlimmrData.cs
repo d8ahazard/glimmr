@@ -21,6 +21,14 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		[JsonProperty] public int SectorCount { get; set; }
 		[JsonProperty] public int TopCount { get; set; }
 		[JsonProperty] public int VCount { get; set; }
+		[JsonProperty] public string Name { get; set; } = "";
+		[JsonProperty] public string Id { get; set; } = "";
+		[JsonProperty] public string Tag { get; set; }
+		[JsonProperty] public string IpAddress { get; set; } = "";
+		[JsonProperty] public int Brightness { get; set; } = 255;
+		[JsonProperty] public bool Enable { get; set; }
+
+		public string LastSeen { get; set; }
 
 
 		public GlimmrData() {
@@ -29,6 +37,8 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			if (Id != null) {
 				Name = StringUtil.UppercaseFirst(Id);
 			}
+
+			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 		}
 
 		public GlimmrData(string id, IPAddress ip) {
@@ -41,6 +51,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 
 			IpAddress = ip.ToString();
 			FetchData();
+			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 		}
 
 		public GlimmrData(SystemData sd) {
@@ -60,14 +71,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			Id = Dns.GetHostName();
 		}
 
-		[JsonProperty] public string Name { get; set; }
-		[JsonProperty] public string Id { get; set; }
-		[JsonProperty] public string Tag { get; set; }
-		[JsonProperty] public string IpAddress { get; set; }
-		[JsonProperty] public int Brightness { get; set; }
-		[JsonProperty] public bool Enable { get; set; }
-
-		public string LastSeen { get; set; }
+	
 
 		public void UpdateFromDiscovered(IColorTargetData data) {
 			var input = (GlimmrData) data;
@@ -107,6 +111,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 					SectorCount = sd.SectorCount;
 				}
 			} catch (Exception) {
+				// Ignored
 			}
 		}
 	}

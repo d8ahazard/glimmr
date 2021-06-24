@@ -64,7 +64,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			//_sd.QueryServiceInstances("_arduino._tcp");
 		}
 
-		private void WledDiscovered(object sender, ServiceInstanceDiscoveryEventArgs e) {
+		private void WledDiscovered(object? sender, ServiceInstanceDiscoveryEventArgs e) {
 			var foo = e.Message;
 			if (!foo.ToString().Contains("_wled")) {
 				return;

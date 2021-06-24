@@ -15,11 +15,11 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.Led {
 	public class LedDevice : ColorTarget, IColorTarget {
 		private float CurrentMilliamps { get; set; }
-		private readonly Controller _controller;
+		private readonly Controller? _controller;
 		private readonly int _controllerId;
-		private readonly WS281x _ws;
-		public LedData Data;
-		private readonly LedAgent _agent;
+		private readonly WS281x? _ws;
+		private LedData _data;
+		private readonly LedAgent? _agent;
 		private bool _enableAbl;
 
 		private int _ledCount;
@@ -27,13 +27,18 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 
 		public LedDevice(LedData ld, ColorService colorService) : base(colorService) {
+			_data = ld;
+			Id = _data.Id;
+			_controllerId = int.Parse(Id);
+			IpAddress = _data.IpAddress;
+			Tag = _data.Tag;
+
 			var cs = colorService;
 			_agent = cs.ControlService.GetAgent("LedAgent");
+			if (_agent == null) return;
 			_ws = _agent.Ws281X;
+			if (_ws == null) return;
 			cs.ColorSendEvent += SetColor;
-			Data = ld;
-			Id = Data.Id;
-			_controllerId = int.Parse(Id);
 			if (Id == "0") {
 				_controller = _ws.GetController();
 			}
@@ -55,8 +60,8 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 
 		IColorTargetData IColorTarget.Data {
-			get => Data;
-			set => Data = (LedData) value;
+			get => _data;
+			set => _data = (LedData) value;
 		}
 
 		public async Task StartStream(CancellationToken ct) {
@@ -64,10 +69,10 @@ namespace Glimmr.Models.ColorTarget.Led {
 				return;
 			}
 
-			Log.Information($"{Data.Tag}::Starting stream: {Data.Id}...");
+			Log.Information($"{_data.Tag}::Starting stream: {_data.Id}...");
 			Streaming = true;
 			await Task.FromResult(Streaming);
-			Log.Information($"{Data.Tag}::Stream started: {Data.Id}.");
+			Log.Information($"{_data.Tag}::Stream started: {_data.Id}.");
 		}
 
 		public async Task StopStream() {
@@ -75,21 +80,21 @@ namespace Glimmr.Models.ColorTarget.Led {
 				return;
 			}
 
-			Log.Information($"{Data.Tag}::Stopping stream. {Data.Id}.");
-			StopLights();
-			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
+			Log.Information($"{_data.Tag}::Stopping stream. {_data.Id}.");
+			await StopLights().ConfigureAwait(false);
+			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
 			Streaming = false;
 		}
 
 
 		public Task FlashColor(Color color) {
-			_controller.SetAll(color);
+			_controller?.SetAll(color);
 			return Task.CompletedTask;
 		}
 
 
 		public void Dispose() {
-			_controller.Reset();
+			_controller?.Reset();
 		}
 
 		public Task ReloadData() {
@@ -101,27 +106,27 @@ namespace Glimmr.Models.ColorTarget.Led {
 				return Task.CompletedTask;
 			}
 
-			Data = ld;
-			Enable = Data.Enable;
-			_agent.ToggleStrip(_controllerId, Enable);
-			_ledCount = Data.LedCount;
+			_data = ld;
+			Enable = _data.Enable;
+			_agent?.ToggleStrip(_controllerId, Enable);
+			_ledCount = _data.LedCount;
 			if (_ledCount > sd.LedCount) {
 				_ledCount = sd.LedCount;
 			}
 
-			_enableAbl = Data.AutoBrightnessLevel;
-			_offset = Data.Offset;
+			_enableAbl = _data.AutoBrightnessLevel;
+			_offset = _data.Offset;
 
 			if (!Enable) {
 				return Task.CompletedTask;
 			}
 
-			if (Data.Brightness != ld.Brightness && !_enableAbl) {
-				_ws.SetBrightness(ld.Brightness / 100 * 255, _controllerId);
+			if (_data.Brightness != ld.Brightness && !_enableAbl) {
+				_ws?.SetBrightness(ld.Brightness / 100 * 255, _controllerId);
 			}
 
-			if (Data.LedCount != ld.LedCount) {
-				_ws.SetBrightness(ld.LedCount, _controllerId);
+			if (_data.LedCount != ld.LedCount) {
+				_ws?.SetBrightness(ld.LedCount, _controllerId);
 			}
 
 			return Task.CompletedTask;
@@ -138,20 +143,20 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 			var c1 = ColorUtil.TruncateColors(colors, _offset, _ledCount);
 			if (_enableAbl) {
-				c1 = VoltAdjust(c1, Data);
+				c1 = VoltAdjust(c1, _data);
 			}
 
 			for (var i = 0; i < c1.Length; i++) {
 				var tCol = c1[i];
-				if (Data.StripType == 1) {
+				if (_data.StripType == 1) {
 					tCol = ColorUtil.ClampAlpha(tCol);
 				}
 
-				_controller.SetLED(i, tCol);
+				_controller?.SetLED(i, tCol);
 			}
 
-			_agent.Update(_controllerId);
-			ColorService.Counter.Tick(Id);
+			_agent?.Update(_controllerId);
+			ColorService?.Counter.Tick(Id);
 		}
 
 
@@ -162,11 +167,11 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 			Log.Debug("Setting...");
 			for (var i = 0; i < _ledCount; i++) {
-				_controller.SetLED(i, Color.FromArgb(0, 0, 0, 0));
+				_controller?.SetLED(i, Color.FromArgb(0, 0, 0, 0));
 			}
 
 			Log.Debug("Rendering...");
-			_agent.Update(_controllerId);
+			_agent?.Update(_controllerId);
 			Log.Debug("Rendered...");
 			await Task.FromResult(true);
 		}
@@ -216,7 +221,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 					var scaleI = scale * 255;
 					var scaleB = scaleI > 255 ? 255 : scaleI;
 					var newBri = scale8(defaultBrightness, scaleB);
-					_ws.SetBrightness((int) newBri, _controllerId);
+					_ws?.SetBrightness((int) newBri, _controllerId);
 					CurrentMilliamps = powerSum0 * newBri / puPerMilliamp;
 					if (newBri < defaultBrightness) {
 						//output = ColorUtil.ClampBrightness(input, newBri);
@@ -224,7 +229,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 				} else {
 					CurrentMilliamps = (float) powerSum / puPerMilliamp;
 					if (defaultBrightness < 255) {
-						_ws.SetBrightness(defaultBrightness, _controllerId);
+						_ws?.SetBrightness(defaultBrightness, _controllerId);
 					}
 				}
 
@@ -232,7 +237,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			} else {
 				CurrentMilliamps = 0;
 				if (defaultBrightness < 255) {
-					_ws.SetBrightness(defaultBrightness, _controllerId);
+					_ws?.SetBrightness(defaultBrightness, _controllerId);
 				}
 			}
 

@@ -16,25 +16,40 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Lifx {
 	public class LifxDevice : ColorTarget, IColorTarget {
-		public LifxData Data { get; set; }
+		private LifxData _data;
 		private LightBulb B { get; }
 
-		private readonly LifxClient _client;
-		private BeamLayout _beamLayout;
-		private ColorConverter _conv;
-		private int[] _gammaTableBG;
-		private int[] _gammaTableR;
+		private readonly LifxClient? _client;
+		private BeamLayout? _beamLayout;
+		private readonly int[] _gammaTableBg;
+		private readonly int[] _gammaTableR;
 		private bool _hasMulti;
-		private int _multizoneCount;
+		private int _multiZoneCount;
 		private double _scaledBrightness;
 
 		private int _targetSector;
+		
+		public bool Streaming { get; set; }
+		public bool Testing { get; set; }
+		public int Brightness { get; set; }
+		public string Id { get; set; } = "";
+		public string IpAddress { get; set; } = "";
+		public string Tag { get; set; } = "Lifx";
+
+		public bool Enable { get; set; }
+
+		IColorTargetData IColorTarget.Data {
+			get => _data;
+			set => _data = (LifxData) value;
+		}
 
 
 		public LifxDevice(LifxData d, ColorService colorService) : base(colorService) {
+			_gammaTableR = GenerateGammaTable(1.8);
+			_gammaTableBg = GenerateGammaTable(1.4);
 			DataUtil.GetItem<int>("captureMode");
-			Data = d ?? throw new ArgumentException("Invalid Data");
-			Brightness = Data.Brightness;
+			_data = d ?? throw new ArgumentException("Invalid Data");
+			Brightness = _data.Brightness;
 			_client = colorService.ControlService.GetAgent("LifxAgent");
 			colorService.ColorSendEvent += SetColor;
 			colorService.ControlService.RefreshSystemEvent += LoadData;
@@ -42,19 +57,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			LoadData();
 		}
 
-		public bool Streaming { get; set; }
-		public bool Testing { get; set; }
-		public int Brightness { get; set; }
-		public string Id { get; set; }
-		public string IpAddress { get; set; }
-		public string Tag { get; set; }
-
-		public bool Enable { get; set; }
-
-		IColorTargetData IColorTarget.Data {
-			get => Data;
-			set => Data = (LifxData) value;
-		}
+		
 
 
 		public async Task StartStream(CancellationToken ct) {
@@ -62,18 +65,21 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				return;
 			}
 
-			Log.Information($"{Data.Tag}::Starting stream: {Data.Id}...");
-			// Recalculate target sector before starting stream, just in case.
+			if (_client == null) return;
+
+			Log.Information($"{_data.Tag}::Starting stream: {_data.Id}...");
 			var col = new LifxColor(0, 0, 0);
+			
 			//var col = new LifxColor {R = 0, B = 0, G = 0};
-			_client.SetLightPowerAsync(B, true);
-			_client.SetColorAsync(B, col, 2700);
+			_client.SetLightPowerAsync(B, true).ConfigureAwait(false);
+			_client.SetColorAsync(B, col, 2700).ConfigureAwait(false);
 			Streaming = true;
 			await Task.FromResult(Streaming);
-			Log.Information($"{Data.Tag}::Stream started: {Data.Id}.");
+			Log.Information($"{_data.Tag}::Stream started: {_data.Id}.");
 		}
 
 		public async Task FlashColor(Color color) {
+			if (_client == null) return;
 			var nC = new LifxColor(color);
 			//var nC = new LifxColor {R = color.R, B = color.B, G = color.G};
 			await _client.SetColorAsync(B, nC).ConfigureAwait(false);
@@ -90,18 +96,16 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				return;
 			}
 
-			Log.Information($"{Data.Tag}::Stopping stream.: {Data.Id}...");
-			_client.SetColorAsync(B, new LifxColor(Color.FromArgb(0, 0, 0))).ConfigureAwait(false);
-			// Awaiting this breaks things, leave it alone...
-			_client.SetLightPowerAsync(B, false).ConfigureAwait(false);
-			_client.SetLightPowerAsync(B, false).ConfigureAwait(false);
-			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}.");
+			Log.Information($"{_data.Tag}::Stopping stream.: {_data.Id}...");
+			await _client.SetLightPowerAsync(B, false).ConfigureAwait(false);
+			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
 
 		public Task ReloadData() {
 			var newData = DataUtil.GetDevice<LifxData>(Id);
-			Data = newData;
+			if (newData == null) return Task.CompletedTask;
+			_data = newData;
 			LoadData();
 			return Task.CompletedTask;
 		}
@@ -120,7 +124,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				SetColorSingle(list);
 			}
 
-			ColorService.Counter.Tick(Id);
+			ColorService?.Counter.Tick(Id);
 		}
 
 
@@ -144,18 +148,17 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 			DataUtil.GetItem<int>("captureMode");
 
-			_hasMulti = Data.HasMultiZone;
+			_hasMulti = _data.HasMultiZone;
 			if (_hasMulti) {
-				_multizoneCount = Data.LedCount;
-				_beamLayout = Data.BeamLayout;
-				_gammaTableR = GenerateGammaTable(1.8);
-				_gammaTableBG = GenerateGammaTable(1.4);
-				if (_beamLayout == null && _multizoneCount != 0) {
-					Data.GenerateBeamLayout();
-					_beamLayout = Data.BeamLayout;
+				_multiZoneCount = _data.LedCount;
+				_beamLayout = _data.BeamLayout;
+				
+				if (_beamLayout == null && _multiZoneCount != 0) {
+					_data.GenerateBeamLayout();
+					_beamLayout = _data.BeamLayout;
 				}
 			} else {
-				var target = Data.TargetSector;
+				var target = _data.TargetSector;
 				if ((CaptureMode) sd.CaptureMode == CaptureMode.DreamScreen) {
 					target = ColorUtil.CheckDsSectors(target);
 				}
@@ -167,17 +170,17 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				_targetSector = target;
 			}
 
-			IpAddress = Data.IpAddress;
+			IpAddress = _data.IpAddress;
 			var oldBrightness = Brightness;
-			Brightness = Data.Brightness;
+			Brightness = _data.Brightness;
 			_scaledBrightness = Brightness / 100d;
-			if (oldBrightness != Brightness) {
+			if (oldBrightness != Brightness && _client != null) {
 				var bri = Brightness / 100 * 255;
 				_client.SetBrightnessAsync(B, (ushort) bri).ConfigureAwait(false);
 			}
 
-			Id = Data.Id;
-			Enable = Data.Enable;
+			Id = _data.Id;
+			Enable = _data.Enable;
 		}
 
 		private void SetColorMulti(List<Color> colors) {
@@ -210,8 +213,8 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			foreach (var col in output) {
 				if (i == 0) {
 					var ar = _gammaTableR[col.R];
-					var ag = _gammaTableBG[col.G];
-					var ab = _gammaTableBG[col.B];
+					var ag = _gammaTableBg[col.G];
+					var ab = _gammaTableBg[col.B];
 					cols.Add(new LifxColor(Color.FromArgb(ar, ag, ab), _scaledBrightness));
 					i = 1;
 				} else {
@@ -239,7 +242,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			//var nC = new LifxColor {R = input.R, B = input.B, G = input.G};
 
 			_client.SetColorAsync(B, nC).ConfigureAwait(false);
-			ColorService.Counter.Tick(Id);
+			ColorService?.Counter.Tick(Id);
 		}
 	}
 }

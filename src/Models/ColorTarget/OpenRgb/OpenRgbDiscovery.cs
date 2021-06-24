@@ -14,27 +14,23 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 	public class OpenRgbDiscovery : ColorDiscovery, IColorDiscovery {
 		public override string DeviceTag { get; set; } = "OpenRgb";
 
-		private readonly OpenRGBClient _client;
+		private readonly OpenRGBClient? _client;
 		private readonly ControlService _cs;
 
 		public OpenRgbDiscovery(ColorService colorService) : base(colorService) {
 			_client = colorService.ControlService.GetAgent("OpenRgbAgent");
-			if (_client == null) {
-				return;
-			}
-
 			_cs = colorService.ControlService;
-			LoadData();
 		}
 
 		public async Task Discover(CancellationToken ct, int timeout) {
+			if (_client == null) {
+				Log.Debug("No client.");
+				return;
+			}
 			try {
-				var ip = (string) DataUtil.GetItem<string>("OpenRgbIp");
+				var sd = DataUtil.GetSystemData();
+				var ip = sd.OpenRgbIp;
 				Log.Debug("Disco started...");
-				if (_client == null) {
-					Log.Debug("No client.");
-					return;
-				}
 
 				if (!_client.Connected) {
 					try {
@@ -51,7 +47,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 					var devs = _client.GetAllControllerData();
 					var idx = 0;
 					foreach (var dev in devs) {
-						var rd = new OpenRgbData(dev) {Id = "OpenRgb" + idx, DeviceId = idx, IpAddress = ip};
+						var rd = new OpenRgbData(dev, idx, ip);
 						await _cs.UpdateDevice(rd).ConfigureAwait(false);
 						idx++;
 					}
@@ -61,8 +57,6 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			}
 		}
 
-		private void LoadData() {
-			var sd = (string) DataUtil.GetItem("OpenRgbIp");
-		}
+		
 	}
 }

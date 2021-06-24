@@ -1,7 +1,9 @@
 ﻿#region
 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
 using OpenRGB.NET.Enums;
@@ -11,6 +13,10 @@ using OpenRGB.NET.Models;
 
 namespace Glimmr.Models.ColorTarget.OpenRgb {
 	public class OpenRgbData : IColorTargetData {
+		
+		[JsonProperty]
+		public string Id { get; set; }
+		
 		[DefaultValue(DeviceType.Ledstrip)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
@@ -61,16 +67,23 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string Version { get; set; }
+		
 
 		public OpenRgbData() {
 			Tag = "OpenRgb";
 			Name ??= Tag;
-			if (Id != null) {
-				Name = StringUtil.UppercaseFirst(Id);
-			}
+			Id = "";
+			IpAddress = "";
+			Description = "";
+			Location = Serial = Vendor = Version = "";
+			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
+			Name = StringUtil.UppercaseFirst(Id);
 		}
 
-		public OpenRgbData(Device dev) {
+		public OpenRgbData(Device dev, int index, string ip) {
+			Id = "OpenRgb" + index;
+			DeviceId = index;
+			IpAddress = ip;
 			Name = dev.Name;
 			Vendor = dev.Vendor;
 			Type = dev.Type;
@@ -84,14 +97,12 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			//Modes = dev.Modes.ToList();
 			Tag = "OpenRgb";
 			Brightness = 255;
+			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 		}
 
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string Name { get; set; }
-
-
-		public string Id { get; set; }
 
 
 		[DefaultValue("OpenRgb")]
@@ -115,6 +126,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 		public bool Enable { get; set; }
 
+		[JsonProperty]
 		public string LastSeen { get; set; }
 
 

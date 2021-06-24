@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Net;
 using Glimmr.Enums;
 using Glimmr.Models.Util;
@@ -13,8 +14,15 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Wled {
 	public class WledData : IColorTargetData {
+		[JsonProperty] public string Name { get; set; }
+		[JsonProperty] public string Id { get; set; }
+		[JsonProperty] public string Tag { get; set; }
+		[JsonProperty] public string IpAddress { get; set; }
+		[JsonProperty] public int Brightness { get; set; }
+		[JsonProperty] public bool Enable { get; set; }
 		[JsonProperty] public bool AutoDisable { get; set; }
 		[JsonProperty] public bool ControlStrip { get; set; }
+		[JsonProperty] public string LastSeen { get; set; }
 
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -39,21 +47,28 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		[JsonProperty] public List<int> Sectors { get; set; }
 		[JsonProperty] public WledStateData State { get; set; }
 
-		private SettingsProperty[] _keyProperties;
-
 
 		public WledData() {
 			Tag = "Wled";
 			Name ??= Tag;
-			if (Id != null) {
+			Id = "";
+			IpAddress = "";
+			ControlStrip = false;
+			AutoDisable = true;
+			Sectors = new List<int>();
+			SubSectors = new Dictionary<int, int>();
+			if (!string.IsNullOrEmpty(Id)) {
 				Name = StringUtil.UppercaseFirst(Id);
 			}
+
+			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 		}
 
 		public WledData(string id, string ipaddress) {
 			Id = id;
 			Tag = "Wled";
 			Name ??= Tag;
+			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 			IpAddress = ipaddress;
 			ControlStrip = false;
 			AutoDisable = true;
@@ -65,18 +80,15 @@ namespace Glimmr.Models.ColorTarget.Wled {
 				var jsonData = webClient.DownloadString(url);
 				var jsonObj = JsonConvert.DeserializeObject<WledStateData>(jsonData);
 				State = jsonObj;
-				if (jsonObj == null) {
-					return;
-				}
 
-				LedCount = jsonObj.info.leds.count;
-				Brightness = (int) (jsonObj.state.bri / 255f * 100);
+				LedCount = jsonObj.Info.Leds.Count;
+				Brightness = (int) (jsonObj.State.Bri / 255f * 100);
 			} catch (Exception e) {
 				Log.Debug("Yeah, here's your problem, smart guy: " + e.Message);
 			}
 		}
 
-		public string LastSeen { get; set; }
+		
 
 		public void UpdateFromDiscovered(IColorTargetData data) {
 			var input = (WledData) data;
@@ -93,18 +105,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 		public SettingsProperty[] KeyProperties {
 			get => Kps();
-			set => _keyProperties = value;
+			set { }
 		}
-
-		[JsonProperty] public string Name { get; set; }
-
-		public string Id { get; set; }
-		public string Tag { get; set; }
-		public string IpAddress { get; set; }
-		public int Brightness { get; set; }
-
-
-		public bool Enable { get; set; }
 
 		private SettingsProperty[] Kps() {
 			if ((StripMode) StripMode == Enums.StripMode.Single) {
@@ -136,104 +138,124 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		}
 	}
 
-	public class Ccnf {
-		public int max { get; set; }
-		public int min { get; set; }
-		public int time { get; set; }
+	public struct Ccnf {
+		[JsonProperty("max")] public int Max { get; set; }
+		[JsonProperty("min")] public int Min { get; set; }
+		[JsonProperty("time")] public int Time { get; set; }
 	}
 
 	public class Nl {
-		public bool fade { get; set; }
-		public bool on { get; set; }
-		public int dur { get; set; }
-		public int mode { get; set; }
-		public int tbri { get; set; }
+		[JsonProperty("fade")] public bool Fade { get; set; }
+
+		[JsonProperty("on")] public bool On { get; set; }
+
+		[JsonProperty("dur")] public int Duration { get; set; }
+
+		[JsonProperty("mode")] public int Mode { get; set; }
+
+		[JsonProperty("tbri")] public int Tbri { get; set; }
 	}
 
 	public class Udpn {
-		public bool recv { get; set; }
-		public bool send { get; set; }
+		[JsonProperty("recv")] public bool Recv { get; set; }
+
+		[JsonProperty("send")] public bool Send { get; set; }
 	}
 
 	public class Seg {
-		public bool mi { get; set; }
-		public bool on { get; set; }
-		public bool rev { get; set; }
-		public bool sel { get; set; }
-		public int bri { get; set; }
-		public int fx { get; set; }
-		public int grp { get; set; }
-		public int id { get; set; }
-		public int ix { get; set; }
-		public int len { get; set; }
-		public int pal { get; set; }
-		public int spc { get; set; }
-		public int start { get; set; }
-		public int stop { get; set; }
-		public int sx { get; set; }
-		public List<List<int>> col { get; set; }
+		[JsonProperty("mi")] public bool Mi { get; set; }
+
+		[JsonProperty("on")] public bool On { get; set; }
+
+		[JsonProperty("rev")] public bool Rev { get; set; }
+
+		[JsonProperty("sel")] public bool Sel { get; set; }
+
+		[JsonProperty("bri")] public int Bri { get; set; }
+
+		[JsonProperty("fx")] public int Fx { get; set; }
+
+		[JsonProperty("grp")] public int Grp { get; set; }
+
+		[JsonProperty("id")] public int Id { get; set; }
+
+		[JsonProperty("ix")] public int Ix { get; set; }
+
+		[JsonProperty("len")] public int Len { get; set; }
+
+		[JsonProperty("pal")] public int Pal { get; set; }
+
+		[JsonProperty("spc")] public int Spc { get; set; }
+
+		[JsonProperty("start")] public int Start { get; set; }
+
+		[JsonProperty("stop")] public int Stop { get; set; }
+
+		[JsonProperty("sx")] public int Sx { get; set; }
+
+		[JsonProperty("col")] public List<List<int>>? Col { get; set; }
 	}
 
-	public class State {
-		public bool on { get; set; }
-		public Ccnf ccnf { get; set; }
-		public int bri { get; set; }
-		public int lor { get; set; }
-		public int mainseg { get; set; }
-		public int pl { get; set; }
-		public int ps { get; set; }
-		public int pss { get; set; }
-		public int transition { get; set; }
-		public List<Seg> seg { get; set; }
-		public Nl nl { get; set; }
-		public Udpn udpn { get; set; }
+	public struct State {
+		[JsonProperty("on")] public bool On { get; set; }
+		[JsonProperty("ccnf")] public Ccnf Ccnf { get; set; }
+		[JsonProperty("bri")] public int Bri { get; set; }
+		[JsonProperty("lor")] public int Lor { get; set; }
+		[JsonProperty("mainseg")] public int Mainseg { get; set; }
+		[JsonProperty("pl")] public int Pl { get; set; }
+		[JsonProperty("ps")] public int Ps { get; set; }
+		[JsonProperty("pss")] public int Pss { get; set; }
+		[JsonProperty("transition")] public int Transition { get; set; }
+		[JsonProperty("seg")] public List<Seg> Seg { get; set; }
+		[JsonProperty("nl")] public Nl Nl { get; set; }
+		[JsonProperty("udpn")] public Udpn Udpn { get; set; }
 	}
 
-	public class Leds {
-		public bool rgbw { get; set; }
-		public bool seglock { get; set; }
-		public bool wv { get; set; }
-		public int count { get; set; }
-		public int maxpwr { get; set; }
-		public int maxseg { get; set; }
-		public int pwr { get; set; }
-		public List<int> pin { get; set; }
+	public struct Leds {
+		[JsonProperty("rgbw")] public bool Rgbw { get; set; }
+		[JsonProperty("seglock")] public bool Seglock { get; set; }
+		[JsonProperty("wv")] public bool Wv { get; set; }
+		[JsonProperty("count")] public int Count { get; set; }
+		[JsonProperty("maxpwr")] public int Maxpwr { get; set; }
+		[JsonProperty("maxseg")] public int Maxseg { get; set; }
+		[JsonProperty("pwr")] public int Pwr { get; set; }
+		[JsonProperty("pin")] public List<int> Pin { get; set; }
 	}
 
-	public class Wifi {
-		public int channel { get; set; }
-		public int rssi { get; set; }
-		public int signal { get; set; }
-		public string bssid { get; set; }
+	public struct Wifi {
+		[JsonProperty("channel")] public int Channel { get; set; }
+		[JsonProperty("rssi")] public int Rssi { get; set; }
+		[JsonProperty("signal")] public int Signal { get; set; }
+		[JsonProperty("bssid")] public string Bssid { get; set; }
 	}
 
-	public class Info {
-		public bool live { get; set; }
-		public bool str { get; set; }
-		public int freeheap { get; set; }
-		public int fxcount { get; set; }
-		public int lwip { get; set; }
-		public int opt { get; set; }
-		public int palcount { get; set; }
-		public int udpport { get; set; }
-		public int uptime { get; set; }
-		public int vid { get; set; }
-		public int ws { get; set; }
-		public Leds leds { get; set; }
-		public string arch { get; set; }
-		public string brand { get; set; }
-		public string core { get; set; }
-		public string lip { get; set; }
-		public string lm { get; set; }
-		public string mac { get; set; }
-		public string name { get; set; }
-		public string product { get; set; }
-		public string ver { get; set; }
-		public Wifi wifi { get; set; }
+	public struct Info {
+		[JsonProperty("live")] public bool Live { get; set; }
+		[JsonProperty("str")] public bool Str { get; set; }
+		[JsonProperty("freeheap")] public int Freeheap { get; set; }
+		[JsonProperty("fxcount")] public int Fxcount { get; set; }
+		[JsonProperty("lwip")] public int Lwip { get; set; }
+		[JsonProperty("opt")] public int Opt { get; set; }
+		[JsonProperty("palcount")] public int Palcount { get; set; }
+		[JsonProperty("udpport")] public int Udpport { get; set; }
+		[JsonProperty("uptime")] public int Uptime { get; set; }
+		[JsonProperty("vid")] public int Vid { get; set; }
+		[JsonProperty("ws")] public int Ws { get; set; }
+		[JsonProperty("leds")] public Leds Leds { get; set; }
+		[JsonProperty("arch")] public string Arch { get; set; }
+		[JsonProperty("brand")] public string Brand { get; set; }
+		[JsonProperty("core")] public string Core { get; set; }
+		[JsonProperty("lip")] public string Lip { get; set; }
+		[JsonProperty("lm")] public string Lm { get; set; }
+		[JsonProperty("mac")] public string Mac { get; set; }
+		[JsonProperty("name")] public string Name { get; set; }
+		[JsonProperty("product")] public string Product { get; set; }
+		[JsonProperty("ver")] public string Ver { get; set; }
+		[JsonProperty("wifi")] public Wifi Wifi { get; set; }
 	}
 
-	public class WledStateData {
-		public Info info { get; set; }
-		public State state { get; set; }
+	public struct WledStateData {
+		[JsonProperty("info")] public Info Info { get; set; }
+		[JsonProperty("state")] public State State { get; set; }
 	}
 }

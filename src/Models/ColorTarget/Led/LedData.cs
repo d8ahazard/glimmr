@@ -2,6 +2,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Globalization;
 using Newtonsoft.Json;
 
 #endregion
@@ -45,13 +46,13 @@ namespace Glimmr.Models.ColorTarget.Led {
 			set { }
 		}
 
-		public string Id { get; set; }
+		public string Id { get; set; } = "";
 
 		[DefaultValue("Led")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string Tag { get; set; } = "Led";
 
-		public string IpAddress { get; set; }
+		public string IpAddress { get; set; } = "";
 		public int Brightness { get; set; }
 
 
@@ -59,6 +60,10 @@ namespace Glimmr.Models.ColorTarget.Led {
 		public string LastSeen { get; set; }
 
 		public void UpdateFromDiscovered(IColorTargetData data) {
+		}
+
+		public LedData() {
+			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 		}
 
 		[JsonProperty]

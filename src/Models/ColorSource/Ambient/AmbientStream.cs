@@ -23,7 +23,6 @@ namespace Glimmr.Models.ColorSource.Ambient {
 		private string _ambientColor;
 		private int _ambientShow;
 		private double _animationTime;
-		private int _bottomCount;
 		private int _colorIndex;
 		private Color[] _currentColors;
 		private EasingMode _easingMode;
@@ -32,25 +31,35 @@ namespace Glimmr.Models.ColorSource.Ambient {
 		private bool _enable;
 		private int _hCount;
 		private Color[] _ledColors;
-		private int _ledCount;
-		private int _leftCount;
+		
+		// private int _ledCount;
+		// private int _leftCount;
+		// private int _rightCount;
+		// private int _topCount;
+		// private int _bottomCount;
 
-		private JsonLoader _loader;
+		private JsonLoader? _loader;
 		private AnimationMode _mode;
 		private Color[] _nextColors;
-		private int _rightCount;
 		private Color[] _sceneColors;
 		private List<AmbientScene> _scenes;
 		private Color[] _sectorColors;
 		private int _sectorCount;
-		private int _topCount;
 		private int _vCount;
 
 		public AmbientStream(ColorService colorService) {
+			_ambientColor = "#FFFFFF";
+			_currentColors = Array.Empty<Color>();
+			_ledColors = Array.Empty<Color>();
+			_sectorColors = Array.Empty<Color>();
+			_nextColors = Array.Empty<Color>();
+			_sceneColors = Array.Empty<Color>();
 			_watch = new Stopwatch();
 			_random = new Random();
 			_cs = colorService;
 			_cs.AddStream(DeviceMode.Ambient, this);
+			_loader = new JsonLoader("ambientScenes");
+			_scenes = _loader.LoadFiles<AmbientScene>();
 		}
 
 		public void ToggleStream(bool enable = false) {
@@ -59,17 +68,20 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
 		public void Refresh(SystemData sd) {
 			_sectorCount = sd.HSectors + sd.VSectors + sd.HSectors + sd.VSectors - 4;
-			_ledCount = sd.LedCount;
 			_ambientShow = sd.AmbientShow;
 			_ambientColor = sd.AmbientColor;
 			_hCount = sd.HSectors;
 			_vCount = sd.VSectors;
-			_leftCount = sd.LeftCount;
-			_rightCount = sd.RightCount;
-			_topCount = sd.TopCount;
-			_bottomCount = sd.BottomCount;
-			_loader = new JsonLoader("ambientScenes");
+			_loader ??= new JsonLoader("ambientScenes");
 			_scenes = _loader.LoadFiles<AmbientScene>();
+			
+			// _ledCount = sd.LedCount;
+			// _leftCount = sd.LeftCount;
+			// _rightCount = sd.RightCount;
+			// _topCount = sd.TopCount;
+			// _bottomCount = sd.BottomCount;
+			
+			
 			var scene = new AmbientScene();
 			foreach (var s in _scenes.Where(s => s.Id == _ambientShow)) {
 				scene = s;
@@ -80,10 +92,15 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			}
 
 			var colorStrings = scene.Colors;
-			_sceneColors = new Color[colorStrings.Length];
-			for (var i = 0; i < _sceneColors.Length; i++) {
-				_sceneColors[i] = ColorTranslator.FromHtml(colorStrings[i]);
+			if (colorStrings != null) {
+				_sceneColors = new Color[colorStrings.Length];
+				for (var i = 0; i < _sceneColors.Length; i++) {
+					_sceneColors[i] = ColorTranslator.FromHtml(colorStrings[i]);
+				}
+			} else {
+				Log.Warning("Color strings are null.");
 			}
+			
 
 			_animationTime = scene.AnimationTime * 1000;
 			_easingTime = scene.EasingTime * 1000;
