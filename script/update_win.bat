@@ -1,6 +1,6 @@
 @echo off
 cd ..
-git fetch && git pull
+git stash && fetch && git pull
 taskkill /IM GlimmrTray.exe /F
 taskkill /IM Glimmr.exe /F
 echo Publishing for windows

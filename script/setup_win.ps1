@@ -97,7 +97,7 @@ $glimmrRepo = "https://github.com/d8ahazard/glimmr";
 
 If( -not (Test-Path -Path $glimmrPath) ){
     Write-Host "Cloning Glimmr repository.";
-    Invoke-Expression "& '$gitPath' clone --branch dev $glimmrRepo $glimmrPath";
+    Invoke-Expression "& '$gitPath' clone $glimmrRepo $glimmrPath";
     
     if($service -ne $null) {
         Stop-Service -Name "glimmr";
