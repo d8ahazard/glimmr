@@ -21,6 +21,5 @@ backup/*
 wwwroot/img/_preview_input.jpg
 wwwroot/img/_preview_output.jpg
 copyPi.bat
-publish_pi.bat
 store-log.db
 script/publish_pi2.bat
