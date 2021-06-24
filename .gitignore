@@ -3,15 +3,9 @@
 */bin/*
 */obj/*
 ./bin/*
-CorsairTest/bin/*
-CorsairTest/obj/*
 src/bin/*
 src/obj/*
 packages/*
-huedream.ini
-huedream.json
-huedream.json.bk
-store.json*
 store.db*
 CodeGraphData/*
 log/*
