@@ -50,17 +50,11 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 			_video?.Stop();
 			_video?.Dispose();
 			var sd = DataUtil.GetSystemData();
-			var devs = SystemUtil.ListUsb();
 			var inputStream = sd.UsbSelection;
 			_video = new VideoCapture(inputStream);
 			_video.SetCaptureProperty(CapProp.FrameWidth, DisplayUtil.CaptureWidth);
 			_video.SetCaptureProperty(CapProp.FrameHeight, DisplayUtil.CaptureHeight);
-			var srcName = _video.CaptureSource.ToString();
-			if (devs.ContainsKey(inputStream)) {
-				srcName = devs[inputStream];
-			}
-
-			Log.Debug("Stream init, capture source is " + srcName + ", " + inputStream);
+			
 			return Task.CompletedTask;
 		}
 

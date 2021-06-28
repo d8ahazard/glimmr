@@ -183,7 +183,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 
 			try {
 				uri = new Uri("http://" + IpAddress + "/api/DreamData/" + target);
-				Log.Debug($"Posting to {uri}: " + value);
+				//Log.Debug($"Posting to {uri}: " + value);
 			} catch (UriFormatException e) {
 				Log.Warning("URI Format exception: " + e.Message);
 				return;
@@ -193,7 +193,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			var stringContent = new StringContent(value, Encoding.UTF8, "application/json");
 			try {
 				var res = await _httpClient.PostAsync(uri, stringContent);
-				Log.Debug("Response: " + res.StatusCode);
+				//Log.Debug("Response: " + res.StatusCode);
 			} catch (Exception e) {
 				Log.Warning("HTTP Request Exception: " + e.Message);
 			}

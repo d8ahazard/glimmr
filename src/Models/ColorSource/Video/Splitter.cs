@@ -84,11 +84,9 @@ namespace Glimmr.Models.ColorSource.Video {
 			// Set desired width of capture region to 15% total image
 			_borderWidth = 10;
 			_borderHeight = 10;
-			Log.Debug($"LED, sector counts: {_ledCount}, {_sectorCount}");
 			// Get sectors
 			_fullCoords = DrawGrid();
 			_fullSectors = DrawSectors();
-			Log.Debug("Splitter init complete.");
 		}
 
 
@@ -130,7 +128,6 @@ namespace Glimmr.Models.ColorSource.Video {
 			_input = inputMat ?? throw new ArgumentException("Invalid input material.");
 			// Don't do anything if there's no frame.
 			if (_input.IsEmpty) {
-				Log.Debug("SPLITTER: NO INPUT.");
 				return;
 			}
 
@@ -480,11 +477,8 @@ namespace Glimmr.Models.ColorSource.Video {
 
 			if (output.Length != _ledCount) {
 				Log.Warning($"Warning: Led count is {output.Length}, but should be {_ledCount}");
-			} else {
-				Log.Information($"Created {output.Length} led regions!");
 			}
-
-
+			
 			return output;
 		}
 
@@ -594,7 +588,6 @@ namespace Glimmr.Models.ColorSource.Video {
 		public void Refresh() {
 			var sd = DataUtil.GetSystemData();
 			_previewMode = sd.PreviewMode;
-			Log.Debug("Preview mode set to: " + _previewMode);
 			_leftCount = sd.LeftCount;
 			_topCount = sd.TopCount;
 			_rightCount = sd.RightCount;

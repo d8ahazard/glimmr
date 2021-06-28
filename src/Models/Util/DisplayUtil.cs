@@ -87,7 +87,6 @@ namespace Glimmr.Models.Util {
 					// Get the position and size of this particular display device
 					var devMode = new DEVMODE();
 					if (EnumDisplaySettings(deviceData.DeviceName, EnumCurrentSettings, ref devMode)) {
-						Log.Debug("Enumerating monitor: " + deviceData.DeviceName);
 						// Update the virtual screen dimensions
 						left = Math.Min(left, devMode.dmPositionX);
 						top = Math.Min(top, devMode.dmPositionY);
