@@ -1,5 +1,6 @@
 ﻿#region
 
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -7,61 +8,75 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Glimmr.Enums;
 using Glimmr.Models;
 using Glimmr.Models.ColorTarget.Glimmr;
 using Glimmr.Models.Util;
 using Makaretu.Dns;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using static Glimmr.Enums.DeviceMode;
 
 #endregion
 
 namespace Glimmr.Services {
 	public class StreamService : BackgroundService {
 		private readonly ControlService _cs;
+		private readonly ColorService _colorService;
 		private readonly UdpClient _uc;
 		private int _devMode;
 		private int _ledCount;
 		private bool _loaded;
+		private bool _sending;
 		private bool _mirrorHorizontal;
 		private SystemData _sd;
+		private GlimmrData? _gd;
 		private int _sectorCount;
 		private bool _useCenter;
+		private bool _streaming;
+		private int[] tgtDimensions = new int[4];
+		private int[] _srcDimensions = new int[4];
 
 
 		public StreamService(ControlService cs) {
 			_cs = cs;
+			_colorService = cs.ColorService;
 			_cs.RefreshSystemEvent += Refresh;
 			_cs.SetModeEvent += Mode;
 			_cs.StartStreamEvent += StartStream;
 			_cs.RefreshSystemEvent += RefreshSd;
 			_uc = new UdpClient(8889) {Ttl = 5};
+			_uc.Client.ReceiveBufferSize = 2000;
 			_uc.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 			_uc.Client.Blocking = false;
 			_uc.DontFragment = true;
 			var sd = DataUtil.GetSystemData();
 			_devMode = sd.DeviceMode;
 			_sd = sd;
+			tgtDimensions = new[] {_sd.LeftCount, _sd.RightCount, _sd.TopCount, _sd.BottomCount};
 		}
 
 		private void RefreshSd() {
 			_sd = DataUtil.GetSystemData();
+			tgtDimensions = new[] {_sd.LeftCount, _sd.RightCount, _sd.TopCount, _sd.BottomCount};
 		}
 
 		private async Task StartStream(object arg1, DynamicEventArgs arg2) {
-			GlimmrData gd = arg2.P1;
+			_gd = arg2.P1;
 			_sd = DataUtil.GetSystemData();
-			_useCenter = gd.UseCenter;
-			_mirrorHorizontal = gd.MirrorHorizontal;
-			_sectorCount = gd.SectorCount;
-			_ledCount = gd.LedCount;
+			_useCenter = _gd.UseCenter;
+			_mirrorHorizontal = _gd.MirrorHorizontal;
+			_sectorCount = _gd.SectorCount;
+			_ledCount = _gd.LedCount;
 			_loaded = true;
-
+			_srcDimensions = new[] {_gd.LeftCount, _gd.RightCount, _gd.TopCount, _gd.BottomCount};
+			_streaming = true;
 			await _cs.SetMode(5);
 		}
 
 		private Task Mode(object arg1, DynamicEventArgs arg2) {
 			_devMode = arg2.P1;
+			_streaming = (DeviceMode) _devMode == Streaming; 
 			return Task.CompletedTask;
 		}
 
@@ -73,22 +88,29 @@ namespace Glimmr.Services {
 				var service = new ServiceProfile(hostname, "_glimmr._tcp", 8889, addr);
 				var sd = new ServiceDiscovery();
 				sd.Advertise(service);
+				Task t1 = Task.Run(() => Listen(),stoppingToken);
+				Task t2 = Task.Run(() => Listen(),stoppingToken);
 				while (!stoppingToken.IsCancellationRequested) {
-					if (_devMode != 5) {
+					if ((DeviceMode) _devMode != Streaming) {
 						await Task.Delay(1, stoppingToken);
-					} else {
-						if (!_loaded) {
-							continue;
-						}
-
-						var receivedResult = await _uc.ReceiveAsync();
-						var bytes = receivedResult.Buffer;
-						await ProcessFrame(bytes);
 					}
 				}
 
 				sd.Dispose();
 			}, stoppingToken);
+		}
+		
+		private async Task Listen() {
+			Log.Debug("Starting listen task...");
+			while (true) {
+				if (!_streaming) continue;
+				try {
+					var result = await _uc.ReceiveAsync();
+					if (!_sending) await ProcessFrame(result.Buffer).ConfigureAwait(false);
+				} catch (Exception ex) {
+					// Ignored
+				}
+			}
 		}
 
 		public override Task StopAsync(CancellationToken stoppingToken) {
@@ -125,7 +147,7 @@ namespace Glimmr.Services {
 				}
 
 				if (_sd.LedCount != _ledCount) {
-					//colors = ColorUtil.ResizeColors(colors, _dimensions).ToArray();
+					colors = ColorUtil.ResizeColors(colors,_srcDimensions, tgtDimensions).ToArray();
 				}
 
 				if (!_useCenter && _sd.SectorCount != _sectorCount) {
@@ -134,12 +156,9 @@ namespace Glimmr.Services {
 
 				var ledColors = colors.ToList();
 				var sectorColors = sectors.ToList();
-				if (_mirrorHorizontal) {
-					sectorColors.Reverse();
-					ledColors.Reverse();
-				}
-
-				_cs.SendColors(ledColors, sectorColors);
+				
+				_colorService.SendColors(ledColors, sectorColors,0);
+				_sending = false;
 				await Task.FromResult(true);
 			} else {
 				Log.Debug("Dev mode is incorrect.");
