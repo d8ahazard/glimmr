@@ -142,6 +142,16 @@ of the web UI.
 To configure system, capture, and audio preferences, click the gear icon in the top-right corner
 of the screen. 
 
+### Configure OpenRGB
+[OpenRGB](https://gitlab.com/CalcProgrammer1/OpenRGB) is a free, cross-platform solution for controlling desktop-connected lighting peripherals.
+
+Once installed, ensure OpenRGB is running and the SDK server is started. Refer to the [OpenRGB FAQ](https://gitlab.com/CalcProgrammer1/OpenRGB/-/wikis/Frequently-Asked-Questions)
+for information regarding setting it up as a service.
+
+Under Settings -> General -> OpenRGB, enter the IP Address of the computer on which OpenRGB is running.
+
+Now, trigger a device refresh, and any devices in OpenRGB should be added to the Glimmr UI.
+
 ### Configure Adalight Devices
 NOTE: It is *highly* recommended to use my [custom Adalight Sketch](https://github.com/d8ahazard/adalight-FastLED-Plus), as it provides
 additional features and controls that help better integrate with Glimmr, including auto-detection
