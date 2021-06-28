@@ -925,12 +925,18 @@ namespace Glimmr.Models.Util {
 		}
 
 		// Resize a color array
-		public static Color[] ResizeColors(Color[] input, int[] dimensions) {
+		public static Color[] ResizeColors(Color[] input, int[] srcDimensions, int[] tgtDimensions) {
+			_leftCount = tgtDimensions[0];
+			_rightCount = tgtDimensions[1];
+			_topCount = tgtDimensions[2];
+			_bottomCount = tgtDimensions[3];
+			_ledCount = _leftCount + _rightCount + _topCount + _bottomCount;
+			
 			var output = new Color[_ledCount];
 
 			try {
-				SetSystemData();
-				var factor = (float) dimensions[0] / _rightCount;
+				
+				var factor = (float) srcDimensions[1] / _rightCount;
 				var idx = 0;
 				var start = 0;
 				var required = _rightCount;
@@ -946,7 +952,7 @@ namespace Glimmr.Models.Util {
 
 				start = required;
 				required += _topCount;
-				factor = (float) dimensions[1] / _topCount;
+				factor = (float) srcDimensions[2] / _topCount;
 				for (var i = start; i < required; i++) {
 					var step = (int) (idx * factor);
 					if (step >= input.Length) {
@@ -959,7 +965,7 @@ namespace Glimmr.Models.Util {
 
 				start = required;
 				required += _leftCount;
-				factor = (float) dimensions[2] / _leftCount;
+				factor = (float) srcDimensions[0] / _leftCount;
 				for (var i = start; i < required; i++) {
 					var step = (int) (idx * factor);
 					if (step >= input.Length) {
@@ -972,7 +978,7 @@ namespace Glimmr.Models.Util {
 
 				start = required;
 				required += _bottomCount;
-				factor = (float) dimensions[3] / _bottomCount;
+				factor = (float) srcDimensions[3] / _bottomCount;
 				for (var i = start; i < required; i++) {
 					var step = (int) (idx * factor);
 					if (step >= input.Length) {

@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
@@ -19,11 +20,13 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.Glimmr {
 	public class GlimmrDevice : ColorTarget, IColorTarget, IDisposable {
 		private GlimmrData _data;
+		private GlimmrData _sourceData;
 		private const int Port = 8889;
 		private readonly HttpClient _httpClient;
 		private readonly UdpClient _udpClient;
 		private readonly List<Color> _updateColors;
 		private bool _disposed;
+		private SystemData _sd;
 		private IPEndPoint? _ep;
 		public bool Enable { get; set; }
 		public bool Streaming { get; set; }
@@ -48,9 +51,13 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			Id = _data.Id;
 			Enable = _data.Enable;
 			IpAddress = _data.IpAddress;
+			_sd = DataUtil.GetSystemData();
+			colorService.ControlService.RefreshSystemEvent += RefreshSystem;
 		}
 
-		
+		private void RefreshSystem() {
+			_sd = DataUtil.GetSystemData();
+		}
 
 
 		public async Task StartStream(CancellationToken ct) {
@@ -112,6 +119,47 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 				return;
 			}
 
+			if (_data.MirrorHorizontal) {
+				var left = new Color[_sd.LeftCount];
+				var right = new Color[_sd.RightCount];
+				var top = new Color[_sd.TopCount];
+				var bottom = new Color[_sd.BottomCount];
+				for (var i = 0; i < right.Length; i++) {
+					right[i] = leds[i];
+				}
+
+				var ct = 0;
+				for (var i = 0; i < top.Length; i++) {
+					var tIdx = right.Length + i;
+					top[ct] = leds[tIdx];
+					ct++;
+				}
+				
+				ct = 0;
+				for (var i = 0; i < left.Length; i++) {
+					var lIdx = right.Length + top.Length + i;
+					left[ct] = leds[lIdx];
+					ct++;
+				}
+				ct = 0;
+				for (var i = 0; i < bottom.Length; i++) {
+					var lIdx = left.Length + right.Length + top.Length + i;
+					bottom[ct] = leds[lIdx];
+					ct++;
+				}
+
+				leds = new List<Color>();
+				left = left.Reverse().ToArray();
+				top = top.Reverse().ToArray();
+				bottom = bottom.Reverse().ToArray();
+				right = right.Reverse().ToArray();
+				
+				leds.AddRange(left);
+				leds.AddRange(top);
+				leds.AddRange(right);
+				leds.AddRange(bottom);
+			}
+
 			var packet = new List<byte> {ByteUtils.IntByte(2), ByteUtils.IntByte(255)};
 			foreach (var color in leds) {
 				packet.Add(ByteUtils.IntByte(color.R));
@@ -136,6 +184,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 
 		public Task ReloadData() {
 			var id = _data.Id;
+			_sd = DataUtil.GetSystemData();
 			var dev = DataUtil.GetDevice<GlimmrData>(id);
 			if (dev == null) return Task.CompletedTask;
 			_data = dev;

@@ -51,6 +51,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 
 			Log.Information($"{_data.Tag}::Starting stream: {_data.Id}...");
 			_adalight.Connect();
+			_adalight.UpdateBrightness(Brightness);
 			Streaming = true;
 			await Task.FromResult(true);
 			Log.Information($"{_data.Tag}::Stream started: {_data.Id}.");
