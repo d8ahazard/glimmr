@@ -81,7 +81,6 @@ namespace Glimmr.Services {
 
 			_agents = new Dictionary<string, dynamic>();
 			// Now we can load stuff
-			LoadAgents();
 			_hubContext = hubContext;
 			// Init nano HttpClient
 			HttpSender = new HttpClient {Timeout = TimeSpan.FromSeconds(5)};
@@ -92,6 +91,7 @@ namespace Glimmr.Services {
 			UdpClient.DontFragment = true;
 			MulticastService = new MulticastService();
 			ServiceDiscovery = new ServiceDiscovery(MulticastService);
+			LoadAgents();
 			// Dynamically load agents
 			ColorUtil.SetSystemData();
 		}
