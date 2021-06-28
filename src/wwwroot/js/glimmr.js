@@ -417,9 +417,14 @@ function setSocketListeners() {
            }
            
            if (isValid(deviceData) && deviceData["Id"] === stuff["Id"]) {
-               console.log("Updating selected deviceData:",stuff);               
-               deviceData = mergeDeviceData(deviceData,stuff);
-               if (settingsShown) createDeviceSettings();
+               console.log("Updating selected deviceData:",stuff);
+               deviceData["LastSeen"] = stuff["LastSeen"];
+               if (Object.toJSON(deviceData) === Object.toJSON(stuff)) {
+                   console.log("DD exactly matches stuff, no need to reload?");
+               } else {
+                   deviceData = mergeDeviceData(deviceData,stuff);
+                   if (settingsShown) createDeviceSettings();    
+               }               
            }
            
         }
@@ -540,7 +545,8 @@ function setListeners() {
         if (isValid(obj) && isValid(property) && isValid(val)) {
             console.log("Trying to set: ", obj, property, val);
             let numVal = parseInt(val);
-            if (!isNaN(numVal) && property !== "DsIp" && property !== "OpenRgbIp") val = numVal; 
+            let skipProps = ["DsIp", "OpenRgbIp","GammaCorrection"];
+            if (!isNaN(numVal) && !skipProps.includes(property)) val = numVal; 
             
             if (isValid(id)) {
                 let strips = data.store[obj];
@@ -559,7 +565,7 @@ function setListeners() {
             } else {
                 if (target.classList.contains("devSetting")) {
                     updateDevice(obj, property, val);  
-                    createDeviceSettings();
+                    //createDeviceSettings();
                     return;
                 } else {
                     if (property === "SelectedMonitors") {
@@ -1032,42 +1038,7 @@ function loadSettings() {
         timeText.innerHTML = "Updates will be installed at "+updateTime.toString()+":00"+ampm+" every day when enabled.";
     }
     
-    let capTab = document.getElementById("capture-tab");
     if (data.store == null) return;
-    if (isValid(ledData)) {
-        for(let i=0; i < 4; i++) {
-            loadSettingObject(ledData[i]);
-        }    
-    }
-
-
-    let monitors = data.store["Dev_Video"];
-    if (isValid(monitors) && monitors.length) {
-        let monList = document.getElementById("monitorSelect");
-        let length = monList.options.length;
-        for (let i = length-1; i >= 0; i--) {
-            monList.options[i] = null;
-        }
-        
-        let vals = [];
-        for(let i=0; i < monitors.length; i++) {
-            let opt = document.createElement("option");
-            opt.value = monitors[i]["Id"];
-            opt.innerText = monitors[i]["DeviceString"];
-            monList.appendChild(opt);
-            if (monitors[i]["Enable"]) {
-                vals.push(monitors[i]["Id"]);
-            }            
-        }
-        for (const option of document.querySelectorAll('#monitorSelect option')) {
-            const value = option.value;
-            if (vals.indexOf(value) !== -1) {
-                option.setAttribute('selected', 'selected');
-            } else {
-                option.removeAttribute('selected');
-            }
-        }
-    }
     
     if (isValid(systemData)) {
         loadSettingObject(systemData);
@@ -1356,11 +1327,7 @@ function updateDevice(id, property, value) {
         sendMessage("updateDevice", dev, true);
     }    
     if (isLoaded) {
-        deviceData = dev;
-        if(expanded) {
-            createDeviceSettings();
-        }
-        
+        deviceData = dev;        
     }
 }
 
@@ -1635,7 +1602,7 @@ function createDeviceSettings() {
                     elem.isDevice = true;
                     break;
                 case "number":
-                    elem = new SettingElement(prop["ValueLabel"], "number", id, propertyName, value);
+                    elem = new SettingElement(prop["ValueLabel"], "number", id, propertyName, value,"",prop["ValueMin"], prop["ValueMax"],prop["ValueStep"]);
                     elem.isDevice = true;
                     break;
                 case "check":
