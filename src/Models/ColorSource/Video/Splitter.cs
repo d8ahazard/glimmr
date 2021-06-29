@@ -101,6 +101,18 @@ namespace Glimmr.Models.ColorSource.Video {
 			_cropDelay = sd.CropDelay;
 			_cropLetter = sd.EnableLetterBox;
 			_cropPillar = sd.EnablePillarBox;
+			if (!_cropLetter) {
+				_vCrop = false;
+				_vCropCheck = 0;
+				_vCropPixels = 0;
+				_vCropCount = 0;
+			}
+			if (!_cropPillar) {
+				_hCrop = false;
+				_hCropCheck = 0;
+				_hCropPixels = 0;
+				_hCropCount = 0;
+			}
 			_useCenter = sd.UseCenter;
 			_ledCount = sd.LedCount;
 			_sectorCount = sd.SectorCount;
