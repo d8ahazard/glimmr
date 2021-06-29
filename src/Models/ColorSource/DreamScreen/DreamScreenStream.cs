@@ -1,5 +1,7 @@
 ﻿#region
 
+using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -11,6 +13,7 @@ using Glimmr.Models.ColorTarget.DreamScreen;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 using Serilog;
 using DeviceMode = Glimmr.Enums.DeviceMode;
 
@@ -24,6 +27,12 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 		private DreamDevice? _dDev;
 		private bool _enable;
 		private IPAddress? _targetDreamScreen;
+		private int _hCount;
+		private int _vCount;
+		private int _ledCount;
+		private int _sectorCount;
+		private Dictionary<int, int> _ledMap;
+		private Dictionary<int, int> _sectorMap;
 
 		public DreamScreenStream(ColorService colorService) {
 			_cs = colorService;
@@ -75,6 +84,12 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 		private void RefreshSd() {
 			var systemData = DataUtil.GetSystemData();
 			var dsIp = systemData.DsIp;
+			_hCount = systemData.HSectors;
+			_vCount = systemData.VSectors;
+			_sectorCount = systemData.SectorCount;
+			_ledCount = systemData.LedCount;
+			_sectorMap = ColorUtil.MapSectors(12, new[] {3, 5});
+			_ledMap = ColorUtil.MapLedsFromSectors(12, 5, 3);
 			// If our DS IP is null, pick one.
 			if (string.IsNullOrEmpty(dsIp)) {
 				var devs = DataUtil.GetDevices();
@@ -149,9 +164,19 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 
 		private void UpdateColors(object? sender, DreamScreenClient.DeviceColorEventArgs e) {
 			var colors = e.Colors;
-			var ledColors = ColorUtil.SectorsToleds(colors.ToList(), 5, 3);
+			if (colors.Length != _sectorCount) {
+				var cols = new Color[_sectorCount];
+				foreach (var (key, value) in _sectorMap) {
+					cols[key] = colors[value];
+				}
+				colors = cols;
+			}
+			var leds = new Color[_ledCount];
+			foreach (var (key, value) in _ledMap) {
+				leds[key] = colors[value];
+			}
 			_cs.Counter.Tick("Dreamscreen");
-			_cs.SendColors(ledColors, colors.ToList(), 0);
+			_cs.SendColors(leds.ToList(), colors.ToList(), 0);
 		}
 	}
 }

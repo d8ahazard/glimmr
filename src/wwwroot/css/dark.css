@@ -18,7 +18,7 @@
     background: #1c1c1c !important;
 }
 
-body, div:not(.sector):not(.led):not(.sector2):not(.modal):not(.modal-dialog):not(.sectorMap):not(#ledMap):not(.bg-light):not(.btn-clear):not(.fixed-bottom):not(#nanoPreview):not(.linkImg):not(#RegionSelect *), .nav-link {
+body, div:not(.sector):not(.led):not(.sector2):not(.modal):not(.modal-dialog):not(.sectorMap):not(#ledMap):not(.bg-light):not(.btn-clear):not(#nanoPreview):not(.linkImg):not(#RegionSelect *), .nav-link {
     color: #c4c4c4 !important;
     background: #232323;    
 }

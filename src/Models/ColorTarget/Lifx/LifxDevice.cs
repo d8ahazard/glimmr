@@ -163,10 +163,6 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				}
 			} else {
 				var target = _data.TargetSector;
-				if ((CaptureMode) sd.CaptureMode == CaptureMode.DreamScreen) {
-					target = ColorUtil.CheckDsSectors(target);
-				}
-
 				if (sd.UseCenter) {
 					target = ColorUtil.FindEdge(target + 1);
 				}

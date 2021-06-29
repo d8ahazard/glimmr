@@ -44,6 +44,8 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			LastSeen = data.LastSeen;
 			GroupNumber = dData.GroupNumber;
 			DeviceTag = dData.DeviceTag;
+			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
+			IpAddress = dData.IpAddress;
 			if (DeviceTag.Contains("DreamScreen")) {
 				Enable = false;
 			}

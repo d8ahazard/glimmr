@@ -36,6 +36,8 @@ namespace Glimmr.Services {
 		private bool _streaming;
 		private int[] tgtDimensions = new int[4];
 		private int[] _srcDimensions = new int[4];
+		private Dictionary<int, int> _ledMap;
+		private Dictionary<int, int> _sectorMap;
 
 
 		public StreamService(ControlService cs) {
@@ -70,6 +72,8 @@ namespace Glimmr.Services {
 			_ledCount = _gd.LedCount;
 			_loaded = true;
 			_srcDimensions = new[] {_gd.LeftCount, _gd.RightCount, _gd.TopCount, _gd.BottomCount};
+			_ledMap = ColorUtil.MapSectors(_sectorCount, new[] {_gd.VCount, _gd.HCount});
+			_sectorMap = ColorUtil.MapLeds(_ledCount, _srcDimensions, tgtDimensions);
 			_streaming = true;
 			await _cs.SetMode(5);
 		}
@@ -147,11 +151,19 @@ namespace Glimmr.Services {
 				}
 
 				if (_sd.LedCount != _ledCount) {
-					colors = ColorUtil.ResizeColors(colors,_srcDimensions, tgtDimensions).ToArray();
+					var cols = new Color[_sd.LedCount];
+					foreach (var (key, value) in _ledMap) {
+						cols[key] = colors[value];
+					}
+					colors = cols;
 				}
 
 				if (!_useCenter && _sd.SectorCount != _sectorCount) {
-					//sectors = ColorUtil.ResizeSectors(sectors, _sectorDimensions).ToArray();
+					var secs = new Color[_sd.SectorCount];
+					foreach (var (key, value) in _sectorMap) {
+						secs[key] = sectors[value];
+					}
+					sectors = secs;
 				}
 
 				var ledColors = colors.ToList();

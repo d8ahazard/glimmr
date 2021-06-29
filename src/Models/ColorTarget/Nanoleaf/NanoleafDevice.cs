@@ -187,11 +187,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
 				if (p.TargetSector != -1) {
 					var target = p.TargetSector;
-					var sTarget = target;
-					if ((CaptureMode) sd.CaptureMode == CaptureMode.DreamScreen) {
-						target = ColorUtil.CheckDsSectors(target);
-					}
-
+					
 					if (sd.UseCenter) {
 						target = ColorUtil.FindEdge(target);
 					}

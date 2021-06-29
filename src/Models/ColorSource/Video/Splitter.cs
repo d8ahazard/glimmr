@@ -112,6 +112,8 @@ namespace Glimmr.Models.ColorSource.Video {
 				_sectorCount = 12;
 			}
 
+			_previewMode = sd.PreviewMode;
+
 			// Start our stopwatches for cropping if they were previously disabled
 			if (_cropLetter || _cropPillar && !_frameWatch.IsRunning) {
 				_frameWatch.Restart();
@@ -439,8 +441,8 @@ namespace Glimmr.Models.ColorSource.Video {
 			pos = 0;
 
 			for (var i = 0; i < _leftCount - 1; i++) {
-				if (pos > ScaleWidth) {
-					pos = ScaleWidth;
+				if (pos > ScaleHeight - heightLeft) {
+					pos = ScaleWidth - heightLeft;
 				}
 
 				output[idx] = new Rectangle(lLeft, (int) pos, (int) _borderWidth, (int) heightLeft);
@@ -458,11 +460,12 @@ namespace Glimmr.Models.ColorSource.Video {
 
 			for (var i = 0; i < _bottomCount - 1; i++) {
 				if (idx >= _ledCount) {
+					Log.Debug($"Index is {idx}, but count is {_ledCount}");
 					continue;
 				}
 
-				if (pos > ScaleHeight) {
-					pos = ScaleHeight;
+				if (pos > ScaleWidth - widthBottom) {
+					pos = ScaleWidth - widthBottom;
 				}
 
 				output[idx] = new Rectangle((int) pos, (int) bTop, (int) widthBottom, (int) _borderHeight);
@@ -537,38 +540,39 @@ namespace Glimmr.Models.ColorSource.Video {
 			// This is where we're saving our output
 			var fs = new Rectangle[_sectorCount];
 			// Individual segment sizes
+			const int squareSize = 40;
 			var sectorWidth = (ScaleWidth - hOffset * 2) / _hSectors;
 			var sectorHeight = (ScaleHeight - vOffset * 2) / _vSectors;
 			// These are based on the border/strip values
 			// Minimum limits for top, bottom, left, right            
 			var minTop = vOffset;
-			var minBot = ScaleHeight - vOffset - sectorHeight;
+			var minBot = ScaleHeight - vOffset - squareSize;
 			var minLeft = hOffset;
-			var minRight = ScaleWidth - hOffset - sectorWidth;
+			var minRight = ScaleWidth - hOffset - squareSize;
 			// Calc right regions, bottom to top
 			var idx = 0;
 			var step = _vSectors - 1;
 			while (step >= 0) {
 				var ord = step * sectorHeight + vOffset;
-				fs[idx] = new Rectangle(minRight, ord, sectorWidth, sectorHeight);
+				fs[idx] = new Rectangle(minRight, ord, squareSize, sectorHeight);
 				idx++;
 				step--;
 			}
 
 			// Calc top regions, from right to left, skipping top-right corner (total horizontal sectors minus one)
 			step = _hSectors - 2;
-			while (step >= 0) {
+			while (step > 0) {
 				var ord = step * sectorWidth + hOffset;
-				fs[idx] = new Rectangle(ord, minTop, sectorWidth, sectorHeight);
+				fs[idx] = new Rectangle(ord, minTop, sectorWidth, squareSize);
 				idx++;
 				step--;
 			}
 
-			step = 1;
+			step = 0;
 			// Calc left regions (top to bottom), skipping top-left
 			while (step <= _vSectors - 1) {
 				var ord = step * sectorHeight + vOffset;
-				fs[idx] = new Rectangle(minLeft, ord, sectorWidth, sectorHeight);
+				fs[idx] = new Rectangle(minLeft, ord, squareSize, sectorHeight);
 				idx++;
 				step++;
 			}
@@ -577,7 +581,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			// Calc bottom center regions (L-R)
 			while (step <= _hSectors - 2) {
 				var ord = step * sectorWidth + hOffset;
-				fs[idx] = new Rectangle(ord, minBot, sectorWidth, sectorHeight);
+				fs[idx] = new Rectangle(ord, minBot, sectorWidth, squareSize);
 				idx++;
 				step += 1;
 			}

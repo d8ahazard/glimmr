@@ -317,10 +317,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			_lightMappings = Data.MappedLights;
 			foreach (var ld in _lightMappings) {
 				var target = ld.TargetSector;
-				if ((CaptureMode) sd.CaptureMode == CaptureMode.DreamScreen) {
-					target = ColorUtil.CheckDsSectors(target);
-				}
-
+				
 				if (sd.UseCenter) {
 					target = ColorUtil.FindEdge(target + 1);
 				}

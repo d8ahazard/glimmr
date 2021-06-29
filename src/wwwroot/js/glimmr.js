@@ -180,6 +180,10 @@ function loadCounts() {
     }
     
     if (isValid(devs)) {
+        let opt = document.createElement("option");
+        opt.value = "";
+        opt.innerText = "";
+        devSelect.appendChild(opt);
         for (let i = 0; i < devs.length; i++) {
             let dev = devs[i];
             if (dev["Tag"] === "DreamScreen" && dev["DeviceTag"].includes("DreamScreen")) {
