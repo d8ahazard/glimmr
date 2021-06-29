@@ -46,10 +46,37 @@ namespace Glimmr.Models.Util {
 			Angle90 = 1
 		}
 
-		public const int CaptureHeight = 480;
+		public static int CaptureHeight() {
+			var sd = DataUtil.GetSystemData();
+			var leftCount = sd.LeftCount;
+			var rightCount = sd.RightCount;
+			var val = leftCount;
+			if (leftCount != rightCount) {
+				if (leftCount % 2 != 0 && rightCount % 2 == 0) {
+					val = rightCount;
+				} 
+			}
 
-		public const int CaptureWidth = 640;
+			var avg = (int) Math.Ceiling(480f / val);
+			return avg * val;
+		}
+		
+		public static int CaptureWidth() {
+			var sd = DataUtil.GetSystemData();
+			var leftCount = sd.TopCount;
+			var rightCount = sd.BottomCount;
+			var val = leftCount;
+			if (leftCount != rightCount) {
+				if (leftCount % 2 != 0 && rightCount % 2 == 0) {
+					val = rightCount;
+				} 
+			}
 
+			var avg = (int) Math.Ceiling(640f / val);
+			return avg * val;
+		}
+
+		
 		private const int EnumCurrentSettings = -1;
 
 		[DllImport("user32.dll")]

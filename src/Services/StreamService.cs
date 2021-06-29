@@ -92,8 +92,9 @@ namespace Glimmr.Services {
 				var service = new ServiceProfile(hostname, "_glimmr._tcp", 8889, addr);
 				var sd = new ServiceDiscovery();
 				sd.Advertise(service);
-				Task t1 = Task.Run(() => Listen(),stoppingToken);
-				Task t2 = Task.Run(() => Listen(),stoppingToken);
+				Task t1 = Task.Run(Listen,stoppingToken);
+				Task t2 = Task.Run(Listen,stoppingToken);
+				Log.Debug("Listen tasks started.");
 				while (!stoppingToken.IsCancellationRequested) {
 					if ((DeviceMode) _devMode != Streaming) {
 						await Task.Delay(1, stoppingToken);

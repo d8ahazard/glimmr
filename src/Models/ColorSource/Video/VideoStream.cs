@@ -32,8 +32,8 @@ namespace Glimmr.Models.ColorSource.Video {
 		private Splitter? StreamSplitter { get; }
 
 		// Scaling variables
-		private const int ScaleHeight = DisplayUtil.CaptureHeight;
-		private const int ScaleWidth = DisplayUtil.CaptureWidth;
+		private readonly int _scaleHeight = DisplayUtil.CaptureHeight();
+		private readonly int _scaleWidth = DisplayUtil.CaptureWidth();
 
 		// Is content detected?
 		private readonly ColorService _colorService;
@@ -222,8 +222,8 @@ namespace Glimmr.Models.ColorSource.Video {
 			Sectors = ColorUtil.EmptyList(sectorSize);
 			_captureMode = (CaptureMode) _systemData.CaptureMode;
 			_camType = DataUtil.GetItem<int>("CamType");
-			_srcArea = ScaleWidth * ScaleHeight;
-			_scaleSize = new Size(ScaleWidth, ScaleHeight);
+			_srcArea = _scaleWidth * _scaleHeight;
+			_scaleSize = new Size(_scaleWidth, _scaleHeight);
 
 			if (_captureMode == CaptureMode.Camera) {
 				try {
@@ -242,7 +242,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			}
 
 			_vectors = new PointF[] {
-				new Point(0, 0), new Point(ScaleWidth, 0), new Point(ScaleWidth, ScaleHeight), new Point(0, ScaleHeight)
+				new Point(0, 0), new Point(_scaleWidth, 0), new Point(_scaleWidth, _scaleHeight), new Point(0, _scaleHeight)
 			};
 		}
 

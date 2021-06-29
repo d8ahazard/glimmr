@@ -97,7 +97,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 					g.CopyFromScreen(_left, _top, 0, 0, bcs.Size, CopyPixelOperation.SourceCopy);
 					var sc = bcs.ToImage<Bgr, byte>();
 					g.Flush();
-					var newMat = sc.Resize(DisplayUtil.CaptureWidth, DisplayUtil.CaptureHeight, Inter.Nearest);
+					var newMat = sc.Resize(DisplayUtil.CaptureWidth(), DisplayUtil.CaptureHeight(), Inter.Nearest);
 					Frame = newMat.Mat;
 					if (_doSave) {
 						//Log.Debug("Save frame?");

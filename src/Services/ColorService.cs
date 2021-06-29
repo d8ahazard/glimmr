@@ -79,7 +79,10 @@ namespace Glimmr.Services {
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			LoadData();
 			return Task.Run(async () => {
-				await Demo(this, null).ConfigureAwait(false);
+				if (!_systemData.SkipDemo) {
+					Log.Debug("Executing demo.");
+					await Demo(this, null);
+				}
 				Log.Information($"All color sources initialized, setting mode to {DeviceMode}.");
 				await Mode(this, new DynamicEventArgs(DeviceMode)).ConfigureAwait(true);
 				while (!stoppingToken.IsCancellationRequested) {
