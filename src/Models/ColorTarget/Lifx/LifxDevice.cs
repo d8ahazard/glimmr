@@ -217,7 +217,9 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 					var ar = _gammaTableRb[col.R];
 					var ag = _gammaTable[col.G];
 					var ab = _gammaTableRb[col.B];
-					cols.Add(new LifxColor(Color.FromArgb(ar, ag, ab), _scaledBrightness));
+					var colL = new LifxColor(Color.FromArgb(ar, ag, ab),_scaledBrightness);
+					colL.Kelvin = 7000;
+					cols.Add(colL);
 					i = 1;
 				} else {
 					i = 0;

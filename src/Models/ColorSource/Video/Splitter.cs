@@ -94,8 +94,8 @@ namespace Glimmr.Models.ColorSource.Video {
 			var sd = DataUtil.GetSystemData();
 			_leftCount = sd.LeftCount;
 			_topCount = sd.TopCount;
-			_rightCount = sd.RightCount == 0 ? _leftCount : sd.RightCount;
-			_bottomCount = sd.BottomCount == 0 ? _topCount : sd.BottomCount;
+			_rightCount = sd.RightCount;
+			_bottomCount = sd.BottomCount;
 			_hSectors = sd.HSectors;
 			_vSectors = sd.VSectors;
 			_cropDelay = sd.CropDelay;
@@ -106,7 +106,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			_sectorCount = sd.SectorCount;
 			_scaleHeight = DisplayUtil.CaptureHeight();
 			_scaleWidth = DisplayUtil.CaptureWidth();
-
+			_sectorChanged = true;
 			if (_ledCount == 0) {
 				_ledCount = 200;
 			}
@@ -518,8 +518,8 @@ namespace Glimmr.Models.ColorSource.Video {
 			}
 
 			// How many sectors does each region have?
-			var hOffset = _hCropPixels;
-			var vOffset = _vCropPixels;
+			var hOffset = _vCropPixels;
+			var vOffset = _hCropPixels;
 			if (_hSectors == 0) {
 				_hSectors = 10;
 			}
@@ -581,29 +581,7 @@ namespace Glimmr.Models.ColorSource.Video {
 		}
 
 		public void Refresh() {
-			var sd = DataUtil.GetSystemData();
-			_previewMode = sd.PreviewMode;
-			_leftCount = sd.LeftCount;
-			_topCount = sd.TopCount;
-			_rightCount = sd.RightCount;
-			_bottomCount = sd.BottomCount;
-			_hSectors = sd.HSectors;
-			_vSectors = sd.VSectors;
-			_ledCount = sd.LedCount;
-			_sectorCount = sd.SectorCount;
-			if (_hSectors == 0) {
-				_hSectors = 10;
-			}
-
-			if (_vSectors == 0) {
-				_vSectors = 6;
-			}
-
-			_sectorChanged = true;
-			_fullCoords = new Rectangle[_ledCount];
-			_fullSectors = new Rectangle[_sectorCount];
-			_fullCoords = DrawGrid();
-			_fullSectors = DrawSectors();
+			RefreshSystem();
 		}
 	}
 }

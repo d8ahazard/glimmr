@@ -124,11 +124,6 @@ namespace Glimmr.Models.ColorSource.Video {
 			var mode = (DeviceMode) _systemData.DeviceMode;
 			var prevMode = (DeviceMode) prevSd.DeviceMode;
 			if (mode == DeviceMode.Video && prevMode == DeviceMode.Video) {
-				if (_systemData.SectorCount != prevSd.SectorCount || _systemData.LedCount != prevSd.LedCount) {
-					StreamSplitter?.Refresh();
-					Initialize(_cancellationToken);
-				}
-
 				if (wasEnabled) {
 					_enable = true;
 				}
