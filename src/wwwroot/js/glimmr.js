@@ -855,6 +855,7 @@ function updateLightProperty(myId, propertyName, value) {
 
 function updateBeamProperty(beamPos, propertyName, value) {
     let id = deviceData["Id"];
+    if (propertyName === "Offset") value = parseInt(value);
     let beamLayout = deviceData["BeamLayout"];
     let beams = beamLayout["Segments"];
     for(let i=0; i < beams.length; i++) {
@@ -867,6 +868,7 @@ function updateBeamProperty(beamPos, propertyName, value) {
 
     beamLayout["Segments"] = beams;
     console.log("Updating beam " + id, propertyName, value);
+    appendBeamLedMap();
     updateDevice(id,"BeamLayout", beamLayout);
 }
 
@@ -1326,6 +1328,9 @@ function getDevices() {
 function updateDevice(id, property, value) {
     let dev;
     let isLoaded = false;
+    if (property === "Offset" || property === "LedCount" || property === "StripMode") {
+        appendLedMap();
+    }
     if (isValid(deviceData) && deviceData["Id"] === id) {
         dev = deviceData;
         isLoaded = true;
@@ -1966,10 +1971,13 @@ function appendLedMap() {
 
 function appendBeamLedMap() {
     let mapDiv = document.getElementById("mapCol");
-    let noteDiv = document.createElement("div");
-    noteDiv.classList.add("col-12", "subtitle");
+    let noteDiv = document.getElementById("noteDiv");
+    if (isValid(noteDiv)) noteDiv.remove();
+    noteDiv = document.createElement("div");
+    noteDiv.classList.add("col-12", "subtitle", "noteDiv");
+    noteDiv.id = "noteDiv";
     noteDiv.innerHTML = "Note: Lifx beams are spaced so that 10 LEDs/beam equal 20 LEDs within Glimmr.";
-
+    
     mapDiv.appendChild(noteDiv);
     createBeamLedMap();
 }
