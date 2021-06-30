@@ -34,6 +34,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			Id = _data.Id;
 			Tag = _data.Tag;
 			IpAddress = _data.IpAddress;
+			Enable = _data.Enable;
 			LoadData();
 			Log.Debug("Created new yee device at " + yd.IpAddress);
 			cs.ColorSendEvent += SetColor;
@@ -66,7 +67,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			}
 
 			Log.Information($"{_data.Tag}::Starting stream: {_data.Id}...");
-			_targetSector = ColorUtil.CheckDsSectors(_data.TargetSector);
+			_targetSector = _data.TargetSector;
 
 			await _yeeDevice.Connect();
 			var ip = IpUtil.GetLocalIpAddress();
@@ -165,10 +166,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			}
 
 			var target = _data.TargetSector;
-			if ((CaptureMode) sd.CaptureMode == CaptureMode.DreamScreen) {
-				target = ColorUtil.CheckDsSectors(target);
-			}
-
+			
 			if (sd.UseCenter) {
 				target = ColorUtil.FindEdge(target + 1);
 			}

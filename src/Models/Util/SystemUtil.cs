@@ -195,7 +195,6 @@ namespace Glimmr.Models.Util {
 				(CaptureMode) sd.CaptureMode == CaptureMode.Hdmi)) {
 			}
 
-			Log.Debug("Available USB Devices: " + JsonConvert.SerializeObject(_usbDevices));
 			return _usbDevices;
 		}
 

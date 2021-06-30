@@ -37,6 +37,7 @@ let leftCount, rightCount, topCount, bottomCount, hSectors, vSectors;
 let useCenter;
 let refreshTimer;
 let fpsCounter;
+let nanoTarget, nanoSector;
 let errModal = new bootstrap.Modal(document.getElementById('errorModal'));
 // We're going to create one object to store our stuff, and add listeners for when values are changed.
 let data = {
@@ -180,6 +181,10 @@ function loadCounts() {
     }
     
     if (isValid(devs)) {
+        let opt = document.createElement("option");
+        opt.value = "";
+        opt.innerText = "";
+        devSelect.appendChild(opt);
         for (let i = 0; i < devs.length; i++) {
             let dev = devs[i];
             if (dev["Tag"] === "DreamScreen" && dev["DeviceTag"].includes("DreamScreen")) {
@@ -417,9 +422,14 @@ function setSocketListeners() {
            }
            
            if (isValid(deviceData) && deviceData["Id"] === stuff["Id"]) {
-               console.log("Updating selected deviceData:",stuff);               
-               deviceData = mergeDeviceData(deviceData,stuff);
-               if (settingsShown) createDeviceSettings();
+               console.log("Updating selected deviceData:",stuff);
+               deviceData["LastSeen"] = stuff["LastSeen"];
+               if (Object.toJSON(deviceData) === Object.toJSON(stuff)) {
+                   console.log("DD exactly matches stuff, no need to reload?");
+               } else {
+                   deviceData = mergeDeviceData(deviceData,stuff);
+                   if (settingsShown) createDeviceSettings();    
+               }               
            }
            
         }
@@ -540,7 +550,8 @@ function setListeners() {
         if (isValid(obj) && isValid(property) && isValid(val)) {
             console.log("Trying to set: ", obj, property, val);
             let numVal = parseInt(val);
-            if (!isNaN(numVal) && property !== "DsIp" && property !== "OpenRgbIp") val = numVal; 
+            let skipProps = ["DsIp", "OpenRgbIp","GammaCorrection"];
+            if (!isNaN(numVal) && !skipProps.includes(property)) val = numVal; 
             
             if (isValid(id)) {
                 let strips = data.store[obj];
@@ -559,7 +570,7 @@ function setListeners() {
             } else {
                 if (target.classList.contains("devSetting")) {
                     updateDevice(obj, property, val);  
-                    createDeviceSettings();
+                    //createDeviceSettings();
                     return;
                 } else {
                     if (property === "SelectedMonitors") {
@@ -655,8 +666,14 @@ function handleClick(target) {
             closeCard();
             break;
         case target.classList.contains("sector"):
-            let val = target.getAttribute("data-sector");
+            let val = target.getAttribute("data-sector");            
             updateDeviceSector(val, target);
+            if (target.classList.contains("nanoRegion")) {
+                console.log("Hiding nano modal.");
+                let myModalEl = document.getElementById('nanoModal');
+                let modal = bootstrap.Modal.getInstance(myModalEl);
+                modal.hide();    
+            }            
             break;
         case target.classList.contains("linkDiv"):
             if (target.getAttribute("data-linked") === "false") {
@@ -838,6 +855,7 @@ function updateLightProperty(myId, propertyName, value) {
 
 function updateBeamProperty(beamPos, propertyName, value) {
     let id = deviceData["Id"];
+    if (propertyName === "Offset") value = parseInt(value);
     let beamLayout = deviceData["BeamLayout"];
     let beams = beamLayout["Segments"];
     for(let i=0; i < beams.length; i++) {
@@ -850,6 +868,7 @@ function updateBeamProperty(beamPos, propertyName, value) {
 
     beamLayout["Segments"] = beams;
     console.log("Updating beam " + id, propertyName, value);
+    appendBeamLedMap();
     updateDevice(id,"BeamLayout", beamLayout);
 }
 
@@ -1032,42 +1051,7 @@ function loadSettings() {
         timeText.innerHTML = "Updates will be installed at "+updateTime.toString()+":00"+ampm+" every day when enabled.";
     }
     
-    let capTab = document.getElementById("capture-tab");
     if (data.store == null) return;
-    if (isValid(ledData)) {
-        for(let i=0; i < 4; i++) {
-            loadSettingObject(ledData[i]);
-        }    
-    }
-
-
-    let monitors = data.store["Dev_Video"];
-    if (isValid(monitors) && monitors.length) {
-        let monList = document.getElementById("monitorSelect");
-        let length = monList.options.length;
-        for (let i = length-1; i >= 0; i--) {
-            monList.options[i] = null;
-        }
-        
-        let vals = [];
-        for(let i=0; i < monitors.length; i++) {
-            let opt = document.createElement("option");
-            opt.value = monitors[i]["Id"];
-            opt.innerText = monitors[i]["DeviceString"];
-            monList.appendChild(opt);
-            if (monitors[i]["Enable"]) {
-                vals.push(monitors[i]["Id"]);
-            }            
-        }
-        for (const option of document.querySelectorAll('#monitorSelect option')) {
-            const value = option.value;
-            if (vals.indexOf(value) !== -1) {
-                option.setAttribute('selected', 'selected');
-            } else {
-                option.removeAttribute('selected');
-            }
-        }
-    }
     
     if (isValid(systemData)) {
         loadSettingObject(systemData);
@@ -1344,6 +1328,9 @@ function getDevices() {
 function updateDevice(id, property, value) {
     let dev;
     let isLoaded = false;
+    if (property === "Offset" || property === "LedCount" || property === "StripMode") {
+        appendLedMap();
+    }
     if (isValid(deviceData) && deviceData["Id"] === id) {
         dev = deviceData;
         isLoaded = true;
@@ -1356,11 +1343,7 @@ function updateDevice(id, property, value) {
         sendMessage("updateDevice", dev, true);
     }    
     if (isLoaded) {
-        deviceData = dev;
-        if(expanded) {
-            createDeviceSettings();
-        }
-        
+        deviceData = dev;        
     }
 }
 
@@ -1635,7 +1618,7 @@ function createDeviceSettings() {
                     elem.isDevice = true;
                     break;
                 case "number":
-                    elem = new SettingElement(prop["ValueLabel"], "number", id, propertyName, value);
+                    elem = new SettingElement(prop["ValueLabel"], "number", id, propertyName, value,"",prop["ValueMin"], prop["ValueMax"],prop["ValueStep"]);
                     elem.isDevice = true;
                     break;
                 case "check":
@@ -1988,10 +1971,13 @@ function appendLedMap() {
 
 function appendBeamLedMap() {
     let mapDiv = document.getElementById("mapCol");
-    let noteDiv = document.createElement("div");
-    noteDiv.classList.add("col-12", "subtitle");
+    let noteDiv = document.getElementById("noteDiv");
+    if (isValid(noteDiv)) noteDiv.remove();
+    noteDiv = document.createElement("div");
+    noteDiv.classList.add("col-12", "subtitle", "noteDiv");
+    noteDiv.id = "noteDiv";
     noteDiv.innerHTML = "Note: Lifx beams are spaced so that 10 LEDs/beam equal 20 LEDs within Glimmr.";
-
+    
     mapDiv.appendChild(noteDiv);
     createBeamLedMap();
 }
@@ -2173,6 +2159,7 @@ function createSectorMap(targetElement, regionName) {
         r = l + fWidth;
         let s1 = document.createElement("div");
         s1.classList.add("sector");
+        if (isValid(regionName)) s1.classList.add(regionName + "Region");
         if (sector.toString() === selected.toString()) s1.classList.add("checked");
         s1.setAttribute("data-sector", sector.toString());
         s1.style.position = "absolute";
@@ -2986,7 +2973,6 @@ function drawNanoShapes(panel) {
 function setNanoMap(id, current) {
     nanoTarget = id;
     nanoSector = current;
-    
     let myModal = new bootstrap.Modal(document.getElementById('nanoModal'));
     let wrap = document.getElementById("nanoPreviewWrap");
     myModal.show();

@@ -128,7 +128,6 @@ namespace Glimmr.Models.Util {
 			var res = "";
 			var hostName = Dns.GetHostName();
 			try {
-				Log.Debug("LOCAL HOSTNAME: " + hostName);
 				if (!string.IsNullOrEmpty(hostName)) {
 					var host = Dns.GetHostEntry(hostName);
 					foreach (var ip in host.AddressList) {
@@ -146,7 +145,6 @@ namespace Glimmr.Models.Util {
 
 			try {
 				hostName += ".local";
-				Log.Debug("LOCAL HOSTNAME2: " + hostName);
 				if (!string.IsNullOrEmpty(hostName)) {
 					var host = Dns.GetHostEntry(hostName);
 					foreach (var ip in host.AddressList) {
@@ -162,7 +160,6 @@ namespace Glimmr.Models.Util {
 				Log.Warning("Exception getting host IP: " + e.Message);
 			}
 
-			Log.Debug("IP Should be: " + res);
 			_localIp = res;
 			return res;
 		}

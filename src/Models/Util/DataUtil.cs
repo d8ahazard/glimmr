@@ -21,7 +21,7 @@ namespace Glimmr.Models.Util {
 	[Serializable]
 	public static class DataUtil {
 		private static bool _dbLocked;
-		private static List<dynamic> _devices = new();
+		private static List<dynamic>? _devices;
 		private static LiteDatabase _db = GetDb();
 		private static SystemData _systemData = CacheSystemData();
 
@@ -135,7 +135,7 @@ namespace Glimmr.Models.Util {
 			db.Commit();
 		}
 
-		private static void CacheDevices() {
+		private static List<dynamic> CacheDevices() {
 			var db = GetDb();
 			var devs = new BsonDocument[0];
 			var devices = new dynamic[0];
@@ -180,14 +180,11 @@ namespace Glimmr.Models.Util {
 			}
 
 			_devices = output;
+			return output;
 		}
 
 		public static List<dynamic> GetDevices() {
-			if (_devices == null) {
-				CacheDevices();
-			}
-
-			return _devices ?? new List<dynamic>();
+			return _devices ?? CacheDevices();
 		}
 
 		public static void RemoveDevice(string id) {

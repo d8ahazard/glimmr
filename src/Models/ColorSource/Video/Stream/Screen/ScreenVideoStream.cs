@@ -41,13 +41,11 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 				SetDimensions();
 
 				if (_width == 0 || _height == 0) {
-					Log.Debug("We have no screen, returning.");
+					Log.Information("We have no screen, returning.");
 					return Task.CompletedTask;
 				}
 
 				_doSave = true;
-
-				Log.Debug("Starting screen capture, width is " + _width + " height is " + _height + ".");
 
 				_capturing = true;
 				return Task.Run(() => CaptureScreen(ct));
@@ -87,7 +85,6 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 			_height = rect.Height;
 			_width = Math.Abs(_width);
 			_height = Math.Abs(_height);
-			Log.Debug("Screen capture dimensions set: " + JsonConvert.SerializeObject(rect));
 		}
 
 
@@ -100,7 +97,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 					g.CopyFromScreen(_left, _top, 0, 0, bcs.Size, CopyPixelOperation.SourceCopy);
 					var sc = bcs.ToImage<Bgr, byte>();
 					g.Flush();
-					var newMat = sc.Resize(DisplayUtil.CaptureWidth, DisplayUtil.CaptureHeight, Inter.Nearest);
+					var newMat = sc.Resize(DisplayUtil.CaptureWidth(), DisplayUtil.CaptureHeight(), Inter.Nearest);
 					Frame = newMat.Mat;
 					if (_doSave) {
 						//Log.Debug("Save frame?");

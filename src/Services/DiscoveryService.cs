@@ -65,13 +65,13 @@ namespace Glimmr.Services {
 			_stopToken = stoppingToken;
 			_mergeSource = CancellationTokenSource.CreateLinkedTokenSource(_syncSource.Token, _stopToken);
 			return Task.Run(async () => {
+				Log.Information($"Starting discovery service loop, interval is {_discoveryInterval}...");
 				var devs = DataUtil.GetDevices();
 				if (devs.Count == 0 || SystemUtil.IsRaspberryPi() && devs.Count == 2) {
-					Log.Debug("No devices, scanning...");
+					Log.Debug($"Dev count is {devs.Count}, scanning...");
 					await TriggerRefresh(null, null).ConfigureAwait(false);
 				}
 
-				Log.Information("Starting discovery service loop...");
 				while (!stoppingToken.IsCancellationRequested) {
 					await Task.Delay(TimeSpan.FromMinutes(_discoveryInterval), _mergeSource.Token);
 					Log.Information("Auto-refreshing devices...");

@@ -51,7 +51,6 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			_data = n;
 			SetData();
 			var streamMode = n.Type == "NL29" || n.Type == "NL42" ? 2 : 1;
-			Log.Debug($"Creating streaming agent with mode {streamMode}.");
 			var cs = ColorService.ControlService;
 			cs.RefreshSystemEvent += SetData;
 			_nanoleafClient = new NanoleafClient(n.IpAddress, n.Token);
@@ -122,16 +121,9 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				cols[p.Key] = color;
 			}
 
-			if (!_logged) {
-				Log.Debug("Definitely setting colors for nanoleaf!");
-			}
-
+			
 			_streamingClient.SetColorAsync(cols, 1).ConfigureAwait(false);
-			if (!_logged) {
-				Log.Debug("SENT");
-				_logged = true;
-			}
-
+			
 			ColorService?.Counter.Tick(Id);
 		}
 
@@ -195,17 +187,12 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
 				if (p.TargetSector != -1) {
 					var target = p.TargetSector;
-					var sTarget = target;
-					if ((CaptureMode) sd.CaptureMode == CaptureMode.DreamScreen) {
-						target = ColorUtil.CheckDsSectors(target);
-					}
-
+					
 					if (sd.UseCenter) {
 						target = ColorUtil.FindEdge(target);
 					}
 
 					_targets[p.PanelId] = target - 1;
-					Log.Debug($"Mapped {sTarget} to {target}");
 				} else {
 					_targets[p.PanelId] = -1;
 				}

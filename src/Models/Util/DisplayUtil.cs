@@ -46,10 +46,37 @@ namespace Glimmr.Models.Util {
 			Angle90 = 1
 		}
 
-		public const int CaptureHeight = 480;
+		public static int CaptureHeight() {
+			var sd = DataUtil.GetSystemData();
+			var leftCount = sd.LeftCount;
+			var rightCount = sd.RightCount;
+			var val = leftCount;
+			if (leftCount != rightCount) {
+				if (leftCount % 2 != 0 && rightCount % 2 == 0) {
+					val = rightCount;
+				} 
+			}
 
-		public const int CaptureWidth = 640;
+			var avg = (int) Math.Ceiling(480f / val);
+			return avg * val;
+		}
+		
+		public static int CaptureWidth() {
+			var sd = DataUtil.GetSystemData();
+			var leftCount = sd.TopCount;
+			var rightCount = sd.BottomCount;
+			var val = leftCount;
+			if (leftCount != rightCount) {
+				if (leftCount % 2 != 0 && rightCount % 2 == 0) {
+					val = rightCount;
+				} 
+			}
 
+			var avg = (int) Math.Ceiling(640f / val);
+			return avg * val;
+		}
+
+		
 		private const int EnumCurrentSettings = -1;
 
 		[DllImport("user32.dll")]
@@ -87,7 +114,6 @@ namespace Glimmr.Models.Util {
 					// Get the position and size of this particular display device
 					var devMode = new DEVMODE();
 					if (EnumDisplaySettings(deviceData.DeviceName, EnumCurrentSettings, ref devMode)) {
-						Log.Debug("Enumerating monitor: " + deviceData.DeviceName);
 						// Update the virtual screen dimensions
 						left = Math.Min(left, devMode.dmPositionX);
 						top = Math.Min(top, devMode.dmPositionY);

@@ -769,6 +769,116 @@ namespace Glimmr.Models.Util {
 
 			return output.ToList();
 		}
+		
+		public static Dictionary<int,int> MapLedsFromSectors(int cCount, int hSectors = -1, int vSectors = -1) {
+			var sd = DataUtil.GetSystemData();
+			var output = new Dictionary<int, int>();
+			if (cCount == 12) {
+				hSectors = 5;
+				vSectors = 3;
+			}
+
+			if (cCount < hSectors + hSectors + vSectors + vSectors - 4) {
+				Log.Warning("Error, can't convert sectors to LEDs, we have less sectors than we should.");
+				return new Dictionary<int, int>();
+			}
+
+			// Right sectors
+			int idx = 0;
+			var count = sd.RightCount / vSectors;
+			var start = 0;
+			var total = 0;
+			for (var i = start; i < vSectors; i++) {
+				idx = i;
+				for (var c = 0; c < count; c++) {
+					output[total] = idx;
+					total++;
+				}
+			}
+
+			// Check that we have the right amount, else add more because division
+			var diff = sd.RightCount - total;
+			if (diff > 0) {
+				for (var d = 0; d < diff; d++) {
+					output[total] = idx;
+					total++;
+				}
+			}
+
+			// Decrement one since our sectors share corners
+			start = vSectors - 1;
+
+			// Top sectors
+			count = sd.TopCount / hSectors;
+			for (var i = start; i < start + hSectors; i++) {
+				idx = i;
+				for (var c = 0; c < count; c++) {
+					output[total] = idx;
+					total++;
+				}
+			}
+
+			// Check that we have the right amount, else add more because division
+			diff = sd.RightCount + sd.TopCount - total;
+			if (diff > 0) {
+				for (var d = 0; d < diff; d++) {
+					output[total] = idx;
+					total++;
+				}
+			}
+
+			start = vSectors + hSectors - 2;
+
+			// Left sectors
+			count = sd.LeftCount / vSectors;
+			for (var i = start; i < start + vSectors; i++) {
+				idx = i;
+				for (var c = 0; c < count; c++) {
+					output[total] = idx;
+					total++;
+				}
+			}
+
+			// Check that we have the right amount, else add more because division
+			diff = sd.RightCount + sd.TopCount + sd.LeftCount - total;
+			if (diff > 0) {
+				for (var d = 0; d < diff; d++) {
+					output[total] = idx;
+					total++;
+				}
+			}
+
+			start = vSectors + hSectors + vSectors - 3;
+
+			// Bottom sectors - Skip one sector at the end, because that's the first one.
+			count = sd.BottomCount / hSectors;
+			for (var i = start; i < start + hSectors - 1; i++) {
+				idx = i;
+				for (var c = 0; c < count; c++) {
+					output[total] = idx;
+					total++;
+				}
+			}
+
+			// Add sector 0 to end
+			idx = 0;
+			for (var c = 0; c < count; c++) {
+				output[total] = idx;
+				total++;
+			}
+
+			// Check that we have the right amount, else add more because division
+			diff = sd.LedCount - total;
+			if (diff > 0) {
+				for (var d = 0; d < diff; d++) {
+					output[total] = idx;
+					total++;
+				}
+			}
+
+
+			return output;
+		}
 
 		public static Color[] AddLedColor(Color[] colors, int sector, Color color, SystemData systemData) {
 			int s0;
@@ -925,12 +1035,18 @@ namespace Glimmr.Models.Util {
 		}
 
 		// Resize a color array
-		public static Color[] ResizeColors(Color[] input, int[] dimensions) {
+		public static Color[] ResizeColors(Color[] input, int[] srcDimensions, int[] tgtDimensions) {
+			_leftCount = tgtDimensions[0];
+			_rightCount = tgtDimensions[1];
+			_topCount = tgtDimensions[2];
+			_bottomCount = tgtDimensions[3];
+			_ledCount = _leftCount + _rightCount + _topCount + _bottomCount;
+			
 			var output = new Color[_ledCount];
 
 			try {
-				SetSystemData();
-				var factor = (float) dimensions[0] / _rightCount;
+				
+				var factor = (float) srcDimensions[1] / _rightCount;
 				var idx = 0;
 				var start = 0;
 				var required = _rightCount;
@@ -946,7 +1062,7 @@ namespace Glimmr.Models.Util {
 
 				start = required;
 				required += _topCount;
-				factor = (float) dimensions[1] / _topCount;
+				factor = (float) srcDimensions[2] / _topCount;
 				for (var i = start; i < required; i++) {
 					var step = (int) (idx * factor);
 					if (step >= input.Length) {
@@ -959,7 +1075,7 @@ namespace Glimmr.Models.Util {
 
 				start = required;
 				required += _leftCount;
-				factor = (float) dimensions[2] / _leftCount;
+				factor = (float) srcDimensions[0] / _leftCount;
 				for (var i = start; i < required; i++) {
 					var step = (int) (idx * factor);
 					if (step >= input.Length) {
@@ -972,7 +1088,7 @@ namespace Glimmr.Models.Util {
 
 				start = required;
 				required += _bottomCount;
-				factor = (float) dimensions[3] / _bottomCount;
+				factor = (float) srcDimensions[3] / _bottomCount;
 				for (var i = start; i < required; i++) {
 					var step = (int) (idx * factor);
 					if (step >= input.Length) {
@@ -989,13 +1105,82 @@ namespace Glimmr.Models.Util {
 			return output;
 		}
 
-		public static Color[] ResizeSectors(Color[] input, int[] dimensions) {
-			var output = new Color[_sectorCount];
+		
+		public static Dictionary<int,int> MapLeds(int len, int[] srcDimensions, int[] tgtDimensions) {
+			_leftCount = tgtDimensions[0];
+			_rightCount = tgtDimensions[1];
+			_topCount = tgtDimensions[2];
+			_bottomCount = tgtDimensions[3];
+			_ledCount = _leftCount + _rightCount + _topCount + _bottomCount;
+			
+			var output = new Dictionary<int, int>();
+
+			try {
+				
+				var factor = (float) srcDimensions[1] / _rightCount;
+				var idx = 0;
+				var start = 0;
+				var required = _rightCount;
+				for (var i = start; i < required; i++) {
+					var step = (int) (idx * factor);
+					if (step >= len) {
+						step = len - 1;
+					}
+
+					output[idx] = step;
+					idx++;
+				}
+
+				start = required;
+				required += _topCount;
+				factor = (float) srcDimensions[2] / _topCount;
+				for (var i = start; i < required; i++) {
+					var step = (int) (idx * factor);
+					if (step >= len) {
+						step = len - 1;
+					}
+
+					output[idx] = step;
+					idx++;
+				}
+
+				start = required;
+				required += _leftCount;
+				factor = (float) srcDimensions[0] / _leftCount;
+				for (var i = start; i < required; i++) {
+					var step = (int) (idx * factor);
+					if (step >= len) {
+						step = len - 1;
+					}
+
+					output[idx] = step;
+					idx++;
+				}
+
+				start = required;
+				required += _bottomCount;
+				factor = (float) srcDimensions[3] / _bottomCount;
+				for (var i = start; i < required; i++) {
+					var step = (int) (idx * factor);
+					if (step >= len) {
+						step = len - 1;
+					}
+
+					output[idx] = step;
+					idx++;
+				}
+			} catch (Exception e) {
+				Log.Debug($"Exception {e.Message}: " + e.StackTrace);
+			}
+
+			return output;
+		}
+		public static Dictionary<int,int> MapSectors(int len, int[] dimensions) {
+			var output = new Dictionary<int, int>();
 
 			try {
 				SetSystemData();
 				// Positions of corners in input
-				var iBr = 0;
 				var iTr = dimensions[0] - 1;
 				var iTl = dimensions[0] + dimensions[1] - 1;
 				var iBl = dimensions[0] + dimensions[1] + dimensions[0] - 1;
@@ -1006,44 +1191,54 @@ namespace Glimmr.Models.Util {
 				var oBl = _vCount + _hCount + _vCount - 3;
 
 				var vFactor = (float) dimensions[0] / _vCount;
-				var hFactor = (float) dimensions[1] / _hCount;
+				var hFactor = (float) (dimensions[1] + dimensions[0]) / (_hCount + _vCount);
+				var lFactor = (float) (dimensions[0] + dimensions[1] + dimensions[0]) / (_vCount + _vCount + _hCount);
+				var bFactor = (float)len / _sectorCount;
 
+				//Log.Debug($"Factors are {vFactor} and {hFactor} and {lFactor} and {bFactor}");
 				// Set bottom-right
-				output[0] = input[iBr];
+				output[0] = 0;
 
 				// Mid-right sectors
 				for (var i = 1; i < oTr; i++) {
-					var tgt = (int) (i * vFactor);
-					//Log.Debug($"Mapping {i} to {tgt}");
-					output[i] = input[tgt];
+					var tgt = (int) Math.Round(i * vFactor);
+					//Log.Debug($"Mapping R {tgt + 1} to {i + 1}");
+					output[i] = tgt;
 				}
 
-				output[oTr] = input[iTr];
+				// Top-right
+				output[oTr] = iTr;
 
+				// Top sectors
 				for (var i = oTr + 1; i < oTl; i++) {
-					var tgt = (int) (i * hFactor);
-					//Log.Debug($"Mapping {i} to {tgt}");
-					output[i] = input[tgt];
+					var tgt = (int) Math.Round(i * hFactor);
+					//Log.Debug($"Mapping T {tgt + 1} to {i + 1}");
+					output[i] = tgt;
 				}
 
-				output[oTl] = input[iTl];
+				// Top-Left
+				output[oTl] = iTl;
 
+				// Left
+			
 				for (var i = oTl + 1; i < oBl; i++) {
-					var tgt = (int) (i * vFactor);
-					//Log.Debug($"Mapping {i} to {tgt}");
-					output[i] = input[tgt];
+					var tgt = (int) Math.Round(i * lFactor);
+					//Log.Debug($"Mapping L {tgt + 1} to {i + 1}");
+					output[i] = tgt;
 				}
 
-				output[oBl] = input[iBl];
+				// Bottom-left
+				output[oBl] = iBl;
 
+				// Bottom
 				for (var i = oBl + 1; i < _sectorCount; i++) {
-					var tgt = (int) (i * hFactor);
-					if (tgt >= _sectorCount) {
-						tgt = _sectorCount - 1;
+					var tgt = (int) Math.Round(i * bFactor);
+					if (tgt >= len) {
+						tgt = 0;
 					}
+					//Log.Debug($"Mapping B {tgt + 1} to {i + 1}");
 
-					//Log.Debug($"Mapping {i} to {tgt}");
-					output[i] = input[tgt];
+					output[i] = tgt;
 				}
 			} catch (Exception e) {
 				Log.Debug($"Exception {e.Message}: " + e.StackTrace);
@@ -1051,19 +1246,73 @@ namespace Glimmr.Models.Util {
 
 			return output;
 		}
+		public static Color[] ResizeSectors(Color[] input, int[] dimensions) {
+			var output = new Color[_sectorCount];
 
-		public static int CheckDsSectors(int target) {
-			SetSystemData();
-			// Append 1 here so target is not zero, and we can get the proper value from "real" sectors
-			float t = target + 1;
-			var output = target;
-			if (_captureMode == CaptureMode.DreamScreen && target != -1) {
-				if (target != 0) {
-					var tPct = t / _sectorCount;
-					t = tPct * 12f;
-					t = Math.Min(t, 12f);
-					output = (int) t - 1;
+			try {
+				SetSystemData();
+				// Positions of corners in input
+				var iTr = dimensions[0] - 1;
+				var iTl = dimensions[0] + dimensions[1] - 1;
+				var iBl = dimensions[0] + dimensions[1] + dimensions[0] - 1;
+
+				// Positions of output corners
+				var oTr = _vCount - 1;
+				var oTl = _vCount + _hCount - 2;
+				var oBl = _vCount + _hCount + _vCount - 3;
+
+				var vFactor = (float) dimensions[0] / _vCount;
+				var hFactor = (float) (dimensions[1] + dimensions[0]) / (_hCount + _vCount);
+				var lFactor = (float) (dimensions[0] + dimensions[1] + dimensions[0]) / (_vCount + _vCount + _hCount);
+				var bFactor = (float)input.Length / _sectorCount;
+
+				//Log.Debug($"Factors are {vFactor} and {hFactor} and {lFactor} and {bFactor}");
+				// Set bottom-right
+				output[0] = input[0];
+
+				// Mid-right sectors
+				for (var i = 1; i < oTr; i++) {
+					var tgt = (int) Math.Round(i * vFactor);
+					//Log.Debug($"Mapping R {tgt + 1} to {i + 1}");
+					output[i] = input[tgt];
 				}
+
+				// Top-right
+				output[oTr] = input[iTr];
+
+				// Top sectors
+				for (var i = oTr + 1; i < oTl; i++) {
+					var tgt = (int) Math.Round(i * hFactor);
+					//Log.Debug($"Mapping T {tgt + 1} to {i + 1}");
+					output[i] = input[tgt];
+				}
+
+				// Top-Left
+				output[oTl] = input[iTl];
+
+				// Left
+			
+				for (var i = oTl + 1; i < oBl; i++) {
+					var tgt = (int) Math.Round(i * lFactor);
+					//Log.Debug($"Mapping L {tgt + 1} to {i + 1}");
+					output[i] = input[tgt];
+				}
+
+				// Bottom-left
+				output[oBl] = input[iBl];
+
+				// Bottom
+				for (var i = oBl + 1; i < _sectorCount; i++) {
+					var tgt = (int) Math.Round(i * bFactor);
+					if (tgt >= input.Length) {
+						tgt = 0;
+					}
+					//Log.Debug($"Mapping B {tgt + 1} to {i + 1}");
+
+					output[i] = input[tgt];
+				}
+			} catch (Exception e) {
+				Log.Debug($"Exception {e.Message}: " + e.StackTrace);
 			}
 
 			return output;

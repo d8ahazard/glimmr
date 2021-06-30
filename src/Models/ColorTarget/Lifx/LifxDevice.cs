@@ -21,8 +21,8 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 		private readonly LifxClient? _client;
 		private BeamLayout? _beamLayout;
-		private readonly int[] _gammaTableBg;
-		private readonly int[] _gammaTableR;
+		private int[] _gammaTable;
+		private int[] _gammaTableRb;
 		private bool _hasMulti;
 		private int _multiZoneCount;
 		private double _scaledBrightness;
@@ -45,11 +45,11 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 
 		public LifxDevice(LifxData d, ColorService colorService) : base(colorService) {
-			_gammaTableR = GenerateGammaTable(1.8);
-			_gammaTableBg = GenerateGammaTable(1.4);
 			DataUtil.GetItem<int>("captureMode");
 			_data = d ?? throw new ArgumentException("Invalid Data");
 			Brightness = _data.Brightness;
+			_gammaTable = GenerateGammaTable(_data.GammaCorrection);
+			_gammaTableRb = GenerateGammaTable(_data.GammaCorrection + .1);
 			_client = colorService.ControlService.GetAgent("LifxAgent");
 			colorService.ColorSendEvent += SetColor;
 			colorService.ControlService.RefreshSystemEvent += LoadData;
@@ -163,10 +163,6 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				}
 			} else {
 				var target = _data.TargetSector;
-				if ((CaptureMode) sd.CaptureMode == CaptureMode.DreamScreen) {
-					target = ColorUtil.CheckDsSectors(target);
-				}
-
 				if (sd.UseCenter) {
 					target = ColorUtil.FindEdge(target + 1);
 				}
@@ -182,6 +178,8 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				var bri = Brightness / 100 * 255;
 				_client.SetBrightnessAsync(B, (ushort) bri).ConfigureAwait(false);
 			}
+			_gammaTable = GenerateGammaTable(_data.GammaCorrection);
+			_gammaTableRb = GenerateGammaTable(_data.GammaCorrection + .1);
 
 			Id = _data.Id;
 			Enable = _data.Enable;
@@ -216,10 +214,12 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			var cols = new List<LifxColor>();
 			foreach (var col in output) {
 				if (i == 0) {
-					var ar = _gammaTableR[col.R];
-					var ag = _gammaTableBg[col.G];
-					var ab = _gammaTableBg[col.B];
-					cols.Add(new LifxColor(Color.FromArgb(ar, ag, ab), _scaledBrightness));
+					var ar = _gammaTableRb[col.R];
+					var ag = _gammaTable[col.G];
+					var ab = _gammaTableRb[col.B];
+					var colL = new LifxColor(Color.FromArgb(ar, ag, ab),_scaledBrightness);
+					colL.Kelvin = 7000;
+					cols.Add(colL);
 					i = 1;
 				} else {
 					i = 0;

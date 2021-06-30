@@ -67,7 +67,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			_entLayer = null;
 			SetData();
 			// Don't grab streaming group unless we need it
-			if (_user == null || _token == null || _client != null) {
+			if (!IsValid(_user) || !IsValid(_token) || _client != null) {
 				return;
 			}
 
@@ -78,6 +78,10 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			} catch (Exception e) {
 				Log.Warning("Exception: " + e.Message + " at " + e.StackTrace);
 			}
+		}
+
+		private bool IsValid(string? input) {
+			return !string.IsNullOrEmpty(input);
 		}
 
 
@@ -313,10 +317,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			_lightMappings = Data.MappedLights;
 			foreach (var ld in _lightMappings) {
 				var target = ld.TargetSector;
-				if ((CaptureMode) sd.CaptureMode == CaptureMode.DreamScreen) {
-					target = ColorUtil.CheckDsSectors(target);
-				}
-
+				
 				if (sd.UseCenter) {
 					target = ColorUtil.FindEdge(target + 1);
 				}

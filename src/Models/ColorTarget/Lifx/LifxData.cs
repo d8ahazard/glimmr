@@ -67,6 +67,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		public string IpAddress { get; set; } = "";
 		public int Brightness { get; set; }
 		public bool Enable { get; set; }
+		public double GammaCorrection { get; set; } = 1;
 
 
 
@@ -170,7 +171,11 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 		private SettingsProperty[] Kps() {
 			if (HasMultiZone) {
-				return new SettingsProperty[] {
+				var gamma = new SettingsProperty("GammaCorrection", "number", "Gamma Correction") {
+					ValueMax = "3", ValueMin = "1", ValueStep = ".1"
+				};
+				return new[] {
+					gamma,
 					new("beamMap", "beamMap", "")
 				};
 			}

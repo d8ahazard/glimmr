@@ -10,10 +10,15 @@
     z-index: 2000;
     position: relative;
     width: 250px;
+    padding-top: 5px;
 }
 
 #mapCol {
     position: relative;
+}
+
+.refreshBtn {
+    margin-bottom: 3px;
 }
 
 #sectorPreview, #sectorMap, #ledMap {
@@ -121,7 +126,7 @@ area {
     text-align: center;
     color: white;
     text-shadow: black;
-    font-size: 16px;
+    font-size: 1vw;
 }
 
 .capModeBtn, .capModeBtn img {

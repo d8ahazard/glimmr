@@ -14,6 +14,10 @@ namespace Glimmr.Models {
 
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public bool SkipDemo { get; set; }
+
+		[DefaultValue(false)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool AutoDisabled { get; set; }
 
 		[DefaultValue(false)]

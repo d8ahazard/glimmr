@@ -63,7 +63,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			}
 
 			Log.Information($"{_data.Tag}::Starting stream: {_data.Id}...");
-			_targetSector = ColorUtil.CheckDsSectors(_data.TargetSector);
+			_targetSector = _data.TargetSector;
 			_ep = IpUtil.Parse(IpAddress, port);
 			if (_ep == null) return;
 			Streaming = true;
@@ -161,7 +161,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			IpAddress = _data.IpAddress;
 			Enable = _data.Enable;
 			_stripMode = (StripMode) _data.StripMode;
-			_targetSector = ColorUtil.CheckDsSectors(_data.TargetSector);
+			_targetSector = _data.TargetSector;
 
 			if (oldBrightness != Brightness) {
 				Log.Debug($"Brightness has changed!! {oldBrightness} {Brightness}");

@@ -21,8 +21,8 @@ using Serilog;
 namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
 	public sealed class PiCamVideoStream : IVideoStream, IDisposable {
 		private readonly MMALCamera _cam;
-		private const int CapHeight = DisplayUtil.CaptureHeight;
-		private const int CapWidth = DisplayUtil.CaptureWidth;
+		private static readonly int CapHeight = 480;
+		private static readonly int CapWidth = 640;
 		public Mat Frame { get; set; }
 
 

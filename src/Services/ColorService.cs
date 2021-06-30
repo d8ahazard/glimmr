@@ -79,7 +79,10 @@ namespace Glimmr.Services {
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			LoadData();
 			return Task.Run(async () => {
-				await Demo(this, null).ConfigureAwait(false);
+				if (!_systemData.SkipDemo) {
+					Log.Debug("Executing demo.");
+					await Demo(this, null);
+				}
 				Log.Information($"All color sources initialized, setting mode to {DeviceMode}.");
 				await Mode(this, new DynamicEventArgs(DeviceMode)).ConfigureAwait(true);
 				while (!stoppingToken.IsCancellationRequested) {
@@ -480,10 +483,10 @@ namespace Glimmr.Services {
 		private Task StartStream() {
 			if (!_streamStarted) {
 				_streamStarted = true;
-				Log.Information("Starting streaming devices...");
+				Log.Information("Starting streaming targets...");
 				foreach (var sDev in _sDevices) {
 					if (sDev.Data == null) {
-						Log.Debug("SET DEV DATA: " + sDev.Id);
+						Log.Warning("Device data is not set: " + sDev.Id);
 					} else {
 						if (sDev.Data.Tag != "Led" && sDev.Data.Tag != "Adalight" && sDev.Data.Enable) {
 							if (!SystemUtil.IsOnline(sDev.Data.IpAddress)) {
@@ -498,7 +501,7 @@ namespace Glimmr.Services {
 			}
 
 			if (_streamStarted) {
-				Log.Information("Streaming on all devices should now be started...");
+				Log.Information("Streaming started on all devices.");
 			}
 
 			return Task.CompletedTask;
@@ -510,20 +513,16 @@ namespace Glimmr.Services {
 			}
 
 			_streamStarted = false;
-			var streamers = new List<IColorTarget>();
-			foreach (var s in _sDevices.Where(s => s.Streaming)) {
-				streamers.Add(s);
-			}
-
-			await Task.WhenAll(streamers.Select(i => {
+			
+			await Task.WhenAll(_sDevices.Select(i => {
 				try {
-					return i.StopStream();
+					return i.Streaming ? i.StopStream() : Task.CompletedTask;
 				} catch (Exception e) {
 					Log.Warning("Well, this is exceptional: " + e.Message);
 					return Task.CompletedTask;
 				}
 			})).ConfigureAwait(false);
-			Log.Information("Stream stopped.");
+			Log.Information("Stream stopped on all devices.");
 		}
 
 
@@ -537,12 +536,12 @@ namespace Glimmr.Services {
 				return;
 			}
 
-			if (!_frameWatch.IsRunning) {
-				_frameWatch.Start();
-			}
+			// if (!_frameWatch.IsRunning) {
+			// 	_frameWatch.Start();
+			// }
 
-			if (_frameWatch.Elapsed >= _frameSpan || force || DeviceMode == DeviceMode.Streaming) {
-				_frameWatch.Restart();
+			if (true || _frameWatch.Elapsed >= _frameSpan || force || DeviceMode == DeviceMode.Streaming) {
+				//_frameWatch.Restart();
 				Counter.Tick("source");
 				ColorSendEvent(colors, sectors, fadeTime, force);
 			}
