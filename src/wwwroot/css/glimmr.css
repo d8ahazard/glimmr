@@ -10,10 +10,15 @@
     z-index: 2000;
     position: relative;
     width: 250px;
+    padding-top: 5px;
 }
 
 #mapCol {
     position: relative;
+}
+
+.refreshBtn {
+    margin-bottom: 3px;
 }
 
 #sectorPreview, #sectorMap, #ledMap {

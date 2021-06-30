@@ -37,6 +37,7 @@ let leftCount, rightCount, topCount, bottomCount, hSectors, vSectors;
 let useCenter;
 let refreshTimer;
 let fpsCounter;
+let nanoTarget, nanoSector;
 let errModal = new bootstrap.Modal(document.getElementById('errorModal'));
 // We're going to create one object to store our stuff, and add listeners for when values are changed.
 let data = {
@@ -665,8 +666,14 @@ function handleClick(target) {
             closeCard();
             break;
         case target.classList.contains("sector"):
-            let val = target.getAttribute("data-sector");
+            let val = target.getAttribute("data-sector");            
             updateDeviceSector(val, target);
+            if (target.classList.contains("nanoRegion")) {
+                console.log("Hiding nano modal.");
+                let myModalEl = document.getElementById('nanoModal');
+                let modal = bootstrap.Modal.getInstance(myModalEl);
+                modal.hide();    
+            }            
             break;
         case target.classList.contains("linkDiv"):
             if (target.getAttribute("data-linked") === "false") {
@@ -2144,6 +2151,7 @@ function createSectorMap(targetElement, regionName) {
         r = l + fWidth;
         let s1 = document.createElement("div");
         s1.classList.add("sector");
+        if (isValid(regionName)) s1.classList.add(regionName + "Region");
         if (sector.toString() === selected.toString()) s1.classList.add("checked");
         s1.setAttribute("data-sector", sector.toString());
         s1.style.position = "absolute";
@@ -2957,7 +2965,6 @@ function drawNanoShapes(panel) {
 function setNanoMap(id, current) {
     nanoTarget = id;
     nanoSector = current;
-    
     let myModal = new bootstrap.Modal(document.getElementById('nanoModal'));
     let wrap = document.getElementById("nanoPreviewWrap");
     myModal.show();
