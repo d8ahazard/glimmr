@@ -536,11 +536,11 @@ namespace Glimmr.Services {
 				return;
 			}
 
-			// if (!_frameWatch.IsRunning) {
-			// 	_frameWatch.Start();
-			// }
+			if (!_frameWatch.IsRunning) {
+				_frameWatch.Start();
+			}
 
-			if (true || _frameWatch.Elapsed >= _frameSpan || force || DeviceMode == DeviceMode.Streaming) {
+			if (_frameWatch.Elapsed >= _frameSpan || force || DeviceMode == DeviceMode.Streaming) {
 				//_frameWatch.Restart();
 				Counter.Tick("source");
 				ColorSendEvent(colors, sectors, fadeTime, force);

@@ -402,7 +402,6 @@ namespace Glimmr.Models.ColorSource.Video {
 
 			// Top Region
 			var tTop = hOffset;
-			Log.Debug("Height and width should be " + _scaleHeight + " and " + _scaleWidth);
 			// Bottom Region
 			var bBottom = _scaleHeight - hOffset;
 			var bTop = bBottom - _borderHeight;
@@ -421,7 +420,6 @@ namespace Glimmr.Models.ColorSource.Video {
 			var widthBottom = (int) Math.Ceiling(w / _bottomCount);
 			var heightLeft = (int) Math.Ceiling(h / _leftCount);
 			var heightRight = (int) Math.Ceiling(h / _rightCount);
-			Log.Debug($"Pxsizes: {widthTop}, {widthBottom}, {heightLeft}, {heightRight}");
 			// Calc right regions, bottom to top
 			var idx = 0;
 			var pos = _scaleHeight - heightRight;
@@ -465,7 +463,6 @@ namespace Glimmr.Models.ColorSource.Video {
 
 			// Calc bottom regions (L-R)
 			pos = 0;
-			Log.Debug($"Calculating bottom, {bTop} {widthBottom} {pos} {_borderHeight} {_bottomCount}");
 			for (var i = 0; i < _bottomCount; i++) {
 				if (idx >= _ledCount) {
 					Log.Debug($"Index is {idx}, but count is {_ledCount}");

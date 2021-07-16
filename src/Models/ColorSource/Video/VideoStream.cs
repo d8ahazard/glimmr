@@ -158,14 +158,12 @@ namespace Glimmr.Models.ColorSource.Video {
 
 						if (_vc == null) continue;
 						var frame = _vc.Frame;
-						if (_enable && !_wasEnabled) Log.Debug("Got frame?");
 						if (frame == null || frame.IsEmpty) {
 							SourceActive = false;
 							Log.Warning("Frame is null.");
 							continue;
 						}
 
-						if (_enable && !_wasEnabled) Log.Debug("Col check...");
 						if (frame.Cols == 0) {
 							SourceActive = false;
 							if (!_noColumns) {
@@ -177,7 +175,6 @@ namespace Glimmr.Models.ColorSource.Video {
 							continue;
 						}
 
-						if (_enable && !_wasEnabled) Log.Debug("Processing frame?");
 						var warped = ProcessFrame(frame);
 						if (warped == null) {
 							SourceActive = false;
@@ -185,7 +182,6 @@ namespace Glimmr.Models.ColorSource.Video {
 							continue;
 						}
 
-						if (_enable && !_wasEnabled) Log.Debug("Updating splitter?");
 						StreamSplitter?.Update(warped);
 						if (StreamSplitter == null) return;
 						SourceActive = !StreamSplitter.NoImage;
@@ -193,7 +189,6 @@ namespace Glimmr.Models.ColorSource.Video {
 						Colors = c1;
 						var c2 = StreamSplitter.GetSectors();
 						Sectors = c2;
-						if (_enable && !_wasEnabled) Log.Debug("Sending frame?");
 						if (SendColors) {
 							_colorService.SendColors(Colors, Sectors, 0);
 						}

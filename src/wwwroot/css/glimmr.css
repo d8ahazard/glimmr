@@ -17,9 +17,6 @@
     position: relative;
 }
 
-.refreshBtn {
-    margin-bottom: 3px;
-}
 
 #sectorPreview, #sectorMap, #ledMap {
     background:url("../img/sectoring_screen.png");
@@ -227,7 +224,7 @@ input[type="range"]::-webkit-slider-runnable-track {
 
 .statIcon {
     position: relative;
-    top: 5px;
+    top: 6px;
 }
 
 .btn-clear.active {
@@ -285,6 +282,8 @@ input[type="range"]::-webkit-slider-runnable-track {
 
 .myNav {
     height: 3rem;
+    padding-left: 0;
+    padding-right: 0;
 }
 
 .btn-offset {
@@ -341,4 +340,61 @@ input[type="range"]::-webkit-slider-runnable-track {
 
 #sectorPreview, #ledPreview, #sLedPreview {
     position: relative;
+}
+
+.lds-ellipsis {
+    display: inline-block;
+    position: relative;
+    width: 80px;
+    height: 80px;
+}
+.lds-ellipsis div {
+    position: absolute;
+    top: 33px;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    color: #232323 !important;
+    background: #c4c4c4 !important;
+    animation-timing-function: cubic-bezier(0, 1, 1, 0);
+}
+.lds-ellipsis div:nth-child(1) {
+    left: 8px;
+    animation: lds-ellipsis1 0.6s infinite;
+}
+.lds-ellipsis div:nth-child(2) {
+    left: 8px;
+    animation: lds-ellipsis2 0.6s infinite;
+}
+.lds-ellipsis div:nth-child(3) {
+    left: 32px;
+    animation: lds-ellipsis2 0.6s infinite;
+}
+.lds-ellipsis div:nth-child(4) {
+    left: 56px;
+    animation: lds-ellipsis3 0.6s infinite;
+}
+@keyframes lds-ellipsis1 {
+    0% {
+        transform: scale(0);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+@keyframes lds-ellipsis3 {
+    0% {
+        transform: scale(1);
+    }
+    100% {
+        transform: scale(0);
+    }
+}
+@keyframes lds-ellipsis2 {
+    0% {
+        transform: translate(0, 0);
+    }
+    100% {
+        transform: translate(24px, 0);
+    }
 }

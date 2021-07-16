@@ -71,7 +71,14 @@
 </div>
 <div id="mainContent">
 <div class="row justify-content-center" id="cardRow">
-
+    <div class="card m-4 devCard" data-id="blankCard">
+        <div class="card-body row">
+            <div class="col-8 titleCol exp">
+                <h5 class="card-title">Loading...</h5>
+                <div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
+            </div>
+        </div>
+    </div>
 </div>
 <div class="row justify-content-center d-none" id="settingsRow">
 <div class="col-12">
@@ -101,9 +108,9 @@
 <!-- System prefs -->
 <div class="row border justify-content-center pb-5">
     <div class="col-12 headerCol">General</div>
-    <div class="col-12 row justify-content-center form-group pt-1">
+    <div class="col-12 col-md-6 col-xl-3 align-self-center form-group pt-1">
+        <label class="form-label">System Control</label>
         <div class="col-12 col-md-6 col-xl-3">
-            <label class="form-label">System Control</label>
             <div class="btn-group">
                 <div class="btn btn-lg btn-clear controlBtn" data-action="shutdown" data-bs-toggle="tooltip" data-bs-placement="top" title="Shutdown">
                     <span class="material-icons">power_settings_new</span>
@@ -215,6 +222,13 @@
             <option value="Pacific/Auckland">(GMT+12:00) Auckland, Wellington</option>
             <option value="Pacific/Fiji">(GMT+12:00) Fiji, Kamchatka, Marshall Is.</option>
             <option value="Pacific/Tongatapu">(GMT+13:00) Nuku'alofa</option>
+        </select>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3 align-self-center form-group">
+        <label class="form-label">Temperature Units</label>
+        <select name="units" data-object="SystemData" data-property="Units" class="form-control">
+            <option value="0">Fahrenheit</option>
+            <option value="1">Celsius</option>
         </select>
     </div>
 </div>
@@ -408,19 +422,8 @@
         <div class="row border justify-content-center pb-5">
             <div class="col-12 titleCol">LED Counts</div>
             <div class="col-12 form-text mb-4">Enter the total number of LEDs around the perimerter of your screen.</div>
-            <!-- Top count -->
-            <div class="col-4"></div>
-            <div class="col-4 align-self-center">
-                <div class="input-group mb-3">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text" id="ledCountTop">Top</span>
-                    </div>
-                    <input type="text" class="form-control ledCount" data-property="TopCount" data-object="SystemData" aria-label="Top" aria-describedby="ledCountTop">
-                </div>
-            </div>
-            <div class="col-4"></div>
-            <!-- Left count -->
-            <div class="col-3">
+           <!-- Left count -->
+            <div class="col-6 col-md-3 align-self-center">
                 <div class="input-group mb-3">
                     <div class="input-group-prepend">
                         <span class="input-group-text" id="ledCountLeft">Left</span>
@@ -428,22 +431,26 @@
                     <input type="text" class="form-control ledCount" data-property="LeftCount" data-object="SystemData" aria-label="Left" aria-describedby="ledCountLeft">
                 </div>
             </div>
-            <!-- Preview -->
-            <div class="col-6" id="sLedPreview">
-                <div id="sLedWrap"></div>
-            </div>
             <!-- Right count -->
-            <div class="col-3">
-                <div class="input-group mb-3">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text" id="ledCountRight">Right</span>
-                    </div>
-                    <input type="text" class="form-control ledCount" data-property="RightCount" data-object="SystemData" aria-label="Right" aria-describedby="ledCountRight">
-                </div>
-            </div>
-            <div class="col-4"></div>
+           <div class="col-6 col-md-3 align-self-center">
+               <div class="input-group mb-3">
+                   <div class="input-group-prepend">
+                       <span class="input-group-text" id="ledCountRight">Right</span>
+                   </div>
+                   <input type="text" class="form-control ledCount" data-property="RightCount" data-object="SystemData" aria-label="Right" aria-describedby="ledCountRight">
+               </div>
+           </div>
+            <!-- Top count -->
+           <div class="col-6 col-md-3 align-self-center">
+               <div class="input-group mb-3">
+                   <div class="input-group-prepend">
+                       <span class="input-group-text" id="ledCountTop">Top</span>
+                   </div>
+                   <input type="text" class="form-control ledCount" data-property="TopCount" data-object="SystemData" aria-label="Top" aria-describedby="ledCountTop">
+               </div>
+           </div>
             <!-- Bottom count -->
-            <div class="col-4 align-self-center">
+            <div class="col-6 col-md-3 align-self-center">
                 <div class="input-group mb-3">
                     <div class="input-group-prepend">
                         <span class="input-group-text" id="ledCountBottom">Bottom</span>
@@ -451,7 +458,10 @@
                     <input type="text" class="form-control ledCount" data-property="BottomCount" data-object="SystemData" aria-label="Bottom" aria-describedby="ledCountBottom">
                 </div>
             </div>
-            <div class="col-4"></div>
+            <!-- Preview -->
+            <div class="col-12 col-md-8" id="sLedPreview">
+                <div id="sLedWrap"></div>
+            </div>
         </div>
 
         <div class="row border justify-content-center pb-5">
@@ -476,13 +486,13 @@
                 </div>
             </div>
             <!-- CENTER MODE! -->
-            <div class="col-12 col-md-6 col-xl-3 form-check align-self-center mt-2 justify-content-center pb-4">
+            <div class="col-12 col-md-6 form-check align-self-center mt-2 justify-content-center mb-4">
                 <label class="form-check-label">Use Center of Screen for Sectors</label>
                 <input type="checkbox" class="form-check-input" data-object="SystemData" data-property="UseCenter"/>
                 <div class="form-text">Sectors will be captured in order from right-left, bottom-top.</div>
             </div>
             <!-- Preview -->
-            <div class="col-6" id="sectorPreview">
+            <div class="col-12 col-md-8" id="sectorPreview">
                 <div id="sectorWrap"></div>
             </div>
 
@@ -555,7 +565,7 @@
 <nav class="container-fluid fixed-bottom" id="footer">
     <div class="fixed-bottom">
 
-        <div class="btn btn-sm btn-clear float-right refreshBtn mr-4">
+        <div class="btn btn-sm btn-clear float-right refreshBtn mr-2">
             <span class="material-icons fs-1" id="refreshIcon">refresh</span>
         </div>
     </div>

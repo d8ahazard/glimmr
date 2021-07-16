@@ -28,9 +28,10 @@ namespace Glimmr.Services {
 		private int _ledCount;
 		private bool _loaded;
 		private bool _sending;
-		private bool _mirrorHorizontal;
+		private ServiceDiscovery? _discovery;
 		private SystemData _sd;
 		private GlimmrData? _gd;
+		private string _hostName;
 		private int _sectorCount;
 		private bool _useCenter;
 		private bool _streaming;
@@ -55,19 +56,29 @@ namespace Glimmr.Services {
 			var sd = DataUtil.GetSystemData();
 			_devMode = sd.DeviceMode;
 			_sd = sd;
+			_hostName = _sd.DeviceName;
+			_ledMap = new Dictionary<int, int>();
+			_sectorMap = new Dictionary<int, int>();
 			tgtDimensions = new[] {_sd.LeftCount, _sd.RightCount, _sd.TopCount, _sd.BottomCount};
+			RefreshSd();
 		}
 
 		private void RefreshSd() {
 			_sd = DataUtil.GetSystemData();
+			_hostName = _sd.DeviceName;
 			tgtDimensions = new[] {_sd.LeftCount, _sd.RightCount, _sd.TopCount, _sd.BottomCount};
+			
+			_discovery?.Dispose();
+			var addr = new List<IPAddress> {IPAddress.Parse(IpUtil.GetLocalIpAddress())};
+			var service = new ServiceProfile(_hostName, "_glimmr._tcp", 8889, addr);
+			_discovery = new ServiceDiscovery();
+			_discovery.Advertise(service);
 		}
 
 		private async Task StartStream(object arg1, DynamicEventArgs arg2) {
 			_gd = arg2.P1;
 			_sd = DataUtil.GetSystemData();
 			_useCenter = _gd.UseCenter;
-			_mirrorHorizontal = _gd.MirrorHorizontal;
 			_sectorCount = _gd.SectorCount;
 			_ledCount = _gd.LedCount;
 			_loaded = true;
@@ -87,11 +98,6 @@ namespace Glimmr.Services {
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			Log.Information("Stream service initialized.");
 			return Task.Run(async () => {
-				var hostname = Dns.GetHostName();
-				var addr = new List<IPAddress> {IPAddress.Parse(IpUtil.GetLocalIpAddress())};
-				var service = new ServiceProfile(hostname, "_glimmr._tcp", 8889, addr);
-				var sd = new ServiceDiscovery();
-				sd.Advertise(service);
 				Task t1 = Task.Run(Listen,stoppingToken);
 				Task t2 = Task.Run(Listen,stoppingToken);
 				Log.Debug("Listen tasks started.");
@@ -100,8 +106,7 @@ namespace Glimmr.Services {
 						await Task.Delay(1, stoppingToken);
 					}
 				}
-
-				sd.Dispose();
+				_discovery?.Dispose();
 			}, stoppingToken);
 		}
 		

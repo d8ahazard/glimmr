@@ -1,6 +1,8 @@
 ﻿#region
 
+using System;
 using System.ComponentModel;
+using System.Net;
 using System.Runtime.InteropServices;
 using Newtonsoft.Json;
 
@@ -221,6 +223,10 @@ namespace Glimmr.Models {
 
 		[JsonProperty] public string AmbientColor { get; set; } = "FFFFFF";
 
+		[DefaultValue("")]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public string DeviceName { get; set; } = "";
+		
 		[DefaultValue("Dreamscreen4K")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string DevType { get; set; } = "Dreamscreen4K";
@@ -258,6 +264,10 @@ namespace Glimmr.Models {
 		[DefaultValue("US/Central")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string TimeZone { get; set; } = "US/Central";
+		
+		[DefaultValue("0")]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public string Units { get; set; } = "0";
 
 		public void SetDefaults() {
 			Brightness = 255;
@@ -267,6 +277,8 @@ namespace Glimmr.Models {
 			DeviceMode = 0;
 			AutoUpdateTime = 2;
 			DefaultSet = true;
+			DeviceName = Environment.MachineName;
+			if (string.IsNullOrEmpty(DeviceName)) DeviceName = Dns.GetHostName();
 		}
 	}
 }
