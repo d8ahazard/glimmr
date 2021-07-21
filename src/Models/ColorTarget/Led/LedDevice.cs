@@ -78,7 +78,6 @@ namespace Glimmr.Models.ColorTarget.Led {
 				return;
 			}
 
-			Log.Information($"{_data.Tag}::Stopping stream. {_data.Id}.");
 			await StopLights().ConfigureAwait(false);
 			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
 			Streaming = false;

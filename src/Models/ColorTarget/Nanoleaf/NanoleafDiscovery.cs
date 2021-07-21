@@ -138,7 +138,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				}
 			}
 
-			_controlService.AddDevice(nData).ConfigureAwait(true);
+			ControlService.AddDevice(nData).ConfigureAwait(true);
 		}
 	}
 }

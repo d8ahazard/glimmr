@@ -288,7 +288,6 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			// Load two arrays of colors, which we will use for the actual fade values
 			_currentColors = RefreshColors(_sceneColors);
 			_nextColors = RefreshColors(_sceneColors);
-			Log.Debug($"Loaded, color len is {_currentColors.Length}");
 		}
 
 

@@ -25,11 +25,11 @@ using Serilog;
 namespace Glimmr.Services {
 	public class ControlService : BackgroundService {
 		public ColorService ColorService { get; set; }
-		public HttpClient HttpSender { get; }
+		public HttpClient HttpSender { get; set; }
 
-		public MulticastService MulticastService { get; }
-		public ServiceDiscovery ServiceDiscovery { get; }
-		public UdpClient UdpClient { get; }
+		public MulticastService MulticastService { get; set; }
+		public ServiceDiscovery ServiceDiscovery { get; set; }
+		public UdpClient UdpClient { get; set; }
 		private readonly IHubContext<SocketServer> _hubContext;
 
 		public AsyncEvent<DynamicEventArgs> DemoLedEvent;
@@ -54,46 +54,9 @@ namespace Glimmr.Services {
 #pragma warning disable 8618
 		public ControlService(IHubContext<SocketServer> hubContext) {
 #pragma warning restore 8618
-			var text = @"
-
- (                                            (    (      *      *    (     
- )\ )   )            )                 (      )\ ) )\ ) (  `   (  `   )\ )  
-(()/(( /(   ) (   ( /((        (  (    )\ )  (()/((()/( )\))(  )\))( (()/(  
- /(_))\()| /( )(  )\())\  (    )\))(  (()/(   /(_))/(_)|(_)()\((_)()\ /(_)) 
-(_))(_))/)(_)|()\(_))((_) )\ )((_))\   /(_))_(_)) (_)) (_()((_|_()((_|_))   
-/ __| |_((_)_ ((_) |_ (_)_(_/( (()(_) (_)) __| |  |_ _||  \/  |  \/  | _ \  
-\__ \  _/ _` | '_|  _|| | ' \)) _` |    | (_ | |__ | | | |\/| | |\/| |   /  
-|___/\__\__,_|_|  \__||_|_||_|\__, |     \___|____|___||_|  |_|_|  |_|_|_\  
-                              |___/                                         
-
-";
-			Log.Debug(text);
-			_sd = DataUtil.GetSystemData();
-			var devs = DataUtil.GetDevices();
-			if (devs.Count == 0) {
-				if (SystemUtil.IsRaspberryPi()) {
-					var ld0 = new LedData {Id = "0", Brightness = 255, GpioNumber = 18, Enable = true};
-					var ld1 = new LedData {Id = "1", Brightness = 255, GpioNumber = 19};
-					DataUtil.AddDeviceAsync(ld0).ConfigureAwait(false);
-					DataUtil.AddDeviceAsync(ld1).ConfigureAwait(false);
-				}
-			}
-
-			_agents = new Dictionary<string, dynamic>();
-			// Now we can load stuff
 			_hubContext = hubContext;
-			// Init nano HttpClient
-			HttpSender = new HttpClient {Timeout = TimeSpan.FromSeconds(5)};
-			// Init UDP client
-			UdpClient = new UdpClient {Ttl = 5};
-			UdpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-			UdpClient.Client.Blocking = false;
-			UdpClient.DontFragment = true;
-			MulticastService = new MulticastService();
-			ServiceDiscovery = new ServiceDiscovery(MulticastService);
-			LoadAgents();
-			// Dynamically load agents
-			ColorUtil.SetSystemData();
+			Initialize();
+
 		}
 
 		public event Action RefreshSystemEvent = delegate { };
@@ -296,6 +259,50 @@ namespace Glimmr.Services {
 				Log.Debug("Control service stopped.");
 				return Task.CompletedTask;
 			}, stoppingToken);
+		}
+
+		private void Initialize() {
+			const string text = @"
+
+ (                                            (    (      *      *    (     
+ )\ )   )            )                 (      )\ ) )\ ) (  `   (  `   )\ )  
+(()/(( /(   ) (   ( /((        (  (    )\ )  (()/((()/( )\))(  )\))( (()/(  
+ /(_))\()| /( )(  )\())\  (    )\))(  (()/(   /(_))/(_)|(_)()\((_)()\ /(_)) 
+(_))(_))/)(_)|()\(_))((_) )\ )((_))\   /(_))_(_)) (_)) (_()((_|_()((_|_))   
+/ __| |_((_)_ ((_) |_ (_)_(_/( (()(_) (_)) __| |  |_ _||  \/  |  \/  | _ \  
+\__ \  _/ _` | '_|  _|| | ' \)) _` |    | (_ | |__ | | | |\/| | |\/| |   /  
+|___/\__\__,_|_|  \__||_|_||_|\__, |     \___|____|___||_|  |_|_|  |_|_|_\  
+                              |___/                                         
+
+";
+			Log.Information(text);
+			Log.Information("Starting control service...");
+			_sd = DataUtil.GetSystemData();
+			var devs = DataUtil.GetDevices();
+			if (devs.Count == 0) {
+				if (SystemUtil.IsRaspberryPi()) {
+					var ld0 = new LedData {Id = "0", Brightness = 255, GpioNumber = 18, Enable = true};
+					var ld1 = new LedData {Id = "1", Brightness = 255, GpioNumber = 19};
+					DataUtil.AddDeviceAsync(ld0).ConfigureAwait(false);
+					DataUtil.AddDeviceAsync(ld1).ConfigureAwait(false);
+				}
+			}
+
+			_agents = new Dictionary<string, dynamic>();
+			// Now we can load stuff
+			// Init nano HttpClient
+			HttpSender = new HttpClient {Timeout = TimeSpan.FromSeconds(5)};
+			// Init UDP client
+			UdpClient = new UdpClient {Ttl = 5};
+			UdpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+			UdpClient.Client.Blocking = false;
+			UdpClient.DontFragment = true;
+			MulticastService = new MulticastService();
+			ServiceDiscovery = new ServiceDiscovery(MulticastService);
+			LoadAgents();
+			// Dynamically load agents
+			ColorUtil.SetSystemData();
+			Log.Information("Control service started.");
 		}
 
 		public override Task StopAsync(CancellationToken cancellationToken) {

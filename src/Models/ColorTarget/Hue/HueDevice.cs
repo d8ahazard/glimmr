@@ -72,7 +72,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				return;
 			}
 
-			Log.Debug($"Creating client: {IpAddress}, {_user}, {_token}");
 			_client = new StreamingHueClient(IpAddress, _user, _token);
 			SetData();
 			
@@ -170,11 +169,11 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			//Connect to the streaming group
 			try {
 				await _client.Connect(_streamingGroup.Id);
-				Log.Debug("Connected.");
 			} catch (SocketException s) {
 				if (s.Message.Contains("already connected")) {
-					Log.Debug("Client is already connected.");
+					Log.Warning("Client is already connected.");
 				} else {
+					Streaming = false;
 					return;
 				}
 			} catch (Exception e) {
@@ -182,8 +181,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				return;
 			}
 
-			Log.Debug("Setting autoUpdate...");
-			//_updateTask = _client.AutoUpdate(_stream, _ct);
 			Log.Information($"{Data.Tag}::Stream started: {Data.Id}");
 			Streaming = true;
 		}
@@ -239,9 +236,15 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				}
 			}
 
-			if (_client != null && _stream != null) {
-				_client.ManualUpdate(_stream);
+			try {
+				if (_client != null && _stream != null) {
+					_client.ManualUpdate(_stream);
+				}
+			} catch (Exception e) {
+				Log.Warning("Exception: " + e.Message + " at " + e.StackTrace);
+				if (e.Message == "internal_error(80)") Streaming = false;
 			}
+
 			ColorService?.Counter.Tick(Id);
 		}
 
@@ -256,8 +259,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				return;
 			}
 
-			Log.Information($"{Data.Tag}::Stoppinging stream... {Data.Id}");
-
 			try {
 				if (_client == null || _selectedGroup == null) {
 					Log.Debug("Client or group is null, returning...stream stopped?");
@@ -269,7 +270,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			}
 
 			Streaming = false;
-			Log.Information($"{Data.Tag}::Stream stopped. {Data.Id}");
+			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}");
 		}
 
 		public bool IsEnabled() {

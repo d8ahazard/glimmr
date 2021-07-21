@@ -67,7 +67,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 			_sd = systemData;
 			LoadData().ConfigureAwait(true);
 			try {
-				Log.Debug("Loading audio stream with index " + _recordDeviceIndex);
 				Bass.RecordInit(_recordDeviceIndex);
 				_handle = Bass.RecordStart(48000, 2, BassFlags.Float, Update);
 				Bass.RecordGetDeviceInfo(_recordDeviceIndex, out _);
@@ -79,12 +78,12 @@ namespace Glimmr.Models.ColorSource.Audio {
 		}
 
 		protected override Task ExecuteAsync(CancellationToken ct) {
+			Log.Debug("Starting audio stream service...");
 			if (!_hasDll) {
 				Log.Debug("Audio stream unavailable, no bass.dll found.");
 				return Task.CompletedTask;
 			}
 
-			Log.Debug("Starting audio stream service...");
 			return Task.Run(async () => {
 				while (!ct.IsCancellationRequested) {
 					await Task.Delay(1, ct);

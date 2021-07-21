@@ -260,9 +260,8 @@ namespace Glimmr.Models.Util {
 			var db = GetDb();
 			try {
 				var devs = db.GetCollection<dynamic>("Devices");
-				devs.Delete(deviceId);
+				if (devs.Delete(deviceId)) Log.Information($"Device {deviceId} deleted.");
 				db.Commit();
-				Log.Debug($"Device {deviceId} deleted.");
 			} catch (Exception) {
 				//ignored
 			}

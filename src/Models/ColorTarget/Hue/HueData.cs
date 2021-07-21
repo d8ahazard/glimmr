@@ -53,13 +53,11 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			IpAddress = b.IpAddress;
 			Id = b.BridgeId;
 			if (Id.Length > 12) {
-				Log.Debug("Truncating ID: " + Id);
 				var left = Id.Substring(0, 6);
 				var right = Id.Substring(Id.Length - 6);
 				Id = left + right;
 			}
 
-			Log.Debug("Id should be " + Id);
 			Brightness = 100;
 			User = "";
 			Token = "";
@@ -82,9 +80,11 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			}
 
 			if (!string.IsNullOrEmpty(input.Token)) {
-				Token = input.Token;
-				User = input.User;
-				Log.Debug("Updating token and user to " + Token + " and " + User);
+				if (Token != input.Token || User != input.User) {
+					Log.Debug("Updating token and user to " + Token + " and " + User);
+					Token = input.Token;
+					User = input.User;
+				}
 			}
 
 			Lights = input.Lights;

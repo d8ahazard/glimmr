@@ -49,7 +49,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 							data.Brightness = bri;
 						}
 
-						_controlService.AddDevice(data).ConfigureAwait(false);
+						ControlService.AddDevice(data).ConfigureAwait(false);
 					}
 				} catch (Exception e) {
 					Log.Debug("Exception: " + e.Message);

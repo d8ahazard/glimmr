@@ -39,7 +39,7 @@ namespace Glimmr.Models.ColorSource.Video {
 		private readonly ColorService _colorService;
 
 		// Loaded data
-		private int _camType;
+		private CameraType _camType;
 		private CancellationToken _cancellationToken;
 		private CaptureMode _captureMode;
 		private bool _doSave;
@@ -47,7 +47,6 @@ namespace Glimmr.Models.ColorSource.Video {
 		// Should we be processing?
 
 		private bool _enable;
-		private bool _wasEnabled;
 
 		private VectorOfPointF? _lockTarget;
 
@@ -88,8 +87,7 @@ namespace Glimmr.Models.ColorSource.Video {
 
 		public void ToggleStream(bool enable = false) {
 			_enable = enable;
-			if (!enable) _wasEnabled = true;
-			SendColors = true;
+			SendColors = enable;
 		}
 
 
@@ -154,7 +152,6 @@ namespace Glimmr.Models.ColorSource.Video {
 					}
 
 					ProcessFrame();
-					_wasEnabled = _enable;
 				}
 
 				await _saveTimer.DisposeAsync();
@@ -212,7 +209,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			var sectorSize = _systemData.VSectors * 2 + _systemData.HSectors * 2 - 4;
 			Sectors = ColorUtil.EmptyList(sectorSize);
 			_captureMode = (CaptureMode) _systemData.CaptureMode;
-			_camType = DataUtil.GetItem<int>("CamType");
+			_camType = (CameraType) _systemData.CamType;
 			_srcArea = _scaleWidth * _scaleHeight;
 			_scaleSize = new Size(_scaleWidth, _scaleHeight);
 
@@ -241,11 +238,11 @@ namespace Glimmr.Models.ColorSource.Video {
 			switch (_captureMode) {
 				case CaptureMode.Camera:
 					switch (_camType) {
-						case 0:
+						case CameraType.RasPiCam:
 							// 0 = pi module, 1 = web cam
 							Log.Information("Using Pi cam for capture.");
 							return new PiCamVideoStream();
-						case 1:
+						case CameraType.WebCam:
 							Log.Information("Using web cam for capture.");
 							return new UsbVideoStream();
 					}
@@ -275,17 +272,8 @@ namespace Glimmr.Models.ColorSource.Video {
 
 		private Mat? ProcessFrame(Mat? input) {
 			if (input == null) return input;
-			Mat? output;
 			// If we need to crop our image...do it.
-			if (_captureMode == CaptureMode.Camera && _camType != 2) // Crop our camera frame if the input is a camera
-			{
-				output = CamFrame(input);
-			}
-			// Otherwise, just return the input.
-			else {
-				output = input;
-			}
-
+			var output = _captureMode == CaptureMode.Camera ? CamFrame(input) : input;
 			// Save a preview frame every 5 seconds
 			if (!_doSave) {
 				return output;
