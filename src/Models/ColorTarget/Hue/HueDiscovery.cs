@@ -99,7 +99,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				dev.UpdateFromDiscovered(data);
 				return dev;
 			} catch (Exception e) {
-				Log.Warning("Exception: " + e.Message);
+				Log.Warning("Hue Discovery Exception: " + e.Message + " at " + e.StackTrace);
 			}
 
 			return data;

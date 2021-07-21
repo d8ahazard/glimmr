@@ -153,55 +153,56 @@ namespace Glimmr.Models.ColorSource.Video {
 						continue;
 					}
 
-					try {
-						//if (_enable && !_wasEnabled) Log.Debug("Starting frame?");
-
-						if (_vc == null) continue;
-						var frame = _vc.Frame;
-						if (frame == null || frame.IsEmpty) {
-							SourceActive = false;
-							Log.Warning("Frame is null.");
-							continue;
-						}
-
-						if (frame.Cols == 0) {
-							SourceActive = false;
-							if (!_noColumns) {
-								Log.Warning("Frame has no columns.");
-								_noColumns = true;
-							}
-
-							//Log.Debug("NO COLUMNS");
-							continue;
-						}
-
-						var warped = ProcessFrame(frame);
-						if (warped == null) {
-							SourceActive = false;
-							Log.Warning("Unable to process frame.");
-							continue;
-						}
-
-						StreamSplitter?.Update(warped);
-						if (StreamSplitter == null) return;
-						SourceActive = !StreamSplitter.NoImage;
-						var c1 = StreamSplitter.GetColors();
-						Colors = c1;
-						var c2 = StreamSplitter.GetSectors();
-						Sectors = c2;
-						if (SendColors) {
-							_colorService.SendColors(Colors, Sectors, 0);
-						}
-					} catch (Exception e) {
-						Log.Warning("Exception: " + e.Message);
-					}
-
+					ProcessFrame();
 					_wasEnabled = _enable;
 				}
 
 				await _saveTimer.DisposeAsync();
 				Log.Information("Video stream service stopped.");
 			}, CancellationToken.None);
+		}
+
+		private void ProcessFrame() {
+			try {
+				if (_vc == null) return;
+				var frame = _vc.Frame;
+				if (frame == null || frame.IsEmpty) {
+					SourceActive = false;
+					Log.Warning("Frame is null.");
+					return;
+				}
+
+				if (frame.Cols == 0) {
+					SourceActive = false;
+					if (!_noColumns) {
+						Log.Warning("Frame has no columns.");
+						_noColumns = true;
+					}
+
+					//Log.Debug("NO COLUMNS");
+					return;
+				}
+
+				var warped = ProcessFrame(frame);
+				if (warped == null) {
+					SourceActive = false;
+					Log.Warning("Unable to process frame.");
+					return;
+				}
+
+				StreamSplitter?.Update(warped);
+				if (StreamSplitter == null) return;
+				SourceActive = !StreamSplitter.NoImage;
+				var c1 = StreamSplitter.GetColors();
+				Colors = c1;
+				var c2 = StreamSplitter.GetSectors();
+				Sectors = c2;
+				if (SendColors) {
+					_colorService.SendColors(Colors, Sectors, 0);
+				}
+			} catch (Exception e) {
+				Log.Warning("Exception Processing Frame: " + e.Message + " at " + e.StackTrace);
+			}
 		}
 
 
@@ -227,7 +228,7 @@ namespace Glimmr.Models.ColorSource.Video {
 						}
 					}
 				} catch (Exception e) {
-					Log.Debug("Exception: " + e.Message);
+					Log.Warning("Video Capture Exception: " + e.Message + " at " + e.StackTrace);
 				}
 			}
 
@@ -242,20 +243,20 @@ namespace Glimmr.Models.ColorSource.Video {
 					switch (_camType) {
 						case 0:
 							// 0 = pi module, 1 = web cam
-							Log.Debug("Using Pi cam for capture.");
+							Log.Information("Using Pi cam for capture.");
 							return new PiCamVideoStream();
 						case 1:
-							Log.Debug("Using web cam for capture.");
+							Log.Information("Using web cam for capture.");
 							return new UsbVideoStream();
 					}
 
 					return null;
 				case CaptureMode.Hdmi:
-					Log.Debug("Using usb stream for capture.");
+					Log.Information("Using usb stream for capture.");
 					return new UsbVideoStream();
 
 				case CaptureMode.Screen:
-					Log.Debug("Using screen for capture.");
+					Log.Information("Using screen for capture.");
 					return new ScreenVideoStream();
 			}
 

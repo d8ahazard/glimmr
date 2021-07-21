@@ -156,7 +156,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 				_midRange = am.MidRange;
 				_lowRange = am.LowRange;
 			} catch (Exception e) {
-				Log.Warning("Exception: " + e.Message);
+				Log.Warning("Audio Map Refresh Exception: " + e.Message);
 			}
 
 			_hSectors = sd.HSectors;

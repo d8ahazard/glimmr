@@ -65,7 +65,6 @@ namespace Glimmr.Models.Util {
 
 		public static Color[] TruncateColors(List<Color> input, int offset, int len) {
 			var output = new Color[len];
-
 			// Instead of doing dumb crap, just make our list of colors loop around
 			var total = len + offset;
 			var doubled = new Color[total];
@@ -77,7 +76,6 @@ namespace Glimmr.Models.Util {
 					} else {
 						break;
 					}
-
 					c++;
 				}
 			}

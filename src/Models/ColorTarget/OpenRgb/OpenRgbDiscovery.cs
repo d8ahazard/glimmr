@@ -53,7 +53,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 					}
 				}
 			} catch (Exception f) {
-				Log.Warning("Exception: " + f.Message + " at " + f.StackTrace);
+				Log.Warning("Exception during OpenRGB Discovery: " + f.Message + " at " + f.StackTrace);
 			}
 		}
 

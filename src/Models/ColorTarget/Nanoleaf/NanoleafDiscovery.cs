@@ -54,7 +54,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 					Log.Debug("New nano info: " + JsonConvert.SerializeObject(deviceData));
 				}
 			} catch (Exception e) {
-				Log.Debug("DISCOVERY Exception: " + e.Message);
+				Log.Debug("Nanoleaf Discovery Exception: " + e.Message);
 			}
 
 			nanoleaf.Dispose();

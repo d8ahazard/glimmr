@@ -57,6 +57,11 @@ namespace Glimmr.Services {
 			_devMode = sd.DeviceMode;
 			_sd = sd;
 			_hostName = _sd.DeviceName;
+			if (string.IsNullOrEmpty(_hostName)) {
+				_hostName = Dns.GetHostName();
+				_sd.DeviceName = _hostName;
+				DataUtil.SetSystemData(_sd);
+			}
 			_ledMap = new Dictionary<int, int>();
 			_sectorMap = new Dictionary<int, int>();
 			tgtDimensions = new[] {_sd.LeftCount, _sd.RightCount, _sd.TopCount, _sd.BottomCount};

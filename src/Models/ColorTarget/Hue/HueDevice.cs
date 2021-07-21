@@ -11,6 +11,7 @@ using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Q42.HueApi.ColorConverters;
+using Q42.HueApi.Models.Groups;
 using Q42.HueApi.Streaming;
 using Q42.HueApi.Streaming.Extensions;
 using Q42.HueApi.Streaming.Models;
@@ -23,7 +24,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		private HueData Data { get; set; }
 
 		private readonly StreamingHueClient? _client;
-		private readonly StreamingGroup? _stream;
+		private StreamingGroup? _stream;
 		private EntertainmentLayer? _entLayer;
 		private string? _token;
 		private string? _user;
@@ -32,8 +33,8 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		private bool _disposed;
 		private List<LightMap> _lightMappings;
 		private string? _selectedGroup;
+		private Group? _streamingGroup;
 		private Dictionary<string, int> _targets;
-		private Task? _updateTask;
 		public bool Enable { get; set; }
 
 		IColorTargetData IColorTarget.Data {
@@ -65,19 +66,16 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			_disposed = false;
 			Streaming = false;
 			_entLayer = null;
-			SetData();
+			_selectedGroup = Data.SelectedGroup;
 			// Don't grab streaming group unless we need it
-			if (!IsValid(_user) || !IsValid(_token) || _client != null) {
+			if (!IsValid(_user) || !IsValid(_token)) {
 				return;
 			}
 
 			Log.Debug($"Creating client: {IpAddress}, {_user}, {_token}");
 			_client = new StreamingHueClient(IpAddress, _user, _token);
-			try {
-				_stream = SetupAndReturnGroup().Result;
-			} catch (Exception e) {
-				Log.Warning("Exception: " + e.Message + " at " + e.StackTrace);
-			}
+			SetData();
+			
 		}
 
 		private bool IsValid(string? input) {
@@ -107,7 +105,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				_stream = SetupAndReturnGroup().Result;
 				Log.Debug("Stream is set.");
 			} catch (Exception e) {
-				Log.Warning("Exception: " + e.Message);
+				Log.Warning("Exception creating Hue: " + e.Message);
 			}
 		}
 
@@ -163,7 +161,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			_ct = ct;
 
 			// This is what we actually need
-			if (_stream == null) {
+			if (_stream == null || _streamingGroup == null) {
 				Log.Warning("Error fetching bridge stream.");
 				Streaming = false;
 				return;
@@ -171,14 +169,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 			//Connect to the streaming group
 			try {
-				if (_selectedGroup == null) return;
-				var group = await _client.LocalHueClient.GetGroupAsync(_selectedGroup);
-				if (group == null) {
-					Log.Warning("Unable to fetch group with ID of " + _selectedGroup);
-					return;
-				}
-
-				await _client.Connect(group.Id);
+				await _client.Connect(_streamingGroup.Id);
 				Log.Debug("Connected.");
 			} catch (SocketException s) {
 				if (s.Message.Contains("already connected")) {
@@ -192,8 +183,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			}
 
 			Log.Debug("Setting autoUpdate...");
-			_updateTask = _client.AutoUpdate(_stream, _ct);
-			_entLayer = _stream.GetNewLayer(true);
+			//_updateTask = _client.AutoUpdate(_stream, _ct);
 			Log.Information($"{Data.Tag}::Stream started: {Data.Id}");
 			Streaming = true;
 		}
@@ -249,6 +239,9 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				}
 			}
 
+			if (_client != null && _stream != null) {
+				_client.ManualUpdate(_stream);
+			}
 			ColorService?.Counter.Tick(Id);
 		}
 
@@ -263,16 +256,14 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				return;
 			}
 
-			Log.Information($"{Data.Tag}::Starting stream... {Data.Id}");
+			Log.Information($"{Data.Tag}::Stoppinging stream... {Data.Id}");
 
 			try {
-				if (_client == null || _selectedGroup == null) return;
-				await _client.LocalHueClient.SetStreamingAsync(_selectedGroup, false).ConfigureAwait(false);
-				if (_updateTask != null && !_updateTask.IsCompleted) {
-					_updateTask.Dispose();
+				if (_client == null || _selectedGroup == null) {
+					Log.Debug("Client or group is null, returning...stream stopped?");
+					return;
 				}
-
-				//_client.Close();
+				await _client.LocalHueClient.SetStreamingAsync(_selectedGroup, false).ConfigureAwait(false);
 			} catch (Exception) {
 				// ignored
 			}
@@ -326,7 +317,26 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			}
 
 			Enable = Data.Enable;
+			var prevGroup = _selectedGroup;
 			_selectedGroup = Data.SelectedGroup;
+			if (prevGroup == _selectedGroup && _streamingGroup != null && _stream != null && _entLayer != null) {
+				return;
+			}
+
+			if (_selectedGroup == null || _client == null) return;
+			if (prevGroup != _selectedGroup || _streamingGroup == null) {
+				_streamingGroup = _client.LocalHueClient.GetGroupAsync(_selectedGroup).Result;
+				if (_streamingGroup == null) {
+					Log.Warning("Unable to fetch group with ID of " + _selectedGroup);
+				}
+			}
+
+			try {
+				_stream = SetupAndReturnGroup().Result;
+				_entLayer = _stream?.GetNewLayer(true);
+			} catch (Exception e) {
+				Log.Warning("Exception: " + e.Message + " at " + e.StackTrace);
+			}
 		}
 
 		private async Task<StreamingGroup?> SetupAndReturnGroup() {

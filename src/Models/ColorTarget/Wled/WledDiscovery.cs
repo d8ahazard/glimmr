@@ -111,7 +111,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 					Log.Warning("Unable to get data for wled.");
 				}
 			} catch (Exception p) {
-				Log.Warning("Exception: " + p.Message);
+				Log.Warning("WLED Discovery Exception: " + p.Message);
 			}
 		}
 	}

@@ -29,6 +29,7 @@ namespace Glimmr.Services {
 		private CaptureMode _captureMode;
 		private readonly TimeSpan _frameSpan;
 		private readonly Stopwatch _frameWatch;
+		private bool _enableAutoDisable;
 
 		// Figure out how to make these generic, non-callable
 
@@ -59,6 +60,7 @@ namespace Glimmr.Services {
 			_sDevices = Array.Empty<IColorTarget>();
 			_frameSpan = TimeSpan.FromMilliseconds(1000f / 60);
 			_systemData = DataUtil.GetSystemData();
+			_enableAutoDisable = _systemData.EnableAutoDisable;
 			_streams = new Dictionary<DeviceMode, IColorSource>();
 			ControlService = controlService;
 			Counter = new FrameCounter(this);
@@ -87,27 +89,7 @@ namespace Glimmr.Services {
 				await Mode(this, new DynamicEventArgs(DeviceMode)).ConfigureAwait(true);
 				while (!stoppingToken.IsCancellationRequested) {
 					await CheckAutoDisable();
-					if (_setAutoDisable) {
-						if (!_watch.IsRunning) {
-							_watch.Restart();
-						}
-
-						if (_watch.ElapsedMilliseconds >= _autoDisableDelay * 1000f) {
-							_autoDisabled = true;
-							_setAutoDisable = false;
-							DataUtil.SetItem("AutoDisabled", _autoDisabled);
-							ControlService.SetModeEvent -= Mode;
-							await ControlService.SetMode(0);
-							ControlService.SetModeEvent += Mode;
-							Log.Information(
-								$"Auto-disabling stream {_watch.ElapsedMilliseconds} vs {_autoDisableDelay * 1000}.");
-							_watch.Reset();
-						}
-					} else {
-						_watch.Reset();
-					}
-
-					await Task.Delay(500, stoppingToken);
+					await Task.Delay(1000, stoppingToken);
 				}
 			}, CancellationToken.None);
 		}
@@ -222,35 +204,51 @@ namespace Glimmr.Services {
 		}
 
 		private async Task CheckAutoDisable() {
+			// Don't do anything if auto-disable isn't enabled
+			if (!_enableAutoDisable) {
+				_autoDisabled = false;
+				DataUtil.SetItem("AutoDisabled", _autoDisabled);
+				return;
+			}
 			bool sourceActive;
 			// If we're in video or audio mode, check the source is active...
 			if (DeviceMode == DeviceMode.Video && _streams[DeviceMode.Video] != null &&
 			    _captureMode != CaptureMode.DreamScreen) {
 				sourceActive = _streams[DeviceMode.Video].SourceActive;
-			} else {
+			} else { // Otherwise, just keep it enabled for now.
 				//todo: Add proper source checks for other media. 
 				sourceActive = true;
 			}
-
+			
 			if (sourceActive) {
-				if (!_autoDisabled) {
-					return;
+				// If our source is active, but not auto-disabled, do nothing
+				if (_autoDisabled) {
+					Log.Information("Auto-enabling stream.");
+					_autoDisabled = false;
+					DataUtil.SetItem("AutoDisabled", _autoDisabled);
+					ControlService.SetModeEvent -= Mode;
+					await ControlService.SetMode((int) DeviceMode);
+					ControlService.SetModeEvent += Mode;
 				}
-
-				Log.Information("Auto-enabling stream.");
-				_autoDisabled = false;
-				DataUtil.SetItem("AutoDisabled", _autoDisabled);
-				ControlService.SetModeEvent -= Mode;
-				await ControlService.SetMode((int) DeviceMode);
-				ControlService.SetModeEvent += Mode;
 				_watch.Reset();
-				_setAutoDisable = false;
 			} else {
 				if (_autoDisabled || DeviceMode != DeviceMode.Video) {
 					return;
 				}
+				if (!_watch.IsRunning) {
+					_watch.Restart();
+				}
 
-				_setAutoDisable = true;
+				if (_watch.ElapsedMilliseconds >= _autoDisableDelay * 1000f) {
+					_autoDisabled = true;
+					DataUtil.SetItem("AutoDisabled", _autoDisabled);
+					ControlService.SetModeEvent -= Mode;
+					await ControlService.SetMode(0);
+					ControlService.SetModeEvent += Mode;
+					Log.Information(
+						$"Auto-disabling stream {_watch.ElapsedMilliseconds} vs {_autoDisableDelay * 1000}.");
+					_watch.Reset();
+				}
 			}
 		}
 
@@ -291,6 +289,7 @@ namespace Glimmr.Services {
 			_captureMode = (CaptureMode) (DataUtil.GetItem<int>("CaptureMode") ?? 2);
 			_sendTokenSource = new CancellationTokenSource();
 			_systemData = DataUtil.GetSystemData();
+			_enableAutoDisable = _systemData.EnableAutoDisable;
 			_autoDisableDelay = _systemData.AutoDisableDelay;
 			// Create new lists
 			var sDevs = new List<IColorTarget>();
@@ -415,7 +414,7 @@ namespace Glimmr.Services {
 					dynamic? obj = Activator.CreateInstance(Type.GetType(c)!, args);
 					return obj;
 				} catch (Exception e) {
-					Log.Warning("Exception: " + e.Message);
+					Log.Warning("Exception creating device: " + e.Message + " at " + e.StackTrace);
 				}
 			}
 

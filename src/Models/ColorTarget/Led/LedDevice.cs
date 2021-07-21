@@ -39,13 +39,11 @@ namespace Glimmr.Models.ColorTarget.Led {
 			_ws = _agent.Ws281X;
 			if (_ws == null) return;
 			cs.ColorSendEvent += SetColor;
-			if (Id == "0") {
-				_controller = _ws.GetController();
-			}
-
-			if (Id == "1") {
-				_controller = _ws.GetController(ControllerType.PWM1);
-			}
+			_controller = Id switch {
+				"0" => _ws.GetController(),
+				"1" => _ws.GetController(ControllerType.PWM1),
+				_ => _controller
+			};
 
 			ReloadData();
 		}
