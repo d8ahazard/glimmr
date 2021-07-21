@@ -1,5 +1,4 @@
 #!/bin/bash -eu
-
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 BUILD_OPTS="$*"
@@ -48,7 +47,6 @@ fi
 CONTAINER_NAME=${CONTAINER_NAME:-pigen_work}
 CONTINUE=${CONTINUE:-0}
 PRESERVE_CONTAINER=${PRESERVE_CONTAINER:-0}
-PIGEN_DOCKER_OPTS=${PIGEN_DOCKER_OPTS:-""}  
 
 if [ -z "${IMG_NAME}" ]; then
 	echo "IMG_NAME not set in 'config'" 1>&2
@@ -89,10 +87,6 @@ ${DOCKER} build --build-arg BASE_IMAGE=${BASE_IMAGE} -t pi-gen "${DIR}"
 if [ "${CONTAINER_EXISTS}" != "" ]; then
 	trap 'echo "got CTRL+C... please wait 5s" && ${DOCKER} stop -t 5 ${CONTAINER_NAME}_cont' SIGINT SIGTERM
 	time ${DOCKER} run --rm --privileged \
-		--cap-add=ALL \
-		-v /dev:/dev \
-		-v /lib/modules:/lib/modules \
-		${PIGEN_DOCKER_OPTS} \
 		--volume "${CONFIG_FILE}":/config:ro \
 		-e "GIT_HASH=${GIT_HASH}" \
 		--volumes-from="${CONTAINER_NAME}" --name "${CONTAINER_NAME}_cont" \
@@ -104,10 +98,6 @@ if [ "${CONTAINER_EXISTS}" != "" ]; then
 else
 	trap 'echo "got CTRL+C... please wait 5s" && ${DOCKER} stop -t 5 ${CONTAINER_NAME}' SIGINT SIGTERM
 	time ${DOCKER} run --name "${CONTAINER_NAME}" --privileged \
-		--cap-add=ALL \
-		-v /dev:/dev \
-		-v /lib/modules:/lib/modules \
-		${PIGEN_DOCKER_OPTS} \
 		--volume "${CONFIG_FILE}":/config:ro \
 		-e "GIT_HASH=${GIT_HASH}" \
 		pi-gen \
@@ -116,7 +106,6 @@ else
 	rsync -av work/*/build.log deploy/" &
 	wait "$!"
 fi
-
 echo "copying results from deploy/"
 ${DOCKER} cp "${CONTAINER_NAME}":/pi-gen/deploy .
 ls -lah deploy
