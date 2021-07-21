@@ -11,7 +11,7 @@ rm -rf ${ROOTFS_DIR}/home/glimmrtv/glimmr
 echo "done" > "${ROOTFS_DIR}/home/glimmrtv/firstrun"
 git clone -b dev https://github.com/d8ahazard/glimmr ${ROOTFS_DIR}/home/glimmrtv/glimmr
 # Install update script to init.d 
-sudo chmod 777 ${ROOTFS_DIR}/home/glimmrtv/glimmr/script/update_linux.sh
+chmod 777 ${ROOTFS_DIR}/home/glimmrtv/glimmr/script/update_linux.sh
 cd ${ROOTFS_DIR}/home/glimmrtv/glimmr
 dotnet restore ${ROOTFS_DIR}/home/glimmrtv/glimmr/src/Glimmr.csproj
 dotnet publish ${ROOTFS_DIR}/home/glimmrtv/glimmr/src/Glimmr.csproj /p:PublishProfile=LinuxARM -o ${ROOTFS_DIR}/home/glimmrtv/glimmr/bin/
