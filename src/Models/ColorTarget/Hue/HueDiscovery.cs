@@ -36,9 +36,8 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				await Task.WhenAll(_bridgeLocatorHttp.LocateBridgesAsync(ct), _bridgeLocatorMdns.LocateBridgesAsync(ct),
 					_bridgeLocatorSsdp.LocateBridgesAsync(ct));
 			} catch (Exception e) {
-				Log.Debug("Hue discovery exception: " + e.Message);
+				if (!e.Message.Contains("canceled")) Log.Debug("Hue discovery exception: " + e.Message);
 			}
-
 			Log.Debug("Hue: Discovery complete.");
 		}
 
@@ -99,7 +98,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				dev.UpdateFromDiscovered(data);
 				return dev;
 			} catch (Exception e) {
-				Log.Warning("Exception: " + e.Message);
+				Log.Warning("Hue Discovery Exception: " + e.Message + " at " + e.StackTrace);
 			}
 
 			return data;

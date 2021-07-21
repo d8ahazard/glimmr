@@ -39,7 +39,7 @@ namespace Glimmr.Models.ColorSource.Video {
 		private readonly ColorService _colorService;
 
 		// Loaded data
-		private int _camType;
+		private CameraType _camType;
 		private CancellationToken _cancellationToken;
 		private CaptureMode _captureMode;
 		private bool _doSave;
@@ -47,7 +47,6 @@ namespace Glimmr.Models.ColorSource.Video {
 		// Should we be processing?
 
 		private bool _enable;
-		private bool _wasEnabled;
 
 		private VectorOfPointF? _lockTarget;
 
@@ -88,8 +87,7 @@ namespace Glimmr.Models.ColorSource.Video {
 
 		public void ToggleStream(bool enable = false) {
 			_enable = enable;
-			if (!enable) _wasEnabled = true;
-			SendColors = true;
+			SendColors = enable;
 		}
 
 
@@ -153,60 +151,55 @@ namespace Glimmr.Models.ColorSource.Video {
 						continue;
 					}
 
-					try {
-						//if (_enable && !_wasEnabled) Log.Debug("Starting frame?");
-
-						if (_vc == null) continue;
-						var frame = _vc.Frame;
-						if (_enable && !_wasEnabled) Log.Debug("Got frame?");
-						if (frame == null || frame.IsEmpty) {
-							SourceActive = false;
-							Log.Warning("Frame is null.");
-							continue;
-						}
-
-						if (_enable && !_wasEnabled) Log.Debug("Col check...");
-						if (frame.Cols == 0) {
-							SourceActive = false;
-							if (!_noColumns) {
-								Log.Warning("Frame has no columns.");
-								_noColumns = true;
-							}
-
-							//Log.Debug("NO COLUMNS");
-							continue;
-						}
-
-						if (_enable && !_wasEnabled) Log.Debug("Processing frame?");
-						var warped = ProcessFrame(frame);
-						if (warped == null) {
-							SourceActive = false;
-							Log.Warning("Unable to process frame.");
-							continue;
-						}
-
-						if (_enable && !_wasEnabled) Log.Debug("Updating splitter?");
-						StreamSplitter?.Update(warped);
-						if (StreamSplitter == null) return;
-						SourceActive = !StreamSplitter.NoImage;
-						var c1 = StreamSplitter.GetColors();
-						Colors = c1;
-						var c2 = StreamSplitter.GetSectors();
-						Sectors = c2;
-						if (_enable && !_wasEnabled) Log.Debug("Sending frame?");
-						if (SendColors) {
-							_colorService.SendColors(Colors, Sectors, 0);
-						}
-					} catch (Exception e) {
-						Log.Warning("Exception: " + e.Message);
-					}
-
-					_wasEnabled = _enable;
+					ProcessFrame();
 				}
 
 				await _saveTimer.DisposeAsync();
 				Log.Information("Video stream service stopped.");
 			}, CancellationToken.None);
+		}
+
+		private void ProcessFrame() {
+			try {
+				if (_vc == null) return;
+				var frame = _vc.Frame;
+				if (frame == null || frame.IsEmpty) {
+					SourceActive = false;
+					Log.Warning("Frame is null.");
+					return;
+				}
+
+				if (frame.Cols == 0) {
+					SourceActive = false;
+					if (!_noColumns) {
+						Log.Warning("Frame has no columns.");
+						_noColumns = true;
+					}
+
+					//Log.Debug("NO COLUMNS");
+					return;
+				}
+
+				var warped = ProcessFrame(frame);
+				if (warped == null) {
+					SourceActive = false;
+					Log.Warning("Unable to process frame.");
+					return;
+				}
+
+				StreamSplitter?.Update(warped);
+				if (StreamSplitter == null) return;
+				SourceActive = !StreamSplitter.NoImage;
+				var c1 = StreamSplitter.GetColors();
+				Colors = c1;
+				var c2 = StreamSplitter.GetSectors();
+				Sectors = c2;
+				if (SendColors) {
+					_colorService.SendColors(Colors, Sectors, 0);
+				}
+			} catch (Exception e) {
+				Log.Warning("Exception Processing Frame: " + e.Message + " at " + e.StackTrace);
+			}
 		}
 
 
@@ -216,7 +209,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			var sectorSize = _systemData.VSectors * 2 + _systemData.HSectors * 2 - 4;
 			Sectors = ColorUtil.EmptyList(sectorSize);
 			_captureMode = (CaptureMode) _systemData.CaptureMode;
-			_camType = DataUtil.GetItem<int>("CamType");
+			_camType = (CameraType) _systemData.CamType;
 			_srcArea = _scaleWidth * _scaleHeight;
 			_scaleSize = new Size(_scaleWidth, _scaleHeight);
 
@@ -232,7 +225,7 @@ namespace Glimmr.Models.ColorSource.Video {
 						}
 					}
 				} catch (Exception e) {
-					Log.Debug("Exception: " + e.Message);
+					Log.Warning("Video Capture Exception: " + e.Message + " at " + e.StackTrace);
 				}
 			}
 
@@ -245,22 +238,22 @@ namespace Glimmr.Models.ColorSource.Video {
 			switch (_captureMode) {
 				case CaptureMode.Camera:
 					switch (_camType) {
-						case 0:
+						case CameraType.RasPiCam:
 							// 0 = pi module, 1 = web cam
-							Log.Debug("Using Pi cam for capture.");
+							Log.Information("Using Pi cam for capture.");
 							return new PiCamVideoStream();
-						case 1:
-							Log.Debug("Using web cam for capture.");
+						case CameraType.WebCam:
+							Log.Information("Using web cam for capture.");
 							return new UsbVideoStream();
 					}
 
 					return null;
 				case CaptureMode.Hdmi:
-					Log.Debug("Using usb stream for capture.");
+					Log.Information("Using usb stream for capture.");
 					return new UsbVideoStream();
 
 				case CaptureMode.Screen:
-					Log.Debug("Using screen for capture.");
+					Log.Information("Using screen for capture.");
 					return new ScreenVideoStream();
 			}
 
@@ -279,17 +272,8 @@ namespace Glimmr.Models.ColorSource.Video {
 
 		private Mat? ProcessFrame(Mat? input) {
 			if (input == null) return input;
-			Mat? output;
 			// If we need to crop our image...do it.
-			if (_captureMode == CaptureMode.Camera && _camType != 2) // Crop our camera frame if the input is a camera
-			{
-				output = CamFrame(input);
-			}
-			// Otherwise, just return the input.
-			else {
-				output = input;
-			}
-
+			var output = _captureMode == CaptureMode.Camera ? CamFrame(input) : input;
 			// Save a preview frame every 5 seconds
 			if (!_doSave) {
 				return output;

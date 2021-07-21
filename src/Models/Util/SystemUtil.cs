@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using DirectShowLib;
 using Emgu.CV;
 using Glimmr.Enums;
-using Newtonsoft.Json;
 using Serilog;
 using DeviceMode = DreamScreenNet.Enum.DeviceMode;
 

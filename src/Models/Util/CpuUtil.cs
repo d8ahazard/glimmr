@@ -80,7 +80,10 @@ namespace Glimmr.Models.Util {
 			await process.WaitForExitAsync();
 			process.Dispose();
 			var res = result.Split("=")[1].Split("'")[0];
-			return float.TryParse(res, out var temperature) ? temperature : 0.0f;
+			var temp = float.TryParse(res, out var temperature) ? temperature : 0.0f;
+			var sd = DataUtil.GetSystemData();
+			if (sd.Units == "0") temp = (float) Math.Round(temp * 1.8f + 32);
+			return temp;
 		}
 
 		private static async Task<string[]> GetThrottledState() {

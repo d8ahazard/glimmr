@@ -53,7 +53,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		}
 
 		private void ServiceDiscovered(object? sender, DomainName serviceName) {
-			Log.Debug("Querying: " + serviceName);
 			if (!_stopDiscovery) {
 				_mDns.SendQuery(serviceName, type: DnsType.PTR);
 			}
@@ -75,8 +74,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			if (name.Contains(".local")) {
 				name = name.Split(".")[0];
 			}
-			//Log.Debug("Name: " + name);
-
+			
 			if (_ids.Contains(name)) {
 				return;
 			}
@@ -88,30 +86,27 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 
 				foreach (var msg in rr) {
-					//Log.Debug("Msg: " + msg.Name);
-					// Extract IP
-					if (msg.Type == DnsType.A) {
-						ip = msg.ToString().Split(" ").Last();
-					}
-
-					// Extract Mac
-					if (msg.Type == DnsType.TXT) {
-						id = msg.ToString().Split("=")[1];
+					switch (msg.Type) {
+						// Extract IP
+						case DnsType.A:
+							ip = msg.ToString().Split(" ").Last();
+							break;
+						// Extract Mac
+						case DnsType.TXT:
+							id = msg.ToString().Split("=")[1];
+							break;
 					}
 				}
 
-				//Log.Debug("Creating new WLED...");
 				if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(ip)) {
 					var nData = new WledData(id, ip) {Name = name};
-
-					//Log.Debug("WLED found: " + JsonConvert.SerializeObject(nData));
-					_controlService.AddDevice(nData).ConfigureAwait(false);
+					ControlService.AddDevice(nData).ConfigureAwait(false);
 					_ids.Add(id);
 				} else {
 					Log.Warning("Unable to get data for wled.");
 				}
 			} catch (Exception p) {
-				Log.Warning("Exception: " + p.Message);
+				Log.Warning("WLED Discovery Exception: " + p.Message);
 			}
 		}
 	}

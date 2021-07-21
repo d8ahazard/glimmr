@@ -188,13 +188,13 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			var output = new Color[input.Count];
 			var il = output.Length - 1;
 			if (!_data.ReverseStrip) {
-				for (var i = 0; i < input.Count; i++) {
+				for (var i = 0; i < input.Count / 2; i++) {
 					output[i] = input[i];
 					output[il - i] = input[i];
 				}
 			} else {
 				var l = 0;
-				for (var i = input.Count - 1; i >= 0; i--) {
+				for (var i = (input.Count - 1) / 2 ; i >= 0; i--) {
 					output[i] = input[l];
 					output[il - i] = input[l];
 					l++;

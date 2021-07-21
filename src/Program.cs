@@ -80,14 +80,14 @@ namespace Glimmr {
 					services.AddSingleton<ColorService>();
 					services.AddHostedService(serviceProvider =>
 						serviceProvider.GetService<ColorService>());
+					services.AddHostedService<StreamService>();
+					services.AddHostedService<DiscoveryService>();
+					services.AddHostedService<StatService>();
 					services.AddHostedService<AudioStream>();
 					services.AddHostedService<VideoStream>();
 					services.AddHostedService<AudioVideoStream>();
 					services.AddHostedService<AmbientStream>();
 					services.AddHostedService<DreamScreenStream>();
-					services.AddHostedService<StreamService>();
-					services.AddHostedService<DiscoveryService>();
-					services.AddHostedService<StatService>();
 				})
 				.ConfigureWebHostDefaults(webBuilder => {
 					webBuilder.UseStartup<Startup>();

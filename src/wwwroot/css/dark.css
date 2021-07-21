@@ -23,6 +23,11 @@ body, div:not(.sector):not(.led):not(.sector2):not(.modal):not(.modal-dialog):no
     background: #232323;    
 }
 
+.lds-ellipsis {
+    background: #232323 !important;
+    color: #c4c4c4 !important;
+}
+
 .btn-outline-secondary {
     color: #c4c4c4;
     border-color: #d7d7d7;

@@ -26,7 +26,7 @@ namespace Glimmr.Services {
 		}
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
-			Log.Debug("StatService initialized.");
+			Initialize();
 			return Task.Run(async () => {
 				try {
 					while (!stoppingToken.IsCancellationRequested) {
@@ -53,12 +53,17 @@ namespace Glimmr.Services {
 						}
 					}
 				} catch (Exception e) {
-					Log.Warning("Exception during init: " + e.Message);
+					if (!e.Message.Contains("canceled")) Log.Warning("Exception during init: " + e.Message);
 				}
 
-				Log.Information("Stopped stat service.");
+				Log.Information("Stat service stopped.");
 				return Task.CompletedTask;
 			}, stoppingToken);
+		}
+
+		private void Initialize() {
+			Log.Debug("Starting stat service...");
+			Log.Debug("Stat service started.");
 		}
 	}
 }

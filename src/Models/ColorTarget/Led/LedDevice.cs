@@ -39,13 +39,11 @@ namespace Glimmr.Models.ColorTarget.Led {
 			_ws = _agent.Ws281X;
 			if (_ws == null) return;
 			cs.ColorSendEvent += SetColor;
-			if (Id == "0") {
-				_controller = _ws.GetController();
-			}
-
-			if (Id == "1") {
-				_controller = _ws.GetController(ControllerType.PWM1);
-			}
+			_controller = Id switch {
+				"0" => _ws.GetController(),
+				"1" => _ws.GetController(ControllerType.PWM1),
+				_ => _controller
+			};
 
 			ReloadData();
 		}
@@ -80,7 +78,6 @@ namespace Glimmr.Models.ColorTarget.Led {
 				return;
 			}
 
-			Log.Information($"{_data.Tag}::Stopping stream. {_data.Id}.");
 			await StopLights().ConfigureAwait(false);
 			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
 			Streaming = false;
@@ -108,6 +105,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 			_data = ld;
 			Enable = _data.Enable;
+			Brightness = (int)(_data.Brightness / 100f * 255);
 			_agent?.ToggleStrip(_controllerId, Enable);
 			_ledCount = _data.LedCount;
 			if (_ledCount > sd.LedCount) {
@@ -122,11 +120,11 @@ namespace Glimmr.Models.ColorTarget.Led {
 			}
 
 			if (_data.Brightness != ld.Brightness && !_enableAbl) {
-				_ws?.SetBrightness(ld.Brightness / 100 * 255, _controllerId);
+				_ws?.SetBrightness(Brightness, _controllerId);
 			}
 
 			if (_data.LedCount != ld.LedCount) {
-				_ws?.SetBrightness(ld.LedCount, _controllerId);
+				_ws?.SetLedCount(ld.LedCount, _controllerId);
 			}
 
 			return Task.CompletedTask;
@@ -179,7 +177,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			//one PU is the power it takes to have 1 channel 1 step brighter per brightness step
 			//so A=2,R=255,G=0,B=0 would use 510 PU per LED (1mA is about 3700 PU)
 			var actualMilliampsPerLed = ld.MilliampsPerLed; // 20
-			var defaultBrightness = (int) (ld.Brightness / 100f * 255);
+			var defaultBrightness = Brightness;
 			var ablMaxMilliamps = ld.AblMaxMilliamps; // 4500
 			var length = input.Length;
 			var output = input;

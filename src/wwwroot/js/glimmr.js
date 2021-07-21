@@ -293,7 +293,9 @@ function setSocketListeners() {
         let tempText = $("#temperature");
         let cpuText = $("#cpuPct");
         let overIcon = $("#overIcon");
-        tempText.textContent = cpuData["tempCurrent"] + "°C";
+        let sd = data.store["SystemData"];
+        let tempUnit = (sd["Units"] === "0") ? "°F" : "°C";
+        tempText.textContent = cpuData["tempCurrent"] + tempUnit;
         cpuText.textContent = cpuData["loadAvg1"] + "%";
         overIcon.textContent = "";
         tempDiv.classList.remove("text-danger");
@@ -1100,6 +1102,12 @@ function updateCaptureUi() {
         }
     }
     let usbDevs = data.store["Dev_Usb"];
+
+    let opt = document.createElement("option");
+    opt.value = "";
+    opt.innerText = "";
+    if (opt.value === usbIdx) opt.selected = true;
+    usbSel.appendChild(opt);
     
     for (const [key, value] of Object.entries(usbDevs)) {
         let opt = document.createElement("option");

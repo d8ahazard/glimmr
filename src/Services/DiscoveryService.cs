@@ -62,19 +62,10 @@ namespace Glimmr.Services {
 		}
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
-			_stopToken = stoppingToken;
-			_mergeSource = CancellationTokenSource.CreateLinkedTokenSource(_syncSource.Token, _stopToken);
+			_mergeSource = Initialize(stoppingToken);
 			return Task.Run(async () => {
-				Log.Information($"Starting discovery service loop, interval is {_discoveryInterval}...");
-				var devs = DataUtil.GetDevices();
-				if (devs.Count == 0 || SystemUtil.IsRaspberryPi() && devs.Count == 2) {
-					Log.Debug($"Dev count is {devs.Count}, scanning...");
-					await TriggerRefresh(null, null).ConfigureAwait(false);
-				}
-
 				while (!stoppingToken.IsCancellationRequested) {
 					await Task.Delay(TimeSpan.FromMinutes(_discoveryInterval), _mergeSource.Token);
-					Log.Information("Auto-refreshing devices...");
 					if (!_streaming) {
 						await TriggerRefresh(this, null);
 					}
@@ -82,6 +73,20 @@ namespace Glimmr.Services {
 
 				return Task.CompletedTask;
 			}, stoppingToken);
+		}
+
+		private CancellationTokenSource Initialize(CancellationToken stoppingToken) {
+			Log.Information($"Starting discovery service, interval is {_discoveryInterval} seconds...");
+			_stopToken = stoppingToken;
+			var devs = DataUtil.GetDevices();
+			if (devs.Count == 0 || SystemUtil.IsRaspberryPi() && devs.Count == 2) {
+				Log.Debug($"Dev count is {devs.Count}, scanning...");
+				TriggerRefresh(null, null).ConfigureAwait(false);
+			}
+			Log.Information("Discovery service started.");
+			return CancellationTokenSource.CreateLinkedTokenSource(_syncSource.Token, _stopToken);
+			
+
 		}
 
 		public override Task StopAsync(CancellationToken cancellationToken) {
@@ -96,6 +101,7 @@ namespace Glimmr.Services {
 
 
 		private async Task TriggerRefresh(object? o, DynamicEventArgs? dynamicEventArgs) {
+			Log.Information("Refreshing devices...");
 			var cs = new CancellationTokenSource();
 			var sd = DataUtil.GetSystemData();
 			var timeout = sd.DiscoveryTimeout;

@@ -100,7 +100,7 @@ namespace Glimmr.Models.Util {
 
 				output.AddRange(coll.FindAll());
 			} catch (Exception e) {
-				Log.Warning("Exception: " + e.Message);
+				Log.Warning($"Exception finding collection {key}: " + e.Message);
 			}
 
 			return output;
@@ -174,7 +174,7 @@ namespace Glimmr.Models.Util {
 						device.KeyProperties = donor.KeyProperties;
 						output.Add(device);
 					} catch (Exception e) {
-						Log.Warning("Exception: " + e.Message);
+						Log.Warning("Exception Caching Devices: " + e.Message + " at " + e.StackTrace);
 					}
 				}
 			}
@@ -260,9 +260,8 @@ namespace Glimmr.Models.Util {
 			var db = GetDb();
 			try {
 				var devs = db.GetCollection<dynamic>("Devices");
-				devs.Delete(deviceId);
+				if (devs.Delete(deviceId)) Log.Information($"Device {deviceId} deleted.");
 				db.Commit();
-				Log.Debug($"Device {deviceId} deleted.");
 			} catch (Exception) {
 				//ignored
 			}
@@ -412,7 +411,7 @@ namespace Glimmr.Models.Util {
 					}
 				}
 			} catch (Exception e) {
-				Log.Warning("Exception: " + e.Message);
+				Log.Warning("Exception Getting Data Object: " + e.Message + " at " + e.StackTrace);
 			}
 
 			return null;
@@ -439,7 +438,7 @@ namespace Glimmr.Models.Util {
 					}
 				}
 			} catch (Exception e) {
-				Log.Warning("Exception: " + e.Message + " at " + e.StackTrace);
+				Log.Warning("Exception caching SD: " + e.Message + " at " + e.StackTrace);
 			}
 
 			Log.Debug("Creating new SD");
