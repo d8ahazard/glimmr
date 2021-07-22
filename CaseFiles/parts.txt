@@ -26,4 +26,8 @@ https://www.aliexpress.com/item/4000069210891.html
 "TOTOT 10 Pack 5.5mm x 2.1mm 3 Pin Female DC Power Jack Panel Mount Screw Nut Kit DC Socket Electrical Plug"
 https://smile.amazon.com/gp/product/B077YC457J/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1
 
+WS2812B LED Strips:
+"BTF-LIGHTING WS2812B RGB 5050SMD Individual Addressable 16.4FT 60Pixels/m 300Pixels Flexible Black PCB Full Color LED Pixel Strip Dream Color IP30 Non-Waterproof Making LED Screen LED Wall Only DC5V"
+https://smile.amazon.com/BTF-LIGHTING-Flexible-Individually-Addressable-Non-waterproof/dp/B01CDTEJBG/
+
 You'll also need some 18AWG wire to connect the splitter's power supply to the barrel connector.
