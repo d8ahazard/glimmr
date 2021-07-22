@@ -2,8 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
+    <VersionPrefix>1.1.7</VersionPrefix>
+    <Product>Glimmr</Product>
+    <ProductName>Glimmr</ProductName>
     <CopyRefAssembliesToPublishDirectory>false</CopyRefAssembliesToPublishDirectory>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <UserSecretsId>2513db3e-6259-49c1-8062-41f810f170fa</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>.</DockerfileContext>
@@ -19,6 +22,7 @@
     <PackageReference Include="digitalhigh.rpi-ws281x-csharp" Version="1.1.6" />
     <PackageReference Include="DirectShowLib" Version="1.0.0" />
     <PackageReference Include="DreamScreenNet" Version="1.0.3" />
+    <PackageReference Include="DasMulli.SimpleGitVersion" Version="1.0.0-*" PrivateAssets="All" />
     <PackageReference Include="Emgu.CV" Version="4.5.1.4349" />
     <PackageReference Include="Emgu.CV.Bitmap" Version="4.5.1.4349" />
     <PackageReference Include="Emgu.CV.runtime.linux-arm" Version="4.5.1.4349" Condition="$(RuntimeIdentifier) == 'linux-arm'" />
@@ -45,6 +49,7 @@
     <PackageReference Include="Serilog.Sinks.Async" Version="1.4.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
+    <PackageReference Include="SimpleGitVersion.Core" Version="5.1.1" />
     <PackageReference Include="System.Net.WebSockets" Version="4.3.0" />
     <PackageReference Include="YeelightAPI" Version="1.10.2" />
   </ItemGroup>

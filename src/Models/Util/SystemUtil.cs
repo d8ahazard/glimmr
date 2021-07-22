@@ -141,6 +141,8 @@ namespace Glimmr.Models.Util {
 		}
 
 		private static Dictionary<int, string> ListUsbLinux() {
+			var sd = DataUtil.GetSystemData();
+			var usb = sd.UsbSelection;
 			var i = 0;
 			var output = new Dictionary<int, string>();
 			while (i < 10) {
@@ -150,7 +152,7 @@ namespace Glimmr.Models.Util {
 					var w = v.Width;
 					var h = v.Height;
 
-					if (w != 0 && h != 0) {
+					if (usb == i || w != 0 && h != 0) {
 						output[i] = GetDeviceName(i).Result;
 					}
 
@@ -184,11 +186,9 @@ namespace Glimmr.Models.Util {
 
 		public static Dictionary<int, string> ListUsb() {
 			var sd = DataUtil.GetSystemData();
-			if (_usbDevices == null) {
-				_usbDevices = new Dictionary<int, string>();
-				_usbDevices = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ListUsbWindows() : ListUsbLinux();
-			}
-
+			_usbDevices = new Dictionary<int, string>();
+			_usbDevices = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ListUsbWindows() : ListUsbLinux();
+		
 			if ((DeviceMode) sd.DeviceMode == DeviceMode.Video && (
 				(CaptureMode) sd.CaptureMode == CaptureMode.Camera ||
 				(CaptureMode) sd.CaptureMode == CaptureMode.Hdmi)) {

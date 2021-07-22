@@ -23,7 +23,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 	public sealed class HueDevice : ColorTarget, IColorTarget, IDisposable {
 		private HueData Data { get; set; }
 
-		private readonly StreamingHueClient? _client;
+		private StreamingHueClient? _client;
 		private StreamingGroup? _stream;
 		private EntertainmentLayer? _entLayer;
 		private string? _token;
@@ -35,6 +35,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		private string? _selectedGroup;
 		private Group? _streamingGroup;
 		private Dictionary<string, int> _targets;
+		private Task _uTask;
 		public bool Enable { get; set; }
 
 		IColorTargetData IColorTarget.Data {
@@ -67,18 +68,9 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Streaming = false;
 			_entLayer = null;
 			_selectedGroup = Data.SelectedGroup;
-			// Don't grab streaming group unless we need it
-			if (!IsValid(_user) || !IsValid(_token)) {
-				return;
-			}
-
-			_client = new StreamingHueClient(IpAddress, _user, _token);
+			
 			SetData();
 			
-		}
-
-		private bool IsValid(string? input) {
-			return !string.IsNullOrEmpty(input);
 		}
 
 
@@ -89,23 +81,9 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Id = Data.Id;
 			IpAddress = Data.IpAddress;
 			_targets = new Dictionary<string, int>();
-			SetData();
 			_disposed = false;
 			Streaming = false;
-			_entLayer = null;
-
-			// Don't grab streaming group unless we need it
-			if (_user == null || _token == null || _client != null) {
-				return;
-			}
-
-			_client = new StreamingHueClient(IpAddress, _user, _token);
-			try {
-				_stream = SetupAndReturnGroup().Result;
-				Log.Debug("Stream is set.");
-			} catch (Exception e) {
-				Log.Warning("Exception creating Hue: " + e.Message);
-			}
+			SetData();
 		}
 
 		
@@ -138,49 +116,46 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			if (!Enable) {
 				return;
 			}
-
+			
 			Log.Information($"{Data.Tag}::Starting stream: {Data.Id}...");
-			// Leave if we have no client (not authorized)
-			if (_client == null) {
-				Log.Warning("We have no streaming client, can't start.");
-				return;
-			}
 
-			// Leave if we have no mapped lights
-			if (_lightMappings.Count == 0) {
-				Log.Warning("Bridge has no mapped lights, returning.");
-				return;
-			}
-
-			if (Streaming) {
-				Log.Debug("We are already streaming.");
-				return;
-			}
-
-			_ct = ct;
-
-			// This is what we actually need
-			if (_stream == null || _streamingGroup == null) {
-				Log.Warning("Error fetching bridge stream.");
+			if (_selectedGroup == null) {
+				Log.Information("No group selected, returning.");
 				Streaming = false;
 				return;
 			}
 
-			//Connect to the streaming group
-			try {
-				await _client.Connect(_streamingGroup.Id);
-			} catch (SocketException s) {
-				if (s.Message.Contains("already connected")) {
-					Log.Warning("Client is already connected.");
-				} else {
-					Streaming = false;
-					return;
-				}
-			} catch (Exception e) {
-				Log.Debug("Streaming exception caught: " + e.Message + " at " + e.StackTrace);
+			
+			if (_user != null && _token != null && Enable) {
+				_client = new StreamingHueClient(IpAddress, _user, _token);
+			} else {
+				Log.Warning("Can't create client.");
+				Streaming = false;
 				return;
 			}
 
+			_streamingGroup = _client.LocalHueClient.GetGroupAsync(_selectedGroup).Result;
+			if (_streamingGroup == null) {
+				Log.Warning("Unable to fetch group with ID of " + _selectedGroup);
+			} else {
+				try {
+					await _client.Connect(_streamingGroup.Id);
+					_stream = SetupAndReturnGroup().Result;
+				} catch (Exception e) {
+					Log.Warning("Streaming exception caught: " + e.Message + " at " + e.StackTrace);
+				}
+			}
+
+			if (_stream == null) {
+				Log.Warning("Unable to create stream!");
+				Streaming = false;
+				return;
+			}
+			
+			_entLayer = _stream.GetNewLayer(true);
+			_uTask = _client.AutoUpdate(_stream, ct);
+			//Connect to the streaming group
+			
 			Log.Information($"{Data.Tag}::Stream started: {Data.Id}");
 			Streaming = true;
 		}
@@ -235,16 +210,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 					entLight.SetState(_ct, oColor, mb);
 				}
 			}
-
-			try {
-				if (_client != null && _stream != null) {
-					_client.ManualUpdate(_stream);
-				}
-			} catch (Exception e) {
-				Log.Warning("Exception: " + e.Message + " at " + e.StackTrace);
-				if (e.Message == "internal_error(80)") Streaming = false;
-			}
-
+			
 			ColorService?.Counter.Tick(Id);
 		}
 
@@ -254,23 +220,26 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 
 
-		public async Task StopStream() {
-			if (!Enable) {
-				return;
+		public Task StopStream() {
+			if (!Enable || !Streaming) {
+				return Task.CompletedTask;
 			}
 
 			try {
 				if (_client == null || _selectedGroup == null) {
 					Log.Debug("Client or group is null, returning...stream stopped?");
-					return;
+					return Task.CompletedTask;
 				}
-				await _client.LocalHueClient.SetStreamingAsync(_selectedGroup, false).ConfigureAwait(false);
+
+				_client.LocalHueClient.SetStreamingAsync(_selectedGroup, false);
+				if (!_uTask.IsCompleted) _uTask.Dispose();
+				Streaming = false;
+				Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}");
 			} catch (Exception) {
 				// ignored
 			}
 
-			Streaming = false;
-			Log.Information($"{Data.Tag}::Stream stopped: {Data.Id}");
+			return Task.CompletedTask;
 		}
 
 		public bool IsEnabled() {
@@ -320,24 +289,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Enable = Data.Enable;
 			var prevGroup = _selectedGroup;
 			_selectedGroup = Data.SelectedGroup;
-			if (prevGroup == _selectedGroup && _streamingGroup != null && _stream != null && _entLayer != null) {
-				return;
-			}
-
-			if (_selectedGroup == null || _client == null) return;
-			if (prevGroup != _selectedGroup || _streamingGroup == null) {
-				_streamingGroup = _client.LocalHueClient.GetGroupAsync(_selectedGroup).Result;
-				if (_streamingGroup == null) {
-					Log.Warning("Unable to fetch group with ID of " + _selectedGroup);
-				}
-			}
-
-			try {
-				_stream = SetupAndReturnGroup().Result;
-				_entLayer = _stream?.GetNewLayer(true);
-			} catch (Exception e) {
-				Log.Warning("Exception: " + e.Message + " at " + e.StackTrace);
-			}
 		}
 
 		private async Task<StreamingGroup?> SetupAndReturnGroup() {
