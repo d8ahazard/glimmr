@@ -17,7 +17,7 @@ Note: Glimmr/GlimmrTray *MUST* be run as administrator in order for screen captu
 ### Raspberry Pi
 Execute the following command:
 ```
-bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/script/setup_pi.sh)
+bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_linux.sh
 ```
 
 *Alternatively*, you can flash a custom image directly to your pi from here:
