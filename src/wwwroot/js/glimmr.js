@@ -933,7 +933,9 @@ function loadUi() {
     loadCounts();
     let mode = 0; 
     let autoDisabled = getStoreProperty("AutoDisabled");
-    
+    let version = getStoreProperty("Version");
+    let vDiv = document.getElementById("versionDiv");
+    vDiv.innerHTML="Glimmr Version: " + version.toString();
     if (isValid(data.store["SystemData"])) {
         let sd = data.store["SystemData"];
         let theme = sd["Theme"];

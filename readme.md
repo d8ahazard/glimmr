@@ -5,7 +5,7 @@
 ### Windows
 Open a Powershell window, execute the following command:
 ```
-iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_win.ps1'))
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/d8ahazard/glimmr/script/setup_win.ps1'))
 
 ```
 Once the script is done running, you should now have a "GlimmrTray" application in your start menu.
@@ -17,12 +17,12 @@ Note: Glimmr/GlimmrTray *MUST* be run as administrator in order for screen captu
 ### Raspberry Pi
 Execute the following command:
 ```
-bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_pi.sh)
+bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/script/setup_pi.sh)
 ```
 
 *Alternatively*, you can flash a custom image directly to your pi from here:
 
-https://mega.nz/folder/brR31IKS#B7EI5KTr24ZwXdpdeG6pTw 
+https://mega.nz/file/u24w0TpK#esrm65xrUQf_kZd6CSkO5hNUlsSpojCXBn4OU1jUOBI
 
 You will need to use "BalenaEtcher", a free software for flashing the image.
 
@@ -52,7 +52,6 @@ Execute the following command:
 sudo su
 bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_linux.sh)
 ```
-You may want to reboot your computer after exectution if it's a first-time install...
 
 Note: Glimmr is installed as a service, and can be stopped/started by running "sudo service glimmr start"
 or "sudo service glimmr stop" respectively.
@@ -208,7 +207,6 @@ circumstances. If Glimmr does not find your WLED devices, reboot them, and then 
 WLED settings -> "Security and Updates", scroll down and UNCHECK "Enable ArduinoOTA".
 This will fix discovery for your WLED devices.
 
-
 WLED devices have several different options and display modes.
 
 "Normal" mode matches up the WLED strip to the perimeter of the screen using the LED counts
@@ -224,8 +222,6 @@ where there are two pixels for a strip that correspond to a segment of the scree
 "Single Color" assumes that you have a small number of LEDs in a close area, and you want all of 
 those LEDs to display the same color. The color being displayed will be whatever the strip's offset
 is set to.
-
-
 
 Click the "Save settings" button to submit your configuration.
 
@@ -258,6 +254,13 @@ Linux - /etc/Glimmr
 The application is installed to the following location(s):
 Windows - C:\program files\Glimmr\bin
 Linux - /home/glimmrtv/glimmr/bin
+
+## Related repositories:
+[Raspberry pi image generator](https://github.com/d8ahazard/Glimmr-image-gen)
+[Glimmr mobile app](https://github.com/d8ahazard/glimmrmobile)
+[FloW LED Android Screen Capture App](https://play.google.com/store/apps/details?id=com.digitalhigh.glimmrextender&hl=en_US&gl=US)
+[DreamScreen Documents](https://github.com/d8ahazard/DreamscreenDocs/)
+
 
 ## THANKS!
 Mad props to Greg F. for all the support, and Dr. Ackula for all the help and testing.

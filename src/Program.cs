@@ -41,7 +41,7 @@ namespace Glimmr {
 			Log.Logger = new LoggerConfiguration()
 				.Enrich.WithCaller()
 				.WriteTo.Console(outputTemplate: outputTemplate, theme: SystemConsoleTheme.Literate)
-				.MinimumLevel.Debug()
+				.MinimumLevel.Information()
 				.MinimumLevel.Override("Microsoft", LogEventLevel.Information)
 				.Enrich.FromLogContext()
 				.WriteTo.Async(a =>
@@ -68,7 +68,7 @@ namespace Glimmr {
 			return Host.CreateDefaultBuilder(args)
 				.UseSerilog((_, loggerConfiguration) => loggerConfiguration
 					.Enrich.WithCaller()
-					.MinimumLevel.Debug()
+					.MinimumLevel.Information()
 					.Enrich.FromLogContext()
 					.Filter.ByExcluding(c => JsonConvert.SerializeObject(c).Contains("SerilogLogger"))
 					.WriteTo.Console(outputTemplate: outputTemplate)

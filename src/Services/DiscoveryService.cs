@@ -101,7 +101,7 @@ namespace Glimmr.Services {
 
 
 		private async Task TriggerRefresh(object? o, DynamicEventArgs? dynamicEventArgs) {
-			Log.Information("Refreshing devices...");
+			Log.Information("Beginning device discovery...");
 			var cs = new CancellationTokenSource();
 			var sd = DataUtil.GetSystemData();
 			var timeout = sd.DiscoveryTimeout;
@@ -110,7 +110,7 @@ namespace Glimmr.Services {
 			}
 
 			cs.CancelAfter(TimeSpan.FromSeconds(timeout));
-			await DeviceDiscovery(cs.Token, timeout);
+			await DeviceDiscovery(timeout, cs.Token);
 			var devs = DataUtil.GetDevices();
 			if (!sd.AutoRemoveDevices) {
 				return;
@@ -133,10 +133,11 @@ namespace Glimmr.Services {
 			}
 
 			cs.Dispose();
+			Log.Information("Device discovery completed.");
 		}
 
 
-		private async Task DeviceDiscovery(CancellationToken token, int timeout) {
+		private async Task DeviceDiscovery(int timeout, CancellationToken token) {
 			if (_discovering) {
 				return;
 			}
@@ -155,7 +156,6 @@ namespace Glimmr.Services {
 				}
 			}
 
-			Log.Information("All devices should now be refreshed.");
 			_discovering = false;
 			// Notify all clients to refresh data
 			await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized(), CancellationToken.None);

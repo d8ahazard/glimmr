@@ -5,7 +5,9 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Mime;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Hubs;
@@ -262,7 +264,9 @@ namespace Glimmr.Services {
 		}
 
 		private void Initialize() {
-			const string text = @"
+			var version = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
+
+			string text = $@"
 
  (                                            (    (      *      *    (     
  )\ )   )            )                 (      )\ ) )\ ) (  `   (  `   )\ )  
@@ -273,7 +277,7 @@ namespace Glimmr.Services {
 \__ \  _/ _` | '_|  _|| | ' \)) _` |    | (_ | |__ | | | |\/| | |\/| |   /  
 |___/\__\__,_|_|  \__||_|_||_|\__, |     \___|____|___||_|  |_|_|  |_|_|_\  
                               |___/                                         
-
+v. {version}
 ";
 			Log.Information(text);
 			Log.Information("Starting control service...");

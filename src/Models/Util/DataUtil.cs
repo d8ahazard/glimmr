@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Glimmr.Models.ColorSource.Ambient;
 using Glimmr.Models.ColorSource.Audio;
@@ -353,6 +354,17 @@ namespace Glimmr.Models.Util {
 			output["Dev_Usb"] = caps;
 			output["AmbientScenes"] = jl.LoadDynamic<AmbientScene>();
 			output["AudioScenes"] = jl.LoadDynamic<AudioScene>();
+			var assembly = Assembly.GetEntryAssembly();
+			if (assembly != null) {
+				var attrib = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+				if (attrib != null) {
+					output["Version"] = attrib.InformationalVersion;	
+				}
+			} else {
+				output["Version"] = "0.0.0.0";
+			}
+			
+;
 			return JsonConvert.SerializeObject(output);
 		}
 

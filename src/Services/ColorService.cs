@@ -486,55 +486,37 @@ namespace Glimmr.Services {
 		}
 
 
-		private async Task StartStream() {
+		private Task StartStream() {
 			if (!_streamStarted) {
 				_streamStarted = true;
 				Log.Information("Starting streaming targets...");
-				var taskList = new List<Task>();
 				foreach (var sDev in _sDevices) {
-					if (sDev.Data == null) {
-						Log.Warning("Device data is not set: " + sDev.Id);
-					} else {
-						if (sDev.Data.Tag != "Led" && sDev.Data.Tag != "Adalight" && sDev.Data.Enable) {
-							if (!SystemUtil.IsOnline(sDev.Data.IpAddress)) {
-								Log.Information($"Device {sDev.Data.Tag} at {sDev.Data.Id} is offline.");
-								continue;
-							}
-						}
-					}
-
-					taskList.Add(sDev.StartStream(_sendTokenSource.Token));
 					try {
-						await Task.WhenAll(taskList.ToArray());
-						_streamStarted = true;
+						if (sDev.Enable) sDev.StartStream(_sendTokenSource.Token);
 					} catch (Exception e) {
 						Log.Warning("Exception starting stream: " + e.Message);
 					}
-
 				}
+				_streamStarted = true;
 			}
 
 			if (_streamStarted) {
 				Log.Information("Streaming started on all devices.");
 			}
+			return Task.CompletedTask;
 		}
 
-		private async Task StopStream() {
+		private Task StopStream() {
 			if (!_streamStarted) {
-				return;
+				return Task.CompletedTask;
 			}
 			Log.Information("Stopping device stream(s)...");
 			_streamStarted = false;
-			
-			await Task.WhenAll(_sDevices.Select(i => {
-				try {
-					return i.Streaming ? i.StopStream() : Task.CompletedTask;
-				} catch (Exception e) {
-					Log.Warning("Well, this is exceptional: " + e.Message);
-					return Task.CompletedTask;
-				}
-			})).ConfigureAwait(false);
+			foreach (var dev in _sDevices) {
+				if (dev.Enable) dev.StopStream();
+			}
 			Log.Information("Stream(s) stopped on all devices.");
+			return Task.CompletedTask;
 		}
 
 
