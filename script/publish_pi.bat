@@ -12,7 +12,6 @@ echo Killing Glimmr task...
 plink -no-antispoof -pw glimmrtv glimmrtv@%1 "echo glimmrtv | sudo -S pkill -f Glimmr"
 
 :BUILD2
-set version=1.1.1
 dotnet publish ..\src\Glimmr.csproj /p:PublishProfile=LinuxARM -o ..\src\bin\linuxARM
 cd ..\src\bin\linuxARM
 

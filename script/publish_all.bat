@@ -2,9 +2,6 @@
 IF [%1] == [] GOTO Error
 set version=%~1
 
-
-@echo off
-
 for %%x in (
 	Linux
 	LinuxARM
