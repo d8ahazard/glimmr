@@ -1,0 +1,29 @@
+Capture Card:
+"ZasLuke Audio Video Capture Card, 4K HDMI USB2.0 Game Capture Device 1080P for High Definition Acquisition/Game Live Streaming/Screen Sharing/Video Recording/Medical Imaging/Live Conference"
+https://smile.amazon.com/gp/product/B08GFB5VW6/ref=ppx_yo_dt_b_asin_title_o03_s00?ie=UTF8&psc=1
+
+HDMI Splitter:
+'EzCootech' "HDMI Splitter 1x2 4K 60Hz 4:4:4 HDR Atmos 1080P 120Hz CEC SPDIF 5.1CH Breakout - HDMI Scaler 4K 1080P Sync,Firmware Upgrade HDMI 2.0 Splitter 1 in 2 Out HDCP2.2 18Gbps for PS5, Slim Case SP12"
+https://smile.amazon.com/gp/product/B07WR7KP1B/ref=ppx_yo_dt_b_asin_title_o03_s01?ie=UTF8&psc=1
+
+JST-SM Connector(s):
+"BTF-LIGHTING 20 Pairs JST SM 3 Pin Connectors for WS2812B WS2811 WS2812 SK6812 LED Strip Female Male 15cm 22awg Wire"
+https://smile.amazon.com/BTF-LIGHTING-Connectors-WS2812B-WS2811-WS2812/dp/B01DC0KIT2/ref=sr_1_1?dchild=1&keywords=jst-sm+connector+btf&qid=1626982351&sr=8-1
+
+HDMI Ribbon cable - 20cm (15cm would be ideal):
+"DIY USB or HDMI Cable Parts - 20 cm Ribbon Cable"
+https://www.adafruit.com/product/3561
+
+R-Bend DIY HDMI Connector:
+"DIY HDMI Cable Parts - Right Angle (R bend) HDMI Plug Adapter"
+https://www.adafruit.com/product/3549
+
+Right-angle USB Cable (1m, "left"):
+"RIGHT ANGLE USB 2.0 TYPE A MALE TO FEMALE 90 DEGREE CABLE USB EXTEND CORD 0.1M 0.2M 0.4M"
+https://www.aliexpress.com/item/4000069210891.html
+
+5v Connector:
+"TOTOT 10 Pack 5.5mm x 2.1mm 3 Pin Female DC Power Jack Panel Mount Screw Nut Kit DC Socket Electrical Plug"
+https://smile.amazon.com/gp/product/B077YC457J/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1
+
+You'll also need some 18AWG wire to connect the splitter's power supply to the barrel connector.
