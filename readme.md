@@ -22,7 +22,7 @@ bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/set
 
 *Alternatively*, you can flash a custom image directly to your pi from here:
 
-https://mega.nz/file/u24w0TpK#esrm65xrUQf_kZd6CSkO5hNUlsSpojCXBn4OU1jUOBI
+https://mega.nz/file/FwUTCA6Q#NG8J_CZjjlHjTI9TnfKUuZ3qehaN5Whz8uOj1U1gya0
 
 You will need to use "BalenaEtcher", a free software for flashing the image.
 
