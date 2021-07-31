@@ -9,9 +9,9 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Enums;
-using Glimmr.Models;
 using Glimmr.Models.ColorTarget.Glimmr;
 using Glimmr.Models.Util;
+using Glimmr.Services;
 using Makaretu.Dns;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -19,8 +19,8 @@ using static Glimmr.Enums.DeviceMode;
 
 #endregion
 
-namespace Glimmr.Services {
-	public class StreamService : BackgroundService {
+namespace Glimmr.Models.ColorSource.UDP {
+	public class UdpStream : BackgroundService, IColorSource {
 		private readonly ControlService _cs;
 		private readonly ColorService _colorService;
 		private readonly UdpClient _uc;
@@ -40,9 +40,9 @@ namespace Glimmr.Services {
 		private Dictionary<int, int> _sectorMap;
 
 
-		public StreamService(ControlService cs) {
-			_cs = cs;
-			_colorService = cs.ColorService;
+		public UdpStream(ColorService cs) {
+			_cs = cs.ControlService;
+			_colorService = cs;
 			_cs.RefreshSystemEvent += Refresh;
 			_cs.SetModeEvent += Mode;
 			_cs.StartStreamEvent += StartStream;
@@ -64,6 +64,12 @@ namespace Glimmr.Services {
 			_sectorMap = new Dictionary<int, int>();
 			_tgtDimensions = new[] {_sd.LeftCount, _sd.RightCount, _sd.TopCount, _sd.BottomCount};
 			RefreshSd();
+		}
+
+		public Task ToggleStream(CancellationToken ct) {
+			Initialize(ct);
+			Log.Information("Starting UDP Stream service...");
+			return ExecuteAsync(ct);
 		}
 
 		private void RefreshSd() {
@@ -93,18 +99,18 @@ namespace Glimmr.Services {
 
 		private Task Mode(object arg1, DynamicEventArgs arg2) {
 			_devMode = arg2.P1;
-			_streaming = _devMode == Streaming; 
+			_streaming = _devMode == DeviceMode.Udp; 
 			return Task.CompletedTask;
 		}
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
-			Initialize(stoppingToken);
 			return Task.Run(async () => {
 				while (!stoppingToken.IsCancellationRequested) {
-					if (_devMode != Streaming) {
+					if (_devMode != DeviceMode.Udp) {
 						await Task.Delay(1, stoppingToken);
 					}
 				}
+				Log.Information("UDP Stream service stopped.");
 				_discovery?.Dispose();
 			}, stoppingToken);
 		}
@@ -144,7 +150,7 @@ namespace Glimmr.Services {
 			var bytes = data.Skip(2).ToArray();
 			var colors = new Color[_ledCount];
 			var sectors = new Color[_sectorCount];
-			if (_devMode == Streaming) {
+			if (_devMode == DeviceMode.Udp) {
 				var colIdx = 0;
 				for (var i = 0; i < bytes.Length; i += 3) {
 					if (i + 2 >= bytes.Length) {
@@ -193,6 +199,12 @@ namespace Glimmr.Services {
 			_devMode = DataUtil.GetItem("DeviceMode");
 			var sd = DataUtil.GetSystemData();
 			_devMode = (DeviceMode) sd.DeviceMode;
+		}
+
+		public bool SourceActive { get; set; }
+		
+		public void Refresh(SystemData systemData) {
+			throw new NotImplementedException();
 		}
 	}
 }

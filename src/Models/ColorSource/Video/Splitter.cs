@@ -288,7 +288,7 @@ namespace Glimmr.Models.ColorSource.Video {
 
 
 			if (_cropPillar) {
-				for (var c = 0; c < _input.Width / 4; c += checkSize) {
+				for (var c = 0; c < _input.Width / 16; c += checkSize) {
 					// Define left coord of right sector
 					var c2 = _input.Width - c - checkSize;
 					// Create rect for left side check, make it a Mat

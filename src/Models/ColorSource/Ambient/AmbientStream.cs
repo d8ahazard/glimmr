@@ -57,13 +57,8 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			_watch = new Stopwatch();
 			_random = new Random();
 			_cs = colorService;
-			_cs.AddStream(DeviceMode.Ambient, this);
 			_loader = new JsonLoader("ambientScenes");
 			_scenes = _loader.LoadFiles<AmbientScene>();
-		}
-
-		public void ToggleStream(bool enable = false) {
-			_enable = enable;
 		}
 
 		public void Refresh(SystemData sd) {
@@ -112,21 +107,21 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
 		public bool SourceActive { get; set; }
 
+		public Task ToggleStream(CancellationToken ct) {
+			Log.Debug("Starting ambient stream...");
+			return ExecuteAsync(ct);
+		}
+
 		private void LoadSystem() {
 			var sd = DataUtil.GetSystemData();
 			Refresh(sd);
 		}
 
 		protected override Task ExecuteAsync(CancellationToken ct) {
-			Log.Debug("Starting ambient stream service...");
 			LoadSystem();
 			return Task.Run(async () => {
 				// Load this one for fading
 				while (!ct.IsCancellationRequested) {
-					if (!_enable) {
-						continue;
-					}
-
 					var elapsed = _watch.ElapsedMilliseconds;
 					var diff = _animationTime - elapsed;
 					var sectors = new Color[_sectorCount];

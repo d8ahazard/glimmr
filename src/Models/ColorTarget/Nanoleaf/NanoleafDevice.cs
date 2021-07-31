@@ -72,7 +72,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			SetData();
 			Streaming = true;
 			//_wasOn = await _nanoleafClient.GetPowerStatusAsync();
-			if (!_frameWatch.IsRunning) {
+			if (!_frameWatch.IsRunning && _data.Type == "NL42") {
 				_frameWatch.Restart();
 			}
 
@@ -89,7 +89,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
 			await FlashColor(Color.FromArgb(0, 0, 0)).ConfigureAwait(false);
 			Streaming = false;
-			if (_frameWatch.IsRunning) {
+			if (_frameWatch.IsRunning && _data.Type == "NL42") {
 				_frameWatch.Reset();
 			}
 
@@ -103,11 +103,11 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				return;
 			}
 
-			if (_frameWatch.ElapsedMilliseconds < 100) {
+			if (_frameWatch.ElapsedMilliseconds < 100 && _data.Type == "NL42") {
 				return;
 			}
 
-			_frameWatch.Restart();
+			if (_data.Type == "NL42") _frameWatch.Restart();
 			var cols = new Dictionary<int, Color>();
 			foreach (var p in _targets) {
 				var color = Color.FromArgb(0, 0, 0);

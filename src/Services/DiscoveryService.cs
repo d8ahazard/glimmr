@@ -27,9 +27,9 @@ namespace Glimmr.Services {
 		private CancellationToken _stopToken;
 		private bool _streaming;
 
-		public DiscoveryService(IHubContext<SocketServer> hubContext, ColorService colorService) {
+		public DiscoveryService(IHubContext<SocketServer> hubContext, ControlService cs) {
 			_hubContext = hubContext;
-			var controlService = colorService.ControlService;
+			var controlService = cs;
 			controlService.DeviceRescanEvent += TriggerRefresh;
 			controlService.SetModeEvent += UpdateMode;
 			controlService.RefreshSystemEvent += RefreshSystem;
@@ -42,7 +42,7 @@ namespace Glimmr.Services {
 			_discoverables = new List<IColorDiscovery>();
 			_syncSource = new CancellationTokenSource();
 			foreach (var c in classnames) {
-				var obj = Activator.CreateInstance(Type.GetType(c)!, colorService);
+				var obj = Activator.CreateInstance(Type.GetType(c)!, cs.ColorService);
 				if (obj == null) {
 					continue;
 				}

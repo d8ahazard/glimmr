@@ -23,7 +23,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 		public List<Color> Sectors { get; private set; }
 		private readonly ColorService _cs;
 		private List<AudioData> _devices;
-		private bool _enable;
 		private float _gain;
 		private int _handle;
 		private bool _hasDll;
@@ -36,7 +35,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 		public AudioStream(ColorService cs) {
 			_cs = cs;
-			_cs.AddStream(DeviceMode.Audio, this);
 			Colors = new List<Color>();
 			Sectors = new List<Color>();
 			_devices = new List<AudioData>();
@@ -46,23 +44,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 		public bool SourceActive { get; set; }
 
-		public void ToggleStream(bool enable = false) {
-			if (!_hasDll) {
-				return;
-			}
-
-			if (enable) {
-				SendColors = true;
-				Bass.ChannelPlay(_handle);
-			} else {
-				SendColors = false;
-				Bass.ChannelPause(_handle);
-			}
-
-			_enable = enable;
-		}
-
-
+		
 		public void Refresh(SystemData systemData) {
 			_sd = systemData;
 			LoadData().ConfigureAwait(true);
@@ -78,11 +60,9 @@ namespace Glimmr.Models.ColorSource.Audio {
 		}
 
 		protected override Task ExecuteAsync(CancellationToken ct) {
-			Log.Debug("Starting audio stream service...");
-			if (!_hasDll) {
-				Log.Debug("Audio stream unavailable, no bass.dll found.");
-				return Task.CompletedTask;
-			}
+			
+			SendColors = true;
+			Bass.ChannelPlay(_handle);
 
 			return Task.Run(async () => {
 				while (!ct.IsCancellationRequested) {
@@ -92,6 +72,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 				Bass.ChannelStop(_handle);
 				Bass.Free();
 				Bass.RecordFree();
+				SendColors = false;
 				Log.Debug("Audio stream service stopped.");
 			}, CancellationToken.None);
 		}
@@ -138,12 +119,17 @@ namespace Glimmr.Models.ColorSource.Audio {
 			_devices = DataUtil.GetCollection<AudioData>("Dev_Audio") ?? new List<AudioData>();
 		}
 
+		public Task ToggleStream(CancellationToken ct) {
+			if (!_hasDll) {
+				Log.Debug("Audio stream unavailable, no bass.dll found.");
+				return Task.CompletedTask;
+			}
+			Log.Debug("Starting audio stream service...");
+
+			return ExecuteAsync(ct);
+		}
 
 		private bool Update(int handle, IntPtr buffer, int length, IntPtr user) {
-			if (!_enable) {
-				return true;
-			}
-
 			if (_map == null) {
 				return false;
 			}

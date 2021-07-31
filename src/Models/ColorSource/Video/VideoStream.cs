@@ -40,13 +40,8 @@ namespace Glimmr.Models.ColorSource.Video {
 
 		// Loaded data
 		private CameraType _camType;
-		private CancellationToken _cancellationToken;
 		private CaptureMode _captureMode;
 		private bool _doSave;
-
-		// Should we be processing?
-
-		private bool _enable;
 
 		private VectorOfPointF? _lockTarget;
 
@@ -68,26 +63,27 @@ namespace Glimmr.Models.ColorSource.Video {
 
 		// Source stuff
 		private PointF[] _vectors;
+		private bool _warned;
 
 
-		public VideoStream(ControlService controlService) {
+		public VideoStream(ColorService colorService) {
 			Colors = new List<Color>();
 			Sectors = new List<Color>();
 			_vectors = Array.Empty<PointF>();
 			_systemData = DataUtil.GetSystemData();
-			_colorService = controlService.ColorService;
-			ControlService controlService1 = controlService;
+			_colorService = colorService;
+			ControlService controlService1 = _colorService.ControlService;
 			controlService1.RefreshSystemEvent += RefreshSystem;
-			_colorService.AddStream(DeviceMode.Video, this);
 			var autoEvent = new AutoResetEvent(false);
 			_saveTimer = new Timer(SaveFrame, autoEvent, 0, 10000);
 			_targets = new List<VectorOfPoint>();
 			StreamSplitter = new Splitter(controlService1);
 		}
 
-		public void ToggleStream(bool enable = false) {
-			_enable = enable;
-			SendColors = enable;
+		public Task ToggleStream(CancellationToken ct) {
+			Log.Debug("Starting video stream service...");
+			SendColors = true;
+			return ExecuteAsync(ct);
 		}
 
 
@@ -98,62 +94,27 @@ namespace Glimmr.Models.ColorSource.Video {
 		public bool SourceActive { get; set; }
 
 		private void RefreshSystem() {
-			var prevSd = _systemData;
 			_systemData = DataUtil.GetSystemData();
-
-			var wasEnabled = _enable;
-			if (_enable) {
-				_enable = false;
-			}
-
-			var prevCapMode = _captureMode;
 			_captureMode = (CaptureMode) _systemData.CaptureMode;
-			if (prevCapMode != _captureMode) {
-				_vc?.Stop();
-				_vc = GetStream();
-				if (_vc == null) {
-					Log.Information("We have no video source.");
-					return;
-				}
-
-				_vc.Start(_cancellationToken);
-			}
-
-			var mode = (DeviceMode) _systemData.DeviceMode;
-			var prevMode = (DeviceMode) prevSd.DeviceMode;
-			if (mode == DeviceMode.Video && prevMode == DeviceMode.Video) {
-				if (wasEnabled) {
-					_enable = true;
-				}
-			}
 		}
 
-		private void Initialize(CancellationToken ct) {
-			_cancellationToken = ct;
-			SetCapVars();
-			_vc = GetStream();
-			if (_vc == null) {
-				Log.Information("We have no video source, returning.");
-				return;
-			}
-			_vc.Start(ct);
-			SendColors = true;
-		}
-
+		
 
 		protected override Task ExecuteAsync(CancellationToken ct) {
-			Log.Debug("Starting video stream service...");
-			Initialize(ct);
 			return Task.Run(async () => {
+				SetCapVars();
+				_vc = GetStream();
+				if (_vc == null) {
+					Log.Information("We have no video source, returning.");
+					return;
+				}
+				_vc.Start(ct);
+				SendColors = true;
 				while (!ct.IsCancellationRequested) {
-					if (!_enable) {
-						await Task.Delay(1, ct);
-						continue;
-					}
-
 					ProcessFrame();
 				}
 
+				_vc.Stop();
 				await _saveTimer.DisposeAsync();
 				Log.Information("Video stream service stopped.");
 			}, CancellationToken.None);
@@ -161,18 +122,24 @@ namespace Glimmr.Models.ColorSource.Video {
 
 		private void ProcessFrame() {
 			try {
-				if (_vc == null) return;
+				if (_vc == null) {
+					if (!_warned) Log.Warning("Video capture is null");
+					_warned = true;
+					return;
+				}
 				var frame = _vc.Frame;
 				if (frame == null || frame.IsEmpty) {
 					SourceActive = false;
-					Log.Warning("Frame is null.");
+					if (!_warned) Log.Warning("Frame is null.");
+					_warned = true;
 					return;
 				}
 
 				if (frame.Cols == 0) {
 					SourceActive = false;
 					if (!_noColumns) {
-						Log.Warning("Frame has no columns.");
+						if (!_warned) Log.Warning("Frame has no columns.");
+						_warned = true;
 						_noColumns = true;
 					}
 
@@ -183,7 +150,8 @@ namespace Glimmr.Models.ColorSource.Video {
 				var warped = ProcessFrame(frame);
 				if (warped == null) {
 					SourceActive = false;
-					Log.Warning("Unable to process frame.");
+					if (!_warned) Log.Warning("Unable to process frame.");
+					_warned = true;
 					return;
 				}
 
@@ -194,6 +162,7 @@ namespace Glimmr.Models.ColorSource.Video {
 				Colors = c1;
 				var c2 = StreamSplitter.GetSectors();
 				Sectors = c2;
+				_warned = false;
 				if (SendColors) {
 					_colorService.SendColors(Colors, Sectors, 0);
 				}

@@ -184,6 +184,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 			foreach (var entLight in _entLayer) {
 				// Get data for our light from map
+				
 				var lightData = _lightMappings.SingleOrDefault(item =>
 					item.Id == entLight.Id.ToString());
 				// Return if not mapped

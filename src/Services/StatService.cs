@@ -19,9 +19,9 @@ namespace Glimmr.Services {
 		private readonly IHubContext<SocketServer> _hubContext;
 		private int _count;
 
-		public StatService(IHubContext<SocketServer> hubContext, ColorService colorService) {
+		public StatService(IHubContext<SocketServer> hubContext, ControlService cs) {
 			_hubContext = hubContext;
-			_colorService = colorService;
+			_colorService = cs.ColorService;
 			_count = 0;
 		}
 

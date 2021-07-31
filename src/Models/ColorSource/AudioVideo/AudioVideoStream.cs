@@ -19,37 +19,35 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 		private List<Color> _colors;
 		private List<Color> _sectors;
 		private readonly ColorService _cs;
-		private readonly VideoStream? _vs;
-		private readonly AudioStream? _as;
+		private VideoStream? _vs;
+		private AudioStream? _as;
 
 		private bool _enable;
 		private SystemData _systemData;
 
 		public AudioVideoStream(ColorService cs) {
 			_cs = cs;
-			_cs.AddStream(DeviceMode.AudioVideo, this);
-			var aS = _cs.GetStream(DeviceMode.Audio);
-			var vS = _cs.GetStream(DeviceMode.Video);
-			if (aS != null) _as = (AudioStream) aS; 
-			if (vS != null) _vs = (VideoStream) vS;
 			_colors = new List<Color>();
 			_sectors = new List<Color>();
 			_systemData = DataUtil.GetSystemData();
 		}
 
-
-		public void ToggleStream(bool enable = false) {
-			_enable = enable;
-			if (!enable) {
-				return;
-			}
-
+		public Task ToggleStream(CancellationToken ct) {
+			Log.Debug("Starting av stream service...");
+			var aS = _cs.GetStream(DeviceMode.Audio.ToString());
+			var vS = _cs.GetStream(DeviceMode.Video.ToString());
+			if (aS != null) _as = (AudioStream) aS; 
+			if (vS != null) _vs = (VideoStream) vS;
 			if (_vs != null && _as != null) {
-				_vs.ToggleStream(true);
+				_vs.ToggleStream(ct);
 				_vs.SendColors = false;
-				_as.ToggleStream(true);
+				_as.ToggleStream(ct);
 				_as.SendColors = false;
+			} else {
+				Log.Warning("Unable to acquire audio or video stream.");
+				return Task.CompletedTask;
 			}
+			return ExecuteAsync(ct);
 		}
 
 
@@ -62,7 +60,7 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 		public bool SourceActive { get; set; }
 
 		protected override Task ExecuteAsync(CancellationToken ct) {
-			Log.Debug("Starting av stream service...");
+			
 			return Task.Run(async () => {
 				while (!ct.IsCancellationRequested) {
 					if (!_enable || _vs == null || _as == null) {

@@ -25,7 +25,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 		private readonly DreamScreenClient? _client;
 		private readonly ColorService _cs;
 		private DreamDevice? _dDev;
-		private bool _enable;
+		public bool Enable { get; set; }
 		private IPAddress? _targetDreamScreen;
 		private int _hCount;
 		private int _vCount;
@@ -36,7 +36,6 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 
 		public DreamScreenStream(ColorService colorService) {
 			_cs = colorService;
-			_cs.AddStream(DeviceMode.DreamScreen, this);
 			var client = _cs.ControlService.GetAgent("DreamAgent");
 			if (client != null) {
 				_client = client;
@@ -47,18 +46,17 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 			RefreshSd();
 		}
 
-		public void ToggleStream(bool enable) {
-			if (_client == null || _dDev == null || _targetDreamScreen == null) return;
-			_enable = enable;
-			if (_enable) {
-				Log.Debug("Starting DS stream, Target is " + _targetDreamScreen + " group is " + TargetGroup);
-				_client.SetMode(_dDev, DreamScreenNet.Enum.DeviceMode.Off);
-				_client.SetMode(_dDev, DreamScreenNet.Enum.DeviceMode.Video);
-				_client.StartSubscribing(_targetDreamScreen);
-				Log.Debug("DS Stream should be started...");
-			} else {
-				_client.StopSubscribing();
-			}
+		public Task ToggleStream(CancellationToken ct) {
+			if (_client == null || _dDev == null || _targetDreamScreen == null) return Task.CompletedTask;
+			Log.Debug("Starting DS stream, Target is " + _targetDreamScreen + " group is " + TargetGroup);
+			_client.SetMode(_dDev, DreamScreenNet.Enum.DeviceMode.Off);
+			_client.SetMode(_dDev, DreamScreenNet.Enum.DeviceMode.Video);
+			_client.StartSubscribing(_targetDreamScreen);
+			Log.Debug("DS Stream should be started...");
+			Log.Debug("Starting DS stream service...");
+			_client.ColorsReceived += UpdateColors;
+
+			return ExecuteAsync(ct);
 		}
 
 		public void Refresh(SystemData systemData) {
@@ -72,13 +70,11 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 		public bool SourceActive { get; set; }
 
 		private void SubRequested(object? sender, DreamScreenClient.DeviceSubscriptionEventArgs e) {
-			if (_enable) {
 				if (Equals(e.Target, _targetDreamScreen)) {
 					Log.Debug("Incoming sub request from target!" + e.Target);
 				} else {
 					Log.Debug("incoming sub request, but it's not from our target: " + e.Target);
 				}
-			}
 		}
 
 		private void RefreshSd() {
@@ -151,9 +147,6 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 		}
 
 		protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-			if (_client == null) return;
-			Log.Debug("Starting DS stream service...");
-			_client.ColorsReceived += UpdateColors;
 			while (!stoppingToken.IsCancellationRequested) {
 				await Task.Delay(1, stoppingToken);
 			}

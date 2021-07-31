@@ -1,8 +1,11 @@
-﻿namespace Glimmr.Models.ColorSource {
+﻿using System.Threading;
+using System.Threading.Tasks;
+
+namespace Glimmr.Models.ColorSource {
 	public interface IColorSource {
 		bool SourceActive { get; set; }
 
-		public void ToggleStream(bool toggle);
+		public Task ToggleStream(CancellationToken ct);
 		public void Refresh(SystemData systemData);
 	}
 }

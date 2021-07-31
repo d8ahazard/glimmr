@@ -77,17 +77,9 @@ namespace Glimmr {
 				.ConfigureServices(services => {
 					services.AddSignalR();
 					services.AddSingleton<ControlService>();
-					services.AddSingleton<ColorService>();
-					services.AddHostedService(serviceProvider =>
-						serviceProvider.GetService<ColorService>());
-					services.AddHostedService<StreamService>();
+					services.AddHostedService<ColorService>();
 					services.AddHostedService<DiscoveryService>();
 					services.AddHostedService<StatService>();
-					services.AddHostedService<AudioStream>();
-					services.AddHostedService<VideoStream>();
-					services.AddHostedService<AudioVideoStream>();
-					services.AddHostedService<AmbientStream>();
-					services.AddHostedService<DreamScreenStream>();
 				})
 				.ConfigureWebHostDefaults(webBuilder => {
 					webBuilder.UseStartup<Startup>();
