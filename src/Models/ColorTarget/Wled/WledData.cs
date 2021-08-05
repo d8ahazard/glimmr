@@ -24,6 +24,9 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		[JsonProperty] public bool ControlStrip { get; set; }
 		[JsonProperty] public string LastSeen { get; set; }
 
+		[JsonProperty] public int LedMultiplier { get; set; } = 1;
+		
+
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool ReverseStrip { get; set; }
@@ -109,8 +112,11 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		}
 
 		private SettingsProperty[] Kps() {
+			var multiplier = new SettingsProperty("LedMultiplier", "number", "LED Multiplier") {
+				ValueMin = "-10", ValueStep = "1"
+			};
 			if ((StripMode) StripMode == Enums.StripMode.Single) {
-				return new SettingsProperty[] {
+				return new[] {
 					new("sectormap", "sectormap", ""),
 					new("LedCount", "number", "Led Count"),
 					new("StripMode", "select", "Strip Mode", new Dictionary<string, string> {
@@ -119,11 +125,12 @@ namespace Glimmr.Models.ColorTarget.Wled {
 						["2"] = "Loop (Play Bar)",
 						["3"] = "Single Color"
 					}),
+					multiplier,
 					new("ReverseStrip", "check", "Reverse Strip Direction")
 				};
 			}
 
-			return new SettingsProperty[] {
+			return new[] {
 				new("ledmap", "ledmap", ""),
 				new("Offset", "number", "Strip Offset"),
 				new("LedCount", "number", "Led Count"),
@@ -133,6 +140,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 					["2"] = "Loop (Play Bar)",
 					["3"] = "Single Color"
 				}),
+				multiplier,
 				new("ReverseStrip", "check", "Reverse Strip Direction")
 			};
 		}

@@ -14,6 +14,7 @@
     <ApplicationIcon>appIcon.ico</ApplicationIcon>
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
     <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   
   <ItemGroup>

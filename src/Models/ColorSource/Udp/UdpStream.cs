@@ -22,31 +22,26 @@ using static Glimmr.Enums.DeviceMode;
 namespace Glimmr.Models.ColorSource.UDP {
 	public class UdpStream : BackgroundService, IColorSource {
 		private readonly ControlService _cs;
-		private readonly ColorService _colorService;
 		private readonly UdpClient _uc;
-		private DeviceMode _devMode;
+		private DeviceMode _devMode; 
 		private int _ledCount;
 		private bool _sending;
 		private ServiceDiscovery? _discovery;
 		private SystemData _sd;
 		private GlimmrData? _gd;
 		private string _hostName;
-		private int _sectorCount;
-		private bool _useCenter;
 		private bool _streaming;
-		private int[] _tgtDimensions;
-		private int[] _srcDimensions = new int[4];
-		private Dictionary<int, int> _ledMap;
-		private Dictionary<int, int> _sectorMap;
-
+		private FrameBuilder? _builder;
+		private FrameSplitter _splitter;
+		
 
 		public UdpStream(ColorService cs) {
 			_cs = cs.ControlService;
-			_colorService = cs;
 			_cs.RefreshSystemEvent += Refresh;
 			_cs.SetModeEvent += Mode;
 			_cs.StartStreamEvent += StartStream;
 			_cs.RefreshSystemEvent += RefreshSd;
+			_splitter = cs.Splitter;
 			_uc = new UdpClient(8889) {Ttl = 5, Client = {ReceiveBufferSize = 2000}};
 			_uc.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 			_uc.Client.Blocking = false;
@@ -60,14 +55,10 @@ namespace Glimmr.Models.ColorSource.UDP {
 				_sd.DeviceName = _hostName;
 				DataUtil.SetSystemData(_sd);
 			}
-			_ledMap = new Dictionary<int, int>();
-			_sectorMap = new Dictionary<int, int>();
-			_tgtDimensions = new[] {_sd.LeftCount, _sd.RightCount, _sd.TopCount, _sd.BottomCount};
 			RefreshSd();
 		}
 
 		public Task ToggleStream(CancellationToken ct) {
-			Initialize(ct);
 			Log.Information("Starting UDP Stream service...");
 			return ExecuteAsync(ct);
 		}
@@ -75,8 +66,6 @@ namespace Glimmr.Models.ColorSource.UDP {
 		private void RefreshSd() {
 			_sd = DataUtil.GetSystemData();
 			_hostName = _sd.DeviceName;
-			_tgtDimensions = new[] {_sd.LeftCount, _sd.RightCount, _sd.TopCount, _sd.BottomCount};
-			
 			_discovery?.Dispose();
 			var addr = new List<IPAddress> {IPAddress.Parse(IpUtil.GetLocalIpAddress())};
 			var service = new ServiceProfile(_hostName, "_glimmr._tcp", 8889, addr);
@@ -87,41 +76,30 @@ namespace Glimmr.Models.ColorSource.UDP {
 		private async Task StartStream(object arg1, DynamicEventArgs arg2) {
 			_gd = arg2.P1;
 			_sd = DataUtil.GetSystemData();
-			_useCenter = _gd.UseCenter;
-			_sectorCount = _gd.SectorCount;
 			_ledCount = _gd.LedCount;
-			_srcDimensions = new[] {_gd.LeftCount, _gd.RightCount, _gd.TopCount, _gd.BottomCount};
-			_ledMap = ColorUtil.MapSectors(_sectorCount, new[] {_gd.VCount, _gd.HCount});
-			_sectorMap = ColorUtil.MapLeds(_ledCount, _srcDimensions, _tgtDimensions);
+			var dims = new[] {_gd.LeftCount, _gd.RightCount, _gd.TopCount, _gd.BottomCount};
+			_builder = new FrameBuilder(dims);
 			_streaming = true;
 			await _cs.SetMode(5);
 		}
 
 		private Task Mode(object arg1, DynamicEventArgs arg2) {
-			_devMode = arg2.P1;
-			_streaming = _devMode == DeviceMode.Udp; 
+			_devMode = (DeviceMode) arg2.P1;
+			_streaming = _devMode == Udp; 
 			return Task.CompletedTask;
 		}
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
+			_splitter.DoSend = true;
 			return Task.Run(async () => {
-				while (!stoppingToken.IsCancellationRequested) {
-					if (_devMode != DeviceMode.Udp) {
-						await Task.Delay(1, stoppingToken);
-					}
-				}
+				var l1 = Task.Run(Listen,stoppingToken);
+				var l2 = Task.Run(Listen,stoppingToken);
+				await Task.WhenAll(l1, l2);
+				_splitter.DoSend = false;
 				Log.Information("UDP Stream service stopped.");
-				_discovery?.Dispose();
 			}, stoppingToken);
 		}
 
-		private void Initialize(CancellationToken stoppingToken) {
-			Log.Information("Starting stream service...");
-			Task unused = Task.Run(Listen,stoppingToken);
-			Task unused1 = Task.Run(Listen,stoppingToken);
-			Log.Information("Stream service initialized.");
-
-		}
 		
 		private async Task Listen() {
 			while (true) {
@@ -149,8 +127,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 
 			var bytes = data.Skip(2).ToArray();
 			var colors = new Color[_ledCount];
-			var sectors = new Color[_sectorCount];
-			if (_devMode == DeviceMode.Udp) {
+			if (_devMode == Udp) {
 				var colIdx = 0;
 				for (var i = 0; i < bytes.Length; i += 3) {
 					if (i + 2 >= bytes.Length) {
@@ -160,34 +137,15 @@ namespace Glimmr.Models.ColorSource.UDP {
 					var col = Color.FromArgb(255, bytes[i], bytes[i + 1], bytes[i + 2]);
 					if (colIdx < _ledCount) {
 						colors[colIdx] = col;
-					} else {
-						var sIdx = colIdx - _ledCount;
-						sectors[sIdx] = col;
 					}
 
 					colIdx++;
 				}
 
-				if (_sd.LedCount != _ledCount) {
-					var cols = new Color[_sd.LedCount];
-					foreach (var (key, value) in _ledMap) {
-						cols[key] = colors[value];
-					}
-					colors = cols;
-				}
-
-				if (!_useCenter && _sd.SectorCount != _sectorCount) {
-					var secs = new Color[_sd.SectorCount];
-					foreach (var (key, value) in _sectorMap) {
-						secs[key] = sectors[value];
-					}
-					sectors = secs;
-				}
-
 				var ledColors = colors.ToList();
-				var sectorColors = sectors.ToList();
+				var frame = _builder.Build(ledColors);
+				_splitter.Update(frame);
 				
-				_colorService.SendColors(ledColors, sectorColors,0);
 				_sending = false;
 				await Task.FromResult(true);
 			} else {
@@ -196,7 +154,6 @@ namespace Glimmr.Models.ColorSource.UDP {
 		}
 
 		private void Refresh() {
-			_devMode = DataUtil.GetItem("DeviceMode");
 			var sd = DataUtil.GetSystemData();
 			_devMode = (DeviceMode) sd.DeviceMode;
 		}
@@ -204,7 +161,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 		public bool SourceActive { get; set; }
 		
 		public void Refresh(SystemData systemData) {
-			throw new NotImplementedException();
+			
 		}
 	}
 }

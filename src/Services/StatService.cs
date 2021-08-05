@@ -6,7 +6,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Enums;
 using Glimmr.Hubs;
+using Glimmr.Models;
 using Glimmr.Models.Util;
+using LibGit2Sharp;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -22,7 +24,13 @@ namespace Glimmr.Services {
 		public StatService(IHubContext<SocketServer> hubContext, ControlService cs) {
 			_hubContext = hubContext;
 			_colorService = cs.ColorService;
+			cs.SetModeEvent += Mode;
 			_count = 0;
+		}
+
+		private Task Mode(object arg1, DynamicEventArgs arg2) {
+			return _hubContext.Clients.All
+				.SendAsync("frames", _colorService.Counter.Rates(), CancellationToken.None);
 		}
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {

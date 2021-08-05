@@ -31,10 +31,6 @@ namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
 			Frame = new Mat();
 		}
 
-		public Task SaveFrame() {
-			return Task.CompletedTask;
-		}
-
 		
 		public async Task Start(CancellationToken ct) {
 			Log.Debug("Starting Camera...");

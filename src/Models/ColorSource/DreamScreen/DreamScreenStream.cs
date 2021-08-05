@@ -1,7 +1,6 @@
 ﻿#region
 
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -13,9 +12,7 @@ using Glimmr.Models.ColorTarget.DreamScreen;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.Extensions.Hosting;
-using Newtonsoft.Json;
 using Serilog;
-using DeviceMode = Glimmr.Enums.DeviceMode;
 
 #endregion
 
@@ -25,23 +22,22 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 		private readonly DreamScreenClient? _client;
 		private readonly ColorService _cs;
 		private DreamDevice? _dDev;
-		public bool Enable { get; set; }
 		private IPAddress? _targetDreamScreen;
-		private int _hCount;
-		private int _vCount;
-		private int _ledCount;
-		private int _sectorCount;
-		private Dictionary<int, int> _ledMap;
-		private Dictionary<int, int> _sectorMap;
+		private FrameBuilder _builder;
+		private FrameSplitter _splitter;
 
 		public DreamScreenStream(ColorService colorService) {
 			_cs = colorService;
+			
 			var client = _cs.ControlService.GetAgent("DreamAgent");
 			if (client != null) {
 				_client = client;
 				_client.CommandReceived += ProcessCommand;
-				_client.SubscriptionRequested += SubRequested;
 			}
+
+			var rect = new[]{3,3,5,5};
+			_builder = new FrameBuilder(rect, true);
+			_splitter = colorService.Splitter;
 			_cs.ControlService.RefreshSystemEvent += RefreshSd;
 			RefreshSd();
 		}
@@ -49,13 +45,10 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 		public Task ToggleStream(CancellationToken ct) {
 			if (_client == null || _dDev == null || _targetDreamScreen == null) return Task.CompletedTask;
 			Log.Debug("Starting DS stream, Target is " + _targetDreamScreen + " group is " + TargetGroup);
-			_client.SetMode(_dDev, DreamScreenNet.Enum.DeviceMode.Off);
-			_client.SetMode(_dDev, DreamScreenNet.Enum.DeviceMode.Video);
 			_client.StartSubscribing(_targetDreamScreen);
-			Log.Debug("DS Stream should be started...");
+			_client.SetMode(_dDev, DeviceMode.Off);
+			_client.SetMode(_dDev, DeviceMode.Video);
 			Log.Debug("Starting DS stream service...");
-			_client.ColorsReceived += UpdateColors;
-
 			return ExecuteAsync(ct);
 		}
 
@@ -69,23 +62,11 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 
 		public bool SourceActive { get; set; }
 
-		private void SubRequested(object? sender, DreamScreenClient.DeviceSubscriptionEventArgs e) {
-				if (Equals(e.Target, _targetDreamScreen)) {
-					Log.Debug("Incoming sub request from target!" + e.Target);
-				} else {
-					Log.Debug("incoming sub request, but it's not from our target: " + e.Target);
-				}
-		}
+	
 
 		private void RefreshSd() {
 			var systemData = DataUtil.GetSystemData();
 			var dsIp = systemData.DsIp;
-			_hCount = systemData.HSectors;
-			_vCount = systemData.VSectors;
-			_sectorCount = systemData.SectorCount;
-			_ledCount = systemData.LedCount;
-			_sectorMap = ColorUtil.MapSectors(12, new[] {3, 5});
-			_ledMap = ColorUtil.MapLedsFromSectors(12, 5, 3);
 			// If our DS IP is null, pick one.
 			if (string.IsNullOrEmpty(dsIp)) {
 				var devs = DataUtil.GetDevices();
@@ -127,6 +108,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 				switch (e.Response.Type) {
 					case MessageType.Mode:
 						var mode = int.Parse(e.Response.Payload.ToString());
+						if (mode == 1) mode = 5; // Video = streaming
 						Log.Debug("Toggle mode: " + mode);
 						_cs.ControlService.SetMode(mode).ConfigureAwait(false);
 						break;
@@ -147,29 +129,28 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 		}
 
 		protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
+			if (_client != null) _client.ColorsReceived += UpdateColors;
+			_splitter.DoSend = true;
 			while (!stoppingToken.IsCancellationRequested) {
 				await Task.Delay(1, stoppingToken);
 			}
 
+			if (_client != null) {
+				Log.Information("Stopping subscription...");
+				_client.StopSubscribing();
+				_client.ColorsReceived -= UpdateColors;
+			}
+			_splitter.DoSend = false;
 			Log.Debug("DS stream service stopped.");
-			_client.StopSubscribing();
 		}
 
 		private void UpdateColors(object? sender, DreamScreenClient.DeviceColorEventArgs e) {
 			var colors = e.Colors;
-			if (colors.Length != _sectorCount) {
-				var cols = new Color[_sectorCount];
-				foreach (var (key, value) in _sectorMap) {
-					cols[key] = colors[value];
-				}
-				colors = cols;
-			}
-			var leds = new Color[_ledCount];
-			foreach (var (key, value) in _ledMap) {
-				leds[key] = colors[value];
-			}
+			var frame = _builder.Build(colors);
+			_splitter.Update(frame);
+			frame.Dispose();
+			SourceActive = !_splitter.NoImage;
 			_cs.Counter.Tick("Dreamscreen");
-			_cs.SendColors(leds.ToList(), colors.ToList(), 0);
 		}
 	}
 }

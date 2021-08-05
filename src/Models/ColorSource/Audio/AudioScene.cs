@@ -1,31 +1,13 @@
 #region
 
+using System.Collections.Generic;
+using Emgu.CV.Aruco;
 using Emgu.CV.Structure;
 
 #endregion
 
 namespace Glimmr.Models.ColorSource.Audio {
 	public struct AudioScene {
-		/// <summary>
-		///     Perimeter range where low frequencies should be mapped, as a percent.
-		/// </summary>
-		public RangeF LowRange { get; set; }
-
-		/// <summary>
-		///     Perimeter range where mid frequencies should be mapped, as a percent.
-		/// </summary>
-		public RangeF MidRange { get; set; }
-
-		/// <summary>
-		///     Perimeter range where high frequencies should be mapped, as a percent.
-		/// </summary>
-		public RangeF HighRange { get; set; }
-
-		/// <summary>
-		///     Enable me, figure out how to work this
-		/// </summary>
-		public bool MirrorRange { get; set; }
-
 		/// <summary>
 		///     Overall lower limit to color range (0 - 1)
 		///     If lower is GEQ higher, will be ignored
@@ -48,6 +30,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 		/// </summary>
 		public float RotationThreshold { get; set; }
 
+		public Dictionary<string, int> OctaveMap { get; set; }
 		public int Id { get; set; }
 		public string Name { get; set; }
 	}

@@ -58,9 +58,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 			return Task.CompletedTask;
 		}
 
-		public Task SaveFrame() {
-			return Task.CompletedTask;
-		}
+		
 
 		public Mat Frame { get; }
 

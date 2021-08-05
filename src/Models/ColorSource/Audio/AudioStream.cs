@@ -6,7 +6,6 @@ using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using ManagedBass;
@@ -17,11 +16,11 @@ using Serilog;
 
 namespace Glimmr.Models.ColorSource.Audio {
 	public sealed class AudioStream : BackgroundService, IColorSource {
-		public bool SendColors { get; set; }
-
+		public bool SendColors {
+			set => Splitter.DoSend = value;
+		}
 		public List<Color> Colors { get; private set; }
 		public List<Color> Sectors { get; private set; }
-		private readonly ColorService _cs;
 		private List<AudioData> _devices;
 		private float _gain;
 		private int _handle;
@@ -31,15 +30,21 @@ namespace Glimmr.Models.ColorSource.Audio {
 		private int _recordDeviceIndex;
 		private SystemData _sd;
 		private int _sectorCount;
-
+		public FrameSplitter Splitter { get; }
+		private readonly FrameBuilder _builder;
 
 		public AudioStream(ColorService cs) {
-			_cs = cs;
 			Colors = new List<Color>();
 			Sectors = new List<Color>();
 			_devices = new List<AudioData>();
 			_map = new AudioMap();
+			Splitter = new FrameSplitter(cs.ControlService);
+			_builder = new FrameBuilder(new[] {
+				3,3,6,6
+			}, true);
 			_sd = DataUtil.GetSystemData();
+			Refresh(_sd);
+			
 		}
 
 		public bool SourceActive { get; set; }
@@ -47,23 +52,11 @@ namespace Glimmr.Models.ColorSource.Audio {
 		
 		public void Refresh(SystemData systemData) {
 			_sd = systemData;
+			Splitter.Refresh();
 			LoadData().ConfigureAwait(true);
-			try {
-				Bass.RecordInit(_recordDeviceIndex);
-				_handle = Bass.RecordStart(48000, 2, BassFlags.Float, Update);
-				Bass.RecordGetDeviceInfo(_recordDeviceIndex, out _);
-				_hasDll = true;
-			} catch (DllNotFoundException) {
-				Log.Warning("Bass.dll not found, nothing to do...");
-				_hasDll = false;
-			}
 		}
 
 		protected override Task ExecuteAsync(CancellationToken ct) {
-			
-			SendColors = true;
-			Bass.ChannelPlay(_handle);
-
 			return Task.Run(async () => {
 				while (!ct.IsCancellationRequested) {
 					await Task.Delay(1, ct);
@@ -80,7 +73,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 		private async Task LoadData() {
 			var sd = DataUtil.GetSystemData();
-			_sectorCount = (_sd.VSectors + _sd.HSectors) * 2 - 4;
+			_sectorCount = 14;
 			_gain = _sd.AudioGain;
 			Colors = ColorUtil.EmptyList(_sd.LedCount);
 			Sectors = ColorUtil.EmptyList(_sectorCount);
@@ -120,18 +113,30 @@ namespace Glimmr.Models.ColorSource.Audio {
 		}
 
 		public Task ToggleStream(CancellationToken ct) {
+			SendColors = true;
+			try {
+				Bass.RecordInit(_recordDeviceIndex);
+				_handle = Bass.RecordStart(48000, 2, BassFlags.Float, Update);
+				Bass.RecordGetDeviceInfo(_recordDeviceIndex, out _);
+				_hasDll = true;
+				Log.Information("Recording init completed.");
+			} catch (DllNotFoundException) {
+				Log.Warning("Bass.dll not found, nothing to do...");
+				_hasDll = false;
+			}
 			if (!_hasDll) {
 				Log.Debug("Audio stream unavailable, no bass.dll found.");
 				return Task.CompletedTask;
 			}
 			Log.Debug("Starting audio stream service...");
-
+			Bass.ChannelPlay(_handle);
 			return ExecuteAsync(ct);
 		}
 
 		private bool Update(int handle, IntPtr buffer, int length, IntPtr user) {
 			if (_map == null) {
-				return false;
+				Log.Warning("No map?");
+				//return false;
 			}
 
 			var samples = 2048 * 2;
@@ -144,6 +149,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 			for (var a = 0; a < samples; a++) {
 				var val = FlattenValue(fft[a]);
+				//if (val > 0) Log.Information($"Audio val: {val}");
 				var freq = FftIndex2Frequency(realIndex, 4096 / 2, 48000);
 
 				if (a % 1 == 0) {
@@ -156,16 +162,12 @@ namespace Glimmr.Models.ColorSource.Audio {
 				}
 			}
 
-			Sectors = ColorUtil.EmptyList(Sectors.Count);
-			Colors = ColorUtil.EmptyList(Colors.Count);
-
-			Sectors = _map.MapColors(lData, rData).ToList();
-			Colors = ColorUtil.SectorsToleds(Sectors.ToList());
-			if (SendColors) {
-				//_cs.SendColors(this, new DynamicEventArgs(Colors, Sectors)).ConfigureAwait(false);
-				_cs.SendColors(Colors, Sectors, 0);
-			}
-
+			var sectors = _map.MapColors(lData, rData).ToList();
+			var frame = _builder.Build(sectors);
+			Splitter.Update(frame);
+			Sectors = Splitter.GetSectors();
+			Colors = Splitter.GetColors();
+			frame.Dispose();
 			return true;
 		}
 

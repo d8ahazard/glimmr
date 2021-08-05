@@ -133,6 +133,7 @@ namespace Glimmr.Services {
 
 			await _hubContext.Clients.All.SendAsync("mode", mode);
 			DataUtil.SetItem("DeviceMode", mode);
+			DataUtil.SetItem("AutoDisabled", false);
 			ColorUtil.SetSystemData();
 			await SetModeEvent.InvokeAsync(this, new DynamicEventArgs(mode));
 		}

@@ -25,11 +25,14 @@ using Serilog;
 namespace Glimmr.Models.ColorSource.Video {
 	public sealed class VideoStream : BackgroundService, IColorSource {
 		// should we send them to devices?
-		public bool SendColors { get; set; }
+		public bool SendColors {
+			set => StreamSplitter.DoSend = value;
+		}
 
 		public List<Color> Colors { get; private set; }
 		public List<Color> Sectors { get; private set; }
-		private Splitter? StreamSplitter { get; }
+		
+		public FrameSplitter StreamSplitter { get; }
 
 		// Scaling variables
 		private readonly int _scaleHeight = DisplayUtil.CaptureHeight();
@@ -47,7 +50,7 @@ namespace Glimmr.Models.ColorSource.Video {
 
 		// Debug options
 		private bool _noColumns;
-
+		
 		// Timer and bool for saving sample frames
 		private readonly Timer _saveTimer;
 
@@ -72,12 +75,9 @@ namespace Glimmr.Models.ColorSource.Video {
 			_vectors = Array.Empty<PointF>();
 			_systemData = DataUtil.GetSystemData();
 			_colorService = colorService;
-			ControlService controlService1 = _colorService.ControlService;
-			controlService1.RefreshSystemEvent += RefreshSystem;
-			var autoEvent = new AutoResetEvent(false);
-			_saveTimer = new Timer(SaveFrame, autoEvent, 0, 10000);
+			_colorService.ControlService.RefreshSystemEvent += RefreshSystem;
 			_targets = new List<VectorOfPoint>();
-			StreamSplitter = new Splitter(controlService1);
+			StreamSplitter = new FrameSplitter(colorService.ControlService, true);
 		}
 
 		public Task ToggleStream(CancellationToken ct) {
@@ -88,7 +88,7 @@ namespace Glimmr.Models.ColorSource.Video {
 
 
 		public void Refresh(SystemData systemData) {
-			StreamSplitter?.Refresh();
+			StreamSplitter.Refresh();
 		}
 
 		public bool SourceActive { get; set; }
@@ -109,7 +109,6 @@ namespace Glimmr.Models.ColorSource.Video {
 					return;
 				}
 				_vc.Start(ct);
-				SendColors = true;
 				while (!ct.IsCancellationRequested) {
 					ProcessFrame();
 				}
@@ -155,17 +154,10 @@ namespace Glimmr.Models.ColorSource.Video {
 					return;
 				}
 
-				StreamSplitter?.Update(warped);
-				if (StreamSplitter == null) return;
+				StreamSplitter.Update(warped);
 				SourceActive = !StreamSplitter.NoImage;
-				var c1 = StreamSplitter.GetColors();
-				Colors = c1;
-				var c2 = StreamSplitter.GetSectors();
-				Sectors = c2;
+				
 				_warned = false;
-				if (SendColors) {
-					_colorService.SendColors(Colors, Sectors, 0);
-				}
 			} catch (Exception e) {
 				Log.Warning("Exception Processing Frame: " + e.Message + " at " + e.StackTrace);
 			}
@@ -229,31 +221,21 @@ namespace Glimmr.Models.ColorSource.Video {
 			return null;
 		}
 
-		private void SaveFrame(object? sender) {
-			if (_doSave) {
-				return;
-			}
-
-			_doSave = true;
-			_vc?.SaveFrame();
-		}
-
 
 		private Mat? ProcessFrame(Mat? input) {
 			if (input == null) return input;
 			// If we need to crop our image...do it.
 			var output = _captureMode == CaptureMode.Camera ? CamFrame(input) : input;
 			// Save a preview frame every 5 seconds
-			if (!_doSave) {
+			if (!StreamSplitter.DoSave) {
 				return output;
 			}
 
-			_doSave = false;
-			if (StreamSplitter != null) StreamSplitter.DoSave = true;
 			var path = Directory.GetCurrentDirectory();
 			var fullPath = Path.Join(path, "wwwroot", "img", "_preview_input.jpg");
 			input.Save(fullPath);
 
+			_doSave = false;
 			return output;
 		}
 

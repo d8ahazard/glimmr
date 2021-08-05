@@ -29,6 +29,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		private int _offset;
 		private StripMode _stripMode;
 		private int _targetSector;
+		private int _multiplier;
 
 		public WledDevice(WledData wd, ColorService colorService) : base(colorService) {
 			colorService.ColorSendEvent += SetColor;
@@ -40,6 +41,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			Id = _data.Id;
 			IpAddress = _data.IpAddress;
 			Brightness = _data.Brightness;
+			_multiplier = _data.LedMultiplier;
 			ReloadData();
 		}
 
@@ -114,10 +116,9 @@ namespace Glimmr.Models.ColorTarget.Wled {
 				if (_targetSector >= colors1.Count || _targetSector == -1) {
 					return;
 				}
-
 				colors = ColorUtil.FillArray(colors1[_targetSector], _ledCount).ToList();
 			} else {
-				colors = ColorUtil.TruncateColors(colors, _offset, _ledCount).ToList();
+				colors = ColorUtil.TruncateColors(colors, _offset, _ledCount, _multiplier).ToList();
 				if (_stripMode == StripMode.Loop) {
 					colors = ShiftColors(colors);
 				} else {
@@ -162,7 +163,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			Enable = _data.Enable;
 			_stripMode = (StripMode) _data.StripMode;
 			_targetSector = _data.TargetSector;
-
+			_multiplier = _data.LedMultiplier;
+			if (_multiplier == 0 || _multiplier == null) _multiplier = 1;
 			if (oldBrightness != Brightness) {
 				Log.Debug($"Brightness has changed!! {oldBrightness} {Brightness}");
 				UpdateLightState(Streaming).ConfigureAwait(false);

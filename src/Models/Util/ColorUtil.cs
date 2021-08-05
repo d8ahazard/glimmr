@@ -9,6 +9,7 @@ using Glimmr.Enums;
 using Newtonsoft.Json;
 using Serilog;
 
+
 #endregion
 
 namespace Glimmr.Models.Util {
@@ -63,10 +64,15 @@ namespace Glimmr.Models.Util {
 			return input;
 		}
 
-		public static Color[] TruncateColors(List<Color> input, int offset, int len) {
+		public static Color[] TruncateColors(List<Color> input, int offset, int len, int multiplier = 1) {
 			var output = new Color[len];
 			// Instead of doing dumb crap, just make our list of colors loop around
+			
 			var total = len + offset;
+			// If we have a negative multiplier, our total should be that many times (abs) larger
+			if (multiplier < 0) {
+				total *= Math.Abs(multiplier);
+			}
 			var doubled = new Color[total];
 			var c = 0;
 			while (c < total) {
@@ -81,9 +87,16 @@ namespace Glimmr.Models.Util {
 			}
 
 			var idx = 0;
-			for (var i = offset; i < total; i++) {
+			for (var i = offset; i < total; i+= Math.Abs(multiplier)) {
 				output[idx] = doubled[i];
 				idx++;
+				if (multiplier > 1 && idx < len) {
+					for (var m = 1; m < multiplier; m++) {
+						output[idx] = doubled[i];
+						idx++;	
+					}
+				}
+				if (idx >= len) break;
 			}
 
 			return output;
@@ -221,7 +234,7 @@ namespace Glimmr.Models.Util {
 					return Color.FromArgb(255, v, p, q);
 			}
 		}
-
+		
 		public static Color SetBrightness(Color color, float brightness) {
 			// var hsb = ColorToHsb(input);
 			if (brightness == 0) {
@@ -637,22 +650,23 @@ namespace Glimmr.Models.Util {
 			return Color.FromArgb(gammas[input.A], gammas[input.R], gammas[input.G], gammas[input.B]);
 		}
 
-		public static float HueFromFrequency(int frequency) {
-			var start = 16;
+		public static float HueFromFrequency(int freq) {
+			var frequency = (float) freq;
+			var start = 27.5f;
+			var end = start * 2;
+
 			if (frequency < start) {
 				frequency = start;
 			}
 
-			var end = start * 2;
-			const int max = 10000;
-			while (end < frequency && start < max) {
+			const int max = 3520;
+			while (frequency < start && end < max) {
 				start *= 2;
-				end *= 2;
+				end = start * 2;
 			}
 
 			if (frequency >= start) {
-				var pct = (float) (frequency - start) / start;
-				return pct;
+				return frequency / end;
 			}
 
 			return 1;

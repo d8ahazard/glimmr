@@ -55,23 +55,13 @@ namespace Glimmr.Models {
 				_ticks[id] = 0;
 			}
 		}
-
-		public int Rate(string id) {
-			if (!_ticks.Keys.Contains(id)) {
-				return 0;
-			}
-
-			var avg = _ticks[id] / (_stopwatch.ElapsedMilliseconds / 1000);
-			return (int) avg;
-		}
-
+		
 		public Dictionary<string, long> Rates() {
 			var time = _stopwatch.ElapsedMilliseconds / 1000;
 			var output = new Dictionary<string, long>();
 			foreach (var (key, value) in _ticks) {
 				output[key] = time != 0 ? value / time : 0;
 			}
-
 			return output;
 		}
 	}

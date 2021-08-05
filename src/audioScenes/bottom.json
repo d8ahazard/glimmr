@@ -1,20 +1,16 @@
 ﻿{
-  "LowRange": {
-    "Min": 0,
-    "Max": 0.332
+  "OctaveMap": {
+    "1": 1,
+    "2": 2,
+    "3": 3,
+    "4": 4,
+    "5": 5,
+    "6": 6,
+    "7": 7
   },
-  "MidRange": {
-    "Min": 0.333,
-    "Max": 0.665
-  },
-  "HighRange": {
-    "Min": 0.666,
-    "Max": 1
-  },
-  "MirrorRange": false,
   "RotationLower": 0.3,
-  "RotationUpper": 0.5,
-  "RotationSpeed": 0.005,
+  "RotationUpper": 1.0,
+  "RotationSpeed": 0.00,
   "RotationThreshold": 0.85,
   "Id": 0,
   "Name": "Bottom"

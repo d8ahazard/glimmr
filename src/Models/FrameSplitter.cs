@@ -6,27 +6,37 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
+using Glimmr.Enums;
+using Glimmr.Models.ColorTarget.Wled;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorSource.Video {
-	public class Splitter {
+namespace Glimmr.Models {
+	public class FrameSplitter {
 		private int _scaleHeight = DisplayUtil.CaptureHeight();
 		private int _scaleWidth = DisplayUtil.CaptureWidth();
 		private readonly float _borderHeight;
+		public Mat InFrame { get; private set; }
+		public Mat OutFrame { get; private set; }
 
 		// The width of the border to crop from for LEDs
 		private readonly float _borderWidth;
 
 		private readonly ControlService _controlService;
 		private readonly Stopwatch _frameWatch;
-		public bool DoSave;
+		
+		public bool DoSave { get; private set; }
+		public bool HasPreview { get; set; }
+		// Do we send our frame data, or store it?
+		public bool DoSend { get; set; }
 		public bool NoImage;
 		private int _bottomCount;
 
@@ -41,6 +51,7 @@ namespace Glimmr.Models.ColorSource.Video {
 
 		private Rectangle[] _fullCoords;
 		private Rectangle[] _fullSectors;
+		
 		private bool _hCrop;
 		private int _hCropCheck;
 		private int _hCropCount;
@@ -60,6 +71,7 @@ namespace Glimmr.Models.ColorSource.Video {
 		private int _sectorCount;
 		private int _topCount;
 		private bool _useCenter;
+		private bool _useCrop;
 
 		// Are we cropping right now?
 		private bool _vCrop;
@@ -71,15 +83,21 @@ namespace Glimmr.Models.ColorSource.Video {
 		// Current crop settings
 		private int _vCropPixels;
 		private int _vSectors;
+		private Timer _saveTimer;
+		private DeviceMode _mode;
 
 
-		public Splitter(ControlService controlService) {
+		public FrameSplitter(ControlService controlService, bool crop = false) {
+			OutFrame = new Mat();
+			InFrame = new Mat();
+			_useCrop = crop;
 			_colorsLed = Array.Empty<Color>();
 			_colorsSectors = Array.Empty<Color>();
 			_frameWatch = new Stopwatch();
 			_frameWatch.Start();
 			_controlService = controlService;
 			_controlService.RefreshSystemEvent += RefreshSystem;
+			controlService.ColorService.FrameSaveEvent += TriggerSave;
 			RefreshSystem();
 			// Set desired width of capture region to 15% total image
 			_borderWidth = 10;
@@ -87,6 +105,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			// Get sectors
 			_fullCoords = DrawGrid();
 			_fullSectors = DrawSectors();
+			
 		}
 
 
@@ -101,17 +120,20 @@ namespace Glimmr.Models.ColorSource.Video {
 			_cropDelay = sd.CropDelay;
 			_cropLetter = sd.EnableLetterBox;
 			_cropPillar = sd.EnablePillarBox;
-			if (!_cropLetter) {
+			_mode = (DeviceMode) sd.DeviceMode;
+			if (!_cropLetter || !_useCrop) {
 				_vCrop = false;
 				_vCropCheck = 0;
 				_vCropPixels = 0;
 				_vCropCount = 0;
+				_cropLetter = false;
 			}
-			if (!_cropPillar) {
+			if (!_cropPillar || !_useCrop) {
 				_hCrop = false;
 				_hCropCheck = 0;
 				_hCropPixels = 0;
 				_hCropCount = 0;
+				_cropPillar = false;
 			}
 			_useCenter = sd.UseCenter;
 			_ledCount = sd.LedCount;
@@ -139,19 +161,106 @@ namespace Glimmr.Models.ColorSource.Video {
 				_frameWatch.Stop();
 			}
 		}
+		
+		private void TriggerSave() {
+			DoSave = true;
+		}
 
+		private void SaveFrame() {
+			DoSave = false;
+			if (InFrame == null) return;
+			if (InFrame.IsEmpty) return;
+			var path = Directory.GetCurrentDirectory();
+			var inPath = Path.Join(path, "wwwroot", "img", "_preview_input.jpg");
+			var outPath = Path.Join(path, "wwwroot", "img", "_preview_output.jpg");
+			if (DoSend) InFrame.Save(inPath);
+			var outMat = new Mat();
+			if (OutFrame == null) return;
+			if (OutFrame.IsEmpty) return;
+			OutFrame.CopyTo(outMat);
+			var colBlack = new Bgr(Color.FromArgb(0, 0, 0, 0)).MCvScalar;
+			if (_previewMode == 1) {
+				for (var i = 0; i < _fullCoords.Length; i++) {
+					var col = new Bgr(_colorsLed[i]).MCvScalar;
+					CvInvoke.Rectangle(outMat, _fullCoords[i], col, -1, LineType.AntiAlias);
+					CvInvoke.Rectangle(outMat, _fullCoords[i], colBlack, 1, LineType.AntiAlias);
+				}
+			}
+
+			if (_previewMode == 2) {
+				for (var i = 0; i < _fullSectors.Length; i++) {
+					var s = _fullSectors[i];
+					var col = new Bgr(_colorsSectors[i]).MCvScalar;
+					CvInvoke.Rectangle(outMat, s, col, -1, LineType.AntiAlias);
+					CvInvoke.Rectangle(outMat, s, colBlack, 1, LineType.AntiAlias);
+					var cInt = i + 1;
+					var tPoint = new Point(s.X, s.Y + 30);
+					CvInvoke.PutText(outMat, cInt.ToString(), tPoint, FontFace.HersheySimplex, 1.0, colBlack);
+				}
+			}
+			outMat.CopyTo(OutFrame);
+			if (DoSend) {
+				outMat.Save(outPath);
+			}
+			
+			outMat.Dispose();
+			if (DoSend) _controlService.TriggerImageUpdate();
+		}
+		
+		
+		public async Task MergeFrame(Color[] leds, Color[] sectors) {
+			await Task.Delay(5);
+			var path = Directory.GetCurrentDirectory();
+			var inPath = Path.Join(path, "wwwroot", "img", "_preview_input.jpg");
+			var outPath = Path.Join(path, "wwwroot", "img", "_preview_output.jpg");
+			if (InFrame == null || OutFrame == null) return;
+			if (InFrame.IsEmpty || OutFrame.IsEmpty) return;
+			InFrame.Save(inPath);
+			var outMat = new Mat();
+			OutFrame.CopyTo(outMat);
+			var colBlack = new Bgr(Color.FromArgb(0, 0, 0, 0)).MCvScalar;
+			if (_previewMode == 1) {
+				for (var i = 0; i < _fullCoords.Length; i++) {
+					var col = new Bgr(leds[i]).MCvScalar;
+					CvInvoke.Rectangle(outMat, _fullCoords[i], col, -1, LineType.AntiAlias);
+					CvInvoke.Rectangle(outMat, _fullCoords[i], colBlack, 1, LineType.AntiAlias);
+				}
+			}
+
+			if (_previewMode == 2) {
+				for (var i = 0; i < _fullSectors.Length; i++) {
+					var s = _fullSectors[i];
+					var col = new Bgr(sectors[i]).MCvScalar;
+					CvInvoke.Rectangle(outMat, s, col, -1, LineType.AntiAlias);
+					CvInvoke.Rectangle(outMat, s, colBlack, 1, LineType.AntiAlias);
+					var cInt = i + 1;
+					var tPoint = new Point(s.X, s.Y + 30);
+					CvInvoke.PutText(outMat, cInt.ToString(), tPoint, FontFace.HersheySimplex, 1.0, colBlack);
+				}
+			}
+			outMat.Save(outPath);
+			outMat.Dispose();
+			_controlService.TriggerImageUpdate();
+		}
 
 		public void Update(Mat inputMat) {
-			
-			var frame = inputMat ?? throw new ArgumentException("Invalid input material.");
-			var img = frame.ToImage<Bgr, byte>();
-			var sized = img.Resize(_scaleWidth, _scaleHeight,Inter.Cubic);
-			_input = sized.Mat;
-			
-			// Don't do anything if there's no frame.
-			if (_input == null || _input.IsEmpty) {
+			if (inputMat == null) {
+				Log.Warning("Invalid input frame.");
 				return;
 			}
+			
+			InFrame = new Mat();
+			inputMat.CopyTo(InFrame);
+			var img = InFrame.ToImage<Bgr, byte>();
+			var sized = img.Resize(_scaleWidth, _scaleHeight,Inter.Cubic);
+			_input = sized.Mat;
+			// Don't do anything if there's no frame.
+			if (_input == null || _input.IsEmpty) {
+				Log.Warning("Null/Empty input!");
+				return;
+			}
+			OutFrame = new Mat();
+			_input.CopyTo(OutFrame);
 
 			// Check sectors once per second
 			if (_frameWatch.Elapsed >= TimeSpan.FromSeconds(1)) {
@@ -159,7 +268,6 @@ namespace Glimmr.Models.ColorSource.Video {
 				_frameWatch.Restart();
 			}
 
-			//Log.Debug("Input dims are " + _input.Width + " and " + _input.Height);
 			// Only calculate new sectors if the value has changed
 			if (_sectorChanged) {
 				_sectorChanged = false;
@@ -183,42 +291,10 @@ namespace Glimmr.Models.ColorSource.Video {
 
 			_colorsLed = ledColors;
 			_colorsSectors = sectorColors;
-
-			// Save a preview image if desired
-			if (!DoSave) {
-				return;
+			if (DoSend) {
+				_controlService.ColorService.SendColors(_colorsLed.ToList(), _colorsSectors.ToList(), 0);
 			}
-
-			DoSave = false;
-
-			var path = Directory.GetCurrentDirectory();
-			var fullPath = Path.Join(path, "wwwroot", "img", "_preview_output.jpg");
-			var gMat = new Mat();
-			_input.CopyTo(gMat);
-			var colBlack = new Bgr(Color.FromArgb(0, 0, 0, 0)).MCvScalar;
-			if (_previewMode == 1) {
-				for (var i = 0; i < _fullCoords.Length; i++) {
-					var col = new Bgr(_colorsLed[i]).MCvScalar;
-					CvInvoke.Rectangle(gMat, _fullCoords[i], col, -1, LineType.AntiAlias);
-					CvInvoke.Rectangle(gMat, _fullCoords[i], colBlack, 1, LineType.AntiAlias);
-				}
-			}
-
-			if (_previewMode == 2) {
-				for (var i = 0; i < _fullSectors.Length; i++) {
-					var s = _fullSectors[i];
-					var col = new Bgr(_colorsSectors[i]).MCvScalar;
-					CvInvoke.Rectangle(gMat, s, col, -1, LineType.AntiAlias);
-					CvInvoke.Rectangle(gMat, s, colBlack, 1, LineType.AntiAlias);
-					var cInt = i + 1;
-					var tPoint = new Point(s.X, s.Y + 30);
-					CvInvoke.PutText(gMat, cInt.ToString(), tPoint, FontFace.HersheySimplex, 1.0, colBlack);
-				}
-			}
-
-			gMat.Save(fullPath);
-			gMat.Dispose();
-			_controlService.TriggerImageUpdate();
+			if (DoSave) SaveFrame();
 		}
 
 

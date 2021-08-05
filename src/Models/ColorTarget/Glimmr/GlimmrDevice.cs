@@ -167,12 +167,6 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 				packet.Add(ByteUtils.IntByte(color.B));
 			}
 
-			foreach (var color in sectors) {
-				packet.Add(ByteUtils.IntByte(color.R));
-				packet.Add(ByteUtils.IntByte(color.G));
-				packet.Add(ByteUtils.IntByte(color.B));
-			}
-
 			try {
 				_udpClient.SendAsync(packet.ToArray(), packet.Count, _ep).ConfigureAwait(false);
 				ColorService?.Counter.Tick(Id);

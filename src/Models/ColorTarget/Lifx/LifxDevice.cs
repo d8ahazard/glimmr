@@ -25,8 +25,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		private int[] _gammaTableRb;
 		private bool _hasMulti;
 		private int _multiZoneCount;
-		private double _scaledBrightness;
-
+		
 		private int _targetSector;
 		
 		public bool Streaming { get; set; }
@@ -47,7 +46,8 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		public LifxDevice(LifxData d, ColorService colorService) : base(colorService) {
 			DataUtil.GetItem<int>("captureMode");
 			_data = d ?? throw new ArgumentException("Invalid Data");
-			Brightness = (int)(_data.Brightness / 100f * 255);
+			Brightness = _data.Brightness;
+			Log.Debug("Brightness is " + Brightness);
 			_gammaTable = GenerateGammaTable(_data.GammaCorrection);
 			_gammaTableRb = GenerateGammaTable(_data.GammaCorrection + .1);
 			_client = colorService.ControlService.GetAgent("LifxAgent");
@@ -170,7 +170,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			}
 
 			IpAddress = _data.IpAddress;
-			Brightness = (int)(_data.Brightness / 100f * 255);
+			Brightness = _data.Brightness;
 			_gammaTable = GenerateGammaTable(_data.GammaCorrection);
 			_gammaTableRb = GenerateGammaTable(_data.GammaCorrection + .1);
 
@@ -210,8 +210,9 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 					var ar = _gammaTable[col.R];
 					var ag = _gammaTable[col.G];
 					var ab = _gammaTable[col.B];
-					var colL = new LifxColor(Color.FromArgb(ar, ag, ab),Brightness);
-					colL.Kelvin = 7000;
+					var color = Color.FromArgb(ar, ag, ab);
+
+					var colL = new LifxColor(color, Brightness / 255f) {Kelvin = 7000};
 					cols.Add(colL);
 					i = 1;
 				} else {

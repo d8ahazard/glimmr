@@ -39,8 +39,8 @@
     "#000000",
     "#000000"
   ],
-  "AnimationTime": 0.5,
-  "EasingTime": 0.5,
+  "AnimationTime": 0.25,
+  "EasingTime": 0.25,
   "Mode": 0,
   "Easing": 0,
   "Name": "Chase",

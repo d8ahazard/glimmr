@@ -29,15 +29,10 @@ namespace Glimmr.Models.ColorSource.Ambient {
 		private double _easingTime;
 
 		private bool _enable;
+		private bool _doSave;
 		private int _hCount;
 		private Color[] _ledColors;
 		
-		// private int _ledCount;
-		// private int _leftCount;
-		// private int _rightCount;
-		// private int _topCount;
-		// private int _bottomCount;
-
 		private JsonLoader? _loader;
 		private AnimationMode _mode;
 		private Color[] _nextColors;
@@ -46,6 +41,8 @@ namespace Glimmr.Models.ColorSource.Ambient {
 		private Color[] _sectorColors;
 		private int _sectorCount;
 		private int _vCount;
+		private FrameSplitter _splitter;
+		private FrameBuilder _builder;
 
 		public AmbientStream(ColorService colorService) {
 			_ambientColor = "#FFFFFF";
@@ -59,6 +56,8 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			_cs = colorService;
 			_loader = new JsonLoader("ambientScenes");
 			_scenes = _loader.LoadFiles<AmbientScene>();
+			_splitter = colorService.Splitter;
+			colorService.FrameSaveEvent += TriggerSave;
 		}
 
 		public void Refresh(SystemData sd) {
@@ -67,15 +66,10 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			_ambientColor = sd.AmbientColor;
 			_hCount = sd.HSectors;
 			_vCount = sd.VSectors;
+			var dims = new[] {sd.VSectors, sd.VSectors, sd.HSectors, sd.HSectors};
+			_builder = new FrameBuilder(dims, true);
 			_loader ??= new JsonLoader("ambientScenes");
 			_scenes = _loader.LoadFiles<AmbientScene>();
-			
-			// _ledCount = sd.LedCount;
-			// _leftCount = sd.LeftCount;
-			// _rightCount = sd.RightCount;
-			// _topCount = sd.TopCount;
-			// _bottomCount = sd.BottomCount;
-			
 			
 			var scene = new AmbientScene();
 			foreach (var s in _scenes.Where(s => s.Id == _ambientShow)) {
@@ -119,6 +113,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
 		protected override Task ExecuteAsync(CancellationToken ct) {
 			LoadSystem();
+			_splitter.DoSend = true;
 			return Task.Run(async () => {
 				// Load this one for fading
 				while (!ct.IsCancellationRequested) {
@@ -147,35 +142,41 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
 						// If our time has elapsed, restart the watch 
 					} else if (diff <= 0) {
+						_currentColors = _nextColors;
+						_nextColors = RefreshColors(_sceneColors);
 						switch (_easingMode) {
 							case EasingMode.Blend:
 							case EasingMode.FadeOut:
-								_currentColors = _nextColors;
-								_nextColors = RefreshColors(_sceneColors);
 								sectors = _currentColors;
 								break;
 							case EasingMode.FadeIn:
 							case EasingMode.FadeInOut:
-								_currentColors = _nextColors;
-								_nextColors = RefreshColors(_sceneColors);
 								sectors = ColorUtil.EmptyColors(sectors);
 								break;
 						}
-
 						_watch.Restart();
 					} else {
 						sectors = _currentColors;
 					}
 
-					_ledColors = ColorUtil.SectorsToleds(sectors.ToList(), _hCount, _vCount).ToArray();
-					_sectorColors = sectors;
-					_cs.SendColors(_ledColors.ToList(), _sectorColors.ToList(), 0);
+					try {
+						var frame = _builder.Build(sectors);
+						_splitter.Update(frame);
+						frame.Dispose();
+					} catch (Exception e) {
+						Log.Warning("EX: " + e.Message);
+					}
 					await Task.FromResult(true);
 				}
 
 				_watch.Stop();
+				_splitter.DoSend = false;
 				Log.Information("Ambient stream service stopped.");
 			}, CancellationToken.None);
+		}
+
+		private void TriggerSave() {
+			_doSave = true;
 		}
 
 
@@ -213,30 +214,28 @@ namespace Glimmr.Models.ColorSource.Ambient {
 				return ColorUtil.EmptyColors(output);
 			}
 
-			var max = input.Length;
+			var max = input.Length - 1;
 			var rand = _random.Next(0, max);
 			switch (_mode) {
 				case AnimationMode.Linear:
+					var nu = CycleInt(_colorIndex, max);
+					_colorIndex = nu;
 					for (var i = 0; i < _sectorCount; i++) {
-						output[i] = input[_colorIndex];
-						_colorIndex = CycleInt(_colorIndex, max);
+						output[i] = input[nu];
+						nu = CycleInt(nu, max);
 					}
-
-					_colorIndex = CycleInt(_colorIndex, max);
 					break;
 				case AnimationMode.Reverse:
 					for (var i = 0; i < _sectorCount; i++) {
 						output[i] = input[_colorIndex];
 						_colorIndex = CycleInt(_colorIndex, max, true);
 					}
-
 					break;
 				case AnimationMode.Random:
 					for (var i = 0; i < _sectorCount; i++) {
 						output[i] = input[rand];
 						rand = _random.Next(0, max);
 					}
-
 					break;
 				case AnimationMode.RandomAll:
 					for (var i = 0; i < _sectorCount; i++) {
@@ -248,7 +247,6 @@ namespace Glimmr.Models.ColorSource.Ambient {
 					for (var i = 0; i < _sectorCount; i++) {
 						output[i] = input[_colorIndex];
 					}
-
 					_colorIndex = CycleInt(_colorIndex, max);
 					break;
 				default:
@@ -260,21 +258,16 @@ namespace Glimmr.Models.ColorSource.Ambient {
 		}
 
 		private static int CycleInt(int input, int max, bool reverse = false) {
+			var output = input;
 			if (reverse) {
-				input--;
+				output--;
 			} else {
-				input++;
+				output++;
 			}
-
-			if (input >= max) {
-				input = 0;
-			}
-
-			if (input < 0) {
-				input = max;
-			}
-
-			return input;
+			
+			if (output > max) output = 0;
+			if (output < 0) output = max;
+			return output;
 		}
 
 		private void LoadScene() {

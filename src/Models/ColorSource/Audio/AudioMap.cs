@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Linq;
 using Emgu.CV.Structure;
 using Glimmr.Models.Util;
+using Newtonsoft.Json;
 using Serilog;
 
 #endregion
@@ -13,137 +14,92 @@ using Serilog;
 namespace Glimmr.Models.ColorSource.Audio {
 	public class AudioMap {
 		private readonly JsonLoader _loader;
-		private RangeF _highRange;
-		private int _hSectors;
-		private List<int> _leftSectors;
-		private RangeF _lowRange;
-		private RangeF _midRange;
-		private List<int> _rightSectors;
+		private readonly int[] _leftSectors;
+		private readonly int[] _rightSectors;
 		private float _rotation;
 		private float _rotationLower;
 		private float _rotationSpeed;
 		private float _rotationThreshold;
 		private float _rotationUpper = 1;
 		private bool _triggered;
-		private int _vSectors;
 		private float _maxVal;
+		private float _minVal;
+		private Dictionary<string, int> _octaveMap;
 
 		public AudioMap() {
-			_leftSectors = new List<int>();
-			_rightSectors = new List<int>();
+			_leftSectors = new[] {11, 10, 9, 8, 7, 6, 5};
+			_rightSectors = new[] {12, 13, 0, 1, 2, 3, 4};
+			_minVal = float.MaxValue;
 			_loader = new JsonLoader("audioScenes");
 			Refresh();
 		}
 
 		public Color[] MapColors(Dictionary<int, float> lChannel, Dictionary<int, float> rChannel) {
 			// Total number of sectors
-			var len = (_hSectors + _vSectors) * 2 - 4;
+			const int len = 14;
 			var output = new Color[len];
 			output = ColorUtil.EmptyColors(output);
 			var triggered = false;
-
-			foreach (var range in new[] {_lowRange, _midRange, _highRange}) {
-				// Find the starting pont of our range, and the total length
-				var rangeEnd = range.Max;
-				var rangeStart = range.Min;
-				var step = .001f;
-				if (range.Min > range.Max) {
-					rangeStart = rangeEnd;
-					rangeEnd = range.Min;
-					step = -.001f;
+			foreach (var (key, value) in _octaveMap) {
+				var l = _leftSectors[value - 1];
+				var r = _rightSectors[value - 1];
+				var step = int.Parse(key);
+				var lNote = HighNote(lChannel, step);
+				var rNote = HighNote(rChannel, step);
+				if (!triggered) {
+					triggered = lNote.Value >= _rotationThreshold || rNote.Value >= _rotationThreshold;
 				}
-
-				var lSteps = new List<int>();
-				var rSteps = new List<int>();
-				for (var i = rangeStart; i < rangeEnd; i += step) {
-					var sector = (int) Math.Floor(_leftSectors.Count * i);
-					if (!lSteps.Contains(sector)) {
-						lSteps.Add(sector);
-						var note = HighNote(lChannel, sector, _leftSectors.Count);
-						if (note.Value >= _rotationThreshold && !triggered) {
-							triggered = true;
-						}
-
-						var targetHue = RotateHue(ColorUtil.HueFromFrequency(note.Key));
-						var sectorInt = _leftSectors.ElementAt(sector);
-						if (note.Value > _maxVal) {
-							_maxVal = note.Value;
-						}
-
-						output[sectorInt] = ColorUtil.HsvToColor(targetHue * 360, 1, note.Value);
-					}
-
-					sector = (int) Math.Floor(_rightSectors.Count * i);
-					if (!rSteps.Contains(sector)) {
-						rSteps.Add(sector);
-						var note = HighNote(lChannel, sector, _rightSectors.Count);
-						if (note.Value >= _rotationThreshold && !triggered) {
-							triggered = true;
-						}
-
-						var targetHue = RotateHue(ColorUtil.HueFromFrequency(note.Key));
-						var sectorInt = _rightSectors.ElementAt(sector);
-						if (note.Value > _maxVal) {
-							_maxVal = note.Value;
-							Log.Debug("Max is " + _maxVal);
-						}
-
-						output[sectorInt] = ColorUtil.HsvToColor(targetHue * 360, 1, note.Value);
-					}
-				}
+				
+				var lHue = RotateHue(ColorUtil.HueFromFrequency(lNote.Key));
+				var rHue = RotateHue(ColorUtil.HueFromFrequency(rNote.Key));
+				if (lNote.Value > _maxVal) _maxVal = lNote.Value;
+				if (rNote.Value > _maxVal) _maxVal = rNote.Value;
+				if (lNote.Value > 0 && lNote.Value < _minVal) _minVal = lNote.Value;
+				if (rNote.Value > 0 && rNote.Value < _minVal) _minVal = rNote.Value;
+				
+				//Log.Debug($"Sector {l} using octave {step} is {lNote.Key} and {lNote.Value}");
+				output[l] = ColorUtil.HsvToColor(lHue * 360, 1, lNote.Value);
+				output[r] = ColorUtil.HsvToColor(rHue * 360, 1, rNote.Value);
 			}
-
+			
 			_triggered = triggered;
 
 			return output;
 		}
 
-		private KeyValuePair<int, float> HighNote(Dictionary<int, float> stuff, int step, int total) {
-			const int range = 15984;
-			var pct = (float) step / total;
-			var freq = range * pct;
-			var minFrequency = OctaveFromFrequency(freq);
+		private KeyValuePair<int, float> HighNote(Dictionary<int, float> stuff, int step) {
+			var minFrequency = 27.5 / 2;
+			for (var i = 1; i <= step; i++) {
+				minFrequency *= 2;
+			}
+			
 			var amp = 0f;
 			var frequency = 0;
-			foreach (var d in stuff) {
-				if (d.Key < minFrequency) {
+			foreach (var (key, value) in stuff) {
+				if (key < minFrequency) {
 					continue;
 				}
 
-				if (d.Key >= minFrequency * 2) {
+				if (key >= minFrequency * 2) {
 					continue;
 				}
 
-				if (d.Value > amp) {
-					amp = d.Value;
-					frequency = d.Key;
+				if (!(value > amp)) {
+					continue;
 				}
+
+				amp = value;
+				frequency = key;
 			}
 
 			return new KeyValuePair<int, float>(frequency, amp);
 		}
-
-		private int OctaveFromFrequency(float frequency) {
-			var start = 16;
-			const int max = 20000;
-			while (start < max) {
-				if (frequency > start) {
-					start *= 2;
-				} else {
-					return start / 2;
-				}
-			}
-
-			return max / 2;
-		}
+	
 
 		private void Refresh() {
 			var sd = DataUtil.GetSystemData();
 			var id = sd.AudioMap;
 			var am = _loader.GetItem(id);
-			_highRange = new RangeF(0.666f, 1f);
-			_midRange = new RangeF(0.333f, 0.665f);
-			_lowRange = new RangeF(0f, 0.332f);
 			_rotationSpeed = 0;
 			_rotationUpper = 1;
 			_rotationLower = 0;
@@ -152,35 +108,10 @@ namespace Glimmr.Models.ColorSource.Audio {
 				_rotationLower = am.RotationLower;
 				_rotationUpper = am.RotationUpper;
 				_rotationThreshold = am.RotationThreshold;
-				_highRange = am.HighRange;
-				_midRange = am.MidRange;
-				_lowRange = am.LowRange;
+				_octaveMap = am.OctaveMap;
+				Log.Debug("Ocatve map: " + JsonConvert.SerializeObject(_octaveMap));
 			} catch (Exception e) {
 				Log.Warning("Audio Map Refresh Exception: " + e.Message);
-			}
-
-			_hSectors = sd.HSectors;
-			_vSectors = sd.VSectors;
-			var len = (_hSectors + _vSectors) * 2 - 4;
-			var rightStart = len - _hSectors / 2 + 1;
-			var rightEnd = _vSectors + _hSectors / 2 - 2;
-
-			_rightSectors = new List<int>();
-			// Start of left range from bottom mid
-			for (var i = rightStart; i < len; i++) {
-				_rightSectors.Add(i);
-			}
-
-			// Rest of left range from 0 up to top mid
-			for (var i = 0; i <= rightEnd; i++) {
-				_rightSectors.Add(i);
-			}
-
-			_leftSectors = new List<int>();
-			var leftEnd = _vSectors + _hSectors / 2 - 1;
-			var leftStart = len - _hSectors / 2;
-			for (var i = leftStart; i >= leftEnd; i--) {
-				_leftSectors.Add(i);
 			}
 		}
 

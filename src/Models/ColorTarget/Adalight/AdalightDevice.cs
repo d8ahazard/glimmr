@@ -21,6 +21,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 		private int _offset;
 		private int _port;
 		private bool _reverseStrip;
+		private int _multiplier;
 
 		public AdalightDevice(AdalightData data, ColorService cs) {
 			Id = data.Id;

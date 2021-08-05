@@ -37,17 +37,20 @@ namespace Glimmr.Services {
 		private IColorTarget[] _sDevices;
 
 		// Token for the color target
-		private CancellationTokenSource _sendTokenSource;
+		private CancellationTokenSource _targetTokenSource;
+		
+		// Token for the color source
+		private CancellationTokenSource _streamTokenSource;
 
+		
 		private readonly Dictionary<string, IColorSource> _streams;
 		private bool _streamStarted;
 
-		// Token for the color source
-		private readonly CancellationTokenSource _streamTokenSource;
-
+		
 		//private float _fps;
 		private SystemData _systemData;
 		private readonly Stopwatch _watch;
+		public FrameSplitter Splitter;
 		
 
 		public ColorService(ControlService controlService) {
@@ -55,7 +58,7 @@ namespace Glimmr.Services {
 			_watch = new Stopwatch();
 			_frameWatch = new Stopwatch();
 			_streamTokenSource = new CancellationTokenSource();
-			_sendTokenSource = new CancellationTokenSource();
+			_targetTokenSource = new CancellationTokenSource();
 			_sDevices = Array.Empty<IColorTarget>();
 			_frameSpan = TimeSpan.FromMilliseconds(1000f / 60);
 			_systemData = DataUtil.GetSystemData();
@@ -73,7 +76,9 @@ namespace Glimmr.Services {
 			ControlService.FlashDeviceEvent += FlashDevice;
 			ControlService.FlashSectorEvent += FlashSector;
 			ControlService.DemoLedEvent += Demo;
+			Splitter = new FrameSplitter(controlService);
 			LoadServices();
+			
 		}
 
 		private void LoadServices() {
@@ -99,14 +104,23 @@ namespace Glimmr.Services {
 		}
 
 		public event Action<List<Color>, List<Color>, int, bool> ColorSendEvent = delegate { };
+		
+		public event Action FrameSaveEvent = delegate {  };
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			Initialize().ConfigureAwait(true);
 			return Task.Run(async () => {
+				var fc = 0;
 				while (!stoppingToken.IsCancellationRequested) {
 					await CheckAutoDisable();
+					if (fc >= 5) {
+						fc = 0;
+						FrameSaveEvent.Invoke();
+					}
 					await Task.Delay(1000, stoppingToken);
+					fc++;
 				}
+				DataUtil.Dispose();				
 			}, CancellationToken.None);
 		}
 
@@ -237,8 +251,7 @@ namespace Glimmr.Services {
 			}
 			bool sourceActive;
 			// If we're in video or audio mode, check the source is active...
-			if (DeviceMode == DeviceMode.Video && _streams[DeviceMode.Video.ToString()] != null &&
-			    _captureMode != CaptureMode.DreamScreen) {
+			if (DeviceMode == DeviceMode.Video && _streams[DeviceMode.Video.ToString()] != null) {
 				sourceActive = _streams[DeviceMode.Video.ToString()].SourceActive;
 			} else { // Otherwise, just keep it enabled for now.
 				//todo: Add proper source checks for other media. 
@@ -312,7 +325,7 @@ namespace Glimmr.Services {
 			// Reload main vars
 			DeviceMode = (DeviceMode) sd.DeviceMode;
 			_captureMode = (CaptureMode) (DataUtil.GetItem<int>("CaptureMode") ?? 2);
-			_sendTokenSource = new CancellationTokenSource();
+			_targetTokenSource = new CancellationTokenSource();
 			_systemData = DataUtil.GetSystemData();
 			_enableAutoDisable = _systemData.EnableAutoDisable;
 			_autoDisableDelay = _systemData.AutoDisableDelay;
@@ -396,7 +409,7 @@ namespace Glimmr.Services {
 
 				await dev.ReloadData().ConfigureAwait(false);
 				if (DeviceMode != DeviceMode.Off && dev.Data.Enable && !dev.Streaming) {
-					await dev.StartStream(_sendTokenSource.Token).ConfigureAwait(false);
+					await dev.StartStream(_targetTokenSource.Token).ConfigureAwait(false);
 				}
 
 				if (DeviceMode == DeviceMode.Off || dev.Data.Enable || !dev.Streaming) {
@@ -417,7 +430,7 @@ namespace Glimmr.Services {
 			}
 
 			var newDev = CreateDevice(sda);
-			await newDev.StartStream(_sendTokenSource.Token).ConfigureAwait(false);
+			await newDev.StartStream(_targetTokenSource.Token).ConfigureAwait(false);
 
 			var sDevs = _sDevices.ToList();
 			sDevs.Add(newDev);
@@ -474,6 +487,7 @@ namespace Glimmr.Services {
 		}
 
 		private async Task Mode(object o, DynamicEventArgs dynamicEventArgs) {
+			var sd = DataUtil.GetSystemData();
 			var newMode = (DeviceMode) dynamicEventArgs.P1;
 			DeviceMode = newMode;
 			if (newMode != 0 && _autoDisabled) {
@@ -481,20 +495,33 @@ namespace Glimmr.Services {
 				DataUtil.SetItem("AutoDisabled", _autoDisabled);
 			}
 
+			_streamTokenSource.Cancel();
+
 			if (_streamStarted && newMode == 0) {
+				//if (_streamTask != null && !_streamTask.IsCompleted) _streamTask.Wait();
 				await StopStream();
 			}
-			_sendTokenSource.Cancel();
-			_sendTokenSource = new CancellationTokenSource();
-			if (_sendTokenSource.IsCancellationRequested) {
+			_streamTokenSource = new CancellationTokenSource();
+			if (_streamTokenSource.IsCancellationRequested) {
 				Log.Warning("Token source has cancellation requested.");
 				//return;
 			}
+			IColorSource? stream = null;
+			if (newMode == DeviceMode.Udp) {
+				stream = (StreamMode) sd.StreamMode == StreamMode.DreamScreen ? _streams["DreamScreen"] : _streams["UDP"];
+			} else if (newMode != DeviceMode.Off) {
+				stream = _streams[newMode.ToString()];
+			}
 
-			var stream = _streams[newMode.ToString()];
+			if (newMode == DeviceMode.Ambient || newMode == DeviceMode.Udp || newMode == DeviceMode.DreamScreen) {
+				Splitter.DoSend = true;
+			} else {
+				Splitter.DoSend = false;
+			}
+
 			if (stream != null) {
 				Log.Information("Starting stream on " + newMode);
-				_streamTask = stream.ToggleStream(_sendTokenSource.Token);
+				_streamTask = stream.ToggleStream(_streamTokenSource.Token);
 			} else {
 				Log.Warning("Unable to acquire stream.");
 			}
@@ -514,7 +541,7 @@ namespace Glimmr.Services {
 				Log.Information("Starting streaming targets...");
 				foreach (var sDev in _sDevices) {
 					try {
-						if (sDev.Enable) sDev.StartStream(_sendTokenSource.Token);
+						if (sDev.Enable) sDev.StartStream(_targetTokenSource.Token);
 					} catch (Exception e) {
 						Log.Warning("Exception starting stream: " + e.Message);
 					}
@@ -572,7 +599,7 @@ namespace Glimmr.Services {
 			_watch.Stop();
 			//_frameWatch.Stop();
 			_streamTokenSource.Cancel();
-			CancelSource(_sendTokenSource, true);
+			CancelSource(_targetTokenSource, true);
 			foreach (var s in _sDevices) {
 				try {
 					s.Dispose();

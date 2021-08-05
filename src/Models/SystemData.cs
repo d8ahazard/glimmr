@@ -60,11 +60,11 @@ namespace Glimmr.Models {
 
 		[DefaultValue(.5f)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public float AudioGain { get; set; } = .5f;
+		public float AudioGain { get; set; } = .6f;
 
 		[DefaultValue(.025f)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public float AudioMin { get; set; } = .025f;
+		public float AudioMin { get; set; } = .01f;
 
 		[DefaultValue(.0f)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -130,6 +130,11 @@ namespace Glimmr.Models {
 		[DefaultValue(2)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int CaptureMode { get; set; } = 2;
+
+		[DefaultValue(15)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		
+		public int StreamMode { get; set; } = 2;
 
 		[DefaultValue(15)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -277,6 +282,8 @@ namespace Glimmr.Models {
 			DeviceMode = 0;
 			AutoUpdateTime = 2;
 			DefaultSet = true;
+			AudioGain = .6f;
+			AudioMin = .01f;
 			DeviceName = Environment.MachineName;
 			if (string.IsNullOrEmpty(DeviceName)) DeviceName = Dns.GetHostName();
 		}

@@ -24,7 +24,12 @@ namespace Glimmr.Hubs {
 
 		public async Task Mode(int mode) {
 			Log.Debug("Mode set to: " + mode);
-			await _cs.SetMode(mode);
+			try {
+				await _cs.SetMode(mode);
+			} catch (Exception e) {
+				Log.Warning("Exception caught on mode change: " + e.Message + " at " + e.StackTrace);
+			}
+			
 		}
 
 		public async Task ScanDevices() {
@@ -48,9 +53,16 @@ namespace Glimmr.Hubs {
 
 		public async Task SystemData(string sd) {
 			var sdd = JObject.Parse(sd);
+			Log.Information("Parsed...");
 			var sd2 = sdd.ToObject<SystemData>();
-			Log.Debug("Updating system data: " + JsonConvert.SerializeObject(sd2));
-			await _cs.UpdateSystem(sd2).ConfigureAwait(false);
+			Log.Information("Updating system data: " + JsonConvert.SerializeObject(sd2));
+			try {
+				await _cs.UpdateSystem(sd2).ConfigureAwait(false);
+			} catch (Exception e) {
+				Log.Warning("Exception updating SD: " + e.Message + " at " + e.StackTrace);
+			}
+
+			Log.Information("Updated...");
 		}
 
 		public async Task DemoLed(string id) {

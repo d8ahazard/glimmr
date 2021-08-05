@@ -34,7 +34,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			set => MultiZoneCount = value / 2;
 		}
 
-		[DefaultValue(100)]
+		[DefaultValue(255)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int MaxBrightness { get; set; } = 255;
 

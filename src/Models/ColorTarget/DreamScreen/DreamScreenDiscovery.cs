@@ -36,6 +36,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		}
 
 		private void DevFound(object? sender, DreamScreenClient.DeviceDiscoveryEventArgs e) {
+			Log.Debug("Dream Device found??");
 			var dd = new DreamScreenData(e.Device);
 			Log.Debug("Got one: " + JsonConvert.SerializeObject(dd));
 			_cs.AddDevice(dd).ConfigureAwait(false);

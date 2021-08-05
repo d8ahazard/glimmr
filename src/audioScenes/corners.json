@@ -1,21 +1,17 @@
 ﻿{
-  "MidRange": {
-    "Min": 0,
-    "Max": 0.332
+  "OctaveMap": {
+    "1": 5,
+    "2": 3,
+    "3": 1,
+    "4": 4,
+    "5": 1,
+    "6": 3,
+    "7": 5
   },
-  "LowRange": {
-    "Min": 0.333,
-    "Max": 0.665
-  },
-  "HighRange": {
-    "Min": 0.666,
-    "Max": 1
-  },
-  "MirrorRange": false,
   "RotationLower": 0.0,
-  "RotationUpper": 0.5,
+  "RotationUpper": 1.0,
   "RotationSpeed": 0.005,
   "RotationThreshold": 0.85,
-  "Id": 2,
+  "Id": 4,
   "Name": "Corners"
 }

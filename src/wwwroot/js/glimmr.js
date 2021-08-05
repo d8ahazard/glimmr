@@ -10,6 +10,7 @@ let settingsTitle;
 let settingsTab;
 let settingsContent;
 let newColor;
+let mode;
 // Is a device card expanded?
 let expanded = false;
 // Do we have a LED map?
@@ -590,7 +591,7 @@ function setListeners() {
                     } else {
                         data.store[obj][property] = val;
                         pack = data.store[obj];
-                        if (property === "ScreenCapMode" || property === "CaptureMode") {
+                        if (property === "ScreenCapMode" || property === "CaptureMode" || property === "StreamMode") {
                             updateCaptureUi();
                         }
                         if (property === "UseCenter" || property === "HSectors" || property === "VSectors") {
@@ -908,8 +909,8 @@ function setLightMap(map) {
 
 
 function setMode(newMode) {    
-    //data.store["DeviceMode"][0]["value"] = newMode;
     mode = newMode;
+    console.log("Updating mode: " + mode);
     let target = document.querySelector("[data-mode='"+mode+"']");    
     let others = document.querySelectorAll(".modeBtn");
     for (let i=0; i< others.length; i++) {
@@ -925,13 +926,50 @@ function setMode(newMode) {
     } else {
         ambientNav.classList.add("hide");
         ambientNav.classList.remove("show");        
-    }
+    }    
     sizeContent();
+}
+
+function setModeButtons() {
+    let sd = data.store["SystemData"];
+    let capMode = sd["CaptureMode"];
+    let streamMode = sd["StreamMode"];
+    let videoBtn = document.getElementById("videoBtn");
+    let streamBtn = document.getElementById("streamBtn");
+    if (capMode === 1) {
+        videoBtn.firstElementChild.innerHTML = "videocam";
+    }
+    if (capMode === 2) {
+        videoBtn.firstElementChild.innerHTML = "settings_input_hdmi";
+    }
+    if (capMode === 3) {
+        videoBtn.firstElementChild.innerHTML = "tv";
+    }
+
+    if (streamMode === 0) {
+        streamBtn.firstElementChild.innerHTML = "";
+        streamBtn.firstElementChild.classList.remove("material-icons");
+        streamBtn.firstElementChild.classList.remove("appz-glimmr");
+        streamBtn.firstElementChild.classList.add("appz-dreamscreen");
+    }
+    if (streamMode === 1) {
+        streamBtn.firstElementChild.innerHTML = "";
+        streamBtn.firstElementChild.classList.remove("material-icons");
+        streamBtn.firstElementChild.classList.remove("appz-dreamscreen");
+        streamBtn.firstElementChild.classList.add("appz-glimmr");
+    }
+    if (streamMode === 2) {
+        streamBtn.firstElementChild.innerHTML = "sensors";
+        streamBtn.firstElementChild.classList.add("material-icons");
+        streamBtn.firstElementChild.classList.remove("appz-dreamscreen");
+        streamBtn.firstElementChild.classList.remove("appz-glimmr");
+    }
 }
 
 function loadUi() {
     loadCounts();
-    let mode = 0; 
+    setModeButtons();
+    let mode = getStoreProperty("DeviceMode"); 
     let autoDisabled = getStoreProperty("AutoDisabled");
     let version = getStoreProperty("Version");
     let vDiv = document.getElementById("versionDiv");
@@ -940,7 +978,8 @@ function loadUi() {
         let sd = data.store["SystemData"];
         let theme = sd["Theme"];
         mode = sd["DeviceMode"];
-        setMode(mode);
+        autoDisabled = sd["AutoDisabled"];
+        if (autoDisabled) mode = 0;
         if (isValid(data.store["AmbientScenes"])) {
             let scenes = data.store["AmbientScenes"];
             let ambientMode = sd["AmbientShow"];
@@ -1060,6 +1099,7 @@ function loadSettings() {
     if (isValid(systemData)) {
         loadSettingObject(systemData);
         updateCaptureUi();
+        setModeButtons();
         loadCounts();
         console.log("Loading System Data: ", systemData);
         let lPreview = document.getElementById("sLedWrap");
@@ -1083,8 +1123,19 @@ function updateCaptureUi() {
     let usbIdx = systemData["UsbSelection"].toString();
     let usbRow = document.getElementById("UsbSelectRow");
     let usbSel = document.getElementById("UsbSelect");
-    let target = document.getElementById("ScreenCapMode");
-
+    let streamMode = systemData["StreamMode"].toString();
+    let streamGroups = document.querySelectorAll(".streamGroup");
+    for (let i=0; i < streamGroups.length; i++) {
+        let group = streamGroups[i];
+        if (group.getAttribute("data-stream") === streamMode) {
+            group.classList.add("show");
+            group.classList.remove("hide");
+        } else {
+            group.classList.add("hide");
+            group.classList.remove("show");
+        }
+    }
+    
     for (let i=0; i < capGroups.length; i++) {
         let group = capGroups[i];
         let groupMode = group.getAttribute("data-mode");
@@ -1264,8 +1315,10 @@ function loadDevices() {
             brightnessSlide.setAttribute("type","range");
             brightnessSlide.setAttribute("data-target",device["Id"]);
             brightnessSlide.setAttribute("data-attribute","Brightness");
+            let max = "100";
+            if (isValid(device["MaxBrightness"])) max = device["MaxBrightness"].toString;
             brightnessSlide.setAttribute("min", "0");
-            brightnessSlide.setAttribute("max", "100");
+            brightnessSlide.setAttribute("max", max);
             brightnessSlide.value = device["Brightness"];
             brightnessSlide.classList.add("form-control", "w-100", 'custom-range');
             
@@ -2406,6 +2459,7 @@ function createLedMap(targetElement) {
         let mode = deviceData["StripMode"];
         let total = sd["LedCount"];
         if (isValid(mode) && mode === 2) count /=2;
+        if (isValid(deviceData["LedMultiplier"])) count /= 2;
         range1 = ranges(total, offset, count);
     }
     
