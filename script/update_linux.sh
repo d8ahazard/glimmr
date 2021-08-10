@@ -42,10 +42,11 @@ if [ -d "/home/glimmrtv/glimmr/lib/$PUBPROFILE/" ]
     cp -r /home/glimmrtv/glimmr/lib/$PUBPROFILE/* /usr/lib
 fi
 cp -r /home/glimmrtv/glimmr/lib/bass.dll /usr/lib/bass.dll
+#Give all scripts full permission
+chmod -R 777 /home/glimmrtv/glimmr/script
 chmod -R 777 /home/glimmrtv/glimmr/bin
 echo "DONE." >> $log
 
-#Give all scripts full permission
 echo "Restarting glimmr service..." >> $log
 
 # Restart Service
