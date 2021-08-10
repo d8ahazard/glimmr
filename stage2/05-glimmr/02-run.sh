@@ -10,7 +10,7 @@ cd ${ROOTFS_DIR}/home/glimmrtv/glimmr
 /opt/dotnet/dotnet publish ${ROOTFS_DIR}/home/glimmrtv/glimmr/src/Glimmr.csproj /p:PublishProfile=LinuxARM -o ${ROOTFS_DIR}/home/glimmrtv/glimmr/bin/
 chmod -R 777 ${ROOTFS_DIR}/home/glimmrtv/glimmr/bin
 cp -r ${ROOTFS_DIR}/home/glimmrtv/glimmr/lib/bass.dll ${ROOTFS_DIR}/usr/lib/bass.dll
-cp -r ${ROOTFS_DIR}/home/glimmrtv/glimmr/lib/LinuxARM/* ${ROOTFS_DIR}/usr/lib
+cp -r ${ROOTFS_DIR}/home/glimmrtv/glimmr/lib/LinuxARM/* ${ROOTFS_DIR}/usr/lib/
 # Install service
 echo "
 [Unit]
