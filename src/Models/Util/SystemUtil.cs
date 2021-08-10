@@ -5,11 +5,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net.NetworkInformation;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using DirectShowLib;
 using Emgu.CV;
 using Glimmr.Enums;
+using Org.BouncyCastle.Asn1.Icao;
 using Serilog;
 using DeviceMode = DreamScreenNet.Enum.DeviceMode;
 
@@ -71,11 +73,25 @@ namespace Glimmr.Models.Util {
 
 		public static void Update() {
 			Log.Debug("Updating");
+			var branch = "master";
+			var assembly = Assembly.GetEntryAssembly();
+			if (assembly != null) {
+				var attrib = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+				if (attrib != null) {
+					var ver = attrib.InformationalVersion;
+					if (ver.Contains("dev")) {
+						Log.Information("We should be using the dev branch to update.");
+						branch = "dev";
+					}
+				}
+			}
+
+			Log.Information("Backing up current settings...");
 			DataUtil.ExportSettings();
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-				Process.Start("../script/update_win.bat");
+				Process.Start("../script/update_win.bat", branch);
 			} else {
-				var cmd = "/home/glimmrtv/glimmr/script/update_linux.sh &";
+				var cmd = $"/home/glimmrtv/glimmr/script/update_linux.sh {branch} &";
 				Log.Debug("Update command should be: " + cmd);
 				Process.Start("/bin/bash", cmd);
 			}

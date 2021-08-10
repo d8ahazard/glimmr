@@ -1,4 +1,5 @@
 #!/bin/bash
+branch=${1:-"master"}
 
 PUBPROFILE="Linux";
 if [ -f "/usr/bin/raspi-config" ] 
@@ -18,7 +19,7 @@ if [ $unameOut == "FreeBSD" ]
 fi
 
 
-echo "Updating Glimmr for $PUBPROFILE"
+echo "Updating Glimmr for $PUBPROFILE using branch $branch."
 
 log=$(ls -t /var/log/glimmr/glimmr* | head -1)
 
@@ -29,6 +30,8 @@ echo "SERVICE STOPPED!" >> $log
 
 # Fetch changes from github repo
 cd /home/glimmrtv/glimmr || exit
+git stash
+git checkout $branch >> $log
 git fetch && git pull >> $log
 
 # Build latest version
@@ -43,7 +46,7 @@ chmod -R 777 /home/glimmrtv/glimmr/bin
 echo "DONE." >> $log
 
 #Give all scripts full permission
-echo "Restarting..." >> $log
+echo "Restarting glimmr service..." >> $log
 
 # Restart Service
 service glimmr start

@@ -51,10 +51,12 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 			_video?.Dispose();
 			var sd = DataUtil.GetSystemData();
 			var inputStream = sd.UsbSelection;
-			_video = new VideoCapture(inputStream);
-			_video.SetCaptureProperty(CapProp.FrameWidth, 640);
-			_video.SetCaptureProperty(CapProp.FrameHeight, 480);
-			
+			var vp = new Tuple<CapProp, int>[] {
+				new(CapProp.FrameWidth, 640),
+				new(CapProp.FrameHeight, 480),
+				new(CapProp.Fps, 60)
+			};
+			_video = new VideoCapture(inputStream, VideoCapture.API.Any,vp);
 			return Task.CompletedTask;
 		}
 
