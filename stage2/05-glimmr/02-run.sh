@@ -30,4 +30,3 @@ KillMode=process
 WantedBy=multi-user.target
 
 " > ${ROOTFS_DIR}/etc/systemd/system/glimmr.service
-ln -sf ${ROOTFS_DIR}/etc/systemd/system/glimmr.service ${ROOTFS_DIR}/etc/systemd/system/multi-user.target.wants/glimmr.service
