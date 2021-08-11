@@ -10,10 +10,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using DirectShowLib;
 using Emgu.CV;
-using Glimmr.Enums;
-using Org.BouncyCastle.Asn1.Icao;
 using Serilog;
-using DeviceMode = DreamScreenNet.Enum.DeviceMode;
 
 #endregion
 
@@ -71,23 +68,36 @@ namespace Glimmr.Models.Util {
 			return output.ToLower().Contains("raspbian");
 		}
 
-		public static void Update() {
-			Log.Debug("Updating");
+		public static string GetBranch() {
 			var branch = "master";
 			var assembly = Assembly.GetEntryAssembly();
-			if (assembly != null) {
-				var attrib = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
-				if (attrib != null) {
-					var ver = attrib.InformationalVersion;
-					if (ver.Contains("dev")) {
-						Log.Information("We should be using the dev branch to update.");
-						branch = "dev";
-					}
-				}
+			if (assembly == null) {
+				return branch;
 			}
+
+			var attrib = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+			if (attrib == null) {
+				return branch;
+			}
+
+			var ver = attrib.InformationalVersion;
+			if (!ver.Contains("dev")) {
+				return branch;
+			}
+
+			Log.Information("We should be using the dev branch to update.");
+			branch = "dev";
+
+			return branch;
+		}
+
+		public static void Update() {
+			Log.Debug("Updating");
+			
 
 			Log.Information("Backing up current settings...");
 			DataUtil.ExportSettings();
+			var branch = GetBranch();
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 				Process.Start("../script/update_win.bat", branch);
 			} else {
