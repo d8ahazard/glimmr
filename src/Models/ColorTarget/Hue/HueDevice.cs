@@ -185,10 +185,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		/// <param name="force"></param>
 		public void SetColor(List<Color> list, List<Color> sectors, int fadeTime, bool force = false) {
 			if (!Streaming || !Enable || _entLayer == null || Testing && !force) {
-				//if (!Streaming) Log.Debug("Nostream");
-				if (!Enable) Log.Debug("Noenable");
-				if (Testing && !force) Log.Debug("Noforce");
-				if (_entLayer == null) Log.Debug("NOLAYER");
 				return;
 			}
 

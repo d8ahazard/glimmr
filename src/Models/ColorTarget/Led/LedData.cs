@@ -10,7 +10,8 @@ using Newtonsoft.Json;
 namespace Glimmr.Models.ColorTarget.Led {
 	[Serializable]
 	public class LedData : IColorTargetData {
-		[JsonProperty] public bool AutoBrightnessLevel { get; set; }
+
+		[DefaultValue(true)] [JsonProperty] public bool AutoBrightnessLevel { get; set; } = true;
 
 		[DefaultValue(true)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -54,7 +55,6 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 		public string IpAddress { get; set; } = "";
 		public int Brightness { get; set; }
-
 
 		public bool Enable { get; set; }
 		public string LastSeen { get; set; }

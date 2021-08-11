@@ -19,7 +19,7 @@ using DeviceMode = DreamScreenNet.Enum.DeviceMode;
 
 namespace Glimmr.Models.Util {
 	public static class SystemUtil {
-		private static Dictionary<int, string>? _usbDevices;
+		
 
 		public static void Reboot() {
 			Log.Debug("Rebooting");
@@ -156,6 +156,38 @@ namespace Glimmr.Models.Util {
 			return output;
 		}
 
+		
+
+		private static async Task<string> GetDeviceName(int index) {
+			var process = new Process {
+				StartInfo = new ProcessStartInfo {
+					FileName = "/bin/bash",
+					Arguments = $"-c \"cat /sys/class/video4linux/video{index}/name\"",
+					RedirectStandardOutput = true,
+					UseShellExecute = false,
+					CreateNoWindow = true
+				}
+			};
+			process.Start();
+			var result = await process.StandardOutput.ReadToEndAsync();
+			await process.WaitForExitAsync();
+			process.Dispose();
+			return result;
+		}
+
+		public static Dictionary<int, string> ListUsb() {
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+				return ListUsbWindows();
+			}
+
+			try {
+				return ListUsbLinux();
+			} catch (Exception e) {
+			}
+
+			return new Dictionary<int, string>();
+		}
+
 		private static Dictionary<int, string> ListUsbLinux() {
 			var sd = DataUtil.GetSystemData();
 			var usb = sd.UsbSelection;
@@ -182,37 +214,6 @@ namespace Glimmr.Models.Util {
 
 			return output;
 		}
-
-		private static async Task<string> GetDeviceName(int index) {
-			var process = new Process {
-				StartInfo = new ProcessStartInfo {
-					FileName = "/bin/bash",
-					Arguments = $"-c \"cat /sys/class/video4linux/video{index}/name\"",
-					RedirectStandardOutput = true,
-					UseShellExecute = false,
-					CreateNoWindow = true
-				}
-			};
-			process.Start();
-			var result = await process.StandardOutput.ReadToEndAsync();
-			await process.WaitForExitAsync();
-			process.Dispose();
-			return result;
-		}
-
-		public static Dictionary<int, string> ListUsb() {
-			var sd = DataUtil.GetSystemData();
-			_usbDevices = new Dictionary<int, string>();
-			_usbDevices = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ListUsbWindows() : ListUsbLinux();
-		
-			if ((DeviceMode) sd.DeviceMode == DeviceMode.Video && (
-				(CaptureMode) sd.CaptureMode == CaptureMode.Camera ||
-				(CaptureMode) sd.CaptureMode == CaptureMode.Hdmi)) {
-			}
-
-			return _usbDevices;
-		}
-
 
 		private static Dictionary<int, string> ListUsbWindows() {
 			var cams = new Dictionary<int, string>();

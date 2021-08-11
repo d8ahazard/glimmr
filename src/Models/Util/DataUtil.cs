@@ -328,29 +328,13 @@ namespace Glimmr.Models.Util {
 			var sd = GetSystemData();
 			var audio = GetCollection<AudioData>("Dev_Audio");
 			var devices = GetDevices();
-			var mons = DisplayUtil.GetMonitors();
-			var exMons = GetCollection<MonitorInfo>("Dev_Video");
-			var oMons = new List<MonitorInfo>();
-			var caps = SystemUtil.ListUsb();
-			foreach (var mon in mons) {
-				var exists = false;
-				foreach (var cMon in exMons) {
-					if (mon.Id == cMon.Id) {
-						oMons.Add(cMon);
-						exists = true;
-					}
-				}
 
-				if (!exists) {
-					oMons.Add(mon);
-				}
-			}
+			var caps = SystemUtil.ListUsb();
 
 			var jl = new JsonLoader("ambientScenes");
 			output["SystemData"] = sd;
 			output["Devices"] = devices;
 			output["Dev_Audio"] = audio;
-			output["Dev_Video"] = oMons;
 			output["Dev_Usb"] = caps;
 			output["AmbientScenes"] = jl.LoadDynamic<AmbientScene>();
 			output["AudioScenes"] = jl.LoadDynamic<AudioScene>();
@@ -439,7 +423,6 @@ namespace Glimmr.Models.Util {
 
 		private static SystemData CacheSystemData() {
 			var db = GetDb();
-
 			var col = db.GetCollection<SystemData>("SystemData");
 			try {
 				if (col.Count() != 0) {

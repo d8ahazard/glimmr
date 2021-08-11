@@ -477,8 +477,10 @@ namespace Glimmr.Services {
 			foreach (var stream in _streams.Values) {
 				stream.Refresh(_systemData);
 			}
-
+			
 			_autoDisableDelay = sd.AutoDisableDelay;
+			_enableAutoDisable = _systemData.EnableAutoDisable;
+
 			if (_autoDisableDelay < 1) {
 				_autoDisableDelay = 10;
 			}
