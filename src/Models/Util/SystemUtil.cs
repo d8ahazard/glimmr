@@ -16,8 +16,6 @@ using Serilog;
 
 namespace Glimmr.Models.Util {
 	public static class SystemUtil {
-		
-
 		public static void Reboot() {
 			Log.Debug("Rebooting");
 			Process.Start("shutdown", RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "/r /t 0" : "-r now");
@@ -93,7 +91,7 @@ namespace Glimmr.Models.Util {
 
 		public static void Update() {
 			Log.Debug("Updating");
-			
+
 
 			Log.Information("Backing up current settings...");
 			DataUtil.ExportSettings();
@@ -166,7 +164,6 @@ namespace Glimmr.Models.Util {
 			return output;
 		}
 
-		
 
 		private static async Task<string> GetDeviceName(int index) {
 			var process = new Process {
@@ -192,7 +189,8 @@ namespace Glimmr.Models.Util {
 
 			try {
 				return ListUsbLinux();
-			} catch (Exception e) {
+			} catch (Exception) {
+				// Ignored
 			}
 
 			return new Dictionary<int, string>();

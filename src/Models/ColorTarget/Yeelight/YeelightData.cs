@@ -10,9 +10,19 @@ using Newtonsoft.Json;
 
 namespace Glimmr.Models.ColorTarget.Yeelight {
 	public class YeelightData : IColorTargetData {
+		[DefaultValue(255)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+
+		public int Brightness { get; set; } = 255;
+
 		[DefaultValue(-1)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int TargetSector { get; set; }
+
+		[DefaultValue("Yeelight")]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+
+		public string Tag { get; set; } = "Yeelight";
 
 
 		public YeelightData() {
@@ -40,23 +50,13 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 		public string Id { get; set; } = "";
 
-		[DefaultValue("Yeelight")]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-
-		public string Tag { get; set; } = "Yeelight";
-
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
 		public string IpAddress { get; set; } = "";
 
-		[DefaultValue(255)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-
-		public int Brightness { get; set; } = 255;
-
-		public bool Enable { get; set; }
-		public string LastSeen { get; set; }
+		[JsonProperty] public bool Enable { get; set; }
+		[JsonProperty] public string LastSeen { get; set; }
 
 
 		public void UpdateFromDiscovered(IColorTargetData existing) {

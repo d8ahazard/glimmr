@@ -22,22 +22,22 @@ using static Glimmr.Enums.DeviceMode;
 namespace Glimmr.Models.ColorSource.UDP {
 	public class UdpStream : BackgroundService, IColorSource {
 		private readonly ControlService _cs;
+		private readonly FrameSplitter _splitter;
 		private readonly UdpClient _uc;
-		private DeviceMode _devMode; 
-		private int _ledCount;
-		private bool _sending;
+		private FrameBuilder? _builder;
+		private DeviceMode _devMode;
 		private ServiceDiscovery? _discovery;
-		private SystemData _sd;
 		private GlimmrData? _gd;
 		private string _hostName;
+		private int _ledCount;
+		private SystemData _sd;
+		private bool _sending;
+		private CancellationToken _stoppingToken;
 		private bool _streaming;
-		private FrameBuilder? _builder;
-		private FrameSplitter _splitter;
-		
 
 		public UdpStream(ColorService cs) {
 			_cs = cs.ControlService;
-			_cs.RefreshSystemEvent += Refresh;
+			_cs.RefreshSystemEvent += RefreshSystem;
 			_cs.SetModeEvent += Mode;
 			_cs.StartStreamEvent += StartStream;
 			_cs.RefreshSystemEvent += RefreshSd;
@@ -55,6 +55,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 				_sd.DeviceName = _hostName;
 				DataUtil.SetSystemData(_sd);
 			}
+
 			RefreshSd();
 		}
 
@@ -62,6 +63,13 @@ namespace Glimmr.Models.ColorSource.UDP {
 			Log.Information("Starting UDP Stream service...");
 			return ExecuteAsync(ct);
 		}
+
+		public void RefreshSystem() {
+			var sd = DataUtil.GetSystemData();
+			_devMode = (DeviceMode) sd.DeviceMode;
+		}
+
+		public bool SourceActive => _splitter.SourceActive;
 
 		private void RefreshSd() {
 			_sd = DataUtil.GetSystemData();
@@ -85,28 +93,34 @@ namespace Glimmr.Models.ColorSource.UDP {
 
 		private Task Mode(object arg1, DynamicEventArgs arg2) {
 			_devMode = (DeviceMode) arg2.P1;
-			_streaming = _devMode == Udp; 
+			_streaming = _devMode == Udp;
 			return Task.CompletedTask;
 		}
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			_splitter.DoSend = true;
+			_stoppingToken = stoppingToken;
 			return Task.Run(async () => {
-				var l1 = Task.Run(Listen,stoppingToken);
-				var l2 = Task.Run(Listen,stoppingToken);
+				var l1 = Task.Run(Listen, stoppingToken);
+				var l2 = Task.Run(Listen, stoppingToken);
 				await Task.WhenAll(l1, l2);
 				_splitter.DoSend = false;
 				Log.Information("UDP Stream service stopped.");
 			}, stoppingToken);
 		}
 
-		
+
 		private async Task Listen() {
-			while (true) {
-				if (!_streaming) continue;
+			while (!_stoppingToken.IsCancellationRequested) {
+				if (!_streaming) {
+					continue;
+				}
+
 				try {
 					var result = await _uc.ReceiveAsync();
-					if (!_sending) await ProcessFrame(result.Buffer).ConfigureAwait(false);
+					if (!_sending) {
+						await ProcessFrame(result.Buffer).ConfigureAwait(false);
+					}
 				} catch (Exception) {
 					// Ignored
 				}
@@ -143,25 +157,18 @@ namespace Glimmr.Models.ColorSource.UDP {
 				}
 
 				var ledColors = colors.ToList();
+				if (_builder == null) {
+					return;
+				}
+
 				var frame = _builder.Build(ledColors);
+				Log.Debug("Update: Udp");
 				_splitter.Update(frame);
-				
 				_sending = false;
 				await Task.FromResult(true);
 			} else {
 				Log.Debug("Dev mode is incorrect.");
 			}
-		}
-
-		private void Refresh() {
-			var sd = DataUtil.GetSystemData();
-			_devMode = (DeviceMode) sd.DeviceMode;
-		}
-
-		public bool SourceActive { get; set; }
-		
-		public void Refresh(SystemData systemData) {
-			
 		}
 	}
 }

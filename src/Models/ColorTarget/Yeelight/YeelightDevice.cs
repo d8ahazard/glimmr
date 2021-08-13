@@ -6,7 +6,6 @@ using System.Drawing;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
-using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Serilog;
@@ -16,7 +15,10 @@ using YeelightAPI;
 
 namespace Glimmr.Models.ColorTarget.Yeelight {
 	public class YeelightDevice : ColorTarget, IColorTarget {
+		private string IpAddress { get; set; }
 		private readonly ColorService _colorService;
+
+		private readonly Device _yeeDevice;
 
 		private YeelightData _data;
 
@@ -26,13 +28,10 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 		private int _targetSector;
 
-		private readonly Device _yeeDevice;
-
 
 		public YeelightDevice(YeelightData yd, ColorService cs) : base(cs) {
 			_data = yd;
 			Id = _data.Id;
-			Tag = _data.Tag;
 			IpAddress = _data.IpAddress;
 			Enable = _data.Enable;
 			LoadData();
@@ -47,10 +46,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 		public bool Streaming { get; set; }
 		public bool Testing { get; set; }
-		public int Brightness { get; set; }
-		public string Id { get; set; }
-		public string IpAddress { get; set; }
-		public string Tag { get; set; }
+		public string Id { get; private set; }
 		public bool Enable { get; set; }
 
 
@@ -166,15 +162,13 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			}
 
 			var target = _data.TargetSector;
-			
+
 			if (sd.UseCenter) {
 				target = ColorUtil.FindEdge(target + 1);
 			}
 
 			_targetSector = target;
-			Tag = _data.Tag;
 			Id = _data.Id;
-			Brightness = _data.Brightness;
 			Enable = _data.Enable;
 
 			if (restart) {

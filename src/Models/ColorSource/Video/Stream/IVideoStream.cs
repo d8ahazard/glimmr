@@ -2,14 +2,12 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using Emgu.CV;
 
 #endregion
 
 namespace Glimmr.Models.ColorSource.Video.Stream {
 	public interface IVideoStream {
-		public Mat Frame { get; }
-		public Task Start(CancellationToken ct);
+		public Task Start(CancellationToken ct, FrameSplitter splitter);
 		public Task Stop();
 		public Task Refresh();
 	}

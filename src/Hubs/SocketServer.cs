@@ -29,7 +29,6 @@ namespace Glimmr.Hubs {
 			} catch (Exception e) {
 				Log.Warning("Exception caught on mode change: " + e.Message + " at " + e.StackTrace);
 			}
-			
 		}
 
 		public async Task ScanDevices() {
@@ -77,7 +76,10 @@ namespace Glimmr.Hubs {
 		public async Task UpdateDevice(string deviceJson) {
 			var device = JObject.Parse(deviceJson);
 			var cTag = device.GetValue("Tag");
-			if (cTag == null) return;  
+			if (cTag == null) {
+				return;
+			}
+
 			var tag = cTag.ToString();
 			var className = "Glimmr.Models.ColorTarget." + tag + "." + tag + "Data";
 			var typeName = Type.GetType(className);
@@ -85,14 +87,17 @@ namespace Glimmr.Hubs {
 				dynamic? devObject = device.ToObject(typeName);
 				if (devObject != null) {
 					await _cs.UpdateDevice(devObject, false).ConfigureAwait(false);
-				}	
+				}
 			}
 		}
 
 		public async Task Monitors(string deviceArray) {
 			Log.Debug("Mon string: " + deviceArray);
 			var monitors = JsonConvert.DeserializeObject<List<MonitorInfo>>(deviceArray);
-			if (monitors == null) return;
+			if (monitors == null) {
+				return;
+			}
+
 			foreach (var mon in monitors) {
 				Log.Debug("Inserting monitor: " + JsonConvert.SerializeObject(mon));
 				await DataUtil.InsertCollection<MonitorInfo>("Dev_Video", mon);

@@ -11,14 +11,17 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Lifx {
 	public class LifxDiscovery : ColorDiscovery, IColorDiscovery {
-		public override string DeviceTag { get; set; } = "Lifx Bulb";
+		public virtual string DeviceTag { get; } = "Lifx Bulb";
 		private readonly LifxClient? _client;
 		private readonly ControlService _controlService;
 
 		public LifxDiscovery(ColorService cs) : base(cs) {
 			var client = cs.ControlService.GetAgent("LifxAgent");
 			_controlService = cs.ControlService;
-			if (client == null) return;
+			if (client == null) {
+				return;
+			}
+
 			_client = client;
 			_client.DeviceDiscovered += Client_DeviceDiscovered;
 			_controlService = cs.ControlService;
@@ -38,15 +41,22 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 		private async void Client_DeviceDiscovered(object sender, LifxClient.DeviceDiscoveryEventArgs e) {
 			var bulb = e.Device;
-			if (bulb == null) return;
+			if (bulb == null) {
+				return;
+			}
+
 			//Log.Debug("Device found: " + JsonConvert.SerializeObject(bulb));
 			var ld = await GetBulbInfo(bulb);
-			if (ld != null) await _controlService.AddDevice(ld);
+			if (ld != null) {
+				await _controlService.AddDevice(ld);
+			}
 		}
 
 		private async Task<LifxData?> GetBulbInfo(Device b) {
-			if (_client == null) return null;
-			var state = await _client.GetLightStateAsync(b);
+			if (_client == null) {
+				return null;
+			}
+
 			var ver = await _client.GetDeviceVersionAsync(b);
 			var hasMulti = false;
 			var extended = false;
@@ -64,20 +74,38 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 				if (extended) {
 					var zones = await _client.GetExtendedColorZonesAsync(b);
-					zoneCount = zones.ZonesCount;
+					if (zones != null) {
+						zoneCount = zones.ZonesCount;
+					}
 				} else {
 					// Original device only supports eight zones?
 					var zones = await _client.GetColorZonesAsync(b, 0, 8);
-					zoneCount = zones.Count;
+					if (zones != null) {
+						zoneCount = zones.Count;
+					}
 				}
 			}
 
+			var state = await _client.GetLightStateAsync(b);
+			var power = false;
+			ushort hue = 0;
+			ushort saturation = 0;
+			ushort brightness = 100;
+			ushort kelvin = 0;
+			if (state != null) {
+				power = state.IsOn;
+				hue = state.Hue;
+				saturation = state.Saturation;
+				brightness = state.Brightness;
+				kelvin = state.Kelvin;
+			}
+
 			var d = new LifxData(b) {
-				Power = state.IsOn,
-				Hue = state.Hue,
-				Saturation = state.Saturation,
-				Brightness = 100,
-				Kelvin = state.Kelvin,
+				Power = power,
+				Hue = hue,
+				Saturation = saturation,
+				Brightness = brightness,
+				Kelvin = kelvin,
 				TargetSector = -1,
 				HasMultiZone = hasMulti,
 				MultiZoneV2 = extended,
@@ -91,7 +119,9 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				tag = "Lifx Tile";
 				try {
 					var tData = _client.GetDeviceChainAsync(b).Result;
-					d.Layout = new TileLayout(tData);
+					if (tData != null) {
+						d.Layout = new TileLayout(tData);
+					}
 				} catch (Exception e) {
 					Log.Debug("Chain exception: " + e.Message);
 				}

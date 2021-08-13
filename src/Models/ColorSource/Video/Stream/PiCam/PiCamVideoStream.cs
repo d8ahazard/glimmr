@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
 using Emgu.CV.Structure;
-using Glimmr.Models.Util;
 using MMALSharp;
 using MMALSharp.Common;
 using MMALSharp.Common.Utility;
@@ -20,19 +19,18 @@ using Serilog;
 
 namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
 	public sealed class PiCamVideoStream : IVideoStream, IDisposable {
-		private readonly MMALCamera _cam;
 		private static readonly int CapHeight = 480;
 		private static readonly int CapWidth = 640;
-		public Mat Frame { get; set; }
-
+		private readonly MMALCamera _cam;
+		private FrameSplitter? _splitter;
 
 		public PiCamVideoStream() {
 			_cam = MMALCamera.Instance;
-			Frame = new Mat();
 		}
 
-		
-		public async Task Start(CancellationToken ct) {
+
+		public async Task Start(CancellationToken ct, FrameSplitter frameSplitter) {
+			_splitter = frameSplitter;
 			Log.Debug("Starting Camera...");
 			MMALCameraConfig.VideoStabilisation = false;
 
@@ -47,7 +45,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
 			_cam.ConfigureCameraSettings();
 			Log.Debug("Cam mode is " + MMALCameraConfig.SensorMode);
 			// Register to the event.
-			vidCaptureHandler.MyEmguEvent += OnEmguEventCallback;
+			vidCaptureHandler.MyEmguEvent += ProcessFrame;
 
 			// We are instructing the splitter to do a format conversion to BGR24.
 			var splitterPortConfig =
@@ -67,7 +65,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
 
 			// Camera warm up time
 			Log.Debug("Camera is warming up...");
-			await Task.Delay(2000,ct);
+			await Task.Delay(2000, ct);
 			Log.Debug("Camera initialized.");
 			await _cam.ProcessAsync(_cam.Camera.VideoPort, ct).ConfigureAwait(false);
 			Log.Debug("Camera closed.");
@@ -82,40 +80,41 @@ namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
 			return Task.CompletedTask;
 		}
 
-		private void OnEmguEventCallback(object sender, EmguEventArgs args) {
-			var input = new Image<Bgr, byte>(CapWidth, CapHeight);
-			input.Bytes = args.ImageData;
-			Frame = input.Mat;
+		private void ProcessFrame(object sender, EmguEventArgs args) {
+			var input = new Image<Bgr, byte>(CapWidth, CapHeight) {Bytes = args.ImageData};
+			_splitter?.Update(input.Mat.Clone());
 			input.Dispose();
 		}
 
 		private class EmguEventArgs : EventArgs {
-			public byte[] ImageData { get; set; }
+			public byte[]? ImageData { get; init; }
 		}
 
 		private class EmguInMemoryCaptureHandler : InMemoryCaptureHandler, IVideoCaptureHandler {
 			public override void Process(ImageContext context) {
 				base.Process(context);
 
-				if (context != null && context.Eos) {
-					MyEmguEvent?.Invoke(this, new EmguEventArgs {ImageData = WorkingData.ToArray()});
-					WorkingData.Clear();
+				if (context == null || !context.Eos) {
+					return;
 				}
+
+				MyEmguEvent?.Invoke(this, new EmguEventArgs {ImageData = WorkingData.ToArray()});
+				WorkingData.Clear();
 			}
 
 			public void Split() {
 			}
 
-			public event EventHandler<EmguEventArgs> MyEmguEvent;
+			public event EventHandler<EmguEventArgs>? MyEmguEvent;
 		}
 
 		#region IDisposable Support
 
-		private bool disposedValue;
+		private bool _disposedValue;
 
 
 		private void Dispose(bool disposing) {
-			if (disposedValue) {
+			if (_disposedValue) {
 				return;
 			}
 
@@ -123,7 +122,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
 				_cam.Cleanup();
 			}
 
-			disposedValue = true;
+			_disposedValue = true;
 		}
 
 		public void Dispose() {

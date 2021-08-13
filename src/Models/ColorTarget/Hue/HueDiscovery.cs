@@ -14,7 +14,7 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Hue {
 	public class HueDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth {
-		public override string DeviceTag { get; set; } = "Hue";
+		public virtual string DeviceTag { get; set; } = "Hue";
 		private readonly BridgeLocator _bridgeLocatorHttp;
 		private readonly BridgeLocator _bridgeLocatorMdns;
 		private readonly BridgeLocator _bridgeLocatorSsdp;
@@ -36,8 +36,11 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				await Task.WhenAll(_bridgeLocatorHttp.LocateBridgesAsync(ct), _bridgeLocatorMdns.LocateBridgesAsync(ct),
 					_bridgeLocatorSsdp.LocateBridgesAsync(ct));
 			} catch (Exception e) {
-				if (!e.Message.Contains("canceled")) Log.Debug("Hue discovery exception: " + e.Message);
+				if (!e.Message.Contains("canceled")) {
+					Log.Debug("Hue discovery exception: " + e.Message);
+				}
 			}
+
 			Log.Debug("Hue: Discovery complete.");
 		}
 

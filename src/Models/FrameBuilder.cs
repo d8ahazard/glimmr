@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -8,20 +10,24 @@ using Emgu.CV.Structure;
 using Glimmr.Models.Util;
 using Serilog;
 
+#endregion
+
 namespace Glimmr.Models {
 	public class FrameBuilder {
+		private readonly int _borderHeight = 10;
+		private readonly int _borderWidth = 10;
+
+		private readonly int _bottomCount;
+
 		// This will store the coords of input values
 		private readonly Rectangle[] _inputCoords;
+		private readonly int _ledCount;
 		private readonly int _leftCount;
 		private readonly int _rightCount;
-		private readonly int _topCount;
-		private readonly int _bottomCount;
-		private readonly int _ledCount;
 		private readonly int _scaleHeight = DisplayUtil.CaptureHeight();
 		private readonly int _scaleWidth = DisplayUtil.CaptureWidth();
-		private readonly int _borderWidth = 10;
-		private readonly int _borderHeight = 10;
-		
+		private readonly int _topCount;
+
 		public FrameBuilder(int[] inputDimensions, bool sectors = false) {
 			_leftCount = inputDimensions[0];
 			_rightCount = inputDimensions[1];
@@ -39,10 +45,11 @@ namespace Glimmr.Models {
 		public Mat Build(IEnumerable<Color> colors) {
 			var enumerable = colors as Color[] ?? colors.ToArray();
 			if (enumerable.Length != _ledCount) {
-				throw new ArgumentOutOfRangeException($"Color length should be {_ledCount} versus {enumerable.Length}.");
+				throw new ArgumentOutOfRangeException(
+					$"Color length should be {_ledCount} versus {enumerable.Length}.");
 			}
 
-			var gMat = new Mat(new Size(_scaleWidth,_scaleHeight),DepthType.Cv8U,3);
+			var gMat = new Mat(new Size(_scaleWidth, _scaleHeight), DepthType.Cv8U, 3);
 			for (var i = 0; i < _inputCoords.Length; i++) {
 				var col = new Bgr(enumerable.ToArray()[i]).MCvScalar;
 				CvInvoke.Rectangle(gMat, _inputCoords[i], col, -1, LineType.AntiAlias);
@@ -50,7 +57,7 @@ namespace Glimmr.Models {
 
 			return gMat;
 		}
-		
+
 		private Rectangle[] DrawGrid() {
 			var vOffset = 0;
 			var hOffset = 0;
@@ -129,7 +136,7 @@ namespace Glimmr.Models {
 					pos = _scaleWidth - widthBottom;
 				}
 
-				output[idx] = new Rectangle(pos, (int) bTop, widthBottom, (int) _borderHeight);
+				output[idx] = new Rectangle(pos, bTop, widthBottom, _borderHeight);
 				pos += widthBottom;
 				idx++;
 			}
@@ -137,11 +144,11 @@ namespace Glimmr.Models {
 			if (idx != _ledCount) {
 				Log.Warning($"Warning: Led count is {idx - 1}, but should be {_ledCount}");
 			}
-			
+
 			return output;
 		}
+
 		private Rectangle[] DrawSectors() {
-			
 			// This is where we're saving our output
 			var fs = new Rectangle[_ledCount];
 			// Individual segment sizes

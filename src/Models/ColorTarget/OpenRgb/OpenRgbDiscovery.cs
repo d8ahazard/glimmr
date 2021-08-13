@@ -12,7 +12,7 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.OpenRgb {
 	public class OpenRgbDiscovery : ColorDiscovery, IColorDiscovery {
-		public override string DeviceTag { get; set; } = "OpenRgb";
+		public virtual string DeviceTag { get; set; } = "OpenRgb";
 
 		private readonly OpenRGBClient? _client;
 		private readonly ControlService _cs;
@@ -27,6 +27,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 				Log.Debug("No client.");
 				return;
 			}
+
 			try {
 				var sd = DataUtil.GetSystemData();
 				var ip = sd.OpenRgbIp;
@@ -56,7 +57,5 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 				Log.Warning("Exception during OpenRGB Discovery: " + f.Message + " at " + f.StackTrace);
 			}
 		}
-
-		
 	}
 }

@@ -24,6 +24,8 @@ namespace Glimmr.Models.Util {
 		private static bool _dbLocked;
 		private static List<dynamic>? _devices;
 		private static LiteDatabase _db = GetDb();
+
+
 		private static SystemData _systemData = CacheSystemData();
 
 		public static LiteDatabase GetDb() {
@@ -261,7 +263,10 @@ namespace Glimmr.Models.Util {
 			var db = GetDb();
 			try {
 				var devs = db.GetCollection<dynamic>("Devices");
-				if (devs.Delete(deviceId)) Log.Information($"Device {deviceId} deleted.");
+				if (devs.Delete(deviceId)) {
+					Log.Information($"Device {deviceId} deleted.");
+				}
+
 				db.Commit();
 			} catch (Exception) {
 				//ignored
@@ -342,13 +347,12 @@ namespace Glimmr.Models.Util {
 			if (assembly != null) {
 				var attrib = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
 				if (attrib != null) {
-					output["Version"] = attrib.InformationalVersion;	
+					output["Version"] = attrib.InformationalVersion;
 				}
 			} else {
 				output["Version"] = "0.0.0.0";
 			}
-			
-;
+
 			return JsonConvert.SerializeObject(output);
 		}
 
@@ -381,6 +385,7 @@ namespace Glimmr.Models.Util {
 			if (i == null) {
 				return null;
 			}
+
 			return (T) i;
 		}
 

@@ -13,11 +13,8 @@ namespace Glimmr.Models.ColorTarget {
 
 	public abstract class ColorDiscovery {
 		public ControlService ControlService { get; }
-		public abstract string DeviceTag { get; set; }
-		private ColorService _colorService;
 
 		protected ColorDiscovery(ColorService colorService) {
-			_colorService = colorService;
 			ControlService = colorService.ControlService;
 		}
 	}

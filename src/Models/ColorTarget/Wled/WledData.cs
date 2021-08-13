@@ -14,26 +14,19 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Wled {
 	public class WledData : IColorTargetData {
-		[JsonProperty] public string Name { get; set; }
-		[JsonProperty] public string Id { get; set; }
-		[JsonProperty] public string Tag { get; set; }
-		[JsonProperty] public string IpAddress { get; set; }
-		[JsonProperty] public int Brightness { get; set; }
-		[JsonProperty] public bool Enable { get; set; }
 		[JsonProperty] public bool AutoDisable { get; set; }
 		[JsonProperty] public bool ControlStrip { get; set; }
-		[JsonProperty] public string LastSeen { get; set; }
 
-		[JsonProperty] public int LedMultiplier { get; set; } = 1;
-		
 
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool ReverseStrip { get; set; }
 
 		[JsonProperty] public Dictionary<int, int> SubSectors { get; set; }
+		[JsonProperty] public int Brightness { get; set; }
 
 		[JsonProperty] public int LedCount { get; set; }
+		[JsonProperty] public int LedMultiplier { get; set; } = 1;
 
 		// If in normal mode, set an optional offset, strip direction, horizontal count, and vertical count.
 		[JsonProperty] public int Offset { get; set; }
@@ -48,6 +41,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		public int TargetSector { get; set; }
 
 		[JsonProperty] public List<int> Sectors { get; set; }
+		[JsonProperty] public string Tag { get; set; }
 		[JsonProperty] public WledStateData State { get; set; }
 
 
@@ -91,7 +85,12 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			}
 		}
 
-		
+		[JsonProperty] public string Name { get; set; }
+		[JsonProperty] public string Id { get; set; }
+		[JsonProperty] public string IpAddress { get; set; }
+		[JsonProperty] public bool Enable { get; set; }
+		[JsonProperty] public string LastSeen { get; set; }
+
 
 		public void UpdateFromDiscovered(IColorTargetData data) {
 			var input = (WledData) data;
@@ -119,13 +118,13 @@ namespace Glimmr.Models.ColorTarget.Wled {
 				return new[] {
 					new("sectormap", "sectormap", ""),
 					new("LedCount", "number", "Led Count"),
+					multiplier,
 					new("StripMode", "select", "Strip Mode", new Dictionary<string, string> {
 						["0"] = "Normal",
 						["1"] = "Sectored",
 						["2"] = "Loop (Play Bar)",
 						["3"] = "Single Color"
 					}),
-					multiplier,
 					new("ReverseStrip", "check", "Reverse Strip Direction")
 				};
 			}
@@ -134,13 +133,13 @@ namespace Glimmr.Models.ColorTarget.Wled {
 				new("ledmap", "ledmap", ""),
 				new("Offset", "number", "Strip Offset"),
 				new("LedCount", "number", "Led Count"),
+				multiplier,
 				new("StripMode", "select", "Strip Mode", new Dictionary<string, string> {
 					["0"] = "Normal",
 					["1"] = "Sectored",
 					["2"] = "Loop (Play Bar)",
 					["3"] = "Single Color"
 				}),
-				multiplier,
 				new("ReverseStrip", "check", "Reverse Strip Direction")
 			};
 		}

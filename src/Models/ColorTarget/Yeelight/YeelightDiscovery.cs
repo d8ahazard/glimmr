@@ -12,7 +12,7 @@ using YeelightAPI;
 
 namespace Glimmr.Models.ColorTarget.Yeelight {
 	public class YeelightDiscovery : ColorDiscovery, IColorDiscovery {
-		public override string DeviceTag { get; set; } = "Yeelight";
+		public virtual string DeviceTag { get; set; } = "Yeelight";
 
 		private readonly ControlService _controlService;
 		private readonly Progress<Device> _reporter;

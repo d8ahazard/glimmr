@@ -13,10 +13,6 @@ using OpenRGB.NET.Models;
 
 namespace Glimmr.Models.ColorTarget.OpenRgb {
 	public class OpenRgbData : IColorTargetData {
-		
-		[JsonProperty]
-		public string Id { get; set; }
-		
 		[DefaultValue(DeviceType.Ledstrip)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
@@ -25,6 +21,12 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int ActiveModeIndex { get; set; }
+
+		[DefaultValue(255)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+
+
+		public int Brightness { get; set; }
 
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -60,6 +62,12 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		public string Serial { get; set; }
 
 
+		[DefaultValue("OpenRgb")]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+
+		public string Tag { get; set; }
+
+
 		[DefaultValue("Unknown")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string Vendor { get; set; }
@@ -67,7 +75,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string Version { get; set; }
-		
+
 
 		public OpenRgbData() {
 			Tag = "OpenRgb";
@@ -100,34 +108,23 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 		}
 
+		[JsonProperty] public string Id { get; set; }
+
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string Name { get; set; }
-
-
-		[DefaultValue("OpenRgb")]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-
-		public string Tag { get; set; }
 
 		[DefaultValue("127.0.0.1")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
 		public string IpAddress { get; set; }
 
-		[DefaultValue(255)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-
-
-		public int Brightness { get; set; }
-
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
 		public bool Enable { get; set; }
 
-		[JsonProperty]
-		public string LastSeen { get; set; }
+		[JsonProperty] public string LastSeen { get; set; }
 
 
 		public SettingsProperty[] KeyProperties { get; set; } = {

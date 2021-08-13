@@ -8,23 +8,24 @@ using Newtonsoft.Json;
 
 namespace Glimmr.Models.ColorTarget {
 	public interface IColorTargetData {
-		public bool Enable { get; set; }
-		public int Brightness { get; set; }
+		public bool Enable { get; }
 
 
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
 		public SettingsProperty[] KeyProperties { get; set; }
 
-		public string Id { get; set; }
-		public string IpAddress { get; set; }
-		public string LastSeen { get; set; }
-		public string Name { get; set; }
-		public string Tag { get; set; }
+		public string Id { get; }
+		public string IpAddress { get; }
+		public string LastSeen { get; }
+		public string Name { get; }
 		public void UpdateFromDiscovered(IColorTargetData data);
 	}
 
 	[Serializable]
 	public class SettingsProperty {
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+		public string ValueLabel { get; set; } = "";
+
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
 		public string ValueMax { get; set; } = "100";
 
@@ -32,19 +33,16 @@ namespace Glimmr.Models.ColorTarget {
 		public string ValueMin { get; set; } = "0";
 
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-		public string ValueStep { get; set; } = "1";
-
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-		public Dictionary<string, string> Options;
-
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-		public string ValueLabel { get; set; } = "";
-
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
 		public string ValueName { get; set; } = "";
 
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+		public string ValueStep { get; set; } = "1";
+
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
 		public string ValueType { get; set; } = "";
+
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+		public Dictionary<string, string> Options;
 
 		public SettingsProperty() {
 			Options = new Dictionary<string, string>();

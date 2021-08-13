@@ -15,7 +15,7 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Nanoleaf {
 	public class NanoleafDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth {
-		public override string DeviceTag { get; set; } = "Nanoleaf";
+		public virtual string DeviceTag { get; set; } = "Nanoleaf";
 		private readonly ControlService _controlService;
 		private readonly MulticastService _mDns;
 		private readonly ServiceDiscovery _sd;

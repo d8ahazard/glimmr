@@ -8,7 +8,6 @@ using Glimmr.Enums;
 using Glimmr.Hubs;
 using Glimmr.Models;
 using Glimmr.Models.Util;
-using LibGit2Sharp;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -28,9 +27,10 @@ namespace Glimmr.Services {
 			_count = 0;
 		}
 
+
 		private Task Mode(object arg1, DynamicEventArgs arg2) {
 			return _hubContext.Clients.All
-				.SendAsync("frames", _colorService.Counter.Rates(), CancellationToken.None);
+				.SendAsync("frames", _colorService.Counter.Rates, CancellationToken.None);
 		}
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
@@ -53,15 +53,18 @@ namespace Glimmr.Services {
 							_count = 0;
 						}
 
-						_count++;
 						if (_colorService.DeviceMode != DeviceMode.Off) {
 							await _hubContext.Clients.All
-								.SendAsync("frames", _colorService.Counter.Rates(), stoppingToken)
+								.SendAsync("frames", _colorService.Counter.Rates, CancellationToken.None)
 								.ConfigureAwait(false);
 						}
+
+						_count++;
 					}
 				} catch (Exception e) {
-					if (!e.Message.Contains("canceled")) Log.Warning("Exception during init: " + e.Message);
+					if (!e.Message.Contains("canceled")) {
+						Log.Warning("Exception during init: " + e.Message);
+					}
 				}
 
 				Log.Information("Stat service stopped.");

@@ -30,7 +30,10 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 			LedData? d0 = DataUtil.GetDevice<LedData>("0");
 			LedData? d1 = DataUtil.GetDevice<LedData>("1");
-			if (d0 == null || d1 == null) return null;
+			if (d0 == null || d1 == null) {
+				return null;
+			}
+
 			var settings = Settings.CreateDefaultSettings();
 			var stripType0 = d0.StripType switch {
 				1 => StripType.SK6812W_STRIP,

@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,10 +16,12 @@ using Serilog;
 namespace Glimmr.Models.ColorSource.Audio {
 	public sealed class AudioStream : BackgroundService, IColorSource {
 		public bool SendColors {
-			set => Splitter.DoSend = value;
+			set => StreamSplitter.DoSend = value;
 		}
-		public List<Color> Colors { get; private set; }
-		public List<Color> Sectors { get; private set; }
+
+		public FrameSplitter StreamSplitter { get; }
+		private readonly FrameBuilder _builder;
+
 		private List<AudioData> _devices;
 		private float _gain;
 		private int _handle;
@@ -28,32 +29,48 @@ namespace Glimmr.Models.ColorSource.Audio {
 		private AudioMap _map;
 		private float _min = .015f;
 		private int _recordDeviceIndex;
-		private SystemData _sd;
-		private int _sectorCount;
-		public FrameSplitter Splitter { get; }
-		private readonly FrameBuilder _builder;
+		private SystemData? _sd;
 
 		public AudioStream(ColorService cs) {
-			Colors = new List<Color>();
-			Sectors = new List<Color>();
 			_devices = new List<AudioData>();
 			_map = new AudioMap();
-			Splitter = new FrameSplitter(cs.ControlService);
+			StreamSplitter = new FrameSplitter(cs);
 			_builder = new FrameBuilder(new[] {
-				3,3,6,6
+				3, 3, 6, 6
 			}, true);
-			_sd = DataUtil.GetSystemData();
-			Refresh(_sd);
-			
+			cs.ControlService.RefreshSystemEvent += RefreshSystem;
+			RefreshSystem();
 		}
 
-		public bool SourceActive { get; set; }
+		public bool SourceActive => StreamSplitter.SourceActive;
 
-		
-		public void Refresh(SystemData systemData) {
-			_sd = systemData;
-			Splitter.Refresh();
-			LoadData().ConfigureAwait(true);
+
+		public void RefreshSystem() {
+			_sd = DataUtil.GetSystemData();
+			LoadData();
+		}
+
+		public Task ToggleStream(CancellationToken ct) {
+			SendColors = true;
+			try {
+				Bass.RecordInit(_recordDeviceIndex);
+				_handle = Bass.RecordStart(48000, 2, BassFlags.Float, Update);
+				Bass.RecordGetDeviceInfo(_recordDeviceIndex, out _);
+				_hasDll = true;
+				Log.Information("Recording init completed.");
+			} catch (DllNotFoundException) {
+				Log.Warning("Bass.dll not found, nothing to do...");
+				_hasDll = false;
+			}
+
+			if (!_hasDll) {
+				Log.Debug("Audio stream unavailable, no bass.dll found.");
+				return Task.CompletedTask;
+			}
+
+			Log.Debug("Starting audio stream service...");
+			Bass.ChannelPlay(_handle);
+			return ExecuteAsync(ct);
 		}
 
 		protected override Task ExecuteAsync(CancellationToken ct) {
@@ -71,17 +88,14 @@ namespace Glimmr.Models.ColorSource.Audio {
 		}
 
 
-		private async Task LoadData() {
-			var sd = DataUtil.GetSystemData();
-			_sectorCount = 14;
+		private void LoadData() {
+			_sd = DataUtil.GetSystemData();
 			_gain = _sd.AudioGain;
-			Colors = ColorUtil.EmptyList(_sd.LedCount);
-			Sectors = ColorUtil.EmptyList(_sectorCount);
 			_min = _sd.AudioMin;
+			string rd = _sd.RecDev;
 			_devices = DataUtil.GetCollection<AudioData>("Dev_Audio") ?? new List<AudioData>();
 			_map = new AudioMap();
 			_recordDeviceIndex = -1;
-			string rd = sd.RecDev;
 			_devices = new List<AudioData>();
 			for (var a = 0; Bass.RecordGetDeviceInfo(a, out var info); a++) {
 				if (!info.IsEnabled) {
@@ -91,7 +105,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 				try {
 					var ad = new AudioData();
 					ad.ParseDevice(info);
-					await DataUtil.InsertCollection<AudioData>("Dev_Audio", ad);
+					DataUtil.InsertCollection<AudioData>("Dev_Audio", ad).ConfigureAwait(true);
 					_devices.Add(ad);
 				} catch (Exception e) {
 					Log.Warning("Error loading devices: " + e.Message);
@@ -110,27 +124,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 			}
 
 			_devices = DataUtil.GetCollection<AudioData>("Dev_Audio") ?? new List<AudioData>();
-		}
-
-		public Task ToggleStream(CancellationToken ct) {
-			SendColors = true;
-			try {
-				Bass.RecordInit(_recordDeviceIndex);
-				_handle = Bass.RecordStart(48000, 2, BassFlags.Float, Update);
-				Bass.RecordGetDeviceInfo(_recordDeviceIndex, out _);
-				_hasDll = true;
-				Log.Information("Recording init completed.");
-			} catch (DllNotFoundException) {
-				Log.Warning("Bass.dll not found, nothing to do...");
-				_hasDll = false;
-			}
-			if (!_hasDll) {
-				Log.Debug("Audio stream unavailable, no bass.dll found.");
-				return Task.CompletedTask;
-			}
-			Log.Debug("Starting audio stream service...");
-			Bass.ChannelPlay(_handle);
-			return ExecuteAsync(ct);
 		}
 
 		private bool Update(int handle, IntPtr buffer, int length, IntPtr user) {
@@ -162,11 +155,16 @@ namespace Glimmr.Models.ColorSource.Audio {
 				}
 			}
 
+			if (_map == null) {
+				Log.Warning("No map.");
+				return false;
+			}
+
 			var sectors = _map.MapColors(lData, rData).ToList();
 			var frame = _builder.Build(sectors);
-			Splitter.Update(frame);
-			Sectors = Splitter.GetSectors();
-			Colors = Splitter.GetColors();
+			Log.Debug("Update: Aud");
+
+			StreamSplitter.Update(frame);
 			frame.Dispose();
 			return true;
 		}

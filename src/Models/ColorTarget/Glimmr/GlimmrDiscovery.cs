@@ -14,17 +14,16 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Glimmr {
 	public class GlimmrDiscovery : ColorDiscovery, IColorDiscovery {
-		public override string DeviceTag { get; set; } = "Glimmr";
-		private readonly ControlService _controlService;
+		public virtual string DeviceTag { get; set; } = "Glimmr";
 
 		private readonly MulticastService _mDns;
 		private readonly ServiceDiscovery _sd;
 		private bool _stopDiscovery;
 
 		public GlimmrDiscovery(ColorService cs) : base(cs) {
-			_controlService = cs.ControlService;
-			_mDns = _controlService.MulticastService;
-			_sd = _controlService.ServiceDiscovery;
+			var controlService = cs.ControlService;
+			_mDns = controlService.MulticastService;
+			_sd = controlService.ServiceDiscovery;
 		}
 
 		public async Task Discover(CancellationToken ct, int timeout) {

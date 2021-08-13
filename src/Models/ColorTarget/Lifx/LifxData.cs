@@ -26,6 +26,8 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		[JsonProperty] public bool Power { get; set; }
 		[JsonProperty] public byte Service { get; internal set; }
 		[JsonProperty] public byte[] MacAddress { get; internal set; } = new byte[0];
+		[JsonProperty] public double GammaCorrection { get; set; } = 1;
+		[JsonProperty] public int Brightness { get; set; }
 
 		[DefaultValue(82)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -33,6 +35,8 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			get => MultiZoneCount * 2;
 			set => MultiZoneCount = value / 2;
 		}
+
+		[JsonProperty] public int LedMultiplier { get; set; } = 2;
 
 		[DefaultValue(255)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -55,20 +59,12 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		[JsonProperty] public string DeviceTag { get; internal set; }
 		[BsonCtor] [JsonProperty] public string HostName { get; internal set; } = "";
 		[JsonProperty] public string MacAddressString { get; internal set; } = "";
+		[JsonProperty] public string Tag { get; set; }
 
 		[JsonProperty] public TileLayout Layout { get; set; }
 		[JsonProperty] public ushort Hue { get; set; }
 		[JsonProperty] public ushort Kelvin { get; set; }
 		[JsonProperty] public ushort Saturation { get; set; }
-		
-		public string Name { get; set; } = "";
-		public string Id { get; set; } = "";
-		public string Tag { get; set; }
-		public string IpAddress { get; set; } = "";
-		public int Brightness { get; set; }
-		public bool Enable { get; set; }
-		public double GammaCorrection { get; set; } = 1;
-
 
 
 		public LifxData() {
@@ -85,7 +81,10 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			Name ??= Tag;
 			HostName = b.HostName;
 			var ip = IpUtil.GetIpFromHost(HostName);
-			if (ip != null) IpAddress = ip.ToString();
+			if (ip != null) {
+				IpAddress = ip.ToString();
+			}
+
 			if (Id == null && MacAddressString != null) {
 				Id = MacAddressString;
 			}
@@ -94,6 +93,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			if (Id != null && Id.Length > 4) {
 				Name = "Lifx - " + Id.Substring(Id.Length - 5, 5);
 			}
+
 			Service = b.Service;
 			Port = (int) b.Port;
 			MacAddress = b.MacAddress;
@@ -108,7 +108,11 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			Kps();
 		}
 
-		public string LastSeen { get; set; }
+		[JsonProperty] public string Name { get; set; } = "";
+		[JsonProperty] public string Id { get; set; } = "";
+		[JsonProperty] public string IpAddress { get; set; } = "";
+		[JsonProperty] public bool Enable { get; set; }
+		[JsonProperty] public string LastSeen { get; set; }
 
 
 		public void UpdateFromDiscovered(IColorTargetData data) {
@@ -133,7 +137,6 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		}
 
 
-		
 		public void GenerateBeamLayout() {
 			var total = 0;
 			var beamCount = 0;
@@ -175,6 +178,9 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 					ValueMax = "3", ValueMin = "1", ValueStep = ".1"
 				};
 				return new[] {
+					new("LedMultiplier", "number", "LED Multiplier") {
+						ValueMin = "-10", ValueStep = "1"
+					},
 					gamma,
 					new("beamMap", "beamMap", "")
 				};

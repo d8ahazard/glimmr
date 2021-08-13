@@ -6,13 +6,12 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
+using Emgu.CV.Util;
 using Glimmr.Enums;
-using Glimmr.Models.ColorTarget.Wled;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Serilog;
@@ -21,24 +20,24 @@ using Serilog;
 
 namespace Glimmr.Models {
 	public class FrameSplitter {
-		private int _scaleHeight = DisplayUtil.CaptureHeight();
-		private int _scaleWidth = DisplayUtil.CaptureWidth();
+		// Do we send our frame data, or store it?
+		public bool DoSend { get; set; }
+		public bool SourceActive { get; private set; }
 		private readonly float _borderHeight;
-		public Mat InFrame { get; private set; }
-		public Mat OutFrame { get; private set; }
 
 		// The width of the border to crop from for LEDs
 		private readonly float _borderWidth;
-
+		private readonly ColorService _colorService;
 		private readonly ControlService _controlService;
 		private readonly Stopwatch _frameWatch;
-		
-		public bool DoSave { get; private set; }
-		public bool HasPreview { get; set; }
-		// Do we send our frame data, or store it?
-		public bool DoSend { get; set; }
-		public bool NoImage;
+		private readonly List<VectorOfPoint> _targets;
+		private readonly bool _useCrop;
 		private int _bottomCount;
+
+		// Is content detected?
+
+		// Loaded data
+		private CaptureMode _captureMode;
 
 		// The current crop mode?
 		private Color[] _colorsLed;
@@ -49,29 +48,38 @@ namespace Glimmr.Models {
 		private bool _cropLetter;
 		private bool _cropPillar;
 
+		private bool _doSave;
+
 		private Rectangle[] _fullCoords;
 		private Rectangle[] _fullSectors;
-		
+
 		private bool _hCrop;
 		private int _hCropCheck;
 		private int _hCropCount;
 		private int _hCropPixels;
 		private int _hSectors;
-		private Mat? _input;
+		private Mat _inFrame;
 
 		private int _ledCount;
 		private int _leftCount;
+		private VectorOfPointF? _lockTarget;
+		private DeviceMode _mode;
+		private bool _noImage;
+		private Mat _outFrame;
 
 		private int _previewMode;
 		private int _rightCount;
+		private int _scaleHeight = DisplayUtil.CaptureHeight();
 
+		private Size _scaleSize;
+		private int _scaleWidth = DisplayUtil.CaptureWidth();
 
 		// Set this when the sector changes
 		private bool _sectorChanged;
 		private int _sectorCount;
+		private int _srcArea;
 		private int _topCount;
 		private bool _useCenter;
-		private bool _useCrop;
 
 		// Are we cropping right now?
 		private bool _vCrop;
@@ -82,22 +90,28 @@ namespace Glimmr.Models {
 
 		// Current crop settings
 		private int _vCropPixels;
+
+		// Source stuff
+		private PointF[] _vectors;
 		private int _vSectors;
-		private Timer _saveTimer;
-		private DeviceMode _mode;
+
+		private bool _warned;
 
 
-		public FrameSplitter(ControlService controlService, bool crop = false) {
-			OutFrame = new Mat();
-			InFrame = new Mat();
+		public FrameSplitter(ColorService cs, bool crop = false) {
+			_vectors = Array.Empty<PointF>();
+			_targets = new List<VectorOfPoint>();
 			_useCrop = crop;
+			_inFrame = new Mat();
+			_outFrame = new Mat();
 			_colorsLed = Array.Empty<Color>();
 			_colorsSectors = Array.Empty<Color>();
 			_frameWatch = new Stopwatch();
 			_frameWatch.Start();
-			_controlService = controlService;
-			_controlService.RefreshSystemEvent += RefreshSystem;
-			controlService.ColorService.FrameSaveEvent += TriggerSave;
+			_colorService = cs;
+			_controlService = cs.ControlService;
+			cs.ControlService.RefreshSystemEvent += RefreshSystem;
+			cs.FrameSaveEvent += TriggerSave;
 			RefreshSystem();
 			// Set desired width of capture region to 15% total image
 			_borderWidth = 10;
@@ -105,7 +119,6 @@ namespace Glimmr.Models {
 			// Get sectors
 			_fullCoords = DrawGrid();
 			_fullSectors = DrawSectors();
-			
 		}
 
 
@@ -128,6 +141,7 @@ namespace Glimmr.Models {
 				_vCropCount = 0;
 				_cropLetter = false;
 			}
+
 			if (!_cropPillar || !_useCrop) {
 				_hCrop = false;
 				_hCropCheck = 0;
@@ -135,6 +149,7 @@ namespace Glimmr.Models {
 				_hCropCount = 0;
 				_cropPillar = false;
 			}
+
 			_useCenter = sd.UseCenter;
 			_ledCount = sd.LedCount;
 			_sectorCount = sd.SectorCount;
@@ -151,6 +166,31 @@ namespace Glimmr.Models {
 
 			_previewMode = sd.PreviewMode;
 
+			_captureMode = (CaptureMode) sd.CaptureMode;
+			_srcArea = _scaleWidth * _scaleHeight;
+			_scaleSize = new Size(_scaleWidth, _scaleHeight);
+
+			if (_captureMode == CaptureMode.Camera) {
+				try {
+					var lt = DataUtil.GetItem<PointF[]>("LockTarget");
+					if (lt != null) {
+						_lockTarget = new VectorOfPointF(lt);
+						var lC = 0;
+						while (lC < 20) {
+							_targets.Add(VPointFToVPoint(_lockTarget));
+							lC++;
+						}
+					}
+				} catch (Exception e) {
+					Log.Warning("Video Capture Exception: " + e.Message + " at " + e.StackTrace);
+				}
+			}
+
+			_vectors = new PointF[] {
+				new Point(0, 0), new Point(_scaleWidth, 0), new Point(_scaleWidth, _scaleHeight),
+				new Point(0, _scaleHeight)
+			};
+
 			// Start our stopwatches for cropping if they were previously disabled
 			if (_cropLetter || _cropPillar && !_frameWatch.IsRunning) {
 				_frameWatch.Restart();
@@ -161,23 +201,23 @@ namespace Glimmr.Models {
 				_frameWatch.Stop();
 			}
 		}
-		
+
 		private void TriggerSave() {
-			DoSave = true;
+			_doSave = true;
 		}
 
-		private void SaveFrame() {
-			DoSave = false;
-			if (InFrame == null) return;
-			if (InFrame.IsEmpty) return;
+		private void SaveFrame(Mat outMat) {
+			_doSave = false;
 			var path = Directory.GetCurrentDirectory();
-			var inPath = Path.Join(path, "wwwroot", "img", "_preview_input.jpg");
 			var outPath = Path.Join(path, "wwwroot", "img", "_preview_output.jpg");
-			if (DoSend) InFrame.Save(inPath);
-			var outMat = new Mat();
-			if (OutFrame == null) return;
-			if (OutFrame.IsEmpty) return;
-			OutFrame.CopyTo(outMat);
+			if (outMat == null) {
+				return;
+			}
+
+			if (outMat.IsEmpty) {
+				return;
+			}
+
 			var colBlack = new Bgr(Color.FromArgb(0, 0, 0, 0)).MCvScalar;
 			if (_previewMode == 1) {
 				for (var i = 0; i < _fullCoords.Length; i++) {
@@ -198,26 +238,33 @@ namespace Glimmr.Models {
 					CvInvoke.PutText(outMat, cInt.ToString(), tPoint, FontFace.HersheySimplex, 1.0, colBlack);
 				}
 			}
-			outMat.CopyTo(OutFrame);
+
 			if (DoSend) {
 				outMat.Save(outPath);
 			}
-			
+
 			outMat.Dispose();
-			if (DoSend) _controlService.TriggerImageUpdate();
+			if (DoSend) {
+				_controlService.TriggerImageUpdate();
+			}
 		}
-		
-		
+
 		public async Task MergeFrame(Color[] leds, Color[] sectors) {
 			await Task.Delay(5);
 			var path = Directory.GetCurrentDirectory();
 			var inPath = Path.Join(path, "wwwroot", "img", "_preview_input.jpg");
 			var outPath = Path.Join(path, "wwwroot", "img", "_preview_output.jpg");
-			if (InFrame == null || OutFrame == null) return;
-			if (InFrame.IsEmpty || OutFrame.IsEmpty) return;
-			InFrame.Save(inPath);
+			if (_inFrame == null || _outFrame == null) {
+				return;
+			}
+
+			if (_inFrame.IsEmpty || _outFrame.IsEmpty) {
+				return;
+			}
+
+			_inFrame.Save(inPath);
 			var outMat = new Mat();
-			OutFrame.CopyTo(outMat);
+			_outFrame.CopyTo(outMat);
 			var colBlack = new Bgr(Color.FromArgb(0, 0, 0, 0)).MCvScalar;
 			if (_previewMode == 1) {
 				for (var i = 0; i < _fullCoords.Length; i++) {
@@ -238,53 +285,108 @@ namespace Glimmr.Models {
 					CvInvoke.PutText(outMat, cInt.ToString(), tPoint, FontFace.HersheySimplex, 1.0, colBlack);
 				}
 			}
+
 			outMat.Save(outPath);
 			outMat.Dispose();
 			_controlService.TriggerImageUpdate();
 		}
 
-		public void Update(Mat inputMat) {
-			if (inputMat == null) {
+		public void Update(Mat frame) {
+			if (frame == null || frame.IsEmpty) {
+				SourceActive = false;
+				if (!_warned) {
+					Log.Warning("Frame is null.");
+				}
+
+				_warned = true;
+				return;
+			}
+
+			if (frame.Cols == 0) {
+				SourceActive = false;
+				if (!_warned) {
+					Log.Warning("Frame has no columns.");
+				}
+
+				_warned = true;
+				return;
+			}
+
+			if (frame.Rows == 0) {
+				SourceActive = false;
+				if (!_warned) {
+					Log.Warning("Frame has no rows.");
+				}
+
+				_warned = true;
+				return;
+			}
+
+			// Save a preview frame every 5 seconds
+			if (_doSave) {
+				if (DoSend) {
+					var path = Directory.GetCurrentDirectory();
+					var fullPath = Path.Join(path, "wwwroot", "img", "_preview_input.jpg");
+					frame.Save(fullPath);
+				} else {
+					_inFrame = frame.Clone();
+				}
+			}
+
+			// Check if we're using camera/video mode and crop if necessary
+			var warped = CheckCamera(frame);
+			// Dispose frame
+			frame.Dispose();
+			if (warped == null || warped.IsEmpty || warped.Cols == 0) {
 				Log.Warning("Invalid input frame.");
 				return;
 			}
-			
-			InFrame = new Mat();
-			inputMat.CopyTo(InFrame);
-			var img = InFrame.ToImage<Bgr, byte>();
-			var sized = img.Resize(_scaleWidth, _scaleHeight,Inter.Cubic);
-			_input = sized.Mat;
+
+			SourceActive = true;
+			var mustResize = warped.Width != _scaleWidth || warped.Height != _scaleHeight;
+
+			Mat scaled;
+			if (mustResize) {
+				var img = warped.ToImage<Bgr, byte>();
+				var sized = mustResize ? img.Resize(_scaleWidth, _scaleHeight, Inter.Cubic) : img;
+				scaled = sized.Mat.Clone();
+				sized.Dispose();
+			} else {
+				scaled = warped.Clone();
+			}
+
+			// Dispose warped
+			warped.Dispose();
 			// Don't do anything if there's no frame.
-			if (_input == null || _input.IsEmpty) {
+			if (scaled == null || scaled.IsEmpty) {
 				Log.Warning("Null/Empty input!");
 				return;
 			}
-			OutFrame = new Mat();
-			_input.CopyTo(OutFrame);
 
 			// Check sectors once per second
 			if (_frameWatch.Elapsed >= TimeSpan.FromSeconds(1)) {
-				CheckSectors();
+				CheckSectors(scaled);
 				_frameWatch.Restart();
 			}
 
 			// Only calculate new sectors if the value has changed
 			if (_sectorChanged) {
+				Log.Debug($"Sector changed, redrawing {_vCropPixels} and {_hCropPixels}...");
 				_sectorChanged = false;
 				_fullCoords = DrawGrid();
 				_fullSectors = DrawSectors();
 			}
 
-			var ledColors = new Color[_ledCount];
+			var ledColors = ColorUtil.EmptyColors(_ledCount);
 			for (var i = 0; i < _fullCoords.Length; i++) {
-				var sub = new Mat(_input, _fullCoords[i]);
+				var sub = new Mat(scaled, _fullCoords[i]);
 				ledColors[i] = GetAverage(sub);
 				sub.Dispose();
 			}
 
-			var sectorColors = new Color[_sectorCount];
+			var sectorColors = ColorUtil.EmptyColors(_sectorCount);
 			for (var i = 0; i < _fullSectors.Length; i++) {
-				var sub = new Mat(_input, _fullSectors[i]);
+				var sub = new Mat(scaled, _fullSectors[i]);
 				sectorColors[i] = GetAverage(sub);
 				sub.Dispose();
 			}
@@ -292,9 +394,183 @@ namespace Glimmr.Models {
 			_colorsLed = ledColors;
 			_colorsSectors = sectorColors;
 			if (DoSend) {
-				_controlService.ColorService.SendColors(_colorsLed.ToList(), _colorsSectors.ToList(), 0);
+				_colorService.SendColors(_colorsLed, _colorsSectors);
 			}
-			if (DoSave) SaveFrame();
+
+			if (_doSave) {
+				if (DoSend) {
+					_doSave = false;
+					SaveFrame(scaled);
+				} else {
+					_doSave = false;
+					_outFrame = scaled.Clone();
+				}
+			}
+
+			scaled.Dispose();
+		}
+
+
+		private Mat? CheckCamera(Mat input) {
+			var scaled = input.Clone();
+			if (_captureMode != CaptureMode.Camera || _mode != DeviceMode.Video) {
+				return scaled;
+			}
+
+			Mat? output = null;
+
+			// If we don't have a target, find one
+			if (_lockTarget == null) {
+				_lockTarget = FindTarget(scaled);
+				if (_lockTarget != null) {
+					Log.Debug("Target hit.");
+					DataUtil.SetItem("LockTarget", _lockTarget.ToArray());
+				} else {
+					Log.Debug("No target.");
+				}
+			}
+
+			// If we do or we found one...crop it out
+			if (_lockTarget != null) {
+				var dPoints = _lockTarget.ToArray();
+				var warpMat = CvInvoke.GetPerspectiveTransform(dPoints, _vectors);
+				output = new Mat();
+				CvInvoke.WarpPerspective(scaled, output, warpMat, _scaleSize);
+				warpMat.Dispose();
+			}
+
+			scaled.Dispose();
+			// Once we have a warped frame, we need to do a check every N seconds for letterboxing...
+			return output;
+		}
+
+		private VectorOfPointF? FindTarget(Mat input) {
+			var cannyEdges = new Mat();
+			var uImage = new Mat();
+			var gray = new Mat();
+			var blurred = new Mat();
+
+			// Convert to greyscale
+			CvInvoke.CvtColor(input, uImage, ColorConversion.Bgr2Gray);
+			CvInvoke.BilateralFilter(uImage, gray, 11, 17, 17);
+			uImage.Dispose();
+			CvInvoke.MedianBlur(gray, blurred, 11);
+			gray.Dispose();
+			// Get edged version
+			const double cannyThreshold = 0.0;
+			const double cannyThresholdLinking = 200.0;
+			CvInvoke.Canny(blurred, cannyEdges, cannyThreshold, cannyThresholdLinking);
+			blurred.Dispose();
+
+			// Get contours
+			using (var contours = new VectorOfVectorOfPoint()) {
+				CvInvoke.FindContours(cannyEdges, contours, null, RetrType.List,
+					ChainApproxMethod.ChainApproxSimple);
+				var count = contours.Size;
+				// Looping contours
+				for (var i = 0; i < count; i++) {
+					var approxContour = new VectorOfPoint();
+					using var contour = contours[i];
+					CvInvoke.ApproxPolyDP(contour, approxContour, CvInvoke.ArcLength(contour, true) * 0.02,
+						true);
+					if (approxContour.Size != 4) {
+						continue;
+					}
+
+					var cntArea = CvInvoke.ContourArea(approxContour);
+					if (!(cntArea / _srcArea > .15)) {
+						continue;
+					}
+
+					var pointOut = new VectorOfPointF(SortPoints(approxContour));
+					_targets.Add(VPointFToVPoint(pointOut));
+				}
+			}
+
+			var output = CountTargets(_targets);
+			cannyEdges.Dispose();
+			return output;
+		}
+
+		private VectorOfPointF? CountTargets(IReadOnlyCollection<VectorOfPoint> inputT) {
+			VectorOfPointF? output = null;
+			var x1 = 0;
+			var x2 = 0;
+			var x3 = 0;
+			var x4 = 0;
+			var y1 = 0;
+			var y2 = 0;
+			var y3 = 0;
+			var y4 = 0;
+			var iCount = inputT.Count;
+			foreach (var point in inputT) {
+				x1 += point[0].X;
+				y1 += point[0].Y;
+				x2 += point[1].X;
+				y2 += point[1].Y;
+				x3 += point[2].X;
+				y3 += point[2].Y;
+				x4 += point[3].X;
+				y4 += point[3].Y;
+			}
+
+			if (iCount > 10) {
+				x1 /= iCount;
+				x2 /= iCount;
+				x3 /= iCount;
+				x4 /= iCount;
+				y1 /= iCount;
+				y2 /= iCount;
+				y3 /= iCount;
+				y4 /= iCount;
+
+				PointF[] avgPoints = {new(x1, y1), new(x2, y2), new(x3, y3), new(x4, y4)};
+				var avgVector = new VectorOfPointF(avgPoints);
+				if (iCount > 20) {
+					output = avgVector;
+				}
+			}
+
+			if (iCount > 200) {
+				_targets.RemoveRange(0, 150);
+			}
+
+			return output;
+		}
+
+		private static VectorOfPoint VPointFToVPoint(VectorOfPointF input) {
+			var ta = input.ToArray();
+			var pIn = new Point[input.Size];
+			for (var i = 0; i < ta.Length; i++) {
+				pIn[i] = new Point((int) ta[i].X, (int) ta[i].Y);
+			}
+
+			return new VectorOfPoint(pIn);
+		}
+
+
+		private static PointF[] SortPoints(VectorOfPoint wTarget) {
+			var ta = wTarget.ToArray();
+			var pIn = new PointF[wTarget.Size];
+			for (var i = 0; i < ta.Length; i++) {
+				pIn[i] = ta[i];
+			}
+
+			// Order points?
+			var tPoints = pIn.OrderBy(p => p.Y);
+			var vPoints = pIn.OrderByDescending(p => p.Y);
+			var vtPoints = tPoints.Take(2);
+			var vvPoints = vPoints.Take(2);
+			vtPoints = vtPoints.OrderBy(p => p.X);
+			vvPoints = vvPoints.OrderByDescending(p => p.X);
+			var pointFs = vtPoints as PointF[] ?? vtPoints.ToArray();
+			var tl = pointFs[0];
+			var tr = pointFs[1];
+			var enumerable = vvPoints as PointF[] ?? vvPoints.ToArray();
+			var br = enumerable[0];
+			var bl = enumerable[1];
+			PointF[] outPut = {tl, tr, br, bl};
+			return outPut;
 		}
 
 
@@ -316,8 +592,12 @@ namespace Glimmr.Models {
 			return _colorsSectors.ToList();
 		}
 
-		private void CheckSectors() {
-			if (_input == null) return;
+		private void CheckSectors(Mat check) {
+			if (check == null) {
+				return;
+			}
+
+			var input = check.Clone();
 			// If nothing to crop, just leave
 			if (!_cropLetter && !_cropPillar) {
 				return;
@@ -331,23 +611,23 @@ namespace Glimmr.Models {
 			var cropVertical = 0;
 
 			var gr = new Mat();
-			CvInvoke.CvtColor(_input, gr, ColorConversion.Bgr2Gray);
+			CvInvoke.CvtColor(input, gr, ColorConversion.Bgr2Gray);
 			// Check to see if everything is black
 			var allB = CvInvoke.CountNonZero(gr);
-			NoImage = allB == 0;
+			_noImage = allB == 0;
 			// If it is, we can stop here
-			if (NoImage) {
+			if (_noImage) {
 				gr.Dispose();
 				return;
 			}
 
 			if (_cropLetter) {
-				for (var r = 0; r <= _input.Height / 4; r += checkSize) {
+				for (var r = 0; r <= input.Height / 4; r += checkSize) {
 					// Define top position of bottom section
-					var r2 = _input.Height - r - checkSize;
+					var r2 = input.Height - r - checkSize;
 					// Regions to check
-					var s1 = new Rectangle(0, r, _input.Width, checkSize);
-					var s2 = new Rectangle(0, r2, _input.Width, checkSize);
+					var s1 = new Rectangle(0, r, input.Width, checkSize);
+					var s2 = new Rectangle(0, r2, input.Width, checkSize);
 					var t1 = new Mat(gr, s1);
 					var t2 = new Mat(gr, s2);
 					var l1 = GetBrightestColor(t1);
@@ -364,12 +644,12 @@ namespace Glimmr.Models {
 
 
 			if (_cropPillar) {
-				for (var c = 0; c < _input.Width / 16; c += checkSize) {
+				for (var c = 0; c < input.Width / 4; c += checkSize) {
 					// Define left coord of right sector
-					var c2 = _input.Width - c - checkSize;
+					var c2 = input.Width - c - checkSize;
 					// Create rect for left side check, make it a Mat
-					var s1 = new Rectangle(c, 0, checkSize, _input.Height);
-					var s2 = new Rectangle(c2, 0, 1, _input.Height);
+					var s1 = new Rectangle(c, 0, checkSize, input.Height);
+					var s2 = new Rectangle(c2, 0, 1, input.Height);
 					var t1 = new Mat(gr, s1);
 					var t2 = new Mat(gr, s2);
 					var n1 = GetBrightestColor(t1);
@@ -389,7 +669,7 @@ namespace Glimmr.Models {
 			gr.Dispose();
 
 			if (_cropLetter && cropHorizontal != 0) {
-				if (Math.Abs(cropHorizontal - _hCropCheck) <= 4) {
+				if (cropHorizontal == _hCropCheck) {
 					_hCropCount++;
 				} else {
 					_hCropCount--;
@@ -419,7 +699,7 @@ namespace Glimmr.Models {
 			_hCropCheck = cropHorizontal;
 
 			if (_cropPillar && cropVertical != 0) {
-				if (Math.Abs(cropVertical - _vCropCheck) <= 4) {
+				if (cropVertical == _vCropCheck) {
 					_vCropCount++;
 				} else {
 					_vCropCount--;
@@ -447,6 +727,7 @@ namespace Glimmr.Models {
 			}
 
 			_vCropCheck = cropVertical;
+			input.Dispose();
 		}
 
 		private Color GetBrightestColor(Mat input) {
@@ -557,7 +838,7 @@ namespace Glimmr.Models {
 			if (idx != _ledCount) {
 				Log.Warning($"Warning: Led count is {idx - 1}, but should be {_ledCount}");
 			}
-			
+
 			return output;
 		}
 

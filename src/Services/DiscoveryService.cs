@@ -83,10 +83,9 @@ namespace Glimmr.Services {
 				Log.Debug($"Dev count is {devs.Count}, scanning...");
 				TriggerRefresh(null, null).ConfigureAwait(false);
 			}
+
 			Log.Information("Discovery service started.");
 			return CancellationTokenSource.CreateLinkedTokenSource(_syncSource.Token, _stopToken);
-			
-
 		}
 
 		public override Task StopAsync(CancellationToken cancellationToken) {

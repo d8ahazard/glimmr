@@ -15,6 +15,7 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.Hue {
 	[Serializable]
 	public class HueData : IColorTargetData {
+		[JsonProperty] public int Brightness { get; set; } = 255;
 		[JsonProperty] public int GroupNumber { get; set; }
 
 		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
@@ -28,17 +29,9 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 		[JsonProperty] public string GroupName { get; set; } = "";
 		[JsonProperty] public string SelectedGroup { get; set; } = "";
+		[JsonProperty] public string Tag { get; set; } = "Hue";
 		[JsonProperty] public string Token { get; set; } = "";
 		[JsonProperty] public string User { get; set; } = "";
-		[JsonProperty] public string Name { get; set; } = "";
-		[JsonProperty] public string Id { get; set; } = "";
-		[JsonProperty] public string Tag { get; set; } = "Hue";
-		[JsonProperty] public string IpAddress { get; set; } = "";
-		[JsonProperty] public int Brightness { get; set; } = 255;
-		[JsonProperty] public bool Enable { get; set; }
-
-
-		public string LastSeen { get; set; }
 
 		public HueData() {
 			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
@@ -70,8 +63,14 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			MappedLights ??= new List<LightMap>();
 		}
 
+		[JsonProperty] public string Name { get; set; } = "";
+		[JsonProperty] public string Id { get; set; } = "";
+		[JsonProperty] public string IpAddress { get; set; } = "";
+		[JsonProperty] public bool Enable { get; set; }
 
-		
+
+		public string LastSeen { get; set; }
+
 
 		public void UpdateFromDiscovered(IColorTargetData data) {
 			var input = (HueData) data;

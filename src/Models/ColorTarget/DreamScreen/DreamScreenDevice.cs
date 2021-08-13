@@ -16,39 +16,43 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.DreamScreen {
 	public class DreamScreenDevice : ColorTarget, IColorTarget {
-		private DreamScreenData _data;
-		
-		private string _deviceTag;
-		public bool Streaming { get; set; }
-		public bool Testing { get; set; }
-		public int Brightness { get; set; } = 255;
-		public string Id { get; set; }
-		public string IpAddress { get; set; }
-		public string Tag { get; set; } = "DreamScreen";
-		public bool Enable { get; set; }
-
 		private readonly DreamScreenClient? _client;
 		private readonly DreamDevice _dev;
+		private DreamScreenData _data;
+
+		private string _deviceTag;
+
+		private string _ipAddress;
 
 		public DreamScreenDevice(DreamScreenData data, ColorService colorService) {
 			_data = data;
 			Id = data.Id;
 			colorService.ColorSendEvent += SetColor;
 			var client = colorService.ControlService.GetAgent("DreamAgent");
-			if (client != null) _client = client;
-			IpAddress = _data.IpAddress;
+			if (client != null) {
+				_client = client;
+			}
+
+			_ipAddress = _data.IpAddress;
 			_deviceTag = _data.DeviceTag;
 			LoadData();
-			var myIp = IPAddress.Parse(IpAddress);
+			var myIp = IPAddress.Parse(_ipAddress);
 			_dev = new DreamDevice(_deviceTag) {IpAddress = myIp, DeviceGroup = data.GroupNumber};
 		}
+
+		public bool Streaming { get; set; }
+		public bool Testing { get; set; }
+		public string Id { get; private set; }
+		public bool Enable { get; set; }
 
 		public async Task StartStream(CancellationToken ct) {
 			if (!Enable) {
 				return;
 			}
 
-			if (_client == null) return;
+			if (_client == null) {
+				return;
+			}
 
 			Log.Information($"{_data.Tag}::Starting stream: {_data.Id}...");
 			if (_data.DeviceTag.Contains("DreamScreen")) {
@@ -66,7 +70,9 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 				return;
 			}
 
-			if (_client == null) return;
+			if (_client == null) {
+				return;
+			}
 
 			await _client.SetMode(_dev, DeviceMode.Off);
 			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
@@ -77,7 +83,9 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 				return;
 			}
 
-			if (_client == null) return;
+			if (_client == null) {
+				return;
+			}
 
 			if (sectors.Count != 12) {
 				sectors = ColorUtil.TruncateColors(sectors);
@@ -92,7 +100,10 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 
 		public Task ReloadData() {
 			var dev = DataUtil.GetDevice(Id);
-			if (dev != null) _data = dev;
+			if (dev != null) {
+				_data = dev;
+			}
+
 			return Task.CompletedTask;
 		}
 
@@ -106,18 +117,16 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 
 		private void LoadData() {
 			Enable = _data.Enable;
-			Brightness = _data.Brightness;
 			Id = _data.Id;
-			IpAddress = _data.IpAddress;
-			Tag = _data.Tag;
+			_ipAddress = _data.IpAddress;
 			Enable = _data.Enable;
 			_deviceTag = _data.DeviceTag;
 			if (_deviceTag.Contains("DreamScreen") && Enable) {
 				Enable = false;
 			}
 
-			if (string.IsNullOrEmpty(IpAddress)) {
-				IpAddress = Id;
+			if (string.IsNullOrEmpty(_ipAddress)) {
+				_ipAddress = Id;
 			}
 		}
 	}

@@ -23,51 +23,46 @@ namespace Glimmr.Services {
 	public class ColorService : BackgroundService {
 		public ControlService ControlService { get; }
 		public readonly FrameCounter Counter;
+		public readonly FrameSplitter Splitter;
+
+
+		private readonly Dictionary<string, IColorSource> _streams;
+		private readonly Stopwatch _watch;
 		public DeviceMode DeviceMode;
 		private bool _autoDisabled;
 		private int _autoDisableDelay;
-		private CaptureMode _captureMode;
-		private readonly TimeSpan _frameSpan;
-		private readonly Stopwatch _frameWatch;
-		private bool _enableAutoDisable;
 
-		private Task _streamTask;
+		private bool _enableAutoDisable;
 		// Figure out how to make these generic, non-callable
 
 		private IColorTarget[] _sDevices;
+		private bool _sending;
+		private bool _streamStarted;
+		private Task? _streamTask;
 
-		// Token for the color target
-		private CancellationTokenSource _targetTokenSource;
-		
 		// Token for the color source
 		private CancellationTokenSource _streamTokenSource;
 
-		
-		private readonly Dictionary<string, IColorSource> _streams;
-		private bool _streamStarted;
 
-		
 		//private float _fps;
 		private SystemData _systemData;
-		private readonly Stopwatch _watch;
-		public FrameSplitter Splitter;
-		
+
+		// Token for the color target
+		private CancellationTokenSource _targetTokenSource;
+
 
 		public ColorService(ControlService controlService) {
 			controlService.ColorService = this;
 			_watch = new Stopwatch();
-			_frameWatch = new Stopwatch();
 			_streamTokenSource = new CancellationTokenSource();
 			_targetTokenSource = new CancellationTokenSource();
 			_sDevices = Array.Empty<IColorTarget>();
-			_frameSpan = TimeSpan.FromMilliseconds(1000f / 60);
 			_systemData = DataUtil.GetSystemData();
 			_enableAutoDisable = _systemData.EnableAutoDisable;
 			_streams = new Dictionary<string, IColorSource>();
 			ControlService = controlService;
 			Counter = new FrameCounter(this);
 			ControlService.ColorService = this;
-			ControlService.TriggerSendColorEvent += SendColors;
 			ControlService.SetModeEvent += Mode;
 			ControlService.DeviceReloadEvent += RefreshDeviceData;
 			ControlService.RefreshLedEvent += ReloadLedData;
@@ -76,9 +71,8 @@ namespace Glimmr.Services {
 			ControlService.FlashDeviceEvent += FlashDevice;
 			ControlService.FlashSectorEvent += FlashSector;
 			ControlService.DemoLedEvent += Demo;
-			Splitter = new FrameSplitter(controlService);
+			Splitter = new FrameSplitter(this);
 			LoadServices();
-			
 		}
 
 		private void LoadServices() {
@@ -92,11 +86,10 @@ namespace Glimmr.Services {
 					if (obj == null) {
 						continue;
 					}
-					
+
 					var dObj = (IColorSource) obj;
 					Log.Debug("Adding color source: " + tag);
 					_streams[tag] = dObj;
-					
 				} catch (InvalidCastException e) {
 					Log.Warning("Exception: " + e.Message + " at " + e.StackTrace);
 				}
@@ -104,8 +97,9 @@ namespace Glimmr.Services {
 		}
 
 		public event Action<List<Color>, List<Color>, int, bool> ColorSendEvent = delegate { };
-		
-		public event Action FrameSaveEvent = delegate {  };
+
+		public event Action FrameSaveEvent = delegate { };
+
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			Initialize().ConfigureAwait(true);
@@ -117,10 +111,13 @@ namespace Glimmr.Services {
 						fc = 0;
 						FrameSaveEvent.Invoke();
 					}
+
 					await Task.Delay(1000, stoppingToken);
 					fc++;
 				}
-				DataUtil.Dispose();				
+
+				_streamTask?.Dispose();
+				DataUtil.Dispose();
 			}, CancellationToken.None);
 		}
 
@@ -132,11 +129,11 @@ namespace Glimmr.Services {
 				await Demo(this, null);
 				Log.Information("Demo complete.");
 			} else {
-				Log.Information("Skipping demo.");	
+				Log.Information("Skipping demo.");
 			}
+
 			await Mode(this, new DynamicEventArgs(DeviceMode)).ConfigureAwait(true);
 			Log.Information($"Color service started, device mode is {DeviceMode}.");
-
 		}
 
 		public override async Task StopAsync(CancellationToken cancellationToken) {
@@ -202,7 +199,7 @@ namespace Glimmr.Services {
 			var col = Color.FromArgb(255, 255, 0, 0);
 			Color[] colors = ColorUtil.AddLedColor(new Color[_systemData.LedCount], sector, col, _systemData);
 			var sectorCount = (_systemData.HSectors + _systemData.VSectors) * 2 - 4;
-			var sectors = ColorUtil.EmptyColors(new Color[sectorCount]);
+			var sectors = ColorUtil.EmptyColors(sectorCount);
 			if (sector < sectorCount) {
 				sectors[sector] = col;
 			}
@@ -249,15 +246,9 @@ namespace Glimmr.Services {
 				DataUtil.SetItem("AutoDisabled", _autoDisabled);
 				return;
 			}
-			bool sourceActive;
-			// If we're in video or audio mode, check the source is active...
-			if (DeviceMode == DeviceMode.Video && _streams[DeviceMode.Video.ToString()] != null) {
-				sourceActive = _streams[DeviceMode.Video.ToString()].SourceActive;
-			} else { // Otherwise, just keep it enabled for now.
-				//todo: Add proper source checks for other media. 
-				sourceActive = true;
-			}
-			
+
+			var sourceActive = _streams[DeviceMode.Video.ToString()].SourceActive;
+
 			if (sourceActive) {
 				// If our source is active, but not auto-disabled, do nothing
 				if (_autoDisabled) {
@@ -268,11 +259,13 @@ namespace Glimmr.Services {
 					await ControlService.SetMode((int) DeviceMode);
 					ControlService.SetModeEvent += Mode;
 				}
+
 				_watch.Reset();
 			} else {
 				if (_autoDisabled || DeviceMode != DeviceMode.Video) {
 					return;
 				}
+
 				if (!_watch.IsRunning) {
 					_watch.Restart();
 				}
@@ -324,7 +317,6 @@ namespace Glimmr.Services {
 			var sd = DataUtil.GetSystemData();
 			// Reload main vars
 			DeviceMode = (DeviceMode) sd.DeviceMode;
-			_captureMode = (CaptureMode) (DataUtil.GetItem<int>("CaptureMode") ?? 2);
 			_targetTokenSource = new CancellationTokenSource();
 			_systemData = DataUtil.GetSystemData();
 			_enableAutoDisable = _systemData.EnableAutoDisable;
@@ -337,7 +329,8 @@ namespace Glimmr.Services {
 				try {
 					var tag = c.Replace("Glimmr.Models.ColorTarget.", "");
 					tag = tag.Split(".")[0];
-					foreach (var device in deviceData.Where(device => device.Tag == tag).Where(device => tag != "Led" || device.Id != "2")) {
+					foreach (var device in deviceData.Where(device => device.Tag == tag)
+						.Where(device => tag != "Led" || device.Id != "2")) {
 						var args = new object[] {device, this};
 						dynamic? obj = Activator.CreateInstance(Type.GetType(c)!, args);
 						if (obj == null) {
@@ -367,8 +360,8 @@ namespace Glimmr.Services {
 			}
 
 			var i = 0;
-			var cols = ColorUtil.EmptyList(ledCount);
-			var secs = ColorUtil.EmptyList(sectorCount);
+			var cols = ColorUtil.EmptyColors(ledCount);
+			var secs = ColorUtil.EmptyColors(sectorCount);
 			try {
 				while (i < ledCount) {
 					var pi = i * 1.0f;
@@ -376,7 +369,7 @@ namespace Glimmr.Services {
 					var sector = (int) Math.Round(progress * sectorCount);
 					var rCol = ColorUtil.Rainbow(progress);
 					cols[i] = rCol;
-					if (sector < secs.Count) {
+					if (sector < secs.Length) {
 						secs[sector] = rCol;
 					}
 
@@ -474,18 +467,13 @@ namespace Glimmr.Services {
 		private void ReloadSystemData() {
 			var sd = _systemData;
 			_systemData = DataUtil.GetSystemData();
-			foreach (var stream in _streams.Values) {
-				stream.Refresh(_systemData);
-			}
-			
+
 			_autoDisableDelay = sd.AutoDisableDelay;
 			_enableAutoDisable = _systemData.EnableAutoDisable;
 
 			if (_autoDisableDelay < 1) {
 				_autoDisableDelay = 10;
 			}
-
-			_captureMode = (CaptureMode) sd.CaptureMode;
 		}
 
 		private async Task Mode(object o, DynamicEventArgs dynamicEventArgs) {
@@ -503,14 +491,18 @@ namespace Glimmr.Services {
 				//if (_streamTask != null && !_streamTask.IsCompleted) _streamTask.Wait();
 				await StopStream();
 			}
+
 			_streamTokenSource = new CancellationTokenSource();
 			if (_streamTokenSource.IsCancellationRequested) {
 				Log.Warning("Token source has cancellation requested.");
 				//return;
 			}
+
 			IColorSource? stream = null;
 			if (newMode == DeviceMode.Udp) {
-				stream = (StreamMode) sd.StreamMode == StreamMode.DreamScreen ? _streams["DreamScreen"] : _streams["UDP"];
+				stream = (StreamMode) sd.StreamMode == StreamMode.DreamScreen
+					? _streams["DreamScreen"]
+					: _streams["UDP"];
 			} else if (newMode != DeviceMode.Off) {
 				stream = _streams[newMode.ToString()];
 			}
@@ -527,7 +519,7 @@ namespace Glimmr.Services {
 			} else {
 				Log.Warning("Unable to acquire stream.");
 			}
-			
+
 			if (newMode != 0 && !_streamStarted) {
 				await StartStream();
 			}
@@ -543,17 +535,21 @@ namespace Glimmr.Services {
 				Log.Information("Starting streaming targets...");
 				foreach (var sDev in _sDevices) {
 					try {
-						if (sDev.Enable) sDev.StartStream(_targetTokenSource.Token);
+						if (sDev.Enable) {
+							sDev.StartStream(_targetTokenSource.Token);
+						}
 					} catch (Exception e) {
 						Log.Warning("Exception starting stream: " + e.Message);
 					}
 				}
+
 				_streamStarted = true;
 			}
 
 			if (_streamStarted) {
 				Log.Information("Streaming started on all devices.");
 			}
+
 			return Task.CompletedTask;
 		}
 
@@ -561,23 +557,34 @@ namespace Glimmr.Services {
 			if (!_streamStarted) {
 				return Task.CompletedTask;
 			}
+
 			Log.Information("Stopping device stream(s)...");
 			_streamStarted = false;
 			foreach (var dev in _sDevices) {
-				if (dev.Enable) dev.StopStream();
+				if (dev.Enable) {
+					dev.StopStream();
+				}
 			}
+
 			Log.Information("Stream(s) stopped on all devices.");
 			return Task.CompletedTask;
 		}
 
 
-		public void SendColors(List<Color> colors, List<Color> sectors, int fadeTime, bool force = false) {
+		public void SendColors(IEnumerable<Color> colors, IEnumerable<Color> sectors, int fadeTime = 0,
+			bool force = false) {
 			if (!_streamStarted) {
 				return;
 			}
-			
-			Counter.Tick("source");
-			ColorSendEvent(colors, sectors, fadeTime, force);
+
+			if (!_sending) {
+				_sending = true;
+				Counter.Tick("source");
+				ColorSendEvent(colors.ToList(), sectors.ToList(), fadeTime, force);
+				_sending = false;
+			} else {
+				Log.Debug("Skipping...");
+			}
 		}
 
 

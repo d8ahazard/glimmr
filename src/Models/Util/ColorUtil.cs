@@ -9,7 +9,6 @@ using Glimmr.Enums;
 using Newtonsoft.Json;
 using Serilog;
 
-
 #endregion
 
 namespace Glimmr.Models.Util {
@@ -19,7 +18,6 @@ namespace Glimmr.Models.Util {
 
 		private static int _bottomCount;
 
-		private static CaptureMode _captureMode;
 		private static DeviceMode _deviceMode;
 		private static int _hCount;
 		private static int _ledCount;
@@ -67,12 +65,13 @@ namespace Glimmr.Models.Util {
 		public static Color[] TruncateColors(List<Color> input, int offset, int len, int multiplier = 1) {
 			var output = new Color[len];
 			// Instead of doing dumb crap, just make our list of colors loop around
-			
+
 			var total = len + offset;
 			// If we have a negative multiplier, our total should be that many times (abs) larger
 			if (multiplier < 0) {
 				total *= Math.Abs(multiplier);
 			}
+
 			var doubled = new Color[total];
 			var c = 0;
 			while (c < total) {
@@ -82,21 +81,25 @@ namespace Glimmr.Models.Util {
 					} else {
 						break;
 					}
+
 					c++;
 				}
 			}
 
 			var idx = 0;
-			for (var i = offset; i < total; i+= Math.Abs(multiplier)) {
+			for (var i = offset; i < total; i += Math.Abs(multiplier)) {
 				output[idx] = doubled[i];
 				idx++;
 				if (multiplier > 1 && idx < len) {
 					for (var m = 1; m < multiplier; m++) {
 						output[idx] = doubled[i];
-						idx++;	
+						idx++;
 					}
 				}
-				if (idx >= len) break;
+
+				if (idx >= len) {
+					break;
+				}
 			}
 
 			return output;
@@ -234,7 +237,7 @@ namespace Glimmr.Models.Util {
 					return Color.FromArgb(255, v, p, q);
 			}
 		}
-		
+
 		public static Color SetBrightness(Color color, float brightness) {
 			// var hsb = ColorToHsb(input);
 			if (brightness == 0) {
@@ -423,7 +426,8 @@ namespace Glimmr.Models.Util {
 			};
 		}
 
-		public static Color[] EmptyColors(Color[] input) {
+		public static Color[] EmptyColors(int len) {
+			var input = new Color[len];
 			for (var i = 0; i < input.Length; i++) {
 				input[i] = Color.FromArgb(0, 0, 0, 0);
 			}
@@ -781,8 +785,8 @@ namespace Glimmr.Models.Util {
 
 			return output.ToList();
 		}
-		
-		public static Dictionary<int,int> MapLedsFromSectors(int cCount, int hSectors = -1, int vSectors = -1) {
+
+		public static Dictionary<int, int> MapLedsFromSectors(int cCount, int hSectors = -1, int vSectors = -1) {
 			var sd = DataUtil.GetSystemData();
 			var output = new Dictionary<int, int>();
 			if (cCount == 12) {
@@ -796,7 +800,7 @@ namespace Glimmr.Models.Util {
 			}
 
 			// Right sectors
-			int idx = 0;
+			var idx = 0;
 			var count = sd.RightCount / vSectors;
 			var start = 0;
 			var total = 0;
@@ -1053,11 +1057,10 @@ namespace Glimmr.Models.Util {
 			_topCount = tgtDimensions[2];
 			_bottomCount = tgtDimensions[3];
 			_ledCount = _leftCount + _rightCount + _topCount + _bottomCount;
-			
+
 			var output = new Color[_ledCount];
 
 			try {
-				
 				var factor = (float) srcDimensions[1] / _rightCount;
 				var idx = 0;
 				var start = 0;
@@ -1117,18 +1120,17 @@ namespace Glimmr.Models.Util {
 			return output;
 		}
 
-		
-		public static Dictionary<int,int> MapLeds(int len, int[] srcDimensions, int[] tgtDimensions) {
+
+		public static Dictionary<int, int> MapLeds(int len, int[] srcDimensions, int[] tgtDimensions) {
 			_leftCount = tgtDimensions[0];
 			_rightCount = tgtDimensions[1];
 			_topCount = tgtDimensions[2];
 			_bottomCount = tgtDimensions[3];
 			_ledCount = _leftCount + _rightCount + _topCount + _bottomCount;
-			
+
 			var output = new Dictionary<int, int>();
 
 			try {
-				
 				var factor = (float) srcDimensions[1] / _rightCount;
 				var idx = 0;
 				var start = 0;
@@ -1187,7 +1189,8 @@ namespace Glimmr.Models.Util {
 
 			return output;
 		}
-		public static Dictionary<int,int> MapSectors(int len, int[] dimensions) {
+
+		public static Dictionary<int, int> MapSectors(int len, int[] dimensions) {
 			var output = new Dictionary<int, int>();
 
 			try {
@@ -1205,7 +1208,7 @@ namespace Glimmr.Models.Util {
 				var vFactor = (float) dimensions[0] / _vCount;
 				var hFactor = (float) (dimensions[1] + dimensions[0]) / (_hCount + _vCount);
 				var lFactor = (float) (dimensions[0] + dimensions[1] + dimensions[0]) / (_vCount + _vCount + _hCount);
-				var bFactor = (float)len / _sectorCount;
+				var bFactor = (float) len / _sectorCount;
 
 				//Log.Debug($"Factors are {vFactor} and {hFactor} and {lFactor} and {bFactor}");
 				// Set bottom-right
@@ -1232,7 +1235,7 @@ namespace Glimmr.Models.Util {
 				output[oTl] = iTl;
 
 				// Left
-			
+
 				for (var i = oTl + 1; i < oBl; i++) {
 					var tgt = (int) Math.Round(i * lFactor);
 					//Log.Debug($"Mapping L {tgt + 1} to {i + 1}");
@@ -1258,6 +1261,7 @@ namespace Glimmr.Models.Util {
 
 			return output;
 		}
+
 		public static Color[] ResizeSectors(Color[] input, int[] dimensions) {
 			var output = new Color[_sectorCount];
 
@@ -1276,7 +1280,7 @@ namespace Glimmr.Models.Util {
 				var vFactor = (float) dimensions[0] / _vCount;
 				var hFactor = (float) (dimensions[1] + dimensions[0]) / (_hCount + _vCount);
 				var lFactor = (float) (dimensions[0] + dimensions[1] + dimensions[0]) / (_vCount + _vCount + _hCount);
-				var bFactor = (float)input.Length / _sectorCount;
+				var bFactor = (float) input.Length / _sectorCount;
 
 				//Log.Debug($"Factors are {vFactor} and {hFactor} and {lFactor} and {bFactor}");
 				// Set bottom-right
@@ -1303,7 +1307,7 @@ namespace Glimmr.Models.Util {
 				output[oTl] = input[iTl];
 
 				// Left
-			
+
 				for (var i = oTl + 1; i < oBl; i++) {
 					var tgt = (int) Math.Round(i * lFactor);
 					//Log.Debug($"Mapping L {tgt + 1} to {i + 1}");
@@ -1332,7 +1336,6 @@ namespace Glimmr.Models.Util {
 
 		public static void SetSystemData() {
 			var sd = DataUtil.GetSystemData();
-			_captureMode = (CaptureMode) sd.CaptureMode;
 			_deviceMode = (DeviceMode) sd.DeviceMode;
 			_useCenter = sd.UseCenter;
 			_sectorCount = sd.SectorCount;

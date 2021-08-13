@@ -1,6 +1,5 @@
 ﻿#region
 
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -19,31 +18,34 @@ using Serilog;
 namespace Glimmr.Models.ColorSource.DreamScreen {
 	public class DreamScreenStream : BackgroundService, IColorSource {
 		private const int TargetGroup = 20;
+		private readonly FrameBuilder _builder;
 		private readonly DreamScreenClient? _client;
 		private readonly ColorService _cs;
+		private readonly FrameSplitter _splitter;
 		private DreamDevice? _dDev;
 		private IPAddress? _targetDreamScreen;
-		private FrameBuilder _builder;
-		private FrameSplitter _splitter;
 
 		public DreamScreenStream(ColorService colorService) {
 			_cs = colorService;
-			
+
 			var client = _cs.ControlService.GetAgent("DreamAgent");
 			if (client != null) {
 				_client = client;
 				_client.CommandReceived += ProcessCommand;
 			}
 
-			var rect = new[]{3,3,5,5};
+			var rect = new[] {3, 3, 5, 5};
 			_builder = new FrameBuilder(rect, true);
 			_splitter = colorService.Splitter;
-			_cs.ControlService.RefreshSystemEvent += RefreshSd;
-			RefreshSd();
+			_cs.ControlService.RefreshSystemEvent += RefreshSystem;
+			RefreshSystem();
 		}
 
 		public Task ToggleStream(CancellationToken ct) {
-			if (_client == null || _dDev == null || _targetDreamScreen == null) return Task.CompletedTask;
+			if (_client == null || _dDev == null || _targetDreamScreen == null) {
+				return Task.CompletedTask;
+			}
+
 			Log.Debug("Starting DS stream, Target is " + _targetDreamScreen + " group is " + TargetGroup);
 			_client.StartSubscribing(_targetDreamScreen);
 			_client.SetMode(_dDev, DeviceMode.Off);
@@ -52,19 +54,10 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 			return ExecuteAsync(ct);
 		}
 
-		public void Refresh(SystemData systemData) {
-			var dsIp = systemData.DsIp;
+		public bool SourceActive => _splitter.SourceActive;
 
-			if (!string.IsNullOrEmpty(dsIp)) {
-				_targetDreamScreen = IPAddress.Parse(dsIp);
-			}
-		}
 
-		public bool SourceActive { get; set; }
-
-	
-
-		private void RefreshSd() {
+		public void RefreshSystem() {
 			var systemData = DataUtil.GetSystemData();
 			var dsIp = systemData.DsIp;
 			// If our DS IP is null, pick one.
@@ -103,12 +96,18 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 
 		private void ProcessCommand(object? sender, DreamScreenClient.MessageEventArgs e) {
 			Log.Debug("Incoming command from DS: " + e.Response.Type);
-			if (_dDev == null) return;
+			if (_dDev == null) {
+				return;
+			}
+
 			if (e.Response.Group == TargetGroup || e.Response.Group == _dDev.DeviceGroup) {
 				switch (e.Response.Type) {
 					case MessageType.Mode:
 						var mode = int.Parse(e.Response.Payload.ToString());
-						if (mode == 1) mode = 5; // Video = streaming
+						if (mode == 1) {
+							mode = 5; // Video = streaming
+						}
+
 						Log.Debug("Toggle mode: " + mode);
 						_cs.ControlService.SetMode(mode).ConfigureAwait(false);
 						break;
@@ -129,7 +128,10 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 		}
 
 		protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-			if (_client != null) _client.ColorsReceived += UpdateColors;
+			if (_client != null) {
+				_client.ColorsReceived += UpdateColors;
+			}
+
 			_splitter.DoSend = true;
 			while (!stoppingToken.IsCancellationRequested) {
 				await Task.Delay(1, stoppingToken);
@@ -140,6 +142,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 				_client.StopSubscribing();
 				_client.ColorsReceived -= UpdateColors;
 			}
+
 			_splitter.DoSend = false;
 			Log.Debug("DS stream service stopped.");
 		}
@@ -147,9 +150,10 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 		private void UpdateColors(object? sender, DreamScreenClient.DeviceColorEventArgs e) {
 			var colors = e.Colors;
 			var frame = _builder.Build(colors);
+			Log.Debug("Update: DS");
+
 			_splitter.Update(frame);
 			frame.Dispose();
-			SourceActive = !_splitter.NoImage;
 			_cs.Counter.Tick("Dreamscreen");
 		}
 	}

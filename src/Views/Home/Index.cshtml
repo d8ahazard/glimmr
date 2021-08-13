@@ -13,7 +13,7 @@
 <div class="main">
 <nav class="myNav navbar-light bg-light fixed-top" id="mainNav">
     <div class="myNav container-fluid">
-        <div class="btn-group btn-group-lg myNav">
+        <div class="btn-group btn-group-lg myNav" id="modeBtns">
             <div class="btn btn-clear modeBtn" data-mode="0" data-toggle="tooltip" data-placement="top" title="Off">
                 <span class="material-icons">power_off</span>
             </div>
@@ -23,7 +23,7 @@
             <div class="btn btn-clear modeBtn" data-mode="2" data-toggle="tooltip" data-placement="top" title="Audio">
                 <span class="material-icons">music_note</span>
             </div>
-            <div class="btn btn-clear modeBtn" data-mode="4" data-toggle="tooltip" data-placement="top" title="AudioVideo">
+            <div class="btn btn-clear modeBtn" data-mode="4" data-toggle="tooltip" data-placement="top" title="Audio/Video">
                 <span class="material-icons">music_video</span>
             </div>
             <div class="btn btn-clear modeBtn" data-mode="3" data-toggle="tooltip" data-placement="top" title="Ambient">
@@ -34,7 +34,7 @@
             </div>
         </div>
         <div class="btn-group btn-group-lg myNav float-right">
-            <div class="btn btn-clear btn-lg btn-offset mainSettings">
+            <div class="btn btn-clear btn-lg btn-offset mainSettings" id="settingBtn">
                 <span class="material-icons">settings_applications</span>
             </div>
             <div class="btn btn-clear btn-lg btn-offset d-none" id="closeBtn">
@@ -75,7 +75,12 @@
         <div class="card-body row">
             <div class="col-8 titleCol exp">
                 <h5 class="card-title">Loading...</h5>
-                <div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
+                <div class="lds-ellipsis">
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                </div>
             </div>
         </div>
     </div>
@@ -108,7 +113,7 @@
 <!-- System prefs -->
 <div class="row border justify-content-center pb-5">
     <div class="col-12 headerCol">General</div>
-    <div class="col-12 col-md-6 col-xl-3 align-self-center form-group pt-1">
+    <div class="col-12 col-md-6 col-xl-3 align-self-center form-group pt-1" id="settingsMainControl">
         <label class="form-label">System Control</label>
         <div class="col-12 col-md-6 col-xl-3">
             <div class="btn-group">
@@ -232,7 +237,7 @@
         </select>
     </div>
 </div>
-<div class="row border justify-content-center pb-5">
+<div class="row border justify-content-center pb-5 updateDiv" id="settingsMainUpdates">
     <div class="col-12 headerCol">Updates</div>
     <!-- Auto-update -->
     <div class="col-12" id="versionDiv">Updates</div>
@@ -316,7 +321,7 @@
         </form>
     </div>
 </div>
-<div class="row border justify-content-center pb-5">
+<div class="row border justify-content-center pb-5 openRgbDiv" id="settingsMainOpenRGB">
     <div class="col-12 titleCol">OpenRGB</div>
     <div class="col-12 form-text pb-4">Enter the IP Address and port of your OpenRGB Server.</div>
     <div class="col-12 col-md-6 col-xl-3 form-group">
@@ -335,7 +340,7 @@
 <div class="tab-pane fade" id="captureTab" role="tabpanel" aria-labelledby="capture-tab">
     <div class="container-fluid">
         <!-- Capture Mode -->
-        <div class="row border justify-content-center pb-5">
+        <div class="row border justify-content-center pb-5" id="settingsCaptureSource">
             <div class="col-12 headerCol">Capture Preferences</div>
             <div class="col-12 col-md-6 col-xl-3">
                 <label class="form-label">Capture Mode</label>
@@ -362,7 +367,7 @@
 
             </div>
         </div>
-        <div class="row border justify-content-center pb-5">
+        <div class="row border justify-content-center pb-5 streamingDiv" id="settingsCaptureStream">
             <div class="col-12 headerCol">Streaming Preferences</div>
             <div class="col-12 col-md-6 col-xl-3">
                 <label class="form-label">Streaming Mode</label>
@@ -374,7 +379,7 @@
                 <div class="form-text">Select your desired streaming mode.</div>
             </div>
             <div class="col-12 col-md-6 col-xl-3">
-                 <div class="col-12 col-md-6 col-xl-3 streamGroup form-group" data-stream="0">
+                <div class="col-12 col-md-6 col-xl-3 streamGroup form-group" data-stream="0">
                     <label class="form-label">Target DreamScreen</label>
                     <select id="targetDs" class="form-control" data-object="SystemData" data-property="DsIp">
                         <option value=""></option>
@@ -430,10 +435,10 @@
             </div>
         </div>
 
-        <div class="row border justify-content-center pb-5">
+        <div class="row border justify-content-center pb-5" id="settingsCaptureLed">
             <div class="col-12 titleCol">LED Counts</div>
             <div class="col-12 form-text mb-4">Enter the total number of LEDs around the perimerter of your screen.</div>
-           <!-- Left count -->
+            <!-- Left count -->
             <div class="col-6 col-md-3 align-self-center">
                 <div class="input-group mb-3">
                     <div class="input-group-prepend">
@@ -443,23 +448,23 @@
                 </div>
             </div>
             <!-- Right count -->
-           <div class="col-6 col-md-3 align-self-center">
-               <div class="input-group mb-3">
-                   <div class="input-group-prepend">
-                       <span class="input-group-text" id="ledCountRight">Right</span>
-                   </div>
-                   <input type="text" class="form-control ledCount" data-property="RightCount" data-object="SystemData" aria-label="Right" aria-describedby="ledCountRight">
-               </div>
-           </div>
+            <div class="col-6 col-md-3 align-self-center">
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="ledCountRight">Right</span>
+                    </div>
+                    <input type="text" class="form-control ledCount" data-property="RightCount" data-object="SystemData" aria-label="Right" aria-describedby="ledCountRight">
+                </div>
+            </div>
             <!-- Top count -->
-           <div class="col-6 col-md-3 align-self-center">
-               <div class="input-group mb-3">
-                   <div class="input-group-prepend">
-                       <span class="input-group-text" id="ledCountTop">Top</span>
-                   </div>
-                   <input type="text" class="form-control ledCount" data-property="TopCount" data-object="SystemData" aria-label="Top" aria-describedby="ledCountTop">
-               </div>
-           </div>
+            <div class="col-6 col-md-3 align-self-center">
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="ledCountTop">Top</span>
+                    </div>
+                    <input type="text" class="form-control ledCount" data-property="TopCount" data-object="SystemData" aria-label="Top" aria-describedby="ledCountTop">
+                </div>
+            </div>
             <!-- Bottom count -->
             <div class="col-6 col-md-3 align-self-center">
                 <div class="input-group mb-3">
@@ -474,8 +479,7 @@
                 <div id="sLedWrap"></div>
             </div>
         </div>
-
-        <div class="row border justify-content-center pb-5">
+        <div class="row border justify-content-center pb-5" id="settingsCaptureSector">
             <div class="col-12 titleCol">Sector Counts</div>
             <div class="col-12 form-text mb-4">Enter the number of vertical and horizontal sectors. You will need to re-map your sectors for devices after this.</div>
             <!-- Top count -->
@@ -576,7 +580,7 @@
 <nav class="container-fluid fixed-bottom" id="footer">
     <div class="fixed-bottom">
 
-        <div class="btn btn-sm btn-clear float-right refreshBtn mr-2">
+        <div class="btn btn-sm btn-clear float-right refreshBtn mr-2" id="refreshBtn">
             <span class="material-icons fs-1" id="refreshIcon">refresh</span>
         </div>
     </div>
@@ -627,6 +631,7 @@
         </div>
     </div>
 </div>
+<div id="blank"></div>
 </div>
 </body>
 </html>

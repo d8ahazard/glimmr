@@ -30,7 +30,7 @@ namespace Glimmr {
 			}
 
 			var branch = SystemUtil.GetBranch();
-			
+
 			//var tr1 = new TextWriterTraceListener(Console.Out);
 			//Trace.Listeners.Add(tr1);
 			var lc = new LoggerConfiguration()

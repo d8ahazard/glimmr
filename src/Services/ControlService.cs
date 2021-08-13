@@ -2,10 +2,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Mime;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
@@ -27,11 +25,11 @@ using Serilog;
 namespace Glimmr.Services {
 	public class ControlService : BackgroundService {
 		public ColorService ColorService { get; set; }
-		public HttpClient HttpSender { get; set; }
+		public HttpClient HttpSender { get; private set; }
 
-		public MulticastService MulticastService { get; set; }
-		public ServiceDiscovery ServiceDiscovery { get; set; }
-		public UdpClient UdpClient { get; set; }
+		public MulticastService MulticastService { get; private set; }
+		public ServiceDiscovery ServiceDiscovery { get; private set; }
+		public UdpClient UdpClient { get; private set; }
 		private readonly IHubContext<SocketServer> _hubContext;
 
 		public AsyncEvent<DynamicEventArgs> DemoLedEvent;
@@ -58,12 +56,9 @@ namespace Glimmr.Services {
 #pragma warning restore 8618
 			_hubContext = hubContext;
 			Initialize();
-
 		}
 
 		public event Action RefreshSystemEvent = delegate { };
-
-		public event Action<List<Color>, List<Color>, int, bool> TriggerSendColorEvent = delegate { };
 
 		public dynamic? GetAgent(string classType) {
 			foreach (var (key, value) in _agents) {
@@ -229,12 +224,6 @@ namespace Glimmr.Services {
 		}
 
 
-		// We call this one to send colors to everything, including the color service
-		public void SendColors(List<Color> c1, List<Color> c2, int fadeTime = 0, bool force = false) {
-			TriggerSendColorEvent(c1, c2, fadeTime, force);
-		}
-
-
 		public async Task NotifyClients() {
 			await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
 		}
@@ -265,7 +254,16 @@ namespace Glimmr.Services {
 		}
 
 		private void Initialize() {
-			var version = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
+			var entry = Assembly.GetEntryAssembly();
+			var version = "1.1.0";
+			if (entry != null) {
+				try {
+					version = entry.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+				} catch (Exception) {
+					// ignore
+				}
+			}
+
 
 			string text = $@"
 

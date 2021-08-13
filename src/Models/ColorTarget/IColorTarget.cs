@@ -14,15 +14,11 @@ namespace Glimmr.Models.ColorTarget {
 	public interface IColorTarget {
 		public bool Enable { get; set; }
 		public bool Streaming { get; set; }
-		public bool Testing { get; set; }
-
+		public bool Testing { set; }
 		[JsonProperty] public DateTime LastSeen => DateTime.Now;
 
 		public IColorTargetData Data { get; set; }
-		public int Brightness { get; set; }
-		public string Id { get; set; }
-		public string IpAddress { get; set; }
-		public string Tag { get; set; }
+		public string Id { get; }
 
 		public Task StartStream(CancellationToken ct);
 
@@ -39,7 +35,7 @@ namespace Glimmr.Models.ColorTarget {
 	}
 
 	public abstract class ColorTarget {
-		public ColorService? ColorService { get; set; }
+		public ColorService? ColorService { get; init; }
 
 		protected ColorTarget(ColorService cs) {
 			ColorService = cs;

@@ -82,7 +82,10 @@ namespace Glimmr.Models.Util {
 			var res = result.Split("=")[1].Split("'")[0];
 			var temp = float.TryParse(res, out var temperature) ? temperature : 0.0f;
 			var sd = DataUtil.GetSystemData();
-			if (sd.Units == "0") temp = (float) Math.Round(temp * 1.8f + 32);
+			if (sd.Units == "0") {
+				temp = (float) Math.Round(temp * 1.8f + 32);
+			}
+
 			return temp;
 		}
 

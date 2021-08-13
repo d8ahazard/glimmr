@@ -50,7 +50,7 @@ namespace Glimmr {
 				endpoints.MapHub<SocketServer>("/socket");
 			});
 			app.Use(async (context, next) => {
-				var hubContext = context.RequestServices
+				var unused = context.RequestServices
 					.GetRequiredService<IHubContext<SocketServer>>();
 
 				if (next != null) {

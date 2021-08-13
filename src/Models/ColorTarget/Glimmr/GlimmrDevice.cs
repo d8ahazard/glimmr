@@ -19,28 +19,15 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Glimmr {
 	public class GlimmrDevice : ColorTarget, IColorTarget, IDisposable {
-		private GlimmrData _data;
-		private GlimmrData _sourceData;
 		private const int Port = 8889;
 		private readonly HttpClient _httpClient;
 		private readonly UdpClient _udpClient;
 		private readonly List<Color> _updateColors;
+		private GlimmrData _data;
 		private bool _disposed;
-		private SystemData _sd;
 		private IPEndPoint? _ep;
-		public bool Enable { get; set; }
-		public bool Streaming { get; set; }
-		public bool Testing { get; set; }
-		public int Brightness { get; set; }
-		public string Id { get; set; }
-		public string IpAddress { get; set; }
-		public string Tag { get; set; } = "Glimmr";
-
-
-		IColorTargetData IColorTarget.Data {
-			get => _data;
-			set => _data = (GlimmrData) value;
-		}
+		private string _ipAddress;
+		private SystemData _sd;
 
 		public GlimmrDevice(GlimmrData wd, ColorService colorService) : base(colorService) {
 			colorService.ColorSendEvent += SetColor;
@@ -50,13 +37,20 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			_data = wd ?? throw new ArgumentException("Invalid Glimmr data.");
 			Id = _data.Id;
 			Enable = _data.Enable;
-			IpAddress = _data.IpAddress;
+			_ipAddress = _data.IpAddress;
 			_sd = DataUtil.GetSystemData();
 			colorService.ControlService.RefreshSystemEvent += RefreshSystem;
 		}
 
-		private void RefreshSystem() {
-			_sd = DataUtil.GetSystemData();
+		public bool Enable { get; set; }
+		public bool Streaming { get; set; }
+		public bool Testing { get; set; }
+		public string Id { get; }
+
+
+		IColorTargetData IColorTarget.Data {
+			get => _data;
+			set => _data = (GlimmrData) value;
 		}
 
 
@@ -69,7 +63,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			var sd = DataUtil.GetSystemData();
 			var glimmrData = new GlimmrData(sd);
 			await SendPost("startStream", JsonConvert.SerializeObject(glimmrData)).ConfigureAwait(false);
-			_ep = IpUtil.Parse(IpAddress, Port);
+			_ep = IpUtil.Parse(_ipAddress, Port);
 			Streaming = true;
 			Log.Information($"{_data.Tag}::Stream started: {_data.Id}.");
 		}
@@ -134,13 +128,14 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 					top[ct] = leds[tIdx];
 					ct++;
 				}
-				
+
 				ct = 0;
 				for (var i = 0; i < left.Length; i++) {
 					var lIdx = right.Length + top.Length + i;
 					left[ct] = leds[lIdx];
 					ct++;
 				}
+
 				ct = 0;
 				for (var i = 0; i < bottom.Length; i++) {
 					var lIdx = left.Length + right.Length + top.Length + i;
@@ -153,7 +148,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 				top = top.Reverse().ToArray();
 				bottom = bottom.Reverse().ToArray();
 				right = right.Reverse().ToArray();
-				
+
 				leds.AddRange(left);
 				leds.AddRange(top);
 				leds.AddRange(right);
@@ -180,9 +175,12 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			var id = _data.Id;
 			_sd = DataUtil.GetSystemData();
 			var dev = DataUtil.GetDevice<GlimmrData>(id);
-			if (dev == null) return Task.CompletedTask;
+			if (dev == null) {
+				return Task.CompletedTask;
+			}
+
 			_data = dev;
-			IpAddress = _data.IpAddress;
+			_ipAddress = _data.IpAddress;
 			Enable = _data.Enable;
 			Log.Debug($"Reloaded LED Data for {id}: " + JsonConvert.SerializeObject(_data));
 			return Task.CompletedTask;
@@ -192,6 +190,10 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		public void Dispose() {
 			Dispose(true).ConfigureAwait(true);
 			GC.SuppressFinalize(this);
+		}
+
+		private void RefreshSystem() {
+			_sd = DataUtil.GetSystemData();
 		}
 
 
@@ -219,13 +221,13 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 
 		private async Task SendPost(string target, string value) {
 			Uri uri;
-			if (string.IsNullOrEmpty(IpAddress) && !string.IsNullOrEmpty(Id)) {
-				IpAddress = Id;
+			if (string.IsNullOrEmpty(_ipAddress) && !string.IsNullOrEmpty(Id)) {
+				_ipAddress = Id;
 				_data.IpAddress = Id;
 			}
 
 			try {
-				uri = new Uri("http://" + IpAddress + "/api/DreamData/" + target);
+				uri = new Uri("http://" + _ipAddress + "/api/DreamData/" + target);
 				//Log.Debug($"Posting to {uri}: " + value);
 			} catch (UriFormatException e) {
 				Log.Warning("URI Format exception: " + e.Message);
@@ -235,8 +237,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 
 			var stringContent = new StringContent(value, Encoding.UTF8, "application/json");
 			try {
-				var res = await _httpClient.PostAsync(uri, stringContent);
-				//Log.Debug("Response: " + res.StatusCode);
+				var _ = await _httpClient.PostAsync(uri, stringContent);
 			} catch (Exception e) {
 				Log.Warning("HTTP Request Exception: " + e.Message);
 			}

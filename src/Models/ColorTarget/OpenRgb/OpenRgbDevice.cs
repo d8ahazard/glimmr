@@ -15,33 +15,31 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.OpenRgb {
 	public class OpenRgbDevice : ColorTarget, IColorTarget {
-		private OpenRgbData _data;
 		private readonly ColorService _colorService;
 		private OpenRGBClient? _client;
-		public bool Streaming { get; set; }
-		public bool Testing { get; set; }
-		public int Brightness { get; set; }
-		public string Id { get; set; }
-		public string IpAddress { get; set; }
-		public string Tag { get; set; }
-		public bool Enable { get; set; }
-		IColorTargetData IColorTarget.Data {
-			get => _data;
-			set => _data = (OpenRgbData) value;
-		}
+		private OpenRgbData _data;
 
 		public OpenRgbDevice(OpenRgbData data, ColorService cs) {
 			Id = data.Id;
 			_data = data;
-			IpAddress = _data.IpAddress;
-			Tag = _data.Tag;
 			cs.ColorSendEvent += SetColor;
 			_colorService = cs;
 			_client = cs.ControlService.GetAgent("OpenRgbAgent");
 			LoadData();
 		}
 
-		
+		public bool Streaming { get; set; }
+
+		public bool Testing { private get; set; }
+		public string Id { get; }
+		public bool Enable { get; set; }
+
+		IColorTargetData IColorTarget.Data {
+			get => _data;
+			set => _data = (OpenRgbData) value;
+		}
+
+
 		public Task StartStream(CancellationToken ct) {
 			if (_client == null || !Enable) {
 				return Task.CompletedTask;
@@ -115,7 +113,10 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 		public Task ReloadData() {
 			var dev = DataUtil.GetDevice(Id);
-			if (dev != null) _data = dev; 
+			if (dev != null) {
+				_data = dev;
+			}
+
 			return Task.CompletedTask;
 		}
 
@@ -124,7 +125,6 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 		private void LoadData() {
 			Enable = _data.Enable;
-			IpAddress = _data.IpAddress;
 		}
 	}
 }

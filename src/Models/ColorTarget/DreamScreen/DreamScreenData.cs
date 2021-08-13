@@ -3,21 +3,16 @@
 using System;
 using System.Globalization;
 using DreamScreenNet.Devices;
+using Newtonsoft.Json;
 
 #endregion
 
 namespace Glimmr.Models.ColorTarget.DreamScreen {
 	public class DreamScreenData : IColorTargetData {
-		public int GroupNumber { get; private set; }
-		public string DeviceTag { get; private set; } = "DreamScreen";
-		public string Name { get; set; } = "DreamScreen";
-		public string Id { get; set; } = "";
-		public string Tag { get; set; } = "DreamScreen";
-		public string IpAddress { get; set; } = "";
-		public int Brightness { get; set; } = 255;
-
-		public bool Enable { get; set; }
-		public string LastSeen { get; set; }
+		[JsonProperty] public int Brightness { get; set; } = 255;
+		[JsonProperty] public int GroupNumber { get; private set; }
+		[JsonProperty] public string DeviceTag { get; private set; } = "DreamScreen";
+		[JsonProperty] public string Tag { get; set; } = "DreamScreen";
 
 		public DreamScreenData() {
 			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
@@ -36,7 +31,13 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			}
 		}
 
-	
+		[JsonProperty] public string Name { get; set; } = "DreamScreen";
+		[JsonProperty] public string Id { get; set; } = "";
+		[JsonProperty] public string IpAddress { get; set; } = "";
+
+		[JsonProperty] public bool Enable { get; set; }
+		[JsonProperty] public string LastSeen { get; set; }
+
 
 		public void UpdateFromDiscovered(IColorTargetData data) {
 			var dData = (DreamScreenData) data;

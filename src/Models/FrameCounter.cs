@@ -12,11 +12,13 @@ using Glimmr.Services;
 
 namespace Glimmr.Models {
 	public class FrameCounter : IDisposable {
+		public Dictionary<string, int> Rates { get; private set; }
 		private readonly Stopwatch _stopwatch;
 		private Dictionary<string, int> _ticks;
 
 		public FrameCounter(ColorService cs) {
 			_ticks = new Dictionary<string, int> {["source"] = 0};
+			Rates = _ticks;
 			_stopwatch = new Stopwatch();
 			cs.ControlService.SetModeEvent += Mode;
 		}
@@ -34,6 +36,7 @@ namespace Glimmr.Models {
 			}
 
 			_ticks = new Dictionary<string, int> {["source"] = 0};
+			Rates = _ticks;
 			return Task.CompletedTask;
 		}
 
@@ -44,8 +47,9 @@ namespace Glimmr.Models {
 			}
 
 			// Clear our cache every minute so we don't wind up with massive stored values over time
-			if (_stopwatch.Elapsed > TimeSpan.FromMinutes(1)) {
+			if (_stopwatch.Elapsed >= TimeSpan.FromSeconds(1)) {
 				_stopwatch.Restart();
+				Rates = _ticks;
 				_ticks = new Dictionary<string, int> {["source"] = 0};
 			}
 
@@ -54,15 +58,6 @@ namespace Glimmr.Models {
 			} else {
 				_ticks[id] = 0;
 			}
-		}
-		
-		public Dictionary<string, long> Rates() {
-			var time = _stopwatch.ElapsedMilliseconds / 1000;
-			var output = new Dictionary<string, long>();
-			foreach (var (key, value) in _ticks) {
-				output[key] = time != 0 ? value / time : 0;
-			}
-			return output;
 		}
 	}
 }

@@ -10,11 +10,9 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Adalight {
 	public class AdalightDiscovery : ColorDiscovery, IColorDiscovery {
-		public override string DeviceTag { get; set; } = "Adalight";
-		private readonly ControlService _controlService;
+		public virtual string DeviceTag { get; set; } = "Adalight";
 
 		public AdalightDiscovery(ColorService cs) : base(cs) {
-			_controlService = cs.ControlService;
 		}
 
 		public async Task Discover(CancellationToken ct, int timeout) {

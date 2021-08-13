@@ -14,6 +14,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		[JsonProperty] public bool MirrorHorizontal { get; set; }
 		[JsonProperty] public bool UseCenter { get; set; }
 		[JsonProperty] public int BottomCount { get; set; }
+		[JsonProperty] public int Brightness { get; set; } = 255;
 		[JsonProperty] public int HCount { get; set; }
 		[JsonProperty] public int LedCount { get; set; }
 		[JsonProperty] public int LeftCount { get; set; }
@@ -21,14 +22,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		[JsonProperty] public int SectorCount { get; set; }
 		[JsonProperty] public int TopCount { get; set; }
 		[JsonProperty] public int VCount { get; set; }
-		[JsonProperty] public string Name { get; set; } = "";
-		[JsonProperty] public string Id { get; set; } = "";
 		[JsonProperty] public string Tag { get; set; }
-		[JsonProperty] public string IpAddress { get; set; } = "";
-		[JsonProperty] public int Brightness { get; set; } = 255;
-		[JsonProperty] public bool Enable { get; set; }
-
-		public string LastSeen { get; set; }
 
 
 		public GlimmrData() {
@@ -71,7 +65,13 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			Id = Dns.GetHostName();
 		}
 
-	
+		[JsonProperty] public string Name { get; set; } = "";
+		[JsonProperty] public string Id { get; set; } = "";
+		[JsonProperty] public string IpAddress { get; set; } = "";
+		[JsonProperty] public bool Enable { get; set; }
+
+		public string LastSeen { get; set; }
+
 
 		public void UpdateFromDiscovered(IColorTargetData data) {
 			var input = (GlimmrData) data;

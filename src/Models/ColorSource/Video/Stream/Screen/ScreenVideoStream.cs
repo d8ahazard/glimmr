@@ -19,20 +19,20 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 		private int _height;
 		private int _left;
 		private Rectangle _screenDims;
+		private FrameSplitter? _splitter;
 		private int _top;
 		private int _width;
+
+		public ScreenVideoStream() {
+			Log.Information("Config got.");
+		}
+
 		public void Dispose() {
 			GC.SuppressFinalize(this);
 		}
 
-		public Mat Frame { get; private set; }
-
-		public ScreenVideoStream() {
-			Frame = new Mat();
-			Log.Information("Config got.");
-		}
-
-		public Task Start(CancellationToken ct) {
+		public Task Start(CancellationToken ct, FrameSplitter splitter) {
+			_splitter = splitter;
 			try {
 				SetDimensions();
 
@@ -42,7 +42,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 				}
 
 				_capturing = true;
-				return Task.Run(() => CaptureScreen(ct));
+				return Task.Run(() => CaptureScreen(ct), CancellationToken.None);
 			} catch (Exception e) {
 				Log.Warning("Exception, can't start screen cap: " + e.Message);
 				_capturing = false;
@@ -85,7 +85,8 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 				var sc = bcs.ToImage<Bgr, byte>();
 				g.Flush();
 				var newMat = sc.Resize(DisplayUtil.CaptureWidth(), DisplayUtil.CaptureHeight(), Inter.Nearest);
-				Frame = newMat.Mat;
+				_splitter?.Update(newMat.Mat);
+				newMat.Dispose();
 			}
 
 			Log.Debug("Capture completed?");

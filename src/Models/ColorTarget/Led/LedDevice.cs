@@ -15,29 +15,36 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.Led {
 	public class LedDevice : ColorTarget, IColorTarget {
 		private float CurrentMilliamps { get; set; }
+		private readonly LedAgent? _agent;
 		private readonly Controller? _controller;
 		private readonly int _controllerId;
 		private readonly WS281x? _ws;
+		private int _brightness;
 		private LedData _data;
-		private readonly LedAgent? _agent;
 		private bool _enableAbl;
 
 		private int _ledCount;
+		private int _multiplier;
 		private int _offset;
 
 
 		public LedDevice(LedData ld, ColorService colorService) : base(colorService) {
 			_data = ld;
 			Id = _data.Id;
+			_multiplier = _data.LedMultiplier;
 			_controllerId = int.Parse(Id);
-			IpAddress = _data.IpAddress;
-			Tag = _data.Tag;
 
 			var cs = colorService;
 			_agent = cs.ControlService.GetAgent("LedAgent");
-			if (_agent == null) return;
+			if (_agent == null) {
+				return;
+			}
+
 			_ws = _agent.Ws281X;
-			if (_ws == null) return;
+			if (_ws == null) {
+				return;
+			}
+
 			cs.ColorSendEvent += SetColor;
 			_controller = Id switch {
 				"0" => _ws.GetController(),
@@ -50,10 +57,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 		public bool Streaming { get; set; }
 		public bool Testing { get; set; }
-		public int Brightness { get; set; }
-		public string Id { get; set; }
-		public string IpAddress { get; set; }
-		public string Tag { get; set; }
+		public string Id { get; }
 		public bool Enable { get; set; }
 
 
@@ -104,8 +108,13 @@ namespace Glimmr.Models.ColorTarget.Led {
 			}
 
 			_data = ld;
+			_multiplier = _data.LedMultiplier;
+			if (_multiplier == 0 || _multiplier == null) {
+				_multiplier = 1;
+			}
+
 			Enable = _data.Enable;
-			Brightness = (int)(_data.Brightness / 100f * 255);
+			_brightness = (int) (_data.Brightness / 100f * 255);
 			_agent?.ToggleStrip(_controllerId, Enable);
 			_ledCount = _data.LedCount;
 			if (_ledCount > sd.LedCount) {
@@ -120,7 +129,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			}
 
 			if (_data.Brightness != ld.Brightness && !_enableAbl) {
-				_ws?.SetBrightness(Brightness, _controllerId);
+				_ws?.SetBrightness(_brightness, _controllerId);
 			}
 
 			if (_data.LedCount != ld.LedCount) {
@@ -139,7 +148,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 				return;
 			}
 
-			var c1 = ColorUtil.TruncateColors(colors, _offset, _ledCount);
+			var c1 = ColorUtil.TruncateColors(colors, _offset, _ledCount, _multiplier);
 			if (_enableAbl) {
 				c1 = VoltAdjust(c1, _data);
 			}
@@ -177,7 +186,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			//one PU is the power it takes to have 1 channel 1 step brighter per brightness step
 			//so A=2,R=255,G=0,B=0 would use 510 PU per LED (1mA is about 3700 PU)
 			var actualMilliampsPerLed = ld.MilliampsPerLed; // 20
-			var defaultBrightness = Brightness;
+			var defaultBrightness = _brightness;
 			var ablMaxMilliamps = ld.AblMaxMilliamps; // 4500
 			var length = input.Length;
 			var output = input;
