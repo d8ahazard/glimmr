@@ -1,7 +1,6 @@
 #region
 
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
@@ -139,13 +138,15 @@ namespace Glimmr.Models.ColorTarget.Led {
 			return Task.CompletedTask;
 		}
 
-		public void SetColor(List<Color> colors, List<Color> sectors, int fadeTime, bool force = false) {
+		public Task SetColor(object o, DynamicEventArgs args) {
+			Color[] colors = args.Arg0;
+			bool force = args.Arg3 ?? false;
 			if (colors == null) {
 				throw new ArgumentException("Invalid color input.");
 			}
 
 			if (!Streaming || !Enable || Testing && !force) {
-				return;
+				return Task.CompletedTask;
 			}
 
 			var c1 = ColorUtil.TruncateColors(colors, _offset, _ledCount, _multiplier);
@@ -164,6 +165,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 			_agent?.Update(_controllerId);
 			ColorService?.Counter.Tick(Id);
+			return Task.CompletedTask;
 		}
 
 

@@ -94,7 +94,7 @@ namespace Glimmr.Services {
 		}
 
 		private Task UpdateMode(object o, DynamicEventArgs dynamicEventArgs) {
-			_streaming = dynamicEventArgs.P1 != 0;
+			_streaming = dynamicEventArgs.Arg0 != 0;
 			return Task.CompletedTask;
 		}
 

@@ -28,7 +28,7 @@ namespace Glimmr.Models {
 		}
 
 		private Task Mode(object arg1, DynamicEventArgs arg2) {
-			var newMode = (DeviceMode) arg2.P1;
+			var newMode = (DeviceMode) arg2.Arg0;
 			if (newMode != DeviceMode.Off) {
 				_stopwatch.Restart();
 			} else {

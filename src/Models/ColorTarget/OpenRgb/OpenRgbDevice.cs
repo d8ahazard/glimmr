@@ -1,7 +1,6 @@
 ﻿#region
 
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Threading;
@@ -91,9 +90,10 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
-		public void SetColor(List<Color> colors, List<Color> sectors, int fadeTime, bool force = false) {
+		public Task SetColor(object o, DynamicEventArgs args) {
+			Color[] colors = args.Arg0;
 			if (!Enable || !Streaming) {
-				return;
+				return Task.CompletedTask;
 			}
 
 			var toSend = ColorUtil.TruncateColors(colors, _data.Offset, _data.LedCount);
@@ -105,6 +105,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			_client?.UpdateLeds(_data.DeviceId, converted.ToArray());
 
 			_colorService.Counter.Tick(Id);
+			return Task.CompletedTask;
 		}
 
 		public Task FlashColor(Color color) {

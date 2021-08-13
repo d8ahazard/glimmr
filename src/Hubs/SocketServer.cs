@@ -55,6 +55,7 @@ namespace Glimmr.Hubs {
 			var sd2 = sdd.ToObject<SystemData>();
 			try {
 				await _cs.UpdateSystem(sd2).ConfigureAwait(false);
+				await Clients.Others.SendAsync("olo", DataUtil.GetStoreSerialized());
 			} catch (Exception e) {
 				Log.Warning("Exception updating SD: " + e.Message + " at " + e.StackTrace);
 			}

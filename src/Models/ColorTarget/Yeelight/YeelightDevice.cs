@@ -1,7 +1,6 @@
 ﻿#region
 
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 using System.Threading;
@@ -95,20 +94,22 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
-		public void SetColor(List<Color> colors, List<Color> sectors, int arg3, bool force = false) {
+		public Task SetColor(object o, DynamicEventArgs args) {
+			Color[] sectors = args.Arg1 ?? ColorUtil.EmptyColors(12);
+			bool force = args.Arg3 ?? false;
 			if (!Streaming || !Enable) {
-				return;
+				return Task.CompletedTask;
 			}
 
 			if (!force) {
 				if (!Streaming || _targetSector == -1 || Testing) {
-					return;
+					return Task.CompletedTask;
 				}
 			}
 
 			var col = sectors[_targetSector];
-			if (_targetSector >= sectors.Count) {
-				return;
+			if (_targetSector >= sectors.Length) {
+				return Task.CompletedTask;
 			}
 
 			_yeeDevice.SetRGBColor(col.R, col.G, col.B).ConfigureAwait(false);
@@ -129,6 +130,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			}
 
 			_colorService.Counter.Tick(Id);
+			return Task.CompletedTask;
 		}
 
 		public async Task FlashColor(Color col) {

@@ -60,6 +60,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 
 		public Task ToggleStream(CancellationToken ct) {
 			Log.Information("Starting UDP Stream service...");
+			_splitter.DoSend = true;
 			return ExecuteAsync(ct);
 		}
 
@@ -79,7 +80,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 
 		
 		private async Task StartStream(object arg1, DynamicEventArgs arg2) {
-			_gd = arg2.P1;
+			_gd = arg2.Arg0;
 			_sd = DataUtil.GetSystemData();
 			_ledCount = _gd.LedCount;
 			var dims = new[] {_gd.LeftCount, _gd.RightCount, _gd.TopCount, _gd.BottomCount};
@@ -89,7 +90,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 		}
 
 		private Task Mode(object arg1, DynamicEventArgs arg2) {
-			_devMode = (DeviceMode) arg2.P1;
+			_devMode = (DeviceMode) arg2.Arg0;
 			_streaming = _devMode == Udp;
 			return Task.CompletedTask;
 		}

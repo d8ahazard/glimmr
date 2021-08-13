@@ -122,18 +122,22 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		public void Dispose() {
 		}
 
-		public void SetColor(List<Color> colors, List<Color> list, int arg3, bool force = false) {
+		public Task SetColor(object o, DynamicEventArgs args) {
+			Color[] colors = args.Arg0;
+			Color[] sectors = args.Arg1 ?? ColorUtil.EmptyColors(12);
+			bool force = args.Arg3 ?? false;
 			if (!Streaming || !Enable || Testing && !force) {
-				return;
+				return Task.CompletedTask;
 			}
 
 			if (_hasMulti) {
 				SetColorMulti(colors);
 			} else {
-				SetColorSingle(list);
+				SetColorSingle(sectors);
 			}
 
 			ColorService?.Counter.Tick(Id);
+			return Task.CompletedTask;
 		}
 
 
@@ -187,7 +191,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			Enable = _data.Enable;
 		}
 
-		private void SetColorMulti(List<Color> colors) {
+		private void SetColorMulti(Color[] colors) {
 			if (_client == null || _beamLayout == null) {
 				Log.Warning("Null client or no layout!");
 				return;
@@ -225,21 +229,20 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		}
 
 
-		private void SetColorSingle(List<Color> list) {
+		private void SetColorSingle(Color[] list) {
 			var sectors = list;
 			if (sectors == null || _client == null) {
 				return;
 			}
 
-			if (_targetSector >= sectors.Count) {
+			if (_targetSector >= sectors.Length) {
 				return;
 			}
 
 			var input = sectors[_targetSector];
 
 			var nC = new LifxColor(input);
-			//var nC = new LifxColor {R = input.R, B = input.B, G = input.G};
-
+			
 			_client.SetColorAsync(B, nC).ConfigureAwait(false);
 			ColorService?.Counter.Tick(Id);
 		}

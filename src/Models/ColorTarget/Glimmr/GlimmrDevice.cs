@@ -103,14 +103,16 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		}
 
 
-		public void SetColor(List<Color> leds, List<Color> sectors, int arg3, bool force = false) {
+		public Task SetColor(object o, DynamicEventArgs args) {
+			Color[] colors = args.Arg0;
+			bool force = args.Arg3 ?? false;
 			if (!Streaming || !Enable || Testing && !force) {
-				return;
+				return Task.CompletedTask;
 			}
 
 			if (_ep == null) {
 				Log.Debug("No endpoint.");
-				return;
+				return Task.CompletedTask;
 			}
 
 			if (_data.MirrorHorizontal) {
@@ -119,44 +121,45 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 				var top = new Color[_sd.TopCount];
 				var bottom = new Color[_sd.BottomCount];
 				for (var i = 0; i < right.Length; i++) {
-					right[i] = leds[i];
+					right[i] = colors[i];
 				}
 
 				var ct = 0;
 				for (var i = 0; i < top.Length; i++) {
 					var tIdx = right.Length + i;
-					top[ct] = leds[tIdx];
+					top[ct] = colors[tIdx];
 					ct++;
 				}
 
 				ct = 0;
 				for (var i = 0; i < left.Length; i++) {
 					var lIdx = right.Length + top.Length + i;
-					left[ct] = leds[lIdx];
+					left[ct] = colors[lIdx];
 					ct++;
 				}
 
 				ct = 0;
 				for (var i = 0; i < bottom.Length; i++) {
 					var lIdx = left.Length + right.Length + top.Length + i;
-					bottom[ct] = leds[lIdx];
+					bottom[ct] = colors[lIdx];
 					ct++;
 				}
 
-				leds = new List<Color>();
+				var output  = new List<Color>();
 				left = left.Reverse().ToArray();
 				top = top.Reverse().ToArray();
 				bottom = bottom.Reverse().ToArray();
 				right = right.Reverse().ToArray();
 
-				leds.AddRange(left);
-				leds.AddRange(top);
-				leds.AddRange(right);
-				leds.AddRange(bottom);
+				output.AddRange(left);
+				output.AddRange(top);
+				output.AddRange(right);
+				output.AddRange(bottom);
+				colors = output.ToArray();
 			}
 
 			var packet = new List<byte> {ByteUtils.IntByte(2), ByteUtils.IntByte(255)};
-			foreach (var color in leds) {
+			foreach (var color in colors) {
 				packet.Add(ByteUtils.IntByte(color.R));
 				packet.Add(ByteUtils.IntByte(color.G));
 				packet.Add(ByteUtils.IntByte(color.B));
@@ -168,6 +171,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			} catch (Exception e) {
 				Log.Debug("Exception: " + e.Message);
 			}
+			return Task.CompletedTask;
 		}
 
 
@@ -214,8 +218,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			}
 
 			_updateColors[pixelIndex] = color;
-			SetColor(_updateColors, _updateColors, 0);
-			await Task.FromResult(true);
+			await SetColor(this, new DynamicEventArgs(_updateColors,_updateColors)).ConfigureAwait(false);
 		}
 
 

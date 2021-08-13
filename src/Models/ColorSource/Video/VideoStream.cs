@@ -47,7 +47,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			return ExecuteAsync(ct);
 		}
 
-		public bool SourceActive { get; set; }
+		public bool SourceActive { get; private set; }
 
 		public void RefreshSystem() {
 			_systemData = DataUtil.GetSystemData();
@@ -73,6 +73,7 @@ namespace Glimmr.Models.ColorSource.Video {
 				}
 
 				await _vc.Stop();
+				SendColors = false;
 				Log.Information("Video stream service stopped.");
 			}, CancellationToken.None);
 		}

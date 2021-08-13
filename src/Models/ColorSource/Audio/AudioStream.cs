@@ -162,8 +162,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 			var sectors = _map.MapColors(lData, rData).ToList();
 			var frame = _builder.Build(sectors);
-			Log.Debug("Update: Aud");
-
 			StreamSplitter.Update(frame);
 			frame.Dispose();
 			return true;

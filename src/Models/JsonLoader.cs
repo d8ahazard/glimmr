@@ -34,8 +34,6 @@ namespace Glimmr.Models {
 			if (Directory.Exists(userPath)) {
 				_directories.Add(userPath);
 			}
-
-			//Log.Debug("Directories: " + JsonConvert.SerializeObject(_directories));
 		}
 
 		public List<T> LoadFiles<T>() {

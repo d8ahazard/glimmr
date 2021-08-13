@@ -1,7 +1,6 @@
 ﻿#region
 
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,7 +23,7 @@ namespace Glimmr.Models.ColorTarget {
 
 		public Task StopStream();
 
-		public void SetColor(List<Color> colors, List<Color> sectors, int fadeTime, bool force = false);
+		public Task SetColor(object sender, DynamicEventArgs args);
 
 		public Task FlashColor(Color color);
 

@@ -46,6 +46,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 				return Task.CompletedTask;
 			}
 
+			_splitter.DoSend = true;
 			Log.Debug("Starting DS stream, Target is " + _targetDreamScreen + " group is " + TargetGroup);
 			_client.StartSubscribing(_targetDreamScreen);
 			_client.SetMode(_dDev, DeviceMode.Off);

@@ -108,31 +108,33 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		}
 
 
-		public void SetColor(List<Color> list, List<Color> colors1, int arg3, bool force = false) {
+		public Task SetColor(object o, DynamicEventArgs args) {
+			Color[] colors = args.Arg0;
+			Color[] sectors = args.Arg1 ?? ColorUtil.EmptyColors(12);
+			bool force = args.Arg3 ?? false;
 			if (!Streaming || !Enable || Testing && !force) {
-				return;
+				return Task.CompletedTask;
 			}
 
-			var colors = list;
-
 			if (_stripMode == StripMode.Single) {
-				if (_targetSector >= colors1.Count || _targetSector == -1) {
-					return;
+				if (_targetSector >= sectors.Length || _targetSector == -1) {
+					Log.Warning("Invalid sector selection.");
+					return Task.CompletedTask;
 				}
 
-				colors = ColorUtil.FillArray(colors1[_targetSector], _ledCount).ToList();
+				colors = ColorUtil.FillArray(sectors[_targetSector], _ledCount);
 			} else {
-				colors = ColorUtil.TruncateColors(colors, _offset, _ledCount, _multiplier).ToList();
+				colors = ColorUtil.TruncateColors(colors, _offset, _ledCount, _multiplier);
 				if (_stripMode == StripMode.Loop) {
 					colors = ShiftColors(colors);
 				} else {
 					if (_data.ReverseStrip) {
-						colors.Reverse();
+						colors = colors.Reverse().ToArray();
 					}
 				}
 			}
 
-			var packet = new byte[2 + colors.Count * 3];
+			var packet = new byte[2 + colors.Length * 3];	
 			var timeByte = 255;
 			packet[0] = ByteUtils.IntByte(2);
 			packet[1] = ByteUtils.IntByte(timeByte);
@@ -146,7 +148,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 			if (_ep == null) {
 				Log.Debug("No endpoint.");
-				return;
+				return Task.CompletedTask;
 			}
 
 			try {
@@ -155,6 +157,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			} catch (Exception e) {
 				Log.Debug("Exception: " + e.Message);
 			}
+			return Task.CompletedTask;
 		}
 
 		public Task ReloadData() {
@@ -196,7 +199,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		}
 
 
-		private List<Color> ShiftColors(IReadOnlyList<Color> input) {
+		private Color[] ShiftColors(IReadOnlyList<Color> input) {
 			var output = new Color[input.Count];
 			var il = output.Length - 1;
 			if (!_data.ReverseStrip) {
@@ -214,7 +217,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			}
 
 
-			return output.ToList();
+			return output;
 		}
 
 		private void RefreshSystem() {

@@ -1,18 +1,15 @@
 ﻿{
   "Colors": [
-    "#00FF00",
-    "#FF0000",
-    "#00FF00",
-    "#FF0000",
-    "#00FF00",
-    "#FF0000",
-    "#00FF00",
-    "#FF0000",
-    "#00FF00"
+    "#B3000C",
+    "#B3000C",
+    "#B3000C",
+    "#00B32C",
+    "#00B32C",
+    "#00B32C"    
   ],
   "AnimationTime": 0.5,
   "Mode": "Linear",
-  "Easing": "FadeInOut",
+  "Easing": "FadeOut",
   "Name": "Christmas",
   "Id": 6,
   "EasingTime": 0

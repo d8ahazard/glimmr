@@ -8,6 +8,8 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Emgu.CV;
+using Emgu.CV.Util;
 using Glimmr.Hubs;
 using Glimmr.Models;
 using Glimmr.Models.ColorTarget;
@@ -207,10 +209,6 @@ namespace Glimmr.Services {
 		}
 
 
-		public void TriggerImageUpdate() {
-			_hubContext.Clients.All.SendAsync("loadPreview");
-		}
-
 		public async Task TestLights(int led) {
 			await TestLedEvent.InvokeAsync(this, new DynamicEventArgs(led));
 		}
@@ -382,6 +380,13 @@ v. {version}
 			await DataUtil.AddDeviceAsync(device, merge);
 			await _hubContext.Clients.All.SendAsync("device", JsonConvert.SerializeObject((IColorTargetData) device));
 			await RefreshDevice(device.Id);
+		}
+
+		public async Task SendImage(string method, Mat image) {
+			var vb = new VectorOfByte();
+			CvInvoke.Imencode(".png",image,vb);
+			await _hubContext.Clients.All.SendAsync(method, vb.ToArray());
+
 		}
 
 		public async Task FlashDevice(string deviceId) {

@@ -93,13 +93,15 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		}
 
 
-		public void SetColor(List<Color> list, List<Color> sectors, int fadeTime, bool force = false) {
+		public Task SetColor(object o, DynamicEventArgs args) {
+			Color[] sectors = args.Arg1 ?? ColorUtil.EmptyColors(12);
+			bool force = args.Arg3 ?? false;
 			if (!Streaming || !Enable || Testing && !force) {
-				return;
+				return Task.CompletedTask;
 			}
 
 			if (_frameWatch.ElapsedMilliseconds < 100 && _data.Type == "NL42") {
-				return;
+				return Task.CompletedTask;
 			}
 
 			if (_data.Type == "NL42") {
@@ -111,7 +113,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				var color = Color.FromArgb(0, 0, 0);
 				if (p.Value != -1) {
 					var target = p.Value;
-					if (target < sectors.Count) {
+					if (target < sectors.Length) {
 						color = sectors[target];
 					}
 				}
@@ -123,6 +125,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			_streamingClient.SetColorAsync(cols, 1).ConfigureAwait(false);
 
 			ColorService?.Counter.Tick(Id);
+			return Task.CompletedTask;
 		}
 
 

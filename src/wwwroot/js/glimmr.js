@@ -87,6 +87,9 @@ let websocket = new signalR.HubConnectionBuilder()
     .build();
 
 document.addEventListener("DOMContentLoaded", function(){
+    let popover = new bootstrap.Popover(document.getElementById("fps"), {
+        container: 'body'
+    })
     let getUrl = window.location;
     baseUrl = getUrl .protocol + "//" + getUrl.host;
     fpsCounter = document.getElementById("fps");
@@ -342,15 +345,6 @@ function setSocketListeners() {
     websocket.on("updateDevice", function (device) {
         console.log("New device data " + device);
     });
-    
-    websocket.on("loadPreview", function(){
-        // If our preview isn't visible, there's no reason to pull data
-        if (!settingsShown) return;
-        let inputElement = document.getElementById('inputPreview');
-        let croppedElement = document.getElementById('outputPreview');
-        inputElement.src = './img/_preview_input.jpg?rand=' + Math.random();
-        croppedElement.src = './img/_preview_output.jpg?rand=' + Math.random();        
-    });
 
     websocket.on("auth", function (value1, value2) {
         console.log("Auth message: " + value1);
@@ -404,6 +398,16 @@ function setSocketListeners() {
                 //showIntro();
             }
         }
+    });
+    
+    websocket.on('inputImage',function(data) {
+        console.log("Input load...");
+        document.getElementById("inputPreview").src = "data:image/png;base64," + data;
+    });
+
+    websocket.on('outputImage',function(data) {
+        console.log("Output load...");
+        document.getElementById("outputPreview").src = "data:image/png;base64," + data;
     });
     
     websocket.on('deleteDevice', function(id) {

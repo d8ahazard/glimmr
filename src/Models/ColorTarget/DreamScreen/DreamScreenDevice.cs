@@ -1,6 +1,5 @@
 ﻿#region
 
-using System.Collections.Generic;
 using System.Drawing;
 using System.Net;
 using System.Threading;
@@ -19,9 +18,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		private readonly DreamScreenClient? _client;
 		private readonly DreamDevice _dev;
 		private DreamScreenData _data;
-
 		private string _deviceTag;
-
 		private string _ipAddress;
 
 		public DreamScreenDevice(DreamScreenData data, ColorService colorService) {
@@ -78,7 +75,9 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
-		public async void SetColor(List<Color> colors, List<Color> sectors, int arg3, bool force = false) {
+		public async Task SetColor(object o, DynamicEventArgs args) {
+			Color[] sectors = args.Arg1 ?? ColorUtil.EmptyColors(12);
+			bool force = args.Arg3 ?? false;
 			if (!_data.Enable || Testing && !force) {
 				return;
 			}
@@ -87,7 +86,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 				return;
 			}
 
-			if (sectors.Count != 12) {
+			if (sectors.Length != 12) {
 				sectors = ColorUtil.TruncateColors(sectors);
 			}
 

@@ -42,27 +42,23 @@ namespace Glimmr.Models.Util {
 		/// </summary>
 		/// <param name="input">The colors from anywhere else</param>
 		/// <returns>12 colors averaged from those, or something.</returns>
-		public static List<Color> TruncateColors(List<Color> input) {
-			var indices = input.Count / 12;
-			var output = new List<Color>();
+		public static Color[] TruncateColors(Color[] input) {
+			var indices = input.Length / 12;
+			var output = new Color[12];
 			for (var i = 0; i < 12; i++) {
 				double idx = i * indices;
 				idx = Math.Floor(idx);
-				if (idx >= input.Count) {
-					idx = input.Count - 1;
+				if (idx >= input.Length) {
+					idx = input.Length - 1;
 				}
 
-				output.Add(input[(int) idx]);
+				output[i] = input[(int) idx];
 			}
 
 			return output;
 		}
 
-		public static List<Color> SectorToSquare(List<Color> input) {
-			return input;
-		}
-
-		public static Color[] TruncateColors(List<Color> input, int offset, int len, int multiplier = 1) {
+		public static Color[] TruncateColors(Color[] input, int offset, int len, int multiplier = 1) {
 			var output = new Color[len];
 			// Instead of doing dumb crap, just make our list of colors loop around
 
@@ -382,7 +378,7 @@ namespace Glimmr.Models.Util {
 		}
 
 
-		public static IEnumerable<Color> FillArray(Color input, int len) {
+		public static Color[] FillArray(Color input, int len) {
 			var output = new Color[len];
 			for (var i = 0; i < len; i++) {
 				output[i] = input;

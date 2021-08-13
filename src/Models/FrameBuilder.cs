@@ -28,19 +28,26 @@ namespace Glimmr.Models {
 		private readonly int _scaleWidth = DisplayUtil.CaptureWidth();
 		private readonly int _topCount;
 
-		public FrameBuilder(int[] inputDimensions, bool sectors = false) {
+		public FrameBuilder(int[] inputDimensions, bool sectors = false, bool center=false) {
 			_leftCount = inputDimensions[0];
 			_rightCount = inputDimensions[1];
 			_topCount = inputDimensions[2];
 			_bottomCount = inputDimensions[3];
 			_ledCount = _leftCount + _rightCount + _topCount + _bottomCount;
 			if (sectors) {
-				_ledCount -= 4;
-				_inputCoords = DrawSectors();
+				if (center) {
+					_ledCount = _leftCount * _topCount;
+					_inputCoords = DrawCenterSectors();
+				} else {
+					_ledCount -= 4;
+					_inputCoords = DrawSectors();	
+				}
 			} else {
 				_inputCoords = DrawGrid();
 			}
 		}
+		
+		
 
 		public Mat Build(IEnumerable<Color> colors) {
 			var enumerable = colors as Color[] ?? colors.ToArray();
@@ -154,49 +161,100 @@ namespace Glimmr.Models {
 			// Individual segment sizes
 			var sectorWidth = _scaleWidth / _topCount;
 			var sectorHeight = _scaleHeight / _leftCount;
-			var staticWidth = _scaleHeight / 4;
-			var staticHeight = _scaleHeight / 4;
 			// These are based on the border/strip values
 			// Minimum limits for top, bottom, left, right            
 			const int minTop = 0;
-			var minBot = _scaleHeight - staticHeight;
 			const int minLeft = 0;
-			var minRight = _scaleWidth - staticWidth;
 			// Calc right regions, bottom to top
 			var idx = 0;
 			var step = _rightCount - 1;
+			var max = _rightCount;
+			var wIdx = 1;
+			Log.Debug("Step is " + step + ", max is " + max);
 			while (step >= 0) {
 				var ord = step * sectorHeight;
-				fs[idx] = new Rectangle(minRight, ord, staticWidth, sectorHeight);
+				var width = sectorHeight * wIdx + 5;
+				if (width > _scaleWidth / 2) width = _scaleWidth / 2;
+				var right = _scaleWidth - width;
+				fs[idx] = new Rectangle(right, ord, _scaleWidth, sectorHeight);
+				wIdx += step < max / 2 ? -1 : 1;
+				if (wIdx < 1) wIdx = 1;
+				if (wIdx > max / 2) wIdx = max / 2;
 				idx++;
 				step--;
 			}
 
 			// Calc top regions, from right to left, skipping top-right corner (total horizontal sectors minus one)
 			step = _topCount - 2;
+			wIdx = 1;
+			max = _topCount;
 			while (step > 0) {
 				var ord = step * sectorWidth;
-				fs[idx] = new Rectangle(ord, minTop, sectorWidth, staticHeight);
+				var height = sectorWidth * wIdx + 5;
+				if (height > _scaleHeight / 2) height = _scaleHeight / 2;
+				fs[idx] = new Rectangle(ord, minTop, sectorWidth, height);
+				wIdx += step < max / 2 ? -1 : 1;
+				if (wIdx < 1) wIdx = 1;
+				if (wIdx > max / 2) wIdx = max / 2;
 				idx++;
 				step--;
 			}
 
 			step = 0;
+			wIdx = 1;
+			max = _leftCount;
 			// Calc left regions (top to bottom), skipping top-left
 			while (step <= _leftCount - 1) {
 				var ord = step * sectorHeight;
-				fs[idx] = new Rectangle(minLeft, ord, staticWidth, sectorHeight);
+				var width = sectorHeight * wIdx + 5;
+				if (width > _scaleWidth / 2) width = _scaleWidth / 2;
+				fs[idx] = new Rectangle(minLeft, ord, width, sectorHeight);
+				wIdx += step < max / 2 ? 1 : -1;
+				if (wIdx < 1) wIdx = 1;
+				if (wIdx > max / 2) wIdx = max / 2;
 				idx++;
 				step++;
 			}
 
 			step = 1;
+			wIdx = 1;
+			max = _bottomCount;
 			// Calc bottom center regions (L-R)
 			while (step <= _bottomCount - 2) {
 				var ord = step * sectorWidth;
-				fs[idx] = new Rectangle(ord, minBot, sectorWidth, staticHeight);
+				var height = sectorWidth * wIdx + 5;
+				if (height > _scaleHeight / 2) height = _scaleHeight / 2;
+				var bottom = _scaleHeight - height;
+				fs[idx] = new Rectangle(ord, bottom, sectorWidth, height);
+				wIdx += step < max / 2 ? 1 : -1;
+				if (wIdx < 1) wIdx = 1;
+				if (wIdx > max / 2) wIdx = max / 2;
 				idx++;
 				step += 1;
+			}
+
+			return fs;
+		}
+		
+		private Rectangle[] DrawCenterSectors() {
+			// This is where we're saving our output
+			var fs = new Rectangle[_ledCount];
+			// Calculate heights, minus offset for boxing
+			// Individual segment sizes
+			var sectorWidth = _scaleWidth / _topCount;
+			var sectorHeight = _scaleHeight / _leftCount;
+			// These are based on the border/strip values
+			// Minimum limits for top, bottom, left, right            
+			var top = _scaleHeight - sectorHeight;
+			var idx = 0;
+			for (var v = _leftCount; v > 0; v--) {
+				var left = _scaleWidth - sectorWidth;
+				for (var h = _topCount; h > 0; h--) {
+					fs[idx] = new Rectangle(left, top, sectorWidth, sectorHeight);
+					idx++;
+					left -= sectorWidth;
+				}
+				top -= sectorHeight;
 			}
 
 			return fs;

@@ -34,8 +34,6 @@ namespace Glimmr.Models {
 		private readonly bool _useCrop;
 		private int _bottomCount;
 
-		// Is content detected?
-
 		// Loaded data
 		private CaptureMode _captureMode;
 
@@ -200,53 +198,53 @@ namespace Glimmr.Models {
 			if (!_cropLetter && !_cropPillar) {
 				_frameWatch.Stop();
 			}
+
+			_doSave = true;
 		}
 
 		private void TriggerSave() {
 			_doSave = true;
 		}
 
-		private void SaveFrame(Mat outMat) {
+		private void SaveFrames(Mat inMat, Mat outMat) {
 			_doSave = false;
-			var path = Directory.GetCurrentDirectory();
-			var outPath = Path.Join(path, "wwwroot", "img", "_preview_output.jpg");
-			if (outMat == null) {
-				return;
+			if (inMat != null && !inMat.IsEmpty) {
+				_colorService.ControlService.SendImage("inputImage", inMat).ConfigureAwait(false);
 			}
-
-			if (outMat.IsEmpty) {
+			
+			if (outMat == null || outMat.IsEmpty) {
 				return;
 			}
 
 			var colBlack = new Bgr(Color.FromArgb(0, 0, 0, 0)).MCvScalar;
-			if (_previewMode == 1) {
-				for (var i = 0; i < _fullCoords.Length; i++) {
-					var col = new Bgr(_colorsLed[i]).MCvScalar;
-					CvInvoke.Rectangle(outMat, _fullCoords[i], col, -1, LineType.AntiAlias);
-					CvInvoke.Rectangle(outMat, _fullCoords[i], colBlack, 1, LineType.AntiAlias);
+			switch (_previewMode) {
+				case 1: {
+					for (var i = 0; i < _fullCoords.Length; i++) {
+						var col = new Bgr(_colorsLed[i]).MCvScalar;
+						CvInvoke.Rectangle(outMat, _fullCoords[i], col, -1, LineType.AntiAlias);
+						CvInvoke.Rectangle(outMat, _fullCoords[i], colBlack, 1, LineType.AntiAlias);
+					}
+					break;
 				}
-			}
-
-			if (_previewMode == 2) {
-				for (var i = 0; i < _fullSectors.Length; i++) {
-					var s = _fullSectors[i];
-					var col = new Bgr(_colorsSectors[i]).MCvScalar;
-					CvInvoke.Rectangle(outMat, s, col, -1, LineType.AntiAlias);
-					CvInvoke.Rectangle(outMat, s, colBlack, 1, LineType.AntiAlias);
-					var cInt = i + 1;
-					var tPoint = new Point(s.X, s.Y + 30);
-					CvInvoke.PutText(outMat, cInt.ToString(), tPoint, FontFace.HersheySimplex, 1.0, colBlack);
+				case 2: {
+					for (var i = 0; i < _fullSectors.Length; i++) {
+						var s = _fullSectors[i];
+						var col = new Bgr(_colorsSectors[i]).MCvScalar;
+						CvInvoke.Rectangle(outMat, s, col, -1, LineType.AntiAlias);
+						CvInvoke.Rectangle(outMat, s, colBlack, 1, LineType.AntiAlias);
+						var cInt = i + 1;
+						var tPoint = new Point(s.X, s.Y + 30);
+						CvInvoke.PutText(outMat, cInt.ToString(), tPoint, FontFace.HersheySimplex, 0.75, colBlack);
+					}
+					break;
 				}
 			}
 
 			if (DoSend) {
-				outMat.Save(outPath);
+				_colorService.ControlService.SendImage("outputImage", outMat).ConfigureAwait(false);
 			}
-
+			inMat?.Dispose();
 			outMat.Dispose();
-			if (DoSend) {
-				_controlService.TriggerImageUpdate();
-			}
 		}
 
 		public async Task MergeFrame(Color[] leds, Color[] sectors) {
@@ -288,7 +286,6 @@ namespace Glimmr.Models {
 
 			outMat.Save(outPath);
 			outMat.Dispose();
-			_controlService.TriggerImageUpdate();
 		}
 
 		public void Update(Mat frame) {
@@ -323,20 +320,12 @@ namespace Glimmr.Models {
 			}
 
 			// Save a preview frame every 5 seconds
-			if (_doSave) {
-				if (DoSend) {
-					var path = Directory.GetCurrentDirectory();
-					var fullPath = Path.Join(path, "wwwroot", "img", "_preview_input.jpg");
-					frame.Save(fullPath);
-				} else {
-					_inFrame = frame.Clone();
-				}
+			if (!_doSave) {
+				_inFrame = frame.Clone();
 			}
 
 			// Check if we're using camera/video mode and crop if necessary
 			var warped = CheckCamera(frame);
-			// Dispose frame
-			frame.Dispose();
 			if (warped == null || warped.IsEmpty || warped.Cols == 0) {
 				Log.Warning("Invalid input frame.");
 				return;
@@ -355,11 +344,13 @@ namespace Glimmr.Models {
 				scaled = warped.Clone();
 			}
 
-			// Dispose warped
-			warped.Dispose();
 			// Don't do anything if there's no frame.
 			if (scaled == null || scaled.IsEmpty) {
 				Log.Warning("Null/Empty input!");
+				// Dispose warped
+				warped.Dispose();
+				// Dispose frame
+				frame.Dispose();
 				return;
 			}
 
@@ -394,19 +385,22 @@ namespace Glimmr.Models {
 			_colorsLed = ledColors;
 			_colorsSectors = sectorColors;
 			if (DoSend) {
-				_colorService.SendColors(_colorsLed, _colorsSectors);
+				_colorService.SendColors(_colorsLed, _colorsSectors, 0, true);
 			}
 
 			if (_doSave) {
 				if (DoSend) {
-					_doSave = false;
-					SaveFrame(scaled);
+					SaveFrames(frame, scaled);
 				} else {
-					_doSave = false;
 					_outFrame = scaled.Clone();
 				}
+				_doSave = false;
 			}
-
+			// Dispose warped
+			warped.Dispose();
+			// Dispose frame
+			frame.Dispose();
+			// Dispose scaled
 			scaled.Dispose();
 		}
 
@@ -944,10 +938,6 @@ namespace Glimmr.Models {
 			}
 
 			return fs;
-		}
-
-		public void Refresh() {
-			RefreshSystem();
 		}
 	}
 }

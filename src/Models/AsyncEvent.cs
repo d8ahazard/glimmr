@@ -70,10 +70,16 @@ namespace Glimmr.Models {
 	}
 
 	public class DynamicEventArgs : EventArgs {
-		public dynamic P1 { get; }
+		public dynamic Arg0 { get; }
+		public dynamic? Arg1 { get; }
+		public dynamic? Arg2 { get; }
+		public dynamic? Arg3 { get; }
 
-		public DynamicEventArgs(dynamic input) {
-			P1 = input;
+		public DynamicEventArgs(dynamic input0, dynamic? input1 = null, dynamic? input2 = null, dynamic? input3 = null) {
+			Arg0 = input0;
+			Arg1 = input1;
+			Arg2 = input2;
+			Arg3 = input3;
 		}
 	}
 }

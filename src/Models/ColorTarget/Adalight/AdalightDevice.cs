@@ -1,6 +1,5 @@
 ﻿#region
 
-using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Threading;
@@ -70,9 +69,11 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
-		public void SetColor(List<Color> colors, List<Color> sectors, int fadeTime, bool force = false) {
+		public Task SetColor(object o, DynamicEventArgs args) {
+			var colors = args.Arg0;
+			var force = args.Arg3 ?? false;
 			if (!Enable || !Streaming || Testing && !force) {
-				return;
+				return Task.CompletedTask;
 			}
 
 			var toSend = ColorUtil.TruncateColors(colors, _offset, _ledCount, _multiplier).ToList();
@@ -81,6 +82,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			}
 
 			_adalight.UpdateColors(toSend);
+			return Task.CompletedTask;
 		}
 
 		public async Task FlashColor(Color color) {
