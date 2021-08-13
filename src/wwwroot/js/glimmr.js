@@ -1,5 +1,4 @@
 ﻿let socketLoaded = false;
-let frameInt;
 let loadTimeout;
 let loadCalled;
 // Row for settings and device cards divs
@@ -39,6 +38,8 @@ let useCenter;
 let refreshTimer;
 let fpsCounter;
 let nanoTarget, nanoSector;
+let demoLoaded = false;
+
 let errModal = new bootstrap.Modal(document.getElementById('errorModal'));
 // We're going to create one object to store our stuff, and add listeners for when values are changed.
 let data = {
@@ -153,7 +154,7 @@ document.addEventListener("DOMContentLoaded", function(){
     setSocketListeners();
     loadSocket();
     setTimeout(function() {
-        new Image().src = "../img/sectoring_screen.png";
+        new Image().src = "../img/sectoring_screen.png";        
     }, 1000);
 });
 
@@ -295,7 +296,11 @@ function setSocketListeners() {
         let cpuText = $("#cpuPct");
         let overIcon = $("#overIcon");
         let sd = data.store["SystemData"];
-        let tempUnit = (sd["Units"] === "0") ? "°F" : "°C";
+        let tempUnit = "°F";
+
+        if (isValid(sd)) {
+            tempUnit = (sd["Units"] === "0") ? "°F" : "°C";
+        }
         tempText.textContent = cpuData["tempCurrent"] + tempUnit;
         cpuText.textContent = cpuData["loadAvg1"] + "%";
         overIcon.textContent = "";
@@ -392,6 +397,13 @@ function setSocketListeners() {
         console.log("Data loaded: ", parsed);
         data.store = parsed;
         loadUi();
+        if (isValid(parsed["SystemData"]) && !parsed["SystemData"]["SkipIntro"]) {
+            //Show intro here
+            if (!demoLoaded) {
+                demoLoaded = true;
+                //showIntro();
+            }
+        }
     });
     
     websocket.on('deleteDevice', function(id) {
@@ -576,19 +588,6 @@ function setListeners() {
                     //createDeviceSettings();
                     return;
                 } else {
-                    if (property === "SelectedMonitors") {
-                        let mons = data.store["Dev_Video"];
-                        for (let m=0; m < mons.length; m++) {
-                            let mon = mons[m];
-                            for(let i=0; i< target.options.length; i++) {
-                                if (target.options[i].value === mon["Id"])
-                                    mons[m]["Enable"] = target.options[i].selected;                                
-                            }    
-                        }
-                        data.store["Dev_Video"] = mons;
-                        console.log("Updating monitor selections: ", mons);
-                        sendMessage("Monitors",mons,true);
-                    } else {
                         data.store[obj][property] = val;
                         pack = data.store[obj];
                         if (property === "ScreenCapMode" || property === "CaptureMode" || property === "StreamMode") {
@@ -604,7 +603,7 @@ function setListeners() {
                         console.log("Sending updated object: ", obj, pack);
                         sendMessage(obj, pack,true);
                         return;    
-                    }                    
+                                        
                 }
             }
                         
@@ -748,7 +747,7 @@ function handleClick(target) {
             ledAction(lAction, id);
             break;
         case target.classList.contains("mainSettings"):
-            toggleSettingsDiv(0);
+            toggleSettingsDiv();
             break;
         case target.classList.contains("nav-link"):
             let cDiv = target.getAttribute("href");
@@ -796,7 +795,7 @@ function ledAction(action, id) {
     }
 }
 
-async function toggleSettingsDiv(target) {
+async function toggleSettingsDiv() {
     let settingsIcon = document.querySelector(".mainSettings span");
     if (!settingsShown) {
         settingsIcon.textContent = "chevron_left";
@@ -974,8 +973,9 @@ function loadUi() {
     let version = getStoreProperty("Version");
     let vDiv = document.getElementById("versionDiv");
     vDiv.innerHTML="Glimmr Version: " + version.toString();
+    let sd;
     if (isValid(data.store["SystemData"])) {
-        let sd = data.store["SystemData"];
+        sd = data.store["SystemData"];
         let theme = sd["Theme"];
         mode = sd["DeviceMode"];
         autoDisabled = sd["AutoDisabled"];
@@ -1033,12 +1033,209 @@ function loadUi() {
         let tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         let tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl)
-        });
+        });        
     }
     sizeContent();
     document.getElementById("cardRow").click();
 }
 
+function showIntro() {
+    console.log("Creating demo device card.");
+    let devJson = '{"AutoBrightnessLevel":true,"FixGamma":true,"AblMaxMilliamps":5000,"GpioNumber":18,"LedCount":300,"MilliampsPerLed":25,"Offset":0,"StartupAnimation":0,"StripType":0,"Name":"Demo LED Strip","Id":"-1","Tag":"Led","IpAddress":"","Brightness":100,"Enable":false,"LastSeen":"08/05/2021 13:28:53","KeyProperties":[{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"","ValueName":"ledmap","ValueType":"ledmap"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Led Offset","ValueName":"Offset","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Led Count","ValueName":"LedCount","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Fix Gamma","ValueName":"FixGamma","ValueType":"check"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Enable Auto Brightness","ValueName":"AutoBrightnessLevel","ValueType":"check"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Milliamps per led","ValueName":"MilliampsPerLed","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Total Max Milliamps","ValueName":"AblMaxMilliamps","ValueType":"text"}]}';
+    let devObj = JSON.parse(devJson);
+    deviceData = devObj;
+    loadDevice(devObj,true);
+    introJs().setOptions({
+        disableInteraction: false,
+            steps: [
+                {
+                title: 'Welcome to Glimmr!',
+                intro: 'Hello, and thanks for trying out Glimmr. This short tour will help you get familiar with the UI.'
+                },
+                {
+                    element: document.querySelector('#modeBtns'),
+                    title: 'Mode Selection',
+                    intro: 'Use these buttons to select the lighting mode for enabled devices. You can hover over each one to see what mode it enables.'
+                },
+                {
+                    element: document.querySelector('#statDiv'),
+                    title: 'System Stats',
+                    intro: 'Here you can see the current frame rate, CPU temperature and total usage.'
+                },
+                {
+                    element: document.querySelector('#refreshBtn'),
+                    title: 'Device Refresh',
+                    intro: 'Click here to re-scan/refresh devices.'
+                },
+                {
+                    element: document.querySelector('#settingBtn'),
+                    title: 'Glimmr Settings',
+                    intro: 'You can access system settings by clicking this button. Let\'s take a look!'
+                },
+                {
+                    element: document.querySelector('#settingsTab'),
+                    title: 'Setting Selection',
+                    intro: 'Select the various settings groups here.'
+                },
+                {
+                    element: document.querySelector('#settingsMainControl'),
+                    title: 'System Control',
+                    intro: 'Shutdown or reboot your computer, restart Glimmr, or manually trigger an update.'
+                },
+                {
+                    element: document.querySelector('#settingsMainUpdates'),
+                    title: 'Automatic Updates',
+                    intro: 'Select if and when to automatically install Glimmr updates.'
+                },
+                {
+                    element: document.querySelector('#settingsMainOpenRGB'),
+                    title: 'OpenRGB Integration',
+                    intro: 'With OpenRGB, you can control a massive array of RGB PC Peripherals. Enter the IP and port here to enable.'
+                },
+                {
+                    element: document.querySelector('#settingsCaptureSource'),
+                    title: 'Capture Settings',
+                    intro: 'Here, you can select the capture source/mode, as well as other settings related to each mode.'
+                },
+                {
+                    element: document.querySelector('#settingsCaptureStream'),
+                    title: 'Streaming Settings',
+                    intro: 'Similarly, you can select the stream source/mode here, as well as other settings related to each mode, if applicable.'
+                },
+                {
+                    element: document.querySelector('#settingsCaptureLed'),
+                    title: 'LED Dimensions',
+                    intro: 'The values set here determine the overall size of the "master grid" used to divide up the screen edges for LED strips.'
+                },
+                {
+                    element: document.querySelector('#settingsCaptureSector'),
+                    title: 'Sector Dimensions',
+                    intro: 'The values set here determine the overall size of the "master grid" used to divide up the screen edges for single-color devices, like Hue bulbs or a single Nanoleaf panel.'
+                },
+                {
+                    element: document.getElementById('devCard'),
+                    title: 'This is a device',
+                    intro: 'Here you can enable and configure various settings for each device discovered by Glimmr.'
+                },
+                {
+                    element: document.querySelector('#demoIcon'),
+                    title: 'Click me!',
+                    intro: 'Click any device icon in order to locate the device.'
+                },
+                {
+                    element: document.querySelector('#devEnableBtn'),
+                    title: 'Enable/Disable Device Streaming',
+                    intro: 'Click here to enable or disable streaming to this device.'
+                },
+                {
+                    element: document.querySelector('#devPrefBtn'),
+                    title: 'Device Settings',
+                    intro: 'Each device has a unique group of settings depending on what it does. Clicking here will open the device settings.'
+                },
+                {
+                    element: document.querySelector('#blank'),
+                    title: '',
+                    intro: ''
+                }
+            ]
+        })
+        .onbeforechange(function(targetElement) {
+            checkIntroStep(targetElement);
+        }).onexit(function (){
+            demoLoaded = false;  
+        }).oncomplete(function (){
+            demoLoaded = false;  
+        }).start();    
+}
+
+function showIntroTwo() {
+    introJs().exit();
+    demoLoaded = false;
+    console.log("Creating demo device card.");
+    let devJson = '{"AutoBrightnessLevel":true,"FixGamma":true,"AblMaxMilliamps":5000,"GpioNumber":18,"LedCount":300,"MilliampsPerLed":25,"Offset":0,"StartupAnimation":0,"StripType":0,"Name":"Demo LED Strip","Id":"-1","Tag":"Led","IpAddress":"","Brightness":100,"Enable":false,"LastSeen":"08/05/2021 13:28:53","KeyProperties":[{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"","ValueName":"ledmap","ValueType":"ledmap"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Led Offset","ValueName":"Offset","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Led Count","ValueName":"LedCount","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Fix Gamma","ValueName":"FixGamma","ValueType":"check"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Enable Auto Brightness","ValueName":"AutoBrightnessLevel","ValueType":"check"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Milliamps per led","ValueName":"MilliampsPerLed","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Total Max Milliamps","ValueName":"AblMaxMilliamps","ValueType":"text"}]}';
+    deviceData = JSON.parse(devJson);
+    showDeviceCard(document.getElementById("devPrefBtn")).then(function (){
+        introJs().setOptions({
+            disableInteraction: false,
+            steps: [
+                {
+                    element: document.querySelector('#mapDiv'),
+                    title: 'Element mapping',
+                    intro: 'Every device in Glimmr has a mapping section where you can preview the light data in relation to the screen.'
+                }
+            ]
+        })
+            .onbeforechange(function(targetElement) {
+                checkIntroStepTwo(targetElement);
+            }).onexit(function (){
+            demoLoaded = false;
+        }).oncomplete(function (){
+            demoLoaded = false;
+        }).start();    
+    });
+    
+}
+
+
+
+function checkIntroStep(targetElement) {
+    console.log("On change",targetElement);
+    if (!isValid(targetElement.id)) return;    
+    // Open settings tab
+    if (targetElement.id.includes("settings")) {
+        if (!settingsShown) {
+            console.log("Showing settings...");
+            toggleSettingsDiv();
+        }
+    } else {
+        console.log("Settings should already be closed??");
+        if (settingsShown) {
+            console.log("Closing settings?");
+            toggleSettingsDiv();
+        }
+    }
+    
+    if (targetElement.classList.contains("devPrefs")) {
+        if (!expanded) {
+            let devJson = '{"AutoBrightnessLevel":true,"FixGamma":true,"AblMaxMilliamps":5000,"GpioNumber":18,"LedCount":300,"MilliampsPerLed":25,"Offset":0,"StartupAnimation":0,"StripType":0,"Name":"Demo LED Strip","Id":"-1","Tag":"Led","IpAddress":"","Brightness":100,"Enable":false,"LastSeen":"08/05/2021 13:28:53","KeyProperties":[{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"","ValueName":"ledmap","ValueType":"ledmap"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Led Offset","ValueName":"Offset","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Led Count","ValueName":"LedCount","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Fix Gamma","ValueName":"FixGamma","ValueType":"check"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Enable Auto Brightness","ValueName":"AutoBrightnessLevel","ValueType":"check"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Milliamps per led","ValueName":"MilliampsPerLed","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Total Max Milliamps","ValueName":"AblMaxMilliamps","ValueType":"text"}]}';
+            deviceData = JSON.parse(devJson);
+            let target = document.getElementById("devCard");
+            showDeviceCard(target);    
+        }        
+    } else {
+        if (expanded) {
+            close();
+        }
+    }
+    
+    if (targetElement.id === "refreshBtn") {
+        //targetElement.click();
+    }
+    
+    if (targetElement.id === "blank") {
+        showIntroTwo();
+    }
+
+    if (targetElement.id.includes("settingsMain")) {
+        console.log("Loading main tab...");
+        document.getElementById("system-tab").click();
+    }
+    
+    if (targetElement.id.includes("settingsCapture")) {
+        console.log("Loading capture tab...");
+        document.getElementById("capture-tab").click();
+    }
+
+    if (targetElement.id.includes("settingsAudio")) {
+        console.log("Loading audio tab...");
+        document.getElementById("audio-tab").click();
+    }   
+}
+
+function checkIntroStepTwo(targetElement) {
+    console.log("On change",targetElement);
+    
+}
 function loadTheme(theme) {
     let head = document.getElementsByTagName("head")[0];
     if (theme === "light") {
@@ -1219,128 +1416,151 @@ function loadSettingObject(obj) {
 }
 
 function loadDevices() {    
+    if (demoLoaded) return;
     let container = $("#cardRow");
     container.innerHTML = "";
     for (let i = 0; i< data.devices.length; i++) {
         if (data.devices.hasOwnProperty(i)) {
             let device = data.devices[i];
-            if (device.Tag === "DreamScreen" && device["DeviceTag"].includes("DreamScreen")) continue;
-            // Create main card
-            let mainDiv = document.createElement("div");
-            mainDiv.classList.add("card", "m-4", "devCard");
-            mainDiv.setAttribute("data-id",device.Id);
-            // Create card body
-            let bodyDiv = document.createElement("div");
-            bodyDiv.classList.add("card-body", "row");            
-            // Create title/subtitle headers
-            let title = document.createElement("h5");
-            let subTitle = document.createElement("h6");
-            title.classList.add("card-title");
-            subTitle.classList.add("card-subtitle", "mb2", "text-muted");
-            title.textContent = device.Name;
-            
-            if (device["Tag"] === "Wled" || device["Tag"] === "Glimmr") {
-                let a = document.createElement("a");
-                a.href = "http://" + device["IpAddress"];
-                a.innerText = device["IpAddress"];
-                a.target = "_blank";
-                subTitle.appendChild(a);                
-            } else {
-                subTitle.textContent = device["IpAddress"];
-            }
-            
-            if ((device.hasOwnProperty("MultiZoneCount") || device.hasOwnProperty("LedCount")) && device.DeviceTag !== "Lifx Bulb") {
-                let val = (device.hasOwnProperty("MultiZoneCount")) ? device["MultiZoneCount"] : device["LedCount"];
-                let count = document.createElement("span");
-                count.innerText = " (" + val + ")";
-                subTitle.appendChild(count);                
-            }
-            // Create icon
-            let titleRow = document.createElement("div");
-            titleRow.classList.add("mb-3", "col-12", "titleRow");
-            let titleCol = document.createElement("div");
-            titleCol.classList.add("col-8", "titleCol", "exp");            
-            let iconCol = document.createElement("div");
-            iconCol.classList.add("iconCol", "exp", "col-4");
-            let image = document.createElement("img");
-            image.classList.add("deviceIcon", "img-fluid");
-            image.setAttribute("data-bs-toggle", "tooltip");
-            image.setAttribute("data-bs-placement", "top");
-            image.setAttribute("data-title", "Flash/locate device");
-            image.setAttribute("data-device", device["Id"]);
-            let tag = device.Tag;
-            if (isValid(tag)) {
-                if (isValid(device["DeviceTag"]) && (tag === "Dreamscreen" || tag === "Lifx")) tag = device["DeviceTag"];
-                image.setAttribute("src", baseUrl + "/img/" + tag.toLowerCase().replace(" ","") + "_icon.png");
-            }
-            
-            // Settings column
-            let settingsCol = document.createElement("div");
-            settingsCol.classList.add("col-12", "settingsCol", "pb-2", "text-center", "exp");
-            // Create enabled checkbox
-            let enableButton = document.createElement("button");
-            enableButton.classList.add("btn", "btn-outline-secondary", "btn-clear", "enableBtn", "pt-2");
-            enableButton.setAttribute("data-target", device["Id"]);
-            enableButton.setAttribute("data-enabled", device["Enable"]);
-            // And the icon
-            let eIcon = document.createElement("span");
-            eIcon.classList.add("material-icons");
-            if (device["Enable"]) {
-                eIcon.textContent = "cast_connected";                
-            } else {
-                eIcon.textContent = "cast";
-            }
-            enableButton.appendChild(eIcon);
-             
-            let enableCol = document.createElement("div");
-            enableCol.classList.add("btn-group", "settingsGroup", "pt-4");
-            enableCol.appendChild(enableButton);
-            
-            let settingsButton = document.createElement("button");
-            settingsButton.classList.add("btn", "btn-outline-secondary", "btn-clear", "settingBtn", "pt-2");
-            settingsButton.setAttribute("data-target",device["Id"]);
-            let sIcon = document.createElement("span");
-            sIcon.classList.add("material-icons");
-            sIcon.textContent = "settings";
-            settingsButton.appendChild(sIcon);
-            enableCol.appendChild(settingsButton);
-            settingsCol.appendChild(enableCol);
-            // Create settings button
-            //Brightness slider
-            let brightnessRow = document.createElement("div");
-            brightnessRow.classList.add("col-12", "brightRow");
-            
-            // Slider
-            let brightnessSlide = document.createElement("input");
-            brightnessSlide.setAttribute("type","range");
-            brightnessSlide.setAttribute("data-target",device["Id"]);
-            brightnessSlide.setAttribute("data-attribute","Brightness");
-            let max = "100";
-            if (isValid(device["MaxBrightness"])) max = device["MaxBrightness"].toString;
-            brightnessSlide.setAttribute("min", "0");
-            brightnessSlide.setAttribute("max", max);
-            brightnessSlide.value = device["Brightness"];
-            brightnessSlide.classList.add("form-control", "w-100", 'custom-range');
-            
-            // Brightness column
-            let brightnessCol = document.createElement("div");
-            brightnessCol.classList.add("col-12", "pt-1");
-            
-            brightnessCol.appendChild(brightnessSlide);
-            
-
-            // Put it all together
-            iconCol.appendChild(image);
-            titleCol.appendChild(title);
-            titleCol.appendChild(subTitle);
-            
-            bodyDiv.appendChild(iconCol);
-            bodyDiv.appendChild(titleCol);
-            bodyDiv.appendChild(settingsCol);
-            bodyDiv.appendChild(brightnessCol);
-            mainDiv.appendChild(bodyDiv);
-            container.appendChild(mainDiv);
+            loadDevice(device, false);
         }         
+    }
+    //if (demoLoaded) introJs().refresh();
+}
+
+function loadDevice(device, addDemoText) {
+    let container = $("#cardRow");
+    if (device.Tag === "DreamScreen" && device["DeviceTag"].includes("DreamScreen")) return;
+    // Create main card
+    let mainDiv = document.createElement("div");
+    if (addDemoText) {
+        mainDiv.id = "devCard";        
+    }
+    mainDiv.classList.add("card", "m-4", "devCard");
+    mainDiv.setAttribute("data-id",device.Id);
+    // Create card body
+    let bodyDiv = document.createElement("div");
+    bodyDiv.classList.add("card-body", "row");
+    // Create title/subtitle headers
+    let title = document.createElement("h5");
+    let subTitle = document.createElement("h6");
+    title.classList.add("card-title");
+    subTitle.classList.add("card-subtitle", "mb2", "text-muted");
+    title.textContent = device.Name;
+
+    if (device["Tag"] === "Wled" || device["Tag"] === "Glimmr") {
+        let a = document.createElement("a");
+        a.href = "http://" + device["IpAddress"];
+        a.innerText = device["IpAddress"];
+        a.target = "_blank";
+        subTitle.appendChild(a);
+    } else {
+        subTitle.textContent = device["IpAddress"];
+    }
+
+    if ((device.hasOwnProperty("MultiZoneCount") || device.hasOwnProperty("LedCount")) && device.DeviceTag !== "Lifx Bulb") {
+        let val = (device.hasOwnProperty("MultiZoneCount")) ? device["MultiZoneCount"] : device["LedCount"];
+        let count = document.createElement("span");
+        count.innerText = " (" + val + ")";
+        subTitle.appendChild(count);
+    }
+    // Create icon
+    let titleRow = document.createElement("div");
+    titleRow.classList.add("mb-3", "col-12", "titleRow");
+    let titleCol = document.createElement("div");
+    titleCol.classList.add("col-8", "titleCol", "exp");
+    let iconCol = document.createElement("div");
+    iconCol.classList.add("iconCol", "exp", "col-4");
+    let image = document.createElement("img");
+    image.classList.add("deviceIcon", "img-fluid");
+    if (addDemoText) {
+        image.id = "demoIcon";
+    }
+    image.setAttribute("data-bs-toggle", "tooltip");
+    image.setAttribute("data-bs-placement", "top");
+    image.setAttribute("data-title", "Flash/locate device");
+    image.setAttribute("data-device", device["Id"]);
+    let tag = device.Tag;
+    if (isValid(tag)) {
+        if (isValid(device["DeviceTag"]) && (tag === "Dreamscreen" || tag === "Lifx")) tag = device["DeviceTag"];
+        image.setAttribute("src", baseUrl + "/img/" + tag.toLowerCase().replace(" ","") + "_icon.png");
+    }
+
+    // Settings column
+    let settingsCol = document.createElement("div");
+    settingsCol.classList.add("col-12", "settingsCol", "pb-2", "text-center", "exp");
+    // Create enabled checkbox
+    let enableButton = document.createElement("button");
+    enableButton.classList.add("btn", "btn-outline-secondary", "btn-clear", "enableBtn", "pt-2");
+    enableButton.setAttribute("data-target", device["Id"]);
+    enableButton.setAttribute("data-enabled", device["Enable"]);
+    if (addDemoText) {
+        enableButton.id = "devEnableBtn";
+    }
+    // And the icon
+    let eIcon = document.createElement("span");
+    eIcon.classList.add("material-icons");
+    if (device["Enable"]) {
+        eIcon.textContent = "cast_connected";
+    } else {
+        eIcon.textContent = "cast";
+    }
+    enableButton.appendChild(eIcon);
+
+    let enableCol = document.createElement("div");
+    enableCol.classList.add("btn-group", "settingsGroup", "pt-4");
+    enableCol.appendChild(enableButton);
+
+    let settingsButton = document.createElement("button");
+    settingsButton.classList.add("btn", "btn-outline-secondary", "btn-clear", "settingBtn", "pt-2");
+    settingsButton.setAttribute("data-target",device["Id"]);
+    if (addDemoText) {
+        settingsButton.id = "devPrefBtn";        
+    }
+    let sIcon = document.createElement("span");
+    sIcon.classList.add("material-icons");
+    sIcon.textContent = "settings";
+    settingsButton.appendChild(sIcon);
+    enableCol.appendChild(settingsButton);
+    settingsCol.appendChild(enableCol);
+    // Create settings button
+    //Brightness slider
+    let brightnessRow = document.createElement("div");
+    brightnessRow.classList.add("col-12", "brightRow");
+
+    // Slider
+    let brightnessSlide = document.createElement("input");
+    brightnessSlide.setAttribute("type","range");
+    brightnessSlide.setAttribute("data-target",device["Id"]);
+    brightnessSlide.setAttribute("data-attribute","Brightness");
+    let max = "100";
+    if (isValid(device["MaxBrightness"])) max = device["MaxBrightness"].toString;
+    brightnessSlide.setAttribute("min", "0");
+    brightnessSlide.setAttribute("max", max);
+    brightnessSlide.value = device["Brightness"];
+    brightnessSlide.classList.add("form-control", "w-100", 'custom-range');
+
+    // Brightness column
+    let brightnessCol = document.createElement("div");
+    brightnessCol.classList.add("col-12", "pt-1");
+    if (addDemoText) brightnessCol.id = "devPrefBrightness";
+    brightnessCol.appendChild(brightnessSlide);
+
+
+    // Put it all together
+    iconCol.appendChild(image);
+    titleCol.appendChild(title);
+    titleCol.appendChild(subTitle);
+
+    bodyDiv.appendChild(iconCol);
+    bodyDiv.appendChild(titleCol);
+    bodyDiv.appendChild(settingsCol);
+    bodyDiv.appendChild(brightnessCol);
+    mainDiv.appendChild(bodyDiv);
+    if (addDemoText) {
+        container.prepend(mainDiv);
+    } else {
+        container.appendChild(mainDiv);
     }
 }
 
@@ -1628,7 +1848,7 @@ const showDeviceCard = async (e) => {
     sepDiv.classList.add("dropdown-divider");
     let settingsDiv = document.createElement("div");
     settingsDiv.classList.add("deviceSettings", "row", "text-center");
-    settingsDiv.id = "deviceSettings";
+    settingsDiv.id = "devicePrefs";
     //settingsDiv.style.opacity = "0%";
     settingsDiv.style.overflow = "scrollY";
     settingsDiv.style.position = "relative";
@@ -1643,7 +1863,7 @@ const showDeviceCard = async (e) => {
 };
 
 function createDeviceSettings() {
-    let settingsDiv = document.getElementById("deviceSettings");
+    let settingsDiv = document.getElementById("devicePrefs");
     settingsDiv.innerHTML = "";
     let linkCol = document.createElement("div");
     let mapCol = document.createElement("div");
@@ -1664,6 +1884,7 @@ function createDeviceSettings() {
         let id = deviceData["Id"];
         let row = document.createElement("div");
         row.classList.add("row", "border", "justify-content-center", "pb-5");
+        if (demoLoaded) row.classList.add("devPrefs");
         let header = document.createElement("div");
         header.classList.add("col-12", "headerCol");
         row.appendChild(header);
@@ -1726,7 +1947,7 @@ function createDeviceSettings() {
             row2.appendChild(createSettingElement(removeBtn));
             container.appendChild(row2);
         }
-        let ds = document.getElementById("deviceSettings");
+        let ds = document.getElementById("devicePrefs");
         ds.appendChild(container);
     }
 }
@@ -1905,7 +2126,7 @@ function updateBeamLayout(items) {
 }
 
 function appendBeamMap() {
-    let settingsDiv = document.getElementById("deviceSettings");
+    let settingsDiv = document.getElementById("devicePrefs");
     let beamDiv = document.getElementById("beamDiv");
     if (isValid(beamDiv)) beamDiv.remove();
     
@@ -2613,7 +2834,7 @@ function ranges(ledCount, offset, total) {
 }
 
 function createHueMap() {
-    let settingsDiv = document.getElementById("deviceSettings");
+    let settingsDiv = document.getElementById("devicePrefs");
     let selectedGroup = deviceData["SelectedGroup"];
 
     let groups = deviceData["Groups"];

@@ -16,10 +16,6 @@ namespace Glimmr.Models {
 
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public bool SkipDemo { get; set; }
-
-		[DefaultValue(false)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool AutoDisabled { get; set; }
 
 		[DefaultValue(false)]
@@ -49,6 +45,14 @@ namespace Glimmr.Models {
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool ShowSource { get; set; }
+
+		[DefaultValue(false)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public bool SkipDemo { get; set; }
+
+		[DefaultValue(false)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public bool SkipTour { get; set; }
 
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -133,11 +137,6 @@ namespace Glimmr.Models {
 
 		[DefaultValue(15)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		
-		public int StreamMode { get; set; } = 2;
-
-		[DefaultValue(15)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int CropDelay { get; set; }
 
 		[DefaultValue(0)]
@@ -212,6 +211,11 @@ namespace Glimmr.Models {
 			}
 		}
 
+		[DefaultValue(15)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+
+		public int StreamMode { get; set; } = 2;
+
 		[DefaultValue(96)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int TopCount { get; set; } = 96;
@@ -231,7 +235,7 @@ namespace Glimmr.Models {
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string DeviceName { get; set; } = "";
-		
+
 		[DefaultValue("Dreamscreen4K")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string DevType { get; set; } = "Dreamscreen4K";
@@ -256,7 +260,6 @@ namespace Glimmr.Models {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string RecDev { get; set; } = "";
 
-
 		//TODO: Make getter for this always retrieve same value used by setup script
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -269,7 +272,7 @@ namespace Glimmr.Models {
 		[DefaultValue("US/Central")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string TimeZone { get; set; } = "US/Central";
-		
+
 		[DefaultValue("0")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string Units { get; set; } = "0";
@@ -285,7 +288,9 @@ namespace Glimmr.Models {
 			AudioGain = .6f;
 			AudioMin = .01f;
 			DeviceName = Environment.MachineName;
-			if (string.IsNullOrEmpty(DeviceName)) DeviceName = Dns.GetHostName();
+			if (string.IsNullOrEmpty(DeviceName)) {
+				DeviceName = Dns.GetHostName();
+			}
 		}
 	}
 }
