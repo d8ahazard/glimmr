@@ -557,7 +557,10 @@ function setListeners() {
             return;
         }
         
-        if (property === "CaptureMode" || property === "ScreenCapMode" || property === "PreviewMode" || property === "AutoUpdateTime") {
+        let intProps = [
+            "CaptureMode", "ScreenCapMode", "PreviewMode", "AutoUpdateTime",
+        ];
+        if (intProps.includes(property)) {
             val = parseInt(val);            
         }
         
@@ -600,6 +603,7 @@ function setListeners() {
                             let sPreview = document.getElementById("sectorWrap");
                             createSectorMap(sPreview);
                         }
+                        
                         console.log("Sending updated object: ", obj, pack);
                         sendMessage(obj, pack,true);
                         return;    
@@ -1611,9 +1615,6 @@ function getDevices() {
 function updateDevice(id, property, value) {
     let dev;
     let isLoaded = false;
-    if (property === "Offset" || property === "LedCount" || property === "StripMode") {
-        appendLedMap();
-    }
     if (isValid(deviceData) && deviceData["Id"] === id) {
         dev = deviceData;
         isLoaded = true;
@@ -1626,8 +1627,14 @@ function updateDevice(id, property, value) {
         sendMessage("updateDevice", dev, true);
     }    
     if (isLoaded) {
-        deviceData = dev;        
+        deviceData = dev;
+        let ledProps = ["Offset", "LedCount", "StripMode", "LedMultiplier"];
+        if (ledProps.includes(property)) {
+            appendLedMap();
+        }
+
     }
+    
 }
 
 // Find device by id in datastore
