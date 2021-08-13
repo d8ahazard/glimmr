@@ -52,16 +52,12 @@ namespace Glimmr.Hubs {
 
 		public async Task SystemData(string sd) {
 			var sdd = JObject.Parse(sd);
-			Log.Information("Parsed...");
 			var sd2 = sdd.ToObject<SystemData>();
-			Log.Information("Updating system data: " + JsonConvert.SerializeObject(sd2));
 			try {
 				await _cs.UpdateSystem(sd2).ConfigureAwait(false);
 			} catch (Exception e) {
 				Log.Warning("Exception updating SD: " + e.Message + " at " + e.StackTrace);
 			}
-
-			Log.Information("Updated...");
 		}
 
 		public async Task DemoLed(string id) {

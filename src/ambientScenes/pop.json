@@ -8,8 +8,8 @@
   ],
   "AnimationTime": 10,
   "EasingTime": 2,
-  "Mode": 0,
-  "Easing": 0,
+  "Mode": "Random",
+  "Easing": "Blend",
   "Name": "Pop",
   "Id": 7
 }

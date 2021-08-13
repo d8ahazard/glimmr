@@ -11,8 +11,8 @@
     "#00FF00"
   ],
   "AnimationTime": 0.5,
-  "Mode": 0,
-  "Easing": 0,
+  "Mode": "Linear",
+  "Easing": "FadeInOut",
   "Name": "Christmas",
   "Id": 6,
   "EasingTime": 0

@@ -38,8 +38,8 @@
   ],
   "AnimationTime": 5,
   "EasingTime": 5,
-  "Mode": 2,
-  "Easing": 0,
+  "Mode": "Random",
+  "Easing": "Blend",
   "Name": "Devs",
   "Id": 9
 }

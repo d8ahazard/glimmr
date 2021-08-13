@@ -10,8 +10,8 @@
   ],
   "AnimationTime": 10,
   "EasingTime": 10,
-  "Mode": 3,
-  "Easing": 0,
+  "Mode": "RandomAll",
+  "Easing": "Blend",
   "Name": "Random",
   "Id": 0
 }

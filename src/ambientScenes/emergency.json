@@ -19,8 +19,8 @@
   ],
   "AnimationTime": 4,
   "EasingTime": 4,
-  "Mode": 0,
-  "Easing": 3,
+  "Mode": "Linear",
+  "Easing": "FadeInOut",
   "Name": "Emergency",
   "Id": 11
 }

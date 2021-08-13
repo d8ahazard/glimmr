@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 using Serilog;
 
 #endregion
@@ -32,7 +33,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 		private Color[] _nextColors;
 		private Color[] _sceneColors;
 		private List<AmbientScene> _scenes;
-		private int _sectorCount;
+		private const int SectorCount = 116;
 
 		public AmbientStream(ColorService colorService) {
 			_ambientColor = "#FFFFFF";
@@ -47,26 +48,29 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			colorService.ControlService.RefreshSystemEvent += RefreshSystem;
 		}
 
-		public bool SourceActive { get; set; }
+		public bool SourceActive { get; private set; }
 
 		public void RefreshSystem() {
+			Log.Debug("No, really, refreshing system.");
 			var sd = DataUtil.GetSystemData();
-			_sectorCount = sd.HSectors + sd.VSectors + sd.HSectors + sd.VSectors - 4;
 			_ambientShow = sd.AmbientShow;
 			_ambientColor = sd.AmbientColor;
-			var dims = new[] {sd.VSectors, sd.VSectors, sd.HSectors, sd.HSectors};
+			var dims = new[] {20, 20, 40, 40};
 			_builder = new FrameBuilder(dims, true);
 			_loader ??= new JsonLoader("ambientScenes");
 			_scenes = _loader.LoadFiles<AmbientScene>();
 			var scene = new AmbientScene();
+			Log.Debug($"Loading ambient show {_ambientShow}");
 			foreach (var s in _scenes.Where(s => s.Id == _ambientShow)) {
 				scene = s;
+				Log.Debug("Scene: " + JsonConvert.SerializeObject(s));
 			}
 
 			if (_ambientShow == -1) {
 				scene.Colors = new[] {"#" + _ambientColor};
 			}
 
+			
 			var colorStrings = scene.Colors;
 			if (colorStrings != null) {
 				_sceneColors = new Color[colorStrings.Length];
@@ -77,11 +81,19 @@ namespace Glimmr.Models.ColorSource.Ambient {
 				Log.Warning("Color strings are null.");
 			}
 
-
 			_animationTime = scene.AnimationTime * 1000;
 			_easingTime = scene.EasingTime * 1000;
-			_easingMode = (EasingMode) scene.Easing;
-			_mode = (AnimationMode) scene.Mode;
+			if (scene.Easing != null) {
+				_easingMode = Enum.Parse<EasingMode>(scene.Easing);
+			}
+
+			if (scene.Mode != null) {
+				_mode = Enum.Parse<AnimationMode>(scene.Mode);
+				Log.Debug($"Scene mode {_mode} is {scene.Mode}");
+			} else {
+				Log.Warning("Unable to parse scene mode: ");
+			}
+			
 			LoadScene();
 		}
 
@@ -101,7 +113,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 				while (!ct.IsCancellationRequested) {
 					var elapsed = _watch.ElapsedMilliseconds;
 					var diff = _animationTime - elapsed;
-					var sectors = new Color[_sectorCount];
+					var sectors = new Color[SectorCount];
 					// If we're between rotations, blend/fade the colors as desired
 					if (diff > 0 && diff <= _easingTime) {
 						var avg = diff / _easingTime;
@@ -133,7 +145,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 								break;
 							case EasingMode.FadeIn:
 							case EasingMode.FadeInOut:
-								sectors = ColorUtil.EmptyColors(_sectorCount);
+								sectors = ColorUtil.EmptyColors(SectorCount);
 								break;
 						}
 
@@ -194,9 +206,9 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
 
 		private Color[] RefreshColors(Color[] input) {
-			var output = new Color[_sectorCount];
+			var output = new Color[SectorCount];
 			if (input.Length == 0) {
-				return ColorUtil.EmptyColors(_sectorCount);
+				return ColorUtil.EmptyColors(SectorCount);
 			}
 
 			var max = input.Length - 1;
@@ -205,34 +217,36 @@ namespace Glimmr.Models.ColorSource.Ambient {
 				case AnimationMode.Linear:
 					var nu = CycleInt(_colorIndex, max);
 					_colorIndex = nu;
-					for (var i = 0; i < _sectorCount; i++) {
+					for (var i = 0; i < SectorCount; i++) {
 						output[i] = input[nu];
 						nu = CycleInt(nu, max);
 					}
 
 					break;
 				case AnimationMode.Reverse:
-					for (var i = 0; i < _sectorCount; i++) {
+					for (var i = 0; i < SectorCount; i++) {
 						output[i] = input[_colorIndex];
 						_colorIndex = CycleInt(_colorIndex, max, true);
 					}
 
 					break;
 				case AnimationMode.Random:
-					for (var i = 0; i < _sectorCount; i++) {
+					for (var i = 0; i < SectorCount; i++) {
 						output[i] = input[rand];
 						rand = _random.Next(0, max);
 					}
 
 					break;
 				case AnimationMode.RandomAll:
-					for (var i = 0; i < _sectorCount; i++) {
-						output[i] = input[rand];
+					var col = input[rand];
+					Log.Debug("Setting random color to: " + col);
+					for (var i = 0; i < SectorCount; i++) {
+						output[i] = col;
 					}
 
 					break;
 				case AnimationMode.LinearAll:
-					for (var i = 0; i < _sectorCount; i++) {
+					for (var i = 0; i < SectorCount; i++) {
 						output[i] = input[_colorIndex];
 					}
 

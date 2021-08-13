@@ -7,8 +7,8 @@
   ],
   "AnimationTime": 0.75,
   "EasingTime": 0.75,
-  "Mode": 2,
-  "Easing": 0,
+  "Mode": "Random",
+  "Easing": "FadeInOut",
   "Name": "Twinkle",
   "Id": 2
 }

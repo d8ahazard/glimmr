@@ -40,7 +40,6 @@ namespace Glimmr.Models.ColorSource.UDP {
 			_cs.RefreshSystemEvent += RefreshSystem;
 			_cs.SetModeEvent += Mode;
 			_cs.StartStreamEvent += StartStream;
-			_cs.RefreshSystemEvent += RefreshSd;
 			_splitter = cs.Splitter;
 			_uc = new UdpClient(8889) {Ttl = 5, Client = {ReceiveBufferSize = 2000}};
 			_uc.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
@@ -56,7 +55,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 				DataUtil.SetSystemData(_sd);
 			}
 
-			RefreshSd();
+			RefreshSystem();
 		}
 
 		public Task ToggleStream(CancellationToken ct) {
@@ -67,13 +66,8 @@ namespace Glimmr.Models.ColorSource.UDP {
 		public void RefreshSystem() {
 			var sd = DataUtil.GetSystemData();
 			_devMode = (DeviceMode) sd.DeviceMode;
-		}
-
-		public bool SourceActive => _splitter.SourceActive;
-
-		private void RefreshSd() {
-			_sd = DataUtil.GetSystemData();
 			_hostName = _sd.DeviceName;
+			if (SystemUtil.IsRaspberryPi()) return;
 			_discovery?.Dispose();
 			var addr = new List<IPAddress> {IPAddress.Parse(IpUtil.GetLocalIpAddress())};
 			var service = new ServiceProfile(_hostName, "_glimmr._tcp", 8889, addr);
@@ -81,6 +75,9 @@ namespace Glimmr.Models.ColorSource.UDP {
 			_discovery.Advertise(service);
 		}
 
+		public bool SourceActive => _splitter.SourceActive;
+
+		
 		private async Task StartStream(object arg1, DynamicEventArgs arg2) {
 			_gd = arg2.P1;
 			_sd = DataUtil.GetSystemData();

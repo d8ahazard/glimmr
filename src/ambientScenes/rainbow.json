@@ -12,8 +12,8 @@
   ],
   "AnimationTime": 3,
   "EasingTime": 3,
-  "Mode": 0,
-  "Easing": 0,
+  "Mode": "Linear",
+  "Easing": "Blend",
   "Name": "Rainbow",
   "Id": 4
 }

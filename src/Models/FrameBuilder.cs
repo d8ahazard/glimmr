@@ -154,18 +154,20 @@ namespace Glimmr.Models {
 			// Individual segment sizes
 			var sectorWidth = _scaleWidth / _topCount;
 			var sectorHeight = _scaleHeight / _leftCount;
+			var staticWidth = _scaleHeight / 4;
+			var staticHeight = _scaleHeight / 4;
 			// These are based on the border/strip values
 			// Minimum limits for top, bottom, left, right            
 			const int minTop = 0;
-			var minBot = _scaleHeight - sectorHeight;
+			var minBot = _scaleHeight - staticHeight;
 			const int minLeft = 0;
-			var minRight = _scaleWidth - sectorWidth;
+			var minRight = _scaleWidth - staticWidth;
 			// Calc right regions, bottom to top
 			var idx = 0;
 			var step = _rightCount - 1;
 			while (step >= 0) {
 				var ord = step * sectorHeight;
-				fs[idx] = new Rectangle(minRight, ord, sectorWidth, sectorHeight);
+				fs[idx] = new Rectangle(minRight, ord, staticWidth, sectorHeight);
 				idx++;
 				step--;
 			}
@@ -174,7 +176,7 @@ namespace Glimmr.Models {
 			step = _topCount - 2;
 			while (step > 0) {
 				var ord = step * sectorWidth;
-				fs[idx] = new Rectangle(ord, minTop, sectorWidth, sectorHeight);
+				fs[idx] = new Rectangle(ord, minTop, sectorWidth, staticHeight);
 				idx++;
 				step--;
 			}
@@ -183,7 +185,7 @@ namespace Glimmr.Models {
 			// Calc left regions (top to bottom), skipping top-left
 			while (step <= _leftCount - 1) {
 				var ord = step * sectorHeight;
-				fs[idx] = new Rectangle(minLeft, ord, sectorWidth, sectorHeight);
+				fs[idx] = new Rectangle(minLeft, ord, staticWidth, sectorHeight);
 				idx++;
 				step++;
 			}
@@ -192,7 +194,7 @@ namespace Glimmr.Models {
 			// Calc bottom center regions (L-R)
 			while (step <= _bottomCount - 2) {
 				var ord = step * sectorWidth;
-				fs[idx] = new Rectangle(ord, minBot, sectorWidth, sectorHeight);
+				fs[idx] = new Rectangle(ord, minBot, sectorWidth, staticHeight);
 				idx++;
 				step += 1;
 			}

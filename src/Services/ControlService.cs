@@ -355,7 +355,7 @@ v. {version}
 			}
 
 			ColorUtil.SetSystemData();
-			RefreshSystemEvent();
+			RefreshSystemEvent.Invoke();
 		}
 
 		public static Task SystemControl(string action) {

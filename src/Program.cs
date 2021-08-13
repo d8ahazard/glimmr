@@ -8,6 +8,7 @@ using Glimmr.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
@@ -51,8 +52,26 @@ namespace Glimmr {
 		}
 
 		private static IHostBuilder CreateHostBuilder(string[] args) {
+			var outputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}]{Caller} {Message}{NewLine}{Exception}";
+			var logPath = "/var/log/glimmr/glimmr.log";
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+				var userPath = SystemUtil.GetUserDir();
+				var logDir = Path.Combine(userPath, "log");
+				if (!Directory.Exists(logDir)) {
+					Directory.CreateDirectory(logDir);
+				}
+
+				logPath = Path.Combine(userPath, "log", "glimmr.log");
+			}
 			return Host.CreateDefaultBuilder(args)
-				.UseSerilog()
+				.UseSerilog((_, loggerConfiguration) => loggerConfiguration
+					.Enrich.WithCaller()
+					.MinimumLevel.Debug()
+					.Enrich.FromLogContext()
+					.Filter.ByExcluding(c => JsonConvert.SerializeObject(c).Contains("SerilogLogger"))
+					.WriteTo.Console(outputTemplate: outputTemplate)
+					.WriteTo.Async(a =>
+						a.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: outputTemplate)))
 				.ConfigureServices(services => {
 					services.AddSignalR();
 					services.AddSingleton<ControlService>();
