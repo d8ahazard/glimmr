@@ -2680,7 +2680,12 @@ function createLedMap(targetElement) {
         let mode = deviceData["StripMode"];
         let total = sd["LedCount"];
         if (isValid(mode) && mode === 2) count /=2;
-        if (isValid(deviceData["LedMultiplier"])) count /= 2;
+        if (isValid(deviceData["LedMultiplier"])) {
+            let mult = deviceData["LedMultiplier"];
+            if (mult === 0) mult = 1;
+            if (mult > 0) count /= mult;
+            if (mult < 0) count *= Math.abs(mult);
+        }
         range1 = ranges(total, offset, count);
     }
     
