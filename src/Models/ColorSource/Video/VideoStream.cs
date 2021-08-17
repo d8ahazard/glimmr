@@ -48,7 +48,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			return ExecuteAsync(ct);
 		}
 
-		public bool SourceActive { get; private set; }
+		public bool SourceActive => StreamSplitter.SourceActive;
 
 		public void RefreshSystem() {
 			_systemData = DataUtil.GetSystemData();
@@ -78,7 +78,7 @@ namespace Glimmr.Models.ColorSource.Video {
 
 				await _vc.Start(ct, StreamSplitter);
 				while (!ct.IsCancellationRequested) {
-					SourceActive = StreamSplitter.SourceActive;
+					await Task.Delay(10, CancellationToken.None);
 				}
 
 				await _vc.Stop();

@@ -59,5 +59,10 @@ namespace Glimmr.Models {
 				_ticks[id] = 0;
 			}
 		}
+
+		public void Reset() {
+			_ticks = new Dictionary<string, int> {["source"] = 0};
+			Rates = _ticks;
+		}
 	}
 }

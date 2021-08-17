@@ -32,7 +32,9 @@ namespace Glimmr.Services {
 
 		private readonly Dictionary<string, IColorSource> _streams;
 		private readonly Stopwatch _watch;
-		public DeviceMode DeviceMode;
+		
+		public DeviceMode DeviceMode { get; private set; }
+		
 		private bool _autoDisabled;
 		private int _autoDisableDelay;
 
@@ -100,7 +102,6 @@ namespace Glimmr.Services {
 			}
 		}
 
-		
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			Initialize().ConfigureAwait(true);
 			
@@ -116,9 +117,9 @@ namespace Glimmr.Services {
 						continue;
 					}
 
-					
-					var time = loopWatch.ElapsedMilliseconds;
-					if (time >= 15) {
+
+					var time = loopWatch.ElapsedTicks; 
+					if (time > 333333) {
 						var cols = _stream.GetColors();
 						var secs = _stream.GetSectors();
 						if (cols == null || secs == null) {
@@ -128,14 +129,14 @@ namespace Glimmr.Services {
 						}
 						fc++;
 						loopWatch.Restart();
-						if (fc < 60 * 5) {
+						if (fc < 30 * 5) {
 							continue;
 						}
 
 						FrameSaveEvent.Invoke();
 						fc = 0;
 					} else {
-						await Task.Delay(TimeSpan.FromMilliseconds(15 - time), CancellationToken.None);
+						await Task.Delay(TimeSpan.FromTicks(333333 - time), CancellationToken.None);
 					}
 					
 				}
@@ -263,12 +264,16 @@ namespace Glimmr.Services {
 		private async Task CheckAutoDisable() {
 			// Don't do anything if auto-disable isn't enabled
 			if (!_enableAutoDisable) {
+				if (!_autoDisabled) {
+					return;
+				}
+
 				_autoDisabled = false;
 				DataUtil.SetItem("AutoDisabled", _autoDisabled);
 				return;
 			}
 
-			var sourceActive = _streams[DeviceMode.Video.ToString()].SourceActive;
+			var sourceActive = _stream?.SourceActive ?? false;
 
 			if (sourceActive) {
 				// If our source is active, but not auto-disabled, do nothing
@@ -276,30 +281,29 @@ namespace Glimmr.Services {
 					Log.Information("Auto-enabling stream.");
 					_autoDisabled = false;
 					DataUtil.SetItem("AutoDisabled", _autoDisabled);
+					DataUtil.SetItem("PreviousMode", -1);
 					ControlService.SetModeEvent -= Mode;
 					await ControlService.SetMode((int) DeviceMode);
+					if (!_streamStarted) await StartStream();
 					ControlService.SetModeEvent += Mode;
 				}
 
 				_watch.Reset();
 			} else {
-				if (_autoDisabled || DeviceMode != DeviceMode.Video) {
-					return;
-				}
-
-				if (!_watch.IsRunning) {
-					_watch.Restart();
-				}
+				if (!_watch.IsRunning)_watch.Restart();
 
 				if (_watch.ElapsedMilliseconds >= _autoDisableDelay * 1000f) {
 					_autoDisabled = true;
+					Counter.Reset();
 					DataUtil.SetItem("AutoDisabled", _autoDisabled);
+					DataUtil.SetItem("PreviousMode", DeviceMode);
 					ControlService.SetModeEvent -= Mode;
 					await ControlService.SetMode(0);
-					ControlService.SetModeEvent += Mode;
+					ControlService.SetModeEvent -= Mode;
 					Log.Information(
 						$"Auto-disabling stream {_watch.ElapsedMilliseconds} vs {_autoDisableDelay * 1000}.");
 					_watch.Reset();
+					if (_streamStarted) await StopStream();
 				}
 			}
 		}
@@ -585,6 +589,8 @@ namespace Glimmr.Services {
 				Log.Debug("Stream not started?");
 				return;
 			}
+
+			if (_autoDisabled) return;
 
 			ColorSendEvent?.Invoke(colors, sectors, fadeTime, force);
 			Counter.Tick("source");

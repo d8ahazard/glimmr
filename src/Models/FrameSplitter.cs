@@ -286,6 +286,7 @@ namespace Glimmr.Models {
 				return;
 			}
 
+			SourceActive = true;
 			var clone = frame;
 
 			if (frame.Width != ScaleWidth || frame.Height != ScaleWidth) {
@@ -296,11 +297,10 @@ namespace Glimmr.Models {
 				clone = CheckCamera(frame);
 				if (clone == null || clone.IsEmpty || clone.Cols == 0) {
 					Log.Warning("Invalid input frame.");
+					SourceActive = false;
 					return;
 				}
 			}
-			// Check if we're using camera/video mode and crop if necessary
-			SourceActive = true;
 			
 			// Don't do anything if there's no frame.
 			if (clone == null || clone.IsEmpty) {
