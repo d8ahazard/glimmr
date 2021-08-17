@@ -84,7 +84,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 				g.CopyFromScreen(_left, _top, 0, 0, bcs.Size, CopyPixelOperation.SourceCopy);
 				var sc = bcs.ToImage<Bgr, byte>();
 				g.Flush();
-				var newMat = sc.Resize(DisplayUtil.CaptureWidth(), DisplayUtil.CaptureHeight(), Inter.Nearest);
+				var newMat = sc.Resize(640, 480, Inter.Nearest);
 				_splitter?.Update(newMat.Mat);
 				newMat.Dispose();
 			}

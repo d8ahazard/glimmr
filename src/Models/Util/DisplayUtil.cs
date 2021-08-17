@@ -49,36 +49,8 @@ namespace Glimmr.Models.Util {
 
 		private const int EnumCurrentSettings = -1;
 
-		public static int CaptureHeight() {
-			var sd = DataUtil.GetSystemData();
-			var leftCount = sd.LeftCount;
-			var rightCount = sd.RightCount;
-			var val = leftCount;
-			if (leftCount != rightCount) {
-				if (leftCount % 2 != 0 && rightCount % 2 == 0) {
-					val = rightCount;
-				}
-			}
-
-			var avg = (int) Math.Ceiling(480f / val);
-			return avg * val;
-		}
-
-		public static int CaptureWidth() {
-			var sd = DataUtil.GetSystemData();
-			var leftCount = sd.TopCount;
-			var rightCount = sd.BottomCount;
-			var val = leftCount;
-			if (leftCount != rightCount) {
-				if (leftCount % 2 != 0 && rightCount % 2 == 0) {
-					val = rightCount;
-				}
-			}
-
-			var avg = (int) Math.Ceiling(640f / val);
-			return avg * val;
-		}
-
+		
+		
 		[DllImport("user32.dll")]
 		public static extern bool EnumDisplaySettings(string deviceName, int modeNum, ref DEVMODE devMode);
 
