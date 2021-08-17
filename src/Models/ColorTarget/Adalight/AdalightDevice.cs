@@ -28,7 +28,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			_data = data;
 			_multiplier = _data.LedMultiplier;
 			LoadData();
-			cs.ColorSendEvent1 += SetColor;
+			cs.ColorSendEvent += SetColor;
 			_adalight = new AdalightNet.Adalight(_port, _ledCount, _baud);
 		}
 
@@ -69,12 +69,8 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
-		public Task SetColor(object o, DynamicEventArgs args) {
-						SetColor(args.Arg0, args.Arg1, args.Arg2, args.Arg3);
-			return Task.CompletedTask;
-		}
-
-		private void SetColor(Color[] colors, Color[] sectors, int fadeTime, bool force = false) {
+		
+		public void SetColor(Color[] colors, Color[] sectors, int fadeTime, bool force = false) {
 			if (!Enable || !Streaming || Testing && !force) {
 				return;
 			}
@@ -138,7 +134,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			_port = _data.Port;
 			Enable = _data.Enable;
 			_multiplier = _data.LedMultiplier;
-			if (_multiplier == 0 || _multiplier == null) {
+			if (_multiplier == 0) {
 				_multiplier = 1;
 			}
 

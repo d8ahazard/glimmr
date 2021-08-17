@@ -160,7 +160,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 						}
 
 						var frame = _builder.Build(sectors);
-						_splitter.Update(frame);
+						await _splitter.Update(frame).ConfigureAwait(false);
 						frame.Dispose();
 					} catch (Exception e) {
 						Log.Warning("EX: " + e.Message);

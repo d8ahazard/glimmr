@@ -34,7 +34,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			_data = d ?? throw new ArgumentException("Invalid Data");
 			_brightness = _data.Brightness;
 			_multiplier = _data.LedMultiplier;
-			if (_multiplier == null || _multiplier == 0) {
+			if (_multiplier == 0) {
 				_multiplier = 2;
 			}
 
@@ -122,10 +122,6 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		public void Dispose() {
 		}
 
-		public Task SetColor(object o, DynamicEventArgs args) {
-			SetColor(args.Arg0, args.Arg1, args.Arg2, args.Arg3);
-			return Task.CompletedTask;
-		}
 		
 		public void SetColor(Color[] colors, Color[] list, int arg3, bool force = false) {
 			if (!Streaming || !Enable || Testing && !force) {
@@ -139,11 +135,6 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			}
 
 			ColorService?.Counter.Tick(Id);
-		}
-
-
-		public bool IsEnabled() {
-			return Enable;
 		}
 
 		private int[] GenerateGammaTable(double gamma = 2.3, int maxOut = 255) {
@@ -163,7 +154,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 			_hasMulti = _data.HasMultiZone;
 			_multiplier = _data.LedMultiplier;
-			if (_multiplier == null || _multiplier == 0) {
+			if (_multiplier == 0) {
 				_multiplier = 2;
 			}
 

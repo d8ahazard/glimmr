@@ -80,7 +80,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
 			return Task.CompletedTask;
 		}
 
-		private void ProcessFrame(object sender, EmguEventArgs args) {
+		private void ProcessFrame(object? sender, EmguEventArgs args) {
 			var input = new Image<Bgr, byte>(CapWidth, CapHeight) {Bytes = args.ImageData};
 			_splitter?.Update(input.Mat.Clone());
 			input.Dispose();

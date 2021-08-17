@@ -22,8 +22,7 @@ namespace Glimmr.Services {
 	// Handles capturing and sending color data
 	public class ColorService : BackgroundService {
 		public ControlService ControlService { get; }
-		public AsyncEvent<DynamicEventArgs>? ColorSendEvent;
-		public event Action<Color[], Color[], int, bool> ColorSendEvent1;
+		public event Action<Color[], Color[], int, bool>? ColorSendEvent;
 		
 		public event Action FrameSaveEvent = delegate { };
 
@@ -44,8 +43,7 @@ namespace Glimmr.Services {
 		private bool _streamStarted;
 		private IColorSource? _stream;
 		private Task? _streamTask;
-		private Task? _sendTask;
-
+		
 		private bool _demoComplete;
 		// Token for the color source
 		private CancellationTokenSource _streamTokenSource;
@@ -246,16 +244,16 @@ namespace Glimmr.Services {
 			}
 
 			Splitter.DoSend = false;
-			Splitter.Update(tMat);
+			await Splitter.Update(tMat);
 			var colors = Splitter.GetColors().ToArray();
 			var sectors = Splitter.GetSectors().ToArray();
-			SendColors(colors, sectors, 0, true);
+			await SendColors(colors, sectors, 0, true);
 			await Task.Delay(500);
-			SendColors(emptyColors, emptySectors, 0, true);
+			await SendColors(emptyColors, emptySectors, 0, true);
 			await Task.Delay(500);
-			SendColors(colors, sectors, 0, true);
+			await SendColors(colors, sectors, 0, true);
 			await Task.Delay(1000);
-			SendColors(emptyColors, emptySectors, 0, true);
+			await SendColors(emptyColors, emptySectors, 0, true);
 			foreach (var dev in _sDevices) {
 				if (dev.Enable) dev.Testing = true;
 			}
@@ -314,15 +312,13 @@ namespace Glimmr.Services {
 			colors[led] = Color.FromArgb(255, 0, 0);
 			var sectors = ColorUtil.LedsToSectors(colors.ToList(), _systemData).ToArray();
 			var blackSectors = ColorUtil.EmptyList(_systemData.SectorCount).ToArray();
-			SendColors(colors, sectors, 0, true);
-			
+			await SendColors(colors, sectors, 0, true);
 			await Task.Delay(500);
-			SendColors(blackColors, blackSectors, 0, true);
-
+			await SendColors(blackColors, blackSectors, 0, true);
 			await Task.Delay(500);
-			SendColors(colors, sectors, 0, true);
+			await SendColors(colors, sectors, 0, true);
 			await Task.Delay(500);
-			SendColors(blackColors, blackSectors, 0, true);
+			await SendColors(blackColors, blackSectors, 0, true);
 
 			foreach (var dev in _sDevices) {
 				dev.Testing = false;
@@ -390,7 +386,7 @@ namespace Glimmr.Services {
 					}
 					
 					try {
-						SendColors(cols, secs, 0, true);
+						await SendColors(cols, secs, 0, true).ConfigureAwait(false);
 					} catch (Exception e) {
 						Log.Warning("SEND EXCEPTION: " + JsonConvert.SerializeObject(e));
 					}
@@ -590,9 +586,7 @@ namespace Glimmr.Services {
 				return;
 			}
 
-			//var args = new DynamicEventArgs(colors.ToArray(), sectors.ToArray(), fadeTime, force);
-			//ColorSendEvent?.InvokeAsync(this, args).ConfigureAwait(false);
-			ColorSendEvent1.Invoke(colors, sectors, fadeTime, force);
+			ColorSendEvent?.Invoke(colors, sectors, fadeTime, force);
 			Counter.Tick("source");
 			await Task.FromResult(true);
 		}

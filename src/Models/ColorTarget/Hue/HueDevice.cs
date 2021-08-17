@@ -45,7 +45,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Enable = Data.Enable;
 			_brightness = Data.Brightness;
 			_lightMappings = Data.MappedLights;
-			colorService.ColorSendEvent1 += SetColor;
+			colorService.ColorSendEvent += SetColor;
 			colorService.ControlService.RefreshSystemEvent += SetData;
 			Id = Data.Id;
 			_disposed = false;

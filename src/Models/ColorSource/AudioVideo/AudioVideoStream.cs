@@ -1,7 +1,6 @@
 ﻿#region
 
 using System.Drawing;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Enums;
@@ -127,7 +126,7 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 
 					if (_doSave) {
 						_doSave = false;
-						await _vs.StreamSplitter.MergeFrame(oCols, oSecs).ConfigureAwait(false);
+						_vs.StreamSplitter.MergeFrame(oCols, oSecs);
 					}
 
 					await Task.Delay(16, CancellationToken.None);

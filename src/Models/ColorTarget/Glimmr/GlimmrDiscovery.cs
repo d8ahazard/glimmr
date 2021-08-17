@@ -14,8 +14,6 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Glimmr {
 	public class GlimmrDiscovery : ColorDiscovery, IColorDiscovery {
-		public virtual string DeviceTag { get; set; } = "Glimmr";
-
 		private readonly MulticastService _mDns;
 		private readonly ServiceDiscovery _sd;
 		private bool _stopDiscovery;
@@ -56,7 +54,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			_sd.QueryServiceInstances("_glimmr._tcp");
 		}
 
-		private void GlimmrDiscovered(object sender, ServiceInstanceDiscoveryEventArgs e) {
+		private void GlimmrDiscovered(object? sender, ServiceInstanceDiscoveryEventArgs e) {
 			var name = e.ServiceInstanceName.ToString();
 			if (!name.Contains("glimmr", StringComparison.InvariantCulture)) {
 				return;

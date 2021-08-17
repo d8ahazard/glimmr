@@ -15,7 +15,6 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Nanoleaf {
 	public class NanoleafDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth {
-		public virtual string DeviceTag { get; set; } = "Nanoleaf";
 		private readonly ControlService _controlService;
 		private readonly MulticastService _mDns;
 		private readonly ServiceDiscovery _sd;
@@ -69,7 +68,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			_mDns.SendQuery(serviceName, type: DnsType.PTR);
 		}
 
-		private void NanoleafDiscovered(object o, ServiceInstanceDiscoveryEventArgs e) {
+		private void NanoleafDiscovered(object? sender, ServiceInstanceDiscoveryEventArgs e) {
 			var name = e.ServiceInstanceName.ToString();
 			var nData = new NanoleafData {IpAddress = string.Empty};
 			if (!name.Contains("nanoleafapi", StringComparison.InvariantCulture)) {

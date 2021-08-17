@@ -44,7 +44,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 				return;
 			}
 
-			cs.ColorSendEvent1 += SetColor;
+			cs.ColorSendEvent += SetColor;
 			_controller = Id switch {
 				"0" => _ws.GetController(),
 				"1" => _ws.GetController(ControllerType.PWM1),
@@ -108,7 +108,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 			_data = ld;
 			_multiplier = _data.LedMultiplier;
-			if (_multiplier == 0 || _multiplier == null) {
+			if (_multiplier == 0) {
 				_multiplier = 1;
 			}
 
@@ -138,11 +138,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			return Task.CompletedTask;
 		}
 
-		public Task SetColor(object o, DynamicEventArgs args) {
-			SetColor(args.Arg0, args.Arg1, args.Arg2, args.Arg3);
-			return Task.CompletedTask;
-		}
-		
+	
 		public void SetColor(Color[] colors, Color[] sectors, int fadeTime, bool force = false) {
 			if (colors == null) {
 				throw new ArgumentException("Invalid color input.");

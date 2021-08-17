@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Emgu.CV;
@@ -14,14 +13,13 @@ using Emgu.CV.Util;
 using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Newtonsoft.Json;
 using Serilog;
 
 #endregion
 
 namespace Glimmr.Models {
 	public class FrameSplitter {
-		// Do we send our frame data, or store it?
+		// Do we send our frame data to the UI?
 		public bool DoSend { get; set; }
 		public bool SourceActive { get; private set; }
 		private readonly float _borderHeight;
@@ -40,11 +38,14 @@ namespace Glimmr.Models {
 		// The current crop mode?
 		private Color[] _colorsLed;
 		private Color[] _colorsSectors;
+		private Color[] _colorsLedIn;
+		private Color[] _colorsSectorsIn;
 		private int _cropDelay;
 
 		// Loaded settings
 		private bool _cropLetter;
 		private bool _cropPillar;
+		private bool _merge;
 
 		private bool _doSave;
 
@@ -56,21 +57,18 @@ namespace Glimmr.Models {
 		private int _hCropCount;
 		private int _hCropPixels;
 		private int _hSectors;
-		private Mat _inFrame;
-
+		
 		private int _ledCount;
 		private int _leftCount;
 		private VectorOfPointF? _lockTarget;
 		private DeviceMode _mode;
 		private bool _noImage;
-		private Mat _outFrame;
-
+		
 		private int _previewMode;
 		private int _rightCount;
 		private const int ScaleHeight = 480;
-
-		private Size _scaleSize;
 		private const int ScaleWidth = 640;
+		private Size _scaleSize;
 
 		// Set this when the sector changes
 		private bool _sectorChanged;
@@ -100,10 +98,10 @@ namespace Glimmr.Models {
 			_vectors = Array.Empty<PointF>();
 			_targets = new List<VectorOfPoint>();
 			_useCrop = crop;
-			_inFrame = new Mat();
-			_outFrame = new Mat();
 			_colorsLed = Array.Empty<Color>();
 			_colorsSectors = Array.Empty<Color>();
+			_colorsLedIn = _colorsLed;
+			_colorsSectorsIn = _colorsSectors;
 			_frameWatch = new Stopwatch();
 			_frameWatch.Start();
 			_colorService = cs;
@@ -208,6 +206,12 @@ namespace Glimmr.Models {
 
 		private void SaveFrames(Mat inMat, Mat outMat) {
 			_doSave = false;
+			var cols = _colorsLed;
+			var secs = _colorsSectors;
+			if (_merge) {
+				cols = _colorsLedIn;
+				secs = _colorsSectorsIn;
+			}
 			if (inMat != null && !inMat.IsEmpty) {
 				_colorService.ControlService.SendImage("inputImage", inMat).ConfigureAwait(false);
 			}
@@ -220,7 +224,7 @@ namespace Glimmr.Models {
 			switch (_previewMode) {
 				case 1: {
 					for (var i = 0; i < _fullCoords.Length; i++) {
-						var col = new Bgr(_colorsLed[i]).MCvScalar;
+						var col = new Bgr(cols[i]).MCvScalar;
 						CvInvoke.Rectangle(outMat, _fullCoords[i], col, -1, LineType.AntiAlias);
 						CvInvoke.Rectangle(outMat, _fullCoords[i], colBlack, 1, LineType.AntiAlias);
 					}
@@ -229,7 +233,7 @@ namespace Glimmr.Models {
 				case 2: {
 					for (var i = 0; i < _fullSectors.Length; i++) {
 						var s = _fullSectors[i];
-						var col = new Bgr(_colorsSectors[i]).MCvScalar;
+						var col = new Bgr(secs[i]).MCvScalar;
 						CvInvoke.Rectangle(outMat, s, col, -1, LineType.AntiAlias);
 						CvInvoke.Rectangle(outMat, s, colBlack, 1, LineType.AntiAlias);
 						var cInt = i + 1;
@@ -247,45 +251,10 @@ namespace Glimmr.Models {
 			outMat.Dispose();
 		}
 
-		public async Task MergeFrame(Color[] leds, Color[] sectors) {
-			await Task.Delay(5);
-			var path = Directory.GetCurrentDirectory();
-			var inPath = Path.Join(path, "wwwroot", "img", "_preview_input.jpg");
-			var outPath = Path.Join(path, "wwwroot", "img", "_preview_output.jpg");
-			if (_inFrame == null || _outFrame == null) {
-				return;
-			}
-
-			if (_inFrame.IsEmpty || _outFrame.IsEmpty) {
-				return;
-			}
-
-			_inFrame.Save(inPath);
-			var outMat = new Mat();
-			_outFrame.CopyTo(outMat);
-			var colBlack = new Bgr(Color.FromArgb(0, 0, 0, 0)).MCvScalar;
-			if (_previewMode == 1) {
-				for (var i = 0; i < _fullCoords.Length; i++) {
-					var col = new Bgr(leds[i]).MCvScalar;
-					CvInvoke.Rectangle(outMat, _fullCoords[i], col, -1, LineType.AntiAlias);
-					CvInvoke.Rectangle(outMat, _fullCoords[i], colBlack, 1, LineType.AntiAlias);
-				}
-			}
-
-			if (_previewMode == 2) {
-				for (var i = 0; i < _fullSectors.Length; i++) {
-					var s = _fullSectors[i];
-					var col = new Bgr(sectors[i]).MCvScalar;
-					CvInvoke.Rectangle(outMat, s, col, -1, LineType.AntiAlias);
-					CvInvoke.Rectangle(outMat, s, colBlack, 1, LineType.AntiAlias);
-					var cInt = i + 1;
-					var tPoint = new Point(s.X, s.Y + 30);
-					CvInvoke.PutText(outMat, cInt.ToString(), tPoint, FontFace.HersheySimplex, 1.0, colBlack);
-				}
-			}
-
-			outMat.Save(outPath);
-			outMat.Dispose();
+		public void MergeFrame(Color[] leds, Color[] sectors) {
+			_colorsLedIn = leds;
+			_colorsSectorsIn = sectors;
+			_merge = true;
 		}
 
 		
@@ -317,8 +286,12 @@ namespace Glimmr.Models {
 				return;
 			}
 
-
 			var clone = frame;
+
+			if (frame.Width != ScaleWidth || frame.Height != ScaleWidth) {
+				CvInvoke.Resize(frame, clone, new Size(ScaleWidth, ScaleHeight));	
+			}
+			
 			if (_captureMode == CaptureMode.Camera && _mode == DeviceMode.Video) {
 				clone = CheckCamera(frame);
 				if (clone == null || clone.IsEmpty || clone.Cols == 0) {
@@ -695,35 +668,7 @@ namespace Glimmr.Models {
 			await Task.FromResult(true);
 		}
 
-
-		private static Color GetBrightestColor(Mat input) {
-			var bytes = input.GetRawData();
-			var image = input.ToImage<Bgr, byte>();
-			var maxR = 0;
-			var maxG = 0;
-			var maxB = 0;
-			Log.Debug("GBC");
-			for (var r = 0; r < image.Rows; r++) {
-				for (var c = 0; c < image.Cols; c++) {
-					Log.Debug("Looping...");
-					var col = image[r, c];
-					maxR = Math.Max((int) col.Red, maxR);
-					maxG = Math.Max((int) col.Green, maxG);
-					maxB = Math.Max((int) col.Blue, maxB);
-				}
-			}
-			Log.Debug($"GBCd: {maxR}, {maxG}, {maxB}:" + (int)bytes[0]);
-
-			return Color.FromArgb(maxR, maxG, maxB);
-		}
-
-		private static bool IsBlack(Color input, Color input2, Color input3, int blackLevel) {
-			var v1 = input.R + input.G + input.B;
-			var v2 = input2.R + input2.G + input2.B;
-			var v3 = input3.R + input3.G + input3.B;
-			return v1 + v2 + v3 < blackLevel * 9;
-		}
-
+		
 		private Rectangle[] DrawGrid() {
 			var vOffset = _vCropPixels;
 			var hOffset = _hCropPixels;

@@ -171,7 +171,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 			var sectors = _map.MapColors(lData, rData).ToList();
 			var frame = _builder.Build(sectors);
-			StreamSplitter.Update(frame);
+			StreamSplitter.Update(frame).ConfigureAwait(false);
 
 			frame.Dispose();
 			return true;

@@ -56,26 +56,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Models\ColorTarget\Dreamscreen\Encoders" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Remove="Models\ColorTarget\DreamScreen\Encoders\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Remove="Models\ColorTarget\DreamScreen\Encoders\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="Models\ColorTarget\DreamScreen\Encoders\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Remove="Models\ColorTarget\DreamScreen\Encoders\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <_ContentIncludedByDefault Remove="wwwroot\lib\croppr\croppr.min.css" />
     <_ContentIncludedByDefault Remove="wwwroot\lib\croppr\croppr.min.js" />
   </ItemGroup>

@@ -140,6 +140,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 		}
 
 		private async Task ProcessFrame(IReadOnlyList<byte> data) {
+			_sending = true;
 			var flag = data[0];
 			if (flag != 2) {
 				Log.Warning("Flag is invalid!");
@@ -164,14 +165,16 @@ namespace Glimmr.Models.ColorSource.UDP {
 
 				var ledColors = colors.ToList();
 				if (_builder == null) {
+					_sending = false;
 					return;
 				}
 
 				var frame = _builder.Build(ledColors);
 				Log.Debug("Update: Udp");
-				_splitter.Update(frame);
+				await _splitter.Update(frame);
+				frame.Dispose();
 				_sending = false;
-				await Task.FromResult(true);
+				
 			} else {
 				Log.Debug("Dev mode is incorrect.");
 			}

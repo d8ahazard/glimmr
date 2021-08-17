@@ -32,7 +32,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		/// <param name="n"></param>
 		/// <param name="colorService"></param>
 		public NanoleafDevice(NanoleafData n, ColorService colorService) : base(colorService) {
-			colorService.ColorSendEvent1 += SetColor;
+			colorService.ColorSendEvent += SetColor;
 			ColorService = colorService;
 			_targets = new Dictionary<int, int>();
 			_data = n;

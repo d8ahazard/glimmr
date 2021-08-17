@@ -14,7 +14,6 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Hue {
 	public class HueDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth {
-		public virtual string DeviceTag { get; set; } = "Hue";
 		private readonly BridgeLocator _bridgeLocatorHttp;
 		private readonly BridgeLocator _bridgeLocatorMdns;
 		private readonly BridgeLocator _bridgeLocatorSsdp;
@@ -86,11 +85,14 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 		private static HueData UpdateDeviceData(HueData data) {
 			// Check for existing device
-			var dev = DataUtil.GetDevice<HueData>(data.Id);
+			var dd = DataUtil.GetDevice<HueData>(data.Id);
 
-			if (dev == null || string.IsNullOrEmpty(dev.Token)) {
+			if (dd == null) {
 				return data;
 			}
+
+			var dev = (HueData) dd;
+			if (string.IsNullOrEmpty(dev.Token)) return data;
 
 			var client = new LocalHueClient(data.IpAddress, dev.User, dev.Token);
 			try {

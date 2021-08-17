@@ -173,8 +173,9 @@ namespace Glimmr.Services {
 					break;
 				}
 			}
-
-			if (dev != null && dev.GetType().GetMethod("CheckAuthAsync") != null) {
+			if (dev == null) return;
+			if (dev.GetType() == null) return;
+			if (dev.GetType().GetMethod("CheckAuthAsync") != null) {
 				var count = 0;
 				while (count < 30) {
 					try {

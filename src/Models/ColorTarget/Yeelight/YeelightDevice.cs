@@ -35,7 +35,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			Enable = _data.Enable;
 			LoadData();
 			Log.Debug("Created new yee device at " + yd.IpAddress);
-			cs.ColorSendEvent1 += SetColor;
+			cs.ColorSendEvent += SetColor;
 			_colorService = cs;
 
 			_data.LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);

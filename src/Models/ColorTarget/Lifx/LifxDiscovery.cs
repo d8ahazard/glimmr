@@ -39,7 +39,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			Log.Debug("Lifx: Discovery complete.");
 		}
 
-		private async void Client_DeviceDiscovered(object sender, LifxClient.DeviceDiscoveryEventArgs e) {
+		private async void Client_DeviceDiscovered(object? sender, LifxClient.DeviceDiscoveryEventArgs e) {
 			var bulb = e.Device;
 			if (bulb == null) {
 				return;

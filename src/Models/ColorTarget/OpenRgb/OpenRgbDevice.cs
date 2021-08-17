@@ -90,13 +90,9 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
-		public Task SetColor(object o, DynamicEventArgs args) {
-			SetColor(args.Arg0, args.Arg1, args.Arg2, args.Arg3);
-			return Task.CompletedTask;
-		}
 		
 		public void SetColor(Color[] colors, Color[] sectors, int fadeTime, bool force = false) {
-			if (!Enable || !Streaming) {
+			if (!Enable || !Streaming || Testing && !force) {
 				return;
 			}
 

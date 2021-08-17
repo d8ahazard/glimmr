@@ -27,6 +27,12 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 
 		public int Brightness { get; set; }
+		
+		[DefaultValue(1)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+
+
+		public int LedMultiplier { get; set; }
 
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -129,6 +135,9 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 		public SettingsProperty[] KeyProperties { get; set; } = {
 			new("ledmap", "ledmap", ""),
+			new("LedMultiplier", "number", "LED Multiplier") {
+			ValueMin = "-10", ValueStep = "1"
+			},
 			new("Offset", "number", "Strip Offset"),
 			new("Rotation", "select", "Rotation", new Dictionary<string, string> {
 				["0"] = "Normal",

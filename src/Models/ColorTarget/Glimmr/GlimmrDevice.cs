@@ -30,7 +30,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		private SystemData _sd;
 
 		public GlimmrDevice(GlimmrData wd, ColorService colorService) : base(colorService) {
-			colorService.ColorSendEvent1 += SetColor;
+			colorService.ColorSendEvent += SetColor;
 			_udpClient = colorService.ControlService.UdpClient;
 			_httpClient = colorService.ControlService.HttpSender;
 			_updateColors = new List<Color>();

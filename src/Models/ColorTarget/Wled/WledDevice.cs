@@ -35,7 +35,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		private int _targetSector;
 
 		public WledDevice(WledData wd, ColorService colorService) : base(colorService) {
-			colorService.ColorSendEvent1 += SetColor;
+			colorService.ColorSendEvent += SetColor;
 			ColorService = colorService;
 			colorService.ControlService.RefreshSystemEvent += RefreshSystem;
 			_udpClient = ColorService.ControlService.UdpClient;
@@ -107,11 +107,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
-
-		public Task SetColor(object o, DynamicEventArgs args) {
-			SetColor(args.Arg0, args.Arg1, args.Arg2, args.Arg3);
-			return Task.CompletedTask;
-		}
 		
 		public void SetColor(Color[] list, Color[] colors1, int arg3, bool force = false) {
 			if (!Streaming || !Enable || Testing && !force) {
@@ -177,7 +172,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			_stripMode = (StripMode) _data.StripMode;
 			_targetSector = _data.TargetSector;
 			_multiplier = _data.LedMultiplier;
-			if (_multiplier == 0 || _multiplier == null) {
+			if (_multiplier == 0) {
 				_multiplier = 1;
 			}
 

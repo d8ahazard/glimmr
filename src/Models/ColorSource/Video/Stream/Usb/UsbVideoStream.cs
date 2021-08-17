@@ -15,11 +15,9 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 		private bool _disposed;
 		private FrameSplitter? _splitter;
 		private VideoCapture? _video;
-		private Mat _frame;
-
+		
 
 		public UsbVideoStream() {
-			_frame = new Mat();
 			Refresh();
 		}
 
@@ -68,7 +66,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 			return Task.CompletedTask;
 		}
 
-		private void SetFrame(object sender, EventArgs e) {
+		private void SetFrame(object? sender, EventArgs e) {
 			if (_video != null && _video.Ptr != IntPtr.Zero) {
 				using var frame = new Mat();
 				_video.Read(frame);
@@ -78,9 +76,6 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 			}
 		}
 
-		private async Task UpdateFrame() {
-			
-		}
 
 		protected virtual void Dispose(bool disposing) {
 			if (!disposing) {

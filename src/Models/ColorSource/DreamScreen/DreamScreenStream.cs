@@ -161,7 +161,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 			var colors = e.Colors;
 			var frame = _builder.Build(colors);
 			Log.Debug("Update: DS");
-			_splitter.Update(frame);
+			_splitter.Update(frame).ConfigureAwait(false);
 			frame.Dispose();
 			_cs.Counter.Tick("Dreamscreen");
 		}

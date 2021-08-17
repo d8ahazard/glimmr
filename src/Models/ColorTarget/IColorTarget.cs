@@ -23,7 +23,7 @@ namespace Glimmr.Models.ColorTarget {
 
 		public Task StopStream();
 
-		public Task SetColor(object sender, DynamicEventArgs args);
+		public void SetColor(Color[] colors, Color[] sectors, int fadeTime, bool force = false);
 
 		public Task FlashColor(Color color);
 
