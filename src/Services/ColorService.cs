@@ -23,6 +23,7 @@ namespace Glimmr.Services {
 	public class ColorService : BackgroundService {
 		public ControlService ControlService { get; }
 		public AsyncEvent<DynamicEventArgs>? ColorSendEvent;
+		public event Action<Color[], Color[], int, bool> ColorSendEvent1;
 		
 		public event Action FrameSaveEvent = delegate { };
 
@@ -41,8 +42,11 @@ namespace Glimmr.Services {
 
 		private IColorTarget[] _sDevices;
 		private bool _streamStarted;
+		private IColorSource? _stream;
 		private Task? _streamTask;
+		private Task? _sendTask;
 
+		private bool _demoComplete;
 		// Token for the color source
 		private CancellationTokenSource _streamTokenSource;
 
@@ -101,23 +105,50 @@ namespace Glimmr.Services {
 		
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			Initialize().ConfigureAwait(true);
+			
+			Log.Debug("Send task started, starting main loop.");
 			return Task.Run(async () => {
+				var loopWatch = new Stopwatch();
+				loopWatch.Start();
 				var fc = 0;
 				while (!stoppingToken.IsCancellationRequested) {
 					await CheckAutoDisable();
-					if (fc >= 5) {
-						fc = 0;
-						FrameSaveEvent.Invoke();
+
+					if (!_demoComplete || _stream == null) {
+						continue;
 					}
 
-					await Task.Delay(1000, stoppingToken);
-					fc++;
-				}
+					
+					var time = loopWatch.ElapsedMilliseconds;
+					if (time >= 15) {
+						var cols = _stream.GetColors();
+						var secs = _stream.GetSectors();
+						if (cols == null || secs == null) {
+							Log.Debug("No columns/sectors.");
+						} else {
+							await SendColors(cols, secs, 0, true).ConfigureAwait(false);
+						}
+						fc++;
+						loopWatch.Restart();
+						if (fc < 60 * 5) {
+							continue;
+						}
 
+						FrameSaveEvent.Invoke();
+						fc = 0;
+					} else {
+						await Task.Delay(TimeSpan.FromMilliseconds(15 - time), CancellationToken.None);
+					}
+					
+				}
+				loopWatch.Stop();
+				Log.Information("Send loop canceled.");
+				
 				_streamTask?.Dispose();
 				DataUtil.Dispose();
 			}, CancellationToken.None);
 		}
+
 
 		private async Task Initialize() {
 			Log.Information("Starting color service...");
@@ -125,6 +156,7 @@ namespace Glimmr.Services {
 			if (!_systemData.SkipDemo) {
 				Log.Information("Executing demo...");
 				await Demo(this, null);
+				_demoComplete = true;
 				Log.Information("Demo complete.");
 			} else {
 				Log.Information("Skipping demo.");
@@ -215,8 +247,8 @@ namespace Glimmr.Services {
 
 			Splitter.DoSend = false;
 			Splitter.Update(tMat);
-			var colors = Splitter.GetColors();
-			var sectors = Splitter.GetSectors();
+			var colors = Splitter.GetColors().ToArray();
+			var sectors = Splitter.GetSectors().ToArray();
 			SendColors(colors, sectors, 0, true);
 			await Task.Delay(500);
 			SendColors(emptyColors, emptySectors, 0, true);
@@ -277,11 +309,11 @@ namespace Glimmr.Services {
 
 		private async Task LedTest(object o, DynamicEventArgs dynamicEventArgs) {
 			int led = dynamicEventArgs.Arg0;
-			var colors = ColorUtil.EmptyList(_systemData.LedCount);
+			var colors = ColorUtil.EmptyList(_systemData.LedCount).ToArray();
 			var blackColors = colors;
 			colors[led] = Color.FromArgb(255, 0, 0);
-			var sectors = ColorUtil.LedsToSectors(colors, _systemData);
-			var blackSectors = ColorUtil.EmptyList(_systemData.SectorCount);
+			var sectors = ColorUtil.LedsToSectors(colors.ToList(), _systemData).ToArray();
+			var blackSectors = ColorUtil.EmptyList(_systemData.SectorCount).ToArray();
 			SendColors(colors, sectors, 0, true);
 			
 			await Task.Delay(500);
@@ -490,6 +522,8 @@ namespace Glimmr.Services {
 			} else if (newMode != DeviceMode.Off) {
 				stream = _streams[newMode.ToString()];
 			}
+			
+			_stream = stream;
 
 			if (stream != null) {
 				Log.Information("Starting stream on " + newMode);
@@ -549,19 +583,20 @@ namespace Glimmr.Services {
 		}
 
 
-		public void SendColors(IEnumerable<Color> colors, IEnumerable<Color> sectors, int fadeTime = 0,
+		private async Task SendColors(Color[] colors, Color[] sectors, int fadeTime = 0,
 			bool force = false) {
 			if (!_streamStarted) {
 				Log.Debug("Stream not started?");
 				return;
 			}
 
+			//var args = new DynamicEventArgs(colors.ToArray(), sectors.ToArray(), fadeTime, force);
+			//ColorSendEvent?.InvokeAsync(this, args).ConfigureAwait(false);
+			ColorSendEvent1.Invoke(colors, sectors, fadeTime, force);
 			Counter.Tick("source");
-			var args = new DynamicEventArgs(colors.ToArray(), sectors.ToArray(), fadeTime, force);
-			ColorSendEvent?.InvokeAsync(this, args).ConfigureAwait(false);
+			await Task.FromResult(true);
 		}
-
-
+		
 		private static void CancelSource(CancellationTokenSource target, bool dispose = false) {
 			if (target == null) {
 				return;

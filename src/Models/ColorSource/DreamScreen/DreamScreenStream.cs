@@ -1,5 +1,6 @@
 ﻿#region
 
+using System.Drawing;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -147,12 +148,19 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 			_splitter.DoSend = false;
 			Log.Debug("DS stream service stopped.");
 		}
+		
+		public Color[] GetColors() {
+			return _splitter.GetColors();
+		}
+
+		public Color[] GetSectors() {
+			return _splitter.GetSectors();
+		}
 
 		private void UpdateColors(object? sender, DreamScreenClient.DeviceColorEventArgs e) {
 			var colors = e.Colors;
 			var frame = _builder.Build(colors);
 			Log.Debug("Update: DS");
-
 			_splitter.Update(frame);
 			frame.Dispose();
 			_cs.Counter.Tick("Dreamscreen");

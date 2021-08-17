@@ -45,7 +45,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Enable = Data.Enable;
 			_brightness = Data.Brightness;
 			_lightMappings = Data.MappedLights;
-			colorService.ColorSendEvent += SetColor;
+			colorService.ColorSendEvent1 += SetColor;
 			colorService.ControlService.RefreshSystemEvent += SetData;
 			Id = Data.Id;
 			_disposed = false;
@@ -190,11 +190,21 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		/// <param name="o"></param>
 		/// <param name="args"></param>
 		public Task SetColor(object o, DynamicEventArgs args) {
-			Color[] sectors = args.Arg1 ?? ColorUtil.EmptyColors(12);
-			int fadeTime = args.Arg2 ?? 0;
-			bool force = args.Arg3 ?? false;
+			SetColor(args.Arg0, args.Arg1, args.Arg2, args.Arg3);
+
+			return Task.CompletedTask;
+		}
+		
+		/// <summary>
+		///     Update lites in entertainment group...
+		/// </summary>
+		/// <param name="list"></param>
+		/// <param name="sectors"></param>
+		/// <param name="fadeTime"></param>
+		/// <param name="force"></param>
+		public void SetColor(Color[] list, Color[] sectors, int fadeTime, bool force = false) {
 			if (!Streaming || !Enable || _entLayer == null || Testing && !force) {
-				return Task.CompletedTask;
+				return;
 			}
 
 			foreach (var entLight in _entLayer) {
@@ -230,7 +240,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			}
 
 			ColorService?.Counter.Tick(Id);
-			return Task.CompletedTask;
 		}
 
 

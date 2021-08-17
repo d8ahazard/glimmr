@@ -35,7 +35,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		private int _targetSector;
 
 		public WledDevice(WledData wd, ColorService colorService) : base(colorService) {
-			colorService.ColorSendEvent += SetColor;
+			colorService.ColorSendEvent1 += SetColor;
 			ColorService = colorService;
 			colorService.ControlService.RefreshSystemEvent += RefreshSystem;
 			_udpClient = ColorService.ControlService.UdpClient;
@@ -87,7 +87,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			}
 
 			try {
-				await _udpClient.SendAsync(packet.ToArray(), packet.Count, _ep);
+				await _udpClient.SendAsync(packet.ToArray(), packet.Count, _ep).ConfigureAwait(false);
 			} catch (Exception e) {
 				Log.Debug("Exception, look at that: " + e.Message);
 			}
@@ -109,20 +109,23 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 
 		public Task SetColor(object o, DynamicEventArgs args) {
-			Color[] colors = args.Arg0;
-			Color[] sectors = args.Arg1 ?? ColorUtil.EmptyColors(12);
-			bool force = args.Arg3 ?? false;
+			SetColor(args.Arg0, args.Arg1, args.Arg2, args.Arg3);
+			return Task.CompletedTask;
+		}
+		
+		public void SetColor(Color[] list, Color[] colors1, int arg3, bool force = false) {
 			if (!Streaming || !Enable || Testing && !force) {
-				return Task.CompletedTask;
+				return;
 			}
 
+			var colors = list;
+
 			if (_stripMode == StripMode.Single) {
-				if (_targetSector >= sectors.Length || _targetSector == -1) {
-					Log.Warning("Invalid sector selection.");
-					return Task.CompletedTask;
+				if (_targetSector >= colors1.Length || _targetSector == -1) {
+					return;
 				}
 
-				colors = ColorUtil.FillArray(sectors[_targetSector], _ledCount);
+				colors = ColorUtil.FillArray(colors1[_targetSector], _ledCount);
 			} else {
 				colors = ColorUtil.TruncateColors(colors, _offset, _ledCount, _multiplier);
 				if (_stripMode == StripMode.Loop) {
@@ -134,7 +137,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 				}
 			}
 
-			var packet = new byte[2 + colors.Length * 3];	
+			var packet = new byte[2 + colors.Length * 3];
 			var timeByte = 255;
 			packet[0] = ByteUtils.IntByte(2);
 			packet[1] = ByteUtils.IntByte(timeByte);
@@ -148,7 +151,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 			if (_ep == null) {
 				Log.Debug("No endpoint.");
-				return Task.CompletedTask;
+				return;
 			}
 
 			try {
@@ -157,8 +160,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			} catch (Exception e) {
 				Log.Debug("Exception: " + e.Message);
 			}
-			return Task.CompletedTask;
 		}
+
 
 		public Task ReloadData() {
 			var oldBrightness = _brightness;

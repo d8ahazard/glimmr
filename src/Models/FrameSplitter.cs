@@ -14,6 +14,7 @@ using Emgu.CV.Util;
 using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
+using Newtonsoft.Json;
 using Serilog;
 
 #endregion
@@ -28,7 +29,6 @@ namespace Glimmr.Models {
 		// The width of the border to crop from for LEDs
 		private readonly float _borderWidth;
 		private readonly ColorService _colorService;
-		private readonly ControlService _controlService;
 		private readonly Stopwatch _frameWatch;
 		private readonly List<VectorOfPoint> _targets;
 		private readonly bool _useCrop;
@@ -67,10 +67,10 @@ namespace Glimmr.Models {
 
 		private int _previewMode;
 		private int _rightCount;
-		private int _scaleHeight = DisplayUtil.CaptureHeight();
+		private const int ScaleHeight = 480;
 
 		private Size _scaleSize;
-		private int _scaleWidth = DisplayUtil.CaptureWidth();
+		private const int ScaleWidth = 640;
 
 		// Set this when the sector changes
 		private bool _sectorChanged;
@@ -107,7 +107,6 @@ namespace Glimmr.Models {
 			_frameWatch = new Stopwatch();
 			_frameWatch.Start();
 			_colorService = cs;
-			_controlService = cs.ControlService;
 			cs.ControlService.RefreshSystemEvent += RefreshSystem;
 			cs.FrameSaveEvent += TriggerSave;
 			RefreshSystem();
@@ -151,8 +150,6 @@ namespace Glimmr.Models {
 			_useCenter = sd.UseCenter;
 			_ledCount = sd.LedCount;
 			_sectorCount = sd.SectorCount;
-			_scaleHeight = DisplayUtil.CaptureHeight();
-			_scaleWidth = DisplayUtil.CaptureWidth();
 			_sectorChanged = true;
 			if (_ledCount == 0) {
 				_ledCount = 200;
@@ -162,11 +159,14 @@ namespace Glimmr.Models {
 				_sectorCount = 12;
 			}
 
+			_colorsLed = ColorUtil.EmptyColors(_ledCount);
+			_colorsSectors = ColorUtil.EmptyColors(_sectorCount);
+
 			_previewMode = sd.PreviewMode;
 
 			_captureMode = (CaptureMode) sd.CaptureMode;
-			_srcArea = _scaleWidth * _scaleHeight;
-			_scaleSize = new Size(_scaleWidth, _scaleHeight);
+			_srcArea = ScaleWidth * ScaleHeight;
+			_scaleSize = new Size(ScaleWidth, ScaleHeight);
 
 			if (_captureMode == CaptureMode.Camera) {
 				try {
@@ -185,8 +185,8 @@ namespace Glimmr.Models {
 			}
 
 			_vectors = new PointF[] {
-				new Point(0, 0), new Point(_scaleWidth, 0), new Point(_scaleWidth, _scaleHeight),
-				new Point(0, _scaleHeight)
+				new Point(0, 0), new Point(ScaleWidth, 0), new Point(ScaleWidth, ScaleHeight),
+				new Point(0, ScaleHeight)
 			};
 
 			// Start our stopwatches for cropping if they were previously disabled
@@ -288,13 +288,13 @@ namespace Glimmr.Models {
 			outMat.Dispose();
 		}
 
-		public void Update(Mat frame) {
+		
+		public async Task Update(Mat frame) {
 			if (frame == null || frame.IsEmpty) {
 				SourceActive = false;
 				if (!_warned) {
 					Log.Warning("Frame is null.");
 				}
-
 				_warned = true;
 				return;
 			}
@@ -304,7 +304,6 @@ namespace Glimmr.Models {
 				if (!_warned) {
 					Log.Warning("Frame has no columns.");
 				}
-
 				_warned = true;
 				return;
 			}
@@ -314,103 +313,72 @@ namespace Glimmr.Models {
 				if (!_warned) {
 					Log.Warning("Frame has no rows.");
 				}
-
 				_warned = true;
 				return;
 			}
 
-			// Save a preview frame every 5 seconds
-			if (!_doSave) {
-				_inFrame = frame.Clone();
-			}
 
+			var clone = frame;
+			if (_captureMode == CaptureMode.Camera && _mode == DeviceMode.Video) {
+				clone = CheckCamera(frame);
+				if (clone == null || clone.IsEmpty || clone.Cols == 0) {
+					Log.Warning("Invalid input frame.");
+					return;
+				}
+			}
 			// Check if we're using camera/video mode and crop if necessary
-			var warped = CheckCamera(frame);
-			if (warped == null || warped.IsEmpty || warped.Cols == 0) {
-				Log.Warning("Invalid input frame.");
-				return;
-			}
-
 			SourceActive = true;
-			var mustResize = warped.Width != _scaleWidth || warped.Height != _scaleHeight;
-
-			Mat scaled;
-			if (mustResize) {
-				var img = warped.ToImage<Bgr, byte>();
-				var sized = mustResize ? img.Resize(_scaleWidth, _scaleHeight, Inter.Cubic) : img;
-				scaled = sized.Mat.Clone();
-				sized.Dispose();
-			} else {
-				scaled = warped.Clone();
-			}
-
+			
 			// Don't do anything if there's no frame.
-			if (scaled == null || scaled.IsEmpty) {
+			if (clone == null || clone.IsEmpty) {
 				Log.Warning("Null/Empty input!");
-				// Dispose warped
-				warped.Dispose();
 				// Dispose frame
 				frame.Dispose();
+				clone?.Dispose();
 				return;
 			}
 
 			// Check sectors once per second
 			if (_frameWatch.Elapsed >= TimeSpan.FromSeconds(1)) {
-				CheckSectors(scaled);
+				await CheckCrop(clone).ConfigureAwait(false);
 				_frameWatch.Restart();
 			}
-
-			// Only calculate new sectors if the value has changed
-			if (_sectorChanged) {
-				Log.Debug($"Sector changed, redrawing {_vCropPixels} and {_hCropPixels}...");
-				_sectorChanged = false;
-				_fullCoords = DrawGrid();
-				_fullSectors = DrawSectors();
-			}
+			
 
 			var ledColors = ColorUtil.EmptyColors(_ledCount);
 			for (var i = 0; i < _fullCoords.Length; i++) {
-				var sub = new Mat(scaled, _fullCoords[i]);
+				var sub = new Mat(clone, _fullCoords[i]);
 				ledColors[i] = GetAverage(sub);
 				sub.Dispose();
 			}
 
+			
 			var sectorColors = ColorUtil.EmptyColors(_sectorCount);
 			for (var i = 0; i < _fullSectors.Length; i++) {
-				var sub = new Mat(scaled, _fullSectors[i]);
+				var sub = new Mat(clone, _fullSectors[i]);
 				sectorColors[i] = GetAverage(sub);
 				sub.Dispose();
 			}
 
 			_colorsLed = ledColors;
 			_colorsSectors = sectorColors;
-			if (DoSend) {
-				_colorService.SendColors(_colorsLed, _colorsSectors, 0, true);
-			}
-
+			
 			if (_doSave) {
 				if (DoSend) {
-					SaveFrames(frame, scaled);
-				} else {
-					_outFrame = scaled.Clone();
+					SaveFrames(frame, clone);
 				}
 				_doSave = false;
 			}
-			// Dispose warped
-			warped.Dispose();
-			// Dispose frame
+			// Dispose
 			frame.Dispose();
-			// Dispose scaled
-			scaled.Dispose();
+			clone.Dispose();
+			await Task.FromResult(true);
 		}
 
 
 		private Mat? CheckCamera(Mat input) {
 			var scaled = input.Clone();
-			if (_captureMode != CaptureMode.Camera || _mode != DeviceMode.Video) {
-				return scaled;
-			}
-
+			
 			Mat? output = null;
 
 			// If we don't have a target, find one
@@ -568,44 +536,45 @@ namespace Glimmr.Models {
 		}
 
 
-		private static Color GetAverage(Mat sInput) {
-			var output = sInput.ToImage<Bgr, byte>();
-			var avg = output.GetAverage();
-			if (avg.Red < 6 && avg.Green < 6 && avg.Blue < 6) {
+		private static Color GetAverage(IInputArray sInput) {
+			var foo = CvInvoke.Mean(sInput);
+			var red = foo.V2;
+			var green = foo.V1;
+			var blue = foo.V0;
+			if (red < 6 && green < 6 && blue < 6) {
 				return Color.FromArgb(0, 0, 0, 0);
 			}
 
-			return Color.FromArgb(255, (int) avg.Red, (int) avg.Green, (int) avg.Blue);
+			return Color.FromArgb(255, (int) red, (int) green, (int) blue);
 		}
 
-		public List<Color> GetColors() {
-			return _colorsLed.ToList();
+		public Color[] GetColors() {
+			return _colorsLed;
 		}
 
-		public List<Color> GetSectors() {
-			return _colorsSectors.ToList();
+		public Color[] GetSectors() {
+			return _colorsSectors;
 		}
 
-		private void CheckSectors(Mat check) {
-			if (check == null) {
-				return;
-			}
+		private async Task CheckCrop(Mat image) {
+			var width = image.Width;
+			var height = image.Height;
+			var wStart = width / 3;
+			var hStart = height / 3;
+			var wEnd = wStart * 2;
+			var hEnd = hStart * 2;
+			var xCenter = width / 2;
+			var yCenter = height / 2;
+			var blackLevel = 1;
 
-			var input = check.Clone();
-			// If nothing to crop, just leave
-			if (!_cropLetter && !_cropPillar) {
-				return;
-			}
-
-			// Number of pixels to check per loop. Smaller = more accurate, larger = faster?
-			const int checkSize = 1;
-			const int blackLevel = 2;
-			// Set our starting values to zero per loop
-			var cropHorizontal = 0;
 			var cropVertical = 0;
+			var cropHorizontal = 0;
 
+			width--; // remove 1 pixel to get end pixel index
+			height--;
+			
 			var gr = new Mat();
-			CvInvoke.CvtColor(input, gr, ColorConversion.Bgr2Gray);
+			CvInvoke.CvtColor(image, gr, ColorConversion.Bgr2Gray);
 			// Check to see if everything is black
 			var allB = CvInvoke.CountNonZero(gr);
 			_noImage = allB == 0;
@@ -615,53 +584,47 @@ namespace Glimmr.Models {
 				return;
 			}
 
+			// find first X pixel of the image
 			if (_cropLetter) {
-				for (var r = 0; r <= input.Height / 4; r += checkSize) {
-					// Define top position of bottom section
-					var r2 = input.Height - r - checkSize;
-					// Regions to check
-					var s1 = new Rectangle(0, r, input.Width, checkSize);
-					var s2 = new Rectangle(0, r2, input.Width, checkSize);
-					var t1 = new Mat(gr, s1);
-					var t2 = new Mat(gr, s2);
-					var l1 = GetBrightestColor(t1);
-					var l2 = GetBrightestColor(t2);
-					t1.Dispose();
-					t2.Dispose();
-					if (!IsBlack(l1, l2, blackLevel)) {
+				for (var x = 0; x < wStart; ++x) {
+					var c1 = gr.Row(yCenter).Col(width-x);
+					var c2 = gr.Row(hStart).Col(x);
+					var c3 = gr.Row(hEnd).Col(x);
+					var l1 = c1.GetRawData()[0];
+					var l2 = c2.GetRawData()[0];
+					var l3 = c3.GetRawData()[0];
+					if (l1+l2+l3 <= blackLevel * 3) {
+						cropVertical = x;
+					} else {
 						break;
 					}
-
-					cropHorizontal = r;
 				}
 			}
 
-
+			// find first Y pixel of the image
 			if (_cropPillar) {
-				for (var c = 0; c < input.Width / 4; c += checkSize) {
-					// Define left coord of right sector
-					var c2 = input.Width - c - checkSize;
-					// Create rect for left side check, make it a Mat
-					var s1 = new Rectangle(c, 0, checkSize, input.Height);
-					var s2 = new Rectangle(c2, 0, 1, input.Height);
-					var t1 = new Mat(gr, s1);
-					var t2 = new Mat(gr, s2);
-					var n1 = GetBrightestColor(t1);
-					var n2 = GetBrightestColor(t2);
-					t1.Dispose();
-					t2.Dispose();
-					// If it is also black, set that to our current check value
-					if (!IsBlack(n1, n2, blackLevel)) {
+				for (var y = 0; y < hStart; y++) {
+					var c1 = gr.Row(height - y).Col(xCenter);
+					var c2 = gr.Row(y).Col(wStart);
+					var c3 = gr.Row(y).Col(wEnd);
+					var l1 = (int)c1.GetRawData()[0];
+					var l2 = (int)c2.GetRawData()[0];
+					var l3 = (int)c3.GetRawData()[0];
+					c1.Dispose();
+					c2.Dispose();
+					c3.Dispose();
+					if (l1+l2+l3 <= blackLevel * 3) {
+						cropHorizontal = y;
+					} else {
 						break;
 					}
-
-					cropVertical = c;
 				}
+
 			}
-
-
+			
 			gr.Dispose();
 
+			
 			if (_cropLetter && cropHorizontal != 0) {
 				if (cropHorizontal == _hCropCheck) {
 					_hCropCount++;
@@ -721,29 +684,44 @@ namespace Glimmr.Models {
 			}
 
 			_vCropCheck = cropVertical;
-			input.Dispose();
+			// Only calculate new sectors if the value has changed
+			if (_sectorChanged) {
+				Log.Debug($"Sector changed, redrawing {_vCropPixels} and {_hCropPixels}...");
+				_sectorChanged = false;
+				_fullCoords = DrawGrid();
+				_fullSectors = DrawSectors();
+			}
+
+			await Task.FromResult(true);
 		}
 
-		private Color GetBrightestColor(Mat input) {
+
+		private static Color GetBrightestColor(Mat input) {
+			var bytes = input.GetRawData();
 			var image = input.ToImage<Bgr, byte>();
 			var maxR = 0;
 			var maxG = 0;
 			var maxB = 0;
+			Log.Debug("GBC");
 			for (var r = 0; r < image.Rows; r++) {
 				for (var c = 0; c < image.Cols; c++) {
+					Log.Debug("Looping...");
 					var col = image[r, c];
 					maxR = Math.Max((int) col.Red, maxR);
 					maxG = Math.Max((int) col.Green, maxG);
 					maxB = Math.Max((int) col.Blue, maxB);
 				}
 			}
+			Log.Debug($"GBCd: {maxR}, {maxG}, {maxB}:" + (int)bytes[0]);
 
 			return Color.FromArgb(maxR, maxG, maxB);
 		}
 
-		private static bool IsBlack(Color input, Color input2, int blackLevel) {
-			return input.R <= blackLevel && input.B <= blackLevel && input.G <= blackLevel && input2.R <= blackLevel &&
-			       input2.B <= blackLevel && input2.G <= blackLevel;
+		private static bool IsBlack(Color input, Color input2, Color input3, int blackLevel) {
+			var v1 = input.R + input.G + input.B;
+			var v2 = input2.R + input2.G + input2.B;
+			var v3 = input3.R + input3.G + input3.B;
+			return v1 + v2 + v3 < blackLevel * 9;
 		}
 
 		private Rectangle[] DrawGrid() {
@@ -754,17 +732,17 @@ namespace Glimmr.Models {
 			// Top Region
 			var tTop = hOffset;
 			// Bottom Region
-			var bBottom = _scaleHeight - hOffset;
+			var bBottom = ScaleHeight - hOffset;
 			var bTop = bBottom - _borderHeight;
 
 			// Left Column Border
 			var lLeft = vOffset;
 
 			// Right Column Border
-			var rRight = _scaleWidth - vOffset;
+			var rRight = ScaleWidth - vOffset;
 			var rLeft = rRight - _borderWidth;
-			float w = _scaleWidth;
-			float h = _scaleHeight;
+			float w = ScaleWidth;
+			float h = ScaleHeight;
 
 			// Steps
 			var widthTop = (int) Math.Ceiling(w / _topCount);
@@ -773,7 +751,7 @@ namespace Glimmr.Models {
 			var heightRight = (int) Math.Ceiling(h / _rightCount);
 			// Calc right regions, bottom to top
 			var idx = 0;
-			var pos = _scaleHeight - heightRight;
+			var pos = ScaleHeight - heightRight;
 
 			for (var i = 0; i < _rightCount; i++) {
 				if (pos < 0) {
@@ -786,7 +764,7 @@ namespace Glimmr.Models {
 			}
 
 			// Calc top regions, from right to left
-			pos = _scaleWidth - widthTop;
+			pos = ScaleWidth - widthTop;
 
 			for (var i = 0; i < _topCount; i++) {
 				if (pos < 0) {
@@ -803,8 +781,8 @@ namespace Glimmr.Models {
 			pos = 0;
 
 			for (var i = 0; i < _leftCount; i++) {
-				if (pos > _scaleHeight - heightLeft) {
-					pos = _scaleHeight - heightLeft;
+				if (pos > ScaleHeight - heightLeft) {
+					pos = ScaleHeight - heightLeft;
 				}
 
 				output[idx] = new Rectangle(lLeft, pos, (int) _borderWidth, heightLeft);
@@ -820,8 +798,8 @@ namespace Glimmr.Models {
 					continue;
 				}
 
-				if (pos > _scaleWidth - widthBottom) {
-					pos = _scaleWidth - widthBottom;
+				if (pos > ScaleWidth - widthBottom) {
+					pos = ScaleWidth - widthBottom;
 				}
 
 				output[idx] = new Rectangle(pos, (int) bTop, widthBottom, (int) _borderHeight);
@@ -852,14 +830,14 @@ namespace Glimmr.Models {
 			var fs = new Rectangle[_sectorCount];
 			// Calculate heights, minus offset for boxing
 			// Individual segment sizes
-			var sectorWidth = (_scaleWidth - hOffset * 2) / _hSectors;
-			var sectorHeight = (_scaleHeight - vOffset * 2) / _vSectors;
+			var sectorWidth = (ScaleWidth - hOffset * 2) / _hSectors;
+			var sectorHeight = (ScaleHeight - vOffset * 2) / _vSectors;
 			// These are based on the border/strip values
 			// Minimum limits for top, bottom, left, right            
-			var top = _scaleHeight - vOffset - sectorHeight;
+			var top = ScaleHeight - vOffset - sectorHeight;
 			var idx = 0;
 			for (var v = _vSectors; v > 0; v--) {
-				var left = _scaleWidth - hOffset - sectorWidth;
+				var left = ScaleWidth - hOffset - sectorWidth;
 				for (var h = _hSectors; h > 0; h--) {
 					fs[idx] = new Rectangle(left, top, sectorWidth, sectorHeight);
 					idx++;
@@ -892,14 +870,14 @@ namespace Glimmr.Models {
 			var fs = new Rectangle[_sectorCount];
 			// Individual segment sizes
 			const int squareSize = 40;
-			var sectorWidth = (_scaleWidth - hOffset * 2) / _hSectors;
-			var sectorHeight = (_scaleHeight - vOffset * 2) / _vSectors;
+			var sectorWidth = (ScaleWidth - hOffset * 2) / _hSectors;
+			var sectorHeight = (ScaleHeight - vOffset * 2) / _vSectors;
 			// These are based on the border/strip values
 			// Minimum limits for top, bottom, left, right            
 			var minTop = vOffset;
-			var minBot = _scaleHeight - vOffset - squareSize;
+			var minBot = ScaleHeight - vOffset - squareSize;
 			var minLeft = hOffset;
-			var minRight = _scaleWidth - hOffset - squareSize;
+			var minRight = ScaleWidth - hOffset - squareSize;
 			// Calc right regions, bottom to top
 			var idx = 0;
 			var step = _vSectors - 1;

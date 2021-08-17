@@ -91,9 +91,13 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		}
 
 		public Task SetColor(object o, DynamicEventArgs args) {
-			Color[] colors = args.Arg0;
+			SetColor(args.Arg0, args.Arg1, args.Arg2, args.Arg3);
+			return Task.CompletedTask;
+		}
+		
+		public void SetColor(Color[] colors, Color[] sectors, int fadeTime, bool force = false) {
 			if (!Enable || !Streaming) {
-				return Task.CompletedTask;
+				return;
 			}
 
 			var toSend = ColorUtil.TruncateColors(colors, _data.Offset, _data.LedCount);
@@ -105,7 +109,6 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			_client?.UpdateLeds(_data.DeviceId, converted.ToArray());
 
 			_colorService.Counter.Tick(Id);
-			return Task.CompletedTask;
 		}
 
 		public Task FlashColor(Color color) {

@@ -1,5 +1,6 @@
 ﻿#region
 
+using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Enums;
@@ -53,6 +54,14 @@ namespace Glimmr.Models.ColorSource.Video {
 			_systemData = DataUtil.GetSystemData();
 			_captureMode = (CaptureMode) _systemData.CaptureMode;
 			_camType = (CameraType) _systemData.CamType;
+		}
+
+		public Color[] GetColors() {
+			return StreamSplitter.GetColors();
+		}
+
+		public Color[] GetSectors() {
+			return StreamSplitter.GetSectors();
 		}
 
 		protected override Task ExecuteAsync(CancellationToken ct) {

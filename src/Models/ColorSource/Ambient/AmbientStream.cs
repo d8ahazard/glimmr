@@ -81,8 +81,8 @@ namespace Glimmr.Models.ColorSource.Ambient {
 				Log.Warning("Color strings are null.");
 			}
 
-			_animationTime = scene.AnimationTime * 1000;
-			_easingTime = scene.EasingTime * 1000;
+			_animationTime = scene.AnimationTime * 1000f;
+			_easingTime = scene.EasingTime * 1000f;
 			if (scene.Easing != null) {
 				_easingMode = Enum.Parse<EasingMode>(scene.Easing);
 			}
@@ -174,6 +174,14 @@ namespace Glimmr.Models.ColorSource.Ambient {
 				SourceActive = false;
 				Log.Information("Ambient stream service stopped.");
 			}, CancellationToken.None);
+		}
+		
+		public Color[] GetColors() {
+			return _splitter.GetColors();
+		}
+
+		public Color[] GetSectors() {
+			return _splitter.GetSectors();
 		}
 
 

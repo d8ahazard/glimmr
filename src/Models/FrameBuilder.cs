@@ -7,7 +7,6 @@ using System.Linq;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
-using Glimmr.Models.Util;
 using Serilog;
 
 #endregion
@@ -24,8 +23,8 @@ namespace Glimmr.Models {
 		private readonly int _ledCount;
 		private readonly int _leftCount;
 		private readonly int _rightCount;
-		private readonly int _scaleHeight = DisplayUtil.CaptureHeight();
-		private readonly int _scaleWidth = DisplayUtil.CaptureWidth();
+		private const int ScaleHeight = 480;
+		private const int ScaleWidth = 640;
 		private readonly int _topCount;
 
 		public FrameBuilder(int[] inputDimensions, bool sectors = false, bool center=false) {
@@ -56,7 +55,7 @@ namespace Glimmr.Models {
 					$"Color length should be {_ledCount} versus {enumerable.Length}.");
 			}
 
-			var gMat = new Mat(new Size(_scaleWidth, _scaleHeight), DepthType.Cv8U, 3);
+			var gMat = new Mat(new Size(ScaleWidth, ScaleHeight), DepthType.Cv8U, 3);
 			for (var i = 0; i < _inputCoords.Length; i++) {
 				var col = new Bgr(enumerable.ToArray()[i]).MCvScalar;
 				CvInvoke.Rectangle(gMat, _inputCoords[i], col, -1, LineType.AntiAlias);
@@ -73,17 +72,17 @@ namespace Glimmr.Models {
 			// Top Region
 			var tTop = hOffset;
 			// Bottom Region
-			var bBottom = _scaleHeight;
+			var bBottom = ScaleHeight;
 			var bTop = bBottom - _borderHeight;
 
 			// Left Column Border
 			var lLeft = vOffset;
 
 			// Right Column Border
-			var rRight = _scaleWidth;
+			var rRight = ScaleWidth;
 			var rLeft = rRight - _borderWidth;
-			float w = _scaleWidth;
-			float h = _scaleHeight;
+			float w = ScaleWidth;
+			float h = ScaleHeight;
 
 			// Steps
 			var widthTop = (int) Math.Ceiling(w / _topCount);
@@ -92,7 +91,7 @@ namespace Glimmr.Models {
 			var heightRight = (int) Math.Ceiling(h / _rightCount);
 			// Calc right regions, bottom to top
 			var idx = 0;
-			var pos = _scaleHeight - heightRight;
+			var pos = ScaleHeight - heightRight;
 
 			for (var i = 0; i < _rightCount; i++) {
 				if (pos < 0) {
@@ -105,7 +104,7 @@ namespace Glimmr.Models {
 			}
 
 			// Calc top regions, from right to left
-			pos = _scaleWidth - widthTop;
+			pos = ScaleWidth - widthTop;
 
 			for (var i = 0; i < _topCount; i++) {
 				if (pos < 0) {
@@ -122,8 +121,8 @@ namespace Glimmr.Models {
 			pos = 0;
 
 			for (var i = 0; i < _leftCount; i++) {
-				if (pos > _scaleHeight - heightLeft) {
-					pos = _scaleHeight - heightLeft;
+				if (pos > ScaleHeight - heightLeft) {
+					pos = ScaleHeight - heightLeft;
 				}
 
 				output[idx] = new Rectangle(lLeft, pos, _borderWidth, heightLeft);
@@ -139,8 +138,8 @@ namespace Glimmr.Models {
 					continue;
 				}
 
-				if (pos > _scaleWidth - widthBottom) {
-					pos = _scaleWidth - widthBottom;
+				if (pos > ScaleWidth - widthBottom) {
+					pos = ScaleWidth - widthBottom;
 				}
 
 				output[idx] = new Rectangle(pos, bTop, widthBottom, _borderHeight);
@@ -159,8 +158,8 @@ namespace Glimmr.Models {
 			// This is where we're saving our output
 			var fs = new Rectangle[_ledCount];
 			// Individual segment sizes
-			var sectorWidth = _scaleWidth / _topCount;
-			var sectorHeight = _scaleHeight / _leftCount;
+			var sectorWidth = ScaleWidth / _topCount;
+			var sectorHeight = ScaleHeight / _leftCount;
 			// These are based on the border/strip values
 			// Minimum limits for top, bottom, left, right            
 			const int minTop = 0;
@@ -174,9 +173,9 @@ namespace Glimmr.Models {
 			while (step >= 0) {
 				var ord = step * sectorHeight;
 				var width = sectorHeight * wIdx + 5;
-				if (width > _scaleWidth / 2) width = _scaleWidth / 2;
-				var right = _scaleWidth - width;
-				fs[idx] = new Rectangle(right, ord, _scaleWidth, sectorHeight);
+				if (width > ScaleWidth / 2) width = ScaleWidth / 2;
+				var right = ScaleWidth - width;
+				fs[idx] = new Rectangle(right, ord, ScaleWidth, sectorHeight);
 				wIdx += step < max / 2 ? -1 : 1;
 				if (wIdx < 1) wIdx = 1;
 				if (wIdx > max / 2) wIdx = max / 2;
@@ -191,7 +190,7 @@ namespace Glimmr.Models {
 			while (step > 0) {
 				var ord = step * sectorWidth;
 				var height = sectorWidth * wIdx + 5;
-				if (height > _scaleHeight / 2) height = _scaleHeight / 2;
+				if (height > ScaleHeight / 2) height = ScaleHeight / 2;
 				fs[idx] = new Rectangle(ord, minTop, sectorWidth, height);
 				wIdx += step < max / 2 ? -1 : 1;
 				if (wIdx < 1) wIdx = 1;
@@ -207,7 +206,7 @@ namespace Glimmr.Models {
 			while (step <= _leftCount - 1) {
 				var ord = step * sectorHeight;
 				var width = sectorHeight * wIdx + 5;
-				if (width > _scaleWidth / 2) width = _scaleWidth / 2;
+				if (width > ScaleWidth / 2) width = ScaleWidth / 2;
 				fs[idx] = new Rectangle(minLeft, ord, width, sectorHeight);
 				wIdx += step < max / 2 ? 1 : -1;
 				if (wIdx < 1) wIdx = 1;
@@ -223,8 +222,8 @@ namespace Glimmr.Models {
 			while (step <= _bottomCount - 2) {
 				var ord = step * sectorWidth;
 				var height = sectorWidth * wIdx + 5;
-				if (height > _scaleHeight / 2) height = _scaleHeight / 2;
-				var bottom = _scaleHeight - height;
+				if (height > ScaleHeight / 2) height = ScaleHeight / 2;
+				var bottom = ScaleHeight - height;
 				fs[idx] = new Rectangle(ord, bottom, sectorWidth, height);
 				wIdx += step < max / 2 ? 1 : -1;
 				if (wIdx < 1) wIdx = 1;
@@ -241,14 +240,14 @@ namespace Glimmr.Models {
 			var fs = new Rectangle[_ledCount];
 			// Calculate heights, minus offset for boxing
 			// Individual segment sizes
-			var sectorWidth = _scaleWidth / _topCount;
-			var sectorHeight = _scaleHeight / _leftCount;
+			var sectorWidth = ScaleWidth / _topCount;
+			var sectorHeight = ScaleHeight / _leftCount;
 			// These are based on the border/strip values
 			// Minimum limits for top, bottom, left, right            
-			var top = _scaleHeight - sectorHeight;
+			var top = ScaleHeight - sectorHeight;
 			var idx = 0;
 			for (var v = _leftCount; v > 0; v--) {
-				var left = _scaleWidth - sectorWidth;
+				var left = ScaleWidth - sectorWidth;
 				for (var h = _topCount; h > 0; h--) {
 					fs[idx] = new Rectangle(left, top, sectorWidth, sectorHeight);
 					idx++;

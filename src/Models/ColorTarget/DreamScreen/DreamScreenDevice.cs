@@ -24,7 +24,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		public DreamScreenDevice(DreamScreenData data, ColorService colorService) {
 			_data = data;
 			Id = data.Id;
-			colorService.ColorSendEvent += SetColor;
+			colorService.ColorSendEvent1 += SetColor;
 			var client = colorService.ControlService.GetAgent("DreamAgent");
 			if (client != null) {
 				_client = client;
@@ -75,9 +75,12 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
-		public async Task SetColor(object o, DynamicEventArgs args) {
-			Color[] sectors = args.Arg1 ?? ColorUtil.EmptyColors(12);
-			bool force = args.Arg3 ?? false;
+		public Task SetColor(object o, DynamicEventArgs args) {
+			SetColor(args.Arg0, args.Arg1, args.Arg2, args.Arg3);
+			return Task.CompletedTask;
+		}
+		
+			public async void SetColor(Color[] colors, Color[] sectors, int arg3, bool force = false) {
 			if (!_data.Enable || Testing && !force) {
 				return;
 			}

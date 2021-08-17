@@ -44,7 +44,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 				return;
 			}
 
-			cs.ColorSendEvent += SetColor;
+			cs.ColorSendEvent1 += SetColor;
 			_controller = Id switch {
 				"0" => _ws.GetController(),
 				"1" => _ws.GetController(ControllerType.PWM1),
@@ -139,14 +139,17 @@ namespace Glimmr.Models.ColorTarget.Led {
 		}
 
 		public Task SetColor(object o, DynamicEventArgs args) {
-			Color[] colors = args.Arg0;
-			bool force = args.Arg3 ?? false;
+			SetColor(args.Arg0, args.Arg1, args.Arg2, args.Arg3);
+			return Task.CompletedTask;
+		}
+		
+		public void SetColor(Color[] colors, Color[] sectors, int fadeTime, bool force = false) {
 			if (colors == null) {
 				throw new ArgumentException("Invalid color input.");
 			}
 
 			if (!Streaming || !Enable || Testing && !force) {
-				return Task.CompletedTask;
+				return;
 			}
 
 			var c1 = ColorUtil.TruncateColors(colors, _offset, _ledCount, _multiplier);
@@ -165,8 +168,9 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 			_agent?.Update(_controllerId);
 			ColorService?.Counter.Tick(Id);
-			return Task.CompletedTask;
 		}
+
+
 
 
 		private async Task StopLights() {

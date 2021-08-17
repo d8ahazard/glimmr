@@ -23,10 +23,14 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 		private SystemData _systemData;
 		private VideoStream? _vs;
 		private Task? _vTask;
+		private Color[] _colors;
+		private Color[] _sectors;
 
 		public AudioVideoStream(ColorService cs) {
 			_cs = cs;
 			_systemData = DataUtil.GetSystemData();
+			_colors = ColorUtil.EmptyColors(_systemData.LedCount);
+			_sectors = ColorUtil.EmptyColors(_systemData.SectorCount);
 			_cs.ControlService.RefreshSystemEvent += RefreshSystem;
 			_cs.FrameSaveEvent += TriggerSave;
 			RefreshSystem();
@@ -62,6 +66,14 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 		public void RefreshSystem() {
 			_systemData = DataUtil.GetSystemData();
 		}
+		
+		public Color[] GetColors() {
+			return _colors;
+		}
+
+		public Color[] GetSectors() {
+			return _sectors;
+		}
 
 
 		public bool SourceActive => _vs != null && _vs.StreamSplitter.SourceActive;
@@ -89,28 +101,29 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 					var vSecs = _vs.StreamSplitter.GetSectors();
 					var aCols = _as.StreamSplitter.GetColors();
 					var aSecs = _as.StreamSplitter.GetSectors();
-					if (vCols.Count == 0 || vCols.Count != aCols.Count || vSecs.Count == 0 ||
-					    vSecs.Count != aSecs.Count) {
+					if (vCols.Length == 0 || vCols.Length != aCols.Length || vSecs.Length == 0 ||
+					    vSecs.Length != aSecs.Length) {
 						Log.Debug(
-							$"AV Splitter is still warming up {aCols.Count}, {aSecs.Count}, {vCols.Count}, {vSecs.Count}");
+							$"AV Splitter is still warming up...");
 						continue;
 					}
 
 					var oCols = new Color[_systemData.LedCount];
 					var oSecs = new Color[_systemData.SectorCount];
-					for (var i = 0; i < vCols.Count; i++) {
+					for (var i = 0; i < vCols.Length; i++) {
 						var ab = aCols[i].GetBrightness();
 						var vCol = vCols[i];
 						oCols[i] = ColorUtil.SetBrightness(vCol, ab);
 					}
 
-					for (var i = 0; i < vSecs.Count; i++) {
+					for (var i = 0; i < vSecs.Length; i++) {
 						var ab = aSecs[i].GetBrightness();
 						var vCol = vSecs[i];
 						oSecs[i] = ColorUtil.SetBrightness(vCol, ab);
 					}
 
-					_cs.SendColors(oCols.ToList(), oSecs.ToList());
+					_colors = oCols;
+					_sectors = oSecs;
 
 					if (_doSave) {
 						_doSave = false;

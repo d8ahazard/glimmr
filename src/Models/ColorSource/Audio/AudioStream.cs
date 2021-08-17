@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -86,6 +87,14 @@ namespace Glimmr.Models.ColorSource.Audio {
 				Log.Debug("Audio stream service stopped.");
 			}, CancellationToken.None);
 		}
+		
+		public Color[] GetColors() {
+			return StreamSplitter.GetColors();
+		}
+
+		public Color[] GetSectors() {
+			return StreamSplitter.GetSectors();
+		}
 
 
 		private void LoadData() {
@@ -163,6 +172,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 			var sectors = _map.MapColors(lData, rData).ToList();
 			var frame = _builder.Build(sectors);
 			StreamSplitter.Update(frame);
+
 			frame.Dispose();
 			return true;
 		}

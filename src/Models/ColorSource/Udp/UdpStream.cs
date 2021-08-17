@@ -106,6 +106,14 @@ namespace Glimmr.Models.ColorSource.UDP {
 				Log.Information("UDP Stream service stopped.");
 			}, stoppingToken);
 		}
+		
+		public Color[] GetColors() {
+			return _splitter.GetColors();
+		}
+
+		public Color[] GetSectors() {
+			return _splitter.GetSectors();
+		}
 
 
 		private async Task Listen() {

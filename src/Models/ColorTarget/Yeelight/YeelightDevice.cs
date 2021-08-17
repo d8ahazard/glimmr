@@ -35,7 +35,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			Enable = _data.Enable;
 			LoadData();
 			Log.Debug("Created new yee device at " + yd.IpAddress);
-			cs.ColorSendEvent += SetColor;
+			cs.ColorSendEvent1 += SetColor;
 			_colorService = cs;
 
 			_data.LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
@@ -95,21 +95,25 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		}
 
 		public Task SetColor(object o, DynamicEventArgs args) {
-			Color[] sectors = args.Arg1 ?? ColorUtil.EmptyColors(12);
-			bool force = args.Arg3 ?? false;
+		SetColor(args.Arg0, args.Arg1, args.Arg2, args.Arg3);
+
+			return Task.CompletedTask;
+		}
+		
+				public void SetColor(Color[] colors, Color[] sectors, int arg3, bool force = false) {
 			if (!Streaming || !Enable) {
-				return Task.CompletedTask;
+				return;
 			}
 
 			if (!force) {
 				if (!Streaming || _targetSector == -1 || Testing) {
-					return Task.CompletedTask;
+					return;
 				}
 			}
 
 			var col = sectors[_targetSector];
 			if (_targetSector >= sectors.Length) {
-				return Task.CompletedTask;
+				return;
 			}
 
 			_yeeDevice.SetRGBColor(col.R, col.G, col.B).ConfigureAwait(false);
@@ -130,8 +134,8 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			}
 
 			_colorService.Counter.Tick(Id);
-			return Task.CompletedTask;
 		}
+
 
 		public async Task FlashColor(Color col) {
 			await _yeeDevice.SetRGBColor(col.R, col.G, col.B).ConfigureAwait(false);

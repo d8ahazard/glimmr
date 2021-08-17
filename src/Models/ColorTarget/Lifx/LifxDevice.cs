@@ -123,21 +123,22 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		}
 
 		public Task SetColor(object o, DynamicEventArgs args) {
-			Color[] colors = args.Arg0;
-			Color[] sectors = args.Arg1 ?? ColorUtil.EmptyColors(12);
-			bool force = args.Arg3 ?? false;
+			SetColor(args.Arg0, args.Arg1, args.Arg2, args.Arg3);
+			return Task.CompletedTask;
+		}
+		
+		public void SetColor(Color[] colors, Color[] list, int arg3, bool force = false) {
 			if (!Streaming || !Enable || Testing && !force) {
-				return Task.CompletedTask;
+				return;
 			}
 
 			if (_hasMulti) {
 				SetColorMulti(colors);
 			} else {
-				SetColorSingle(sectors);
+				SetColorSingle(list);
 			}
 
 			ColorService?.Counter.Tick(Id);
-			return Task.CompletedTask;
 		}
 
 

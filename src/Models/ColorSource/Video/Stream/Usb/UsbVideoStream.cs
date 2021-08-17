@@ -15,9 +15,11 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 		private bool _disposed;
 		private FrameSplitter? _splitter;
 		private VideoCapture? _video;
+		private Mat _frame;
 
 
 		public UsbVideoStream() {
+			_frame = new Mat();
 			Refresh();
 		}
 
@@ -42,6 +44,9 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 			_video.ImageGrabbed += SetFrame;
 			_video.Start();
 			Log.Debug("USB Stream started.");
+			while (!ct.IsCancellationRequested) {
+				await Task.Delay(TimeSpan.FromMilliseconds(16), CancellationToken.None);
+			}
 		}
 
 		public Task Stop() {
@@ -56,26 +61,25 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 			var sd = DataUtil.GetSystemData();
 			var inputStream = sd.UsbSelection;
 			_video = new VideoCapture(inputStream);
-			_video.SetCaptureProperty(CapProp.FourCC, VideoWriter.Fourcc('M', 'J', 'P', 'G'));
+			//_video.SetCaptureProperty(CapProp.FourCC, VideoWriter.Fourcc('M', 'J', 'P', 'G'));
 			_video.SetCaptureProperty(CapProp.FrameWidth, 640);
 			_video.SetCaptureProperty(CapProp.FrameHeight, 480);
-			_video.SetCaptureProperty(CapProp.Fps, 60);
+			//_video.SetCaptureProperty(CapProp.Fps, 30);
 			return Task.CompletedTask;
 		}
 
 		private void SetFrame(object sender, EventArgs e) {
 			if (_video != null && _video.Ptr != IntPtr.Zero) {
-				var frame = new Mat();
+				using var frame = new Mat();
 				_video.Read(frame);
-				if (frame == null || frame.IsEmpty) {
-					return;
-				}
-
-				_splitter?.Update(frame.Clone());
-				frame.Dispose();
+				_splitter?.Update(frame);
 			} else {
 				Log.Debug("No frame to set...");
 			}
+		}
+
+		private async Task UpdateFrame() {
+			
 		}
 
 		protected virtual void Dispose(bool disposing) {
