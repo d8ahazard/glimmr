@@ -28,8 +28,13 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			_data = data;
 			_multiplier = _data.LedMultiplier;
 			LoadData();
-			cs.ColorSendEvent += SetColor;
+			cs.ColorSendEventAsync += SetColors;
 			_adalight = new AdalightNet.Adalight(_port, _ledCount, _baud);
+		}
+		
+		private Task SetColors(object sender, ColorSendEventArgs args) {
+			SetColor(args.LedColors, args.SectorColors, args.FadeTime, args.Force);
+			return Task.CompletedTask;
 		}
 
 		public bool Enable { get; set; }

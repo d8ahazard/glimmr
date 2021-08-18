@@ -35,7 +35,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		private int _targetSector;
 
 		public WledDevice(WledData wd, ColorService colorService) : base(colorService) {
-			colorService.ColorSendEvent += SetColor;
+			colorService.ColorSendEventAsync += SetColors;
 			ColorService = colorService;
 			colorService.ControlService.RefreshSystemEvent += RefreshSystem;
 			_udpClient = ColorService.ControlService.UdpClient;
@@ -46,6 +46,11 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			_brightness = _data.Brightness;
 			_multiplier = _data.LedMultiplier;
 			ReloadData();
+		}
+		
+		private Task SetColors(object sender, ColorSendEventArgs args) {
+			SetColor(args.LedColors, args.SectorColors, args.FadeTime, args.Force);
+			return Task.CompletedTask;
 		}
 
 		public bool Enable { get; set; }
@@ -150,7 +155,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			}
 
 			try {
-				_udpClient.SendAsync(packet.ToArray(), packet.Length, _ep).ConfigureAwait(false);
+				_udpClient.SendAsync(packet.ToArray(), packet.Length, _ep);
 				ColorService?.Counter.Tick(Id);
 			} catch (Exception e) {
 				Log.Debug("Exception: " + e.Message);

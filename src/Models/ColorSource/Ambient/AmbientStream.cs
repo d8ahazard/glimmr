@@ -48,7 +48,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			colorService.ControlService.RefreshSystemEvent += RefreshSystem;
 		}
 
-		public bool SourceActive { get; private set; }
+		public bool SourceActive => _splitter.SourceActive;
 
 		public void RefreshSystem() {
 			Log.Debug("No, really, refreshing system.");
@@ -100,7 +100,6 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
 		public Task ToggleStream(CancellationToken ct) {
 			Log.Debug("Starting ambient stream...");
-			SourceActive = true;
 			return ExecuteAsync(ct);
 		}
 
@@ -171,7 +170,6 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
 				_watch.Stop();
 				_splitter.DoSend = false;
-				SourceActive = false;
 				Log.Information("Ambient stream service stopped.");
 			}, CancellationToken.None);
 		}

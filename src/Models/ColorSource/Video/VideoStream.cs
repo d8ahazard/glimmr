@@ -79,6 +79,7 @@ namespace Glimmr.Models.ColorSource.Video {
 				await _vc.Start(ct, StreamSplitter);
 				while (!ct.IsCancellationRequested) {
 					await Task.Delay(10, CancellationToken.None);
+					Log.Debug("SA: " + SourceActive);
 				}
 
 				await _vc.Stop();

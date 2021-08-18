@@ -41,10 +41,15 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			Log.Debug("Brightness is " + _brightness);
 			_gammaTable = GenerateGammaTable(_data.GammaCorrection);
 			_client = colorService.ControlService.GetAgent("LifxAgent");
-			colorService.ColorSendEvent += SetColor;
+			colorService.ColorSendEventAsync += SetColors;
 			colorService.ControlService.RefreshSystemEvent += LoadData;
 			B = new Device(d.HostName, d.MacAddress, d.Service, (uint) d.Port);
 			LoadData();
+		}
+		
+		private Task SetColors(object sender, ColorSendEventArgs args) {
+			SetColor(args.LedColors, args.SectorColors, args.FadeTime, args.Force);
+			return Task.CompletedTask;
 		}
 
 		public bool Streaming { get; set; }

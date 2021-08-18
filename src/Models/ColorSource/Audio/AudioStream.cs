@@ -106,29 +106,37 @@ namespace Glimmr.Models.ColorSource.Audio {
 			_map = new AudioMap();
 			_recordDeviceIndex = -1;
 			_devices = new List<AudioData>();
-			for (var a = 0; Bass.RecordGetDeviceInfo(a, out var info); a++) {
-				if (!info.IsEnabled) {
-					continue;
-				}
-
-				try {
-					var ad = new AudioData();
-					ad.ParseDevice(info);
-					DataUtil.InsertCollection<AudioData>("Dev_Audio", ad).ConfigureAwait(true);
-					_devices.Add(ad);
-				} catch (Exception e) {
-					Log.Warning("Error loading devices: " + e.Message);
-				}
-
-				if (rd == null && a == 0) {
-					DataUtil.SetItem("RecDev", info.Name);
-					rd = info.Name;
-				} else {
-					if (rd != info.Name) {
+			try {
+				for (var a = 0; Bass.RecordGetDeviceInfo(a, out var info); a++) {
+					if (!info.IsEnabled) {
 						continue;
 					}
 
-					_recordDeviceIndex = a;
+					try {
+						var ad = new AudioData();
+						ad.ParseDevice(info);
+						DataUtil.InsertCollection<AudioData>("Dev_Audio", ad).ConfigureAwait(true);
+						_devices.Add(ad);
+					} catch (Exception e) {
+						Log.Warning("Error loading devices: " + e.Message);
+					}
+
+					if (rd == null && a == 0) {
+						DataUtil.SetItem("RecDev", info.Name);
+						rd = info.Name;
+					} else {
+						if (rd != info.Name) {
+							continue;
+						}
+
+						_recordDeviceIndex = a;
+					}
+				}
+			} catch (Exception e) {
+				if (e.GetType() == typeof(DllNotFoundException)) {
+					_hasDll = false;
+					Log.Warning("Unable to find bass.dll, nothing to do.");
+					return;
 				}
 			}
 

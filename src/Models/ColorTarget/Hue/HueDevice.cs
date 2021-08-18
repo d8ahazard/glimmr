@@ -45,7 +45,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Enable = Data.Enable;
 			_brightness = Data.Brightness;
 			_lightMappings = Data.MappedLights;
-			colorService.ColorSendEvent += SetColor;
+			colorService.ColorSendEventAsync += SetColors;
 			colorService.ControlService.RefreshSystemEvent += SetData;
 			Id = Data.Id;
 			_disposed = false;
@@ -53,6 +53,11 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			_entLayer = null;
 			_selectedGroup = Data.SelectedGroup;
 			SetData();
+		}
+		
+		private Task SetColors(object sender, ColorSendEventArgs args) {
+			SetColor(args.LedColors, args.SectorColors, args.FadeTime, args.Force);
+			return Task.CompletedTask;
 		}
 
 

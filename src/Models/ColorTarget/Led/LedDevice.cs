@@ -44,7 +44,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 				return;
 			}
 
-			cs.ColorSendEvent += SetColor;
+			cs.ColorSendEventAsync += SetColors;
 			_controller = Id switch {
 				"0" => _ws.GetController(),
 				"1" => _ws.GetController(ControllerType.PWM1),
@@ -52,6 +52,11 @@ namespace Glimmr.Models.ColorTarget.Led {
 			};
 
 			ReloadData();
+		}
+		
+		private Task SetColors(object sender, ColorSendEventArgs args) {
+			SetColor(args.LedColors, args.SectorColors, args.FadeTime, args.Force);
+			return Task.CompletedTask;
 		}
 
 		public bool Streaming { get; set; }

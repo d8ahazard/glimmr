@@ -30,7 +30,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		private SystemData _sd;
 
 		public GlimmrDevice(GlimmrData wd, ColorService colorService) : base(colorService) {
-			colorService.ColorSendEvent += SetColor;
+			colorService.ColorSendEventAsync += SetColors;
 			_udpClient = colorService.ControlService.UdpClient;
 			_httpClient = colorService.ControlService.HttpSender;
 			_updateColors = new List<Color>();
@@ -40,6 +40,11 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			_ipAddress = _data.IpAddress;
 			_sd = DataUtil.GetSystemData();
 			colorService.ControlService.RefreshSystemEvent += RefreshSystem;
+		}
+		
+		private Task SetColors(object sender, ColorSendEventArgs args) {
+			SetColor(args.LedColors, args.SectorColors, args.FadeTime, args.Force);
+			return Task.CompletedTask;
 		}
 
 		public bool Enable { get; set; }

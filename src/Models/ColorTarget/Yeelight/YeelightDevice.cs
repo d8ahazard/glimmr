@@ -35,12 +35,17 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			Enable = _data.Enable;
 			LoadData();
 			Log.Debug("Created new yee device at " + yd.IpAddress);
-			cs.ColorSendEvent += SetColor;
+			cs.ColorSendEventAsync += SetColors;
 			_colorService = cs;
 
 			_data.LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 			DataUtil.AddDeviceAsync(_data, false).ConfigureAwait(false);
 			_yeeDevice = new Device(IpAddress);
+		}
+
+		private Task SetColors(object sender, ColorSendEventArgs args) {
+			SetColor(args.LedColors, args.SectorColors, args.FadeTime, args.Force);
+			return Task.CompletedTask;
 		}
 
 		public bool Streaming { get; set; }

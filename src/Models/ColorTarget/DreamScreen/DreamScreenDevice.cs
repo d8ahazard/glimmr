@@ -24,7 +24,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		public DreamScreenDevice(DreamScreenData data, ColorService colorService) {
 			_data = data;
 			Id = data.Id;
-			colorService.ColorSendEvent += SetColor;
+			colorService.ColorSendEventAsync += SetColors;
 			var client = colorService.ControlService.GetAgent("DreamAgent");
 			if (client != null) {
 				_client = client;
@@ -35,6 +35,11 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			LoadData();
 			var myIp = IPAddress.Parse(_ipAddress);
 			_dev = new DreamDevice(_deviceTag) {IpAddress = myIp, DeviceGroup = data.GroupNumber};
+		}
+		
+		private Task SetColors(object sender, ColorSendEventArgs args) {
+			SetColor(args.LedColors, args.SectorColors, args.FadeTime, args.Force);
+			return Task.CompletedTask;
 		}
 
 		public bool Streaming { get; set; }

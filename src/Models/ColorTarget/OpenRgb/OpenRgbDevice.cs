@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
+using Microsoft.Net.Http.Headers;
 using OpenRGB.NET;
 using Serilog;
 
@@ -21,10 +22,15 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		public OpenRgbDevice(OpenRgbData data, ColorService cs) {
 			Id = data.Id;
 			_data = data;
-			cs.ColorSendEvent += SetColor;
+			cs.ColorSendEventAsync += SetColors;
 			_colorService = cs;
 			_client = cs.ControlService.GetAgent("OpenRgbAgent");
 			LoadData();
+		}
+		
+		private Task SetColors(object sender, ColorSendEventArgs args) {
+			SetColor(args.LedColors, args.SectorColors, args.FadeTime, args.Force);
+			return Task.CompletedTask;
 		}
 
 		public bool Streaming { get; set; }

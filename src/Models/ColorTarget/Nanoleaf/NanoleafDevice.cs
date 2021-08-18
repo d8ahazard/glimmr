@@ -32,7 +32,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		/// <param name="n"></param>
 		/// <param name="colorService"></param>
 		public NanoleafDevice(NanoleafData n, ColorService colorService) : base(colorService) {
-			colorService.ColorSendEvent += SetColor;
+			colorService.ColorSendEventAsync += SetColors;
 			ColorService = colorService;
 			_targets = new Dictionary<int, int>();
 			_data = n;
@@ -44,6 +44,11 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			_streamingClient = new NanoleafStreamingClient(n.IpAddress, streamMode, cs.UdpClient);
 			_frameWatch = new Stopwatch();
 			_disposed = false;
+		}
+		
+		private Task SetColors(object sender, ColorSendEventArgs args) {
+			SetColor(args.LedColors, args.SectorColors, args.FadeTime, args.Force);
+			return Task.CompletedTask;
 		}
 
 		public bool Enable { get; set; }
@@ -93,10 +98,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		}
 
 
-		public Task SetColor(object o, DynamicEventArgs args) {
-						SetColor(args.Arg0, args.Arg1, args.Arg2, args.Arg3);
-			return Task.CompletedTask;
-		}
+		
 
 	public void SetColor(Color[] list, Color[] sectors, int fadeTime, bool force = false) {
 			if (!Streaming || !Enable || Testing && !force) {
@@ -125,7 +127,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			}
 
 
-			_streamingClient.SetColorAsync(cols, 1).ConfigureAwait(false);
+			_streamingClient.SetColorAsync(cols, 1);
 
 			ColorService?.Counter.Tick(Id);
 		}

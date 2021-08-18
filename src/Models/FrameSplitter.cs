@@ -53,8 +53,8 @@ namespace Glimmr.Models {
 		private Rectangle[] _fullSectors;
 
 		private bool _hCrop;
-		private int _hCropCheck;
-		private int _hCropCount;
+		private CropCounter _hCropCounter;
+		private CropCounter _vCropCounter;
 		private int _hCropPixels;
 		private int _hSectors;
 		
@@ -62,8 +62,7 @@ namespace Glimmr.Models {
 		private int _leftCount;
 		private VectorOfPointF? _lockTarget;
 		private DeviceMode _mode;
-		private bool _noImage;
-		
+
 		private int _previewMode;
 		private int _rightCount;
 		private const int ScaleHeight = 480;
@@ -82,8 +81,8 @@ namespace Glimmr.Models {
 
 		// Where we save the potential new value between checks
 		private int _vCropCheck;
-		private int _vCropCount;
-
+		private int _hCropCheck;
+		
 		// Current crop settings
 		private int _vCropPixels;
 
@@ -107,6 +106,8 @@ namespace Glimmr.Models {
 			_colorService = cs;
 			cs.ControlService.RefreshSystemEvent += RefreshSystem;
 			cs.FrameSaveEvent += TriggerSave;
+			_hCropCounter = new CropCounter(5);
+			_vCropCounter = new CropCounter(5);
 			RefreshSystem();
 			// Set desired width of capture region to 15% total image
 			_borderWidth = 10;
@@ -114,6 +115,7 @@ namespace Glimmr.Models {
 			// Get sectors
 			_fullCoords = DrawGrid();
 			_fullSectors = DrawSectors();
+			
 		}
 
 
@@ -126,6 +128,8 @@ namespace Glimmr.Models {
 			_hSectors = sd.HSectors;
 			_vSectors = sd.VSectors;
 			_cropDelay = sd.CropDelay;
+			_hCropCounter = new CropCounter(_cropDelay);
+			_vCropCounter = new CropCounter(_cropDelay);
 			_cropLetter = sd.EnableLetterBox;
 			_cropPillar = sd.EnablePillarBox;
 			_mode = (DeviceMode) sd.DeviceMode;
@@ -133,15 +137,12 @@ namespace Glimmr.Models {
 				_vCrop = false;
 				_vCropCheck = 0;
 				_vCropPixels = 0;
-				_vCropCount = 0;
 				_cropLetter = false;
 			}
 
 			if (!_cropPillar || !_useCrop) {
 				_hCrop = false;
-				_hCropCheck = 0;
 				_hCropPixels = 0;
-				_hCropCount = 0;
 				_cropPillar = false;
 			}
 
@@ -335,7 +336,7 @@ namespace Glimmr.Models {
 
 			_colorsLed = ledColors;
 			_colorsSectors = sectorColors;
-			
+			_colorService.Counter.Tick("splitter");
 			if (_doSave) {
 				if (DoSend) {
 					SaveFrames(frame, clone);
@@ -530,6 +531,8 @@ namespace Glimmr.Models {
 		}
 
 		private async Task CheckCrop(Mat image) {
+			// Set our tolerances
+			_sectorChanged = false;
 			var width = image.Width;
 			var height = image.Height;
 			var wStart = width / 3;
@@ -538,26 +541,26 @@ namespace Glimmr.Models {
 			var hEnd = hStart * 2;
 			var xCenter = width / 2;
 			var yCenter = height / 2;
-			var blackLevel = 1;
+			const int blackLevel = 1;
 
 			var cropVertical = 0;
 			var cropHorizontal = 0;
 
-			width--; // remove 1 pixel to get end pixel index
+			width--;
 			height--;
 			
+			// Convert image to greyscale
 			var gr = new Mat();
 			CvInvoke.CvtColor(image, gr, ColorConversion.Bgr2Gray);
 			// Check to see if everything is black
-			var allB = CvInvoke.CountNonZero(gr);
-			_noImage = allB == 0;
+			var noImage = CvInvoke.CountNonZero(gr) == blackLevel;
 			// If it is, we can stop here
-			if (_noImage) {
+			if (noImage) {
 				gr.Dispose();
 				return;
 			}
 
-			// find first X pixel of the image
+			// Check letterboxing
 			if (_cropLetter) {
 				for (var x = 0; x < wStart; ++x) {
 					var c1 = gr.Row(yCenter).Col(width-x);
@@ -574,7 +577,7 @@ namespace Glimmr.Models {
 				}
 			}
 
-			// find first Y pixel of the image
+			// Check pillarboxing
 			if (_cropPillar) {
 				for (var y = 0; y < hStart; y++) {
 					var c1 = gr.Row(height - y).Col(xCenter);
@@ -592,69 +595,47 @@ namespace Glimmr.Models {
 						break;
 					}
 				}
-
 			}
 			
+			// Cleanup mat
 			gr.Dispose();
 
-			
-			if (_cropLetter && cropHorizontal != 0) {
-				if (cropHorizontal == _hCropCheck) {
-					_hCropCount++;
+			if (_cropLetter) {
+				if (cropHorizontal == 0) {
+					_hCropCounter.Clear();
+					_hCrop = false;
+					if (_hCropPixels != 0) _sectorChanged = true;
+					_hCropPixels = 0;
 				} else {
-					_hCropCount--;
+					_hCropCounter.Tick(cropHorizontal == _hCropCheck);	
 				}
-
-				if (_hCropCount <= 0) {
-					_hCropCount = 0;
-				}
-
-				if (_hCropCount >= _cropDelay) {
-					_hCropCount = _cropDelay;
-				}
-			} else {
-				_hCropCount = 0;
 			}
 
-			if (_hCropCount >= _cropDelay && !_hCrop) {
-				_sectorChanged = true;
-				_hCrop = true;
+			if (_hCropCounter.Triggered() && !_hCrop) {
+				_hCrop = _sectorChanged = true;
 				_hCropPixels = cropHorizontal;
-			} else if (_hCrop && _hCropCount == 0) {
-				_hCrop = false;
-				_hCropPixels = 0;
-				_sectorChanged = true;
-			}
+				_hCropCounter.Clear();
+			} 
 
 			_hCropCheck = cropHorizontal;
 
-			if (_cropPillar && cropVertical != 0) {
-				if (cropVertical == _vCropCheck) {
-					_vCropCount++;
+			
+			if (_cropPillar) {
+				if (cropVertical == 0) {
+					_vCropCounter.Clear();
+					_vCrop = false;
+					if (_vCropPixels != 0) _sectorChanged = true;
+					_vCropPixels = 0;
 				} else {
-					_vCropCount--;
+					_vCropCounter.Tick(cropVertical == _vCropCheck);	
 				}
-
-				if (_vCropCount <= 0) {
-					_vCropCount = 0;
-				}
-
-				if (_vCropCount >= _cropDelay) {
-					_vCropCount = _cropDelay;
-				}
-			} else {
-				_vCropCount = 0;
 			}
 
-			if (_vCropCount >= _cropDelay && !_vCrop) {
-				_sectorChanged = true;
-				_vCrop = true;
+			if (_vCropCounter.Triggered() && !_vCrop) {
+				_vCrop = _sectorChanged = true;
 				_vCropPixels = cropVertical;
-			} else if (_vCrop && _vCropCount == 0) {
-				_vCrop = false;
-				_vCropPixels = 0;
-				_sectorChanged = true;
-			}
+				_vCropCounter.Clear();
+			} 
 
 			_vCropCheck = cropVertical;
 			// Only calculate new sectors if the value has changed
@@ -668,7 +649,6 @@ namespace Glimmr.Models {
 			await Task.FromResult(true);
 		}
 
-		
 		private Rectangle[] DrawGrid() {
 			var vOffset = _vCropPixels;
 			var hOffset = _hCropPixels;
@@ -758,7 +738,6 @@ namespace Glimmr.Models {
 
 			return output;
 		}
-
 
 		private Rectangle[] DrawCenterSectors() {
 			var hOffset = _hCropPixels;
@@ -861,6 +840,33 @@ namespace Glimmr.Models {
 			}
 
 			return fs;
+		}
+	}
+
+	public class CropCounter {
+		private int _count;
+		private readonly int _max;
+		public CropCounter(int max) {
+			_max = max;
+			_count = 0;
+		}
+		public void Clear() {
+			_count = 0;
+		}
+
+
+		public void Tick(bool b) {
+			if (b) {
+				_count++;
+				if (_count >= _max) _count = _max;
+			} else {
+				_count--;
+				if (_count <= 0) _count = 0;	
+			}
+		}
+
+		public bool Triggered() {
+			return _count >= _max;
 		}
 	}
 }
