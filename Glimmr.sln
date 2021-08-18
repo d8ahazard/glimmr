@@ -3,11 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30711.63
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Glimmr", "./src/Glimmr.csproj", "{FDF342C5-295B-4198-9D86-8AC0DF53898D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Glimmr", "./src/Glimmr/Glimmr.csproj", "{FDF342C5-295B-4198-9D86-8AC0DF53898D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenRgbTest", "OpenRgbTest\OpenRgbTest.csproj", "{E9356451-CD00-40FD-94D7-9E154BEB46B3}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GlimmrTray", "GlimmrTray\GlimmrTray.csproj", "{F27D4BA2-9D49-48E2-9948-89EFFF8C029B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GlimmrTray", "./src/GlimmrTray/GlimmrTray.csproj", "{F27D4BA2-9D49-48E2-9948-89EFFF8C029B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

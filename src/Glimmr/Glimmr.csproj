@@ -20,7 +20,6 @@
   <ItemGroup>
     <PackageReference Include="AdalightNet" Version="1.0.4" />
     <PackageReference Include="AutoMapper" Version="10.1.1" />
-    <PackageReference Include="BaseLibS" Version="1.6.4.382" />
     <PackageReference Include="digitalhigh.rpi-ws281x-csharp" Version="1.1.6" />
     <PackageReference Include="DirectShowLib.Standard" Version="2.1.0" />
     <PackageReference Include="DreamScreenNet" Version="1.0.4" />
@@ -52,7 +51,6 @@
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
     <PackageReference Include="SimpleGitVersion.Core" Version="5.1.1" />
     <PackageReference Include="System.Net.WebSockets" Version="4.3.0" />
-    <PackageReference Include="Ultraviolet.BASS.Native" Version="2021.5.0.4569" />
     <PackageReference Include="YeelightAPI" Version="1.10.2" />
   </ItemGroup>
 

@@ -113,38 +113,36 @@ namespace Glimmr.Services {
 				var loopWatch = new Stopwatch();
 				loopWatch.Start();
 				var fc = 0;
+				// 30FPS
+				const int ms = 30;
 				while (!stoppingToken.IsCancellationRequested) {
-					//Log.Debug("Loop");
+					loopWatch.Restart();
 					await CheckAutoDisable();
-					//Log.Debug("Checked...");
 					if (!_demoComplete || _stream == null) {
 						if (_demoComplete && _stream == null) {
 							Log.Warning("Stream is null.");
 						}
-
-						//Log.Debug("No demo or stream.");
 						continue;
 					}
-					
-					var time = loopWatch.ElapsedTicks;
-					if (time <= 333333) {
-						continue;
-					}
-
+				
 					var cols = _stream.GetColors();
 					var secs = _stream.GetSectors();
 					if (cols == null || secs == null) {
 						Log.Debug("No columns/sectors.");
 					} else {
-						await SendColors(cols, secs).ConfigureAwait(false);
+						await SendColors(cols, secs);
+						fc++;
 					}
-					fc++;
-					loopWatch.Restart();
 					// Save a frame every 5 seconds
-					if (fc < 30 * 5) continue;
-					FrameSaveEvent.Invoke();
-					fc = 0;
-
+					if (fc >= 150) {
+						fc = 0;
+						FrameSaveEvent.Invoke();
+					}
+					var time = loopWatch.ElapsedMilliseconds;
+					if (time < ms) {
+						var diff = ms - time;
+						await Task.Delay(TimeSpan.FromMilliseconds(diff), CancellationToken.None);
+					}
 				}
 				loopWatch.Stop();
 				Log.Information("Send loop canceled.");

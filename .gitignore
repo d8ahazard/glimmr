@@ -5,6 +5,10 @@
 ./bin/*
 src/bin/*
 src/obj/*
+src/Glimmr/bin/*
+src/Glimmr/obj/*
+src/GlimmrTray/bin/*
+src/GlimmrTray/obj/*
 packages/*
 store.db*
 CodeGraphData/*

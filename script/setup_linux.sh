@@ -95,10 +95,7 @@ if [ ! -d "/home/glimmrtv/glimmr" ]
 then
 # Clone glimmr
   echo "Cloning glimmr"
-  git clone https://github.com/d8ahazard/glimmr /home/glimmrtv/glimmr
-  # Install update script to init.d   
-  sudo cp /home/glimmrtv/glimmr/script/update_linux.sh /etc/init.d/update_linux.sh
-  sudo chmod 777 /etc/init.d/update_linux.sh
+  git clone https://github.com/d8ahazard/glimmr /home/glimmrtv/glimmr  
 else
   echo "Source exists, updating..."
   cd /home/glimmrtv/glimmr || exit
@@ -119,8 +116,8 @@ fi
 
 # Build latest version
 echo "Building glimmr..."
-/opt/dotnet/dotnet restore /home/glimmrtv/glimmr/src/Glimmr.csproj
-/opt/dotnet/dotnet publish /home/glimmrtv/glimmr/src/Glimmr.csproj /p:PublishProfile=$PUBPROFILE -o /home/glimmrtv/glimmr/bin/
+/opt/dotnet/dotnet restore /home/glimmrtv/glimmr/src/Glimmr/Glimmr.csproj
+/opt/dotnet/dotnet publish /home/glimmrtv/glimmr/src/Glimmr/Glimmr.csproj /p:PublishProfile=$PUBPROFILE -o /home/glimmrtv/glimmr/bin/
 echo "DONE."
 chmod -R 777 /home/glimmrtv/glimmr/bin
 

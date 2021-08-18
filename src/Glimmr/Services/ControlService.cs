@@ -52,7 +52,6 @@ namespace Glimmr.Services {
 
 		private Dictionary<string, dynamic> _agents;
 		private SystemData _sd;
-		private bool _imageSending;
 
 #pragma warning disable 8618
 		public ControlService(IHubContext<SocketServer> hubContext) {
@@ -385,13 +384,9 @@ v. {version}
 		}
 
 		public async Task SendImage(string method, Mat image) {
-			if (!_imageSending) {
-				_imageSending = true;
-				var vb = new VectorOfByte();
-				CvInvoke.Imencode(".png",image,vb);
-				await _hubContext.Clients.All.SendAsync(method, vb.ToArray());
-				_imageSending = false;
-			}
+			var vb = new VectorOfByte();
+			CvInvoke.Imencode(".png",image,vb);
+			await _hubContext.Clients.All.SendAsync(method, vb.ToArray());
 		}
 
 		public async Task FlashDevice(string deviceId) {

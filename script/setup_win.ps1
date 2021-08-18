@@ -131,7 +131,7 @@ If( -not (Test-Path -Path $glimmrPath) ){
     Write-Host "Glimmr path doesn't exist...something went wrong.";
 } else {
     Write-Host "Compiling Glimmr...";
-    $projectPath = "$glimmrPath\src\Glimmr.csproj";
+    $projectPath = "$glimmrPath\src\Glimmr\Glimmr.csproj";
     $outPath = "$glimmrPath\bin";    
     Invoke-Expression "& '$dotNetPath' publish $projectPath /p:PublishProfile=Windows -o $outPath";
     Copy-Item "$glimmrPath\lib\Windows\bass.dll" "$outPath\bass.dll";
