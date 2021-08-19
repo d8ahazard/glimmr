@@ -52,10 +52,10 @@ namespace Glimmr.Models {
 		private Rectangle[] _fullCoords;
 		private Rectangle[] _fullSectors;
 
-		private bool _hCrop;
-		private CropCounter _hCropCounter;
-		private CropCounter _vCropCounter;
-		private int _hCropPixels;
+		private bool pCrop;
+		private CropCounter pillarCropCounter;
+		private CropCounter lCroupCounter;
+		private int pCropPixels;
 		private int _hSectors;
 		
 		private int _ledCount;
@@ -77,14 +77,14 @@ namespace Glimmr.Models {
 		private bool _useCenter;
 
 		// Are we cropping right now?
-		private bool _vCrop;
+		private bool _lCrop;
 
 		// Where we save the potential new value between checks
 		private int _vCropCheck;
 		private int _hCropCheck;
 		
 		// Current crop settings
-		private int _vCropPixels;
+		private int _lCropPixels;
 
 		// Source stuff
 		private PointF[] _vectors;
@@ -106,8 +106,8 @@ namespace Glimmr.Models {
 			_colorService = cs;
 			cs.ControlService.RefreshSystemEvent += RefreshSystem;
 			cs.FrameSaveEvent += TriggerSave;
-			_hCropCounter = new CropCounter(5);
-			_vCropCounter = new CropCounter(5);
+			pillarCropCounter = new CropCounter(5);
+			lCroupCounter = new CropCounter(5);
 			RefreshSystem();
 			// Set desired width of capture region to 15% total image
 			_borderWidth = 10;
@@ -128,21 +128,21 @@ namespace Glimmr.Models {
 			_hSectors = sd.HSectors;
 			_vSectors = sd.VSectors;
 			_cropDelay = sd.CropDelay;
-			_hCropCounter = new CropCounter(_cropDelay);
-			_vCropCounter = new CropCounter(_cropDelay);
+			pillarCropCounter = new CropCounter(_cropDelay);
+			lCroupCounter = new CropCounter(_cropDelay);
 			_cropLetter = sd.EnableLetterBox;
 			_cropPillar = sd.EnablePillarBox;
 			_mode = (DeviceMode) sd.DeviceMode;
 			if (!_cropLetter || !_useCrop) {
-				_vCrop = false;
+				_lCrop = false;
 				_vCropCheck = 0;
-				_vCropPixels = 0;
+				_lCropPixels = 0;
 				_cropLetter = false;
 			}
 
 			if (!_cropPillar || !_useCrop) {
-				_hCrop = false;
-				_hCropPixels = 0;
+				pCrop = false;
+				pCropPixels = 0;
 				_cropPillar = false;
 			}
 
@@ -533,18 +533,15 @@ namespace Glimmr.Models {
 		private async Task CheckCrop(Mat image) {
 			// Set our tolerances
 			_sectorChanged = false;
-			var width = image.Width;
-			var height = image.Height;
+			var width = image.Cols;
+			var height = image.Rows;
+			//Log.Debug($"W V W {width} and {image.Width}");
 			var wStart = width / 3;
 			var hStart = height / 3;
-			var wEnd = wStart * 2;
-			var hEnd = hStart * 2;
-			var xCenter = width / 2;
-			var yCenter = height / 2;
-			const int blackLevel = 1;
-
-			var cropVertical = 0;
-			var cropHorizontal = 0;
+			// How many non-black pixels can be in a given row
+			const int blackLevel = 7;
+			var lPixels = 0;
+			var pPixels = 0;
 
 			width--;
 			height--;
@@ -562,35 +559,39 @@ namespace Glimmr.Models {
 
 			// Check letterboxing
 			if (_cropLetter) {
-				for (var x = 0; x < wStart; ++x) {
-					var c1 = gr.Row(yCenter).Col(width-x);
-					var c2 = gr.Row(hStart).Col(x);
-					var c3 = gr.Row(hEnd).Col(x);
-					var l1 = c1.GetRawData()[0];
-					var l2 = c2.GetRawData()[0];
-					var l3 = c3.GetRawData()[0];
-					if (l1+l2+l3 <= blackLevel * 3) {
-						cropVertical = x;
+				for (var y = 0; y < hStart; y+=2) {
+					var c1 = gr.Row(height - y);
+					var c2 = gr.Row(y);
+					var b1 = c1.GetRawData();
+					var b2 = c1.GetRawData();
+					var l1 = Sum(b1);
+					var l2 = Sum(b2);
+					//Log.Debug($"L1/L2 {y}: {l1}, {l2}");
+					c1.Dispose();
+					c2.Dispose();
+					if (l1 == l2 && l1 < blackLevel) {
+						lPixels = y;
 					} else {
 						break;
 					}
 				}
+
+				//Log.Debug("Done");
 			}
 
 			// Check pillarboxing
 			if (_cropPillar) {
-				for (var y = 0; y < hStart; y++) {
-					var c1 = gr.Row(height - y).Col(xCenter);
-					var c2 = gr.Row(y).Col(wStart);
-					var c3 = gr.Row(y).Col(wEnd);
-					var l1 = (int)c1.GetRawData()[0];
-					var l2 = (int)c2.GetRawData()[0];
-					var l3 = (int)c3.GetRawData()[0];
+				for (var x = 0; x < wStart; x+=2) {
+					var c1 = gr.Col(width - x);
+					var c2 = gr.Col(x);
+					var b1 = c1.GetRawData();
+					var b2 = c1.GetRawData();
+					var l1 = Sum(b1);
+					var l2 = Sum(b2);
 					c1.Dispose();
 					c2.Dispose();
-					c3.Dispose();
-					if (l1+l2+l3 <= blackLevel * 3) {
-						cropHorizontal = y;
+					if (l1+l2 <= blackLevel) {
+						pPixels = x;
 					} else {
 						break;
 					}
@@ -600,47 +601,47 @@ namespace Glimmr.Models {
 			// Cleanup mat
 			gr.Dispose();
 
-			if (_cropLetter) {
-				if (cropHorizontal == 0) {
-					_hCropCounter.Clear();
-					_hCrop = false;
-					if (_hCropPixels != 0) _sectorChanged = true;
-					_hCropPixels = 0;
+			if (_cropPillar) {
+				if (pPixels == 0) {
+					pillarCropCounter.Clear();
+					pCrop = false;
+					if (pCropPixels != 0) _sectorChanged = true;
+					pCropPixels = 0;
 				} else {
-					_hCropCounter.Tick(cropHorizontal == _hCropCheck);	
+					pillarCropCounter.Tick(Math.Abs(pPixels - _hCropCheck) < 4);	
 				}
 			}
 
-			if (_hCropCounter.Triggered() && !_hCrop) {
-				_hCrop = _sectorChanged = true;
-				_hCropPixels = cropHorizontal;
-				_hCropCounter.Clear();
+			if (pillarCropCounter.Triggered() && !pCrop) {
+				pCrop = _sectorChanged = true;
+				pCropPixels = pPixels;
+				pillarCropCounter.Clear();
 			} 
 
-			_hCropCheck = cropHorizontal;
+			_hCropCheck = pPixels;
 
 			
-			if (_cropPillar) {
-				if (cropVertical == 0) {
-					_vCropCounter.Clear();
-					_vCrop = false;
-					if (_vCropPixels != 0) _sectorChanged = true;
-					_vCropPixels = 0;
+			if (_cropLetter) {
+				if (lPixels == 0) {
+					lCroupCounter.Clear();
+					_lCrop = false;
+					if (_lCropPixels != 0) _sectorChanged = true;
+					_lCropPixels = 0;
 				} else {
-					_vCropCounter.Tick(cropVertical == _vCropCheck);	
+					lCroupCounter.Tick(Math.Abs(lPixels - _vCropCheck) < 4);	
 				}
 			}
 
-			if (_vCropCounter.Triggered() && !_vCrop) {
-				_vCrop = _sectorChanged = true;
-				_vCropPixels = cropVertical;
-				_vCropCounter.Clear();
+			if (lCroupCounter.Triggered() && !_lCrop) {
+				_lCrop = _sectorChanged = true;
+				_lCropPixels = lPixels;
+				lCroupCounter.Clear();
 			} 
 
-			_vCropCheck = cropVertical;
+			_vCropCheck = lPixels;
 			// Only calculate new sectors if the value has changed
 			if (_sectorChanged) {
-				Log.Debug($"Sector changed, redrawing {_vCropPixels} and {_hCropPixels}...");
+				Log.Debug($"Sector changed, redrawing {_lCropPixels} and {pCropPixels}...");
 				_sectorChanged = false;
 				_fullCoords = DrawGrid();
 				_fullSectors = DrawSectors();
@@ -649,22 +650,26 @@ namespace Glimmr.Models {
 			await Task.FromResult(true);
 		}
 
+		private static int Sum(IEnumerable<byte> bytes) {
+			return bytes.Aggregate(0, (current, b) => current + b);
+		}
+
 		private Rectangle[] DrawGrid() {
-			var vOffset = _vCropPixels;
-			var hOffset = _hCropPixels;
+			var lOffset = _lCropPixels;
+			var pOffset = pCropPixels;
 			var output = new Rectangle[_ledCount];
 
 			// Top Region
-			var tTop = hOffset;
+			var tTop = lOffset;
 			// Bottom Region
-			var bBottom = ScaleHeight - hOffset;
+			var bBottom = ScaleHeight - lOffset;
 			var bTop = bBottom - _borderHeight;
 
 			// Left Column Border
-			var lLeft = vOffset;
+			var lLeft = pOffset;
 
 			// Right Column Border
-			var rRight = ScaleWidth - vOffset;
+			var rRight = ScaleWidth - pOffset;
 			var rLeft = rRight - _borderWidth;
 			float w = ScaleWidth;
 			float h = ScaleHeight;
@@ -740,8 +745,8 @@ namespace Glimmr.Models {
 		}
 
 		private Rectangle[] DrawCenterSectors() {
-			var hOffset = _hCropPixels;
-			var vOffset = _vCropPixels;
+			var pOffset = pCropPixels;
+			var lOffset = _lCropPixels;
 			if (_hSectors == 0) {
 				_hSectors = 10;
 			}
@@ -754,14 +759,14 @@ namespace Glimmr.Models {
 			var fs = new Rectangle[_sectorCount];
 			// Calculate heights, minus offset for boxing
 			// Individual segment sizes
-			var sectorWidth = (ScaleWidth - hOffset * 2) / _hSectors;
-			var sectorHeight = (ScaleHeight - vOffset * 2) / _vSectors;
+			var sectorWidth = (ScaleWidth - pOffset * 2) / _hSectors;
+			var sectorHeight = (ScaleHeight - lOffset * 2) / _vSectors;
 			// These are based on the border/strip values
 			// Minimum limits for top, bottom, left, right            
-			var top = ScaleHeight - vOffset - sectorHeight;
+			var top = ScaleHeight - lOffset - sectorHeight;
 			var idx = 0;
 			for (var v = _vSectors; v > 0; v--) {
-				var left = ScaleWidth - hOffset - sectorWidth;
+				var left = ScaleWidth - pOffset - sectorWidth;
 				for (var h = _hSectors; h > 0; h--) {
 					fs[idx] = new Rectangle(left, top, sectorWidth, sectorHeight);
 					idx++;
@@ -780,8 +785,8 @@ namespace Glimmr.Models {
 			}
 
 			// How many sectors does each region have?
-			var hOffset = _vCropPixels;
-			var vOffset = _hCropPixels;
+			var pOffset = pCropPixels;
+			var lOffset = _lCropPixels;
 			if (_hSectors == 0) {
 				_hSectors = 10;
 			}
@@ -794,19 +799,19 @@ namespace Glimmr.Models {
 			var fs = new Rectangle[_sectorCount];
 			// Individual segment sizes
 			const int squareSize = 40;
-			var sectorWidth = (ScaleWidth - hOffset * 2) / _hSectors;
-			var sectorHeight = (ScaleHeight - vOffset * 2) / _vSectors;
+			var sectorWidth = (ScaleWidth - pOffset * 2) / _hSectors;
+			var sectorHeight = (ScaleHeight - lOffset * 2) / _vSectors;
 			// These are based on the border/strip values
 			// Minimum limits for top, bottom, left, right            
-			var minTop = vOffset;
-			var minBot = ScaleHeight - vOffset - squareSize;
-			var minLeft = hOffset;
-			var minRight = ScaleWidth - hOffset - squareSize;
+			var minTop = lOffset;
+			var minBot = ScaleHeight - lOffset - squareSize;
+			var minLeft = pOffset;
+			var minRight = ScaleWidth - pOffset - squareSize;
 			// Calc right regions, bottom to top
 			var idx = 0;
 			var step = _vSectors - 1;
 			while (step >= 0) {
-				var ord = step * sectorHeight + vOffset;
+				var ord = step * sectorHeight + lOffset;
 				fs[idx] = new Rectangle(minRight, ord, squareSize, sectorHeight);
 				idx++;
 				step--;
@@ -815,7 +820,7 @@ namespace Glimmr.Models {
 			// Calc top regions, from right to left, skipping top-right corner (total horizontal sectors minus one)
 			step = _hSectors - 2;
 			while (step > 0) {
-				var ord = step * sectorWidth + hOffset;
+				var ord = step * sectorWidth + pOffset;
 				fs[idx] = new Rectangle(ord, minTop, sectorWidth, squareSize);
 				idx++;
 				step--;
@@ -824,7 +829,7 @@ namespace Glimmr.Models {
 			step = 0;
 			// Calc left regions (top to bottom), skipping top-left
 			while (step <= _vSectors - 1) {
-				var ord = step * sectorHeight + vOffset;
+				var ord = step * sectorHeight + lOffset;
 				fs[idx] = new Rectangle(minLeft, ord, squareSize, sectorHeight);
 				idx++;
 				step++;
@@ -833,7 +838,7 @@ namespace Glimmr.Models {
 			step = 1;
 			// Calc bottom center regions (L-R)
 			while (step <= _hSectors - 2) {
-				var ord = step * sectorWidth + hOffset;
+				var ord = step * sectorWidth + pOffset;
 				fs[idx] = new Rectangle(ord, minBot, sectorWidth, squareSize);
 				idx++;
 				step += 1;

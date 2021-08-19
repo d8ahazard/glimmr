@@ -46,9 +46,8 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			_disposed = false;
 		}
 		
-		private Task SetColors(object sender, ColorSendEventArgs args) {
-			SetColor(args.LedColors, args.SectorColors, args.FadeTime, args.Force);
-			return Task.CompletedTask;
+		private async Task SetColors(object sender, ColorSendEventArgs args) {
+			await SetColor(args.SectorColors, args.Force).ConfigureAwait(false);
 		}
 
 		public bool Enable { get; set; }
@@ -100,7 +99,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
 		
 
-	public void SetColor(Color[] list, Color[] sectors, int fadeTime, bool force = false) {
+	private async Task SetColor(Color[] sectors, bool force = false) {
 			if (!Streaming || !Enable || Testing && !force) {
 				return;
 			}
@@ -127,7 +126,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			}
 
 
-			_streamingClient.SetColorAsync(cols, 1);
+			await _streamingClient.SetColorAsync(cols, 1);
 
 			ColorService?.Counter.Tick(Id);
 		}

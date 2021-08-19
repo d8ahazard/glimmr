@@ -119,9 +119,6 @@ namespace Glimmr.Services {
 					loopWatch.Restart();
 					await CheckAutoDisable();
 					if (!_demoComplete || _stream == null) {
-						if (_demoComplete && _stream == null) {
-							Log.Warning("Stream is null.");
-						}
 						continue;
 					}
 				
@@ -605,8 +602,6 @@ namespace Glimmr.Services {
 					Counter.Tick("source");
 				}
 				_sending = false;
-			} else {
-				Log.Debug("Skip send.");
 			}
 			await Task.FromResult(true);
 		}

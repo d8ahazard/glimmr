@@ -48,9 +48,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			ReloadData();
 		}
 		
-		private Task SetColors(object sender, ColorSendEventArgs args) {
-			SetColor(args.LedColors, args.SectorColors, args.FadeTime, args.Force);
-			return Task.CompletedTask;
+		private async Task SetColors(object sender, ColorSendEventArgs args) {
+			await SetColor(args.LedColors, args.SectorColors, args.Force).ConfigureAwait(false);
 		}
 
 		public bool Enable { get; set; }
@@ -112,8 +111,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
-		
-		public void SetColor(Color[] list, Color[] colors1, int arg3, bool force = false) {
+
+		private async Task SetColor(Color[] list, Color[] colors1, bool force = false) {
 			if (!Streaming || !Enable || Testing && !force) {
 				return;
 			}
@@ -155,7 +154,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			}
 
 			try {
-				_udpClient.SendAsync(packet.ToArray(), packet.Length, _ep);
+				await _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep);
 				ColorService?.Counter.Tick(Id);
 			} catch (Exception e) {
 				Log.Debug("Exception: " + e.Message);
