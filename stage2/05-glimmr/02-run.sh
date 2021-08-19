@@ -6,8 +6,8 @@ git clone -b dev https://github.com/d8ahazard/glimmr ${ROOTFS_DIR}/home/glimmrtv
 # Install update script to init.d 
 chmod 777 ${ROOTFS_DIR}/home/glimmrtv/glimmr/script/update_linux.sh
 cd ${ROOTFS_DIR}/home/glimmrtv/glimmr
-/opt/dotnet/dotnet restore ${ROOTFS_DIR}/home/glimmrtv/glimmr/src/Glimmr.csproj
-/opt/dotnet/dotnet publish ${ROOTFS_DIR}/home/glimmrtv/glimmr/src/Glimmr.csproj /p:PublishProfile=LinuxARM -o ${ROOTFS_DIR}/home/glimmrtv/glimmr/bin/
+/opt/dotnet/dotnet restore ${ROOTFS_DIR}/home/glimmrtv/glimmr/src/Glimmr/Glimmr.csproj
+/opt/dotnet/dotnet publish ${ROOTFS_DIR}/home/glimmrtv/glimmr/src/Glimmr/Glimmr.csproj /p:PublishProfile=LinuxARM -o ${ROOTFS_DIR}/home/glimmrtv/glimmr/bin/
 chmod -R 777 ${ROOTFS_DIR}/home/glimmrtv/glimmr/bin
 install -m 755 ${ROOTFS_DIR}/home/glimmrtv/glimmr/lib/bass.dll ${ROOTFS_DIR}/usr/lib/bass.dll
 cp -r ${ROOTFS_DIR}/home/glimmrtv/glimmr/lib/LinuxARM/* ${ROOTFS_DIR}/usr/lib/
