@@ -1,4 +1,5 @@
 @echo off
+if "%1"=="" GOTO HELP
 if "%1"=="-h" GOTO HELP
 IF NOT "%2"=="-s" GOTO BUILD
 echo Stopping services
