@@ -68,7 +68,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 				return;
 			}
 
-			Log.Information($"{_data.Tag}::Starting stream: {_data.Id}...");
+			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
 			_targetSector = _data.TargetSector;
 			_ep = IpUtil.Parse(IpAddress, port);
 			if (_ep == null) {
@@ -78,7 +78,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			Streaming = true;
 			await FlashColor(Color.Red);
 			await UpdateLightState(Streaming);
-			Log.Information($"{_data.Tag}::Stream started: {_data.Id}.");
+			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
 		}
 
 
@@ -108,7 +108,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			await FlashColor(Color.Black).ConfigureAwait(false);
 			await UpdateLightState(false).ConfigureAwait(false);
 			await Task.FromResult(true);
-			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
+			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
 
@@ -154,7 +154,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			}
 
 			try {
-				await _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep);
+				await _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep).ConfigureAwait(false);
 				ColorService?.Counter.Tick(Id);
 			} catch (Exception e) {
 				Log.Debug("Exception: " + e.Message + " at " + e.StackTrace);

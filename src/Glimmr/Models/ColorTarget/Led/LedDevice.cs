@@ -75,10 +75,10 @@ namespace Glimmr.Models.ColorTarget.Led {
 				return;
 			}
 
-			Log.Information($"{_data.Tag}::Starting stream: {_data.Id}...");
+			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
 			Streaming = true;
 			await Task.FromResult(Streaming);
-			Log.Information($"{_data.Tag}::Stream started: {_data.Id}.");
+			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
 		}
 
 		public async Task StopStream() {
@@ -87,7 +87,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			}
 
 			await StopLights().ConfigureAwait(false);
-			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
+			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 			Streaming = false;
 		}
 

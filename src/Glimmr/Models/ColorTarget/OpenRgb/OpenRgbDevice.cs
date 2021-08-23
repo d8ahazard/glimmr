@@ -66,10 +66,10 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			}
 
 			if (_client != null && _client.Connected) {
-				Log.Information($"{_data.Tag}::Starting stream: {_data.Id}...");
+				Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
 				Streaming = true;
 				_client.SetMode(_data.DeviceId, 0);
-				Log.Information($"{_data.Tag}::Stream started: {_data.Id}.");
+				Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
 			}
 
 			return Task.CompletedTask;
@@ -92,7 +92,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			_client.UpdateLeds(_data.DeviceId, output);
 			await Task.FromResult(true);
 			Streaming = false;
-			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
+			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
 

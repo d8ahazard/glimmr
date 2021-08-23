@@ -106,7 +106,7 @@ namespace Glimmr.Services {
 		protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
 			await Initialize();
 			
-			Log.Debug("Send task started, starting main loop.");
+			Log.Debug("Starting main Color Service loop...");
 			await Task.Run(async () => {
 				var loopWatch = new Stopwatch();
 				loopWatch.Start();
@@ -143,17 +143,16 @@ namespace Glimmr.Services {
 			LoadData();
 			Log.Debug("Data loaded...");
 			if (!_systemData.SkipDemo) {
-				Log.Information("Executing demo...");
+				Log.Debug("Executing demo...");
 				await Demo(this, null).ConfigureAwait(true);
 				_demoComplete = true;
-				Log.Information("Demo complete.");
+				Log.Debug("Demo complete.");
 			} else {
 				_demoComplete = true;
-				Log.Information("Skipping demo.");
+				Log.Debug("Skipping demo.");
 			}
-
 			await Mode(this, new DynamicEventArgs(DeviceMode, true)).ConfigureAwait(true);
-			Log.Information($"Color service started, device mode is {DeviceMode}.");
+			Log.Information($"Color service started.");
 		}
 
 		public override async Task StopAsync(CancellationToken cancellationToken) {
@@ -351,7 +350,7 @@ namespace Glimmr.Services {
 			}
 
 			_sDevices = sDevs.ToArray();
-			Log.Debug($"Loaded {_sDevices.Length} devices.");
+			Log.Information($"Loaded {_sDevices.Length} devices.");
 		}
 
 		private async Task Demo(object o, DynamicEventArgs? dynamicEventArgs) {
@@ -516,7 +515,6 @@ namespace Glimmr.Services {
 			
 			_stream = stream;
 			if (stream != null) {
-				Log.Information("Starting stream on " + newMode);
 				_streamTask = stream.ToggleStream(_streamTokenSource.Token);
 				_stream = stream;
 			} else {
@@ -532,26 +530,25 @@ namespace Glimmr.Services {
 		}
 
 		private Task StartStream() {
+			var sc = 0;
 			if (!_streamStarted) {
 				_streamStarted = true;
-				Log.Information("Starting streaming targets...");
+				Log.Debug("Starting streaming targets...");
 				foreach (var sDev in _sDevices) {
 					try {
-						if (sDev.Enable) {
-							sDev.StartStream(_targetTokenSource.Token);
+						if (!sDev.Enable) {
+							continue;
 						}
+
+						sDev.StartStream(_targetTokenSource.Token);
+						sc++;
 					} catch (Exception e) {
 						Log.Warning("Exception starting stream: " + e.Message);
 					}
 				}
-
 				_streamStarted = true;
 			}
-
-			if (_streamStarted) {
-				Log.Information("Streaming started on all devices.");
-			}
-
+			Log.Information($"Streaming started on {sc} devices.");
 			return Task.CompletedTask;
 		}
 

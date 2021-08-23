@@ -71,14 +71,14 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				return;
 			}
 
-			Log.Information($"{_data.Tag}::Starting stream: {_data.Id}...");
+			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
 			var col = new LifxColor(0, 0, 0);
 
 			await _client.SetLightPowerAsync(B, true).ConfigureAwait(false);
 			await _client.SetColorAsync(B, col, 2700).ConfigureAwait(false);
 			Streaming = true;
 			await Task.FromResult(Streaming);
-			Log.Information($"{_data.Tag}::Stream started: {_data.Id}.");
+			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
 		}
 
 		public async Task FlashColor(Color color) {
@@ -107,7 +107,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 			await _client.SetLightPowerAsync(B, false).ConfigureAwait(false);
 			await _client.SetColorAsync(B, col, 2700).ConfigureAwait(false);
-			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
+			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
 

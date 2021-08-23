@@ -60,31 +60,34 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 			var sd = DataUtil.GetSystemData();
 			var inputStream = sd.UsbSelection;
 			if (inputStream != _inputStream || _video == null) {
-				_video?.Stop();
-				_video?.Dispose();
-				if (OperatingSystem.IsWindows()) {
-					_video = new VideoCapture(inputStream,VideoCapture.API.DShow);	
-				} else {
-					_video = new VideoCapture(inputStream,VideoCapture.API.V4L2);
-				}
-				
 				_inputStream = inputStream;
+				SetVideo();
 			}
 
-			if (_video == null) return Task.CompletedTask;
-			_video.SetCaptureProperty(CapProp.FourCC, VideoWriter.Fourcc('M', 'J', 'P', 'G'));
-			_video.SetCaptureProperty(CapProp.Fps, 60);
-			var fourCC = _video.GetCaptureProperty(CapProp.FourCC);
-			double d4 = VideoWriter.Fourcc('Y', 'U', 'Y', 'V');
-			double d5 = VideoWriter.Fourcc('M', 'J', 'P', 'G');
+			var fourCc = _video.GetCaptureProperty(CapProp.FourCC);
 			var fps = _video.GetCaptureProperty(CapProp.Fps);
-			Log.Debug($"Video created, fps and 4cc are {fps} and {fourCC} vs {d4} or {d5}.");
+			double d5 = VideoWriter.Fourcc('M', 'J', 'P', 'G');
+			if (fourCc != d5 || fps != 60) {
+				Log.Information("Couldn't set fc or fps, re-creating.");
+				SetVideo();
+			}
+			
+			Log.Debug($"Video created, fps and 4cc are {fps} and {fourCc}.");
 			//Log.Debug("API is " + _video.BackendName);
 			//Log.Warning(!fourcc ? "FourCC not set." : "FourCC Set.");
-			_video.SetCaptureProperty(CapProp.FrameWidth, 640);
-			_video.SetCaptureProperty(CapProp.FrameHeight, 480);
+			
 			
 			return Task.CompletedTask;
+		}
+
+		private void SetVideo() {
+			_video?.Stop();
+			_video?.Dispose();
+			_video = OperatingSystem.IsWindows() ? new VideoCapture(_inputStream,VideoCapture.API.DShow) : new VideoCapture(_inputStream,VideoCapture.API.V4L2);
+			_video.SetCaptureProperty(CapProp.FourCC, VideoWriter.Fourcc('M', 'J', 'P', 'G'));
+			_video.SetCaptureProperty(CapProp.Fps, 60);
+			_video.SetCaptureProperty(CapProp.FrameWidth, 640);
+			_video.SetCaptureProperty(CapProp.FrameHeight, 480);
 		}
 
 		private void SetFrame(object? sender, EventArgs e) {

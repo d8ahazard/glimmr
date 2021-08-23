@@ -66,7 +66,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				return;
 			}
 
-			Log.Information($"{_data.Tag}::Starting stream: {_data.Id}...");
+			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
 
 			SetData();
 			Streaming = true;
@@ -78,7 +78,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			//await _nanoleafClient.TurnOnAsync();
 			//await _nanoleafClient.SetBrightnessAsync((int) (Brightness / 100f * 255));
 			await _nanoleafClient.StartExternalAsync();
-			Log.Information($"{_data.Tag}::Stream started: {_data.Id}.");
+			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
 		}
 
 		public async Task StopStream() {
@@ -93,7 +93,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			}
 
 			await _nanoleafClient.TurnOffAsync().ConfigureAwait(false);
-			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
+			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
 

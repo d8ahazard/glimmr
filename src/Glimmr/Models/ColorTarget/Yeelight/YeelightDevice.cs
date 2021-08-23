@@ -63,7 +63,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 				return;
 			}
 
-			Log.Information($"{_data.Tag}::Starting stream: {_data.Id}...");
+			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
 			_targetSector = _data.TargetSector;
 
 			await _yeeDevice.Connect();
@@ -74,7 +74,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			}
 
 			if (Streaming) {
-				Log.Information($"{_data.Tag}::Stream started: {_data.Id}.");
+				Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
 			}
 		}
 
@@ -93,7 +93,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 				}
 			}
 
-			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
+			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
 		private async Task SetColor(Color[] sectors, bool force = false) {

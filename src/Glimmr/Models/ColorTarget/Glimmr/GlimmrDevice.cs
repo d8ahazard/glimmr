@@ -61,13 +61,13 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 				return;
 			}
 
-			Log.Information($"{_data.Tag}::Starting stream: {_data.Id}...");
+			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
 			var sd = DataUtil.GetSystemData();
 			var glimmrData = new GlimmrData(sd);
 			await SendPost("startStream", JsonConvert.SerializeObject(glimmrData)).ConfigureAwait(false);
 			_ep = IpUtil.Parse(_ipAddress, Port);
 			Streaming = true;
-			Log.Information($"{_data.Tag}::Stream started: {_data.Id}.");
+			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
 		}
 
 
@@ -101,7 +101,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			await FlashColor(Color.FromArgb(0, 0, 0));
 			Streaming = false;
 			await SendPost("mode", 0.ToString());
-			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
+			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
 

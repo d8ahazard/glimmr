@@ -87,7 +87,7 @@ namespace Glimmr.Services {
 			foreach (var c in types) {
 				var parts = c.Split(".");
 				var shortClass = parts[^1];
-				Log.Information("Creating agent: " + c);
+				Log.Debug("Creating agent: " + c);
 				try {
 					dynamic? agentCheck = Activator.CreateInstance(Type.GetType(c)!);
 					if (agentCheck == null) {
@@ -102,7 +102,7 @@ namespace Glimmr.Services {
 						}
 					}
 				} catch (Exception e) {
-					Log.Debug("Agent creation error: " + e.Message);
+					Log.Warning("Agent creation error: " + e.Message);
 				}
 			}
 		}
