@@ -45,6 +45,7 @@ namespace Glimmr.Models.ColorSource.Video {
 		public Task ToggleStream(CancellationToken ct) {
 			Log.Debug("Starting video stream service...");
 			SendColors = true;
+			StreamSplitter.DoSend = true;
 			return ExecuteAsync(ct);
 		}
 

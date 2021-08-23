@@ -38,8 +38,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		}
 		
 		private Task SetColors(object sender, ColorSendEventArgs args) {
-			SetColor(args.LedColors, args.SectorColors, args.FadeTime, args.Force);
-			return Task.CompletedTask;
+			return SetColor(args.SectorColors, args.Force);
 		}
 
 		public bool Streaming { get; set; }
@@ -80,9 +79,8 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
-		
-		
-			public async void SetColor(Color[] colors, Color[] sectors, int arg3, bool force = false) {
+
+		private async Task SetColor(Color[] sectors, bool force = false) {
 			if (!_data.Enable || Testing && !force) {
 				return;
 			}
@@ -95,7 +93,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 				sectors = ColorUtil.TruncateColors(sectors);
 			}
 
-			await _client.SendColors(_dev, sectors).ConfigureAwait(false);
+			await _client.SendColors(_dev, sectors);
 		}
 
 		public Task FlashColor(Color color) {

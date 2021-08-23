@@ -2,12 +2,13 @@
 
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Serilog;
 
 #endregion
 namespace Glimmr.Models {
-    namespace AsyncEvent
-{
+    
     /// <summary>
     /// Represents an asynchronous event handler.
     /// </summary>
@@ -113,5 +114,4 @@ namespace Glimmr.Models {
             return Task.WhenAll(tasks);
         }
     }
-}
 }

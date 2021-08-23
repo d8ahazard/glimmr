@@ -21,7 +21,7 @@ namespace Glimmr.Models {
 	public class FrameSplitter {
 		// Do we send our frame data to the UI?
 		public bool DoSend { get; set; }
-		public bool SourceActive { get; private set; }
+		public bool SourceActive { get; set; }
 		private readonly float _borderHeight;
 
 		// The width of the border to crop from for LEDs
@@ -30,6 +30,7 @@ namespace Glimmr.Models {
 		private readonly Stopwatch _frameWatch;
 		private readonly List<VectorOfPoint> _targets;
 		private readonly bool _useCrop;
+		private bool _allBlack;
 		private int _bottomCount;
 
 		// Loaded data
@@ -286,8 +287,7 @@ namespace Glimmr.Models {
 				_warned = true;
 				return;
 			}
-
-			SourceActive = true;
+			
 			var clone = frame;
 
 			if (frame.Width != ScaleWidth || frame.Height != ScaleWidth) {
@@ -318,6 +318,7 @@ namespace Glimmr.Models {
 				_frameWatch.Restart();
 			}
 			
+			SourceActive = !_allBlack;
 
 			var ledColors = ColorUtil.EmptyColors(_ledCount);
 			for (var i = 0; i < _fullCoords.Length; i++) {
@@ -336,7 +337,10 @@ namespace Glimmr.Models {
 
 			_colorsLed = ledColors;
 			_colorsSectors = sectorColors;
-			_colorService.Counter.Tick("splitter");
+			if (DoSend) {
+				await _colorService.TriggerSend(ledColors, sectorColors);
+				_colorService.Counter.Tick("splitter");
+			}
 			if (_doSave) {
 				if (DoSend) {
 					SaveFrames(frame, clone);
@@ -535,7 +539,6 @@ namespace Glimmr.Models {
 			_sectorChanged = false;
 			var width = image.Cols;
 			var height = image.Rows;
-			//Log.Debug($"W V W {width} and {image.Width}");
 			var wStart = width / 3;
 			var hStart = height / 3;
 			// How many non-black pixels can be in a given row
@@ -550,13 +553,15 @@ namespace Glimmr.Models {
 			var gr = new Mat();
 			CvInvoke.CvtColor(image, gr, ColorConversion.Bgr2Gray);
 			// Check to see if everything is black
-			var noImage = CvInvoke.CountNonZero(gr) == blackLevel;
+			var noImage = CvInvoke.CountNonZero(gr) <= blackLevel;
 			// If it is, we can stop here
 			if (noImage) {
 				gr.Dispose();
+				_allBlack = true;
 				return;
 			}
 
+			_allBlack = false;
 			// Check letterboxing
 			if (_cropLetter) {
 				for (var y = 0; y < hStart; y+=2) {
@@ -566,7 +571,6 @@ namespace Glimmr.Models {
 					var b2 = c1.GetRawData();
 					var l1 = Sum(b1);
 					var l2 = Sum(b2);
-					//Log.Debug($"L1/L2 {y}: {l1}, {l2}");
 					c1.Dispose();
 					c2.Dispose();
 					if (l1 == l2 && l1 < blackLevel) {
@@ -575,8 +579,6 @@ namespace Glimmr.Models {
 						break;
 					}
 				}
-
-				//Log.Debug("Done");
 			}
 
 			// Check pillarboxing
@@ -641,7 +643,7 @@ namespace Glimmr.Models {
 			_vCropCheck = lPixels;
 			// Only calculate new sectors if the value has changed
 			if (_sectorChanged) {
-				Log.Debug($"Sector changed, redrawing {_lCropPixels} and {pCropPixels}...");
+				Log.Debug($"Crop changed, redrawing {_lCropPixels} and {pCropPixels}...");
 				_sectorChanged = false;
 				_fullCoords = DrawGrid();
 				_fullSectors = DrawSectors();
@@ -724,7 +726,7 @@ namespace Glimmr.Models {
 			pos = 0;
 			for (var i = 0; i < _bottomCount; i++) {
 				if (idx >= _ledCount) {
-					Log.Debug($"Index is {idx}, but count is {_ledCount}");
+					Log.Warning($"Index is {idx}, but count is {_ledCount}");
 					continue;
 				}
 

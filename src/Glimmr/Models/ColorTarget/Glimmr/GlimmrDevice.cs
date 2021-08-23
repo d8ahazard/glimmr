@@ -22,7 +22,6 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		private const int Port = 8889;
 		private readonly HttpClient _httpClient;
 		private readonly UdpClient _udpClient;
-		private readonly List<Color> _updateColors;
 		private GlimmrData _data;
 		private bool _disposed;
 		private IPEndPoint? _ep;
@@ -33,7 +32,6 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			colorService.ColorSendEventAsync += SetColors;
 			_udpClient = colorService.ControlService.UdpClient;
 			_httpClient = colorService.ControlService.HttpSender;
-			_updateColors = new List<Color>();
 			_data = wd ?? throw new ArgumentException("Invalid Glimmr data.");
 			Id = _data.Id;
 			Enable = _data.Enable;
@@ -43,8 +41,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		}
 		
 		private Task SetColors(object sender, ColorSendEventArgs args) {
-			SetColor(args.LedColors, args.SectorColors, args.FadeTime, args.Force);
-			return Task.CompletedTask;
+			return SetColor(args.LedColors, args.Force);
 		}
 
 		public bool Enable { get; set; }
@@ -108,12 +105,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		}
 
 
-		public Task SetColor(object o, DynamicEventArgs args) {
-			SetColor(args.Arg0, args.Arg1, args.Arg2, args.Arg3);
-			return Task.CompletedTask;
-		}
-		
-			public void SetColor(Color[] leds, Color[] sectors, int arg3, bool force = false) {
+		private async Task SetColor(Color[] leds, bool force = false) {
 			if (!Streaming || !Enable || Testing && !force) {
 				return;
 			}
@@ -175,7 +167,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			}
 
 			try {
-				_udpClient.SendAsync(packet.ToArray(), packet.Count, _ep).ConfigureAwait(false);
+				await _udpClient.SendAsync(packet.ToArray(), packet.Count, _ep);
 				ColorService?.Counter.Tick(Id);
 			} catch (Exception e) {
 				Log.Debug("Exception: " + e.Message);
@@ -214,21 +206,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		}
 
 
-		public async Task UpdatePixel(int pixelIndex, Color color) {
-			if (_updateColors.Count == 0) {
-				for (var i = 0; i < _data.LedCount; i++) {
-					_updateColors.Add(Color.FromArgb(0, 0, 0, 0));
-				}
-			}
-
-			if (pixelIndex >= _data.LedCount) {
-				return;
-			}
-
-			_updateColors[pixelIndex] = color;
-			await SetColor(this, new DynamicEventArgs(_updateColors,_updateColors)).ConfigureAwait(false);
-		}
-
+		
 
 		private async Task SendPost(string target, string value) {
 			Uri uri;

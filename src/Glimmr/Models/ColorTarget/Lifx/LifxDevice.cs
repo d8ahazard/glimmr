@@ -38,7 +38,6 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				_multiplier = 2;
 			}
 
-			Log.Debug("Brightness is " + _brightness);
 			_gammaTable = GenerateGammaTable(_data.GammaCorrection);
 			_client = colorService.ControlService.GetAgent("LifxAgent");
 			colorService.ColorSendEventAsync += SetColors;
@@ -48,8 +47,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		}
 		
 		private Task SetColors(object sender, ColorSendEventArgs args) {
-			SetColor(args.LedColors, args.SectorColors, args.FadeTime, args.Force);
-			return Task.CompletedTask;
+			return SetColor(args.LedColors, args.SectorColors, args.Force);
 		}
 
 		public bool Streaming { get; set; }
@@ -127,16 +125,16 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		public void Dispose() {
 		}
 
-		
-		public void SetColor(Color[] colors, Color[] list, int arg3, bool force = false) {
+
+		private async Task SetColor(Color[] colors, Color[] list, bool force = false) {
 			if (!Streaming || !Enable || Testing && !force) {
 				return;
 			}
 
 			if (_hasMulti) {
-				SetColorMulti(colors);
+				await SetColorMulti(colors);
 			} else {
-				SetColorSingle(list);
+				await SetColorSingle(list);
 			}
 
 			ColorService?.Counter.Tick(Id);
@@ -188,7 +186,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			Enable = _data.Enable;
 		}
 
-		private void SetColorMulti(Color[] colors) {
+		private async Task SetColorMulti(Color[] colors) {
 			if (_client == null || _beamLayout == null) {
 				Log.Warning("Null client or no layout!");
 				return;
@@ -222,11 +220,11 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				cols.Add(colL);
 			}
 
-			_client.SetExtendedColorZonesAsync(B, cols, 5).ConfigureAwait(false);
+			await _client.SetExtendedColorZonesAsync(B, cols, 5);
 		}
 
 
-		private void SetColorSingle(Color[] list) {
+		private async Task SetColorSingle(Color[] list) {
 			var sectors = list;
 			if (sectors == null || _client == null) {
 				return;
@@ -240,7 +238,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 			var nC = new LifxColor(input);
 			
-			_client.SetColorAsync(B, nC).ConfigureAwait(false);
+			await _client.SetColorAsync(B, nC);
 			ColorService?.Counter.Tick(Id);
 		}
 	}

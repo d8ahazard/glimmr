@@ -33,7 +33,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 		}
 		
 		private Task SetColors(object sender, ColorSendEventArgs args) {
-			SetColor(args.LedColors, args.SectorColors, args.FadeTime, args.Force);
+			SetColor(args.LedColors, args.Force);
 			return Task.CompletedTask;
 		}
 
@@ -74,8 +74,8 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
-		
-		public void SetColor(Color[] colors, Color[] sectors, int fadeTime, bool force = false) {
+
+		private void SetColor(Color[] colors, bool force = false) {
 			if (!Enable || !Streaming || Testing && !force) {
 				return;
 			}

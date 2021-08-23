@@ -134,7 +134,7 @@ namespace Glimmr.Models {
 			pos = 0;
 			for (var i = 0; i < _bottomCount; i++) {
 				if (idx >= _ledCount) {
-					Log.Debug($"Index is {idx}, but count is {_ledCount}");
+					Log.Warning($"Index is {idx}, but count is {_ledCount}");
 					continue;
 				}
 
@@ -169,7 +169,6 @@ namespace Glimmr.Models {
 			var step = _rightCount - 1;
 			var max = _rightCount;
 			var wIdx = 1;
-			Log.Debug("Step is " + step + ", max is " + max);
 			while (step >= 0) {
 				var ord = step * sectorHeight;
 				var width = sectorHeight * wIdx + 5;

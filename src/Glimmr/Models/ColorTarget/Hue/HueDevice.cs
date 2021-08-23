@@ -56,7 +56,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 		
 		private Task SetColors(object sender, ColorSendEventArgs args) {
-			SetColor(args.LedColors, args.SectorColors, args.FadeTime, args.Force);
+			SetColor(args.SectorColors, args.FadeTime, args.Force);
 			return Task.CompletedTask;
 		}
 
@@ -195,19 +195,18 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		/// <param name="o"></param>
 		/// <param name="args"></param>
 		public Task SetColor(object o, DynamicEventArgs args) {
-			SetColor(args.Arg0, args.Arg1, args.Arg2, args.Arg3);
+			SetColor(args.Arg1, args.Arg2, args.Arg3);
 
 			return Task.CompletedTask;
 		}
-		
+
 		/// <summary>
 		///     Update lites in entertainment group...
 		/// </summary>
-		/// <param name="list"></param>
 		/// <param name="sectors"></param>
 		/// <param name="fadeTime"></param>
 		/// <param name="force"></param>
-		public void SetColor(Color[] list, Color[] sectors, int fadeTime, bool force = false) {
+		private void SetColor(Color[] sectors, int fadeTime, bool force = false) {
 			if (!Streaming || !Enable || _entLayer == null || Testing && !force) {
 				return;
 			}

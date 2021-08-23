@@ -39,6 +39,7 @@ namespace Glimmr {
 				.MinimumLevel.Information()
 				.WriteTo.Console(outputTemplate: outputTemplate, theme: SystemConsoleTheme.Literate)
 				.MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+				.Filter.ByExcluding(c => c.Properties["Caller"].ToString().Contains("SerilogLogger"))
 				.Enrich.FromLogContext()
 				.WriteTo.Async(a =>
 					a.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: outputTemplate));
@@ -47,31 +48,13 @@ namespace Glimmr {
 			}
 
 			Log.Logger = lc.CreateLogger();
-			CreateHostBuilder(args).Build().Run();
+			CreateHostBuilder(args, Log.Logger).Build().Run();
 			Log.CloseAndFlush();
 		}
 
-		private static IHostBuilder CreateHostBuilder(string[] args) {
-			var outputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}]{Caller} {Message}{NewLine}{Exception}";
-			var logPath = "/var/log/glimmr/glimmr.log";
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-				var userPath = SystemUtil.GetUserDir();
-				var logDir = Path.Combine(userPath, "log");
-				if (!Directory.Exists(logDir)) {
-					Directory.CreateDirectory(logDir);
-				}
-
-				logPath = Path.Combine(userPath, "log", "glimmr.log");
-			}
+		private static IHostBuilder CreateHostBuilder(string[] args, ILogger logger) {
 			return Host.CreateDefaultBuilder(args)
-				.UseSerilog((_, loggerConfiguration) => loggerConfiguration
-					.Enrich.WithCaller()
-					.MinimumLevel.Debug()
-					.Enrich.FromLogContext()
-					.Filter.ByExcluding(c => JsonConvert.SerializeObject(c).Contains("SerilogLogger"))
-					.WriteTo.Console(outputTemplate: outputTemplate)
-					.WriteTo.Async(a =>
-						a.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: outputTemplate)))
+				.UseSerilog(logger)
 				.ConfigureServices(services => {
 					services.AddSignalR();
 					services.AddSingleton<ControlService>();

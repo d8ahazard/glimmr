@@ -9,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Enums;
 using Glimmr.Models;
-using Glimmr.Models.AsyncEvent;
 using Glimmr.Models.ColorSource;
 using Glimmr.Models.ColorTarget;
 using Glimmr.Models.Util;
@@ -47,8 +46,7 @@ namespace Glimmr.Services {
 		private bool _streamStarted;
 		private IColorSource? _stream;
 		private Task? _streamTask;
-		private bool _sending;
-		
+
 		private bool _demoComplete;
 		// Token for the color source
 		private CancellationTokenSource _streamTokenSource;
@@ -105,11 +103,11 @@ namespace Glimmr.Services {
 			}
 		}
 
-		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
-			Initialize();
+		protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
+			await Initialize();
 			
 			Log.Debug("Send task started, starting main loop.");
-			return Task.Run(async () => {
+			await Task.Run(async () => {
 				var loopWatch = new Stopwatch();
 				loopWatch.Start();
 				var fc = 0;
@@ -117,19 +115,8 @@ namespace Glimmr.Services {
 				const int ms = 30;
 				while (!stoppingToken.IsCancellationRequested) {
 					loopWatch.Restart();
-					await CheckAutoDisable();
-					if (!_demoComplete || _stream == null) {
-						continue;
-					}
-				
-					var cols = _stream.GetColors();
-					var secs = _stream.GetSectors();
-					if (cols == null || secs == null) {
-						Log.Debug("No columns/sectors.");
-					} else {
-						await SendColors(cols, secs);
-						fc++;
-					}
+					await CheckAutoDisable().ConfigureAwait(false);
+					
 					// Save a frame every 5 seconds
 					if (fc >= 150) {
 						fc = 0;
@@ -138,6 +125,7 @@ namespace Glimmr.Services {
 					var time = loopWatch.ElapsedMilliseconds;
 					if (time < ms) {
 						var diff = ms - time;
+						fc++;
 						await Task.Delay(TimeSpan.FromMilliseconds(diff), CancellationToken.None);
 					}
 				}
@@ -150,13 +138,13 @@ namespace Glimmr.Services {
 		}
 
 
-		private void Initialize() {
+		private async Task Initialize() {
 			Log.Information("Starting color service...");
 			LoadData();
 			Log.Debug("Data loaded...");
 			if (!_systemData.SkipDemo) {
 				Log.Information("Executing demo...");
-				Demo(this, null).ConfigureAwait(true);
+				await Demo(this, null).ConfigureAwait(true);
 				_demoComplete = true;
 				Log.Information("Demo complete.");
 			} else {
@@ -164,7 +152,7 @@ namespace Glimmr.Services {
 				Log.Information("Skipping demo.");
 			}
 
-			Mode(this, new DynamicEventArgs(DeviceMode, true)).ConfigureAwait(true);
+			await Mode(this, new DynamicEventArgs(DeviceMode, true)).ConfigureAwait(true);
 			Log.Information($"Color service started, device mode is {DeviceMode}.");
 		}
 
@@ -276,6 +264,7 @@ namespace Glimmr.Services {
 			}
 			
 			var sourceActive = _stream?.SourceActive ?? false;
+			//Log.Debug("Source is " + (sourceActive ? "Active" : "Inactive"));
 
 			if (sourceActive) {
 				// If our source is active, but not auto-disabled, do nothing
@@ -285,14 +274,12 @@ namespace Glimmr.Services {
 					DataUtil.SetItem("AutoDisabled", _autoDisabled);
 					ControlService.SetModeEvent -= Mode;
 					await ControlService.SetMode((int) DeviceMode);
-					if (!_streamStarted) await StartStream();
+					await StartStream();
 					ControlService.SetModeEvent += Mode;
 				}
-
 				_watch.Reset();
 			} else {
 				if (!_watch.IsRunning)_watch.Restart();
-
 				if (_watch.ElapsedMilliseconds >= _autoDisableDelay * 1000f) {
 					_autoDisabled = true;
 					Counter.Reset();
@@ -300,10 +287,12 @@ namespace Glimmr.Services {
 					ControlService.SetModeEvent -= Mode;
 					await ControlService.SetMode(0);
 					ControlService.SetModeEvent += Mode;
+					await SendColors(ColorUtil.EmptyColors(_systemData.LedCount),
+						ColorUtil.EmptyColors(_systemData.SectorCount), 0, true);
 					Log.Information(
 						$"Auto-disabling stream {_watch.ElapsedMilliseconds} vs {_autoDisableDelay * 1000}.");
 					_watch.Reset();
-					if (_streamStarted) await StopStream();
+					await StopStream();
 				}
 			}
 		}
@@ -526,13 +515,12 @@ namespace Glimmr.Services {
 			}
 			
 			_stream = stream;
-
 			if (stream != null) {
 				Log.Information("Starting stream on " + newMode);
 				_streamTask = stream.ToggleStream(_streamTokenSource.Token);
 				_stream = stream;
 			} else {
-				Log.Warning("Unable to acquire stream.");
+				if (newMode != DeviceMode.Off) Log.Warning("Unable to acquire stream.");
 			}
 
 			if (newMode != 0 && !_streamStarted && !_autoDisabled && !init) {
@@ -594,16 +582,20 @@ namespace Glimmr.Services {
 				return;
 			}
 
-			if (!_sending) {
-				_sending = true;
-				if (ColorSendEventAsync != null) {
-					await ColorSendEventAsync
-						.InvokeAsync(this, new ColorSendEventArgs(colors, sectors, fadeTime, force));
-					Counter.Tick("source");
+			if (ColorSendEventAsync != null) {
+				CancellationTokenSource cts = new();
+				cts.CancelAfter(TimeSpan.FromMilliseconds(33));
+				try {
+					if (ColorSendEventAsync != null) {
+						await ColorSendEventAsync
+							.InvokeAsync(this, new ColorSendEventArgs(colors, sectors, fadeTime, force));
+					}
+				} catch (Exception e) {
+					Log.Warning("Exception: " + e.Message + " at " + e.StackTrace);
 				}
-				_sending = false;
+
+				Counter.Tick("source");
 			}
-			await Task.FromResult(true);
 		}
 
 		
@@ -660,14 +652,28 @@ namespace Glimmr.Services {
 
 			_sDevices = devs.ToArray();
 		}
+
+		public async Task TriggerSend(Color[] leds, Color[] sectors) {
+			
+			if (!_demoComplete || _stream == null) {
+				return;
+			}
+				
+			
+			if (leds == null || sectors == null) {
+				Log.Debug("No columns/sectors.");
+			} else {
+				await SendColors(leds, sectors).ConfigureAwait(false);
+			}
+		}
 	}
 	public class ColorSendEventArgs : EventArgs
 	{
-		public Color[] LedColors { get; set; }
-		public Color[] SectorColors { get; set; }
-		public int FadeTime { get; set; }
-		public bool Force { get; set; }
-
+		public Color[] LedColors { get; }
+		public Color[] SectorColors { get; }
+		public int FadeTime { get; }
+		public bool Force { get; }
+		
 		public ColorSendEventArgs(Color[] leds, Color[] sectors, int fadeTime, bool force) {
 			LedColors = leds;
 			SectorColors = sectors;

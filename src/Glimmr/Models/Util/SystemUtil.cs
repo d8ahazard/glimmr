@@ -214,7 +214,7 @@ namespace Glimmr.Models.Util {
 
 					v.Dispose();
 				} catch (Exception e) {
-					Log.Debug("Exception with cam " + i + ": " + e);
+					Log.Debug("Exception with cam " + i + ": " + e.Message);
 				}
 
 				i++;

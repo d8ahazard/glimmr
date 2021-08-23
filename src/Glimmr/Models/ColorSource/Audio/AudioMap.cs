@@ -118,7 +118,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 				_rotationUpper = am.RotationUpper;
 				_rotationThreshold = am.RotationThreshold;
 				_octaveMap = am.OctaveMap;
-				Log.Debug("Octave map: " + JsonConvert.SerializeObject(_octaveMap));
 			} catch (Exception e) {
 				Log.Warning("Audio Map Refresh Exception: " + e.Message);
 			}

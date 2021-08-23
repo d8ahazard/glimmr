@@ -401,12 +401,10 @@ function setSocketListeners() {
     });
     
     websocket.on('inputImage',function(data) {
-        console.log("Input load...");
         document.getElementById("inputPreview").src = "data:image/png;base64," + data;
     });
 
     websocket.on('outputImage',function(data) {
-        console.log("Output load...");
         document.getElementById("outputPreview").src = "data:image/png;base64," + data;
     });
     

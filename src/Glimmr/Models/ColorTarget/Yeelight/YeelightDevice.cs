@@ -21,8 +21,6 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 		private YeelightData _data;
 
-		private bool _isOn;
-
 		private Task? _streamTask;
 
 		private int _targetSector;
@@ -44,8 +42,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		}
 
 		private Task SetColors(object sender, ColorSendEventArgs args) {
-			SetColor(args.LedColors, args.SectorColors, args.FadeTime, args.Force);
-			return Task.CompletedTask;
+			return SetColor(args.SectorColors, args.Force);
 		}
 
 		public bool Streaming { get; set; }
@@ -99,13 +96,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
-		public Task SetColor(object o, DynamicEventArgs args) {
-		SetColor(args.Arg0, args.Arg1, args.Arg2, args.Arg3);
-
-			return Task.CompletedTask;
-		}
-		
-				public void SetColor(Color[] colors, Color[] sectors, int arg3, bool force = false) {
+		private async Task SetColor(Color[] sectors, bool force = false) {
 			if (!Streaming || !Enable) {
 				return;
 			}
@@ -115,29 +106,14 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 					return;
 				}
 			}
-
+			
+			// TODO: Clamp brightness here.
 			var col = sectors[_targetSector];
 			if (_targetSector >= sectors.Length) {
 				return;
 			}
-
-			_yeeDevice.SetRGBColor(col.R, col.G, col.B).ConfigureAwait(false);
-			var bri = col.GetBrightness() * 100;
-			if (bri <= 10f) {
-				if (_isOn) {
-					_isOn = false;
-					_yeeDevice.SetPower(false);
-				}
-			} else {
-				if (!_isOn) {
-					_isOn = true;
-					_yeeDevice.SetPower();
-				}
-
-				_yeeDevice.SetRGBColor(col.R, col.G, col.B).ConfigureAwait(false);
-				_yeeDevice.BackgroundSetBrightness((int) bri);
-			}
-
+			
+			await _yeeDevice.SetRGBColor(col.R, col.G, col.B);
 			_colorService.Counter.Tick(Id);
 		}
 

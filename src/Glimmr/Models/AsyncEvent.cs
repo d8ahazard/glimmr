@@ -60,12 +60,16 @@ namespace Glimmr.Models {
 				tmpInvocationList = new List<Func<object, TEventArgs, Task>>(_invocationList);
 			}
 
+			var tasks = new List<Task>();
+			
 			foreach (var callback in tmpInvocationList) {
 				//Assuming we want a serial invocation, for a parallel invocation we can use Task.WhenAll instead
 				if (sender != null && eventArgs != null) {
-					await callback(sender, eventArgs);
+					tasks.Add(callback.Invoke(sender, eventArgs));
 				}
 			}
+
+			await Task.WhenAll(tasks);
 		}
 	}
 

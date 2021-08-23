@@ -55,7 +55,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 		}
 		
 		private Task SetColors(object sender, ColorSendEventArgs args) {
-			SetColor(args.LedColors, args.SectorColors, args.FadeTime, args.Force);
+			SetColor(args.LedColors, args.Force);
 			return Task.CompletedTask;
 		}
 
@@ -143,8 +143,8 @@ namespace Glimmr.Models.ColorTarget.Led {
 			return Task.CompletedTask;
 		}
 
-	
-		public void SetColor(Color[] colors, Color[] sectors, int fadeTime, bool force = false) {
+
+		private void SetColor(Color[] colors, bool force = false) {
 			if (colors == null) {
 				throw new ArgumentException("Invalid color input.");
 			}

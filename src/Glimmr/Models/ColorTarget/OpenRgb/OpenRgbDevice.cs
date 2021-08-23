@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Microsoft.Net.Http.Headers;
 using OpenRGB.NET;
 using Serilog;
 
@@ -29,7 +28,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		}
 		
 		private Task SetColors(object sender, ColorSendEventArgs args) {
-			SetColor(args.LedColors, args.SectorColors, args.FadeTime, args.Force);
+			SetColor(args.LedColors, args.Force);
 			return Task.CompletedTask;
 		}
 
@@ -96,8 +95,8 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			Log.Information($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
-		
-		public void SetColor(Color[] colors, Color[] sectors, int fadeTime, bool force = false) {
+
+		private void SetColor(Color[] colors, bool force = false) {
 			if (!Enable || !Streaming || Testing && !force) {
 				return;
 			}
