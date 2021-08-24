@@ -27,21 +27,21 @@
     <!-- Google Fonts -->
     <link href="~/css/roboto.css" rel="stylesheet"/>
     <link href="~/css/appIcons.css" rel="stylesheet"/>
-    <link rel="stylesheet" href="~/css/nano.css"/> <!-- 'nano' theme -->
-    <link rel="stylesheet" href="~/css/introjs.min.css"/> <!-- 'nano' theme -->
     <!-- Bootstrap 5 -->
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="~/lib/bootstrap-4.6.0-dist/css/bootstrap.min.css">
+    <link href="~/lib/bootstrap-tour-0.12.0/css/bootstrap-tour-standalone.min.css" rel="stylesheet">
     <link rel="stylesheet" href="~/css/glimmr.css" asp-append-version="true"/>
 </head>
 <body>
 
 @RenderBody()
-<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/lib/jquery/jquery-3.6.0.min.js"></script>
+<script src="~/lib/bootstrap-4.6.0-dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/lib/bootstrap-tour-0.12.0/js/bootstrap-tour-standalone.min.js"></script>
 <script src="~/lib/konva/konva.min.js"></script>
 <script src="~/js/signalr/dist/browser/signalr.js"></script>
 <script src="~/lib/html5sortable/html5sortable.min.js"></script>
 <script src="~/js/pickr.min.js"></script>
-<script src="~/js/intro.min.js"></script>
 <script src="~/lib/progressbar/progressbar.js"></script>
 <script src="~/js/glimmr.js" type="text/javascript" asp-append-version="true"></script>
 @await RenderSectionAsync("Scripts", false)

@@ -17,6 +17,14 @@
     position: relative;
 }
 
+.tab-pane.fade.show.active {
+    opacity: 100% !important;
+}
+
+.popover.right.in {
+    width: 276px !important;
+}
+
 
 #sectorPreview, #sectorMap, #ledMap {
     background:url("../img/sectoring_screen.png");

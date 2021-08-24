@@ -39,7 +39,8 @@ let refreshTimer;
 let fpsCounter;
 let nanoTarget, nanoSector;
 let demoLoaded = false;
-
+let myTour;
+let devJson = '{"AutoBrightnessLevel":true,"FixGamma":true,"AblMaxMilliamps":5000,"GpioNumber":18,"LedCount":150,"MilliampsPerLed":25,"Offset":50,"StartupAnimation":0,"StripType":0,"Name":"Demo LED Strip","Id":"-1","Tag":"Led","IpAddress":"","Brightness":100,"Enable":false,"LastSeen":"08/05/2021 13:28:53","KeyProperties":[{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"","ValueName":"ledmap","ValueType":"ledmap"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Led Offset","ValueName":"Offset","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Led Count","ValueName":"LedCount","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Fix Gamma","ValueName":"FixGamma","ValueType":"check"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Enable Auto Brightness","ValueName":"AutoBrightnessLevel","ValueType":"check"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Milliamps per led","ValueName":"MilliampsPerLed","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Total Max Milliamps","ValueName":"AblMaxMilliamps","ValueType":"text"}]}';
 let errModal = new bootstrap.Modal(document.getElementById('errorModal'));
 // We're going to create one object to store our stuff, and add listeners for when values are changed.
 let data = {
@@ -720,7 +721,9 @@ function handleClick(target) {
                 closeCard();
             } else {
                 let devId = target.getAttribute("data-target");
+                console.log("Device id: ", devId);
                 deviceData = findDevice(devId);
+                if (devId === "-1") deviceData = JSON.parse(devJson);
                 showDeviceCard(target);
             }
             break;
@@ -1046,171 +1049,282 @@ function loadUi() {
 }
 
 function showIntro() {
-    console.log("Creating demo device card.");
-    let devJson = '{"AutoBrightnessLevel":true,"FixGamma":true,"AblMaxMilliamps":5000,"GpioNumber":18,"LedCount":300,"MilliampsPerLed":25,"Offset":0,"StartupAnimation":0,"StripType":0,"Name":"Demo LED Strip","Id":"-1","Tag":"Led","IpAddress":"","Brightness":100,"Enable":false,"LastSeen":"08/05/2021 13:28:53","KeyProperties":[{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"","ValueName":"ledmap","ValueType":"ledmap"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Led Offset","ValueName":"Offset","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Led Count","ValueName":"LedCount","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Fix Gamma","ValueName":"FixGamma","ValueType":"check"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Enable Auto Brightness","ValueName":"AutoBrightnessLevel","ValueType":"check"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Milliamps per led","ValueName":"MilliampsPerLed","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Total Max Milliamps","ValueName":"AblMaxMilliamps","ValueType":"text"}]}';
-    let devObj = JSON.parse(devJson);
-    deviceData = devObj;
-    loadDevice(devObj,true);
-    introJs().setOptions({
-        disableInteraction: false,
+    let myTour = new Tour(
+        {
+            storage: false,
+            backdropPadding: 5,
+            backdrop: true,
+            orphan: true,
+            onStart: function(){
+                console.log("Creating demo device card.");
+                let devObj = JSON.parse(devJson);
+                deviceData = devObj;
+                loadDevice(devObj,true);
+            },
+            onEnd: function(){
+                console.log("Removing demo device card.");
+                if (expanded) closeCard().then(function () {
+                    let devCard = document.querySelector('.devCard[data-id="-1"]');
+                    devCard.remove();
+                });                
+            },
             steps: [
                 {
-                title: 'Welcome to Glimmr!',
-                intro: 'Hello, and thanks for trying out Glimmr. This short tour will help you get familiar with the UI.'
+                    element: '',
+                    title: 'Welcome to Glimmr!',
+                    content: 'Hello, and thanks for trying out Glimmr. This short tour will help you get familiar with the UI.'
                 },
                 {
-                    element: document.querySelector('#modeBtns'),
+                    element: "#modeBtns",
                     title: 'Mode Selection',
-                    intro: 'Use these buttons to select the lighting mode for enabled devices. You can hover over each one to see what mode it enables.'
+                    content: 'Use these buttons to select the lighting mode for enabled devices. You can hover over each one to see what mode it enables.'
                 },
                 {
-                    element: document.querySelector('#statDiv'),
+                    element: "#statDiv",
                     title: 'System Stats',
-                    intro: 'Here you can see the current frame rate, CPU temperature and total usage.'
+                    content: 'Here you can see the current frame rate, CPU temperature and total usage.'
                 },
                 {
-                    element: document.querySelector('#refreshBtn'),
+                    element: "#refreshBtn",
                     title: 'Device Refresh',
-                    intro: 'Click here to re-scan/refresh devices.'
+                    placement: 'left',
+                    smartPlacement: false,
+                    content: 'Click here to re-scan/refresh devices.'
                 },
                 {
-                    element: document.querySelector('#settingBtn'),
+                    element: "#settingBtn",
                     title: 'Glimmr Settings',
-                    intro: 'You can access system settings by clicking this button. Let\'s take a look!'
+                    placement: 'left',
+                    smartPlacement: false,
+                    content: 'You can access system settings by clicking this button. Let\'s take a look!',
+                    reflex: true,
+                    onNext: function() {
+                        if (!settingsShown) toggleSettingsDiv();
+                        document.getElementById("system-tab").click();
+                    }
                 },
                 {
-                    element: document.querySelector('#settingsTab'),
+                    element: "#settingsTab",
                     title: 'Setting Selection',
-                    intro: 'Select the various settings groups here.'
+                    content: 'Select the various settings groups here.',
+                    container: '#mainContent',
+                    backdropContainer: '#mainContent',
+                    onNext: function(){
+                        if (!settingsShown) toggleSettingsDiv();
+                    },
+                    onPrev: function(){
+                        if (settingsShown) toggleSettingsDiv();
+                        document.getElementById("system-tab").click();
+                    }
                 },
                 {
-                    element: document.querySelector('#settingsMainControl'),
+                    element: "#settingsMainControl",
                     title: 'System Control',
-                    intro: 'Shutdown or reboot your computer, restart Glimmr, or manually trigger an update.'
+                    container: '#mainContent',
+                    backdropContainer: '#mainContent',
+                    content: 'Shutdown or reboot your computer, restart Glimmr, or manually trigger an update.',
+                    onNext: function(){
+                        document.getElementById("system-tab").click();
+                        scrollSetting(myTour.getStep(myTour.getCurrentStep() + 1));
+                    }
                 },
                 {
-                    element: document.querySelector('#settingsMainUpdates'),
+                    element: "#settingsMainUpdates",
                     title: 'Automatic Updates',
-                    intro: 'Select if and when to automatically install Glimmr updates.'
+                    container: '#mainContent',
+                    backdropContainer: '#mainContent',
+                    placement: 'bottom',
+                    content: 'Select if and when to automatically install Glimmr updates.',
+                    onNext: function(){
+                        document.getElementById("system-tab").click();
+                        scrollSetting(myTour.getStep(myTour.getCurrentStep() + 1));
+                    },
+                    onPrev: function() {
+                        document.getElementById("system-tab").click();
+                        scrollSetting(myTour.getStep(myTour.getCurrentStep() - 1));
+                    }
                 },
                 {
-                    element: document.querySelector('#settingsMainOpenRGB'),
+                    element: "#settingsMainOpenRGB",
                     title: 'OpenRGB Integration',
-                    intro: 'With OpenRGB, you can control a massive array of RGB PC Peripherals. Enter the IP and port here to enable.'
+                    container: '#mainContent',
+                    backdropContainer: '#mainContent',
+                    placement: 'top',
+                    content: 'With OpenRGB, you can control a massive array of RGB PC Peripherals. Enter the IP and port here to enable.',
+                    onNext: function(){
+                        document.getElementById("capture-tab").click();
+                        scrollSetting(myTour.getStep(myTour.getCurrentStep() + 1));
+                    },
+                    onPrev: function() {
+                        document.getElementById("system-tab").click();
+                        scrollSetting(myTour.getStep(myTour.getCurrentStep() - 1));
+                    }
                 },
                 {
-                    element: document.querySelector('#settingsCaptureSource'),
+                    element: "#settingsCaptureSource",
                     title: 'Capture Settings',
-                    intro: 'Here, you can select the capture source/mode, as well as other settings related to each mode.'
+                    container: '#mainContent',
+                    backdropContainer: '#mainContent',
+                    placement: 'bottom',
+                    content: 'Here, you can select the capture source/mode, as well as other settings related to each mode.',
+                    onNext: function(){
+                        document.getElementById("capture-tab").click();
+                        scrollSetting(myTour.getStep(myTour.getCurrentStep() + 1));
+                    },
+                    onPrev: function() {
+                        document.getElementById("system-tab").click();
+                        scrollSetting(myTour.getStep(myTour.getCurrentStep() - 1));
+                    }
                 },
                 {
-                    element: document.querySelector('#settingsCaptureStream'),
+                    element: "#settingsCaptureStream",
                     title: 'Streaming Settings',
-                    intro: 'Similarly, you can select the stream source/mode here, as well as other settings related to each mode, if applicable.'
+                    container: '#mainContent',
+                    backdropContainer: '#mainContent',
+                    placement: 'bottom',
+                    content: 'Similarly, you can select the stream source/mode here, as well as other settings related to each mode, if applicable.',
+                    onNext: function(){
+                        document.getElementById("capture-tab").click();
+                        scrollSetting(myTour.getStep(myTour.getCurrentStep() + 1));
+                    },
+                    onPrev: function() {
+                        document.getElementById("capture-tab").click();
+                        scrollSetting(myTour.getStep(myTour.getCurrentStep() - 1));
+                    }
                 },
                 {
-                    element: document.querySelector('#settingsCaptureLed'),
+                    element: "#settingsCaptureLed",
                     title: 'LED Dimensions',
-                    intro: 'The values set here determine the overall size of the "master grid" used to divide up the screen edges for LED strips.'
+                    container: '#mainContent',
+                    backdropContainer: '#mainContent',
+                    content: 'The values set here determine the overall size of the "master grid" used to divide up the screen edges for LED strips.',
+                    onNext: function(){
+                        document.getElementById("capture-tab").click();
+                        scrollSetting(myTour.getStep(myTour.getCurrentStep() + 1));
+                    },
+                    onPrev: function() {
+                        document.getElementById("capturem-tab").click();
+                        scrollSetting(myTour.getStep(myTour.getCurrentStep() - 1));
+                    }
                 },
                 {
-                    element: document.querySelector('#settingsCaptureSector'),
+                    element: "#settingsCaptureSector",
                     title: 'Sector Dimensions',
-                    intro: 'The values set here determine the overall size of the "master grid" used to divide up the screen edges for single-color devices, like Hue bulbs or a single Nanoleaf panel.'
+                    container: '#mainContent',
+                    backdropContainer: '#mainContent',
+                    content: 'The values set here determine the overall size of the "master grid" used to divide up the screen edges for single-color devices, like Hue bulbs or a single Nanoleaf panel.',
+                    onNext: function(){
+                        scrollElement(myTour.getStep(myTour.getCurrentStep() + 1));
+                    },
+                    onPrev: function() {
+                        document.getElementById("capture-tab").click();
+                        scrollSetting(myTour.getStep(myTour.getCurrentStep() - 1));
+                    }
                 },
                 {
-                    element: document.getElementById('devCard'),
+                    element: "#devCard",
                     title: 'This is a device',
-                    intro: 'Here you can enable and configure various settings for each device discovered by Glimmr.'
+                    content: 'Here you can enable and configure various settings for each device discovered by Glimmr.',
+                    onPrev: function() {
+                        document.getElementById("capture-tab").click();
+                        scrollSetting(myTour.getStep(myTour.getCurrentStep() - 1));
+                    },
+                    onNext: function() {
+                        scrollElement(myTour.getStep(myTour.getCurrentStep() + 1));
+                    }
                 },
                 {
-                    element: document.querySelector('#demoIcon'),
+                    element: "#demoIcon",
                     title: 'Click me!',
-                    intro: 'Click any device icon in order to locate the device.'
+                    content: 'Click any device icon in order to locate the device.'
                 },
                 {
-                    element: document.querySelector('#devEnableBtn'),
+                    element: "#devEnableBtn",
                     title: 'Enable/Disable Device Streaming',
-                    intro: 'Click here to enable or disable streaming to this device.'
+                    content: 'Click here to enable or disable streaming to this device.'
                 },
                 {
-                    element: document.querySelector('#devPrefBtn'),
+                    element: "#devPrefBtn",
                     title: 'Device Settings',
-                    intro: 'Each device has a unique group of settings depending on what it does. Clicking here will open the device settings.'
+                    content: 'Each device has a unique group of settings depending on what it does. Clicking here will open the device settings.',
+                    onNext: function(){
+                        deviceData = JSON.parse(devJson);
+                        if (!expanded) showDeviceCard(document.getElementById("devPrefBtn"));
+                    }
+                
                 },
                 {
-                    element: document.querySelector('#blank'),
-                    title: '',
-                    intro: ''
-                },
-                {
-                    element: document.querySelector('#mapDiv'),
+                    element: "#mapWrap",
                     title: 'Element mapping',
-                    intro: 'Every device in Glimmr has a mapping section where you can preview the light data in relation to the screen.'
+                    content: 'Every device in Glimmr has a mapping section where you can preview the light data in relation to the screen.',
+                    onNext: function() {
+                        scrollDevPref(myTour.getStep(myTour.getCurrentStep() + 1))
+                    },
+                    onPrev: function() {
+                        closeCard();
+                    }
                 },
                 {
-                    element: document.querySelector('input[data-property="Offset"]'),
+                    element: '#Offset',
                     title: 'LED Offset',
-                    intro: 'The offset controls how many leds to skip from the start of the strip, allowing you to segment strips as needd.'
+                    content: 'The offset controls how many leds to skip from the start of the strip, allowing you to segment strips as needd.',
+                    onNext: function() {
+                        scrollDevPref(myTour.getStep(myTour.getCurrentStep() + 1))
+                    },
+                    onPrev: function() {
+                        scrollDevPref(myTour.getStep(myTour.getCurrentStep() - 1))
+                    }
+                },
+                {
+                    element: '#LedCount',
+                    title: 'LED Offset',
+                    content: 'The offset controls how many leds to skip from the start of the strip, allowing you to segment strips as needd.',
+                    placement: 'left',
+                    onNext: function() {
+                        scrollDevPref(myTour.getStep(myTour.getCurrentStep() + 1))
+                    },
+                    onPrev: function() {
+                        scrollDevPref(myTour.getStep(myTour.getCurrentStep() - 1))
+                    }
                 }
             ]
-        })
-        .onbeforechange(function(targetElement) {
-            checkIntroStep(targetElement);
-        }).onexit(function (){
-            demoLoaded = false;  
-        }).oncomplete(function (){
-            demoLoaded = false;  
-        }).start();    
+    });
+    myTour.init();
+
+    // Start the tour
+    myTour.start();
 }
 
+function scrollSetting(step){
+    if (!settingsShown) toggleSettingsDiv();    
+    let elem = document.querySelector(step.element);
+    let parent = document.getElementById("mainContent");
+    let topPos = elem.offsetTop;
+    console.log("ELEMN", elem);
+    console.log("PARENT: ", parent);
+    console.log("TOP: ", topPos);
+    parent.scrollTop = topPos;
+}
 
-function checkIntroStep(targetElement) {
-    console.log("On change",targetElement);
-    if (!isValid(targetElement.id)) return;    
-    // Open settings tab
-    if (targetElement.id.includes("settings")) {
-        if (!settingsShown) {
-            console.log("Showing settings...");
-            toggleSettingsDiv();
-        }
-    } else {
-        console.log("Settings should already be closed??");
-        if (settingsShown) {
-            console.log("Closing settings?");
-            toggleSettingsDiv();
-        }
-    }
-        
-    
-    if (targetElement.id === "refreshBtn") {
-        //targetElement.click();
-    }
-    
-    if (targetElement.id === "blank") {
-        console.log("Creating demo device card.");
-        let devJson = '{"AutoBrightnessLevel":true,"FixGamma":true,"AblMaxMilliamps":5000,"GpioNumber":18,"LedCount":150,"MilliampsPerLed":25,"Offset":50,"StartupAnimation":0,"StripType":0,"Name":"Demo LED Strip","Id":"-1","Tag":"Led","IpAddress":"","Brightness":100,"Enable":false,"LastSeen":"08/05/2021 13:28:53","KeyProperties":[{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"","ValueName":"ledmap","ValueType":"ledmap"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Led Offset","ValueName":"Offset","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Led Count","ValueName":"LedCount","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Fix Gamma","ValueName":"FixGamma","ValueType":"check"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Enable Auto Brightness","ValueName":"AutoBrightnessLevel","ValueType":"check"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Milliamps per led","ValueName":"MilliampsPerLed","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Total Max Milliamps","ValueName":"AblMaxMilliamps","ValueType":"text"}]}';
-        deviceData = JSON.parse(devJson);
-        showDeviceCard(document.getElementById("devPrefBtn")).then(function () {
-            //introJs().exit();
-            introJs().goToStep(17).start();    
-        });        
-    }
+function scrollElement(step) {
+    if (settingsShown) toggleSettingsDiv();
+    let elem = document.querySelector(step.element);
+    let parent = document.getElementById("mainContent");
+    let topPos = elem.offsetTop;
+    console.log("ELEMN", elem);
+    console.log("PARENT: ", parent);
+    console.log("TOP: ", topPos);
+    parent.scrollTop = topPos;
+}
 
-    if (targetElement.id.includes("settingsMain")) {
-        console.log("Loading main tab...");
-        document.getElementById("system-tab").click();
-    }
-    
-    if (targetElement.id.includes("settingsCapture")) {
-        console.log("Loading capture tab...");
-        document.getElementById("capture-tab").click();
-    }
-
-    if (targetElement.id.includes("settingsAudio")) {
-        console.log("Loading audio tab...");
-        document.getElementById("audio-tab").click();
-    }   
+function scrollDevPref(step) {
+    let elem = document.querySelector(step.element);
+    let parent = document.querySelector("#devCard.container-fluid");
+    let topPos = elem.offsetTop;
+    console.log("ELEMN", elem);
+    console.log("PARENT: ", parent);
+    console.log("TOP: ", topPos);
+    parent.scrollTop = topPos;
 }
 
 
@@ -1857,6 +1971,7 @@ function createDeviceSettings() {
     mapCol.appendChild(mapWrap);
     settingsDiv.appendChild(linkCol);
     settingsDiv.appendChild(mapCol);
+    if (deviceData === undefined) deviceData = JSON.parse(devJson);
     console.log("Loading device data: ", deviceData);   
     let props = deviceData["KeyProperties"];
     if (isValid(props)) {
@@ -1876,7 +1991,6 @@ function createDeviceSettings() {
             let propertyName = prop["ValueName"];
             let elem, se;
             let value = deviceData[propertyName];
-            
             switch(prop["ValueType"]) {
                 case "text":
                     elem = new SettingElement(prop["ValueLabel"], "text", id, propertyName, value);
@@ -1916,6 +2030,8 @@ function createDeviceSettings() {
             if (isValid(elem)) {
                 elem.isDevice = true;
                 se = createSettingElement(elem);
+                if (demoLoaded) se.id = propertyName;
+
                 row.appendChild(se);
             }
         }

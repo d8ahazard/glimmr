@@ -18,14 +18,11 @@
     background: #1c1c1c !important;
 }
 
-body, div:not(.sector):not(.led):not(.sector2):not(.modal):not(.modal-dialog):not(.sectorMap):not(#ledMap):not(.bg-light):not(.btn-clear):not(#nanoPreview):not(.linkImg):not(#RegionSelect *):not(.introjs-helperLayer), .nav-link {
+body, div:not(.sector):not(.led):not(.sector2):not(.modal):not(.modal-dialog):not(.sectorMap):not(#ledMap):not(.bg-light):not(.btn-clear):not(#nanoPreview):not(.linkImg):not(#RegionSelect *):not(.tour-backdrop), .nav-link {
     color: #c4c4c4 !important;
     background: #232323;    
 }
 
-.introjs-helperLayer {
-    box-shadow: rgb(126 126 126 / 80%) 0px 0px 1px 2px, rgb(99 98 98 / 50%) 0px 0px 0px 5000px !important;
-}
 .lds-ellipsis {
     background: #232323 !important;
     color: #c4c4c4 !important;
