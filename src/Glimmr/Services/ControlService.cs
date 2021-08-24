@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
@@ -300,7 +301,7 @@ v. {version}
 			// This should keep our socket from doing bad things?
 			UdpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout,30);
 			UdpClient.Client.Blocking = false;
-			UdpClient.DontFragment = true;
+			if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) UdpClient.DontFragment = true;
 			MulticastService = new MulticastService();
 			ServiceDiscovery = new ServiceDiscovery(MulticastService);
 			LoadAgents();
