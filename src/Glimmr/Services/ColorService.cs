@@ -278,6 +278,7 @@ namespace Glimmr.Services {
 				}
 				_watch.Reset();
 			} else {
+				if (_autoDisabled) return;
 				if (!_watch.IsRunning)_watch.Restart();
 				if (_watch.ElapsedMilliseconds >= _autoDisableDelay * 1000f) {
 					_autoDisabled = true;
