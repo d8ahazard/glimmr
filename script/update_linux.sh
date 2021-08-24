@@ -30,7 +30,6 @@ echo "SERVICE STOPPED!" >> $log
 
 # Fetch changes from github repo
 cd /home/glimmrtv/glimmr || exit
-git stash
 git checkout $branch >> $log
 git fetch && git pull >> $log
 
