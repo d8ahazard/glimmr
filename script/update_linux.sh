@@ -35,7 +35,7 @@ git fetch && git pull >> $log
 
 # Build latest version
 echo "Building glimmr using profile $PUBPROFILE..." >> $log
-/opt/dotnet/dotnet publish /home/glimmrtv/glimmr/src/Glimmr.csproj /p:PublishProfile=$PUBPROFILE -o /home/glimmrtv/glimmr/bin/
+/opt/dotnet/dotnet publish /home/glimmrtv/glimmr/src/Glimmr/Glimmr.csproj /p:PublishProfile=$PUBPROFILE -o /home/glimmrtv/glimmr/bin/
 if [ -d "/home/glimmrtv/glimmr/lib/$PUBPROFILE/" ]
   then
     cp -r /home/glimmrtv/glimmr/lib/$PUBPROFILE/* /usr/lib
