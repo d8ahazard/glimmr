@@ -580,8 +580,6 @@ namespace Glimmr.Services {
 			}
 
 			if (ColorSendEventAsync != null) {
-				CancellationTokenSource cts = new();
-				cts.CancelAfter(TimeSpan.FromMilliseconds(33));
 				try {
 					if (ColorSendEventAsync != null) {
 						await ColorSendEventAsync

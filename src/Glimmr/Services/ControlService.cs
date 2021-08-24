@@ -297,6 +297,8 @@ v. {version}
 			// Init UDP client
 			UdpClient = new UdpClient {Ttl = 5};
 			UdpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+			// This should keep our socket from doing bad things?
+			UdpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout,30);
 			UdpClient.Client.Blocking = false;
 			UdpClient.DontFragment = true;
 			MulticastService = new MulticastService();

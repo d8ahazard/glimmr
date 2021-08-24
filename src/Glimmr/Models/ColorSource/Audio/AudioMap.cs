@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using Glimmr.Models.Util;
-using Newtonsoft.Json;
 using Serilog;
 
 #endregion

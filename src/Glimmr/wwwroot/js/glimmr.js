@@ -1142,6 +1142,16 @@ function showIntro() {
                     element: document.querySelector('#blank'),
                     title: '',
                     intro: ''
+                },
+                {
+                    element: document.querySelector('#mapDiv'),
+                    title: 'Element mapping',
+                    intro: 'Every device in Glimmr has a mapping section where you can preview the light data in relation to the screen.'
+                },
+                {
+                    element: document.querySelector('input[data-property="Offset"]'),
+                    title: 'LED Offset',
+                    intro: 'The offset controls how many leds to skip from the start of the strip, allowing you to segment strips as needd.'
                 }
             ]
         })
@@ -1153,35 +1163,6 @@ function showIntro() {
             demoLoaded = false;  
         }).start();    
 }
-
-function showIntroTwo() {
-    introJs().exit();
-    demoLoaded = false;
-    console.log("Creating demo device card.");
-    let devJson = '{"AutoBrightnessLevel":true,"FixGamma":true,"AblMaxMilliamps":5000,"GpioNumber":18,"LedCount":300,"MilliampsPerLed":25,"Offset":0,"StartupAnimation":0,"StripType":0,"Name":"Demo LED Strip","Id":"-1","Tag":"Led","IpAddress":"","Brightness":100,"Enable":false,"LastSeen":"08/05/2021 13:28:53","KeyProperties":[{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"","ValueName":"ledmap","ValueType":"ledmap"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Led Offset","ValueName":"Offset","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Led Count","ValueName":"LedCount","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Fix Gamma","ValueName":"FixGamma","ValueType":"check"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Enable Auto Brightness","ValueName":"AutoBrightnessLevel","ValueType":"check"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Milliamps per led","ValueName":"MilliampsPerLed","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Total Max Milliamps","ValueName":"AblMaxMilliamps","ValueType":"text"}]}';
-    deviceData = JSON.parse(devJson);
-    showDeviceCard(document.getElementById("devPrefBtn")).then(function (){
-        introJs().setOptions({
-            disableInteraction: false,
-            steps: [
-                {
-                    element: document.querySelector('#mapDiv'),
-                    title: 'Element mapping',
-                    intro: 'Every device in Glimmr has a mapping section where you can preview the light data in relation to the screen.'
-                }
-            ]
-        })
-            .onbeforechange(function(targetElement) {
-                checkIntroStepTwo(targetElement);
-            }).onexit(function (){
-            demoLoaded = false;
-        }).oncomplete(function (){
-            demoLoaded = false;
-        }).start();    
-    });
-    
-}
-
 
 
 function checkIntroStep(targetElement) {
@@ -1200,26 +1181,20 @@ function checkIntroStep(targetElement) {
             toggleSettingsDiv();
         }
     }
-    
-    if (targetElement.classList.contains("devPrefs")) {
-        if (!expanded) {
-            let devJson = '{"AutoBrightnessLevel":true,"FixGamma":true,"AblMaxMilliamps":5000,"GpioNumber":18,"LedCount":300,"MilliampsPerLed":25,"Offset":0,"StartupAnimation":0,"StripType":0,"Name":"Demo LED Strip","Id":"-1","Tag":"Led","IpAddress":"","Brightness":100,"Enable":false,"LastSeen":"08/05/2021 13:28:53","KeyProperties":[{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"","ValueName":"ledmap","ValueType":"ledmap"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Led Offset","ValueName":"Offset","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Led Count","ValueName":"LedCount","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Fix Gamma","ValueName":"FixGamma","ValueType":"check"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Enable Auto Brightness","ValueName":"AutoBrightnessLevel","ValueType":"check"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Milliamps per led","ValueName":"MilliampsPerLed","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Total Max Milliamps","ValueName":"AblMaxMilliamps","ValueType":"text"}]}';
-            deviceData = JSON.parse(devJson);
-            let target = document.getElementById("devCard");
-            showDeviceCard(target);    
-        }        
-    } else {
-        if (expanded) {
-            close();
-        }
-    }
+        
     
     if (targetElement.id === "refreshBtn") {
         //targetElement.click();
     }
     
     if (targetElement.id === "blank") {
-        showIntroTwo();
+        console.log("Creating demo device card.");
+        let devJson = '{"AutoBrightnessLevel":true,"FixGamma":true,"AblMaxMilliamps":5000,"GpioNumber":18,"LedCount":150,"MilliampsPerLed":25,"Offset":50,"StartupAnimation":0,"StripType":0,"Name":"Demo LED Strip","Id":"-1","Tag":"Led","IpAddress":"","Brightness":100,"Enable":false,"LastSeen":"08/05/2021 13:28:53","KeyProperties":[{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"","ValueName":"ledmap","ValueType":"ledmap"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Led Offset","ValueName":"Offset","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Led Count","ValueName":"LedCount","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Fix Gamma","ValueName":"FixGamma","ValueType":"check"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Enable Auto Brightness","ValueName":"AutoBrightnessLevel","ValueType":"check"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Milliamps per led","ValueName":"MilliampsPerLed","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Total Max Milliamps","ValueName":"AblMaxMilliamps","ValueType":"text"}]}';
+        deviceData = JSON.parse(devJson);
+        showDeviceCard(document.getElementById("devPrefBtn")).then(function () {
+            //introJs().exit();
+            introJs().goToStep(17).start();    
+        });        
     }
 
     if (targetElement.id.includes("settingsMain")) {
@@ -1238,10 +1213,7 @@ function checkIntroStep(targetElement) {
     }   
 }
 
-function checkIntroStepTwo(targetElement) {
-    console.log("On change",targetElement);
-    
-}
+
 function loadTheme(theme) {
     let head = document.getElementsByTagName("head")[0];
     if (theme === "light") {

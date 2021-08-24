@@ -564,7 +564,7 @@ namespace Glimmr.Models {
 			_allBlack = false;
 			// Check letterboxing
 			if (_cropLetter) {
-				for (var y = 0; y < hStart; y+=2) {
+				for (var y = 0; y < hStart; y++) {
 					var c1 = gr.Row(height - y);
 					var c2 = gr.Row(y);
 					var b1 = c1.GetRawData();
@@ -583,7 +583,7 @@ namespace Glimmr.Models {
 
 			// Check pillarboxing
 			if (_cropPillar) {
-				for (var x = 0; x < wStart; x+=2) {
+				for (var x = 0; x < wStart; x++) {
 					var c1 = gr.Col(width - x);
 					var c2 = gr.Col(x);
 					var b1 = c1.GetRawData();
@@ -657,8 +657,8 @@ namespace Glimmr.Models {
 		}
 
 		private Rectangle[] DrawGrid() {
-			var lOffset = _lCropPixels;
-			var pOffset = pCropPixels;
+			int lOffset = _lCropPixels == 0 ? _lCropPixels : _lCropPixels + (int) _borderHeight + 5;
+			int pOffset = pCropPixels == 0 ? pCropPixels : pCropPixels + (int)_borderWidth + 5;
 			var output = new Rectangle[_ledCount];
 
 			// Top Region

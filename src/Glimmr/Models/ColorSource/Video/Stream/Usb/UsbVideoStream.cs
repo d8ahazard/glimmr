@@ -1,11 +1,9 @@
 ﻿#region
 
 using System;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
-using Emgu.CV.Cuda;
 using Emgu.CV.CvEnum;
 using Glimmr.Models.Util;
 using Serilog;
@@ -18,11 +16,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 		private FrameSplitter? _splitter;
 		private VideoCapture? _video;
 		private int _inputStream;
-		
 
-		public UsbVideoStream() {
-			//Refresh();
-		}
 
 		public void Dispose() {
 			if (_disposed) {
@@ -64,10 +58,14 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 				SetVideo();
 			}
 
+			if (_video == null) {
+				Log.Warning("Unable to set video stream.");
+				return Task.CompletedTask;
+			}
 			var fourCc = _video.GetCaptureProperty(CapProp.FourCC);
 			var fps = _video.GetCaptureProperty(CapProp.Fps);
 			double d5 = VideoWriter.Fourcc('M', 'J', 'P', 'G');
-			if (fourCc != d5 || fps != 60) {
+			if (Math.Abs(fourCc - d5) > float.MinValue || Math.Abs(fps - 60) > float.MinValue) {
 				Log.Information("Couldn't set fc or fps, re-creating.");
 				SetVideo();
 			}
