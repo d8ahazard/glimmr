@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Enums;
@@ -44,7 +45,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 			_uc = new UdpClient(8889) {Ttl = 5, Client = {ReceiveBufferSize = 2000}};
 			_uc.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 			_uc.Client.Blocking = false;
-			_uc.DontFragment = true;
+			if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) _uc.DontFragment = true;
 			var sd = DataUtil.GetSystemData();
 			_devMode = (DeviceMode) sd.DeviceMode;
 			_sd = sd;
