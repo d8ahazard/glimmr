@@ -1,6 +1,8 @@
 ﻿#region
 
 using System;
+using System.Collections.Generic;
+using System.IO.Ports;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Services;
@@ -19,7 +21,8 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			Log.Debug("Adalight: Discovery started.");
 			var discoTask = Task.Run(() => {
 				try {
-					var devs = AdalightNet.Adalight.FindDevices();
+					var devs = FindDevices();
+					Log.Debug("Found" + devs.Count + " devices.");
 					foreach (var dev in devs) {
 						var count = dev.Value.Key;
 						var bri = dev.Value.Value;
@@ -55,6 +58,36 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			}, ct);
 			await discoTask;
 			Log.Debug("Adalight: Discovery complete.");
+		}
+		private static Dictionary<int, KeyValuePair<int, int>> FindDevices()
+		{
+			Dictionary<int, KeyValuePair<int, int>> dictionary = new();
+			foreach (string portName in SerialPort.GetPortNames()){
+				Log.Debug("Testing port: " + portName);
+				try
+				{
+					int key = int.Parse(portName.Replace("COM", ""));
+					SerialPort serialPort = new()
+					{
+						PortName = portName,
+						BaudRate = 115200,
+						Parity = Parity.None,
+						DataBits = 8,
+						StopBits = StopBits.One,
+						ReadTimeout = 1500
+					};
+					serialPort.Open();
+					var line = serialPort.ReadLine();
+					Log.Debug("Response line: " + line);
+					if (line.Substring(0, 3) == "Ada")
+						dictionary[key] = new KeyValuePair<int, int>(0, 0);
+					serialPort.Close();
+				}
+				catch (Exception ex)
+				{
+				}
+			}
+			return dictionary;
 		}
 	}
 }
