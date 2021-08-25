@@ -118,30 +118,30 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			if ((StripMode) StripMode == Enums.StripMode.Single) {
 				return new[] {
 					new("sectormap", "sectormap", ""),
-					new("LedCount", "number", "Led Count"),
-					multiplier,
 					new("StripMode", "select", "Strip Mode", new Dictionary<string, string> {
 						["0"] = "Normal",
 						["1"] = "Sectored",
 						["2"] = "Loop (Play Bar)",
 						["3"] = "Single Color"
 					}),
-					new("ReverseStrip", "check", "Reverse Strip Direction")
+					new("LedCount", "number", "Led Count"),
+					new("ReverseStrip", "check", "Reverse Strip Direction"),
+					multiplier
 				};
 			}
 
 			return new[] {
 				new("ledmap", "ledmap", ""),
-				new("Offset", "number", "Strip Offset"),
-				new("LedCount", "number", "Led Count"),
-				multiplier,
 				new("StripMode", "select", "Strip Mode", new Dictionary<string, string> {
 					["0"] = "Normal",
 					["1"] = "Sectored",
 					["2"] = "Loop (Play Bar)",
 					["3"] = "Single Color"
 				}),
-				new("ReverseStrip", "check", "Reverse Strip"){ValueHint = "Reverse the order of the leds to clockwise (facing screen)."}
+				new("LedCount", "number", "Led Count"),
+				new("Offset", "number", "Strip Offset"),
+				new("ReverseStrip", "check", "Reverse Strip"){ValueHint = "Reverse the order of the leds to clockwise (facing screen)."},
+				multiplier
 			};
 		}
 	}

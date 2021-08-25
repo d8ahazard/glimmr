@@ -76,8 +76,8 @@ namespace Glimmr.Models.ColorTarget.Led {
 		[JsonProperty]
 		public SettingsProperty[] KeyProperties { get; set; } = {
 			new("ledmap", "ledmap", ""),
-			new("Offset", "text", "Led Offset"),
 			new("LedCount", "text", "Led Count"),
+			new("Offset", "text", "Led Offset"),
 			new("LedMultiplier", "number", "LED Multiplier") {
 				ValueMin = "-5", ValueStep = "1", ValueMax="5", ValueHint = "Positive values to multiply (skip), negative values to divide (duplicate)."
 			},

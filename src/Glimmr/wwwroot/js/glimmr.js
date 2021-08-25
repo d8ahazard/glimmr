@@ -398,7 +398,7 @@ function setSocketListeners() {
             //Show intro here
             if (!demoLoaded) {
                 demoLoaded = true;
-                //showIntro();
+                showIntro();
             }
         }
     });
@@ -2110,7 +2110,8 @@ function createSettingElement(settingElement) {
     
     if (isValid(element)) {       
         if (settingElement.isDevice) { 
-            element.classList.add("devSetting");            
+            element.classList.add("devSetting");
+            element.classList.add("form-control");
         }
         element.setAttribute("data-property", settingElement.property);
         element.setAttribute("data-object", settingElement.object);
@@ -2969,6 +2970,7 @@ function createHueMap() {
     groupSelect.setAttribute("data-property", "SelectedGroup");
     groupSelect.setAttribute("data-object", deviceData["Id"]);
     groupSelect.classList.add("devSetting");
+    groupSelect.classList.add("form-control");
     let defaultOption = document.createElement("option");
     defaultOption.textContent = "";
     defaultOption.value = "-1";
@@ -2997,6 +2999,8 @@ function createHueMap() {
     // Get the main light group
     let lightGroup = document.createElement("div");
     lightGroup.classList.add("row");
+    lightGroup.classList.add("justify-content-center");
+    lightGroup.classList.add("col-12");
     if (!group.hasOwnProperty('lights')) return false;
     const ids = group["lights"];
 
@@ -3114,7 +3118,7 @@ function createHueMap() {
 
                 // Create the div for the other divs
                 const lightDiv = document.createElement('div');
-                lightDiv.className += "delSel col-12 col-md-6 col-xl-3 justify-content-center form-group";
+                lightDiv.className += "delSel col-12 col-md-6 justify-content-center form-group";
                 lightDiv.id = id;
                 lightDiv.setAttribute('data-name', name);
                 lightDiv.setAttribute('data-id', id);

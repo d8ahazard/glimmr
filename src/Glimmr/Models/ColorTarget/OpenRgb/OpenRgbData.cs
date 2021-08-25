@@ -135,10 +135,10 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 		public SettingsProperty[] KeyProperties { get; set; } = {
 			new("ledmap", "ledmap", ""),
+			new("Offset", "number", "LED Offset"),
 			new("LedMultiplier", "number", "LED Multiplier") {
-			ValueMin = "-10", ValueStep = "1"
+				ValueMin = "-5", ValueStep = "1", ValueMax="5", ValueHint = "Positive values to multiply (skip), negative values to divide (duplicate)."
 			},
-			new("Offset", "number", "Strip Offset"),
 			new("Rotation", "select", "Rotation", new Dictionary<string, string> {
 				["0"] = "Normal",
 				["90"] = "90 Degrees",

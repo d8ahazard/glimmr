@@ -77,6 +77,13 @@ input.devSetting {
     padding-left: 5px;
 }
 
+.header {
+    position: absolute;
+    z-index: 1;
+    top: 23px;
+    background: none !important;
+}
+
 @keyframes rotation {
     from {
         transform: rotate(0deg);
