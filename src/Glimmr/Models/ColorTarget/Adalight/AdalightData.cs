@@ -28,9 +28,9 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int Offset { get; set; }
 
-		[DefaultValue(1)]
+		[DefaultValue("COM1")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int Port { get; set; }
+		public string Port { get; set; }
 
 		[DefaultValue(115200)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -40,8 +40,8 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 
 
 		public AdalightData() {
-			Port = 3;
-			Name = $"Adalight - COM{Port}";
+			Port = "COM1";
+			Name = $"Adalight - {Port}";
 			Id = Name;
 			Brightness = 100;
 			LedCount = 0;
@@ -50,9 +50,9 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 		}
 
-		public AdalightData(int port, int ledCount) {
+		public AdalightData(string port, int ledCount) {
 			Port = port;
-			Name = $"Adalight - COM{port}";
+			Name = $"Adalight - {port}";
 			Id = Name;
 			Brightness = 100;
 			LedCount = ledCount;

@@ -59,14 +59,13 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			await discoTask;
 			Log.Debug("Adalight: Discovery complete.");
 		}
-		private static Dictionary<int, KeyValuePair<int, int>> FindDevices()
+		private static Dictionary<string, KeyValuePair<int, int>> FindDevices()
 		{
-			Dictionary<int, KeyValuePair<int, int>> dictionary = new();
+			Dictionary<string, KeyValuePair<int, int>> dictionary = new();
 			foreach (string portName in SerialPort.GetPortNames()){
 				Log.Debug("Testing port: " + portName);
 				try
 				{
-					int key = int.Parse(portName.Replace("COM", ""));
 					SerialPort serialPort = new()
 					{
 						PortName = portName,
@@ -80,8 +79,9 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 					if (serialPort.IsOpen) {
 						var line = serialPort.ReadLine();
 						Log.Debug("Response line: " + line);
-						if (line.Substring(0, 3) == "Ada")
-							dictionary[key] = new KeyValuePair<int, int>(0, 0);
+						if (line.Substring(0, 3) == "Ada") {
+							dictionary[portName] = new KeyValuePair<int, int>(0, 0);
+						}
 						serialPort.Close();
 					} else {
 						Log.Debug($"Unable to open port {portName}.");
