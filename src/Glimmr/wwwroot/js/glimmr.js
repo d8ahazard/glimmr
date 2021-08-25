@@ -40,9 +40,7 @@ let fpsCounter;
 let nanoTarget, nanoSector;
 let demoLoaded = false;
 let myTour;
-let ledData = '{"AutoBrightnessLevel":true,"FixGamma":true,"AblMaxMilliamps":5000,"GpioNumber":18,"LedCount":150,"MilliampsPerLed":25,"Offset":50,"StartupAnimation":0,"StripType":0,"Name":"Demo LED Strip","Id":"-1","Tag":"Led","IpAddress":"","Brightness":100,"Enable":false,"LastSeen":"08/05/2021 13:28:53","KeyProperties":[{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"","ValueName":"ledmap","ValueType":"ledmap"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Led Offset","ValueName":"Offset","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Led Count","ValueName":"LedCount","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Fix Gamma","ValueName":"FixGamma","ValueType":"check"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Enable Auto Brightness","ValueName":"AutoBrightnessLevel","ValueType":"check"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Milliamps per led","ValueName":"MilliampsPerLed","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Total Max Milliamps","ValueName":"AblMaxMilliamps","ValueType":"text"}]}';
-let wledData = '{"AutoDisable":true,"ControlStrip":false,"ReverseStrip":false,"SubSectors":{},"Brightness":51,"LedCount":88,"LedMultiplier":1,"Offset":230,"StripMode":0,"TargetSector":0,"Sectors":[],"Tag":"Wled","State":{"info":{"live":false,"str":false,"freeheap":22984,"fxcount":118,"lwip":1,"opt":127,"palcount":56,"udpport":21324,"uptime":30759,"vid":2104020,"ws":0,"leds":{"rgbw":false,"seglock":false,"wv":false,"count":88,"maxpwr":850,"maxseg":12,"pwr":188,"pin":[2]},"arch":"esp8266","brand":"WLED","core":"2_7_4_7","lip":null,"lm":null,"mac":"000000000000","name":"Demo WLED","product":"FOSS","ver":"0.12.0","wifi":{"channel":6,"rssi":-64,"signal":72,"bssid":"3C:28:6D:B6:13:69"}},"state":{"on":false,"ccnf":{"max":5,"min":1,"time":12},"bri":128,"lor":0,"mainseg":0,"pl":-1,"ps":-1,"pss":0,"transition":7,"seg":[{"mi":false,"on":true,"rev":false,"sel":true,"bri":255,"fx":0,"grp":1,"id":0,"ix":128,"len":88,"pal":0,"spc":0,"start":0,"stop":88,"sx":128,"col":[[255,160,0],[0,0,0],[0,0,0]]}],"nl":{"fade":true,"on":false,"dur":0,"mode":1,"tbri":0},"udpn":{"recv":true,"send":false}}},"Name":"Demo WLED","Id":"-2","IpAddress":"192.168.1.54","Enable":true,"LastSeen":"07/30/2021 16:09:39","KeyProperties":[{"Options":{},"ValueLabel":"","ValueMax":"100","ValueMin":"0","ValueName":"ledmap","ValueStep":"1","ValueType":"ledmap"},{"Options":{},"ValueLabel":"Strip Offset","ValueMax":"100","ValueMin":"0","ValueName":"Offset","ValueStep":"1","ValueType":"number"},{"Options":{},"ValueLabel":"Led Count","ValueMax":"100","ValueMin":"0","ValueName":"LedCount","ValueStep":"1","ValueType":"number"},{"Options":{},"ValueLabel":"LED Multiplier","ValueMax":"100","ValueMin":"-10","ValueName":"LedMultiplier","ValueStep":"1","ValueType":"number"},{"Options":{"0":"Normal","1":"Sectored","2":"Loop (Play Bar)","3":"Single Color"},"ValueLabel":"Strip Mode","ValueMax":"100","ValueMin":"0","ValueName":"StripMode","ValueStep":"1","ValueType":"select"},{"Options":{},"ValueLabel":"Reverse Strip Direction","ValueMax":"100","ValueMin":"0","ValueName":"ReverseStrip","ValueStep":"1","ValueType":"check"}]}';
-let nanoData ='{"MirrorX":false,"MirrorY":false,"Rotation":0,"Brightness":2,"GroupNumber":0,"Mode":0,"Port":16021,"Hostname":"Shapes-0000.local","Tag":"Nanoleaf","Token":"redacted","Type":"NL42","Version":"5.2.4","Layout":{"NumPanels":5,"SideLength":0,"PositionData":[{"O":0,"PanelId":17820,"ShapeType":7,"SideLength":67,"TargetSector":31,"X":100,"Y":108},{"O":60,"PanelId":28451,"ShapeType":9,"SideLength":67,"TargetSector":30,"X":34,"Y":147},{"O":120,"PanelId":31543,"ShapeType":8,"SideLength":134,"TargetSector":30,"X":0,"Y":89},{"O":120,"PanelId":27817,"ShapeType":9,"SideLength":67,"TargetSector":29,"X":100,"Y":185},{"O":180,"PanelId":0,"ShapeType":12,"SideLength":0,"TargetSector":-1,"X":100,"Y":40}]},"Name":"Demo Nanoleaf","Id":"-3","IpAddress":"192.168.1.66","Enable":true,"LastSeen":"08/24/2021 15:09:14","KeyProperties":[{"Options":{},"ValueLabel":"","ValueMax":"100","ValueMin":"0","ValueName":"custom","ValueStep":"1","ValueType":"nanoleaf"}]}';
+let ledData = '{"AutoBrightnessLevel":true,"FixGamma":true,"AblMaxMilliamps":5000,"GpioNumber":18,"LedCount":150,"MilliampsPerLed":25,"Offset":50,"StartupAnimation":0,"StripType":0,"Name":"Demo LED Strip","Id":"-1","Tag":"Led","IpAddress":"","Brightness":100,"Enable":false,"LastSeen":"08/05/2021 13:28:53","KeyProperties":[{"Options":{},"ValueLabel":"","ValueHint":"","ValueMax":"100","ValueMin":"0","ValueName":"ledmap","ValueStep":"1","ValueType":"ledmap"},{"Options":{},"ValueLabel":"Led Count","ValueHint":"","ValueMax":"100","ValueMin":"0","ValueName":"LedCount","ValueStep":"1","ValueType":"text"},{"Options":{},"ValueLabel":"Led Offset","ValueHint":"","ValueMax":"100","ValueMin":"0","ValueName":"Offset","ValueStep":"1","ValueType":"text"},{"Options":{},"ValueLabel":"LED Multiplier","ValueHint":"Positive values to multiply (skip), negative values to divide (duplicate).","ValueMax":"5","ValueMin":"-5","ValueName":"LedMultiplier","ValueStep":"1","ValueType":"number"},{"Options":{},"ValueLabel":"Reverse Strip","ValueHint":"Reverse the order of the leds to clockwise (facing screen).","ValueMax":"100","ValueMin":"0","ValueName":"ReverseStrip","ValueStep":"1","ValueType":"check"},{"Options":{},"ValueLabel":"Fix Gamma","ValueHint":"Automatically correct Gamma (recommended)","ValueMax":"100","ValueMin":"0","ValueName":"FixGamma","ValueStep":"1","ValueType":"check"},{"Options":{},"ValueLabel":"Enable Auto Brightness","ValueHint":"Automatically adjust brightness to avoid dropouts.","ValueMax":"100","ValueMin":"0","ValueName":"AutoBrightnessLevel","ValueStep":"1","ValueType":"check"},{"Options":{},"ValueLabel":"Milliamps Per LED","ValueHint":"\'Conservative\' = 25, \'Normal\' = 55","ValueMax":"100","ValueMin":"0","ValueName":"MilliampsPerLed","ValueStep":"1","ValueType":"text"},{"Options":{},"ValueLabel":"Power Supply Voltage","ValueHint":"Total PSU voltage in Milliamps","ValueMax":"100","ValueMin":"0","ValueName":"AblMaxMilliamps","ValueStep":"1","ValueType":"text"}]}';
 let errModal = new bootstrap.Modal(document.getElementById('errorModal'));
 // We're going to create one object to store our stuff, and add listeners for when values are changed.
 let data = {
@@ -398,7 +396,7 @@ function setSocketListeners() {
             //Show intro here
             if (!demoLoaded) {
                 demoLoaded = true;
-                //showIntro();
+                showIntro();
             }
         }
     });
@@ -726,8 +724,6 @@ function handleClick(target) {
                 console.log("Device id: ", devId);
                 deviceData = findDevice(devId);
                 if (devId === "-1") deviceData = JSON.parse(ledData);
-                if (devId === "-2") deviceData = JSON.parse(wledData);
-                if (devId === "-3") deviceData = JSON.parse(nanoData);
                 showDeviceCard(target);
             }
             break;
@@ -1028,11 +1024,7 @@ function showIntro() {
             onStart: function(){
                 console.log("Creating demo device card.");
                 let ledObj = JSON.parse(ledData);
-                let wledObj = JSON.parse(wledData);
-                let nanoObj = JSON.parse(nanoData);
-                loadDevice(nanoObj,true);
-                loadDevice(wledObj,true);
-                loadDevice(ledObj,true);
+                loadDevice(ledObj,true);                
             },
             onEnd: function(){
                 console.log("Removing demo device card.");
@@ -1241,9 +1233,9 @@ function showIntro() {
                     }
                 },
                 {
-                    element: '#Offset',
-                    title: 'LED Offset',
-                    content: 'The offset controls how many leds to skip from the start of the strip, allowing you to segment strips as needd.',
+                    element: '#LedCount',
+                    title: 'LED Count',
+                    content: 'This is the total number of leds in your strip. It can be less than the total number in the grid.',
                     onNext: function() {
                         scrollDevPref(myTour.getStep(myTour.getCurrentStep() + 1))
                     },
@@ -1252,37 +1244,45 @@ function showIntro() {
                     }
                 },
                 {
-                    element: '#LedCount',
+                    element: '#Offset',
                     title: 'LED Offset',
-                    content: 'The offset controls how many leds to skip from the start of the strip, allowing you to segment strips as needd.',
-                    placement: 'left',
+                    content: 'The offset controls how many leds to skip from the start of the strip, allowing you to segment strips as need.',
                     onNext: function() {
-                        closeCard().then(function(){
-                            deviceData = JSON.parse(wledData);
-                            if (!expanded) showDeviceCard(document.getElementById("devPrefBtn"));    
-                        });                        
+                        scrollDevPref(myTour.getStep(myTour.getCurrentStep() + 1))
                     },
                     onPrev: function() {
                         scrollDevPref(myTour.getStep(myTour.getCurrentStep() - 1))
                     }
                 },
                 {
-                    element: "#ReverseStrip",
-                    title: 'This is a device',
-                    content: 'Here you can enable and configure various settings for each device discovered by Glimmr.',
-                    onPrev: function() {
-                        deviceData = JSON.parse(ledData);
-                        closeCard().then(function () {
-                            if (!expanded) showDeviceCard(document.getElementById("devPrefBtn")).then(function(){
-                                scrollSetting(myTour.getStep(myTour.getCurrentStep() - 1));    
-                            });                                
-                        });
-                        
-                    },
+                    element: '#LedMultiplier',
+                    title: 'LED Multiplier',
+                    content: 'The LED Multiplier can be used to adjust for strips or configurations where the number of LEDs' +
+                        'doesn\'t correspond to the number of leds in the grid. By setting this value to a positive number,' +
+                        'the strip will use every N colors from the main color array.' +
+                        '' +
+                        'If set to a negative value, then each color from the main array will be repeated that many times.',
                     onNext: function() {
-                        scrollElement(myTour.getStep(myTour.getCurrentStep() + 1));
+                        closeCard();
+                    },
+                    onPrev: function() {
+                        scrollDevPref(myTour.getStep(myTour.getCurrentStep() - 1));
                     }
                 },
+                {
+                    element:'',
+                    title: 'Tour Complete',
+                    content: 'This completes the tour. Other devices have other settings, but if I were to try covering' +
+                        'everything, you would be sitting here all day. Feel free to play around and look at everything,' +
+                        'and head on over to <a href="https://github.com/d8ahazard/glimmr" target="_blank">the project page</a> to submit' +
+                        'an issue or feature request.',
+                    onPrev: function(){
+                        deviceData = JSON.parse(ledData);
+                        if (!expanded) showDeviceCard(document.getElementById("devPrefBtn")).then(function () {
+                            scrollDevPref(myTour.getStep(myTour.getCurrentStep() - 1));
+                        });
+                    }
+                }
             ]
     });
     myTour.init();

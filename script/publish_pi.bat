@@ -17,6 +17,7 @@ dotnet publish ..\src\Glimmr\Glimmr.csproj /p:PublishProfile=LinuxARM -o ..\src\
 cd ..\src\Glimmr\bin\linuxARM
 IF "%2"=="-j" GOTO JS
 IF "%2"=="-c" GOTO CSS
+IF "%2"=="-w" GOTO WEB
 
 echo Copying new files...
 IF "%3"=="-f" GOTO FULL
@@ -32,11 +33,12 @@ pscp -P 22 -r -pw glimmrtv .\Glimmr glimmrtv@%1:/home/glimmrtv/glimmr/bin/Glimmr
 GOTO NEXT
 :JS
 pscp -P 22 -r -pw glimmrtv .\wwwroot\js\* glimmrtv@%1:/home/glimmrtv/glimmr/bin/wwwroot/js/
-pscp -P 22 -r -pw glimmrtv .\wwwroot\lib\* glimmrtv@%1:/home/glimmrtv/glimmr/bin/wwwroot/lib/
 GOTO END
 :CSS
 pscp -P 22 -r -pw glimmrtv .\wwwroot\css\* glimmrtv@%1:/home/glimmrtv/glimmr/bin/wwwroot/css/
-pscp -P 22 -r -pw glimmrtv .\wwwroot\lib\* glimmrtv@%1:/home/glimmrtv/glimmr/bin/wwwroot/lib/
+GOTO END
+:WEB
+pscp -P 22 -r -pw glimmrtv .\wwwroot\* glimmrtv@%1:/home/glimmrtv/glimmr/bin/wwwroot/
 GOTO END
 :FULL
 pscp -P 22 -r -pw glimmrtv .\* glimmrtv@%1:/home/glimmrtv/glimmr/bin/

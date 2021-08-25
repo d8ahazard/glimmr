@@ -99,9 +99,6 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 			Log.Debug($"Video created, fps and 4cc are {fps} and {fourCc} versus {d5}.");
 			if (fps == 60 && fourCc == d5) {
 				return true;
-			} else {
-				if (fps != 60) Log.Debug("FPS");
-				if (fourCc != d5) Log.Debug("4cc");
 			}
 
 			Log.Warning("Video problems, bob...");

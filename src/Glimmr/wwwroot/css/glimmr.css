@@ -84,6 +84,10 @@ input.devSetting {
     background: none !important;
 }
 
+body, .main, #mainNav, #footer {
+    overflow: hidden !important;
+}
+
 @keyframes rotation {
     from {
         transform: rotate(0deg);
