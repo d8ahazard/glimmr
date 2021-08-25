@@ -1,5 +1,5 @@
 #!/bin/bash
-branch=${1:-"master"}
+branch=${1:-"dev"}
 
 PUBPROFILE="Linux";
 if [ -f "/usr/bin/raspi-config" ] 

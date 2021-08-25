@@ -50,7 +50,7 @@ or "sudo service glimmr stop" respectively.
 Execute the following command. You can replace "dev" with "master" to use the master branch instead.:
 ```
 sudo su
-bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_linux.sh dev)
+bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_linux.sh)
 ```
 
 Note: Glimmr is installed as a service, and can be stopped/started by running "sudo service glimmr start"
