@@ -85,7 +85,7 @@ if [ ! -d "/home/glimmrtv/glimmr" ]
 then
 # Clone glimmr
   echo "Cloning glimmr"
-  git clone https://github.com/d8ahazard/glimmr /home/glimmrtv/glimmr  
+  git clone -b dev https://github.com/d8ahazard/glimmr /home/glimmrtv/glimmr  
 else
   echo "Source exists, updating..."
   cd /home/glimmrtv/glimmr || exit
