@@ -1,6 +1,7 @@
 ﻿#region
 
 using System;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
@@ -45,7 +46,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 		}
 
 		public Task Stop() {
-			_video?.Stop();
+			//_video?.Stop();
 			Dispose();
 			return Task.CompletedTask;
 		}
@@ -58,34 +59,55 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 				SetVideo();
 			}
 
-			if (_video == null) {
-				Log.Warning("Unable to set video stream.");
+			if (CheckVideo()) {
 				return Task.CompletedTask;
 			}
-			var fourCc = _video.GetCaptureProperty(CapProp.FourCC);
-			var fps = _video.GetCaptureProperty(CapProp.Fps);
-			double d5 = VideoWriter.Fourcc('M', 'J', 'P', 'G');
-			if (Math.Abs(fourCc - d5) > float.MinValue || Math.Abs(fps - 60) > float.MinValue) {
-				Log.Information("Couldn't set fc or fps, re-creating.");
-				SetVideo();
+
+			SetVideo();
+			if (!CheckVideo()) {
+				Log.Warning("Still unable to set video.");
 			}
-			
-			Log.Debug($"Video created, fps and 4cc are {fps} and {fourCc}.");
-			//Log.Debug("API is " + _video.BackendName);
-			//Log.Warning(!fourcc ? "FourCC not set." : "FourCC Set.");
-			
-			
+
+
 			return Task.CompletedTask;
 		}
 
 		private void SetVideo() {
-			_video?.Stop();
 			_video?.Dispose();
-			_video = OperatingSystem.IsWindows() ? new VideoCapture(_inputStream,VideoCapture.API.DShow) : new VideoCapture(_inputStream,VideoCapture.API.V4L2);
-			_video.SetCaptureProperty(CapProp.FourCC, VideoWriter.Fourcc('M', 'J', 'P', 'G'));
-			_video.SetCaptureProperty(CapProp.Fps, 60);
-			_video.SetCaptureProperty(CapProp.FrameWidth, 640);
-			_video.SetCaptureProperty(CapProp.FrameHeight, 480);
+			var props = new Tuple<CapProp, int>[] {
+				new(CapProp.FourCC,VideoWriter.Fourcc('M', 'J', 'P', 'G')),
+				new(CapProp.Fps,60),
+				new(CapProp.FrameWidth,640),
+				new(CapProp.FrameHeight,480)
+			};
+			var api = OperatingSystem.IsWindows() ? VideoCapture.API.DShow : VideoCapture.API.V4L2;
+			_video = new VideoCapture(_inputStream, api);
+			foreach (var (prop, val) in props) {
+				_video.SetCaptureProperty(prop, val);
+			}
+		}
+
+		private bool CheckVideo() {
+			if (_video == null) {
+				Log.Warning("Unable to set video stream.");
+				return false;
+			}
+			var fourCc = (int)_video.GetCaptureProperty(CapProp.FourCC);
+			var fps = (int) _video.GetCaptureProperty(CapProp.Fps);
+			var d5 = VideoWriter.Fourcc('M', 'J', 'P', 'G');
+
+			Log.Debug($"Video created, fps and 4cc are {fps} and {fourCc} versus {d5}.");
+			if (fps == 60 && fourCc == d5) {
+				return true;
+			} else {
+				if (fps != 60) Log.Debug("FPS");
+				if (fourCc != d5) Log.Debug("4cc");
+			}
+
+			Log.Warning("Video problems, bob...");
+			_video?.Dispose();
+			_video = null;
+			return false;
 		}
 
 		private void SetFrame(object? sender, EventArgs e) {
@@ -102,13 +124,37 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 			}
 		}
 
+		private void DisposeVideo() {
+			Log.Debug("Disposing video.");
+			try {
+				if (_video != null) {
+					var ptr = _video.Ptr;
+					if (ptr != IntPtr.Zero) {
+						Log.Debug("Releasing cap??");
+						//cveVideoCaptureRelease(ref ptr);
+						Log.Debug("Released");
+					} else {
+						Log.Debug("No pointer.");
+					}
+				} else {
+					Log.Debug("Video is null");
+				}
+
+			} catch (Exception e) {
+				Log.Warning("Exception: " + e.Message);
+			}
+			_video?.Dispose();
+			_video = null;
+		}
 
 		protected virtual void Dispose(bool disposing) {
 			if (!disposing) {
 				return;
 			}
-
-			_video?.Dispose();
+			DisposeVideo();
 		}
+		
+		[DllImport("cvextern", CallingConvention = CallingConvention.Cdecl)]
+		private static extern void cveVideoCaptureRelease(ref IntPtr capture);
 	}
 }

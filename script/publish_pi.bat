@@ -4,10 +4,12 @@ if "%1"=="-h" GOTO HELP
 IF NOT "%2"=="-s" GOTO BUILD
 echo Stopping services
 plink -no-antispoof -pw glimmrtv glimmrtv@%1 "echo glimmrtv | sudo -S service glimmr stop"
+plink -no-antispoof -pw glimmrtv glimmrtv@%1 "echo glimmrtv | sudo -S pkill -f Glimmr"
 
 :BUILD
 IF NOT "%2"=="-k" GOTO BUILD2
 echo Killing Glimmr task...
+plink -no-antispoof -pw glimmrtv glimmrtv@%1 "echo glimmrtv | sudo -S service glimmr stop"
 plink -no-antispoof -pw glimmrtv glimmrtv@%1 "echo glimmrtv | sudo -S pkill -f Glimmr"
 
 :BUILD2
