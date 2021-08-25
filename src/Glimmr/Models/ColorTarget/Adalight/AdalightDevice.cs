@@ -20,7 +20,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 		private int _ledCount;
 		private int _multiplier;
 		private int _offset;
-		private int _port;
+		private string _port;
 		private bool _reverseStrip;
 
 		public AdalightDevice(AdalightData data, ColorService cs) {
