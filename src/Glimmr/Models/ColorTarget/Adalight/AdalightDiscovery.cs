@@ -75,11 +75,19 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 						StopBits = StopBits.One,
 						ReadTimeout = 1500
 					};
+					Log.Debug("Opening...");
 					serialPort.Open();
+					Log.Debug("Opened.");
 					if (serialPort.IsOpen) {
-						var line = serialPort.ReadLine();
+						Log.Debug("Reading");
+						int count = serialPort.BytesToRead;
+						byte[] data = new byte[count];
+						serialPort.Read(data, 0, data.Length);
+						//var line = serialPort.ReadLine();
+						var line = BitConverter.ToString(data);  
 						Log.Debug("Response line: " + line);
 						if (line.Substring(0, 3) == "Ada") {
+							Log.Debug("Line match");
 							dictionary[portName] = new KeyValuePair<int, int>(0, 0);
 						}
 						serialPort.Close();
@@ -89,7 +97,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 				}
 				catch (Exception ex)
 				{
-					Log.Warning("Exception: " + ex.Message);
+					Log.Warning("Exception: " + ex.Message + " at " + ex.StackTrace);
 				}
 			}
 			return dictionary;
