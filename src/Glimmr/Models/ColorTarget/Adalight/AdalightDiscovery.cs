@@ -63,12 +63,16 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 		{
 			Dictionary<string, KeyValuePair<int, int>> dictionary = new();
 			foreach (string portName in SerialPort.GetPortNames()){
+				var pnum = portName.Replace("/dev/ttyAMA","");
+				pnum = pnum.Replace("/dev/ttyACM","");
+				pnum = pnum.Replace("/dev/COM","");
+
 				Log.Debug("Testing port: " + portName);
 				try
 				{
 					SerialPort serialPort = new()
 					{
-						PortName = portName,
+						PortName = pnum,
 						BaudRate = 115200,
 						Parity = Parity.None,
 						DataBits = 8,
@@ -84,7 +88,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 						Log.Debug("Response line: " + line);
 						if (line.Substring(0, 3) == "Ada") {
 							Log.Debug("Line match");
-							dictionary[portName] = new KeyValuePair<int, int>(0, 0);
+							dictionary[pnum] = new KeyValuePair<int, int>(0, 0);
 						}
 						serialPort.Close();
 					} else {
