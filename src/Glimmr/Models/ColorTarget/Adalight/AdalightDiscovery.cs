@@ -80,11 +80,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 					Log.Debug("Opened.");
 					if (serialPort.IsOpen) {
 						Log.Debug("Reading");
-						int count = serialPort.BytesToRead;
-						byte[] data = new byte[count];
-						serialPort.Read(data, 0, data.Length);
-						//var line = serialPort.ReadLine();
-						var line = BitConverter.ToString(data);  
+						var line = serialPort.ReadLine();
 						Log.Debug("Response line: " + line);
 						if (line.Substring(0, 3) == "Ada") {
 							Log.Debug("Line match");

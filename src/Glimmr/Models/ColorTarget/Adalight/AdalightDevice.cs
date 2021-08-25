@@ -26,6 +26,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 		public AdalightDevice(AdalightData data, ColorService cs) {
 			Id = data.Id;
 			_data = data;
+			_port = _data.Port;
 			_multiplier = _data.LedMultiplier;
 			LoadData();
 			cs.ColorSendEventAsync += SetColors;
