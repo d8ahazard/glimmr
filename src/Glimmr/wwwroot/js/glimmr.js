@@ -398,7 +398,7 @@ function setSocketListeners() {
             //Show intro here
             if (!demoLoaded) {
                 demoLoaded = true;
-                showIntro();
+                //showIntro();
             }
         }
     });
