@@ -112,7 +112,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 		private SettingsProperty[] Kps() {
 			var multiplier = new SettingsProperty("LedMultiplier", "number", "LED Multiplier") {
-				ValueMin = "-10", ValueStep = "1"
+				ValueMin = "-5", ValueStep = "1", ValueMax = "5",
+				ValueHint = "Positive values to multiply (skip), negative values to divide (duplicate)."
 			};
 			if ((StripMode) StripMode == Enums.StripMode.Single) {
 				return new[] {
@@ -140,7 +141,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 					["2"] = "Loop (Play Bar)",
 					["3"] = "Single Color"
 				}),
-				new("ReverseStrip", "check", "Reverse Strip Direction")
+				new("ReverseStrip", "check", "Reverse Strip"){ValueHint = "Reverse the order of the leds to clockwise (facing screen)."}
 			};
 		}
 	}

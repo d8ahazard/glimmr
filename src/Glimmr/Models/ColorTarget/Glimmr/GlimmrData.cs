@@ -89,7 +89,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public SettingsProperty[] KeyProperties { get; set; } = {
-			new("MirrorHorizontal", "check", "Mirror LED Colors")
+			new("MirrorHorizontal", "check", "Mirror LED Colors"){ValueHint = "Horizontally Mirror color data, for setups 'opposite' your main setup."}
 		};
 
 		private void FetchData() {

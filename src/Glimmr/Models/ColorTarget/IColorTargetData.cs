@@ -27,6 +27,9 @@ namespace Glimmr.Models.ColorTarget {
 		public string ValueLabel { get; set; } = "";
 
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+		public string ValueHint { get; set; } = "";
+
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
 		public string ValueMax { get; set; } = "100";
 
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
@@ -55,6 +58,7 @@ namespace Glimmr.Models.ColorTarget {
 			ValueMax = "100";
 			ValueMin = "0";
 			ValueStep = "1";
+			ValueHint = "";
 			Options = options ?? new Dictionary<string, string>();
 		}
 	}

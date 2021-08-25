@@ -2,6 +2,7 @@
 
 using System;
 using System.Drawing;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
@@ -25,6 +26,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 		private int _ledCount;
 		private int _multiplier;
 		private int _offset;
+		private bool _reverseStrip;
 
 
 		public LedDevice(LedData ld, ColorService colorService) : base(colorService) {
@@ -105,13 +107,13 @@ namespace Glimmr.Models.ColorTarget.Led {
 		public Task ReloadData() {
 			var ld = DataUtil.GetDevice<LedData>(Id);
 			var sd = DataUtil.GetSystemData();
-
 			if (ld == null) {
 				Log.Warning("No LED Data");
 				return Task.CompletedTask;
 			}
 
 			_data = ld;
+			_reverseStrip = _data.ReverseStrip;
 			_multiplier = _data.LedMultiplier;
 			if (_multiplier == 0) {
 				_multiplier = 1;
@@ -153,13 +155,15 @@ namespace Glimmr.Models.ColorTarget.Led {
 				return;
 			}
 
-			var c1 = ColorUtil.TruncateColors(colors, _offset, _ledCount, _multiplier);
+			var toSend = ColorUtil.TruncateColors(colors, _offset, _ledCount, _multiplier);
 			if (_enableAbl) {
-				c1 = VoltAdjust(c1, _data);
+				toSend = VoltAdjust(toSend, _data);
 			}
 
-			for (var i = 0; i < c1.Length; i++) {
-				var tCol = c1[i];
+			if (_reverseStrip) toSend = toSend.Reverse().ToArray();
+			
+			for (var i = 0; i < toSend.Length; i++) {
+				var tCol = toSend[i];
 				if (_data.StripType == 1) {
 					tCol = ColorUtil.ClampAlpha(tCol);
 				}

@@ -55,6 +55,28 @@
     cursor: pointer;
 }
 
+.form-check-input {
+    position: absolute;
+    margin-top: 6px;
+    right: 20px;
+}
+
+.custom-control-input {
+    position: relative !important;
+    left: -4px !important;
+    width: 2rem !important;
+    z-index: 1 !important;
+    
+}
+
+.custom-control.custom-switch {
+    padding-left: 15px;
+}
+
+input.devSetting {
+    padding-left: 5px;
+}
+
 @keyframes rotation {
     from {
         transform: rotate(0deg);

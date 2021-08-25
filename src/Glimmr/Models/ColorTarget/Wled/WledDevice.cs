@@ -117,31 +117,31 @@ namespace Glimmr.Models.ColorTarget.Wled {
 				return;
 			}
 
-			var colors = list;
+			var toSend = list;
 
 			if (_stripMode == StripMode.Single) {
 				if (_targetSector >= colors1.Length || _targetSector == -1) {
 					return;
 				}
 
-				colors = ColorUtil.FillArray(colors1[_targetSector], _ledCount);
+				toSend = ColorUtil.FillArray(colors1[_targetSector], _ledCount);
 			} else {
-				colors = ColorUtil.TruncateColors(colors, _offset, _ledCount, _multiplier);
+				toSend = ColorUtil.TruncateColors(toSend, _offset, _ledCount, _multiplier);
 				if (_stripMode == StripMode.Loop) {
-					colors = ShiftColors(colors);
+					toSend = ShiftColors(toSend);
 				} else {
 					if (_data.ReverseStrip) {
-						colors = colors.Reverse().ToArray();
+						toSend = toSend.Reverse().ToArray();
 					}
 				}
 			}
 
-			var packet = new byte[2 + colors.Length * 3];
+			var packet = new byte[2 + toSend.Length * 3];
 			var timeByte = 255;
 			packet[0] = ByteUtils.IntByte(2);
 			packet[1] = ByteUtils.IntByte(timeByte);
 			var pInt = 2;
-			foreach (var t in colors) {
+			foreach (var t in toSend) {
 				packet[pInt] = t.R;
 				packet[pInt + 1] = t.G;
 				packet[pInt + 2] = t.B;

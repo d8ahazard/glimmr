@@ -40,7 +40,9 @@ let fpsCounter;
 let nanoTarget, nanoSector;
 let demoLoaded = false;
 let myTour;
-let devJson = '{"AutoBrightnessLevel":true,"FixGamma":true,"AblMaxMilliamps":5000,"GpioNumber":18,"LedCount":150,"MilliampsPerLed":25,"Offset":50,"StartupAnimation":0,"StripType":0,"Name":"Demo LED Strip","Id":"-1","Tag":"Led","IpAddress":"","Brightness":100,"Enable":false,"LastSeen":"08/05/2021 13:28:53","KeyProperties":[{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"","ValueName":"ledmap","ValueType":"ledmap"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Led Offset","ValueName":"Offset","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Led Count","ValueName":"LedCount","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Fix Gamma","ValueName":"FixGamma","ValueType":"check"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Enable Auto Brightness","ValueName":"AutoBrightnessLevel","ValueType":"check"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Milliamps per led","ValueName":"MilliampsPerLed","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Total Max Milliamps","ValueName":"AblMaxMilliamps","ValueType":"text"}]}';
+let ledData = '{"AutoBrightnessLevel":true,"FixGamma":true,"AblMaxMilliamps":5000,"GpioNumber":18,"LedCount":150,"MilliampsPerLed":25,"Offset":50,"StartupAnimation":0,"StripType":0,"Name":"Demo LED Strip","Id":"-1","Tag":"Led","IpAddress":"","Brightness":100,"Enable":false,"LastSeen":"08/05/2021 13:28:53","KeyProperties":[{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"","ValueName":"ledmap","ValueType":"ledmap"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Led Offset","ValueName":"Offset","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Led Count","ValueName":"LedCount","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Fix Gamma","ValueName":"FixGamma","ValueType":"check"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Enable Auto Brightness","ValueName":"AutoBrightnessLevel","ValueType":"check"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Milliamps per led","ValueName":"MilliampsPerLed","ValueType":"text"},{"Options":{},"ValueMax":"100","ValueMin":"0","ValueStep":"1","ValueLabel":"Total Max Milliamps","ValueName":"AblMaxMilliamps","ValueType":"text"}]}';
+let wledData = '{"AutoDisable":true,"ControlStrip":false,"ReverseStrip":false,"SubSectors":{},"Brightness":51,"LedCount":88,"LedMultiplier":1,"Offset":230,"StripMode":0,"TargetSector":0,"Sectors":[],"Tag":"Wled","State":{"info":{"live":false,"str":false,"freeheap":22984,"fxcount":118,"lwip":1,"opt":127,"palcount":56,"udpport":21324,"uptime":30759,"vid":2104020,"ws":0,"leds":{"rgbw":false,"seglock":false,"wv":false,"count":88,"maxpwr":850,"maxseg":12,"pwr":188,"pin":[2]},"arch":"esp8266","brand":"WLED","core":"2_7_4_7","lip":null,"lm":null,"mac":"000000000000","name":"Demo WLED","product":"FOSS","ver":"0.12.0","wifi":{"channel":6,"rssi":-64,"signal":72,"bssid":"3C:28:6D:B6:13:69"}},"state":{"on":false,"ccnf":{"max":5,"min":1,"time":12},"bri":128,"lor":0,"mainseg":0,"pl":-1,"ps":-1,"pss":0,"transition":7,"seg":[{"mi":false,"on":true,"rev":false,"sel":true,"bri":255,"fx":0,"grp":1,"id":0,"ix":128,"len":88,"pal":0,"spc":0,"start":0,"stop":88,"sx":128,"col":[[255,160,0],[0,0,0],[0,0,0]]}],"nl":{"fade":true,"on":false,"dur":0,"mode":1,"tbri":0},"udpn":{"recv":true,"send":false}}},"Name":"Demo WLED","Id":"-2","IpAddress":"192.168.1.54","Enable":true,"LastSeen":"07/30/2021 16:09:39","KeyProperties":[{"Options":{},"ValueLabel":"","ValueMax":"100","ValueMin":"0","ValueName":"ledmap","ValueStep":"1","ValueType":"ledmap"},{"Options":{},"ValueLabel":"Strip Offset","ValueMax":"100","ValueMin":"0","ValueName":"Offset","ValueStep":"1","ValueType":"number"},{"Options":{},"ValueLabel":"Led Count","ValueMax":"100","ValueMin":"0","ValueName":"LedCount","ValueStep":"1","ValueType":"number"},{"Options":{},"ValueLabel":"LED Multiplier","ValueMax":"100","ValueMin":"-10","ValueName":"LedMultiplier","ValueStep":"1","ValueType":"number"},{"Options":{"0":"Normal","1":"Sectored","2":"Loop (Play Bar)","3":"Single Color"},"ValueLabel":"Strip Mode","ValueMax":"100","ValueMin":"0","ValueName":"StripMode","ValueStep":"1","ValueType":"select"},{"Options":{},"ValueLabel":"Reverse Strip Direction","ValueMax":"100","ValueMin":"0","ValueName":"ReverseStrip","ValueStep":"1","ValueType":"check"}]}';
+let nanoData ='{"MirrorX":false,"MirrorY":false,"Rotation":0,"Brightness":2,"GroupNumber":0,"Mode":0,"Port":16021,"Hostname":"Shapes-0000.local","Tag":"Nanoleaf","Token":"redacted","Type":"NL42","Version":"5.2.4","Layout":{"NumPanels":5,"SideLength":0,"PositionData":[{"O":0,"PanelId":17820,"ShapeType":7,"SideLength":67,"TargetSector":31,"X":100,"Y":108},{"O":60,"PanelId":28451,"ShapeType":9,"SideLength":67,"TargetSector":30,"X":34,"Y":147},{"O":120,"PanelId":31543,"ShapeType":8,"SideLength":134,"TargetSector":30,"X":0,"Y":89},{"O":120,"PanelId":27817,"ShapeType":9,"SideLength":67,"TargetSector":29,"X":100,"Y":185},{"O":180,"PanelId":0,"ShapeType":12,"SideLength":0,"TargetSector":-1,"X":100,"Y":40}]},"Name":"Demo Nanoleaf","Id":"-3","IpAddress":"192.168.1.66","Enable":true,"LastSeen":"08/24/2021 15:09:14","KeyProperties":[{"Options":{},"ValueLabel":"","ValueMax":"100","ValueMin":"0","ValueName":"custom","ValueStep":"1","ValueType":"nanoleaf"}]}';
 let errModal = new bootstrap.Modal(document.getElementById('errorModal'));
 // We're going to create one object to store our stuff, and add listeners for when values are changed.
 let data = {
@@ -723,7 +725,9 @@ function handleClick(target) {
                 let devId = target.getAttribute("data-target");
                 console.log("Device id: ", devId);
                 deviceData = findDevice(devId);
-                if (devId === "-1") deviceData = JSON.parse(devJson);
+                if (devId === "-1") deviceData = JSON.parse(ledData);
+                if (devId === "-2") deviceData = JSON.parse(wledData);
+                if (devId === "-3") deviceData = JSON.parse(nanoData);
                 showDeviceCard(target);
             }
             break;
@@ -750,11 +754,6 @@ function handleClick(target) {
             setMode(newMode);
             sendMessage("Mode", newMode, false);
             break;
-        case target.classList.contains("ledCtl"):
-            let lAction = target.getAttribute("data-function");
-            let id = target.getAttribute("data-id");
-            ledAction(lAction, id);
-            break;
         case target.classList.contains("mainSettings"):
             toggleSettingsDiv();
             break;
@@ -774,35 +773,6 @@ function handleClick(target) {
     }
 }
 
-function ledAction(action, id) {
-    let ledData = data.store["LedData"];
-    if (isValid(ledData)) {
-        let led = getObj(ledData, "Id", id);
-        if (isValid(led)) {
-            if (action === "test") {
-                sendMessage("DemoLed", id.toString(), false);
-            } else {
-                led["Enable"] = (action === "enable");
-                let t1 = document.querySelector('[data-id="'+id+'"][data-function="enable"]');
-                let t2 = document.querySelector('[data-id="'+id+'"][data-function="disable"]');
-                if (action === "enable") {
-                    t1.classList.add("active");
-                    t2.classList.remove("active");
-                } else {
-                    t2.classList.add("active");
-                    t1.classList.remove("active");
-                }
-            }
-            data.store["LedData"] = setObj(ledData, "Id", id, led);
-            led["Id"] = led["Id"];
-            sendMessage("LedData", led, true);
-        } else {
-            console.log("Invalid led")
-        }
-    } else {
-        console.log("Invalid led data");
-    }
-}
 
 async function toggleSettingsDiv() {
     let settingsIcon = document.querySelector(".mainSettings span");
@@ -1057,16 +1027,22 @@ function showIntro() {
             orphan: true,
             onStart: function(){
                 console.log("Creating demo device card.");
-                let devObj = JSON.parse(devJson);
-                deviceData = devObj;
-                loadDevice(devObj,true);
+                let ledObj = JSON.parse(ledData);
+                let wledObj = JSON.parse(wledData);
+                let nanoObj = JSON.parse(nanoData);
+                loadDevice(nanoObj,true);
+                loadDevice(wledObj,true);
+                loadDevice(ledObj,true);
             },
             onEnd: function(){
                 console.log("Removing demo device card.");
-                if (expanded) closeCard().then(function () {
-                    let devCard = document.querySelector('.devCard[data-id="-1"]');
-                    devCard.remove();
-                });                
+                if (expanded) closeCard();
+                let devCard = document.querySelector('.devCard[data-id="-1"]');
+                devCard.remove();
+                devCard = document.querySelector('.devCard[data-id="-2"]');
+                devCard.remove();
+                devCard = document.querySelector('.devCard[data-id="-3"]');
+                devCard.remove();
             },
             steps: [
                 {
@@ -1248,7 +1224,7 @@ function showIntro() {
                     title: 'Device Settings',
                     content: 'Each device has a unique group of settings depending on what it does. Clicking here will open the device settings.',
                     onNext: function(){
-                        deviceData = JSON.parse(devJson);
+                        deviceData = JSON.parse(ledData);
                         if (!expanded) showDeviceCard(document.getElementById("devPrefBtn"));
                     }
                 
@@ -1281,12 +1257,32 @@ function showIntro() {
                     content: 'The offset controls how many leds to skip from the start of the strip, allowing you to segment strips as needd.',
                     placement: 'left',
                     onNext: function() {
-                        scrollDevPref(myTour.getStep(myTour.getCurrentStep() + 1))
+                        closeCard().then(function(){
+                            deviceData = JSON.parse(wledData);
+                            if (!expanded) showDeviceCard(document.getElementById("devPrefBtn"));    
+                        });                        
                     },
                     onPrev: function() {
                         scrollDevPref(myTour.getStep(myTour.getCurrentStep() - 1))
                     }
-                }
+                },
+                {
+                    element: "#ReverseStrip",
+                    title: 'This is a device',
+                    content: 'Here you can enable and configure various settings for each device discovered by Glimmr.',
+                    onPrev: function() {
+                        deviceData = JSON.parse(ledData);
+                        closeCard().then(function () {
+                            if (!expanded) showDeviceCard(document.getElementById("devPrefBtn")).then(function(){
+                                scrollSetting(myTour.getStep(myTour.getCurrentStep() - 1));    
+                            });                                
+                        });
+                        
+                    },
+                    onNext: function() {
+                        scrollElement(myTour.getStep(myTour.getCurrentStep() + 1));
+                    }
+                },
             ]
     });
     myTour.init();
@@ -1971,7 +1967,7 @@ function createDeviceSettings() {
     mapCol.appendChild(mapWrap);
     settingsDiv.appendChild(linkCol);
     settingsDiv.appendChild(mapCol);
-    if (deviceData === undefined) deviceData = JSON.parse(devJson);
+    if (deviceData === undefined) deviceData = JSON.parse(ledData);
     console.log("Loading device data: ", deviceData);   
     let props = deviceData["KeyProperties"];
     if (isValid(props)) {
@@ -1993,15 +1989,15 @@ function createDeviceSettings() {
             let value = deviceData[propertyName];
             switch(prop["ValueType"]) {
                 case "text":
-                    elem = new SettingElement(prop["ValueLabel"], "text", id, propertyName, value);
+                    elem = new SettingElement(prop["ValueLabel"], "text", id, propertyName, value, prop["ValueHint"]);
                     elem.isDevice = true;
                     break;
                 case "number":
-                    elem = new SettingElement(prop["ValueLabel"], "number", id, propertyName, value,"",prop["ValueMin"], prop["ValueMax"],prop["ValueStep"]);
+                    elem = new SettingElement(prop["ValueLabel"], "number", id, propertyName, value,prop["ValueHint"],prop["ValueMin"], prop["ValueMax"],prop["ValueStep"]);
                     elem.isDevice = true;
                     break;
                 case "check":
-                    elem = new SettingElement(prop["ValueLabel"], "check", id, propertyName, value);
+                    elem = new SettingElement(prop["ValueLabel"], "check", id, propertyName, value, prop["ValueHint"]);
                     elem.isDevice = true;
                     break;
                 case "ledmap":
@@ -2014,7 +2010,7 @@ function createDeviceSettings() {
                     appendBeamMap();
                     break;
                 case "select":
-                    elem = new SettingElement(prop["ValueLabel"], "select", id, propertyName, value);
+                    elem = new SettingElement(prop["ValueLabel"], "select", id, propertyName, value, prop["ValueHint"]);
                     elem.options = prop["Options"];
                     break;
                 case "sectormap":
@@ -2060,8 +2056,13 @@ function createSettingElement(settingElement) {
     switch(settingElement.type) {
         case "check":
             element = document.createElement("input");
-            element.classList.add("form-check");
+            label.classList.add("custom-control-label");
+            group.classList.add("custom-control");
+            group.classList.add("custom-switch");
+            group.classList.add("form-check-dev");
+            element.classList.add("custom-control-input");
             element.type = "checkbox";
+            element.id = "customSwitch" + deviceData.Id;
             element.checked = settingElement.value;
             break;
         case "select":
@@ -2100,16 +2101,13 @@ function createSettingElement(settingElement) {
             element.appendChild(icon);
             break;
     }
-    if (settingElement.type === "check") {
-        label.classList.add("form-check-label");
-        group.classList.add("form-check");
-        if (isValid(element)) element.classList.add("form-check-input");
-    } else {
+    if (settingElement.type !== "check") {
         label.classList.add("form-label");
-        if (isValid(element)) element.classList.add("form-control");
+        //if (isValid(element)) element.classList.add("form-control");
+        group.appendChild(label);
     }
     
-    group.appendChild(label);
+    
     if (isValid(element)) {       
         if (settingElement.isDevice) { 
             element.classList.add("devSetting");            
@@ -2121,6 +2119,18 @@ function createSettingElement(settingElement) {
         }
         group.append(element);
     }
+    if (settingElement.type === "check") {
+        group.appendChild(label);
+    }
+
+    // Append hint if it exists
+    if (settingElement.hint !== "") {
+        let hint = document.createElement("div");
+        hint.classList.add("form-text");
+        hint.innerText = settingElement.hint;
+        group.append(hint);
+    }
+
     return group;
 }
 
@@ -2292,11 +2302,11 @@ function appendBeamMap() {
                     checkDiv1.classList.add("form-check");
                     let label3 = document.createElement("label");
                     label3.innerText = "Repeat";
-                    label3.classList.add("form-check-label");
+                    label3.classList.add("custom-control-label");
                     let rCheck = document.createElement("input");
                     rCheck.type = "checkbox";
                     if (repeat) rCheck.checked = true;
-                    rCheck.classList.add("form-check", "form-check-input", "beam-control");
+                    rCheck.classList.add("form-check", "custom-control-input", "beam-control");
                     rCheck.setAttribute("data-position",position);
                     rCheck.setAttribute("data-beamProperty","Repeat");
                     checkDiv1.appendChild(rCheck);
@@ -2313,9 +2323,9 @@ function appendBeamMap() {
                     checkDiv2.classList.add("form-check");
                     let label4 = document.createElement("label");
                     label4.innerText = "Reverse Direction";
-                    label4.classList.add("form-check-label");
+                    label4.classList.add("custom-control-label");
                     let rCheck2 = document.createElement("input");
-                    rCheck2.classList.add("form-check", "form-check-input", "beam-control");
+                    rCheck2.classList.add("form-check", "custom-control-input", "beam-control");
                     rCheck2.type = "checkbox";
                     if (reverse) rCheck2.checked = true;
                     rCheck2.setAttribute("data-position",position);
@@ -3085,12 +3095,12 @@ function createHueMap() {
                 // Create label for override check
                 const checkLabel = document.createElement('label');
                 checkLabel.innerHTML = "Override";
-                checkLabel.className += "form-check-label";
+                checkLabel.className += "custom-control-label";
                 checkLabel.setAttribute('for', 'overrideBrightness' + id);
 
                 // Create a checkbox
                 const newCheck = document.createElement("input");
-                newCheck.className += "overrideBright form-check-input lightProperty";
+                newCheck.className += "overrideBright custom-control-input lightProperty";
                 newCheck.setAttribute('data-id', id);
                 newCheck.setAttribute('data-property',"Override");
                 newCheck.setAttribute("type", "checkbox");

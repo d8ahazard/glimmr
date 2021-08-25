@@ -78,10 +78,10 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			new("Offset", "text", "Led Offset"),
 			new("LedCount", "text", "Led Count"),
 			new("LedMultiplier", "number", "LED Multiplier") {
-				ValueMin = "-10", ValueStep = "1"
+				ValueMin = "-5", ValueStep = "1", ValueMax="5", ValueHint = "Positive values to multiply (skip), negative values to divide (duplicate)."
 			},
 			new("Speed", "text", "Connection Speed (Baud Rate)"),
-			new("ReverseStrip", "check", "Reverse Strip")
+			new("ReverseStrip", "check", "Reverse Strip"){ValueHint = "Reverse the order of the leds to clockwise (facing screen)."}
 		};
 
 
