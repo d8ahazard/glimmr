@@ -69,6 +69,9 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 		{
 			Dictionary<string, KeyValuePair<int, int>> dictionary = new();
 			foreach (string portName in SerialPort.GetPortNames()){
+				if (!portName.Contains("COM") && !portName.Contains("ttyACM")) {
+					continue;
+				}
 				Log.Debug("Testing port: " + portName);
 				try
 				{
