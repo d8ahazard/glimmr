@@ -276,6 +276,10 @@ namespace Glimmr.Models {
 		[DefaultValue("0")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string Units { get; set; } = "0";
+		
+		[DefaultValue(115200)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int BaudRate { get; set; } = 115200;
 
 		public void SetDefaults() {
 			Brightness = 255;
@@ -287,6 +291,7 @@ namespace Glimmr.Models {
 			DefaultSet = true;
 			AudioGain = .6f;
 			AudioMin = .01f;
+			BaudRate = 115200;
 			DeviceName = Environment.MachineName;
 			if (string.IsNullOrEmpty(DeviceName)) {
 				DeviceName = Dns.GetHostName();

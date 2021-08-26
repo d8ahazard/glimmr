@@ -240,5 +240,12 @@ namespace Glimmr.Models.Util {
 
 			return cams;
 		}
+		
+		public static string ExportLog() {
+			var userDir = GetUserDir();
+			var stamp = DateTime.Now.ToString("yyyyMMdd");
+			var outFile = Path.Combine(userDir, $"glimmr{stamp}.log");
+			return outFile;
+		}
 	}
 }

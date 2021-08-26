@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO.Ports;
 using System.Threading;
 using System.Threading.Tasks;
+using Glimmr.Models.Util;
 using Glimmr.Services;
 using Serilog;
 
@@ -18,11 +19,13 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 		}
 
 		public async Task Discover(CancellationToken ct, int timeout) {
+			var sd = DataUtil.GetSystemData();
+			var baud = sd.BaudRate;
 			Log.Debug("Adalight: Discovery started.");
 			var discoTask = Task.Run(() => {
 				var devs = new Dictionary<string, KeyValuePair<int,int>>();
 				try {
-					devs = FindDevices();
+					devs = FindDevices(baud);
 				} catch (Exception e) {
 					Log.Debug("Exception: " + e.Message);
 				}
@@ -33,7 +36,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 					var bri = dev.Value.Value;
 					try {
 						Log.Debug("Trying: " + dev.Key);
-						var ac = new AdalightNet.Adalight(dev.Key, 20);
+						var ac = new AdalightNet.Adalight(dev.Key, 20, baud);
 						ac.Connect();
 						if (ac.Connected) {
 							Log.Debug("Connected.");
@@ -51,7 +54,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 					}
 
 
-					var data = new AdalightData(dev.Key, count);
+					var data = new AdalightData(dev.Key, count) {Speed = baud};
 					Log.Debug("Creating device.");
 					if (bri != 0) {
 						data.Brightness = bri;
@@ -65,7 +68,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			await discoTask;
 			Log.Debug("Adalight: Discovery complete.");
 		}
-		private static Dictionary<string, KeyValuePair<int, int>> FindDevices()
+		private static Dictionary<string, KeyValuePair<int, int>> FindDevices(int speed = 115200)
 		{
 			Dictionary<string, KeyValuePair<int, int>> dictionary = new();
 			foreach (string portName in SerialPort.GetPortNames()){
@@ -78,11 +81,11 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 					SerialPort serialPort = new()
 					{
 						PortName = portName,
-						BaudRate = 115200,
+						BaudRate = speed,
 						Parity = Parity.None,
 						DataBits = 8,
 						StopBits = StopBits.One,
-						ReadTimeout = 1500
+						ReadTimeout = 2500
 					};
 					Log.Debug("Opening...");
 					serialPort.Open();
