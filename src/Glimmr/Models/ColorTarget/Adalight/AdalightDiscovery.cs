@@ -101,7 +101,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 					}
 				}
 				catch (Exception ex){
-					Log.Warning("Exception: " + ex.Message + " at " + ex.StackTrace);
+					Log.Warning($"Exception testing port {portName}: " + ex.Message + " at " + ex.StackTrace);
 				}
 			}
 			return dictionary;
