@@ -90,7 +90,6 @@ if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 
 $service = Get-Service -Name glimmr -ErrorAction SilentlyContinue
 
-
 $glimmrPath = "C:\Progra~1\Glimmr";
 $glimmrBinPath = "C:\Progra~1\Glimmr\bin\Glimmr.exe";
 $glimmrRepo = "https://github.com/d8ahazard/glimmr";

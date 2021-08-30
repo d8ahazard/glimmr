@@ -78,15 +78,16 @@ namespace Glimmr.Controllers {
 
 			var filePaths = new List<string>();
 			foreach (var formFile in files) {
-				if (formFile.Length > 0) {
-					// full path to file in temp location
-					var filePath =
-						Path.GetTempFileName(); //we are using Temp file name just for the example. Add your own file path.
-					filePaths.Add(filePath);
-					using (var stream = new FileStream(filePath, FileMode.Create)) {
-						await formFile.CopyToAsync(stream);
-					}
+				if (formFile.Length <= 0) {
+					continue;
 				}
+
+				// full path to file in temp location
+				var filePath =
+					Path.GetTempFileName(); //we are using Temp file name just for the example. Add your own file path.
+				filePaths.Add(filePath);
+				await using var stream = new FileStream(filePath, FileMode.Create);
+				await formFile.CopyToAsync(stream);
 			}
 
 			var imported = false;

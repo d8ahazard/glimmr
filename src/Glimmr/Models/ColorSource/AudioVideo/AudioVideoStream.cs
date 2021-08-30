@@ -62,7 +62,7 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 			return ExecuteAsync(ct);
 		}
 
-		public void RefreshSystem() {
+		private void RefreshSystem() {
 			_systemData = DataUtil.GetSystemData();
 		}
 		
@@ -103,7 +103,7 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 					if (vCols.Length == 0 || vCols.Length != aCols.Length || vSecs.Length == 0 ||
 					    vSecs.Length != aSecs.Length) {
 						Log.Debug(
-							$"AV Splitter is still warming up...");
+							"AV Splitter is still warming up...");
 						continue;
 					}
 
@@ -123,6 +123,7 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 
 					_colors = oCols;
 					_sectors = oSecs;
+					await _cs.TriggerSend(_colors, _sectors);
 
 					if (_doSave) {
 						_doSave = false;

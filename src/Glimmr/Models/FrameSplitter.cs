@@ -53,10 +53,10 @@ namespace Glimmr.Models {
 		private Rectangle[] _fullCoords;
 		private Rectangle[] _fullSectors;
 
-		private bool pCrop;
-		private CropCounter pillarCropCounter;
-		private CropCounter lCroupCounter;
-		private int pCropPixels;
+		private bool _pCrop;
+		private CropCounter _pillarCropCounter;
+		private CropCounter _lCroupCounter;
+		private int _pCropPixels;
 		private int _hSectors;
 		
 		private int _ledCount;
@@ -107,8 +107,8 @@ namespace Glimmr.Models {
 			_colorService = cs;
 			cs.ControlService.RefreshSystemEvent += RefreshSystem;
 			cs.FrameSaveEvent += TriggerSave;
-			pillarCropCounter = new CropCounter(5);
-			lCroupCounter = new CropCounter(5);
+			_pillarCropCounter = new CropCounter(5);
+			_lCroupCounter = new CropCounter(5);
 			RefreshSystem();
 			// Set desired width of capture region to 15% total image
 			_borderWidth = 10;
@@ -129,8 +129,8 @@ namespace Glimmr.Models {
 			_hSectors = sd.HSectors;
 			_vSectors = sd.VSectors;
 			_cropDelay = sd.CropDelay;
-			pillarCropCounter = new CropCounter(_cropDelay);
-			lCroupCounter = new CropCounter(_cropDelay);
+			_pillarCropCounter = new CropCounter(_cropDelay);
+			_lCroupCounter = new CropCounter(_cropDelay);
 			_cropLetter = sd.EnableLetterBox;
 			_cropPillar = sd.EnablePillarBox;
 			_mode = (DeviceMode) sd.DeviceMode;
@@ -142,8 +142,8 @@ namespace Glimmr.Models {
 			}
 
 			if (!_cropPillar || !_useCrop) {
-				pCrop = false;
-				pCropPixels = 0;
+				_pCrop = false;
+				_pCropPixels = 0;
 				_cropPillar = false;
 			}
 
@@ -605,19 +605,19 @@ namespace Glimmr.Models {
 
 			if (_cropPillar) {
 				if (pPixels == 0) {
-					pillarCropCounter.Clear();
-					pCrop = false;
-					if (pCropPixels != 0) _sectorChanged = true;
-					pCropPixels = 0;
+					_pillarCropCounter.Clear();
+					_pCrop = false;
+					if (_pCropPixels != 0) _sectorChanged = true;
+					_pCropPixels = 0;
 				} else {
-					pillarCropCounter.Tick(Math.Abs(pPixels - _hCropCheck) < 4);	
+					_pillarCropCounter.Tick(Math.Abs(pPixels - _hCropCheck) < 4);	
 				}
 			}
 
-			if (pillarCropCounter.Triggered() && !pCrop) {
-				pCrop = _sectorChanged = true;
-				pCropPixels = pPixels;
-				pillarCropCounter.Clear();
+			if (_pillarCropCounter.Triggered() && !_pCrop) {
+				_pCrop = _sectorChanged = true;
+				_pCropPixels = pPixels;
+				_pillarCropCounter.Clear();
 			} 
 
 			_hCropCheck = pPixels;
@@ -625,25 +625,25 @@ namespace Glimmr.Models {
 			
 			if (_cropLetter) {
 				if (lPixels == 0) {
-					lCroupCounter.Clear();
+					_lCroupCounter.Clear();
 					_lCrop = false;
 					if (_lCropPixels != 0) _sectorChanged = true;
 					_lCropPixels = 0;
 				} else {
-					lCroupCounter.Tick(Math.Abs(lPixels - _vCropCheck) < 4);	
+					_lCroupCounter.Tick(Math.Abs(lPixels - _vCropCheck) < 4);	
 				}
 			}
 
-			if (lCroupCounter.Triggered() && !_lCrop) {
+			if (_lCroupCounter.Triggered() && !_lCrop) {
 				_lCrop = _sectorChanged = true;
 				_lCropPixels = lPixels;
-				lCroupCounter.Clear();
+				_lCroupCounter.Clear();
 			} 
 
 			_vCropCheck = lPixels;
 			// Only calculate new sectors if the value has changed
 			if (_sectorChanged) {
-				Log.Debug($"Crop changed, redrawing {_lCropPixels} and {pCropPixels}...");
+				Log.Debug($"Crop changed, redrawing {_lCropPixels} and {_pCropPixels}...");
 				_sectorChanged = false;
 				_fullCoords = DrawGrid();
 				_fullSectors = DrawSectors();
@@ -658,7 +658,7 @@ namespace Glimmr.Models {
 
 		private Rectangle[] DrawGrid() {
 			int lOffset = _lCropPixels == 0 ? _lCropPixels : _lCropPixels + (int) _borderHeight + 5;
-			int pOffset = pCropPixels == 0 ? pCropPixels : pCropPixels + (int)_borderWidth + 5;
+			int pOffset = _pCropPixels == 0 ? _pCropPixels : _pCropPixels + (int)_borderWidth + 5;
 			var output = new Rectangle[_ledCount];
 
 			// Top Region
@@ -747,7 +747,7 @@ namespace Glimmr.Models {
 		}
 
 		private Rectangle[] DrawCenterSectors() {
-			var pOffset = pCropPixels;
+			var pOffset = _pCropPixels;
 			var lOffset = _lCropPixels;
 			if (_hSectors == 0) {
 				_hSectors = 10;
@@ -787,7 +787,7 @@ namespace Glimmr.Models {
 			}
 
 			// How many sectors does each region have?
-			var pOffset = pCropPixels;
+			var pOffset = _pCropPixels;
 			var lOffset = _lCropPixels;
 			if (_hSectors == 0) {
 				_hSectors = 10;

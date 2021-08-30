@@ -1,7 +1,6 @@
 ﻿#region
 
 using System;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
@@ -150,8 +149,5 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 			}
 			DisposeVideo();
 		}
-		
-		[DllImport("cvextern", CallingConvention = CallingConvention.Cdecl)]
-		private static extern void cveVideoCaptureRelease(ref IntPtr capture);
 	}
 }

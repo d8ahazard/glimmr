@@ -50,7 +50,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
 		public bool SourceActive => _splitter.SourceActive;
 
-		public void RefreshSystem() {
+		private void RefreshSystem() {
 			Log.Debug("No, really, refreshing system.");
 			var sd = DataUtil.GetSystemData();
 			_ambientShow = sd.AmbientShow;

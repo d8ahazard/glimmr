@@ -65,7 +65,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 			return ExecuteAsync(ct);
 		}
 
-		public void RefreshSystem() {
+		private void RefreshSystem() {
 			var sd = DataUtil.GetSystemData();
 			_devMode = (DeviceMode) sd.DeviceMode;
 			_hostName = _sd.DeviceName;

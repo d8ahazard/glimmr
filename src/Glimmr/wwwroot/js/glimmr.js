@@ -39,7 +39,6 @@ let refreshTimer;
 let fpsCounter;
 let nanoTarget, nanoSector;
 let demoLoaded = false;
-let myTour;
 let ledData = '{"AutoBrightnessLevel":true,"FixGamma":true,"AblMaxMilliamps":5000,"GpioNumber":18,"LedCount":150,"MilliampsPerLed":25,"Offset":50,"StartupAnimation":0,"StripType":0,"Name":"Demo LED Strip","Id":"-1","Tag":"Led","IpAddress":"","Brightness":100,"Enable":false,"LastSeen":"08/05/2021 13:28:53","KeyProperties":[{"Options":{},"ValueLabel":"","ValueHint":"","ValueMax":"100","ValueMin":"0","ValueName":"ledmap","ValueStep":"1","ValueType":"ledmap"},{"Options":{},"ValueLabel":"Led Count","ValueHint":"","ValueMax":"100","ValueMin":"0","ValueName":"LedCount","ValueStep":"1","ValueType":"text"},{"Options":{},"ValueLabel":"Led Offset","ValueHint":"","ValueMax":"100","ValueMin":"0","ValueName":"Offset","ValueStep":"1","ValueType":"text"},{"Options":{},"ValueLabel":"LED Multiplier","ValueHint":"Positive values to multiply (skip), negative values to divide (duplicate).","ValueMax":"5","ValueMin":"-5","ValueName":"LedMultiplier","ValueStep":"1","ValueType":"number"},{"Options":{},"ValueLabel":"Reverse Strip","ValueHint":"Reverse the order of the leds to clockwise (facing screen).","ValueMax":"100","ValueMin":"0","ValueName":"ReverseStrip","ValueStep":"1","ValueType":"check"},{"Options":{},"ValueLabel":"Fix Gamma","ValueHint":"Automatically correct Gamma (recommended)","ValueMax":"100","ValueMin":"0","ValueName":"FixGamma","ValueStep":"1","ValueType":"check"},{"Options":{},"ValueLabel":"Enable Auto Brightness","ValueHint":"Automatically adjust brightness to avoid dropouts.","ValueMax":"100","ValueMin":"0","ValueName":"AutoBrightnessLevel","ValueStep":"1","ValueType":"check"},{"Options":{},"ValueLabel":"Milliamps Per LED","ValueHint":"\'Conservative\' = 25, \'Normal\' = 55","ValueMax":"100","ValueMin":"0","ValueName":"MilliampsPerLed","ValueStep":"1","ValueType":"text"},{"Options":{},"ValueLabel":"Power Supply Voltage","ValueHint":"Total PSU voltage in Milliamps","ValueMax":"100","ValueMin":"0","ValueName":"AblMaxMilliamps","ValueStep":"1","ValueType":"text"}]}';
 let errModal = new bootstrap.Modal(document.getElementById('errorModal'));
 // We're going to create one object to store our stuff, and add listeners for when values are changed.
@@ -78,7 +77,7 @@ data.registerStoreListener(function(val) {
     }
 });
 
-data.registerDevicesListener(function(val) {
+data.registerDevicesListener(function() {
     loadDevices();
 });
 
@@ -162,9 +161,6 @@ document.addEventListener("DOMContentLoaded", function(){
     }, 1000);
 });
 
-function rgbToHex(r, g, b) {
-    return ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-}
 
 function loadCounts() {
     let sd = data.store["SystemData"];
@@ -176,7 +172,6 @@ function loadCounts() {
     vSectors = 3;
 
     if (!isValid(sd)) return;
-    let capMode = sd["CaptureMode"];
     let target = sd["DsIp"];
     let devs = data.store["Devices"];
     let devSelect = document.getElementById("targetDs");
@@ -262,11 +257,10 @@ function doPost(endpoint, payload) {
     xhttp.open("POST", url, true);
     xhttp.onreadystatechange = function() {
         if (this.readyState === 4 && this.status === 200) {
-            postResult = this.json;
+            let postResult = this.json;
             if (endpoint === "loadData") {
                 let stuff = postResult.replace(/\\n/g, '');
-                let parsed = JSON.parse(stuff);
-                data.store = parsed;
+                data.store = JSON.parse(stuff);
                 loadUi();
             }
         }
@@ -561,7 +555,7 @@ function setListeners() {
         }
         
         let intProps = [
-            "CaptureMode", "ScreenCapMode", "PreviewMode", "AutoUpdateTime",
+            "CaptureMode", "ScreenCapMode", "PreviewMode", "AutoUpdateTime", "BaudRate",
         ];
         if (intProps.includes(property)) {
             val = parseInt(val);            
@@ -672,7 +666,7 @@ function handleClick(target) {
             }
             break;
         case target === closeButton:
-            closeCard();
+            closeCard().then();
             break;
         case target.classList.contains("sector"):
             let val = target.getAttribute("data-sector");            
@@ -709,7 +703,7 @@ function handleClick(target) {
             let deviceId = deviceData["Id"];
             let devName = deviceData["Name"];
             if (confirm('Warning! The device named ' + devName + " will have all settings removed. Do you want to continue?")) {
-                let res = closeCard();
+                closeCard().then();
                 sendMessage("DeleteDevice", deviceId, false);
                 console.log('Deleting device.');
             } else {
@@ -718,13 +712,13 @@ function handleClick(target) {
             break;
         case target.classList.contains("settingBtn"):
             if (expanded) {
-                closeCard();
+                closeCard().then();
             } else {
                 let devId = target.getAttribute("data-target");
                 console.log("Device id: ", devId);
                 deviceData = findDevice(devId);
                 if (devId === "-1") deviceData = JSON.parse(ledData);
-                showDeviceCard(target);
+                showDeviceCard(target).then();
             }
             break;
         case target.classList.contains("enableBtn"):
@@ -751,7 +745,7 @@ function handleClick(target) {
             sendMessage("Mode", newMode, false);
             break;
         case target.classList.contains("mainSettings"):
-            toggleSettingsDiv();
+            toggleSettingsDiv().then();
             break;
         case target.classList.contains("nav-link"):
             let cDiv = target.getAttribute("href");
@@ -1006,7 +1000,7 @@ function loadUi() {
     if (!listenersSet) {
         setListeners();
         let tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        let tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl)
         });        
     }
@@ -1028,13 +1022,14 @@ function showIntro() {
             },
             onEnd: function(){
                 console.log("Removing demo device card.");
-                if (expanded) closeCard();
                 let devCard = document.querySelector('.devCard[data-id="-1"]');
-                devCard.remove();
-                devCard = document.querySelector('.devCard[data-id="-2"]');
-                devCard.remove();
-                devCard = document.querySelector('.devCard[data-id="-3"]');
-                devCard.remove();
+                if (expanded) {
+                    closeCard().then(function () {
+                        devCard.remove();
+                    });
+                } else {
+                    devCard.remove();
+                }
             },
             steps: [
                 {
@@ -1067,7 +1062,7 @@ function showIntro() {
                     content: 'You can access system settings by clicking this button. Let\'s take a look!',
                     reflex: true,
                     onNext: function() {
-                        if (!settingsShown) toggleSettingsDiv();
+                        if (!settingsShown) toggleSettingsDiv().then();
                         document.getElementById("system-tab").click();
                     }
                 },
@@ -1078,10 +1073,10 @@ function showIntro() {
                     container: '#mainContent',
                     backdropContainer: '#mainContent',
                     onNext: function(){
-                        if (!settingsShown) toggleSettingsDiv();
+                        if (!settingsShown) toggleSettingsDiv().then();
                     },
                     onPrev: function(){
-                        if (settingsShown) toggleSettingsDiv();
+                        if (settingsShown) toggleSettingsDiv().then();
                         document.getElementById("system-tab").click();
                     }
                 },
@@ -1217,7 +1212,7 @@ function showIntro() {
                     content: 'Each device has a unique group of settings depending on what it does. Clicking here will open the device settings.',
                     onNext: function(){
                         deviceData = JSON.parse(ledData);
-                        if (!expanded) showDeviceCard(document.getElementById("devPrefBtn"));
+                        if (!expanded) showDeviceCard(document.getElementById("devPrefBtn")).then();
                     }
                 
                 },
@@ -1263,7 +1258,7 @@ function showIntro() {
                         '' +
                         'If set to a negative value, then each color from the main array will be repeated that many times.',
                     onNext: function() {
-                        closeCard();
+                        closeCard().then();
                     },
                     onPrev: function() {
                         scrollDevPref(myTour.getStep(myTour.getCurrentStep() - 1));
@@ -1292,7 +1287,7 @@ function showIntro() {
 }
 
 function scrollSetting(step){
-    if (!settingsShown) toggleSettingsDiv();    
+    if (!settingsShown) toggleSettingsDiv().then();    
     let elem = document.querySelector(step.element);
     let parent = document.getElementById("mainContent");
     let topPos = elem.offsetTop;
@@ -1303,7 +1298,7 @@ function scrollSetting(step){
 }
 
 function scrollElement(step) {
-    if (settingsShown) toggleSettingsDiv();
+    if (settingsShown) toggleSettingsDiv().then();
     let elem = document.querySelector(step.element);
     let parent = document.getElementById("mainContent");
     let topPos = elem.offsetTop;
@@ -1345,7 +1340,6 @@ function loadTheme(theme) {
 }
 
 function loadSettings() {
-    let ledData = data.store["LedData"];
     let systemData = data.store["SystemData"];
     let updateTime = systemData["AutoUpdateTime"].toString();
     let timeSelect = document.getElementById("AutoUpdateTime");
@@ -1746,23 +1740,9 @@ function saveDevice(deviceData) {
 }
 
 function loadData() {
-    let getUrl = window.location;
-    let baseUrl = getUrl .protocol + "//" + getUrl.host;
     sendMessage("LoadData");
 }
 
-function RefreshData() {
-    if (!refreshing) {
-        refreshing = true;
-        if (socketLoaded) {
-            doGet("./api/DreamData/action?action=refreshDevices");
-        } else {
-            doGet("./api/DreamData/action?action=refreshDevices", function (newData) {
-                data.store = newData;                
-            });
-        }
-    }
-}
 
 // Utility functions!
 function $(elem) {
@@ -1781,20 +1761,6 @@ function setCookie(cname, cvalue, exdays) {
     document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
 }
 
-function getCookie(cname) {
-    let name = cname + "=";
-    let ca = document.cookie.split(';');
-    for(let i = 0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) === ' ') {
-            c = c.substring(1);
-        }
-        if (c.indexOf(name) === 0) {
-            return c.substring(name.length, c.length);
-        }
-    }
-    return "";
-}
 
 function getStoreProperty(name) {
     let store = data.store;
@@ -1892,17 +1858,6 @@ const toggleExpansion = (element, to, duration = 350) => {
     })
 };
 
-const fadeContent = (element, opacity, duration = 300) => {
-    return new Promise(res => {
-        [...element.children, element].forEach((child) => {
-            requestAnimationFrame(() => {
-                child.style.transition = `opacity ${duration}ms ease-in`;
-                child.style.opacity = opacity;
-            });
-        });
-        setTimeout(res, duration);
-    })
-};
 
 const showDeviceCard = async (e) => {
     expanded = true;
@@ -2141,8 +2096,6 @@ function SettingElement(description, type, object, property, value, hint, minLim
     this.object = object;
     this.property = property ?? {};
     this.hint = hint ?? "";
-    this.minLimit = minLimit ?? 0;
-    this.maxLimit = maxLimit ?? 255;
     this.increment = increment ?? 1;
     this.options = options;
     this.id = id;
@@ -2436,7 +2389,6 @@ function createSectorCenter(targetElement, regionName) {
             for(let i =0; i < mappedLights.length; i++) {
                 let lMap = mappedLights[i];
                 let target = lMap["TargetSector"];
-                let id = lMap["_id"];
                 let targetDiv = document.querySelector('.sector[data-sector="'+target+'"]');
                 if (isValid(targetDiv)) {
                     targetDiv.classList.add("checked");
@@ -2583,7 +2535,6 @@ function createSectorMap(targetElement, regionName) {
             for(let i =0; i < mappedLights.length; i++) {
                 let lMap = mappedLights[i];
                 let target = lMap["TargetSector"];
-                let id = lMap["_id"];
                 let targetDiv = document.querySelector('.sector[data-sector="'+target+'"]');
                 if (isValid(targetDiv)) {
                     targetDiv.classList.add("checked");

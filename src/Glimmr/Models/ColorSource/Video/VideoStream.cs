@@ -43,7 +43,7 @@ namespace Glimmr.Models.ColorSource.Video {
 		}
 
 		public Task ToggleStream(CancellationToken ct) {
-			Log.Debug("Starting video stream service...");
+			//Log.Debug("Starting video stream service...");
 			SendColors = true;
 			StreamSplitter.DoSend = true;
 			return ExecuteAsync(ct);
@@ -57,13 +57,6 @@ namespace Glimmr.Models.ColorSource.Video {
 			_camType = (CameraType) _systemData.CamType;
 		}
 
-		public Color[] GetColors() {
-			return StreamSplitter.GetColors();
-		}
-
-		public Color[] GetSectors() {
-			return StreamSplitter.GetSectors();
-		}
 
 		protected override Task ExecuteAsync(CancellationToken ct) {
 			return Task.Run(async () => {
@@ -79,7 +72,7 @@ namespace Glimmr.Models.ColorSource.Video {
 
 				await _vc.Start(ct, StreamSplitter);
 				while (!ct.IsCancellationRequested) {
-					await Task.Delay(10, CancellationToken.None);;
+					await Task.Delay(10, CancellationToken.None);
 				}
 
 				await _vc.Stop();

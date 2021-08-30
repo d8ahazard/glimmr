@@ -59,7 +59,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 		public bool SourceActive => _splitter.SourceActive;
 
 
-		public void RefreshSystem() {
+		private void RefreshSystem() {
 			var systemData = DataUtil.GetSystemData();
 			var dsIp = systemData.DsIp;
 			// If our DS IP is null, pick one.

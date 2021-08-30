@@ -46,7 +46,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 		public bool SourceActive => StreamSplitter.SourceActive;
 
 
-		public void RefreshSystem() {
+		private void RefreshSystem() {
 			_sd = DataUtil.GetSystemData();
 			LoadData();
 		}
@@ -88,13 +88,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 			}, CancellationToken.None);
 		}
 		
-		public Color[] GetColors() {
-			return StreamSplitter.GetColors();
-		}
-
-		public Color[] GetSectors() {
-			return StreamSplitter.GetSectors();
-		}
 
 
 		private void LoadData() {
