@@ -4,10 +4,18 @@
 
 ### Windows
 Open a Powershell window, execute the following command:
+
 ```
 iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_win.ps1'))
 
 ```
+OR, to clone from the master branch:
+
+```
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/d8ahazard/glimmr/master/script/setup_win.ps1'))
+
+```
+
 Once the script is done running, you should now have a "GlimmrTray" application in your start menu.
 
 Click this to launch Glimmr, minimize the console window to have it stored in the tray.
@@ -22,7 +30,7 @@ bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/set
 
 *Alternatively*, you can flash a custom image directly to your pi from here:
 
-https://mega.nz/file/FwUTCA6Q#NG8J_CZjjlHjTI9TnfKUuZ3qehaN5Whz8uOj1U1gya0
+https://mega.nz/file/u24w0TpK#esrm65xrUQf_kZd6CSkO5hNUlsSpojCXBn4OU1jUOBI
 
 You will need to use "BalenaEtcher", a free software for flashing the image.
 
@@ -47,10 +55,17 @@ or "sudo service glimmr stop" respectively.
 
 
 ### Linux
-Execute the following command:
+Execute the following command. You can replace "dev" with "master" to use the master branch instead.:
 ```
 sudo su
-bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_linux.sh)
+wget -qO- https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_linux.sh | bash
+```
+
+OR, to clone from the master branch...
+
+```
+sudo su
+wget -qO- https://raw.githubusercontent.com/d8ahazard/glimmr/master/script/setup_linux.sh | bash
 ```
 
 Note: Glimmr is installed as a service, and can be stopped/started by running "sudo service glimmr start"
