@@ -10,12 +10,12 @@ for %%x in (
 	OSX
 ) do (
 	echo Building %%x
-	dotnet publish -c Release ..\src\Glimmr\Glimmr.csproj /p:PublishProfile=%%x -o ..\src\bin\%%x
+	dotnet publish -c Release ..\src\Glimmr\Glimmr.csproj /p:PublishProfile=%%x -o ..\src\Glimmr\bin\%%x
 	if exist "..\lib\%%x" xcopy /y ..\lib\%%x\* ..\src\bin\%%x\	
 )
 
 :Archive
-cd ..\src\bin\
+cd ..\src\Glimmr\bin\
 %~dp07z.exe a -ttar -so -an -r .\LinuxARM\* | %~dp07z a -si Glimmr-linux-arm-%version%.tgz
 %~dp07z.exe a -ttar -so -an -r .\Linux\* | %~dp07z a -si Glimmr-linux-%version%.tgz
 %~dp07z.exe a -tzip -r Glimmr-windows-%version%.zip .\Windows\*
