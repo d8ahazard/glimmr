@@ -1011,7 +1011,6 @@ function loadUi() {
 function showIntro() {
     let myTour = new Tour(
         {
-            storage: false,
             backdropPadding: 5,
             backdrop: true,
             orphan: true,
