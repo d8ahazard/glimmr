@@ -1,0 +1,17 @@
+﻿{
+  "OctaveMap": {
+    "1": 1,
+    "2": 3,
+    "3": 5,
+    "4": 6,
+    "5": 5,
+    "6": 3,
+    "7": 1
+  },
+  "RotationLower": 0.0,
+  "RotationUpper": 1.0,
+  "RotationSpeed": 0.005,
+  "RotationThreshold": 0.85,
+  "Id": 3,
+  "Name": "Middle"
+}

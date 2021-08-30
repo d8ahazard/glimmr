@@ -1,0 +1,662 @@
+﻿@{
+    Layout = "_Layout";
+}
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>New Hotness</title>
+</head>
+<body>
+<div class="main">
+<nav class="myNav navbar-light bg-light fixed-top" id="mainNav">
+    <div class="myNav container-fluid">
+        <div class="btn-group btn-group-lg myNav" id="modeBtns">
+            <div class="btn btn-clear modeBtn" data-mode="0" data-toggle="tooltip" data-placement="top" title="Off">
+                <span class="material-icons">power_off</span>
+            </div>
+            <div class="btn btn-clear modeBtn" id="videoBtn" data-mode="1" data-toggle="tooltip" data-placement="top" title="Video">
+                <span class="material-icons">tv</span>
+            </div>
+            <div class="btn btn-clear modeBtn" data-mode="2" data-toggle="tooltip" data-placement="top" title="Audio">
+                <span class="material-icons">music_note</span>
+            </div>
+            <div class="btn btn-clear modeBtn" data-mode="4" data-toggle="tooltip" data-placement="top" title="Audio/Video">
+                <span class="material-icons">music_video</span>
+            </div>
+            <div class="btn btn-clear modeBtn" data-mode="3" data-toggle="tooltip" data-placement="top" title="Ambient">
+                <span class="material-icons">color_lens</span>
+            </div>
+            <div class="btn btn-clear modeBtn" id="streamBtn" data-mode="5" data-toggle="tooltip" data-placement="top" title="Streaming">
+                <span class="material-icons">sensors</span>
+            </div>
+        </div>
+        <div class="btn-group btn-group-lg myNav float-right">
+            <div class="btn btn-clear btn-lg btn-offset mainSettings" id="settingBtn">
+                <span class="material-icons">settings_applications</span>
+            </div>
+            <div class="btn btn-clear btn-lg btn-offset d-none" id="closeBtn">
+                <span class="material-icons">arrow_left</span>
+            </div>
+        </div>
+    </div>
+
+</nav>
+<div class="bg-dark hide container-fluid" id="ambientNav">
+    <div class="row">
+        <div class="col-6 row">
+            <div class="col-2">
+                <label class="form-label">Ambient Scene</label>
+            </div>
+            <div class="col-10">
+                <select class="form-control" data-property="AmbientShow" data-object="SystemData" id="AmbientShow">
+
+                </select>
+            </div>
+
+        </div>
+        <div class="col-6 row">
+            <div class="col-2">
+                <label class="form-label">
+                    Ambient color
+                </label>
+            </div>
+            <div class="col-10">
+                <div class="pickrBtn form-control"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="mainContent">
+<div class="row justify-content-center" id="cardRow">
+    <div class="card m-4 devCard" data-id="blankCard">
+        <div class="card-body row">
+            <div class="col-8 titleCol exp">
+                <h5 class="card-title">Loading...</h5>
+                <div class="lds-ellipsis">
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row justify-content-center d-none" id="settingsRow">
+<div class="col-12">
+<div class="card" id="mainSettingsCard" aria-labelledby="mainSettingsCard" data-backdrop="false" aria-hidden="true">
+<div class="card-content">
+<div class="card-dialog">
+<div class="card-header">
+    <h5 class="card-title" id="settingsTitle">Settings</h5>
+</div>
+<div class="card-body">
+<div class="container-fluid">
+<ul class="nav nav-tabs" id="settingsTab" role="tablist">
+    <li class="nav-item" role="presentation">
+        <a class="nav-link active" id="system-tab" data-toggle="tab" href="#systemTab" role="tab" aria-controls="system" aria-selected="true">System</a>
+    </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link" id="capture-tab" data-toggle="tab" href="#captureTab" role="tab" aria-controls="capture" aria-selected="false">Capture</a>
+    </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link" id="audio-tab" data-toggle="tab" href="#audioTab" role="tab" aria-controls="profile" aria-selected="false">Audio</a>
+    </li>
+
+</ul>
+<div class="tab-content" id="settingsContent">
+    <div class="tab-pane fade show active" id="systemTab" role="tabpanel" aria-labelledby="system-tab">
+    <div class="container-fluid">
+    <!-- System prefs -->
+    <div class="row border justify-content-center pb-5">
+        <div class="col-12 headerCol">General</div>
+        <div class="col-12 col-md-6 col-xl-3 align-self-center form-group pt-1" id="settingsMainControl">
+            <label class="form-label">System Control</label>
+            <div class="justify-content-center">
+                <div class="btn-group">
+                    <div class="btn btn-lg btn-clear controlBtn" data-action="shutdown" data-bs-toggle="tooltip" data-bs-placement="top" title="Shutdown">
+                        <span class="material-icons">power_settings_new</span>
+                    </div>
+                    <div class="btn btn-lg btn-clear controlBtn" data-action="reboot" data-bs-toggle="tooltip" data-bs-placement="top" title="Reboot">
+                        <span class="material-icons">settings_power</span>
+                    </div>
+                    <div class="btn btn-lg btn-clear controlBtn" data-action="restart" data-bs-toggle="tooltip" data-bs-placement="top" title="Restart Glimmr TV Service">
+                        <span class="material-icons">sync</span>
+                    </div>
+                    <div class="btn btn-lg btn-clear controlBtn" data-action="update" data-bs-toggle="tooltip" data-bs-placement="top" title="Update Glimmr TV">
+                        <span class="material-icons">system_update_alt</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Theme -->
+        <div class="col-12 col-md-6 col-xl-3 align-self-center form-group">
+            <label class="form-label">UI Theme</label>
+            <select class="form-control" data-object="SystemData" data-property="Theme">
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+            </select>
+        </div>
+        <!-- Time zone -->
+        <div class="col-12 col-md-6 col-xl-3 align-self-center form-group">
+            <label class="form-label">Time Zone</label>
+            <select name="timezone" data-object="SystemData" data-property="TimeZone" class="form-control">
+                <option></option>
+                <option value="Etc/GMT+12">(GMT-12:00) International Date Line West</option>
+                <option value="Pacific/Midway">(GMT-11:00) Midway Island, Samoa</option>
+                <option value="Pacific/Honolulu">(GMT-10:00) Hawaii</option>
+                <option value="US/Alaska">(GMT-09:00) Alaska</option>
+                <option value="America/Los_Angeles">(GMT-08:00) Pacific Time (US & Canada)</option>
+                <option value="America/Tijuana">(GMT-08:00) Tijuana, Baja California</option>
+                <option value="US/Arizona">(GMT-07:00) Arizona</option>
+                <option value="America/Chihuahua">(GMT-07:00) Chihuahua, La Paz, Mazatlan</option>
+                <option value="US/Mountain">(GMT-07:00) Mountain Time (US & Canada)</option>
+                <option value="America/Managua">(GMT-06:00) Central America</option>
+                <option value="US/Central">(GMT-06:00) Central Time (US & Canada)</option>
+                <option value="America/Mexico_City">(GMT-06:00) Guadalajara, Mexico City, Monterrey</option>
+                <option value="Canada/Saskatchewan">(GMT-06:00) Saskatchewan</option>
+                <option value="America/Bogota">(GMT-05:00) Bogota, Lima, Quito, Rio Branco</option>
+                <option value="US/Eastern">(GMT-05:00) Eastern Time (US & Canada)</option>
+                <option value="US/East-Indiana">(GMT-05:00) Indiana (East)</option>
+                <option value="Canada/Atlantic">(GMT-04:00) Atlantic Time (Canada)</option>
+                <option value="America/Caracas">(GMT-04:00) Caracas, La Paz</option>
+                <option value="America/Manaus">(GMT-04:00) Manaus</option>
+                <option value="America/Santiago">(GMT-04:00) Santiago</option>
+                <option value="Canada/Newfoundland">(GMT-03:30) Newfoundland</option>
+                <option value="America/Sao_Paulo">(GMT-03:00) Brasilia</option>
+                <option value="America/Argentina/Buenos_Aires">(GMT-03:00) Buenos Aires, Georgetown</option>
+                <option value="America/Godthab">(GMT-03:00) Greenland</option>
+                <option value="America/Montevideo">(GMT-03:00) Montevideo</option>
+                <option value="America/Noronha">(GMT-02:00) Mid-Atlantic</option>
+                <option value="Atlantic/Cape_Verde">(GMT-01:00) Cape Verde Is.</option>
+                <option value="Atlantic/Azores">(GMT-01:00) Azores</option>
+                <option value="Africa/Casablanca">(GMT+00:00) Casablanca, Monrovia, Reykjavik</option>
+                <option value="Etc/Greenwich">(GMT+00:00) Greenwich Mean Time : Dublin, Edinburgh, Lisbon, London</option>
+                <option value="Europe/Amsterdam">(GMT+01:00) Amsterdam, Berlin, Bern, Rome, Stockholm, Vienna</option>
+                <option value="Europe/Belgrade">(GMT+01:00) Belgrade, Bratislava, Budapest, Ljubljana, Prague</option>
+                <option value="Europe/Brussels">(GMT+01:00) Brussels, Copenhagen, Madrid, Paris</option>
+                <option value="Europe/Sarajevo">(GMT+01:00) Sarajevo, Skopje, Warsaw, Zagreb</option>
+                <option value="Africa/Lagos">(GMT+01:00) West Central Africa</option>
+                <option value="Asia/Amman">(GMT+02:00) Amman</option>
+                <option value="Europe/Athens">(GMT+02:00) Athens, Bucharest, Istanbul</option>
+                <option value="Asia/Beirut">(GMT+02:00) Beirut</option>
+                <option value="Africa/Cairo">(GMT+02:00) Cairo</option>
+                <option value="Africa/Harare">(GMT+02:00) Harare, Pretoria</option>
+                <option value="Europe/Helsinki">(GMT+02:00) Helsinki, Kyiv, Riga, Sofia, Tallinn, Vilnius</option>
+                <option value="Asia/Jerusalem">(GMT+02:00) Jerusalem</option>
+                <option value="Europe/Minsk">(GMT+02:00) Minsk</option>
+                <option value="Africa/Windhoek">(GMT+02:00) Windhoek</option>
+                <option value="Asia/Kuwait">(GMT+03:00) Kuwait, Riyadh, Baghdad</option>
+                <option value="Europe/Moscow">(GMT+03:00) Moscow, St. Petersburg, Volgograd</option>
+                <option value="Africa/Nairobi">(GMT+03:00) Nairobi</option>
+                <option value="Asia/Tbilisi">(GMT+03:00) Tbilisi</option>
+                <option value="Asia/Tehran">(GMT+03:30) Tehran</option>
+                <option value="Asia/Muscat">(GMT+04:00) Abu Dhabi, Muscat</option>
+                <option value="Asia/Baku">(GMT+04:00) Baku</option>
+                <option value="Asia/Yerevan">(GMT+04:00) Yerevan</option>
+                <option value="Asia/Kabul">(GMT+04:30) Kabul</option>
+                <option value="Asia/Yekaterinburg">(GMT+05:00) Yekaterinburg</option>
+                <option value="Asia/Karachi">(GMT+05:00) Islamabad, Karachi, Tashkent</option>
+                <option value="Asia/Calcutta">(GMT+05:30) Chennai, Kolkata, Mumbai, New Delhi</option>
+                <option value="Asia/Calcutta">(GMT+05:30) Sri Jayawardenapura</option>
+                <option value="Asia/Katmandu">(GMT+05:45) Kathmandu</option>
+                <option value="Asia/Almaty">(GMT+06:00) Almaty, Novosibirsk</option>
+                <option value="Asia/Dhaka">(GMT+06:00) Astana, Dhaka</option>
+                <option value="Asia/Rangoon">(GMT+06:30) Yangon (Rangoon)</option>
+                <option value="Asia/Bangkok">(GMT+07:00) Bangkok, Hanoi, Jakarta</option>
+                <option value="Asia/Krasnoyarsk">(GMT+07:00) Krasnoyarsk</option>
+                <option value="Asia/Hong_Kong">(GMT+08:00) Beijing, Chongqing, Hong Kong, Urumqi</option>
+                <option value="Asia/Kuala_Lumpur">(GMT+08:00) Kuala Lumpur, Singapore</option>
+                <option value="Asia/Irkutsk">(GMT+08:00) Irkutsk, Ulaan Bataar</option>
+                <option value="Australia/Perth">(GMT+08:00) Perth</option>
+                <option value="Asia/Taipei">(GMT+08:00) Taipei</option>
+                <option value="Asia/Tokyo">(GMT+09:00) Osaka, Sapporo, Tokyo</option>
+                <option value="Asia/Seoul">(GMT+09:00) Seoul</option>
+                <option value="Asia/Yakutsk">(GMT+09:00) Yakutsk</option>
+                <option value="Australia/Adelaide">(GMT+09:30) Adelaide</option>
+                <option value="Australia/Darwin">(GMT+09:30) Darwin</option>
+                <option value="Australia/Brisbane">(GMT+10:00) Brisbane</option>
+                <option value="Australia/Canberra">(GMT+10:00) Canberra, Melbourne, Sydney</option>
+                <option value="Australia/Hobart">(GMT+10:00) Hobart</option>
+                <option value="Pacific/Guam">(GMT+10:00) Guam, Port Moresby</option>
+                <option value="Asia/Vladivostok">(GMT+10:00) Vladivostok</option>
+                <option value="Asia/Magadan">(GMT+11:00) Magadan, Solomon Is., New Caledonia</option>
+                <option value="Pacific/Auckland">(GMT+12:00) Auckland, Wellington</option>
+                <option value="Pacific/Fiji">(GMT+12:00) Fiji, Kamchatka, Marshall Is.</option>
+                <option value="Pacific/Tongatapu">(GMT+13:00) Nuku'alofa</option>
+            </select>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3 align-self-center form-group">
+            <label class="form-label">Temperature Units</label>
+            <select name="units" data-object="SystemData" data-property="Units" class="form-control">
+                <option value="0">Fahrenheit</option>
+                <option value="1">Celsius</option>
+            </select>
+        </div>
+    </div>
+    <div class="row border justify-content-center pb-5 updateDiv" id="settingsMainUpdates">
+        <div class="col-12 headerCol">Updates</div>
+        <!-- Auto-update -->
+        <div class="col-12" id="versionDiv">Updates</div>
+        <div class="col-12 col-md-6 col-xl-3 custom-control custom-switch align-self-center mt-2 justify-content-center pb-4">
+            <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="AutoUpdate"/>
+            <label class="custom-control-label">Automatically Install Updates</label>
+            <div class="form-text" id="updateTime">Updates will be installed at 1:00AM every day when enabled.</div>
+        </div>
+        <!-- Auto-update time -->
+        <div class="col-12 col-md-6 col-xl-3 align-self-center form-group">
+            <label>Auto-update Time</label>
+            <select name="AutoUpdateTime" id="AutoUpdateTime" data-object="SystemData" data-property="AutoUpdateTime" class="systemSetting form-control">
+
+            </select>
+            <div class="form-text">What time Glimmr should check for and auto-install updates (if enabled).</div>
+        </div>
+    </div>
+    <div class="row border justify-content-center pb-5">
+        <div class="col-12 headerCol">Device Discovery</div>
+        <!-- Discovery time -->
+        <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center">
+            <label class="form-label">Discovery Time</label>
+            <input class="form-control" data-object="SystemData" data-property="DiscoveryTimeout" type="number" min="1" max="60" step="1"/>
+            <div class="form-text">Amount of time (in seconds) to allow for discovery.</div>
+        </div>
+
+        <!-- Auto discovery frequency time -->
+        <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center">
+            <label class="form-label">Discovery Interval</label>
+            <input class="form-control" data-object="SystemData" data-property="AutoDiscoveryFrequency" type="number" min="1" max="60" step="1"/>
+            <div class="form-text">Interval (in minutes) in which Auto Discovery is run.</div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center custom-control custom-switch">
+            <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="AutoRemoveDevices"/>
+            <label class="custom-control-label">Automatically Delete Old Devices</label>
+            <div class="form-text">Auto remove devices not seen during discovery after the specified time.</div>
+        </div>
+        <!-- Auto discovery frequency time -->
+        <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center">
+            <label class="form-label">Auto-Delete Interval</label>
+            <input class="form-control" data-object="SystemData" data-property="AutoRemoveDevicesAfter" type="number" min="1" max="60" step="1"/>
+            <div class="form-text">Interval (in days) after which old devices will be removed.</div>
+        </div>
+    </div>
+    <div class="row border justify-content-center pb-5">
+        <div class="col-12 headerCol">Auto-Disable</div>
+        <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center custom-control custom-switch">
+            <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="EnableAutoDisable"/>
+            <label class="custom-control-label">Automatically Sleep Lights</label>
+            <div class="form-text">Automatically disable control of lights when no input is detected.</div>
+        </div>
+
+        <!-- Auto-disable interval -->
+        <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center custom-control custom-switch">
+            <label class="form-label">Auto-Disable Delay</label>
+            <input type="number" class="form-input" data-object="SystemData" data-property="AutoDisableDelay" min="0" max="3000"/>
+            <div class="form-text">Amount of time (in seconds) for Glimmr to have no input before auto-disabling.</div>
+        </div>
+    </div>
+    <div class="row border justify-content-center pb-5">
+            <div class="col-12 headerCol">Serial Discovery</div>
+            <!-- Serial port speed -->
+            <div class="col-12 col-md-6 col-xl-3 align-self-center form-group">
+                <!--75, 110, 300, 1200, 2400, 4800, 9600, 19200, 38400, 57600 and 115200 bit/s.-->
+                <label>Serial Port Speed</label>
+                <select name="BaudRate" id="BaudRate" data-object="SystemData" data-property="BaudRate" class="systemSetting form-control">
+                    <option value="75">75</option>
+                    <option value="110">110</option>
+                    <option value="300">300</option>
+                    <option value="1200">1200</option>
+                    <option value="2400">2400</option>
+                    <option value="4800">4800</option>
+                    <option value="9600">9600</option>
+                    <option value="19200">19200</option>
+                    <option value="38400">38400</option>
+                    <option value="57600">57600</option>
+                    <option value="115200">115200</option>
+                </select>
+                <div class="form-text">Select the Serial Port speed to use when discovering Adalight devices.</div>
+            </div>
+    
+            
+        </div>
+    <div class="row border justify-content-center pb-5">
+        <div class="col-12 headerCol">Backup/Restore</div>
+        <div class="col-12 col-md-6 col-xl-3 justify-content-center form-group pt-5">
+            <label class="form-label">Backup Database</label>
+            <div class="btn btn-primary" id="backupBtn" onclick="downloadDb()">Backup</div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3 justify-content-center form-group">
+            <label class="form-label">Restore Database</label>
+            <form method="post" enctype="multipart/form-data" asp-controller="DreamData" asp-action="ImportDb" target="dummyframe">
+                <div class="form-group">
+                    <div class="col-md-10">
+                        <p>Select you new DB here:</p>
+                        <input type="file" name="files"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-10">
+                        <input type="submit" value="Upload"/>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="row border justify-content-center pb-5 openRgbDiv" id="settingsMainOpenRGB">
+        <div class="col-12 titleCol">OpenRGB</div>
+        <div class="col-12 form-text pb-4">Enter the IP Address and port of your OpenRGB Server.</div>
+        <div class="col-12 col-md-6 col-xl-3 form-group">
+            <label class="form-label">IP Address</label>
+            <input type="text" class="form-control" data-object="SystemData" data-property="OpenRgbIp" id="OpenRgbIp"/>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3 form-group">
+            <label class="form-label">Port</label>
+            <input type="text" class="form-control" data-object="SystemData" data-property="OpenRgbPort" id="OpenRgbPort"/>
+        </div>
+    </div>
+    </div>
+
+    <iframe name="dummyframe" id="dummyframe" style="display: none;"></iframe>
+    </div>
+    <div class="tab-pane fade" id="captureTab" role="tabpanel" aria-labelledby="capture-tab">
+        <div class="container-fluid">
+            <!-- Capture Mode -->
+            <div class="row border justify-content-center pb-5" id="settingsCaptureSource">
+                <div class="col-12 headerCol">Capture Preferences</div>
+                <div class="col-12 col-md-6 col-xl-3">
+                    <label class="form-label">Capture Mode</label>
+                    <select class="form-control" data-object="SystemData" data-property="CaptureMode">
+                        <option value="1">Camera</option>
+                        <option value="2">HDMI</option>
+                        <option value="3">Screen Capture</option>
+                    </select>
+                    <div class="form-text">Select your desired input source.</div>
+                </div>
+                <div class="col-12 col-md-6 col-xl-3 capGroup form-group" id="UsbSelectRow">
+                    <label class="form-label">USB Selection</label>
+                    <select class="form-control" data-object="SystemData" data-property="UsbSelection" id="UsbSelect">
+                    </select>
+                </div>
+                <div class="col-12 col-md-6 col-xl-3 capGroup" data-mode="1">
+                    <label class="form-label">Camera Type</label>
+                    <select class="form-control" data-object="SystemData" data-property="CamType">
+                        <option value="0">Raspberry Pi Camera</option>
+                        <option value="1">USB Web Camera</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-6 col-xl-3 capGroup" data-mode="2">
+
+                </div>
+            </div>
+            <div class="row border justify-content-center pb-5 streamingDiv" id="settingsCaptureStream">
+                <div class="col-12 headerCol">Streaming Preferences</div>
+                <div class="col-12 col-md-6 col-xl-3">
+                    <label class="form-label">Streaming Mode</label>
+                    <select class="form-control" data-object="SystemData" data-property="StreamMode">
+                        <option value="0">DreamScreen</option>
+                        <option value="1">Glimmr</option>
+                        <option value="2">FloW LED/WLED</option>
+                    </select>
+                    <div class="form-text">Select your desired streaming mode.</div>
+                </div>
+                <div class="col-12 col-md-6 col-xl-3">
+                    <div class="col-12 col-md-6 col-xl-3 streamGroup form-group" data-stream="0">
+                        <label class="form-label">Target DreamScreen</label>
+                        <select id="targetDs" class="form-control" data-object="SystemData" data-property="DsIp">
+                            <option value=""></option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row border justify-content-center pb-5">
+                <div class="col-12 headerCol">Cropping</div>
+                <!-- Letterboxing enable -->
+                <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="EnableLetterBox"/>
+                    <label class="custom-control-label">Enable Letterbox Cropping</label>
+                    <div class="form-text">Automatically crop black sectors from the top and bottom of the screen.</div>
+                </div>
+
+                <!-- Pillarboxing enable -->
+                <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="EnablePillarBox"/>
+                    <label class="custom-control-label">Enable Pillarbox Cropping</label>
+                    <div class="form-text">Automatically crop black sectors from the left and right sides of the screen.</div>
+                </div>
+                <!-- Crop time -->
+                <div class="col-12 col-md-6 col-xl-3 mt-2 mb-2 align-self-center custom-control custom-switch">
+                    <label class="form-label">Cropping Delay</label>
+                    <input class="form-control" data-object="SystemData" data-property="CropDelay" type="number" min="1" max="60" step="1"/>
+                    <div class="form-text">How long to wait before cropping the picture.</div>
+                </div>
+            </div>
+
+            <!-- Capture Preview -->
+            <div class="row border justify-content-center pb-5">
+                <div class="col-12 headerCol">Preview</div>
+                <div class="col-6">
+                    <div class="col-12 titleCol">Input</div>
+                    <div class="col-12">
+                        <img id="inputPreview" class="prevImg img-fluid" alt="Input preview." src="~/img/no_preview.jpg"/>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="col-12 titleCol">Output</div>
+                    <div class="col-12">
+                        <img id="outputPreview" class="prevImg img-fluid" alt="Output preview." src="~/img/no_preview.jpg"/>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-xl-3 form-group">
+                    <label class="form-label">Preview Mode</label>
+                    <select data-object="SystemData" data-property="PreviewMode" class="form-control">
+                        <option value="0">None</option>
+                        <option value="1">LED</option>
+                        <option value="2">Sectors</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row border justify-content-center pb-5" id="settingsCaptureLed">
+                <div class="col-12 titleCol">LED Counts</div>
+                <div class="col-12 form-text mb-4">Enter the total number of LEDs around the perimerter of your screen.</div>
+                <!-- Left count -->
+                <div class="col-6 col-md-3 align-self-center">
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="ledCountLeft">Left</span>
+                        </div>
+                        <input type="text" class="form-control ledCount" data-property="LeftCount" data-object="SystemData" aria-label="Left" aria-describedby="ledCountLeft">
+                    </div>
+                </div>
+                <!-- Right count -->
+                <div class="col-6 col-md-3 align-self-center">
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="ledCountRight">Right</span>
+                        </div>
+                        <input type="text" class="form-control ledCount" data-property="RightCount" data-object="SystemData" aria-label="Right" aria-describedby="ledCountRight">
+                    </div>
+                </div>
+                <!-- Top count -->
+                <div class="col-6 col-md-3 align-self-center">
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="ledCountTop">Top</span>
+                        </div>
+                        <input type="text" class="form-control ledCount" data-property="TopCount" data-object="SystemData" aria-label="Top" aria-describedby="ledCountTop">
+                    </div>
+                </div>
+                <!-- Bottom count -->
+                <div class="col-6 col-md-3 align-self-center">
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="ledCountBottom">Bottom</span>
+                        </div>
+                        <input type="text" class="form-control ledCount" data-property="BottomCount" data-object="SystemData" aria-label="Bottom" aria-describedby="ledCountBottom">
+                    </div>
+                </div>
+                <!-- Preview -->
+                <div class="col-12 col-md-8" id="sLedPreview">
+                    <div id="sLedWrap"></div>
+                </div>
+            </div>
+            <div class="row border justify-content-center pb-5" id="settingsCaptureSector">
+                <div class="col-12 titleCol">Sector Counts</div>
+                <div class="col-12 form-text mb-4">Enter the number of vertical and horizontal sectors. You will need to re-map your sectors for devices after this.</div>
+                <!-- Top count -->
+                <div class="col-6">
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="hSectorCount">Horizontal</span>
+                        </div>
+                        <input type="text" class="form-control ledCount" data-property="HSectors" data-object="SystemData" aria-label="Top" aria-describedby="ledCountTop">
+                    </div>
+                </div>
+                <!-- Left count -->
+                <div class="col-6">
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="vSectorCount">Vertical</span>
+                        </div>
+                        <input type="text" class="form-control ledCount" data-property="VSectors" data-object="SystemData" aria-label="Left" aria-describedby="ledCountLeft">
+                    </div>
+                </div>
+                <!-- CENTER MODE! -->
+                <div class="col-12 col-md-6 custom-control custom-switch align-self-center mt-2 justify-content-center mb-4">
+                    <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="UseCenter"/>
+                    <label class="custom-control-label">Use Center of Screen for Sectors</label>
+                    <div class="form-text">Sectors will be captured in order from right-left, bottom-top.</div>
+                </div>
+                <!-- Preview -->
+                <div class="col-12 col-md-8" id="sectorPreview">
+                    <div id="sectorWrap"></div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+    <div class="tab-pane fade" id="audioTab" role="tabpanel" aria-labelledby="audio-tab">
+    <div class="container-fluid">
+        <div class="row border justify-content-center pb-5">
+            <div class="col-12 headerCol">Music Mode</div>
+            <div class="col-12 col-md-6 col-xl-3 justify-content-center form-group">
+                <label class="form-label">Input Device</label>
+                <select class="form-control" data-object="SystemData" data-property="RecDev" id="RecDev">
+
+                </select>
+            </div>
+        </div>
+        <div class="row border justify-content-center pb-5">
+            <div class="col-12 col-md-6 col-xl-3 justify-content-center form-group">
+                <label class="form-label">Sector Map</label>
+                <select class="form-control" data-object="SystemData" data-property="AudioMap">
+                    <option value="0">Bottom</option>
+                    <option value="1">Top</option>
+                    <option value="2">Center</option>
+                    <option value="3">Middle</option>
+                    <option value="4">Corners</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-6 col-xl-3 justify-content-center form-group">
+                <label class="form-label">Rotation Speed</label>
+                <input class="form-control" data-object="SystemData" data-property="AudioRotationSpeed" type="number" min=".99" max=".99" step=".01"/>
+            </div>
+            <div class="col-12 col-md-6 col-xl-3 justify-content-center form-group">
+                <label class="form-label">Rotation Sensitivity</label>
+                <input class="form-control" data-object="SystemData" data-property="AudioRotationSensitivity" type="number" min="-.99" max=".99" step=".01"/>
+            </div>
+            <div class="col-12 col-md-6 col-xl-3 justify-content-center form-group">
+                <label class="form-label">Rotation Lower Limit</label>
+                <input class="form-control" data-object="SystemData" data-property="AudioRotationLower" type="number" min="0" max="1" step=".01"/>
+            </div>
+            <div class="col-12 col-md-6 col-xl-3 justify-content-center form-group">
+                <label class="form-label">Rotation Upper Limit</label>
+                <input class="form-control" data-object="SystemData" data-property="AudioRotationUpper" type="number" min="0" max="1" step=".01"/>
+            </div>
+            <div class="col-12 col-md-6 col-xl-3 justify-content-center form-group">
+                <label class="form-label">Audio Gain</label>
+                <input class="form-control" data-object="SystemData" data-property="AudioGain" type="number" min="0" max="5" step=".1"/>
+            </div>
+            <div class="col-12 col-md-6 col-xl-3 justify-content-center form-group">
+                <label class="form-label">Low Audio Cutoff</label>
+                <input class="form-control" data-object="SystemData" data-property="AudioMin" type="number" min="0" max=".1" step=".001"/>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<nav class="container-fluid fixed-bottom" id="footer">
+    <div class="fixed-bottom">
+
+        <div class="btn btn-sm btn-clear float-right refreshBtn mr-2" id="refreshBtn">
+            <span class="material-icons" id="refreshIcon">refresh</span>
+        </div>
+    </div>
+    <div id="statDiv" class="mt-1">
+        <div class="d-inline-block" id="fpsDiv" data-container="body" data-toggle="popover" data-placement="top"
+             data-trigger="hover"
+             data-title="Frame Statistics"
+             data-content="">
+            <div id="fps" class="d-inline-block mb-2"></div>
+        </div>
+        <div id="tempDiv" class="d-inline-block">
+            <span class="material-icons d-inline-block statIcon">toys</span>
+            <div id="temperature" class="d-inline-block mb-2"></div>
+        </div>
+        <div id="cpuDiv" class="d-inline-block">
+            <span class="material-icons d-inline-block statIcon">multiline_chart</span>
+            <div id="cpuPct" class="d-inline-block mb-2"></div>
+        </div>
+        <div id="throttleDiv" class="d-inline-block">
+            <span class="material-icons d-inline-block statIcon" id="overIcon"></span>
+        </div>
+    </div>
+</nav>
+<div class="modal" tabindex="-1" id="nanoModal" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Select a sector</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Click on the sector to map to a panel.</p>
+                <div class="nanoPreviewWrap" id="nanoPreviewWrap">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal" tabindex="-1" id="errorModal" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Socket connection lost!</h5>
+            </div>
+            <div class="modal-body">
+                <p>The connection to the glimmr websocket was lost. Automatically attempting to reconnect in 5 seconds.</p>
+                <p>Otherwise, you can try <a href="">reloading the page</a>.</p>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="blank"></div>
+</div>
+</body>
+</html>

@@ -90,7 +90,6 @@ if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 
 $service = Get-Service -Name glimmr -ErrorAction SilentlyContinue
 
-
 $glimmrPath = "C:\Progra~1\Glimmr";
 $glimmrBinPath = "C:\Progra~1\Glimmr\bin\Glimmr.exe";
 $glimmrRepo = "https://github.com/d8ahazard/glimmr";
@@ -131,7 +130,7 @@ If( -not (Test-Path -Path $glimmrPath) ){
     Write-Host "Glimmr path doesn't exist...something went wrong.";
 } else {
     Write-Host "Compiling Glimmr...";
-    $projectPath = "$glimmrPath\src\Glimmr.csproj";
+    $projectPath = "$glimmrPath\src\Glimmr\Glimmr.csproj";
     $outPath = "$glimmrPath\bin";    
     Invoke-Expression "& '$dotNetPath' publish $projectPath /p:PublishProfile=Windows -o $outPath";
     Copy-Item "$glimmrPath\lib\Windows\bass.dll" "$outPath\bass.dll";

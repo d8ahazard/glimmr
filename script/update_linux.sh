@@ -1,4 +1,5 @@
 #!/bin/bash
+branch=${1:-"master"}
 
 PUBPROFILE="Linux";
 if [ -f "/usr/bin/raspi-config" ] 
@@ -18,7 +19,7 @@ if [ $unameOut == "FreeBSD" ]
 fi
 
 
-echo "Updating Glimmr for $PUBPROFILE"
+echo "Updating Glimmr for $PUBPROFILE using branch $branch."
 
 log=$(ls -t /var/log/glimmr/glimmr* | head -1)
 
@@ -29,21 +30,23 @@ echo "SERVICE STOPPED!" >> $log
 
 # Fetch changes from github repo
 cd /home/glimmrtv/glimmr || exit
+git checkout $branch >> $log
 git fetch && git pull >> $log
 
 # Build latest version
 echo "Building glimmr using profile $PUBPROFILE..." >> $log
-/opt/dotnet/dotnet publish /home/glimmrtv/glimmr/src/Glimmr.csproj /p:PublishProfile=$PUBPROFILE -o /home/glimmrtv/glimmr/bin/
+/opt/dotnet/dotnet publish /home/glimmrtv/glimmr/src/Glimmr/Glimmr.csproj /p:PublishProfile=$PUBPROFILE -o /home/glimmrtv/glimmr/bin/
 if [ -d "/home/glimmrtv/glimmr/lib/$PUBPROFILE/" ]
   then
     cp -r /home/glimmrtv/glimmr/lib/$PUBPROFILE/* /usr/lib
 fi
 cp -r /home/glimmrtv/glimmr/lib/bass.dll /usr/lib/bass.dll
+#Give all scripts full permission
+chmod -R 777 /home/glimmrtv/glimmr/script
 chmod -R 777 /home/glimmrtv/glimmr/bin
 echo "DONE." >> $log
 
-#Give all scripts full permission
-echo "Restarting..." >> $log
+echo "Restarting glimmr service..." >> $log
 
 # Restart Service
 service glimmr start

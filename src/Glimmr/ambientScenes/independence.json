@@ -1,0 +1,28 @@
+﻿{
+  "Colors": [
+    "#FF0000",
+    "#FF0000",
+    "#FF0000",
+    "#0000FF",
+    "#0000FF",
+    "#0000FF",
+    "#FFFFFF",
+    "#FFFFFF",
+    "#FFFFFF",
+    "#FF0000",
+    "#FF0000",
+    "#FF0000",
+    "#0000FF",
+    "#0000FF",
+    "#0000FF",
+    "#FFFFFF",
+    "#FFFFFF",
+    "#FFFFFF"
+  ],
+  "AnimationTime": 7,
+  "EasingTime": 0.2,
+  "Mode": "Linear",
+  "Easing": "FadeOut",
+  "Name": "Independence",
+  "Id": 5
+}

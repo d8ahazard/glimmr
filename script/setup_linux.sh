@@ -1,5 +1,4 @@
 #!/bin/bash
-
 PUBPROFILE="Linux";
 if [ -f "/usr/bin/raspi-config" ] 
   then
@@ -45,18 +44,8 @@ then
     echo "Installing Linux-ARM dependencies..."
     # Install dependencies
     sudo apt-get -y update && apt-get -y upgrade
-    sudo apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa libdc1394-22 libtesseract-dev scons icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libatlas-base-dev gfortran libopengl-dev git gcc xauth avahi-daemon x11-xserver-utils libtiff5-dev libgeotiff-dev libgtk-3-dev libgstreamer1.0-dev libavcodec-dev libswscale-dev libavformat-dev libopenexr-dev libjasper-dev libdc1394-22-dev libv4l-dev libeigen3-dev libopengl-dev cmake-curses-gui freeglut3-dev
+    sudo apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa libdc1394-22 libtesseract-dev scons icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev gfortran libopengl-dev git gcc xauth avahi-daemon x11-xserver-utils libtiff5-dev libgeotiff-dev libgtk-3-dev libgstreamer1.0-dev libavcodec-dev libswscale-dev libavformat-dev libopenexr-dev libjasper-dev libdc1394-22-dev libv4l-dev libeigen3-dev libopengl-dev cmake-curses-gui freeglut3-dev
     echo "gpio=19=op,a5" >> /boot/config.txt
-    #Assign existing hostname to $hostn
-    hostn=$(cat /etc/hostname)
-    hostn=`cat /etc/hostname | tr -d " \t\n\r"`
-    serial=$(cat /proc/cpuinfo | grep -E "^Serial" | sed "s/.*: 0*//")
-    newhost=glimmr-"${serial: -4}"
-    if [ "$hostn" != $newhost ]; then
-      echo "Changing hostname from $hostn to $newhost..." >&2
-      echo $newhost > /etc/hostname
-      sudo sed -i "s/127.0.1.1.*$CURRENT_HOSTNAME\$/127.0.1.1\t$NEW_HOSTNAME/g" /etc/hosts
-    fi
     
     if [ ! -d "/home/glimmrtv/ws281x" ]
     then
@@ -95,10 +84,7 @@ if [ ! -d "/home/glimmrtv/glimmr" ]
 then
 # Clone glimmr
   echo "Cloning glimmr"
-  git clone https://github.com/d8ahazard/glimmr /home/glimmrtv/glimmr
-  # Install update script to init.d   
-  sudo cp /home/glimmrtv/glimmr/script/update_linux.sh /etc/init.d/update_linux.sh
-  sudo chmod 777 /etc/init.d/update_linux.sh
+  git clone -b dev https://github.com/d8ahazard/glimmr /home/glimmrtv/glimmr  
 else
   echo "Source exists, updating..."
   cd /home/glimmrtv/glimmr || exit
@@ -119,8 +105,8 @@ fi
 
 # Build latest version
 echo "Building glimmr..."
-/opt/dotnet/dotnet restore /home/glimmrtv/glimmr/src/Glimmr.csproj
-/opt/dotnet/dotnet publish /home/glimmrtv/glimmr/src/Glimmr.csproj /p:PublishProfile=$PUBPROFILE -o /home/glimmrtv/glimmr/bin/
+/opt/dotnet/dotnet restore /home/glimmrtv/glimmr/src/Glimmr/Glimmr.csproj
+/opt/dotnet/dotnet publish /home/glimmrtv/glimmr/src/Glimmr/Glimmr.csproj /p:PublishProfile=$PUBPROFILE -o /home/glimmrtv/glimmr/bin/
 echo "DONE."
 chmod -R 777 /home/glimmrtv/glimmr/bin
 

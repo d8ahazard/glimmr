@@ -9,13 +9,13 @@ Open a Powershell window, execute the following command:
 iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_win.ps1'))
 
 ```
-OR, to clone from the master branch:
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_win.ps1'))
 
+```
+OR, to clone from the master branch:
 ```
 iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/d8ahazard/glimmr/master/script/setup_win.ps1'))
-
 ```
-
 Once the script is done running, you should now have a "GlimmrTray" application in your start menu.
 
 Click this to launch Glimmr, minimize the console window to have it stored in the tray.
