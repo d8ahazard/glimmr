@@ -4,6 +4,10 @@
 
 ### Windows
 Open a Powershell window, execute the following command:
+
+```
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_win.ps1'))
+
 ```
 iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_win.ps1'))
 
@@ -56,7 +60,9 @@ Execute the following command. You can replace "dev" with "master" to use the ma
 sudo su
 wget -qO- https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_linux.sh | bash
 ```
+
 OR, to clone from the master branch...
+
 ```
 sudo su
 wget -qO- https://raw.githubusercontent.com/d8ahazard/glimmr/master/script/setup_linux.sh | bash

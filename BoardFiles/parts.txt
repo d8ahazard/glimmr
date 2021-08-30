@@ -1,0 +1,11 @@
+GPIO Header:
+"100pcs/lot 2.54mm Double Row Female 20P Straight Header Pitch Socket Strip 2X20 Pin"
+https://www.aliexpress.com/item/32454935478.html?spm=a2g0s.9042311.0.0.53a64c4dn4HmG0
+
+Level Shifter (74AHC125):
+"10PCS 74AHC125 SOP14 74AHC125D SOP-14 SN74AHC125DR SOP AHC125 SOIC14 74AHC125DR SOIC-14 SMD new and original IC Chipset"
+https://www.aliexpress.com/item/1005001972469123.html?spm=a2g0o.productlist.0.0.7e9f194awLko0t&algo_pvid=8fb58219-1acf-4241-9161-61829c359d20&algo_exp_id=8fb58219-1acf-4241-9161-61829c359d20-3
+
+JST-SM Connectors, female (4x):
+"BTF-LIGHTING 20 Pairs JST SM 3 Pin Connectors for WS2812B WS2811 WS2812 SK6812 LED Strip Female Male 15cm 22awg Wire"
+https://smile.amazon.com/BTF-LIGHTING-Connectors-WS2812B-WS2811-WS2812/dp/B01DC0KIT2/ref=sr_1_1?dchild=1&keywords=jst-sm+connector+btf&qid=1626982351&sr=8-1
