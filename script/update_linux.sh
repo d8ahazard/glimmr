@@ -31,7 +31,11 @@ echo "SERVICE STOPPED!" >> $log
 # Fetch changes from github repo
 cd /home/glimmrtv/glimmr || exit
 git checkout $branch >> $log
-git fetch && git pull >> $log
+git fetch --all >> $log
+
+# Ensure we don't have any weird file stuff
+git reset --hard origin/$branch >> $log
+git pull >> $log
 
 # Build latest version
 echo "Building glimmr using profile $PUBPROFILE..." >> $log
