@@ -108,6 +108,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			}
 
 			_data = dev;
+			_brightness = _data.Brightness;
 			LoadData();
 			if (oldBaud != _baud || oldPort != _port || oldCount != _ledCount) {
 				Log.Debug("Reloading connection to adalight!");
@@ -142,11 +143,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 				_multiplier = 1;
 			}
 
-			if (_data.Brightness == 0) {
-				_brightness = 0;
-			} else {
-				_brightness = (int) (_data.Brightness / 100f * 255);
-			}
+			_brightness = _data.Brightness;
 		}
 	}
 }
