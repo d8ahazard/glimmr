@@ -28,15 +28,6 @@ namespace Glimmr.Models.Util {
 		private static bool _useCenter;
 		private static int _vCount;
 
-		private static void ColorToHsv(Color color, out double hue, out double saturation, out double value) {
-			double max = Math.Max(color.R, Math.Max(color.G, color.B));
-			double min = Math.Min(color.R, Math.Min(color.G, color.B));
-
-			hue = color.GetHue();
-			saturation = max == 0 ? 0 : 1d - min / max;
-			value = max / 255d;
-		}
-
 		/// <summary>
 		///     Take a n-color list, and convert down to 12 for DS
 		/// </summary>
@@ -385,26 +376,6 @@ namespace Glimmr.Models.Util {
 			}
 
 			return output;
-		}
-
-		public static bool IsBlack(Color color, int min = 5) {
-			return color.R < min && color.G < min && color.B < min;
-		}
-
-		public static Color AdjustBrightness(Color input, float boost) {
-			ColorToHsv(input, out var h, out var s, out var v);
-			if (v + boost <= 1.0) {
-				v += boost;
-				//s -= boost;
-			} else {
-				v = 1.0;
-			}
-
-			if (v < 0) {
-				v = 0;
-			}
-
-			return HsvToColor(h, s, v);
 		}
 
 		public static Color Rainbow(float progress) {
@@ -1342,6 +1313,32 @@ namespace Glimmr.Models.Util {
 			_topCount = sd.TopCount;
 			_bottomCount = sd.BottomCount;
 			_ledCount = sd.LedCount;
+		}
+
+		/// <summary>
+		/// Adjust the brightness of a list of colors
+		/// </summary>
+		/// <param name="toSend">Input colors</param>
+		/// <param name="max">A float from 0-1, representing the max percentage brightness can be represented</param>
+		/// <returns></returns>
+		public static Color[] AdjustBrightness(List<Color> toSend, float max) {
+			var output = new Color[toSend.Count];
+			var mc = (byte) (max * 255f);
+			for (var i=0; i < toSend.Count; i++) {
+				var color = toSend[i];
+				var cMax = Math.Max(color.R, Math.Max(color.G, color.B));
+				var diff = 0;
+				if (cMax > mc) {
+					diff = cMax - mc;
+				}
+
+				var r = Math.Max(0, color.R - diff);
+				var g = Math.Max(0, color.G - diff);
+				var b = Math.Max(0, color.B - diff);
+				output[i] = Color.FromArgb(r, g, b);
+			}
+
+			return output;
 		}
 	}
 }
