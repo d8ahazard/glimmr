@@ -55,7 +55,6 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
 			_adalight.Connect();
-			_adalight.UpdateBrightness(_brightness);
 			Streaming = true;
 			await Task.FromResult(true);
 			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
@@ -86,6 +85,9 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 				toSend.Reverse();
 			}
 
+			if (_brightness < 100) {
+				toSend = ColorUtil.AdjustBrightness(toSend, _brightness / 100f).ToList();
+			}
 			_adalight.UpdateColors(toSend);
 		}
 
@@ -119,10 +121,6 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 				if (wasStreaming) {
 					Streaming = _adalight.Connect();
 				}
-			}
-
-			if (_adalight != null && _adalight.Connected) {
-				_adalight.UpdateBrightness(_brightness);
 			}
 
 			return Task.CompletedTask;

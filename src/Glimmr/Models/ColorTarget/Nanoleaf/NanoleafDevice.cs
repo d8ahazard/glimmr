@@ -18,7 +18,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		private readonly Stopwatch _frameWatch;
 		private readonly NanoleafClient _nanoleafClient;
 		private readonly NanoleafStreamingClient _streamingClient;
-		private int _brightness = 255;
+		private int _brightness;
 		private NanoleafData _data;
 		private bool _disposed;
 
@@ -34,14 +34,16 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		public NanoleafDevice(NanoleafData n, ColorService colorService) : base(colorService) {
 			colorService.ColorSendEventAsync += SetColors;
 			ColorService = colorService;
+			_brightness = -1;
 			_targets = new Dictionary<int, int>();
 			_data = n;
-			SetData();
 			var streamMode = n.Type == "NL29" || n.Type == "NL42" ? 2 : 1;
 			var cs = ColorService.ControlService;
-			cs.RefreshSystemEvent += SetData;
 			_nanoleafClient = new NanoleafClient(n.IpAddress, n.Token);
 			_streamingClient = new NanoleafStreamingClient(n.IpAddress, streamMode, cs.UdpClient);
+
+			SetData();
+			cs.RefreshSystemEvent += SetData;
 			_frameWatch = new Stopwatch();
 			_disposed = false;
 		}
@@ -67,16 +69,12 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			}
 
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
-
 			SetData();
 			Streaming = true;
-			//_wasOn = await _nanoleafClient.GetPowerStatusAsync();
 			if (!_frameWatch.IsRunning && _data.Type == "NL42") {
 				_frameWatch.Restart();
 			}
-
-			//await _nanoleafClient.TurnOnAsync();
-			//await _nanoleafClient.SetBrightnessAsync((int) (Brightness / 100f * 255));
+			
 			await _nanoleafClient.StartExternalAsync();
 			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
 		}
@@ -167,13 +165,11 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
 		private void SetData() {
 			var sd = DataUtil.GetSystemData();
-			var oldBrightness = _data.Brightness;
 			DataUtil.GetItem<int>("captureMode");
 			_layout = _data.Layout;
 			_targets = new Dictionary<int, int>();
-
-			_brightness = _data.Brightness;
-			if (oldBrightness != _brightness) {
+			if (_data.Brightness != _brightness) {
+				_brightness = _data.Brightness;
 				_nanoleafClient.SetBrightnessAsync(_brightness);
 			}
 

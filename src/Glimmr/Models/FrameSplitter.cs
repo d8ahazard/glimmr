@@ -549,18 +549,19 @@ namespace Glimmr.Models {
 			width--;
 			height--;
 			
-			// Convert image to greyscale
-			var gr = new Mat();
-			CvInvoke.CvtColor(image, gr, ColorConversion.Bgr2Gray);
-			// Check to see if everything is black
-			var noImage = CvInvoke.CountNonZero(gr) <= blackLevel;
+			var count = Sum(image.GetRawData());
+			var avg = count / image.Total.ToInt32();
+			var noImage =  avg <= 21 || width == 0 || height == 0;
 			// If it is, we can stop here
 			if (noImage) {
-				gr.Dispose();
 				_allBlack = true;
 				return;
 			}
 
+			// Convert image to greyscale
+			var gr = new Mat();
+			CvInvoke.CvtColor(image, gr, ColorConversion.Bgr2Gray);
+			
 			_allBlack = false;
 			// Check letterboxing
 			if (_cropLetter) {
