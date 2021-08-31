@@ -9,9 +9,7 @@ Open a Powershell window, execute the following command:
 iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_win.ps1'))
 
 ```
-iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_win.ps1'))
 
-```
 OR, to clone from the master branch:
 ```
 iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/d8ahazard/glimmr/master/script/setup_win.ps1'))
