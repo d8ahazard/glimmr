@@ -1,9 +1,12 @@
 ﻿#region
 
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Mime;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models;
@@ -69,6 +72,26 @@ namespace Glimmr.Controllers {
 			var dbPath = DataUtil.ExportSettings();
 			var fileBytes = System.IO.File.ReadAllBytes(dbPath);
 			var fileName = Path.GetFileName(dbPath);
+			return File(fileBytes, MediaTypeNames.Application.Octet, fileName);
+		}
+		
+		[HttpGet("LogDownload")]
+		public FileResult LogDownload() {
+			var dt = DateTime.Now.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
+			var logPath = $"/var/log/glimmr/{dt}.log";
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+				var userPath = SystemUtil.GetUserDir();
+				var logDir = Path.Combine(userPath, "log");
+				if (!Directory.Exists(logDir)) {
+					Directory.CreateDirectory(logDir);
+				}
+
+				logPath = Path.Combine(userPath, "log", $"{dt}.log");
+			}
+
+			Console.WriteLine("Grabbing log from " + logPath);
+			var fileBytes = System.IO.File.ReadAllBytes(logPath);
+			var fileName = Path.GetFileName(logPath);
 			return File(fileBytes, MediaTypeNames.Application.Octet, fileName);
 		}
 

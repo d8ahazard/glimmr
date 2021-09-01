@@ -66,10 +66,9 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			}
 
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
-			var blacks = ColorUtil.EmptyList(_ledCount);
-			_adalight.UpdateColors(blacks);
+			var blacks = ColorUtil.EmptyColors(_ledCount);
+			await _adalight.UpdateColorsAsync(blacks);
 			_adalight.Disconnect();
-			await Task.FromResult(true);
 			Streaming = false;
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
@@ -80,21 +79,20 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 				return;
 			}
 
-			var toSend = ColorUtil.TruncateColors(colors, _offset, _ledCount, _multiplier).ToList();
+			var toSend = ColorUtil.TruncateColors(colors, _offset, _ledCount, _multiplier);
 			if (_reverseStrip) {
-				toSend.Reverse();
+				toSend = toSend.Reverse().ToArray();
 			}
 
 			if (_brightness < 100) {
-				toSend = ColorUtil.AdjustBrightness(toSend, _brightness / 100f).ToList();
+				toSend = ColorUtil.AdjustBrightness(toSend, _brightness / 100f);
 			}
 			_adalight.UpdateColors(toSend);
 		}
 
 		public async Task FlashColor(Color color) {
 			var toSend = ColorUtil.FillArray(color, _ledCount);
-			_adalight.UpdateColors(toSend.ToList());
-			await Task.FromResult(true);
+			await _adalight.UpdateColorsAsync(toSend).ConfigureAwait(false);
 		}
 
 		public Task ReloadData() {
@@ -104,6 +102,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			var dev = DataUtil.GetDevice<AdalightData>(Id);
 
 			if (dev == null) {
+				Log.Warning("Unable to retrieve ada data.");
 				return Task.CompletedTask;
 			}
 

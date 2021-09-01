@@ -588,17 +588,22 @@ namespace Glimmr.Models.Util {
 		/// Adjust the brightness of a list of colors
 		/// </summary>
 		/// <param name="toSend">Input colors</param>
-		/// <param name="max">A float from 0-1, representing the max percentage brightness can be represented</param>
+		/// <param name="max">A float from 0-1, representing the max percentage brightness can be represented.</param>
 		/// <returns></returns>
-		public static Color[] AdjustBrightness(List<Color> toSend, float max) {
-			var output = new Color[toSend.Count];
+		public static Color[] AdjustBrightness(Color[] toSend, float max) {
+			var output = new Color[toSend.Length];
 			var mc = (byte) (max * 255f);
-			for (var i=0; i < toSend.Count; i++) {
+			Log.Debug("Max is " + max + " mc is " + mc);
+
+			for (var i=0; i < toSend.Length; i++) {
 				var color = toSend[i];
-				var cMax = Math.Max(color.R, Math.Max(color.G, color.B));
+				// Max value is the brightness
+				var colM = Math.Max(color.R, Math.Max(color.G, color.B));
+				// Divide by 255 and multiply by max we can have...
+				var cMax = (byte) (colM / 255f * mc);
 				var diff = 0;
-				if (cMax > mc) {
-					diff = cMax - mc;
+				if (colM > cMax) {
+					diff = colM - cMax;
 				}
 
 				var r = Math.Max(0, color.R - diff);

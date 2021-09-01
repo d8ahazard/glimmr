@@ -336,13 +336,14 @@ namespace Glimmr.Models.Util {
 
 			var caps = SystemUtil.ListUsb();
 
-			var jl = new JsonLoader("ambientScenes");
+			var jl1 = new JsonLoader("ambientScenes");
+			var jl2 = new JsonLoader("audioScenes");
 			output["SystemData"] = sd;
 			output["Devices"] = devices;
 			output["Dev_Audio"] = audio;
 			output["Dev_Usb"] = caps;
-			output["AmbientScenes"] = jl.LoadDynamic<AmbientScene>();
-			output["AudioScenes"] = jl.LoadDynamic<AudioScene>();
+			output["AmbientScenes"] = jl1.LoadDynamic<AmbientScene>();
+			output["AudioScenes"] = jl2.LoadDynamic<AudioScene>();
 			var assembly = Assembly.GetEntryAssembly();
 			if (assembly != null) {
 				var attrib = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();

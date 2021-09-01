@@ -201,7 +201,7 @@ area {
     border: 2px solid black;
 }
 
-input[type="range"]::-webkit-slider-thumb {
+input[type="range"]::-webkit-slider-thumb:not[data-object="SystemData"] {
     -webkit-appearance: none;
     cursor: pointer;
     height: 25px;
@@ -221,7 +221,7 @@ input[type="range"]::-webkit-slider-thumb {
     background-repeat: no-repeat;
 }
 
-input[type="range"]::-webkit-slider-thumb::before {
+input[type="range"]::-webkit-slider-thumb:not[data-object="SystemData"]::before {
     content: '+';
     position: absolute;
     top: -10px;
@@ -232,7 +232,7 @@ input[type="range"]::-webkit-slider-thumb::before {
 }
 
 
-input[type="range"] {
+input[type="range"]:not[data-object="SystemData"] {
     -webkit-appearance: none;
     display: block;
     margin: 0;
@@ -244,7 +244,7 @@ input[type="range"]:focus {
     outline: none;
 }
 
-input[type="range"]::-webkit-slider-runnable-track {
+input[type="range"]:not[data-object="SystemData"]::-webkit-slider-runnable-track {
     -webkit-appearance: none;
     width: 100%;
     color: transparent;
@@ -282,6 +282,27 @@ input[type="range"]::-webkit-slider-runnable-track {
     height: 48px;
     top: 48px;
     width: 100%;
+}
+
+#audioNav {
+    position: fixed;
+    height: 145px;
+    top: 48px;
+    width: 100%;
+}
+
+.subCol {
+    font-size: 20px;
+}
+
+.sceneRow {
+    margin-bottom: -20px;
+    margin-left: 15px;
+}
+
+.rotRow {
+    margin-left: 15px;
+    margin-right: 15px;
 }
 
 .btn-clear.btn-lg, .btn-clear.btn-lg > span {

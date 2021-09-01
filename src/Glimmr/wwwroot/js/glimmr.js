@@ -89,7 +89,7 @@ let websocket = new signalR.HubConnectionBuilder()
 document.addEventListener("DOMContentLoaded", function(){
     let popover = new bootstrap.Popover(document.getElementById("fps"), {
         container: 'body'
-    })
+    });
     let getUrl = window.location;
     baseUrl = getUrl .protocol + "//" + getUrl.host;
     fpsCounter = document.getElementById("fps");
@@ -98,21 +98,32 @@ document.addEventListener("DOMContentLoaded", function(){
     settingsTab = document.getElementById("settingsTab");
     settingsTitle = document.getElementById("settingsTitle");
     settingsContent = document.getElementById("settingsContent");
-    cardRow = document.getElementById("cardRow");
+    cardRow = document.getElementById("cardRow");   
+    setSocketListeners();
+    loadSocket();
+    setTimeout(function() {
+        new Image().src = "../img/sectoring_screen.png";        
+    }, 1000);
+});
+
+function loadPickr() {
+    let sd = getStoreProperty("SystemData");
     pickr = Pickr.create({
         el: '.pickrBtn',
-        theme: 'nano', // or 'monolith', or 'nano'
+        theme: 'nano',
+        default: "#" + sd.AmbientColor,
         swatches: [
-            'rgba(255, 0, 0, 1)',
-            'rgba(255, 128, 0, 1)',
-            'rgba(255, 255, 0, 1)',
-            'rgb(128,255,0)',
-            'rgb(0,255,128)',
-            'rgb(0,255,255)',
-            'rgba(0, 0, 255, 1)',
-            'rgba(128, 0, 255, 1)',
-            'rgba(255, 0, 255, 1)',
-            'rgb(255,0,128)'
+            'rgb(255, 0, 0)',
+            'rgb(255, 128, 0)',
+            'rgb(128, 255, 0)',
+            'rgb(0, 255, 0)',
+            'rgb(0, 255, 128)',
+            'rgb(0,128,128)',
+            'rgb(0,128,255)',
+            'rgb(0,0,255)',
+            'rgb(128, 0, 255)',
+            'rgb(255, 0, 255)',
+            'rgb(255, 0, 128)'
         ],
 
         components: {
@@ -140,7 +151,7 @@ document.addEventListener("DOMContentLoaded", function(){
         pickr.setColor("#" + newColor);
         setStoreProperty("SystemData",sd);
         sendMessage("SystemData",sd);
-        
+
     }).on('swatchselect', (color, instance) => {
         let col = color.toHEXA();
         newColor = col[0] + col[1] + col[2];
@@ -151,16 +162,10 @@ document.addEventListener("DOMContentLoaded", function(){
         asSelect.value = "-1";
         pickr.setColor("#" + newColor);
         setStoreProperty("SystemData",sd);
-        sendMessage("SystemData",sd);        
+        sendMessage("SystemData",sd);
     });
 
-    setSocketListeners();
-    loadSocket();
-    setTimeout(function() {
-        new Image().src = "../img/sectoring_screen.png";        
-    }, 1000);
-});
-
+}
 
 function loadCounts() {
     let sd = data.store["SystemData"];
@@ -498,6 +503,17 @@ function downloadDb() {
     link.remove();
 }
 
+function fetchLog() {
+    let link = document.createElement("a");
+    // If you don't know the name or want to use
+    // the webserver default set name = ''
+    link.setAttribute('download', name);
+    link.href = "/api/DreamData/LogDownload";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+}
+
 function showSocketError() {
     errModal.show();
 }
@@ -641,6 +657,9 @@ function setListeners() {
 
 function handleClick(target) {
     switch(true) {
+        case target.id === "fetchLog":
+            fetchLog();
+            break;
         case target.classList.contains("controlBtn"):
             let action = target.getAttribute("data-action");
             let message = "Warning: ";
@@ -888,13 +907,23 @@ function setMode(newMode) {
     }
     if (target != null) target.classList.add("active");
     let ambientNav = document.getElementById("ambientNav");
-    if (mode === 3) {
-        ambientNav.classList.add("show");
-        ambientNav.classList.remove("hide");
-    } else {
-        ambientNav.classList.add("hide");
-        ambientNav.classList.remove("show");        
-    }    
+    let audioNav = document.getElementById("audioNav");
+    ambientNav.classList.add("hide");
+    ambientNav.classList.remove("show");
+    audioNav.classList.add("hide");
+    audioNav.classList.remove("show");
+    switch (mode) {
+        case 3:
+            ambientNav.classList.add("show");
+            ambientNav.classList.remove("hide");
+            break;
+        case 4:
+        case 2:
+            audioNav.classList.add("show");
+            audioNav.classList.remove("hide");
+            
+    }
+        
     sizeContent();
 }
 
@@ -944,6 +973,7 @@ function loadUi() {
     vDiv.innerHTML="Glimmr Version: " + version.toString();
     let sd;
     if (isValid(data.store["SystemData"])) {
+        if (!isValid(pickr)) loadPickr();
         sd = data.store["SystemData"];
         let theme = sd["Theme"];
         mode = sd["DeviceMode"];
@@ -963,6 +993,21 @@ function loadUi() {
                 sceneSelector.appendChild(opt);
             }
             sceneSelector.value = ambientMode;
+        }
+        if (isValid(data.store["AudioScenes"])) {
+            let aScenes = data.store["AudioScenes"];
+            let audioMode = sd["AudioMap"];
+            aScenes.sort((a, b) => (a.Id > b.Id) ? 1 : -1);
+            let sceneSelector = document.getElementById("AudioMap");
+            sceneSelector.innerHTML = "";
+            for(let i=0; i < aScenes.length; i++) {
+                let opt = document.createElement("option");
+                opt.value = aScenes[i]["Id"];
+                opt.innerText = aScenes[i]["Name"];
+                if (opt.value === audioMode) opt.selected = true;
+                sceneSelector.appendChild(opt);
+            }
+            sceneSelector.value = audioMode;
         }
         loadTheme(theme);
         pickr.setColor("#" + sd["AmbientColor"]);
@@ -1614,6 +1659,9 @@ function loadDevice(device, addDemoText) {
     brightnessSlide.setAttribute("type","range");
     brightnessSlide.setAttribute("data-target",device["Id"]);
     brightnessSlide.setAttribute("data-attribute","Brightness");
+    brightnessSlide.setAttribute("data-toggle","tooltip");
+    brightnessSlide.setAttribute("data-placement","top");
+    brightnessSlide.setAttribute("title","Device brightness");
     let max = "100";
     if (isValid(device["MaxBrightness"])) max = device["MaxBrightness"].toString;
     brightnessSlide.setAttribute("min", "0");
@@ -3346,17 +3394,22 @@ function sizeContent() {
     let footDiv = document.getElementById("footer");
     let cDiv = document.getElementById("mainContent");
     let colorDiv = document.getElementById("ambientNav");
+    let audioDiv = document.getElementById("audioNav");
     let wHeight = window.innerHeight;
     let wWidth = window.innerWidth;
     let ambientOffset = 0;
     if (mode === 3) {
         ambientOffset = 48; 
     }
+    if (mode === 2 || mode === 4) {
+        ambientOffset = 145;
+    }
     cDiv.style.position = "fixed";
     cDiv.style.top = navDiv.offsetHeight + ambientOffset + "px";
     cDiv.style.height = wHeight - navDiv.offsetHeight - footDiv.offsetHeight - ambientOffset + "px";
     cDiv.style.width = wWidth + "px";
     colorDiv.style.width = wWidth + "px";
+    audioDiv.style.width = wWidth + "px";
     if (expanded) {
         createDeviceSettings();
     }

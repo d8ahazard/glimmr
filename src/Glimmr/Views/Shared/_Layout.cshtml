@@ -2,9 +2,6 @@
 <html lang="en">
 <head>
     <title>@ViewData["Title"]</title>
-    <!-- Material Icons -->
-    <link rel="stylesheet" href="~/css/materialIcons.css">
-
     <link rel="apple-touch-icon" sizes="57x57" href="/apple-icon-57x57.png">
     <link rel="apple-touch-icon" sizes="60x60" href="/apple-icon-60x60.png">
     <link rel="apple-touch-icon" sizes="72x72" href="/apple-icon-72x72.png">
@@ -23,26 +20,34 @@
     <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
     <meta name="theme-color" content="#ffffff">
     <title>@ViewData["Title"] - Glimmr</title>
-    <link href="~/lib/font-awesome/css/fontawesome.min.css" rel="stylesheet"/>
+    <!-- Material Icons -->
+    <link rel="stylesheet" href="~/css/materialIcons.css">
     <!-- Google Fonts -->
     <link href="~/css/roboto.css" rel="stylesheet"/>
+    <!-- Custom app icons -->
     <link href="~/css/appIcons.css" rel="stylesheet"/>
-    <!-- Bootstrap 5 -->
-    <link rel="stylesheet" href="~/lib/bootstrap-4.6.0-dist/css/bootstrap.min.css">
-    <link href="~/lib/bootstrap-tour-0.12.0/css/bootstrap-tour-standalone.min.css" rel="stylesheet">
+    <!-- Font-awesome -->
+    <link href="~/lib/font-awesome/css/font-awesome.min.css" rel="stylesheet"/>
+    <!-- Bootstrap 4 -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css">
+    <!-- Bootstrap tour -->
+    <link href="~/lib/bootstrap-tour/build/css/bootstrap-tour-standalone.min.css" rel="stylesheet">
+    <!-- Color picker theme -->
+    <link href="~/lib/simonwep/pickr/dist/themes/nano.min.css" rel="stylesheet"/>
+        
     <link rel="stylesheet" href="~/css/glimmr.css" asp-append-version="true"/>
 </head>
 <body>
 
 @RenderBody()
-<script src="~/lib/jquery/jquery-3.6.0.min.js"></script>
-<script src="~/lib/bootstrap-4.6.0-dist/js/bootstrap.bundle.min.js"></script>
-<script src="~/lib/bootstrap-tour-0.12.0/js/bootstrap-tour-standalone.min.js"></script>
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/lib/bootstrap-tour/build/js/bootstrap-tour-standalone.min.js"></script>
 <script src="~/lib/konva/konva.min.js"></script>
-<script src="~/js/signalr/dist/browser/signalr.js"></script>
-<script src="~/lib/html5sortable/html5sortable.min.js"></script>
-<script src="~/js/pickr.min.js"></script>
-<script src="~/lib/progressbar/progressbar.js"></script>
+<script src="~/lib/signalr/dist/browser/signalr.min.js"></script>
+<script src="~/lib/html5sortable/dist/html5sortable.min.js"></script>
+<script src="~/lib/progressbar.js/dist/progressbar.min.js"></script>
+<script src="~/lib/simonwep/pickr/dist/pickr.min.js"></script>
 <script src="~/js/glimmr.js" type="text/javascript" asp-append-version="true"></script>
 @await RenderSectionAsync("Scripts", false)
 

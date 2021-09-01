@@ -34,7 +34,7 @@
             </div>
         </div>
         <div class="btn-group btn-group-lg myNav float-right">
-            <div class="btn btn-clear btn-lg btn-offset mainSettings" id="settingBtn">
+            <div class="btn btn-clear btn-lg btn-offset mainSettings" id="settingBtn" data-toggle="tooltip" title="Adjust Glimmr settings">
                 <span class="material-icons">settings_applications</span>
             </div>
             <div class="btn btn-clear btn-lg btn-offset d-none" id="closeBtn">
@@ -64,9 +64,50 @@
                 </label>
             </div>
             <div class="col-10">
-                <div class="pickrBtn form-control"></div>
+                <div class="pickrBtn"></div>
             </div>
         </div>
+    </div>
+</div>
+<div class="bg-dark hide" id="audioNav">
+    <div class="row sceneRow">
+        <div class="row col-6 form-group">
+            <div class="col-4 col-sm-2 pt-1">
+                <label class="form-label">Audio Scene</label>
+            </div>
+            <div class="col-8 col-sm-10 pt-2">
+                <select class="form-control" data-property="AudioMap" data-object="SystemData" id="AudioMap">
+                </select>    
+            </div>
+        </div>
+        <div class="col-3 form-group">
+            <label>Gain</label>
+            <input class="form-control-range" data-object="SystemData" data-property="AudioGain" type="range" min="0" max="5" step=".1"/>
+        </div>
+        <div class="col-3 form-group">
+            <label>Cutoff</label>
+            <input class="form-control-range" data-object="SystemData" data-property="AudioMin" type="range" min="0" max=".2" step=".001"/>
+        </div>
+    </div>
+    <div class="row rotRow">
+        <div class="col-12 subCol">Rotation</div>
+        <div class="col-3 form-group">
+            <label>Speed</label>
+            <input class="form-control-range" data-object="SystemData" data-property="AudioRotationSpeed" type="range" min=".01" max="1" step=".01"/>
+        </div>
+        <div class="col-3 form-group">
+            <label>Sensitivity</label>
+            <input class="form-control-range" data-object="SystemData" data-property="AudioRotationSensitivity" type="range" min="0" max="1" step=".01"/>
+        </div>
+        <div class="col-3 form-group">
+            <label>Lower Limit</label>
+            <input class="form-control-range" data-object="SystemData" data-property="AudioRotationLower" type="range" min="0" max="1" step=".01"/>
+        </div>
+        <div class="col-3 form-group">
+            <label>Upper Limit</label>
+            <input class="form-control-range" data-object="SystemData" data-property="AudioRotationUpper" type="range" min="0" max="1" step=".01"/>
+        </div>
+        
     </div>
 </div>
 <div id="mainContent">
@@ -100,12 +141,8 @@
         <a class="nav-link active" id="system-tab" data-toggle="tab" href="#systemTab" role="tab" aria-controls="system" aria-selected="true">System</a>
     </li>
     <li class="nav-item" role="presentation">
-        <a class="nav-link" id="capture-tab" data-toggle="tab" href="#captureTab" role="tab" aria-controls="capture" aria-selected="false">Capture</a>
+        <a class="nav-link" id="capture-tab" data-toggle="tab" href="#captureTab" role="tab" aria-controls="capture" aria-selected="false">Sources</a>
     </li>
-    <li class="nav-item" role="presentation">
-        <a class="nav-link" id="audio-tab" data-toggle="tab" href="#audioTab" role="tab" aria-controls="profile" aria-selected="false">Audio</a>
-    </li>
-
 </ul>
 <div class="tab-content" id="settingsContent">
     <div class="tab-pane fade show active" id="systemTab" role="tabpanel" aria-labelledby="system-tab">
@@ -319,6 +356,7 @@
                 </select>
                 <div class="form-text">Select the Serial Port speed to use when discovering Adalight devices.</div>
             </div>
+            <div class="col-12 col-md-6 col-xl-3"></div>
     
             
         </div>
@@ -345,6 +383,16 @@
             </form>
         </div>
     </div>
+    <div class="row border justify-content-center pb-5">
+        <div class="col-12 headerCol">Logs</div>
+        <div class="col-12 col-md-6 col-xl-3 justify-content-center form-group pt-5">
+            <div class="form-group">
+                <div class="col-md-10">
+                    <div class="btn btn-clear" id="fetchLog">Download Log</div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="row border justify-content-center pb-5 openRgbDiv" id="settingsMainOpenRGB">
         <div class="col-12 titleCol">OpenRGB</div>
         <div class="col-12 form-text pb-4">Enter the IP Address and port of your OpenRGB Server.</div>
@@ -365,13 +413,13 @@
         <div class="container-fluid">
             <!-- Capture Mode -->
             <div class="row border justify-content-center pb-5" id="settingsCaptureSource">
-                <div class="col-12 headerCol">Capture Preferences</div>
+                <div class="col-12 headerCol">Video Configuration</div>
                 <div class="col-12 col-md-6 col-xl-3">
-                    <label class="form-label">Capture Mode</label>
+                    <label class="form-label">Video Capture Source</label>
                     <select class="form-control" data-object="SystemData" data-property="CaptureMode">
                         <option value="1">Camera</option>
                         <option value="2">HDMI</option>
-                        <option value="3">Screen Capture</option>
+                        <option value="3">Screen</option>
                     </select>
                     <div class="form-text">Select your desired input source.</div>
                 </div>
@@ -392,7 +440,7 @@
                 </div>
             </div>
             <div class="row border justify-content-center pb-5 streamingDiv" id="settingsCaptureStream">
-                <div class="col-12 headerCol">Streaming Preferences</div>
+                <div class="col-12 headerCol">Streaming Configuration</div>
                 <div class="col-12 col-md-6 col-xl-3">
                     <label class="form-label">Streaming Mode</label>
                     <select class="form-control" data-object="SystemData" data-property="StreamMode">
@@ -410,6 +458,16 @@
                         </select>
                     </div>
                 </div>
+            </div>
+            <div class="row border justify-content-center pb-5">
+                <div class="col-12 headerCol">Audio Configuration</div>
+                <div class="col-12 col-md-6 col-xl-3">
+                    <label class="form-label">Input Device</label>
+                    <select class="form-control" data-object="SystemData" data-property="RecDev" id="RecDev">
+                        <option value=""></option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-6 col-xl-3"></div>
             </div>
             <div class="row border justify-content-center pb-5">
                 <div class="col-12 headerCol">Cropping</div>
@@ -432,6 +490,8 @@
                     <input class="form-control" data-object="SystemData" data-property="CropDelay" type="number" min="1" max="60" step="1"/>
                     <div class="form-text">How long to wait before cropping the picture.</div>
                 </div>
+                <!-- Spacer -->
+                <div class="col-12 col-md-6 col-xl-3"></div>
             </div>
 
             <!-- Capture Preview -->
@@ -457,6 +517,8 @@
                         <option value="2">Sectors</option>
                     </select>
                 </div>
+                <!-- Spacer -->
+                <div class="col-12 col-md-6 col-xl-3"></div>
             </div>
 
             <div class="row border justify-content-center pb-5" id="settingsCaptureLed">
@@ -539,56 +601,6 @@
 
         </div>
     </div>
-    <div class="tab-pane fade" id="audioTab" role="tabpanel" aria-labelledby="audio-tab">
-    <div class="container-fluid">
-        <div class="row border justify-content-center pb-5">
-            <div class="col-12 headerCol">Music Mode</div>
-            <div class="col-12 col-md-6 col-xl-3 justify-content-center form-group">
-                <label class="form-label">Input Device</label>
-                <select class="form-control" data-object="SystemData" data-property="RecDev" id="RecDev">
-
-                </select>
-            </div>
-        </div>
-        <div class="row border justify-content-center pb-5">
-            <div class="col-12 col-md-6 col-xl-3 justify-content-center form-group">
-                <label class="form-label">Sector Map</label>
-                <select class="form-control" data-object="SystemData" data-property="AudioMap">
-                    <option value="0">Bottom</option>
-                    <option value="1">Top</option>
-                    <option value="2">Center</option>
-                    <option value="3">Middle</option>
-                    <option value="4">Corners</option>
-                </select>
-            </div>
-            <div class="col-12 col-md-6 col-xl-3 justify-content-center form-group">
-                <label class="form-label">Rotation Speed</label>
-                <input class="form-control" data-object="SystemData" data-property="AudioRotationSpeed" type="number" min=".99" max=".99" step=".01"/>
-            </div>
-            <div class="col-12 col-md-6 col-xl-3 justify-content-center form-group">
-                <label class="form-label">Rotation Sensitivity</label>
-                <input class="form-control" data-object="SystemData" data-property="AudioRotationSensitivity" type="number" min="-.99" max=".99" step=".01"/>
-            </div>
-            <div class="col-12 col-md-6 col-xl-3 justify-content-center form-group">
-                <label class="form-label">Rotation Lower Limit</label>
-                <input class="form-control" data-object="SystemData" data-property="AudioRotationLower" type="number" min="0" max="1" step=".01"/>
-            </div>
-            <div class="col-12 col-md-6 col-xl-3 justify-content-center form-group">
-                <label class="form-label">Rotation Upper Limit</label>
-                <input class="form-control" data-object="SystemData" data-property="AudioRotationUpper" type="number" min="0" max="1" step=".01"/>
-            </div>
-            <div class="col-12 col-md-6 col-xl-3 justify-content-center form-group">
-                <label class="form-label">Audio Gain</label>
-                <input class="form-control" data-object="SystemData" data-property="AudioGain" type="number" min="0" max="5" step=".1"/>
-            </div>
-            <div class="col-12 col-md-6 col-xl-3 justify-content-center form-group">
-                <label class="form-label">Low Audio Cutoff</label>
-                <input class="form-control" data-object="SystemData" data-property="AudioMin" type="number" min="0" max=".1" step=".001"/>
-            </div>
-        </div>
-    </div>
-</div>
-
 </div>
 
 </div>
@@ -602,26 +614,24 @@
 <nav class="container-fluid fixed-bottom" id="footer">
     <div class="fixed-bottom">
 
-        <div class="btn btn-sm btn-clear float-right refreshBtn mr-2" id="refreshBtn">
+        <div class="btn btn-sm btn-clear float-right refreshBtn mr-2" id="refreshBtn" title="Rescan devices" data-toggle="tooltip">
             <span class="material-icons" id="refreshIcon">refresh</span>
         </div>
     </div>
     <div id="statDiv" class="mt-1">
-        <div class="d-inline-block" id="fpsDiv" data-container="body" data-toggle="popover" data-placement="top"
-             data-trigger="hover"
-             data-title="Frame Statistics"
-             data-content="">
+        <div class="d-inline-block mr-2" id="fpsDiv" data-toggle="tooltip" data-placement="top"
+             title="Current FPS">
             <div id="fps" class="d-inline-block mb-2"></div>
         </div>
-        <div id="tempDiv" class="d-inline-block">
-            <span class="material-icons d-inline-block statIcon">toys</span>
+        <div id="tempDiv" class="d-inline-block mr-2" title="CPU Temperature" data-toggle="tooltip">
+            <span class="material-icons d-inline-block statIcon">thermostat</span>
             <div id="temperature" class="d-inline-block mb-2"></div>
         </div>
-        <div id="cpuDiv" class="d-inline-block">
+        <div id="cpuDiv" class="d-inline-block" title="Average CPU load (all cores)" data-toggle="tooltip">
             <span class="material-icons d-inline-block statIcon">multiline_chart</span>
             <div id="cpuPct" class="d-inline-block mb-2"></div>
         </div>
-        <div id="throttleDiv" class="d-inline-block">
+        <div id="throttleDiv" class="d-inline-block" title="System is currently throttled" data-toggle="tooltip">
             <span class="material-icons d-inline-block statIcon" id="overIcon"></span>
         </div>
     </div>

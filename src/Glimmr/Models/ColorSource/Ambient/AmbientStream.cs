@@ -113,44 +113,36 @@ namespace Glimmr.Models.ColorSource.Ambient {
 					var elapsed = _watch.ElapsedMilliseconds;
 					var diff = _animationTime - elapsed;
 					var sectors = new Color[SectorCount];
-					// If we're between rotations, blend/fade the colors as desired
-					if (diff > 0 && diff <= _easingTime) {
-						var avg = diff / _easingTime;
-						for (var i = 0; i < _currentColors.Length; i++) {
-							switch (_easingMode) {
-								case EasingMode.Blend:
-									sectors[i] = BlendColor(_currentColors[i], _nextColors[i], avg);
-									break;
-								case EasingMode.FadeIn:
-									sectors[i] = FadeIn(_currentColors[i], avg);
-									break;
-								case EasingMode.FadeOut:
-									sectors[i] = FadeOut(_currentColors[i], avg);
-									break;
-								case EasingMode.FadeInOut:
-									sectors[i] = FadeInOut(_nextColors[i], avg);
-									break;
+					switch (diff) {
+						// If we're between rotations, blend/fade the colors as desired
+						case > 0 when diff <= _easingTime: {
+							var avg = diff / _easingTime;
+							for (var i = 0; i < _currentColors.Length; i++) {
+								sectors[i] = _easingMode switch {
+									EasingMode.Blend => BlendColor(_currentColors[i], _nextColors[i], avg),
+									EasingMode.FadeIn => FadeIn(_currentColors[i], avg),
+									EasingMode.FadeOut => FadeOut(_currentColors[i], avg),
+									EasingMode.FadeInOut => FadeInOut(_nextColors[i], avg),
+									_ => sectors[i]
+								};
 							}
+							break;
 						}
-
-						// If our time has elapsed, restart the watch 
-					} else if (diff <= 0) {
-						_currentColors = _nextColors;
-						_nextColors = RefreshColors(_sceneColors);
-						switch (_easingMode) {
-							case EasingMode.Blend:
-							case EasingMode.FadeOut:
-								sectors = _currentColors;
-								break;
-							case EasingMode.FadeIn:
-							case EasingMode.FadeInOut:
-								sectors = ColorUtil.EmptyColors(SectorCount);
-								break;
-						}
-
-						_watch.Restart();
-					} else {
-						sectors = _currentColors;
+						case <= 0:
+							_currentColors = _nextColors;
+							_nextColors = RefreshColors(_sceneColors);
+							sectors = _easingMode switch {
+								EasingMode.Blend => _currentColors,
+								EasingMode.FadeOut => _currentColors,
+								EasingMode.FadeIn => ColorUtil.EmptyColors(SectorCount),
+								EasingMode.FadeInOut => ColorUtil.EmptyColors(SectorCount),
+								_ => sectors
+							};
+							_watch.Restart();
+							break;
+						default:
+							sectors = _currentColors;
+							break;
 					}
 
 					try {
@@ -164,8 +156,6 @@ namespace Glimmr.Models.ColorSource.Ambient {
 					} catch (Exception e) {
 						Log.Warning("EX: " + e.Message);
 					}
-
-					await Task.FromResult(true);
 				}
 
 				_watch.Stop();
