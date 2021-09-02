@@ -2829,6 +2829,7 @@ function createLedMap(targetElement) {
     let l = 0;
     let r = 0;
     let ledCount = 0;
+    let started = false;
     for (let i = 0; i < rightCount; i++) {
         t = h - hMargin - ((i + 1) * frHeight);
         b = t + frHeight;
@@ -2836,7 +2837,14 @@ function createLedMap(targetElement) {
         r = l + dWidth;        
         let s1 = document.createElement("div");
         s1.classList.add("led");
-        if (isValid(range1) && range1.includes(ledCount)) s1.classList.add("highLed");
+        if (isValid(range1) && range1.includes(ledCount)) {
+            s1.classList.add("highLed");
+            if (!started) {
+                started = true;
+                s1.classList.add("firstLed");
+            }
+        }
+        
         s1.setAttribute("data-sector", ledCount.toString());
         s1.style.position = "absolute";
         s1.style.top = t.toString() + "px";
@@ -2859,7 +2867,13 @@ function createLedMap(targetElement) {
         r = l - ftWidth;
         let s1 = document.createElement("div");
         s1.classList.add("led");
-        if (isValid(range1) && range1.includes(ledCount)) s1.classList.add("highLed");
+        if (isValid(range1) && range1.includes(ledCount)) {
+            s1.classList.add("highLed");
+            if (!started) {
+                started = true;
+                s1.classList.add("firstLed");
+            }
+        }
         s1.setAttribute("data-sector", ledCount.toString());
         s1.style.position = "absolute";
         s1.style.top = t.toString() + "px";
@@ -2886,7 +2900,13 @@ function createLedMap(targetElement) {
         r = l + dWidth;
         let s1 = document.createElement("div");
         s1.classList.add("led");
-        if (isValid(range1) && range1.includes(ledCount)) s1.classList.add("highLed");
+        if (isValid(range1) && range1.includes(ledCount)) {
+            s1.classList.add("highLed");
+            if (!started) {
+                started = true;
+                s1.classList.add("firstLed");
+            }
+        }
         s1.setAttribute("data-sector", ledCount.toString());
         s1.style.position = "absolute";
         s1.style.top = t.toString() + "px";
@@ -2913,7 +2933,13 @@ function createLedMap(targetElement) {
         r = l + fbWidth;
         let s1 = document.createElement("div");
         s1.classList.add("led");
-        if (isValid(range1) && range1.includes(ledCount)) s1.classList.add("highLed");
+        if (isValid(range1) && range1.includes(ledCount)) {
+            s1.classList.add("highLed");
+            if (!started) {
+                started = true;
+                s1.classList.add("firstLed");
+            }
+        }
         s1.setAttribute("data-sector", ledCount.toString());
         s1.style.position = "absolute";
         s1.style.top = t.toString() + "px";

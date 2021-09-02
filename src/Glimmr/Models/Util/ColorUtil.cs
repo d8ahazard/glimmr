@@ -593,7 +593,7 @@ namespace Glimmr.Models.Util {
 		public static Color[] AdjustBrightness(Color[] toSend, float max) {
 			var output = new Color[toSend.Length];
 			var mc = (byte) (max * 255f);
-			Log.Debug("Max is " + max + " mc is " + mc);
+			//Log.Debug("Max is " + max + " mc is " + mc);
 
 			for (var i=0; i < toSend.Length; i++) {
 				var color = toSend[i];

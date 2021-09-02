@@ -22,9 +22,11 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 		private int _offset;
 		private string _port;
 		private bool _reverseStrip;
+		private readonly ColorService _cs;
 
 		public AdalightDevice(AdalightData data, ColorService cs) {
 			Id = data.Id;
+			_cs = cs;
 			_data = data;
 			_port = _data.Port;
 			_multiplier = _data.LedMultiplier;
@@ -54,7 +56,11 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			}
 
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
-			_adalight.Connect();
+			var conn = _adalight.Connect();
+			if (!conn) {
+				Log.Warning("Unable to connect!");
+				return;
+			}
 			Streaming = true;
 			await Task.FromResult(true);
 			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
@@ -67,7 +73,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 			var blacks = ColorUtil.EmptyColors(_ledCount);
-			await _adalight.UpdateColorsAsync(blacks);
+			await _adalight.UpdateColorsAsync(blacks.ToList());
 			_adalight.Disconnect();
 			Streaming = false;
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
@@ -87,12 +93,14 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			if (_brightness < 100) {
 				toSend = ColorUtil.AdjustBrightness(toSend, _brightness / 100f);
 			}
-			_adalight.UpdateColors(toSend);
+			
+			_adalight.UpdateColorsAsync(toSend.ToList());
+			_cs.Counter.Tick(Id);
 		}
 
 		public async Task FlashColor(Color color) {
 			var toSend = ColorUtil.FillArray(color, _ledCount);
-			await _adalight.UpdateColorsAsync(toSend).ConfigureAwait(false);
+			await _adalight.UpdateColorsAsync(toSend.ToList());
 		}
 
 		public Task ReloadData() {

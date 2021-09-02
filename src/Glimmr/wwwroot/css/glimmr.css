@@ -114,6 +114,10 @@ body, .main, #mainNav, #footer {
     background-color: red;
 }
 
+.highLed.firstLed {
+    background-color: green;
+}
+
 .ledRed {
     background-color: red;
 }
