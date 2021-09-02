@@ -35,9 +35,8 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			_adalight = new AdalightNet.Adalight(_port, _ledCount, _baud);
 		}
 		
-		private Task SetColors(object sender, ColorSendEventArgs args) {
-			SetColor(args.LedColors, args.Force);
-			return Task.CompletedTask;
+		private async Task SetColors(object sender, ColorSendEventArgs args) {
+			await SetColor(args.LedColors, args.Force).ConfigureAwait(false);
 		}
 
 		public bool Enable { get; set; }
@@ -80,7 +79,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 		}
 
 
-		private void SetColor(Color[] colors, bool force = false) {
+		private async Task SetColor(Color[] colors, bool force = false) {
 			if (!Enable || !Streaming || Testing && !force) {
 				return;
 			}
@@ -94,7 +93,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 				toSend = ColorUtil.AdjustBrightness(toSend, _brightness / 100f);
 			}
 			
-			_adalight.UpdateColorsAsync(toSend.ToList());
+			await _adalight.UpdateColorsAsync(toSend.ToList());
 			_cs.Counter.Tick(Id);
 		}
 
