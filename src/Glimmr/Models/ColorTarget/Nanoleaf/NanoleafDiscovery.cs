@@ -130,7 +130,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 						var nd = new NanoleafDevice(nData, _controlService.ColorService);
 						var layout = nd.GetLayout().Result;
 						nd.Dispose();
-						nData.Layout = layout;
+						if (layout != null) nData.Layout = layout;
 					} catch (Exception f) {
 						Log.Debug("Exception: " + f.Message);
 					}

@@ -16,8 +16,8 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.Nanoleaf {
 	public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
 		private readonly Stopwatch _frameWatch;
-		private readonly NanoleafClient _nanoleafClient;
-		private readonly NanoleafStreamingClient _streamingClient;
+		private readonly NanoleafClient? _nanoleafClient;
+		private readonly NanoleafStreamingClient? _streamingClient;
 		private int _brightness;
 		private NanoleafData _data;
 		private bool _disposed;
@@ -37,8 +37,13 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			Id = _data.Id;
 			var streamMode = n.Type == "NL29" || n.Type == "NL42" ? 2 : 1;
 			var controlService = cs.ControlService;
-			_nanoleafClient = new NanoleafClient(n.IpAddress, n.Token);
-			_streamingClient = new NanoleafStreamingClient(n.IpAddress, streamMode, controlService.UdpClient);
+			try {
+				_nanoleafClient = new NanoleafClient(n.IpAddress, n.Token);
+				_streamingClient = new NanoleafStreamingClient(n.IpAddress, streamMode, controlService.UdpClient);
+			} catch (Exception e) {
+				Log.Debug("Exception creating client..." + e.Message);
+			}
+
 			_frameWatch = new Stopwatch();
 			SetData();
 			controlService.RefreshSystemEvent += SetData;
@@ -62,6 +67,11 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				return;
 			}
 
+			if (_nanoleafClient == null || _streamingClient == null) {
+				Log.Warning("Client is null...");
+				return;
+			}
+
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
 			SetData();
 			Streaming = true;
@@ -81,6 +91,11 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			await FlashColor(Color.FromArgb(0, 0, 0)).ConfigureAwait(false);
 			Streaming = false;
 			_frameWatch.Restart();
+			if (_nanoleafClient == null || _streamingClient == null) {
+				Log.Warning("Client is null...");
+				return;
+			}
+
 			
 			await _nanoleafClient.TurnOffAsync().ConfigureAwait(false);
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
@@ -107,6 +122,10 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				foreach (var pd in _layout.PositionData) {
 					cols[pd.PanelId] = color;
 				}
+			}
+			if (_nanoleafClient == null || _streamingClient == null) {
+				Log.Warning("Client is null...");
+				return;
 			}
 
 			await _streamingClient.SetColorAsync(cols);
@@ -146,6 +165,10 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				cols[p.Key] = color;
 			}
 
+			if (_nanoleafClient == null || _streamingClient == null) {
+				Log.Warning("Client is null...");
+				return;
+			}
 
 			await _streamingClient.SetColorAsync(cols, 1).ConfigureAwait(false);
 			ColorService?.Counter.Tick(Id);
@@ -163,6 +186,11 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			_targets = new Dictionary<int, int>();
 			if (_data.Brightness != _brightness) {
 				_brightness = _data.Brightness;
+				if (_nanoleafClient == null || _streamingClient == null) {
+					Log.Warning("Client is null...");
+					return;
+				}
+
 				_nanoleafClient.SetBrightnessAsync(_brightness);
 			}
 
@@ -196,7 +224,12 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		}
 
 
-		public async Task<TileLayout> GetLayout() {
+		public async Task<TileLayout?> GetLayout() {
+			if (_nanoleafClient == null || _streamingClient == null) {
+				Log.Warning("Client is null...");
+				return null;
+			}
+
 			var layout = await _nanoleafClient.GetLayoutAsync();
 			return new TileLayout(layout);
 		}
