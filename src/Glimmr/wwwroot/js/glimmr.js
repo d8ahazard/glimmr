@@ -1925,7 +1925,9 @@ const showDeviceCard = async (e) => {
     cardClone.style.left = left + 'px';
     cardClone.style.width = width + 'px';
     cardClone.style.height = height + 'px';
-    cardClone.style.opacity = "0";
+    cardClone.style.display = 'block';
+    cardClone.style.overflowY = "scroll";
+
     // hide the original card with opacity
     //card.style.opacity = '0';
     // add card to the main container
@@ -1937,20 +1939,16 @@ const showDeviceCard = async (e) => {
     // This is the proper height for the dev card
     fh += oh;
     // remove the display style so the original content is displayed right
-    cardClone.style.display = 'block';
     let sepDiv = document.createElement("div");
     sepDiv.classList.add("dropdown-divider", "row");
 
     let settingsRow = document.createElement("div");
     settingsRow.classList.add("deviceSettings", "row", "justify-content-center");
     settingsRow.id = "devicePrefs";
-    //settingsDiv.style.opacity = "0%";
-    settingsRow.style.overflow = "scrollY";
     settingsRow.style.position = "relative";
     body.appendChild(sepDiv);
     body.appendChild(settingsRow);
-    cardClone.style.overflowY = "scroll";
-
+    
     // Create settings for our card
     let settingsButtons = document.querySelectorAll(".mainSettings");
     for (let i = 0; i < settingsButtons.length; ++i) {
@@ -1960,7 +1958,7 @@ const showDeviceCard = async (e) => {
         closeButton[i].classList.remove('d-none');
     }
     // Expand that bish
-    await toggleExpansion(cardClone, {top: oh + "px", left: 0, width: '100%', height: 'calc(100% - ' + fh + 'px)', opacity: "100%"}, 250);
+    await toggleExpansion(cardClone, {top: oh + "px", left: 0, width: '100%', height: 'calc(100% - ' + fh + 'px)'}, 250);
     createDeviceSettings();
 
 
@@ -3477,15 +3475,16 @@ async function closeCard() {
         left: `${toggleLeft}px`,
         width: `${toggleWidth}px`,
         height: `${toggleHeight}px`,
-        padding: '1rem 1rem',
-        opacity: '0'
+        padding: '1rem 1rem'
     }, 300).then(function(){
         cardClone.classList.add("devCard", "m-4");
         cardClone.classList.remove("container-fluid");
-
+        cardClone.style.scrollY = "hidden";
+        baseCard.style.removeProperty('opacity');
         // shrink the card back to the original position and size
         document.querySelectorAll(".delSetting").forEach(e => e.remove());
-
+        cardClone.remove();
+        
         let settingsButtons = document.querySelectorAll(".mainSettings");
         for (let i = 0; i < settingsButtons.length; ++i) {
             settingsButtons[i].classList.remove('d-none');
@@ -3494,9 +3493,7 @@ async function closeCard() {
         for (let i = 0; i < closeButtons.length; ++i) {
             closeButtons[i].classList.add('d-none');
         }
-
-        baseCard.style.removeProperty('opacity');
-        cardClone.remove();    
+            
     });
     // show the original card again
     
