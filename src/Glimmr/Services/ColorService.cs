@@ -544,7 +544,7 @@ namespace Glimmr.Services {
 				}
 			}
 
-			if (newMode != 0 && !_streamStarted && !_autoDisabled && !init) {
+			if (newMode != 0 && !_streamStarted && !_autoDisabled) {
 				await StartStream();
 			}
 
