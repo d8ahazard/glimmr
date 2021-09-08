@@ -20,7 +20,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		private int _brightness;
 		private NanoleafData _data;
 		private bool _disposed;
-
+		private readonly Stopwatch _frameWatch;
 		private TileLayout? _layout;
 		private Dictionary<int, int> _targets;
 		
