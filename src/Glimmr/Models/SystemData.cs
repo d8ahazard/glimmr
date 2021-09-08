@@ -32,6 +32,10 @@ namespace Glimmr.Models {
 
 		[DefaultValue(true)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public bool EnableAutoBrightness { get; set; } = true;
+
+		[DefaultValue(true)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool EnableAutoDisable { get; set; } = true;
 
 		[DefaultValue(true)]
@@ -61,6 +65,14 @@ namespace Glimmr.Models {
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool UseCenter { get; set; }
+
+		[DefaultValue(3)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public float AblAmps { get; set; } = 3f;
+
+		[DefaultValue(5)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public float AblVolts { get; set; } = 5f;
 
 		[DefaultValue(.5f)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -119,6 +131,10 @@ namespace Glimmr.Models {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int AutoUpdateTime { get; set; }
 
+		[DefaultValue(115200)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int BaudRate { get; set; } = 115200;
+
 		[DefaultValue(96)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int BottomCount { get; set; } = 96;
@@ -151,18 +167,6 @@ namespace Glimmr.Models {
 		[DefaultValue(10)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int DiscoveryTimeout { get; set; }
-
-		[DefaultValue(true)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public bool EnableAutoBrightness { get; set; } = true;
-		
-		[DefaultValue(5)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public float AblVolts { get; set; } = 5f;
-		
-		[DefaultValue(3)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public float AblAmps { get; set; } = 3f;
 
 		[DefaultValue(10)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -287,10 +291,6 @@ namespace Glimmr.Models {
 		[DefaultValue("0")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string Units { get; set; } = "0";
-		
-		[DefaultValue(115200)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int BaudRate { get; set; } = 115200;
 
 		public void SetDefaults() {
 			Brightness = 255;

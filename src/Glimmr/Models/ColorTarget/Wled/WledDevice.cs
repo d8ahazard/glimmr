@@ -47,10 +47,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			ReloadData();
 			cs1.ColorSendEventAsync += SetColors;
 		}
-		
-		private Task SetColors(object sender, ColorSendEventArgs args) {
-			return SetColor(args.LedColors, args.SectorColors, args.Force);
-		}
 
 		public bool Enable { get; set; }
 		public bool Streaming { get; set; }
@@ -102,11 +98,50 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			if (!Streaming) {
 				return;
 			}
+
 			Streaming = false;
 			await FlashColor(Color.Black).ConfigureAwait(false);
 			await UpdateLightState(false).ConfigureAwait(false);
 			await Task.FromResult(true);
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
+		}
+
+
+		public Task ReloadData() {
+			var oldBrightness = _brightness;
+			var dev = DataUtil.GetDevice<WledData>(Id);
+			if (dev != null) {
+				_data = dev;
+			}
+
+			_offset = _data.Offset;
+			_brightness = _data.Brightness;
+			IpAddress = _data.IpAddress;
+			Enable = _data.Enable;
+			_stripMode = (StripMode) _data.StripMode;
+			_targetSector = _data.TargetSector;
+			_multiplier = _data.LedMultiplier;
+			if (_multiplier == 0) {
+				_multiplier = 1;
+			}
+
+			if (oldBrightness != _brightness) {
+				Log.Debug($"Brightness has changed!! {oldBrightness} {_brightness}");
+				UpdateLightState(Streaming).ConfigureAwait(false);
+			}
+
+			_ledCount = _data.LedCount;
+			return Task.CompletedTask;
+		}
+
+
+		public void Dispose() {
+			Dispose(true).ConfigureAwait(true);
+			GC.SuppressFinalize(this);
+		}
+
+		private Task SetColors(object sender, ColorSendEventArgs args) {
+			return SetColor(args.LedColors, args.SectorColors, args.Force);
 		}
 
 
@@ -157,40 +192,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			} catch (Exception e) {
 				Log.Debug("Exception: " + e.Message + " at " + e.StackTrace);
 			}
-		}
-
-
-		public Task ReloadData() {
-			var oldBrightness = _brightness;
-			var dev = DataUtil.GetDevice<WledData>(Id);
-			if (dev != null) {
-				_data = dev;
-			}
-
-			_offset = _data.Offset;
-			_brightness = _data.Brightness;
-			IpAddress = _data.IpAddress;
-			Enable = _data.Enable;
-			_stripMode = (StripMode) _data.StripMode;
-			_targetSector = _data.TargetSector;
-			_multiplier = _data.LedMultiplier;
-			if (_multiplier == 0) {
-				_multiplier = 1;
-			}
-
-			if (oldBrightness != _brightness) {
-				Log.Debug($"Brightness has changed!! {oldBrightness} {_brightness}");
-				UpdateLightState(Streaming).ConfigureAwait(false);
-			}
-
-			_ledCount = _data.LedCount;
-			return Task.CompletedTask;
-		}
-
-
-		public void Dispose() {
-			Dispose(true).ConfigureAwait(true);
-			GC.SuppressFinalize(this);
 		}
 
 

@@ -24,10 +24,10 @@ namespace Glimmr.Models.ColorTarget {
 	[Serializable]
 	public class SettingsProperty {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-		public string ValueLabel { get; set; } = "";
+		public string ValueHint { get; set; } = "";
 
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-		public string ValueHint { get; set; } = "";
+		public string ValueLabel { get; set; } = "";
 
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
 		public string ValueMax { get; set; } = "100";

@@ -22,71 +22,71 @@ namespace Glimmr.Models {
 		// Do we send our frame data to the UI?
 		public bool DoSend { get; set; }
 		public bool SourceActive { get; set; }
+		public ColorService ColorService { get; }
+		private const int ScaleHeight = 480;
+		private const int ScaleWidth = 640;
 		private readonly float _borderHeight;
 
 		// The width of the border to crop from for LEDs
 		private readonly float _borderWidth;
-		public ColorService ColorService { get; }
 		private readonly Stopwatch _frameWatch;
 		private readonly List<VectorOfPoint> _targets;
 		private readonly bool _useCrop;
 		private bool _allBlack;
 		private int _bottomCount;
-		private string _source;
 
 		// Loaded data
 		private CaptureMode _captureMode;
 
 		// The current crop mode?
 		private Color[] _colorsLed;
-		private Color[] _colorsSectors;
 		private Color[] _colorsLedIn;
+		private Color[] _colorsSectors;
 		private Color[] _colorsSectorsIn;
 		private int _cropDelay;
 
 		// Loaded settings
 		private bool _cropLetter;
 		private bool _cropPillar;
-		private bool _merge;
 
 		private bool _doSave;
 
 		private Rectangle[] _fullCoords;
 		private Rectangle[] _fullSectors;
-
-		private bool _pCrop;
-		private CropCounter _pillarCropCounter;
-		private CropCounter _lCroupCounter;
-		private int _pCropPixels;
+		private int _hCropCheck;
 		private int _hSectors;
-		
+
+		// Are we cropping right now?
+		private bool _lCrop;
+
+		// Current crop settings
+		private int _lCropPixels;
+		private CropCounter _lCroupCounter;
+
 		private int _ledCount;
 		private int _leftCount;
 		private VectorOfPointF? _lockTarget;
+		private bool _merge;
 		private DeviceMode _mode;
+
+		private bool _pCrop;
+		private int _pCropPixels;
+		private CropCounter _pillarCropCounter;
 
 		private int _previewMode;
 		private int _rightCount;
-		private const int ScaleHeight = 480;
-		private const int ScaleWidth = 640;
 		private Size _scaleSize;
 
 		// Set this when the sector changes
 		private bool _sectorChanged;
 		private int _sectorCount;
+		private readonly string _source;
 		private int _srcArea;
 		private int _topCount;
 		private bool _useCenter;
 
-		// Are we cropping right now?
-		private bool _lCrop;
-
 		// Where we save the potential new value between checks
 		private int _vCropCheck;
-		private int _hCropCheck;
-		
-		// Current crop settings
-		private int _lCropPixels;
 
 		// Source stuff
 		private PointF[] _vectors;
@@ -118,7 +118,6 @@ namespace Glimmr.Models {
 			// Get sectors
 			_fullCoords = DrawGrid();
 			_fullSectors = DrawSectors();
-			
 		}
 
 
@@ -216,10 +215,11 @@ namespace Glimmr.Models {
 				cols = _colorsLedIn;
 				secs = _colorsSectorsIn;
 			}
+
 			if (inMat != null && !inMat.IsEmpty) {
 				ColorService.ControlService.SendImage("inputImage", inMat).ConfigureAwait(false);
 			}
-			
+
 			if (outMat == null || outMat.IsEmpty) {
 				return;
 			}
@@ -232,6 +232,7 @@ namespace Glimmr.Models {
 						CvInvoke.Rectangle(outMat, _fullCoords[i], col, -1, LineType.AntiAlias);
 						CvInvoke.Rectangle(outMat, _fullCoords[i], colBlack, 1, LineType.AntiAlias);
 					}
+
 					break;
 				}
 				case 2: {
@@ -244,6 +245,7 @@ namespace Glimmr.Models {
 						var tPoint = new Point(s.X, s.Y + 30);
 						CvInvoke.PutText(outMat, cInt.ToString(), tPoint, FontFace.HersheySimplex, 0.75, colBlack);
 					}
+
 					break;
 				}
 			}
@@ -251,6 +253,7 @@ namespace Glimmr.Models {
 			if (DoSend) {
 				ColorService.ControlService.SendImage("outputImage", outMat).ConfigureAwait(false);
 			}
+
 			inMat?.Dispose();
 			outMat.Dispose();
 		}
@@ -261,13 +264,14 @@ namespace Glimmr.Models {
 			_merge = true;
 		}
 
-		
+
 		public async Task Update(Mat frame) {
 			if (frame == null || frame.IsEmpty) {
 				SourceActive = false;
 				if (!_warned) {
 					Log.Warning("Frame is null.");
 				}
+
 				_warned = true;
 				return;
 			}
@@ -277,6 +281,7 @@ namespace Glimmr.Models {
 				if (!_warned) {
 					Log.Warning("Frame has no columns.");
 				}
+
 				_warned = true;
 				return;
 			}
@@ -286,16 +291,17 @@ namespace Glimmr.Models {
 				if (!_warned) {
 					Log.Warning("Frame has no rows.");
 				}
+
 				_warned = true;
 				return;
 			}
-			
+
 			var clone = frame;
 
 			if (frame.Width != ScaleWidth || frame.Height != ScaleWidth) {
-				CvInvoke.Resize(frame, clone, new Size(ScaleWidth, ScaleHeight));	
+				CvInvoke.Resize(frame, clone, new Size(ScaleWidth, ScaleHeight));
 			}
-			
+
 			if (_captureMode == CaptureMode.Camera && _mode == DeviceMode.Video) {
 				clone = CheckCamera(frame);
 				if (clone == null || clone.IsEmpty || clone.Cols == 0) {
@@ -304,7 +310,7 @@ namespace Glimmr.Models {
 					return;
 				}
 			}
-			
+
 			// Don't do anything if there's no frame.
 			if (clone == null || clone.IsEmpty) {
 				Log.Warning("Null/Empty input!");
@@ -319,7 +325,7 @@ namespace Glimmr.Models {
 				await CheckCrop(clone).ConfigureAwait(false);
 				_frameWatch.Restart();
 			}
-			
+
 			SourceActive = !_allBlack;
 
 			var ledColors = ColorUtil.EmptyColors(_ledCount);
@@ -329,7 +335,7 @@ namespace Glimmr.Models {
 				sub.Dispose();
 			}
 
-			
+
 			var sectorColors = ColorUtil.EmptyColors(_sectorCount);
 			for (var i = 0; i < _fullSectors.Length; i++) {
 				var sub = new Mat(clone, _fullSectors[i]);
@@ -343,12 +349,15 @@ namespace Glimmr.Models {
 				await ColorService.TriggerSend(ledColors, sectorColors);
 				ColorService.Counter.Tick(_source);
 			}
+
 			if (_doSave) {
 				if (DoSend) {
 					SaveFrames(frame, clone);
 				}
+
 				_doSave = false;
 			}
+
 			// Dispose
 			frame.Dispose();
 			clone.Dispose();
@@ -358,7 +367,7 @@ namespace Glimmr.Models {
 
 		private Mat? CheckCamera(Mat input) {
 			var scaled = input.Clone();
-			
+
 			Mat? output = null;
 
 			// If we don't have a target, find one
@@ -550,10 +559,10 @@ namespace Glimmr.Models {
 
 			width--;
 			height--;
-			
+
 			var count = Sum(image.GetRawData());
 			var avg = count / image.Total.ToInt32();
-			var noImage =  avg <= 21 || width == 0 || height == 0;
+			var noImage = avg <= 21 || width == 0 || height == 0;
 			// If it is, we can stop here
 			if (noImage) {
 				_allBlack = true;
@@ -563,7 +572,7 @@ namespace Glimmr.Models {
 			// Convert image to greyscale
 			var gr = new Mat();
 			CvInvoke.CvtColor(image, gr, ColorConversion.Bgr2Gray);
-			
+
 			_allBlack = false;
 			// Check letterboxing
 			if (_cropLetter) {
@@ -595,14 +604,14 @@ namespace Glimmr.Models {
 					var l2 = Sum(b2);
 					c1.Dispose();
 					c2.Dispose();
-					if (l1+l2 <= blackLevel) {
+					if (l1 + l2 <= blackLevel) {
 						pPixels = x;
 					} else {
 						break;
 					}
 				}
 			}
-			
+
 			// Cleanup mat
 			gr.Dispose();
 
@@ -610,10 +619,13 @@ namespace Glimmr.Models {
 				if (pPixels == 0) {
 					_pillarCropCounter.Clear();
 					_pCrop = false;
-					if (_pCropPixels != 0) _sectorChanged = true;
+					if (_pCropPixels != 0) {
+						_sectorChanged = true;
+					}
+
 					_pCropPixels = 0;
 				} else {
-					_pillarCropCounter.Tick(Math.Abs(pPixels - _hCropCheck) < 4);	
+					_pillarCropCounter.Tick(Math.Abs(pPixels - _hCropCheck) < 4);
 				}
 			}
 
@@ -621,19 +633,22 @@ namespace Glimmr.Models {
 				_pCrop = _sectorChanged = true;
 				_pCropPixels = pPixels;
 				_pillarCropCounter.Clear();
-			} 
+			}
 
 			_hCropCheck = pPixels;
 
-			
+
 			if (_cropLetter) {
 				if (lPixels == 0) {
 					_lCroupCounter.Clear();
 					_lCrop = false;
-					if (_lCropPixels != 0) _sectorChanged = true;
+					if (_lCropPixels != 0) {
+						_sectorChanged = true;
+					}
+
 					_lCropPixels = 0;
 				} else {
-					_lCroupCounter.Tick(Math.Abs(lPixels - _vCropCheck) < 4);	
+					_lCroupCounter.Tick(Math.Abs(lPixels - _vCropCheck) < 4);
 				}
 			}
 
@@ -641,7 +656,7 @@ namespace Glimmr.Models {
 				_lCrop = _sectorChanged = true;
 				_lCropPixels = lPixels;
 				_lCroupCounter.Clear();
-			} 
+			}
 
 			_vCropCheck = lPixels;
 			// Only calculate new sectors if the value has changed
@@ -660,8 +675,8 @@ namespace Glimmr.Models {
 		}
 
 		private Rectangle[] DrawGrid() {
-			int lOffset = _lCropPixels == 0 ? _lCropPixels : _lCropPixels + (int) _borderHeight + 5;
-			int pOffset = _pCropPixels == 0 ? _pCropPixels : _pCropPixels + (int)_borderWidth + 5;
+			var lOffset = _lCropPixels == 0 ? _lCropPixels : _lCropPixels + (int) _borderHeight + 5;
+			var pOffset = _pCropPixels == 0 ? _pCropPixels : _pCropPixels + (int) _borderWidth + 5;
 			var output = new Rectangle[_ledCount];
 
 			// Top Region
@@ -854,12 +869,14 @@ namespace Glimmr.Models {
 	}
 
 	public class CropCounter {
-		private int _count;
 		private readonly int _max;
+		private int _count;
+
 		public CropCounter(int max) {
 			_max = max;
 			_count = 0;
 		}
+
 		public void Clear() {
 			_count = 0;
 		}
@@ -868,10 +885,14 @@ namespace Glimmr.Models {
 		public void Tick(bool b) {
 			if (b) {
 				_count++;
-				if (_count >= _max) _count = _max;
+				if (_count >= _max) {
+					_count = _max;
+				}
 			} else {
 				_count--;
-				if (_count <= 0) _count = 0;	
+				if (_count <= 0) {
+					_count = 0;
+				}
 			}
 		}
 

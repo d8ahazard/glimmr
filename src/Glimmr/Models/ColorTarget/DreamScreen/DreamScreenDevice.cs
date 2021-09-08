@@ -36,10 +36,6 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			var myIp = IPAddress.Parse(_ipAddress);
 			_dev = new DreamDevice(_deviceTag) {IpAddress = myIp, DeviceGroup = data.GroupNumber};
 		}
-		
-		private Task SetColors(object sender, ColorSendEventArgs args) {
-			return SetColor(args.SectorColors, args.Force);
-		}
 
 		public bool Streaming { get; set; }
 		public bool Testing { get; set; }
@@ -61,6 +57,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 				Enable = false;
 				return;
 			}
+
 			await _client.SetMode(_dev, DeviceMode.Video);
 			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
 		}
@@ -73,25 +70,9 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			if (_client == null) {
 				return;
 			}
+
 			await _client.SetMode(_dev, DeviceMode.Off);
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
-		}
-
-
-		private async Task SetColor(Color[] sectors, bool force = false) {
-			if (!_data.Enable || Testing && !force) {
-				return;
-			}
-
-			if (_client == null) {
-				return;
-			}
-
-			if (sectors.Length != 12) {
-				sectors = ColorUtil.TruncateColors(sectors);
-			}
-
-			await _client.SendColors(_dev, sectors);
 		}
 
 		public Task FlashColor(Color color) {
@@ -113,6 +94,27 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		IColorTargetData IColorTarget.Data {
 			get => _data;
 			set => _data = (DreamScreenData) value;
+		}
+
+		private Task SetColors(object sender, ColorSendEventArgs args) {
+			return SetColor(args.SectorColors, args.Force);
+		}
+
+
+		private async Task SetColor(Color[] sectors, bool force = false) {
+			if (!_data.Enable || Testing && !force) {
+				return;
+			}
+
+			if (_client == null) {
+				return;
+			}
+
+			if (sectors.Length != 12) {
+				sectors = ColorUtil.TruncateColors(sectors);
+			}
+
+			await _client.SendColors(_dev, sectors);
 		}
 
 		private void LoadData() {

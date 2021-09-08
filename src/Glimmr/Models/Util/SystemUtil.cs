@@ -240,7 +240,7 @@ namespace Glimmr.Models.Util {
 
 			return cams;
 		}
-		
+
 		public static string ExportLog() {
 			var userDir = GetUserDir();
 			var stamp = DateTime.Now.ToString("yyyyMMdd");

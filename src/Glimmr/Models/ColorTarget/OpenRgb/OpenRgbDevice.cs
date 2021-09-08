@@ -17,7 +17,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		private readonly ColorService _colorService;
 		private OpenRGBClient? _client;
 		private OpenRgbData _data;
-		
+
 		public OpenRgbDevice(OpenRgbData data, ColorService cs) {
 			Id = data.Id;
 			_data = data;
@@ -25,11 +25,6 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			_client = cs.ControlService.GetAgent("OpenRgbAgent");
 			LoadData();
 			_colorService.ColorSendEventAsync -= SetColors;
-		}
-		
-		private Task SetColors(object sender, ColorSendEventArgs args) {
-			SetColor(args.LedColors, args.Force);
-			return Task.CompletedTask;
 		}
 
 		public bool Streaming { get; set; }
@@ -83,6 +78,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			if (!_client.Connected || !Streaming) {
 				return;
 			}
+
 			var output = new OpenRGB.NET.Models.Color[_data.LedCount];
 			for (var i = 0; i < output.Length; i++) {
 				output[i] = new OpenRGB.NET.Models.Color();
@@ -92,6 +88,27 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			await Task.FromResult(true);
 			Streaming = false;
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
+		}
+
+		public Task FlashColor(Color color) {
+			return Task.CompletedTask;
+		}
+
+		public Task ReloadData() {
+			var dev = DataUtil.GetDevice(Id);
+			if (dev != null) {
+				_data = dev;
+			}
+
+			return Task.CompletedTask;
+		}
+
+		public void Dispose() {
+		}
+
+		private Task SetColors(object sender, ColorSendEventArgs args) {
+			SetColor(args.LedColors, args.Force);
+			return Task.CompletedTask;
 		}
 
 
@@ -109,22 +126,6 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			_client?.UpdateLeds(_data.DeviceId, converted.ToArray());
 
 			_colorService.Counter.Tick(Id);
-		}
-
-		public Task FlashColor(Color color) {
-			return Task.CompletedTask;
-		}
-
-		public Task ReloadData() {
-			var dev = DataUtil.GetDevice(Id);
-			if (dev != null) {
-				_data = dev;
-			}
-
-			return Task.CompletedTask;
-		}
-
-		public void Dispose() {
 		}
 
 		private void LoadData() {

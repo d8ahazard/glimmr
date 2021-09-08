@@ -23,12 +23,13 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			var baud = sd.BaudRate;
 			Log.Debug("Adalight: Discovery started.");
 			var discoTask = Task.Run(() => {
-				var devs = new Dictionary<string, KeyValuePair<int,int>>();
+				var devs = new Dictionary<string, KeyValuePair<int, int>>();
 				try {
 					devs = FindDevices(baud);
 				} catch (Exception e) {
 					Log.Debug("Exception: " + e.Message);
 				}
+
 				Log.Debug("Found" + devs.Count + " devices.");
 
 				foreach (var dev in devs) {
@@ -59,27 +60,25 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 					if (bri != 0) {
 						data.Brightness = bri;
 					}
-					
+
 					ControlService.AddDevice(data).ConfigureAwait(false);
 					Log.Debug("And added...");
 				}
-				
 			}, ct);
 			await discoTask;
 			Log.Debug("Adalight: Discovery complete.");
 		}
-		private static Dictionary<string, KeyValuePair<int, int>> FindDevices(int speed = 115200)
-		{
+
+		private static Dictionary<string, KeyValuePair<int, int>> FindDevices(int speed = 115200) {
 			Dictionary<string, KeyValuePair<int, int>> dictionary = new();
-			foreach (string portName in SerialPort.GetPortNames()){
+			foreach (string portName in SerialPort.GetPortNames()) {
 				if (!portName.Contains("COM") && !portName.Contains("ttyACM")) {
 					continue;
 				}
+
 				Log.Debug("Testing port: " + portName);
-				try
-				{
-					SerialPort serialPort = new()
-					{
+				try {
+					SerialPort serialPort = new() {
 						PortName = portName,
 						BaudRate = speed,
 						Parity = Parity.None,
@@ -94,19 +93,20 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 						Log.Debug("Reading");
 						var line = serialPort.ReadLine();
 						Log.Debug("Response line: " + line);
-						if (line.Substring(0, 3).ToLower()== "ada") {
+						if (line.Substring(0, 3).ToLower() == "ada") {
 							Log.Debug("Line match.");
 							dictionary[portName] = new KeyValuePair<int, int>(0, 0);
 						}
+
 						serialPort.Close();
 					} else {
 						Log.Debug($"Unable to open port {portName}.");
 					}
-				}
-				catch (Exception ex){
+				} catch (Exception ex) {
 					Log.Warning($"Exception testing port {portName}: " + ex.Message + " at " + ex.StackTrace);
 				}
 			}
+
 			return dictionary;
 		}
 	}

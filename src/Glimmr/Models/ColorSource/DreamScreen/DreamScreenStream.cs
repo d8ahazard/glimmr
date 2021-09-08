@@ -148,7 +148,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 			_splitter.DoSend = false;
 			Log.Debug("DS stream service stopped.");
 		}
-		
+
 		public Color[] GetColors() {
 			return _splitter.GetColors();
 		}

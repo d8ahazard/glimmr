@@ -14,13 +14,16 @@ namespace Glimmr.Models.ColorTarget.Led {
 	public class LedDevice : ColorTarget, IColorTarget {
 		private readonly LedAgent? _agent;
 		private LedData _data;
-		
+
 		public LedDevice(LedData ld, ColorService cs) : base(cs) {
 			_data = ld;
 			Id = _data.Id;
 			// We only bind and create agent for LED device 0, regardless of which one is enabled.
 			// The agent will handle all the color stuff for both strips.
-			if (Id == "1") return;
+			if (Id == "1") {
+				return;
+			}
+
 			_agent = cs.ControlService.GetAgent("LedAgent");
 			if (_agent == null) {
 				Log.Warning("Unable to get LED agent.");
@@ -29,11 +32,6 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 			Log.Debug("LED device created.");
 			cs.ColorSendEventAsync += SetColors;
-		}
-
-		private async Task SetColors(object sender, ColorSendEventArgs args) {
-			SetColor(args.LedColors);
-			await Task.FromResult(true);
 		}
 
 		public bool Streaming { get; set; }
@@ -48,12 +46,15 @@ namespace Glimmr.Models.ColorTarget.Led {
 		}
 
 		public async Task StartStream(CancellationToken ct) {
-			if (!SystemUtil.IsRaspberryPi()) return;
+			if (!SystemUtil.IsRaspberryPi()) {
+				return;
+			}
+
 			if (Id != "0") {
 				Log.Debug($"Id is {Id}, returning.");
 				return;
 			}
-			
+
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
 			Streaming = true;
 			await Task.FromResult(Streaming);
@@ -64,6 +65,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			if (!Streaming) {
 				return;
 			}
+
 			await StopLights().ConfigureAwait(false);
 			Streaming = false;
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
@@ -85,18 +87,27 @@ namespace Glimmr.Models.ColorTarget.Led {
 			return Task.CompletedTask;
 		}
 
+		private async Task SetColors(object sender, ColorSendEventArgs args) {
+			SetColor(args.LedColors);
+			await Task.FromResult(true);
+		}
+
 
 		private void SetColor(Color[] colors) {
 			if (colors == null) {
 				throw new ArgumentException("Invalid color input.");
 			}
-			
-			if (Id == "0") _agent?.SetColors(colors);
-			if (!Enable) return;
+
+			if (Id == "0") {
+				_agent?.SetColors(colors);
+			}
+
+			if (!Enable) {
+				return;
+			}
+
 			ColorService?.Counter.Tick(Id);
 		}
-
-
 
 
 		private async Task StopLights() {

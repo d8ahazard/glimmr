@@ -27,12 +27,6 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 
 		public int Brightness { get; set; }
-		
-		[DefaultValue(1)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-
-
-		public int LedMultiplier { get; set; }
 
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -43,6 +37,12 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
 		public int LedCount { get; set; }
+
+		[DefaultValue(1)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+
+
+		public int LedMultiplier { get; set; }
 
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -137,7 +137,8 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			new("ledmap", "ledmap", ""),
 			new("Offset", "number", "LED Offset"),
 			new("LedMultiplier", "number", "LED Multiplier") {
-				ValueMin = "-5", ValueStep = "1", ValueMax="5", ValueHint = "Positive values to multiply (skip), negative values to divide (duplicate)."
+				ValueMin = "-5", ValueStep = "1", ValueMax = "5",
+				ValueHint = "Positive values to multiply (skip), negative values to divide (duplicate)."
 			},
 			new("Rotation", "select", "Rotation", new Dictionary<string, string> {
 				["0"] = "Normal",

@@ -13,9 +13,9 @@ using Serilog;
 namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 	public class UsbVideoStream : IVideoStream, IDisposable {
 		private bool _disposed;
+		private int _inputStream;
 		private FrameSplitter? _splitter;
 		private VideoCapture? _video;
-		private int _inputStream;
 
 
 		public void Dispose() {
@@ -74,10 +74,10 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 		private void SetVideo() {
 			_video?.Dispose();
 			var props = new Tuple<CapProp, int>[] {
-				new(CapProp.FourCC,VideoWriter.Fourcc('M', 'J', 'P', 'G')),
-				new(CapProp.Fps,60),
-				new(CapProp.FrameWidth,640),
-				new(CapProp.FrameHeight,480)
+				new(CapProp.FourCC, VideoWriter.Fourcc('M', 'J', 'P', 'G')),
+				new(CapProp.Fps, 60),
+				new(CapProp.FrameWidth, 640),
+				new(CapProp.FrameHeight, 480)
 			};
 			var api = OperatingSystem.IsWindows() ? VideoCapture.API.DShow : VideoCapture.API.V4L2;
 			_video = new VideoCapture(_inputStream, api);
@@ -91,7 +91,8 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 				Log.Warning("Unable to set video stream.");
 				return false;
 			}
-			var fourCc = (int)_video.GetCaptureProperty(CapProp.FourCC);
+
+			var fourCc = (int) _video.GetCaptureProperty(CapProp.FourCC);
 			var fps = (int) _video.GetCaptureProperty(CapProp.Fps);
 			var d5 = VideoWriter.Fourcc('M', 'J', 'P', 'G');
 
@@ -135,10 +136,10 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 				} else {
 					Log.Debug("Video is null");
 				}
-
 			} catch (Exception e) {
 				Log.Warning("Exception: " + e.Message);
 			}
+
 			_video?.Dispose();
 			_video = null;
 		}
@@ -147,6 +148,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 			if (!disposing) {
 				return;
 			}
+
 			DisposeVideo();
 		}
 	}

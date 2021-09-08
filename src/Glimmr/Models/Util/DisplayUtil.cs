@@ -49,8 +49,7 @@ namespace Glimmr.Models.Util {
 
 		private const int EnumCurrentSettings = -1;
 
-		
-		
+
 		[DllImport("user32.dll")]
 		public static extern bool EnumDisplaySettings(string deviceName, int modeNum, ref DEVMODE devMode);
 

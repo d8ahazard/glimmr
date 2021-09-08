@@ -12,24 +12,19 @@ using rpi_ws281x;
 namespace Glimmr.Models.ColorTarget.Led {
 	public class LedAgent : IColorTargetAgent {
 		public WS281x? Ws281X { get; private set; }
+		private float _ablAmps;
+		private float _ablVolts;
+		private Color[] _colors1;
+		private Color[] _colors2;
 		private Controller? _controller0;
 		private Controller? _controller1;
+		private LedData? _d0;
+		private LedData? _d1;
+		private bool _enableAbl;
+		private SystemData _sd;
 
 		private bool _use0;
 		private bool _use1;
-		private Color[] _colors1;
-		private Color[] _colors2;
-		private LedData? _d0;
-		private LedData? _d1;
-		private SystemData _sd;
-		private bool _enableAbl;
-		private float _ablVolts;
-		private float _ablAmps;
-
-		public void Dispose() {
-			GC.SuppressFinalize(this);
-			Ws281X?.Dispose();
-		}
 
 		public LedAgent() {
 			_colors1 = ColorUtil.EmptyColors(_d0?.LedCount ?? 0);
@@ -37,6 +32,11 @@ namespace Glimmr.Models.ColorTarget.Led {
 			_sd = DataUtil.GetSystemData();
 			_ablAmps = _sd.AblAmps;
 			_ablVolts = _sd.AblVolts;
+		}
+
+		public void Dispose() {
+			GC.SuppressFinalize(this);
+			Ws281X?.Dispose();
 		}
 
 		public dynamic? CreateAgent(ControlService cs) {
@@ -55,7 +55,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			}
 
 			LoadStrips(_d0, _d1);
-			
+
 			ReloadData();
 			return this;
 		}
@@ -64,11 +64,15 @@ namespace Glimmr.Models.ColorTarget.Led {
 			_sd = DataUtil.GetSystemData();
 			LedData? d0 = DataUtil.GetDevice<LedData>("0");
 			LedData? d1 = DataUtil.GetDevice<LedData>("1");
-			if (!SystemUtil.IsRaspberryPi() || d0 == null || d1 == null || _d0 == null || _d1 == null) return;
+			if (!SystemUtil.IsRaspberryPi() || d0 == null || d1 == null || _d0 == null || _d1 == null) {
+				return;
+			}
+
 			if (d0.StripType != _d0.StripType || d1.StripType != _d1.StripType) {
 				Ws281X?.Dispose();
 				LoadStrips(d0, d1);
 			}
+
 			_d0 = d0;
 			_d1 = d1;
 			_use0 = _d0.Enable;
@@ -80,10 +84,15 @@ namespace Glimmr.Models.ColorTarget.Led {
 				return;
 			}
 
-			if (_use0) Ws281X?.SetBrightness((int) (_d0.Brightness / 100f * 255f));
-			if (_use0) Ws281X?.SetBrightness((int) (_d1.Brightness / 100f * 255f));
+			if (_use0) {
+				Ws281X?.SetBrightness((int) (_d0.Brightness / 100f * 255f));
+			}
+
+			if (_use0) {
+				Ws281X?.SetBrightness((int) (_d1.Brightness / 100f * 255f));
+			}
 		}
-		
+
 
 		private void LoadStrips(LedData d0, LedData d1) {
 			var settings = Settings.CreateDefaultSettings();
@@ -109,8 +118,14 @@ namespace Glimmr.Models.ColorTarget.Led {
 		}
 
 		public void SetColors(Color[] input) {
-			if (_d0?.Enable ?? false) SetColors(input, "0");
-			if (_d1?.Enable ?? false) SetColors(input, "1");
+			if (_d0?.Enable ?? false) {
+				SetColors(input, "0");
+			}
+
+			if (_d1?.Enable ?? false) {
+				SetColors(input, "1");
+			}
+
 			Render();
 		}
 
@@ -118,29 +133,47 @@ namespace Glimmr.Models.ColorTarget.Led {
 			if (_enableAbl) {
 				VoltAdjust();
 			}
-			if (_use0) _controller0?.SetLEDS(_colors1);
-			if (_use1) _controller1?.SetLEDS(_colors2);
-			if (_use0 || _use1) Ws281X?.Render();
+
+			if (_use0) {
+				_controller0?.SetLEDS(_colors1);
+			}
+
+			if (_use1) {
+				_controller1?.SetLEDS(_colors2);
+			}
+
+			if (_use0 || _use1) {
+				Ws281X?.Render();
+			}
 		}
-		
-		
+
+
 		private void VoltAdjust() {
 			// Gonna do this from scratch. According to ws2812B docs, modern B strips should
 			// use .3w/LED, or 3000 milliamps.
-			if (_d0 == null || _d1 == null) return;
+			if (_d0 == null || _d1 == null) {
+				return;
+			}
+
 			var strip0Draw = _d0.MilliampsPerLed; // 20
 			var strip1Draw = _d1.MilliampsPerLed;
-			var strip0Brightness = (int) (_d0.Brightness / 100f * 255f) ;
-			var strip1Brightness = (int) (_d1.Brightness / 100f * 255f) ;
-			
+			var strip0Brightness = (int) (_d0.Brightness / 100f * 255f);
+			var strip1Brightness = (int) (_d1.Brightness / 100f * 255f);
+
 			// Total power we have at our disposal
 			var totalWatts = _ablVolts * _ablAmps;
 			// Subtract CPU usage (Probably needs more for splitter, etc)
 			totalWatts -= 6.5f;
 			// This should totally work
 			var totalCost = 0;
-			if (_d0.Enable) totalCost += _d0.MilliampsPerLed * _d0.LedCount;
-			if (_d1.Enable) totalCost += _d1.MilliampsPerLed * _d1.LedCount;
+			if (_d0.Enable) {
+				totalCost += _d0.MilliampsPerLed * _d0.LedCount;
+			}
+
+			if (_d1.Enable) {
+				totalCost += _d1.MilliampsPerLed * _d1.LedCount;
+			}
+
 			var usage = 0f;
 			// Loop each LED, subtract it's current score 
 			if (totalWatts <= totalCost) {
@@ -180,6 +213,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 							use = Math.Max(10f, use);
 						}
 					}
+
 					use *= strip0Brightness / 255f;
 					usage += use;
 				}
@@ -189,23 +223,35 @@ namespace Glimmr.Models.ColorTarget.Led {
 				//scale brightness down to stay in current limit
 				var scale = totalWatts / usage;
 				var scaleI = scale * 255;
-				if (_use0) Ws281X?.SetBrightness((int) Math.Min(strip0Brightness, scaleI));
-				if (_use1) Ws281X?.SetBrightness((int) Math.Min(strip1Brightness, scaleI), 1);
+				if (_use0) {
+					Ws281X?.SetBrightness((int) Math.Min(strip0Brightness, scaleI));
+				}
+
+				if (_use1) {
+					Ws281X?.SetBrightness((int) Math.Min(strip1Brightness, scaleI), 1);
+				}
 			} else {
 				if (_use0 && strip0Brightness < 255) {
 					Ws281X?.SetBrightness(strip0Brightness);
 				}
+
 				if (_use1 && strip1Brightness < 255) {
 					Ws281X?.SetBrightness(strip0Brightness, 1);
 				}
 			}
 		}
-		
+
 		private void SetColors(Color[] colors, string id) {
-			if (_d0 == null || _d1 == null) return;
+			if (_d0 == null || _d1 == null) {
+				return;
+			}
+
 			var data = id == "0" ? _d0 : _d1;
 			var toSend = ColorUtil.TruncateColors(colors, data.Offset, data.LedCount, data.LedMultiplier);
-			if (data.ReverseStrip) toSend = toSend.Reverse().ToArray();
+			if (data.ReverseStrip) {
+				toSend = toSend.Reverse().ToArray();
+			}
+
 			if (data.StripType == 1) {
 				for (var i = 0; i < toSend.Length; i++) {
 					var tCol = toSend[i];
@@ -222,14 +268,26 @@ namespace Glimmr.Models.ColorTarget.Led {
 		}
 
 		public void SetColor(Color color, string id) {
-			if (_use0 && id == "0") _controller0?.SetAll(color);
-			if (_use1 && id == "1") _controller1?.SetAll(color);
+			if (_use0 && id == "0") {
+				_controller0?.SetAll(color);
+			}
+
+			if (_use1 && id == "1") {
+				_controller1?.SetAll(color);
+			}
+
 			Ws281X?.Render();
 		}
 
 		public void Clear() {
-			if (_use0) _controller0?.SetAll(Color.Empty);
-			if (_use1) _controller1?.SetAll(Color.Empty);
+			if (_use0) {
+				_controller0?.SetAll(Color.Empty);
+			}
+
+			if (_use1) {
+				_controller1?.SetAll(Color.Empty);
+			}
+
 			Ws281X?.Render();
 		}
 	}

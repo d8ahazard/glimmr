@@ -585,7 +585,7 @@ namespace Glimmr.Models.Util {
 		}
 
 		/// <summary>
-		/// Adjust the brightness of a list of colors
+		///     Adjust the brightness of a list of colors
 		/// </summary>
 		/// <param name="toSend">Input colors</param>
 		/// <param name="max">A float from 0-1, representing the max percentage brightness can be represented.</param>
@@ -595,7 +595,7 @@ namespace Glimmr.Models.Util {
 			var mc = (byte) (max * 255f);
 			//Log.Debug("Max is " + max + " mc is " + mc);
 
-			for (var i=0; i < toSend.Length; i++) {
+			for (var i = 0; i < toSend.Length; i++) {
 				var color = toSend[i];
 				// Max value is the brightness
 				var colM = Math.Max(color.R, Math.Max(color.G, color.B));

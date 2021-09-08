@@ -15,15 +15,15 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Nanoleaf {
 	public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
+		private readonly Stopwatch _frameWatch;
 		private readonly NanoleafClient _nanoleafClient;
 		private readonly NanoleafStreamingClient _streamingClient;
 		private int _brightness;
 		private NanoleafData _data;
 		private bool _disposed;
-		private readonly Stopwatch _frameWatch;
 		private TileLayout? _layout;
 		private Dictionary<int, int> _targets;
-		
+
 		/// <summary>
 		///     Use this for sending color data to the panel
 		/// </summary>
@@ -43,10 +43,6 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			controlService.RefreshSystemEvent += SetData;
 			_disposed = false;
 			cs.ColorSendEventAsync += SetColors;
-		}
-		
-		private Task SetColors(object sender, ColorSendEventArgs args) {
-			return SetColor(args.SectorColors, args.Force);
 		}
 
 		public bool Enable { get; set; }
@@ -71,7 +67,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			if (!_frameWatch.IsRunning && _data.Type == "NL42") {
 				_frameWatch.Restart();
 			}
-			
+
 			await _nanoleafClient.StartExternalAsync();
 			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
 		}
@@ -86,42 +82,9 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			if (_frameWatch.IsRunning && _data.Type == "NL42") {
 				_frameWatch.Reset();
 			}
+
 			await _nanoleafClient.TurnOffAsync().ConfigureAwait(false);
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
-		}
-
-
-		
-
-	private async Task SetColor(Color[] sectors, bool force = false) {
-			if (!Streaming || !Enable || Testing && !force) {
-				return;
-			}
-
-			if (_frameWatch.ElapsedMilliseconds < 100 && _data.Type == "NL42") {
-				return;
-			}
-
-			if (_data.Type == "NL42") {
-				_frameWatch.Restart();
-			}
-
-			var cols = new Dictionary<int, Color>();
-			foreach (var p in _targets) {
-				var color = Color.FromArgb(0, 0, 0);
-				if (p.Value != -1) {
-					var target = p.Value;
-					if (target < sectors.Length) {
-						color = sectors[target];
-					}
-				}
-
-				cols[p.Key] = color;
-			}
-
-
-			await _streamingClient.SetColorAsync(cols, 1);
-			ColorService?.Counter.Tick(Id);
 		}
 
 		public Task ReloadData() {
@@ -153,6 +116,42 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
 		public void Dispose() {
 			Dispose(true);
+		}
+
+		private Task SetColors(object sender, ColorSendEventArgs args) {
+			return SetColor(args.SectorColors, args.Force);
+		}
+
+
+		private async Task SetColor(Color[] sectors, bool force = false) {
+			if (!Streaming || !Enable || Testing && !force) {
+				return;
+			}
+
+			if (_frameWatch.ElapsedMilliseconds < 100 && _data.Type == "NL42") {
+				return;
+			}
+
+			if (_data.Type == "NL42") {
+				_frameWatch.Restart();
+			}
+
+			var cols = new Dictionary<int, Color>();
+			foreach (var p in _targets) {
+				var color = Color.FromArgb(0, 0, 0);
+				if (p.Value != -1) {
+					var target = p.Value;
+					if (target < sectors.Length) {
+						color = sectors[target];
+					}
+				}
+
+				cols[p.Key] = color;
+			}
+
+
+			await _streamingClient.SetColorAsync(cols, 1);
+			ColorService?.Counter.Tick(Id);
 		}
 
 		public bool IsEnabled() {
@@ -212,6 +211,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			if (!disposing) {
 				return;
 			}
+
 			_disposed = true;
 		}
 	}

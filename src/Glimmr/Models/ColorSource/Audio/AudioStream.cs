@@ -34,7 +34,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 		public AudioStream(ColorService cs) {
 			_devices = new List<AudioData>();
 			_map = new AudioMap();
-			StreamSplitter = new FrameSplitter(cs,false, "audioStream");
+			StreamSplitter = new FrameSplitter(cs, false, "audioStream");
 			_builder = new FrameBuilder(new[] {
 				3, 3, 6, 6
 			}, true);
@@ -43,12 +43,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 		}
 
 		public bool SourceActive => StreamSplitter.SourceActive;
-
-
-		private void RefreshSystem() {
-			_sd = DataUtil.GetSystemData();
-			LoadData();
-		}
 
 		public Task ToggleStream(CancellationToken ct) {
 			SendColors = true;
@@ -73,6 +67,12 @@ namespace Glimmr.Models.ColorSource.Audio {
 			return ExecuteAsync(ct);
 		}
 
+
+		private void RefreshSystem() {
+			_sd = DataUtil.GetSystemData();
+			LoadData();
+		}
+
 		public Task StopStream() {
 			try {
 				Bass.ChannelStop(_handle);
@@ -83,6 +83,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 			} catch (Exception e) {
 				Log.Warning("Exception stopping stream..." + e.Message);
 			}
+
 			return Task.CompletedTask;
 		}
 
@@ -95,7 +96,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 				await StopStream();
 			}, CancellationToken.None);
 		}
-		
 
 
 		private void LoadData() {

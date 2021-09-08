@@ -34,7 +34,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		private string? _token;
 		private Task? _updateTask;
 		private string? _user;
-		
+
 
 		public HueDevice(HueData data, ColorService cs) : base(cs) {
 			Data = data;
@@ -53,11 +53,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			_selectedGroup = Data.SelectedGroup;
 			SetData();
 			cs.ColorSendEventAsync += SetColors;
-		}
-
-		private Task SetColors(object sender, ColorSendEventArgs args) {
-			SetColor(args.SectorColors, args.FadeTime, args.Force);
-			return Task.CompletedTask;
 		}
 
 
@@ -131,7 +126,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Group? group = null;
 			foreach (var g in all) {
 				if (g.Id == _selectedGroup) {
-					@group = g;
+					group = g;
 				}
 			}
 
@@ -161,7 +156,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 			try {
 				if (!connected) {
-					await _client.Connect(@group.Id);
+					await _client.Connect(group.Id);
 				}
 			} catch (Exception e) {
 				Log.Warning("Exception caught: " + e.Message);
@@ -185,6 +180,34 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 			Data = dev;
 			SetData();
+			return Task.CompletedTask;
+		}
+
+
+		public void Dispose() {
+			Dispose(true);
+		}
+
+
+		public Task StopStream() {
+			if (!Enable || !Streaming) {
+				return Task.CompletedTask;
+			}
+
+			if (_client == null || _selectedGroup == null) {
+				Log.Warning("Client or group are null, can't stop stream.");
+				return Task.CompletedTask;
+			}
+
+			_client.LocalHueClient.SetStreamingAsync(_selectedGroup, false);
+			_client.Close();
+			Log.Debug($"{Data.Tag}::Stream stopped: {Data.Id}");
+
+			return Task.CompletedTask;
+		}
+
+		private Task SetColors(object sender, ColorSendEventArgs args) {
+			SetColor(args.SectorColors, args.FadeTime, args.Force);
 			return Task.CompletedTask;
 		}
 
@@ -246,28 +269,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 
 
-		public void Dispose() {
-			Dispose(true);
-		}
-
-
-		public Task StopStream() {
-			if (!Enable || !Streaming) {
-				return Task.CompletedTask;
-			}
-
-			if (_client == null || _selectedGroup == null) {
-				Log.Warning("Client or group are null, can't stop stream.");
-				return Task.CompletedTask;
-			}
-			_client.LocalHueClient.SetStreamingAsync(_selectedGroup, false);
-			_client.Close();
-			Log.Debug($"{Data.Tag}::Stream stopped: {Data.Id}");
-
-			return Task.CompletedTask;
-		}
-
-
 		private void SetData() {
 			var sd = DataUtil.GetSystemData();
 			_targets = new Dictionary<string, int>();
@@ -301,7 +302,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			if (!disposing || _updateTask == null) {
 				return;
 			}
-			
+
 			if (!_updateTask.IsCompleted) {
 				_updateTask.Dispose();
 			}

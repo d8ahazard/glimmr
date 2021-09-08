@@ -41,9 +41,6 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			_yeeDevice = new Device(IpAddress);
 			_colorService.ColorSendEventAsync += SetColors;
 		}
-		private Task SetColors(object sender, ColorSendEventArgs args) {
-			return SetColor(args.SectorColors, args.Force);
-		}
 
 		public bool Streaming { get; set; }
 		public bool Testing { get; set; }
@@ -96,27 +93,6 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
-		private async Task SetColor(Color[] sectors, bool force = false) {
-			if (!Streaming || !Enable) {
-				return;
-			}
-
-			if (!force) {
-				if (!Streaming || _targetSector == -1 || Testing) {
-					return;
-				}
-			}
-			
-			// TODO: Clamp brightness here.
-			var col = sectors[_targetSector];
-			if (_targetSector >= sectors.Length) {
-				return;
-			}
-			
-			await _yeeDevice.SetRGBColor(col.R, col.G, col.B);
-			_colorService.Counter.Tick(Id);
-		}
-
 
 		public async Task FlashColor(Color col) {
 			await _yeeDevice.SetRGBColor(col.R, col.G, col.B).ConfigureAwait(false);
@@ -132,6 +108,31 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 		public void Dispose() {
 			_yeeDevice.Dispose();
+		}
+
+		private Task SetColors(object sender, ColorSendEventArgs args) {
+			return SetColor(args.SectorColors, args.Force);
+		}
+
+		private async Task SetColor(Color[] sectors, bool force = false) {
+			if (!Streaming || !Enable) {
+				return;
+			}
+
+			if (!force) {
+				if (!Streaming || _targetSector == -1 || Testing) {
+					return;
+				}
+			}
+
+			// TODO: Clamp brightness here.
+			var col = sectors[_targetSector];
+			if (_targetSector >= sectors.Length) {
+				return;
+			}
+
+			await _yeeDevice.SetRGBColor(col.R, col.G, col.B);
+			_colorService.Counter.Tick(Id);
 		}
 
 		private void LoadData() {

@@ -28,13 +28,13 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int Offset { get; set; }
 
-		[DefaultValue("COM1")]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public string Port { get; set; }
-
 		[DefaultValue(115200)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int Speed { get; set; }
+
+		[DefaultValue("COM1")]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public string Port { get; set; }
 
 		[JsonProperty] public string Tag { get; set; } = "Adalight";
 
@@ -78,10 +78,12 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			new("Offset", "text", "Led Offset"),
 			new("LedCount", "text", "Led Count"),
 			new("LedMultiplier", "number", "LED Multiplier") {
-				ValueMin = "-5", ValueStep = "1", ValueMax="5", ValueHint = "Positive values to multiply (skip), negative values to divide (duplicate)."
+				ValueMin = "-5", ValueStep = "1", ValueMax = "5",
+				ValueHint = "Positive values to multiply (skip), negative values to divide (duplicate)."
 			},
 			new("Speed", "text", "Connection Speed (Baud Rate)"),
-			new("ReverseStrip", "check", "Reverse Strip"){ValueHint = "Reverse the order of the leds to clockwise (facing screen)."}
+			new("ReverseStrip", "check", "Reverse Strip")
+				{ValueHint = "Reverse the order of the leds to clockwise (facing screen)."}
 		};
 
 

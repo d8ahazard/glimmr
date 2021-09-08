@@ -74,7 +74,7 @@ namespace Glimmr.Controllers {
 			var fileName = Path.GetFileName(dbPath);
 			return File(fileBytes, MediaTypeNames.Application.Octet, fileName);
 		}
-		
+
 		[HttpGet("LogDownload")]
 		public FileResult LogDownload() {
 			var dt = DateTime.Now.ToString("yyyyMMdd", CultureInfo.InvariantCulture);

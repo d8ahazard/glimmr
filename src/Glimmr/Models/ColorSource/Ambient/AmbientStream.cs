@@ -17,6 +17,7 @@ using Serilog;
 
 namespace Glimmr.Models.ColorSource.Ambient {
 	public class AmbientStream : BackgroundService, IColorSource {
+		private const int SectorCount = 116;
 		private readonly Random _random;
 		private readonly FrameSplitter _splitter;
 		private readonly Stopwatch _watch;
@@ -33,7 +34,6 @@ namespace Glimmr.Models.ColorSource.Ambient {
 		private Color[] _nextColors;
 		private Color[] _sceneColors;
 		private List<AmbientScene> _scenes;
-		private const int SectorCount = 116;
 
 		public AmbientStream(ColorService colorService) {
 			_ambientColor = "#FFFFFF";
@@ -49,6 +49,12 @@ namespace Glimmr.Models.ColorSource.Ambient {
 		}
 
 		public bool SourceActive => _splitter.SourceActive;
+
+
+		public Task ToggleStream(CancellationToken ct) {
+			Log.Debug("Starting ambient stream...");
+			return ExecuteAsync(ct);
+		}
 
 		private void RefreshSystem() {
 			Log.Debug("No, really, refreshing system.");
@@ -70,7 +76,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 				scene.Colors = new[] {"#" + _ambientColor};
 			}
 
-			
+
 			var colorStrings = scene.Colors;
 			if (colorStrings != null) {
 				_sceneColors = new Color[colorStrings.Length];
@@ -93,14 +99,8 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			} else {
 				Log.Warning("Unable to parse scene mode: ");
 			}
-			
+
 			LoadScene();
-		}
-
-
-		public Task ToggleStream(CancellationToken ct) {
-			Log.Debug("Starting ambient stream...");
-			return ExecuteAsync(ct);
 		}
 
 
@@ -126,6 +126,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 									_ => sectors[i]
 								};
 							}
+
 							break;
 						}
 						case <= 0:
@@ -157,13 +158,13 @@ namespace Glimmr.Models.ColorSource.Ambient {
 						Log.Warning("EX: " + e.Message);
 					}
 				}
-				
+
 				_watch.Stop();
 				_splitter.DoSend = false;
 				Log.Information("Ambient stream service stopped.");
 			}, CancellationToken.None);
 		}
-		
+
 		public Color[] GetColors() {
 			return _splitter.GetColors();
 		}

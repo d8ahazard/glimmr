@@ -61,7 +61,7 @@ namespace Glimmr.Models {
 			}
 
 			var tasks = new List<Task>();
-			
+
 			foreach (var callback in tmpInvocationList) {
 				//Assuming we want a serial invocation, for a parallel invocation we can use Task.WhenAll instead
 				if (sender != null && eventArgs != null) {
@@ -79,7 +79,8 @@ namespace Glimmr.Models {
 		public dynamic? Arg2 { get; }
 		public dynamic? Arg3 { get; }
 
-		public DynamicEventArgs(dynamic input0, dynamic? input1 = null, dynamic? input2 = null, dynamic? input3 = null) {
+		public DynamicEventArgs(dynamic input0, dynamic? input1 = null, dynamic? input2 = null,
+			dynamic? input3 = null) {
 			Arg0 = input0;
 			Arg1 = input1;
 			Arg2 = input2;

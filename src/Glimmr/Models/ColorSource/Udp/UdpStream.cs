@@ -45,7 +45,10 @@ namespace Glimmr.Models.ColorSource.UDP {
 			_uc = new UdpClient(8889) {Ttl = 5, Client = {ReceiveBufferSize = 2000}};
 			_uc.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 			_uc.Client.Blocking = false;
-			if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) _uc.DontFragment = true;
+			if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+				_uc.DontFragment = true;
+			}
+
 			var sd = DataUtil.GetSystemData();
 			_devMode = (DeviceMode) sd.DeviceMode;
 			_sd = sd;
@@ -65,11 +68,16 @@ namespace Glimmr.Models.ColorSource.UDP {
 			return ExecuteAsync(ct);
 		}
 
+		public bool SourceActive => _splitter.SourceActive;
+
 		private void RefreshSystem() {
 			var sd = DataUtil.GetSystemData();
 			_devMode = (DeviceMode) sd.DeviceMode;
 			_hostName = _sd.DeviceName;
-			if (SystemUtil.IsRaspberryPi()) return;
+			if (SystemUtil.IsRaspberryPi()) {
+				return;
+			}
+
 			_discovery?.Dispose();
 			var addr = new List<IPAddress> {IPAddress.Parse(IpUtil.GetLocalIpAddress())};
 			var service = new ServiceProfile(_hostName, "_glimmr._tcp", 8889, addr);
@@ -77,9 +85,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 			_discovery.Advertise(service);
 		}
 
-		public bool SourceActive => _splitter.SourceActive;
 
-		
 		private async Task StartStream(object arg1, DynamicEventArgs arg2) {
 			_gd = arg2.Arg0;
 			_sd = DataUtil.GetSystemData();
@@ -107,7 +113,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 				Log.Information("UDP Stream service stopped.");
 			}, stoppingToken);
 		}
-		
+
 		public Color[] GetColors() {
 			return _splitter.GetColors();
 		}
@@ -175,7 +181,6 @@ namespace Glimmr.Models.ColorSource.UDP {
 				await _splitter.Update(frame);
 				frame.Dispose();
 				_sending = false;
-				
 			} else {
 				Log.Debug("Dev mode is incorrect.");
 			}

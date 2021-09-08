@@ -10,10 +10,13 @@ using Newtonsoft.Json;
 namespace Glimmr.Models.ColorTarget.Led {
 	[Serializable]
 	public class LedData : IColorTargetData {
-		
 		[DefaultValue(true)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool FixGamma { get; set; } = true;
+
+		[DefaultValue(false)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public bool ReverseStrip { get; set; }
 
 
 		[JsonProperty] public int Brightness { get; set; }
@@ -56,10 +59,6 @@ namespace Glimmr.Models.ColorTarget.Led {
 		[JsonProperty] public bool Enable { get; set; }
 
 		[JsonProperty] public string LastSeen { get; set; }
-		
-		[DefaultValue(false)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public bool ReverseStrip { get; set; }
 
 
 		public void UpdateFromDiscovered(IColorTargetData data) {
@@ -71,11 +70,14 @@ namespace Glimmr.Models.ColorTarget.Led {
 			new("LedCount", "text", "Led Count"),
 			new("Offset", "text", "Led Offset"),
 			new("LedMultiplier", "number", "LED Multiplier") {
-				ValueMin = "-5", ValueStep = "1", ValueMax="5", ValueHint = "Positive values to multiply (skip), negative values to divide (duplicate)."
+				ValueMin = "-5", ValueStep = "1", ValueMax = "5",
+				ValueHint = "Positive values to multiply (skip), negative values to divide (duplicate)."
 			},
-			new("ReverseStrip", "check", "Reverse Strip"){ValueHint = "Reverse the order of the leds to clockwise (facing screen)."},
-			new("FixGamma", "check", "Fix Gamma"){ValueHint = "Automatically correct Gamma (recommended)"},
-			new("MilliampsPerLed", "text", "Milliamps Per LED"){ValueHint = "'Default' = 30 (.3w), 'Normal' = 55 (.55w)"}
+			new("ReverseStrip", "check", "Reverse Strip")
+				{ValueHint = "Reverse the order of the leds to clockwise (facing screen)."},
+			new("FixGamma", "check", "Fix Gamma") {ValueHint = "Automatically correct Gamma (recommended)"},
+			new("MilliampsPerLed", "text", "Milliamps Per LED")
+				{ValueHint = "'Default' = 30 (.3w), 'Normal' = 55 (.55w)"}
 		};
 	}
 }

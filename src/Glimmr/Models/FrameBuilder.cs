@@ -13,6 +13,8 @@ using Serilog;
 
 namespace Glimmr.Models {
 	public class FrameBuilder {
+		private const int ScaleHeight = 480;
+		private const int ScaleWidth = 640;
 		private readonly int _borderHeight = 10;
 		private readonly int _borderWidth = 10;
 
@@ -23,11 +25,9 @@ namespace Glimmr.Models {
 		private readonly int _ledCount;
 		private readonly int _leftCount;
 		private readonly int _rightCount;
-		private const int ScaleHeight = 480;
-		private const int ScaleWidth = 640;
 		private readonly int _topCount;
 
-		public FrameBuilder(int[] inputDimensions, bool sectors = false, bool center=false) {
+		public FrameBuilder(int[] inputDimensions, bool sectors = false, bool center = false) {
 			_leftCount = inputDimensions[0];
 			_rightCount = inputDimensions[1];
 			_topCount = inputDimensions[2];
@@ -39,14 +39,13 @@ namespace Glimmr.Models {
 					_inputCoords = DrawCenterSectors();
 				} else {
 					_ledCount -= 4;
-					_inputCoords = DrawSectors();	
+					_inputCoords = DrawSectors();
 				}
 			} else {
 				_inputCoords = DrawGrid();
 			}
 		}
-		
-		
+
 
 		public Mat Build(IEnumerable<Color> colors) {
 			var enumerable = colors as Color[] ?? colors.ToArray();
@@ -172,12 +171,21 @@ namespace Glimmr.Models {
 			while (step >= 0) {
 				var ord = step * sectorHeight;
 				var width = sectorHeight * wIdx + 5;
-				if (width > ScaleWidth / 2) width = ScaleWidth / 2;
+				if (width > ScaleWidth / 2) {
+					width = ScaleWidth / 2;
+				}
+
 				var right = ScaleWidth - width;
 				fs[idx] = new Rectangle(right, ord, ScaleWidth, sectorHeight);
 				wIdx += step < max / 2 ? -1 : 1;
-				if (wIdx < 1) wIdx = 1;
-				if (wIdx > max / 2) wIdx = max / 2;
+				if (wIdx < 1) {
+					wIdx = 1;
+				}
+
+				if (wIdx > max / 2) {
+					wIdx = max / 2;
+				}
+
 				idx++;
 				step--;
 			}
@@ -189,11 +197,20 @@ namespace Glimmr.Models {
 			while (step > 0) {
 				var ord = step * sectorWidth;
 				var height = sectorWidth * wIdx + 5;
-				if (height > ScaleHeight / 2) height = ScaleHeight / 2;
+				if (height > ScaleHeight / 2) {
+					height = ScaleHeight / 2;
+				}
+
 				fs[idx] = new Rectangle(ord, minTop, sectorWidth, height);
 				wIdx += step < max / 2 ? -1 : 1;
-				if (wIdx < 1) wIdx = 1;
-				if (wIdx > max / 2) wIdx = max / 2;
+				if (wIdx < 1) {
+					wIdx = 1;
+				}
+
+				if (wIdx > max / 2) {
+					wIdx = max / 2;
+				}
+
 				idx++;
 				step--;
 			}
@@ -205,11 +222,20 @@ namespace Glimmr.Models {
 			while (step <= _leftCount - 1) {
 				var ord = step * sectorHeight;
 				var width = sectorHeight * wIdx + 5;
-				if (width > ScaleWidth / 2) width = ScaleWidth / 2;
+				if (width > ScaleWidth / 2) {
+					width = ScaleWidth / 2;
+				}
+
 				fs[idx] = new Rectangle(minLeft, ord, width, sectorHeight);
 				wIdx += step < max / 2 ? 1 : -1;
-				if (wIdx < 1) wIdx = 1;
-				if (wIdx > max / 2) wIdx = max / 2;
+				if (wIdx < 1) {
+					wIdx = 1;
+				}
+
+				if (wIdx > max / 2) {
+					wIdx = max / 2;
+				}
+
 				idx++;
 				step++;
 			}
@@ -221,19 +247,28 @@ namespace Glimmr.Models {
 			while (step <= _bottomCount - 2) {
 				var ord = step * sectorWidth;
 				var height = sectorWidth * wIdx + 5;
-				if (height > ScaleHeight / 2) height = ScaleHeight / 2;
+				if (height > ScaleHeight / 2) {
+					height = ScaleHeight / 2;
+				}
+
 				var bottom = ScaleHeight - height;
 				fs[idx] = new Rectangle(ord, bottom, sectorWidth, height);
 				wIdx += step < max / 2 ? 1 : -1;
-				if (wIdx < 1) wIdx = 1;
-				if (wIdx > max / 2) wIdx = max / 2;
+				if (wIdx < 1) {
+					wIdx = 1;
+				}
+
+				if (wIdx > max / 2) {
+					wIdx = max / 2;
+				}
+
 				idx++;
 				step += 1;
 			}
 
 			return fs;
 		}
-		
+
 		private Rectangle[] DrawCenterSectors() {
 			// This is where we're saving our output
 			var fs = new Rectangle[_ledCount];
@@ -252,6 +287,7 @@ namespace Glimmr.Models {
 					idx++;
 					left -= sectorWidth;
 				}
+
 				top -= sectorHeight;
 			}
 

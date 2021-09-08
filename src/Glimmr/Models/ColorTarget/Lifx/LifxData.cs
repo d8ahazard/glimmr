@@ -179,7 +179,8 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				};
 				return new[] {
 					new("LedMultiplier", "number", "LED Multiplier") {
-						ValueMin = "-5", ValueStep = "1", ValueMax="5", ValueHint = "Positive values to multiply (skip), negative values to divide (duplicate)."
+						ValueMin = "-5", ValueStep = "1", ValueMax = "5",
+						ValueHint = "Positive values to multiply (skip), negative values to divide (duplicate)."
 					},
 					gamma,
 					new("beamMap", "beamMap", "")

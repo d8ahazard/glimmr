@@ -174,8 +174,15 @@ namespace Glimmr.Services {
 					break;
 				}
 			}
-			if (dev == null) return;
-			if (dev.GetType() == null) return;
+
+			if (dev == null) {
+				return;
+			}
+
+			if (dev.GetType() == null) {
+				return;
+			}
+
 			if (dev.GetType().GetMethod("CheckAuthAsync") != null) {
 				var count = 0;
 				while (count < 30) {
@@ -299,9 +306,12 @@ v. {version}
 			UdpClient = new UdpClient {Ttl = 5};
 			UdpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 			// This should keep our socket from doing bad things?
-			UdpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout,30);
+			UdpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout, 30);
 			UdpClient.Client.Blocking = false;
-			if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) UdpClient.DontFragment = true;
+			if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+				UdpClient.DontFragment = true;
+			}
+
 			MulticastService = new MulticastService();
 			ServiceDiscovery = new ServiceDiscovery(MulticastService);
 			LoadAgents();
@@ -388,7 +398,7 @@ v. {version}
 
 		public async Task SendImage(string method, Mat image) {
 			var vb = new VectorOfByte();
-			CvInvoke.Imencode(".png",image,vb);
+			CvInvoke.Imencode(".png", image, vb);
 			await _hubContext.Clients.All.SendAsync(method, vb.ToArray());
 		}
 

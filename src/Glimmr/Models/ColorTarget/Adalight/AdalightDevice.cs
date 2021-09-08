@@ -33,11 +33,6 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			_adalight = new AdalightNet.Adalight(_port, _ledCount, _baud);
 		}
 
-		private Task SetColors(object sender, ColorSendEventArgs args) {
-			SetColor(args.LedColors, args.Force);
-			return Task.CompletedTask;
-		}
-
 		public bool Enable { get; set; }
 		public bool Streaming { get; set; }
 		public bool Testing { get; set; }
@@ -59,6 +54,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 				Log.Warning("Unable to connect!");
 				return;
 			}
+
 			Streaming = true;
 			await Task.FromResult(true);
 			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
@@ -75,24 +71,6 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			_adalight.Disconnect();
 			Streaming = false;
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
-		}
-
-
-		private void SetColor(Color[] colors, bool force = false) {
-			if (!Enable || !Streaming || Testing && !force) {
-				return;
-			}
-
-			var toSend = ColorUtil.TruncateColors(colors, _offset, _ledCount, _multiplier);
-			if (_reverseStrip) {
-				toSend = toSend.Reverse().ToArray();
-			}
-
-			if (_brightness < 100) {
-				toSend = ColorUtil.AdjustBrightness(toSend, _brightness / 100f);
-			}
-			
-			_adalight.UpdateColorsAsync(toSend.ToList());
 		}
 
 		public async Task FlashColor(Color color) {
@@ -133,6 +111,29 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 
 		public void Dispose() {
 			_adalight.Dispose();
+		}
+
+		private Task SetColors(object sender, ColorSendEventArgs args) {
+			SetColor(args.LedColors, args.Force);
+			return Task.CompletedTask;
+		}
+
+
+		private void SetColor(Color[] colors, bool force = false) {
+			if (!Enable || !Streaming || Testing && !force) {
+				return;
+			}
+
+			var toSend = ColorUtil.TruncateColors(colors, _offset, _ledCount, _multiplier);
+			if (_reverseStrip) {
+				toSend = toSend.Reverse().ToArray();
+			}
+
+			if (_brightness < 100) {
+				toSend = ColorUtil.AdjustBrightness(toSend, _brightness / 100f);
+			}
+
+			_adalight.UpdateColorsAsync(toSend.ToList());
 		}
 
 		private void LoadData() {

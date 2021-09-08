@@ -1920,7 +1920,7 @@ const toggleExpansion = (element, to, duration = 350, fade = false) => {
 
 const showSettingsCard = async (e) => {
     settingsShown = true;
-    const card = document.getElementById("mainSettingsCard")
+    const card = document.getElementById("mainSettingsCard");
     // get the location of the card in the view
     let x = window.matchMedia("(max-width: 576px)");
     let btn = document.querySelector(".mainSettings.mainSettings-lg span");
@@ -1943,7 +1943,7 @@ const showSettingsCard = async (e) => {
 
 const hideSettingsCard = async (e) => {
     settingsShown = false;
-    const card = document.getElementById("mainSettingsCard")
+    const card = document.getElementById("mainSettingsCard");
     let x = window.matchMedia("(max-width: 576px)");
     let btn = document.querySelector(".mainSettings.mainSettings-lg span");
     if (x.matches) btn = document.querySelector(".mainSettings.mainSettings-sm span");

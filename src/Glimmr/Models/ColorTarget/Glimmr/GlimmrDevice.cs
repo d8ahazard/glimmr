@@ -27,22 +27,18 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		private IPEndPoint? _ep;
 		private string _ipAddress;
 		private SystemData _sd;
-		
+
 		public GlimmrDevice(GlimmrData wd, ColorService cs) : base(cs) {
 			_udpClient = cs.ControlService.UdpClient;
 			_httpClient = cs.ControlService.HttpSender;
 			_data = wd ?? throw new ArgumentException("Invalid Glimmr data.");
 			Id = _data.Id;
-			
+
 			Enable = _data.Enable;
 			_ipAddress = _data.IpAddress;
 			_sd = DataUtil.GetSystemData();
 			cs.ControlService.RefreshSystemEvent += RefreshSystem;
 			cs.ColorSendEventAsync += SetColors;
-		}
-		
-		private Task SetColors(object sender, ColorSendEventArgs args) {
-			return SetColor(args.LedColors, args.Force);
 		}
 
 		public bool Enable { get; set; }
@@ -106,6 +102,32 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		}
 
 
+		public Task ReloadData() {
+			var id = _data.Id;
+			_sd = DataUtil.GetSystemData();
+			var dev = DataUtil.GetDevice<GlimmrData>(id);
+			if (dev == null) {
+				return Task.CompletedTask;
+			}
+
+			_data = dev;
+			_ipAddress = _data.IpAddress;
+			Enable = _data.Enable;
+			Log.Debug($"Reloaded LED Data for {id}: " + JsonConvert.SerializeObject(_data));
+			return Task.CompletedTask;
+		}
+
+
+		public void Dispose() {
+			Dispose(true).ConfigureAwait(true);
+			GC.SuppressFinalize(this);
+		}
+
+		private Task SetColors(object sender, ColorSendEventArgs args) {
+			return SetColor(args.LedColors, args.Force);
+		}
+
+
 		private async Task SetColor(Color[] leds, bool force = false) {
 			if (!Streaming || !Enable || Testing && !force) {
 				return;
@@ -159,7 +181,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 				leds = leds1.ToArray();
 			}
 
-			
+
 			var packet = new List<byte> {ByteUtils.IntByte(2), ByteUtils.IntByte(255)};
 			foreach (var color in leds) {
 				packet.Add(ByteUtils.IntByte(color.R));
@@ -175,28 +197,6 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			}
 		}
 
-
-		public Task ReloadData() {
-			var id = _data.Id;
-			_sd = DataUtil.GetSystemData();
-			var dev = DataUtil.GetDevice<GlimmrData>(id);
-			if (dev == null) {
-				return Task.CompletedTask;
-			}
-
-			_data = dev;
-			_ipAddress = _data.IpAddress;
-			Enable = _data.Enable;
-			Log.Debug($"Reloaded LED Data for {id}: " + JsonConvert.SerializeObject(_data));
-			return Task.CompletedTask;
-		}
-
-
-		public void Dispose() {
-			Dispose(true).ConfigureAwait(true);
-			GC.SuppressFinalize(this);
-		}
-
 		private void RefreshSystem() {
 			_sd = DataUtil.GetSystemData();
 		}
@@ -206,8 +206,6 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			return _data.Enable;
 		}
 
-
-		
 
 		private async Task SendPost(string target, string value) {
 			Uri uri;

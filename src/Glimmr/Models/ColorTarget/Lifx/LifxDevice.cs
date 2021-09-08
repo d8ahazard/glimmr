@@ -26,7 +26,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		private int _multiplier;
 		private int _multiZoneCount;
 		private int _targetSector;
-		
+
 		public LifxDevice(LifxData d, ColorService cs) : base(cs) {
 			DataUtil.GetItem<int>("captureMode");
 			_data = d ?? throw new ArgumentException("Invalid Data");
@@ -43,10 +43,6 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			B = new Device(d.HostName, d.MacAddress, d.Service, (uint) d.Port);
 			LoadData();
 			cs.ColorSendEventAsync += SetColors;
-		}
-		
-		private Task SetColors(object sender, ColorSendEventArgs args) {
-			return SetColor(args.LedColors, args.SectorColors, args.Force);
 		}
 
 		public bool Streaming { get; set; }
@@ -69,6 +65,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			if (_client == null) {
 				return;
 			}
+
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
 			var col = new LifxColor(0, 0, 0);
 
@@ -99,7 +96,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			if (_client == null) {
 				return;
 			}
-			
+
 			Log.Information($"{_data.Tag}::Stopping stream.: {_data.Id}...");
 			var col = new LifxColor(0, 0, 0);
 			await _client.SetLightPowerAsync(B, false).ConfigureAwait(false);
@@ -120,6 +117,10 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		}
 
 		public void Dispose() {
+		}
+
+		private Task SetColors(object sender, ColorSendEventArgs args) {
+			return SetColor(args.LedColors, args.SectorColors, args.Force);
 		}
 
 
@@ -234,7 +235,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			var input = sectors[_targetSector];
 
 			var nC = new LifxColor(input);
-			
+
 			await _client.SetColorAsync(B, nC);
 			ColorService?.Counter.Tick(Id);
 		}
