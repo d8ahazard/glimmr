@@ -553,7 +553,7 @@ namespace Glimmr.Models {
 			var wStart = width / 3;
 			var hStart = height / 3;
 			// How many non-black pixels can be in a given row
-			const int blackLevel = 7;
+			const int blackLevel = 3;
 			var lPixels = 0;
 			var pPixels = 0;
 
@@ -561,8 +561,7 @@ namespace Glimmr.Models {
 			height--;
 
 			var count = Sum(image.GetRawData());
-			var avg = count / image.Total.ToInt32();
-			var noImage = avg <= 21 || width == 0 || height == 0;
+			var noImage = count == 0 || width == 0 || height == 0;
 			// If it is, we can stop here
 			if (noImage) {
 				_allBlack = true;
@@ -585,7 +584,7 @@ namespace Glimmr.Models {
 					var l2 = Sum(b2);
 					c1.Dispose();
 					c2.Dispose();
-					if (l1 == l2 && l1 < blackLevel) {
+					if (l1 == l2 && l1 + l2 < blackLevel) {
 						lPixels = y;
 					} else {
 						break;
@@ -604,7 +603,7 @@ namespace Glimmr.Models {
 					var l2 = Sum(b2);
 					c1.Dispose();
 					c2.Dispose();
-					if (l1 + l2 <= blackLevel) {
+					if (l1 == l2 && l1 + l2 <= blackLevel) {
 						pPixels = x;
 					} else {
 						break;
