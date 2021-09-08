@@ -303,7 +303,7 @@ function setSocketListeners() {
         let tempUnit = "°F";
 
         if (isValid(sd)) {
-            tempUnit = (sd["Units"] === "0") ? "°F" : "°C";
+            tempUnit = (sd["Units"] === 0) ? "°F" : "°C";
         }
         tempText.textContent = cpuData["tempCurrent"] + tempUnit;
         cpuText.textContent = cpuData["loadAvg1"] + "%";
@@ -552,7 +552,6 @@ function setListeners() {
         let target = e.target;
         let obj = target.getAttribute("data-object");
         let property = target.getAttribute("data-property");
-        let id = target.getAttribute("data-id");
         let val = target.value;
         if (target.type && target.type ==="checkbox") {
             val = target.checked;
@@ -587,76 +586,54 @@ function setListeners() {
             val = parseInt(val);            
         }
         
-        let pack;
-        if (isValid(obj) && isValid(property) && isValid(val)) {
+        let sd;
+        if (isValid(obj) && isValid(property) && isValid(val) && obj === "SystemData") {
             console.log("Trying to set: ", obj, property, val);
             let numVal = parseInt(val);
             let skipProps = ["DsIp", "OpenRgbIp","GammaCorrection"];
-            if (!isNaN(numVal) && !skipProps.includes(property)) val = numVal; 
-            
-            if (isValid(id)) {
-                let strips = data.store[obj];
-                for(let i=0; i < strips.length; i++) {
-                    let strip = strips[i];
-                    if (strip["Id"] === id) {
-                        strip[property] = val;
-                        strip["Id"] = id;
-                        strips[i] = strip;
-                        pack = strip;
-                        sendMessage(obj, pack,true);
-                    }
-                }
-                data.store[obj] = strips;
-                
-            } else {
-                if (target.classList.contains("devSetting")) {
-                    updateDevice(obj, property, val);  
-                    //createDeviceSettings();
-                    return;
-                } else {
-                        data.store[obj][property] = val;
-                        pack = data.store[obj];
-                        if (property === "ScreenCapMode" || property === "CaptureMode" || property === "StreamMode") {
-                            updateCaptureUi();
-                        }
-                        if (property === "UseCenter" || property === "HSectors" || property === "VSectors") {
-                            if (property === "UseCenter") useCenter = val;
-                            if (property === "HSectors") hSectors = val;
-                            if (property === "VSectors") vSectors = val;
-                            let sPreview = document.getElementById("sectorWrap");
-                            createSectorMap(sPreview);
-                        }
-                        
-                        console.log("Sending updated object: ", obj, pack);
-                        sendMessage(obj, pack,true);
-                        return;    
-                                        
-                }
+            if (!isNaN(numVal) && !skipProps.includes(property)) val = numVal;            
+            console.log("System data update.");
+            data.store[obj][property] = val;
+            sd = data.store[obj];
+            if (property === "ScreenCapMode" || property === "CaptureMode" || property === "StreamMode") {
+                updateCaptureUi();
             }
-                        
+            
+            console.log("Sending updated object: ", obj, sd);
+            sendMessage(obj, sd,true);
+                                    
             if (property === "LeftCount" || property === "RightCount" || property ==="TopCount" || property === "BottomCount") {
                 let lPreview = document.getElementById("sLedWrap");
                 createLedMap(lPreview);
-                
-                return;
             }
+
+            if (property === "UseCenter" || property === "HSectors" || property === "VSectors") {
+                if (property === "UseCenter") useCenter = val;
+                if (property === "HSectors") hSectors = val;
+                if (property === "VSectors") vSectors = val;
+                let sPreview = document.getElementById("sectorWrap");
+                createSectorMap(sPreview);
+            }
+
             if (property === "Theme") {
                 loadTheme(val);
-                return;
-            }
-            if (property === "AudioMap") {
-                let mapImg = document.getElementById("audioMapImg");
-                mapImg.setAttribute("src","./img/MusicMode" + val + ".png");
-                return;
-            }
-            
-        }   
+            }   
+            return;
+        }
+        
+        // If we're still here, check for a device setting
+        if (target.classList.contains("devSetting")) {
+            updateDevice(obj, property, val);
+            return;
+        }
+        
         obj = target.getAttribute("data-target");
         property = target.getAttribute("data-attribute");
         if (isValid(obj) && isValid(property) && isValid(val)) {
-            
             updateDevice(obj, property, val);
+            return;
         }
+        console.log("What are we trying to set??", obj, property, value);
     });
     
     document.addEventListener('click',function(e){
@@ -1381,20 +1358,22 @@ function scrollDevPref(step) {
 
 
 function loadTheme(theme) {
+    console.log("Loadtheme called: ", theme);
     let head = document.getElementsByTagName("head")[0];
     if (theme === "light") {
         let last = head.lastChild;
+        console.log("Checking last: ", last);
         if (isValid(last.href)) {
             if (last.href.includes("dark.css")) {
                 last.parentNode.removeChild(last);
             }
-        }
-        
+        }        
     } else {
         let newSS=document.createElement('link');
         newSS.rel='stylesheet';
         newSS.href='/css/' + theme + '.css';
-        document.getElementsByTagName("head")[0].appendChild(newSS);    
+        document.getElementsByTagName("head")[0].appendChild(newSS);
+        console.log("appended dark theme:", newSS);
     }
     
     

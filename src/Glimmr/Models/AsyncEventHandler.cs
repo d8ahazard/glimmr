@@ -60,27 +60,6 @@ namespace Glimmr.Models {
         /// <summary>
         ///     Asynchronously invokes an event, dispatching the provided event arguments to all registered handlers.
         /// </summary>
-        /// <param name="eventHandler">This event handler.</param>
-        /// <param name="sender">The object firing the event.</param>
-        /// <param name="eventArgs">The object containing the event data.</param>
-        /// <returns>
-        ///     A <see cref="Task" /> that completes only when all registered handlers complete. A completed task is returned
-        ///     if the event handler is <c>null</c>.
-        /// </returns>
-        public static Task InvokeAsync(this AsyncEventHandler eventHandler, object sender, EventArgs eventArgs) {
-			if (eventHandler == null) {
-				return Task.CompletedTask;
-			}
-
-			var delegates = eventHandler.GetInvocationList().Cast<AsyncEventHandler>();
-			var tasks = delegates.Select(it => it.Invoke(sender, eventArgs));
-
-			return Task.WhenAll(tasks);
-		}
-
-        /// <summary>
-        ///     Asynchronously invokes an event, dispatching the provided event arguments to all registered handlers.
-        /// </summary>
         /// <typeparam name="TEventArgs">The type of the event arguments.</typeparam>
         /// <param name="eventHandler">This event handler.</param>
         /// <param name="sender">The object firing the event.</param>
