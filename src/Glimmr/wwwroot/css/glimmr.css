@@ -55,7 +55,7 @@
     }    
     #statDiv {
         position: relative;
-        margin-left: 20px;
+        margin-left: 5px;
         padding-top: 5px;
     }    
 }
@@ -271,7 +271,6 @@ div.btn-clear:not(.btn-lg) {
     padding: 10px 16px !important;
     font-size: 18px;
     line-height: 1.3333333;
-    height: 100%;
     border-radius: 6px;
 }
 
@@ -434,6 +433,14 @@ input[type="range"]:not[data-object="SystemData"]::-webkit-slider-runnable-track
 
 #mainSettingsCard > div > div > div.card-body {
     padding: 0!important;
+}
+
+#mainSettingsCard {
+    position: fixed;
+    top: 3rem;
+    right: 100%;
+    overflow-y: scroll;
+    opacity: 0;
 }
 
 .subCol {
@@ -636,7 +643,7 @@ text > * {
     color: var(--fg-primary) !important;
 }
 
-.modal {
+.modal, .popover {
     background: var(--bg-secondary) !important;
     color: var(--fg-primary) !important;
 }
@@ -647,7 +654,7 @@ text > * {
 }
 
 
-div.btn-clear:hover {
+div.btn-clear:hover, .popover-title {
     background: var(--fg-secondary) !important;
     color: var(--bg-primary) !important;
 }

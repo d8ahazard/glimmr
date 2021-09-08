@@ -1,4 +1,4 @@
-﻿let socketLoaded = false;
+let socketLoaded = false;
 let loadTimeout;
 let loadCalled;
 // Row for settings and device cards divs
@@ -70,8 +70,7 @@ let data = {
     }
 };
 
-data.registerStoreListener(function(val) {
-    console.log("Datastore has been updated: ", val);
+data.registerStoreListener(function() {
     if (loadTimeout === null || loadCalled) {
         loadCalled = false;
         loadUi();        
@@ -141,7 +140,6 @@ function loadPickr() {
     });
     pickr.on('change', (color, source, instance) => {
         let col = color.toHEXA();
-        console.log("COL: ", col);
         newColor = col[0] + col[1] + col[2];
     }).on('changestop', (source, instance) => {
         let sd = getStoreProperty("SystemData");
@@ -202,20 +200,14 @@ function loadCounts() {
                 devSelect.appendChild(opt);
             }
         }
-    } else {
-        console.log("Devs invalid?");
     }
-    
     
     let lSel = document.querySelector('[data-property="LeftCount"][data-object="SystemData"]');
     let rSel = document.querySelector('[data-property="RightCount"][data-object="SystemData"]');
     let tSel = document.querySelector('[data-property="TopCount"][data-object="SystemData"]');
     let bSel = document.querySelector('[data-property="BottomCount"][data-object="SystemData"]');
 
-
-    
-    // If using DS capture, set static/dev LED counts.
-    
+    // If using DS capture, set static/dev LED counts.    
     leftCount = sd["LeftCount"];
     rightCount = sd["RightCount"];
     topCount = sd["TopCount"];
@@ -239,7 +231,7 @@ function sendMessage(endpoint, sData, encode=true) {
     },500);
     if (socketLoaded) {
         if (isValid(sData)) {
-            console.log("Sending to " + endpoint, sData);
+            console.log("Sending message: " + endpoint, sData);
             websocket.invoke(endpoint, sData).catch(function (err) {
                 return console.error("Error: ", err);
             });
@@ -286,11 +278,10 @@ function doGet(endpoint) {
 // Set various actions/responses on the websocket
 function setSocketListeners() {
     websocket.on("ReceiveMessage", function (message) {
-        console.log("RecMsg: " + message);
+        console.log("Message received: " + message);
     });
 
     websocket.on("mode", function (mode) {
-        console.log("Socket has set mode to " + mode);
         setMode(mode);
     });
 
@@ -344,24 +335,20 @@ function setSocketListeners() {
     });
 
     websocket.on("updateDevice", function (device) {
-        console.log("New device data " + device);
+        console.log("Updating device data " + device);
     });
 
     websocket.on("auth", function (value1, value2) {
-        console.log("Auth message: " + value1);
         let cb = document.getElementById("CircleBar");        
         switch (value1) {
             case "start":
                 bar.animate(0);
                 cb.classList.remove("hide");
-                console.log("Auth start...");
                 break;
             case "error":
-                console.log("Auth error...");
                 cb.classList.add("hide");
                 break;
             case "stop":
-                console.log("Auth stop...");
                 cb.classList.add("hide");
                 break;
             case "update":
@@ -369,7 +356,6 @@ function setSocketListeners() {
                 if (value2 === 30) cb.classList.add("hide");
                 break;
             case "authorized":
-                console.log("Auth success!");
                 let led = document.querySelector(".linkImg");
                 led.classList.remove("unlinked");
                 led.classList.add("linked");
@@ -382,7 +368,7 @@ function setSocketListeners() {
 
 
     websocket.on('open', function() {
-        console.log("Socket connected (onOpen).");
+        console.log("Socket connected.");
         socketLoaded = true;        
     });
 
@@ -402,7 +388,7 @@ function setSocketListeners() {
     });
     
     websocket.on('deleteDevice', function(id) {
-       console.log("Removing device...");
+       console.log("Removing device: ", id);
         let idx = -1;
         for(let i = 0; i < data.devices.length; i++) {
             if (data.devices[i].Id === id) {
@@ -415,7 +401,7 @@ function setSocketListeners() {
     });
     
     websocket.on('frames', function(stuff) {
-        console.log("frame counts: ", stuff); 
+        //console.log("frame counts: ", stuff); 
         fpsCounter.innerText = stuff['source'] + "FPS"; 
     });
 
@@ -423,7 +409,6 @@ function setSocketListeners() {
         dData = dData.replace(/\\n/g, '');
         let stuff = JSON.parse(dData);
         stuff["Id"] = stuff["id"];
-        console.log("Device data retrieved: ", stuff);
         for(let i=0; i<data.devices.length; i++) {
            let dev = data.devices[i];
            if (dev["Id"] === stuff["Id"]) {
@@ -432,7 +417,6 @@ function setSocketListeners() {
            }
            
            if (isValid(deviceData) && deviceData["Id"] === stuff["Id"]) {
-               console.log("Updating selected deviceData:",stuff);
                deviceData["LastSeen"] = stuff["LastSeen"];
                if (Object.toJSON(deviceData) === Object.toJSON(stuff)) {
                    console.log("DD exactly matches stuff, no need to reload?");
@@ -644,6 +628,9 @@ function setListeners() {
 
 function handleClick(target) {
     switch(true) {
+        case target.id === "showIntro":
+            showIntro();
+            break;
         case target.id === "fetchLog":
             fetchLog();
             break;
@@ -1044,6 +1031,7 @@ function loadUi() {
 }
 
 function showIntro() {
+    let x = window.matchMedia("(max-width: 576px)");
     let myTour = new Tour(
         {
             backdropPadding: 5,
@@ -1053,7 +1041,8 @@ function showIntro() {
             onStart: function(){
                 console.log("Creating demo device card.");
                 let ledObj = JSON.parse(ledData);
-                loadDevice(ledObj,true);                
+                loadDevice(ledObj,true);
+                if (settingsShown) toggleSettingsDiv().then();
             },
             onEnd: function(){
                 console.log("Removing demo device card.");
@@ -1076,14 +1065,16 @@ function showIntro() {
                     content: 'Hello, and thanks for trying out Glimmr. This short tour will help you get familiar with the UI.'
                 },
                 {
-                    element: "#modeBtns",
+                    element: ".modeGroup",
                     title: 'Mode Selection',
+                    placement: 'bottom',
                     content: 'Use these buttons to select the lighting mode for enabled devices. You can hover over each one to see what mode it enables.'
                 },
                 {
                     element: "#statDiv",
                     title: 'System Stats',
-                    content: 'Here you can see the current frame rate, CPU temperature and total usage.'
+                    placement: 'top',
+                    content: 'Here you can see the current frame rate, CPU temperature, CPU usage, and if any throttling is occurring.'
                 },
                 {
                     element: "#refreshBtn",
@@ -1093,7 +1084,7 @@ function showIntro() {
                     content: 'Click here to re-scan/refresh devices.'
                 },
                 {
-                    element: "#settingBtn",
+                    element: x.matches ? ".settingBtn-sm" : ".settingBtn-lg",
                     title: 'Glimmr Settings',
                     placement: 'left',
                     smartPlacement: false,
@@ -1101,20 +1092,6 @@ function showIntro() {
                     reflex: true,
                     onNext: function() {
                         if (!settingsShown) toggleSettingsDiv().then();
-                        document.getElementById("system-tab").click();
-                    }
-                },
-                {
-                    element: "#settingsTab",
-                    title: 'Setting Selection',
-                    content: 'Select the various settings groups here.',
-                    container: '#mainContent',
-                    backdropContainer: '#mainContent',
-                    onNext: function(){
-                        if (!settingsShown) toggleSettingsDiv().then();
-                    },
-                    onPrev: function(){
-                        if (settingsShown) toggleSettingsDiv().then();
                         document.getElementById("system-tab").click();
                     }
                 },
@@ -1266,7 +1243,7 @@ function showIntro() {
                     }
                 },
                 {
-                    element: '#LedCount',
+                    element: '.devSetting[data-property="LedCount"]',
                     title: 'LED Count',
                     content: 'This is the total number of leds in your strip. It can be less than the total number in the grid.',
                     onNext: function() {
@@ -1277,7 +1254,7 @@ function showIntro() {
                     }
                 },
                 {
-                    element: '#Offset',
+                    element: '.devSetting[data-property="Offset"]',
                     title: 'LED Offset',
                     content: 'The offset controls how many leds to skip from the start of the strip, allowing you to segment strips as need.',
                     onNext: function() {
@@ -1288,7 +1265,7 @@ function showIntro() {
                     }
                 },
                 {
-                    element: '#LedMultiplier',
+                    element: '.devSetting[data-property="LedMultiplier"]',
                     title: 'LED Multiplier',
                     content: 'The LED Multiplier can be used to adjust for strips or configurations where the number of LEDs' +
                         'doesn\'t correspond to the number of leds in the grid. By setting this value to a positive number,' +
@@ -1348,21 +1325,16 @@ function scrollElement(step) {
 
 function scrollDevPref(step) {
     let elem = document.querySelector(step.element);
-    let parent = document.querySelector("#devCard.card-body");
+    let parent = document.querySelector("#devCard");
     let topPos = elem.offsetTop;
-    console.log("ELEMN", elem);
-    console.log("PARENT: ", parent);
-    console.log("TOP: ", topPos);
     parent.scrollTop = topPos;
 }
 
 
 function loadTheme(theme) {
-    console.log("Loadtheme called: ", theme);
     let head = document.getElementsByTagName("head")[0];
     if (theme === "light") {
         let last = head.lastChild;
-        console.log("Checking last: ", last);
         if (isValid(last.href)) {
             if (last.href.includes("dark.css")) {
                 last.parentNode.removeChild(last);
@@ -1373,7 +1345,6 @@ function loadTheme(theme) {
         newSS.rel='stylesheet';
         newSS.href='/css/' + theme + '.css';
         document.getElementsByTagName("head")[0].appendChild(newSS);
-        console.log("appended dark theme:", newSS);
     }
     
     
@@ -1420,17 +1391,13 @@ function loadSettings() {
         updateCaptureUi();
         setModeButtons();
         loadCounts();
-        console.log("Loading System Data: ", systemData);
         let lPreview = document.getElementById("sLedWrap");
         let sPreview = document.getElementById("sectorWrap");
         setTimeout(function(){
             createLedMap(lPreview);
             createSectorMap(sPreview);
         },500);
-    } else {
-        console.log("NO LED DATA");
-    }   
-    
+    }
 }
 
 function updateCaptureUi() {
@@ -1505,7 +1472,6 @@ function loadSettingObject(obj) {
     let dataProp = obj;
     let id = obj["Id"];
     let name = "SystemData";
-    console.log("Loading object: ",name, dataProp, id);
     for(let prop in dataProp) {
         if (dataProp.hasOwnProperty(prop)) {
             let value = dataProp[prop];
@@ -1837,7 +1803,7 @@ function setStoreProperty(name, value) {
     }
 }
 
-const toggleExpansion = (element, to, duration = 350, fade = false) => {
+const toggleExpansion = (element, to, duration = 350) => {
     return new Promise((res) => {
         requestAnimationFrame(() => {
             element.style.transition = `
@@ -1848,13 +1814,16 @@ const toggleExpansion = (element, to, duration = 350, fade = false) => {
 						padding ${duration}ms ease-in-out,						
 						margin ${duration}ms ease-in-out
 					`;
-            if (fade) element.style.transition += ', opacity  ${duration}ms ease-in-out';
+            if (to.opacity !== null) {
+                element.style.transition += `, opacity  ${duration}ms ease-in-out`;
+                element.style.opacity = to.opacity;
+            }
             element.style.top = to.top;
             element.style.left = to.left;
             element.style.width = to.width;
             element.style.height = to.height;
             element.style.padding = to.padding;
-            if (fade) element.style.opacity = 0;
+            
             
         });
         setTimeout(function(){
@@ -1900,38 +1869,40 @@ const toggleExpansion = (element, to, duration = 350, fade = false) => {
 const showSettingsCard = async (e) => {
     settingsShown = true;
     const card = document.getElementById("mainSettingsCard");
-    // get the location of the card in the view
-    let x = window.matchMedia("(max-width: 576px)");
+    let mainContent = document.getElementById("mainContent");
+    let oh = mainContent.offsetTop;
     let btn = document.querySelector(".mainSettings.mainSettings-lg span");
+    let x = window.matchMedia("(max-width: 576px)");
     if (x.matches) btn = document.querySelector(".mainSettings.mainSettings-sm span");
-    let cardRow = document.getElementById("mainContent");
-    let oh = cardRow.offsetTop;
+    let fh = document.getElementById("footer").offsetHeight;
+    // This is the proper height for the dev card
+    fh += oh;
+
     const {top, left, width, height} = btn.getBoundingClientRect();
-    let h = 'calc(100% - ' + oh + 'px)';
+    let h = 'calc(100% - ' + fh + 'px)';
     card.style.position = 'fixed';
-    card.style.top = top + 'px';
+    card.style.top = oh + 'px';
     card.style.left = left + 'px';
     card.style.width = width + 'px';
     card.style.height = h;
-    card.classList.remove("hide");
-    await toggleExpansion(card, {top: 0, left: 0, width: '100%', height: h, padding: "1rem 3rem"}, 250)
-        .then(function(){
-            card.style.position = 'relative';
-        });    
+    card.style.opacity = "0";
+    await toggleExpansion(card, {top: oh + 'px', left: 0, width: '100%', height: h, opacity: "100%"}, 250);
 };
 
 const hideSettingsCard = async (e) => {
     settingsShown = false;
     const card = document.getElementById("mainSettingsCard");
-    let x = window.matchMedia("(max-width: 576px)");
+    let mainContent = document.getElementById("mainContent");
+    let oh = mainContent.offsetTop;
     let btn = document.querySelector(".mainSettings.mainSettings-lg span");
+    let x = window.matchMedia("(max-width: 576px)");
     if (x.matches) btn = document.querySelector(".mainSettings.mainSettings-sm span");
-
+    let fh = document.getElementById("footer").offsetHeight;
+    fh += oh;
     const {top, left, width, height} = btn.getBoundingClientRect();
+    let h = 'calc(100% - ' + fh + 'px)';
     card.style.display = 'block';
-    await toggleExpansion(card, {top: top + "px", left: left + "px", width: width + "px", height: height + 'px', padding: "1rem 3rem"}, 250);
-    card.classList.add("hide");
-
+    await toggleExpansion(card, {top: oh + "px", left: left + "px", width: width + "px", height: h + 'px', opacity:"0"}, 250);
 };
 
 const showDeviceCard = async (e) => {
@@ -1961,10 +1932,13 @@ const showDeviceCard = async (e) => {
     let body = document.querySelector("div.card.container-fluid > div");
     let cardRow = document.getElementById("mainContent");
     let oh = cardRow.offsetTop;
+    let fh = document.getElementById("footer").offsetHeight;
+    // This is the proper height for the dev card
+    fh += oh;
     // remove the display style so the original content is displayed right
     cardClone.style.display = 'block';
     // Expand that bish
-    await toggleExpansion(cardClone, {top: oh + "px", left: 0, width: '100%', height: 'calc(100% - ' + oh + 'px)', padding: "1rem 3rem"}, 250);
+    await toggleExpansion(cardClone, {top: oh + "px", left: 0, width: '100%', height: 'calc(100% - ' + fh + 'px)', padding: "1rem 3rem"}, 250);
     
     let sepDiv = document.createElement("div");
     sepDiv.classList.add("dropdown-divider", "row");
@@ -1993,7 +1967,8 @@ const showDeviceCard = async (e) => {
 function createDeviceSettings() {
     let container = document.querySelector("div.card.container-fluid > div");
     if (deviceData === undefined) deviceData = JSON.parse(ledData);
-    console.log("Loading device data: ", deviceData);   
+    console.log("Loading device data: ", deviceData);
+    document.querySelectorAll(".delSetting").forEach(e => e.remove());
     let props = deviceData["KeyProperties"];
     if (isValid(props)) {
         let id = deviceData["Id"];
@@ -2001,7 +1976,6 @@ function createDeviceSettings() {
         for (let i = 0; i < props.length; i++) {
             keys.push(props[i]["ValueType"]);
         }
-        console.log("Keys: ",keys);
         let mapProps = ["ledmap", "beamMap", "nanoleaf", "hue", "sectormap"];
         let addLink = false;
         
@@ -2262,14 +2236,12 @@ function drawLinkPane(type, linked) {
 function updateBeamLayout(items) {
     let beamLayout = deviceData["BeamLayout"];
     if (isValid(beamLayout)) {
-        console.log("Appending beamLayout: ", beamLayout);
         let existing = beamLayout["Segments"];
         let sorted = [];
         for (let i=0; i < items.length; i++) {
             let pos = parseInt(items[i].getAttribute("data-position"));
             for(let ex = 0; ex < existing.length; ex++) {
                 if (existing[ex]["Position"] === pos) {
-                    console.log("Adding: ", existing[ex]);
                     sorted.push(existing[ex]);
                 }
             }
@@ -2292,14 +2264,12 @@ function appendBeamMap() {
     if (deviceData.hasOwnProperty("BeamLayout")) {
         let beamLayout = deviceData["BeamLayout"];
         if (isValid(beamLayout)) {
-            console.log("Appending beamLayout: " , beamLayout);
             let items = beamLayout["Segments"];
             if (items.length > 0) {
                 let beamDiv = document.createElement("div");
                 beamDiv.id = "BeamDiv";
                 beamDiv.classList.add("sortable");
                 items.sort((a, b) => (a["Position"] > b["Position"]) ? 1 : -1);
-                console.log("ITEMS: ", items);
                 for (let i = 0; i < items.length; i++) {
                     let item = items[i];
                     let position = item["Position"];
@@ -2665,6 +2635,7 @@ function createBeamLedMap() {
 
     if (!isValid(deviceData)) {
         console.log("Invalid device data...");
+        return;
     }
     
     let beamLayout = deviceData["BeamLayout"];
@@ -2678,8 +2649,6 @@ function createBeamLedMap() {
         len *= 2;
         rangeList.push(ranges(total, offset, len));
     }
-    console.log("Range list: ", rangeList);
-    
     let w = targetElement.offsetWidth;
     let h = (w / 16) * 9;
     let imgL = targetElement.offsetLeft;
@@ -3217,7 +3186,7 @@ function createHueMap() {
 function drawNanoShapes(panel) {
     
     // Get window width
-    let width = window.innerWidth;
+    let width = document.getElementById("mapCol").offsetWidth;
     let height = width * .5625;
     if (height > 800) height = 800;
     let rotation = panel['Rotation'];
@@ -3228,9 +3197,6 @@ function drawNanoShapes(panel) {
     let layout = panel['Layout'];
     if (!isValid(layout)) return;
     let sideLength = layout['SideLength'];
-
-   
-
     let positions = layout['PositionData'];
     let minX = 1000;
     let minY = 1000;
@@ -3248,8 +3214,10 @@ function drawNanoShapes(panel) {
     let wX = maxX - minX;
     let wY = maxY - minY;
     let scaleXY = 1;
-    if (wX + 50 >= width) {
-        scaleXY = .5;
+    if (wX + 75 >= width) {
+        let newScale = width / (wX + 75);
+        console.log("Scaling canvas...", newScale);
+        scaleXY = newScale;
         maxX *= scaleXY;
         maxY *= scaleXY;
         minX *= scaleXY;
@@ -3315,7 +3283,6 @@ function drawNanoShapes(panel) {
         });
         let o = data['O'];
         // Draw each individual shape
-        console.log("Shape type is " + shape);
         switch (shape) {
             // Hexagon
             case 7:
@@ -3405,8 +3372,6 @@ function drawNanoShapes(panel) {
             shapeDrawing.on('tap', function () {
                 setNanoMap(data['PanelId'], data['TargetSector']);
             });
-            console.log("Adding shape: ", shapeDrawing);
-
             shapeGroup.add(shapeDrawing);
         }
         sText.offsetX(sText.width() / 2);
@@ -3510,7 +3475,7 @@ async function closeCard() {
         width: `${toggleWidth}px`,
         height: `${toggleHeight}px`,
         padding: '1rem 1rem',
-        fade: true
+        opacity: '0'
     }, 300).then(function(){
         cardClone.classList.add("devCard", "m-4");
         cardClone.classList.remove("container-fluid");

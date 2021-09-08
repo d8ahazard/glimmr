@@ -109,7 +109,7 @@
         </div>
     </div>
 </div>
-<div class="hide" id="mainSettingsCard" aria-labelledby="mainSettingsCard" data-backdrop="false" aria-hidden="true">
+<div id="mainSettingsCard" aria-labelledby="mainSettingsCard">
 <div class="container-fluid">
 <ul class="nav nav-tabs" id="settingsTab" role="tablist">
     <li class="nav-item" role="presentation">
@@ -250,7 +250,7 @@
         </select>
     </div>
     <!-- Auto-update -->
-    <div class="col-12 col-md-6 col-xl-3 form-group custom-control custom-switch">
+    <div class="col-12 col-md-6 col-xl-3 form-group custom-control custom-switch" id="settingsMainUpdates">
         <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="AutoUpdate"/>
         <label class="custom-control-label">Automatically Install Updates</label>
         <div class="form-text" id="updateTime">Updates will be installed at 1:00AM every day when enabled.</div>
@@ -262,6 +262,15 @@
 
         </select>
         <div class="form-text">What time Glimmr should check for and auto-install updates (if enabled).</div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3 form-group custom-control custom-switch">
+        <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="SkipDemo"/>
+        <label class="custom-control-label">Skip Demo Animation</label>
+        <div class="form-text">Disable the rainbow animation that runs on software startup.</div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3 form-group">
+        <div class="btn btn-primary form-control" id="showIntro">Show Tour</div>
+        <div class="form-text">Replay the UI introduction tour.</div>
     </div>
     <div class="col-12 titleCol pb-1">Backup and Restore</div>
     <div class="col-12 col-md-6 col-xl-3 form-group">
@@ -591,7 +600,7 @@
             <span class="material-icons" id="refreshIcon">refresh</span>
         </div>
     </div>
-    <div id="statDiv">
+    <div id="statDiv" class="col-10 col-md-6 col-lg-3">
         <div class="d-inline-block mr-2" id="fpsDiv" data-toggle="tooltip" data-placement="top"
              title="Current FPS">
             <div id="fps" class="d-inline-block mb-2"></div>
