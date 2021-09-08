@@ -11,7 +11,7 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Lifx {
 	public class LifxDiscovery : ColorDiscovery, IColorDiscovery {
-		public virtual string DeviceTag { get; } = "Lifx Bulb";
+		protected virtual string DeviceTag { get; } = "Lifx Bulb";
 		private readonly LifxClient? _client;
 		private readonly ControlService _controlService;
 
@@ -63,25 +63,27 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			var zoneCount = 0;
 			var tag = DeviceTag;
 			// Set multi zone stuff
-			if (ver.Product == 31 || ver.Product == 32 || ver.Product == 38) {
-				tag = ver.Product == 38 ? "Lifx Beam" : "Lifx Z";
-				hasMulti = true;
-				if (ver.Product != 31) {
-					if (ver.Version >= 1532997580) {
-						extended = true;
+			if (ver != null) {
+				if (ver.Product == 31 || ver.Product == 32 || ver.Product == 38) {
+					tag = ver.Product == 38 ? "Lifx Beam" : "Lifx Z";
+					hasMulti = true;
+					if (ver.Product != 31) {
+						if (ver.Version >= 1532997580) {
+							extended = true;
+						}
 					}
-				}
 
-				if (extended) {
-					var zones = await _client.GetExtendedColorZonesAsync(b);
-					if (zones != null) {
-						zoneCount = zones.ZonesCount;
-					}
-				} else {
-					// Original device only supports eight zones?
-					var zones = await _client.GetColorZonesAsync(b, 0, 8);
-					if (zones != null) {
-						zoneCount = zones.Count;
+					if (extended) {
+						var zones = await _client.GetExtendedColorZonesAsync(b);
+						if (zones != null) {
+							zoneCount = zones.ZonesCount;
+						}
+					} else {
+						// Original device only supports eight zones?
+						var zones = await _client.GetColorZonesAsync(b, 0, 8);
+						if (zones != null) {
+							zoneCount = zones.Count;
+						}
 					}
 				}
 			}
@@ -115,20 +117,21 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				d.GenerateBeamLayout();
 			}
 
-			if (ver.Product == 55 || ver.Product == 101) {
-				tag = "Lifx Tile";
-				try {
-					var tData = _client.GetDeviceChainAsync(b).Result;
-					if (tData != null) {
-						d.Layout = new TileLayout(tData);
+			if (ver != null) {
+				if (ver.Product == 55 || ver.Product == 101) {
+					tag = "Lifx Tile";
+					try {
+						var tData = _client.GetDeviceChainAsync(b).Result;
+						if (tData != null) {
+							d.Layout = new TileLayout(tData);
+						}
+					} catch (Exception e) {
+						Log.Debug("Chain exception: " + e.Message);
 					}
-				} catch (Exception e) {
-					Log.Debug("Chain exception: " + e.Message);
 				}
 			}
 
 			d.DeviceTag = tag;
-			//Log.Debug("Discovered lifx device: " + JsonConvert.SerializeObject(d));
 			return d;
 		}
 	}
