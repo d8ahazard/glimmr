@@ -5,7 +5,6 @@ let loadCalled;
 let settingsRow;
 let cardRow;
 // Settings content elements
-let settingsTitle;
 let settingsTab;
 let settingsContent;
 let newColor;
@@ -39,6 +38,8 @@ let refreshTimer;
 let fpsCounter;
 let nanoTarget, nanoSector;
 let demoLoaded = false;
+let reload = false;
+let toLoad = null;
 let ledData = '{"AutoBrightnessLevel":true,"FixGamma":true,"AblMaxMilliamps":5000,"GpioNumber":18,"LedCount":150,"MilliampsPerLed":25,"Offset":50,"StartupAnimation":0,"StripType":0,"Name":"Demo LED Strip","Id":"-1","Tag":"Led","IpAddress":"","Brightness":100,"Enable":false,"LastSeen":"08/05/2021 13:28:53","KeyProperties":[{"Options":{},"ValueLabel":"","ValueHint":"","ValueMax":"100","ValueMin":"0","ValueName":"ledmap","ValueStep":"1","ValueType":"ledmap"},{"Options":{},"ValueLabel":"Led Count","ValueHint":"","ValueMax":"100","ValueMin":"0","ValueName":"LedCount","ValueStep":"1","ValueType":"text"},{"Options":{},"ValueLabel":"Led Offset","ValueHint":"","ValueMax":"100","ValueMin":"0","ValueName":"Offset","ValueStep":"1","ValueType":"text"},{"Options":{},"ValueLabel":"LED Multiplier","ValueHint":"Positive values to multiply (skip), negative values to divide (duplicate).","ValueMax":"5","ValueMin":"-5","ValueName":"LedMultiplier","ValueStep":"1","ValueType":"number"},{"Options":{},"ValueLabel":"Reverse Strip","ValueHint":"Reverse the order of the leds to clockwise (facing screen).","ValueMax":"100","ValueMin":"0","ValueName":"ReverseStrip","ValueStep":"1","ValueType":"check"},{"Options":{},"ValueLabel":"Fix Gamma","ValueHint":"Automatically correct Gamma (recommended)","ValueMax":"100","ValueMin":"0","ValueName":"FixGamma","ValueStep":"1","ValueType":"check"},{"Options":{},"ValueLabel":"Enable Auto Brightness","ValueHint":"Automatically adjust brightness to avoid dropouts.","ValueMax":"100","ValueMin":"0","ValueName":"AutoBrightnessLevel","ValueStep":"1","ValueType":"check"},{"Options":{},"ValueLabel":"Milliamps Per LED","ValueHint":"\'Conservative\' = 25, \'Normal\' = 55","ValueMax":"100","ValueMin":"0","ValueName":"MilliampsPerLed","ValueStep":"1","ValueType":"text"},{"Options":{},"ValueLabel":"Power Supply Voltage","ValueHint":"Total PSU voltage in Milliamps","ValueMax":"100","ValueMin":"0","ValueName":"AblMaxMilliamps","ValueStep":"1","ValueType":"text"}]}';
 let errModal = new bootstrap.Modal(document.getElementById('errorModal'));
 // We're going to create one object to store our stuff, and add listeners for when values are changed.
@@ -93,10 +94,9 @@ document.addEventListener("DOMContentLoaded", function(){
     let getUrl = window.location;
     baseUrl = getUrl .protocol + "//" + getUrl.host;
     fpsCounter = document.getElementById("fps");
-    closeButton = document.getElementById("closeBtn");
+    closeButton = document.querySelectorAll(".closeBtn");
     settingsRow = document.getElementById("settingsRow");    
     settingsTab = document.getElementById("settingsTab");
-    settingsTitle = document.getElementById("settingsTitle");
     settingsContent = document.getElementById("settingsContent");
     cardRow = document.getElementById("cardRow");   
     setSocketListeners();
@@ -104,6 +104,7 @@ document.addEventListener("DOMContentLoaded", function(){
     setTimeout(function() {
         new Image().src = "../img/sectoring_screen.png";        
     }, 1000);
+    setInterval(function() {checkReload()},250);
 });
 
 function loadPickr() {
@@ -388,16 +389,8 @@ function setSocketListeners() {
     websocket.on('olo', function(stuff) {
         stuff = stuff.replace(/\\n/g, '');
         let parsed = JSON.parse(stuff);
-        console.log("Data loaded: ", parsed);
-        data.store = parsed;
-        loadUi();
-        if (isValid(parsed["SystemData"]) && !parsed["SystemData"]["SkipIntro"]) {
-            //Show intro here
-            if (!demoLoaded) {
-                demoLoaded = true;
-                showIntro();
-            }
-        }
+        reload = true;
+        toLoad = parsed;        
     });
     
     websocket.on('inputImage',function(data) {
@@ -463,6 +456,23 @@ function setSocketListeners() {
             if (++i >= 100 || socketLoaded) clearInterval(intr);
         }, 5000);
     })
+}
+
+function checkReload() {
+    if (reload !== true) return;
+    reload = false;
+    let parsed = toLoad;
+    toLoad = null;
+    console.log("Data loaded: ", parsed);
+    data.store = parsed;
+    loadUi();
+    if (isValid(parsed["SystemData"]) && parsed["SystemData"]["SkipTour"] !== true) {
+        //Show intro here
+        if (!demoLoaded) {
+            demoLoaded = true;
+            showIntro();
+        }
+    }
 }
 
 function mergeDeviceData(existing, newDev) {
@@ -684,7 +694,7 @@ function handleClick(target) {
                 console.log(action + " canceled.");
             }
             break;
-        case target === closeButton:
+        case target.classList.contains("closeBtn"):
             closeCard().then();
             break;
         case target.classList.contains("sector"):
@@ -784,19 +794,22 @@ function handleClick(target) {
 
 
 async function toggleSettingsDiv() {
-    let settingsIcon = document.querySelector(".mainSettings span");
+    let x = window.matchMedia("(max-width: 576px)");    
+    let settingsIcon = document.querySelector(".mainSettings.mainSettings-lg span");
+    if (x.matches) settingsIcon = document.querySelector(".mainSettings.mainSettings-sm span");
     if (!settingsShown) {
         settingsIcon.textContent = "chevron_left";
-        settingsRow.classList.remove("d-none");
-        cardRow.classList.add("d-none");
-        loadSettings();        
+        showSettingsCard().then(function(){
+            cardRow.classList.add("d-none");
+            loadSettings();
+        });                
     } else {
         settingsIcon.textContent = "settings_applications";
-        settingsRow.classList.add("d-none");
-        cardRow.classList.remove("d-none");
+        hideSettingsCard().then(function(){
+            cardRow.classList.remove("d-none");    
+        });
+        
     }
-    settingsShown = !settingsShown;
-    settingsTitle.textContent = "Main Settings";
 }
 
 
@@ -931,35 +944,35 @@ function setModeButtons() {
     let sd = data.store["SystemData"];
     let capMode = sd["CaptureMode"];
     let streamMode = sd["StreamMode"];
-    let videoBtn = document.getElementById("videoBtn");
-    let streamBtn = document.getElementById("streamBtn");
-    if (capMode === 1) {
-        videoBtn.firstElementChild.innerHTML = "videocam";
-    }
-    if (capMode === 2) {
-        videoBtn.firstElementChild.innerHTML = "settings_input_hdmi";
-    }
-    if (capMode === 3) {
-        videoBtn.firstElementChild.innerHTML = "tv";
+    let videoBtns = document.querySelectorAll(".videoBtn");
+    let streamBtns = document.querySelectorAll(".streamBtn");
+    let vString = "tv";
+    if (capMode === 1) vString = "videocam";
+    if (capMode === 2) vString = "settings_input_hdmi";
+    if (capMode === 3) vString = "tv";
+
+    for (let i = 0; i < videoBtns.length; ++i) {
+        videoBtns[i].firstElementChild.innerHTML = vString;
     }
 
-    if (streamMode === 0) {
+    for (let i = 0; i < streamBtns.length; ++i) {
+        let streamBtn = streamBtns[i];
         streamBtn.firstElementChild.innerHTML = "";
         streamBtn.firstElementChild.classList.remove("material-icons");
         streamBtn.firstElementChild.classList.remove("appz-glimmr");
-        streamBtn.firstElementChild.classList.add("appz-dreamscreen");
-    }
-    if (streamMode === 1) {
-        streamBtn.firstElementChild.innerHTML = "";
-        streamBtn.firstElementChild.classList.remove("material-icons");
         streamBtn.firstElementChild.classList.remove("appz-dreamscreen");
-        streamBtn.firstElementChild.classList.add("appz-glimmr");
-    }
-    if (streamMode === 2) {
-        streamBtn.firstElementChild.innerHTML = "sensors";
-        streamBtn.firstElementChild.classList.add("material-icons");
-        streamBtn.firstElementChild.classList.remove("appz-dreamscreen");
-        streamBtn.firstElementChild.classList.remove("appz-glimmr");
+        switch(streamMode) {
+            case 0:
+                streamBtn.firstElementChild.classList.add("appz-dreamscreen");
+                break;
+            case 1:
+                streamBtn.firstElementChild.classList.add("appz-glimmr");
+                break;
+            case 2:
+                streamBtn.firstElementChild.innerHTML = "sensors";
+                streamBtn.firstElementChild.classList.add("material-icons");
+                break;
+        }
     }
 }
 
@@ -976,6 +989,7 @@ function loadUi() {
         if (!isValid(pickr)) loadPickr();
         sd = data.store["SystemData"];
         let theme = sd["Theme"];
+        loadTheme(theme);
         mode = sd["DeviceMode"];
         autoDisabled = sd["AutoDisabled"];
         if (autoDisabled) mode = 0;
@@ -1009,7 +1023,6 @@ function loadUi() {
             }
             sceneSelector.value = audioMode;
         }
-        loadTheme(theme);
         pickr.setColor("#" + sd["AmbientColor"]);
     }
     
@@ -1059,6 +1072,7 @@ function showIntro() {
             backdropPadding: 5,
             backdrop: true,
             orphan: true,
+            storage:false,
             onStart: function(){
                 console.log("Creating demo device card.");
                 let ledObj = JSON.parse(ledData);
@@ -1074,6 +1088,9 @@ function showIntro() {
                 } else {
                     devCard.remove();
                 }
+                let sd = getStoreProperty("SystemData");
+                sd.SkipTour = true;
+                sendMessage("SystemData",sd);
             },
             steps: [
                 {
@@ -1354,7 +1371,7 @@ function scrollElement(step) {
 
 function scrollDevPref(step) {
     let elem = document.querySelector(step.element);
-    let parent = document.querySelector("#devCard.container-fluid");
+    let parent = document.querySelector("#devCard.card-body");
     let topPos = elem.offsetTop;
     console.log("ELEMN", elem);
     console.log("PARENT: ", parent);
@@ -1368,7 +1385,7 @@ function loadTheme(theme) {
     if (theme === "light") {
         let last = head.lastChild;
         if (isValid(last.href)) {
-            if (!last.href.includes("site")) {
+            if (last.href.includes("dark.css")) {
                 last.parentNode.removeChild(last);
             }
         }
@@ -1566,7 +1583,7 @@ function loadDevice(device, addDemoText) {
     mainDiv.setAttribute("data-id",device.Id);
     // Create card body
     let bodyDiv = document.createElement("div");
-    bodyDiv.classList.add("card-body", "row");
+    bodyDiv.classList.add("card-body");
     // Create title/subtitle headers
     let title = document.createElement("h5");
     let subTitle = document.createElement("h6");
@@ -1590,9 +1607,9 @@ function loadDevice(device, addDemoText) {
         count.innerText = " (" + val + ")";
         subTitle.appendChild(count);
     }
-    // Create icon
+    // Create title row
     let titleRow = document.createElement("div");
-    titleRow.classList.add("mb-3", "col-12", "titleRow");
+    titleRow.classList.add("row", "titleRow");
     let titleCol = document.createElement("div");
     titleCol.classList.add("col-8", "titleCol", "exp");
     let iconCol = document.createElement("div");
@@ -1613,10 +1630,11 @@ function loadDevice(device, addDemoText) {
     }
 
     // Settings column
-    let settingsCol = document.createElement("div");
-    settingsCol.classList.add("col-12", "settingsCol", "pb-2", "text-center", "exp");
+    let settingsRow = document.createElement("div");
+    settingsRow.classList.add("row", "align-items-end","settingsCol", "pb-2", "justify-content-center", "exp");
     // Create enabled checkbox
-    let enableButton = document.createElement("button");
+    
+    let enableButton = document.createElement("div");
     enableButton.classList.add("btn", "btn-outline-secondary", "btn-clear", "enableBtn", "pt-2");
     enableButton.setAttribute("data-target", device["Id"]);
     enableButton.setAttribute("data-enabled", device["Enable"]);
@@ -1627,6 +1645,7 @@ function loadDevice(device, addDemoText) {
     let eIcon = document.createElement("span");
     eIcon.classList.add("material-icons");
     if (device["Enable"]) {
+        enableButton.classList.add("active");
         eIcon.textContent = "cast_connected";
     } else {
         eIcon.textContent = "cast";
@@ -1634,10 +1653,10 @@ function loadDevice(device, addDemoText) {
     enableButton.appendChild(eIcon);
 
     let enableCol = document.createElement("div");
-    enableCol.classList.add("btn-group", "settingsGroup", "pt-4");
+    enableCol.classList.add("btn-group", "settingsGroup", "pt-3");
     enableCol.appendChild(enableButton);
 
-    let settingsButton = document.createElement("button");
+    let settingsButton = document.createElement("div");
     settingsButton.classList.add("btn", "btn-outline-secondary", "btn-clear", "settingBtn", "pt-2");
     settingsButton.setAttribute("data-target",device["Id"]);
     if (addDemoText) {
@@ -1648,12 +1667,10 @@ function loadDevice(device, addDemoText) {
     sIcon.textContent = "settings";
     settingsButton.appendChild(sIcon);
     enableCol.appendChild(settingsButton);
-    settingsCol.appendChild(enableCol);
+    settingsRow.appendChild(enableCol);
     // Create settings button
     //Brightness slider
-    let brightnessRow = document.createElement("div");
-    brightnessRow.classList.add("col-12", "brightRow");
-
+    
     // Slider
     let brightnessSlide = document.createElement("input");
     brightnessSlide.setAttribute("type","range");
@@ -1670,21 +1687,27 @@ function loadDevice(device, addDemoText) {
     brightnessSlide.classList.add("form-control", "w-100", 'custom-range');
 
     // Brightness column
-    let brightnessCol = document.createElement("div");
-    brightnessCol.classList.add("col-12", "pt-1");
-    if (addDemoText) brightnessCol.id = "devPrefBrightness";
-    brightnessCol.appendChild(brightnessSlide);
+    let brightnessRow = document.createElement("div");
+    brightnessRow.classList.add("row","pt-3", "brightRow", "brightSlider", "justify-content-center");
+    if (addDemoText) brightnessRow.id = "devPrefBrightness";
+    let brightCol = document.createElement("div");
+    brightCol.classList.add("col-12");
+    brightCol.appendChild(brightnessSlide);
+    brightnessRow.appendChild(brightCol);
+    
 
 
     // Put it all together
     iconCol.appendChild(image);
     titleCol.appendChild(title);
     titleCol.appendChild(subTitle);
-
-    bodyDiv.appendChild(iconCol);
-    bodyDiv.appendChild(titleCol);
-    bodyDiv.appendChild(settingsCol);
-    bodyDiv.appendChild(brightnessCol);
+    
+    titleRow.appendChild(iconCol);
+    titleRow.appendChild(titleCol);
+    
+    bodyDiv.appendChild(titleRow);
+    bodyDiv.appendChild(settingsRow);
+    bodyDiv.appendChild(brightnessRow);
     mainDiv.appendChild(bodyDiv);
     if (addDemoText) {
         container.prepend(mainDiv);
@@ -1835,7 +1858,7 @@ function setStoreProperty(name, value) {
     }
 }
 
-const toggleExpansion = (element, to, duration = 350) => {
+const toggleExpansion = (element, to, duration = 350, fade = false) => {
     return new Promise((res) => {
         requestAnimationFrame(() => {
             element.style.transition = `
@@ -1846,65 +1869,91 @@ const toggleExpansion = (element, to, duration = 350) => {
 						padding ${duration}ms ease-in-out,						
 						margin ${duration}ms ease-in-out
 					`;
+            if (fade) element.style.transition += ', opacity  ${duration}ms ease-in-out';
             element.style.top = to.top;
             element.style.left = to.left;
             element.style.width = to.width;
             element.style.height = to.height;
             element.style.padding = to.padding;
+            if (fade) element.style.opacity = 0;
             
         });
         setTimeout(function(){
-            let bbGroup = element.querySelector(".settingsGroup");
-            if (isValid(bbGroup)) {
-                if (expanded) {
-                    bbGroup.classList.add("float-right");
-                } else {
-                    bbGroup.classList.remove("float-right");
-                }
-            }
-            element.querySelector(".card-body").querySelectorAll(".exp").forEach(function(row){
-            row.style.transition = `
-						width ${duration}ms ease-in-out,
-						height ${duration}ms ease-in-out,
-						left ${duration}ms ease-in-out,
-						top ${duration}ms ease-in-out,
-						padding ${duration}ms ease-in-out,
-						margin ${duration}ms ease-in-out,
-						order ${duration}ms ease-in-out
+            let body = element.querySelector(".card-body");
+            if (isValid(body)) {
+
+                let exps = body.querySelectorAll(".exp");
+                exps.forEach(function (row) {
+                    row.style.transition = `
+                width ${duration}ms ease-in-out,
+                height ${duration}ms ease-in-out,
+                left ${duration}ms ease-in-out,
+                top ${duration}ms ease-in-out,
+                padding ${duration}ms ease-in-out,
+                margin ${duration}ms ease-in-out,
+                order ${duration}ms ease-in-out
             `;
-            
-            if (row.classList.contains("iconCol")) {
-                if (expanded) {
-                    row.classList.add("col-md-2", "col-lg-1")
-                } else {
-                    row.classList.remove("col-md-2", "col-lg-1")
+
+                if (row.classList.contains("iconCol")) {
+                    if (expanded) {
+                        row.classList.add("col-md-2", "col-lg-1")
+                    } else {
+                        row.classList.remove("col-md-2", "col-lg-1")
+                    }
                 }
-            }
-            
-            if (row.classList.contains("titleCol")) {
-                if (expanded) {
-                    row.classList.add("col-md-4", "col-lg-5")
-                } else {
-                    row.classList.remove("col-md-4", "col-lg-5")
+
+                if (row.classList.contains("titleCol")) {
+                    if (expanded) {
+                        row.classList.add("col-md-4", "col-lg-5")
+                    } else {
+                        row.classList.remove("col-md-4", "col-lg-5")
+                    }
                 }
-            }  
-            
-            if (row.classList.contains("settingsCol")) {
-                if (expanded) {
-                    row.classList.add("col-md-6");
-                } else {
-                    row.classList.remove("col-md-6");
-                }
-            }            
-        });
-            
-        
-        }, 50);
-        
+                });
+            }   
+        }, duration);
+    
         setTimeout(res, duration);
     })
 };
 
+
+const showSettingsCard = async (e) => {
+    settingsShown = true;
+    const card = document.getElementById("mainSettingsCard")
+    // get the location of the card in the view
+    let x = window.matchMedia("(max-width: 576px)");
+    let btn = document.querySelector(".mainSettings.mainSettings-lg span");
+    if (x.matches) btn = document.querySelector(".mainSettings.mainSettings-sm span");
+    let cardRow = document.getElementById("mainContent");
+    let oh = cardRow.offsetTop;
+    const {top, left, width, height} = btn.getBoundingClientRect();
+    let h = 'calc(100% - ' + oh + 'px)';
+    card.style.position = 'fixed';
+    card.style.top = top + 'px';
+    card.style.left = left + 'px';
+    card.style.width = width + 'px';
+    card.style.height = h;
+    card.classList.remove("hide");
+    await toggleExpansion(card, {top: 0, left: 0, width: '100%', height: h, padding: "1rem 3rem"}, 250)
+        .then(function(){
+            card.style.position = 'relative';
+        });    
+};
+
+const hideSettingsCard = async (e) => {
+    settingsShown = false;
+    const card = document.getElementById("mainSettingsCard")
+    let x = window.matchMedia("(max-width: 576px)");
+    let btn = document.querySelector(".mainSettings.mainSettings-lg span");
+    if (x.matches) btn = document.querySelector(".mainSettings.mainSettings-sm span");
+
+    const {top, left, width, height} = btn.getBoundingClientRect();
+    card.style.display = 'block';
+    await toggleExpansion(card, {top: top + "px", left: left + "px", width: width + "px", height: height + 'px', padding: "1rem 3rem"}, 250);
+    card.classList.add("hide");
+
+};
 
 const showDeviceCard = async (e) => {
     expanded = true;
@@ -1930,6 +1979,7 @@ const showDeviceCard = async (e) => {
     card.style.opacity = '0';
     // add card to the main container
     document.querySelector(".main").appendChild(cardClone);
+    let body = document.querySelector("div.card.container-fluid > div");
     let cardRow = document.getElementById("mainContent");
     let oh = cardRow.offsetTop;
     // remove the display style so the original content is displayed right
@@ -1938,57 +1988,80 @@ const showDeviceCard = async (e) => {
     await toggleExpansion(cardClone, {top: oh + "px", left: 0, width: '100%', height: 'calc(100% - ' + oh + 'px)', padding: "1rem 3rem"}, 250);
     
     let sepDiv = document.createElement("div");
-    sepDiv.classList.add("dropdown-divider");
-    let settingsDiv = document.createElement("div");
-    settingsDiv.classList.add("deviceSettings", "row", "text-center");
-    settingsDiv.id = "devicePrefs";
+    sepDiv.classList.add("dropdown-divider", "row");
+    
+    let settingsRow = document.createElement("div");
+    settingsRow.classList.add("deviceSettings", "row", "justify-content-center");
+    settingsRow.id = "devicePrefs";
     //settingsDiv.style.opacity = "0%";
-    settingsDiv.style.overflow = "scrollY";
-    settingsDiv.style.position = "relative";
-    cardClone.appendChild(sepDiv);
-    cardClone.appendChild(settingsDiv);
+    settingsRow.style.overflow = "scrollY";
+    settingsRow.style.position = "relative";
+    body.appendChild(sepDiv);
+    body.appendChild(settingsRow);
     cardClone.style.overflowY = "scroll";
 
     // Create settings for our card
-    document.querySelector(".mainSettings").classList.add('d-none');
-    closeButton.classList.remove('d-none');
+    let settingsButtons = document.querySelectorAll(".mainSettings");
+    for (let i = 0; i < settingsButtons.length; ++i) {
+        settingsButtons[i].classList.add('d-none');
+    }
+    for (let i = 0; i < closeButton.length; ++i) {
+        closeButton[i].classList.remove('d-none');
+    }
     createDeviceSettings();
 };
 
 function createDeviceSettings() {
-    let settingsDiv = document.getElementById("devicePrefs");
-    settingsDiv.innerHTML = "";
-    let linkCol = document.createElement("div");
-    let mapCol = document.createElement("div");
-    let mapWrap = document.createElement("div");
-    linkCol.classList.add("col-12", "row", "justify-content-center");
-    mapCol.classList.add("col-12");
-    mapWrap.id = "mapWrap";
-    linkCol.id = "linkCol";
-    mapCol.id = "mapCol";
-    mapCol.appendChild(mapWrap);
-    settingsDiv.appendChild(linkCol);
-    settingsDiv.appendChild(mapCol);
+    let container = document.querySelector("div.card.container-fluid > div");
     if (deviceData === undefined) deviceData = JSON.parse(ledData);
     console.log("Loading device data: ", deviceData);   
     let props = deviceData["KeyProperties"];
     if (isValid(props)) {
-        let container = document.createElement("div");
-        container.classList.add("container");
         let id = deviceData["Id"];
-        let row = document.createElement("div");
-        row.classList.add("row", "border", "justify-content-center", "pb-5");
-        if (demoLoaded) row.classList.add("devPrefs");
-        let header = document.createElement("div");
-        header.classList.add("col-12", "headerCol");
-        row.appendChild(header);
+        let keys = [];
+        for (let i = 0; i < props.length; i++) {
+            keys.push(props[i]["ValueType"]);
+        }
+        console.log("Keys: ",keys);
+        let mapProps = ["ledmap", "beamMap", "nanoleaf", "hue", "sectormap"];
+        let addLink = false;
         
-        for (let i =0; i < props.length; i++) {
-            
+        if (keys.includes("nanoleaf") || keys.includes("hue")) {
+            addLink = true;
+        }
+        
+        if (addLink) {
+            let linkRow = document.createElement("div");
+            linkRow.classList.add("row", "justify-content-center","delSetting", "pb-3", "pt-3");
+            linkRow.id = "linkCol";
+            container.appendChild(linkRow);
+        }
+        
+        let addMap = false;
+        for (let i = 0; i < mapProps.length; i++) {
+            if (keys.includes(mapProps[i])) addMap = true;     
+        }
+        
+        if (addMap) {
+            let mapRow = document.createElement("div");
+            let mapWrap = document.createElement("div");
+            mapRow.classList.add("row", "justify-content-center", "delSetting", "pb-3", "pt-3");
+            mapWrap.id = "mapWrap";
+            mapWrap.classList.add("col-12", "col-md-8", "col-xl-6");
+            mapRow.id = "mapCol";
+            mapRow.appendChild(mapWrap);
+            container.appendChild(mapRow);
+        }
+
+        let row = document.createElement("div");
+        row.classList.add("row", "border", "justify-content-center", "pb-3", "pt-3", "delSetting");
+        if (demoLoaded) row.classList.add("devPrefs");     
+        let addRow = false;
+        for (let i =0; i < props.length; i++) {            
             let prop = props[i];
             let propertyName = prop["ValueName"];
             let elem, se;
-            let value = deviceData[propertyName];
+            let value = deviceData[propertyName];            
             switch(prop["ValueType"]) {
                 case "text":
                     elem = new SettingElement(prop["ValueLabel"], "text", id, propertyName, value, prop["ValueHint"]);
@@ -2029,28 +2102,26 @@ function createDeviceSettings() {
                 elem.isDevice = true;
                 se = createSettingElement(elem);
                 if (demoLoaded) se.id = propertyName;
-
+                addRow = true;
                 row.appendChild(se);
             }
         }
         
-        container.appendChild(row);
+        if (addRow) container.appendChild(row);
         if (deviceData.Tag !== "Led") {
             let removeBtn = new SettingElement("Remove device", "button", id, "removeDevice", id);
             let row2 = document.createElement("div");
-            row2.classList.add("row", "border", "justify-content-center", "pb-5");
+            row2.classList.add("row", "border", "justify-content-center", "pb-3", "pt-3", "delSetting");
             row2.appendChild(createSettingElement(removeBtn));
             container.appendChild(row2);
-        }
-        let ds = document.getElementById("devicePrefs");
-        ds.appendChild(container);
+        }        
     }
 }
 
 
 function createSettingElement(settingElement) {
     let group = document.createElement("div");
-    group.classList.add("col-12", "col-md-6", "col-xl-3", "justify-content-center", "form-group");
+    group.classList.add("col-12", "col-md-6", "col-xl-3", "align-self-top", "form-group", "custom-control");
     let label = document.createElement("label");   
     label.innerText = settingElement.descrption;
     let element;
@@ -2094,7 +2165,6 @@ function createSettingElement(settingElement) {
             element.value = settingElement.value;
             break;
         case "button":
-            label.classList.add("pt-5");
             element = document.createElement("div");
             element.classList.add("btn", "btn-clear", "btn-danger", "removeDevice");
             let icon = document.createElement("span");
@@ -2105,7 +2175,9 @@ function createSettingElement(settingElement) {
     }
     if (settingElement.type !== "check") {
         label.classList.add("form-label");
-        //if (isValid(element)) element.classList.add("form-control");
+        if (isValid(element)) {
+            element.classList.add("form-control");
+        }
         group.appendChild(label);
     }
     
@@ -2113,7 +2185,6 @@ function createSettingElement(settingElement) {
     if (isValid(element)) {       
         if (settingElement.isDevice) { 
             element.classList.add("devSetting");
-            element.classList.add("form-control");
         }
         element.setAttribute("data-property", settingElement.property);
         element.setAttribute("data-object", settingElement.object);
@@ -2126,14 +2197,14 @@ function createSettingElement(settingElement) {
         group.appendChild(label);
     }
 
-    // Append hint if it exists
-    if (settingElement.hint !== "") {
-        let hint = document.createElement("div");
-        hint.classList.add("form-text");
-        hint.innerText = settingElement.hint;
-        group.append(hint);
-    }
+    // Append hint
+    let hint = document.createElement("div");
+    hint.classList.add("form-text");
 
+    if (settingElement.hint !== "") {
+        hint.innerText = settingElement.hint;
+    }
+    group.append(hint);
     return group;
 }
 
@@ -2175,6 +2246,7 @@ function drawLinkPane(type, linked) {
     wrap.classList.add("row", "col-12", "justify-content-center");
     let header = document.createElement("div");
     header.classList.add("header");
+    header.classList.add("text-light");
     header.innerText = linked ? "Device is linked" : "Click here to link";
     let div = document.createElement("div");
     div.classList.add("col-8", "col-sm-6", "col-md-4", "col-lg-3", "col-xl-2", "linkDiv");
@@ -2815,7 +2887,7 @@ function createLedMap(targetElement) {
     let ftWidth = (w - wMargin - wMargin) / topCount;
     let fbWidth = (w - wMargin - wMargin) / bottomCount;
     let dHeight = (flHeight + frHeight) / 2;
-    let dWidth = (ftWidth + fbWidth) / 2;
+    let dWidth = ((ftWidth + fbWidth) / 2);
     let map = document.createElement("div");
     map.id = "ledMap";
     map.classList.add("ledMap");
@@ -2990,11 +3062,13 @@ function createHueMap() {
     let groupSelectCol = document.createElement("div");
     groupSelectCol.classList.add("col-12");
     // Group select
+    let gLabel = document.createElement("label");
+    gLabel.classList.add("form-label");
+    gLabel.innerHTML = "Entertainment Group";
     let groupSelect = document.createElement("select");
     groupSelect.setAttribute("data-property", "SelectedGroup");
     groupSelect.setAttribute("data-object", deviceData["Id"]);
-    groupSelect.classList.add("devSetting");
-    groupSelect.classList.add("form-control");
+    groupSelect.classList.add("devSetting", "form-control");
     let defaultOption = document.createElement("option");
     defaultOption.textContent = "";
     defaultOption.value = "-1";
@@ -3010,6 +3084,7 @@ function createHueMap() {
         if (selectedGroup.toString() === groups[i]["Id"]) opt.selected = true;
         groupSelect.appendChild(opt);
     }
+    groupSelectCol.appendChild(gLabel);
     groupSelectCol.appendChild(groupSelect);
     settingsDiv.appendChild(groupSelectCol);
 
@@ -3136,7 +3211,7 @@ function createHueMap() {
 
                 // Create the div to hold the checkbox
                 const chkDiv = document.createElement('div');
-                chkDiv.className += "form-check";
+                chkDiv.className += "form-check custom-control custom-switch";
                 chkDiv.appendChild(newCheck);
                 chkDiv.appendChild(checkLabel);
 
@@ -3425,10 +3500,10 @@ function sizeContent() {
     let wWidth = window.innerWidth;
     let ambientOffset = 0;
     if (mode === 3) {
-        ambientOffset = 48; 
+        ambientOffset = colorDiv.offsetHeight; 
     }
     if (mode === 2 || mode === 4) {
-        ambientOffset = 145;
+        ambientOffset = audioDiv.offsetHeight;
     }
     cDiv.style.position = "fixed";
     cDiv.style.top = navDiv.offsetHeight + ambientOffset + "px";
@@ -3445,18 +3520,38 @@ function sizeContent() {
 }
 
 async function closeCard() {
-    cardClone.style.overflowY = "none";
     deviceData = undefined;
     drawSectorMap = false;
     drawLedMap = false;    
     expanded = false;
-    // shrink the card back to the original position and size    
-    await toggleExpansion(cardClone, {top: `${toggleTop}px`, left: `${toggleLeft}px`, width: `${toggleWidth}px`, height: `${toggleHeight}px`, padding: '1rem 1rem'}, 300);
-    // show the original card again
-    document.querySelector(".mainSettings").classList.remove('d-none');
-    document.getElementById("closeBtn").classList.add('d-none');
+    cardClone.style.overflow = "hidden";
+    await toggleExpansion(cardClone, {
+        top: `${toggleTop}px`,
+        left: `${toggleLeft}px`,
+        width: `${toggleWidth}px`,
+        height: `${toggleHeight}px`,
+        padding: '1rem 1rem',
+        fade: true
+    }, 300).then(function(){
+        cardClone.classList.add("devCard", "m-4");
+        cardClone.classList.remove("container-fluid");
 
-    baseCard.style.removeProperty('opacity');
-    cardClone.remove();
+        // shrink the card back to the original position and size
+        document.querySelectorAll(".delSetting").forEach(e => e.remove());
+
+        let settingsButtons = document.querySelectorAll(".mainSettings");
+        for (let i = 0; i < settingsButtons.length; ++i) {
+            settingsButtons[i].classList.remove('d-none');
+        }
+        let closeButtons = document.querySelectorAll(".closeBtn");
+        for (let i = 0; i < closeButtons.length; ++i) {
+            closeButtons[i].classList.add('d-none');
+        }
+
+        baseCard.style.removeProperty('opacity');
+        cardClone.remove();    
+    });
+    // show the original card again
+    
 }
 

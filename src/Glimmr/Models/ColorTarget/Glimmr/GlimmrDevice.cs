@@ -27,17 +27,18 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		private IPEndPoint? _ep;
 		private string _ipAddress;
 		private SystemData _sd;
-
-		public GlimmrDevice(GlimmrData wd, ColorService colorService) : base(colorService) {
-			colorService.ColorSendEventAsync += SetColors;
-			_udpClient = colorService.ControlService.UdpClient;
-			_httpClient = colorService.ControlService.HttpSender;
+		
+		public GlimmrDevice(GlimmrData wd, ColorService cs) : base(cs) {
+			_udpClient = cs.ControlService.UdpClient;
+			_httpClient = cs.ControlService.HttpSender;
 			_data = wd ?? throw new ArgumentException("Invalid Glimmr data.");
 			Id = _data.Id;
+			
 			Enable = _data.Enable;
 			_ipAddress = _data.IpAddress;
 			_sd = DataUtil.GetSystemData();
-			colorService.ControlService.RefreshSystemEvent += RefreshSystem;
+			cs.ControlService.RefreshSystemEvent += RefreshSystem;
+			cs.ColorSendEventAsync += SetColors;
 		}
 		
 		private Task SetColors(object sender, ColorSendEventArgs args) {

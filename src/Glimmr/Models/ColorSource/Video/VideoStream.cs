@@ -39,7 +39,7 @@ namespace Glimmr.Models.ColorSource.Video {
 		public VideoStream(ColorService colorService) {
 			_systemData = DataUtil.GetSystemData();
 			colorService.ControlService.RefreshSystemEvent += RefreshSystem;
-			StreamSplitter = new FrameSplitter(colorService, true);
+			StreamSplitter = new FrameSplitter(colorService, true, "videoStream");
 		}
 
 		public Task ToggleStream(CancellationToken ct) {

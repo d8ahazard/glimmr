@@ -21,11 +21,10 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		private string _deviceTag;
 		private string _ipAddress;
 
-		public DreamScreenDevice(DreamScreenData data, ColorService colorService) {
+		public DreamScreenDevice(DreamScreenData data, ColorService cs) {
 			_data = data;
 			Id = data.Id;
-			colorService.ColorSendEventAsync += SetColors;
-			var client = colorService.ControlService.GetAgent("DreamAgent");
+			var client = cs.ControlService.GetAgent("DreamAgent");
 			if (client != null) {
 				_client = client;
 			}
@@ -33,6 +32,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			_ipAddress = _data.IpAddress;
 			_deviceTag = _data.DeviceTag;
 			LoadData();
+			cs.ColorSendEventAsync += SetColors;
 			var myIp = IPAddress.Parse(_ipAddress);
 			_dev = new DreamDevice(_deviceTag) {IpAddress = myIp, DeviceGroup = data.GroupNumber};
 		}
@@ -61,7 +61,6 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 				Enable = false;
 				return;
 			}
-
 			await _client.SetMode(_dev, DeviceMode.Video);
 			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
 		}
@@ -74,7 +73,6 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			if (_client == null) {
 				return;
 			}
-
 			await _client.SetMode(_dev, DeviceMode.Off);
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}

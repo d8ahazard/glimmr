@@ -22,21 +22,20 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 		private int _offset;
 		private string _port;
 		private bool _reverseStrip;
-		private readonly ColorService _cs;
 
-		public AdalightDevice(AdalightData data, ColorService cs) {
+		public AdalightDevice(AdalightData data, ColorService colorService) {
 			Id = data.Id;
-			_cs = cs;
 			_data = data;
 			_port = _data.Port;
 			_multiplier = _data.LedMultiplier;
 			LoadData();
-			cs.ColorSendEventAsync += SetColors;
+			colorService.ColorSendEventAsync += SetColors;
 			_adalight = new AdalightNet.Adalight(_port, _ledCount, _baud);
 		}
-		
-		private async Task SetColors(object sender, ColorSendEventArgs args) {
-			await SetColor(args.LedColors, args.Force).ConfigureAwait(false);
+
+		private Task SetColors(object sender, ColorSendEventArgs args) {
+			SetColor(args.LedColors, args.Force);
+			return Task.CompletedTask;
 		}
 
 		public bool Enable { get; set; }
@@ -79,7 +78,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 		}
 
 
-		private async Task SetColor(Color[] colors, bool force = false) {
+		private void SetColor(Color[] colors, bool force = false) {
 			if (!Enable || !Streaming || Testing && !force) {
 				return;
 			}
@@ -93,8 +92,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 				toSend = ColorUtil.AdjustBrightness(toSend, _brightness / 100f);
 			}
 			
-			await _adalight.UpdateColorsAsync(toSend.ToList());
-			_cs.Counter.Tick(Id);
+			_adalight.UpdateColorsAsync(toSend.ToList());
 		}
 
 		public async Task FlashColor(Color color) {

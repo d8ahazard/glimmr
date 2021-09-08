@@ -44,7 +44,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			_random = new Random();
 			_loader = new JsonLoader("ambientScenes");
 			_scenes = _loader.LoadFiles<AmbientScene>();
-			_splitter = colorService.Splitter;
+			_splitter = new FrameSplitter(colorService, false, "ambientStream");
 			colorService.ControlService.RefreshSystemEvent += RefreshSystem;
 		}
 
@@ -157,7 +157,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 						Log.Warning("EX: " + e.Message);
 					}
 				}
-
+				
 				_watch.Stop();
 				_splitter.DoSend = false;
 				Log.Information("Ambient stream service stopped.");

@@ -34,9 +34,9 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		private string? _token;
 		private Task? _updateTask;
 		private string? _user;
+		
 
-
-		public HueDevice(HueData data, ColorService colorService) : base(colorService) {
+		public HueDevice(HueData data, ColorService cs) : base(cs) {
 			Data = data;
 			_targets = new Dictionary<string, int>();
 			_ipAddress = Data.IpAddress;
@@ -45,16 +45,16 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Enable = Data.Enable;
 			_brightness = Data.Brightness;
 			_lightMappings = Data.MappedLights;
-			colorService.ColorSendEventAsync += SetColors;
-			colorService.ControlService.RefreshSystemEvent += SetData;
+			cs.ControlService.RefreshSystemEvent += SetData;
 			Id = Data.Id;
 			_disposed = false;
 			Streaming = false;
 			_entLayer = null;
 			_selectedGroup = Data.SelectedGroup;
 			SetData();
+			cs.ColorSendEventAsync += SetColors;
 		}
-		
+
 		private Task SetColors(object sender, ColorSendEventArgs args) {
 			SetColor(args.SectorColors, args.FadeTime, args.Force);
 			return Task.CompletedTask;
@@ -171,7 +171,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 			//Start auto updating this entertainment group
 			_updateTask = _client.AutoUpdate(entGroup, ct, 60);
-
 			Log.Debug($"{Data.Tag}::Stream started: {Data.Id}");
 			Streaming = true;
 		}
@@ -261,37 +260,11 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				Log.Warning("Client or group are null, can't stop stream.");
 				return Task.CompletedTask;
 			}
-
 			_client.LocalHueClient.SetStreamingAsync(_selectedGroup, false);
 			_client.Close();
 			Log.Debug($"{Data.Tag}::Stream stopped: {Data.Id}");
 
 			return Task.CompletedTask;
-		}
-
-		public bool IsEnabled() {
-			return Enable;
-		}
-
-		public void FlashLight(Color color, int lightId) {
-			if (!Enable) {
-				return;
-			}
-
-			if (_entLayer == null) {
-				return;
-			}
-
-			foreach (var entLight in _entLayer) {
-				if (lightId != entLight.Id) {
-					continue;
-				}
-
-				// Get data for our light from map
-				var oColor = new RGBColor(color.R, color.G, color.B);
-				// If we're currently using a scene, animate it
-				entLight.SetState(_ct, oColor, 255);
-			}
 		}
 
 
@@ -328,7 +301,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			if (!disposing || _updateTask == null) {
 				return;
 			}
-
+			
 			if (!_updateTask.IsCompleted) {
 				_updateTask.Dispose();
 			}

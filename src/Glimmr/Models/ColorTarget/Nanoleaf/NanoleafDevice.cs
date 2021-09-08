@@ -15,7 +15,6 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Nanoleaf {
 	public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
-		private readonly Stopwatch _frameWatch;
 		private readonly NanoleafClient _nanoleafClient;
 		private readonly NanoleafStreamingClient _streamingClient;
 		private int _brightness;
@@ -24,28 +23,26 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
 		private TileLayout? _layout;
 		private Dictionary<int, int> _targets;
-
-
+		
 		/// <summary>
 		///     Use this for sending color data to the panel
 		/// </summary>
 		/// <param name="n"></param>
-		/// <param name="colorService"></param>
-		public NanoleafDevice(NanoleafData n, ColorService colorService) : base(colorService) {
-			colorService.ColorSendEventAsync += SetColors;
-			ColorService = colorService;
+		/// <param name="cs"></param>
+		public NanoleafDevice(NanoleafData n, ColorService cs) : base(cs) {
 			_brightness = -1;
 			_targets = new Dictionary<int, int>();
 			_data = n;
+			Id = _data.Id;
 			var streamMode = n.Type == "NL29" || n.Type == "NL42" ? 2 : 1;
-			var cs = ColorService.ControlService;
+			var controlService = cs.ControlService;
 			_nanoleafClient = new NanoleafClient(n.IpAddress, n.Token);
-			_streamingClient = new NanoleafStreamingClient(n.IpAddress, streamMode, cs.UdpClient);
-
-			SetData();
-			cs.RefreshSystemEvent += SetData;
+			_streamingClient = new NanoleafStreamingClient(n.IpAddress, streamMode, controlService.UdpClient);
 			_frameWatch = new Stopwatch();
+			SetData();
+			controlService.RefreshSystemEvent += SetData;
 			_disposed = false;
+			cs.ColorSendEventAsync += SetColors;
 		}
 		
 		private Task SetColors(object sender, ColorSendEventArgs args) {
@@ -54,7 +51,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
 		public bool Enable { get; set; }
 		public bool Testing { get; set; }
-		public string Id { get; private set; } = "";
+		public string Id { get; private set; }
 		public bool Streaming { get; set; }
 
 		IColorTargetData IColorTarget.Data {
@@ -89,7 +86,6 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			if (_frameWatch.IsRunning && _data.Type == "NL42") {
 				_frameWatch.Reset();
 			}
-
 			await _nanoleafClient.TurnOffAsync().ConfigureAwait(false);
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
@@ -216,7 +212,6 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			if (!disposing) {
 				return;
 			}
-
 			_disposed = true;
 		}
 	}

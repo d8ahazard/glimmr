@@ -37,7 +37,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 
 			var rect = new[] {3, 3, 5, 5};
 			_builder = new FrameBuilder(rect, true);
-			_splitter = colorService.Splitter;
+			_splitter = new FrameSplitter(colorService, false, "dreamscreenStream");
 			_cs.ControlService.RefreshSystemEvent += RefreshSystem;
 			RefreshSystem();
 		}

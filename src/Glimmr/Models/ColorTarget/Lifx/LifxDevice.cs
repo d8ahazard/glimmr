@@ -25,13 +25,12 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		private bool _hasMulti;
 		private int _multiplier;
 		private int _multiZoneCount;
-
 		private int _targetSector;
-
-
-		public LifxDevice(LifxData d, ColorService colorService) : base(colorService) {
+		
+		public LifxDevice(LifxData d, ColorService cs) : base(cs) {
 			DataUtil.GetItem<int>("captureMode");
 			_data = d ?? throw new ArgumentException("Invalid Data");
+			Id = _data.Id;
 			_brightness = _data.Brightness;
 			_multiplier = _data.LedMultiplier;
 			if (_multiplier == 0) {
@@ -39,11 +38,11 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			}
 
 			_gammaTable = GenerateGammaTable(_data.GammaCorrection);
-			_client = colorService.ControlService.GetAgent("LifxAgent");
-			colorService.ColorSendEventAsync += SetColors;
-			colorService.ControlService.RefreshSystemEvent += LoadData;
+			_client = cs.ControlService.GetAgent("LifxAgent");
+			cs.ControlService.RefreshSystemEvent += LoadData;
 			B = new Device(d.HostName, d.MacAddress, d.Service, (uint) d.Port);
 			LoadData();
+			cs.ColorSendEventAsync += SetColors;
 		}
 		
 		private Task SetColors(object sender, ColorSendEventArgs args) {
@@ -52,7 +51,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 		public bool Streaming { get; set; }
 		public bool Testing { get; set; }
-		public string Id { get; private set; } = "";
+		public string Id { get; private set; }
 
 		public bool Enable { get; set; }
 
@@ -70,7 +69,6 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			if (_client == null) {
 				return;
 			}
-
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
 			var col = new LifxColor(0, 0, 0);
 
@@ -101,10 +99,9 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			if (_client == null) {
 				return;
 			}
-
+			
 			Log.Information($"{_data.Tag}::Stopping stream.: {_data.Id}...");
 			var col = new LifxColor(0, 0, 0);
-
 			await _client.SetLightPowerAsync(B, false).ConfigureAwait(false);
 			await _client.SetColorAsync(B, col, 2700).ConfigureAwait(false);
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");

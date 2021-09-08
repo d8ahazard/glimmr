@@ -2,63 +2,38 @@
 
 using System;
 using System.Drawing;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using rpi_ws281x;
 using Serilog;
 
 #endregion
 
 namespace Glimmr.Models.ColorTarget.Led {
 	public class LedDevice : ColorTarget, IColorTarget {
-		private float CurrentMilliamps { get; set; }
 		private readonly LedAgent? _agent;
-		private readonly Controller? _controller;
-		private readonly int _controllerId;
-		private readonly WS281x? _ws;
-		private int _brightness;
 		private LedData _data;
-		private bool _enableAbl;
-
-		private int _ledCount;
-		private int _multiplier;
-		private int _offset;
-		private bool _reverseStrip;
-
-
-		public LedDevice(LedData ld, ColorService colorService) : base(colorService) {
+		
+		public LedDevice(LedData ld, ColorService cs) : base(cs) {
 			_data = ld;
 			Id = _data.Id;
-			_multiplier = _data.LedMultiplier;
-			_controllerId = int.Parse(Id);
-
-			var cs = colorService;
+			// We only bind and create agent for LED device 0, regardless of which one is enabled.
+			// The agent will handle all the color stuff for both strips.
+			if (Id == "1") return;
 			_agent = cs.ControlService.GetAgent("LedAgent");
 			if (_agent == null) {
+				Log.Warning("Unable to get LED agent.");
 				return;
 			}
 
-			_ws = _agent.Ws281X;
-			if (_ws == null) {
-				return;
-			}
-
+			Log.Debug("LED device created.");
 			cs.ColorSendEventAsync += SetColors;
-			_controller = Id switch {
-				"0" => _ws.GetController(),
-				"1" => _ws.GetController(ControllerType.PWM1),
-				_ => _controller
-			};
-
-			ReloadData();
 		}
-		
-		private Task SetColors(object sender, ColorSendEventArgs args) {
-			SetColor(args.LedColors, args.Force);
-			return Task.CompletedTask;
+
+		private async Task SetColors(object sender, ColorSendEventArgs args) {
+			SetColor(args.LedColors);
+			await Task.FromResult(true);
 		}
 
 		public bool Streaming { get; set; }
@@ -73,10 +48,12 @@ namespace Glimmr.Models.ColorTarget.Led {
 		}
 
 		public async Task StartStream(CancellationToken ct) {
-			if (!Enable) {
+			if (!SystemUtil.IsRaspberryPi()) return;
+			if (Id != "0") {
+				Log.Debug($"Id is {Id}, returning.");
 				return;
 			}
-
+			
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
 			Streaming = true;
 			await Task.FromResult(Streaming);
@@ -87,91 +64,35 @@ namespace Glimmr.Models.ColorTarget.Led {
 			if (!Streaming) {
 				return;
 			}
-
 			await StopLights().ConfigureAwait(false);
-			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 			Streaming = false;
+			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
 
 		public Task FlashColor(Color color) {
-			_controller?.SetAll(color);
+			_agent?.SetColor(color, Id);
 			return Task.CompletedTask;
 		}
 
 
 		public void Dispose() {
-			_controller?.Reset();
+			_agent?.Clear();
 		}
 
 		public Task ReloadData() {
-			var ld = DataUtil.GetDevice<LedData>(Id);
-			var sd = DataUtil.GetSystemData();
-			if (ld == null) {
-				Log.Warning("No LED Data");
-				return Task.CompletedTask;
-			}
-
-			_data = ld;
-			_reverseStrip = _data.ReverseStrip;
-			_multiplier = _data.LedMultiplier;
-			if (_multiplier == 0) {
-				_multiplier = 1;
-			}
-
-			Enable = _data.Enable;
-			_brightness = (int) (_data.Brightness / 100f * 255);
-			_agent?.ToggleStrip(_controllerId, Enable);
-			_ledCount = _data.LedCount;
-			if (_ledCount > sd.LedCount) {
-				_ledCount = sd.LedCount;
-			}
-
-			_enableAbl = _data.AutoBrightnessLevel;
-			_offset = _data.Offset;
-
-			if (!Enable) {
-				return Task.CompletedTask;
-			}
-
-			if (_data.Brightness != ld.Brightness && !_enableAbl) {
-				_ws?.SetBrightness(_brightness, _controllerId);
-			}
-
-			if (_data.LedCount != ld.LedCount) {
-				_ws?.SetLedCount(ld.LedCount, _controllerId);
-			}
-
+			_agent?.ReloadData();
 			return Task.CompletedTask;
 		}
 
 
-		private void SetColor(Color[] colors, bool force = false) {
+		private void SetColor(Color[] colors) {
 			if (colors == null) {
 				throw new ArgumentException("Invalid color input.");
 			}
-
-			if (!Streaming || !Enable || Testing && !force) {
-				return;
-			}
-
-			var toSend = ColorUtil.TruncateColors(colors, _offset, _ledCount, _multiplier);
-			if (_enableAbl) {
-				toSend = VoltAdjust(toSend, _data);
-			}
-
-			if (_reverseStrip) toSend = toSend.Reverse().ToArray();
 			
-			for (var i = 0; i < toSend.Length; i++) {
-				var tCol = toSend[i];
-				if (_data.StripType == 1) {
-					tCol = ColorUtil.ClampAlpha(tCol);
-				}
-
-				_controller?.SetLED(i, tCol);
-			}
-
-			_agent?.Update(_controllerId);
+			if (Id == "0") _agent?.SetColors(colors);
+			if (!Enable) return;
 			ColorService?.Counter.Tick(Id);
 		}
 
@@ -179,88 +100,12 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 
 		private async Task StopLights() {
-			if (!Enable) {
+			if (Id != "0") {
 				return;
 			}
 
-			for (var i = 0; i < _ledCount; i++) {
-				_controller?.SetLED(i, Color.FromArgb(0, 0, 0, 0));
-			}
-
-			_agent?.Update(_controllerId);
+			_agent?.Clear();
 			await Task.FromResult(true);
-		}
-
-		private Color[] VoltAdjust(Color[] input, LedData ld) {
-			//power limit calculation
-			//each LED can draw up 195075 "power units" (approx. 53mA)
-			//one PU is the power it takes to have 1 channel 1 step brighter per brightness step
-			//so A=2,R=255,G=0,B=0 would use 510 PU per LED (1mA is about 3700 PU)
-			var actualMilliampsPerLed = ld.MilliampsPerLed; // 20
-			var defaultBrightness = _brightness;
-			var ablMaxMilliamps = ld.AblMaxMilliamps; // 4500
-			var length = input.Length;
-			var output = input;
-			if (ablMaxMilliamps > 149 && actualMilliampsPerLed > 0) {
-				//0 mA per LED and too low numbers turn off calculation
-
-				var puPerMilliamp = 195075 / actualMilliampsPerLed;
-				var powerBudget = ablMaxMilliamps * puPerMilliamp; //100mA for ESP power
-				if (powerBudget > puPerMilliamp * length) {
-					//each LED uses about 1mA in standby, exclude that from power budget
-					powerBudget -= puPerMilliamp * length;
-				} else {
-					powerBudget = 0;
-				}
-
-				var powerSum = 0;
-
-				for (var i = 0; i < length; i++) {
-					//sum up the usage of each LED
-					var c = input[i];
-					powerSum += c.R + c.G + c.B + c.A;
-				}
-
-				if (ld.StripType == 1) {
-					//RGBW led total output with white LEDs enabled is still 50mA, so each channel uses less
-					powerSum *= 3;
-					powerSum >>= 2; //same as /= 4
-				}
-
-				var powerSum0 = powerSum;
-				powerSum *= defaultBrightness;
-
-				if (powerSum > powerBudget) {
-					//scale brightness down to stay in current limit
-					var scale = powerBudget / (float) powerSum;
-					var scaleI = scale * 255;
-					var scaleB = scaleI > 255 ? 255 : scaleI;
-					var newBri = scale8(defaultBrightness, scaleB);
-					_ws?.SetBrightness((int) newBri, _controllerId);
-					CurrentMilliamps = powerSum0 * newBri / puPerMilliamp;
-					if (newBri < defaultBrightness) {
-						//output = ColorUtil.ClampBrightness(input, newBri);
-					}
-				} else {
-					CurrentMilliamps = (float) powerSum / puPerMilliamp;
-					if (defaultBrightness < 255) {
-						_ws?.SetBrightness(defaultBrightness, _controllerId);
-					}
-				}
-
-				CurrentMilliamps += length; //add standby power back to estimate
-			} else {
-				CurrentMilliamps = 0;
-				if (defaultBrightness < 255) {
-					_ws?.SetBrightness(defaultBrightness, _controllerId);
-				}
-			}
-
-			return output;
-		}
-
-		private float scale8(float i, float scale) {
-			return i * (scale / 256);
 		}
 	}
 }

@@ -152,6 +152,17 @@ namespace Glimmr.Models {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int DiscoveryTimeout { get; set; }
 
+		[DefaultValue(true)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public bool EnableAutoBrightness { get; set; } = true;
+		
+		[DefaultValue(5)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public float AblVolts { get; set; } = 5f;
+		
+		[DefaultValue(3)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public float AblAmps { get; set; } = 3f;
 
 		[DefaultValue(10)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]

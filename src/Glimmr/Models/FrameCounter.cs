@@ -1,9 +1,8 @@
 ﻿#region
 
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
 using Glimmr.Enums;
 using Glimmr.Services;
@@ -12,12 +11,12 @@ using Glimmr.Services;
 
 namespace Glimmr.Models {
 	public class FrameCounter : IDisposable {
-		public Dictionary<string, int> Rates { get; private set; }
+		public ConcurrentDictionary<string, int> Rates { get; private set; }
 		private readonly Stopwatch _stopwatch;
-		private Dictionary<string, int> _ticks;
+		private ConcurrentDictionary<string, int> _ticks;
 
 		public FrameCounter(ColorService cs) {
-			_ticks = new Dictionary<string, int> {["source"] = 0};
+			_ticks = new ConcurrentDictionary<string, int> {["source"] = 0};
 			Rates = _ticks;
 			_stopwatch = new Stopwatch();
 			cs.ControlService.SetModeEvent += Mode;
@@ -35,7 +34,7 @@ namespace Glimmr.Models {
 				_stopwatch.Stop();
 			}
 
-			_ticks = new Dictionary<string, int> {["source"] = 0};
+			_ticks = new ConcurrentDictionary<string, int> {["source"] = 0};
 			Rates = _ticks;
 			return Task.CompletedTask;
 		}
@@ -50,7 +49,7 @@ namespace Glimmr.Models {
 			if (_stopwatch.Elapsed >= TimeSpan.FromSeconds(1)) {
 				_stopwatch.Restart();
 				Rates = _ticks;
-				_ticks = new Dictionary<string, int> {["source"] = 0};
+				_ticks = new ConcurrentDictionary<string, int> {["source"] = 0};
 			}
 
 			if (_ticks.Keys.Contains(id)) {
@@ -61,7 +60,7 @@ namespace Glimmr.Models {
 		}
 
 		public void Reset() {
-			_ticks = new Dictionary<string, int> {["source"] = 0};
+			_ticks = new ConcurrentDictionary<string, int> {["source"] = 0};
 			Rates = _ticks;
 		}
 	}

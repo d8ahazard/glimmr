@@ -17,14 +17,14 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		private readonly ColorService _colorService;
 		private OpenRGBClient? _client;
 		private OpenRgbData _data;
-
+		
 		public OpenRgbDevice(OpenRgbData data, ColorService cs) {
 			Id = data.Id;
 			_data = data;
-			cs.ColorSendEventAsync += SetColors;
 			_colorService = cs;
 			_client = cs.ControlService.GetAgent("OpenRgbAgent");
 			LoadData();
+			_colorService.ColorSendEventAsync -= SetColors;
 		}
 		
 		private Task SetColors(object sender, ColorSendEventArgs args) {
@@ -83,7 +83,6 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			if (!_client.Connected || !Streaming) {
 				return;
 			}
-
 			var output = new OpenRGB.NET.Models.Color[_data.LedCount];
 			for (var i = 0; i < output.Length; i++) {
 				output[i] = new OpenRGB.NET.Models.Color();

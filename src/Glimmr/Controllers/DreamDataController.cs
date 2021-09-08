@@ -78,7 +78,7 @@ namespace Glimmr.Controllers {
 		[HttpGet("LogDownload")]
 		public FileResult LogDownload() {
 			var dt = DateTime.Now.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
-			var logPath = $"/var/log/glimmr/{dt}.log";
+			var logPath = $"/var/log/glimmr/glimmr{dt}.log";
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 				var userPath = SystemUtil.GetUserDir();
 				var logDir = Path.Combine(userPath, "log");
@@ -89,7 +89,7 @@ namespace Glimmr.Controllers {
 				logPath = Path.Combine(userPath, "log", $"{dt}.log");
 			}
 
-			Console.WriteLine("Grabbing log from " + logPath);
+			Log.Debug("Grabbing log from " + logPath);
 			var fileBytes = System.IO.File.ReadAllBytes(logPath);
 			var fileName = Path.GetFileName(logPath);
 			return File(fileBytes, MediaTypeNames.Application.Octet, fileName);

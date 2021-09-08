@@ -39,8 +39,8 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			_data.LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 			DataUtil.AddDeviceAsync(_data, false).ConfigureAwait(false);
 			_yeeDevice = new Device(IpAddress);
+			_colorService.ColorSendEventAsync += SetColors;
 		}
-
 		private Task SetColors(object sender, ColorSendEventArgs args) {
 			return SetColor(args.SectorColors, args.Force);
 		}

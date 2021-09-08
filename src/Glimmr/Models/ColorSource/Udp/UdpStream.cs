@@ -41,7 +41,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 			_cs.RefreshSystemEvent += RefreshSystem;
 			_cs.SetModeEvent += Mode;
 			_cs.StartStreamEvent += StartStream;
-			_splitter = cs.Splitter;
+			_splitter = new FrameSplitter(cs, false, "udpStream");
 			_uc = new UdpClient(8889) {Ttl = 5, Client = {ReceiveBufferSize = 2000}};
 			_uc.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 			_uc.Client.Blocking = false;

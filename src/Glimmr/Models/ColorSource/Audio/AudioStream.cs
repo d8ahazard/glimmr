@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,7 +34,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 		public AudioStream(ColorService cs) {
 			_devices = new List<AudioData>();
 			_map = new AudioMap();
-			StreamSplitter = new FrameSplitter(cs);
+			StreamSplitter = new FrameSplitter(cs,false, "audioStream");
 			_builder = new FrameBuilder(new[] {
 				3, 3, 6, 6
 			}, true);
@@ -74,17 +73,26 @@ namespace Glimmr.Models.ColorSource.Audio {
 			return ExecuteAsync(ct);
 		}
 
-		protected override Task ExecuteAsync(CancellationToken ct) {
-			return Task.Run(async () => {
-				while (!ct.IsCancellationRequested) {
-					await Task.Delay(1, ct);
-				}
-
+		public Task StopStream() {
+			try {
 				Bass.ChannelStop(_handle);
 				Bass.Free();
 				Bass.RecordFree();
 				SendColors = false;
 				Log.Debug("Audio stream service stopped.");
+			} catch (Exception e) {
+				Log.Warning("Exception stopping stream..." + e.Message);
+			}
+			return Task.CompletedTask;
+		}
+
+		protected override Task ExecuteAsync(CancellationToken ct) {
+			return Task.Run(async () => {
+				while (!ct.IsCancellationRequested) {
+					await Task.Delay(1, CancellationToken.None);
+				}
+
+				await StopStream();
 			}, CancellationToken.None);
 		}
 		

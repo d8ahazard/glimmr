@@ -1,5 +1,6 @@
 ﻿#region
 
+using System;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
@@ -123,7 +124,7 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 
 					_colors = oCols;
 					_sectors = oSecs;
-					await _cs.TriggerSend(_colors, _sectors);
+					await _cs.TriggerSend(_colors, _sectors, "avStream");
 
 					if (_doSave) {
 						_doSave = false;
@@ -131,6 +132,16 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 					}
 
 					await Task.Delay(16, CancellationToken.None);
+				}
+
+				if (_vs != null) _vs.StreamSplitter.DoSend = false;
+				if (_as != null) {
+					try {
+						await _as.StopStream();
+					} catch (Exception) {
+						Log.Warning("Exception stopping audio stream.");
+					}
+					_as.StreamSplitter.DoSend = false;
 				}
 
 				if (_aTask != null && !_aTask.IsCompleted) {

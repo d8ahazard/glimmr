@@ -34,18 +34,18 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		private StripMode _stripMode;
 		private int _targetSector;
 
-		public WledDevice(WledData wd, ColorService colorService) : base(colorService) {
-			colorService.ColorSendEventAsync += SetColors;
-			ColorService = colorService;
-			colorService.ControlService.RefreshSystemEvent += RefreshSystem;
-			_udpClient = ColorService.ControlService.UdpClient;
-			_httpClient = ColorService.ControlService.HttpSender;
+		public WledDevice(WledData wd, ColorService cs) : base(cs) {
+			ColorService cs1 = cs;
+			cs1.ControlService.RefreshSystemEvent += RefreshSystem;
+			_udpClient = cs1.ControlService.UdpClient;
+			_httpClient = cs1.ControlService.HttpSender;
 			_data = wd ?? throw new ArgumentException("Invalid WLED data.");
 			Id = _data.Id;
 			IpAddress = _data.IpAddress;
 			_brightness = _data.Brightness;
 			_multiplier = _data.LedMultiplier;
 			ReloadData();
+			cs1.ColorSendEventAsync += SetColors;
 		}
 		
 		private Task SetColors(object sender, ColorSendEventArgs args) {
@@ -102,8 +102,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			if (!Streaming) {
 				return;
 			}
-
-
 			Streaming = false;
 			await FlashColor(Color.Black).ConfigureAwait(false);
 			await UpdateLightState(false).ConfigureAwait(false);
@@ -193,11 +191,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		public void Dispose() {
 			Dispose(true).ConfigureAwait(true);
 			GC.SuppressFinalize(this);
-		}
-
-
-		public bool IsEnabled() {
-			return _data.Enable;
 		}
 
 

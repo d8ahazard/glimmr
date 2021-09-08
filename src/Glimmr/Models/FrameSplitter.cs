@@ -26,12 +26,13 @@ namespace Glimmr.Models {
 
 		// The width of the border to crop from for LEDs
 		private readonly float _borderWidth;
-		private readonly ColorService _colorService;
+		public ColorService ColorService { get; }
 		private readonly Stopwatch _frameWatch;
 		private readonly List<VectorOfPoint> _targets;
 		private readonly bool _useCrop;
 		private bool _allBlack;
 		private int _bottomCount;
+		private string _source;
 
 		// Loaded data
 		private CaptureMode _captureMode;
@@ -94,7 +95,8 @@ namespace Glimmr.Models {
 		private bool _warned;
 
 
-		public FrameSplitter(ColorService cs, bool crop = false) {
+		public FrameSplitter(ColorService cs, bool crop = false, string source = "") {
+			_source = source;
 			_vectors = Array.Empty<PointF>();
 			_targets = new List<VectorOfPoint>();
 			_useCrop = crop;
@@ -104,7 +106,7 @@ namespace Glimmr.Models {
 			_colorsSectorsIn = _colorsSectors;
 			_frameWatch = new Stopwatch();
 			_frameWatch.Start();
-			_colorService = cs;
+			ColorService = cs;
 			cs.ControlService.RefreshSystemEvent += RefreshSystem;
 			cs.FrameSaveEvent += TriggerSave;
 			_pillarCropCounter = new CropCounter(5);
@@ -215,7 +217,7 @@ namespace Glimmr.Models {
 				secs = _colorsSectorsIn;
 			}
 			if (inMat != null && !inMat.IsEmpty) {
-				_colorService.ControlService.SendImage("inputImage", inMat).ConfigureAwait(false);
+				ColorService.ControlService.SendImage("inputImage", inMat).ConfigureAwait(false);
 			}
 			
 			if (outMat == null || outMat.IsEmpty) {
@@ -247,7 +249,7 @@ namespace Glimmr.Models {
 			}
 
 			if (DoSend) {
-				_colorService.ControlService.SendImage("outputImage", outMat).ConfigureAwait(false);
+				ColorService.ControlService.SendImage("outputImage", outMat).ConfigureAwait(false);
 			}
 			inMat?.Dispose();
 			outMat.Dispose();
@@ -338,8 +340,8 @@ namespace Glimmr.Models {
 			_colorsLed = ledColors;
 			_colorsSectors = sectorColors;
 			if (DoSend) {
-				await _colorService.TriggerSend(ledColors, sectorColors);
-				_colorService.Counter.Tick("splitter");
+				await ColorService.TriggerSend(ledColors, sectorColors);
+				ColorService.Counter.Tick(_source);
 			}
 			if (_doSave) {
 				if (DoSend) {

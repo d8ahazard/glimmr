@@ -1,4 +1,92 @@
-﻿.main {
+﻿:root {
+    --fg-primary: #181818;
+    --fg-secondary: #212121;
+    --bg-secondary: #cfcfcf;
+    --bg-primary: #9f9f9f;
+}
+
+@media (max-width: 576px) {
+    .modeGroup {
+        display: inline-block !important;
+        text-align: center !important;
+        margin: 0 auto;
+    }
+    .myNav > .myNav {
+        text-align: center;
+    }
+    .modeGroup-lg {
+        display: none !important;
+    }
+    .settingBtn-lg {
+        display: none;
+    }
+    .settingBtn > .mainSettings {
+        padding: 5px 16px !important;
+    }
+
+    div.card.container-fluid > div.card-body.row > div.col-12.settingsCol.pb-2.text-center.exp.col-md-6 {
+        position: relative;
+        width: revert;
+    }
+    
+    #statDiv {
+        margin: 5px auto !important;
+        max-width: calc(100% - 128px);
+        position: relative;
+        font-size: 12px;
+        text-align: center;
+    }
+    .ambientRow, #audioNav {
+        justify-content: center!important;
+        text-align: center!important;
+    }
+    
+    #mainSettingsCard {
+        padding: 0!important;
+    }
+}
+
+@media (min-width: 576px) {
+    .settingBtn-sm {
+        display: none;
+    }
+    .modeGroup-lg {
+        display: inline-block !important;
+    }    
+    #statDiv {
+        position: relative;
+        margin-left: 20px;
+        padding-top: 5px;
+    }    
+}
+
+#sLedWrap, #sectorWrap {
+    width: 95%;
+    position: relative;
+    margin: 0 auto;
+}
+
+div.btn-clear.btn-lg.controlBtn {
+    padding: 8px 16px !important;
+    font-size: 18px;
+    line-height: 1.3333333;
+    border-radius: 6px;
+}
+
+.dropdown-divider {
+    margin: 1.25rem 0;
+}
+
+.ambientRow {
+    
+}
+
+div.btn-clear.closeBtn.closeBtn-sm, div.btn-clear.refreshBtn {
+    padding: 5px 16px !important;
+}
+ 
+
+.main {
     width: 100%;
     height: 100%;
     overflow: hidden;
@@ -6,15 +94,31 @@
     left: 0;
 }
 
-#statDiv {
-    z-index: 2000;
-    position: relative;
-    width: 250px;
-    padding-top: 5px;
+.card {
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+}
+
+.card-1:hover {
+    box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+}
+
+.card-title {
+    display: block;
+    text-overflow: ellipsis;
+    word-wrap: break-word;
+    overflow: hidden;
+    max-height: 48px;
+    line-height: 24px;
 }
 
 #mapCol {
     position: relative;
+}
+
+#mapWrap {
+    padding: 0!important;
 }
 
 .tab-pane.fade.show.active {
@@ -26,18 +130,21 @@
 }
 
 
-#sectorPreview, #sectorMap, #ledMap {
+#sectorMap, #ledMap {
     background:url("../img/sectoring_screen.png");
     background-size: 100% 100%;;
 }
 
 .devCard {
     width: 18rem;
+    height: 225px !important;
 }
 
 #footer {
-    height: 54px;
+    height: 3rem;
     background-color: rgb(171, 171, 171) !important;
+    padding: 0;
+    margin: 0;
 }
 
 
@@ -63,19 +170,16 @@
 
 .custom-control-input {
     position: relative !important;
-    left: -4px !important;
+    margin-left: 4px !important;
     width: 2rem !important;
     z-index: 1 !important;
     
 }
 
-.custom-control.custom-switch {
+.custom-control, .custom-switch {
     padding-left: 15px;
 }
 
-input.devSetting {
-    padding-left: 5px;
-}
 
 .header {
     position: absolute;
@@ -107,7 +211,11 @@ body, .main, #mainNav, #footer {
 
 .headerCol {
     font-size: 26px;
-    margin-bottom: 5px;
+    margin-bottom: 10px;
+}
+
+#dbForm {
+    margin-left: -15px;
 }
 
 .highLed {
@@ -116,6 +224,10 @@ body, .main, #mainNav, #footer {
 
 .highLed.firstLed {
     background-color: green;
+}
+
+#footer > .fixed-bottom {
+    height: 3rem !important;
 }
 
 .ledRed {
@@ -146,13 +258,36 @@ body, .main, #mainNav, #footer {
     background-color: violet;
 }
 
-.titleCol {
-    font-size: 22px;
+.titleRow {
+    height: 76px;
 }
 
-div.btn-clear {
-    height: 48px;
+.titleCol {
+    font-size: 22px;
+    margin-bottom: 10px;
 }
+
+div.btn-clear:not(.btn-lg) {
+    padding: 10px 16px !important;
+    font-size: 18px;
+    line-height: 1.3333333;
+    height: 100%;
+    border-radius: 6px;
+}
+
+div.card.container-fluid > div.card-body.row > .settingsCol {
+    top: 20px;
+}
+
+div.card.container-fluid > div.card-body.row > .brightSlider {
+    top: 92px;
+    left: 0;
+}
+
+.btn-group>.btn.active {
+    z-index: 0!important;
+}
+
 
 .btn-clear * {
     pointer-events: none;
@@ -162,6 +297,10 @@ div.btn-clear {
 area {
     display: block;
     cursor: pointer;
+}
+
+.center {
+    text-align: center;
 }
 
 .sectorMap, .ledMap {
@@ -283,30 +422,34 @@ input[type="range"]:not[data-object="SystemData"]::-webkit-slider-runnable-track
 
 #ambientNav {
     position: fixed;
-    height: 48px;
     top: 48px;
     width: 100%;
 }
 
 #audioNav {
     position: fixed;
-    height: 145px;
     top: 48px;
     width: 100%;
 }
 
+#mainSettingsCard > div > div > div.card-body {
+    padding: 0!important;
+}
+
 .subCol {
-    font-size: 20px;
+    font-size: 18px;
 }
 
 .sceneRow {
     margin-bottom: -20px;
     margin-left: 15px;
+    margin-right: 15px;
 }
 
 .rotRow {
     margin-left: 15px;
     margin-right: 15px;
+    margin-top: 25px;
 }
 
 .btn-clear.btn-lg, .btn-clear.btn-lg > span {
@@ -398,12 +541,6 @@ input[type="range"]:not[data-object="SystemData"]::-webkit-slider-runnable-track
     background-position: center;
 }
 
-#nanoPreviewWrap, #mapWrap, #sLedWrap, #sectorWrap {
-    width: 95%;
-    position: relative;
-    margin: 0 auto;
-}
-
 #sectorPreview, #ledPreview, #sLedPreview {
     position: relative;
 }
@@ -464,3 +601,96 @@ input[type="range"]:not[data-object="SystemData"]::-webkit-slider-runnable-track
         transform: translate(24px, 0);
     }
 }
+
+text > * {
+    color: var(--fg-primary);
+}
+
+.text-muted {
+    color: var(--fg-secondary) !important;
+}
+
+#footer, .myNav, .bg-light {
+    background: var(--bg-secondary) !important;
+}
+
+.text-light {
+    color: var(--bg-secondary) !important;
+}
+
+.text-dark {
+    color: var(--fg-secondary) !important;
+}
+
+.bg-dark {
+    background: var(--fg-secondary) !important;
+}
+
+.btn-outline-secondary {
+    color: var(--fg-secondary);
+    border-color: var(--fg-secondary);
+}
+
+.lds-ellipsis, div.btn-clear, div.btn-clear.active, .input-group-text {
+    background: var(--bg-secondary) !important;
+    color: var(--fg-primary) !important;
+}
+
+.modal {
+    background: var(--bg-secondary) !important;
+    color: var(--fg-primary) !important;
+}
+
+.modal-content, body, .main {
+    background: var(--bg-primary) !important;
+    color: var(--fg-primary) !important;
+}
+
+
+div.btn-clear:hover {
+    background: var(--fg-secondary) !important;
+    color: var(--bg-primary) !important;
+}
+
+div.btn-clear.active {
+    background: var(--fg-primary) !important;
+    color: var(--bg-secondary) !important;
+}
+
+#mainSettingsCard {
+    background: var(--bg-primary) !important;
+    color: var(--fg-primary) !important;
+}
+
+.card {
+    background: var(--bg-secondary) !important;
+    color: var(--fg-primary) !important;
+}
+
+
+.card.container-fluid {
+    background: var(--bg-primary) !important;
+}
+
+#mainContent {
+    background: var(--bg-primary);
+}
+
+.border {
+    border: 1px solid var(--fg-secondary) !important;
+}
+
+.nav-tabs .nav-item.show .nav-link, .nav-tabs .nav-link.active {
+    background: var(--bg-primary) !important;
+    color: var(--fg-primary) !important;
+    border-color: #777777 #858585 #757575;
+}
+
+#tempDiv {
+    color: var(--fg-secondary);
+}
+
+#cpuDiv, #throttleDiv, #fpsDiv {
+    color: var(--fg-secondary) !important;
+}
+
