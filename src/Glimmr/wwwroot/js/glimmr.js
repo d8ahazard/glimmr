@@ -1859,7 +1859,7 @@ const toggleExpansion = (element, to, duration = 350) => {
                 }
                 });
             }   
-        }, duration);
+        }, duration/2);
     
         setTimeout(res, duration);
     })
@@ -1925,8 +1925,9 @@ const showDeviceCard = async (e) => {
     cardClone.style.left = left + 'px';
     cardClone.style.width = width + 'px';
     cardClone.style.height = height + 'px';
+    cardClone.style.opacity = "0";
     // hide the original card with opacity
-    card.style.opacity = '0';
+    //card.style.opacity = '0';
     // add card to the main container
     document.querySelector(".main").appendChild(cardClone);
     let body = document.querySelector("div.card.container-fluid > div");
@@ -1937,12 +1938,9 @@ const showDeviceCard = async (e) => {
     fh += oh;
     // remove the display style so the original content is displayed right
     cardClone.style.display = 'block';
-    // Expand that bish
-    await toggleExpansion(cardClone, {top: oh + "px", left: 0, width: '100%', height: 'calc(100% - ' + fh + 'px)', padding: "1rem 3rem"}, 250);
-    
     let sepDiv = document.createElement("div");
     sepDiv.classList.add("dropdown-divider", "row");
-    
+
     let settingsRow = document.createElement("div");
     settingsRow.classList.add("deviceSettings", "row", "justify-content-center");
     settingsRow.id = "devicePrefs";
@@ -1961,7 +1959,12 @@ const showDeviceCard = async (e) => {
     for (let i = 0; i < closeButton.length; ++i) {
         closeButton[i].classList.remove('d-none');
     }
+    // Expand that bish
+    await toggleExpansion(cardClone, {top: oh + "px", left: 0, width: '100%', height: 'calc(100% - ' + fh + 'px)', opacity: "100%"}, 250);
     createDeviceSettings();
+
+
+
 };
 
 function createDeviceSettings() {
@@ -2000,7 +2003,7 @@ function createDeviceSettings() {
             let mapWrap = document.createElement("div");
             mapRow.classList.add("row", "justify-content-center", "delSetting", "pb-3", "pt-3");
             mapWrap.id = "mapWrap";
-            mapWrap.classList.add("col-12", "col-md-8", "col-xl-6");
+            mapWrap.classList.add("col-12");
             mapRow.id = "mapCol";
             mapRow.appendChild(mapWrap);
             container.appendChild(mapRow);
