@@ -125,8 +125,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
 						["3"] = "Single Color"
 					}),
 					new("LedCount", "number", "Led Count"),
-					new("ReverseStrip", "check", "Reverse Strip Direction"),
-					multiplier
+					multiplier,
+					new("ReverseStrip", "check", "Reverse Strip Direction")
 				};
 			}
 
@@ -140,9 +140,9 @@ namespace Glimmr.Models.ColorTarget.Wled {
 				}),
 				new("LedCount", "number", "Led Count"),
 				new("Offset", "number", "Strip Offset"),
+				multiplier,
 				new("ReverseStrip", "check", "Reverse Strip")
-					{ValueHint = "Reverse the order of the leds to clockwise (facing screen)."},
-				multiplier
+					{ValueHint = "Reverse the order of the leds to clockwise (facing screen)."}
 			};
 		}
 	}
