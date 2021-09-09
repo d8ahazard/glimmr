@@ -79,6 +79,9 @@ namespace Glimmr.Models.Util {
 				return null;
 			}
 
+			//DUH
+			if (IPAddress.TryParse(p, out var parsed)) return parsed;
+			
 			try {
 				var hosts = Dns.GetHostAddresses(p);
 

@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Services;
 using LifxNetPlus;
+using Newtonsoft.Json;
 using Serilog;
 
 #endregion
@@ -48,6 +49,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			//Log.Debug("Device found: " + JsonConvert.SerializeObject(bulb));
 			var ld = await GetBulbInfo(bulb);
 			if (ld != null) {
+				Log.Debug("Adding device: " + JsonConvert.SerializeObject(ld));
 				await _controlService.AddDevice(ld);
 			}
 		}

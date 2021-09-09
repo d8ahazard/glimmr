@@ -37,9 +37,28 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			Id = _data.Id;
 			var streamMode = n.Type == "NL29" || n.Type == "NL42" ? 2 : 1;
 			var controlService = cs.ControlService;
+			var host = n.IpAddress;
 			try {
-				_nanoleafClient = new NanoleafClient(n.IpAddress, n.Token);
-				_streamingClient = new NanoleafStreamingClient(n.IpAddress, streamMode, controlService.UdpClient);
+				var ip = IpUtil.GetIpFromHost(n.IpAddress);
+				if (ip != null) {
+					host = ip.ToString();
+				} else {
+					if (host.Contains(".local")) {
+						host = host.Replace(".local", "");
+						ip = IpUtil.GetIpFromHost(host);
+					}
+				}
+
+				if (ip != null) host = ip.ToString();
+			} catch (Exception e) {
+				//ignored
+			}
+			try {
+				
+				Log.Debug("Creating nano client: " + host);
+				_nanoleafClient = new NanoleafClient(host, n.Token);
+				Log.Debug("Nano client created.");
+				_streamingClient = new NanoleafStreamingClient(host, streamMode, controlService.UdpClient);
 			} catch (Exception e) {
 				Log.Debug("Exception creating client..." + e.Message);
 			}

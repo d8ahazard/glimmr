@@ -79,6 +79,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		public LifxData(Device b) {
 			Tag = "Lifx";
 			Name ??= Tag;
+			Id = HostName;
 			HostName = b.HostName;
 			var ip = IpUtil.GetIpFromHost(HostName);
 			if (ip != null) {

@@ -406,8 +406,9 @@ function setSocketListeners() {
     });
 
     websocket.on('device', function(dData) {
-        dData = dData.replace(/\\n/g, '');
+        //dData = dData.replace(/\\n/g, '');
         let stuff = JSON.parse(dData);
+        console.log("Got device data: ", dData);
         stuff["Id"] = stuff["id"];
         for(let i=0; i<data.devices.length; i++) {
            let dev = data.devices[i];

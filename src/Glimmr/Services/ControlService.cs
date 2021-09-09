@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Sockets;
@@ -343,6 +344,8 @@ v. {version}
 
 		public async Task AddDevice(IColorTargetData data) {
 			await DataUtil.AddDeviceAsync(data);
+			Log.Debug("Adding device " + data.Name);
+			await _hubContext.Clients.All.SendAsync("device", JsonConvert.SerializeObject(data));
 		}
 
 
@@ -391,7 +394,7 @@ v. {version}
 
 		public async Task UpdateDevice(dynamic device, bool merge = true) {
 			Log.Debug($"Updating {device.Tag}...");
-			await DataUtil.AddDeviceAsync(device, merge);
+			await DataUtil.AddDeviceAsync(device, merge).ConfigureAwait(false);
 			await _hubContext.Clients.All.SendAsync("device", JsonConvert.SerializeObject((IColorTargetData) device));
 			await RefreshDevice(device.Id);
 		}

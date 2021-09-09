@@ -25,6 +25,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 		private bool _use0;
 		private bool _use1;
+		private float _lastScale = 1f;
 
 		public LedAgent() {
 			_colors1 = ColorUtil.EmptyColors(_d0?.LedCount ?? 0);
@@ -223,6 +224,11 @@ namespace Glimmr.Models.ColorTarget.Led {
 				//scale brightness down to stay in current limit
 				var scale = totalWatts / usage;
 				var scaleI = scale * 255;
+				if (scaleI > _lastScale) {
+					scaleI = (scaleI + _lastScale) / 2;
+				}
+
+				_lastScale = scaleI;
 				if (_use0) {
 					Ws281X?.SetBrightness((int) Math.Min(strip0Brightness, scaleI));
 				}

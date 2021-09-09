@@ -74,10 +74,6 @@ namespace Glimmr.Models.ColorSource.UDP {
 			var sd = DataUtil.GetSystemData();
 			_devMode = (DeviceMode) sd.DeviceMode;
 			_hostName = _sd.DeviceName;
-			if (SystemUtil.IsRaspberryPi()) {
-				return;
-			}
-
 			_discovery?.Dispose();
 			var addr = new List<IPAddress> {IPAddress.Parse(IpUtil.GetLocalIpAddress())};
 			var service = new ServiceProfile(_hostName, "_glimmr._tcp", 8889, addr);

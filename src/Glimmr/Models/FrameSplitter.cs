@@ -13,6 +13,7 @@ using Emgu.CV.Util;
 using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
+using Newtonsoft.Json;
 using Serilog;
 
 #endregion
@@ -44,6 +45,7 @@ namespace Glimmr.Models {
 		private Color[] _colorsSectors;
 		private Color[] _colorsSectorsIn;
 		private int _cropDelay;
+		private int _minBrightness;
 
 		// Loaded settings
 		private bool _cropLetter;
@@ -553,14 +555,14 @@ namespace Glimmr.Models {
 			var wStart = width / 3;
 			var hStart = height / 3;
 			// How many non-black pixels can be in a given row
-			const int blackLevel = 3;
+			const int blackLevel = 7;
 			var lPixels = 0;
 			var pPixels = 0;
 
 			width--;
 			height--;
-
-			var count = Sum(image.GetRawData());
+			var raw = image.GetRawData();
+			var count = Sum(raw);
 			var noImage = count == 0 || width == 0 || height == 0;
 			// If it is, we can stop here
 			if (noImage) {
@@ -578,13 +580,14 @@ namespace Glimmr.Models {
 				for (var y = 0; y < hStart; y++) {
 					var c1 = gr.Row(height - y);
 					var c2 = gr.Row(y);
-					var b1 = c1.GetRawData();
-					var b2 = c1.GetRawData();
-					var l1 = Sum(b1);
-					var l2 = Sum(b2);
+					var b1 = c1.GetRawData().SkipLast(8).Skip(8).ToArray();
+					var b2 = c1.GetRawData().SkipLast(8).Skip(8).ToArray();
+					var dist = b1.Distinct().ToArray();
+					var l1 = Sum(b1) / b1.Length;
+					var l2 = Sum(b2) / b1.Length;
 					c1.Dispose();
 					c2.Dispose();
-					if (l1 == l2 && l1 + l2 < blackLevel) {
+					if (dist.Length == 1 && l1 == l2 && l1 <= blackLevel) {
 						lPixels = y;
 					} else {
 						break;
@@ -597,13 +600,14 @@ namespace Glimmr.Models {
 				for (var x = 0; x < wStart; x++) {
 					var c1 = gr.Col(width - x);
 					var c2 = gr.Col(x);
-					var b1 = c1.GetRawData();
-					var b2 = c1.GetRawData();
-					var l1 = Sum(b1);
-					var l2 = Sum(b2);
+					var b1 = c1.GetRawData().SkipLast(8).Skip(8).ToArray();
+					var b2 = c1.GetRawData().SkipLast(8).Skip(8).ToArray();
+					var dist = b1.Distinct().ToArray();
+					var l1 = Sum(b1) / b1.Length;
+					var l2 = Sum(b2) / b1.Length;
 					c1.Dispose();
 					c2.Dispose();
-					if (l1 == l2 && l1 + l2 <= blackLevel) {
+					if (dist.Length == 1 && l1 == l2 && l1 < blackLevel) {
 						pPixels = x;
 					} else {
 						break;
@@ -667,6 +671,10 @@ namespace Glimmr.Models {
 			}
 
 			await Task.FromResult(true);
+		}
+
+		private int[] GetInts(byte[] input) {
+			return input.Select(b => (int) b).ToArray();
 		}
 
 		private static int Sum(IEnumerable<byte> bytes) {
