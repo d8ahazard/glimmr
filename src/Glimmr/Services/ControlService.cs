@@ -418,8 +418,11 @@ v. {version}
 		}
 
 		public async Task RemoveDevice(string id) {
+			Log.Debug("Stopping device...");
 			ColorService.StopDevice(id, true);
-			DataUtil.RemoveDevice(id);
+			Log.Debug("Deleting device...");
+			DataUtil.DeleteDevice(id);
+			Log.Debug("Removed?");
 			await _hubContext.Clients.All.SendAsync("deleteDevice", id);
 		}
 

@@ -265,11 +265,13 @@ namespace Glimmr.Models.Util {
 				var devs = db.GetCollection<dynamic>("Devices");
 				if (devs.Delete(deviceId)) {
 					Log.Information($"Device {deviceId} deleted.");
+				} else {
+					Log.Information("Unable to delete device?");
 				}
 
 				db.Commit();
-			} catch (Exception) {
-				//ignored
+			} catch (Exception e) {
+				Log.Warning("Error deleting device: " + e.Message);
 			}
 		}
 

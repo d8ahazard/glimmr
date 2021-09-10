@@ -157,6 +157,9 @@ namespace Glimmr.Models.ColorSource.Ambient {
 					} catch (Exception e) {
 						Log.Warning("EX: " + e.Message);
 					}
+
+					await Task.Delay(TimeSpan.FromTicks(83333), CancellationToken.None);
+					
 				}
 
 				_watch.Stop();

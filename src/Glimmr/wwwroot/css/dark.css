@@ -3,10 +3,5 @@
     --bg-secondary: #212121 !important;
     --fg-primary: #cfcfcf !important;
     --fg-secondary: #9f9f9f !important;
-}
-
-
-.card {
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+    
 }

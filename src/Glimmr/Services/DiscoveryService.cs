@@ -156,8 +156,6 @@ namespace Glimmr.Services {
 			}
 
 			_discovering = false;
-			// Notify all clients to refresh data
-			await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized(), CancellationToken.None);
 		}
 	}
 }

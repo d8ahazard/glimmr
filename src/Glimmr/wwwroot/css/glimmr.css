@@ -5,6 +5,17 @@
     --bg-primary: #9f9f9f;
 }
 
+:root, body, .main, #mainContent, #cardRow {
+    height: 100%;
+}
+
+#cardRow {
+    top : 48px;
+    position: relative;
+    margin-left: 0!important;
+    overflow-y: scroll;
+}
+
 @media (max-width: 576px) {
     .modeGroup {
         display: inline-block !important;
@@ -94,10 +105,36 @@ div.btn-clear.closeBtn.closeBtn-sm, div.btn-clear.refreshBtn {
     left: 0;
 }
 
+.devCard.min {
+    width: 0!important;
+    height: 0!important;
+}
+
+.devCard.min * {
+    width: 100%!important;
+    height: 100%!important;   
+    opacity: 0!important;
+    display: none;
+}
+
 .card {
     border-radius: 10px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-    transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+}
+
+.devCard {
+    -webkit-transition: all 0.5s ease-in-out;
+    -moz-transition: all 0.5s ease-in-out;
+    -o-transition: all 0.5s ease-in-out;
+    transition: all 0.5s ease-in-out;
+    overflow: hidden;
+}
+
+.devCard * {
+    -webkit-transition: all 0.25s ease-in-out 0.5s;
+    -moz-transition: all 0.25s ease-in-out 0.5s;
+    -o-transition: all 0.25s ease-in-out 0.5s;
+    transition: all 0.75s ease-in-out;
 }
 
 .card:hover {
@@ -483,7 +520,7 @@ input[type="range"]:not[data-object="SystemData"]::-webkit-slider-runnable-track
 }
 
 #mainContent {
-    overflow-y: scroll;
+    overflow-y: hidden;
     overflow-x: hidden;
 }
 

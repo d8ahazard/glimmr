@@ -40,45 +40,186 @@ let nanoTarget, nanoSector;
 let demoLoaded = false;
 let reload = false;
 let toLoad = null;
+let devTimeout = null;
 let ledData = '{"AutoBrightnessLevel":true,"FixGamma":true,"AblMaxMilliamps":5000,"GpioNumber":18,"LedCount":150,"MilliampsPerLed":25,"Offset":50,"StartupAnimation":0,"StripType":0,"Name":"Demo LED Strip","Id":"-1","Tag":"Led","IpAddress":"","Brightness":100,"Enable":false,"LastSeen":"08/05/2021 13:28:53","KeyProperties":[{"Options":{},"ValueLabel":"","ValueHint":"","ValueMax":"100","ValueMin":"0","ValueName":"ledmap","ValueStep":"1","ValueType":"ledmap"},{"Options":{},"ValueLabel":"Led Count","ValueHint":"","ValueMax":"100","ValueMin":"0","ValueName":"LedCount","ValueStep":"1","ValueType":"text"},{"Options":{},"ValueLabel":"Led Offset","ValueHint":"","ValueMax":"100","ValueMin":"0","ValueName":"Offset","ValueStep":"1","ValueType":"text"},{"Options":{},"ValueLabel":"LED Multiplier","ValueHint":"Positive values to multiply (skip), negative values to divide (duplicate).","ValueMax":"5","ValueMin":"-5","ValueName":"LedMultiplier","ValueStep":"1","ValueType":"number"},{"Options":{},"ValueLabel":"Reverse Strip","ValueHint":"Reverse the order of the leds to clockwise (facing screen).","ValueMax":"100","ValueMin":"0","ValueName":"ReverseStrip","ValueStep":"1","ValueType":"check"},{"Options":{},"ValueLabel":"Fix Gamma","ValueHint":"Automatically correct Gamma (recommended)","ValueMax":"100","ValueMin":"0","ValueName":"FixGamma","ValueStep":"1","ValueType":"check"},{"Options":{},"ValueLabel":"Enable Auto Brightness","ValueHint":"Automatically adjust brightness to avoid dropouts.","ValueMax":"100","ValueMin":"0","ValueName":"AutoBrightnessLevel","ValueStep":"1","ValueType":"check"},{"Options":{},"ValueLabel":"Milliamps Per LED","ValueHint":"\'Conservative\' = 25, \'Normal\' = 55","ValueMax":"100","ValueMin":"0","ValueName":"MilliampsPerLed","ValueStep":"1","ValueType":"text"},{"Options":{},"ValueLabel":"Power Supply Voltage","ValueHint":"Total PSU voltage in Milliamps","ValueMax":"100","ValueMin":"0","ValueName":"AblMaxMilliamps","ValueStep":"1","ValueType":"text"}]}';
 let errModal = new bootstrap.Modal(document.getElementById('errorModal'));
+
 // We're going to create one object to store our stuff, and add listeners for when values are changed.
 let data = {
-    storeInternal: [],
     devicesInternal:[],
-    storeListener: function(val) {},
+    systemInternal:[],
+    audioScenes:[],
+    ambientScenes:[],
+    audioDevices:[],
+    usbDevices:[],
+    version:"",
+    load: function(val){
+        if (val.hasOwnProperty("SystemData")) {
+            this.systemInternal = val["SystemData"];
+            console.log("Loaded system data: ", this.systemInternal);
+            this.systemListener(this.systemInternal);
+        }
+        if (val.hasOwnProperty("Devices")) {
+            this.devicesInternal = val["Devices"];
+            this.devicesInternal.sort((a, b) => (a.Name > b.Name) ? 1 : -1);
+            console.log("Loaded devices: ", this.devicesInternal);
+            this.devicesListener(this.devicesInternal);
+        }
+        if (val.hasOwnProperty("Dev_Usb")) {
+            this.usbDevices = val["Dev_Usb"];
+        }
+        if (val.hasOwnProperty("Dev_Audio")) {
+            this.audioDevices = val["Dev_Audio"];
+        }
+        if (val.hasOwnProperty("Version")) {
+            this.version = val["Version"];
+        }
+        if (val.hasOwnProperty("AmbientScenes")) {
+            this.ambientScenes = val["AmbientScenes"];
+        }
+        if (val.hasOwnProperty("AudioScenes")) {
+            this.audioScenes = val["AudioScenes"];
+        }
+    },
+    systemListener: function(val) {},
+    set SystemData(val) {
+        this.systemInternal = val;
+        this.systemListener(val);
+    },
+    get SystemData() {
+        return this.systemInternal;
+    },
     devicesListener: function(val) {},
-    set store(val) {
-        this.storeInternal = val;
-        this.storeListener(val);
-    },
-    get store() {
-        return this.storeInternal;
-    },
-    set devices(val) {
+    set Devices(val) {
         this.devicesInternal = val;
+        this.devicesInternal.sort((a, b) => (a.Name > b.Name) ? 1 : -1);
         this.devicesListener(val);
     },
-    get devices() {
+    get Devices() {
         return this.devicesInternal;
     },
-    registerStoreListener: function(listener) {
-        this.storeListener = listener;        
+    deleteDevice(id) {
+        let devs = this.devicesInternal;
+        let newDevs = [];
+        for (let i = 0; i < devs.length; i++) {
+            if (devs[i].Id !== id) {
+                newDevs.push(devs[i]);
+            } 
+        }
+        this.devicesInternal = newDevs;
+        this.devicesInternal.sort((a, b) => (a.Name > b.Name) ? 1 : -1);
+        this.devicesListener(this.devicesInternal);
+    },
+    getDevice(id) {
+        for (let i=0; i < this.devicesInternal.length; i++) {
+            if (id === this.devicesInternal[i].Id) {
+                return this.devicesInternal[i];
+            }
+        }
+        return null;
+    },
+    setDevice(deviceData) {
+        let exists = false;
+        for (let i=0; i < this.devicesInternal.length; i++) {
+            if (deviceData.Id === this.devicesInternal[i].Id) {
+                this.devicesInternal[i] = deviceData;
+                exists = true;
+            }
+        }
+        if (!exists) this.devicesInternal.push(deviceData);
+      this.devicesInternal.sort((a, b) => (a.Name > b.Name) ? 1 : -1);
+      this.devicesListener(this.devicesInternal);
+    },
+    getProp(string) {
+        if (this.systemInternal.hasOwnProperty(string)) return this.systemInternal[string];
+        return null;
+    },
+    setProp(string, value) {
+        if (this.systemInternal.hasOwnProperty(string)) {
+            let check = this.systemInternal[string];
+            // If types match, set it
+            if (typeof(check) === typeof(value)) {
+                console.log("Type match, setting ", string, value);
+                this.systemInternal[string] = value;
+                return;
+            }
+            // If not, try a conversion
+            switch (typeof (check)) {
+                case "number":
+                    console.log("NUM NUM");
+                    let num = parseInt(value);
+                    if (typeof(num) === typeof(check)) {
+                        console.log("Setting (parsed num)", string, num);
+                        this.systemInternal[string] = num;
+                    } else {
+                        console.log("FAIL: " + typeof(num));
+                    }
+                    break;
+                case "string":
+                    let str = value.toString();
+                    if (isValid(str)) {
+                        console.log("Setting (string conversion)", string, str);
+                        this.systemInternal[string] = str;
+                    }
+                    break;
+                case "boolean":
+                    if (value === 0) this.systemInternal[string] = false;
+                    if (value === 1) this.systemInternal[string] = true;
+                    if (value === "false" || value === "false") this.systemInternal[string] = true;
+                    if (value === "true" || value === "True") this.systemInternal[string] = true;
+                    break;
+                case "object":
+                    if (value === null) this.systemInternal[string] = value;
+                    if (typeof(value) === "string") {
+                        try {
+                            let obj = JSON.parse(value);
+                            if (typeof(obj) === "object" && isValid(obj)) {
+                                console.log("Parsed...");
+                                this.systemInternal[string] = obj;
+                            } 
+                        } catch {
+                            console.log("Error...");
+                        }
+                    }
+                    break;
+                case "undefined":
+                    console.log("Can't set undefined prop: ", string, value);
+                    break;
+            }
+            this.systemListener();
+        } else {
+            console.log("Property doesn't exist, stupid: ");
+        }
+    },
+    registerSystemListener: function(listener) {
+        this.systemListener = listener;        
     },
     registerDevicesListener: function(listener) {
         this.devicesListener = listener;
     }
 };
 
-data.registerStoreListener(function() {
-    if (loadTimeout === null || loadCalled) {
-        loadCalled = false;
-        loadUi();        
+data.registerSystemListener(function() {
+    if (loadTimeout !== null) {
+        clearTimeout(loadTimeout);
+        loadTimeout = null;
     }
+    loadTimeout = setTimeout(function() {
+        console.log("Re-loading UI via listener.");
+        loadUi();
+        clearTimeout(loadTimeout);
+        loadTimeout = null;
+    }, 250);
 });
 
 data.registerDevicesListener(function() {
-    loadDevices();
+    if (devTimeout !== null) {
+        clearTimeout(devTimeout);
+        devTimeout = null;
+    }
+    devTimeout = setTimeout(function() {
+        loadDevices();
+    }, 500);
 });
 
 let websocket = new signalR.HubConnectionBuilder()
@@ -103,15 +244,14 @@ document.addEventListener("DOMContentLoaded", function(){
     setTimeout(function() {
         new Image().src = "../img/sectoring_screen.png";        
     }, 1000);
-    setInterval(function() {checkReload()},250);
 });
 
 function loadPickr() {
-    let sd = getStoreProperty("SystemData");
+    console.log("Creating pickr", data.getProp("AmbientColor"));
     pickr = Pickr.create({
         el: '.pickrBtn',
         theme: 'nano',
-        default: "#" + sd.AmbientColor,
+        default: "#" + data.getProp("AmbientColor"),
         swatches: [
             'rgb(255, 0, 0)',
             'rgb(255, 128, 0)',
@@ -141,33 +281,28 @@ function loadPickr() {
     pickr.on('change', (color, source, instance) => {
         let col = color.toHEXA();
         newColor = col[0] + col[1] + col[2];
-    }).on('changestop', (source, instance) => {
-        let sd = getStoreProperty("SystemData");
-        sd["AmbientColor"] = newColor;
-        sd["AmbientShow"] = -1;
+    }).on('changestop', (source, instance) => {        
+        data.setProp("AmbientColor", newColor);
+        data.setProp("AmbientShow", -1);
         let asSelect = document.getElementById("AmbientShow");
         asSelect.value = "-1";
         pickr.setColor("#" + newColor);
-        setStoreProperty("SystemData",sd);
-        sendMessage("SystemData",sd);
+        sendMessage("SystemData",data.SystemData);
 
     }).on('swatchselect', (color, instance) => {
         let col = color.toHEXA();
         newColor = col[0] + col[1] + col[2];
-        let sd = getStoreProperty("SystemData");
-        sd["AmbientColor"] = newColor;
-        sd["AmbientShow"] = -1;
+        data.setProp("AmbientColor", newColor);
+        data.setProp("AmbientShow", -1);
         let asSelect = document.getElementById("AmbientShow");
         asSelect.value = "-1";
         pickr.setColor("#" + newColor);
-        setStoreProperty("SystemData",sd);
-        sendMessage("SystemData",sd);
+        sendMessage("SystemData",data.SystemData);
     });
-
 }
 
 function loadCounts() {
-    let sd = data.store["SystemData"];
+    let sd = data.SystemData;
     leftCount = 0;
     rightCount = 0;
     topCount = 0;
@@ -177,7 +312,7 @@ function loadCounts() {
 
     if (!isValid(sd)) return;
     let target = sd["DsIp"];
-    let devs = data.store["Devices"];
+    let devs = data.Devices;
     let devSelect = document.getElementById("targetDs");
     if (isValid(devSelect)) {
         for (let i = 0; i < devSelect.options.length; i++) {
@@ -223,15 +358,12 @@ function loadCounts() {
 }
 
 // Send a message to the server, websocket or not
-function sendMessage(endpoint, sData, encode=true) {
+function sendMessage(endpoint, sData, encode= true) {
+    let input = sData;
     if (encode && isValid(sData)) sData = JSON.stringify(sData);
-    // Set a .5s timeout so that responses from sent messages aren't loaded
-    loadTimeout = setTimeout(function(){
-        loadTimeout = null;
-    },500);
     if (socketLoaded) {
         if (isValid(sData)) {
-            console.log("Sending message: " + endpoint, sData);
+            console.log("Sending message: " + endpoint, input);
             websocket.invoke(endpoint, sData).catch(function (err) {
                 return console.error("Error: ", err);
             });
@@ -241,6 +373,7 @@ function sendMessage(endpoint, sData, encode=true) {
             });
         }
     } else {
+        console.log("Posting: " + endpoint, input);
         doPost(endpoint, data);
     }
 }
@@ -258,8 +391,7 @@ function doPost(endpoint, payload) {
             let postResult = this.json;
             if (endpoint === "loadData") {
                 let stuff = postResult.replace(/\\n/g, '');
-                data.store = JSON.parse(stuff);
-                loadUi();
+                data.load(JSON.parse(stuff));
             }
         }
     };
@@ -283,6 +415,7 @@ function setSocketListeners() {
 
     websocket.on("mode", function (mode) {
         setMode(mode);
+        data.setProp("DeviceMode",mode);
     });
 
     websocket.on("cpuData", function (cpuData) {
@@ -290,7 +423,7 @@ function setSocketListeners() {
         let tempText = $("#temperature");
         let cpuText = $("#cpuPct");
         let overIcon = $("#overIcon");
-        let sd = data.store["SystemData"];
+        let sd = data.SystemData;
         let tempUnit = "°F";
 
         if (isValid(sd)) {
@@ -375,8 +508,10 @@ function setSocketListeners() {
     websocket.on('olo', function(stuff) {
         stuff = stuff.replace(/\\n/g, '');
         let parsed = JSON.parse(stuff);
-        reload = true;
-        toLoad = parsed;        
+        if (isValid(parsed)) {
+            console.log("Loading data.");
+            data.load(parsed);   
+        }                
     });
     
     websocket.on('inputImage',function(data) {
@@ -389,15 +524,28 @@ function setSocketListeners() {
     
     websocket.on('deleteDevice', function(id) {
        console.log("Removing device: ", id);
-        let idx = -1;
-        for(let i = 0; i < data.devices.length; i++) {
-            if (data.devices[i].Id === id) {
-                idx = i;
+        data.deleteDevice(id);
+        if (isValid(deviceData) && deviceData["Id"] === id) {
+            if (expanded) {
+                closeCard().then(function(){
+                    let devCard = document.querySelector('.devCard[data-id="'+id+'"]');
+                    if (isValid(devCard)) {
+                        devCard.classList.add('min');
+                        setTimeout(function(){
+                            devCard.remove();
+                        },750);
+                    }           
+                });
             }
-        }
-        if (idx !== -1) data.devices.splice(idx, 1);
-        let devCard = document.querySelector('.devCard[data-id="'+id+'"]');
-        devCard.remove();
+        } else {
+            let devCard = document.querySelector('.devCard[data-id="'+id+'"]');
+            if (isValid(devCard)) {
+                devCard.classList.add('min');
+                setTimeout(function(){
+                    devCard.remove();
+                }, 500);
+            }    
+        }        
     });
     
     websocket.on('frames', function(stuff) {
@@ -406,29 +554,29 @@ function setSocketListeners() {
     });
 
     websocket.on('device', function(dData) {
-        //dData = dData.replace(/\\n/g, '');
-        let stuff = JSON.parse(dData);
-        console.log("Got device data: ", dData);
-        stuff["Id"] = stuff["id"];
-        for(let i=0; i<data.devices.length; i++) {
-           let dev = data.devices[i];
-           if (dev["Id"] === stuff["Id"]) {
-               console.log("Device updated: ",stuff);
-               data.devices[i] = mergeDeviceData(dev,stuff);
-           }
-           
-           if (isValid(deviceData) && deviceData["Id"] === stuff["Id"]) {
-               deviceData["LastSeen"] = stuff["LastSeen"];
-               if (Object.toJSON(deviceData) === Object.toJSON(stuff)) {
-                   console.log("DD exactly matches stuff, no need to reload?");
-               } else {
-                   deviceData = mergeDeviceData(deviceData,stuff);
-                   if (settingsShown) createDeviceSettings();    
-               }               
-           }
-           
+        let parsed = JSON.parse(dData);
+        if (isValid(parsed) && isValid(parsed.Id)) {
+            console.log("Got device data: ", parsed);    
+        } else {
+            console.log("Device data is invalid:", dData);
+            return;
         }
-        loadDevices();
+        
+        let existing = data.getDevice(parsed.Id);
+        console.log("Existing:",existing);
+        data.setDevice(parsed);
+        if (isValid(existing) && existing !== null) {
+            // Check if dev settings are shown and refresh them
+            if (isValid(deviceData) && deviceData["Id"] === parsed["Id"]) {
+                deviceData["LastSeen"] = parsed["LastSeen"];
+                if (Object.toJSON(deviceData) === Object.toJSON(parsed)) {
+                    console.log("DD exactly matches stuff, no need to reload?");
+                } else {
+                    deviceData = parsed;
+                    if (settingsShown) createDeviceSettings();
+                }
+            }    
+        }
     });
 
     websocket.onclose(function() {
@@ -441,36 +589,6 @@ function setSocketListeners() {
             if (++i >= 100 || socketLoaded) clearInterval(intr);
         }, 5000);
     })
-}
-
-function checkReload() {
-    if (reload !== true) return;
-    reload = false;
-    let parsed = toLoad;
-    toLoad = null;
-    console.log("Data loaded: ", parsed);
-    data.store = parsed;
-    loadUi();
-    if (isValid(parsed["SystemData"]) && parsed["SystemData"]["SkipTour"] !== true) {
-        //Show intro here
-        if (!demoLoaded) {
-            demoLoaded = true;
-            showIntro();
-        }
-    }
-}
-
-function mergeDeviceData(existing, newDev) {
-    let clone = existing;
-    for (const [key, value] of Object.entries(existing)) {
-        let titleKey = key[0].toUpperCase() + key.substring(1);
-        for (const [nKey, nValue] of Object.entries(newDev)) {
-            if (key.toLowerCase() === nKey.toLowerCase()) {
-                clone[titleKey] = nValue;        
-            }
-        }
-    }
-    return clone;
 }
 
 // Initialize our websocket
@@ -514,7 +632,7 @@ function showSocketError() {
 }
 
 function TriggerRefresh() {
-    let sd = data.store["SystemData"];
+    let sd = data.SystemData;
     let refreshIcon = document.getElementById("refreshIcon");
     if (refreshTimer == null) {
         if (!isValid(sd)) return;
@@ -564,28 +682,15 @@ function setListeners() {
             return;
         }
         
-        let intProps = [
-            "CaptureMode", "ScreenCapMode", "PreviewMode", "AutoUpdateTime", "BaudRate",
-        ];
-        if (intProps.includes(property)) {
-            val = parseInt(val);            
-        }
-        
-        let sd;
         if (isValid(obj) && isValid(property) && isValid(val) && obj === "SystemData") {
-            console.log("Trying to set: ", obj, property, val);
-            let numVal = parseInt(val);
-            let skipProps = ["DsIp", "OpenRgbIp","GammaCorrection"];
-            if (!isNaN(numVal) && !skipProps.includes(property)) val = numVal;            
-            console.log("System data update.");
-            data.store[obj][property] = val;
-            sd = data.store[obj];
+            console.log("Setting system property: ", obj, property, val);
+            data.setProp(property, val);
             if (property === "ScreenCapMode" || property === "CaptureMode" || property === "StreamMode") {
                 updateCaptureUi();
             }
             
-            console.log("Sending updated object: ", obj, sd);
-            sendMessage(obj, sd,true);
+            console.log("Sending updated object: ", obj, data.SystemData);
+            sendMessage(obj, data.SystemData,true);
                                     
             if (property === "LeftCount" || property === "RightCount" || property ==="TopCount" || property === "BottomCount") {
                 let lPreview = document.getElementById("sLedWrap");
@@ -697,7 +802,21 @@ function handleClick(target) {
             let deviceId = deviceData["Id"];
             let devName = deviceData["Name"];
             if (confirm('Warning! The device named ' + devName + " will have all settings removed. Do you want to continue?")) {
-                closeCard().then();
+                closeCard().then(function(){
+                    data.deleteDevice(deviceId);
+                    let devCard = document.querySelector('.devCard[data-id="'+deviceId+'"]');
+                    if (isValid(devCard)) {
+                        if (isValid(devCard)) {
+                            setTimeout(function(){
+                                devCard.classList.add('min');
+                                setTimeout(function(){
+                                    devCard.remove();
+                                }, 750);    
+                            },1500);                            
+                        }
+                    }
+                });
+                
                 sendMessage("DeleteDevice", deviceId, false);
                 console.log('Deleting device.');
             } else {
@@ -710,7 +829,7 @@ function handleClick(target) {
             } else {
                 let devId = target.getAttribute("data-target");
                 console.log("Device id: ", devId);
-                deviceData = findDevice(devId);
+                deviceData = data.getDevice(devId);
                 if (devId === "-1") deviceData = JSON.parse(ledData);
                 showDeviceCard(target).then();
             }
@@ -726,8 +845,7 @@ function handleClick(target) {
                 target.setAttribute("data-enabled","true");
                 icon.innerText = "cast_connected";
             }
-            deviceData = findDevice(dId);
-            //data.devices[devId]["Enable"] = (devEnabled !== "true");
+            deviceData = data.getDevice(dId);
             updateDevice(dId,"Enable",(devEnabled !== "true"));
             break;
         case target.classList.contains("refreshBtn"):
@@ -735,6 +853,7 @@ function handleClick(target) {
             break;
         case target.classList.contains("modeBtn"):
             let newMode = parseInt(target.getAttribute("data-mode"));
+            data.setProp("DeviceMode",mode);
             setMode(newMode);
             sendMessage("Mode", newMode, false);
             break;
@@ -752,7 +871,6 @@ function handleClick(target) {
                 }
             }
             document.querySelector(cDiv).classList.add("show", "active");
-            loadSettings();
             break;
     }
 }
@@ -875,7 +993,7 @@ function setLightMap(map) {
 
 function setMode(newMode) {    
     mode = newMode;
-    console.log("Updating mode: " + mode);
+    console.log("Updating mode: " + mode);    
     let target = document.querySelector("[data-mode='"+mode+"']");    
     let others = document.querySelectorAll(".modeBtn");
     for (let i=0; i< others.length; i++) {
@@ -898,15 +1016,14 @@ function setMode(newMode) {
         case 4:
         case 2:
             audioNav.classList.add("show");
-            audioNav.classList.remove("hide");
-            
+            audioNav.classList.remove("hide");            
     }
         
     sizeContent();
 }
 
 function setModeButtons() {
-    let sd = data.store["SystemData"];
+    let sd = data.SystemData;
     let capMode = sd["CaptureMode"];
     let streamMode = sd["StreamMode"];
     let videoBtns = document.querySelectorAll(".videoBtn");
@@ -944,60 +1061,15 @@ function setModeButtons() {
 function loadUi() {
     loadCounts();
     setModeButtons();
-    let mode = getStoreProperty("DeviceMode"); 
-    let autoDisabled = getStoreProperty("AutoDisabled");
-    let version = getStoreProperty("Version");
-    let vDiv = document.getElementById("versionDiv");
-    vDiv.innerHTML="Glimmr Version: " + version.toString();
-    let sd;
-    if (isValid(data.store["SystemData"])) {
-        if (!isValid(pickr)) loadPickr();
-        sd = data.store["SystemData"];
-        let theme = sd["Theme"];
-        loadTheme(theme);
-        mode = sd["DeviceMode"];
-        autoDisabled = sd["AutoDisabled"];
-        if (autoDisabled) mode = 0;
-        if (isValid(data.store["AmbientScenes"])) {
-            let scenes = data.store["AmbientScenes"];
-            let ambientMode = sd["AmbientShow"];
-            scenes.sort((a, b) => (a.Id > b.Id) ? 1 : -1);
-            let sceneSelector = document.getElementById("AmbientShow");
-            sceneSelector.innerHTML = "";
-            for(let i=0; i < scenes.length; i++) {
-                let opt = document.createElement("option");
-                opt.value = scenes[i]["Id"];
-                opt.innerText = scenes[i]["Name"];
-                if (opt.value === ambientMode) opt.selected = true;
-                sceneSelector.appendChild(opt);
-            }
-            sceneSelector.value = ambientMode;
-        }
-        if (isValid(data.store["AudioScenes"])) {
-            let aScenes = data.store["AudioScenes"];
-            let audioMode = sd["AudioMap"];
-            aScenes.sort((a, b) => (a.Id > b.Id) ? 1 : -1);
-            let sceneSelector = document.getElementById("AudioMap");
-            sceneSelector.innerHTML = "";
-            for(let i=0; i < aScenes.length; i++) {
-                let opt = document.createElement("option");
-                opt.value = aScenes[i]["Id"];
-                opt.innerText = aScenes[i]["Name"];
-                if (opt.value === audioMode) opt.selected = true;
-                sceneSelector.appendChild(opt);
-            }
-            sceneSelector.value = audioMode;
-        }
-        pickr.setColor("#" + sd["AmbientColor"]);
-    }
+    getDevices();
     
-    if (isValid(data.store["Dev_Audio"])) {
+    if (isValid(data.audioDevices)) {
         let recList = document.getElementById("RecDev");
         for (let i = 0; i < recList.options.length; i++) {
             recList.options[i] = null;
         }
-        let recDevs = data.store["Dev_Audio"];
-        let recDev = getStoreProperty("RecDev");
+        let recDevs = data.audioDevices;
+        let recDev = data.getProp("RecDev");
         if (isValid(recDevs)) {
             for (let i = 0; i < recDevs.length; i++) {
                 let dev = recDevs[i];
@@ -1011,15 +1083,12 @@ function loadUi() {
     } else {
         console.log("No recording devices found.");
     }
-    let sectorMap = getStoreProperty("AudioMap");
-    if (isValid(sectorMap)) {
-        let mapImg = document.getElementById("audioMapImg");
-        mapImg.setAttribute("src","./img/MusicMode" + sectorMap + ".png");
-    }
-    
+
+    let mode = data.getProp("DeviceMode");
+    let autoDisabled = data.getProp("AutoDisabled");
     if (autoDisabled) mode = 0;
     setMode(mode);
-    getDevices();
+    
     if (!listenersSet) {
         setListeners();
         let tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
@@ -1027,6 +1096,53 @@ function loadUi() {
             return new bootstrap.Tooltip(tooltipTriggerEl)
         });        
     }
+
+    let version = data.version;
+    let vDiv = document.getElementById("versionDiv");
+    vDiv.innerHTML="Glimmr Version: " + version.toString();
+    let sd = data.SystemData;
+    if (isValid(sd)) {
+        if (!isValid(pickr)) loadPickr();
+        let theme = sd["Theme"];
+        loadTheme(theme);
+        mode = sd["DeviceMode"];
+        autoDisabled = sd["AutoDisabled"];
+        if (autoDisabled) mode = 0;
+        if (isValid(data.ambientScenes)) {
+            let scenes = data.ambientScenes;
+            let ambientMode = sd["AmbientShow"];
+            scenes.sort((a, b) => (a.Id > b.Id) ? 1 : -1);
+            let sceneSelector = document.getElementById("AmbientShow");
+            sceneSelector.innerHTML = "";
+            for(let i=0; i < scenes.length; i++) {
+                let opt = document.createElement("option");
+                opt.value = scenes[i]["Id"];
+                opt.innerText = scenes[i]["Name"];
+                if (opt.value === ambientMode) opt.selected = true;
+                sceneSelector.appendChild(opt);
+            }
+            sceneSelector.value = ambientMode;
+        }
+        if (isValid(data.audioScenes)) {
+            let aScenes = data.audioScenes;
+            let audioMode = sd["AudioMap"];
+            aScenes.sort((a, b) => (a.Id > b.Id) ? 1 : -1);
+            let sceneSelector = document.getElementById("AudioMap");
+            sceneSelector.innerHTML = "";
+            for(let i=0; i < aScenes.length; i++) {
+                let opt = document.createElement("option");
+                opt.value = aScenes[i]["Id"];
+                opt.innerText = aScenes[i]["Name"];
+                if (opt.value === audioMode) opt.selected = true;
+                sceneSelector.appendChild(opt);
+            }
+            sceneSelector.value = audioMode;
+        }
+        let color ="#" + sd["AmbientColor"];
+        console.log("Pickr color should be: " + color);
+        pickr.setColor(color);
+    }
+
     sizeContent();
     document.getElementById("cardRow").click();
 }
@@ -1042,7 +1158,8 @@ function showIntro() {
             onStart: function(){
                 console.log("Creating demo device card.");
                 let ledObj = JSON.parse(ledData);
-                loadDevice(ledObj,true);
+                let newCard = createDeviceCard(ledObj,true);
+                document.getElementById("cardRow").prepend(newCard);
                 if (settingsShown) toggleSettingsDiv().then();
             },
             onEnd: function(){
@@ -1055,7 +1172,7 @@ function showIntro() {
                 } else {
                     devCard.remove();
                 }
-                let sd = getStoreProperty("SystemData");
+                let sd = data.SystemData;
                 sd.SkipTour = true;
                 sendMessage("SystemData",sd);
             },
@@ -1240,7 +1357,7 @@ function showIntro() {
                         scrollDevPref(myTour.getStep(myTour.getCurrentStep() + 1))
                     },
                     onPrev: function() {
-                        closeCard();
+                        closeCard().then();
                     }
                 },
                 {
@@ -1352,7 +1469,8 @@ function loadTheme(theme) {
 }
 
 function loadSettings() {
-    let systemData = data.store["SystemData"];
+    let systemData = data.SystemData;
+    console.log("No, really, loading sd: ", systemData);
     let updateTime = systemData["AutoUpdateTime"].toString();
     let timeSelect = document.getElementById("AutoUpdateTime");
     if (isValid(timeSelect)) {
@@ -1384,9 +1502,6 @@ function loadSettings() {
         }
         timeText.innerHTML = "Updates will be installed at "+updateTime.toString()+":00"+ampm+" every day when enabled.";
     }
-    
-    if (data.store == null) return;
-    
     if (isValid(systemData)) {
         loadSettingObject(systemData);
         updateCaptureUi();
@@ -1402,7 +1517,7 @@ function loadSettings() {
 }
 
 function updateCaptureUi() {
-    let systemData = data.store["SystemData"];
+    let systemData = data.SystemData;
     if (!isValid(systemData)) return;
     let capGroups = document.querySelectorAll(".capGroup");
     let mode = systemData["CaptureMode"].toString();
@@ -1441,7 +1556,7 @@ function updateCaptureUi() {
             usbSel.options[i] = null;
         }
     }
-    let usbDevs = data.store["Dev_Usb"];
+    let usbDevs = data.usbDevices;
 
     let opt = document.createElement("option");
     opt.value = "";
@@ -1491,8 +1606,6 @@ function loadSettingObject(obj) {
                 }
             }
             
-            
-            
             if (isValid(target) && prop !== "SelectedMonitors" && prop !== "ScreenCapMode") {
                 if (value === true) {
                     target.setAttribute('checked', "true");
@@ -1506,30 +1619,63 @@ function loadSettingObject(obj) {
 
 function loadDevices() {    
     if (demoLoaded) return;
+    let blankCard = $("#blankCard");
+    if (isValid(blankCard)) blankCard.remove();
+    let devs = data.Devices;
     let container = $("#cardRow");
-    container.innerHTML = "";
-    for (let i = 0; i< data.devices.length; i++) {
-        if (data.devices.hasOwnProperty(i)) {
-            let device = data.devices[i];
-            loadDevice(device, false);
-        }         
+    let cards = container.querySelectorAll(".card.devCard");
+    let empty = (cards.length === 0); 
+    for (let i = 0; i< devs.length; i++) {
+        let pos = i - 1;
+        let card = null;
+        if (devs.hasOwnProperty(i)) {
+            let deviceData = devs[i];
+            card = createDeviceCard(deviceData, false);
+            if (isValid(card) && card !== null) {
+                setTimeout(function(){
+                    card.classList.remove("min");
+                },250);
+                if (empty) {
+                    container.append(card);                    
+                    continue;
+                }
+                
+                let exCard = document.querySelector(".devCard[data-id='"+deviceData.Id+"']");
+                console.log("Excard:", exCard);
+                if (isObject(exCard)) {
+                    if (JSON.stringify(exCard) !== JSON.stringify(card)) {
+                        console.log("Replacing card...");
+                        container.replaceChild(card, exCard);
+                    }
+                    
+                } else if (pos !== -1 && container.children.length >= i + 1) {
+                    console.log("Inserting before ", i);
+                    container.insertBefore(card, container.children[i]);   
+                } else {
+                    if (i === 0) {
+                        console.log("Prepending...");
+                        container.prepend(card);
+                    } else {
+                        container.append(card);
+                    }
+                }          
+            }            
+        }                 
     }
-    //if (demoLoaded) introJs().refresh();
 }
 
-function loadDevice(device, addDemoText) {
-    let container = $("#cardRow");
+function createDeviceCard(device, addDemoText) {
     if (device.Tag === "DreamScreen" && device["DeviceTag"].includes("DreamScreen")) return;
     // Create main card
-    let mainDiv = document.createElement("div");
+    let card = document.createElement("div");
     if (addDemoText) {
-        mainDiv.id = "devCard";        
+        card.id = "devCard";        
     }
-    mainDiv.classList.add("card", "m-4", "devCard");
-    mainDiv.setAttribute("data-id",device.Id);
+    card.classList.add("card", "m-4", "devCard");
+    card.setAttribute("data-id",device.Id);
     // Create card body
-    let bodyDiv = document.createElement("div");
-    bodyDiv.classList.add("card-body");
+    let cardBody = document.createElement("div");
+    cardBody.classList.add("card-body");
     // Create title/subtitle headers
     let title = document.createElement("h5");
     let subTitle = document.createElement("h6");
@@ -1641,8 +1787,6 @@ function loadDevice(device, addDemoText) {
     brightCol.appendChild(brightnessSlide);
     brightnessRow.appendChild(brightCol);
     
-
-
     // Put it all together
     iconCol.appendChild(image);
     titleCol.appendChild(title);
@@ -1651,21 +1795,20 @@ function loadDevice(device, addDemoText) {
     titleRow.appendChild(iconCol);
     titleRow.appendChild(titleCol);
     
-    bodyDiv.appendChild(titleRow);
-    bodyDiv.appendChild(settingsRow);
-    bodyDiv.appendChild(brightnessRow);
-    mainDiv.appendChild(bodyDiv);
-    if (addDemoText) {
-        container.prepend(mainDiv);
-    } else {
-        container.appendChild(mainDiv);
-    }
+    cardBody.appendChild(titleRow);
+    cardBody.appendChild(settingsRow);
+    cardBody.appendChild(brightnessRow);
+    card.appendChild(cardBody);
+    card.classList.add("min");    
+    return card;
 }
 
 function isValid(toCheck) {
-    return !(toCheck === null || toCheck === undefined || toCheck === "");
-    
+    if (toCheck == null) return false;
+    return toCheck !== "";       
 }
+
+const isObject = (value) => typeof value === "object" && value !== null;
 
 function getObj(group, key, val) {
     if (isValid(group)) {
@@ -1695,13 +1838,8 @@ function setObj(group, key, val, obj) {
     return group;
 }
 
-
 function getDevices() {
-    let d = data.store["Devices"];
-    if (isValid(d)) {
-        d.sort((a, b) => (a.Name > b.Name) ? 1 : -1);
-        data.devices = d;
-    } else {
+    if (!isValid(data.Devices)) {
         sendMessage("ScanDevices");
     }
 }
@@ -1713,11 +1851,11 @@ function updateDevice(id, property, value) {
         dev = deviceData;
         isLoaded = true;
     } else {
-        dev = findDevice(id);
+        dev = data.getDevice(id);
     }
     if (isValid(dev) && dev.hasOwnProperty(property)) {
         dev[property] = value;
-        saveDevice(dev);
+        data.setDevice(dev);
         sendMessage("updateDevice", dev, true);
     }    
     if (isLoaded) {
@@ -1729,30 +1867,6 @@ function updateDevice(id, property, value) {
 
     }
     
-}
-
-// Find device by id in datastore
-function findDevice(id) {
-    for (let i=0; i < data.devices.length; i++) {
-        if (data.devices[i]) {
-            if (data.devices[i]["Id"] === id) {
-                return data.devices[i];
-            }
-        }
-    }
-    return null;
-}
-
-// Save device by id in datastore
-function saveDevice(deviceData) {
-    for(let i=0; i < data.devices.length; i++) {
-        if (data.devices[i]) {
-            if(data.devices[i]["Id"] === deviceData["Id"]) {
-                data.devices[i] = deviceData;
-                return;
-            }
-        }
-    }
 }
 
 function loadData() {
@@ -1778,31 +1892,6 @@ function setCookie(cname, cvalue, exdays) {
 }
 
 
-function getStoreProperty(name) {
-    let store = data.store;
-    if (!isValid(store)) return null;
-    let sysData = store["SystemData"];
-    if (isValid(sysData) && isValid(sysData[0])) {
-        if (name === "SystemData") return sysData;
-        if (sysData.hasOwnProperty(name)) {
-            return sysData[name];
-        }
-    }
-
-    if (data.store.hasOwnProperty(name)) {
-        return data.store[name];
-    }
-    
-    return null;
-}
-
-function setStoreProperty(name, value) {
-    let store = data.store;
-    if (!isValid(store)) return;
-    if (data.store.hasOwnProperty(name)) {
-        data.store[name] = value;
-    }
-}
 
 const toggleExpansion = (element, to, duration = 350) => {
     return new Promise((res) => {
@@ -2198,7 +2287,7 @@ function appendHueSettings() {
 
 function drawLinkPane(type, linked) {
     let wrap = document.createElement("div");
-    wrap.classList.add("row", "col-12", "justify-content-center");
+    wrap.classList.add("row", "col-12", "justify-content-center", "delSetting");
     let header = document.createElement("div");
     header.classList.add("header");
     header.classList.add("text-light");
@@ -2268,7 +2357,7 @@ function appendBeamMap() {
         if (isValid(beamLayout)) {
             let items = beamLayout["Segments"];
             if (items.length > 0) {
-                let beamDiv = document.createElement("div");
+                let beamDiv = document.createElement("div", "delSetting");
                 beamDiv.id = "BeamDiv";
                 beamDiv.classList.add("sortable");
                 items.sort((a, b) => (a["Position"] > b["Position"]) ? 1 : -1);
@@ -2389,7 +2478,7 @@ function appendBeamLedMap() {
     let noteDiv = document.getElementById("noteDiv");
     if (isValid(noteDiv)) noteDiv.remove();
     noteDiv = document.createElement("div");
-    noteDiv.classList.add("col-12", "subtitle", "noteDiv");
+    noteDiv.classList.add("col-12", "subtitle", "noteDiv", "delSetting");
     noteDiv.id = "noteDiv";
     noteDiv.innerHTML = "Note: Lifx beams are spaced so that 10 LEDs/beam equal 20 LEDs within Glimmr.";
     
@@ -2397,11 +2486,9 @@ function appendBeamLedMap() {
     createBeamLedMap();
 }
 
-
 function createSectorCenter(targetElement, regionName) {
     let exMap = targetElement.querySelector("#sectorMap");
     if (isValid(exMap)) exMap.remove();
-
     let tgt = targetElement;
     let cs = getComputedStyle(tgt);
     let paddingX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
@@ -2421,7 +2508,7 @@ function createSectorCenter(targetElement, regionName) {
     let fWidth = (w - wMargin - wMargin) / hSectors;
     let map = document.createElement("div");
     map.id = "sectorMap";
-    map.classList.add("sectorMap");
+    map.classList.add("sectorMap", "delSetting");
     map.style.top = imgT + "px";
     map.style.left = imgL + "px";
     map.style.width = w + "px";
@@ -2495,7 +2582,7 @@ function createSectorMap(targetElement, regionName) {
     let fWidth = (w - wMargin - wMargin) / hSectors;
     let map = document.createElement("div");
     map.id = "sectorMap";
-    map.classList.add("sectorMap");
+    map.classList.add("sectorMap", "delSetting");
     map.style.top = imgT + "px";
     map.style.left = imgL + "px";
     map.style.width = w + "px";
@@ -2616,8 +2703,7 @@ function createSectorMap(targetElement, regionName) {
 
 function createBeamLedMap() {
     let targetElement = document.getElementById("mapWrap");
-
-    let sd = data.store["SystemData"];
+    let sd = data.SystemData;
     let colorClasses = [
         "ledRed",
         "ledOrange",
@@ -2669,7 +2755,7 @@ function createBeamLedMap() {
     let dWidth = (ftWidth + fbWidth) / 2;
     let map = document.createElement("div");
     map.id = "ledMap";
-    map.classList.add("ledMap");
+    map.classList.add("ledMap", "delSetting");
     map.style.top = imgT + "px";
     map.style.left = imgL + "px";
     map.style.width = w + "px";
@@ -2800,7 +2886,7 @@ function createBeamLedMap() {
 
 function createLedMap(targetElement) {
     let range1;
-    let sd = data.store["SystemData"];
+    let sd = data.SystemData;
     let count = 0;
     if (isValid(deviceData)) {
         count = deviceData["LedCount"];
@@ -2840,7 +2926,7 @@ function createLedMap(targetElement) {
     let dWidth = ((ftWidth + fbWidth) / 2);
     let map = document.createElement("div");
     map.id = "ledMap";
-    map.classList.add("ledMap");
+    map.classList.add("ledMap", "delSetting");
     map.style.top = imgT + "px";
     map.style.left = imgL + "px";
     map.style.width = w + "px";
@@ -2976,20 +3062,10 @@ function createLedMap(targetElement) {
         } else {
             s1.setAttribute("title", ledCount.toString());
         }
-        map.appendChild(s1);
+        map.appendChild(s1);        
         ledCount++;
     }
     targetElement.appendChild(map);
-}
-
-function ranges(ledCount, offset, total) {
-    let range = [];
-    while (range.length < offset + total) {
-        for (let i = 0; i < ledCount; i++) {
-            range.push(i);
-        }        
-    }
-    return range.slice(offset, total + offset);
 }
 
 function createHueMap() {
@@ -3010,7 +3086,7 @@ function createHueMap() {
     hueMapRow.classList.add("row");
     // Group select row
     let groupSelectCol = document.createElement("div");
-    groupSelectCol.classList.add("col-12");
+    groupSelectCol.classList.add("col-12", "delSetting");
     // Group select
     let gLabel = document.createElement("label");
     gLabel.classList.add("form-label");
@@ -3104,7 +3180,7 @@ function createHueMap() {
                 newSelect.appendChild(opt);
 
                 // Add the options for our regions
-                let sectorCount = data.store["SystemData"]["SectorCount"];
+                let sectorCount = data.getProp("SectorCount");
                 for (let i = 1; i < sectorCount; i++) {
                     opt = document.createElement("option");
                     opt.value = (i).toString();
@@ -3185,8 +3261,7 @@ function createHueMap() {
     // $('.delSel').bootstrapMaterialDesign();
 }
 
-function drawNanoShapes(panel) {
-    
+function drawNanoShapes(panel) {    
     // Get window width
     let width = document.getElementById("mapCol").offsetWidth;
     let height = width * .5625;
@@ -3436,12 +3511,23 @@ function setNanoMap(id, current) {
 
 }
 
+function ranges(ledCount, offset, total) {
+    let range = [];
+    while (range.length < offset + total) {
+        for (let i = 0; i < ledCount; i++) {
+            range.push(i);
+        }
+    }
+    return range.slice(offset, total + offset);
+}
+
 function sizeContent() {
     let navDiv = document.getElementById("mainNav");
     let footDiv = document.getElementById("footer");
     let cDiv = document.getElementById("mainContent");
     let colorDiv = document.getElementById("ambientNav");
     let audioDiv = document.getElementById("audioNav");
+    let cardRow = document.getElementById("cardRow");
     let wHeight = window.innerHeight;
     let wWidth = window.innerWidth;
     let ambientOffset = 0;
@@ -3452,9 +3538,13 @@ function sizeContent() {
         ambientOffset = audioDiv.offsetHeight;
     }
     cDiv.style.position = "fixed";
+    cardRow.style.position = "fixed";    
     cDiv.style.top = navDiv.offsetHeight + ambientOffset + "px";
+    cardRow.style.top = navDiv.offsetHeight + ambientOffset + "px";
     cDiv.style.height = wHeight - navDiv.offsetHeight - footDiv.offsetHeight - ambientOffset + "px";
+    cardRow.style.height = wHeight - navDiv.offsetHeight - footDiv.offsetHeight - ambientOffset + "px";
     cDiv.style.width = wWidth + "px";
+    cardRow.style.width = wWidth + "px";
     colorDiv.style.width = wWidth + "px";
     audioDiv.style.width = wWidth + "px";
     if (expanded) {
@@ -3493,10 +3583,7 @@ async function closeCard() {
         let closeButtons = document.querySelectorAll(".closeBtn");
         for (let i = 0; i < closeButtons.length; ++i) {
             closeButtons[i].classList.add('d-none');
-        }
-            
+        }            
     });
-    // show the original card again
-    
 }
 
