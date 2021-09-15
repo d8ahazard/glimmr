@@ -395,7 +395,8 @@ v. {version}
 		public async Task UpdateDevice(dynamic device, bool merge = true) {
 			Log.Debug($"Updating {device.Tag}...");
 			await DataUtil.AddDeviceAsync(device, merge).ConfigureAwait(false);
-			await _hubContext.Clients.All.SendAsync("device", JsonConvert.SerializeObject((IColorTargetData) device));
+			var data = DataUtil.GetDevice(device.Id);
+			await _hubContext.Clients.All.SendAsync("device", JsonConvert.SerializeObject((IColorTargetData) data));
 			await RefreshDevice(device.Id);
 		}
 

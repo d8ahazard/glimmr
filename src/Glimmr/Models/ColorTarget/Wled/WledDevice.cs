@@ -29,7 +29,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		private bool _disposed;
 		private IPEndPoint? _ep;
 		private int _ledCount;
-		private int _multiplier;
+		private float _multiplier;
 		private int _offset;
 		private StripMode _stripMode;
 		private int _targetSector;
@@ -231,29 +231,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			url += "&A=" + (int) scaledBright;
 			await _httpClient.GetAsync(url).ConfigureAwait(false);
 		}
-
-		// private async Task<WledStateData?> GetLightState() {
-		// 	var url = "http://" + IpAddress + "/json/";
-		// 	Log.Debug("URL is " + url);
-		// 	var res = await _httpClient.GetAsync(url);
-		// 	res.EnsureSuccessStatusCode();
-		// 	if (res.Content != null && res.Content.Headers.ContentType?.MediaType == "application/json") {
-		// 		var contentStream = await res.Content.ReadAsStreamAsync();
-		//
-		// 		try {
-		// 			return await JsonSerializer.DeserializeAsync<WledStateData>(contentStream,
-		// 				new JsonSerializerOptions {IgnoreNullValues = true, PropertyNameCaseInsensitive = true});
-		// 		} catch (JsonException) // Invalid JSON
-		// 		{
-		// 			Console.WriteLine("Invalid JSON.");
-		// 		}
-		// 	} else {
-		// 		Console.WriteLine("HTTP Response was invalid and cannot be de-serialised.");
-		// 	}
-		//
-		// 	return null;
-		// }
-
 
 		protected virtual async Task Dispose(bool disposing) {
 			if (_disposed) {

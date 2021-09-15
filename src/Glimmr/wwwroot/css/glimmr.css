@@ -2,6 +2,7 @@
     --fg-primary: #181818;
     --fg-secondary: #212121;
     --bg-secondary: #cfcfcf;
+    --bg-secondary-alpha: #cfcfcfab;    
     --bg-primary: #9f9f9f;
 }
 
@@ -160,10 +161,6 @@ div.btn-clear.closeBtn.closeBtn-sm, div.btn-clear.refreshBtn {
     position: relative;
 }
 
-#mapWrap {
-    padding: 0!important;
-}
-
 .tab-pane.fade.show.active {
     opacity: 100% !important;
 }
@@ -219,8 +216,12 @@ div.btn-clear.closeBtn.closeBtn-sm, div.btn-clear.refreshBtn {
     
 }
 
-.custom-control, .custom-switch {
+.custom-control:not(.hue-switch), .custom-switch:not(.hue-switch) {
     padding-left: 15px;
+}
+
+.custom-switch.hue-switch {
+    padding-left: 0 !important;
 }
 
 
@@ -475,7 +476,8 @@ input[type="range"]:not[data-object="SystemData"]::-webkit-slider-runnable-track
 }
 
 #mainSettingsCard > div > div > div.card-body {
-    padding: 0!important;
+    padding-left: 0!important;
+    padding-right: 0!important;
 }
 
 #mainSettingsCard {
@@ -510,10 +512,19 @@ input[type="range"]:not[data-object="SystemData"]::-webkit-slider-runnable-track
 
 }
 
+#ambientNav, #audioNav {
+    -webkit-transition: height 0.5s ease-in-out;
+    -moz-transition: height 0.5s ease-in-out;
+    -o-transition: height 0.5s ease-in-out;
+    transition: height 0.5s ease-in-out;
+}
+
 .hide {
     height: 0!important;
-    width: 0!important;
-    transition: height 0.4s linear;
+    -webkit-transition: height 0.5s ease-in-out;
+    -moz-transition: height 0.5s ease-in-out;
+    -o-transition: height 0.5s ease-in-out;
+    transition: height 0.5s ease-in-out;
     overflow: hidden !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -687,7 +698,7 @@ text > * {
 }
 
 .modal, .popover {
-    background: var(--bg-secondary) !important;
+    background: var(--bg-secondary-alpha) !important;
     color: var(--fg-primary) !important;
 }
 
@@ -719,7 +730,12 @@ div.btn-clear.active {
 
 
 .card.container-fluid {
-    background: var(--bg-primary) !important;
+    background: var(--bg-primary) !important;    
+}
+
+.card.container-fluid > .card-body, #stageCol {
+    padding-left: 0!important;
+    padding-right: 0!important;
 }
 
 #mainContent {

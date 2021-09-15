@@ -26,7 +26,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		[JsonProperty] public int Brightness { get; set; }
 
 		[JsonProperty] public int LedCount { get; set; }
-		[JsonProperty] public int LedMultiplier { get; set; } = 1;
+		[JsonProperty] public float LedMultiplier { get; set; } = 1.0f;
 
 		// If in normal mode, set an optional offset, strip direction, horizontal count, and vertical count.
 		[JsonProperty] public int Offset { get; set; }
@@ -111,11 +111,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		}
 
 		private SettingsProperty[] Kps() {
-			var multiplier = new SettingsProperty("LedMultiplier", "number", "LED Multiplier") {
-				ValueMin = "-5", ValueStep = "1", ValueMax = "5",
-				ValueHint = "Positive values to multiply (skip), negative values to divide (duplicate)."
-			};
-			if ((StripMode) StripMode == Enums.StripMode.Single) {
+			var multiplier = new SettingsProperty("LedMultiplier", "ledMultiplier", "");
+			if (StripMode == 3) {
 				return new[] {
 					new("sectormap", "sectormap", ""),
 					new("StripMode", "select", "Strip Mode", new Dictionary<string, string> {

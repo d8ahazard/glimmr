@@ -23,7 +23,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		private LifxData _data;
 		private int[] _gammaTable;
 		private bool _hasMulti;
-		private int _multiplier;
+		private float _multiplier;
 		private int _multiZoneCount;
 		private int _targetSector;
 

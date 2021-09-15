@@ -50,7 +50,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				}
 
 				if (ip != null) host = ip.ToString();
-			} catch (Exception e) {
+			} catch (Exception) {
 				//ignored
 			}
 			try {
@@ -99,6 +99,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			}
 
 			await _nanoleafClient.StartExternalAsync();
+			await _nanoleafClient.SetBrightnessAsync(_brightness).ConfigureAwait(false);
 			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
 		}
 
@@ -210,7 +211,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 					return;
 				}
 
-				_nanoleafClient.SetBrightnessAsync(_brightness);
+				_nanoleafClient.SetBrightnessAsync(_brightness).ConfigureAwait(false);
 			}
 
 			Enable = _data.Enable;

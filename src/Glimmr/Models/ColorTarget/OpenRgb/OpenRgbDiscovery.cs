@@ -1,20 +1,18 @@
 ﻿#region
 
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using OpenRGB.NET;
 using Serilog;
 
 #endregion
 
 namespace Glimmr.Models.ColorTarget.OpenRgb {
 	public class OpenRgbDiscovery : ColorDiscovery, IColorDiscovery {
-		public virtual string DeviceTag { get; set; } = "OpenRgb";
-
-		private readonly OpenRGBClient? _client;
+		private readonly OpenRgbAgent? _client;
 		private readonly ControlService _cs;
 
 		public OpenRgbDiscovery(ColorService colorService) : base(colorService) {
@@ -30,7 +28,6 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 			try {
 				var sd = DataUtil.GetSystemData();
-				var ip = sd.OpenRgbIp;
 				Log.Debug("Disco started...");
 
 				if (!_client.Connected) {
@@ -45,12 +42,16 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 				if (_client.Connected) {
 					Log.Debug("Client connected.");
-					var devs = _client.GetAllControllerData();
-					var idx = 0;
-					foreach (var dev in devs) {
-						var rd = new OpenRgbData(dev, idx, ip);
+					var devs = _client.GetDevices().ToArray();
+					var existing = DataUtil.GetDevices();
+					for (var i=0; i < devs.Length; i++) {
+						var dev = devs[i];
+						var rd = new OpenRgbData(dev, i, sd.OpenRgbIp);
+						foreach (var od in from IColorTargetData ex in existing where ex.Id.Contains("OpenRgb") select (OpenRgbData) ex into od where od.Matches(dev) select od) {
+							od.UpdateFromDiscovered(rd);
+							rd = od;
+						}
 						await _cs.UpdateDevice(rd).ConfigureAwait(false);
-						idx++;
 					}
 				}
 			} catch (Exception f) {

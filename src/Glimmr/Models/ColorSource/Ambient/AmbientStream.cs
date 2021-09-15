@@ -158,7 +158,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 						Log.Warning("EX: " + e.Message);
 					}
 
-					await Task.Delay(TimeSpan.FromTicks(83333), CancellationToken.None);
+					//await Task.Delay(TimeSpan.FromTicks(166666), CancellationToken.None);
 					
 				}
 

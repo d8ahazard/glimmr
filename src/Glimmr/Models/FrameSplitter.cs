@@ -13,7 +13,6 @@ using Emgu.CV.Util;
 using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Newtonsoft.Json;
 using Serilog;
 
 #endregion
@@ -45,8 +44,7 @@ namespace Glimmr.Models {
 		private Color[] _colorsSectors;
 		private Color[] _colorsSectorsIn;
 		private int _cropDelay;
-		private int _minBrightness;
-
+		
 		// Loaded settings
 		private bool _cropLetter;
 		private bool _cropPillar;
@@ -671,10 +669,6 @@ namespace Glimmr.Models {
 			}
 
 			await Task.FromResult(true);
-		}
-
-		private int[] GetInts(byte[] input) {
-			return input.Select(b => (int) b).ToArray();
 		}
 
 		private static int Sum(IEnumerable<byte> bytes) {

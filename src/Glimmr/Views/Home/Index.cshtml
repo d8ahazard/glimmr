@@ -603,17 +603,17 @@
     <div id="statDiv" class="col-10 col-md-6 col-lg-3">
         <div class="d-inline-block mr-2" id="fpsDiv" data-toggle="tooltip" data-placement="top"
              title="Current FPS">
-            <div id="fps" class="d-inline-block mb-2"></div>
+            <div id="fps" class="d-inline-block mb-2">0FPS</div>
         </div>
         <div id="tempDiv" class="d-inline-block mr-2" title="CPU Temperature" data-toggle="tooltip">
             <span class="material-icons d-inline-block statIcon">thermostat</span>
-            <div id="temperature" class="d-inline-block mb-2"></div>
+            <div id="temperature" class="d-inline-block mb-2">0°</div>
         </div>
         <div id="cpuDiv" class="d-inline-block" title="Average CPU load (all cores)" data-toggle="tooltip">
             <span class="material-icons d-inline-block statIcon">multiline_chart</span>
-            <div id="cpuPct" class="d-inline-block mb-2"></div>
+            <div id="cpuPct" class="d-inline-block mb-2">0%</div>
         </div>
-        <div id="throttleDiv" class="d-inline-block" title="System is currently throttled" data-toggle="tooltip">
+        <div id="throttleDiv" class="d-inline-block" title="System throttle state" data-toggle="tooltip">
             <span class="material-icons d-inline-block statIcon" id="overIcon"></span>
         </div>
     </div>
@@ -627,9 +627,9 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body">
-                <p>Click on the sector to map to a panel.</p>
-                <div class="nanoPreviewWrap" id="nanoPreviewWrap">
+            <div class="modal-body row justify-content-center">
+                <div class="col-12 headerCol text-center">Click on the sector to map to a panel.</div>
+                <div class="nanoPreviewWrap col-12" id="nanoPreviewWrap">
                 </div>
             </div>
         </div>

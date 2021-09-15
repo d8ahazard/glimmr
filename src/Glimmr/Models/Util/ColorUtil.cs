@@ -38,44 +38,28 @@ namespace Glimmr.Models.Util {
 			return output;
 		}
 
-		public static Color[] TruncateColors(Color[] input, int offset, int len, int multiplier = 1) {
+		public static Color[] TruncateColors(Color[] input, int offset, int len, float multiplier = 1f) {
+			if (offset >= len) {
+				offset = offset - len;
+			}
 			var output = new Color[len];
-			// Instead of doing dumb crap, just make our list of colors loop around
-
-			var total = len + offset;
-			// If we have a negative multiplier, our total should be that many times (abs) larger
-			if (multiplier < 0) {
-				total *= Math.Abs(multiplier);
-			}
-
+			var total = Convert.ToInt32((len + offset) * multiplier);
+			//Log.Debug($"Total is {total}, len is {len}, mult is {multiplier}");
 			var doubled = new Color[total];
-			var c = 0;
-			while (c < total) {
-				foreach (var col in input) {
-					if (c < total) {
-						doubled[c] = col;
-					} else {
-						break;
-					}
-
-					c++;
+			var dIdx = 0;
+			while (dIdx < total) {
+				foreach (var t in input) {
+					doubled[dIdx] = t;
+					dIdx++;
+					if (dIdx >= total) break;
 				}
 			}
-
-			var idx = 0;
-			for (var i = offset; i < total; i += Math.Abs(multiplier)) {
-				output[idx] = doubled[i];
-				idx++;
-				if (multiplier > 1 && idx < len) {
-					for (var m = 1; m < multiplier; m++) {
-						output[idx] = doubled[i];
-						idx++;
-					}
-				}
-
-				if (idx >= len) {
-					break;
-				}
+			
+			for (var i = 0; i < len; i++) {
+				var tgt = Convert.ToInt32((i + offset) * multiplier);
+				if (tgt >= total) tgt = total - 1;
+				//Log.Debug($"Mapping {i} to {tgt}");
+				output[i] = doubled[tgt];
 			}
 
 			return output;

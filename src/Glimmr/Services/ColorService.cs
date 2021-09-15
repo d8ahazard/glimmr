@@ -226,11 +226,11 @@ namespace Glimmr.Services {
 			var sector = dynamicEventArgs.Arg0;
 			// When building center, we only need the v and h sectors.
 			var dims = new[]
-				{_systemData.VSectors, 0, _systemData.HSectors, 0};
-			var builder = new FrameBuilder(dims, true, true);
+				{_systemData.VSectors, _systemData.VSectors, _systemData.HSectors, _systemData.HSectors};
+			var builder = new FrameBuilder(dims, true, _systemData.UseCenter);
 			var col = Color.FromArgb(255, 255, 0, 0);
-			var emptyColors = ColorUtil.EmptyColors(_systemData.SectorCount);
-			var emptySectors = ColorUtil.EmptyColors(_systemData.LedCount);
+			var emptyColors = ColorUtil.EmptyColors(_systemData.LedCount);
+			var emptySectors = ColorUtil.EmptyColors(_systemData.SectorCount);
 			var bSectors = emptySectors;
 			bSectors[sector - 1] = col;
 			var tMat = builder.Build(bSectors);
@@ -421,12 +421,17 @@ namespace Glimmr.Services {
 					continue;
 				}
 
+				Log.Debug("Reloading dev data...");
 				await dev.ReloadData().ConfigureAwait(false);
+				Log.Debug("Reloaded...");
 				if (DeviceMode != DeviceMode.Off && dev.Data.Enable && !dev.Streaming || dev.Id == "0") {
-					await dev.StartStream(_targetTokenSource.Token).ConfigureAwait(false);
+					Log.Debug("Starting device stream.");
+					await dev.StartStream(_targetTokenSource.Token);
+					Log.Debug("Started...");
 				}
 
 				if (DeviceMode == DeviceMode.Off || dev.Data.Enable || !dev.Streaming) {
+					Log.Debug("Mode is off or something, returning.");
 					return;
 				}
 

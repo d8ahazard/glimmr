@@ -29,7 +29,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int LedCount { get; set; } = 300;
 
-		[JsonProperty] public int LedMultiplier { get; set; } = 1;
+		[JsonProperty] public float LedMultiplier { get; set; } = 1.0f;
 
 		[DefaultValue(30)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -69,10 +69,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			new("ledmap", "ledmap", ""),
 			new("LedCount", "text", "Led Count"),
 			new("Offset", "text", "Led Offset"),
-			new("LedMultiplier", "number", "LED Multiplier") {
-				ValueMin = "-5", ValueStep = "1", ValueMax = "5",
-				ValueHint = "Positive values to multiply (skip), negative values to divide (duplicate)."
-			},
+			new("LedMultiplier", "ledMultiplier", ""),
 			new("ReverseStrip", "check", "Reverse Strip")
 				{ValueHint = "Reverse the order of the leds to clockwise (facing screen)."},
 			new("FixGamma", "check", "Fix Gamma") {ValueHint = "Automatically correct Gamma (recommended)"},

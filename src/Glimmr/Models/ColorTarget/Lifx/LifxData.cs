@@ -36,7 +36,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			set => MultiZoneCount = value / 2;
 		}
 
-		[JsonProperty] public int LedMultiplier { get; set; } = 2;
+		[JsonProperty] public float LedMultiplier { get; set; } = 2.0f;
 
 		[DefaultValue(255)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -179,10 +179,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 					ValueMax = "3", ValueMin = "1", ValueStep = ".1"
 				};
 				return new[] {
-					new("LedMultiplier", "number", "LED Multiplier") {
-						ValueMin = "-5", ValueStep = "1", ValueMax = "5",
-						ValueHint = "Positive values to multiply (skip), negative values to divide (duplicate)."
-					},
+					new("LedMultiplier", "ledMultiplier", ""),
 					gamma,
 					new("beamMap", "beamMap", "")
 				};
