@@ -1703,6 +1703,15 @@ function loadSettingObject(obj) {
     }
 }
 
+function expandCards() {
+    let devCards = document.querySelectorAll(".card.devCard.min");
+    if (devCards.length >= 1) {
+        console.log("Expanding: ", devCards[0]);
+        devCards[0].classList.remove("min");
+        setTimeout(expandCards, 50);
+    }   
+}
+
 function loadDevices() {    
     if (demoLoaded) return;
     let blankCard = $("#blankCard");
@@ -1710,39 +1719,41 @@ function loadDevices() {
     let devs = data.Devices;
     let container = $("#cardRow");
     let cards = container.querySelectorAll(".card.devCard");
-    let empty = (cards.length === 0); 
+    let empty = (cards.length === 0);
+    setTimeout(expandCards, 250);
     for (let i = 0; i< devs.length; i++) {
         let pos = i - 1;
         let card = null;
+        let expand = false;
         if (devs.hasOwnProperty(i)) {
-            let deviceData = devs[i];
-            card = createDeviceCard(deviceData, false);
+            let devData = devs[i];
+            card = createDeviceCard(devData, false);
             if (isValid(card) && card !== null) {
-                setTimeout(function(){
-                    card.classList.remove("min");
-                },250);
                 if (empty) {
-                    container.append(card);                    
-                    continue;
-                }
-                
-                let exCard = document.querySelector(".devCard[data-id='"+deviceData.Id+"']");
-                if (isObject(exCard)) {
-                    if (JSON.stringify(exCard) !== JSON.stringify(card)) {
-                        container.replaceChild(card, exCard);
-                    }
-                    
-                } else if (pos !== -1 && container.children.length >= i + 1) {
-                    container.insertBefore(card, container.children[i]);   
-                } else {
-                    if (i === 0) {
-                        container.prepend(card);
+                    container.append(card);
+                    expand = true;
+                } else {                
+                    let exCard = document.querySelector(".devCard[data-id='"+devData.Id+"']");
+                    if (isObject(exCard)) {
+                        if (JSON.stringify(exCard) !== JSON.stringify(card)) {
+                            card.classList.remove("min");
+                            container.replaceChild(card, exCard);
+                        }                        
+                    } else if (pos !== -1 && container.children.length >= i + 1) {
+                        container.insertBefore(card, container.children[i]);
+                        expand = true;
                     } else {
-                        container.append(card);
+                        if (i === 0) {
+                            container.prepend(card);
+                            expand = true;
+                        } else {
+                            container.append(card);
+                            expand = true;
+                        }
                     }
-                }          
+                }                
             }            
-        }                 
+        } 
     }
 }
 
@@ -2177,15 +2188,20 @@ function createDeviceSettings() {
             container.appendChild(mapRow);
         }
         
-        let row = document.createElement("div");
-        row.classList.add("row", "border", "justify-content-center", "pb-3", "pt-3", "delSetting", "devPrefs");
+        let devPrefRow = document.createElement("div");
+        devPrefRow.classList.add("row", "justify-content-center", "pb-3", "pt-3", "delSetting", "devPrefs");
+        
+        let devPrefCol = document.createElement("div");
+        devPrefCol.classList.add("col-12", "col-md-8", "col-lg-6", "border");
         
         let addRow = false;
         for (let i =0; i < props.length; i++) {            
             let prop = props[i];
             let propertyName = prop["ValueName"];
             let elem, se;
-            let value = deviceData[propertyName];            
+            let value = deviceData[propertyName];
+            let dirCol = document.createElement("div");
+            dirCol.classList.add("row", "justify-content-center", "delSetting");
             switch(prop["ValueType"]) {
                 case "text":
                 case "check":
@@ -2212,9 +2228,7 @@ function createDeviceSettings() {
                     break;
                 case "sectormap":
                     let region = "flashSector";
-                    let dirString = "Click a sector above to assign it to your " + deviceData.Tag + " device.";
-                    let dirCol = document.createElement("div");
-                    dirCol.classList.add("col-12", "text-center", "delSetting");
+                    let dirString = "Click a sector above to assign it to your " + deviceData.Tag + " device.";                    
 
                     if (deviceData.Tag === "Wled" && deviceData["StripMode"] === 3) {
                         region = "wledSector";
@@ -2246,8 +2260,6 @@ function createDeviceSettings() {
                         stageCol.id = "stageCol";
                         stageCol.classList.add("col-12", "col-md-8", "col-lg-6");
                         stageRow.appendChild(stageCol);
-                        let dirCol = document.createElement("div");
-                        dirCol.classList.add("col-12", "text-center", "delSetting");
                         dirCol.innerHTML = "Click a tile to select a target sector.";
                         container.appendChild(dirCol);
                         container.appendChild(stageRow);                        
@@ -2263,8 +2275,6 @@ function createDeviceSettings() {
                         let mapCol = document.getElementById("mapWrap");
                         let hueMap = createHueMap();
                         createSectorMap(mapCol, "flashSector");
-                        let dirCol = document.createElement("div");
-                        dirCol.classList.add("col-12", "text-center", "delSetting");
                         dirCol.innerHTML = "Select the target sector for each light below.";
                         container.appendChild(dirCol);
 
@@ -2272,29 +2282,29 @@ function createDeviceSettings() {
                         container.append(hueMap);
                     } else {
                         let linkPane = createLinkPane("hue", false);
-                        document.getElementById("linkCol").append(linkPane);
-                        
+                        document.getElementById("linkCol").append(linkPane);                        
                     }
                     //addRow = true;
                     break;
             }
+            
             if (isValid(elem)) {
                 elem.isDevice = true;
                 se = createSettingElement(elem);
                 if (demoLoaded) se.id = propertyName;
                 addRow = true;
-                row.appendChild(se);
+                devPrefCol.appendChild(se);
+                devPrefRow.appendChild(devPrefCol);
             }
         }
         
-        if (addRow) container.appendChild(row);
         if (deviceData.Tag !== "Led") {
             let removeBtn = new SettingElement("Remove device", "button", id, "removeDevice", id);
-            let row2 = document.createElement("div");
-            row2.classList.add("row", "border", "justify-content-center", "pb-3", "pt-3", "delSetting");
-            row2.appendChild(createSettingElement(removeBtn));
-            container.appendChild(row2);
+            devPrefCol.appendChild(createSettingElement(removeBtn));
+            devPrefRow.appendChild(devPrefCol);
+            addRow = true;
         }
+        if (addRow) container.appendChild(devPrefRow);
         card = document.querySelector("div.card.container-fluid");
         if (st !== card.scrollTop) card.scrollTop = st;
     }
@@ -2303,7 +2313,7 @@ function createDeviceSettings() {
 
 function createSettingElement(settingElement) {
     let group = document.createElement("div");
-    group.classList.add("col-12", "col-md-6", "col-xl-3", "align-self-top", "form-group", "custom-control");
+    group.classList.add("col-12", "align-self-top", "form-group", "custom-control");
     let label = document.createElement("label");   
     label.innerText = settingElement.descrption;
     let element;
@@ -2465,18 +2475,20 @@ function updateBeamLayout(items) {
 }
 
 function appendBeamMap() {
-    let settingsDiv = document.getElementById("mapCol");
-    let beamDiv = document.getElementById("beamDiv");
-    if (isValid(beamDiv)) beamDiv.remove();
+    let settingsDiv = document.querySelector(".card.container-fluid > .card-body");
     
     if (deviceData.hasOwnProperty("BeamLayout")) {
         let beamLayout = deviceData["BeamLayout"];
         if (isValid(beamLayout)) {
             let items = beamLayout["Segments"];
             if (items.length > 0) {
-                let beamDiv = document.createElement("div", "delSetting");
-                beamDiv.id = "BeamDiv";
-                beamDiv.classList.add("sortable");
+                let beamRow = document.createElement("div", "delSetting");
+                beamRow.id = "BeamDiv";
+                beamRow.classList.add("row", "justify-content-center", "delSetting", "pt-2");
+                
+                let beamCol = document.createElement("div");
+                beamCol.classList.add("sortable", "col-12", "col-md-8", "col-lg-6");
+                
                 items.sort((a, b) => (a["Position"] > b["Position"]) ? 1 : -1);
                 for (let i = 0; i < items.length; i++) {
                     let item = items[i];
@@ -2486,14 +2498,13 @@ function appendBeamMap() {
                     let reverse = item["Reverse"];
                     let count = item["LedCount"];
                     let itemDiv = document.createElement("div");
-                    itemDiv.classList.add("beamItem");
+                    itemDiv.classList.add("beamItem", "form-inline");
                     itemDiv.setAttribute("data-position",position);
                     if (count === 1) {
                         itemDiv.setAttribute("data-type", "corner");
                     } else {
                         itemDiv.setAttribute("data-type", "beam");
                     }                    
-                    itemDiv.classList.add("col-12", "row", "justify-content-center", "form-group", "mb-5");
                     
                     // drag handle
                     let dragHandle = document.createElement("span");
@@ -2502,31 +2513,31 @@ function appendBeamMap() {
                     itemDiv.appendChild(dragHandle);
                     
                     let nameLabel = document.createElement("div");
-                    nameLabel.classList.add("col-12", "headerCol");
+                    nameLabel.classList.add("col-12", "headerCol", "text-center");
                     nameLabel.innerText = (count === 1 ? "Corner" : "Beam") + " " + position;
                     itemDiv.appendChild(nameLabel);
                     
                     let oGroup = document.createElement("div");
-                    oGroup.classList.add("form-group","col-12", "col-md-6", "col-lg-3");
+                    oGroup.classList.add("form-group");
                     
                     // Offset
                     let label2 = document.createElement("label");
                     label2.innerText = "Offset";
-                    label2.classList.add("form-label");
+                    label2.classList.add("my-1", "mr-2");
                     let offsetText = document.createElement("input");
                     offsetText.type = "number";
                     offsetText.value = offset;
-                    offsetText.classList.add("form-control", "beam-control");
+                    offsetText.classList.add("custom-select", "beam-control");
                     offsetText.setAttribute("data-position",position);
                     offsetText.setAttribute("data-beamProperty","Offset");
 
-                    oGroup.appendChild(offsetText);
                     oGroup.appendChild(label2);
+                    oGroup.appendChild(offsetText);
                     itemDiv.appendChild(oGroup);
 
                     // Repeat
                     let rGroup = document.createElement("div");
-                    rGroup.classList.add("form-group","col-12", "col-md-6", "col-lg-3");
+                    rGroup.classList.add("form-group", "custom-control", "custom-switch");
                     
                     let checkDiv1 = document.createElement("div");
                     checkDiv1.classList.add("form-check");
@@ -2536,7 +2547,7 @@ function appendBeamMap() {
                     let rCheck = document.createElement("input");
                     rCheck.type = "checkbox";
                     if (repeat) rCheck.checked = true;
-                    rCheck.classList.add("form-check", "custom-control-input", "beam-control");
+                    rCheck.classList.add("custom-control-input", "beam-control");
                     rCheck.setAttribute("data-position",position);
                     rCheck.setAttribute("data-beamProperty","Repeat");
                     checkDiv1.appendChild(rCheck);
@@ -2547,15 +2558,14 @@ function appendBeamMap() {
 
                     // Reverse
                     let rGroup2 = document.createElement("div");
-                    rGroup2.classList.add("form-group","col-12", "col-md-6", "col-lg-3");
-                    
+                    rGroup2.classList.add("form-group","custom-control", "custom-switch");                    
                     let checkDiv2 = document.createElement("div");
                     checkDiv2.classList.add("form-check");
                     let label4 = document.createElement("label");
-                    label4.innerText = "Reverse Direction";
+                    label4.innerText = "Reverse";
                     label4.classList.add("custom-control-label");
                     let rCheck2 = document.createElement("input");
-                    rCheck2.classList.add("form-check", "custom-control-input", "beam-control");
+                    rCheck2.classList.add("custom-control-input", "beam-control");
                     rCheck2.type = "checkbox";
                     if (reverse) rCheck2.checked = true;
                     rCheck2.setAttribute("data-position",position);
@@ -2565,9 +2575,10 @@ function appendBeamMap() {
 
                     rGroup2.appendChild(checkDiv2);
                     itemDiv.appendChild(rGroup2);
-                    beamDiv.appendChild(itemDiv);
+                    beamCol.appendChild(itemDiv);
+                    beamRow.appendChild(beamCol);
                 }
-                settingsDiv.appendChild(beamDiv);
+                settingsDiv.appendChild(beamRow);
 
                 sortable(".sortable");
                 sortable('.sortable')[0].addEventListener('sortupdate', function(e) {
@@ -2580,22 +2591,17 @@ function appendBeamMap() {
     }
 }
 
-
 function appendLedMap() {
     let mapDiv = document.getElementById("mapWrap");
     createLedMap(mapDiv);    
 }
 
 function appendBeamLedMap() {
-    let mapDiv = document.getElementById("mapCol");
-    let noteDiv = document.getElementById("noteDiv");
-    if (isValid(noteDiv)) noteDiv.remove();
-    noteDiv = document.createElement("div");
-    noteDiv.classList.add("col-12", "subtitle", "noteDiv", "delSetting");
-    noteDiv.id = "noteDiv";
-    noteDiv.innerHTML = "Note: Lifx beams are spaced so that 10 LEDs/beam equal 20 LEDs within Glimmr.";
-    
-    mapDiv.appendChild(noteDiv);
+    let cardBody = document.querySelector("div.card.container-fluid > .card-body");
+    let dirCol = document.createElement("div");
+    dirCol.classList.add("row", "justify-content-center", "delSetting");
+    dirCol.innerHTML = "Note: Lifx beams are spaced so that 10 LEDs/beam equal 20 LEDs within Glimmr.";    
+    cardBody.appendChild(dirCol);
     createBeamLedMap();
 }
 
@@ -2836,13 +2842,13 @@ function createBeamLedMap() {
         "LedBlue",
         "ledIndigo",
         "ledViolet"
-    ]; 
+    ];
 
     if (!isValid(deviceData)) {
         console.log("Invalid device data...");
         return;
     }
-    
+
     let beamLayout = deviceData["BeamLayout"];
     let segments = beamLayout["Segments"];
     let total = sd["LedCount"];
@@ -2854,14 +2860,19 @@ function createBeamLedMap() {
         len *= 2;
         rangeList.push(ranges(total, offset, len));
     }
-    let w = targetElement.offsetWidth;
+    let tgt = targetElement;
+    let cs = getComputedStyle(tgt);
+    let paddingX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+    let borderX = parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
+    let w = tgt.offsetWidth - paddingX - borderX;
     let h = (w / 16) * 9;
-    let imgL = targetElement.offsetLeft;
-    let imgT = targetElement.offsetTop;
+    let imgL = tgt.offsetLeft;
+    let imgT = tgt.offsetTop;
+    console.log("Left is ", imgL);
     let exMap = targetElement.querySelector("#ledMap");
     if (isValid(exMap)) exMap.remove();
     let wFactor = w / 1920;
-    let hFactor = h / 1100;
+    let hFactor = h / 1080;
     let wMargin = 62 * wFactor;
     let hMargin = 52 * hFactor;
     let flHeight = (h - hMargin - hMargin) / leftCount;
@@ -2869,7 +2880,7 @@ function createBeamLedMap() {
     let ftWidth = (w - wMargin - wMargin) / topCount;
     let fbWidth = (w - wMargin - wMargin) / bottomCount;
     let dHeight = (flHeight + frHeight) / 2;
-    let dWidth = (ftWidth + fbWidth) / 2;
+    let dWidth = ((ftWidth + fbWidth) / 2);
     let map = document.createElement("div");
     map.id = "ledMap";
     map.classList.add("ledMap", "delSetting");
@@ -3029,6 +3040,7 @@ function createLedMap(targetElement) {
     let h = (w / 16) * 9;
     let imgL = tgt.offsetLeft;
     let imgT = tgt.offsetTop;
+    console.log("Left is ", imgL);
     let exMap = targetElement.querySelector("#ledMap");
     if (isValid(exMap)) exMap.remove();
     let wFactor = w / 1920;

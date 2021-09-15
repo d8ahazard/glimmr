@@ -39,12 +39,12 @@ namespace Glimmr.Models.Util {
 		}
 
 		public static Color[] TruncateColors(Color[] input, int offset, int len, float multiplier = 1f) {
-			if (offset >= len) {
-				offset = offset - len;
+			if (offset >= input.Length) {
+				offset = offset - input.Length;
 			}
 			var output = new Color[len];
 			var total = Convert.ToInt32((len + offset) * multiplier);
-			//Log.Debug($"Total is {total}, len is {len}, mult is {multiplier}");
+			
 			var doubled = new Color[total];
 			var dIdx = 0;
 			while (dIdx < total) {
