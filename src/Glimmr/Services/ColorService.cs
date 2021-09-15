@@ -253,7 +253,7 @@ namespace Glimmr.Services {
 			await SendColors(emptyColors, emptySectors, 0, true);
 			foreach (var dev in _sDevices) {
 				if (dev.Enable) {
-					dev.Testing = true;
+					dev.Testing = false;
 				}
 			}
 

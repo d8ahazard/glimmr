@@ -54,7 +54,7 @@
     }
     
     #mainSettingsCard {
-        padding: 0!important;
+        padding: 15px 0 !important;
     }
 }
 
@@ -79,7 +79,7 @@
 }
 
 div.btn-clear.btn-lg.controlBtn {
-    padding: 8px 16px !important;
+    padding: 0 16px !important;
     font-size: 18px;
     line-height: 1.3333333;
     border-radius: 6px;
@@ -193,9 +193,40 @@ div.btn-clear.closeBtn.closeBtn-sm, div.btn-clear.refreshBtn {
     margin: 0;
 }
 
+.system-group {
+    width: 100%;
+    height: calc(1.5em + .75rem + 2px);
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: .25rem;
+    display: flex;
+    padding: 0;
+}
+
+.system-group > .btn.btn-clear {
+    height: 100%;
+}
+
+.system-group > .btn:first-child {
+    margin-left: 0;
+}
+
+.system-group > .btn:last-child {
+    margin-right: 0;
+}
+
+.system-group > .btn {
+    position: relative;
+    float: left;
+    -ms-flex: 1 1 auto;
+    flex: 1 1 auto;
+}
+
 
 .beamItem {
-    border: 1px solid grey;
     display: flex;
     -ms-flex-wrap: wrap;
     flex-wrap: wrap;
@@ -203,6 +234,7 @@ div.btn-clear.closeBtn.closeBtn-sm, div.btn-clear.refreshBtn {
     justify-content: center!important;
     margin-bottom: 10px !important;
     padding: 15px;
+    border: 1px solid grey;
 }
 
 
@@ -620,17 +652,19 @@ input[type="range"]:not[data-object="SystemData"]::-webkit-slider-runnable-track
     position: relative;
     width: 80px;
     height: 80px;
+    margin: 0 auto;
+    left: 50%;
 }
+
 .lds-ellipsis div {
     position: absolute;
     top: 33px;
     width: 13px;
     height: 13px;
     border-radius: 50%;
-    color: #232323 !important;
-    background: #c4c4c4 !important;
     animation-timing-function: cubic-bezier(0, 1, 1, 0);
 }
+
 .lds-ellipsis div:nth-child(1) {
     left: 8px;
     animation: lds-ellipsis1 0.6s infinite;
@@ -701,7 +735,7 @@ text > * {
     border-color: var(--fg-secondary);
 }
 
-.lds-ellipsis, div.btn-clear, div.btn-clear.active, .input-group-text {
+div.btn-clear, div.btn-clear.active, .input-group-text {
     background: var(--bg-secondary) !important;
     color: var(--fg-primary) !important;
 }
@@ -735,6 +769,16 @@ div.btn-clear.active {
 .card {
     background: var(--bg-secondary) !important;
     color: var(--fg-primary) !important;
+}
+
+#blankCard, #blankCard *:not(.lds-ellipsis *) {
+    color: #181818 !important;
+    background: #9f9f9f !important;
+}
+
+.titleCol > .lds-ellipsis * {
+    color: #181818 !important;
+    background: #181818 !important;
 }
 
 

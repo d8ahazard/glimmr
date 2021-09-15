@@ -98,7 +98,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 				throw new ArgumentException("Invalid color input.");
 			}
 
-			if (Id == "0") {
+			if (Id == "0" && !Testing) {
 				_agent?.SetColors(colors);
 			}
 

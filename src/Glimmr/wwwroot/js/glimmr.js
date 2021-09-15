@@ -875,17 +875,6 @@ function handleClick(target) {
             let targetId = target.getAttribute("data-device");
             sendMessage("flashDevice", targetId, false);
             break;
-        // case target.classList.contains("devSetting"):
-        //     let devId = target.getAttribute("data-object");
-        //     let attribute = target.getAttribute("data-property");
-        //     let value = target.value;
-        //     if (target.type === "check") value = target.checked;
-        //     if (target.type === "text" || target.type === "number") value = target.value;            
-        //     console.log("DS click:", devId, attribute, value);
-        //     if (isValid(devId) && isValid(attribute) && value !== null && value !== undefined) {
-        //         updateDevice(devId, attribute, value);    
-        //     }            
-        //     break;
         case target.classList.contains("removeDevice"):
             let deviceId = deviceData["Id"];
             let devName = deviceData["Name"];
@@ -1143,6 +1132,7 @@ function setModeButtons() {
         }
     }
 }
+
 
 function loadUi() {
     loadCounts();
@@ -1712,10 +1702,12 @@ function expandCards() {
     }   
 }
 
-function loadDevices() {    
+function loadDevices() {   
     if (demoLoaded) return;
     let blankCard = $("#blankCard");
-    if (isValid(blankCard)) blankCard.remove();
+    if (isValid(blankCard)) {        
+        blankCard.remove();
+    }
     let devs = data.Devices;
     let container = $("#cardRow");
     let cards = container.querySelectorAll(".card.devCard");
@@ -1735,10 +1727,12 @@ function loadDevices() {
                 } else {                
                     let exCard = document.querySelector(".devCard[data-id='"+devData.Id+"']");
                     if (isObject(exCard)) {
-                        if (JSON.stringify(exCard) !== JSON.stringify(card)) {
-                            card.classList.remove("min");
-                            container.replaceChild(card, exCard);
-                        }                        
+                        card.classList.remove("min");
+                        container.replaceChild(card, exCard);
+                        if (expanded && devData.Id === deviceData.Id) {
+                            let sub = document.querySelector(".card.container-fluid > .card-body > .titleRow > .titleCol > .card-subtitle > span")
+                            if (isValid(sub)) sub.innerHTML = getSubtitle(devData).innerHTML;
+                        } 
                     } else if (pos !== -1 && container.children.length >= i + 1) {
                         container.insertBefore(card, container.children[i]);
                         expand = true;
@@ -1757,6 +1751,28 @@ function loadDevices() {
     }
 }
 
+function getSubtitle(device) {
+    let subTitle = document.createElement("div");
+    if (device["Tag"] === "Wled" || device["Tag"] === "Glimmr") {
+        let a = document.createElement("a");
+        a.href = "http://" + device["IpAddress"];
+        a.innerText = device["IpAddress"];
+        a.target = "_blank";
+        subTitle.appendChild(a);
+    } else {
+        subTitle.textContent = device["IpAddress"];
+    }
+
+    if ((device.hasOwnProperty("MultiZoneCount") || device.hasOwnProperty("LedCount")) && device["DeviceTag"] !== "Lifx Bulb") {
+        let val = (device.hasOwnProperty("MultiZoneCount")) ? device["MultiZoneCount"] : device["LedCount"];
+        let count = document.createElement("span");
+        count.innerText = " (" + val + ")";
+        subTitle.appendChild(count);
+    }
+    console.log("Returning: ", subTitle);
+    return subTitle;
+}
+
 function createDeviceCard(device, addDemoText) {
     if (device.Tag === "DreamScreen" && device["DeviceTag"].includes("DreamScreen")) return;
     // Create main card
@@ -1773,25 +1789,9 @@ function createDeviceCard(device, addDemoText) {
     let title = document.createElement("h5");
     let subTitle = document.createElement("h6");
     title.classList.add("card-title");
-    subTitle.classList.add("card-subtitle", "mb2", "text-muted");
-    title.textContent = device.Name;
-
-    if (device["Tag"] === "Wled" || device["Tag"] === "Glimmr") {
-        let a = document.createElement("a");
-        a.href = "http://" + device["IpAddress"];
-        a.innerText = device["IpAddress"];
-        a.target = "_blank";
-        subTitle.appendChild(a);
-    } else {
-        subTitle.textContent = device["IpAddress"];
-    }
-
-    if ((device.hasOwnProperty("MultiZoneCount") || device.hasOwnProperty("LedCount")) && device.DeviceTag !== "Lifx Bulb") {
-        let val = (device.hasOwnProperty("MultiZoneCount")) ? device["MultiZoneCount"] : device["LedCount"];
-        let count = document.createElement("span");
-        count.innerText = " (" + val + ")";
-        subTitle.appendChild(count);
-    }
+    subTitle.classList.add("card-subtitle", "mb2", "text-muted", "ledCount");
+    title.textContent = device.Name;    
+    subTitle.innerHTML = getSubtitle(device).innerHTML;
     // Create title row
     let titleRow = document.createElement("div");
     titleRow.classList.add("row", "titleRow");
@@ -1876,7 +1876,7 @@ function createDeviceCard(device, addDemoText) {
     brightnessRow.classList.add("row","pt-3", "brightRow", "brightSlider", "justify-content-center");
     if (addDemoText) brightnessRow.id = "devPrefBrightness";
     let brightCol = document.createElement("div");
-    brightCol.classList.add("col-12");
+    brightCol.classList.add("col-12", "brightCol");
     brightCol.appendChild(brightnessSlide);
     brightnessRow.appendChild(brightCol);
     
@@ -1958,7 +1958,6 @@ function updateDevice(id, property, value) {
         if (ledProps.includes(property)) {
             appendLedMap();
         }
-
     }
     
 }
@@ -2136,7 +2135,10 @@ const showDeviceCard = async (e) => {
         closeButton[i].classList.remove('d-none');
     }
     // Expand that bish
-    await toggleExpansion(cardClone, {top: oh + "px", left: 0, width: '100%', height: 'calc(100% - ' + fh + 'px)'}, 250);
+    await toggleExpansion(cardClone, {top: oh + "px", left: 0, width: '100%', height: 'calc(100% - ' + fh + 'px)'}, 250).then(function(){
+        let bCol = cardClone.querySelector(".brightCol");
+        bCol.classList.add("col-md-8", "col-lg-6");
+    });
     createDeviceSettings();
 
 
@@ -3056,7 +3058,7 @@ function createLedMap(targetElement) {
     let map = document.createElement("div");
     map.id = "ledMap";
     map.classList.add("ledMap", "delSetting");
-    map.style.top = imgT + "px";
+    if (targetElement.id !== "sLedWrap") map.style.top = imgT + "px";
     //map.style.left = imgL + "px";
     map.style.width = w + "px";
     map.style.height = h + "px";
