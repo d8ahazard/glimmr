@@ -291,6 +291,10 @@ namespace Glimmr.Models {
 		[DefaultValue("0")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string Units { get; set; } = "0";
+		
+		[DefaultValue(7)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int BlackLevel { get; set; } = 7;
 
 		public void SetDefaults() {
 			Brightness = 255;

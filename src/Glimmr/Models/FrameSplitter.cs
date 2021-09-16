@@ -91,6 +91,7 @@ namespace Glimmr.Models {
 		// Source stuff
 		private PointF[] _vectors;
 		private int _vSectors;
+		private int _blackLevel;
 
 		private bool _warned;
 
@@ -123,6 +124,7 @@ namespace Glimmr.Models {
 
 		private void RefreshSystem() {
 			var sd = DataUtil.GetSystemData();
+			_blackLevel = sd.BlackLevel;
 			_leftCount = sd.LeftCount;
 			_topCount = sd.TopCount;
 			_rightCount = sd.RightCount;
@@ -525,12 +527,12 @@ namespace Glimmr.Models {
 		}
 
 
-		private static Color GetAverage(IInputArray sInput) {
+		private Color GetAverage(IInputArray sInput) {
 			var foo = CvInvoke.Mean(sInput);
 			var red = (int)foo.V2;
 			var green = (int)foo.V1;
 			var blue = (int)foo.V0;
-			if (red < 6 && green < 6 && blue < 6) {
+			if (red < _blackLevel && green < _blackLevel && blue < _blackLevel) {
 				return Color.FromArgb(0, 0, 0, 0);
 			}
 
@@ -553,7 +555,6 @@ namespace Glimmr.Models {
 			var wStart = width / 3;
 			var hStart = height / 3;
 			// How many non-black pixels can be in a given row
-			const int blackLevel = 7;
 			var lPixels = 0;
 			var pPixels = 0;
 
@@ -585,7 +586,7 @@ namespace Glimmr.Models {
 					var l2 = Sum(b2) / b1.Length;
 					c1.Dispose();
 					c2.Dispose();
-					if (dist.Length == 1 && l1 == l2 && l1 <= blackLevel) {
+					if (dist.Length == 1 && l1 == l2 && l1 <= _blackLevel) {
 						lPixels = y;
 					} else {
 						break;
@@ -605,7 +606,7 @@ namespace Glimmr.Models {
 					var l2 = Sum(b2) / b1.Length;
 					c1.Dispose();
 					c2.Dispose();
-					if (dist.Length == 1 && l1 == l2 && l1 < blackLevel) {
+					if (dist.Length == 1 && l1 == l2 && l1 < _blackLevel) {
 						pPixels = x;
 					} else {
 						break;

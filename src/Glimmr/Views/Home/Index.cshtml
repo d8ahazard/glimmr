@@ -421,6 +421,11 @@
                     <option value="1">USB Web Camera</option>
                 </select>
             </div>
+            <div class="col-12 col-md-6 col-xl-3 form-group" id="BlackLevelRow">
+                <label class="form-label">Black Level</label>
+                <input type="number" class="form-control" data-object="SystemData" data-property="BlackLevel" id="BlackLevel" min="0" max="100" step="1"/>
+                <div class="form-text">Adjust the minimum image brightness to be interpreted as "black". Default is 7.</div>
+            </div>
             <div class="col-12 col-md-6 col-xl-3 capGroup form-group" data-mode="2">
 
             </div>
@@ -445,13 +450,11 @@
                 </select>
                 <div class="form-text">Select your desired streaming mode.</div>
             </div>
-            <div class="col-12 col-md-6 col-xl-3 form-group">
-                <div class="col-12 col-md-6 col-xl-3 streamGroup form-group" data-stream="0">
-                    <label class="form-label">Target DreamScreen</label>
-                    <select id="targetDs" class="form-control" data-object="SystemData" data-property="DsIp">
-                        <option value=""></option>
-                    </select>
-                </div>
+            <div class="col-12 col-md-6 col-xl-3 streamGroup form-group" data-stream="0">
+                <label class="form-label">Target DreamScreen</label>
+                <select id="targetDs" class="form-control" data-object="SystemData" data-property="DsIp">
+                    <option value=""></option>
+                </select>
             </div>
         </div>
         <div class="row border pb-1">

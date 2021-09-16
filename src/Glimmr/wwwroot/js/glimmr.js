@@ -473,7 +473,7 @@ function setSocketListeners() {
         let tempUnit = "°F";
 
         if (isValid(sd)) {
-            tempUnit = (sd["Units"] === 0) ? "°F" : "°C";
+            tempUnit = (sd["Units"] === "0") ? "°F" : "°C";
         }
         tempText.textContent = cpuData["tempCurrent"] + tempUnit;
         cpuText.textContent = cpuData["loadAvg1"] + "%";
@@ -1606,11 +1606,9 @@ function updateCaptureUi() {
     for (let i=0; i < streamGroups.length; i++) {
         let group = streamGroups[i];
         if (group.getAttribute("data-stream") === streamMode) {
-            group.classList.add("show");
-            group.classList.remove("hide");
+            group.classList.remove("d-none");
         } else {
-            group.classList.add("hide");
-            group.classList.remove("show");
+            group.classList.add("d-none");
         }
     }
     
@@ -1618,12 +1616,9 @@ function updateCaptureUi() {
         let group = capGroups[i];
         let groupMode = group.getAttribute("data-mode");
         if (groupMode === mode) {
-            group.classList.add("show");
-            group.classList.remove("hide");
-            
+            group.classList.remove("d-none");            
         } else {
-            group.classList.add("hide");
-            group.classList.remove("show");
+            group.classList.add("d-none");
         }
     }
 
@@ -1649,11 +1644,9 @@ function updateCaptureUi() {
     }
     
     if (mode === "2" || (mode === "1" && camMode === "1")) {
-        usbRow.classList.add("show");
-        usbRow.classList.remove("hide");
+        usbRow.classList.remove("d-none");
     } else {
-        usbRow.classList.add("hide");
-        usbRow.classList.remove("show");
+        usbRow.classList.add("d-none");
     }
 }
 
