@@ -24,7 +24,7 @@ namespace Glimmr.Models.Util {
 		/// <returns>12 colors averaged from those, or something.</returns>
 		public static Color[] TruncateColors(Color[] input) {
 			var indices = input.Length / 12;
-			var output = new Color[12];
+			var output = EmptyColors(12);
 			for (var i = 0; i < 12; i++) {
 				double idx = i * indices;
 				idx = Math.Floor(idx);
@@ -42,10 +42,11 @@ namespace Glimmr.Models.Util {
 			if (offset >= input.Length) {
 				offset = offset - input.Length;
 			}
-			var output = new Color[len];
+
+			var output = EmptyColors(len);
 			var total = Convert.ToInt32((len + offset) * multiplier);
-			
-			var doubled = new Color[total];
+
+			var doubled = EmptyColors(total);
 			var dIdx = 0;
 			while (dIdx < total) {
 				foreach (var t in input) {

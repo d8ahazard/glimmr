@@ -527,14 +527,14 @@ namespace Glimmr.Models {
 
 		private static Color GetAverage(IInputArray sInput) {
 			var foo = CvInvoke.Mean(sInput);
-			var red = foo.V2;
-			var green = foo.V1;
-			var blue = foo.V0;
+			var red = (int)foo.V2;
+			var green = (int)foo.V1;
+			var blue = (int)foo.V0;
 			if (red < 6 && green < 6 && blue < 6) {
 				return Color.FromArgb(0, 0, 0, 0);
 			}
 
-			return Color.FromArgb(255, (int) red, (int) green, (int) blue);
+			return Color.FromArgb(red, green, blue);
 		}
 
 		public Color[] GetColors() {
