@@ -36,6 +36,9 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string Port { get; set; }
 
+		[DefaultValue(2.2)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public float GammaFactor { get; set; } = 2.2f;
 		[JsonProperty] public string Tag { get; set; } = "Adalight";
 
 
@@ -78,6 +81,8 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			new("Offset", "text", "Led Offset"),
 			new("LedCount", "text", "Led Count"),
 			new("LedMultiplier", "ledMultiplier", ""),
+			new("GammaFactor", "number", "Gamma Correction")
+				{ValueMin = "1.0",ValueMax = "5", ValueStep = ".1", ValueHint = "1 = No adjustment, 2.2 = Recommended"},
 			new("Speed", "text", "Connection Speed (Baud Rate)"),
 			new("ReverseStrip", "check", "Reverse Strip")
 				{ValueHint = "Reverse the order of the leds to clockwise (facing screen)."}

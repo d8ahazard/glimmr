@@ -1,11 +1,13 @@
 ﻿#region
 
+using System;
 using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
+using Newtonsoft.Json;
 using Serilog;
 
 #endregion
@@ -22,12 +24,14 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 		private int _offset;
 		private string _port;
 		private bool _reverseStrip;
+		private byte[] _gammaTable;
 
 		public AdalightDevice(AdalightData data, ColorService colorService) {
 			Id = data.Id;
 			_data = data;
 			_port = _data.Port;
 			_multiplier = _data.LedMultiplier;
+			_gammaTable = ColorUtil.GammaTable(1);
 			LoadData();
 			colorService.ColorSendEventAsync += SetColors;
 			_adalight = new AdalightNet.Adalight(_port, _ledCount, _baud);
@@ -133,7 +137,23 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 				toSend = ColorUtil.AdjustBrightness(toSend, _brightness / 100f);
 			}
 
+			toSend = FixGamma(toSend);
+
 			_adalight.UpdateColorsAsync(toSend.ToList());
+		}
+
+		private Color[] FixGamma(Color[] input) {
+			if (Math.Abs(_data.GammaFactor - 1.0f) < float.MinValue) {
+				return input;
+			}
+
+			var output = new Color[input.Length];
+			for (var i = 0; i < input.Length; i++) {
+				var col = input[i];
+				output[i] = Color.FromArgb(0, _gammaTable[col.R], _gammaTable[col.G], _gammaTable[col.B]);
+			}
+
+			return output;
 		}
 
 		private void LoadData() {
@@ -148,6 +168,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 				_multiplier = 1;
 			}
 
+			_gammaTable = ColorUtil.GammaTable(_data.GammaFactor);
 			_brightness = _data.Brightness;
 		}
 	}
