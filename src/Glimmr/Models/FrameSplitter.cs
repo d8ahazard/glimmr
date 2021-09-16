@@ -555,6 +555,7 @@ namespace Glimmr.Models {
 			var wStart = width / 3;
 			var hStart = height / 3;
 			// How many non-black pixels can be in a given row
+			const int blackLevel = 7;
 			var lPixels = 0;
 			var pPixels = 0;
 
@@ -586,7 +587,7 @@ namespace Glimmr.Models {
 					var l2 = Sum(b2) / b1.Length;
 					c1.Dispose();
 					c2.Dispose();
-					if (dist.Length == 1 && l1 == l2 && l1 <= _blackLevel) {
+					if (dist.Length == 1 && l1 == l2 && l1 <= blackLevel) {
 						lPixels = y;
 					} else {
 						break;
@@ -606,7 +607,7 @@ namespace Glimmr.Models {
 					var l2 = Sum(b2) / b1.Length;
 					c1.Dispose();
 					c2.Dispose();
-					if (dist.Length == 1 && l1 == l2 && l1 < _blackLevel) {
+					if (dist.Length == 1 && l1 == l2 && l1 < blackLevel) {
 						pPixels = x;
 					} else {
 						break;
