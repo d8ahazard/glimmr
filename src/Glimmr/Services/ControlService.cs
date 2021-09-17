@@ -89,7 +89,6 @@ namespace Glimmr.Services {
 			foreach (var c in types) {
 				var parts = c.Split(".");
 				var shortClass = parts[^1];
-				Log.Debug("Creating agent: " + c);
 				try {
 					dynamic? agentCheck = Activator.CreateInstance(Type.GetType(c)!);
 					if (agentCheck == null) {
@@ -419,16 +418,15 @@ v. {version}
 		}
 
 		public async Task RemoveDevice(string id) {
-			Log.Debug("Stopping device...");
 			ColorService.StopDevice(id, true);
-			Log.Debug("Deleting device...");
 			DataUtil.DeleteDevice(id);
-			Log.Debug("Removed?");
 			await _hubContext.Clients.All.SendAsync("deleteDevice", id);
 		}
 
 		public async Task StartStream(GlimmrData gd) {
 			await StartStreamEvent.InvokeAsync(this, new DynamicEventArgs(gd));
+			//await SetModeEvent.InvokeAsync(this, new DynamicEventArgs(5)).ConfigureAwait(false);
+
 		}
 	}
 }

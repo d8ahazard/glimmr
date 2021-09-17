@@ -281,7 +281,6 @@ namespace Glimmr.Models.Util {
 			var output = new byte[256];
 			for(var i=0; i<256; i++) {
 				output[i] = (byte)(Math.Pow(i / (float)256, factor) * 256 + 0.5);
-				Log.Debug($"{i} => {output[i]}");
 			}
 			return output;
 		}

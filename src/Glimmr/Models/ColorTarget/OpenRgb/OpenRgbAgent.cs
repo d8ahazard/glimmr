@@ -18,7 +18,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		private int _port;
 		private Device[]? _devices;
 		public bool Connected => _client?.Connected ?? false;
-
+		
 		public IEnumerable<Device> GetDevices() {
 			if (_client == null) return new List<Device>();
 			Connect();
@@ -29,11 +29,16 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 		public void Connect() {
 			if (_client == null) return;
+			
 			if (_client.Connected) {
 				return;
 			}
 			Log.Debug("Connecting OpenRGB client.");
-			_client?.Connect();
+			try {
+				_client?.Connect();
+			} catch (ObjectDisposedException) {
+				
+			}
 		}
 
 		public void SetMode(int deviceId, int mode, Color[] colors) {

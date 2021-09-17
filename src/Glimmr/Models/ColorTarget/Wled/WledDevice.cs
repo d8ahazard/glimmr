@@ -10,6 +10,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Enums;
+using Glimmr.Models.ColorSource.UDP;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Serilog;
@@ -33,6 +34,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		private int _offset;
 		private StripMode _stripMode;
 		private int _targetSector;
+		private int _protocol = 2;
 
 		public WledDevice(WledData wd, ColorService cs) : base(cs) {
 			ColorService cs1 = cs;
@@ -79,15 +81,11 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 
 		public async Task FlashColor(Color color) {
-			var packet = new List<byte> {ByteUtils.IntByte(2), ByteUtils.IntByte(10)};
-			for (var i = 0; i < _data.LedCount; i++) {
-				packet.Add(color.R);
-				packet.Add(color.G);
-				packet.Add(color.B);
-			}
-
 			try {
-				await _udpClient.SendAsync(packet.ToArray(), packet.Count, _ep).ConfigureAwait(false);
+				var colors = ColorUtil.FillArray(color, _ledCount);
+				var cp = new ColorPacket(colors, (UdpStreamMode) _protocol);
+				var packet = cp.Encode();
+				await _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep).ConfigureAwait(false);
 			} catch (Exception e) {
 				Log.Debug("Exception, look at that: " + e.Message);
 			}
@@ -114,6 +112,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 				_data = dev;
 			}
 
+			_protocol = _data.Protocol;
 			_offset = _data.Offset;
 			_brightness = _data.Brightness;
 			IpAddress = _data.IpAddress;
@@ -169,24 +168,15 @@ namespace Glimmr.Models.ColorTarget.Wled {
 				}
 			}
 
-			var packet = new byte[2 + toSend.Length * 3];
-			var timeByte = 255;
-			packet[0] = ByteUtils.IntByte(2);
-			packet[1] = ByteUtils.IntByte(timeByte);
-			var pInt = 2;
-			foreach (var t in toSend) {
-				packet[pInt] = t.R;
-				packet[pInt + 1] = t.G;
-				packet[pInt + 2] = t.B;
-				pInt += 3;
-			}
-
+			
 			if (_ep == null) {
 				Log.Debug("No endpoint.");
 				return;
 			}
 
 			try {
+				var cp = new ColorPacket(toSend,(UdpStreamMode) _protocol);
+				var packet = cp.Encode(); 
 				await _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep).ConfigureAwait(false);
 				ColorService?.Counter.Tick(Id);
 			} catch (Exception e) {

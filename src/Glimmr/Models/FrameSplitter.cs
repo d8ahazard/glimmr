@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
+using DreamScreenNet;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -153,7 +154,7 @@ namespace Glimmr.Models {
 			_useCenter = sd.UseCenter;
 			_ledCount = sd.LedCount;
 			_sectorCount = sd.SectorCount;
-			_sectorChanged = true;
+			
 			if (_ledCount == 0) {
 				_ledCount = 200;
 			}
@@ -201,7 +202,8 @@ namespace Glimmr.Models {
 			if (!_cropLetter && !_cropPillar) {
 				_frameWatch.Stop();
 			}
-
+			_fullCoords = DrawGrid();
+			_fullSectors = DrawSectors();
 			_doSave = true;
 		}
 
@@ -230,6 +232,8 @@ namespace Glimmr.Models {
 			switch (_previewMode) {
 				case 1: {
 					for (var i = 0; i < _fullCoords.Length; i++) {
+						var color = cols[i];
+						if (color.R < _blackLevel && color.G < _blackLevel && color.B < _blackLevel) continue; 
 						var col = new Bgr(cols[i]).MCvScalar;
 						CvInvoke.Rectangle(outMat, _fullCoords[i], col, -1, LineType.AntiAlias);
 						CvInvoke.Rectangle(outMat, _fullCoords[i], colBlack, 1, LineType.AntiAlias);
@@ -240,6 +244,8 @@ namespace Glimmr.Models {
 				case 2: {
 					for (var i = 0; i < _fullSectors.Length; i++) {
 						var s = _fullSectors[i];
+						var color = secs[i];
+						if (color.R < _blackLevel && color.G < _blackLevel && color.B < _blackLevel) continue;
 						var col = new Bgr(secs[i]).MCvScalar;
 						CvInvoke.Rectangle(outMat, s, col, -1, LineType.AntiAlias);
 						CvInvoke.Rectangle(outMat, s, colBlack, 1, LineType.AntiAlias);

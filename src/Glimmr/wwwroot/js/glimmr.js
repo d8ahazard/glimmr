@@ -1723,7 +1723,7 @@ function loadDevices() {
                         card.classList.remove("min");
                         container.replaceChild(card, exCard);
                         if (expanded && devData.Id === deviceData.Id) {
-                            let sub = document.querySelector(".card.container-fluid > .card-body > .titleRow > .titleCol > .card-subtitle > span")
+                            let sub = document.querySelector(".card.container-fluid > .card-body > .titleRow > .titleCol > .card-subtitle")
                             if (isValid(sub)) sub.innerHTML = getSubtitle(devData).innerHTML;
                         } 
                     } else if (pos !== -1 && container.children.length >= i + 1) {

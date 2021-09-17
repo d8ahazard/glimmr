@@ -30,7 +30,6 @@ namespace Glimmr.Models.ColorSource.UDP {
 		private ServiceDiscovery? _discovery;
 		private GlimmrData? _gd;
 		private string _hostName;
-		private int _ledCount;
 		private SystemData _sd;
 		private bool _sending;
 		private CancellationToken _stoppingToken;
@@ -85,11 +84,12 @@ namespace Glimmr.Models.ColorSource.UDP {
 		private async Task StartStream(object arg1, DynamicEventArgs arg2) {
 			_gd = arg2.Arg0;
 			_sd = DataUtil.GetSystemData();
-			_ledCount = _gd.LedCount;
 			var dims = new[] {_gd.LeftCount, _gd.RightCount, _gd.TopCount, _gd.BottomCount};
 			_builder = new FrameBuilder(dims);
-			_streaming = true;
+			//_streaming = true;
+			//_cs.SetModeEvent -= Mode;
 			await _cs.SetMode(5);
+			//_cs.SetModeEvent += Mode;
 		}
 
 		private Task Mode(object arg1, DynamicEventArgs arg2) {
@@ -144,41 +144,25 @@ namespace Glimmr.Models.ColorSource.UDP {
 
 		private async Task ProcessFrame(IReadOnlyList<byte> data) {
 			_sending = true;
-			var flag = data[0];
-			if (flag != 2) {
-				Log.Warning("Flag is invalid!");
+			if (_devMode != Udp) {
+				Log.Debug("Wrong device mode...");
+				return;
 			}
-
-			var bytes = data.Skip(2).ToArray();
-			var colors = new Color[_ledCount];
-			if (_devMode == Udp) {
-				var colIdx = 0;
-				for (var i = 0; i < bytes.Length; i += 3) {
-					if (i + 2 >= bytes.Length) {
-						continue;
-					}
-
-					var col = Color.FromArgb(255, bytes[i], bytes[i + 1], bytes[i + 2]);
-					if (colIdx < _ledCount) {
-						colors[colIdx] = col;
-					}
-
-					colIdx++;
-				}
-
-				var ledColors = colors.ToList();
+			try {
+				var cp = new ColorPacket(data.ToArray());
+				var ledColors = cp.Colors;
 				if (_builder == null) {
+					Log.Warning("Null builder.");
 					_sending = false;
 					return;
 				}
-
+				
 				var frame = _builder.Build(ledColors);
-				Log.Debug("Update: Udp");
 				await _splitter.Update(frame);
 				frame.Dispose();
 				_sending = false;
-			} else {
-				Log.Debug("Dev mode is incorrect.");
+			} catch (Exception e) {
+				Log.Warning("Exception parsing packet: " + e.Message);
 			}
 		}
 	}

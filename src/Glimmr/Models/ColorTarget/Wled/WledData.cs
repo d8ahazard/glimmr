@@ -44,6 +44,10 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		[JsonProperty] public string Tag { get; set; }
 		[JsonProperty] public WledStateData State { get; set; }
 
+		[DefaultValue(2)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int Protocol { get; set; } = 2;
+
 
 		public WledData() {
 			Tag = "Wled";
@@ -123,7 +127,13 @@ namespace Glimmr.Models.ColorTarget.Wled {
 					}),
 					new("LedCount", "number", "Led Count"),
 					multiplier,
-					new("ReverseStrip", "check", "Reverse Strip Direction")
+					new("ReverseStrip", "check", "Reverse Strip Direction"),
+					new("Protocol", "select", "Streaming Protocol", new Dictionary<string, string> {
+						["1"] = "WARLS",
+						["2"] = "DRGB",
+						["3"] = "DRGBW",
+						["4"] = "DNRGB"
+					}){ValueHint = "Select desired WLED protocol. Default is DRGB."}
 				};
 			}
 
@@ -139,7 +149,13 @@ namespace Glimmr.Models.ColorTarget.Wled {
 				new("Offset", "number", "Strip Offset"),
 				multiplier,
 				new("ReverseStrip", "check", "Reverse Strip")
-					{ValueHint = "Reverse the order of the leds to clockwise (facing screen)."}
+					{ValueHint = "Reverse the order of the leds to clockwise (facing screen)."},
+				new("Protocol", "select", "Streaming Protocol", new Dictionary<string, string> {
+					["1"] = "WARLS",
+					["2"] = "DRGB",
+					["3"] = "DRGBW",
+					["4"] = "DNRGB"
+				}){ValueHint = "Select desired WLED protocol. Default is DRGB."}
 			};
 		}
 	}

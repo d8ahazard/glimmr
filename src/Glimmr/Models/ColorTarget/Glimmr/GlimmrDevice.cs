@@ -10,6 +10,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Glimmr.Models.ColorSource.UDP;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Newtonsoft.Json;
@@ -69,20 +70,11 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 
 
 		public async Task FlashColor(Color color) {
-			var packet = new List<byte>();
-			// Set mode to D-RGB, dude.
-			const int timeByte = 255;
-			packet.Add(ByteUtils.IntByte(2));
-			packet.Add(ByteUtils.IntByte(timeByte));
-			for (var i = 0; i < _data.LedCount; i++) {
-				packet.Add(color.R);
-				packet.Add(color.G);
-				packet.Add(color.B);
-			}
-
 			try {
 				if (_udpClient != null) {
-					await _udpClient.SendAsync(packet.ToArray(), packet.Count, _ep);
+					var cp = new ColorPacket(ColorUtil.FillArray(color, _data.LedCount));
+					var data = cp.Encode(255);
+					await _udpClient.SendAsync(data, data.Length, _ep);
 				}
 			} catch (Exception e) {
 				Log.Debug("Exception, look at that: " + e.Message);
@@ -181,16 +173,10 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 				leds = leds1.ToArray();
 			}
 
-
-			var packet = new List<byte> {ByteUtils.IntByte(2), ByteUtils.IntByte(255)};
-			foreach (var color in leds) {
-				packet.Add(ByteUtils.IntByte(color.R));
-				packet.Add(ByteUtils.IntByte(color.G));
-				packet.Add(ByteUtils.IntByte(color.B));
-			}
-
 			try {
-				await _udpClient.SendAsync(packet.ToArray(), packet.Count, _ep);
+				var cp = new ColorPacket(leds);
+				var packet = cp.Encode();
+				await _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep);
 				ColorService?.Counter.Tick(Id);
 			} catch (Exception e) {
 				Log.Debug("Exception: " + e.Message);

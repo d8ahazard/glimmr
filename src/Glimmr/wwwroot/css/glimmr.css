@@ -1,13 +1,18 @@
 ﻿:root {
-    --fg-primary: #181818;
-    --fg-secondary: #212121;
-    --bg-secondary: #cfcfcf;
-    --bg-secondary-alpha: #cfcfcfab;    
-    --bg-primary: #9f9f9f;
+    --bg-primary: #e7e7e7;
+    --bg-secondary: #dedede;
+    --bg-secondary-alpha: #cdededeab;
+    --fg-primary: #303030;
+    --fg-secondary: #606060;
 }
 
 :root, body, .main, #mainContent, #cardRow {
     height: 100%;
+}
+
+.pcr-app.visible {
+	background: var(--bg-secondary) !important;
+    color: var(--fg-primary) !important;
 }
 
 #cardRow {
@@ -128,7 +133,7 @@ div.btn-clear.closeBtn.closeBtn-sm, div.btn-clear.refreshBtn {
 
 .card {
     border-radius: 10px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.12), 0 4px 6px rgba(0,0,0,0.24);
 }
 
 .devCard {
@@ -137,13 +142,6 @@ div.btn-clear.closeBtn.closeBtn-sm, div.btn-clear.refreshBtn {
     -o-transition: all 0.5s ease-in-out;
     transition: all 0.5s ease-in-out;
     overflow: hidden;
-}
-
-.devCard * {
-    -webkit-transition: all 0.6s ease-in-out 0.1s;
-    -moz-transition: all 0.6s ease-in-out 0.1s;
-    -o-transition: all 0.6s ease-in-out 0.1s;
-    transition: all 0.6s ease-in-out 0.1s;
 }
 
 .card:hover {
@@ -188,7 +186,8 @@ div.btn-clear.closeBtn.closeBtn-sm, div.btn-clear.refreshBtn {
 
 #footer {
     height: 3rem;
-    background-color: rgb(171, 171, 171) !important;
+	background: var(--bg-secondary) !important;
+    color: var(--fg-primary) !important;
     padding: 0;
     margin: 0;
 }
@@ -435,17 +434,11 @@ input[type="range"]::-webkit-slider-thumb:not[data-object="SystemData"] {
     width: 25px;
     border-radius: 25px;
     top: -.75rem;
-    background: black;
-    box-shadow: 0px 2px 10px -2px black(1);
+    background: var(--bg-primary) !important;
+	color: var(--fg-primary) !important;
     position: relative;
     z-index: 2;
-    box-shadow: 1.1px 1.1px 6.8px rgba(0, 0, 0, 0), 0px 0px 1.1px rgba(13, 13, 13, 0);
-    border: 0px solid #000000;
-    content:"<span class='material-icons'>emoji_objects</span>";
-    background: url("../img/sun.png") #dedede;
-    background-size: 80%;
-    background-position: center;
-    background-repeat: no-repeat;
+    border: 0 solid transparent;   
 }
 
 input[type="range"]::-webkit-slider-thumb:not[data-object="SystemData"]::before {
@@ -465,6 +458,12 @@ input[type="range"]:not[data-object="SystemData"] {
     margin: 0;
     width: 100%;
     background: transparent;
+    border: transparent!important;
+    outline: transparent!important;
+}
+
+input.custom-range {
+    border: none;
 }
 
 input[type="range"]:focus {
@@ -478,11 +477,9 @@ input[type="range"]:not[data-object="SystemData"]::-webkit-slider-runnable-track
     height: 10px;
     background: lightgray;
     border-radius: 200px;
-    border: none;
     padding: 5px;
-    box-shadow: 0px 0px 0px rgba(0, 0, 0, 0), 0px 0px 0px rgba(13, 13, 13, 0);
-    background: rgba(69, 69, 69, 0.5);
-    border: 0px solid rgba(0, 0, 0, 0);
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0), 0 0 0 rgba(13, 13, 13, 0);
+    background: var(--bg-secondary-alpha);
 }
 
 
@@ -496,12 +493,12 @@ input[type="range"]:not[data-object="SystemData"]::-webkit-slider-runnable-track
 }
 
 .btn-clear.active {
-    color: white;
-    background-color: black;
+    color: var(--fg-secondary);
+    background-color: var(--bg-secondary);
 }
 
 .btn-clear:hover {
-    background-color: gray;
+    background-color: var(--bg-secondary-alpha);
 }
 
 #ambientNav {
@@ -547,10 +544,6 @@ input[type="range"]:not[data-object="SystemData"]::-webkit-slider-runnable-track
 
 .btn-clear.btn-lg, .btn-clear.btn-lg > span {
     font-size: 30px;
-}
-
-.btn-clear.active.dark {
-
 }
 
 #ambientNav, #audioNav {
@@ -604,7 +597,7 @@ input[type="range"]:not[data-object="SystemData"]::-webkit-slider-runnable-track
 
 .linkDiv {
     position: relative;
-    border: 1px solid #888888;
+    border: 1px solid var(--fg-secondary);
     border-radius: 20px;
     cursor: pointer;
 }
@@ -792,7 +785,7 @@ div.btn-clear.active {
 }
 
 #mainContent {
-    background: #414141;;
+    background: #414141;
 }
 
 .border {
