@@ -568,8 +568,11 @@ namespace Glimmr.Models {
 			width--;
 			height--;
 			var raw = image.GetRawData();
+			var unique = raw.Distinct().ToArray();
+			
 			var count = Sum(raw);
 			var noImage = count == 0 || width == 0 || height == 0;
+			if (unique.Length == 1 && unique[0] <= blackLevel) noImage = true;
 			// If it is, we can stop here
 			if (noImage) {
 				_allBlack = true;
