@@ -9,6 +9,8 @@ namespace Glimmr.Models.ColorSource.UDP {
 		
 		public UdpStreamMode UdpStreamMode { get; private set; }
 		
+		public int Duration { get; set; }
+		
 		public ColorPacket(Color[] colors, UdpStreamMode mode = UdpStreamMode.Drgb) {
 			UdpStreamMode = mode;
 			Colors = colors;
@@ -22,6 +24,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 		public byte[] Encode(int duration = 1) {
 			var header = new[] {(byte)UdpStreamMode, (byte)duration};
 			var data = Array.Empty<byte>();
+			Duration = duration;
 			switch (UdpStreamMode) {
 				case UdpStreamMode.Drgb:
 					data = EncodeDrgb();
@@ -97,6 +100,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 				throw new ArgumentOutOfRangeException(nameof(input));
 			}
 			UdpStreamMode = (UdpStreamMode) input[0];
+			Duration = input[1];
 			switch (UdpStreamMode) {
 				case UdpStreamMode.Drgb:
 					DecodeDrgb(input.Skip(2).ToArray());

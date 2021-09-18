@@ -12,16 +12,11 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 	[Serializable]
 	public class GlimmrData : IColorTargetData {
 		[JsonProperty] public bool MirrorHorizontal { get; set; }
-		[JsonProperty] public bool UseCenter { get; set; }
 		[JsonProperty] public int BottomCount { get; set; }
 		[JsonProperty] public int Brightness { get; set; } = 255;
-		[JsonProperty] public int HCount { get; set; }
-		[JsonProperty] public int LedCount { get; set; }
 		[JsonProperty] public int LeftCount { get; set; }
 		[JsonProperty] public int RightCount { get; set; }
-		[JsonProperty] public int SectorCount { get; set; }
 		[JsonProperty] public int TopCount { get; set; }
-		[JsonProperty] public int VCount { get; set; }
 		[JsonProperty] public string Tag { get; set; }
 
 
@@ -52,15 +47,11 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			Tag = "Glimmr";
 			Name ??= Tag;
 			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
-			LedCount = sd.LedCount;
 			LeftCount = sd.LeftCount;
 			RightCount = sd.RightCount;
 			TopCount = sd.TopCount;
-			VCount = sd.VSectors;
-			HCount = sd.HSectors;
 			BottomCount = sd.BottomCount;
 			Brightness = sd.Brightness;
-			SectorCount = sd.SectorCount;
 			IpAddress = IpUtil.GetLocalIpAddress();
 			Id = Dns.GetHostName();
 		}
@@ -79,7 +70,6 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 				throw new ArgumentNullException(nameof(input));
 			}
 
-			LedCount = input.LedCount;
 			IpAddress = data.IpAddress;
 			FetchData();
 			if (Id != null) {
@@ -100,16 +90,11 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 				var jsonData = webClient.DownloadString(url);
 				var sd = JsonConvert.DeserializeObject<GlimmrData>(jsonData);
 				if (sd != null) {
-					LedCount = sd.LedCount;
 					LeftCount = sd.LeftCount;
 					RightCount = sd.RightCount;
 					TopCount = sd.TopCount;
 					BottomCount = sd.BottomCount;
 					Brightness = sd.Brightness;
-					HCount = sd.HCount;
-					VCount = sd.VCount;
-					UseCenter = sd.UseCenter;
-					SectorCount = sd.SectorCount;
 				}
 			} catch (Exception) {
 				// Ignored

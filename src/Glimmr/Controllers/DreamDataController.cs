@@ -182,9 +182,22 @@ namespace Glimmr.Controllers {
 			return Ok(ld);
 		}
 
-		// POST: api/DreamData/ledData
+		// POST: api/DreamData/startStream
 		[HttpPost("startStream")]
 		public async Task<IActionResult> StartStream([FromBody] GlimmrData gd) {
+			Log.Debug("SS post: " + JsonConvert.SerializeObject(gd));
+			await _controlService.StartStream(gd);
+			return Ok(gd);
+		}
+		
+		[HttpGet("startStream")]
+		public async Task<IActionResult> StartStream([FromQuery(Name = "l")] int l,
+			[FromQuery(Name = "r")] int r,
+			[FromQuery(Name = "t")] int t,
+			[FromQuery(Name = "b")] int b) {
+			Log.Debug("SS Get");
+			var sd = new SystemData {LeftCount =  l, RightCount = r, TopCount = t, BottomCount = b};
+			var gd = new GlimmrData(sd);
 			await _controlService.StartStream(gd);
 			return Ok(gd);
 		}

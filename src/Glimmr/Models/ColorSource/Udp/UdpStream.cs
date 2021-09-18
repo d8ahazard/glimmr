@@ -2,7 +2,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Drawing;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -34,6 +34,8 @@ namespace Glimmr.Models.ColorSource.UDP {
 		private bool _sending;
 		private CancellationToken _stoppingToken;
 		private bool _streaming;
+		private readonly Stopwatch _timeOutWatch;
+		private int _timeOut;
 
 		public UdpStream(ColorService cs) {
 			_cs = cs.ControlService;
@@ -41,7 +43,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 			_cs.SetModeEvent += Mode;
 			_cs.StartStreamEvent += StartStream;
 			_splitter = new FrameSplitter(cs, false, "udpStream");
-			_uc = new UdpClient(8889) {Ttl = 5, Client = {ReceiveBufferSize = 2000}};
+			_uc = new UdpClient(21324) {Ttl = 5, Client = {ReceiveBufferSize = 2000}};
 			_uc.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 			_uc.Client.Blocking = false;
 			if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
@@ -59,6 +61,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 			}
 
 			RefreshSystem();
+			_timeOutWatch = new Stopwatch();
 		}
 
 		public Task ToggleStream(CancellationToken ct) {
@@ -67,7 +70,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 			return ExecuteAsync(ct);
 		}
 
-		public bool SourceActive => _splitter.SourceActive;
+		public bool SourceActive { get; private set; }
 
 		private void RefreshSystem() {
 			var sd = DataUtil.GetSystemData();
@@ -75,7 +78,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 			_hostName = _sd.DeviceName;
 			_discovery?.Dispose();
 			var addr = new List<IPAddress> {IPAddress.Parse(IpUtil.GetLocalIpAddress())};
-			var service = new ServiceProfile(_hostName, "_glimmr._tcp", 8889, addr);
+			var service = new ServiceProfile(_hostName, "_glimmr._tcp", 21324, addr);
 			_discovery = new ServiceDiscovery();
 			_discovery.Advertise(service);
 		}
@@ -86,10 +89,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 			_sd = DataUtil.GetSystemData();
 			var dims = new[] {_gd.LeftCount, _gd.RightCount, _gd.TopCount, _gd.BottomCount};
 			_builder = new FrameBuilder(dims);
-			//_streaming = true;
-			//_cs.SetModeEvent -= Mode;
 			await _cs.SetMode(5);
-			//_cs.SetModeEvent += Mode;
 		}
 
 		private Task Mode(object arg1, DynamicEventArgs arg2) {
@@ -110,15 +110,6 @@ namespace Glimmr.Models.ColorSource.UDP {
 			}, stoppingToken);
 		}
 
-		public Color[] GetColors() {
-			return _splitter.GetColors();
-		}
-
-		public Color[] GetSectors() {
-			return _splitter.GetSectors();
-		}
-
-
 		private async Task Listen() {
 			while (!_stoppingToken.IsCancellationRequested) {
 				if (!_streaming) {
@@ -126,6 +117,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 				}
 
 				try {
+					await CheckTimeout();
 					var result = await _uc.ReceiveAsync();
 					if (!_sending) {
 						await ProcessFrame(result.Buffer).ConfigureAwait(false);
@@ -134,6 +126,15 @@ namespace Glimmr.Models.ColorSource.UDP {
 					// Ignored
 				}
 			}
+		}
+
+		private Task CheckTimeout() {
+			if (!_timeOutWatch.IsRunning) {
+				_timeOutWatch.Start();
+			}
+
+			SourceActive = _timeOutWatch.ElapsedMilliseconds <= _timeOut * 1000;
+			return Task.CompletedTask;
 		}
 
 		public override Task StopAsync(CancellationToken stoppingToken) {
@@ -156,6 +157,10 @@ namespace Glimmr.Models.ColorSource.UDP {
 					_sending = false;
 					return;
 				}
+
+				// Set our timeout value and restart watch every time a frame is received
+				_timeOut = cp.Duration;
+				_timeOutWatch.Restart();
 				
 				var frame = _builder.Build(ledColors);
 				await _splitter.Update(frame);

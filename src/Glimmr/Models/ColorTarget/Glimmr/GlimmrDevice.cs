@@ -20,7 +20,7 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Glimmr {
 	public class GlimmrDevice : ColorTarget, IColorTarget, IDisposable {
-		private const int Port = 8889;
+		private const int Port = 21324;
 		private readonly HttpClient _httpClient;
 		private readonly UdpClient _udpClient;
 		private GlimmrData _data;
@@ -28,6 +28,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		private IPEndPoint? _ep;
 		private string _ipAddress;
 		private SystemData _sd;
+		private int _ledCount;
 
 		public GlimmrDevice(GlimmrData wd, ColorService cs) : base(cs) {
 			_udpClient = cs.ControlService.UdpClient;
@@ -72,7 +73,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		public async Task FlashColor(Color color) {
 			try {
 				if (_udpClient != null) {
-					var cp = new ColorPacket(ColorUtil.FillArray(color, _data.LedCount));
+					var cp = new ColorPacket(ColorUtil.FillArray(color, _ledCount));
 					var data = cp.Encode(255);
 					await _udpClient.SendAsync(data, data.Length, _ep);
 				}
@@ -105,6 +106,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			_data = dev;
 			_ipAddress = _data.IpAddress;
 			Enable = _data.Enable;
+			_ledCount = _data.LeftCount + _data.RightCount + _data.TopCount + _data.BottomCount;
 			Log.Debug($"Reloaded LED Data for {id}: " + JsonConvert.SerializeObject(_data));
 			return Task.CompletedTask;
 		}

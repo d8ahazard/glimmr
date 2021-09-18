@@ -176,7 +176,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 			try {
 				var cp = new ColorPacket(toSend,(UdpStreamMode) _protocol);
-				var packet = cp.Encode(); 
+				var packet = cp.Encode(255); 
 				await _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep).ConfigureAwait(false);
 				ColorService?.Counter.Tick(Id);
 			} catch (Exception e) {
