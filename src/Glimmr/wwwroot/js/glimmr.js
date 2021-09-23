@@ -460,6 +460,7 @@ function setSocketListeners() {
     });
 
     websocket.on("mode", function (mode) {
+        console.log("Mode updated via web socket:", mode);
         setMode(mode);
         data.setProp("DeviceMode",mode);
     });
@@ -1689,7 +1690,6 @@ function loadSettingObject(obj) {
 function expandCards() {
     let devCards = document.querySelectorAll(".card.devCard.min");
     if (devCards.length >= 1) {
-        console.log("Expanding: ", devCards[0]);
         devCards[0].classList.remove("min");
         setTimeout(expandCards, 50);
     }   
@@ -1762,7 +1762,6 @@ function getSubtitle(device) {
         count.innerText = " (" + val + ")";
         subTitle.appendChild(count);
     }
-    console.log("Returning: ", subTitle);
     return subTitle;
 }
 

@@ -69,7 +69,7 @@ namespace Glimmr.Controllers {
 
 		[HttpGet("DbDownload")]
 		public FileResult DbDownload() {
-			var dbPath = DataUtil.ExportSettings();
+			var dbPath = DataUtil.BackupDb();
 			var fileBytes = System.IO.File.ReadAllBytes(dbPath);
 			var fileName = Path.GetFileName(dbPath);
 			return File(fileBytes, MediaTypeNames.Application.Octet, fileName);
@@ -200,6 +200,14 @@ namespace Glimmr.Controllers {
 			var gd = new GlimmrData(sd);
 			await _controlService.StartStream(gd);
 			return Ok(gd);
+		}
+
+		[HttpGet("mode")]
+		public async Task<IActionResult> Mode([FromQuery(Name = "mode")] int mode) {
+			await _controlService.SetModeEvent.InvokeAsync(this, new DynamicEventArgs(mode));
+			var sd = DataUtil.GetSystemData();
+			sd.DeviceMode = mode;
+			return Ok(JsonConvert.SerializeObject(sd));
 		}
 
 		[HttpPost("systemControl")]

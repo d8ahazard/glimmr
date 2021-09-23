@@ -32,10 +32,10 @@ namespace Glimmr.Models.ColorSource.UDP {
 		private string _hostName;
 		private SystemData _sd;
 		private bool _sending;
-		private CancellationToken _stoppingToken;
-		private bool _streaming;
+		private readonly CancellationToken _listenToken;
 		private readonly Stopwatch _timeOutWatch;
 		private int _timeOut;
+		private readonly CancellationTokenSource _cts;
 
 		public UdpStream(ColorService cs) {
 			_cs = cs.ControlService;
@@ -62,6 +62,10 @@ namespace Glimmr.Models.ColorSource.UDP {
 
 			RefreshSystem();
 			_timeOutWatch = new Stopwatch();
+			_cts = new CancellationTokenSource();
+			_listenToken = _cts.Token;
+			Task.Run(Listen, _listenToken);
+			Task.Run(Listen, _listenToken);
 		}
 
 		public Task ToggleStream(CancellationToken ct) {
@@ -94,28 +98,28 @@ namespace Glimmr.Models.ColorSource.UDP {
 
 		private Task Mode(object arg1, DynamicEventArgs arg2) {
 			_devMode = (DeviceMode) arg2.Arg0;
-			_streaming = _devMode == Udp;
 			return Task.CompletedTask;
 		}
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			_splitter.DoSend = true;
-			_stoppingToken = stoppingToken;
 			return Task.Run(async () => {
-				var l1 = Task.Run(Listen, stoppingToken);
-				var l2 = Task.Run(Listen, stoppingToken);
-				await Task.WhenAll(l1, l2);
+				try {
+					while (!stoppingToken.IsCancellationRequested) {
+						await Task.Delay(1000, stoppingToken);
+					}
+				} catch (Exception e) {
+					Log.Warning("Exception: " + e.Message);
+				}
+
 				_splitter.DoSend = false;
+				_cts.Cancel();
 				Log.Information("UDP Stream service stopped.");
 			}, stoppingToken);
 		}
 
 		private async Task Listen() {
-			while (!_stoppingToken.IsCancellationRequested) {
-				if (!_streaming) {
-					continue;
-				}
-
+			while (!_listenToken.IsCancellationRequested) {
 				try {
 					await CheckTimeout();
 					var result = await _uc.ReceiveAsync();
@@ -134,6 +138,10 @@ namespace Glimmr.Models.ColorSource.UDP {
 			}
 
 			SourceActive = _timeOutWatch.ElapsedMilliseconds <= _timeOut * 1000;
+			if (!_splitter.DoSend && SourceActive) {
+				Log.Debug("Enabling splitter.");
+			}
+			_splitter.DoSend = SourceActive;
 			return Task.CompletedTask;
 		}
 
@@ -145,9 +153,13 @@ namespace Glimmr.Models.ColorSource.UDP {
 
 		private async Task ProcessFrame(IReadOnlyList<byte> data) {
 			_sending = true;
+			_splitter.DoSend = true;
 			if (_devMode != Udp) {
-				Log.Debug("Wrong device mode...");
-				return;
+				Log.Debug("Starting stream via stream?");
+				_gd = new GlimmrData(DataUtil.GetSystemData());
+				var dims = new[] {_gd.LeftCount, _gd.RightCount, _gd.TopCount, _gd.BottomCount};
+				_builder = new FrameBuilder(dims);
+				await _cs.SetMode(5);
 			}
 			try {
 				var cp = new ColorPacket(data.ToArray());

@@ -6,11 +6,9 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Glimmr.Hubs;
 using Glimmr.Models;
 using Glimmr.Models.ColorTarget;
 using Glimmr.Models.Util;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
@@ -19,7 +17,6 @@ using Serilog;
 namespace Glimmr.Services {
 	public class DiscoveryService : BackgroundService {
 		private readonly List<IColorDiscovery> _discoverables;
-		private readonly IHubContext<SocketServer> _hubContext;
 		private readonly CancellationTokenSource _syncSource;
 		private bool _discovering;
 		private int _discoveryInterval;
@@ -27,8 +24,7 @@ namespace Glimmr.Services {
 		private CancellationToken _stopToken;
 		private bool _streaming;
 
-		public DiscoveryService(IHubContext<SocketServer> hubContext, ControlService cs) {
-			_hubContext = hubContext;
+		public DiscoveryService(ControlService cs) {
 			var controlService = cs;
 			controlService.DeviceRescanEvent += TriggerRefresh;
 			controlService.SetModeEvent += UpdateMode;

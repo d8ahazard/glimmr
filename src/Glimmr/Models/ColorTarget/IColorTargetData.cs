@@ -18,6 +18,7 @@ namespace Glimmr.Models.ColorTarget {
 		public string Id { get; }
 		public string IpAddress { get; }
 		public string LastSeen { get; }
+
 		public string Name { get; }
 		public void UpdateFromDiscovered(IColorTargetData data);
 	}

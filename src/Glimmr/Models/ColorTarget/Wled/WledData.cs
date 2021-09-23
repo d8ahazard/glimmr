@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Net;
-using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
 using Serilog;
@@ -52,6 +51,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		public WledData() {
 			Tag = "Wled";
 			Name ??= Tag;
+			Segments = Array.Empty<WledSegment>();
 			Id = "";
 			IpAddress = "";
 			ControlStrip = false;
@@ -74,6 +74,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			ControlStrip = false;
 			AutoDisable = true;
 			Sectors = new List<int>();
+			Segments = Array.Empty<WledSegment>();
 			SubSectors = new Dictionary<int, int>();
 			using var webClient = new WebClient();
 			try {
@@ -83,7 +84,9 @@ namespace Glimmr.Models.ColorTarget.Wled {
 				State = jsonObj;
 
 				LedCount = jsonObj.Info.Leds.Count;
+				Segments = jsonObj.State.Segments;
 				Brightness = (int) (jsonObj.State.Bri / 255f * 100);
+				
 			} catch (Exception e) {
 				Log.Debug("Yeah, here's your problem, smart guy: " + e.Message);
 			}
@@ -94,6 +97,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		[JsonProperty] public string IpAddress { get; set; }
 		[JsonProperty] public bool Enable { get; set; }
 		[JsonProperty] public string LastSeen { get; set; }
+		
+		[JsonProperty] public WledSegment[] Segments { get; set; }
 
 
 		public void UpdateFromDiscovered(IColorTargetData data) {
@@ -107,6 +112,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			LedCount = input.LedCount;
 			IpAddress = data.IpAddress;
 			Name = StringUtil.UppercaseFirst(input.Name);
+			Segments = input.Segments;
 		}
 
 		public SettingsProperty[] KeyProperties {
@@ -184,16 +190,16 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		[JsonProperty("send")] public bool Send { get; set; }
 	}
 
-	public class Seg {
+	public class WledSegment {
 		[JsonProperty("mi")] public bool Mi { get; set; }
 
 		[JsonProperty("on")] public bool On { get; set; }
 
-		[JsonProperty("rev")] public bool Rev { get; set; }
+		[JsonProperty("rev")] public bool ReverseStrip { get; set; }
 
 		[JsonProperty("sel")] public bool Sel { get; set; }
 
-		[JsonProperty("bri")] public int Bri { get; set; }
+		[JsonProperty("bri")] public int Brightness { get; set; }
 
 		[JsonProperty("fx")] public int Fx { get; set; }
 
@@ -203,13 +209,13 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 		[JsonProperty("ix")] public int Ix { get; set; }
 
-		[JsonProperty("len")] public int Len { get; set; }
+		[JsonProperty("len")] public int LedCount { get; set; }
 
 		[JsonProperty("pal")] public int Pal { get; set; }
 
 		[JsonProperty("spc")] public int Spc { get; set; }
 
-		[JsonProperty("start")] public int Start { get; set; }
+		[JsonProperty("start")] public int Offset { get; set; }
 
 		[JsonProperty("stop")] public int Stop { get; set; }
 
@@ -228,7 +234,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		[JsonProperty("ps")] public int Ps { get; set; }
 		[JsonProperty("pss")] public int Pss { get; set; }
 		[JsonProperty("transition")] public int Transition { get; set; }
-		[JsonProperty("seg")] public List<Seg> Seg { get; set; }
+		[JsonProperty("seg")] public WledSegment[] Segments { get; set; }
 		[JsonProperty("nl")] public Nl Nl { get; set; }
 		[JsonProperty("udpn")] public Udpn Udpn { get; set; }
 	}

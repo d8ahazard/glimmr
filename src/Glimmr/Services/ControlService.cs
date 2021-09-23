@@ -2,7 +2,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Sockets;
@@ -239,6 +239,7 @@ namespace Glimmr.Services {
 			return Task.Run(async () => {
 				while (!stoppingToken.IsCancellationRequested) {
 					await Task.Delay(60000, stoppingToken);
+					CheckBackups();
 					if (!_sd.AutoUpdate) {
 						continue;
 					}
@@ -258,6 +259,44 @@ namespace Glimmr.Services {
 				Log.Debug("Control service stopped.");
 				return Task.CompletedTask;
 			}, stoppingToken);
+		}
+
+		private void CheckBackups() {
+			var userPath = SystemUtil.GetUserDir();
+			var dbFiles = Directory.GetFiles(userPath, "*.db");
+			if (dbFiles.Length == 0) {
+				Log.Debug("Backing up database...");
+				DataUtil.BackupDb();
+			}
+			
+			var userDir = SystemUtil.GetUserDir();
+			var stamp = DateTime.Now.ToString("yyyyMMddHHmm");
+			var outFile = Path.Combine(userDir, $"store_{stamp}_.db");
+			if (!dbFiles.Contains(outFile)) {
+				Log.Debug("Backing up database...");
+			}
+
+			if (dbFiles.Length <= 8) {
+				return;
+			}
+
+			foreach (var p in dbFiles) {
+				var pStamp = p.Replace(userDir, "");
+				pStamp = pStamp.Replace(Path.DirectorySeparatorChar.ToString(), "");
+				pStamp = pStamp.Replace("store_", "");
+				pStamp = pStamp.Replace("_.db", "");
+				if (DateTime.Now - DateTime.Parse(pStamp) <= TimeSpan.FromDays(7)) {
+					continue;
+				}
+
+				if (p.Equals(Path.Combine(userDir, "store.db"))) continue;
+				try {
+					Log.Debug("Deleting old db backup: " + p);
+					File.Delete(p);
+				} catch (Exception e) {
+					Log.Warning($"Exception removing file({p}): " + e.Message);
+				}
+			}
 		}
 
 		private void Initialize() {

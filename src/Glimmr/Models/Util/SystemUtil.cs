@@ -94,7 +94,7 @@ namespace Glimmr.Models.Util {
 
 
 			Log.Information("Backing up current settings...");
-			DataUtil.ExportSettings();
+			DataUtil.BackupDb();
 			var branch = GetBranch();
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 				Process.Start("../script/update_win.bat", branch);
