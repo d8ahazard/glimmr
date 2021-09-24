@@ -65,7 +65,6 @@ namespace Glimmr.Services {
 			_streams = new Dictionary<string, IColorSource>();
 			ControlService = controlService;
 			Counter = new FrameCounter(this);
-			ControlService.ColorService = this;
 			ControlService.SetModeEvent += Mode;
 			ControlService.DeviceReloadEvent += RefreshDeviceData;
 			ControlService.RefreshLedEvent += ReloadLedData;
@@ -108,6 +107,7 @@ namespace Glimmr.Services {
 
 			Log.Debug("Starting main Color Service loop...");
 			await Task.Run(async () => {
+				var cTask = ControlService.Execute(stoppingToken);
 				var loopWatch = new Stopwatch();
 				loopWatch.Start();
 				var fc = 0;

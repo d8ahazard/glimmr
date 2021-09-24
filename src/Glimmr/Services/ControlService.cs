@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -18,6 +19,7 @@ using Glimmr.Models.ColorTarget;
 using Glimmr.Models.ColorTarget.Glimmr;
 using Glimmr.Models.ColorTarget.Led;
 using Glimmr.Models.Util;
+using LiteDB;
 using Makaretu.Dns;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
@@ -235,8 +237,18 @@ namespace Glimmr.Services {
 			await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
 		}
 
+		public Task Execute(CancellationToken stoppingToken) {
+			return ExecuteAsync(stoppingToken);
+		}
+
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
+			Log.Debug("Starting control service loop?");
 			return Task.Run(async () => {
+				Log.Debug("Running execute...");
+				await Task.Yield();
+				Log.Debug("Checking backups...");
+				CheckBackups();
+				Log.Debug("Starting main loop.");
 				while (!stoppingToken.IsCancellationRequested) {
 					await Task.Delay(60000, stoppingToken);
 					CheckBackups();
@@ -261,35 +273,44 @@ namespace Glimmr.Services {
 			}, stoppingToken);
 		}
 
-		private void CheckBackups() {
+		private static void CheckBackups() {
+			Log.Debug("Checking db backups...");
 			var userPath = SystemUtil.GetUserDir();
 			var dbFiles = Directory.GetFiles(userPath, "*.db");
-			if (dbFiles.Length == 0) {
+			if (dbFiles.Length == 1) {
 				Log.Debug("Backing up database...");
 				DataUtil.BackupDb();
 			}
 			
 			var userDir = SystemUtil.GetUserDir();
-			var stamp = DateTime.Now.ToString("yyyyMMddHHmm");
-			var outFile = Path.Combine(userDir, $"store_{stamp}_.db");
+			var stamp = DateTime.Now.ToString("yyyyMMdd");
+			var outFile = Path.Combine(userDir, $"store_{stamp}.db");
+			Log.Debug($"Looking for {outFile}");
 			if (!dbFiles.Contains(outFile)) {
-				Log.Debug("Backing up database...");
+				Log.Debug($"Backing up database for {stamp}...");
+				DataUtil.BackupDb();
 			}
 
+			Array.Sort(dbFiles);
+			Array.Reverse(dbFiles);
 			if (dbFiles.Length <= 8) {
 				return;
 			}
 
+			Log.Debug("Pruning old backups...");
 			foreach (var p in dbFiles) {
 				var pStamp = p.Replace(userDir, "");
 				pStamp = pStamp.Replace(Path.DirectorySeparatorChar.ToString(), "");
 				pStamp = pStamp.Replace("store_", "");
-				pStamp = pStamp.Replace("_.db", "");
-				if (DateTime.Now - DateTime.Parse(pStamp) <= TimeSpan.FromDays(7)) {
+				pStamp = pStamp.Replace(".db", "");
+				Log.Debug("P stamp is " + pStamp);
+				var diff = DateTime.Now - DateTime.ParseExact(pStamp, "yyyyMMdd", CultureInfo.InvariantCulture);
+				if (diff <= TimeSpan.FromDays(7)) {
 					continue;
 				}
 
 				if (p.Equals(Path.Combine(userDir, "store.db"))) continue;
+				if (p.Contains("-log")) continue;
 				try {
 					Log.Debug("Deleting old db backup: " + p);
 					File.Delete(p);
@@ -354,6 +375,7 @@ v. {version}
 			MulticastService = new MulticastService();
 			ServiceDiscovery = new ServiceDiscovery(MulticastService);
 			LoadAgents();
+			Log.Information("Loading color util info...");
 			// Dynamically load agents
 			ColorUtil.SetSystemData();
 			Log.Information("Control service started.");
