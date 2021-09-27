@@ -3237,7 +3237,7 @@ function createHueMap() {
     groupSelectCol.appendChild(groupSelect);
     hueMapRow.appendChild(groupSelectCol);
 
-    if (group === null || group["lights"] === null) {
+    if (!isValid(group) || !isValid(group["lights"])) {
         console.log("No group, returning: ", group);
         return hueMapRow;        
     }
@@ -3279,7 +3279,7 @@ function createHueMap() {
                     }
                 }
             }
-
+            console.log("Checking for " + id + " in " , ids);
             if (ids.includes(id)) {
                 // Create the div for the other divs
                 let name = light['Name'];

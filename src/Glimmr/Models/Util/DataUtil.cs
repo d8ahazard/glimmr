@@ -11,6 +11,7 @@ using Glimmr.Models.ColorSource.Ambient;
 using Glimmr.Models.ColorSource.Audio;
 using Glimmr.Models.ColorTarget;
 using LiteDB;
+using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
@@ -42,6 +43,7 @@ namespace Glimmr.Models.Util {
 				Log.Debug("Creating new db.");
 				try {
 					var db = new LiteDatabase(userPath);
+					Log.Debug("Returning db from " + userPath);
 					return db;
 				} catch (Exception e) {
 					Log.Warning("Exception creating database: " + e.Message);
@@ -62,6 +64,7 @@ namespace Glimmr.Models.Util {
 		}
 
 		public static void RollbackDb() {
+			Log.Debug("Rolling back database.");
 			// Get list of db files
 			var userPath = SystemUtil.GetUserDir();
 			var dbFiles = Directory.GetFiles(userPath, "*.db");
@@ -374,15 +377,21 @@ namespace Glimmr.Models.Util {
 		}
 
 		public static bool ImportSettings(string newPath) {
-			var dbPath = "./store.db";
 			var userDir = SystemUtil.GetUserDir();
 			var stamp = DateTime.Now.ToString("yyyyMMdd");
+			var userPath = SystemUtil.GetUserDir();
+			var dbPath = Path.Join(userPath, "store.db");
 			var outFile = Path.Combine(userDir, $"store_{stamp}.db");
 			// lock DB so we don't get issues
 			_dbLocked = true;
 			_db?.Commit();
 			_db?.Dispose();
 			try {
+				// Back up existing db
+				if (File.Exists(outFile)) {
+					var rand = new Random();
+					File.Move(outFile, outFile + rand.Next());
+				}
 				File.Copy(dbPath, outFile);
 			} catch (Exception d) {
 				Log.Warning("Exception backing up DB: " + d.Message);
@@ -392,6 +401,9 @@ namespace Glimmr.Models.Util {
 				Log.Debug($"DB backed up to {outFile}, importing new DB.");
 				try {
 					File.Copy(newPath, dbPath, true);
+					GetDb();
+					CacheDevices();
+					CacheSystemData();
 					_db = new LiteDatabase(dbPath);
 					_dbLocked = false;
 					return true;

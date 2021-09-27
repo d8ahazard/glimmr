@@ -250,7 +250,7 @@ namespace Glimmr.Services {
 				CheckBackups();
 				Log.Debug("Starting main loop.");
 				while (!stoppingToken.IsCancellationRequested) {
-					await Task.Delay(60000, stoppingToken);
+					await Task.Delay(600000, stoppingToken);
 					CheckBackups();
 					if (!_sd.AutoUpdate) {
 						continue;
@@ -405,7 +405,8 @@ v. {version}
 		public async Task AddDevice(IColorTargetData data) {
 			await DataUtil.AddDeviceAsync(data);
 			Log.Debug("Adding device " + data.Name);
-			await _hubContext.Clients.All.SendAsync("device", JsonConvert.SerializeObject(data));
+			IColorTargetData? data2 = DataUtil.GetDevice(data.Id) ?? null;
+			if (data2 != null) await _hubContext.Clients.All.SendAsync("device", JsonConvert.SerializeObject(data2));
 		}
 
 
