@@ -25,10 +25,9 @@ namespace Glimmr.Services {
 		private bool _streaming;
 
 		public DiscoveryService(ControlService cs) {
-			var controlService = cs;
-			controlService.DeviceRescanEvent += TriggerRefresh;
-			controlService.SetModeEvent += UpdateMode;
-			controlService.RefreshSystemEvent += RefreshSystem;
+			cs.DeviceRescanEvent += TriggerRefresh;
+			cs.SetModeEvent += UpdateMode;
+			cs.RefreshSystemEvent += RefreshSystem;
 			_discoveryInterval = DataUtil.GetItem<int>("AutoDiscoveryFrequency");
 			if (_discoveryInterval < 15) {
 				_discoveryInterval = 15;
@@ -37,14 +36,8 @@ namespace Glimmr.Services {
 			var classnames = SystemUtil.GetClasses<IColorDiscovery>();
 			_discoverables = new List<IColorDiscovery>();
 			_syncSource = new CancellationTokenSource();
-			foreach (var c in classnames) {
-				var obj = Activator.CreateInstance(Type.GetType(c)!, cs.ColorService);
-				if (obj == null) {
-					continue;
-				}
-
-				var dev = (IColorDiscovery) obj;
-				_discoverables.Add(dev);
+			foreach (var dev in classnames.Select(c => Activator.CreateInstance(Type.GetType(c)!, cs.ColorService)).Where(obj => obj != null).Cast<IColorDiscovery?>()) {
+				if (dev != null) _discoverables.Add(dev);
 			}
 		}
 

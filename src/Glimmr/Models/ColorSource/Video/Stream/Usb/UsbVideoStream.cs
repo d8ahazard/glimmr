@@ -28,7 +28,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 			Dispose(true);
 		}
 
-		public async Task Start(CancellationToken ct, FrameSplitter splitter) {
+		public async Task Start(FrameSplitter splitter, CancellationToken ct) {
 			Log.Debug("Starting USB Stream...");
 			_splitter = splitter;
 			await Refresh();
@@ -50,7 +50,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 			return Task.CompletedTask;
 		}
 
-		public Task Refresh() {
+		private Task Refresh() {
 			var sd = DataUtil.GetSystemData();
 			var inputStream = sd.UsbSelection;
 			if (inputStream != _inputStream || _video == null) {

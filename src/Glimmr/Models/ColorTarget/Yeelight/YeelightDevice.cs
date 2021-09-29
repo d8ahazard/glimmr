@@ -1,6 +1,7 @@
 ﻿#region
 
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 using System.Threading;
@@ -24,6 +25,8 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		private Task? _streamTask;
 
 		private int _targetSector;
+
+		private float _brightness;
 
 
 		public YeelightDevice(YeelightData yd, ColorService cs) : base(cs) {
@@ -84,10 +87,8 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			await _yeeDevice.StopMusicMode();
 			_yeeDevice.Disconnect();
 			Streaming = false;
-			if (_streamTask != null) {
-				if (!_streamTask.IsCompleted) {
-					_streamTask.Dispose();
-				}
+			if (_streamTask is { IsCompleted: false }) {
+				_streamTask.Dispose();
 			}
 
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
@@ -114,7 +115,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			return SetColor(args.SectorColors, args.Force);
 		}
 
-		private async Task SetColor(Color[] sectors, bool force = false) {
+		private async Task SetColor(IReadOnlyList<Color> sectors, bool force = false) {
 			if (!Streaming || !Enable) {
 				return;
 			}
@@ -125,9 +126,11 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 				}
 			}
 
-			// TODO: Clamp brightness here.
 			var col = sectors[_targetSector];
-			if (_targetSector >= sectors.Length) {
+			if (_data.Brightness < 255) {
+				col = ColorUtil.ClampBrightness(col, (int) _brightness);
+			}
+			if (_targetSector >= sectors.Count) {
 				return;
 			}
 
@@ -155,6 +158,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 				target = ColorUtil.FindEdge(target + 1);
 			}
 
+			_brightness = _data.Brightness * 2.55f;
 			_targetSector = target;
 			Id = _data.Id;
 			Enable = _data.Enable;

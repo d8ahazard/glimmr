@@ -104,7 +104,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		public void UpdateFromDiscovered(IColorTargetData data) {
 			var input = (WledData) data;
 			if (input == null) {
-				throw new ArgumentNullException(nameof(input));
+				throw new ArgumentNullException(nameof(data));
 			}
 
 			AutoDisable = input.AutoDisable;

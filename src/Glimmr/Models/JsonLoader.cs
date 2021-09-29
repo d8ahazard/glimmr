@@ -97,11 +97,7 @@ namespace Glimmr.Models {
 
 		private dynamic GetDefault() {
 			var files = LoadFiles<AudioScene>();
-			if (files.Count != 0) {
-				return files[0];
-			}
-
-			return new AudioScene();
+			return files.Count != 0 ? files[0] : new AudioScene();
 		}
 	}
 }

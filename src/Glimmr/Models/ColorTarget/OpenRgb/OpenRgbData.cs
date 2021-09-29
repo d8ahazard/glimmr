@@ -164,8 +164,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			if (dev.Description != Description) return false;
 			if (dev.Version != Version) return false;
 			if (dev.Serial != Serial) return false;
-			if (dev.Location != Location) return false;
-			return true;
+			return dev.Location == Location;
 		}
 	}
 }

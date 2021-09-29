@@ -26,7 +26,7 @@ namespace Glimmr.Models.Util {
 				return false;
 			}
 
-			if (target == "127.0.0.1" || target == "localhost") {
+			if (target is "127.0.0.1" or "localhost") {
 				return true;
 			}
 
@@ -61,7 +61,7 @@ namespace Glimmr.Models.Util {
 				}
 			};
 			process.Start();
-			string output = process.StandardOutput.ReadToEnd();
+			var output = process.StandardOutput.ReadToEnd();
 			process.WaitForExit();
 			return output.ToLower().Contains("raspbian");
 		}
@@ -129,17 +129,17 @@ namespace Glimmr.Models.Util {
 			var userDir = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "C:\\ProgramData\\" : "/etc/";
 
 			var fullPath = Path.Combine(userDir, "Glimmr");
-			if (!Directory.Exists(fullPath)) {
-				try {
-					Directory.CreateDirectory(fullPath);
-					return fullPath;
-				} catch (Exception e) {
-					Log.Warning("Exception creating userdata dir: " + e.Message);
-					return string.Empty;
-				}
+			if (Directory.Exists(fullPath)) {
+				return Directory.Exists(fullPath) ? fullPath : string.Empty;
 			}
 
-			return Directory.Exists(fullPath) ? fullPath : string.Empty;
+			try {
+				Directory.CreateDirectory(fullPath);
+				return fullPath;
+			} catch (Exception e) {
+				Log.Warning("Exception creating userdata dir: " + e.Message);
+				return string.Empty;
+			}
 		}
 
 		public static List<string> GetClasses<T>() {
@@ -239,13 +239,6 @@ namespace Glimmr.Models.Util {
 
 
 			return cams;
-		}
-
-		public static string ExportLog() {
-			var userDir = GetUserDir();
-			var stamp = DateTime.Now.ToString("yyyyMMdd");
-			var outFile = Path.Combine(userDir, $"glimmr{stamp}.log");
-			return outFile;
 		}
 	}
 }

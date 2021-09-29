@@ -6,7 +6,6 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
-using DreamScreenNet;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -23,7 +22,7 @@ namespace Glimmr.Models {
 		// Do we send our frame data to the UI?
 		public bool DoSend { get; set; }
 		public bool SourceActive { get; set; }
-		public ColorService ColorService { get; }
+		private ColorService ColorService { get; }
 		private const int ScaleHeight = 480;
 		private const int ScaleWidth = 640;
 		private readonly float _borderHeight;
@@ -220,7 +219,7 @@ namespace Glimmr.Models {
 				secs = _colorsSectorsIn;
 			}
 
-			if (inMat != null && !inMat.IsEmpty) {
+			if (inMat is { IsEmpty: false }) {
 				ColorService.ControlService.SendImage("inputImage", inMat).ConfigureAwait(false);
 			}
 
@@ -262,7 +261,7 @@ namespace Glimmr.Models {
 				ColorService.ControlService.SendImage("outputImage", outMat).ConfigureAwait(false);
 			}
 
-			inMat?.Dispose();
+			inMat.Dispose();
 			outMat.Dispose();
 		}
 
@@ -403,7 +402,7 @@ namespace Glimmr.Models {
 			return output;
 		}
 
-		private VectorOfPointF? FindTarget(Mat input) {
+		private VectorOfPointF? FindTarget(IInputArray input) {
 			var cannyEdges = new Mat();
 			var uImage = new Mat();
 			var gray = new Mat();
@@ -571,8 +570,7 @@ namespace Glimmr.Models {
 			var unique = raw.Distinct().ToArray();
 			
 			var count = Sum(raw);
-			var noImage = count == 0 || width == 0 || height == 0;
-			if (unique.Length == 1 && unique[0] <= blackLevel) noImage = true;
+			var noImage = count == 0 || width == 0 || height == 0 || unique.Length == 1 && unique[0] <= blackLevel;
 			// If it is, we can stop here
 			if (noImage) {
 				_allBlack = true;
@@ -691,20 +689,15 @@ namespace Glimmr.Models {
 			var pOffset = _pCropPixels == 0 ? _pCropPixels : _pCropPixels + (int) _borderWidth + 5;
 			var output = new Rectangle[_ledCount];
 
-			// Top Region
-			var tTop = lOffset;
 			// Bottom Region
 			var bBottom = ScaleHeight - lOffset;
 			var bTop = bBottom - _borderHeight;
 
-			// Left Column Border
-			var lLeft = pOffset;
-
 			// Right Column Border
 			var rRight = ScaleWidth - pOffset;
 			var rLeft = rRight - _borderWidth;
-			float w = ScaleWidth;
-			float h = ScaleHeight;
+			const float w = ScaleWidth;
+			const float h = ScaleHeight;
 
 			// Steps
 			var widthTop = (int) Math.Ceiling(w / _topCount);
@@ -733,7 +726,7 @@ namespace Glimmr.Models {
 					pos = 0;
 				}
 
-				output[idx] = new Rectangle(pos, tTop, widthTop, (int) _borderHeight);
+				output[idx] = new Rectangle(pos, lOffset, widthTop, (int) _borderHeight);
 				idx++;
 				pos -= widthTop;
 			}
@@ -747,7 +740,7 @@ namespace Glimmr.Models {
 					pos = ScaleHeight - heightLeft;
 				}
 
-				output[idx] = new Rectangle(lLeft, pos, (int) _borderWidth, heightLeft);
+				output[idx] = new Rectangle(pOffset, pos, (int) _borderWidth, heightLeft);
 				pos += heightLeft;
 				idx++;
 			}
@@ -835,9 +828,7 @@ namespace Glimmr.Models {
 			var sectorHeight = (ScaleHeight - lOffset * 2) / _vSectors;
 			// These are based on the border/strip values
 			// Minimum limits for top, bottom, left, right            
-			var minTop = lOffset;
 			var minBot = ScaleHeight - lOffset - squareSize;
-			var minLeft = pOffset;
 			var minRight = ScaleWidth - pOffset - squareSize;
 			// Calc right regions, bottom to top
 			var idx = 0;
@@ -853,7 +844,7 @@ namespace Glimmr.Models {
 			step = _hSectors - 2;
 			while (step > 0) {
 				var ord = step * sectorWidth + pOffset;
-				fs[idx] = new Rectangle(ord, minTop, sectorWidth, squareSize);
+				fs[idx] = new Rectangle(ord, lOffset, sectorWidth, squareSize);
 				idx++;
 				step--;
 			}
@@ -862,7 +853,7 @@ namespace Glimmr.Models {
 			// Calc left regions (top to bottom), skipping top-left
 			while (step <= _vSectors - 1) {
 				var ord = step * sectorHeight + lOffset;
-				fs[idx] = new Rectangle(minLeft, ord, squareSize, sectorHeight);
+				fs[idx] = new Rectangle(pOffset, ord, squareSize, sectorHeight);
 				idx++;
 				step++;
 			}

@@ -1,5 +1,6 @@
 ﻿#region
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Enums;
@@ -15,7 +16,7 @@ using Serilog;
 #endregion
 
 namespace Glimmr.Models.ColorSource.Video {
-	public sealed class VideoStream : BackgroundService, IColorSource {
+	public abstract class VideoStream : BackgroundService, IColorSource {
 		// should we send them to devices?
 		public bool SendColors {
 			set => StreamSplitter.DoSend = value;
@@ -50,7 +51,7 @@ namespace Glimmr.Models.ColorSource.Video {
 
 		public bool SourceActive => StreamSplitter.SourceActive;
 
-		public void RefreshSystem() {
+		private void RefreshSystem() {
 			_systemData = DataUtil.GetSystemData();
 			_captureMode = (CaptureMode) _systemData.CaptureMode;
 			_camType = (CameraType) _systemData.CamType;
@@ -69,7 +70,7 @@ namespace Glimmr.Models.ColorSource.Video {
 					return;
 				}
 
-				await _vc.Start(ct, StreamSplitter);
+				await _vc.Start(StreamSplitter, ct);
 				while (!ct.IsCancellationRequested) {
 					await Task.Delay(10, CancellationToken.None);
 				}
@@ -85,7 +86,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			_systemData = DataUtil.GetSystemData();
 		}
 
-		private IVideoStream? GetStream() {
+		private IVideoStream GetStream() {
 			switch (_captureMode) {
 				case CaptureMode.Camera:
 					switch (_camType) {
@@ -96,9 +97,10 @@ namespace Glimmr.Models.ColorSource.Video {
 						case CameraType.WebCam:
 							Log.Information("Using web cam for capture.");
 							return new UsbVideoStream();
+						default:
+							throw new ArgumentOutOfRangeException();
 					}
 
-					return null;
 				case CaptureMode.Hdmi:
 					Log.Information("Using usb stream for capture.");
 					return new UsbVideoStream();
@@ -106,9 +108,9 @@ namespace Glimmr.Models.ColorSource.Video {
 				case CaptureMode.Screen:
 					Log.Information("Using screen for capture.");
 					return new ScreenVideoStream();
+				default:
+					throw new ArgumentOutOfRangeException();
 			}
-
-			return null;
 		}
 	}
 }

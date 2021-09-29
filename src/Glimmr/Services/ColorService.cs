@@ -124,13 +124,18 @@ namespace Glimmr.Services {
 					}
 
 					var time = loopWatch.ElapsedMilliseconds;
-					if (time < ms) {
-						var diff = ms - time;
-						fc++;
-						await Task.Delay(TimeSpan.FromMilliseconds(diff), CancellationToken.None);
+					if (time >= ms) {
+						continue;
 					}
+
+					var diff = ms - time;
+					fc++;
+					await Task.Delay(TimeSpan.FromMilliseconds(diff), CancellationToken.None);
 				}
 
+				if (cTask.IsCompleted) {
+					Log.Debug("CTask canceled.");
+				}
 				loopWatch.Stop();
 				Log.Information("Send loop canceled.");
 
@@ -231,9 +236,8 @@ namespace Glimmr.Services {
 			var col = Color.FromArgb(255, 255, 0, 0);
 			var emptyColors = ColorUtil.EmptyColors(_systemData.LedCount);
 			var emptySectors = ColorUtil.EmptyColors(_systemData.SectorCount);
-			var bSectors = emptySectors;
-			bSectors[sector - 1] = col;
-			var tMat = builder.Build(bSectors);
+			emptySectors[sector - 1] = col;
+			var tMat = builder.Build(emptySectors);
 			foreach (var dev in _sDevices) {
 				if (dev.Enable) {
 					dev.Testing = true;
@@ -316,19 +320,20 @@ namespace Glimmr.Services {
 
 
 		private async Task LedTest(object o, DynamicEventArgs dynamicEventArgs) {
-			int led = dynamicEventArgs.Arg0;
-			var colors = ColorUtil.EmptyList(_systemData.LedCount).ToArray();
-			var blackColors = colors;
-			colors[led] = Color.FromArgb(255, 0, 0);
-			var sectors = ColorUtil.LedsToSectors(colors.ToList(), _systemData).ToArray();
-			var blackSectors = ColorUtil.EmptyList(_systemData.SectorCount).ToArray();
-			await SendColors(colors, sectors, 0, true);
-			await Task.Delay(500);
-			await SendColors(blackColors, blackSectors, 0, true);
-			await Task.Delay(500);
-			await SendColors(colors, sectors, 0, true);
-			await Task.Delay(500);
-			await SendColors(blackColors, blackSectors, 0, true);
+			if (dynamicEventArgs != null) {
+				int led = dynamicEventArgs.Arg0;
+				var colors = ColorUtil.EmptyList(_systemData.LedCount).ToArray();
+				colors[led] = Color.FromArgb(255, 0, 0);
+				var sectors = ColorUtil.LedsToSectors(colors.ToList(), _systemData).ToArray();
+				var blackSectors = ColorUtil.EmptyList(_systemData.SectorCount).ToArray();
+				await SendColors(colors, sectors, 0, true);
+				await Task.Delay(500);
+				await SendColors(colors, blackSectors, 0, true);
+				await Task.Delay(500);
+				await SendColors(colors, sectors, 0, true);
+				await Task.Delay(500);
+				await SendColors(colors, blackSectors, 0, true);
+			}
 
 			foreach (var dev in _sDevices) {
 				dev.Testing = false;
@@ -460,7 +465,7 @@ namespace Glimmr.Services {
 			var classes = SystemUtil.GetClasses<IColorTarget>();
 			foreach (var c in classes) {
 				try {
-					string tag = c.Replace("Glimmr.Models.ColorTarget.", "");
+					var tag = c.Replace("Glimmr.Models.ColorTarget.", "");
 					tag = tag.Split(".")[0];
 					if (devData.Tag != tag) {
 						continue;

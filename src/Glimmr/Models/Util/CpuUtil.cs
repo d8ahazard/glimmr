@@ -139,10 +139,10 @@ namespace Glimmr.Models.Util {
 			var processResult = (await process.StandardOutput.ReadToEndAsync()).Trim();
 			await process.WaitForExitAsync();
 			process.Dispose();
-			var loadAverages = processResult.Substring(processResult.IndexOf("average: ", Sc) + 9).Split(',');
-			float.TryParse(loadAverages[0], out _loadAvg1);
-			float.TryParse(loadAverages[1], out _loadAvg5);
-			float.TryParse(loadAverages[2], out _loadAvg15);
+			var loadAverages = processResult[(processResult.IndexOf("average: ", Sc) + 9)..].Split(',');
+			if (float.TryParse(loadAverages[0], out var la1)) _loadAvg1 = la1;
+			if (float.TryParse(loadAverages[1], out var la5)) _loadAvg5 = la5;
+			if (float.TryParse(loadAverages[2], out var la15)) _loadAvg15 = la15;
 			_upTime = processResult.Split(",")[1].Trim();
 		}
 

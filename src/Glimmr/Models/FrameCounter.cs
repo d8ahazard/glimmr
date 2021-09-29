@@ -22,10 +22,7 @@ namespace Glimmr.Models {
 			cs.ControlService.SetModeEvent += Mode;
 		}
 
-		public void Dispose() {
-			_stopwatch.Stop();
-		}
-
+		
 		private Task Mode(object arg1, DynamicEventArgs arg2) {
 			var newMode = (DeviceMode) arg2.Arg0;
 			if (newMode != DeviceMode.Off) {
@@ -63,5 +60,11 @@ namespace Glimmr.Models {
 			_ticks = new ConcurrentDictionary<string, int> {["source"] = 0};
 			Rates = _ticks;
 		}
+		
+		public void Dispose() {
+			_stopwatch.Stop();
+			GC.SuppressFinalize(this);
+		}
+
 	}
 }

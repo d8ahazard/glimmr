@@ -70,14 +70,6 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 			_systemData = DataUtil.GetSystemData();
 		}
 
-		public Color[] GetColors() {
-			return _colors;
-		}
-
-		public Color[] GetSectors() {
-			return _sectors;
-		}
-
 		private void TriggerSave() {
 			_doSave = true;
 		}
@@ -148,11 +140,11 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 					_as.StreamSplitter.DoSend = false;
 				}
 
-				if (_aTask != null && !_aTask.IsCompleted) {
+				if (_aTask is { IsCompleted: false }) {
 					_aTask.Dispose();
 				}
 
-				if (_vTask != null && !_vTask.IsCompleted) {
+				if (_vTask is { IsCompleted: false }) {
 					_vTask.Dispose();
 				}
 

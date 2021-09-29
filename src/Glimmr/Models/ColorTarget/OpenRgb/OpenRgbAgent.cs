@@ -41,7 +41,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			}
 		}
 
-		public void SetMode(int deviceId, int mode, Color[] colors) {
+		public void SetMode(int deviceId, int mode) {
 			if (_client == null) return;
 			if (!DeviceExists(deviceId)) return;
 			Connect();
@@ -58,16 +58,17 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		}
 
 		private bool DeviceExists(int deviceId) {
-			if (_devices == null) _devices = new Device[0];
+			_devices ??= Array.Empty<Device>();
 			return deviceId >= _devices.Length - 1;
 		}
 		
 		public void Dispose() {
 			_client?.Dispose();
+			GC.SuppressFinalize(this);
 		}
 
 		public dynamic CreateAgent(ControlService cs) {
-			if (_devices == null) _devices = GetDevices().ToArray();
+			_devices ??= GetDevices().ToArray();
 			cs.RefreshSystemEvent += LoadClient;
 			LoadClient();
 			return this;

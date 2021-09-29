@@ -12,7 +12,6 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.DreamScreen {
 	public class DreamScreenDiscovery : ColorDiscovery, IColorDiscovery {
-		public virtual string DeviceTag { get; set; } = "DreamScreen";
 		private readonly DreamScreenClient? _client;
 		private readonly ControlService _cs;
 

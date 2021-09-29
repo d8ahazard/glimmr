@@ -76,7 +76,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			}
 
 			var devName = name.Split(".")[0];
-			devName = devName.Substring(Math.Max(0, devName.Length - 3));
+			devName = devName[Math.Max(0, devName.Length - 3)..];
 			nData.Name = devName;
 			foreach (var msg in e.Message.AdditionalRecords) {
 				try {
@@ -106,17 +106,12 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				}
 			}
 
-			if (nData.Type == "NL42") {
-				nData.Name = $"Shape {devName}";
-			}
-
-			if (nData.Type == "NL29") {
-				nData.Name = $"Canvas {devName}";
-			}
-
-			if (nData.Type == "NL22") {
-				nData.Name = $"Rhythm {devName}";
-			}
+			nData.Name = nData.Type switch {
+				"NL42" => $"Shape {devName}",
+				"NL29" => $"Canvas {devName}",
+				"NL22" => $"Rhythm {devName}",
+				_ => nData.Name
+			};
 
 			if (string.IsNullOrEmpty(nData.IpAddress) && !string.IsNullOrEmpty(nData.Hostname)) {
 				nData.IpAddress = nData.Hostname;

@@ -19,7 +19,6 @@ using Glimmr.Models.ColorTarget;
 using Glimmr.Models.ColorTarget.Glimmr;
 using Glimmr.Models.ColorTarget.Led;
 using Glimmr.Models.Util;
-using LiteDB;
 using Makaretu.Dns;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
@@ -108,17 +107,6 @@ namespace Glimmr.Services {
 					Log.Warning("Agent creation error: " + e.Message);
 				}
 			}
-		}
-
-		public async Task EnableDevice(string devId) {
-			var dev = DataUtil.GetDevice(devId);
-			if (dev == null) {
-				return;
-			}
-
-			dev.Enable = true;
-			await DataUtil.AddDeviceAsync(dev);
-			await DeviceReloadEvent.InvokeAsync(this, new DynamicEventArgs(devId));
 		}
 
 		public async Task ScanDevices() {
@@ -244,13 +232,8 @@ namespace Glimmr.Services {
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			Log.Debug("Starting control service loop?");
 			return Task.Run(async () => {
-				Log.Debug("Running execute...");
 				await Task.Yield();
-				Log.Debug("Checking backups...");
-				CheckBackups();
-				Log.Debug("Starting main loop.");
 				while (!stoppingToken.IsCancellationRequested) {
-					await Task.Delay(600000, stoppingToken);
 					CheckBackups();
 					if (!_sd.AutoUpdate) {
 						continue;
@@ -266,6 +249,7 @@ namespace Glimmr.Services {
 
 					Log.Information("Triggering system update.");
 					SystemUtil.Update();
+					await Task.Delay(TimeSpan.FromMinutes(60), stoppingToken);
 				}
 
 				Log.Debug("Control service stopped.");
@@ -274,7 +258,6 @@ namespace Glimmr.Services {
 		}
 
 		private static void CheckBackups() {
-			Log.Debug("Checking db backups...");
 			var userPath = SystemUtil.GetUserDir();
 			var dbFiles = Directory.GetFiles(userPath, "*.db");
 			if (dbFiles.Length == 1) {
@@ -285,7 +268,6 @@ namespace Glimmr.Services {
 			var userDir = SystemUtil.GetUserDir();
 			var stamp = DateTime.Now.ToString("yyyyMMdd");
 			var outFile = Path.Combine(userDir, $"store_{stamp}.db");
-			Log.Debug($"Looking for {outFile}");
 			if (!dbFiles.Contains(outFile)) {
 				Log.Debug($"Backing up database for {stamp}...");
 				DataUtil.BackupDb();
@@ -303,7 +285,6 @@ namespace Glimmr.Services {
 				pStamp = pStamp.Replace(Path.DirectorySeparatorChar.ToString(), "");
 				pStamp = pStamp.Replace("store_", "");
 				pStamp = pStamp.Replace(".db", "");
-				Log.Debug("P stamp is " + pStamp);
 				var diff = DateTime.Now - DateTime.ParseExact(pStamp, "yyyyMMdd", CultureInfo.InvariantCulture);
 				if (diff <= TimeSpan.FromDays(7)) {
 					continue;
@@ -332,7 +313,7 @@ namespace Glimmr.Services {
 			}
 
 
-			string text = $@"
+			var text = $@"
 
  (                                            (    (      *      *    (     
  )\ )   )            )                 (      )\ ) )\ ) (  `   (  `   )\ )  
@@ -419,9 +400,8 @@ v. {version}
 					var leds = DataUtil.GetDevices<LedData>("Led");
 
 					foreach (var colorTargetData in leds.Where(led => led.LedCount == 0)) {
-						var led = colorTargetData;
-						led.LedCount = sd.LedCount;
-						await DataUtil.AddDeviceAsync(led);
+						colorTargetData.LedCount = sd.LedCount;
+						await DataUtil.AddDeviceAsync(colorTargetData);
 					}
 				}
 

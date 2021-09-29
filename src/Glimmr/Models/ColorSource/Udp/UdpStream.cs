@@ -81,8 +81,8 @@ namespace Glimmr.Models.ColorSource.UDP {
 			_devMode = (DeviceMode) sd.DeviceMode;
 			_hostName = _sd.DeviceName;
 			_discovery?.Dispose();
-			var addr = new List<IPAddress> {IPAddress.Parse(IpUtil.GetLocalIpAddress())};
-			var service = new ServiceProfile(_hostName, "_glimmr._tcp", 21324, addr);
+			var address = new List<IPAddress> {IPAddress.Parse(IpUtil.GetLocalIpAddress())};
+			var service = new ServiceProfile(_hostName, "_glimmr._tcp", 21324, address);
 			_discovery = new ServiceDiscovery();
 			_discovery.Advertise(service);
 		}
@@ -138,9 +138,6 @@ namespace Glimmr.Models.ColorSource.UDP {
 			}
 
 			SourceActive = _timeOutWatch.ElapsedMilliseconds <= _timeOut * 1000;
-			if (!_splitter.DoSend && SourceActive) {
-				Log.Debug("Enabling splitter.");
-			}
 			_splitter.DoSend = SourceActive;
 			return Task.CompletedTask;
 		}
@@ -151,7 +148,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 			return Task.CompletedTask;
 		}
 
-		private async Task ProcessFrame(IReadOnlyList<byte> data) {
+		private async Task ProcessFrame(IEnumerable<byte> data) {
 			_sending = true;
 			_splitter.DoSend = true;
 			if (_devMode != Udp) {

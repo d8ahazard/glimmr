@@ -152,7 +152,7 @@ namespace Glimmr.Controllers {
 		}
 
 		[HttpPost("loadData")]
-		public IActionResult LoadData([FromBody] JObject foo) {
+		public IActionResult LoadData() {
 			return new JsonResult(DataUtil.GetStoreSerialized());
 		}
 

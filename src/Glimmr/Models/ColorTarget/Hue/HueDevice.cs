@@ -214,21 +214,10 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		/// <summary>
 		///     Update lites in entertainment group...
 		/// </summary>
-		/// <param name="o"></param>
-		/// <param name="args"></param>
-		public Task SetColor(object o, DynamicEventArgs args) {
-			SetColor(args.Arg1, args.Arg2, args.Arg3);
-
-			return Task.CompletedTask;
-		}
-
-		/// <summary>
-		///     Update lites in entertainment group...
-		/// </summary>
 		/// <param name="sectors"></param>
 		/// <param name="fadeTime"></param>
 		/// <param name="force"></param>
-		private void SetColor(Color[] sectors, int fadeTime, bool force = false) {
+		private void SetColor(IReadOnlyList<Color> sectors, int fadeTime, bool force = false) {
 			if (!Streaming || !Enable || _entLayer == null || Testing && !force) {
 				return;
 			}
@@ -246,7 +235,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 				// Otherwise, get the corresponding sector color
 				var target = _targets[entLight.Id.ToString()];
-				if (target >= sectors.Length) {
+				if (target >= sectors.Count) {
 					Log.Debug("NO TARGET!!");
 					continue;
 				}

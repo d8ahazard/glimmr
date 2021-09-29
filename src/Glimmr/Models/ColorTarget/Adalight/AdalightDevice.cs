@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Newtonsoft.Json;
 using Serilog;
 
 #endregion
@@ -96,18 +95,20 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			_data = dev;
 			_brightness = _data.Brightness;
 			LoadData();
-			if (oldBaud != _baud || oldPort != _port || oldCount != _ledCount) {
-				Log.Debug("Reloading connection to adalight!");
-				var wasStreaming = Streaming;
-				if (Streaming) {
-					_adalight.Disconnect();
-				}
+			if (oldBaud == _baud && oldPort == _port && oldCount == _ledCount) {
+				return Task.CompletedTask;
+			}
 
-				Streaming = false;
-				_adalight = new AdalightNet.Adalight(_port, _ledCount, _baud);
-				if (wasStreaming) {
-					Streaming = _adalight.Connect();
-				}
+			Log.Debug("Reloading connection to adalight!");
+			var wasStreaming = Streaming;
+			if (Streaming) {
+				_adalight.Disconnect();
+			}
+
+			Streaming = false;
+			_adalight = new AdalightNet.Adalight(_port, _ledCount, _baud);
+			if (wasStreaming) {
+				Streaming = _adalight.Connect();
 			}
 
 			return Task.CompletedTask;

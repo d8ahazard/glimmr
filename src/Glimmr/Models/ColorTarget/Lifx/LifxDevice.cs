@@ -124,7 +124,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		}
 
 
-		private async Task SetColor(Color[] colors, Color[] list, bool force = false) {
+		private async Task SetColor(Color[] colors, IReadOnlyList<Color> list, bool force = false) {
 			if (!Streaming || !Enable || Testing && !force) {
 				return;
 			}
@@ -138,7 +138,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			ColorService?.Counter.Tick(Id);
 		}
 
-		private int[] GenerateGammaTable(double gamma = 2.3, int maxOut = 255) {
+		private static int[] GenerateGammaTable(double gamma = 2.3, int maxOut = 255) {
 			const int maxIn = 255;
 			var output = new int[256];
 			for (var i = 0; i <= maxIn; i++) {
@@ -208,31 +208,22 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				output.AddRange(segColors);
 			}
 
-			var cols = new List<LifxColor>();
-			foreach (var col in output) {
-				var ar = _gammaTable[col.R];
-				var ag = _gammaTable[col.G];
-				var ab = _gammaTable[col.B];
-				var color = Color.FromArgb(ar, ag, ab);
-				var colL = new LifxColor(color, _brightness / 255f) {Kelvin = 7000};
-				cols.Add(colL);
-			}
+			var cols = (from col in output let ar = _gammaTable[col.R] let ag = _gammaTable[col.G] let ab = _gammaTable[col.B] select Color.FromArgb(ar, ag, ab) into color select new LifxColor(color, _brightness / 255f) { Kelvin = 7000 }).ToList();
 
 			await _client.SetExtendedColorZonesAsync(B, cols, 5);
 		}
 
 
-		private async Task SetColorSingle(Color[] list) {
-			var sectors = list;
-			if (sectors == null || _client == null) {
+		private async Task SetColorSingle(IReadOnlyList<Color> list) {
+			if (list == null || _client == null) {
 				return;
 			}
 
-			if (_targetSector >= sectors.Length) {
+			if (_targetSector >= list.Count) {
 				return;
 			}
 
-			var input = sectors[_targetSector];
+			var input = list[_targetSector];
 
 			var nC = new LifxColor(input);
 

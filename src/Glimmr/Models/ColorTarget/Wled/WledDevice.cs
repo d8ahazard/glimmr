@@ -20,7 +20,7 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.Wled {
 	public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		private string IpAddress { get; set; }
-		private static readonly int port = 21324;
+		private const int Port = 21324;
 		private readonly HttpClient _httpClient;
 		private readonly UdpClient _udpClient;
 
@@ -37,17 +37,16 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		private int _protocol = 2;
 
 		public WledDevice(WledData wd, ColorService cs) : base(cs) {
-			ColorService cs1 = cs;
-			cs1.ControlService.RefreshSystemEvent += RefreshSystem;
-			_udpClient = cs1.ControlService.UdpClient;
-			_httpClient = cs1.ControlService.HttpSender;
+			cs.ControlService.RefreshSystemEvent += RefreshSystem;
+			_udpClient = cs.ControlService.UdpClient;
+			_httpClient = cs.ControlService.HttpSender;
 			_data = wd ?? throw new ArgumentException("Invalid WLED data.");
 			Id = _data.Id;
 			IpAddress = _data.IpAddress;
 			_brightness = _data.Brightness;
 			_multiplier = _data.LedMultiplier;
 			ReloadData();
-			cs1.ColorSendEventAsync += SetColors;
+			cs.ColorSendEventAsync += SetColors;
 		}
 
 		public bool Enable { get; set; }
@@ -68,7 +67,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
 			_targetSector = _data.TargetSector;
-			_ep = IpUtil.Parse(IpAddress, port);
+			_ep = IpUtil.Parse(IpAddress, Port);
 			if (_ep == null) {
 				return;
 			}
@@ -144,7 +143,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		}
 
 
-		private async Task SetColor(Color[] list, Color[] colors1, bool force = false) {
+		private async Task SetColor(Color[] list, IReadOnlyList<Color> colors1, bool force = false) {
 			if (!Streaming || !Enable || Testing && !force) {
 				return;
 			}
@@ -152,7 +151,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			var toSend = list;
 
 			if (_stripMode == StripMode.Single) {
-				if (_targetSector >= colors1.Length || _targetSector == -1) {
+				if (_targetSector >= colors1.Count || _targetSector == -1) {
 					return;
 				}
 

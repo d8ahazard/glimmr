@@ -19,8 +19,7 @@ namespace Glimmr.Models.Util {
 			}
 
 			if (portIn != -1 &&
-			    (portIn < IPEndPoint.MinPort
-			     || portIn > IPEndPoint.MaxPort)) {
+			    portIn is < IPEndPoint.MinPort or > IPEndPoint.MaxPort) {
 				throw new ArgumentException($"Invalid default port '{portIn}'");
 			}
 
@@ -66,8 +65,7 @@ namespace Glimmr.Models.Util {
 
 		private static int GetPort(string p) {
 			if (!int.TryParse(p, out var port)
-			    || port < IPEndPoint.MinPort
-			    || port > IPEndPoint.MaxPort) {
+			    || port is < IPEndPoint.MinPort or > IPEndPoint.MaxPort) {
 				throw new FormatException($@"Invalid end point port '{p}'");
 			}
 

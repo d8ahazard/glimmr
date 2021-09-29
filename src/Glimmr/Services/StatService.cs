@@ -72,7 +72,7 @@ namespace Glimmr.Services {
 			}, stoppingToken);
 		}
 
-		private void Initialize() {
+		private static void Initialize() {
 			Log.Debug("Starting stat service...");
 			Log.Debug("Stat service started.");
 		}

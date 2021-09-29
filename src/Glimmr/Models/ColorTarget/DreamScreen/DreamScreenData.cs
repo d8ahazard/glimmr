@@ -52,7 +52,6 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			}
 		}
 
-		public SettingsProperty[] KeyProperties { get; set; } = {
-		};
+		public SettingsProperty[] KeyProperties { get; set; } = Array.Empty<SettingsProperty>();
 	}
 }

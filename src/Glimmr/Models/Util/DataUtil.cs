@@ -11,7 +11,6 @@ using Glimmr.Models.ColorSource.Ambient;
 using Glimmr.Models.ColorSource.Audio;
 using Glimmr.Models.ColorTarget;
 using LiteDB;
-using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
@@ -40,10 +39,8 @@ namespace Glimmr.Models.Util {
 
 			if (_db != null) return _db;
 			if (_db == null) {
-				Log.Debug("Creating new db.");
 				try {
 					var db = new LiteDatabase(userPath);
-					Log.Debug("Returning db from " + userPath);
 					return db;
 				} catch (Exception e) {
 					Log.Warning("Exception creating database: " + e.Message);
@@ -75,12 +72,14 @@ namespace Glimmr.Models.Util {
 			foreach (var p in dbFiles) {
 				if (p.Contains("store.db") || p.Contains("store-log.db")) continue;
 				try {
-					var foo = new LiteDatabase(p);
-					if (foo.CollectionExists("SystemData")) {
-						Log.Debug($"DB {p} appears valid?");
-						path = p;
-						break;
+					var db = new LiteDatabase(p);
+					if (!db.CollectionExists("SystemData")) {
+						continue;
 					}
+
+					Log.Debug($"DB {p} appears valid?");
+					path = p;
+					break;
 				} catch (Exception e) {
 					Log.Warning($"Exception opening {p}: " + e.Message);
 				}	
@@ -324,11 +323,13 @@ namespace Glimmr.Models.Util {
 			} catch (KeyNotFoundException) {
 			}
 
-			if (string.IsNullOrEmpty(serial)) {
-				var rd = new Random();
-				serial = "12091" + rd.Next(0, 9) + rd.Next(0, 9) + rd.Next(0, 9);
-				SetItem("Serial", serial);
+			if (!string.IsNullOrEmpty(serial)) {
+				return serial;
 			}
+
+			var rd = new Random();
+			serial = "12091" + rd.Next(0, 9) + rd.Next(0, 9) + rd.Next(0, 9);
+			SetItem("Serial", serial);
 
 			return serial;
 		}
@@ -486,15 +487,7 @@ namespace Glimmr.Models.Util {
 
 		public static dynamic? GetItem(string key) {
 			var sd = GetSystemData();
-			foreach (var e in sd.GetType().GetProperties()) {
-				if (e.Name != key) {
-					continue;
-				}
-
-				return e.GetValue(sd);
-			}
-
-			return null;
+			return (from e in sd.GetType().GetProperties() where e.Name == key select e.GetValue(sd)).FirstOrDefault();
 		}
 
 		public static dynamic? GetObject<T>(string key) {
@@ -542,7 +535,7 @@ namespace Glimmr.Models.Util {
 				Log.Warning("Exception caching SD: " + e.Message + " at " + e.StackTrace);
 			}
 			
-			Log.Debug("Creating new SD");
+			Log.Information("Creating first-time SystemData.");
 			var sd = new SystemData();
 			sd.SetDefaults();
 			

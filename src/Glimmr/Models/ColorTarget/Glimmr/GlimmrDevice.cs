@@ -190,11 +190,6 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		}
 
 
-		public bool IsEnabled() {
-			return _data.Enable;
-		}
-
-
 		private async Task SendPost(string target, string value) {
 			Uri uri;
 			if (string.IsNullOrEmpty(_ipAddress) && !string.IsNullOrEmpty(Id)) {

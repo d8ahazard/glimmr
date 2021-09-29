@@ -31,7 +31,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 			GC.SuppressFinalize(this);
 		}
 
-		public Task Start(CancellationToken ct, FrameSplitter splitter) {
+		public Task Start(FrameSplitter splitter, CancellationToken ct) {
 			_splitter = splitter;
 			try {
 				SetDimensions();
@@ -53,12 +53,6 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 		public Task Stop() {
 			_capturing = false;
 			Dispose();
-			return Task.CompletedTask;
-		}
-
-		public Task Refresh() {
-			Log.Debug("Refreshing...");
-			SetDimensions();
 			return Task.CompletedTask;
 		}
 

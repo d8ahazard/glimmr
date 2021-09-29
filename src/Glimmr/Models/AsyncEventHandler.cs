@@ -30,34 +30,7 @@ namespace Glimmr.Models {
     ///     asynchronous event handlers.
     /// </summary>
     public static class Extensions {
-        /// <summary>
-        ///     Converts a synchronous event handler to an asynchronous event handler that performs the same actions and returns
-        ///     <see cref="Task.CompletedTask" />.
-        /// </summary>
-        /// <param name="eventHandler">The synchronous event handler.</param>
-        /// <returns>An asynchronous event handler that performs the same logic and returns a completed task.</returns>
-        public static AsyncEventHandler Async(EventHandler eventHandler) {
-			return (sender, eventArgs) => {
-				eventHandler(sender, eventArgs);
-				return Task.CompletedTask;
-			};
-		}
-
-        /// <summary>
-        ///     Converts a synchronous event handler to an asynchronous event handler that performs the same actions and returns
-        ///     <see cref="Task.CompletedTask" />.
-        /// </summary>
-        /// <typeparam name="TEventArgs">The type of the event arguments.</typeparam>
-        /// <param name="eventHandler">The synchronous event handler.</param>
-        /// <returns>An asynchronous event handler that performs the same logic and returns a completed task.</returns>
-        public static AsyncEventHandler<TEventArgs> Async<TEventArgs>(EventHandler<TEventArgs> eventHandler) {
-			return (sender, eventArgs) => {
-				eventHandler(sender, eventArgs);
-				return Task.CompletedTask;
-			};
-		}
-
-        /// <summary>
+	    /// <summary>
         ///     Asynchronously invokes an event, dispatching the provided event arguments to all registered handlers.
         /// </summary>
         /// <typeparam name="TEventArgs">The type of the event arguments.</typeparam>

@@ -35,7 +35,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			_targets = new Dictionary<int, int>();
 			_data = n;
 			Id = _data.Id;
-			var streamMode = n.Type == "NL29" || n.Type == "NL42" ? 2 : 1;
+			var streamMode = n.Type is "NL29" or "NL42" ? 2 : 1;
 			var controlService = cs.ControlService;
 			var host = n.IpAddress;
 			try {
@@ -161,7 +161,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		}
 
 
-		private async Task SetColor(Color[] sectors, bool force = false) {
+		private async Task SetColor(IReadOnlyList<Color> sectors, bool force = false) {
 			if (!Streaming || !Enable || Testing && !force) {
 				return;
 			}
@@ -173,16 +173,15 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			_frameWatch.Restart();
 			
 			var cols = new Dictionary<int, Color>();
-			foreach (var p in _targets) {
+			foreach (var (key, target) in _targets) {
 				var color = Color.FromArgb(0, 0, 0);
-				if (p.Value != -1) {
-					var target = p.Value;
-					if (target < sectors.Length) {
+				if (target != -1) {
+					if (target < sectors.Count) {
 						color = sectors[target];
 					}
 				}
 
-				cols[p.Key] = color;
+				cols[key] = color;
 			}
 
 			if (_nanoleafClient == null || _streamingClient == null) {
@@ -192,10 +191,6 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
 			await _streamingClient.SetColorAsync(cols, 1).ConfigureAwait(false);
 			ColorService?.Counter.Tick(Id);
-		}
-
-		public bool IsEnabled() {
-			return Enable;
 		}
 
 		private void SetData() {

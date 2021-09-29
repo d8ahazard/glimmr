@@ -23,7 +23,7 @@ namespace Glimmr.Models {
 		private readonly int _rightCount;
 		private readonly int _topCount;
 
-		public FrameBuilder(int[] inputDimensions, bool sectors = false, bool center = false) {
+		public FrameBuilder(IReadOnlyList<int> inputDimensions, bool sectors = false, bool center = false) {
 			_leftCount = inputDimensions[0];
 			_rightCount = inputDimensions[1];
 			_topCount = inputDimensions[2];

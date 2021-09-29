@@ -67,7 +67,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		public void UpdateFromDiscovered(IColorTargetData data) {
 			var input = (GlimmrData) data;
 			if (input == null) {
-				throw new ArgumentNullException(nameof(input));
+				throw new ArgumentNullException(nameof(data));
 			}
 
 			IpAddress = data.IpAddress;
@@ -89,13 +89,15 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 				var url = "http://" + IpAddress + "/api/DreamData/json";
 				var jsonData = webClient.DownloadString(url);
 				var sd = JsonConvert.DeserializeObject<GlimmrData>(jsonData);
-				if (sd != null) {
-					LeftCount = sd.LeftCount;
-					RightCount = sd.RightCount;
-					TopCount = sd.TopCount;
-					BottomCount = sd.BottomCount;
-					Brightness = sd.Brightness;
+				if (sd == null) {
+					return;
 				}
+
+				LeftCount = sd.LeftCount;
+				RightCount = sd.RightCount;
+				TopCount = sd.TopCount;
+				BottomCount = sd.BottomCount;
+				Brightness = sd.Brightness;
 			} catch (Exception) {
 				// Ignored
 			}

@@ -19,8 +19,8 @@ using Serilog;
 
 namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
 	public sealed class PiCamVideoStream : IVideoStream, IDisposable {
-		private static readonly int CapHeight = 480;
-		private static readonly int CapWidth = 640;
+		private const int CapHeight = 480;
+		private const int CapWidth = 640;
 		private readonly MMALCamera _cam;
 		private FrameSplitter? _splitter;
 
@@ -29,7 +29,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
 		}
 
 
-		public async Task Start(CancellationToken ct, FrameSplitter frameSplitter) {
+		public async Task Start(FrameSplitter frameSplitter, CancellationToken ct) {
 			_splitter = frameSplitter;
 			Log.Debug("Starting Camera...");
 			MMALCameraConfig.VideoStabilisation = false;
@@ -76,10 +76,6 @@ namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
 			return Task.CompletedTask;
 		}
 
-		public Task Refresh() {
-			return Task.CompletedTask;
-		}
-
 		private void ProcessFrame(object? sender, EmguEventArgs args) {
 			var input = new Image<Bgr, byte>(CapWidth, CapHeight) {Bytes = args.ImageData};
 			_splitter?.Update(input.Mat.Clone());
@@ -94,7 +90,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
 			public override void Process(ImageContext context) {
 				base.Process(context);
 
-				if (context == null || !context.Eos) {
+				if (context is not { Eos: true }) {
 					return;
 				}
 

@@ -11,7 +11,7 @@ using rpi_ws281x;
 
 namespace Glimmr.Models.ColorTarget.Led {
 	public class LedAgent : IColorTargetAgent {
-		public WS281x? Ws281X { get; private set; }
+		private WS281x? _ws281X;
 		private float _ablAmps;
 		private float _ablVolts;
 		private Color[] _colors1;
@@ -37,7 +37,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 		public void Dispose() {
 			GC.SuppressFinalize(this);
-			Ws281X?.Dispose();
+			_ws281X?.Dispose();
 		}
 
 		public dynamic? CreateAgent(ControlService cs) {
@@ -70,7 +70,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			}
 
 			if (d0.StripType != _d0.StripType || d1.StripType != _d1.StripType) {
-				Ws281X?.Dispose();
+				_ws281X?.Dispose();
 				LoadStrips(d0, d1);
 			}
 
@@ -86,11 +86,11 @@ namespace Glimmr.Models.ColorTarget.Led {
 			}
 
 			if (_use0) {
-				Ws281X?.SetBrightness((int) (_d0.Brightness / 100f * 255f));
+				_ws281X?.SetBrightness((int) (_d0.Brightness / 100f * 255f));
 			}
 
 			if (_use0) {
-				Ws281X?.SetBrightness((int) (_d1.Brightness / 100f * 255f));
+				_ws281X?.SetBrightness((int) (_d1.Brightness / 100f * 255f));
 			}
 		}
 
@@ -115,7 +115,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			_controller1 = settings.AddController(ControllerType.PWM1, d1.LedCount, stripType1, (byte) d1.Brightness);
 			_colors1 = ColorUtil.EmptyColors(d0.LedCount);
 			_colors2 = ColorUtil.EmptyColors(d1.LedCount);
-			Ws281X = new WS281x(settings);
+			_ws281X = new WS281x(settings);
 		}
 
 		public void SetColors(Color[] input) {
@@ -144,7 +144,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			}
 
 			if (_use0 || _use1) {
-				Ws281X?.Render();
+				_ws281X?.Render();
 			}
 		}
 
@@ -230,19 +230,19 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 				_lastScale = scaleI;
 				if (_use0) {
-					Ws281X?.SetBrightness((int) Math.Min(strip0Brightness, scaleI));
+					_ws281X?.SetBrightness((int) Math.Min(strip0Brightness, scaleI));
 				}
 
 				if (_use1) {
-					Ws281X?.SetBrightness((int) Math.Min(strip1Brightness, scaleI), 1);
+					_ws281X?.SetBrightness((int) Math.Min(strip1Brightness, scaleI), 1);
 				}
 			} else {
 				if (_use0 && strip0Brightness < 255) {
-					Ws281X?.SetBrightness(strip0Brightness);
+					_ws281X?.SetBrightness(strip0Brightness);
 				}
 
 				if (_use1 && strip1Brightness < 255) {
-					Ws281X?.SetBrightness(strip0Brightness, 1);
+					_ws281X?.SetBrightness(strip0Brightness, 1);
 				}
 			}
 		}
@@ -282,7 +282,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 				_controller1?.SetAll(color);
 			}
 
-			Ws281X?.Render();
+			_ws281X?.Render();
 		}
 
 		public void Clear() {
@@ -294,7 +294,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 				_controller1?.SetAll(Color.Empty);
 			}
 
-			Ws281X?.Render();
+			_ws281X?.Render();
 		}
 	}
 }

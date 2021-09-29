@@ -12,7 +12,7 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Lifx {
 	public class LifxDiscovery : ColorDiscovery, IColorDiscovery {
-		protected virtual string DeviceTag { get; } = "Lifx Bulb";
+		protected virtual string DeviceTag => "Lifx Bulb";
 		private readonly LifxClient? _client;
 		private readonly ControlService _controlService;
 
@@ -48,10 +48,12 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 			//Log.Debug("Device found: " + JsonConvert.SerializeObject(bulb));
 			var ld = await GetBulbInfo(bulb);
-			if (ld != null) {
-				Log.Debug("Adding device: " + JsonConvert.SerializeObject(ld));
-				await _controlService.AddDevice(ld);
+			if (ld == null) {
+				return;
 			}
+
+			Log.Debug("Adding device: " + JsonConvert.SerializeObject(ld));
+			await _controlService.AddDevice(ld);
 		}
 
 		private async Task<LifxData?> GetBulbInfo(Device b) {
@@ -65,27 +67,25 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			var zoneCount = 0;
 			var tag = DeviceTag;
 			// Set multi zone stuff
-			if (ver != null) {
-				if (ver.Product == 31 || ver.Product == 32 || ver.Product == 38) {
-					tag = ver.Product == 38 ? "Lifx Beam" : "Lifx Z";
-					hasMulti = true;
-					if (ver.Product != 31) {
-						if (ver.Version >= 1532997580) {
-							extended = true;
-						}
+			if (ver is { Product: 31 or 32 or 38 }) {
+				tag = ver.Product == 38 ? "Lifx Beam" : "Lifx Z";
+				hasMulti = true;
+				if (ver.Product != 31) {
+					if (ver.Version >= 1532997580) {
+						extended = true;
 					}
+				}
 
-					if (extended) {
-						var zones = await _client.GetExtendedColorZonesAsync(b);
-						if (zones != null) {
-							zoneCount = zones.ZonesCount;
-						}
-					} else {
-						// Original device only supports eight zones?
-						var zones = await _client.GetColorZonesAsync(b, 0, 8);
-						if (zones != null) {
-							zoneCount = zones.Count;
-						}
+				if (extended) {
+					var zones = await _client.GetExtendedColorZonesAsync(b);
+					if (zones != null) {
+						zoneCount = zones.ZonesCount;
+					}
+				} else {
+					// Original device only supports eight zones?
+					var zones = await _client.GetColorZonesAsync(b, 0, 8);
+					if (zones != null) {
+						zoneCount = zones.Count;
 					}
 				}
 			}
@@ -119,17 +119,15 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				d.GenerateBeamLayout();
 			}
 
-			if (ver != null) {
-				if (ver.Product == 55 || ver.Product == 101) {
-					tag = "Lifx Tile";
-					try {
-						var tData = _client.GetDeviceChainAsync(b).Result;
-						if (tData != null) {
-							d.Layout = new TileLayout(tData);
-						}
-					} catch (Exception e) {
-						Log.Debug("Chain exception: " + e.Message);
+			if (ver is { Product: 55 or 101 }) {
+				tag = "Lifx Tile";
+				try {
+					var tData = _client.GetDeviceChainAsync(b).Result;
+					if (tData != null) {
+						d.Layout = new TileLayout(tData);
 					}
+				} catch (Exception e) {
+					Log.Debug("Chain exception: " + e.Message);
 				}
 			}
 

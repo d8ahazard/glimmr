@@ -5,11 +5,11 @@ using System.Linq;
 namespace Glimmr.Models.ColorSource.UDP {
 	public class ColorPacket {
 		
-		public Color[] Colors { get; set; }
+		public Color[] Colors { get; private set; }
+
+		private UdpStreamMode UdpStreamMode { get; set; }
 		
-		public UdpStreamMode UdpStreamMode { get; private set; }
-		
-		public int Duration { get; set; }
+		public int Duration { get; private set; }
 		
 		public ColorPacket(Color[] colors, UdpStreamMode mode = UdpStreamMode.Drgb) {
 			UdpStreamMode = mode;
@@ -17,7 +17,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 		}
 
 		public ColorPacket(byte[] bytes) {
-			Colors = new Color[0];
+			Colors = Array.Empty<Color>();
 			DecodePacket(bytes);
 		}
 
@@ -25,20 +25,13 @@ namespace Glimmr.Models.ColorSource.UDP {
 			var header = new[] {(byte)UdpStreamMode, (byte)duration};
 			var data = Array.Empty<byte>();
 			Duration = duration;
-			switch (UdpStreamMode) {
-				case UdpStreamMode.Drgb:
-					data = EncodeDrgb();
-					break;
-				case UdpStreamMode.Dnrgb:
-					data = EncodeDnrgb();
-					break;
-				case UdpStreamMode.Drgbw:
-					data = EncodeDrgbw();
-					break;
-				case UdpStreamMode.Warls:
-					data = EncodeWarls();
-					break;
-			}
+			data = UdpStreamMode switch {
+				UdpStreamMode.Drgb => EncodeDrgb(),
+				UdpStreamMode.Dnrgb => EncodeDnrgb(),
+				UdpStreamMode.Drgbw => EncodeDrgbw(),
+				UdpStreamMode.Warls => EncodeWarls(),
+				_ => data
+			};
 
 			return header.Concat(data).ToArray();
 		}
@@ -70,7 +63,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 
 		private byte[] EncodeDnrgb() {
 			var data = new byte[Colors.Length * 3 + 2];
-			var len = BitConverter.GetBytes((Int16) Colors.Length);
+			var len = BitConverter.GetBytes((short) Colors.Length);
 			data[0] = len[0];
 			data[1] = len[1];
 			var dIdx = 2;
@@ -114,6 +107,8 @@ namespace Glimmr.Models.ColorSource.UDP {
 				case UdpStreamMode.Warls:
 					DecodeWarls(input.Skip(2).ToArray());
 					break;
+				default:
+					throw new ArgumentOutOfRangeException(nameof(UdpStreamMode));
 			}
 		}
 

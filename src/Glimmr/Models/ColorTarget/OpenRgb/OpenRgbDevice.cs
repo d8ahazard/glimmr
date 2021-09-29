@@ -38,31 +38,31 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		}
 
 		public Task StartStream(CancellationToken ct) {
-			if (_client == null) {
-				_client = _colorService.ControlService.GetAgent("OpenRgbAgent");
-			}
+			_client ??= _colorService.ControlService.GetAgent("OpenRgbAgent");
 			if (_client == null || !Enable) {
 				if (_client == null) Log.Debug("Null client, returning.");
 				return Task.CompletedTask;
 			}
 
 			_client.Connect();
-			if (_client.Connected) {
-				Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
-				try {
-					var mt = new OpenRGB.NET.Models.Color[_data.LedCount];
-					for (var i = 0; i < mt.Length; i++) {
-						mt[i] = new OpenRGB.NET.Models.Color();
-					}
-					_client.SetMode(_data.DeviceId, 0, mt);
-				} catch (Exception e) {
-					Log.Warning("Exception setting mode..." + e.Message);
-					return Task.CompletedTask;
-				}
-
-				Streaming = true;
-				Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
+			if (!_client.Connected) {
+				return Task.CompletedTask;
 			}
+
+			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
+			try {
+				var mt = new OpenRGB.NET.Models.Color[_data.LedCount];
+				for (var i = 0; i < mt.Length; i++) {
+					mt[i] = new OpenRGB.NET.Models.Color();
+				}
+				_client.SetMode(_data.DeviceId, 0);
+			} catch (Exception e) {
+				Log.Warning("Exception setting mode..." + e.Message);
+				return Task.CompletedTask;
+			}
+
+			Streaming = true;
+			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
 
 			return Task.CompletedTask;
 		}
@@ -96,11 +96,12 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		public Task ReloadData() {
 			Log.Debug("Reloading data...");
 			var dev = DataUtil.GetDevice(Id);
-			if (dev != null) {
-				_data = dev;
-				Enable = _data.Enable;
-				
+			if (dev == null) {
+				return Task.CompletedTask;
 			}
+
+			_data = dev;
+			Enable = _data.Enable;
 
 			return Task.CompletedTask;
 		}

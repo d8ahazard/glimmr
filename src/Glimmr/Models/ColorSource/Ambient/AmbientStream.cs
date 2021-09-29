@@ -168,14 +168,6 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			}, CancellationToken.None);
 		}
 
-		public Color[] GetColors() {
-			return _splitter.GetColors();
-		}
-
-		public Color[] GetSectors() {
-			return _splitter.GetSectors();
-		}
-
 
 		private static Color BlendColor(Color target, Color dest, double percent) {
 			var r1 = (int) ((target.R - dest.R) * percent) + dest.R;
@@ -205,13 +197,13 @@ namespace Glimmr.Models.ColorSource.Ambient {
 		}
 
 
-		private Color[] RefreshColors(Color[] input) {
+		private Color[] RefreshColors(IReadOnlyList<Color> input) {
 			var output = new Color[SectorCount];
-			if (input.Length == 0) {
+			if (input.Count == 0) {
 				return ColorUtil.EmptyColors(SectorCount);
 			}
 
-			var max = input.Length - 1;
+			var max = input.Count - 1;
 			var rand = _random.Next(0, max);
 			switch (_mode) {
 				case AnimationMode.Linear:
