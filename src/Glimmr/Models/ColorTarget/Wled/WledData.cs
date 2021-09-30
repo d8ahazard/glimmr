@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Net;
+using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
 using Serilog;
@@ -85,6 +86,11 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 				LedCount = jsonObj.Info.Leds.Count;
 				Segments = jsonObj.State.Segments;
+				foreach (var seg in Segments) {
+					if (seg.Offset == 0) {
+						seg.Offset = seg.Start;
+					}
+				}
 				Brightness = (int) (jsonObj.State.Bri / 255f * 100);
 				
 			} catch (Exception e) {
@@ -112,7 +118,13 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			LedCount = input.LedCount;
 			IpAddress = data.IpAddress;
 			Name = StringUtil.UppercaseFirst(input.Name);
-			Segments = input.Segments;
+			var segments = input.Segments;
+			for (var i = 0; i < segments.Length; i++) {
+				if (Segments.Length < i) {
+					segments[i].Offset = Segments[i].Offset;
+				}
+			}
+			Segments = segments;
 		}
 
 		public SettingsProperty[] KeyProperties {
@@ -122,7 +134,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 		private SettingsProperty[] Kps() {
 			var multiplier = new SettingsProperty("LedMultiplier", "ledMultiplier", "");
-			if (StripMode == 3) {
+			if ((StripMode) StripMode == Enums.StripMode.Single) {
 				return new[] {
 					new("sectormap", "sectormap", ""),
 					new("StripMode", "select", "Strip Mode", new Dictionary<string, string> {
@@ -141,6 +153,30 @@ namespace Glimmr.Models.ColorTarget.Wled {
 						["4"] = "DNRGB"
 					}){ValueHint = "Select desired WLED protocol. Default is DRGB."}
 				};
+			}
+			
+			if ((StripMode) StripMode == Enums.StripMode.Sectored) {
+				var props = new List<SettingsProperty> {
+					new("sectorLedMap", "sectorLedMap", ""),
+					new("StripMode", "select", "Strip Mode", new Dictionary<string, string> {
+						["0"] = "Normal",
+						["1"] = "Sectored",
+						["2"] = "Loop (Play Bar)",
+						["3"] = "Single Color"
+					}),
+					new("Protocol", "select", "Streaming Protocol", new Dictionary<string, string> {
+						["1"] = "WARLS",
+						["2"] = "DRGB",
+						["3"] = "DRGBW",
+						["4"] = "DNRGB"
+					}){ValueHint = "Select desired WLED protocol. Default is DRGB."}
+				};
+				foreach (var seg in Segments) {
+					var id = seg.Id;
+					props.Add(new SettingsProperty($"segmentOffset{id}","number",$"Segment {id} Offset"));
+				}
+
+				return props.ToArray();
 			}
 
 			return new[] {
@@ -215,7 +251,10 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 		[JsonProperty("spc")] public int Spc { get; set; }
 
-		[JsonProperty("start")] public int Offset { get; set; }
+		[JsonProperty("start")] public int Start { get; set; }
+		[JsonProperty("Offset")] public int Offset { get; set; }
+		
+		[JsonProperty("LedMultiplier")] public float Multiplier { get; set; }
 
 		[JsonProperty("stop")] public int Stop { get; set; }
 

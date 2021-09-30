@@ -1932,12 +1932,20 @@ function getDevices() {
 function updateDevice(id, property, value) {
     let dev;
     let isLoaded = false;
-    if (property === "StripMode") value = parseInt(value);
+    if (property === "StripMode") value = parseInt(value);    
     if (isValid(deviceData) && deviceData["Id"] === id) {
         dev = deviceData;
         isLoaded = true;
     } else {
         dev = data.getDevice(id);
+    }
+    if (property.includes("segmentOffset")) {
+        let segmentId = parseInt(property.replace("segmentOffset", ""));
+        let segments = dev["Segments"];
+        console.log("Grabbing ", segmentId, segments);
+        segments[segmentId]["Offset"] = parseInt(value);
+        value = segments;
+        property = "Segments";
     }
     if (isValid(dev) && dev.hasOwnProperty(property)) {
         dev[property] = value;
@@ -2152,7 +2160,7 @@ function createDeviceSettings() {
         for (let i = 0; i < props.length; i++) {
             keys.push(props[i]["ValueType"]);
         }
-        let mapProps = ["ledmap", "beamMap", "nanoleaf", "hue", "sectormap"];
+        let mapProps = ["ledmap", "beamMap", "nanoleaf", "hue", "sectormap", "sectorLedMap"];
         let addLink = false;
         
         if (keys.includes("nanoleaf") || keys.includes("hue")) {
@@ -2194,6 +2202,11 @@ function createDeviceSettings() {
             let propertyName = prop["ValueName"];
             let elem, se;
             let value = deviceData[propertyName];
+            if (propertyName.includes("segmentOffset")) {
+                let segments = deviceData["Segments"];
+                let segmentId = parseInt(propertyName.replace("segmentOffset",""));
+                value = segments[segmentId]["Offset"];
+            }
             let dirCol = document.createElement("div");
             dirCol.classList.add("row", "justify-content-center", "delSetting");
             switch(prop["ValueType"]) {
@@ -2215,6 +2228,10 @@ function createDeviceSettings() {
                     drawLedMap = true;
                     appendBeamLedMap();
                     appendBeamMap();
+                    break;
+                case "sectorLedMap":
+                    drawLedMap = true;
+                    appendSectorLedMap();
                     break;
                 case "select":
                     elem = new SettingElement(prop["ValueLabel"], "select", id, propertyName, value, prop["ValueHint"]);
@@ -2588,6 +2605,198 @@ function appendBeamMap() {
 function appendLedMap() {
     let mapDiv = document.getElementById("mapWrap");
     createLedMap(mapDiv);    
+}
+
+function appendSectorLedMap() {
+    let targetElement = document.getElementById("mapWrap");
+    let sd = data.SystemData;
+    let colorClasses = [
+        "ledRed",
+        "ledOrange",
+        "ledYellow",
+        "ledGreen",
+        "ledBlue",
+        "ledIndigo",
+        "ledViolet",
+        "ledRed",
+        "ledOrange",
+        "ledYellow",
+        "ledGreen",
+        "LedBlue",
+        "ledIndigo",
+        "ledViolet"
+    ];
+
+    if (!isValid(deviceData)) {
+        console.log("Invalid device data...");
+        return;
+    }
+
+    let segments = deviceData["Segments"];
+    let total = sd["LedCount"];
+    let rangeList = [];
+    for (let s = 0; s < segments.length; s++) {
+        let offset = segments[s]["Offset"];
+        let len = segments[s]["len"];        
+        rangeList.push(ranges(total, offset, len));
+    }
+    let tgt = targetElement;
+    let cs = getComputedStyle(tgt);
+    let paddingX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+    let borderX = parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
+    let w = tgt.offsetWidth - paddingX - borderX;
+    let h = (w / 16) * 9;
+    let imgL = tgt.offsetLeft;
+    let imgT = tgt.offsetTop;
+    console.log("Left is ", imgL);
+    let exMap = targetElement.querySelector("#ledMap");
+    if (isValid(exMap)) exMap.remove();
+    let wFactor = w / 1920;
+    let hFactor = h / 1080;
+    let wMargin = 62 * wFactor;
+    let hMargin = 52 * hFactor;
+    let flHeight = (h - hMargin - hMargin) / leftCount;
+    let frHeight = (h - hMargin - hMargin) / rightCount;
+    let ftWidth = (w - wMargin - wMargin) / topCount;
+    let fbWidth = (w - wMargin - wMargin) / bottomCount;
+    let dHeight = (flHeight + frHeight) / 2;
+    let dWidth = ((ftWidth + fbWidth) / 2);
+    let map = document.createElement("div");
+    map.id = "ledMap";
+    map.classList.add("ledMap", "delSetting");
+    map.style.top = imgT + "px";
+    //map.style.left = imgL + "px";
+    map.style.width = w + "px";
+    map.style.height = h + "px";
+    map.style.position = "relative";
+    // Bottom-right, up to top-right
+    let t = 0;
+    let b = 0;
+    let l = 0;
+    let r = 0;
+    let ledCount = 0;
+    for (let i = 0; i < rightCount; i++) {
+        t = h - hMargin - ((i + 1) * frHeight);
+        b = t + frHeight;
+        l = w - wMargin - dWidth;
+        r = l + dWidth;
+        let s1 = document.createElement("div");
+        s1.classList.add("led");
+        for(let r=0; r < rangeList.length; r++) {
+            let colClass = colorClasses[r];
+            let range = rangeList[r];
+            if (range.includes(ledCount)) s1.classList.add(colClass);
+        }
+        s1.setAttribute("data-sector", ledCount.toString());
+        s1.style.position = "absolute";
+        s1.style.top = t.toString() + "px";
+        s1.style.left = l.toString() + "px";
+        s1.style.width = fbWidth.toString() + "px";
+        s1.style.height = frHeight.toString() + "px";
+        s1.setAttribute("data-bs-toggle", "tooltip");
+        s1.setAttribute("data-bs-placement", "top");
+        if (i === 0) {
+            s1.setAttribute("title", sd["LedCount"].toString() + "/" + (ledCount).toString());
+        } else {
+            s1.setAttribute("title", ledCount.toString());
+        }
+        map.appendChild(s1);
+        ledCount++;
+    }
+
+    for (let i = 0; i < topCount - 1; i++) {
+        l = w - wMargin - (ftWidth * (i + 1));
+        r = l - ftWidth;
+        let s1 = document.createElement("div");
+        s1.classList.add("led");
+        for(let r=0; r < rangeList.length; r++) {
+            let colClass = colorClasses[r];
+            let range = rangeList[r];
+            if (range.includes(ledCount)) s1.classList.add(colClass);
+        }
+        s1.setAttribute("data-sector", ledCount.toString());
+        s1.style.position = "absolute";
+        s1.style.top = t.toString() + "px";
+        s1.style.left = l.toString() + "px";
+        s1.style.width = ftWidth.toString() + "px";
+        s1.style.height = frHeight.toString() + "px";
+        s1.setAttribute("data-bs-toggle", "tooltip");
+        s1.setAttribute("data-bs-placement", "top");
+        if (i === 0) {
+            s1.setAttribute("title", ledCount.toString() + "/" + (ledCount + 1).toString());
+        } else {
+            s1.setAttribute("title", ledCount.toString());
+        }
+        map.appendChild(s1);
+        ledCount++;
+    }
+
+    // Left, top-bottom
+    for (let i = 0; i < leftCount - 1; i++) {
+        t = hMargin + (i * flHeight);
+        b = t + flHeight;
+        l = wMargin;
+        r = l + dWidth;
+        let s1 = document.createElement("div");
+        s1.classList.add("led");
+        for(let r=0; r < rangeList.length; r++) {
+            let colClass = colorClasses[r];
+            let range = rangeList[r];
+            if (range.includes(ledCount)) s1.classList.add(colClass);
+        }
+        s1.setAttribute("data-sector", ledCount.toString());
+        s1.style.position = "absolute";
+        s1.style.top = t.toString() + "px";
+        s1.style.left = l.toString() + "px";
+        s1.style.width = dWidth.toString() + "px";
+        s1.style.height = flHeight.toString() + "px";
+        s1.setAttribute("data-bs-toggle", "tooltip");
+        s1.setAttribute("data-bs-placement", "top");
+        if (i === 0) {
+            s1.setAttribute("title", ledCount.toString() + "/" + (ledCount + 1).toString());
+        } else {
+            s1.setAttribute("title", ledCount.toString());
+        }
+        map.appendChild(s1);
+        ledCount++;
+    }
+
+    // This one, stupid
+    for (let i = 0; i < bottomCount; i++) {
+        t = h - hMargin - dHeight;
+        b = t + dHeight;
+        l = wMargin + (fbWidth * (i));
+        r = l + fbWidth;
+        let s1 = document.createElement("div");
+        s1.classList.add("led");
+        for(let r=0; r < rangeList.length; r++) {
+            let colClass = colorClasses[r];
+            let range = rangeList[r];
+            if (range.includes(ledCount)) s1.classList.add(colClass);
+        }
+        s1.setAttribute("data-sector", ledCount.toString());
+        s1.style.position = "absolute";
+        s1.style.top = t.toString() + "px";
+        s1.style.left = l.toString() + "px";
+        s1.style.width = fbWidth.toString() + "px";
+        s1.style.height = dHeight.toString() + "px";
+        s1.setAttribute("data-bs-toggle", "tooltip");
+        s1.setAttribute("data-bs-placement", "top");
+        if (i === 0) {
+            s1.setAttribute("title", ledCount.toString() + "/" + (ledCount + 1).toString());
+        } else {
+            s1.setAttribute("title", ledCount.toString());
+        }
+        map.appendChild(s1);
+        ledCount++;
+    }
+    targetElement.appendChild(map);
+
+    for (let s = 0; s < segments.length; s++) {
+        let offset = segments[s]["Offset"];
+        let len = segments[s]["LedCount"];
+        
+    }
 }
 
 function appendBeamLedMap() {

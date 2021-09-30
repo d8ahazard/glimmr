@@ -35,8 +35,10 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		private StripMode _stripMode;
 		private int _targetSector;
 		private int _protocol = 2;
+		private WledSegment[] _segments;
 
 		public WledDevice(WledData wd, ColorService cs) : base(cs) {
+			_segments = Array.Empty<WledSegment>();
 			cs.ControlService.RefreshSystemEvent += RefreshSystem;
 			_udpClient = cs.ControlService.UdpClient;
 			_httpClient = cs.ControlService.HttpSender;
@@ -128,6 +130,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 				UpdateLightState(Streaming).ConfigureAwait(false);
 			}
 
+			_segments = _data.Segments;
 			_ledCount = _data.LedCount;
 			return Task.CompletedTask;
 		}
@@ -149,13 +152,28 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			}
 
 			var toSend = list;
-
 			if (_stripMode == StripMode.Single) {
 				if (_targetSector >= colors1.Count || _targetSector == -1) {
 					return;
 				}
 
 				toSend = ColorUtil.FillArray(colors1[_targetSector], _ledCount);
+			} else if (_stripMode == StripMode.Sectored) {
+				var output = new Color[_ledCount];
+				foreach (var seg in _segments) {
+					var cols = ColorUtil.TruncateColors(toSend, seg.Offset, seg.LedCount, seg.Multiplier);
+					if (seg.ReverseStrip) cols = cols.Reverse().ToArray();
+					var start = seg.Start;
+					foreach (var col in cols) {
+						if (start >= _ledCount) {
+							Log.Warning($"Error, dest color idx is greater than led count: {start}/{_ledCount}");
+							continue;
+						}
+						output[start] = col;
+						start++;
+					}
+				}
+				toSend = output;
 			} else {
 				toSend = ColorUtil.TruncateColors(toSend, _offset, _ledCount, _multiplier);
 				if (_stripMode == StripMode.Loop) {
@@ -166,7 +184,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
 					}
 				}
 			}
-
 			
 			if (_ep == null) {
 				Log.Debug("No endpoint.");
