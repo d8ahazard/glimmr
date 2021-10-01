@@ -270,7 +270,7 @@ Linux - /home/glimmrtv/glimmr/bin
 
 ## Related repositories:
 [Raspberry pi image generator](https://github.com/d8ahazard/Glimmr-image-gen)
-[Glimmr mobile app](https://github.com/d8ahazard/glimmrmobile)
+[Glimmr mobile app](https://github.com/d8ahazard/GlimmrControl)
 [FloW LED Android Screen Capture App](https://play.google.com/store/apps/details?id=com.digitalhigh.glimmrextender&hl=en_US&gl=US)
 [DreamScreen Documents](https://github.com/d8ahazard/DreamscreenDocs/)
 
