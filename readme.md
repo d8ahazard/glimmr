@@ -23,12 +23,12 @@ Note: Glimmr/GlimmrTray *MUST* be run as administrator in order for screen captu
 ### Raspberry Pi
 Execute the following command:
 ```
-bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_linux.sh
+bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/master/script/setup_linux.sh
 ```
 
 *Alternatively*, you can flash a custom image directly to your pi from here:
 
-https://mega.nz/file/u24w0TpK#esrm65xrUQf_kZd6CSkO5hNUlsSpojCXBn4OU1jUOBI
+https://mega.nz/file/m7oT0a4B#CmEhWU8wrdNPSpwCTVwCgFqSoL_-dNFA8YA_ctIf-Vw
 
 You will need to use "BalenaEtcher", a free software for flashing the image.
 
