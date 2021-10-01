@@ -25,7 +25,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 		[JsonProperty] public bool Power { get; set; }
 		[JsonProperty] public byte Service { get; internal set; }
-		[JsonProperty] public byte[] MacAddress { get; internal set; } = new byte[0];
+		[JsonProperty] public byte[] MacAddress { get; internal set; } = Array.Empty<byte>();
 		[JsonProperty] public double GammaCorrection { get; set; } = 1;
 		[JsonProperty] public int Brightness { get; set; }
 
@@ -36,7 +36,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			set => MultiZoneCount = value / 2;
 		}
 
-		[JsonProperty] public int LedMultiplier { get; set; } = 2;
+		[JsonProperty] public float LedMultiplier { get; set; } = 2.0f;
 
 		[DefaultValue(255)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -79,6 +79,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		public LifxData(Device b) {
 			Tag = "Lifx";
 			Name ??= Tag;
+			Id = HostName;
 			HostName = b.HostName;
 			var ip = IpUtil.GetIpFromHost(HostName);
 			if (ip != null) {
@@ -90,7 +91,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			}
 
 			Name ??= Tag;
-			if (Id != null && Id.Length > 4) {
+			if (Id is { Length: > 4 }) {
 				Name = "Lifx - " + Id.Substring(Id.Length - 5, 5);
 			}
 
@@ -173,22 +174,21 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 		}
 
 		private SettingsProperty[] Kps() {
-			if (HasMultiZone) {
-				var gamma = new SettingsProperty("GammaCorrection", "number", "Gamma Correction") {
-					ValueMax = "3", ValueMin = "1", ValueStep = ".1"
-				};
-				return new[] {
-					new("LedMultiplier", "number", "LED Multiplier") {
-						ValueMin = "-5", ValueStep = "1", ValueMax="5", ValueHint = "Positive values to multiply (skip), negative values to divide (duplicate)."
-					},
-					gamma,
-					new("beamMap", "beamMap", "")
+			if (!HasMultiZone) {
+				return new SettingsProperty[] {
+					new("TargetSector", "sectormap", "Target Sector")
 				};
 			}
 
-			return new SettingsProperty[] {
-				new("TargetSector", "sectormap", "Target Sector")
+			var gamma = new SettingsProperty("GammaCorrection", "number", "Gamma Correction") {
+				ValueMax = "3", ValueMin = "1", ValueStep = ".1"
 			};
+			return new[] {
+				new("LedMultiplier", "ledMultiplier", ""),
+				gamma,
+				new("beamMap", "beamMap", "")
+			};
+
 		}
 	}
 

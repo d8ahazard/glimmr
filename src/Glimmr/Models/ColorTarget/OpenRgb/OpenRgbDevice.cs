@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using OpenRGB.NET;
 using Serilog;
 
 #endregion
@@ -15,21 +14,16 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.OpenRgb {
 	public class OpenRgbDevice : ColorTarget, IColorTarget {
 		private readonly ColorService _colorService;
-		private OpenRGBClient? _client;
+		private OpenRgbAgent? _client;
 		private OpenRgbData _data;
 
 		public OpenRgbDevice(OpenRgbData data, ColorService cs) {
 			Id = data.Id;
 			_data = data;
-			cs.ColorSendEventAsync += SetColors;
 			_colorService = cs;
 			_client = cs.ControlService.GetAgent("OpenRgbAgent");
 			LoadData();
-		}
-		
-		private Task SetColors(object sender, ColorSendEventArgs args) {
-			SetColor(args.LedColors, args.Force);
-			return Task.CompletedTask;
+			_colorService.ColorSendEventAsync += SetColors;
 		}
 
 		public bool Streaming { get; set; }
@@ -43,34 +37,32 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			set => _data = (OpenRgbData) value;
 		}
 
-
 		public Task StartStream(CancellationToken ct) {
+			_client ??= _colorService.ControlService.GetAgent("OpenRgbAgent");
 			if (_client == null || !Enable) {
+				if (_client == null) Log.Debug("Null client, returning.");
 				return Task.CompletedTask;
 			}
 
+			_client.Connect();
 			if (!_client.Connected) {
-				try {
-					_client.Connect();
-				} catch (Exception e) {
-					Log.Debug("Exception connecting client: " + e.Message);
-				}
-
-				try {
-					_client.Dispose();
-					_client = _colorService.ControlService.GetAgent("OpenRgbAgent");
-					_client?.Connect();
-				} catch {
-					// Ignored
-				}
+				return Task.CompletedTask;
 			}
 
-			if (_client != null && _client.Connected) {
-				Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
-				Streaming = true;
+			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
+			try {
+				var mt = new OpenRGB.NET.Models.Color[_data.LedCount];
+				for (var i = 0; i < mt.Length; i++) {
+					mt[i] = new OpenRGB.NET.Models.Color();
+				}
 				_client.SetMode(_data.DeviceId, 0);
-				Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
+			} catch (Exception e) {
+				Log.Warning("Exception setting mode..." + e.Message);
+				return Task.CompletedTask;
 			}
+
+			Streaming = true;
+			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
 
 			return Task.CompletedTask;
 		}
@@ -89,14 +81,41 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 				output[i] = new OpenRGB.NET.Models.Color();
 			}
 
-			_client.UpdateLeds(_data.DeviceId, output);
+			_client.Update(_data.DeviceId, output);
+			_client.Update(_data.DeviceId, output);
+			_client.Update(_data.DeviceId, output);
 			await Task.FromResult(true);
 			Streaming = false;
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
+		public Task FlashColor(Color color) {
+			return Task.CompletedTask;
+		}
 
-		private void SetColor(Color[] colors, bool force = false) {
+		public Task ReloadData() {
+			Log.Debug("Reloading data...");
+			var dev = DataUtil.GetDevice(Id);
+			if (dev == null) {
+				return Task.CompletedTask;
+			}
+
+			_data = dev;
+			Enable = _data.Enable;
+
+			return Task.CompletedTask;
+		}
+
+		public void Dispose() {
+		}
+
+		private async Task SetColors(object sender, ColorSendEventArgs args) {
+			if (!_client?.Connected ?? false) return;
+			await SetColor(args.LedColors, args.Force).ConfigureAwait(false);
+		}
+
+
+		private async Task SetColor(Color[] colors, bool force = false) {
 			if (!Enable || !Streaming || Testing && !force) {
 				return;
 			}
@@ -107,25 +126,9 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			}
 
 			var converted = toSend.Select(col => new OpenRGB.NET.Models.Color(col.R, col.G, col.B)).ToList();
-			_client?.UpdateLeds(_data.DeviceId, converted.ToArray());
-
+			_client?.Update(_data.DeviceId, converted.ToArray());
+			await Task.FromResult(true);
 			_colorService.Counter.Tick(Id);
-		}
-
-		public Task FlashColor(Color color) {
-			return Task.CompletedTask;
-		}
-
-		public Task ReloadData() {
-			var dev = DataUtil.GetDevice(Id);
-			if (dev != null) {
-				_data = dev;
-			}
-
-			return Task.CompletedTask;
-		}
-
-		public void Dispose() {
 		}
 
 		private void LoadData() {

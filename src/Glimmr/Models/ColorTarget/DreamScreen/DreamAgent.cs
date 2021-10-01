@@ -1,5 +1,6 @@
 ﻿#region
 
+using System;
 using DreamScreenNet;
 using Glimmr.Services;
 
@@ -16,6 +17,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 
 		public void Dispose() {
 			_du?.Dispose();
+			GC.SuppressFinalize(this);
 		}
 	}
 }

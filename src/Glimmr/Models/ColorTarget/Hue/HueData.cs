@@ -46,8 +46,8 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			IpAddress = b.IpAddress;
 			Id = b.BridgeId;
 			if (Id.Length > 12) {
-				var left = Id.Substring(0, 6);
-				var right = Id.Substring(Id.Length - 6);
+				var left = Id[..6];
+				var right = Id[^6..];
 				Id = left + right;
 			}
 

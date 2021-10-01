@@ -10,6 +10,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Enums;
+using Glimmr.Models.ColorSource.UDP;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Serilog;
@@ -19,7 +20,7 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.Wled {
 	public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		private string IpAddress { get; set; }
-		private static readonly int port = 21324;
+		private const int Port = 21324;
 		private readonly HttpClient _httpClient;
 		private readonly UdpClient _udpClient;
 
@@ -29,27 +30,25 @@ namespace Glimmr.Models.ColorTarget.Wled {
 		private bool _disposed;
 		private IPEndPoint? _ep;
 		private int _ledCount;
-		private int _multiplier;
+		private float _multiplier;
 		private int _offset;
 		private StripMode _stripMode;
 		private int _targetSector;
+		private int _protocol = 2;
+		private WledSegment[] _segments;
 
-		public WledDevice(WledData wd, ColorService colorService) : base(colorService) {
-			colorService.ColorSendEventAsync += SetColors;
-			ColorService = colorService;
-			colorService.ControlService.RefreshSystemEvent += RefreshSystem;
-			_udpClient = ColorService.ControlService.UdpClient;
-			_httpClient = ColorService.ControlService.HttpSender;
+		public WledDevice(WledData wd, ColorService cs) : base(cs) {
+			_segments = Array.Empty<WledSegment>();
+			cs.ControlService.RefreshSystemEvent += RefreshSystem;
+			_udpClient = cs.ControlService.UdpClient;
+			_httpClient = cs.ControlService.HttpSender;
 			_data = wd ?? throw new ArgumentException("Invalid WLED data.");
 			Id = _data.Id;
 			IpAddress = _data.IpAddress;
 			_brightness = _data.Brightness;
 			_multiplier = _data.LedMultiplier;
 			ReloadData();
-		}
-		
-		private Task SetColors(object sender, ColorSendEventArgs args) {
-			return SetColor(args.LedColors, args.SectorColors, args.Force);
+			cs.ColorSendEventAsync += SetColors;
 		}
 
 		public bool Enable { get; set; }
@@ -70,7 +69,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
 			_targetSector = _data.TargetSector;
-			_ep = IpUtil.Parse(IpAddress, port);
+			_ep = IpUtil.Parse(IpAddress, Port);
 			if (_ep == null) {
 				return;
 			}
@@ -83,15 +82,11 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 
 		public async Task FlashColor(Color color) {
-			var packet = new List<byte> {ByteUtils.IntByte(2), ByteUtils.IntByte(10)};
-			for (var i = 0; i < _data.LedCount; i++) {
-				packet.Add(color.R);
-				packet.Add(color.G);
-				packet.Add(color.B);
-			}
-
 			try {
-				await _udpClient.SendAsync(packet.ToArray(), packet.Count, _ep).ConfigureAwait(false);
+				var colors = ColorUtil.FillArray(color, _ledCount);
+				var cp = new ColorPacket(colors, (UdpStreamMode) _protocol);
+				var packet = cp.Encode();
+				await _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep).ConfigureAwait(false);
 			} catch (Exception e) {
 				Log.Debug("Exception, look at that: " + e.Message);
 			}
@@ -103,62 +98,11 @@ namespace Glimmr.Models.ColorTarget.Wled {
 				return;
 			}
 
-
 			Streaming = false;
 			await FlashColor(Color.Black).ConfigureAwait(false);
 			await UpdateLightState(false).ConfigureAwait(false);
 			await Task.FromResult(true);
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
-		}
-
-
-		private async Task SetColor(Color[] list, Color[] colors1, bool force = false) {
-			if (!Streaming || !Enable || Testing && !force) {
-				return;
-			}
-
-			var toSend = list;
-
-			if (_stripMode == StripMode.Single) {
-				if (_targetSector >= colors1.Length || _targetSector == -1) {
-					return;
-				}
-
-				toSend = ColorUtil.FillArray(colors1[_targetSector], _ledCount);
-			} else {
-				toSend = ColorUtil.TruncateColors(toSend, _offset, _ledCount, _multiplier);
-				if (_stripMode == StripMode.Loop) {
-					toSend = ShiftColors(toSend);
-				} else {
-					if (_data.ReverseStrip) {
-						toSend = toSend.Reverse().ToArray();
-					}
-				}
-			}
-
-			var packet = new byte[2 + toSend.Length * 3];
-			var timeByte = 255;
-			packet[0] = ByteUtils.IntByte(2);
-			packet[1] = ByteUtils.IntByte(timeByte);
-			var pInt = 2;
-			foreach (var t in toSend) {
-				packet[pInt] = t.R;
-				packet[pInt + 1] = t.G;
-				packet[pInt + 2] = t.B;
-				pInt += 3;
-			}
-
-			if (_ep == null) {
-				Log.Debug("No endpoint.");
-				return;
-			}
-
-			try {
-				await _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep).ConfigureAwait(false);
-				ColorService?.Counter.Tick(Id);
-			} catch (Exception e) {
-				Log.Debug("Exception: " + e.Message + " at " + e.StackTrace);
-			}
 		}
 
 
@@ -169,6 +113,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 				_data = dev;
 			}
 
+			_protocol = _data.Protocol;
 			_offset = _data.Offset;
 			_brightness = _data.Brightness;
 			IpAddress = _data.IpAddress;
@@ -185,6 +130,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 				UpdateLightState(Streaming).ConfigureAwait(false);
 			}
 
+			_segments = _data.Segments;
 			_ledCount = _data.LedCount;
 			return Task.CompletedTask;
 		}
@@ -195,9 +141,63 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			GC.SuppressFinalize(this);
 		}
 
+		private Task SetColors(object sender, ColorSendEventArgs args) {
+			return SetColor(args.LedColors, args.SectorColors, args.Force);
+		}
 
-		public bool IsEnabled() {
-			return _data.Enable;
+
+		private async Task SetColor(Color[] list, IReadOnlyList<Color> colors1, bool force = false) {
+			if (!Streaming || !Enable || Testing && !force) {
+				return;
+			}
+
+			var toSend = list;
+			if (_stripMode == StripMode.Single) {
+				if (_targetSector >= colors1.Count || _targetSector == -1) {
+					return;
+				}
+
+				toSend = ColorUtil.FillArray(colors1[_targetSector], _ledCount);
+			} else if (_stripMode == StripMode.Sectored) {
+				var output = new Color[_ledCount];
+				foreach (var seg in _segments) {
+					var cols = ColorUtil.TruncateColors(toSend, seg.Offset, seg.LedCount, seg.Multiplier);
+					if (seg.ReverseStrip) cols = cols.Reverse().ToArray();
+					var start = seg.Start;
+					foreach (var col in cols) {
+						if (start >= _ledCount) {
+							Log.Warning($"Error, dest color idx is greater than led count: {start}/{_ledCount}");
+							continue;
+						}
+						output[start] = col;
+						start++;
+					}
+				}
+				toSend = output;
+			} else {
+				toSend = ColorUtil.TruncateColors(toSend, _offset, _ledCount, _multiplier);
+				if (_stripMode == StripMode.Loop) {
+					toSend = ShiftColors(toSend);
+				} else {
+					if (_data.ReverseStrip) {
+						toSend = toSend.Reverse().ToArray();
+					}
+				}
+			}
+			
+			if (_ep == null) {
+				Log.Debug("No endpoint.");
+				return;
+			}
+
+			try {
+				var cp = new ColorPacket(toSend,(UdpStreamMode) _protocol);
+				var packet = cp.Encode(255); 
+				await _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep).ConfigureAwait(false);
+				ColorService?.Counter.Tick(Id);
+			} catch (Exception e) {
+				Log.Debug("Exception: " + e.Message + " at " + e.StackTrace);
+			}
 		}
 
 
@@ -237,29 +237,6 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			url += "&A=" + (int) scaledBright;
 			await _httpClient.GetAsync(url).ConfigureAwait(false);
 		}
-
-		// private async Task<WledStateData?> GetLightState() {
-		// 	var url = "http://" + IpAddress + "/json/";
-		// 	Log.Debug("URL is " + url);
-		// 	var res = await _httpClient.GetAsync(url);
-		// 	res.EnsureSuccessStatusCode();
-		// 	if (res.Content != null && res.Content.Headers.ContentType?.MediaType == "application/json") {
-		// 		var contentStream = await res.Content.ReadAsStreamAsync();
-		//
-		// 		try {
-		// 			return await JsonSerializer.DeserializeAsync<WledStateData>(contentStream,
-		// 				new JsonSerializerOptions {IgnoreNullValues = true, PropertyNameCaseInsensitive = true});
-		// 		} catch (JsonException) // Invalid JSON
-		// 		{
-		// 			Console.WriteLine("Invalid JSON.");
-		// 		}
-		// 	} else {
-		// 		Console.WriteLine("HTTP Response was invalid and cannot be de-serialised.");
-		// 	}
-		//
-		// 	return null;
-		// }
-
 
 		protected virtual async Task Dispose(bool disposing) {
 			if (_disposed) {

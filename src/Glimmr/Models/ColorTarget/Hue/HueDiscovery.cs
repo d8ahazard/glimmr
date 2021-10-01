@@ -51,7 +51,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				//It will throw an LinkButtonNotPressedException if the user did not press the button
 				var devName = Environment.MachineName;
 				if (devName.Length > 19) {
-					devName = devName.Substring(0, 18);
+					devName = devName[..18];
 				}
 
 				Log.Debug("Using device name for registration: " + devName);
@@ -92,7 +92,9 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			}
 
 			var dev = (HueData) dd;
-			if (string.IsNullOrEmpty(dev.Token)) return data;
+			if (string.IsNullOrEmpty(dev.Token)) {
+				return data;
+			}
 
 			var client = new LocalHueClient(data.IpAddress, dev.User, dev.Token);
 			try {

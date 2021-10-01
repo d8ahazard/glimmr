@@ -36,7 +36,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		private string? _user;
 
 
-		public HueDevice(HueData data, ColorService colorService) : base(colorService) {
+		public HueDevice(HueData data, ColorService cs) : base(cs) {
 			Data = data;
 			_targets = new Dictionary<string, int>();
 			_ipAddress = Data.IpAddress;
@@ -45,19 +45,14 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Enable = Data.Enable;
 			_brightness = Data.Brightness;
 			_lightMappings = Data.MappedLights;
-			colorService.ColorSendEventAsync += SetColors;
-			colorService.ControlService.RefreshSystemEvent += SetData;
+			cs.ControlService.RefreshSystemEvent += SetData;
 			Id = Data.Id;
 			_disposed = false;
 			Streaming = false;
 			_entLayer = null;
 			_selectedGroup = Data.SelectedGroup;
 			SetData();
-		}
-		
-		private Task SetColors(object sender, ColorSendEventArgs args) {
-			SetColor(args.SectorColors, args.FadeTime, args.Force);
-			return Task.CompletedTask;
+			cs.ColorSendEventAsync += SetColors;
 		}
 
 
@@ -131,7 +126,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Group? group = null;
 			foreach (var g in all) {
 				if (g.Id == _selectedGroup) {
-					@group = g;
+					group = g;
 				}
 			}
 
@@ -161,7 +156,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 			try {
 				if (!connected) {
-					await _client.Connect(@group.Id);
+					await _client.Connect(group.Id);
 				}
 			} catch (Exception e) {
 				Log.Warning("Exception caught: " + e.Message);
@@ -171,7 +166,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 			//Start auto updating this entertainment group
 			_updateTask = _client.AutoUpdate(entGroup, ct, 60);
-
 			Log.Debug($"{Data.Tag}::Stream started: {Data.Id}");
 			Streaming = true;
 		}
@@ -187,63 +181,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			Data = dev;
 			SetData();
 			return Task.CompletedTask;
-		}
-
-		/// <summary>
-		///     Update lites in entertainment group...
-		/// </summary>
-		/// <param name="o"></param>
-		/// <param name="args"></param>
-		public Task SetColor(object o, DynamicEventArgs args) {
-			SetColor(args.Arg1, args.Arg2, args.Arg3);
-
-			return Task.CompletedTask;
-		}
-
-		/// <summary>
-		///     Update lites in entertainment group...
-		/// </summary>
-		/// <param name="sectors"></param>
-		/// <param name="fadeTime"></param>
-		/// <param name="force"></param>
-		private void SetColor(Color[] sectors, int fadeTime, bool force = false) {
-			if (!Streaming || !Enable || _entLayer == null || Testing && !force) {
-				return;
-			}
-
-			foreach (var entLight in _entLayer) {
-				// Get data for our light from map
-
-				var lightData = _lightMappings.SingleOrDefault(item =>
-					item.Id == entLight.Id.ToString());
-				// Return if not mapped
-				if (lightData == null) {
-					Log.Debug("No DATA");
-					continue;
-				}
-
-				// Otherwise, get the corresponding sector color
-				var target = _targets[entLight.Id.ToString()];
-				if (target >= sectors.Length) {
-					Log.Debug("NO TARGET!!");
-					continue;
-				}
-
-				var color = sectors[target];
-				var mb = lightData.Override ? lightData.Brightness : _brightness;
-				var oColor = new RGBColor(color.R, color.G, color.B);
-				// If we're currently using a scene, animate it
-				if (Math.Abs(fadeTime) > 0.01) {
-					// Our start color is the last color we had}
-					entLight.SetState(_ct, oColor, mb,
-						TimeSpan.FromMilliseconds(fadeTime));
-				} else {
-					// Otherwise, if we're streaming, just set the color
-					entLight.SetState(_ct, oColor, mb);
-				}
-			}
-
-			ColorService?.Counter.Tick(Id);
 		}
 
 
@@ -269,29 +206,55 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			return Task.CompletedTask;
 		}
 
-		public bool IsEnabled() {
-			return Enable;
+		private Task SetColors(object sender, ColorSendEventArgs args) {
+			SetColor(args.SectorColors, args.FadeTime, args.Force);
+			return Task.CompletedTask;
 		}
 
-		public void FlashLight(Color color, int lightId) {
-			if (!Enable) {
-				return;
-			}
-
-			if (_entLayer == null) {
+		/// <summary>
+		///     Update lites in entertainment group...
+		/// </summary>
+		/// <param name="sectors"></param>
+		/// <param name="fadeTime"></param>
+		/// <param name="force"></param>
+		private void SetColor(IReadOnlyList<Color> sectors, int fadeTime, bool force = false) {
+			if (!Streaming || !Enable || _entLayer == null || Testing && !force) {
 				return;
 			}
 
 			foreach (var entLight in _entLayer) {
-				if (lightId != entLight.Id) {
+				// Get data for our light from map
+
+				var lightData = _lightMappings.SingleOrDefault(item =>
+					item.Id == entLight.Id.ToString());
+				// Return if not mapped
+				if (lightData == null) {
+					Log.Debug("No DATA");
 					continue;
 				}
 
-				// Get data for our light from map
+				// Otherwise, get the corresponding sector color
+				var target = _targets[entLight.Id.ToString()];
+				if (target >= sectors.Count) {
+					Log.Debug("NO TARGET!!");
+					continue;
+				}
+
+				var color = sectors[target];
+				var mb = lightData.Override ? lightData.Brightness : _brightness;
 				var oColor = new RGBColor(color.R, color.G, color.B);
 				// If we're currently using a scene, animate it
-				entLight.SetState(_ct, oColor, 255);
+				if (Math.Abs(fadeTime) > 0.01) {
+					// Our start color is the last color we had}
+					entLight.SetState(_ct, oColor, mb,
+						TimeSpan.FromMilliseconds(fadeTime));
+				} else {
+					// Otherwise, if we're streaming, just set the color
+					entLight.SetState(_ct, oColor, mb);
+				}
 			}
+
+			ColorService?.Counter.Tick(Id);
 		}
 
 

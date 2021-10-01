@@ -6,11 +6,9 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Glimmr.Hubs;
 using Glimmr.Models;
 using Glimmr.Models.ColorTarget;
 using Glimmr.Models.Util;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
@@ -19,7 +17,6 @@ using Serilog;
 namespace Glimmr.Services {
 	public class DiscoveryService : BackgroundService {
 		private readonly List<IColorDiscovery> _discoverables;
-		private readonly IHubContext<SocketServer> _hubContext;
 		private readonly CancellationTokenSource _syncSource;
 		private bool _discovering;
 		private int _discoveryInterval;
@@ -27,12 +24,10 @@ namespace Glimmr.Services {
 		private CancellationToken _stopToken;
 		private bool _streaming;
 
-		public DiscoveryService(IHubContext<SocketServer> hubContext, ControlService cs) {
-			_hubContext = hubContext;
-			var controlService = cs;
-			controlService.DeviceRescanEvent += TriggerRefresh;
-			controlService.SetModeEvent += UpdateMode;
-			controlService.RefreshSystemEvent += RefreshSystem;
+		public DiscoveryService(ControlService cs) {
+			cs.DeviceRescanEvent += TriggerRefresh;
+			cs.SetModeEvent += UpdateMode;
+			cs.RefreshSystemEvent += RefreshSystem;
 			_discoveryInterval = DataUtil.GetItem<int>("AutoDiscoveryFrequency");
 			if (_discoveryInterval < 15) {
 				_discoveryInterval = 15;
@@ -41,14 +36,8 @@ namespace Glimmr.Services {
 			var classnames = SystemUtil.GetClasses<IColorDiscovery>();
 			_discoverables = new List<IColorDiscovery>();
 			_syncSource = new CancellationTokenSource();
-			foreach (var c in classnames) {
-				var obj = Activator.CreateInstance(Type.GetType(c)!, cs.ColorService);
-				if (obj == null) {
-					continue;
-				}
-
-				var dev = (IColorDiscovery) obj;
-				_discoverables.Add(dev);
+			foreach (var dev in classnames.Select(c => Activator.CreateInstance(Type.GetType(c)!, cs.ColorService)).Where(obj => obj != null).Cast<IColorDiscovery?>()) {
+				if (dev != null) _discoverables.Add(dev);
 			}
 		}
 
@@ -156,8 +145,6 @@ namespace Glimmr.Services {
 			}
 
 			_discovering = false;
-			// Notify all clients to refresh data
-			await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized(), CancellationToken.None);
 		}
 	}
 }

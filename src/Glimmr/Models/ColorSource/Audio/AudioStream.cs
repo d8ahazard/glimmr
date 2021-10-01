@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,7 +34,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 		public AudioStream(ColorService cs) {
 			_devices = new List<AudioData>();
 			_map = new AudioMap();
-			StreamSplitter = new FrameSplitter(cs);
+			StreamSplitter = new FrameSplitter(cs, false, "audioStream");
 			_builder = new FrameBuilder(new[] {
 				3, 3, 6, 6
 			}, true);
@@ -44,12 +43,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 		}
 
 		public bool SourceActive => StreamSplitter.SourceActive;
-
-
-		private void RefreshSystem() {
-			_sd = DataUtil.GetSystemData();
-			LoadData();
-		}
 
 		public Task ToggleStream(CancellationToken ct) {
 			SendColors = true;
@@ -74,27 +67,42 @@ namespace Glimmr.Models.ColorSource.Audio {
 			return ExecuteAsync(ct);
 		}
 
-		protected override Task ExecuteAsync(CancellationToken ct) {
-			return Task.Run(async () => {
-				while (!ct.IsCancellationRequested) {
-					await Task.Delay(1, ct);
-				}
 
+		private void RefreshSystem() {
+			_sd = DataUtil.GetSystemData();
+			LoadData();
+		}
+
+		public Task StopStream() {
+			try {
 				Bass.ChannelStop(_handle);
 				Bass.Free();
 				Bass.RecordFree();
 				SendColors = false;
 				Log.Debug("Audio stream service stopped.");
+			} catch (Exception e) {
+				Log.Warning("Exception stopping stream..." + e.Message);
+			}
+
+			return Task.CompletedTask;
+		}
+
+		protected override Task ExecuteAsync(CancellationToken ct) {
+			return Task.Run(async () => {
+				while (!ct.IsCancellationRequested) {
+					await Task.Delay(1, CancellationToken.None);
+				}
+
+				await StopStream();
 			}, CancellationToken.None);
 		}
-		
 
 
 		private void LoadData() {
 			_sd = DataUtil.GetSystemData();
 			_gain = _sd.AudioGain;
 			_min = _sd.AudioMin;
-			string rd = _sd.RecDev;
+			var rd = _sd.RecDev;
 			_devices = DataUtil.GetCollection<AudioData>("Dev_Audio") ?? new List<AudioData>();
 			_map = new AudioMap();
 			_recordDeviceIndex = -1;
@@ -142,27 +150,32 @@ namespace Glimmr.Models.ColorSource.Audio {
 				//return false;
 			}
 
-			var samples = 2048 * 2;
+			const int samples = 2048 * 2;
 			var fft = new float[samples]; // fft data buffer
 			// Get our FFT for "everything"
-			Bass.ChannelGetData(handle, fft, (int) DataFlags.FFT4096 | (int) DataFlags.FFTIndividual);
+			var res = Bass.ChannelGetData(handle, fft, (int) DataFlags.FFT4096 | (int) DataFlags.FFTIndividual);
+			if (res == -1) {
+				Log.Warning("Error getting channel data: " + Bass.LastError);
+				return false;
+			}
 			var lData = new Dictionary<int, float>();
 			var rData = new Dictionary<int, float>();
 			var realIndex = 0;
 
 			for (var a = 0; a < samples; a++) {
 				var val = FlattenValue(fft[a]);
-				//if (val > 0) Log.Information($"Audio val: {val}");
 				var freq = FftIndex2Frequency(realIndex, 4096 / 2, 48000);
 
 				if (a % 1 == 0) {
 					lData[freq] = val;
 				}
 
-				if (a % 2 == 0) {
-					rData[freq] = val;
-					realIndex++;
+				if (a % 2 != 0) {
+					continue;
 				}
+
+				rData[freq] = val;
+				realIndex++;
 			}
 
 			if (_map == null) {

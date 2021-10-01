@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 #pragma warning disable 8603
@@ -60,14 +61,7 @@ namespace Glimmr.Models {
 				tmpInvocationList = new List<Func<object, TEventArgs, Task>>(_invocationList);
 			}
 
-			var tasks = new List<Task>();
-			
-			foreach (var callback in tmpInvocationList) {
-				//Assuming we want a serial invocation, for a parallel invocation we can use Task.WhenAll instead
-				if (sender != null && eventArgs != null) {
-					tasks.Add(callback.Invoke(sender, eventArgs));
-				}
-			}
+			var tasks = (from callback in tmpInvocationList where sender != null && eventArgs != null select callback.Invoke(sender, eventArgs)).ToList();
 
 			await Task.WhenAll(tasks);
 		}
@@ -76,14 +70,10 @@ namespace Glimmr.Models {
 	public class DynamicEventArgs : EventArgs {
 		public dynamic Arg0 { get; }
 		public dynamic? Arg1 { get; }
-		public dynamic? Arg2 { get; }
-		public dynamic? Arg3 { get; }
 
-		public DynamicEventArgs(dynamic input0, dynamic? input1 = null, dynamic? input2 = null, dynamic? input3 = null) {
+		public DynamicEventArgs(dynamic input0, dynamic? input1 = null) {
 			Arg0 = input0;
 			Arg1 = input1;
-			Arg2 = input2;
-			Arg3 = input3;
 		}
 	}
 }

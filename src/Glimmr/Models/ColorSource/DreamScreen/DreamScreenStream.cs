@@ -1,6 +1,5 @@
 ﻿#region
 
-using System.Drawing;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -37,7 +36,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 
 			var rect = new[] {3, 3, 5, 5};
 			_builder = new FrameBuilder(rect, true);
-			_splitter = colorService.Splitter;
+			_splitter = new FrameSplitter(colorService, false, "dreamscreenStream");
 			_cs.ControlService.RefreshSystemEvent += RefreshSystem;
 			RefreshSystem();
 		}
@@ -79,21 +78,23 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 				}
 			}
 
-			if (!string.IsNullOrEmpty(dsIp)) {
-				var dsData = DataUtil.GetDevice<DreamScreenData>(dsIp);
-				if (dsData != null) {
-					_dDev = new DreamDevice {DeviceGroup = dsData.GroupNumber};
-					_dDev.Type = dsData.DeviceTag switch {
-						"DreamScreenHd" => DeviceType.DreamScreenHd,
-						"DreamScreen4K" => DeviceType.DreamScreen4K,
-						"DreamScreenSolo" => DeviceType.DreamScreenSolo,
-						_ => _dDev.Type
-					};
-					_dDev.IpAddress = IPAddress.Parse(dsData.IpAddress);
-				}
-
-				_targetDreamScreen = IPAddress.Parse(dsIp);
+			if (string.IsNullOrEmpty(dsIp)) {
+				return;
 			}
+
+			var dsData = DataUtil.GetDevice<DreamScreenData>(dsIp);
+			if (dsData != null) {
+				_dDev = new DreamDevice {DeviceGroup = dsData.GroupNumber};
+				_dDev.Type = dsData.DeviceTag switch {
+					"DreamScreenHd" => DeviceType.DreamScreenHd,
+					"DreamScreen4K" => DeviceType.DreamScreen4K,
+					"DreamScreenSolo" => DeviceType.DreamScreenSolo,
+					_ => _dDev.Type
+				};
+				_dDev.IpAddress = IPAddress.Parse(dsData.IpAddress);
+			}
+
+			_targetDreamScreen = IPAddress.Parse(dsIp);
 		}
 
 		private void ProcessCommand(object? sender, DreamScreenClient.MessageEventArgs e) {
@@ -112,12 +113,6 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 
 						Log.Debug("Toggle mode: " + mode);
 						_cs.ControlService.SetMode(mode).ConfigureAwait(false);
-						break;
-					case MessageType.Brightness:
-						break;
-					case MessageType.AmbientColor:
-						break;
-					case MessageType.AmbientScene:
 						break;
 					case MessageType.AmbientModeType:
 						_cs.ControlService.SetMode(3).ConfigureAwait(false);
@@ -147,14 +142,6 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 
 			_splitter.DoSend = false;
 			Log.Debug("DS stream service stopped.");
-		}
-		
-		public Color[] GetColors() {
-			return _splitter.GetColors();
-		}
-
-		public Color[] GetSectors() {
-			return _splitter.GetSectors();
 		}
 
 		private void UpdateColors(object? sender, DreamScreenClient.DeviceColorEventArgs e) {

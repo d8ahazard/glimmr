@@ -1,6 +1,7 @@
 ﻿#region
 
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 using System.Threading;
@@ -25,6 +26,8 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 		private int _targetSector;
 
+		private float _brightness;
+
 
 		public YeelightDevice(YeelightData yd, ColorService cs) : base(cs) {
 			_data = yd;
@@ -39,10 +42,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			_data.LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 			DataUtil.AddDeviceAsync(_data, false).ConfigureAwait(false);
 			_yeeDevice = new Device(IpAddress);
-		}
-
-		private Task SetColors(object sender, ColorSendEventArgs args) {
-			return SetColor(args.SectorColors, args.Force);
+			_colorService.ColorSendEventAsync += SetColors;
 		}
 
 		public bool Streaming { get; set; }
@@ -87,34 +87,11 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			await _yeeDevice.StopMusicMode();
 			_yeeDevice.Disconnect();
 			Streaming = false;
-			if (_streamTask != null) {
-				if (!_streamTask.IsCompleted) {
-					_streamTask.Dispose();
-				}
+			if (_streamTask is { IsCompleted: false }) {
+				_streamTask.Dispose();
 			}
 
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
-		}
-
-		private async Task SetColor(Color[] sectors, bool force = false) {
-			if (!Streaming || !Enable) {
-				return;
-			}
-
-			if (!force) {
-				if (!Streaming || _targetSector == -1 || Testing) {
-					return;
-				}
-			}
-			
-			// TODO: Clamp brightness here.
-			var col = sectors[_targetSector];
-			if (_targetSector >= sectors.Length) {
-				return;
-			}
-			
-			await _yeeDevice.SetRGBColor(col.R, col.G, col.B);
-			_colorService.Counter.Tick(Id);
 		}
 
 
@@ -132,6 +109,33 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 		public void Dispose() {
 			_yeeDevice.Dispose();
+		}
+
+		private Task SetColors(object sender, ColorSendEventArgs args) {
+			return SetColor(args.SectorColors, args.Force);
+		}
+
+		private async Task SetColor(IReadOnlyList<Color> sectors, bool force = false) {
+			if (!Streaming || !Enable) {
+				return;
+			}
+
+			if (!force) {
+				if (!Streaming || _targetSector == -1 || Testing) {
+					return;
+				}
+			}
+
+			var col = sectors[_targetSector];
+			if (_data.Brightness < 255) {
+				col = ColorUtil.ClampBrightness(col, (int) _brightness);
+			}
+			if (_targetSector >= sectors.Count) {
+				return;
+			}
+
+			await _yeeDevice.SetRGBColor(col.R, col.G, col.B);
+			_colorService.Counter.Tick(Id);
 		}
 
 		private void LoadData() {
@@ -154,6 +158,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 				target = ColorUtil.FindEdge(target + 1);
 			}
 
+			_brightness = _data.Brightness * 2.55f;
 			_targetSector = target;
 			Id = _data.Id;
 			Enable = _data.Enable;

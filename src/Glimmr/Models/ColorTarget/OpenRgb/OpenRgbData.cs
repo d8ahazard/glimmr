@@ -27,12 +27,6 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 
 		public int Brightness { get; set; }
-		
-		[DefaultValue(1)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-
-
-		public int LedMultiplier { get; set; }
 
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -43,6 +37,8 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
 		public int LedCount { get; set; }
+
+		[JsonProperty] public float LedMultiplier { get; set; } = 1.0f;
 
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -101,25 +97,25 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			Name = dev.Name;
 			Vendor = dev.Vendor;
 			Type = dev.Type;
-			//Zones = dev.Zones.ToList();
 			Description = dev.Description;
 			Version = dev.Version;
 			Serial = dev.Serial;
 			Location = dev.Location;
 			ActiveModeIndex = dev.ActiveModeIndex;
 			LedCount = dev.Leds.Length;
-			//Modes = dev.Modes.ToList();
 			Tag = "OpenRgb";
 			Brightness = 255;
 			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 		}
 
+		
 		[JsonProperty] public string Id { get; set; }
 
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string Name { get; set; }
 
+		
 		[DefaultValue("127.0.0.1")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
@@ -136,9 +132,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		public SettingsProperty[] KeyProperties { get; set; } = {
 			new("ledmap", "ledmap", ""),
 			new("Offset", "number", "LED Offset"),
-			new("LedMultiplier", "number", "LED Multiplier") {
-				ValueMin = "-5", ValueStep = "1", ValueMax="5", ValueHint = "Positive values to multiply (skip), negative values to divide (duplicate)."
-			},
+			new("LedMultiplier", "ledMultiplier", ""),
 			new("Rotation", "select", "Rotation", new Dictionary<string, string> {
 				["0"] = "Normal",
 				["90"] = "90 Degrees",
@@ -149,17 +143,28 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 
 		public void UpdateFromDiscovered(IColorTargetData data) {
-			var dev = (OpenRgbData) data;
+			var dev = (OpenRgbData)data;
+			IpAddress = dev.IpAddress;
 			Name = dev.Name;
 			Vendor = dev.Vendor;
 			Type = dev.Type;
-			//Zones = dev.Zones.ToList();
 			Description = dev.Description;
 			Version = dev.Version;
 			Serial = dev.Serial;
 			Location = dev.Location;
 			ActiveModeIndex = dev.ActiveModeIndex;
 			LedCount = dev.LedCount;
+			DeviceId = dev.DeviceId;
+		}
+
+		public bool Matches(Device dev) {
+			if (dev.Name != Name) return false;
+			if (dev.Vendor != Vendor) return false;
+			if (dev.Type != Type) return false;
+			if (dev.Description != Description) return false;
+			if (dev.Version != Version) return false;
+			if (dev.Serial != Serial) return false;
+			return dev.Location == Location;
 		}
 	}
 }

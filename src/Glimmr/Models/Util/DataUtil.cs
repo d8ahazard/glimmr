@@ -23,12 +23,12 @@ namespace Glimmr.Models.Util {
 	public static class DataUtil {
 		private static bool _dbLocked;
 		private static List<dynamic>? _devices;
-		private static LiteDatabase _db = GetDb();
+		private static LiteDatabase? _db = GetDb();
 
 
-		private static SystemData _systemData = CacheSystemData();
+		private static SystemData? _systemData = CacheSystemData();
 
-		public static LiteDatabase GetDb() {
+		private static LiteDatabase GetDb() {
 			while (_dbLocked) {
 				Log.Debug("Awaiting export...");
 				Task.Delay(TimeSpan.FromMilliseconds(50));
@@ -37,21 +37,68 @@ namespace Glimmr.Models.Util {
 			var userPath = SystemUtil.GetUserDir();
 			userPath = Path.Join(userPath, "store.db");
 
-			if (File.Exists("./store.db")) {
-				Log.Information($"Migrating existing datastore to {userPath}.");
-				if (!File.Exists(userPath)) {
-					File.Copy("./store.db", userPath, false);
+			if (_db != null) return _db;
+			if (_db == null) {
+				try {
+					var db = new LiteDatabase(userPath);
+					return db;
+				} catch (Exception e) {
+					Log.Warning("Exception creating database: " + e.Message);
 				}
-
-				File.Delete("./store.db");
 			}
 
-			return _db ??= new LiteDatabase(userPath);
+			if (File.Exists(userPath)) {
+				RollbackDb();
+			}
+			
+			try {
+				var db = new LiteDatabase(userPath);
+				return db;
+			} catch (Exception e) {
+				Log.Warning("Exception creating database(2): " + e.Message);
+				throw new InvalidOperationException("Can't create new db...gotta die.");
+			}
+		}
+
+		public static void RollbackDb() {
+			Log.Debug("Rolling back database.");
+			// Get list of db files
+			var userPath = SystemUtil.GetUserDir();
+			var dbFiles = Directory.GetFiles(userPath, "*.db");
+			var dbPath = Path.Join(userPath, "store.db");
+			Array.Sort(dbFiles);
+			Array.Reverse(dbFiles);
+			var path = string.Empty;
+			foreach (var p in dbFiles) {
+				if (p.Contains("store.db") || p.Contains("store-log.db")) continue;
+				try {
+					var db = new LiteDatabase(p);
+					if (!db.CollectionExists("SystemData")) {
+						continue;
+					}
+
+					Log.Debug($"DB {p} appears valid?");
+					path = p;
+					break;
+				} catch (Exception e) {
+					Log.Warning($"Exception opening {p}: " + e.Message);
+				}	
+			}
+
+			
+			File.Move(dbPath, dbPath + ".bak");
+			if (path == string.Empty) {
+				return;
+			}
+
+			Log.Debug("Rotating db to " + path);
+			File.Move(path, dbPath);
+
 		}
 
 		public static void Dispose() {
-			_db.Commit();
-			_db.Dispose();
+			_db?.Commit();
+			_db?.Dispose();
 		}
 
 
@@ -114,72 +161,95 @@ namespace Glimmr.Models.Util {
 			try {
 				var db = GetDb();
 				var coll = db.GetCollection<T>(key);
-				var r = coll.FindById(value);
-				return r;
+				if (coll != null) {
+					var r = coll.FindById(value);
+					return r;
+				}
 			} catch (Exception e) {
 				Log.Warning($@"Get exception for {typeof(T)}: {e.Message}");
 				return null;
 			}
+
+			return null;
 		}
 
 		//fixed
 		public static async Task InsertCollection<T>(string key, dynamic value) where T : class {
-			var db = GetDb();
-			var coll = db.GetCollection<T>(key);
-			await Task.FromResult(coll.Upsert(value.Id, value));
-			db.Commit();
+			try {
+				var db = GetDb();
+				var coll = db.GetCollection<T>(key);
+				if (coll != null) {
+					await Task.FromResult(coll.Upsert(value.Id, value));
+					db.Commit();
+				}
+			} catch (Exception e) {
+				Log.Warning("Exception caught inserting: " + e.Message + " at " + e.StackTrace);
+			}
+
 		}
 
 		//fixed
 		public static async Task InsertCollection(string key, dynamic value) {
-			var db = GetDb();
-			var coll = db.GetCollection(key);
-			await Task.FromResult(coll.Upsert(value.Id, value));
-			db.Commit();
+			try {
+				var db = GetDb();
+				var coll = db.GetCollection(key);
+				if (coll != null) {
+					await Task.FromResult(coll.Upsert(value.Id, value));
+					db.Commit();	
+				}
+				
+			} catch (Exception e) {
+				Log.Warning("Exception caught inserting: " + e.Message + " at " + e.StackTrace);
+			}
 		}
 
 		private static List<dynamic> CacheDevices() {
 			var db = GetDb();
-			var devs = new BsonDocument[0];
-			var devices = new dynamic[0];
+			var devs = Array.Empty<BsonDocument>();
+			var devices = Array.Empty<dynamic>();
 			try {
 				devs = db.GetCollection("Devices").FindAll().ToArray();
 				devices = db.GetCollection<dynamic>("Devices").FindAll().ToArray();
-			} catch (Exception) {
-				// Ignore
+			} catch (Exception e) {
+				Log.Warning("Exception caught caching devices: " + e.Message + " at " + e.StackTrace);
 			}
 
+			if (devices == null || devs == null) return new List<dynamic>();
 			var output = new List<dynamic>(devices.Length);
-			foreach (var device in devices) {
-				foreach (var dev in devs) {
-					try {
-						var json = JsonSerializer.Serialize(dev);
-						var jObj = JObject.Parse(json);
-						if (jObj.GetValue("_id") != device.Id) {
-							continue;
-						}
+			try {
+				foreach (var device in devices) {
+					foreach (var dev in devs) {
+						try {
+							var json = JsonSerializer.Serialize(dev);
+							var jObj = JObject.Parse(json);
+							if (jObj.GetValue("_id") != device.Id) {
+								continue;
+							}
 
-						var type = jObj.GetValue("_type");
-						if (type == null) {
-							continue;
-						}
+							var type = jObj.GetValue("_type");
+							if (type == null) {
+								continue;
+							}
 
-						var typeType = Type.GetType(type.ToString());
-						if (typeType == null) {
-							continue;
-						}
+							var typeType = Type.GetType(type.ToString());
+							if (typeType == null) {
+								continue;
+							}
 
-						dynamic? donor = Activator.CreateInstance(typeType);
-						if (donor == null) {
-							continue;
-						}
+							dynamic? donor = Activator.CreateInstance(typeType);
+							if (donor == null) {
+								continue;
+							}
 
-						device.KeyProperties = donor.KeyProperties;
-						output.Add(device);
-					} catch (Exception e) {
-						Log.Warning("Exception Caching Devices: " + e.Message + " at " + e.StackTrace);
+							device.KeyProperties = donor.KeyProperties;
+							output.Add(device);
+						} catch (Exception e) {
+							Log.Warning("Exception Caching Devices: " + e.Message + " at " + e.StackTrace);
+						}
 					}
 				}
+			} catch (Exception e) {
+				Log.Warning("Exception caching devs: " + e.Message + " at " + e.StackTrace);
 			}
 
 			_devices = output;
@@ -193,19 +263,12 @@ namespace Glimmr.Models.Util {
 		public static void RemoveDevice(string id) {
 			var db = GetDb();
 			var devs = db.GetCollection("Devices");
-			devs.Delete(id);
+			devs?.Delete(id);
 		}
 
 		public static List<T> GetDevices<T>(string tag) where T : class {
 			var devs = GetDevices();
-			var output = new List<T>();
-			foreach (var d in devs) {
-				if (d.Tag == tag) {
-					output.Add((T) d);
-				}
-			}
-
-			return output;
+			return (from d in devs where d.Tag == tag select (T) d).ToList();
 		}
 
 		public static dynamic? GetDevice<T>(string id) where T : class {
@@ -221,25 +284,35 @@ namespace Glimmr.Models.Util {
 
 
 		public static async Task AddDeviceAsync(dynamic device, bool merge = true) {
-			var db = GetDb();
-			var devs = db.GetCollection<dynamic>("Devices");
-			if (merge) {
-				var devices = devs.FindAll().ToArray();
-				foreach (var t in devices) {
-					if (t.Id != device.Id.ToString()) {
-						continue;
-					}
-
-					IColorTargetData dev = t;
-					dev.UpdateFromDiscovered(device);
-					device = dev;
+			try {
+				var db = GetDb();
+				var devs = db.GetCollection<dynamic>("Devices");
+				if (devs == null) {	
+					Log.Warning("No devices...");
+					return;
 				}
+				if (merge) {
+					var devices = devs.FindAll().ToArray();
+					foreach (var t in devices) {
+						if (t.Id != device.Id.ToString()) {
+							continue;
+						}
+
+						IColorTargetData dev = t;
+						dev.UpdateFromDiscovered(device);
+						device = dev;
+					}
+				}
+
+				device.LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
+				devs.Upsert(device);
+				devs.EnsureIndex("Id");
+				db.Commit();
+				CacheDevices();
+			} catch (Exception e) {
+				Log.Warning("Exception adding device: " + e.Message + " at " + e.StackTrace);
 			}
 
-			device.LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
-			devs.Upsert(device);
-			db.Commit();
-			CacheDevices();
 			await Task.FromResult(true);
 		}
 
@@ -250,11 +323,13 @@ namespace Glimmr.Models.Util {
 			} catch (KeyNotFoundException) {
 			}
 
-			if (string.IsNullOrEmpty(serial)) {
-				var rd = new Random();
-				serial = "12091" + rd.Next(0, 9) + rd.Next(0, 9) + rd.Next(0, 9);
-				SetItem("Serial", serial);
+			if (!string.IsNullOrEmpty(serial)) {
+				return serial;
 			}
+
+			var rd = new Random();
+			serial = "12091" + rd.Next(0, 9) + rd.Next(0, 9) + rd.Next(0, 9);
+			SetItem("Serial", serial);
 
 			return serial;
 		}
@@ -263,22 +338,29 @@ namespace Glimmr.Models.Util {
 			var db = GetDb();
 			try {
 				var devs = db.GetCollection<dynamic>("Devices");
-				if (devs.Delete(deviceId)) {
-					Log.Information($"Device {deviceId} deleted.");
+				if (devs == null) {
+					Log.Warning("Null devices, can't delete!");
+					return;
 				}
 
+				Log.Information(devs.Delete(deviceId) ? $"Device {deviceId} deleted." : "Unable to delete device?");
+
 				db.Commit();
-			} catch (Exception) {
-				//ignored
+			} catch (Exception e) {
+				Log.Warning("Error deleting device: " + e.Message);
 			}
 		}
 
 
-		public static string ExportSettings() {
-			var dbPath = "./store.db";
+		public static string BackupDb() {
+			if (_db == null) {
+				Log.Warning("DB is null, this is bad!!");
+				return "";
+			}
+			const string? dbPath = "./store.db";
 			var userDir = SystemUtil.GetUserDir();
-			var stamp = DateTime.Now.ToString("yyyyMMddHHmm");
-			var outFile = Path.Combine(userDir, $"store_{stamp}_.db");
+			var stamp = DateTime.Now.ToString("yyyyMMdd");
+			var outFile = Path.Combine(userDir, $"store_{stamp}.db");
 			var output = string.Empty;
 			_dbLocked = true;
 			_db.Commit();
@@ -296,15 +378,21 @@ namespace Glimmr.Models.Util {
 		}
 
 		public static bool ImportSettings(string newPath) {
-			var dbPath = "./store.db";
 			var userDir = SystemUtil.GetUserDir();
-			var stamp = DateTime.Now.ToString("yyyyMMddHHmm");
-			var outFile = Path.Combine(userDir, $"store_{stamp}_.db");
+			var stamp = DateTime.Now.ToString("yyyyMMdd");
+			var userPath = SystemUtil.GetUserDir();
+			var dbPath = Path.Join(userPath, "store.db");
+			var outFile = Path.Combine(userDir, $"store_{stamp}.db");
 			// lock DB so we don't get issues
 			_dbLocked = true;
-			_db.Commit();
-			_db.Dispose();
+			_db?.Commit();
+			_db?.Dispose();
 			try {
+				// Back up existing db
+				if (File.Exists(outFile)) {
+					var rand = new Random();
+					File.Move(outFile, outFile + rand.Next());
+				}
 				File.Copy(dbPath, outFile);
 			} catch (Exception d) {
 				Log.Warning("Exception backing up DB: " + d.Message);
@@ -314,6 +402,9 @@ namespace Glimmr.Models.Util {
 				Log.Debug($"DB backed up to {outFile}, importing new DB.");
 				try {
 					File.Copy(newPath, dbPath, true);
+					GetDb();
+					CacheDevices();
+					CacheSystemData();
 					_db = new LiteDatabase(dbPath);
 					_dbLocked = false;
 					return true;
@@ -336,13 +427,14 @@ namespace Glimmr.Models.Util {
 
 			var caps = SystemUtil.ListUsb();
 
-			var jl = new JsonLoader("ambientScenes");
+			var jl1 = new JsonLoader("ambientScenes");
+			var jl2 = new JsonLoader("audioScenes");
 			output["SystemData"] = sd;
 			output["Devices"] = devices;
 			output["Dev_Audio"] = audio;
 			output["Dev_Usb"] = caps;
-			output["AmbientScenes"] = jl.LoadDynamic<AmbientScene>();
-			output["AudioScenes"] = jl.LoadDynamic<AudioScene>();
+			output["AmbientScenes"] = jl1.LoadDynamic<AmbientScene>();
+			output["AudioScenes"] = jl2.LoadDynamic<AudioScene>();
 			var assembly = Assembly.GetEntryAssembly();
 			if (assembly != null) {
 				var attrib = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
@@ -362,6 +454,10 @@ namespace Glimmr.Models.Util {
 			// See if it's a system property
 			var sd = _systemData;
 			var saveSd = false;
+			if (sd == null) {
+				Log.Warning("NO SD, this is bad!");
+				return;
+			}
 			foreach (var e in sd.GetType().GetProperties()) {
 				if (e.Name != key) {
 					continue;
@@ -391,21 +487,18 @@ namespace Glimmr.Models.Util {
 
 		public static dynamic? GetItem(string key) {
 			var sd = GetSystemData();
-			foreach (var e in sd.GetType().GetProperties()) {
-				if (e.Name != key) {
-					continue;
-				}
-
-				return e.GetValue(sd);
-			}
-
-			return null;
+			return (from e in sd.GetType().GetProperties() where e.Name == key select e.GetValue(sd)).FirstOrDefault();
 		}
 
 		public static dynamic? GetObject<T>(string key) {
 			try {
 				var db = GetDb();
+				if (db == null) {
+					Log.Warning("Can't get db, can't set object...");
+					return null;
+				}
 				var col = db.GetCollection<T>(key);
+				
 				if (col.Count() != 0) {
 					foreach (var doc in col.FindAll()) {
 						return doc;
@@ -419,16 +512,17 @@ namespace Glimmr.Models.Util {
 		}
 
 		public static SystemData GetSystemData() {
-			if (_systemData == null) {
-				return CacheSystemData();
-			}
-
-			return _systemData;
+			return _systemData ?? CacheSystemData();
 		}
 
 		private static SystemData CacheSystemData() {
 			var db = GetDb();
+			if (db == null) {
+				Log.Warning("Can't get db, can't set object...");
+				throw new Exception("Can't get database, time to die.");
+			}
 			var col = db.GetCollection<SystemData>("SystemData");
+			
 			try {
 				if (col.Count() != 0) {
 					var cols = col.FindAll().ToList();
@@ -440,11 +534,17 @@ namespace Glimmr.Models.Util {
 			} catch (Exception e) {
 				Log.Warning("Exception caching SD: " + e.Message + " at " + e.StackTrace);
 			}
-
-			Log.Debug("Creating new SD");
+			
+			Log.Information("Creating first-time SystemData.");
 			var sd = new SystemData();
 			sd.SetDefaults();
-			col.Upsert(0, sd);
+			
+			try {
+				col.Upsert(0, sd);
+			} catch (Exception e) {
+				Log.Warning("Exception updating SD: " + e.Message);
+			}
+			
 			_systemData = sd;
 			return sd;
 		}
@@ -476,14 +576,23 @@ namespace Glimmr.Models.Util {
 				value.BottomCount = 40;
 			}
 
-			col.Upsert(0, value);
-			db.Commit();
+			if (col != null) {
+				col.Upsert(0, value);
+				db.Commit();	
+			} else {
+				Log.Warning("Unable to insert, col is null. This is bad!");
+			}
+			
 			_systemData = value;
 		}
 
 
 		public static void SetObject<T>(dynamic value) {
 			var db = GetDb();
+			if (db == null) {
+				Log.Warning("Can't get db, can't set object...");
+				return;
+			}
 			var key = typeof(T).Name;
 			var col = db.GetCollection<T>(key);
 			col.Upsert(0, value);
@@ -492,6 +601,10 @@ namespace Glimmr.Models.Util {
 
 		public static async Task SetObjectAsync<T>(dynamic value) {
 			var db = GetDb();
+			if (db == null) {
+				Log.Warning("Can't get db, can't set object...");
+				return;
+			}
 			var key = typeof(T).Name;
 			var col = db.GetCollection<T>(key);
 			col.Upsert("0", value);

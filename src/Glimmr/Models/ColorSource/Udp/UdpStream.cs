@@ -2,7 +2,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Drawing;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -30,22 +30,26 @@ namespace Glimmr.Models.ColorSource.UDP {
 		private ServiceDiscovery? _discovery;
 		private GlimmrData? _gd;
 		private string _hostName;
-		private int _ledCount;
 		private SystemData _sd;
 		private bool _sending;
-		private CancellationToken _stoppingToken;
-		private bool _streaming;
+		private readonly CancellationToken _listenToken;
+		private readonly Stopwatch _timeOutWatch;
+		private int _timeOut;
+		private readonly CancellationTokenSource _cts;
 
 		public UdpStream(ColorService cs) {
 			_cs = cs.ControlService;
 			_cs.RefreshSystemEvent += RefreshSystem;
 			_cs.SetModeEvent += Mode;
 			_cs.StartStreamEvent += StartStream;
-			_splitter = cs.Splitter;
-			_uc = new UdpClient(8889) {Ttl = 5, Client = {ReceiveBufferSize = 2000}};
+			_splitter = new FrameSplitter(cs, false, "udpStream");
+			_uc = new UdpClient(21324) {Ttl = 5, Client = {ReceiveBufferSize = 2000}};
 			_uc.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 			_uc.Client.Blocking = false;
-			if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) _uc.DontFragment = true;
+			if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+				_uc.DontFragment = true;
+			}
+
 			var sd = DataUtil.GetSystemData();
 			_devMode = (DeviceMode) sd.DeviceMode;
 			_sd = sd;
@@ -57,6 +61,11 @@ namespace Glimmr.Models.ColorSource.UDP {
 			}
 
 			RefreshSystem();
+			_timeOutWatch = new Stopwatch();
+			_cts = new CancellationTokenSource();
+			_listenToken = _cts.Token;
+			Task.Run(Listen, _listenToken);
+			Task.Run(Listen, _listenToken);
 		}
 
 		public Task ToggleStream(CancellationToken ct) {
@@ -65,65 +74,54 @@ namespace Glimmr.Models.ColorSource.UDP {
 			return ExecuteAsync(ct);
 		}
 
+		public bool SourceActive { get; private set; }
+
 		private void RefreshSystem() {
 			var sd = DataUtil.GetSystemData();
 			_devMode = (DeviceMode) sd.DeviceMode;
 			_hostName = _sd.DeviceName;
-			if (SystemUtil.IsRaspberryPi()) return;
 			_discovery?.Dispose();
-			var addr = new List<IPAddress> {IPAddress.Parse(IpUtil.GetLocalIpAddress())};
-			var service = new ServiceProfile(_hostName, "_glimmr._tcp", 8889, addr);
+			var address = new List<IPAddress> {IPAddress.Parse(IpUtil.GetLocalIpAddress())};
+			var service = new ServiceProfile(_hostName, "_glimmr._tcp", 21324, address);
 			_discovery = new ServiceDiscovery();
 			_discovery.Advertise(service);
 		}
 
-		public bool SourceActive => _splitter.SourceActive;
 
-		
 		private async Task StartStream(object arg1, DynamicEventArgs arg2) {
 			_gd = arg2.Arg0;
 			_sd = DataUtil.GetSystemData();
-			_ledCount = _gd.LedCount;
 			var dims = new[] {_gd.LeftCount, _gd.RightCount, _gd.TopCount, _gd.BottomCount};
 			_builder = new FrameBuilder(dims);
-			_streaming = true;
 			await _cs.SetMode(5);
 		}
 
 		private Task Mode(object arg1, DynamicEventArgs arg2) {
 			_devMode = (DeviceMode) arg2.Arg0;
-			_streaming = _devMode == Udp;
 			return Task.CompletedTask;
 		}
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			_splitter.DoSend = true;
-			_stoppingToken = stoppingToken;
 			return Task.Run(async () => {
-				var l1 = Task.Run(Listen, stoppingToken);
-				var l2 = Task.Run(Listen, stoppingToken);
-				await Task.WhenAll(l1, l2);
+				try {
+					while (!stoppingToken.IsCancellationRequested) {
+						await Task.Delay(1000, stoppingToken);
+					}
+				} catch (Exception e) {
+					Log.Warning("Exception: " + e.Message);
+				}
+
 				_splitter.DoSend = false;
+				_cts.Cancel();
 				Log.Information("UDP Stream service stopped.");
 			}, stoppingToken);
 		}
-		
-		public Color[] GetColors() {
-			return _splitter.GetColors();
-		}
-
-		public Color[] GetSectors() {
-			return _splitter.GetSectors();
-		}
-
 
 		private async Task Listen() {
-			while (!_stoppingToken.IsCancellationRequested) {
-				if (!_streaming) {
-					continue;
-				}
-
+			while (!_listenToken.IsCancellationRequested) {
 				try {
+					await CheckTimeout();
 					var result = await _uc.ReceiveAsync();
 					if (!_sending) {
 						await ProcessFrame(result.Buffer).ConfigureAwait(false);
@@ -134,50 +132,51 @@ namespace Glimmr.Models.ColorSource.UDP {
 			}
 		}
 
+		private Task CheckTimeout() {
+			if (!_timeOutWatch.IsRunning) {
+				_timeOutWatch.Start();
+			}
+
+			SourceActive = _timeOutWatch.ElapsedMilliseconds <= _timeOut * 1000;
+			_splitter.DoSend = SourceActive;
+			return Task.CompletedTask;
+		}
+
 		public override Task StopAsync(CancellationToken stoppingToken) {
 			_uc.Close();
 			_uc.Dispose();
 			return Task.CompletedTask;
 		}
 
-		private async Task ProcessFrame(IReadOnlyList<byte> data) {
+		private async Task ProcessFrame(IEnumerable<byte> data) {
 			_sending = true;
-			var flag = data[0];
-			if (flag != 2) {
-				Log.Warning("Flag is invalid!");
+			_splitter.DoSend = true;
+			if (_devMode != Udp) {
+				Log.Debug("Starting stream via stream?");
+				_gd = new GlimmrData(DataUtil.GetSystemData());
+				var dims = new[] {_gd.LeftCount, _gd.RightCount, _gd.TopCount, _gd.BottomCount};
+				_builder = new FrameBuilder(dims);
+				await _cs.SetMode(5);
 			}
-
-			var bytes = data.Skip(2).ToArray();
-			var colors = new Color[_ledCount];
-			if (_devMode == Udp) {
-				var colIdx = 0;
-				for (var i = 0; i < bytes.Length; i += 3) {
-					if (i + 2 >= bytes.Length) {
-						continue;
-					}
-
-					var col = Color.FromArgb(255, bytes[i], bytes[i + 1], bytes[i + 2]);
-					if (colIdx < _ledCount) {
-						colors[colIdx] = col;
-					}
-
-					colIdx++;
-				}
-
-				var ledColors = colors.ToList();
+			try {
+				var cp = new ColorPacket(data.ToArray());
+				var ledColors = cp.Colors;
 				if (_builder == null) {
+					Log.Warning("Null builder.");
 					_sending = false;
 					return;
 				}
 
+				// Set our timeout value and restart watch every time a frame is received
+				_timeOut = cp.Duration;
+				_timeOutWatch.Restart();
+				
 				var frame = _builder.Build(ledColors);
-				Log.Debug("Update: Udp");
 				await _splitter.Update(frame);
 				frame.Dispose();
 				_sending = false;
-				
-			} else {
-				Log.Debug("Dev mode is incorrect.");
+			} catch (Exception e) {
+				Log.Warning("Exception parsing packet: " + e.Message);
 			}
 		}
 	}

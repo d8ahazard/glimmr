@@ -1,9 +1,12 @@
 ﻿#region
 
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Mime;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models;
@@ -66,9 +69,29 @@ namespace Glimmr.Controllers {
 
 		[HttpGet("DbDownload")]
 		public FileResult DbDownload() {
-			var dbPath = DataUtil.ExportSettings();
+			var dbPath = DataUtil.BackupDb();
 			var fileBytes = System.IO.File.ReadAllBytes(dbPath);
 			var fileName = Path.GetFileName(dbPath);
+			return File(fileBytes, MediaTypeNames.Application.Octet, fileName);
+		}
+
+		[HttpGet("LogDownload")]
+		public FileResult LogDownload() {
+			var dt = DateTime.Now.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
+			var logPath = $"/var/log/glimmr/glimmr{dt}.log";
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+				var userPath = SystemUtil.GetUserDir();
+				var logDir = Path.Combine(userPath, "log");
+				if (!Directory.Exists(logDir)) {
+					Directory.CreateDirectory(logDir);
+				}
+
+				logPath = Path.Combine(userPath, "log", $"{dt}.log");
+			}
+
+			Log.Debug("Grabbing log from " + logPath);
+			var fileBytes = System.IO.File.ReadAllBytes(logPath);
+			var fileName = Path.GetFileName(logPath);
 			return File(fileBytes, MediaTypeNames.Application.Octet, fileName);
 		}
 
@@ -129,7 +152,7 @@ namespace Glimmr.Controllers {
 		}
 
 		[HttpPost("loadData")]
-		public IActionResult LoadData([FromBody] JObject foo) {
+		public IActionResult LoadData() {
 			return new JsonResult(DataUtil.GetStoreSerialized());
 		}
 
@@ -159,11 +182,32 @@ namespace Glimmr.Controllers {
 			return Ok(ld);
 		}
 
-		// POST: api/DreamData/ledData
+		// POST: api/DreamData/startStream
 		[HttpPost("startStream")]
 		public async Task<IActionResult> StartStream([FromBody] GlimmrData gd) {
+			Log.Debug("SS post: " + JsonConvert.SerializeObject(gd));
 			await _controlService.StartStream(gd);
 			return Ok(gd);
+		}
+		
+		[HttpGet("startStream")]
+		public async Task<IActionResult> StartStream([FromQuery(Name = "l")] int l,
+			[FromQuery(Name = "r")] int r,
+			[FromQuery(Name = "t")] int t,
+			[FromQuery(Name = "b")] int b) {
+			Log.Debug("SS Get");
+			var sd = new SystemData {LeftCount =  l, RightCount = r, TopCount = t, BottomCount = b};
+			var gd = new GlimmrData(sd);
+			await _controlService.StartStream(gd);
+			return Ok(gd);
+		}
+
+		[HttpGet("mode")]
+		public async Task<IActionResult> Mode([FromQuery(Name = "mode")] int mode) {
+			await _controlService.SetModeEvent.InvokeAsync(this, new DynamicEventArgs(mode));
+			var sd = DataUtil.GetSystemData();
+			sd.DeviceMode = mode;
+			return Ok(JsonConvert.SerializeObject(sd));
 		}
 
 		[HttpPost("systemControl")]

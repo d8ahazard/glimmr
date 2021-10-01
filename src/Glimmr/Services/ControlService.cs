@@ -2,6 +2,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Sockets;
@@ -88,7 +90,6 @@ namespace Glimmr.Services {
 			foreach (var c in types) {
 				var parts = c.Split(".");
 				var shortClass = parts[^1];
-				Log.Debug("Creating agent: " + c);
 				try {
 					dynamic? agentCheck = Activator.CreateInstance(Type.GetType(c)!);
 					if (agentCheck == null) {
@@ -106,17 +107,6 @@ namespace Glimmr.Services {
 					Log.Warning("Agent creation error: " + e.Message);
 				}
 			}
-		}
-
-		public async Task EnableDevice(string devId) {
-			var dev = DataUtil.GetDevice(devId);
-			if (dev == null) {
-				return;
-			}
-
-			dev.Enable = true;
-			await DataUtil.AddDeviceAsync(dev);
-			await DeviceReloadEvent.InvokeAsync(this, new DynamicEventArgs(devId));
 		}
 
 		public async Task ScanDevices() {
@@ -174,8 +164,15 @@ namespace Glimmr.Services {
 					break;
 				}
 			}
-			if (dev == null) return;
-			if (dev.GetType() == null) return;
+
+			if (dev == null) {
+				return;
+			}
+
+			if (dev.GetType() == null) {
+				return;
+			}
+
 			if (dev.GetType().GetMethod("CheckAuthAsync") != null) {
 				var count = 0;
 				while (count < 30) {
@@ -228,10 +225,16 @@ namespace Glimmr.Services {
 			await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
 		}
 
+		public Task Execute(CancellationToken stoppingToken) {
+			return ExecuteAsync(stoppingToken);
+		}
+
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
+			Log.Debug("Starting control service loop?");
 			return Task.Run(async () => {
+				await Task.Yield();
 				while (!stoppingToken.IsCancellationRequested) {
-					await Task.Delay(60000, stoppingToken);
+					CheckBackups();
 					if (!_sd.AutoUpdate) {
 						continue;
 					}
@@ -246,11 +249,56 @@ namespace Glimmr.Services {
 
 					Log.Information("Triggering system update.");
 					SystemUtil.Update();
+					await Task.Delay(TimeSpan.FromMinutes(60), stoppingToken);
 				}
 
 				Log.Debug("Control service stopped.");
 				return Task.CompletedTask;
 			}, stoppingToken);
+		}
+
+		private static void CheckBackups() {
+			var userPath = SystemUtil.GetUserDir();
+			var dbFiles = Directory.GetFiles(userPath, "*.db");
+			if (dbFiles.Length == 1) {
+				Log.Debug("Backing up database...");
+				DataUtil.BackupDb();
+			}
+			
+			var userDir = SystemUtil.GetUserDir();
+			var stamp = DateTime.Now.ToString("yyyyMMdd");
+			var outFile = Path.Combine(userDir, $"store_{stamp}.db");
+			if (!dbFiles.Contains(outFile)) {
+				Log.Debug($"Backing up database for {stamp}...");
+				DataUtil.BackupDb();
+			}
+
+			Array.Sort(dbFiles);
+			Array.Reverse(dbFiles);
+			if (dbFiles.Length <= 8) {
+				return;
+			}
+
+			Log.Debug("Pruning old backups...");
+			foreach (var p in dbFiles) {
+				var pStamp = p.Replace(userDir, "");
+				pStamp = pStamp.Replace(Path.DirectorySeparatorChar.ToString(), "");
+				pStamp = pStamp.Replace("store_", "");
+				pStamp = pStamp.Replace(".db", "");
+				var diff = DateTime.Now - DateTime.ParseExact(pStamp, "yyyyMMdd", CultureInfo.InvariantCulture);
+				if (diff <= TimeSpan.FromDays(7)) {
+					continue;
+				}
+
+				if (p.Equals(Path.Combine(userDir, "store.db"))) continue;
+				if (p.Contains("-log")) continue;
+				try {
+					Log.Debug("Deleting old db backup: " + p);
+					File.Delete(p);
+				} catch (Exception e) {
+					Log.Warning($"Exception removing file({p}): " + e.Message);
+				}
+			}
 		}
 
 		private void Initialize() {
@@ -265,7 +313,7 @@ namespace Glimmr.Services {
 			}
 
 
-			string text = $@"
+			var text = $@"
 
  (                                            (    (      *      *    (     
  )\ )   )            )                 (      )\ ) )\ ) (  `   (  `   )\ )  
@@ -299,12 +347,16 @@ v. {version}
 			UdpClient = new UdpClient {Ttl = 5};
 			UdpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 			// This should keep our socket from doing bad things?
-			UdpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout,30);
+			UdpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout, 30);
 			UdpClient.Client.Blocking = false;
-			if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) UdpClient.DontFragment = true;
+			if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+				UdpClient.DontFragment = true;
+			}
+
 			MulticastService = new MulticastService();
 			ServiceDiscovery = new ServiceDiscovery(MulticastService);
 			LoadAgents();
+			Log.Information("Loading color util info...");
 			// Dynamically load agents
 			ColorUtil.SetSystemData();
 			Log.Information("Control service started.");
@@ -333,6 +385,9 @@ v. {version}
 
 		public async Task AddDevice(IColorTargetData data) {
 			await DataUtil.AddDeviceAsync(data);
+			Log.Debug("Adding device " + data.Name);
+			IColorTargetData? data2 = DataUtil.GetDevice(data.Id) ?? null;
+			if (data2 != null) await _hubContext.Clients.All.SendAsync("device", JsonConvert.SerializeObject(data2));
 		}
 
 
@@ -345,9 +400,8 @@ v. {version}
 					var leds = DataUtil.GetDevices<LedData>("Led");
 
 					foreach (var colorTargetData in leds.Where(led => led.LedCount == 0)) {
-						var led = colorTargetData;
-						led.LedCount = sd.LedCount;
-						await DataUtil.AddDeviceAsync(led);
+						colorTargetData.LedCount = sd.LedCount;
+						await DataUtil.AddDeviceAsync(colorTargetData);
 					}
 				}
 
@@ -381,14 +435,15 @@ v. {version}
 
 		public async Task UpdateDevice(dynamic device, bool merge = true) {
 			Log.Debug($"Updating {device.Tag}...");
-			await DataUtil.AddDeviceAsync(device, merge);
-			await _hubContext.Clients.All.SendAsync("device", JsonConvert.SerializeObject((IColorTargetData) device));
+			await DataUtil.AddDeviceAsync(device, merge).ConfigureAwait(false);
+			var data = DataUtil.GetDevice(device.Id);
+			await _hubContext.Clients.All.SendAsync("device", JsonConvert.SerializeObject((IColorTargetData) data));
 			await RefreshDevice(device.Id);
 		}
 
 		public async Task SendImage(string method, Mat image) {
 			var vb = new VectorOfByte();
-			CvInvoke.Imencode(".png",image,vb);
+			CvInvoke.Imencode(".png", image, vb);
 			await _hubContext.Clients.All.SendAsync(method, vb.ToArray());
 		}
 
@@ -406,12 +461,14 @@ v. {version}
 
 		public async Task RemoveDevice(string id) {
 			ColorService.StopDevice(id, true);
-			DataUtil.RemoveDevice(id);
+			DataUtil.DeleteDevice(id);
 			await _hubContext.Clients.All.SendAsync("deleteDevice", id);
 		}
 
 		public async Task StartStream(GlimmrData gd) {
 			await StartStreamEvent.InvokeAsync(this, new DynamicEventArgs(gd));
+			//await SetModeEvent.InvokeAsync(this, new DynamicEventArgs(5)).ConfigureAwait(false);
+
 		}
 	}
 }

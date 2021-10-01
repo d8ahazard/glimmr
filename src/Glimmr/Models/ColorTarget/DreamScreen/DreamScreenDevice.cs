@@ -21,11 +21,10 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		private string _deviceTag;
 		private string _ipAddress;
 
-		public DreamScreenDevice(DreamScreenData data, ColorService colorService) {
+		public DreamScreenDevice(DreamScreenData data, ColorService cs) {
 			_data = data;
 			Id = data.Id;
-			colorService.ColorSendEventAsync += SetColors;
-			var client = colorService.ControlService.GetAgent("DreamAgent");
+			var client = cs.ControlService.GetAgent("DreamAgent");
 			if (client != null) {
 				_client = client;
 			}
@@ -33,12 +32,9 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			_ipAddress = _data.IpAddress;
 			_deviceTag = _data.DeviceTag;
 			LoadData();
+			cs.ColorSendEventAsync += SetColors;
 			var myIp = IPAddress.Parse(_ipAddress);
 			_dev = new DreamDevice(_deviceTag) {IpAddress = myIp, DeviceGroup = data.GroupNumber};
-		}
-		
-		private Task SetColors(object sender, ColorSendEventArgs args) {
-			return SetColor(args.SectorColors, args.Force);
 		}
 
 		public bool Streaming { get; set; }
@@ -79,23 +75,6 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		}
 
-
-		private async Task SetColor(Color[] sectors, bool force = false) {
-			if (!_data.Enable || Testing && !force) {
-				return;
-			}
-
-			if (_client == null) {
-				return;
-			}
-
-			if (sectors.Length != 12) {
-				sectors = ColorUtil.TruncateColors(sectors);
-			}
-
-			await _client.SendColors(_dev, sectors);
-		}
-
 		public Task FlashColor(Color color) {
 			return Task.CompletedTask;
 		}
@@ -115,6 +94,27 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		IColorTargetData IColorTarget.Data {
 			get => _data;
 			set => _data = (DreamScreenData) value;
+		}
+
+		private Task SetColors(object sender, ColorSendEventArgs args) {
+			return SetColor(args.SectorColors, args.Force);
+		}
+
+
+		private async Task SetColor(Color[] sectors, bool force = false) {
+			if (!_data.Enable || Testing && !force) {
+				return;
+			}
+
+			if (_client == null) {
+				return;
+			}
+
+			if (sectors.Length != 12) {
+				sectors = ColorUtil.TruncateColors(sectors);
+			}
+
+			await _client.SendColors(_dev, sectors);
 		}
 
 		private void LoadData() {

@@ -1,5 +1,6 @@
 ﻿#region
 
+using System;
 using Glimmr.Services;
 using LifxNetPlus;
 
@@ -16,6 +17,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 		public void Dispose() {
 			_lc?.Dispose();
+			GC.SuppressFinalize(this);
 		}
 	}
 }

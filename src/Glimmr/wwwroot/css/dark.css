@@ -1,69 +1,7 @@
-﻿text > * {
-    color: white;
+﻿:root {
+    --bg-primary: #181818 !important;
+    --bg-secondary: #212121 !important;
+    --bg-secondary-alpha: #212121ab!important;
+    --fg-primary: #cfcfcf !important;
+    --fg-secondary: #9f9f9f !important;    
 }
-
-.text-muted {
-    color: #8f8f8f !important;
-}
-
-#footer {
-    background-color: rgb(27, 30, 30) !important;
-}
-
-.text-dark {
-    color: rgb(243 243 243) !important;
-}
-
-.bg-light {
-    background: #1c1c1c !important;
-}
-
-body, div:not(.sector):not(.led):not(.sector2):not(.modal):not(.modal-dialog):not(.sectorMap):not(#ledMap):not(.bg-light):not(.btn-clear):not(#nanoPreview):not(.linkImg):not(#RegionSelect *):not(.tour-backdrop), .nav-link {
-    color: #c4c4c4 !important;
-    background: #232323;    
-}
-
-.lds-ellipsis {
-    background: #232323 !important;
-    color: #c4c4c4 !important;
-}
-
-.btn-outline-secondary {
-    color: #c4c4c4;
-    border-color: #d7d7d7;
-}
-
-div.btn-clear {
-    color: #c4c4c4;
-    background: #232323;
-}
-
-div.btn-clear.active {
-    background: #c4c4c4;
-    color: #232323;
-}
-
-
-div.btn-clear:hover {
-    color: #ffffff !important;
-}
-
-.input-group-text {
-    background-color: #212529;
-    color: #e9ecef;
-}
-
-.card {
-    border: 1px solid rgba(176, 176, 176, 0.12);
-}
-
-.border {
-    border: 1px solid rgba(176, 176, 176, 0.12) !important;
-}
-
-.nav-tabs .nav-item.show .nav-link, .nav-tabs .nav-link.active {
-    color: #cbcbcb;
-    background-color: #5f5f5f;
-    border-color: #777777 #858585 #757575;
-}
-

@@ -5,13 +5,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Services;
 using LifxNetPlus;
+using Newtonsoft.Json;
 using Serilog;
 
 #endregion
 
 namespace Glimmr.Models.ColorTarget.Lifx {
 	public class LifxDiscovery : ColorDiscovery, IColorDiscovery {
-		public virtual string DeviceTag { get; } = "Lifx Bulb";
+		protected virtual string DeviceTag => "Lifx Bulb";
 		private readonly LifxClient? _client;
 		private readonly ControlService _controlService;
 
@@ -47,9 +48,12 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 			//Log.Debug("Device found: " + JsonConvert.SerializeObject(bulb));
 			var ld = await GetBulbInfo(bulb);
-			if (ld != null) {
-				await _controlService.AddDevice(ld);
+			if (ld == null) {
+				return;
 			}
+
+			Log.Debug("Adding device: " + JsonConvert.SerializeObject(ld));
+			await _controlService.AddDevice(ld);
 		}
 
 		private async Task<LifxData?> GetBulbInfo(Device b) {
@@ -63,7 +67,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			var zoneCount = 0;
 			var tag = DeviceTag;
 			// Set multi zone stuff
-			if (ver.Product == 31 || ver.Product == 32 || ver.Product == 38) {
+			if (ver is { Product: 31 or 32 or 38 }) {
 				tag = ver.Product == 38 ? "Lifx Beam" : "Lifx Z";
 				hasMulti = true;
 				if (ver.Product != 31) {
@@ -115,7 +119,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				d.GenerateBeamLayout();
 			}
 
-			if (ver.Product == 55 || ver.Product == 101) {
+			if (ver is { Product: 55 or 101 }) {
 				tag = "Lifx Tile";
 				try {
 					var tData = _client.GetDeviceChainAsync(b).Result;
@@ -128,7 +132,6 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			}
 
 			d.DeviceTag = tag;
-			//Log.Debug("Discovered lifx device: " + JsonConvert.SerializeObject(d));
 			return d;
 		}
 	}

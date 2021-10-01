@@ -32,7 +32,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 			Refresh();
 		}
 
-		public Color[] MapColors(Dictionary<int, float> lChannel, Dictionary<int, float> rChannel) {
+		public IEnumerable<Color> MapColors(Dictionary<int, float> lChannel, Dictionary<int, float> rChannel) {
 			// Total number of sectors
 			const int len = 14;
 			var output = ColorUtil.EmptyColors(len);
@@ -41,33 +41,33 @@ namespace Glimmr.Models.ColorSource.Audio {
 				var l = _leftSectors[value - 1];
 				var r = _rightSectors[value - 1];
 				var step = int.Parse(key);
-				var lNote = HighNote(lChannel, step);
-				var rNote = HighNote(rChannel, step);
+				var (i, f) = HighNote(lChannel, step);
+				var (key1, value1) = HighNote(rChannel, step);
 				if (!triggered) {
-					triggered = lNote.Value >= _rotationThreshold || rNote.Value >= _rotationThreshold;
+					triggered = f >= _rotationThreshold || value1 >= _rotationThreshold;
 				}
 
-				var lHue = RotateHue(ColorUtil.HueFromFrequency(lNote.Key));
-				var rHue = RotateHue(ColorUtil.HueFromFrequency(rNote.Key));
-				if (lNote.Value > _maxVal) {
-					_maxVal = lNote.Value;
+				var lHue = RotateHue(ColorUtil.HueFromFrequency(i));
+				var rHue = RotateHue(ColorUtil.HueFromFrequency(key1));
+				if (f > _maxVal) {
+					_maxVal = f;
 				}
 
-				if (rNote.Value > _maxVal) {
-					_maxVal = rNote.Value;
+				if (value1 > _maxVal) {
+					_maxVal = value1;
 				}
 
-				if (lNote.Value > 0 && lNote.Value < _minVal) {
-					_minVal = lNote.Value;
+				if (f > 0 && f < _minVal) {
+					_minVal = f;
 				}
 
-				if (rNote.Value > 0 && rNote.Value < _minVal) {
-					_minVal = rNote.Value;
+				if (value1 > 0 && value1 < _minVal) {
+					_minVal = value1;
 				}
 
 				//Log.Debug($"Sector {l} using octave {step} is {lNote.Key} and {lNote.Value}");
-				output[l] = ColorUtil.HsvToColor(lHue * 360, 1, lNote.Value);
-				output[r] = ColorUtil.HsvToColor(rHue * 360, 1, rNote.Value);
+				output[l] = ColorUtil.HsvToColor(lHue * 360, 1, f);
+				output[r] = ColorUtil.HsvToColor(rHue * 360, 1, value1);
 			}
 
 			_triggered = triggered;
@@ -75,7 +75,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 			return output;
 		}
 
-		private KeyValuePair<int, float> HighNote(Dictionary<int, float> stuff, int step) {
+		private static KeyValuePair<int, float> HighNote(Dictionary<int, float> stuff, int step) {
 			var minFrequency = 27.5 / 2;
 			for (var i = 1; i <= step; i++) {
 				minFrequency *= 2;

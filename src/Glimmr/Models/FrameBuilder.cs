@@ -7,15 +7,13 @@ using System.Linq;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
-using Serilog;
 
 #endregion
 
 namespace Glimmr.Models {
 	public class FrameBuilder {
-		private readonly int _borderHeight = 10;
-		private readonly int _borderWidth = 10;
-
+		private const int ScaleHeight = 480;
+		private const int ScaleWidth = 640;
 		private readonly int _bottomCount;
 
 		// This will store the coords of input values
@@ -23,11 +21,9 @@ namespace Glimmr.Models {
 		private readonly int _ledCount;
 		private readonly int _leftCount;
 		private readonly int _rightCount;
-		private const int ScaleHeight = 480;
-		private const int ScaleWidth = 640;
 		private readonly int _topCount;
 
-		public FrameBuilder(int[] inputDimensions, bool sectors = false, bool center=false) {
+		public FrameBuilder(IReadOnlyList<int> inputDimensions, bool sectors = false, bool center = false) {
 			_leftCount = inputDimensions[0];
 			_rightCount = inputDimensions[1];
 			_topCount = inputDimensions[2];
@@ -39,14 +35,13 @@ namespace Glimmr.Models {
 					_inputCoords = DrawCenterSectors();
 				} else {
 					_ledCount -= 4;
-					_inputCoords = DrawSectors();	
+					_inputCoords = DrawSectors();
 				}
 			} else {
-				_inputCoords = DrawGrid();
+				_inputCoords = DrawLeds();
 			}
 		}
-		
-		
+
 
 		public Mat Build(IEnumerable<Color> colors) {
 			var enumerable = colors as Color[] ?? colors.ToArray();
@@ -64,102 +59,133 @@ namespace Glimmr.Models {
 			return gMat;
 		}
 
-		private Rectangle[] DrawGrid() {
-			var vOffset = 0;
-			var hOffset = 0;
-			var output = new Rectangle[_ledCount];
 
-			// Top Region
-			var tTop = hOffset;
-			// Bottom Region
-			var bBottom = ScaleHeight;
-			var bTop = bBottom - _borderHeight;
-
-			// Left Column Border
-			var lLeft = vOffset;
-
-			// Right Column Border
-			var rRight = ScaleWidth;
-			var rLeft = rRight - _borderWidth;
-			float w = ScaleWidth;
-			float h = ScaleHeight;
-
-			// Steps
-			var widthTop = (int) Math.Ceiling(w / _topCount);
-			var widthBottom = (int) Math.Ceiling(w / _bottomCount);
-			var heightLeft = (int) Math.Ceiling(h / _leftCount);
-			var heightRight = (int) Math.Ceiling(h / _rightCount);
+		private Rectangle[] DrawLeds() {
+			// This is where we're saving our output
+			var fs = new Rectangle[_ledCount];
+			// Individual segment sizes
+			var tWidth = (int)Math.Round((float)ScaleWidth / _topCount, MidpointRounding.AwayFromZero);
+			var tHeight = ScaleHeight / (_topCount - 5);
+			var lHeight = (int)Math.Round((float)ScaleHeight / _leftCount, MidpointRounding.AwayFromZero);
+			var lWidth = ScaleWidth / (_leftCount - 5);
+			var bWidth = (int)Math.Round((float)ScaleWidth / _bottomCount, MidpointRounding.AwayFromZero);
+			var bHeight = ScaleHeight /  (_bottomCount - 5);
+			var rHeight = (int)Math.Round((float)ScaleHeight / _rightCount, MidpointRounding.AwayFromZero);
+			var rWidth = ScaleWidth / (_rightCount - 5);
+			
+			// These are based on the border/strip values
+			// Minimum limits for top, bottom, left, right            
+			const int minTop = 0;
+			const int minLeft = 0;
 			// Calc right regions, bottom to top
 			var idx = 0;
-			var pos = ScaleHeight - heightRight;
-
-			for (var i = 0; i < _rightCount; i++) {
-				if (pos < 0) {
-					pos = 0;
+			var step = _rightCount;
+			var width = 0;
+			var rev = false;
+			var max = 0;
+			while (step > 0) {
+				var ord = step * rHeight;
+				var h = ord + rHeight > ScaleWidth ? ScaleWidth - ord : rHeight;
+				if (max == 0 && width >= ScaleWidth / 2) max = step;
+				if (rev) {
+					width -= rWidth;
+				} else {
+					width += rWidth;
 				}
-
-				output[idx] = new Rectangle(rLeft, pos, _borderWidth, heightRight);
-				pos -= heightRight;
+				var right = ScaleWidth - width;
+				fs[idx] = new Rectangle(right, ord, width, h);
+				if (max != 0 && _rightCount - max == step) rev = true;
+				if (width < rHeight) width = rHeight;
+				if (width > ScaleWidth / 2) {
+					width = ScaleWidth / 2;
+				}
 				idx++;
+				step--;
 			}
 
-			// Calc top regions, from right to left
-			pos = ScaleWidth - widthTop;
-
-			for (var i = 0; i < _topCount; i++) {
-				if (pos < 0) {
-					pos = 0;
+			// Calc top regions, from right to left, skipping top-right corner (total horizontal sectors minus one)
+			step = _topCount;
+			var height = 0;
+			rev = false;
+			max = -1;
+			while (step > 0) {
+				var ord = step * tWidth;
+				if (max == -1 && height >= ScaleHeight / 2) max = step;
+				if (rev) {
+					height -= tHeight;
+				} else {
+					height += tHeight;
 				}
+				var w = ord + tWidth > ScaleWidth ? ScaleWidth - ord : tWidth;
+				fs[idx] = new Rectangle(ord, minTop,w, height);
+				
+				if (max != -1 && _topCount - max == step) rev = true;
 
-				output[idx] = new Rectangle(pos, tTop, widthTop, _borderHeight);
+				if (height > ScaleHeight / 2) height = ScaleHeight / 2;
+				if (height < tHeight) height = tHeight;
+
 				idx++;
-				pos -= widthTop;
+				step--;
 			}
 
-
-			// Calc left regions (top to bottom)
-			pos = 0;
-
-			for (var i = 0; i < _leftCount; i++) {
-				if (pos > ScaleHeight - heightLeft) {
-					pos = ScaleHeight - heightLeft;
+			step = 0;
+			width = 0;
+			rev = false;
+			max = -1;
+			// Calc left regions (top to bottom), skipping top-left
+			while (step < _leftCount) {
+				var ord = step * lHeight;
+				var h = ord + lHeight > ScaleHeight ? ScaleHeight - ord : lHeight;
+				if (max == -1 && width >= ScaleWidth / 2) max = step;
+				if (rev) {
+					width -= lWidth;
+				} else {
+					width += lWidth;
 				}
-
-				output[idx] = new Rectangle(lLeft, pos, _borderWidth, heightLeft);
-				pos += heightLeft;
+				if (step == _leftCount - 1) width = lHeight;
+				fs[idx] = new Rectangle(minLeft, ord, width, h);
+				if (max != -1 && max == _leftCount - step + 1) rev = true;
+				if (width > ScaleWidth / 2) width = ScaleWidth / 2;
+				if (width < lHeight) width = lWidth;
 				idx++;
+				step++;
 			}
 
-			// Calc bottom regions (L-R)
-			pos = 0;
-			for (var i = 0; i < _bottomCount; i++) {
-				if (idx >= _ledCount) {
-					Log.Warning($"Index is {idx}, but count is {_ledCount}");
-					continue;
+			step = 0;
+			height = 0;
+			rev = false;
+			max = -1;
+			// Calc bottom center regions (L-R)
+			while (step < _bottomCount) {
+				var ord = step * bWidth;
+				if (max == -1 && height >= ScaleHeight / 2) max = step;
+				if (rev) {
+					height -= bHeight;
+				} else {
+					height += bHeight;
 				}
-
-				if (pos > ScaleWidth - widthBottom) {
-					pos = ScaleWidth - widthBottom;
-				}
-
-				output[idx] = new Rectangle(pos, bTop, widthBottom, _borderHeight);
-				pos += widthBottom;
+				var bottom = ScaleHeight - height;
+				var w = ord + bWidth > ScaleWidth ? ScaleWidth - ord : bWidth;
+				if (step == _bottomCount - 1) height = bWidth;
+				fs[idx] = new Rectangle(ord, bottom, w, height);
+				if (max != -1 && max == _bottomCount - step - 1)  rev = true;
+				if (height > ScaleHeight / 2) height = ScaleHeight / 2;
+				if (height < bWidth) height = bWidth;
+				
 				idx++;
+				step += 1;
 			}
-
-			if (idx != _ledCount) {
-				Log.Warning($"Warning: Led count is {idx - 1}, but should be {_ledCount}");
-			}
-
-			return output;
+			return fs;
 		}
 
 		private Rectangle[] DrawSectors() {
 			// This is where we're saving our output
 			var fs = new Rectangle[_ledCount];
 			// Individual segment sizes
-			var sectorWidth = ScaleWidth / _topCount;
-			var sectorHeight = ScaleHeight / _leftCount;
+			var vWidth = ScaleWidth / _topCount;
+			var vHeight = ScaleHeight / _topCount;
+			var hHeight = ScaleHeight / _leftCount;
+			var hWidth = ScaleWidth / _leftCount;
 			// These are based on the border/strip values
 			// Minimum limits for top, bottom, left, right            
 			const int minTop = 0;
@@ -170,14 +196,20 @@ namespace Glimmr.Models {
 			var max = _rightCount;
 			var wIdx = 1;
 			while (step >= 0) {
-				var ord = step * sectorHeight;
-				var width = sectorHeight * wIdx + 5;
-				if (width > ScaleWidth / 2) width = ScaleWidth / 2;
+				var ord = step * hHeight;
+				var width = hWidth * wIdx + 5;
+				width = step == _rightCount - 1 || step == 0 ? hHeight : width;
 				var right = ScaleWidth - width;
-				fs[idx] = new Rectangle(right, ord, ScaleWidth, sectorHeight);
+				fs[idx] = new Rectangle(right, ord, ScaleWidth, hHeight);
 				wIdx += step < max / 2 ? -1 : 1;
-				if (wIdx < 1) wIdx = 1;
-				if (wIdx > max / 2) wIdx = max / 2;
+				if (wIdx < 1) {
+					wIdx = 1;
+				}
+
+				if (wIdx > max / 2) {
+					wIdx = max / 2;
+				}
+
 				idx++;
 				step--;
 			}
@@ -187,13 +219,19 @@ namespace Glimmr.Models {
 			wIdx = 1;
 			max = _topCount;
 			while (step > 0) {
-				var ord = step * sectorWidth;
-				var height = sectorWidth * wIdx + 5;
-				if (height > ScaleHeight / 2) height = ScaleHeight / 2;
-				fs[idx] = new Rectangle(ord, minTop, sectorWidth, height);
+				var ord = step * vWidth;
+				var height = vHeight * wIdx;
+				height = step == _topCount - 2 || step == 1 ? vWidth : height;
+				fs[idx] = new Rectangle(ord, minTop, vWidth, height);
 				wIdx += step < max / 2 ? -1 : 1;
-				if (wIdx < 1) wIdx = 1;
-				if (wIdx > max / 2) wIdx = max / 2;
+				if (wIdx < 1) {
+					wIdx = 1;
+				}
+
+				if (wIdx > max / 2) {
+					wIdx = max / 2;
+				}
+
 				idx++;
 				step--;
 			}
@@ -203,13 +241,23 @@ namespace Glimmr.Models {
 			max = _leftCount;
 			// Calc left regions (top to bottom), skipping top-left
 			while (step <= _leftCount - 1) {
-				var ord = step * sectorHeight;
-				var width = sectorHeight * wIdx + 5;
-				if (width > ScaleWidth / 2) width = ScaleWidth / 2;
-				fs[idx] = new Rectangle(minLeft, ord, width, sectorHeight);
+				var ord = step * hHeight;
+				var width = hWidth * wIdx;
+				if (width > ScaleWidth / 2) {
+					width = ScaleWidth / 2;
+				}
+
+				width = step == 0 || step == _leftCount - 1 ? hHeight : width;
+				fs[idx] = new Rectangle(minLeft, ord, width, hHeight);
 				wIdx += step < max / 2 ? 1 : -1;
-				if (wIdx < 1) wIdx = 1;
-				if (wIdx > max / 2) wIdx = max / 2;
+				if (wIdx < 1) {
+					wIdx = 1;
+				}
+
+				if (wIdx > max / 2) {
+					wIdx = max / 2;
+				}
+
 				idx++;
 				step++;
 			}
@@ -219,21 +267,31 @@ namespace Glimmr.Models {
 			max = _bottomCount;
 			// Calc bottom center regions (L-R)
 			while (step <= _bottomCount - 2) {
-				var ord = step * sectorWidth;
-				var height = sectorWidth * wIdx + 5;
-				if (height > ScaleHeight / 2) height = ScaleHeight / 2;
+				var ord = step * vWidth;
+				var height = vHeight * wIdx;
+				if (height > ScaleHeight / 2) {
+					height = ScaleHeight / 2;
+				}
+
+				height = step == 1 ? vWidth : height;
 				var bottom = ScaleHeight - height;
-				fs[idx] = new Rectangle(ord, bottom, sectorWidth, height);
+				fs[idx] = new Rectangle(ord, bottom, vWidth, height);
 				wIdx += step < max / 2 ? 1 : -1;
-				if (wIdx < 1) wIdx = 1;
-				if (wIdx > max / 2) wIdx = max / 2;
+				if (wIdx < 1) {
+					wIdx = 1;
+				}
+
+				if (wIdx > max / 2) {
+					wIdx = max / 2;
+				}
+
 				idx++;
 				step += 1;
 			}
 
 			return fs;
 		}
-		
+
 		private Rectangle[] DrawCenterSectors() {
 			// This is where we're saving our output
 			var fs = new Rectangle[_ledCount];
@@ -252,6 +310,7 @@ namespace Glimmr.Models {
 					idx++;
 					left -= sectorWidth;
 				}
+
 				top -= sectorHeight;
 			}
 

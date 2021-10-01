@@ -108,7 +108,12 @@ namespace Glimmr.Hubs {
 		}
 
 		public async Task FlashSector(int sector) {
-			await _cs.FlashSector(sector);
+			Log.Debug("Sector flash called for: " + sector);
+			try {
+				await _cs.FlashSector(sector);
+			} catch (Exception e) {
+				Log.Warning("Exception: " + e.Message + " at " + e.StackTrace);
+			}
 		}
 
 		public async Task FlashLed(int led) {

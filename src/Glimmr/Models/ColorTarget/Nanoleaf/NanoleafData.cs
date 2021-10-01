@@ -23,7 +23,9 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public float Rotation { get; set; }
-
+		
+		[DefaultValue(100)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int Brightness { get; set; }
 
 		[JsonProperty] public int GroupNumber { get; set; }
@@ -43,9 +45,8 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			Name ??= Tag;
 			if (IpAddress != null) {
 				var hc = string.GetHashCode(IpAddress, StringComparison.InvariantCulture);
-				Name = "Nanoleaf - " + hc.ToString(CultureInfo.InvariantCulture).Substring(0, 4);
+				Name = "Nanoleaf - " + hc.ToString(CultureInfo.InvariantCulture)[..4];
 			}
-
 			Layout ??= new TileLayout();
 		}
 

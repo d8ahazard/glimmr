@@ -22,20 +22,23 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int LedCount { get; set; }
 
-		[JsonProperty] public int LedMultiplier { get; set; } = 1;
+		[JsonProperty] public float LedMultiplier { get; set; } = 1.0f;
 
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int Offset { get; set; }
 
-		[DefaultValue("COM1")]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public string Port { get; set; }
-
 		[DefaultValue(115200)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int Speed { get; set; }
 
+		[DefaultValue("COM1")]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public string Port { get; set; }
+
+		[DefaultValue(2.2)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public float GammaFactor { get; set; } = 2.2f;
 		[JsonProperty] public string Tag { get; set; } = "Adalight";
 
 
@@ -77,11 +80,12 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			new("ledmap", "ledmap", ""),
 			new("Offset", "text", "Led Offset"),
 			new("LedCount", "text", "Led Count"),
-			new("LedMultiplier", "number", "LED Multiplier") {
-				ValueMin = "-5", ValueStep = "1", ValueMax="5", ValueHint = "Positive values to multiply (skip), negative values to divide (duplicate)."
-			},
+			new("LedMultiplier", "ledMultiplier", ""),
+			new("GammaFactor", "number", "Gamma Correction")
+				{ValueMin = "1.0",ValueMax = "5", ValueStep = ".1", ValueHint = "1 = No adjustment, 2.2 = Recommended"},
 			new("Speed", "text", "Connection Speed (Baud Rate)"),
-			new("ReverseStrip", "check", "Reverse Strip"){ValueHint = "Reverse the order of the leds to clockwise (facing screen)."}
+			new("ReverseStrip", "check", "Reverse Strip")
+				{ValueHint = "Reverse the order of the leds to clockwise (facing screen)."}
 		};
 
 

@@ -60,7 +60,7 @@
     "#000000"
   ],
   "AnimationTime": 0.01666,
-  "EasingTime": 0.0166,
+  "EasingTime": 0.01666,
   "Mode": "Linear",
   "Easing": "Blend",
   "Name": "Chase",

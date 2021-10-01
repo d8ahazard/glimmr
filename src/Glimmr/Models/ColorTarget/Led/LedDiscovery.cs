@@ -10,8 +10,6 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Led {
 	public class LedDiscovery : ColorDiscovery, IColorDiscovery {
-		public virtual string DeviceTag { get; set; } = "Led";
-
 		public LedDiscovery(ColorService colorService) : base(colorService) {
 		}
 

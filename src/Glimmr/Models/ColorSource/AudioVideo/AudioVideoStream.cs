@@ -1,5 +1,6 @@
 ﻿#region
 
+using System;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,12 +19,12 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 		private readonly ColorService _cs;
 		private AudioStream? _as;
 		private Task? _aTask;
+		private Color[] _colors;
 		private bool _doSave;
+		private Color[] _sectors;
 		private SystemData _systemData;
 		private VideoStream? _vs;
 		private Task? _vTask;
-		private Color[] _colors;
-		private Color[] _sectors;
 
 		public AudioVideoStream(ColorService cs) {
 			_cs = cs;
@@ -62,20 +63,12 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 			return ExecuteAsync(ct);
 		}
 
+
+		public bool SourceActive => _vs != null && _vs.StreamSplitter.SourceActive;
+
 		private void RefreshSystem() {
 			_systemData = DataUtil.GetSystemData();
 		}
-		
-		public Color[] GetColors() {
-			return _colors;
-		}
-
-		public Color[] GetSectors() {
-			return _sectors;
-		}
-
-
-		public bool SourceActive => _vs != null && _vs.StreamSplitter.SourceActive;
 
 		private void TriggerSave() {
 			_doSave = true;
@@ -123,7 +116,7 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 
 					_colors = oCols;
 					_sectors = oSecs;
-					await _cs.TriggerSend(_colors, _sectors);
+					await _cs.TriggerSend(_colors, _sectors, "avStream");
 
 					if (_doSave) {
 						_doSave = false;
@@ -133,11 +126,25 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 					await Task.Delay(16, CancellationToken.None);
 				}
 
-				if (_aTask != null && !_aTask.IsCompleted) {
+				if (_vs != null) {
+					_vs.StreamSplitter.DoSend = false;
+				}
+
+				if (_as != null) {
+					try {
+						await _as.StopStream();
+					} catch (Exception) {
+						Log.Warning("Exception stopping audio stream.");
+					}
+
+					_as.StreamSplitter.DoSend = false;
+				}
+
+				if (_aTask is { IsCompleted: false }) {
 					_aTask.Dispose();
 				}
 
-				if (_vTask != null && !_vTask.IsCompleted) {
+				if (_vTask is { IsCompleted: false }) {
 					_vTask.Dispose();
 				}
 

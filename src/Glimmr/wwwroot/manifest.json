@@ -1,5 +1,11 @@
 {
- "name": "Glimmr",
+ "name": "Glimmr Control",
+ "short_name": "Glimmr",
+ "start_url": "index.html",
+ "display": "standalone",
+ "background_color": "#808080",
+ "theme_color": "#2d5eb3",
+ "orientation": "portrait-primary",
  "icons": [
   {
    "src": "\/android-icon-36x36.png",

@@ -17,6 +17,7 @@ namespace Glimmr.Models.ColorTarget {
 		public string Id { get; }
 		public string IpAddress { get; }
 		public string LastSeen { get; }
+
 		public string Name { get; }
 		public void UpdateFromDiscovered(IColorTargetData data);
 	}
@@ -24,10 +25,10 @@ namespace Glimmr.Models.ColorTarget {
 	[Serializable]
 	public class SettingsProperty {
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-		public string ValueLabel { get; set; } = "";
+		public string ValueHint { get; set; } = "";
 
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-		public string ValueHint { get; set; } = "";
+		public string ValueLabel { get; set; } = "";
 
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
 		public string ValueMax { get; set; } = "100";

@@ -10,6 +10,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Glimmr.Models.ColorSource.UDP;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Newtonsoft.Json;
@@ -19,7 +20,7 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Glimmr {
 	public class GlimmrDevice : ColorTarget, IColorTarget, IDisposable {
-		private const int Port = 8889;
+		private const int Port = 21324;
 		private readonly HttpClient _httpClient;
 		private readonly UdpClient _udpClient;
 		private GlimmrData _data;
@@ -27,21 +28,19 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		private IPEndPoint? _ep;
 		private string _ipAddress;
 		private SystemData _sd;
+		private int _ledCount;
 
-		public GlimmrDevice(GlimmrData wd, ColorService colorService) : base(colorService) {
-			colorService.ColorSendEventAsync += SetColors;
-			_udpClient = colorService.ControlService.UdpClient;
-			_httpClient = colorService.ControlService.HttpSender;
+		public GlimmrDevice(GlimmrData wd, ColorService cs) : base(cs) {
+			_udpClient = cs.ControlService.UdpClient;
+			_httpClient = cs.ControlService.HttpSender;
 			_data = wd ?? throw new ArgumentException("Invalid Glimmr data.");
 			Id = _data.Id;
+
 			Enable = _data.Enable;
 			_ipAddress = _data.IpAddress;
 			_sd = DataUtil.GetSystemData();
-			colorService.ControlService.RefreshSystemEvent += RefreshSystem;
-		}
-		
-		private Task SetColors(object sender, ColorSendEventArgs args) {
-			return SetColor(args.LedColors, args.Force);
+			cs.ControlService.RefreshSystemEvent += RefreshSystem;
+			cs.ColorSendEventAsync += SetColors;
 		}
 
 		public bool Enable { get; set; }
@@ -72,20 +71,11 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 
 
 		public async Task FlashColor(Color color) {
-			var packet = new List<byte>();
-			// Set mode to D-RGB, dude.
-			const int timeByte = 255;
-			packet.Add(ByteUtils.IntByte(2));
-			packet.Add(ByteUtils.IntByte(timeByte));
-			for (var i = 0; i < _data.LedCount; i++) {
-				packet.Add(color.R);
-				packet.Add(color.G);
-				packet.Add(color.B);
-			}
-
 			try {
 				if (_udpClient != null) {
-					await _udpClient.SendAsync(packet.ToArray(), packet.Count, _ep);
+					var cp = new ColorPacket(ColorUtil.FillArray(color, _ledCount));
+					var data = cp.Encode(255);
+					await _udpClient.SendAsync(data, data.Length, _ep);
 				}
 			} catch (Exception e) {
 				Log.Debug("Exception, look at that: " + e.Message);
@@ -102,6 +92,33 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			Streaming = false;
 			await SendPost("mode", 0.ToString());
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
+		}
+
+
+		public Task ReloadData() {
+			var id = _data.Id;
+			_sd = DataUtil.GetSystemData();
+			var dev = DataUtil.GetDevice<GlimmrData>(id);
+			if (dev == null) {
+				return Task.CompletedTask;
+			}
+
+			_data = dev;
+			_ipAddress = _data.IpAddress;
+			Enable = _data.Enable;
+			_ledCount = _data.LeftCount + _data.RightCount + _data.TopCount + _data.BottomCount;
+			Log.Debug($"Reloaded LED Data for {id}: " + JsonConvert.SerializeObject(_data));
+			return Task.CompletedTask;
+		}
+
+
+		public void Dispose() {
+			Dispose(true).ConfigureAwait(true);
+			GC.SuppressFinalize(this);
+		}
+
+		private Task SetColors(object sender, ColorSendEventArgs args) {
+			return SetColor(args.LedColors, args.Force);
 		}
 
 
@@ -158,55 +175,20 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 				leds = leds1.ToArray();
 			}
 
-			
-			var packet = new List<byte> {ByteUtils.IntByte(2), ByteUtils.IntByte(255)};
-			foreach (var color in leds) {
-				packet.Add(ByteUtils.IntByte(color.R));
-				packet.Add(ByteUtils.IntByte(color.G));
-				packet.Add(ByteUtils.IntByte(color.B));
-			}
-
 			try {
-				await _udpClient.SendAsync(packet.ToArray(), packet.Count, _ep);
+				var cp = new ColorPacket(leds);
+				var packet = cp.Encode();
+				await _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep);
 				ColorService?.Counter.Tick(Id);
 			} catch (Exception e) {
 				Log.Debug("Exception: " + e.Message);
 			}
 		}
 
-
-		public Task ReloadData() {
-			var id = _data.Id;
-			_sd = DataUtil.GetSystemData();
-			var dev = DataUtil.GetDevice<GlimmrData>(id);
-			if (dev == null) {
-				return Task.CompletedTask;
-			}
-
-			_data = dev;
-			_ipAddress = _data.IpAddress;
-			Enable = _data.Enable;
-			Log.Debug($"Reloaded LED Data for {id}: " + JsonConvert.SerializeObject(_data));
-			return Task.CompletedTask;
-		}
-
-
-		public void Dispose() {
-			Dispose(true).ConfigureAwait(true);
-			GC.SuppressFinalize(this);
-		}
-
 		private void RefreshSystem() {
 			_sd = DataUtil.GetSystemData();
 		}
 
-
-		public bool IsEnabled() {
-			return _data.Enable;
-		}
-
-
-		
 
 		private async Task SendPost(string target, string value) {
 			Uri uri;

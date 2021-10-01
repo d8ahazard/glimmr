@@ -24,7 +24,7 @@ namespace Glimmr.Models.Util {
 		/// <returns>12 colors averaged from those, or something.</returns>
 		public static Color[] TruncateColors(Color[] input) {
 			var indices = input.Length / 12;
-			var output = new Color[12];
+			var output = EmptyColors(12);
 			for (var i = 0; i < 12; i++) {
 				double idx = i * indices;
 				idx = Math.Floor(idx);
@@ -38,44 +38,29 @@ namespace Glimmr.Models.Util {
 			return output;
 		}
 
-		public static Color[] TruncateColors(Color[] input, int offset, int len, int multiplier = 1) {
-			var output = new Color[len];
-			// Instead of doing dumb crap, just make our list of colors loop around
-
-			var total = len + offset;
-			// If we have a negative multiplier, our total should be that many times (abs) larger
-			if (multiplier < 0) {
-				total *= Math.Abs(multiplier);
+		public static Color[] TruncateColors(Color[] input, int offset, int len, float multiplier = 1f) {
+			if (offset >= input.Length) {
+				offset -= input.Length;
 			}
 
-			var doubled = new Color[total];
-			var c = 0;
-			while (c < total) {
-				foreach (var col in input) {
-					if (c < total) {
-						doubled[c] = col;
-					} else {
-						break;
-					}
+			var output = EmptyColors(len);
+			var total = Convert.ToInt32((len + offset) * multiplier);
 
-					c++;
+			var doubled = EmptyColors(total);
+			var dIdx = 0;
+			while (dIdx < total) {
+				foreach (var t in input) {
+					doubled[dIdx] = t;
+					dIdx++;
+					if (dIdx >= total) break;
 				}
 			}
-
-			var idx = 0;
-			for (var i = offset; i < total; i += Math.Abs(multiplier)) {
-				output[idx] = doubled[i];
-				idx++;
-				if (multiplier > 1 && idx < len) {
-					for (var m = 1; m < multiplier; m++) {
-						output[idx] = doubled[i];
-						idx++;
-					}
-				}
-
-				if (idx >= len) {
-					break;
-				}
+			
+			for (var i = 0; i < len; i++) {
+				var tgt = Convert.ToInt32((i + offset) * multiplier);
+				if (tgt >= total) tgt = total - 1;
+				//Log.Debug($"Mapping {i} to {tgt}");
+				output[i] = doubled[tgt];
 			}
 
 			return output;
@@ -192,26 +177,20 @@ namespace Glimmr.Models.Util {
 			var hi = Convert.ToInt32(Math.Floor(hue / 60)) % 6;
 			var f = hue / 60 - Math.Floor(hue / 60);
 
-			value = value * 255;
+			value *= 255;
 			var v = Convert.ToInt32(value);
 			var p = Convert.ToInt32(value * (1 - saturation));
 			var q = Convert.ToInt32(value * (1 - f * saturation));
 			var t = Convert.ToInt32(value * (1 - (1 - f) * saturation));
 
-			switch (hi) {
-				case 0:
-					return Color.FromArgb(255, v, t, p);
-				case 1:
-					return Color.FromArgb(255, q, v, p);
-				case 2:
-					return Color.FromArgb(255, p, v, t);
-				case 3:
-					return Color.FromArgb(255, p, q, v);
-				case 4:
-					return Color.FromArgb(255, t, p, v);
-				default:
-					return Color.FromArgb(255, v, p, q);
-			}
+			return hi switch {
+				0 => Color.FromArgb(255, v, t, p),
+				1 => Color.FromArgb(255, q, v, p),
+				2 => Color.FromArgb(255, p, v, t),
+				3 => Color.FromArgb(255, p, q, v),
+				4 => Color.FromArgb(255, t, p, v),
+				_ => Color.FromArgb(255, v, p, q)
+			};
 		}
 
 		public static Color SetBrightness(Color color, float brightness) {
@@ -236,7 +215,11 @@ namespace Glimmr.Models.Util {
 				blue = Math.Max(blue, 0);
 			}
 
-			if (existing < brightness) {
+			if (!(existing < brightness)) {
+				return Color.FromArgb(color.A, (int)red, (int)green, (int)blue);
+			}
+
+			{
 				var diff = brightness - existing;
 				red += diff;
 				green += diff;
@@ -263,7 +246,7 @@ namespace Glimmr.Models.Util {
 			var div = Math.Abs(progress % 1) * 6;
 			var ascending = (int) (div % 1 * 255);
 			var descending = 255 - ascending;
-			var alpha = 0;
+			const int alpha = 0;
 			return (int) div switch {
 				0 => Color.FromArgb(alpha, 255, ascending, 0),
 				1 => Color.FromArgb(alpha, descending, 255, 0),
@@ -292,6 +275,14 @@ namespace Glimmr.Models.Util {
 			return output;
 		}
 
+		public static byte[] GammaTable(float factor) {
+			var output = new byte[256];
+			for(var i=0; i<256; i++) {
+				output[i] = (byte)(Math.Pow(i / (float)256, factor) * 256 + 0.5);
+			}
+			return output;
+		}
+
 		public static int FindEdge(int sector) {
 			Log.Debug("Finding edge for " + sector);
 			SetSystemData();
@@ -306,7 +297,6 @@ namespace Glimmr.Models.Util {
 			// Corners
 			const int br = 1;
 			var bl = _hCount;
-			var tl = total;
 			var tr = total - _hCount + 1;
 
 			var bottom = new List<int>();
@@ -350,7 +340,7 @@ namespace Glimmr.Models.Util {
 				dIdx++;
 			}
 
-			sectorMap[tl] = dIdx;
+			sectorMap[total] = dIdx;
 			dIdx++;
 
 			foreach (var num in left.ToArray().Reverse()) {
@@ -388,43 +378,49 @@ namespace Glimmr.Models.Util {
 			for (var i = 1; i < _vCount / 2; i++) {
 				bn = sector - _hCount * i;
 				Log.Debug("BN: " + bn);
-				if (bottom.Contains(bn)) {
-					bDist = i;
-					break;
+				if (!bottom.Contains(bn)) {
+					continue;
 				}
+
+				bDist = i;
+				break;
 			}
 
 			for (var i = 1; i < _hCount / 2; i++) {
 				ln = sector + i;
-				if (left.Contains(ln)) {
-					lDist = i;
-					break;
+				if (!left.Contains(ln)) {
+					continue;
 				}
+
+				lDist = i;
+				break;
 			}
 
 			for (var i = 1; i < _hCount / 2; i++) {
 				rn = sector - i;
-				if (right.Contains(ln)) {
-					rDist = i;
-					break;
+				if (!right.Contains(ln)) {
+					continue;
 				}
+
+				rDist = i;
+				break;
 			}
 
 			var minH = Math.Min(lDist, rDist);
 			var minV = Math.Min(tDist, bDist);
 			Log.Debug("SectorMap: " + JsonConvert.SerializeObject(sectorMap));
-			foreach (var num in new[] {tr, tl, br, bl}) {
-				if (sector == num) {
-					Log.Debug("Sector is in a corner: " + sector);
-					return sectorMap[num];
+			foreach (var num in new[] {tr, total, br, bl}) {
+				if (sector != num) {
+					continue;
 				}
+
+				Log.Debug("Sector is in a corner: " + sector);
+				return sectorMap[num];
 			}
 
 			foreach (var arr in new[] {left, right, top, bottom}) {
-				foreach (var num in arr) {
-					if (sector == num) {
-						return sectorMap[num];
-					}
+				foreach (var num in arr.Where(num => sector == num)) {
+					return sectorMap[num];
 				}
 			}
 
@@ -442,7 +438,7 @@ namespace Glimmr.Models.Util {
 
 			// top-left
 			if (minV == tDist && minH == lDist && minV == minH) {
-				return sectorMap[tl];
+				return sectorMap[total];
 			}
 
 
@@ -519,9 +515,7 @@ namespace Glimmr.Models.Util {
 
 			var idx = 0;
 			while (idx < rightColors.Count && output.Count <= sd.VSectors) {
-				foreach (var t in rightColors) {
-					toAvg.Add(t);
-				}
+				toAvg.AddRange(rightColors);
 
 				// On the last sector, don't average it so we can add the bit from the next corner
 				if (idx % rStep == 0 && output.Count < sd.VSectors) {
@@ -534,9 +528,7 @@ namespace Glimmr.Models.Util {
 
 			idx = 0;
 			while (idx < topColors.Count && output.Count < sd.VSectors + sd.HSectors - 1) {
-				foreach (var t in topColors) {
-					toAvg.Add(t);
-				}
+				toAvg.AddRange(topColors);
 
 				if (idx % tStep == 0) {
 					output.Add(AverageColors(toAvg.ToArray()));
@@ -548,9 +540,7 @@ namespace Glimmr.Models.Util {
 
 			idx = 0;
 			while (idx < leftColors.Count && output.Count < sd.VSectors + sd.HSectors + sd.VSectors - 2) {
-				foreach (var t in leftColors) {
-					toAvg.Add(t);
-				}
+				toAvg.AddRange(leftColors);
 
 				if (idx % lStep == 0) {
 					output.Add(AverageColors(toAvg.ToArray()));
@@ -585,20 +575,25 @@ namespace Glimmr.Models.Util {
 		}
 
 		/// <summary>
-		/// Adjust the brightness of a list of colors
+		///     Adjust the brightness of a list of colors
 		/// </summary>
 		/// <param name="toSend">Input colors</param>
-		/// <param name="max">A float from 0-1, representing the max percentage brightness can be represented</param>
+		/// <param name="max">A float from 0-1, representing the max percentage brightness can be represented.</param>
 		/// <returns></returns>
-		public static Color[] AdjustBrightness(List<Color> toSend, float max) {
-			var output = new Color[toSend.Count];
+		public static Color[] AdjustBrightness(Color[] toSend, float max) {
+			var output = new Color[toSend.Length];
 			var mc = (byte) (max * 255f);
-			for (var i=0; i < toSend.Count; i++) {
+			//Log.Debug("Max is " + max + " mc is " + mc);
+
+			for (var i = 0; i < toSend.Length; i++) {
 				var color = toSend[i];
-				var cMax = Math.Max(color.R, Math.Max(color.G, color.B));
+				// Max value is the brightness
+				var colM = Math.Max(color.R, Math.Max(color.G, color.B));
+				// Divide by 255 and multiply by max we can have...
+				var cMax = (byte) (colM / 255f * mc);
 				var diff = 0;
-				if (cMax > mc) {
-					diff = cMax - mc;
+				if (colM > cMax) {
+					diff = colM - cMax;
 				}
 
 				var r = Math.Max(0, color.R - diff);
@@ -608,6 +603,20 @@ namespace Glimmr.Models.Util {
 			}
 
 			return output;
+		}
+
+		public static Color ClampBrightness(Color col, int dataBrightness) {
+			var max = Math.Max(col.R, Math.Max(col.G, col.B));
+			if (max <= dataBrightness) {
+				return col;
+			}
+
+			var diff = max - dataBrightness;
+			var r = Math.Max(col.R - diff, 0);
+			var g = Math.Max(col.G - diff, 0);
+			var b = Math.Max(col.B - diff, 0);
+			return Color.FromArgb(r, g, b);
+
 		}
 	}
 }
