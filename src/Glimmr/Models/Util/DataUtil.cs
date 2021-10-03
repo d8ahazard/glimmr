@@ -361,18 +361,22 @@ namespace Glimmr.Models.Util {
 			var userDir = SystemUtil.GetUserDir();
 			var stamp = DateTime.Now.ToString("yyyyMMdd");
 			var outFile = Path.Combine(userDir, $"store_{stamp}.db");
+			Log.Debug($"Locking DB, backing up to {outFile}");
 			var output = string.Empty;
 			_dbLocked = true;
 			_db.Commit();
 			_db.Dispose();
 			try {
+				Log.Debug("Copying...");
 				File.Copy(dbPath, outFile);
 				output = outFile;
+				Log.Debug("Done.");
 			} catch (Exception) {
 				//ignored
 			}
-
+			Log.Debug("Creating new.");
 			_db = new LiteDatabase(dbPath);
+			Log.Debug("Unlocked...");
 			_dbLocked = false;
 			return output;
 		}
@@ -414,6 +418,8 @@ namespace Glimmr.Models.Util {
 			}
 
 			_db = new LiteDatabase(dbPath);
+			CacheDevices();
+			CacheSystemData();
 			_dbLocked = false;
 			return false;
 		}

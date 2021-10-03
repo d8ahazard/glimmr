@@ -16,7 +16,7 @@ using Serilog;
 #endregion
 
 namespace Glimmr.Models.ColorSource.Video {
-	public abstract class VideoStream : BackgroundService, IColorSource {
+	public class VideoStream : BackgroundService, IColorSource {
 		// should we send them to devices?
 		public bool SendColors {
 			set => StreamSplitter.DoSend = value;

@@ -83,13 +83,14 @@ namespace Glimmr.Services {
 
 		private void LoadServices() {
 			var classes = SystemUtil.GetClasses<IColorSource>();
+			Log.Debug("Sources: " + JsonConvert.SerializeObject(classes));
 			foreach (var c in classes) {
 				try {
-					var tag = c.Replace("Glimmr.Models.ColorSource.", "");
-					tag = tag.Split(".")[0];
+					var tag = c.Split(".")[0];
 					var args = new object[] {this};
 					dynamic? obj = Activator.CreateInstance(Type.GetType(c)!, args);
 					if (obj == null) {
+						Log.Warning("Color source: " + tag + " is null.");
 						continue;
 					}
 

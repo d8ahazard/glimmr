@@ -151,7 +151,6 @@ namespace Glimmr.Models.Util {
 						if (!typeof(T).IsAssignableFrom(type) || type.IsInterface || type.IsAbstract) {
 							continue;
 						}
-
 						if (type.FullName != null) {
 							output.Add(type.FullName);
 						}
