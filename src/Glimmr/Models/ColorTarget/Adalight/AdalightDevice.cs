@@ -25,14 +25,14 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 		private bool _reverseStrip;
 		private byte[] _gammaTable;
 
-		public AdalightDevice(AdalightData data, ColorService colorService) {
+		public AdalightDevice(AdalightData data, ColorService cs) : base(cs) {
 			Id = data.Id;
 			_data = data;
 			_port = _data.Port;
 			_multiplier = _data.LedMultiplier;
 			_gammaTable = ColorUtil.GammaTable(1);
 			LoadData();
-			colorService.ColorSendEventAsync += SetColors;
+			cs.ColorSendEventAsync += SetColors;
 			_adalight = new AdalightNet.Adalight(_port, _ledCount, _baud);
 		}
 

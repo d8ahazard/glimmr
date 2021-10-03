@@ -24,8 +24,6 @@ namespace Glimmr.Models.Util {
 		private static bool _dbLocked;
 		private static List<dynamic>? _devices;
 		private static LiteDatabase? _db = GetDb();
-
-
 		private static SystemData? _systemData = CacheSystemData();
 
 		private static LiteDatabase GetDb() {

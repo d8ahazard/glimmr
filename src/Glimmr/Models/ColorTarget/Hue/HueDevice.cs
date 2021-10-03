@@ -56,18 +56,6 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 
 
-		public HueDevice(HueData data) {
-			DataUtil.GetItem<int>("captureMode");
-			Data = data;
-			_lightMappings = Data.MappedLights;
-			Id = Data.Id;
-			_ipAddress = Data.IpAddress;
-			_targets = new Dictionary<string, int>();
-			_disposed = false;
-			Streaming = false;
-			SetData();
-		}
-
 		public bool Enable { get; set; }
 
 		IColorTargetData IColorTarget.Data {
@@ -254,7 +242,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				}
 			}
 
-			ColorService?.Counter.Tick(Id);
+			ColorService.Counter.Tick(Id);
 		}
 
 

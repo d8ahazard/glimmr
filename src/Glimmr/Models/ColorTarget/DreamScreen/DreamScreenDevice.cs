@@ -21,7 +21,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		private string _deviceTag;
 		private string _ipAddress;
 
-		public DreamScreenDevice(DreamScreenData data, ColorService cs) {
+		public DreamScreenDevice(DreamScreenData data, ColorService cs) : base(cs) {
 			_data = data;
 			Id = data.Id;
 			var client = cs.ControlService.GetAgent("DreamAgent");

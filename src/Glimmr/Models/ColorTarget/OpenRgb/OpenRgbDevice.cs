@@ -17,7 +17,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		private OpenRgbAgent? _client;
 		private OpenRgbData _data;
 
-		public OpenRgbDevice(OpenRgbData data, ColorService cs) {
+		public OpenRgbDevice(OpenRgbData data, ColorService cs) : base(cs) {
 			Id = data.Id;
 			_data = data;
 			_colorService = cs;

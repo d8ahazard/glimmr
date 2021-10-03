@@ -5,7 +5,9 @@ using System.Drawing;
 using System.Linq;
 using Glimmr.Models.Util;
 using Glimmr.Services;
+using Newtonsoft.Json;
 using rpi_ws281x;
+using Serilog;
 
 #endregion
 
@@ -25,7 +27,10 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 		private bool _use0;
 		private bool _use1;
-		private float _lastScale = 1f;
+		private int _s0Brightness;
+		private int _s1Brightness;
+		private int _s0MaxBrightness;
+		private int _s1MaxBrightness;
 
 		public LedAgent() {
 			_colors1 = ColorUtil.EmptyColors(_d0?.LedCount ?? 0);
@@ -33,6 +38,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			_sd = DataUtil.GetSystemData();
 			_ablAmps = _sd.AblAmps;
 			_ablVolts = _sd.AblVolts;
+			ReloadData();
 		}
 
 		public void Dispose() {
@@ -41,31 +47,22 @@ namespace Glimmr.Models.ColorTarget.Led {
 		}
 
 		public dynamic? CreateAgent(ControlService cs) {
-			_d0 = new LedData();
-			_d1 = new LedData();
 			if (!SystemUtil.IsRaspberryPi()) {
 				return null;
 			}
 
 			cs.RefreshSystemEvent += ReloadData;
-
-			_d0 = DataUtil.GetDevice<LedData>("0");
-			_d1 = DataUtil.GetDevice<LedData>("1");
-			if (_d0 == null || _d1 == null) {
-				return null;
-			}
-
-			LoadStrips(_d0, _d1);
-
-			ReloadData();
 			return this;
 		}
 
 		public void ReloadData() {
+			Log.Debug("Reloading...");
 			_sd = DataUtil.GetSystemData();
 			LedData? d0 = DataUtil.GetDevice<LedData>("0");
 			LedData? d1 = DataUtil.GetDevice<LedData>("1");
 			if (!SystemUtil.IsRaspberryPi() || d0 == null || d1 == null || _d0 == null || _d1 == null) {
+				_d0 = d0;
+				_d1 = d1;
 				return;
 			}
 
@@ -73,24 +70,28 @@ namespace Glimmr.Models.ColorTarget.Led {
 				_ws281X?.Dispose();
 				LoadStrips(d0, d1);
 			}
-
+			Log.Debug("Reloading led data for real...");
 			_d0 = d0;
 			_d1 = d1;
+			
+			if (_ws281X == null) LoadStrips(_d0, _d1);
 			_use0 = _d0.Enable;
 			_use1 = _d1.Enable;
 			_enableAbl = _sd.EnableAutoBrightness;
 			_ablVolts = _sd.AblVolts;
 			_ablAmps = _sd.AblAmps;
-			if (_sd.EnableAutoBrightness) {
-				return;
+			
+			if (_use0) {
+				_s0Brightness = (int) (_d0.Brightness / 100f * 255f);
+				_s0MaxBrightness = _s0Brightness;
+				Log.Debug("Setting brightness to " + _s0Brightness);
+				_ws281X?.SetBrightness(_s0Brightness);
 			}
 
-			if (_use0) {
-				_ws281X?.SetBrightness((int) (_d0.Brightness / 100f * 255f));
-			}
-
-			if (_use0) {
-				_ws281X?.SetBrightness((int) (_d1.Brightness / 100f * 255f));
+			if (_use1) {
+				_s1Brightness = (int) (_d1.Brightness / 100f * 255f);
+				_s1MaxBrightness = _s1Brightness;
+				_ws281X?.SetBrightness(_s1Brightness, 1);
 			}
 		}
 
@@ -111,8 +112,8 @@ namespace Glimmr.Models.ColorTarget.Led {
 				_ => StripType.WS2812_STRIP
 			};
 
-			_controller0 = settings.AddController(ControllerType.PWM0, d0.LedCount, stripType0, (byte) d0.Brightness);
-			_controller1 = settings.AddController(ControllerType.PWM1, d1.LedCount, stripType1, (byte) d1.Brightness);
+			_controller0 = settings.AddController(ControllerType.PWM0, d0.LedCount, stripType0, (byte)d0.Brightness);
+			_controller1 = settings.AddController(ControllerType.PWM1, d1.LedCount, stripType1, (byte)d1.Brightness);
 			_colors1 = ColorUtil.EmptyColors(d0.LedCount);
 			_colors2 = ColorUtil.EmptyColors(d1.LedCount);
 			_ws281X = new WS281x(settings);
@@ -134,7 +135,6 @@ namespace Glimmr.Models.ColorTarget.Led {
 			if (_enableAbl) {
 				VoltAdjust();
 			}
-
 			if (_use0) {
 				_controller0?.SetLEDS(_colors1);
 			}
@@ -158,13 +158,10 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 			var strip0Draw = _d0.MilliampsPerLed; // 20
 			var strip1Draw = _d1.MilliampsPerLed;
-			var strip0Brightness = (int) (_d0.Brightness / 100f * 255f);
-			var strip1Brightness = (int) (_d1.Brightness / 100f * 255f);
-
+			
 			// Total power we have at our disposal
 			var totalWatts = _ablVolts * _ablAmps;
 			// Subtract CPU usage (Probably needs more for splitter, etc)
-			totalWatts -= 6.5f;
 			// This should totally work
 			var totalCost = 0;
 			if (_d0.Enable) {
@@ -195,7 +192,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 						}
 					}
 
-					use *= strip0Brightness / 255f;
+					use *= _s0MaxBrightness / 255f;
 					usage += use;
 				}
 
@@ -215,7 +212,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 						}
 					}
 
-					use *= strip0Brightness / 255f;
+					use *= _s1MaxBrightness / 255f;
 					usage += use;
 				}
 			}
@@ -223,29 +220,40 @@ namespace Glimmr.Models.ColorTarget.Led {
 			if (usage > totalWatts) {
 				//scale brightness down to stay in current limit
 				var scale = totalWatts / usage;
-				var scaleI = scale * 255;
-				if (scaleI > _lastScale) {
-					scaleI = (scaleI + _lastScale) / 2;
-				}
-
-				_lastScale = scaleI;
+				
 				if (_use0) {
-					_ws281X?.SetBrightness((int) Math.Min(strip0Brightness, scaleI));
+					var scaleI = scale * _s0MaxBrightness;
+					_s0Brightness = LerpBrightness(_s0Brightness, scaleI, _s0MaxBrightness);
+					_ws281X?.SetBrightness(_s0Brightness);
 				}
 
 				if (_use1) {
-					_ws281X?.SetBrightness((int) Math.Min(strip1Brightness, scaleI), 1);
+					var scaleI = scale * _s1MaxBrightness;
+					_s1Brightness = LerpBrightness(_s1Brightness, scaleI, _s1MaxBrightness);
+					_ws281X?.SetBrightness(_s1Brightness);
 				}
 			} else {
-				if (_use0 && strip0Brightness < 255) {
-					_ws281X?.SetBrightness(strip0Brightness);
+				if (_use0 && _s0Brightness < _s0MaxBrightness) {
+					_ws281X?.SetBrightness(LerpBrightness(_s0Brightness, _s0MaxBrightness, _s0MaxBrightness));
 				}
 
-				if (_use1 && strip1Brightness < 255) {
-					_ws281X?.SetBrightness(strip0Brightness, 1);
+				if (_use1 && _s1Brightness < _s0MaxBrightness) {
+					_ws281X?.SetBrightness(LerpBrightness(_s1Brightness, _s1MaxBrightness, _s1MaxBrightness), 1);
 				}
 			}
 		}
+
+		private int LerpBrightness(int current, float target, int max) {
+			int output = (int) Math.Min(target, max);
+			if (output > current) {
+				output = Math.Min(current + 1, max);
+			} else {
+				output = (int)target;
+			}
+			var op = output;
+			return op;
+		}
+
 
 		private void SetColors(Color[] colors, string id) {
 			if (_d0 == null || _d1 == null) {
