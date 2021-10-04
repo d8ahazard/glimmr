@@ -132,10 +132,8 @@ namespace Glimmr.Models.Util {
 				if (!string.IsNullOrEmpty(hostName)) {
 					var host = Dns.GetHostEntry(hostName);
 					foreach (var ip in host.AddressList) {
-						if (ip.AddressFamily != AddressFamily.InterNetwork) {
-							continue;
-						}
-
+						if (ip.AddressFamily != AddressFamily.InterNetwork) continue;
+						if (IPAddress.IsLoopback(ip)) continue;
 						res = ip.ToString();
 						break;
 					}
