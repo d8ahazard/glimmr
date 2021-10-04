@@ -5,7 +5,6 @@ using System.Drawing;
 using System.Linq;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Newtonsoft.Json;
 using rpi_ws281x;
 using Serilog;
 
