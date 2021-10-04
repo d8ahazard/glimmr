@@ -16,6 +16,7 @@ on_chroot << EOF
 dpkg -i --force-all /tmp/davesteele-comitup-apt-source_*.deb
 apt-get -f install
 apt-get update
+apt-get -y upgrade
 systemctl mask dnsmasq.service
 systemctl mask systemd-resolved.service
 systemctl mask dhcpd.service
