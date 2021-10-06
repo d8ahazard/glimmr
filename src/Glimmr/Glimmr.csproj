@@ -19,7 +19,9 @@
     <Copyright>GPLv3</Copyright>
     <PackageProjectUrl>https://github.com/d8ahazard/Glimmr</PackageProjectUrl>
     <PackageLicenseUrl>https://raw.githubusercontent.com/d8ahazard/glimmr/master/COPYING</PackageLicenseUrl>
-    <RepositoryUrl>https://github.com/d8ahazard/Glimmr</RepositoryUrl>
+    <RepositoryUrl>https://github.com/d8ahazard/Glimmr</RepositoryUrl>  
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
   
   <ItemGroup>
@@ -55,6 +57,7 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="4.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
     <PackageReference Include="SimpleGitVersion.Core" Version="5.1.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.2" />
     <PackageReference Include="System.Net.WebSockets" Version="4.3.0" />
     <PackageReference Include="YeelightAPI" Version="1.10.2" />
   </ItemGroup>

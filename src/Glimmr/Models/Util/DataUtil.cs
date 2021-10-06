@@ -34,10 +34,11 @@ namespace Glimmr.Models.Util {
 
 			var userPath = SystemUtil.GetUserDir();
 			userPath = Path.Join(userPath, "store.db");
-
+			
 			if (_db != null) return _db;
 			if (_db == null) {
 				try {
+					Log.Debug($"Loading db from {userPath}");
 					var db = new LiteDatabase(userPath);
 					return db;
 				} catch (Exception e) {
@@ -366,7 +367,7 @@ namespace Glimmr.Models.Util {
 			_db.Dispose();
 			try {
 				Log.Debug("Copying...");
-				File.Copy(dbPath, outFile);
+				File.Copy(dbPath, outFile,true);
 				output = outFile;
 				Log.Debug("Done.");
 			} catch (Exception) {
@@ -423,33 +424,9 @@ namespace Glimmr.Models.Util {
 		}
 
 
-		public static string GetStoreSerialized() {
-			var output = new Dictionary<string, dynamic>();
-			var sd = GetSystemData();
-			var audio = GetCollection<AudioData>("Dev_Audio");
-			var devices = GetDevices();
-
-			var caps = SystemUtil.ListUsb();
-
-			var jl1 = new JsonLoader("ambientScenes");
-			var jl2 = new JsonLoader("audioScenes");
-			output["SystemData"] = sd;
-			output["Devices"] = devices;
-			output["Dev_Audio"] = audio;
-			output["Dev_Usb"] = caps;
-			output["AmbientScenes"] = jl1.LoadDynamic<AmbientScene>();
-			output["AudioScenes"] = jl2.LoadDynamic<AudioScene>();
-			var assembly = Assembly.GetEntryAssembly();
-			if (assembly != null) {
-				var attrib = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
-				if (attrib != null) {
-					output["Version"] = attrib.InformationalVersion;
-				}
-			} else {
-				output["Version"] = "0.0.0.0";
-			}
-
-			return JsonConvert.SerializeObject(output);
+		public static StoreData GetStoreSerialized() {
+			var output = new StoreData();
+			return output;
 		}
 
 

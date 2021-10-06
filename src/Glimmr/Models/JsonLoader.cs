@@ -53,6 +53,8 @@ namespace Glimmr.Models {
 										if ((int) id == 0 && (string) name! != "Random") {
 											data["Id"] = fCount;
 										}
+									} else {
+										continue;
 									}
 								}
 
@@ -75,9 +77,9 @@ namespace Glimmr.Models {
 			return output;
 		}
 
-		public List<dynamic> LoadDynamic<T>() {
+		public List<T> LoadDynamic<T>() {
 			var files = LoadFiles<T>();
-			return files.Where(f => f != null).Cast<dynamic>().ToList();
+			return files.Where(f => f != null).ToList();
 		}
 
 		public AudioScene GetItem(dynamic id) {

@@ -7,31 +7,38 @@ using Newtonsoft.Json;
 
 namespace Glimmr.Models.ColorSource.Audio {
 	public class AudioData {
+		/// <summary>
+		/// Is this the default device?
+		/// </summary>
 		[JsonProperty] public bool IsDefault { get; set; }
 
+		/// <summary>
+		/// Is this device enabled?
+		/// </summary>
 		[JsonProperty] public bool IsEnabled { get; set; }
-
-		[JsonProperty] public bool IsInitialized { get; set; }
+		
+		/// <summary>
+		/// Is this a loopback device?
+		/// </summary>
 
 		[JsonProperty] public bool IsLoopback { get; set; }
-
-		[JsonProperty] public DeviceType Type { get; set; }
-
-		[JsonProperty] public string Driver { get; set; } = "";
-
+		
+		
+		/// <summary>
+		/// Same as Device Name.
+		/// </summary>
 		[JsonProperty] public string Id { get; set; } = "";
 
+		/// <summary>
+		/// Device Name (Also Device ID).
+		/// </summary>
 		[JsonProperty] public string Name { get; set; } = "";
 
 		public void ParseDevice(DeviceInfo input) {
 			Name = input.Name;
 			Id = Name;
-			Driver = input.Driver;
 			IsDefault = input.IsDefault;
 			IsEnabled = input.IsEnabled;
-			IsInitialized = input.IsInitialized;
-			IsLoopback = input.IsLoopback;
-			Type = input.Type;
 		}
 	}
 }

@@ -80,7 +80,6 @@ namespace Glimmr.Models {
 		// Set this when the sector changes
 		private bool _sectorChanged;
 		private int _sectorCount;
-		private readonly string _source;
 		private int _srcArea;
 		private int _topCount;
 		private bool _useCenter;
@@ -97,7 +96,6 @@ namespace Glimmr.Models {
 
 
 		public FrameSplitter(ColorService cs, bool crop = false, string source = "") {
-			_source = source;
 			_vectors = Array.Empty<PointF>();
 			_targets = new List<VectorOfPoint>();
 			_useCrop = crop;
@@ -353,12 +351,13 @@ namespace Glimmr.Models {
 			_colorsLed = ledColors;
 			_colorsSectors = sectorColors;
 			if (DoSend) {
-				await ColorService.TriggerSend(ledColors, sectorColors);
-				ColorService.Counter.Tick(_source);
+				ColorService.LedColors = ledColors;
+				ColorService.SectorColors = sectorColors;
+				ColorService.ColorsUpdated = true;
 			}
 
 			if (_doSave) {
-				if (DoSend) {
+				if (DoSend && ColorService.ControlService.SendPreview) {
 					SaveFrames(frame, clone);
 				}
 
@@ -594,7 +593,7 @@ namespace Glimmr.Models {
 					var l2 = Sum(b2) / b1.Length;
 					c1.Dispose();
 					c2.Dispose();
-					if (dist.Length == 1 && l1 == l2 && l1 <= blackLevel) {
+					if (dist.Length == 1 && l1 == l2 && l1 <= 8) {
 						lPixels = y;
 					} else {
 						break;
@@ -614,7 +613,7 @@ namespace Glimmr.Models {
 					var l2 = Sum(b2) / b1.Length;
 					c1.Dispose();
 					c2.Dispose();
-					if (dist.Length == 1 && l1 == l2 && l1 < blackLevel) {
+					if (dist.Length == 1 && l1 == l2 && l1 < 8) {
 						pPixels = x;
 					} else {
 						break;

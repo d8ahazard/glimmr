@@ -95,7 +95,6 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
 			if (scene.Mode != null) {
 				_mode = Enum.Parse<AnimationMode>(scene.Mode);
-				Log.Debug($"Scene mode {_mode} is {scene.Mode}");
 			} else {
 				Log.Warning("Unable to parse scene mode: ");
 			}

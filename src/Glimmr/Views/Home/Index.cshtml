@@ -48,7 +48,7 @@
     <div class="row form-inline ambientRow">
         <div class="form-group pl-4">
             <label for="AmbientShow" class="pr-2">Scene</label>
-            <select class="form-control" data-property="AmbientShow" data-object="SystemData" id="AmbientShow">
+            <select class="form-control" data-property="ambientShow" data-object="SystemData" id="AmbientShow">
             </select>
         </div>
         <div class="form-group pl-4">
@@ -61,35 +61,35 @@
     <div class="row form-inline sceneRow">
         <div class="col-3 form-group">
             <label for="AudioMap" class="form-label mr-2">Scene</label>
-            <select class="form-control" data-property="AudioMap" data-object="SystemData" id="AudioMap">
+            <select class="form-control" data-property="audioMap" data-object="SystemData" id="AudioMap">
             </select>
         </div>
         <div class="col-3 form-group">
             <label>Gain</label>
-            <input class="form-control-range" data-object="SystemData" data-property="AudioGain" type="range" min="0" max="5" step=".1"/>
+            <input class="form-control-range" data-object="SystemData" data-property="audioGain" type="range" min="0" max="5" step=".1"/>
         </div>
         <div class="col-3 form-group">
             <label>Cutoff</label>
-            <input class="form-control-range" data-object="SystemData" data-property="AudioMin" type="range" min="0" max=".2" step=".001"/>
+            <input class="form-control-range" data-object="SystemData" data-property="audioMin" type="range" min="0" max=".2" step=".001"/>
         </div>
     </div>
     <div class="row rotRow">
         <div class="col-12 subCol">Rotation</div>
         <div class="col-3">
             <label>Speed</label>
-            <input class="form-control-range" data-object="SystemData" data-property="AudioRotationSpeed" type="range" min=".01" max="1" step=".01"/>
+            <input class="form-control-range" data-object="SystemData" data-property="audioRotationSpeed" type="range" min=".01" max="1" step=".01"/>
         </div>
         <div class="col-3">
             <label>Sensitivity</label>
-            <input class="form-control-range" data-object="SystemData" data-property="AudioRotationSensitivity" type="range" min="0" max="1" step=".01"/>
+            <input class="form-control-range" data-object="SystemData" data-property="audioRotationSensitivity" type="range" min="0" max="1" step=".01"/>
         </div>
         <div class="col-3">
             <label>Lower</label>
-            <input class="form-control-range" data-object="SystemData" data-property="AudioRotationLower" type="range" min="0" max="1" step=".01"/>
+            <input class="form-control-range" data-object="SystemData" data-property="audioRotationLower" type="range" min="0" max="1" step=".01"/>
         </div>
         <div class="col-3">
             <label>Upper</label>
-            <input class="form-control-range" data-object="SystemData" data-property="AudioRotationUpper" type="range" min="0" max="1" step=".01"/>
+            <input class="form-control-range" data-object="SystemData" data-property="audioRotationUpper" type="range" min="0" max="1" step=".01"/>
         </div>
     </div>
 </div>
@@ -148,7 +148,7 @@
     <!-- Theme -->
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">UI Theme</label>
-        <select class="form-control" data-object="SystemData" data-property="Theme">
+        <select class="form-control" data-object="SystemData" data-property="theme">
             <option value="light">Light</option>
             <option value="dark">Dark</option>
         </select>
@@ -156,7 +156,7 @@
     <!-- Time zone -->
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">Time Zone</label>
-        <select name="timezone" data-object="SystemData" data-property="TimeZone" class="form-control">
+        <select name="timezone" data-object="SystemData" data-property="timeZone" class="form-control">
             <option></option>
             <option value="Etc/GMT+12">(GMT-12:00) International Date Line West</option>
             <option value="Pacific/Midway">(GMT-11:00) Midway Island, Samoa</option>
@@ -244,27 +244,27 @@
     </div>
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">Temperature Units</label>
-        <select name="units" data-object="SystemData" data-property="Units" class="form-control">
+        <select name="units" data-object="SystemData" data-property="units" class="form-control">
             <option value="0">Fahrenheit</option>
             <option value="1">Celsius</option>
         </select>
     </div>
     <!-- Auto-update -->
     <div class="col-12 col-md-6 col-xl-3 form-group custom-control custom-switch" id="settingsMainUpdates">
-        <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="AutoUpdate"/>
+        <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="autoUpdate"/>
         <label class="custom-control-label">Automatically Install Updates</label>
         <div class="form-text" id="updateTime">Updates will be installed at 1:00AM every day when enabled.</div>
     </div>
     <!-- Auto-update time -->
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">Auto-update Time</label>
-        <select name="AutoUpdateTime" id="AutoUpdateTime" data-object="SystemData" data-property="AutoUpdateTime" class="systemSetting form-control">
+        <select name="AutoUpdateTime" id="AutoUpdateTime" data-object="SystemData" data-property="autoUpdateTime" class="systemSetting form-control">
 
         </select>
         <div class="form-text">What time Glimmr should check for and auto-install updates (if enabled).</div>
     </div>
     <div class="col-12 col-md-6 col-xl-3 form-group custom-control custom-switch">
-        <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="SkipDemo"/>
+        <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="skipDemo"/>
         <label class="custom-control-label">Skip Demo Animation</label>
         <div class="form-text">Disable the rainbow animation that runs on software startup.</div>
     </div>
@@ -303,21 +303,21 @@
     <!-- Discovery time -->
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">Discovery Time</label>
-        <input class="form-control" data-object="SystemData" data-property="DiscoveryTimeout" type="number" min="1" max="60" step="1"/>
+        <input class="form-control" data-object="SystemData" data-property="discoveryTimeout" type="number" min="1" max="60" step="1"/>
         <div class="form-text">Amount of time (in seconds) to allow for discovery.</div>
     </div>
 
     <!-- Auto discovery frequency time -->
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">Discovery Interval</label>
-        <input class="form-control" data-object="SystemData" data-property="AutoDiscoveryFrequency" type="number" min="1" max="60" step="1"/>
+        <input class="form-control" data-object="SystemData" data-property="autoDiscoveryFrequency" type="number" min="1" max="60" step="1"/>
         <div class="form-text">Interval (in minutes) in which Auto Discovery is run.</div>
     </div>
 
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <!--75, 110, 300, 1200, 2400, 4800, 9600, 19200, 38400, 57600 and 115200 bit/s.-->
         <label class="form-label">Serial Port Speed</label>
-        <select name="BaudRate" id="BaudRate" data-object="SystemData" data-property="BaudRate" class="systemSetting form-control">
+        <select name="BaudRate" id="BaudRate" data-object="SystemData" data-property="baudRate" class="systemSetting form-control">
             <option value="75">75</option>
             <option value="110">110</option>
             <option value="300">300</option>
@@ -337,17 +337,17 @@
 <div class="row border pb-1">
     <div class="col-12 headerCol">Automation</div>
     <div class="col-12 col-md-6 col-xl-3 form-group custom-switch">
-        <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="AutoRemoveDevices"/>
+        <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="autoRemoveDevices"/>
         <label class="custom-control-label">Auto-Delete Old Devices</label>
         <div class="form-text">Auto-delete devices not seen during discovery after the specified time.</div>
     </div>
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">Auto-Delete Interval</label>
-        <input class="form-control" data-object="SystemData" data-property="AutoRemoveDevicesAfter" type="number" min="1" max="60" step="1"/>
+        <input class="form-control" data-object="SystemData" data-property="autoRemoveDevicesAfter" type="number" min="1" max="60" step="1"/>
         <div class="form-text">Interval (in days) after which old devices will be removed.</div>
     </div>
     <div class="col-12 col-md-6 col-xl-3 form-group custom-switch">
-        <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="EnableAutoDisable"/>
+        <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="enableAutoDisable"/>
         <label class="custom-control-label">Auto-Sleep Lights</label>
         <div class="form-text">Automatically disable control of lights when no input is detected.</div>
     </div>
@@ -355,11 +355,11 @@
     <!-- Auto-disable interval -->
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">Auto-Disable Delay</label>
-        <input type="number" class="form-control" data-object="SystemData" data-property="AutoDisableDelay" min="0" max="3000"/>
+        <input type="number" class="form-control" data-object="SystemData" data-property="autoDisableDelay" min="0" max="3000"/>
         <div class="form-text">Amount of time (in seconds) for Glimmr to have no input before auto-disabling.</div>
     </div>
     <div class="col-12 col-md-6 col-xl-3 form-group custom-switch">
-        <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="EnableAutoBrightness"/>
+        <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="enableAutoBrightness"/>
         <label class="custom-control-label">Auto-Adjust LED Brightness</label>
         <div class="form-text">Automatically adjust wired LED brightness to prevent dropouts/flickering.</div>
     </div>
@@ -367,7 +367,7 @@
     <!-- Auto-brightness voltage -->
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">PSU Voltage</label>
-        <select class="form-control" data-object="SystemData" data-property="AblVolts">
+        <select class="form-control" data-object="SystemData" data-property="ablVolts">
             <option value="5">5v</option>
             <option value="5.1">5.1v (Canakit Raspberry Pi Power supply)</option>
         </select>
@@ -375,7 +375,7 @@
     </div>
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">PSU Amperage</label>
-        <input type="number" class="form-control" data-object="SystemData" data-property="AblAmps" min="1" max="100" step="0.1"/>
+        <input type="number" class="form-control" data-object="SystemData" data-property="ablAmps" min="1" max="100" step="0.1"/>
         <div class="form-text">Enter the input amperage of your power supply.</div>
     </div>
 </div>
@@ -384,11 +384,11 @@
     <div class="col-12 titleCol">OpenRGB</div>
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">IP Address</label>
-        <input type="text" class="form-control" data-object="SystemData" data-property="OpenRgbIp" id="OpenRgbIp"/>
+        <input type="text" class="form-control" data-object="SystemData" data-property="openRgbIp" id="OpenRgbIp"/>
     </div>
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">Port</label>
-        <input type="text" class="form-control" data-object="SystemData" data-property="OpenRgbPort" id="OpenRgbPort"/>
+        <input type="text" class="form-control" data-object="SystemData" data-property="openRgbPort" id="OpenRgbPort"/>
     </div>
 </div>
 </div>
@@ -402,7 +402,7 @@
             <div class="col-12 titleCol">Video</div>
             <div class="col-12 col-md-6 col-xl-3 form-group">
                 <label class="form-label">Input Source</label>
-                <select class="form-control" data-object="SystemData" data-property="CaptureMode">
+                <select class="form-control" data-object="SystemData" data-property="captureMode">
                     <option value="1">Camera</option>
                     <option value="2">HDMI</option>
                     <option value="3">Screen</option>
@@ -411,19 +411,19 @@
             </div>
             <div class="col-12 col-md-6 col-xl-3 capGroup form-group" id="UsbSelectRow">
                 <label class="form-label">USB Selection</label>
-                <select class="form-control" data-object="SystemData" data-property="UsbSelection" id="UsbSelect">
+                <select class="form-control" data-object="SystemData" data-property="usbSelection" id="UsbSelect">
                 </select>
             </div>
             <div class="col-12 col-md-6 col-xl-3 capGroup form-group" data-mode="1">
                 <label class="form-label">Camera Type</label>
-                <select class="form-control" data-object="SystemData" data-property="CamType">
+                <select class="form-control" data-object="SystemData" data-property="camType">
                     <option value="0">Raspberry Pi Camera</option>
                     <option value="1">USB Web Camera</option>
                 </select>
             </div>
             <div class="col-12 col-md-6 col-xl-3 form-group" id="BlackLevelRow">
                 <label class="form-label">Black Level</label>
-                <input type="number" class="form-control" data-object="SystemData" data-property="BlackLevel" id="BlackLevel" min="0" max="255" step="1"/>
+                <input type="number" class="form-control" data-object="SystemData" data-property="blackLevel" id="BlackLevel" min="0" max="255" step="1"/>
                 <div class="form-text">Minimum brightness level for colors to be displayed. Default is 7.</div>
             </div>
         </div>
@@ -431,7 +431,7 @@
             <div class="col-12 titleCol">Audio</div>
             <div class="col-12 col-md-6 col-xl-3 form-group">
                 <label class="form-label">Input Device</label>
-                <select class="form-control" data-object="SystemData" data-property="RecDev" id="RecDev">
+                <select class="form-control" data-object="SystemData" data-property="recDev" id="RecDev">
                     <option value=""></option>
                 </select>
             </div>
@@ -440,7 +440,7 @@
             <div class="col-12 titleCol">Streaming</div>
             <div class="col-12 col-md-6 col-xl-3 form-group">
                 <label class="form-label">Streaming Mode</label>
-                <select class="form-control" data-object="SystemData" data-property="StreamMode">
+                <select class="form-control" data-object="SystemData" data-property="streamMode">
                     <option value="0">DreamScreen</option>
                     <option value="1">Glimmr</option>
                     <option value="2">FloW LED/WLED</option>
@@ -449,7 +449,7 @@
             </div>
             <div class="col-12 col-md-6 col-xl-3 streamGroup form-group" data-stream="0">
                 <label class="form-label">Target DreamScreen</label>
-                <select id="targetDs" class="form-control" data-object="SystemData" data-property="DsIp">
+                <select id="targetDs" class="form-control" data-object="SystemData" data-property="dsIp">
                     <option value=""></option>
                 </select>
             </div>
@@ -458,21 +458,21 @@
             <div class="col-12 titleCol">Cropping</div>
             <!-- Letterboxing enable -->
             <div class="col-12 col-md-6 col-xl-3 form-group custom-switch">
-                <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="EnableLetterBox"/>
+                <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="enableLetterBox"/>
                 <label class="custom-control-label">Enable Letterbox Cropping</label>
                 <div class="form-text">Automatically crop black sectors from the top and bottom of the screen.</div>
             </div>
 
             <!-- Pillarboxing enable -->
             <div class="col-12 col-md-6 col-xl-3 form-group custom-switch">
-                <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="EnablePillarBox"/>
+                <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="enablePillarBox"/>
                 <label class="custom-control-label">Enable Pillarbox Cropping</label>
                 <div class="form-text">Automatically crop black sectors from the left and right sides of the screen.</div>
             </div>
             <!-- Crop time -->
             <div class="col-12 col-md-6 col-xl-3 form-group">
                 <label class="form-label">Cropping Delay</label>
-                <input class="form-control" data-object="SystemData" data-property="CropDelay" type="number" min="1" max="60" step="1"/>
+                <input class="form-control" data-object="SystemData" data-property="cropDelay" type="number" min="1" max="60" step="1"/>
                 <div class="form-text">How long to wait before cropping the picture.</div>
             </div>
         </div>
@@ -494,7 +494,7 @@
             </div>
             <div class="col-12 col-md-6 col-xl-3 form-group pt-5">
                 <label class="form-label">Preview Mode</label>
-                <select data-object="SystemData" data-property="PreviewMode" class="form-control">
+                <select data-object="SystemData" data-property="previewMode" class="form-control">
                     <option value="0">None</option>
                     <option value="1">LED</option>
                     <option value="2">Sectors</option>
@@ -511,7 +511,7 @@
                     <div class="input-group-prepend">
                         <span class="input-group-text" id="ledCountLeft">Left</span>
                     </div>
-                    <input type="text" class="form-control ledCount" data-property="LeftCount" data-object="SystemData" aria-label="Left" aria-describedby="ledCountLeft">
+                    <input type="text" class="form-control ledCount" data-property="leftCount" data-object="SystemData" aria-label="Left" aria-describedby="ledCountLeft">
                 </div>
             </div>
             <!-- Right count -->
@@ -520,7 +520,7 @@
                     <div class="input-group-prepend">
                         <span class="input-group-text" id="ledCountRight">Right</span>
                     </div>
-                    <input type="text" class="form-control ledCount" data-property="RightCount" data-object="SystemData" aria-label="Right" aria-describedby="ledCountRight">
+                    <input type="text" class="form-control ledCount" data-property="rightCount" data-object="SystemData" aria-label="Right" aria-describedby="ledCountRight">
                 </div>
             </div>
             <!-- Top count -->
@@ -529,7 +529,7 @@
                     <div class="input-group-prepend">
                         <span class="input-group-text" id="ledCountTop">Top</span>
                     </div>
-                    <input type="text" class="form-control ledCount" data-property="TopCount" data-object="SystemData" aria-label="Top" aria-describedby="ledCountTop">
+                    <input type="text" class="form-control ledCount" data-property="topCount" data-object="SystemData" aria-label="Top" aria-describedby="ledCountTop">
                 </div>
             </div>
             <!-- Bottom count -->
@@ -538,7 +538,7 @@
                     <div class="input-group-prepend">
                         <span class="input-group-text" id="ledCountBottom">Bottom</span>
                     </div>
-                    <input type="text" class="form-control ledCount" data-property="BottomCount" data-object="SystemData" aria-label="Bottom" aria-describedby="ledCountBottom">
+                    <input type="text" class="form-control ledCount" data-property="bottomCount" data-object="SystemData" aria-label="Bottom" aria-describedby="ledCountBottom">
                 </div>
             </div>
             <!-- Preview -->
@@ -555,7 +555,7 @@
                     <div class="input-group-prepend">
                         <span class="input-group-text" id="hSectorCount">Horizontal</span>
                     </div>
-                    <input type="text" class="form-control ledCount" data-property="HSectors" data-object="SystemData" aria-label="Top" aria-describedby="ledCountTop">
+                    <input type="text" class="form-control ledCount" data-property="hSectors" data-object="SystemData" aria-label="Top" aria-describedby="ledCountTop">
                 </div>
             </div>
             <!-- V count -->
@@ -564,12 +564,12 @@
                     <div class="input-group-prepend">
                         <span class="input-group-text" id="vSectorCount">Vertical</span>
                     </div>
-                    <input type="text" class="form-control ledCount" data-property="VSectors" data-object="SystemData" aria-label="Left" aria-describedby="ledCountLeft">
+                    <input type="text" class="form-control ledCount" data-property="vSectors" data-object="SystemData" aria-label="Left" aria-describedby="ledCountLeft">
                 </div>
             </div>
             <!-- CENTER MODE! -->
             <div class="col-12 col-sd-6 col-md-4 custom-control custom-switch pt-2 center">
-                <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="UseCenter"/>
+                <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="yseCenter"/>
                 <label class="custom-control-label">Include Center</label>
             </div>
 

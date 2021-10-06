@@ -28,6 +28,7 @@ pscp -P 22 -r -pw glimmrtv .\wwwroot\js\* glimmrtv@%1:/home/glimmrtv/glimmr/bin/
 pscp -P 22 -r -pw glimmrtv .\wwwroot\css\* glimmrtv@%1:/home/glimmrtv/glimmr/bin/wwwroot/css/
 pscp -P 22 -r -pw glimmrtv .\Glimmr.dll glimmrtv@%1:/home/glimmrtv/glimmr/bin/Glimmr.dll
 pscp -P 22 -r -pw glimmrtv .\Glimmr.pdb glimmrtv@%1:/home/glimmrtv/glimmr/bin/Glimmr.pdb
+pscp -P 22 -r -pw glimmrtv .\Glimmr.xml glimmrtv@%1:/home/glimmrtv/glimmr/bin/Glimmr.xml
 pscp -P 22 -r -pw glimmrtv .\Glimmr.runtimeconfig.json glimmrtv@%1:/home/glimmrtv/glimmr/bin/Glimmr.runtimeconfig.json
 pscp -P 22 -r -pw glimmrtv .\Glimmr glimmrtv@%1:/home/glimmrtv/glimmr/bin/Glimmr
 GOTO NEXT

@@ -51,7 +51,6 @@ namespace Glimmr.Models {
 
 			var delegates = eventHandler.GetInvocationList().Cast<AsyncEventHandler<TEventArgs>>();
 			var tasks = delegates.Select(it => it.Invoke(sender, eventArgs));
-
 			return Task.WhenAll(tasks);
 		}
 	}

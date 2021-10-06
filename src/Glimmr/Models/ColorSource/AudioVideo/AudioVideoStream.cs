@@ -19,9 +19,7 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 		private readonly ColorService _cs;
 		private AudioStream? _as;
 		private Task? _aTask;
-		private Color[] _colors;
 		private bool _doSave;
-		private Color[] _sectors;
 		private SystemData _systemData;
 		private VideoStream? _vs;
 		private Task? _vTask;
@@ -29,8 +27,6 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 		public AudioVideoStream(ColorService cs) {
 			_cs = cs;
 			_systemData = DataUtil.GetSystemData();
-			_colors = ColorUtil.EmptyColors(_systemData.LedCount);
-			_sectors = ColorUtil.EmptyColors(_systemData.SectorCount);
 			_cs.ControlService.RefreshSystemEvent += RefreshSystem;
 			_cs.FrameSaveEvent += TriggerSave;
 			RefreshSystem();
@@ -114,11 +110,11 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 						oSecs[i] = ColorUtil.SetBrightness(vCol, ab);
 					}
 
-					_colors = oCols;
-					_sectors = oSecs;
-					await _cs.TriggerSend(_colors, _sectors, "avStream");
+					_cs.LedColors = oCols;
+					_cs.SectorColors = oSecs;
+					_cs.ColorsUpdated = true;
 
-					if (_doSave) {
+					if (_doSave && _cs.ControlService.SendPreview) {
 						_doSave = false;
 						_vs.StreamSplitter.MergeFrame(oCols, oSecs);
 					}

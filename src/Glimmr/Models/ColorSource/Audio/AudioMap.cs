@@ -106,7 +106,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 		private void Refresh() {
 			var sd = DataUtil.GetSystemData();
-			var id = sd.AudioMap;
+			var id = sd.AudioScene;
 			var am = _loader.GetItem(id);
 			_rotationSpeed = 0;
 			_rotationUpper = 1;

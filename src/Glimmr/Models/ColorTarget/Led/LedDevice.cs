@@ -12,12 +12,13 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Led {
 	public class LedDevice : ColorTarget, IColorTarget {
-		private readonly LedAgent _agent;
+		private readonly LedAgent? _agent;
 		private LedData _data;
 		public LedDevice(LedData ld, ColorService cs) : base(cs) {
 			_data = ld;
 			Id = _data.Id;
-			_agent = cs.ControlService.GetAgent("LedAgent") ?? throw new InvalidOperationException("Unable to retrieve LED agent.");
+			
+			_agent = cs.ControlService.GetAgent("LedAgent");
 			
 			// We only bind and create agent for LED device 0, regardless of which one is enabled.
 			// The agent will handle all the color stuff for both strips.
@@ -49,7 +50,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 				Log.Debug($"Id is {Id}, returning.");
 				return;
 			}
-			_agent.ReloadData();
+			_agent?.ReloadData();
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
 			Streaming = true;
 			await Task.FromResult(Streaming);
@@ -68,13 +69,13 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 
 		public Task FlashColor(Color color) {
-			_agent.SetColor(color, Id);
+			_agent?.SetColor(color, Id);
 			return Task.CompletedTask;
 		}
 
 
 		public void Dispose() {
-			_agent.Clear();
+			_agent?.Clear();
 		}
 
 		public Task ReloadData() {
@@ -82,7 +83,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			if (Id == "1") {
 				return Task.CompletedTask;
 			}
-			_agent.ReloadData();
+			_agent?.ReloadData();
 			return Task.CompletedTask;
 		}
 
@@ -98,7 +99,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			}
 
 			if (Id == "0" && !Testing) {
-				_agent.SetColors(colors);
+				_agent?.SetColors(colors);
 			}
 
 			if (!Enable) {
@@ -114,7 +115,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 				return;
 			}
 
-			_agent.Clear();
+			_agent?.Clear();
 			await Task.FromResult(true);
 		}
 	}

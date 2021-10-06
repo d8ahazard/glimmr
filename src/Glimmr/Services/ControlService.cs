@@ -23,6 +23,7 @@ using Makaretu.Dns;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Serilog;
 
 #endregion
@@ -35,6 +36,8 @@ namespace Glimmr.Services {
 		public MulticastService MulticastService { get; private set; }
 		public ServiceDiscovery ServiceDiscovery { get; private set; }
 		public UdpClient UdpClient { get; private set; }
+		public bool SendPreview { get; set; }
+
 		private readonly IHubContext<SocketServer> _hubContext;
 
 		public AsyncEvent<DynamicEventArgs> DemoLedEvent;
@@ -126,7 +129,7 @@ namespace Glimmr.Services {
 			await SetModeEvent.InvokeAsync(this, new DynamicEventArgs(mode));
 		}
 
-		public async Task AuthorizeDevice(string id, IClientProxy? clientProxy = null) {
+		public async Task<bool> AuthorizeDevice(string id, IClientProxy? clientProxy = null) {
 			var data = DataUtil.GetDevice(id);
 			if (data != null) {
 				if (string.IsNullOrEmpty(data.Token)) {
@@ -140,7 +143,7 @@ namespace Glimmr.Services {
 						await clientProxy.SendAsync("auth", "authorized");
 					}
 
-					return;
+					return true;
 				}
 			} else {
 				Log.Warning("Device is null: " + id);
@@ -148,7 +151,7 @@ namespace Glimmr.Services {
 					await clientProxy.SendAsync("auth", "error");
 				}
 
-				return;
+				return false;
 			}
 
 
@@ -166,11 +169,11 @@ namespace Glimmr.Services {
 			}
 
 			if (dev == null) {
-				return;
+				return false;
 			}
 
 			if (dev.GetType() == null) {
-				return;
+				return false;
 			}
 
 			if (dev.GetType().GetMethod("CheckAuthAsync") != null) {
@@ -187,7 +190,7 @@ namespace Glimmr.Services {
 
 							await _hubContext.Clients.All.SendAsync("device",
 								JsonConvert.SerializeObject((IColorTargetData) activated));
-							return;
+							return true;
 						}
 					} catch (Exception e) {
 						Log.Warning("Error: " + e.Message + " at " + e.StackTrace);
@@ -197,14 +200,18 @@ namespace Glimmr.Services {
 					count++;
 					if (clientProxy != null) {
 						await clientProxy.SendAsync("auth", "update", count);
+						return false;
 					}
 				}
 			} else {
 				Log.Warning("Error creating activator!");
 				if (clientProxy != null) {
 					await clientProxy.SendAsync("auth", "error");
+					return false;
 				}
 			}
+
+			return false;
 		}
 
 
@@ -437,7 +444,7 @@ v. {version}
 			Log.Debug($"Updating {device.Tag}...");
 			await DataUtil.AddDeviceAsync(device, merge).ConfigureAwait(false);
 			var data = DataUtil.GetDevice(device.Id);
-			await _hubContext.Clients.All.SendAsync("device", JsonConvert.SerializeObject((IColorTargetData) data));
+			await _hubContext.Clients.All.SendAsync("device", (IColorTargetData) data);
 			await RefreshDevice(device.Id);
 		}
 

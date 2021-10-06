@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,6 +14,7 @@ using Glimmr.Models.Util;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Serilog;
+using Color = System.Drawing.Color;
 
 #endregion
 
@@ -37,6 +37,12 @@ namespace Glimmr.Services {
 		private bool _demoComplete;
 
 		private bool _enableAutoDisable;
+
+		public Color[] LedColors { get; set; }
+
+		public Color[] SectorColors { get; set; }
+
+		public bool ColorsUpdated { get; set; }
 		// Figure out how to make these generic, non-callable
 
 		private IColorTarget[] _sDevices;
@@ -61,6 +67,8 @@ namespace Glimmr.Services {
 			_targetTokenSource = new CancellationTokenSource();
 			_sDevices = Array.Empty<IColorTarget>();
 			_systemData = DataUtil.GetSystemData();
+			LedColors = new Color[_systemData.LedCount];
+			SectorColors = new Color[+_systemData.SectorCount];
 			_enableAutoDisable = _systemData.EnableAutoDisable;
 			_streams = new Dictionary<string, IColorSource>();
 			ControlService = controlService;
@@ -113,27 +121,26 @@ namespace Glimmr.Services {
 				var cTask = ControlService.Execute(stoppingToken);
 				var loopWatch = new Stopwatch();
 				loopWatch.Start();
-				var fc = 0;
-				// 30FPS
-				const int ms = 30;
 				while (!stoppingToken.IsCancellationRequested) {
-					loopWatch.Restart();
 					await CheckAutoDisable().ConfigureAwait(false);
 
 					// Save a frame every 5 seconds
-					if (fc >= 150) {
-						fc = 0;
+					if (loopWatch.Elapsed >= TimeSpan.FromSeconds(5)) {
 						FrameSaveEvent.Invoke();
+						loopWatch.Restart();
 					}
 
-					var time = loopWatch.ElapsedMilliseconds;
-					if (time >= ms) {
-						continue;
-					}
+					if (ColorsUpdated) {
+						if (!_demoComplete || _stream == null) {
+							return;
+						}
 
-					var diff = ms - time;
-					fc++;
-					await Task.Delay(TimeSpan.FromMilliseconds(diff), CancellationToken.None);
+						Counter.Tick("");
+						ColorsUpdated = false;
+						await SendColors(LedColors, SectorColors);
+					
+					}
+					
 				}
 
 				if (cTask.IsCompleted) {
@@ -348,7 +355,9 @@ namespace Glimmr.Services {
 			// Reload main vars
 			DeviceMode = (DeviceMode) sd.DeviceMode;
 			_targetTokenSource = new CancellationTokenSource();
-			_systemData = DataUtil.GetSystemData();
+			_systemData = sd;
+			LedColors = new Color[_systemData.LedCount];
+			SectorColors = new Color[+_systemData.SectorCount];
 			_enableAutoDisable = _systemData.EnableAutoDisable;
 			_autoDisableDelay = _systemData.AutoDisableDelay;
 			// Create new lists
@@ -621,7 +630,7 @@ namespace Glimmr.Services {
 				try {
 					if (ColorSendEventAsync != null) {
 						await ColorSendEventAsync
-							.InvokeAsync(this, new ColorSendEventArgs(colors, sectors, fadeTime, force));
+							.InvokeAsync(this, new ColorSendEventArgs(colors, sectors, fadeTime, force)).ConfigureAwait(false);
 					}
 				} catch (Exception e) {
 					Log.Warning("Exception: " + e.Message + " at " + e.StackTrace);

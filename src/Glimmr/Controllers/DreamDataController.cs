@@ -9,14 +9,15 @@ using System.Net.Mime;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Glimmr.Enums;
 using Glimmr.Models;
+using Glimmr.Models.ColorTarget;
 using Glimmr.Models.ColorTarget.Glimmr;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Serilog;
 
 #endregion
@@ -31,74 +32,48 @@ namespace Glimmr.Controllers {
 			_controlService = controlService;
 		}
 
+		/// <summary>
+		/// Default endpoint - returns a SystemData object.
+		/// </summary>
+		/// <returns><see cref="SystemData"/></returns>
 		[HttpGet("")]
-		public JsonResult GetSystemData() {
+		public ActionResult<SystemData> GetSystemData() {
 			var sd = DataUtil.GetSystemData();
-			return new JsonResult(sd);
+			return sd;
 		}
-
-		[HttpGet("json")]
-		public JsonResult GetJson() {
-			var sd = DataUtil.GetSystemData();
-			var glimmrData = new GlimmrData(sd);
-			return new JsonResult(glimmrData);
+		
+		/// <summary>
+		/// Trigger device authorization for the specified device.
+		/// </summary>
+		/// <param name="id">The device Id to try authorizing.</param>
+		/// <returns>True or false representing if the device is authorized.</returns>
+		[HttpGet("authorizeDevice")]
+		public async Task<ActionResult<bool>> AuthorizeDevice([FromQuery] string id) {
+			var result = await _controlService.AuthorizeDevice(id);
+			return result;
 		}
-
-		[HttpGet("brightness")]
-		public async Task<IActionResult> SetBrightness([FromQuery] int value) {
-			Log.Debug("Setting brightness: " + value);
-			var sd = DataUtil.GetSystemData();
-			sd.Brightness = value;
-			await _controlService.UpdateSystem(sd);
-			return Ok(value);
-		}
-
-		[HttpGet("toggleMode")]
-		public async Task<IActionResult> ToggleMode() {
-			var sd = DataUtil.GetSystemData();
-			var prev = sd.PreviousMode;
-			var mode = sd.DeviceMode;
-			if (mode == 0) {
-				await _controlService.SetMode(prev);
-			} else {
-				await _controlService.SetMode(0);
-			}
-
-			return Ok();
-		}
-
-		[HttpGet("DbDownload")]
+		
+		/// <summary>
+		/// Download a backup of the current database.
+		/// </summary>
+		/// <returns>A copy of the LiteDB used for setting storage.</returns>
+		[HttpGet("database")]
 		public FileResult DbDownload() {
 			var dbPath = DataUtil.BackupDb();
+			Log.Debug("Fetching DB from: " + dbPath);
 			var fileBytes = System.IO.File.ReadAllBytes(dbPath);
 			var fileName = Path.GetFileName(dbPath);
 			return File(fileBytes, MediaTypeNames.Application.Octet, fileName);
 		}
-
-		[HttpGet("LogDownload")]
-		public FileResult LogDownload() {
-			var dt = DateTime.Now.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
-			var logPath = $"/var/log/glimmr/glimmr{dt}.log";
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-				var userPath = SystemUtil.GetUserDir();
-				var logDir = Path.Combine(userPath, "log");
-				if (!Directory.Exists(logDir)) {
-					Directory.CreateDirectory(logDir);
-				}
-
-				logPath = Path.Combine(userPath, "log", $"{dt}.log");
-			}
-
-			Log.Debug("Grabbing log from " + logPath);
-			var fileBytes = System.IO.File.ReadAllBytes(logPath);
-			var fileName = Path.GetFileName(logPath);
-			return File(fileBytes, MediaTypeNames.Application.Octet, fileName);
-		}
-
-		[HttpPost("DbUpload")]
+		
+		/// <summary>
+		/// Upload and replace the database with a copy from a db download.
+		/// </summary>
+		/// <param name="files">Technically a file list, but in reality, just one LiteDB file.</param>
+		/// <returns>True if the import succeeded, false if not.</returns>
+		[HttpPost("database")]
 		public async Task<IActionResult> ImportDb(List<IFormFile> files) {
-			var size = files.Sum(f => f.Length);
-
+			
 			var filePaths = new List<string>();
 			foreach (var formFile in files) {
 				if (formFile.Length <= 0) {
@@ -129,109 +104,59 @@ namespace Glimmr.Controllers {
 			if (imported) {
 				await _controlService.NotifyClients();
 			}
-
-			// process uploaded files
-			// Don't rely on or trust the FileName property without validation.
-			return Ok(new {count = files.Count, size, filePaths, imported});
-		}
-
-		// POST: api/DreamData/mode
-		[HttpPost("mode")]
-		public async Task<IActionResult> DevMode([FromBody] int mode) {
-			Log.Debug("Mode set to: " + mode);
-			await _controlService.SetMode(mode);
-			return Ok(mode);
-		}
-
-		// POST: api/DreamData/refreshDevices
-		[HttpPost("scanDevices")]
-		public async Task<IActionResult> ScanDevices() {
-			await _controlService.ScanDevices();
-			Thread.Sleep(5000);
-			return new JsonResult(DataUtil.GetStoreSerialized());
-		}
-
-		[HttpPost("loadData")]
-		public IActionResult LoadData() {
-			return new JsonResult(DataUtil.GetStoreSerialized());
-		}
-
-		// POST: api/DreamData/dsConnect
-		[HttpPost("ambientShow")]
-		public IActionResult PostShow([FromBody] JObject myDevice) {
-			Log.Debug(@"Did it work (ambient Show)? " + JsonConvert.SerializeObject(myDevice));
-			return Ok(myDevice);
-		}
-
-		[HttpGet("authorizeDevice")]
-		public async Task<IActionResult> AuthorizeDevice([FromQuery] string id) {
-			await _controlService.AuthorizeDevice(id);
-			return Ok(id);
-		}
-
-		[HttpGet("getStats")]
-		public IActionResult GetStats() {
-			return Ok(CpuUtil.GetStats());
+			return Ok(imported);
 		}
 
 
-		// POST: api/DreamData/ledData
-		[HttpPost("systemData")]
-		public async Task<IActionResult> UpdateSystem([FromBody] SystemData ld) {
-			await _controlService.UpdateSystem(ld);
-			return Ok(ld);
-		}
-
-		// POST: api/DreamData/startStream
-		[HttpPost("startStream")]
-		public async Task<IActionResult> StartStream([FromBody] GlimmrData gd) {
-			Log.Debug("SS post: " + JsonConvert.SerializeObject(gd));
-			await _controlService.StartStream(gd);
-			return Ok(gd);
+		/// <summary>
+		/// Retrieve the entire datastore in JSON format
+		/// </summary>
+		/// <returns>a JSON representation of the entire database.</returns>
+		[HttpGet("databaseJson")]
+		public ActionResult<StoreData> LoadData() {
+			return DataUtil.GetStoreSerialized();
 		}
 		
-		[HttpGet("startStream")]
-		public async Task<IActionResult> StartStream([FromQuery(Name = "l")] int l,
-			[FromQuery(Name = "r")] int r,
-			[FromQuery(Name = "t")] int t,
-			[FromQuery(Name = "b")] int b) {
-			Log.Debug("SS Get");
-			var sd = new SystemData {LeftCount =  l, RightCount = r, TopCount = t, BottomCount = b};
-			var gd = new GlimmrData(sd);
-			await _controlService.StartStream(gd);
-			return Ok(gd);
+		/// <summary>
+		/// Retrieve the current list of devices
+		/// </summary>
+		/// <returns></returns>
+		[HttpGet("devices")]
+		public ActionResult<List<IColorTargetData>> GetDevices() {
+			var devs = DataUtil.GetDevices();
+			return devs.Select(dev => (IColorTargetData)dev).ToList();
 		}
-
-		[HttpGet("mode")]
-		public async Task<IActionResult> Mode([FromQuery(Name = "mode")] int mode) {
-			await _controlService.SetModeEvent.InvokeAsync(this, new DynamicEventArgs(mode));
-			var sd = DataUtil.GetSystemData();
-			sd.DeviceMode = mode;
-			return Ok(JsonConvert.SerializeObject(sd));
-		}
-
-		[HttpPost("systemControl")]
-		public IActionResult SysControl([FromBody] string action) {
-			ControlService.SystemControl(action);
-			return Ok(action);
-		}
-
-		// POST: api/DreamData/updateDevice
-		[HttpPost("updateDevice")]
-		public async Task<IActionResult> UpdateDevice([FromBody] string dData) {
-			var dObj = JObject.Parse(dData);
-			Log.Debug("Update device fired: " + JsonConvert.SerializeObject(dObj));
-			await _controlService.UpdateDevice(dObj, false);
-			return Ok(dObj);
-		}
-
+		
+		/// <summary>
+		/// Flash an entire device.
+		/// </summary>
+		/// <param name="deviceId">The ID of the device to flash on/off.</param>
+		/// <returns></returns>
 		// POST: api/DreamData/flashDevice
 		[HttpPost("flashDevice")]
 		public async Task<IActionResult> FlashDevice([FromBody] string deviceId) {
 			await _controlService.FlashDevice(deviceId);
-			return Ok(deviceId);
+			return Ok();
+		}
+		
+		
+		/// <summary>
+		/// Flash a specific LED from the grid
+		/// </summary>
+		/// <param name="len">The LED ID to flash.</param>
+		/// <returns></returns>
+		[HttpPost("flashLed")]
+		public async Task<IActionResult> TestStripOffset([FromBody] int len) {
+			Log.Debug("Get got: " + len);
+			await _controlService.TestLights(len);
+			return Ok();
 		}
 
+		/// <summary>
+		/// Flash a specific Sector
+		/// </summary>
+		/// <param name="sector">The sector ID to flash.</param>
+		/// <returns></returns>
 		// POST: api/DreamData/flashSector
 		[HttpPost("flashSector")]
 		public async Task<IActionResult> FlashSector([FromBody] int sector) {
@@ -239,34 +164,169 @@ namespace Glimmr.Controllers {
 			return Ok(sector);
 		}
 
-
-		[HttpPost("flashLed")]
-		public async Task<IActionResult> TestStripOffset([FromBody] int len) {
-			Log.Debug("Get got: " + len);
-			await _controlService.TestLights(len);
-			return Ok(len);
+		/// <summary>
+		/// Retrieves a simplified version of our SystemData object used for Glimmr-to-Glimmr control.
+		/// </summary>
+		/// <returns><see cref="GlimmrData"/></returns>
+		[HttpGet("glimmrData")]
+		public JsonResult GetJson() {
+			var sd = DataUtil.GetSystemData();
+			var glimmrData = new GlimmrData(sd);
+			return new JsonResult(glimmrData);
 		}
+		
+				
+		
 
-
-		[HttpPost("systemControl")]
-		public IActionResult SystemControl(string action) {
-			Log.Debug("Action triggered: " + action);
-			switch (action) {
-				case "restart":
-					SystemUtil.Restart();
-					break;
-				case "shutdown":
-					SystemUtil.Shutdown();
-					break;
-				case "reboot":
-					SystemUtil.Reboot();
-					break;
-				case "update":
-					SystemUtil.Update();
-					break;
+		/// <summary>
+		/// Download the current log file.
+		/// </summary>
+		/// <returns>A plain-text logfile.</returns>
+		[HttpGet("logs")]
+		public async Task<FileResult> LogDownload() {
+			var dt = DateTime.Now.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
+			var logPath = $"/var/log/glimmr/glimmr{dt}.log";
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+				var userPath = SystemUtil.GetUserDir();
+				var logDir = Path.Combine(userPath, "log");
+				if (!Directory.Exists(logDir)) {
+					Directory.CreateDirectory(logDir);
+				}
+				logPath = Path.Combine(userPath, "log", $"glimmr{dt}.log");
 			}
 
+			byte[] result;
+			await using (FileStream stream = new(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+				result = new byte[stream.Length];
+				await stream.ReadAsync(result.AsMemory(0, (int)stream.Length));
+			}
+			return File(result, MediaTypeNames.Application.Octet, $"glimmr{dt}.log");
+		}
+		
+		
+
+		/// <summary>
+		/// Retrieve the current device mode
+		/// </summary>
+		/// <remarks>
+		/// Device Modes:
+		/// Off = 0,
+		/// Video = 1,
+		/// Audio = 2,
+		/// AudioVideo = 4,
+		/// Ambient = 3,
+		/// Udp = 5,
+		/// DreamScreen = 6
+		/// </remarks>
+		/// <returns>The current device mode.</returns>
+		[HttpGet("mode")]
+		public IActionResult Mode() {
+			var sd = DataUtil.GetSystemData();
+			return Ok((DeviceMode)sd.DeviceMode);
+		}
+
+		/// <summary>
+		/// Set a new device mode
+		/// </summary>
+		/// /// <remarks>
+		/// Device Modes:
+		/// Off = 0,
+		/// Video = 1,
+		/// Audio = 2,
+		/// AudioVideo = 4,
+		/// Ambient = 3,
+		/// Udp = 5,
+		/// DreamScreen = 6
+		/// </remarks>
+		/// <param name="mode">The new device mode to set.</param>
+		/// <returns>The newly-set mode.</returns>
+		// POST: api/DreamData/mode
+		[HttpPost("mode")]
+		public async Task<IActionResult> DevMode([FromBody] DeviceMode mode) {
+			Log.Debug("Mode set to: " + mode);
+			await _controlService.SetMode((int)mode);
+			return Ok(mode);
+		}
+
+		/// <summary>
+		/// Triggers a device refresh
+		/// </summary>
+		/// <returns>A List of devices.</returns>
+		// GET: api/DreamData/refreshDevices
+		[HttpPost("scanDevices")]
+		public async Task<ActionResult<dynamic[]>> ScanDevices() {
+			await _controlService.ScanDevices();
+			Thread.Sleep(5000);
+			return DataUtil.GetDevices().Select(i=>(IColorTargetData) i).ToArray();
+		}
+
+		/// <summary>
+		/// Fetch current CPU statistics.
+		/// </summary>
+		/// <remarks>Example json:
+		///{
+		///"loadAvg1": 1.23,
+		///"loadAvg15": 0.33,
+		///"loadAvg5": 0.52,
+		///"tempAvg": 146,
+		///"tempCurrent": 146,
+		///"tempMax": 146,
+		///"tempMin": 146,
+		///"uptime": "1:12",
+		///"throttledState": [
+		///"Soft Temperature Limit has occurred"
+		///]
+		///}
+		/// </remarks>
+		/// <returns></returns>
+		[HttpGet("stats")]
+		public IActionResult GetStats() {
+			return Ok(CpuUtil.GetStats());
+		}
+
+		/// <summary>
+		/// Triggers a system action.
+		/// </summary>
+		/// <param name="action">Available commands are "restart", "shutdown", "reboot", and "update".
+		///	Restart restarts ONLY the glimmr service.
+		/// Shutdown shuts down the entire machine.
+		/// Reboot triggers a system reboot.
+		/// Update will stop Glimmr, update the software, and re-start the service.
+		/// </param>
+		/// <returns></returns>
+		[HttpPost("systemControl")]
+		public IActionResult SysControl([FromBody] string action) {
+			ControlService.SystemControl(action);
 			return Ok(action);
 		}
+		
+		/// <summary>
+		/// Update System configuration
+		/// </summary>
+		/// <param name="ld">A SystemData object.</param>
+		/// <returns>The updated SystemData object.</returns>
+		// POST: api/DreamData/ledData
+		[HttpPost("systemData")]
+		public async Task<ActionResult<SystemData>> UpdateSystem([FromBody] SystemData ld) {
+			await _controlService.UpdateSystem(ld);
+			return ld;
+		}
+
+		/// <summary>
+		/// Update a specific Devices data.
+		/// </summary>
+		/// <param name="dData">A JSON string representing the ColorTarget to update.</param>
+		/// <returns>The updated ColorTarget object.</returns>
+		// POST: api/DreamData/updateDevice
+		[HttpPost("updateDevice")]
+		public async Task<ActionResult<IColorTargetData>> UpdateDevice([FromBody] IColorTargetData dData) {
+			Log.Debug("Update device fired: " + JsonConvert.SerializeObject(dData));
+			await _controlService.UpdateDevice(dData, false);
+			return Ok(dData);
+		}
+
+		
+
+
 	}
 }

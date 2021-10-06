@@ -51,7 +51,6 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			RightCount = sd.RightCount;
 			TopCount = sd.TopCount;
 			BottomCount = sd.BottomCount;
-			Brightness = sd.Brightness;
 			IpAddress = IpUtil.GetLocalIpAddress();
 			Id = Dns.GetHostName();
 		}
@@ -86,7 +85,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		private void FetchData() {
 			using var webClient = new WebClient();
 			try {
-				var url = "http://" + IpAddress + "/api/DreamData/json";
+				var url = "http://" + IpAddress + "/api/DreamData/glimmrData";
 				var jsonData = webClient.DownloadString(url);
 				var sd = JsonConvert.DeserializeObject<GlimmrData>(jsonData);
 				if (sd == null) {
