@@ -16,38 +16,43 @@ namespace Glimmr.Models.ColorTarget {
 	/// for full device structures.
 	/// </summary>
 	
-	public interface IColorTargetData {
+	public abstract class IColorTargetData {
 		/// <summary>
 		/// If set, Glimmr will attempt to control this device.
 		/// </summary>
-		public bool Enable { get; }
+		public abstract bool Enable { get;  set;}
+		
+		/// <summary>
+		/// Unique device tag used for serilization/deserilization
+		/// </summary>
+		public abstract string Tag { get; set; }
 
 		/// <summary>
 		/// An array of properties that will be auto-filled in the web UI.
 		/// </summary>
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-		public SettingsProperty[] KeyProperties { get; set; }
+		public abstract SettingsProperty[] KeyProperties { get; set; }
 
 		/// <summary>
 		/// A unique device identifier.
 		/// </summary>
-		public string Id { get; }
+		public abstract string Id { get;  set;}
 		
 		/// <summary>
 		/// The device IP address.
 		/// </summary>
-		public string IpAddress { get; }
+		public abstract string IpAddress { get; set; }
 		
 		/// <summary>
 		/// The last time the device was seen via device discovery.
 		/// </summary>
-		public string LastSeen { get; }
+		public abstract string LastSeen { get;  set;}
 
 		/// <summary>
 		/// The device name.
 		/// </summary>
-		public string Name { get; }
-		public void UpdateFromDiscovered(IColorTargetData data);
+		public abstract string Name { get;  set;}
+		public abstract void UpdateFromDiscovered(IColorTargetData data);
 	}
 
 	/// <summary>

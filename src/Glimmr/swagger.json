@@ -123,7 +123,17 @@
         "tags": [
           "Glimmr"
         ],
-        "summary": "Retrieve the currently selected ambient scene.\r\nWill still return a value if ambient mode is not\r\nactive.",
+        "summary": "Retrieve the ambient scene specified in the query, or current if none is specified.\r\nWill still return a value if ambient mode is not\r\nactive.",
+        "parameters": [
+          {
+            "name": "sceneId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -530,7 +540,7 @@
         "tags": [
           "Glimmr"
         ],
-        "summary": "Update a specific Devices data.",
+        "summary": "Insert or update a device.",
         "requestBody": {
           "description": "A JSON string representing the ColorTarget to update.",
           "content": {
@@ -615,17 +625,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/IColorTargetData"
+                  "type": "boolean"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IColorTargetData"
+                  "type": "boolean"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IColorTargetData"
+                  "type": "boolean"
                 }
               }
             }
@@ -802,7 +812,24 @@
         "summary": "Retrieves a simplified version of our SystemData object used for Glimmr-to-Glimmr control.",
         "responses": {
           "200": {
-            "description": "Success"
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/GlimmrData"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GlimmrData"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GlimmrData"
+                }
+              }
+            }
           }
         }
       }
@@ -829,7 +856,24 @@
         "description": "Device Modes:\r\nOff = 0,\r\nVideo = 1,\r\nAudio = 2,\r\nAudioVideo = 4,\r\nAmbient = 3,\r\nUdp = 5,\r\nDreamScreen = 6",
         "responses": {
           "200": {
-            "description": "Success"
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceMode"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceMode"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceMode"
+                }
+              }
+            }
           }
         }
       },
@@ -866,7 +910,24 @@
         },
         "responses": {
           "200": {
-            "description": "Success"
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceMode"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceMode"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceMode"
+                }
+              }
+            }
           }
         }
       }
@@ -884,19 +945,25 @@
               "text/plain": {
                 "schema": {
                   "type": "array",
-                  "items": { }
+                  "items": {
+                    "$ref": "#/components/schemas/IColorTargetData"
+                  }
                 }
               },
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "items": { }
+                  "items": {
+                    "$ref": "#/components/schemas/IColorTargetData"
+                  }
                 }
               },
               "text/json": {
                 "schema": {
                   "type": "array",
-                  "items": { }
+                  "items": {
+                    "$ref": "#/components/schemas/IColorTargetData"
+                  }
                 }
               }
             }
@@ -1211,6 +1278,65 @@
         "type": "integer",
         "description": "The current device mode.\r\nOff = 0\r\nVideo = 1\r\nAudio = 2\r\nAmbient = 3\r\nAudioVideo = 4\r\nUdp = 5\r\nDreamScreen = 6",
         "format": "int32"
+      },
+      "GlimmrData": {
+        "type": "object",
+        "properties": {
+          "MirrorHorizontal": {
+            "type": "boolean"
+          },
+          "BottomCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Brightness": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "LeftCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "RightCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "TopCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Tag": {
+            "type": "string",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "nullable": true
+          },
+          "Id": {
+            "type": "string",
+            "nullable": true
+          },
+          "IpAddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "Enable": {
+            "type": "boolean"
+          },
+          "LastSeen": {
+            "type": "string",
+            "nullable": true
+          },
+          "KeyProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SettingsProperty"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "IColorTargetData": {
         "type": "object",

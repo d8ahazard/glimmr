@@ -333,21 +333,24 @@ namespace Glimmr.Models.Util {
 			return serial;
 		}
 
-		public static void DeleteDevice(string deviceId) {
+		public static bool DeleteDevice(string deviceId) {
 			var db = GetDb();
+			var result = false;
 			try {
 				var devs = db.GetCollection<dynamic>("Devices");
 				if (devs == null) {
 					Log.Warning("Null devices, can't delete!");
-					return;
+					return false;
 				}
 
-				Log.Information(devs.Delete(deviceId) ? $"Device {deviceId} deleted." : "Unable to delete device?");
-
+				result = devs.Delete(deviceId);
+				Log.Information(result ? $"Device {deviceId} deleted." : "Unable to delete device?");
 				db.Commit();
 			} catch (Exception e) {
 				Log.Warning("Error deleting device: " + e.Message);
 			}
+
+			return result;
 		}
 
 

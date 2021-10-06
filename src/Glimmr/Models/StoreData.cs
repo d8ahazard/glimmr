@@ -60,7 +60,6 @@ namespace Glimmr.Models {
 			var jl1 = new JsonLoader("ambientScenes");
 			var jl2 = new JsonLoader("audioScenes");
 			AmbientScenes = jl1.LoadDynamic<AmbientScene>().ToArray();
-			Log.Debug("Ambient scenes: " + JsonConvert.SerializeObject(AmbientScenes));
 			AudioScenes = jl2.LoadDynamic<AudioScene>().ToArray();
 			Version = "0.0.0.0";
 			var assembly = Assembly.GetEntryAssembly();

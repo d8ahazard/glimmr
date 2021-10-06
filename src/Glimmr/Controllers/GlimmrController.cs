@@ -65,33 +65,40 @@ namespace Glimmr.Controllers {
 		/// <returns>The ID of the selected scene available, or -1 if not found.</returns>
 		[HttpPost("ambientColor")]
 		public async Task<ActionResult<string>> SetAmbientColor([FromBody]string color) {
+			Log.Debug("String: " + color);
+			var sd = DataUtil.GetSystemData();
 			if (color[..1] != "#" && color.Length == 6) {
 				color = "#" + color;
 			}
-			var sd = DataUtil.GetSystemData();
-
 			if (!Regex.Match(color, "^#(?:[0-9a-fA-F]{3}){1,2}$").Success) {
-				return sd.AmbientColor;
+				return Ok(sd.AmbientColor);
 			}
 
-			sd.AmbientColor = color;
+			sd.AmbientColor = color.Replace("#","");
 			sd.AmbientScene = -1;
 			sd.DeviceMode = (int)DeviceMode.Ambient;
 			await _controlService.UpdateSystem(sd);
-			return sd.AmbientColor;
+			return Ok(sd.AmbientColor);
 		}
 
 		/// <summary>
-		/// Retrieve the currently selected ambient scene.
+		/// Retrieve the ambient scene specified in the query, or current if none is specified.
 		/// Will still return a value if ambient mode is not
 		/// active.
 		/// </summary>
 		/// <returns>The current ambient scene.</returns>
 		[HttpGet("ambientScene")]
-		public ActionResult<AmbientScene?>? GetAmbientScene() {
+		public ActionResult<AmbientScene> GetAmbientScene([FromQuery] int? sceneId) {
 			var sd = DataUtil.GetSystemData();
+			sceneId ??= sd.AmbientScene;
 			var storeD = new StoreData();
-			return storeD.AmbientScenes.FirstOrDefault(scene => sd.AmbientScene == scene.Id) ?? null;
+			foreach (var scene in storeD.AmbientScenes) {
+				if (scene.Id == sceneId) {
+					return new ActionResult<AmbientScene>(scene);
+				}
+			}
+
+			return NotFound();
 		}
 		
 		/// <summary>
@@ -265,20 +272,16 @@ namespace Glimmr.Controllers {
 		/// <param name="id">The id of the device to retrieve.</param>
 		/// <returns>Device data or null if not found.</returns>
 		[HttpGet("device")]
-		public IColorTargetData? GetDevice([FromQuery]string id) {
+		public ActionResult<IColorTargetData> GetDevice([FromQuery]string id) {
 			var devs = DataUtil.GetDevices();
-			foreach (var dev in devs) {
-				var device = (IColorTargetData) dev;
-				if (device.Id == id) {
-					return device;
-				}
+			foreach (var device in devs.Select(dev => (IColorTargetData) dev).Where(device => device.Id == id)) {
+				return new ActionResult<IColorTargetData>(device);
 			}
-
-			return null;
+			return NotFound($"Device {id} not found.");
 		}
 		
 		/// <summary>
-		/// Update a specific Devices data.
+		/// Insert or update a device.
 		/// </summary>
 		/// <param name="dData">A JSON string representing the ColorTarget to update.</param>
 		/// <returns>The updated ColorTarget object.</returns>
@@ -286,7 +289,7 @@ namespace Glimmr.Controllers {
 		public async Task<ActionResult<IColorTargetData>> UpdateDevice([FromBody] IColorTargetData dData) {
 			Log.Debug("Update device fired: " + JsonConvert.SerializeObject(dData));
 			await _controlService.UpdateDevice(dData, false);
-			return Ok(dData);
+			return new ActionResult<IColorTargetData>(dData);
 		}
 		
 		/// <summary>
@@ -295,10 +298,10 @@ namespace Glimmr.Controllers {
 		/// <param name="dData">A JSON string representing the ColorTarget to update.</param>
 		/// <returns>The updated ColorTarget object.</returns>
 		[HttpDelete("device")]
-		public async Task<ActionResult<IColorTargetData>> DeleteDevice(IColorTargetData dData) {
+		public async Task<ActionResult<bool>> DeleteDevice(IColorTargetData dData) {
 			Log.Debug("Update device fired: " + JsonConvert.SerializeObject(dData));
-			await _controlService.RemoveDevice(dData.Id);
-			return Ok(dData);
+			var res = await _controlService.RemoveDevice(dData.Id);
+			return new ActionResult<bool>(res);
 		}
 		
 		/// <summary>
@@ -306,9 +309,9 @@ namespace Glimmr.Controllers {
 		/// </summary>
 		/// <returns></returns>
 		[HttpGet("devices")]
-		public ActionResult<List<IColorTargetData>> GetDevices() {
+		public ActionResult<IColorTargetData[]> GetDevices() {
 			var devs = DataUtil.GetDevices();
-			return devs.Select(dev => (IColorTargetData)dev).ToList();
+			return new ActionResult<IColorTargetData[]>(devs.Select(dev => (IColorTargetData)dev).ToArray());
 		}
 		
 		/// <summary>
@@ -353,14 +356,12 @@ namespace Glimmr.Controllers {
 		/// </summary>
 		/// <returns><see cref="GlimmrData"/></returns>
 		[HttpGet("glimmrData")]
-		public JsonResult GetJson() {
+		public ActionResult<GlimmrData> GetJson() {
 			var sd = DataUtil.GetSystemData();
 			var glimmrData = new GlimmrData(sd);
-			return new JsonResult(glimmrData);
+			return new ActionResult<GlimmrData>(glimmrData);
 		}
-		
-				
-		
+
 
 		/// <summary>
 		/// Download the current log file.
@@ -397,16 +398,16 @@ namespace Glimmr.Controllers {
 		/// Off = 0,
 		/// Video = 1,
 		/// Audio = 2,
-		/// AudioVideo = 4,
 		/// Ambient = 3,
+		/// AudioVideo = 4,
 		/// Udp = 5,
 		/// DreamScreen = 6
 		/// </remarks>
 		/// <returns>The current device mode.</returns>
 		[HttpGet("mode")]
-		public IActionResult Mode() {
+		public ActionResult<DeviceMode> Mode() {
 			var sd = DataUtil.GetSystemData();
-			return Ok((DeviceMode)sd.DeviceMode);
+			return new ActionResult<DeviceMode>((DeviceMode)sd.DeviceMode);
 		}
 
 		/// <summary>
@@ -426,10 +427,10 @@ namespace Glimmr.Controllers {
 		/// <returns>The newly-set mode.</returns>
 		// POST: api/DreamData/mode
 		[HttpPost("mode")]
-		public async Task<IActionResult> DevMode([FromBody] DeviceMode mode) {
+		public async Task<ActionResult<DeviceMode>> DevMode([FromBody] DeviceMode mode) {
 			Log.Debug("Mode set to: " + mode);
 			await _controlService.SetMode((int)mode);
-			return Ok(mode);
+			return new ActionResult<DeviceMode>(mode);
 		}
 
 		/// <summary>
@@ -438,10 +439,10 @@ namespace Glimmr.Controllers {
 		/// <returns>A List of devices.</returns>
 		// GET: api/DreamData/refreshDevices
 		[HttpPost("scanDevices")]
-		public async Task<ActionResult<dynamic[]>> ScanDevices() {
+		public async Task<ActionResult<IColorTargetData[]>> ScanDevices() {
 			await _controlService.ScanDevices();
 			Thread.Sleep(5000);
-			return DataUtil.GetDevices().Select(i=>(IColorTargetData) i).ToArray();
+			return new ActionResult<IColorTargetData[]>(DataUtil.GetDevices().Select(i => (IColorTargetData)i).ToArray());
 		}
 
 		/// <summary>
@@ -451,6 +452,19 @@ namespace Glimmr.Controllers {
 		[HttpGet("stats")]
 		public async Task<ActionResult<CpuData>> GetStats() {
 			return await CpuUtil.GetStats();
+		}
+
+		
+		/// <summary>
+		/// Start Glimmr-to-Glimmr UDP stream
+		/// </summary>
+		/// <param name="gd">A GlimmrData object containing the input dimensions of
+		/// the received colors.</param>
+		/// <returns></returns>
+		[HttpPost("startStream")]
+		public async Task<ActionResult<bool>> StartStream([FromBody]GlimmrData gd) {
+			await _controlService.StartStream(gd);
+			return new ActionResult<bool>(true);
 		}
 
 		/// <summary>
@@ -478,7 +492,7 @@ namespace Glimmr.Controllers {
 		[HttpPost("systemData")]
 		public async Task<ActionResult<SystemData>> UpdateSystem([FromBody] SystemData ld) {
 			await _controlService.UpdateSystem(ld);
-			return ld;
+			return new ActionResult<SystemData>(ld);
 		}
 	}
 }

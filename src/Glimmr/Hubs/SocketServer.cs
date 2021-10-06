@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.PlatformServices;
 using System.Threading.Tasks;
 using Glimmr.Models;
 using Glimmr.Models.Util;
@@ -25,6 +26,8 @@ namespace Glimmr.Hubs {
 			_cs = cs;
 			_states = new Dictionary<string, bool>();
 		}
+
+		
 
 		public async Task Mode(int mode) {
 			Log.Debug("Mode set to: " + mode);
@@ -60,7 +63,7 @@ namespace Glimmr.Hubs {
 			var sd2 = sdd.ToObject<SystemData>();
 			try {
 				await _cs.UpdateSystem(sd2).ConfigureAwait(false);
-				await Clients.Others.SendAsync("olo", DataUtil.GetStoreSerialized());
+				//await Clients.Others.SendAsync("olo", DataUtil.GetStoreSerialized());
 			} catch (Exception e) {
 				Log.Warning("Exception updating SD: " + e.Message + " at " + e.StackTrace);
 			}
