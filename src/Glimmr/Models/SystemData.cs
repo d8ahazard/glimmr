@@ -130,7 +130,7 @@ namespace Glimmr.Models {
 		/// </summary>
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int AmbientShow { get; set; }
+		public int AmbientScene { get; set; }
 
 		/// <summary>
 		/// Current audio scene.

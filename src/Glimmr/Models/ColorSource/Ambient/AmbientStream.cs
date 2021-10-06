@@ -22,7 +22,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 		private readonly FrameSplitter _splitter;
 		private readonly Stopwatch _watch;
 		private string _ambientColor;
-		private int _ambientShow;
+		private int _ambientScene;
 		private double _animationTime;
 		private FrameBuilder? _builder;
 		private int _colorIndex;
@@ -59,20 +59,20 @@ namespace Glimmr.Models.ColorSource.Ambient {
 		private void RefreshSystem() {
 			Log.Debug("No, really, refreshing system.");
 			var sd = DataUtil.GetSystemData();
-			_ambientShow = sd.AmbientShow;
+			_ambientScene = sd.AmbientScene;
 			_ambientColor = sd.AmbientColor;
 			var dims = new[] {20, 20, 40, 40};
 			_builder = new FrameBuilder(dims, true);
 			_loader ??= new JsonLoader("ambientScenes");
 			_scenes = _loader.LoadFiles<AmbientScene>();
 			var scene = new AmbientScene();
-			Log.Debug($"Loading ambient show {_ambientShow}");
-			foreach (var s in _scenes.Where(s => s.Id == _ambientShow)) {
+			Log.Debug($"Loading ambient show {_ambientScene}");
+			foreach (var s in _scenes.Where(s => s.Id == _ambientScene)) {
 				scene = s;
 				Log.Debug("Scene: " + JsonConvert.SerializeObject(s));
 			}
 
-			if (_ambientShow == -1) {
+			if (_ambientScene == -1) {
 				scene.Colors = new[] {"#" + _ambientColor};
 			}
 

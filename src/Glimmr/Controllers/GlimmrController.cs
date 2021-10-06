@@ -7,10 +7,12 @@ using System.IO;
 using System.Linq;
 using System.Net.Mime;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Glimmr.Enums;
 using Glimmr.Models;
+using Glimmr.Models.ColorSource.Ambient;
+using Glimmr.Models.ColorSource.Audio;
 using Glimmr.Models.ColorTarget;
 using Glimmr.Models.ColorTarget.Glimmr;
 using Glimmr.Models.Util;
@@ -19,16 +21,17 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Serilog;
+using DeviceMode = Glimmr.Enums.DeviceMode;
 
 #endregion
 
 namespace Glimmr.Controllers {
 	[Route("api/[controller]")]
 	[ApiController]
-	public class DreamDataController : ControllerBase {
+	public class GlimmrController : ControllerBase {
 		private readonly ControlService _controlService;
 
-		public DreamDataController(ControlService controlService) {
+		public GlimmrController(ControlService controlService) {
 			_controlService = controlService;
 		}
 
@@ -41,6 +44,145 @@ namespace Glimmr.Controllers {
 			var sd = DataUtil.GetSystemData();
 			return sd;
 		}
+		
+		/// <summary>
+		/// Retrieve the currently set ambient color.
+		/// Will still return a value if ambient mode is not
+		/// active.
+		/// </summary>
+		/// <returns>A HTML RGB hex string (#FFFFFF).</returns>
+		[HttpGet("ambientColor")]
+		public ActionResult<string> GetAmbientColor() {
+			var sd = DataUtil.GetSystemData();
+			return sd.AmbientColor;
+		}
+
+		
+		/// <summary>
+		/// Set the current ambient mode, and set device mode to ambient.
+		/// </summary>
+		/// <param name="color">A HTML-formatted RGB Color (#666666/FFFFFF)</param>
+		/// <returns>The ID of the selected scene available, or -1 if not found.</returns>
+		[HttpPost("ambientColor")]
+		public async Task<ActionResult<string>> SetAmbientColor([FromBody]string color) {
+			if (color[..1] != "#" && color.Length == 6) {
+				color = "#" + color;
+			}
+			var sd = DataUtil.GetSystemData();
+
+			if (!Regex.Match(color, "^#(?:[0-9a-fA-F]{3}){1,2}$").Success) {
+				return sd.AmbientColor;
+			}
+
+			sd.AmbientColor = color;
+			sd.AmbientScene = -1;
+			sd.DeviceMode = (int)DeviceMode.Ambient;
+			await _controlService.UpdateSystem(sd);
+			return sd.AmbientColor;
+		}
+
+		/// <summary>
+		/// Retrieve the currently selected ambient scene.
+		/// Will still return a value if ambient mode is not
+		/// active.
+		/// </summary>
+		/// <returns>The current ambient scene.</returns>
+		[HttpGet("ambientScene")]
+		public ActionResult<AmbientScene?>? GetAmbientScene() {
+			var sd = DataUtil.GetSystemData();
+			var storeD = new StoreData();
+			return storeD.AmbientScenes.FirstOrDefault(scene => sd.AmbientScene == scene.Id) ?? null;
+		}
+		
+		/// <summary>
+		/// Retrieve the list of available ambient scenes.
+		/// </summary>
+		/// <returns>An array of ambient scenes.</returns>
+		[HttpGet("ambientScenes")]
+		public ActionResult<AmbientScene[]> GetAmbientScenes() {
+			var sd = new StoreData();
+			return sd.AmbientScenes;
+		}
+		
+		/// <summary>
+		/// Set the current ambient mode, and set device mode to ambient.
+		/// </summary>
+		/// <param name="mode">The ID of the target ambient mode.</param>
+		/// <returns>The ID of the selected scene available, or the current scene if
+		/// the target scene isn't found.</returns>
+		[HttpPost("ambientScene")]
+		public async Task<ActionResult<AmbientScene>?> SetAmbientScene([FromBody]int mode) {
+			var sd = DataUtil.GetSystemData();
+			var storeD = new StoreData();
+			var scenes = storeD.AmbientScenes;
+			foreach (var scene in scenes) {
+				if (scene.Id != mode) {
+					continue;
+				}
+
+				sd.AmbientScene = mode;
+				sd.DeviceMode = (int)DeviceMode.Ambient;
+				await _controlService.UpdateSystem(sd);
+				return scene;
+			}
+
+			return null;
+		}
+		
+		
+		/// <summary>
+		/// Get the currently selected audio scene.
+		/// </summary>
+		/// <returns></returns>
+		[HttpGet("audioScene")]
+		public ActionResult<AudioScene>? GetAudioScene() {
+			var sd = DataUtil.GetSystemData();
+			var sData = new StoreData();
+			var scenes = sData.AudioScenes;
+			foreach (var aScene in scenes) {
+				if (aScene.Id == sd.AudioScene) {
+					return aScene;
+				}
+			}
+			return null;
+		}
+		
+		/// <summary>
+		/// Set the desired audio scene and set device mode to Audio.
+		/// </summary>
+		/// <param name="mode">ID of the target audio scene.</param>
+		/// <returns></returns>
+		[HttpPost("audioScene")]
+
+		public async Task<ActionResult<AudioScene>?> SetAudioScene([FromBody]int mode) {
+			var sd = DataUtil.GetSystemData();
+			var storeD = new StoreData();
+			var scenes = storeD.AudioScenes;
+			foreach (var scene in scenes) {
+				if (scene.Id != mode) {
+					continue;
+				}
+
+				sd.AmbientScene = mode;
+				sd.DeviceMode = (int)DeviceMode.Audio;
+				await _controlService.UpdateSystem(sd);
+				return scene;
+			}
+
+			return null;
+		}
+
+		
+
+		/// <summary>
+		/// Retrieve an array of available audio scenes.
+		/// </summary>
+		/// <returns></returns>
+		[HttpGet("audioScenes")]
+		public ActionResult<AudioScene[]> GetAudioScenes() {
+			return new StoreData().AudioScenes;
+		}
+
 		
 		/// <summary>
 		/// Trigger device authorization for the specified device.
@@ -109,16 +251,58 @@ namespace Glimmr.Controllers {
 
 
 		/// <summary>
-		/// Retrieve the entire datastore in JSON format
+		/// Retrieve the entire datastore in JSON format.
 		/// </summary>
 		/// <returns>a JSON representation of the entire database.</returns>
 		[HttpGet("databaseJson")]
 		public ActionResult<StoreData> LoadData() {
 			return DataUtil.GetStoreSerialized();
 		}
+
+		/// <summary>
+		/// Retrieve target device data.
+		/// </summary>
+		/// <param name="id">The id of the device to retrieve.</param>
+		/// <returns>Device data or null if not found.</returns>
+		[HttpGet("device")]
+		public IColorTargetData? GetDevice([FromQuery]string id) {
+			var devs = DataUtil.GetDevices();
+			foreach (var dev in devs) {
+				var device = (IColorTargetData) dev;
+				if (device.Id == id) {
+					return device;
+				}
+			}
+
+			return null;
+		}
 		
 		/// <summary>
-		/// Retrieve the current list of devices
+		/// Update a specific Devices data.
+		/// </summary>
+		/// <param name="dData">A JSON string representing the ColorTarget to update.</param>
+		/// <returns>The updated ColorTarget object.</returns>
+		[HttpPost("device")]
+		public async Task<ActionResult<IColorTargetData>> UpdateDevice([FromBody] IColorTargetData dData) {
+			Log.Debug("Update device fired: " + JsonConvert.SerializeObject(dData));
+			await _controlService.UpdateDevice(dData, false);
+			return Ok(dData);
+		}
+		
+		/// <summary>
+		/// Delete a device.
+		/// </summary>
+		/// <param name="dData">A JSON string representing the ColorTarget to update.</param>
+		/// <returns>The updated ColorTarget object.</returns>
+		[HttpDelete("device")]
+		public async Task<ActionResult<IColorTargetData>> DeleteDevice([FromBody] IColorTargetData dData) {
+			Log.Debug("Update device fired: " + JsonConvert.SerializeObject(dData));
+			await _controlService.RemoveDevice(dData.Id);
+			return Ok(dData);
+		}
+		
+		/// <summary>
+		/// Retrieve the current list of devices.
 		/// </summary>
 		/// <returns></returns>
 		[HttpGet("devices")]
@@ -141,7 +325,7 @@ namespace Glimmr.Controllers {
 		
 		
 		/// <summary>
-		/// Flash a specific LED from the grid
+		/// Flash a specific LED from the grid.
 		/// </summary>
 		/// <param name="len">The LED ID to flash.</param>
 		/// <returns></returns>
@@ -153,7 +337,7 @@ namespace Glimmr.Controllers {
 		}
 
 		/// <summary>
-		/// Flash a specific Sector
+		/// Flash a specific Sector.
 		/// </summary>
 		/// <param name="sector">The sector ID to flash.</param>
 		/// <returns></returns>
@@ -206,7 +390,7 @@ namespace Glimmr.Controllers {
 		
 
 		/// <summary>
-		/// Retrieve the current device mode
+		/// Retrieve the current device mode.
 		/// </summary>
 		/// <remarks>
 		/// Device Modes:
@@ -226,7 +410,7 @@ namespace Glimmr.Controllers {
 		}
 
 		/// <summary>
-		/// Set a new device mode
+		/// Set a new device mode.
 		/// </summary>
 		/// /// <remarks>
 		/// Device Modes:
@@ -249,7 +433,7 @@ namespace Glimmr.Controllers {
 		}
 
 		/// <summary>
-		/// Triggers a device refresh
+		/// Triggers a device refresh.
 		/// </summary>
 		/// <returns>A List of devices.</returns>
 		// GET: api/DreamData/refreshDevices
@@ -263,25 +447,10 @@ namespace Glimmr.Controllers {
 		/// <summary>
 		/// Fetch current CPU statistics.
 		/// </summary>
-		/// <remarks>Example json:
-		///{
-		///"loadAvg1": 1.23,
-		///"loadAvg15": 0.33,
-		///"loadAvg5": 0.52,
-		///"tempAvg": 146,
-		///"tempCurrent": 146,
-		///"tempMax": 146,
-		///"tempMin": 146,
-		///"uptime": "1:12",
-		///"throttledState": [
-		///"Soft Temperature Limit has occurred"
-		///]
-		///}
-		/// </remarks>
 		/// <returns></returns>
 		[HttpGet("stats")]
-		public IActionResult GetStats() {
-			return Ok(CpuUtil.GetStats());
+		public async Task<ActionResult<CpuData>> GetStats() {
+			return await CpuUtil.GetStats();
 		}
 
 		/// <summary>
@@ -301,7 +470,7 @@ namespace Glimmr.Controllers {
 		}
 		
 		/// <summary>
-		/// Update System configuration
+		/// Update System configuration.
 		/// </summary>
 		/// <param name="ld">A SystemData object.</param>
 		/// <returns>The updated SystemData object.</returns>
@@ -311,22 +480,5 @@ namespace Glimmr.Controllers {
 			await _controlService.UpdateSystem(ld);
 			return ld;
 		}
-
-		/// <summary>
-		/// Update a specific Devices data.
-		/// </summary>
-		/// <param name="dData">A JSON string representing the ColorTarget to update.</param>
-		/// <returns>The updated ColorTarget object.</returns>
-		// POST: api/DreamData/updateDevice
-		[HttpPost("updateDevice")]
-		public async Task<ActionResult<IColorTargetData>> UpdateDevice([FromBody] IColorTargetData dData) {
-			Log.Debug("Update device fired: " + JsonConvert.SerializeObject(dData));
-			await _controlService.UpdateDevice(dData, false);
-			return Ok(dData);
-		}
-
-		
-
-
 	}
 }

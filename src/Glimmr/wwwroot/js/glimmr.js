@@ -308,8 +308,8 @@ function loadPickr() {
         newColor = col[0] + col[1] + col[2];
     }).on('changestop', (source, instance) => {        
         data.setProp("ambientColor", newColor);
-        data.setProp("ambientShow", -1);
-        let asSelect = document.getElementById("AmbientShow");
+        data.setProp("ambientScene", -1);
+        let asSelect = document.getElementById("AmbientScene");
         asSelect.value = "-1";
         pickr.setColor("#" + newColor);
         sendMessage("systemData",data.SystemData);
@@ -318,8 +318,8 @@ function loadPickr() {
         let col = color.toHEXA();
         newColor = col[0] + col[1] + col[2];
         data.setProp("ambientColor", newColor);
-        data.setProp("ambientShow", -1);
-        let asSelect = document.getElementById("AmbientShow");
+        data.setProp("ambientScene", -1);
+        let asSelect = document.getElementById("AmbientScene");
         asSelect.value = "-1";
         pickr.setColor("#" + newColor);
         sendMessage("systemData",data.SystemData);
@@ -404,7 +404,7 @@ function sendMessage(endpoint, sData, encode= true) {
 }
 
 function doPost(endpoint, payload) {
-    let url = baseUrl + "/api/DreamData/" + endpoint;
+    let url = baseUrl + "/api/Glimmr/" + endpoint;
     if (posting) {
         return;
     }
@@ -477,7 +477,7 @@ function setSocketListeners() {
         console.log("Socket has set ambient mode to " + mode);
     });
 
-    websocket.on("ambientShow", function (show) {
+    websocket.on("ambientScene", function (show) {
         console.log("Socket has set ambient show to " + show);
     });
 
@@ -761,7 +761,7 @@ function handleClick(target) {
             fetchLog();
             break;
         case target.id === "capture-tab":
-            sizeContent(true);
+            sizeContent();
             break;
         case target.classList.contains("controlBtn"):
             let action = target.getAttribute("data-action");
@@ -1051,7 +1051,7 @@ function setMode(newMode) {
             audioNav.classList.remove("hide");            
     }
         
-    sizeContent(true);
+    sizeContent();
 }
 
 function setModeButtons() {
@@ -1140,18 +1140,18 @@ function loadUi() {
         autoDisabled = sd["autoDisabled"];
         if (isValid(data.ambientScenes)) {
             let scenes = data.ambientScenes;
-            let ambientMode = sd["ambientShow"];
+            let ambientScene = sd["ambientScene"];
             scenes.sort((a, b) => (a["name"] > b["name"]) ? 1 : -1);
-            let sceneSelector = document.getElementById("AmbientShow");
+            let sceneSelector = document.getElementById("AmbientScene");
             sceneSelector.innerHTML = "";
             for(let i=0; i < Object.entries(scenes).length; i++) {
                 let opt = document.createElement("option");
                 opt.value = scenes[i]["id"].toString();
                 opt.innerText = scenes[i]["name"];
-                if (opt.key === ambientMode) opt.selected = true;
+                if (opt.key === ambientScene) opt.selected = true;
                 sceneSelector.appendChild(opt);
             }
-            sceneSelector.value = ambientMode;
+            sceneSelector.value = ambientScene;
         }
         if (isValid(data.audioScenes)) {
             let aScenes = data.audioScenes;
@@ -1172,7 +1172,7 @@ function loadUi() {
         pickr.setColor(color);
     }
 
-    sizeContent(false);
+    sizeContent();
     document.getElementById("cardRow").click();
 }
 
@@ -3790,7 +3790,7 @@ function ranges(ledCount, offset, total) {
     return range.slice(offset, total + offset);
 }
 
-function sizeContent(force) {
+function sizeContent() {
     let navDiv = document.getElementById("mainNav");
     let footDiv = document.getElementById("footer");
     let cDiv = document.getElementById("mainContent");

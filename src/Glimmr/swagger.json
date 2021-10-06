@@ -5,10 +5,10 @@
     "version": "1.0"
   },
   "paths": {
-    "/api/DreamData": {
+    "/api/Glimmr": {
       "get": {
         "tags": [
-          "DreamData"
+          "Glimmr"
         ],
         "summary": "Default endpoint - returns a SystemData object.",
         "responses": {
@@ -35,10 +35,345 @@
         }
       }
     },
-    "/api/DreamData/authorizeDevice": {
+    "/api/Glimmr/ambientColor": {
       "get": {
         "tags": [
-          "DreamData"
+          "Glimmr"
+        ],
+        "summary": "Retrieve the currently set ambient color.\r\nWill still return a value if ambient mode is not\r\nactive.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Set the current ambient mode, and set device mode to ambient.",
+        "requestBody": {
+          "description": "A HTML-formatted RGB Color (#666666/FFFFFF)",
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/ambientScene": {
+      "get": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Retrieve the currently selected ambient scene.\r\nWill still return a value if ambient mode is not\r\nactive.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AmbientScene"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AmbientScene"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AmbientScene"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Set the current ambient mode, and set device mode to ambient.",
+        "requestBody": {
+          "description": "The ID of the target ambient mode.",
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AmbientScene"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AmbientScene"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AmbientScene"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/ambientScenes": {
+      "get": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Retrieve the list of available ambient scenes.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AmbientScene"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AmbientScene"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AmbientScene"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/audioScene": {
+      "get": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Get the currently selected audio scene.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudioScene"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudioScene"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudioScene"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Set the desired audio scene and set device mode to Audio.",
+        "requestBody": {
+          "description": "ID of the target audio scene.",
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudioScene"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudioScene"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudioScene"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/audioScenes": {
+      "get": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Retrieve an array of available audio scenes.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AudioScene"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AudioScene"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AudioScene"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/authorizeDevice": {
+      "get": {
+        "tags": [
+          "Glimmr"
         ],
         "summary": "Trigger device authorization for the specified device.",
         "parameters": [
@@ -75,10 +410,10 @@
         }
       }
     },
-    "/api/DreamData/database": {
+    "/api/Glimmr/database": {
       "get": {
         "tags": [
-          "DreamData"
+          "Glimmr"
         ],
         "summary": "Download a backup of the current database.",
         "responses": {
@@ -89,7 +424,7 @@
       },
       "post": {
         "tags": [
-          "DreamData"
+          "Glimmr"
         ],
         "summary": "Upload and replace the database with a copy from a db download.",
         "requestBody": {
@@ -122,12 +457,12 @@
         }
       }
     },
-    "/api/DreamData/databaseJson": {
+    "/api/Glimmr/databaseJson": {
       "get": {
         "tags": [
-          "DreamData"
+          "Glimmr"
         ],
-        "summary": "Retrieve the entire datastore in JSON format",
+        "summary": "Retrieve the entire datastore in JSON format.",
         "responses": {
           "200": {
             "description": "Success",
@@ -152,388 +487,48 @@
         }
       }
     },
-    "/api/DreamData/devices": {
+    "/api/Glimmr/device": {
       "get": {
         "tags": [
-          "DreamData"
+          "Glimmr"
         ],
-        "summary": "Retrieve the current list of devices",
+        "summary": "Retrieve target device data.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "description": "The id of the device to retrieve.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success",
             "content": {
               "text/plain": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/IColorTargetData"
-                  }
+                  "$ref": "#/components/schemas/IColorTargetData"
                 }
               },
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/IColorTargetData"
-                  }
+                  "$ref": "#/components/schemas/IColorTargetData"
                 }
               },
               "text/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/IColorTargetData"
-                  }
+                  "$ref": "#/components/schemas/IColorTargetData"
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "/api/DreamData/flashDevice": {
-      "post": {
-        "tags": [
-          "DreamData"
-        ],
-        "summary": "Flash an entire device.",
-        "requestBody": {
-          "description": "The ID of the device to flash on/off.",
-          "content": {
-            "application/json-patch+json": {
-              "schema": {
-                "type": "string"
-              }
-            },
-            "application/json": {
-              "schema": {
-                "type": "string"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "type": "string"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "type": "string"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/DreamData/flashLed": {
-      "post": {
-        "tags": [
-          "DreamData"
-        ],
-        "summary": "Flash a specific LED from the grid",
-        "requestBody": {
-          "description": "The LED ID to flash.",
-          "content": {
-            "application/json-patch+json": {
-              "schema": {
-                "type": "integer",
-                "format": "int32"
-              }
-            },
-            "application/json": {
-              "schema": {
-                "type": "integer",
-                "format": "int32"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "type": "integer",
-                "format": "int32"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "type": "integer",
-                "format": "int32"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/DreamData/flashSector": {
-      "post": {
-        "tags": [
-          "DreamData"
-        ],
-        "summary": "Flash a specific Sector",
-        "requestBody": {
-          "description": "The sector ID to flash.",
-          "content": {
-            "application/json-patch+json": {
-              "schema": {
-                "type": "integer",
-                "format": "int32"
-              }
-            },
-            "application/json": {
-              "schema": {
-                "type": "integer",
-                "format": "int32"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "type": "integer",
-                "format": "int32"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "type": "integer",
-                "format": "int32"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/DreamData/glimmrData": {
-      "get": {
-        "tags": [
-          "DreamData"
-        ],
-        "summary": "Retrieves a simplified version of our SystemData object used for Glimmr-to-Glimmr control.",
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/DreamData/logs": {
-      "get": {
-        "tags": [
-          "DreamData"
-        ],
-        "summary": "Download the current log file.",
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/DreamData/mode": {
-      "get": {
-        "tags": [
-          "DreamData"
-        ],
-        "summary": "Retrieve the current device mode",
-        "description": "Device Modes:\r\nOff = 0,\r\nVideo = 1,\r\nAudio = 2,\r\nAudioVideo = 4,\r\nAmbient = 3,\r\nUdp = 5,\r\nDreamScreen = 6",
-        "responses": {
-          "200": {
-            "description": "Success"
           }
         }
       },
       "post": {
         "tags": [
-          "DreamData"
-        ],
-        "summary": "Set a new device mode",
-        "description": "Device Modes:\r\nOff = 0,\r\nVideo = 1,\r\nAudio = 2,\r\nAudioVideo = 4,\r\nAmbient = 3,\r\nUdp = 5,\r\nDreamScreen = 6",
-        "requestBody": {
-          "description": "The new device mode to set.",
-          "content": {
-            "application/json-patch+json": {
-              "schema": {
-                "$ref": "#/components/schemas/DeviceMode"
-              }
-            },
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DeviceMode"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DeviceMode"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/DeviceMode"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/DreamData/scanDevices": {
-      "post": {
-        "tags": [
-          "DreamData"
-        ],
-        "summary": "Triggers a device refresh",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "array",
-                  "items": { }
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": { }
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "type": "array",
-                  "items": { }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/DreamData/stats": {
-      "get": {
-        "tags": [
-          "DreamData"
-        ],
-        "summary": "Fetch current CPU statistics.",
-        "description": "Example json:\r\n            {\r\n            \"loadAvg1\": 1.23,\r\n            \"loadAvg15\": 0.33,\r\n            \"loadAvg5\": 0.52,\r\n            \"tempAvg\": 146,\r\n            \"tempCurrent\": 146,\r\n            \"tempMax\": 146,\r\n            \"tempMin\": 146,\r\n            \"uptime\": \"1:12\",\r\n            \"throttledState\": [\r\n            \"Soft Temperature Limit has occurred\"\r\n            ]\r\n            }",
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/DreamData/systemControl": {
-      "post": {
-        "tags": [
-          "DreamData"
-        ],
-        "summary": "Triggers a system action.",
-        "requestBody": {
-          "description": "Available commands are \"restart\", \"shutdown\", \"reboot\", and \"update\".\r\n            Restart restarts ONLY the glimmr service.\r\n            Shutdown shuts down the entire machine.\r\n            Reboot triggers a system reboot.\r\n            Update will stop Glimmr, update the software, and re-start the service.",
-          "content": {
-            "application/json-patch+json": {
-              "schema": {
-                "type": "string"
-              }
-            },
-            "application/json": {
-              "schema": {
-                "type": "string"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "type": "string"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "type": "string"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/DreamData/systemData": {
-      "post": {
-        "tags": [
-          "DreamData"
-        ],
-        "summary": "Update System configuration",
-        "requestBody": {
-          "description": "A SystemData object.",
-          "content": {
-            "application/json-patch+json": {
-              "schema": {
-                "$ref": "#/components/schemas/SystemData"
-              }
-            },
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SystemData"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SystemData"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/SystemData"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/SystemData"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SystemData"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SystemData"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/DreamData/updateDevice": {
-      "post": {
-        "tags": [
-          "DreamData"
+          "Glimmr"
         ],
         "summary": "Update a specific Devices data.",
         "requestBody": {
@@ -578,6 +573,453 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/IColorTargetData"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Delete a device.",
+        "requestBody": {
+          "description": "A JSON string representing the ColorTarget to update.",
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/IColorTargetData"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IColorTargetData"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IColorTargetData"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/IColorTargetData"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/IColorTargetData"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IColorTargetData"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IColorTargetData"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/devices": {
+      "get": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Retrieve the current list of devices.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IColorTargetData"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IColorTargetData"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IColorTargetData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/flashDevice": {
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Flash an entire device.",
+        "requestBody": {
+          "description": "The ID of the device to flash on/off.",
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Glimmr/flashLed": {
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Flash a specific LED from the grid.",
+        "requestBody": {
+          "description": "The LED ID to flash.",
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Glimmr/flashSector": {
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Flash a specific Sector.",
+        "requestBody": {
+          "description": "The sector ID to flash.",
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Glimmr/glimmrData": {
+      "get": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Retrieves a simplified version of our SystemData object used for Glimmr-to-Glimmr control.",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Glimmr/logs": {
+      "get": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Download the current log file.",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Glimmr/mode": {
+      "get": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Retrieve the current device mode.",
+        "description": "Device Modes:\r\nOff = 0,\r\nVideo = 1,\r\nAudio = 2,\r\nAudioVideo = 4,\r\nAmbient = 3,\r\nUdp = 5,\r\nDreamScreen = 6",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Set a new device mode.",
+        "description": "Device Modes:\r\nOff = 0,\r\nVideo = 1,\r\nAudio = 2,\r\nAudioVideo = 4,\r\nAmbient = 3,\r\nUdp = 5,\r\nDreamScreen = 6",
+        "requestBody": {
+          "description": "The new device mode to set.",
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceMode"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceMode"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceMode"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceMode"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Glimmr/scanDevices": {
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Triggers a device refresh.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": { }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/stats": {
+      "get": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Fetch current CPU statistics.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CpuData"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CpuData"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CpuData"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/systemControl": {
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Triggers a system action.",
+        "requestBody": {
+          "description": "Available commands are \"restart\", \"shutdown\", \"reboot\", and \"update\".\r\n            Restart restarts ONLY the glimmr service.\r\n            Shutdown shuts down the entire machine.\r\n            Reboot triggers a system reboot.\r\n            Update will stop Glimmr, update the software, and re-start the service.",
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Glimmr/systemData": {
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Update System configuration.",
+        "requestBody": {
+          "description": "A SystemData object.",
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SystemData"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SystemData"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SystemData"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SystemData"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemData"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemData"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemData"
                 }
               }
             }
@@ -697,6 +1139,60 @@
           },
           "Name": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CpuData": {
+        "type": "object",
+        "properties": {
+          "LoadAvg1": {
+            "type": "number",
+            "description": "Load Average for the past minute.",
+            "format": "float"
+          },
+          "LoadAvg15": {
+            "type": "number",
+            "description": "Load average for the past 15 minutes.",
+            "format": "float"
+          },
+          "LoadAvg5": {
+            "type": "number",
+            "description": "Load average for the past 5 minutes.",
+            "format": "float"
+          },
+          "TempAvg": {
+            "type": "number",
+            "description": "Average temperature.",
+            "format": "float"
+          },
+          "TempCurrent": {
+            "type": "number",
+            "description": "Current temperature.",
+            "format": "float"
+          },
+          "TempMax": {
+            "type": "number",
+            "description": "Maximum detected temperature.",
+            "format": "float"
+          },
+          "TempMin": {
+            "type": "number",
+            "description": "Minimum detected temperature.",
+            "format": "float"
+          },
+          "Uptime": {
+            "type": "string",
+            "description": "System Uptime.",
+            "nullable": true
+          },
+          "ThrottledState": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Current throttle state.",
             "nullable": true
           }
         },
@@ -937,7 +1433,7 @@
             "format": "float",
             "default": 0.025
           },
-          "AmbientShow": {
+          "AmbientScene": {
             "type": "integer",
             "description": "Current ambient scene.",
             "format": "int32",

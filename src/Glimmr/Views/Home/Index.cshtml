@@ -47,8 +47,8 @@
 <div class="bg-light hide container-fluid pb-2 pt-2" id="ambientNav">
     <div class="row form-inline ambientRow">
         <div class="form-group pl-4">
-            <label for="AmbientShow" class="pr-2">Scene</label>
-            <select class="form-control" data-property="ambientShow" data-object="SystemData" id="AmbientShow">
+            <label for="AmbientScene" class="pr-2">Scene</label>
+            <select class="form-control" data-property="ambientScene" data-object="SystemData" id="AmbientScene">
             </select>
         </div>
         <div class="form-group pl-4">
@@ -274,7 +274,7 @@
     </div>
     <div class="col-12 titleCol pb-1">Backup and Restore</div>
     <div class="col-12 col-md-6 col-xl-3 form-group">
-        <form method="post" enctype="multipart/form-data" asp-controller="DreamData" asp-action="ImportDb" target="dummyframe" id="dbForm">
+        <form method="post" enctype="multipart/form-data" asp-controller="Glimmr" asp-action="ImportDb" target="dummyframe" id="dbForm">
             <div class="form-group">
                 <div class="col-md-10">
                     <p>Select you new DB here:</p>
