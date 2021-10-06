@@ -4,6 +4,7 @@ using System;
 using System.ComponentModel;
 using System.Net;
 using System.Runtime.InteropServices;
+using Glimmr.Enums;
 using Newtonsoft.Json;
 
 #endregion
@@ -191,7 +192,7 @@ namespace Glimmr.Models {
 		/// </summary>
 		[DefaultValue(1)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int CamType { get; set; } = 1;
+		public CameraType CamType { get; set; } = CameraType.WebCam;
 
 		/// <summary>
 		/// Currently selected capture mode for video input.
@@ -201,7 +202,7 @@ namespace Glimmr.Models {
 		/// </summary>
 		[DefaultValue(2)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int CaptureMode { get; set; } = 2;
+		public CaptureMode CaptureMode { get; set; } = CaptureMode.Hdmi;
 
 		/// <summary>
 		/// The number of frames required for detection before cropping is
@@ -213,17 +214,10 @@ namespace Glimmr.Models {
 
 		/// <summary>
 		/// The currently selected device mode.
-		/// Off = 0
-		/// Video = 1
-		/// Audio = 2
-		/// AudioVideo = 4
-		/// Ambient = 3
-		/// Udp = 5
-		/// DreamScreen = 
 		/// </summary>
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int DeviceMode { get; set; }
+		public DeviceMode DeviceMode { get; set; }
 
 		/// <summary>
 		/// How long to wait before canceling discovery tasks, in seconds.
@@ -304,13 +298,11 @@ namespace Glimmr.Models {
 
 		/// <summary>
 		/// Currently selected streaming mode.
-		/// 0 = DreamScreen
-		/// 1 = UDP (WLED, Glimmr)
 		/// </summary>
 		[DefaultValue(15)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
-		public int StreamMode { get; set; } = 2;
+		public StreamMode StreamMode { get; set; } = StreamMode.Udp;
 
 		/// <summary>
 		/// Number of LEDs along the top of the screen.
@@ -386,12 +378,10 @@ namespace Glimmr.Models {
 
 		/// <summary>
 		/// Temperature units.
-		/// 0 = Not 'Murica.
-		/// 1 = 'Murica.
 		/// </summary>
 		[DefaultValue("0")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public string Units { get; set; } = "0";
+		public DeviceUnits Units { get; set; } = DeviceUnits.Imperial;
 		
 		/// <summary>
 		/// Colors below this brightness will be considered "black".

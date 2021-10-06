@@ -13,67 +13,107 @@ using OpenRGB.NET.Models;
 
 namespace Glimmr.Models.ColorTarget.OpenRgb {
 	public class OpenRgbData : IColorTargetData {
+		
+		/// <summary>
+		/// The OpenRGB device type.
+		/// </summary>
 		[DefaultValue(DeviceType.Ledstrip)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-
+		
 		public DeviceType Type { get; set; }
+		
+		/// <summary>
+		/// The index of the active device mode.
+		/// </summary>
 
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int ActiveModeIndex { get; set; }
 
+		/// <summary>
+		/// Device brightness.
+		/// </summary>
 		[DefaultValue(255)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-
-
 		public int Brightness { get; set; }
 
+		/// <summary>
+		/// OpenRGB Device ID.
+		/// </summary>
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-
 		public int DeviceId { get; set; }
-
+		
+		/// <summary>
+		/// Number of LEDs in strip.
+		/// </summary>
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
 		public int LedCount { get; set; }
-
+		
+		/// <summary>
+		/// Scale factor for LED counts related to master grid.
+		/// </summary>
 		[JsonProperty] public float LedMultiplier { get; set; } = 1.0f;
 
+		
+		/// <summary>
+		/// Offset of leds from lower-right corner of master grid.
+		/// </summary>
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-
 		public int Offset { get; set; }
 
+		/// <summary>
+		/// Device rotation.
+		/// </summary>
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-
 		public int Rotation { get; set; }
-
+		
+		/// <summary>
+		/// Device description.
+		/// </summary>
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
 		public string Description { get; set; }
-
+		
+		/// <summary>
+		/// Device location.
+		/// </summary>
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string Location { get; set; }
 
+		/// <summary>
+		/// Device serial.
+		/// </summary>
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string Serial { get; set; }
 
 
+		/// <summary>
+		/// Device tag.
+		/// </summary>
 		[DefaultValue("OpenRgb")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
 		public string Tag { get; set; }
 
 
+		/// <summary>
+		/// Device vendor.
+		/// </summary>
 		[DefaultValue("Unknown")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string Vendor { get; set; }
 
+		/// <summary>
+		/// Device version.
+		/// </summary>
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string Version { get; set; }
@@ -109,26 +149,43 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		}
 
 		
+		/// <summary>
+		/// Device ID.
+		/// </summary>
 		[JsonProperty] public string Id { get; set; }
 
+		/// <summary>
+		/// Device name.
+		/// </summary>
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string Name { get; set; }
 
-		
+		/// <summary>
+		/// Device IP Address.
+		/// </summary>
 		[DefaultValue("127.0.0.1")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
 		public string IpAddress { get; set; }
 
+		/// <summary>
+		/// Enable device for streaming.
+		/// </summary>
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
 		public bool Enable { get; set; }
 
+		/// <summary>
+		/// Last time the device was seen during discovery.
+		/// </summary>
 		[JsonProperty] public string LastSeen { get; set; }
 
 
+		/// <summary>
+		/// UI Properties.
+		/// </summary>
 		public SettingsProperty[] KeyProperties { get; set; } = {
 			new("ledmap", "ledmap", ""),
 			new("Offset", "number", "LED Offset"),

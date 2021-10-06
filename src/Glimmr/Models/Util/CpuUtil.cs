@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using Glimmr.Enums;
 using Serilog;
 
 #endregion
@@ -82,7 +83,7 @@ namespace Glimmr.Models.Util {
 			var res = result.Split("=")[1].Split("'")[0];
 			var temp = float.TryParse(res, out var temperature) ? temperature : 0.0f;
 			var sd = DataUtil.GetSystemData();
-			if (sd.Units == "0") {
+			if (sd.Units == DeviceUnits.Imperial) {
 				temp = (float) Math.Round(temp * 1.8f + 32);
 			}
 

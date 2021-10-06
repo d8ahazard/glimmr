@@ -14,9 +14,19 @@ using Newtonsoft.Json;
 namespace Glimmr.Models.ColorTarget {
 	[Serializable]
 	public class TileLayout {
+		/// <summary>
+		/// Number of panels in the layout.
+		/// </summary>
 		[JsonProperty] public int NumPanels { get; set; }
 
+		/// <summary>
+		/// Length of sides of each panel. This is not used for shapes.
+		/// </summary>
 		[JsonProperty] public int SideLength { get; set; }
+		
+		/// <summary>
+		/// Array of position data for our tiles.
+		/// </summary>
 
 		[JsonProperty] public TileData[]? PositionData { get; set; }
 
@@ -74,20 +84,42 @@ namespace Glimmr.Models.ColorTarget {
 
 	[Serializable]
 	public class TileData {
+		/// <summary>
+		/// Orientation.
+		/// </summary>
 		[JsonProperty] public int O { get; set; }
 
+		/// <summary>
+		/// Panel ID.
+		/// </summary>
 		[JsonProperty] public int PanelId { get; set; }
 
+		/// <summary>
+		/// What type of shape is this?
+		/// </summary>
 		[JsonProperty] public int ShapeType { get; set; }
 
+		/// <summary>
+		/// Length of panel sides.
+		/// </summary>
 		[JsonProperty] public int SideLength { get; set; }
 
+		/// <summary>
+		/// The sector to use for streaming for this panel.
+		/// </summary>
 		[DefaultValue(-1)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int TargetSector { get; set; } = -1;
 
+		/// <summary>
+		/// Tile X position.
+		/// </summary>
 		[JsonProperty] public int X { get; set; }
 
+		
+		/// <summary>
+		/// Tile Y position.
+		/// </summary>
 		[JsonProperty] public int Y { get; set; }
 
 		public TileData() {

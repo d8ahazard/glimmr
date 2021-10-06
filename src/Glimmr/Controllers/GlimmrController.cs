@@ -76,7 +76,7 @@ namespace Glimmr.Controllers {
 
 			sd.AmbientColor = color.Replace("#","");
 			sd.AmbientScene = -1;
-			sd.DeviceMode = (int)DeviceMode.Ambient;
+			sd.DeviceMode = DeviceMode.Ambient;
 			await _controlService.UpdateSystem(sd);
 			return Ok(sd.AmbientColor);
 		}
@@ -128,7 +128,7 @@ namespace Glimmr.Controllers {
 				}
 
 				sd.AmbientScene = mode;
-				sd.DeviceMode = (int)DeviceMode.Ambient;
+				sd.DeviceMode = DeviceMode.Ambient;
 				await _controlService.UpdateSystem(sd);
 				return scene;
 			}
@@ -171,7 +171,7 @@ namespace Glimmr.Controllers {
 				}
 
 				sd.AmbientScene = mode;
-				sd.DeviceMode = (int)DeviceMode.Audio;
+				sd.DeviceMode = DeviceMode.Audio;
 				await _controlService.UpdateSystem(sd);
 				return scene;
 			}

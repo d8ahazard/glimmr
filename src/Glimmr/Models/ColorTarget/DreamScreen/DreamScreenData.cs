@@ -9,9 +9,24 @@ using Newtonsoft.Json;
 
 namespace Glimmr.Models.ColorTarget.DreamScreen {
 	public class DreamScreenData : IColorTargetData {
+		/// <summary>
+		/// Device brightness.
+		/// </summary>
 		[JsonProperty] public int Brightness { get; set; } = 255;
+		
+		/// <summary>
+		/// Device group number.
+		/// </summary>
 		[JsonProperty] public int GroupNumber { get; private set; }
+		
+		/// <summary>
+		/// Dreamscreen-specific device tag.
+		/// </summary>
 		[JsonProperty] public string DeviceTag { get; private set; } = "DreamScreen";
+		
+		/// <summary>
+		/// Device tag.
+		/// </summary>
 		[JsonProperty] public string Tag { get; set; } = "DreamScreen";
 
 		public DreamScreenData() {
@@ -31,11 +46,29 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			}
 		}
 
+		/// <summary>
+		/// Device name.
+		/// </summary>
 		[JsonProperty] public string Name { get; set; } = "DreamScreen";
+		
+		/// <summary>
+		/// Unique device ID.
+		/// </summary>
 		[JsonProperty] public string Id { get; set; } = "";
+		
+		/// <summary>
+		/// Device IP Address.
+		/// </summary>
 		[JsonProperty] public string IpAddress { get; set; } = "";
 
+		/// <summary>
+		/// Enable device for streaming.
+		/// </summary>
 		[JsonProperty] public bool Enable { get; set; }
+		
+		/// <summary>
+		/// Last time the device was seen during discovery.
+		/// </summary>
 		[JsonProperty] public string LastSeen { get; set; }
 
 
@@ -52,6 +85,9 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			}
 		}
 
+		/// <summary>
+		/// UI properties.
+		/// </summary>
 		public SettingsProperty[] KeyProperties { get; set; } = Array.Empty<SettingsProperty>();
 	}
 }

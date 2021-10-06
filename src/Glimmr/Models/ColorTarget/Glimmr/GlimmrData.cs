@@ -11,12 +11,39 @@ using Newtonsoft.Json;
 namespace Glimmr.Models.ColorTarget.Glimmr {
 	[Serializable]
 	public class GlimmrData : IColorTargetData {
+		/// <summary>
+		/// Mirror light data before sending to target Glimmr.
+		/// </summary>
 		[JsonProperty] public bool MirrorHorizontal { get; set; }
+		
+		/// <summary>
+		/// Number of LEDs along the bottom side of the screen.
+		/// </summary>
 		[JsonProperty] public int BottomCount { get; set; }
+		
+		/// <summary>
+		/// Device brightness.
+		/// </summary>
 		[JsonProperty] public int Brightness { get; set; } = 255;
+		
+		/// <summary>
+		/// Number of LEDs along the left side of the screen.
+		/// </summary>
 		[JsonProperty] public int LeftCount { get; set; }
+		
+		/// <summary>
+		/// Number of LEDs along the right side of the screen.
+		/// </summary>
 		[JsonProperty] public int RightCount { get; set; }
+		
+		/// <summary>
+		/// Number of LEDs along the top side of the screen.
+		/// </summary>
 		[JsonProperty] public int TopCount { get; set; }
+		
+		/// <summary>
+		/// Device tag.
+		/// </summary>
 		[JsonProperty] public string Tag { get; set; }
 
 
@@ -55,11 +82,29 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			Id = Dns.GetHostName();
 		}
 
+		/// <summary>
+		/// Device name.
+		/// </summary>
 		[JsonProperty] public string Name { get; set; } = "";
+		
+		/// <summary>
+		/// Unique device ID.
+		/// </summary>
 		[JsonProperty] public string Id { get; set; } = "";
+		
+		/// <summary>
+		/// Device IP Address.
+		/// </summary>
 		[JsonProperty] public string IpAddress { get; set; } = "";
+		
+		/// <summary>
+		/// Enable device for streaming.
+		/// </summary>
 		[JsonProperty] public bool Enable { get; set; }
 
+		/// <summary>
+		/// Last time the device was seen during discovery.
+		/// </summary>
 		public string LastSeen { get; set; }
 
 
@@ -76,6 +121,9 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			}
 		}
 
+		/// <summary>
+		/// UI Properties.
+		/// </summary>
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public SettingsProperty[] KeyProperties { get; set; } = {
 			new("MirrorHorizontal", "check", "Mirror LED Colors")

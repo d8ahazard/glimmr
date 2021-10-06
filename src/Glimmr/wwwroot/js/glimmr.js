@@ -453,7 +453,7 @@ function setSocketListeners() {
         let tempUnit = "°F";
 
         if (isValid(sd)) {
-            tempUnit = (sd["units"] === "0") ? "°F" : "°C";
+            tempUnit = (sd["units"] === 0) ? "°F" : "°C";
         }
         tempText.textContent = cpuData["tempCurrent"] + tempUnit;
         cpuText.textContent = cpuData["loadAvg1"] + "%";

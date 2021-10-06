@@ -10,14 +10,25 @@ using Newtonsoft.Json;
 
 namespace Glimmr.Models.ColorTarget.Yeelight {
 	public class YeelightData : IColorTargetData {
+		/// <summary>
+		/// Device brightness.
+		/// </summary>
 		[DefaultValue(255)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
 		public int Brightness { get; set; } = 255;
+		
+		/// <summary>
+		/// Target sector for streaming.
+		/// </summary>
 
 		[DefaultValue(-1)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int TargetSector { get; set; }
+		
+		/// <summary>
+		/// Device tag.
+		/// </summary>
 
 		[DefaultValue("Yeelight")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -40,22 +51,39 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			}
 		}
 
+		/// <summary>
+		/// Device name.
+		/// </summary>
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
 		public string Name { get; set; } = "";
+		
+		/// <summary>
+		/// Device ID.
+		/// </summary>
 
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
 		public string Id { get; set; } = "";
 
+		/// <summary>
+		/// Device IP Address.
+		/// </summary>
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-
+		
 		public string IpAddress { get; set; } = "";
 
+		/// <summary>
+		/// Enable streaming.
+		/// </summary>
 		[JsonProperty] public bool Enable { get; set; }
+		
+		/// <summary>
+		/// Last time the device was seen during discovery.
+		/// </summary>
 		[JsonProperty] public string LastSeen { get; set; }
 
 
@@ -64,6 +92,9 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			IpAddress = existing.IpAddress;
 		}
 
+		/// <summary>
+		/// UI Properties.
+		/// </summary>
 		public SettingsProperty[] KeyProperties { get; set; } = {
 			new("TargetSector", "sectormap", "Target Sector")
 		};

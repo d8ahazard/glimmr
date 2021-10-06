@@ -2,8 +2,11 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using Glimmr.Hubs;
+using Glimmr.Models;
+using Glimmr.Models.ColorTarget;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.SignalR;
@@ -24,7 +27,10 @@ namespace Glimmr {
 			{
 				var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
 				var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-				c.IncludeXmlComments(xmlPath);         
+				c.IncludeXmlComments(xmlPath);
+				c.UseOneOfForPolymorphism();
+				c.EnableAnnotations(true, true);
+				c.SchemaFilter<DescribeEnumMembers>(xmlPath);
 			});
 		}
 

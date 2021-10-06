@@ -2,7 +2,18 @@
 
 using System;
 using System.Collections.Generic;
+using Glimmr.Models.ColorTarget.Adalight;
+using Glimmr.Models.ColorTarget.DreamScreen;
+using Glimmr.Models.ColorTarget.Glimmr;
+using Glimmr.Models.ColorTarget.Hue;
+using Glimmr.Models.ColorTarget.Led;
+using Glimmr.Models.ColorTarget.Lifx;
+using Glimmr.Models.ColorTarget.Nanoleaf;
+using Glimmr.Models.ColorTarget.Wled;
+using Glimmr.Models.ColorTarget.Yeelight;
+using JsonSubTypes;
 using Newtonsoft.Json;
+using Swashbuckle.AspNetCore.Annotations;
 
 #endregion
 
@@ -16,43 +27,62 @@ namespace Glimmr.Models.ColorTarget {
 	/// for full device structures.
 	/// </summary>
 	
-	public abstract class IColorTargetData {
+	[JsonConverter(typeof(ColorTargetConverter), nameof(Tag))]
+	[JsonSubtypes.KnownSubType(typeof(AdalightData), "Adalight")]
+	[JsonSubtypes.KnownSubType(typeof(DreamScreenData), "DreamScreen")]
+	[JsonSubtypes.KnownSubType(typeof(GlimmrData), "Glimmr")]
+	[JsonSubtypes.KnownSubType(typeof(HueData), "Hue")]
+	[JsonSubtypes.KnownSubType(typeof(LedData), "Led")]
+	[JsonSubtypes.KnownSubType(typeof(LifxData), "Lifx")]
+	[JsonSubtypes.KnownSubType(typeof(NanoleafData), "Nanoleaf")]
+	[JsonSubtypes.KnownSubType(typeof(WledData), "Wled")]
+	[JsonSubtypes.KnownSubType(typeof(YeelightData), "Yeelight")]
+	[SwaggerSubType(typeof(AdalightData))]
+	[SwaggerSubType(typeof(DreamScreenData))]
+	[SwaggerSubType(typeof(GlimmrData))]
+	[SwaggerSubType(typeof(HueData))]
+	[SwaggerSubType(typeof(LedData))]
+	[SwaggerSubType(typeof(LifxData))]
+	[SwaggerSubType(typeof(NanoleafData))]
+	[SwaggerSubType(typeof(WledData))]
+	[SwaggerSubType(typeof(YeelightData))]
+	public interface IColorTargetData {
 		/// <summary>
 		/// If set, Glimmr will attempt to control this device.
 		/// </summary>
-		public abstract bool Enable { get;  set;}
+		public bool Enable { get;  set;}
 		
 		/// <summary>
 		/// Unique device tag used for serilization/deserilization
 		/// </summary>
-		public abstract string Tag { get; set; }
+		public string Tag { get; set; }
 
 		/// <summary>
 		/// An array of properties that will be auto-filled in the web UI.
 		/// </summary>
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-		public abstract SettingsProperty[] KeyProperties { get; set; }
+		public SettingsProperty[] KeyProperties { get; set; }
 
 		/// <summary>
 		/// A unique device identifier.
 		/// </summary>
-		public abstract string Id { get;  set;}
+		public string Id { get;  set;}
 		
 		/// <summary>
 		/// The device IP address.
 		/// </summary>
-		public abstract string IpAddress { get; set; }
+		public string IpAddress { get; set; }
 		
 		/// <summary>
 		/// The last time the device was seen via device discovery.
 		/// </summary>
-		public abstract string LastSeen { get;  set;}
+		public string LastSeen { get;  set;}
 
 		/// <summary>
 		/// The device name.
 		/// </summary>
-		public abstract string Name { get;  set;}
-		public abstract void UpdateFromDiscovered(IColorTargetData data);
+		public string Name { get;  set;}
+		public void UpdateFromDiscovered(IColorTargetData data);
 	}
 
 	/// <summary>

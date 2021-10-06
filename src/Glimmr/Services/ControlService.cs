@@ -418,6 +418,7 @@ v. {version}
 			}
 
 			ColorUtil.SetSystemData();
+			await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
 			RefreshSystemEvent.Invoke();
 		}
 
@@ -466,16 +467,15 @@ v. {version}
 			await DemoLedEvent.InvokeAsync(this, new DynamicEventArgs(id));
 		}
 
-		public async Task RemoveDevice(string id) {
+		public async Task<bool> RemoveDevice(string id) {
 			ColorService.StopDevice(id, true);
-			DataUtil.DeleteDevice(id);
+			var res= DataUtil.DeleteDevice(id);
 			await _hubContext.Clients.All.SendAsync("deleteDevice", id);
+			return res;
 		}
 
 		public async Task StartStream(GlimmrData gd) {
 			await StartStreamEvent.InvokeAsync(this, new DynamicEventArgs(gd));
-			//await SetModeEvent.InvokeAsync(this, new DynamicEventArgs(5)).ConfigureAwait(false);
-
 		}
 	}
 }
