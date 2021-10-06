@@ -470,7 +470,7 @@ v. {version}
 		public async Task<bool> RemoveDevice(string id) {
 			ColorService.StopDevice(id, true);
 			var res= DataUtil.DeleteDevice(id);
-			await _hubContext.Clients.All.SendAsync("deleteDevice", id);
+			if (res) await _hubContext.Clients.All.SendAsync("deleteDevice", id);
 			return res;
 		}
 

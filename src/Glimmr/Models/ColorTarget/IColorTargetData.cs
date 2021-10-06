@@ -11,7 +11,6 @@ using Glimmr.Models.ColorTarget.Lifx;
 using Glimmr.Models.ColorTarget.Nanoleaf;
 using Glimmr.Models.ColorTarget.Wled;
 using Glimmr.Models.ColorTarget.Yeelight;
-using JsonSubTypes;
 using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -27,16 +26,6 @@ namespace Glimmr.Models.ColorTarget {
 	/// for full device structures.
 	/// </summary>
 	
-	[JsonConverter(typeof(ColorTargetConverter), nameof(Tag))]
-	[JsonSubtypes.KnownSubType(typeof(AdalightData), "Adalight")]
-	[JsonSubtypes.KnownSubType(typeof(DreamScreenData), "DreamScreen")]
-	[JsonSubtypes.KnownSubType(typeof(GlimmrData), "Glimmr")]
-	[JsonSubtypes.KnownSubType(typeof(HueData), "Hue")]
-	[JsonSubtypes.KnownSubType(typeof(LedData), "Led")]
-	[JsonSubtypes.KnownSubType(typeof(LifxData), "Lifx")]
-	[JsonSubtypes.KnownSubType(typeof(NanoleafData), "Nanoleaf")]
-	[JsonSubtypes.KnownSubType(typeof(WledData), "Wled")]
-	[JsonSubtypes.KnownSubType(typeof(YeelightData), "Yeelight")]
 	[SwaggerSubType(typeof(AdalightData))]
 	[SwaggerSubType(typeof(DreamScreenData))]
 	[SwaggerSubType(typeof(GlimmrData))]
@@ -154,7 +143,7 @@ namespace Glimmr.Models.ColorTarget {
 		/// </summary>
 
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-		public Dictionary<string, string> Options;
+		public Dictionary<string, string> Options { get; set; }
 
 		public SettingsProperty() {
 			Options = new Dictionary<string, string>();

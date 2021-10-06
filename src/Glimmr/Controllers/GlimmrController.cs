@@ -291,16 +291,16 @@ namespace Glimmr.Controllers {
 			await _controlService.UpdateDevice(dData, false);
 			return new ActionResult<IColorTargetData>(dData);
 		}
-		
+
 		/// <summary>
 		/// Delete a device.
 		/// </summary>
-		/// <param name="dData">A JSON string representing the ColorTarget to update.</param>
+		/// <param name="id">The ID of the device to delete.</param>
 		/// <returns>The updated ColorTarget object.</returns>
 		[HttpDelete("device")]
-		public async Task<ActionResult<bool>> DeleteDevice(IColorTargetData dData) {
-			Log.Debug("Update device fired: " + JsonConvert.SerializeObject(dData));
-			var res = await _controlService.RemoveDevice(dData.Id);
+		public async Task<ActionResult<bool>> DeleteDevice(string id) {
+			Log.Debug("Delete device fired: " + id);
+			var res = await _controlService.RemoveDevice(id);
 			return new ActionResult<bool>(res);
 		}
 		

@@ -97,10 +97,11 @@ let data = {
         return this.devicesInternal;
     },
     deleteDevice(id) {
+        console.log("Removing device: ", id);
         let devs = this.devicesInternal;
         let newDevs = [];
         for (let i = 0; i < devs.length; i++) {
-            if (devs[i].Id !== id) {
+            if (devs[i].id !== id) {
                 newDevs.push(devs[i]);
             } 
         }
@@ -547,8 +548,7 @@ function setSocketListeners() {
     });
     
     websocket.on('deleteDevice', function(id) {
-       console.log("Removing device: ", id);
-        data.deleteDevice(id);
+       data.deleteDevice(id);
         if (isValid(deviceData) && deviceData["id"] === id) {
             if (expanded) {
                 closeCard().then(function(){
@@ -1873,7 +1873,7 @@ function getDevices() {
 function updateDevice(id, property, value) {
     let dev;
     let isLoaded = false;
-    if (property === "StripMode") value = parseInt(value);    
+    if (property === "stripMode") value = parseInt(value);    
     if (isValid(deviceData) && deviceData["id"] === id) {
         dev = deviceData;
         isLoaded = true;
@@ -1885,7 +1885,7 @@ function updateDevice(id, property, value) {
         let segments = dev["segments"];
         segments[segmentId]["offset"] = parseInt(value);
         value = segments;
-        property = "Segments";
+        property = "segments";
     }
     if (isValid(dev) && dev.hasOwnProperty(property)) {
         dev[property] = value;
@@ -2139,6 +2139,7 @@ function createDeviceSettings() {
         for (let i =0; i < props.length; i++) {            
             let prop = props[i];
             let propertyName = prop["valueName"];
+            propertyName = propertyName.charAt(0).toLowerCase() + propertyName.slice(1);
             let elem, se;
             let value = deviceData[propertyName];
             if (propertyName.includes("segmentOffset")) {
@@ -2174,7 +2175,7 @@ function createDeviceSettings() {
                     break;
                 case "select":
                     elem = new SettingElement(prop["valueLabel"], "select", id, propertyName, value, prop["valueHint"]);
-                    elem.options = prop["Options"];
+                    elem.options = prop["options"];
                     break;
                 case "sectormap":
                     let region = "flashSector";
@@ -2267,7 +2268,7 @@ function createSettingElement(settingElement) {
     let label = document.createElement("label");   
     label.innerText = settingElement.descrption;
     let element;
-    
+    console.log("Loading se: ", settingElement);
     switch(settingElement.type) {
         case "check":
             element = document.createElement("input");
@@ -2277,12 +2278,13 @@ function createSettingElement(settingElement) {
             group.classList.add("form-check-dev");
             element.classList.add("custom-control-input");
             element.type = "checkbox";
-            element.id = "customSwitch" + deviceData.Id;
+            element.id = "customSwitch" + deviceData.id;
             element.checked = settingElement.value;
             break;
         case "select":
             element = document.createElement("select");
             if (isValid(settingElement.options)) {
+                console.log("Options: ", settingElement.options);
                 for (const [key, value] of Object.entries(settingElement.options)) {
                     let option = document.createElement("option");
                     option.value = key.toString();
@@ -2361,6 +2363,7 @@ function createSettingElement(settingElement) {
 }
 
 function SettingElement(description, type, object, property, value, hint, minLimit, maxLimit, increment, options, id, isDevice) {
+    property = property.charAt(0).toLowerCase() + property.slice(1);
     this.descrption = description;
     this.type = type;
     this.object = object;
