@@ -519,17 +519,104 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/IColorTargetData"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/AdalightData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DreamScreenData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/GlimmrData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HueData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LedData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LifxData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NanoleafData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WledData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/YeelightData"
+                    }
+                  ],
+                  "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IColorTargetData"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/AdalightData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DreamScreenData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/GlimmrData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HueData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LedData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LifxData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NanoleafData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WledData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/YeelightData"
+                    }
+                  ],
+                  "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IColorTargetData"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/AdalightData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DreamScreenData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/GlimmrData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HueData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LedData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LifxData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NanoleafData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WledData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/YeelightData"
+                    }
+                  ],
+                  "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
                 }
               }
             }
@@ -546,22 +633,138 @@
           "content": {
             "application/json-patch+json": {
               "schema": {
-                "$ref": "#/components/schemas/IColorTargetData"
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/AdalightData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DreamScreenData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/GlimmrData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/HueData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LedData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LifxData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/NanoleafData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WledData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/YeelightData"
+                  }
+                ],
+                "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
               }
             },
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IColorTargetData"
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/AdalightData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DreamScreenData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/GlimmrData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/HueData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LedData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LifxData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/NanoleafData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WledData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/YeelightData"
+                  }
+                ],
+                "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/IColorTargetData"
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/AdalightData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DreamScreenData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/GlimmrData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/HueData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LedData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LifxData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/NanoleafData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WledData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/YeelightData"
+                  }
+                ],
+                "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/IColorTargetData"
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/AdalightData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DreamScreenData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/GlimmrData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/HueData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LedData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LifxData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/NanoleafData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WledData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/YeelightData"
+                  }
+                ],
+                "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
               }
             }
           }
@@ -572,17 +775,104 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/IColorTargetData"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/AdalightData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DreamScreenData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/GlimmrData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HueData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LedData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LifxData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NanoleafData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WledData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/YeelightData"
+                    }
+                  ],
+                  "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IColorTargetData"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/AdalightData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DreamScreenData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/GlimmrData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HueData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LedData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LifxData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NanoleafData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WledData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/YeelightData"
+                    }
+                  ],
+                  "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IColorTargetData"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/AdalightData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DreamScreenData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/GlimmrData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HueData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LedData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LifxData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NanoleafData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WledData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/YeelightData"
+                    }
+                  ],
+                  "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
                 }
               }
             }
@@ -599,22 +889,138 @@
           "content": {
             "application/json-patch+json": {
               "schema": {
-                "$ref": "#/components/schemas/IColorTargetData"
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/AdalightData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DreamScreenData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/GlimmrData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/HueData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LedData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LifxData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/NanoleafData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WledData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/YeelightData"
+                  }
+                ],
+                "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
               }
             },
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IColorTargetData"
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/AdalightData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DreamScreenData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/GlimmrData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/HueData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LedData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LifxData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/NanoleafData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WledData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/YeelightData"
+                  }
+                ],
+                "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/IColorTargetData"
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/AdalightData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DreamScreenData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/GlimmrData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/HueData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LedData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LifxData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/NanoleafData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WledData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/YeelightData"
+                  }
+                ],
+                "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/IColorTargetData"
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/AdalightData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DreamScreenData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/GlimmrData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/HueData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LedData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LifxData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/NanoleafData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WledData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/YeelightData"
+                  }
+                ],
+                "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
               }
             }
           }
@@ -657,7 +1063,36 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/IColorTargetData"
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/AdalightData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/DreamScreenData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/GlimmrData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/HueData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/LedData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/LifxData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/NanoleafData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/WledData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/YeelightData"
+                      }
+                    ],
+                    "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
                   }
                 }
               },
@@ -665,7 +1100,36 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/IColorTargetData"
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/AdalightData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/DreamScreenData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/GlimmrData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/HueData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/LedData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/LifxData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/NanoleafData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/WledData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/YeelightData"
+                      }
+                    ],
+                    "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
                   }
                 }
               },
@@ -673,7 +1137,36 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/IColorTargetData"
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/AdalightData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/DreamScreenData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/GlimmrData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/HueData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/LedData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/LifxData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/NanoleafData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/WledData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/YeelightData"
+                      }
+                    ],
+                    "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
                   }
                 }
               }
@@ -853,7 +1346,7 @@
           "Glimmr"
         ],
         "summary": "Retrieve the current device mode.",
-        "description": "Device Modes:\r\nOff = 0,\r\nVideo = 1,\r\nAudio = 2,\r\nAudioVideo = 4,\r\nAmbient = 3,\r\nUdp = 5,\r\nDreamScreen = 6",
+        "description": "Device Modes:\r\nOff = 0,\r\nVideo = 1,\r\nAudio = 2,\r\nAmbient = 3,\r\nAudioVideo = 4,\r\nUdp = 5,\r\nDreamScreen = 6",
         "responses": {
           "200": {
             "description": "Success",
@@ -946,7 +1439,36 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/IColorTargetData"
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/AdalightData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/DreamScreenData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/GlimmrData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/HueData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/LedData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/LifxData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/NanoleafData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/WledData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/YeelightData"
+                      }
+                    ],
+                    "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
                   }
                 }
               },
@@ -954,7 +1476,36 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/IColorTargetData"
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/AdalightData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/DreamScreenData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/GlimmrData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/HueData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/LedData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/LifxData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/NanoleafData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/WledData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/YeelightData"
+                      }
+                    ],
+                    "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
                   }
                 }
               },
@@ -962,7 +1513,36 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/IColorTargetData"
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/AdalightData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/DreamScreenData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/GlimmrData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/HueData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/LedData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/LifxData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/NanoleafData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/WledData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/YeelightData"
+                      }
+                    ],
+                    "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
                   }
                 }
               }
@@ -994,6 +1574,61 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CpuData"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/startStream": {
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Start Glimmr-to-Glimmr UDP stream",
+        "requestBody": {
+          "description": "A GlimmrData object containing the input dimensions of\r\n            the received colors.",
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GlimmrData"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GlimmrData"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GlimmrData"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GlimmrData"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "boolean"
                 }
               }
             }
@@ -1097,6 +1732,106 @@
   },
   "components": {
     "schemas": {
+      "AdalightData": {
+        "type": "object",
+        "properties": {
+          "ReverseStrip": {
+            "type": "boolean",
+            "description": "Reverse strip direction.",
+            "default": false
+          },
+          "Brightness": {
+            "type": "integer",
+            "description": "Device brightness.",
+            "format": "int32",
+            "default": 100
+          },
+          "LedCount": {
+            "type": "integer",
+            "description": "Number of LEDs on device. Must match Adalight settings, or device won't respond.",
+            "format": "int32",
+            "default": 0
+          },
+          "LedMultiplier": {
+            "type": "number",
+            "description": "Scale factor for LED counts related to master grid.",
+            "format": "float"
+          },
+          "Offset": {
+            "type": "integer",
+            "description": "Offset of leds from lower-right corner of master grid.",
+            "format": "int32",
+            "default": 0
+          },
+          "Speed": {
+            "type": "integer",
+            "description": "Baud rate for device.",
+            "format": "int32",
+            "default": 115200
+          },
+          "Port": {
+            "type": "string",
+            "description": "Port for device communication.",
+            "default": "COM1",
+            "nullable": true
+          },
+          "GammaFactor": {
+            "type": "number",
+            "description": "Gamma adjustment factor. You probably don't want to go higher than 3 or so.",
+            "format": "float",
+            "default": 2.2
+          },
+          "Tag": {
+            "type": "string",
+            "description": "Device tag.",
+            "nullable": true
+          },
+          "Id": {
+            "type": "string",
+            "description": "Device ID.",
+            "nullable": true
+          },
+          "IpAddress": {
+            "type": "string",
+            "description": "Unused for adalight.",
+            "nullable": true
+          },
+          "LastSeen": {
+            "type": "string",
+            "description": "Last time the device was seen during discovery.",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "description": "Device name.",
+            "nullable": true
+          },
+          "Enable": {
+            "type": "boolean",
+            "description": "Enable streaming.",
+            "default": false
+          },
+          "KeyProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SettingsProperty"
+            },
+            "description": "UI Properties.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Alert": {
+        "enum": [
+          0,
+          1,
+          2
+        ],
+        "type": "integer",
+        "description": "<p>Possible values:</p>\r\n<ul>\r\n</ul>\r\n",
+        "format": "int32"
+      },
       "AmbientScene": {
         "type": "object",
         "properties": {
@@ -1211,6 +1946,58 @@
         },
         "additionalProperties": false
       },
+      "BeamLayout": {
+        "type": "object",
+        "properties": {
+          "Segments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Segment"
+            },
+            "description": "List of individual segments.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CameraType": {
+        "enum": [
+          0,
+          1
+        ],
+        "type": "integer",
+        "description": "<p>Possible values:</p>\r\n<ul>\r\n<li><b>RasPiCam = 0</b> (Raspberry Pi Camera Module)</li>\r\n<li><b>WebCam = 1</b> (Web camera)</li>\r\n</ul>\r\n",
+        "format": "int32"
+      },
+      "CaptureMode": {
+        "enum": [
+          1,
+          2,
+          3
+        ],
+        "type": "integer",
+        "description": "<p>Possible values:</p>\r\n<ul>\r\n<li><b>Camera = 1</b> (Camera)</li>\r\n<li><b>Hdmi = 2</b> (HDMI)</li>\r\n<li><b>Screen = 3</b> (Screen)</li>\r\n</ul>\r\n",
+        "format": "int32"
+      },
+      "Ccnf": {
+        "type": "object",
+        "properties": {
+          "Max": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Min": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Time": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false,
+        "description": ""
+      },
       "CpuData": {
         "type": "object",
         "properties": {
@@ -1276,56 +2063,146 @@
           6
         ],
         "type": "integer",
-        "description": "The current device mode.\r\nOff = 0\r\nVideo = 1\r\nAudio = 2\r\nAmbient = 3\r\nAudioVideo = 4\r\nUdp = 5\r\nDreamScreen = 6",
+        "description": "The current device mode.\r\nOff = 0\r\nVideo = 1\r\nAudio = 2\r\nAmbient = 3\r\nAudioVideo = 4\r\nUdp = 5\r\nDreamScreen = 6<p>Possible values:</p>\r\n<ul>\r\n<li><b>Off = 0</b> (Off)</li>\r\n<li><b>Video = 1</b> (Video)</li>\r\n<li><b>Audio = 2</b> (Audio)</li>\r\n<li><b>Ambient = 3</b> (Ambient)</li>\r\n<li><b>AudioVideo = 4</b> (Audio+Video)</li>\r\n<li><b>Udp = 5</b> (UDP (Glimmr/WLED))</li>\r\n<li><b>DreamScreen = 6</b> (DreamScreen)</li>\r\n</ul>\r\n",
+        "format": "int32"
+      },
+      "DeviceUnits": {
+        "enum": [
+          0,
+          1
+        ],
+        "type": "integer",
+        "description": "<p>Possible values:</p>\r\n<ul>\r\n<li><b>Imperial = 0</b> (Imperial)</li>\r\n<li><b>Metric = 1</b> (Metric)</li>\r\n</ul>\r\n",
+        "format": "int32"
+      },
+      "DreamScreenData": {
+        "type": "object",
+        "properties": {
+          "Brightness": {
+            "type": "integer",
+            "description": "Device brightness.",
+            "format": "int32"
+          },
+          "GroupNumber": {
+            "type": "integer",
+            "description": "Device group number.",
+            "format": "int32",
+            "readOnly": true
+          },
+          "DeviceTag": {
+            "type": "string",
+            "description": "Dreamscreen-specific device tag.",
+            "nullable": true,
+            "readOnly": true
+          },
+          "Tag": {
+            "type": "string",
+            "description": "Device tag.",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "description": "Device name.",
+            "nullable": true
+          },
+          "Id": {
+            "type": "string",
+            "description": "Unique device ID.",
+            "nullable": true
+          },
+          "IpAddress": {
+            "type": "string",
+            "description": "Device IP Address.",
+            "nullable": true
+          },
+          "Enable": {
+            "type": "boolean",
+            "description": "Enable device for streaming."
+          },
+          "LastSeen": {
+            "type": "string",
+            "description": "Last time the device was seen during discovery.",
+            "nullable": true
+          },
+          "KeyProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SettingsProperty"
+            },
+            "description": "UI properties.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Effect": {
+        "enum": [
+          0,
+          1
+        ],
+        "type": "integer",
+        "description": "<p>Possible values:</p>\r\n<ul>\r\n</ul>\r\n",
         "format": "int32"
       },
       "GlimmrData": {
         "type": "object",
         "properties": {
           "MirrorHorizontal": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Mirror light data before sending to target Glimmr."
           },
           "BottomCount": {
             "type": "integer",
+            "description": "Number of LEDs along the bottom side of the screen.",
             "format": "int32"
           },
           "Brightness": {
             "type": "integer",
+            "description": "Device brightness.",
             "format": "int32"
           },
           "LeftCount": {
             "type": "integer",
+            "description": "Number of LEDs along the left side of the screen.",
             "format": "int32"
           },
           "RightCount": {
             "type": "integer",
+            "description": "Number of LEDs along the right side of the screen.",
             "format": "int32"
           },
           "TopCount": {
             "type": "integer",
+            "description": "Number of LEDs along the top side of the screen.",
             "format": "int32"
           },
           "Tag": {
             "type": "string",
+            "description": "Device tag.",
             "nullable": true
           },
           "Name": {
             "type": "string",
+            "description": "Device name.",
             "nullable": true
           },
           "Id": {
             "type": "string",
+            "description": "Unique device ID.",
             "nullable": true
           },
           "IpAddress": {
             "type": "string",
+            "description": "Device IP Address.",
             "nullable": true
           },
           "Enable": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Enable device for streaming."
           },
           "LastSeen": {
             "type": "string",
+            "description": "Last time the device was seen during discovery.",
             "nullable": true
           },
           "KeyProperties": {
@@ -1333,54 +2210,994 @@
             "items": {
               "$ref": "#/components/schemas/SettingsProperty"
             },
+            "description": "UI Properties.",
             "nullable": true
           }
         },
         "additionalProperties": false
       },
-      "IColorTargetData": {
+      "GroupLightLevel": {
         "type": "object",
         "properties": {
+          "State": {
+            "$ref": "#/components/schemas/SensorState"
+          },
+          "Lastupdated": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "Dark": {
+            "type": "boolean"
+          },
+          "DarkAll": {
+            "type": "boolean"
+          },
+          "Daylight": {
+            "type": "boolean"
+          },
+          "DaylightAny": {
+            "type": "boolean"
+          },
+          "LightLevel": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "LightLevelMin": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "LightLevelMax": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "GroupPresence": {
+        "type": "object",
+        "properties": {
+          "State": {
+            "$ref": "#/components/schemas/State"
+          },
+          "Lastupdated": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "Presence": {
+            "type": "boolean"
+          },
+          "PresenceAll": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "GroupState": {
+        "type": "object",
+        "properties": {
+          "AnyOn": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "AllOn": {
+            "type": "boolean",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "GroupType": {
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "type": "integer",
+        "description": "<p>Possible values:</p>\r\n<ul>\r\n</ul>\r\n",
+        "format": "int32"
+      },
+      "HueData": {
+        "type": "object",
+        "properties": {
+          "Brightness": {
+            "type": "integer",
+            "description": "Brightness to use for all enabled hue bulbs, unless override is specified.",
+            "format": "int32"
+          },
+          "Groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HueGroup"
+            },
+            "description": "List of available entertainment groups.",
+            "nullable": true
+          },
+          "Lights": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LightData"
+            },
+            "description": "List of available lights.",
+            "nullable": true
+          },
+          "MappedLights": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LightMap"
+            },
+            "description": "List of lights and their mappings to sectors.",
+            "nullable": true
+          },
+          "SelectedGroup": {
+            "type": "string",
+            "description": "Target entertainment group to use for streaming.",
+            "nullable": true
+          },
+          "Tag": {
+            "type": "string",
+            "description": "Device tag",
+            "nullable": true
+          },
+          "Token": {
+            "type": "string",
+            "description": "Token for entertainment streaming assigned after device is linked.",
+            "nullable": true
+          },
+          "User": {
+            "type": "string",
+            "description": "Hue user ID assigned after device is linked.",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "description": "Device name.",
+            "nullable": true
+          },
+          "Id": {
+            "type": "string",
+            "description": "Unique device ID.",
+            "nullable": true
+          },
+          "IpAddress": {
+            "type": "string",
+            "description": "Device IP Address.",
+            "nullable": true
+          },
           "Enable": {
             "type": "boolean",
-            "description": "If set, Glimmr will attempt to control this device.",
-            "readOnly": true
+            "description": "Enable device for streaming."
+          },
+          "LastSeen": {
+            "type": "string",
+            "description": "Last time the device was seen during discovery.",
+            "nullable": true
           },
           "KeyProperties": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/SettingsProperty"
             },
-            "description": "An array of properties that will be auto-filled in the web UI.",
+            "description": "UI Properties.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "HueGroup": {
+        "type": "object",
+        "properties": {
+          "Name": {
+            "type": "string",
+            "nullable": true
+          },
+          "Type": {
+            "$ref": "#/components/schemas/GroupType"
+          },
+          "Class": {
+            "$ref": "#/components/schemas/RoomClass"
+          },
+          "ModelId": {
+            "type": "string",
+            "nullable": true
+          },
+          "Lights": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "Action": {
+            "$ref": "#/components/schemas/State"
+          },
+          "State": {
+            "$ref": "#/components/schemas/GroupState"
+          },
+          "Locations": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "format": "double"
+              }
+            },
+            "nullable": true
+          },
+          "Recycle": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "Stream": {
+            "$ref": "#/components/schemas/Stream"
+          },
+          "Sensors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "Presence": {
+            "$ref": "#/components/schemas/GroupPresence"
+          },
+          "LightLevel": {
+            "$ref": "#/components/schemas/GroupLightLevel"
+          },
+          "Id": {
+            "type": "string",
+            "description": "Entertainment group ID.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Hue Entertainment Group."
+      },
+      "Info": {
+        "type": "object",
+        "properties": {
+          "Live": {
+            "type": "boolean",
+            "description": "Is live streaming enabled?"
+          },
+          "Str": {
+            "type": "boolean",
+            "description": "UI Sync button options."
+          },
+          "Freeheap": {
+            "type": "integer",
+            "description": "Free memory heap.",
+            "format": "int32"
+          },
+          "Fxcount": {
+            "type": "integer",
+            "description": "Number of included effects.",
+            "format": "int32"
+          },
+          "Lwip": {
+            "type": "integer",
+            "description": "IP address?",
+            "format": "int32"
+          },
+          "Opt": {
+            "type": "integer",
+            "description": "Debugging only.",
+            "format": "int32"
+          },
+          "Palcount": {
+            "type": "integer",
+            "description": "Palette count.",
+            "format": "int32"
+          },
+          "Udpport": {
+            "type": "integer",
+            "description": "Udp port.",
+            "format": "int32"
+          },
+          "Uptime": {
+            "type": "integer",
+            "description": "System Uptime.",
+            "format": "int32"
+          },
+          "Vid": {
+            "type": "integer",
+            "description": "Build ID.",
+            "format": "int32"
+          },
+          "Ws": {
+            "type": "integer",
+            "description": "Number of current websocket clients.",
+            "format": "int32"
+          },
+          "Leds": {
+            "$ref": "#/components/schemas/Leds"
+          },
+          "Arch": {
+            "type": "string",
+            "description": "Architecture.",
+            "nullable": true
+          },
+          "Brand": {
+            "type": "string",
+            "description": "Device brand.",
+            "nullable": true
+          },
+          "Core": {
+            "type": "string",
+            "description": "Arduino core version.",
+            "nullable": true
+          },
+          "Lip": {
+            "type": "string",
+            "description": "LED IP.",
+            "nullable": true
+          },
+          "Lm": {
+            "type": "string",
+            "description": "Realtime datasource info.",
+            "nullable": true
+          },
+          "Mac": {
+            "type": "string",
+            "description": "Device MAC address.",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "description": "Device name.",
+            "nullable": true
+          },
+          "Product": {
+            "type": "string",
+            "description": "Product type.",
+            "nullable": true
+          },
+          "Ver": {
+            "type": "string",
+            "description": "Product version.",
+            "nullable": true
+          },
+          "Wifi": {
+            "$ref": "#/components/schemas/Wifi"
+          }
+        },
+        "additionalProperties": false
+      },
+      "LedData": {
+        "type": "object",
+        "properties": {
+          "FixGamma": {
+            "type": "boolean",
+            "description": "Enable gamma correction.",
+            "default": true
+          },
+          "ReverseStrip": {
+            "type": "boolean",
+            "description": "Reverse the order of data sent to leds.",
+            "default": false
+          },
+          "Brightness": {
+            "type": "integer",
+            "description": "Device brightness.",
+            "format": "int32"
+          },
+          "GpioNumber": {
+            "type": "integer",
+            "description": "GPIO Number to use for device. Don't change this.",
+            "format": "int32",
+            "default": 18
+          },
+          "LedCount": {
+            "type": "integer",
+            "description": "Number of LEDs in strip.",
+            "format": "int32",
+            "default": 300
+          },
+          "LedMultiplier": {
+            "type": "number",
+            "description": "Scale factor for LED counts related to master grid.",
+            "format": "float"
+          },
+          "MilliampsPerLed": {
+            "type": "integer",
+            "description": "Per-led milliamp usage. Default is 30.",
+            "format": "int32",
+            "default": 30
+          },
+          "Offset": {
+            "type": "integer",
+            "description": "Offset of leds from lower-right corner of master grid.",
+            "format": "int32",
+            "default": 0
+          },
+          "StripType": {
+            "type": "integer",
+            "description": "LED Strip Type.\r\n0 = WS2812,\r\n1 = SK6812W (RGBW),\r\n2 = WS2811,\r\nDefault = WS2812",
+            "format": "int32"
+          },
+          "Tag": {
+            "type": "string",
+            "description": "Device tag.",
+            "default": "Led",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
             "nullable": true
           },
           "Id": {
             "type": "string",
-            "description": "A unique device identifier.",
-            "nullable": true,
-            "readOnly": true
+            "description": "Unique device identifier.",
+            "nullable": true
           },
           "IpAddress": {
             "type": "string",
-            "description": "The device IP address.",
-            "nullable": true,
-            "readOnly": true
+            "description": "Device IP Address.",
+            "nullable": true
+          },
+          "Enable": {
+            "type": "boolean",
+            "description": "Enable streaming."
           },
           "LastSeen": {
             "type": "string",
-            "description": "The last time the device was seen via device discovery.",
+            "description": "Last time the device was seen during discovery.",
+            "nullable": true
+          },
+          "KeyProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SettingsProperty"
+            },
+            "description": "UI Elements.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Leds": {
+        "type": "object",
+        "properties": {
+          "Rgbw": {
+            "type": "boolean",
+            "description": "Is the strip RGB+W?"
+          },
+          "Seglock": {
+            "type": "boolean",
+            "description": "Is the segment locked."
+          },
+          "Wv": {
+            "type": "boolean",
+            "description": "Show white channel slider."
+          },
+          "Count": {
+            "type": "integer",
+            "description": "Number of LEDs.",
+            "format": "int32"
+          },
+          "Maxpwr": {
+            "type": "integer",
+            "description": "Maximum power.",
+            "format": "int32"
+          },
+          "Maxseg": {
+            "type": "integer",
+            "description": "Maximum number of segments.",
+            "format": "int32"
+          },
+          "Pwr": {
+            "type": "integer",
+            "description": "Current LED power usage.",
+            "format": "int32"
+          },
+          "Pin": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "LED data pin.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "LifxData": {
+        "type": "object",
+        "properties": {
+          "BeamLayout": {
+            "$ref": "#/components/schemas/BeamLayout"
+          },
+          "HasMultiZone": {
+            "type": "boolean",
+            "description": "If this device supports multi-zone operations.",
+            "default": false
+          },
+          "MultiZoneV2": {
+            "type": "boolean",
+            "description": "Supports V2 Multi-zone operations.",
+            "default": false
+          },
+          "Power": {
+            "type": "boolean",
+            "description": "Is the device on?"
+          },
+          "Service": {
+            "type": "integer",
+            "description": "",
+            "format": "int32",
+            "readOnly": true
+          },
+          "MacAddress": {
+            "type": "string",
+            "description": "Device's MAC Address.",
+            "format": "byte",
             "nullable": true,
             "readOnly": true
           },
-          "Name": {
+          "GammaCorrection": {
+            "type": "number",
+            "description": "Gamma Correction level.",
+            "format": "double"
+          },
+          "Brightness": {
+            "type": "integer",
+            "description": "Device Brightness.",
+            "format": "int32"
+          },
+          "LedCount": {
+            "type": "integer",
+            "description": "UI Properties.",
+            "format": "int32",
+            "default": 82
+          },
+          "LedMultiplier": {
+            "type": "number",
+            "description": "Scale factor for LED counts related to master grid.",
+            "format": "float"
+          },
+          "MultiZoneCount": {
+            "type": "integer",
+            "description": "Number of zones, if device has multi-zone support.",
+            "format": "int32",
+            "default": 8
+          },
+          "Port": {
+            "type": "integer",
+            "description": "Port used for communication.",
+            "format": "int32",
+            "readOnly": true
+          },
+          "ProductId": {
+            "type": "integer",
+            "description": "Product ID.",
+            "format": "int32",
+            "default": 0
+          },
+          "TargetSector": {
+            "type": "integer",
+            "description": "Selected sector, if device is single-color.",
+            "format": "int32",
+            "default": -1
+          },
+          "DeviceTag": {
             "type": "string",
-            "description": "The device name.",
+            "description": "Lifx-Specific Device Tag.",
             "nullable": true,
             "readOnly": true
+          },
+          "HostName": {
+            "type": "string",
+            "description": "Device Hostname.",
+            "nullable": true,
+            "readOnly": true
+          },
+          "MacAddressString": {
+            "type": "string",
+            "description": "Device MAC Address.",
+            "nullable": true,
+            "readOnly": true
+          },
+          "Tag": {
+            "type": "string",
+            "description": "Device Tag",
+            "nullable": true
+          },
+          "Layout": {
+            "$ref": "#/components/schemas/TileLayout"
+          },
+          "Hue": {
+            "type": "integer",
+            "description": "Device Hue - Bulb only.",
+            "format": "int32"
+          },
+          "Kelvin": {
+            "type": "integer",
+            "description": "Device Color Temperature - Bulb only.",
+            "format": "int32"
+          },
+          "Saturation": {
+            "type": "integer",
+            "description": "Device Saturation - Bulb only.",
+            "format": "int32"
+          },
+          "Name": {
+            "type": "string",
+            "description": "Device Name.",
+            "nullable": true
+          },
+          "Id": {
+            "type": "string",
+            "description": "Device ID.",
+            "nullable": true
+          },
+          "IpAddress": {
+            "type": "string",
+            "description": "Device IP Address.",
+            "nullable": true
+          },
+          "Enable": {
+            "type": "boolean",
+            "description": "Enable device for streaming."
+          },
+          "LastSeen": {
+            "type": "string",
+            "description": "Last time the device was seen during discovery.",
+            "nullable": true
+          },
+          "KeyProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SettingsProperty"
+            },
+            "description": "UI Properties.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "LightData": {
+        "type": "object",
+        "properties": {
+          "HasStreaming": {
+            "type": "boolean",
+            "description": "If Light is capable of streaming.",
+            "default": false
+          },
+          "Brightness": {
+            "type": "integer",
+            "description": "Current light brightness.",
+            "format": "int32"
+          },
+          "LightLevel": {
+            "type": "integer",
+            "description": "Light elevation.",
+            "format": "int32"
+          },
+          "Presence": {
+            "type": "integer",
+            "description": "?",
+            "format": "int32"
+          },
+          "LastState": {
+            "$ref": "#/components/schemas/State"
+          },
+          "Id": {
+            "type": "string",
+            "description": "Bulb ID.",
+            "nullable": true
+          },
+          "ModelId": {
+            "type": "string",
+            "description": "Bulb model ID.",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "description": "Bulb name.",
+            "nullable": true
+          },
+          "Type": {
+            "type": "string",
+            "description": "Bulb type.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "LightMap": {
+        "type": "object",
+        "properties": {
+          "Override": {
+            "type": "boolean",
+            "description": "Override hue brightness and use light-specific value.",
+            "default": false
+          },
+          "Brightness": {
+            "type": "integer",
+            "description": "Light-specific brightness - needs override enable to be used.",
+            "format": "int32",
+            "default": 255
+          },
+          "TargetSector": {
+            "type": "integer",
+            "description": "Target sector used for streaming.",
+            "format": "int32",
+            "default": -1
+          },
+          "Id": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false,
-        "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+        "description": "Used to associate light data with mapping/brightness info."
+      },
+      "NanoleafData": {
+        "type": "object",
+        "properties": {
+          "MirrorX": {
+            "type": "boolean",
+            "description": "Mirror layout horizontally.",
+            "default": false
+          },
+          "MirrorY": {
+            "type": "boolean",
+            "description": "Mirror layout vertically.",
+            "default": false
+          },
+          "Rotation": {
+            "type": "number",
+            "description": "Layout rotation.",
+            "format": "float",
+            "default": 0
+          },
+          "Brightness": {
+            "type": "integer",
+            "description": "Device Brightness.",
+            "format": "int32",
+            "default": 100
+          },
+          "Port": {
+            "type": "integer",
+            "description": "Port used for communication.",
+            "format": "int32"
+          },
+          "Hostname": {
+            "type": "string",
+            "description": "Device host name.",
+            "nullable": true
+          },
+          "Tag": {
+            "type": "string",
+            "description": "Device tag.",
+            "nullable": true
+          },
+          "Token": {
+            "type": "string",
+            "description": "Token used for control, retrieved after authorization.",
+            "nullable": true
+          },
+          "Type": {
+            "type": "string",
+            "description": "Nanoleaf type.",
+            "nullable": true
+          },
+          "Version": {
+            "type": "string",
+            "description": "Device protocol version.",
+            "nullable": true
+          },
+          "Layout": {
+            "$ref": "#/components/schemas/TileLayout"
+          },
+          "Name": {
+            "type": "string",
+            "description": "Device name.",
+            "nullable": true
+          },
+          "Id": {
+            "type": "string",
+            "description": "Device ID.",
+            "nullable": true
+          },
+          "IpAddress": {
+            "type": "string",
+            "description": "Device IP address.",
+            "nullable": true
+          },
+          "Enable": {
+            "type": "boolean",
+            "description": "Enable device for streaming."
+          },
+          "LastSeen": {
+            "type": "string",
+            "description": "Last time the device was seen during discovery.",
+            "nullable": true
+          },
+          "KeyProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SettingsProperty"
+            },
+            "description": "UI Properties.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Nl": {
+        "type": "object",
+        "properties": {
+          "Fade": {
+            "type": "boolean",
+            "description": "Dim over course of nightlight duration."
+          },
+          "On": {
+            "type": "boolean",
+            "description": "Enable nightlight mode."
+          },
+          "Duration": {
+            "type": "integer",
+            "description": "NightLight duration.",
+            "format": "int32"
+          },
+          "Mode": {
+            "type": "integer",
+            "description": "Nightlight mode (0: instant, 1: fade, 2: color fade, 3: sunrise).",
+            "format": "int32"
+          },
+          "Tbri": {
+            "type": "integer",
+            "description": "Target brightness of nightlight feature.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Nightlight configuration"
+      },
+      "RoomClass": {
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39
+        ],
+        "type": "integer",
+        "description": "<p>Possible values:</p>\r\n<ul>\r\n</ul>\r\n",
+        "format": "int32"
+      },
+      "Segment": {
+        "type": "object",
+        "properties": {
+          "Repeat": {
+            "type": "boolean",
+            "description": "Use one color for the whole beam."
+          },
+          "Reverse": {
+            "type": "boolean",
+            "description": "Reverse color data order."
+          },
+          "Id": {
+            "type": "integer",
+            "description": "Beam ID. This is an arbitrary value.",
+            "format": "int32"
+          },
+          "LedCount": {
+            "type": "integer",
+            "description": "Number of leds per beam. Don't change this.",
+            "format": "int32"
+          },
+          "Offset": {
+            "type": "integer",
+            "description": "Offset of leds from lower-right corner of master grid.",
+            "format": "int32"
+          },
+          "Position": {
+            "type": "integer",
+            "description": "This beam's position in the layout.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Led Beam Data"
+      },
+      "SensorState": {
+        "type": "object",
+        "properties": {
+          "ButtonEvent": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "Dark": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "Daylight": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "Flag": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "Humidity": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "Lastupdated": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "LightLevel": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "Open": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "Presence": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "Status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "Temperature": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "SettingsProperty": {
         "type": "object",
@@ -1423,6 +3240,63 @@
         },
         "additionalProperties": false,
         "description": "A class used by the web UI to automagically generate device settings."
+      },
+      "State": {
+        "type": "object",
+        "properties": {
+          "On": {
+            "type": "boolean"
+          },
+          "Brightness": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Hue": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "Saturation": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "ColorCoordinates": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "format": "double"
+            },
+            "nullable": true
+          },
+          "ColorTemperature": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "Alert": {
+            "$ref": "#/components/schemas/Alert"
+          },
+          "Effect": {
+            "$ref": "#/components/schemas/Effect"
+          },
+          "ColorMode": {
+            "type": "string",
+            "nullable": true
+          },
+          "IsReachable": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "TransitionTime": {
+            "$ref": "#/components/schemas/TimeSpan"
+          },
+          "Mode": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "StoreData": {
         "type": "object",
@@ -1476,6 +3350,47 @@
         },
         "additionalProperties": false,
         "description": "A JSON representation of the database."
+      },
+      "Stream": {
+        "type": "object",
+        "properties": {
+          "ProxyMode": {
+            "type": "string",
+            "nullable": true
+          },
+          "ProxyNode": {
+            "type": "string",
+            "nullable": true
+          },
+          "Active": {
+            "type": "boolean"
+          },
+          "Owner": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "StreamMode": {
+        "enum": [
+          0,
+          1
+        ],
+        "type": "integer",
+        "description": "<p>Possible values:</p>\r\n<ul>\r\n<li><b>DreamScreen = 0</b> (DreamScreen.)</li>\r\n<li><b>Udp = 1</b> (UDP (WLED/Glimmr))</li>\r\n</ul>\r\n",
+        "format": "int32"
+      },
+      "StripMode": {
+        "enum": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "type": "integer",
+        "description": "<p>Possible values:</p>\r\n<ul>\r\n<li><b>Normal = 0</b> (Normal.)</li>\r\n<li><b>Sectored = 1</b> (Sectored (use WLED segments).)</li>\r\n<li><b>Loop = 2</b> (Loop colors (strip is divided in half, second half of colors are mirrored).)</li>\r\n<li><b>Single = 3</b> (All leds use a single sector.)</li>\r\n</ul>\r\n",
+        "format": "int32"
       },
       "SystemData": {
         "type": "object",
@@ -1608,16 +3523,10 @@
             "default": 96
           },
           "CamType": {
-            "type": "integer",
-            "description": "Type of camera used for capture.\r\n0 = Raspberry pi camera module\r\n1 = USB webcam",
-            "format": "int32",
-            "default": 1
+            "$ref": "#/components/schemas/CameraType"
           },
           "CaptureMode": {
-            "type": "integer",
-            "description": "Currently selected capture mode for video input.\r\nCamera = 1\r\nHdmi = 2\r\nScreen = 3",
-            "format": "int32",
-            "default": 2
+            "$ref": "#/components/schemas/CaptureMode"
           },
           "CropDelay": {
             "type": "integer",
@@ -1626,10 +3535,7 @@
             "default": 15
           },
           "DeviceMode": {
-            "type": "integer",
-            "description": "The currently selected device mode.\r\nOff = 0\r\nVideo = 1\r\nAudio = 2\r\nAudioVideo = 4\r\nAmbient = 3\r\nUdp = 5\r\nDreamScreen =",
-            "format": "int32",
-            "default": 0
+            "$ref": "#/components/schemas/DeviceMode"
           },
           "DiscoveryTimeout": {
             "type": "integer",
@@ -1688,10 +3594,7 @@
             "readOnly": true
           },
           "StreamMode": {
-            "type": "integer",
-            "description": "Currently selected streaming mode.\r\n0 = DreamScreen\r\n1 = UDP (WLED, Glimmr)",
-            "format": "int32",
-            "default": 15
+            "$ref": "#/components/schemas/StreamMode"
           },
           "TopCount": {
             "type": "integer",
@@ -1753,16 +3656,500 @@
             "nullable": true
           },
           "Units": {
-            "type": "string",
-            "description": "Temperature units.\r\n0 = Not 'Murica.\r\n1 = 'Murica.",
-            "default": "0",
-            "nullable": true
+            "$ref": "#/components/schemas/DeviceUnits"
           },
           "BlackLevel": {
             "type": "integer",
             "description": "Colors below this brightness will be considered \"black\".\r\n(Max 255)",
             "format": "int32",
             "default": 7
+          }
+        },
+        "additionalProperties": false
+      },
+      "TileData": {
+        "type": "object",
+        "properties": {
+          "O": {
+            "type": "integer",
+            "description": "Orientation.",
+            "format": "int32"
+          },
+          "PanelId": {
+            "type": "integer",
+            "description": "Panel ID.",
+            "format": "int32"
+          },
+          "ShapeType": {
+            "type": "integer",
+            "description": "What type of shape is this?",
+            "format": "int32"
+          },
+          "SideLength": {
+            "type": "integer",
+            "description": "Length of panel sides.",
+            "format": "int32"
+          },
+          "TargetSector": {
+            "type": "integer",
+            "description": "The sector to use for streaming for this panel.",
+            "format": "int32",
+            "default": -1
+          },
+          "X": {
+            "type": "integer",
+            "description": "Tile X position.",
+            "format": "int32"
+          },
+          "Y": {
+            "type": "integer",
+            "description": "Tile Y position.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TileLayout": {
+        "type": "object",
+        "properties": {
+          "NumPanels": {
+            "type": "integer",
+            "description": "Number of panels in the layout.",
+            "format": "int32"
+          },
+          "SideLength": {
+            "type": "integer",
+            "description": "Length of sides of each panel. This is not used for shapes.",
+            "format": "int32"
+          },
+          "PositionData": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TileData"
+            },
+            "description": "Array of position data for our tiles.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TimeSpan": {
+        "type": "object",
+        "properties": {
+          "Ticks": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "Days": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Hours": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Milliseconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Minutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Seconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "TotalDays": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
+          },
+          "TotalHours": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
+          },
+          "TotalMilliseconds": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
+          },
+          "TotalMinutes": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
+          },
+          "TotalSeconds": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Udpn": {
+        "type": "object",
+        "properties": {
+          "Recv": {
+            "type": "boolean",
+            "description": "Receive broadcast packets"
+          },
+          "Send": {
+            "type": "boolean",
+            "description": "Send WLED broadcast (UDP sync) packet on state change"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Wifi": {
+        "type": "object",
+        "properties": {
+          "Channel": {
+            "type": "integer",
+            "description": "Wifi channel.",
+            "format": "int32"
+          },
+          "Rssi": {
+            "type": "integer",
+            "description": "Wifi RSSI.",
+            "format": "int32"
+          },
+          "Signal": {
+            "type": "integer",
+            "description": "Wifi signal strength.",
+            "format": "int32"
+          },
+          "Bssid": {
+            "type": "string",
+            "description": "Wifi bssid.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "WledData": {
+        "type": "object",
+        "properties": {
+          "ReverseStrip": {
+            "type": "boolean",
+            "description": "Reverse the order of data sent to leds.",
+            "default": false
+          },
+          "Brightness": {
+            "type": "integer",
+            "description": "Device brightness.",
+            "format": "int32"
+          },
+          "LedCount": {
+            "type": "integer",
+            "description": "Number of LEDs in strip.",
+            "format": "int32"
+          },
+          "LedMultiplier": {
+            "type": "number",
+            "description": "Scale factor for LED counts related to master grid.",
+            "format": "float"
+          },
+          "Offset": {
+            "type": "integer",
+            "description": "Offset of leds from lower-right corner of master grid.",
+            "format": "int32"
+          },
+          "StripMode": {
+            "$ref": "#/components/schemas/StripMode"
+          },
+          "TargetSector": {
+            "type": "integer",
+            "description": "Target sector, if using sectored StripMode.",
+            "format": "int32",
+            "default": -1
+          },
+          "Tag": {
+            "type": "string",
+            "description": "Device tag.",
+            "nullable": true
+          },
+          "State": {
+            "$ref": "#/components/schemas/WledStateData"
+          },
+          "Protocol": {
+            "type": "integer",
+            "description": "Device protocol.",
+            "format": "int32",
+            "default": 2
+          },
+          "Name": {
+            "type": "string",
+            "description": "Device name.",
+            "nullable": true
+          },
+          "Id": {
+            "type": "string",
+            "description": "Device ID.",
+            "nullable": true
+          },
+          "IpAddress": {
+            "type": "string",
+            "description": "Device IP Address.",
+            "nullable": true
+          },
+          "Enable": {
+            "type": "boolean",
+            "description": "Enable streaming."
+          },
+          "LastSeen": {
+            "type": "string",
+            "description": "Last time the device was seen during discovery.",
+            "nullable": true
+          },
+          "Segments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WledSegment"
+            },
+            "description": "List of individual LED segments defined in WLED.",
+            "nullable": true
+          },
+          "KeyProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SettingsProperty"
+            },
+            "description": "UI Properties.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "WledSegment": {
+        "type": "object",
+        "properties": {
+          "Mi": {
+            "type": "boolean",
+            "description": "Mirror the segment."
+          },
+          "On": {
+            "type": "boolean",
+            "description": "Segment is enabled."
+          },
+          "ReverseStrip": {
+            "type": "boolean",
+            "description": "Flip the segment (reverse animation)"
+          },
+          "Sel": {
+            "type": "boolean",
+            "description": "True if segment is selected."
+          },
+          "Brightness": {
+            "type": "integer",
+            "description": "Segment brightness.",
+            "format": "int32"
+          },
+          "Fx": {
+            "type": "integer",
+            "description": "ID of segment effect.",
+            "format": "int32"
+          },
+          "Grp": {
+            "type": "integer",
+            "description": "Segment group",
+            "format": "int32"
+          },
+          "Id": {
+            "type": "integer",
+            "description": "Segment ID.",
+            "format": "int32"
+          },
+          "Ix": {
+            "type": "integer",
+            "description": "Effect intensity.",
+            "format": "int32"
+          },
+          "LedCount": {
+            "type": "integer",
+            "description": "Segment length.",
+            "format": "int32"
+          },
+          "Pal": {
+            "type": "integer",
+            "description": "ID of the color palette.",
+            "format": "int32"
+          },
+          "Spc": {
+            "type": "integer",
+            "description": "Spacing?",
+            "format": "int32"
+          },
+          "Start": {
+            "type": "integer",
+            "description": "Segment start position.",
+            "format": "int32"
+          },
+          "Offset": {
+            "type": "integer",
+            "description": "Segment offset in reference to Glimmr master Grid.",
+            "format": "int32"
+          },
+          "Multiplier": {
+            "type": "number",
+            "description": "Scale factor for LED counts related to master grid.",
+            "format": "float"
+          },
+          "Stop": {
+            "type": "integer",
+            "description": "Segment end position.",
+            "format": "int32"
+          },
+          "Sx": {
+            "type": "integer",
+            "description": "Relative effect speed.",
+            "format": "int32"
+          },
+          "Col": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "description": "Segment colors",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "WledState": {
+        "type": "object",
+        "properties": {
+          "On": {
+            "type": "boolean",
+            "description": "Is the device on?"
+          },
+          "Ccnf": {
+            "$ref": "#/components/schemas/Ccnf"
+          },
+          "Bri": {
+            "type": "integer",
+            "description": "WLED Brightness.",
+            "format": "int32"
+          },
+          "Lor": {
+            "type": "integer",
+            "description": "Live Data Override.",
+            "format": "int32"
+          },
+          "Mainseg": {
+            "type": "integer",
+            "description": "Main Segment.",
+            "format": "int32"
+          },
+          "Pl": {
+            "type": "integer",
+            "description": "ID of currently set playlist.",
+            "format": "int32"
+          },
+          "Ps": {
+            "type": "integer",
+            "description": "Id of currently set preset.",
+            "format": "int32"
+          },
+          "Pss": {
+            "type": "integer",
+            "description": "Bitwise indication of preset slots.",
+            "format": "int32"
+          },
+          "Transition": {
+            "type": "integer",
+            "description": "Duration of cross fade between different colors.",
+            "format": "int32"
+          },
+          "Segments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WledSegment"
+            },
+            "description": "Individual segments.",
+            "nullable": true
+          },
+          "Nl": {
+            "$ref": "#/components/schemas/Nl"
+          },
+          "Udpn": {
+            "$ref": "#/components/schemas/Udpn"
+          }
+        },
+        "additionalProperties": false
+      },
+      "WledStateData": {
+        "type": "object",
+        "properties": {
+          "Info": {
+            "$ref": "#/components/schemas/Info"
+          },
+          "WledState": {
+            "$ref": "#/components/schemas/WledState"
+          }
+        },
+        "additionalProperties": false
+      },
+      "YeelightData": {
+        "type": "object",
+        "properties": {
+          "Brightness": {
+            "type": "integer",
+            "description": "Device brightness.",
+            "format": "int32",
+            "default": 255
+          },
+          "TargetSector": {
+            "type": "integer",
+            "description": "Target sector for streaming.",
+            "format": "int32",
+            "default": -1
+          },
+          "Tag": {
+            "type": "string",
+            "description": "Device tag.",
+            "default": "Yeelight",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "description": "Device name.",
+            "default": "",
+            "nullable": true
+          },
+          "Id": {
+            "type": "string",
+            "description": "Device ID.",
+            "default": "",
+            "nullable": true
+          },
+          "IpAddress": {
+            "type": "string",
+            "description": "Device IP Address.",
+            "default": "",
+            "nullable": true
+          },
+          "Enable": {
+            "type": "boolean",
+            "description": "Enable streaming."
+          },
+          "LastSeen": {
+            "type": "string",
+            "description": "Last time the device was seen during discovery.",
+            "nullable": true
+          },
+          "KeyProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SettingsProperty"
+            },
+            "description": "UI Properties.",
+            "nullable": true
           }
         },
         "additionalProperties": false
