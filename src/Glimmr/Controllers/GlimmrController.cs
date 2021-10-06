@@ -295,7 +295,7 @@ namespace Glimmr.Controllers {
 		/// <param name="dData">A JSON string representing the ColorTarget to update.</param>
 		/// <returns>The updated ColorTarget object.</returns>
 		[HttpDelete("device")]
-		public async Task<ActionResult<IColorTargetData>> DeleteDevice([FromBody] IColorTargetData dData) {
+		public async Task<ActionResult<IColorTargetData>> DeleteDevice(IColorTargetData dData) {
 			Log.Debug("Update device fired: " + JsonConvert.SerializeObject(dData));
 			await _controlService.RemoveDevice(dData.Id);
 			return Ok(dData);
