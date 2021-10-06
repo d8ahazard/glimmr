@@ -57,7 +57,6 @@ namespace Glimmr.Models.ColorSource.Ambient {
 		}
 
 		private void RefreshSystem() {
-			Log.Debug("No, really, refreshing system.");
 			var sd = DataUtil.GetSystemData();
 			_ambientScene = sd.AmbientScene;
 			_ambientColor = sd.AmbientColor;
@@ -66,10 +65,8 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			_loader ??= new JsonLoader("ambientScenes");
 			_scenes = _loader.LoadFiles<AmbientScene>();
 			var scene = new AmbientScene();
-			Log.Debug($"Loading ambient show {_ambientScene}");
 			foreach (var s in _scenes.Where(s => s.Id == _ambientScene)) {
 				scene = s;
-				Log.Debug("Scene: " + JsonConvert.SerializeObject(s));
 			}
 
 			if (_ambientScene == -1) {
@@ -230,7 +227,6 @@ namespace Glimmr.Models.ColorSource.Ambient {
 					break;
 				case AnimationMode.RandomAll:
 					var col = input[rand];
-					Log.Debug("Setting random color to: " + col);
 					for (var i = 0; i < SectorCount; i++) {
 						output[i] = col;
 					}
@@ -244,7 +240,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 					_colorIndex = CycleInt(_colorIndex, max);
 					break;
 				default:
-					Log.Debug("Unknown animation mode: " + _mode);
+					Log.Warning("Unknown animation mode: " + _mode);
 					break;
 			}
 

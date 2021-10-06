@@ -78,7 +78,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 					await _udpClient.SendAsync(data, data.Length, _ep);
 				}
 			} catch (Exception e) {
-				Log.Debug("Exception, look at that: " + e.Message);
+				Log.Warning("Exception flashing color: " + e.Message);
 			}
 		}
 
@@ -128,7 +128,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			}
 
 			if (_ep == null) {
-				Log.Debug("No endpoint.");
+				Log.Warning("No endpoint.");
 				return;
 			}
 
@@ -179,9 +179,9 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 				var cp = new ColorPacket(leds);
 				var packet = cp.Encode();
 				await _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep);
-				ColorService?.Counter.Tick(Id);
+				ColorService.Counter.Tick(Id);
 			} catch (Exception e) {
-				Log.Debug("Exception: " + e.Message);
+				Log.Warning("Exception: " + e.Message);
 			}
 		}
 
@@ -199,7 +199,6 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 
 			try {
 				uri = new Uri("http://" + _ipAddress + "/api/DreamData/" + target);
-				//Log.Debug($"Posting to {uri}: " + value);
 			} catch (UriFormatException e) {
 				Log.Warning("URI Format exception: " + e.Message);
 				return;
