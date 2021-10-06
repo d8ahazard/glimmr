@@ -884,147 +884,16 @@
           "Glimmr"
         ],
         "summary": "Delete a device.",
-        "requestBody": {
-          "description": "A JSON string representing the ColorTarget to update.",
-          "content": {
-            "application/json-patch+json": {
-              "schema": {
-                "oneOf": [
-                  {
-                    "$ref": "#/components/schemas/AdalightData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/DreamScreenData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/GlimmrData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/HueData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/LedData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/LifxData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/NanoleafData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/WledData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/YeelightData"
-                  }
-                ],
-                "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
-              }
-            },
-            "application/json": {
-              "schema": {
-                "oneOf": [
-                  {
-                    "$ref": "#/components/schemas/AdalightData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/DreamScreenData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/GlimmrData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/HueData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/LedData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/LifxData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/NanoleafData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/WledData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/YeelightData"
-                  }
-                ],
-                "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
-              }
-            },
-            "text/json": {
-              "schema": {
-                "oneOf": [
-                  {
-                    "$ref": "#/components/schemas/AdalightData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/DreamScreenData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/GlimmrData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/HueData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/LedData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/LifxData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/NanoleafData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/WledData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/YeelightData"
-                  }
-                ],
-                "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "oneOf": [
-                  {
-                    "$ref": "#/components/schemas/AdalightData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/DreamScreenData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/GlimmrData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/HueData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/LedData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/LifxData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/NanoleafData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/WledData"
-                  },
-                  {
-                    "$ref": "#/components/schemas/YeelightData"
-                  }
-                ],
-                "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
-              }
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "description": "The ID of the device to delete.",
+            "schema": {
+              "type": "string"
             }
           }
-        },
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -1829,7 +1698,7 @@
           2
         ],
         "type": "integer",
-        "description": "<p>Possible values:</p>\r\n<ul>\r\n</ul>\r\n",
+        "description": "<p>Possible values:</p>\n<ul>\n</ul>\n",
         "format": "int32"
       },
       "AmbientScene": {
@@ -1966,7 +1835,7 @@
           1
         ],
         "type": "integer",
-        "description": "<p>Possible values:</p>\r\n<ul>\r\n<li><b>RasPiCam = 0</b> (Raspberry Pi Camera Module)</li>\r\n<li><b>WebCam = 1</b> (Web camera)</li>\r\n</ul>\r\n",
+        "description": "<p>Possible values:</p>\n<ul>\n<li><b>RasPiCam = 0</b> (Raspberry Pi Camera Module)</li>\n<li><b>WebCam = 1</b> (Web camera)</li>\n</ul>\n",
         "format": "int32"
       },
       "CaptureMode": {
@@ -1976,7 +1845,7 @@
           3
         ],
         "type": "integer",
-        "description": "<p>Possible values:</p>\r\n<ul>\r\n<li><b>Camera = 1</b> (Camera)</li>\r\n<li><b>Hdmi = 2</b> (HDMI)</li>\r\n<li><b>Screen = 3</b> (Screen)</li>\r\n</ul>\r\n",
+        "description": "<p>Possible values:</p>\n<ul>\n<li><b>Camera = 1</b> (Camera)</li>\n<li><b>Hdmi = 2</b> (HDMI)</li>\n<li><b>Screen = 3</b> (Screen)</li>\n</ul>\n",
         "format": "int32"
       },
       "Ccnf": {
@@ -2063,7 +1932,7 @@
           6
         ],
         "type": "integer",
-        "description": "The current device mode.\r\nOff = 0\r\nVideo = 1\r\nAudio = 2\r\nAmbient = 3\r\nAudioVideo = 4\r\nUdp = 5\r\nDreamScreen = 6<p>Possible values:</p>\r\n<ul>\r\n<li><b>Off = 0</b> (Off)</li>\r\n<li><b>Video = 1</b> (Video)</li>\r\n<li><b>Audio = 2</b> (Audio)</li>\r\n<li><b>Ambient = 3</b> (Ambient)</li>\r\n<li><b>AudioVideo = 4</b> (Audio+Video)</li>\r\n<li><b>Udp = 5</b> (UDP (Glimmr/WLED))</li>\r\n<li><b>DreamScreen = 6</b> (DreamScreen)</li>\r\n</ul>\r\n",
+        "description": "The current device mode.\r\nOff = 0\r\nVideo = 1\r\nAudio = 2\r\nAmbient = 3\r\nAudioVideo = 4\r\nUdp = 5\r\nDreamScreen = 6<p>Possible values:</p>\n<ul>\n<li><b>Off = 0</b> (Off)</li>\n<li><b>Video = 1</b> (Video)</li>\n<li><b>Audio = 2</b> (Audio)</li>\n<li><b>Ambient = 3</b> (Ambient)</li>\n<li><b>AudioVideo = 4</b> (Audio+Video)</li>\n<li><b>Udp = 5</b> (UDP (Glimmr/WLED))</li>\n<li><b>DreamScreen = 6</b> (DreamScreen)</li>\n</ul>\n",
         "format": "int32"
       },
       "DeviceUnits": {
@@ -2072,7 +1941,7 @@
           1
         ],
         "type": "integer",
-        "description": "<p>Possible values:</p>\r\n<ul>\r\n<li><b>Imperial = 0</b> (Imperial)</li>\r\n<li><b>Metric = 1</b> (Metric)</li>\r\n</ul>\r\n",
+        "description": "<p>Possible values:</p>\n<ul>\n<li><b>Imperial = 0</b> (Imperial)</li>\n<li><b>Metric = 1</b> (Metric)</li>\n</ul>\n",
         "format": "int32"
       },
       "DreamScreenData": {
@@ -2141,7 +2010,7 @@
           1
         ],
         "type": "integer",
-        "description": "<p>Possible values:</p>\r\n<ul>\r\n</ul>\r\n",
+        "description": "<p>Possible values:</p>\n<ul>\n</ul>\n",
         "format": "int32"
       },
       "GlimmrData": {
@@ -2298,7 +2167,7 @@
           5
         ],
         "type": "integer",
-        "description": "<p>Possible values:</p>\r\n<ul>\r\n</ul>\r\n",
+        "description": "<p>Possible values:</p>\n<ul>\n</ul>\n",
         "format": "int32"
       },
       "HueData": {
@@ -3105,7 +2974,7 @@
           39
         ],
         "type": "integer",
-        "description": "<p>Possible values:</p>\r\n<ul>\r\n</ul>\r\n",
+        "description": "<p>Possible values:</p>\n<ul>\n</ul>\n",
         "format": "int32"
       },
       "Segment": {
@@ -3235,6 +3104,14 @@
           "ValueType": {
             "type": "string",
             "description": "The control type to create in the web UI.\r\nPossible options:\r\ntext - Standard text input\r\ncheck - A checkbox (toggle)\r\nnumber - A number input (can be limited by valuemax/min/step\r\nledmap - Create a LED map (custom)\r\nbeamMap - Create a Lifx Beam map\r\nsectorLedMap - Create a LED map for WLED that has multiple sections\r\nselect - standard select, populate the \"Options\" dictionary to auto-fill\r\nsectormap - Create a standard Sector map\r\nnanoleaf - Draw nano leaves\r\nhue - Draw Hue selection stuff",
+            "nullable": true
+          },
+          "Options": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "A string, string dictionary containing title/value pairs to populate a select input.",
             "nullable": true
           }
         },
@@ -3378,7 +3255,7 @@
           1
         ],
         "type": "integer",
-        "description": "<p>Possible values:</p>\r\n<ul>\r\n<li><b>DreamScreen = 0</b> (DreamScreen.)</li>\r\n<li><b>Udp = 1</b> (UDP (WLED/Glimmr))</li>\r\n</ul>\r\n",
+        "description": "<p>Possible values:</p>\n<ul>\n<li><b>DreamScreen = 0</b> (DreamScreen.)</li>\n<li><b>Udp = 1</b> (UDP (WLED/Glimmr))</li>\n</ul>\n",
         "format": "int32"
       },
       "StripMode": {
@@ -3389,7 +3266,7 @@
           3
         ],
         "type": "integer",
-        "description": "<p>Possible values:</p>\r\n<ul>\r\n<li><b>Normal = 0</b> (Normal.)</li>\r\n<li><b>Sectored = 1</b> (Sectored (use WLED segments).)</li>\r\n<li><b>Loop = 2</b> (Loop colors (strip is divided in half, second half of colors are mirrored).)</li>\r\n<li><b>Single = 3</b> (All leds use a single sector.)</li>\r\n</ul>\r\n",
+        "description": "<p>Possible values:</p>\n<ul>\n<li><b>Normal = 0</b> (Normal.)</li>\n<li><b>Sectored = 1</b> (Sectored (use WLED segments).)</li>\n<li><b>Loop = 2</b> (Loop colors (strip is divided in half, second half of colors are mirrored).)</li>\n<li><b>Single = 3</b> (All leds use a single sector.)</li>\n</ul>\n",
         "format": "int32"
       },
       "SystemData": {
