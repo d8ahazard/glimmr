@@ -91,10 +91,8 @@ namespace Glimmr.Services {
 
 		private void LoadServices() {
 			var classes = SystemUtil.GetClasses<IColorSource>();
-			Log.Debug("Sources: " + JsonConvert.SerializeObject(classes));
 			foreach (var c in classes) {
 				try {
-					Log.Debug("C: " + c);
 					var tag = c.Replace("Glimmr.Models.ColorSource.", "");
 					tag = tag.Split(".")[0];
 					var args = new object[] {this};
@@ -105,7 +103,6 @@ namespace Glimmr.Services {
 					}
 
 					var dObj = (IColorSource) obj;
-					Log.Debug("Adding color source: " + tag);
 					_streams[tag] = dObj;
 				} catch (InvalidCastException e) {
 					Log.Warning("Exception: " + e.Message + " at " + e.StackTrace);
@@ -353,7 +350,7 @@ namespace Glimmr.Services {
 		private void LoadData() {
 			var sd = DataUtil.GetSystemData();
 			// Reload main vars
-			DeviceMode = (DeviceMode) sd.DeviceMode;
+			DeviceMode = sd.DeviceMode;
 			_targetTokenSource = new CancellationTokenSource();
 			_systemData = sd;
 			LedColors = new Color[_systemData.LedCount];
@@ -549,7 +546,7 @@ namespace Glimmr.Services {
 			// Load our stream regardless
 			IColorSource? stream = null;
 			if (newMode == DeviceMode.Udp) {
-				stream = (StreamMode) sd.StreamMode == StreamMode.DreamScreen
+				stream = sd.StreamMode == StreamMode.DreamScreen
 					? _streams["DreamScreen"]
 					: _streams["UDP"];
 			} else if (newMode != DeviceMode.Off) {
@@ -558,6 +555,7 @@ namespace Glimmr.Services {
 
 			_stream = stream;
 			if (stream != null) {
+				Log.Debug("Toggling stream for " + newMode);
 				_streamTask = stream.ToggleStream(_streamTokenSource.Token);
 				_stream = stream;
 			} else {

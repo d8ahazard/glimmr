@@ -43,7 +43,7 @@ namespace Glimmr.Models.ColorSource.Video {
 		}
 
 		public Task ToggleStream(CancellationToken ct) {
-			//Log.Debug("Starting video stream service...");
+			Log.Debug("Enabling video stream service...");
 			SendColors = true;
 			StreamSplitter.DoSend = true;
 			return ExecuteAsync(ct);
@@ -62,8 +62,8 @@ namespace Glimmr.Models.ColorSource.Video {
 			return Task.Run(async () => {
 				SetCapVars();
 				_systemData = DataUtil.GetSystemData();
-				_captureMode = (CaptureMode) _systemData.CaptureMode;
-				_camType = (CameraType) _systemData.CamType;
+				_captureMode = _systemData.CaptureMode;
+				_camType = _systemData.CamType;
 				_vc = GetStream();
 				if (_vc == null) {
 					Log.Information("We have no video source, returning.");

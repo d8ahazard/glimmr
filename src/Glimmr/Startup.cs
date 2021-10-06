@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 
 #endregion
 
@@ -32,6 +33,9 @@ namespace Glimmr {
 				c.EnableAnnotations(true, true);
 				c.SchemaFilter<DescribeEnumMembers>(xmlPath);
 			});
+			var settings = new JsonSerializerSettings { ContractResolver = new SignalRContractResolver() };
+			var serializer = JsonSerializer.Create(settings);
+			services.AddSingleton(serializer);
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

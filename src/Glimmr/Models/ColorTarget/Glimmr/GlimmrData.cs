@@ -133,7 +133,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		private void FetchData() {
 			using var webClient = new WebClient();
 			try {
-				var url = "http://" + IpAddress + "/api/DreamData/glimmrData";
+				var url = "http://" + IpAddress + "/api/glimmr/glimmrData";
 				var jsonData = webClient.DownloadString(url);
 				var sd = JsonConvert.DeserializeObject<GlimmrData>(jsonData);
 				if (sd == null) {

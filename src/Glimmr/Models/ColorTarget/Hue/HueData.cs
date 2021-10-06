@@ -4,7 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
+using System.Linq;
 using Newtonsoft.Json;
+using Org.BouncyCastle.Asn1.Esf;
 using Q42.HueApi;
 using Q42.HueApi.Models.Bridge;
 using Q42.HueApi.Models.Groups;
@@ -37,8 +39,19 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		/// </summary>
 
 		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-		public List<LightMap> MappedLights { get; set; } = new();
+		public List<LightMap> MappedLights {
+			get => _lights;
+			set {
+				var ids = new List<string>();
+				_lights = new List<LightMap>();
+				foreach (var light in value.Where(light => !ids.Contains(light.Id))) {
+					ids.Add(light.Id);	
+					_lights.Add(light);
+				}
+			}
+		}
 
+		private List<LightMap> _lights = new();
 		
 		/// <summary>
 		/// Target entertainment group to use for streaming.
@@ -247,12 +260,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		/// Entertainment group ID.
 		/// </summary>
 		[JsonProperty]
-		public new string Id {
-			get => _id;
-			set => _id = value;
-		}
-
-		[JsonProperty] private string _id = "";
+		public new string Id { get; set; } = "";
 
 		/// <inheritdoc />
 		public HueGroup() {

@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reactive.PlatformServices;
 using System.Threading.Tasks;
 using Glimmr.Models;
 using Glimmr.Models.Util;
@@ -83,11 +82,13 @@ namespace Glimmr.Hubs {
 			Log.Debug("Got a device: " + JsonConvert.SerializeObject(device));
 			var cTag = device.GetValue("tag");
 			if (cTag == null) {
+				Log.Debug("Unable to get tag.");
 				return;
 			}
 
 			var tag = cTag.ToString();
 			var className = "Glimmr.Models.ColorTarget." + tag + "." + tag + "Data";
+			Log.Debug("Finding: " + className);
 			var typeName = Type.GetType(className);
 			if (typeName != null) {
 				dynamic? devObject = device.ToObject(typeName);

@@ -59,8 +59,8 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			if (Streaming || !Enable) {
 				return;
 			}
-
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
+
 			var sd = DataUtil.GetSystemData();
 			var glimmrData = new GlimmrData(sd);
 			await SendPost("startStream", JsonConvert.SerializeObject(glimmrData)).ConfigureAwait(false);
@@ -198,7 +198,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			}
 
 			try {
-				uri = new Uri("http://" + _ipAddress + "/api/DreamData/" + target);
+				uri = new Uri("http://" + _ipAddress + "/api/Glimmr/" + target);
 			} catch (UriFormatException e) {
 				Log.Warning("URI Format exception: " + e.Message);
 				return;

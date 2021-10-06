@@ -221,9 +221,6 @@ let websocket = new signalR.HubConnectionBuilder()
     .build();
 
 document.addEventListener("DOMContentLoaded", function(){
-    let popover = new bootstrap.Popover(document.getElementById("fps"), {
-        container: 'body'
-    });
     document.addEventListener("backbutton", onBackKeyDown, false);
     document.addEventListener('keydown', function(e) {
         if (e.key === "Escape") {
@@ -304,10 +301,10 @@ function loadPickr() {
             }
         }
     });
-    pickr.on('change', (color, source, instance) => {
+    pickr.on('change', (color) => {
         let col = color.toHEXA();
         newColor = col[0] + col[1] + col[2];
-    }).on('changestop', (source, instance) => {        
+    }).on('changestop', () => {        
         data.setProp("ambientColor", newColor);
         data.setProp("ambientScene", -1);
         let asSelect = document.getElementById("AmbientScene");
@@ -315,7 +312,7 @@ function loadPickr() {
         pickr.setColor("#" + newColor);
         sendMessage("systemData",data.SystemData);
 
-    }).on('swatchselect', (color, instance) => {
+    }).on('swatchselect', (color) => {
         let col = color.toHEXA();
         newColor = col[0] + col[1] + col[2];
         data.setProp("ambientColor", newColor);
@@ -574,7 +571,7 @@ function setSocketListeners() {
     
     websocket.on('frames', function(stuff) {
         //console.log("frame counts: ", stuff); 
-        fpsCounter.innerText = stuff['source'] + "FPS"; 
+        fpsCounter.innerText = stuff["source"] + "FPS"; 
     });
 
     websocket.on('device', function(parsed) {
@@ -632,7 +629,7 @@ function downloadDb() {
     // If you don't know the name or want to use
     // the webserver default set name = ''
     link.setAttribute('download', name);
-    link.href = "/api/DreamData/database";
+    link.href = "/api/Glimmr/database";
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -643,7 +640,7 @@ function fetchLog() {
     // If you don't know the name or want to use
     // the webserver default set name = ''
     link.setAttribute('download', name);
-    link.href = "/api/DreamData/logs";
+    link.href = "/api/Glimmr/logs";
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -962,7 +959,7 @@ function updateLightProperty(myId, propertyName, value) {
     let nGroup = [];
     for (let g in fGroup) {
         if (fGroup.hasOwnProperty(g)) {
-            fGroup[g]["id"] = fGroup[g]["_id"];
+            fGroup[g]["id"] = fGroup[g]["id"];
             nGroup.push(fGroup[g]);
         }
 
@@ -993,13 +990,13 @@ function getLightMap(id) {
     let hueLightMap = deviceData["mappedLights"];
     for (let l in hueLightMap) {
         if (hueLightMap.hasOwnProperty(l)) {
-            if (hueLightMap[l]["_id"] === id) {
+            if (hueLightMap[l]["id"] === id) {
                 return hueLightMap[l];
             }
         }
     }
     return {
-        _id: id,
+        id: id,
         TargetSector: -1,
         TargetSector2: -1,
         Brightness: 255,
@@ -1009,16 +1006,17 @@ function getLightMap(id) {
 
 function setLightMap(map) {
     let hueLightMap = deviceData["mappedLights"];
+    let ids = [];
     for (let l in hueLightMap) {
         if (hueLightMap.hasOwnProperty(l)) {
-            if (hueLightMap[l]["_id"] === map["_id"]) {
+            if (hueLightMap[l]["id"] === map["id"]) {
                 hueLightMap[l] = map;
                 return;
             }
         }
     }
     hueLightMap.push(map);
-    updateDevice(deviceData["_id"],"mappedLights", hueLightMap);
+    updateDevice(deviceData["id"],"mappedLights", hueLightMap);
 }
 
 
@@ -1137,7 +1135,6 @@ function loadUi() {
         if (!isValid(pickr)) loadPickr();
         let theme = sd["theme"];
         loadTheme(theme);
-        autoDisabled = sd["autoDisabled"];
         if (isValid(data.ambientScenes)) {
             let scenes = data.ambientScenes;
             let ambientScene = sd["ambientScene"];
@@ -1450,23 +1447,20 @@ function scrollSetting(step){
     if (!settingsShown) toggleSettingsDiv().then();    
     let elem = document.querySelector(step.element);
     let parent = document.getElementById("mainContent");
-    let topPos = elem.offsetTop;
-    parent.scrollTop = topPos;
+    parent.scrollTop = elem.offsetTop;
 }
 
 function scrollElement(step) {
     if (settingsShown) toggleSettingsDiv().then();
     let elem = document.querySelector(step.element);
     let parent = document.getElementById("mainContent");
-    let topPos = elem.offsetTop;
-    parent.scrollTop = topPos;
+    parent.scrollTop = elem.offsetTop;
 }
 
 function scrollDevPref(step) {
     let elem = document.querySelector(step.element);
     let parent = document.querySelector("#devCard");
-    let topPos = elem.offsetTop;
-    parent.scrollTop = topPos;
+    parent.scrollTop = elem.offsetTop;
 }
 
 
@@ -1663,7 +1657,7 @@ function loadDevices() {
                     if (isObject(exCard)) {
                         card.classList.remove("min");
                         container.replaceChild(card, exCard);
-                        if (expanded && devData.Id === deviceData.Id) {
+                        if (expanded && devData["id"] === deviceData["id"]) {
                             let sub = document.querySelector(".card.container-fluid > .card-body > .titleRow > .titleCol > .card-subtitle")
                             if (isValid(sub)) sub.innerHTML = getSubtitle(devData).innerHTML;
                         } 
@@ -1917,14 +1911,6 @@ function create(tag) {
     return document.createElement(tag);
 }
 
-function setCookie(cname, cvalue, exdays) {
-    let d = new Date();
-    d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
-    let expires = "expires="+d.toUTCString();
-    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
-}
-
-
 
 const toggleExpansion = (element, to, duration = 350) => {
     return new Promise((res) => {
@@ -1989,7 +1975,7 @@ const toggleExpansion = (element, to, duration = 350) => {
 };
 
 
-const showSettingsCard = async (e) => {
+const showSettingsCard = async () => {
     settingsShown = true;
     const card = document.getElementById("mainSettingsCard");
     let mainContent = document.getElementById("mainContent");
@@ -2000,8 +1986,9 @@ const showSettingsCard = async (e) => {
     let fh = document.getElementById("footer").offsetHeight;
     // This is the proper height for the dev card
     fh += oh;
-
-    const {top, left, width, height} = btn.getBoundingClientRect();
+    let rect = btn.getBoundingClientRect();
+    let left = rect.left;
+    let width = rect.width;
     let h = 'calc(100% - ' + fh + 'px)';
     card.style.position = 'fixed';
     card.style.top = oh + 'px';
@@ -2012,7 +1999,7 @@ const showSettingsCard = async (e) => {
     await toggleExpansion(card, {top: oh + 'px', left: 0, width: '100%', height: h, opacity: "100%"}, 250);
 };
 
-const hideSettingsCard = async (e) => {
+const hideSettingsCard = async () => {
     settingsShown = false;
     const card = document.getElementById("mainSettingsCard");
     let mainContent = document.getElementById("mainContent");
@@ -2022,7 +2009,9 @@ const hideSettingsCard = async (e) => {
     if (x.matches) btn = document.querySelector(".mainSettings.mainSettings-sm span");
     let fh = document.getElementById("footer").offsetHeight;
     fh += oh;
-    const {top, left, width, height} = btn.getBoundingClientRect();
+    let rect = btn.getBoundingClientRect();
+    let left = rect.left;
+    let width = rect.width;    
     let h = 'calc(100% - ' + fh + 'px)';
     card.style.display = 'block';
     await toggleExpansion(card, {top: oh + "px", left: left + "px", width: width + "px", height: h + 'px', opacity:"0"}, 250);
@@ -2588,7 +2577,6 @@ function appendSectorLedMap() {
     let borderX = parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
     let w = tgt.offsetWidth - paddingX - borderX;
     let h = (w / 16) * 9;
-    let imgL = tgt.offsetLeft;
     let imgT = tgt.offsetTop;
     let exMap = targetElement.querySelector("#ledMap");
     if (isValid(exMap)) exMap.remove();
@@ -2606,7 +2594,6 @@ function appendSectorLedMap() {
     map.id = "ledMap";
     map.classList.add("ledMap", "delSetting");
     map.style.top = imgT + "px";
-    //map.style.left = imgL + "px";
     map.style.width = w + "px";
     map.style.height = h + "px";
     map.style.position = "relative";
@@ -2826,8 +2813,6 @@ function createSectorMap(targetElement, regionName) {
     let borderX = parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
     let w = tgt.offsetWidth - paddingX - borderX;
     let h = (w / 16) * 9; 
-    let imgL = tgt.offsetLeft;
-    let imgT = tgt.offsetTop;
     let selected = -1;
     if (isValid(deviceData)) selected = deviceData["targetSector"];
     if (!isValid(selected)) selected = -1;
@@ -3004,7 +2989,6 @@ function createBeamLedMap() {
     let borderX = parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
     let w = tgt.offsetWidth - paddingX - borderX;
     let h = (w / 16) * 9;
-    let imgL = tgt.offsetLeft;
     let imgT = tgt.offsetTop;
     let exMap = targetElement.querySelector("#ledMap");
     if (isValid(exMap)) exMap.remove();
@@ -3022,7 +3006,6 @@ function createBeamLedMap() {
     map.id = "ledMap";
     map.classList.add("ledMap", "delSetting");
     map.style.top = imgT + "px";
-    //map.style.left = imgL + "px";
     map.style.width = w + "px";
     map.style.height = h + "px";
     map.style.position = "relative";
@@ -3175,7 +3158,6 @@ function createLedMap(targetElement) {
     let w = tgt.offsetWidth - paddingX - borderX;
     
     let h = (w / 16) * 9;
-    let imgL = tgt.offsetLeft;
     let imgT = tgt.offsetTop;
     let exMap = targetElement.querySelector("#ledMap");
     if (isValid(exMap)) exMap.remove();
@@ -3193,7 +3175,6 @@ function createLedMap(targetElement) {
     map.id = "ledMap";
     map.classList.add("ledMap", "delSetting");
     if (targetElement.id !== "sLedWrap") map.style.top = imgT + "px";
-    //map.style.left = imgL + "px";
     map.style.width = w + "px";
     map.style.height = h + "px";
     map.style.position = "relative";
@@ -3368,11 +3349,12 @@ function createHueMap() {
     groupSelect.appendChild(defaultOption);
     groupSelect.id = "HueGroup";
     for(let i = 0; i < groups.length; i++) {
-        if (groups[i]['type'] !== "Entertainment") continue;
+        if (groups[i]["type"] !== 4) continue;
         let opt = document.createElement("option");
         opt.value = groups[i]["id"];
         opt.innerText = groups[i]["name"];
-        if (selectedGroup.toString() === groups[i]["id"]) opt.selected = true;
+        console.log("Checking:", selectedGroup, groups[i]["id"]);
+        if (selectedGroup === groups[i]["id"]) opt.selected = true;
         groupSelect.appendChild(opt);
     }
     groupSelectCol.appendChild(gLabel);
@@ -3384,8 +3366,8 @@ function createHueMap() {
         return hueMapRow;        
     }
 
-    let lights = deviceData['lights'];
-    let lightMap = deviceData['mappedLights'];
+    let lights = deviceData["lights"];
+    let lightMap = deviceData["mappedLights"];
     if (!isValid(lights) || !isValid(lightMap)) {
         return hueMapRow;
     }
@@ -3403,7 +3385,7 @@ function createHueMap() {
     for (let l in lights) {
         if (lights.hasOwnProperty(l)) {
             let light = lights[l];
-            let id = light['_id'];
+            let id = light["id"];
             let map;
             let brightness = 255;
             let override = false;
@@ -3411,7 +3393,7 @@ function createHueMap() {
 
             for(let m in lightMap) {
                 if (lightMap.hasOwnProperty(m)) {
-                    if (lightMap[m]['_id'] === id) {
+                    if (lightMap[m]["id"] === id) {
                         map = lightMap[m];
                         brightness = map["brightness"];
                         override = map["override"];
@@ -3422,7 +3404,7 @@ function createHueMap() {
             }
             if (ids.includes(id)) {
                 // Create the div for the other divs
-                let name = light['Name'];
+                let name = light["name"];
                 const lightCol = document.createElement('div');
                 lightCol.className += "delSel col-12 col-md-6 col-lg-3 justify-content-center form-group";
                 lightCol.id = id;
@@ -3539,16 +3521,16 @@ function drawNanoShapes(panel) {
     let width = document.getElementById("stageCol").offsetWidth;
     let height = width * .5625;
     if (height > 800) height = 800;
-    let rotation = panel['Rotation'];
+    let rotation = panel["rotation"];
     if (!isValid(rotation)) rotation = 0;
     // Get layout data from panel
-    let mirrorX = panel['MirrorX'];
-    let mirrorY = panel['MirrorY'];
-    let layout = panel['Layout'];
+    let mirrorX = panel["mirrorX"];
+    let mirrorY = panel["mirrorY"];
+    let layout = panel["layout"];
     if (!isValid(layout)) return;
     
-    let sideLength = layout['SideLength'];
-    let positions = layout['PositionData'];
+    let sideLength = layout["sideLength"];
+    let positions = layout["positionData"];
     let minX = 1000;
     let minY = 1000;
     let maxX = 0;
@@ -3557,10 +3539,10 @@ function drawNanoShapes(panel) {
     // Calculate the min/max range for each tile
     for (let i=0; i< positions.length; i++) {
         let data = positions[i];
-        if (data.X < minX) minX = data.X;
-        if ((data.Y * -1) < minY) minY = (data.Y * -1);
-        if (data.X > maxX) maxX = data.X;
-        if ((data.Y * -1) > maxY) maxY = (data.Y * -1);
+        if (data["x"] < minX) minX = data["x"];
+        if ((data["y"] * -1) < minY) minY = (data["y"] * -1);
+        if (data["x"] > maxX) maxX = data["x"];
+        if ((data["y"] * -1) > maxY) maxY = (data["y"] * -1);
     }
     let wX = maxX - minX;
     let wY = maxY - minY;
@@ -3620,7 +3602,7 @@ function drawNanoShapes(panel) {
             fontFamily: 'Calibri'
         });
 
-        let sectorText = data['TargetSector'];
+        let sectorText = data["targetSector"];
 
         let sText2 = new Konva.Text({
             x: x,
@@ -3630,7 +3612,7 @@ function drawNanoShapes(panel) {
             listening: false,
             fontFamily: 'Calibri'
         });
-        let o = data['O'];
+        let o = data["o"];
         // Draw each individual shape
         switch (shape) {
             // Hexagon
@@ -3716,10 +3698,10 @@ function drawNanoShapes(panel) {
         }
         if (isValid(shapeDrawing)) {
             shapeDrawing.on('click', function () {
-                setNanoMap(data['PanelId'], data['TargetSector']);
+                setNanoMap(data["panelId"], data["targetSector"]);
             });
             shapeDrawing.on('tap', function () {
-                setNanoMap(data['PanelId'], data['TargetSector']);
+                setNanoMap(data["panelId"], data["targetSector"]);
             });
             shapeGroup.add(shapeDrawing);
         }
@@ -3778,6 +3760,7 @@ function setNanoMap(id, current) {
     }
 
     if (current !== -1) {
+        console.log("Trying to check sector " + current);
         document.querySelector('.sector[data-sector="'+current+'"]').classList.add("checked");
     }
 
