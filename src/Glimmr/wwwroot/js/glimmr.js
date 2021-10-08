@@ -1787,7 +1787,7 @@ function createDeviceCard(device, addDemoText) {
     let brightnessSlide = document.createElement("input");
     brightnessSlide.setAttribute("type","range");
     brightnessSlide.setAttribute("data-target",device["id"]);
-    brightnessSlide.setAttribute("data-attribute","Brightness");
+    brightnessSlide.setAttribute("data-attribute","brightness");
     brightnessSlide.setAttribute("data-toggle","tooltip");
     brightnessSlide.setAttribute("data-placement","top");
     brightnessSlide.setAttribute("title","Device brightness");
@@ -2257,7 +2257,6 @@ function createSettingElement(settingElement) {
     let label = document.createElement("label");   
     label.innerText = settingElement.descrption;
     let element;
-    console.log("Loading se: ", settingElement);
     switch(settingElement.type) {
         case "check":
             element = document.createElement("input");
@@ -2273,7 +2272,6 @@ function createSettingElement(settingElement) {
         case "select":
             element = document.createElement("select");
             if (isValid(settingElement.options)) {
-                console.log("Options: ", settingElement.options);
                 for (const [key, value] of Object.entries(settingElement.options)) {
                     let option = document.createElement("option");
                     option.value = key.toString();
@@ -3185,6 +3183,9 @@ function createLedMap(targetElement) {
     let r = 0;
     let ledCount = 0;
     let started = false;
+    let stopped = false;
+    let reverse = isValid(deviceData["reverseStrip"]) ? deviceData["reverseStrip"] : false;
+    console.log("Reversed? ", reverse);
     for (let i = 0; i < rightCount; i++) {
         t = h - hMargin - ((i + 1) * frHeight);
         b = t + frHeight;
@@ -3193,11 +3194,7 @@ function createLedMap(targetElement) {
         let s1 = document.createElement("div");
         s1.classList.add("led");
         if (isValid(range1) && range1.includes(ledCount)) {
-            s1.classList.add("highLed");
-            if (!started) {
-                started = true;
-                s1.classList.add("firstLed");
-            }
+            s1.classList.add("highLed");            
         }
         
         s1.setAttribute("data-sector", ledCount.toString());
@@ -3223,11 +3220,7 @@ function createLedMap(targetElement) {
         let s1 = document.createElement("div");
         s1.classList.add("led");
         if (isValid(range1) && range1.includes(ledCount)) {
-            s1.classList.add("highLed");
-            if (!started) {
-                started = true;
-                s1.classList.add("firstLed");
-            }
+            s1.classList.add("highLed");            
         }
         s1.setAttribute("data-sector", ledCount.toString());
         s1.style.position = "absolute";
@@ -3256,11 +3249,7 @@ function createLedMap(targetElement) {
         let s1 = document.createElement("div");
         s1.classList.add("led");
         if (isValid(range1) && range1.includes(ledCount)) {
-            s1.classList.add("highLed");
-            if (!started) {
-                started = true;
-                s1.classList.add("firstLed");
-            }
+            s1.classList.add("highLed");            
         }
         s1.setAttribute("data-sector", ledCount.toString());
         s1.style.position = "absolute";
@@ -3289,11 +3278,7 @@ function createLedMap(targetElement) {
         let s1 = document.createElement("div");
         s1.classList.add("led");
         if (isValid(range1) && range1.includes(ledCount)) {
-            s1.classList.add("highLed");
-            if (!started) {
-                started = true;
-                s1.classList.add("firstLed");
-            }
+            s1.classList.add("highLed");            
         }
         s1.setAttribute("data-sector", ledCount.toString());
         s1.style.position = "absolute";
@@ -3313,6 +3298,14 @@ function createLedMap(targetElement) {
         ledCount++;
     }
     targetElement.appendChild(map);
+    let target = range1[0];
+    if (reverse) {
+        target = range1[range1.length - 1];
+    }
+    let tLed = document.querySelector('.led[data-sector="'+target+'"]');
+    if (isValid(tLed)) {
+        tLed.classList.add("firstLed");
+    }
 }
 
 function createHueMap() {

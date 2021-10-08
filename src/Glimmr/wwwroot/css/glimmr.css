@@ -311,7 +311,7 @@ body, .main, #mainNav, #footer {
 }
 
 .highLed.firstLed {
-    background-color: green;
+    background-color: #10ff00;
 }
 
 #footer > .fixed-bottom {

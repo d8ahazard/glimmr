@@ -2,11 +2,9 @@
 
 using System;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using Glimmr.Hubs;
 using Glimmr.Models;
-using Glimmr.Models.ColorTarget;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.SignalR;

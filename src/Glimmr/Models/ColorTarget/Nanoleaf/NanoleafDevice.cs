@@ -99,7 +99,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			}
 
 			await _nanoleafClient.StartExternalAsync();
-			await _nanoleafClient.SetBrightnessAsync(_brightness).ConfigureAwait(false);
+			await _nanoleafClient.SetBrightnessAsync(_brightness);
 			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
 		}
 
