@@ -3130,7 +3130,7 @@ function createBeamLedMap() {
 }
 
 function createLedMap(targetElement) {
-    let range1;
+    let range;
     let sd = data.SystemData;
     let count = 0;
     if (isValid(deviceData)) {
@@ -3144,7 +3144,8 @@ function createLedMap(targetElement) {
             if (mult === 0) mult = 1;
             count *= mult;
         }
-        range1 = ranges(total, offset, count);
+        range = ranges(total, offset, count);
+        console.log("Range created: ", range);
     }
     
     let tgt = targetElement;
@@ -3179,9 +3180,7 @@ function createLedMap(targetElement) {
     let b = 0;
     let l = 0;
     let r = 0;
-    let ledCount = 0;
-    let started = false;
-    let stopped = false;
+    let index = 0;
     let reverse = isValid(deviceData["reverseStrip"]) ? deviceData["reverseStrip"] : false;
     console.log("Reversed? ", reverse);
     for (let i = 0; i < rightCount; i++) {
@@ -3191,11 +3190,11 @@ function createLedMap(targetElement) {
         r = l + dWidth;        
         let s1 = document.createElement("div");
         s1.classList.add("led");
-        if (isValid(range1) && range1.includes(ledCount)) {
+        if (isValid(range) && range.includes(index)) {
             s1.classList.add("highLed");            
         }
         
-        s1.setAttribute("data-sector", ledCount.toString());
+        s1.setAttribute("data-sector", index.toString());
         s1.style.position = "absolute";
         s1.style.top = t.toString() + "px";
         s1.style.left = l.toString() + "px";
@@ -3204,12 +3203,12 @@ function createLedMap(targetElement) {
         s1.setAttribute("data-bs-toggle", "tooltip");
         s1.setAttribute("data-bs-placement", "top");
         if (i === 0) {
-            s1.setAttribute("title", sd["ledCount"].toString() + "/" + (ledCount).toString());
+            s1.setAttribute("title", sd["ledCount"].toString() + "/" + (index).toString());
         } else {
-            s1.setAttribute("title", ledCount.toString());    
+            s1.setAttribute("title", index.toString());    
         }        
         map.appendChild(s1);
-        ledCount++;
+        index++;
     }
 
     for (let i = 0; i < topCount - 1; i++) {
@@ -3217,10 +3216,10 @@ function createLedMap(targetElement) {
         r = l - ftWidth;
         let s1 = document.createElement("div");
         s1.classList.add("led");
-        if (isValid(range1) && range1.includes(ledCount)) {
+        if (isValid(range) && range.includes(index)) {
             s1.classList.add("highLed");            
         }
-        s1.setAttribute("data-sector", ledCount.toString());
+        s1.setAttribute("data-sector", index.toString());
         s1.style.position = "absolute";
         s1.style.top = t.toString() + "px";
         s1.style.left = l.toString() + "px";
@@ -3229,13 +3228,16 @@ function createLedMap(targetElement) {
         s1.setAttribute("data-bs-toggle", "tooltip");
         s1.setAttribute("data-bs-placement", "top");
         if (i === 0) {
-            s1.setAttribute("title", ledCount.toString() + "/" + (ledCount + 1).toString());
-            ledCount++;
+            s1.setAttribute("title", index.toString() + "/" + (index + 1).toString());            
+            index++;
+            let clone = s1.cloneNode();
+            clone.setAttribute("data-sector", index);
+            map.appendChild(clone);
         } else {
-            s1.setAttribute("title", ledCount.toString());
+            s1.setAttribute("title", index.toString());
         }
         map.appendChild(s1);
-        ledCount++;
+        index++;
     }
 
     // Left, top-bottom
@@ -3246,10 +3248,10 @@ function createLedMap(targetElement) {
         r = l + dWidth;
         let s1 = document.createElement("div");
         s1.classList.add("led");
-        if (isValid(range1) && range1.includes(ledCount)) {
+        if (isValid(range) && range.includes(index)) {
             s1.classList.add("highLed");            
         }
-        s1.setAttribute("data-sector", ledCount.toString());
+        s1.setAttribute("data-sector", index.toString());
         s1.style.position = "absolute";
         s1.style.top = t.toString() + "px";
         s1.style.left = l.toString() + "px";
@@ -3258,13 +3260,16 @@ function createLedMap(targetElement) {
         s1.setAttribute("data-bs-toggle", "tooltip");
         s1.setAttribute("data-bs-placement", "top");
         if (i === 0) {
-            s1.setAttribute("title", ledCount.toString() + "/" + (ledCount + 1).toString());
-            ledCount++;
+            s1.setAttribute("title", index.toString() + "/" + (index + 1).toString());
+            index++;
+            let clone = s1.cloneNode();
+            clone.setAttribute("data-sector", index);
+            map.appendChild(clone);
         } else {
-            s1.setAttribute("title", ledCount.toString());
+            s1.setAttribute("title", index.toString());
         }
         map.appendChild(s1);
-        ledCount++;
+        index++;
     }
 
     // This one, stupid
@@ -3275,10 +3280,10 @@ function createLedMap(targetElement) {
         r = l + fbWidth;
         let s1 = document.createElement("div");
         s1.classList.add("led");
-        if (isValid(range1) && range1.includes(ledCount)) {
+        if (isValid(range) && range.includes(index)) {
             s1.classList.add("highLed");            
         }
-        s1.setAttribute("data-sector", ledCount.toString());
+        s1.setAttribute("data-sector", index.toString());
         s1.style.position = "absolute";
         s1.style.top = t.toString() + "px";
         s1.style.left = l.toString() + "px";
@@ -3287,18 +3292,21 @@ function createLedMap(targetElement) {
         s1.setAttribute("data-bs-toggle", "tooltip");
         s1.setAttribute("data-bs-placement", "top");
         if (i === 0) {
-            s1.setAttribute("title", ledCount.toString() + "/" + (ledCount + 1).toString());
-            ledCount++;
+            s1.setAttribute("title", index.toString() + "/" + (index + 1).toString());
+            index++;
+            let clone = s1.cloneNode();
+            clone.setAttribute("data-sector", index);
+            map.appendChild(clone);
         } else {
-            s1.setAttribute("title", ledCount.toString());
+            s1.setAttribute("title", index.toString());
         }
         map.appendChild(s1);        
-        ledCount++;
+        index++;
     }
     targetElement.appendChild(map);
-    let target = range1[0];
+    let target = range[0];
     if (reverse) {
-        target = range1[range1.length - 1];
+        target = range[range.length - 1];
     }
     let tLed = document.querySelector('.led[data-sector="'+target+'"]');
     if (isValid(tLed)) {

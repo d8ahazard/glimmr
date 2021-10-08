@@ -312,6 +312,7 @@ body, .main, #mainNav, #footer {
 
 .highLed.firstLed {
     background-color: #10ff00;
+    z-index: 1;
 }
 
 #footer > .fixed-bottom {
