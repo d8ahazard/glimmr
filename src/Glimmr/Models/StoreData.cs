@@ -1,10 +1,8 @@
 ﻿using System.Collections.Generic;
-using System.Reflection;
 using Glimmr.Models.ColorSource.Ambient;
 using Glimmr.Models.ColorSource.Audio;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
-using Serilog;
 
 namespace Glimmr.Models {
 	/// <summary>
@@ -46,12 +44,7 @@ namespace Glimmr.Models {
 		[JsonProperty]
 		public AudioScene[] AudioScenes {get;set;}
 		
-		/// <summary>
-		/// Version string based on current build + github revison.
-		/// </summary>
-		[JsonProperty]
-		public string Version {get;set;}
-
+		
 		public StoreData() {
 			SystemData = DataUtil.GetSystemData();
 			DevAudio = DataUtil.GetCollection<AudioData>("Dev_Audio").ToArray();
@@ -61,14 +54,6 @@ namespace Glimmr.Models {
 			var jl2 = new JsonLoader("audioScenes");
 			AmbientScenes = jl1.LoadDynamic<AmbientScene>().ToArray();
 			AudioScenes = jl2.LoadDynamic<AudioScene>().ToArray();
-			Version = "0.0.0.0";
-			var assembly = Assembly.GetEntryAssembly();
-			if (assembly != null) {
-				var attrib = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
-				if (attrib != null) {
-					Version = attrib.InformationalVersion;
-				}
-			}
 		}
 	}
 }

@@ -3,6 +3,7 @@
 using System;
 using System.ComponentModel;
 using System.Net;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using Glimmr.Enums;
 using Newtonsoft.Json;
@@ -390,6 +391,26 @@ namespace Glimmr.Models {
 		[DefaultValue(7)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int BlackLevel { get; set; } = 7;
+		
+		/// <summary>
+		/// Version string based on current build + github revison.
+		/// </summary>
+		[JsonProperty]
+		public string Version {
+			get {
+				var val = "0.0.0.0";
+				var assembly = Assembly.GetEntryAssembly();
+				if (assembly != null) {
+					var attrib = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+					if (attrib != null) {
+						val = attrib.InformationalVersion;
+					}
+				}
+
+				return val;
+			}
+		}
+
 
 		public void SetDefaults() {
 			DiscoveryTimeout = 10;

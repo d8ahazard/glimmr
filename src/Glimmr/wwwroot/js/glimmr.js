@@ -56,6 +56,7 @@ let data = {
     load: function(val){
         if (val.hasOwnProperty("systemData")) {
             this.systemInternal = val["systemData"];
+            this.version = val["systemData"]["version"];
             this.systemListener(this.systemInternal);
         }
         if (val.hasOwnProperty("devices")) {
@@ -68,9 +69,6 @@ let data = {
         }
         if (val.hasOwnProperty("devAudio")) {
             this.audioDevices = val["devAudio"];
-        }
-        if (val.hasOwnProperty("version")) {
-            this.version = val["version"];
         }
         if (val.hasOwnProperty("ambientScenes")) {
             this.ambientScenes = val["ambientScenes"];
