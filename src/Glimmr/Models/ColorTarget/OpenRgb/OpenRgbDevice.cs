@@ -1,10 +1,12 @@
 ﻿#region
 
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Serilog;
@@ -80,7 +82,6 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			for (var i = 0; i < output.Length; i++) {
 				output[i] = new OpenRGB.NET.Models.Color();
 			}
-
 			_client.Update(_data.DeviceId, output);
 			_client.Update(_data.DeviceId, output);
 			_client.Update(_data.DeviceId, output);
@@ -125,7 +126,16 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 				toSend = toSend.Reverse().ToArray();
 			}
 
-			var converted = toSend.Select(col => new OpenRGB.NET.Models.Color(col.R, col.G, col.B)).ToList();
+			List<OpenRGB.NET.Models.Color> converted = _data.ColorOrder switch {
+				ColorOrder.RGB => toSend.Select(col => new OpenRGB.NET.Models.Color(col.R, col.G, col.B)).ToList(),
+				ColorOrder.RBG => toSend.Select(col => new OpenRGB.NET.Models.Color(col.R, col.B, col.G)).ToList(),
+				ColorOrder.GBR => toSend.Select(col => new OpenRGB.NET.Models.Color(col.G, col.B, col.R)).ToList(),
+				ColorOrder.GRB => toSend.Select(col => new OpenRGB.NET.Models.Color(col.G, col.R, col.B)).ToList(),
+				ColorOrder.BGR => toSend.Select(col => new OpenRGB.NET.Models.Color(col.B, col.G, col.R)).ToList(),
+				ColorOrder.BRG => toSend.Select(col => new OpenRGB.NET.Models.Color(col.B, col.R, col.G)).ToList(),
+				_ => throw new ArgumentOutOfRangeException()
+			};
+
 			_client?.Update(_data.DeviceId, converted.ToArray());
 			await Task.FromResult(true);
 			_colorService.Counter.Tick(Id);

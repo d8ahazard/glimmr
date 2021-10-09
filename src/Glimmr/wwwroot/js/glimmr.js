@@ -225,28 +225,7 @@ document.addEventListener("DOMContentLoaded", function(){
             onBackKeyDown();
         }
     });
-    window.addEventListener("hashchange", function(e) {
-        if (expanded) closeCard().then();
-        if (settingsShown) toggleSettingsDiv().then();
-        if (expanded || settingsShown) {
-            history.pushState(null, null, window.location.pathname);
-        }
-    });
-
-    window.addEventListener('popstate', function(event) {
-        // The popstate event is fired each time when the current history entry changes.
-        if (expanded) closeCard().then();
-        if (settingsShown) toggleSettingsDiv().then();
-        if (expanded || settingsShown) {
-            history.pushState(null, null, window.location.pathname);
-        } else {
-            // Stay on the current page.
-            history.back();
-        }
-
-        history.pushState(null, null, window.location.pathname);
-
-    }, false);
+   
     let getUrl = window.location;
     baseUrl = getUrl .protocol + "//" + getUrl.host;
     fpsCounter = document.getElementById("fps");
@@ -1004,7 +983,6 @@ function getLightMap(id) {
 
 function setLightMap(map) {
     let hueLightMap = deviceData["mappedLights"];
-    let ids = [];
     for (let l in hueLightMap) {
         if (hueLightMap.hasOwnProperty(l)) {
             if (hueLightMap[l]["id"] === map["id"]) {

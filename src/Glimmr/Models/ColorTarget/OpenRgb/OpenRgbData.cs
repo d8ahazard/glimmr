@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
+using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
 using OpenRGB.NET.Enums;
@@ -13,6 +14,14 @@ using OpenRGB.NET.Models;
 
 namespace Glimmr.Models.ColorTarget.OpenRgb {
 	public class OpenRgbData : IColorTargetData {
+		
+		/// <summary>
+		/// The order of the color values for the particular device.
+		/// </summary>
+		[DefaultValue(ColorOrder.RBG)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		
+		public ColorOrder ColorOrder { get; set; }
 		
 		/// <summary>
 		/// The OpenRGB device type.
@@ -195,7 +204,15 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 				["90"] = "90 Degrees",
 				["180"] = "180 Degrees (Mirror)",
 				["270"] = "270 Degrees"
-			})
+			}),
+			new("ColorOrder", "select", "Color Order", new Dictionary<string, string> {
+				["0"] = "RGB",
+				["1"] = "RBG",
+				["2"] = "GBR",
+				["3"] = "GRB",
+				["4"] = "BGR",
+				["5"] = "BRG"
+			}){ValueHint = "The order in which RGB values are sent to the LED strip."}
 		};
 
 
