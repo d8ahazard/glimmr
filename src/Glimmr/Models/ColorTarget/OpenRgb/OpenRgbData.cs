@@ -18,7 +18,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		/// <summary>
 		/// The order of the color values for the particular device.
 		/// </summary>
-		[DefaultValue(ColorOrder.RBG)]
+		[DefaultValue(ColorOrder.Rbg)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		
 		public ColorOrder ColorOrder { get; set; }

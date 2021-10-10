@@ -1,39 +1,36 @@
 ﻿#region
 
 using System;
+using System.Collections.Concurrent;
 using Newtonsoft.Json;
 
 #endregion
 
 namespace Glimmr.Models.Util {
 	[Serializable]
-	public class CpuData {
+	public class StatData {
 		/// <summary>
-		/// Load Average for the past minute.
+		/// Percentage of CPU Used
 		/// </summary>
-		[JsonProperty] public float LoadAvg1 { get; set; }
+		[JsonProperty] public int CpuUsage { get; set; }
 
 		/// <summary>
-		/// Load average for the past 15 minutes.
+		/// Current CPU temperature (May not report on Windows)
 		/// </summary>
-		[JsonProperty] public float LoadAvg15 { get; set; }
+
+		[JsonProperty]
+		public float CpuTemp { get; set; }
 
 		/// <summary>
-		/// Load average for the past 5 minutes.
+		/// Current number of frames per second
 		/// </summary>
-		[JsonProperty] public float LoadAvg5 { get; set; }
+		[JsonProperty]
+		public ConcurrentDictionary<string, int> Fps { get; set; } = new();
 		
 		/// <summary>
-		/// Average temperature.
+		/// Total percentage of memory used in GB
 		/// </summary>
-
-		[JsonProperty] public float TempAvg { get; set; }
-		
-		/// <summary>
-		/// Current temperature.
-		/// </summary>
-
-		[JsonProperty] public float TempCurrent { get; set; }
+		[JsonProperty] public float MemoryUsage { get; set; }
 		
 		/// <summary>
 		/// Maximum detected temperature.
@@ -51,7 +48,7 @@ namespace Glimmr.Models.Util {
 		/// System Uptime.
 		/// </summary>
 
-		[JsonProperty] public string? Uptime { get; set; }
+		[JsonProperty] public int Uptime { get; set; }
 		
 		/// <summary>
 		/// Current throttle state.

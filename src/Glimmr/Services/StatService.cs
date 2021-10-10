@@ -19,6 +19,7 @@ namespace Glimmr.Services {
 		private readonly ColorService _colorService;
 		private readonly IHubContext<SocketServer> _hubContext;
 		private int _count;
+		private bool _gathered;
 
 		public StatService(IHubContext<SocketServer> hubContext, ControlService cs) {
 			_hubContext = hubContext;
@@ -40,25 +41,17 @@ namespace Glimmr.Services {
 					while (!stoppingToken.IsCancellationRequested) {
 						// Sleep for 5s
 						await Task.Delay(5000, stoppingToken);
-						if (_count >= 6) {
+						if (_count >= 6 || !_gathered) {
+							_gathered = true;
 							_count = 0;
-							if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-								continue;
-							}
-
+							Log.Debug("Getting stats...");
 							var cd = await CpuUtil.GetStats();
+							cd.Fps = _colorService.Counter.Rates;
 							// Send it to everybody
 
-							await _hubContext.Clients.All.SendAsync("cpuData", cd, stoppingToken);
+							await _hubContext.Clients.All.SendAsync("stats", cd, stoppingToken);
 							_count = 0;
 						}
-
-						if (_colorService.DeviceMode != DeviceMode.Off) {
-							await _hubContext.Clients.All
-								.SendAsync("frames", _colorService.Counter.Rates, CancellationToken.None)
-								.ConfigureAwait(false);
-						}
-
 						_count++;
 					}
 				} catch (Exception e) {

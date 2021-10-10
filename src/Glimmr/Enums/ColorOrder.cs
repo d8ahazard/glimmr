@@ -1,10 +1,28 @@
 ﻿namespace Glimmr.Enums {
 	public enum ColorOrder {
-		RGB = 0,
-		RBG = 1,
-		GBR = 2,
-		GRB = 3,
-		BGR = 4,
-		BRG = 5
+		/// <summary>
+		/// RGB
+		/// </summary>
+		Rgb = 0,
+		/// <summary>
+		/// RBG
+		/// </summary>
+		Rbg = 1,
+		/// <summary>
+		/// GBR
+		/// </summary>
+		Gbr = 2,
+		/// <summary>
+		/// GRB
+		/// </summary>
+		Grb = 3,
+		/// <summary>
+		/// BGR
+		/// </summary>
+		Bgr = 4,
+		/// <summary>
+		/// BRG
+		/// </summary>
+		Brg = 5
 	}
 }

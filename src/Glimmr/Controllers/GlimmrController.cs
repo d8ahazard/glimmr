@@ -450,7 +450,7 @@ namespace Glimmr.Controllers {
 		/// </summary>
 		/// <returns></returns>
 		[HttpGet("stats")]
-		public async Task<ActionResult<CpuData>> GetStats() {
+		public async Task<ActionResult<StatData>> GetStats() {
 			return await CpuUtil.GetStats();
 		}
 

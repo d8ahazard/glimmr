@@ -9,6 +9,7 @@ using Glimmr.Models.ColorTarget.Hue;
 using Glimmr.Models.ColorTarget.Led;
 using Glimmr.Models.ColorTarget.Lifx;
 using Glimmr.Models.ColorTarget.Nanoleaf;
+using Glimmr.Models.ColorTarget.OpenRgb;
 using Glimmr.Models.ColorTarget.Wled;
 using Glimmr.Models.ColorTarget.Yeelight;
 using Newtonsoft.Json;
@@ -33,6 +34,7 @@ namespace Glimmr.Models.ColorTarget {
 	[SwaggerSubType(typeof(LedData))]
 	[SwaggerSubType(typeof(LifxData))]
 	[SwaggerSubType(typeof(NanoleafData))]
+	[SwaggerSubType(typeof(OpenRgbData))]
 	[SwaggerSubType(typeof(WledData))]
 	[SwaggerSubType(typeof(YeelightData))]
 	public interface IColorTargetData {

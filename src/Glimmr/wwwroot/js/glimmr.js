@@ -419,10 +419,12 @@ function setSocketListeners() {
         data.setProp("deviceMode",mode);
     });
 
-    websocket.on("cpuData", function (cpuData) {
+    websocket.on("stats", function (cpuData) {
+        console.log("Stats: ", cpuData);
         let tempDiv = $("#tempDiv");
         let tempText = $("#temperature");
         let cpuText = $("#cpuPct");
+        let memText = $("#memPct");
         let overIcon = $("#overIcon");
         let sd = data.SystemData;
         let tempUnit = "°F";
@@ -430,12 +432,14 @@ function setSocketListeners() {
         if (isValid(sd)) {
             tempUnit = (sd["units"] === 0) ? "°F" : "°C";
         }
-        tempText.textContent = cpuData["tempCurrent"] + tempUnit;
-        cpuText.textContent = cpuData["loadAvg1"] + "%";
+        tempText.textContent = cpuData["cpuTemp"] + tempUnit;
+        cpuText.textContent = cpuData["cpuUsage"] + "%";
+        memText.textContent = cpuData["memoryUsage"] + "%";
         overIcon.textContent = "";
         tempDiv.classList.remove("text-danger");
         tempDiv.classList.add("text-success");
         overIcon.classList.remove("text-danger");
+        fpsCounter.innerText = cpuData["fps"]["source"] + "FPS";
         for(let i=0; i< cpuData["throttledState"].length; i++) {
             if (cpuData["throttledState"][i] === "Currently throttled") {
                 tempDiv.classList.add("text-danger");
@@ -546,11 +550,6 @@ function setSocketListeners() {
         }        
     });
     
-    websocket.on('frames', function(stuff) {
-        //console.log("frame counts: ", stuff); 
-        fpsCounter.innerText = stuff["source"] + "FPS"; 
-    });
-
     websocket.on('device', function(parsed) {
         //let parsed = JSON.parse(dData);
         if (isValid(parsed) && isValid(parsed["id"])) {

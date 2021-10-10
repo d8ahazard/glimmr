@@ -127,12 +127,12 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			}
 
 			List<OpenRGB.NET.Models.Color> converted = _data.ColorOrder switch {
-				ColorOrder.RGB => toSend.Select(col => new OpenRGB.NET.Models.Color(col.R, col.G, col.B)).ToList(),
-				ColorOrder.RBG => toSend.Select(col => new OpenRGB.NET.Models.Color(col.R, col.B, col.G)).ToList(),
-				ColorOrder.GBR => toSend.Select(col => new OpenRGB.NET.Models.Color(col.G, col.B, col.R)).ToList(),
-				ColorOrder.GRB => toSend.Select(col => new OpenRGB.NET.Models.Color(col.G, col.R, col.B)).ToList(),
-				ColorOrder.BGR => toSend.Select(col => new OpenRGB.NET.Models.Color(col.B, col.G, col.R)).ToList(),
-				ColorOrder.BRG => toSend.Select(col => new OpenRGB.NET.Models.Color(col.B, col.R, col.G)).ToList(),
+				ColorOrder.Rgb => toSend.Select(col => new OpenRGB.NET.Models.Color(col.R, col.G, col.B)).ToList(),
+				ColorOrder.Rbg => toSend.Select(col => new OpenRGB.NET.Models.Color(col.R, col.B, col.G)).ToList(),
+				ColorOrder.Gbr => toSend.Select(col => new OpenRGB.NET.Models.Color(col.G, col.B, col.R)).ToList(),
+				ColorOrder.Grb => toSend.Select(col => new OpenRGB.NET.Models.Color(col.G, col.R, col.B)).ToList(),
+				ColorOrder.Bgr => toSend.Select(col => new OpenRGB.NET.Models.Color(col.B, col.G, col.R)).ToList(),
+				ColorOrder.Brg => toSend.Select(col => new OpenRGB.NET.Models.Color(col.B, col.R, col.G)).ToList(),
 				_ => throw new ArgumentOutOfRangeException()
 			};
 

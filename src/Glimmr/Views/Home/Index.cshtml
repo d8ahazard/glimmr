@@ -600,7 +600,7 @@
             <span class="material-icons" id="refreshIcon">refresh</span>
         </div>
     </div>
-    <div id="statDiv" class="col-10 col-md-6 col-lg-3">
+    <div id="statDiv" class="col-10 col-md-6">
         <div class="d-inline-block mr-2" id="fpsDiv" data-toggle="tooltip" data-placement="top"
              title="Current FPS">
             <div id="fps" class="d-inline-block mb-2">0FPS</div>
@@ -609,9 +609,13 @@
             <span class="material-icons d-inline-block statIcon">thermostat</span>
             <div id="temperature" class="d-inline-block mb-2">0°</div>
         </div>
-        <div id="cpuDiv" class="d-inline-block" title="Average CPU load (all cores)" data-toggle="tooltip">
-            <span class="material-icons d-inline-block statIcon">multiline_chart</span>
+        <div id="cpuDiv" class="d-inline-block mr-2" title="Average CPU load (all cores)" data-toggle="tooltip">
+            <span class="material-icons d-inline-block statIcon">memory</span>
             <div id="cpuPct" class="d-inline-block mb-2">0%</div>
+        </div>
+        <div id="ramDiv" class="d-inline-block mr-2" title="Memory used percent." data-toggle="tooltip">
+            <span class="material-icons d-inline-block statIcon">straighten</span>
+            <div id="memPct" class="d-inline-block mb-2">0%</div>
         </div>
         <div id="throttleDiv" class="d-inline-block" title="System throttle state" data-toggle="tooltip">
             <span class="material-icons d-inline-block statIcon" id="overIcon"></span>
