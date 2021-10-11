@@ -138,7 +138,6 @@ namespace Glimmr.Services {
 					Counter.Tick("");
 					ColorsUpdated = false;
 					await SendColors(LedColors, SectorColors);
-
 				}
 
 				if (cTask.IsCompleted) {
@@ -166,8 +165,9 @@ namespace Glimmr.Services {
 				_demoComplete = true;
 				Log.Debug("Skipping demo.");
 			}
-
-			await Mode(this, new DynamicEventArgs(_deviceMode, true)).ConfigureAwait(true);
+			Log.Debug($"Previous AUTO state: {_systemData.AutoDisabled}, prevMode: {_systemData.PreviousMode}");
+			var mode = _systemData.AutoDisabled ? _systemData.PreviousMode : _deviceMode;
+			await Mode(this, new DynamicEventArgs(mode, true)).ConfigureAwait(true);
 			Log.Information("Color service started.");
 		}
 
@@ -290,7 +290,8 @@ namespace Glimmr.Services {
 					_autoDisabled = false;
 					DataUtil.SetItem("AutoDisabled", _autoDisabled);
 					ControlService.SetModeEvent -= Mode;
-					await ControlService.SetMode((int) _deviceMode);
+					_deviceMode = _systemData.PreviousMode;
+					await ControlService.SetMode(_deviceMode);
 					await StartStream();
 					ControlService.SetModeEvent += Mode;
 				}
@@ -310,7 +311,7 @@ namespace Glimmr.Services {
 					Counter.Reset();
 					DataUtil.SetItem("AutoDisabled", _autoDisabled);
 					ControlService.SetModeEvent -= Mode;
-					await ControlService.SetMode(0);
+					await ControlService.SetMode(DeviceMode.Off, true);
 					ControlService.SetModeEvent += Mode;
 					await SendColors(ColorUtil.EmptyColors(_systemData.LedCount),
 						ColorUtil.EmptyColors(_systemData.SectorCount), 0, true);
@@ -522,7 +523,7 @@ namespace Glimmr.Services {
 
 			_deviceMode = newMode;
 			// Don't unset auto-disable if init is set...
-			if (_autoDisabled) {
+			if (_autoDisabled && !init) {
 				_autoDisabled = false;
 				DataUtil.SetItem("AutoDisabled", _autoDisabled);
 				Log.Debug("Unsetting auto-disabled flag...");

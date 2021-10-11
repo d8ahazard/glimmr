@@ -429,7 +429,7 @@ namespace Glimmr.Controllers {
 		[HttpPost("mode")]
 		public async Task<ActionResult<DeviceMode>> DevMode([FromBody] DeviceMode mode) {
 			Log.Debug("Mode set to: " + mode);
-			await _controlService.SetMode((int)mode);
+			await _controlService.SetMode(mode);
 			return new ActionResult<DeviceMode>(mode);
 		}
 

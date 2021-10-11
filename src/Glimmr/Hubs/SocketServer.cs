@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Glimmr.Enums;
 using Glimmr.Models;
 using Glimmr.Models.Util;
 using Glimmr.Services;
@@ -28,7 +29,7 @@ namespace Glimmr.Hubs {
 
 		
 
-		public async Task Mode(int mode) {
+		public async Task Mode(DeviceMode mode) {
 			Log.Debug("Mode set to: " + mode);
 			try {
 				await _cs.SetMode(mode);

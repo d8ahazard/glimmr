@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using DreamScreenNet;
 using DreamScreenNet.Devices;
 using DreamScreenNet.Enum;
+using GlimmrMode = Glimmr.Enums.DeviceMode;
 using Glimmr.Models.ColorTarget.DreamScreen;
 using Glimmr.Models.Util;
 using Glimmr.Services;
@@ -105,16 +106,21 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 			if (e.Response.Group == TargetGroup || e.Response.Group == _dDev.DeviceGroup) {
 				switch (e.Response.Type) {
 					case MessageType.Mode:
-						var mode = int.Parse(e.Response.Payload.ToString());
-						if (mode == 1) {
-							mode = 5; // Video = streaming
+						var mode = (DeviceMode) int.Parse(e.Response.Payload.ToString());
+						if (mode == DeviceMode.Video || mode == DeviceMode.Ambient) {
+							_cs.ControlService.SetMode(GlimmrMode.DreamScreen).ConfigureAwait(false);	
 						}
 
-						Log.Debug("Toggle mode: " + mode);
-						_cs.ControlService.SetMode(mode).ConfigureAwait(false);
+						if (mode == DeviceMode.Ambient) {
+							_cs.ControlService.SetMode(GlimmrMode.Ambient).ConfigureAwait(false);
+						}
+
+						if (mode == DeviceMode.Off) {
+							_cs.ControlService.SetMode(GlimmrMode.Off).ConfigureAwait(false);
+						}
 						break;
 					case MessageType.AmbientModeType:
-						_cs.ControlService.SetMode(3).ConfigureAwait(false);
+						_cs.ControlService.SetMode(GlimmrMode.Ambient).ConfigureAwait(false);
 						break;
 				}
 			} else {

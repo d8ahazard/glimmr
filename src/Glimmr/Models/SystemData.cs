@@ -270,9 +270,9 @@ namespace Glimmr.Models {
 		/// <summary>
 		/// The previous device mode before Auto-disable was activated.
 		/// </summary>
-		[DefaultValue(0)]
+		[DefaultValue(DeviceMode.Off)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int PreviousMode { get; set; }
+		public DeviceMode PreviousMode { get; set; }
 
 		
 		/// <summary>
@@ -423,7 +423,7 @@ namespace Glimmr.Models {
 			DiscoveryTimeout = 10;
 			AutoDiscoveryFrequency = 60;
 			CropDelay = 15;
-			DeviceMode = 0;
+			DeviceMode = DeviceMode.Off;
 			AutoUpdateTime = 2;
 			DefaultSet = true;
 			AudioGain = .6f;

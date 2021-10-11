@@ -94,7 +94,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 			_sd = DataUtil.GetSystemData();
 			var dims = new[] {_gd.LeftCount, _gd.RightCount, _gd.TopCount, _gd.BottomCount};
 			_builder = new FrameBuilder(dims);
-			await _cs.SetMode(5);
+			await _cs.SetMode(Udp);
 		}
 
 		private Task Mode(object arg1, DynamicEventArgs arg2) {
@@ -157,7 +157,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 				_gd = new GlimmrData(DataUtil.GetSystemData());
 				var dims = new[] {_gd.LeftCount, _gd.RightCount, _gd.TopCount, _gd.BottomCount};
 				_builder = new FrameBuilder(dims);
-				await _cs.SetMode(5);
+				await _cs.SetMode(Udp);
 			}
 			try {
 				var cp = new ColorPacket(data.ToArray());

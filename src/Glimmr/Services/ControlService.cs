@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using DreamScreenNet.Enum;
 using Emgu.CV;
 using Emgu.CV.Util;
 using Glimmr.Hubs;
@@ -24,6 +25,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Serilog;
+using DeviceMode = Glimmr.Enums.DeviceMode;
 
 #endregion
 
@@ -116,15 +118,15 @@ namespace Glimmr.Services {
 			await DeviceRescanEvent.InvokeAsync(this, new DynamicEventArgs("foo"));
 		}
 
-		public async Task SetMode(int mode) {
+		public async Task SetMode(DeviceMode mode, bool autoDisabled = false) {
 			Log.Information("Setting mode: " + mode);
-			if (mode != 0) {
+			if (mode != DeviceMode.Off) {
 				DataUtil.SetItem("PreviousMode", mode);
 			}
 
 			await _hubContext.Clients.All.SendAsync("mode", mode);
 			DataUtil.SetItem("DeviceMode", mode);
-			DataUtil.SetItem("AutoDisabled", false);
+			DataUtil.SetItem("AutoDisabled", autoDisabled);
 			ColorUtil.SetSystemData();
 			await SetModeEvent.InvokeAsync(this, new DynamicEventArgs(mode));
 		}
