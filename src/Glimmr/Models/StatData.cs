@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 
 #endregion
 
-namespace Glimmr.Models.Util {
+namespace Glimmr.Models {
 	[Serializable]
 	public class StatData {
 		/// <summary>
@@ -16,20 +16,20 @@ namespace Glimmr.Models.Util {
 		public int CpuUsage { get; set; }
 
 		/// <summary>
-		/// Current CPU temperature (May not report on Windows)
+		/// Current CPU temperature (May not work with some AMD processors).
 		/// </summary>
 
 		[JsonProperty]
 		public float CpuTemp { get; set; }
 
 		/// <summary>
-		/// Current number of frames per second
+		/// Current number of frames per second.
 		/// </summary>
 		[JsonProperty]
 		public ConcurrentDictionary<string, int> Fps { get; set; } = new();
 
 		/// <summary>
-		/// Total percentage of memory used in GB
+		/// Total percentage of memory used.
 		/// </summary>
 		[JsonProperty]
 		public float MemoryUsage { get; set; }

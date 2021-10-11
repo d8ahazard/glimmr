@@ -7,6 +7,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Glimmr.Enums;
+using LibreHardwareMonitor.Hardware;
 using Serilog;
 
 #endregion
@@ -44,7 +45,6 @@ namespace Glimmr.Models.Util {
 		public static async Task<StatData> GetStats() {
 			var cd = new StatData();
 			if (OperatingSystem.IsWindows()) {
-				var mon = new CpuMonitor();
 				cd = CpuMonitor.Monitor();
 			} else {
 				cd.CpuUsage = GetProcessAverage().Result;
@@ -199,6 +199,63 @@ namespace Glimmr.Models.Util {
 			} catch (Exception ex) {
 				Log.Warning("Got me some kind of exception: " + ex.Message);
 			}
+		}
+	}
+	public class CpuMonitor : IVisitor {
+		public void VisitComputer(IComputer computer) {
+			computer.Traverse(this);
+		}
+
+		public void VisitHardware(IHardware hardware) {
+			hardware.Update();
+			foreach (IHardware subHardware in hardware.SubHardware) subHardware.Accept(this);
+		}
+
+		public void VisitSensor(ISensor sensor) {
+		}
+
+		public void VisitParameter(IParameter parameter) {
+		}
+		
+		public static StatData Monitor() {
+			Computer computer = new() {
+				IsCpuEnabled = true,
+				IsStorageEnabled = true,
+				IsNetworkEnabled = true,
+				IsGpuEnabled = true,
+				IsMemoryEnabled = true,
+				IsMotherboardEnabled = true
+			};
+			var output = new StatData();
+			computer.Open();
+			computer.Accept(new CpuMonitor());
+			foreach (IHardware hardware in computer.Hardware) {
+				switch (hardware.HardwareType) {
+					case HardwareType.Cpu:
+						foreach (ISensor sensor in hardware.Sensors) {
+							switch (sensor.Name) {
+								case "CPU Total":
+									output.CpuUsage = (int)(sensor.Value ?? 0);
+									break;
+								case "Core (Tctl/Tdie)":
+								case "Core (Tctl)":
+								case "Core (Tdie)":
+									output.CpuTemp = sensor.Value ?? 0;
+									break;
+							}
+						}
+						break;
+					case HardwareType.Memory:
+						foreach (ISensor sensor in hardware.Sensors) {
+							if (sensor.Name == "Memory") {
+								output.MemoryUsage = (int) (sensor.Value ?? 0);
+							}
+						}
+						break;
+				}
+			}
+			computer.Close();
+			return output;
 		}
 	}
 }

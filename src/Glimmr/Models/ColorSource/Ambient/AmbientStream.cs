@@ -9,14 +9,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Microsoft.Extensions.Hosting;
-using Newtonsoft.Json;
 using Serilog;
 
 #endregion
 
 namespace Glimmr.Models.ColorSource.Ambient {
-	public class AmbientStream : BackgroundService, IColorSource {
+	public class AmbientStream : ColorSource {
 		private const int SectorCount = 116;
 		private readonly Random _random;
 		private readonly FrameSplitter _splitter;
@@ -44,19 +42,19 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			_random = new Random();
 			_loader = new JsonLoader("ambientScenes");
 			_scenes = _loader.LoadFiles<AmbientScene>();
-			_splitter = new FrameSplitter(colorService, false, "ambientStream");
+			_splitter = new FrameSplitter(colorService);
 			colorService.ControlService.RefreshSystemEvent += RefreshSystem;
 		}
 
-		public bool SourceActive => _splitter.SourceActive;
+		public override bool SourceActive => _splitter.SourceActive;
 
 
-		public Task ToggleStream(CancellationToken ct) {
+		public override Task ToggleStream(CancellationToken ct) {
 			Log.Debug("Starting ambient stream...");
 			return ExecuteAsync(ct);
 		}
 
-		private void RefreshSystem() {
+		public override void RefreshSystem() {
 			var sd = DataUtil.GetSystemData();
 			_ambientScene = sd.AmbientScene;
 			_ambientColor = sd.AmbientColor;

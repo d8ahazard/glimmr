@@ -36,8 +36,8 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			Log.Debug("Connecting OpenRGB client.");
 			try {
 				_client?.Connect();
-			} catch (ObjectDisposedException) {
-				
+			} catch (Exception) {
+				Log.Warning("Could not connect to open RGB at " + Ip);
 			}
 		}
 

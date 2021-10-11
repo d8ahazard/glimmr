@@ -2,12 +2,15 @@
 
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
 
 #endregion
 
 namespace Glimmr.Models.ColorSource {
-	public interface IColorSource {
-		bool SourceActive { get; }
-		public Task ToggleStream(CancellationToken ct);
+	public abstract class ColorSource : BackgroundService {
+		public abstract bool SourceActive { get; }
+		public abstract Task ToggleStream(CancellationToken ct);
+
+		public abstract void RefreshSystem();
 	}
 }

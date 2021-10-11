@@ -14,14 +14,13 @@ using Glimmr.Models.ColorTarget.Glimmr;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Makaretu.Dns;
-using Microsoft.Extensions.Hosting;
 using Serilog;
 using static Glimmr.Enums.DeviceMode;
 
 #endregion
 
 namespace Glimmr.Models.ColorSource.UDP {
-	public class UdpStream : BackgroundService, IColorSource {
+	public class UdpStream : ColorSource {
 		private readonly ControlService _cs;
 		private readonly FrameSplitter _splitter;
 		private readonly UdpClient _uc;
@@ -42,7 +41,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 			_cs.RefreshSystemEvent += RefreshSystem;
 			_cs.SetModeEvent += Mode;
 			_cs.StartStreamEvent += StartStream;
-			_splitter = new FrameSplitter(cs, false, "udpStream");
+			_splitter = new FrameSplitter(cs);
 			_uc = new UdpClient(21324) {Ttl = 5, Client = {ReceiveBufferSize = 2000}};
 			_uc.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 			_uc.Client.Blocking = false;
@@ -51,7 +50,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 			}
 
 			var sd = DataUtil.GetSystemData();
-			_devMode = (DeviceMode) sd.DeviceMode;
+			_devMode = sd.DeviceMode;
 			_sd = sd;
 			_hostName = _sd.DeviceName;
 			if (string.IsNullOrEmpty(_hostName)) {
@@ -68,17 +67,19 @@ namespace Glimmr.Models.ColorSource.UDP {
 			Task.Run(Listen, _listenToken);
 		}
 
-		public Task ToggleStream(CancellationToken ct) {
+		public override Task ToggleStream(CancellationToken ct) {
 			Log.Information("Starting UDP Stream service...");
 			_splitter.DoSend = true;
 			return ExecuteAsync(ct);
 		}
 
-		public bool SourceActive { get; private set; }
+		public override bool SourceActive => _sourceActive;
 
-		private void RefreshSystem() {
+		private bool _sourceActive;
+
+		public sealed override void RefreshSystem() {
 			var sd = DataUtil.GetSystemData();
-			_devMode = (DeviceMode) sd.DeviceMode;
+			_devMode = sd.DeviceMode;
 			_hostName = _sd.DeviceName;
 			_discovery?.Dispose();
 			var address = new List<IPAddress> {IPAddress.Parse(IpUtil.GetLocalIpAddress())};
@@ -137,7 +138,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 				_timeOutWatch.Start();
 			}
 
-			SourceActive = _timeOutWatch.ElapsedMilliseconds <= _timeOut * 1000;
+			_sourceActive = _timeOutWatch.ElapsedMilliseconds <= _timeOut * 1000;
 			_splitter.DoSend = SourceActive;
 			return Task.CompletedTask;
 		}

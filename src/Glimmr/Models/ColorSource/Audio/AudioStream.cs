@@ -8,13 +8,12 @@ using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using ManagedBass;
-using Microsoft.Extensions.Hosting;
 using Serilog;
 
 #endregion
 
 namespace Glimmr.Models.ColorSource.Audio {
-	public sealed class AudioStream : BackgroundService, IColorSource {
+	public class AudioStream : ColorSource {
 		public bool SendColors {
 			set => StreamSplitter.DoSend = value;
 		}
@@ -34,7 +33,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 		public AudioStream(ColorService cs) {
 			_devices = new List<AudioData>();
 			_map = new AudioMap();
-			StreamSplitter = new FrameSplitter(cs, false, "audioStream");
+			StreamSplitter = new FrameSplitter(cs);
 			_builder = new FrameBuilder(new[] {
 				3, 3, 6, 6
 			}, true);
@@ -42,9 +41,9 @@ namespace Glimmr.Models.ColorSource.Audio {
 			RefreshSystem();
 		}
 
-		public bool SourceActive => StreamSplitter.SourceActive;
+		public override bool SourceActive => StreamSplitter.SourceActive;
 
-		public Task ToggleStream(CancellationToken ct) {
+		public override Task ToggleStream(CancellationToken ct) {
 			SendColors = true;
 			try {
 				Bass.RecordInit(_recordDeviceIndex);
@@ -68,32 +67,28 @@ namespace Glimmr.Models.ColorSource.Audio {
 		}
 
 
-		private void RefreshSystem() {
+		public sealed override void RefreshSystem() {
 			_sd = DataUtil.GetSystemData();
 			LoadData();
 		}
 
-		public Task StopStream() {
-			try {
-				Bass.ChannelStop(_handle);
-				Bass.Free();
-				Bass.RecordFree();
-				SendColors = false;
-				Log.Debug("Audio stream service stopped.");
-			} catch (Exception e) {
-				Log.Warning("Exception stopping stream..." + e.Message);
-			}
-
-			return Task.CompletedTask;
-		}
-
+		
 		protected override Task ExecuteAsync(CancellationToken ct) {
 			return Task.Run(async () => {
 				while (!ct.IsCancellationRequested) {
 					await Task.Delay(1, CancellationToken.None);
 				}
 
-				await StopStream();
+				try {
+					Bass.ChannelStop(_handle);
+					Bass.Free();
+					Bass.RecordFree();
+					SendColors = false;
+					Log.Debug("Audio stream service stopped.");
+				} catch (Exception e) {
+					Log.Warning("Exception stopping stream..." + e.Message);
+				}
+
 			}, CancellationToken.None);
 		}
 

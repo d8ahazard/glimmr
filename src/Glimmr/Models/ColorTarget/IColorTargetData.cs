@@ -44,7 +44,7 @@ namespace Glimmr.Models.ColorTarget {
 		public bool Enable { get;  set;}
 		
 		/// <summary>
-		/// Unique device tag used for serilization/deserilization
+		/// Unique device tag.
 		/// </summary>
 		public string Tag { get; set; }
 

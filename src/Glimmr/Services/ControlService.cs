@@ -241,7 +241,7 @@ namespace Glimmr.Services {
 			return Task.Run(async () => {
 				await Task.Yield();
 				while (!stoppingToken.IsCancellationRequested) {
-					CheckBackups();
+					CheckBackups().RunSynchronously();
 					if (!_sd.AutoUpdate) {
 						continue;
 					}
@@ -264,7 +264,7 @@ namespace Glimmr.Services {
 			}, stoppingToken);
 		}
 
-		private static void CheckBackups() {
+		private static Task CheckBackups() {
 			var userPath = SystemUtil.GetUserDir();
 			var dbFiles = Directory.GetFiles(userPath, "*.db");
 			if (dbFiles.Length == 1) {
@@ -283,10 +283,9 @@ namespace Glimmr.Services {
 			Array.Sort(dbFiles);
 			Array.Reverse(dbFiles);
 			if (dbFiles.Length <= 8) {
-				return;
+				return Task.CompletedTask;
 			}
 
-			Log.Debug("Pruning old backups...");
 			foreach (var p in dbFiles) {
 				var pStamp = p.Replace(userDir, "");
 				pStamp = pStamp.Replace(Path.DirectorySeparatorChar.ToString(), "");
@@ -306,6 +305,7 @@ namespace Glimmr.Services {
 					Log.Warning($"Exception removing file({p}): " + e.Message);
 				}
 			}
+			return Task.CompletedTask;
 		}
 
 		private void Initialize() {

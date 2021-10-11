@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Serilog;
 
 #endregion
 
@@ -61,7 +60,6 @@ namespace Glimmr.Models {
 		public void Tick(string id) {
 			// Make sure watch is running
 			if (_mode == DeviceMode.Off) {
-				Log.Debug("Device is off, no ticky ticky.");
 				_ticks = new ConcurrentDictionary<string, int> {["source"] = 0};
 				return;
 			}
@@ -69,7 +67,6 @@ namespace Glimmr.Models {
 				_stopwatch.Start();
 			}
 
-			// Clear our cache every minute so we don't wind up with massive stored values over time
 			if (_stopwatch.Elapsed >= TimeSpan.FromSeconds(1)) {
 				_stopwatch.Restart();
 				Rates = _ticks;

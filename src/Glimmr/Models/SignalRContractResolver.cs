@@ -18,15 +18,8 @@ namespace Glimmr.Models {
 			_assembly = typeof(Connection).Assembly;
 		}
 
-		public JsonContract ResolveContract(Type type)
-		{
-			if (type.Assembly.Equals(_assembly))
-			{
-				return _defaultContractSerializer.ResolveContract(type);
-
-			}
-
-			return _camelCaseContractResolver.ResolveContract(type);
+		public JsonContract ResolveContract(Type type) {
+			return type.Assembly.Equals(_assembly) ? _defaultContractSerializer.ResolveContract(type) : _camelCaseContractResolver.ResolveContract(type);
 		}
 
 	}

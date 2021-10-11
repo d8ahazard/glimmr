@@ -10,13 +10,12 @@ using Glimmr.Models.ColorSource.Video.Stream.Screen;
 using Glimmr.Models.ColorSource.Video.Stream.Usb;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Microsoft.Extensions.Hosting;
 using Serilog;
 
 #endregion
 
 namespace Glimmr.Models.ColorSource.Video {
-	public class VideoStream : BackgroundService, IColorSource {
+	public class VideoStream : ColorSource {
 		// should we send them to devices?
 		public bool SendColors {
 			set => StreamSplitter.DoSend = value;
@@ -39,22 +38,22 @@ namespace Glimmr.Models.ColorSource.Video {
 		public VideoStream(ColorService colorService) {
 			_systemData = DataUtil.GetSystemData();
 			colorService.ControlService.RefreshSystemEvent += RefreshSystem;
-			StreamSplitter = new FrameSplitter(colorService, true, "videoStream");
+			StreamSplitter = new FrameSplitter(colorService, true);
 		}
 
-		public Task ToggleStream(CancellationToken ct) {
+		public override Task ToggleStream(CancellationToken ct) {
 			Log.Debug("Enabling video stream service...");
 			SendColors = true;
 			StreamSplitter.DoSend = true;
 			return ExecuteAsync(ct);
 		}
 
-		public bool SourceActive => StreamSplitter.SourceActive;
+		public override bool SourceActive => StreamSplitter.SourceActive;
 
-		private void RefreshSystem() {
+		public override void RefreshSystem() {
 			_systemData = DataUtil.GetSystemData();
-			_captureMode = (CaptureMode) _systemData.CaptureMode;
-			_camType = (CameraType) _systemData.CamType;
+			_captureMode = _systemData.CaptureMode;
+			_camType = _systemData.CamType;
 		}
 
 

@@ -6,7 +6,6 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using Newtonsoft.Json;
-using Org.BouncyCastle.Asn1.Esf;
 using Q42.HueApi;
 using Q42.HueApi.Models.Bridge;
 using Q42.HueApi.Models.Groups;

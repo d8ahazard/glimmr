@@ -407,7 +407,7 @@ namespace Glimmr.Controllers {
 		[HttpGet("mode")]
 		public ActionResult<DeviceMode> Mode() {
 			var sd = DataUtil.GetSystemData();
-			return new ActionResult<DeviceMode>((DeviceMode)sd.DeviceMode);
+			return new ActionResult<DeviceMode>(sd.DeviceMode);
 		}
 
 		/// <summary>

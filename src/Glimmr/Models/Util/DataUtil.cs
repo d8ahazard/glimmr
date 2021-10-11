@@ -5,14 +5,10 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
-using Glimmr.Models.ColorSource.Ambient;
-using Glimmr.Models.ColorSource.Audio;
 using Glimmr.Models.ColorTarget;
 using Glimmr.Services;
 using LiteDB;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
 using JsonSerializer = LiteDB.JsonSerializer;
@@ -364,8 +360,8 @@ namespace Glimmr.Models.Util {
 				Log.Warning("DB is null, this is bad!!");
 				return "";
 			}
-			const string? dbPath = "./store.db";
 			var userDir = SystemUtil.GetUserDir();
+			var dbPath = Path.Combine(userDir, "store.db");
 			var stamp = DateTime.Now.ToString("yyyyMMdd");
 			var outFile = Path.Combine(userDir, $"store_{stamp}.db");
 			Log.Debug($"Locking DB, backing up to {outFile}");

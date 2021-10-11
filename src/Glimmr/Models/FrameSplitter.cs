@@ -95,7 +95,7 @@ namespace Glimmr.Models {
 		private bool _warned;
 
 
-		public FrameSplitter(ColorService cs, bool crop = false, string source = "") {
+		public FrameSplitter(ColorService cs, bool crop = false) {
 			_vectors = Array.Empty<PointF>();
 			_targets = new List<VectorOfPoint>();
 			_useCrop = crop;
@@ -134,7 +134,7 @@ namespace Glimmr.Models {
 			_lCroupCounter = new CropCounter(_cropDelay);
 			_cropLetter = sd.EnableLetterBox;
 			_cropPillar = sd.EnablePillarBox;
-			_mode = (DeviceMode) sd.DeviceMode;
+			_mode = sd.DeviceMode;
 			if (!_cropLetter || !_useCrop) {
 				_lCrop = false;
 				_vCropCheck = 0;
@@ -164,8 +164,7 @@ namespace Glimmr.Models {
 			_colorsSectors = ColorUtil.EmptyColors(_sectorCount);
 
 			_previewMode = sd.PreviewMode;
-
-			_captureMode = (CaptureMode) sd.CaptureMode;
+			_captureMode = sd.CaptureMode;
 			_srcArea = ScaleWidth * ScaleHeight;
 			_scaleSize = new Size(ScaleWidth, ScaleHeight);
 

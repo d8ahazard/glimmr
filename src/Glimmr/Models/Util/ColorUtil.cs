@@ -568,7 +568,7 @@ namespace Glimmr.Models.Util {
 
 		public static void SetSystemData() {
 			var sd = DataUtil.GetSystemData();
-			_deviceMode = (DeviceMode) sd.DeviceMode;
+			_deviceMode = sd.DeviceMode;
 			_useCenter = sd.UseCenter;
 			_hCount = sd.HSectors;
 			_vCount = sd.VSectors;

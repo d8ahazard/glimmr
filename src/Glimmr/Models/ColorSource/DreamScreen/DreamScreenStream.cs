@@ -10,13 +10,12 @@ using DreamScreenNet.Enum;
 using Glimmr.Models.ColorTarget.DreamScreen;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Microsoft.Extensions.Hosting;
 using Serilog;
 
 #endregion
 
 namespace Glimmr.Models.ColorSource.DreamScreen {
-	public class DreamScreenStream : BackgroundService, IColorSource {
+	public class DreamScreenStream : ColorSource {
 		private const int TargetGroup = 20;
 		private readonly FrameBuilder _builder;
 		private readonly DreamScreenClient? _client;
@@ -36,12 +35,12 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 
 			var rect = new[] {3, 3, 5, 5};
 			_builder = new FrameBuilder(rect, true);
-			_splitter = new FrameSplitter(colorService, false, "dreamscreenStream");
+			_splitter = new FrameSplitter(colorService);
 			_cs.ControlService.RefreshSystemEvent += RefreshSystem;
 			RefreshSystem();
 		}
 
-		public Task ToggleStream(CancellationToken ct) {
+		public override Task ToggleStream(CancellationToken ct) {
 			if (_client == null || _dDev == null || _targetDreamScreen == null) {
 				return Task.CompletedTask;
 			}
@@ -55,10 +54,10 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 			return ExecuteAsync(ct);
 		}
 
-		public bool SourceActive => _splitter.SourceActive;
+		public override bool SourceActive => _splitter.SourceActive;
 
 
-		private void RefreshSystem() {
+		public sealed override void RefreshSystem() {
 			var systemData = DataUtil.GetSystemData();
 			var dsIp = systemData.DsIp;
 			// If our DS IP is null, pick one.

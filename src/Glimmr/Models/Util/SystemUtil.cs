@@ -90,9 +90,7 @@ namespace Glimmr.Models.Util {
 		}
 
 		public static void Update() {
-			Log.Debug("Updating");
-
-
+			Log.Debug("Updating...");
 			Log.Information("Backing up current settings...");
 			DataUtil.BackupDb();
 			var branch = GetBranch();
@@ -104,7 +102,8 @@ namespace Glimmr.Models.Util {
 				Process.Start("/bin/bash", cmd);
 			}
 		}
-
+		
+	
 		public static void Restart() {
 			Log.Debug("Restarting glimmr.");
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {

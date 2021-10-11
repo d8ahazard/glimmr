@@ -284,7 +284,7 @@ namespace Glimmr.Models {
 
 		/// <summary>
 		/// Total number of sectors available. Is auto-computed based on sector counts and
-		/// whether center-sectoring is enabled.
+		/// whether center sectors are enabled.
 		/// </summary>
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -394,7 +394,7 @@ namespace Glimmr.Models {
 		public int BlackLevel { get; set; } = 7;
 		
 		/// <summary>
-		/// Version string based on current build + github revison.
+		/// Version string based on current build + github revision.
 		/// </summary>
 		[JsonProperty]
 		public string Version {

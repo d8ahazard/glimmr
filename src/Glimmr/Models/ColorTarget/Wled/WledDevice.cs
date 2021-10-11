@@ -118,7 +118,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			_brightness = _data.Brightness;
 			IpAddress = _data.IpAddress;
 			Enable = _data.Enable;
-			_stripMode = (StripMode) _data.StripMode;
+			_stripMode = _data.StripMode;
 			_targetSector = _data.TargetSector;
 			_multiplier = _data.LedMultiplier;
 			if (_multiplier == 0) {
