@@ -53,6 +53,7 @@ let data = {
     audioDevices:[],
     usbDevices:[],
     version:"",
+    stats:{},
     load: function(val){
         if (val.hasOwnProperty("systemData")) {
             this.systemInternal = val["systemData"];
@@ -75,6 +76,9 @@ let data = {
         }
         if (val.hasOwnProperty("audioScenes")) {
             this.audioScenes = val["audioScenes"];
+        }
+        if (val.hasOwnProperty("stats")) {
+            this.stats = val["stats"];
         }
     },
     systemListener: function(val) {},
@@ -427,6 +431,8 @@ function setSocketListeners() {
         let memText = $("#memPct");
         let overIcon = $("#overIcon");
         let sd = data.SystemData;
+        let utDiv = document.getElementById("utDiv");
+        data.stats = cpuData;
         let tempUnit = "°F";
 
         if (isValid(sd)) {
@@ -435,6 +441,7 @@ function setSocketListeners() {
         tempText.textContent = cpuData["cpuTemp"] + tempUnit;
         cpuText.textContent = cpuData["cpuUsage"] + "%";
         memText.textContent = cpuData["memoryUsage"] + "%";
+        utDiv.innerHTML = cpuData["uptime"];
         overIcon.textContent = "";
         tempDiv.classList.remove("text-danger");
         tempDiv.classList.add("text-success");
@@ -1102,11 +1109,19 @@ function loadUi() {
         });        
     }
 
-    let version = data.version;
-    let vDiv = document.getElementById("versionDiv");
-    vDiv.innerHTML="Glimmr Version: " + version.toString();
     let sd = data.SystemData;
+
     if (isValid(sd)) {
+        let version = sd.version;
+        let vDiv = document.getElementById("versionDiv");
+        let hDiv = document.getElementById("hostDiv");
+        let utDiv = document.getElementById("utDiv");
+        let ipDiv = document.getElementById("ipDiv");
+        vDiv.innerHTML=version.toString();
+        hDiv.innerHTML = sd["deviceName"];
+        ipDiv.innerHTML = sd["ipAddress"];
+        utDiv.innerHTML = data.stats["uptime"];
+
         if (!isValid(pickr)) loadPickr();
         let theme = sd["theme"];
         loadTheme(theme);
@@ -3158,7 +3173,7 @@ function createLedMap(targetElement) {
     let l = 0;
     let r = 0;
     let index = 0;
-    let reverse = isValid(deviceData["reverseStrip"]) ? deviceData["reverseStrip"] : false;
+    let reverse = isValid(deviceData && deviceData["reverseStrip"]) ? deviceData["reverseStrip"] : false;
     console.log("Reversed? ", reverse);
     for (let i = 0; i < rightCount; i++) {
         t = h - hMargin - ((i + 1) * frHeight);
@@ -3281,14 +3296,16 @@ function createLedMap(targetElement) {
         index++;
     }
     targetElement.appendChild(map);
-    let target = range[0];
-    if (reverse) {
-        target = range[range.length - 1];
-    }
-    let tLed = document.querySelector('.led[data-sector="'+target+'"]');
-    if (isValid(tLed)) {
-        tLed.classList.add("firstLed");
-    }
+    if (isValid(range) && range.length) {
+        let target = range[0];
+        if (reverse) {
+            target = range[range.length - 1];
+        }
+        let tLed = document.querySelector('.led[data-sector="'+target+'"]');
+        if (isValid(tLed)) {
+            tLed.classList.add("firstLed");
+        }    
+    }    
 }
 
 function createHueMap() {

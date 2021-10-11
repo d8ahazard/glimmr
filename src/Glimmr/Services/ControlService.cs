@@ -23,7 +23,6 @@ using Makaretu.Dns;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using Serilog;
 
 #endregion
@@ -32,11 +31,12 @@ namespace Glimmr.Services {
 	public class ControlService : BackgroundService {
 		public ColorService ColorService { get; set; }
 		public HttpClient HttpSender { get; private set; }
-
 		public MulticastService MulticastService { get; private set; }
 		public ServiceDiscovery ServiceDiscovery { get; private set; }
 		public UdpClient UdpClient { get; private set; }
 		public bool SendPreview { get; set; }
+		
+		public StatData? Stats { get; set; }
 
 		private readonly IHubContext<SocketServer> _hubContext;
 
@@ -229,7 +229,7 @@ namespace Glimmr.Services {
 
 
 		public async Task NotifyClients() {
-			await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+			await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized(this));
 		}
 
 		public Task Execute(CancellationToken stoppingToken) {
@@ -418,7 +418,7 @@ v. {version}
 			}
 
 			ColorUtil.SetSystemData();
-			await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized());
+			await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized(this));
 			RefreshSystemEvent.Invoke();
 		}
 

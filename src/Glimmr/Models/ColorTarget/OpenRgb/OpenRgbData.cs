@@ -14,14 +14,14 @@ using OpenRGB.NET.Models;
 
 namespace Glimmr.Models.ColorTarget.OpenRgb {
 	public class OpenRgbData : IColorTargetData {
-		
+
 		/// <summary>
 		/// The order of the color values for the particular device.
 		/// </summary>
 		[DefaultValue(ColorOrder.Rbg)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		
-		public ColorOrder ColorOrder { get; set; }
+
+		public ColorOrder ColorOrder { get; set; } = ColorOrder.Rbg;
 		
 		/// <summary>
 		/// The OpenRGB device type.

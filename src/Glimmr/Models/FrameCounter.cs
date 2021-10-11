@@ -5,7 +5,9 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Glimmr.Enums;
+using Glimmr.Models.Util;
 using Glimmr.Services;
+using Serilog;
 
 #endregion
 
@@ -14,17 +16,37 @@ namespace Glimmr.Models {
 		public ConcurrentDictionary<string, int> Rates { get; private set; }
 		private readonly Stopwatch _stopwatch;
 		private ConcurrentDictionary<string, int> _ticks;
+		private DeviceMode _mode;
 
 		public FrameCounter(ColorService cs) {
 			_ticks = new ConcurrentDictionary<string, int> {["source"] = 0};
 			Rates = _ticks;
 			_stopwatch = new Stopwatch();
 			cs.ControlService.SetModeEvent += Mode;
+			cs.ControlService.RefreshSystemEvent += RefreshSystem;
+			var sd = DataUtil.GetSystemData();
+			_mode = sd.DeviceMode;
+			if (sd.AutoDisabled) _mode = DeviceMode.Off;
 		}
 
-		
+		private void RefreshSystem() {
+			var sd = DataUtil.GetSystemData();
+			
+			_mode = sd.DeviceMode;
+			if (_mode != DeviceMode.Off) {
+				_stopwatch.Restart();
+			} else {
+				_stopwatch.Stop();
+			}
+
+			_ticks = new ConcurrentDictionary<string, int> {["source"] = 0};
+			Rates = _ticks;
+		}
+
+
 		private Task Mode(object arg1, DynamicEventArgs arg2) {
 			var newMode = (DeviceMode) arg2.Arg0;
+			_mode = newMode;
 			if (newMode != DeviceMode.Off) {
 				_stopwatch.Restart();
 			} else {
@@ -38,6 +60,11 @@ namespace Glimmr.Models {
 
 		public void Tick(string id) {
 			// Make sure watch is running
+			if (_mode == DeviceMode.Off) {
+				Log.Debug("Device is off, no ticky ticky.");
+				_ticks = new ConcurrentDictionary<string, int> {["source"] = 0};
+				return;
+			}
 			if (!_stopwatch.IsRunning) {
 				_stopwatch.Start();
 			}

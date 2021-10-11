@@ -1,10 +1,9 @@
 ﻿#region
 
 using System;
-using System.Runtime.InteropServices;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using Glimmr.Enums;
 using Glimmr.Hubs;
 using Glimmr.Models;
 using Glimmr.Models.Util;
@@ -18,14 +17,11 @@ namespace Glimmr.Services {
 	public class StatService : BackgroundService {
 		private readonly ColorService _colorService;
 		private readonly IHubContext<SocketServer> _hubContext;
-		private int _count;
-		private bool _gathered;
 
 		public StatService(IHubContext<SocketServer> hubContext, ControlService cs) {
 			_hubContext = hubContext;
 			_colorService = cs.ColorService;
 			cs.SetModeEvent += Mode;
-			_count = 0;
 		}
 
 
@@ -36,27 +32,28 @@ namespace Glimmr.Services {
 
 		protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 			Initialize();
+			var watch = new Stopwatch();
+			watch.Start();
+			var loaded = false;
 			return Task.Run(async () => {
-				try {
-					while (!stoppingToken.IsCancellationRequested) {
-						// Sleep for 5s
-						await Task.Delay(5000, stoppingToken);
-						if (_count >= 6 || !_gathered) {
-							_gathered = true;
-							_count = 0;
-							Log.Debug("Getting stats...");
-							var cd = await CpuUtil.GetStats();
-							cd.Fps = _colorService.Counter.Rates;
-							// Send it to everybody
 
-							await _hubContext.Clients.All.SendAsync("stats", cd, stoppingToken);
-							_count = 0;
+				while (!stoppingToken.IsCancellationRequested) {
+					try {
+						if (loaded && watch.Elapsed <= TimeSpan.FromSeconds(5)) {
+							continue;
 						}
-						_count++;
-					}
-				} catch (Exception e) {
-					if (!e.Message.Contains("canceled")) {
-						Log.Warning("Exception during init: " + e.Message);
+
+						loaded = true;
+						var cd = await CpuUtil.GetStats();
+						cd.Fps = _colorService.Counter.Rates;
+						_colorService.ControlService.Stats = cd;
+						await _hubContext.Clients.All.SendAsync("stats", cd, stoppingToken);
+						watch.Restart();
+
+					} catch (Exception e) {
+						if (!e.Message.Contains("canceled")) {
+							Log.Warning("Exception during init: " + e.Message);
+						}
 					}
 				}
 

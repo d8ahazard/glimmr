@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using Glimmr.Enums;
 using Serilog;
 
 #endregion
@@ -15,6 +16,7 @@ namespace Glimmr.Models.Util {
 		private static float _tempMax;
 		private static float _tempMin = float.MinValue;
 		private static string[]? _throttledState;
+		private const StringComparison Sc = StringComparison.InvariantCulture;
 
 		private static readonly string[] StringTable = {
 			"Soft Temperature Limit has occurred", //19
@@ -40,14 +42,21 @@ namespace Glimmr.Models.Util {
 		};
 
 		public static async Task<StatData> GetStats() {
-			var mon = new CpuMonitor();
-			var cd = mon.Monitor();
-			_throttledState = await GetThrottledState();
-			cd.ThrottledState = _throttledState;
+			var cd = new StatData();
+			if (OperatingSystem.IsWindows()) {
+				var mon = new CpuMonitor();
+				cd = CpuMonitor.Monitor();
+			} else {
+				cd.CpuUsage = GetProcessAverage().Result;
+				cd.CpuTemp = GetTemperature().Result;
+				cd.MemoryUsage = GetMemoryUsage();
+				_throttledState = await GetThrottledState();
+				cd.ThrottledState = _throttledState;	
+			}
+			
 			TemperatureSetMinMax(cd.CpuTemp);
 			cd.TempMin = _tempMin;
 			cd.TempMax = _tempMax;
-			cd.Uptime = Environment.TickCount;
 			return cd;
 		}
 
@@ -57,6 +66,86 @@ namespace Glimmr.Models.Util {
 			}
 
 			return Array.Empty<string>();
+		}
+
+		private static async Task<float> GetTemperature() {
+			// bash command / opt / vc / bin / vc gen cmd measure_temp
+			var process = new Process {
+				StartInfo = new ProcessStartInfo {
+					FileName = "/bin/bash",
+					Arguments = "-c \"/opt/vc/bin/vcgencmd measure_temp\"",
+					RedirectStandardOutput = true,
+					UseShellExecute = false,
+					CreateNoWindow = true
+				}
+			};
+			process.Start();
+			var result = await process.StandardOutput.ReadToEndAsync();
+			await process.WaitForExitAsync();
+			process.Dispose();
+			var res = result.Split("=")[1].Split("'")[0];
+			var temp = float.TryParse(res, out var temperature) ? temperature : 0.0f;
+			var sd = DataUtil.GetSystemData();
+			if (sd.Units == DeviceUnits.Imperial) {
+				temp = (float)Math.Round(temp * 1.8f + 32);
+			}
+			
+			return temp;
+		}
+
+		private static int GetMemoryUsage() {
+			var process = new Process {
+				StartInfo = new ProcessStartInfo {
+					FileName = "vmstat",
+					RedirectStandardOutput = true,
+					UseShellExecute = false,
+					CreateNoWindow = true,
+					Arguments = "-s"
+				}
+			};
+			process.Start();
+			var used = -1f;
+			var total = -1f;
+			while (!process.StandardOutput.EndOfStream) {
+				var data = process.StandardOutput.ReadLineAsync().Result;
+				if (data == null) continue;
+				if (data.Contains("total memory")) {
+					var str = data.Replace(" used memory", "");
+					if (float.TryParse(str.Split(" ")[0], out var foo)) {
+						used = foo;
+					}
+				}
+				if (data.Contains("used memory")) {
+					var str = data.Replace(" total memory", "");
+					if (float.TryParse(str.Split(" ")[0], out var foo)) {
+						total = foo;
+					}
+				}
+			}
+
+			if (Math.Abs(used - -1) > float.MinValue && Math.Abs(total - -1f) > float.MinValue) {
+				return (int)(used / total);
+			}
+			process.Dispose();
+			return 0;
+		}
+		
+		private static async Task<int> GetProcessAverage() {
+			var process = new Process {
+				StartInfo = new ProcessStartInfo {
+					FileName = "/usr/bin/uptime",
+					RedirectStandardOutput = true,
+					UseShellExecute = false,
+					CreateNoWindow = true
+				}
+			};
+			process.Start();
+			var processResult = (await process.StandardOutput.ReadToEndAsync()).Trim();
+			await process.WaitForExitAsync();
+			process.Dispose();
+			var loadAverages = processResult[(processResult.IndexOf("average: ", Sc) + 9)..].Split(',');
+			if (float.TryParse(loadAverages[0], out var la1)) return (int) la1;
+			return 0;
 		}
 		
 		private static async Task<string[]> GetThrottledStateLinux() {

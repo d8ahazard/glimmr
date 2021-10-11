@@ -1,5 +1,4 @@
-﻿using System;
-using LibreHardwareMonitor.Hardware;
+﻿using LibreHardwareMonitor.Hardware;
 using Serilog;
 
 namespace Glimmr.Models.Util {
@@ -19,7 +18,7 @@ namespace Glimmr.Models.Util {
 		public void VisitParameter(IParameter parameter) {
 		}
 		
-		public StatData Monitor() {
+		public static StatData Monitor() {
 			Computer computer = new() {
 				IsCpuEnabled = true,
 				IsStorageEnabled = true,
@@ -29,60 +28,32 @@ namespace Glimmr.Models.Util {
 				IsMotherboardEnabled = true
 			};
 			var output = new StatData();
-			float usedMemory = -1;
-			float totalMemory = -1;
 			computer.Open();
 			computer.Accept(new CpuMonitor());
 			foreach (IHardware hardware in computer.Hardware) {
-				Log.Debug($"Hardware: {hardware.Name} - {hardware.HardwareType}");
 				switch (hardware.HardwareType) {
 					case HardwareType.Cpu:
 						foreach (ISensor sensor in hardware.Sensors) {
-							if (sensor.Name == "CPU Total") {
-								output.CpuUsage = (int)(sensor.Value ?? 0);
-								Log.Debug(sensor.Name + ":" + sensor.Value);
+							switch (sensor.Name) {
+								case "CPU Total":
+									output.CpuUsage = (int)(sensor.Value ?? 0);
+									break;
+								case "Core (Tctl/Tdie)":
+								case "Core (Tctl)":
+								case "Core (Tdie)":
+									output.CpuTemp = sensor.Value ?? 0;
+									break;
 							}
-
-							if (sensor.Name == "Core (Tctl/Tdie)") {
-								output.CpuTemp = sensor.Value ?? 0;
-								Log.Debug(sensor.Name + ":" + sensor.Value);
-							}
-
-							foreach (var sub in hardware.SubHardware) {
-								Log.Debug("Sub: " + sub.Name);
-								foreach (var subSensor in sub.Sensors) {
-									Log.Debug($"SubSensor: {subSensor.Name}: {subSensor.Value}");
-								}
-							}
-							Log.Debug(sensor.Name + ":" + sensor.Value);
 						}
 						break;
 					case HardwareType.Memory:
 						foreach (ISensor sensor in hardware.Sensors) {
 							if (sensor.Name == "Memory") {
 								output.MemoryUsage = (int) (sensor.Value ?? 0);
-								Log.Debug(sensor.Name + ":" + sensor.Value);
 							}
 						}
-						break;
-					default:
-						foreach (ISensor sensor in hardware.Sensors) {
-							Log.Debug(sensor.Name + ":" + sensor.Value);
-							foreach (var sub in hardware.SubHardware) {
-								Log.Debug("Sub: " + sub.Name);
-								foreach (var subSensor in sub.Sensors) {
-									Log.Debug($"SubSensor: {subSensor.Name}: {subSensor.Value}");
-								}
-							}
-							Log.Debug(sensor.Name + ":" + sensor.Value);
-						}
-
 						break;
 				}
-			}
-
-			if (Math.Abs(usedMemory - -1f) > float.MinValue && Math.Abs(totalMemory - -1f) > float.MinValue) {
-				output.MemoryUsage = usedMemory / totalMemory;
 			}
 			computer.Close();
 			return output;

@@ -43,6 +43,13 @@ namespace Glimmr.Models {
 		/// </summary>
 		[JsonProperty]
 		public AudioScene[] AudioScenes {get;set;}
+
+		/// <summary>
+		/// List of detected audio scenes.
+		/// </summary>
+		[JsonProperty]
+		public StatData Stats { get; set; } = new();
+
 		
 		
 		public StoreData() {

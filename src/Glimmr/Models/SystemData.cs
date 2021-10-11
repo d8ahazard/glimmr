@@ -6,6 +6,7 @@ using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Glimmr.Enums;
+using Glimmr.Models.Util;
 using Newtonsoft.Json;
 
 #endregion
@@ -400,17 +401,23 @@ namespace Glimmr.Models {
 			get {
 				var val = "0.0.0.0";
 				var assembly = Assembly.GetEntryAssembly();
-				if (assembly != null) {
-					var attrib = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
-					if (attrib != null) {
-						val = attrib.InformationalVersion;
-					}
+				if (assembly == null) {
+					return val;
+				}
+
+				var attrib = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+				if (attrib != null) {
+					val = attrib.InformationalVersion;
 				}
 
 				return val;
 			}
 		}
 
+		/// <summary>
+		/// Local IP Address.
+		/// </summary>
+		public string IpAddress => IpUtil.GetLocalIpAddress();
 
 		public void SetDefaults() {
 			DiscoveryTimeout = 10;

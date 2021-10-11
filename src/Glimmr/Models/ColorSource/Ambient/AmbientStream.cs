@@ -104,8 +104,11 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			RefreshSystem();
 			_splitter.DoSend = true;
 			return Task.Run(async () => {
+				var watch = new Stopwatch();
+				watch.Start();
 				// Load this one for fading
 				while (!ct.IsCancellationRequested) {
+					if (watch.ElapsedMilliseconds <= 6) continue;
 					var elapsed = _watch.ElapsedMilliseconds;
 					var diff = _animationTime - elapsed;
 					var sectors = new Color[SectorCount];
@@ -150,12 +153,14 @@ namespace Glimmr.Models.ColorSource.Ambient {
 						var frame = _builder.Build(sectors);
 						await _splitter.Update(frame).ConfigureAwait(false);
 						frame.Dispose();
+						
+						
+						
 					} catch (Exception e) {
 						Log.Warning("EX: " + e.Message);
 					}
 
-					//await Task.Delay(TimeSpan.FromTicks(166666), CancellationToken.None);
-					
+					watch.Restart();
 				}
 
 				_watch.Stop();

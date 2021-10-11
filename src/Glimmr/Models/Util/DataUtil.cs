@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Glimmr.Models.ColorSource.Ambient;
 using Glimmr.Models.ColorSource.Audio;
 using Glimmr.Models.ColorTarget;
+using Glimmr.Services;
 using LiteDB;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -293,13 +294,17 @@ namespace Glimmr.Models.Util {
 				if (merge) {
 					var devices = devs.FindAll().ToArray();
 					foreach (var t in devices) {
-						if (t.Id != device.Id.ToString()) {
-							continue;
-						}
+						try {
+							if (t.Id != device.Id.ToString()) {
+								continue;
+							}
 
-						IColorTargetData dev = t;
-						dev.UpdateFromDiscovered(device);
-						device = dev;
+							IColorTargetData dev = t;
+							dev.UpdateFromDiscovered(device);
+							device = dev;
+						} catch (Exception e) {
+							Log.Warning("Exception adding device: " + e.Message + " at " + e.StackTrace);
+						}
 					}
 				}
 
@@ -427,8 +432,10 @@ namespace Glimmr.Models.Util {
 		}
 
 
-		public static StoreData GetStoreSerialized() {
-			var output = new StoreData();
+		public static StoreData GetStoreSerialized(ControlService cs) {
+			var output = new StoreData {
+				Stats = cs.Stats ?? CpuUtil.GetStats().Result
+			};
 			return output;
 		}
 

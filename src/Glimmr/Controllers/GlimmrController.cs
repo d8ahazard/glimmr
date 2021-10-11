@@ -263,7 +263,7 @@ namespace Glimmr.Controllers {
 		/// <returns>a JSON representation of the entire database.</returns>
 		[HttpGet("databaseJson")]
 		public ActionResult<StoreData> LoadData() {
-			return DataUtil.GetStoreSerialized();
+			return new ActionResult<StoreData>(DataUtil.GetStoreSerialized(_controlService));
 		}
 
 		/// <summary>

@@ -31,6 +31,7 @@ namespace Glimmr.Services {
 
 		private readonly Dictionary<string, IColorSource> _streams;
 		private readonly Stopwatch _watch;
+		private readonly Stopwatch _frameWatch;
 
 		private bool _autoDisabled;
 		private int _autoDisableDelay;
@@ -63,6 +64,7 @@ namespace Glimmr.Services {
 		public ColorService(ControlService controlService) {
 			controlService.ColorService = this;
 			_watch = new Stopwatch();
+			_frameWatch = new Stopwatch();
 			_streamTokenSource = new CancellationTokenSource();
 			_targetTokenSource = new CancellationTokenSource();
 			_sDevices = Array.Empty<IColorTarget>();
@@ -127,17 +129,18 @@ namespace Glimmr.Services {
 						loopWatch.Restart();
 					}
 
-					if (ColorsUpdated) {
-						if (!_demoComplete || _stream == null) {
-							return;
-						}
-
-						Counter.Tick("");
-						ColorsUpdated = false;
-						await SendColors(LedColors, SectorColors);
-					
+					if (!ColorsUpdated) {
+						continue;
 					}
-					
+
+					if (!_demoComplete || _stream == null) {
+						return;
+					}
+
+					Counter.Tick("");
+					ColorsUpdated = false;
+					await SendColors(LedColors, SectorColors);
+
 				}
 
 				if (cTask.IsCompleted) {
@@ -616,6 +619,7 @@ namespace Glimmr.Services {
 
 		private async Task SendColors(Color[] colors, Color[] sectors, int fadeTime = 0,
 			bool force = false) {
+			
 			if (!_streamStarted) {
 				return;
 			}
@@ -623,18 +627,17 @@ namespace Glimmr.Services {
 			if (_autoDisabled && !force) {
 				return;
 			}
-
+		
 			if (ColorSendEventAsync != null) {
 				try {
-					if (ColorSendEventAsync != null) {
-						await ColorSendEventAsync
-							.InvokeAsync(this, new ColorSendEventArgs(colors, sectors, fadeTime, force)).ConfigureAwait(false);
-					}
+					await ColorSendEventAsync
+						.InvokeAsync(this, new ColorSendEventArgs(colors, sectors, fadeTime, force)).ConfigureAwait(false);
+					Counter.Tick("source");
 				} catch (Exception e) {
 					Log.Warning("Exception: " + e.Message + " at " + e.StackTrace);
 				}
 
-				Counter.Tick("source");
+				
 			}
 		}
 

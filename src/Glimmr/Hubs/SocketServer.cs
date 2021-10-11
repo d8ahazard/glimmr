@@ -49,7 +49,7 @@ namespace Glimmr.Hubs {
 		}
 
 		public async Task Store() {
-			await Clients.Caller.SendAsync("olo", DataUtil.GetStoreSerialized());
+			await Clients.Caller.SendAsync("olo", DataUtil.GetStoreSerialized(_cs));
 		}
 
 		public async Task DeleteDevice(string id) {
@@ -142,17 +142,17 @@ namespace Glimmr.Hubs {
 		}
 
 
-		public override Task OnConnectedAsync() {
+		public override async Task OnConnectedAsync() {
 			try {
 				_states[Context.ConnectionId] = false;
 				SetSend();
 				Log.Debug("Connected: " + Context.ConnectionId);
-				Clients.Caller.SendAsync("olo", DataUtil.GetStoreSerialized());
+				await Clients.Caller.SendAsync("olo", DataUtil.GetStoreSerialized(_cs));
 			} catch (Exception) {
 				// Ignored
 			}
 
-			return base.OnConnectedAsync();
+			await base.OnConnectedAsync();
 		}
 
 		public override Task OnDisconnectedAsync(Exception? exception) {
