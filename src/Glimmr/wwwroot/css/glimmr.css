@@ -52,7 +52,17 @@
         position: relative;
         font-size: 12px;
         text-align: center;
+        pointer-events: none !important;
     }
+
+    div.fixed-bottom, nav.fixed-bottom {
+        pointer-events: none !important;
+    }
+    
+    #fpsDiv, #tempDiv, #cpuDiv, #ramDiv, #throttleDiv {
+        pointer-events: auto !important;
+    }
+    
     .ambientRow, #audioNav {
         justify-content: center!important;
         text-align: center!important;
@@ -317,6 +327,7 @@ body, .main, #mainNav, #footer {
 
 #footer > .fixed-bottom {
     height: 3rem !important;
+    pointer-events: none !important;
 }
 
 .ledRed {

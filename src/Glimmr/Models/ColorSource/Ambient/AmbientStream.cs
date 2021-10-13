@@ -49,7 +49,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 		public override bool SourceActive => _splitter.SourceActive;
 
 
-		public override Task ToggleStream(CancellationToken ct) {
+		public override Task Start(CancellationToken ct) {
 			Log.Debug("Starting ambient stream...");
 			return ExecuteAsync(ct);
 		}

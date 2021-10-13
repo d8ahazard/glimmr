@@ -92,6 +92,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			}
 
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
+			ColorService.StartCounter++;
 			SetData();
 			Streaming = true;
 			if (!_frameWatch.IsRunning) {
@@ -101,6 +102,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			await _nanoleafClient.StartExternalAsync();
 			await _nanoleafClient.SetBrightnessAsync(_brightness);
 			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
+			ColorService.StartCounter--;
 		}
 
 		public async Task StopStream() {
@@ -115,10 +117,12 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				Log.Warning("Client is null...");
 				return;
 			}
-
+			Log.Debug($"{_data.Tag}::Stopping stream...{_data.Id}.");
+			ColorService.StopCounter++;
 			
 			await _nanoleafClient.TurnOffAsync().ConfigureAwait(false);
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
+			ColorService.StopCounter--;
 		}
 
 		public Task ReloadData() {
@@ -190,7 +194,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			}
 
 			await _streamingClient.SetColorAsync(cols, 1).ConfigureAwait(false);
-			ColorService?.Counter.Tick(Id);
+			ColorService.Counter.Tick(Id);
 		}
 
 		private void SetData() {

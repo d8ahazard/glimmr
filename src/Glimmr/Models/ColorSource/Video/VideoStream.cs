@@ -41,7 +41,7 @@ namespace Glimmr.Models.ColorSource.Video {
 			StreamSplitter = new FrameSplitter(colorService, true);
 		}
 
-		public override Task ToggleStream(CancellationToken ct) {
+		public override Task Start(CancellationToken ct) {
 			Log.Debug("Enabling video stream service...");
 			SendColors = true;
 			StreamSplitter.DoSend = true;

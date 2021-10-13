@@ -52,19 +52,23 @@ namespace Glimmr.Models.ColorTarget.Led {
 			}
 			_agent?.ReloadData();
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
+			ColorService.StartCounter++;
 			Streaming = true;
 			await Task.FromResult(Streaming);
 			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
+			ColorService.StartCounter--;
 		}
 
 		public async Task StopStream() {
 			if (!Streaming) {
 				return;
 			}
-
+			Log.Debug($"{_data.Tag}::Stopping stream...{_data.Id}.");
+			ColorService.StopCounter++;
 			await StopLights().ConfigureAwait(false);
 			Streaming = false;
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
+			ColorService.StopCounter--;
 		}
 
 

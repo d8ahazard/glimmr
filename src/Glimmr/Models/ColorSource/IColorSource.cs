@@ -9,7 +9,7 @@ using Microsoft.Extensions.Hosting;
 namespace Glimmr.Models.ColorSource {
 	public abstract class ColorSource : BackgroundService {
 		public abstract bool SourceActive { get; }
-		public abstract Task ToggleStream(CancellationToken ct);
+		public abstract Task Start(CancellationToken ct);
 
 		public abstract void RefreshSystem();
 	}

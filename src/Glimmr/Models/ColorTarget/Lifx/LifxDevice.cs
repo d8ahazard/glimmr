@@ -67,6 +67,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			}
 
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
+			ColorService.StartCounter++;
 			var col = new LifxColor(0, 0, 0);
 
 			await _client.SetLightPowerAsync(B, true).ConfigureAwait(false);
@@ -74,6 +75,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			Streaming = true;
 			await Task.FromResult(Streaming);
 			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
+			ColorService.StartCounter--;
 		}
 
 		public async Task FlashColor(Color color) {
@@ -98,10 +100,12 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			}
 
 			Log.Information($"{_data.Tag}::Stopping stream.: {_data.Id}...");
+			ColorService.StopCounter++;
 			var col = new LifxColor(0, 0, 0);
 			await _client.SetLightPowerAsync(B, false).ConfigureAwait(false);
 			await _client.SetColorAsync(B, col, 2700).ConfigureAwait(false);
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
+			ColorService.StopCounter--;
 		}
 
 
@@ -135,7 +139,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				await SetColorSingle(list);
 			}
 
-			ColorService?.Counter.Tick(Id);
+			ColorService.Counter.Tick(Id);
 		}
 
 		private static int[] GenerateGammaTable(double gamma = 2.3, int maxOut = 255) {
@@ -228,7 +232,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			var nC = new LifxColor(input);
 
 			await _client.SetColorAsync(B, nC);
-			ColorService?.Counter.Tick(Id);
+			ColorService.Counter.Tick(Id);
 		}
 	}
 }

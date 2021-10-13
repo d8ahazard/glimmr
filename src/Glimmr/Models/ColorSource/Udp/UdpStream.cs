@@ -67,7 +67,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 			Task.Run(Listen, _listenToken);
 		}
 
-		public override Task ToggleStream(CancellationToken ct) {
+		public override Task Start(CancellationToken ct) {
 			Log.Information("Starting UDP Stream service...");
 			_splitter.DoSend = true;
 			return ExecuteAsync(ct);

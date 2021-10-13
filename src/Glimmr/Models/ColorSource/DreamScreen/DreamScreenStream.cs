@@ -41,7 +41,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 			RefreshSystem();
 		}
 
-		public override Task ToggleStream(CancellationToken ct) {
+		public override Task Start(CancellationToken ct) {
 			if (_client == null || _dDev == null || _targetDreamScreen == null) {
 				return Task.CompletedTask;
 			}

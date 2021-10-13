@@ -68,6 +68,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			}
 
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
+			ColorService.StartCounter++;
 			_targetSector = _data.TargetSector;
 			_ep = IpUtil.Parse(IpAddress, Port);
 			if (_ep == null) {
@@ -75,9 +76,10 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			}
 
 			Streaming = true;
-			await FlashColor(Color.Red);
+			await FlashColor(Color.Black);
 			await UpdateLightState(Streaming);
 			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
+			ColorService.StartCounter--;
 		}
 
 
@@ -97,12 +99,14 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			if (!Streaming) {
 				return;
 			}
-
+			Log.Debug($"{_data.Tag}::Stopping stream...{_data.Id}.");
+			ColorService.StopCounter++;
 			Streaming = false;
 			await FlashColor(Color.Black).ConfigureAwait(false);
 			await UpdateLightState(false).ConfigureAwait(false);
 			await Task.FromResult(true);
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
+			ColorService.StopCounter--;
 		}
 
 
@@ -194,7 +198,7 @@ namespace Glimmr.Models.ColorTarget.Wled {
 				var cp = new ColorPacket(toSend,(UdpStreamMode) _protocol);
 				var packet = cp.Encode(255); 
 				await _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep).ConfigureAwait(false);
-				ColorService?.Counter.Tick(Id);
+				ColorService.Counter.Tick(Id);
 			} catch (Exception e) {
 				Log.Debug("Exception: " + e.Message + " at " + e.StackTrace);
 			}

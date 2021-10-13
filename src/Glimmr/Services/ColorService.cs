@@ -34,6 +34,8 @@ namespace Glimmr.Services {
 
 		private bool _autoDisabled;
 		private int _autoDisableDelay;
+		public int StartCounter { get; set; }
+		public int StopCounter { get; set; }
 		private bool _demoComplete;
 
 		private bool _enableAutoDisable;
@@ -165,9 +167,16 @@ namespace Glimmr.Services {
 				_demoComplete = true;
 				Log.Debug("Skipping demo.");
 			}
-			Log.Debug($"Previous AUTO state: {_systemData.AutoDisabled}, prevMode: {_systemData.PreviousMode}");
-			var mode = _systemData.AutoDisabled ? _systemData.PreviousMode : _deviceMode;
-			await Mode(this, new DynamicEventArgs(mode, true)).ConfigureAwait(true);
+
+			// If device was previously auto-disabled, set mode to last
+			// mode before app restart, and see if there's a source.
+			if (_systemData.AutoDisabled) {
+				_systemData.AutoDisabled = false;
+				_systemData.DeviceMode = _systemData.PreviousMode;
+				DataUtil.SetSystemData(_systemData);
+				_deviceMode = _systemData.DeviceMode;
+			}
+			await Mode(this, new DynamicEventArgs(_deviceMode, true)).ConfigureAwait(true);
 			Log.Information("Color service started.");
 		}
 
@@ -214,7 +223,6 @@ namespace Glimmr.Services {
 				disable = true;
 				await device.StartStream(ts.Token);
 			}
-
 			await device.FlashColor(rColor);
 			Thread.Sleep(500);
 			await device.FlashColor(bColor);
@@ -226,7 +234,6 @@ namespace Glimmr.Services {
 			if (disable) {
 				await device.StopStream();
 			}
-
 			ts.Cancel();
 			ts.Dispose();
 		}
@@ -281,10 +288,9 @@ namespace Glimmr.Services {
 			}
 
 			var sourceActive = _stream?.SourceActive ?? false;
-			//Log.Debug("Source is " + (sourceActive ? "Active" : "Inactive"));
-
+			
 			if (sourceActive) {
-				// If our source is active, but not auto-disabled, do nothing
+				// If our source is active and we're auto-disabled, turn it off.
 				if (_autoDisabled) {
 					Log.Information("Auto-enabling stream.");
 					_autoDisabled = false;
@@ -554,7 +560,7 @@ namespace Glimmr.Services {
 			_stream = stream;
 			if (stream != null) {
 				Log.Debug("Toggling stream for " + newMode);
-				_streamTask = stream.ToggleStream(_streamTokenSource.Token);
+				_streamTask = stream.Start(_streamTokenSource.Token);
 				_stream = stream;
 			} else {
 				if (newMode != DeviceMode.Off) {
@@ -564,52 +570,55 @@ namespace Glimmr.Services {
 
 			if (newMode != 0 && !_streamStarted && !_autoDisabled) {
 				await StartStream();
+				
 			}
 
 			_deviceMode = newMode;
 			Log.Information($"Device mode updated to {newMode}.");
 		}
 
-		private Task StartStream() {
+		private async Task StartStream() {
 			var sc = 0;
 			if (!_streamStarted) {
 				_streamStarted = true;
 				Log.Debug("Starting streaming targets...");
+				var tasks = new List<Task>();
 				foreach (var sDev in _sDevices) {
 					try {
 						if (!sDev.Enable && sDev.Id != "0") {
 							continue;
 						}
-
-						sDev.StartStream(_targetTokenSource.Token);
+						tasks.Add(sDev.StartStream(_targetTokenSource.Token));
 						sc++;
 					} catch (Exception e) {
 						Log.Warning("Exception starting stream: " + e.Message);
 					}
 				}
 
+				// Cancel any attempts to start streaming after four seconds if unsuccessful
+				var cts = new CancellationTokenSource();
+				cts.CancelAfter(TimeSpan.FromSeconds(4));
+				await Task.Run(()=> Task.WaitAll(tasks.ToArray()), cts.Token);
+				
+				Log.Debug("Start counter: " + StartCounter);
 				_streamStarted = true;
 			}
 
-			Log.Information($"Streaming started on {sc} devices.");
-			return Task.CompletedTask;
+			Log.Information($"Streaming started on {sc} devices, counter is {StartCounter}.");
 		}
 
-		private Task StopStream() {
+		private async Task StopStream() {
 			if (!_streamStarted) {
-				return Task.CompletedTask;
+				return;
 			}
 
 			Log.Information("Stopping device stream(s)...");
 			_streamStarted = false;
-			foreach (var dev in _sDevices) {
-				if (dev.Enable || dev.Id == "0") {
-					dev.StopStream();
-				}
-			}
-
-			Log.Information("Stream(s) stopped on all devices.");
-			return Task.CompletedTask;
+			// Give our devices four seconds to stop streaming, then cancel so we're not waiting forever...
+			var cts = new CancellationTokenSource();
+			cts.CancelAfter(TimeSpan.FromSeconds(4));
+			await Task.Run(()=> Task.WaitAll((from dev in _sDevices where dev.Enable || dev.Id == "0" select dev.StopStream()).ToArray()), cts.Token);
+			Log.Information($"Stream(s) stopped on all devices, {StopCounter}.");
 		}
 
 		private async Task SendColors(Color[] colors, Color[] sectors, int fadeTime = 0,

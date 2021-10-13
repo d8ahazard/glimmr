@@ -53,7 +53,7 @@ let data = {
     audioDevices:[],
     usbDevices:[],
     version:"",
-    stats:{},
+    statsInternal:{},
     load: function(val){
         if (val.hasOwnProperty("systemData")) {
             this.systemInternal = val["systemData"];
@@ -78,8 +78,17 @@ let data = {
             this.audioScenes = val["audioScenes"];
         }
         if (val.hasOwnProperty("stats")) {
-            this.stats = val["stats"];
+            this.statsInternal = val["stats"];
+            this.statListener(val["stats"]);
         }
+    },
+    statListener: function(val) {},
+    set Stats(val) {
+        this.statsInternal = val;
+        this.statListener(val);
+    },
+    get Stats() {
+        return this.statsInternal;
     },
     systemListener: function(val) {},
     set SystemData(val) {
@@ -192,6 +201,9 @@ let data = {
     },
     registerDevicesListener: function(listener) {
         this.devicesListener = listener;
+    },
+    registerStatsListener: function(listener) {
+        this.statListener = listener;
     }
 };
 
@@ -205,6 +217,10 @@ data.registerSystemListener(function() {
         clearTimeout(loadTimeout);
         loadTimeout = null;
     }, 250);
+});
+
+data.registerStatsListener(function(data){
+    loadStats(data);
 });
 
 data.registerDevicesListener(function() {
@@ -424,39 +440,7 @@ function setSocketListeners() {
     });
 
     websocket.on("stats", function (cpuData) {
-        console.log("Stats: ", cpuData);
-        let tempDiv = $("#tempDiv");
-        let tempText = $("#temperature");
-        let cpuText = $("#cpuPct");
-        let memText = $("#memPct");
-        let overIcon = $("#overIcon");
-        let sd = data.SystemData;
-        let utDiv = document.getElementById("utDiv");
-        data.stats = cpuData;
-        let tempUnit = "°F";
-
-        if (isValid(sd)) {
-            tempUnit = (sd["units"] === 0) ? "°F" : "°C";
-        }
-        tempText.textContent = cpuData["cpuTemp"] + tempUnit;
-        cpuText.textContent = cpuData["cpuUsage"] + "%";
-        memText.textContent = cpuData["memoryUsage"] + "%";
-        utDiv.innerHTML = cpuData["uptime"];
-        overIcon.textContent = "";
-        tempDiv.classList.remove("text-danger");
-        tempDiv.classList.add("text-success");
-        overIcon.classList.remove("text-danger");
-        fpsCounter.innerText = cpuData["fps"]["source"] + "FPS";
-        for(let i=0; i< cpuData["throttledState"].length; i++) {
-            if (cpuData["throttledState"][i] === "Currently throttled") {
-                tempDiv.classList.add("text-danger");
-                tempDiv.classList.remove("text-success");
-            }
-            if (cpuData["throttledState"][i] === "Under-voltage detected") {
-                overIcon.textContent = "power_input";
-                overIcon.classList.add("text-danger");
-            }
-        }
+        data.Stats = cpuData;
     });
 
     websocket.on("ambientMode", function (mode) {
@@ -520,7 +504,7 @@ function setSocketListeners() {
     websocket.on('olo', function(parsed) {
         if (isValid(parsed)) {
             console.log("Loading data: ",parsed);
-            data.load(parsed);   
+            data.load(parsed);  
         }                
     });
     
@@ -605,6 +589,41 @@ function loadSocket() {
         console.log("Socket connection error: ", err.toString());
         showSocketError();
     });
+}
+
+function loadStats(cpuData) {
+    let tempDiv = $("#tempDiv");
+    let tempText = $("#temperature");
+    let cpuText = $("#cpuPct");
+    let memText = $("#memPct");
+    let overIcon = $("#overIcon");
+    let sd = data.SystemData;
+    let utDiv = document.getElementById("utDiv");
+    data.stats = cpuData;
+    let tempUnit = "°F";
+
+    if (isValid(sd)) {
+        tempUnit = (sd["units"] === 0) ? "°F" : "°C";
+    }
+    tempText.textContent = cpuData["cpuTemp"] + tempUnit;
+    cpuText.textContent = cpuData["cpuUsage"] + "%";
+    memText.textContent = cpuData["memoryUsage"] + "%";
+    utDiv.innerHTML = cpuData["uptime"];
+    overIcon.textContent = "";
+    tempDiv.classList.remove("text-danger");
+    tempDiv.classList.add("text-success");
+    overIcon.classList.remove("text-danger");
+    fpsCounter.innerText = cpuData["fps"]["source"] + "FPS";
+    for(let i=0; i< cpuData["throttledState"].length; i++) {
+        if (cpuData["throttledState"][i] === "Currently throttled") {
+            tempDiv.classList.add("text-danger");
+            tempDiv.classList.remove("text-success");
+        }
+        if (cpuData["throttledState"][i] === "Under-voltage detected") {
+            overIcon.textContent = "power_input";
+            overIcon.classList.add("text-danger");
+        }
+    }
 }
 
 function downloadDb() {

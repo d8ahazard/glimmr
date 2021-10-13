@@ -52,6 +52,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			}
 
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
+			ColorService.StartCounter++;
 			var conn = _adalight.Connect();
 			if (!conn) {
 				Log.Warning("Unable to connect!");
@@ -61,19 +62,22 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			Streaming = true;
 			await Task.FromResult(true);
 			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
+			ColorService.StartCounter--;
 		}
 
 		public async Task StopStream() {
 			if (!Streaming) {
 				return;
 			}
-
-			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
+			
+			Log.Debug($"{_data.Tag}::Stopping stream: {_data.Id}.");
+			ColorService.StopCounter++;
 			var blacks = ColorUtil.EmptyColors(_ledCount);
 			await _adalight.UpdateColorsAsync(blacks.ToList());
 			_adalight.Disconnect();
 			Streaming = false;
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
+			ColorService.StopCounter--;
 		}
 
 		public async Task FlashColor(Color color) {

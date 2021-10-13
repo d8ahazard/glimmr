@@ -52,6 +52,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			}
 
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
+			ColorService.StartCounter++;
 			if (_data.DeviceTag.Contains("DreamScreen")) {
 				Log.Warning("Error, you can't send colors to a dreamscreen.");
 				Enable = false;
@@ -60,6 +61,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 
 			await _client.SetMode(_dev, DeviceMode.Video);
 			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
+			ColorService.StartCounter--;
 		}
 
 		public async Task StopStream() {
@@ -70,9 +72,11 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			if (_client == null) {
 				return;
 			}
-
+			Log.Debug($"{_data.Tag}::Stopping stream... {_data.Id}.");
+			ColorService.StopCounter++;
 			await _client.SetMode(_dev, DeviceMode.Off);
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
+			ColorService.StopCounter--;
 		}
 
 		public Task FlashColor(Color color) {

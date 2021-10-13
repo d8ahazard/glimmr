@@ -29,7 +29,7 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 			_cs.FrameSaveEvent += TriggerSave;
 		}
 
-		public override Task ToggleStream(CancellationToken ct) {
+		public override Task Start(CancellationToken ct) {
 			RefreshSystem();
 			Log.Debug("Starting av stream service...");
 			var aS = _cs.GetStream(DeviceMode.Audio.ToString());
@@ -43,10 +43,10 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 			}
 
 			if (_vs != null && _as != null) {
-				_vTask = _vs.ToggleStream(ct);
+				_vTask = _vs.Start(ct);
 				_vs.SendColors = false;
 				_vs.StreamSplitter.DoSend = false;
-				_aTask = _as.ToggleStream(ct);
+				_aTask = _as.Start(ct);
 				_as.SendColors = false;
 				_as.StreamSplitter.DoSend = false;
 			} else {

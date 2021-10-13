@@ -43,7 +43,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 		public override bool SourceActive => StreamSplitter.SourceActive;
 
-		public override Task ToggleStream(CancellationToken ct) {
+		public override Task Start(CancellationToken ct) {
 			SendColors = true;
 			try {
 				Bass.RecordInit(_recordDeviceIndex);

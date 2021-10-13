@@ -105,7 +105,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			}
 
 			Log.Debug($"{Data.Tag}::Starting stream: {Data.Id}...");
-
+			ColorService.StartCounter++;
 			//Initialize streaming client
 			_client = new StreamingHueClient(_ipAddress, _user, _token);
 
@@ -155,6 +155,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			//Start auto updating this entertainment group
 			_updateTask = _client.AutoUpdate(entGroup, ct, 60);
 			Log.Debug($"{Data.Tag}::Stream started: {Data.Id}");
+			ColorService.StartCounter--;
 			Streaming = true;
 		}
 
@@ -187,10 +188,12 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				return Task.CompletedTask;
 			}
 
+			Log.Debug($"{Data.Tag}::Stopping stream...{Data.Id}.");
+			ColorService.StopCounter++;
 			_client.LocalHueClient.SetStreamingAsync(_selectedGroup, false);
 			_client.Close();
 			Log.Debug($"{Data.Tag}::Stream stopped: {Data.Id}");
-
+			ColorService.StopCounter--;
 			return Task.CompletedTask;
 		}
 
