@@ -15,13 +15,16 @@
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-    <PackageVersion>1.1.8</PackageVersion>
+    <PackageVersion>1.2.0</PackageVersion>
     <Copyright>GPLv3</Copyright>
     <PackageProjectUrl>https://github.com/d8ahazard/Glimmr</PackageProjectUrl>
     <PackageLicenseUrl>https://raw.githubusercontent.com/d8ahazard/glimmr/master/COPYING</PackageLicenseUrl>
     <RepositoryUrl>https://github.com/d8ahazard/Glimmr</RepositoryUrl>  
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
+    <PackageIconUrl>https://github.com/d8ahazard/glimmr/raw/master/appIcon.png</PackageIconUrl>
+    <AssemblyVersion>1.2.0</AssemblyVersion>
+    <FileVersion>1.2.0</FileVersion>
   </PropertyGroup>
   
   <ItemGroup>
