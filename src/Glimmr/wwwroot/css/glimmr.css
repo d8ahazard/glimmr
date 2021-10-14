@@ -59,7 +59,7 @@
         pointer-events: none !important;
     }
     
-    #fpsDiv, #tempDiv, #cpuDiv, #ramDiv, #throttleDiv {
+    #fpsDiv, #tempDiv, #cpuDiv, #ramDiv, #throttleDiv, #refreshBtn {
         pointer-events: auto !important;
     }
     

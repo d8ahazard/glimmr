@@ -7,7 +7,6 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Glimmr.Enums;
-using LibreHardwareMonitor.Hardware;
 using Serilog;
 
 #endregion
@@ -61,14 +60,58 @@ namespace Glimmr.Models.Util {
 		}
 
 		private static async Task<string[]> GetThrottledState() {
-			if (!OperatingSystem.IsWindows()) {
-				return await GetThrottledStateLinux();
+			if (SystemUtil.IsRaspberryPi()) {
+				return await GetThrottledStatePi();
 			}
 
 			return Array.Empty<string>();
 		}
 
 		private static async Task<float> GetTemperature() {
+			if (SystemUtil.IsRaspberryPi()) {
+				return await GetTempPi();
+			}
+
+			return await GetTempLinux();
+		}
+		
+		private static async Task<float> GetTempLinux() {
+			// bash command / opt / vc / bin / vc gen cmd measure_temp
+			var temp = 0f;
+			try {
+				var process = new Process {
+					StartInfo = new ProcessStartInfo {
+						FileName = "/bin/bash",
+						Arguments = "-c \"sensors\"",
+						RedirectStandardOutput = true,
+						UseShellExecute = false,
+						CreateNoWindow = true
+					}
+				};
+				process.Start();
+				while (!process.StandardOutput.EndOfStream) {
+					var res = await process.StandardOutput.ReadLineAsync();
+					if (res != null && res.Contains("temp")) {
+						if (!float.TryParse(res.Split("+")[1], out temp)) {
+							Log.Warning("Unable to parse line: " + res);
+						}
+					}
+				}
+
+				process.Dispose();
+			} catch (Exception e) {
+				Log.Warning("Exception: " + e.Message);
+			}
+
+			var sd = DataUtil.GetSystemData();
+			if (sd.Units == DeviceUnits.Imperial) {
+				temp = (float)Math.Round(temp * 1.8f + 32);
+			}
+			
+			return temp;
+		}
+
+		private static async Task<float> GetTempPi() {
 			// bash command / opt / vc / bin / vc gen cmd measure_temp
 			var process = new Process {
 				StartInfo = new ProcessStartInfo {
@@ -148,7 +191,7 @@ namespace Glimmr.Models.Util {
 			return 0;
 		}
 		
-		private static async Task<string[]> GetThrottledStateLinux() {
+		private static async Task<string[]> GetThrottledStatePi() {
 			var process = new Process {
 				StartInfo = new ProcessStartInfo {
 					FileName = "/bin/bash",
@@ -201,61 +244,5 @@ namespace Glimmr.Models.Util {
 			}
 		}
 	}
-	public class CpuMonitor : IVisitor {
-		public void VisitComputer(IComputer computer) {
-			computer.Traverse(this);
-		}
-
-		public void VisitHardware(IHardware hardware) {
-			hardware.Update();
-			foreach (IHardware subHardware in hardware.SubHardware) subHardware.Accept(this);
-		}
-
-		public void VisitSensor(ISensor sensor) {
-		}
-
-		public void VisitParameter(IParameter parameter) {
-		}
-		
-		public static StatData Monitor() {
-			Computer computer = new() {
-				IsCpuEnabled = true,
-				IsStorageEnabled = true,
-				IsNetworkEnabled = true,
-				IsGpuEnabled = true,
-				IsMemoryEnabled = true,
-				IsMotherboardEnabled = true
-			};
-			var output = new StatData();
-			computer.Open();
-			computer.Accept(new CpuMonitor());
-			foreach (IHardware hardware in computer.Hardware) {
-				switch (hardware.HardwareType) {
-					case HardwareType.Cpu:
-						foreach (ISensor sensor in hardware.Sensors) {
-							switch (sensor.Name) {
-								case "CPU Total":
-									output.CpuUsage = (int)(sensor.Value ?? 0);
-									break;
-								case "Core (Tctl/Tdie)":
-								case "Core (Tctl)":
-								case "Core (Tdie)":
-									output.CpuTemp = sensor.Value ?? 0;
-									break;
-							}
-						}
-						break;
-					case HardwareType.Memory:
-						foreach (ISensor sensor in hardware.Sensors) {
-							if (sensor.Name == "Memory") {
-								output.MemoryUsage = (int) (sensor.Value ?? 0);
-							}
-						}
-						break;
-				}
-			}
-			computer.Close();
-			return output;
-		}
-	}
+	
 }

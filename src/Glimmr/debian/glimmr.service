@@ -1,0 +1,15 @@
+[Unit]
+Description=GlimmrTV
+
+[Service]
+Type=simple
+RemainAfterExit=yes
+StandardOutput=tty
+Restart=always
+User=root
+WorkingDirectory=/opt/glimmrtv/glimmr
+ExecStart=sudo /opt/glimmrtv/glimmr/Glimmr
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target

@@ -1,8 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
+    <RuntimeIdentifiers>ubuntu.18.04-x64;linux-arm;linux-x64;osx-x64;win-x64;win-arm;win-x86</RuntimeIdentifiers>
     <TargetFramework>net5.0</TargetFramework>
-    <VersionPrefix>1.1.7</VersionPrefix>
+    <VersionPrefix>1.1.9</VersionPrefix>
     <Product>Glimmr</Product>
     <ProductName>Glimmr</ProductName>
     <CopyRefAssembliesToPublishDirectory>false</CopyRefAssembliesToPublishDirectory>
@@ -51,6 +52,7 @@
     <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.11.1" />
     <PackageReference Include="MMALSharp" Version="0.6.0" />
+    <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />
     <PackageReference Include="Nanoleaf.Core" Version="2.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="OpenRGB.NET" Version="1.7.0" />
@@ -71,6 +73,9 @@
   <ItemGroup>
     <_ContentIncludedByDefault Remove="wwwroot\lib\croppr\croppr.min.css" />
     <_ContentIncludedByDefault Remove="wwwroot\lib\croppr\croppr.min.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <RuntimeHostConfigurationOption Include="System.Globalization.Invariant" Value="true" />
   </ItemGroup>
   
 </Project>

@@ -52,7 +52,7 @@ namespace Glimmr.Services {
 
 					} catch (Exception e) {
 						if (!e.Message.Contains("canceled")) {
-							Log.Warning("Exception during init: " + e.Message);
+							Log.Warning("Exception during init: " + e.Message + " at " + e.StackTrace);
 						}
 					}
 				}
