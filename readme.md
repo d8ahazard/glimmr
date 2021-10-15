@@ -1,5 +1,31 @@
 # [d8ahazard/glimmr](https://github.com/d8ahazard/glimmr)
 
+## What the heck is this??
+Glimmr is a FOSS ambient home lighting solution. Hook it up to a HDMI signal, use a webcam, or use the screen capture function; and drive a wide range of lighting devices in sync with the input signal. It's similar to Hyperion, Govee, or the Hue Sync box, only with a much broader support for devices.
+
+The project is written in dotnet core, which means it can run on most any modern arm, intel, or AMD processor. Presently, it has been tested to work with Debian and Ubuntu linux, as well as raspbian and Windows 10 and 11. It is specifically designed to run on a raspberry Pi 4B, however, it has also been shown to run fine on a 3B, and could potentailly also work on a zero...although it has not been tested.
+
+Supported devices include DreamScreen, Hue, Lifx, Nanoleaf, WLED, Adalight (Arduino), Yeelight, and WS2812B/SK6822 strips connected to the GPIO of a raspberry pi. Additionally, a *vast* array of desktop RGB devices are supported via OpenRGB integration. And, if there's not a device supported and it has an API, I'm more than willing to try adding support for it.
+
+In addition to all the supported devices, each device has a custom set of options which can be used to ensure perfect alignement with the screen content, regardless of room placement. Mirroring, scaling, and brightness are all configurable for every device.
+
+Additional features include automatic updates, black bar detection, auto-disable and enable; audio, audio/video, and ambient modes with user-defineable parameters via a JSON loading system. 
+
+The app is controllable via an inbuilt web interface, Android application (available on the play store), and a fully documented API (via swagger). Python api wrapper WIP.
+
+![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/arduino.png?raw=true)
+![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/debian.png?raw=true)
+![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/docker.png?raw=true)
+![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/dreamscreen.png?raw=true)
+![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/linux.png?raw=true)
+![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/openrgb.png?raw=true)
+![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/raspi.png?raw=true)
+![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/ubuntu.png?raw=true)
+![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/windows.png?raw=true)
+![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/wled.png?raw=true)
+![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/yeelight.png?raw=true)
+
+
 ## Installation
 
 ### Windows
