@@ -9,22 +9,21 @@ Supported devices include DreamScreen, Hue, Lifx, Nanoleaf, WLED, Adalight (Ardu
 
 In addition to all the supported devices, each device has a custom set of options which can be used to ensure perfect alignement with the screen content, regardless of room placement. Mirroring, scaling, and brightness are all configurable for every device.
 
-Additional features include automatic updates, black bar detection, auto-disable and enable; audio, audio/video, and ambient modes with user-defineable parameters via a JSON loading system. 
+Additional features include automatic updates, black bar detection, auto-disable and enable; audio, audio/video, and ambient modes with user-defineable parameters via a JSON loading system.
 
 The app is controllable via an inbuilt web interface, Android application (available on the play store), and a fully documented API (via swagger). Python api wrapper WIP.
 
-![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/arduino.png?raw=true =250x250)
-![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/debian.png?raw=true =250x250)
-![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/docker.png?raw=true =250x250)
-![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/dreamscreen.png?raw=true =250x250)
-![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/linux.png?raw=true)
-![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/openrgb.png?raw=true)
-![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/raspi.png?raw=true)
-![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/ubuntu.png?raw=true)
-![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/windows.png?raw=true)
-![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/wled.png?raw=true)
-![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/yeelight.png?raw=true)
-
+<img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/arduino.png?raw=true" width=100 height=100>
+<img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/debian.png?raw=true" width=100 height=100>
+<img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/docker.png?raw=true" width=100 height=100>
+<img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/dreamscreen.png?raw=true" width=100 height=100>
+<img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/linux.png?raw=true" width=100 height=100>
+<img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/openrgb.png?raw=true" width=100 height=100>
+<img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/raspi.png?raw=true" width=100 height=100>
+<img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/ubuntu.png?raw=true" width=100 height=100>
+<img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/windows.png?raw=true" width=100 height=100>
+<img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/wled.png?raw=true" width=100 height=100>
+<img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/yeelight.png?raw=true" width=100 height=100>
 
 ## Installation
 
@@ -60,13 +59,13 @@ You will need to use "BalenaEtcher", a free software for flashing the image.
 
 https://www.balena.io/etcher/
 
-Once Balena is installed and loaded, select the image file you downloaded from above, and make sure your 
+Once Balena is installed and loaded, select the image file you downloaded from above, and make sure your
 micro SD card is connected to your computer. Select the SD card, and click "Flash" to begin.
 
 Once flashing is done - simply insert the SD card into your pi and boot it up.
 
 If using the custom RasPi image, it is configured to use the Comitup service to create an access point which
-you can connect to to configure your Glimmr's wifi settings. Once the pi is booted, use a phone or laptop and 
+you can connect to to configure your Glimmr's wifi settings. Once the pi is booted, use a phone or laptop and
 connect to the access point "Comitup-XXX" or "Glimmr-XXX" (WIP). Once connected, you should be prompted to select
 a local wifi network and enter a password. Make a note of the name of the access point.
 
@@ -178,7 +177,7 @@ of the web UI.
 
 ### Configure Glimmr Settings
 To configure system, capture, and audio preferences, click the gear icon in the top-right corner
-of the screen. 
+of the screen.
 
 ### Configure OpenRGB
 [OpenRGB](https://gitlab.com/CalcProgrammer1/OpenRGB) is a free, cross-platform solution for controlling desktop-connected lighting peripherals.
@@ -195,9 +194,9 @@ NOTE: It is *highly* recommended to use my [custom Adalight Sketch](https://gith
 additional features and controls that help better integrate with Glimmr, including auto-detection
 of brightness and LED count, adjusting brightness during runtime, and gamma correction.
 
-If you're not using my sketch, you will need to specify your strip's LED count. 
+If you're not using my sketch, you will need to specify your strip's LED count.
 
-You can also specify an offset (number of pixels to skip before displaying LED colors), baud rate, 
+You can also specify an offset (number of pixels to skip before displaying LED colors), baud rate,
 and whether or not to reverse the order of the colors sent to your device.
 
 ### Configure your Lifx Bulbs
@@ -237,7 +236,7 @@ Create a new entertainment area and configure it with your lights as they are in
 Back in the glimmr web UI, reload the page, then select your hue bridge, and select the newly created entertainment group from the drop-down.
 For each light you wish to map, select the sector in the dropdown that corresponds to the sector you wish to map to.
 
-If no entertainment groups are showing and you're linked already, use the refresh button to re-scan entertainment 
+If no entertainment groups are showing and you're linked already, use the refresh button to re-scan entertainment
 groups and light settings.
 
 #### Configure WLED
@@ -258,7 +257,7 @@ where there are two pixels for a strip that correspond to a segment of the scree
 
 "Sectored" currently does nothing, as I haven't implemented it yet.
 
-"Single Color" assumes that you have a small number of LEDs in a close area, and you want all of 
+"Single Color" assumes that you have a small number of LEDs in a close area, and you want all of
 those LEDs to display the same color. The color being displayed will be whatever the strip's offset
 is set to.
 
