@@ -13,10 +13,10 @@ Additional features include automatic updates, black bar detection, auto-disable
 
 The app is controllable via an inbuilt web interface, Android application (available on the play store), and a fully documented API (via swagger). Python api wrapper WIP.
 
-![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/arduino.png?raw=true)
-![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/debian.png?raw=true)
-![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/docker.png?raw=true)
-![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/dreamscreen.png?raw=true)
+![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/arduino.png?raw=true =250x250)
+![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/debian.png?raw=true =250x250)
+![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/docker.png?raw=true =250x250)
+![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/dreamscreen.png?raw=true =250x250)
 ![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/linux.png?raw=true)
 ![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/openrgb.png?raw=true)
 ![alt text](https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/raspi.png?raw=true)
