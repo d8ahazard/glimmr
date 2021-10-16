@@ -92,7 +92,7 @@ namespace Glimmr.Models {
 		private int _vSectors;
 		private int _blackLevel;
 		private int _cropBlackLevel;
-
+		private int _cropCount;
 		private bool _warned;
 
 
@@ -562,7 +562,7 @@ namespace Glimmr.Models {
 			// How many non-black pixels can be in a given row
 			var lPixels = 0;
 			var pPixels = 0;
-
+			
 			width--;
 			height--;
 			var raw = image.GetRawData();
@@ -594,11 +594,17 @@ namespace Glimmr.Models {
 					c1.Dispose();
 					c2.Dispose();
 					if (dist.Length == 1 && l1 == l2 && l1 <= _cropBlackLevel) {
+						if (_cropCount == 10) {
+							Log.Debug("Black levels is " + l1);
+						}
 						lPixels = y;
 					} else {
 						break;
 					}
 				}
+
+				_cropCount++;
+				if (_cropCount > 10) _cropCount = 0;
 			}
 
 			// Check pillarboxing
