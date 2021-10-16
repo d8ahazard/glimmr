@@ -91,6 +91,7 @@ namespace Glimmr.Models {
 		private PointF[] _vectors;
 		private int _vSectors;
 		private int _blackLevel;
+		private int _cropBlackLevel;
 
 		private bool _warned;
 
@@ -123,6 +124,7 @@ namespace Glimmr.Models {
 		private void RefreshSystem() {
 			var sd = DataUtil.GetSystemData();
 			_blackLevel = sd.BlackLevel;
+			_cropBlackLevel = sd.CropBlackLevel;
 			_leftCount = sd.LeftCount;
 			_topCount = sd.TopCount;
 			_rightCount = sd.RightCount;
@@ -558,7 +560,6 @@ namespace Glimmr.Models {
 			var wStart = width / 3;
 			var hStart = height / 3;
 			// How many non-black pixels can be in a given row
-			const int blackLevel = 7;
 			var lPixels = 0;
 			var pPixels = 0;
 
@@ -568,7 +569,7 @@ namespace Glimmr.Models {
 			var unique = raw.Distinct().ToArray();
 			
 			var count = Sum(raw);
-			var noImage = count == 0 || width == 0 || height == 0 || unique.Length == 1 && unique[0] <= blackLevel;
+			var noImage = count == 0 || width == 0 || height == 0 || unique.Length == 1 && unique[0] <= _cropBlackLevel;
 			// If it is, we can stop here
 			if (noImage) {
 				_allBlack = true;
@@ -592,7 +593,7 @@ namespace Glimmr.Models {
 					var l2 = Sum(b2) / b1.Length;
 					c1.Dispose();
 					c2.Dispose();
-					if (dist.Length == 1 && l1 == l2 && l1 <= 8) {
+					if (dist.Length == 1 && l1 == l2 && l1 <= _cropBlackLevel) {
 						lPixels = y;
 					} else {
 						break;
@@ -612,7 +613,7 @@ namespace Glimmr.Models {
 					var l2 = Sum(b2) / b1.Length;
 					c1.Dispose();
 					c2.Dispose();
-					if (dist.Length == 1 && l1 == l2 && l1 < 8) {
+					if (dist.Length == 1 && l1 == l2 && l1 < _cropBlackLevel) {
 						pPixels = x;
 					} else {
 						break;

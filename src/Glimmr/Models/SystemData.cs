@@ -42,6 +42,14 @@ namespace Glimmr.Models {
 		public bool AutoUpdate { get; set; }
 
 		/// <summary>
+		/// Value cropping checks use to determine what is "black" and should
+		/// be cropped.
+		/// </summary>
+		[DefaultValue(7)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int CropBlackLevel { get; set; } = 7;
+
+		/// <summary>
 		/// Set on first-time initialization. Don't change this.
 		/// </summary>
 		[DefaultValue(false)]
@@ -429,6 +437,8 @@ namespace Glimmr.Models {
 			AudioGain = .6f;
 			AudioMin = .01f;
 			BaudRate = 115200;
+			CropBlackLevel = 7;
+			BlackLevel = 7;
 			DeviceName = Environment.MachineName;
 			if (string.IsNullOrEmpty(DeviceName)) {
 				DeviceName = Dns.GetHostName();
