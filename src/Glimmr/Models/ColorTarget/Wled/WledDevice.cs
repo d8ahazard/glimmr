@@ -102,8 +102,8 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			Log.Debug($"{_data.Tag}::Stopping stream...{_data.Id}.");
 			ColorService.StopCounter++;
 			Streaming = false;
-			await FlashColor(Color.Black).ConfigureAwait(false);
-			await UpdateLightState(false).ConfigureAwait(false);
+			await FlashColor(Color.Black);
+			await UpdateLightState(false);
 			await Task.FromResult(true);
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 			ColorService.StopCounter--;

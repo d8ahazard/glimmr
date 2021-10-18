@@ -178,23 +178,22 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 
 
-		public Task StopStream() {
+		public async Task StopStream() {
 			if (!Enable || !Streaming) {
-				return Task.CompletedTask;
+				return;
 			}
 
 			if (_client == null || _selectedGroup == null) {
 				Log.Warning("Client or group are null, can't stop stream.");
-				return Task.CompletedTask;
+				return;
 			}
 
 			Log.Debug($"{Data.Tag}::Stopping stream...{Data.Id}.");
 			ColorService.StopCounter++;
-			_client.LocalHueClient.SetStreamingAsync(_selectedGroup, false);
+			await _client.LocalHueClient.SetStreamingAsync(_selectedGroup, false);
 			_client.Close();
 			Log.Debug($"{Data.Tag}::Stream stopped: {Data.Id}");
 			ColorService.StopCounter--;
-			return Task.CompletedTask;
 		}
 
 		private Task SetColors(object sender, ColorSendEventArgs args) {

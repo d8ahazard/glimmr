@@ -102,8 +102,8 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			Log.Information($"{_data.Tag}::Stopping stream.: {_data.Id}...");
 			ColorService.StopCounter++;
 			var col = new LifxColor(0, 0, 0);
-			await _client.SetLightPowerAsync(B, false).ConfigureAwait(false);
-			await _client.SetColorAsync(B, col, 2700).ConfigureAwait(false);
+			await _client.SetLightPowerAsync(B, false);
+			await _client.SetColorAsync(B, col, 2700);
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 			ColorService.StopCounter--;
 		}

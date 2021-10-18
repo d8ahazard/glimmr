@@ -110,7 +110,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				return;
 			}
 
-			await FlashColor(Color.FromArgb(0, 0, 0)).ConfigureAwait(false);
+			await FlashColor(Color.FromArgb(0, 0, 0));
 			Streaming = false;
 			_frameWatch.Restart();
 			if (_nanoleafClient == null || _streamingClient == null) {
@@ -120,7 +120,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			Log.Debug($"{_data.Tag}::Stopping stream...{_data.Id}.");
 			ColorService.StopCounter++;
 			
-			await _nanoleafClient.TurnOffAsync().ConfigureAwait(false);
+			await _nanoleafClient.TurnOffAsync();
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 			ColorService.StopCounter--;
 		}

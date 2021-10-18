@@ -86,7 +86,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			}
 			Log.Debug($"{_data.Tag}::Stopping stream...{_data.Id}.");
 			ColorService.StopCounter++;
-			await FlashColor(Color.FromArgb(0, 0, 0)).ConfigureAwait(false);
+			await FlashColor(Color.FromArgb(0, 0, 0));
 			await _yeeDevice.StopMusicMode();
 			_yeeDevice.Disconnect();
 			Streaming = false;

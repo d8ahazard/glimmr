@@ -578,7 +578,6 @@ namespace Glimmr.Services {
 		}
 
 		private async Task StartStream() {
-			var sc = 0;
 			if (!_streamStarted) {
 				_streamStarted = true;
 				Log.Debug("Starting streaming targets...");
@@ -589,22 +588,26 @@ namespace Glimmr.Services {
 							continue;
 						}
 						tasks.Add(sDev.StartStream(_targetTokenSource.Token));
-						sc++;
 					} catch (Exception e) {
 						Log.Warning("Exception starting stream: " + e.Message);
 					}
 				}
 
+				var len = tasks.Count;
 				// Cancel any attempts to start streaming after four seconds if unsuccessful
 				var cts = new CancellationTokenSource();
 				cts.CancelAfter(TimeSpan.FromSeconds(4));
-				await Task.Run(()=> Task.WaitAll(tasks.ToArray()), cts.Token);
-				
-				Log.Debug("Start counter: " + StartCounter);
+				try {
+					await Task.Run(() => Task.WaitAll(tasks.ToArray()), cts.Token);
+				} catch (TaskCanceledException) {
+					// Ignored
+				}
+
 				_streamStarted = true;
+				Log.Information($"Streaming started on {len - StartCounter}/{len} devices.");
 			}
 
-			Log.Information($"Streaming started on {sc} devices, counter is {StartCounter}.");
+			
 		}
 
 		private async Task StopStream() {
@@ -612,13 +615,25 @@ namespace Glimmr.Services {
 				return;
 			}
 
-			Log.Information("Stopping device stream(s)...");
+			Log.Information("Stopping streaming...");
 			_streamStarted = false;
 			// Give our devices four seconds to stop streaming, then cancel so we're not waiting forever...
 			var cts = new CancellationTokenSource();
-			cts.CancelAfter(TimeSpan.FromSeconds(4));
-			await Task.Run(()=> Task.WaitAll((from dev in _sDevices where dev.Enable || dev.Id == "0" select dev.StopStream()).ToArray()), cts.Token);
-			Log.Information($"Stream(s) stopped on all devices, {StopCounter}.");
+			cts.CancelAfter(TimeSpan.FromSeconds(5));
+			var tasks = new List<Task>();
+			foreach (var dev in _sDevices) {
+				if (dev.Streaming) {
+					tasks.Add(dev.StopStream());
+				}
+			}
+			try {
+				await Task.Run(() => Task.WaitAll(tasks.ToArray()), cts.Token);
+			} catch (TaskCanceledException) {
+				// Ignored
+			}
+
+			var len = tasks.Count;
+			Log.Information($"Streaming stopped on {len - StopCounter}/{len} devices.");
 		}
 
 		private async Task SendColors(Color[] colors, Color[] sectors, int fadeTime = 0,

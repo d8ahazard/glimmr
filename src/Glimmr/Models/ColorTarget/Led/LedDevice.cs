@@ -65,7 +65,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			}
 			Log.Debug($"{_data.Tag}::Stopping stream...{_data.Id}.");
 			ColorService.StopCounter++;
-			await StopLights().ConfigureAwait(false);
+			await StopLights();
 			Streaming = false;
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 			ColorService.StopCounter--;
