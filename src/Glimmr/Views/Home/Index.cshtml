@@ -284,12 +284,17 @@
         <label class="custom-control-label">Skip Demo Animation</label>
         <div class="form-text">Disable the rainbow animation that runs on software startup.</div>
     </div>
-    <div class="col-12 col-md-6 col-xl-3 form-group">
-        <div class="btn btn-primary form-control" id="showIntro">Show Tour</div>
-        <div class="form-text">Replay the UI introduction tour.</div>
+<div class="col-12 col-md-6 col-xl-3 form-group">
+    <div class="btn btn-primary form-control" id="showIntro">Show Tour</div>
+    <div class="form-text">Replay the UI introduction tour.</div>
+</div>
+<div class="col-12 col-md-6 col-xl-3 form-group">
+        <div class="titleCol pb-1">DB Backup</div>
+        <p>Click Here to Download Current database:</p>
+        <div class="btn btn-primary" id="backupBtn" onclick="downloadDb()">Backup</div>
     </div>
-    <div class="col-12 titleCol pb-1">Backup and Restore</div>
     <div class="col-12 col-md-6 col-xl-3 form-group">
+        <div class="titleCol pb-1">DB Restore</div>
         <form method="post" enctype="multipart/form-data" asp-controller="Glimmr" asp-action="ImportDb" target="dummyframe" id="dbForm">
             <div class="form-group">
                 <div class="col-md-10">
@@ -305,13 +310,43 @@
         </form>
     </div>
     <div class="col-12 col-md-6 col-xl-3 form-group">
-        <label class="form-label">Backup Database</label>
-        <div class="btn btn-primary" id="backupBtn" onclick="downloadDb()">Backup</div>
+        <div class="titleCol pb-1">Ambient Scene Upload</div>
+        <form method="post" enctype="multipart/form-data" asp-controller="Glimmr" asp-action="ImportAmbient" target="dummyframe" id="ambientForm">
+            <div class="form-group">
+                <div class="col-md-10">
+                    <p>Select your scene JSON:</p>
+                    <input type="file" name="files"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-10">
+                    <input type="submit" value="Upload"/>
+                </div>
+            </div>
+        </form>
     </div>
-    <div class="col-12 titleCol pb-1">Logging</div>
+    <div class="col-12 col-md-6 col-xl-3 form-group">
+        <div class="titleCol pb-1">Audio Scene Upload</div>
+        <form method="post" enctype="multipart/form-data" asp-controller="Glimmr" asp-action="ImportAudio" target="dummyframe" id="audioForm">
+            <div class="form-group">
+                <div class="col-md-10">
+                    <p>Select your scene JSON:</p>
+                    <input type="file" name="files"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-10">
+                    <input type="submit" value="Upload"/>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+<div class="col-12 titleCol pb-1">Logging</div>
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <div class="btn btn-primary" id="fetchLog">Download Log</div>
     </div>
+
 </div>
 <!-- Discovery -->
 <div class="row border pb-1">

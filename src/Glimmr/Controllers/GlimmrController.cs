@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Emgu.CV.Ocl;
 using Glimmr.Models;
 using Glimmr.Models.ColorSource.Ambient;
 using Glimmr.Models.ColorSource.Audio;
@@ -136,7 +137,6 @@ namespace Glimmr.Controllers {
 			return null;
 		}
 		
-		
 		/// <summary>
 		/// Get the currently selected audio scene.
 		/// </summary>
@@ -178,8 +178,6 @@ namespace Glimmr.Controllers {
 
 			return null;
 		}
-
-		
 
 		/// <summary>
 		/// Retrieve an array of available audio scenes.
@@ -361,8 +359,77 @@ namespace Glimmr.Controllers {
 			var glimmrData = new GlimmrData(sd);
 			return new ActionResult<GlimmrData>(glimmrData);
 		}
+		
+		/// <summary>
+		/// Upload and replace the database with a copy from a db download.
+		/// </summary>
+		/// <param name="files">Technically a file list, but in reality, just one LiteDB file.</param>
+		/// <returns>True if the import succeeded, false if not.</returns>
+		[HttpPost("importAmbientScene")]
+		public async Task<IActionResult> ImportAmbient(List<IFormFile> files) {
+			
+			var filePaths = new List<string>();
+			foreach (var formFile in files) {
+				if (formFile.Length <= 0) {
+					continue;
+				}
 
+				// full path to file in temp location
+				var filePath =
+					Path.GetTempFileName(); //we are using Temp file name just for the example. Add your own file path.
+				filePaths.Add(filePath);
+				await using var stream = new FileStream(filePath, FileMode.Create);
+				await formFile.CopyToAsync(stream);
+			}
 
+			var imported = false;
+			foreach (var path in filePaths) {
+				try {
+					var loader = new JsonLoader("ambientScenes");
+					imported = loader.ImportJson(path);
+				} catch (Exception) {
+					imported = false;
+				}
+			}
+			if (imported) await _controlService.NotifyClients();
+			return Ok(imported);
+		}
+		
+		/// <summary>
+		/// Upload and replace the database with a copy from a db download.
+		/// </summary>
+		/// <param name="files">Technically a file list, but in reality, just one LiteDB file.</param>
+		/// <returns>True if the import succeeded, false if not.</returns>
+		[HttpPost("importAudioScene")]
+		public async Task<IActionResult> ImportAudio(List<IFormFile> files) {
+			
+			var filePaths = new List<string>();
+			foreach (var formFile in files) {
+				if (formFile.Length <= 0) {
+					continue;
+				}
+
+				// full path to file in temp location
+				var filePath =
+					Path.GetTempFileName(); //we are using Temp file name just for the example. Add your own file path.
+				filePaths.Add(filePath);
+				await using var stream = new FileStream(filePath, FileMode.Create);
+				await formFile.CopyToAsync(stream);
+			}
+			
+			var imported = false;
+			foreach (var path in filePaths) {
+				try {
+					var loader = new JsonLoader("audioScenes");
+					imported = loader.ImportJson(path);
+				} catch (Exception) {
+					imported = false;
+				}
+			}
+			if (imported) await _controlService.NotifyClients();
+			return Ok(imported);
+		}
+		
 		/// <summary>
 		/// Download the current log file.
 		/// </summary>
