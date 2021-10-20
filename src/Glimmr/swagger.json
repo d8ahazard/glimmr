@@ -2,7 +2,7 @@
   "openapi": "3.0.1",
   "info": {
     "title": "Glimmr",
-    "version": "1.0"
+    "version": "1.1"
   },
   "paths": {
     "/api/Glimmr": {
@@ -542,6 +542,9 @@
                       "$ref": "#/components/schemas/NanoleafData"
                     },
                     {
+                      "$ref": "#/components/schemas/OpenRgbData"
+                    },
+                    {
                       "$ref": "#/components/schemas/WledData"
                     },
                     {
@@ -576,6 +579,9 @@
                       "$ref": "#/components/schemas/NanoleafData"
                     },
                     {
+                      "$ref": "#/components/schemas/OpenRgbData"
+                    },
+                    {
                       "$ref": "#/components/schemas/WledData"
                     },
                     {
@@ -608,6 +614,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/NanoleafData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/OpenRgbData"
                     },
                     {
                       "$ref": "#/components/schemas/WledData"
@@ -656,6 +665,9 @@
                     "$ref": "#/components/schemas/NanoleafData"
                   },
                   {
+                    "$ref": "#/components/schemas/OpenRgbData"
+                  },
+                  {
                     "$ref": "#/components/schemas/WledData"
                   },
                   {
@@ -688,6 +700,9 @@
                   },
                   {
                     "$ref": "#/components/schemas/NanoleafData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/OpenRgbData"
                   },
                   {
                     "$ref": "#/components/schemas/WledData"
@@ -724,6 +739,9 @@
                     "$ref": "#/components/schemas/NanoleafData"
                   },
                   {
+                    "$ref": "#/components/schemas/OpenRgbData"
+                  },
+                  {
                     "$ref": "#/components/schemas/WledData"
                   },
                   {
@@ -756,6 +774,9 @@
                   },
                   {
                     "$ref": "#/components/schemas/NanoleafData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/OpenRgbData"
                   },
                   {
                     "$ref": "#/components/schemas/WledData"
@@ -798,6 +819,9 @@
                       "$ref": "#/components/schemas/NanoleafData"
                     },
                     {
+                      "$ref": "#/components/schemas/OpenRgbData"
+                    },
+                    {
                       "$ref": "#/components/schemas/WledData"
                     },
                     {
@@ -832,6 +856,9 @@
                       "$ref": "#/components/schemas/NanoleafData"
                     },
                     {
+                      "$ref": "#/components/schemas/OpenRgbData"
+                    },
+                    {
                       "$ref": "#/components/schemas/WledData"
                     },
                     {
@@ -864,6 +891,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/NanoleafData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/OpenRgbData"
                     },
                     {
                       "$ref": "#/components/schemas/WledData"
@@ -955,6 +985,9 @@
                         "$ref": "#/components/schemas/NanoleafData"
                       },
                       {
+                        "$ref": "#/components/schemas/OpenRgbData"
+                      },
+                      {
                         "$ref": "#/components/schemas/WledData"
                       },
                       {
@@ -992,6 +1025,9 @@
                         "$ref": "#/components/schemas/NanoleafData"
                       },
                       {
+                        "$ref": "#/components/schemas/OpenRgbData"
+                      },
+                      {
                         "$ref": "#/components/schemas/WledData"
                       },
                       {
@@ -1027,6 +1063,9 @@
                       },
                       {
                         "$ref": "#/components/schemas/NanoleafData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/OpenRgbData"
                       },
                       {
                         "$ref": "#/components/schemas/WledData"
@@ -1196,6 +1235,78 @@
         }
       }
     },
+    "/api/Glimmr/importAmbientScene": {
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Upload and replace the database with a copy from a db download.",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              },
+              "encoding": {
+                "files": {
+                  "style": "form"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Glimmr/importAudioScene": {
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Upload and replace the database with a copy from a db download.",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              },
+              "encoding": {
+                "files": {
+                  "style": "form"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/Glimmr/logs": {
       "get": {
         "tags": [
@@ -1331,6 +1442,9 @@
                         "$ref": "#/components/schemas/NanoleafData"
                       },
                       {
+                        "$ref": "#/components/schemas/OpenRgbData"
+                      },
+                      {
                         "$ref": "#/components/schemas/WledData"
                       },
                       {
@@ -1368,6 +1482,9 @@
                         "$ref": "#/components/schemas/NanoleafData"
                       },
                       {
+                        "$ref": "#/components/schemas/OpenRgbData"
+                      },
+                      {
                         "$ref": "#/components/schemas/WledData"
                       },
                       {
@@ -1403,6 +1520,9 @@
                       },
                       {
                         "$ref": "#/components/schemas/NanoleafData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/OpenRgbData"
                       },
                       {
                         "$ref": "#/components/schemas/WledData"
@@ -1432,17 +1552,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/CpuData"
+                  "$ref": "#/components/schemas/StatData"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CpuData"
+                  "$ref": "#/components/schemas/StatData"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CpuData"
+                  "$ref": "#/components/schemas/StatData"
                 }
               }
             }
@@ -1867,59 +1987,18 @@
         "additionalProperties": false,
         "description": ""
       },
-      "CpuData": {
-        "type": "object",
-        "properties": {
-          "LoadAvg1": {
-            "type": "number",
-            "description": "Load Average for the past minute.",
-            "format": "float"
-          },
-          "LoadAvg15": {
-            "type": "number",
-            "description": "Load average for the past 15 minutes.",
-            "format": "float"
-          },
-          "LoadAvg5": {
-            "type": "number",
-            "description": "Load average for the past 5 minutes.",
-            "format": "float"
-          },
-          "TempAvg": {
-            "type": "number",
-            "description": "Average temperature.",
-            "format": "float"
-          },
-          "TempCurrent": {
-            "type": "number",
-            "description": "Current temperature.",
-            "format": "float"
-          },
-          "TempMax": {
-            "type": "number",
-            "description": "Maximum detected temperature.",
-            "format": "float"
-          },
-          "TempMin": {
-            "type": "number",
-            "description": "Minimum detected temperature.",
-            "format": "float"
-          },
-          "Uptime": {
-            "type": "string",
-            "description": "System Uptime.",
-            "nullable": true
-          },
-          "ThrottledState": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "Current throttle state.",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
+      "ColorOrder": {
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "type": "integer",
+        "description": "<p>Possible values:</p>\n<ul>\n<li><b>Rgb = 0</b> (RGB)</li>\n<li><b>Rbg = 1</b> (RBG)</li>\n<li><b>Gbr = 2</b> (GBR)</li>\n<li><b>Grb = 3</b> (GRB)</li>\n<li><b>Bgr = 4</b> (BGR)</li>\n<li><b>Brg = 5</b> (BRG)</li>\n</ul>\n",
+        "format": "int32"
       },
       "DeviceMode": {
         "enum": [
@@ -1933,6 +2012,28 @@
         ],
         "type": "integer",
         "description": "The current device mode.\r\nOff = 0\r\nVideo = 1\r\nAudio = 2\r\nAmbient = 3\r\nAudioVideo = 4\r\nUdp = 5\r\nDreamScreen = 6<p>Possible values:</p>\n<ul>\n<li><b>Off = 0</b> (Off)</li>\n<li><b>Video = 1</b> (Video)</li>\n<li><b>Audio = 2</b> (Audio)</li>\n<li><b>Ambient = 3</b> (Ambient)</li>\n<li><b>AudioVideo = 4</b> (Audio+Video)</li>\n<li><b>Udp = 5</b> (UDP (Glimmr/WLED))</li>\n<li><b>DreamScreen = 6</b> (DreamScreen)</li>\n</ul>\n",
+        "format": "int32"
+      },
+      "DeviceType": {
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14
+        ],
+        "type": "integer",
+        "description": "<p>Possible values:</p>\n<ul>\n</ul>\n",
         "format": "int32"
       },
       "DeviceUnits": {
@@ -2930,6 +3031,130 @@
         "additionalProperties": false,
         "description": "Nightlight configuration"
       },
+      "OpenRgbData": {
+        "type": "object",
+        "properties": {
+          "ColorOrder": {
+            "$ref": "#/components/schemas/ColorOrder"
+          },
+          "Type": {
+            "$ref": "#/components/schemas/DeviceType"
+          },
+          "ActiveModeIndex": {
+            "type": "integer",
+            "description": "The index of the active device mode.",
+            "format": "int32",
+            "default": 0
+          },
+          "Brightness": {
+            "type": "integer",
+            "description": "Device brightness.",
+            "format": "int32",
+            "default": 255
+          },
+          "DeviceId": {
+            "type": "integer",
+            "description": "OpenRGB Device ID.",
+            "format": "int32",
+            "default": 0
+          },
+          "LedCount": {
+            "type": "integer",
+            "description": "Number of LEDs in strip.",
+            "format": "int32",
+            "default": 0
+          },
+          "LedMultiplier": {
+            "type": "number",
+            "description": "Scale factor for LED counts related to master grid.",
+            "format": "float"
+          },
+          "Offset": {
+            "type": "integer",
+            "description": "Offset of leds from lower-right corner of master grid.",
+            "format": "int32",
+            "default": 0
+          },
+          "Rotation": {
+            "type": "integer",
+            "description": "Device rotation.",
+            "format": "int32",
+            "default": 0
+          },
+          "Description": {
+            "type": "string",
+            "description": "Device description.",
+            "default": "",
+            "nullable": true
+          },
+          "Location": {
+            "type": "string",
+            "description": "Device location.",
+            "default": "",
+            "nullable": true
+          },
+          "Serial": {
+            "type": "string",
+            "description": "Device serial.",
+            "default": "",
+            "nullable": true
+          },
+          "Tag": {
+            "type": "string",
+            "description": "Device tag.",
+            "default": "OpenRgb",
+            "nullable": true
+          },
+          "Vendor": {
+            "type": "string",
+            "description": "Device vendor.",
+            "default": "Unknown",
+            "nullable": true
+          },
+          "Version": {
+            "type": "string",
+            "description": "Device version.",
+            "default": "",
+            "nullable": true
+          },
+          "Id": {
+            "type": "string",
+            "description": "Device ID.",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "description": "Device name.",
+            "default": "",
+            "nullable": true
+          },
+          "IpAddress": {
+            "type": "string",
+            "description": "Device IP Address.",
+            "default": "127.0.0.1",
+            "nullable": true
+          },
+          "Enable": {
+            "type": "boolean",
+            "description": "Enable device for streaming.",
+            "default": false
+          },
+          "LastSeen": {
+            "type": "string",
+            "description": "Last time the device was seen during discovery.",
+            "nullable": true
+          },
+          "KeyProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SettingsProperty"
+            },
+            "description": "UI Properties.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "RoomClass": {
         "enum": [
           0,
@@ -3118,6 +3343,60 @@
         "additionalProperties": false,
         "description": "A class used by the web UI to automagically generate device settings."
       },
+      "StatData": {
+        "type": "object",
+        "properties": {
+          "CpuUsage": {
+            "type": "integer",
+            "description": "Percentage of CPU Used",
+            "format": "int32"
+          },
+          "CpuTemp": {
+            "type": "number",
+            "description": "Current CPU temperature (May not work with some AMD processors).",
+            "format": "float"
+          },
+          "Fps": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Current number of frames per second.",
+            "nullable": true
+          },
+          "MemoryUsage": {
+            "type": "number",
+            "description": "Total percentage of memory used.",
+            "format": "float"
+          },
+          "TempMax": {
+            "type": "number",
+            "description": "Maximum detected temperature.",
+            "format": "float"
+          },
+          "TempMin": {
+            "type": "number",
+            "description": "Minimum detected temperature.",
+            "format": "float"
+          },
+          "Uptime": {
+            "type": "string",
+            "description": "System Uptime.",
+            "nullable": true,
+            "readOnly": true
+          },
+          "ThrottledState": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Current throttle state.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "State": {
         "type": "object",
         "properties": {
@@ -3219,10 +3498,8 @@
             "description": "List of detected audio scenes.",
             "nullable": true
           },
-          "Version": {
-            "type": "string",
-            "description": "Version string based on current build + github revison.",
-            "nullable": true
+          "Stats": {
+            "$ref": "#/components/schemas/StatData"
           }
         },
         "additionalProperties": false,
@@ -3286,6 +3563,12 @@
             "type": "boolean",
             "description": "If enabled, Glimmr will automatically update itself daily.",
             "default": false
+          },
+          "CropBlackLevel": {
+            "type": "integer",
+            "description": "Value cropping checks use to determine what is \"black\" and should\r\nbe cropped.",
+            "format": "int32",
+            "default": 7
           },
           "DefaultSet": {
             "type": "boolean",
@@ -3452,10 +3735,7 @@
             "default": 0
           },
           "PreviousMode": {
-            "type": "integer",
-            "description": "The previous device mode before Auto-disable was activated.",
-            "format": "int32",
-            "default": 0
+            "$ref": "#/components/schemas/DeviceMode"
           },
           "RightCount": {
             "type": "integer",
@@ -3465,7 +3745,7 @@
           },
           "SectorCount": {
             "type": "integer",
-            "description": "Total number of sectors available. Is auto-computed based on sector counts and\r\nwhether center-sectoring is enabled.",
+            "description": "Total number of sectors available. Is auto-computed based on sector counts and\r\nwhether center sectors are enabled.",
             "format": "int32",
             "default": 0,
             "readOnly": true
@@ -3540,6 +3820,18 @@
             "description": "Colors below this brightness will be considered \"black\".\r\n(Max 255)",
             "format": "int32",
             "default": 7
+          },
+          "Version": {
+            "type": "string",
+            "description": "Version string based on current build + github revision.",
+            "nullable": true,
+            "readOnly": true
+          },
+          "IpAddress": {
+            "type": "string",
+            "description": "Local IP Address.",
+            "nullable": true,
+            "readOnly": true
           }
         },
         "additionalProperties": false

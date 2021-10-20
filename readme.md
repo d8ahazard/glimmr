@@ -13,7 +13,7 @@ Additional features include automatic updates, black bar detection, auto-disable
 
 The app is controllable via an inbuilt web interface, Android application (available on the play store), and a fully documented API (via swagger). Python api wrapper WIP.
 
-<img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/arduino.png" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/debian.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/docker.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/dreamscreen.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/linux.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/openrgb.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/raspi.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/ubuntu.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/windows.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/wled.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/yeelight.png?raw=true" width=100 height=100>
+<img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/arduino.png" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/debian.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/docker.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/dreamscreen.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/hue.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/lifx.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/linux.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/nanoleaf.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/openrgb.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/raspi.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/ubuntu.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/windows.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/wled.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/yeelight.png?raw=true" width=100 height=100>
 
 ## Installation
 
@@ -252,6 +252,17 @@ those LEDs to display the same color. The color being displayed will be whatever
 is set to.
 
 Click the "Save settings" button to submit your configuration.
+
+
+## API
+
+Glimmr has a fully REST-ful API that supports control and enumeration of nearly every method and
+relevant data structure in the application. All methods are documented on (https://app.swaggerhub.com/apis/d8ahazard/glimmr/1.1)[Swagger Hub].
+Additionally, you can access the API documentation locally by going to http://<YOUR_GLIMMR_ADDRESS>/swagger/index.html.
+
+The local API reference can be used to view and set data in real-time, as well as see in-depth descriptions 
+of what each device and system setting do. You can also examine the data structures of Ambient and Audio Scenes.
+
 
 ## PROFIT
 
