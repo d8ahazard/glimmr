@@ -15,6 +15,7 @@ namespace Glimmr.Hubs
 			if (_cs == null) {
 				_cs = ControlService.GetInstance();
 			}
+
 			_cs?.SendLogLine(logEvent).ConfigureAwait(false);
 		}
 	}

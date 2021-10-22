@@ -3,7 +3,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -162,6 +164,24 @@ namespace Glimmr.Models.Util {
 			return output;
 		}
 
+		public static async Task<string[]> ReadLogLines(int len = 500) {
+			var dt = DateTime.Now.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
+			var logPath = $"/var/log/glimmr/glimmr{dt}.log";
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+				var userPath = GetUserDir();
+				var logDir = Path.Combine(userPath, "log");
+				if (!Directory.Exists(logDir)) {
+					Directory.CreateDirectory(logDir);
+				}
+				logPath = Path.Combine(userPath, "log", $"glimmr{dt}.log");
+			}
+
+			var result = await File.ReadAllLinesAsync(logPath);
+			if (result.Length > len) {
+				result = result.Skip(Math.Max(0, result.Length - len)).ToArray();
+			}
+			return result;
+		}
 		
 		public static bool IsFileReady(string filename)
 		{

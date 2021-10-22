@@ -122,6 +122,16 @@
     overflow-x: hidden;
 }
 
+.hideLine {
+    display: none;
+    max-height: 0;
+    max-width: 0;
+}
+
+.btn-group-center {
+    text-align: center;
+}
+
 #sLedWrap, #sectorWrap {
     width: 95%;
     position: relative;
@@ -788,6 +798,7 @@ div.btn-clear, div.btn-clear.active, .input-group-text {
 .modal-content, body, .main {
     background: var(--bg-primary) !important;
     color: var(--fg-primary) !important;
+    height: 100%;
 }
 
 

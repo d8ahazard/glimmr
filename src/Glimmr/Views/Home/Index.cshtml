@@ -700,15 +700,31 @@
 <div class="modal" tabindex="-1" id="logModal" role="dialog">
     <div class="modal-dialog modal-lg modal-log" role="document">
         <div class="modal-content">
-            <div class="modal-header">
-                
-                <h5 class="modal-title">Glimmr Log Viewer</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+            <div class="modal-header row">
+                <h5 class="modal-title col-3">Glimmr Log Viewer</h5>
+                <div class="btn-group btn-group-center col-6">
+                    <div class="btn btn-clear active" data-level="1" onclick="toggleLog(this, 1)">
+                        <span>D</span>
+                    </div>
+                    <div class="btn btn-clear active" data-level="2" onclick="toggleLog(this, 2)">
+                        <span>I</span>
+                    </div>
+                    <div class="btn btn-clear active" data-level="3" onclick="toggleLog(this, 3)">
+                        <span>W</span>
+                    </div>
+                    <div class="btn btn-clear active" data-level="4" onclick="toggleLog(this, 4)">
+                        <span>E</span>
+                    </div>
+                    
+                </div>
+                <div class="btn-group col-3">
+                    <div class="btn btn-clear" onclick="clearLog()">
+                        <span class="material-icons">delete</span>
+                    </div>
+                    <div class="btn btn-clear" data-dismiss="modal" aria-label="Close">
+                        <span class="material-icons" aria-hidden="true">clear</span>
+                    </div>
+                </div>
             </div>
             <div class="modal-body row justify-content-center">
                 <div class="nanoPreviewWrap col-12" id="logWrap">

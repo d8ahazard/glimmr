@@ -403,7 +403,7 @@ v. {version}
 		}
 
 		public async Task SendLogLine(LogEvent message) {
-			await _hubContext.Clients.All.SendAsync("log", message);
+			await _hubContext.Clients.All.SendAsync("log", JsonConvert.SerializeObject(message));
 		}
 
 

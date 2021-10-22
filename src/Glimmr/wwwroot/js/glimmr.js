@@ -44,8 +44,10 @@ let ledData = '{"AutoBrightnessLevel":true,"FixGamma":true,"AblMaxMilliamps":500
 let logEl = document.getElementById("logModal");
 let errModal = new bootstrap.Modal(document.getElementById('errorModal'));
 let logModal = new bootstrap.Modal(logEl);
-
-
+let log1 = true;
+let log2 = true;
+let log3 = true;
+let log4 = true;
 let logOpen = false;
 let winWidth, winHeight;
 
@@ -473,12 +475,41 @@ function setSocketListeners() {
     });
 
     let logDiv = document.getElementById("logWrap");
-    websocket.on("log", function (message) {
+    websocket.on("log", function (msg) {
+        let message = JSON.parse(msg);
+        console.log("MSG: ", message);
         let logLine = document.createElement("div");
+        let lvl = "";
+        let show = true;
+        switch(message["Level"]) {
+            case 1:
+                lvl = "DBG";
+                show = log1;
+                break;
+            case 2:
+                lvl = "INF";
+                show = log2;
+                break;
+            case 3:
+                lvl = "WRN";
+                show = log3;
+                break;
+            case 4:
+                lvl = "ERR";
+                show = log4;
+                break;
+        }
         logLine.classList.add("logLine");
-        logLine.classList.add("log-" + message["level"].toString());
-        logLine.innerHTML = message["timestamp"] + " - " + message["messageTemplate"]["text"];
+        if (!show) logLine.classList.add("hideLine");
+        logLine.classList.add("log-" + message["Level"].toString());
+        let ts = message["Timestamp"].split("T")[1].split(".")[0];
+        logLine.innerHTML = "[" + ts + " " + lvl + "]" + message["Properties"]["Caller"]["Value"] + " " + message["MessageTemplate"]["Text"];
         logDiv.prepend(logLine);
+        for (let i = 0; i < logDiv.children.length; i++) {
+            if (i > 500) {
+                logDiv.children[i].remove();
+            }
+        }
     });
 
 
@@ -675,6 +706,34 @@ function showLog() {
 function hideLog() {
     logModal.hide();
     logOpen = false;
+}
+
+function clearLog() {
+    let logDiv = document.getElementById("logWrap");
+    logDiv.innerHTML = "";
+}
+
+function toggleLog(event, level) {
+    let highlightedItems = document.querySelectorAll(".log-" + level.toString());
+    console.log("E: ", event);
+    switch (level) {
+        case 1:
+            log1 = !log1;
+            break;
+        case 2:
+            log2 = !log2;
+            break;
+        case 3:
+            log3 = !log3;
+            break;
+        case 4:
+            log4 = !log4;
+            break;
+    }
+    event.classList.toggle("active");
+    highlightedItems.forEach(function(userItem) {
+        userItem.classList.toggle("hideLine");
+    });
 }
 
 function TriggerRefresh() {
