@@ -59,9 +59,10 @@
         pointer-events: none !important;
     }
     
-    #fpsDiv, #tempDiv, #cpuDiv, #ramDiv, #throttleDiv, #refreshBtn {
+    #fpsDiv, #tempDiv, #cpuDiv, #ramDiv, #throttleDiv, #refreshBtn, .mainSettings, .closeBtn {
         pointer-events: auto !important;
     }
+    
     
     .ambientRow, #audioNav {
         justify-content: center!important;
@@ -85,6 +86,40 @@
         margin-left: 5px;
         padding-top: 5px;
     }    
+}
+
+.logLine {
+    width: 100%;
+}
+
+.log-1 {
+    color: green;
+}
+
+.log-2 {
+    color: blue;
+}
+
+.log-3 {
+    color: yellow;
+    background-color: black;
+}
+
+.log-4 {
+    color: red;
+}
+
+#footer > .fixed-bottom > * {
+    pointer-events: auto !important;
+}
+
+.modal-log {
+    width: 100%;
+    height: calc(100% - 80px);
+    top: 40px;
+    margin: auto;
+    overflow-y: scroll;
+    overflow-x: hidden;
 }
 
 #sLedWrap, #sectorWrap {

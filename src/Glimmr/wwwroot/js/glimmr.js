@@ -41,7 +41,12 @@ let reload = false;
 let toLoad = null;
 let devTimeout = null;
 let ledData = '{"AutoBrightnessLevel":true,"FixGamma":true,"AblMaxMilliamps":5000,"GpioNumber":18,"LedCount":150,"MilliampsPerLed":25,"Offset":50,"StartupAnimation":0,"StripType":0,"Name":"Demo LED Strip","Id":"-1","Tag":"Led","IpAddress":"","Brightness":100,"Enable":false,"LastSeen":"08/05/2021 13:28:53","KeyProperties":[{"Options":{},"ValueLabel":"","ValueHint":"","ValueMax":"100","ValueMin":"0","ValueName":"ledmap","ValueStep":"1","ValueType":"ledmap"},{"Options":{},"ValueLabel":"Led Count","ValueHint":"","ValueMax":"100","ValueMin":"0","ValueName":"LedCount","ValueStep":"1","ValueType":"text"},{"Options":{},"ValueLabel":"Led Offset","ValueHint":"","ValueMax":"100","ValueMin":"0","ValueName":"Offset","ValueStep":"1","ValueType":"text"},{"Options":{},"ValueLabel":"LED Multiplier","ValueHint":"Positive values to multiply (skip), negative values to divide (duplicate).","ValueMax":"5","ValueMin":"-5","ValueName":"LedMultiplier","ValueStep":"1","ValueType":"number"},{"Options":{},"ValueLabel":"Reverse Strip","ValueHint":"Reverse the order of the leds to clockwise (facing screen).","ValueMax":"100","ValueMin":"0","ValueName":"ReverseStrip","ValueStep":"1","ValueType":"check"},{"Options":{},"ValueLabel":"Fix Gamma","ValueHint":"Automatically correct Gamma (recommended)","ValueMax":"100","ValueMin":"0","ValueName":"FixGamma","ValueStep":"1","ValueType":"check"},{"Options":{},"ValueLabel":"Enable Auto Brightness","ValueHint":"Automatically adjust brightness to avoid dropouts.","ValueMax":"100","ValueMin":"0","ValueName":"AutoBrightnessLevel","ValueStep":"1","ValueType":"check"},{"Options":{},"ValueLabel":"Milliamps Per LED","ValueHint":"\'Conservative\' = 25, \'Normal\' = 55","ValueMax":"100","ValueMin":"0","ValueName":"MilliampsPerLed","ValueStep":"1","ValueType":"text"},{"Options":{},"ValueLabel":"Power Supply Voltage","ValueHint":"Total PSU voltage in Milliamps","ValueMax":"100","ValueMin":"0","ValueName":"AblMaxMilliamps","ValueStep":"1","ValueType":"text"}]}';
+let logEl = document.getElementById("logModal");
 let errModal = new bootstrap.Modal(document.getElementById('errorModal'));
+let logModal = new bootstrap.Modal(logEl);
+
+
+let logOpen = false;
 let winWidth, winHeight;
 
 // We're going to create one object to store our stuff, and add listeners for when values are changed.
@@ -467,6 +472,16 @@ function setSocketListeners() {
         console.log("Updating device data " + device);
     });
 
+    let logDiv = document.getElementById("logWrap");
+    websocket.on("log", function (message) {
+        let logLine = document.createElement("div");
+        logLine.classList.add("logLine");
+        logLine.classList.add("log-" + message["level"].toString());
+        logLine.innerHTML = message["timestamp"] + " - " + message["messageTemplate"]["text"];
+        logDiv.prepend(logLine);
+    });
+
+
     websocket.on("auth", function (value1, value2) {
         let cb = document.getElementById("CircleBar");        
         switch (value1) {
@@ -652,6 +667,16 @@ function showSocketError() {
     errModal.show();
 }
 
+function showLog() {
+    logModal.show();
+    logOpen = true;
+}
+
+function hideLog() {
+    logModal.hide();
+    logOpen = false;
+}
+
 function TriggerRefresh() {
     let sd = data.SystemData;
     let refreshIcon = document.getElementById("refreshIcon");
@@ -671,7 +696,18 @@ function TriggerRefresh() {
 function setListeners() {
     listenersSet = true;
     window.addEventListener('resize', sizeContent);
-        
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'l') {
+            if (logOpen) {
+                hideLog();
+            } else {
+                showLog();
+            }
+        }
+    });
+
+
     document.addEventListener('change', function(e) {
         let target = e.target;
         let obj = target.getAttribute("data-object");

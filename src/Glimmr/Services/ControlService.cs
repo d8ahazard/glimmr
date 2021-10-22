@@ -11,7 +11,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using DreamScreenNet.Enum;
 using Emgu.CV;
 using Emgu.CV.Util;
 using Glimmr.Hubs;
@@ -25,6 +24,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Serilog;
+using Serilog.Events;
 using DeviceMode = Glimmr.Enums.DeviceMode;
 
 #endregion
@@ -37,7 +37,8 @@ namespace Glimmr.Services {
 		public ServiceDiscovery ServiceDiscovery { get; private set; }
 		public UdpClient UdpClient { get; private set; }
 		public bool SendPreview { get; set; }
-		
+
+		private static ControlService? _myCs;
 		public StatData? Stats { get; set; }
 
 		private readonly IHubContext<SocketServer> _hubContext;
@@ -66,8 +67,10 @@ namespace Glimmr.Services {
 #pragma warning restore 8618
 			_hubContext = hubContext;
 			Initialize();
+			_myCs = this;
 		}
 
+		public static ControlService? GetInstance() => _myCs;
 		public event Action RefreshSystemEvent = delegate { };
 
 		public dynamic? GetAgent(string classType) {
@@ -397,6 +400,10 @@ v. {version}
 			Log.Debug("Adding device " + data.Name);
 			IColorTargetData? data2 = DataUtil.GetDevice(data.Id) ?? null;
 			if (data2 != null) await _hubContext.Clients.All.SendAsync("device", JsonConvert.SerializeObject(data2));
+		}
+
+		public async Task SendLogLine(LogEvent message) {
+			await _hubContext.Clients.All.SendAsync("log", message);
 		}
 
 
