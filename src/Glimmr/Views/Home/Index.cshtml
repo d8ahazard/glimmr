@@ -697,37 +697,40 @@
         </div>
     </div>
 </div>
-<div class="modal" tabindex="-1" id="logModal" role="dialog">
-    <div class="modal-dialog modal-lg modal-log" role="document">
-        <div class="modal-content">
+<div class="modal modal-scroll" tabindex="-1" id="logModal" role="dialog">
+    <div class="modal-dialog modal-lg modal-scroll" role="document">
+        <div class="modal-content modal-scroll">
             <div class="modal-header row">
-                <h5 class="modal-title col-3">Glimmr Log Viewer</h5>
-                <div class="btn-group btn-group-center col-6">
-                    <div class="btn btn-clear active" data-level="1" onclick="toggleLog(this, 1)">
-                        <span>D</span>
+                <h5 class="modal-title col-3">Log Viewer</h5>
+                <div class="col-6 row justify-content-center pt-1">
+                    <div class="btn-group btn-group-center">
+                        <div class="btn btn-clear active" data-toggle="tooltip" data-placement="top" title="Debug" onclick="toggleLog(this, 1)">
+                            <span>D</span>
+                        </div>
+                        <div class="btn btn-clear active" data-toggle="tooltip" data-placement="top" title="Info" onclick="toggleLog(this, 2)">
+                            <span>I</span>
+                        </div>
+                        <div class="btn btn-clear active" data-toggle="tooltip" data-placement="top" title="Warn" onclick="toggleLog(this, 3)">
+                            <span>W</span>
+                        </div>
+                        <div class="btn btn-clear active" data-toggle="tooltip" data-placement="top" title="Error" onclick="toggleLog(this, 4)">
+                            <span>E</span>
+                        </div>
                     </div>
-                    <div class="btn btn-clear active" data-level="2" onclick="toggleLog(this, 2)">
-                        <span>I</span>
-                    </div>
-                    <div class="btn btn-clear active" data-level="3" onclick="toggleLog(this, 3)">
-                        <span>W</span>
-                    </div>
-                    <div class="btn btn-clear active" data-level="4" onclick="toggleLog(this, 4)">
-                        <span>E</span>
-                    </div>
-                    
                 </div>
-                <div class="btn-group col-3">
-                    <div class="btn btn-clear" onclick="clearLog()">
-                        <span class="material-icons">delete</span>
-                    </div>
-                    <div class="btn btn-clear" data-dismiss="modal" aria-label="Close">
-                        <span class="material-icons" aria-hidden="true">clear</span>
+                <div class="col-3">
+                    <div class="btn-group float-right">
+                        <div class="btn btn-clear" onclick="clearLog()">
+                            <span class="material-icons">delete</span>
+                        </div>
+                        <div class="btn btn-clear" data-dismiss="modal" aria-label="Close">
+                            <span class="material-icons" aria-hidden="true">clear</span>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="modal-body row justify-content-center">
-                <div class="nanoPreviewWrap col-12" id="logWrap">
+            <div class="modal-body row justify-content-center modal-scroll">
+                <div class="modal-log col-12" id="logWrap">
                 </div>
             </div>
         </div>
