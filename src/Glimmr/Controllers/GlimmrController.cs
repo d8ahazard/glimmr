@@ -10,7 +10,6 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Emgu.CV.Ocl;
 using Glimmr.Models;
 using Glimmr.Models.ColorSource.Ambient;
 using Glimmr.Models.ColorSource.Audio;
@@ -458,21 +457,16 @@ namespace Glimmr.Controllers {
 		
 
 		/// <summary>
-		/// Retrieve the current device mode.
+		/// Retrieve or set the current device mode.
 		/// </summary>
-		/// <remarks>
-		/// Device Modes:
-		/// Off = 0,
-		/// Video = 1,
-		/// Audio = 2,
-		/// Ambient = 3,
-		/// AudioVideo = 4,
-		/// Udp = 5,
-		/// DreamScreen = 6
-		/// </remarks>
+		/// <param name="mode">If specified, set the mode to the value.</param>
 		/// <returns>The current device mode.</returns>
 		[HttpGet("mode")]
-		public ActionResult<DeviceMode> Mode() {
+		public async Task<ActionResult<DeviceMode>> Mode(int mode=-1) {
+			if (mode != -1) {
+				Log.Debug("GET request, updating device mode to " + mode);
+				await _controlService.SetMode((DeviceMode)mode);
+			}
 			var sd = DataUtil.GetSystemData();
 			return new ActionResult<DeviceMode>(sd.DeviceMode);
 		}
