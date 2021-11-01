@@ -35,11 +35,11 @@
     <PackageReference Include="DirectShowLib.Standard" Version="2.1.0" />
     <PackageReference Include="DreamScreenNet" Version="1.0.5" />
     <PackageReference Include="DasMulli.SimpleGitVersion" Version="1.0.0" PrivateAssets="All" />
-    <PackageReference Include="Emgu.CV" Version="4.5.1.4349" />
-    <PackageReference Include="Emgu.CV.Bitmap" Version="4.5.1.4349" />
-    <PackageReference Include="Emgu.CV.runtime.linux-arm" Version="4.5.1.4349" Condition="$(RuntimeIdentifier) == 'linux-arm'" />
-    <PackageReference Include="Emgu.CV.runtime.ubuntu.20.04-x64" Version="4.5.1.4349" Condition="$(RuntimeIdentifier) == 'ubuntu.20.04-x64'" />
-    <PackageReference Include="Emgu.CV.runtime.windows" Version="4.5.1.4349" />
+    <PackageReference Include="Emgu.CV" Version="4.5.4.4788" />
+    <PackageReference Include="Emgu.CV.Bitmap" Version="4.5.4.4788" />
+    <PackageReference Include="Emgu.CV.runtime.linux-arm" Version="4.5.4.4788" Condition="$(RuntimeIdentifier) == 'linux-arm'" />
+    <PackageReference Include="Emgu.CV.runtime.ubuntu.20.04-x64" Version="4.5.4.4788" Condition="$(RuntimeIdentifier) == 'ubuntu.20.04-x64'" />
+    <PackageReference Include="Emgu.CV.runtime.windows" Version="4.5.4.4788" />
     <PackageReference Include="JsonSubTypes" Version="1.8.0" />
     <PackageReference Include="LibreHardwareMonitorLib" Version="0.8.9-pre47" />
     <PackageReference Include="LifxNetPlus" Version="1.1.5" />

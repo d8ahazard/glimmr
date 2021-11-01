@@ -82,7 +82,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 			var api = OperatingSystem.IsWindows() ? VideoCapture.API.DShow : VideoCapture.API.V4L2;
 			_video = new VideoCapture(_inputStream, api);
 			foreach (var (prop, val) in props) {
-				_video.SetCaptureProperty(prop, val);
+				_video.Set(prop, val);
 			}
 		}
 
@@ -92,8 +92,8 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 				return false;
 			}
 
-			var fourCc = (int) _video.GetCaptureProperty(CapProp.FourCC);
-			var fps = (int) _video.GetCaptureProperty(CapProp.Fps);
+			var fourCc = (int) _video.Get(CapProp.FourCC);
+			var fps = (int) _video.Get(CapProp.Fps);
 			var d5 = VideoWriter.Fourcc('M', 'J', 'P', 'G');
 
 			Log.Debug($"Video created, fps and 4cc are {fps} and {fourCc} versus {d5}.");
