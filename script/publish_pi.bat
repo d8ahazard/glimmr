@@ -1,5 +1,4 @@
 @echo off
-if "%1"=="" GOTO HELP
 if "%1"=="-h" GOTO HELP
 IF NOT "%2"=="-s" GOTO BUILD
 echo Stopping services
@@ -13,7 +12,8 @@ plink -no-antispoof -pw glimmrtv glimmrtv@%1 "echo glimmrtv | sudo -S service gl
 plink -no-antispoof -pw glimmrtv glimmrtv@%1 "echo glimmrtv | sudo -S pkill -f Glimmr"
 
 :BUILD2
-dotnet publish ..\src\Glimmr\Glimmr.csproj /p:PublishProfile=LinuxARM -o ..\src\Glimmr\bin\linuxARM
+dotnet publish ..\src\Glimmr\Glimmr.csproj /p:PublishProfile=LinuxARM -o ..\src\Glimmr\bin\linuxARM --self-contained=true
+if "%1"=="" GOTO :END
 cd ..\src\Glimmr\bin\linuxARM
 IF "%2"=="-j" GOTO JS
 IF "%2"=="-c" GOTO CSS

@@ -10,7 +10,7 @@ for %%x in (
 	OSX
 ) do (
 	echo Building %%x
-	dotnet publish -c Release ..\src\Glimmr\Glimmr.csproj /p:PublishProfile=%%x -o ..\src\Glimmr\bin\%%x
+	dotnet publish -c Release ..\src\Glimmr\Glimmr.csproj /p:PublishProfile=%%x -o ..\src\Glimmr\bin\%%x --self-contained=true
 	if exist "..\lib\%%x" xcopy /y ..\lib\%%x\* ..\src\bin\%%x\	
 )
 

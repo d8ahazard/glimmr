@@ -97,9 +97,14 @@ namespace Glimmr.Models.Util {
 			DataUtil.BackupDb();
 			var branch = GetBranch();
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-				Process.Start("../script/update_win.bat", branch);
+				if (File.Exists("C:\\Progra~1\\Glimmr\\update_win.bat")) {
+					Process.Start("../script/update_win.bat", branch);	
+				} else {
+					Log.Warning("Unable to update windows, not installed via git.");
+				}
+				
 			} else {
-				var cmd = $"/home/glimmrtv/glimmr/script/update_linux.sh {branch} &";
+				var cmd = "/home/glimmrtv/glimmr/script/update_linux.sh";
 				Log.Debug("Update command should be: " + cmd);
 				Process.Start("/bin/bash", cmd);
 			}

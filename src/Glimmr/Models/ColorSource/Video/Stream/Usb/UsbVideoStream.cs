@@ -101,10 +101,10 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 				return true;
 			}
 
-			Log.Warning("Video problems, bob...");
-			_video?.Dispose();
-			_video = null;
-			return false;
+			// Log.Warning("Video problems, bob...");
+			// _video?.Dispose();
+			// _video = null;
+			return true;
 		}
 
 		private void SetFrame(object? sender, EventArgs e) {
