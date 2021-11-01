@@ -527,6 +527,15 @@ namespace Glimmr.Controllers {
 			await _controlService.StartStream(gd);
 			return new ActionResult<bool>(true);
 		}
+		
+		/// <summary>
+		/// Fetch store data object.
+		/// </summary>
+		/// <returns></returns>
+		[HttpGet("store")]
+		public ActionResult<StoreData> GetStore() {
+			return new ActionResult<StoreData>(DataUtil.GetStoreSerialized(_controlService));
+		}
 
 		/// <summary>
 		/// Triggers a system action.
