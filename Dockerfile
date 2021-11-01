@@ -40,6 +40,7 @@ WORKDIR /etc/Glimmr/log
 RUN ln -sf /etc/Glimmr/log /var/log/glimmr
 USER glimmrtv
 ENV ASPNETCORE_URLS=http://+:5699
+WORKDIR /opt/glimmr
 ENTRYPOINT ["sudo", "/opt/glimmr/Glimmr"]
 VOLUME /etc/Glimmr 
 # Web UI
