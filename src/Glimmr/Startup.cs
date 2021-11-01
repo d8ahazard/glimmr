@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 
 #endregion
@@ -30,6 +31,23 @@ namespace Glimmr {
 				c.UseOneOfForPolymorphism();
 				c.EnableAnnotations(true, true);
 				c.SchemaFilter<DescribeEnumMembers>(xmlPath);
+				c.SwaggerDoc("v1.2", new OpenApiInfo
+				{
+					Version = "v1.2",
+					Title = "Glimmr Web API",
+					Description = "A simple example ASP.NET Core Web API",
+					Contact = new OpenApiContact
+					{
+						Name = "d8ahazard",
+						Email = "donate.to.digitalhigh@gmail.com",
+						Url = new Uri("https://facebook.com/GlimmrTV"),
+					},
+					License = new OpenApiLicense
+					{
+						Name = "GPL3.0",
+						Url = new Uri("https://github.com/d8ahazard/glimmr/blob/master/COPYING"),
+					}
+				});
 			});
 			var settings = new JsonSerializerSettings { ContractResolver = new SignalRContractResolver() };
 			var serializer = JsonSerializer.Create(settings);
@@ -51,7 +69,7 @@ namespace Glimmr {
 			app.UseSwagger();
 			app.UseSwaggerUI(c =>
 			{
-				c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+				c.SwaggerEndpoint("/swagger/v1.2/swagger.json", "My API V1");
 			});
 			app.UseRouting();
 			app.UseAuthorization();
