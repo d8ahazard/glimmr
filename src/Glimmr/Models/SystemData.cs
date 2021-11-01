@@ -2,7 +2,9 @@
 
 using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Glimmr.Enums;
@@ -347,6 +349,13 @@ namespace Glimmr.Models {
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string DeviceName { get; set; } = "";
+		
+		/// <summary>
+		/// A unique device ID based on MAC address, or random if no NIC accessible.
+		/// </summary>
+		[DefaultValue("")]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public string? DeviceId { get; set; } = "";
 
 		/// <summary>
 		/// Target DreamScreen device to receive color data from.
@@ -427,6 +436,10 @@ namespace Glimmr.Models {
 		/// </summary>
 		public string IpAddress => IpUtil.GetLocalIpAddress();
 
+		public SystemData() {
+			CheckDeviceId();
+		}
+		
 		public void SetDefaults() {
 			DiscoveryTimeout = 10;
 			AutoDiscoveryFrequency = 60;
@@ -443,6 +456,30 @@ namespace Glimmr.Models {
 			if (string.IsNullOrEmpty(DeviceName)) {
 				DeviceName = Dns.GetHostName();
 			}
+			CheckDeviceId();
+			
+		}
+
+		private void CheckDeviceId() {
+			var id = DeviceId;
+			if (string.IsNullOrEmpty(id)) {
+				id = NetworkInterface
+					.GetAllNetworkInterfaces()
+					.Where( nic => nic.OperationalStatus == OperationalStatus.Up && nic.NetworkInterfaceType != NetworkInterfaceType.Loopback )
+					.Select( nic => nic.GetPhysicalAddress().ToString() )
+					.FirstOrDefault();
+				DeviceId = id;
+				if (!string.IsNullOrEmpty(id)) {
+					return;
+				}
+
+				var rand = new Random();
+				const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+				id =  new string(Enumerable.Repeat(chars, 6)
+					.Select(s => s[rand.Next(s.Length)]).ToArray());
+			}
+
+			DeviceId = id;
 		}
 	}
 }
