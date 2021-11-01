@@ -477,7 +477,6 @@ function setSocketListeners() {
     let logDiv = document.getElementById("logWrap");
     websocket.on("log", function (msg) {
         let message = JSON.parse(msg);
-        console.log("MSG: ", message);
         let logLine = document.createElement("div");
         let lvl = "";
         let show = true;
