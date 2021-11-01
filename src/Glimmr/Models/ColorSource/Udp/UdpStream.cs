@@ -14,6 +14,7 @@ using Glimmr.Models.ColorTarget.Glimmr;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Makaretu.Dns;
+using Newtonsoft.Json;
 using Serilog;
 using static Glimmr.Enums.DeviceMode;
 
@@ -84,6 +85,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 			_discovery?.Dispose();
 			var address = new List<IPAddress> {IPAddress.Parse(IpUtil.GetLocalIpAddress())};
 			var service = new ServiceProfile(_hostName, "_glimmr._tcp", 21324, address);
+			service.AddProperty("mac", sd.DeviceId);
 			_discovery = new ServiceDiscovery();
 			_discovery.Advertise(service);
 		}
