@@ -254,14 +254,41 @@ is set to.
 Click the "Save settings" button to submit your configuration.
 
 
-## API
+## Integrations
+
+### Swagger API
 
 Glimmr has a fully REST-ful API that supports control and enumeration of nearly every method and
-relevant data structure in the application. All methods are documented on (https://app.swaggerhub.com/apis/d8ahazard/glimmr/1.1)[Swagger Hub].
+relevant data structure in the application. All methods are documented on (https://app.swaggerhub.com/apis/d8ahazard/glimmr/)[Swagger Hub].
 Additionally, you can access the API documentation locally by going to http://<YOUR_GLIMMR_ADDRESS>/swagger/index.html.
 
 The local API reference can be used to view and set data in real-time, as well as see in-depth descriptions 
 of what each device and system setting do. You can also examine the data structures of Ambient and Audio Scenes.
+
+
+### Python Library
+
+Want to create a python project to control Glimmr? There's a package for that.
+Presently, this is not a full implementation of the Swagger API, but only adds the features
+required for implementation with Home Assistant. If a feature is not implemented, 
+feel free to submit a feature request to the below github repo.
+
+https://pypi.org/project/glimmr/
+https://github.com/d8ahazard/glimmr-python
+
+
+## Home Assistant Integration
+
+Running a Home Assistant instance? Well, you're in luck. I've created a platinum-level
+integration for Home Assistant that takes full advantage of the features provided by Glimmr.
+
+The integration includes automatic discovery via MDNS/Zeroconfig, automatic push updates via websocket,
+and the ability to change device modes and adjust ambient color and scenes.
+
+Also, the integration is supported by HACS - you can just copy the below URL and add it as a custom 
+repository, then install via the settings -> integrations page.
+
+https://github.com/d8ahazard/glimmr_ha
 
 
 ## PROFIT
