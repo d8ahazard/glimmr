@@ -5,19 +5,29 @@ RUN useradd -ms /bin/bash glimmrtv
 RUN usermod -aG sudo glimmrtv
 RUN usermod -aG video glimmrtv
 
-#Install Required Packages
-RUN apt-get update && apt-get install -y software-properties-common
+#Update so we get software-properties-common
+RUN apt-get -y update
+RUN apt-get install -y software-properties-common
+# Add extra repositories 
+RUN add-apt-repository "deb http://security.ubuntu.com/ubuntu xenial-security main"
+RUN add-apt-repository ppa:rock-core/qt4 -y
+# Update again
+RUN apt-get -y update
+# Install packages
 RUN apt-get install -y \
-  sudo \
-  curl \
-  wget
+  sudo curl wget libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa \
+  libdc1394-22 libtesseract-dev scons icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev \
+  libswscale-dev libv4l-dev libxvidcore-dev libatlas-base-dev gfortran libopengl-dev git gcc xauth avahi-daemon \
+  x11-xserver-utils libopencv-dev python3-opencv unzip libtiff5-dev libgeotiff-dev libgtk-3-dev libgstreamer1.0-dev \
+  libavcodec-dev libswscale-dev libavformat-dev libopenexr-dev libjasper-dev libdc1394-22-dev libv4l-dev \
+  libeigen3-dev libopengl-dev cmake-curses-gui freeglut3-dev lm-sensors
+  
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
-#Install locally defined required packages
-COPY linux-docker-packages.sh .
-RUN chmod 777 linux-docker-packages.sh
-RUN mkdir /opt/dotnet
-RUN ./linux-docker-packages.sh
+#Install glimmr
+COPY docker_install.sh .
+RUN chmod 777 docker_install.sh
+RUN ./docker_install.sh
 
 #Clean it up
 RUN apt-get autoclean -y \
@@ -28,8 +38,6 @@ RUN apt-get autoclean -y \
 FROM base AS final
 WORKDIR /etc/Glimmr/log
 RUN ln -sf /etc/Glimmr/log /var/log/glimmr
-WORKDIR /app
-COPY --from=build /app/publish .
 USER glimmrtv
 ENV ASPNETCORE_URLS=http://+:5699
 ENTRYPOINT ["sudo", "/opt/glimmr/Glimmr"]
