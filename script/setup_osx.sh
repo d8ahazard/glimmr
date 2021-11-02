@@ -25,27 +25,18 @@ chown -R $USER:staff /Users/$USER
 if [ ! -f "$HOMEDIR/firstrun" ]
 then
   echo "Starting first-run setup..."
-  echo "done" > "$HOMEDIR/firstrun"
+  touch $HOMEDIR/firstrun
 fi
 
-# Check for service stop
-serviceName="glimmr"
-if systemctl --all --type service | grep -q "$serviceName";then
-  echo "Stopping glimmr..."
-    service glimmr stop
-    echo "STOPPED!"
-else
-    echo "$serviceName is not installed."
-fi
-
-if [ ! -d $APPDIR ]
+if [ ! -d "/Applications/glimmr" ]
   then
+  echo "Creating app dir."
 # Make dir
-  mkdir $APPDIR  
+  mkdir /Applications/glimmr
 fi
 
 # Download and extract latest release
-cd /tmp || exit
+cd /Users/$USER || exit
 ver=$(curl -s "https://api.github.com/repos/d8ahazard/glimmr/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
 echo ver is $ver
 url="https://github.com/d8ahazard/glimmr/releases/download/$ver/Glimmr-$PUBPATH-$ver.tgz"
