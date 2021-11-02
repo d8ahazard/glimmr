@@ -1,87 +1,87 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <PropertyGroup>
-    <RuntimeIdentifiers>ubuntu.18.04-x64;linux-arm;linux-x64;osx-x64;win-x64;win-arm;win-x86</RuntimeIdentifiers>
-    <TargetFramework>net5.0</TargetFramework>
-    <VersionPrefix>1.2.0</VersionPrefix>
-    <Product>Glimmr</Product>
-    <ProductName>Glimmr</ProductName>
-    <CopyRefAssembliesToPublishDirectory>false</CopyRefAssembliesToPublishDirectory>
-    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-    <UserSecretsId>2513db3e-6259-49c1-8062-41f810f170fa</UserSecretsId>
-    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerfileContext>.</DockerfileContext>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <ApplicationIcon>appIcon.ico</ApplicationIcon>
-    <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
-    <Nullable>enable</Nullable>
-    <LangVersion>latest</LangVersion>
-    <PackageVersion>1.2.0</PackageVersion>
-    <Copyright>GPLv3</Copyright>
-    <PackageProjectUrl>https://github.com/d8ahazard/Glimmr</PackageProjectUrl>
-    <PackageLicenseUrl>https://raw.githubusercontent.com/d8ahazard/glimmr/master/COPYING</PackageLicenseUrl>
-    <RepositoryUrl>https://github.com/d8ahazard/Glimmr</RepositoryUrl>  
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);1591</NoWarn>
-    <PackageIconUrl>https://github.com/d8ahazard/glimmr/raw/master/appIcon.png</PackageIconUrl>
-    <AssemblyVersion>1.2.0</AssemblyVersion>
-    <FileVersion>1.2.0</FileVersion>
-  </PropertyGroup>
-  
-  <ItemGroup>
-    <PackageReference Include="AdalightNet" Version="1.0.8" />
-    <PackageReference Include="AutoMapper" Version="10.1.1" />
-    <PackageReference Include="digitalhigh.rpi-ws281x-csharp" Version="1.1.7" />
-    <PackageReference Include="DirectShowLib.Standard" Version="2.1.0" />
-    <PackageReference Include="DreamScreenNet" Version="1.0.5" />
-    <PackageReference Include="DasMulli.SimpleGitVersion" Version="1.0.0" PrivateAssets="All" />
-    <PackageReference Include="Emgu.CV" Version="4.5.4.4788" />
-    <PackageReference Include="Emgu.CV.Bitmap" Version="4.5.4.4788" />
-    <PackageReference Include="Emgu.CV.runtime.linux-arm" Version="4.5.4.4788" Condition="$(RuntimeIdentifier) == 'linux-arm'" />
-    <PackageReference Include="Emgu.CV.runtime.ubuntu.20.04-x64" Version="4.5.4.4788" Condition="$(RuntimeIdentifier) == 'ubuntu.20.04-x64'" />
-    <PackageReference Include="Emgu.CV.runtime.windows" Version="4.5.4.4788" />
-    <PackageReference Include="JsonSubTypes" Version="1.8.0" />
-    <PackageReference Include="LibreHardwareMonitorLib" Version="0.8.9-pre47" />
-    <PackageReference Include="LifxNetPlus" Version="1.1.5" />
-    <PackageReference Include="LiteDB" Version="5.0.11" />
-    <PackageReference Include="Makaretu.Dns.Multicast" Version="0.27.0" />
-    <PackageReference Include="ManagedBass" Version="3.1.0" />
-    <PackageReference Include="Microsoft.AspNet.SignalR.Client" Version="2.4.2" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="5.0.11" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="5.0.11" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0" />
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.11.1" />
-    <PackageReference Include="MMALSharp" Version="0.6.0" />
-    <PackageReference Include="Nanoleaf.Core" Version="2.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="OpenRGB.NET" Version="1.7.0" />
-    <PackageReference Include="Q42.HueApi" Version="3.18.1" />
-    <PackageReference Include="Q42.HueApi.Entertainment" Version="3.18.1" />
-    <PackageReference Include="Serilog" Version="2.10.0" />
-    <PackageReference Include="Serilog.AspNetCore" Version="4.1.0" />
-    <PackageReference Include="Serilog.Sinks.AspNetCore.SignalR" Version="0.4.0" />
-    <PackageReference Include="Serilog.Sinks.Async" Version="1.5.0" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="4.0.0" />
-    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
-    <PackageReference Include="SimpleGitVersion.Core" Version="5.1.1" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
-    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.2.3" />
-    <PackageReference Include="System.Net.WebSockets" Version="4.3.0" />
-    <PackageReference Include="YeelightAPI" Version="1.10.2" />
-    <PackageReference Update="Packaging.Targets">
-      <Version>0.1.189</Version>
-    </PackageReference>
-  </ItemGroup>
+    <PropertyGroup>
+        <RuntimeIdentifiers>ubuntu.18.04-x64;linux-arm;linux-x64;osx-x64;win-x64;win-arm;win-x86</RuntimeIdentifiers>
+        <TargetFramework>net5.0</TargetFramework>
+        <VersionPrefix>1.2.0</VersionPrefix>
+        <Product>Glimmr</Product>
+        <ProductName>Glimmr</ProductName>
+        <CopyRefAssembliesToPublishDirectory>false</CopyRefAssembliesToPublishDirectory>
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+        <UserSecretsId>2513db3e-6259-49c1-8062-41f810f170fa</UserSecretsId>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <DockerfileContext>.</DockerfileContext>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <ApplicationIcon>appIcon.ico</ApplicationIcon>
+        <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+        <PackageVersion>1.2.0</PackageVersion>
+        <Copyright>GPLv3</Copyright>
+        <PackageProjectUrl>https://github.com/d8ahazard/Glimmr</PackageProjectUrl>
+        <PackageLicenseUrl>https://raw.githubusercontent.com/d8ahazard/glimmr/master/COPYING</PackageLicenseUrl>
+        <RepositoryUrl>https://github.com/d8ahazard/Glimmr</RepositoryUrl>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);1591</NoWarn>
+        <PackageIconUrl>https://github.com/d8ahazard/glimmr/raw/master/appIcon.png</PackageIconUrl>
+        <AssemblyVersion>1.2.0</AssemblyVersion>
+        <FileVersion>1.2.0</FileVersion>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <_ContentIncludedByDefault Remove="wwwroot\lib\croppr\croppr.min.css" />
-    <_ContentIncludedByDefault Remove="wwwroot\lib\croppr\croppr.min.js" />
-  </ItemGroup>
-  <ItemGroup>
-    <RuntimeHostConfigurationOption Include="System.Globalization.Invariant" Value="true" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="script" />
-  </ItemGroup>
-  
+    <ItemGroup>
+        <PackageReference Include="AdalightNet" Version="1.0.8"/>
+        <PackageReference Include="AutoMapper" Version="10.1.1"/>
+        <PackageReference Include="digitalhigh.rpi-ws281x-csharp" Version="1.1.7"/>
+        <PackageReference Include="DirectShowLib.Standard" Version="2.1.0"/>
+        <PackageReference Include="DreamScreenNet" Version="1.0.5"/>
+        <PackageReference Include="DasMulli.SimpleGitVersion" Version="1.0.0" PrivateAssets="All"/>
+        <PackageReference Include="Emgu.CV" Version="4.5.4.4788"/>
+        <PackageReference Include="Emgu.CV.Bitmap" Version="4.5.4.4788"/>
+        <PackageReference Include="Emgu.CV.runtime.linux-arm" Version="4.5.4.4788" Condition="$(RuntimeIdentifier) == 'linux-arm'"/>
+        <PackageReference Include="Emgu.CV.runtime.ubuntu.20.04-x64" Version="4.5.4.4788" Condition="$(RuntimeIdentifier) == 'ubuntu.20.04-x64'"/>
+        <PackageReference Include="Emgu.CV.runtime.windows" Version="4.5.4.4788"/>
+        <PackageReference Include="JsonSubTypes" Version="1.8.0"/>
+        <PackageReference Include="LibreHardwareMonitorLib" Version="0.8.9-pre47"/>
+        <PackageReference Include="LifxNetPlus" Version="1.1.5"/>
+        <PackageReference Include="LiteDB" Version="5.0.11"/>
+        <PackageReference Include="Makaretu.Dns.Multicast" Version="0.27.0"/>
+        <PackageReference Include="ManagedBass" Version="3.1.0"/>
+        <PackageReference Include="Microsoft.AspNet.SignalR.Client" Version="2.4.2"/>
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="5.0.11"/>
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="5.0.11"/>
+        <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0"/>
+        <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.11.1"/>
+        <PackageReference Include="MMALSharp" Version="0.6.0"/>
+        <PackageReference Include="Nanoleaf.Core" Version="2.0.0"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.1"/>
+        <PackageReference Include="OpenRGB.NET" Version="1.7.0"/>
+        <PackageReference Include="Q42.HueApi" Version="3.18.1"/>
+        <PackageReference Include="Q42.HueApi.Entertainment" Version="3.18.1"/>
+        <PackageReference Include="Serilog" Version="2.10.0"/>
+        <PackageReference Include="Serilog.AspNetCore" Version="4.1.0"/>
+        <PackageReference Include="Serilog.Sinks.AspNetCore.SignalR" Version="0.4.0"/>
+        <PackageReference Include="Serilog.Sinks.Async" Version="1.5.0"/>
+        <PackageReference Include="Serilog.Sinks.Console" Version="4.0.0"/>
+        <PackageReference Include="Serilog.Sinks.File" Version="5.0.0"/>
+        <PackageReference Include="SimpleGitVersion.Core" Version="5.1.1"/>
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3"/>
+        <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.2.3"/>
+        <PackageReference Include="System.Net.WebSockets" Version="4.3.0"/>
+        <PackageReference Include="YeelightAPI" Version="1.10.2"/>
+        <PackageReference Update="Packaging.Targets">
+            <Version>0.1.189</Version>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <_ContentIncludedByDefault Remove="wwwroot\lib\croppr\croppr.min.css"/>
+        <_ContentIncludedByDefault Remove="wwwroot\lib\croppr\croppr.min.js"/>
+    </ItemGroup>
+    <ItemGroup>
+        <RuntimeHostConfigurationOption Include="System.Globalization.Invariant" Value="true"/>
+    </ItemGroup>
+    <ItemGroup>
+        <Folder Include="script"/>
+    </ItemGroup>
+
 </Project>

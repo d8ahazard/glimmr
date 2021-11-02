@@ -11,14 +11,14 @@
 }
 
 .pcr-app.visible {
-	background: var(--bg-secondary) !important;
+    background: var(--bg-secondary) !important;
     color: var(--fg-primary) !important;
 }
 
 #cardRow {
-    top : 48px;
+    top: 48px;
     position: relative;
-    margin-left: 0!important;
+    margin-left: 0 !important;
     overflow-y: scroll;
 }
 
@@ -28,15 +28,19 @@
         text-align: center !important;
         margin: 0 auto;
     }
+
     .myNav > .myNav {
         text-align: center;
     }
+
     .modeGroup-lg {
         display: none !important;
     }
+
     .settingBtn-lg {
         display: none;
     }
+
     .settingBtn > .mainSettings {
         padding: 5px 16px !important;
     }
@@ -45,7 +49,7 @@
         position: relative;
         width: revert;
     }
-    
+
     #statDiv {
         margin: 5px auto !important;
         max-width: calc(100% - 128px);
@@ -58,17 +62,17 @@
     div.fixed-bottom, nav.fixed-bottom {
         pointer-events: none !important;
     }
-    
+
     #fpsDiv, #tempDiv, #cpuDiv, #ramDiv, #throttleDiv, #refreshBtn, .mainSettings, .closeBtn {
         pointer-events: auto !important;
     }
-    
-    
+
+
     .ambientRow, #audioNav {
-        justify-content: center!important;
-        text-align: center!important;
+        justify-content: center !important;
+        text-align: center !important;
     }
-    
+
     #mainSettingsCard {
         padding: 15px 0 !important;
     }
@@ -78,14 +82,16 @@
     .settingBtn-sm {
         display: none;
     }
+
     .modeGroup-lg {
         display: inline-block !important;
-    }    
+    }
+
     #statDiv {
         position: relative;
         margin-left: 5px;
         padding-top: 5px;
-    }    
+    }
 }
 
 .logLine {
@@ -149,13 +155,13 @@ div.btn-clear.btn-lg.controlBtn {
 }
 
 .ambientRow {
-    
+
 }
 
 div.btn-clear.closeBtn.closeBtn-sm, div.btn-clear.refreshBtn {
     padding: 5px 16px !important;
 }
- 
+
 
 .main {
     width: 100%;
@@ -166,28 +172,28 @@ div.btn-clear.closeBtn.closeBtn-sm, div.btn-clear.refreshBtn {
 }
 
 .devCard.min {
-    opacity: 0!important;
-    width: 0!important;
-    height: 0!important;
-    margin: 0!important;
-    padding: 0!important;
-    border: 0!important;
-    max-width: 0!important;    
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    max-width: 0 !important;
 }
 
 .devCard.min * {
-    opacity: 0!important;
-    width: 0!important;
-    height: 0!important;
-    margin: 0!important;
-    padding: 0!important;
-    border: 0!important;
-    max-width: 0!important;
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    max-width: 0 !important;
 }
 
 .card {
     border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.12), 0 4px 6px rgba(0,0,0,0.24), 0 4px 6px rgba(0,0,0,0.24);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.12), 0 4px 6px rgba(0, 0, 0, 0.24), 0 4px 6px rgba(0, 0, 0, 0.24);
 }
 
 .devCard {
@@ -203,7 +209,7 @@ div.btn-clear.closeBtn.closeBtn-sm, div.btn-clear.refreshBtn {
 }
 
 .card-1:hover {
-    box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
 }
 
 .card-title {
@@ -229,7 +235,7 @@ div.btn-clear.closeBtn.closeBtn-sm, div.btn-clear.refreshBtn {
 
 
 #sectorMap, #ledMap {
-    background:url("../img/sectoring_screen.png");
+    background: url("../img/sectoring_screen.png");
     background-size: 100% 100%;;
 }
 
@@ -240,7 +246,7 @@ div.btn-clear.closeBtn.closeBtn-sm, div.btn-clear.refreshBtn {
 
 #footer {
     height: 3rem;
-	background: var(--bg-secondary) !important;
+    background: var(--bg-secondary) !important;
     color: var(--fg-primary) !important;
     padding: 0;
     margin: 0;
@@ -284,7 +290,7 @@ div.btn-clear.closeBtn.closeBtn-sm, div.btn-clear.refreshBtn {
     -ms-flex-wrap: wrap;
     flex-wrap: wrap;
     position: relative;
-    justify-content: center!important;
+    justify-content: center !important;
     margin-bottom: 10px !important;
     padding: 15px;
     border: 1px solid grey;
@@ -311,7 +317,7 @@ div.btn-clear.closeBtn.closeBtn-sm, div.btn-clear.refreshBtn {
     margin-left: 4px !important;
     width: 2rem !important;
     z-index: 1 !important;
-    
+
 }
 
 .custom-control:not(.hue-switch), .custom-switch:not(.hue-switch) {
@@ -427,8 +433,8 @@ div.card.container-fluid > div.card-body.row > .brightSlider {
     left: 0;
 }
 
-.btn-group>.btn.active {
-    z-index: 0!important;
+.btn-group > .btn.active {
+    z-index: 0 !important;
 }
 
 
@@ -467,19 +473,19 @@ area {
 }
 
 .sector {
-    position: absolute!important;  
+    position: absolute !important;
     border: 2px solid black;
     cursor: pointer;
 }
 
 .led {
-    position: absolute!important;
+    position: absolute !important;
     border: 1px solid black;
     cursor: pointer;
 }
 
 .sector2 {
-    position: absolute!important;
+    position: absolute !important;
     border: 2px solid black;
 }
 
@@ -491,10 +497,10 @@ input[type="range"]::-webkit-slider-thumb:not[data-object="SystemData"] {
     border-radius: 25px;
     top: -.75rem;
     background: var(--bg-primary) !important;
-	color: var(--fg-primary) !important;
+    color: var(--fg-primary) !important;
     position: relative;
     z-index: 2;
-    border: 0 solid transparent;   
+    border: 0 solid transparent;
 }
 
 input[type="range"]::-webkit-slider-thumb:not[data-object="SystemData"]::before {
@@ -514,8 +520,8 @@ input[type="range"]:not[data-object="SystemData"] {
     margin: 0;
     width: 100%;
     background: transparent;
-    border: transparent!important;
-    outline: transparent!important;
+    border: transparent !important;
+    outline: transparent !important;
 }
 
 input.custom-range {
@@ -570,8 +576,8 @@ input[type="range"]:not[data-object="SystemData"]::-webkit-slider-runnable-track
 }
 
 #mainSettingsCard > div > div > div.card-body {
-    padding-left: 0!important;
-    padding-right: 0!important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
 }
 
 #mainSettingsCard {
@@ -610,7 +616,7 @@ input[type="range"]:not[data-object="SystemData"]::-webkit-slider-runnable-track
 }
 
 .hide {
-    height: 0!important;
+    height: 0 !important;
     -webkit-transition: height 0.5s ease-in-out;
     -moz-transition: height 0.5s ease-in-out;
     -o-transition: height 0.5s ease-in-out;
@@ -636,7 +642,7 @@ input[type="range"]:not[data-object="SystemData"]::-webkit-slider-runnable-track
     z-index: 5;
 }
 
-.col-* {
+.col- * {
     min-width: 25px;
 }
 
@@ -718,18 +724,22 @@ input[type="range"]:not[data-object="SystemData"]::-webkit-slider-runnable-track
     left: 8px;
     animation: lds-ellipsis1 0.6s infinite;
 }
+
 .lds-ellipsis div:nth-child(2) {
     left: 8px;
     animation: lds-ellipsis2 0.6s infinite;
 }
+
 .lds-ellipsis div:nth-child(3) {
     left: 32px;
     animation: lds-ellipsis2 0.6s infinite;
 }
+
 .lds-ellipsis div:nth-child(4) {
     left: 56px;
     animation: lds-ellipsis3 0.6s infinite;
 }
+
 @keyframes lds-ellipsis1 {
     0% {
         transform: scale(0);
@@ -738,6 +748,7 @@ input[type="range"]:not[data-object="SystemData"]::-webkit-slider-runnable-track
         transform: scale(1);
     }
 }
+
 @keyframes lds-ellipsis3 {
     0% {
         transform: scale(1);
@@ -746,6 +757,7 @@ input[type="range"]:not[data-object="SystemData"]::-webkit-slider-runnable-track
         transform: scale(0);
     }
 }
+
 @keyframes lds-ellipsis2 {
     0% {
         transform: translate(0, 0);
@@ -838,12 +850,12 @@ div.btn-clear.active {
 
 
 .card.container-fluid {
-    background: var(--bg-primary) !important;    
+    background: var(--bg-primary) !important;
 }
 
 .card.container-fluid > .card-body, #stageCol {
-    padding-left: 0!important;
-    padding-right: 0!important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
 }
 
 #mainContent {

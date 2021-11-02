@@ -98,19 +98,18 @@ namespace Glimmr.Models.Util {
 			var branch = GetBranch();
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 				if (File.Exists("C:\\Progra~1\\Glimmr\\update_win.bat")) {
-					Process.Start("../script/update_win.bat", branch);	
+					Process.Start("../script/update_win.bat", branch);
 				} else {
 					Log.Warning("Unable to update windows, not installed via git.");
 				}
-				
 			} else {
 				var cmd = "/home/glimmrtv/glimmr/script/update_linux.sh";
 				Log.Debug("Update command should be: " + cmd);
 				Process.Start("/bin/bash", cmd);
 			}
 		}
-		
-	
+
+
 		public static void Restart() {
 			Log.Debug("Restarting glimmr.");
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
@@ -133,7 +132,10 @@ namespace Glimmr.Models.Util {
 
 		public static string GetUserDir() {
 			var userDir = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "C:\\ProgramData\\" : "/etc/";
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) userDir = "~/Library/Application Support/";
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+				userDir = "~/Library/Application Support/";
+			}
+
 			var fullPath = Path.Combine(userDir, "Glimmr");
 			if (Directory.Exists(fullPath)) {
 				return Directory.Exists(fullPath) ? fullPath : string.Empty;
@@ -157,6 +159,7 @@ namespace Glimmr.Models.Util {
 						if (!typeof(T).IsAssignableFrom(type) || type.IsInterface || type.IsAbstract) {
 							continue;
 						}
+
 						if (type.FullName != null) {
 							output.Add(type.FullName);
 						}
@@ -178,25 +181,25 @@ namespace Glimmr.Models.Util {
 				if (!Directory.Exists(logDir)) {
 					Directory.CreateDirectory(logDir);
 				}
+
 				logPath = Path.Combine(userPath, "log", $"glimmr{dt}.log");
 			}
+
 			var result = await File.ReadAllLinesAsync(logPath);
 			if (result.Length > len) {
 				result = result.Skip(Math.Max(0, result.Length - len)).ToArray();
 			}
+
 			return result;
 		}
-		
-		public static bool IsFileReady(string filename)
-		{
+
+		public static bool IsFileReady(string filename) {
 			// If the file can be opened for exclusive access it means that the file
 			// is no longer locked by another process.
 			try {
 				using FileStream inputStream = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.None);
 				return inputStream.Length > 0;
-			}
-			catch (Exception)
-			{
+			} catch (Exception) {
 				return false;
 			}
 		}
