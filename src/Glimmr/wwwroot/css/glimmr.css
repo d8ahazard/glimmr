@@ -29,6 +29,19 @@
         margin: 0 auto;
     }
 
+    #logModal .btn {
+        width: 30px;
+        height: 30px;
+    }
+    
+    #logModal .btn > span {
+        position: absolute;
+        left: 0;
+        top: 2px;
+        width: 100%;
+        text-align: center;
+    }
+
     .myNav > .myNav {
         text-align: center;
     }
