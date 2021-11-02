@@ -80,7 +80,7 @@ namespace Glimmr.Models.Util {
 			// Enumerate system display devices
 			var devIdx = 0;
 			while (true) {
-				var deviceData = new DisplayDevice {cb = Marshal.SizeOf(typeof(DisplayDevice))};
+				var deviceData = new DisplayDevice { cb = Marshal.SizeOf(typeof(DisplayDevice)) };
 				if (EnumDisplayDevices(null, devIdx, ref deviceData, 0) != 0) {
 					// Get the position and size of this particular display device
 					var devMode = new DEVMODE();
@@ -111,7 +111,7 @@ namespace Glimmr.Models.Util {
 			var output = string.Empty;
 			try {
 				var p = new Process {
-					StartInfo = {UseShellExecute = false, RedirectStandardOutput = true, FileName = "xrandr"}
+					StartInfo = { UseShellExecute = false, RedirectStandardOutput = true, FileName = "xrandr" }
 				};
 				p.Start();
 				output = p.StandardOutput.ReadToEnd();
@@ -147,7 +147,7 @@ namespace Glimmr.Models.Util {
 
 			var devIdx = 0;
 			while (true) {
-				var deviceData = new DisplayDevice {cb = Marshal.SizeOf(typeof(DisplayDevice))};
+				var deviceData = new DisplayDevice { cb = Marshal.SizeOf(typeof(DisplayDevice)) };
 				if (EnumDisplayDevices(null, devIdx, ref deviceData, 0) != 0) {
 					// Get the position and size of this particular display device
 					var devMode = new DEVMODE();

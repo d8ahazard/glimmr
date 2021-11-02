@@ -36,8 +36,11 @@ namespace Glimmr.Services {
 			var classnames = SystemUtil.GetClasses<IColorDiscovery>();
 			_discoverables = new List<IColorDiscovery>();
 			_syncSource = new CancellationTokenSource();
-			foreach (var dev in classnames.Select(c => Activator.CreateInstance(Type.GetType(c)!, cs.ColorService)).Where(obj => obj != null).Cast<IColorDiscovery?>()) {
-				if (dev != null) _discoverables.Add(dev);
+			foreach (var dev in classnames.Select(c => Activator.CreateInstance(Type.GetType(c)!, cs.ColorService))
+				.Where(obj => obj != null).Cast<IColorDiscovery?>()) {
+				if (dev != null) {
+					_discoverables.Add(dev);
+				}
 			}
 		}
 
@@ -105,7 +108,7 @@ namespace Glimmr.Services {
 			}
 
 			foreach (var dev in devs) {
-				var device = (IColorTargetData) dev;
+				var device = (IColorTargetData)dev;
 				var lastSeen = DateTime.Parse(device.LastSeen, CultureInfo.InvariantCulture);
 				if (DateTime.Now - lastSeen < TimeSpan.FromDays(sd.AutoRemoveDevicesAfter)) {
 					continue;

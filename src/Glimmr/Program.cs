@@ -44,7 +44,7 @@ namespace Glimmr {
 				.WriteTo.Async(a =>
 					a.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: outputTemplate))
 				.WriteTo.SocketSink();
-				
+
 			if (branch != "master") {
 				lc.MinimumLevel.Debug();
 			}

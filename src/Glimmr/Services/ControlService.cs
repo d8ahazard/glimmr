@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
 using Emgu.CV.Util;
+using Glimmr.Enums;
 using Glimmr.Hubs;
 using Glimmr.Models;
 using Glimmr.Models.ColorTarget;
@@ -25,21 +26,20 @@ using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Serilog;
 using Serilog.Events;
-using DeviceMode = Glimmr.Enums.DeviceMode;
 
 #endregion
 
 namespace Glimmr.Services {
 	public class ControlService : BackgroundService {
+		public bool SendPreview { get; set; }
 		public ColorService ColorService { get; set; }
 		public HttpClient HttpSender { get; private set; }
 		public MulticastService MulticastService { get; private set; }
 		public ServiceDiscovery ServiceDiscovery { get; private set; }
+		public StatData? Stats { get; set; }
 		public UdpClient UdpClient { get; private set; }
-		public bool SendPreview { get; set; }
 
 		private static ControlService? _myCs;
-		public StatData? Stats { get; set; }
 
 		private readonly IHubContext<SocketServer> _hubContext;
 
@@ -70,7 +70,10 @@ namespace Glimmr.Services {
 			_myCs = this;
 		}
 
-		public static ControlService? GetInstance() => _myCs;
+		public static ControlService? GetInstance() {
+			return _myCs;
+		}
+
 		public event Action RefreshSystemEvent = delegate { };
 
 		public dynamic? GetAgent(string classType) {
@@ -103,7 +106,7 @@ namespace Glimmr.Services {
 					if (agentCheck == null) {
 						Log.Warning($"Agent maker for {c} is null!");
 					} else {
-						var agentMaker = (IColorTargetAgent) agentCheck;
+						var agentMaker = (IColorTargetAgent)agentCheck;
 						var agent = agentMaker.CreateAgent(this);
 						if (agent != null) {
 							_agents[shortClass] = agent;
@@ -194,7 +197,7 @@ namespace Glimmr.Services {
 							}
 
 							await _hubContext.Clients.All.SendAsync("device",
-								JsonConvert.SerializeObject((IColorTargetData) activated));
+								JsonConvert.SerializeObject((IColorTargetData)activated));
 							return true;
 						}
 					} catch (Exception e) {
@@ -276,7 +279,7 @@ namespace Glimmr.Services {
 				Log.Debug("Backing up database...");
 				DataUtil.BackupDb();
 			}
-			
+
 			var userDir = SystemUtil.GetUserDir();
 			var stamp = DateTime.Now.ToString("yyyyMMdd");
 			var outFile = Path.Combine(userDir, $"store_{stamp}.db");
@@ -301,8 +304,14 @@ namespace Glimmr.Services {
 					continue;
 				}
 
-				if (p.Equals(Path.Combine(userDir, "store.db"))) continue;
-				if (p.Contains("-log")) continue;
+				if (p.Equals(Path.Combine(userDir, "store.db"))) {
+					continue;
+				}
+
+				if (p.Contains("-log")) {
+					continue;
+				}
+
 				try {
 					Log.Debug("Deleting old db backup: " + p);
 					File.Delete(p);
@@ -310,6 +319,7 @@ namespace Glimmr.Services {
 					Log.Warning($"Exception removing file({p}): " + e.Message);
 				}
 			}
+
 			return Task.CompletedTask;
 		}
 
@@ -344,8 +354,8 @@ v. {version}
 			var devs = DataUtil.GetDevices();
 			if (devs.Count == 0) {
 				if (SystemUtil.IsRaspberryPi()) {
-					var ld0 = new LedData {Id = "0", Brightness = 255, GpioNumber = 18, Enable = true};
-					var ld1 = new LedData {Id = "1", Brightness = 255, GpioNumber = 19};
+					var ld0 = new LedData { Id = "0", Brightness = 255, GpioNumber = 18, Enable = true };
+					var ld1 = new LedData { Id = "1", Brightness = 255, GpioNumber = 19 };
 					DataUtil.AddDeviceAsync(ld0).ConfigureAwait(false);
 					DataUtil.AddDeviceAsync(ld1).ConfigureAwait(false);
 				}
@@ -354,9 +364,9 @@ v. {version}
 			_agents = new Dictionary<string, dynamic>();
 			// Now we can load stuff
 			// Init nano HttpClient
-			HttpSender = new HttpClient {Timeout = TimeSpan.FromSeconds(5)};
+			HttpSender = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
 			// Init UDP client
-			UdpClient = new UdpClient {Ttl = 5};
+			UdpClient = new UdpClient { Ttl = 5 };
 			UdpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 			// This should keep our socket from doing bad things?
 			UdpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout, 30);
@@ -399,7 +409,9 @@ v. {version}
 			await DataUtil.AddDeviceAsync(data);
 			Log.Debug("Adding device " + data.Name);
 			IColorTargetData? data2 = DataUtil.GetDevice(data.Id) ?? null;
-			if (data2 != null) await _hubContext.Clients.All.SendAsync("device", JsonConvert.SerializeObject(data2));
+			if (data2 != null) {
+				await _hubContext.Clients.All.SendAsync("device", JsonConvert.SerializeObject(data2));
+			}
 		}
 
 		public async Task SendLogLine(LogEvent message) {
@@ -454,7 +466,7 @@ v. {version}
 			Log.Debug($"Updating {device.Tag}...");
 			await DataUtil.AddDeviceAsync(device, merge).ConfigureAwait(false);
 			var data = DataUtil.GetDevice(device.Id);
-			await _hubContext.Clients.All.SendAsync("device", (IColorTargetData) data);
+			await _hubContext.Clients.All.SendAsync("device", (IColorTargetData)data);
 			await RefreshDevice(device.Id);
 		}
 
@@ -478,8 +490,11 @@ v. {version}
 
 		public async Task<bool> RemoveDevice(string id) {
 			ColorService.StopDevice(id, true);
-			var res= DataUtil.DeleteDevice(id);
-			if (res) await _hubContext.Clients.All.SendAsync("deleteDevice", id);
+			var res = DataUtil.DeleteDevice(id);
+			if (res) {
+				await _hubContext.Clients.All.SendAsync("deleteDevice", id);
+			}
+
 			return res;
 		}
 

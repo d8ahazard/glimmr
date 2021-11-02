@@ -38,12 +38,15 @@ namespace Glimmr.Models {
 		}
 
 		public bool ImportJson(string path) {
-			if (!File.Exists(path)) return false;
+			if (!File.Exists(path)) {
+				return false;
+			}
+
 			Log.Debug($"Loading scene from path: {path}");
 			using StreamReader r = new(path);
 			string json = r.ReadToEnd();
 			var ids = new List<int>();
-			
+
 			try {
 				var scene = JsonConvert.DeserializeObject<AudioScene>(json);
 				var scenes = LoadFiles<AudioScene>();
@@ -55,12 +58,14 @@ namespace Glimmr.Models {
 			} catch (Exception) {
 				Log.Debug("Can't import JSON as audio scene.");
 			}
+
 			try {
 				var scene = JsonConvert.DeserializeObject<AmbientScene>(json);
 				if (scene == null) {
 					Log.Warning("Unable to import scene as ambient.");
 					return false;
 				}
+
 				var scenes = LoadFiles<AmbientScene>();
 				ids.AddRange(scenes.Select(sc => sc.Id));
 				if (ids.Count > 0) {
@@ -70,7 +75,7 @@ namespace Glimmr.Models {
 			} catch (Exception) {
 				Log.Debug("Can't import JSON as audio scene.");
 			}
-			
+
 			return false;
 		}
 
@@ -78,6 +83,7 @@ namespace Glimmr.Models {
 			if (scene == null) {
 				return false;
 			}
+
 			var userPath = Path.Join(SystemUtil.GetUserDir(), path);
 			if (!Directory.Exists(userPath)) {
 				Directory.CreateDirectory(userPath);
@@ -112,7 +118,7 @@ namespace Glimmr.Models {
 									var id = data.GetValue("Id");
 									var name = data.GetValue("Name");
 									if (id != null && name != null) {
-										if ((int) id == 0 && (string) name! != "Random") {
+										if ((int)id == 0 && (string)name! != "Random") {
 											data["Id"] = fCount;
 										}
 									} else {

@@ -13,7 +13,6 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Wled {
 	public class WledDiscovery : ColorDiscovery, IColorDiscovery {
-
 		private readonly MulticastService _mDns;
 		private readonly ServiceDiscovery _sd;
 		private List<string> _ids;
@@ -92,11 +91,12 @@ namespace Glimmr.Models.ColorTarget.Wled {
 						// Extract Mac
 						case DnsType.TXT:
 							id = msg.ToString().Split("=")[1];
-							break;				}
+							break;
+					}
 				}
 
 				if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(ip)) {
-					var nData = new WledData(id, ip) {Name = name};
+					var nData = new WledData(id, ip) { Name = name };
 					ControlService.AddDevice(nData).ConfigureAwait(false);
 					_ids.Add(id);
 				} else {

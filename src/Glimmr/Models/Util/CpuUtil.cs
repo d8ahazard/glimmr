@@ -14,10 +14,10 @@ using Serilog;
 
 namespace Glimmr.Models.Util {
 	public static class CpuUtil {
+		private const StringComparison Sc = StringComparison.InvariantCulture;
 		private static float _tempMax;
 		private static float _tempMin = float.MinValue;
 		private static string[]? _throttledState;
-		private const StringComparison Sc = StringComparison.InvariantCulture;
 
 		private static readonly string[] StringTable = {
 			"Soft Temperature Limit has occurred", //19
@@ -51,9 +51,9 @@ namespace Glimmr.Models.Util {
 				cd.CpuTemp = GetTemperature().Result;
 				cd.MemoryUsage = GetMemoryUsage();
 				_throttledState = await GetThrottledState();
-				cd.ThrottledState = _throttledState;	
+				cd.ThrottledState = _throttledState;
 			}
-			
+
 			TemperatureSetMinMax(cd.CpuTemp);
 			cd.TempMin = _tempMin;
 			cd.TempMax = _tempMax;
@@ -79,7 +79,7 @@ namespace Glimmr.Models.Util {
 
 			return await GetTempLinux();
 		}
-		
+
 		private static async Task<float> GetTempOsx() {
 			// bash command / opt / vc / bin / vc gen cmd measure_temp
 			var temp = 0f;
@@ -113,10 +113,10 @@ namespace Glimmr.Models.Util {
 			if (sd.Units == DeviceUnits.Imperial) {
 				temp = (float)Math.Round(temp * 1.8f + 32);
 			}
-			
+
 			return temp;
 		}
-		
+
 		private static async Task<float> GetTempLinux() {
 			// bash command / opt / vc / bin / vc gen cmd measure_temp
 			var temp = 0f;
@@ -138,6 +138,7 @@ namespace Glimmr.Models.Util {
 						if (p1.Contains(" ")) {
 							p1 = p1.Split(" ")[0];
 						}
+
 						if (!float.TryParse(p1, out temp)) {
 							Log.Warning("Unable to parse line: " + res);
 						}
@@ -153,7 +154,7 @@ namespace Glimmr.Models.Util {
 			if (sd.Units == DeviceUnits.Imperial) {
 				temp = (float)Math.Round(temp * 1.8f + 32);
 			}
-			
+
 			return temp;
 		}
 
@@ -178,16 +179,15 @@ namespace Glimmr.Models.Util {
 			if (sd.Units == DeviceUnits.Imperial) {
 				temp = (float)Math.Round(temp * 1.8f + 32);
 			}
-			
+
 			return temp;
 		}
 
 		private static int GetMemoryUsage() {
 			return RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? GetMemoryUsageOsx() : GetMemoryUsageLinux();
 		}
-		
+
 		private static int GetMemoryUsageLinux() {
-			
 			var process = new Process {
 				StartInfo = new ProcessStartInfo {
 					FileName = "vmstat",
@@ -202,13 +202,17 @@ namespace Glimmr.Models.Util {
 			var total = -1f;
 			while (!process.StandardOutput.EndOfStream) {
 				var data = process.StandardOutput.ReadLineAsync().Result;
-				if (data == null) continue;
+				if (data == null) {
+					continue;
+				}
+
 				if (data.Contains("total memory")) {
 					var str = data.Replace(" used memory", "");
 					if (float.TryParse(str.Split(" ")[0], out var foo)) {
 						used = foo;
 					}
 				}
+
 				if (data.Contains("used memory")) {
 					var str = data.Replace(" total memory", "");
 					if (float.TryParse(str.Split(" ")[0], out var foo)) {
@@ -220,6 +224,7 @@ namespace Glimmr.Models.Util {
 			if (Math.Abs(used - -1) > float.MinValue && Math.Abs(total - -1f) > float.MinValue) {
 				return (int)(used / total);
 			}
+
 			process.Dispose();
 			return 0;
 		}
@@ -241,7 +246,9 @@ namespace Glimmr.Models.Util {
 			var wired = 0;
 			while (!process.StandardOutput.EndOfStream) {
 				var data = process.StandardOutput.ReadLineAsync().Result;
-				if (data == null) continue;
+				if (data == null) {
+					continue;
+				}
 
 				string line;
 				if (data.Contains("Pages free")) {
@@ -250,24 +257,28 @@ namespace Glimmr.Models.Util {
 						free = foo;
 					}
 				}
+
 				if (data.Contains("Pages active")) {
 					line = data.Split(":")[1].Replace(".", "").Trim().TrimEnd();
 					if (int.TryParse(line, out var foo)) {
 						active = foo;
 					}
 				}
+
 				if (data.Contains("Pages speculative")) {
 					line = data.Split(":")[1].Replace(".", "").Trim().TrimEnd();
 					if (int.TryParse(line, out var foo)) {
 						spec = foo;
 					}
 				}
+
 				if (data.Contains("Pages throttled")) {
 					line = data.Split(":")[1].Replace(".", "").Trim().TrimEnd();
 					if (int.TryParse(line, out var foo)) {
 						throttled = foo;
 					}
 				}
+
 				if (data.Contains("Pages wired down")) {
 					line = data.Split(":")[1].Replace(".", "").Trim().TrimEnd();
 					if (int.TryParse(line, out var foo)) {
@@ -280,7 +291,7 @@ namespace Glimmr.Models.Util {
 			process.Dispose();
 			return total == 0 ? 0 : active / total;
 		}
-		
+
 		private static async Task<int> GetProcessAverage() {
 			var process = new Process {
 				StartInfo = new ProcessStartInfo {
@@ -295,10 +306,13 @@ namespace Glimmr.Models.Util {
 			await process.WaitForExitAsync();
 			process.Dispose();
 			var loadAverages = processResult[(processResult.IndexOf("average: ", Sc) + 9)..].Split(',');
-			if (float.TryParse(loadAverages[0], out var la1)) return (int) la1;
+			if (float.TryParse(loadAverages[0], out var la1)) {
+				return (int)la1;
+			}
+
 			return 0;
 		}
-		
+
 		private static async Task<string[]> GetThrottledStatePi() {
 			var process = new Process {
 				StartInfo = new ProcessStartInfo {
@@ -325,7 +339,7 @@ namespace Glimmr.Models.Util {
 
 			return messages.ToArray();
 		}
-		
+
 		private static string Hex2Bin(string hexString) {
 			var output = string.Join(string.Empty,
 				hexString.Select(
@@ -350,5 +364,4 @@ namespace Glimmr.Models.Util {
 			}
 		}
 	}
-	
 }

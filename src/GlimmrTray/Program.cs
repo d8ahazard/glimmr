@@ -77,9 +77,9 @@ namespace GlimmrTray {
 
 			var trapText = "Glimmr TV System Tray";
 			var contextMenu = new ContextMenu();
-			var menuItem0 = new MenuItem {Index = 0, Text = "Show &UI"};
-			var menuItem1 = new MenuItem {Index = 1, Text = "Open &Data Folder"};
-			var menuItem2 = new MenuItem {Index = 2, Text = "E&xit"};
+			var menuItem0 = new MenuItem { Index = 0, Text = "Show &UI" };
+			var menuItem1 = new MenuItem { Index = 1, Text = "Open &Data Folder" };
+			var menuItem2 = new MenuItem { Index = 2, Text = "E&xit" };
 			menuItem0.Click += ShowUi;
 			menuItem1.Click += OpenData;
 			menuItem2.Click += CloseApp;

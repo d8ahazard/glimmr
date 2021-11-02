@@ -33,6 +33,7 @@ namespace Glimmr.Models {
 		private readonly List<VectorOfPoint> _targets;
 		private readonly bool _useCrop;
 		private bool _allBlack;
+		private int _blackLevel;
 		private int _bottomCount;
 
 		// Loaded data
@@ -43,8 +44,10 @@ namespace Glimmr.Models {
 		private Color[] _colorsLedIn;
 		private Color[] _colorsSectors;
 		private Color[] _colorsSectorsIn;
+		private int _cropBlackLevel;
+		private int _cropCount;
 		private int _cropDelay;
-		
+
 		// Loaded settings
 		private bool _cropLetter;
 		private bool _cropPillar;
@@ -90,9 +93,6 @@ namespace Glimmr.Models {
 		// Source stuff
 		private PointF[] _vectors;
 		private int _vSectors;
-		private int _blackLevel;
-		private int _cropBlackLevel;
-		private int _cropCount;
 		private bool _warned;
 
 
@@ -153,7 +153,7 @@ namespace Glimmr.Models {
 			_useCenter = sd.UseCenter;
 			_ledCount = sd.LedCount;
 			_sectorCount = sd.SectorCount;
-			
+
 			if (_ledCount == 0) {
 				_ledCount = 200;
 			}
@@ -200,6 +200,7 @@ namespace Glimmr.Models {
 			if (!_cropLetter && !_cropPillar) {
 				_frameWatch.Stop();
 			}
+
 			_fullCoords = DrawGrid();
 			_fullSectors = DrawSectors();
 			_doSave = true;
@@ -231,7 +232,10 @@ namespace Glimmr.Models {
 				case 1: {
 					for (var i = 0; i < _fullCoords.Length; i++) {
 						var color = cols[i];
-						if (color.R < _blackLevel && color.G < _blackLevel && color.B < _blackLevel) continue; 
+						if (color.R < _blackLevel && color.G < _blackLevel && color.B < _blackLevel) {
+							continue;
+						}
+
 						var col = new Bgr(cols[i]).MCvScalar;
 						CvInvoke.Rectangle(outMat, _fullCoords[i], col, -1, LineType.AntiAlias);
 						CvInvoke.Rectangle(outMat, _fullCoords[i], colBlack, 1, LineType.AntiAlias);
@@ -243,7 +247,10 @@ namespace Glimmr.Models {
 					for (var i = 0; i < _fullSectors.Length; i++) {
 						var s = _fullSectors[i];
 						var color = secs[i];
-						if (color.R < _blackLevel && color.G < _blackLevel && color.B < _blackLevel) continue;
+						if (color.R < _blackLevel && color.G < _blackLevel && color.B < _blackLevel) {
+							continue;
+						}
+
 						var col = new Bgr(secs[i]).MCvScalar;
 						CvInvoke.Rectangle(outMat, s, col, -1, LineType.AntiAlias);
 						CvInvoke.Rectangle(outMat, s, colBlack, 1, LineType.AntiAlias);
@@ -482,7 +489,7 @@ namespace Glimmr.Models {
 				y3 /= iCount;
 				y4 /= iCount;
 
-				PointF[] avgPoints = {new(x1, y1), new(x2, y2), new(x3, y3), new(x4, y4)};
+				PointF[] avgPoints = { new(x1, y1), new(x2, y2), new(x3, y3), new(x4, y4) };
 				var avgVector = new VectorOfPointF(avgPoints);
 				if (iCount > 20) {
 					output = avgVector;
@@ -500,7 +507,7 @@ namespace Glimmr.Models {
 			var ta = input.ToArray();
 			var pIn = new Point[input.Size];
 			for (var i = 0; i < ta.Length; i++) {
-				pIn[i] = new Point((int) ta[i].X, (int) ta[i].Y);
+				pIn[i] = new Point((int)ta[i].X, (int)ta[i].Y);
 			}
 
 			return new VectorOfPoint(pIn);
@@ -527,7 +534,7 @@ namespace Glimmr.Models {
 			var enumerable = vvPoints as PointF[] ?? vvPoints.ToArray();
 			var br = enumerable[0];
 			var bl = enumerable[1];
-			PointF[] outPut = {tl, tr, br, bl};
+			PointF[] outPut = { tl, tr, br, bl };
 			return outPut;
 		}
 
@@ -562,12 +569,12 @@ namespace Glimmr.Models {
 			// How many non-black pixels can be in a given row
 			var lPixels = 0;
 			var pPixels = 0;
-			
+
 			width--;
 			height--;
 			var raw = image.GetRawData();
 			var unique = raw.Distinct().ToArray();
-			
+
 			var count = Sum(raw);
 			var noImage = count == 0 || width == 0 || height == 0 || unique.Length == 1 && unique[0] <= _cropBlackLevel;
 			// If it is, we can stop here
@@ -601,7 +608,9 @@ namespace Glimmr.Models {
 				}
 
 				_cropCount++;
-				if (_cropCount > 10) _cropCount = 0;
+				if (_cropCount > 10) {
+					_cropCount = 0;
+				}
 			}
 
 			// Check pillarboxing
@@ -687,8 +696,8 @@ namespace Glimmr.Models {
 		}
 
 		private Rectangle[] DrawGrid() {
-			var lOffset = _lCropPixels == 0 ? _lCropPixels : _lCropPixels + (int) _borderHeight + 5;
-			var pOffset = _pCropPixels == 0 ? _pCropPixels : _pCropPixels + (int) _borderWidth + 5;
+			var lOffset = _lCropPixels == 0 ? _lCropPixels : _lCropPixels + (int)_borderHeight + 5;
+			var pOffset = _pCropPixels == 0 ? _pCropPixels : _pCropPixels + (int)_borderWidth + 5;
 			var output = new Rectangle[_ledCount];
 
 			// Bottom Region
@@ -702,10 +711,10 @@ namespace Glimmr.Models {
 			const float h = ScaleHeight;
 
 			// Steps
-			var widthTop = (int) Math.Ceiling(w / _topCount);
-			var widthBottom = (int) Math.Ceiling(w / _bottomCount);
-			var heightLeft = (int) Math.Ceiling(h / _leftCount);
-			var heightRight = (int) Math.Ceiling(h / _rightCount);
+			var widthTop = (int)Math.Ceiling(w / _topCount);
+			var widthBottom = (int)Math.Ceiling(w / _bottomCount);
+			var heightLeft = (int)Math.Ceiling(h / _leftCount);
+			var heightRight = (int)Math.Ceiling(h / _rightCount);
 			// Calc right regions, bottom to top
 			var idx = 0;
 			var pos = ScaleHeight - heightRight;
@@ -715,7 +724,7 @@ namespace Glimmr.Models {
 					pos = 0;
 				}
 
-				output[idx] = new Rectangle((int) rLeft, pos, (int) _borderWidth, heightRight);
+				output[idx] = new Rectangle((int)rLeft, pos, (int)_borderWidth, heightRight);
 				pos -= heightRight;
 				idx++;
 			}
@@ -728,7 +737,7 @@ namespace Glimmr.Models {
 					pos = 0;
 				}
 
-				output[idx] = new Rectangle(pos, lOffset, widthTop, (int) _borderHeight);
+				output[idx] = new Rectangle(pos, lOffset, widthTop, (int)_borderHeight);
 				idx++;
 				pos -= widthTop;
 			}
@@ -742,7 +751,7 @@ namespace Glimmr.Models {
 					pos = ScaleHeight - heightLeft;
 				}
 
-				output[idx] = new Rectangle(pOffset, pos, (int) _borderWidth, heightLeft);
+				output[idx] = new Rectangle(pOffset, pos, (int)_borderWidth, heightLeft);
 				pos += heightLeft;
 				idx++;
 			}
@@ -759,7 +768,7 @@ namespace Glimmr.Models {
 					pos = ScaleWidth - widthBottom;
 				}
 
-				output[idx] = new Rectangle(pos, (int) bTop, widthBottom, (int) _borderHeight);
+				output[idx] = new Rectangle(pos, (int)bTop, widthBottom, (int)_borderHeight);
 				pos += widthBottom;
 				idx++;
 			}

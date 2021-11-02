@@ -10,46 +10,46 @@ namespace Glimmr.Models {
 	[Serializable]
 	public class StatData {
 		/// <summary>
-		/// Percentage of CPU Used
+		///     Current number of frames per second.
 		/// </summary>
 		[JsonProperty]
-		public int CpuUsage { get; set; }
+		public ConcurrentDictionary<string, int> Fps { get; set; } = new();
 
 		/// <summary>
-		/// Current CPU temperature (May not work with some AMD processors).
+		///     Current CPU temperature (May not work with some AMD processors).
 		/// </summary>
 
 		[JsonProperty]
 		public float CpuTemp { get; set; }
 
 		/// <summary>
-		/// Current number of frames per second.
-		/// </summary>
-		[JsonProperty]
-		public ConcurrentDictionary<string, int> Fps { get; set; } = new();
-
-		/// <summary>
-		/// Total percentage of memory used.
+		///     Total percentage of memory used.
 		/// </summary>
 		[JsonProperty]
 		public float MemoryUsage { get; set; }
 
 		/// <summary>
-		/// Maximum detected temperature.
+		///     Maximum detected temperature.
 		/// </summary>
 
 		[JsonProperty]
 		public float TempMax { get; set; }
 
 		/// <summary>
-		/// Minimum detected temperature.
+		///     Minimum detected temperature.
 		/// </summary>
 
 		[JsonProperty]
 		public float TempMin { get; set; }
 
 		/// <summary>
-		/// System Uptime.
+		///     Percentage of CPU Used
+		/// </summary>
+		[JsonProperty]
+		public int CpuUsage { get; set; }
+
+		/// <summary>
+		///     System Uptime.
 		/// </summary>
 
 		[JsonProperty]
@@ -61,7 +61,7 @@ namespace Glimmr.Models {
 		}
 
 		/// <summary>
-		/// Current throttle state.
+		///     Current throttle state.
 		/// </summary>
 
 		[JsonProperty]

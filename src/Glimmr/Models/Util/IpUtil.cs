@@ -25,7 +25,7 @@ namespace Glimmr.Models.Util {
 				throw new ArgumentException($"Invalid default port '{portIn}'");
 			}
 
-			var values = endpoint.Split(new[] {':'});
+			var values = endpoint.Split(new[] { ':' });
 			IPAddress? ipAddress;
 			int port;
 
@@ -80,8 +80,10 @@ namespace Glimmr.Models.Util {
 			}
 
 			//DUH
-			if (IPAddress.TryParse(p, out var parsed)) return parsed;
-			
+			if (IPAddress.TryParse(p, out var parsed)) {
+				return parsed;
+			}
+
 			try {
 				var hosts = Dns.GetHostAddresses(p);
 
@@ -146,6 +148,7 @@ namespace Glimmr.Models.Util {
 			} catch (Exception e) {
 				Log.Warning("Exception: " + e.Message);
 			}
+
 			Log.Debug("OSX Hostname: " + result);
 			return result;
 		}
@@ -178,6 +181,7 @@ namespace Glimmr.Models.Util {
 			if (!string.IsNullOrEmpty(result)) {
 				_localIp = result;
 			}
+
 			Log.Debug("OSX IP: " + result);
 			return result;
 		}
@@ -192,12 +196,19 @@ namespace Glimmr.Models.Util {
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
 				return GetLocalOsxIpAddress();
 			}
+
 			try {
 				if (!string.IsNullOrEmpty(hostName)) {
 					var host = Dns.GetHostEntry(hostName);
 					foreach (var ip in host.AddressList) {
-						if (ip.AddressFamily != AddressFamily.InterNetwork) continue;
-						if (IPAddress.IsLoopback(ip)) continue;
+						if (ip.AddressFamily != AddressFamily.InterNetwork) {
+							continue;
+						}
+
+						if (IPAddress.IsLoopback(ip)) {
+							continue;
+						}
+
 						res = ip.ToString();
 						break;
 					}

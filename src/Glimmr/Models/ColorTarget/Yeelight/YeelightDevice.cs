@@ -20,13 +20,13 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 		private readonly Device _yeeDevice;
 
+		private float _brightness;
+
 		private YeelightData _data;
 
 		private Task? _streamTask;
 
 		private int _targetSector;
-
-		private float _brightness;
 
 
 		public YeelightDevice(YeelightData yd, ColorService cs) : base(cs) {
@@ -53,7 +53,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 		IColorTargetData IColorTarget.Data {
 			get => _data;
-			set => _data = (YeelightData) value;
+			set => _data = (YeelightData)value;
 		}
 
 
@@ -84,6 +84,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			if (!Streaming) {
 				return;
 			}
+
 			Log.Debug($"{_data.Tag}::Stopping stream...{_data.Id}.");
 			ColorService.StopCounter++;
 			await FlashColor(Color.FromArgb(0, 0, 0));
@@ -132,8 +133,9 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 			var col = sectors[_targetSector];
 			if (_data.Brightness < 255) {
-				col = ColorUtil.ClampBrightness(col, (int) _brightness);
+				col = ColorUtil.ClampBrightness(col, (int)_brightness);
 			}
+
 			if (_targetSector >= sectors.Count) {
 				return;
 			}

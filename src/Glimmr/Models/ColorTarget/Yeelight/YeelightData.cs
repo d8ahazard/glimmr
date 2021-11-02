@@ -11,29 +11,20 @@ using Newtonsoft.Json;
 namespace Glimmr.Models.ColorTarget.Yeelight {
 	public class YeelightData : IColorTargetData {
 		/// <summary>
-		/// Device brightness.
+		///     Device brightness.
 		/// </summary>
 		[DefaultValue(255)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
 		public int Brightness { get; set; } = 255;
-		
+
 		/// <summary>
-		/// Target sector for streaming.
+		///     Target sector for streaming.
 		/// </summary>
 
 		[DefaultValue(-1)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int TargetSector { get; set; }
-		
-		/// <summary>
-		/// Device tag.
-		/// </summary>
-
-		[DefaultValue("Yeelight")]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-
-		public string Tag { get; set; } = "Yeelight";
 
 
 		public YeelightData() {
@@ -52,15 +43,24 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		}
 
 		/// <summary>
-		/// Device name.
+		///     Device tag.
+		/// </summary>
+
+		[DefaultValue("Yeelight")]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+
+		public string Tag { get; set; } = "Yeelight";
+
+		/// <summary>
+		///     Device name.
 		/// </summary>
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
 		public string Name { get; set; } = "";
-		
+
 		/// <summary>
-		/// Device ID.
+		///     Device ID.
 		/// </summary>
 
 		[DefaultValue("")]
@@ -69,22 +69,24 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		public string Id { get; set; } = "";
 
 		/// <summary>
-		/// Device IP Address.
+		///     Device IP Address.
 		/// </summary>
 		[DefaultValue("")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		
+
 		public string IpAddress { get; set; } = "";
 
 		/// <summary>
-		/// Enable streaming.
+		///     Enable streaming.
 		/// </summary>
-		[JsonProperty] public bool Enable { get; set; }
-		
+		[JsonProperty]
+		public bool Enable { get; set; }
+
 		/// <summary>
-		/// Last time the device was seen during discovery.
+		///     Last time the device was seen during discovery.
 		/// </summary>
-		[JsonProperty] public string LastSeen { get; set; }
+		[JsonProperty]
+		public string LastSeen { get; set; }
 
 
 		public void UpdateFromDiscovered(IColorTargetData existing) {
@@ -93,7 +95,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 		}
 
 		/// <summary>
-		/// UI Properties.
+		///     UI Properties.
 		/// </summary>
 		public SettingsProperty[] KeyProperties { get; set; } = {
 			new("TargetSector", "sectormap", "Target Sector")

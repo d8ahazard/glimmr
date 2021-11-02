@@ -1,4 +1,8 @@
-﻿using LibreHardwareMonitor.Hardware;
+﻿#region
+
+using LibreHardwareMonitor.Hardware;
+
+#endregion
 
 namespace Glimmr.Models.Util {
 	public class CpuMonitor : IVisitor {
@@ -8,7 +12,9 @@ namespace Glimmr.Models.Util {
 
 		public void VisitHardware(IHardware hardware) {
 			hardware.Update();
-			foreach (IHardware subHardware in hardware.SubHardware) subHardware.Accept(this);
+			foreach (IHardware subHardware in hardware.SubHardware) {
+				subHardware.Accept(this);
+			}
 		}
 
 		public void VisitSensor(ISensor sensor) {
@@ -16,7 +22,7 @@ namespace Glimmr.Models.Util {
 
 		public void VisitParameter(IParameter parameter) {
 		}
-		
+
 		public static StatData Monitor() {
 			Computer computer = new() {
 				IsCpuEnabled = true,
@@ -44,16 +50,19 @@ namespace Glimmr.Models.Util {
 									break;
 							}
 						}
+
 						break;
 					case HardwareType.Memory:
 						foreach (ISensor sensor in hardware.Sensors) {
 							if (sensor.Name == "Memory") {
-								output.MemoryUsage = (int) (sensor.Value ?? 0);
+								output.MemoryUsage = (int)(sensor.Value ?? 0);
 							}
 						}
+
 						break;
 				}
 			}
+
 			computer.Close();
 			return output;
 		}

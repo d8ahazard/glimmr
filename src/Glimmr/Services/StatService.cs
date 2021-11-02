@@ -36,7 +36,6 @@ namespace Glimmr.Services {
 			watch.Start();
 			var loaded = false;
 			return Task.Run(async () => {
-
 				while (!stoppingToken.IsCancellationRequested) {
 					try {
 						if (loaded && watch.Elapsed <= TimeSpan.FromSeconds(5)) {
@@ -49,7 +48,6 @@ namespace Glimmr.Services {
 						_colorService.ControlService.Stats = cd;
 						await _hubContext.Clients.All.SendAsync("stats", cd, stoppingToken);
 						watch.Restart();
-
 					} catch (Exception e) {
 						if (!e.Message.Contains("canceled")) {
 							Log.Warning("Exception during init: " + e.Message + " at " + e.StackTrace);
