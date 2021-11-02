@@ -69,7 +69,6 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 					into dd
 					where dd.DeviceTag.Contains("DreamScreen")
 					select dd) {
-					Log.Debug("No target set, setting to " + dd.IpAddress);
 					systemData.DsIp = dd.IpAddress;
 					DataUtil.SetSystemData(systemData);
 					dsIp = dd.IpAddress;

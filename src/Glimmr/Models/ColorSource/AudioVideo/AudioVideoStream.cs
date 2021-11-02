@@ -32,7 +32,6 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 
 		public override Task Start(CancellationToken ct) {
 			RefreshSystem();
-			Log.Debug("Starting av stream service...");
 			var aS = _cs.GetStream(DeviceMode.Audio.ToString());
 			var vS = _cs.GetStream(DeviceMode.Video.ToString());
 			if (aS != null) {
@@ -87,8 +86,6 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 					var aSecs = _as.StreamSplitter.GetSectors();
 					if (vCols.Length == 0 || vCols.Length != aCols.Length || vSecs.Length == 0 ||
 					    vSecs.Length != aSecs.Length) {
-						Log.Debug(
-							"AV Splitter is still warming up...");
 						continue;
 					}
 

@@ -442,17 +442,12 @@ namespace Glimmr.Services {
 					continue;
 				}
 
-				Log.Debug("Reloading dev data...");
 				await dev.ReloadData().ConfigureAwait(false);
-				Log.Debug("Reloaded...");
 				if (_deviceMode != DeviceMode.Off && dev.Data.Enable && !dev.Streaming || dev.Id == "0") {
-					Log.Debug("Starting device stream.");
 					await dev.StartStream(_targetTokenSource.Token);
-					Log.Debug("Started...");
 				}
 
 				if (_deviceMode == DeviceMode.Off || dev.Data.Enable || !dev.Streaming) {
-					Log.Debug("Mode is off or something, returning.");
 					return;
 				}
 

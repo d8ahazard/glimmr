@@ -31,7 +31,6 @@ namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
 
 		public async Task Start(FrameSplitter frameSplitter, CancellationToken ct) {
 			_splitter = frameSplitter;
-			Log.Debug("Starting Camera...");
 			MMALCameraConfig.VideoStabilisation = false;
 
 			MMALCameraConfig.SensorMode = MMALSensorMode.Mode1;
@@ -63,10 +62,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
 			_cam.Camera.PreviewPort.ConnectTo(renderer);
 			_cam.Camera.VideoPort.ConnectTo(splitter);
 
-			// Camera warm up time
-			Log.Debug("Camera is warming up...");
 			await Task.Delay(2000, ct);
-			Log.Debug("Camera initialized.");
 			await _cam.ProcessAsync(_cam.Camera.VideoPort, ct).ConfigureAwait(false);
 			Log.Debug("Camera closed.");
 		}

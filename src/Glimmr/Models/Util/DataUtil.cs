@@ -61,7 +61,7 @@ namespace Glimmr.Models.Util {
 		}
 
 		public static void RollbackDb() {
-			Log.Debug("Rolling back database.");
+			Log.Information("Rolling back database.");
 			// Get list of db files
 			var userPath = SystemUtil.GetUserDir();
 			var dbFiles = Directory.GetFiles(userPath, "*.db");
@@ -80,7 +80,6 @@ namespace Glimmr.Models.Util {
 						continue;
 					}
 
-					Log.Debug($"DB {p} appears valid?");
 					path = p;
 					break;
 				} catch (Exception e) {
@@ -373,23 +372,18 @@ namespace Glimmr.Models.Util {
 			var dbPath = Path.Combine(userDir, "store.db");
 			var stamp = DateTime.Now.ToString("yyyyMMdd");
 			var outFile = Path.Combine(userDir, $"store_{stamp}.db");
-			Log.Debug($"Locking DB, backing up to {outFile}");
 			var output = string.Empty;
 			_dbLocked = true;
 			_db.Commit();
 			_db.Dispose();
 			try {
-				Log.Debug("Copying...");
 				File.Copy(dbPath, outFile, true);
 				output = outFile;
-				Log.Debug("Done.");
 			} catch (Exception) {
 				//ignored
 			}
 
-			Log.Debug("Creating new.");
 			_db = new LiteDatabase(dbPath);
-			Log.Debug("Unlocked...");
 			_dbLocked = false;
 			return output;
 		}

@@ -29,7 +29,6 @@ namespace Glimmr.Hubs {
 
 
 		public async Task Mode(DeviceMode mode) {
-			Log.Debug("Mode set to: " + mode);
 			try {
 				await _cs.SetMode(mode);
 			} catch (Exception e) {
@@ -39,7 +38,6 @@ namespace Glimmr.Hubs {
 
 
 		public async Task ScanDevices() {
-			Log.Debug("Scan called from socket!");
 			await _cs.ScanDevices();
 		}
 
@@ -53,7 +51,6 @@ namespace Glimmr.Hubs {
 		}
 
 		public async Task DeleteDevice(string id) {
-			Log.Debug("Deleting device: " + id);
 			await _cs.RemoveDevice(id).ConfigureAwait(false);
 		}
 
@@ -69,7 +66,6 @@ namespace Glimmr.Hubs {
 		}
 
 		public async Task DemoLed(string id) {
-			Log.Debug("We should demo a strip here.");
 			await _cs.DemoLed(id).ConfigureAwait(false);
 		}
 
@@ -79,16 +75,14 @@ namespace Glimmr.Hubs {
 
 		public async Task UpdateDevice(string deviceJson) {
 			var device = JObject.Parse(deviceJson);
-			Log.Debug("Got a device: " + JsonConvert.SerializeObject(device));
 			var cTag = device.GetValue("tag");
 			if (cTag == null) {
-				Log.Debug("Unable to get tag.");
+				Log.Warning("Unable to get tag.");
 				return;
 			}
 
 			var tag = cTag.ToString();
 			var className = "Glimmr.Models.ColorTarget." + tag + "." + tag + "Data";
-			Log.Debug("Finding: " + className);
 			var typeName = Type.GetType(className);
 			if (typeName != null) {
 				dynamic? devObject = device.ToObject(typeName);
@@ -103,7 +97,6 @@ namespace Glimmr.Hubs {
 		}
 
 		public Task SettingsShown(bool open) {
-			Log.Debug("SS: " + open);
 			var client = Context.ConnectionId;
 			if (client == null) {
 				Log.Warning("Unable to get client identity...");

@@ -67,7 +67,6 @@ namespace Glimmr.Controllers {
 		/// <returns>The ID of the selected scene available, or -1 if not found.</returns>
 		[HttpPost("ambientColor")]
 		public async Task<ActionResult<string>> SetAmbientColor([FromBody] string color) {
-			Log.Debug("String: " + color);
 			var sd = DataUtil.GetSystemData();
 			if (color[..1] != "#" && color.Length == 6) {
 				color = "#" + color;
@@ -211,7 +210,6 @@ namespace Glimmr.Controllers {
 		[HttpGet("database")]
 		public FileResult DbDownload() {
 			var dbPath = DataUtil.BackupDb();
-			Log.Debug("Fetching DB from: " + dbPath);
 			var fileBytes = System.IO.File.ReadAllBytes(dbPath);
 			var fileName = Path.GetFileName(dbPath);
 			return File(fileBytes, MediaTypeNames.Application.Octet, fileName);
@@ -242,12 +240,11 @@ namespace Glimmr.Controllers {
 			if (filePaths.Count != 1) {
 				Log.Warning("Error, we should only have one DB file!");
 			} else {
-				Log.Debug("We have a db, restoring.");
 				if (DataUtil.ImportSettings(filePaths[0])) {
-					Log.Debug("Import was successful!");
+					Log.Information("Import was successful!");
 					imported = true;
 				} else {
-					Log.Debug("Import failed!!");
+					Log.Warning("Import failed!!");
 				}
 			}
 
@@ -290,7 +287,6 @@ namespace Glimmr.Controllers {
 		/// <returns>The updated ColorTarget object.</returns>
 		[HttpPost("device")]
 		public async Task<ActionResult<IColorTargetData>> UpdateDevice([FromBody] IColorTargetData dData) {
-			Log.Debug("Update device fired: " + JsonConvert.SerializeObject(dData));
 			await _controlService.UpdateDevice(dData, false);
 			return new ActionResult<IColorTargetData>(dData);
 		}
@@ -302,7 +298,6 @@ namespace Glimmr.Controllers {
 		/// <returns>The updated ColorTarget object.</returns>
 		[HttpDelete("device")]
 		public async Task<ActionResult<bool>> DeleteDevice(string id) {
-			Log.Debug("Delete device fired: " + id);
 			var res = await _controlService.RemoveDevice(id);
 			return new ActionResult<bool>(res);
 		}
@@ -337,7 +332,6 @@ namespace Glimmr.Controllers {
 		/// <returns></returns>
 		[HttpPost("flashLed")]
 		public async Task<IActionResult> TestStripOffset([FromBody] int len) {
-			Log.Debug("Get got: " + len);
 			await _controlService.TestLights(len);
 			return Ok();
 		}
@@ -479,7 +473,6 @@ namespace Glimmr.Controllers {
 		[HttpGet("mode")]
 		public async Task<ActionResult<DeviceMode>> Mode(int mode = -1) {
 			if (mode != -1) {
-				Log.Debug("GET request, updating device mode to " + mode);
 				await _controlService.SetMode((DeviceMode)mode);
 			}
 
@@ -506,7 +499,6 @@ namespace Glimmr.Controllers {
 		// POST: api/DreamData/mode
 		[HttpPost("mode")]
 		public async Task<ActionResult<DeviceMode>> DevMode([FromBody] DeviceMode mode) {
-			Log.Debug("Mode set to: " + mode);
 			await _controlService.SetMode(mode);
 			return new ActionResult<DeviceMode>(mode);
 		}

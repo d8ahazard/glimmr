@@ -98,12 +98,12 @@ namespace Glimmr.Models.Util {
 			var branch = GetBranch();
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 				if (File.Exists("C:\\Progra~1\\Glimmr\\update_win.bat")) {
-					Process.Start("../script/update_win.bat", branch);
+					Process.Start("../update_win.bat", branch);
 				} else {
 					Log.Warning("Unable to update windows, not installed via git.");
 				}
 			} else {
-				var cmd = "/home/glimmrtv/glimmr/script/update_linux.sh";
+				var cmd = "/opt/glimmr/update_linux.sh";
 				Log.Debug("Update command should be: " + cmd);
 				Process.Start("/bin/bash", cmd);
 			}
@@ -252,8 +252,8 @@ namespace Glimmr.Models.Util {
 					}
 
 					v.Dispose();
-				} catch (Exception e) {
-					Log.Debug("Exception with cam " + i + ": " + e.Message);
+				} catch (Exception) {
+					// Ignored
 				}
 
 				i++;

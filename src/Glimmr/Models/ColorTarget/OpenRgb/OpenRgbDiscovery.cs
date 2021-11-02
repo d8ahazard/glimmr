@@ -28,11 +28,8 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 			try {
 				var sd = DataUtil.GetSystemData();
-				Log.Debug("Disco started...");
-
 				if (!_client.Connected) {
 					try {
-						Log.Debug("Trying connection...");
 						_client.Connect();
 					} catch (Exception e) {
 						Log.Debug("Error connecting to client, probably it doesn't exist: " + e.Message);

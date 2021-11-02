@@ -153,7 +153,6 @@ namespace Glimmr.Models.ColorSource.UDP {
 			_sending = true;
 			_splitter.DoSend = true;
 			if (_devMode != Udp) {
-				Log.Debug("Starting stream via stream?");
 				_gd = new GlimmrData(DataUtil.GetSystemData());
 				var dims = new[] { _gd.LeftCount, _gd.RightCount, _gd.TopCount, _gd.BottomCount };
 				_builder = new FrameBuilder(dims);
