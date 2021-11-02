@@ -1,6 +1,6 @@
 #!/bin/bash
 branch=${1:-"master"}
-APPDIR=${2:-"/home/glimmrtv/glimmr"}
+APPDIR=${2:-"/opt/glimmr/"}
 
 PUBPROFILE="Linux"
 PUBPATH="linux-arm"
@@ -9,13 +9,6 @@ if [ -f "/usr/bin/raspi-config" ]
   then
     PUBPROFILE="LinuxARM"
     PUBPATH="linux-arm"
-fi
-
-unameOut="$(uname -s)"
-if [ $unameOut == "Darwin" ]
-  then
-    PUBPROFILE="OSX"
-    PUBPATH="osx"
 fi
 
 if [ $unameOut == "FreeBSD" ]
