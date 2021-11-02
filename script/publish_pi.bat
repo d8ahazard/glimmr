@@ -21,28 +21,28 @@ IF "%2"=="-w" GOTO WEB
 
 echo Copying new files...
 IF "%3"=="-f" GOTO FULL
-pscp -P 22 -r -pw glimmrtv .\Glimmr.Views.dll glimmrtv@%1:/home/glimmrtv/glimmr/bin/Glimmr.Views.dll
-pscp -P 22 -r -pw glimmrtv .\Glimmr.deps.json glimmrtv@%1:/home/glimmrtv/glimmr/bin/Glimmr.deps.json
-pscp -P 22 -r -pw glimmrtv .\Glimmr.Views.pdb glimmrtv@%1:/home/glimmrtv/glimmr/bin/Glimmr.Views.pdb
-pscp -P 22 -r -pw glimmrtv .\wwwroot\js\* glimmrtv@%1:/home/glimmrtv/glimmr/bin/wwwroot/js/
-pscp -P 22 -r -pw glimmrtv .\wwwroot\css\* glimmrtv@%1:/home/glimmrtv/glimmr/bin/wwwroot/css/
-pscp -P 22 -r -pw glimmrtv .\Glimmr.dll glimmrtv@%1:/home/glimmrtv/glimmr/bin/Glimmr.dll
-pscp -P 22 -r -pw glimmrtv .\Glimmr.pdb glimmrtv@%1:/home/glimmrtv/glimmr/bin/Glimmr.pdb
-pscp -P 22 -r -pw glimmrtv .\Glimmr.xml glimmrtv@%1:/home/glimmrtv/glimmr/bin/Glimmr.xml
-pscp -P 22 -r -pw glimmrtv .\Glimmr.runtimeconfig.json glimmrtv@%1:/home/glimmrtv/glimmr/bin/Glimmr.runtimeconfig.json
-pscp -P 22 -r -pw glimmrtv .\Glimmr glimmrtv@%1:/home/glimmrtv/glimmr/bin/Glimmr
+pscp -P 22 -r -pw glimmrtv .\Glimmr.Views.dll glimmrtv@%1:/opt/glimmr/Glimmr.Views.dll
+pscp -P 22 -r -pw glimmrtv .\Glimmr.deps.json glimmrtv@%1:/opt/glimmr/Glimmr.deps.json
+pscp -P 22 -r -pw glimmrtv .\Glimmr.Views.pdb glimmrtv@%1:/opt/glimmr/Glimmr.Views.pdb
+pscp -P 22 -r -pw glimmrtv .\wwwroot\js\* glimmrtv@%1:/opt/glimmr/wwwroot/js/
+pscp -P 22 -r -pw glimmrtv .\wwwroot\css\* glimmrtv@%1:/opt/glimmr/wwwroot/css/
+pscp -P 22 -r -pw glimmrtv .\Glimmr.dll glimmrtv@%1:/opt/glimmr/Glimmr.dll
+pscp -P 22 -r -pw glimmrtv .\Glimmr.pdb glimmrtv@%1:/opt/glimmr/Glimmr.pdb
+pscp -P 22 -r -pw glimmrtv .\Glimmr.xml glimmrtv@%1:/opt/glimmr/Glimmr.xml
+pscp -P 22 -r -pw glimmrtv .\Glimmr.runtimeconfig.json glimmrtv@%1:/opt/glimmr/Glimmr.runtimeconfig.json
+pscp -P 22 -r -pw glimmrtv .\Glimmr glimmrtv@%1:/opt/glimmr/Glimmr
 GOTO NEXT
 :JS
-pscp -P 22 -r -pw glimmrtv .\wwwroot\js\* glimmrtv@%1:/home/glimmrtv/glimmr/bin/wwwroot/js/
+pscp -P 22 -r -pw glimmrtv .\wwwroot\js\* glimmrtv@%1:/opt/glimmr/wwwroot/js/
 GOTO END
 :CSS
-pscp -P 22 -r -pw glimmrtv .\wwwroot\css\* glimmrtv@%1:/home/glimmrtv/glimmr/bin/wwwroot/css/
+pscp -P 22 -r -pw glimmrtv .\wwwroot\css\* glimmrtv@%1:/opt/glimmr/wwwroot/css/
 GOTO END
 :WEB
-pscp -P 22 -r -pw glimmrtv .\wwwroot\* glimmrtv@%1:/home/glimmrtv/glimmr/bin/wwwroot/
+pscp -P 22 -r -pw glimmrtv .\wwwroot\* glimmrtv@%1:/opt/glimmr/wwwroot/
 GOTO END
 :FULL
-pscp -P 22 -r -pw glimmrtv .\* glimmrtv@%1:/home/glimmrtv/glimmr/bin/
+pscp -P 22 -r -pw glimmrtv .\* glimmrtv@%1:/opt/glimmr/
 :NEXT
 IF NOT "%2"=="-s" GOTO END
 

@@ -31,9 +31,9 @@ namespace Glimmr {
 				c.UseOneOfForPolymorphism();
 				c.EnableAnnotations(true, true);
 				c.SchemaFilter<DescribeEnumMembers>(xmlPath);
-				c.SwaggerDoc("v1.2", new OpenApiInfo
+				c.SwaggerDoc("v1.3", new OpenApiInfo
 				{
-					Version = "v1.2",
+					Version = "v1.3",
 					Title = "Glimmr Web API",
 					Description = "A simple example ASP.NET Core Web API",
 					Contact = new OpenApiContact
@@ -69,7 +69,7 @@ namespace Glimmr {
 			app.UseSwagger();
 			app.UseSwaggerUI(c =>
 			{
-				c.SwaggerEndpoint("/swagger/v1.2/swagger.json", "My API V1");
+				c.SwaggerEndpoint("/swagger/v1.3/swagger.json", "My API V1");
 			});
 			app.UseRouting();
 			app.UseAuthorization();

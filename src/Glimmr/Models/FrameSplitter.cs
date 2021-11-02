@@ -594,9 +594,6 @@ namespace Glimmr.Models {
 					c1.Dispose();
 					c2.Dispose();
 					if (dist.Length == 1 && l1 == l2 && l1 <= _cropBlackLevel) {
-						if (_cropCount == 10) {
-							Log.Debug("Black levels is " + l1);
-						}
 						lPixels = y;
 					} else {
 						break;

@@ -1,8 +1,18 @@
 {
   "openapi": "3.0.1",
   "info": {
-    "title": "Glimmr",
-    "version": "1.1"
+    "title": "Glimmr Web API",
+    "description": "A simple example ASP.NET Core Web API",
+    "contact": {
+      "name": "d8ahazard",
+      "url": "https://facebook.com/GlimmrTV",
+      "email": "donate.to.digitalhigh@gmail.com"
+    },
+    "license": {
+      "name": "GPL3.0",
+      "url": "https://github.com/d8ahazard/glimmr/blob/master/COPYING"
+    },
+    "version": "v1.3"
   },
   "paths": {
     "/api/Glimmr": {
@@ -1325,8 +1335,19 @@
         "tags": [
           "Glimmr"
         ],
-        "summary": "Retrieve the current device mode.",
-        "description": "Device Modes:\r\nOff = 0,\r\nVideo = 1,\r\nAudio = 2,\r\nAmbient = 3,\r\nAudioVideo = 4,\r\nUdp = 5,\r\nDreamScreen = 6",
+        "summary": "Retrieve or set the current device mode.",
+        "parameters": [
+          {
+            "name": "mode",
+            "in": "query",
+            "description": "If specified, set the mode to the value.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": -1
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -1618,6 +1639,36 @@
               "text/json": {
                 "schema": {
                   "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/store": {
+      "get": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Fetch store data object.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreData"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreData"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreData"
                 }
               }
             }
@@ -3779,6 +3830,12 @@
           "DeviceName": {
             "type": "string",
             "description": "Device name (should be device hostname)",
+            "default": "",
+            "nullable": true
+          },
+          "DeviceId": {
+            "type": "string",
+            "description": "A unique device ID based on MAC address, or random if no NIC accessible.",
             "default": "",
             "nullable": true
           },

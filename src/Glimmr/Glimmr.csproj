@@ -3,7 +3,7 @@
   <PropertyGroup>
     <RuntimeIdentifiers>ubuntu.18.04-x64;linux-arm;linux-x64;osx-x64;win-x64;win-arm;win-x86</RuntimeIdentifiers>
     <TargetFramework>net5.0</TargetFramework>
-    <VersionPrefix>1.1.9</VersionPrefix>
+    <VersionPrefix>1.2.0</VersionPrefix>
     <Product>Glimmr</Product>
     <ProductName>Glimmr</ProductName>
     <CopyRefAssembliesToPublishDirectory>false</CopyRefAssembliesToPublishDirectory>
