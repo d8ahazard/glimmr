@@ -1,7 +1,10 @@
 #!/bin/bash -e
 echo "gpio=19=op,a5" >> ${ROOTFS_DIR}/boot/config.txt
 echo "done" > "${ROOTFS_DIR}/home/glimmrtv/firstrun"
-mkdir ${ROOTFS_DIR}/opt/glimmr  
+if [! -d "${ROOTF_DIR}/opt/glimmr/" ]
+	then
+		mkdir ${ROOTFS_DIR}/opt/glimmr  
+fi
 
 # Download and extract latest release
 cd ${ROOTFS_DIR}/tmp || exit
