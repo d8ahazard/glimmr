@@ -34,7 +34,7 @@ ver=$(curl -s "https://api.github.com/repos/d8ahazard/glimmr/releases/latest" | 
 echo ver is $ver
 url="https://github.com/d8ahazard/glimmr/releases/download/$ver/Glimmr-osx-$ver.tgz"
 echo Grabbing archive from $url
-curl -oL /Users/glimmrtv/archive.tgz $url
+curl -L -o /Users/glimmrtv/archive.tgz $url
 tar zxvf Users/glimmrtv/archive.tgz -C /Applications/glimmr
 chmod -R 777 /Applications/glimmr
 rm /Users/glimmrtv/archive.tgz
