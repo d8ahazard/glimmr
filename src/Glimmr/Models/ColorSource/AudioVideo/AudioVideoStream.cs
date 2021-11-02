@@ -14,6 +14,7 @@ using Serilog;
 
 namespace Glimmr.Models.ColorSource.AudioVideo {
 	public class AudioVideoStream : ColorSource {
+		public override bool SourceActive => _vs != null && _vs.StreamSplitter.SourceActive;
 		private readonly ColorService _cs;
 		private AudioStream? _as;
 		private Task? _aTask;
@@ -35,11 +36,11 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 			var aS = _cs.GetStream(DeviceMode.Audio.ToString());
 			var vS = _cs.GetStream(DeviceMode.Video.ToString());
 			if (aS != null) {
-				_as = (AudioStream) aS;
+				_as = (AudioStream)aS;
 			}
 
 			if (vS != null) {
-				_vs = (VideoStream) vS;
+				_vs = (VideoStream)vS;
 			}
 
 			if (_vs != null && _as != null) {
@@ -56,9 +57,6 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 
 			return ExecuteAsync(ct);
 		}
-
-
-		public override bool SourceActive => _vs != null && _vs.StreamSplitter.SourceActive;
 
 		public override void RefreshSystem() {
 			_systemData = DataUtil.GetSystemData();

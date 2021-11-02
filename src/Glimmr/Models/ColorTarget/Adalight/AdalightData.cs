@@ -11,67 +11,62 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 	[Serializable]
 	public class AdalightData : IColorTargetData {
 		/// <summary>
-		/// Reverse strip direction.
+		///     Reverse strip direction.
 		/// </summary>
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool ReverseStrip { get; set; }
 
 		/// <summary>
-		/// Device brightness.
+		///     Gamma adjustment factor. You probably don't want to go higher than 3 or so.
+		/// </summary>
+		[DefaultValue(2.2)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public float GammaFactor { get; set; } = 2.2f;
+
+		/// <summary>
+		///     Scale factor for LED counts related to master grid.
+		/// </summary>
+		[JsonProperty]
+		public float LedMultiplier { get; set; } = 1.0f;
+
+		/// <summary>
+		///     Device brightness.
 		/// </summary>
 		[DefaultValue(100)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int Brightness { get; set; }
 
 		/// <summary>
-		/// Number of LEDs on device. Must match Adalight settings, or device won't respond.
+		///     Number of LEDs on device. Must match Adalight settings, or device won't respond.
 		/// </summary>
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int LedCount { get; set; }
 
-		/// <summary>
-		/// Scale factor for LED counts related to master grid.
-		/// </summary>
-		[JsonProperty] public float LedMultiplier { get; set; } = 1.0f;
 
-		
 		/// <summary>
-		/// Offset of leds from lower-right corner of master grid.
+		///     Offset of leds from lower-right corner of master grid.
 		/// </summary>
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int Offset { get; set; }
-		
+
 		/// <summary>
-		/// Baud rate for device.
+		///     Baud rate for device.
 		/// </summary>
 
 		[DefaultValue(115200)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int Speed { get; set; }
-		
+
 		/// <summary>
-		/// Port for device communication.
+		///     Port for device communication.
 		/// </summary>
 
 		[DefaultValue("COM1")]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public string Port { get; set; }
-
-		/// <summary>
-		/// Gamma adjustment factor. You probably don't want to go higher than 3 or so.
-		/// </summary>
-		[DefaultValue(2.2)]
-		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public float GammaFactor { get; set; } = 2.2f;
-		
-		
-		/// <summary>
-		/// Device tag.
-		/// </summary>
-		[JsonProperty] public string Tag { get; set; } = "Adalight";
 
 
 		public AdalightData() {
@@ -96,36 +91,47 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 		}
 
-		/// <summary>
-		/// Device ID.
-		/// </summary>
-		[JsonProperty] public string Id { get; set; }
 
 		/// <summary>
-		/// Unused for adalight.
+		///     Device tag.
 		/// </summary>
-		[JsonProperty] public string IpAddress { get; set; }
+		[JsonProperty]
+		public string Tag { get; set; } = "Adalight";
 
 		/// <summary>
-		/// Last time the device was seen during discovery.
+		///     Device ID.
 		/// </summary>
-		[JsonProperty] public string LastSeen { get; set; }
+		[JsonProperty]
+		public string Id { get; set; }
 
 		/// <summary>
-		/// Device name.
+		///     Unused for adalight.
 		/// </summary>
-		[JsonProperty] public string Name { get; set; }
-		
+		[JsonProperty]
+		public string IpAddress { get; set; }
+
 		/// <summary>
-		/// Enable streaming.
+		///     Last time the device was seen during discovery.
+		/// </summary>
+		[JsonProperty]
+		public string LastSeen { get; set; }
+
+		/// <summary>
+		///     Device name.
+		/// </summary>
+		[JsonProperty]
+		public string Name { get; set; }
+
+		/// <summary>
+		///     Enable streaming.
 		/// </summary>
 
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool Enable { get; set; }
-		
+
 		/// <summary>
-		/// UI Properties.
+		///     UI Properties.
 		/// </summary>
 
 		public SettingsProperty[] KeyProperties { get; set; } = {
@@ -133,11 +139,12 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			new("Offset", "text", "Led Offset"),
 			new("LedCount", "text", "Led Count"),
 			new("LedMultiplier", "ledMultiplier", ""),
-			new("GammaFactor", "number", "Gamma Correction")
-				{ValueMin = "1.0",ValueMax = "5", ValueStep = ".1", ValueHint = "1 = No adjustment, 2.2 = Recommended"},
+			new("GammaFactor", "number", "Gamma Correction") {
+				ValueMin = "1.0", ValueMax = "5", ValueStep = ".1", ValueHint = "1 = No adjustment, 2.2 = Recommended"
+			},
 			new("Speed", "text", "Connection Speed (Baud Rate)"),
 			new("ReverseStrip", "check", "Reverse Strip")
-				{ValueHint = "Reverse the order of the leds to clockwise (facing screen)."}
+				{ ValueHint = "Reverse the order of the leds to clockwise (facing screen)." }
 		};
 
 

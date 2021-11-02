@@ -14,7 +14,6 @@ using Glimmr.Models.ColorTarget.Glimmr;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Makaretu.Dns;
-using Newtonsoft.Json;
 using Serilog;
 using static Glimmr.Enums.DeviceMode;
 
@@ -22,8 +21,12 @@ using static Glimmr.Enums.DeviceMode;
 
 namespace Glimmr.Models.ColorSource.UDP {
 	public class UdpStream : ColorSource {
+		public override bool SourceActive => _sourceActive;
 		private readonly ControlService _cs;
+		private readonly CancellationTokenSource _cts;
+		private readonly CancellationToken _listenToken;
 		private readonly FrameSplitter _splitter;
+		private readonly Stopwatch _timeOutWatch;
 		private readonly UdpClient _uc;
 		private FrameBuilder? _builder;
 		private DeviceMode _devMode;
@@ -32,10 +35,9 @@ namespace Glimmr.Models.ColorSource.UDP {
 		private string _hostName;
 		private SystemData _sd;
 		private bool _sending;
-		private readonly CancellationToken _listenToken;
-		private readonly Stopwatch _timeOutWatch;
+
+		private bool _sourceActive;
 		private int _timeOut;
-		private readonly CancellationTokenSource _cts;
 
 		public UdpStream(ColorService cs) {
 			_cs = cs.ControlService;
@@ -43,7 +45,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 			_cs.SetModeEvent += Mode;
 			_cs.StartStreamEvent += StartStream;
 			_splitter = new FrameSplitter(cs);
-			_uc = new UdpClient(21324) {Ttl = 5, Client = {ReceiveBufferSize = 2000}};
+			_uc = new UdpClient(21324) { Ttl = 5, Client = { ReceiveBufferSize = 2000 } };
 			_uc.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 			_uc.Client.Blocking = false;
 			if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
@@ -74,16 +76,12 @@ namespace Glimmr.Models.ColorSource.UDP {
 			return ExecuteAsync(ct);
 		}
 
-		public override bool SourceActive => _sourceActive;
-
-		private bool _sourceActive;
-
 		public sealed override void RefreshSystem() {
 			var sd = DataUtil.GetSystemData();
 			_devMode = sd.DeviceMode;
 			_hostName = _sd.DeviceName;
 			_discovery?.Dispose();
-			var address = new List<IPAddress> {IPAddress.Parse(IpUtil.GetLocalIpAddress())};
+			var address = new List<IPAddress> { IPAddress.Parse(IpUtil.GetLocalIpAddress()) };
 			var service = new ServiceProfile(_hostName, "_glimmr._tcp", 21324, address);
 			service.AddProperty("mac", sd.DeviceId);
 			_discovery = new ServiceDiscovery();
@@ -94,13 +92,13 @@ namespace Glimmr.Models.ColorSource.UDP {
 		private async Task StartStream(object arg1, DynamicEventArgs arg2) {
 			_gd = arg2.Arg0;
 			_sd = DataUtil.GetSystemData();
-			var dims = new[] {_gd.LeftCount, _gd.RightCount, _gd.TopCount, _gd.BottomCount};
+			var dims = new[] { _gd.LeftCount, _gd.RightCount, _gd.TopCount, _gd.BottomCount };
 			_builder = new FrameBuilder(dims);
 			await _cs.SetMode(Udp);
 		}
 
 		private Task Mode(object arg1, DynamicEventArgs arg2) {
-			_devMode = (DeviceMode) arg2.Arg0;
+			_devMode = (DeviceMode)arg2.Arg0;
 			return Task.CompletedTask;
 		}
 
@@ -157,10 +155,11 @@ namespace Glimmr.Models.ColorSource.UDP {
 			if (_devMode != Udp) {
 				Log.Debug("Starting stream via stream?");
 				_gd = new GlimmrData(DataUtil.GetSystemData());
-				var dims = new[] {_gd.LeftCount, _gd.RightCount, _gd.TopCount, _gd.BottomCount};
+				var dims = new[] { _gd.LeftCount, _gd.RightCount, _gd.TopCount, _gd.BottomCount };
 				_builder = new FrameBuilder(dims);
 				await _cs.SetMode(Udp);
 			}
+
 			try {
 				var cp = new ColorPacket(data.ToArray());
 				var ledColors = cp.Colors;
@@ -173,7 +172,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 				// Set our timeout value and restart watch every time a frame is received
 				_timeOut = cp.Duration;
 				_timeOutWatch.Restart();
-				
+
 				var frame = _builder.Build(ledColors);
 				await _splitter.Update(frame);
 				frame.Dispose();

@@ -61,8 +61,14 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			}
 
 			var rr = e.Message.AdditionalRecords;
-			foreach (var nData in from msg in rr where msg.Type == DnsType.A let ipString = msg.ToString().Split(" ").Last() let hostname = msg.CanonicalName.Split(".")[0] let ip = IPAddress.Parse(ipString) where ip.ToString() != IpUtil.GetLocalIpAddress() && !string.Equals(hostname, Environment.MachineName,
-				StringComparison.CurrentCultureIgnoreCase) select new GlimmrData(hostname, ip)) {
+			foreach (var nData in from msg in rr
+				where msg.Type == DnsType.A
+				let ipString = msg.ToString().Split(" ").Last()
+				let hostname = msg.CanonicalName.Split(".")[0]
+				let ip = IPAddress.Parse(ipString)
+				where ip.ToString() != IpUtil.GetLocalIpAddress() && !string.Equals(hostname, Environment.MachineName,
+					StringComparison.CurrentCultureIgnoreCase)
+				select new GlimmrData(hostname, ip)) {
 				ControlService.AddDevice(nData).ConfigureAwait(false);
 			}
 		}

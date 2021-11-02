@@ -21,6 +21,8 @@ namespace Glimmr.Models.ColorSource.Video {
 			set => StreamSplitter.DoSend = value;
 		}
 
+		public override bool SourceActive => StreamSplitter.SourceActive;
+
 		public FrameSplitter StreamSplitter { get; }
 
 
@@ -47,8 +49,6 @@ namespace Glimmr.Models.ColorSource.Video {
 			StreamSplitter.DoSend = true;
 			return ExecuteAsync(ct);
 		}
-
-		public override bool SourceActive => StreamSplitter.SourceActive;
 
 		public override void RefreshSystem() {
 			_systemData = DataUtil.GetSystemData();

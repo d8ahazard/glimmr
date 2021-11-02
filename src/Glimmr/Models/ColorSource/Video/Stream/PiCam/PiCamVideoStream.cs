@@ -77,7 +77,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
 		}
 
 		private void ProcessFrame(object? sender, EmguEventArgs args) {
-			var input = new Image<Bgr, byte>(CapWidth, CapHeight) {Bytes = args.ImageData};
+			var input = new Image<Bgr, byte>(CapWidth, CapHeight) { Bytes = args.ImageData };
 			_splitter?.Update(input.Mat.Clone());
 			input.Dispose();
 		}
@@ -94,7 +94,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.PiCam {
 					return;
 				}
 
-				MyEmguEvent?.Invoke(this, new EmguEventArgs {ImageData = WorkingData.ToArray()});
+				MyEmguEvent?.Invoke(this, new EmguEventArgs { ImageData = WorkingData.ToArray() });
 				WorkingData.Clear();
 			}
 

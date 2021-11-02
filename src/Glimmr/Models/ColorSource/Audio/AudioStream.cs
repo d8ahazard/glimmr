@@ -18,6 +18,8 @@ namespace Glimmr.Models.ColorSource.Audio {
 			set => StreamSplitter.DoSend = value;
 		}
 
+		public override bool SourceActive => StreamSplitter.SourceActive;
+
 		public FrameSplitter StreamSplitter { get; }
 		private readonly FrameBuilder _builder;
 
@@ -40,8 +42,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 			cs.ControlService.RefreshSystemEvent += RefreshSystem;
 			RefreshSystem();
 		}
-
-		public override bool SourceActive => StreamSplitter.SourceActive;
 
 		public override Task Start(CancellationToken ct) {
 			SendColors = true;
@@ -72,7 +72,7 @@ namespace Glimmr.Models.ColorSource.Audio {
 			LoadData();
 		}
 
-		
+
 		protected override Task ExecuteAsync(CancellationToken ct) {
 			return Task.Run(async () => {
 				while (!ct.IsCancellationRequested) {
@@ -88,7 +88,6 @@ namespace Glimmr.Models.ColorSource.Audio {
 				} catch (Exception e) {
 					Log.Warning("Exception stopping stream..." + e.Message);
 				}
-
 			}, CancellationToken.None);
 		}
 
@@ -148,11 +147,12 @@ namespace Glimmr.Models.ColorSource.Audio {
 			const int samples = 2048 * 2;
 			var fft = new float[samples]; // fft data buffer
 			// Get our FFT for "everything"
-			var res = Bass.ChannelGetData(handle, fft, (int) DataFlags.FFT4096 | (int) DataFlags.FFTIndividual);
+			var res = Bass.ChannelGetData(handle, fft, (int)DataFlags.FFT4096 | (int)DataFlags.FFTIndividual);
 			if (res == -1) {
 				Log.Warning("Error getting channel data: " + Bass.LastError);
 				return false;
 			}
+
 			var lData = new Dictionary<int, float>();
 			var rData = new Dictionary<int, float>();
 			var realIndex = 0;

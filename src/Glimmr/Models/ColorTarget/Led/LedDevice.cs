@@ -14,18 +14,19 @@ namespace Glimmr.Models.ColorTarget.Led {
 	public class LedDevice : ColorTarget, IColorTarget {
 		private readonly LedAgent? _agent;
 		private LedData _data;
+
 		public LedDevice(LedData ld, ColorService cs) : base(cs) {
 			_data = ld;
 			Id = _data.Id;
-			
+
 			_agent = cs.ControlService.GetAgent("LedAgent");
-			
+
 			// We only bind and create agent for LED device 0, regardless of which one is enabled.
 			// The agent will handle all the color stuff for both strips.
 			if (Id == "1") {
 				return;
 			}
-			
+
 			Log.Debug("LED device created.");
 			cs.ColorSendEventAsync += SetColors;
 		}
@@ -38,7 +39,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 		IColorTargetData IColorTarget.Data {
 			get => _data;
-			set => _data = (LedData) value;
+			set => _data = (LedData)value;
 		}
 
 		public async Task StartStream(CancellationToken ct) {
@@ -50,6 +51,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 				Log.Debug($"Id is {Id}, returning.");
 				return;
 			}
+
 			_agent?.ReloadData();
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
 			ColorService.StartCounter++;
@@ -63,6 +65,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			if (!Streaming) {
 				return;
 			}
+
 			Log.Debug($"{_data.Tag}::Stopping stream...{_data.Id}.");
 			ColorService.StopCounter++;
 			await StopLights();
@@ -87,6 +90,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			if (Id == "1") {
 				return Task.CompletedTask;
 			}
+
 			_agent?.ReloadData();
 			return Task.CompletedTask;
 		}

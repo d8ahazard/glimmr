@@ -40,7 +40,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			_gammaTable = GenerateGammaTable(_data.GammaCorrection);
 			_client = cs.ControlService.GetAgent("LifxAgent");
 			cs.ControlService.RefreshSystemEvent += LoadData;
-			B = new Device(d.HostName, d.MacAddress, d.Service, (uint) d.Port);
+			B = new Device(d.HostName, d.MacAddress, d.Service, (uint)d.Port);
 			LoadData();
 			cs.ColorSendEventAsync += SetColors;
 		}
@@ -53,7 +53,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 		IColorTargetData IColorTarget.Data {
 			get => _data;
-			set => _data = (LifxData) value;
+			set => _data = (LifxData)value;
 		}
 
 
@@ -146,7 +146,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			const int maxIn = 255;
 			var output = new int[256];
 			for (var i = 0; i <= maxIn; i++) {
-				output[i] = (int) (Math.Pow((float) i / maxIn, gamma) * maxOut);
+				output[i] = (int)(Math.Pow((float)i / maxIn, gamma) * maxOut);
 			}
 
 			return output;
@@ -212,7 +212,13 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				output.AddRange(segColors);
 			}
 
-			var cols = (from col in output let ar = _gammaTable[col.R] let ag = _gammaTable[col.G] let ab = _gammaTable[col.B] select Color.FromArgb(ar, ag, ab) into color select new LifxColor(color, _brightness / 255f) { Kelvin = 7000 }).ToList();
+			var cols = (from col in output
+				let ar = _gammaTable[col.R]
+				let ag = _gammaTable[col.G]
+				let ab = _gammaTable[col.B]
+				select Color.FromArgb(ar, ag, ab)
+				into color
+				select new LifxColor(color, _brightness / 255f) { Kelvin = 7000 }).ToList();
 
 			await _client.SetExtendedColorZonesAsync(B, cols, 5);
 		}

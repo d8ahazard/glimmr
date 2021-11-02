@@ -1,15 +1,17 @@
 ﻿namespace Glimmr.Enums {
 	public enum CaptureMode {
 		/// <summary>
-		/// Camera
+		///     Camera
 		/// </summary>
 		Camera = 1,
+
 		/// <summary>
-		/// HDMI
+		///     HDMI
 		/// </summary>
 		Hdmi = 2,
+
 		/// <summary>
-		/// Screen
+		///     Screen
 		/// </summary>
 		Screen = 3
 	}

@@ -60,7 +60,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 
 		IColorTargetData IColorTarget.Data {
 			get => Data;
-			set => Data = (HueData) value;
+			set => Data = (HueData)value;
 		}
 
 		public bool Testing { get; set; }

@@ -18,12 +18,12 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 		private int _baud;
 		private int _brightness;
 		private AdalightData _data;
+		private byte[] _gammaTable;
 		private int _ledCount;
 		private float _multiplier;
 		private int _offset;
 		private string _port;
 		private bool _reverseStrip;
-		private byte[] _gammaTable;
 
 		public AdalightDevice(AdalightData data, ColorService cs) : base(cs) {
 			Id = data.Id;
@@ -43,7 +43,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 
 		IColorTargetData IColorTarget.Data {
 			get => _data;
-			set => _data = (AdalightData) value;
+			set => _data = (AdalightData)value;
 		}
 
 		public async Task StartStream(CancellationToken ct) {
@@ -69,7 +69,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			if (!Streaming) {
 				return;
 			}
-			
+
 			Log.Debug($"{_data.Tag}::Stopping stream: {_data.Id}.");
 			ColorService.StopCounter++;
 			var blacks = ColorUtil.EmptyColors(_ledCount);

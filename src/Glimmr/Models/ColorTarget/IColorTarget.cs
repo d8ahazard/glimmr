@@ -37,6 +37,5 @@ namespace Glimmr.Models.ColorTarget {
 		protected ColorTarget(ColorService cs) {
 			ColorService = cs;
 		}
-
 	}
 }

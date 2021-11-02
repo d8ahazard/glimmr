@@ -17,24 +17,25 @@ namespace Glimmr.Models.ColorTarget.Hue {
 	[Serializable]
 	public class HueData : IColorTargetData {
 		/// <summary>
-		/// Brightness to use for all enabled hue bulbs, unless override is specified.
+		///     Brightness to use for all enabled hue bulbs, unless override is specified.
 		/// </summary>
-		[JsonProperty] public int Brightness { get; set; } = 255;
-		
+		[JsonProperty]
+		public int Brightness { get; set; } = 255;
+
 		/// <summary>
-		/// List of available entertainment groups.
+		///     List of available entertainment groups.
 		/// </summary>
 		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
 		public List<HueGroup> Groups { get; set; } = new();
-		
+
 		/// <summary>
-		/// List of available lights.
+		///     List of available lights.
 		/// </summary>
 		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
 		public List<LightData> Lights { get; set; } = new();
-		
+
 		/// <summary>
-		/// List of lights and their mappings to sectors.
+		///     List of lights and their mappings to sectors.
 		/// </summary>
 
 		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
@@ -44,33 +45,31 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				var ids = new List<string>();
 				_lights = new List<LightMap>();
 				foreach (var light in value.Where(light => !ids.Contains(light.Id))) {
-					ids.Add(light.Id);	
+					ids.Add(light.Id);
 					_lights.Add(light);
 				}
 			}
 		}
 
+		/// <summary>
+		///     Target entertainment group to use for streaming.
+		/// </summary>
+		[JsonProperty]
+		public string SelectedGroup { get; set; } = "";
+
+		/// <summary>
+		///     Token for entertainment streaming assigned after device is linked.
+		/// </summary>
+		[JsonProperty]
+		public string Token { get; set; } = "";
+
+		/// <summary>
+		///     Hue user ID assigned after device is linked.
+		/// </summary>
+		[JsonProperty]
+		public string User { get; set; } = "";
+
 		private List<LightMap> _lights = new();
-		
-		/// <summary>
-		/// Target entertainment group to use for streaming.
-		/// </summary>
-		[JsonProperty] public string SelectedGroup { get; set; } = "";
-		
-		/// <summary>
-		/// Device tag
-		/// </summary>
-		[JsonProperty] public string Tag { get; set; } = "Hue";
-		
-		/// <summary>
-		/// Token for entertainment streaming assigned after device is linked.
-		/// </summary>
-		[JsonProperty] public string Token { get; set; } = "";
-		
-		/// <summary>
-		/// Hue user ID assigned after device is linked.
-		/// </summary>
-		[JsonProperty] public string User { get; set; } = "";
 
 		public HueData() {
 			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
@@ -101,33 +100,43 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 
 		/// <summary>
-		/// Device name.
+		///     Device tag
 		/// </summary>
-		[JsonProperty] public string Name { get; set; } = "";
-		
-		/// <summary>
-		/// Unique device ID.
-		/// </summary>
-		[JsonProperty] public string Id { get; set; } = "";
-		
-		/// <summary>
-		/// Device IP Address.
-		/// </summary>
-		[JsonProperty] public string IpAddress { get; set; } = "";
-		
-		/// <summary>
-		/// Enable device for streaming.
-		/// </summary>
-		[JsonProperty] public bool Enable { get; set; }
+		[JsonProperty]
+		public string Tag { get; set; } = "Hue";
 
 		/// <summary>
-		/// Last time the device was seen during discovery.
+		///     Device name.
+		/// </summary>
+		[JsonProperty]
+		public string Name { get; set; } = "";
+
+		/// <summary>
+		///     Unique device ID.
+		/// </summary>
+		[JsonProperty]
+		public string Id { get; set; } = "";
+
+		/// <summary>
+		///     Device IP Address.
+		/// </summary>
+		[JsonProperty]
+		public string IpAddress { get; set; } = "";
+
+		/// <summary>
+		///     Enable device for streaming.
+		/// </summary>
+		[JsonProperty]
+		public bool Enable { get; set; }
+
+		/// <summary>
+		///     Last time the device was seen during discovery.
 		/// </summary>
 		public string LastSeen { get; set; }
 
 
 		public void UpdateFromDiscovered(IColorTargetData data) {
-			var input = (HueData) data;
+			var input = (HueData)data;
 			if (input == null) {
 				throw new ArgumentException("Invalid bridge data.");
 			}
@@ -147,7 +156,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 
 		/// <summary>
-		/// UI Properties.
+		///     UI Properties.
 		/// </summary>
 		public SettingsProperty[] KeyProperties { get; set; } = {
 			new("custom", "hue", "")
@@ -170,38 +179,41 @@ namespace Glimmr.Models.ColorTarget.Hue {
 	[Serializable]
 	public class LightData {
 		/// <summary>
-		/// If Light is capable of streaming.
+		///     If Light is capable of streaming.
 		/// </summary>
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool HasStreaming { get; set; }
+
 		/// <summary>
-		/// Current light brightness.
+		///     Current light brightness.
 		/// </summary>
 
-		[JsonProperty] public int Brightness { get; set; }
-		
+		[JsonProperty]
+		public int Brightness { get; set; }
+
 		/// <summary>
-		/// Light elevation.
+		///     Light elevation.
 		/// </summary>
 
 		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
 		public int LightLevel { get; set; }
-		
+
 		/// <summary>
-		/// ?
+		///     ?
 		/// </summary>
 
 		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
 		public int Presence { get; set; }
 
 		/// <summary>
-		/// Previous light state.
+		///     Previous light state.
 		/// </summary>
-		[JsonProperty] public State? LastState { get; set; }
+		[JsonProperty]
+		public State? LastState { get; set; }
 
 		/// <summary>
-		/// Bulb ID.
+		///     Bulb ID.
 		/// </summary>
 		[JsonProperty]
 		public string Id {
@@ -210,20 +222,22 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 
 		/// <summary>
-		/// Bulb model ID.
+		///     Bulb model ID.
 		/// </summary>
 		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
 		public string ModelId { get; set; } = "";
 
 		/// <summary>
-		/// Bulb name.
+		///     Bulb name.
 		/// </summary>
-		[JsonProperty] public string Name { get; set; } = "";
-		
+		[JsonProperty]
+		public string Name { get; set; } = "";
+
 		/// <summary>
-		/// Bulb type.
+		///     Bulb type.
 		/// </summary>
-		[JsonProperty] public string Type { get; set; } = "";
+		[JsonProperty]
+		public string Type { get; set; } = "";
 
 		[JsonProperty] private string _id = "";
 
@@ -251,12 +265,12 @@ namespace Glimmr.Models.ColorTarget.Hue {
 	}
 
 	/// <summary>
-	/// Hue Entertainment Group.
+	///     Hue Entertainment Group.
 	/// </summary>
 	[Serializable]
 	public class HueGroup : Group {
 		/// <summary>
-		/// Entertainment group ID.
+		///     Entertainment group ID.
 		/// </summary>
 		[JsonProperty]
 		public new string Id { get; set; } = "";
@@ -274,19 +288,19 @@ namespace Glimmr.Models.ColorTarget.Hue {
 	}
 
 	/// <summary>
-	/// Used to associate light data with mapping/brightness info.
+	///     Used to associate light data with mapping/brightness info.
 	/// </summary>
 	[Serializable]
 	public class LightMap {
 		/// <summary>
-		/// Override hue brightness and use light-specific value.
+		///     Override hue brightness and use light-specific value.
 		/// </summary>
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool Override { get; set; }
-		
+
 		/// <summary>
-		/// Light-specific brightness - needs override enable to be used.
+		///     Light-specific brightness - needs override enable to be used.
 		/// </summary>
 
 		[DefaultValue(255)]
@@ -294,7 +308,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		public int Brightness { get; set; }
 
 		/// <summary>
-		/// Target sector used for streaming.
+		///     Target sector used for streaming.
 		/// </summary>
 		[DefaultValue(-1)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]

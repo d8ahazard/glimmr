@@ -12,7 +12,6 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Led {
 	public class LedAgent : IColorTargetAgent {
-		private WS281x? _ws281X;
 		private float _ablAmps;
 		private float _ablVolts;
 		private Color[] _colors1;
@@ -22,14 +21,15 @@ namespace Glimmr.Models.ColorTarget.Led {
 		private LedData? _d0;
 		private LedData? _d1;
 		private bool _enableAbl;
+		private int _s0Brightness;
+		private int _s0MaxBrightness;
+		private int _s1Brightness;
+		private int _s1MaxBrightness;
 		private SystemData _sd;
 
 		private bool _use0;
 		private bool _use1;
-		private int _s0Brightness;
-		private int _s1Brightness;
-		private int _s0MaxBrightness;
-		private int _s1MaxBrightness;
+		private WS281x? _ws281X;
 
 		public LedAgent() {
 			_colors1 = ColorUtil.EmptyColors(_d0?.LedCount ?? 0);
@@ -69,26 +69,30 @@ namespace Glimmr.Models.ColorTarget.Led {
 				_ws281X?.Dispose();
 				LoadStrips(d0, d1);
 			}
+
 			Log.Debug("Reloading led data for real...");
 			_d0 = d0;
 			_d1 = d1;
-			
-			if (_ws281X == null) LoadStrips(_d0, _d1);
+
+			if (_ws281X == null) {
+				LoadStrips(_d0, _d1);
+			}
+
 			_use0 = _d0.Enable;
 			_use1 = _d1.Enable;
 			_enableAbl = _sd.EnableAutoBrightness;
 			_ablVolts = _sd.AblVolts;
 			_ablAmps = _sd.AblAmps;
-			
+
 			if (_use0) {
-				_s0Brightness = (int) (_d0.Brightness / 100f * 255f);
+				_s0Brightness = (int)(_d0.Brightness / 100f * 255f);
 				_s0MaxBrightness = _s0Brightness;
 				Log.Debug("Setting brightness to " + _s0Brightness);
 				_ws281X?.SetBrightness(_s0Brightness);
 			}
 
 			if (_use1) {
-				_s1Brightness = (int) (_d1.Brightness / 100f * 255f);
+				_s1Brightness = (int)(_d1.Brightness / 100f * 255f);
 				_s1MaxBrightness = _s1Brightness;
 				_ws281X?.SetBrightness(_s1Brightness, 1);
 			}
@@ -134,6 +138,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			if (_enableAbl) {
 				VoltAdjust();
 			}
+
 			if (_use0) {
 				_controller0?.SetLEDS(_colors1);
 			}
@@ -157,7 +162,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 			var strip0Draw = _d0.MilliampsPerLed; // 20
 			var strip1Draw = _d1.MilliampsPerLed;
-			
+
 			// Total power we have at our disposal
 			var totalWatts = _ablVolts * _ablAmps;
 			// Subtract CPU usage (Probably needs more for splitter, etc)
@@ -219,7 +224,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 			if (usage > totalWatts) {
 				//scale brightness down to stay in current limit
 				var scale = totalWatts / usage;
-				
+
 				if (_use0) {
 					var scaleI = scale * _s0MaxBrightness;
 					_s0Brightness = LerpBrightness(_s0Brightness, scaleI, _s0MaxBrightness);
@@ -243,12 +248,13 @@ namespace Glimmr.Models.ColorTarget.Led {
 		}
 
 		private int LerpBrightness(int current, float target, int max) {
-			int output = (int) Math.Min(target, max);
+			var output = (int)Math.Min(target, max);
 			if (output > current) {
 				output = Math.Min(current + 1, max);
 			} else {
 				output = (int)target;
 			}
+
 			var op = output;
 			return op;
 		}

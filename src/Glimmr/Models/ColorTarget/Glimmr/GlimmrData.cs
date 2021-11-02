@@ -12,39 +12,40 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 	[Serializable]
 	public class GlimmrData : IColorTargetData {
 		/// <summary>
-		/// Mirror light data before sending to target Glimmr.
+		///     Mirror light data before sending to target Glimmr.
 		/// </summary>
-		[JsonProperty] public bool MirrorHorizontal { get; set; }
-		
+		[JsonProperty]
+		public bool MirrorHorizontal { get; set; }
+
 		/// <summary>
-		/// Number of LEDs along the bottom side of the screen.
+		///     Number of LEDs along the bottom side of the screen.
 		/// </summary>
-		[JsonProperty] public int BottomCount { get; set; }
-		
+		[JsonProperty]
+		public int BottomCount { get; set; }
+
 		/// <summary>
-		/// Device brightness.
+		///     Device brightness.
 		/// </summary>
-		[JsonProperty] public int Brightness { get; set; } = 255;
-		
+		[JsonProperty]
+		public int Brightness { get; set; } = 255;
+
 		/// <summary>
-		/// Number of LEDs along the left side of the screen.
+		///     Number of LEDs along the left side of the screen.
 		/// </summary>
-		[JsonProperty] public int LeftCount { get; set; }
-		
+		[JsonProperty]
+		public int LeftCount { get; set; }
+
 		/// <summary>
-		/// Number of LEDs along the right side of the screen.
+		///     Number of LEDs along the right side of the screen.
 		/// </summary>
-		[JsonProperty] public int RightCount { get; set; }
-		
+		[JsonProperty]
+		public int RightCount { get; set; }
+
 		/// <summary>
-		/// Number of LEDs along the top side of the screen.
+		///     Number of LEDs along the top side of the screen.
 		/// </summary>
-		[JsonProperty] public int TopCount { get; set; }
-		
-		/// <summary>
-		/// Device tag.
-		/// </summary>
-		[JsonProperty] public string Tag { get; set; }
+		[JsonProperty]
+		public int TopCount { get; set; }
 
 
 		public GlimmrData() {
@@ -83,33 +84,43 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		}
 
 		/// <summary>
-		/// Device name.
+		///     Device tag.
 		/// </summary>
-		[JsonProperty] public string Name { get; set; } = "";
-		
-		/// <summary>
-		/// Unique device ID.
-		/// </summary>
-		[JsonProperty] public string Id { get; set; } = "";
-		
-		/// <summary>
-		/// Device IP Address.
-		/// </summary>
-		[JsonProperty] public string IpAddress { get; set; } = "";
-		
-		/// <summary>
-		/// Enable device for streaming.
-		/// </summary>
-		[JsonProperty] public bool Enable { get; set; }
+		[JsonProperty]
+		public string Tag { get; set; }
 
 		/// <summary>
-		/// Last time the device was seen during discovery.
+		///     Device name.
+		/// </summary>
+		[JsonProperty]
+		public string Name { get; set; } = "";
+
+		/// <summary>
+		///     Unique device ID.
+		/// </summary>
+		[JsonProperty]
+		public string Id { get; set; } = "";
+
+		/// <summary>
+		///     Device IP Address.
+		/// </summary>
+		[JsonProperty]
+		public string IpAddress { get; set; } = "";
+
+		/// <summary>
+		///     Enable device for streaming.
+		/// </summary>
+		[JsonProperty]
+		public bool Enable { get; set; }
+
+		/// <summary>
+		///     Last time the device was seen during discovery.
 		/// </summary>
 		public string LastSeen { get; set; }
 
 
 		public void UpdateFromDiscovered(IColorTargetData data) {
-			var input = (GlimmrData) data;
+			var input = (GlimmrData)data;
 			if (input == null) {
 				throw new ArgumentNullException(nameof(data));
 			}
@@ -122,12 +133,12 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		}
 
 		/// <summary>
-		/// UI Properties.
+		///     UI Properties.
 		/// </summary>
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public SettingsProperty[] KeyProperties { get; set; } = {
 			new("MirrorHorizontal", "check", "Mirror LED Colors")
-				{ValueHint = "Horizontally Mirror color data, for setups 'opposite' your main setup."}
+				{ ValueHint = "Horizontally Mirror color data, for setups 'opposite' your main setup." }
 		};
 
 		private void FetchData() {

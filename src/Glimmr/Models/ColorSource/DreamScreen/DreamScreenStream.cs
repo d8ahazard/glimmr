@@ -7,16 +7,17 @@ using System.Threading.Tasks;
 using DreamScreenNet;
 using DreamScreenNet.Devices;
 using DreamScreenNet.Enum;
-using GlimmrMode = Glimmr.Enums.DeviceMode;
 using Glimmr.Models.ColorTarget.DreamScreen;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Serilog;
+using GlimmrMode = Glimmr.Enums.DeviceMode;
 
 #endregion
 
 namespace Glimmr.Models.ColorSource.DreamScreen {
 	public class DreamScreenStream : ColorSource {
+		public override bool SourceActive => _splitter.SourceActive;
 		private const int TargetGroup = 20;
 		private readonly FrameBuilder _builder;
 		private readonly DreamScreenClient? _client;
@@ -34,7 +35,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 				_client.CommandReceived += ProcessCommand;
 			}
 
-			var rect = new[] {3, 3, 5, 5};
+			var rect = new[] { 3, 3, 5, 5 };
 			_builder = new FrameBuilder(rect, true);
 			_splitter = new FrameSplitter(colorService);
 			_cs.ControlService.RefreshSystemEvent += RefreshSystem;
@@ -55,8 +56,6 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 			return ExecuteAsync(ct);
 		}
 
-		public override bool SourceActive => _splitter.SourceActive;
-
 
 		public sealed override void RefreshSystem() {
 			var systemData = DataUtil.GetSystemData();
@@ -66,7 +65,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 				var devs = DataUtil.GetDevices();
 				foreach (var dd in from dev in devs
 					where dev.Tag == "DreamScreen"
-					select (DreamScreenData) dev
+					select (DreamScreenData)dev
 					into dd
 					where dd.DeviceTag.Contains("DreamScreen")
 					select dd) {
@@ -84,7 +83,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 
 			var dsData = DataUtil.GetDevice<DreamScreenData>(dsIp);
 			if (dsData != null) {
-				_dDev = new DreamDevice {DeviceGroup = dsData.GroupNumber};
+				_dDev = new DreamDevice { DeviceGroup = dsData.GroupNumber };
 				_dDev.Type = dsData.DeviceTag switch {
 					"DreamScreenHd" => DeviceType.DreamScreenHd,
 					"DreamScreen4K" => DeviceType.DreamScreen4K,
@@ -106,9 +105,9 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 			if (e.Response.Group == TargetGroup || e.Response.Group == _dDev.DeviceGroup) {
 				switch (e.Response.Type) {
 					case MessageType.Mode:
-						var mode = (DeviceMode) int.Parse(e.Response.Payload.ToString());
+						var mode = (DeviceMode)int.Parse(e.Response.Payload.ToString());
 						if (mode == DeviceMode.Video || mode == DeviceMode.Ambient) {
-							_cs.ControlService.SetMode(GlimmrMode.DreamScreen).ConfigureAwait(false);	
+							_cs.ControlService.SetMode(GlimmrMode.DreamScreen).ConfigureAwait(false);
 						}
 
 						if (mode == DeviceMode.Ambient) {
@@ -118,6 +117,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 						if (mode == DeviceMode.Off) {
 							_cs.ControlService.SetMode(GlimmrMode.Off).ConfigureAwait(false);
 						}
+
 						break;
 					case MessageType.AmbientModeType:
 						_cs.ControlService.SetMode(GlimmrMode.Ambient).ConfigureAwait(false);

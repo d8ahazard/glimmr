@@ -15,6 +15,7 @@ using Serilog;
 
 namespace Glimmr.Models.ColorSource.Ambient {
 	public class AmbientStream : ColorSource {
+		public override bool SourceActive => _splitter.SourceActive;
 		private const int SectorCount = 116;
 		private readonly Random _random;
 		private readonly FrameSplitter _splitter;
@@ -46,8 +47,6 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			colorService.ControlService.RefreshSystemEvent += RefreshSystem;
 		}
 
-		public override bool SourceActive => _splitter.SourceActive;
-
 
 		public override Task Start(CancellationToken ct) {
 			Log.Debug("Starting ambient stream...");
@@ -58,7 +57,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			var sd = DataUtil.GetSystemData();
 			_ambientScene = sd.AmbientScene;
 			_ambientColor = sd.AmbientColor;
-			var dims = new[] {20, 20, 40, 40};
+			var dims = new[] { 20, 20, 40, 40 };
 			_builder = new FrameBuilder(dims, true);
 			_loader ??= new JsonLoader("ambientScenes");
 			_scenes = _loader.LoadFiles<AmbientScene>();
@@ -68,7 +67,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			}
 
 			if (_ambientScene == -1) {
-				scene.Colors = new[] {"#" + _ambientColor};
+				scene.Colors = new[] { "#" + _ambientColor };
 			}
 
 
@@ -106,7 +105,10 @@ namespace Glimmr.Models.ColorSource.Ambient {
 				watch.Start();
 				// Load this one for fading
 				while (!ct.IsCancellationRequested) {
-					if (watch.ElapsedMilliseconds <= 6) continue;
+					if (watch.ElapsedMilliseconds <= 6) {
+						continue;
+					}
+
 					var elapsed = _watch.ElapsedMilliseconds;
 					var diff = _animationTime - elapsed;
 					var sectors = new Color[SectorCount];
@@ -151,9 +153,6 @@ namespace Glimmr.Models.ColorSource.Ambient {
 						var frame = _builder.Build(sectors);
 						await _splitter.Update(frame).ConfigureAwait(false);
 						frame.Dispose();
-						
-						
-						
 					} catch (Exception e) {
 						Log.Warning("EX: " + e.Message);
 					}
@@ -169,9 +168,9 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
 
 		private static Color BlendColor(Color target, Color dest, double percent) {
-			var r1 = (int) ((target.R - dest.R) * percent) + dest.R;
-			var g1 = (int) ((target.G - dest.G) * percent) + dest.G;
-			var b1 = (int) ((target.B - dest.B) * percent) + dest.B;
+			var r1 = (int)((target.R - dest.R) * percent) + dest.R;
+			var g1 = (int)((target.G - dest.G) * percent) + dest.G;
+			var b1 = (int)((target.B - dest.B) * percent) + dest.B;
 			r1 = r1 > 255 ? 255 : r1 < 0 ? 0 : r1;
 			g1 = g1 > 255 ? 255 : g1 < 0 ? 0 : g1;
 			b1 = b1 > 255 ? 255 : b1 < 0 ? 0 : b1;

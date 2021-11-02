@@ -25,8 +25,8 @@ namespace Glimmr.Models.ColorSource.Audio {
 
 		public AudioMap() {
 			_octaveMap = new Dictionary<string, int>();
-			_leftSectors = new[] {11, 10, 9, 8, 7, 6, 5};
-			_rightSectors = new[] {12, 13, 0, 1, 2, 3, 4};
+			_leftSectors = new[] { 11, 10, 9, 8, 7, 6, 5 };
+			_rightSectors = new[] { 12, 13, 0, 1, 2, 3, 4 };
 			_minVal = float.MaxValue;
 			_loader = new JsonLoader("audioScenes");
 			Refresh();

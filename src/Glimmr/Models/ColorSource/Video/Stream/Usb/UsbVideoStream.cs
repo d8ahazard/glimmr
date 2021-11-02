@@ -92,8 +92,8 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 				return false;
 			}
 
-			var fourCc = (int) _video.Get(CapProp.FourCC);
-			var fps = (int) _video.Get(CapProp.Fps);
+			var fourCc = (int)_video.Get(CapProp.FourCC);
+			var fps = (int)_video.Get(CapProp.Fps);
 			var d5 = VideoWriter.Fourcc('M', 'J', 'P', 'G');
 
 			Log.Debug($"Video created, fps and 4cc are {fps} and {fourCc} versus {d5}.");

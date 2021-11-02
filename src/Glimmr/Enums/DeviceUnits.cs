@@ -1,11 +1,12 @@
 ﻿namespace Glimmr.Enums {
 	public enum DeviceUnits {
 		/// <summary>
-		/// Imperial
+		///     Imperial
 		/// </summary>
 		Imperial = 0,
+
 		/// <summary>
-		/// Metric
+		///     Metric
 		/// </summary>
 		Metric = 1
 	}

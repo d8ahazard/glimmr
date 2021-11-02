@@ -34,7 +34,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			LoadData();
 			cs.ColorSendEventAsync += SetColors;
 			var myIp = IPAddress.Parse(_ipAddress);
-			_dev = new DreamDevice(_deviceTag) {IpAddress = myIp, DeviceGroup = data.GroupNumber};
+			_dev = new DreamDevice(_deviceTag) { IpAddress = myIp, DeviceGroup = data.GroupNumber };
 		}
 
 		public bool Streaming { get; set; }
@@ -72,6 +72,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			if (_client == null) {
 				return;
 			}
+
 			Log.Debug($"{_data.Tag}::Stopping stream... {_data.Id}.");
 			ColorService.StopCounter++;
 			await _client.SetMode(_dev, DeviceMode.Off);
@@ -97,7 +98,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 
 		IColorTargetData IColorTarget.Data {
 			get => _data;
-			set => _data = (DreamScreenData) value;
+			set => _data = (DreamScreenData)value;
 		}
 
 		private Task SetColors(object sender, ColorSendEventArgs args) {

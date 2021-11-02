@@ -13,55 +13,12 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.OpenRgb {
 	public class OpenRgbAgent : IColorTargetAgent {
+		public bool Connected => _client?.Connected ?? false;
 		private string Ip { get; set; } = "";
 		private OpenRGBClient? _client;
-		private int _port;
 		private Device[]? _devices;
-		public bool Connected => _client?.Connected ?? false;
-		
-		public IEnumerable<Device> GetDevices() {
-			if (_client == null) return new List<Device>();
-			Connect();
-			if (!_client.Connected) return new List<Device>();
-			_devices = _client.GetAllControllerData();
-			return _devices;
-		}
+		private int _port;
 
-		public void Connect() {
-			if (_client == null) return;
-			
-			if (_client.Connected) {
-				return;
-			}
-			Log.Debug("Connecting OpenRGB client.");
-			try {
-				_client?.Connect();
-			} catch (Exception) {
-				Log.Warning("Could not connect to open RGB at " + Ip);
-			}
-		}
-
-		public void SetMode(int deviceId, int mode) {
-			if (_client == null) return;
-			if (!DeviceExists(deviceId)) return;
-			Connect();
-			if (!_client.Connected) return;
-			_client.SetMode(deviceId, mode);
-		}
-
-		public void Update(int deviceId, Color[] colors) {
-			if (_client == null) return;
-			if (!DeviceExists(deviceId)) return;
-			Connect();
-			if (!_client.Connected) return;
-			_client.UpdateLeds(deviceId, colors);
-		}
-
-		private bool DeviceExists(int deviceId) {
-			_devices ??= Array.Empty<Device>();
-			return deviceId >= _devices.Length - 1;
-		}
-		
 		public void Dispose() {
 			_client?.Dispose();
 			GC.SuppressFinalize(this);
@@ -74,6 +31,76 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			return this;
 		}
 
+		public IEnumerable<Device> GetDevices() {
+			if (_client == null) {
+				return new List<Device>();
+			}
+
+			Connect();
+			if (!_client.Connected) {
+				return new List<Device>();
+			}
+
+			_devices = _client.GetAllControllerData();
+			return _devices;
+		}
+
+		public void Connect() {
+			if (_client == null) {
+				return;
+			}
+
+			if (_client.Connected) {
+				return;
+			}
+
+			Log.Debug("Connecting OpenRGB client.");
+			try {
+				_client?.Connect();
+			} catch (Exception) {
+				Log.Warning("Could not connect to open RGB at " + Ip);
+			}
+		}
+
+		public void SetMode(int deviceId, int mode) {
+			if (_client == null) {
+				return;
+			}
+
+			if (!DeviceExists(deviceId)) {
+				return;
+			}
+
+			Connect();
+			if (!_client.Connected) {
+				return;
+			}
+
+			_client.SetMode(deviceId, mode);
+		}
+
+		public void Update(int deviceId, Color[] colors) {
+			if (_client == null) {
+				return;
+			}
+
+			if (!DeviceExists(deviceId)) {
+				return;
+			}
+
+			Connect();
+			if (!_client.Connected) {
+				return;
+			}
+
+			_client.UpdateLeds(deviceId, colors);
+		}
+
+		private bool DeviceExists(int deviceId) {
+			_devices ??= Array.Empty<Device>();
+			return deviceId >= _devices.Length - 1;
+		}
+
 		private void LoadClient() {
 			var sd = DataUtil.GetSystemData();
 			var ip = sd.OpenRgbIp;
@@ -82,8 +109,8 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 				Ip = ip;
 				_port = port;
 				Log.Debug("Creating new client.");
-				_client = new OpenRGBClient(Ip, _port, "Glimmr",false);
-				Log.Debug("Created.");	
+				_client = new OpenRGBClient(Ip, _port, "Glimmr", false);
+				Log.Debug("Created.");
 			}
 
 			Connect();

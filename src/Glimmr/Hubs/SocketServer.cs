@@ -27,7 +27,6 @@ namespace Glimmr.Hubs {
 			_states = new Dictionary<string, bool>();
 		}
 
-		
 
 		public async Task Mode(DeviceMode mode) {
 			Log.Debug("Mode set to: " + mode);

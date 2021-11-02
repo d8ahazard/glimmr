@@ -53,7 +53,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 					}
 
 
-					var data = new AdalightData(key, count) {Speed = baud};
+					var data = new AdalightData(key, count) { Speed = baud };
 					Log.Debug("Creating device.");
 					if (bri != 0) {
 						data.Brightness = bri;

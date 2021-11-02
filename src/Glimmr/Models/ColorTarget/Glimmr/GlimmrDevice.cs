@@ -27,8 +27,8 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		private bool _disposed;
 		private IPEndPoint? _ep;
 		private string _ipAddress;
-		private SystemData _sd;
 		private int _ledCount;
+		private SystemData _sd;
 
 		public GlimmrDevice(GlimmrData wd, ColorService cs) : base(cs) {
 			_udpClient = cs.ControlService.UdpClient;
@@ -51,7 +51,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 
 		IColorTargetData IColorTarget.Data {
 			get => _data;
-			set => _data = (GlimmrData) value;
+			set => _data = (GlimmrData)value;
 		}
 
 
@@ -59,6 +59,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			if (Streaming || !Enable) {
 				return;
 			}
+
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
 			ColorService.StartCounter++;
 			var sd = DataUtil.GetSystemData();
@@ -88,6 +89,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			if (!Streaming) {
 				return;
 			}
+
 			Log.Debug($"{_data.Tag}::Stopping stream...{_data.Id}.");
 			ColorService.StopCounter++;
 			await FlashColor(Color.FromArgb(0, 0, 0));

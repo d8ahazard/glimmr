@@ -36,13 +36,16 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 		IColorTargetData IColorTarget.Data {
 			get => _data;
-			set => _data = (OpenRgbData) value;
+			set => _data = (OpenRgbData)value;
 		}
 
 		public Task StartStream(CancellationToken ct) {
 			_client ??= _colorService.ControlService.GetAgent("OpenRgbAgent");
 			if (_client == null || !Enable) {
-				if (_client == null) Log.Debug("Null client, returning.");
+				if (_client == null) {
+					Log.Debug("Null client, returning.");
+				}
+
 				return Task.CompletedTask;
 			}
 
@@ -58,6 +61,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 				for (var i = 0; i < mt.Length; i++) {
 					mt[i] = new OpenRGB.NET.Models.Color();
 				}
+
 				_client.SetMode(_data.DeviceId, 0);
 			} catch (Exception e) {
 				Log.Warning("Exception setting mode..." + e.Message);
@@ -84,6 +88,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			for (var i = 0; i < output.Length; i++) {
 				output[i] = new OpenRGB.NET.Models.Color();
 			}
+
 			_client.Update(_data.DeviceId, output);
 			_client.Update(_data.DeviceId, output);
 			_client.Update(_data.DeviceId, output);
@@ -113,7 +118,10 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 		}
 
 		private async Task SetColors(object sender, ColorSendEventArgs args) {
-			if (!_client?.Connected ?? false) return;
+			if (!_client?.Connected ?? false) {
+				return;
+			}
+
 			await SetColor(args.LedColors, args.Force).ConfigureAwait(false);
 		}
 
