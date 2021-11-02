@@ -86,6 +86,13 @@ Note: Glimmr is installed as a service, and can be stopped/started by running "s
 or "sudo service glimmr stop" respectively.
 
 
+### OSX
+Open a terminal, execute the following commands:
+```
+sudo su
+curl https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_osx.sh | sh
+```
+
 ### docker
 Use the following command. You don't need to specify the ASPNETCORE_URLS value, unless you wish to change the default
 port that the web UI listens on. If so, modify the port number. e.g.: 'http://+:5699' to 'http://+:80'

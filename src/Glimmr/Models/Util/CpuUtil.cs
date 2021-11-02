@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Glimmr.Enums;
 using Serilog;
@@ -72,7 +73,48 @@ namespace Glimmr.Models.Util {
 				return await GetTempPi();
 			}
 
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+				return await GetTempOsx();
+			}
+
 			return await GetTempLinux();
+		}
+		
+		private static async Task<float> GetTempOsx() {
+			// bash command / opt / vc / bin / vc gen cmd measure_temp
+			var temp = 0f;
+			try {
+				var process = new Process {
+					StartInfo = new ProcessStartInfo {
+						FileName = "sysctl",
+						Arguments = "machdep.xcpm.cpu_thermal_level",
+						RedirectStandardOutput = true,
+						UseShellExecute = false,
+						CreateNoWindow = true
+					}
+				};
+				process.Start();
+				while (!process.StandardOutput.EndOfStream) {
+					var res = await process.StandardOutput.ReadLineAsync();
+					if (res != null && res.Contains("machdep.xcpm.cpu_thermal_level")) {
+						var p1 = res.Replace("machdep.xcpm.cpu_thermal_level: ", "");
+						if (!float.TryParse(p1, out temp)) {
+							Log.Warning("Unable to parse line: " + res);
+						}
+					}
+				}
+
+				process.Dispose();
+			} catch (Exception e) {
+				Log.Warning("Exception: " + e.Message);
+			}
+
+			var sd = DataUtil.GetSystemData();
+			if (sd.Units == DeviceUnits.Imperial) {
+				temp = (float)Math.Round(temp * 1.8f + 32);
+			}
+			
+			return temp;
 		}
 		
 		private static async Task<float> GetTempLinux() {
@@ -92,7 +134,11 @@ namespace Glimmr.Models.Util {
 				while (!process.StandardOutput.EndOfStream) {
 					var res = await process.StandardOutput.ReadLineAsync();
 					if (res != null && res.Contains("temp")) {
-						if (!float.TryParse(res.Split("+")[1], out temp)) {
+						var p1 = res.Split("+")[1];
+						if (p1.Contains(" ")) {
+							p1 = p1.Split(" ")[0];
+						}
+						if (!float.TryParse(p1, out temp)) {
 							Log.Warning("Unable to parse line: " + res);
 						}
 					}
@@ -137,6 +183,11 @@ namespace Glimmr.Models.Util {
 		}
 
 		private static int GetMemoryUsage() {
+			return RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? GetMemoryUsageOsx() : GetMemoryUsageLinux();
+		}
+		
+		private static int GetMemoryUsageLinux() {
+			
 			var process = new Process {
 				StartInfo = new ProcessStartInfo {
 					FileName = "vmstat",
@@ -171,6 +222,63 @@ namespace Glimmr.Models.Util {
 			}
 			process.Dispose();
 			return 0;
+		}
+
+		private static int GetMemoryUsageOsx() {
+			var process = new Process {
+				StartInfo = new ProcessStartInfo {
+					FileName = "vm_stat",
+					RedirectStandardOutput = true,
+					UseShellExecute = false,
+					CreateNoWindow = true
+				}
+			};
+			process.Start();
+			var free = 0;
+			var active = 0;
+			var spec = 0;
+			var throttled = 0;
+			var wired = 0;
+			while (!process.StandardOutput.EndOfStream) {
+				var data = process.StandardOutput.ReadLineAsync().Result;
+				if (data == null) continue;
+
+				string line;
+				if (data.Contains("Pages free")) {
+					line = data.Split(":")[1].Replace(".", "").Trim().TrimEnd();
+					if (int.TryParse(line, out var foo)) {
+						free = foo;
+					}
+				}
+				if (data.Contains("Pages active")) {
+					line = data.Split(":")[1].Replace(".", "").Trim().TrimEnd();
+					if (int.TryParse(line, out var foo)) {
+						active = foo;
+					}
+				}
+				if (data.Contains("Pages speculative")) {
+					line = data.Split(":")[1].Replace(".", "").Trim().TrimEnd();
+					if (int.TryParse(line, out var foo)) {
+						spec = foo;
+					}
+				}
+				if (data.Contains("Pages throttled")) {
+					line = data.Split(":")[1].Replace(".", "").Trim().TrimEnd();
+					if (int.TryParse(line, out var foo)) {
+						throttled = foo;
+					}
+				}
+				if (data.Contains("Pages wired down")) {
+					line = data.Split(":")[1].Replace(".", "").Trim().TrimEnd();
+					if (int.TryParse(line, out var foo)) {
+						wired = foo;
+					}
+				}
+			}
+
+			var total = free + active + spec + throttled + wired;
+			process.Dispose();
+			return total == 0 ? 0 : active / total;
 		}
 		
 		private static async Task<int> GetProcessAverage() {
@@ -217,7 +325,6 @@ namespace Glimmr.Models.Util {
 
 			return messages.ToArray();
 		}
-
 		
 		private static string Hex2Bin(string hexString) {
 			var output = string.Join(string.Empty,
@@ -228,7 +335,6 @@ namespace Glimmr.Models.Util {
 			);
 			return output;
 		}
-
 
 		private static void TemperatureSetMinMax(float temperature) {
 			try {

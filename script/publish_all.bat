@@ -18,9 +18,9 @@ for %%x in (
 cd ..\src\Glimmr\bin\
 %~dp07z.exe a -ttar -so -an -r .\LinuxARM\* | %~dp07z a -si Glimmr-linux-arm-%version%.tgz
 %~dp07z.exe a -ttar -so -an -r .\Linux\* | %~dp07z a -si Glimmr-linux-%version%.tgz
+%~dp07z.exe a -ttar -so -an -r .\OSX\* | %~dp07z a -si Glimmr-osx-%version%.tgz
 %~dp07z.exe a -tzip -r Glimmr-windows-%version%.zip .\Windows\*
 %~dp07z.exe a -tzip -r Glimmr-windows-arm-%version%.zip .\WindowsARM\*
-%~dp07z.exe a -tzip -r Glimmr-osx-%version%.zip .\OSX\*
 GOTO End
 
 :Error

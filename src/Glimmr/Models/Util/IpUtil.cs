@@ -1,9 +1,11 @@
 ﻿#region
 
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using Serilog;
 
 #endregion
@@ -120,6 +122,65 @@ namespace Glimmr.Models.Util {
 			return null;
 		}
 
+		private static string GetOsxHostName() {
+			var result = "";
+			try {
+				var process = new Process {
+					StartInfo = new ProcessStartInfo {
+						FileName = "/bin/sh",
+						Arguments = "-c \"hostname\"",
+						RedirectStandardOutput = true,
+						UseShellExecute = false,
+						CreateNoWindow = true
+					}
+				};
+				process.Start();
+				while (!process.StandardOutput.EndOfStream) {
+					var res = process.StandardOutput.ReadLine();
+					if (!string.IsNullOrEmpty(res)) {
+						result = res;
+					}
+				}
+
+				process.Dispose();
+			} catch (Exception e) {
+				Log.Warning("Exception: " + e.Message);
+			}
+			Log.Debug("OSX Hostname: " + result);
+			return result;
+		}
+
+		public static string GetLocalOsxIpAddress() {
+			var result = "";
+			try {
+				var process = new Process {
+					StartInfo = new ProcessStartInfo {
+						FileName = "ipconfig",
+						Arguments = "getifaddr en0",
+						RedirectStandardOutput = true,
+						UseShellExecute = false,
+						CreateNoWindow = true
+					}
+				};
+				process.Start();
+				while (!process.StandardOutput.EndOfStream) {
+					var res = process.StandardOutput.ReadLine();
+					if (!string.IsNullOrEmpty(res)) {
+						result = res;
+					}
+				}
+
+				process.Dispose();
+			} catch (Exception e) {
+				Log.Warning("Exception: " + e.Message);
+			}
+
+			if (!string.IsNullOrEmpty(result)) {
+				_localIp = result;
+			}
+			Log.Debug("OSX IP: " + result);
+			return result;
+		}
 
 		public static string GetLocalIpAddress() {
 			if (!string.IsNullOrEmpty(_localIp)) {
@@ -127,7 +188,10 @@ namespace Glimmr.Models.Util {
 			}
 
 			var res = "";
-			var hostName = Dns.GetHostName();
+			var hostName = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? GetOsxHostName() : Dns.GetHostName();
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+				return GetLocalOsxIpAddress();
+			}
 			try {
 				if (!string.IsNullOrEmpty(hostName)) {
 					var host = Dns.GetHostEntry(hostName);

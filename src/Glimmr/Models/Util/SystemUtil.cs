@@ -133,7 +133,7 @@ namespace Glimmr.Models.Util {
 
 		public static string GetUserDir() {
 			var userDir = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "C:\\ProgramData\\" : "/etc/";
-
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) userDir = "~/Library/Application Support/";
 			var fullPath = Path.Combine(userDir, "Glimmr");
 			if (Directory.Exists(fullPath)) {
 				return Directory.Exists(fullPath) ? fullPath : string.Empty;
@@ -180,7 +180,6 @@ namespace Glimmr.Models.Util {
 				}
 				logPath = Path.Combine(userPath, "log", $"glimmr{dt}.log");
 			}
-
 			var result = await File.ReadAllLinesAsync(logPath);
 			if (result.Length > len) {
 				result = result.Skip(Math.Max(0, result.Length - len)).ToArray();
