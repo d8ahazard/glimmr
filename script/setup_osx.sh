@@ -34,9 +34,9 @@ ver=$(curl -s "https://api.github.com/repos/d8ahazard/glimmr/releases/latest" | 
 echo ver is $ver
 url="https://github.com/d8ahazard/glimmr/releases/download/$ver/Glimmr-osx-$ver.tgz"
 echo Grabbing archive from $url
-curl -oL ./archive.tgz $url
-tar zxvf ./archive.tgz -C /Applications/glimmr
+curl -oL /Users/glimmrtv/archive.tgz $url
+tar zxvf Users/glimmrtv/archive.tgz -C /Applications/glimmr
 chmod -R 777 /Applications/glimmr
-rm ./archive.tgz
+rm /Users/glimmrtv/archive.tgz
 
 read -n 1 -r -s -p $'Install complete, press enter to continue. You may want to reboot now.\n'
