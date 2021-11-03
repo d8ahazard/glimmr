@@ -1,11 +1,7 @@
 #!/bin/bash -e
 echo "gpio=19=op,a5" >> ${ROOTFS_DIR}/boot/config.txt
 echo "done" > "${ROOTFS_DIR}/home/glimmrtv/firstrun"
-if [! -d "${ROOTF_DIR}/opt/glimmr/" ]
-	then
-		mkdir ${ROOTFS_DIR}/opt/glimmr  
-fi
-
+mkdir ${ROOTFS_DIR}/opt/glimmr  
 # Download and extract latest release
 cd /tmp || exit
 ver=$(wget "https://api.github.com/repos/d8ahazard/glimmr/releases/latest" -q -O - | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
