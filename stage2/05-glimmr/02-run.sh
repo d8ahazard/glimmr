@@ -7,13 +7,14 @@ if [! -d "${ROOTF_DIR}/opt/glimmr/" ]
 fi
 
 # Download and extract latest release
-cd ${ROOTFS_DIR}/tmp || exit
+cd /tmp || exit
 ver=$(wget "https://api.github.com/repos/d8ahazard/glimmr/releases/latest" -q -O - | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
 url="https://github.com/d8ahazard/glimmr/releases/download/$ver/Glimmr-linux-arm-$ver.tgz"
-wget -O ${ROOTFS_DIR}/tmp/archive.tgz $url
-tar zxvf ${ROOTFS_DIR}/archive.tgz -C ${ROOTFS_DIR}/opt/glimmr/
+wget -O /tmp/archive.tgz $url
+tar zxvf /tmp/archive.tgz -C ${ROOTFS_DIR}/opt/glimmr/
 chmod -R 777 ${ROOTFS_DIR}/opt/glimmr/
-rm ${ROOTFS_DIR}/tmp/archive.tgz
+rm /tmp/archive.tgz
+
 # Install service
 echo "
 [Unit]
