@@ -35,19 +35,16 @@ namespace GlimmrTray {
 		private static extern bool UnhookWinEvent(IntPtr hWinEventHook);
 
 		private static void Main() {
-			if (true) {
-				try {
-					var dir = AppDomain.CurrentDomain.BaseDirectory;
-					var path = Path.Combine(dir, "Glimmr.exe");
-					var baseDirectory = dir;
-					Run(path, baseDirectory);
-				} catch (CmdArgumentException e) {
-					Console.Error.WriteLine(e.Message);
-					Environment.ExitCode = -1;
-				} catch (Exception e) {
-					Console.Error.WriteLine(e.ToString());
-					Environment.ExitCode = -1;
-				}
+			try {
+				var dir = AppDomain.CurrentDomain.BaseDirectory;
+				var path = Path.Combine(dir, "Glimmr.exe");
+				Run(path, dir);
+			} catch (CmdArgumentException e) {
+				Console.Error.WriteLine(e.Message);
+				Environment.ExitCode = -1;
+			} catch (Exception e) {
+				Console.Error.WriteLine(e.ToString());
+				Environment.ExitCode = -1;
 			}
 		}
 
@@ -75,7 +72,7 @@ namespace GlimmrTray {
 				_winShown = true;
 			}
 
-			var trapText = "Glimmr TV System Tray";
+			var trayText = "Glimmr TV System Tray";
 			var contextMenu = new ContextMenu();
 			var menuItem0 = new MenuItem { Index = 0, Text = "Show &UI" };
 			var menuItem1 = new MenuItem { Index = 1, Text = "Open &Data Folder" };
@@ -88,9 +85,9 @@ namespace GlimmrTray {
 			contextMenu.MenuItems.Add(menuItem2);
 			var tray = new NotifyIcon {
 				Icon = trayIcon,
-				Text = trapText,
-				BalloonTipTitle = trapText,
-				BalloonTipText = trapText,
+				Text = trayText,
+				BalloonTipTitle = trayText,
+				BalloonTipText = trayText,
 				Visible = true,
 				ContextMenu = contextMenu
 			};

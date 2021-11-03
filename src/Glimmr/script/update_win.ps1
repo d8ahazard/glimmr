@@ -29,13 +29,13 @@ $zip = "$Env:ProgramData\Glimmr\archive.zip"
 Write-Host "Dowloading latest release"
 Invoke-WebRequest $download -Out $zip
 
-$service = Get-Service -Name glimmr -ErrorAction SilentlyContinue
-
-
 Stop-Process -name "Glimmr" -ErrorAction SilentlyContinue;
+Stop-Process -name "GlimmrTray.exe" -ErrorAction SilentlyContinue;
 
 Write-Host Extracting release files
 Expand-Archive -Path $zip -DestinationPath $appdir
 
 # Delete extracted archive
 Remove-Item $zip -Force -ErrorAction SilentlyContinue
+
+Start-Process -FilePath "$Env:ProgramData\Glimmr\GlimmrTray.exe"

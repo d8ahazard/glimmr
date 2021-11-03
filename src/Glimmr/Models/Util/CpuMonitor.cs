@@ -46,7 +46,7 @@ namespace Glimmr.Models.Util {
 								case "Core (Tctl/Tdie)":
 								case "Core (Tctl)":
 								case "Core (Tdie)":
-									output.CpuTemp = sensor.Value ?? 0;
+									output.CpuTemp = (int)(sensor.Value ?? 0);
 									break;
 							}
 						}
