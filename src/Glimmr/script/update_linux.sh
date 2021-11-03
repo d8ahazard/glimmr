@@ -1,4 +1,39 @@
 #!/bin/bash
+function vercomp () {
+    if [[ $1 == $2 ]]
+    then
+        echo "0"
+        return 0
+    fi
+    local IFS=.
+    local i ver1=($1) ver2=($2)
+    # fill empty fields in ver1 with zeros
+    for ((i=${#ver1[@]}; i<${#ver2[@]}; i++))
+    do
+        ver1[i]=0
+    done
+    for ((i=0; i<${#ver1[@]}; i++))
+    do
+        if [[ -z ${ver2[i]} ]]
+        then
+            # fill empty fields in ver2 with zeros
+            ver2[i]=0
+        fi
+        if ((10#${ver1[i]} > 10#${ver2[i]}))
+        then
+            echo "1"
+            return 1
+        fi
+        if ((10#${ver1[i]} < 10#${ver2[i]}))
+        then
+            echo "2"
+            return 2
+        fi
+    done
+    echo "0"
+    return 0
+}
+
 branch=${1:-"master"}
 APPDIR=${2:-"/opt/glimmr/"}
 
@@ -11,13 +46,6 @@ if [ -f "/usr/bin/raspi-config" ]
     PUBPATH="linux-arm"
 fi
 
-if [ $unameOut == "FreeBSD" ]
-  then
-    PUBPROFILE="Portable"
-    PUBPATH="portable"
-fi
-
-echo "Updating Glimmr for $PUBPROFILE using branch $branch."
 
 log=$(ls -t /var/log/glimmr/glimmr* | head -1)
 if [ $log == "" ]
@@ -32,10 +60,7 @@ if [ ! -f $log ]
     chmod 777 $log
 fi
 
-#Stop service
-echo "Stopping glimmr..." >> $log
-service glimmr stop
-echo "SERVICE STOPPED!" >> $log
+echo "Checking for Glimmr updates for $PUBPROFILE." >> $log
 
 if [ ! -d "/opt/glimmr" ]
   then
@@ -44,17 +69,35 @@ if [ ! -d "/opt/glimmr" ]
 fi
 
 # Download and extract latest release
-cd /tmp || exit
 ver=$(wget "https://api.github.com/repos/d8ahazard/glimmr/releases/latest" -q -O - | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-echo ver is $ver
+echo "Repo version is $ver." >> $log
+if [ -f "/etc/Glimmr/version" ]
+  then
+    curr=$(head -n 1 /etc/Glimmr/version)
+    echo "Current version is $curr." >> $log
+    diff=$(vercomp $curr $ver)
+    if [ "$diff" != "2" ]
+      then
+        echo "Nothing to update." >> $log
+        exit 0
+    fi
+fi
+
+echo "Updating glimmr to version $ver." >> $log
+#Stop service
+echo "Stopping glimmr services..." >> $log
+service glimmr stop
+echo "Services stopped." >> $log
+
+cd /tmp || exit
 url="https://github.com/d8ahazard/glimmr/releases/download/$ver/Glimmr-$PUBPATH-$ver.tgz"
-echo Grabbing archive from $url
+echo "Grabbing archive from $url" >> $log
 wget -O archive.tgz $url
 tar zxvf ./archive.tgz -C /opt/glimmr/
 chmod -R 777 /opt/glimmr/
 rm ./archive.tgz
-echo "DONE." >> $log
-
+echo "Update completed." >> $log
+echo $ver > /etc/Glimmr/version
 echo "Restarting glimmr service..." >> $log
 
 # Restart Service
