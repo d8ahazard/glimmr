@@ -8,4 +8,3 @@ FIRST_USER_NAME="glimmrtv"
 FIRST_USER_PASS="glimmrtv"
 ENABLE_SSH=1
 STAGE_LIST="stage0 stage1 stage2"
-RELEASE="bullseye"

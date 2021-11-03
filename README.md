@@ -40,25 +40,31 @@ The following environment variables are supported:
    `IMG_NAME=Raspbian` is logical for an unmodified RPi-Distro/pi-gen build,
    but you should use something else for a customized version.  Export files
    in stages may add suffixes to `IMG_NAME`.
+
 * `USE_QCOW2`(Default: `1` )
+
     Instead of using traditional way of building the rootfs of every stage in
     single subdirectories and copying over the previous one to the next one,
     qcow2 based virtual disks with backing images are used in every stage.
     This speeds up the build process and reduces overall space consumption
     significantly.
+
     <u>Additional optional parameters regarding qcow2 build:</u>
+
     * `BASE_QCOW2_SIZE` (Default: 12G)
+
         Size of the virtual qcow2 disk.
         Note: it will not actually use that much of space at once but defines the
         maximum size of the virtual disk. If you change the build process by adding
         a lot of bigger packages or additional build stages, it can be necessary to
         increase the value because the virtual disk can run out of space like a normal
         hard drive would.
+
     **CAUTION:**  Although the qcow2 build mechanism will run fine inside Docker, it can happen
     that the network block device is not disconnected correctly after the Docker process has
     ended abnormally. In that case see [Disconnect an image if something went wrong](#Disconnect-an-image-if-something-went-wrong)
 
- * `RELEASE` (Default: buster)
+ * `RELEASE` (Default: bullseye)
 
    The release version to build images against. Valid values are jessie, stretch
    buster, bullseye, and testing.
@@ -271,6 +277,7 @@ starting the `./build-docker.sh` script (or using your own docker build
 solution).
 
 ### Passing arguments to Docker
+
 When the docker image is run various required command line arguments are provided.  For example the system mounts the `/dev` directory to the `/dev` directory within the docker container.  If other arguments are required they may be specified in the PIGEN_DOCKER_OPTS environment variable.  For example setting `PIGEN_DOCKER_OPTS="--add-host foo:192.168.0.23"` will add '192.168.0.23   foo' to the `/etc/hosts` file in the container.  The `--name`
 and `--privileged` options are already set by the script and should not be redefined.
 
@@ -366,22 +373,29 @@ follows:
    export your image to test
 
 # Regarding Qcow2 image building
+
 ### Get infos about the image in use
+
 If you issue the two commands shown in the example below in a second command shell while a build
 is running you can find out, which network block device is currently being used and which qcow2 image
 is bound to it.
+
 Example:
+
 ```bash
 root@build-machine:~/$ lsblk | grep nbd
 nbd1      43:32   0    10G  0 disk 
 +-nbd1p1  43:33   0    10G  0 part 
 +-nbd1p1 253:0    0    10G  0 part
+
 root@build-machine:~/$ ps xa | grep qemu-nbd
  2392 pts/6    S+     0:00 grep --color=auto qemu-nbd
 31294 ?        Ssl    0:12 qemu-nbd --discard=unmap -c /dev/nbd1 image-stage4.qcow2
 ```
+
 Here you can see, that the qcow2 image `image-stage4.qcow2` is currently connected to `/dev/nbd1` with
 the associated partition map `/dev/mapper/nbd1p1`. Don't worry that `lsblk` shows two entries. It is totally fine, because the device map is accessible via `/dev/mapper/nbd1p1` and also via `/dev/dm-0`. This is all part of the device mapper functionality of the kernel. See `dmsetup` for further information.
+
 ### Mount a qcow2 image
 
 If you want to examine the content of a a single stage, you can simply mount the qcow2 image found in the `WORK_DIR` directory with the tool `./imagetool.sh`.
