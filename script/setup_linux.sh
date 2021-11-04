@@ -28,7 +28,7 @@ usermod -aG video glimmrtv
 usermod -aG video $USER
 cd /home/glimmrtv || exit
 
-if [ ! -f "/opt/glimmr/firstrun" ]
+if [ ! -f "/usr/share/Glimmr/firstrun" ]
 then
   echo "Starting first-run setup..."
   if [ "$PUBPROFILE" == "LinuxARM" ] 
@@ -36,7 +36,7 @@ then
     echo "Installing Linux-ARM dependencies..."
     # Install dependencies
     sudo apt-get -y update && apt-get -y upgrade
-    sudo apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa libdc1394-22 libtesseract-dev scons icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev gfortran libopengl-dev git gcc xauth avahi-daemon x11-xserver-utils libtiff5-dev libgeotiff-dev libgtk-3-dev libgstreamer1.0-dev libavcodec-dev libswscale-dev libavformat-dev libopenexr-dev libjasper-dev libdc1394-22-dev libv4l-dev libeigen3-dev libopengl-dev cmake-curses-gui freeglut3-dev
+    sudo apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa libdc1394-22 libtesseract-dev icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev gfortran libopengl-dev git gcc xauth avahi-daemon x11-xserver-utils libtiff5-dev libgeotiff-dev libgtk-3-dev libgstreamer1.0-dev libavcodec-dev libswscale-dev libavformat-dev libopenexr-dev libjasper-dev libdc1394-22-dev libv4l-dev libeigen3-dev libopengl-dev cmake-curses-gui freeglut3-dev
     echo "gpio=19=op,a5" >> /boot/config.txt    
     echo "Raspi first-config is done!"
   fi
@@ -48,16 +48,16 @@ then
       sudo add-apt-repository "deb http://security.ubuntu.com/ubuntu xenial-security main"
       sudo add-apt-repository ppa:rock-core/qt4 -y
       sudo apt-get -y update && apt-get -y upgrade
-      sudo apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa libdc1394-22 libtesseract-dev scons icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libatlas-base-dev gfortran libopengl-dev git gcc xauth avahi-daemon x11-xserver-utils libopencv-dev python3-opencv unzip libtiff5-dev libgeotiff-dev libgtk-3-dev libgstreamer1.0-dev libavcodec-dev libswscale-dev libavformat-dev libopenexr-dev libjasper-dev libdc1394-22-dev libv4l-dev libeigen3-dev libopengl-dev cmake-curses-gui freeglut3-dev lm-sensors
+      sudo apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa libdc1394-22 libtesseract-dev icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libatlas-base-dev gfortran libopengl-dev git gcc xauth avahi-daemon x11-xserver-utils libopencv-dev python3-opencv unzip libtiff5-dev libgeotiff-dev libgtk-3-dev libgstreamer1.0-dev libavcodec-dev libswscale-dev libavformat-dev libopenexr-dev libjasper-dev libdc1394-22-dev libv4l-dev libeigen3-dev libopengl-dev cmake-curses-gui freeglut3-dev lm-sensors
       echo "DONE!"
   fi
   
-  if [ ! -d "/opt/glimmr" ]
+  if [ ! -d "/usr/share/Glimmr" ]
     then
   # Make dir
-    mkdir /opt/glimmr  
+    mkdir /usr/share/Glimmr  
   fi
-  echo "done" > "/opt/glimmr/firstrun"
+  echo "done" > "/usr/share/Glimmr/firstrun"
 fi
 
 # Check for service stop
@@ -77,8 +77,8 @@ echo ver is $ver
 url="https://github.com/d8ahazard/glimmr/releases/download/$ver/Glimmr-$PUBPATH-$ver.tgz"
 echo Grabbing archive from $url
 wget -O archive.tgz $url
-tar zxvf ./archive.tgz -C /opt/glimmr/
-chmod -R 777 /opt/glimmr
+tar zxvf ./archive.tgz -C /usr/share/Glimmr/
+chmod -R 777 /usr/share/Glimmr
 rm ./archive.tgz
 echo "DONE." >> $log
 
@@ -100,7 +100,7 @@ RemainAfterExit=yes
 StandardOutput=tty
 Restart=always
 User=root
-WorkingDirectory=/opt/glimmr
+WorkingDirectory=/usr/share/Glimmr
 ExecStart=sudo Glimmr
 KillMode=process
 
