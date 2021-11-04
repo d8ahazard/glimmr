@@ -318,21 +318,31 @@ Ambient Scenes and music mode *are* now implemented. I still have some work to d
 Not all settings for DS devices in the Web UI are implemented...but the video and advanced settings should now be working properly.
 
 Logs are stored to the following location(s):
-Windows - %appdata%\Glimmr\log
+Windows - %programdata%\Glimmr\log\
 Linux - /var/log/Glimmr/
 
 Glimmr storage DB and scenes are stored in the following location(s):
-Windows - %appdata%\Glimmr\
-Linux - /etc/Glimmr
+Windows - %programdata%\Glimmr\
+Linux - /etc/Glimmr/
 
 The application is installed to the following location(s):
-Windows - C:\program files\Glimmr\bin
-Linux - /home/glimmrtv/glimmr/bin
+Windows - C:\Program Files\Glimmr\
+Linux - /usr/share/Glimmr/
+OSX - /Applications/Glimmr/
 
-## Related repositories:
+## Related links:
+[Home Assistant Integration](https://github.com/d8ahazard/Glimmr_ha)
+
+[Python Library](https://github.com/d8ahazard/Glimmr-python)
+
 [Raspberry pi image generator](https://github.com/d8ahazard/Glimmr-image-gen)
-[Glimmr mobile app](https://github.com/d8ahazard/glimmrmobile)
-[FloW LED Android Screen Capture App](https://play.google.com/store/apps/details?id=com.digitalhigh.glimmrextender&hl=en_US&gl=US)
+
+[Glimmr mobile app (Play Store)](https://play.google.com/store/apps/details?id=com.digitalhigh.GlimmrControl)
+
+[FloW LED Android Screen Capture App (Play Store)](https://play.google.com/store/apps/details?id=com.digitalhigh.glimmrextender&hl=en_US&gl=US)
+
+[Glimmr mobile app (source)](https://github.com/d8ahazard/GlimmrControl)
+
 [DreamScreen Documents](https://github.com/d8ahazard/DreamscreenDocs/)
 
 

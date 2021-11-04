@@ -1,21 +1,12 @@
 #Use Ubuntu Focal as the base image and add user glimmrtv + add it to the video group
 From ubuntu:20.04 AS base
 ENV DEBIAN_FRONTEND noninteractive
-RUN useradd -ms /bin/bash glimmrtv
-RUN usermod -aG sudo glimmrtv
-RUN usermod -aG video glimmrtv
 
-#Update so we get software-properties-common
-RUN apt-get -y update
-RUN apt-get install -y software-properties-common
-# Add extra repositories 
-RUN add-apt-repository "deb http://security.ubuntu.com/ubuntu xenial-security main"
-RUN add-apt-repository ppa:rock-core/qt4 -y
 # Update again
-RUN apt-get -y update
+RUN apt-get -y update && apt-get upgrade
 # Install packages
 RUN apt-get install -y \
-  sudo curl wget libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa \
+  sudo curl wget libgtk-3-dev libhdf5-dev libatlas-base-dev libglu1-mesa \
   libdc1394-22 libtesseract-dev scons icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev \
   libswscale-dev libv4l-dev libxvidcore-dev libatlas-base-dev gfortran libopengl-dev git gcc xauth avahi-daemon \
   x11-xserver-utils libopencv-dev python3-opencv unzip libtiff5-dev libgeotiff-dev libgtk-3-dev libgstreamer1.0-dev \
@@ -41,7 +32,7 @@ RUN ln -sf /etc/Glimmr/log /var/log/glimmr
 USER glimmrtv
 ENV ASPNETCORE_URLS=http://+:5699
 WORKDIR /opt/glimmr
-ENTRYPOINT ["sudo", "/opt/glimmr/Glimmr"]
+ENTRYPOINT ["sudo", "/usr/share/Glimmr/Glimmr"]
 VOLUME /etc/Glimmr 
 # Web UI
 EXPOSE 5699

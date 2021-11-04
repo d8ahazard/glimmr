@@ -5,7 +5,7 @@ if [ ! -d "/Applications/glimmr" ]
   then
   echo "Creating app dir."
 # Make dir
-  mkdir /Applications/glimmr
+  mkdir /Applications/Glimmr
 fi
 
 # Download and extract latest release
@@ -16,8 +16,8 @@ echo ver is $ver
 url="https://github.com/d8ahazard/glimmr/releases/download/$ver/Glimmr-osx-$ver.tgz"
 echo Grabbing archive from $url
 curl -L -o $HOME/archive.tgz $url
-tar zxvf $HOME/archive.tgz -C /Applications/glimmr
-chmod -R 777 /Applications/glimmr
+tar zxvf $HOME/archive.tgz -C /Applications/Glimmr
+chmod -R 777 /Applications/Glimmr
 rm $HOME/archive.tgz
 
 read -n 1 -r -s -p $'Install complete, press enter to continue. You may want to reboot now.\n'
