@@ -18,6 +18,12 @@ The app is controllable via an inbuilt web interface, Android application (avail
 ## Installation
 
 ### Windows
+
+#### Installer
+Download the latest .exe installer from [releases](https://github.com/d8ahazard/glimmr/releases/latest), and run it.
+
+
+#### Scripted
 Open a Powershell window, execute the following command:
 
 ```
@@ -36,6 +42,12 @@ Click this to launch Glimmr, minimize the console window to have it stored in th
 Note: Glimmr/GlimmrTray *MUST* be run as administrator in order for screen capture to work.
 
 ### Raspberry Pi
+
+#### Installer
+Download the latest linux-arm deb package installer from [releases](https://github.com/d8ahazard/glimmr/releases/latest), and 
+installing it by running ```apt-get install FILENAME.deb```.
+
+#### Script
 Execute the following command:
 ```
 sudo su
@@ -69,6 +81,12 @@ or "sudo service glimmr stop" respectively.
 
 
 ### Linux
+
+#### Installer
+Download the latest linux-x64 deb package installer from [releases](https://github.com/d8ahazard/glimmr/releases/latest), and
+installing it by running ```apt-get install FILENAME.deb```.
+
+#### Script
 Execute the following command. You can replace "dev" with "master" to use the master branch instead.:
 ```
 sudo su
