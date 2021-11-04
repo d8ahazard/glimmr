@@ -87,9 +87,6 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(RuntimeIdentifier)'=='linux-x64' OR '$(RuntimeIdentifier)'=='linux-arm'">
-		<None Include="script/glimmr.service" CopyToPublishDirectory="Always" LinuxFileMode="1755">
-			<LinuxPath>/etc/systemd/system/glimmr.service</LinuxPath>
-		</None>
 		<None Include="script/update_linux.sh" CopyToPublishDirectory="Always" LinuxFileMode="0777" Link="%(Filename)%(Extension)">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
@@ -131,39 +128,231 @@
     <ItemGroup>
         <RuntimeHostConfigurationOption Include="System.Globalization.Invariant" Value="true" />
     </ItemGroup>
-    <PropertyGroup Condition="'$(RuntimeIdentifier)'=='linux-x64'">
+    <ItemGroup Condition="'$(RuntimeIdentifier)'=='linux-arm'">
+            <DebDependency Include="libgtk-3-dev" />
+            <DebDependency Include="libhdf5-dev" />
+            <DebDependency Include="libatlas-base-dev" />
+            <DebDependency Include="libglu1-mesa" />
+            <DebDependency Include="libdc1394-22" />
+            <DebDependency Include="libtesseract-dev" />
+            <DebDependency Include="icu-devtools" />
+            <DebDependency Include="libjpeg-dev" />
+            <DebDependency Include="libpng-dev" />
+            <DebDependency Include="libtiff-dev" />
+            <DebDependency Include="libavcodec-dev" />
+            <DebDependency Include="libavformat-dev" />
+            <DebDependency Include="libswscale-dev" />
+            <DebDependency Include="libv4l-dev" />
+            <DebDependency Include="libxvidcore-dev" />
+            <DebDependency Include="libatlas-base-dev" />
+            <DebDependency Include="gfortran" />
+            <DebDependency Include="libopengl-dev" />
+            <DebDependency Include="git" />
+            <DebDependency Include="gcc" />
+            <DebDependency Include="xauth" />
+            <DebDependency Include="avahi-daemon" />
+            <DebDependency Include="x11-xserver-utils" />
+            <DebDependency Include="libopencv-dev" />
+            <DebDependency Include="python3-opencv" />
+            <DebDependency Include="unzip" />
+            <DebDependency Include="libtiff5-dev" />
+            <DebDependency Include="libgeotiff-dev" />
+            <DebDependency Include="libgtk-3-dev" />
+            <DebDependency Include="libgstreamer1.0-dev" />
+            <DebDependency Include="libavcodec-dev" />
+            <DebDependency Include="libswscale-dev" />
+            <DebDependency Include="libavformat-dev" />
+            <DebDependency Include="libopenexr-dev" />
+            <DebDependency Include="libjasper-dev" />
+            <DebDependency Include="libdc1394-22-dev" />
+            <DebDependency Include="libv4l-dev" />
+            <DebDependency Include="libeigen3-dev" />
+            <DebDependency Include="libopengl-dev" />
+            <DebDependency Include="cmake-curses-gui" />
+            <DebDependency Include="freeglut3-dev" />
+            <RpmDependency Include="libgtk-3-dev" />
+            <RpmDependency Include="libhdf5-dev" />
+            <RpmDependency Include="libatlas-base-dev" />
+            <RpmDependency Include="libglu1-mesa" />
+            <RpmDependency Include="libdc1394-22" />
+            <RpmDependency Include="libtesseract-dev" />
+            <RpmDependency Include="icu-devtools" />
+            <RpmDependency Include="libjpeg-dev" />
+            <RpmDependency Include="libpng-dev" />
+            <RpmDependency Include="libtiff-dev" />
+            <RpmDependency Include="libavcodec-dev" />
+            <RpmDependency Include="libavformat-dev" />
+            <RpmDependency Include="libswscale-dev" />
+            <RpmDependency Include="libv4l-dev" />
+            <RpmDependency Include="libxvidcore-dev" />
+            <RpmDependency Include="libatlas-base-dev" />
+            <RpmDependency Include="gfortran" />
+            <RpmDependency Include="libopengl-dev" />
+            <RpmDependency Include="git" />
+            <RpmDependency Include="gcc" />
+            <RpmDependency Include="xauth" />
+            <RpmDependency Include="avahi-daemon" />
+            <RpmDependency Include="x11-xserver-utils" />
+            <RpmDependency Include="libopencv-dev" />
+            <RpmDependency Include="python3-opencv" />
+            <RpmDependency Include="unzip" />
+            <RpmDependency Include="libtiff5-dev" />
+            <RpmDependency Include="libgeotiff-dev" />
+            <RpmDependency Include="libgtk-3-dev" />
+            <RpmDependency Include="libgstreamer1.0-dev" />
+            <RpmDependency Include="libavcodec-dev" />
+            <RpmDependency Include="libswscale-dev" />
+            <RpmDependency Include="libavformat-dev" />
+            <RpmDependency Include="libopenexr-dev" />
+            <RpmDependency Include="libjasper-dev" />
+            <RpmDependency Include="libdc1394-22-dev" />
+            <RpmDependency Include="libv4l-dev" />
+            <RpmDependency Include="libeigen3-dev" />
+            <RpmDependency Include="libopengl-dev" />
+            <RpmDependency Include="cmake-curses-gui" />
+            <RpmDependency Include="freeglut3-dev" />
+    </ItemGroup>
+    <PropertyGroup>
         <PreInstallScript>
-            #!/bin/bash
-            add-apt-repository "deb http://security.ubuntu.com/ubuntu xenial-security main"
-            add-apt-repository ppa:rock-core/qt4 -y
-            apt-get -y update 
-            apt-get -y upgrade
-            apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa libdc1394-22 libtesseract-dev icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libatlas-base-dev gfortran libopengl-dev git gcc xauth avahi-daemon x11-xserver-utils libopencv-dev python3-opencv unzip libtiff5-dev libgeotiff-dev libgtk-3-dev libgstreamer1.0-dev libavcodec-dev libswscale-dev libavformat-dev libopenexr-dev libjasper-dev libdc1394-22-dev libv4l-dev libeigen3-dev libopengl-dev cmake-curses-gui freeglut3-dev lm-sensors
+#!/bin/bash
+serviceName="glimmr"
+if systemctl --all --type service | grep -q "$serviceName";then
+    service glimmr stop
+fi
         </PreInstallScript>
     </PropertyGroup>
-    <PropertyGroup Condition="'$(RuntimeIdentifier)'=='linux-arm'">
+    <ItemGroup Condition="'$(RuntimeIdentifier)'=='linux-x64'">        
+        <DebDependency Include="libgtk-3-dev" />
+        <DebDependency Include="libhdf5-dev" />
+        <DebDependency Include="libatlas-base-dev" />
+        <DebDependency Include="libjasper-dev" />
+        <DebDependency Include="libqtgui4" />
+        <DebDependency Include="libqt4-test" />
+        <DebDependency Include="libglu1-mesa" />
+        <DebDependency Include="libdc1394-22" />
+        <DebDependency Include="libtesseract-dev" />
+        <DebDependency Include="icu-devtools" />
+        <DebDependency Include="libjpeg-dev" />
+        <DebDependency Include="libpng-dev" />
+        <DebDependency Include="libtiff-dev" />
+        <DebDependency Include="libavcodec-dev" />
+        <DebDependency Include="libavformat-dev" />
+        <DebDependency Include="libswscale-dev" />
+        <DebDependency Include="libv4l-dev" />
+        <DebDependency Include="libxvidcore-dev" />
+        <DebDependency Include="gfortran" />
+        <DebDependency Include="libopengl-dev" />
+        <DebDependency Include="git" />
+        <DebDependency Include="gcc" />
+        <DebDependency Include="xauth" />
+        <DebDependency Include="avahi-daemon" />
+        <DebDependency Include="x11-xserver-utils" />
+        <DebDependency Include="libtiff5-dev" />
+        <DebDependency Include="libgeotiff-dev" />
+        <DebDependency Include="libgtk-3-dev" />
+        <DebDependency Include="libgstreamer1.0-dev" />
+        <DebDependency Include="libavcodec-dev" />
+        <DebDependency Include="libswscale-dev" />
+        <DebDependency Include="libavformat-dev" />
+        <DebDependency Include="libopenexr-dev" />
+        <DebDependency Include="libjasper-dev" />
+        <DebDependency Include="libdc1394-22-dev" />
+        <DebDependency Include="libv4l-dev" />
+        <DebDependency Include="libeigen3-dev" />
+        <DebDependency Include="libopengl-dev" />
+        <DebDependency Include="cmake-curses-gui" />
+        <DebDependency Include="freeglut3-dev" />
+        <DebDependency Include="lm-sensors" />
+        <RpmDependency Include="libgtk-3-dev" />
+        <RpmDependency Include="libhdf5-dev" />
+        <RpmDependency Include="libatlas-base-dev" />
+        <RpmDependency Include="libjasper-dev" />
+        <RpmDependency Include="libqtgui4" />
+        <RpmDependency Include="libqt4-test" />
+        <RpmDependency Include="libglu1-mesa" />
+        <RpmDependency Include="libdc1394-22" />
+        <RpmDependency Include="libtesseract-dev" />
+        <RpmDependency Include="icu-devtools" />
+        <RpmDependency Include="libjpeg-dev" />
+        <RpmDependency Include="libpng-dev" />
+        <RpmDependency Include="libtiff-dev" />
+        <RpmDependency Include="libavcodec-dev" />
+        <RpmDependency Include="libavformat-dev" />
+        <RpmDependency Include="libswscale-dev" />
+        <RpmDependency Include="libv4l-dev" />
+        <RpmDependency Include="libxvidcore-dev" />
+        <RpmDependency Include="gfortran" />
+        <RpmDependency Include="libopengl-dev" />
+        <RpmDependency Include="git" />
+        <RpmDependency Include="gcc" />
+        <RpmDependency Include="xauth" />
+        <RpmDependency Include="avahi-daemon" />
+        <RpmDependency Include="x11-xserver-utils" />
+        <RpmDependency Include="libtiff5-dev" />
+        <RpmDependency Include="libgeotiff-dev" />
+        <RpmDependency Include="libgtk-3-dev" />
+        <RpmDependency Include="libgstreamer1.0-dev" />
+        <RpmDependency Include="libavcodec-dev" />
+        <RpmDependency Include="libswscale-dev" />
+        <RpmDependency Include="libavformat-dev" />
+        <RpmDependency Include="libopenexr-dev" />
+        <RpmDependency Include="libjasper-dev" />
+        <RpmDependency Include="libdc1394-22-dev" />
+        <RpmDependency Include="libv4l-dev" />
+        <RpmDependency Include="libeigen3-dev" />
+        <RpmDependency Include="libopengl-dev" />
+        <RpmDependency Include="cmake-curses-gui" />
+        <RpmDependency Include="freeglut3-dev" />
+        <RpmDependency Include="lm-sensors" />
+    </ItemGroup>
+    <PropertyGroup>
         <PreInstallScript>
-            #!/bin/bash
-            apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa libdc1394-22 libtesseract-dev icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev gfortran libopengl-dev git gcc xauth avahi-daemon x11-xserver-utils libtiff5-dev libgeotiff-dev libgtk-3-dev libgstreamer1.0-dev libavcodec-dev libswscale-dev libavformat-dev libopenexr-dev libjasper-dev libdc1394-22-dev libv4l-dev libeigen3-dev libopengl-dev cmake-curses-gui freeglut3-dev
-            echo "gpio=19=op,a5" >> /boot/config.txt
+#!/bin/bash
+if systemctl --all --type service | grep -q "glimmr";
+then
+    service glimmr stop
+fi
+
+echo "gpio=19=op,a5" >> /boot/config.txt
         </PreInstallScript>
     </PropertyGroup>
 
     <PropertyGroup>
         <PostInstallScript>
-            #!/bin/bash
-            systemctl daemon-reload
-            systemctl enable glimmr.service
-            systemctl start glimmr.service
+#!/bin/bash
+echo "
+[Unit]
+Description=GlimmrTV
+
+[Service]
+Type=simple
+RemainAfterExit=yes
+StandardOutput=tty
+Restart=always
+User=root
+WorkingDirectory=/usr/share/Glimmr
+ExecStart=sudo Glimmr
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
+
+" > /etc/systemd/system/glimmr.service
+systemctl daemon-reload
+systemctl enable glimmr.service
+systemctl start glimmr.service
         </PostInstallScript>
     </PropertyGroup>
     <PropertyGroup>
         <PreRemoveScript>
-            #!/bin/bash
-            systemctl stop glimmr.service
-            systemctl disable glimmr.service
-            rm -rf /etc/systemd/system/glimmr.service
-            systemctl daemon-reload
+#!/bin/bash
+if systemctl --all --type service | grep -q "glimmr";
+then
+    systemctl stop glimmr.service
+    systemctl disable glimmr.service
+    rm -rf /etc/systemd/system/glimmr.service
+fi
+systemctl daemon-reload
         </PreRemoveScript>
     </PropertyGroup>
 
