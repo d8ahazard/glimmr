@@ -35,7 +35,7 @@ function vercomp () {
 }
 
 branch=${1:-"master"}
-APPDIR=${2:-"/opt/glimmr/"}
+APPDIR=${2:-"/usr/share/Glimmr/"}
 
 PUBPROFILE="Linux"
 PUBPATH="linux-arm"
@@ -62,10 +62,10 @@ fi
 
 echo "Checking for Glimmr updates for $PUBPROFILE." >> $log
 
-if [ ! -d "/opt/glimmr" ]
+if [ ! -d "/usr/share/Glimmr" ]
   then
 # Make dir
-  mkdir /opt/glimmr  
+  mkdir /usr/share/Glimmr  
 fi
 
 # Download and extract latest release
@@ -93,8 +93,8 @@ cd /tmp || exit
 url="https://github.com/d8ahazard/glimmr/releases/download/$ver/Glimmr-$PUBPATH-$ver.tgz"
 echo "Grabbing archive from $url" >> $log
 wget -O archive.tgz $url
-tar zxvf ./archive.tgz -C /opt/glimmr/
-chmod -R 777 /opt/glimmr/
+tar zxvf ./archive.tgz -C /usr/share/Glimmr/
+chmod -R 777 /usr/share/Glimmr/
 rm ./archive.tgz
 echo "Update completed." >> $log
 echo $ver > /etc/Glimmr/version

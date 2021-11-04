@@ -95,27 +95,40 @@ namespace Glimmr.Models.Util {
 			Log.Debug("Updating...");
 			Log.Information("Backing up current settings...");
 			DataUtil.BackupDb();
-			var branch = GetBranch();
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-				if (File.Exists("C:\\Progra~1\\Glimmr\\update_win.bat")) {
-					Process.Start("../update_win.bat", branch);
-				} else {
-					Log.Warning("Unable to update windows, not installed via git.");
-				}
-			} else {
-				var cmd = "/opt/glimmr/update_linux.sh";
+				Ps("update_win");
+			}
+
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+				var appDir = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
+				var cmd = Path.Join(appDir, "update_osx.sh");
+				Log.Debug("Update command should be: " + cmd);
+				Process.Start("/bin/bash", cmd);	
+			}
+
+			if (IsRaspberryPi() || RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+				var appDir = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
+				var cmd = Path.Join(appDir, "update_linux.sh");
 				Log.Debug("Update command should be: " + cmd);
 				Process.Start("/bin/bash", cmd);
 			}
 		}
 
+		private static void Ps(string filename) {
+			var path = AppDomain.CurrentDomain.BaseDirectory;
+			path = Path.Join(path, $"{filename}.ps1");
+			if (File.Exists(path)) {
+				Process.Start("powershell.exe",
+					$"-NoProfile -ExecutionPolicy unrestricted -File \"{path}\"");
+			} else {
+				Log.Warning("Unable to find script: " + filename);
+			}
+		}
 
 		public static void Restart() {
 			Log.Debug("Restarting glimmr.");
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-				var path = AppDomain.CurrentDomain.BaseDirectory;
-				path = Path.Join(path, "..", "script", "restart_win.ps1");
-				Process.Start("powershell", path);
+				Ps("restart_win");
 			} else {
 				Process.Start("service", "glimmr restart");
 			}

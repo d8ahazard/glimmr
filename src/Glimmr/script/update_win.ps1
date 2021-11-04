@@ -1,16 +1,17 @@
 ﻿# Download latest dotnet/codeformatter release from github
 $releases = "https://api.github.com/repos/d8ahazard/glimmr/releases"
-$appdir = "$Env:Programfiles\Glimmr\"
-Write-Host "Determining latest release."
+$appdir = "$Env:ProgramFiles\Glimmr\"
+Write-Host "Determining latest Glimmr release."
 $tag = (Invoke-WebRequest $releases | ConvertFrom-Json)[0].tag_name
-Write-Host "Latest release version is $tag."
+Write-Host "Latest Glimmr version is $tag."
 # Check for existing "version" file, refer to that to determine if update is needed
 $file = "$Env:ProgramData\Glimmr\"
 if (Test-Path -Path $file -PathType Leaf) {
     $existing = Get-Content -Path $file
-    Write-Host "Existing version is $existing."
+    Write-Host "Existing Glimmr version is $existing."
     if([System.Version]$tag -le [System.Version]$existing) {
-        Write-Host "Version is older or equal, nothing to do."
+        Write-Host "Nothing to do."
+        Exit
     }
 }
 
@@ -29,7 +30,7 @@ $zip = "$Env:ProgramData\Glimmr\archive.zip"
 Write-Host "Dowloading latest release"
 Invoke-WebRequest $download -Out $zip
 
-Stop-Process -name "Glimmr" -ErrorAction SilentlyContinue;
+Stop-Process -name "Glimmr.exe" -ErrorAction SilentlyContinue;
 Stop-Process -name "GlimmrTray.exe" -ErrorAction SilentlyContinue;
 
 Write-Host Extracting release files
@@ -38,4 +39,4 @@ Expand-Archive -Path $zip -DestinationPath $appdir
 # Delete extracted archive
 Remove-Item $zip -Force -ErrorAction SilentlyContinue
 
-Start-Process -FilePath "$Env:ProgramData\Glimmr\GlimmrTray.exe"
+Start-Process -FilePath "$Env:ProgramFiles\Glimmr\GlimmrTray.exe"

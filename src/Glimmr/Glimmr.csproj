@@ -28,6 +28,14 @@
         <FileVersion>1.2.0</FileVersion>
     </PropertyGroup>
 
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <DebugType>full</DebugType>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <DebugType>full</DebugType>
+    </PropertyGroup>
+
     <ItemGroup>
         <PackageReference Include="AdalightNet" Version="1.0.8" />
         <PackageReference Include="AutoMapper" Version="10.1.1" />
@@ -37,8 +45,8 @@
         <PackageReference Include="DasMulli.SimpleGitVersion" Version="1.0.0" PrivateAssets="All" />
         <PackageReference Include="Emgu.CV" Version="4.5.4.4788" />
         <PackageReference Include="Emgu.CV.Bitmap" Version="4.5.4.4788" />
-        <PackageReference Include="Emgu.CV.runtime.linux-arm" Version="4.5.4.4788" Condition="$(RuntimeIdentifier) == 'linux-arm'" />
-        <PackageReference Include="Emgu.CV.runtime.ubuntu.20.04-x64" Version="4.5.4.4788" Condition="$(RuntimeIdentifier) == 'ubuntu.20.04-x64'" />
+        <PackageReference Include="Emgu.CV.runtime.linux-arm" Version="4.5.4.4788" />
+        <PackageReference Include="Emgu.CV.runtime.ubuntu.20.04-x64" Version="4.5.4.4788" />
         <PackageReference Include="Emgu.CV.runtime.windows" Version="4.5.4.4788" />
         <PackageReference Include="JsonSubTypes" Version="1.8.0" />
         <PackageReference Include="LibreHardwareMonitorLib" Version="0.8.9-pre47" />
@@ -74,9 +82,52 @@
     </ItemGroup>
 
     <ItemGroup>
-        <_ContentIncludedByDefault Remove="wwwroot\lib\croppr\croppr.min.css" />
-        <_ContentIncludedByDefault Remove="wwwroot\lib\croppr\croppr.min.js" />
+        <None Include="lib/bass.dll" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" LinuxFileMode="1755" />
+        <None Include="../../COPYING" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
     </ItemGroup>
+
+    <ItemGroup Condition="'$(RuntimeIdentifier)'=='linux-x64' OR '$(RuntimeIdentifier)'=='linux-arm'">
+		<None Include="script/glimmr.service" CopyToPublishDirectory="Always" LinuxFileMode="1755">
+			<LinuxPath>/etc/systemd/system/glimmr.service</LinuxPath>
+		</None>
+		<None Include="script/update_linux.sh" CopyToPublishDirectory="Always" LinuxFileMode="0777" Link="%(Filename)%(Extension)">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+	
+	<ItemGroup Condition="'$(RuntimeIdentifier)'=='linux-x64'">
+		<Content Include="lib/Linux/libbass.so" CopyToPublishDirectory="Always" LinuxFileMode="1755" Link="%(Filename)%(Extension)">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>		
+	</ItemGroup>
+
+    <ItemGroup Condition="'$(RuntimeIdentifier)'=='osx'">
+        <Content Include="lib/OSX/libbass.dylib" CopyToPublishDirectory="Always" LinuxFileMode="1755" Link="%(Filename)%(Extension)">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <None Include="script/update_osx.sh" CopyToPublishDirectory="Always" LinuxFileMode="0777" Link="%(Filename)%(Extension)">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+	
+	<ItemGroup Condition="'$(RuntimeIdentifier)'=='linux-arm'">
+		<Content Include="lib/LinuxARM/libbass.so" CopyToPublishDirectory="Always" LinuxFileMode="1755" Link="%(Filename)%(Extension)">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>		
+		<Content Include="lib/LinuxARM/ws2811.so" CopyToPublishDirectory="Always" LinuxFileMode="1755" Link="%(Filename)%(Extension)">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>		
+	</ItemGroup>
+
+    <ItemGroup Condition="'$(RuntimeIdentifier)'=='win-x64' OR '$(RuntimeIdentifier)'=='win-x86'">
+        <Content Include="lib/Windows/bass.dll" CopyToPublishDirectory="Always" LinuxFileMode="1755" Link="%(Filename)%(Extension)">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="lib/Windows/GlimmrTray.exe" CopyToPublishDirectory="Always" LinuxFileMode="1755" Link="%(Filename)%(Extension)">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
     <ItemGroup>
         <RuntimeHostConfigurationOption Include="System.Globalization.Invariant" Value="true" />
     </ItemGroup>
