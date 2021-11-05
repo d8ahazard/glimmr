@@ -19,34 +19,68 @@ if [ "$unameOut" == "FreeBSD" ]
     PUBPROFILE="Portable"
 fi
 
+echo "Performing cleanup..."
+
+serviceName="glimmr"
+if systemctl --all --type service | grep -q "$serviceName";then
+  echo "Stopping and removing old glimmr service definitions..."
+    service glimmr stop
+    systemctl disable glimmr.service
+    rm -rf /etc/systemd/system/glimmr.service
+    echo "STOPPED!"
+else
+    echo "$serviceName is not installed."
+fi
+
+
+if [ -d "/opt/glimmr" ]
+  then
+    echo "Removing /opt/glimmr folder."
+    rm -r "/opt/glimmr"
+fi
+
+if [ -d "/home/glimmrtv/glimmr" ]
+  then
+    echo "Removing /home/glimmrtv/glimmr folder."
+    rm -r "/home/glimmrtv/glimmr"
+fi
+
+if [ -d "/home/glimmrtv/ws281x" ]
+  then
+    echo "Removing /home/glimmrtv/ws281x folder."
+    rm -r "/home/glimmrtv/ws281x"
+fi
+
+if [ -d "/opt/dotnet" ]
+  then
+    echo "Removing /opt/dotnet folder."
+    rm -r "/opt/dotnet"
+fi
+
 echo "Beginning Glimmr setup/update for $PUBPROFILE"
 
-if [ ! -f "/usr/share/Glimmr/firstrun" ]
+echo "Checking dependencies..."
+if [ "$PUBPROFILE" == "LinuxARM" ] 
 then
-  echo "Starting first-run setup..."
-  if [ "$PUBPROFILE" == "LinuxARM" ] 
-  then
-    echo "Installing Linux-ARM dependencies..."
-    # Install dependencies
-    sudo apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa libdc1394-22 libtesseract-dev icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev gfortran libopengl-dev git gcc xauth avahi-daemon x11-xserver-utils libtiff5-dev libgeotiff-dev libgtk-3-dev libgstreamer1.0-dev libavcodec-dev libswscale-dev libavformat-dev libopenexr-dev libjasper-dev libdc1394-22-dev libv4l-dev libeigen3-dev libopengl-dev cmake-curses-gui freeglut3-dev
-    echo "gpio=19=op,a5" >> /boot/config.txt    
-    echo "Raspi first-config is done!"
-  fi
+  echo "Installing Linux-ARM dependencies..."
+  # Install dependencies
+  sudo apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test libglu1-mesa libdc1394-22 libtesseract-dev icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev gfortran libopengl-dev git gcc xauth avahi-daemon x11-xserver-utils libtiff5-dev libgeotiff-dev libgtk-3-dev libgstreamer1.0-dev libavcodec-dev libswscale-dev libavformat-dev libopenexr-dev libjasper-dev libdc1394-22-dev libv4l-dev libeigen3-dev libopengl-dev cmake-curses-gui freeglut3-dev
+  echo "gpio=19=op,a5" >> /boot/config.txt    
+  echo "Raspi first-config is done!"
+fi
 
-  if [ "$PUBPROFILE" == "Linux" ] 
+if [ "$PUBPROFILE" == "Linux" ] 
+then
+    echo "Installing Linux (x64) dependencies..."
+    sudo apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libglu1-mesa libdc1394-22 libtesseract-dev icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libatlas-base-dev gfortran libopengl-dev git gcc xauth avahi-daemon x11-xserver-utils libopencv-dev python3-opencv unzip libtiff5-dev libgeotiff-dev libgtk-3-dev libgstreamer1.0-dev libavcodec-dev libswscale-dev libavformat-dev libopenexr-dev libdc1394-22-dev libv4l-dev libeigen3-dev libopengl-dev cmake-curses-gui freeglut3-dev lm-sensors
+    sudo apt-get -y install libopencv-dev python3-opencv lm-sensors
+    echo "DONE!"
+fi
+
+if [ ! -d "/usr/share/Glimmr" ]
   then
-      echo "Installing Linux (x64) dependencies..."
-      sudo apt-get -y install libgtk-3-dev libhdf5-dev libatlas-base-dev libglu1-mesa libdc1394-22 libtesseract-dev icu-devtools libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libatlas-base-dev gfortran libopengl-dev git gcc xauth avahi-daemon x11-xserver-utils libopencv-dev python3-opencv unzip libtiff5-dev libgeotiff-dev libgtk-3-dev libgstreamer1.0-dev libavcodec-dev libswscale-dev libavformat-dev libopenexr-dev libdc1394-22-dev libv4l-dev libeigen3-dev libopengl-dev cmake-curses-gui freeglut3-dev lm-sensors
-      sudo apt-get -y install libopencv-dev python3-opencv lm-sensors
-      echo "DONE!"
-  fi
-  
-  if [ ! -d "/usr/share/Glimmr" ]
-    then
-  # Make dir
-    mkdir /usr/share/Glimmr  
-  fi
-  echo "done" > "/usr/share/Glimmr/firstrun"
+# Make dir
+  mkdir /usr/share/Glimmr  
 fi
 
 # Check for service stop
@@ -71,15 +105,8 @@ chmod -R 777 /usr/share/Glimmr
 rm ./archive.tgz
 echo "DONE." >> $log
 
-# Check service start/install
-if systemctl --all --type service | grep -q "$serviceName";then
-  echo "Starting Glimmr service..."
-  systemctl daemon-reload
-  service glimmr start
-  echo "DONE!"
-else  
-  echo "$serviceName does NOT exist, installing."
-  echo "
+echo "Re-installing $serviceName."
+echo "
 [Unit]
 Description=GlimmrTV
 
@@ -97,8 +124,8 @@ KillMode=process
 WantedBy=multi-user.target
 
 " > /etc/systemd/system/glimmr.service
-  systemctl daemon-reload
-  systemctl enable glimmr.service
-  systemctl start glimmr.service
-fi
+systemctl daemon-reload
+systemctl enable glimmr.service
+systemctl start glimmr.service
+
 read -n 1 -r -s -p $'Install complete, press enter to continue.\n'
