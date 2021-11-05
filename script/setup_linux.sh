@@ -63,7 +63,7 @@ fi
 cd /tmp || exit
 ver=$(wget "https://api.github.com/repos/d8ahazard/glimmr/releases/latest" -q -O - | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
 echo ver is $ver
-url="https://github.com/d8ahazard/glimmr/releases/download/$ver/Glimmr-$PUBPATH-$ver.tgz"
+url="https://github.com/d8ahazard/glimmr/releases/download/$ver/Glimmr-$PUBFILE-$ver.tgz"
 echo Grabbing archive from $url
 wget -O archive.tgz $url
 tar zxvf ./archive.tgz -C /usr/share/Glimmr/
