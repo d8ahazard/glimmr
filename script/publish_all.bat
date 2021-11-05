@@ -27,9 +27,13 @@ echo Build MSI package
 SET "APP=C:\Progra~2\Inno Setup 6\iscc.exe"
 "%APP%" "%~dp0..\src\Glimmr\build_app.iss"
 
-echo Creating archives...
 :Archive
 cd .\bin\
+echo Copying OSX Files...
+xcopy /Y /E .\OSX\* ..\..\..\..\Glimmr-macos-installer-builder\macOS-x64\application
+
+echo Creating archives...
+
 %~dp07z.exe a -ttar -so -an -r .\LinuxARM\* | %~dp07z a -si Glimmr-linux-arm-%version%.tgz
 %~dp07z.exe a -ttar -so -an -r .\Linux\* | %~dp07z a -si Glimmr-linux-%version%.tgz
 %~dp07z.exe a -ttar -so -an -r .\OSX\* | %~dp07z a -si Glimmr-osx-%version%.tgz

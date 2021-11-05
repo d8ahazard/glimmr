@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>com.glimmr.loginscript</string>
+    <key>ProgramArguments</key>
+    <array>
+      <string>/Applications/Glimmr/Glimmr</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true />
+  </dict>
+</plist>
+

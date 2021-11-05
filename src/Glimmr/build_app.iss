@@ -19,4 +19,7 @@ Name: "{group}\Uninstall Glimmr"; Filename: "{uninstallexe}"
 [Registry]
 Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; \
     ValueType: string; ValueName: "Glimmr Tray"; \
-    ValueData: """{app}\GlimmrTray.exe"" /login"
+    ValueData: """{app}\GlimmrTray.exe"" /login";Tasks:StartMenuEntry;
+    
+[Tasks]
+Name: "StartMenuEntry" ; Description: "Start Glimmr when Windows starts." ; GroupDescription: "Windows Startup"; MinVersion: 4,4;

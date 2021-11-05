@@ -102,6 +102,10 @@
         <Content Include="lib/OSX/libbass.dylib" CopyToPublishDirectory="Always" LinuxFileMode="1755" Link="%(Filename)%(Extension)">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
+        <Content Include="lib/OSX/com.glimmr.loginscript.plist" CopyToPublishDirectory="Always" LinuxFileMode="1755" Link="%(Filename)%(Extension)">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        
         <None Include="script/update_osx.sh" CopyToPublishDirectory="Always" LinuxFileMode="0777" Link="%(Filename)%(Extension)">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
@@ -313,7 +317,7 @@ then
     service glimmr stop
 fi
 
-echo "gpio=19=op,a5" >> /boot/config.txt
+echo "gpio=19=op,a5" &gt;&gt; /boot/config.txt
         </PreInstallScript>
     </PropertyGroup>
 
@@ -337,7 +341,7 @@ KillMode=process
 [Install]
 WantedBy=multi-user.target
 
-" > /etc/systemd/system/glimmr.service
+" &gt; /etc/systemd/system/glimmr.service
 systemctl daemon-reload
 systemctl enable glimmr.service
 systemctl start glimmr.service
