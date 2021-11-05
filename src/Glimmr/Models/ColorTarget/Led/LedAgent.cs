@@ -55,7 +55,6 @@ namespace Glimmr.Models.ColorTarget.Led {
 		}
 
 		public void ReloadData() {
-			Log.Debug("Reloading...");
 			_sd = DataUtil.GetSystemData();
 			LedData? d0 = DataUtil.GetDevice<LedData>("0");
 			LedData? d1 = DataUtil.GetDevice<LedData>("1");
@@ -70,7 +69,6 @@ namespace Glimmr.Models.ColorTarget.Led {
 				LoadStrips(d0, d1);
 			}
 
-			Log.Debug("Reloading led data for real...");
 			_d0 = d0;
 			_d1 = d1;
 
@@ -87,7 +85,6 @@ namespace Glimmr.Models.ColorTarget.Led {
 			if (_use0) {
 				_s0Brightness = (int)(_d0.Brightness / 100f * 255f);
 				_s0MaxBrightness = _s0Brightness;
-				Log.Debug("Setting brightness to " + _s0Brightness);
 				_ws281X?.SetBrightness(_s0Brightness);
 			}
 
