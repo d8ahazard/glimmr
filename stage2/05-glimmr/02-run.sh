@@ -23,7 +23,7 @@ StandardOutput=tty
 Restart=always
 User=root
 WorkingDirectory=/usr/share/Glimmr
-ExecStart=sudo Glimmr
+ExecStart=sudo ./Glimmr
 KillMode=process
 
 [Install]
