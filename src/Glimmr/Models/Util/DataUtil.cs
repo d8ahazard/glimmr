@@ -18,6 +18,7 @@ namespace Glimmr.Models.Util {
 	[Serializable]
 	public static class DataUtil {
 		private static bool _dbLocked;
+		private static int _lockCount = 0;
 		private static List<dynamic>? _devices;
 		private static LiteDatabase? _db = GetDb();
 
@@ -25,11 +26,13 @@ namespace Glimmr.Models.Util {
 		private static SystemData? _systemData = CacheSystemData();
 
 		private static LiteDatabase GetDb() {
-			while (_dbLocked) {
+			while (_dbLocked && _lockCount < 20) {
 				Log.Debug("Awaiting export...");
-				Task.Delay(TimeSpan.FromMilliseconds(50));
+				_lockCount++;
+				Task.Delay(TimeSpan.FromMilliseconds(50));				
 			}
 
+			_lockCount = 0;
 			var userPath = SystemUtil.GetUserDir();
 			userPath = Path.Join(userPath, "store.db");
 
@@ -374,10 +377,11 @@ namespace Glimmr.Models.Util {
 			var outFile = Path.Combine(userDir, $"store_{stamp}.db");
 			var output = string.Empty;
 			_dbLocked = true;
-			_db.Commit();
-			_db.Dispose();
 			try {
+				_db.Commit();
+				_db.Dispose();
 				File.Copy(dbPath, outFile, true);
+				if (SystemUtil.IsRaspberryPi()) File.Copy(dbPath, "/boot/store.db");
 				output = outFile;
 			} catch (Exception) {
 				//ignored
@@ -396,9 +400,10 @@ namespace Glimmr.Models.Util {
 			var outFile = Path.Combine(userDir, $"store_{stamp}.db");
 			// lock DB so we don't get issues
 			_dbLocked = true;
-			_db?.Commit();
-			_db?.Dispose();
 			try {
+				_db?.Commit();
+				_db?.Dispose();
+
 				// Back up existing db
 				if (File.Exists(outFile)) {
 					var rand = new Random();
