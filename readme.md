@@ -56,7 +56,7 @@ wget -qO- https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_li
 
 *Alternatively*, you can flash a custom image directly to your pi from here:
 
-https://mega.nz/file/u24w0TpK#esrm65xrUQf_kZd6CSkO5hNUlsSpojCXBn4OU1jUOBI
+https://mega.nz/file/m2RHyIAI#wFZqNlS3zxf2WnJChmUHgCMHsBejjLkFRJ6o8Na0a8w
 
 You will need to use "BalenaEtcher", a free software for flashing the image.
 
