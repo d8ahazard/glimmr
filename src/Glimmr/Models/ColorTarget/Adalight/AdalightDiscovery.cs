@@ -101,7 +101,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 						Log.Debug($"Unable to open port {portName}.");
 					}
 				} catch (Exception ex) {
-					Log.Warning($"Exception testing port {portName}: " + ex.Message + " at " + ex.StackTrace);
+					Log.Warning($"Exception testing port {portName}: " + ex.Message);
 				}
 			}
 

@@ -48,6 +48,10 @@ namespace Glimmr.Models.Util {
 			return pingable;
 		}
 
+		public static bool IsDocker() {
+			return File.Exists("/docker_install.sh");
+		}
+
 		public static bool IsRaspberryPi() {
 			if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
 				return false;

@@ -589,9 +589,9 @@ function setSocketListeners() {
         }
     });
 
-    websocket.on('device', function (parsed) {
-        //let parsed = JSON.parse(dData);
-        if (isValid(parsed) && isValid(parsed["id"])) {
+    websocket.on('device', function (dData) {
+        let parsed = JSON.parse(dData);
+        if (parsed && typeof(parsed) === "object" && parsed.hasOwnProperty("Id") && parsed["Id"] !== undefined && parsed["Id"] !== "") {
             console.log("Received device data from server: ", parsed);
         } else {
             console.log("Device data is invalid:", parsed);

@@ -58,7 +58,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 		}
 
-		public GlimmrData(string id, IPAddress ip) {
+		public GlimmrData(string id, string ip) {
 			Id = id;
 			Tag = "Glimmr";
 			Name ??= Tag;
@@ -66,7 +66,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 				Name = StringUtil.UppercaseFirst(Id);
 			}
 
-			IpAddress = ip.ToString();
+			IpAddress = ip;
 			FetchData();
 			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 		}
@@ -80,7 +80,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			TopCount = sd.TopCount;
 			BottomCount = sd.BottomCount;
 			IpAddress = IpUtil.GetLocalIpAddress();
-			Id = Dns.GetHostName();
+			Id = sd.CheckDeviceVariables();
 		}
 
 		/// <summary>

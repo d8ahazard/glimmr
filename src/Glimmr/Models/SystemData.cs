@@ -438,7 +438,7 @@ namespace Glimmr.Models {
 		public string? DeviceId { get; set; } = "";
 
 		public SystemData() {
-			CheckDeviceId();
+			CheckDeviceVariables();
 		}
 
 		public void SetDefaults() {
@@ -453,15 +453,10 @@ namespace Glimmr.Models {
 			BaudRate = 115200;
 			CropBlackLevel = 7;
 			BlackLevel = 7;
-			DeviceName = Environment.MachineName;
-			if (string.IsNullOrEmpty(DeviceName)) {
-				DeviceName = Dns.GetHostName();
-			}
-
-			CheckDeviceId();
+			CheckDeviceVariables();
 		}
 
-		private void CheckDeviceId() {
+		public string CheckDeviceVariables() {
 			var id = DeviceId;
 			if (string.IsNullOrEmpty(id)) {
 				id = NetworkInterface
@@ -473,7 +468,7 @@ namespace Glimmr.Models {
 					.FirstOrDefault();
 				DeviceId = id;
 				if (!string.IsNullOrEmpty(id)) {
-					return;
+					return id;
 				}
 
 				var rand = new Random();
@@ -483,6 +478,15 @@ namespace Glimmr.Models {
 			}
 
 			DeviceId = id;
+			if (!SystemUtil.IsDocker()) {
+				DeviceName = Environment.MachineName;
+				if (string.IsNullOrEmpty(DeviceName)) {
+					DeviceName = Dns.GetHostName();
+				}
+			} else {
+				DeviceName = "Glimmr-" + id[..3];
+			}
+			return id;
 		}
 	}
 }

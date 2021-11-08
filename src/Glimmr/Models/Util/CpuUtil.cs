@@ -44,19 +44,25 @@ namespace Glimmr.Models.Util {
 
 		public static async Task<StatData> GetStats() {
 			var cd = new StatData();
-			if (OperatingSystem.IsWindows()) {
-				cd = CpuMonitor.Monitor();
-			} else {
-				cd.CpuUsage = GetProcessAverage().Result;
-				cd.CpuTemp = GetTemperature().Result;
-				cd.MemoryUsage = GetMemoryUsage();
-				_throttledState = await GetThrottledState();
-				cd.ThrottledState = _throttledState;
-			}
+			try {
+				if (OperatingSystem.IsWindows()) {
+					cd = CpuMonitor.Monitor();
+				} else {
+					cd.CpuUsage = GetProcessAverage().Result;
+					cd.CpuTemp = GetTemperature().Result;
+					cd.MemoryUsage = GetMemoryUsage();
+					_throttledState = await GetThrottledState();
+					cd.ThrottledState = _throttledState;
+				}
 
-			TemperatureSetMinMax(cd.CpuTemp);
-			cd.TempMin = _tempMin;
-			cd.TempMax = _tempMax;
+				TemperatureSetMinMax(cd.CpuTemp);
+				cd.TempMin = _tempMin;
+				cd.TempMax = _tempMax;
+			} catch (Exception e) {
+				Log.Warning("Stat exception: " + e.Message + " at " + e.StackTrace);
+			}
+			
+
 			return cd;
 		}
 
@@ -305,12 +311,24 @@ namespace Glimmr.Models.Util {
 			var processResult = (await process.StandardOutput.ReadToEndAsync()).Trim();
 			await process.WaitForExitAsync();
 			process.Dispose();
-			var loadAverages = processResult[(processResult.IndexOf("average: ", Sc) + 9)..].Split(',');
-			if (float.TryParse(loadAverages[0], out var la1)) {
-				return (int)la1;
+			var split0 = processResult.Split("average: ")[1];
+			var loadAverages = split0.Split(", ");
+			var idx = 0;
+			var average = 0f;
+			foreach (var avg in loadAverages) {
+				if (float.TryParse(avg.Trim(), out var la1)) {
+					idx++;
+					average += la1;
+				}	
 			}
 
-			return 0;
+			if (idx <= 0 || !(average > 0)) {
+				return 0;
+			}
+
+			average /= idx;
+			return (int)average;
+
 		}
 
 		private static async Task<string[]> GetThrottledStatePi() {
