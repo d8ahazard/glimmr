@@ -18,7 +18,7 @@ namespace Glimmr.Models.Util {
 	[Serializable]
 	public static class DataUtil {
 		private static bool _dbLocked;
-		private static int _lockCount = 0;
+		private static int _lockCount;
 		private static List<dynamic>? _devices;
 		private static LiteDatabase? _db = GetDb();
 

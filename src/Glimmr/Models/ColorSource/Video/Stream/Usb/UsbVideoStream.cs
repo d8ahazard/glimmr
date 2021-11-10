@@ -1,6 +1,7 @@
 ﻿#region
 
 using System;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
@@ -81,6 +82,10 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 			};
 			var api = OperatingSystem.IsWindows() ? VideoCapture.API.DShow : VideoCapture.API.V4L2;
 			_video = new VideoCapture(_inputStream, api);
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+				return;
+			}
+
 			foreach (var (prop, val) in props) {
 				_video.Set(prop, val);
 			}

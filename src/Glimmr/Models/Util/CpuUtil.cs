@@ -311,7 +311,7 @@ namespace Glimmr.Models.Util {
 			var processResult = (await process.StandardOutput.ReadToEndAsync()).Trim();
 			await process.WaitForExitAsync();
 			process.Dispose();
-			var split0 = processResult.Split("average: ")[1];
+			var split0 = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? processResult.Split("averages: ")[1] : processResult.Split("average: ")[1];
 			var loadAverages = split0.Split(", ");
 			var idx = 0;
 			var average = 0f;
