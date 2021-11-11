@@ -221,7 +221,15 @@ namespace Glimmr.Models.Util {
 			}
 		}
 
-		private static async Task<string> GetDeviceName(int index) {
+		private static async Task<string> GetVideoName(int index) {
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+				return GetVideoNameLinux(index).Result;
+			} else {
+				return GetVideoNameOsx(index).Result;
+			}
+		}
+		
+		private static async Task<string> GetVideoNameLinux(int index) {
 			var process = new Process {
 				StartInfo = new ProcessStartInfo {
 					FileName = "/bin/bash",
@@ -238,9 +246,31 @@ namespace Glimmr.Models.Util {
 			return result;
 		}
 
+		private static async Task<string> GetVideoNameOsx(int index) {
+			return $"Device {index}";
+			var process = new Process {
+				StartInfo = new ProcessStartInfo {
+					FileName = "system_profiler",
+					Arguments = "SPCameraDataType",
+					RedirectStandardOutput = true,
+					UseShellExecute = false,
+					CreateNoWindow = true
+				}
+			};
+			process.Start();
+			var result = await process.StandardOutput.ReadToEndAsync();
+			await process.WaitForExitAsync();
+			process.Dispose();
+			return result;
+		}
+
 		public static Dictionary<int, string> ListUsb() {
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 				return ListUsbWindows();
+			}
+
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+				return ListUsbOsx();
 			}
 
 			try {
@@ -265,7 +295,7 @@ namespace Glimmr.Models.Util {
 					var h = v.Height;
 
 					if (usb == i || w != 0 && h != 0) {
-						output[i] = GetDeviceName(i).Result;
+						output[i] = GetVideoNameLinux(i).Result;
 					}
 
 					v.Dispose();
@@ -277,6 +307,41 @@ namespace Glimmr.Models.Util {
 			}
 
 			return output;
+		}
+		
+		private static Dictionary<int, string> ListUsbOsx() {
+			var sd = DataUtil.GetSystemData();
+			var usb = sd.UsbSelection;
+			var i = 0;
+			var output = new Dictionary<int, string>();
+			while (i < 10) {
+				var res = CheckVideo(i, usb, VideoCapture.API.Any);
+				if (string.IsNullOrEmpty(res)) res = CheckVideo(i, usb, VideoCapture.API.DShow);
+				if (string.IsNullOrEmpty(res)) res = CheckVideo(i, usb, VideoCapture.API.QT);
+				if (string.IsNullOrEmpty(res)) res = CheckVideo(i, usb, VideoCapture.API.AVFoundation);
+				if (!string.IsNullOrEmpty(res)) output[i] = res;
+				i++;
+			}
+
+			return output;
+		}
+
+		private static string? CheckVideo(int index, int selection, VideoCapture.API api) {
+			string? result = null;
+			try {
+				var v = new VideoCapture(index, api); // Will crash if not available, hence try/catch.
+				var w = v.Width;
+				var h = v.Height;
+
+				if (selection == index || w != 0 && h != 0) {
+					result = GetVideoName(index).Result;
+				}
+
+				v.Dispose();
+			} catch (Exception e) {
+				Log.Debug("Exception checking video: " + e.Message);
+			}
+			return result;
 		}
 
 		private static Dictionary<int, string> ListUsbWindows() {

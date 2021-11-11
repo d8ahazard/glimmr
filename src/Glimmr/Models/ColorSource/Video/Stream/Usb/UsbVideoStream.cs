@@ -81,11 +81,9 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 				new(CapProp.FrameHeight, 480)
 			};
 			var api = OperatingSystem.IsWindows() ? VideoCapture.API.DShow : VideoCapture.API.V4L2;
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) api = VideoCapture.API.Any;
 			_video = new VideoCapture(_inputStream, api);
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
-				return;
-			}
-
+			
 			foreach (var (prop, val) in props) {
 				_video.Set(prop, val);
 			}
