@@ -12,7 +12,7 @@ namespace Glimmr.Models.Util {
 
 		public void VisitHardware(IHardware hardware) {
 			hardware.Update();
-			foreach (IHardware subHardware in hardware.SubHardware) {
+			foreach (var subHardware in hardware.SubHardware) {
 				subHardware.Accept(this);
 			}
 		}

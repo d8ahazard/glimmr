@@ -35,6 +35,10 @@
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
       <DebugType>full</DebugType>
     </PropertyGroup>
+    
+    <ItemGroup>
+        <Reference Include="Xamarin.Mac" />
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="AdalightNet" Version="1.0.8" />
@@ -49,7 +53,7 @@
         <PackageReference Include="Emgu.CV.runtime.ubuntu.20.04-x64" Version="4.5.4.4788" />
         <PackageReference Include="Emgu.CV.runtime.windows" Version="4.5.4.4788" />
         <PackageReference Include="JsonSubTypes" Version="1.8.0" />
-        <PackageReference Include="LibreHardwareMonitorLib" Version="0.8.9-pre47" />
+        <PackageReference Include="LibreHardwareMonitorLib" Version="0.8.9" />
         <PackageReference Include="LifxNetPlus" Version="1.1.5" />
         <PackageReference Include="LiteDB" Version="5.0.11" />
         <PackageReference Include="Makaretu.Dns.Multicast" Version="0.27.0" />

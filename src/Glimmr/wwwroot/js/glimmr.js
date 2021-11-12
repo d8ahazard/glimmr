@@ -633,6 +633,7 @@ function loadSocket() {
         console.log("Socket connected.");
         socketLoaded = true;
         errModal.hide();
+        sendMessage("settingsShown", settingsShown, false);
     }).catch(function (err) {
         console.log("Socket connection error: ", err.toString());
         showSocketError();
