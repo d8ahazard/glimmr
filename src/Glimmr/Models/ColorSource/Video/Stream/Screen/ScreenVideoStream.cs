@@ -1,8 +1,10 @@
 ﻿#region
 
 using System;
+
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
@@ -22,9 +24,13 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 		private FrameSplitter? _splitter;
 		private int _top;
 		private int _width;
+		private readonly OSxScreenshot? _ss;
 
 		public ScreenVideoStream() {
 			Log.Information("Config got.");
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+				_ss = new OSxScreenshot();
+			}
 		}
 
 		public void Dispose() {
@@ -73,14 +79,25 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 		private void CaptureScreen(CancellationToken ct) {
 			Log.Debug("Screen capture started...");
 			while (!ct.IsCancellationRequested && _capturing) {
-				var bcs = new Bitmap(_width, _height, PixelFormat.Format24bppRgb);
-				using var g = Graphics.FromImage(bcs);
-				g.CopyFromScreen(_left, _top, 0, 0, bcs.Size, CopyPixelOperation.SourceCopy);
-				var sc = bcs.ToImage<Bgr, byte>();
-				g.Flush();
-				var newMat = sc.Resize(640, 480, Inter.Nearest);
-				_splitter?.Update(newMat.Mat);
-				newMat.Dispose();
+				try {
+					Image<Bgr, byte>? newMat;
+					if (_ss == null) {
+						var bcs = new Bitmap(_width, _height, PixelFormat.Format24bppRgb);
+						using var g = Graphics.FromImage(bcs);
+						g.CopyFromScreen(_left, _top, 0, 0, bcs.Size, CopyPixelOperation.SourceCopy);
+						g.Flush();
+						var sc = bcs.ToImage<Bgr, byte>();
+						newMat = sc.Resize(640, 480, Inter.Nearest);
+					} else {
+						newMat = _ss.Grab();
+						if (newMat == null) return;
+					}
+					_splitter?.Update(newMat.Mat);
+					newMat.Dispose();
+				} catch (Exception e) {
+					Log.Debug("Exception grabbing screen: " + e.Message);
+				}
+				
 			}
 
 			Log.Debug("Capture completed?");

@@ -223,10 +223,9 @@ namespace Glimmr.Models.Util {
 
 		private static async Task<string> GetVideoName(int index) {
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-				return GetVideoNameLinux(index).Result;
-			} else {
-				return GetVideoNameOsx(index).Result;
+				return await GetVideoNameLinux(index);
 			}
+			return await GetVideoNameOsx(index);
 		}
 		
 		private static async Task<string> GetVideoNameLinux(int index) {
@@ -246,22 +245,8 @@ namespace Glimmr.Models.Util {
 			return result;
 		}
 
-		private static async Task<string> GetVideoNameOsx(int index) {
-			return $"Device {index}";
-			var process = new Process {
-				StartInfo = new ProcessStartInfo {
-					FileName = "system_profiler",
-					Arguments = "SPCameraDataType",
-					RedirectStandardOutput = true,
-					UseShellExecute = false,
-					CreateNoWindow = true
-				}
-			};
-			process.Start();
-			var result = await process.StandardOutput.ReadToEndAsync();
-			await process.WaitForExitAsync();
-			process.Dispose();
-			return result;
+		private static Task<string> GetVideoNameOsx(int index) {
+			return Task.FromResult($"Device {index}");
 		}
 
 		public static Dictionary<int, string> ListUsb() {

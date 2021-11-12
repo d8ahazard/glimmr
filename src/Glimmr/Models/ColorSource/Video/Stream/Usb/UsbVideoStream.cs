@@ -104,9 +104,7 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 				return true;
 			}
 
-			// Log.Warning("Video problems, bob...");
-			// _video?.Dispose();
-			// _video = null;
+			Log.Information("Unable to set FPS or FourCC, video may not work.");
 			return true;
 		}
 

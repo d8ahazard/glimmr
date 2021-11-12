@@ -19,8 +19,8 @@ IF "%2"=="-j" GOTO JS
 IF "%2"=="-c" GOTO CSS
 IF "%2"=="-w" GOTO WEB
 
-echo Copying new files...
-IF "%3"=="-f" GOTO FULL
+IF "%2"=="-f" GOTO FULL
+echo Copying main files...
 pscp -P 22 -r -pw intozoom .\Glimmr.Views.dll intozoom@%1:/Library/Glimmr/1.2.0/Glimmr.Views.dll
 pscp -P 22 -r -pw intozoom .\Glimmr.deps.json intozoom@%1:/Library/Glimmr/1.2.0/Glimmr.deps.json
 pscp -P 22 -r -pw intozoom .\Glimmr.Views.pdb intozoom@%1:/Library/Glimmr/1.2.0/Glimmr.Views.pdb
@@ -33,15 +33,19 @@ pscp -P 22 -r -pw intozoom .\Glimmr.runtimeconfig.json intozoom@%1:/Library/Glim
 pscp -P 22 -r -pw intozoom .\Glimmr intozoom@%1:/Library/Glimmr/1.2.0/Glimmr
 GOTO NEXT
 :JS
+echo Copying JS files...
 pscp -P 22 -r -pw intozoom .\wwwroot\js\* intozoom@%1:/Library/Glimmr/1.2.0/wwwroot/js/
 GOTO END
 :CSS
+echo Copying CSS files...
 pscp -P 22 -r -pw intozoom .\wwwroot\css\* intozoom@%1:/Library/Glimmr/1.2.0/wwwroot/css/
 GOTO END
 :WEB
+echo Copying Web files...
 pscp -P 22 -r -pw intozoom .\wwwroot\* intozoom@%1:/Library/Glimmr/1.2.0/wwwroot/
 GOTO END
 :FULL
+echo Copying All files...
 pscp -P 22 -r -pw intozoom .\* intozoom@%1:/Library/Glimmr/1.2.0/
 :NEXT
 IF NOT "%2"=="-s" GOTO END
