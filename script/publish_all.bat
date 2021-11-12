@@ -30,6 +30,7 @@ SET "APP=C:\Progra~2\Inno Setup 6\iscc.exe"
 :Archive
 cd .\bin\
 echo Copying OSX Files...
+del /S /Q ..\..\..\..\..\Glimmr-macos-installer-builder\macOS-x64\application\*
 xcopy /Y /E .\OSX\* ..\..\..\..\Glimmr-macos-installer-builder\macOS-x64\application
 
 echo Creating archives...

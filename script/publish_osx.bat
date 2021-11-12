@@ -14,6 +14,7 @@ dotnet publish ..\src\Glimmr\Glimmr.csproj /p:PublishProfile=OSX -o ..\src\Glimm
 if "%1"=="" GOTO :END
 cd ..\src\Glimmr\bin\OSX
 echo Copying OSX Files...
+del /S /Q ..\..\..\..\..\Glimmr-macos-installer-builder\macOS-x64\application\*
 xcopy /Y /E .\* ..\..\..\..\..\Glimmr-macos-installer-builder\macOS-x64\application\
 IF "%2"=="-j" GOTO JS
 IF "%2"=="-c" GOTO CSS
