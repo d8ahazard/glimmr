@@ -46,7 +46,7 @@ namespace Glimmr.Models.Util {
 					var db = new LiteDatabase(userPath);
 					return db;
 				} catch (Exception e) {
-					Log.Warning("Exception creating database: " + e.Message);
+					Log.Warning("Exception creating database: " + e);
 				}
 			}
 

@@ -885,18 +885,27 @@ namespace Glimmr.Models {
 	public class CropCounter {
 		private readonly int _max;
 		private int _count;
+		private int _clearCount;
 
 		public CropCounter(int max) {
 			_max = max;
 			_count = 0;
+			_clearCount = 0;
 		}
 
 		public void Clear() {
+			_clearCount++;
+			if (_clearCount < 10) {
+				return;
+			}
+
 			_count = 0;
+			_clearCount = 0;
 		}
 
 
 		public void Tick(bool b) {
+			_clearCount = 0;
 			if (b) {
 				_count++;
 				if (_count >= _max) {

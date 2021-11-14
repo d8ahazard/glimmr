@@ -205,7 +205,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			var sd = DataUtil.GetSystemData();
 			DataUtil.GetItem<int>("captureMode");
 			_layout = _data.Layout;
-			_frameTime = _data.Type == "NL42" ? 100 : 40;
+			_frameTime = _data.Type == "NL42" ? 100 : 16;
 			_targets = new Dictionary<int, int>();
 			if (_data.Brightness != _brightness) {
 				_brightness = _data.Brightness;

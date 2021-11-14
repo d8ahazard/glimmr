@@ -150,7 +150,7 @@ namespace Glimmr.Models.Util {
 		public static string GetUserDir() {
 			var userDir = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "C:\\ProgramData\\" : "/etc/";
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
-				userDir = "~/Library/Application Support/";
+				userDir = "/Library/Application Support/";
 			}
 
 			var fullPath = Path.Combine(userDir, "Glimmr");
