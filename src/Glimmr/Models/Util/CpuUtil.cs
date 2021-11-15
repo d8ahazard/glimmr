@@ -140,15 +140,24 @@ namespace Glimmr.Models.Util {
 				process.Start();
 				while (!process.StandardOutput.EndOfStream) {
 					var res = await process.StandardOutput.ReadLineAsync();
-					if (res != null && res.Contains("temp")) {
-						var p1 = res.Split("+")[1];
-						if (p1.Contains(" ")) {
-							p1 = p1.Split(" ")[0];
-						}
+					if (res == null || !res.Contains("temp")) {
+						continue;
+					}
 
-						if (!float.TryParse(p1, out temp)) {
-							Log.Warning("Unable to parse line: " + res);
+					var splits = res.Split("+");
+					if (splits.Length <= 1) {
+						continue;
+					}
+
+					var p1 = splits[1];
+					if (p1.Contains(" ")) {
+						var splits2 = p1.Split(" ");
+						if (splits2.Length > 0) {
+							p1 = splits2[0];
 						}
+					}
+					if (!float.TryParse(p1, out temp)) {
+						Log.Warning("Unable to parse line: " + res);
 					}
 				}
 
