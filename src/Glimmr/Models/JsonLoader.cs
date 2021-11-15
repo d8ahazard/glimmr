@@ -44,7 +44,7 @@ namespace Glimmr.Models {
 
 			Log.Debug($"Loading scene from path: {path}");
 			using StreamReader r = new(path);
-			string json = r.ReadToEnd();
+			var json = r.ReadToEnd();
 			var ids = new List<int>();
 
 			try {

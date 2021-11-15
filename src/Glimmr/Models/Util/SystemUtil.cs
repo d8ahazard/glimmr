@@ -107,7 +107,7 @@ namespace Glimmr.Models.Util {
 				var appDir = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
 				var cmd = Path.Join(appDir, "update_osx.sh");
 				Log.Debug("Update command should be: " + cmd);
-				Process.Start("/bin/bash", cmd);	
+				Process.Start("/bin/bash", cmd);
 			}
 
 			if (IsRaspberryPi() || RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
@@ -214,7 +214,7 @@ namespace Glimmr.Models.Util {
 			// If the file can be opened for exclusive access it means that the file
 			// is no longer locked by another process.
 			try {
-				using FileStream inputStream = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.None);
+				using var inputStream = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.None);
 				return inputStream.Length > 0;
 			} catch (Exception) {
 				return false;
@@ -225,9 +225,10 @@ namespace Glimmr.Models.Util {
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
 				return await GetVideoNameLinux(index);
 			}
+
 			return await GetVideoNameOsx(index);
 		}
-		
+
 		private static async Task<string> GetVideoNameLinux(int index) {
 			var process = new Process {
 				StartInfo = new ProcessStartInfo {
@@ -293,7 +294,7 @@ namespace Glimmr.Models.Util {
 
 			return output;
 		}
-		
+
 		private static Dictionary<int, string> ListUsbOsx() {
 			var sd = DataUtil.GetSystemData();
 			var usb = sd.UsbSelection;
@@ -301,10 +302,22 @@ namespace Glimmr.Models.Util {
 			var output = new Dictionary<int, string>();
 			while (i < 10) {
 				var res = CheckVideo(i, usb, VideoCapture.API.Any);
-				if (string.IsNullOrEmpty(res)) res = CheckVideo(i, usb, VideoCapture.API.DShow);
-				if (string.IsNullOrEmpty(res)) res = CheckVideo(i, usb, VideoCapture.API.QT);
-				if (string.IsNullOrEmpty(res)) res = CheckVideo(i, usb, VideoCapture.API.AVFoundation);
-				if (!string.IsNullOrEmpty(res)) output[i] = res;
+				if (string.IsNullOrEmpty(res)) {
+					res = CheckVideo(i, usb, VideoCapture.API.DShow);
+				}
+
+				if (string.IsNullOrEmpty(res)) {
+					res = CheckVideo(i, usb, VideoCapture.API.QT);
+				}
+
+				if (string.IsNullOrEmpty(res)) {
+					res = CheckVideo(i, usb, VideoCapture.API.AVFoundation);
+				}
+
+				if (!string.IsNullOrEmpty(res)) {
+					output[i] = res;
+				}
+
 				i++;
 			}
 
@@ -326,6 +339,7 @@ namespace Glimmr.Models.Util {
 			} catch (Exception e) {
 				Log.Debug("Exception checking video: " + e.Message);
 			}
+
 			return result;
 		}
 

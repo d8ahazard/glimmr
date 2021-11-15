@@ -18,8 +18,8 @@ namespace Glimmr.Models.Util {
 	[Serializable]
 	public static class DataUtil {
 		private static bool _dbLocked;
-		private static int _lockCount;
 		private static List<dynamic>? _devices;
+		private static int _lockCount;
 		private static LiteDatabase? _db = GetDb();
 
 
@@ -29,7 +29,7 @@ namespace Glimmr.Models.Util {
 			while (_dbLocked && _lockCount < 20) {
 				Log.Debug("Awaiting export...");
 				_lockCount++;
-				Task.Delay(TimeSpan.FromMilliseconds(50));				
+				Task.Delay(TimeSpan.FromMilliseconds(50));
 			}
 
 			_lockCount = 0;
@@ -381,7 +381,10 @@ namespace Glimmr.Models.Util {
 				_db.Commit();
 				_db.Dispose();
 				File.Copy(dbPath, outFile, true);
-				if (SystemUtil.IsRaspberryPi()) File.Copy(dbPath, "/boot/store.db");
+				if (SystemUtil.IsRaspberryPi()) {
+					File.Copy(dbPath, "/boot/store.db");
+				}
+
 				output = outFile;
 			} catch (Exception) {
 				//ignored

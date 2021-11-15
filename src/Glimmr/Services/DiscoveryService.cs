@@ -37,7 +37,7 @@ namespace Glimmr.Services {
 			_discoverables = new List<IColorDiscovery>();
 			_syncSource = new CancellationTokenSource();
 			foreach (var dev in classnames.Select(c => Activator.CreateInstance(Type.GetType(c)!, cs.ColorService))
-				.Where(obj => obj != null).Cast<IColorDiscovery?>()) {
+				         .Where(obj => obj != null).Cast<IColorDiscovery?>()) {
 				if (dev != null) {
 					_discoverables.Add(dev);
 				}

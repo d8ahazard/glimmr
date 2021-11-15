@@ -884,8 +884,8 @@ namespace Glimmr.Models {
 
 	public class CropCounter {
 		private readonly int _max;
-		private int _count;
 		private int _clearCount;
+		private int _count;
 
 		public CropCounter(int max) {
 			_max = max;

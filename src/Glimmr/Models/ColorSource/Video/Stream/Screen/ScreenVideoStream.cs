@@ -1,7 +1,6 @@
 ﻿#region
 
 using System;
-
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
@@ -17,6 +16,7 @@ using Serilog;
 
 namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 	public class ScreenVideoStream : IVideoStream, IDisposable {
+		private readonly OSxScreenshot? _ss;
 		private bool _capturing;
 		private int _height;
 		private int _left;
@@ -24,7 +24,6 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 		private FrameSplitter? _splitter;
 		private int _top;
 		private int _width;
-		private readonly OSxScreenshot? _ss;
 
 		public ScreenVideoStream() {
 			Log.Information("Config got.");
@@ -90,14 +89,16 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Screen {
 						newMat = sc.Resize(640, 480, Inter.Nearest);
 					} else {
 						newMat = _ss.Grab();
-						if (newMat == null) return;
+						if (newMat == null) {
+							return;
+						}
 					}
+
 					_splitter?.Update(newMat.Mat);
 					newMat.Dispose();
 				} catch (Exception e) {
 					Log.Debug("Exception grabbing screen: " + e.Message);
 				}
-				
 			}
 
 			Log.Debug("Capture completed?");

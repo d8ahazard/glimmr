@@ -373,7 +373,7 @@ namespace Glimmr.Services {
 					var tag = c.Replace("Glimmr.Models.ColorTarget.", "");
 					tag = tag.Split(".")[0];
 					foreach (var device in deviceData.Where(device => device.Tag == tag)
-						.Where(device => tag != "Led" || device.Id != "2")) {
+						         .Where(device => tag != "Led" || device.Id != "2")) {
 						var args = new object[] { device, this };
 						dynamic? obj = Activator.CreateInstance(Type.GetType(c)!, args);
 						if (obj == null) {

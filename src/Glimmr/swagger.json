@@ -561,7 +561,7 @@
                       "$ref": "#/components/schemas/YeelightData"
                     }
                   ],
-                  "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                  "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
                 }
               },
               "application/json": {
@@ -598,7 +598,7 @@
                       "$ref": "#/components/schemas/YeelightData"
                     }
                   ],
-                  "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                  "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
                 }
               },
               "text/json": {
@@ -635,7 +635,7 @@
                       "$ref": "#/components/schemas/YeelightData"
                     }
                   ],
-                  "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                  "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
                 }
               }
             }
@@ -684,7 +684,7 @@
                     "$ref": "#/components/schemas/YeelightData"
                   }
                 ],
-                "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
               }
             },
             "application/json": {
@@ -721,7 +721,7 @@
                     "$ref": "#/components/schemas/YeelightData"
                   }
                 ],
-                "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
               }
             },
             "text/json": {
@@ -758,7 +758,7 @@
                     "$ref": "#/components/schemas/YeelightData"
                   }
                 ],
-                "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
               }
             },
             "application/*+json": {
@@ -795,7 +795,7 @@
                     "$ref": "#/components/schemas/YeelightData"
                   }
                 ],
-                "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
               }
             }
           }
@@ -838,7 +838,7 @@
                       "$ref": "#/components/schemas/YeelightData"
                     }
                   ],
-                  "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                  "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
                 }
               },
               "application/json": {
@@ -875,7 +875,7 @@
                       "$ref": "#/components/schemas/YeelightData"
                     }
                   ],
-                  "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                  "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
                 }
               },
               "text/json": {
@@ -912,7 +912,7 @@
                       "$ref": "#/components/schemas/YeelightData"
                     }
                   ],
-                  "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                  "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
                 }
               }
             }
@@ -1004,7 +1004,7 @@
                         "$ref": "#/components/schemas/YeelightData"
                       }
                     ],
-                    "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                    "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
                   }
                 }
               },
@@ -1044,7 +1044,7 @@
                         "$ref": "#/components/schemas/YeelightData"
                       }
                     ],
-                    "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                    "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
                   }
                 }
               },
@@ -1084,7 +1084,7 @@
                         "$ref": "#/components/schemas/YeelightData"
                       }
                     ],
-                    "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                    "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
                   }
                 }
               }
@@ -1472,7 +1472,7 @@
                         "$ref": "#/components/schemas/YeelightData"
                       }
                     ],
-                    "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                    "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
                   }
                 }
               },
@@ -1512,7 +1512,7 @@
                         "$ref": "#/components/schemas/YeelightData"
                       }
                     ],
-                    "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                    "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
                   }
                 }
               },
@@ -1552,7 +1552,7 @@
                         "$ref": "#/components/schemas/YeelightData"
                       }
                     ],
-                    "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\n\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                    "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
                   }
                 }
               }
@@ -1598,7 +1598,7 @@
         ],
         "summary": "Start Glimmr-to-Glimmr UDP stream",
         "requestBody": {
-          "description": "A GlimmrData object containing the input dimensions of\r\n            the received colors.",
+          "description": "A GlimmrData object containing the input dimensions of\r\nthe received colors.",
           "content": {
             "application/json-patch+json": {
               "schema": {
@@ -1683,7 +1683,7 @@
         ],
         "summary": "Triggers a system action.",
         "requestBody": {
-          "description": "Available commands are \"restart\", \"shutdown\", \"reboot\", and \"update\".\r\n            Restart restarts ONLY the glimmr service.\r\n            Shutdown shuts down the entire machine.\r\n            Reboot triggers a system reboot.\r\n            Update will stop Glimmr, update the software, and re-start the service.",
+          "description": "Available commands are \"restart\", \"shutdown\", \"reboot\", and \"update\".\r\nRestart restarts ONLY the glimmr service.\r\nShutdown shuts down the entire machine.\r\nReboot triggers a system reboot.\r\nUpdate will stop Glimmr, update the software, and re-start the service.",
           "content": {
             "application/json-patch+json": {
               "schema": {
@@ -1780,6 +1780,17 @@
             "description": "Reverse strip direction.",
             "default": false
           },
+          "GammaFactor": {
+            "type": "number",
+            "description": "Gamma adjustment factor. You probably don't want to go higher than 3 or so.",
+            "format": "float",
+            "default": 2.2
+          },
+          "LedMultiplier": {
+            "type": "number",
+            "description": "Scale factor for LED counts related to master grid.",
+            "format": "float"
+          },
           "Brightness": {
             "type": "integer",
             "description": "Device brightness.",
@@ -1791,11 +1802,6 @@
             "description": "Number of LEDs on device. Must match Adalight settings, or device won't respond.",
             "format": "int32",
             "default": 0
-          },
-          "LedMultiplier": {
-            "type": "number",
-            "description": "Scale factor for LED counts related to master grid.",
-            "format": "float"
           },
           "Offset": {
             "type": "integer",
@@ -1814,12 +1820,6 @@
             "description": "Port for device communication.",
             "default": "COM1",
             "nullable": true
-          },
-          "GammaFactor": {
-            "type": "number",
-            "description": "Gamma adjustment factor. You probably don't want to go higher than 3 or so.",
-            "format": "float",
-            "default": 2.2
           },
           "Tag": {
             "type": "string",
@@ -1875,6 +1875,36 @@
       "AmbientScene": {
         "type": "object",
         "properties": {
+          "AnimationTime": {
+            "type": "number",
+            "description": "Amount of time (in milliseconds) between color updates.",
+            "format": "float"
+          },
+          "EasingTime": {
+            "type": "number",
+            "description": "How long to ease between colors.",
+            "format": "float"
+          },
+          "Id": {
+            "type": "integer",
+            "description": "Theme ID. Will be auto-assigned for user defined themes.",
+            "format": "int32"
+          },
+          "Easing": {
+            "type": "string",
+            "description": "Easing mode.\r\nBlend = 0 (Colors fade directly between one another)\r\nFadeIn = 1 (Color fades in after being replaced)\r\nFadeOut = 2 (Color fades out, is replaced, turns on full)\r\nFadeInOut = 3 (Colors fade in/out before being replaced)",
+            "nullable": true
+          },
+          "Mode": {
+            "type": "string",
+            "description": "Animation mode.\r\nLinear = 0 (Colors progress normally)\r\nReverse = 1 (Colors progress in reverse direction)\r\nRandom = 2 (Colors are selected randomly)\r\nRandomAll = 3 (One random color for everything)\r\nLinearAll = 4 (Colors progress normally, one color for everything)",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "description": "The theme name.",
+            "nullable": true
+          },
           "Colors": {
             "type": "array",
             "items": {
@@ -1882,36 +1912,6 @@
             },
             "description": "An array of colors used by the scene.",
             "nullable": true
-          },
-          "AnimationTime": {
-            "type": "number",
-            "description": "Amount of time (in milliseconds) between color updates.",
-            "format": "float"
-          },
-          "Mode": {
-            "type": "string",
-            "description": "Animation mode.\r\nLinear = 0 (Colors progress normally)\r\nReverse = 1 (Colors progress in reverse direction)\r\nRandom = 2 (Colors are selected randomly)\r\nRandomAll = 3 (One random color for everything)\r\nLinearAll = 4 (Colors progress normally, one color for everything)",
-            "nullable": true
-          },
-          "Easing": {
-            "type": "string",
-            "description": "Easing mode.\r\nBlend = 0 (Colors fade directly between one another)\r\nFadeIn = 1 (Color fades in after being replaced)\r\nFadeOut = 2 (Color fades out, is replaced, turns on full)\r\nFadeInOut = 3 (Colors fade in/out before being replaced)",
-            "nullable": true
-          },
-          "EasingTime": {
-            "type": "number",
-            "description": "How long to ease between colors.",
-            "format": "float"
-          },
-          "Name": {
-            "type": "string",
-            "description": "The theme name.",
-            "nullable": true
-          },
-          "Id": {
-            "type": "integer",
-            "description": "Theme ID. Will be auto-assigned for user defined themes.",
-            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -2359,11 +2359,6 @@
             "description": "Target entertainment group to use for streaming.",
             "nullable": true
           },
-          "Tag": {
-            "type": "string",
-            "description": "Device tag",
-            "nullable": true
-          },
           "Token": {
             "type": "string",
             "description": "Token for entertainment streaming assigned after device is linked.",
@@ -2372,6 +2367,11 @@
           "User": {
             "type": "string",
             "description": "Hue user ID assigned after device is linked.",
+            "nullable": true
+          },
+          "Tag": {
+            "type": "string",
+            "description": "Device tag",
             "nullable": true
           },
           "Name": {
@@ -2602,6 +2602,11 @@
             "description": "Reverse the order of data sent to leds.",
             "default": false
           },
+          "LedMultiplier": {
+            "type": "number",
+            "description": "Scale factor for LED counts related to master grid.",
+            "format": "float"
+          },
           "Brightness": {
             "type": "integer",
             "description": "Device brightness.",
@@ -2618,11 +2623,6 @@
             "description": "Number of LEDs in strip.",
             "format": "int32",
             "default": 300
-          },
-          "LedMultiplier": {
-            "type": "number",
-            "description": "Scale factor for LED counts related to master grid.",
-            "format": "float"
           },
           "MilliampsPerLed": {
             "type": "integer",
@@ -2766,6 +2766,11 @@
             "description": "Gamma Correction level.",
             "format": "double"
           },
+          "LedMultiplier": {
+            "type": "number",
+            "description": "Scale factor for LED counts related to master grid.",
+            "format": "float"
+          },
           "Brightness": {
             "type": "integer",
             "description": "Device Brightness.",
@@ -2776,11 +2781,6 @@
             "description": "UI Properties.",
             "format": "int32",
             "default": 82
-          },
-          "LedMultiplier": {
-            "type": "number",
-            "description": "Scale factor for LED counts related to master grid.",
-            "format": "float"
           },
           "MultiZoneCount": {
             "type": "integer",
@@ -2824,11 +2824,6 @@
             "nullable": true,
             "readOnly": true
           },
-          "Tag": {
-            "type": "string",
-            "description": "Device Tag",
-            "nullable": true
-          },
           "Layout": {
             "$ref": "#/components/schemas/TileLayout"
           },
@@ -2846,6 +2841,11 @@
             "type": "integer",
             "description": "Device Saturation - Bulb only.",
             "format": "int32"
+          },
+          "Tag": {
+            "type": "string",
+            "description": "Device Tag",
+            "nullable": true
           },
           "Name": {
             "type": "string",
@@ -2994,11 +2994,6 @@
             "description": "Device host name.",
             "nullable": true
           },
-          "Tag": {
-            "type": "string",
-            "description": "Device tag.",
-            "nullable": true
-          },
           "Token": {
             "type": "string",
             "description": "Token used for control, retrieved after authorization.",
@@ -3016,6 +3011,11 @@
           },
           "Layout": {
             "$ref": "#/components/schemas/TileLayout"
+          },
+          "Tag": {
+            "type": "string",
+            "description": "Device tag.",
+            "nullable": true
           },
           "Name": {
             "type": "string",
@@ -3091,6 +3091,11 @@
           "Type": {
             "$ref": "#/components/schemas/DeviceType"
           },
+          "LedMultiplier": {
+            "type": "number",
+            "description": "Scale factor for LED counts related to master grid.",
+            "format": "float"
+          },
           "ActiveModeIndex": {
             "type": "integer",
             "description": "The index of the active device mode.",
@@ -3114,11 +3119,6 @@
             "description": "Number of LEDs in strip.",
             "format": "int32",
             "default": 0
-          },
-          "LedMultiplier": {
-            "type": "number",
-            "description": "Scale factor for LED counts related to master grid.",
-            "format": "float"
           },
           "Offset": {
             "type": "integer",
@@ -3150,12 +3150,6 @@
             "default": "",
             "nullable": true
           },
-          "Tag": {
-            "type": "string",
-            "description": "Device tag.",
-            "default": "OpenRgb",
-            "nullable": true
-          },
           "Vendor": {
             "type": "string",
             "description": "Device vendor.",
@@ -3166,6 +3160,12 @@
             "type": "string",
             "description": "Device version.",
             "default": "",
+            "nullable": true
+          },
+          "Tag": {
+            "type": "string",
+            "description": "Device tag.",
+            "default": "OpenRgb",
             "nullable": true
           },
           "Id": {
@@ -3347,6 +3347,14 @@
       "SettingsProperty": {
         "type": "object",
         "properties": {
+          "Options": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "A string, string dictionary containing title/value pairs to populate a select input.",
+            "nullable": true
+          },
           "ValueHint": {
             "type": "string",
             "description": "If set, this will be shown beneath the property.",
@@ -3381,14 +3389,6 @@
             "type": "string",
             "description": "The control type to create in the web UI.\r\nPossible options:\r\ntext - Standard text input\r\ncheck - A checkbox (toggle)\r\nnumber - A number input (can be limited by valuemax/min/step\r\nledmap - Create a LED map (custom)\r\nbeamMap - Create a Lifx Beam map\r\nsectorLedMap - Create a LED map for WLED that has multiple sections\r\nselect - standard select, populate the \"Options\" dictionary to auto-fill\r\nsectormap - Create a standard Sector map\r\nnanoleaf - Draw nano leaves\r\nhue - Draw Hue selection stuff",
             "nullable": true
-          },
-          "Options": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            },
-            "description": "A string, string dictionary containing title/value pairs to populate a select input.",
-            "nullable": true
           }
         },
         "additionalProperties": false,
@@ -3397,16 +3397,6 @@
       "StatData": {
         "type": "object",
         "properties": {
-          "CpuUsage": {
-            "type": "integer",
-            "description": "Percentage of CPU Used",
-            "format": "int32"
-          },
-          "CpuTemp": {
-            "type": "number",
-            "description": "Current CPU temperature (May not work with some AMD processors).",
-            "format": "float"
-          },
           "Fps": {
             "type": "object",
             "additionalProperties": {
@@ -3415,6 +3405,11 @@
             },
             "description": "Current number of frames per second.",
             "nullable": true
+          },
+          "CpuTemp": {
+            "type": "number",
+            "description": "Current CPU temperature (May not work with some AMD processors).",
+            "format": "float"
           },
           "MemoryUsage": {
             "type": "number",
@@ -3430,6 +3425,11 @@
             "type": "number",
             "description": "Minimum detected temperature.",
             "format": "float"
+          },
+          "CpuUsage": {
+            "type": "integer",
+            "description": "Percentage of CPU Used",
+            "format": "int32"
           },
           "Uptime": {
             "type": "string",
@@ -3508,13 +3508,12 @@
       "StoreData": {
         "type": "object",
         "properties": {
-          "SystemData": {
-            "$ref": "#/components/schemas/SystemData"
-          },
-          "Devices": {
+          "AmbientScenes": {
             "type": "array",
-            "items": {},
-            "description": "List of devices and their settings.",
+            "items": {
+              "$ref": "#/components/schemas/AmbientScene"
+            },
+            "description": "List of detected ambient scenes.",
             "nullable": true
           },
           "DevAudio": {
@@ -3525,22 +3524,6 @@
             "description": "List of available audio devices.",
             "nullable": true
           },
-          "DevUsb": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            },
-            "description": "List of available USB devices.",
-            "nullable": true
-          },
-          "AmbientScenes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AmbientScene"
-            },
-            "description": "List of detected ambient scenes.",
-            "nullable": true
-          },
           "AudioScenes": {
             "type": "array",
             "items": {
@@ -3549,8 +3532,25 @@
             "description": "List of detected audio scenes.",
             "nullable": true
           },
+          "DevUsb": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "List of available USB devices.",
+            "nullable": true
+          },
+          "Devices": {
+            "type": "array",
+            "items": { },
+            "description": "List of devices and their settings.",
+            "nullable": true
+          },
           "Stats": {
             "$ref": "#/components/schemas/StatData"
+          },
+          "SystemData": {
+            "$ref": "#/components/schemas/SystemData"
           }
         },
         "additionalProperties": false,
@@ -3615,12 +3615,6 @@
             "description": "If enabled, Glimmr will automatically update itself daily.",
             "default": false
           },
-          "CropBlackLevel": {
-            "type": "integer",
-            "description": "Value cropping checks use to determine what is \"black\" and should\r\nbe cropped.",
-            "format": "int32",
-            "default": 7
-          },
           "DefaultSet": {
             "type": "boolean",
             "description": "Set on first-time initialization. Don't change this.",
@@ -3660,6 +3654,21 @@
             "type": "boolean",
             "description": "If set, sectors will also be collected from teh center of the screen, not just the perimeter.",
             "default": false
+          },
+          "CamType": {
+            "$ref": "#/components/schemas/CameraType"
+          },
+          "CaptureMode": {
+            "$ref": "#/components/schemas/CaptureMode"
+          },
+          "DeviceMode": {
+            "$ref": "#/components/schemas/DeviceMode"
+          },
+          "PreviousMode": {
+            "$ref": "#/components/schemas/DeviceMode"
+          },
+          "Units": {
+            "$ref": "#/components/schemas/DeviceUnits"
           },
           "AblAmps": {
             "type": "number",
@@ -3727,26 +3736,29 @@
             "format": "int32",
             "default": 115200
           },
+          "BlackLevel": {
+            "type": "integer",
+            "description": "Colors below this brightness will be considered \"black\".\r\n(Max 255)",
+            "format": "int32",
+            "default": 7
+          },
           "BottomCount": {
             "type": "integer",
             "description": "Number of LEDs along the bottom of the screen.",
             "format": "int32",
             "default": 96
           },
-          "CamType": {
-            "$ref": "#/components/schemas/CameraType"
-          },
-          "CaptureMode": {
-            "$ref": "#/components/schemas/CaptureMode"
+          "CropBlackLevel": {
+            "type": "integer",
+            "description": "Value cropping checks use to determine what is \"black\" and should\r\nbe cropped.",
+            "format": "int32",
+            "default": 7
           },
           "CropDelay": {
             "type": "integer",
             "description": "The number of frames required for detection before cropping is\r\nactivated, if enabled.",
             "format": "int32",
             "default": 15
-          },
-          "DeviceMode": {
-            "$ref": "#/components/schemas/DeviceMode"
           },
           "DiscoveryTimeout": {
             "type": "integer",
@@ -3785,9 +3797,6 @@
             "format": "int32",
             "default": 0
           },
-          "PreviousMode": {
-            "$ref": "#/components/schemas/DeviceMode"
-          },
           "RightCount": {
             "type": "integer",
             "description": "Number of LEDs along the right side of the screen.",
@@ -3800,9 +3809,6 @@
             "format": "int32",
             "default": 0,
             "readOnly": true
-          },
-          "StreamMode": {
-            "$ref": "#/components/schemas/StreamMode"
           },
           "TopCount": {
             "type": "integer",
@@ -3822,6 +3828,9 @@
             "format": "int32",
             "default": 6
           },
+          "StreamMode": {
+            "$ref": "#/components/schemas/StreamMode"
+          },
           "AmbientColor": {
             "type": "string",
             "description": "Current ambient color used when AmbientShow is set to \"solid\".",
@@ -3833,17 +3842,17 @@
             "default": "",
             "nullable": true
           },
-          "DeviceId": {
-            "type": "string",
-            "description": "A unique device ID based on MAC address, or random if no NIC accessible.",
-            "default": "",
-            "nullable": true
-          },
           "DsIp": {
             "type": "string",
             "description": "Target DreamScreen device to receive color data from.\r\n(Streaming mode must be set to 0/DreamScreen)",
             "default": "",
             "nullable": true
+          },
+          "IpAddress": {
+            "type": "string",
+            "description": "Local IP Address.",
+            "nullable": true,
+            "readOnly": true
           },
           "OpenRgbIp": {
             "type": "string",
@@ -3869,26 +3878,17 @@
             "default": "US/Central",
             "nullable": true
           },
-          "Units": {
-            "$ref": "#/components/schemas/DeviceUnits"
-          },
-          "BlackLevel": {
-            "type": "integer",
-            "description": "Colors below this brightness will be considered \"black\".\r\n(Max 255)",
-            "format": "int32",
-            "default": 7
-          },
           "Version": {
             "type": "string",
             "description": "Version string based on current build + github revision.",
             "nullable": true,
             "readOnly": true
           },
-          "IpAddress": {
+          "DeviceId": {
             "type": "string",
-            "description": "Local IP Address.",
-            "nullable": true,
-            "readOnly": true
+            "description": "A unique device ID based on MAC address, or random if no NIC accessible.",
+            "default": "",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -4062,6 +4062,11 @@
             "description": "Reverse the order of data sent to leds.",
             "default": false
           },
+          "LedMultiplier": {
+            "type": "number",
+            "description": "Scale factor for LED counts related to master grid.",
+            "format": "float"
+          },
           "Brightness": {
             "type": "integer",
             "description": "Device brightness.",
@@ -4072,18 +4077,16 @@
             "description": "Number of LEDs in strip.",
             "format": "int32"
           },
-          "LedMultiplier": {
-            "type": "number",
-            "description": "Scale factor for LED counts related to master grid.",
-            "format": "float"
-          },
           "Offset": {
             "type": "integer",
             "description": "Offset of leds from lower-right corner of master grid.",
             "format": "int32"
           },
-          "StripMode": {
-            "$ref": "#/components/schemas/StripMode"
+          "Protocol": {
+            "type": "integer",
+            "description": "Device protocol.",
+            "format": "int32",
+            "default": 2
           },
           "TargetSector": {
             "type": "integer",
@@ -4091,19 +4094,24 @@
             "format": "int32",
             "default": -1
           },
-          "Tag": {
-            "type": "string",
-            "description": "Device tag.",
+          "StripMode": {
+            "$ref": "#/components/schemas/StripMode"
+          },
+          "Segments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WledSegment"
+            },
+            "description": "List of individual LED segments defined in WLED.",
             "nullable": true
           },
           "State": {
             "$ref": "#/components/schemas/WledStateData"
           },
-          "Protocol": {
-            "type": "integer",
-            "description": "Device protocol.",
-            "format": "int32",
-            "default": 2
+          "Tag": {
+            "type": "string",
+            "description": "Device tag.",
+            "nullable": true
           },
           "Name": {
             "type": "string",
@@ -4127,14 +4135,6 @@
           "LastSeen": {
             "type": "string",
             "description": "Last time the device was seen during discovery.",
-            "nullable": true
-          },
-          "Segments": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/WledSegment"
-            },
-            "description": "List of individual LED segments defined in WLED.",
             "nullable": true
           },
           "KeyProperties": {
@@ -4167,6 +4167,11 @@
             "type": "boolean",
             "description": "True if segment is selected."
           },
+          "Multiplier": {
+            "type": "number",
+            "description": "Scale factor for LED counts related to master grid.",
+            "format": "float"
+          },
           "Brightness": {
             "type": "integer",
             "description": "Segment brightness.",
@@ -4197,6 +4202,11 @@
             "description": "Segment length.",
             "format": "int32"
           },
+          "Offset": {
+            "type": "integer",
+            "description": "Segment offset in reference to Glimmr master Grid.",
+            "format": "int32"
+          },
           "Pal": {
             "type": "integer",
             "description": "ID of the color palette.",
@@ -4211,16 +4221,6 @@
             "type": "integer",
             "description": "Segment start position.",
             "format": "int32"
-          },
-          "Offset": {
-            "type": "integer",
-            "description": "Segment offset in reference to Glimmr master Grid.",
-            "format": "int32"
-          },
-          "Multiplier": {
-            "type": "number",
-            "description": "Scale factor for LED counts related to master grid.",
-            "format": "float"
           },
           "Stop": {
             "type": "integer",

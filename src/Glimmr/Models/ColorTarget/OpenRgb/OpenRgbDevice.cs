@@ -1,7 +1,6 @@
 ﻿#region
 
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Threading;
@@ -136,7 +135,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 				toSend = toSend.Reverse().ToArray();
 			}
 
-			List<OpenRGB.NET.Models.Color> converted = _data.ColorOrder switch {
+			var converted = _data.ColorOrder switch {
 				ColorOrder.Rgb => toSend.Select(col => new OpenRGB.NET.Models.Color(col.R, col.G, col.B)).ToList(),
 				ColorOrder.Rbg => toSend.Select(col => new OpenRGB.NET.Models.Color(col.R, col.B, col.G)).ToList(),
 				ColorOrder.Gbr => toSend.Select(col => new OpenRGB.NET.Models.Color(col.G, col.B, col.R)).ToList(),

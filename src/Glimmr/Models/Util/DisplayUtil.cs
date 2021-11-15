@@ -68,6 +68,7 @@ namespace Glimmr.Models.Util {
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
 				return GetOsxDisplaySize();
 			}
+
 			return new Rectangle();
 		}
 
@@ -140,13 +141,13 @@ namespace Glimmr.Models.Util {
 
 			return r;
 		}
-		
+
 		private static Rectangle GetOsxDisplaySize() {
 			var r = new Rectangle();
 			var output = string.Empty;
 			try {
 				var p = new Process {
-					StartInfo = { 
+					StartInfo = {
 						UseShellExecute = false,
 						RedirectStandardOutput = true,
 						FileName = "system_profiler",
@@ -162,6 +163,7 @@ namespace Glimmr.Models.Util {
 						break;
 					}
 				}
+
 				p.Dispose();
 			} catch (Exception e) {
 				Log.Warning("Exception getting screen size: " + e.Message);
@@ -182,7 +184,6 @@ namespace Glimmr.Models.Util {
 						int.Parse(h, CultureInfo.InvariantCulture));
 					Console.WriteLine("Display Size is {0} x {1}", w, h);
 				}
-				
 			} catch (FormatException) {
 				//Log.Debug("Format exception, probably we have no screen.");
 			}

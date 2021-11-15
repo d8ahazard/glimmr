@@ -61,7 +61,7 @@ namespace Glimmr.Models.Util {
 			} catch (Exception e) {
 				Log.Warning("Stat exception: " + e.Message + " at " + e.StackTrace);
 			}
-			
+
 
 			return cd;
 		}
@@ -311,7 +311,9 @@ namespace Glimmr.Models.Util {
 			var processResult = (await process.StandardOutput.ReadToEndAsync()).Trim();
 			await process.WaitForExitAsync();
 			process.Dispose();
-			var split0 = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? processResult.Split("averages: ")[1] : processResult.Split("average: ")[1];
+			var split0 = RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
+				? processResult.Split("averages: ")[1]
+				: processResult.Split("average: ")[1];
 			var loadAverages = split0.Split(", ");
 			var idx = 0;
 			var average = 0f;
@@ -319,7 +321,7 @@ namespace Glimmr.Models.Util {
 				if (float.TryParse(avg.Trim(), out var la1)) {
 					idx++;
 					average += la1;
-				}	
+				}
 			}
 
 			if (idx <= 0 || !(average > 0)) {
@@ -328,7 +330,6 @@ namespace Glimmr.Models.Util {
 
 			average /= idx;
 			return (int)average;
-
 		}
 
 		private static async Task<string[]> GetThrottledStatePi() {

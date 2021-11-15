@@ -45,11 +45,11 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 						var dev = devs[i];
 						var rd = new OpenRgbData(dev, i, sd.OpenRgbIp);
 						foreach (var od in from IColorTargetData ex in existing
-							where ex.Id.Contains("OpenRgb")
-							select (OpenRgbData)ex
-							into od
-							where od.Matches(dev)
-							select od) {
+						         where ex.Id.Contains("OpenRgb")
+						         select (OpenRgbData)ex
+						         into od
+						         where od.Matches(dev)
+						         select od) {
 							od.UpdateFromDiscovered(rd);
 							rd = od;
 						}

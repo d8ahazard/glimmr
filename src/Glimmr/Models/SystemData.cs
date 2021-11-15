@@ -486,6 +486,7 @@ namespace Glimmr.Models {
 			} else {
 				DeviceName = "Glimmr-" + id[..3];
 			}
+
 			return id;
 		}
 	}

@@ -35,10 +35,10 @@ namespace Glimmr.Models.Util {
 			var output = new StatData();
 			computer.Open();
 			computer.Accept(new CpuMonitor());
-			foreach (IHardware hardware in computer.Hardware) {
+			foreach (var hardware in computer.Hardware) {
 				switch (hardware.HardwareType) {
 					case HardwareType.Cpu:
-						foreach (ISensor sensor in hardware.Sensors) {
+						foreach (var sensor in hardware.Sensors) {
 							switch (sensor.Name) {
 								case "CPU Total":
 									output.CpuUsage = (int)(sensor.Value ?? 0);
@@ -53,7 +53,7 @@ namespace Glimmr.Models.Util {
 
 						break;
 					case HardwareType.Memory:
-						foreach (ISensor sensor in hardware.Sensors) {
+						foreach (var sensor in hardware.Sensors) {
 							if (sensor.Name == "Memory") {
 								output.MemoryUsage = (int)(sensor.Value ?? 0);
 							}

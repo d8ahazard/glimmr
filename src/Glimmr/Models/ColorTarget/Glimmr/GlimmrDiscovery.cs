@@ -62,6 +62,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			if (!foo.ToString().Contains("_glimmr")) {
 				return;
 			}
+
 			var name = e.ServiceInstanceName.ToString();
 
 			if (name.Contains(".local")) {
@@ -95,10 +96,14 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 
 				if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(ip)) {
 					var sd = DataUtil.GetSystemData();
-					if (id == sd.DeviceId) return;
+					if (id == sd.DeviceId) {
+						return;
+					}
+
 					if (name == id) {
 						name = "Glimmr-" + id[..3];
 					}
+
 					Log.Debug($"Adding glimmr: {id}:{ip}-{name}");
 					var nData = new GlimmrData(id, ip) { Name = name };
 					ControlService.AddDevice(nData).ConfigureAwait(false);

@@ -64,11 +64,11 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 			if (string.IsNullOrEmpty(dsIp)) {
 				var devs = DataUtil.GetDevices();
 				foreach (var dd in from dev in devs
-					where dev.Tag == "DreamScreen"
-					select (DreamScreenData)dev
-					into dd
-					where dd.DeviceTag.Contains("DreamScreen")
-					select dd) {
+				         where dev.Tag == "DreamScreen"
+				         select (DreamScreenData)dev
+				         into dd
+				         where dd.DeviceTag.Contains("DreamScreen")
+				         select dd) {
 					systemData.DsIp = dd.IpAddress;
 					DataUtil.SetSystemData(systemData);
 					dsIp = dd.IpAddress;
