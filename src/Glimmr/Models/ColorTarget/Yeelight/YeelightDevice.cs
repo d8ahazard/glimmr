@@ -20,13 +20,13 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 		private readonly Device _yeeDevice;
 
+		private float _brightness;
+
 		private YeelightData _data;
 
 		private Task? _streamTask;
 
 		private int _targetSector;
-
-		private float _brightness;
 
 
 		public YeelightDevice(YeelightData yd, ColorService cs) : base(cs) {
@@ -53,17 +53,17 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 		IColorTargetData IColorTarget.Data {
 			get => _data;
-			set => _data = (YeelightData) value;
+			set => _data = (YeelightData)value;
 		}
 
 
 		public async Task StartStream(CancellationToken ct) {
 			if (!Enable) {
-				Log.Warning("YEE: Not enabled!");
 				return;
 			}
 
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
+			ColorService.StartCounter++;
 			_targetSector = _data.TargetSector;
 
 			await _yeeDevice.Connect();
@@ -76,6 +76,8 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			if (Streaming) {
 				Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
 			}
+
+			ColorService.StartCounter--;
 		}
 
 		public async Task StopStream() {
@@ -83,7 +85,9 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 				return;
 			}
 
-			await FlashColor(Color.FromArgb(0, 0, 0)).ConfigureAwait(false);
+			Log.Debug($"{_data.Tag}::Stopping stream...{_data.Id}.");
+			ColorService.StopCounter++;
+			await FlashColor(Color.FromArgb(0, 0, 0));
 			await _yeeDevice.StopMusicMode();
 			_yeeDevice.Disconnect();
 			Streaming = false;
@@ -92,6 +96,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 			}
 
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
+			ColorService.StopCounter--;
 		}
 
 
@@ -128,8 +133,9 @@ namespace Glimmr.Models.ColorTarget.Yeelight {
 
 			var col = sectors[_targetSector];
 			if (_data.Brightness < 255) {
-				col = ColorUtil.ClampBrightness(col, (int) _brightness);
+				col = ColorUtil.ClampBrightness(col, (int)_brightness);
 			}
+
 			if (_targetSector >= sectors.Count) {
 				return;
 			}

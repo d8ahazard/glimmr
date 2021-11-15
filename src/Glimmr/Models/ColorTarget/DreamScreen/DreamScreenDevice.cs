@@ -21,7 +21,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 		private string _deviceTag;
 		private string _ipAddress;
 
-		public DreamScreenDevice(DreamScreenData data, ColorService cs) {
+		public DreamScreenDevice(DreamScreenData data, ColorService cs) : base(cs) {
 			_data = data;
 			Id = data.Id;
 			var client = cs.ControlService.GetAgent("DreamAgent");
@@ -34,7 +34,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			LoadData();
 			cs.ColorSendEventAsync += SetColors;
 			var myIp = IPAddress.Parse(_ipAddress);
-			_dev = new DreamDevice(_deviceTag) {IpAddress = myIp, DeviceGroup = data.GroupNumber};
+			_dev = new DreamDevice(_deviceTag) { IpAddress = myIp, DeviceGroup = data.GroupNumber };
 		}
 
 		public bool Streaming { get; set; }
@@ -52,6 +52,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			}
 
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
+			ColorService.StartCounter++;
 			if (_data.DeviceTag.Contains("DreamScreen")) {
 				Log.Warning("Error, you can't send colors to a dreamscreen.");
 				Enable = false;
@@ -60,6 +61,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 
 			await _client.SetMode(_dev, DeviceMode.Video);
 			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
+			ColorService.StartCounter--;
 		}
 
 		public async Task StopStream() {
@@ -71,8 +73,11 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 				return;
 			}
 
+			Log.Debug($"{_data.Tag}::Stopping stream... {_data.Id}.");
+			ColorService.StopCounter++;
 			await _client.SetMode(_dev, DeviceMode.Off);
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
+			ColorService.StopCounter--;
 		}
 
 		public Task FlashColor(Color color) {
@@ -93,7 +98,7 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 
 		IColorTargetData IColorTarget.Data {
 			get => _data;
-			set => _data = (DreamScreenData) value;
+			set => _data = (DreamScreenData)value;
 		}
 
 		private Task SetColors(object sender, ColorSendEventArgs args) {

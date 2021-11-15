@@ -12,31 +12,69 @@ using Newtonsoft.Json;
 namespace Glimmr.Models.ColorTarget.Nanoleaf {
 	[Serializable]
 	public class NanoleafData : IColorTargetData {
+		/// <summary>
+		///     Mirror layout horizontally.
+		/// </summary>
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool MirrorX { get; set; }
 
+		/// <summary>
+		///     Mirror layout vertically.
+		/// </summary>
 		[DefaultValue(false)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public bool MirrorY { get; set; }
 
+		/// <summary>
+		///     Layout rotation.
+		/// </summary>
 		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public float Rotation { get; set; }
-		
+
+		/// <summary>
+		///     Device Brightness.
+		/// </summary>
 		[DefaultValue(100)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int Brightness { get; set; }
 
-		[JsonProperty] public int GroupNumber { get; set; }
-		[JsonProperty] public int Mode { get; set; }
-		[JsonProperty] public int Port { get; set; }
-		[JsonProperty] public string Hostname { get; set; } = "";
-		public string Tag { get; set; }
-		[JsonProperty] public string Token { get; set; } = "";
-		[JsonProperty] public string Type { get; set; } = "";
-		[JsonProperty] public string Version { get; set; } = "";
-		[JsonProperty] public TileLayout Layout { get; set; }
+		/// <summary>
+		///     Port used for communication.
+		/// </summary>
+		[JsonProperty]
+		public int Port { get; set; }
+
+		/// <summary>
+		///     Device host name.
+		/// </summary>
+		[JsonProperty]
+		public string Hostname { get; set; } = "";
+
+		/// <summary>
+		///     Token used for control, retrieved after authorization.
+		/// </summary>
+		[JsonProperty]
+		public string Token { get; set; } = "";
+
+		/// <summary>
+		///     Nanoleaf type.
+		/// </summary>
+		[JsonProperty]
+		public string Type { get; set; } = "";
+
+		/// <summary>
+		///     Device protocol version.
+		/// </summary>
+		[JsonProperty]
+		public string Version { get; set; } = "";
+
+		/// <summary>
+		///     Layout of device tiles.
+		/// </summary>
+		[JsonProperty]
+		public TileLayout Layout { get; set; }
 
 
 		public NanoleafData() {
@@ -47,6 +85,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				var hc = string.GetHashCode(IpAddress, StringComparison.InvariantCulture);
 				Name = "Nanoleaf - " + hc.ToString(CultureInfo.InvariantCulture)[..4];
 			}
+
 			Layout ??= new TileLayout();
 		}
 
@@ -61,18 +100,39 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			Layout ??= new TileLayout();
 		}
 
+		/// <summary>
+		///     Device tag.
+		/// </summary>
+		public string Tag { get; set; }
 
+
+		/// <summary>
+		///     Device name.
+		/// </summary>
 		public string Name { get; set; }
+
+		/// <summary>
+		///     Device ID.
+		/// </summary>
 		public string Id { get; set; } = "";
+
+		/// <summary>
+		///     Device IP address.
+		/// </summary>
 		public string IpAddress { get; set; } = "";
 
+		/// <summary>
+		///     Enable device for streaming.
+		/// </summary>
 		public bool Enable { get; set; }
 
-		// Copy data from an existing leaf into this leaf...don't insert
+		/// <summary>
+		///     Last time the device was seen during discovery.
+		/// </summary>
 		public string LastSeen { get; set; }
 
 		public void UpdateFromDiscovered(IColorTargetData data) {
-			var existingLeaf = (NanoleafData) data;
+			var existingLeaf = (NanoleafData)data;
 			if (existingLeaf == null) {
 				throw new ArgumentException("Invalid nano data!");
 			}
@@ -88,6 +148,9 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			IpAddress = data.IpAddress;
 		}
 
+		/// <summary>
+		///     UI Properties.
+		/// </summary>
 		public SettingsProperty[] KeyProperties { get; set; } = {
 			new("custom", "nanoleaf", "")
 		};

@@ -44,7 +44,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 
 		public async Task<dynamic> CheckAuthAsync(dynamic dev) {
-			var devData = (HueData) dev;
+			var devData = (HueData)dev;
 			try {
 				ILocalHueClient client = new LocalHueClient(devData.IpAddress);
 				//Make sure the user has pressed the button on the bridge before calling RegisterAsync
@@ -91,7 +91,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				return data;
 			}
 
-			var dev = (HueData) dd;
+			var dev = (HueData)dd;
 			if (string.IsNullOrEmpty(dev.Token)) {
 				return data;
 			}

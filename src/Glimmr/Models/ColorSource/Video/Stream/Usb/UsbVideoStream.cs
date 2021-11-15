@@ -1,6 +1,7 @@
 ﻿#region
 
 using System;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
@@ -80,9 +81,14 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 				new(CapProp.FrameHeight, 480)
 			};
 			var api = OperatingSystem.IsWindows() ? VideoCapture.API.DShow : VideoCapture.API.V4L2;
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+				api = VideoCapture.API.Any;
+			}
+
 			_video = new VideoCapture(_inputStream, api);
+
 			foreach (var (prop, val) in props) {
-				_video.SetCaptureProperty(prop, val);
+				_video.Set(prop, val);
 			}
 		}
 
@@ -92,8 +98,8 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 				return false;
 			}
 
-			var fourCc = (int) _video.GetCaptureProperty(CapProp.FourCC);
-			var fps = (int) _video.GetCaptureProperty(CapProp.Fps);
+			var fourCc = (int)_video.Get(CapProp.FourCC);
+			var fps = (int)_video.Get(CapProp.Fps);
 			var d5 = VideoWriter.Fourcc('M', 'J', 'P', 'G');
 
 			Log.Debug($"Video created, fps and 4cc are {fps} and {fourCc} versus {d5}.");
@@ -101,10 +107,8 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 				return true;
 			}
 
-			Log.Warning("Video problems, bob...");
-			_video?.Dispose();
-			_video = null;
-			return false;
+			Log.Information("Unable to set FPS or FourCC, video may not work.");
+			return true;
 		}
 
 		private void SetFrame(object? sender, EventArgs e) {

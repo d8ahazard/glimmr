@@ -32,7 +32,7 @@ namespace Glimmr.Models.Util {
 					idx = input.Length - 1;
 				}
 
-				output[i] = input[(int) idx];
+				output[i] = input[(int)idx];
 			}
 
 			return output;
@@ -52,13 +52,18 @@ namespace Glimmr.Models.Util {
 				foreach (var t in input) {
 					doubled[dIdx] = t;
 					dIdx++;
-					if (dIdx >= total) break;
+					if (dIdx >= total) {
+						break;
+					}
 				}
 			}
-			
+
 			for (var i = 0; i < len; i++) {
 				var tgt = Convert.ToInt32((i + offset) * multiplier);
-				if (tgt >= total) tgt = total - 1;
+				if (tgt >= total) {
+					tgt = total - 1;
+				}
+
 				//Log.Debug($"Mapping {i} to {tgt}");
 				output[i] = doubled[tgt];
 			}
@@ -93,8 +98,8 @@ namespace Glimmr.Models.Util {
 			avgB /= inputCount;
 			avgR /= inputCount;
 			avgA /= inputCount;
-			return Color.FromArgb((int) Math.Sqrt(avgA), (int) Math.Sqrt(avgR), (int) Math.Sqrt(avgB),
-				(int) Math.Sqrt(avgG));
+			return Color.FromArgb((int)Math.Sqrt(avgA), (int)Math.Sqrt(avgR), (int)Math.Sqrt(avgB),
+				(int)Math.Sqrt(avgG));
 		}
 
 		public static Color ClampAlpha(Color tCol) {
@@ -200,9 +205,9 @@ namespace Glimmr.Models.Util {
 			}
 
 			// return HsbToColor(hsb[0], hsb[1], brightness);
-			var red = (float) color.R;
-			var green = (float) color.G;
-			var blue = (float) color.B;
+			var red = (float)color.R;
+			var green = (float)color.G;
+			var blue = (float)color.B;
 
 			var existing = color.GetBrightness();
 			if (existing > brightness) {
@@ -229,7 +234,7 @@ namespace Glimmr.Models.Util {
 				blue = Math.Min(blue, 255);
 			}
 
-			return Color.FromArgb(color.A, (int) red, (int) green, (int) blue);
+			return Color.FromArgb(color.A, (int)red, (int)green, (int)blue);
 		}
 
 
@@ -244,10 +249,10 @@ namespace Glimmr.Models.Util {
 
 		public static Color Rainbow(float progress) {
 			var div = Math.Abs(progress % 1) * 6;
-			var ascending = (int) (div % 1 * 255);
+			var ascending = (int)(div % 1 * 255);
 			var descending = 255 - ascending;
 			const int alpha = 0;
-			return (int) div switch {
+			return (int)div switch {
 				0 => Color.FromArgb(alpha, 255, ascending, 0),
 				1 => Color.FromArgb(alpha, descending, 255, 0),
 				2 => Color.FromArgb(alpha, 0, 255, ascending),
@@ -277,9 +282,10 @@ namespace Glimmr.Models.Util {
 
 		public static byte[] GammaTable(float factor) {
 			var output = new byte[256];
-			for(var i=0; i<256; i++) {
+			for (var i = 0; i < 256; i++) {
 				output[i] = (byte)(Math.Pow(i / (float)256, factor) * 256 + 0.5);
 			}
+
 			return output;
 		}
 
@@ -409,7 +415,7 @@ namespace Glimmr.Models.Util {
 			var minH = Math.Min(lDist, rDist);
 			var minV = Math.Min(tDist, bDist);
 			Log.Debug("SectorMap: " + JsonConvert.SerializeObject(sectorMap));
-			foreach (var num in new[] {tr, total, br, bl}) {
+			foreach (var num in new[] { tr, total, br, bl }) {
 				if (sector != num) {
 					continue;
 				}
@@ -418,7 +424,7 @@ namespace Glimmr.Models.Util {
 				return sectorMap[num];
 			}
 
-			foreach (var arr in new[] {left, right, top, bottom}) {
+			foreach (var arr in new[] { left, right, top, bottom }) {
 				foreach (var num in arr.Where(num => sector == num)) {
 					return sectorMap[num];
 				}
@@ -476,7 +482,7 @@ namespace Glimmr.Models.Util {
 
 
 		public static float HueFromFrequency(int freq) {
-			var frequency = (float) freq;
+			var frequency = (float)freq;
 			var start = 27.5f;
 			var end = start * 2;
 
@@ -502,15 +508,15 @@ namespace Glimmr.Models.Util {
 			var topColors = ledColors.GetRange(sd.RightCount - 1, sd.TopCount);
 			var leftColors = ledColors.GetRange(sd.TopCount - 1, sd.LeftCount);
 			var bottomColors = ledColors.GetRange(sd.LeftCount - 1, sd.BottomCount);
-			var rStep = (float) rightColors.Count / sd.VSectors;
-			var tStep = (float) topColors.Count / sd.HSectors;
-			var lStep = (float) leftColors.Count / sd.VSectors;
-			var bStep = (float) bottomColors.Count / sd.HSectors;
+			var rStep = (float)rightColors.Count / sd.VSectors;
+			var tStep = (float)topColors.Count / sd.HSectors;
+			var lStep = (float)leftColors.Count / sd.VSectors;
+			var bStep = (float)bottomColors.Count / sd.HSectors;
 			var output = new List<Color>();
 			var toAvg = new List<Color>();
 			// Add the last range of colors from the bottom to sector 0
 			for (var i = bottomColors.Count - 1 - bStep; i < bottomColors.Count; i++) {
-				toAvg.Add(bottomColors[(int) i]);
+				toAvg.Add(bottomColors[(int)i]);
 			}
 
 			var idx = 0;
@@ -568,7 +574,7 @@ namespace Glimmr.Models.Util {
 
 		public static void SetSystemData() {
 			var sd = DataUtil.GetSystemData();
-			_deviceMode = (DeviceMode) sd.DeviceMode;
+			_deviceMode = sd.DeviceMode;
 			_useCenter = sd.UseCenter;
 			_hCount = sd.HSectors;
 			_vCount = sd.VSectors;
@@ -582,7 +588,7 @@ namespace Glimmr.Models.Util {
 		/// <returns></returns>
 		public static Color[] AdjustBrightness(Color[] toSend, float max) {
 			var output = new Color[toSend.Length];
-			var mc = (byte) (max * 255f);
+			var mc = (byte)(max * 255f);
 			//Log.Debug("Max is " + max + " mc is " + mc);
 
 			for (var i = 0; i < toSend.Length; i++) {
@@ -590,7 +596,7 @@ namespace Glimmr.Models.Util {
 				// Max value is the brightness
 				var colM = Math.Max(color.R, Math.Max(color.G, color.B));
 				// Divide by 255 and multiply by max we can have...
-				var cMax = (byte) (colM / 255f * mc);
+				var cMax = (byte)(colM / 255f * mc);
 				var diff = 0;
 				if (colM > cMax) {
 					diff = colM - cMax;
@@ -616,7 +622,6 @@ namespace Glimmr.Models.Util {
 			var g = Math.Max(col.G - diff, 0);
 			var b = Math.Max(col.B - diff, 0);
 			return Color.FromArgb(r, g, b);
-
 		}
 	}
 }

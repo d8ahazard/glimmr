@@ -1,6 +1,5 @@
 ﻿#region
 
-using System;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,19 +8,17 @@ using Glimmr.Models.ColorSource.Audio;
 using Glimmr.Models.ColorSource.Video;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Microsoft.Extensions.Hosting;
 using Serilog;
 
 #endregion
 
 namespace Glimmr.Models.ColorSource.AudioVideo {
-	public class AudioVideoStream : BackgroundService, IColorSource {
+	public class AudioVideoStream : ColorSource {
+		public override bool SourceActive => _vs != null && _vs.StreamSplitter.SourceActive;
 		private readonly ColorService _cs;
 		private AudioStream? _as;
 		private Task? _aTask;
-		private Color[] _colors;
 		private bool _doSave;
-		private Color[] _sectors;
 		private SystemData _systemData;
 		private VideoStream? _vs;
 		private Task? _vTask;
@@ -29,30 +26,27 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 		public AudioVideoStream(ColorService cs) {
 			_cs = cs;
 			_systemData = DataUtil.GetSystemData();
-			_colors = ColorUtil.EmptyColors(_systemData.LedCount);
-			_sectors = ColorUtil.EmptyColors(_systemData.SectorCount);
 			_cs.ControlService.RefreshSystemEvent += RefreshSystem;
 			_cs.FrameSaveEvent += TriggerSave;
-			RefreshSystem();
 		}
 
-		public Task ToggleStream(CancellationToken ct) {
-			Log.Debug("Starting av stream service...");
+		public override Task Start(CancellationToken ct) {
+			RefreshSystem();
 			var aS = _cs.GetStream(DeviceMode.Audio.ToString());
 			var vS = _cs.GetStream(DeviceMode.Video.ToString());
 			if (aS != null) {
-				_as = (AudioStream) aS;
+				_as = (AudioStream)aS;
 			}
 
 			if (vS != null) {
-				_vs = (VideoStream) vS;
+				_vs = (VideoStream)vS;
 			}
 
 			if (_vs != null && _as != null) {
-				_vTask = _vs.ToggleStream(ct);
+				_vTask = _vs.Start(ct);
 				_vs.SendColors = false;
 				_vs.StreamSplitter.DoSend = false;
-				_aTask = _as.ToggleStream(ct);
+				_aTask = _as.Start(ct);
 				_as.SendColors = false;
 				_as.StreamSplitter.DoSend = false;
 			} else {
@@ -63,10 +57,7 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 			return ExecuteAsync(ct);
 		}
 
-
-		public bool SourceActive => _vs != null && _vs.StreamSplitter.SourceActive;
-
-		private void RefreshSystem() {
+		public override void RefreshSystem() {
 			_systemData = DataUtil.GetSystemData();
 		}
 
@@ -95,8 +86,6 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 					var aSecs = _as.StreamSplitter.GetSectors();
 					if (vCols.Length == 0 || vCols.Length != aCols.Length || vSecs.Length == 0 ||
 					    vSecs.Length != aSecs.Length) {
-						Log.Debug(
-							"AV Splitter is still warming up...");
 						continue;
 					}
 
@@ -114,11 +103,11 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 						oSecs[i] = ColorUtil.SetBrightness(vCol, ab);
 					}
 
-					_colors = oCols;
-					_sectors = oSecs;
-					await _cs.TriggerSend(_colors, _sectors, "avStream");
+					_cs.LedColors = oCols;
+					_cs.SectorColors = oSecs;
+					_cs.ColorsUpdated = true;
 
-					if (_doSave) {
+					if (_doSave && _cs.ControlService.SendPreview) {
 						_doSave = false;
 						_vs.StreamSplitter.MergeFrame(oCols, oSecs);
 					}
@@ -127,17 +116,11 @@ namespace Glimmr.Models.ColorSource.AudioVideo {
 				}
 
 				if (_vs != null) {
-					_vs.StreamSplitter.DoSend = false;
+					_vs.SendColors = false;
 				}
 
 				if (_as != null) {
-					try {
-						await _as.StopStream();
-					} catch (Exception) {
-						Log.Warning("Exception stopping audio stream.");
-					}
-
-					_as.StreamSplitter.DoSend = false;
+					_as.SendColors = false;
 				}
 
 				if (_aTask is { IsCompleted: false }) {

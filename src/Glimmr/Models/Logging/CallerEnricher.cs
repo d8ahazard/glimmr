@@ -12,7 +12,7 @@ using Serilog.Events;
 namespace Glimmr.Models.Logging {
 	internal class CallerEnricher : ILogEventEnricher {
 		public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory) {
-			var skip = 3;
+			var skip = 2;
 			while (true) {
 				var stack = new StackFrame(skip);
 				if (!stack.HasMethod()) {

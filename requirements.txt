@@ -1,0 +1,2 @@
+﻿git+https://github.com/jgarff/rpi_ws281x.git@master
+git+https://github.com/davesteele/comitup.git@master

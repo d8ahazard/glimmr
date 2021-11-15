@@ -32,13 +32,10 @@ namespace Glimmr.Models.ColorTarget {
 	}
 
 	public abstract class ColorTarget {
-		public ColorService? ColorService { get; }
+		public ColorService ColorService { get; }
 
 		protected ColorTarget(ColorService cs) {
 			ColorService = cs;
-		}
-
-		protected ColorTarget() {
 		}
 	}
 }

@@ -27,8 +27,8 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 		private bool _disposed;
 		private IPEndPoint? _ep;
 		private string _ipAddress;
-		private SystemData _sd;
 		private int _ledCount;
+		private SystemData _sd;
 
 		public GlimmrDevice(GlimmrData wd, ColorService cs) : base(cs) {
 			_udpClient = cs.ControlService.UdpClient;
@@ -51,7 +51,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 
 		IColorTargetData IColorTarget.Data {
 			get => _data;
-			set => _data = (GlimmrData) value;
+			set => _data = (GlimmrData)value;
 		}
 
 
@@ -61,12 +61,14 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			}
 
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
+			ColorService.StartCounter++;
 			var sd = DataUtil.GetSystemData();
 			var glimmrData = new GlimmrData(sd);
 			await SendPost("startStream", JsonConvert.SerializeObject(glimmrData)).ConfigureAwait(false);
 			_ep = IpUtil.Parse(_ipAddress, Port);
 			Streaming = true;
 			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
+			ColorService.StartCounter--;
 		}
 
 
@@ -78,7 +80,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 					await _udpClient.SendAsync(data, data.Length, _ep);
 				}
 			} catch (Exception e) {
-				Log.Debug("Exception, look at that: " + e.Message);
+				Log.Warning("Exception flashing color: " + e.Message);
 			}
 		}
 
@@ -88,10 +90,13 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 				return;
 			}
 
+			Log.Debug($"{_data.Tag}::Stopping stream...{_data.Id}.");
+			ColorService.StopCounter++;
 			await FlashColor(Color.FromArgb(0, 0, 0));
 			Streaming = false;
 			await SendPost("mode", 0.ToString());
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
+			ColorService.StopCounter--;
 		}
 
 
@@ -128,7 +133,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			}
 
 			if (_ep == null) {
-				Log.Debug("No endpoint.");
+				Log.Warning("No endpoint.");
 				return;
 			}
 
@@ -179,9 +184,9 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 				var cp = new ColorPacket(leds);
 				var packet = cp.Encode();
 				await _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep);
-				ColorService?.Counter.Tick(Id);
+				ColorService.Counter.Tick(Id);
 			} catch (Exception e) {
-				Log.Debug("Exception: " + e.Message);
+				Log.Warning("Exception: " + e.Message);
 			}
 		}
 
@@ -198,8 +203,7 @@ namespace Glimmr.Models.ColorTarget.Glimmr {
 			}
 
 			try {
-				uri = new Uri("http://" + _ipAddress + "/api/DreamData/" + target);
-				//Log.Debug($"Posting to {uri}: " + value);
+				uri = new Uri("http://" + _ipAddress + "/api/Glimmr/" + target);
 			} catch (UriFormatException e) {
 				Log.Warning("URI Format exception: " + e.Message);
 				return;

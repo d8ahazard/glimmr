@@ -13,15 +13,14 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.Wled {
 	public class WledDiscovery : ColorDiscovery, IColorDiscovery {
-
 		private readonly MulticastService _mDns;
 		private readonly ServiceDiscovery _sd;
 		private List<string> _ids;
 		private bool _stopDiscovery;
 
 		public WledDiscovery(ColorService cs) : base(cs) {
-			_mDns = cs.ControlService.MulticastService;
 			var controlService = cs.ControlService;
+			_mDns = controlService.MulticastService;
 			_sd = controlService.ServiceDiscovery;
 			_ids = new List<string>();
 		}
@@ -31,17 +30,15 @@ namespace Glimmr.Models.ColorTarget.Wled {
 			Log.Debug("WLED: Discovery started...");
 
 			try {
-				_mDns.Start();
 				_mDns.NetworkInterfaceDiscovered += InterfaceDiscovered;
 				_sd.ServiceDiscovered += ServiceDiscovered;
-				_sd.ServiceInstanceDiscovered += WledDiscovered;
-				_sd.QueryServiceInstances("_wled._tcp");
-				_mDns.SendQuery("_wled._tcp", type: DnsType.PTR);
+				_sd.ServiceInstanceDiscovered += DeviceDiscovered;
+				_mDns.Start();
+				_mDns.SendQuery("_glimmr._tcp", type: DnsType.PTR);
 				await Task.Delay(TimeSpan.FromSeconds(timeout), CancellationToken.None);
 				_mDns.NetworkInterfaceDiscovered -= InterfaceDiscovered;
 				_sd.ServiceDiscovered -= ServiceDiscovered;
-				_sd.ServiceInstanceDiscovered -= WledDiscovered;
-				//_mDns.Stop();
+				_sd.ServiceInstanceDiscovered -= DeviceDiscovered;
 				_stopDiscovery = true;
 			} catch {
 				// Ignore collection modified exception
@@ -58,10 +55,9 @@ namespace Glimmr.Models.ColorTarget.Wled {
 
 		private void InterfaceDiscovered(object? sender, NetworkInterfaceEventArgs e) {
 			_sd.QueryServiceInstances("_wled._tcp");
-			//_sd.QueryServiceInstances("_arduino._tcp");
 		}
 
-		private void WledDiscovered(object? sender, ServiceInstanceDiscoveryEventArgs e) {
+		private void DeviceDiscovered(object? sender, ServiceInstanceDiscoveryEventArgs e) {
 			var foo = e.Message;
 			if (!foo.ToString().Contains("_wled")) {
 				return;
@@ -92,11 +88,12 @@ namespace Glimmr.Models.ColorTarget.Wled {
 						// Extract Mac
 						case DnsType.TXT:
 							id = msg.ToString().Split("=")[1];
-							break;				}
+							break;
+					}
 				}
 
 				if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(ip)) {
-					var nData = new WledData(id, ip) {Name = name};
+					var nData = new WledData(id, ip) { Name = name };
 					ControlService.AddDevice(nData).ConfigureAwait(false);
 					_ids.Add(id);
 				} else {

@@ -9,10 +9,23 @@ using Newtonsoft.Json;
 
 namespace Glimmr.Models.ColorTarget.DreamScreen {
 	public class DreamScreenData : IColorTargetData {
-		[JsonProperty] public int Brightness { get; set; } = 255;
-		[JsonProperty] public int GroupNumber { get; private set; }
-		[JsonProperty] public string DeviceTag { get; private set; } = "DreamScreen";
-		[JsonProperty] public string Tag { get; set; } = "DreamScreen";
+		/// <summary>
+		///     Device brightness.
+		/// </summary>
+		[JsonProperty]
+		public int Brightness { get; set; } = 255;
+
+		/// <summary>
+		///     Device group number.
+		/// </summary>
+		[JsonProperty]
+		public int GroupNumber { get; private set; }
+
+		/// <summary>
+		///     Dreamscreen-specific device tag.
+		/// </summary>
+		[JsonProperty]
+		public string DeviceTag { get; private set; } = "DreamScreen";
 
 		public DreamScreenData() {
 			LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
@@ -31,16 +44,45 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			}
 		}
 
-		[JsonProperty] public string Name { get; set; } = "DreamScreen";
-		[JsonProperty] public string Id { get; set; } = "";
-		[JsonProperty] public string IpAddress { get; set; } = "";
+		/// <summary>
+		///     Device tag.
+		/// </summary>
+		[JsonProperty]
+		public string Tag { get; set; } = "DreamScreen";
 
-		[JsonProperty] public bool Enable { get; set; }
-		[JsonProperty] public string LastSeen { get; set; }
+		/// <summary>
+		///     Device name.
+		/// </summary>
+		[JsonProperty]
+		public string Name { get; set; } = "DreamScreen";
+
+		/// <summary>
+		///     Unique device ID.
+		/// </summary>
+		[JsonProperty]
+		public string Id { get; set; } = "";
+
+		/// <summary>
+		///     Device IP Address.
+		/// </summary>
+		[JsonProperty]
+		public string IpAddress { get; set; } = "";
+
+		/// <summary>
+		///     Enable device for streaming.
+		/// </summary>
+		[JsonProperty]
+		public bool Enable { get; set; }
+
+		/// <summary>
+		///     Last time the device was seen during discovery.
+		/// </summary>
+		[JsonProperty]
+		public string LastSeen { get; set; }
 
 
 		public void UpdateFromDiscovered(IColorTargetData data) {
-			var dData = (DreamScreenData) data;
+			var dData = (DreamScreenData)data;
 			Brightness = dData.Brightness;
 			LastSeen = data.LastSeen;
 			GroupNumber = dData.GroupNumber;
@@ -52,6 +94,9 @@ namespace Glimmr.Models.ColorTarget.DreamScreen {
 			}
 		}
 
+		/// <summary>
+		///     UI properties.
+		/// </summary>
 		public SettingsProperty[] KeyProperties { get; set; } = Array.Empty<SettingsProperty>();
 	}
 }

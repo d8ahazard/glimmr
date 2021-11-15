@@ -1,8 +1,29 @@
 # [d8ahazard/glimmr](https://github.com/d8ahazard/glimmr)
 
+## What the heck is this??
+Glimmr is a FOSS ambient home lighting solution. Hook it up to a HDMI signal, use a webcam, or use the screen capture function; and drive a wide range of lighting devices in sync with the input signal. It's similar to Hyperion, Govee, or the Hue Sync box, only with a much broader support for devices.
+
+The project is written in dotnet core, which means it can run on most any modern arm, intel, or AMD processor. Presently, it has been tested to work with Debian and Ubuntu linux, as well as raspbian and Windows 10 and 11. It is specifically designed to run on a raspberry Pi 4B, however, it has also been shown to run fine on a 3B, and could potentailly also work on a zero...although it has not been tested.
+
+Supported devices include DreamScreen, Hue, Lifx, Nanoleaf, WLED, Adalight (Arduino), Yeelight, and WS2812B/SK6822 strips connected to the GPIO of a raspberry pi. Additionally, a *vast* array of desktop RGB devices are supported via OpenRGB integration. And, if there's not a device supported and it has an API, I'm more than willing to try adding support for it.
+
+In addition to all the supported devices, each device has a custom set of options which can be used to ensure perfect alignement with the screen content, regardless of room placement. Mirroring, scaling, and brightness are all configurable for every device.
+
+Additional features include automatic updates, black bar detection, auto-disable and enable; audio, audio/video, and ambient modes with user-defineable parameters via a JSON loading system.
+
+The app is controllable via an inbuilt web interface, Android application (available on the play store), and a fully documented API (via swagger). Python api wrapper WIP.
+
+<img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/arduino.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/debian.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/docker.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/dreamscreen.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/hue.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/lifx.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/linux.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/nanoleaf.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/openrgb.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/raspi.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/ubuntu.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/windows.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/wled.png?raw=true" width=100 height=100><img src="https://github.com/d8ahazard/glimmr/blob/dev/docs/logos/yeelight.png?raw=true" width=100 height=100>
+
 ## Installation
 
 ### Windows
+
+#### Installer
+Download the latest .exe installer from [releases](https://github.com/d8ahazard/glimmr/releases/latest), and run it.
+
+
+#### Scripted
 Open a Powershell window, execute the following command:
 
 ```
@@ -21,26 +42,33 @@ Click this to launch Glimmr, minimize the console window to have it stored in th
 Note: Glimmr/GlimmrTray *MUST* be run as administrator in order for screen capture to work.
 
 ### Raspberry Pi
+
+#### Installer
+Download the latest linux-arm deb package installer from [releases](https://github.com/d8ahazard/glimmr/releases/latest), and 
+installing it by running ```apt-get install FILENAME.deb```.
+
+#### Script
 Execute the following command:
 ```
-bash <(curl -s https://raw.githubusercontent.com/d8ahazard/glimmr/master/script/setup_linux.sh
+sudo su
+wget -qO- https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_linux.sh | bash
 ```
 
 *Alternatively*, you can flash a custom image directly to your pi from here:
 
-https://mega.nz/file/m7oT0a4B#CmEhWU8wrdNPSpwCTVwCgFqSoL_-dNFA8YA_ctIf-Vw
+https://mega.nz/file/m2RHyIAI#wFZqNlS3zxf2WnJChmUHgCMHsBejjLkFRJ6o8Na0a8w
 
 You will need to use "BalenaEtcher", a free software for flashing the image.
 
 https://www.balena.io/etcher/
 
-Once Balena is installed and loaded, select the image file you downloaded from above, and make sure your 
+Once Balena is installed and loaded, select the image file you downloaded from above, and make sure your
 micro SD card is connected to your computer. Select the SD card, and click "Flash" to begin.
 
 Once flashing is done - simply insert the SD card into your pi and boot it up.
 
 If using the custom RasPi image, it is configured to use the Comitup service to create an access point which
-you can connect to to configure your Glimmr's wifi settings. Once the pi is booted, use a phone or laptop and 
+you can connect to to configure your Glimmr's wifi settings. Once the pi is booted, use a phone or laptop and
 connect to the access point "Comitup-XXX" or "Glimmr-XXX" (WIP). Once connected, you should be prompted to select
 a local wifi network and enter a password. Make a note of the name of the access point.
 
@@ -53,6 +81,12 @@ or "sudo service glimmr stop" respectively.
 
 
 ### Linux
+
+#### Installer
+Download the latest linux-x64 deb package installer from [releases](https://github.com/d8ahazard/glimmr/releases/latest), and
+installing it by running ```apt-get install FILENAME.deb```.
+
+#### Script
 Execute the following command. You can replace "dev" with "master" to use the master branch instead.:
 ```
 sudo su
@@ -69,6 +103,13 @@ wget -qO- https://raw.githubusercontent.com/d8ahazard/glimmr/master/script/setup
 Note: Glimmr is installed as a service, and can be stopped/started by running "sudo service glimmr start"
 or "sudo service glimmr stop" respectively.
 
+
+### OSX
+Open a terminal, execute the following commands:
+```
+sudo su
+curl https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_osx.sh | sh
+```
 
 ### docker
 Use the following command. You don't need to specify the ASPNETCORE_URLS value, unless you wish to change the default
@@ -152,7 +193,7 @@ of the web UI.
 
 ### Configure Glimmr Settings
 To configure system, capture, and audio preferences, click the gear icon in the top-right corner
-of the screen. 
+of the screen.
 
 ### Configure OpenRGB
 [OpenRGB](https://gitlab.com/CalcProgrammer1/OpenRGB) is a free, cross-platform solution for controlling desktop-connected lighting peripherals.
@@ -169,9 +210,9 @@ NOTE: It is *highly* recommended to use my [custom Adalight Sketch](https://gith
 additional features and controls that help better integrate with Glimmr, including auto-detection
 of brightness and LED count, adjusting brightness during runtime, and gamma correction.
 
-If you're not using my sketch, you will need to specify your strip's LED count. 
+If you're not using my sketch, you will need to specify your strip's LED count.
 
-You can also specify an offset (number of pixels to skip before displaying LED colors), baud rate, 
+You can also specify an offset (number of pixels to skip before displaying LED colors), baud rate,
 and whether or not to reverse the order of the colors sent to your device.
 
 ### Configure your Lifx Bulbs
@@ -211,7 +252,7 @@ Create a new entertainment area and configure it with your lights as they are in
 Back in the glimmr web UI, reload the page, then select your hue bridge, and select the newly created entertainment group from the drop-down.
 For each light you wish to map, select the sector in the dropdown that corresponds to the sector you wish to map to.
 
-If no entertainment groups are showing and you're linked already, use the refresh button to re-scan entertainment 
+If no entertainment groups are showing and you're linked already, use the refresh button to re-scan entertainment
 groups and light settings.
 
 #### Configure WLED
@@ -232,11 +273,49 @@ where there are two pixels for a strip that correspond to a segment of the scree
 
 "Sectored" currently does nothing, as I haven't implemented it yet.
 
-"Single Color" assumes that you have a small number of LEDs in a close area, and you want all of 
+"Single Color" assumes that you have a small number of LEDs in a close area, and you want all of
 those LEDs to display the same color. The color being displayed will be whatever the strip's offset
 is set to.
 
 Click the "Save settings" button to submit your configuration.
+
+
+## Integrations
+
+### Swagger API
+
+Glimmr has a fully REST-ful API that supports control and enumeration of nearly every method and
+relevant data structure in the application. All methods are documented on (https://app.swaggerhub.com/apis/d8ahazard/glimmr/)[Swagger Hub].
+Additionally, you can access the API documentation locally by going to http://<YOUR_GLIMMR_ADDRESS>/swagger/index.html.
+
+The local API reference can be used to view and set data in real-time, as well as see in-depth descriptions 
+of what each device and system setting do. You can also examine the data structures of Ambient and Audio Scenes.
+
+
+### Python Library
+
+Want to create a python project to control Glimmr? There's a package for that.
+Presently, this is not a full implementation of the Swagger API, but only adds the features
+required for implementation with Home Assistant. If a feature is not implemented, 
+feel free to submit a feature request to the below github repo.
+
+https://pypi.org/project/glimmr/
+https://github.com/d8ahazard/glimmr-python
+
+
+## Home Assistant Integration
+
+Running a Home Assistant instance? Well, you're in luck. I've created a platinum-level
+integration for Home Assistant that takes full advantage of the features provided by Glimmr.
+
+The integration includes automatic discovery via MDNS/Zeroconfig, automatic push updates via websocket,
+and the ability to change device modes and adjust ambient color and scenes.
+
+Also, the integration is supported by HACS - you can just copy the below URL and add it as a custom 
+repository, then install via the settings -> integrations page.
+
+https://github.com/d8ahazard/glimmr_ha
+
 
 ## PROFIT
 
@@ -257,21 +336,31 @@ Ambient Scenes and music mode *are* now implemented. I still have some work to d
 Not all settings for DS devices in the Web UI are implemented...but the video and advanced settings should now be working properly.
 
 Logs are stored to the following location(s):
-Windows - %appdata%\Glimmr\log
+Windows - %programdata%\Glimmr\log\
 Linux - /var/log/Glimmr/
 
 Glimmr storage DB and scenes are stored in the following location(s):
-Windows - %appdata%\Glimmr\
-Linux - /etc/Glimmr
+Windows - %programdata%\Glimmr\
+Linux - /etc/Glimmr/
 
 The application is installed to the following location(s):
-Windows - C:\program files\Glimmr\bin
-Linux - /home/glimmrtv/glimmr/bin
+Windows - C:\Program Files\Glimmr\
+Linux - /usr/share/Glimmr/
+OSX - /Applications/Glimmr/
 
-## Related repositories:
+## Related links:
+[Home Assistant Integration](https://github.com/d8ahazard/Glimmr_ha)
+
+[Python Library](https://github.com/d8ahazard/Glimmr-python)
+
 [Raspberry pi image generator](https://github.com/d8ahazard/Glimmr-image-gen)
-[Glimmr mobile app](https://github.com/d8ahazard/GlimmrControl)
-[FloW LED Android Screen Capture App](https://play.google.com/store/apps/details?id=com.digitalhigh.glimmrextender&hl=en_US&gl=US)
+
+[Glimmr mobile app (Play Store)](https://play.google.com/store/apps/details?id=com.digitalhigh.GlimmrControl)
+
+[FloW LED Android Screen Capture App (Play Store)](https://play.google.com/store/apps/details?id=com.digitalhigh.glimmrextender&hl=en_US&gl=US)
+
+[Glimmr mobile app (source)](https://github.com/d8ahazard/GlimmrControl)
+
 [DreamScreen Documents](https://github.com/d8ahazard/DreamscreenDocs/)
 
 

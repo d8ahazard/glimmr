@@ -1,0 +1,4385 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Glimmr Web API",
+    "description": "A simple example ASP.NET Core Web API",
+    "contact": {
+      "name": "d8ahazard",
+      "url": "https://facebook.com/GlimmrTV",
+      "email": "donate.to.digitalhigh@gmail.com"
+    },
+    "license": {
+      "name": "GPL3.0",
+      "url": "https://github.com/d8ahazard/glimmr/blob/master/COPYING"
+    },
+    "version": "v1.3"
+  },
+  "paths": {
+    "/api/Glimmr": {
+      "get": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Default endpoint - returns a SystemData object.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemData"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemData"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemData"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/ambientColor": {
+      "get": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Retrieve the currently set ambient color.\r\nWill still return a value if ambient mode is not\r\nactive.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Set the current ambient mode, and set device mode to ambient.",
+        "requestBody": {
+          "description": "A HTML-formatted RGB Color (#666666/FFFFFF)",
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/ambientScene": {
+      "get": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Retrieve the ambient scene specified in the query, or current if none is specified.\r\nWill still return a value if ambient mode is not\r\nactive.",
+        "parameters": [
+          {
+            "name": "sceneId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AmbientScene"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AmbientScene"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AmbientScene"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Set the current ambient mode, and set device mode to ambient.",
+        "requestBody": {
+          "description": "The ID of the target ambient mode.",
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AmbientScene"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AmbientScene"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AmbientScene"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/ambientScenes": {
+      "get": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Retrieve the list of available ambient scenes.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AmbientScene"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AmbientScene"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AmbientScene"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/audioScene": {
+      "get": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Get the currently selected audio scene.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudioScene"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudioScene"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudioScene"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Set the desired audio scene and set device mode to Audio.",
+        "requestBody": {
+          "description": "ID of the target audio scene.",
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudioScene"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudioScene"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudioScene"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/audioScenes": {
+      "get": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Retrieve an array of available audio scenes.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AudioScene"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AudioScene"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AudioScene"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/authorizeDevice": {
+      "get": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Trigger device authorization for the specified device.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "description": "The device Id to try authorizing.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/database": {
+      "get": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Download a backup of the current database.",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Upload and replace the database with a copy from a db download.",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              },
+              "encoding": {
+                "files": {
+                  "style": "form"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Glimmr/databaseJson": {
+      "get": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Retrieve the entire datastore in JSON format.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreData"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreData"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreData"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/device": {
+      "get": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Retrieve target device data.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "description": "The id of the device to retrieve.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/AdalightData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DreamScreenData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/GlimmrData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HueData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LedData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LifxData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NanoleafData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/OpenRgbData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WledData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/YeelightData"
+                    }
+                  ],
+                  "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/AdalightData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DreamScreenData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/GlimmrData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HueData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LedData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LifxData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NanoleafData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/OpenRgbData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WledData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/YeelightData"
+                    }
+                  ],
+                  "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/AdalightData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DreamScreenData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/GlimmrData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HueData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LedData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LifxData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NanoleafData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/OpenRgbData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WledData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/YeelightData"
+                    }
+                  ],
+                  "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Insert or update a device.",
+        "requestBody": {
+          "description": "A JSON string representing the ColorTarget to update.",
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/AdalightData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DreamScreenData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/GlimmrData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/HueData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LedData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LifxData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/NanoleafData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/OpenRgbData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WledData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/YeelightData"
+                  }
+                ],
+                "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/AdalightData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DreamScreenData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/GlimmrData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/HueData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LedData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LifxData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/NanoleafData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/OpenRgbData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WledData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/YeelightData"
+                  }
+                ],
+                "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/AdalightData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DreamScreenData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/GlimmrData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/HueData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LedData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LifxData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/NanoleafData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/OpenRgbData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WledData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/YeelightData"
+                  }
+                ],
+                "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/AdalightData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DreamScreenData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/GlimmrData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/HueData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LedData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LifxData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/NanoleafData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/OpenRgbData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WledData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/YeelightData"
+                  }
+                ],
+                "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/AdalightData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DreamScreenData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/GlimmrData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HueData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LedData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LifxData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NanoleafData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/OpenRgbData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WledData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/YeelightData"
+                    }
+                  ],
+                  "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/AdalightData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DreamScreenData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/GlimmrData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HueData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LedData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LifxData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NanoleafData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/OpenRgbData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WledData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/YeelightData"
+                    }
+                  ],
+                  "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/AdalightData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DreamScreenData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/GlimmrData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HueData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LedData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LifxData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NanoleafData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/OpenRgbData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WledData"
+                    },
+                    {
+                      "$ref": "#/components/schemas/YeelightData"
+                    }
+                  ],
+                  "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Delete a device.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "description": "The ID of the device to delete.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/devices": {
+      "get": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Retrieve the current list of devices.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/AdalightData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/DreamScreenData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/GlimmrData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/HueData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/LedData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/LifxData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/NanoleafData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/OpenRgbData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/WledData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/YeelightData"
+                      }
+                    ],
+                    "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/AdalightData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/DreamScreenData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/GlimmrData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/HueData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/LedData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/LifxData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/NanoleafData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/OpenRgbData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/WledData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/YeelightData"
+                      }
+                    ],
+                    "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/AdalightData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/DreamScreenData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/GlimmrData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/HueData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/LedData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/LifxData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/NanoleafData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/OpenRgbData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/WledData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/YeelightData"
+                      }
+                    ],
+                    "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/flashDevice": {
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Flash an entire device.",
+        "requestBody": {
+          "description": "The ID of the device to flash on/off.",
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Glimmr/flashLed": {
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Flash a specific LED from the grid.",
+        "requestBody": {
+          "description": "The LED ID to flash.",
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Glimmr/flashSector": {
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Flash a specific Sector.",
+        "requestBody": {
+          "description": "The sector ID to flash.",
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Glimmr/glimmrData": {
+      "get": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Retrieves a simplified version of our SystemData object used for Glimmr-to-Glimmr control.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/GlimmrData"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GlimmrData"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GlimmrData"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/importAmbientScene": {
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Upload and replace the database with a copy from a db download.",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              },
+              "encoding": {
+                "files": {
+                  "style": "form"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Glimmr/importAudioScene": {
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Upload and replace the database with a copy from a db download.",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              },
+              "encoding": {
+                "files": {
+                  "style": "form"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Glimmr/logs": {
+      "get": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Download the current log file.",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Glimmr/mode": {
+      "get": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Retrieve or set the current device mode.",
+        "parameters": [
+          {
+            "name": "mode",
+            "in": "query",
+            "description": "If specified, set the mode to the value.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": -1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceMode"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceMode"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceMode"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Set a new device mode.",
+        "description": "Device Modes:\r\nOff = 0,\r\nVideo = 1,\r\nAudio = 2,\r\nAudioVideo = 4,\r\nAmbient = 3,\r\nUdp = 5,\r\nDreamScreen = 6",
+        "requestBody": {
+          "description": "The new device mode to set.",
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceMode"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceMode"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceMode"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceMode"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceMode"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceMode"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceMode"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/scanDevices": {
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Triggers a device refresh.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/AdalightData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/DreamScreenData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/GlimmrData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/HueData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/LedData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/LifxData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/NanoleafData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/OpenRgbData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/WledData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/YeelightData"
+                      }
+                    ],
+                    "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/AdalightData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/DreamScreenData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/GlimmrData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/HueData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/LedData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/LifxData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/NanoleafData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/OpenRgbData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/WledData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/YeelightData"
+                      }
+                    ],
+                    "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/AdalightData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/DreamScreenData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/GlimmrData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/HueData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/LedData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/LifxData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/NanoleafData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/OpenRgbData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/WledData"
+                      },
+                      {
+                        "$ref": "#/components/schemas/YeelightData"
+                      }
+                    ],
+                    "description": "Base class for various color target data classes.\r\nAll color target data MUST have these properties,\r\nbut will almost certainly implement more.\r\nRefer to actual device JSON from /devices\r\nfor full device structures."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/stats": {
+      "get": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Fetch current CPU statistics.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatData"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatData"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatData"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/startStream": {
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Start Glimmr-to-Glimmr UDP stream",
+        "requestBody": {
+          "description": "A GlimmrData object containing the input dimensions of\r\nthe received colors.",
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GlimmrData"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GlimmrData"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GlimmrData"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GlimmrData"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/store": {
+      "get": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Fetch store data object.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreData"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreData"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreData"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Glimmr/systemControl": {
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Triggers a system action.",
+        "requestBody": {
+          "description": "Available commands are \"restart\", \"shutdown\", \"reboot\", and \"update\".\r\nRestart restarts ONLY the glimmr service.\r\nShutdown shuts down the entire machine.\r\nReboot triggers a system reboot.\r\nUpdate will stop Glimmr, update the software, and re-start the service.",
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Glimmr/systemData": {
+      "post": {
+        "tags": [
+          "Glimmr"
+        ],
+        "summary": "Update System configuration.",
+        "requestBody": {
+          "description": "A SystemData object.",
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SystemData"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SystemData"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SystemData"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SystemData"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemData"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemData"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemData"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AdalightData": {
+        "type": "object",
+        "properties": {
+          "ReverseStrip": {
+            "type": "boolean",
+            "description": "Reverse strip direction.",
+            "default": false
+          },
+          "GammaFactor": {
+            "type": "number",
+            "description": "Gamma adjustment factor. You probably don't want to go higher than 3 or so.",
+            "format": "float",
+            "default": 2.2
+          },
+          "LedMultiplier": {
+            "type": "number",
+            "description": "Scale factor for LED counts related to master grid.",
+            "format": "float"
+          },
+          "Brightness": {
+            "type": "integer",
+            "description": "Device brightness.",
+            "format": "int32",
+            "default": 100
+          },
+          "LedCount": {
+            "type": "integer",
+            "description": "Number of LEDs on device. Must match Adalight settings, or device won't respond.",
+            "format": "int32",
+            "default": 0
+          },
+          "Offset": {
+            "type": "integer",
+            "description": "Offset of leds from lower-right corner of master grid.",
+            "format": "int32",
+            "default": 0
+          },
+          "Speed": {
+            "type": "integer",
+            "description": "Baud rate for device.",
+            "format": "int32",
+            "default": 115200
+          },
+          "Port": {
+            "type": "string",
+            "description": "Port for device communication.",
+            "default": "COM1",
+            "nullable": true
+          },
+          "Tag": {
+            "type": "string",
+            "description": "Device tag.",
+            "nullable": true
+          },
+          "Id": {
+            "type": "string",
+            "description": "Device ID.",
+            "nullable": true
+          },
+          "IpAddress": {
+            "type": "string",
+            "description": "Unused for adalight.",
+            "nullable": true
+          },
+          "LastSeen": {
+            "type": "string",
+            "description": "Last time the device was seen during discovery.",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "description": "Device name.",
+            "nullable": true
+          },
+          "Enable": {
+            "type": "boolean",
+            "description": "Enable streaming.",
+            "default": false
+          },
+          "KeyProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SettingsProperty"
+            },
+            "description": "UI Properties.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Alert": {
+        "enum": [
+          0,
+          1,
+          2
+        ],
+        "type": "integer",
+        "description": "<p>Possible values:</p>\n<ul>\n</ul>\n",
+        "format": "int32"
+      },
+      "AmbientScene": {
+        "type": "object",
+        "properties": {
+          "AnimationTime": {
+            "type": "number",
+            "description": "Amount of time (in milliseconds) between color updates.",
+            "format": "float"
+          },
+          "EasingTime": {
+            "type": "number",
+            "description": "How long to ease between colors.",
+            "format": "float"
+          },
+          "Id": {
+            "type": "integer",
+            "description": "Theme ID. Will be auto-assigned for user defined themes.",
+            "format": "int32"
+          },
+          "Easing": {
+            "type": "string",
+            "description": "Easing mode.\r\nBlend = 0 (Colors fade directly between one another)\r\nFadeIn = 1 (Color fades in after being replaced)\r\nFadeOut = 2 (Color fades out, is replaced, turns on full)\r\nFadeInOut = 3 (Colors fade in/out before being replaced)",
+            "nullable": true
+          },
+          "Mode": {
+            "type": "string",
+            "description": "Animation mode.\r\nLinear = 0 (Colors progress normally)\r\nReverse = 1 (Colors progress in reverse direction)\r\nRandom = 2 (Colors are selected randomly)\r\nRandomAll = 3 (One random color for everything)\r\nLinearAll = 4 (Colors progress normally, one color for everything)",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "description": "The theme name.",
+            "nullable": true
+          },
+          "Colors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "An array of colors used by the scene.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AudioData": {
+        "type": "object",
+        "properties": {
+          "IsDefault": {
+            "type": "boolean",
+            "description": "Is this the default device?"
+          },
+          "IsEnabled": {
+            "type": "boolean",
+            "description": "Is this device enabled?"
+          },
+          "IsLoopback": {
+            "type": "boolean",
+            "description": "Is this a loopback device?"
+          },
+          "Id": {
+            "type": "string",
+            "description": "Same as Device Name.",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "description": "Device Name (Also Device ID).",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AudioScene": {
+        "type": "object",
+        "properties": {
+          "RotationLower": {
+            "type": "number",
+            "description": "Overall lower limit to color range (0 - 1)\r\nIf lower is GEQ higher, will be ignored",
+            "format": "float"
+          },
+          "RotationUpper": {
+            "type": "number",
+            "description": "Overall upper limit to color range (0 - 1)\r\nIf lower is GEQ higher, will be ignored",
+            "format": "float"
+          },
+          "RotationSpeed": {
+            "type": "number",
+            "description": "How many degrees to rotate on each trigger (0 - 1)",
+            "format": "float"
+          },
+          "RotationThreshold": {
+            "type": "number",
+            "description": "Minimum amplitude to trigger color rotation",
+            "format": "float"
+          },
+          "OctaveMap": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          },
+          "Id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Name": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BeamLayout": {
+        "type": "object",
+        "properties": {
+          "Segments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Segment"
+            },
+            "description": "List of individual segments.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CameraType": {
+        "enum": [
+          0,
+          1
+        ],
+        "type": "integer",
+        "description": "<p>Possible values:</p>\n<ul>\n<li><b>RasPiCam = 0</b> (Raspberry Pi Camera Module)</li>\n<li><b>WebCam = 1</b> (Web camera)</li>\n</ul>\n",
+        "format": "int32"
+      },
+      "CaptureMode": {
+        "enum": [
+          1,
+          2,
+          3
+        ],
+        "type": "integer",
+        "description": "<p>Possible values:</p>\n<ul>\n<li><b>Camera = 1</b> (Camera)</li>\n<li><b>Hdmi = 2</b> (HDMI)</li>\n<li><b>Screen = 3</b> (Screen)</li>\n</ul>\n",
+        "format": "int32"
+      },
+      "Ccnf": {
+        "type": "object",
+        "properties": {
+          "Max": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Min": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Time": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false,
+        "description": ""
+      },
+      "ColorOrder": {
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "type": "integer",
+        "description": "<p>Possible values:</p>\n<ul>\n<li><b>Rgb = 0</b> (RGB)</li>\n<li><b>Rbg = 1</b> (RBG)</li>\n<li><b>Gbr = 2</b> (GBR)</li>\n<li><b>Grb = 3</b> (GRB)</li>\n<li><b>Bgr = 4</b> (BGR)</li>\n<li><b>Brg = 5</b> (BRG)</li>\n</ul>\n",
+        "format": "int32"
+      },
+      "DeviceMode": {
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "type": "integer",
+        "description": "The current device mode.\r\nOff = 0\r\nVideo = 1\r\nAudio = 2\r\nAmbient = 3\r\nAudioVideo = 4\r\nUdp = 5\r\nDreamScreen = 6<p>Possible values:</p>\n<ul>\n<li><b>Off = 0</b> (Off)</li>\n<li><b>Video = 1</b> (Video)</li>\n<li><b>Audio = 2</b> (Audio)</li>\n<li><b>Ambient = 3</b> (Ambient)</li>\n<li><b>AudioVideo = 4</b> (Audio+Video)</li>\n<li><b>Udp = 5</b> (UDP (Glimmr/WLED))</li>\n<li><b>DreamScreen = 6</b> (DreamScreen)</li>\n</ul>\n",
+        "format": "int32"
+      },
+      "DeviceType": {
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14
+        ],
+        "type": "integer",
+        "description": "<p>Possible values:</p>\n<ul>\n</ul>\n",
+        "format": "int32"
+      },
+      "DeviceUnits": {
+        "enum": [
+          0,
+          1
+        ],
+        "type": "integer",
+        "description": "<p>Possible values:</p>\n<ul>\n<li><b>Imperial = 0</b> (Imperial)</li>\n<li><b>Metric = 1</b> (Metric)</li>\n</ul>\n",
+        "format": "int32"
+      },
+      "DreamScreenData": {
+        "type": "object",
+        "properties": {
+          "Brightness": {
+            "type": "integer",
+            "description": "Device brightness.",
+            "format": "int32"
+          },
+          "GroupNumber": {
+            "type": "integer",
+            "description": "Device group number.",
+            "format": "int32",
+            "readOnly": true
+          },
+          "DeviceTag": {
+            "type": "string",
+            "description": "Dreamscreen-specific device tag.",
+            "nullable": true,
+            "readOnly": true
+          },
+          "Tag": {
+            "type": "string",
+            "description": "Device tag.",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "description": "Device name.",
+            "nullable": true
+          },
+          "Id": {
+            "type": "string",
+            "description": "Unique device ID.",
+            "nullable": true
+          },
+          "IpAddress": {
+            "type": "string",
+            "description": "Device IP Address.",
+            "nullable": true
+          },
+          "Enable": {
+            "type": "boolean",
+            "description": "Enable device for streaming."
+          },
+          "LastSeen": {
+            "type": "string",
+            "description": "Last time the device was seen during discovery.",
+            "nullable": true
+          },
+          "KeyProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SettingsProperty"
+            },
+            "description": "UI properties.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Effect": {
+        "enum": [
+          0,
+          1
+        ],
+        "type": "integer",
+        "description": "<p>Possible values:</p>\n<ul>\n</ul>\n",
+        "format": "int32"
+      },
+      "GlimmrData": {
+        "type": "object",
+        "properties": {
+          "MirrorHorizontal": {
+            "type": "boolean",
+            "description": "Mirror light data before sending to target Glimmr."
+          },
+          "BottomCount": {
+            "type": "integer",
+            "description": "Number of LEDs along the bottom side of the screen.",
+            "format": "int32"
+          },
+          "Brightness": {
+            "type": "integer",
+            "description": "Device brightness.",
+            "format": "int32"
+          },
+          "LeftCount": {
+            "type": "integer",
+            "description": "Number of LEDs along the left side of the screen.",
+            "format": "int32"
+          },
+          "RightCount": {
+            "type": "integer",
+            "description": "Number of LEDs along the right side of the screen.",
+            "format": "int32"
+          },
+          "TopCount": {
+            "type": "integer",
+            "description": "Number of LEDs along the top side of the screen.",
+            "format": "int32"
+          },
+          "Tag": {
+            "type": "string",
+            "description": "Device tag.",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "description": "Device name.",
+            "nullable": true
+          },
+          "Id": {
+            "type": "string",
+            "description": "Unique device ID.",
+            "nullable": true
+          },
+          "IpAddress": {
+            "type": "string",
+            "description": "Device IP Address.",
+            "nullable": true
+          },
+          "Enable": {
+            "type": "boolean",
+            "description": "Enable device for streaming."
+          },
+          "LastSeen": {
+            "type": "string",
+            "description": "Last time the device was seen during discovery.",
+            "nullable": true
+          },
+          "KeyProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SettingsProperty"
+            },
+            "description": "UI Properties.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "GroupLightLevel": {
+        "type": "object",
+        "properties": {
+          "State": {
+            "$ref": "#/components/schemas/SensorState"
+          },
+          "Lastupdated": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "Dark": {
+            "type": "boolean"
+          },
+          "DarkAll": {
+            "type": "boolean"
+          },
+          "Daylight": {
+            "type": "boolean"
+          },
+          "DaylightAny": {
+            "type": "boolean"
+          },
+          "LightLevel": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "LightLevelMin": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "LightLevelMax": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "GroupPresence": {
+        "type": "object",
+        "properties": {
+          "State": {
+            "$ref": "#/components/schemas/State"
+          },
+          "Lastupdated": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "Presence": {
+            "type": "boolean"
+          },
+          "PresenceAll": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "GroupState": {
+        "type": "object",
+        "properties": {
+          "AnyOn": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "AllOn": {
+            "type": "boolean",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "GroupType": {
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "type": "integer",
+        "description": "<p>Possible values:</p>\n<ul>\n</ul>\n",
+        "format": "int32"
+      },
+      "HueData": {
+        "type": "object",
+        "properties": {
+          "Brightness": {
+            "type": "integer",
+            "description": "Brightness to use for all enabled hue bulbs, unless override is specified.",
+            "format": "int32"
+          },
+          "Groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HueGroup"
+            },
+            "description": "List of available entertainment groups.",
+            "nullable": true
+          },
+          "Lights": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LightData"
+            },
+            "description": "List of available lights.",
+            "nullable": true
+          },
+          "MappedLights": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LightMap"
+            },
+            "description": "List of lights and their mappings to sectors.",
+            "nullable": true
+          },
+          "SelectedGroup": {
+            "type": "string",
+            "description": "Target entertainment group to use for streaming.",
+            "nullable": true
+          },
+          "Token": {
+            "type": "string",
+            "description": "Token for entertainment streaming assigned after device is linked.",
+            "nullable": true
+          },
+          "User": {
+            "type": "string",
+            "description": "Hue user ID assigned after device is linked.",
+            "nullable": true
+          },
+          "Tag": {
+            "type": "string",
+            "description": "Device tag",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "description": "Device name.",
+            "nullable": true
+          },
+          "Id": {
+            "type": "string",
+            "description": "Unique device ID.",
+            "nullable": true
+          },
+          "IpAddress": {
+            "type": "string",
+            "description": "Device IP Address.",
+            "nullable": true
+          },
+          "Enable": {
+            "type": "boolean",
+            "description": "Enable device for streaming."
+          },
+          "LastSeen": {
+            "type": "string",
+            "description": "Last time the device was seen during discovery.",
+            "nullable": true
+          },
+          "KeyProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SettingsProperty"
+            },
+            "description": "UI Properties.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "HueGroup": {
+        "type": "object",
+        "properties": {
+          "Name": {
+            "type": "string",
+            "nullable": true
+          },
+          "Type": {
+            "$ref": "#/components/schemas/GroupType"
+          },
+          "Class": {
+            "$ref": "#/components/schemas/RoomClass"
+          },
+          "ModelId": {
+            "type": "string",
+            "nullable": true
+          },
+          "Lights": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "Action": {
+            "$ref": "#/components/schemas/State"
+          },
+          "State": {
+            "$ref": "#/components/schemas/GroupState"
+          },
+          "Locations": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "format": "double"
+              }
+            },
+            "nullable": true
+          },
+          "Recycle": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "Stream": {
+            "$ref": "#/components/schemas/Stream"
+          },
+          "Sensors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "Presence": {
+            "$ref": "#/components/schemas/GroupPresence"
+          },
+          "LightLevel": {
+            "$ref": "#/components/schemas/GroupLightLevel"
+          },
+          "Id": {
+            "type": "string",
+            "description": "Entertainment group ID.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Hue Entertainment Group."
+      },
+      "Info": {
+        "type": "object",
+        "properties": {
+          "Live": {
+            "type": "boolean",
+            "description": "Is live streaming enabled?"
+          },
+          "Str": {
+            "type": "boolean",
+            "description": "UI Sync button options."
+          },
+          "Freeheap": {
+            "type": "integer",
+            "description": "Free memory heap.",
+            "format": "int32"
+          },
+          "Fxcount": {
+            "type": "integer",
+            "description": "Number of included effects.",
+            "format": "int32"
+          },
+          "Lwip": {
+            "type": "integer",
+            "description": "IP address?",
+            "format": "int32"
+          },
+          "Opt": {
+            "type": "integer",
+            "description": "Debugging only.",
+            "format": "int32"
+          },
+          "Palcount": {
+            "type": "integer",
+            "description": "Palette count.",
+            "format": "int32"
+          },
+          "Udpport": {
+            "type": "integer",
+            "description": "Udp port.",
+            "format": "int32"
+          },
+          "Uptime": {
+            "type": "integer",
+            "description": "System Uptime.",
+            "format": "int32"
+          },
+          "Vid": {
+            "type": "integer",
+            "description": "Build ID.",
+            "format": "int32"
+          },
+          "Ws": {
+            "type": "integer",
+            "description": "Number of current websocket clients.",
+            "format": "int32"
+          },
+          "Leds": {
+            "$ref": "#/components/schemas/Leds"
+          },
+          "Arch": {
+            "type": "string",
+            "description": "Architecture.",
+            "nullable": true
+          },
+          "Brand": {
+            "type": "string",
+            "description": "Device brand.",
+            "nullable": true
+          },
+          "Core": {
+            "type": "string",
+            "description": "Arduino core version.",
+            "nullable": true
+          },
+          "Lip": {
+            "type": "string",
+            "description": "LED IP.",
+            "nullable": true
+          },
+          "Lm": {
+            "type": "string",
+            "description": "Realtime datasource info.",
+            "nullable": true
+          },
+          "Mac": {
+            "type": "string",
+            "description": "Device MAC address.",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "description": "Device name.",
+            "nullable": true
+          },
+          "Product": {
+            "type": "string",
+            "description": "Product type.",
+            "nullable": true
+          },
+          "Ver": {
+            "type": "string",
+            "description": "Product version.",
+            "nullable": true
+          },
+          "Wifi": {
+            "$ref": "#/components/schemas/Wifi"
+          }
+        },
+        "additionalProperties": false
+      },
+      "LedData": {
+        "type": "object",
+        "properties": {
+          "FixGamma": {
+            "type": "boolean",
+            "description": "Enable gamma correction.",
+            "default": true
+          },
+          "ReverseStrip": {
+            "type": "boolean",
+            "description": "Reverse the order of data sent to leds.",
+            "default": false
+          },
+          "LedMultiplier": {
+            "type": "number",
+            "description": "Scale factor for LED counts related to master grid.",
+            "format": "float"
+          },
+          "Brightness": {
+            "type": "integer",
+            "description": "Device brightness.",
+            "format": "int32"
+          },
+          "GpioNumber": {
+            "type": "integer",
+            "description": "GPIO Number to use for device. Don't change this.",
+            "format": "int32",
+            "default": 18
+          },
+          "LedCount": {
+            "type": "integer",
+            "description": "Number of LEDs in strip.",
+            "format": "int32",
+            "default": 300
+          },
+          "MilliampsPerLed": {
+            "type": "integer",
+            "description": "Per-led milliamp usage. Default is 30.",
+            "format": "int32",
+            "default": 30
+          },
+          "Offset": {
+            "type": "integer",
+            "description": "Offset of leds from lower-right corner of master grid.",
+            "format": "int32",
+            "default": 0
+          },
+          "StripType": {
+            "type": "integer",
+            "description": "LED Strip Type.\r\n0 = WS2812,\r\n1 = SK6812W (RGBW),\r\n2 = WS2811,\r\nDefault = WS2812",
+            "format": "int32"
+          },
+          "Tag": {
+            "type": "string",
+            "description": "Device tag.",
+            "default": "Led",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "nullable": true
+          },
+          "Id": {
+            "type": "string",
+            "description": "Unique device identifier.",
+            "nullable": true
+          },
+          "IpAddress": {
+            "type": "string",
+            "description": "Device IP Address.",
+            "nullable": true
+          },
+          "Enable": {
+            "type": "boolean",
+            "description": "Enable streaming."
+          },
+          "LastSeen": {
+            "type": "string",
+            "description": "Last time the device was seen during discovery.",
+            "nullable": true
+          },
+          "KeyProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SettingsProperty"
+            },
+            "description": "UI Elements.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Leds": {
+        "type": "object",
+        "properties": {
+          "Rgbw": {
+            "type": "boolean",
+            "description": "Is the strip RGB+W?"
+          },
+          "Seglock": {
+            "type": "boolean",
+            "description": "Is the segment locked."
+          },
+          "Wv": {
+            "type": "boolean",
+            "description": "Show white channel slider."
+          },
+          "Count": {
+            "type": "integer",
+            "description": "Number of LEDs.",
+            "format": "int32"
+          },
+          "Maxpwr": {
+            "type": "integer",
+            "description": "Maximum power.",
+            "format": "int32"
+          },
+          "Maxseg": {
+            "type": "integer",
+            "description": "Maximum number of segments.",
+            "format": "int32"
+          },
+          "Pwr": {
+            "type": "integer",
+            "description": "Current LED power usage.",
+            "format": "int32"
+          },
+          "Pin": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "LED data pin.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "LifxData": {
+        "type": "object",
+        "properties": {
+          "BeamLayout": {
+            "$ref": "#/components/schemas/BeamLayout"
+          },
+          "HasMultiZone": {
+            "type": "boolean",
+            "description": "If this device supports multi-zone operations.",
+            "default": false
+          },
+          "MultiZoneV2": {
+            "type": "boolean",
+            "description": "Supports V2 Multi-zone operations.",
+            "default": false
+          },
+          "Power": {
+            "type": "boolean",
+            "description": "Is the device on?"
+          },
+          "Service": {
+            "type": "integer",
+            "description": "",
+            "format": "int32",
+            "readOnly": true
+          },
+          "MacAddress": {
+            "type": "string",
+            "description": "Device's MAC Address.",
+            "format": "byte",
+            "nullable": true,
+            "readOnly": true
+          },
+          "GammaCorrection": {
+            "type": "number",
+            "description": "Gamma Correction level.",
+            "format": "double"
+          },
+          "LedMultiplier": {
+            "type": "number",
+            "description": "Scale factor for LED counts related to master grid.",
+            "format": "float"
+          },
+          "Brightness": {
+            "type": "integer",
+            "description": "Device Brightness.",
+            "format": "int32"
+          },
+          "LedCount": {
+            "type": "integer",
+            "description": "UI Properties.",
+            "format": "int32",
+            "default": 82
+          },
+          "MultiZoneCount": {
+            "type": "integer",
+            "description": "Number of zones, if device has multi-zone support.",
+            "format": "int32",
+            "default": 8
+          },
+          "Port": {
+            "type": "integer",
+            "description": "Port used for communication.",
+            "format": "int32",
+            "readOnly": true
+          },
+          "ProductId": {
+            "type": "integer",
+            "description": "Product ID.",
+            "format": "int32",
+            "default": 0
+          },
+          "TargetSector": {
+            "type": "integer",
+            "description": "Selected sector, if device is single-color.",
+            "format": "int32",
+            "default": -1
+          },
+          "DeviceTag": {
+            "type": "string",
+            "description": "Lifx-Specific Device Tag.",
+            "nullable": true,
+            "readOnly": true
+          },
+          "HostName": {
+            "type": "string",
+            "description": "Device Hostname.",
+            "nullable": true,
+            "readOnly": true
+          },
+          "MacAddressString": {
+            "type": "string",
+            "description": "Device MAC Address.",
+            "nullable": true,
+            "readOnly": true
+          },
+          "Layout": {
+            "$ref": "#/components/schemas/TileLayout"
+          },
+          "Hue": {
+            "type": "integer",
+            "description": "Device Hue - Bulb only.",
+            "format": "int32"
+          },
+          "Kelvin": {
+            "type": "integer",
+            "description": "Device Color Temperature - Bulb only.",
+            "format": "int32"
+          },
+          "Saturation": {
+            "type": "integer",
+            "description": "Device Saturation - Bulb only.",
+            "format": "int32"
+          },
+          "Tag": {
+            "type": "string",
+            "description": "Device Tag",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "description": "Device Name.",
+            "nullable": true
+          },
+          "Id": {
+            "type": "string",
+            "description": "Device ID.",
+            "nullable": true
+          },
+          "IpAddress": {
+            "type": "string",
+            "description": "Device IP Address.",
+            "nullable": true
+          },
+          "Enable": {
+            "type": "boolean",
+            "description": "Enable device for streaming."
+          },
+          "LastSeen": {
+            "type": "string",
+            "description": "Last time the device was seen during discovery.",
+            "nullable": true
+          },
+          "KeyProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SettingsProperty"
+            },
+            "description": "UI Properties.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "LightData": {
+        "type": "object",
+        "properties": {
+          "HasStreaming": {
+            "type": "boolean",
+            "description": "If Light is capable of streaming.",
+            "default": false
+          },
+          "Brightness": {
+            "type": "integer",
+            "description": "Current light brightness.",
+            "format": "int32"
+          },
+          "LightLevel": {
+            "type": "integer",
+            "description": "Light elevation.",
+            "format": "int32"
+          },
+          "Presence": {
+            "type": "integer",
+            "description": "?",
+            "format": "int32"
+          },
+          "LastState": {
+            "$ref": "#/components/schemas/State"
+          },
+          "Id": {
+            "type": "string",
+            "description": "Bulb ID.",
+            "nullable": true
+          },
+          "ModelId": {
+            "type": "string",
+            "description": "Bulb model ID.",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "description": "Bulb name.",
+            "nullable": true
+          },
+          "Type": {
+            "type": "string",
+            "description": "Bulb type.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "LightMap": {
+        "type": "object",
+        "properties": {
+          "Override": {
+            "type": "boolean",
+            "description": "Override hue brightness and use light-specific value.",
+            "default": false
+          },
+          "Brightness": {
+            "type": "integer",
+            "description": "Light-specific brightness - needs override enable to be used.",
+            "format": "int32",
+            "default": 255
+          },
+          "TargetSector": {
+            "type": "integer",
+            "description": "Target sector used for streaming.",
+            "format": "int32",
+            "default": -1
+          },
+          "Id": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Used to associate light data with mapping/brightness info."
+      },
+      "NanoleafData": {
+        "type": "object",
+        "properties": {
+          "MirrorX": {
+            "type": "boolean",
+            "description": "Mirror layout horizontally.",
+            "default": false
+          },
+          "MirrorY": {
+            "type": "boolean",
+            "description": "Mirror layout vertically.",
+            "default": false
+          },
+          "Rotation": {
+            "type": "number",
+            "description": "Layout rotation.",
+            "format": "float",
+            "default": 0
+          },
+          "Brightness": {
+            "type": "integer",
+            "description": "Device Brightness.",
+            "format": "int32",
+            "default": 100
+          },
+          "Port": {
+            "type": "integer",
+            "description": "Port used for communication.",
+            "format": "int32"
+          },
+          "Hostname": {
+            "type": "string",
+            "description": "Device host name.",
+            "nullable": true
+          },
+          "Token": {
+            "type": "string",
+            "description": "Token used for control, retrieved after authorization.",
+            "nullable": true
+          },
+          "Type": {
+            "type": "string",
+            "description": "Nanoleaf type.",
+            "nullable": true
+          },
+          "Version": {
+            "type": "string",
+            "description": "Device protocol version.",
+            "nullable": true
+          },
+          "Layout": {
+            "$ref": "#/components/schemas/TileLayout"
+          },
+          "Tag": {
+            "type": "string",
+            "description": "Device tag.",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "description": "Device name.",
+            "nullable": true
+          },
+          "Id": {
+            "type": "string",
+            "description": "Device ID.",
+            "nullable": true
+          },
+          "IpAddress": {
+            "type": "string",
+            "description": "Device IP address.",
+            "nullable": true
+          },
+          "Enable": {
+            "type": "boolean",
+            "description": "Enable device for streaming."
+          },
+          "LastSeen": {
+            "type": "string",
+            "description": "Last time the device was seen during discovery.",
+            "nullable": true
+          },
+          "KeyProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SettingsProperty"
+            },
+            "description": "UI Properties.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Nl": {
+        "type": "object",
+        "properties": {
+          "Fade": {
+            "type": "boolean",
+            "description": "Dim over course of nightlight duration."
+          },
+          "On": {
+            "type": "boolean",
+            "description": "Enable nightlight mode."
+          },
+          "Duration": {
+            "type": "integer",
+            "description": "NightLight duration.",
+            "format": "int32"
+          },
+          "Mode": {
+            "type": "integer",
+            "description": "Nightlight mode (0: instant, 1: fade, 2: color fade, 3: sunrise).",
+            "format": "int32"
+          },
+          "Tbri": {
+            "type": "integer",
+            "description": "Target brightness of nightlight feature.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Nightlight configuration"
+      },
+      "OpenRgbData": {
+        "type": "object",
+        "properties": {
+          "ColorOrder": {
+            "$ref": "#/components/schemas/ColorOrder"
+          },
+          "Type": {
+            "$ref": "#/components/schemas/DeviceType"
+          },
+          "LedMultiplier": {
+            "type": "number",
+            "description": "Scale factor for LED counts related to master grid.",
+            "format": "float"
+          },
+          "ActiveModeIndex": {
+            "type": "integer",
+            "description": "The index of the active device mode.",
+            "format": "int32",
+            "default": 0
+          },
+          "Brightness": {
+            "type": "integer",
+            "description": "Device brightness.",
+            "format": "int32",
+            "default": 255
+          },
+          "DeviceId": {
+            "type": "integer",
+            "description": "OpenRGB Device ID.",
+            "format": "int32",
+            "default": 0
+          },
+          "LedCount": {
+            "type": "integer",
+            "description": "Number of LEDs in strip.",
+            "format": "int32",
+            "default": 0
+          },
+          "Offset": {
+            "type": "integer",
+            "description": "Offset of leds from lower-right corner of master grid.",
+            "format": "int32",
+            "default": 0
+          },
+          "Rotation": {
+            "type": "integer",
+            "description": "Device rotation.",
+            "format": "int32",
+            "default": 0
+          },
+          "Description": {
+            "type": "string",
+            "description": "Device description.",
+            "default": "",
+            "nullable": true
+          },
+          "Location": {
+            "type": "string",
+            "description": "Device location.",
+            "default": "",
+            "nullable": true
+          },
+          "Serial": {
+            "type": "string",
+            "description": "Device serial.",
+            "default": "",
+            "nullable": true
+          },
+          "Vendor": {
+            "type": "string",
+            "description": "Device vendor.",
+            "default": "Unknown",
+            "nullable": true
+          },
+          "Version": {
+            "type": "string",
+            "description": "Device version.",
+            "default": "",
+            "nullable": true
+          },
+          "Tag": {
+            "type": "string",
+            "description": "Device tag.",
+            "default": "OpenRgb",
+            "nullable": true
+          },
+          "Id": {
+            "type": "string",
+            "description": "Device ID.",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "description": "Device name.",
+            "default": "",
+            "nullable": true
+          },
+          "IpAddress": {
+            "type": "string",
+            "description": "Device IP Address.",
+            "default": "127.0.0.1",
+            "nullable": true
+          },
+          "Enable": {
+            "type": "boolean",
+            "description": "Enable device for streaming.",
+            "default": false
+          },
+          "LastSeen": {
+            "type": "string",
+            "description": "Last time the device was seen during discovery.",
+            "nullable": true
+          },
+          "KeyProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SettingsProperty"
+            },
+            "description": "UI Properties.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "RoomClass": {
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39
+        ],
+        "type": "integer",
+        "description": "<p>Possible values:</p>\n<ul>\n</ul>\n",
+        "format": "int32"
+      },
+      "Segment": {
+        "type": "object",
+        "properties": {
+          "Repeat": {
+            "type": "boolean",
+            "description": "Use one color for the whole beam."
+          },
+          "Reverse": {
+            "type": "boolean",
+            "description": "Reverse color data order."
+          },
+          "Id": {
+            "type": "integer",
+            "description": "Beam ID. This is an arbitrary value.",
+            "format": "int32"
+          },
+          "LedCount": {
+            "type": "integer",
+            "description": "Number of leds per beam. Don't change this.",
+            "format": "int32"
+          },
+          "Offset": {
+            "type": "integer",
+            "description": "Offset of leds from lower-right corner of master grid.",
+            "format": "int32"
+          },
+          "Position": {
+            "type": "integer",
+            "description": "This beam's position in the layout.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Led Beam Data"
+      },
+      "SensorState": {
+        "type": "object",
+        "properties": {
+          "ButtonEvent": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "Dark": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "Daylight": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "Flag": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "Humidity": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "Lastupdated": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "LightLevel": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "Open": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "Presence": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "Status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "Temperature": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SettingsProperty": {
+        "type": "object",
+        "properties": {
+          "Options": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "A string, string dictionary containing title/value pairs to populate a select input.",
+            "nullable": true
+          },
+          "ValueHint": {
+            "type": "string",
+            "description": "If set, this will be shown beneath the property.",
+            "nullable": true
+          },
+          "ValueLabel": {
+            "type": "string",
+            "description": "Main label for the setting.",
+            "nullable": true
+          },
+          "ValueMax": {
+            "type": "string",
+            "description": "Maximum value that can be set for this property.",
+            "nullable": true
+          },
+          "ValueMin": {
+            "type": "string",
+            "description": "Minimum Value that can be set for this property.",
+            "nullable": true
+          },
+          "ValueName": {
+            "type": "string",
+            "description": "The property name to set in the device object.",
+            "nullable": true
+          },
+          "ValueStep": {
+            "type": "string",
+            "description": "Step size for this property. (Only applies to numeric value types)",
+            "nullable": true
+          },
+          "ValueType": {
+            "type": "string",
+            "description": "The control type to create in the web UI.\r\nPossible options:\r\ntext - Standard text input\r\ncheck - A checkbox (toggle)\r\nnumber - A number input (can be limited by valuemax/min/step\r\nledmap - Create a LED map (custom)\r\nbeamMap - Create a Lifx Beam map\r\nsectorLedMap - Create a LED map for WLED that has multiple sections\r\nselect - standard select, populate the \"Options\" dictionary to auto-fill\r\nsectormap - Create a standard Sector map\r\nnanoleaf - Draw nano leaves\r\nhue - Draw Hue selection stuff",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "A class used by the web UI to automagically generate device settings."
+      },
+      "StatData": {
+        "type": "object",
+        "properties": {
+          "Fps": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Current number of frames per second.",
+            "nullable": true
+          },
+          "CpuTemp": {
+            "type": "number",
+            "description": "Current CPU temperature (May not work with some AMD processors).",
+            "format": "float"
+          },
+          "MemoryUsage": {
+            "type": "number",
+            "description": "Total percentage of memory used.",
+            "format": "float"
+          },
+          "TempMax": {
+            "type": "number",
+            "description": "Maximum detected temperature.",
+            "format": "float"
+          },
+          "TempMin": {
+            "type": "number",
+            "description": "Minimum detected temperature.",
+            "format": "float"
+          },
+          "CpuUsage": {
+            "type": "integer",
+            "description": "Percentage of CPU Used",
+            "format": "int32"
+          },
+          "Uptime": {
+            "type": "string",
+            "description": "System Uptime.",
+            "nullable": true,
+            "readOnly": true
+          },
+          "ThrottledState": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Current throttle state.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "State": {
+        "type": "object",
+        "properties": {
+          "On": {
+            "type": "boolean"
+          },
+          "Brightness": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Hue": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "Saturation": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "ColorCoordinates": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "format": "double"
+            },
+            "nullable": true
+          },
+          "ColorTemperature": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "Alert": {
+            "$ref": "#/components/schemas/Alert"
+          },
+          "Effect": {
+            "$ref": "#/components/schemas/Effect"
+          },
+          "ColorMode": {
+            "type": "string",
+            "nullable": true
+          },
+          "IsReachable": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "TransitionTime": {
+            "$ref": "#/components/schemas/TimeSpan"
+          },
+          "Mode": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "StoreData": {
+        "type": "object",
+        "properties": {
+          "AmbientScenes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AmbientScene"
+            },
+            "description": "List of detected ambient scenes.",
+            "nullable": true
+          },
+          "DevAudio": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AudioData"
+            },
+            "description": "List of available audio devices.",
+            "nullable": true
+          },
+          "AudioScenes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AudioScene"
+            },
+            "description": "List of detected audio scenes.",
+            "nullable": true
+          },
+          "DevUsb": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "List of available USB devices.",
+            "nullable": true
+          },
+          "Devices": {
+            "type": "array",
+            "items": { },
+            "description": "List of devices and their settings.",
+            "nullable": true
+          },
+          "Stats": {
+            "$ref": "#/components/schemas/StatData"
+          },
+          "SystemData": {
+            "$ref": "#/components/schemas/SystemData"
+          }
+        },
+        "additionalProperties": false,
+        "description": "A JSON representation of the database."
+      },
+      "Stream": {
+        "type": "object",
+        "properties": {
+          "ProxyMode": {
+            "type": "string",
+            "nullable": true
+          },
+          "ProxyNode": {
+            "type": "string",
+            "nullable": true
+          },
+          "Active": {
+            "type": "boolean"
+          },
+          "Owner": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "StreamMode": {
+        "enum": [
+          0,
+          1
+        ],
+        "type": "integer",
+        "description": "<p>Possible values:</p>\n<ul>\n<li><b>DreamScreen = 0</b> (DreamScreen.)</li>\n<li><b>Udp = 1</b> (UDP (WLED/Glimmr))</li>\n</ul>\n",
+        "format": "int32"
+      },
+      "StripMode": {
+        "enum": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "type": "integer",
+        "description": "<p>Possible values:</p>\n<ul>\n<li><b>Normal = 0</b> (Normal.)</li>\n<li><b>Sectored = 1</b> (Sectored (use WLED segments).)</li>\n<li><b>Loop = 2</b> (Loop colors (strip is divided in half, second half of colors are mirrored).)</li>\n<li><b>Single = 3</b> (All leds use a single sector.)</li>\n</ul>\n",
+        "format": "int32"
+      },
+      "SystemData": {
+        "type": "object",
+        "properties": {
+          "AutoDisabled": {
+            "type": "boolean",
+            "description": "If the system is currently auto-disabled due to no input.",
+            "default": false
+          },
+          "AutoRemoveDevices": {
+            "type": "boolean",
+            "description": "If enabled, devices will be automatically removed after the specified time.",
+            "default": false
+          },
+          "AutoUpdate": {
+            "type": "boolean",
+            "description": "If enabled, Glimmr will automatically update itself daily.",
+            "default": false
+          },
+          "DefaultSet": {
+            "type": "boolean",
+            "description": "Set on first-time initialization. Don't change this.",
+            "default": false
+          },
+          "EnableAutoBrightness": {
+            "type": "boolean",
+            "description": "If set, wired LED strips will have their brightness automatically adjusted,\r\na la WLED.",
+            "default": true
+          },
+          "EnableAutoDisable": {
+            "type": "boolean",
+            "description": "If set, streaming will be automatically stopped when no input is detected.",
+            "default": true
+          },
+          "EnableLetterBox": {
+            "type": "boolean",
+            "description": "If set, horizontal black bars will be cropped when detected.",
+            "default": true
+          },
+          "EnablePillarBox": {
+            "type": "boolean",
+            "description": "If set, vertical black bars will be cropped when detected.",
+            "default": true
+          },
+          "SkipDemo": {
+            "type": "boolean",
+            "description": "If set, rainbow wipe will not be played on application startup.",
+            "default": false
+          },
+          "SkipTour": {
+            "type": "boolean",
+            "description": "If set, introduction/tour will not run on UI load.",
+            "default": false
+          },
+          "UseCenter": {
+            "type": "boolean",
+            "description": "If set, sectors will also be collected from teh center of the screen, not just the perimeter.",
+            "default": false
+          },
+          "CamType": {
+            "$ref": "#/components/schemas/CameraType"
+          },
+          "CaptureMode": {
+            "$ref": "#/components/schemas/CaptureMode"
+          },
+          "DeviceMode": {
+            "$ref": "#/components/schemas/DeviceMode"
+          },
+          "PreviousMode": {
+            "$ref": "#/components/schemas/DeviceMode"
+          },
+          "Units": {
+            "$ref": "#/components/schemas/DeviceUnits"
+          },
+          "AblAmps": {
+            "type": "number",
+            "description": "Input amps of power supply.",
+            "format": "float",
+            "default": 3
+          },
+          "AblVolts": {
+            "type": "number",
+            "description": "Input voltage of power supply.",
+            "format": "float",
+            "default": 5
+          },
+          "AudioGain": {
+            "type": "number",
+            "description": "How much to increase input audio volume.",
+            "format": "float",
+            "default": 0.5
+          },
+          "AudioMin": {
+            "type": "number",
+            "description": "Low cutoff for audio detection, values below this will not be displayed.",
+            "format": "float",
+            "default": 0.025
+          },
+          "AmbientScene": {
+            "type": "integer",
+            "description": "Current ambient scene.",
+            "format": "int32",
+            "default": 0
+          },
+          "AudioScene": {
+            "type": "integer",
+            "description": "Current audio scene.",
+            "format": "int32",
+            "default": 0
+          },
+          "AutoDisableDelay": {
+            "type": "integer",
+            "description": "How long to wait (in seconds) before disabling streaming when no\r\ninput is detected, when auto-disable is active.",
+            "format": "int32",
+            "default": 30
+          },
+          "AutoDiscoveryFrequency": {
+            "type": "integer",
+            "description": "Delay (in minutes) between execution of auto-discovery.",
+            "format": "int32",
+            "default": 60
+          },
+          "AutoRemoveDevicesAfter": {
+            "type": "integer",
+            "description": "If enabled,",
+            "format": "int32",
+            "default": 7
+          },
+          "AutoUpdateTime": {
+            "type": "integer",
+            "description": "How frequently to automatically send updated system data to the UI.",
+            "format": "int32",
+            "default": 2
+          },
+          "BaudRate": {
+            "type": "integer",
+            "description": "Speed at which to attempt discovering Adalight devices.",
+            "format": "int32",
+            "default": 115200
+          },
+          "BlackLevel": {
+            "type": "integer",
+            "description": "Colors below this brightness will be considered \"black\".\r\n(Max 255)",
+            "format": "int32",
+            "default": 7
+          },
+          "BottomCount": {
+            "type": "integer",
+            "description": "Number of LEDs along the bottom of the screen.",
+            "format": "int32",
+            "default": 96
+          },
+          "CropBlackLevel": {
+            "type": "integer",
+            "description": "Value cropping checks use to determine what is \"black\" and should\r\nbe cropped.",
+            "format": "int32",
+            "default": 7
+          },
+          "CropDelay": {
+            "type": "integer",
+            "description": "The number of frames required for detection before cropping is\r\nactivated, if enabled.",
+            "format": "int32",
+            "default": 15
+          },
+          "DiscoveryTimeout": {
+            "type": "integer",
+            "description": "How long to wait before canceling discovery tasks, in seconds.",
+            "format": "int32",
+            "default": 10
+          },
+          "HSectors": {
+            "type": "integer",
+            "description": "Number of horizontal sectors around the screen",
+            "format": "int32",
+            "default": 10
+          },
+          "LedCount": {
+            "type": "integer",
+            "description": "Number of LEDs for the \"master grid\". This is auto-computed via left/right/top/bottom counts.",
+            "format": "int32",
+            "default": 0,
+            "readOnly": true
+          },
+          "LeftCount": {
+            "type": "integer",
+            "description": "Number of LEDs along the left side of the screen.",
+            "format": "int32",
+            "default": 54
+          },
+          "OpenRgbPort": {
+            "type": "integer",
+            "description": "Port to use for OpenRGB communication. (Default is 6742)",
+            "format": "int32",
+            "default": 6742
+          },
+          "PreviewMode": {
+            "type": "integer",
+            "description": "Image preview mode for the web UI.\r\n0 = None\r\n1 = LED\r\n2 = Sectors",
+            "format": "int32",
+            "default": 0
+          },
+          "RightCount": {
+            "type": "integer",
+            "description": "Number of LEDs along the right side of the screen.",
+            "format": "int32",
+            "default": 54
+          },
+          "SectorCount": {
+            "type": "integer",
+            "description": "Total number of sectors available. Is auto-computed based on sector counts and\r\nwhether center sectors are enabled.",
+            "format": "int32",
+            "default": 0,
+            "readOnly": true
+          },
+          "TopCount": {
+            "type": "integer",
+            "description": "Number of LEDs along the top of the screen.",
+            "format": "int32",
+            "default": 96
+          },
+          "UsbSelection": {
+            "type": "integer",
+            "description": "Currently selected USB device for HDMI/camera capture.",
+            "format": "int32",
+            "default": 0
+          },
+          "VSectors": {
+            "type": "integer",
+            "description": "Number of vertical sectors along the left/right of screen.",
+            "format": "int32",
+            "default": 6
+          },
+          "StreamMode": {
+            "$ref": "#/components/schemas/StreamMode"
+          },
+          "AmbientColor": {
+            "type": "string",
+            "description": "Current ambient color used when AmbientShow is set to \"solid\".",
+            "nullable": true
+          },
+          "DeviceName": {
+            "type": "string",
+            "description": "Device name (should be device hostname)",
+            "default": "",
+            "nullable": true
+          },
+          "DsIp": {
+            "type": "string",
+            "description": "Target DreamScreen device to receive color data from.\r\n(Streaming mode must be set to 0/DreamScreen)",
+            "default": "",
+            "nullable": true
+          },
+          "IpAddress": {
+            "type": "string",
+            "description": "Local IP Address.",
+            "nullable": true,
+            "readOnly": true
+          },
+          "OpenRgbIp": {
+            "type": "string",
+            "description": "IP address to use for OpenRGB communication.",
+            "default": "127.0.0.1",
+            "nullable": true
+          },
+          "RecDev": {
+            "type": "string",
+            "description": "Name of the selected audio device for audio and audio/video capture.",
+            "default": "",
+            "nullable": true
+          },
+          "Theme": {
+            "type": "string",
+            "description": "Web UI theme\r\n(dark/light)",
+            "default": "dark",
+            "nullable": true
+          },
+          "TimeZone": {
+            "type": "string",
+            "description": "Time zone to use for automatic updates.",
+            "default": "US/Central",
+            "nullable": true
+          },
+          "Version": {
+            "type": "string",
+            "description": "Version string based on current build + github revision.",
+            "nullable": true,
+            "readOnly": true
+          },
+          "DeviceId": {
+            "type": "string",
+            "description": "A unique device ID based on MAC address, or random if no NIC accessible.",
+            "default": "",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TileData": {
+        "type": "object",
+        "properties": {
+          "O": {
+            "type": "integer",
+            "description": "Orientation.",
+            "format": "int32"
+          },
+          "PanelId": {
+            "type": "integer",
+            "description": "Panel ID.",
+            "format": "int32"
+          },
+          "ShapeType": {
+            "type": "integer",
+            "description": "What type of shape is this?",
+            "format": "int32"
+          },
+          "SideLength": {
+            "type": "integer",
+            "description": "Length of panel sides.",
+            "format": "int32"
+          },
+          "TargetSector": {
+            "type": "integer",
+            "description": "The sector to use for streaming for this panel.",
+            "format": "int32",
+            "default": -1
+          },
+          "X": {
+            "type": "integer",
+            "description": "Tile X position.",
+            "format": "int32"
+          },
+          "Y": {
+            "type": "integer",
+            "description": "Tile Y position.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TileLayout": {
+        "type": "object",
+        "properties": {
+          "NumPanels": {
+            "type": "integer",
+            "description": "Number of panels in the layout.",
+            "format": "int32"
+          },
+          "SideLength": {
+            "type": "integer",
+            "description": "Length of sides of each panel. This is not used for shapes.",
+            "format": "int32"
+          },
+          "PositionData": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TileData"
+            },
+            "description": "Array of position data for our tiles.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TimeSpan": {
+        "type": "object",
+        "properties": {
+          "Ticks": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "Days": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Hours": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Milliseconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Minutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Seconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "TotalDays": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
+          },
+          "TotalHours": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
+          },
+          "TotalMilliseconds": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
+          },
+          "TotalMinutes": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
+          },
+          "TotalSeconds": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Udpn": {
+        "type": "object",
+        "properties": {
+          "Recv": {
+            "type": "boolean",
+            "description": "Receive broadcast packets"
+          },
+          "Send": {
+            "type": "boolean",
+            "description": "Send WLED broadcast (UDP sync) packet on state change"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Wifi": {
+        "type": "object",
+        "properties": {
+          "Channel": {
+            "type": "integer",
+            "description": "Wifi channel.",
+            "format": "int32"
+          },
+          "Rssi": {
+            "type": "integer",
+            "description": "Wifi RSSI.",
+            "format": "int32"
+          },
+          "Signal": {
+            "type": "integer",
+            "description": "Wifi signal strength.",
+            "format": "int32"
+          },
+          "Bssid": {
+            "type": "string",
+            "description": "Wifi bssid.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "WledData": {
+        "type": "object",
+        "properties": {
+          "ReverseStrip": {
+            "type": "boolean",
+            "description": "Reverse the order of data sent to leds.",
+            "default": false
+          },
+          "LedMultiplier": {
+            "type": "number",
+            "description": "Scale factor for LED counts related to master grid.",
+            "format": "float"
+          },
+          "Brightness": {
+            "type": "integer",
+            "description": "Device brightness.",
+            "format": "int32"
+          },
+          "LedCount": {
+            "type": "integer",
+            "description": "Number of LEDs in strip.",
+            "format": "int32"
+          },
+          "Offset": {
+            "type": "integer",
+            "description": "Offset of leds from lower-right corner of master grid.",
+            "format": "int32"
+          },
+          "Protocol": {
+            "type": "integer",
+            "description": "Device protocol.",
+            "format": "int32",
+            "default": 2
+          },
+          "TargetSector": {
+            "type": "integer",
+            "description": "Target sector, if using sectored StripMode.",
+            "format": "int32",
+            "default": -1
+          },
+          "StripMode": {
+            "$ref": "#/components/schemas/StripMode"
+          },
+          "Segments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WledSegment"
+            },
+            "description": "List of individual LED segments defined in WLED.",
+            "nullable": true
+          },
+          "State": {
+            "$ref": "#/components/schemas/WledStateData"
+          },
+          "Tag": {
+            "type": "string",
+            "description": "Device tag.",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "description": "Device name.",
+            "nullable": true
+          },
+          "Id": {
+            "type": "string",
+            "description": "Device ID.",
+            "nullable": true
+          },
+          "IpAddress": {
+            "type": "string",
+            "description": "Device IP Address.",
+            "nullable": true
+          },
+          "Enable": {
+            "type": "boolean",
+            "description": "Enable streaming."
+          },
+          "LastSeen": {
+            "type": "string",
+            "description": "Last time the device was seen during discovery.",
+            "nullable": true
+          },
+          "KeyProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SettingsProperty"
+            },
+            "description": "UI Properties.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "WledSegment": {
+        "type": "object",
+        "properties": {
+          "Mi": {
+            "type": "boolean",
+            "description": "Mirror the segment."
+          },
+          "On": {
+            "type": "boolean",
+            "description": "Segment is enabled."
+          },
+          "ReverseStrip": {
+            "type": "boolean",
+            "description": "Flip the segment (reverse animation)"
+          },
+          "Sel": {
+            "type": "boolean",
+            "description": "True if segment is selected."
+          },
+          "Multiplier": {
+            "type": "number",
+            "description": "Scale factor for LED counts related to master grid.",
+            "format": "float"
+          },
+          "Brightness": {
+            "type": "integer",
+            "description": "Segment brightness.",
+            "format": "int32"
+          },
+          "Fx": {
+            "type": "integer",
+            "description": "ID of segment effect.",
+            "format": "int32"
+          },
+          "Grp": {
+            "type": "integer",
+            "description": "Segment group",
+            "format": "int32"
+          },
+          "Id": {
+            "type": "integer",
+            "description": "Segment ID.",
+            "format": "int32"
+          },
+          "Ix": {
+            "type": "integer",
+            "description": "Effect intensity.",
+            "format": "int32"
+          },
+          "LedCount": {
+            "type": "integer",
+            "description": "Segment length.",
+            "format": "int32"
+          },
+          "Offset": {
+            "type": "integer",
+            "description": "Segment offset in reference to Glimmr master Grid.",
+            "format": "int32"
+          },
+          "Pal": {
+            "type": "integer",
+            "description": "ID of the color palette.",
+            "format": "int32"
+          },
+          "Spc": {
+            "type": "integer",
+            "description": "Spacing?",
+            "format": "int32"
+          },
+          "Start": {
+            "type": "integer",
+            "description": "Segment start position.",
+            "format": "int32"
+          },
+          "Stop": {
+            "type": "integer",
+            "description": "Segment end position.",
+            "format": "int32"
+          },
+          "Sx": {
+            "type": "integer",
+            "description": "Relative effect speed.",
+            "format": "int32"
+          },
+          "Col": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "description": "Segment colors",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "WledState": {
+        "type": "object",
+        "properties": {
+          "On": {
+            "type": "boolean",
+            "description": "Is the device on?"
+          },
+          "Ccnf": {
+            "$ref": "#/components/schemas/Ccnf"
+          },
+          "Bri": {
+            "type": "integer",
+            "description": "WLED Brightness.",
+            "format": "int32"
+          },
+          "Lor": {
+            "type": "integer",
+            "description": "Live Data Override.",
+            "format": "int32"
+          },
+          "Mainseg": {
+            "type": "integer",
+            "description": "Main Segment.",
+            "format": "int32"
+          },
+          "Pl": {
+            "type": "integer",
+            "description": "ID of currently set playlist.",
+            "format": "int32"
+          },
+          "Ps": {
+            "type": "integer",
+            "description": "Id of currently set preset.",
+            "format": "int32"
+          },
+          "Pss": {
+            "type": "integer",
+            "description": "Bitwise indication of preset slots.",
+            "format": "int32"
+          },
+          "Transition": {
+            "type": "integer",
+            "description": "Duration of cross fade between different colors.",
+            "format": "int32"
+          },
+          "Segments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WledSegment"
+            },
+            "description": "Individual segments.",
+            "nullable": true
+          },
+          "Nl": {
+            "$ref": "#/components/schemas/Nl"
+          },
+          "Udpn": {
+            "$ref": "#/components/schemas/Udpn"
+          }
+        },
+        "additionalProperties": false
+      },
+      "WledStateData": {
+        "type": "object",
+        "properties": {
+          "Info": {
+            "$ref": "#/components/schemas/Info"
+          },
+          "WledState": {
+            "$ref": "#/components/schemas/WledState"
+          }
+        },
+        "additionalProperties": false
+      },
+      "YeelightData": {
+        "type": "object",
+        "properties": {
+          "Brightness": {
+            "type": "integer",
+            "description": "Device brightness.",
+            "format": "int32",
+            "default": 255
+          },
+          "TargetSector": {
+            "type": "integer",
+            "description": "Target sector for streaming.",
+            "format": "int32",
+            "default": -1
+          },
+          "Tag": {
+            "type": "string",
+            "description": "Device tag.",
+            "default": "Yeelight",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "description": "Device name.",
+            "default": "",
+            "nullable": true
+          },
+          "Id": {
+            "type": "string",
+            "description": "Device ID.",
+            "default": "",
+            "nullable": true
+          },
+          "IpAddress": {
+            "type": "string",
+            "description": "Device IP Address.",
+            "default": "",
+            "nullable": true
+          },
+          "Enable": {
+            "type": "boolean",
+            "description": "Enable streaming."
+          },
+          "LastSeen": {
+            "type": "string",
+            "description": "Last time the device was seen during discovery.",
+            "nullable": true
+          },
+          "KeyProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SettingsProperty"
+            },
+            "description": "UI Properties.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

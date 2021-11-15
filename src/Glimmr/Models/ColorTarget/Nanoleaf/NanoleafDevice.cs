@@ -21,9 +21,9 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 		private int _brightness;
 		private NanoleafData _data;
 		private bool _disposed;
+		private int _frameTime;
 		private TileLayout? _layout;
 		private Dictionary<int, int> _targets;
-		private int _frameTime;
 
 		/// <summary>
 		///     Use this for sending color data to the panel
@@ -49,12 +49,14 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 					}
 				}
 
-				if (ip != null) host = ip.ToString();
+				if (ip != null) {
+					host = ip.ToString();
+				}
 			} catch (Exception) {
 				//ignored
 			}
+
 			try {
-				
 				Log.Debug("Creating nano client: " + host);
 				_nanoleafClient = new NanoleafClient(host, n.Token);
 				Log.Debug("Nano client created.");
@@ -77,7 +79,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
 		IColorTargetData IColorTarget.Data {
 			get => _data;
-			set => _data = (NanoleafData) value;
+			set => _data = (NanoleafData)value;
 		}
 
 
@@ -92,6 +94,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			}
 
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
+			ColorService.StartCounter++;
 			SetData();
 			Streaming = true;
 			if (!_frameWatch.IsRunning) {
@@ -99,8 +102,9 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			}
 
 			await _nanoleafClient.StartExternalAsync();
-			await _nanoleafClient.SetBrightnessAsync(_brightness).ConfigureAwait(false);
+			await _nanoleafClient.SetBrightnessAsync(_brightness);
 			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
+			ColorService.StartCounter--;
 		}
 
 		public async Task StopStream() {
@@ -108,7 +112,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				return;
 			}
 
-			await FlashColor(Color.FromArgb(0, 0, 0)).ConfigureAwait(false);
+			await FlashColor(Color.FromArgb(0, 0, 0));
 			Streaming = false;
 			_frameWatch.Restart();
 			if (_nanoleafClient == null || _streamingClient == null) {
@@ -116,9 +120,12 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 				return;
 			}
 
-			
-			await _nanoleafClient.TurnOffAsync().ConfigureAwait(false);
+			Log.Debug($"{_data.Tag}::Stopping stream...{_data.Id}.");
+			ColorService.StopCounter++;
+
+			await _nanoleafClient.TurnOffAsync();
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
+			ColorService.StopCounter--;
 		}
 
 		public Task ReloadData() {
@@ -143,6 +150,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 					cols[pd.PanelId] = color;
 				}
 			}
+
 			if (_nanoleafClient == null || _streamingClient == null) {
 				Log.Warning("Client is null...");
 				return;
@@ -171,7 +179,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			}
 
 			_frameWatch.Restart();
-			
+
 			var cols = new Dictionary<int, Color>();
 			foreach (var (key, target) in _targets) {
 				var color = Color.FromArgb(0, 0, 0);
@@ -190,14 +198,14 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 			}
 
 			await _streamingClient.SetColorAsync(cols, 1).ConfigureAwait(false);
-			ColorService?.Counter.Tick(Id);
+			ColorService.Counter.Tick(Id);
 		}
 
 		private void SetData() {
 			var sd = DataUtil.GetSystemData();
 			DataUtil.GetItem<int>("captureMode");
 			_layout = _data.Layout;
-			_frameTime = _data.Type == "NL42" ? 100 : 40;
+			_frameTime = _data.Type == "NL42" ? 100 : 16;
 			_targets = new Dictionary<int, int>();
 			if (_data.Brightness != _brightness) {
 				_brightness = _data.Brightness;
