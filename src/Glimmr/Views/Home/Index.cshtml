@@ -47,8 +47,8 @@
 <div class="bg-light hide container-fluid pb-2 pt-2" id="ambientNav">
     <div class="row form-inline ambientRow">
         <div class="form-group pl-4">
-            <label for="AmbientShow" class="pr-2">Scene</label>
-            <select class="form-control" data-property="AmbientShow" data-object="SystemData" id="AmbientShow">
+            <label for="AmbientScene" class="pr-2">Scene</label>
+            <select class="form-control" data-property="ambientScene" data-object="SystemData" id="AmbientScene">
             </select>
         </div>
         <div class="form-group pl-4">
@@ -61,35 +61,35 @@
     <div class="row form-inline sceneRow">
         <div class="col-3 form-group">
             <label for="AudioMap" class="form-label mr-2">Scene</label>
-            <select class="form-control" data-property="AudioMap" data-object="SystemData" id="AudioMap">
+            <select class="form-control" data-property="audioMap" data-object="SystemData" id="AudioMap">
             </select>
         </div>
         <div class="col-3 form-group">
             <label>Gain</label>
-            <input class="form-control-range" data-object="SystemData" data-property="AudioGain" type="range" min="0" max="5" step=".1"/>
+            <input class="form-control-range" data-object="SystemData" data-property="audioGain" type="range" min="0" max="5" step=".1"/>
         </div>
         <div class="col-3 form-group">
             <label>Cutoff</label>
-            <input class="form-control-range" data-object="SystemData" data-property="AudioMin" type="range" min="0" max=".2" step=".001"/>
+            <input class="form-control-range" data-object="SystemData" data-property="audioMin" type="range" min="0" max=".2" step=".001"/>
         </div>
     </div>
     <div class="row rotRow">
         <div class="col-12 subCol">Rotation</div>
         <div class="col-3">
             <label>Speed</label>
-            <input class="form-control-range" data-object="SystemData" data-property="AudioRotationSpeed" type="range" min=".01" max="1" step=".01"/>
+            <input class="form-control-range" data-object="SystemData" data-property="audioRotationSpeed" type="range" min=".01" max="1" step=".01"/>
         </div>
         <div class="col-3">
             <label>Sensitivity</label>
-            <input class="form-control-range" data-object="SystemData" data-property="AudioRotationSensitivity" type="range" min="0" max="1" step=".01"/>
+            <input class="form-control-range" data-object="SystemData" data-property="audioRotationSensitivity" type="range" min="0" max="1" step=".01"/>
         </div>
         <div class="col-3">
             <label>Lower</label>
-            <input class="form-control-range" data-object="SystemData" data-property="AudioRotationLower" type="range" min="0" max="1" step=".01"/>
+            <input class="form-control-range" data-object="SystemData" data-property="audioRotationLower" type="range" min="0" max="1" step=".01"/>
         </div>
         <div class="col-3">
             <label>Upper</label>
-            <input class="form-control-range" data-object="SystemData" data-property="AudioRotationUpper" type="range" min="0" max="1" step=".01"/>
+            <input class="form-control-range" data-object="SystemData" data-property="audioRotationUpper" type="range" min="0" max="1" step=".01"/>
         </div>
     </div>
 </div>
@@ -124,178 +124,238 @@
 <div class="container-fluid">
 <!-- General -->
 <div class="row border pb-1">
-    <div class="col-12 headerCol">General</div>
-    <div class="col-12 titleCol pb-1" id="versionDiv"></div>
-    <div class="col-12 col-md-6 col-xl-3 form-group" id="settingsMainControl">
-        <label class="form-label">System Control</label>
-        <div class="justify-content-center">
-            <div class="system-group">
-                <div class="btn btn-lg btn-clear controlBtn" data-action="shutdown" data-bs-toggle="tooltip" data-bs-placement="top" title="Shutdown">
-                    <span class="material-icons">power_settings_new</span>
-                </div>
-                <div class="btn btn-lg btn-clear controlBtn" data-action="reboot" data-bs-toggle="tooltip" data-bs-placement="top" title="Reboot">
-                    <span class="material-icons">settings_power</span>
-                </div>
-                <div class="btn btn-lg btn-clear controlBtn" data-action="restart" data-bs-toggle="tooltip" data-bs-placement="top" title="Restart Glimmr TV Service">
-                    <span class="material-icons">sync</span>
-                </div>
-                <div class="btn btn-lg btn-clear controlBtn" data-action="update" data-bs-toggle="tooltip" data-bs-placement="top" title="Update Glimmr TV">
-                    <span class="material-icons">system_update_alt</span>
-                </div>
+<div class="col-12 headerCol">General</div>
+<div class="col-12 pb-1">
+    <span>
+        <b>Hostname:</b>
+    </span>
+    <span id="hostDiv"></span>
+</div>
+<div class="col-12 pb-1">
+    <span>
+        <b>IP Address:</b>
+    </span>
+    <span id="ipDiv"></span>
+</div>
+<div class="col-12 pb-1">
+    <span>
+        <b>SW Version:</b>
+    </span>
+    <span id="versionDiv"></span>
+</div>
+<div class="col-12 pb-1 mb-2">
+    <span>
+        <b>Uptime:</b>
+    </span>
+    <span id="utDiv"></span>
+</div>
+
+<div class="col-12 col-md-6 col-xl-3 form-group" id="settingsMainControl">
+    <label class="form-label">System Control</label>
+    <div class="justify-content-center">
+        <div class="system-group">
+            <div class="btn btn-lg btn-clear controlBtn" data-action="shutdown" data-bs-toggle="tooltip" data-bs-placement="top" title="Shutdown">
+                <span class="material-icons">power_settings_new</span>
+            </div>
+            <div class="btn btn-lg btn-clear controlBtn" data-action="reboot" data-bs-toggle="tooltip" data-bs-placement="top" title="Reboot">
+                <span class="material-icons">settings_power</span>
+            </div>
+            <div class="btn btn-lg btn-clear controlBtn" data-action="restart" data-bs-toggle="tooltip" data-bs-placement="top" title="Restart Glimmr TV Service">
+                <span class="material-icons">sync</span>
+            </div>
+            <div class="btn btn-lg btn-clear controlBtn" data-action="update" data-bs-toggle="tooltip" data-bs-placement="top" title="Update Glimmr TV">
+                <span class="material-icons">system_update_alt</span>
             </div>
         </div>
     </div>
-    <!-- Theme -->
-    <div class="col-12 col-md-6 col-xl-3 form-group">
-        <label class="form-label">UI Theme</label>
-        <select class="form-control" data-object="SystemData" data-property="Theme">
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
-        </select>
-    </div>
-    <!-- Time zone -->
-    <div class="col-12 col-md-6 col-xl-3 form-group">
-        <label class="form-label">Time Zone</label>
-        <select name="timezone" data-object="SystemData" data-property="TimeZone" class="form-control">
-            <option></option>
-            <option value="Etc/GMT+12">(GMT-12:00) International Date Line West</option>
-            <option value="Pacific/Midway">(GMT-11:00) Midway Island, Samoa</option>
-            <option value="Pacific/Honolulu">(GMT-10:00) Hawaii</option>
-            <option value="US/Alaska">(GMT-09:00) Alaska</option>
-            <option value="America/Los_Angeles">(GMT-08:00) Pacific Time (US & Canada)</option>
-            <option value="America/Tijuana">(GMT-08:00) Tijuana, Baja California</option>
-            <option value="US/Arizona">(GMT-07:00) Arizona</option>
-            <option value="America/Chihuahua">(GMT-07:00) Chihuahua, La Paz, Mazatlan</option>
-            <option value="US/Mountain">(GMT-07:00) Mountain Time (US & Canada)</option>
-            <option value="America/Managua">(GMT-06:00) Central America</option>
-            <option value="US/Central">(GMT-06:00) Central Time (US & Canada)</option>
-            <option value="America/Mexico_City">(GMT-06:00) Guadalajara, Mexico City, Monterrey</option>
-            <option value="Canada/Saskatchewan">(GMT-06:00) Saskatchewan</option>
-            <option value="America/Bogota">(GMT-05:00) Bogota, Lima, Quito, Rio Branco</option>
-            <option value="US/Eastern">(GMT-05:00) Eastern Time (US & Canada)</option>
-            <option value="US/East-Indiana">(GMT-05:00) Indiana (East)</option>
-            <option value="Canada/Atlantic">(GMT-04:00) Atlantic Time (Canada)</option>
-            <option value="America/Caracas">(GMT-04:00) Caracas, La Paz</option>
-            <option value="America/Manaus">(GMT-04:00) Manaus</option>
-            <option value="America/Santiago">(GMT-04:00) Santiago</option>
-            <option value="Canada/Newfoundland">(GMT-03:30) Newfoundland</option>
-            <option value="America/Sao_Paulo">(GMT-03:00) Brasilia</option>
-            <option value="America/Argentina/Buenos_Aires">(GMT-03:00) Buenos Aires, Georgetown</option>
-            <option value="America/Godthab">(GMT-03:00) Greenland</option>
-            <option value="America/Montevideo">(GMT-03:00) Montevideo</option>
-            <option value="America/Noronha">(GMT-02:00) Mid-Atlantic</option>
-            <option value="Atlantic/Cape_Verde">(GMT-01:00) Cape Verde Is.</option>
-            <option value="Atlantic/Azores">(GMT-01:00) Azores</option>
-            <option value="Africa/Casablanca">(GMT+00:00) Casablanca, Monrovia, Reykjavik</option>
-            <option value="Etc/Greenwich">(GMT+00:00) Greenwich Mean Time : Dublin, Edinburgh, Lisbon, London</option>
-            <option value="Europe/Amsterdam">(GMT+01:00) Amsterdam, Berlin, Bern, Rome, Stockholm, Vienna</option>
-            <option value="Europe/Belgrade">(GMT+01:00) Belgrade, Bratislava, Budapest, Ljubljana, Prague</option>
-            <option value="Europe/Brussels">(GMT+01:00) Brussels, Copenhagen, Madrid, Paris</option>
-            <option value="Europe/Sarajevo">(GMT+01:00) Sarajevo, Skopje, Warsaw, Zagreb</option>
-            <option value="Africa/Lagos">(GMT+01:00) West Central Africa</option>
-            <option value="Asia/Amman">(GMT+02:00) Amman</option>
-            <option value="Europe/Athens">(GMT+02:00) Athens, Bucharest, Istanbul</option>
-            <option value="Asia/Beirut">(GMT+02:00) Beirut</option>
-            <option value="Africa/Cairo">(GMT+02:00) Cairo</option>
-            <option value="Africa/Harare">(GMT+02:00) Harare, Pretoria</option>
-            <option value="Europe/Helsinki">(GMT+02:00) Helsinki, Kyiv, Riga, Sofia, Tallinn, Vilnius</option>
-            <option value="Asia/Jerusalem">(GMT+02:00) Jerusalem</option>
-            <option value="Europe/Minsk">(GMT+02:00) Minsk</option>
-            <option value="Africa/Windhoek">(GMT+02:00) Windhoek</option>
-            <option value="Asia/Kuwait">(GMT+03:00) Kuwait, Riyadh, Baghdad</option>
-            <option value="Europe/Moscow">(GMT+03:00) Moscow, St. Petersburg, Volgograd</option>
-            <option value="Africa/Nairobi">(GMT+03:00) Nairobi</option>
-            <option value="Asia/Tbilisi">(GMT+03:00) Tbilisi</option>
-            <option value="Asia/Tehran">(GMT+03:30) Tehran</option>
-            <option value="Asia/Muscat">(GMT+04:00) Abu Dhabi, Muscat</option>
-            <option value="Asia/Baku">(GMT+04:00) Baku</option>
-            <option value="Asia/Yerevan">(GMT+04:00) Yerevan</option>
-            <option value="Asia/Kabul">(GMT+04:30) Kabul</option>
-            <option value="Asia/Yekaterinburg">(GMT+05:00) Yekaterinburg</option>
-            <option value="Asia/Karachi">(GMT+05:00) Islamabad, Karachi, Tashkent</option>
-            <option value="Asia/Calcutta">(GMT+05:30) Chennai, Kolkata, Mumbai, New Delhi</option>
-            <option value="Asia/Calcutta">(GMT+05:30) Sri Jayawardenapura</option>
-            <option value="Asia/Katmandu">(GMT+05:45) Kathmandu</option>
-            <option value="Asia/Almaty">(GMT+06:00) Almaty, Novosibirsk</option>
-            <option value="Asia/Dhaka">(GMT+06:00) Astana, Dhaka</option>
-            <option value="Asia/Rangoon">(GMT+06:30) Yangon (Rangoon)</option>
-            <option value="Asia/Bangkok">(GMT+07:00) Bangkok, Hanoi, Jakarta</option>
-            <option value="Asia/Krasnoyarsk">(GMT+07:00) Krasnoyarsk</option>
-            <option value="Asia/Hong_Kong">(GMT+08:00) Beijing, Chongqing, Hong Kong, Urumqi</option>
-            <option value="Asia/Kuala_Lumpur">(GMT+08:00) Kuala Lumpur, Singapore</option>
-            <option value="Asia/Irkutsk">(GMT+08:00) Irkutsk, Ulaan Bataar</option>
-            <option value="Australia/Perth">(GMT+08:00) Perth</option>
-            <option value="Asia/Taipei">(GMT+08:00) Taipei</option>
-            <option value="Asia/Tokyo">(GMT+09:00) Osaka, Sapporo, Tokyo</option>
-            <option value="Asia/Seoul">(GMT+09:00) Seoul</option>
-            <option value="Asia/Yakutsk">(GMT+09:00) Yakutsk</option>
-            <option value="Australia/Adelaide">(GMT+09:30) Adelaide</option>
-            <option value="Australia/Darwin">(GMT+09:30) Darwin</option>
-            <option value="Australia/Brisbane">(GMT+10:00) Brisbane</option>
-            <option value="Australia/Canberra">(GMT+10:00) Canberra, Melbourne, Sydney</option>
-            <option value="Australia/Hobart">(GMT+10:00) Hobart</option>
-            <option value="Pacific/Guam">(GMT+10:00) Guam, Port Moresby</option>
-            <option value="Asia/Vladivostok">(GMT+10:00) Vladivostok</option>
-            <option value="Asia/Magadan">(GMT+11:00) Magadan, Solomon Is., New Caledonia</option>
-            <option value="Pacific/Auckland">(GMT+12:00) Auckland, Wellington</option>
-            <option value="Pacific/Fiji">(GMT+12:00) Fiji, Kamchatka, Marshall Is.</option>
-            <option value="Pacific/Tongatapu">(GMT+13:00) Nuku'alofa</option>
-        </select>
-    </div>
-    <div class="col-12 col-md-6 col-xl-3 form-group">
-        <label class="form-label">Temperature Units</label>
-        <select name="units" data-object="SystemData" data-property="Units" class="form-control">
-            <option value="0">Fahrenheit</option>
-            <option value="1">Celsius</option>
-        </select>
-    </div>
-    <!-- Auto-update -->
-    <div class="col-12 col-md-6 col-xl-3 form-group custom-control custom-switch" id="settingsMainUpdates">
-        <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="AutoUpdate"/>
-        <label class="custom-control-label">Automatically Install Updates</label>
-        <div class="form-text" id="updateTime">Updates will be installed at 1:00AM every day when enabled.</div>
-    </div>
-    <!-- Auto-update time -->
-    <div class="col-12 col-md-6 col-xl-3 form-group">
-        <label class="form-label">Auto-update Time</label>
-        <select name="AutoUpdateTime" id="AutoUpdateTime" data-object="SystemData" data-property="AutoUpdateTime" class="systemSetting form-control">
+</div>
+<!-- Theme -->
+<div class="col-12 col-md-6 col-xl-3 form-group">
+    <label class="form-label">UI Theme</label>
+    <select class="form-control" data-object="SystemData" data-property="theme">
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+    </select>
+</div>
+<!-- Time zone -->
+<div class="col-12 col-md-6 col-xl-3 form-group">
+    <label class="form-label">Time Zone</label>
+    <select name="timezone" data-object="SystemData" data-property="timeZone" class="form-control">
+        <option></option>
+        <option value="Etc/GMT+12">(GMT-12:00) International Date Line West</option>
+        <option value="Pacific/Midway">(GMT-11:00) Midway Island, Samoa</option>
+        <option value="Pacific/Honolulu">(GMT-10:00) Hawaii</option>
+        <option value="US/Alaska">(GMT-09:00) Alaska</option>
+        <option value="America/Los_Angeles">(GMT-08:00) Pacific Time (US & Canada)</option>
+        <option value="America/Tijuana">(GMT-08:00) Tijuana, Baja California</option>
+        <option value="US/Arizona">(GMT-07:00) Arizona</option>
+        <option value="America/Chihuahua">(GMT-07:00) Chihuahua, La Paz, Mazatlan</option>
+        <option value="US/Mountain">(GMT-07:00) Mountain Time (US & Canada)</option>
+        <option value="America/Managua">(GMT-06:00) Central America</option>
+        <option value="US/Central">(GMT-06:00) Central Time (US & Canada)</option>
+        <option value="America/Mexico_City">(GMT-06:00) Guadalajara, Mexico City, Monterrey</option>
+        <option value="Canada/Saskatchewan">(GMT-06:00) Saskatchewan</option>
+        <option value="America/Bogota">(GMT-05:00) Bogota, Lima, Quito, Rio Branco</option>
+        <option value="US/Eastern">(GMT-05:00) Eastern Time (US & Canada)</option>
+        <option value="US/East-Indiana">(GMT-05:00) Indiana (East)</option>
+        <option value="Canada/Atlantic">(GMT-04:00) Atlantic Time (Canada)</option>
+        <option value="America/Caracas">(GMT-04:00) Caracas, La Paz</option>
+        <option value="America/Manaus">(GMT-04:00) Manaus</option>
+        <option value="America/Santiago">(GMT-04:00) Santiago</option>
+        <option value="Canada/Newfoundland">(GMT-03:30) Newfoundland</option>
+        <option value="America/Sao_Paulo">(GMT-03:00) Brasilia</option>
+        <option value="America/Argentina/Buenos_Aires">(GMT-03:00) Buenos Aires, Georgetown</option>
+        <option value="America/Godthab">(GMT-03:00) Greenland</option>
+        <option value="America/Montevideo">(GMT-03:00) Montevideo</option>
+        <option value="America/Noronha">(GMT-02:00) Mid-Atlantic</option>
+        <option value="Atlantic/Cape_Verde">(GMT-01:00) Cape Verde Is.</option>
+        <option value="Atlantic/Azores">(GMT-01:00) Azores</option>
+        <option value="Africa/Casablanca">(GMT+00:00) Casablanca, Monrovia, Reykjavik</option>
+        <option value="Etc/Greenwich">(GMT+00:00) Greenwich Mean Time : Dublin, Edinburgh, Lisbon, London</option>
+        <option value="Europe/Amsterdam">(GMT+01:00) Amsterdam, Berlin, Bern, Rome, Stockholm, Vienna</option>
+        <option value="Europe/Belgrade">(GMT+01:00) Belgrade, Bratislava, Budapest, Ljubljana, Prague</option>
+        <option value="Europe/Brussels">(GMT+01:00) Brussels, Copenhagen, Madrid, Paris</option>
+        <option value="Europe/Sarajevo">(GMT+01:00) Sarajevo, Skopje, Warsaw, Zagreb</option>
+        <option value="Africa/Lagos">(GMT+01:00) West Central Africa</option>
+        <option value="Asia/Amman">(GMT+02:00) Amman</option>
+        <option value="Europe/Athens">(GMT+02:00) Athens, Bucharest, Istanbul</option>
+        <option value="Asia/Beirut">(GMT+02:00) Beirut</option>
+        <option value="Africa/Cairo">(GMT+02:00) Cairo</option>
+        <option value="Africa/Harare">(GMT+02:00) Harare, Pretoria</option>
+        <option value="Europe/Helsinki">(GMT+02:00) Helsinki, Kyiv, Riga, Sofia, Tallinn, Vilnius</option>
+        <option value="Asia/Jerusalem">(GMT+02:00) Jerusalem</option>
+        <option value="Europe/Minsk">(GMT+02:00) Minsk</option>
+        <option value="Africa/Windhoek">(GMT+02:00) Windhoek</option>
+        <option value="Asia/Kuwait">(GMT+03:00) Kuwait, Riyadh, Baghdad</option>
+        <option value="Europe/Moscow">(GMT+03:00) Moscow, St. Petersburg, Volgograd</option>
+        <option value="Africa/Nairobi">(GMT+03:00) Nairobi</option>
+        <option value="Asia/Tbilisi">(GMT+03:00) Tbilisi</option>
+        <option value="Asia/Tehran">(GMT+03:30) Tehran</option>
+        <option value="Asia/Muscat">(GMT+04:00) Abu Dhabi, Muscat</option>
+        <option value="Asia/Baku">(GMT+04:00) Baku</option>
+        <option value="Asia/Yerevan">(GMT+04:00) Yerevan</option>
+        <option value="Asia/Kabul">(GMT+04:30) Kabul</option>
+        <option value="Asia/Yekaterinburg">(GMT+05:00) Yekaterinburg</option>
+        <option value="Asia/Karachi">(GMT+05:00) Islamabad, Karachi, Tashkent</option>
+        <option value="Asia/Calcutta">(GMT+05:30) Chennai, Kolkata, Mumbai, New Delhi</option>
+        <option value="Asia/Calcutta">(GMT+05:30) Sri Jayawardenapura</option>
+        <option value="Asia/Katmandu">(GMT+05:45) Kathmandu</option>
+        <option value="Asia/Almaty">(GMT+06:00) Almaty, Novosibirsk</option>
+        <option value="Asia/Dhaka">(GMT+06:00) Astana, Dhaka</option>
+        <option value="Asia/Rangoon">(GMT+06:30) Yangon (Rangoon)</option>
+        <option value="Asia/Bangkok">(GMT+07:00) Bangkok, Hanoi, Jakarta</option>
+        <option value="Asia/Krasnoyarsk">(GMT+07:00) Krasnoyarsk</option>
+        <option value="Asia/Hong_Kong">(GMT+08:00) Beijing, Chongqing, Hong Kong, Urumqi</option>
+        <option value="Asia/Kuala_Lumpur">(GMT+08:00) Kuala Lumpur, Singapore</option>
+        <option value="Asia/Irkutsk">(GMT+08:00) Irkutsk, Ulaan Bataar</option>
+        <option value="Australia/Perth">(GMT+08:00) Perth</option>
+        <option value="Asia/Taipei">(GMT+08:00) Taipei</option>
+        <option value="Asia/Tokyo">(GMT+09:00) Osaka, Sapporo, Tokyo</option>
+        <option value="Asia/Seoul">(GMT+09:00) Seoul</option>
+        <option value="Asia/Yakutsk">(GMT+09:00) Yakutsk</option>
+        <option value="Australia/Adelaide">(GMT+09:30) Adelaide</option>
+        <option value="Australia/Darwin">(GMT+09:30) Darwin</option>
+        <option value="Australia/Brisbane">(GMT+10:00) Brisbane</option>
+        <option value="Australia/Canberra">(GMT+10:00) Canberra, Melbourne, Sydney</option>
+        <option value="Australia/Hobart">(GMT+10:00) Hobart</option>
+        <option value="Pacific/Guam">(GMT+10:00) Guam, Port Moresby</option>
+        <option value="Asia/Vladivostok">(GMT+10:00) Vladivostok</option>
+        <option value="Asia/Magadan">(GMT+11:00) Magadan, Solomon Is., New Caledonia</option>
+        <option value="Pacific/Auckland">(GMT+12:00) Auckland, Wellington</option>
+        <option value="Pacific/Fiji">(GMT+12:00) Fiji, Kamchatka, Marshall Is.</option>
+        <option value="Pacific/Tongatapu">(GMT+13:00) Nuku'alofa</option>
+    </select>
+</div>
+<div class="col-12 col-md-6 col-xl-3 form-group">
+    <label class="form-label">Temperature Units</label>
+    <select name="units" data-object="SystemData" data-property="units" class="form-control">
+        <option value="0">Fahrenheit</option>
+        <option value="1">Celsius</option>
+    </select>
+</div>
+<!-- Auto-update -->
+<div class="col-12 col-md-6 col-xl-3 form-group custom-control custom-switch" id="settingsMainUpdates">
+    <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="autoUpdate"/>
+    <label class="custom-control-label">Automatically Install Updates</label>
+    <div class="form-text" id="updateTime">Updates will be installed at 1:00AM every day when enabled.</div>
+</div>
+<!-- Auto-update time -->
+<div class="col-12 col-md-6 col-xl-3 form-group">
+    <label class="form-label">Auto-update Time</label>
+    <select name="AutoUpdateTime" id="AutoUpdateTime" data-object="SystemData" data-property="autoUpdateTime" class="systemSetting form-control">
 
-        </select>
-        <div class="form-text">What time Glimmr should check for and auto-install updates (if enabled).</div>
-    </div>
-    <div class="col-12 col-md-6 col-xl-3 form-group custom-control custom-switch">
-        <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="SkipDemo"/>
-        <label class="custom-control-label">Skip Demo Animation</label>
-        <div class="form-text">Disable the rainbow animation that runs on software startup.</div>
-    </div>
-    <div class="col-12 col-md-6 col-xl-3 form-group">
-        <div class="btn btn-primary form-control" id="showIntro">Show Tour</div>
-        <div class="form-text">Replay the UI introduction tour.</div>
-    </div>
-    <div class="col-12 titleCol pb-1">Backup and Restore</div>
-    <div class="col-12 col-md-6 col-xl-3 form-group">
-        <form method="post" enctype="multipart/form-data" asp-controller="DreamData" asp-action="ImportDb" target="dummyframe" id="dbForm">
-            <div class="form-group">
-                <div class="col-md-10">
-                    <p>Select you new DB here:</p>
-                    <input type="file" name="files"/>
-                </div>
+    </select>
+    <div class="form-text">What time Glimmr should check for and auto-install updates (if enabled).</div>
+</div>
+<div class="col-12 col-md-6 col-xl-3 form-group custom-control custom-switch">
+    <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="skipDemo"/>
+    <label class="custom-control-label">Skip Demo Animation</label>
+    <div class="form-text">Disable the rainbow animation that runs on software startup.</div>
+</div>
+<div class="col-12 col-md-6 col-xl-3 form-group">
+    <div class="btn btn-primary form-control" id="showIntro">Show Tour</div>
+    <div class="form-text">Replay the UI introduction tour.</div>
+</div>
+<div class="col-12 col-md-6 col-xl-3 form-group">
+    <div class="titleCol pb-1">DB Backup</div>
+    <p>Click Here to Download Current database:</p>
+    <div class="btn btn-primary" id="backupBtn" onclick="downloadDb()">Backup</div>
+</div>
+<div class="col-12 col-md-6 col-xl-3 form-group">
+    <div class="titleCol pb-1">DB Restore</div>
+    <form method="post" enctype="multipart/form-data" asp-controller="Glimmr" asp-action="ImportDb" target="dummyframe" id="dbForm">
+        <div class="form-group">
+            <div class="col-md-10">
+                <p>Select you new DB here:</p>
+                <input type="file" name="files"/>
             </div>
-            <div class="form-group">
-                <div class="col-md-10">
-                    <input type="submit" value="Upload"/>
-                </div>
+        </div>
+        <div class="form-group">
+            <div class="col-md-10">
+                <input type="submit" value="Upload"/>
             </div>
-        </form>
-    </div>
-    <div class="col-12 col-md-6 col-xl-3 form-group">
-        <label class="form-label">Backup Database</label>
-        <div class="btn btn-primary" id="backupBtn" onclick="downloadDb()">Backup</div>
-    </div>
-    <div class="col-12 titleCol pb-1">Logging</div>
-    <div class="col-12 col-md-6 col-xl-3 form-group">
-        <div class="btn btn-primary" id="fetchLog">Download Log</div>
-    </div>
+        </div>
+    </form>
+</div>
+<div class="col-12 col-md-6 col-xl-3 form-group">
+    <div class="titleCol pb-1">Ambient Scene Upload</div>
+    <form method="post" enctype="multipart/form-data" asp-controller="Glimmr" asp-action="ImportAmbient" target="dummyframe" id="ambientForm">
+        <div class="form-group">
+            <div class="col-md-10">
+                <p>Select your scene JSON:</p>
+                <input type="file" name="files"/>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-md-10">
+                <input type="submit" value="Upload"/>
+            </div>
+        </div>
+    </form>
+</div>
+<div class="col-12 col-md-6 col-xl-3 form-group">
+    <div class="titleCol pb-1">Audio Scene Upload</div>
+    <form method="post" enctype="multipart/form-data" asp-controller="Glimmr" asp-action="ImportAudio" target="dummyframe" id="audioForm">
+        <div class="form-group">
+            <div class="col-md-10">
+                <p>Select your scene JSON:</p>
+                <input type="file" name="files"/>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-md-10">
+                <input type="submit" value="Upload"/>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="col-12 titleCol pb-1">Logging</div>
+<div class="col-12 col-md-6 col-xl-3 form-group">
+    <div class="btn btn-primary" id="fetchLog">Download Log</div>
+    <div class="btn btn-secondary" id="showLog" onclick="showLog()">Log Viewer</div>
+</div>
+
 </div>
 <!-- Discovery -->
 <div class="row border pb-1">
@@ -303,21 +363,21 @@
     <!-- Discovery time -->
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">Discovery Time</label>
-        <input class="form-control" data-object="SystemData" data-property="DiscoveryTimeout" type="number" min="1" max="60" step="1"/>
+        <input class="form-control" data-object="SystemData" data-property="discoveryTimeout" type="number" min="1" max="60" step="1"/>
         <div class="form-text">Amount of time (in seconds) to allow for discovery.</div>
     </div>
 
     <!-- Auto discovery frequency time -->
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">Discovery Interval</label>
-        <input class="form-control" data-object="SystemData" data-property="AutoDiscoveryFrequency" type="number" min="1" max="60" step="1"/>
+        <input class="form-control" data-object="SystemData" data-property="autoDiscoveryFrequency" type="number" min="1" max="60" step="1"/>
         <div class="form-text">Interval (in minutes) in which Auto Discovery is run.</div>
     </div>
 
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <!--75, 110, 300, 1200, 2400, 4800, 9600, 19200, 38400, 57600 and 115200 bit/s.-->
         <label class="form-label">Serial Port Speed</label>
-        <select name="BaudRate" id="BaudRate" data-object="SystemData" data-property="BaudRate" class="systemSetting form-control">
+        <select name="BaudRate" id="BaudRate" data-object="SystemData" data-property="baudRate" class="systemSetting form-control">
             <option value="75">75</option>
             <option value="110">110</option>
             <option value="300">300</option>
@@ -337,17 +397,17 @@
 <div class="row border pb-1">
     <div class="col-12 headerCol">Automation</div>
     <div class="col-12 col-md-6 col-xl-3 form-group custom-switch">
-        <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="AutoRemoveDevices"/>
+        <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="autoRemoveDevices"/>
         <label class="custom-control-label">Auto-Delete Old Devices</label>
         <div class="form-text">Auto-delete devices not seen during discovery after the specified time.</div>
     </div>
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">Auto-Delete Interval</label>
-        <input class="form-control" data-object="SystemData" data-property="AutoRemoveDevicesAfter" type="number" min="1" max="60" step="1"/>
+        <input class="form-control" data-object="SystemData" data-property="autoRemoveDevicesAfter" type="number" min="1" max="60" step="1"/>
         <div class="form-text">Interval (in days) after which old devices will be removed.</div>
     </div>
     <div class="col-12 col-md-6 col-xl-3 form-group custom-switch">
-        <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="EnableAutoDisable"/>
+        <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="enableAutoDisable"/>
         <label class="custom-control-label">Auto-Sleep Lights</label>
         <div class="form-text">Automatically disable control of lights when no input is detected.</div>
     </div>
@@ -355,11 +415,11 @@
     <!-- Auto-disable interval -->
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">Auto-Disable Delay</label>
-        <input type="number" class="form-control" data-object="SystemData" data-property="AutoDisableDelay" min="0" max="3000"/>
+        <input type="number" class="form-control" data-object="SystemData" data-property="autoDisableDelay" min="0" max="3000"/>
         <div class="form-text">Amount of time (in seconds) for Glimmr to have no input before auto-disabling.</div>
     </div>
     <div class="col-12 col-md-6 col-xl-3 form-group custom-switch">
-        <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="EnableAutoBrightness"/>
+        <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="enableAutoBrightness"/>
         <label class="custom-control-label">Auto-Adjust LED Brightness</label>
         <div class="form-text">Automatically adjust wired LED brightness to prevent dropouts/flickering.</div>
     </div>
@@ -367,7 +427,7 @@
     <!-- Auto-brightness voltage -->
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">PSU Voltage</label>
-        <select class="form-control" data-object="SystemData" data-property="AblVolts">
+        <select class="form-control" data-object="SystemData" data-property="ablVolts">
             <option value="5">5v</option>
             <option value="5.1">5.1v (Canakit Raspberry Pi Power supply)</option>
         </select>
@@ -375,7 +435,7 @@
     </div>
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">PSU Amperage</label>
-        <input type="number" class="form-control" data-object="SystemData" data-property="AblAmps" min="1" max="100" step="0.1"/>
+        <input type="number" class="form-control" data-object="SystemData" data-property="ablAmps" min="1" max="100" step="0.1"/>
         <div class="form-text">Enter the input amperage of your power supply.</div>
     </div>
 </div>
@@ -384,11 +444,11 @@
     <div class="col-12 titleCol">OpenRGB</div>
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">IP Address</label>
-        <input type="text" class="form-control" data-object="SystemData" data-property="OpenRgbIp" id="OpenRgbIp"/>
+        <input type="text" class="form-control" data-object="SystemData" data-property="openRgbIp" id="OpenRgbIp"/>
     </div>
     <div class="col-12 col-md-6 col-xl-3 form-group">
         <label class="form-label">Port</label>
-        <input type="text" class="form-control" data-object="SystemData" data-property="OpenRgbPort" id="OpenRgbPort"/>
+        <input type="text" class="form-control" data-object="SystemData" data-property="openRgbPort" id="OpenRgbPort"/>
     </div>
 </div>
 </div>
@@ -402,7 +462,7 @@
             <div class="col-12 titleCol">Video</div>
             <div class="col-12 col-md-6 col-xl-3 form-group">
                 <label class="form-label">Input Source</label>
-                <select class="form-control" data-object="SystemData" data-property="CaptureMode">
+                <select class="form-control" data-object="SystemData" data-property="captureMode">
                     <option value="1">Camera</option>
                     <option value="2">HDMI</option>
                     <option value="3">Screen</option>
@@ -411,19 +471,19 @@
             </div>
             <div class="col-12 col-md-6 col-xl-3 capGroup form-group" id="UsbSelectRow">
                 <label class="form-label">USB Selection</label>
-                <select class="form-control" data-object="SystemData" data-property="UsbSelection" id="UsbSelect">
+                <select class="form-control" data-object="SystemData" data-property="usbSelection" id="UsbSelect">
                 </select>
             </div>
             <div class="col-12 col-md-6 col-xl-3 capGroup form-group" data-mode="1">
                 <label class="form-label">Camera Type</label>
-                <select class="form-control" data-object="SystemData" data-property="CamType">
+                <select class="form-control" data-object="SystemData" data-property="camType">
                     <option value="0">Raspberry Pi Camera</option>
                     <option value="1">USB Web Camera</option>
                 </select>
             </div>
             <div class="col-12 col-md-6 col-xl-3 form-group" id="BlackLevelRow">
                 <label class="form-label">Black Level</label>
-                <input type="number" class="form-control" data-object="SystemData" data-property="BlackLevel" id="BlackLevel" min="0" max="255" step="1"/>
+                <input type="number" class="form-control" data-object="SystemData" data-property="blackLevel" id="BlackLevel" min="0" max="255" step="1"/>
                 <div class="form-text">Minimum brightness level for colors to be displayed. Default is 7.</div>
             </div>
         </div>
@@ -431,7 +491,7 @@
             <div class="col-12 titleCol">Audio</div>
             <div class="col-12 col-md-6 col-xl-3 form-group">
                 <label class="form-label">Input Device</label>
-                <select class="form-control" data-object="SystemData" data-property="RecDev" id="RecDev">
+                <select class="form-control" data-object="SystemData" data-property="recDev" id="RecDev">
                     <option value=""></option>
                 </select>
             </div>
@@ -440,7 +500,7 @@
             <div class="col-12 titleCol">Streaming</div>
             <div class="col-12 col-md-6 col-xl-3 form-group">
                 <label class="form-label">Streaming Mode</label>
-                <select class="form-control" data-object="SystemData" data-property="StreamMode">
+                <select class="form-control" data-object="SystemData" data-property="streamMode">
                     <option value="0">DreamScreen</option>
                     <option value="1">Glimmr</option>
                     <option value="2">FloW LED/WLED</option>
@@ -449,7 +509,7 @@
             </div>
             <div class="col-12 col-md-6 col-xl-3 streamGroup form-group" data-stream="0">
                 <label class="form-label">Target DreamScreen</label>
-                <select id="targetDs" class="form-control" data-object="SystemData" data-property="DsIp">
+                <select id="targetDs" class="form-control" data-object="SystemData" data-property="dsIp">
                     <option value=""></option>
                 </select>
             </div>
@@ -458,22 +518,28 @@
             <div class="col-12 titleCol">Cropping</div>
             <!-- Letterboxing enable -->
             <div class="col-12 col-md-6 col-xl-3 form-group custom-switch">
-                <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="EnableLetterBox"/>
+                <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="enableLetterBox"/>
                 <label class="custom-control-label">Enable Letterbox Cropping</label>
                 <div class="form-text">Automatically crop black sectors from the top and bottom of the screen.</div>
             </div>
 
             <!-- Pillarboxing enable -->
             <div class="col-12 col-md-6 col-xl-3 form-group custom-switch">
-                <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="EnablePillarBox"/>
+                <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="enablePillarBox"/>
                 <label class="custom-control-label">Enable Pillarbox Cropping</label>
                 <div class="form-text">Automatically crop black sectors from the left and right sides of the screen.</div>
             </div>
             <!-- Crop time -->
             <div class="col-12 col-md-6 col-xl-3 form-group">
                 <label class="form-label">Cropping Delay</label>
-                <input class="form-control" data-object="SystemData" data-property="CropDelay" type="number" min="1" max="60" step="1"/>
+                <input class="form-control" data-object="SystemData" data-property="cropDelay" type="number" min="1" max="60" step="1"/>
                 <div class="form-text">How long to wait before cropping the picture.</div>
+            </div>
+            <!-- Crop black level -->
+            <div class="col-12 col-md-6 col-xl-3 form-group">
+                <label class="form-label">Cropping Black Level</label>
+                <input class="form-control" data-object="SystemData" data-property="cropBlackLevel" type="number" min="7" max="40" step="1"/>
+                <div class="form-text">How many non-black pixels are allowed per line when checking crop.</div>
             </div>
         </div>
 
@@ -494,7 +560,7 @@
             </div>
             <div class="col-12 col-md-6 col-xl-3 form-group pt-5">
                 <label class="form-label">Preview Mode</label>
-                <select data-object="SystemData" data-property="PreviewMode" class="form-control">
+                <select data-object="SystemData" data-property="previewMode" class="form-control">
                     <option value="0">None</option>
                     <option value="1">LED</option>
                     <option value="2">Sectors</option>
@@ -511,7 +577,7 @@
                     <div class="input-group-prepend">
                         <span class="input-group-text" id="ledCountLeft">Left</span>
                     </div>
-                    <input type="text" class="form-control ledCount" data-property="LeftCount" data-object="SystemData" aria-label="Left" aria-describedby="ledCountLeft">
+                    <input type="text" class="form-control ledCount" data-property="leftCount" data-object="SystemData" aria-label="Left" aria-describedby="ledCountLeft">
                 </div>
             </div>
             <!-- Right count -->
@@ -520,7 +586,7 @@
                     <div class="input-group-prepend">
                         <span class="input-group-text" id="ledCountRight">Right</span>
                     </div>
-                    <input type="text" class="form-control ledCount" data-property="RightCount" data-object="SystemData" aria-label="Right" aria-describedby="ledCountRight">
+                    <input type="text" class="form-control ledCount" data-property="rightCount" data-object="SystemData" aria-label="Right" aria-describedby="ledCountRight">
                 </div>
             </div>
             <!-- Top count -->
@@ -529,7 +595,7 @@
                     <div class="input-group-prepend">
                         <span class="input-group-text" id="ledCountTop">Top</span>
                     </div>
-                    <input type="text" class="form-control ledCount" data-property="TopCount" data-object="SystemData" aria-label="Top" aria-describedby="ledCountTop">
+                    <input type="text" class="form-control ledCount" data-property="topCount" data-object="SystemData" aria-label="Top" aria-describedby="ledCountTop">
                 </div>
             </div>
             <!-- Bottom count -->
@@ -538,7 +604,7 @@
                     <div class="input-group-prepend">
                         <span class="input-group-text" id="ledCountBottom">Bottom</span>
                     </div>
-                    <input type="text" class="form-control ledCount" data-property="BottomCount" data-object="SystemData" aria-label="Bottom" aria-describedby="ledCountBottom">
+                    <input type="text" class="form-control ledCount" data-property="bottomCount" data-object="SystemData" aria-label="Bottom" aria-describedby="ledCountBottom">
                 </div>
             </div>
             <!-- Preview -->
@@ -555,7 +621,7 @@
                     <div class="input-group-prepend">
                         <span class="input-group-text" id="hSectorCount">Horizontal</span>
                     </div>
-                    <input type="text" class="form-control ledCount" data-property="HSectors" data-object="SystemData" aria-label="Top" aria-describedby="ledCountTop">
+                    <input type="text" class="form-control ledCount" data-property="hSectors" data-object="SystemData" aria-label="Top" aria-describedby="ledCountTop">
                 </div>
             </div>
             <!-- V count -->
@@ -564,12 +630,12 @@
                     <div class="input-group-prepend">
                         <span class="input-group-text" id="vSectorCount">Vertical</span>
                     </div>
-                    <input type="text" class="form-control ledCount" data-property="VSectors" data-object="SystemData" aria-label="Left" aria-describedby="ledCountLeft">
+                    <input type="text" class="form-control ledCount" data-property="vSectors" data-object="SystemData" aria-label="Left" aria-describedby="ledCountLeft">
                 </div>
             </div>
             <!-- CENTER MODE! -->
             <div class="col-12 col-sd-6 col-md-4 custom-control custom-switch pt-2 center">
-                <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="UseCenter"/>
+                <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="yseCenter"/>
                 <label class="custom-control-label">Include Center</label>
             </div>
 
@@ -600,7 +666,7 @@
             <span class="material-icons" id="refreshIcon">refresh</span>
         </div>
     </div>
-    <div id="statDiv" class="col-10 col-md-6 col-lg-3">
+    <div id="statDiv" class="col-10 col-md-6">
         <div class="d-inline-block mr-2" id="fpsDiv" data-toggle="tooltip" data-placement="top"
              title="Current FPS">
             <div id="fps" class="d-inline-block mb-2">0FPS</div>
@@ -609,9 +675,13 @@
             <span class="material-icons d-inline-block statIcon">thermostat</span>
             <div id="temperature" class="d-inline-block mb-2">0°</div>
         </div>
-        <div id="cpuDiv" class="d-inline-block" title="Average CPU load (all cores)" data-toggle="tooltip">
-            <span class="material-icons d-inline-block statIcon">multiline_chart</span>
+        <div id="cpuDiv" class="d-inline-block mr-2" title="Average CPU load (all cores)" data-toggle="tooltip">
+            <span class="material-icons d-inline-block statIcon">memory</span>
             <div id="cpuPct" class="d-inline-block mb-2">0%</div>
+        </div>
+        <div id="ramDiv" class="d-inline-block mr-2" title="Memory used percent." data-toggle="tooltip">
+            <span class="material-icons d-inline-block statIcon">straighten</span>
+            <div id="memPct" class="d-inline-block mb-2">0%</div>
         </div>
         <div id="throttleDiv" class="d-inline-block" title="System throttle state" data-toggle="tooltip">
             <span class="material-icons d-inline-block statIcon" id="overIcon"></span>
@@ -630,6 +700,45 @@
             <div class="modal-body row justify-content-center">
                 <div class="col-12 headerCol text-center">Click on the sector to map to a panel.</div>
                 <div class="nanoPreviewWrap col-12" id="nanoPreviewWrap">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal modal-scroll" tabindex="-1" id="logModal" role="dialog">
+    <div class="modal-dialog modal-lg modal-scroll" role="document">
+        <div class="modal-content modal-scroll">
+            <div class="modal-header row">
+                <h5 class="modal-title col-3">Log Viewer</h5>
+                <div class="col-6 row justify-content-center">
+                    <div class="btn-group btn-group-center">
+                        <div class="btn btn-clear active" data-toggle="tooltip" data-placement="top" title="Debug" onclick="toggleLog(this, 1)">
+                            <span>D</span>
+                        </div>
+                        <div class="btn btn-clear active" data-toggle="tooltip" data-placement="top" title="Info" onclick="toggleLog(this, 2)">
+                            <span>I</span>
+                        </div>
+                        <div class="btn btn-clear active" data-toggle="tooltip" data-placement="top" title="Warn" onclick="toggleLog(this, 3)">
+                            <span>W</span>
+                        </div>
+                        <div class="btn btn-clear active" data-toggle="tooltip" data-placement="top" title="Error" onclick="toggleLog(this, 4)">
+                            <span>E</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="btn-group float-right">
+                        <div class="btn btn-clear" onclick="clearLog()">
+                            <span class="material-icons">delete</span>
+                        </div>
+                        <div class="btn btn-clear" data-dismiss="modal" aria-label="Close">
+                            <span class="material-icons" aria-hidden="true">clear</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-body row justify-content-center modal-scroll">
+                <div class="modal-log col-12" id="logWrap">
                 </div>
             </div>
         </div>

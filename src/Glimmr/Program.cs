@@ -2,6 +2,7 @@
 
 using System.IO;
 using System.Runtime.InteropServices;
+using Glimmr.Hubs;
 using Glimmr.Models.Logging;
 using Glimmr.Models.Util;
 using Glimmr.Services;
@@ -41,7 +42,9 @@ namespace Glimmr {
 				.Filter.ByExcluding(c => c.Properties["Caller"].ToString().Contains("SerilogLogger"))
 				.Enrich.FromLogContext()
 				.WriteTo.Async(a =>
-					a.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: outputTemplate));
+					a.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: outputTemplate))
+				.WriteTo.SocketSink();
+
 			if (branch != "master") {
 				lc.MinimumLevel.Debug();
 			}

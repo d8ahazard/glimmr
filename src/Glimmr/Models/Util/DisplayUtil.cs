@@ -1,7 +1,6 @@
 ﻿#region
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
@@ -66,6 +65,10 @@ namespace Glimmr.Models.Util {
 				return GetLinuxDisplaySize();
 			}
 
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+				return GetOsxDisplaySize();
+			}
+
 			return new Rectangle();
 		}
 
@@ -80,7 +83,7 @@ namespace Glimmr.Models.Util {
 			// Enumerate system display devices
 			var devIdx = 0;
 			while (true) {
-				var deviceData = new DisplayDevice {cb = Marshal.SizeOf(typeof(DisplayDevice))};
+				var deviceData = new DisplayDevice { cb = Marshal.SizeOf(typeof(DisplayDevice)) };
 				if (EnumDisplayDevices(null, devIdx, ref deviceData, 0) != 0) {
 					// Get the position and size of this particular display device
 					var devMode = new DEVMODE();
@@ -111,7 +114,7 @@ namespace Glimmr.Models.Util {
 			var output = string.Empty;
 			try {
 				var p = new Process {
-					StartInfo = {UseShellExecute = false, RedirectStandardOutput = true, FileName = "xrandr"}
+					StartInfo = { UseShellExecute = false, RedirectStandardOutput = true, FileName = "xrandr" }
 				};
 				p.Start();
 				output = p.StandardOutput.ReadToEnd();
@@ -139,30 +142,53 @@ namespace Glimmr.Models.Util {
 			return r;
 		}
 
-		public static List<MonitorInfo> GetMonitors() {
-			var monitors = new List<MonitorInfo>();
-			if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-				return monitors;
-			}
-
-			var devIdx = 0;
-			while (true) {
-				var deviceData = new DisplayDevice {cb = Marshal.SizeOf(typeof(DisplayDevice))};
-				if (EnumDisplayDevices(null, devIdx, ref deviceData, 0) != 0) {
-					// Get the position and size of this particular display device
-					var devMode = new DEVMODE();
-					if (EnumDisplaySettings(deviceData.DeviceName, EnumCurrentSettings, ref devMode)) {
-						JsonConvert.SerializeObject(devMode);
-						monitors.Add(new MonitorInfo(deviceData, devMode));
+		private static Rectangle GetOsxDisplaySize() {
+			var r = new Rectangle();
+			var output = string.Empty;
+			try {
+				var p = new Process {
+					StartInfo = {
+						UseShellExecute = false,
+						RedirectStandardOutput = true,
+						FileName = "system_profiler",
+						Arguments = "SPDisplaysDataType"
 					}
-
-					devIdx++;
-				} else {
-					break;
+				};
+				p.Start();
+				string? standardOutput;
+				while ((standardOutput = p.StandardOutput.ReadLine()) != null) {
+					if (standardOutput.Contains("Resolution")) {
+						//do something
+						output = standardOutput;
+						break;
+					}
 				}
+
+				p.Dispose();
+			} catch (Exception e) {
+				Log.Warning("Exception getting screen size: " + e.Message);
 			}
 
-			return monitors;
+			if (string.IsNullOrEmpty(output)) {
+				return r;
+			}
+
+			try {
+				var splits1 = output.Split(": ");
+				if (splits1.Length > 1) {
+					var lines = splits1[1].Split(" ");
+					var w = lines[0];
+					var h = lines[2];
+					Log.Debug($"W {w} H: {h}");
+					r = new Rectangle(0, 0, int.Parse(w, CultureInfo.InvariantCulture),
+						int.Parse(h, CultureInfo.InvariantCulture));
+					Console.WriteLine("Display Size is {0} x {1}", w, h);
+				}
+			} catch (FormatException) {
+				//Log.Debug("Format exception, probably we have no screen.");
+			}
+
+			return r;
 		}
 
 		[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]

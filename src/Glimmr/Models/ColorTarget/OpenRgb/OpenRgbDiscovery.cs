@@ -28,11 +28,8 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 			try {
 				var sd = DataUtil.GetSystemData();
-				Log.Debug("Disco started...");
-
 				if (!_client.Connected) {
 					try {
-						Log.Debug("Trying connection...");
 						_client.Connect();
 					} catch (Exception e) {
 						Log.Debug("Error connecting to client, probably it doesn't exist: " + e.Message);
@@ -44,13 +41,19 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 					Log.Debug("Client connected.");
 					var devs = _client.GetDevices().ToArray();
 					var existing = DataUtil.GetDevices();
-					for (var i=0; i < devs.Length; i++) {
+					for (var i = 0; i < devs.Length; i++) {
 						var dev = devs[i];
 						var rd = new OpenRgbData(dev, i, sd.OpenRgbIp);
-						foreach (var od in from IColorTargetData ex in existing where ex.Id.Contains("OpenRgb") select (OpenRgbData) ex into od where od.Matches(dev) select od) {
+						foreach (var od in from IColorTargetData ex in existing
+						         where ex.Id.Contains("OpenRgb")
+						         select (OpenRgbData)ex
+						         into od
+						         where od.Matches(dev)
+						         select od) {
 							od.UpdateFromDiscovered(rd);
 							rd = od;
 						}
+
 						await _cs.UpdateDevice(rd).ConfigureAwait(false);
 					}
 				}

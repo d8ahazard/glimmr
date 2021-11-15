@@ -10,17 +10,18 @@ using Glimmr.Models.ColorSource.Video.Stream.Screen;
 using Glimmr.Models.ColorSource.Video.Stream.Usb;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Microsoft.Extensions.Hosting;
 using Serilog;
 
 #endregion
 
 namespace Glimmr.Models.ColorSource.Video {
-	public abstract class VideoStream : BackgroundService, IColorSource {
+	public class VideoStream : ColorSource {
 		// should we send them to devices?
 		public bool SendColors {
 			set => StreamSplitter.DoSend = value;
 		}
+
+		public override bool SourceActive => StreamSplitter.SourceActive;
 
 		public FrameSplitter StreamSplitter { get; }
 
@@ -39,22 +40,20 @@ namespace Glimmr.Models.ColorSource.Video {
 		public VideoStream(ColorService colorService) {
 			_systemData = DataUtil.GetSystemData();
 			colorService.ControlService.RefreshSystemEvent += RefreshSystem;
-			StreamSplitter = new FrameSplitter(colorService, true, "videoStream");
+			StreamSplitter = new FrameSplitter(colorService, true);
 		}
 
-		public Task ToggleStream(CancellationToken ct) {
-			//Log.Debug("Starting video stream service...");
+		public override Task Start(CancellationToken ct) {
+			Log.Debug("Enabling video stream service...");
 			SendColors = true;
 			StreamSplitter.DoSend = true;
 			return ExecuteAsync(ct);
 		}
 
-		public bool SourceActive => StreamSplitter.SourceActive;
-
-		private void RefreshSystem() {
+		public override void RefreshSystem() {
 			_systemData = DataUtil.GetSystemData();
-			_captureMode = (CaptureMode) _systemData.CaptureMode;
-			_camType = (CameraType) _systemData.CamType;
+			_captureMode = _systemData.CaptureMode;
+			_camType = _systemData.CamType;
 		}
 
 
@@ -62,8 +61,8 @@ namespace Glimmr.Models.ColorSource.Video {
 			return Task.Run(async () => {
 				SetCapVars();
 				_systemData = DataUtil.GetSystemData();
-				_captureMode = (CaptureMode) _systemData.CaptureMode;
-				_camType = (CameraType) _systemData.CamType;
+				_captureMode = _systemData.CaptureMode;
+				_camType = _systemData.CamType;
 				_vc = GetStream();
 				if (_vc == null) {
 					Log.Information("We have no video source, returning.");

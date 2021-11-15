@@ -70,7 +70,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 
 		private void NanoleafDiscovered(object? sender, ServiceInstanceDiscoveryEventArgs e) {
 			var name = e.ServiceInstanceName.ToString();
-			var nData = new NanoleafData {IpAddress = string.Empty};
+			var nData = new NanoleafData { IpAddress = string.Empty };
 			if (!name.Contains("nanoleafapi", StringComparison.InvariantCulture)) {
 				return;
 			}
@@ -125,7 +125,9 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf {
 						var nd = new NanoleafDevice(nData, _controlService.ColorService);
 						var layout = nd.GetLayout().Result;
 						nd.Dispose();
-						if (layout != null) nData.Layout = layout;
+						if (layout != null) {
+							nData.Layout = layout;
+						}
 					} catch (Exception f) {
 						Log.Debug("Exception: " + f.Message);
 					}

@@ -14,11 +14,24 @@ using Newtonsoft.Json;
 namespace Glimmr.Models.ColorTarget {
 	[Serializable]
 	public class TileLayout {
-		[JsonProperty] public int NumPanels { get; set; }
+		/// <summary>
+		///     Number of panels in the layout.
+		/// </summary>
+		[JsonProperty]
+		public int NumPanels { get; set; }
 
-		[JsonProperty] public int SideLength { get; set; }
+		/// <summary>
+		///     Length of sides of each panel. This is not used for shapes.
+		/// </summary>
+		[JsonProperty]
+		public int SideLength { get; set; }
 
-		[JsonProperty] public TileData[]? PositionData { get; set; }
+		/// <summary>
+		///     Array of position data for our tiles.
+		/// </summary>
+
+		[JsonProperty]
+		public TileData[]? PositionData { get; set; }
 
 		public TileLayout() {
 		}
@@ -74,28 +87,56 @@ namespace Glimmr.Models.ColorTarget {
 
 	[Serializable]
 	public class TileData {
-		[JsonProperty] public int O { get; set; }
+		/// <summary>
+		///     Orientation.
+		/// </summary>
+		[JsonProperty]
+		public int O { get; set; }
 
-		[JsonProperty] public int PanelId { get; set; }
+		/// <summary>
+		///     Panel ID.
+		/// </summary>
+		[JsonProperty]
+		public int PanelId { get; set; }
 
-		[JsonProperty] public int ShapeType { get; set; }
+		/// <summary>
+		///     What type of shape is this?
+		/// </summary>
+		[JsonProperty]
+		public int ShapeType { get; set; }
 
-		[JsonProperty] public int SideLength { get; set; }
+		/// <summary>
+		///     Length of panel sides.
+		/// </summary>
+		[JsonProperty]
+		public int SideLength { get; set; }
 
+		/// <summary>
+		///     The sector to use for streaming for this panel.
+		/// </summary>
 		[DefaultValue(-1)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int TargetSector { get; set; } = -1;
 
-		[JsonProperty] public int X { get; set; }
+		/// <summary>
+		///     Tile X position.
+		/// </summary>
+		[JsonProperty]
+		public int X { get; set; }
 
-		[JsonProperty] public int Y { get; set; }
+
+		/// <summary>
+		///     Tile Y position.
+		/// </summary>
+		[JsonProperty]
+		public int Y { get; set; }
 
 		public TileData() {
 		}
 
 		public TileData(Tile t, int index) {
-			X = (int) t.UserX;
-			Y = (int) t.UserY;
+			X = (int)t.UserX;
+			Y = (int)t.UserY;
 			PanelId = index;
 			ShapeType = 2;
 			SetSideLength();
@@ -111,21 +152,21 @@ namespace Glimmr.Models.ColorTarget {
 		}
 
 		private void SetSideLength() {
-			switch ((ShapeType) ShapeType) {
+			switch ((ShapeType)ShapeType) {
 				case Enums.ShapeType.Square:
 				case Enums.ShapeType.ControlSquareMaster:
 				case Enums.ShapeType.ControlSquarePassive:
-					SideLength = (int) ShapeSize.Square;
+					SideLength = (int)ShapeSize.Square;
 					break;
 				case Enums.ShapeType.Triangle:
-					SideLength = (int) ShapeSize.Triangle;
+					SideLength = (int)ShapeSize.Triangle;
 					break;
 				case Enums.ShapeType.HexagonShapes:
 				case Enums.ShapeType.MiniTriangleShapes:
-					SideLength = (int) ShapeSize.HexagonShapes;
+					SideLength = (int)ShapeSize.HexagonShapes;
 					break;
 				case Enums.ShapeType.TriangleShapes:
-					SideLength = (int) ShapeSize.TriangleShapes;
+					SideLength = (int)ShapeSize.TriangleShapes;
 					break;
 				default:
 					SideLength = 0;

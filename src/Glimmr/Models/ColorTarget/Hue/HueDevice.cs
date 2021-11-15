@@ -56,23 +56,11 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 
 
-		public HueDevice(HueData data) {
-			DataUtil.GetItem<int>("captureMode");
-			Data = data;
-			_lightMappings = Data.MappedLights;
-			Id = Data.Id;
-			_ipAddress = Data.IpAddress;
-			_targets = new Dictionary<string, int>();
-			_disposed = false;
-			Streaming = false;
-			SetData();
-		}
-
 		public bool Enable { get; set; }
 
 		IColorTargetData IColorTarget.Data {
 			get => Data;
-			set => Data = (HueData) value;
+			set => Data = (HueData)value;
 		}
 
 		public bool Testing { get; set; }
@@ -117,7 +105,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			}
 
 			Log.Debug($"{Data.Tag}::Starting stream: {Data.Id}...");
-
+			ColorService.StartCounter++;
 			//Initialize streaming client
 			_client = new StreamingHueClient(_ipAddress, _user, _token);
 
@@ -167,6 +155,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 			//Start auto updating this entertainment group
 			_updateTask = _client.AutoUpdate(entGroup, ct, 60);
 			Log.Debug($"{Data.Tag}::Stream started: {Data.Id}");
+			ColorService.StartCounter--;
 			Streaming = true;
 		}
 
@@ -189,21 +178,22 @@ namespace Glimmr.Models.ColorTarget.Hue {
 		}
 
 
-		public Task StopStream() {
+		public async Task StopStream() {
 			if (!Enable || !Streaming) {
-				return Task.CompletedTask;
+				return;
 			}
 
 			if (_client == null || _selectedGroup == null) {
 				Log.Warning("Client or group are null, can't stop stream.");
-				return Task.CompletedTask;
+				return;
 			}
 
-			_client.LocalHueClient.SetStreamingAsync(_selectedGroup, false);
+			Log.Debug($"{Data.Tag}::Stopping stream...{Data.Id}.");
+			ColorService.StopCounter++;
+			await _client.LocalHueClient.SetStreamingAsync(_selectedGroup, false);
 			_client.Close();
 			Log.Debug($"{Data.Tag}::Stream stopped: {Data.Id}");
-
-			return Task.CompletedTask;
+			ColorService.StopCounter--;
 		}
 
 		private Task SetColors(object sender, ColorSendEventArgs args) {
@@ -254,7 +244,7 @@ namespace Glimmr.Models.ColorTarget.Hue {
 				}
 			}
 
-			ColorService?.Counter.Tick(Id);
+			ColorService.Counter.Tick(Id);
 		}
 
 

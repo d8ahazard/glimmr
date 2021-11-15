@@ -18,15 +18,12 @@ namespace Glimmr.Models.ColorTarget.Led {
 		public LedDevice(LedData ld, ColorService cs) : base(cs) {
 			_data = ld;
 			Id = _data.Id;
+
+			_agent = cs.ControlService.GetAgent("LedAgent");
+
 			// We only bind and create agent for LED device 0, regardless of which one is enabled.
 			// The agent will handle all the color stuff for both strips.
 			if (Id == "1") {
-				return;
-			}
-
-			_agent = cs.ControlService.GetAgent("LedAgent");
-			if (_agent == null) {
-				Log.Warning("Unable to get LED agent.");
 				return;
 			}
 
@@ -42,7 +39,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 
 		IColorTargetData IColorTarget.Data {
 			get => _data;
-			set => _data = (LedData) value;
+			set => _data = (LedData)value;
 		}
 
 		public async Task StartStream(CancellationToken ct) {
@@ -55,10 +52,13 @@ namespace Glimmr.Models.ColorTarget.Led {
 				return;
 			}
 
+			_agent?.ReloadData();
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
+			ColorService.StartCounter++;
 			Streaming = true;
 			await Task.FromResult(Streaming);
 			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
+			ColorService.StartCounter--;
 		}
 
 		public async Task StopStream() {
@@ -66,9 +66,12 @@ namespace Glimmr.Models.ColorTarget.Led {
 				return;
 			}
 
-			await StopLights().ConfigureAwait(false);
+			Log.Debug($"{_data.Tag}::Stopping stream...{_data.Id}.");
+			ColorService.StopCounter++;
+			await StopLights();
 			Streaming = false;
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
+			ColorService.StopCounter--;
 		}
 
 
@@ -83,6 +86,11 @@ namespace Glimmr.Models.ColorTarget.Led {
 		}
 
 		public Task ReloadData() {
+			Log.Debug("Reload triggered for " + Id);
+			if (Id == "1") {
+				return Task.CompletedTask;
+			}
+
 			_agent?.ReloadData();
 			return Task.CompletedTask;
 		}
@@ -106,7 +114,7 @@ namespace Glimmr.Models.ColorTarget.Led {
 				return;
 			}
 
-			ColorService?.Counter.Tick(Id);
+			ColorService.Counter.Tick(Id);
 		}
 
 

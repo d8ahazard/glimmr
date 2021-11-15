@@ -40,7 +40,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			_gammaTable = GenerateGammaTable(_data.GammaCorrection);
 			_client = cs.ControlService.GetAgent("LifxAgent");
 			cs.ControlService.RefreshSystemEvent += LoadData;
-			B = new Device(d.HostName, d.MacAddress, d.Service, (uint) d.Port);
+			B = new Device(d.HostName, d.MacAddress, d.Service, (uint)d.Port);
 			LoadData();
 			cs.ColorSendEventAsync += SetColors;
 		}
@@ -53,7 +53,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 
 		IColorTargetData IColorTarget.Data {
 			get => _data;
-			set => _data = (LifxData) value;
+			set => _data = (LifxData)value;
 		}
 
 
@@ -67,6 +67,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			}
 
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
+			ColorService.StartCounter++;
 			var col = new LifxColor(0, 0, 0);
 
 			await _client.SetLightPowerAsync(B, true).ConfigureAwait(false);
@@ -74,6 +75,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			Streaming = true;
 			await Task.FromResult(Streaming);
 			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
+			ColorService.StartCounter--;
 		}
 
 		public async Task FlashColor(Color color) {
@@ -98,10 +100,12 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			}
 
 			Log.Information($"{_data.Tag}::Stopping stream.: {_data.Id}...");
+			ColorService.StopCounter++;
 			var col = new LifxColor(0, 0, 0);
-			await _client.SetLightPowerAsync(B, false).ConfigureAwait(false);
-			await _client.SetColorAsync(B, col, 2700).ConfigureAwait(false);
+			await _client.SetLightPowerAsync(B, false);
+			await _client.SetColorAsync(B, col, 2700);
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
+			ColorService.StopCounter--;
 		}
 
 
@@ -135,14 +139,14 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				await SetColorSingle(list);
 			}
 
-			ColorService?.Counter.Tick(Id);
+			ColorService.Counter.Tick(Id);
 		}
 
 		private static int[] GenerateGammaTable(double gamma = 2.3, int maxOut = 255) {
 			const int maxIn = 255;
 			var output = new int[256];
 			for (var i = 0; i <= maxIn; i++) {
-				output[i] = (int) (Math.Pow((float) i / maxIn, gamma) * maxOut);
+				output[i] = (int)(Math.Pow((float)i / maxIn, gamma) * maxOut);
 			}
 
 			return output;
@@ -208,7 +212,13 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 				output.AddRange(segColors);
 			}
 
-			var cols = (from col in output let ar = _gammaTable[col.R] let ag = _gammaTable[col.G] let ab = _gammaTable[col.B] select Color.FromArgb(ar, ag, ab) into color select new LifxColor(color, _brightness / 255f) { Kelvin = 7000 }).ToList();
+			var cols = (from col in output
+				let ar = _gammaTable[col.R]
+				let ag = _gammaTable[col.G]
+				let ab = _gammaTable[col.B]
+				select Color.FromArgb(ar, ag, ab)
+				into color
+				select new LifxColor(color, _brightness / 255f) { Kelvin = 7000 }).ToList();
 
 			await _client.SetExtendedColorZonesAsync(B, cols, 5);
 		}
@@ -228,7 +238,7 @@ namespace Glimmr.Models.ColorTarget.Lifx {
 			var nC = new LifxColor(input);
 
 			await _client.SetColorAsync(B, nC);
-			ColorService?.Counter.Tick(Id);
+			ColorService.Counter.Tick(Id);
 		}
 	}
 }

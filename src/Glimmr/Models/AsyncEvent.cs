@@ -61,7 +61,9 @@ namespace Glimmr.Models {
 				tmpInvocationList = new List<Func<object, TEventArgs, Task>>(_invocationList);
 			}
 
-			var tasks = (from callback in tmpInvocationList where sender != null && eventArgs != null select callback.Invoke(sender, eventArgs)).ToList();
+			var tasks = (from callback in tmpInvocationList
+				where sender != null && eventArgs != null
+				select callback.Invoke(sender, eventArgs)).ToList();
 
 			await Task.WhenAll(tasks);
 		}

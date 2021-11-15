@@ -10,13 +10,14 @@ using DreamScreenNet.Enum;
 using Glimmr.Models.ColorTarget.DreamScreen;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Microsoft.Extensions.Hosting;
 using Serilog;
+using GlimmrMode = Glimmr.Enums.DeviceMode;
 
 #endregion
 
 namespace Glimmr.Models.ColorSource.DreamScreen {
-	public class DreamScreenStream : BackgroundService, IColorSource {
+	public class DreamScreenStream : ColorSource {
+		public override bool SourceActive => _splitter.SourceActive;
 		private const int TargetGroup = 20;
 		private readonly FrameBuilder _builder;
 		private readonly DreamScreenClient? _client;
@@ -34,14 +35,14 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 				_client.CommandReceived += ProcessCommand;
 			}
 
-			var rect = new[] {3, 3, 5, 5};
+			var rect = new[] { 3, 3, 5, 5 };
 			_builder = new FrameBuilder(rect, true);
-			_splitter = new FrameSplitter(colorService, false, "dreamscreenStream");
+			_splitter = new FrameSplitter(colorService);
 			_cs.ControlService.RefreshSystemEvent += RefreshSystem;
 			RefreshSystem();
 		}
 
-		public Task ToggleStream(CancellationToken ct) {
+		public override Task Start(CancellationToken ct) {
 			if (_client == null || _dDev == null || _targetDreamScreen == null) {
 				return Task.CompletedTask;
 			}
@@ -55,22 +56,19 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 			return ExecuteAsync(ct);
 		}
 
-		public bool SourceActive => _splitter.SourceActive;
 
-
-		private void RefreshSystem() {
+		public sealed override void RefreshSystem() {
 			var systemData = DataUtil.GetSystemData();
 			var dsIp = systemData.DsIp;
 			// If our DS IP is null, pick one.
 			if (string.IsNullOrEmpty(dsIp)) {
 				var devs = DataUtil.GetDevices();
 				foreach (var dd in from dev in devs
-					where dev.Tag == "DreamScreen"
-					select (DreamScreenData) dev
-					into dd
-					where dd.DeviceTag.Contains("DreamScreen")
-					select dd) {
-					Log.Debug("No target set, setting to " + dd.IpAddress);
+				         where dev.Tag == "DreamScreen"
+				         select (DreamScreenData)dev
+				         into dd
+				         where dd.DeviceTag.Contains("DreamScreen")
+				         select dd) {
 					systemData.DsIp = dd.IpAddress;
 					DataUtil.SetSystemData(systemData);
 					dsIp = dd.IpAddress;
@@ -84,7 +82,7 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 
 			var dsData = DataUtil.GetDevice<DreamScreenData>(dsIp);
 			if (dsData != null) {
-				_dDev = new DreamDevice {DeviceGroup = dsData.GroupNumber};
+				_dDev = new DreamDevice { DeviceGroup = dsData.GroupNumber };
 				_dDev.Type = dsData.DeviceTag switch {
 					"DreamScreenHd" => DeviceType.DreamScreenHd,
 					"DreamScreen4K" => DeviceType.DreamScreen4K,
@@ -106,16 +104,22 @@ namespace Glimmr.Models.ColorSource.DreamScreen {
 			if (e.Response.Group == TargetGroup || e.Response.Group == _dDev.DeviceGroup) {
 				switch (e.Response.Type) {
 					case MessageType.Mode:
-						var mode = int.Parse(e.Response.Payload.ToString());
-						if (mode == 1) {
-							mode = 5; // Video = streaming
+						var mode = (DeviceMode)int.Parse(e.Response.Payload.ToString());
+						if (mode == DeviceMode.Video || mode == DeviceMode.Ambient) {
+							_cs.ControlService.SetMode(GlimmrMode.DreamScreen).ConfigureAwait(false);
 						}
 
-						Log.Debug("Toggle mode: " + mode);
-						_cs.ControlService.SetMode(mode).ConfigureAwait(false);
+						if (mode == DeviceMode.Ambient) {
+							_cs.ControlService.SetMode(GlimmrMode.Ambient).ConfigureAwait(false);
+						}
+
+						if (mode == DeviceMode.Off) {
+							_cs.ControlService.SetMode(GlimmrMode.Off).ConfigureAwait(false);
+						}
+
 						break;
 					case MessageType.AmbientModeType:
-						_cs.ControlService.SetMode(3).ConfigureAwait(false);
+						_cs.ControlService.SetMode(GlimmrMode.Ambient).ConfigureAwait(false);
 						break;
 				}
 			} else {

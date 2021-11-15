@@ -69,10 +69,10 @@ namespace Glimmr.Models {
 			var lHeight = (int)Math.Round((float)ScaleHeight / _leftCount, MidpointRounding.AwayFromZero);
 			var lWidth = ScaleWidth / (_leftCount - 5);
 			var bWidth = (int)Math.Round((float)ScaleWidth / _bottomCount, MidpointRounding.AwayFromZero);
-			var bHeight = ScaleHeight /  (_bottomCount - 5);
+			var bHeight = ScaleHeight / (_bottomCount - 5);
 			var rHeight = (int)Math.Round((float)ScaleHeight / _rightCount, MidpointRounding.AwayFromZero);
 			var rWidth = ScaleWidth / (_rightCount - 5);
-			
+
 			// These are based on the border/strip values
 			// Minimum limits for top, bottom, left, right            
 			const int minTop = 0;
@@ -86,19 +86,30 @@ namespace Glimmr.Models {
 			while (step > 0) {
 				var ord = step * rHeight;
 				var h = ord + rHeight > ScaleWidth ? ScaleWidth - ord : rHeight;
-				if (max == 0 && width >= ScaleWidth / 2) max = step;
+				if (max == 0 && width >= ScaleWidth / 2) {
+					max = step;
+				}
+
 				if (rev) {
 					width -= rWidth;
 				} else {
 					width += rWidth;
 				}
+
 				var right = ScaleWidth - width;
 				fs[idx] = new Rectangle(right, ord, width, h);
-				if (max != 0 && _rightCount - max == step) rev = true;
-				if (width < rHeight) width = rHeight;
+				if (max != 0 && _rightCount - max == step) {
+					rev = true;
+				}
+
+				if (width < rHeight) {
+					width = rHeight;
+				}
+
 				if (width > ScaleWidth / 2) {
 					width = ScaleWidth / 2;
 				}
+
 				idx++;
 				step--;
 			}
@@ -110,19 +121,30 @@ namespace Glimmr.Models {
 			max = -1;
 			while (step > 0) {
 				var ord = step * tWidth;
-				if (max == -1 && height >= ScaleHeight / 2) max = step;
+				if (max == -1 && height >= ScaleHeight / 2) {
+					max = step;
+				}
+
 				if (rev) {
 					height -= tHeight;
 				} else {
 					height += tHeight;
 				}
-				var w = ord + tWidth > ScaleWidth ? ScaleWidth - ord : tWidth;
-				fs[idx] = new Rectangle(ord, minTop,w, height);
-				
-				if (max != -1 && _topCount - max == step) rev = true;
 
-				if (height > ScaleHeight / 2) height = ScaleHeight / 2;
-				if (height < tHeight) height = tHeight;
+				var w = ord + tWidth > ScaleWidth ? ScaleWidth - ord : tWidth;
+				fs[idx] = new Rectangle(ord, minTop, w, height);
+
+				if (max != -1 && _topCount - max == step) {
+					rev = true;
+				}
+
+				if (height > ScaleHeight / 2) {
+					height = ScaleHeight / 2;
+				}
+
+				if (height < tHeight) {
+					height = tHeight;
+				}
 
 				idx++;
 				step--;
@@ -136,17 +158,33 @@ namespace Glimmr.Models {
 			while (step < _leftCount) {
 				var ord = step * lHeight;
 				var h = ord + lHeight > ScaleHeight ? ScaleHeight - ord : lHeight;
-				if (max == -1 && width >= ScaleWidth / 2) max = step;
+				if (max == -1 && width >= ScaleWidth / 2) {
+					max = step;
+				}
+
 				if (rev) {
 					width -= lWidth;
 				} else {
 					width += lWidth;
 				}
-				if (step == _leftCount - 1) width = lHeight;
+
+				if (step == _leftCount - 1) {
+					width = lHeight;
+				}
+
 				fs[idx] = new Rectangle(minLeft, ord, width, h);
-				if (max != -1 && max == _leftCount - step + 1) rev = true;
-				if (width > ScaleWidth / 2) width = ScaleWidth / 2;
-				if (width < lHeight) width = lWidth;
+				if (max != -1 && max == _leftCount - step + 1) {
+					rev = true;
+				}
+
+				if (width > ScaleWidth / 2) {
+					width = ScaleWidth / 2;
+				}
+
+				if (width < lHeight) {
+					width = lWidth;
+				}
+
 				idx++;
 				step++;
 			}
@@ -158,23 +196,39 @@ namespace Glimmr.Models {
 			// Calc bottom center regions (L-R)
 			while (step < _bottomCount) {
 				var ord = step * bWidth;
-				if (max == -1 && height >= ScaleHeight / 2) max = step;
+				if (max == -1 && height >= ScaleHeight / 2) {
+					max = step;
+				}
+
 				if (rev) {
 					height -= bHeight;
 				} else {
 					height += bHeight;
 				}
+
 				var bottom = ScaleHeight - height;
 				var w = ord + bWidth > ScaleWidth ? ScaleWidth - ord : bWidth;
-				if (step == _bottomCount - 1) height = bWidth;
+				if (step == _bottomCount - 1) {
+					height = bWidth;
+				}
+
 				fs[idx] = new Rectangle(ord, bottom, w, height);
-				if (max != -1 && max == _bottomCount - step - 1)  rev = true;
-				if (height > ScaleHeight / 2) height = ScaleHeight / 2;
-				if (height < bWidth) height = bWidth;
-				
+				if (max != -1 && max == _bottomCount - step - 1) {
+					rev = true;
+				}
+
+				if (height > ScaleHeight / 2) {
+					height = ScaleHeight / 2;
+				}
+
+				if (height < bWidth) {
+					height = bWidth;
+				}
+
 				idx++;
 				step += 1;
 			}
+
 			return fs;
 		}
 

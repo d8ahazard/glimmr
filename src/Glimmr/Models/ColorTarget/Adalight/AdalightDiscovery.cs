@@ -53,7 +53,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 					}
 
 
-					var data = new AdalightData(key, count) {Speed = baud};
+					var data = new AdalightData(key, count) { Speed = baud };
 					Log.Debug("Creating device.");
 					if (bri != 0) {
 						data.Brightness = bri;
@@ -101,7 +101,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 						Log.Debug($"Unable to open port {portName}.");
 					}
 				} catch (Exception ex) {
-					Log.Warning($"Exception testing port {portName}: " + ex.Message + " at " + ex.StackTrace);
+					Log.Warning($"Exception testing port {portName}: " + ex.Message);
 				}
 			}
 

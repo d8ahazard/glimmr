@@ -2,12 +2,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Glimmr.Enums;
 using Glimmr.Models;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.AspNetCore.SignalR;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
 
@@ -15,15 +16,18 @@ using Serilog;
 
 namespace Glimmr.Hubs {
 	public class SocketServer : Hub {
+		private static Dictionary<string, bool> _states = new();
 		private readonly ControlService _cs;
+		private bool _doSend;
 
 
 		public SocketServer(ControlService cs) {
 			_cs = cs;
+			_states = new Dictionary<string, bool>();
 		}
 
-		public async Task Mode(int mode) {
-			Log.Debug("Mode set to: " + mode);
+
+		public async Task Mode(DeviceMode mode) {
 			try {
 				await _cs.SetMode(mode);
 			} catch (Exception e) {
@@ -31,8 +35,8 @@ namespace Glimmr.Hubs {
 			}
 		}
 
+
 		public async Task ScanDevices() {
-			Log.Debug("Scan called from socket!");
 			await _cs.ScanDevices();
 		}
 
@@ -41,12 +45,11 @@ namespace Glimmr.Hubs {
 			await _cs.AuthorizeDevice(id, sender);
 		}
 
-		public async Task LoadData() {
-			await Clients.Caller.SendAsync("olo", DataUtil.GetStoreSerialized());
+		public async Task Store() {
+			await Clients.Caller.SendAsync("olo", DataUtil.GetStoreSerialized(_cs));
 		}
 
 		public async Task DeleteDevice(string id) {
-			Log.Debug("Deleting device: " + id);
 			await _cs.RemoveDevice(id).ConfigureAwait(false);
 		}
 
@@ -55,14 +58,13 @@ namespace Glimmr.Hubs {
 			var sd2 = sdd.ToObject<SystemData>();
 			try {
 				await _cs.UpdateSystem(sd2).ConfigureAwait(false);
-				await Clients.Others.SendAsync("olo", DataUtil.GetStoreSerialized());
+				//await Clients.Others.SendAsync("olo", DataUtil.GetStoreSerialized());
 			} catch (Exception e) {
 				Log.Warning("Exception updating SD: " + e.Message + " at " + e.StackTrace);
 			}
 		}
 
 		public async Task DemoLed(string id) {
-			Log.Debug("We should demo a strip here.");
 			await _cs.DemoLed(id).ConfigureAwait(false);
 		}
 
@@ -72,8 +74,9 @@ namespace Glimmr.Hubs {
 
 		public async Task UpdateDevice(string deviceJson) {
 			var device = JObject.Parse(deviceJson);
-			var cTag = device.GetValue("Tag");
+			var cTag = device.GetValue("tag");
 			if (cTag == null) {
+				Log.Warning("Unable to get tag.");
 				return;
 			}
 
@@ -88,23 +91,32 @@ namespace Glimmr.Hubs {
 			}
 		}
 
-		public async Task Monitors(string deviceArray) {
-			Log.Debug("Mon string: " + deviceArray);
-			var monitors = JsonConvert.DeserializeObject<List<MonitorInfo>>(deviceArray);
-			if (monitors == null) {
-				return;
-			}
-
-			foreach (var mon in monitors) {
-				Log.Debug("Inserting monitor: " + JsonConvert.SerializeObject(mon));
-				await DataUtil.InsertCollection<MonitorInfo>("Dev_Video", mon);
-			}
-
-			await _cs.UpdateSystem();
-		}
-
 		public async Task FlashDevice(string deviceId) {
 			await _cs.FlashDevice(deviceId);
+		}
+
+		public Task SettingsShown(bool open) {
+			var client = Context.ConnectionId;
+			if (client == null) {
+				Log.Warning("Unable to get client identity...");
+				return Task.CompletedTask;
+			}
+
+			_states[client] = open;
+			if (open) {
+				Log.Debug("Open client: " + client);
+			} else {
+				Log.Debug("Close client: " + client);
+			}
+
+			SetSend();
+			return Task.CompletedTask;
+		}
+
+		private void SetSend() {
+			var send = _states.Any(state => state.Value);
+			_doSend = send;
+			_cs.SendPreview = _doSend;
 		}
 
 		public async Task FlashSector(int sector) {
@@ -122,14 +134,23 @@ namespace Glimmr.Hubs {
 		}
 
 
-		public override Task OnConnectedAsync() {
+		public override async Task OnConnectedAsync() {
 			try {
-				Clients.Caller.SendAsync("olo", DataUtil.GetStoreSerialized());
+				_states[Context.ConnectionId] = false;
+				SetSend();
+				Log.Debug("Connected: " + Context.ConnectionId);
+				await Clients.Caller.SendAsync("olo", DataUtil.GetStoreSerialized(_cs));
 			} catch (Exception) {
 				// Ignored
 			}
 
-			return base.OnConnectedAsync();
+			await base.OnConnectedAsync();
+		}
+
+		public override Task OnDisconnectedAsync(Exception? exception) {
+			_states.Remove(Context.ConnectionId);
+			SetSend();
+			return base.OnDisconnectedAsync(exception);
 		}
 	}
 }

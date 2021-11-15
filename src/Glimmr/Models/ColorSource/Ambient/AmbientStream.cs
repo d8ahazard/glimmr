@@ -9,20 +9,19 @@ using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Microsoft.Extensions.Hosting;
-using Newtonsoft.Json;
 using Serilog;
 
 #endregion
 
 namespace Glimmr.Models.ColorSource.Ambient {
-	public class AmbientStream : BackgroundService, IColorSource {
+	public class AmbientStream : ColorSource {
+		public override bool SourceActive => _splitter.SourceActive;
 		private const int SectorCount = 116;
 		private readonly Random _random;
 		private readonly FrameSplitter _splitter;
 		private readonly Stopwatch _watch;
 		private string _ambientColor;
-		private int _ambientShow;
+		private int _ambientScene;
 		private double _animationTime;
 		private FrameBuilder? _builder;
 		private int _colorIndex;
@@ -44,36 +43,31 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			_random = new Random();
 			_loader = new JsonLoader("ambientScenes");
 			_scenes = _loader.LoadFiles<AmbientScene>();
-			_splitter = new FrameSplitter(colorService, false, "ambientStream");
+			_splitter = new FrameSplitter(colorService);
 			colorService.ControlService.RefreshSystemEvent += RefreshSystem;
 		}
 
-		public bool SourceActive => _splitter.SourceActive;
 
-
-		public Task ToggleStream(CancellationToken ct) {
+		public override Task Start(CancellationToken ct) {
 			Log.Debug("Starting ambient stream...");
 			return ExecuteAsync(ct);
 		}
 
-		private void RefreshSystem() {
-			Log.Debug("No, really, refreshing system.");
+		public override void RefreshSystem() {
 			var sd = DataUtil.GetSystemData();
-			_ambientShow = sd.AmbientShow;
+			_ambientScene = sd.AmbientScene;
 			_ambientColor = sd.AmbientColor;
-			var dims = new[] {20, 20, 40, 40};
+			var dims = new[] { 20, 20, 40, 40 };
 			_builder = new FrameBuilder(dims, true);
 			_loader ??= new JsonLoader("ambientScenes");
 			_scenes = _loader.LoadFiles<AmbientScene>();
 			var scene = new AmbientScene();
-			Log.Debug($"Loading ambient show {_ambientShow}");
-			foreach (var s in _scenes.Where(s => s.Id == _ambientShow)) {
+			foreach (var s in _scenes.Where(s => s.Id == _ambientScene)) {
 				scene = s;
-				Log.Debug("Scene: " + JsonConvert.SerializeObject(s));
 			}
 
-			if (_ambientShow == -1) {
-				scene.Colors = new[] {"#" + _ambientColor};
+			if (_ambientScene == -1) {
+				scene.Colors = new[] { "#" + _ambientColor };
 			}
 
 
@@ -95,7 +89,6 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
 			if (scene.Mode != null) {
 				_mode = Enum.Parse<AnimationMode>(scene.Mode);
-				Log.Debug($"Scene mode {_mode} is {scene.Mode}");
 			} else {
 				Log.Warning("Unable to parse scene mode: ");
 			}
@@ -108,8 +101,14 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			RefreshSystem();
 			_splitter.DoSend = true;
 			return Task.Run(async () => {
+				var watch = new Stopwatch();
+				watch.Start();
 				// Load this one for fading
 				while (!ct.IsCancellationRequested) {
+					if (watch.ElapsedMilliseconds <= 6) {
+						continue;
+					}
+
 					var elapsed = _watch.ElapsedMilliseconds;
 					var diff = _animationTime - elapsed;
 					var sectors = new Color[SectorCount];
@@ -158,8 +157,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 						Log.Warning("EX: " + e.Message);
 					}
 
-					//await Task.Delay(TimeSpan.FromTicks(166666), CancellationToken.None);
-					
+					watch.Restart();
 				}
 
 				_watch.Stop();
@@ -170,9 +168,9 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
 
 		private static Color BlendColor(Color target, Color dest, double percent) {
-			var r1 = (int) ((target.R - dest.R) * percent) + dest.R;
-			var g1 = (int) ((target.G - dest.G) * percent) + dest.G;
-			var b1 = (int) ((target.B - dest.B) * percent) + dest.B;
+			var r1 = (int)((target.R - dest.R) * percent) + dest.R;
+			var g1 = (int)((target.G - dest.G) * percent) + dest.G;
+			var b1 = (int)((target.B - dest.B) * percent) + dest.B;
 			r1 = r1 > 255 ? 255 : r1 < 0 ? 0 : r1;
 			g1 = g1 > 255 ? 255 : g1 < 0 ? 0 : g1;
 			b1 = b1 > 255 ? 255 : b1 < 0 ? 0 : b1;
@@ -231,7 +229,6 @@ namespace Glimmr.Models.ColorSource.Ambient {
 					break;
 				case AnimationMode.RandomAll:
 					var col = input[rand];
-					Log.Debug("Setting random color to: " + col);
 					for (var i = 0; i < SectorCount; i++) {
 						output[i] = col;
 					}
@@ -245,7 +242,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 					_colorIndex = CycleInt(_colorIndex, max);
 					break;
 				default:
-					Log.Debug("Unknown animation mode: " + _mode);
+					Log.Warning("Unknown animation mode: " + _mode);
 					break;
 			}
 

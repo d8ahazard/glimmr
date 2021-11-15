@@ -1,16 +1,19 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Drawing;
 using System.Linq;
 
+#endregion
+
 namespace Glimmr.Models.ColorSource.UDP {
 	public class ColorPacket {
-		
 		public Color[] Colors { get; private set; }
 
-		private UdpStreamMode UdpStreamMode { get; set; }
-		
 		public int Duration { get; private set; }
-		
+
+		private UdpStreamMode UdpStreamMode { get; set; }
+
 		public ColorPacket(Color[] colors, UdpStreamMode mode = UdpStreamMode.Drgb) {
 			UdpStreamMode = mode;
 			Colors = colors;
@@ -22,7 +25,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 		}
 
 		public byte[] Encode(int duration = 1) {
-			var header = new[] {(byte)UdpStreamMode, (byte)duration};
+			var header = new[] { (byte)UdpStreamMode, (byte)duration };
 			var data = Array.Empty<byte>();
 			Duration = duration;
 			data = UdpStreamMode switch {
@@ -44,6 +47,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 				output[i + 2] = Colors[i].G;
 				output[i + 3] = Colors[i].B;
 			}
+
 			return output;
 		}
 
@@ -52,9 +56,9 @@ namespace Glimmr.Models.ColorSource.UDP {
 			var dIdx = 0;
 			foreach (var color in Colors) {
 				output[dIdx] = color.R;
-				output[dIdx+1] = color.G;
-				output[dIdx+2] = color.B;
-				output[dIdx+3] = color.A;
+				output[dIdx + 1] = color.G;
+				output[dIdx + 2] = color.B;
+				output[dIdx + 3] = color.A;
 				dIdx += 4;
 			}
 
@@ -63,7 +67,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 
 		private byte[] EncodeDnrgb() {
 			var data = new byte[Colors.Length * 3 + 2];
-			var len = BitConverter.GetBytes((short) Colors.Length);
+			var len = BitConverter.GetBytes((short)Colors.Length);
 			data[0] = len[0];
 			data[1] = len[1];
 			var dIdx = 2;
@@ -73,6 +77,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 				data[dIdx + 2] = color.B;
 				dIdx += 3;
 			}
+
 			return data;
 		}
 
@@ -85,6 +90,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 				output[oIdx + 2] = t.B;
 				oIdx += 3;
 			}
+
 			return output;
 		}
 
@@ -92,7 +98,8 @@ namespace Glimmr.Models.ColorSource.UDP {
 			if (input.Length < 2) {
 				throw new ArgumentOutOfRangeException(nameof(input));
 			}
-			UdpStreamMode = (UdpStreamMode) input[0];
+
+			UdpStreamMode = (UdpStreamMode)input[0];
 			Duration = input[1];
 			switch (UdpStreamMode) {
 				case UdpStreamMode.Drgb:
@@ -113,7 +120,10 @@ namespace Glimmr.Models.ColorSource.UDP {
 		}
 
 		private void DecodeWarls(byte[] input) {
-			if (input.Length % 4 != 0) throw new ArgumentOutOfRangeException(nameof(input));
+			if (input.Length % 4 != 0) {
+				throw new ArgumentOutOfRangeException(nameof(input));
+			}
+
 			var index = 0;
 			for (var i = 0; i < input.Length; i += 4) {
 				index = Math.Max(input[i], index);
@@ -121,7 +131,7 @@ namespace Glimmr.Models.ColorSource.UDP {
 
 			if (Colors.Length < index + 1) {
 				var col = Colors;
-				Array.Resize(ref col,index + 1);
+				Array.Resize(ref col, index + 1);
 				Colors = col;
 			}
 
@@ -131,11 +141,14 @@ namespace Glimmr.Models.ColorSource.UDP {
 		}
 
 		private void DecodeDrgbw(byte[] input) {
-			if (input.Length % 4 != 0) throw new ArgumentOutOfRangeException(nameof(input));
+			if (input.Length % 4 != 0) {
+				throw new ArgumentOutOfRangeException(nameof(input));
+			}
+
 			Colors = new Color[input.Length / 4];
 			var cIdx = 0;
 			for (var i = 0; i < input.Length; i += 4) {
-				Colors[cIdx] = Color.FromArgb(input[i+3],input[i], input[i + 1], input[i + 2]);
+				Colors[cIdx] = Color.FromArgb(input[i + 3], input[i], input[i + 1], input[i + 2]);
 				cIdx++;
 			}
 		}
@@ -144,14 +157,18 @@ namespace Glimmr.Models.ColorSource.UDP {
 			var hi = toArray[0];
 			var lo = toArray[1];
 			var input = toArray.Skip(2).ToArray();
-			if (input.Length % 3 != 0) throw new ArgumentOutOfRangeException(nameof(toArray));
-			var start = BitConverter.ToInt16(new[] {hi, lo});
+			if (input.Length % 3 != 0) {
+				throw new ArgumentOutOfRangeException(nameof(toArray));
+			}
+
+			var start = BitConverter.ToInt16(new[] { hi, lo });
 			var len = start + input.Length / 3;
 			var cols = Colors;
 			if (cols.Length > len) {
 				Array.Resize(ref cols, len);
 				Colors = cols;
 			}
+
 			var cIdx = start;
 			for (var i = 0; i < input.Length; i += 3) {
 				Colors[cIdx] = Color.FromArgb(input[i], input[i + 1], input[i + 2]);
@@ -160,7 +177,10 @@ namespace Glimmr.Models.ColorSource.UDP {
 		}
 
 		private void DecodeDrgb(byte[] input) {
-			if (input.Length % 3 != 0) throw new ArgumentOutOfRangeException(nameof(input));
+			if (input.Length % 3 != 0) {
+				throw new ArgumentOutOfRangeException(nameof(input));
+			}
+
 			Colors = new Color[input.Length / 3];
 			var cIdx = 0;
 			for (var i = 0; i < input.Length; i += 3) {
@@ -171,9 +191,9 @@ namespace Glimmr.Models.ColorSource.UDP {
 	}
 
 	public enum UdpStreamMode {
-		Warls= 1,
-		Drgb= 2,
-		Drgbw= 3,
-		Dnrgb=4
+		Warls = 1,
+		Drgb = 2,
+		Drgbw = 3,
+		Dnrgb = 4
 	}
 }

@@ -3,7 +3,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -44,6 +46,10 @@ namespace Glimmr.Models.Util {
 			}
 
 			return pingable;
+		}
+
+		public static bool IsDocker() {
+			return File.Exists("/docker_install.sh");
 		}
 
 		public static bool IsRaspberryPi() {
@@ -90,27 +96,43 @@ namespace Glimmr.Models.Util {
 		}
 
 		public static void Update() {
-			Log.Debug("Updating");
-
-
+			Log.Debug("Updating...");
 			Log.Information("Backing up current settings...");
 			DataUtil.BackupDb();
-			var branch = GetBranch();
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-				Process.Start("../script/update_win.bat", branch);
-			} else {
-				var cmd = $"/home/glimmrtv/glimmr/script/update_linux.sh {branch} &";
+				Ps("update_win");
+			}
+
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+				var appDir = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
+				var cmd = Path.Join(appDir, "update_osx.sh");
 				Log.Debug("Update command should be: " + cmd);
 				Process.Start("/bin/bash", cmd);
+			}
+
+			if (IsRaspberryPi() || RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+				var appDir = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
+				var cmd = Path.Join(appDir, "update_linux.sh");
+				Log.Debug("Update command should be: " + cmd);
+				Process.Start("/bin/bash", cmd);
+			}
+		}
+
+		private static void Ps(string filename) {
+			var path = AppDomain.CurrentDomain.BaseDirectory;
+			path = Path.Join(path, $"{filename}.ps1");
+			if (File.Exists(path)) {
+				Process.Start("powershell.exe",
+					$"-NoProfile -ExecutionPolicy unrestricted -File \"{path}\"");
+			} else {
+				Log.Warning("Unable to find script: " + filename);
 			}
 		}
 
 		public static void Restart() {
 			Log.Debug("Restarting glimmr.");
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-				var path = AppDomain.CurrentDomain.BaseDirectory;
-				path = Path.Join(path, "..", "script", "restart_win.ps1");
-				Process.Start("powershell", path);
+				Ps("restart_win");
 			} else {
 				Process.Start("service", "glimmr restart");
 			}
@@ -127,6 +149,9 @@ namespace Glimmr.Models.Util {
 
 		public static string GetUserDir() {
 			var userDir = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "C:\\ProgramData\\" : "/etc/";
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+				userDir = "/Library/Application Support/";
+			}
 
 			var fullPath = Path.Combine(userDir, "Glimmr");
 			if (Directory.Exists(fullPath)) {
@@ -164,8 +189,47 @@ namespace Glimmr.Models.Util {
 			return output;
 		}
 
+		public static async Task<string[]> ReadLogLines(int len = 500) {
+			var dt = DateTime.Now.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
+			var logPath = $"/var/log/glimmr/glimmr{dt}.log";
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+				var userPath = GetUserDir();
+				var logDir = Path.Combine(userPath, "log");
+				if (!Directory.Exists(logDir)) {
+					Directory.CreateDirectory(logDir);
+				}
 
-		private static async Task<string> GetDeviceName(int index) {
+				logPath = Path.Combine(userPath, "log", $"glimmr{dt}.log");
+			}
+
+			var result = await File.ReadAllLinesAsync(logPath);
+			if (result.Length > len) {
+				result = result.Skip(Math.Max(0, result.Length - len)).ToArray();
+			}
+
+			return result;
+		}
+
+		public static bool IsFileReady(string filename) {
+			// If the file can be opened for exclusive access it means that the file
+			// is no longer locked by another process.
+			try {
+				using var inputStream = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.None);
+				return inputStream.Length > 0;
+			} catch (Exception) {
+				return false;
+			}
+		}
+
+		private static async Task<string> GetVideoName(int index) {
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+				return await GetVideoNameLinux(index);
+			}
+
+			return await GetVideoNameOsx(index);
+		}
+
+		private static async Task<string> GetVideoNameLinux(int index) {
 			var process = new Process {
 				StartInfo = new ProcessStartInfo {
 					FileName = "/bin/bash",
@@ -182,9 +246,17 @@ namespace Glimmr.Models.Util {
 			return result;
 		}
 
+		private static Task<string> GetVideoNameOsx(int index) {
+			return Task.FromResult($"Device {index}");
+		}
+
 		public static Dictionary<int, string> ListUsb() {
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 				return ListUsbWindows();
+			}
+
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+				return ListUsbOsx();
 			}
 
 			try {
@@ -209,18 +281,66 @@ namespace Glimmr.Models.Util {
 					var h = v.Height;
 
 					if (usb == i || w != 0 && h != 0) {
-						output[i] = GetDeviceName(i).Result;
+						output[i] = GetVideoNameLinux(i).Result;
 					}
 
 					v.Dispose();
-				} catch (Exception e) {
-					Log.Debug("Exception with cam " + i + ": " + e.Message);
+				} catch (Exception) {
+					// Ignored
 				}
 
 				i++;
 			}
 
 			return output;
+		}
+
+		private static Dictionary<int, string> ListUsbOsx() {
+			var sd = DataUtil.GetSystemData();
+			var usb = sd.UsbSelection;
+			var i = 0;
+			var output = new Dictionary<int, string>();
+			while (i < 10) {
+				var res = CheckVideo(i, usb, VideoCapture.API.Any);
+				if (string.IsNullOrEmpty(res)) {
+					res = CheckVideo(i, usb, VideoCapture.API.DShow);
+				}
+
+				if (string.IsNullOrEmpty(res)) {
+					res = CheckVideo(i, usb, VideoCapture.API.QT);
+				}
+
+				if (string.IsNullOrEmpty(res)) {
+					res = CheckVideo(i, usb, VideoCapture.API.AVFoundation);
+				}
+
+				if (!string.IsNullOrEmpty(res)) {
+					output[i] = res;
+				}
+
+				i++;
+			}
+
+			return output;
+		}
+
+		private static string? CheckVideo(int index, int selection, VideoCapture.API api) {
+			string? result = null;
+			try {
+				var v = new VideoCapture(index, api); // Will crash if not available, hence try/catch.
+				var w = v.Width;
+				var h = v.Height;
+
+				if (selection == index || w != 0 && h != 0) {
+					result = GetVideoName(index).Result;
+				}
+
+				v.Dispose();
+			} catch (Exception e) {
+				Log.Debug("Exception checking video: " + e.Message);
+			}
+
+			return result;
 		}
 
 		private static Dictionary<int, string> ListUsbWindows() {

@@ -18,21 +18,21 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 		private int _baud;
 		private int _brightness;
 		private AdalightData _data;
+		private byte[] _gammaTable;
 		private int _ledCount;
 		private float _multiplier;
 		private int _offset;
 		private string _port;
 		private bool _reverseStrip;
-		private byte[] _gammaTable;
 
-		public AdalightDevice(AdalightData data, ColorService colorService) {
+		public AdalightDevice(AdalightData data, ColorService cs) : base(cs) {
 			Id = data.Id;
 			_data = data;
 			_port = _data.Port;
 			_multiplier = _data.LedMultiplier;
 			_gammaTable = ColorUtil.GammaTable(1);
 			LoadData();
-			colorService.ColorSendEventAsync += SetColors;
+			cs.ColorSendEventAsync += SetColors;
 			_adalight = new AdalightNet.Adalight(_port, _ledCount, _baud);
 		}
 
@@ -43,7 +43,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 
 		IColorTargetData IColorTarget.Data {
 			get => _data;
-			set => _data = (AdalightData) value;
+			set => _data = (AdalightData)value;
 		}
 
 		public async Task StartStream(CancellationToken ct) {
@@ -52,6 +52,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			}
 
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
+			ColorService.StartCounter++;
 			var conn = _adalight.Connect();
 			if (!conn) {
 				Log.Warning("Unable to connect!");
@@ -61,6 +62,7 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 			Streaming = true;
 			await Task.FromResult(true);
 			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
+			ColorService.StartCounter--;
 		}
 
 		public async Task StopStream() {
@@ -68,12 +70,14 @@ namespace Glimmr.Models.ColorTarget.Adalight {
 				return;
 			}
 
-			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
+			Log.Debug($"{_data.Tag}::Stopping stream: {_data.Id}.");
+			ColorService.StopCounter++;
 			var blacks = ColorUtil.EmptyColors(_ledCount);
 			await _adalight.UpdateColorsAsync(blacks.ToList());
 			_adalight.Disconnect();
 			Streaming = false;
 			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
+			ColorService.StopCounter--;
 		}
 
 		public async Task FlashColor(Color color) {
