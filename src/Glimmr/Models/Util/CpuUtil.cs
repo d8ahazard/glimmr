@@ -14,7 +14,6 @@ using Serilog;
 
 namespace Glimmr.Models.Util {
 	public static class CpuUtil {
-		private const StringComparison Sc = StringComparison.InvariantCulture;
 		private static float _tempMax;
 		private static float _tempMin = float.MinValue;
 		private static string[]? _throttledState;
@@ -95,6 +94,7 @@ namespace Glimmr.Models.Util {
 						FileName = "sysctl",
 						Arguments = "machdep.xcpm.cpu_thermal_level",
 						RedirectStandardOutput = true,
+						RedirectStandardError = true,
 						UseShellExecute = false,
 						CreateNoWindow = true
 					}
@@ -132,6 +132,7 @@ namespace Glimmr.Models.Util {
 						FileName = "/bin/bash",
 						Arguments = "-c \"sensors\"",
 						RedirectStandardOutput = true,
+						RedirectStandardError = true,
 						UseShellExecute = false,
 						CreateNoWindow = true
 					}
@@ -171,6 +172,7 @@ namespace Glimmr.Models.Util {
 					FileName = "/bin/bash",
 					Arguments = "-c \"/opt/vc/bin/vcgencmd measure_temp\"",
 					RedirectStandardOutput = true,
+					RedirectStandardError = true,
 					UseShellExecute = false,
 					CreateNoWindow = true
 				}
@@ -198,6 +200,7 @@ namespace Glimmr.Models.Util {
 				StartInfo = new ProcessStartInfo {
 					FileName = "vmstat",
 					RedirectStandardOutput = true,
+					RedirectStandardError = true,
 					UseShellExecute = false,
 					CreateNoWindow = true,
 					Arguments = "-s"
@@ -240,6 +243,7 @@ namespace Glimmr.Models.Util {
 				StartInfo = new ProcessStartInfo {
 					FileName = "vm_stat",
 					RedirectStandardOutput = true,
+					RedirectStandardError = true,
 					UseShellExecute = false,
 					CreateNoWindow = true
 				}
@@ -303,6 +307,7 @@ namespace Glimmr.Models.Util {
 				StartInfo = new ProcessStartInfo {
 					FileName = "/usr/bin/uptime",
 					RedirectStandardOutput = true,
+					RedirectStandardError = true,
 					UseShellExecute = false,
 					CreateNoWindow = true
 				}
@@ -338,6 +343,7 @@ namespace Glimmr.Models.Util {
 					FileName = "/bin/bash",
 					Arguments = "-c \"/opt/vc/bin/vcgencmd get_throttled\"",
 					RedirectStandardOutput = true,
+					RedirectStandardError = true,
 					UseShellExecute = false,
 					CreateNoWindow = true
 				}
