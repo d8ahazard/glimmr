@@ -48,15 +48,16 @@ Download the latest linux-arm deb package installer from [releases](https://gith
 installing it by running ```apt-get install FILENAME.deb```.
 
 #### Script
+
 Execute the following command:
 ```
 sudo su
-wget -qO- https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_linux.sh | bash
+wget -qO- https://raw.githubusercontent.com/d8ahazard/glimmr/master/script/setup_linux.sh | bash
 ```
 
 *Alternatively*, you can flash a custom image directly to your pi from here:
 
-https://mega.nz/file/m2RHyIAI#wFZqNlS3zxf2WnJChmUHgCMHsBejjLkFRJ6o8Na0a8w
+https://mega.nz/file/iuwQESYL#herJGmGqMvsfsc8UVy_q5aGosUzZJBSIUDo0ZlzkeaQ
 
 You will need to use "BalenaEtcher", a free software for flashing the image.
 
@@ -87,14 +88,7 @@ Download the latest linux-x64 deb package installer from [releases](https://gith
 installing it by running ```apt-get install FILENAME.deb```.
 
 #### Script
-Execute the following command. You can replace "dev" with "master" to use the master branch instead.:
-```
-sudo su
-wget -qO- https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_linux.sh | bash
-```
-
-OR, to clone from the master branch...
-
+Execute the following command:
 ```
 sudo su
 wget -qO- https://raw.githubusercontent.com/d8ahazard/glimmr/master/script/setup_linux.sh | bash
@@ -105,11 +99,20 @@ or "sudo service glimmr stop" respectively.
 
 
 ### OSX
+
+#### Installer:
+Download the latest macos-installer package installer from [releases](https://github.com/d8ahazard/glimmr/releases/latest), and
+installing it by double-clicking it.
+
+
+#### Scripted Install
+
 Open a terminal, execute the following commands:
 ```
 sudo su
-curl https://raw.githubusercontent.com/d8ahazard/glimmr/dev/script/setup_osx.sh | sh
+curl https://raw.githubusercontent.com/d8ahazard/glimmr/master/script/setup_osx.sh | sh
 ```
+
 
 ### docker
 Use the following command. You don't need to specify the ASPNETCORE_URLS value, unless you wish to change the default
