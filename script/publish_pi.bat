@@ -1,5 +1,4 @@
 @echo off
-if "%1"=="" GOTO HELP
 if "%1"=="-h" GOTO HELP
 IF NOT "%2"=="-s" GOTO BUILD
 echo Stopping services
@@ -13,7 +12,8 @@ plink -no-antispoof -pw glimmrtv glimmrtv@%1 "echo glimmrtv | sudo -S service gl
 plink -no-antispoof -pw glimmrtv glimmrtv@%1 "echo glimmrtv | sudo -S pkill -f Glimmr"
 
 :BUILD2
-dotnet publish ..\src\Glimmr\Glimmr.csproj /p:PublishProfile=LinuxARM -o ..\src\Glimmr\bin\linuxARM
+dotnet publish ..\src\Glimmr\Glimmr.csproj /p:PublishProfile=LinuxARM -o ..\src\Glimmr\bin\linuxARM --self-contained=true
+if "%1"=="" GOTO :END
 cd ..\src\Glimmr\bin\linuxARM
 IF "%2"=="-j" GOTO JS
 IF "%2"=="-c" GOTO CSS
@@ -21,27 +21,28 @@ IF "%2"=="-w" GOTO WEB
 
 echo Copying new files...
 IF "%3"=="-f" GOTO FULL
-pscp -P 22 -r -pw glimmrtv .\Glimmr.Views.dll glimmrtv@%1:/home/glimmrtv/glimmr/bin/Glimmr.Views.dll
-pscp -P 22 -r -pw glimmrtv .\Glimmr.deps.json glimmrtv@%1:/home/glimmrtv/glimmr/bin/Glimmr.deps.json
-pscp -P 22 -r -pw glimmrtv .\Glimmr.Views.pdb glimmrtv@%1:/home/glimmrtv/glimmr/bin/Glimmr.Views.pdb
-pscp -P 22 -r -pw glimmrtv .\wwwroot\js\* glimmrtv@%1:/home/glimmrtv/glimmr/bin/wwwroot/js/
-pscp -P 22 -r -pw glimmrtv .\wwwroot\css\* glimmrtv@%1:/home/glimmrtv/glimmr/bin/wwwroot/css/
-pscp -P 22 -r -pw glimmrtv .\Glimmr.dll glimmrtv@%1:/home/glimmrtv/glimmr/bin/Glimmr.dll
-pscp -P 22 -r -pw glimmrtv .\Glimmr.pdb glimmrtv@%1:/home/glimmrtv/glimmr/bin/Glimmr.pdb
-pscp -P 22 -r -pw glimmrtv .\Glimmr.runtimeconfig.json glimmrtv@%1:/home/glimmrtv/glimmr/bin/Glimmr.runtimeconfig.json
-pscp -P 22 -r -pw glimmrtv .\Glimmr glimmrtv@%1:/home/glimmrtv/glimmr/bin/Glimmr
+pscp -P 22 -r -pw glimmrtv .\Glimmr.Views.dll glimmrtv@%1:/usr/share/Glimmr/Glimmr.Views.dll
+pscp -P 22 -r -pw glimmrtv .\Glimmr.deps.json glimmrtv@%1:/usr/share/Glimmr/Glimmr.deps.json
+pscp -P 22 -r -pw glimmrtv .\Glimmr.Views.pdb glimmrtv@%1:/usr/share/Glimmr/Glimmr.Views.pdb
+pscp -P 22 -r -pw glimmrtv .\wwwroot\js\* glimmrtv@%1:/usr/share/Glimmr/wwwroot/js/
+pscp -P 22 -r -pw glimmrtv .\wwwroot\css\* glimmrtv@%1:/usr/share/Glimmr/wwwroot/css/
+pscp -P 22 -r -pw glimmrtv .\Glimmr.dll glimmrtv@%1:/usr/share/Glimmr/Glimmr.dll
+pscp -P 22 -r -pw glimmrtv .\Glimmr.pdb glimmrtv@%1:/usr/share/Glimmr/Glimmr.pdb
+pscp -P 22 -r -pw glimmrtv .\Glimmr.xml glimmrtv@%1:/usr/share/Glimmr/Glimmr.xml
+pscp -P 22 -r -pw glimmrtv .\Glimmr.runtimeconfig.json glimmrtv@%1:/usr/share/Glimmr/Glimmr.runtimeconfig.json
+pscp -P 22 -r -pw glimmrtv .\Glimmr glimmrtv@%1:/usr/share/Glimmr/Glimmr
 GOTO NEXT
 :JS
-pscp -P 22 -r -pw glimmrtv .\wwwroot\js\* glimmrtv@%1:/home/glimmrtv/glimmr/bin/wwwroot/js/
+pscp -P 22 -r -pw glimmrtv .\wwwroot\js\* glimmrtv@%1:/usr/share/Glimmr/wwwroot/js/
 GOTO END
 :CSS
-pscp -P 22 -r -pw glimmrtv .\wwwroot\css\* glimmrtv@%1:/home/glimmrtv/glimmr/bin/wwwroot/css/
+pscp -P 22 -r -pw glimmrtv .\wwwroot\css\* glimmrtv@%1:/usr/share/Glimmr/wwwroot/css/
 GOTO END
 :WEB
-pscp -P 22 -r -pw glimmrtv .\wwwroot\* glimmrtv@%1:/home/glimmrtv/glimmr/bin/wwwroot/
+pscp -P 22 -r -pw glimmrtv .\wwwroot\* glimmrtv@%1:/usr/share/Glimmr/wwwroot/
 GOTO END
 :FULL
-pscp -P 22 -r -pw glimmrtv .\* glimmrtv@%1:/home/glimmrtv/glimmr/bin/
+pscp -P 22 -r -pw glimmrtv .\* glimmrtv@%1:/usr/share/Glimmr/
 :NEXT
 IF NOT "%2"=="-s" GOTO END
 
