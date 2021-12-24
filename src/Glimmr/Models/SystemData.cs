@@ -221,6 +221,13 @@ namespace Glimmr.Models {
 		[DefaultValue(115200)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 		public int BaudRate { get; set; } = 115200;
+		
+		/// <summary>
+		///     Level to log the logging at. 0 = debug, 1 = inf
+		/// </summary>
+		[DefaultValue(1)]
+		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+		public int LogLevel { get; set; } = 1;
 
 		/// <summary>
 		///     Colors below this brightness will be considered "black".

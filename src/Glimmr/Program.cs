@@ -6,10 +6,12 @@ using Glimmr.Hubs;
 using Glimmr.Models.Logging;
 using Glimmr.Models.Util;
 using Glimmr.Services;
+using LibGit2Sharp;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using Serilog.Configuration;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 
@@ -20,6 +22,7 @@ namespace Glimmr {
 		public static void Main(string[] args) {
 			const string outputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}]{Caller} {Message}{NewLine}{Exception}";
 			var logPath = "/var/log/glimmr/glimmr.log";
+			var sd = DataUtil.GetSystemData();
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 				var userPath = SystemUtil.GetUserDir();
 				var logDir = Path.Combine(userPath, "log");
@@ -29,8 +32,6 @@ namespace Glimmr {
 
 				logPath = Path.Combine(userPath, "log", "glimmr.log");
 			}
-
-			var branch = SystemUtil.GetBranch();
 
 			//var tr1 = new TextWriterTraceListener(Console.Out);
 			//Trace.Listeners.Add(tr1);
@@ -45,7 +46,7 @@ namespace Glimmr {
 					a.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: outputTemplate))
 				.WriteTo.SocketSink();
 
-			if (branch != "master") {
+			if (sd.LogLevel == 0) {
 				lc.MinimumLevel.Debug();
 			}
 
