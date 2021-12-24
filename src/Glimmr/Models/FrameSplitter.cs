@@ -590,7 +590,7 @@ namespace Glimmr.Models {
 			_allBlack = false;
 			// Check letterboxing
 			if (_cropLetter) {
-				for (var y = 0; y < hStart; y++) {
+				for (var y = 2; y < hStart; y++) {
 					var c1 = gr.Row(height - y);
 					var c2 = gr.Row(y);
 					var b1 = c1.GetRawData().SkipLast(8).Skip(8).ToArray();
@@ -615,7 +615,7 @@ namespace Glimmr.Models {
 
 			// Check pillarboxing
 			if (_cropPillar) {
-				for (var x = 0; x < wStart; x++) {
+				for (var x = 2; x < wStart; x++) {
 					var c1 = gr.Col(width - x);
 					var c2 = gr.Col(x);
 					var b1 = c1.GetRawData().SkipLast(8).Skip(8).ToArray();
