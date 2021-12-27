@@ -6,12 +6,10 @@ using Glimmr.Hubs;
 using Glimmr.Models.Logging;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using LibGit2Sharp;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using Serilog.Configuration;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 

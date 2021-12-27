@@ -225,9 +225,9 @@ namespace Glimmr.Models {
 		/// <summary>
 		///     Level to log the logging at. 0 = debug, 1 = inf
 		/// </summary>
-		[DefaultValue(1)]
+		[DefaultValue(0)]
 		[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-		public int LogLevel { get; set; } = 1;
+		public int LogLevel { get; set; } = 0;
 
 		/// <summary>
 		///     Colors below this brightness will be considered "black".

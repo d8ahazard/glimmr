@@ -352,6 +352,13 @@
 
 <div class="col-12 titleCol pb-1">Logging</div>
 <div class="col-12 col-md-6 col-xl-3 form-group">
+    <select name="LogLevel" id="LogLevel" data-object="SystemData" data-property="logLevel" class="systemSetting form-control">
+        <option value="0">Debug</option>
+        <option value="1">Information</option>
+    </select>
+</div>
+
+<div class="col-12 col-md-6 col-xl-3 form-group">
     <div class="btn btn-primary" id="fetchLog">Download Log</div>
     <div class="btn btn-secondary" id="showLog" onclick="showLog()">Log Viewer</div>
 </div>
