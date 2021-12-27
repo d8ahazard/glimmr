@@ -55,21 +55,27 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 
 			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
 			ColorService.StartCounter++;
+			bool connected;
 			try {
 				var mt = new OpenRGB.NET.Models.Color[_data.LedCount];
 				for (var i = 0; i < mt.Length; i++) {
 					mt[i] = new OpenRGB.NET.Models.Color();
 				}
 
-				_client.SetMode(_data.DeviceId, 0);
+				connected = _client.SetMode(_data.DeviceId, 0).Result;
 			} catch (Exception e) {
 				Log.Warning("Exception setting mode..." + e.Message);
 				ColorService.StartCounter--;
 				return Task.CompletedTask;
 			}
 
-			Streaming = true;
-			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
+			if (connected) {
+				Streaming = true;
+				Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
+			} else {
+				Log.Debug($"{_data.Tag}::Stream start failed: {_data.Id}.");
+			}
+			
 			ColorService.StartCounter--;
 			return Task.CompletedTask;
 		}

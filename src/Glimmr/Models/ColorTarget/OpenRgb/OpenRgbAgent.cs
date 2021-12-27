@@ -3,6 +3,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using OpenRGB.NET;
@@ -53,7 +55,6 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			if (_client.Connected) {
 				return;
 			}
-
 			Log.Debug("Connecting OpenRGB client.");
 			try {
 				_client?.Connect();
@@ -62,21 +63,31 @@ namespace Glimmr.Models.ColorTarget.OpenRgb {
 			}
 		}
 
-		public void SetMode(int deviceId, int mode) {
+		public async Task<bool> SetMode(int deviceId, int mode) {
 			if (_client == null) {
-				return;
+				return false;
 			}
 
 			if (!DeviceExists(deviceId)) {
-				return;
+				return false;
 			}
 
-			Connect();
-			if (!_client.Connected) {
-				return;
+			try {
+				var cts = new CancellationTokenSource();
+				cts.CancelAfter(500);
+				Task.Run(() => {
+					Connect();
+					if (!_client.Connected) {
+						return false;
+					}
+					_client.SetMode(deviceId, mode);
+					return true;
+				}, cts.Token).ConfigureAwait(false);
+			} catch (Exception e) {
+				Log.Warning("Exception starting OpenRGB: " + e.Message);
 			}
 
-			_client.SetMode(deviceId, mode);
+			return false;
 		}
 
 		public void Update(int deviceId, Color[] colors) {
