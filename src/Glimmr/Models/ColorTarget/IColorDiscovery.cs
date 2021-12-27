@@ -6,16 +6,16 @@ using Glimmr.Services;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget {
-	public interface IColorDiscovery {
-		public Task Discover(CancellationToken ct, int timeout);
-	}
+namespace Glimmr.Models.ColorTarget; 
 
-	public abstract class ColorDiscovery {
-		public ControlService ControlService { get; }
+public interface IColorDiscovery {
+	public Task Discover(CancellationToken ct, int timeout);
+}
 
-		protected ColorDiscovery(ColorService colorService) {
-			ControlService = colorService.ControlService;
-		}
+public abstract class ColorDiscovery {
+	public ControlService ControlService { get; }
+
+	protected ColorDiscovery(ColorService colorService) {
+		ControlService = colorService.ControlService;
 	}
 }

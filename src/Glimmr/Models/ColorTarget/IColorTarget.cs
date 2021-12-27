@@ -9,33 +9,33 @@ using Newtonsoft.Json;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget {
-	public interface IColorTarget {
-		public bool Enable { get; set; }
-		public bool Streaming { get; set; }
-		public bool Testing { set; }
-		[JsonProperty] public DateTime LastSeen => DateTime.Now;
+namespace Glimmr.Models.ColorTarget; 
 
-		public IColorTargetData Data { get; set; }
-		public string Id { get; }
+public interface IColorTarget {
+	public bool Enable { get; set; }
+	public bool Streaming { get; set; }
+	public bool Testing { set; }
+	[JsonProperty] public DateTime LastSeen => DateTime.Now;
 
-		public Task StartStream(CancellationToken ct);
+	public IColorTargetData Data { get; set; }
+	public string Id { get; }
 
-		public Task StopStream();
+	public Task StartStream(CancellationToken ct);
 
-		public Task FlashColor(Color color);
+	public Task StopStream();
+
+	public Task FlashColor(Color color);
 
 
-		public Task ReloadData();
+	public Task ReloadData();
 
-		public void Dispose();
-	}
+	public void Dispose();
+}
 
-	public abstract class ColorTarget {
-		public ColorService ColorService { get; }
+public abstract class ColorTarget {
+	public ColorService ColorService { get; }
 
-		protected ColorTarget(ColorService cs) {
-			ColorService = cs;
-		}
+	protected ColorTarget(ColorService cs) {
+		ColorService = cs;
 	}
 }

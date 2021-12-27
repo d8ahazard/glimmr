@@ -1,13 +1,13 @@
-﻿namespace Glimmr.Enums {
-	public enum StreamMode {
-		/// <summary>
-		///     DreamScreen.
-		/// </summary>
-		DreamScreen = 0,
+﻿namespace Glimmr.Enums; 
 
-		/// <summary>
-		///     UDP (WLED/Glimmr)
-		/// </summary>
-		Udp = 1
-	}
+public enum StreamMode {
+	/// <summary>
+	///     DreamScreen.
+	/// </summary>
+	DreamScreen = 0,
+
+	/// <summary>
+	///     UDP (WLED/Glimmr)
+	/// </summary>
+	Udp = 1
 }

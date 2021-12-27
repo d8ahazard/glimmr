@@ -1,13 +1,13 @@
-﻿namespace Glimmr.Enums {
-	public enum CameraType {
-		/// <summary>
-		///     Raspberry Pi Camera Module
-		/// </summary>
-		RasPiCam = 0,
+﻿namespace Glimmr.Enums; 
 
-		/// <summary>
-		///     Web camera
-		/// </summary>
-		WebCam = 1
-	}
+public enum CameraType {
+	/// <summary>
+	///     Raspberry Pi Camera Module
+	/// </summary>
+	RasPiCam = 0,
+
+	/// <summary>
+	///     Web camera
+	/// </summary>
+	WebCam = 1
 }
