@@ -98,16 +98,19 @@ namespace Glimmr.Models.ColorSource.Video.Stream.Usb {
 				return false;
 			}
 
-			var fourCc = (int)_video.Get(CapProp.FourCC);
-			var fps = (int)_video.Get(CapProp.Fps);
 			var d5 = VideoWriter.Fourcc('M', 'J', 'P', 'G');
 
-			Log.Debug($"Video created, fps and 4cc are {fps} and {fourCc} versus {d5}.");
-			if (fps == 60 && fourCc == d5) {
-				return true;
-			}
-
-			Log.Information("Unable to set FPS or FourCC, video may not work.");
+			try {
+				_video.Set(CapProp.FourCC, d5);
+				_video.Set(CapProp.Fps, 60);
+			} catch (Exception e) {
+				Log.Debug("Exception setting video prop: " + e.Message);
+			} 
+			
+			var fourCc = (int)_video.Get(CapProp.FourCC);
+			var fps = (int)_video.Get(CapProp.Fps);
+			
+			Log.Debug($"Video created, fps and 4cc are {fps} and {fourCc} versus 60 and {d5}.");
 			return true;
 		}
 
