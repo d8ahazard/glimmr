@@ -1974,7 +1974,7 @@ function getDevices() {
 function updateDevice(id, property, value) {
     let dev;
     let isLoaded = false;
-    if (property === "stripMode") value = parseInt(value);
+    if (property === "stripMode" || property === "offset") value = parseInt(value);
     if (isValid(deviceData) && deviceData["id"] === id) {
         dev = deviceData;
         isLoaded = true;
@@ -3886,14 +3886,51 @@ function setNanoMap(id, current) {
 
 }
 
-function ranges(ledCount, offset, total) {
+// 300, 20, 150
+// 300, -10, 150
+/**
+ * Calculate the total range that LEDs fall into.
+ * 
+ * @param systemTotal - The total number of LEDs our system has
+ * @param offset - Starting point in relation to the total number of LEDs
+ * @param deviceTotal - The number of LEDs for the desired device
+ * @returns {*[]} - The range of LEDs
+ */
+function ranges(systemTotal, offset, deviceTotal) {
+    let ogTotal = deviceTotal;
     let range = [];
-    while (range.length < offset + total) {
-        for (let i = 0; i < ledCount; i++) {
+    let fromEnd = 0;
+    let startOffset = offset;
+    // If negative offset, we need to start from the end
+    if (offset < 0) {
+        fromEnd = systemTotal + offset;
+        deviceTotal += offset;
+        offset = fromEnd;
+        startOffset = 0;        
+    } else if (offset + deviceTotal > systemTotal) {
+        if (offset > systemTotal) {
+            while (offset > systemTotal) {
+                offset -= systemTotal;
+            }
+        }
+        fromEnd = systemTotal - offset;
+        deviceTotal -= fromEnd;
+        startOffset = 0;
+    }
+    
+    // Start from the end if required
+    if (fromEnd !== 0) {
+        for (let i = offset; i < systemTotal; i++) {
+            range.push(i);
+        }    
+    }
+    
+    if (deviceTotal > 0) {
+        for (let i = startOffset; i < startOffset + deviceTotal; i++) {
             range.push(i);
         }
     }
-    return range.slice(offset, total + offset);
+    return range;
 }
 
 function sizeContent() {

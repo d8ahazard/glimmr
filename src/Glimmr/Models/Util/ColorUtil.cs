@@ -43,6 +43,14 @@ namespace Glimmr.Models.Util {
 				offset -= input.Length;
 			}
 
+			if (offset < 0 && Math.Abs(offset) >= input.Length) {
+				offset += input.Length;
+			}
+
+			if (offset < 0) {
+				offset = input.Length - Math.Abs(offset);
+			}
+
 			var output = EmptyColors(len);
 			var total = Convert.ToInt32((len + offset) * multiplier);
 
