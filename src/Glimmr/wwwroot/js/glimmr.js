@@ -3899,7 +3899,6 @@ function setNanoMap(id, current) {
  * @returns {*[]} - The range of LEDs
  */
 function ranges(systemTotal, offset, deviceTotal) {
-    let ogTotal = deviceTotal;
     let range = [];
     let fromEnd = 0;
     let startOffset = offset;
