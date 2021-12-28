@@ -1,5 +1,6 @@
 #region
 
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using Glimmr.Hubs;
@@ -48,8 +49,21 @@ public static class Program {
 		if (sd.LogLevel == 0) {
 			lc.MinimumLevel.Debug();
 		}
-
+		
 		Log.Logger = lc.CreateLogger();
+		
+		var app = Process.GetCurrentProcess().MainModule;
+		if (app != null) {
+			var file = app.FileName;
+			var appProcessName = Path.GetFileNameWithoutExtension(file);
+			var runningProcesses = Process.GetProcessesByName(appProcessName);
+			if (runningProcesses.Length > 1) {
+				Log.Information("Glimmr is already running, exiting.");
+				Log.CloseAndFlush();
+				return;
+			}
+		}
+
 		CreateHostBuilder(args, Log.Logger).Build().Run();
 		Log.CloseAndFlush();
 	}
