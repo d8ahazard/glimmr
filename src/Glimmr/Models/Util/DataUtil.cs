@@ -92,7 +92,7 @@ public static class DataUtil {
 		}
 
 
-		File.Move(dbPath, dbPath + ".bak");
+		File.Move(dbPath, dbPath + ".bak",true);
 		if (path == string.Empty) {
 			return;
 		}
@@ -379,8 +379,7 @@ public static class DataUtil {
 		var output = string.Empty;
 		_dbLocked = true;
 		try {
-			_db.Commit();
-			_db.Dispose();
+			_db.Checkpoint();
 			File.Copy(dbPath, outFile, true);
 			if (SystemUtil.IsRaspberryPi()) {
 				File.Copy(dbPath, "/boot/store.db");
@@ -390,8 +389,6 @@ public static class DataUtil {
 		} catch (Exception) {
 			//ignored
 		}
-
-		_db = new LiteDatabase(dbPath);
 		_dbLocked = false;
 		return output;
 	}
