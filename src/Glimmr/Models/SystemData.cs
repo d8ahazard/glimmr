@@ -148,7 +148,7 @@ public class SystemData {
 	/// </summary>
 	[DefaultValue(3)]
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-	public float AblAmps { get; set; } = 3f;
+	public float AblAmps { get; set; } = 2f;
 
 	/// <summary>
 	///     Input voltage of power supply.
@@ -226,9 +226,9 @@ public class SystemData {
 	/// <summary>
 	///     Level to log the logging at. 0 = debug, 1 = inf
 	/// </summary>
-	[DefaultValue(0)]
+	[DefaultValue(1)]
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-	public int LogLevel { get; set; } = 0;
+	public int LogLevel { get; set; }
 
 	/// <summary>
 	///     Colors below this brightness will be considered "black".
@@ -455,6 +455,7 @@ public class SystemData {
 		CropDelay = 15;
 		DeviceMode = DeviceMode.Off;
 		AutoUpdateTime = 2;
+		AblAmps = 2;
 		DefaultSet = true;
 		AudioGain = .6f;
 		AudioMin = .01f;
@@ -462,6 +463,8 @@ public class SystemData {
 		CropBlackLevel = 7;
 		BlackLevel = 7;
 		CheckDeviceVariables();
+		EnableAutoBrightness = true;
+		LogLevel = 1;
 	}
 
 	public string CheckDeviceVariables() {
