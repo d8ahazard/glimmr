@@ -3,7 +3,7 @@
     <PropertyGroup>
         <RuntimeIdentifiers>ubuntu.18.04-x64;linux-arm;linux-x64;osx-x64;win-x64;win-arm;win-x86</RuntimeIdentifiers>
         <TargetFramework>net6.0</TargetFramework>
-        <VersionPrefix>1.2.0</VersionPrefix>
+        <VersionPrefix>1.2.1</VersionPrefix>
         <Product>Glimmr</Product>
         <ProductName>Glimmr</ProductName>
         <CopyRefAssembliesToPublishDirectory>false</CopyRefAssembliesToPublishDirectory>
@@ -24,8 +24,8 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <NoWarn>$(NoWarn);1591</NoWarn>
         <PackageIconUrl>https://github.com/d8ahazard/glimmr/raw/master/appIcon.png</PackageIconUrl>
-        <AssemblyVersion>1.2.0</AssemblyVersion>
-        <FileVersion>1.2.0</FileVersion>
+        <AssemblyVersion>1.2.1</AssemblyVersion>
+        <FileVersion>1.2.1</FileVersion>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -76,7 +76,7 @@
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
         <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.2.3" />
         <PackageReference Include="System.Net.WebSockets" Version="4.3.0" />
-        <PackageReference Include="Xamarin.Mac.digitalhigh" Version="8.2.0.1" />
+        <PackageReference Include="Xamarin.Mac.digitalhigh" Version="8.3.0.41" />
         <PackageReference Include="YeelightAPI" Version="1.10.2" />
         <PackageReference Update="Packaging.Targets">
             <Version>0.1.220</Version>
@@ -85,7 +85,6 @@
 
     <!-- All builds -->
     <ItemGroup>
-        <None Include="lib/bass.dll" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" LinuxFileMode="1755" />
         <None Include="../../COPYING" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
     </ItemGroup>
 
