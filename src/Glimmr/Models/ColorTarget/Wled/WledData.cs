@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
-using System.Net;
+using System.Net.Http;
 using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
@@ -105,10 +105,10 @@ public class WledData : IColorTargetData {
 		LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 		IpAddress = ipaddress;
 		Segments = Array.Empty<WledSegment>();
-		using var webClient = new WebClient();
+		using var webClient = new HttpClient();
 		try {
 			var url = "http://" + IpAddress + "/json";
-			var jsonData = webClient.DownloadString(url);
+			var jsonData = webClient.GetStringAsync(url).Result;
 			var jsonObj = JsonConvert.DeserializeObject<WledStateData>(jsonData);
 			State = jsonObj;
 
