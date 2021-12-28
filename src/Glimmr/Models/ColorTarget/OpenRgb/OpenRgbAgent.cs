@@ -76,7 +76,7 @@ public class OpenRgbAgent : IColorTargetAgent {
 		try {
 			var cts = new CancellationTokenSource();
 			cts.CancelAfter(500);
-			Task.Run(() => {
+			await Task.Run(() => {
 				Connect();
 				if (!_client.Connected) {
 					return false;
