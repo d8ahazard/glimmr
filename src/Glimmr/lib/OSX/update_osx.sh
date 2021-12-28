@@ -16,6 +16,7 @@ echo ver is $ver
 url="https://github.com/d8ahazard/glimmr/releases/download/$ver/Glimmr-osx-$ver.tgz"
 echo Grabbing archive from $url
 curl -L -o $HOME/archive.tgz $url
+rm -rf /Applications/glimmr/*
 tar zxvf $HOME/archive.tgz -C /Applications/glimmr
 chmod -R 777 /Applications/glimmr
 rm $HOME/archive.tgz

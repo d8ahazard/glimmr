@@ -93,6 +93,7 @@ cd /tmp || exit
 url="https://github.com/d8ahazard/glimmr/releases/download/$ver/Glimmr-$PUBPATH-$ver.tgz"
 echo "Grabbing archive from $url" >> $log
 wget -O archive.tgz $url
+rm -rf /usr/share/Glimmr/*
 tar zxvf ./archive.tgz -C /usr/share/Glimmr/
 chmod -R 777 /usr/share/Glimmr/
 rm ./archive.tgz
