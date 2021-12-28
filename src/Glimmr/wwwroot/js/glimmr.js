@@ -1808,6 +1808,8 @@ function getSubtitle(device) {
 }
 
 function createDeviceCard(device, addDemoText) {
+    console.log("Creating device card: ", device);
+    if (device["id"] === undefined) return null;
     if (device["tag"] === "DreamScreen" && device["deviceTag"].includes("DreamScreen")) return;
     // Create main card
     let card = document.createElement("div");
