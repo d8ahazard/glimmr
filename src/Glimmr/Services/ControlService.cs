@@ -25,49 +25,53 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Serilog;
+using Serilog.Core;
 using Serilog.Events;
 
 #endregion
 
-namespace Glimmr.Services; 
+namespace Glimmr.Services;
 
 public class ControlService : BackgroundService {
 	public bool SendPreview { get; set; }
 	public ColorService ColorService { get; set; }
-	public HttpClient HttpSender { get; private set; }
-	public MulticastService MulticastService { get; private set; }
-	public ServiceDiscovery ServiceDiscovery { get; private set; }
+	public HttpClient HttpSender { get; private set; } = null!;
+	public MulticastService MulticastService { get; private set; } = null!;
+	public ServiceDiscovery ServiceDiscovery { get; private set; } = null!;
 	public StatData? Stats { get; set; }
-	public UdpClient UdpClient { get; private set; }
+	public UdpClient UdpClient { get; private set; } = null!;
+
+	private static LoggingLevelSwitch? _levelSwitch;
 
 	private static ControlService? _myCs;
 
 	private readonly IHubContext<SocketServer> _hubContext;
 
-	public AsyncEvent<DynamicEventArgs> DemoLedEvent;
+	public AsyncEvent<DynamicEventArgs> DemoLedEvent = null!;
+	public AsyncEvent<DynamicEventArgs> DeviceReloadEvent = null!;
+	public AsyncEvent<DynamicEventArgs> DeviceRescanEvent = null!;
+	public AsyncEvent<DynamicEventArgs> FlashDeviceEvent = null!;
+	public AsyncEvent<DynamicEventArgs> FlashSectorEvent = null!;
+	public AsyncEvent<DynamicEventArgs> RefreshLedEvent = null!;
+	public AsyncEvent<DynamicEventArgs> SetModeEvent = null!;
+	public AsyncEvent<DynamicEventArgs> StartStreamEvent = null!;
+	public AsyncEvent<DynamicEventArgs> TestLedEvent = null!;
 
-	public AsyncEvent<DynamicEventArgs> DeviceReloadEvent;
-	public AsyncEvent<DynamicEventArgs> DeviceRescanEvent;
+	private Dictionary<string, dynamic> _agents = null!;
+	private SystemData _sd = null!;
+	private Task _statTask = null!;
+	private Task _colorTask = null!;
+	private Task _discoveryTask = null!;
+	private readonly StatService _statService;
+	private readonly DiscoveryService _discoveryService;
 
-	public AsyncEvent<DynamicEventArgs> FlashDeviceEvent;
-
-	public AsyncEvent<DynamicEventArgs> FlashSectorEvent;
-	public AsyncEvent<DynamicEventArgs> RefreshLedEvent;
-
-	public AsyncEvent<DynamicEventArgs> SetModeEvent;
-
-	public AsyncEvent<DynamicEventArgs> StartStreamEvent;
-
-	public AsyncEvent<DynamicEventArgs> TestLedEvent;
-
-	private Dictionary<string, dynamic> _agents;
-	private SystemData _sd;
-
-#pragma warning disable 8618
 	public ControlService(IHubContext<SocketServer> hubContext) {
-#pragma warning restore 8618
 		_hubContext = hubContext;
+		_levelSwitch = Program.LogSwitch;
 		Initialize();
+		ColorService = new ColorService(this);
+		_discoveryService = new DiscoveryService(this);
+		_statService = new StatService(_hubContext, this);
 		_myCs = this;
 	}
 
@@ -241,16 +245,17 @@ public class ControlService : BackgroundService {
 		await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized(this));
 	}
 
-	public Task Execute(CancellationToken stoppingToken) {
-		return ExecuteAsync(stoppingToken);
-	}
 
 	protected override Task ExecuteAsync(CancellationToken stoppingToken) {
-		Log.Debug("Starting control service loop?");
-		return Task.Run(async () => {
-			await Task.Yield();
+		Log.Debug("Starting services...");
+		var sCts = new CancellationTokenSource();
+		_discoveryTask = _discoveryService.StartAsync(sCts.Token);
+		_statTask = _statService.StartAsync(sCts.Token);
+		_colorTask = ColorService.StartAsync(sCts.Token);
+		Log.Debug("All services started, running main loop...");
+		Task.Run(async () => {
 			while (!stoppingToken.IsCancellationRequested) {
-				CheckBackups().RunSynchronously();
+				await CheckBackups().ConfigureAwait(false);
 				if (!_sd.AutoUpdate) {
 					continue;
 				}
@@ -267,10 +272,8 @@ public class ControlService : BackgroundService {
 				SystemUtil.Update();
 				await Task.Delay(TimeSpan.FromMinutes(60), stoppingToken);
 			}
-
-			Log.Debug("Control service stopped.");
-			return Task.CompletedTask;
 		}, stoppingToken);
+		return Task.CompletedTask;
 	}
 
 	private static Task CheckBackups() {
@@ -316,6 +319,7 @@ public class ControlService : BackgroundService {
 			try {
 				Log.Debug("Deleting old db backup: " + p);
 				File.Delete(p);
+				Log.Debug("Deleted...");
 			} catch (Exception e) {
 				Log.Warning($"Exception removing file({p}): " + e.Message);
 			}
@@ -350,8 +354,9 @@ public class ControlService : BackgroundService {
 v. {version}
 ";
 		Log.Information(text);
-		Log.Information("Starting control service...");
+		Log.Information("Initializing control service...");
 		_sd = DataUtil.GetSystemData();
+		SetLogLevel();
 		var devs = DataUtil.GetDevices();
 		if (devs.Count == 0) {
 			if (SystemUtil.IsRaspberryPi()) {
@@ -379,13 +384,31 @@ v. {version}
 		MulticastService = new MulticastService();
 		ServiceDiscovery = new ServiceDiscovery(MulticastService);
 		LoadAgents();
-		Log.Information("Loading color util info...");
-		// Dynamically load agents
 		ColorUtil.SetSystemData();
-		Log.Information("Control service started.");
+		Log.Information("Control service initialized...");
 	}
 
-	public override Task StopAsync(CancellationToken cancellationToken) {
+	private void SetLogLevel() {
+		if (_levelSwitch == null) return;
+		_levelSwitch.MinimumLevel = _sd.LogLevel switch {
+			0 => LogEventLevel.Verbose,
+			1 => LogEventLevel.Debug,
+			2 => LogEventLevel.Information,
+			4 => LogEventLevel.Warning,
+			5 => LogEventLevel.Error,
+			6 => LogEventLevel.Fatal,
+			_ => _levelSwitch.MinimumLevel
+		};
+	}
+
+	public override async Task StopAsync(CancellationToken cancellationToken) {
+		Log.Debug("Stopping stat service...");
+		await _statService.StopAsync(CancellationToken.None);
+		Log.Debug("Stopping discovery service...");
+		await _discoveryService.StopAsync(CancellationToken.None);
+		Log.Debug("Stopping colorService...");
+		await ColorService.StopAsync(CancellationToken.None);
+		Log.Debug("All services have been stopped.");
 		Log.Information("Stopping control service...");
 		HttpSender.Dispose();
 		UdpClient.Dispose();
@@ -401,8 +424,8 @@ v. {version}
 			}
 		}
 
+		await Task.WhenAll(_statTask, _colorTask, _discoveryTask);
 		Log.Information("Control service stopped.");
-		return base.StopAsync(cancellationToken);
 	}
 
 
@@ -422,6 +445,7 @@ v. {version}
 
 	public async Task UpdateSystem(SystemData? sd = null) {
 		var oldSd = DataUtil.GetSystemData();
+		var ll = oldSd.LogLevel;
 		if (sd != null) {
 			DataUtil.SetSystemData(sd);
 			_sd = sd;
@@ -436,6 +460,10 @@ v. {version}
 
 			if (oldSd.OpenRgbIp != sd.OpenRgbIp || oldSd.OpenRgbPort != sd.OpenRgbPort) {
 				LoadAgents();
+			}
+
+			if (ll != _sd.LogLevel) {
+				SetLogLevel();
 			}
 		}
 

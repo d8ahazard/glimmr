@@ -14,7 +14,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Services; 
+namespace Glimmr.Services;
 
 public class DiscoveryService : BackgroundService {
 	private readonly List<IColorDiscovery> _discoverables;
@@ -55,36 +55,45 @@ public class DiscoveryService : BackgroundService {
 	}
 
 	protected override Task ExecuteAsync(CancellationToken stoppingToken) {
+		Log.Debug("Starting discovery service...");
 		_mergeSource = Initialize(stoppingToken);
-		return Task.Run(async () => {
+		var discoTask = Task.Run(async () => {
 			while (!stoppingToken.IsCancellationRequested) {
 				await Task.Delay(TimeSpan.FromMinutes(_discoveryInterval), _mergeSource.Token);
-				if (!_streaming) {
+				if (_streaming) {
+					continue;
+				}
+
+				try {
 					await TriggerRefresh(this, null);
+				} catch (Exception e) {
+					Log.Warning("Disco Exception: " + e.Message);
 				}
 			}
-
-			return Task.CompletedTask;
-		}, stoppingToken);
-	}
-
-	private CancellationTokenSource Initialize(CancellationToken stoppingToken) {
-		Log.Information($"Starting discovery service, interval is {_discoveryInterval} seconds...");
-		_stopToken = stoppingToken;
-		var devs = DataUtil.GetDevices();
-		if (devs.Count == 0 || SystemUtil.IsRaspberryPi() && devs.Count == 2) {
-			Log.Debug($"Dev count is {devs.Count}, scanning...");
-			TriggerRefresh(null, null).ConfigureAwait(false);
-		}
-
-		Log.Information("Discovery service started.");
-		return CancellationTokenSource.CreateLinkedTokenSource(_syncSource.Token, _stopToken);
+		}, CancellationToken.None);
+		Log.Debug("Discovery service started.");
+		return discoTask;
 	}
 
 	public override Task StopAsync(CancellationToken cancellationToken) {
+		_mergeSource?.Cancel();
 		Log.Information("Discovery service stopped.");
 		return base.StopAsync(cancellationToken);
 	}
+
+
+	private CancellationTokenSource Initialize(CancellationToken stoppingToken) {
+		_stopToken = stoppingToken;
+		var devs = DataUtil.GetDevices();
+		if (devs.Count != 0 && (!SystemUtil.IsRaspberryPi() || devs.Count != 2)) {
+			return CancellationTokenSource.CreateLinkedTokenSource(_syncSource.Token, _stopToken);
+		}
+
+		Log.Debug($"Dev count is {devs.Count}, scanning...");
+		TriggerRefresh(null, null).ConfigureAwait(false);
+		return CancellationTokenSource.CreateLinkedTokenSource(_syncSource.Token, _stopToken);
+	}
+
 
 	private Task UpdateMode(object o, DynamicEventArgs dynamicEventArgs) {
 		_streaming = dynamicEventArgs.Arg0 != 0;

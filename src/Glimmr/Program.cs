@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using Serilog.Core;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 
@@ -19,10 +20,10 @@ using Serilog.Sinks.SystemConsole.Themes;
 namespace Glimmr; 
 
 public static class Program {
+	public static LoggingLevelSwitch LogSwitch { get; set; }
 	public static void Main(string[] args) {
 		const string outputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}]{Caller} {Message}{NewLine}{Exception}";
 		var logPath = "/var/log/glimmr/glimmr.log";
-		var sd = DataUtil.GetSystemData();
 		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 			var userPath = SystemUtil.GetUserDir();
 			var logDir = Path.Combine(userPath, "log");
@@ -35,20 +36,18 @@ public static class Program {
 
 		//var tr1 = new TextWriterTraceListener(Console.Out);
 		//Trace.Listeners.Add(tr1);
+		LogSwitch = new LoggingLevelSwitch {
+			MinimumLevel = LogEventLevel.Debug
+		};
 		var lc = new LoggerConfiguration()
 			.Enrich.WithCaller()
-			.MinimumLevel.Information()
+			.MinimumLevel.ControlledBy(LogSwitch)
 			.WriteTo.Console(outputTemplate: outputTemplate, theme: SystemConsoleTheme.Literate)
-			.MinimumLevel.Override("Microsoft", LogEventLevel.Information)
 			.Filter.ByExcluding(c => c.Properties["Caller"].ToString().Contains("SerilogLogger"))
 			.Enrich.FromLogContext()
 			.WriteTo.Async(a =>
 				a.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: outputTemplate))
 			.WriteTo.SocketSink();
-
-		if (sd.LogLevel == 0) {
-			lc.MinimumLevel.Debug();
-		}
 		
 		Log.Logger = lc.CreateLogger();
 		
@@ -65,18 +64,26 @@ public static class Program {
 		}
 
 		CreateHostBuilder(args, Log.Logger).Build().Run();
+		//ControlService.LevelSwitch = levelSwitch;
 		Log.CloseAndFlush();
 	}
 
 	private static IHostBuilder CreateHostBuilder(string[] args, ILogger logger) {
 		return Host.CreateDefaultBuilder(args)
+			.UseDefaultServiceProvider(o =>
+			{
+				o.ValidateOnBuild = false;
+			})
 			.UseSerilog(logger)
+			.UseConsoleLifetime()
 			.ConfigureServices(services => {
+				services.Configure<HostOptions>(hostOptions =>
+				{
+					hostOptions.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore;
+				});
 				services.AddSignalR();
-				services.AddSingleton<ControlService>();
-				services.AddHostedService<ColorService>();
-				services.AddHostedService<DiscoveryService>();
-				services.AddHostedService<StatService>();
+				services.AddSingleton<IHostedService, ControlService>();
+				Log.Debug("Config...");
 			})
 			.ConfigureWebHostDefaults(webBuilder => {
 				webBuilder.UseStartup<Startup>();

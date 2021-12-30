@@ -12,10 +12,7 @@ public class SocketSink : ILogEventSink {
 	private ControlService? _cs;
 
 	public void Emit(LogEvent logEvent) {
-		if (_cs == null) {
-			_cs = ControlService.GetInstance();
-		}
-
+		_cs ??= ControlService.GetInstance();
 		_cs?.SendLogLine(logEvent).ConfigureAwait(false);
 	}
 }

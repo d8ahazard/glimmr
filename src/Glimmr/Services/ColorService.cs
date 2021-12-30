@@ -18,7 +18,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Services; 
+namespace Glimmr.Services;
 
 // Handles capturing and sending color data
 public class ColorService : BackgroundService {
@@ -33,7 +33,7 @@ public class ColorService : BackgroundService {
 
 	public readonly FrameCounter Counter;
 	private readonly FrameSplitter _splitter;
-
+	private readonly Stopwatch _loopWatch;
 
 	private readonly Dictionary<string, ColorSource> _streams;
 	private readonly Stopwatch _watch;
@@ -51,8 +51,6 @@ public class ColorService : BackgroundService {
 	private ColorSource? _stream;
 	private bool _streamStarted;
 
-	private Task? _streamTask;
-
 	// Token for the color source
 	private CancellationTokenSource _streamTokenSource;
 
@@ -65,6 +63,7 @@ public class ColorService : BackgroundService {
 	public ColorService(ControlService controlService) {
 		controlService.ColorService = this;
 		_watch = new Stopwatch();
+		_loopWatch = new Stopwatch();
 		_streamTokenSource = new CancellationTokenSource();
 		_targetTokenSource = new CancellationTokenSource();
 		_sDevices = Array.Empty<IColorTarget>();
@@ -112,21 +111,18 @@ public class ColorService : BackgroundService {
 		}
 	}
 
-	protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-		await Initialize();
-
-		Log.Debug("Starting main Color Service loop...");
-		await Task.Run(async () => {
-			var cTask = ControlService.Execute(stoppingToken);
-			var loopWatch = new Stopwatch();
-			loopWatch.Start();
+	protected override Task ExecuteAsync(CancellationToken stoppingToken) {
+		Log.Debug("Starting color service...");
+		var colorTask = Task.Run(async () => {
+			await Initialize();
+			_loopWatch.Start();
 			while (!stoppingToken.IsCancellationRequested) {
 				await CheckAutoDisable().ConfigureAwait(false);
 
 				// Save a frame every 5 seconds
-				if (loopWatch.Elapsed >= TimeSpan.FromSeconds(5)) {
+				if (_loopWatch.Elapsed >= TimeSpan.FromSeconds(5)) {
 					FrameSaveEvent.Invoke();
-					loopWatch.Restart();
+					_loopWatch.Restart();
 				}
 
 				if (!ColorsUpdated) {
@@ -141,22 +137,24 @@ public class ColorService : BackgroundService {
 				ColorsUpdated = false;
 				await SendColors(LedColors, SectorColors);
 			}
-
-			if (cTask.IsCompleted) {
-				Log.Debug("CTask canceled.");
-			}
-
-			loopWatch.Stop();
-			Log.Information("Send loop canceled.");
-
-			_streamTask?.Dispose();
-			DataUtil.Dispose();
 		}, CancellationToken.None);
+		Log.Debug("Color Service Started.");
+		return colorTask;
+	}
+
+	public override Task StopAsync(CancellationToken cancellationToken) {
+		Log.Information("Stopping color service...");
+		_loopWatch.Stop();
+		StopServices().ConfigureAwait(true);
+		DataUtil.Dispose();
+		Log.Information("Color service stopped.");
+		base.StopAsync(cancellationToken);
+		return Task.CompletedTask;
 	}
 
 
 	private async Task Initialize() {
-		Log.Information("Starting color service...");
+		Log.Information("Initializing color service...");
 		LoadData();
 		Log.Debug("Data loaded...");
 		if (!_systemData.SkipDemo) {
@@ -182,13 +180,6 @@ public class ColorService : BackgroundService {
 		Log.Information("Color service started.");
 	}
 
-	public override async Task StopAsync(CancellationToken cancellationToken) {
-		Log.Information("Stopping color service...");
-		await StopServices();
-		DataUtil.Dispose();
-		Log.Information("Color service stopped.");
-		await base.StopAsync(cancellationToken);
-	}
 
 	public BackgroundService? GetStream(string name) {
 		return _streams.ContainsKey(name) ? _streams[name] : null;
@@ -559,7 +550,7 @@ public class ColorService : BackgroundService {
 		_stream = stream;
 		if (stream != null) {
 			Log.Debug("Toggling stream for " + newMode);
-			_streamTask = stream.Start(_streamTokenSource.Token);
+			await stream.Start(_streamTokenSource.Token);
 			_stream = stream;
 		} else {
 			if (newMode != DeviceMode.Off) {

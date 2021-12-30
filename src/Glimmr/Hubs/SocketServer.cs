@@ -18,12 +18,13 @@ namespace Glimmr.Hubs;
 
 public class SocketServer : Hub {
 	private static Dictionary<string, bool> _states = new();
-	private readonly ControlService _cs;
+	private readonly ControlService? _cs;
 	private bool _doSend;
 
 
-	public SocketServer(ControlService cs) {
-		_cs = cs;
+	public SocketServer() {
+		var cs = ControlService.GetInstance();
+		if (cs != null) _cs = cs;
 		_states = new Dictionary<string, bool>();
 	}
 

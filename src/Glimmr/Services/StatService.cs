@@ -13,7 +13,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Services; 
+namespace Glimmr.Services;
 
 public class StatService : BackgroundService {
 	private readonly ColorService _colorService;
@@ -32,11 +32,12 @@ public class StatService : BackgroundService {
 	}
 
 	protected override Task ExecuteAsync(CancellationToken stoppingToken) {
-		Initialize();
+		Log.Debug("Starting stat service...");
 		var watch = new Stopwatch();
 		watch.Start();
 		var loaded = false;
-		return Task.Run(async () => {
+
+		var statTask = Task.Run(async () => {
 			while (!stoppingToken.IsCancellationRequested) {
 				try {
 					if (loaded && watch.Elapsed <= TimeSpan.FromSeconds(5)) {
@@ -57,12 +58,8 @@ public class StatService : BackgroundService {
 			}
 
 			Log.Information("Stat service stopped.");
-			return Task.CompletedTask;
-		}, stoppingToken);
-	}
-
-	private static void Initialize() {
-		Log.Debug("Starting stat service...");
-		Log.Debug("Stat service started.");
+		}, CancellationToken.None);
+		Log.Debug("Stat service started...");
+		return statTask;
 	}
 }
