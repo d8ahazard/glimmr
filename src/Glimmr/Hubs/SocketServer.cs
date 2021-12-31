@@ -14,7 +14,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Hubs; 
+namespace Glimmr.Hubs;
 
 public class SocketServer : Hub {
 	private static Dictionary<string, bool> _states = new();
@@ -24,7 +24,10 @@ public class SocketServer : Hub {
 
 	public SocketServer() {
 		var cs = ControlService.GetInstance();
-		if (cs != null) _cs = cs;
+		if (cs != null) {
+			_cs = cs;
+		}
+
 		_states = new Dictionary<string, bool>();
 	}
 

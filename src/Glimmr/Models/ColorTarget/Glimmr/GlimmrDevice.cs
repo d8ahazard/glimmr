@@ -18,7 +18,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.Glimmr; 
+namespace Glimmr.Models.ColorTarget.Glimmr;
 
 public class GlimmrDevice : ColorTarget, IColorTarget, IDisposable {
 	private const int Port = 21324;

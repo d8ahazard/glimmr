@@ -12,7 +12,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.Wled; 
+namespace Glimmr.Models.ColorTarget.Wled;
 
 [Serializable]
 public class WledData : IColorTargetData {

@@ -10,7 +10,7 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 
 #endregion
 
-namespace Glimmr.Models; 
+namespace Glimmr.Models;
 
 public class DescribeEnumMembers : ISchemaFilter {
 	private readonly XDocument? _xmlComments;

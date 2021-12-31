@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.Lifx; 
+namespace Glimmr.Models.ColorTarget.Lifx;
 
 public class LifxData : IColorTargetData {
 	/// <summary>

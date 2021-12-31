@@ -14,7 +14,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorSource.Video; 
+namespace Glimmr.Models.ColorSource.Video;
 
 public class VideoStream : ColorSource {
 	// should we send them to devices?

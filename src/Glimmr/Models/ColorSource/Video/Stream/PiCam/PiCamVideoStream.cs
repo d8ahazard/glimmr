@@ -17,7 +17,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorSource.Video.Stream.PiCam; 
+namespace Glimmr.Models.ColorSource.Video.Stream.PiCam;
 
 public sealed class PiCamVideoStream : IVideoStream, IDisposable {
 	private const int CapHeight = 480;

@@ -16,7 +16,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.Util; 
+namespace Glimmr.Models.Util;
 
 public static class SystemUtil {
 	public static void Reboot() {

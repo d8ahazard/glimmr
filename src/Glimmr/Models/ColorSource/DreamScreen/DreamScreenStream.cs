@@ -15,7 +15,7 @@ using GlimmrMode = Glimmr.Enums.DeviceMode;
 
 #endregion
 
-namespace Glimmr.Models.ColorSource.DreamScreen; 
+namespace Glimmr.Models.ColorSource.DreamScreen;
 
 public class DreamScreenStream : ColorSource {
 	public override bool SourceActive => _splitter.SourceActive;

@@ -9,7 +9,7 @@ using rpi_ws281x;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.Led; 
+namespace Glimmr.Models.ColorTarget.Led;
 
 public class LedAgent : IColorTargetAgent {
 	private float _ablAmps;

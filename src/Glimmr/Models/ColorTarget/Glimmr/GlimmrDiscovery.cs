@@ -12,7 +12,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.Glimmr; 
+namespace Glimmr.Models.ColorTarget.Glimmr;
 
 public class GlimmrDiscovery : ColorDiscovery, IColorDiscovery {
 	private readonly MulticastService _mDns;

@@ -10,7 +10,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.DreamScreen; 
+namespace Glimmr.Models.ColorTarget.DreamScreen;
 
 public class DreamScreenDiscovery : ColorDiscovery, IColorDiscovery {
 	private readonly DreamScreenClient? _client;

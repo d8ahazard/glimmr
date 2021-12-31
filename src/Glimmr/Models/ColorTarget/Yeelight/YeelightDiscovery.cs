@@ -10,7 +10,7 @@ using YeelightAPI;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.Yeelight; 
+namespace Glimmr.Models.ColorTarget.Yeelight;
 
 public class YeelightDiscovery : ColorDiscovery, IColorDiscovery {
 	private readonly ControlService _controlService;

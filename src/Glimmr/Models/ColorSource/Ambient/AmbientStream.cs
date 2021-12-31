@@ -13,7 +13,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorSource.Ambient; 
+namespace Glimmr.Models.ColorSource.Ambient;
 
 public class AmbientStream : ColorSource {
 	public override bool SourceActive => _splitter.SourceActive;
@@ -154,6 +154,7 @@ public class AmbientStream : ColorSource {
 				} catch (Exception e) {
 					Log.Warning("EX: " + e.Message);
 				}
+
 				watch.Restart();
 			}
 

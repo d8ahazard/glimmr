@@ -12,7 +12,7 @@ using OpenRGB.NET.Models;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.OpenRgb; 
+namespace Glimmr.Models.ColorTarget.OpenRgb;
 
 public class OpenRgbData : IColorTargetData {
 	/// <summary>

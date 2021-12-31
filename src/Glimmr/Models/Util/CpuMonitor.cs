@@ -4,7 +4,7 @@ using LibreHardwareMonitor.Hardware;
 
 #endregion
 
-namespace Glimmr.Models.Util; 
+namespace Glimmr.Models.Util;
 
 public class CpuMonitor : IVisitor {
 	public void VisitComputer(IComputer computer) {

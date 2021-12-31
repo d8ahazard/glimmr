@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 #endregion
 
-namespace Glimmr.Models; 
+namespace Glimmr.Models;
 
 public class AsyncEvent<TEventArgs> where TEventArgs : DynamicEventArgs {
 	private readonly List<Func<object, TEventArgs, Task>> _invocationList;

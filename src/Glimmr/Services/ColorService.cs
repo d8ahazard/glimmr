@@ -32,8 +32,8 @@ public class ColorService : BackgroundService {
 	public int StopCounter { get; set; }
 
 	public readonly FrameCounter Counter;
-	private readonly FrameSplitter _splitter;
 	private readonly Stopwatch _loopWatch;
+	private readonly FrameSplitter _splitter;
 
 	private readonly Dictionary<string, ColorSource> _streams;
 	private readonly Stopwatch _watch;

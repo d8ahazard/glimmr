@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.Yeelight; 
+namespace Glimmr.Models.ColorTarget.Yeelight;
 
 public class YeelightData : IColorTargetData {
 	/// <summary>

@@ -5,7 +5,7 @@ using Glimmr.Services;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget; 
+namespace Glimmr.Models.ColorTarget;
 
 /// <summary>
 ///     Keeping with our theme of dynamically instantiating classes based on

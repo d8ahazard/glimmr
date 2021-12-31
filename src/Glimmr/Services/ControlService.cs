@@ -44,8 +44,10 @@ public class ControlService : BackgroundService {
 	private static LoggingLevelSwitch? _levelSwitch;
 
 	private static ControlService? _myCs;
+	private readonly DiscoveryService _discoveryService;
 
 	private readonly IHubContext<SocketServer> _hubContext;
+	private readonly StatService _statService;
 
 	public AsyncEvent<DynamicEventArgs> DemoLedEvent = null!;
 	public AsyncEvent<DynamicEventArgs> DeviceReloadEvent = null!;
@@ -58,12 +60,10 @@ public class ControlService : BackgroundService {
 	public AsyncEvent<DynamicEventArgs> TestLedEvent = null!;
 
 	private Dictionary<string, dynamic> _agents = null!;
-	private SystemData _sd = null!;
-	private Task _statTask = null!;
 	private Task _colorTask = null!;
 	private Task _discoveryTask = null!;
-	private readonly StatService _statService;
-	private readonly DiscoveryService _discoveryService;
+	private SystemData _sd = null!;
+	private Task _statTask = null!;
 
 	public ControlService(IHubContext<SocketServer> hubContext) {
 		_hubContext = hubContext;
@@ -389,7 +389,10 @@ v. {version}
 	}
 
 	private void SetLogLevel() {
-		if (_levelSwitch == null) return;
+		if (_levelSwitch == null) {
+			return;
+		}
+
 		_levelSwitch.MinimumLevel = _sd.LogLevel switch {
 			0 => LogEventLevel.Verbose,
 			1 => LogEventLevel.Debug,

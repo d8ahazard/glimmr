@@ -8,7 +8,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorSource.Audio; 
+namespace Glimmr.Models.ColorSource.Audio;
 
 public class AudioMap {
 	private readonly int[] _leftSectors;

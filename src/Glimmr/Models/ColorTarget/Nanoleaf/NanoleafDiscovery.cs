@@ -13,7 +13,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.Nanoleaf; 
+namespace Glimmr.Models.ColorTarget.Nanoleaf;
 
 public class NanoleafDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth {
 	private readonly ControlService _controlService;

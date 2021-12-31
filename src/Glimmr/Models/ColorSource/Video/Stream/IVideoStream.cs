@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 #endregion
 
-namespace Glimmr.Models.ColorSource.Video.Stream; 
+namespace Glimmr.Models.ColorSource.Video.Stream;
 
 public interface IVideoStream {
 	public Task Start(FrameSplitter splitter, CancellationToken ct);

@@ -8,7 +8,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.Led; 
+namespace Glimmr.Models.ColorTarget.Led;
 
 public class LedDiscovery : ColorDiscovery, IColorDiscovery {
 	public LedDiscovery(ColorService colorService) : base(colorService) {

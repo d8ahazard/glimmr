@@ -10,7 +10,7 @@ using Glimmr.Services;
 
 #endregion
 
-namespace Glimmr.Models; 
+namespace Glimmr.Models;
 
 public class FrameCounter : IDisposable {
 	public ConcurrentDictionary<string, int> Rates { get; private set; }

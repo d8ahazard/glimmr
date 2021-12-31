@@ -12,7 +12,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorSource.Audio; 
+namespace Glimmr.Models.ColorSource.Audio;
 
 public class AudioStream : ColorSource {
 	public bool SendColors {

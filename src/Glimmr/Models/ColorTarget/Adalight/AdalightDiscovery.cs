@@ -11,7 +11,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.Adalight; 
+namespace Glimmr.Models.ColorTarget.Adalight;
 
 public class AdalightDiscovery : ColorDiscovery, IColorDiscovery {
 	public AdalightDiscovery(ColorService cs) : base(cs) {

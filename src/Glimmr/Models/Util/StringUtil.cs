@@ -4,7 +4,7 @@ using System.Globalization;
 
 #endregion
 
-namespace Glimmr.Models.Util; 
+namespace Glimmr.Models.Util;
 
 public static class StringUtil {
 	public static string UppercaseFirst(string s) {

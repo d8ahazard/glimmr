@@ -12,7 +12,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.OpenRgb; 
+namespace Glimmr.Models.ColorTarget.OpenRgb;
 
 public class OpenRgbDevice : ColorTarget, IColorTarget {
 	private readonly ColorService _colorService;
@@ -75,7 +75,7 @@ public class OpenRgbDevice : ColorTarget, IColorTarget {
 		} else {
 			Log.Debug($"{_data.Tag}::Stream start failed: {_data.Id}.");
 		}
-			
+
 		ColorService.StartCounter--;
 		return Task.CompletedTask;
 	}

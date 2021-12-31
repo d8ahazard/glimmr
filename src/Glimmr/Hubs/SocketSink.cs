@@ -6,7 +6,7 @@ using Serilog.Events;
 
 #endregion
 
-namespace Glimmr.Hubs; 
+namespace Glimmr.Hubs;
 
 public class SocketSink : ILogEventSink {
 	private ControlService? _cs;

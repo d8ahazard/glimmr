@@ -13,7 +13,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.Nanoleaf; 
+namespace Glimmr.Models.ColorTarget.Nanoleaf;
 
 public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
 	private readonly Stopwatch _frameWatch;

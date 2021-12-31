@@ -10,7 +10,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.OpenRgb; 
+namespace Glimmr.Models.ColorTarget.OpenRgb;
 
 public class OpenRgbDiscovery : ColorDiscovery, IColorDiscovery {
 	private readonly OpenRgbAgent? _client;

@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.Nanoleaf; 
+namespace Glimmr.Models.ColorTarget.Nanoleaf;
 
 [Serializable]
 public class NanoleafData : IColorTargetData {

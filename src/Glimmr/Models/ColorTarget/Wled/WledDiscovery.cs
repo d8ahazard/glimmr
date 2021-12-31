@@ -11,7 +11,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.Wled; 
+namespace Glimmr.Models.ColorTarget.Wled;
 
 public class WledDiscovery : ColorDiscovery, IColorDiscovery {
 	private readonly MulticastService _mDns;

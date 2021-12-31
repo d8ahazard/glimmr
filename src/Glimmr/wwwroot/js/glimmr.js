@@ -452,8 +452,8 @@ function setSocketListeners() {
     websocket.on("stats", function (cpuData) {
         data.Stats = cpuData;
     });
-    
-    websocket.on("frames", function(statData) {
+
+    websocket.on("frames", function (statData) {
         let curStats = data.Stats;
         curStats.Fps = statData;
         data.Stats = curStats;
@@ -3898,7 +3898,7 @@ function setNanoMap(id, current) {
 // 300, -10, 150
 /**
  * Calculate the total range that LEDs fall into.
- * 
+ *
  * @param systemTotal - The total number of LEDs our system has
  * @param offset - Starting point in relation to the total number of LEDs
  * @param deviceTotal - The number of LEDs for the desired device
@@ -3913,7 +3913,7 @@ function ranges(systemTotal, offset, deviceTotal) {
         fromEnd = systemTotal + offset;
         deviceTotal += offset;
         offset = fromEnd;
-        startOffset = 0;        
+        startOffset = 0;
     } else if (offset + deviceTotal > systemTotal) {
         if (offset > systemTotal) {
             while (offset > systemTotal) {
@@ -3924,14 +3924,14 @@ function ranges(systemTotal, offset, deviceTotal) {
         deviceTotal -= fromEnd;
         startOffset = 0;
     }
-    
+
     // Start from the end if required
     if (fromEnd !== 0) {
         for (let i = offset; i < systemTotal; i++) {
             range.push(i);
-        }    
+        }
     }
-    
+
     if (deviceTotal > 0) {
         for (let i = startOffset; i < startOffset + deviceTotal; i++) {
             range.push(i);

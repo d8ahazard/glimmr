@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 #endregion
 
-namespace Glimmr.Models; 
+namespace Glimmr.Models;
 
 /// <summary>
 ///     Represents an asynchronous event handler.

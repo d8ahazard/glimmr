@@ -12,7 +12,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorSource.AudioVideo; 
+namespace Glimmr.Models.ColorSource.AudioVideo;
 
 public class AudioVideoStream : ColorSource {
 	public override bool SourceActive => _vs != null && _vs.StreamSplitter.SourceActive;

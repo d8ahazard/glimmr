@@ -6,7 +6,7 @@ using Microsoft.Extensions.Hosting;
 
 #endregion
 
-namespace Glimmr.Models.ColorSource; 
+namespace Glimmr.Models.ColorSource;
 
 public abstract class ColorSource : BackgroundService {
 	public abstract bool SourceActive { get; }

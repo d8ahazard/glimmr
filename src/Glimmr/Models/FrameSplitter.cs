@@ -17,7 +17,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models; 
+namespace Glimmr.Models;
 
 public class FrameSplitter {
 	// Do we send our frame data to the UI?

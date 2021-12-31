@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget; 
+namespace Glimmr.Models.ColorTarget;
 
 [Serializable]
 public class TileLayout {

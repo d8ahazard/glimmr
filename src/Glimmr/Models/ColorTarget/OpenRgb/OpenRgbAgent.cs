@@ -11,7 +11,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.OpenRgb; 
+namespace Glimmr.Models.ColorTarget.OpenRgb;
 
 public abstract class OpenRgbAgent : IColorTargetAgent {
 	public bool Connected => _client?.Connected ?? false;
@@ -53,6 +53,7 @@ public abstract class OpenRgbAgent : IColorTargetAgent {
 		if (_client.Connected) {
 			return;
 		}
+
 		try {
 			_client?.Connect();
 		} catch (Exception e) {
@@ -73,6 +74,7 @@ public abstract class OpenRgbAgent : IColorTargetAgent {
 			if (!_client.Connected) {
 				return false;
 			}
+
 			_client.SetMode(deviceId, mode);
 			return true;
 		} catch (Exception e) {

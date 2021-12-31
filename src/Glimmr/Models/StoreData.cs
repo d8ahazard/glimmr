@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 
 #endregion
 
-namespace Glimmr.Models; 
+namespace Glimmr.Models;
 
 /// <summary>
 ///     A JSON representation of the database.

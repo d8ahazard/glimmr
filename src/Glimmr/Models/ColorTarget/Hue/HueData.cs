@@ -13,7 +13,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.Hue; 
+namespace Glimmr.Models.ColorTarget.Hue;
 
 [Serializable]
 public class HueData : IColorTargetData {

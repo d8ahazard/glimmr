@@ -6,7 +6,7 @@ using Glimmr.Services;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget; 
+namespace Glimmr.Models.ColorTarget;
 
 public interface IColorDiscovery {
 	public Task Discover(CancellationToken ct, int timeout);

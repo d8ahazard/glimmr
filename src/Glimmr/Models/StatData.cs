@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 
 #endregion
 
-namespace Glimmr.Models; 
+namespace Glimmr.Models;
 
 [Serializable]
 public class StatData {

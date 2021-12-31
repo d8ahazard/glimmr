@@ -17,7 +17,7 @@ using Swashbuckle.AspNetCore.Annotations;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget; 
+namespace Glimmr.Models.ColorTarget;
 
 /// <summary>
 ///     Base class for various color target data classes.

@@ -1,4 +1,4 @@
-﻿namespace Glimmr.Enums; 
+﻿namespace Glimmr.Enums;
 
 /// <summary>
 ///     The current device mode.

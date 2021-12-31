@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 
 #endregion
 
-namespace Glimmr.Models.ColorSource.Audio; 
+namespace Glimmr.Models.ColorSource.Audio;
 
 public struct AudioScene {
 	/// <summary>

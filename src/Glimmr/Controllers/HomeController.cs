@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 #endregion
 
-namespace Glimmr.Controllers; 
+namespace Glimmr.Controllers;
 
 public class HomeController : Controller {
 	public IActionResult Index() {

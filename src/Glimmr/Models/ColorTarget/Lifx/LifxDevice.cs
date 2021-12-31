@@ -13,7 +13,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.Lifx; 
+namespace Glimmr.Models.ColorTarget.Lifx;
 
 public class LifxDevice : ColorTarget, IColorTarget {
 	private Device B { get; }

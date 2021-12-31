@@ -9,7 +9,7 @@ using Serilog.Events;
 
 #endregion
 
-namespace Glimmr.Models.Logging; 
+namespace Glimmr.Models.Logging;
 
 internal class CallerEnricher : ILogEventEnricher {
 	public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory) {

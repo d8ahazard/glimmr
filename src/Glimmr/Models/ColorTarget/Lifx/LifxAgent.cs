@@ -6,7 +6,7 @@ using LifxNetPlus;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.Lifx; 
+namespace Glimmr.Models.ColorTarget.Lifx;
 
 public class LifxAgent : IColorTargetAgent {
 	private LifxClient? _lc;

@@ -3542,7 +3542,7 @@
           },
           "Devices": {
             "type": "array",
-            "items": { },
+            "items": {},
             "description": "List of devices and their settings.",
             "nullable": true
           },

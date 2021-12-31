@@ -10,7 +10,7 @@ using Emgu.CV.Structure;
 
 #endregion
 
-namespace Glimmr.Models; 
+namespace Glimmr.Models;
 
 public class FrameBuilder {
 	private const int ScaleHeight = 480;

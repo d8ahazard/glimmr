@@ -14,7 +14,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.Util; 
+namespace Glimmr.Models.Util;
 
 [Serializable]
 public static class DataUtil {
@@ -92,7 +92,7 @@ public static class DataUtil {
 		}
 
 
-		File.Move(dbPath, dbPath + ".bak",true);
+		File.Move(dbPath, dbPath + ".bak", true);
 		if (path == string.Empty) {
 			return;
 		}
@@ -389,6 +389,7 @@ public static class DataUtil {
 		} catch (Exception) {
 			//ignored
 		}
+
 		_dbLocked = false;
 		return output;
 	}

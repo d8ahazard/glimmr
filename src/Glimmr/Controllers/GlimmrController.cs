@@ -24,7 +24,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Controllers; 
+namespace Glimmr.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]

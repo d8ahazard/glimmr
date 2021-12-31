@@ -11,7 +11,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.Adalight; 
+namespace Glimmr.Models.ColorTarget.Adalight;
 
 public class AdalightDevice : ColorTarget, IColorTarget {
 	private AdalightNet.Adalight _adalight;

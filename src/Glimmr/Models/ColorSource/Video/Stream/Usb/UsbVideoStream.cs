@@ -11,7 +11,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorSource.Video.Stream.Usb; 
+namespace Glimmr.Models.ColorSource.Video.Stream.Usb;
 
 public class UsbVideoStream : IVideoStream, IDisposable {
 	private bool _disposed;
@@ -102,11 +102,11 @@ public class UsbVideoStream : IVideoStream, IDisposable {
 			_video.Set(CapProp.Fps, 60);
 		} catch (Exception e) {
 			Log.Debug("Exception setting video prop: " + e.Message);
-		} 
-			
+		}
+
 		var fourCc = (int)_video.Get(CapProp.FourCC);
 		var fps = (int)_video.Get(CapProp.Fps);
-			
+
 		Log.Debug($"Video created, fps and 4cc are {fps} and {fourCc} versus 60 and {d5}.");
 		return true;
 	}

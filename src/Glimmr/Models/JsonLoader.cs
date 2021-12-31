@@ -14,7 +14,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models; 
+namespace Glimmr.Models;
 
 public class JsonLoader {
 	private readonly List<string> _directories;

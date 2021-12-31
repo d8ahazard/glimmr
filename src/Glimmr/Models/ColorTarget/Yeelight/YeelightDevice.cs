@@ -13,7 +13,7 @@ using YeelightAPI;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.Yeelight; 
+namespace Glimmr.Models.ColorTarget.Yeelight;
 
 public class YeelightDevice : ColorTarget, IColorTarget {
 	private string IpAddress { get; set; }

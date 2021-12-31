@@ -13,7 +13,7 @@ using Newtonsoft.Json;
 
 #endregion
 
-namespace Glimmr.Models; 
+namespace Glimmr.Models;
 
 public class SystemData {
 	/// <summary>
@@ -222,13 +222,6 @@ public class SystemData {
 	[DefaultValue(115200)]
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 	public int BaudRate { get; set; } = 115200;
-		
-	/// <summary>
-	///     Level to log the logging at. 0 = debug, 1 = inf
-	/// </summary>
-	[DefaultValue(1)]
-	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-	public int LogLevel { get; set; }
 
 	/// <summary>
 	///     Colors below this brightness will be considered "black".
@@ -289,6 +282,13 @@ public class SystemData {
 	[DefaultValue(54)]
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 	public int LeftCount { get; set; } = 54;
+
+	/// <summary>
+	///     Level to log the logging at. 0 = debug, 1 = inf
+	/// </summary>
+	[DefaultValue(1)]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public int LogLevel { get; set; }
 
 	/// <summary>
 	///     Port to use for OpenRGB communication. (Default is 6742)

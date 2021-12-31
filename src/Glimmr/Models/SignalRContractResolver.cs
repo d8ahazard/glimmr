@@ -7,7 +7,7 @@ using Newtonsoft.Json.Serialization;
 
 #endregion
 
-namespace Glimmr.Models; 
+namespace Glimmr.Models;
 
 public class SignalRContractResolver : IContractResolver {
 	private readonly Assembly _assembly;

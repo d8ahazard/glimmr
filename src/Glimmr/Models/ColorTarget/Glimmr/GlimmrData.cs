@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.Glimmr; 
+namespace Glimmr.Models.ColorTarget.Glimmr;
 
 [Serializable]
 public class GlimmrData : IColorTargetData {

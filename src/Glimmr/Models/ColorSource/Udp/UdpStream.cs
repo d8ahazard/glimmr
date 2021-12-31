@@ -19,7 +19,7 @@ using static Glimmr.Enums.DeviceMode;
 
 #endregion
 
-namespace Glimmr.Models.ColorSource.UDP; 
+namespace Glimmr.Models.ColorSource.UDP;
 
 public class UdpStream : ColorSource {
 	public override bool SourceActive => _sourceActive;

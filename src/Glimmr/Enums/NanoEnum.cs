@@ -1,4 +1,4 @@
-﻿namespace Glimmr.Enums; 
+﻿namespace Glimmr.Enums;
 
 public enum ShapeType {
 	Triangle = 0,

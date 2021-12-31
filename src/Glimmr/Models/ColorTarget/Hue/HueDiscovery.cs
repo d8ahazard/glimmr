@@ -12,7 +12,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.Hue; 
+namespace Glimmr.Models.ColorTarget.Hue;
 
 public class HueDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth {
 	private readonly BridgeLocator _bridgeLocatorHttp;

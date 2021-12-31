@@ -17,7 +17,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.Wled; 
+namespace Glimmr.Models.ColorTarget.Wled;
 
 public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 	private string IpAddress { get; set; }

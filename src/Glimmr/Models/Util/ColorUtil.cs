@@ -10,7 +10,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.Util; 
+namespace Glimmr.Models.Util;
 
 public static class ColorUtil {
 	private static DeviceMode _deviceMode;

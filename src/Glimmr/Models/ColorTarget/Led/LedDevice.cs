@@ -10,7 +10,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.Led; 
+namespace Glimmr.Models.ColorTarget.Led;
 
 public class LedDevice : ColorTarget, IColorTarget {
 	private readonly LedAgent? _agent;

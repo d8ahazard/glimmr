@@ -17,7 +17,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.Hue; 
+namespace Glimmr.Models.ColorTarget.Hue;
 
 public sealed class HueDevice : ColorTarget, IColorTarget, IDisposable {
 	private HueData Data { get; set; }

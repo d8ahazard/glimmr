@@ -13,7 +13,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.DreamScreen; 
+namespace Glimmr.Models.ColorTarget.DreamScreen;
 
 public class DreamScreenDevice : ColorTarget, IColorTarget {
 	private readonly DreamScreenClient? _client;

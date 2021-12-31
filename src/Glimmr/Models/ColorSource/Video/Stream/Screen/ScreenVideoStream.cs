@@ -14,7 +14,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorSource.Video.Stream.Screen; 
+namespace Glimmr.Models.ColorSource.Video.Stream.Screen;
 
 public class ScreenVideoStream : IVideoStream, IDisposable {
 	private readonly OSxScreenshot? _ss;

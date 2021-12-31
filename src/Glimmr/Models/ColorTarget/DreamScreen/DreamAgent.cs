@@ -6,7 +6,7 @@ using Glimmr.Services;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.DreamScreen; 
+namespace Glimmr.Models.ColorTarget.DreamScreen;
 
 public class DreamAgent : IColorTargetAgent {
 	private DreamScreenClient? _du;

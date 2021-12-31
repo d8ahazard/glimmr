@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.DreamScreen; 
+namespace Glimmr.Models.ColorTarget.DreamScreen;
 
 public class DreamScreenData : IColorTargetData {
 	/// <summary>

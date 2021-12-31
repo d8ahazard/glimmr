@@ -10,7 +10,7 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.Lifx; 
+namespace Glimmr.Models.ColorTarget.Lifx;
 
 public class LifxDiscovery : ColorDiscovery, IColorDiscovery {
 	protected virtual string DeviceTag => "Lifx Bulb";

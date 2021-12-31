@@ -5,7 +5,7 @@ using Serilog.Configuration;
 
 #endregion
 
-namespace Glimmr.Hubs; 
+namespace Glimmr.Hubs;
 
 public static class SocketSinkExtensions {
 	public static LoggerConfiguration SocketSink(this LoggerSinkConfiguration loggerConfiguration) {

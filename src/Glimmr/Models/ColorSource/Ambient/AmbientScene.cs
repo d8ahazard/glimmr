@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 
 #endregion
 
-namespace Glimmr.Models.ColorSource.Ambient; 
+namespace Glimmr.Models.ColorSource.Ambient;
 
 [Serializable]
 public class AmbientScene {

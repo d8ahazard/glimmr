@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.Adalight; 
+namespace Glimmr.Models.ColorTarget.Adalight;
 
 [Serializable]
 public class AdalightData : IColorTargetData {

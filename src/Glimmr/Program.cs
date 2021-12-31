@@ -17,10 +17,11 @@ using Serilog.Sinks.SystemConsole.Themes;
 
 #endregion
 
-namespace Glimmr; 
+namespace Glimmr;
 
 public static class Program {
 	public static LoggingLevelSwitch? LogSwitch { get; private set; }
+
 	public static void Main(string[] args) {
 		const string outputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}]{Caller} {Message}{NewLine}{Exception}";
 		var logPath = "/var/log/glimmr/glimmr.log";
@@ -48,9 +49,9 @@ public static class Program {
 			.WriteTo.Async(a =>
 				a.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: outputTemplate))
 			.WriteTo.SocketSink();
-		
+
 		Log.Logger = lc.CreateLogger();
-		
+
 		var app = Process.GetCurrentProcess().MainModule;
 		if (app != null) {
 			var file = app.FileName;
@@ -70,15 +71,11 @@ public static class Program {
 
 	private static IHostBuilder CreateHostBuilder(string[] args, ILogger logger) {
 		return Host.CreateDefaultBuilder(args)
-			.UseDefaultServiceProvider(o =>
-			{
-				o.ValidateOnBuild = false;
-			})
+			.UseDefaultServiceProvider(o => { o.ValidateOnBuild = false; })
 			.UseSerilog(logger)
 			.UseConsoleLifetime()
 			.ConfigureServices(services => {
-				services.Configure<HostOptions>(hostOptions =>
-				{
+				services.Configure<HostOptions>(hostOptions => {
 					hostOptions.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore;
 				});
 				services.AddSignalR();
