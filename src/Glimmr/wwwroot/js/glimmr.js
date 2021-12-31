@@ -452,6 +452,12 @@ function setSocketListeners() {
     websocket.on("stats", function (cpuData) {
         data.Stats = cpuData;
     });
+    
+    websocket.on("frames", function(statData) {
+        let curStats = data.Stats;
+        curStats.Fps = statData;
+        data.Stats = curStats;
+    });
 
     websocket.on("ambientMode", function (mode) {
         console.log("Socket has set ambient mode to " + mode);
