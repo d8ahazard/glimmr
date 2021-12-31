@@ -3,8 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using OpenRGB.NET;
@@ -15,7 +13,7 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.OpenRgb; 
 
-public class OpenRgbAgent : IColorTargetAgent {
+public abstract class OpenRgbAgent : IColorTargetAgent {
 	public bool Connected => _client?.Connected ?? false;
 	private string Ip { get; set; } = "";
 	private OpenRGBClient? _client;
@@ -39,7 +37,6 @@ public class OpenRgbAgent : IColorTargetAgent {
 			return new List<Device>();
 		}
 
-		Connect();
 		if (!_client.Connected) {
 			return new List<Device>();
 		}
@@ -56,15 +53,14 @@ public class OpenRgbAgent : IColorTargetAgent {
 		if (_client.Connected) {
 			return;
 		}
-		Log.Debug("Connecting OpenRGB client.");
 		try {
 			_client?.Connect();
-		} catch (Exception) {
-			Log.Warning("Could not connect to open RGB at " + Ip);
+		} catch (Exception e) {
+			Log.Warning($"Could not connect to open RGB {Ip}: " + e.Message);
 		}
 	}
 
-	public async Task<bool> SetMode(int deviceId, int mode) {
+	public bool SetMode(int deviceId, int mode) {
 		if (_client == null) {
 			return false;
 		}
@@ -74,16 +70,11 @@ public class OpenRgbAgent : IColorTargetAgent {
 		}
 
 		try {
-			var cts = new CancellationTokenSource();
-			cts.CancelAfter(500);
-			await Task.Run(() => {
-				Connect();
-				if (!_client.Connected) {
-					return false;
-				}
-				_client.SetMode(deviceId, mode);
-				return true;
-			}, cts.Token).ConfigureAwait(false);
+			if (!_client.Connected) {
+				return false;
+			}
+			_client.SetMode(deviceId, mode);
+			return true;
 		} catch (Exception e) {
 			Log.Warning("Exception starting OpenRGB: " + e.Message);
 		}
@@ -100,7 +91,6 @@ public class OpenRgbAgent : IColorTargetAgent {
 			return;
 		}
 
-		Connect();
 		if (!_client.Connected) {
 			return;
 		}
@@ -120,9 +110,7 @@ public class OpenRgbAgent : IColorTargetAgent {
 		if (ip != Ip || port != _port || _client == null) {
 			Ip = ip;
 			_port = port;
-			Log.Debug("Creating new client.");
 			_client = new OpenRGBClient(Ip, _port, "Glimmr", false);
-			Log.Debug("Created.");
 		}
 
 		Connect();

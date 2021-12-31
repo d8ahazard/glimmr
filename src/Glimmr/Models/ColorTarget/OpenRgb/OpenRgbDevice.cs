@@ -49,7 +49,6 @@ public class OpenRgbDevice : ColorTarget, IColorTarget {
 			return Task.CompletedTask;
 		}
 
-		_client.Connect();
 		if (!_client.Connected) {
 			return Task.CompletedTask;
 		}
@@ -63,7 +62,7 @@ public class OpenRgbDevice : ColorTarget, IColorTarget {
 				mt[i] = new OpenRGB.NET.Models.Color();
 			}
 
-			connected = _client.SetMode(_data.DeviceId, 0).Result;
+			connected = _client.SetMode(_data.DeviceId, 0);
 		} catch (Exception e) {
 			Log.Warning("Exception setting mode..." + e.Message);
 			ColorService.StartCounter--;
