@@ -549,8 +549,9 @@ public class ColorService : BackgroundService {
 
 		_stream = stream;
 		if (stream != null) {
-			Log.Debug("Toggling stream for " + newMode);
+			Log.Debug("Setting stream mode to " + newMode);
 			await stream.Start(_streamTokenSource.Token);
+			Log.Debug("Stream started.");
 			_stream = stream;
 		} else {
 			if (newMode != DeviceMode.Off) {

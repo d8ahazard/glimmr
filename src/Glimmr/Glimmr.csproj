@@ -26,6 +26,7 @@
         <PackageIconUrl>https://github.com/d8ahazard/glimmr/raw/master/appIcon.png</PackageIconUrl>
         <AssemblyVersion>1.2.1</AssemblyVersion>
         <FileVersion>1.2.1</FileVersion>
+        <InvariantGlobalization>false</InvariantGlobalization>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">

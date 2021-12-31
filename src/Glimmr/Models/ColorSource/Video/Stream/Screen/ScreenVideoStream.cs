@@ -48,7 +48,8 @@ public class ScreenVideoStream : IVideoStream, IDisposable {
 			}
 
 			_capturing = true;
-			return Task.Run(() => CaptureScreen(ct), CancellationToken.None);
+			Task.Run(() => CaptureScreen(ct), CancellationToken.None);
+			return Task.CompletedTask;
 		} catch (Exception e) {
 			Log.Warning("Exception, can't start screen cap: " + e.Message);
 			_capturing = false;
@@ -82,6 +83,7 @@ public class ScreenVideoStream : IVideoStream, IDisposable {
 			try {
 				Image<Bgr, byte>? newMat;
 				if (_ss == null) {
+					// We can ignore warnings about this, there's a flag set in the runtime config to allow this in 'nix.
 					var bcs = new Bitmap(_width, _height, PixelFormat.Format24bppRgb);
 					using var g = Graphics.FromImage(bcs);
 					g.CopyFromScreen(_left, _top, 0, 0, bcs.Size, CopyPixelOperation.SourceCopy);

@@ -41,13 +41,9 @@ public class UsbVideoStream : IVideoStream, IDisposable {
 		_video.ImageGrabbed += SetFrame;
 		_video.Start();
 		Log.Debug("USB Stream started.");
-		while (!ct.IsCancellationRequested) {
-			await Task.Delay(TimeSpan.FromMilliseconds(1), CancellationToken.None);
-		}
 	}
 
 	public Task Stop() {
-		//_video?.Stop();
 		Dispose();
 		return Task.CompletedTask;
 	}

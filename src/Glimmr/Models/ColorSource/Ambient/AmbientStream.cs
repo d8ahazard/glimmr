@@ -51,7 +51,8 @@ public class AmbientStream : ColorSource {
 
 	public override Task Start(CancellationToken ct) {
 		Log.Debug("Starting ambient stream...");
-		return ExecuteAsync(ct);
+		ExecuteAsync(ct).ConfigureAwait(false);
+		return Task.CompletedTask;
 	}
 
 	public override void RefreshSystem() {
@@ -101,15 +102,11 @@ public class AmbientStream : ColorSource {
 	protected override Task ExecuteAsync(CancellationToken ct) {
 		RefreshSystem();
 		_splitter.DoSend = true;
-		return Task.Run(async () => {
+		var aTask = Task.Run(async () => {
 			var watch = new Stopwatch();
 			watch.Start();
 			// Load this one for fading
 			while (!ct.IsCancellationRequested) {
-				if (watch.ElapsedMilliseconds <= 6) {
-					continue;
-				}
-
 				var elapsed = _watch.ElapsedMilliseconds;
 				var diff = _animationTime - elapsed;
 				var sectors = new Color[SectorCount];
@@ -157,7 +154,6 @@ public class AmbientStream : ColorSource {
 				} catch (Exception e) {
 					Log.Warning("EX: " + e.Message);
 				}
-
 				watch.Restart();
 			}
 
@@ -165,6 +161,8 @@ public class AmbientStream : ColorSource {
 			_splitter.DoSend = false;
 			Log.Information("Ambient stream service stopped.");
 		}, CancellationToken.None);
+		Log.Debug("Ambient stream started.");
+		return aTask;
 	}
 
 

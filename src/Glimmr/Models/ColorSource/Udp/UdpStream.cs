@@ -74,7 +74,8 @@ public class UdpStream : ColorSource {
 	public override Task Start(CancellationToken ct) {
 		Log.Information("Starting UDP Stream service...");
 		_splitter.DoSend = true;
-		return ExecuteAsync(ct);
+		ExecuteAsync(ct).ConfigureAwait(false);
+		return Task.CompletedTask;
 	}
 
 	public sealed override void RefreshSystem() {

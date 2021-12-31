@@ -20,7 +20,7 @@ using Serilog.Sinks.SystemConsole.Themes;
 namespace Glimmr; 
 
 public static class Program {
-	public static LoggingLevelSwitch LogSwitch { get; set; }
+	public static LoggingLevelSwitch? LogSwitch { get; private set; }
 	public static void Main(string[] args) {
 		const string outputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}]{Caller} {Message}{NewLine}{Exception}";
 		var logPath = "/var/log/glimmr/glimmr.log";
