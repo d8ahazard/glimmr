@@ -30,6 +30,11 @@ public class SocketServer : Hub {
 
 
 	public async Task Mode(DeviceMode mode) {
+		if (_cs == null) {
+			Log.Debug("NO CONTROL SERVICE!");
+			return;
+		}
+
 		try {
 			await _cs.SetMode(mode);
 		} catch (Exception e) {
@@ -39,23 +44,48 @@ public class SocketServer : Hub {
 
 
 	public async Task ScanDevices() {
+		if (_cs == null) {
+			Log.Debug("NO CONTROL SERVICE!");
+			return;
+		}
+
 		await _cs.ScanDevices();
 	}
 
 	public async Task AuthorizeDevice(string id) {
+		if (_cs == null) {
+			Log.Debug("NO CONTROL SERVICE!");
+			return;
+		}
+
 		var sender = Clients.Caller;
 		await _cs.AuthorizeDevice(id, sender);
 	}
 
 	public async Task Store() {
+		if (_cs == null) {
+			Log.Debug("NO CONTROL SERVICE!");
+			return;
+		}
+
 		await Clients.Caller.SendAsync("olo", DataUtil.GetStoreSerialized(_cs));
 	}
 
 	public async Task DeleteDevice(string id) {
+		if (_cs == null) {
+			Log.Debug("NO CONTROL SERVICE!");
+			return;
+		}
+
 		await _cs.RemoveDevice(id).ConfigureAwait(false);
 	}
 
 	public async Task SystemData(string sd) {
+		if (_cs == null) {
+			Log.Debug("NO CONTROL SERVICE!");
+			return;
+		}
+
 		var sdd = JObject.Parse(sd);
 		var sd2 = sdd.ToObject<SystemData>();
 		try {
@@ -67,6 +97,11 @@ public class SocketServer : Hub {
 	}
 
 	public async Task DemoLed(string id) {
+		if (_cs == null) {
+			Log.Debug("NO CONTROL SERVICE!");
+			return;
+		}
+
 		await _cs.DemoLed(id).ConfigureAwait(false);
 	}
 
@@ -75,6 +110,11 @@ public class SocketServer : Hub {
 	}
 
 	public async Task UpdateDevice(string deviceJson) {
+		if (_cs == null) {
+			Log.Debug("NO CONTROL SERVICE!");
+			return;
+		}
+
 		var device = JObject.Parse(deviceJson);
 		var cTag = device.GetValue("tag");
 		if (cTag == null) {
@@ -94,6 +134,11 @@ public class SocketServer : Hub {
 	}
 
 	public async Task FlashDevice(string deviceId) {
+		if (_cs == null) {
+			Log.Debug("NO CONTROL SERVICE!");
+			return;
+		}
+
 		await _cs.FlashDevice(deviceId);
 	}
 
@@ -116,12 +161,22 @@ public class SocketServer : Hub {
 	}
 
 	private void SetSend() {
+		if (_cs == null) {
+			Log.Debug("NO CONTROL SERVICE!");
+			return;
+		}
+
 		var send = _states.Any(state => state.Value);
 		_doSend = send;
 		_cs.SendPreview = _doSend;
 	}
 
 	public async Task FlashSector(int sector) {
+		if (_cs == null) {
+			Log.Debug("NO CONTROL SERVICE!");
+			return;
+		}
+
 		Log.Debug("Sector flash called for: " + sector);
 		try {
 			await _cs.FlashSector(sector);
@@ -131,12 +186,22 @@ public class SocketServer : Hub {
 	}
 
 	public async Task FlashLed(int led) {
+		if (_cs == null) {
+			Log.Debug("NO CONTROL SERVICE!");
+			return;
+		}
+
 		Log.Debug("Get got: " + led);
 		await _cs.TestLights(led);
 	}
 
 
 	public override async Task OnConnectedAsync() {
+		if (_cs == null) {
+			Log.Debug("NO CONTROL SERVICE!");
+			return;
+		}
+
 		try {
 			_states[Context.ConnectionId] = false;
 			SetSend();
