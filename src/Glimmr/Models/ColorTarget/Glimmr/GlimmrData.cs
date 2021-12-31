@@ -2,7 +2,7 @@
 
 using System;
 using System.Globalization;
-using System.Net;
+using System.Net.Http;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
 
@@ -143,10 +143,10 @@ public class GlimmrData : IColorTargetData {
 	};
 
 	private void FetchData() {
-		using var webClient = new WebClient();
+		using var webClient = new HttpClient();
 		try {
 			var url = "http://" + IpAddress + "/api/glimmr/glimmrData";
-			var jsonData = webClient.DownloadString(url);
+			var jsonData = webClient.GetStringAsync(url).Result;
 			var sd = JsonConvert.DeserializeObject<GlimmrData>(jsonData);
 			if (sd == null) {
 				return;
