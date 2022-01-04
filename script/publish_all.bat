@@ -2,6 +2,9 @@
 IF [%1] == [] GOTO Error
 set version=%~1
 
+echo Building Glimmr Tray for Windows...
+dotnet publish -r win-x64 -c release ..\src\GlimmrTray\GlimmrTray.csproj -o ..\src\Glimmr\bin\Windows
+
 echo Build packages for various architectures
 for %%x in (
 	Linux
@@ -13,6 +16,7 @@ for %%x in (
 	echo Building %%x
 	dotnet publish -c Release ..\src\Glimmr\Glimmr.csproj /p:PublishProfile=%%x -o ..\src\Glimmr\bin\%%x --self-contained=true
 )
+
 
 cd ..\src\Glimmr\
 
