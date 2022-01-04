@@ -45,6 +45,7 @@ public static class DataUtil {
 			try {
 				Log.Debug($"Loading db from {userPath}");
 				var db = new LiteDatabase(userPath);
+				db.Rebuild();
 				return db;
 			} catch (Exception e) {
 				Log.Warning("Exception creating database: " + e);
@@ -310,7 +311,7 @@ public static class DataUtil {
 						dev.UpdateFromDiscovered(device);
 						device = dev;
 					} catch (Exception e) {
-						Log.Warning("Exception adding device: " + e.Message + " at " + e.StackTrace);
+						Log.Warning($"Exception adding device ({device.Name}): " + e.Message + " at " + e.StackTrace);
 					}
 				}
 			}
@@ -321,7 +322,7 @@ public static class DataUtil {
 			db.Commit();
 			CacheDevices();
 		} catch (Exception e) {
-			Log.Warning("Exception adding device: " + e.Message + " at " + e.StackTrace);
+			Log.Warning($"Exception adding device ({device.Name}): " + e.Message + " at " + e.StackTrace);
 		}
 
 		await Task.FromResult(true);
