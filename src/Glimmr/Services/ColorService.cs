@@ -364,17 +364,14 @@ public class ColorService : BackgroundService {
 			try {
 				var tag = c.Replace("Glimmr.Models.ColorTarget.", "");
 				tag = tag.Split(".")[0];
-				foreach (var device in deviceData.Where(device => device.Tag == tag)
-					         .Where(device => tag != "Led" || device.Id != "2")) {
-					var args = new object[] { device, this };
-					dynamic? obj = Activator.CreateInstance(Type.GetType(c)!, args);
-					if (obj == null) {
-						continue;
-					}
-
-					var dObj = (IColorTarget)obj;
-					sDevs.Add(dObj);
-				}
+				sDevs.AddRange(from device in deviceData.Where(device => device.Tag == tag)
+						.Where(device => tag != "Led" || device.Id != "2")
+					select new object[] { device, this }
+					into args
+					select Activator.CreateInstance(Type.GetType(c)!, args)
+					into obj
+					where (dynamic?)obj != null
+					select (IColorTarget)(dynamic?)obj);
 			} catch (InvalidCastException e) {
 				Log.Warning("Exception: " + e.Message + " at " + e.StackTrace);
 			}
@@ -609,12 +606,7 @@ public class ColorService : BackgroundService {
 		// Give our devices four seconds to stop streaming, then cancel so we're not waiting forever...
 		var cts = new CancellationTokenSource();
 		cts.CancelAfter(TimeSpan.FromSeconds(5));
-		var tasks = new List<Task>();
-		foreach (var dev in _sDevices) {
-			if (dev.Streaming) {
-				tasks.Add(dev.StopStream());
-			}
-		}
+		var tasks = (from dev in _sDevices where dev.Streaming select dev.StopStream()).ToList();
 
 		try {
 			await Task.Run(() => Task.WaitAll(tasks.ToArray()), cts.Token);

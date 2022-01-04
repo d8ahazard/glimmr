@@ -154,7 +154,7 @@ public static class IpUtil {
 		return result;
 	}
 
-	public static string GetLocalOsxIpAddress() {
+	private static string GetLocalOsxIpAddress() {
 		var result = "";
 		try {
 			var process = new Process {

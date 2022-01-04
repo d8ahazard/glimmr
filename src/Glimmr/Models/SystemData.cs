@@ -385,6 +385,7 @@ public class SystemData {
 	/// <summary>
 	///     Local IP Address.
 	/// </summary>
+	[JsonProperty]
 	public string IpAddress => IpUtil.GetLocalIpAddress();
 
 	/// <summary>

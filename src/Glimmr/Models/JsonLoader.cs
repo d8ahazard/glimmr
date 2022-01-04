@@ -90,16 +90,18 @@ public class JsonLoader {
 			Directory.CreateDirectory(userPath);
 		}
 
-		if (Directory.Exists(path)) {
-			var filePath = Path.Join(userPath, $"{name}.json");
-			Log.Debug("Saving scene to " + filePath);
-			try {
-				File.WriteAllText(filePath, JsonConvert.SerializeObject(scene));
-				return true;
-			} catch (Exception) {
-				Log.Warning("Exception saving file to " + filePath);
-				return false;
-			}
+		if (!Directory.Exists(path)) {
+			return false;
+		}
+
+		var filePath = Path.Join(userPath, $"{name}.json");
+		Log.Debug("Saving scene to " + filePath);
+		try {
+			File.WriteAllText(filePath, JsonConvert.SerializeObject(scene));
+			return true;
+		} catch (Exception) {
+			Log.Warning("Exception saving file to " + filePath);
+			return false;
 		}
 
 		return false;

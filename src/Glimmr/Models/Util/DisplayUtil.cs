@@ -51,7 +51,7 @@ public static class DisplayUtil {
 
 
 	[DllImport("user32.dll")]
-	public static extern bool EnumDisplaySettings(string deviceName, int modeNum, ref DEVMODE devMode);
+	public static extern bool EnumDisplaySettings(string deviceName, int modeNum, ref Devmode devMode);
 
 	[DllImport("User32.dll")]
 	public static extern int EnumDisplayDevices(string? lpDevice, int iDevNum, ref DisplayDevice lpDisplayDevice,
@@ -87,7 +87,7 @@ public static class DisplayUtil {
 			var deviceData = new DisplayDevice { cb = Marshal.SizeOf(typeof(DisplayDevice)) };
 			if (EnumDisplayDevices(null, devIdx, ref deviceData, 0) != 0) {
 				// Get the position and size of this particular display device
-				var devMode = new DEVMODE();
+				var devMode = new Devmode();
 				if (EnumDisplaySettings(deviceData.DeviceName, EnumCurrentSettings, ref devMode)) {
 					// Update the virtual screen dimensions
 					left = Math.Min(left, devMode.dmPositionX);
@@ -212,42 +212,42 @@ public static class DisplayUtil {
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	public struct DEVMODE {
+	public struct Devmode {
 		[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 0x20)]
-		public readonly string dmDeviceName;
+		private readonly string dmDeviceName;
 
-		public readonly short dmSpecVersion;
-		public readonly short dmDriverVersion;
-		public readonly short dmSize;
-		public readonly short dmDriverExtra;
-		public readonly int dmFields;
+		private readonly short dmSpecVersion;
+		private readonly short dmDriverVersion;
+		private readonly short dmSize;
+		private readonly short dmDriverExtra;
+		private readonly int dmFields;
 		public readonly int dmPositionX;
 		public readonly int dmPositionY;
-		public readonly ScreenOrientation dmDisplayOrientation;
-		public readonly int dmDisplayFixedOutput;
-		public readonly short dmColor;
-		public readonly short dmDuplex;
-		public readonly short dmYResolution;
-		public readonly short dmTTOption;
-		public readonly short dmCollate;
+		private readonly ScreenOrientation dmDisplayOrientation;
+		private readonly int dmDisplayFixedOutput;
+		private readonly short dmColor;
+		private readonly short dmDuplex;
+		private readonly short dmYResolution;
+		private readonly short dmTTOption;
+		private readonly short dmCollate;
 
 		[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 0x20)]
-		public readonly string dmFormName;
+		private readonly string dmFormName;
 
-		public readonly short dmLogPixels;
-		public readonly int dmBitsPerPel;
+		private readonly short dmLogPixels;
+		private readonly int dmBitsPerPel;
 		public readonly int dmPelsWidth;
 		public readonly int dmPelsHeight;
-		public readonly int dmDisplayFlags;
-		public readonly int dmDisplayFrequency;
-		public readonly int dmICMMethod;
-		public readonly int dmICMIntent;
-		public readonly int dmMediaType;
-		public readonly int dmDitherType;
-		public readonly int dmReserved1;
-		public readonly int dmReserved2;
-		public readonly int dmPanningWidth;
-		public readonly int dmPanningHeight;
+		private readonly int dmDisplayFlags;
+		private readonly int dmDisplayFrequency;
+		private readonly int dmICMMethod;
+		private readonly int dmICMIntent;
+		private readonly int dmMediaType;
+		private readonly int dmDitherType;
+		private readonly int dmReserved1;
+		private readonly int dmReserved2;
+		private readonly int dmPanningWidth;
+		private readonly int dmPanningHeight;
 	}
 }
 
@@ -292,7 +292,7 @@ public class MonitorInfo {
 	public MonitorInfo() {
 	}
 
-	public MonitorInfo(DisplayUtil.DisplayDevice device, DisplayUtil.DEVMODE mode) {
+	public MonitorInfo(DisplayUtil.DisplayDevice device, DisplayUtil.Devmode mode) {
 		DeviceName = device.DeviceName;
 		DeviceString = device.DeviceString;
 		Id = device.DeviceID;

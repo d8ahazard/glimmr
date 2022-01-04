@@ -82,7 +82,7 @@ public class FrameCounter : IDisposable {
 			_ticks = new ConcurrentDictionary<string, int> { ["source"] = 0 };
 		}
 
-		if (_ticks.Keys.Contains(id)) {
+		if (_ticks.ContainsKey(id)) {
 			_ticks[id]++;
 		} else {
 			_ticks[id] = 0;

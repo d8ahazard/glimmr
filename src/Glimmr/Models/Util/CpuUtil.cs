@@ -103,11 +103,13 @@ public static class CpuUtil {
 			process.Start();
 			while (!process.StandardOutput.EndOfStream) {
 				var res = await process.StandardOutput.ReadLineAsync();
-				if (res != null && res.Contains("machdep.xcpm.cpu_thermal_level")) {
-					var p1 = res.Replace("machdep.xcpm.cpu_thermal_level: ", "");
-					if (!float.TryParse(p1, out temp)) {
-						Log.Warning("Unable to parse line: " + res);
-					}
+				if (res == null || !res.Contains("machdep.xcpm.cpu_thermal_level")) {
+					continue;
+				}
+
+				var p1 = res.Replace("machdep.xcpm.cpu_thermal_level: ", "");
+				if (!float.TryParse(p1, out temp)) {
+					Log.Warning("Unable to parse line: " + res);
 				}
 			}
 
@@ -151,7 +153,7 @@ public static class CpuUtil {
 				}
 
 				var p1 = splits[1];
-				if (p1.Contains(" ")) {
+				if (p1.Contains(' ')) {
 					var splits2 = p1.Split(" ");
 					if (splits2.Length > 0) {
 						p1 = splits2[0];
@@ -233,7 +235,11 @@ public static class CpuUtil {
 				}
 			}
 
-			if (data.Contains("used memory")) {
+			if (!data.Contains("used memory")) {
+				continue;
+			}
+
+			{
 				var str = data.Replace(" total memory", "");
 				if (float.TryParse(str.Split(" ")[0], out var foo)) {
 					total = foo;
@@ -300,7 +306,11 @@ public static class CpuUtil {
 				}
 			}
 
-			if (data.Contains("Pages wired down")) {
+			if (!data.Contains("Pages wired down")) {
+				continue;
+			}
+
+			{
 				line = data.Split(":")[1].Replace(".", "").Trim().TrimEnd();
 				if (int.TryParse(line, out var foo)) {
 					wired = foo;
@@ -334,10 +344,12 @@ public static class CpuUtil {
 		var idx = 0;
 		var average = 0f;
 		foreach (var avg in loadAverages) {
-			if (float.TryParse(avg.Trim(), out var la1)) {
-				idx++;
-				average += la1;
+			if (!float.TryParse(avg.Trim(), out var la1)) {
+				continue;
 			}
+
+			idx++;
+			average += la1;
 		}
 
 		if (idx <= 0 || !(average > 0)) {

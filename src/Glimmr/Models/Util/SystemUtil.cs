@@ -73,29 +73,6 @@ public static class SystemUtil {
 		return output.ToLower().Contains("raspbian");
 	}
 
-	public static string GetBranch() {
-		var branch = "master";
-		var assembly = Assembly.GetEntryAssembly();
-		if (assembly == null) {
-			return branch;
-		}
-
-		var attrib = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
-		if (attrib == null) {
-			return branch;
-		}
-
-		var ver = attrib.InformationalVersion;
-		if (!ver.Contains("dev")) {
-			return branch;
-		}
-
-		Log.Information("We should be using the dev branch to update.");
-		branch = "dev";
-
-		return branch;
-	}
-
 	public static void Update() {
 		Log.Debug("Updating...");
 		Log.Information("Backing up current settings...");
@@ -111,7 +88,11 @@ public static class SystemUtil {
 			Process.Start("/bin/bash", cmd);
 		}
 
-		if (IsRaspberryPi() || RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+		if (!IsRaspberryPi() && !RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+			return;
+		}
+
+		{
 			var appDir = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
 			var cmd = Path.Join(appDir, "update_linux.sh");
 			Log.Debug("Update command should be: " + cmd);
@@ -172,7 +153,7 @@ public static class SystemUtil {
 		var output = new List<string>();
 		foreach (var ad in AppDomain.CurrentDomain.GetAssemblies()) {
 			try {
-				var types = ad.GetTypes();
+				var types = ad.GetTypes() ?? throw new ArgumentNullException("ad.GetTypes()");
 				foreach (var type in types) {
 					if (!typeof(T).IsAssignableFrom(type) || type.IsInterface || type.IsAbstract) {
 						continue;

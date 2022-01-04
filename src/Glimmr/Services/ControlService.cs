@@ -211,17 +211,21 @@ public class ControlService : BackgroundService {
 
 				await Task.Delay(1000);
 				count++;
-				if (clientProxy != null) {
-					await clientProxy.SendAsync("auth", "update", count);
-					return false;
+				if (clientProxy == null) {
+					continue;
 				}
+
+				await clientProxy.SendAsync("auth", "update", count);
+				return false;
 			}
 		} else {
 			Log.Warning("Error creating activator!");
-			if (clientProxy != null) {
-				await clientProxy.SendAsync("auth", "error");
+			if (clientProxy == null) {
 				return false;
 			}
+
+			await clientProxy.SendAsync("auth", "error");
+			return false;
 		}
 
 		return false;

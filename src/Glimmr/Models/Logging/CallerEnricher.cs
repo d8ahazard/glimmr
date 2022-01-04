@@ -33,13 +33,13 @@ internal class CallerEnricher : ILogEventEnricher {
 					}
 				}
 
-				if (name.Contains("<") && name.Contains(">")) {
+				if (name.Contains('<') && name.Contains('>')) {
 					var pFrom = name.IndexOf("<", StringComparison.Ordinal) + 1;
 					var pTo = name.LastIndexOf(">", StringComparison.Ordinal);
 					name = name.Substring(pFrom, pTo - pFrom);
 				}
 
-				if (mName.Contains("<") && mName.Contains(">")) {
+				if (mName.Contains('<') && mName.Contains('>')) {
 					var pFrom = mName.IndexOf("<", StringComparison.Ordinal) + 1;
 					var pTo = mName.LastIndexOf(">", StringComparison.Ordinal);
 					mName = mName.Substring(pFrom, pTo - pFrom);

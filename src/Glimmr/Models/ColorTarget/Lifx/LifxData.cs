@@ -170,7 +170,7 @@ public class LifxData : IColorTargetData {
 
 		Name ??= Tag;
 		if (Id is { Length: > 4 }) {
-			Name = "Lifx - " + Id.Substring(Id.Length - 5, 5);
+			Name = string.Concat("Lifx - ", Id.AsSpan(Id.Length - 5, 5));
 		}
 
 		Service = b.Service;
@@ -182,7 +182,7 @@ public class LifxData : IColorTargetData {
 		Layout = new TileLayout();
 		DeviceTag = "Lifx Bulb";
 		Brightness = 255;
-		Name = "Lifx - " + Id.Substring(Id.Length - 5, 5);
+		Name = string.Concat("Lifx - ", Id.AsSpan(Id.Length - 5, 5));
 		LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 		Kps();
 	}
@@ -232,7 +232,7 @@ public class LifxData : IColorTargetData {
 		IpAddress = ld.IpAddress;
 		MacAddress = ld.MacAddress;
 		DeviceTag = ld.DeviceTag;
-		Name = DeviceTag + " - " + Id.Substring(Id.Length - 5, 5);
+		Name = string.Concat(DeviceTag, " - ", Id.AsSpan(Id.Length - 5, 5));
 		Layout.MergeLayout(ld.Layout);
 		var omz = MultiZoneCount;
 		MultiZoneCount = ld.MultiZoneCount;

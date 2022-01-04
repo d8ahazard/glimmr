@@ -96,7 +96,7 @@ public class HueData : IColorTargetData {
 		SelectedGroup = "-1";
 		Groups = new List<HueGroup>();
 		Lights = new List<LightData>();
-		Name = "Hue - " + Id.Substring(Id.Length - 5, 4);
+		Name = string.Concat("Hue - ", Id.AsSpan(Id.Length - 5, 4));
 		MappedLights ??= new List<LightMap>();
 	}
 
@@ -153,7 +153,7 @@ public class HueData : IColorTargetData {
 		Lights = input.Lights;
 		Groups = input.Groups;
 		IpAddress = input.IpAddress;
-		Name = "Hue - " + Id.Substring(Id.Length - 5, 4);
+		Name = string.Concat("Hue - ", Id.AsSpan(Id.Length - 5, 4));
 	}
 
 	/// <summary>
