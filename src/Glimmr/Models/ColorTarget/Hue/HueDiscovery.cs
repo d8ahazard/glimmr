@@ -30,7 +30,7 @@ public class HueDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth {
 		_controlService = colorService.ControlService;
 	}
 
-	public async Task Discover(CancellationToken ct, int timeout) {
+	public async Task Discover(int timeout, CancellationToken ct) {
 		Log.Debug("Hue: Discovery started...");
 		try {
 			await Task.WhenAll(_bridgeLocatorHttp.LocateBridgesAsync(ct), _bridgeLocatorMdns.LocateBridgesAsync(ct),

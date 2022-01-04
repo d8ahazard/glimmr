@@ -27,7 +27,7 @@ public class GlimmrDiscovery : ColorDiscovery, IColorDiscovery {
 		_ids = new List<string>();
 	}
 
-	public async Task Discover(CancellationToken ct, int timeout) {
+	public async Task Discover(int timeout, CancellationToken ct) {
 		_ids = new List<string>();
 		Log.Debug("Glimmr: Discovery started...");
 		try {

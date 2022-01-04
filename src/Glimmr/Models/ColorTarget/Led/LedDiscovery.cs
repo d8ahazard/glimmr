@@ -14,7 +14,7 @@ public class LedDiscovery : ColorDiscovery, IColorDiscovery {
 	public LedDiscovery(ColorService colorService) : base(colorService) {
 	}
 
-	public async Task Discover(CancellationToken ct, int timeout) {
+	public async Task Discover(int timeout, CancellationToken ct) {
 		DataUtil.DeleteDevice("2");
 
 		if (!SystemUtil.IsRaspberryPi()) {

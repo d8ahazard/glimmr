@@ -29,7 +29,7 @@ public class LifxDiscovery : ColorDiscovery, IColorDiscovery {
 		_controlService = cs.ControlService;
 	}
 
-	public async Task Discover(CancellationToken ct, int timeout) {
+	public async Task Discover(int timeout, CancellationToken ct) {
 		if (_client == null) {
 			return;
 		}

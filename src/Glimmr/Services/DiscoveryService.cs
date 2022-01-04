@@ -145,10 +145,11 @@ public class DiscoveryService : BackgroundService {
 
 		_discovering = true;
 		var tasks = _discoverables
-			.Select(disco => Task.Run(() => disco.Discover(token, timeout), CancellationToken.None)).ToList();
+			.Select(disco => Task.Run(() => disco.Discover(timeout, token), CancellationToken.None)).ToList();
 
 		try {
 			await Task.WhenAll(tasks);
+			
 		} catch (Exception e) {
 			Log.Warning($"Exception during discovery: {e.Message}" + e.StackTrace);
 		} finally {

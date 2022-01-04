@@ -21,7 +21,7 @@ public class DreamScreenDiscovery : ColorDiscovery, IColorDiscovery {
 		_cs = colorService.ControlService;
 	}
 
-	public async Task Discover(CancellationToken ct, int timeout) {
+	public async Task Discover(int timeout, CancellationToken ct) {
 		if (_client == null) {
 			Log.Warning("DS Client is null...this is bad.");
 			return;

@@ -21,7 +21,7 @@ public class YeelightDiscovery : ColorDiscovery, IColorDiscovery {
 		_reporter = new Progress<Device>(DeviceFound);
 	}
 
-	public async Task Discover(CancellationToken ct, int timeout) {
+	public async Task Discover(int timeout, CancellationToken ct) {
 		Log.Debug("Yeelight: Discovery started...");
 		// Await the asynchronous call to the static API
 		try {

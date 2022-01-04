@@ -26,7 +26,7 @@ public class NanoleafDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAu
 		_sd = _controlService.ServiceDiscovery;
 	}
 
-	public async Task Discover(CancellationToken ct, int timeout) {
+	public async Task Discover(int timeout, CancellationToken ct) {
 		_mDns.NetworkInterfaceDiscovered += InterfaceDiscovered;
 		_sd.ServiceDiscovered += ServiceDiscovered;
 		_sd.ServiceInstanceDiscovered += NanoleafDiscovered;

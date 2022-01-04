@@ -38,47 +38,47 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AdalightNet" Version="1.0.8"/>
-        <PackageReference Include="AutoMapper" Version="10.1.1"/>
-        <PackageReference Include="digitalhigh.rpi-ws281x-csharp" Version="1.1.7"/>
-        <PackageReference Include="DirectShowLib.Standard" Version="2.1.0"/>
-        <PackageReference Include="DreamScreenNet" Version="1.0.5"/>
-        <PackageReference Include="DasMulli.SimpleGitVersion" Version="1.0.0" PrivateAssets="All"/>
-        <PackageReference Include="Emgu.CV" Version="4.5.4.4788"/>
-        <PackageReference Include="Emgu.CV.Bitmap" Version="4.5.4.4788"/>
-        <PackageReference Include="Emgu.CV.runtime.linux-arm" Version="4.5.4.4788"/>
-        <PackageReference Include="Emgu.CV.runtime.ubuntu.20.04-x64" Version="4.5.4.4788"/>
-        <PackageReference Include="Emgu.CV.runtime.windows" Version="4.5.4.4788"/>
-        <PackageReference Include="JsonSubTypes" Version="1.8.0"/>
-        <PackageReference Include="LibreHardwareMonitorLib" Version="0.8.9"/>
-        <PackageReference Include="LifxNetPlus" Version="1.1.5"/>
-        <PackageReference Include="LiteDB" Version="5.0.11"/>
-        <PackageReference Include="Makaretu.Dns.Multicast" Version="0.27.0"/>
-        <PackageReference Include="ManagedBass" Version="3.1.0"/>
-        <PackageReference Include="Microsoft.AspNet.SignalR.Client" Version="2.4.2"/>
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="6.0.1"/>
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="6.0.1"/>
-        <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0"/>
-        <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0"/>
-        <PackageReference Include="MMALSharp" Version="0.6.0"/>
-        <PackageReference Include="Nanoleaf.Core" Version="2.0.0"/>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.1"/>
-        <PackageReference Include="OpenRGB.NET" Version="1.7.0"/>
-        <PackageReference Include="Q42.HueApi" Version="3.19.0"/>
-        <PackageReference Include="Q42.HueApi.Entertainment" Version="3.18.1"/>
-        <PackageReference Include="System.Drawing.Common" Version="6.0.0"/>
-        <PackageReference Include="Serilog" Version="2.10.0"/>
-        <PackageReference Include="Serilog.AspNetCore" Version="4.1.0"/>
-        <PackageReference Include="Serilog.Sinks.AspNetCore.SignalR" Version="0.4.0"/>
-        <PackageReference Include="Serilog.Sinks.Async" Version="1.5.0"/>
-        <PackageReference Include="Serilog.Sinks.Console" Version="4.0.1"/>
-        <PackageReference Include="Serilog.Sinks.File" Version="5.0.0"/>
-        <PackageReference Include="SimpleGitVersion.Core" Version="6.0.0"/>
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3"/>
-        <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.2.3"/>
-        <PackageReference Include="System.Net.WebSockets" Version="4.3.0"/>
-        <PackageReference Include="Xamarin.Mac.digitalhigh" Version="8.3.0.41"/>
-        <PackageReference Include="YeelightAPI" Version="1.10.2"/>
+        <PackageReference Include="AdalightNet" Version="1.0.8" />
+        <PackageReference Include="AutoMapper" Version="10.1.1" />
+        <PackageReference Include="digitalhigh.rpi-ws281x-csharp" Version="1.1.7" />
+        <PackageReference Include="DirectShowLib.Standard" Version="2.1.0" />
+        <PackageReference Include="DreamScreenNet" Version="1.0.5" />
+        <PackageReference Include="DasMulli.SimpleGitVersion" Version="1.0.0" PrivateAssets="All" />
+        <PackageReference Include="Emgu.CV" Version="4.5.4.4788" />
+        <PackageReference Include="Emgu.CV.Bitmap" Version="4.5.4.4788" />
+        <PackageReference Include="Emgu.CV.runtime.linux-arm" Version="4.5.4.4788" />
+        <PackageReference Include="Emgu.CV.runtime.ubuntu.20.04-x64" Version="4.5.4.4788" />
+        <PackageReference Include="Emgu.CV.runtime.windows" Version="4.5.4.4788" />
+        <PackageReference Include="JsonSubTypes" Version="1.8.0" />
+        <PackageReference Include="LibreHardwareMonitorLib" Version="0.8.9" />
+        <PackageReference Include="LifxNetPlus" Version="1.1.5" />
+        <PackageReference Include="LiteDB" Version="5.0.11" />
+        <PackageReference Include="Makaretu.Dns.Multicast" Version="0.27.0" />
+        <PackageReference Include="ManagedBass" Version="3.1.0" />
+        <PackageReference Include="Microsoft.AspNet.SignalR.Client" Version="2.4.2" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="6.0.1" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="6.0.1" />
+        <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0" />
+        <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
+        <PackageReference Include="MMALSharp" Version="0.6.0" />
+        <PackageReference Include="Nanoleaf.Core" Version="2.0.0" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+        <PackageReference Include="OpenRGB.NET" Version="1.7.0" />
+        <PackageReference Include="Q42.HueApi" Version="3.19.0" />
+        <PackageReference Include="Q42.HueApi.Entertainment" Version="3.18.1" />
+        <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
+        <PackageReference Include="Serilog" Version="2.10.0" />
+        <PackageReference Include="Serilog.AspNetCore" Version="4.1.0" />
+        <PackageReference Include="Serilog.Sinks.AspNetCore.SignalR" Version="0.4.0" />
+        <PackageReference Include="Serilog.Sinks.Async" Version="1.5.0" />
+        <PackageReference Include="Serilog.Sinks.Console" Version="4.0.1" />
+        <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+        <PackageReference Include="SimpleGitVersion.Core" Version="6.0.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
+        <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.2.3" />
+        <PackageReference Include="System.Net.WebSockets" Version="4.3.0" />
+        <PackageReference Include="Xamarin.Mac.digitalhigh" Version="8.3.0.41" />
+        <PackageReference Include="YeelightAPI" Version="1.10.2" />
         <PackageReference Update="Packaging.Targets">
             <Version>0.1.220</Version>
         </PackageReference>
@@ -86,7 +86,7 @@
 
     <!-- All builds -->
     <ItemGroup>
-        <None Include="../../COPYING" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)"/>
+        <None Include="../../COPYING" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
     </ItemGroup>
 
     <!-- Linux -->
@@ -119,7 +119,7 @@
 
     <!-- Yep -->
     <ItemGroup>
-        <RuntimeHostConfigurationOption Include="System.Globalization.Invariant" Value="true"/>
+        <RuntimeHostConfigurationOption Include="System.Globalization.Invariant" Value="true" />
     </ItemGroup>
 
     <!-- Linux Preinstall -->
@@ -177,174 +177,174 @@
 
     <!-- Dependencies -->
     <ItemGroup Condition="'$(RuntimeIdentifier)'=='linux-x64'">
-        <DebDependency Include="libgtk-3-dev"/>
-        <DebDependency Include="libhdf5-dev"/>
-        <DebDependency Include="libatlas-base-dev"/>
-        <DebDependency Include="libjasper-dev"/>
-        <DebDependency Include="libqtgui4"/>
-        <DebDependency Include="libqt4-test"/>
-        <DebDependency Include="libglu1-mesa"/>
-        <DebDependency Include="libdc1394-22"/>
-        <DebDependency Include="libtesseract-dev"/>
-        <DebDependency Include="icu-devtools"/>
-        <DebDependency Include="libjpeg-dev"/>
-        <DebDependency Include="libpng-dev"/>
-        <DebDependency Include="libtiff-dev"/>
-        <DebDependency Include="libavcodec-dev"/>
-        <DebDependency Include="libavformat-dev"/>
-        <DebDependency Include="libswscale-dev"/>
-        <DebDependency Include="libv4l-dev"/>
-        <DebDependency Include="libxvidcore-dev"/>
-        <DebDependency Include="gfortran"/>
-        <DebDependency Include="libopengl-dev"/>
-        <DebDependency Include="git"/>
-        <DebDependency Include="gcc"/>
-        <DebDependency Include="xauth"/>
-        <DebDependency Include="avahi-daemon"/>
-        <DebDependency Include="x11-xserver-utils"/>
-        <DebDependency Include="libtiff5-dev"/>
-        <DebDependency Include="libgeotiff-dev"/>
-        <DebDependency Include="libgtk-3-dev"/>
-        <DebDependency Include="libgstreamer1.0-dev"/>
-        <DebDependency Include="libavcodec-dev"/>
-        <DebDependency Include="libswscale-dev"/>
-        <DebDependency Include="libavformat-dev"/>
-        <DebDependency Include="libopenexr-dev"/>
-        <DebDependency Include="libjasper-dev"/>
-        <DebDependency Include="libdc1394-22-dev"/>
-        <DebDependency Include="libv4l-dev"/>
-        <DebDependency Include="libeigen3-dev"/>
-        <DebDependency Include="libopengl-dev"/>
-        <DebDependency Include="cmake-curses-gui"/>
-        <DebDependency Include="freeglut3-dev"/>
-        <DebDependency Include="lm-sensors"/>
-        <RpmDependency Include="libgtk-3-dev"/>
-        <RpmDependency Include="libhdf5-dev"/>
-        <RpmDependency Include="libatlas-base-dev"/>
-        <RpmDependency Include="libjasper-dev"/>
-        <RpmDependency Include="libqtgui4"/>
-        <RpmDependency Include="libqt4-test"/>
-        <RpmDependency Include="libglu1-mesa"/>
-        <RpmDependency Include="libdc1394-22"/>
-        <RpmDependency Include="libtesseract-dev"/>
-        <RpmDependency Include="icu-devtools"/>
-        <RpmDependency Include="libjpeg-dev"/>
-        <RpmDependency Include="libpng-dev"/>
-        <RpmDependency Include="libtiff-dev"/>
-        <RpmDependency Include="libavcodec-dev"/>
-        <RpmDependency Include="libavformat-dev"/>
-        <RpmDependency Include="libswscale-dev"/>
-        <RpmDependency Include="libv4l-dev"/>
-        <RpmDependency Include="libxvidcore-dev"/>
-        <RpmDependency Include="gfortran"/>
-        <RpmDependency Include="libopengl-dev"/>
-        <RpmDependency Include="git"/>
-        <RpmDependency Include="gcc"/>
-        <RpmDependency Include="xauth"/>
-        <RpmDependency Include="avahi-daemon"/>
-        <RpmDependency Include="x11-xserver-utils"/>
-        <RpmDependency Include="libtiff5-dev"/>
-        <RpmDependency Include="libgeotiff-dev"/>
-        <RpmDependency Include="libgtk-3-dev"/>
-        <RpmDependency Include="libgstreamer1.0-dev"/>
-        <RpmDependency Include="libavcodec-dev"/>
-        <RpmDependency Include="libswscale-dev"/>
-        <RpmDependency Include="libavformat-dev"/>
-        <RpmDependency Include="libopenexr-dev"/>
-        <RpmDependency Include="libjasper-dev"/>
-        <RpmDependency Include="libdc1394-22-dev"/>
-        <RpmDependency Include="libv4l-dev"/>
-        <RpmDependency Include="libeigen3-dev"/>
-        <RpmDependency Include="libopengl-dev"/>
-        <RpmDependency Include="cmake-curses-gui"/>
-        <RpmDependency Include="freeglut3-dev"/>
-        <RpmDependency Include="lm-sensors"/>
+        <DebDependency Include="libgtk-3-dev" />
+        <DebDependency Include="libhdf5-dev" />
+        <DebDependency Include="libatlas-base-dev" />
+        <DebDependency Include="libjasper-dev" />
+        <DebDependency Include="libqtgui4" />
+        <DebDependency Include="libqt4-test" />
+        <DebDependency Include="libglu1-mesa" />
+        <DebDependency Include="libdc1394-22" />
+        <DebDependency Include="libtesseract-dev" />
+        <DebDependency Include="icu-devtools" />
+        <DebDependency Include="libjpeg-dev" />
+        <DebDependency Include="libpng-dev" />
+        <DebDependency Include="libtiff-dev" />
+        <DebDependency Include="libavcodec-dev" />
+        <DebDependency Include="libavformat-dev" />
+        <DebDependency Include="libswscale-dev" />
+        <DebDependency Include="libv4l-dev" />
+        <DebDependency Include="libxvidcore-dev" />
+        <DebDependency Include="gfortran" />
+        <DebDependency Include="libopengl-dev" />
+        <DebDependency Include="git" />
+        <DebDependency Include="gcc" />
+        <DebDependency Include="xauth" />
+        <DebDependency Include="avahi-daemon" />
+        <DebDependency Include="x11-xserver-utils" />
+        <DebDependency Include="libtiff5-dev" />
+        <DebDependency Include="libgeotiff-dev" />
+        <DebDependency Include="libgtk-3-dev" />
+        <DebDependency Include="libgstreamer1.0-dev" />
+        <DebDependency Include="libavcodec-dev" />
+        <DebDependency Include="libswscale-dev" />
+        <DebDependency Include="libavformat-dev" />
+        <DebDependency Include="libopenexr-dev" />
+        <DebDependency Include="libjasper-dev" />
+        <DebDependency Include="libdc1394-22-dev" />
+        <DebDependency Include="libv4l-dev" />
+        <DebDependency Include="libeigen3-dev" />
+        <DebDependency Include="libopengl-dev" />
+        <DebDependency Include="cmake-curses-gui" />
+        <DebDependency Include="freeglut3-dev" />
+        <DebDependency Include="lm-sensors" />
+        <RpmDependency Include="libgtk-3-dev" />
+        <RpmDependency Include="libhdf5-dev" />
+        <RpmDependency Include="libatlas-base-dev" />
+        <RpmDependency Include="libjasper-dev" />
+        <RpmDependency Include="libqtgui4" />
+        <RpmDependency Include="libqt4-test" />
+        <RpmDependency Include="libglu1-mesa" />
+        <RpmDependency Include="libdc1394-22" />
+        <RpmDependency Include="libtesseract-dev" />
+        <RpmDependency Include="icu-devtools" />
+        <RpmDependency Include="libjpeg-dev" />
+        <RpmDependency Include="libpng-dev" />
+        <RpmDependency Include="libtiff-dev" />
+        <RpmDependency Include="libavcodec-dev" />
+        <RpmDependency Include="libavformat-dev" />
+        <RpmDependency Include="libswscale-dev" />
+        <RpmDependency Include="libv4l-dev" />
+        <RpmDependency Include="libxvidcore-dev" />
+        <RpmDependency Include="gfortran" />
+        <RpmDependency Include="libopengl-dev" />
+        <RpmDependency Include="git" />
+        <RpmDependency Include="gcc" />
+        <RpmDependency Include="xauth" />
+        <RpmDependency Include="avahi-daemon" />
+        <RpmDependency Include="x11-xserver-utils" />
+        <RpmDependency Include="libtiff5-dev" />
+        <RpmDependency Include="libgeotiff-dev" />
+        <RpmDependency Include="libgtk-3-dev" />
+        <RpmDependency Include="libgstreamer1.0-dev" />
+        <RpmDependency Include="libavcodec-dev" />
+        <RpmDependency Include="libswscale-dev" />
+        <RpmDependency Include="libavformat-dev" />
+        <RpmDependency Include="libopenexr-dev" />
+        <RpmDependency Include="libjasper-dev" />
+        <RpmDependency Include="libdc1394-22-dev" />
+        <RpmDependency Include="libv4l-dev" />
+        <RpmDependency Include="libeigen3-dev" />
+        <RpmDependency Include="libopengl-dev" />
+        <RpmDependency Include="cmake-curses-gui" />
+        <RpmDependency Include="freeglut3-dev" />
+        <RpmDependency Include="lm-sensors" />
     </ItemGroup>
 
     <!-- Dependencies -->
     <ItemGroup Condition="'$(RuntimeIdentifier)'=='linux-arm'">
-        <DebDependency Include="libgtk-3-dev"/>
-        <DebDependency Include="libhdf5-dev"/>
-        <DebDependency Include="libatlas-base-dev"/>
-        <DebDependency Include="libglu1-mesa"/>
-        <DebDependency Include="libdc1394-22"/>
-        <DebDependency Include="libtesseract-dev"/>
-        <DebDependency Include="icu-devtools"/>
-        <DebDependency Include="libjpeg-dev"/>
-        <DebDependency Include="libpng-dev"/>
-        <DebDependency Include="libtiff-dev"/>
-        <DebDependency Include="libavcodec-dev"/>
-        <DebDependency Include="libavformat-dev"/>
-        <DebDependency Include="libswscale-dev"/>
-        <DebDependency Include="libv4l-dev"/>
-        <DebDependency Include="libxvidcore-dev"/>
-        <DebDependency Include="libatlas-base-dev"/>
-        <DebDependency Include="gfortran"/>
-        <DebDependency Include="libopengl-dev"/>
-        <DebDependency Include="git"/>
-        <DebDependency Include="gcc"/>
-        <DebDependency Include="xauth"/>
-        <DebDependency Include="avahi-daemon"/>
-        <DebDependency Include="x11-xserver-utils"/>
-        <DebDependency Include="libopencv-dev"/>
-        <DebDependency Include="python3-opencv"/>
-        <DebDependency Include="unzip"/>
-        <DebDependency Include="libtiff5-dev"/>
-        <DebDependency Include="libgeotiff-dev"/>
-        <DebDependency Include="libgtk-3-dev"/>
-        <DebDependency Include="libgstreamer1.0-dev"/>
-        <DebDependency Include="libavcodec-dev"/>
-        <DebDependency Include="libswscale-dev"/>
-        <DebDependency Include="libavformat-dev"/>
-        <DebDependency Include="libopenexr-dev"/>
-        <DebDependency Include="libjasper-dev"/>
-        <DebDependency Include="libdc1394-22-dev"/>
-        <DebDependency Include="libv4l-dev"/>
-        <DebDependency Include="libeigen3-dev"/>
-        <DebDependency Include="libopengl-dev"/>
-        <DebDependency Include="cmake-curses-gui"/>
-        <DebDependency Include="freeglut3-dev"/>
-        <RpmDependency Include="libgtk-3-dev"/>
-        <RpmDependency Include="libhdf5-dev"/>
-        <RpmDependency Include="libatlas-base-dev"/>
-        <RpmDependency Include="libglu1-mesa"/>
-        <RpmDependency Include="libdc1394-22"/>
-        <RpmDependency Include="libtesseract-dev"/>
-        <RpmDependency Include="icu-devtools"/>
-        <RpmDependency Include="libjpeg-dev"/>
-        <RpmDependency Include="libpng-dev"/>
-        <RpmDependency Include="libtiff-dev"/>
-        <RpmDependency Include="libavcodec-dev"/>
-        <RpmDependency Include="libavformat-dev"/>
-        <RpmDependency Include="libswscale-dev"/>
-        <RpmDependency Include="libv4l-dev"/>
-        <RpmDependency Include="libxvidcore-dev"/>
-        <RpmDependency Include="libatlas-base-dev"/>
-        <RpmDependency Include="gfortran"/>
-        <RpmDependency Include="libopengl-dev"/>
-        <RpmDependency Include="git"/>
-        <RpmDependency Include="gcc"/>
-        <RpmDependency Include="xauth"/>
-        <RpmDependency Include="avahi-daemon"/>
-        <RpmDependency Include="x11-xserver-utils"/>
-        <RpmDependency Include="libopencv-dev"/>
-        <RpmDependency Include="python3-opencv"/>
-        <RpmDependency Include="unzip"/>
-        <RpmDependency Include="libtiff5-dev"/>
-        <RpmDependency Include="libgeotiff-dev"/>
-        <RpmDependency Include="libgtk-3-dev"/>
-        <RpmDependency Include="libgstreamer1.0-dev"/>
-        <RpmDependency Include="libavcodec-dev"/>
-        <RpmDependency Include="libswscale-dev"/>
-        <RpmDependency Include="libavformat-dev"/>
-        <RpmDependency Include="libopenexr-dev"/>
-        <RpmDependency Include="libjasper-dev"/>
-        <RpmDependency Include="libdc1394-22-dev"/>
-        <RpmDependency Include="libv4l-dev"/>
-        <RpmDependency Include="libeigen3-dev"/>
-        <RpmDependency Include="libopengl-dev"/>
-        <RpmDependency Include="cmake-curses-gui"/>
-        <RpmDependency Include="freeglut3-dev"/>
+        <DebDependency Include="libgtk-3-dev" />
+        <DebDependency Include="libhdf5-dev" />
+        <DebDependency Include="libatlas-base-dev" />
+        <DebDependency Include="libglu1-mesa" />
+        <DebDependency Include="libdc1394-22" />
+        <DebDependency Include="libtesseract-dev" />
+        <DebDependency Include="icu-devtools" />
+        <DebDependency Include="libjpeg-dev" />
+        <DebDependency Include="libpng-dev" />
+        <DebDependency Include="libtiff-dev" />
+        <DebDependency Include="libavcodec-dev" />
+        <DebDependency Include="libavformat-dev" />
+        <DebDependency Include="libswscale-dev" />
+        <DebDependency Include="libv4l-dev" />
+        <DebDependency Include="libxvidcore-dev" />
+        <DebDependency Include="libatlas-base-dev" />
+        <DebDependency Include="gfortran" />
+        <DebDependency Include="libopengl-dev" />
+        <DebDependency Include="git" />
+        <DebDependency Include="gcc" />
+        <DebDependency Include="xauth" />
+        <DebDependency Include="avahi-daemon" />
+        <DebDependency Include="x11-xserver-utils" />
+        <DebDependency Include="libopencv-dev" />
+        <DebDependency Include="python3-opencv" />
+        <DebDependency Include="unzip" />
+        <DebDependency Include="libtiff5-dev" />
+        <DebDependency Include="libgeotiff-dev" />
+        <DebDependency Include="libgtk-3-dev" />
+        <DebDependency Include="libgstreamer1.0-dev" />
+        <DebDependency Include="libavcodec-dev" />
+        <DebDependency Include="libswscale-dev" />
+        <DebDependency Include="libavformat-dev" />
+        <DebDependency Include="libopenexr-dev" />
+        <DebDependency Include="libjasper-dev" />
+        <DebDependency Include="libdc1394-22-dev" />
+        <DebDependency Include="libv4l-dev" />
+        <DebDependency Include="libeigen3-dev" />
+        <DebDependency Include="libopengl-dev" />
+        <DebDependency Include="cmake-curses-gui" />
+        <DebDependency Include="freeglut3-dev" />
+        <RpmDependency Include="libgtk-3-dev" />
+        <RpmDependency Include="libhdf5-dev" />
+        <RpmDependency Include="libatlas-base-dev" />
+        <RpmDependency Include="libglu1-mesa" />
+        <RpmDependency Include="libdc1394-22" />
+        <RpmDependency Include="libtesseract-dev" />
+        <RpmDependency Include="icu-devtools" />
+        <RpmDependency Include="libjpeg-dev" />
+        <RpmDependency Include="libpng-dev" />
+        <RpmDependency Include="libtiff-dev" />
+        <RpmDependency Include="libavcodec-dev" />
+        <RpmDependency Include="libavformat-dev" />
+        <RpmDependency Include="libswscale-dev" />
+        <RpmDependency Include="libv4l-dev" />
+        <RpmDependency Include="libxvidcore-dev" />
+        <RpmDependency Include="libatlas-base-dev" />
+        <RpmDependency Include="gfortran" />
+        <RpmDependency Include="libopengl-dev" />
+        <RpmDependency Include="git" />
+        <RpmDependency Include="gcc" />
+        <RpmDependency Include="xauth" />
+        <RpmDependency Include="avahi-daemon" />
+        <RpmDependency Include="x11-xserver-utils" />
+        <RpmDependency Include="libopencv-dev" />
+        <RpmDependency Include="python3-opencv" />
+        <RpmDependency Include="unzip" />
+        <RpmDependency Include="libtiff5-dev" />
+        <RpmDependency Include="libgeotiff-dev" />
+        <RpmDependency Include="libgtk-3-dev" />
+        <RpmDependency Include="libgstreamer1.0-dev" />
+        <RpmDependency Include="libavcodec-dev" />
+        <RpmDependency Include="libswscale-dev" />
+        <RpmDependency Include="libavformat-dev" />
+        <RpmDependency Include="libopenexr-dev" />
+        <RpmDependency Include="libjasper-dev" />
+        <RpmDependency Include="libdc1394-22-dev" />
+        <RpmDependency Include="libv4l-dev" />
+        <RpmDependency Include="libeigen3-dev" />
+        <RpmDependency Include="libopengl-dev" />
+        <RpmDependency Include="cmake-curses-gui" />
+        <RpmDependency Include="freeglut3-dev" />
     </ItemGroup>
 
 </Project>

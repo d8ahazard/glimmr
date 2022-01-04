@@ -17,7 +17,7 @@ public class AdalightDiscovery : ColorDiscovery, IColorDiscovery {
 	public AdalightDiscovery(ColorService cs) : base(cs) {
 	}
 
-	public async Task Discover(CancellationToken ct, int timeout) {
+	public async Task Discover(int timeout, CancellationToken ct) {
 		var sd = DataUtil.GetSystemData();
 		var baud = sd.BaudRate;
 		Log.Debug("Adalight: Discovery started.");

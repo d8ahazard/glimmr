@@ -9,11 +9,11 @@ using Glimmr.Services;
 namespace Glimmr.Models.ColorTarget;
 
 public interface IColorDiscovery {
-	public Task Discover(CancellationToken ct, int timeout);
+	public Task Discover(int timeout, CancellationToken ct);
 }
 
 public abstract class ColorDiscovery {
-	public ControlService ControlService { get; }
+	protected ControlService ControlService { get; }
 
 	protected ColorDiscovery(ColorService colorService) {
 		ControlService = colorService.ControlService;
