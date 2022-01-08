@@ -14,6 +14,7 @@ using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Serilog;
+using static Glimmr.Models.GlimmrConstants;
 
 #endregion
 
@@ -24,8 +25,6 @@ public class FrameSplitter {
 	public bool DoSend { get; set; }
 	public bool SourceActive { get; set; }
 	private ColorService ColorService { get; }
-	private const int ScaleHeight = 480;
-	private const int ScaleWidth = 640;
 	private readonly float _borderHeight;
 
 	// The width of the border to crop from for LEDs
@@ -563,10 +562,10 @@ public class FrameSplitter {
 	private async Task CheckCrop(Mat image) {
 		// Set our tolerances
 		_sectorChanged = false;
-		var width = image.Cols;
-		var height = image.Rows;
-		var wStart = width / 3;
-		var hStart = height / 3;
+		var width = ScaleWidth;
+		var height = ScaleHeight;
+		var wMax = width / 3;
+		var hMax = height / 3;
 		// How many non-black pixels can be in a given row
 		var lPixels = 0;
 		var pPixels = 0;

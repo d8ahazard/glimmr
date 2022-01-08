@@ -7,14 +7,13 @@ using System.Linq;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
+using static Glimmr.Models.GlimmrConstants;
 
 #endregion
 
 namespace Glimmr.Models;
 
 public class FrameBuilder {
-	private const int ScaleHeight = 480;
-	private const int ScaleWidth = 640;
 	private readonly int _bottomCount;
 
 	// This will store the coords of input values

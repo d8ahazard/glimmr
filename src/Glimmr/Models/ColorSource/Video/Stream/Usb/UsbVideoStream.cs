@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Glimmr.Models.Util;
+using static Glimmr.Models.GlimmrConstants;
 using Serilog;
 
 #endregion
@@ -74,8 +75,8 @@ public class UsbVideoStream : IVideoStream, IDisposable {
 		var props = new Tuple<CapProp, int>[] {
 			new(CapProp.FourCC, VideoWriter.Fourcc('M', 'J', 'P', 'G')),
 			new(CapProp.Fps, 60),
-			new(CapProp.FrameWidth, 640),
-			new(CapProp.FrameHeight, 480)
+			new(CapProp.FrameWidth, ScaleWidth),
+			new(CapProp.FrameHeight, ScaleHeight)
 		};
 		var api = OperatingSystem.IsWindows() ? VideoCapture.API.DShow : VideoCapture.API.V4L2;
 		if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
