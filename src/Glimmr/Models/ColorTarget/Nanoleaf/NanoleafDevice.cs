@@ -25,6 +25,7 @@ public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
 	private int _frameTime;
 	private TileLayout? _layout;
 	private Dictionary<int, int> _targets;
+	private Task? _checkTask;
 
 	/// <summary>
 	///     Use this for sending color data to the panel
@@ -104,6 +105,19 @@ public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
 
 		await _nanoleafClient.StartExternalAsync();
 		await _nanoleafClient.SetBrightnessAsync(_brightness);
+		_checkTask = Task.Run(async () => {
+			while (!ct.IsCancellationRequested) {
+				var nfo = await _nanoleafClient.GetCurrentEffectAsync();
+				if (nfo != "*Dynamic*") {
+					Log.Debug("Re-starting nanoleaf stream...");
+					await _nanoleafClient.StartExternalAsync();
+					await _nanoleafClient.SetBrightnessAsync(_brightness);
+				}
+				await Task.Delay(TimeSpan.FromHours(1), ct);
+					
+			}
+		}, CancellationToken.None);
+
 		Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
 		ColorService.StartCounter--;
 	}
@@ -120,10 +134,13 @@ public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
 			Log.Warning("Client is null...");
 			return;
 		}
-
+		
 		Log.Debug($"{_data.Tag}::Stopping stream...{_data.Id}.");
 		ColorService.StopCounter++;
-
+		if (_checkTask is { IsCompleted: false }) {
+			await _checkTask.WaitAsync(TimeSpan.FromSeconds(1));
+			_checkTask = null;
+		}
 		await _nanoleafClient.TurnOffAsync();
 		Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 		ColorService.StopCounter--;
