@@ -13,6 +13,8 @@ using Emgu.CV.Util;
 using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Newtonsoft.Json;
 using Serilog;
 using static Glimmr.Models.GlimmrConstants;
 
@@ -64,7 +66,7 @@ public class FrameSplitter {
 
 	// Current crop settings
 	private int _lCropPixels;
-	private CropCounter _lCroupCounter;
+	private CropCounter _lCropCounter;
 
 	private int _ledCount;
 	private int _leftCount;
@@ -107,10 +109,12 @@ public class FrameSplitter {
 		_frameWatch = new Stopwatch();
 		_frameWatch.Start();
 		ColorService = cs;
+		var sd = DataUtil.GetSystemData();
+		_cropDelay = sd.CropDelay;
 		cs.ControlService.RefreshSystemEvent += RefreshSystem;
 		cs.FrameSaveEvent += TriggerSave;
-		_pillarCropCounter = new CropCounter(5);
-		_lCroupCounter = new CropCounter(5);
+		_pillarCropCounter = new CropCounter(_cropDelay);
+		_lCropCounter = new CropCounter(_cropDelay);
 		RefreshSystem();
 		// Set desired width of capture region to 15% total image
 		_borderWidth = 10;
@@ -133,7 +137,7 @@ public class FrameSplitter {
 		_vSectors = sd.VSectors;
 		_cropDelay = sd.CropDelay;
 		_pillarCropCounter = new CropCounter(_cropDelay);
-		_lCroupCounter = new CropCounter(_cropDelay);
+		_lCropCounter = new CropCounter(_cropDelay);
 		_cropLetter = sd.EnableLetterBox;
 		_cropPillar = sd.EnablePillarBox;
 		_mode = sd.DeviceMode;
@@ -590,17 +594,16 @@ public class FrameSplitter {
 		_allBlack = false;
 		// Check letterboxing
 		if (_cropLetter) {
-			for (var y = 2; y < hStart; y++) {
+			for (var y = 0; y < hMax; y++) {
 				var c1 = gr.Row(height - y);
 				var c2 = gr.Row(y);
 				var b1 = c1.GetRawData().SkipLast(8).Skip(8).ToArray();
 				var b2 = c1.GetRawData().SkipLast(8).Skip(8).ToArray();
-				var dist = b1.Distinct().ToArray();
 				var l1 = Sum(b1) / b1.Length;
 				var l2 = Sum(b2) / b1.Length;
 				c1.Dispose();
 				c2.Dispose();
-				if (dist.Length == 1 && l1 == l2 && l1 <= _cropBlackLevel) {
+				if (l1 <= _cropBlackLevel && l2 <= _cropBlackLevel && l1==l2) {
 					lPixels = y;
 				} else {
 					break;
@@ -615,17 +618,16 @@ public class FrameSplitter {
 
 		// Check pillarboxing
 		if (_cropPillar) {
-			for (var x = 2; x < wStart; x++) {
+			for (var x = 0; x < wMax; x++) {
 				var c1 = gr.Col(width - x);
 				var c2 = gr.Col(x);
 				var b1 = c1.GetRawData().SkipLast(8).Skip(8).ToArray();
 				var b2 = c1.GetRawData().SkipLast(8).Skip(8).ToArray();
-				var dist = b1.Distinct().ToArray();
 				var l1 = Sum(b1) / b1.Length;
 				var l2 = Sum(b2) / b1.Length;
 				c1.Dispose();
 				c2.Dispose();
-				if (dist.Length == 1 && l1 == l2 && l1 < _cropBlackLevel) {
+				if (l1 <= _cropBlackLevel && l2 <= _cropBlackLevel && l1 == l2) {
 					pPixels = x;
 				} else {
 					break;
@@ -638,22 +640,20 @@ public class FrameSplitter {
 
 		if (_cropPillar) {
 			if (pPixels == 0) {
-				_pillarCropCounter.Clear();
-				_pCrop = false;
-				if (_pCropPixels != 0) {
-					_sectorChanged = true;
+				if (_pillarCropCounter.Triggered || _pCrop) {
+					_pillarCropCounter.Clear();
+					_pCropPixels = 0;	
 				}
-
-				_pCropPixels = 0;
+				
 			} else {
 				_pillarCropCounter.Tick(Math.Abs(pPixels - _hCropCheck) < 4);
 			}
 		}
 
-		if (_pillarCropCounter.Triggered() && !_pCrop) {
-			_pCrop = _sectorChanged = true;
+		if (_pillarCropCounter.Triggered && !_pCrop) {
+			_pCrop = true;
+			_sectorChanged = true;
 			_pCropPixels = pPixels;
-			_pillarCropCounter.Clear();
 		}
 
 		_hCropCheck = pPixels;
@@ -661,22 +661,22 @@ public class FrameSplitter {
 
 		if (_cropLetter) {
 			if (lPixels == 0) {
-				_lCroupCounter.Clear();
-				_lCrop = false;
-				if (_lCropPixels != 0) {
+				if (_lCropCounter.Triggered || _lCrop) {
+					_lCropCounter.Clear();
+					_lCrop = false;
 					_sectorChanged = true;
+					_lCropPixels = 0;	
 				}
-
-				_lCropPixels = 0;
 			} else {
-				_lCroupCounter.Tick(Math.Abs(lPixels - _vCropCheck) < 4);
+				// Tick our counter - up if the difference between current and new crop values are lt 4, down otherwise.
+				_lCropCounter.Tick(Math.Abs(lPixels - _vCropCheck) < 4);
 			}
 		}
-
-		if (_lCroupCounter.Triggered() && !_lCrop) {
-			_lCrop = _sectorChanged = true;
+		
+		if (_lCropCounter.Triggered && !_lCrop) {
+			_lCrop = true;
+			_sectorChanged = true;
 			_lCropPixels = lPixels;
-			_lCroupCounter.Clear();
 		}
 
 		_vCropCheck = lPixels;
@@ -696,8 +696,8 @@ public class FrameSplitter {
 	}
 
 	private Rectangle[] DrawGrid() {
-		var lOffset = _lCropPixels == 0 ? _lCropPixels : _lCropPixels + (int)_borderHeight + 5;
-		var pOffset = _pCropPixels == 0 ? _pCropPixels : _pCropPixels + (int)_borderWidth + 5;
+		var lOffset = _lCropPixels;
+		var pOffset = _pCropPixels;
 		var output = new Rectangle[_ledCount];
 
 		// Bottom Region
@@ -883,8 +883,11 @@ public class FrameSplitter {
 }
 
 public class CropCounter {
+	[JsonProperty]
 	private readonly int _max;
+	[JsonProperty]
 	private int _clearCount;
+	[JsonProperty]
 	private int _count;
 
 	public CropCounter(int max) {
@@ -894,18 +897,11 @@ public class CropCounter {
 	}
 
 	public void Clear() {
-		_clearCount++;
-		if (_clearCount < 10) {
-			return;
-		}
-
 		_count = 0;
-		_clearCount = 0;
 	}
 
 
 	public void Tick(bool b) {
-		_clearCount = 0;
 		if (b) {
 			_count++;
 			if (_count >= _max) {
@@ -919,7 +915,6 @@ public class CropCounter {
 		}
 	}
 
-	public bool Triggered() {
-		return _count >= _max;
-	}
+	[JsonProperty]
+	public bool Triggered => _count >= _max;
 }
