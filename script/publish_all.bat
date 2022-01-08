@@ -3,7 +3,7 @@ IF [%1] == [] GOTO Error
 set version=%~1
 
 echo Building Glimmr Tray for Windows...
-dotnet publish -r win-x64 -c release ..\src\GlimmrTray\GlimmrTray.csproj -o ..\src\Glimmr\bin\Windows
+dotnet publish -r win-x64 -c release ..\src\GlimmrTray\GlimmrTray.csproj -o ..\src\Glimmr\bin\Windows --self-contained
 
 echo Build packages for various architectures
 for %%x in (
