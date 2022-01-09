@@ -524,7 +524,7 @@ public class ColorService : BackgroundService {
 
 		_streamTokenSource.Cancel();
 
-		if (_streamStarted) {
+		if (_streamStarted && newMode == 0) {
 			await StopStream();
 		}
 

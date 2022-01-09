@@ -113,8 +113,7 @@ public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
 					await _nanoleafClient.StartExternalAsync();
 					await _nanoleafClient.SetBrightnessAsync(_brightness);
 				}
-				await Task.Delay(TimeSpan.FromHours(1), ct);
-					
+				await Task.Delay(TimeSpan.FromMinutes(15), ct);
 			}
 		}, CancellationToken.None);
 
