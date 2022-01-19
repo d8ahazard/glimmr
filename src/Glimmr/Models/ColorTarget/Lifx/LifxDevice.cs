@@ -29,7 +29,6 @@ public class LifxDevice : ColorTarget, IColorTarget {
 	private int _targetSector;
 
 	public LifxDevice(LifxData d, ColorService cs) : base(cs) {
-		DataUtil.GetItem<int>("captureMode");
 		_data = d ?? throw new ArgumentException("Invalid Data");
 		Id = _data.Id;
 		_brightness = _data.Brightness;

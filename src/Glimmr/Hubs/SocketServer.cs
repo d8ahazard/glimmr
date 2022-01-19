@@ -205,8 +205,7 @@ public class SocketServer : Hub {
 			return;
 		}
 
-		try {
-			_states[Context.ConnectionId] = false;
+		try {_states[Context.ConnectionId] = false;
 			SetSend();
 			Log.Debug("Connected: " + Context.ConnectionId);
 			await Clients.Caller.SendAsync("olo", DataUtil.GetStoreSerialized(_cs));

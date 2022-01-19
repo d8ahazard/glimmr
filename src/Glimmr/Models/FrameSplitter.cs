@@ -13,7 +13,6 @@ using Emgu.CV.Util;
 using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Newtonsoft.Json;
 using Serilog;
 using static Glimmr.Models.GlimmrConstants;
@@ -886,14 +885,11 @@ public class CropCounter {
 	[JsonProperty]
 	private readonly int _max;
 	[JsonProperty]
-	private int _clearCount;
-	[JsonProperty]
 	private int _count;
 
 	public CropCounter(int max) {
 		_max = max;
 		_count = 0;
-		_clearCount = 0;
 	}
 
 	public void Clear() {

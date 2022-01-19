@@ -1,9 +1,4 @@
 ﻿{
-  "runtimeOptions": {
-    "configProperties": {
-      "System.Drawing.EnableUnixSupport": true
-    }
-  },
   "configProperties": {
     "System.Globalization.Invariant": false,
     "System.Drawing.EnableUnixSupport": true

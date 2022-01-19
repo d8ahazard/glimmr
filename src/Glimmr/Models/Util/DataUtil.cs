@@ -208,6 +208,7 @@ public static class DataUtil {
 	}
 
 	private static List<dynamic> CacheDevices() {
+		Log.Information("Caching devices.");
 		var db = GetDb();
 		var devs = Array.Empty<BsonDocument>();
 		var devices = Array.Empty<dynamic>();
@@ -223,41 +224,39 @@ public static class DataUtil {
 		}
 
 		var output = new List<dynamic>(devices.Length);
-		try {
-			foreach (var device in devices) {
-				foreach (var dev in devs) {
-					try {
-						var json = JsonSerializer.Serialize(dev);
-						var jObj = JObject.Parse(json);
-						if (jObj.GetValue("_id") != device.Id) {
-							continue;
-						}
-
-						var type = jObj.GetValue("_type");
-						if (type == null) {
-							continue;
-						}
-
-						var typeType = Type.GetType(type.ToString());
-						if (typeType == null) {
-							continue;
-						}
-
-						dynamic? donor = Activator.CreateInstance(typeType);
-						if (donor == null) {
-							continue;
-						}
-
-						device.KeyProperties = donor.KeyProperties;
-						output.Add(device);
-					} catch (Exception e) {
-						Log.Warning("Exception Caching Devices: " + e.Message + " at " + e.StackTrace);
+	
+		foreach (var device in devices) {
+			foreach (var dev in devs) {
+				try {
+					var json = JsonSerializer.Serialize(dev);
+					var jObj = JObject.Parse(json);
+					if (jObj.GetValue("_id") != device.Id) {
+						continue;
 					}
+
+					var type = jObj.GetValue("_type");
+					if (type == null) {
+						continue;
+					}
+
+					var typeType = Type.GetType(type.ToString());
+					if (typeType == null) {
+						continue;
+					}
+
+					dynamic? donor = Activator.CreateInstance(typeType);
+					if (donor == null) {
+						continue;
+					}
+
+					device.KeyProperties = donor.KeyProperties;
+					output.Add(device);
+				} catch (Exception e) {
+					Log.Warning("Exception Caching Devices: " + e.Message + " at " + e.StackTrace);
 				}
 			}
-		} catch (Exception e) {
-			Log.Warning("Exception caching devs: " + e.Message + " at " + e.StackTrace);
 		}
+		Log.Debug("Loaded " + output.Count + " devices.");
 
 		_devices = output;
 		return output;

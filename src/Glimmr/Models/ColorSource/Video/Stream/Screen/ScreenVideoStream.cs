@@ -84,10 +84,12 @@ public class ScreenVideoStream : IVideoStream, IDisposable {
 				Image<Bgr, byte>? newMat;
 				if (_ss == null) {
 					// We can ignore warnings about this, there's a flag set in the runtime config to allow this in 'nix.
+#pragma warning disable CA1416
 					var bcs = new Bitmap(_width, _height, PixelFormat.Format24bppRgb);
 					using var g = Graphics.FromImage(bcs);
 					g.CopyFromScreen(_left, _top, 0, 0, bcs.Size, CopyPixelOperation.SourceCopy);
 					g.Flush();
+#pragma warning restore CA1416
 					var sc = bcs.ToImage<Bgr, byte>();
 					newMat = sc.Resize(640, 480, Inter.Nearest);
 				} else {

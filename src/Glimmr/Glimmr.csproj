@@ -7,6 +7,7 @@
         <ProductName>Glimmr</ProductName>
         <CopyRefAssembliesToPublishDirectory>false</CopyRefAssembliesToPublishDirectory>
         <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+        <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
         <UserSecretsId>2513db3e-6259-49c1-8062-41f810f170fa</UserSecretsId>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
         <DockerfileContext>.</DockerfileContext>
@@ -63,7 +64,8 @@
         <PackageReference Include="Nanoleaf.Core" Version="2.0.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
         <PackageReference Include="OpenRGB.NET" Version="1.7.0" />
-        <PackageReference Include="Q42.HueApi" Version="3.19.0" />
+        <PackageReference Include="Q42.HueApi" Version="3.19.1" />
+        <PackageReference Include="Q42.HueApi.ColorConverters" Version="3.18.1" />
         <PackageReference Include="Q42.HueApi.Entertainment" Version="3.18.1" />
         <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
         <PackageReference Include="Serilog" Version="2.10.0" />

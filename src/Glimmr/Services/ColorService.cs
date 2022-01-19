@@ -362,16 +362,7 @@ public class ColorService : BackgroundService {
 		var deviceData = DataUtil.GetDevices();
 		foreach (var c in classes) {
 			try {
-				var tag = c.Replace("Glimmr.Models.ColorTarget.", "");
-				tag = tag.Split(".")[0];
-				sDevs.AddRange(from device in deviceData.Where(device => device.Tag == tag)
-						.Where(device => tag != "Led" || device.Id != "2")
-					select new object[] { device, this }
-					into args
-					select Activator.CreateInstance(Type.GetType(c)!, args)
-					into obj
-					where (dynamic?)obj != null
-					select (IColorTarget)(dynamic?)obj);
+				sDevs.AddRange(GetDevice(deviceData, c));
 			} catch (InvalidCastException e) {
 				Log.Warning("Exception: " + e.Message + " at " + e.StackTrace);
 			}
@@ -379,6 +370,39 @@ public class ColorService : BackgroundService {
 
 		_sDevices = sDevs.ToArray();
 		Log.Information($"Loaded {_sDevices.Length} devices.");
+	}
+
+	private IEnumerable<IColorTarget> GetDevice(IEnumerable<dynamic> devices, string c) {
+		Log.Debug("Trying to create device: " + c);
+		var output = new List<IColorTarget>();
+		var tag = c.Replace("Glimmr.Models.ColorTarget.", "");
+		tag = tag.Split(".")[0];
+		Log.Debug("Trying to create device: " + c);
+
+		foreach (IColorTargetData device in devices.Where(device => device.Tag == tag)) {
+			if (tag == "Led" && device.Id == "2") {
+				continue;
+			}
+
+			try {
+				var cType = Type.GetType(c);
+				if (cType == null) {
+					Log.Warning("Unable to load type for " + c);
+					continue;
+				}
+
+				if (Activator.CreateInstance(cType, device, this) is not IColorTarget dev) {
+					Log.Warning("Unable to load instance for " + c);
+					continue;
+				}
+
+				output.Add(dev);
+			} catch (Exception e) {
+				Log.Warning($"Exception adding device {device.Id}: " + e.Message + " at " + e.StackTrace);
+			}
+		}
+		Log.Debug("Created " + output.Count + " " + tag + " devices.");
+		return output;
 	}
 
 	private async Task Demo(object o, DynamicEventArgs? dynamicEventArgs) {

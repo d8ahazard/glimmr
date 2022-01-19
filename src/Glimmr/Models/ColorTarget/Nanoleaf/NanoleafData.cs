@@ -82,7 +82,7 @@ public class NanoleafData : IColorTargetData {
 		LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 		Tag = "Nanoleaf";
 		Name ??= Tag;
-		if (IpAddress != null) {
+		if (!string.IsNullOrEmpty(IpAddress)) {
 			var hc = string.GetHashCode(IpAddress, StringComparison.InvariantCulture);
 			Name = "Nanoleaf - " + hc.ToString(CultureInfo.InvariantCulture)[..4];
 		}

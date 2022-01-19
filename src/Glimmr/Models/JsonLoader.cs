@@ -103,8 +103,6 @@ public class JsonLoader {
 			Log.Warning("Exception saving file to " + filePath);
 			return false;
 		}
-
-		return false;
 	}
 
 	public List<T> LoadFiles<T>() {

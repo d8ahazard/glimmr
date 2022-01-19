@@ -299,7 +299,6 @@ public static class ColorUtil {
 	}
 
 	public static int FindEdge(int sector) {
-		Log.Debug("Finding edge for " + sector);
 		SetSystemData();
 		if (_deviceMode == DeviceMode.Video || !_useCenter) {
 			return sector;
@@ -323,9 +322,6 @@ public static class ColorUtil {
 		for (var i = 2; i < _vCount; i++) {
 			left.Add(i * _hCount);
 		}
-
-		Log.Debug("Lefts: " + JsonConvert.SerializeObject(left));
-
 
 		var top = new List<int>();
 		for (var i = _hCount * (_vCount - 1) + 2; i < total; i++) {
@@ -392,7 +388,6 @@ public static class ColorUtil {
 
 		for (var i = 1; i < _vCount / 2; i++) {
 			bn = sector - _hCount * i;
-			Log.Debug("BN: " + bn);
 			if (!bottom.Contains(bn)) {
 				continue;
 			}
@@ -423,13 +418,11 @@ public static class ColorUtil {
 
 		var minH = Math.Min(lDist, rDist);
 		var minV = Math.Min(tDist, bDist);
-		Log.Debug("SectorMap: " + JsonConvert.SerializeObject(sectorMap));
 		foreach (var num in new[] { tr, total, br, bl }) {
 			if (sector != num) {
 				continue;
 			}
 
-			Log.Debug("Sector is in a corner: " + sector);
 			return sectorMap[num];
 		}
 
@@ -484,8 +477,6 @@ public static class ColorUtil {
 		if (minV == tDist && minV < minH) {
 			return sectorMap[tn];
 		}
-
-
 		return br;
 	}
 
