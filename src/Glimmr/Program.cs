@@ -36,8 +36,8 @@ public static class Program {
 			logPath = Path.Combine(userPath, "log", "glimmr.log");
 		}
 
-		//var tr1 = new TextWriterTraceListener(Console.Out);
-		//Trace.Listeners.Add(tr1);
+		var tr1 = new TextWriterTraceListener(Console.Out);
+		Trace.Listeners.Add(tr1);
 		LogSwitch = new LoggingLevelSwitch {
 			MinimumLevel = LogEventLevel.Debug
 		};
@@ -76,11 +76,10 @@ public static class Program {
 			.UseSerilog(logger)
 			.UseConsoleLifetime()
 			.ConfigureServices(services => {
+				services.AddSignalR();
 				services.Configure<HostOptions>(hostOptions => {
 					hostOptions.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore;
 				});
-				services.AddSignalR();
-				services.AddSingleton<IHostedService, ControlService>();
 				Log.Debug("Config...");
 			})
 			.ConfigureWebHostDefaults(webBuilder => {
@@ -91,6 +90,9 @@ public static class Program {
 				}
 				webBuilder.UseStartup<Startup>();
 				webBuilder.UseUrls("http://*");
+			})
+			.ConfigureServices(services => {
+				services.AddSingleton<IHostedService, ControlService>();
 			});
 	}
 }

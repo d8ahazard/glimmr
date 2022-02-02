@@ -44,7 +44,7 @@ public class ControlService : BackgroundService {
 
 	private static LoggingLevelSwitch? _levelSwitch;
 
-	private static ControlService? _myCs;
+	private static ControlService _myCs;
 	private readonly DiscoveryService _discoveryService;
 
 	private readonly IHubContext<SocketServer> _hubContext;
@@ -76,7 +76,7 @@ public class ControlService : BackgroundService {
 		_myCs = this;
 	}
 
-	public static ControlService? GetInstance() {
+	public static ControlService GetInstance() {
 		return _myCs;
 	}
 

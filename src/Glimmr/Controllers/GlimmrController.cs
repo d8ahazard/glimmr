@@ -31,8 +31,10 @@ namespace Glimmr.Controllers;
 public class GlimmrController : ControllerBase {
 	private readonly ControlService _controlService;
 
-	public GlimmrController(ControlService controlService) {
-		_controlService = controlService;
+	public GlimmrController() {
+		var cs = ControlService.GetInstance();
+		_controlService = cs;
+		
 	}
 
 	/// <summary>
@@ -43,6 +45,7 @@ public class GlimmrController : ControllerBase {
 	/// </returns>
 	[HttpGet("")]
 	public ActionResult<SystemData> GetSystemData() {
+		Log.Debug("SD req");
 		var sd = DataUtil.GetSystemData();
 		return sd;
 	}
@@ -209,9 +212,11 @@ public class GlimmrController : ControllerBase {
 	/// <returns>A copy of the LiteDB used for setting storage.</returns>
 	[HttpGet("database")]
 	public FileResult DbDownload() {
+		Log.Debug("DB Download requested...");
 		var dbPath = DataUtil.BackupDb();
 		var fileBytes = System.IO.File.ReadAllBytes(dbPath);
 		var fileName = Path.GetFileName(dbPath);
+		Log.Debug("DB path: " + dbPath);
 		return File(fileBytes, MediaTypeNames.Application.Octet, fileName);
 	}
 
