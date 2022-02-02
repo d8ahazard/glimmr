@@ -24,6 +24,7 @@ using Makaretu.Dns;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
@@ -135,7 +136,6 @@ public class ControlService : BackgroundService {
 			DataUtil.SetItem("PreviousMode", mode);
 		}
 
-		await _hubContext.Clients.All.SendAsync("mode", mode);
 		DataUtil.SetItem("DeviceMode", mode);
 		DataUtil.SetItem("AutoDisabled", autoDisabled);
 		ColorUtil.SetSystemData();
@@ -247,6 +247,10 @@ public class ControlService : BackgroundService {
 
 	public async Task NotifyClients() {
 		await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized(this));
+	}
+
+	public async Task SendMode(DeviceMode mode) {
+		await _hubContext.Clients.All.SendAsync("mode", mode);
 	}
 
 
@@ -441,7 +445,10 @@ v. {version}
 		Log.Debug("Adding device " + data.Name);
 		IColorTargetData? data2 = DataUtil.GetDevice(data.Id) ?? null;
 		if (data2 != null) {
-			await _hubContext.Clients.All.SendAsync("device", JsonConvert.SerializeObject(data2));
+			var serializerSettings = new JsonSerializerSettings();
+			serializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+
+			await _hubContext.Clients.All.SendAsync("device", JsonConvert.SerializeObject(data2, serializerSettings));
 		}
 	}
 
@@ -501,8 +508,6 @@ v. {version}
 	public async Task UpdateDevice(dynamic device, bool merge = true) {
 		Log.Debug($"Updating {device.Tag}...");
 		await DataUtil.AddDeviceAsync(device, merge).ConfigureAwait(false);
-		var data = DataUtil.GetDevice(device.Id);
-		await _hubContext.Clients.All.SendAsync("device", (IColorTargetData)data);
 		await RefreshDevice(device.Id);
 	}
 
