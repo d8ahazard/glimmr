@@ -64,8 +64,10 @@
         <PackageReference Include="Nanoleaf.Core" Version="2.0.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
         <PackageReference Include="OpenRGB.NET" Version="1.7.0" />
-        <PackageReference Include="Q42.HueApi" Version="3.19.1" />
-        <PackageReference Include="Q42.HueApi.ColorConverters" Version="3.18.1" />
+        <PackageReference Include="HueApi" Version="0.1.42" />
+        <PackageReference Include="HueApi.ColorConverters" Version="0.1.42" />
+        <PackageReference Include="HueApi.Entertainment" Version="1.0.42" />
+        <PackageReference Include="Q42.HueApi" Version="3.19.2" />
         <PackageReference Include="Q42.HueApi.Entertainment" Version="3.18.1" />
         <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
         <PackageReference Include="Serilog" Version="2.10.0" />
