@@ -384,13 +384,17 @@ public class ColorService : BackgroundService {
 				continue;
 			}
 
+			if (tag == "Hue") {
+				continue;
+			}
+
 			try {
 				var cType = Type.GetType(c);
 				if (cType == null) {
 					Log.Warning("Unable to load type for " + c);
 					continue;
 				}
-
+				
 				if (Activator.CreateInstance(cType, device, this) is not IColorTarget dev) {
 					Log.Warning("Unable to load instance for " + c);
 					continue;
@@ -585,7 +589,9 @@ public class ColorService : BackgroundService {
 		}
 
 		_deviceMode = newMode;
+		await ControlService.SendMode(_deviceMode);
 		Log.Information($"Device mode updated to {newMode}.");
+		
 	}
 
 	private async Task StartStream() {
