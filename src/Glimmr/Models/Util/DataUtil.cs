@@ -358,14 +358,14 @@ public static class DataUtil {
 			result = devs.Delete(deviceId);
 			Log.Information(result ? $"Device {deviceId} deleted." : "Unable to delete device?");
 			db.Commit();
+			CacheDevices();
 		} catch (Exception e) {
 			Log.Warning("Error deleting device: " + e.Message);
 		}
 
 		return result;
 	}
-
-
+	
 	public static string BackupDb() {
 		if (_db == null) {
 			Log.Warning("DB is null, this is bad!!");
