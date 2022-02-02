@@ -6,10 +6,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using Glimmr.Enums;
 using Glimmr.Models;
+using Glimmr.Models.ColorTarget;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.AspNetCore.SignalR;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
 using Serilog;
 
 #endregion
@@ -120,9 +123,15 @@ public class SocketServer : Hub {
 
 		var device = JObject.Parse(deviceJson);
 		var cTag = device.GetValue("tag");
+		var cId = device.GetValue("id");
+		var id = string.Empty;
 		if (cTag == null) {
 			Log.Warning("Unable to get tag.");
 			return;
+		}
+
+		if (cId != null) {
+			id = cId.ToString();
 		}
 
 		var tag = cTag.ToString();
@@ -132,6 +141,13 @@ public class SocketServer : Hub {
 			dynamic? devObject = device.ToObject(typeName);
 			if (devObject != null) {
 				await _cs.UpdateDevice(devObject, false).ConfigureAwait(false);
+				if (string.IsNullOrEmpty(id)) return;
+				var data = DataUtil.GetDevice(id);
+				if (data == null) return;
+				var serializerSettings = new JsonSerializerSettings();
+				serializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+
+				await Clients.All.SendAsync("device", JsonConvert.SerializeObject((IColorTargetData)data, serializerSettings));
 			}
 		}
 	}
