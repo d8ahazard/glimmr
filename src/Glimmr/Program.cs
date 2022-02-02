@@ -1,5 +1,6 @@
 #region
 
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -83,6 +84,11 @@ public static class Program {
 				Log.Debug("Config...");
 			})
 			.ConfigureWebHostDefaults(webBuilder => {
+				var path = Path.Combine(AppContext.BaseDirectory, "wwwroot");
+				if (Directory.Exists(path)) {
+					Log.Debug("using base dir: " + AppContext.BaseDirectory);
+					webBuilder.UseContentRoot(AppContext.BaseDirectory);
+				}
 				webBuilder.UseStartup<Startup>();
 				webBuilder.UseUrls("http://*");
 			});
