@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
+using Newtonsoft.Json;
 using Q42.HueApi;
 using Q42.HueApi.Interfaces;
 using Q42.HueApi.Models.Bridge;
@@ -24,24 +25,13 @@ public class HueDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth {
 		_bridgeLocatorHttp = new HttpBridgeLocator();
 		_bridgeLocatorMdns = new MdnsBridgeLocator();
 		_bridgeLocatorSsdp = new SsdpBridgeLocator();
-		_bridgeLocatorHttp.BridgeFound += DeviceFound;
-		_bridgeLocatorMdns.BridgeFound += DeviceFound;
-		_bridgeLocatorSsdp.BridgeFound += DeviceFound;
+		
 		_controlService = colorService.ControlService;
 	}
 
 	public async Task Discover(int timeout, CancellationToken ct) {
-		Log.Debug("Hue: Discovery started...");
-		try {
-			await Task.WhenAll(_bridgeLocatorHttp.LocateBridgesAsync(ct), _bridgeLocatorMdns.LocateBridgesAsync(ct),
-				_bridgeLocatorSsdp.LocateBridgesAsync(ct));
-		} catch (Exception e) {
-			if (!e.Message.Contains("canceled")) {
-				Log.Debug("Hue discovery exception: " + e.Message);
-			}
-		}
-
-		Log.Debug("Hue: Discovery complete.");
+		Log.Debug("Hue: V1 Discovery disabled...");
+		await Task.FromResult(true);
 	}
 
 	public async Task<dynamic> CheckAuthAsync(dynamic dev) {
@@ -104,6 +94,7 @@ public class HueDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth {
 			data.AddGroups(groups);
 			data.AddLights(lights);
 			dev.UpdateFromDiscovered(data);
+			Log.Debug("Returning dev: " + JsonConvert.SerializeObject(dev));
 			return dev;
 		} catch (Exception e) {
 			Log.Warning("Hue Discovery Exception: " + e.Message + " at " + e.StackTrace);
