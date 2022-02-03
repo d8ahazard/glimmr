@@ -44,7 +44,7 @@ public class ControlService : BackgroundService {
 
 	private static LoggingLevelSwitch? _levelSwitch;
 
-	private static ControlService _myCs;
+	private static ControlService _myCs = null!;
 	private readonly DiscoveryService _discoveryService;
 
 	private readonly IHubContext<SocketServer> _hubContext;
@@ -67,13 +67,13 @@ public class ControlService : BackgroundService {
 	private Task _statTask = null!;
 
 	public ControlService(IHubContext<SocketServer> hubContext) {
+		_myCs = this;
 		_hubContext = hubContext;
 		_levelSwitch = Program.LogSwitch;
 		Initialize();
 		ColorService = new ColorService(this);
 		_discoveryService = new DiscoveryService(this);
 		_statService = new StatService(_hubContext, this);
-		_myCs = this;
 	}
 
 	public static ControlService GetInstance() {
