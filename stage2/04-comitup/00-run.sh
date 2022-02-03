@@ -4,8 +4,6 @@ set -e
 
 touch ${ROOTFS_DIR}/boot/ssh
 
-mv ${ROOTFS_DIR}/etc/wpa_supplicant/wpa_supplicant.conf ${ROOTFS_DIR}/etc/wpa_supplicant/wpa_supplicant.conf.comitup_disable
-
 rm -f ${ROOTFS_DIR}/etc/network/interfaces
 install -m 644 files/interfaces ${ROOTFS_DIR}/etc/network/
 
@@ -20,6 +18,7 @@ systemctl mask dnsmasq.service
 systemctl mask systemd-resolved.service
 systemctl mask dhcpd.service
 systemctl mask dhcpcd.service
+systemctl mask wpa-supplicant.service
 EOF
 
 rm ${ROOTFS_DIR}/tmp/${APT_DEB}

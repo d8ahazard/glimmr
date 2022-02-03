@@ -1,5 +1,8 @@
 # interfaces(5) file used by ifup(8) and ifdown(8)
 
+# Modified for Comitup, which hands over interface responsibility
+# to NetworkManager.
+
 # This has been modified for use with comitup(8). wireless
 # is handled by NetworkManager, with support for dhcp and non-dhcp
 # networks.
@@ -8,7 +11,7 @@
 # For static IP, consult /etc/dhcpcd.conf and 'man dhcpcd.conf'
 
 # Include files from /etc/network/interfaces.d:
-source-directory /etc/network/interfaces.d
-
-auto lo
-iface lo inet loopback
+# source-directory /etc/network/interfaces.d
+#
+# auto lo
+# iface lo inet loopback
