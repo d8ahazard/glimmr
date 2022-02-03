@@ -605,13 +605,13 @@ public class ColorService : BackgroundService {
 			// Cancel any attempts to start streaming after four seconds if unsuccessful
 			var cts = new CancellationTokenSource();
 			Log.Debug("Starting streaming targets...");
+			var startCount = 0;
 			foreach (var sDev in _sDevices) {
 				try {
-					if (!sDev.Enable && sDev.Id != "0") {
-						continue;
+					if (sDev.Enable || sDev.Id == "0") {
+						await sDev.StartStream(_targetTokenSource.Token).ConfigureAwait(false);
+						startCount++;
 					}
-
-					await sDev.StartStream(_targetTokenSource.Token).ConfigureAwait(false);
 				} catch (Exception e) {
 					Log.Warning("Exception starting stream: " + e.Message);
 				}
@@ -619,12 +619,7 @@ public class ColorService : BackgroundService {
 
 			cts.CancelAfter(TimeSpan.FromSeconds(4));
 			_streamStarted = true;
-			var startCount = 0;
-			var enabledCount = 0;
-			foreach (var dev in _sDevices) {
-				if (dev.Streaming) startCount++;
-				if (dev.Enable) enabledCount++;
-			}
+			var enabledCount = _sDevices.Count(dev => dev.Enable);
 			Log.Information($"Streaming started on {startCount}/{enabledCount} devices.");
 		}
 	}
@@ -639,16 +634,26 @@ public class ColorService : BackgroundService {
 		// Give our devices four seconds to stop streaming, then cancel so we're not waiting forever...
 		var cts = new CancellationTokenSource();
 		cts.CancelAfter(TimeSpan.FromSeconds(5));
-		var tasks = (from dev in _sDevices where dev.Streaming select dev.StopStream()).ToList();
+		var len = 0;
+		var en = 0;
+		foreach (var dev in _sDevices) {
+			try {
+				if (dev.Enable) {
+					en++;
+				}
 
-		try {
-			await Task.Run(() => Task.WaitAll(tasks.ToArray()), cts.Token);
-		} catch (TaskCanceledException) {
-			// Ignored
+				if (!dev.Streaming) {
+					continue;
+				}
+
+				await dev.StopStream().ConfigureAwait(false);
+				len++;
+			} catch (Exception) {
+				// Ignored.
+			}
 		}
-
-		var len = tasks.Count;
-		Log.Information($"Streaming stopped on {len - StopCounter}/{len} devices.");
+		
+		Log.Information($"Streaming stopped on {len}/{en} devices.");
 	}
 
 	private async Task SendColors(Color[] colors, Color[] sectors, int fadeTime = 0,
