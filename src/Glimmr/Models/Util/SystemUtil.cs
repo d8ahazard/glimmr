@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
@@ -153,54 +152,14 @@ public static class SystemUtil {
 		var output = new List<string>();
 		foreach (var ad in AppDomain.CurrentDomain.GetAssemblies()) {
 			try {
-				var types = ad.GetTypes() ?? throw new ArgumentNullException("ad.GetTypes()");
-				foreach (var type in types) {
-					if (!typeof(T).IsAssignableFrom(type) || type.IsInterface || type.IsAbstract) {
-						continue;
-					}
-
-					if (type.FullName != null) {
-						output.Add(type.FullName);
-					}
-				}
+				var types = ad.GetTypes() ?? throw new ArgumentNullException(ad.ToString());
+				output.AddRange(from type in types where typeof(T).IsAssignableFrom(type) && !type.IsInterface && !type.IsAbstract where type.FullName != null select type.FullName);
 			} catch (Exception e) {
 				Log.Warning("Exception listing types: " + e.Message);
 			}
 		}
 
 		return output;
-	}
-
-	public static async Task<string[]> ReadLogLines(int len = 500) {
-		var dt = DateTime.Now.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
-		var logPath = $"/var/log/glimmr/glimmr{dt}.log";
-		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-			var userPath = GetUserDir();
-			var logDir = Path.Combine(userPath, "log");
-			if (!Directory.Exists(logDir)) {
-				Directory.CreateDirectory(logDir);
-			}
-
-			logPath = Path.Combine(userPath, "log", $"glimmr{dt}.log");
-		}
-
-		var result = await File.ReadAllLinesAsync(logPath);
-		if (result.Length > len) {
-			result = result.Skip(Math.Max(0, result.Length - len)).ToArray();
-		}
-
-		return result;
-	}
-
-	public static bool IsFileReady(string filename) {
-		// If the file can be opened for exclusive access it means that the file
-		// is no longer locked by another process.
-		try {
-			using var inputStream = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.None);
-			return inputStream.Length > 0;
-		} catch (Exception) {
-			return false;
-		}
 	}
 
 	private static async Task<string> GetVideoName(int index) {

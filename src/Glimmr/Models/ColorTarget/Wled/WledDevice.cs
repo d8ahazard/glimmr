@@ -158,41 +158,46 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		}
 
 		var toSend = list;
-		if (_stripMode == StripMode.Single) {
-			if (_targetSector >= colors1.Count || _targetSector == -1) {
+		switch (_stripMode) {
+			case StripMode.Single when _targetSector >= colors1.Count || _targetSector == -1:
 				return;
-			}
-
-			toSend = ColorUtil.FillArray(colors1[_targetSector], _ledCount);
-		} else if (_stripMode == StripMode.Sectored) {
-			var output = new Color[_ledCount];
-			foreach (var seg in _segments) {
-				var cols = ColorUtil.TruncateColors(toSend, seg.Offset, seg.LedCount, seg.Multiplier);
-				if (seg.ReverseStrip) {
-					cols = cols.Reverse().ToArray();
-				}
-
-				var start = seg.Start;
-				foreach (var col in cols) {
-					if (start >= _ledCount) {
-						Log.Warning($"Error, dest color idx is greater than led count: {start}/{_ledCount}");
-						continue;
+			case StripMode.Single:
+				toSend = ColorUtil.FillArray(colors1[_targetSector], _ledCount);
+				break;
+			case StripMode.Sectored: {
+				var output = new Color[_ledCount];
+				foreach (var seg in _segments) {
+					var cols = ColorUtil.TruncateColors(toSend, seg.Offset, seg.LedCount, seg.Multiplier);
+					if (seg.ReverseStrip) {
+						cols = cols.Reverse().ToArray();
 					}
 
-					output[start] = col;
-					start++;
-				}
-			}
+					var start = seg.Start;
+					foreach (var col in cols) {
+						if (start >= _ledCount) {
+							Log.Warning($"Error, dest color idx is greater than led count: {start}/{_ledCount}");
+							continue;
+						}
 
-			toSend = output;
-		} else {
-			toSend = ColorUtil.TruncateColors(toSend, _offset, _ledCount, _multiplier);
-			if (_stripMode == StripMode.Loop) {
-				toSend = ShiftColors(toSend);
-			} else {
-				if (_data.ReverseStrip) {
-					toSend = toSend.Reverse().ToArray();
+						output[start] = col;
+						start++;
+					}
 				}
+
+				toSend = output;
+				break;
+			}
+			default: {
+				toSend = ColorUtil.TruncateColors(toSend, _offset, _ledCount, _multiplier);
+				if (_stripMode == StripMode.Loop) {
+					toSend = ShiftColors(toSend);
+				} else {
+					if (_data.ReverseStrip) {
+						toSend = toSend.Reverse().ToArray();
+					}
+				}
+
+				break;
 			}
 		}
 

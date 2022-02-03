@@ -88,11 +88,13 @@ public class LedAgent : IColorTargetAgent {
 			_ws281X?.SetBrightness(_s0Brightness);
 		}
 
-		if (_use1) {
-			_s1Brightness = (int)(_d1.Brightness / 100f * 255f);
-			_s1MaxBrightness = _s1Brightness;
-			_ws281X?.SetBrightness(_s1Brightness, 1);
+		if (!_use1) {
+			return;
 		}
+
+		_s1Brightness = (int)(_d1.Brightness / 100f * 255f);
+		_s1MaxBrightness = _s1Brightness;
+		_ws281X?.SetBrightness(_s1Brightness, 1);
 	}
 
 
@@ -228,7 +230,11 @@ public class LedAgent : IColorTargetAgent {
 				_ws281X?.SetBrightness(_s0Brightness);
 			}
 
-			if (_use1) {
+			if (!_use1) {
+				return;
+			}
+
+			{
 				var scaleI = scale * _s1MaxBrightness;
 				_s1Brightness = LerpBrightness(_s1Brightness, scaleI, _s1MaxBrightness);
 				_ws281X?.SetBrightness(_s1Brightness);
@@ -244,7 +250,7 @@ public class LedAgent : IColorTargetAgent {
 		}
 	}
 
-	private int LerpBrightness(int current, float target, int max) {
+	private static int LerpBrightness(int current, float target, int max) {
 		var output = (int)Math.Min(target, max);
 		if (output > current) {
 			output = Math.Min(current + 1, max);

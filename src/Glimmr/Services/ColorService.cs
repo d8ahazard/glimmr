@@ -244,6 +244,10 @@ public class ColorService : BackgroundService {
 		var emptySectors = ColorUtil.EmptyColors(_systemData.SectorCount);
 		emptySectors[sector - 1] = col;
 		var tMat = builder.Build(emptySectors);
+		if (tMat == null) {
+			Log.Debug("No mat, returning...");
+			return;
+		}
 		foreach (var dev in _sDevices) {
 			if (dev.Enable) {
 				dev.Testing = true;
@@ -380,29 +384,29 @@ public class ColorService : BackgroundService {
 		Log.Debug("Trying to create device: " + c);
 
 		foreach (IColorTargetData device in devices.Where(device => device.Tag == tag)) {
-			if (tag == "Led" && device.Id == "2") {
-				continue;
-			}
-
-			if (tag == "Hue") {
-				continue;
-			}
-
-			try {
-				var cType = Type.GetType(c);
-				if (cType == null) {
-					Log.Warning("Unable to load type for " + c);
+			switch (tag) {
+				case "Led" when device.Id == "2":
+				case "Hue":
 					continue;
-				}
+				default:
+					try {
+						var cType = Type.GetType(c);
+						if (cType == null) {
+							Log.Warning("Unable to load type for " + c);
+							continue;
+						}
 				
-				if (Activator.CreateInstance(cType, device, this) is not IColorTarget dev) {
-					Log.Warning("Unable to load instance for " + c);
-					continue;
-				}
+						if (Activator.CreateInstance(cType, device, this) is not IColorTarget dev) {
+							Log.Warning("Unable to load instance for " + c);
+							continue;
+						}
 
-				output.Add(dev);
-			} catch (Exception e) {
-				Log.Warning($"Exception adding device {device.Id}: " + e.Message + " at " + e.StackTrace);
+						output.Add(dev);
+					} catch (Exception e) {
+						Log.Warning($"Exception adding device {device.Id}: " + e.Message + " at " + e.StackTrace);
+					}
+
+					break;
 			}
 		}
 		Log.Debug("Created " + output.Count + " " + tag + " devices.");
@@ -722,19 +726,6 @@ public class ColorService : BackgroundService {
 		}
 
 		_sDevices = devs.ToArray();
-	}
-
-	public async Task TriggerSend(Color[] leds, Color[] sectors, string source = "") {
-		if (!_demoComplete || _stream == null) {
-			return;
-		}
-
-		if (leds == null || sectors == null) {
-			Log.Debug("No columns/sectors.");
-		} else {
-			Counter.Tick(source);
-			await SendColors(leds, sectors).ConfigureAwait(false);
-		}
 	}
 }
 

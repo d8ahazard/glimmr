@@ -8,7 +8,6 @@ using Glimmr.Services;
 using Newtonsoft.Json;
 using Q42.HueApi;
 using Q42.HueApi.Interfaces;
-using Q42.HueApi.Models.Bridge;
 using Serilog;
 
 #endregion
@@ -16,17 +15,7 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.Hue;
 
 public class HueDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth {
-	private readonly BridgeLocator _bridgeLocatorHttp;
-	private readonly BridgeLocator _bridgeLocatorMdns;
-	private readonly BridgeLocator _bridgeLocatorSsdp;
-	private readonly ControlService _controlService;
-
 	public HueDiscovery(ColorService colorService) : base(colorService) {
-		_bridgeLocatorHttp = new HttpBridgeLocator();
-		_bridgeLocatorMdns = new MdnsBridgeLocator();
-		_bridgeLocatorSsdp = new SsdpBridgeLocator();
-		
-		_controlService = colorService.ControlService;
 	}
 
 	public async Task Discover(int timeout, CancellationToken ct) {
@@ -68,12 +57,6 @@ public class HueDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth {
 		return devData;
 	}
 
-	private void DeviceFound(IBridgeLocator sender, LocatedBridge locatedbridge) {
-		var data = new HueData(locatedbridge);
-		data = UpdateDeviceData(data);
-		_controlService.AddDevice(data).ConfigureAwait(false);
-	}
-
 	private static HueData UpdateDeviceData(HueData data) {
 		// Check for existing device
 		var dd = DataUtil.GetDevice<HueData>(data.Id);
@@ -93,6 +76,7 @@ public class HueDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth {
 			var lights = client.GetLightsAsync().Result;
 			data.AddGroups(groups);
 			data.AddLights(lights);
+			
 			dev.UpdateFromDiscovered(data);
 			Log.Debug("Returning dev: " + JsonConvert.SerializeObject(dev));
 			return dev;

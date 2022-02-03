@@ -182,10 +182,13 @@ public class AudioStream : ColorSource {
 
 		var sectors = _map.MapColors(lData, rData).ToList();
 		var frame = _builder.Build(sectors);
-		StreamSplitter.Update(frame).ConfigureAwait(false);
-
-		frame.Dispose();
-		return true;
+		if (frame != null) {
+			StreamSplitter.Update(frame).ConfigureAwait(false);
+			frame.Dispose();
+			return true;	
+		}
+		
+		return false;
 	}
 
 	private float FlattenValue(float input) {

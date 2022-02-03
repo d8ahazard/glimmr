@@ -149,8 +149,10 @@ public class AmbientStream : ColorSource {
 					}
 
 					var frame = _builder.Build(sectors);
-					await _splitter.Update(frame).ConfigureAwait(false);
-					frame.Dispose();
+					if (frame != null) {
+						await _splitter.Update(frame).ConfigureAwait(false);
+						frame.Dispose();
+					}
 				} catch (Exception e) {
 					Log.Warning("EX: " + e.Message);
 				}

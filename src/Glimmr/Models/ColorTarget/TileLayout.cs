@@ -169,6 +169,8 @@ public class TileData {
 			case Enums.ShapeType.TriangleShapes:
 				SideLength = (int)ShapeSize.TriangleShapes;
 				break;
+			case Enums.ShapeType.Rhythm:
+			case Enums.ShapeType.ShapesController:
 			default:
 				SideLength = 0;
 				break;

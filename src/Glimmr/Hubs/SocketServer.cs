@@ -144,8 +144,9 @@ public class SocketServer : Hub {
 				if (string.IsNullOrEmpty(id)) return;
 				var data = DataUtil.GetDevice(id);
 				if (data == null) return;
-				var serializerSettings = new JsonSerializerSettings();
-				serializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+				var serializerSettings = new JsonSerializerSettings {
+					ContractResolver = new CamelCasePropertyNamesContractResolver()
+				};
 
 				await Clients.All.SendAsync("device", JsonConvert.SerializeObject((IColorTargetData)data, serializerSettings));
 			}

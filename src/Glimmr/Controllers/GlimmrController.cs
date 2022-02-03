@@ -463,7 +463,8 @@ public class GlimmrController : ControllerBase {
 		byte[] result;
 		await using (FileStream stream = new(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
 			result = new byte[stream.Length];
-			await stream.ReadAsync(result.AsMemory(0, (int)stream.Length));
+			var readAsync = await stream.ReadAsync(result.AsMemory(0, (int)stream.Length));
+			Log.Debug("Read " + readAsync + " bytes of log data.");
 		}
 
 		return File(result, MediaTypeNames.Application.Octet, $"glimmr{dt}.log");

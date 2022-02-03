@@ -148,7 +148,7 @@ public class OpenRgbDevice : ColorTarget, IColorTarget {
 			ColorOrder.Grb => toSend.Select(col => new OpenRGB.NET.Models.Color(col.G, col.R, col.B)).ToList(),
 			ColorOrder.Bgr => toSend.Select(col => new OpenRGB.NET.Models.Color(col.B, col.G, col.R)).ToList(),
 			ColorOrder.Brg => toSend.Select(col => new OpenRGB.NET.Models.Color(col.B, col.R, col.G)).ToList(),
-			_ => throw new ArgumentOutOfRangeException()
+			_ => throw new ArgumentOutOfRangeException(nameof(_data.ColorOrder))
 		};
 
 		_client?.Update(_data.DeviceId, converted.ToArray());

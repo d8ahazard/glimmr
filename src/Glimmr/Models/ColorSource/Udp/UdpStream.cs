@@ -125,7 +125,7 @@ public class UdpStream : ColorSource {
 		while (!_listenToken.IsCancellationRequested) {
 			try {
 				await CheckTimeout();
-				var result = await _uc.ReceiveAsync();
+				var result = await _uc.ReceiveAsync(_listenToken);
 				if (!_sending) {
 					await ProcessFrame(result.Buffer).ConfigureAwait(false);
 				}
@@ -175,8 +175,10 @@ public class UdpStream : ColorSource {
 			_timeOutWatch.Restart();
 
 			var frame = _builder.Build(ledColors);
-			await _splitter.Update(frame);
-			frame.Dispose();
+			if (frame != null) {
+				await _splitter.Update(frame);
+				frame.Dispose();
+			}
 			_sending = false;
 		} catch (Exception e) {
 			Log.Warning("Exception parsing packet: " + e.Message);

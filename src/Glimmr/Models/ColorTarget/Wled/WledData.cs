@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
+using System.Linq;
 using System.Net.Http;
 using Glimmr.Enums;
 using Glimmr.Models.Util;
@@ -192,69 +193,66 @@ public class WledData : IColorTargetData {
 
 	private SettingsProperty[] Kps() {
 		var multiplier = new SettingsProperty("LedMultiplier", "ledMultiplier", "");
-		if (StripMode == StripMode.Single) {
-			return new[] {
-				new("sectormap", "sectormap", ""),
-				new("StripMode", "select", "Strip Mode", new Dictionary<string, string> {
-					["0"] = "Normal",
-					["1"] = "Sectored",
-					["2"] = "Loop (Play Bar)",
-					["3"] = "Single Color"
-				}),
-				multiplier,
-				new("ReverseStrip", "check", "Reverse Strip Direction"),
-				new("Protocol", "select", "Streaming Protocol", new Dictionary<string, string> {
-					["1"] = "WARLS",
-					["2"] = "DRGB",
-					["3"] = "DRGBW",
-					["4"] = "DNRGB"
-				}) { ValueHint = "Select desired WLED protocol. Default is DRGB." }
-			};
-		}
+		switch (StripMode) {
+			case StripMode.Single:
+				return new[] {
+					new("sectormap", "sectormap", ""),
+					new("StripMode", "select", "Strip Mode", new Dictionary<string, string> {
+						["0"] = "Normal",
+						["1"] = "Sectored",
+						["2"] = "Loop (Play Bar)",
+						["3"] = "Single Color"
+					}),
+					multiplier,
+					new("ReverseStrip", "check", "Reverse Strip Direction"),
+					new("Protocol", "select", "Streaming Protocol", new Dictionary<string, string> {
+						["1"] = "WARLS",
+						["2"] = "DRGB",
+						["3"] = "DRGBW",
+						["4"] = "DNRGB"
+					}) { ValueHint = "Select desired WLED protocol. Default is DRGB." }
+				};
+			case StripMode.Sectored: {
+				var props = new List<SettingsProperty> {
+					new("sectorLedMap", "sectorLedMap", ""),
+					new("StripMode", "select", "Strip Mode", new Dictionary<string, string> {
+						["0"] = "Normal",
+						["1"] = "Sectored",
+						["2"] = "Loop (Play Bar)",
+						["3"] = "Single Color"
+					}),
+					new("Protocol", "select", "Streaming Protocol", new Dictionary<string, string> {
+						["1"] = "WARLS",
+						["2"] = "DRGB",
+						["3"] = "DRGBW",
+						["4"] = "DNRGB"
+					}) { ValueHint = "Select desired WLED protocol. Default is DRGB." }
+				};
+				props.AddRange(Segments.Select(seg => seg.Id).Select(id => new SettingsProperty($"segmentOffset{id}", "number", $"Segment {id} Offset")));
 
-		if (StripMode == StripMode.Sectored) {
-			var props = new List<SettingsProperty> {
-				new("sectorLedMap", "sectorLedMap", ""),
-				new("StripMode", "select", "Strip Mode", new Dictionary<string, string> {
-					["0"] = "Normal",
-					["1"] = "Sectored",
-					["2"] = "Loop (Play Bar)",
-					["3"] = "Single Color"
-				}),
-				new("Protocol", "select", "Streaming Protocol", new Dictionary<string, string> {
-					["1"] = "WARLS",
-					["2"] = "DRGB",
-					["3"] = "DRGBW",
-					["4"] = "DNRGB"
-				}) { ValueHint = "Select desired WLED protocol. Default is DRGB." }
-			};
-			foreach (var seg in Segments) {
-				var id = seg.Id;
-				props.Add(new SettingsProperty($"segmentOffset{id}", "number", $"Segment {id} Offset"));
+				return props.ToArray();
 			}
-
-			return props.ToArray();
+			default:
+				return new[] {
+					new("ledmap", "ledmap", ""),
+					new("StripMode", "select", "Strip Mode", new Dictionary<string, string> {
+						["0"] = "Normal",
+						["1"] = "Sectored",
+						["2"] = "Loop (Play Bar)",
+						["3"] = "Single Color"
+					}),
+					new("Offset", "number", "Strip Offset"),
+					multiplier,
+					new("ReverseStrip", "check", "Reverse Strip")
+						{ ValueHint = "Reverse the order of the leds to clockwise (facing screen)." },
+					new("Protocol", "select", "Streaming Protocol", new Dictionary<string, string> {
+						["1"] = "WARLS",
+						["2"] = "DRGB",
+						["3"] = "DRGBW",
+						["4"] = "DNRGB"
+					}) { ValueHint = "Select desired WLED protocol. Default is DRGB." }
+				};
 		}
-
-		return new[] {
-			new("ledmap", "ledmap", ""),
-			new("StripMode", "select", "Strip Mode", new Dictionary<string, string> {
-				["0"] = "Normal",
-				["1"] = "Sectored",
-				["2"] = "Loop (Play Bar)",
-				["3"] = "Single Color"
-			}),
-			new("Offset", "number", "Strip Offset"),
-			multiplier,
-			new("ReverseStrip", "check", "Reverse Strip")
-				{ ValueHint = "Reverse the order of the leds to clockwise (facing screen)." },
-			new("Protocol", "select", "Streaming Protocol", new Dictionary<string, string> {
-				["1"] = "WARLS",
-				["2"] = "DRGB",
-				["3"] = "DRGBW",
-				["4"] = "DNRGB"
-			}) { ValueHint = "Select desired WLED protocol. Default is DRGB." }
-		};
 	}
 }
 

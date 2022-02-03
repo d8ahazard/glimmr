@@ -7,6 +7,8 @@ using System.Linq;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
+using Newtonsoft.Json;
+using Serilog;
 using static Glimmr.Models.GlimmrConstants;
 
 #endregion
@@ -43,20 +45,27 @@ public class FrameBuilder {
 	}
 
 
-	public Mat Build(IEnumerable<Color> colors) {
+	public Mat? Build(IEnumerable<Color> colors) {
 		var enumerable = colors as Color[] ?? colors.ToArray();
 		if (enumerable.Length != _ledCount) {
 			throw new ArgumentOutOfRangeException(
 				$"Color length should be {_ledCount} versus {enumerable.Length}.");
 		}
 
-		var gMat = new Mat(new Size(ScaleWidth, ScaleHeight), DepthType.Cv8U, 3);
-		for (var i = 0; i < _inputCoords.Length; i++) {
-			var col = new Bgr(enumerable.ToArray()[i]).MCvScalar;
-			CvInvoke.Rectangle(gMat, _inputCoords[i], col, -1, LineType.AntiAlias);
+		try {
+			var gMat = new Mat(new Size(ScaleWidth, ScaleHeight), DepthType.Cv8U, 3);
+			for (var i = 0; i < _inputCoords.Length; i++) {
+				var color = enumerable[i];
+				var col = new MCvScalar(color.B, color.G, color.R);
+				CvInvoke.Rectangle(gMat, _inputCoords[i], col, -1, LineType.AntiAlias);
+			}
+			return gMat;
+		} catch (Exception e) {
+			Log.Debug("Exception: " + e.Message + " at " + e.StackTrace + " " + JsonConvert.SerializeObject(e));
 		}
 
-		return gMat;
+		return null;
+
 	}
 
 

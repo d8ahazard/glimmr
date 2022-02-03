@@ -153,7 +153,10 @@ public class DreamScreenStream : ColorSource {
 	private void UpdateColors(object? sender, DreamScreenClient.DeviceColorEventArgs e) {
 		var colors = e.Colors;
 		var frame = _builder.Build(colors);
-		Log.Debug("Update: DS");
+		if (frame == null) {
+			return;
+		}
+
 		_splitter.Update(frame).ConfigureAwait(false);
 		frame.Dispose();
 		_cs.Counter.Tick("Dreamscreen");

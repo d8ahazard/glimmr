@@ -445,8 +445,9 @@ v. {version}
 		Log.Debug("Adding device " + data.Name);
 		IColorTargetData? data2 = DataUtil.GetDevice(data.Id) ?? null;
 		if (data2 != null) {
-			var serializerSettings = new JsonSerializerSettings();
-			serializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+			var serializerSettings = new JsonSerializerSettings {
+				ContractResolver = new CamelCasePropertyNamesContractResolver()
+			};
 
 			await _hubContext.Clients.All.SendAsync("device", JsonConvert.SerializeObject(data2, serializerSettings));
 		}

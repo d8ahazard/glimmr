@@ -76,6 +76,7 @@ public class UsbVideoStream : IVideoStream, IDisposable {
 			new(CapProp.FourCC, VideoWriter.Fourcc('M', 'J', 'P', 'G')),
 			new(CapProp.Fps, 60),
 			new(CapProp.FrameWidth, ScaleWidth),
+			// new(CapProp.AudioStream,0),
 			new(CapProp.FrameHeight, ScaleHeight)
 		};
 		var api = OperatingSystem.IsWindows() ? VideoCapture.API.DShow : VideoCapture.API.V4L2;
@@ -84,6 +85,7 @@ public class UsbVideoStream : IVideoStream, IDisposable {
 		}
 
 		_video = new VideoCapture(_inputStream, api);
+		
 
 		foreach (var (prop, val) in props) {
 			_video.Set(prop, val);
@@ -116,6 +118,7 @@ public class UsbVideoStream : IVideoStream, IDisposable {
 		if (_video != null && _video.Ptr != IntPtr.Zero) {
 			using var frame = new Mat();
 			_video.Read(frame);
+			
 			_splitter?.Update(frame);
 		} else {
 			if (_splitter != null) {

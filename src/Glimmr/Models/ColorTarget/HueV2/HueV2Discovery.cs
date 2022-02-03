@@ -1,7 +1,6 @@
 ﻿#region
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -51,30 +50,33 @@ public class HueV2Discovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth 
 		var jsonPath = Path.Join(path, "hue_lights.json");
 		var jsonPath2 = Path.Join(path, "hue_entertainment_config.json");
 		var jsonPath3 = Path.Join(path, "hue_entertainment.json");
-		if (File.Exists(jsonPath) && File.Exists(jsonPath2) && File.Exists(jsonPath3)) {
-			var json = File.ReadAllText(jsonPath);
-			var json2 = File.ReadAllText(jsonPath2);
-			var json3 = File.ReadAllText(jsonPath3);
-			try {
-				var groups = JsonConvert.DeserializeObject<HueResponse<Entertainment>>(json3);
-				var entData = JsonConvert.DeserializeObject<HueResponse<EntertainmentConfiguration>>(json2);
-				var lightData = JsonConvert.DeserializeObject<HueResponse<Light>>(json);
-				var testData = new HueV2Data();
-				testData.Id = "GregBridge";
-				testData.Name = "Greg's Bridge";
-				testData.Token = "WOO";
-				testData.AppKey = "FOO";
-				if (entData != null && groups != null && lightData != null) {
-					Log.Debug("Configuring testdata ent...");
-					testData.ConfigureEntertainment(entData.Data, groups.Data, lightData.Data, true);
-					ControlService.AddDevice(testData).ConfigureAwait(true);
-				} else {
-					Log.Warning("Unable to load entertainment data.");
-				}
-				//testData.ConfigureEntertainment(bridgeData);
-			} catch (Exception e) {
-				Log.Debug("Exception parsing bridge data: " + e.Message);
+		if (!File.Exists(jsonPath) || !File.Exists(jsonPath2) || !File.Exists(jsonPath3)) {
+			return;
+		}
+
+		var json = File.ReadAllText(jsonPath);
+		var json2 = File.ReadAllText(jsonPath2);
+		var json3 = File.ReadAllText(jsonPath3);
+		try {
+			var groups = JsonConvert.DeserializeObject<HueResponse<Entertainment>>(json3);
+			var entData = JsonConvert.DeserializeObject<HueResponse<EntertainmentConfiguration>>(json2);
+			var lightData = JsonConvert.DeserializeObject<HueResponse<Light>>(json);
+			var testData = new HueV2Data {
+				Id = "GregBridge",
+				Name = "Greg's Bridge",
+				Token = "WOO",
+				AppKey = "FOO"
+			};
+			if (entData != null && groups != null && lightData != null) {
+				Log.Debug("Configuring test data ent...");
+				testData.ConfigureEntertainment(entData.Data, groups.Data, lightData.Data, true);
+				ControlService.AddDevice(testData).ConfigureAwait(true);
+			} else {
+				Log.Warning("Unable to load entertainment data.");
 			}
+			//testData.ConfigureEntertainment(bridgeData);
+		} catch (Exception e) {
+			Log.Debug("Exception parsing bridge data: " + e.Message);
 		}
 	}
 
@@ -165,15 +167,11 @@ public class HueV2Discovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth 
 		Log.Debug("Connecting to " + data.IpAddress + " with key: " + data.AppKey);
 		var client = new LocalHueApi(data.IpAddress, appKey);
 		try {
-			Log.Debug("Fetching groups and thangs...");
 			var groups = client.GetEntertainmentConfigurations().Result.Data;
-			Log.Debug("GROUPS: " + JsonConvert.SerializeObject(groups));
 			var devs = client.GetEntertainmentServices().Result.Data;
 			var lights = client.GetLights().Result.Data;
-			Log.Debug("Configuring entertainment...");
 			data.ConfigureEntertainment(groups, devs, lights);
 			if (dev != null) {
-				Log.Debug("Updating existing from discovered...");
 				dev.UpdateFromDiscovered(data);
 			} else {
 				dev = data;

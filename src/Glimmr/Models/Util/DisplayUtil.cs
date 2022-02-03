@@ -50,10 +50,10 @@ public static class DisplayUtil {
 	private const int EnumCurrentSettings = -1;
 
 
-	[DllImport("user32.dll")]
+	[DllImport("user32.dll", CharSet = CharSet.Unicode)]
 	public static extern bool EnumDisplaySettings(string deviceName, int modeNum, ref Devmode devMode);
 
-	[DllImport("User32.dll")]
+	[DllImport("User32.dll", CharSet = CharSet.Unicode)]
 	public static extern int EnumDisplayDevices(string? lpDevice, int iDevNum, ref DisplayDevice lpDisplayDevice,
 		int dwFlags);
 
@@ -66,11 +66,7 @@ public static class DisplayUtil {
 			return GetLinuxDisplaySize();
 		}
 
-		if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
-			return GetOsxDisplaySize();
-		}
-
-		return new Rectangle();
+		return RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? GetOsxDisplaySize() : new Rectangle();
 	}
 
 
@@ -158,11 +154,13 @@ public static class DisplayUtil {
 			p.Start();
 			string? standardOutput;
 			while ((standardOutput = p.StandardOutput.ReadLine()) != null) {
-				if (standardOutput.Contains("Resolution")) {
-					//do something
-					output = standardOutput;
-					break;
+				if (!standardOutput.Contains("Resolution")) {
+					continue;
 				}
+
+				//do something
+				output = standardOutput;
+				break;
 			}
 
 			p.Dispose();

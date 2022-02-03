@@ -122,7 +122,27 @@ public class HueV2Data : IColorTargetData {
 			}
 		}
 
-		Groups = input.Groups;
+		var ng = new List<HueGroup>();
+		foreach (var group in input.Groups) {
+			var services = group.Services;
+			var ns = new List<LightMapV2>();
+			foreach (var existingG in Groups.Where(existingG => existingG.Id == group.Id)) {
+				var exServices = existingG.Services;
+				foreach (var svc in services) {
+					foreach (var exSvc in exServices.Where(exSvc => svc.Id == exSvc.Id)) {
+						svc.TargetSector = exSvc.TargetSector;
+						svc.Brightness = exSvc.Brightness;
+						svc.Override = exSvc.Override;
+						break;
+					}
+					ns.Add(svc);
+				}
+			}
+			group.Services = ns;
+			ng.Add(group);
+		}
+		
+		Groups = ng;
 		IpAddress = input.IpAddress;
 		Name = string.Concat("Hue - ", Id.AsSpan(Id.Length - 5, 4));
 	}

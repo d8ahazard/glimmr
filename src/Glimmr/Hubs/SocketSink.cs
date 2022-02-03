@@ -13,6 +13,6 @@ public class SocketSink : ILogEventSink {
 
 	public void Emit(LogEvent logEvent) {
 		_cs ??= ControlService.GetInstance();
-		_cs?.SendLogLine(logEvent).ConfigureAwait(false);
+		_cs.SendLogLine(logEvent).ConfigureAwait(false);
 	}
 }

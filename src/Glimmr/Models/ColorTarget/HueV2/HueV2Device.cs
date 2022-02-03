@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Util;
@@ -124,10 +123,8 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 			return;
 		}
 
-		foreach (var g in Data.Groups) {
-			if (g.Id == _selectedGroup) {
-				_group = g;
-			}
+		foreach (var g in Data.Groups.Where(g => g.Id == _selectedGroup)) {
+			_group = g;
 		}
 		
 		if (_group == null) {
@@ -282,11 +279,9 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 		Enable = Data.Enable;
 		_brightness = Data.Brightness;
 		_selectedGroup = Data.SelectedGroup;
-		foreach (var g in Data.Groups) {
-			if (g.Id == _selectedGroup) {
-				_group = g;
-				break;
-			}
+		foreach (var g in Data.Groups.Where(g => g.Id == _selectedGroup)) {
+			_group = g;
+			break;
 		}
 		if (_group == null) {
 			Log.Warning("No group selected for entertainment.");
