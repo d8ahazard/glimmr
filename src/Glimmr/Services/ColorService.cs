@@ -597,32 +597,31 @@ public class ColorService : BackgroundService {
 	private async Task StartStream() {
 		if (!_streamStarted) {
 			_streamStarted = true;
+			
+			// Cancel any attempts to start streaming after four seconds if unsuccessful
+			var cts = new CancellationTokenSource();
 			Log.Debug("Starting streaming targets...");
-			var tasks = new List<Task>();
 			foreach (var sDev in _sDevices) {
 				try {
 					if (!sDev.Enable && sDev.Id != "0") {
 						continue;
 					}
 
-					tasks.Add(sDev.StartStream(_targetTokenSource.Token));
+					await sDev.StartStream(_targetTokenSource.Token).ConfigureAwait(false);
 				} catch (Exception e) {
 					Log.Warning("Exception starting stream: " + e.Message);
 				}
 			}
 
-			var len = tasks.Count;
-			// Cancel any attempts to start streaming after four seconds if unsuccessful
-			var cts = new CancellationTokenSource();
 			cts.CancelAfter(TimeSpan.FromSeconds(4));
-			try {
-				await Task.Run(() => Task.WaitAll(tasks.ToArray()), cts.Token);
-			} catch (TaskCanceledException) {
-				// Ignored
-			}
-
 			_streamStarted = true;
-			Log.Information($"Streaming started on {len - StartCounter}/{len} devices.");
+			var startCount = 0;
+			var enabledCount = 0;
+			foreach (var dev in _sDevices) {
+				if (dev.Streaming) startCount++;
+				if (dev.Enable) enabledCount++;
+			}
+			Log.Information($"Streaming started on {startCount}/{enabledCount} devices.");
 		}
 	}
 
