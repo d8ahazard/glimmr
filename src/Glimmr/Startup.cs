@@ -18,8 +18,11 @@ using Newtonsoft.Json;
 namespace Glimmr;
 
 public class Startup {
+	private const string Version = "v1.4";
+
 	// This method gets called by the runtime. Use this method to add services to the container.
 	public static void ConfigureServices(IServiceCollection services) {
+		
 		services.AddControllersWithViews();
 		services.AddControllers()
 			.AddJsonOptions(options => { options.JsonSerializerOptions.PropertyNamingPolicy = null; })
@@ -31,8 +34,8 @@ public class Startup {
 			c.UseOneOfForPolymorphism();
 			c.EnableAnnotations(true, true);
 			c.SchemaFilter<DescribeEnumMembers>(xmlPath);
-			c.SwaggerDoc("v1.3", new OpenApiInfo {
-				Version = "v1.3",
+			c.SwaggerDoc(Version, new OpenApiInfo {
+				Version = Version,
 				Title = "Glimmr Web API",
 				Description = "A simple example ASP.NET Core Web API",
 				Contact = new OpenApiContact {
@@ -60,11 +63,11 @@ public class Startup {
 			// The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
 			app.UseHsts();
 		}
-
+		app.UseDeveloperExceptionPage();
 		app.UseHttpsRedirection();
 		app.UseStaticFiles();
 		app.UseSwagger();
-		app.UseSwaggerUI(c => { c.SwaggerEndpoint("/swagger/v1.3/swagger.json", "My API V1"); });
+		app.UseSwaggerUI(c => { c.SwaggerEndpoint($"/swagger/{Version}/swagger.json", $"My API {Version}"); });
 		app.UseRouting();
 		app.UseAuthorization();
 

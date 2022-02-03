@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using Glimmr.Models.ColorTarget.Adalight;
 using Glimmr.Models.ColorTarget.DreamScreen;
 using Glimmr.Models.ColorTarget.Glimmr;
-using Glimmr.Models.ColorTarget.Hue;
+using Glimmr.Models.ColorTarget.HueV2;
 using Glimmr.Models.ColorTarget.Led;
 using Glimmr.Models.ColorTarget.Lifx;
 using Glimmr.Models.ColorTarget.Nanoleaf;
@@ -29,7 +29,7 @@ namespace Glimmr.Models.ColorTarget;
 [SwaggerSubType(typeof(AdalightData))]
 [SwaggerSubType(typeof(DreamScreenData))]
 [SwaggerSubType(typeof(GlimmrData))]
-[SwaggerSubType(typeof(HueData))]
+[SwaggerSubType(typeof(HueV2Data))]
 [SwaggerSubType(typeof(LedData))]
 [SwaggerSubType(typeof(LifxData))]
 [SwaggerSubType(typeof(NanoleafData))]
