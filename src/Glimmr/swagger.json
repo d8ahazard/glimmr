@@ -540,7 +540,7 @@
                       "$ref": "#/components/schemas/GlimmrData"
                     },
                     {
-                      "$ref": "#/components/schemas/HueData"
+                      "$ref": "#/components/schemas/HueV2Data"
                     },
                     {
                       "$ref": "#/components/schemas/LedData"
@@ -577,7 +577,7 @@
                       "$ref": "#/components/schemas/GlimmrData"
                     },
                     {
-                      "$ref": "#/components/schemas/HueData"
+                      "$ref": "#/components/schemas/HueV2Data"
                     },
                     {
                       "$ref": "#/components/schemas/LedData"
@@ -614,7 +614,7 @@
                       "$ref": "#/components/schemas/GlimmrData"
                     },
                     {
-                      "$ref": "#/components/schemas/HueData"
+                      "$ref": "#/components/schemas/HueV2Data"
                     },
                     {
                       "$ref": "#/components/schemas/LedData"
@@ -663,7 +663,7 @@
                     "$ref": "#/components/schemas/GlimmrData"
                   },
                   {
-                    "$ref": "#/components/schemas/HueData"
+                    "$ref": "#/components/schemas/HueV2Data"
                   },
                   {
                     "$ref": "#/components/schemas/LedData"
@@ -700,7 +700,7 @@
                     "$ref": "#/components/schemas/GlimmrData"
                   },
                   {
-                    "$ref": "#/components/schemas/HueData"
+                    "$ref": "#/components/schemas/HueV2Data"
                   },
                   {
                     "$ref": "#/components/schemas/LedData"
@@ -737,7 +737,7 @@
                     "$ref": "#/components/schemas/GlimmrData"
                   },
                   {
-                    "$ref": "#/components/schemas/HueData"
+                    "$ref": "#/components/schemas/HueV2Data"
                   },
                   {
                     "$ref": "#/components/schemas/LedData"
@@ -774,7 +774,7 @@
                     "$ref": "#/components/schemas/GlimmrData"
                   },
                   {
-                    "$ref": "#/components/schemas/HueData"
+                    "$ref": "#/components/schemas/HueV2Data"
                   },
                   {
                     "$ref": "#/components/schemas/LedData"
@@ -817,7 +817,7 @@
                       "$ref": "#/components/schemas/GlimmrData"
                     },
                     {
-                      "$ref": "#/components/schemas/HueData"
+                      "$ref": "#/components/schemas/HueV2Data"
                     },
                     {
                       "$ref": "#/components/schemas/LedData"
@@ -854,7 +854,7 @@
                       "$ref": "#/components/schemas/GlimmrData"
                     },
                     {
-                      "$ref": "#/components/schemas/HueData"
+                      "$ref": "#/components/schemas/HueV2Data"
                     },
                     {
                       "$ref": "#/components/schemas/LedData"
@@ -891,7 +891,7 @@
                       "$ref": "#/components/schemas/GlimmrData"
                     },
                     {
-                      "$ref": "#/components/schemas/HueData"
+                      "$ref": "#/components/schemas/HueV2Data"
                     },
                     {
                       "$ref": "#/components/schemas/LedData"
@@ -983,7 +983,7 @@
                         "$ref": "#/components/schemas/GlimmrData"
                       },
                       {
-                        "$ref": "#/components/schemas/HueData"
+                        "$ref": "#/components/schemas/HueV2Data"
                       },
                       {
                         "$ref": "#/components/schemas/LedData"
@@ -1023,7 +1023,7 @@
                         "$ref": "#/components/schemas/GlimmrData"
                       },
                       {
-                        "$ref": "#/components/schemas/HueData"
+                        "$ref": "#/components/schemas/HueV2Data"
                       },
                       {
                         "$ref": "#/components/schemas/LedData"
@@ -1063,7 +1063,7 @@
                         "$ref": "#/components/schemas/GlimmrData"
                       },
                       {
-                        "$ref": "#/components/schemas/HueData"
+                        "$ref": "#/components/schemas/HueV2Data"
                       },
                       {
                         "$ref": "#/components/schemas/LedData"
@@ -1451,7 +1451,7 @@
                         "$ref": "#/components/schemas/GlimmrData"
                       },
                       {
-                        "$ref": "#/components/schemas/HueData"
+                        "$ref": "#/components/schemas/HueV2Data"
                       },
                       {
                         "$ref": "#/components/schemas/LedData"
@@ -1491,7 +1491,7 @@
                         "$ref": "#/components/schemas/GlimmrData"
                       },
                       {
-                        "$ref": "#/components/schemas/HueData"
+                        "$ref": "#/components/schemas/HueV2Data"
                       },
                       {
                         "$ref": "#/components/schemas/LedData"
@@ -1531,7 +1531,7 @@
                         "$ref": "#/components/schemas/GlimmrData"
                       },
                       {
-                        "$ref": "#/components/schemas/HueData"
+                        "$ref": "#/components/schemas/HueV2Data"
                       },
                       {
                         "$ref": "#/components/schemas/LedData"
@@ -1862,16 +1862,6 @@
         },
         "additionalProperties": false
       },
-      "Alert": {
-        "enum": [
-          0,
-          1,
-          2
-        ],
-        "type": "integer",
-        "description": "<p>Possible values:</p>\n<ul>\n</ul>\n",
-        "format": "int32"
-      },
       "AmbientScene": {
         "type": "object",
         "properties": {
@@ -2156,15 +2146,6 @@
         },
         "additionalProperties": false
       },
-      "Effect": {
-        "enum": [
-          0,
-          1
-        ],
-        "type": "integer",
-        "description": "<p>Possible values:</p>\n<ul>\n</ul>\n",
-        "format": "int32"
-      },
       "GlimmrData": {
         "type": "object",
         "properties": {
@@ -2237,92 +2218,31 @@
         },
         "additionalProperties": false
       },
-      "GroupLightLevel": {
+      "HueGroup": {
         "type": "object",
         "properties": {
-          "State": {
-            "$ref": "#/components/schemas/SensorState"
-          },
-          "Lastupdated": {
+          "Name": {
             "type": "string",
-            "format": "date-time",
+            "description": "Group Name",
             "nullable": true
           },
-          "Dark": {
-            "type": "boolean"
-          },
-          "DarkAll": {
-            "type": "boolean"
-          },
-          "Daylight": {
-            "type": "boolean"
-          },
-          "DaylightAny": {
-            "type": "boolean"
-          },
-          "LightLevel": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "LightLevelMin": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "LightLevelMax": {
-            "type": "integer",
-            "format": "int32"
-          }
-        },
-        "additionalProperties": false
-      },
-      "GroupPresence": {
-        "type": "object",
-        "properties": {
-          "State": {
-            "$ref": "#/components/schemas/State"
-          },
-          "Lastupdated": {
+          "Id": {
             "type": "string",
-            "format": "date-time",
+            "description": "Group ID",
             "nullable": true
           },
-          "Presence": {
-            "type": "boolean"
-          },
-          "PresenceAll": {
-            "type": "boolean"
-          }
-        },
-        "additionalProperties": false
-      },
-      "GroupState": {
-        "type": "object",
-        "properties": {
-          "AnyOn": {
-            "type": "boolean",
-            "nullable": true
-          },
-          "AllOn": {
-            "type": "boolean",
+          "Services": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LightMapV2"
+            },
+            "description": "List of all services associated with this group.",
             "nullable": true
           }
         },
         "additionalProperties": false
       },
-      "GroupType": {
-        "enum": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5
-        ],
-        "type": "integer",
-        "description": "<p>Possible values:</p>\n<ul>\n</ul>\n",
-        "format": "int32"
-      },
-      "HueData": {
+      "HueV2Data": {
         "type": "object",
         "properties": {
           "Brightness": {
@@ -2338,22 +2258,6 @@
             "description": "List of available entertainment groups.",
             "nullable": true
           },
-          "Lights": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/LightData"
-            },
-            "description": "List of available lights.",
-            "nullable": true
-          },
-          "MappedLights": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/LightMap"
-            },
-            "description": "List of lights and their mappings to sectors.",
-            "nullable": true
-          },
           "SelectedGroup": {
             "type": "string",
             "description": "Target entertainment group to use for streaming.",
@@ -2364,7 +2268,7 @@
             "description": "Token for entertainment streaming assigned after device is linked.",
             "nullable": true
           },
-          "User": {
+          "AppKey": {
             "type": "string",
             "description": "Hue user ID assigned after device is linked.",
             "nullable": true
@@ -2408,76 +2312,6 @@
           }
         },
         "additionalProperties": false
-      },
-      "HueGroup": {
-        "type": "object",
-        "properties": {
-          "Name": {
-            "type": "string",
-            "nullable": true
-          },
-          "Type": {
-            "$ref": "#/components/schemas/GroupType"
-          },
-          "Class": {
-            "$ref": "#/components/schemas/RoomClass"
-          },
-          "ModelId": {
-            "type": "string",
-            "nullable": true
-          },
-          "Lights": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "nullable": true
-          },
-          "Action": {
-            "$ref": "#/components/schemas/State"
-          },
-          "State": {
-            "$ref": "#/components/schemas/GroupState"
-          },
-          "Locations": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "array",
-              "items": {
-                "type": "number",
-                "format": "double"
-              }
-            },
-            "nullable": true
-          },
-          "Recycle": {
-            "type": "boolean",
-            "nullable": true
-          },
-          "Stream": {
-            "$ref": "#/components/schemas/Stream"
-          },
-          "Sensors": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "nullable": true
-          },
-          "Presence": {
-            "$ref": "#/components/schemas/GroupPresence"
-          },
-          "LightLevel": {
-            "$ref": "#/components/schemas/GroupLightLevel"
-          },
-          "Id": {
-            "type": "string",
-            "description": "Entertainment group ID.",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false,
-        "description": "Hue Entertainment Group."
       },
       "Info": {
         "type": "object",
@@ -2882,58 +2716,14 @@
         },
         "additionalProperties": false
       },
-      "LightData": {
+      "LightMapV2": {
         "type": "object",
         "properties": {
-          "HasStreaming": {
-            "type": "boolean",
-            "description": "If Light is capable of streaming.",
-            "default": false
-          },
-          "Brightness": {
-            "type": "integer",
-            "description": "Current light brightness.",
-            "format": "int32"
-          },
-          "LightLevel": {
-            "type": "integer",
-            "description": "Light elevation.",
-            "format": "int32"
-          },
-          "Presence": {
-            "type": "integer",
-            "description": "?",
-            "format": "int32"
-          },
-          "LastState": {
-            "$ref": "#/components/schemas/State"
-          },
-          "Id": {
+          "SvcId": {
             "type": "string",
-            "description": "Bulb ID.",
-            "nullable": true
+            "description": "Channel ID of light/device",
+            "format": "uuid"
           },
-          "ModelId": {
-            "type": "string",
-            "description": "Bulb model ID.",
-            "nullable": true
-          },
-          "Name": {
-            "type": "string",
-            "description": "Bulb name.",
-            "nullable": true
-          },
-          "Type": {
-            "type": "string",
-            "description": "Bulb type.",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "LightMap": {
-        "type": "object",
-        "properties": {
           "Override": {
             "type": "boolean",
             "description": "Override hue brightness and use light-specific value.",
@@ -2953,7 +2743,29 @@
           },
           "Id": {
             "type": "string",
+            "description": "Light ID",
             "nullable": true
+          },
+          "Owner": {
+            "type": "string",
+            "description": "Owner RID of the light.",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "description": "Light name",
+            "nullable": true
+          },
+          "Type": {
+            "type": "string",
+            "description": "ArchType of the device",
+            "nullable": true
+          },
+          "Channel": {
+            "type": "integer",
+            "description": "Device channel",
+            "format": "int32",
+            "default": -1
           }
         },
         "additionalProperties": false,
@@ -3206,53 +3018,6 @@
         },
         "additionalProperties": false
       },
-      "RoomClass": {
-        "enum": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8,
-          9,
-          10,
-          11,
-          12,
-          13,
-          14,
-          15,
-          16,
-          17,
-          18,
-          19,
-          20,
-          21,
-          22,
-          23,
-          24,
-          25,
-          26,
-          27,
-          28,
-          29,
-          30,
-          31,
-          32,
-          33,
-          34,
-          35,
-          36,
-          37,
-          38,
-          39
-        ],
-        "type": "integer",
-        "description": "<p>Possible values:</p>\n<ul>\n</ul>\n",
-        "format": "int32"
-      },
       "Segment": {
         "type": "object",
         "properties": {
@@ -3287,62 +3052,6 @@
         },
         "additionalProperties": false,
         "description": "Led Beam Data"
-      },
-      "SensorState": {
-        "type": "object",
-        "properties": {
-          "ButtonEvent": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "Dark": {
-            "type": "boolean",
-            "nullable": true
-          },
-          "Daylight": {
-            "type": "boolean",
-            "nullable": true
-          },
-          "Flag": {
-            "type": "boolean",
-            "nullable": true
-          },
-          "Humidity": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "Lastupdated": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "LightLevel": {
-            "type": "integer",
-            "format": "int64",
-            "nullable": true
-          },
-          "Open": {
-            "type": "boolean",
-            "nullable": true
-          },
-          "Presence": {
-            "type": "boolean",
-            "nullable": true
-          },
-          "Status": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "Temperature": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
       },
       "SettingsProperty": {
         "type": "object",
@@ -3448,63 +3157,6 @@
         },
         "additionalProperties": false
       },
-      "State": {
-        "type": "object",
-        "properties": {
-          "On": {
-            "type": "boolean"
-          },
-          "Brightness": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "Hue": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "Saturation": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "ColorCoordinates": {
-            "type": "array",
-            "items": {
-              "type": "number",
-              "format": "double"
-            },
-            "nullable": true
-          },
-          "ColorTemperature": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "Alert": {
-            "$ref": "#/components/schemas/Alert"
-          },
-          "Effect": {
-            "$ref": "#/components/schemas/Effect"
-          },
-          "ColorMode": {
-            "type": "string",
-            "nullable": true
-          },
-          "IsReachable": {
-            "type": "boolean",
-            "nullable": true
-          },
-          "TransitionTime": {
-            "$ref": "#/components/schemas/TimeSpan"
-          },
-          "Mode": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
       "StoreData": {
         "type": "object",
         "properties": {
@@ -3542,7 +3194,7 @@
           },
           "Devices": {
             "type": "array",
-            "items": {},
+            "items": { },
             "description": "List of devices and their settings.",
             "nullable": true
           },
@@ -3555,27 +3207,6 @@
         },
         "additionalProperties": false,
         "description": "A JSON representation of the database."
-      },
-      "Stream": {
-        "type": "object",
-        "properties": {
-          "ProxyMode": {
-            "type": "string",
-            "nullable": true
-          },
-          "ProxyNode": {
-            "type": "string",
-            "nullable": true
-          },
-          "Active": {
-            "type": "boolean"
-          },
-          "Owner": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
       },
       "StreamMode": {
         "enum": [
@@ -3785,6 +3416,12 @@
             "format": "int32",
             "default": 54
           },
+          "LogLevel": {
+            "type": "integer",
+            "description": "Level to log the logging at. 0 = debug, 1 = inf",
+            "format": "int32",
+            "default": 1
+          },
           "OpenRgbPort": {
             "type": "integer",
             "description": "Port to use for OpenRGB communication. (Default is 6742)",
@@ -3955,61 +3592,6 @@
             },
             "description": "Array of position data for our tiles.",
             "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "TimeSpan": {
-        "type": "object",
-        "properties": {
-          "Ticks": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "Days": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "Hours": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "Milliseconds": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "Minutes": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "Seconds": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "TotalDays": {
-            "type": "number",
-            "format": "double",
-            "readOnly": true
-          },
-          "TotalHours": {
-            "type": "number",
-            "format": "double",
-            "readOnly": true
-          },
-          "TotalMilliseconds": {
-            "type": "number",
-            "format": "double",
-            "readOnly": true
-          },
-          "TotalMinutes": {
-            "type": "number",
-            "format": "double",
-            "readOnly": true
-          },
-          "TotalSeconds": {
-            "type": "number",
-            "format": "double",
-            "readOnly": true
           }
         },
         "additionalProperties": false
