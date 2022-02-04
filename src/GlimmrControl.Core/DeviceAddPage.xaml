@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="GlimmrControl.Core.DeviceAddPage"
+             BackgroundColor="#181818"
+             xmlns:ios="clr-namespace:Xamarin.Forms.PlatformConfiguration.iOSSpecific;assembly=Xamarin.Forms.Core"
+             xmlns:core="clr-namespace:GlimmrControl.Core;assembly=GlimmrControl.Core"
+             ios:Page.UseSafeArea="true">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <Style x:Key="LabelStyle" TargetType="Label">
+                <Setter Property="TextColor" Value="#cfcfcf" />
+                <Setter Property="Font" Value="18" />
+                <Setter Property="HorizontalOptions" Value="CenterAndExpand" />
+            </Style>
+            <Style x:Key="EntryStyle" TargetType="Entry">
+                <Setter Property="TextColor" Value="#cfcfcf" />
+                <Setter Property="PlaceholderColor" Value="#888" />
+                <Setter Property="BackgroundColor" Value="#181818" />
+                <Setter Property="Margin" Value="10" />
+                <Setter Property="ReturnType" Value="Done" />
+                <Setter Property="HorizontalOptions" Value="Fill" />
+            </Style>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <ContentPage.Content>
+        <StackLayout>
+            <core:MenuBar x:Name="topMenuBar" />
+
+            <Button Text="Begin discovery..." BackgroundColor="#181818" TextColor="#cfcfcf" Margin="10"
+                    Clicked="OnDiscoveryButtonClicked" />
+            <Label x:Name="discoveryResultLabel" Text="" Style="{StaticResource LabelStyle}" IsVisible="False" />
+            <BoxView HeightRequest="1" HorizontalOptions="Fill" Margin="8,0" BackgroundColor="#888" />
+
+            <Label Text="Add a device manually:" Style="{StaticResource LabelStyle}" />
+            <Label Text="IP address or URL" Style="{StaticResource LabelStyle}" />
+            <Entry x:Name="networkAddressEntry"
+                   Keyboard="Url"
+                   Placeholder="192.168.1.1"
+                   Completed="OnEntryCompleted"
+                   Style="{StaticResource EntryStyle}" />
+
+            <Label Text="Custom Name" Style="{StaticResource LabelStyle}" />
+            <Entry x:Name="nameEntry"
+                   Keyboard="Plain"
+                   Placeholder="(get from device)"
+                   Completed="OnEntryCompleted"
+                   Style="{StaticResource EntryStyle}" />
+        </StackLayout>
+    </ContentPage.Content>
+</ContentPage>

@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="GlimmrControl.Core.DeviceModificationListViewPage"
+             BackgroundColor="#181818"
+             xmlns:ios="clr-namespace:Xamarin.Forms.PlatformConfiguration.iOSSpecific;assembly=Xamarin.Forms.Core"
+             xmlns:core="clr-namespace:GlimmrControl.Core;assembly=GlimmrControl.Core"
+             ios:Page.UseSafeArea="true">
+
+    <StackLayout>
+        <core:MenuBar x:Name="topMenuBar" />
+        <Label Text="Click on devices to hide them!"
+               HorizontalOptions="CenterAndExpand" VerticalOptions="CenterAndExpand"
+               TextColor="#cfcfcf" Font="18" />
+
+        <ListView x:Name="DeviceModificationListView"
+                  ItemsSource="{Binding DeviceList}"
+                  ItemTapped="OnDeviceTapped"
+                  HasUnevenRows="True"
+                  BackgroundColor="#181818"
+                  ios:ListView.SeparatorStyle="FullWidth"
+                  Footer=""
+                  CachingStrategy="RecycleElement">
+
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <ViewCell>
+                        <Grid BackgroundColor="#181818" Margin="6,2" Padding="6">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="35" />
+                                <RowDefinition Height="25" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="65" />
+                            </Grid.ColumnDefinitions>
+                            <Label Text="{Binding Name}"
+                                   Font="Bold, 25" TextColor="{Binding TextColor}"
+                                   Grid.Row="0" Grid.Column="0" />
+                            <Label Text="{Binding Status}"
+                                   Font="18" TextColor="{Binding TextColor}"
+                                   Grid.Row="1" Grid.Column="0" />
+                            <Button Clicked="OnDeleteButtonTapped" BackgroundColor="#D9321F"
+                                    BorderRadius="34" BorderColor="#cfcfcf" BorderWidth="4"
+                                    Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" />
+
+                            <Image Source="icon_delete.png" Scale="0.8" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2"
+                                   InputTransparent="True" BackgroundColor="Transparent" />
+                        </Grid>
+                    </ViewCell>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </StackLayout>
+</ContentPage>

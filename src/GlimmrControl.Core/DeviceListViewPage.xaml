@@ -1,0 +1,113 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="GlimmrControl.Core.DeviceListViewPage"
+             BackgroundColor="#222"
+             xmlns:ios="clr-namespace:Xamarin.Forms.PlatformConfiguration.iOSSpecific;assembly=Xamarin.Forms.Core"
+             xmlns:core="clr-namespace:GlimmrControl.Core;assembly=GlimmrControl.Core"
+             ios:Page.UseSafeArea="true">
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <Style x:Key="LabelStyle" TargetType="Label">
+                <Setter Property="TextColor" Value="#cfcfcf" />
+                <Setter Property="HorizontalOptions" Value="CenterAndExpand" />
+                <Setter Property="VerticalOptions" Value="CenterAndExpand" />
+            </Style>
+
+        </ResourceDictionary>
+
+    </ContentPage.Resources>
+
+    <StackLayout BackgroundColor="#181818">
+        <core:MenuBar x:Name="topMenuBar" />
+
+        <Label x:Name="welcomeLabel"
+               Text="Welcome!"
+               Font="Bold, 25"
+               Style="{StaticResource LabelStyle}" />
+
+        <Label x:Name="instructionLabel"
+               Font="18"
+               Text="Please use the &quot;+&quot; button to add your Glimmr devices!"
+               HorizontalTextAlignment="Center"
+               Style="{StaticResource LabelStyle}" />
+
+        <ListView x:Name="DeviceListView"
+                  ItemsSource="{Binding DeviceList}"
+                  ItemTapped="OnDeviceTapped"
+                  IsPullToRefreshEnabled="True"
+                  Refreshing="OnRefresh"
+                  HasUnevenRows="True"
+                  RowHeight="-1"
+                  ios:ListView.SeparatorStyle="FullWidth"
+                  BackgroundColor="#181818"
+                  Footer=""
+                  CachingStrategy="RecycleElement">
+
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <ViewCell>
+                        <StackLayout BackgroundColor="#181818" IsVisible="{Binding IsEnabled}"
+                                     HeightRequest="{Binding ListHeight}">
+                            <Grid BackgroundColor="#181818" Padding="6" Margin="6,2">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="65" />
+                                    <RowDefinition Height="55" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="55" />
+                                    <ColumnDefinition Width="55" />
+                                    <ColumnDefinition Width="55" />
+                                    <ColumnDefinition Width="55" />
+                                    <ColumnDefinition Width="55" />
+                                    <ColumnDefinition Width="55" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Label Text="{Binding Name}"
+                                       Font="Bold, 32" TextColor="#cfcfcf"
+                                       Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="3" VerticalTextAlignment="Center"
+                                       HorizontalTextAlignment="Start" />
+                                <Label Text="{Binding Status}"
+                                       Font="22" TextColor="#cfcfcf"
+                                       Grid.Row="0" Grid.Column="4" Grid.ColumnSpan="3" Margin="0"
+                                       VerticalTextAlignment="Center" HorizontalTextAlignment="End" />
+                                <!-- Off -->
+                                <core:ModeButton Clicked="ModeTapped"
+                                                   CornerRadius="32" BorderColor="#cfcfcf" BorderWidth="2" Padding="5"
+                                                   Grid.Row="1" Grid.Column="1" Source="icon_power.png" Mode="0"
+                                                   BackgroundColor="{Binding PowerColor}" />
+                                <!-- Video -->
+                                <core:ModeButton Clicked="ModeTapped"
+                                                   CornerRadius="32" BorderColor="#cfcfcf" BorderWidth="2" Padding="5"
+                                                   Grid.Row="1" Grid.Column="2" Source="icon_video.png" Mode="1"
+                                                   BackgroundColor="{Binding VideoColor}" />
+                                <!-- Audio -->
+                                <core:ModeButton Clicked="ModeTapped"
+                                                   CornerRadius="32" BorderColor="#cfcfcf" BorderWidth="2" Padding="5"
+                                                   Grid.Row="1" Grid.Column="3" Source="icon_music.png" Mode="2"
+                                                   BackgroundColor="{Binding AudioColor}" />
+                                <!-- Av -->
+                                <core:ModeButton Clicked="ModeTapped"
+                                                   CornerRadius="32" BorderColor="#cfcfcf" BorderWidth="2" Padding="5"
+                                                   Grid.Row="1" Grid.Column="4" Source="icon_av.png" Mode="4"
+                                                   BackgroundColor="{Binding AvColor}" />
+                                <!-- Ambient -->
+                                <core:ModeButton Clicked="ModeTapped"
+                                                   CornerRadius="32" BorderColor="#cfcfcf" BorderWidth="2" Padding="5"
+                                                   Grid.Row="1" Grid.Column="5" Source="icon_ambient.png" Mode="3"
+                                                   BackgroundColor="{Binding AmbientColor}" />
+                                <!-- Streaming -->
+                                <core:ModeButton Clicked="ModeTapped"
+                                                   CornerRadius="32" BorderColor="#cfcfcf" BorderWidth="2" Padding="5"
+                                                   Grid.Row="1" Grid.Column="6" Source="icon_stream.png" Mode="5"
+                                                   BackgroundColor="{Binding StreamColor}" />
+                            </Grid>
+                        </StackLayout>
+                    </ViewCell>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </StackLayout>
+</ContentPage>
