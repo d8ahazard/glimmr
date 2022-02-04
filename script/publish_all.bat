@@ -32,13 +32,20 @@ SET "APP=C:\Progra~2\Inno Setup 6\iscc.exe"
 
 :Archive
 cd .\bin\
+del /Q /S .\*.zip
+del /Q /S .\*.tgz
+del /Q /S .\*.zip
+del /Q /S .\*.rpm
+
 echo Copying OSX Files...
-del /S /Q ..\..\..\..\..\Glimmr-macos-installer-builder\macOS-x64\application\*
-xcopy /Y /E .\OSX\* ..\..\..\..\Glimmr-macos-installer-builder\macOS-x64\application
+del /S /Q ..\..\..\Glimmr-macos-installer-builder\macOS-x64\application\*
+xcopy /Y /E .\OSX\* ..\..\..\Glimmr-macos-installer-builder\macOS-x64\application
 
 echo Creating archives...
 
 %~dp07z.exe a -ttar -so -an -r .\LinuxARM\* | %~dp07z a -si Glimmr-linux-arm-%version%.tgz
+del /S /Q ..\..\..\Glimmr-image-gen\stage2\05-glimmr\files\archive.tgz
+cp .\Glimmr-linux-arm-%version%.tgz ..\..\..\Glimmr-image-gen\stage2\05-glimmr\files\archive.tgz
 %~dp07z.exe a -ttar -so -an -r .\Linux\* | %~dp07z a -si Glimmr-linux-%version%.tgz
 %~dp07z.exe a -ttar -so -an -r .\OSX\* | %~dp07z a -si Glimmr-osx-%version%.tgz
 %~dp07z.exe a -tzip -r Glimmr-windows-%version%.zip .\Windows\*
