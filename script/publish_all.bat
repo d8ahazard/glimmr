@@ -36,6 +36,7 @@ del /Q /S .\*.zip
 del /Q /S .\*.tgz
 del /Q /S .\*.zip
 del /Q /S .\*.rpm
+del /Q /S .\*.deb
 
 echo Copying OSX Files...
 del /S /Q ..\..\..\Glimmr-macos-installer-builder\macOS-x64\application\*
