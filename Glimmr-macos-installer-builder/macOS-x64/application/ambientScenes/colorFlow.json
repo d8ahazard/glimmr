@@ -1,0 +1,16 @@
+{
+  "Colors": [
+    "#bb013e",
+    "#21ffff",
+    "#9a00ff",
+    "#3100de",
+    "#ff38ff",
+    "#01004c"
+  ],
+  "AnimationTime": 5,
+  "EasingTime": 5,
+  "Mode": "Random",
+  "Easing": "Blend",
+  "Name": "ColorFlow",
+  "Id": 10
+}

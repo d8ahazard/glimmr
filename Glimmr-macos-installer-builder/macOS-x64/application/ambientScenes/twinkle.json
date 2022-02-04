@@ -1,0 +1,14 @@
+﻿{
+  "Colors": [
+    "#AAAAAA",
+    "#000000",
+    "#FFFFFF",
+    "#AAAAAA"
+  ],
+  "AnimationTime": 0.75,
+  "EasingTime": 0.75,
+  "Mode": "Random",
+  "Easing": "FadeInOut",
+  "Name": "Twinkle",
+  "Id": 2
+}

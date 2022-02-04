@@ -1,0 +1,17 @@
+﻿{
+  "OctaveMap": {
+    "1": 5,
+    "2": 3,
+    "3": 1,
+    "4": 4,
+    "5": 1,
+    "6": 3,
+    "7": 5
+  },
+  "RotationLower": 0.0,
+  "RotationUpper": 1.0,
+  "RotationSpeed": 0.005,
+  "RotationThreshold": 0.85,
+  "Id": 4,
+  "Name": "Corners"
+}

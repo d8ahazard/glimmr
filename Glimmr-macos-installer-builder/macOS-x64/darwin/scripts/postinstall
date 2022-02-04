@@ -1,0 +1,33 @@
+#!/bin/bash
+
+#Customize this for your application
+APPLICATION_FILE_PATH=Glimmr
+
+#Parameters
+PRODUCT_HOME=/Library/__PRODUCT__/__VERSION__
+echo "Post installation process started..."
+
+#Change permissions in home directory
+echo "Changing permissions in product home..."
+cd ${PRODUCT_HOME}
+chmod -R 755 .
+[ -d /Library/LaunchAgents ] || mkdir /Library/LaunchAgents
+[ -d "/Library/Application Support/Glimmr" ] || mkdir "/Library/Application Support/Glimmr"
+chmod -R 777 "/Library/Application Support/Glimmr"
+echo "Copying plist:"
+echo "cp /Library/__PRODUCT__/__VERSION__/com.glimmr.plist /Library/LaunchAgents/com.glimmr.plist"
+cp /Library/__PRODUCT__/__VERSION__/com.glimmr.plist /Library/LaunchAgents/com.glimmr.plist
+
+# As needed through script, logged in user is variable below
+loggedInUser=$( ls -l /dev/console | awk '{print $3}' )
+
+# Get loggedInUser ID
+userID=$( id -u $loggedInUser )
+
+chown root:wheel /Library/LaunchAgents/com.glimmr.plist
+chmod 644 /Library/LaunchAgents/com.glimmr.plist
+
+launchctl bootstrap gui/$userID /Library/LaunchAgents/com.glimmr.plist
+
+echo "Post installation process finished"
+
