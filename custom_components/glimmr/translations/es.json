@@ -1,0 +1,24 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Este dispositivo Glimmr ya est\u00e1 configurado.",
+            "cannot_connect": "No se pudo conectar"
+        },
+        "error": {
+            "cannot_connect": "No se pudo conectar"
+        },
+        "flow_title": "Glimmr: {name}",
+        "step": {
+            "user": {
+                "data": {
+                    "host": "Host"
+                },
+                "description": "Configura el Glimmr para integrarlo con Home Assistant."
+            },
+            "zeroconf_confirm": {
+                "description": "\u00bfQuieres a\u00f1adir el Glimmr `{name}` a Home Assistant?",
+                "title": "Dispositivo Glimmr detectado"
+            }
+        }
+    }
+}

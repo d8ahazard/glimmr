@@ -1,0 +1,18 @@
+effect:
+  name: Set effect
+  description: Control the effect settings of Glimmr.
+  target:
+    entity:
+      integration: glimmr
+      domain: light
+  fields:
+    effect:
+      name: Effect
+      description: Name or ID of the Glimmr scene/mode.
+      example: "Rainbow"
+      selector:
+        text:
+    
+update:
+  # Description of the update state service
+  description: Trigger for update the state of the Glimmr device.

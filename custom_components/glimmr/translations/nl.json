@@ -1,0 +1,24 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Apparaat is al geconfigureerd",
+            "cannot_connect": "Kan geen verbinding maken"
+        },
+        "error": {
+            "cannot_connect": "Kan geen verbinding maken"
+        },
+        "flow_title": "{name}",
+        "step": {
+            "user": {
+                "data": {
+                    "host": "Host"
+                },
+                "description": "Stel uw Glimmr-integratie in met Home Assistant."
+            },
+            "zeroconf_confirm": {
+                "description": "Wil je de Glimmr genaamd `{name}` toevoegen aan Home Assistant?",
+                "title": "Ontdekt Glimmr-apparaat"
+            }
+        }
+    }
+}
