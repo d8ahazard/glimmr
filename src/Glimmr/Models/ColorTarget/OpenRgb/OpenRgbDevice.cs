@@ -107,7 +107,6 @@ public class OpenRgbDevice : ColorTarget, IColorTarget {
 	}
 
 	public Task ReloadData() {
-		Log.Debug("Reloading data...");
 		var dev = DataUtil.GetDevice(Id);
 		if (dev == null) {
 			return Task.CompletedTask;

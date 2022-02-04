@@ -95,7 +95,6 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 		if (!Enable) {
 			return;
 		}
-		Log.Debug("V2 stream started?");
 		_ct = ct;
 
 		if (string.IsNullOrEmpty(_user) || string.IsNullOrEmpty(_token)) {
@@ -154,7 +153,6 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 
 		//Create a streaming group
 		_entLayer = entGroup.GetNewLayer(true);
-		Log.Debug("Ent layer: " + JsonConvert.SerializeObject(_entLayer));
 		var connected = false;
 		try {
 			//Connect to the streaming group

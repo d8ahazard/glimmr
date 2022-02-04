@@ -71,7 +71,6 @@ public static class ColorUtil {
 				tgt = total - 1;
 			}
 
-			//Log.Debug($"Mapping {i} to {tgt}");
 			output[i] = doubled[tgt];
 		}
 
@@ -587,8 +586,6 @@ public static class ColorUtil {
 	public static Color[] AdjustBrightness(Color[] toSend, float max) {
 		var output = new Color[toSend.Length];
 		var mc = (byte)(max * 255f);
-		//Log.Debug("Max is " + max + " mc is " + mc);
-
 		for (var i = 0; i < toSend.Length; i++) {
 			var color = toSend[i];
 			// Max value is the brightness

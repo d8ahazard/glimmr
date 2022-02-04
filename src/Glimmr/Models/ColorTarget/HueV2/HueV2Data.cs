@@ -308,14 +308,12 @@ public class HueGroup {
 	
 	public HueGroup(EntertainmentConfiguration config, List<LightMapV2> lights, bool fromJson = false) {
 		Services = new List<LightMapV2>();
-		Log.Debug("Loading config: " + JsonConvert.SerializeObject(config));
 		Id = config.Id.ToString();
 		Name = "";
 		if (config.Metadata == null) return;
 		Name = config.Metadata.Name;
 		var cc = 0;
 		foreach (var s in config.Channels) {
-			Log.Debug("Looping channel: " + JsonConvert.SerializeObject(s));
 			foreach (var sm in s.Members) {
 				if (sm.Service == null) continue;
 				var cId = fromJson ? cc : s.ChannelId;
@@ -325,7 +323,6 @@ public class HueGroup {
 					}
 
 					var lMap = new LightMapV2(l, cId);
-					Log.Debug($"Adding service {cId}: " + JsonConvert.SerializeObject(lMap));
 					Services.Add(lMap);
 					
 					break;
@@ -334,7 +331,6 @@ public class HueGroup {
 
 			cc++;
 		}
-		Log.Debug("Services: " + JsonConvert.SerializeObject(Services));
 	}
 
 	/// <summary>

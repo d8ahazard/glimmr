@@ -36,7 +36,6 @@ public class YeelightDevice : ColorTarget, IColorTarget {
 		IpAddress = _data.IpAddress;
 		Enable = _data.Enable;
 		LoadData();
-		Log.Debug("Created new yee device at " + yd.IpAddress);
 		cs.ColorSendEventAsync += SetColors;
 		_colorService = cs;
 
@@ -174,6 +173,6 @@ public class YeelightDevice : ColorTarget, IColorTarget {
 			StartStream(CancellationToken.None).ConfigureAwait(true);
 		}
 
-		Log.Debug("YEE: Data reloaded: " + Enable);
+		Log.Debug("Yeelight Data reloaded: " + Enable);
 	}
 }

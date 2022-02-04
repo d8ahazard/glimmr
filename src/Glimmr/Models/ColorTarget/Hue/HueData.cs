@@ -144,7 +144,6 @@ public class HueData : IColorTargetData {
 
 		if (!string.IsNullOrEmpty(input.Token)) {
 			if (Token != input.Token || User != input.User) {
-				Log.Debug("Updating token and user to " + Token + " and " + User);
 				Token = input.Token;
 				User = input.User;
 			}

@@ -91,7 +91,7 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 			var packet = cp.Encode();
 			await _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep).ConfigureAwait(false);
 		} catch (Exception e) {
-			Log.Debug("Exception, look at that: " + e.Message);
+			Log.Debug("Exception flashing color: " + e.Message);
 		}
 	}
 
@@ -132,7 +132,6 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		}
 
 		if (oldBrightness != _brightness) {
-			Log.Debug($"Brightness has changed!! {oldBrightness} {_brightness}");
 			UpdateLightState(Streaming).ConfigureAwait(false);
 		}
 

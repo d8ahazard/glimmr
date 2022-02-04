@@ -87,7 +87,6 @@ public class LedDevice : ColorTarget, IColorTarget {
 	}
 
 	public Task ReloadData() {
-		Log.Debug("Reload triggered for " + Id);
 		if (Id == "1") {
 			return Task.CompletedTask;
 		}
