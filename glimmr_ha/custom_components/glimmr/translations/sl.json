@@ -1,0 +1,20 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Ta naprava Glimmr je \u017ee konfigurirana."
+        },
+        "flow_title": "Glimmr: {name}",
+        "step": {
+            "user": {
+                "data": {
+                    "host": "Gostitelj ali IP naslov"
+                },
+                "description": "Nastavite svoj Glimmr za integracijo s Home Assistant."
+            },
+            "zeroconf_confirm": {
+                "description": "Ali \u017eelite dodati Glimmr z imenom `{name}` v Home Assistant?",
+                "title": "Odkrite Glimmr naprave"
+            }
+        }
+    }
+}

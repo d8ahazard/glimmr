@@ -1,0 +1,24 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Ger\u00e4t ist bereits konfiguriert",
+            "cannot_connect": "Verbindung fehlgeschlagen"
+        },
+        "error": {
+            "cannot_connect": "Verbindung fehlgeschlagen"
+        },
+        "flow_title": "{name}",
+        "step": {
+            "user": {
+                "data": {
+                    "host": "Host"
+                },
+                "description": "Richte deinen Glimmr f\u00fcr die Integration mit Home Assistant ein."
+            },
+            "zeroconf_confirm": {
+                "description": "M\u00f6chtest du die Glimmr mit dem Namen `{name}` zu Home Assistant hinzuf\u00fcgen?",
+                "title": "Glimmr-Ger\u00e4t entdeckt"
+            }
+        }
+    }
+}
