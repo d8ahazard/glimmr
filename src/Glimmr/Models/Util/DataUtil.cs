@@ -22,8 +22,6 @@ public static class DataUtil {
 	private static List<dynamic>? _devices;
 	private static int _lockCount;
 	private static LiteDatabase? _db = GetDb();
-
-
 	private static SystemData? _systemData = CacheSystemData();
 
 	private static LiteDatabase GetDb() {
@@ -36,6 +34,16 @@ public static class DataUtil {
 		_lockCount = 0;
 		var userPath = SystemUtil.GetUserDir();
 		userPath = Path.Join(userPath, "store.db");
+		var bootPath = Path.Join("/boot", "store.db");
+		
+		if (!File.Exists(userPath) && File.Exists(bootPath)) {
+			Log.Information("Copying database from /boot directory.");
+			try {
+				File.Move(bootPath, userPath);
+			} catch (Exception e) {
+				Log.Warning("Exception copying database: " + e.Message);
+			}
+		}
 
 		if (_db != null) {
 			return _db;
