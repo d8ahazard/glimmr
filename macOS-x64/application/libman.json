@@ -1,0 +1,103 @@
+{
+  "version": "1.0",
+  "defaultProvider": "cdnjs",
+  "libraries": [
+    {
+      "provider": "unpkg",
+      "library": "@microsoft/signalr@latest",
+      "destination": "wwwroot/lib/signalr/",
+      "files": [
+        "dist/browser/signalr.min.js",
+        "dist/browser/signalr.min.js.map"
+      ]
+    },
+    {
+      "provider": "unpkg",
+      "library": "jquery@3.6.0",
+      "destination": "wwwroot/lib/jquery/",
+      "files": [
+        "dist/jquery.min.js",
+        "dist/jquery.min.map"
+      ]
+    },
+    {
+      "provider": "unpkg",
+      "library": "bootstrap-tour@0.12.0",
+      "destination": "wwwroot/lib/bootstrap-tour/",
+      "files": [
+        "build/css/bootstrap-tour-standalone.min.css",
+        "build/js/bootstrap-tour-standalone.min.js"
+      ]
+    },
+    {
+      "library": "konva@8.1.3",
+      "destination": "wwwroot/lib/konva/",
+      "files": [
+        "konva.min.js"
+      ]
+    },
+    {
+      "provider": "unpkg",
+      "library": "progressbar.js@1.1.0",
+      "destination": "wwwroot/lib/progressbar.js/",
+      "files": [
+        "dist/progressbar.min.js",
+        "dist/progressbar.min.js.map"
+      ]
+    },
+    {
+      "provider": "unpkg",
+      "library": "bootstrap@4.6.0",
+      "destination": "wwwroot/lib/bootstrap/",
+      "files": [
+        "dist/css/bootstrap.min.css",
+        "dist/css/bootstrap.min.css.map",
+        "dist/js/bootstrap.bundle.min.js",
+        "dist/js/bootstrap.bundle.min.js.map"
+      ]
+    },
+    {
+      "provider": "unpkg",
+      "library": "html5sortable@0.13.3",
+      "destination": "wwwroot/lib/html5sortable/",
+      "files": [
+        "dist/html5sortable.min.js",
+        "dist/html5sortable.min.js.map"
+      ]
+    },
+    {
+      "provider": "unpkg",
+      "library": "font-awesome@4.7.0",
+      "destination": "wwwroot/lib/font-awesome/",
+      "files": [
+        "css/font-awesome.min.css",
+        "css/font-awesome.css.map"
+      ]
+    },
+    {
+      "provider": "unpkg",
+      "library": "font-awesome@4.7.0",
+      "destination": "wwwroot/lib/font-awesome/",
+      "files": [
+        "css/font-awesome.css.map",
+        "css/font-awesome.min.css",
+        "fonts/fontawesome-webfont.eot",
+        "fonts/fontawesome-webfont.svg",
+        "fonts/fontawesome-webfont.ttf",
+        "fonts/fontawesome-webfont.woff",
+        "fonts/fontawesome-webfont.woff2",
+        "fonts/FontAwesome.otf"
+      ]
+    },
+    {
+      "provider": "unpkg",
+      "library": "@simonwep/pickr@1.8.1",
+      "destination": "wwwroot/lib/simonwep/pickr/",
+      "files": [
+        "dist/pickr.min.js",
+        "dist/pickr.min.js.map",
+        "dist/themes/nano.min.css"
+      ]
+    }
+  ]
+}
