@@ -183,7 +183,7 @@ public static class CpuUtil {
 		var process = new Process {
 			StartInfo = new ProcessStartInfo {
 				FileName = "/bin/bash",
-				Arguments = "-c \"/opt/vc/bin/vcgencmd measure_temp\"",
+				Arguments = "-c \"vcgencmd measure_temp\"",
 				RedirectStandardOutput = true,
 				RedirectStandardError = true,
 				UseShellExecute = false,
@@ -364,7 +364,7 @@ public static class CpuUtil {
 		var process = new Process {
 			StartInfo = new ProcessStartInfo {
 				FileName = "/bin/bash",
-				Arguments = "-c \"/opt/vc/bin/vcgencmd get_throttled\"",
+				Arguments = "-c \"vcgencmd get_throttled\"",
 				RedirectStandardOutput = true,
 				RedirectStandardError = true,
 				UseShellExecute = false,

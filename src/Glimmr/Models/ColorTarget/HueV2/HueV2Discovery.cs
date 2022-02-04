@@ -82,7 +82,7 @@ public class HueV2Discovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth 
 
 	public async Task<dynamic> CheckAuthAsync(dynamic dev) {
 		Log.Debug("Checking auth...");
-		var devData = (HueV2Data)dev;
+		var devData = (HueV2Data) dev;
 		try {
 			var client = new LocalHueClient(devData.IpAddress, devData.AppKey);
 			//Make sure the user has pressed the button on the bridge before calling RegisterAsync
@@ -108,7 +108,7 @@ public class HueV2Discovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth 
 			devData.Token = result.StreamingClientKey;
 			devData.AppKey = result.Username;
 			return devData;
-		} catch (HueException) {
+		} catch (Exception) {
 			Log.Debug($@"Hue: The link button is not pressed at {devData.IpAddress}.");
 		}
 
