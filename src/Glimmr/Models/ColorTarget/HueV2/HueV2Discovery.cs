@@ -84,7 +84,7 @@ public class HueV2Discovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth 
 		Log.Debug("Checking auth...");
 		var devData = (HueV2Data) dev;
 		try {
-			var client = new LocalHueClient(devData.IpAddress, devData.AppKey);
+			var client = string.IsNullOrEmpty(devData.AppKey) ? new LocalHueClient(devData.IpAddress) : new LocalHueClient(devData.IpAddress, devData.AppKey);
 			//Make sure the user has pressed the button on the bridge before calling RegisterAsync
 			//It will throw an LinkButtonNotPressedException if the user did not press the button
 			var devName = Environment.MachineName;

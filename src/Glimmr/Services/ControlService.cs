@@ -193,7 +193,7 @@ public class ControlService : BackgroundService {
 			var count = 0;
 			while (count < 30) {
 				try {
-					var activated = await dev.CheckAuthAsync(data);
+					var activated = await dev.CheckAuthAsync(data).ConfigureAwait(false);
 					if (!string.IsNullOrEmpty(activated.Token)) {
 						Log.Information("Device is activated!");
 						await DataUtil.AddDeviceAsync(activated, true);
@@ -209,7 +209,7 @@ public class ControlService : BackgroundService {
 					Log.Warning("Error: " + e.Message + " at " + e.StackTrace);
 				}
 
-				await Task.Delay(1000);
+				await Task.Delay(TimeSpan.FromSeconds(1));
 				count++;
 				if (clientProxy == null) {
 					continue;

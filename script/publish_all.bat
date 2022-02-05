@@ -9,6 +9,7 @@ echo Build packages for various architectures
 for %%x in (
 	Linux
 	LinuxARM
+	LinuxARM64
 	Windows
 	WindowsARM
 	OSX
@@ -22,8 +23,10 @@ cd ..\src\Glimmr\
 
 echo Build deb packages
 dotnet deb -c Release -o .\bin -r linux-arm
+dotnet deb -c Release -o .\bin -r linux-arm64
 dotnet deb -c Release -o .\bin -r linux-x64
 dotnet rpm -c Release -o .\bin -r linux-arm
+dotnet rpm -c Release -o .\bin -r linux-arm64
 dotnet rpm -c Release -o .\bin -r linux-x64
 
 echo Build MSI package
@@ -45,8 +48,9 @@ xcopy /Y /E .\OSX\* ..\..\..\Glimmr-macos-installer-builder\macOS-x64\applicatio
 echo Creating archives...
 
 %~dp07z.exe a -ttar -so -an -r .\LinuxARM\* | %~dp07z a -si Glimmr-linux-arm-%version%.tgz
+%~dp07z.exe a -ttar -so -an -r .\LinuxARM64\* | %~dp07z a -si Glimmr-linux-arm64-%version%.tgz
 del /S /Q ..\..\..\Glimmr-image-gen\stage2\05-glimmr\files\archive.tgz
-cp .\Glimmr-linux-arm-%version%.tgz ..\..\..\Glimmr-image-gen\stage2\05-glimmr\files\archive.tgz
+cp .\Glimmr-linux-arm64-%version%.tgz ..\..\..\Glimmr-image-gen\stage2\05-glimmr\files\archive.tgz
 %~dp07z.exe a -ttar -so -an -r .\Linux\* | %~dp07z a -si Glimmr-linux-%version%.tgz
 %~dp07z.exe a -ttar -so -an -r .\OSX\* | %~dp07z a -si Glimmr-osx-%version%.tgz
 %~dp07z.exe a -tzip -r Glimmr-windows-%version%.zip .\Windows\*
