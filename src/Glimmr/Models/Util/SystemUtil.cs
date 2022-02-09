@@ -69,7 +69,7 @@ public static class SystemUtil {
 		process.Start();
 		var output = process.StandardOutput.ReadToEnd();
 		process.WaitForExit();
-		return output.ToLower().Contains("raspbian");
+		return output.ToLower().Contains("raspbian") || File.Exists("/usr/bin/raspi-config");
 	}
 
 	public static void Update() {

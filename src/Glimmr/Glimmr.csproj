@@ -113,6 +113,12 @@
         </Content>
     </ItemGroup>
 
+    <ItemGroup Condition="'$(RuntimeIdentifier)'=='linux-arm64'">
+        <Content Include="lib/LinuxARM64/*" CopyToPublishDirectory="Always" LinuxFileMode="1755" Link="%(Filename)%(Extension)">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
     <!-- Windeerz -->
     <ItemGroup Condition="'$(RuntimeIdentifier)'=='win-x64' OR '$(RuntimeIdentifier)'=='win-x86'">
         <Content Include="lib/Windows/*" CopyToPublishDirectory="Always" LinuxFileMode="1755" Link="%(Filename)%(Extension)">

@@ -15,6 +15,7 @@ public static class ColorUtil {
 	private static int _hCount;
 	private static bool _useCenter;
 	private static int _vCount;
+	private static Color[] _emptyColors = Array.Empty<Color>();
 
 	/// <summary>
 	///     Take a n-color list, and convert down to 12 for DS
@@ -269,11 +270,14 @@ public static class ColorUtil {
 	}
 
 	public static Color[] EmptyColors(int len) {
-		var input = new Color[len];
-		for (var i = 0; i < input.Length; i++) {
-			input[i] = Color.FromArgb(0, 0, 0, 0);
+		if (_emptyColors == null || _emptyColors.Length < len) {
+			_emptyColors = new Color[len];
+			for (var i = 0; i < _emptyColors.Length; i++) {
+				_emptyColors[i] = Color.FromArgb(0, 0, 0, 0);
+			}
 		}
 
+		var input = _emptyColors[..len];
 		return input;
 	}
 

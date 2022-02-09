@@ -1,5 +1,6 @@
 ﻿#region
 
+using System;
 using Glimmr.Services;
 using Serilog.Core;
 using Serilog.Events;
@@ -13,6 +14,10 @@ public class SocketSink : ILogEventSink {
 
 	public void Emit(LogEvent logEvent) {
 		_cs ??= ControlService.GetInstance();
-		_cs.SendLogLine(logEvent).ConfigureAwait(false);
+		try {
+			_cs.SendLogLine(logEvent).ConfigureAwait(false);
+		} catch (Exception) {
+			// Ignored
+		}
 	}
 }

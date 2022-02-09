@@ -27,6 +27,7 @@ public class AmbientStream : ColorSource {
 	private FrameBuilder? _builder;
 	private int _colorIndex;
 	private Color[] _currentColors;
+	private Color[] _sectors;
 	private EasingMode _easingMode;
 	private double _easingTime;
 	private JsonLoader? _loader;
@@ -34,7 +35,7 @@ public class AmbientStream : ColorSource {
 	private Color[] _nextColors;
 	private Color[] _sceneColors;
 	private List<AmbientScene> _scenes;
-
+	
 	public AmbientStream(ColorService colorService) {
 		_ambientColor = "#FFFFFF";
 		_currentColors = Array.Empty<Color>();
@@ -45,6 +46,7 @@ public class AmbientStream : ColorSource {
 		_loader = new JsonLoader("ambientScenes");
 		_scenes = _loader.LoadFiles<AmbientScene>();
 		_splitter = new FrameSplitter(colorService);
+		_sectors = new Color[SectorCount];
 		colorService.ControlService.RefreshSystemEvent += RefreshSystem;
 	}
 
@@ -103,69 +105,70 @@ public class AmbientStream : ColorSource {
 		RefreshSystem();
 		_splitter.DoSend = true;
 		var aTask = Task.Run(async () => {
-			var watch = new Stopwatch();
-			watch.Start();
+			var timer1 = new System.Timers.Timer();
+			timer1.Elapsed += (_, _) => Update().ConfigureAwait(false);
+			timer1.Interval = 8;
+			timer1.Start();
 			// Load this one for fading
 			while (!ct.IsCancellationRequested) {
-				var elapsed = _watch.ElapsedMilliseconds;
-				var diff = _animationTime - elapsed;
-				var sectors = new Color[SectorCount];
-				switch (diff) {
-					// If we're between rotations, blend/fade the colors as desired
-					case > 0 when diff <= _easingTime: {
-						var avg = diff / _easingTime;
-						for (var i = 0; i < _currentColors.Length; i++) {
-							sectors[i] = _easingMode switch {
-								EasingMode.Blend => BlendColor(_currentColors[i], _nextColors[i], avg),
-								EasingMode.FadeIn => FadeIn(_currentColors[i], avg),
-								EasingMode.FadeOut => FadeOut(_currentColors[i], avg),
-								EasingMode.FadeInOut => FadeInOut(_nextColors[i], avg),
-								_ => sectors[i]
-							};
-						}
+				await Task.Delay(TimeSpan.FromMilliseconds(500), ct);
 
-						break;
-					}
-					case <= 0:
-						_currentColors = _nextColors;
-						_nextColors = RefreshColors(_sceneColors);
-						sectors = _easingMode switch {
-							EasingMode.Blend => _currentColors,
-							EasingMode.FadeOut => _currentColors,
-							EasingMode.FadeIn => ColorUtil.EmptyColors(SectorCount),
-							EasingMode.FadeInOut => ColorUtil.EmptyColors(SectorCount),
-							_ => sectors
-						};
-						_watch.Restart();
-						break;
-					default:
-						sectors = _currentColors;
-						break;
-				}
-
-				try {
-					if (_builder == null) {
-						return;
-					}
-
-					var frame = _builder.Build(sectors);
-					if (frame != null) {
-						await _splitter.Update(frame).ConfigureAwait(false);
-						frame.Dispose();
-					}
-				} catch (Exception e) {
-					Log.Warning("EX: " + e.Message);
-				}
-
-				watch.Restart();
 			}
 
+			timer1.Stop();
 			_watch.Stop();
 			_splitter.DoSend = false;
 			Log.Information("Ambient stream service stopped.");
 		}, CancellationToken.None);
 		Log.Debug("Ambient stream started.");
 		return aTask;
+	}
+
+	private async Task Update() {
+		var elapsed = _watch.ElapsedMilliseconds;
+		var diff = _animationTime - elapsed;
+		switch (diff) {
+			// If we're between rotations, blend/fade the colors as desired
+			case > 0 when diff <= _easingTime: {
+				var avg = diff / _easingTime;
+				for (var i = 0; i < _currentColors.Length; i++) {
+					_sectors[i] = _easingMode switch {
+						EasingMode.Blend => BlendColor(_currentColors[i], _nextColors[i], avg),
+						EasingMode.FadeIn => FadeIn(_currentColors[i], avg),
+						EasingMode.FadeOut => FadeOut(_currentColors[i], avg),
+						EasingMode.FadeInOut => FadeInOut(_nextColors[i], avg),
+						_ => _sectors[i]
+					};
+				}
+
+				break;
+			}
+			case <= 0:
+				_currentColors = _nextColors;
+				_nextColors = RefreshColors(_sceneColors);
+				_sectors = _easingMode switch {
+					EasingMode.Blend => _currentColors,
+					EasingMode.FadeOut => _currentColors,
+					EasingMode.FadeIn => ColorUtil.EmptyColors(SectorCount),
+					EasingMode.FadeInOut => ColorUtil.EmptyColors(SectorCount),
+					_ => _sectors
+				};
+				break;
+			default:
+				_sectors = _currentColors;
+				break;
+		}
+
+		try {
+			if (_builder == null) {
+				return;
+			}
+
+			await _splitter.Update(_builder.Build(_sectors)).ConfigureAwait(false);
+
+		} catch (Exception e) {
+			Log.Warning("EX: " + e.Message);
+		}
 	}
 
 

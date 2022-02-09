@@ -16,6 +16,7 @@ using Glimmr.Services;
 using Newtonsoft.Json;
 using Serilog;
 using static Glimmr.Models.GlimmrConstants;
+using Color = System.Drawing.Color;
 
 #endregion
 
@@ -280,8 +281,7 @@ public class FrameSplitter {
 		_merge = true;
 	}
 
-
-	public async Task Update(Mat frame) {
+	public async Task Update(Mat? frame) {
 		if (frame == null || frame.IsEmpty) {
 			SourceActive = false;
 			if (!_warned) {
@@ -350,14 +350,18 @@ public class FrameSplitter {
 			ledColors[i] = GetAverage(sub);
 			sub.Dispose();
 		}
-
+		
 
 		var sectorColors = ColorUtil.EmptyColors(_sectorCount);
 		for (var i = 0; i < _fullSectors.Length; i++) {
 			var sub = new Mat(clone, _fullSectors[i]);
+			
 			sectorColors[i] = GetAverage(sub);
+			//sectorColors[i] = GetAvg(sub);
+			//Log.Debug("Averages: " + ledColors[i].ToHex() + " vs " + foo.ToHex());
 			sub.Dispose();
 		}
+		//Log.Debug($"AvgTimes: {watch.ElapsedTicks} vs {watch2.ElapsedTicks} ");
 
 		_colorsLed = ledColors;
 		_colorsSectors = sectorColors;
@@ -380,7 +384,6 @@ public class FrameSplitter {
 		clone.Dispose();
 		await Task.FromResult(true);
 	}
-
 
 	private Mat? CheckCamera(Mat input) {
 		var scaled = input.Clone();
@@ -516,7 +519,6 @@ public class FrameSplitter {
 		return new VectorOfPoint(pIn);
 	}
 
-
 	private static PointF[] SortPoints(VectorOfPoint wTarget) {
 		var ta = wTarget.ToArray();
 		var pIn = new PointF[wTarget.Size];
@@ -541,15 +543,13 @@ public class FrameSplitter {
 		return outPut;
 	}
 
-
 	private Color GetAverage(IInputArray sInput) {
 		var foo = CvInvoke.Mean(sInput);
 		var red = (int)foo.V2;
 		var green = (int)foo.V1;
 		var blue = (int)foo.V0;
 		if (red < _blackLevel && green < _blackLevel && blue < _blackLevel) {
-			return Color.FromArgb(0, 0, 0, 0);
-		}
+			return Color.FromArgb(0, 0, 0, 0); }
 
 		return Color.FromArgb(red, green, blue);
 	}

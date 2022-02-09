@@ -76,7 +76,7 @@ public class FrameCounter : IDisposable {
 			_stopwatch.Start();
 		}
 
-		if (_stopwatch.Elapsed >= TimeSpan.FromSeconds(1)) {
+		if (_stopwatch.Elapsed >= TimeSpan.FromMilliseconds(1000)) {
 			_stopwatch.Restart();
 			Rates = _ticks;
 			_ticks = new ConcurrentDictionary<string, int> { ["source"] = 0 };
@@ -85,7 +85,7 @@ public class FrameCounter : IDisposable {
 		if (_ticks.ContainsKey(id)) {
 			_ticks[id]++;
 		} else {
-			_ticks[id] = 0;
+			_ticks[id] = 1;
 		}
 	}
 
