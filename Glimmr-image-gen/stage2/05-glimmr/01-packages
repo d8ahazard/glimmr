@@ -33,3 +33,4 @@ libeigen3-dev
 libopengl-dev
 cmake-curses-gui
 freeglut3-dev
+libdc1394-22-dev
