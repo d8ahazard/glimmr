@@ -38,12 +38,12 @@ branch=${1:-"master"}
 APPDIR=${2:-"/usr/share/Glimmr/"}
 
 PUBPROFILE="Linux"
-PUBPATH="linux-arm"
+PUBPATH="linux-arm64"
 
 if [ -f "/usr/bin/raspi-config" ] 
   then
     PUBPROFILE="LinuxARM"
-    PUBPATH="linux-arm"
+    PUBPATH="linux-arm64"
 fi
 
 
