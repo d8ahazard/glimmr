@@ -13,54 +13,51 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorSource.Ambient;
-
-public class AmbientStream : ColorSource {
-	public override bool SourceActive => _splitter.SourceActive;
-	private const int SectorCount = 116;
-	private readonly Random _random;
-	private readonly FrameSplitter _splitter;
-	private readonly Stopwatch _watch;
-	private string _ambientColor;
-	private int _ambientScene;
-	private double _animationTime;
-	private FrameBuilder? _builder;
-	private int _colorIndex;
-	private Color[] _currentColors;
-	private Color[] _sectors;
-	private EasingMode _easingMode;
-	private double _easingTime;
-	private JsonLoader? _loader;
-	private AnimationMode _mode;
-	private Color[] _nextColors;
-	private Color[] _sceneColors;
+namespace Glimmr.Models.ColorSource.Ambient {
+	public class AmbientStream : ColorSource {
+		private const int SectorCount = 116;
+		private readonly Random _random;
+		private readonly FrameSplitter _splitter;
+		private readonly Stopwatch _watch;
+		private string _ambientColor;
+		private int _ambientScene;
+		private double _animationTime;
+		private FrameBuilder? _builder;
+		private int _colorIndex;
+		private Color[] _currentColors;
+		private EasingMode _easingMode;
+		private double _easingTime;
+		private JsonLoader? _loader;
+		private AnimationMode _mode;
+		private Color[] _nextColors;
+		private Color[] _sceneColors;
 	private List<AmbientScene> _scenes;
 	
 	public AmbientStream(ColorService colorService) {
 		_ambientColor = "#FFFFFF";
 		_currentColors = Array.Empty<Color>();
 		_nextColors = Array.Empty<Color>();
-		_sceneColors = Array.Empty<Color>();
-		_watch = new Stopwatch();
-		_random = new Random();
-		_loader = new JsonLoader("ambientScenes");
-		_scenes = _loader.LoadFiles<AmbientScene>();
-		_splitter = new FrameSplitter(colorService);
-		_sectors = new Color[SectorCount];
-		colorService.ControlService.RefreshSystemEvent += RefreshSystem;
-	}
+			_sceneColors = Array.Empty<Color>();
+			_watch = new Stopwatch();
+			_random = new Random();
+			_loader = new JsonLoader("ambientScenes");
+			_scenes = _loader.LoadFiles<AmbientScene>();
+			_splitter = new FrameSplitter(colorService);
+			colorService.ControlService.RefreshSystemEvent += RefreshSystem;
+		}
+
+		public override bool SourceActive => _splitter.SourceActive;
 
 
-	public override Task Start(CancellationToken ct) {
-		Log.Debug("Starting ambient stream...");
-		ExecuteAsync(ct).ConfigureAwait(false);
-		return Task.CompletedTask;
-	}
+		public override Task Start(CancellationToken ct) {
+			Log.Debug("Starting ambient stream...");
+			return ExecuteAsync(ct);
+		}
 
-	public override void RefreshSystem() {
-		var sd = DataUtil.GetSystemData();
-		_ambientScene = sd.AmbientScene;
-		_ambientColor = sd.AmbientColor;
+		public override void RefreshSystem() {
+			var sd = DataUtil.GetSystemData();
+			_ambientScene = sd.AmbientScene;
+			_ambientColor = sd.AmbientColor;
 		var dims = new[] { 20, 20, 40, 40 };
 		_builder = new FrameBuilder(dims, true);
 		_loader ??= new JsonLoader("ambientScenes");
@@ -98,83 +95,82 @@ public class AmbientStream : ColorSource {
 		}
 
 		LoadScene();
-	}
+		}
 
 
-	protected override Task ExecuteAsync(CancellationToken ct) {
-		RefreshSystem();
-		_splitter.DoSend = true;
-		var aTask = Task.Run(async () => {
-			var timer1 = new System.Timers.Timer();
-			timer1.Elapsed += (_, _) => Update().ConfigureAwait(false);
-			timer1.Interval = 8;
-			timer1.Start();
-			// Load this one for fading
-			while (!ct.IsCancellationRequested) {
-				await Task.Delay(TimeSpan.FromMilliseconds(500), ct);
+		protected override Task ExecuteAsync(CancellationToken ct) {
+			RefreshSystem();
+			_splitter.DoSend = true;
+			return Task.Run(async () => {
+				var watch = new Stopwatch();
+				watch.Start();
+				// Load this one for fading
+				while (!ct.IsCancellationRequested) {
+					if (watch.ElapsedMilliseconds <= 6) continue;
+					var elapsed = _watch.ElapsedMilliseconds;
+					var diff = _animationTime - elapsed;
+					var sectors = new Color[SectorCount];
+					switch (diff) {
+						// If we're between rotations, blend/fade the colors as desired
+						case > 0 when diff <= _easingTime: {
+							var avg = diff / _easingTime;
+							for (var i = 0; i < _currentColors.Length; i++) {
+								sectors[i] = _easingMode switch {
+									EasingMode.Blend => BlendColor(_currentColors[i], _nextColors[i], avg),
+									EasingMode.FadeIn => FadeIn(_currentColors[i], avg),
+									EasingMode.FadeOut => FadeOut(_currentColors[i], avg),
+									EasingMode.FadeInOut => FadeInOut(_nextColors[i], avg),
+									_ => sectors[i]
+								};
+							}
 
-			}
+							break;
+						}
+						case <= 0:
+							_currentColors = _nextColors;
+							_nextColors = RefreshColors(_sceneColors);
+							sectors = _easingMode switch {
+								EasingMode.Blend => _currentColors,
+								EasingMode.FadeOut => _currentColors,
+								EasingMode.FadeIn => ColorUtil.EmptyColors(SectorCount),
+								EasingMode.FadeInOut => ColorUtil.EmptyColors(SectorCount),
+								_ => sectors
+							};
+							_watch.Restart();
+							break;
+						default:
+							sectors = _currentColors;
+							break;
+					}
 
-			timer1.Stop();
-			_watch.Stop();
-			_splitter.DoSend = false;
-			Log.Information("Ambient stream service stopped.");
-		}, CancellationToken.None);
-		Log.Debug("Ambient stream started.");
-		return aTask;
-	}
+					try {
+						if (_builder == null) {
+							return;
+						}
 
-	private async Task Update() {
-		var elapsed = _watch.ElapsedMilliseconds;
-		var diff = _animationTime - elapsed;
-		switch (diff) {
-			// If we're between rotations, blend/fade the colors as desired
-			case > 0 when diff <= _easingTime: {
-				var avg = diff / _easingTime;
-				for (var i = 0; i < _currentColors.Length; i++) {
-					_sectors[i] = _easingMode switch {
-						EasingMode.Blend => BlendColor(_currentColors[i], _nextColors[i], avg),
-						EasingMode.FadeIn => FadeIn(_currentColors[i], avg),
-						EasingMode.FadeOut => FadeOut(_currentColors[i], avg),
-						EasingMode.FadeInOut => FadeInOut(_nextColors[i], avg),
-						_ => _sectors[i]
-					};
+						var frame = _builder.Build(sectors);
+						await _splitter.Update(frame).ConfigureAwait(false);
+						frame?.Dispose();
+						
+						
+						
+					} catch (Exception e) {
+						Log.Warning("EX: " + e.Message);
+					}
+
+					watch.Restart();
 				}
 
-				break;
-			}
-			case <= 0:
-				_currentColors = _nextColors;
-				_nextColors = RefreshColors(_sceneColors);
-				_sectors = _easingMode switch {
-					EasingMode.Blend => _currentColors,
-					EasingMode.FadeOut => _currentColors,
-					EasingMode.FadeIn => ColorUtil.EmptyColors(SectorCount),
-					EasingMode.FadeInOut => ColorUtil.EmptyColors(SectorCount),
-					_ => _sectors
-				};
-				break;
-			default:
-				_sectors = _currentColors;
-				break;
+				_watch.Stop();
+				_splitter.DoSend = false;
+				Log.Information("Ambient stream service stopped.");
+			}, CancellationToken.None);
 		}
 
-		try {
-			if (_builder == null) {
-				return;
-			}
 
-			await _splitter.Update(_builder.Build(_sectors)).ConfigureAwait(false);
-
-		} catch (Exception e) {
-			Log.Warning("EX: " + e.Message);
-		}
-	}
-
-
-	private static Color BlendColor(Color target, Color dest, double percent) {
-		var r1 = (int)((target.R - dest.R) * percent) + dest.R;
-		var g1 = (int)((target.G - dest.G) * percent) + dest.G;
+		private static Color BlendColor(Color target, Color dest, double percent) {
+			var r1 = (int) ((target.R - dest.R) * percent) + dest.R;
+			var g1 = (int) ((target.G - dest.G) * percent) + dest.G;
 		var b1 = (int)((target.B - dest.B) * percent) + dest.B;
 		r1 = r1 > 255 ? 255 : r1 < 0 ? 0 : r1;
 		g1 = g1 > 255 ? 255 : g1 < 0 ? 0 : g1;
@@ -298,9 +294,10 @@ public class AmbientStream : ColorSource {
 	}
 
 	private enum EasingMode {
-		Blend = 0,
-		FadeIn = 1,
-		FadeOut = 2,
-		FadeInOut = 3
+			Blend = 0,
+			FadeIn = 1,
+			FadeOut = 2,
+			FadeInOut = 3
+		}
 	}
 }
