@@ -49,8 +49,7 @@ echo Creating archives...
 
 %~dp07z.exe a -ttar -so -an -r .\LinuxARM\* | %~dp07z a -si Glimmr-linux-arm-%version%.tgz
 %~dp07z.exe a -ttar -so -an -r .\LinuxARM64\* | %~dp07z a -si Glimmr-linux-arm64-%version%.tgz
-del /S /Q ..\..\..\Glimmr-image-gen\stage2\05-glimmr\files\archive.tgz
-cp .\Glimmr-linux-arm64-%version%.tgz ..\..\..\Glimmr-image-gen\stage2\05-glimmr\files\archive.tgz
+xcopy /-I /Y .\Glimmr-linux-arm64-%version%.tgz ..\..\..\Glimmr-image-gen\stage2\05-glimmr\files\archive.tgz
 %~dp07z.exe a -ttar -so -an -r .\Linux\* | %~dp07z a -si Glimmr-linux-%version%.tgz
 %~dp07z.exe a -ttar -so -an -r .\OSX\* | %~dp07z a -si Glimmr-osx-%version%.tgz
 %~dp07z.exe a -tzip -r Glimmr-windows-%version%.zip .\Windows\*

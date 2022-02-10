@@ -38,7 +38,7 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 	private StripMode _stripMode;
 	private int _targetSector;
 
-	public WledDevice(WledData wd, ColorService cs) : base(cs) {
+	public WledDevice(WledData wd, ColorService? cs) : base(cs) {
 		_segments = Array.Empty<WledSegment>();
 		cs.ControlService.RefreshSystemEvent += RefreshSystem;
 		_udpClient = cs.ControlService.UdpClient;

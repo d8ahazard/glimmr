@@ -17,7 +17,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight;
 
 public class YeelightDevice : ColorTarget, IColorTarget {
 	private string IpAddress { get; set; }
-	private readonly ColorService _colorService;
+	private readonly ColorService? _colorService;
 
 	private readonly Device _yeeDevice;
 
@@ -30,7 +30,7 @@ public class YeelightDevice : ColorTarget, IColorTarget {
 	private int _targetSector;
 
 
-	public YeelightDevice(YeelightData yd, ColorService cs) : base(cs) {
+	public YeelightDevice(YeelightData yd, ColorService? cs) : base(cs) {
 		_data = yd;
 		Id = _data.Id;
 		IpAddress = _data.IpAddress;

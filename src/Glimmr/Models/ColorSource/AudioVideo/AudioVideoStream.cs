@@ -55,8 +55,8 @@ public class AudioVideoStream : ColorSource {
 			return Task.CompletedTask;
 		}
 
-		ExecuteAsync(ct).ConfigureAwait(false);
-		return Task.CompletedTask;
+		RunTask = ExecuteAsync(ct);
+		return RunTask;
 	}
 
 	public override void RefreshSystem() {

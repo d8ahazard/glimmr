@@ -51,8 +51,12 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
 		public override Task Start(CancellationToken ct) {
 			Log.Debug("Starting ambient stream...");
-			return ExecuteAsync(ct);
+			RunTask = ExecuteAsync(ct);
+			Log.Debug("Started...");
+			return Task.CompletedTask;
 		}
+
+		
 
 		public override void RefreshSystem() {
 			var sd = DataUtil.GetSystemData();

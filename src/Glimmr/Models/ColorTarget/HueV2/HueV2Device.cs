@@ -36,7 +36,7 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 	private string? _user;
 
 
-	public HueV2Device(HueV2Data data, ColorService cs) : base(cs) {
+	public HueV2Device(HueV2Data data, ColorService? cs) : base(cs) {
 		Data = data;
 		_targets = new Dictionary<int, int>();
 		_ipAddress = Data.IpAddress;

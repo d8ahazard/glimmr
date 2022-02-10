@@ -54,7 +54,7 @@ public class DreamScreenStream : ColorSource {
 		_client.SetMode(_dDev, DeviceMode.Off);
 		_client.SetMode(_dDev, DeviceMode.Video);
 		Log.Debug("Starting DS stream service...");
-		ExecuteAsync(ct).ConfigureAwait(false);
+		RunTask = ExecuteAsync(ct);
 		return Task.CompletedTask;
 	}
 

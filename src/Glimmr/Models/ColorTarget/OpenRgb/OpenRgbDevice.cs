@@ -15,11 +15,11 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.OpenRgb;
 
 public class OpenRgbDevice : ColorTarget, IColorTarget {
-	private readonly ColorService _colorService;
+	private readonly ColorService? _colorService;
 	private OpenRgbAgent? _client;
 	private OpenRgbData _data;
 
-	public OpenRgbDevice(OpenRgbData data, ColorService cs) : base(cs) {
+	public OpenRgbDevice(OpenRgbData data, ColorService? cs) : base(cs) {
 		Id = data.Id;
 		_data = data;
 		_colorService = cs;

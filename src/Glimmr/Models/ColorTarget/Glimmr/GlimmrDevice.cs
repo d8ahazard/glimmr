@@ -31,7 +31,7 @@ public class GlimmrDevice : ColorTarget, IColorTarget, IDisposable {
 	private int _ledCount;
 	private SystemData _sd;
 
-	public GlimmrDevice(GlimmrData wd, ColorService cs) : base(cs) {
+	public GlimmrDevice(GlimmrData wd, ColorService? cs) : base(cs) {
 		_udpClient = cs.ControlService.UdpClient;
 		_httpClient = cs.ControlService.HttpSender;
 		_data = wd ?? throw new ArgumentException("Invalid Glimmr data.");

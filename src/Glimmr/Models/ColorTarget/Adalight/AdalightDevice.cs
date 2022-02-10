@@ -26,7 +26,7 @@ public class AdalightDevice : ColorTarget, IColorTarget {
 	private string _port;
 	private bool _reverseStrip;
 
-	public AdalightDevice(AdalightData data, ColorService cs) : base(cs) {
+	public AdalightDevice(AdalightData data, ColorService? cs) : base(cs) {
 		Id = data.Id;
 		_data = data;
 		_port = _data.Port;

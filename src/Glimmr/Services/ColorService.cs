@@ -60,8 +60,8 @@ public class ColorService : BackgroundService {
 	// Token for the color target
 	private CancellationTokenSource _targetTokenSource;
 
-	public ColorService(ControlService controlService) {
-		controlService.ColorService = this;
+	public ColorService() {
+		ControlService.GetInstance().ColorService = this;
 		_watch = new Stopwatch();
 		_loopWatch = new Stopwatch();
 		_streamTokenSource = new CancellationTokenSource();
@@ -72,7 +72,7 @@ public class ColorService : BackgroundService {
 		SectorColors = new Color[+_systemData.SectorCount];
 		_enableAutoDisable = _systemData.EnableAutoDisable;
 		_streams = new Dictionary<string, ColorSource>();
-		ControlService = controlService;
+		ControlService = ControlService.GetInstance();
 		Counter = new FrameCounter(this);
 		ControlService.SetModeEvent += Mode;
 		ControlService.DeviceReloadEvent += RefreshDeviceData;
@@ -125,17 +125,7 @@ public class ColorService : BackgroundService {
 					_loopWatch.Restart();
 				}
 
-				if (!ColorsUpdated) {
-					continue;
-				}
-
-				if (!_demoComplete || _stream == null) {
-					return;
-				}
-
-				Counter.Tick("");
-				ColorsUpdated = false;
-				await SendColors(LedColors, SectorColors);
+				await Task.Delay(TimeSpan.FromSeconds(1), CancellationToken.None);
 			}
 		}, CancellationToken.None);
 		Log.Debug("Color Service Started.");
@@ -176,7 +166,7 @@ public class ColorService : BackgroundService {
 			_deviceMode = _systemData.DeviceMode;
 		}
 
-		await Mode(this, new DynamicEventArgs(_deviceMode, true)).ConfigureAwait(true);
+		await ControlService.SetMode(_deviceMode, true).ConfigureAwait(true);
 		Log.Information("Color service started.");
 	}
 
@@ -286,6 +276,10 @@ public class ColorService : BackgroundService {
 			return;
 		}
 
+		if (_deviceMode == DeviceMode.Off) {
+			return;
+		}
+		
 		var sourceActive = _stream?.SourceActive ?? false;
 
 		if (sourceActive) {
@@ -323,7 +317,7 @@ public class ColorService : BackgroundService {
 				Log.Information(
 					$"Auto-disabling stream {_watch.ElapsedMilliseconds} vs {_autoDisableDelay * 1000}.");
 				_watch.Reset();
-				await StopStream();
+				await StopDevices();
 			}
 		}
 	}
@@ -541,6 +535,7 @@ public class ColorService : BackgroundService {
 	private async Task Mode(object o, DynamicEventArgs dynamicEventArgs) {
 		var sd = DataUtil.GetSystemData();
 		var newMode = (DeviceMode)dynamicEventArgs.Arg0;
+		Log.Debug("New mode set: " + newMode);
 		bool init = dynamicEventArgs.Arg1 ?? false;
 		if (init) {
 			Log.Debug("Initializing mode.");
@@ -553,13 +548,22 @@ public class ColorService : BackgroundService {
 			DataUtil.SetItem("AutoDisabled", _autoDisabled);
 			Log.Debug("Unsetting auto-disabled flag...");
 		}
-
+		
+		Log.Debug("Canceling stoken...");
 		_streamTokenSource.Cancel();
-
+		await Task.Delay(TimeSpan.FromMilliseconds(500));
+		Log.Debug("Done waiting...");
+		if (_stream != null) {
+			if (_stream.SourceActive) {
+				Log.Debug("Killing stream!");
+				_stream.Stop();
+			}
+		}
 		if (_streamStarted && newMode == 0) {
-			await StopStream();
+			await StopDevices();
 		}
 
+		
 		_streamTokenSource = new CancellationTokenSource();
 		if (_streamTokenSource.IsCancellationRequested) {
 			Log.Warning("Token source has cancellation requested.");
@@ -593,7 +597,6 @@ public class ColorService : BackgroundService {
 		}
 
 		_deviceMode = newMode;
-		await ControlService.SendMode(_deviceMode);
 		Log.Information($"Device mode updated to {newMode}.");
 		
 	}
@@ -624,7 +627,7 @@ public class ColorService : BackgroundService {
 		}
 	}
 
-	private async Task StopStream() {
+	private async Task StopDevices() {
 		if (!_streamStarted) {
 			return;
 		}
@@ -656,7 +659,7 @@ public class ColorService : BackgroundService {
 		Log.Information($"Streaming stopped on {len}/{en} devices.");
 	}
 
-	private async Task SendColors(Color[] colors, Color[] sectors, int fadeTime = 0,
+	public async Task SendColors(Color[] colors, Color[] sectors, int fadeTime = 0,
 		bool force = false) {
 		if (!_streamStarted) {
 			return;
@@ -695,7 +698,7 @@ public class ColorService : BackgroundService {
 
 	private async Task StopServices() {
 		Log.Information("Stopping color services...");
-		await StopStream().ConfigureAwait(false);
+		await StopDevices().ConfigureAwait(false);
 		_watch.Stop();
 		//_frameWatch.Stop();
 		_streamTokenSource.Cancel();

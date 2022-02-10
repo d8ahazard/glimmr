@@ -93,6 +93,9 @@ public static class Program {
 			})
 			.ConfigureServices(services => {
 				services.AddSingleton<IHostedService, ControlService>();
+				services.AddHostedService<ColorService>();
+				services.AddHostedService<StatService>();
+				services.AddHostedService<DiscoveryService>();
 			});
 	}
 }

@@ -1,7 +1,6 @@
 ﻿#region
 
 using System;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Hubs;
@@ -16,10 +15,11 @@ using Serilog;
 namespace Glimmr.Services;
 
 public class StatService : BackgroundService {
-	private readonly ColorService _colorService;
+	private readonly ColorService? _colorService;
 	private readonly IHubContext<SocketServer> _hubContext;
 
-	public StatService(IHubContext<SocketServer> hubContext, ControlService cs) {
+	public StatService(IHubContext<SocketServer> hubContext) {
+		var cs = ControlService.GetInstance();
 		_hubContext = hubContext;
 		_colorService = cs.ColorService;
 		cs.SetModeEvent += Mode;
@@ -33,23 +33,14 @@ public class StatService : BackgroundService {
 
 	protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 		Log.Debug("Starting stat service...");
-		var watch = new Stopwatch();
-		watch.Start();
-		var loaded = false;
-
 		var statTask = Task.Run(async () => {
 			while (!stoppingToken.IsCancellationRequested) {
 				try {
-					if (loaded && watch.Elapsed <= TimeSpan.FromSeconds(5)) {
-						continue;
-					}
-
-					loaded = true;
+					await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
 					var cd = await CpuUtil.GetStats();
 					cd.Fps = _colorService.Counter.Rates;
 					_colorService.ControlService.Stats = cd;
 					await _hubContext.Clients.All.SendAsync("stats", cd, stoppingToken);
-					watch.Restart();
 				} catch (Exception e) {
 					if (!e.Message.Contains("canceled")) {
 						Log.Warning("Exception during init: " + e.Message + " at " + e.StackTrace);

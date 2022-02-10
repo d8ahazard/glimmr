@@ -48,7 +48,7 @@ public class VideoStream : ColorSource {
 		Log.Debug("Enabling video stream service...");
 		SendColors = true;
 		StreamSplitter.DoSend = true;
-		ExecuteAsync(ct).ConfigureAwait(false);
+		RunTask = ExecuteAsync(ct);
 		return Task.CompletedTask;
 	}
 

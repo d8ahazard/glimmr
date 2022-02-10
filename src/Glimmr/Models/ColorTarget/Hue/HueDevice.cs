@@ -37,7 +37,7 @@ public sealed class HueDevice : ColorTarget, IColorTarget, IDisposable {
 	private string? _user;
 
 
-	public HueDevice(HueData data, ColorService cs) : base(cs) {
+	public HueDevice(HueData data, ColorService? cs) : base(cs) {
 		Data = data;
 		_targets = new Dictionary<string, int>();
 		_ipAddress = Data.IpAddress;

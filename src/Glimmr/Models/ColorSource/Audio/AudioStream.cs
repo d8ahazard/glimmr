@@ -64,7 +64,7 @@ public class AudioStream : ColorSource {
 
 		Log.Debug("Starting audio stream service...");
 		Bass.ChannelPlay(_handle);
-		ExecuteAsync(ct).ConfigureAwait(false);
+		RunTask = ExecuteAsync(ct);
 		return Task.CompletedTask;
 	}
 

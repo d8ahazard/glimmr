@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -27,7 +26,6 @@ public class UdpStream : ColorSource {
 	private readonly CancellationTokenSource _cts;
 	private readonly CancellationToken _listenToken;
 	private readonly FrameSplitter _splitter;
-	private readonly Stopwatch _timeOutWatch;
 	private readonly UdpClient _uc;
 	private FrameBuilder? _builder;
 	private DeviceMode _devMode;
@@ -35,10 +33,10 @@ public class UdpStream : ColorSource {
 	private GlimmrData? _gd;
 	private string _hostName;
 	private SystemData _sd;
-	private bool _sending;
-
+	private CancellationTokenSource _cancelSource;
 	private bool _sourceActive;
 	private int _timeOut;
+	private Task? _cancelTask;
 
 	public UdpStream(ColorService cs) {
 		_cs = cs.ControlService;
@@ -49,6 +47,7 @@ public class UdpStream : ColorSource {
 		_uc = new UdpClient(21324) { Ttl = 5, Client = { ReceiveBufferSize = 2000 } };
 		_uc.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 		_uc.Client.Blocking = false;
+		_cancelSource = new CancellationTokenSource();
 		if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
 			_uc.DontFragment = true;
 		}
@@ -64,17 +63,15 @@ public class UdpStream : ColorSource {
 		}
 
 		RefreshSystem();
-		_timeOutWatch = new Stopwatch();
 		_cts = new CancellationTokenSource();
 		_listenToken = _cts.Token;
-		Task.Run(Listen, _listenToken);
 		Task.Run(Listen, _listenToken);
 	}
 
 	public override Task Start(CancellationToken ct) {
 		Log.Information("Starting UDP Stream service...");
 		_splitter.DoSend = true;
-		ExecuteAsync(ct).ConfigureAwait(false);
+		RunTask = ExecuteAsync(ct);
 		return Task.CompletedTask;
 	}
 
@@ -124,36 +121,25 @@ public class UdpStream : ColorSource {
 	private async Task Listen() {
 		while (!_listenToken.IsCancellationRequested) {
 			try {
-				await CheckTimeout();
 				var result = await _uc.ReceiveAsync(_listenToken);
-				if (!_sending) {
-					await ProcessFrame(result.Buffer).ConfigureAwait(false);
-				}
+				await ProcessFrame(result.Buffer).ConfigureAwait(false);
 			} catch (Exception) {
 				// Ignored
 			}
 		}
 	}
-
-	private Task CheckTimeout() {
-		if (!_timeOutWatch.IsRunning) {
-			_timeOutWatch.Start();
-		}
-
-		_sourceActive = _timeOutWatch.ElapsedMilliseconds <= _timeOut * 1000;
-		_splitter.DoSend = SourceActive;
-		return Task.CompletedTask;
-	}
-
+	
 	public override Task StopAsync(CancellationToken stoppingToken) {
 		_uc.Close();
 		_uc.Dispose();
+		_cancelTask?.Dispose();
 		return Task.CompletedTask;
 	}
 
 	private async Task ProcessFrame(IEnumerable<byte> data) {
-		_sending = true;
 		_splitter.DoSend = true;
+		_sourceActive = true;
+		
 		if (_devMode != Udp) {
 			_gd = new GlimmrData(DataUtil.GetSystemData());
 			var dims = new[] { _gd.LeftCount, _gd.RightCount, _gd.TopCount, _gd.BottomCount };
@@ -166,22 +152,31 @@ public class UdpStream : ColorSource {
 			var ledColors = cp.Colors;
 			if (_builder == null) {
 				Log.Warning("Null builder.");
-				_sending = false;
 				return;
 			}
-
+			
 			// Set our timeout value and restart watch every time a frame is received
 			_timeOut = cp.Duration;
-			_timeOutWatch.Restart();
-
+			_cancelSource.Cancel();
+			_cancelSource = new CancellationTokenSource();
+			_cancelTask = new Task(DisableSource, _cancelSource.Token);
 			var frame = _builder.Build(ledColors);
 			if (frame != null) {
 				await _splitter.Update(frame);
 				frame.Dispose();
 			}
-			_sending = false;
 		} catch (Exception e) {
 			Log.Warning("Exception parsing packet: " + e.Message);
+		}
+	}
+
+	private async void DisableSource() {
+		try {
+			await Task.Delay(TimeSpan.FromSeconds(_timeOut), _cancelSource.Token);
+			_sourceActive = false;
+			_splitter.DoSend = SourceActive;
+		} catch (Exception) {
+			//ignored
 		}
 	}
 }

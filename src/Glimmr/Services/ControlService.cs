@@ -35,7 +35,7 @@ namespace Glimmr.Services;
 
 public class ControlService : BackgroundService {
 	public bool SendPreview { get; set; }
-	public ColorService ColorService { get; set; }
+	public ColorService? ColorService { get; set; }
 	public HttpClient HttpSender { get; private set; } = null!;
 	public MulticastService MulticastService { get; private set; } = null!;
 	public ServiceDiscovery ServiceDiscovery { get; private set; } = null!;
@@ -45,11 +45,9 @@ public class ControlService : BackgroundService {
 	private static LoggingLevelSwitch? _levelSwitch;
 
 	private static ControlService _myCs = null!;
-	private readonly DiscoveryService _discoveryService;
-
+	
 	private readonly IHubContext<SocketServer> _hubContext;
-	private readonly StatService _statService;
-
+	
 	public AsyncEvent<DynamicEventArgs> DemoLedEvent = null!;
 	public AsyncEvent<DynamicEventArgs> DeviceReloadEvent = null!;
 	public AsyncEvent<DynamicEventArgs> DeviceRescanEvent = null!;
@@ -61,19 +59,16 @@ public class ControlService : BackgroundService {
 	public AsyncEvent<DynamicEventArgs> TestLedEvent = null!;
 
 	private Dictionary<string, dynamic> _agents = null!;
-	private Task _colorTask = null!;
-	private Task _discoveryTask = null!;
+	private readonly Task _colorTask = null!;
+	private readonly Task _discoveryTask = null!;
 	private SystemData _sd = null!;
-	private Task _statTask = null!;
+	private readonly Task _statTask = null!;
 
 	public ControlService(IHubContext<SocketServer> hubContext) {
 		_myCs = this;
 		_hubContext = hubContext;
 		_levelSwitch = Program.LogSwitch;
 		Initialize();
-		ColorService = new ColorService(this);
-		_discoveryService = new DiscoveryService(this);
-		_statService = new StatService(_hubContext, this);
 	}
 
 	public static ControlService GetInstance() {
@@ -136,7 +131,6 @@ public class ControlService : BackgroundService {
 			DataUtil.SetItem("PreviousMode", mode);
 		}
 
-		DataUtil.SetItem("DeviceMode", mode);
 		DataUtil.SetItem("AutoDisabled", autoDisabled);
 		ColorUtil.SetSystemData();
 		await SetModeEvent.InvokeAsync(this, new DynamicEventArgs(mode));
@@ -249,17 +243,8 @@ public class ControlService : BackgroundService {
 		await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized(this));
 	}
 
-	public async Task SendMode(DeviceMode mode) {
-		await _hubContext.Clients.All.SendAsync("mode", mode);
-	}
-
-
 	protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 		Log.Debug("Starting services...");
-		var sCts = new CancellationTokenSource();
-		_discoveryTask = _discoveryService.StartAsync(sCts.Token);
-		_statTask = _statService.StartAsync(sCts.Token);
-		_colorTask = ColorService.StartAsync(sCts.Token);
 		Log.Debug("All services started, running main loop...");
 		Task.Run(async () => {
 			while (!stoppingToken.IsCancellationRequested) {
@@ -413,13 +398,6 @@ v. {version}
 	}
 
 	public override async Task StopAsync(CancellationToken cancellationToken) {
-		Log.Debug("Stopping stat service...");
-		await _statService.StopAsync(CancellationToken.None);
-		Log.Debug("Stopping discovery service...");
-		await _discoveryService.StopAsync(CancellationToken.None);
-		Log.Debug("Stopping colorService...");
-		await ColorService.StopAsync(CancellationToken.None);
-		Log.Debug("All services have been stopped.");
 		Log.Information("Stopping control service...");
 		HttpSender.Dispose();
 		UdpClient.Dispose();

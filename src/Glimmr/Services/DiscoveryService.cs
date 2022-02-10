@@ -25,7 +25,8 @@ public class DiscoveryService : BackgroundService {
 	private CancellationToken _stopToken;
 	private bool _streaming;
 
-	public DiscoveryService(ControlService cs) {
+	public DiscoveryService() {
+		var cs = ControlService.GetInstance();
 		cs.DeviceRescanEvent += TriggerRefresh;
 		cs.SetModeEvent += UpdateMode;
 		cs.RefreshSystemEvent += RefreshSystem;

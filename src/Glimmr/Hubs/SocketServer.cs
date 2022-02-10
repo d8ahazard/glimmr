@@ -40,9 +40,9 @@ public class SocketServer : Hub {
 			Log.Debug("NO CONTROL SERVICE!");
 			return;
 		}
-
+		Log.Debug("HUB MODE: " + mode);
 		try {
-			await _cs.SetMode(mode);
+			await _cs.SetMode(mode).ConfigureAwait(false);
 		} catch (Exception e) {
 			Log.Warning("Exception caught on mode change: " + e.Message + " at " + e.StackTrace);
 		}

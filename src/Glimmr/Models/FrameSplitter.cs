@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
@@ -31,7 +30,6 @@ public class FrameSplitter {
 
 	// The width of the border to crop from for LEDs
 	private readonly float _borderWidth;
-	private readonly Stopwatch _frameWatch;
 	private readonly List<VectorOfPoint> _targets;
 	private readonly bool _useCrop;
 	private bool _allBlack;
@@ -49,6 +47,7 @@ public class FrameSplitter {
 	private int _cropBlackLevel;
 	private int _cropCount;
 	private int _cropDelay;
+	private int _frameCount;
 
 	// Loaded settings
 	private bool _cropLetter;
@@ -88,6 +87,7 @@ public class FrameSplitter {
 	private int _srcArea;
 	private int _topCount;
 	private bool _useCenter;
+	private Color[] _empty;
 
 	// Where we save the potential new value between checks
 	private int _vCropCheck;
@@ -96,6 +96,7 @@ public class FrameSplitter {
 	private PointF[] _vectors;
 	private int _vSectors;
 	private bool _warned;
+	private Color[] _emptySectors;
 
 
 	public FrameSplitter(ColorService cs, bool crop = false) {
@@ -106,9 +107,9 @@ public class FrameSplitter {
 		_colorsSectors = Array.Empty<Color>();
 		_colorsLedIn = _colorsLed;
 		_colorsSectorsIn = _colorsSectors;
-		_frameWatch = new Stopwatch();
-		_frameWatch.Start();
 		ColorService = cs;
+		_empty = Array.Empty<Color>();
+		_emptySectors = _empty;
 		var sd = DataUtil.GetSystemData();
 		_cropDelay = sd.CropDelay;
 		cs.ControlService.RefreshSystemEvent += RefreshSystem;
@@ -122,6 +123,7 @@ public class FrameSplitter {
 		// Get sectors
 		_fullCoords = DrawGrid();
 		_fullSectors = DrawSectors();
+		
 	}
 
 
@@ -156,7 +158,10 @@ public class FrameSplitter {
 
 		_useCenter = sd.UseCenter;
 		_ledCount = sd.LedCount;
+		_empty = ColorUtil.EmptyColors(_ledCount);
+
 		_sectorCount = sd.SectorCount;
+		_emptySectors = ColorUtil.EmptyColors(_sectorCount);
 
 		if (_ledCount == 0) {
 			_ledCount = 200;
@@ -194,16 +199,6 @@ public class FrameSplitter {
 			new Point(0, 0), new Point(ScaleWidth, 0), new Point(ScaleWidth, ScaleHeight),
 			new Point(0, ScaleHeight)
 		};
-
-		// Start our stopwatches for cropping if they were previously disabled
-		if (_cropLetter || _cropPillar && !_frameWatch.IsRunning) {
-			_frameWatch.Restart();
-		}
-
-		// If not cropping, then we don't need a stopwatch
-		if (!_cropLetter && !_cropPillar) {
-			_frameWatch.Stop();
-		}
 
 		_fullCoords = DrawGrid();
 		_fullSectors = DrawSectors();
@@ -336,23 +331,24 @@ public class FrameSplitter {
 			return;
 		}
 
+		_frameCount++;
 		// Check sectors once per second
-		if (_frameWatch.Elapsed >= TimeSpan.FromSeconds(1)) {
+		if (_frameCount >= 30) {
 			await CheckCrop(clone).ConfigureAwait(false);
-			_frameWatch.Restart();
+			_frameCount = 0;
 		}
-
+		
 		SourceActive = !_allBlack;
 
-		var ledColors = ColorUtil.EmptyColors(_ledCount);
+		var ledColors = _empty;
 		for (var i = 0; i < _fullCoords.Length; i++) {
 			var sub = new Mat(clone, _fullCoords[i]);
 			ledColors[i] = GetAverage(sub);
 			sub.Dispose();
 		}
-		
 
-		var sectorColors = ColorUtil.EmptyColors(_sectorCount);
+
+		var sectorColors = _emptySectors;
 		for (var i = 0; i < _fullSectors.Length; i++) {
 			var sub = new Mat(clone, _fullSectors[i]);
 			
@@ -368,7 +364,7 @@ public class FrameSplitter {
 		if (DoSend) {
 			ColorService.LedColors = ledColors;
 			ColorService.SectorColors = sectorColors;
-			ColorService.ColorsUpdated = true;
+			await ColorService.SendColors(ledColors, sectorColors);
 		}
 
 		if (_doSave) {
