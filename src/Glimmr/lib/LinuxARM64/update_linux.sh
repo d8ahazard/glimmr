@@ -42,7 +42,7 @@ PUBPATH="linux-arm64"
 
 if [ -f "/usr/bin/raspi-config" ] 
   then
-    PUBPROFILE="LinuxARM"
+    PUBPROFILE="LinuxARM64"
     PUBPATH="linux-arm64"
 fi
 

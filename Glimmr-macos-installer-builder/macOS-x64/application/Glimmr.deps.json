@@ -32,7 +32,7 @@
   },
   "targets": {
     ".NETCoreApp,Version=v6.0": {
-      "Glimmr/1.2.2-master-0001059": {
+      "Glimmr/1.2.2-master-0001061": {
         "dependencies": {
           "AdalightNet": "1.0.8",
           "AutoMapper": "11.0.0",
@@ -3700,7 +3700,7 @@
       }
     },
     ".NETCoreApp,Version=v6.0/osx-x64": {
-      "Glimmr/1.2.2-master-0001059": {
+      "Glimmr/1.2.2-master-0001061": {
         "dependencies": {
           "AdalightNet": "1.0.8",
           "AutoMapper": "11.0.0",
@@ -7502,7 +7502,7 @@
     }
   },
   "libraries": {
-    "Glimmr/1.2.2-master-0001059": {
+    "Glimmr/1.2.2-master-0001061": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
