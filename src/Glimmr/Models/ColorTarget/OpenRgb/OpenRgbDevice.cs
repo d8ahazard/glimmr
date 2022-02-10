@@ -15,17 +15,15 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.OpenRgb;
 
 public class OpenRgbDevice : ColorTarget, IColorTarget {
-	private readonly ColorService? _colorService;
 	private OpenRgbAgent? _client;
 	private OpenRgbData _data;
 
-	public OpenRgbDevice(OpenRgbData data, ColorService? cs) : base(cs) {
+	public OpenRgbDevice(OpenRgbData data, ColorService cs) : base(cs) {
 		Id = data.Id;
 		_data = data;
-		_colorService = cs;
 		_client = cs.ControlService.GetAgent("OpenRgbAgent");
 		LoadData();
-		_colorService.ColorSendEventAsync += SetColors;
+		ColorService.ColorSendEventAsync += SetColors;
 	}
 
 	public bool Streaming { get; set; }
@@ -40,7 +38,7 @@ public class OpenRgbDevice : ColorTarget, IColorTarget {
 	}
 
 	public Task StartStream(CancellationToken ct) {
-		_client ??= _colorService.ControlService.GetAgent("OpenRgbAgent");
+		_client ??= ColorService.ControlService.GetAgent("OpenRgbAgent");
 		if (_client == null || !Enable) {
 			if (_client == null) {
 				Log.Debug("Null client, returning.");
@@ -152,7 +150,7 @@ public class OpenRgbDevice : ColorTarget, IColorTarget {
 
 		_client?.Update(_data.DeviceId, converted.ToArray());
 		await Task.FromResult(true);
-		_colorService.Counter.Tick(Id);
+		ColorService.Counter.Tick(Id);
 	}
 
 	private void LoadData() {

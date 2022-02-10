@@ -16,7 +16,7 @@ public class LedDevice : ColorTarget, IColorTarget {
 	private readonly LedAgent? _agent;
 	private LedData _data;
 
-	public LedDevice(LedData ld, ColorService? cs) : base(cs) {
+	public LedDevice(LedData ld, ColorService cs) : base(cs) {
 		_data = ld;
 		Id = _data.Id;
 

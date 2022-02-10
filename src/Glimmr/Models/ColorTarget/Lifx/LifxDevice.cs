@@ -28,7 +28,7 @@ public class LifxDevice : ColorTarget, IColorTarget {
 	private int _multiZoneCount;
 	private int _targetSector;
 
-	public LifxDevice(LifxData d, ColorService? cs) : base(cs) {
+	public LifxDevice(LifxData d, ColorService cs) : base(cs) {
 		_data = d ?? throw new ArgumentException("Invalid Data");
 		Id = _data.Id;
 		_brightness = _data.Brightness;

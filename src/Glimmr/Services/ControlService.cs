@@ -35,7 +35,7 @@ namespace Glimmr.Services;
 
 public class ControlService : BackgroundService {
 	public bool SendPreview { get; set; }
-	public ColorService? ColorService { get; set; }
+	public ColorService ColorService { get; set; } = null!;
 	public HttpClient HttpSender { get; private set; } = null!;
 	public MulticastService MulticastService { get; private set; } = null!;
 	public ServiceDiscovery ServiceDiscovery { get; private set; } = null!;

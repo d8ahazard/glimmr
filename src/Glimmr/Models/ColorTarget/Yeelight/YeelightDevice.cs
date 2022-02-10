@@ -17,8 +17,7 @@ namespace Glimmr.Models.ColorTarget.Yeelight;
 
 public class YeelightDevice : ColorTarget, IColorTarget {
 	private string IpAddress { get; set; }
-	private readonly ColorService? _colorService;
-
+	
 	private readonly Device _yeeDevice;
 
 	private float _brightness;
@@ -30,19 +29,18 @@ public class YeelightDevice : ColorTarget, IColorTarget {
 	private int _targetSector;
 
 
-	public YeelightDevice(YeelightData yd, ColorService? cs) : base(cs) {
+	public YeelightDevice(YeelightData yd, ColorService cs) : base(cs) {
 		_data = yd;
 		Id = _data.Id;
 		IpAddress = _data.IpAddress;
 		Enable = _data.Enable;
 		LoadData();
 		cs.ColorSendEventAsync += SetColors;
-		_colorService = cs;
 
 		_data.LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 		DataUtil.AddDeviceAsync(_data, false).ConfigureAwait(false);
 		_yeeDevice = new Device(IpAddress);
-		_colorService.ColorSendEventAsync += SetColors;
+		ColorService.ColorSendEventAsync += SetColors;
 	}
 
 	public bool Streaming { get; set; }
@@ -141,7 +139,7 @@ public class YeelightDevice : ColorTarget, IColorTarget {
 		}
 
 		await _yeeDevice.SetRGBColor(col.R, col.G, col.B);
-		_colorService.Counter.Tick(Id);
+		ColorService.Counter.Tick(Id);
 	}
 
 	private void LoadData() {

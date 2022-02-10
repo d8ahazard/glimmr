@@ -32,7 +32,7 @@ public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
 	/// </summary>
 	/// <param name="n"></param>
 	/// <param name="cs"></param>
-	public NanoleafDevice(NanoleafData n, ColorService? cs) : base(cs) {
+	public NanoleafDevice(NanoleafData n, ColorService cs) : base(cs) {
 		_brightness = -1;
 		_targets = new Dictionary<int, int>();
 		_data = n;
