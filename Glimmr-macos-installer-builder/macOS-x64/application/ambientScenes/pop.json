@@ -1,0 +1,15 @@
+﻿{
+  "Colors": [
+    "#ff01fb",
+    "#b847ff",
+    "#827dff",
+    "#3db8f6",
+    "#11e5f6"
+  ],
+  "AnimationTime": 10,
+  "EasingTime": 2,
+  "Mode": "Random",
+  "Easing": "Blend",
+  "Name": "Pop",
+  "Id": 7
+}

@@ -1,0 +1,6 @@
+﻿{
+  "configProperties": {
+    "System.Globalization.Invariant": false,
+    "System.Drawing.EnableUnixSupport": true
+  }
+}

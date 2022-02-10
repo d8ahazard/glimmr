@@ -6,18 +6,18 @@ using Glimmr.Services;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.DreamScreen {
-	public class DreamAgent : IColorTargetAgent {
-		private DreamScreenClient? _du;
+namespace Glimmr.Models.ColorTarget.DreamScreen;
 
-		public dynamic? CreateAgent(ControlService cs) {
-			_du = new DreamScreenClient(cs.UdpClient);
-			return _du;
-		}
+public class DreamAgent : IColorTargetAgent {
+	private DreamScreenClient? _du;
 
-		public void Dispose() {
-			_du?.Dispose();
-			GC.SuppressFinalize(this);
-		}
+	public dynamic? CreateAgent(ControlService cs) {
+		_du = new DreamScreenClient(cs.UdpClient);
+		return _du;
+	}
+
+	public void Dispose() {
+		_du?.Dispose();
+		GC.SuppressFinalize(this);
 	}
 }

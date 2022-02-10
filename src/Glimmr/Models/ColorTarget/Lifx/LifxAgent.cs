@@ -6,18 +6,18 @@ using LifxNetPlus;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.Lifx {
-	public class LifxAgent : IColorTargetAgent {
-		private LifxClient? _lc;
+namespace Glimmr.Models.ColorTarget.Lifx;
 
-		public dynamic? CreateAgent(ControlService cs) {
-			_lc = LifxClient.CreateAsync().Result;
-			return _lc;
-		}
+public class LifxAgent : IColorTargetAgent {
+	private LifxClient? _lc;
 
-		public void Dispose() {
-			_lc?.Dispose();
-			GC.SuppressFinalize(this);
-		}
+	public dynamic? CreateAgent(ControlService cs) {
+		_lc = LifxClient.CreateAsync().Result;
+		return _lc;
+	}
+
+	public void Dispose() {
+		_lc?.Dispose();
+		GC.SuppressFinalize(this);
 	}
 }

@@ -1,0 +1,17 @@
+﻿{
+  "Colors": [
+    "#f5dd02",
+    "#00fcff",
+    "#FFFFFF",
+    "#FF0000",
+    "#00FF00",
+    "#0000FF",
+    "#a500c3"
+  ],
+  "AnimationTime": 10,
+  "EasingTime": 10,
+  "Mode": "RandomAll",
+  "Easing": "Blend",
+  "Name": "Random",
+  "Id": 0
+}

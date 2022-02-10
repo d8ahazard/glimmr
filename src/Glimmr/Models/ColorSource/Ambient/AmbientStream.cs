@@ -15,7 +15,6 @@ using Serilog;
 
 namespace Glimmr.Models.ColorSource.Ambient {
 	public class AmbientStream : ColorSource {
-		public override bool SourceActive => _splitter.SourceActive;
 		private const int SectorCount = 116;
 		private readonly Random _random;
 		private readonly FrameSplitter _splitter;
@@ -32,12 +31,12 @@ namespace Glimmr.Models.ColorSource.Ambient {
 		private AnimationMode _mode;
 		private Color[] _nextColors;
 		private Color[] _sceneColors;
-		private List<AmbientScene> _scenes;
-
-		public AmbientStream(ColorService colorService) {
-			_ambientColor = "#FFFFFF";
-			_currentColors = Array.Empty<Color>();
-			_nextColors = Array.Empty<Color>();
+	private List<AmbientScene> _scenes;
+	
+	public AmbientStream(ColorService colorService) {
+		_ambientColor = "#FFFFFF";
+		_currentColors = Array.Empty<Color>();
+		_nextColors = Array.Empty<Color>();
 			_sceneColors = Array.Empty<Color>();
 			_watch = new Stopwatch();
 			_random = new Random();
@@ -47,53 +46,59 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			colorService.ControlService.RefreshSystemEvent += RefreshSystem;
 		}
 
+		public override bool SourceActive => _splitter.SourceActive;
+
 
 		public override Task Start(CancellationToken ct) {
 			Log.Debug("Starting ambient stream...");
-			return ExecuteAsync(ct);
+			RunTask = ExecuteAsync(ct);
+			Log.Debug("Started...");
+			return Task.CompletedTask;
 		}
+
+		
 
 		public override void RefreshSystem() {
 			var sd = DataUtil.GetSystemData();
 			_ambientScene = sd.AmbientScene;
 			_ambientColor = sd.AmbientColor;
-			var dims = new[] { 20, 20, 40, 40 };
-			_builder = new FrameBuilder(dims, true);
-			_loader ??= new JsonLoader("ambientScenes");
-			_scenes = _loader.LoadFiles<AmbientScene>();
-			var scene = new AmbientScene();
-			foreach (var s in _scenes.Where(s => s.Id == _ambientScene)) {
-				scene = s;
+		var dims = new[] { 20, 20, 40, 40 };
+		_builder = new FrameBuilder(dims, true);
+		_loader ??= new JsonLoader("ambientScenes");
+		_scenes = _loader.LoadFiles<AmbientScene>();
+		var scene = new AmbientScene();
+		foreach (var s in _scenes.Where(s => s.Id == _ambientScene)) {
+			scene = s;
+		}
+
+		if (_ambientScene == -1) {
+			scene.Colors = new[] { "#" + _ambientColor };
+		}
+
+
+		var colorStrings = scene.Colors;
+		if (colorStrings != null) {
+			_sceneColors = new Color[colorStrings.Length];
+			for (var i = 0; i < _sceneColors.Length; i++) {
+				_sceneColors[i] = ColorTranslator.FromHtml(colorStrings[i]);
 			}
+		} else {
+			Log.Warning("Color strings are null.");
+		}
 
-			if (_ambientScene == -1) {
-				scene.Colors = new[] { "#" + _ambientColor };
-			}
+		_animationTime = scene.AnimationTime * 1000f;
+		_easingTime = scene.EasingTime * 1000f;
+		if (scene.Easing != null) {
+			_easingMode = Enum.Parse<EasingMode>(scene.Easing);
+		}
 
+		if (scene.Mode != null) {
+			_mode = Enum.Parse<AnimationMode>(scene.Mode);
+		} else {
+			Log.Warning("Unable to parse scene mode: ");
+		}
 
-			var colorStrings = scene.Colors;
-			if (colorStrings != null) {
-				_sceneColors = new Color[colorStrings.Length];
-				for (var i = 0; i < _sceneColors.Length; i++) {
-					_sceneColors[i] = ColorTranslator.FromHtml(colorStrings[i]);
-				}
-			} else {
-				Log.Warning("Color strings are null.");
-			}
-
-			_animationTime = scene.AnimationTime * 1000f;
-			_easingTime = scene.EasingTime * 1000f;
-			if (scene.Easing != null) {
-				_easingMode = Enum.Parse<EasingMode>(scene.Easing);
-			}
-
-			if (scene.Mode != null) {
-				_mode = Enum.Parse<AnimationMode>(scene.Mode);
-			} else {
-				Log.Warning("Unable to parse scene mode: ");
-			}
-
-			LoadScene();
+		LoadScene();
 		}
 
 
@@ -105,10 +110,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 				watch.Start();
 				// Load this one for fading
 				while (!ct.IsCancellationRequested) {
-					if (watch.ElapsedMilliseconds <= 6) {
-						continue;
-					}
-
+					if (watch.ElapsedMilliseconds <= 6) continue;
 					var elapsed = _watch.ElapsedMilliseconds;
 					var diff = _animationTime - elapsed;
 					var sectors = new Color[SectorCount];
@@ -152,7 +154,10 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
 						var frame = _builder.Build(sectors);
 						await _splitter.Update(frame).ConfigureAwait(false);
-						frame.Dispose();
+						frame?.Dispose();
+						
+						
+						
 					} catch (Exception e) {
 						Log.Warning("EX: " + e.Message);
 					}
@@ -168,131 +173,131 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
 
 		private static Color BlendColor(Color target, Color dest, double percent) {
-			var r1 = (int)((target.R - dest.R) * percent) + dest.R;
-			var g1 = (int)((target.G - dest.G) * percent) + dest.G;
-			var b1 = (int)((target.B - dest.B) * percent) + dest.B;
-			r1 = r1 > 255 ? 255 : r1 < 0 ? 0 : r1;
-			g1 = g1 > 255 ? 255 : g1 < 0 ? 0 : g1;
-			b1 = b1 > 255 ? 255 : b1 < 0 ? 0 : b1;
-			return Color.FromArgb(255, r1, g1, b1);
+			var r1 = (int) ((target.R - dest.R) * percent) + dest.R;
+			var g1 = (int) ((target.G - dest.G) * percent) + dest.G;
+		var b1 = (int)((target.B - dest.B) * percent) + dest.B;
+		r1 = r1 > 255 ? 255 : r1 < 0 ? 0 : r1;
+		g1 = g1 > 255 ? 255 : g1 < 0 ? 0 : g1;
+		b1 = b1 > 255 ? 255 : b1 < 0 ? 0 : b1;
+		return Color.FromArgb(255, r1, g1, b1);
+	}
+
+	private static Color FadeOut(Color target, double percent) {
+		return BlendColor(target, Color.FromArgb(255, 0, 0, 0), percent);
+	}
+
+	private static Color FadeIn(Color target, double percent) {
+		return BlendColor(Color.FromArgb(255, 0, 0, 0), target, percent);
+	}
+
+	private static Color FadeInOut(Color target, double percent) {
+		if (percent <= .5) {
+			return FadeOut(target, percent * 2);
 		}
 
-		private static Color FadeOut(Color target, double percent) {
-			return BlendColor(target, Color.FromArgb(255, 0, 0, 0), percent);
+		var pct = (percent - .5) * 2;
+		return FadeIn(target, pct);
+	}
+
+
+	private Color[] RefreshColors(IReadOnlyList<Color> input) {
+		var output = new Color[SectorCount];
+		if (input.Count == 0) {
+			return ColorUtil.EmptyColors(SectorCount);
 		}
 
-		private static Color FadeIn(Color target, double percent) {
-			return BlendColor(Color.FromArgb(255, 0, 0, 0), target, percent);
+		var max = input.Count - 1;
+		var rand = _random.Next(0, max);
+		switch (_mode) {
+			case AnimationMode.Linear:
+				var nu = CycleInt(_colorIndex, max);
+				_colorIndex = nu;
+				for (var i = 0; i < SectorCount; i++) {
+					output[i] = input[nu];
+					nu = CycleInt(nu, max);
+				}
+
+				break;
+			case AnimationMode.Reverse:
+				for (var i = 0; i < SectorCount; i++) {
+					output[i] = input[_colorIndex];
+					_colorIndex = CycleInt(_colorIndex, max, true);
+				}
+
+				break;
+			case AnimationMode.Random:
+				for (var i = 0; i < SectorCount; i++) {
+					output[i] = input[rand];
+					rand = _random.Next(0, max);
+				}
+
+				break;
+			case AnimationMode.RandomAll:
+				var col = input[rand];
+				for (var i = 0; i < SectorCount; i++) {
+					output[i] = col;
+				}
+
+				break;
+			case AnimationMode.LinearAll:
+				for (var i = 0; i < SectorCount; i++) {
+					output[i] = input[_colorIndex];
+				}
+
+				_colorIndex = CycleInt(_colorIndex, max);
+				break;
+			default:
+				Log.Warning("Unknown animation mode: " + _mode);
+				break;
 		}
 
-		private static Color FadeInOut(Color target, double percent) {
-			if (percent <= .5) {
-				return FadeOut(target, percent * 2);
-			}
+		return output;
+	}
 
-			var pct = (percent - .5) * 2;
-			return FadeIn(target, pct);
+	private static int CycleInt(int input, int max, bool reverse = false) {
+		var output = input;
+		if (reverse) {
+			output--;
+		} else {
+			output++;
 		}
 
-
-		private Color[] RefreshColors(IReadOnlyList<Color> input) {
-			var output = new Color[SectorCount];
-			if (input.Count == 0) {
-				return ColorUtil.EmptyColors(SectorCount);
-			}
-
-			var max = input.Count - 1;
-			var rand = _random.Next(0, max);
-			switch (_mode) {
-				case AnimationMode.Linear:
-					var nu = CycleInt(_colorIndex, max);
-					_colorIndex = nu;
-					for (var i = 0; i < SectorCount; i++) {
-						output[i] = input[nu];
-						nu = CycleInt(nu, max);
-					}
-
-					break;
-				case AnimationMode.Reverse:
-					for (var i = 0; i < SectorCount; i++) {
-						output[i] = input[_colorIndex];
-						_colorIndex = CycleInt(_colorIndex, max, true);
-					}
-
-					break;
-				case AnimationMode.Random:
-					for (var i = 0; i < SectorCount; i++) {
-						output[i] = input[rand];
-						rand = _random.Next(0, max);
-					}
-
-					break;
-				case AnimationMode.RandomAll:
-					var col = input[rand];
-					for (var i = 0; i < SectorCount; i++) {
-						output[i] = col;
-					}
-
-					break;
-				case AnimationMode.LinearAll:
-					for (var i = 0; i < SectorCount; i++) {
-						output[i] = input[_colorIndex];
-					}
-
-					_colorIndex = CycleInt(_colorIndex, max);
-					break;
-				default:
-					Log.Warning("Unknown animation mode: " + _mode);
-					break;
-			}
-
-			return output;
+		if (output > max) {
+			output = 0;
 		}
 
-		private static int CycleInt(int input, int max, bool reverse = false) {
-			var output = input;
-			if (reverse) {
-				output--;
-			} else {
-				output++;
-			}
-
-			if (output > max) {
-				output = 0;
-			}
-
-			if (output < 0) {
-				output = max;
-			}
-
-			return output;
+		if (output < 0) {
+			output = max;
 		}
 
-		private void LoadScene() {
-			_colorIndex = 0;
-			_watch.Restart();
-			// Load two arrays of colors, which we will use for the actual fade values
-			_currentColors = RefreshColors(_sceneColors);
-			_nextColors = RefreshColors(_sceneColors);
-		}
+		return output;
+	}
+
+	private void LoadScene() {
+		_colorIndex = 0;
+		_watch.Restart();
+		// Load two arrays of colors, which we will use for the actual fade values
+		_currentColors = RefreshColors(_sceneColors);
+		_nextColors = RefreshColors(_sceneColors);
+	}
 
 
-		/// <summary>
-		///     Linear - Each color from the list of colors is assigned to a sector, and the order is incremented by 1 each update
-		///     Reverse - Same as linear, but the order is decremented each update
-		///     Random - A random color will be assigned to each sector every update
-		///     RandomAll - One random color will be selected and applied to all sectors each update
-		///     LinearAll - One color will be selected and applied to all tiles, with the color incremented each update
-		/// </summary>
-		private enum AnimationMode {
-			Linear = 0,
-			Reverse = 1,
-			Random = 2,
-			RandomAll = 3,
-			LinearAll = 4
-		}
+	/// <summary>
+	///     Linear - Each color from the list of colors is assigned to a sector, and the order is incremented by 1 each update
+	///     Reverse - Same as linear, but the order is decremented each update
+	///     Random - A random color will be assigned to each sector every update
+	///     RandomAll - One random color will be selected and applied to all sectors each update
+	///     LinearAll - One color will be selected and applied to all tiles, with the color incremented each update
+	/// </summary>
+	private enum AnimationMode {
+		Linear = 0,
+		Reverse = 1,
+		Random = 2,
+		RandomAll = 3,
+		LinearAll = 4
+	}
 
-		private enum EasingMode {
+	private enum EasingMode {
 			Blend = 0,
 			FadeIn = 1,
 			FadeOut = 2,

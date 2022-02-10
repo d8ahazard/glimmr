@@ -1,21 +1,23 @@
 ﻿#region
 
+using System;
 using Glimmr.Services;
 using Serilog.Core;
 using Serilog.Events;
 
 #endregion
 
-namespace Glimmr.Hubs {
-	public class SocketSink : ILogEventSink {
-		private ControlService? _cs;
+namespace Glimmr.Hubs;
 
-		public void Emit(LogEvent logEvent) {
-			if (_cs == null) {
-				_cs = ControlService.GetInstance();
-			}
+public class SocketSink : ILogEventSink {
+	private ControlService? _cs;
 
-			_cs?.SendLogLine(logEvent).ConfigureAwait(false);
+	public void Emit(LogEvent logEvent) {
+		_cs ??= ControlService.GetInstance();
+		try {
+			_cs.SendLogLine(logEvent).ConfigureAwait(false);
+		} catch (Exception) {
+			// Ignored
 		}
 	}
 }

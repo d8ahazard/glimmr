@@ -13,128 +13,128 @@ using Serilog;
 
 #endregion
 
-namespace Glimmr.Models.ColorTarget.DreamScreen {
-	public class DreamScreenDevice : ColorTarget, IColorTarget {
-		private readonly DreamScreenClient? _client;
-		private readonly DreamDevice _dev;
-		private DreamScreenData _data;
-		private string _deviceTag;
-		private string _ipAddress;
+namespace Glimmr.Models.ColorTarget.DreamScreen;
 
-		public DreamScreenDevice(DreamScreenData data, ColorService cs) : base(cs) {
-			_data = data;
-			Id = data.Id;
-			var client = cs.ControlService.GetAgent("DreamAgent");
-			if (client != null) {
-				_client = client;
-			}
+public class DreamScreenDevice : ColorTarget, IColorTarget {
+	private readonly DreamScreenClient? _client;
+	private readonly DreamDevice _dev;
+	private DreamScreenData _data;
+	private string _deviceTag;
+	private string _ipAddress;
 
-			_ipAddress = _data.IpAddress;
-			_deviceTag = _data.DeviceTag;
-			LoadData();
-			cs.ColorSendEventAsync += SetColors;
-			var myIp = IPAddress.Parse(_ipAddress);
-			_dev = new DreamDevice(_deviceTag) { IpAddress = myIp, DeviceGroup = data.GroupNumber };
+	public DreamScreenDevice(DreamScreenData data, ColorService cs) : base(cs) {
+		_data = data;
+		Id = data.Id;
+		var client = cs.ControlService.GetAgent("DreamAgent");
+		if (client != null) {
+			_client = client;
 		}
 
-		public bool Streaming { get; set; }
-		public bool Testing { get; set; }
-		public string Id { get; private set; }
-		public bool Enable { get; set; }
+		_ipAddress = _data.IpAddress;
+		_deviceTag = _data.DeviceTag;
+		LoadData();
+		cs.ColorSendEventAsync += SetColors;
+		var myIp = IPAddress.Parse(_ipAddress);
+		_dev = new DreamDevice(_deviceTag) { IpAddress = myIp, DeviceGroup = data.GroupNumber };
+	}
 
-		public async Task StartStream(CancellationToken ct) {
-			if (!Enable) {
-				return;
-			}
+	public bool Streaming { get; set; }
+	public bool Testing { get; set; }
+	public string Id { get; private set; }
+	public bool Enable { get; set; }
 
-			if (_client == null) {
-				return;
-			}
-
-			Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
-			ColorService.StartCounter++;
-			if (_data.DeviceTag.Contains("DreamScreen")) {
-				Log.Warning("Error, you can't send colors to a dreamscreen.");
-				Enable = false;
-				return;
-			}
-
-			await _client.SetMode(_dev, DeviceMode.Video);
-			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
-			ColorService.StartCounter--;
+	public async Task StartStream(CancellationToken ct) {
+		if (!Enable) {
+			return;
 		}
 
-		public async Task StopStream() {
-			if (!Streaming) {
-				return;
-			}
-
-			if (_client == null) {
-				return;
-			}
-
-			Log.Debug($"{_data.Tag}::Stopping stream... {_data.Id}.");
-			ColorService.StopCounter++;
-			await _client.SetMode(_dev, DeviceMode.Off);
-			Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
-			ColorService.StopCounter--;
+		if (_client == null) {
+			return;
 		}
 
-		public Task FlashColor(Color color) {
-			return Task.CompletedTask;
+		Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
+		ColorService.StartCounter++;
+		if (_data.DeviceTag.Contains("DreamScreen")) {
+			Log.Warning("Error, you can't send colors to a dreamscreen.");
+			Enable = false;
+			return;
 		}
 
-		public Task ReloadData() {
-			var dev = DataUtil.GetDevice(Id);
-			if (dev != null) {
-				_data = dev;
-			}
+		await _client.SetMode(_dev, DeviceMode.Video);
+		Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
+		ColorService.StartCounter--;
+	}
 
-			return Task.CompletedTask;
+	public async Task StopStream() {
+		if (!Streaming) {
+			return;
 		}
 
-		public void Dispose() {
+		if (_client == null) {
+			return;
 		}
 
-		IColorTargetData IColorTarget.Data {
-			get => _data;
-			set => _data = (DreamScreenData)value;
+		Log.Debug($"{_data.Tag}::Stopping stream... {_data.Id}.");
+		ColorService.StopCounter++;
+		await _client.SetMode(_dev, DeviceMode.Off);
+		Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
+		ColorService.StopCounter--;
+	}
+
+	public Task FlashColor(Color color) {
+		return Task.CompletedTask;
+	}
+
+	public Task ReloadData() {
+		var dev = DataUtil.GetDevice(Id);
+		if (dev != null) {
+			_data = dev;
 		}
 
-		private Task SetColors(object sender, ColorSendEventArgs args) {
-			return SetColor(args.SectorColors, args.Force);
+		return Task.CompletedTask;
+	}
+
+	public void Dispose() {
+	}
+
+	IColorTargetData IColorTarget.Data {
+		get => _data;
+		set => _data = (DreamScreenData)value;
+	}
+
+	private Task SetColors(object sender, ColorSendEventArgs args) {
+		return SetColor(args.SectorColors, args.Force);
+	}
+
+
+	private async Task SetColor(Color[] sectors, bool force = false) {
+		if (!_data.Enable || Testing && !force) {
+			return;
 		}
 
-
-		private async Task SetColor(Color[] sectors, bool force = false) {
-			if (!_data.Enable || Testing && !force) {
-				return;
-			}
-
-			if (_client == null) {
-				return;
-			}
-
-			if (sectors.Length != 12) {
-				sectors = ColorUtil.TruncateColors(sectors);
-			}
-
-			await _client.SendColors(_dev, sectors);
+		if (_client == null) {
+			return;
 		}
 
-		private void LoadData() {
-			Enable = _data.Enable;
-			Id = _data.Id;
-			_ipAddress = _data.IpAddress;
-			Enable = _data.Enable;
-			_deviceTag = _data.DeviceTag;
-			if (_deviceTag.Contains("DreamScreen") && Enable) {
-				Enable = false;
-			}
+		if (sectors.Length != 12) {
+			sectors = ColorUtil.TruncateColors(sectors);
+		}
 
-			if (string.IsNullOrEmpty(_ipAddress)) {
-				_ipAddress = Id;
-			}
+		await _client.SendColors(_dev, sectors);
+	}
+
+	private void LoadData() {
+		Enable = _data.Enable;
+		Id = _data.Id;
+		_ipAddress = _data.IpAddress;
+		Enable = _data.Enable;
+		_deviceTag = _data.DeviceTag;
+		if (_deviceTag.Contains("DreamScreen") && Enable) {
+			Enable = false;
+		}
+
+		if (string.IsNullOrEmpty(_ipAddress)) {
+			_ipAddress = Id;
 		}
 	}
 }

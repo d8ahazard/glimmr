@@ -60,8 +60,8 @@
 <div class="bg-light hide container-fluid pb-2 pt-2" id="audioNav">
     <div class="row form-inline sceneRow">
         <div class="col-3 form-group">
-            <label for="AudioMap" class="form-label mr-2">Scene</label>
-            <select class="form-control" data-property="audioMap" data-object="SystemData" id="AudioMap">
+            <label for="audioScene" class="form-label mr-2">Scene</label>
+            <select class="form-control" data-property="audioScene" data-object="SystemData" id="audioScene">
             </select>
         </div>
         <div class="col-3 form-group">
@@ -352,6 +352,13 @@
 
 <div class="col-12 titleCol pb-1">Logging</div>
 <div class="col-12 col-md-6 col-xl-3 form-group">
+    <select name="LogLevel" id="LogLevel" data-object="SystemData" data-property="logLevel" class="systemSetting form-control">
+        <option value="0">Debug</option>
+        <option value="1">Information</option>
+    </select>
+</div>
+
+<div class="col-12 col-md-6 col-xl-3 form-group">
     <div class="btn btn-primary" id="fetchLog">Download Log</div>
     <div class="btn btn-secondary" id="showLog" onclick="showLog()">Log Viewer</div>
 </div>
@@ -635,7 +642,7 @@
             </div>
             <!-- CENTER MODE! -->
             <div class="col-12 col-sd-6 col-md-4 custom-control custom-switch pt-2 center">
-                <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="yseCenter"/>
+                <input type="checkbox" class="custom-control-input" data-object="SystemData" data-property="useCenter"/>
                 <label class="custom-control-label">Include Center</label>
             </div>
 

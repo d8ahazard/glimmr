@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+
+<ContentView xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="GlimmrControl.Core.MenuBar">
+    <ContentView.Resources>
+        <ResourceDictionary>
+            <!--Button image style-->
+        </ResourceDictionary>
+    </ContentView.Resources>
+
+    <ContentView.Content>
+        <Grid BackgroundColor="#181818">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="45" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="65" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="65" />
+            </Grid.ColumnDefinitions>
+            <Image x:Name="ImageLeft" Source="icon_back.png" BackgroundColor="#181818" Grid.Column="0"
+                   StyleClass="MenuBar">
+                <Image.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnLeftButtonTapped" />
+                </Image.GestureRecognizers>
+            </Image>
+            <Image Source="glimmr_logo.png" StyleClass="MenuBar" BackgroundColor="#181818" Grid.Column="1">
+                <Image.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnLogoTapped" />
+                </Image.GestureRecognizers>
+            </Image>
+            <Image x:Name="ImageRight" StyleClass="MenuBar" BackgroundColor="#181818" Grid.Column="2">
+                <Image.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnRightButtonTapped" />
+                </Image.GestureRecognizers>
+            </Image>
+        </Grid>
+    </ContentView.Content>
+</ContentView>
