@@ -362,8 +362,6 @@ public class FrameSplitter {
 		_colorsLed = ledColors;
 		_colorsSectors = sectorColors;
 		if (DoSend) {
-			ColorService.LedColors = ledColors;
-			ColorService.SectorColors = sectorColors;
 			await ColorService.SendColors(ledColors, sectorColors);
 		}
 

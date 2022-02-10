@@ -105,9 +105,7 @@ public class AudioVideoStream : ColorSource {
 					oSecs[i] = ColorUtil.SetBrightness(vCol, ab);
 				}
 
-				_cs.LedColors = oCols;
-				_cs.SectorColors = oSecs;
-				_cs.ColorsUpdated = true;
+				await _cs.SendColors(oCols, oSecs);
 
 				if (_doSave && _cs.ControlService.SendPreview) {
 					_doSave = false;

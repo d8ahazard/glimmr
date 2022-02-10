@@ -22,11 +22,6 @@ namespace Glimmr.Services;
 
 // Handles capturing and sending color data
 public class ColorService : BackgroundService {
-	public bool ColorsUpdated { get; set; }
-
-	public Color[] LedColors { get; set; }
-
-	public Color[] SectorColors { get; set; }
 	public ControlService ControlService { get; }
 	public int StartCounter { get; set; }
 	public int StopCounter { get; set; }
@@ -40,8 +35,7 @@ public class ColorService : BackgroundService {
 
 	private bool _autoDisabled;
 	private int _autoDisableDelay;
-	private bool _demoComplete;
-
+	
 	private DeviceMode _deviceMode;
 
 	private bool _enableAutoDisable;
@@ -68,8 +62,6 @@ public class ColorService : BackgroundService {
 		_targetTokenSource = new CancellationTokenSource();
 		_sDevices = Array.Empty<IColorTarget>();
 		_systemData = DataUtil.GetSystemData();
-		LedColors = new Color[_systemData.LedCount];
-		SectorColors = new Color[+_systemData.SectorCount];
 		_enableAutoDisable = _systemData.EnableAutoDisable;
 		_streams = new Dictionary<string, ColorSource>();
 		ControlService = ControlService.GetInstance();
@@ -150,10 +142,8 @@ public class ColorService : BackgroundService {
 		if (!_systemData.SkipDemo) {
 			Log.Debug("Executing demo...");
 			await Demo(this, null).ConfigureAwait(true);
-			_demoComplete = true;
 			Log.Debug("Demo complete.");
 		} else {
-			_demoComplete = true;
 			Log.Debug("Skipping demo.");
 		}
 
@@ -350,8 +340,6 @@ public class ColorService : BackgroundService {
 		_deviceMode = sd.DeviceMode;
 		_targetTokenSource = new CancellationTokenSource();
 		_systemData = sd;
-		LedColors = new Color[_systemData.LedCount];
-		SectorColors = new Color[+_systemData.SectorCount];
 		_enableAutoDisable = _systemData.EnableAutoDisable;
 		_autoDisableDelay = _systemData.AutoDisableDelay;
 		// Create new lists
@@ -549,10 +537,8 @@ public class ColorService : BackgroundService {
 			Log.Debug("Unsetting auto-disabled flag...");
 		}
 		
-		Log.Debug("Canceling stoken...");
 		_streamTokenSource.Cancel();
 		await Task.Delay(TimeSpan.FromMilliseconds(500));
-		Log.Debug("Done waiting...");
 		if (_stream != null) {
 			if (_stream.SourceActive) {
 				Log.Debug("Killing stream!");

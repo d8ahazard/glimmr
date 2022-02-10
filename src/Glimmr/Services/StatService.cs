@@ -15,7 +15,7 @@ using Serilog;
 namespace Glimmr.Services;
 
 public class StatService : BackgroundService {
-	private readonly ColorService? _colorService;
+	private readonly ColorService _colorService;
 	private readonly IHubContext<SocketServer> _hubContext;
 
 	public StatService(IHubContext<SocketServer> hubContext) {
