@@ -597,7 +597,6 @@ function setSocketListeners() {
     });
 
     websocket.on('device', function (dData) {
-        console.log("DData: ", dData);
         let parsed = JSON.parse(dData);
         if (!(parsed && typeof (parsed) === "object" && parsed.hasOwnProperty("id") && parsed["id"] !== undefined && parsed["id"] !== "")) {
             console.log("Device data is invalid:", parsed);

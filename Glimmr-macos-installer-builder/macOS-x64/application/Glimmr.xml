@@ -1488,6 +1488,11 @@
                 The OpenRGB device type.
             </summary>
         </member>
+        <member name="P:Glimmr.Models.ColorTarget.OpenRgb.OpenRgbData.ReverseStrip">
+            <summary>
+                Reverse the order of data sent to leds.
+            </summary>
+        </member>
         <member name="P:Glimmr.Models.ColorTarget.OpenRgb.OpenRgbData.LedMultiplier">
             <summary>
                 Scale factor for LED counts related to master grid.
@@ -1521,6 +1526,19 @@
         <member name="P:Glimmr.Models.ColorTarget.OpenRgb.OpenRgbData.Rotation">
             <summary>
                 Device rotation.
+            </summary>
+        </member>
+        <member name="P:Glimmr.Models.ColorTarget.OpenRgb.OpenRgbData.TargetSector">
+            <summary>
+                Target sector, if using sectored StripMode.
+            </summary>
+        </member>
+        <member name="P:Glimmr.Models.ColorTarget.OpenRgb.OpenRgbData.StripMode">
+            <summary>
+                LED Strip mode.
+                Normal = 0,
+                Loop = 2,
+                Single = 3
             </summary>
         </member>
         <member name="P:Glimmr.Models.ColorTarget.OpenRgb.OpenRgbData.Description">

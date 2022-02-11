@@ -597,11 +597,8 @@ function setSocketListeners() {
     });
 
     websocket.on('device', function (dData) {
-        console.log("DData: ", dData);
         let parsed = JSON.parse(dData);
-        if (parsed && typeof (parsed) === "object" && parsed.hasOwnProperty("id") && parsed["id"] !== undefined && parsed["id"] !== "") {
-            console.log("Received device data from server: ", parsed);
-        } else {
+        if (!(parsed && typeof (parsed) === "object" && parsed.hasOwnProperty("id") && parsed["id"] !== undefined && parsed["id"] !== "")) {
             console.log("Device data is invalid:", parsed);
             return;
         }
@@ -613,11 +610,14 @@ function setSocketListeners() {
             if (isValid(deviceData) && deviceData["id"] === parsed["id"]) {
                 deviceData = parsed;
                 if (expanded) {
+                    console.log("Updating expanded device settings...")
                     createDeviceSettings();
                 } else {
                     console.log("No settings shown?!");
                 }
             }
+        } else {
+            console.log("Invalid existing!!")
         }
     });
 
@@ -912,7 +912,11 @@ function handleClick(target) {
                 updateDeviceSector(val, target);
                 return;
             }
-            if (target.classList.contains("lifxSectorRegion") || target.classList.contains("wledSectorRegion") || target.classList.contains("dreamSectorRegion")) {
+            if (target.classList.contains("lifxSectorRegion")
+                || target.classList.contains("openRgbSectorRegion")    
+                || target.classList.contains("wledSectorRegion") 
+                || target.classList.contains("dreamSectorRegion")) {
+                target.classList.add("checked");
                 updateDevice(deviceData["id"], "targetSector", val);
                 return;
             }
@@ -1825,7 +1829,6 @@ function getSubtitle(device) {
 }
 
 function createDeviceCard(device, addDemoText) {
-    console.log("Creating device card: ", device);
     if (device["id"] === undefined) return null;
     if (device["tag"] === "DreamScreen" && device["deviceTag"].includes("DreamScreen")) return;
     // Create main card
@@ -2305,16 +2308,21 @@ function createDeviceSettings() {
                 case "sectormap":
                     let region = "flashSector";
                     let dirString = "Click a sector above to assign it to your " + deviceData["tag"] + " device.";
-
+                    
                     if (deviceData["tag"] === "Wled" && deviceData["stripMode"] === 3) {
                         region = "wledSector";
                     }
+                    if (deviceData["tag"] === "OpenRgb" && deviceData["stripMode"] === 3) {
+                        region = "openRgbSector";
+                    }
+
                     if (deviceData["tag"] === "Lifx" && !deviceData["hasMultiZone"]) {
                         region = "lifxSector";
                     }
                     if (deviceData["tag"] === "dreamScreen") {
                         region = "dreamSector";
                     }
+                    
                     if (region === "flashSector") {
                         dirString = "Click a tile to select it's target sector.";
                     }
@@ -2409,11 +2417,15 @@ function createSettingElement(settingElement) {
             element = document.createElement("select");
             if (isValid(settingElement.options)) {
                 for (const [key, value] of Object.entries(settingElement.options)) {
-                    let option = document.createElement("option");
-                    option.value = key.toString();
-                    option.innerText = value.toString();
-                    if (key.toString() === settingElement.value.toString()) option.selected = true;
-                    element.appendChild(option);
+                    try {
+                        let option = document.createElement("option");
+                        option.value = key.toString();
+                        option.innerText = value.toString();
+                        if (key.toString() === settingElement.value.toString()) option.selected = true;
+                        element.appendChild(option);
+                    } catch (e) {
+                        console.log("Exception: ", e);
+                    }
                 }
             }
             element.value = settingElement.value;
