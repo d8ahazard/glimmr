@@ -43,6 +43,7 @@ public class SocketServer : Hub {
 		Log.Debug("HUB MODE: " + mode);
 		try {
 			await _cs.SetMode(mode).ConfigureAwait(false);
+			await Clients.All.SendAsync("mode", mode);
 		} catch (Exception e) {
 			Log.Warning("Exception caught on mode change: " + e.Message + " at " + e.StackTrace);
 		}

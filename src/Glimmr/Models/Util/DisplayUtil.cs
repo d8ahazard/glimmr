@@ -50,10 +50,10 @@ public static class DisplayUtil {
 	private const int EnumCurrentSettings = -1;
 
 
-	[DllImport("user32.dll", CharSet = CharSet.Unicode)]
+	[DllImport("user32.dll")]
 	public static extern bool EnumDisplaySettings(string deviceName, int modeNum, ref Devmode devMode);
 
-	[DllImport("User32.dll", CharSet = CharSet.Unicode)]
+	[DllImport("User32.dll")]
 	public static extern int EnumDisplayDevices(string? lpDevice, int iDevNum, ref DisplayDevice lpDisplayDevice,
 		int dwFlags);
 
@@ -79,8 +79,10 @@ public static class DisplayUtil {
 		var height = 0;
 		// Enumerate system display devices
 		var devIdx = 0;
+		
 		while (true) {
 			var deviceData = new DisplayDevice { cb = Marshal.SizeOf(typeof(DisplayDevice)) };
+			Log.Debug("DD: " + JsonConvert.SerializeObject(deviceData));
 			if (EnumDisplayDevices(null, devIdx, ref deviceData, 0) != 0) {
 				// Get the position and size of this particular display device
 				var devMode = new Devmode();
@@ -92,10 +94,12 @@ public static class DisplayUtil {
 					bottom = Math.Max(bottom, devMode.dmPositionY + devMode.dmPelsHeight);
 					width = left - right;
 					height = top - bottom;
+					Log.Debug("Dev: " + JsonConvert.SerializeObject(devMode));
 				}
 
 				devIdx++;
 			} else {
+				Log.Debug("Can't enum dd.");
 				break;
 			}
 		}

@@ -13,7 +13,7 @@ using Serilog;
 
 namespace Glimmr.Models.ColorTarget.OpenRgb;
 
-public abstract class OpenRgbAgent : IColorTargetAgent {
+public class OpenRgbAgent : IColorTargetAgent {
 	public bool Connected => _client?.Connected ?? false;
 	private string Ip { get; set; } = "";
 	private OpenRGBClient? _client;
@@ -26,10 +26,20 @@ public abstract class OpenRgbAgent : IColorTargetAgent {
 	}
 
 	public dynamic CreateAgent(ControlService cs) {
+		Log.Debug("Creating orgb...");
 		_devices ??= GetDevices().ToArray();
-		cs.RefreshSystemEvent += LoadClient;
-		LoadClient();
+		cs.RefreshSystemEvent += RefreshSystem;
+		RefreshSystem();
 		return this;
+	}
+
+	private void RefreshSystem() {
+		var sd = DataUtil.GetSystemData();
+		var ip = sd.OpenRgbIp;
+		var port = sd.OpenRgbPort;
+		Ip = ip;
+		_port = port;
+		LoadClient();
 	}
 
 	public IEnumerable<Device> GetDevices() {
@@ -106,15 +116,15 @@ public abstract class OpenRgbAgent : IColorTargetAgent {
 	}
 
 	private void LoadClient() {
-		var sd = DataUtil.GetSystemData();
-		var ip = sd.OpenRgbIp;
-		var port = sd.OpenRgbPort;
-		if (ip != Ip || port != _port || _client == null) {
-			Ip = ip;
-			_port = port;
-			_client = new OpenRGBClient(Ip, _port, "Glimmr", false);
+		if (_client is { Connected: true }) {
+			_client.Dispose();
 		}
 
-		Connect();
+		try {
+			_client = new OpenRGBClient(Ip, _port, "Glimmr", false);
+			Connect();
+		} catch (Exception e) {
+			Log.Debug("Exception creating OpenRGB Client.");
+		}
 	}
 }

@@ -1,6 +1,7 @@
 ﻿#region
 
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Threading;
@@ -18,11 +19,17 @@ public class OpenRgbDevice : ColorTarget, IColorTarget {
 	private OpenRgbAgent? _client;
 	private OpenRgbData _data;
 
+	private int _ledCount;
+	private float _multiplier;
+	private int _offset;
+	private StripMode _stripMode;
+	private int _targetSector;
 	public OpenRgbDevice(OpenRgbData data, ColorService cs) : base(cs) {
 		Id = data.Id;
 		_data = data;
 		_client = cs.ControlService.GetAgent("OpenRgbAgent");
-		LoadData();
+		_multiplier = _data.LedMultiplier;
+		ReloadData();
 		ColorService.ColorSendEventAsync += SetColors;
 	}
 
@@ -104,39 +111,47 @@ public class OpenRgbDevice : ColorTarget, IColorTarget {
 		return Task.CompletedTask;
 	}
 
-	public Task ReloadData() {
-		var dev = DataUtil.GetDevice(Id);
-		if (dev == null) {
-			return Task.CompletedTask;
-		}
-
-		_data = dev;
-		Enable = _data.Enable;
-
-		return Task.CompletedTask;
-	}
+	
 
 	public void Dispose() {
 	}
 
-	private async Task SetColors(object sender, ColorSendEventArgs args) {
+	private Task SetColors(object sender, ColorSendEventArgs args) {
 		if (!_client?.Connected ?? false) {
-			return;
+			return Task.CompletedTask;
 		}
 
-		await SetColor(args.LedColors, args.Force).ConfigureAwait(false);
+		return SetColor(args.LedColors, args.SectorColors, args.Force);
 	}
 
 
-	private async Task SetColor(Color[] colors, bool force = false) {
-		if (!Enable || !Streaming || Testing && !force) {
+	private async Task SetColor(Color[] list, IReadOnlyList<Color> colors1, bool force = false) {
+		if (!Streaming || !Enable || Testing && !force) {
 			return;
 		}
 
-		var toSend = ColorUtil.TruncateColors(colors, _data.Offset, _data.LedCount);
-		if (_data.Rotation == 180) {
-			toSend = toSend.Reverse().ToArray();
+		var toSend = list;
+		switch (_stripMode) {
+			case StripMode.Single when _targetSector >= colors1.Count || _targetSector == -1:
+				return;
+			case StripMode.Single:
+				toSend = ColorUtil.FillArray(colors1[_targetSector], _ledCount);
+				break;
+			default: {
+				toSend = ColorUtil.TruncateColors(toSend, _offset, _ledCount, _multiplier);
+				if (_stripMode == StripMode.Loop) {
+					toSend = ShiftColors(toSend);
+				} else {
+					if (_data.ReverseStrip) {
+						toSend = toSend.Reverse().ToArray();
+					}
+				}
+
+				break;
+			}
 		}
+
+	
 
 		var converted = _data.ColorOrder switch {
 			ColorOrder.Rgb => toSend.Select(col => new OpenRGB.NET.Models.Color(col.R, col.G, col.B)).ToList(),
@@ -153,7 +168,44 @@ public class OpenRgbDevice : ColorTarget, IColorTarget {
 		ColorService.Counter.Tick(Id);
 	}
 
-	private void LoadData() {
+	private Color[] ShiftColors(IReadOnlyList<Color> input) {
+		var output = new Color[input.Count];
+		var il = output.Length - 1;
+		if (!_data.ReverseStrip) {
+			for (var i = 0; i < input.Count / 2; i++) {
+				output[i] = input[i];
+				output[il - i] = input[i];
+			}
+		} else {
+			var l = 0;
+			for (var i = (input.Count - 1) / 2; i >= 0; i--) {
+				output[i] = input[l];
+				output[il - i] = input[l];
+				l++;
+			}
+		}
+		return output;
+	}
+	public Task ReloadData() {
+		var dev = DataUtil.GetDevice<OpenRgbData>(Id);
+		if (dev == null) {
+			return Task.CompletedTask;
+		}
+
+		_data = dev;
 		Enable = _data.Enable;
+				
+
+		_offset = _data.Offset;
+		Enable = _data.Enable;
+		_stripMode = _data.StripMode;
+		_targetSector = _data.TargetSector;
+		_multiplier = _data.LedMultiplier;
+		if (_multiplier == 0) {
+			_multiplier = 1;
+		}
+
+		_ledCount = _data.LedCount;
+		return Task.CompletedTask;
 	}
 }

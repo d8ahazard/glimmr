@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
+using System.Linq;
 using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
@@ -18,10 +19,10 @@ public class OpenRgbData : IColorTargetData {
 	/// <summary>
 	///     The order of the color values for the particular device.
 	/// </summary>
-	[DefaultValue(ColorOrder.Rbg)]
+	[DefaultValue(ColorOrder.Rgb)]
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
-	public ColorOrder ColorOrder { get; set; } = ColorOrder.Rbg;
+	public ColorOrder ColorOrder { get; set; } = ColorOrder.Rgb;
 
 	/// <summary>
 	///     The OpenRGB device type.
@@ -30,7 +31,12 @@ public class OpenRgbData : IColorTargetData {
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 
 	public DeviceType Type { get; set; }
-
+/// <summary>
+	///     Reverse the order of data sent to leds.
+	/// </summary>
+	[DefaultValue(false)]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public bool ReverseStrip { get; set; }
 	/// <summary>
 	///     Scale factor for LED counts related to master grid.
 	/// </summary>
@@ -81,6 +87,22 @@ public class OpenRgbData : IColorTargetData {
 	[DefaultValue(0)]
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 	public int Rotation { get; set; }
+
+/// <summary>
+	///     Target sector, if using sectored StripMode.
+	/// </summary>
+	[DefaultValue(-1)]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public int TargetSector { get; set; }
+
+	/// <summary>
+	///     LED Strip mode.
+	///     Normal = 0,
+	///     Loop = 2,
+	///     Single = 3
+	/// </summary>
+	[JsonProperty]
+	public StripMode StripMode { get; set; }
 
 	/// <summary>
 	///     Device description.
@@ -198,26 +220,40 @@ public class OpenRgbData : IColorTargetData {
 	/// <summary>
 	///     UI Properties.
 	/// </summary>
-	public SettingsProperty[] KeyProperties { get; set; } = {
-		new("ledmap", "ledmap", ""),
-		new("Offset", "number", "LED Offset"),
-		new("LedMultiplier", "ledMultiplier", ""),
-		new("Rotation", "select", "Rotation", new Dictionary<string, string> {
-			["0"] = "Normal",
-			["90"] = "90 Degrees",
-			["180"] = "180 Degrees (Mirror)",
-			["270"] = "270 Degrees"
-		}),
-		new("ColorOrder", "select", "Color Order", new Dictionary<string, string> {
+	public SettingsProperty[] KeyProperties {
+		get => Kps();
+		set { }
+	}
+
+	private SettingsProperty[] Kps() {
+		var multiplier = new SettingsProperty("LedMultiplier", "ledMultiplier", "");
+		List<SettingsProperty> output = StripMode switch {
+			StripMode.Single => new[] {
+				new SettingsProperty("sectormap", "sectormap", ""),
+				new("StripMode", "select", "Strip Mode",
+		  new Dictionary<string, string> { ["0"] = "Normal", ["3"] = "Single Color" })
+			}.ToList(),
+			_ => new[] {
+				new("ledmap", "ledmap", ""),
+				new("StripMode", "select", "Strip Mode",
+					new Dictionary<string, string> { ["0"] = "Normal", ["3"] = "Single Color" }),
+				new("Offset", "number", "Strip Offset"), 
+				multiplier,
+				new("ReverseStrip", "check", "Reverse Strip") {
+					ValueHint = "Reverse the order of the leds to clockwise (facing screen)."
+				}
+			}.ToList()
+		};
+		output.Add(new SettingsProperty("ColorOrder", "select", "Color Order", new Dictionary<string, string> {
 			["0"] = "RGB",
 			["1"] = "RBG",
 			["2"] = "GBR",
 			["3"] = "GRB",
 			["4"] = "BGR",
 			["5"] = "BRG"
-		}) { ValueHint = "The order in which RGB values are sent to the LED strip." }
-	};
-
+		}) { ValueHint = "The order in which RGB values are sent to the LED strip." });
+		return output.ToArray();
+	}
 
 	public void UpdateFromDiscovered(IColorTargetData data) {
 		var dev = (OpenRgbData)data;
