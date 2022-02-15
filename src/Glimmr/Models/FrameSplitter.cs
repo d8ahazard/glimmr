@@ -98,7 +98,6 @@ public class FrameSplitter {
 	private bool _warned;
 	private Color[] _emptySectors;
 
-
 	public FrameSplitter(ColorService cs, bool crop = false) {
 		_vectors = Array.Empty<PointF>();
 		_targets = new List<VectorOfPoint>();
@@ -334,7 +333,9 @@ public class FrameSplitter {
 		_frameCount++;
 		// Check sectors once per second
 		if (_frameCount >= 30) {
-			await CheckCrop(clone).ConfigureAwait(false);
+			if (_useCrop) {
+				await CheckCrop(clone).ConfigureAwait(false);
+			}
 			_frameCount = 0;
 		}
 		
@@ -351,14 +352,9 @@ public class FrameSplitter {
 		var sectorColors = _emptySectors;
 		for (var i = 0; i < _fullSectors.Length; i++) {
 			var sub = new Mat(clone, _fullSectors[i]);
-			
 			sectorColors[i] = GetAverage(sub);
-			//sectorColors[i] = GetAvg(sub);
-			//Log.Debug("Averages: " + ledColors[i].ToHex() + " vs " + foo.ToHex());
-			sub.Dispose();
 		}
-		//Log.Debug($"AvgTimes: {watch.ElapsedTicks} vs {watch2.ElapsedTicks} ");
-
+		
 		_colorsLed = ledColors;
 		_colorsSectors = sectorColors;
 		if (DoSend) {

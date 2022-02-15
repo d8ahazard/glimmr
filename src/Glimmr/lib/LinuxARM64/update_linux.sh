@@ -1,12 +1,12 @@
 #!/bin/bash
 function vercomp () {
-    if [[ $1 == $2 ]]
+    if [[ "$1" == "$2" ]]
     then
         echo "0"
         return 0
     fi
     local IFS=.
-    local i ver1=($1) ver2=($2)
+    local i ver1=("$1") ver2=("$2")
     # fill empty fields in ver1 with zeros
     for ((i=${#ver1[@]}; i<${#ver2[@]}; i++))
     do
@@ -34,28 +34,32 @@ function vercomp () {
     return 0
 }
 
-branch=${1:-"master"}
-APPDIR=${2:-"/usr/share/Glimmr/"}
-
+arch="$(arch)"
 PUBPROFILE="Linux"
-PUBPATH="linux-arm64"
+PUBPATH="linux-arm"
 
-if [ -f "/usr/bin/raspi-config" ] 
+if [ -f "/usr/bin/raspi-config" ] && [ "$arch" == "armv71" ] 
+  then
+    PUBPROFILE="LinuxARM"
+    PUBPATH="linux-arm"
+fi
+
+if [ -f "/usr/bin/raspi-config" ] && [ "$arch" == "aarch64" ] 
   then
     PUBPROFILE="LinuxARM64"
     PUBPATH="linux-arm64"
 fi
 
-
+# shellcheck disable=SC2012
 log=$(ls -t /var/log/glimmr/glimmr* | head -1)
-if [ $log == "" ]
+if [ "$log" == "" ]
   then
-    $log = /var/log/glimmr/glimmr.log
+    log=/var/log/glimmr/glimmr.log
 fi
 
 if [ ! -f $log ]
   then
-    log = /var/log/glimmr/glimmr.log
+    log=/var/log/glimmr/glimmr.log
     touch $log
     chmod 777 $log
 fi
@@ -75,7 +79,7 @@ if [ -f "/etc/Glimmr/version" ]
   then
     curr=$(head -n 1 /etc/Glimmr/version)
     echo "Current version is $curr." >> $log
-    diff=$(vercomp $curr $ver)
+    diff=$(vercomp "$curr" "$ver")
     if [ "$diff" != "2" ]
       then
         echo "Nothing to update." >> $log
@@ -92,13 +96,12 @@ echo "Services stopped." >> $log
 cd /tmp || exit
 url="https://github.com/d8ahazard/glimmr/releases/download/$ver/Glimmr-$PUBPATH-$ver.tgz"
 echo "Grabbing archive from $url" >> $log
-wget -O archive.tgz $url
-rm -rf /usr/share/Glimmr/*
+wget -O archive.tgz "$url"
 tar zxvf ./archive.tgz -C /usr/share/Glimmr/
 chmod -R 777 /usr/share/Glimmr/
 rm ./archive.tgz
 echo "Update completed." >> $log
-echo $ver > /etc/Glimmr/version
+echo "$ver" > /etc/Glimmr/version
 echo "Restarting glimmr service..." >> $log
 
 # Restart Service

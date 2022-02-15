@@ -15,8 +15,7 @@ public static class ColorUtil {
 	private static int _hCount;
 	private static bool _useCenter;
 	private static int _vCount;
-	private static Color[] _emptyColors = Array.Empty<Color>();
-
+	
 	/// <summary>
 	///     Take a n-color list, and convert down to 12 for DS
 	/// </summary>
@@ -40,7 +39,9 @@ public static class ColorUtil {
 
 	public static Color[] TruncateColors(Color[] input, int offset, int len, float multiplier = 1f) {
 		if (offset >= input.Length) {
-			offset -= input.Length;
+			while (offset >= input.Length) {
+				offset -= input.Length;
+			}
 		}
 
 		if (offset < 0 && Math.Abs(offset) >= input.Length) {
@@ -270,15 +271,13 @@ public static class ColorUtil {
 	}
 
 	public static Color[] EmptyColors(int len) {
-		if (_emptyColors == null || _emptyColors.Length < len) {
-			_emptyColors = new Color[len];
-			for (var i = 0; i < _emptyColors.Length; i++) {
-				_emptyColors[i] = Color.FromArgb(0, 0, 0, 0);
-			}
+		var output = new Color[len];
+		var empty = Color.FromArgb(0, 0, 0, 0);
+		for (var i = 0; i < len; i++) {
+			output[i] = empty;
 		}
 
-		var input = _emptyColors[..len];
-		return input;
+		return output;
 	}
 
 	public static List<Color> EmptyList(int size) {
