@@ -227,7 +227,7 @@ public class OpenRgbData : IColorTargetData {
 
 	private SettingsProperty[] Kps() {
 		var multiplier = new SettingsProperty("LedMultiplier", "ledMultiplier", "");
-		List<SettingsProperty> output = StripMode switch {
+		var output = StripMode switch {
 			StripMode.Single => new[] {
 				new SettingsProperty("sectormap", "sectormap", ""),
 				new("StripMode", "select", "Strip Mode",

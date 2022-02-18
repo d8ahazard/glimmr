@@ -7,6 +7,7 @@ using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using Glimmr.Enums;
 using Glimmr.Models;
 using Glimmr.Models.ColorSource;
@@ -35,6 +36,7 @@ public class ColorService : BackgroundService {
 
 	private bool _autoDisabled;
 	private int _autoDisableDelay;
+	private int _adCount;
 	
 	private DeviceMode _deviceMode;
 
@@ -106,11 +108,12 @@ public class ColorService : BackgroundService {
 	protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 		Log.Debug("Starting color service...");
 		var colorTask = Task.Run(async () => {
+			var checkTimer = new System.Timers.Timer(1000);
+			checkTimer.Elapsed += CheckAutoDisable;
 			await Initialize();
 			_loopWatch.Start();
 			while (!stoppingToken.IsCancellationRequested) {
-				await CheckAutoDisable().ConfigureAwait(false);
-
+				
 				// Save a frame every 5 seconds
 				if (_loopWatch.Elapsed >= TimeSpan.FromSeconds(5)) {
 					FrameSaveEvent.Invoke();
@@ -156,7 +159,7 @@ public class ColorService : BackgroundService {
 			_deviceMode = _systemData.DeviceMode;
 		}
 
-		await ControlService.SetMode(_deviceMode, true).ConfigureAwait(true);
+		await ControlService.SetMode(_deviceMode).ConfigureAwait(true);
 		Log.Information("Color service started.");
 	}
 
@@ -218,7 +221,7 @@ public class ColorService : BackgroundService {
 		// When building center, we only need the v and h sectors.
 		var dims = new[]
 			{ _systemData.VSectors, _systemData.VSectors, _systemData.HSectors, _systemData.HSectors };
-		var builder = new FrameBuilder(dims, true, _systemData.UseCenter);
+		var builder = new FrameBuilder(dims, true);
 		var col = Color.FromArgb(255, 255, 0, 0);
 		var emptyColors = ColorUtil.EmptyColors(_systemData.LedCount);
 		var emptySectors = ColorUtil.EmptyColors(_systemData.SectorCount);
@@ -254,7 +257,7 @@ public class ColorService : BackgroundService {
 		_splitter.DoSend = true;
 	}
 
-	private async Task CheckAutoDisable() {
+	private void CheckAutoDisable(object? sender, ElapsedEventArgs elapsedEventArgs) {
 		// Don't do anything if auto-disable isn't enabled
 		if (!_enableAutoDisable) {
 			if (!_autoDisabled) {
@@ -274,41 +277,40 @@ public class ColorService : BackgroundService {
 
 		if (sourceActive) {
 			// If our source is active and we're auto-disabled, turn it off.
-			if (_autoDisabled) {
-				Log.Information("Auto-enabling stream.");
-				_autoDisabled = false;
-				DataUtil.SetItem("AutoDisabled", _autoDisabled);
-				ControlService.SetModeEvent -= Mode;
-				_deviceMode = _systemData.PreviousMode;
-				await ControlService.SetMode(_deviceMode);
-				await StartStream();
-				ControlService.SetModeEvent += Mode;
+			if (!_autoDisabled) {
+				return;
 			}
 
-			_watch.Reset();
+			_adCount = 0;
+			Log.Information("Auto-enabling stream.");
+			_autoDisabled = false;
+			DataUtil.SetItem("AutoDisabled", _autoDisabled);
+			ControlService.SetModeEvent -= Mode;
+			_deviceMode = _systemData.PreviousMode;
+			ControlService.SetMode(_deviceMode).ConfigureAwait(false);
+			StartStream().ConfigureAwait(false);
+			ControlService.SetModeEvent += Mode;
 		} else {
+			_adCount++;
 			if (_autoDisabled) {
 				return;
 			}
 
-			if (!_watch.IsRunning) {
-				_watch.Restart();
+			if (_adCount < _autoDisableDelay) {
+				return;
 			}
 
-			if (_watch.ElapsedMilliseconds >= _autoDisableDelay * 1000f) {
-				_autoDisabled = true;
-				Counter.Reset();
-				DataUtil.SetItem("AutoDisabled", _autoDisabled);
-				ControlService.SetModeEvent -= Mode;
-				await ControlService.SetMode(DeviceMode.Off, true);
-				ControlService.SetModeEvent += Mode;
-				await SendColors(ColorUtil.EmptyColors(_systemData.LedCount),
-					ColorUtil.EmptyColors(_systemData.SectorCount), 0, true);
-				Log.Information(
-					$"Auto-disabling stream {_watch.ElapsedMilliseconds} vs {_autoDisableDelay * 1000}.");
-				_watch.Reset();
-				await StopDevices();
-			}
+			_autoDisabled = true;
+			_adCount = _autoDisableDelay;
+			Counter.Reset();
+			DataUtil.SetItem("AutoDisabled", _autoDisabled);
+			ControlService.SetModeEvent -= Mode;
+			ControlService.SetMode(DeviceMode.Off, true).ConfigureAwait(false);
+			ControlService.SetModeEvent += Mode;
+			SendColors(ColorUtil.EmptyColors(_systemData.LedCount),
+				ColorUtil.EmptyColors(_systemData.SectorCount), 0, true).ConfigureAwait(false);
+			Log.Information("Auto-disabling stream.");
+			StopDevices().ConfigureAwait(false);
 		}
 	}
 
@@ -531,7 +533,7 @@ public class ColorService : BackgroundService {
 
 		_deviceMode = newMode;
 		// Don't unset auto-disable if init is set...
-		if (_autoDisabled && !init) {
+		if (sd.AutoDisabled && !init) {
 			_autoDisabled = false;
 			DataUtil.SetItem("AutoDisabled", _autoDisabled);
 			Log.Debug("Unsetting auto-disabled flag...");
@@ -625,6 +627,9 @@ public class ColorService : BackgroundService {
 		cts.CancelAfter(TimeSpan.FromSeconds(5));
 		var len = 0;
 		var en = 0;
+		var toKill = new List<Task>();
+		var killSource = new CancellationTokenSource();
+		killSource.CancelAfter(TimeSpan.FromSeconds(3));
 		foreach (var dev in _sDevices) {
 			try {
 				if (dev.Enable) {
@@ -635,13 +640,20 @@ public class ColorService : BackgroundService {
 					continue;
 				}
 
-				await dev.StopStream().ConfigureAwait(false);
-				len++;
+				
+				toKill.Add(Task.Run(async () => {
+					try {
+						await dev.StopStream();
+					} catch {
+						//ignored
+					}
+				}, killSource.Token));
 			} catch (Exception) {
 				// Ignored.
 			}
 		}
-		
+
+		await Task.WhenAll(toKill);
 		Log.Information($"Streaming stopped on {len}/{en} devices.");
 	}
 

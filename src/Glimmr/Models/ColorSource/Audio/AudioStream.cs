@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using ManagedBass;
+using Newtonsoft.Json;
 using Serilog;
 
 #endregion
@@ -25,45 +26,27 @@ public class AudioStream : ColorSource {
 	private readonly FrameBuilder _builder;
 
 	private List<AudioData> _devices;
-	private float _gain;
+	//private float _gain;
 	private int _handle;
 	private bool _hasDll;
 	private AudioMap _map;
-	private float _min = .015f;
+	//private float _min = .015f;
 	private int _recordDeviceIndex;
 	private SystemData? _sd;
-
+	private const int SampleSize = 512;
+	private const int SampleFreq = 48000;
 	public AudioStream(ColorService cs) {
 		_devices = new List<AudioData>();
 		_map = new AudioMap();
 		StreamSplitter = new FrameSplitter(cs);
 		_builder = new FrameBuilder(new[] {
-			3, 3, 6, 6
-		}, true);
+			4, 4, 6, 6
+		});
 		cs.ControlService.RefreshSystemEvent += RefreshSystem;
 		RefreshSystem();
 	}
 
 	public override Task Start(CancellationToken ct) {
-		SendColors = true;
-		try {
-			Bass.RecordInit(_recordDeviceIndex);
-			_handle = Bass.RecordStart(48000, 2, BassFlags.Float, Update);
-			Bass.RecordGetDeviceInfo(_recordDeviceIndex, out _);
-			_hasDll = true;
-			Log.Information("Recording init completed.");
-		} catch (DllNotFoundException) {
-			Log.Warning("Bass.dll not found, nothing to do...");
-			_hasDll = false;
-		}
-
-		if (!_hasDll) {
-			Log.Debug("Audio stream unavailable, no bass.dll found.");
-			return Task.CompletedTask;
-		}
-
-		Log.Debug("Starting audio stream service...");
-		Bass.ChannelPlay(_handle);
 		RunTask = ExecuteAsync(ct);
 		return Task.CompletedTask;
 	}
@@ -77,8 +60,33 @@ public class AudioStream : ColorSource {
 
 	protected override Task ExecuteAsync(CancellationToken ct) {
 		return Task.Run(async () => {
+			SendColors = true;
+			try {
+				Bass.RecordInit(_recordDeviceIndex);
+				// Ensure volume is 100%
+				_handle = Bass.RecordStart(SampleFreq, 2, BassFlags.Float, 100, Update);
+				Bass.ChannelSetAttribute(_handle, ChannelAttribute.Volume, 1);
+
+				_hasDll = true;
+				Log.Information("Recording init completed.");
+			} catch (DllNotFoundException) {
+				Log.Warning("Bass.dll not found, nothing to do...");
+				_hasDll = false;
+			} catch (Exception e) {
+				Log.Debug("Generic exception: " + e.Message);
+			}
+
+			if (!_hasDll) {
+				Log.Debug("Audio stream unavailable, no bass.dll found.");
+				return Task.CompletedTask;
+			}
+
+			Log.Debug("Starting audio stream service...");
+			Bass.ChannelSetAttribute(_handle, ChannelAttribute.Frequency, SampleFreq);
+			Bass.ChannelPlay(_handle, true);
+			Log.Debug("Audio stream started.");
 			while (!ct.IsCancellationRequested) {
-				await Task.Delay(1, CancellationToken.None);
+				await Task.Delay(TimeSpan.FromMilliseconds(500), CancellationToken.None);
 			}
 
 			try {
@@ -90,14 +98,16 @@ public class AudioStream : ColorSource {
 			} catch (Exception e) {
 				Log.Warning("Exception stopping stream..." + e.Message);
 			}
+
+			return Task.CompletedTask;
 		}, CancellationToken.None);
 	}
 
 
 	private void LoadData() {
 		_sd = DataUtil.GetSystemData();
-		_gain = _sd.AudioGain;
-		_min = _sd.AudioMin;
+		// _gain = _sd.AudioGain;
+		// _min = _sd.AudioMin;
 		var rd = _sd.RecDev;
 		_devices = DataUtil.GetCollection<AudioData>("Dev_Audio") ?? new List<AudioData>();
 		_map = new AudioMap();
@@ -143,71 +153,57 @@ public class AudioStream : ColorSource {
 	private bool Update(int handle, IntPtr buffer, int length, IntPtr user) {
 		if (_map == null) {
 			Log.Warning("No map?");
-			//return false;
-		}
-
-		const int samples = 2048 * 2;
-		var fft = new float[samples]; // fft data buffer
-		// Get our FFT for "everything"
-		var res = Bass.ChannelGetData(handle, fft, (int)DataFlags.FFT4096 | (int)DataFlags.FFTIndividual);
-		if (res == -1) {
-			Log.Warning("Error getting channel data: " + Bass.LastError);
-			return false;
-		}
-
-		var lData = new Dictionary<int, float>();
-		var rData = new Dictionary<int, float>();
-		var realIndex = 0;
-
-		for (var a = 0; a < samples; a++) {
-			var val = FlattenValue(fft[a]);
-			var freq = FftIndex2Frequency(realIndex, 4096 / 2, 48000);
-
-			if (a % 1 == 0) {
-				lData[freq] = val;
-			}
-
-			if (a % 2 != 0) {
-				continue;
-			}
-
-			rData[freq] = val;
-			realIndex++;
-		}
-
-		if (_map == null) {
-			Log.Warning("No map.");
-			return false;
-		}
-
-		var sectors = _map.MapColors(lData, rData).ToList();
-		var frame = _builder.Build(sectors);
-		if (frame != null) {
-			StreamSplitter.Update(frame).ConfigureAwait(false);
-			frame.Dispose();
-			return true;	
+			return true;
 		}
 		
-		return false;
-	}
-
-	private float FlattenValue(float input) {
-		// Drop anything that's not at least .01
-		if (input < _min) {
-			return 0;
+		var fft = new float[SampleSize]; // fft data buffer
+		// Get our FFT for "everything"
+		var res = Bass.ChannelGetData(handle, fft, getFlag(SampleSize));
+		if (res == -1) {
+			Log.Warning("Error getting channel data: " + Bass.LastError);
+			return true;
 		}
 
-		input += _gain;
-		if (input > 1) {
-			input = 1;
-		}
+		if (res > 0) {
+			var lData = new Dictionary<float, int>();
 
-		return input;
+			for (var a = 0; a < SampleSize; a++) {
+				var val = fft[a];
+				var y = (int)(Math.Sqrt(val) * 3 * 255 - 4);
+				if (y > 255) y = 255;
+				if (y < 0) y = 0;
+				var freq = FftIndex2Frequency(a, SampleSize, SampleFreq);
+				if (y != 0) lData[freq] = y;
+			}
+			//if (lData.Count > 0) Log.Debug("Ldata: " + JsonConvert.SerializeObject(lData));
+
+			var sectors = _map.MapColors(lData).ToList();
+			var frame = _builder.Build(sectors);
+			if (frame != null) {
+				StreamSplitter.Update(frame).ConfigureAwait(false);
+				frame.Dispose();
+				return true;
+			}
+		} else {
+			Log.Debug("NO RES.");
+		}
+		return true;
 	}
 
 
-	private static int FftIndex2Frequency(int index, int length, int sampleRate) {
-		return index * sampleRate / length;
+	private static float FftIndex2Frequency(int index, int length, int sampleRate) {
+		return 1f * index * sampleRate / length;
+	}
+
+	private static int getFlag(int size) {
+		return size switch {
+			256 => (int)DataFlags.FFT512,
+			512 => (int)DataFlags.FFT1024,
+			1024 => (int)DataFlags.FFT2048,
+			2048 => (int)DataFlags.FFT4096,
+			4096 => (int)DataFlags.FFT8192,
+			_ => 0
+		};
 	}
 
 	#region intColors

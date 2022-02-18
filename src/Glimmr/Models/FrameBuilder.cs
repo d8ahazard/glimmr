@@ -7,6 +7,7 @@ using System.Linq;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
+using Emgu.CV.Util;
 using Newtonsoft.Json;
 using Serilog;
 using static Glimmr.Models.GlimmrConstants;
@@ -19,29 +20,25 @@ public class FrameBuilder {
 	private readonly int _bottomCount;
 
 	// This will store the coords of input values
-	private readonly Rectangle[] _inputCoords;
+	private readonly VectorOfVectorOfPoint _inputCoords;
 	private readonly int _ledCount;
 	private readonly int _leftCount;
 	private readonly int _rightCount;
 	private readonly int _topCount;
 
-	public FrameBuilder(IReadOnlyList<int> inputDimensions, bool sectors = false, bool center = false) {
+	public FrameBuilder(IReadOnlyList<int> inputDimensions, bool sectors = false) {
 		_leftCount = inputDimensions[0];
 		_rightCount = inputDimensions[1];
 		_topCount = inputDimensions[2];
 		_bottomCount = inputDimensions[3];
 		_ledCount = _leftCount + _rightCount + _topCount + _bottomCount;
 		if (sectors) {
-			if (center) {
-				_ledCount = _leftCount * _topCount;
-				_inputCoords = DrawCenterSectors();
-			} else {
-				_ledCount -= 4;
-				_inputCoords = DrawSectors();
-			}
+			_ledCount -= 4;
+			_inputCoords = DrawSectors();
 		} else {
 			_inputCoords = DrawLeds();
 		}
+		Log.Debug("FrameBuilder created, we have " + _inputCoords.Size + " coordinates.");
 	}
 
 
@@ -51,17 +48,20 @@ public class FrameBuilder {
 			throw new ArgumentOutOfRangeException(
 				$"Color length should be {_ledCount} versus {enumerable.Length}.");
 		}
+		var idx = 0;
 
 		try {
 			var gMat = new Mat(new Size(ScaleWidth, ScaleHeight), DepthType.Cv8U, 3);
-			for (var i = 0; i < _inputCoords.Length; i++) {
+			for (var i = 0; i < enumerable.Length; i++) {
+				idx = i;
 				var color = enumerable[i];
 				var col = new MCvScalar(color.B, color.G, color.R);
-				CvInvoke.Rectangle(gMat, _inputCoords[i], col, -1, LineType.AntiAlias);
+				CvInvoke.FillPoly(gMat,_inputCoords[i],col,LineType.AntiAlias);
 			}
+			//CvInvoke.GaussianBlur(gMat, gMat, new Size(29,29), 0);
 			return gMat;
 		} catch (Exception e) {
-			Log.Debug("Exception: " + e.Message + " at " + e.StackTrace + " " + JsonConvert.SerializeObject(e));
+			Log.Debug($"Exception, input coords are {_inputCoords.Size} but requested {idx}: " + e.Message + " at " + e.StackTrace + " " + JsonConvert.SerializeObject(e));
 		}
 
 		return null;
@@ -69,314 +69,185 @@ public class FrameBuilder {
 	}
 
 
-	private Rectangle[] DrawLeds() {
+	private VectorOfVectorOfPoint DrawLeds() {
 		// This is where we're saving our output
-		var fs = new Rectangle[_ledCount];
+		var polly = new VectorOfVectorOfPoint();
+		var center = new Point(ScaleWidth / 2, ScaleHeight / 2);
 		// Individual segment sizes
 		var tWidth = (int)Math.Round((float)ScaleWidth / _topCount, MidpointRounding.AwayFromZero);
-		var tHeight = ScaleHeight / (_topCount - 5);
 		var lHeight = (int)Math.Round((float)ScaleHeight / _leftCount, MidpointRounding.AwayFromZero);
-		var lWidth = ScaleWidth / (_leftCount - 5);
 		var bWidth = (int)Math.Round((float)ScaleWidth / _bottomCount, MidpointRounding.AwayFromZero);
-		var bHeight = ScaleHeight / (_bottomCount - 5);
 		var rHeight = (int)Math.Round((float)ScaleHeight / _rightCount, MidpointRounding.AwayFromZero);
-		var rWidth = ScaleWidth / (_rightCount - 5);
-
+		
 		// These are based on the border/strip values
 		// Minimum limits for top, bottom, left, right            
 		const int minTop = 0;
 		const int minLeft = 0;
 		// Calc right regions, bottom to top
-		var idx = 0;
-		var step = _rightCount;
-		var width = 0;
-		var rev = false;
-		var max = 0;
-		while (step > 0) {
+		var step = _rightCount - 1;
+		var c2 = 0;
+		while (step >= 0) {
 			var ord = step * rHeight;
-			var h = ord + rHeight > ScaleWidth ? ScaleWidth - ord : rHeight;
-			if (max == 0 && width >= ScaleWidth / 2) {
-				max = step;
+			if (step == _rightCount - 1) {
+				ord = ScaleHeight - rHeight;
+				c2 = ScaleHeight;
 			}
 
-			if (rev) {
-				width -= rWidth;
-			} else {
-				width += rWidth;
+			if (step == 0) {
+				ord = minTop;
+				c2 = minTop + rHeight;
 			}
-
-			var right = ScaleWidth - width;
-			fs[idx] = new Rectangle(right, ord, width, h);
-			if (max != 0 && _rightCount - max == step) {
-				rev = true;
-			}
-
-			if (width < rHeight) {
-				width = rHeight;
-			}
-
-			if (width > ScaleWidth / 2) {
-				width = ScaleWidth / 2;
-			}
-
-			idx++;
+			
+			var pts = new Point[3];
+			pts[0] = new Point(ScaleWidth, ord);
+			pts[1] = new Point(ScaleWidth, c2);
+			pts[2] = center;
+			polly.Push(new VectorOfPoint(pts));
+			Log.Debug("Pcount (R): " + polly.Size);
 			step--;
+			c2 = ord;
 		}
 
 		// Calc top regions, from right to left, skipping top-right corner (total horizontal sectors minus one)
-		step = _topCount;
-		var height = 0;
-		rev = false;
-		max = -1;
-		while (step > 0) {
+		step = _topCount - 1;
+		while (step >= 0) {
 			var ord = step * tWidth;
-			if (max == -1 && height >= ScaleHeight / 2) {
-				max = step;
+			if (step == _topCount - 1) {
+				ord = ScaleWidth - tWidth;
+				c2 = ScaleWidth;
 			}
 
-			if (rev) {
-				height -= tHeight;
-			} else {
-				height += tHeight;
+			if (step == 0) {
+				c2 = tWidth;
+				ord = minLeft;
 			}
-
-			var w = ord + tWidth > ScaleWidth ? ScaleWidth - ord : tWidth;
-			fs[idx] = new Rectangle(ord, minTop, w, height);
-
-			if (max != -1 && _topCount - max == step) {
-				rev = true;
-			}
-
-			if (height > ScaleHeight / 2) {
-				height = ScaleHeight / 2;
-			}
-
-			if (height < tHeight) {
-				height = tHeight;
-			}
-
-			idx++;
+			var pts = new Point[3];
+			pts[0] = new Point(ord, minTop);
+			pts[1] = new Point(c2, minTop);
+			pts[2] = center;
+			polly.Push(new VectorOfPoint(pts));
+			Log.Debug("Pcount (T): " + polly.Size);
 			step--;
+			c2 = ord;
 		}
 
 		step = 0;
-		width = 0;
-		rev = false;
-		max = -1;
 		// Calc left regions (top to bottom), skipping top-left
 		while (step < _leftCount) {
 			var ord = step * lHeight;
-			var h = ord + lHeight > ScaleHeight ? ScaleHeight - ord : lHeight;
-			if (max == -1 && width >= ScaleWidth / 2) {
-				max = step;
-			}
-
-			if (rev) {
-				width -= lWidth;
-			} else {
-				width += lWidth;
+			c2 = ord + lHeight;
+			if (step == 0) {
+				ord = minTop;
+				c2 = minTop + lHeight;
 			}
 
 			if (step == _leftCount - 1) {
-				width = lHeight;
+				ord = ScaleHeight - lHeight;
+				c2 = ScaleHeight;
 			}
-
-			fs[idx] = new Rectangle(minLeft, ord, width, h);
-			if (max != -1 && max == _leftCount - step + 1) {
-				rev = true;
-			}
-
-			if (width > ScaleWidth / 2) {
-				width = ScaleWidth / 2;
-			}
-
-			if (width < lHeight) {
-				width = lWidth;
-			}
-
-			idx++;
+			
+			var pts = new Point[3];
+			pts[0] = new Point(minLeft, ord);
+			pts[1] = new Point(minLeft, c2);
+			pts[2] = center;
+			polly.Push(new VectorOfPoint(pts));
+			Log.Debug("Pcount (L): " + polly.Size);
 			step++;
 		}
 
 		step = 0;
-		height = 0;
-		rev = false;
-		max = -1;
 		// Calc bottom center regions (L-R)
 		while (step < _bottomCount) {
 			var ord = step * bWidth;
-			if (max == -1 && height >= ScaleHeight / 2) {
-				max = step;
+			c2 = ord + bWidth;
+			if (step == 0) {
+				ord = minLeft;
+				c2 = minLeft + bWidth;
 			}
 
-			if (rev) {
-				height -= bHeight;
-			} else {
-				height += bHeight;
+			if (step == _bottomCount) {
+				ord = ScaleWidth - bWidth;
+				c2 = ScaleWidth;
 			}
-
-			var bottom = ScaleHeight - height;
-			var w = ord + bWidth > ScaleWidth ? ScaleWidth - ord : bWidth;
-			if (step == _bottomCount - 1) {
-				height = bWidth;
-			}
-
-			fs[idx] = new Rectangle(ord, bottom, w, height);
-			if (max != -1 && max == _bottomCount - step - 1) {
-				rev = true;
-			}
-
-			if (height > ScaleHeight / 2) {
-				height = ScaleHeight / 2;
-			}
-
-			if (height < bWidth) {
-				height = bWidth;
-			}
-
-			idx++;
+			var pts = new Point[3];
+			pts[0] = new Point(ord, ScaleHeight);
+			pts[1] = new Point(c2, ScaleHeight);
+			pts[2] = center;
+			polly.Push(new VectorOfPoint(pts));
+			Log.Debug("Pcount (B): " + polly.Size);
 			step += 1;
 		}
-
-		return fs;
+		
+		return polly;
 	}
 
-	private Rectangle[] DrawSectors() {
+	private VectorOfVectorOfPoint DrawSectors() {
 		// This is where we're saving our output
-		var fs = new Rectangle[_ledCount];
+		var polly = new VectorOfVectorOfPoint();
+		var center = new Point(ScaleWidth / 2, ScaleHeight / 2);
 		// Individual segment sizes
 		var vWidth = ScaleWidth / _topCount;
-		var vHeight = ScaleHeight / _topCount;
 		var hHeight = ScaleHeight / _leftCount;
-		var hWidth = ScaleWidth / _leftCount;
 		// These are based on the border/strip values
 		// Minimum limits for top, bottom, left, right            
 		const int minTop = 0;
 		const int minLeft = 0;
 		// Calc right regions, bottom to top
-		var idx = 0;
 		var step = _rightCount - 1;
-		var max = _rightCount;
-		var wIdx = 1;
 		while (step >= 0) {
 			var ord = step * hHeight;
-			var width = hWidth * wIdx + 5;
-			width = step == _rightCount - 1 || step == 0 ? hHeight : width;
-			var right = ScaleWidth - width;
-			fs[idx] = new Rectangle(right, ord, ScaleWidth, hHeight);
-			wIdx += step < max / 2 ? -1 : 1;
-			if (wIdx < 1) {
-				wIdx = 1;
-			}
-
-			if (wIdx > max / 2) {
-				wIdx = max / 2;
-			}
-
-			idx++;
+			if (step == _rightCount - 1) ord = ScaleHeight - hHeight;
+			if (step == 0) ord = minLeft;
+			var pts = new Point[3];
+			pts[0] = new Point(ScaleWidth, ord);
+			pts[1] = new Point(ScaleWidth, ord + hHeight > ScaleHeight ? ScaleHeight : ord + hHeight);
+			pts[2] = center;
+			polly.Push(new VectorOfPoint(pts));
 			step--;
 		}
 
 		// Calc top regions, from right to left, skipping top-right corner (total horizontal sectors minus one)
 		step = _topCount - 2;
-		wIdx = 1;
-		max = _topCount;
-		while (step > 0) {
+		while (step >= 1) {
 			var ord = step * vWidth;
-			var height = vHeight * wIdx;
-			height = step == _topCount - 2 || step == 1 ? vWidth : height;
-			fs[idx] = new Rectangle(ord, minTop, vWidth, height);
-			wIdx += step < max / 2 ? -1 : 1;
-			if (wIdx < 1) {
-				wIdx = 1;
-			}
-
-			if (wIdx > max / 2) {
-				wIdx = max / 2;
-			}
-
-			idx++;
+			if (step == 1) ord = 0;
+			if (step == _topCount - 2) ord = ScaleWidth - vWidth;
+			var pts = new Point[3];
+			pts[0] = new Point(ord, minTop);
+			pts[1] = new Point(ord + vWidth > ScaleWidth ? ScaleWidth : ord + vWidth, minTop);
+			pts[2] = center;
+			polly.Push(new VectorOfPoint(pts));
 			step--;
 		}
 
 		step = 0;
-		wIdx = 1;
-		max = _leftCount;
 		// Calc left regions (top to bottom), skipping top-left
 		while (step <= _leftCount - 1) {
 			var ord = step * hHeight;
-			var width = hWidth * wIdx;
-			if (width > ScaleWidth / 2) {
-				width = ScaleWidth / 2;
-			}
-
-			width = step == 0 || step == _leftCount - 1 ? hHeight : width;
-			fs[idx] = new Rectangle(minLeft, ord, width, hHeight);
-			wIdx += step < max / 2 ? 1 : -1;
-			if (wIdx < 1) {
-				wIdx = 1;
-			}
-
-			if (wIdx > max / 2) {
-				wIdx = max / 2;
-			}
-
-			idx++;
+			if (step == 0) ord = minTop;
+			if (step == _leftCount - 1) ord = ScaleHeight - hHeight;
+			var pts = new Point[3];
+			pts[0] = new Point(minLeft, ord);
+			pts[1] = new Point(minLeft, ord + hHeight > ScaleHeight - 3 ? ScaleHeight : ord + hHeight);
+			pts[2] = center;
+			polly.Push(new VectorOfPoint(pts));
 			step++;
 		}
 
 		step = 1;
-		wIdx = 1;
-		max = _bottomCount;
 		// Calc bottom center regions (L-R)
 		while (step <= _bottomCount - 2) {
 			var ord = step * vWidth;
-			var height = vHeight * wIdx;
-			if (height > ScaleHeight / 2) {
-				height = ScaleHeight / 2;
-			}
-
-			height = step == 1 ? vWidth : height;
-			var bottom = ScaleHeight - height;
-			fs[idx] = new Rectangle(ord, bottom, vWidth, height);
-			wIdx += step < max / 2 ? 1 : -1;
-			if (wIdx < 1) {
-				wIdx = 1;
-			}
-
-			if (wIdx > max / 2) {
-				wIdx = max / 2;
-			}
-
-			idx++;
+			if (step == 1) ord = minLeft;
+			if (step == _bottomCount - 2) ord = ScaleWidth - vWidth;
+			var pts = new Point[3];
+			pts[0] = new Point(ord, ScaleHeight);
+			pts[1] = new Point(ord + vWidth > ScaleWidth ? ScaleWidth : ord + vWidth, ScaleHeight);
+			pts[2] = center;
+			polly.Push(new VectorOfPoint(pts));
 			step += 1;
 		}
 
-		return fs;
-	}
-
-	private Rectangle[] DrawCenterSectors() {
-		// This is where we're saving our output
-		var fs = new Rectangle[_ledCount];
-		// Calculate heights, minus offset for boxing
-		// Individual segment sizes
-		var sectorWidth = ScaleWidth / _topCount;
-		var sectorHeight = ScaleHeight / _leftCount;
-		// These are based on the border/strip values
-		// Minimum limits for top, bottom, left, right            
-		var top = ScaleHeight - sectorHeight;
-		var idx = 0;
-		for (var v = _leftCount; v > 0; v--) {
-			var left = ScaleWidth - sectorWidth;
-			for (var h = _topCount; h > 0; h--) {
-				fs[idx] = new Rectangle(left, top, sectorWidth, sectorHeight);
-				idx++;
-				left -= sectorWidth;
-			}
-
-			top -= sectorHeight;
-		}
-
-		return fs;
+		return polly;
 	}
 }

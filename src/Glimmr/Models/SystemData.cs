@@ -170,6 +170,34 @@ public class SystemData {
 	[DefaultValue(.025f)]
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 	public float AudioMin { get; set; } = .01f;
+	
+	/// <summary>
+	///     Low cutoff for audio detection, values below this will not be displayed.
+	/// </summary>
+	[DefaultValue(0f)]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public float AudioRotationLower { get; set; }
+	
+	/// <summary>
+	///     Low cutoff for audio detection, values below this will not be displayed.
+	/// </summary>
+	[DefaultValue(1.0f)]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public float AudioRotationUpper { get; set; } = 1.0f;
+	
+	/// <summary>
+	///     Low cutoff for audio detection, values below this will not be displayed.
+	/// </summary>
+	[DefaultValue(.5f)]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public float AudioRotationSpeed { get; set; } = .5f;
+	
+	/// <summary>
+	///     Low cutoff for audio detection, values below this will not be displayed.
+	/// </summary>
+	[DefaultValue(.5f)]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public float AudioRotationSensitivity { get; set; } = .5f;
 
 	/// <summary>
 	///     Current ambient scene.

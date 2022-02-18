@@ -2,6 +2,7 @@
 
 using System;
 using Newtonsoft.Json;
+using ObjCRuntime;
 
 #endregion
 
@@ -16,9 +17,9 @@ public class AmbientScene {
 	public float AnimationTime { get; set; }
 
 	/// <summary>
-	///     How long to ease between colors.
+	///     Deprecated. This is now determined by easing type and animation time.
 	/// </summary>
-	[JsonProperty]
+	[JsonProperty (DefaultValueHandling = DefaultValueHandling.Ignore)]
 	public float EasingTime { get; set; }
 
 	/// <summary>

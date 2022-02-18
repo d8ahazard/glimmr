@@ -20,7 +20,6 @@
     "#FFFFFF"
   ],
   "AnimationTime": 7,
-  "EasingTime": 0.2,
   "Mode": "Linear",
   "Easing": "FadeOut",
   "Name": "Independence",

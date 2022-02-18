@@ -481,26 +481,15 @@ public static class ColorUtil {
 	}
 
 
-	public static float HueFromFrequency(int freq) {
-		var frequency = (float)freq;
-		var start = 27.5f;
-		var end = start * 2;
+	public static float HueFromFrequency(float frequency, int octave) {
+		var start = new[] { 16.35f, 32.7f, 65.41f, 130.81f, 261.63f, 523.25f, 1046.5f, 2093f, 4186.01f };
+		var end = new[] { 30.87f, 61.74f, 123.47f, 246.94f, 493.88f, 987.77f, 1975.53f, 3951.07f, 7902.13f };
+		var minFrequency = start[octave];
+		var maxFrequency = end[octave];
 
-		if (frequency < start) {
-			frequency = start;
-		}
-
-		const int max = 3520;
-		while (frequency < start && end < max) {
-			start *= 2;
-			end = start * 2;
-		}
-
-		if (frequency >= start) {
-			return frequency / end;
-		}
-
-		return 1;
+		var range = maxFrequency - minFrequency;
+		var location = frequency / range;
+		return location;
 	}
 
 	public static List<Color> LedsToSectors(List<Color> ledColors, SystemData sd) {

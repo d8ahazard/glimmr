@@ -26,7 +26,6 @@ public class OpenRgbAgent : IColorTargetAgent {
 	}
 
 	public dynamic CreateAgent(ControlService cs) {
-		Log.Debug("Creating orgb...");
 		_devices ??= GetDevices().ToArray();
 		cs.RefreshSystemEvent += RefreshSystem;
 		RefreshSystem();
@@ -124,7 +123,7 @@ public class OpenRgbAgent : IColorTargetAgent {
 			_client = new OpenRGBClient(Ip, _port, "Glimmr", false);
 			Connect();
 		} catch (Exception e) {
-			Log.Debug("Exception creating OpenRGB Client.");
+			Log.Debug("Exception creating OpenRGB Client: " + e.Message);
 		}
 	}
 }

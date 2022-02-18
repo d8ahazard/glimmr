@@ -7,7 +7,6 @@
     "#11e5f6"
   ],
   "AnimationTime": 10,
-  "EasingTime": 2,
   "Mode": "Random",
   "Easing": "Blend",
   "Name": "Pop",

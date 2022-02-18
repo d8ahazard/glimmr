@@ -24,6 +24,8 @@ namespace Glimmr.Models;
 public class FrameSplitter {
 	// Do we send our frame data to the UI?
 	public bool DoSend { get; set; }
+	public bool Updating { get; set; }
+
 	public bool SourceActive { get; set; }
 	private ColorService ColorService { get; }
 	private readonly float _borderHeight;
@@ -99,6 +101,7 @@ public class FrameSplitter {
 	private Color[] _emptySectors;
 
 	public FrameSplitter(ColorService cs, bool crop = false) {
+		Updating = false;
 		_vectors = Array.Empty<PointF>();
 		_targets = new List<VectorOfPoint>();
 		_useCrop = crop;
@@ -330,17 +333,17 @@ public class FrameSplitter {
 			return;
 		}
 
-		_frameCount++;
-		// Check sectors once per second
-		if (_frameCount >= 30) {
-			if (_useCrop) {
+		if (_useCrop) {
+			_frameCount++;
+			// Check sectors once per second
+			if (_frameCount >= 30) {
 				await CheckCrop(clone).ConfigureAwait(false);
+				_frameCount = 0;
 			}
-			_frameCount = 0;
 		}
-		
-		SourceActive = !_allBlack;
 
+		SourceActive = !_allBlack;
+		Updating = true;
 		var ledColors = _empty;
 		for (var i = 0; i < _fullCoords.Length; i++) {
 			var sub = new Mat(clone, _fullCoords[i]);
@@ -372,7 +375,7 @@ public class FrameSplitter {
 		// Dispose
 		frame.Dispose();
 		clone.Dispose();
-		await Task.FromResult(true);
+		Updating = false;
 	}
 
 	private Mat? CheckCamera(Mat input) {
@@ -576,6 +579,8 @@ public class FrameSplitter {
 			return;
 		}
 
+		// Return here, because otherwise, "no input" detection won't work.
+		if (!_useCrop) return;
 		// Convert image to greyscale
 		var gr = new Mat();
 		CvInvoke.CvtColor(image, gr, ColorConversion.Bgr2Gray);
@@ -829,13 +834,14 @@ public class FrameSplitter {
 		// These are based on the border/strip values
 		// Minimum limits for top, bottom, left, right            
 		var minBot = ScaleHeight - lOffset - squareSize;
-		var minRight = ScaleWidth - pOffset - squareSize;
 		// Calc right regions, bottom to top
 		var idx = 0;
 		var step = _vSectors - 1;
 		while (step >= 0) {
+			var size = step == _vSectors - 1 || step == 0 ? sectorWidth : squareSize;
+			var x = ScaleWidth - pOffset - size;
 			var ord = step * sectorHeight + lOffset;
-			fs[idx] = new Rectangle(minRight, ord, squareSize, sectorHeight);
+			fs[idx] = new Rectangle(x, ord, size, sectorHeight);
 			idx++;
 			step--;
 		}
@@ -853,7 +859,8 @@ public class FrameSplitter {
 		// Calc left regions (top to bottom), skipping top-left
 		while (step <= _vSectors - 1) {
 			var ord = step * sectorHeight + lOffset;
-			fs[idx] = new Rectangle(pOffset, ord, squareSize, sectorHeight);
+			var size = step == _vSectors - 1 || step == 0 ? sectorWidth : squareSize;
+			fs[idx] = new Rectangle(pOffset, ord, size, sectorHeight);
 			idx++;
 			step++;
 		}

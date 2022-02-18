@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using Glimmr.Models.Util;
+using Newtonsoft.Json;
 using Serilog;
 
 #endregion
@@ -26,49 +27,51 @@ public class AudioMap {
 
 	public AudioMap() {
 		_octaveMap = new Dictionary<string, int>();
-		_leftSectors = new[] { 11, 10, 9, 8, 7, 6, 5 };
-		_rightSectors = new[] { 12, 13, 0, 1, 2, 3, 4 };
+		_leftSectors = new[] { 16, 15, 14, 13, 12, 11, 10, 9, 8, 7 };
+		_rightSectors = new[] { 17, 18, 19, 0, 1, 2, 3, 4, 5, 6 };
 		_minVal = float.MaxValue;
 		_loader = new JsonLoader("audioScenes");
 		Refresh();
 	}
 
-	public IEnumerable<Color> MapColors(Dictionary<int, float> lChannel, Dictionary<int, float> rChannel) {
+	public IEnumerable<Color> MapColors(Dictionary<float, int> lChannel) {
 		// Total number of sectors
-		const int len = 14;
+		const int len = 20;
 		var output = ColorUtil.EmptyColors(len);
 		var triggered = false;
-		foreach (var (key, value) in _octaveMap) {
-			var l = _leftSectors[value - 1];
-			var r = _rightSectors[value - 1];
-			var step = int.Parse(key);
-			var (i, f) = HighNote(lChannel, step);
-			var (key1, value1) = HighNote(rChannel, step);
-			if (!triggered) {
-				triggered = f >= _rotationThreshold || value1 >= _rotationThreshold;
-			}
+		var l = 0;
+		var r = 0;
+		//Log.Debug("LMap: " + JsonConvert.SerializeObject(lChannel));
+		foreach (var (key, octave) in _octaveMap) {
+			try {
+				var region = int.Parse(key);
+				l = _leftSectors[region];
+				r = _rightSectors[region];
+				var (lFreq, lMax) = HighNote(lChannel, octave);
+				if (lMax == 0) {
+					output[l] = Color.FromArgb(0, 0, 0, 0);
+					output[r] = output[l];
+				} else {
+					if (!triggered) {
+						triggered = lMax >= _rotationThreshold;
+					}
+					//Log.Debug($"MaxFreq {octave} is {lFreq} at {lMax}");
+					var lHue = RotateHue(ColorUtil.HueFromFrequency(lFreq, octave));
+					if (lMax > _maxVal) {
+						_maxVal = lMax;
+					}
 
-			var lHue = RotateHue(ColorUtil.HueFromFrequency(i));
-			var rHue = RotateHue(ColorUtil.HueFromFrequency(key1));
-			if (f > _maxVal) {
-				_maxVal = f;
-			}
+					if (lMax > 0 && lMax < _minVal) {
+						_minVal = lMax;
+					}
 
-			if (value1 > _maxVal) {
-				_maxVal = value1;
+					output[l] = ColorUtil.HsvToColor(lHue * 360, 1, lMax / 255f);
+					output[r] = output[l];	
+				}
+				
+			} catch (Exception e) {
+				Log.Debug($"Ex {l} {r}: " + e.Message + " at " + e.StackTrace);
 			}
-
-			if (f > 0 && f < _minVal) {
-				_minVal = f;
-			}
-
-			if (value1 > 0 && value1 < _minVal) {
-				_minVal = value1;
-			}
-
-			//Log.Debug($"Sector {l} using octave {step} is {lNote.Key} and {lNote.Value}");
-			output[l] = ColorUtil.HsvToColor(lHue * 360, 1, f);
-			output[r] = ColorUtil.HsvToColor(rHue * 360, 1, value1);
 		}
 
 		_triggered = triggered;
@@ -76,20 +79,26 @@ public class AudioMap {
 		return output;
 	}
 
-	private static KeyValuePair<int, float> HighNote(Dictionary<int, float> stuff, int step) {
-		var minFrequency = 27.5 / 2;
-		for (var i = 1; i <= step; i++) {
-			minFrequency *= 2;
-		}
-
-		var amp = 0f;
-		var frequency = 0;
+	/// <summary>
+	/// Select the highest frequency in a given octave, where step is the octave from 0-9
+	/// </summary>
+	/// <param name="stuff"></param>
+	/// <param name="step"></param>
+	/// <returns></returns>
+	private static KeyValuePair<float, int> HighNote(Dictionary<float, int> stuff, int step) {
+		//Log.Debug($"Octave range {step} is {low} to {high}");
+		var start = new[] { 16.35f, 32.7f, 65.41f, 130.81f, 261.63f, 523.25f, 1046.5f, 2093f, 4186.01f };
+		var end = new[] { 30.87f, 61.74f, 123.47f, 246.94f, 493.88f, 987.77f, 1975.53f, 3951.07f, 7902.13f };
+		var minFrequency = start[step];
+		var maxFrequency = end[step];
+		var amp = 0;
+		var frequency = 0f;
 		foreach (var (key, value) in stuff) {
 			if (key < minFrequency) {
 				continue;
 			}
 
-			if (key >= minFrequency * 2) {
+			if (key > maxFrequency) {
 				continue;
 			}
 
@@ -101,7 +110,7 @@ public class AudioMap {
 			frequency = key;
 		}
 
-		return new KeyValuePair<int, float>(frequency, amp);
+		return new KeyValuePair<float, int>(frequency, amp);
 	}
 
 

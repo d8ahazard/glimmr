@@ -82,7 +82,6 @@ public static class DisplayUtil {
 		
 		while (true) {
 			var deviceData = new DisplayDevice { cb = Marshal.SizeOf(typeof(DisplayDevice)) };
-			Log.Debug("DD: " + JsonConvert.SerializeObject(deviceData));
 			if (EnumDisplayDevices(null, devIdx, ref deviceData, 0) != 0) {
 				// Get the position and size of this particular display device
 				var devMode = new Devmode();
@@ -99,7 +98,6 @@ public static class DisplayUtil {
 
 				devIdx++;
 			} else {
-				Log.Debug("Can't enum dd.");
 				break;
 			}
 		}

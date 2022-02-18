@@ -8,7 +8,6 @@
     "#01004c"
   ],
   "AnimationTime": 5,
-  "EasingTime": 5,
   "Mode": "Random",
   "Easing": "Blend",
   "Name": "ColorFlow",
