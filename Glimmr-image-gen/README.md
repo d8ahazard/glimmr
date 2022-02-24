@@ -1,10 +1,8 @@
-# Glimmr-image-gen
-
-(A fork of a fork of pi-gen)
+# pi-gen
 
 Tool used to create Raspberry Pi OS images. (Previously known as Raspbian).
 
-_This fork creates the [Glimmr](https://github.com/d8ahazard/glimmr) + [Comitup](https://davesteele.github.io/comitup/) spin_
+_This fork creates the [Comitup](https://davesteele.github.io/comitup/) spin_
 
 
 ## Dependencies
@@ -19,7 +17,7 @@ To install the required dependencies for `pi-gen` you should run:
 ```bash
 apt-get install coreutils quilt parted qemu-user-static debootstrap zerofree zip \
 dosfstools libarchive-tools libcap2-bin grep rsync xz-utils file git curl bc \
-qemu-utils kpartx gpg
+qemu-utils kpartx
 ```
 
 The file `depends` contains a list of tools needed.  The format of this
@@ -385,8 +383,8 @@ Example:
 ```bash
 root@build-machine:~/$ lsblk | grep nbd
 nbd1      43:32   0    10G  0 disk 
-+-nbd1p1  43:33   0    10G  0 part 
-+-nbd1p1 253:0    0    10G  0 part
+├─nbd1p1  43:33   0    10G  0 part 
+└─nbd1p1 253:0    0    10G  0 part
 
 root@build-machine:~/$ ps xa | grep qemu-nbd
  2392 pts/6    S+     0:00 grep --color=auto qemu-nbd
