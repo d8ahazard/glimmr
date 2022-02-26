@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Enums;
@@ -27,6 +28,7 @@ public class UdpStream : ColorSource {
 	private readonly CancellationToken _listenToken;
 	private readonly FrameSplitter _splitter;
 	private readonly UdpClient _uc;
+	private readonly Socket _us;
 	private FrameBuilder? _builder;
 	private DeviceMode _devMode;
 	private ServiceDiscovery? _discovery;
@@ -37,8 +39,10 @@ public class UdpStream : ColorSource {
 	private bool _sourceActive;
 	private int _timeOut;
 	private Task? _cancelTask;
+	private readonly ManualResetEvent allDone;
 
 	public UdpStream(ColorService cs) {
+		allDone = new ManualResetEvent(false);
 		_cs = cs.ControlService;
 		_cs.RefreshSystemEvent += RefreshSystem;
 		_cs.SetModeEvent += Mode;
@@ -47,10 +51,22 @@ public class UdpStream : ColorSource {
 		_uc = new UdpClient(21324) { Ttl = 5, Client = { ReceiveBufferSize = 2000 } };
 		_uc.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 		_uc.Client.Blocking = false;
+		_us = new Socket(AddressFamily.InterNetwork,
+			SocketType.Stream,
+			ProtocolType.Tcp);
+
+		// bind the listening socket to the port
+		var hostIP = IpUtil.GetLocalIpAddress();
+		var ep = new IPEndPoint(IPAddress.Parse(hostIP), 19445);
+		_us.Bind(ep);
+
 		_cancelSource = new CancellationTokenSource();
 		if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
 			_uc.DontFragment = true;
 		}
+
+		_cancelSource = new CancellationTokenSource();
+		
 
 		var sd = DataUtil.GetSystemData();
 		_devMode = sd.DeviceMode;
@@ -66,6 +82,7 @@ public class UdpStream : ColorSource {
 		_cts = new CancellationTokenSource();
 		_listenToken = _cts.Token;
 		Task.Run(Listen, _listenToken);
+		Task.Run(Listen2, _listenToken);
 	}
 
 	public override Task Start(CancellationToken ct) {
@@ -129,6 +146,72 @@ public class UdpStream : ColorSource {
 		}
 	}
 	
+	private async Task Listen2() {
+		_us.Listen(1000);
+		while (!_listenToken.IsCancellationRequested) {
+			try {
+				allDone.Reset();
+				_us.BeginAccept(Listen_Callback, _us);
+				allDone.WaitOne();
+				
+			} catch (Exception) {
+				// Ignored
+			}
+		}
+		await Task.FromResult(true);
+	}
+
+	private void Listen_Callback(IAsyncResult ar) {
+		Log.Debug("Accept callback.");
+		allDone.Set();
+		if (ar.AsyncState == null) {
+			Log.Debug("Null async stage!");
+			return;
+		}
+		var listener = (Socket) ar.AsyncState;  
+		var handler = listener.EndAccept(ar);
+		var state = new StateObject {
+			WorkSocket = handler
+		};
+		handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,  
+			ReadCallback, state);  
+	}
+
+	private static void ReadCallback(IAsyncResult ar) {
+		Log.Debug("Read callback!!");
+		if (ar.AsyncState == null) {
+			Log.Debug("Null async state!");
+			return;
+		}
+		var state = (StateObject) ar.AsyncState;  
+		var handler = state.WorkSocket;
+		if (handler == null) return;
+		// Read data from the client socket.  
+		var read = handler.EndReceive(ar);  
+  
+		// Data was read from the client socket.  
+		if (read > 0)
+		{
+			for (var i = 0; i <= read; i++) {
+				state.sb.AppendFormat("{0:x2}", state.buffer[i]);
+			}
+			Log.Debug("State (reading): " + state.sb);
+			handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,  
+				ReadCallback, state);  
+		}
+		else
+		{  
+			if (state.sb.Length > 1)
+			{  
+				// All the data has been read from the client;  
+				// display it on the console.  
+				Log.Debug("State (done): " + state.sb);
+				
+			}  
+			handler.Close();  
+		}  
+	}
+
 	public override Task StopAsync(CancellationToken stoppingToken) {
 		_uc.Close();
 		_uc.Dispose();
@@ -179,4 +262,12 @@ public class UdpStream : ColorSource {
 			//ignored
 		}
 	}
+
+	private class StateObject
+	{  
+		public Socket? WorkSocket;  
+		public const int BufferSize = 1024;  
+		public readonly byte[] buffer = new byte[BufferSize];  
+		public readonly StringBuilder sb = new();
+	}  
 }

@@ -220,14 +220,14 @@ public sealed class HueDevice : ColorTarget, IColorTarget, IDisposable {
 				item.Id == entLight.Id.ToString());
 			// Return if not mapped
 			if (lightData == null) {
-				Log.Debug("No DATA");
+				Log.Debug("No light data.");
 				continue;
 			}
 
 			// Otherwise, get the corresponding sector color
 			var target = _targets[entLight.Id.ToString()];
 			if (target >= sectors.Count) {
-				Log.Debug("NO TARGET!!");
+				Log.Debug("No color target!!");
 				continue;
 			}
 

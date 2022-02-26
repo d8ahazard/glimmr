@@ -15,7 +15,8 @@ using Serilog;
 namespace Glimmr.Models.ColorSource.AudioVideo;
 
 public class AudioVideoStream : ColorSource {
-	public override bool SourceActive => _vs != null && _vs.StreamSplitter.SourceActive;
+	public override bool SourceActive => _vs != null && _vs.FrameSplitter.SourceActive;
+	
 	private readonly ColorService _cs;
 	private AudioStream? _as;
 	private Task? _aTask;
@@ -44,19 +45,19 @@ public class AudioVideoStream : ColorSource {
 		}
 
 		if (_vs != null && _as != null) {
+			Log.Debug("Starting video stream...");
 			_vTask = _vs.Start(ct);
 			_vs.SendColors = false;
-			_vs.StreamSplitter.DoSend = false;
+			Log.Debug("Starting audio stream...");
 			_aTask = _as.Start(ct);
 			_as.SendColors = false;
-			_as.StreamSplitter.DoSend = false;
 		} else {
 			Log.Warning("Unable to acquire audio or video stream.");
 			return Task.CompletedTask;
 		}
-
+		Log.Debug("Starting main av loop...");
 		RunTask = ExecuteAsync(ct);
-		return RunTask;
+		return Task.CompletedTask;
 	}
 
 	public override void RefreshSystem() {
@@ -81,16 +82,14 @@ public class AudioVideoStream : ColorSource {
 
 					continue;
 				}
-
-				var vCols = _vs.StreamSplitter.GetColors();
-				var vSecs = _vs.StreamSplitter.GetSectors();
-				var aCols = _as.StreamSplitter.GetColors();
-				var aSecs = _as.StreamSplitter.GetSectors();
+				var vCols = _vs.FrameSplitter.GetColors();
+				var vSecs = _vs.FrameSplitter.GetSectors();
+				var aCols = _as.FrameSplitter.GetColors();
+				var aSecs = _as.FrameSplitter.GetSectors();
 				if (vCols.Length == 0 || vCols.Length != aCols.Length || vSecs.Length == 0 ||
 				    vSecs.Length != aSecs.Length) {
 					continue;
 				}
-
 				var oCols = new Color[_systemData.LedCount];
 				var oSecs = new Color[_systemData.SectorCount];
 				for (var i = 0; i < vCols.Length; i++) {
@@ -104,23 +103,22 @@ public class AudioVideoStream : ColorSource {
 					var vCol = vSecs[i];
 					oSecs[i] = ColorUtil.SetBrightness(vCol, ab);
 				}
-
 				await _cs.SendColors(oCols, oSecs);
 
 				if (_doSave && _cs.ControlService.SendPreview) {
 					_doSave = false;
-					_vs.StreamSplitter.MergeFrame(oCols, oSecs);
+					Log.Debug("Merge...");
+					_vs.FrameSplitter.MergeFrame(oCols, oSecs);
 				}
-
 				await Task.Delay(16, CancellationToken.None);
 			}
 
 			if (_vs != null) {
-				_vs.SendColors = false;
+				_vs.SendColors = true;
 			}
 
 			if (_as != null) {
-				_as.SendColors = false;
+				_as.SendColors = true;
 			}
 
 			if (_aTask is { IsCompleted: false }) {

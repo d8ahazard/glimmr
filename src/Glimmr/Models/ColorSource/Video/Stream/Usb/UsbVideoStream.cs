@@ -133,23 +133,14 @@ public class UsbVideoStream : IVideoStream, IDisposable {
 		Log.Debug("Disposing video.");
 		try {
 			if (_video != null) {
-				var ptr = _video.Ptr;
-				if (ptr != IntPtr.Zero) {
-					Log.Debug("Releasing cap??");
-					//cveVideoCaptureRelease(ref ptr);
-					Log.Debug("Released");
-				} else {
-					Log.Debug("No pointer.");
-				}
+				_video.Dispose();
+				_video = null;
 			} else {
 				Log.Debug("Video is null");
 			}
 		} catch (Exception e) {
 			Log.Warning("Exception: " + e.Message);
-		}
-
-		_video?.Dispose();
-		_video = null;
+		}		
 	}
 
 	protected virtual void Dispose(bool disposing) {

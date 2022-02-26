@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using Emgu.CV;
 using Emgu.CV.Util;
 using Glimmr.Enums;
@@ -28,6 +29,7 @@ using Newtonsoft.Json.Serialization;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
+using Timer = System.Timers.Timer;
 
 #endregion
 
@@ -47,6 +49,9 @@ public class ControlService : BackgroundService {
 	private static ControlService _myCs = null!;
 	
 	private readonly IHubContext<SocketServer> _hubContext;
+
+	private static Timer? _ut;
+	private static Timer? _bt;
 	
 	public AsyncEvent<DynamicEventArgs> DemoLedEvent = null!;
 	public AsyncEvent<DynamicEventArgs> DeviceReloadEvent = null!;
@@ -56,19 +61,27 @@ public class ControlService : BackgroundService {
 	public AsyncEvent<DynamicEventArgs> RefreshLedEvent = null!;
 	public AsyncEvent<DynamicEventArgs> SetModeEvent = null!;
 	public AsyncEvent<DynamicEventArgs> StartStreamEvent = null!;
-	public AsyncEvent<DynamicEventArgs> TestLedEvent = null!;
+	public AsyncEvent<DynamicEventArgs> FlashLedEvent = null!;
 
 	private Dictionary<string, dynamic> _agents = null!;
-	private readonly Task _colorTask = null!;
-	private readonly Task _discoveryTask = null!;
-	private SystemData _sd = null!;
-	private readonly Task _statTask = null!;
-
+	private SystemData _sd;
+	
 	public ControlService(IHubContext<SocketServer> hubContext) {
 		_myCs = this;
+		_sd = DataUtil.GetSystemData();
 		_hubContext = hubContext;
 		_levelSwitch = Program.LogSwitch;
 		Initialize();
+		_bt = new Timer();
+		_bt.Interval = 1000 * 60 * 60;
+		_bt.Elapsed += CheckBackups;
+		_bt.Start();
+		
+		
+		_ut = new Timer();
+		_ut.Interval = 1000 * 60 * 60 * _sd.AutoUpdateTime;
+		_ut.Elapsed += CheckUpdate;
+		_ut.Start();
 	}
 
 	public static ControlService GetInstance() {
@@ -132,6 +145,7 @@ public class ControlService : BackgroundService {
 		}
 
 		DataUtil.SetItem("AutoDisabled", autoDisabled);
+		DataUtil.SetItem("DeviceMode", mode);
 		ColorUtil.SetSystemData();
 		await SetModeEvent.InvokeAsync(this, new DynamicEventArgs(mode));
 	}
@@ -226,8 +240,16 @@ public class ControlService : BackgroundService {
 	}
 
 
-	public async Task TestLights(int led) {
-		await TestLedEvent.InvokeAsync(this, new DynamicEventArgs(led));
+	public async Task FlashLed(int led) {
+		await FlashLedEvent.InvokeAsync(this, new DynamicEventArgs(led));
+	}
+	
+	public async Task FlashDevice(string deviceId) {
+		await FlashDeviceEvent.InvokeAsync(this, new DynamicEventArgs(deviceId));
+	}
+
+	public async Task FlashSector(int sector) {
+		await FlashSectorEvent.InvokeAsync(this, new DynamicEventArgs(sector));
 	}
 
 
@@ -245,54 +267,31 @@ public class ControlService : BackgroundService {
 
 	protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 		Log.Debug("Starting services...");
-		Log.Debug("All services started, running main loop...");
 		Task.Run(async () => {
 			while (!stoppingToken.IsCancellationRequested) {
-				await CheckBackups().ConfigureAwait(false);
-				if (!_sd.AutoUpdate) {
-					continue;
-				}
-
-				var start = new TimeSpan(_sd.AutoUpdateTime, 0, 0); //10 o'clock
-				var end = new TimeSpan(_sd.AutoUpdateTime, 1, 0); //12 o'clock
-				var now = DateTime.Now.TimeOfDay;
-
-				if (now <= start || now >= end) {
-					continue;
-				}
-
-				Log.Information("Triggering system update.");
-				SystemUtil.Update();
-				await Task.Delay(TimeSpan.FromMinutes(60), stoppingToken);
+				await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
 			}
+			_bt?.Stop();
+			_ut?.Stop();
 		}, stoppingToken);
 		return Task.CompletedTask;
 	}
 
-	private static Task CheckBackups() {
+	private static void CheckBackups(object? sender, ElapsedEventArgs elapsedEventArgs) {
 		var userPath = SystemUtil.GetUserDir();
 		var dbFiles = Directory.GetFiles(userPath, "*.db");
-		if (dbFiles.Length == 1) {
-			Log.Debug("Backing up database...");
-			DataUtil.BackupDb();
-		}
-
-		var userDir = SystemUtil.GetUserDir();
-		var stamp = DateTime.Now.ToString("yyyyMMdd");
-		var outFile = Path.Combine(userDir, $"store_{stamp}.db");
-		if (!dbFiles.Contains(outFile)) {
-			Log.Debug($"Backing up database for {stamp}...");
-			DataUtil.BackupDb();
-		}
-
+		DataUtil.BackupDb();
+		
 		Array.Sort(dbFiles);
 		Array.Reverse(dbFiles);
+		
+		// Prune extra backups
 		if (dbFiles.Length <= 8) {
-			return Task.CompletedTask;
+			return;
 		}
 
 		foreach (var p in dbFiles) {
-			var pStamp = p.Replace(userDir, "");
+			var pStamp = p.Replace(userPath, "");
 			pStamp = pStamp.Replace(Path.DirectorySeparatorChar.ToString(), "");
 			pStamp = pStamp.Replace("store_", "");
 			pStamp = pStamp.Replace(".db", "");
@@ -301,7 +300,7 @@ public class ControlService : BackgroundService {
 				continue;
 			}
 
-			if (p.Equals(Path.Combine(userDir, "store.db"))) {
+			if (p.Equals(Path.Combine(userPath, "store.db"))) {
 				continue;
 			}
 
@@ -317,8 +316,10 @@ public class ControlService : BackgroundService {
 				Log.Warning($"Exception removing file({p}): " + e.Message);
 			}
 		}
+	}
 
-		return Task.CompletedTask;
+	private void CheckUpdate(object? sender, ElapsedEventArgs elapsedEventArgs) {
+		if (_sd.AutoUpdate) SystemUtil.Update();
 	}
 
 	private void Initialize() {
@@ -348,7 +349,6 @@ v. {version}
 ";
 		Log.Information(text);
 		Log.Information("Initializing control service...");
-		_sd = DataUtil.GetSystemData();
 		SetLogLevel();
 		var devs = DataUtil.GetDevices();
 		if (devs.Count == 0) {
@@ -413,7 +413,7 @@ v. {version}
 			}
 		}
 
-		await Task.WhenAll(_statTask, _colorTask, _discoveryTask);
+		await Task.FromResult(true);
 		Log.Information("Control service stopped.");
 	}
 
@@ -461,6 +461,11 @@ v. {version}
 		}
 
 		ColorUtil.SetSystemData();
+		_ut?.Stop();
+		_ut = new Timer();
+		_ut.Interval = 1000 * 60 * 60 * _sd.AutoUpdateTime;
+		_ut.Elapsed += CheckUpdate;
+		_ut.Start();
 		await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized(this));
 		RefreshSystemEvent.Invoke();
 	}
@@ -494,14 +499,6 @@ v. {version}
 		var vb = new VectorOfByte();
 		CvInvoke.Imencode(".png", image, vb);
 		await _hubContext.Clients.All.SendAsync(method, vb.ToArray());
-	}
-
-	public async Task FlashDevice(string deviceId) {
-		await FlashDeviceEvent.InvokeAsync(this, new DynamicEventArgs(deviceId));
-	}
-
-	public async Task FlashSector(int sector) {
-		await FlashSectorEvent.InvokeAsync(this, new DynamicEventArgs(sector));
 	}
 
 	public async Task DemoLed(string id) {

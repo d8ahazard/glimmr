@@ -337,7 +337,7 @@ public class GlimmrController : ControllerBase {
 	/// <returns></returns>
 	[HttpPost("flashLed")]
 	public async Task<IActionResult> TestStripOffset([FromBody] int len) {
-		await _controlService.TestLights(len);
+		await _controlService.FlashLed(len);
 		return Ok();
 	}
 

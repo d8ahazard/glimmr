@@ -47,13 +47,18 @@ public class LedDevice : ColorTarget, IColorTarget {
 		if (!SystemUtil.IsRaspberryPi()) {
 			return;
 		}
-
+		
 		if (Id != "0") {
 			Log.Debug($"Id is {Id}, returning.");
 			return;
 		}
 
 		_agent?.ReloadData();
+		LedData? ld2 = DataUtil.GetDevice("1");
+		var l2Enable = ld2?.Enable ?? false;
+		if (!Enable && !l2Enable) {
+			return;
+		}
 		Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
 		ColorService.StartCounter++;
 		Streaming = true;

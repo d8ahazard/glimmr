@@ -103,7 +103,6 @@ public class FrameBuilder {
 			pts[1] = new Point(ScaleWidth, c2);
 			pts[2] = center;
 			polly.Push(new VectorOfPoint(pts));
-			Log.Debug("Pcount (R): " + polly.Size);
 			step--;
 			c2 = ord;
 		}
@@ -126,7 +125,6 @@ public class FrameBuilder {
 			pts[1] = new Point(c2, minTop);
 			pts[2] = center;
 			polly.Push(new VectorOfPoint(pts));
-			Log.Debug("Pcount (T): " + polly.Size);
 			step--;
 			c2 = ord;
 		}
@@ -151,7 +149,6 @@ public class FrameBuilder {
 			pts[1] = new Point(minLeft, c2);
 			pts[2] = center;
 			polly.Push(new VectorOfPoint(pts));
-			Log.Debug("Pcount (L): " + polly.Size);
 			step++;
 		}
 
@@ -174,7 +171,6 @@ public class FrameBuilder {
 			pts[1] = new Point(c2, ScaleHeight);
 			pts[2] = center;
 			polly.Push(new VectorOfPoint(pts));
-			Log.Debug("Pcount (B): " + polly.Size);
 			step += 1;
 		}
 		

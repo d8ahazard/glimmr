@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using ManagedBass;
-using Newtonsoft.Json;
 using Serilog;
 
 #endregion
@@ -17,12 +16,12 @@ namespace Glimmr.Models.ColorSource.Audio;
 
 public class AudioStream : ColorSource {
 	public bool SendColors {
-		set => StreamSplitter.DoSend = value;
+		set => FrameSplitter.DoSend = value;
 	}
 
-	public override bool SourceActive => StreamSplitter.SourceActive;
+	public override bool SourceActive => FrameSplitter.SourceActive;
 
-	public FrameSplitter StreamSplitter { get; }
+	public FrameSplitter FrameSplitter { get; }
 	private readonly FrameBuilder _builder;
 
 	private List<AudioData> _devices;
@@ -35,10 +34,19 @@ public class AudioStream : ColorSource {
 	private SystemData? _sd;
 	private const int SampleSize = 512;
 	private const int SampleFreq = 48000;
+	private CancellationToken? _ct;
+	private bool _restart;
+	private bool _running;
+	private double _maxVal;
+	private int _cutoff;
+	private Dictionary<float, int> _frameData;
+
 	public AudioStream(ColorService cs) {
+		_frameData = new Dictionary<float, int>();
 		_devices = new List<AudioData>();
 		_map = new AudioMap();
-		StreamSplitter = new FrameSplitter(cs);
+		FrameSplitter = new FrameSplitter(cs);
+		SendColors = true;
 		_builder = new FrameBuilder(new[] {
 			4, 4, 6, 6
 		});
@@ -54,21 +62,30 @@ public class AudioStream : ColorSource {
 
 	public sealed override void RefreshSystem() {
 		_sd = DataUtil.GetSystemData();
+		_cutoff = _sd.AudioCutoff;
+		var idx = _recordDeviceIndex;
 		LoadData();
+		if (idx == _recordDeviceIndex || _ct == null) {
+			return;
+		}
+
+		_restart = true;
+		while (_running) {
+			Task.Delay(TimeSpan.FromMilliseconds(500));
+			RunTask = ExecuteAsync((CancellationToken) _ct);
+		}
+		_restart = false;
 	}
 
 
 	protected override Task ExecuteAsync(CancellationToken ct) {
+		_ct = ct;
 		return Task.Run(async () => {
-			SendColors = true;
 			try {
 				Bass.RecordInit(_recordDeviceIndex);
-				// Ensure volume is 100%
-				_handle = Bass.RecordStart(SampleFreq, 2, BassFlags.Float, 100, Update);
-				Bass.ChannelSetAttribute(_handle, ChannelAttribute.Volume, 1);
-
+				_handle = Bass.RecordStart(SampleFreq, 2, BassFlags.Default, 60, UpdateAudio);
 				_hasDll = true;
-				Log.Information("Recording init completed.");
+				Log.Information("Recording init completed for device " + _recordDeviceIndex);
 			} catch (DllNotFoundException) {
 				Log.Warning("Bass.dll not found, nothing to do...");
 				_hasDll = false;
@@ -82,25 +99,29 @@ public class AudioStream : ColorSource {
 			}
 
 			Log.Debug("Starting audio stream service...");
-			Bass.ChannelSetAttribute(_handle, ChannelAttribute.Frequency, SampleFreq);
+			_running = true;
 			Bass.ChannelPlay(_handle, true);
 			Log.Debug("Audio stream started.");
-			while (!ct.IsCancellationRequested) {
+			while (!ct.IsCancellationRequested && !_restart) {
 				await Task.Delay(TimeSpan.FromMilliseconds(500), CancellationToken.None);
 			}
-
+			_ct = null;
 			try {
 				Bass.ChannelStop(_handle);
 				Bass.Free();
 				Bass.RecordFree();
-				SendColors = false;
 				Log.Debug("Audio stream service stopped.");
 			} catch (Exception e) {
 				Log.Warning("Exception stopping stream..." + e.Message);
 			}
 
+			_running = false;
 			return Task.CompletedTask;
 		}, CancellationToken.None);
+	}
+
+	private bool UpdateAudio(int handle, IntPtr buffer, int length, IntPtr user) {
+		return !_restart && ProcessHandle(handle);
 	}
 
 
@@ -109,7 +130,7 @@ public class AudioStream : ColorSource {
 		// _gain = _sd.AudioGain;
 		// _min = _sd.AudioMin;
 		var rd = _sd.RecDev;
-		_devices = DataUtil.GetCollection<AudioData>("Dev_Audio") ?? new List<AudioData>();
+		_devices = DataUtil.GetCollection<AudioData>("Dev_Audio");
 		_map = new AudioMap();
 		_recordDeviceIndex = -1;
 		_devices = new List<AudioData>();
@@ -135,7 +156,6 @@ public class AudioStream : ColorSource {
 					if (rd != info.Name) {
 						continue;
 					}
-
 					_recordDeviceIndex = a;
 				}
 			}
@@ -147,61 +167,96 @@ public class AudioStream : ColorSource {
 			}
 		}
 
-		_devices = DataUtil.GetCollection<AudioData>("Dev_Audio") ?? new List<AudioData>();
+		_devices = DataUtil.GetCollection<AudioData>("Dev_Audio");
 	}
 
-	private bool Update(int handle, IntPtr buffer, int length, IntPtr user) {
-		if (_map == null) {
-			Log.Warning("No map?");
-			return true;
-		}
-		
+	private bool ProcessHandle(int handle) {
+		if (!_running) return false;
+		var lData = new Dictionary<float, int>();
+		var level = Bass.ChannelGetLevel(handle);
 		var fft = new float[SampleSize]; // fft data buffer
 		// Get our FFT for "everything"
-		var res = Bass.ChannelGetData(handle, fft, getFlag(SampleSize));
-		if (res == -1) {
-			Log.Warning("Error getting channel data: " + Bass.LastError);
-			return true;
-		}
-
-		if (res > 0) {
-			var lData = new Dictionary<float, int>();
-
-			for (var a = 0; a < SampleSize; a++) {
-				var val = fft[a];
-				var y = (int)(Math.Sqrt(val) * 3 * 255 - 4);
-				if (y > 255) y = 255;
-				if (y < 0) y = 0;
-				var freq = FftIndex2Frequency(a, SampleSize, SampleFreq);
-				if (y != 0) lData[freq] = y;
-			}
-			//if (lData.Count > 0) Log.Debug("Ldata: " + JsonConvert.SerializeObject(lData));
-
-			var sectors = _map.MapColors(lData).ToList();
-			var frame = _builder.Build(sectors);
-			if (frame != null) {
-				StreamSplitter.Update(frame).ConfigureAwait(false);
-				frame.Dispose();
-				return true;
+		var res = Bass.ChannelGetData(handle, fft, (int)getFlag(SampleSize));
+		
+		if (level < 700) {
+			_frameData = lData;
+			if (_maxVal > 0) {
+				_maxVal--;
 			}
 		} else {
-			Log.Debug("NO RES.");
+			switch (res) {
+				case -1:
+					Log.Warning("Error getting channel data: " + Bass.LastError);
+					return true;
+				case 0:
+					return true;
+				case > 0: {
+					for (var a = 0; a < SampleSize; a++) {
+						var val = fft[a];
+						if (float.IsNaN(val) || float.IsInfinity(val)) {
+							val = 0;
+						} 
+						var freq = FftIndex2Frequency(a, SampleSize, SampleFreq);
+						
+						var y = Math.Sqrt(val) * 3 * 255 - 4;
+						if (y > 255) y = 255;
+						if (y < 0) y = 0;
+						if (y == 0) {
+							continue;
+						}
+
+						// if (_frameData.ContainsKey(freq)) {
+						// 	var prev = _frameData[freq];
+						// 	if (y < prev) {
+						// 		y = (y + prev) / 2;
+						// 	}
+						// }
+
+						if (y > _maxVal) {
+							_maxVal = y;
+						}
+						lData[freq] = (int) FlattenValue(y);
+					}
+					if (lData.Count > 0) {
+						_frameData = lData;
+					} else {
+						if (_maxVal > 0) {
+							_maxVal--;
+						}
+					}
+					break;
+				}
+				default:
+					Log.Debug("NO RES: " + res / SampleSize);
+					break;
+			}
 		}
+		var sectors = _map.MapColors(_frameData).ToList();
+		var frame = _builder.Build(sectors);
+		if (frame != null) {
+			FrameSplitter.Update(frame).ConfigureAwait(false);
+			frame.Dispose();
+		}
+
 		return true;
 	}
 
-
-	private static float FftIndex2Frequency(int index, int length, int sampleRate) {
-		return 1f * index * sampleRate / length;
+	private double FlattenValue(double v) {
+		if (v <= _cutoff) v = 0;
+		return v / _maxVal * 255;
 	}
 
-	private static int getFlag(int size) {
+	private static float FftIndex2Frequency(int index, int length, int sampleRate) {
+		return 0.5f * index * sampleRate / length;
+	}
+
+	private static DataFlags getFlag(int size) {
 		return size switch {
-			256 => (int)DataFlags.FFT512,
-			512 => (int)DataFlags.FFT1024,
-			1024 => (int)DataFlags.FFT2048,
-			2048 => (int)DataFlags.FFT4096,
-			4096 => (int)DataFlags.FFT8192,
+			256 => DataFlags.FFT512,
+			512 => DataFlags.FFT1024,
+			1024 => DataFlags.FFT2048,
+			2048 => DataFlags.FFT4096,
+			4096 => DataFlags.FFT8192,
 			_ => 0
 		};
 	}

@@ -32,7 +32,6 @@ public class HueV2Discovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth 
 	}
 
 	public async Task Discover(int timeout, CancellationToken ct) {
-		Log.Debug("Hue: Discovery started...");
 		try {
 			LoadTestJson();
 			await _bridgeLocatorHttp.LocateBridgesAsync(ct);

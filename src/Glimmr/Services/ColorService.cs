@@ -35,6 +35,7 @@ public class ColorService : BackgroundService {
 	private readonly Stopwatch _watch;
 
 	private bool _autoDisabled;
+	private bool _testing;
 	private int _autoDisableDelay;
 	private int _adCount;
 	
@@ -72,7 +73,7 @@ public class ColorService : BackgroundService {
 		ControlService.DeviceReloadEvent += RefreshDeviceData;
 		ControlService.RefreshLedEvent += ReloadLedData;
 		ControlService.RefreshSystemEvent += ReloadSystemData;
-		ControlService.TestLedEvent += LedTest;
+		ControlService.FlashLedEvent += FlashLed;
 		ControlService.FlashDeviceEvent += FlashDevice;
 		ControlService.FlashSectorEvent += FlashSector;
 		ControlService.DemoLedEvent += Demo;
@@ -108,8 +109,6 @@ public class ColorService : BackgroundService {
 	protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 		Log.Debug("Starting color service...");
 		var colorTask = Task.Run(async () => {
-			var checkTimer = new System.Timers.Timer(1000);
-			checkTimer.Elapsed += CheckAutoDisable;
 			await Initialize();
 			_loopWatch.Start();
 			while (!stoppingToken.IsCancellationRequested) {
@@ -122,6 +121,8 @@ public class ColorService : BackgroundService {
 
 				await Task.Delay(TimeSpan.FromSeconds(1), CancellationToken.None);
 			}
+
+			_loopWatch.Stop();
 		}, CancellationToken.None);
 		Log.Debug("Color Service Started.");
 		return colorTask;
@@ -217,12 +218,13 @@ public class ColorService : BackgroundService {
 	}
 
 	private async Task FlashSector(object o, DynamicEventArgs dynamicEventArgs) {
+		_testing = true;
 		var sector = dynamicEventArgs.Arg0;
 		// When building center, we only need the v and h sectors.
 		var dims = new[]
 			{ _systemData.VSectors, _systemData.VSectors, _systemData.HSectors, _systemData.HSectors };
 		var builder = new FrameBuilder(dims, true);
-		var col = Color.FromArgb(255, 255, 0, 0);
+		var col = Color.FromArgb(255, 0, 0);
 		var emptyColors = ColorUtil.EmptyColors(_systemData.LedCount);
 		var emptySectors = ColorUtil.EmptyColors(_systemData.SectorCount);
 		emptySectors[sector - 1] = col;
@@ -237,10 +239,7 @@ public class ColorService : BackgroundService {
 			}
 		}
 
-		_splitter.DoSend = false;
-		await _splitter.Update(tMat);
-		var colors = _splitter.GetColors().ToArray();
-		var sectors = _splitter.GetSectors().ToArray();
+		var (colors, sectors) = _splitter.Update(tMat).Result;
 		await SendColors(colors, sectors, 0, true);
 		await Task.Delay(500);
 		await SendColors(emptyColors, emptySectors, 0, true);
@@ -248,16 +247,10 @@ public class ColorService : BackgroundService {
 		await SendColors(colors, sectors, 0, true);
 		await Task.Delay(1000);
 		await SendColors(emptyColors, emptySectors, 0, true);
-		foreach (var dev in _sDevices) {
-			if (dev.Enable) {
-				dev.Testing = false;
-			}
-		}
-
-		_splitter.DoSend = true;
+		_testing = false;
 	}
 
-	private void CheckAutoDisable(object? sender, ElapsedEventArgs elapsedEventArgs) {
+	public void CheckAutoDisable(bool sourceActive) {
 		// Don't do anything if auto-disable isn't enabled
 		if (!_enableAutoDisable) {
 			if (!_autoDisabled) {
@@ -273,15 +266,12 @@ public class ColorService : BackgroundService {
 			return;
 		}
 		
-		var sourceActive = _stream?.SourceActive ?? false;
-
 		if (sourceActive) {
 			// If our source is active and we're auto-disabled, turn it off.
+			_adCount = 0;
 			if (!_autoDisabled) {
 				return;
 			}
-
-			_adCount = 0;
 			Log.Information("Auto-enabling stream.");
 			_autoDisabled = false;
 			DataUtil.SetItem("AutoDisabled", _autoDisabled);
@@ -291,17 +281,18 @@ public class ColorService : BackgroundService {
 			StartStream().ConfigureAwait(false);
 			ControlService.SetModeEvent += Mode;
 		} else {
-			_adCount++;
 			if (_autoDisabled) {
+				_adCount = _autoDisableDelay;
 				return;
 			}
-
+			_adCount++;
+			
 			if (_adCount < _autoDisableDelay) {
 				return;
 			}
-
-			_autoDisabled = true;
 			_adCount = _autoDisableDelay;
+			Log.Debug($"Auto-disabling: {_adCount}/{_autoDisableDelay}");
+			_autoDisabled = true;
 			Counter.Reset();
 			DataUtil.SetItem("AutoDisabled", _autoDisabled);
 			ControlService.SetModeEvent -= Mode;
@@ -315,25 +306,22 @@ public class ColorService : BackgroundService {
 	}
 
 
-	private async Task LedTest(object o, DynamicEventArgs dynamicEventArgs) {
-		if (dynamicEventArgs != null) {
-			int led = dynamicEventArgs.Arg0;
-			var colors = ColorUtil.EmptyList(_systemData.LedCount).ToArray();
-			colors[led] = Color.FromArgb(255, 0, 0);
-			var sectors = ColorUtil.LedsToSectors(colors.ToList(), _systemData).ToArray();
-			var blackSectors = ColorUtil.EmptyList(_systemData.SectorCount).ToArray();
-			await SendColors(colors, sectors, 0, true);
-			await Task.Delay(500);
-			await SendColors(colors, blackSectors, 0, true);
-			await Task.Delay(500);
-			await SendColors(colors, sectors, 0, true);
-			await Task.Delay(500);
-			await SendColors(colors, blackSectors, 0, true);
-		}
+	private async Task FlashLed(object o, DynamicEventArgs dynamicEventArgs) {
+		_testing = true;
+		int led = dynamicEventArgs.Arg0;
+		var colors = ColorUtil.EmptyList(_systemData.LedCount).ToArray();
+		colors[led] = Color.FromArgb(255, 0, 0);
+		var sectors = ColorUtil.LedsToSectors(colors.ToList(), _systemData).ToArray();
+		var blackSectors = ColorUtil.EmptyList(_systemData.SectorCount).ToArray();
+		await SendColors(colors, sectors, 0, true);
+		await Task.Delay(500);
+		await SendColors(colors, blackSectors, 0, true);
+		await Task.Delay(500);
+		await SendColors(colors, sectors, 0, true);
+		await Task.Delay(1000);
+		await SendColors(colors, blackSectors, 0, true);
+		_testing = false;
 
-		foreach (var dev in _sDevices) {
-			dev.Testing = false;
-		}
 	}
 
 	private void LoadData() {
@@ -399,36 +387,26 @@ public class ColorService : BackgroundService {
 
 	private async Task Demo(object o, DynamicEventArgs? dynamicEventArgs) {
 		await StartStream();
-		var ledCount = 300;
-		var sectorCount = _systemData.SectorCount;
-		try {
-			ledCount = _systemData.LedCount;
-		} catch (Exception) {
-			// ignored 
-		}
-
+		var builder = new FrameBuilder(new[] { 30, 30, 60, 60 });
+		var ledCount = 180;
 		var i = 0;
 		var cols = ColorUtil.EmptyColors(ledCount);
-		var secs = ColorUtil.EmptyColors(sectorCount);
 		try {
+			_splitter.DoSend = false;
 			while (i < ledCount) {
 				var pi = i * 1.0f;
 				var progress = pi / ledCount;
-				var sector = (int)Math.Round(progress * sectorCount);
 				var rCol = ColorUtil.Rainbow(progress);
 				cols[i] = rCol;
-				if (sector < secs.Length) {
-					secs[sector] = rCol;
-				}
-
+				var (colors, sectors) = _splitter.Update(builder.Build(cols)).Result;				
 				try {
-					await SendColors(cols, secs, 0, true).ConfigureAwait(false);
+					await SendColors(colors, sectors, 0, true).ConfigureAwait(false);
 				} catch (Exception e) {
 					Log.Warning("SEND EXCEPTION: " + JsonConvert.SerializeObject(e));
 				}
-
 				i++;
 			}
+			_splitter.DoSend = true;
 		} catch (Exception f) {
 			Log.Warning("Outer demo exception: " + f.Message);
 		}
@@ -541,11 +519,9 @@ public class ColorService : BackgroundService {
 		
 		_streamTokenSource.Cancel();
 		await Task.Delay(TimeSpan.FromMilliseconds(500));
-		if (_stream != null) {
-			if (_stream.SourceActive) {
-				Log.Debug("Killing stream!");
-				_stream.Stop();
-			}
+		if (_stream is { SourceActive: true }) {
+			Log.Debug("Killing stream!");
+			_stream.Stop();
 		}
 		if (_streamStarted && newMode == 0) {
 			await StopDevices();
@@ -629,7 +605,7 @@ public class ColorService : BackgroundService {
 		var en = 0;
 		var toKill = new List<Task>();
 		var killSource = new CancellationTokenSource();
-		killSource.CancelAfter(TimeSpan.FromSeconds(3));
+		killSource.CancelAfter(TimeSpan.FromSeconds(4));
 		foreach (var dev in _sDevices) {
 			try {
 				if (dev.Enable) {
@@ -657,13 +633,16 @@ public class ColorService : BackgroundService {
 		Log.Information($"Streaming stopped on {len}/{en} devices.");
 	}
 
-	public async Task SendColors(Color[] colors, Color[] sectors, int fadeTime = 0,
-		bool force = false) {
+	public async Task SendColors(Color[] colors, Color[] sectors, int fadeTime = 0, bool force = false) {
 		if (!_streamStarted) {
 			return;
 		}
 
 		if (_autoDisabled && !force) {
+			return;
+		}
+
+		if (_testing && !force) {
 			return;
 		}
 
@@ -678,13 +657,9 @@ public class ColorService : BackgroundService {
 			}
 		}
 	}
-
+	
 
 	private static void CancelSource(CancellationTokenSource target, bool dispose = false) {
-		if (target == null) {
-			return;
-		}
-
 		if (!target.IsCancellationRequested) {
 			target.CancelAfter(0);
 		}

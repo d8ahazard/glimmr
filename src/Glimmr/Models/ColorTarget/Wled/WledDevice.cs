@@ -13,6 +13,8 @@ using Glimmr.Enums;
 using Glimmr.Models.ColorSource.UDP;
 using Glimmr.Models.Util;
 using Glimmr.Services;
+using Newtonsoft.Json;
+using Q42.HueApi.Models;
 using Serilog;
 
 #endregion
@@ -250,7 +252,17 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		var url = "http://" + IpAddress + "/win";
 		url += "&T=" + (on ? "1" : "0");
 		url += "&A=" + (int)scaledBright;
-		await _httpClient.GetAsync(url).ConfigureAwait(false);
+		//await _httpClient.GetAsync(url).ConfigureAwait(false);
+		url = "http://" + IpAddress + "/json/si/";
+		var bod = new Dictionary<string, dynamic> {
+			["v"] = true,
+			["time"] = DateTimeOffset.Now.ToUnixTimeSeconds(),
+			["on"] = on
+		};
+		var foo = JsonConvert.SerializeObject(bod);
+		Log.Debug("Payload: " + foo);
+		var res = _httpClient.PostAsync(url, new JsonContent(foo)).Result;
+		Log.Debug("Status: " + JsonConvert.SerializeObject(res));
 	}
 
 	protected virtual async Task Dispose(bool disposing) {

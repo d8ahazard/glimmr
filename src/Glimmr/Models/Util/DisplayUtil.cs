@@ -154,8 +154,7 @@ public static class DisplayUtil {
 				}
 			};
 			p.Start();
-			string? standardOutput;
-			while ((standardOutput = p.StandardOutput.ReadLine()) != null) {
+			while (p.StandardOutput.ReadLine() is { } standardOutput) {
 				if (!standardOutput.Contains("Resolution")) {
 					continue;
 				}

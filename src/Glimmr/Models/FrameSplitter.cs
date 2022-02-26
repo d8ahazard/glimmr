@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Timers;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -23,9 +24,18 @@ namespace Glimmr.Models;
 
 public class FrameSplitter {
 	// Do we send our frame data to the UI?
-	public bool DoSend { get; set; }
-	public bool Updating { get; set; }
+	public bool DoSend {
+		set {
+			_doSend = value;
+			if (_doSend) {
+				_cropTimer.Start();
+			} else {
+				_cropTimer.Stop();	
+			}
+		}
+	}
 
+	private bool _doSend;
 	public bool SourceActive { get; set; }
 	private ColorService ColorService { get; }
 	private readonly float _borderHeight;
@@ -49,7 +59,6 @@ public class FrameSplitter {
 	private int _cropBlackLevel;
 	private int _cropCount;
 	private int _cropDelay;
-	private int _frameCount;
 
 	// Loaded settings
 	private bool _cropLetter;
@@ -59,7 +68,6 @@ public class FrameSplitter {
 
 	private Rectangle[] _fullCoords;
 	private Rectangle[] _fullSectors;
-	private int _hCropCheck;
 	private int _hSectors;
 
 	// Are we cropping right now?
@@ -91,17 +99,16 @@ public class FrameSplitter {
 	private bool _useCenter;
 	private Color[] _empty;
 
-	// Where we save the potential new value between checks
-	private int _vCropCheck;
-
+	
 	// Source stuff
 	private PointF[] _vectors;
 	private int _vSectors;
 	private bool _warned;
 	private Color[] _emptySectors;
+	private readonly Timer _cropTimer;
+	private bool _checkCrop;
 
 	public FrameSplitter(ColorService cs, bool crop = false) {
-		Updating = false;
 		_vectors = Array.Empty<PointF>();
 		_targets = new List<VectorOfPoint>();
 		_useCrop = crop;
@@ -125,7 +132,12 @@ public class FrameSplitter {
 		// Get sectors
 		_fullCoords = DrawGrid();
 		_fullSectors = DrawSectors();
-		
+		_cropTimer = new Timer(1000);
+		_cropTimer.Elapsed += TriggerCropCheck;
+	}
+
+	private void TriggerCropCheck(object? sender, ElapsedEventArgs e) {
+		_checkCrop = true;
 	}
 
 
@@ -147,7 +159,6 @@ public class FrameSplitter {
 		_mode = sd.DeviceMode;
 		if (!_cropLetter || !_useCrop) {
 			_lCrop = false;
-			_vCropCheck = 0;
 			_lCropPixels = 0;
 			_cropLetter = false;
 		}
@@ -208,6 +219,7 @@ public class FrameSplitter {
 	}
 
 	private void TriggerSave() {
+		if (!_doSend) return;
 		_doSave = true;
 	}
 
@@ -216,6 +228,7 @@ public class FrameSplitter {
 		var cols = _colorsLed;
 		var secs = _colorsSectors;
 		if (_merge) {
+			Log.Debug("Using merged colors?");
 			cols = _colorsLedIn;
 			secs = _colorsSectorsIn;
 		}
@@ -224,7 +237,7 @@ public class FrameSplitter {
 			ColorService.ControlService.SendImage("inputImage", inMat).ConfigureAwait(false);
 		}
 
-		if (outMat == null || outMat.IsEmpty) {
+		if (outMat.IsEmpty) {
 			return;
 		}
 
@@ -234,10 +247,10 @@ public class FrameSplitter {
 				for (var i = 0; i < _fullCoords.Length; i++) {
 					var color = cols[i];
 					if (color.R < _blackLevel && color.G < _blackLevel && color.B < _blackLevel) {
-						continue;
+						color = Color.Black;
 					}
 
-					var col = new Bgr(cols[i]).MCvScalar;
+					var col = new Bgr(color).MCvScalar;
 					CvInvoke.Rectangle(outMat, _fullCoords[i], col, -1, LineType.AntiAlias);
 					CvInvoke.Rectangle(outMat, _fullCoords[i], colBlack, 1, LineType.AntiAlias);
 				}
@@ -245,14 +258,15 @@ public class FrameSplitter {
 				break;
 			}
 			case 2: {
+				Log.Debug($"Using {_fullSectors.Length} colors for preview...");
 				for (var i = 0; i < _fullSectors.Length; i++) {
 					var s = _fullSectors[i];
 					var color = secs[i];
 					if (color.R < _blackLevel && color.G < _blackLevel && color.B < _blackLevel) {
-						continue;
+						color = Color.FromArgb(0, 0, 0);
 					}
 
-					var col = new Bgr(secs[i]).MCvScalar;
+					var col = new Bgr(color).MCvScalar;
 					CvInvoke.Rectangle(outMat, s, col, -1, LineType.AntiAlias);
 					CvInvoke.Rectangle(outMat, s, colBlack, 1, LineType.AntiAlias);
 					var cInt = i + 1;
@@ -264,7 +278,7 @@ public class FrameSplitter {
 			}
 		}
 
-		if (DoSend) {
+		if (outMat is { IsEmpty: false }) {
 			ColorService.ControlService.SendImage("outputImage", outMat).ConfigureAwait(false);
 		}
 
@@ -276,9 +290,10 @@ public class FrameSplitter {
 		_colorsLedIn = leds;
 		_colorsSectorsIn = sectors;
 		_merge = true;
+		_doSave = true;
 	}
 
-	public async Task Update(Mat? frame) {
+	public async Task<(Color[], Color[])> Update(Mat? frame) {
 		if (frame == null || frame.IsEmpty) {
 			SourceActive = false;
 			if (!_warned) {
@@ -286,7 +301,7 @@ public class FrameSplitter {
 			}
 
 			_warned = true;
-			return;
+			return (Array.Empty<Color>(), Array.Empty<Color>());
 		}
 
 		if (frame.Cols == 0) {
@@ -296,7 +311,7 @@ public class FrameSplitter {
 			}
 
 			_warned = true;
-			return;
+			return (Array.Empty<Color>(), Array.Empty<Color>());
 		}
 
 		if (frame.Rows == 0) {
@@ -306,7 +321,7 @@ public class FrameSplitter {
 			}
 
 			_warned = true;
-			return;
+			return (Array.Empty<Color>(), Array.Empty<Color>());
 		}
 
 		var clone = frame;
@@ -320,7 +335,7 @@ public class FrameSplitter {
 			if (clone == null || clone.IsEmpty || clone.Cols == 0) {
 				Log.Warning("Invalid input frame.");
 				SourceActive = false;
-				return;
+				return (Array.Empty<Color>(), Array.Empty<Color>());
 			}
 		}
 
@@ -330,52 +345,48 @@ public class FrameSplitter {
 			// Dispose frame
 			frame.Dispose();
 			clone?.Dispose();
-			return;
+			return (Array.Empty<Color>(), Array.Empty<Color>());
 		}
 
-		if (_useCrop) {
-			_frameCount++;
-			// Check sectors once per second
-			if (_frameCount >= 30) {
-				await CheckCrop(clone).ConfigureAwait(false);
-				_frameCount = 0;
+		if (_useCrop && _checkCrop) {
+			await CheckCrop(clone).ConfigureAwait(false);
+			_checkCrop = false;
+		}
+		var ledColors = _empty;
+		var sectorColors = _emptySectors;
+
+		if (!_allBlack) {
+			for (var i = 0; i < _fullCoords.Length; i++) {
+				var sub = new Mat(clone, _fullCoords[i]);
+				ledColors[i] = GetAverage(sub);
+				sub.Dispose();
+			}
+
+
+			for (var i = 0; i < _fullSectors.Length; i++) {
+				var sub = new Mat(clone, _fullSectors[i]);
+				sectorColors[i] = GetAverage(sub);
 			}
 		}
 
-		SourceActive = !_allBlack;
-		Updating = true;
-		var ledColors = _empty;
-		for (var i = 0; i < _fullCoords.Length; i++) {
-			var sub = new Mat(clone, _fullCoords[i]);
-			ledColors[i] = GetAverage(sub);
-			sub.Dispose();
-		}
-
-
-		var sectorColors = _emptySectors;
-		for (var i = 0; i < _fullSectors.Length; i++) {
-			var sub = new Mat(clone, _fullSectors[i]);
-			sectorColors[i] = GetAverage(sub);
-		}
-		
 		_colorsLed = ledColors;
 		_colorsSectors = sectorColors;
-		if (DoSend) {
+		if (_doSend) {
 			await ColorService.SendColors(ledColors, sectorColors);
 		}
 
-		if (_doSave) {
-			if (DoSend && ColorService.ControlService.SendPreview) {
+		if (_doSave && (_doSend || _merge)) {
+			if (ColorService.ControlService.SendPreview) {
 				SaveFrames(frame, clone);
 			}
-
 			_doSave = false;
+			_merge = false;
 		}
 
 		// Dispose
 		frame.Dispose();
 		clone.Dispose();
-		Updating = false;
+		return (_colorsLed, _colorsSectors);
 	}
 
 	private Mat? CheckCamera(Mat input) {
@@ -572,13 +583,14 @@ public class FrameSplitter {
 		var unique = raw.Distinct().ToArray();
 
 		var count = Sum(raw);
-		var noImage = count == 0 || width == 0 || height == 0 || unique.Length == 1 && unique[0] <= _cropBlackLevel;
+		var noImage = count == 0 || width == 0 || height == 0 || (unique.Length == 1 && unique[0] <= _cropBlackLevel);
 		// If it is, we can stop here
 		if (noImage) {
 			_allBlack = true;
+			if (_doSend) ColorService.CheckAutoDisable(false);
 			return;
 		}
-
+		if (_doSend) ColorService.CheckAutoDisable(true);
 		// Return here, because otherwise, "no input" detection won't work.
 		if (!_useCrop) return;
 		// Convert image to greyscale
@@ -640,7 +652,7 @@ public class FrameSplitter {
 				}
 				
 			} else {
-				_pillarCropCounter.Tick(Math.Abs(pPixels - _hCropCheck) < 4);
+				_pillarCropCounter.Tick(pPixels);
 			}
 		}
 
@@ -649,9 +661,6 @@ public class FrameSplitter {
 			_sectorChanged = true;
 			_pCropPixels = pPixels;
 		}
-
-		_hCropCheck = pPixels;
-
 
 		if (_cropLetter) {
 			if (lPixels == 0) {
@@ -663,7 +672,7 @@ public class FrameSplitter {
 				}
 			} else {
 				// Tick our counter - up if the difference between current and new crop values are lt 4, down otherwise.
-				_lCropCounter.Tick(Math.Abs(lPixels - _vCropCheck) < 4);
+				_lCropCounter.Tick(lPixels);
 			}
 		}
 		
@@ -673,7 +682,6 @@ public class FrameSplitter {
 			_lCropPixels = lPixels;
 		}
 
-		_vCropCheck = lPixels;
 		// Only calculate new sectors if the value has changed
 		if (_sectorChanged) {
 			Log.Debug($"Crop changed, redrawing {_lCropPixels} and {_pCropPixels}...");
@@ -884,6 +892,8 @@ public class CropCounter {
 	[JsonProperty]
 	private int _count;
 
+	[JsonProperty] private int _dimension;
+
 	public CropCounter(int max) {
 		_max = max;
 		_count = 0;
@@ -894,17 +904,15 @@ public class CropCounter {
 	}
 
 
-	public void Tick(bool b) {
-		if (b) {
+	public void Tick(int dim) {
+		if (dim == _dimension) {
 			_count++;
 			if (_count >= _max) {
 				_count = _max;
 			}
 		} else {
-			_count--;
-			if (_count <= 0) {
-				_count = 0;
-			}
+			_count = 0;
+			_dimension = dim;
 		}
 	}
 

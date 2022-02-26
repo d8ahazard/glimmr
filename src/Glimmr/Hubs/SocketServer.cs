@@ -212,8 +212,7 @@ public class SocketServer : Hub {
 			return;
 		}
 
-		Log.Debug("Get got: " + led);
-		await _cs.TestLights(led);
+		await _cs.FlashLed(led);
 	}
 
 

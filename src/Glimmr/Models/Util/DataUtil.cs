@@ -227,10 +227,6 @@ public static class DataUtil {
 			Log.Warning("Exception caught caching devices: " + e.Message + " at " + e.StackTrace);
 		}
 
-		if (devices == null || devs == null) {
-			return new List<dynamic>();
-		}
-
 		var output = new List<dynamic>(devices.Length);
 	
 		foreach (var device in devices) {
@@ -501,10 +497,6 @@ public static class DataUtil {
 	public static dynamic? GetObject<T>(string key) {
 		try {
 			var db = GetDb();
-			if (db == null) {
-				Log.Warning("Can't get db, can't set object...");
-				return null;
-			}
 
 			var col = db.GetCollection<T>(key);
 
@@ -599,11 +591,6 @@ public static class DataUtil {
 
 	public static void SetObject<T>(dynamic value) {
 		var db = GetDb();
-		if (db == null) {
-			Log.Warning("Can't get db, can't set object...");
-			return;
-		}
-
 		var key = typeof(T).Name;
 		var col = db.GetCollection<T>(key);
 		col.Upsert(0, value);
@@ -612,11 +599,6 @@ public static class DataUtil {
 
 	public static async Task SetObjectAsync<T>(dynamic value) {
 		var db = GetDb();
-		if (db == null) {
-			Log.Warning("Can't get db, can't set object...");
-			return;
-		}
-
 		var key = typeof(T).Name;
 		var col = db.GetCollection<T>(key);
 		col.Upsert("0", value);

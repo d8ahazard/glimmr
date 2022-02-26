@@ -19,12 +19,12 @@ namespace Glimmr.Models.ColorSource.Video;
 public class VideoStream : ColorSource {
 	// should we send them to devices?
 	public bool SendColors {
-		set => StreamSplitter.DoSend = value;
+		set => FrameSplitter.DoSend = value;
 	}
 
-	public override bool SourceActive => StreamSplitter.SourceActive;
+	public override bool SourceActive => FrameSplitter.SourceActive;
 
-	public FrameSplitter StreamSplitter { get; }
+	public FrameSplitter FrameSplitter { get; }
 
 
 	// Loaded data
@@ -41,13 +41,12 @@ public class VideoStream : ColorSource {
 	public VideoStream(ColorService colorService) {
 		_systemData = DataUtil.GetSystemData();
 		colorService.ControlService.RefreshSystemEvent += RefreshSystem;
-		StreamSplitter = new FrameSplitter(colorService, true);
+		FrameSplitter = new FrameSplitter(colorService, true);
+		SendColors = true;
 	}
 
 	public override Task Start(CancellationToken ct) {
 		Log.Debug("Enabling video stream service...");
-		SendColors = true;
-		StreamSplitter.DoSend = true;
 		RunTask = ExecuteAsync(ct);
 		return Task.CompletedTask;
 	}
@@ -71,13 +70,12 @@ public class VideoStream : ColorSource {
 				return;
 			}
 
-			await _vc.Start(StreamSplitter, ct);
+			await _vc.Start(FrameSplitter, ct);
 			while (!ct.IsCancellationRequested) {
 				await Task.Delay(10, CancellationToken.None);
 			}
 
 			await _vc.Stop();
-			SendColors = false;
 			Log.Information("Video stream service stopped.");
 		}, CancellationToken.None);
 	}

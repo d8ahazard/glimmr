@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using Glimmr.Models.Util;
-using Newtonsoft.Json;
 using Serilog;
 
 #endregion
@@ -38,9 +37,12 @@ public class AudioMap {
 		// Total number of sectors
 		const int len = 20;
 		var output = ColorUtil.EmptyColors(len);
+		if (lChannel.Count == 0) return output;
 		var triggered = false;
 		var l = 0;
 		var r = 0;
+		var black = Color.FromArgb(0, 0, 0, 0);
+		
 		//Log.Debug("LMap: " + JsonConvert.SerializeObject(lChannel));
 		foreach (var (key, octave) in _octaveMap) {
 			try {
@@ -49,8 +51,8 @@ public class AudioMap {
 				r = _rightSectors[region];
 				var (lFreq, lMax) = HighNote(lChannel, octave);
 				if (lMax == 0) {
-					output[l] = Color.FromArgb(0, 0, 0, 0);
-					output[r] = output[l];
+					output[l] = black;
+					output[r] = black;
 				} else {
 					if (!triggered) {
 						triggered = lMax >= _rotationThreshold;

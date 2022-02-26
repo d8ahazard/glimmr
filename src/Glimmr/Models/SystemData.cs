@@ -165,11 +165,11 @@ public class SystemData {
 	public float AudioGain { get; set; } = .6f;
 
 	/// <summary>
-	///     Low cutoff for audio detection, values below this will not be displayed.
+	///     Low cutoff for audio detection, values below this will not be displayed (0-255).
 	/// </summary>
-	[DefaultValue(.025f)]
+	[DefaultValue(1)]
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-	public float AudioMin { get; set; } = .01f;
+	public int AudioCutoff { get; set; } = 1;
 	
 	/// <summary>
 	///     Low cutoff for audio detection, values below this will not be displayed.
@@ -238,14 +238,14 @@ public class SystemData {
 	public int AutoRemoveDevicesAfter { get; set; } = 7;
 
 	/// <summary>
-	///     How frequently to automatically send updated system data to the UI.
+	///     How frequently to automatically check for updates (in hours).
 	/// </summary>
 	[DefaultValue(2)]
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 	public int AutoUpdateTime { get; set; }
 
 	/// <summary>
-	///     Speed at which to attempt discovering Adalight devices.
+	///     Serial port speed to use for connecting to adalight devices.
 	/// </summary>
 	[DefaultValue(115200)]
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -487,7 +487,7 @@ public class SystemData {
 		AblAmps = 2;
 		DefaultSet = true;
 		AudioGain = .6f;
-		AudioMin = .01f;
+		AudioCutoff = 1;
 		BaudRate = 115200;
 		CropBlackLevel = 7;
 		BlackLevel = 7;

@@ -80,7 +80,6 @@ public static class Program {
 				services.Configure<HostOptions>(hostOptions => {
 					hostOptions.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore;
 				});
-				Log.Debug("Config...");
 			})
 			.ConfigureWebHostDefaults(webBuilder => {
 				var path = Path.Combine(AppContext.BaseDirectory, "wwwroot");
