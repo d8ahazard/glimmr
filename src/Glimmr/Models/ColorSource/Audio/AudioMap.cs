@@ -20,9 +20,10 @@ public class AudioMap {
 	private float _rotation;
 	private float _rotationLower;
 	private float _rotationSpeed;
-	private float _rotationThreshold;
-	private float _rotationUpper = 1;
+	private int _rotationThreshold;
+	private float _rotationUpper = 1f;
 	private bool _triggered;
+	private int _kickCount;
 
 	public AudioMap() {
 		_octaveMap = new Dictionary<string, int>();
@@ -54,7 +55,7 @@ public class AudioMap {
 					output[l] = black;
 					output[r] = black;
 				} else {
-					if (!triggered) {
+					if (!triggered && lFreq < 100) {
 						triggered = lMax >= _rotationThreshold;
 					}
 					//Log.Debug($"MaxFreq {octave} is {lFreq} at {lMax}");
@@ -76,7 +77,11 @@ public class AudioMap {
 			}
 		}
 
-		_triggered = triggered;
+		if (triggered) _kickCount++;
+		if (_kickCount >= 4) {
+			_kickCount = 0;
+			_triggered = true;
+		}
 
 		return output;
 	}
@@ -120,14 +125,11 @@ public class AudioMap {
 		var sd = DataUtil.GetSystemData();
 		var id = sd.AudioScene;
 		var am = _loader.GetItem(id);
-		_rotationSpeed = 0;
-		_rotationUpper = 1;
-		_rotationLower = 0;
+		_rotationSpeed = sd.AudioRotationSpeed;
+		_rotationLower = sd.AudioRotationLower;
+		_rotationUpper = sd.AudioRotationUpper;
+		_rotationThreshold = sd.AudioRotationTrigger;
 		try {
-			_rotationSpeed = am.RotationSpeed;
-			_rotationLower = am.RotationLower;
-			_rotationUpper = am.RotationUpper;
-			_rotationThreshold = am.RotationThreshold;
 			_octaveMap = am.OctaveMap;
 		} catch (Exception e) {
 			Log.Warning("Audio Map Refresh Exception: " + e.Message);
@@ -136,6 +138,7 @@ public class AudioMap {
 
 	private float RotateHue(float hue) {
 		if (_triggered) {
+			var rot = _rotation;
 			_triggered = false;
 			_rotation += _rotationSpeed;
 			if (_rotation > 1) {
@@ -145,16 +148,12 @@ public class AudioMap {
 			if (_rotation < 0) {
 				_rotation = 1 - _rotationSpeed;
 			}
+			Log.Debug($"Triggered, rotating from {rot} to {_rotation}, speed is {_rotationSpeed}");
 		}
 
 		var output = hue;
-		if (_rotationLower < _rotationUpper) {
-			var range = _rotationUpper - _rotationLower;
-			//.2f
-			var adjusted = range * output;
-			output = _rotationLower + adjusted;
-		}
-
+		var range = Math.Abs(_rotationUpper - _rotationLower);
+		output = _rotationLower + range * output;
 		output += _rotation;
 
 		if (output > 1) {

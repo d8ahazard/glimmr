@@ -7,7 +7,6 @@ using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Timers;
 using Glimmr.Enums;
 using Glimmr.Models;
 using Glimmr.Models.ColorSource;
@@ -24,8 +23,6 @@ namespace Glimmr.Services;
 // Handles capturing and sending color data
 public class ColorService : BackgroundService {
 	public ControlService ControlService { get; }
-	public int StartCounter { get; set; }
-	public int StopCounter { get; set; }
 
 	public readonly FrameCounter Counter;
 	private readonly Stopwatch _loopWatch;
@@ -112,9 +109,8 @@ public class ColorService : BackgroundService {
 			await Initialize();
 			_loopWatch.Start();
 			while (!stoppingToken.IsCancellationRequested) {
-				
 				// Save a frame every 5 seconds
-				if (_loopWatch.Elapsed >= TimeSpan.FromSeconds(5)) {
+				if (_loopWatch.Elapsed >= TimeSpan.FromMilliseconds(500)) {
 					FrameSaveEvent.Invoke();
 					_loopWatch.Restart();
 				}
@@ -194,7 +190,6 @@ public class ColorService : BackgroundService {
 			return;
 		}
 
-		device.Testing = true;
 		Log.Information("Flashing device: " + devId);
 		if (!device.Streaming) {
 			disable = true;
@@ -208,7 +203,6 @@ public class ColorService : BackgroundService {
 		await device.FlashColor(rColor);
 		Thread.Sleep(500);
 		await device.FlashColor(bColor);
-		device.Testing = false;
 		if (disable) {
 			await device.StopStream();
 		}
@@ -233,12 +227,7 @@ public class ColorService : BackgroundService {
 			Log.Debug("No mat, returning...");
 			return;
 		}
-		foreach (var dev in _sDevices) {
-			if (dev.Enable) {
-				dev.Testing = true;
-			}
-		}
-
+		
 		var (colors, sectors) = _splitter.Update(tMat).Result;
 		await SendColors(colors, sectors, 0, true);
 		await Task.Delay(500);
@@ -357,7 +346,6 @@ public class ColorService : BackgroundService {
 
 		foreach (IColorTargetData device in devices.Where(device => device.Tag == tag)) {
 			switch (tag) {
-				case "Led" when device.Id == "2":
 				case "Hue":
 					continue;
 				default:
@@ -420,20 +408,28 @@ public class ColorService : BackgroundService {
 			Log.Warning("Can't refresh null device: " + id);
 		}
 
+		// REALLY reload device 0 if we update LED 1
+		if (id == "1") id = "0";
+		
 		foreach (var dev in _sDevices) {
 			if (dev.Data.Id != id) {
 				continue;
 			}
-
+			Log.Debug($"Reloading data for {dev.Data.Name} ({dev.Data.Id})");
 			await dev.ReloadData().ConfigureAwait(false);
-			if (_deviceMode != DeviceMode.Off && dev.Data.Enable && !dev.Streaming || dev.Id == "0") {
+			var doEnable = dev.Data.Enable;
+			if (_deviceMode != DeviceMode.Off && doEnable && !dev.Streaming) {
+				Log.Debug("Starting stream for newly enabled device...");
 				await dev.StartStream(_targetTokenSource.Token);
-			}
-
-			if (_deviceMode == DeviceMode.Off || dev.Data.Enable || !dev.Streaming) {
 				return;
 			}
 
+			if (id == "0") {
+				if (!doEnable) {
+					await dev.FlashColor(Color.Black);
+				}
+				continue;
+			}
 			Log.Information("Stopping disabled device: " + dev.Id);
 			await dev.StopStream().ConfigureAwait(false);
 
@@ -649,7 +645,7 @@ public class ColorService : BackgroundService {
 		if (ColorSendEventAsync != null) {
 			try {
 				await ColorSendEventAsync
-					.InvokeAsync(this, new ColorSendEventArgs(colors, sectors, fadeTime, force))
+					.InvokeAsync(this, new ColorSendEventArgs(colors, sectors, fadeTime))
 					.ConfigureAwait(false);
 				Counter.Tick("source");
 			} catch (Exception e) {
@@ -711,15 +707,13 @@ public class ColorService : BackgroundService {
 }
 
 public class ColorSendEventArgs : EventArgs {
-	public bool Force { get; }
 	public Color[] LedColors { get; }
 	public Color[] SectorColors { get; }
 	public int FadeTime { get; }
 
-	public ColorSendEventArgs(Color[] leds, Color[] sectors, int fadeTime, bool force) {
+	public ColorSendEventArgs(Color[] leds, Color[] sectors, int fadeTime) {
 		LedColors = leds;
 		SectorColors = sectors;
 		FadeTime = fadeTime;
-		Force = force;
 	}
 }

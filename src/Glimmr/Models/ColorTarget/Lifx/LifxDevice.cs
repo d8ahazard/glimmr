@@ -46,7 +46,6 @@ public class LifxDevice : ColorTarget, IColorTarget {
 	}
 
 	public bool Streaming { get; set; }
-	public bool Testing { get; set; }
 	public string Id { get; private set; }
 
 	public bool Enable { get; set; }
@@ -67,7 +66,6 @@ public class LifxDevice : ColorTarget, IColorTarget {
 		}
 
 		Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
-		ColorService.StartCounter++;
 		var col = new LifxColor(0, 0, 0);
 
 		await _client.SetLightPowerAsync(B, true).ConfigureAwait(false);
@@ -75,7 +73,6 @@ public class LifxDevice : ColorTarget, IColorTarget {
 		Streaming = true;
 		await Task.FromResult(Streaming);
 		Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
-		ColorService.StartCounter--;
 	}
 
 	public async Task FlashColor(Color color) {
@@ -100,12 +97,10 @@ public class LifxDevice : ColorTarget, IColorTarget {
 		}
 
 		Log.Information($"{_data.Tag}::Stopping stream.: {_data.Id}...");
-		ColorService.StopCounter++;
 		var col = new LifxColor(0, 0, 0);
 		await _client.SetLightPowerAsync(B, false);
 		await _client.SetColorAsync(B, col, 2700);
 		Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
-		ColorService.StopCounter--;
 	}
 
 
@@ -124,19 +119,19 @@ public class LifxDevice : ColorTarget, IColorTarget {
 	}
 
 	private Task SetColors(object sender, ColorSendEventArgs args) {
-		return SetColor(args.LedColors, args.SectorColors, args.Force);
+		return SetColors(args.LedColors, args.SectorColors);
 	}
 
 
-	private async Task SetColor(Color[] colors, IReadOnlyList<Color> list, bool force = false) {
-		if (!Streaming || !Enable || Testing && !force) {
+	public async Task SetColors(IReadOnlyList<Color> ledColors, IReadOnlyList<Color> sectorColors) {
+		if (!Streaming || !Enable) {
 			return;
 		}
 
 		if (_hasMulti) {
-			await SetColorMulti(colors);
+			await SetColorMulti(ledColors);
 		} else {
-			await SetColorSingle(list);
+			await SetColorSingle(sectorColors);
 		}
 
 		ColorService.Counter.Tick(Id);
@@ -188,7 +183,7 @@ public class LifxDevice : ColorTarget, IColorTarget {
 		Enable = _data.Enable;
 	}
 
-	private async Task SetColorMulti(Color[] colors) {
+	private async Task SetColorMulti(IReadOnlyList<Color> colors) {
 		if (_client == null || _beamLayout == null) {
 			Log.Warning("Null client or no layout!");
 			return;
@@ -197,7 +192,7 @@ public class LifxDevice : ColorTarget, IColorTarget {
 		var output = new List<Color>();
 		foreach (var segment in _beamLayout.Segments) {
 			var len = segment.LedCount;
-			var segColors = ColorUtil.TruncateColors(colors, segment.Offset, len, _multiplier);
+			var segColors = ColorUtil.TruncateColors(colors.ToArray(), segment.Offset, len, _multiplier);
 			if (segment.Repeat) {
 				var col = segColors[0];
 				for (var c = 0; c < len; c++) {
@@ -225,7 +220,7 @@ public class LifxDevice : ColorTarget, IColorTarget {
 
 
 	private async Task SetColorSingle(IReadOnlyList<Color> list) {
-		if (list == null || _client == null) {
+		if (_client == null) {
 			return;
 		}
 

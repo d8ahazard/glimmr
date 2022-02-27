@@ -205,12 +205,12 @@ public class AudioStream : ColorSource {
 							continue;
 						}
 
-						// if (_frameData.ContainsKey(freq)) {
-						// 	var prev = _frameData[freq];
-						// 	if (y < prev) {
-						// 		y = (y + prev) / 2;
-						// 	}
-						// }
+						if (_frameData.ContainsKey(freq)) {
+							var prev = _frameData[freq];
+							if (y < prev) {
+								y = (y + prev) / 2;
+							}
+						}
 
 						if (y > _maxVal) {
 							_maxVal = y;

@@ -167,8 +167,7 @@ let data = {
             switch (typeof (check)) {
                 case "number":
                     if (string === "audioMin" || string === "audioGain" || string === "audioRotationLower" ||
-                    string === "audioRotationLower" || string === "audioRotationSensitivity" ||
-                        string === "AudioRotationSPeed") {
+                    string === "audioRotationUpper" || string === "audioRotationSpeed") {
                         this.systemInternal[string] = parseFloat(value);
                     } else {
                         let num = parseInt(value);
@@ -1766,6 +1765,7 @@ function loadSettingObject(obj) {
                 if (value === true) {
                     target.setAttribute('checked', "true");
                 } else {
+                    console.log("Setting ", prop, dataProp[prop])
                     target.value = dataProp[prop];
                 }
             }
@@ -4016,10 +4016,13 @@ function sizeContent() {
     winHeight = wHeight;
 
     let ambientOffset = 0;
+    let sd = data.SystemData;
     if (mode === 3) {
+        loadSettingObject(sd);
         ambientOffset = colorDiv.offsetHeight;
     }
     if (mode === 2 || mode === 4) {
+        loadSettingObject(sd);
         ambientOffset = audioDiv.offsetHeight;
     }
     let top = navDiv.offsetHeight + ambientOffset + "px";

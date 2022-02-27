@@ -1,6 +1,7 @@
 ﻿#region
 
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Threading;
@@ -39,7 +40,6 @@ public class AdalightDevice : ColorTarget, IColorTarget {
 
 	public bool Enable { get; set; }
 	public bool Streaming { get; set; }
-	public bool Testing { get; set; }
 	public string Id { get; }
 
 	IColorTargetData IColorTarget.Data {
@@ -53,7 +53,6 @@ public class AdalightDevice : ColorTarget, IColorTarget {
 		}
 
 		Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
-		ColorService.StartCounter++;
 		var conn = _adalight.Connect();
 		if (!conn) {
 			Log.Warning("Unable to connect!");
@@ -63,7 +62,6 @@ public class AdalightDevice : ColorTarget, IColorTarget {
 		Streaming = true;
 		await Task.FromResult(true);
 		Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
-		ColorService.StartCounter--;
 	}
 
 	public async Task StopStream() {
@@ -72,13 +70,11 @@ public class AdalightDevice : ColorTarget, IColorTarget {
 		}
 
 		Log.Debug($"{_data.Tag}::Stopping stream: {_data.Id}.");
-		ColorService.StopCounter++;
 		var blacks = ColorUtil.EmptyColors(_ledCount);
 		await _adalight.UpdateColorsAsync(blacks.ToList());
 		_adalight.Disconnect();
 		Streaming = false;
 		Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
-		ColorService.StopCounter--;
 	}
 
 	public async Task FlashColor(Color color) {
@@ -124,17 +120,16 @@ public class AdalightDevice : ColorTarget, IColorTarget {
 	}
 
 	private Task SetColors(object sender, ColorSendEventArgs args) {
-		SetColor(args.LedColors, args.Force);
-		return Task.CompletedTask;
+		return SetColors(args.LedColors, args.SectorColors);
 	}
 
 
-	private void SetColor(Color[] colors, bool force = false) {
-		if (!Enable || !Streaming || Testing && !force) {
-			return;
+	public Task SetColors(IReadOnlyList<Color> ledColors, IReadOnlyList<Color> _) {
+		if (!Enable || !Streaming) {
+			return Task.CompletedTask;
 		}
 
-		var toSend = ColorUtil.TruncateColors(colors, _offset, _ledCount, _multiplier);
+		var toSend = ColorUtil.TruncateColors(ledColors.ToArray(), _offset, _ledCount, _multiplier);
 		if (_reverseStrip) {
 			toSend = toSend.Reverse().ToArray();
 		}
@@ -144,8 +139,8 @@ public class AdalightDevice : ColorTarget, IColorTarget {
 		}
 
 		toSend = FixGamma(toSend);
-
 		_adalight.UpdateColorsAsync(toSend.ToList());
+		return Task.CompletedTask;
 	}
 
 	private Color[] FixGamma(Color[] input) {

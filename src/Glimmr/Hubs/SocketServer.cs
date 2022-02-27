@@ -141,7 +141,7 @@ public class SocketServer : Hub {
 		if (typeName != null) {
 			dynamic? devObject = device.ToObject(typeName);
 			if (devObject != null) {
-				await _cs.UpdateDevice(devObject, false).ConfigureAwait(false);
+				await _cs.UpdateDevice(devObject, false);
 				if (string.IsNullOrEmpty(id)) return;
 				var data = DataUtil.GetDevice(id);
 				if (data == null) return;
@@ -225,7 +225,7 @@ public class SocketServer : Hub {
 		try {_states[Context.ConnectionId] = false;
 			SetSend();
 			Log.Debug("Connected: " + Context.ConnectionId);
-			await Clients.Caller.SendAsync("olo", DataUtil.GetStoreSerialized(_cs));
+			await Clients.Caller.SendAsync("olo", DataUtil.GetStoreSerialized(_cs)).ConfigureAwait(false);
 		} catch (Exception) {
 			// Ignored
 		}

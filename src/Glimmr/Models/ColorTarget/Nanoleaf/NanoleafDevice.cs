@@ -75,7 +75,6 @@ public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
 	}
 
 	public bool Enable { get; set; }
-	public bool Testing { get; set; }
 	public string Id { get; private set; }
 	public bool Streaming { get; set; }
 
@@ -96,7 +95,6 @@ public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
 		}
 
 		Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
-		ColorService.StartCounter++;
 		SetData();
 		Streaming = true;
 		if (!_frameWatch.IsRunning) {
@@ -118,7 +116,6 @@ public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
 		}, CancellationToken.None);
 
 		Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
-		ColorService.StartCounter--;
 	}
 
 	public async Task StopStream() {
@@ -135,14 +132,12 @@ public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
 		}
 		
 		Log.Debug($"{_data.Tag}::Stopping stream...{_data.Id}.");
-		ColorService.StopCounter++;
 		if (_checkTask is { IsCompleted: false }) {
 			await _checkTask.WaitAsync(TimeSpan.FromSeconds(1));
 			_checkTask = null;
 		}
 		await _nanoleafClient.TurnOffAsync();
 		Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
-		ColorService.StopCounter--;
 	}
 
 	public Task ReloadData() {
@@ -182,12 +177,12 @@ public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
 	}
 
 	private Task SetColors(object sender, ColorSendEventArgs args) {
-		return SetColor(args.SectorColors, args.Force);
+		return SetColors(args.LedColors, args.SectorColors);
 	}
 
 
-	private async Task SetColor(IReadOnlyList<Color> sectors, bool force = false) {
-		if (!Streaming || !Enable || Testing && !force) {
+	public async Task SetColors(IReadOnlyList<Color> _, IReadOnlyList<Color> sectors) {
+		if (!Streaming || !Enable) {
 			return;
 		}
 

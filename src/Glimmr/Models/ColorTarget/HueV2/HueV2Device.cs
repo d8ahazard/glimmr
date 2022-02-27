@@ -103,7 +103,6 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 		}
 
 		Log.Debug($"{Data.Tag}::Starting stream: {Data.Id}...");
-		ColorService.StartCounter++;
 		// Initialize streaming client
 		_client = new StreamingHueClient(_ipAddress, _user, _token);
 
@@ -175,7 +174,6 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 		//Start auto updating this entertainment group
 		_updateTask = _client.AutoUpdate(entGroup, ct, 60);
 		Log.Debug($"{Data.Tag}::Stream started: {Data.Id}");
-		ColorService.StartCounter--;
 		Streaming = true;
 	}
 
@@ -209,28 +207,24 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 		}
 
 		Log.Debug($"{Data.Tag}::Stopping stream...{Data.Id}.");
-		ColorService.StopCounter++;
-		
+
 		_client.Close();
 		Log.Debug($"{Data.Tag}::Stream stopped: {Data.Id}");
-		ColorService.StopCounter--;
 		await Task.FromResult(true);
 	}
 
-	private Task SetColors(object sender, ColorSendEventArgs args) {
-		SetColor(args.SectorColors, args.FadeTime, args.Force);
-		return Task.CompletedTask;
+	private async Task SetColors(object sender, ColorSendEventArgs args) {
+		await SetColors(args.LedColors, args.SectorColors);
 	}
 
 	/// <summary>
 	///     Update lights in entertainment group...
 	/// </summary>
-	/// <param name="sectors"></param>
-	/// <param name="fadeTime"></param>
-	/// <param name="force"></param>
-	private void SetColor(IReadOnlyList<Color> sectors, int fadeTime, bool force = false) {
-		if (!Streaming || !Enable || _entLayer == null || _group == null || Testing && !force) {
-			return;
+	/// <param name="_">LED colors, ignored for hue.</param>
+	/// <param name="sectorColors"></param>
+	public Task SetColors(IReadOnlyList<Color> _, IReadOnlyList<Color> sectorColors) {
+		if (!Streaming || !Enable || _entLayer == null || _group == null) {
+			return Task.CompletedTask;
 		}
 
 		foreach (var entLight in _entLayer) {
@@ -245,26 +239,19 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 
 			// Otherwise, get the corresponding sector color
 			var target = _targets[entLight.Id];
-			if (target >= sectors.Count) {
+			if (target >= sectorColors.Count) {
 				Log.Debug("NO TARGET!!");
 				continue;
 			}
 			
-			var color = sectors[target];
+			var color = sectorColors[target];
 			var mb = lightData.Override ? lightData.Brightness : _brightness;
 			var oColor = new RGBColor(color.R, color.G, color.B);
-			// If we're currently using a scene, animate it
-			if (Math.Abs(fadeTime) > 0.01) {
-				// Our start color is the last color we had}
-				entLight.SetState(_ct, oColor, mb,
-					TimeSpan.FromMilliseconds(fadeTime));
-			} else {
-				// Otherwise, if we're streaming, just set the color
-				entLight.SetState(_ct, oColor, mb);
-			}
+			entLight.SetState(_ct, oColor, mb);
 		}
 
 		ColorService.Counter.Tick(Id);
+		return Task.CompletedTask;
 	}
 
 

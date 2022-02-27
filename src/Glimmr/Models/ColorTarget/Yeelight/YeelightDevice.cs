@@ -44,7 +44,6 @@ public class YeelightDevice : ColorTarget, IColorTarget {
 	}
 
 	public bool Streaming { get; set; }
-	public bool Testing { get; set; }
 	public string Id { get; private set; }
 	public bool Enable { get; set; }
 
@@ -61,7 +60,6 @@ public class YeelightDevice : ColorTarget, IColorTarget {
 		}
 
 		Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
-		ColorService.StartCounter++;
 		_targetSector = _data.TargetSector;
 
 		await _yeeDevice.Connect();
@@ -74,8 +72,6 @@ public class YeelightDevice : ColorTarget, IColorTarget {
 		if (Streaming) {
 			Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
 		}
-
-		ColorService.StartCounter--;
 	}
 
 	public async Task StopStream() {
@@ -84,7 +80,6 @@ public class YeelightDevice : ColorTarget, IColorTarget {
 		}
 
 		Log.Debug($"{_data.Tag}::Stopping stream...{_data.Id}.");
-		ColorService.StopCounter++;
 		await FlashColor(Color.FromArgb(0, 0, 0));
 		await _yeeDevice.StopMusicMode();
 		_yeeDevice.Disconnect();
@@ -94,7 +89,6 @@ public class YeelightDevice : ColorTarget, IColorTarget {
 		}
 
 		Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
-		ColorService.StopCounter--;
 	}
 
 
@@ -115,18 +109,12 @@ public class YeelightDevice : ColorTarget, IColorTarget {
 	}
 
 	private Task SetColors(object sender, ColorSendEventArgs args) {
-		return SetColor(args.SectorColors, args.Force);
+		return SetColors(args.LedColors, args.SectorColors);
 	}
 
-	private async Task SetColor(IReadOnlyList<Color> sectors, bool force = false) {
+	public async Task SetColors(IReadOnlyList<Color> _, IReadOnlyList<Color> sectors) {
 		if (!Streaming || !Enable) {
 			return;
-		}
-
-		if (!force) {
-			if (!Streaming || _targetSector == -1 || Testing) {
-				return;
-			}
 		}
 
 		var col = sectors[_targetSector];

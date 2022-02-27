@@ -1,6 +1,8 @@
 ﻿#region
 
+using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,7 +41,6 @@ public class DreamScreenDevice : ColorTarget, IColorTarget {
 	}
 
 	public bool Streaming { get; set; }
-	public bool Testing { get; set; }
 	public string Id { get; private set; }
 	public bool Enable { get; set; }
 
@@ -53,7 +54,6 @@ public class DreamScreenDevice : ColorTarget, IColorTarget {
 		}
 
 		Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
-		ColorService.StartCounter++;
 		if (_data.DeviceTag.Contains("DreamScreen")) {
 			Log.Warning("Error, you can't send colors to a dreamscreen.");
 			Enable = false;
@@ -62,7 +62,6 @@ public class DreamScreenDevice : ColorTarget, IColorTarget {
 
 		await _client.SetMode(_dev, DeviceMode.Video);
 		Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
-		ColorService.StartCounter--;
 	}
 
 	public async Task StopStream() {
@@ -75,10 +74,8 @@ public class DreamScreenDevice : ColorTarget, IColorTarget {
 		}
 
 		Log.Debug($"{_data.Tag}::Stopping stream... {_data.Id}.");
-		ColorService.StopCounter++;
 		await _client.SetMode(_dev, DeviceMode.Off);
 		Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
-		ColorService.StopCounter--;
 	}
 
 	public Task FlashColor(Color color) {
@@ -103,12 +100,12 @@ public class DreamScreenDevice : ColorTarget, IColorTarget {
 	}
 
 	private Task SetColors(object sender, ColorSendEventArgs args) {
-		return SetColor(args.SectorColors, args.Force);
+		return SetColors(args.LedColors, args.SectorColors);
 	}
 
 
-	private async Task SetColor(Color[] sectors, bool force = false) {
-		if (!_data.Enable || Testing && !force) {
+	public async Task SetColors(IReadOnlyList<Color> _, IReadOnlyList<Color> sectorColors) {
+		if (!_data.Enable || !Streaming) {
 			return;
 		}
 
@@ -116,11 +113,11 @@ public class DreamScreenDevice : ColorTarget, IColorTarget {
 			return;
 		}
 
-		if (sectors.Length != 12) {
-			sectors = ColorUtil.TruncateColors(sectors);
+		if (sectorColors.Count != 12) {
+			sectorColors = ColorUtil.TruncateColors(sectorColors.ToArray());
 		}
 
-		await _client.SendColors(_dev, sectors);
+		await _client.SendColors(_dev, sectorColors);
 	}
 
 	private void LoadData() {

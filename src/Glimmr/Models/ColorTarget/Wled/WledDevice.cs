@@ -56,7 +56,6 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 
 	public bool Enable { get; set; }
 	public bool Streaming { get; set; }
-	public bool Testing { get; set; }
 	public string Id { get; }
 
 	IColorTargetData IColorTarget.Data {
@@ -71,18 +70,16 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		}
 
 		Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
-		ColorService.StartCounter++;
 		_targetSector = _data.TargetSector;
 		_ep = IpUtil.Parse(IpAddress, Port);
 		if (_ep == null) {
 			return;
 		}
 
-		Streaming = true;
-		await FlashColor(Color.Black);
 		await UpdateLightState(Streaming);
+		await FlashColor(Color.Black);
+		Streaming = true;
 		Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
-		ColorService.StartCounter--;
 	}
 
 
@@ -104,13 +101,11 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		}
 
 		Log.Debug($"{_data.Tag}::Stopping stream...{_data.Id}.");
-		ColorService.StopCounter++;
 		Streaming = false;
 		await FlashColor(Color.Black);
 		await UpdateLightState(false);
 		await Task.FromResult(true);
 		Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
-		ColorService.StopCounter--;
 	}
 
 
@@ -149,21 +144,21 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 	}
 
 	private Task SetColors(object sender, ColorSendEventArgs args) {
-		return SetColor(args.LedColors, args.SectorColors, args.Force);
+		return SetColors(args.LedColors, args.SectorColors);
 	}
 
 
-	private async Task SetColor(Color[] list, IReadOnlyList<Color> colors1, bool force = false) {
-		if (!Streaming || !Enable || Testing && !force) {
+	public async Task SetColors(IReadOnlyList<Color> ledColors, IReadOnlyList<Color> sectorColors) {
+		if (!Streaming || !Enable) {
 			return;
 		}
 
-		var toSend = list;
+		var toSend = ledColors.ToArray();
 		switch (_stripMode) {
-			case StripMode.Single when _targetSector >= colors1.Count || _targetSector == -1:
+			case StripMode.Single when _targetSector >= sectorColors.Count || _targetSector == -1:
 				return;
 			case StripMode.Single:
-				toSend = ColorUtil.FillArray(colors1[_targetSector], _ledCount);
+				toSend = ColorUtil.FillArray(sectorColors[_targetSector], _ledCount).ToArray();
 				break;
 			case StripMode.Sectored: {
 				var output = new Color[_ledCount];
@@ -252,7 +247,7 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		var url = "http://" + IpAddress + "/win";
 		url += "&T=" + (on ? "1" : "0");
 		url += "&A=" + (int)scaledBright;
-		//await _httpClient.GetAsync(url).ConfigureAwait(false);
+		await _httpClient.GetAsync(url);
 		url = "http://" + IpAddress + "/json/si/";
 		var bod = new Dictionary<string, dynamic> {
 			["v"] = true,
@@ -261,7 +256,7 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		};
 		var foo = JsonConvert.SerializeObject(bod);
 		Log.Debug("Payload: " + foo);
-		var res = _httpClient.PostAsync(url, new JsonContent(foo)).Result;
+		var res = await _httpClient.PostAsync(url, new JsonContent(foo));
 		Log.Debug("Status: " + JsonConvert.SerializeObject(res));
 	}
 

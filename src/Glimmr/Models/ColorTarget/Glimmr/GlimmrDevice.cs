@@ -46,7 +46,6 @@ public class GlimmrDevice : ColorTarget, IColorTarget, IDisposable {
 
 	public bool Enable { get; set; }
 	public bool Streaming { get; set; }
-	public bool Testing { get; set; }
 	public string Id { get; }
 
 
@@ -62,24 +61,20 @@ public class GlimmrDevice : ColorTarget, IColorTarget, IDisposable {
 		}
 
 		Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
-		ColorService.StartCounter++;
 		var sd = DataUtil.GetSystemData();
 		var glimmrData = new GlimmrData(sd);
 		await SendPost("startStream", JsonConvert.SerializeObject(glimmrData)).ConfigureAwait(false);
 		_ep = IpUtil.Parse(_ipAddress, Port);
 		Streaming = true;
 		Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
-		ColorService.StartCounter--;
 	}
 
 
 	public async Task FlashColor(Color color) {
 		try {
-			if (_udpClient != null) {
-				var cp = new ColorPacket(ColorUtil.FillArray(color, _ledCount));
-				var data = cp.Encode(255);
-				await _udpClient.SendAsync(data, data.Length, _ep);
-			}
+			var cp = new ColorPacket(ColorUtil.FillArray(color, _ledCount));
+			var data = cp.Encode(255);
+			await _udpClient.SendAsync(data, data.Length, _ep);
 		} catch (Exception e) {
 			Log.Warning("Exception flashing color: " + e.Message);
 		}
@@ -92,12 +87,10 @@ public class GlimmrDevice : ColorTarget, IColorTarget, IDisposable {
 		}
 
 		Log.Debug($"{_data.Tag}::Stopping stream...{_data.Id}.");
-		ColorService.StopCounter++;
 		await FlashColor(Color.FromArgb(0, 0, 0));
 		Streaming = false;
 		await SendPost("mode", 0.ToString());
 		Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
-		ColorService.StopCounter--;
 	}
 
 
@@ -124,12 +117,12 @@ public class GlimmrDevice : ColorTarget, IColorTarget, IDisposable {
 	}
 
 	private Task SetColors(object sender, ColorSendEventArgs args) {
-		return SetColor(args.LedColors, args.Force);
+		return SetColors(args.LedColors, args.SectorColors);
 	}
 
 
-	private async Task SetColor(Color[] leds, bool force = false) {
-		if (!Streaming || !Enable || Testing && !force) {
+	public async Task SetColors(IReadOnlyList<Color> ledColors, IReadOnlyList<Color> _) {
+		if (!Streaming || !Enable) {
 			return;
 		}
 
@@ -138,33 +131,34 @@ public class GlimmrDevice : ColorTarget, IColorTarget, IDisposable {
 			return;
 		}
 
+		var toSend = ledColors.ToArray();
 		if (_data.MirrorHorizontal) {
 			var left = new Color[_sd.LeftCount];
 			var right = new Color[_sd.RightCount];
 			var top = new Color[_sd.TopCount];
 			var bottom = new Color[_sd.BottomCount];
 			for (var i = 0; i < right.Length; i++) {
-				right[i] = leds[i];
+				right[i] = ledColors[i];
 			}
 
 			var ct = 0;
 			for (var i = 0; i < top.Length; i++) {
 				var tIdx = right.Length + i;
-				top[ct] = leds[tIdx];
+				top[ct] = ledColors[tIdx];
 				ct++;
 			}
 
 			ct = 0;
 			for (var i = 0; i < left.Length; i++) {
 				var lIdx = right.Length + top.Length + i;
-				left[ct] = leds[lIdx];
+				left[ct] = ledColors[lIdx];
 				ct++;
 			}
 
 			ct = 0;
 			for (var i = 0; i < bottom.Length; i++) {
 				var lIdx = left.Length + right.Length + top.Length + i;
-				bottom[ct] = leds[lIdx];
+				bottom[ct] = ledColors[lIdx];
 				ct++;
 			}
 
@@ -178,11 +172,11 @@ public class GlimmrDevice : ColorTarget, IColorTarget, IDisposable {
 			leds1.AddRange(top);
 			leds1.AddRange(right);
 			leds1.AddRange(bottom);
-			leds = leds1.ToArray();
+			toSend = leds1.ToArray();
 		}
 
 		try {
-			var cp = new ColorPacket(leds);
+			var cp = new ColorPacket(toSend);
 			var packet = cp.Encode();
 			await _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep);
 			ColorService.Counter.Tick(Id);

@@ -172,32 +172,36 @@ public class SystemData {
 	public int AudioCutoff { get; set; } = 1;
 	
 	/// <summary>
-	///     Low cutoff for audio detection, values below this will not be displayed.
+	///     Lower limit to color range (0 - 1)
+	///     Range is calculated as the absolute value between lower and upper.
 	/// </summary>
+
 	[DefaultValue(0f)]
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 	public float AudioRotationLower { get; set; }
 	
 	/// <summary>
-	///     Low cutoff for audio detection, values below this will not be displayed.
+	///     Upper limit to color range (0 - 1)
+	///     Range is calculated as the absolute value between lower and upper.
 	/// </summary>
+
 	[DefaultValue(1.0f)]
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 	public float AudioRotationUpper { get; set; } = 1.0f;
 	
 	/// <summary>
-	///     Low cutoff for audio detection, values below this will not be displayed.
+	///     How many degrees to rotate on each trigger (0 - 1)
 	/// </summary>
 	[DefaultValue(.5f)]
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 	public float AudioRotationSpeed { get; set; } = .5f;
 	
 	/// <summary>
-	///     Low cutoff for audio detection, values below this will not be displayed.
+	///     Minimum amplitude to trigger color rotation (0-255)
 	/// </summary>
-	[DefaultValue(.5f)]
+	[DefaultValue(100)]
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-	public float AudioRotationSensitivity { get; set; } = .5f;
+	public int AudioRotationTrigger { get; set; } = 100;
 
 	/// <summary>
 	///     Current ambient scene.

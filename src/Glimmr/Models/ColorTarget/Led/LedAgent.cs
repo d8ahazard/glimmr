@@ -122,15 +122,17 @@ public class LedAgent : IColorTargetAgent {
 	}
 
 	public void SetColors(Color[] input) {
-		if (_d0?.Enable ?? false) {
-			SetColors(input, "0");
+		var updated = false;
+		if (_use0) {
+			UpdateColors(input, "0");
+			updated = true;
 		}
-
-		if (_d1?.Enable ?? false) {
-			SetColors(input, "1");
+		if (_use1) {
+			UpdateColors(input, "1");
+			updated = true;
 		}
-
-		Render();
+		
+		if (updated) Render();
 	}
 
 	private void Render() {
@@ -263,7 +265,7 @@ public class LedAgent : IColorTargetAgent {
 	}
 
 
-	private void SetColors(Color[] colors, string id) {
+	private void UpdateColors(Color[] colors, string id) {
 		if (_d0 == null || _d1 == null) {
 			return;
 		}

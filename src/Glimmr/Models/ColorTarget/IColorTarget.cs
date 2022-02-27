@@ -1,6 +1,7 @@
 ﻿#region
 
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,7 +15,7 @@ namespace Glimmr.Models.ColorTarget;
 public interface IColorTarget {
 	public bool Enable { get; set; }
 	public bool Streaming { get; set; }
-	public bool Testing { set; }
+	
 	[JsonProperty] public DateTime LastSeen => DateTime.Now;
 
 	public IColorTargetData Data { get; set; }
@@ -26,6 +27,7 @@ public interface IColorTarget {
 
 	public Task FlashColor(Color color);
 
+	public Task SetColors(IReadOnlyList<Color> ledColors, IReadOnlyList<Color> sectorColors);
 
 	public Task ReloadData();
 

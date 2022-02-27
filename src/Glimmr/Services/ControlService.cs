@@ -491,7 +491,7 @@ v. {version}
 
 	public async Task UpdateDevice(dynamic device, bool merge = true) {
 		Log.Debug($"Updating {device.Tag}...");
-		await DataUtil.AddDeviceAsync(device, merge).ConfigureAwait(false);
+		await DataUtil.AddDeviceAsync(device, merge);
 		await RefreshDevice(device.Id);
 	}
 

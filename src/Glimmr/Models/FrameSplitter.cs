@@ -907,12 +907,17 @@ public class CropCounter {
 	public void Tick(int dim) {
 		if (dim == _dimension) {
 			_count++;
-			if (_count >= _max) {
-				_count = _max;
+			if (_count >= _max + 5) {
+				_count = _max + 5;
 			}
 		} else {
-			_count = 0;
-			_dimension = dim;
+			if (dim == 0) {
+				_count--;
+				if (_count < 0) _count = 0;
+			} else {
+				_count = 0;
+				_dimension = dim;	
+			}
 		}
 	}
 

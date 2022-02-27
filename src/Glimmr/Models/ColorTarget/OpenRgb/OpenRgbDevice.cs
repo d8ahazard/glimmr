@@ -35,7 +35,6 @@ public class OpenRgbDevice : ColorTarget, IColorTarget {
 
 	public bool Streaming { get; set; }
 
-	public bool Testing { private get; set; }
 	public string Id { get; }
 	public bool Enable { get; set; }
 
@@ -59,7 +58,6 @@ public class OpenRgbDevice : ColorTarget, IColorTarget {
 		}
 
 		Log.Debug($"{_data.Tag}::Starting stream: {_data.Id}...");
-		ColorService.StartCounter++;
 		bool connected;
 		try {
 			var mt = new OpenRGB.NET.Models.Color[_data.LedCount];
@@ -70,7 +68,6 @@ public class OpenRgbDevice : ColorTarget, IColorTarget {
 			connected = _client.SetMode(_data.DeviceId, 0);
 		} catch (Exception e) {
 			Log.Warning("Exception setting mode..." + e.Message);
-			ColorService.StartCounter--;
 			return Task.CompletedTask;
 		}
 
@@ -81,7 +78,6 @@ public class OpenRgbDevice : ColorTarget, IColorTarget {
 			Log.Debug($"{_data.Tag}::Stream start failed: {_data.Id}.");
 		}
 
-		ColorService.StartCounter--;
 		return Task.CompletedTask;
 	}
 
@@ -121,16 +117,16 @@ public class OpenRgbDevice : ColorTarget, IColorTarget {
 			return Task.CompletedTask;
 		}
 
-		return SetColor(args.LedColors, args.SectorColors, args.Force);
+		return SetColors(args.LedColors, args.SectorColors);
 	}
 
 
-	private async Task SetColor(Color[] list, IReadOnlyList<Color> colors1, bool force = false) {
-		if (!Streaming || !Enable || Testing && !force) {
+	public async Task SetColors(IReadOnlyList<Color> list, IReadOnlyList<Color> colors1) {
+		if (!Streaming || !Enable) {
 			return;
 		}
 
-		var toSend = list;
+		var toSend = list.ToArray();
 		switch (_stripMode) {
 			case StripMode.Single when _targetSector >= colors1.Count || _targetSector == -1:
 				return;
