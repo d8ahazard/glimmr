@@ -431,7 +431,7 @@
         </member>
         <member name="P:Glimmr.Models.ColorSource.Ambient.AmbientScene.EasingTime">
             <summary>
-                How long to ease between colors.
+                Deprecated. This is now determined by easing type and animation time.
             </summary>
         </member>
         <member name="P:Glimmr.Models.ColorSource.Ambient.AmbientScene.Id">
@@ -468,6 +468,16 @@
                 An array of colors used by the scene.
             </summary>
         </member>
+        <member name="M:Glimmr.Models.ColorSource.Ambient.AmbientStream.RefreshSystem">
+            <summary>
+            Refresh system data and reload scene.
+            </summary>
+        </member>
+        <member name="M:Glimmr.Models.ColorSource.Ambient.AmbientStream.LoadScene">
+            <summary>
+            Load scene data to memory
+            </summary>
+        </member>
         <member name="T:Glimmr.Models.ColorSource.Ambient.AmbientStream.AnimationMode">
             <summary>
                 Linear - Each color from the list of colors is assigned to a sector, and the order is incremented by 1 each update
@@ -501,6 +511,14 @@
             <summary>
                 Device Name (Also Device ID).
             </summary>
+        </member>
+        <member name="M:Glimmr.Models.ColorSource.Audio.AudioMap.HighNote(System.Collections.Generic.Dictionary{System.Single,System.Int32},System.Int32)">
+            <summary>
+            Select the highest frequency in a given octave, where step is the octave from 0-9
+            </summary>
+            <param name="stuff"></param>
+            <param name="step"></param>
+            <returns></returns>
         </member>
         <member name="P:Glimmr.Models.ColorSource.Audio.AudioScene.RotationLower">
             <summary>
@@ -850,13 +868,12 @@
             </summary>
             <param name="ct">A cancellation token.</param>
         </member>
-        <member name="M:Glimmr.Models.ColorTarget.HueV2.HueV2Device.SetColor(System.Collections.Generic.IReadOnlyList{System.Drawing.Color},System.Int32,System.Boolean)">
+        <member name="M:Glimmr.Models.ColorTarget.HueV2.HueV2Device.SetColors(System.Collections.Generic.IReadOnlyList{System.Drawing.Color},System.Collections.Generic.IReadOnlyList{System.Drawing.Color})">
             <summary>
                 Update lights in entertainment group...
             </summary>
-            <param name="sectors"></param>
-            <param name="fadeTime"></param>
-            <param name="force"></param>
+            <param name="_">LED colors, ignored for hue.</param>
+            <param name="sectorColors"></param>
         </member>
         <member name="P:Glimmr.Models.ColorTarget.Hue.HueData.Brightness">
             <summary>
@@ -1012,13 +1029,12 @@
             </summary>
             <param name="ct">A cancellation token.</param>
         </member>
-        <member name="M:Glimmr.Models.ColorTarget.Hue.HueDevice.SetColor(System.Collections.Generic.IReadOnlyList{System.Drawing.Color},System.Int32,System.Boolean)">
+        <member name="M:Glimmr.Models.ColorTarget.Hue.HueDevice.SetColors(System.Collections.Generic.IReadOnlyList{System.Drawing.Color},System.Collections.Generic.IReadOnlyList{System.Drawing.Color})">
             <summary>
                 Update lites in entertainment group...
             </summary>
-            <param name="sectors"></param>
-            <param name="fadeTime"></param>
-            <param name="force"></param>
+            <param name="_">Led Colors (Ignored)</param>
+            <param name="sectorColors"></param>
         </member>
         <member name="T:Glimmr.Models.ColorTarget.IColorTargetAgent">
             <summary>
@@ -1206,6 +1222,17 @@
             <summary>
                 UI Elements.
             </summary>
+        </member>
+        <member name="T:Glimmr.Models.ColorTarget.Led.LedDevice">
+             <summary>
+             A wrapper for the WS281X Library.
+            
+             Despite showing two devices in the UI, for all intents and purposes,
+             the "LED 0" device actually handles all updates for *both* strips.
+            
+             All data is passed to the "agent" via LED 0 and updated for both
+             segments simultaneously to avoid lag and extra work.
+             </summary>
         </member>
         <member name="P:Glimmr.Models.ColorTarget.Lifx.LifxData.BeamLayout">
             <summary>
@@ -2358,9 +2385,31 @@
                 How much to increase input audio volume.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.AudioMin">
+        <member name="P:Glimmr.Models.SystemData.AudioCutoff">
             <summary>
-                Low cutoff for audio detection, values below this will not be displayed.
+                Low cutoff for audio detection, values below this will not be displayed (0-255).
+            </summary>
+        </member>
+        <member name="P:Glimmr.Models.SystemData.AudioRotationLower">
+            <summary>
+                Lower limit to color range (0 - 1)
+                Range is calculated as the absolute value between lower and upper.
+            </summary>
+        </member>
+        <member name="P:Glimmr.Models.SystemData.AudioRotationUpper">
+            <summary>
+                Upper limit to color range (0 - 1)
+                Range is calculated as the absolute value between lower and upper.
+            </summary>
+        </member>
+        <member name="P:Glimmr.Models.SystemData.AudioRotationSpeed">
+            <summary>
+                How many degrees to rotate on each trigger (0 - 1)
+            </summary>
+        </member>
+        <member name="P:Glimmr.Models.SystemData.AudioRotationTrigger">
+            <summary>
+                Minimum amplitude to trigger color rotation (0-255)
             </summary>
         </member>
         <member name="P:Glimmr.Models.SystemData.AmbientScene">
@@ -2391,12 +2440,12 @@
         </member>
         <member name="P:Glimmr.Models.SystemData.AutoUpdateTime">
             <summary>
-                How frequently to automatically send updated system data to the UI.
+                How frequently to automatically check for updates (in hours).
             </summary>
         </member>
         <member name="P:Glimmr.Models.SystemData.BaudRate">
             <summary>
-                Speed at which to attempt discovering Adalight devices.
+                Serial port speed to use for connecting to adalight devices.
             </summary>
         </member>
         <member name="P:Glimmr.Models.SystemData.BlackLevel">

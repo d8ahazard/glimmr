@@ -25,8 +25,7 @@
     "#F09018",
     "#601818"
   ],
-  "AnimationTime": 0.5,
-  "EasingTime": 0.5,
+  "AnimationTime": 1.0,
   "Mode": "Random",
   "Easing": "Blend",
   "Name": "Fire",

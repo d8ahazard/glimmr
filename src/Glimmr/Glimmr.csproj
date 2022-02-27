@@ -2,7 +2,7 @@
     <PropertyGroup>
         <RuntimeIdentifiers>ubuntu.18.04-x64;linux-arm;linux-arm64;linux-x64;osx-x64;win-x64;win-arm;win-x86</RuntimeIdentifiers>
         <TargetFramework>net6.0</TargetFramework>
-        <VersionPrefix>1.2.2</VersionPrefix>
+        <VersionPrefix>1.2.3</VersionPrefix>
         <Product>Glimmr</Product>
         <ProductName>Glimmr</ProductName>
         <CopyRefAssembliesToPublishDirectory>false</CopyRefAssembliesToPublishDirectory>
@@ -16,7 +16,7 @@
         <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
-        <PackageVersion>1.2.2</PackageVersion>
+        <PackageVersion>1.2.3</PackageVersion>
         <Copyright>GPLv3</Copyright>
         <PackageProjectUrl>https://github.com/d8ahazard/Glimmr</PackageProjectUrl>
         <PackageLicenseUrl>https://raw.githubusercontent.com/d8ahazard/glimmr/master/COPYING</PackageLicenseUrl>
@@ -24,8 +24,8 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <NoWarn>$(NoWarn);1591</NoWarn>
         <PackageIconUrl>https://github.com/d8ahazard/glimmr/raw/master/appIcon.png</PackageIconUrl>
-        <AssemblyVersion>1.2.2</AssemblyVersion>
-        <FileVersion>1.2.2</FileVersion>
+        <AssemblyVersion>1.2.3</AssemblyVersion>
+        <FileVersion>1.2.3</FileVersion>
         <InvariantGlobalization>false</InvariantGlobalization>
     </PropertyGroup>
 

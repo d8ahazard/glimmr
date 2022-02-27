@@ -32,10 +32,10 @@
   },
   "targets": {
     ".NETCoreApp,Version=v6.0": {
-      "Glimmr/1.2.2-master-0001063": {
+      "Glimmr/1.2.3-master-0001073": {
         "dependencies": {
           "AdalightNet": "1.0.8",
-          "AutoMapper": "11.0.0",
+          "AutoMapper": "11.0.1",
           "DasMulli.SimpleGitVersion": "1.0.0",
           "DirectShowLib.Standard": "2.1.0",
           "DreamScreenNet": "1.0.5",
@@ -55,18 +55,18 @@
           "Makaretu.Dns.Multicast": "0.27.0",
           "ManagedBass": "3.1.0",
           "Microsoft.AspNet.SignalR.Client": "2.4.3",
-          "Microsoft.AspNetCore.Mvc.NewtonsoftJson": "6.0.1",
-          "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation": "6.0.1",
+          "Microsoft.AspNetCore.Mvc.NewtonsoftJson": "6.0.2",
+          "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation": "6.0.2",
           "Microsoft.AspNetCore.SignalR": "1.1.0",
           "Microsoft.VisualStudio.Azure.Containers.Tools.Targets": "1.14.0",
           "Nanoleaf.Core": "2.0.0",
           "Newtonsoft.Json": "13.0.1",
           "OpenRGB.NET": "1.7.0",
           "Packaging.Targets": "0.1.220",
-          "Q42.HueApi": "3.19.2",
+          "Q42.HueApi": "3.19.3",
           "Q42.HueApi.Entertainment": "3.18.1",
           "Serilog": "2.10.0",
-          "Serilog.AspNetCore": "4.1.0",
+          "Serilog.AspNetCore": "5.0.0",
           "Serilog.Sinks.AspNetCore.SignalR": "0.4.0",
           "Serilog.Sinks.Async": "1.5.0",
           "Serilog.Sinks.Console": "4.0.1",
@@ -1825,7 +1825,7 @@
           "lib/netstandard2.1/AdalightNet.dll": {}
         }
       },
-      "AutoMapper/11.0.0": {
+      "AutoMapper/11.0.1": {
         "dependencies": {
           "Microsoft.CSharp": "4.7.0"
         },
@@ -2127,7 +2127,7 @@
           "Microsoft.Extensions.Primitives": "5.0.0"
         }
       },
-      "Microsoft.AspNetCore.JsonPatch/6.0.1": {
+      "Microsoft.AspNetCore.JsonPatch/6.0.2": {
         "dependencies": {
           "Microsoft.CSharp": "4.7.0",
           "Newtonsoft.Json": "13.0.1"
@@ -2136,9 +2136,9 @@
           "lib/net6.0/Microsoft.AspNetCore.JsonPatch.dll": {}
         }
       },
-      "Microsoft.AspNetCore.Mvc.NewtonsoftJson/6.0.1": {
+      "Microsoft.AspNetCore.Mvc.NewtonsoftJson/6.0.2": {
         "dependencies": {
-          "Microsoft.AspNetCore.JsonPatch": "6.0.1",
+          "Microsoft.AspNetCore.JsonPatch": "6.0.2",
           "Newtonsoft.Json": "13.0.1",
           "Newtonsoft.Json.Bson": "1.0.2"
         },
@@ -2146,26 +2146,26 @@
           "lib/net6.0/Microsoft.AspNetCore.Mvc.NewtonsoftJson.dll": {}
         }
       },
-      "Microsoft.AspNetCore.Mvc.Razor.Extensions/6.0.1": {
+      "Microsoft.AspNetCore.Mvc.Razor.Extensions/6.0.2": {
         "dependencies": {
-          "Microsoft.AspNetCore.Razor.Language": "6.0.1",
-          "Microsoft.CodeAnalysis.Razor": "6.0.1"
+          "Microsoft.AspNetCore.Razor.Language": "6.0.2",
+          "Microsoft.CodeAnalysis.Razor": "6.0.2"
         },
         "compile": {
           "lib/netstandard2.0/Microsoft.AspNetCore.Mvc.Razor.Extensions.dll": {}
         }
       },
-      "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation/6.0.1": {
+      "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation/6.0.2": {
         "dependencies": {
-          "Microsoft.AspNetCore.Mvc.Razor.Extensions": "6.0.1",
-          "Microsoft.CodeAnalysis.Razor": "6.0.1",
+          "Microsoft.AspNetCore.Mvc.Razor.Extensions": "6.0.2",
+          "Microsoft.CodeAnalysis.Razor": "6.0.2",
           "Microsoft.Extensions.DependencyModel": "6.0.0"
         },
         "compile": {
           "lib/net6.0/Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation.dll": {}
         }
       },
-      "Microsoft.AspNetCore.Razor.Language/6.0.1": {
+      "Microsoft.AspNetCore.Razor.Language/6.0.2": {
         "compile": {
           "lib/netstandard2.0/Microsoft.AspNetCore.Razor.Language.dll": {}
         }
@@ -2252,9 +2252,9 @@
           "lib/netcoreapp3.1/Microsoft.CodeAnalysis.CSharp.dll": {}
         }
       },
-      "Microsoft.CodeAnalysis.Razor/6.0.1": {
+      "Microsoft.CodeAnalysis.Razor/6.0.2": {
         "dependencies": {
-          "Microsoft.AspNetCore.Razor.Language": "6.0.1",
+          "Microsoft.AspNetCore.Razor.Language": "6.0.2",
           "Microsoft.CodeAnalysis.CSharp": "4.0.0",
           "Microsoft.CodeAnalysis.Common": "4.0.0"
         },
@@ -2484,7 +2484,7 @@
           "lib/netstandard2.0/BouncyCastle.Crypto.dll": {}
         }
       },
-      "Q42.HueApi/3.19.2": {
+      "Q42.HueApi/3.19.3": {
         "dependencies": {
           "Newtonsoft.Json": "13.0.1"
         },
@@ -2500,7 +2500,7 @@
       "Q42.HueApi.Entertainment/3.18.1": {
         "dependencies": {
           "Portable.BouncyCastle": "1.9.0",
-          "Q42.HueApi": "3.19.2",
+          "Q42.HueApi": "3.19.3",
           "Q42.HueApi.ColorConverters": "3.18.1"
         },
         "compile": {
@@ -2693,14 +2693,14 @@
           "lib/netstandard2.1/Serilog.dll": {}
         }
       },
-      "Serilog.AspNetCore/4.1.0": {
+      "Serilog.AspNetCore/5.0.0": {
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection": "5.0.0",
           "Microsoft.Extensions.Logging": "5.0.0",
           "Serilog": "2.10.0",
-          "Serilog.Extensions.Hosting": "4.1.2",
+          "Serilog.Extensions.Hosting": "4.2.0",
           "Serilog.Formatting.Compact": "1.1.0",
-          "Serilog.Settings.Configuration": "3.1.0",
+          "Serilog.Settings.Configuration": "3.3.0",
           "Serilog.Sinks.Console": "4.0.1",
           "Serilog.Sinks.Debug": "2.0.0",
           "Serilog.Sinks.File": "5.0.0"
@@ -2709,19 +2709,19 @@
           "lib/net5.0/Serilog.AspNetCore.dll": {}
         }
       },
-      "Serilog.Extensions.Hosting/4.1.2": {
+      "Serilog.Extensions.Hosting/4.2.0": {
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "5.0.0",
           "Microsoft.Extensions.Hosting.Abstractions": "3.1.8",
           "Microsoft.Extensions.Logging.Abstractions": "5.0.0",
           "Serilog": "2.10.0",
-          "Serilog.Extensions.Logging": "3.0.1"
+          "Serilog.Extensions.Logging": "3.1.0"
         },
         "compile": {
           "lib/netstandard2.1/Serilog.Extensions.Hosting.dll": {}
         }
       },
-      "Serilog.Extensions.Logging/3.0.1": {
+      "Serilog.Extensions.Logging/3.1.0": {
         "dependencies": {
           "Microsoft.Extensions.Logging": "5.0.0",
           "Serilog": "2.10.0"
@@ -2738,7 +2738,7 @@
           "lib/netstandard2.0/Serilog.Formatting.Compact.dll": {}
         }
       },
-      "Serilog.Settings.Configuration/3.1.0": {
+      "Serilog.Settings.Configuration/3.3.0": {
         "dependencies": {
           "Microsoft.Extensions.DependencyModel": "6.0.0",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "2.0.0",
@@ -3700,10 +3700,10 @@
       }
     },
     ".NETCoreApp,Version=v6.0/osx-x64": {
-      "Glimmr/1.2.2-master-0001063": {
+      "Glimmr/1.2.3-master-0001073": {
         "dependencies": {
           "AdalightNet": "1.0.8",
-          "AutoMapper": "11.0.0",
+          "AutoMapper": "11.0.1",
           "DasMulli.SimpleGitVersion": "1.0.0",
           "DirectShowLib.Standard": "2.1.0",
           "DreamScreenNet": "1.0.5",
@@ -3723,18 +3723,18 @@
           "Makaretu.Dns.Multicast": "0.27.0",
           "ManagedBass": "3.1.0",
           "Microsoft.AspNet.SignalR.Client": "2.4.3",
-          "Microsoft.AspNetCore.Mvc.NewtonsoftJson": "6.0.1",
-          "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation": "6.0.1",
+          "Microsoft.AspNetCore.Mvc.NewtonsoftJson": "6.0.2",
+          "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation": "6.0.2",
           "Microsoft.AspNetCore.SignalR": "1.1.0",
           "Microsoft.VisualStudio.Azure.Containers.Tools.Targets": "1.14.0",
           "Nanoleaf.Core": "2.0.0",
           "Newtonsoft.Json": "13.0.1",
           "OpenRGB.NET": "1.7.0",
           "Packaging.Targets": "0.1.220",
-          "Q42.HueApi": "3.19.2",
+          "Q42.HueApi": "3.19.3",
           "Q42.HueApi.Entertainment": "3.18.1",
           "Serilog": "2.10.0",
-          "Serilog.AspNetCore": "4.1.0",
+          "Serilog.AspNetCore": "5.0.0",
           "Serilog.Sinks.AspNetCore.SignalR": "0.4.0",
           "Serilog.Sinks.Async": "1.5.0",
           "Serilog.Sinks.Console": "4.0.1",
@@ -5290,14 +5290,14 @@
           }
         }
       },
-      "AutoMapper/11.0.0": {
+      "AutoMapper/11.0.1": {
         "dependencies": {
           "Microsoft.CSharp": "4.7.0"
         },
         "runtime": {
           "lib/netstandard2.1/AutoMapper.dll": {
             "assemblyVersion": "11.0.0.0",
-            "fileVersion": "11.0.0.0"
+            "fileVersion": "11.0.1.0"
           }
         }
       },
@@ -5676,61 +5676,61 @@
           "Microsoft.Extensions.Primitives": "5.0.0"
         }
       },
-      "Microsoft.AspNetCore.JsonPatch/6.0.1": {
+      "Microsoft.AspNetCore.JsonPatch/6.0.2": {
         "dependencies": {
           "Microsoft.CSharp": "4.7.0",
           "Newtonsoft.Json": "13.0.1"
         },
         "runtime": {
           "lib/net6.0/Microsoft.AspNetCore.JsonPatch.dll": {
-            "assemblyVersion": "6.0.1.0",
-            "fileVersion": "6.0.121.56714"
+            "assemblyVersion": "6.0.2.0",
+            "fileVersion": "6.0.222.6412"
           }
         }
       },
-      "Microsoft.AspNetCore.Mvc.NewtonsoftJson/6.0.1": {
+      "Microsoft.AspNetCore.Mvc.NewtonsoftJson/6.0.2": {
         "dependencies": {
-          "Microsoft.AspNetCore.JsonPatch": "6.0.1",
+          "Microsoft.AspNetCore.JsonPatch": "6.0.2",
           "Newtonsoft.Json": "13.0.1",
           "Newtonsoft.Json.Bson": "1.0.2"
         },
         "runtime": {
           "lib/net6.0/Microsoft.AspNetCore.Mvc.NewtonsoftJson.dll": {
-            "assemblyVersion": "6.0.1.0",
-            "fileVersion": "6.0.121.56714"
+            "assemblyVersion": "6.0.2.0",
+            "fileVersion": "6.0.222.6412"
           }
         }
       },
-      "Microsoft.AspNetCore.Mvc.Razor.Extensions/6.0.1": {
+      "Microsoft.AspNetCore.Mvc.Razor.Extensions/6.0.2": {
         "dependencies": {
-          "Microsoft.AspNetCore.Razor.Language": "6.0.1",
-          "Microsoft.CodeAnalysis.Razor": "6.0.1"
+          "Microsoft.AspNetCore.Razor.Language": "6.0.2",
+          "Microsoft.CodeAnalysis.Razor": "6.0.2"
         },
         "runtime": {
           "lib/netstandard2.0/Microsoft.AspNetCore.Mvc.Razor.Extensions.dll": {
-            "assemblyVersion": "6.0.1.0",
-            "fileVersion": "6.0.121.56714"
+            "assemblyVersion": "6.0.2.0",
+            "fileVersion": "6.0.222.6412"
           }
         }
       },
-      "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation/6.0.1": {
+      "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation/6.0.2": {
         "dependencies": {
-          "Microsoft.AspNetCore.Mvc.Razor.Extensions": "6.0.1",
-          "Microsoft.CodeAnalysis.Razor": "6.0.1",
+          "Microsoft.AspNetCore.Mvc.Razor.Extensions": "6.0.2",
+          "Microsoft.CodeAnalysis.Razor": "6.0.2",
           "Microsoft.Extensions.DependencyModel": "6.0.0"
         },
         "runtime": {
           "lib/net6.0/Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation.dll": {
-            "assemblyVersion": "6.0.1.0",
-            "fileVersion": "6.0.121.56714"
+            "assemblyVersion": "6.0.2.0",
+            "fileVersion": "6.0.222.6412"
           }
         }
       },
-      "Microsoft.AspNetCore.Razor.Language/6.0.1": {
+      "Microsoft.AspNetCore.Razor.Language/6.0.2": {
         "runtime": {
           "lib/netstandard2.0/Microsoft.AspNetCore.Razor.Language.dll": {
-            "assemblyVersion": "6.0.1.0",
-            "fileVersion": "6.0.121.56714"
+            "assemblyVersion": "6.0.2.0",
+            "fileVersion": "6.0.222.6412"
           }
         }
       },
@@ -5904,16 +5904,16 @@
           }
         }
       },
-      "Microsoft.CodeAnalysis.Razor/6.0.1": {
+      "Microsoft.CodeAnalysis.Razor/6.0.2": {
         "dependencies": {
-          "Microsoft.AspNetCore.Razor.Language": "6.0.1",
+          "Microsoft.AspNetCore.Razor.Language": "6.0.2",
           "Microsoft.CodeAnalysis.CSharp": "4.0.0",
           "Microsoft.CodeAnalysis.Common": "4.0.0"
         },
         "runtime": {
           "lib/netstandard2.0/Microsoft.CodeAnalysis.Razor.dll": {
-            "assemblyVersion": "6.0.1.0",
-            "fileVersion": "6.0.121.56714"
+            "assemblyVersion": "6.0.2.0",
+            "fileVersion": "6.0.222.6412"
           }
         }
       },
@@ -6172,14 +6172,14 @@
           }
         }
       },
-      "Q42.HueApi/3.19.2": {
+      "Q42.HueApi/3.19.3": {
         "dependencies": {
           "Newtonsoft.Json": "13.0.1"
         },
         "runtime": {
           "lib/net6.0/Q42.HueApi.dll": {
-            "assemblyVersion": "3.19.2.0",
-            "fileVersion": "3.19.2.0"
+            "assemblyVersion": "3.19.3.0",
+            "fileVersion": "3.19.3.0"
           }
         }
       },
@@ -6194,7 +6194,7 @@
       "Q42.HueApi.Entertainment/3.18.1": {
         "dependencies": {
           "Portable.BouncyCastle": "1.9.0",
-          "Q42.HueApi": "3.19.2",
+          "Q42.HueApi": "3.19.3",
           "Q42.HueApi.ColorConverters": "3.18.1"
         },
         "runtime": {
@@ -6399,14 +6399,14 @@
           }
         }
       },
-      "Serilog.AspNetCore/4.1.0": {
+      "Serilog.AspNetCore/5.0.0": {
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection": "5.0.0",
           "Microsoft.Extensions.Logging": "5.0.0",
           "Serilog": "2.10.0",
-          "Serilog.Extensions.Hosting": "4.1.2",
+          "Serilog.Extensions.Hosting": "4.2.0",
           "Serilog.Formatting.Compact": "1.1.0",
-          "Serilog.Settings.Configuration": "3.1.0",
+          "Serilog.Settings.Configuration": "3.3.0",
           "Serilog.Sinks.Console": "4.0.1",
           "Serilog.Sinks.Debug": "2.0.0",
           "Serilog.Sinks.File": "5.0.0"
@@ -6414,26 +6414,26 @@
         "runtime": {
           "lib/net5.0/Serilog.AspNetCore.dll": {
             "assemblyVersion": "2.0.0.0",
-            "fileVersion": "4.1.0.0"
+            "fileVersion": "5.0.0.0"
           }
         }
       },
-      "Serilog.Extensions.Hosting/4.1.2": {
+      "Serilog.Extensions.Hosting/4.2.0": {
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "5.0.0",
           "Microsoft.Extensions.Hosting.Abstractions": "3.1.8",
           "Microsoft.Extensions.Logging.Abstractions": "5.0.0",
           "Serilog": "2.10.0",
-          "Serilog.Extensions.Logging": "3.0.1"
+          "Serilog.Extensions.Logging": "3.1.0"
         },
         "runtime": {
           "lib/netstandard2.1/Serilog.Extensions.Hosting.dll": {
             "assemblyVersion": "2.0.0.0",
-            "fileVersion": "4.1.2.0"
+            "fileVersion": "4.2.0.0"
           }
         }
       },
-      "Serilog.Extensions.Logging/3.0.1": {
+      "Serilog.Extensions.Logging/3.1.0": {
         "dependencies": {
           "Microsoft.Extensions.Logging": "5.0.0",
           "Serilog": "2.10.0"
@@ -6441,7 +6441,7 @@
         "runtime": {
           "lib/netstandard2.0/Serilog.Extensions.Logging.dll": {
             "assemblyVersion": "2.0.0.0",
-            "fileVersion": "3.0.1.0"
+            "fileVersion": "3.1.0.0"
           }
         }
       },
@@ -6456,7 +6456,7 @@
           }
         }
       },
-      "Serilog.Settings.Configuration/3.1.0": {
+      "Serilog.Settings.Configuration/3.3.0": {
         "dependencies": {
           "Microsoft.Extensions.DependencyModel": "6.0.0",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "2.0.0",
@@ -6464,8 +6464,8 @@
         },
         "runtime": {
           "lib/netstandard2.0/Serilog.Settings.Configuration.dll": {
-            "assemblyVersion": "3.1.0.0",
-            "fileVersion": "3.1.0.0"
+            "assemblyVersion": "3.3.0.0",
+            "fileVersion": "3.3.0.0"
           }
         }
       },
@@ -7502,7 +7502,7 @@
     }
   },
   "libraries": {
-    "Glimmr/1.2.2-master-0001063": {
+    "Glimmr/1.2.3-master-0001073": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
@@ -7524,12 +7524,12 @@
       "path": "adalightnet/1.0.8",
       "hashPath": "adalightnet.1.0.8.nupkg.sha512"
     },
-    "AutoMapper/11.0.0": {
+    "AutoMapper/11.0.1": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-+596AnKykYCk9RxXCEF4GYuapSebQtFVvIA1oVG1rrRkCLAC7AkWehJ0brCfYUbdDW3v1H/p0W3hob7JoXGjMw==",
-      "path": "automapper/11.0.0",
-      "hashPath": "automapper.11.0.0.nupkg.sha512"
+      "sha512": "sha512-WIadGC1pIwbnyTubvI577p3F++Bsj9q2Q3OaAc1I0QS+JhupN1xkdrPBhI9bPIeg63zM81tZplUNYkqU1HE5jQ==",
+      "path": "automapper/11.0.1",
+      "hashPath": "automapper.11.0.1.nupkg.sha512"
     },
     "Common.Logging/3.4.1": {
       "type": "package",
@@ -7832,40 +7832,40 @@
       "path": "microsoft.aspnetcore.http.features/2.2.0",
       "hashPath": "microsoft.aspnetcore.http.features.2.2.0.nupkg.sha512"
     },
-    "Microsoft.AspNetCore.JsonPatch/6.0.1": {
+    "Microsoft.AspNetCore.JsonPatch/6.0.2": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-vLgQbgudEQfGNaGyAvm+jlfLHu5Ynav8/RnhwM0QaKFjVW2crEOGm7tRHHjM5iofF8VZnEYfyvUvyK82dBej1w==",
-      "path": "microsoft.aspnetcore.jsonpatch/6.0.1",
-      "hashPath": "microsoft.aspnetcore.jsonpatch.6.0.1.nupkg.sha512"
+      "sha512": "sha512-SifO3B9FwrRMXIdBHgVoMU17j6E43nYGUIC/3WRpNldCyZKOeBGJ8eT1KfQK80FaxkkJU+4MPm0uCbeYnXvkFQ==",
+      "path": "microsoft.aspnetcore.jsonpatch/6.0.2",
+      "hashPath": "microsoft.aspnetcore.jsonpatch.6.0.2.nupkg.sha512"
     },
-    "Microsoft.AspNetCore.Mvc.NewtonsoftJson/6.0.1": {
+    "Microsoft.AspNetCore.Mvc.NewtonsoftJson/6.0.2": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-UMMDrtDzY1tug3Q6RFmgtknJ65nj3IxI/iVqrRFwKDIeiiBc8DMfxS1cZPWfaGmPfVulgaa8qHvQijaLpa8p7Q==",
-      "path": "microsoft.aspnetcore.mvc.newtonsoftjson/6.0.1",
-      "hashPath": "microsoft.aspnetcore.mvc.newtonsoftjson.6.0.1.nupkg.sha512"
+      "sha512": "sha512-AQ8dnOXPJajeWgM0FW6uMs71+SFnVLe+skEHj/chF3fvkeXFCGqhzaWALlin+LoLKi17+frdRJ340cfT5afs4Q==",
+      "path": "microsoft.aspnetcore.mvc.newtonsoftjson/6.0.2",
+      "hashPath": "microsoft.aspnetcore.mvc.newtonsoftjson.6.0.2.nupkg.sha512"
     },
-    "Microsoft.AspNetCore.Mvc.Razor.Extensions/6.0.1": {
+    "Microsoft.AspNetCore.Mvc.Razor.Extensions/6.0.2": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-NYk/G6kPc4Gifk1/wihe/E5qR36hkA1QkKOxCzgSUY3weq2Nr/aUIa7Uy47GB5AjzI1NAR2D5vTKovm4NDHUgA==",
-      "path": "microsoft.aspnetcore.mvc.razor.extensions/6.0.1",
-      "hashPath": "microsoft.aspnetcore.mvc.razor.extensions.6.0.1.nupkg.sha512"
+      "sha512": "sha512-uJfIP4PASP+lLmcCaIwawDShM+/LxUVRGqrI+o7rqFSDHtaLKVmGEOpK0z+yKhBrDQcwKgiYQffw9IRlIulLFA==",
+      "path": "microsoft.aspnetcore.mvc.razor.extensions/6.0.2",
+      "hashPath": "microsoft.aspnetcore.mvc.razor.extensions.6.0.2.nupkg.sha512"
     },
-    "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation/6.0.1": {
+    "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation/6.0.2": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-9TtkixTq/oqywuhXUS4ZUjYfqF+/9IbxQ7M3VeT2y2iOSayu03Aq+Fz5xD158MKhpbQk7moYCebKpecuvGyCLg==",
-      "path": "microsoft.aspnetcore.mvc.razor.runtimecompilation/6.0.1",
-      "hashPath": "microsoft.aspnetcore.mvc.razor.runtimecompilation.6.0.1.nupkg.sha512"
+      "sha512": "sha512-gF/+zCwhYwKFVcZoAgmPt1QcLfUlzgRlDn9g1dD1gTvGwJL/e/CKMFpEayvD8eQA88H4c6PB82LOA6xuhN8P/g==",
+      "path": "microsoft.aspnetcore.mvc.razor.runtimecompilation/6.0.2",
+      "hashPath": "microsoft.aspnetcore.mvc.razor.runtimecompilation.6.0.2.nupkg.sha512"
     },
-    "Microsoft.AspNetCore.Razor.Language/6.0.1": {
+    "Microsoft.AspNetCore.Razor.Language/6.0.2": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-NfdO54qy+qmvc4DB4Qn0gCswbf59ddijWzn13jGyf4H1DJ/ghdpdM0Ee6XIVX4nLLim35joC/dsDYLXnwYiUqw==",
-      "path": "microsoft.aspnetcore.razor.language/6.0.1",
-      "hashPath": "microsoft.aspnetcore.razor.language.6.0.1.nupkg.sha512"
+      "sha512": "sha512-9OBHuEY1bBCsOXsOcN8m1urwvgKgMy5JWODL6jWLDZZRYIj7PUCYCCYC6KO1kNFq+u9x145aDs25ydr2VAvhRw==",
+      "path": "microsoft.aspnetcore.razor.language/6.0.2",
+      "hashPath": "microsoft.aspnetcore.razor.language.6.0.2.nupkg.sha512"
     },
     "Microsoft.AspNetCore.Routing/2.2.0": {
       "type": "package",
@@ -7944,12 +7944,12 @@
       "path": "microsoft.codeanalysis.csharp/4.0.0",
       "hashPath": "microsoft.codeanalysis.csharp.4.0.0.nupkg.sha512"
     },
-    "Microsoft.CodeAnalysis.Razor/6.0.1": {
+    "Microsoft.CodeAnalysis.Razor/6.0.2": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-UyZYYHq7pBUamcShu8lDIkuhIAOTUeXiADHluq2RdwyIX1zBijXDPrimQXSaevAsyPsOc2DChS9NdFFbMIZYJQ==",
-      "path": "microsoft.codeanalysis.razor/6.0.1",
-      "hashPath": "microsoft.codeanalysis.razor.6.0.1.nupkg.sha512"
+      "sha512": "sha512-MvGMztDQrlc6upO2ncTY/pMXVRYV6AC93b9n8wUL3eGcxH3Mhn3FVjpnnh/4SyAFgnBAyCGD1KYBhWEOYJuLBg==",
+      "path": "microsoft.codeanalysis.razor/6.0.2",
+      "hashPath": "microsoft.codeanalysis.razor.6.0.2.nupkg.sha512"
     },
     "Microsoft.CSharp/4.7.0": {
       "type": "package",
@@ -8189,12 +8189,12 @@
       "path": "portable.bouncycastle/1.9.0",
       "hashPath": "portable.bouncycastle.1.9.0.nupkg.sha512"
     },
-    "Q42.HueApi/3.19.2": {
+    "Q42.HueApi/3.19.3": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-x6lldlozJ704Ou2aOb9Ou0JD9SysuqSQVETQyc51UXxcg/n9RhfAqYeQed/aX71rvzLeXcr3YBu6juSwrKKTHQ==",
-      "path": "q42.hueapi/3.19.2",
-      "hashPath": "q42.hueapi.3.19.2.nupkg.sha512"
+      "sha512": "sha512-8XteCrgLvu5+AqnUKlPLvL3bScB/IDenZgP41fQjh+uzMokEkjyGqA6LCY2bZOYf2erVzFbBhpDyKTWfo4nStw==",
+      "path": "q42.hueapi/3.19.3",
+      "hashPath": "q42.hueapi.3.19.3.nupkg.sha512"
     },
     "Q42.HueApi.ColorConverters/3.18.1": {
       "type": "package",
@@ -8539,26 +8539,26 @@
       "path": "serilog/2.10.0",
       "hashPath": "serilog.2.10.0.nupkg.sha512"
     },
-    "Serilog.AspNetCore/4.1.0": {
+    "Serilog.AspNetCore/5.0.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-qRdEkjX10VJ5Cb3B9q/Q/tv+0ntDxAIA1YbOmmNMlkha1TU0ckK5b73eBYMNNLMAU92ofrzOEuIJEc6Q+Q1Z2A==",
-      "path": "serilog.aspnetcore/4.1.0",
-      "hashPath": "serilog.aspnetcore.4.1.0.nupkg.sha512"
+      "sha512": "sha512-/JO/txIxRR61x1UXQAgUzG2Sx05o1QHCkokVBWrKzmAoDu+p5EtCAj7L/TVVg7Ezhh3GPiZ0JI9OJCmRO9tSRw==",
+      "path": "serilog.aspnetcore/5.0.0",
+      "hashPath": "serilog.aspnetcore.5.0.0.nupkg.sha512"
     },
-    "Serilog.Extensions.Hosting/4.1.2": {
+    "Serilog.Extensions.Hosting/4.2.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-nOpvvYgDoepae4FsXnyX4uSYLO+f+v7aRyNpA0pbpxjdkpw3FWZtfQDe2gnUmZGNYMLWnxMRCPJQ455U/dOUbQ==",
-      "path": "serilog.extensions.hosting/4.1.2",
-      "hashPath": "serilog.extensions.hosting.4.1.2.nupkg.sha512"
+      "sha512": "sha512-gT2keceCmPQR9EX0VpXQZvUgELdfE7yqJ7MOxBhm3WLCblcvRgswEOOTgok/DHObbM15A3V/DtF3VdVDQPIZzQ==",
+      "path": "serilog.extensions.hosting/4.2.0",
+      "hashPath": "serilog.extensions.hosting.4.2.0.nupkg.sha512"
     },
-    "Serilog.Extensions.Logging/3.0.1": {
+    "Serilog.Extensions.Logging/3.1.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-U0xbGoZuxJRjE3C5vlCfrf9a4xHTmbrCXKmaA14cHAqiT1Qir0rkV7Xss9GpPJR3MRYH19DFUUqZ9hvWeJrzdQ==",
-      "path": "serilog.extensions.logging/3.0.1",
-      "hashPath": "serilog.extensions.logging.3.0.1.nupkg.sha512"
+      "sha512": "sha512-IWfem7wfrFbB3iw1OikqPFNPEzfayvDuN4WP7Ue1AVFskalMByeWk3QbtUXQR34SBkv1EbZ3AySHda/ErDgpcg==",
+      "path": "serilog.extensions.logging/3.1.0",
+      "hashPath": "serilog.extensions.logging.3.1.0.nupkg.sha512"
     },
     "Serilog.Formatting.Compact/1.1.0": {
       "type": "package",
@@ -8567,12 +8567,12 @@
       "path": "serilog.formatting.compact/1.1.0",
       "hashPath": "serilog.formatting.compact.1.1.0.nupkg.sha512"
     },
-    "Serilog.Settings.Configuration/3.1.0": {
+    "Serilog.Settings.Configuration/3.3.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-BS+G1dhThTHBOYm8R21JNlR+Nh7ETAOlJuL1P6te1rOG98eV1vos5EyWRTGr0AbHgySxsGu1Q/evfFxS9+Gk1Q==",
-      "path": "serilog.settings.configuration/3.1.0",
-      "hashPath": "serilog.settings.configuration.3.1.0.nupkg.sha512"
+      "sha512": "sha512-7GNudISZwqaT902hqEL2OFGTZeUFWfnrNLupJkOqeF41AR3GjcxX+Hwb30xb8gG2/CDXsCMVfF8o0+8KY0fJNg==",
+      "path": "serilog.settings.configuration/3.3.0",
+      "hashPath": "serilog.settings.configuration.3.3.0.nupkg.sha512"
     },
     "Serilog.Sinks.AspNetCore.SignalR/0.4.0": {
       "type": "package",

@@ -159,18 +159,26 @@ let data = {
             let check = this.systemInternal[string];
             // If types match, set it
             if (typeof (check) === typeof (value)) {
+                console.log("Typematch, setting: ", string, value);
                 this.systemInternal[string] = value;
                 return;
             }
             // If not, try a conversion
             switch (typeof (check)) {
                 case "number":
-                    let num = parseInt(value);
-                    if (typeof (num) === typeof (check)) {
-                        this.systemInternal[string] = num;
+                    if (string === "audioMin" || string === "audioGain" || string === "audioRotationLower" ||
+                    string === "audioRotationUpper" || string === "audioRotationSpeed") {
+                        this.systemInternal[string] = parseFloat(value);
                     } else {
-                        console.log("FAIL: " + typeof (num));
+                        let num = parseInt(value);
+                        if (typeof (num) === typeof (check)) {
+                            console.log("Set: ", string, num);
+                            this.systemInternal[string] = num;
+                        } else {
+                            console.log("FAIL: " + typeof (num));
+                        }    
                     }
+                    
                     break;
                 case "string":
                     let str = value.toString();
@@ -319,6 +327,7 @@ function loadPickr() {
         asSelect.value = "-1";
         pickr.setColor("#" + newColor);
         sendMessage("systemData", data.SystemData);
+        console.log("Sending SD: ", data.SystemData);
 
     }).on('swatchselect', (color) => {
         let col = color.toHEXA();
@@ -329,6 +338,7 @@ function loadPickr() {
         asSelect.value = "-1";
         pickr.setColor("#" + newColor);
         sendMessage("systemData", data.SystemData);
+        console.log("Sending SD: ", data.SystemData);
     });
 }
 
@@ -813,6 +823,7 @@ function setListeners() {
         }
 
         if (isValid(obj) && isValid(property) && isValid(val) && obj === "SystemData") {
+            console.log("CHANGE: ", property, val);
             data.setProp(property, val);
             if (property === "screenCapMode" || property === "captureMode" || property === "streamMode") {
                 updateCaptureUi();
@@ -1143,7 +1154,7 @@ function setLight(map) {
 function setMode(newMode) {
     if (newMode == null) return;
     mode = newMode;
-    console.log("Updating mode: " + mode);
+    console.log("Updating mode: " + mode, data.SystemData);
     let target = document.querySelector("[data-mode='" + mode + "']");
     let others = document.querySelectorAll(".modeBtn");
     for (let i = 0; i < others.length; i++) {
@@ -1167,6 +1178,10 @@ function setMode(newMode) {
         case 2:
             audioNav.classList.add("show");
             audioNav.classList.remove("hide");
+            break;
+        case 0:
+            document.getElementById("inputPreview").src = "../img/no_preview.jpg";
+            document.getElementById("outputPreview").src =  "../img/no_preview.jpg";
     }
 
     sizeContent();
@@ -1215,12 +1230,18 @@ function loadUi() {
     getDevices();
 
     if (isValid(data.audioDevices)) {
+        console.log("re-Loading rec devs");
         let recList = document.getElementById("RecDev");
-        let options = document.querySelectorAll('#recDev option');
+        let options = document.querySelectorAll('#RecDev option');
         options.forEach(o => o.remove());
         let recDevs = data.audioDevices;
         let recDev = data.getProp("recDev");
         if (isValid(recDevs)) {
+            let blank = document.createElement("option");
+            blank.value = "";
+            blank.innerText = "";
+            if (blank.value === recDev) blank.selected = true;
+            recList.options.add(blank);
             for (let i = 0; i < recDevs.length; i++) {
                 let dev = recDevs[i];
                 let opt = document.createElement("option");
@@ -1327,6 +1348,7 @@ function showIntro() {
                 let sd = data.SystemData;
                 sd.skipTour = true;
                 sendMessage("SystemData", sd);
+                console.log("Sending SD: ", sd);
             },
             steps: [
                 {
@@ -1743,6 +1765,7 @@ function loadSettingObject(obj) {
                 if (value === true) {
                     target.setAttribute('checked', "true");
                 } else {
+                    console.log("Setting ", prop, dataProp[prop])
                     target.value = dataProp[prop];
                 }
             }
@@ -3993,10 +4016,13 @@ function sizeContent() {
     winHeight = wHeight;
 
     let ambientOffset = 0;
+    let sd = data.SystemData;
     if (mode === 3) {
+        loadSettingObject(sd);
         ambientOffset = colorDiv.offsetHeight;
     }
     if (mode === 2 || mode === 4) {
+        loadSettingObject(sd);
         ambientOffset = audioDiv.offsetHeight;
     }
     let top = navDiv.offsetHeight + ambientOffset + "px";

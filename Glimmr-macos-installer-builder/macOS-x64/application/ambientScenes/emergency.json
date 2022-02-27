@@ -18,7 +18,6 @@
     "#000000"
   ],
   "AnimationTime": 4,
-  "EasingTime": 4,
   "Mode": "Linear",
   "Easing": "FadeInOut",
   "Name": "Emergency",

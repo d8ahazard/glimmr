@@ -9,7 +9,6 @@
     "#a500c3"
   ],
   "AnimationTime": 10,
-  "EasingTime": 10,
   "Mode": "RandomAll",
   "Easing": "Blend",
   "Name": "Random",
