@@ -386,12 +386,12 @@ public static class DataUtil {
 			_db.Checkpoint();
 			File.Copy(dbPath, outFile, true);
 			if (SystemUtil.IsRaspberryPi()) {
-				File.Copy(dbPath, "/boot/store.db");
+				File.Copy(dbPath, "/boot/store.db", true);
 			}
 
 			output = outFile;
-		} catch (Exception) {
-			//ignored
+		} catch (Exception e) {
+			Log.Debug("Exception backing up db: " + e.Message);
 		}
 
 		_dbLocked = false;
