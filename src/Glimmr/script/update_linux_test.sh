@@ -6,6 +6,7 @@ if [ -f "/usr/bin/raspi-config" ] && [ "$arch" == "armv71" ]
     PUBPROFILE="LinuxARM"
     PUBPATH="linux-arm"
   else
+    echo "Invalid arch?"
     exit 1
 fi
 
@@ -31,8 +32,6 @@ if [ ! -d "/usr/share/Glimmr" ]
   mkdir /usr/share/Glimmr  
 fi
 
-echo "Updating glimmr to version $ver." >> $log
-#Stop service
 echo "Stopping glimmr services..." >> $log
 service glimmr stop
 echo "Services stopped." >> $log
