@@ -6,7 +6,7 @@ if [ -f "/usr/bin/raspi-config" ] && [[ $arch == 'armv71' ]]
     PUBPROFILE="LinuxARM"
     PUBPATH="linux-arm"
   else
-    echo "Invalid arch."
+    echo "Invalid arch $arch."
     exit 1
 fi
 
