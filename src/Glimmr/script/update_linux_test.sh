@@ -7,7 +7,7 @@ if [ -f "/usr/bin/raspi-config" ] && [[ $arch == armv71 ]]
     PUBPATH="linux-arm"
   else
     echo "Invalid arch."
-    return 1
+    exit 1
 fi
 
 # shellcheck disable=SC2012
