@@ -1,6 +1,14 @@
 #!/bin/bash
 
 arch="$(arch)"
+if [ -f "/usr/bin/raspi-config" ] && [[ $arch == armv71 ]] 
+  then
+    PUBPROFILE="LinuxARM"
+    PUBPATH="linux-arm"
+  else
+    echo "Invalid arch."
+    return 1
+fi
 
 # shellcheck disable=SC2012
 log=$(ls -t /var/log/glimmr/glimmr* | head -1)
