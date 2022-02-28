@@ -133,8 +133,6 @@ public class LifxDevice : ColorTarget, IColorTarget {
 		} else {
 			await SetColorSingle(sectorColors);
 		}
-
-		ColorService.Counter.Tick(Id);
 	}
 
 	private static int[] GenerateGammaTable(double gamma = 2.3, int maxOut = 255) {
@@ -167,12 +165,7 @@ public class LifxDevice : ColorTarget, IColorTarget {
 				_beamLayout = _data.BeamLayout;
 			}
 		} else {
-			var target = _data.TargetSector;
-			if (sd.UseCenter) {
-				target = ColorUtil.FindEdge(target + 1);
-			}
-
-			_targetSector = target;
+			_targetSector = _data.TargetSector;
 		}
 
 		_brightness = _data.Brightness;
@@ -224,11 +217,11 @@ public class LifxDevice : ColorTarget, IColorTarget {
 			return;
 		}
 
-		if (_targetSector >= list.Count) {
+		if (_targetSector > list.Count || _targetSector == -1) {
 			return;
 		}
 
-		var input = list[_targetSector];
+		var input = list[_targetSector - 1];
 
 		var nC = new LifxColor(input);
 

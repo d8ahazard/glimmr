@@ -155,7 +155,6 @@ public class LedDevice : ColorTarget, IColorTarget {
 			return Task.CompletedTask;
 		}
 
-		ColorService.Counter.Tick(Id);
 		return Task.CompletedTask;
 	}
 

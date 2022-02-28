@@ -236,6 +236,7 @@ public class LightMapV2 {
 		Type = input.Metadata.Archetype ?? "";
 	}
 
+	
 	/// <summary>
 	/// Channel ID of light/device
 	/// </summary>

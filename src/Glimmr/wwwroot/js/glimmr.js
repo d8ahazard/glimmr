@@ -37,8 +37,6 @@ let refreshTimer;
 let fpsCounter;
 let nanoTarget, nanoSector, nanoModal;
 let demoLoaded = false;
-let reload = false;
-let toLoad = null;
 let devTimeout = null;
 let ledData = '{"AutoBrightnessLevel":true,"FixGamma":true,"AblMaxMilliamps":5000,"GpioNumber":18,"LedCount":150,"MilliampsPerLed":25,"Offset":50,"StartupAnimation":0,"StripType":0,"Name":"Demo LED Strip","Id":"-1","Tag":"Led","IpAddress":"","Brightness":100,"Enable":false,"LastSeen":"08/05/2021 13:28:53","KeyProperties":[{"Options":{},"ValueLabel":"","ValueHint":"","ValueMax":"100","ValueMin":"0","ValueName":"ledmap","ValueStep":"1","ValueType":"ledmap"},{"Options":{},"ValueLabel":"Led Count","ValueHint":"","ValueMax":"100","ValueMin":"0","ValueName":"LedCount","ValueStep":"1","ValueType":"text"},{"Options":{},"ValueLabel":"Led Offset","ValueHint":"","ValueMax":"100","ValueMin":"0","ValueName":"Offset","ValueStep":"1","ValueType":"text"},{"Options":{},"ValueLabel":"LED Multiplier","ValueHint":"Positive values to multiply (skip), negative values to divide (duplicate).","ValueMax":"5","ValueMin":"-5","ValueName":"LedMultiplier","ValueStep":"1","ValueType":"number"},{"Options":{},"ValueLabel":"Reverse Strip","ValueHint":"Reverse the order of the leds to clockwise (facing screen).","ValueMax":"100","ValueMin":"0","ValueName":"ReverseStrip","ValueStep":"1","ValueType":"check"},{"Options":{},"ValueLabel":"Fix Gamma","ValueHint":"Automatically correct Gamma (recommended)","ValueMax":"100","ValueMin":"0","ValueName":"FixGamma","ValueStep":"1","ValueType":"check"},{"Options":{},"ValueLabel":"Enable Auto Brightness","ValueHint":"Automatically adjust brightness to avoid dropouts.","ValueMax":"100","ValueMin":"0","ValueName":"AutoBrightnessLevel","ValueStep":"1","ValueType":"check"},{"Options":{},"ValueLabel":"Milliamps Per LED","ValueHint":"\'Conservative\' = 25, \'Normal\' = 55","ValueMax":"100","ValueMin":"0","ValueName":"MilliampsPerLed","ValueStep":"1","ValueType":"text"},{"Options":{},"ValueLabel":"Power Supply Voltage","ValueHint":"Total PSU voltage in Milliamps","ValueMax":"100","ValueMin":"0","ValueName":"AblMaxMilliamps","ValueStep":"1","ValueType":"text"}]}';
 let logEl = document.getElementById("logModal");
@@ -439,13 +437,6 @@ function doPost(endpoint, payload) {
     xhttp.setRequestHeader("Content-Type", "application/json");
     xhttp.send(JSON.stringify(payload));
     xhttp.send();
-}
-
-function doGet(endpoint) {
-    fetch(endpoint)
-        .then(function (response) {
-            return response.json();
-        });
 }
 
 // Set various actions/responses on the websocket
@@ -1113,41 +1104,6 @@ function updateBeamProperty(beamPos, propertyName, value) {
     console.log("Updating beam " + id, propertyName, value);
     appendBeamLedMap();
     updateDevice(id, "beamLayout", beamLayout);
-}
-
-function getLight(id) {
-    let lights = deviceData["lights"];
-    for (let light in lights) {
-        if (lights.hasOwnProperty(light)) {
-            if (lights[light]["id"] === id) {
-                return lights[light];
-            }
-        }
-    }
-    return {
-        id: id,
-        TargetSector: -1,
-        TargetSector2: -1,
-        Brightness: 255,
-        Override: false, 
-        Owner: "",
-        SvcId: "",
-        type: ""
-    };
-}
-
-function setLight(map) {
-    let hueLightMap = deviceData["lights"];
-    for (let l in hueLightMap) {
-        if (hueLightMap.hasOwnProperty(l)) {
-            if (hueLightMap[l]["id"] === map["id"]) {
-                hueLightMap[l] = map;
-                return;
-            }
-        }
-    }
-    hueLightMap.push(map);
-    updateDevice(deviceData["id"], "lights", hueLightMap);
 }
 
 
@@ -1982,33 +1938,6 @@ function isValid(toCheck) {
 
 const isObject = (value) => typeof value === "object" && value !== null;
 
-function getObj(group, key, val) {
-    if (isValid(group)) {
-        for (let i = 0; i < group.length; i++) {
-            let obj = group[i];
-            if (obj.hasOwnProperty(key)) {
-                if (obj[key] === val) {
-                    return obj;
-                }
-            }
-        }
-    }
-    return null;
-}
-
-function setObj(group, key, val, obj) {
-    if (isValid(group)) {
-        for (let i = 0; i < group.length; i++) {
-            let ex = group[i];
-            if (ex.hasOwnProperty(key)) {
-                if (ex[key] === val) {
-                    group[i] = obj;
-                }
-            }
-        }
-    }
-    return group;
-}
 
 function getDevices() {
     if (!isValid(data.Devices)) {
@@ -2950,27 +2879,12 @@ function createSectorCenter(targetElement, regionName) {
         t -= fHeight;
     }
     targetElement.appendChild(map);
-    if (isValid(deviceData) && expanded) {
-        let lights;
-        if (isValid(deviceData["lights"])) {
-            lights = deviceData["lights"];
-        }
-        if (isValid(lights)) {
-            for (let i = 0; i < lights.length; i++) {
-                let lMap = lights[i];
-                let target = lMap["targetSector"];
-                let targetDiv = document.querySelector('.sector[data-sector="' + target + '"]');
-                if (isValid(targetDiv)) {
-                    targetDiv.classList.add("checked");
-                }
-            }
-        }
-    }
 }
 
 function createSectorMap(targetElement, regionName) {
     if (useCenter) {
         createSectorCenter(targetElement, regionName);
+        selectSectors();
         return;
     }
     let exMap = targetElement.querySelector("#sectorMap");
@@ -3084,6 +2998,10 @@ function createSectorMap(targetElement, regionName) {
     }
 
     targetElement.appendChild(map);
+    selectSectors();
+}
+
+function selectSectors() {
     if (isValid(deviceData) && expanded) {
         let lights;
         if (isValid(deviceData["lights"])) {
@@ -3560,11 +3478,6 @@ function createHueMap() {
     let lightRow = document.createElement("div");
     lightRow.classList.add("row", "justify-content-center", "col-12", "delSetting");
     
-    // Sort our lights by name
-    lights = lights.sort(function (a, b) {
-        if (!a.hasOwnProperty('name') || !b.hasOwnProperty('name')) return false;
-        return a["name"].localeCompare(b["name"]);
-    });
     
     let targetGroup;
     for (let i=0; i < groups.length; i++) {
@@ -3792,7 +3705,7 @@ function drawNanoShapes(panel) {
         });
 
         let sectorText = data["targetSector"];
-
+       
         let sText2 = new Konva.Text({
             x: x,
             y: y - 35,

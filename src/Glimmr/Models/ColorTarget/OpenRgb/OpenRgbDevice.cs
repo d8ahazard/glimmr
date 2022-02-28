@@ -128,10 +128,10 @@ public class OpenRgbDevice : ColorTarget, IColorTarget {
 
 		var toSend = list.ToArray();
 		switch (_stripMode) {
-			case StripMode.Single when _targetSector >= colors1.Count || _targetSector == -1:
+			case StripMode.Single when _targetSector > colors1.Count || _targetSector == -1:
 				return;
 			case StripMode.Single:
-				toSend = ColorUtil.FillArray(colors1[_targetSector], _ledCount);
+				toSend = ColorUtil.FillArray(colors1[_targetSector - 1], _ledCount);
 				break;
 			default: {
 				toSend = ColorUtil.TruncateColors(toSend, _offset, _ledCount, _multiplier);
@@ -161,7 +161,6 @@ public class OpenRgbDevice : ColorTarget, IColorTarget {
 
 		_client?.Update(_data.DeviceId, converted.ToArray());
 		await Task.FromResult(true);
-		ColorService.Counter.Tick(Id);
 	}
 
 	private Color[] ShiftColors(IReadOnlyList<Color> input) {

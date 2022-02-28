@@ -220,25 +220,21 @@ public sealed class HueDevice : ColorTarget, IColorTarget, IDisposable {
 
 			// Otherwise, get the corresponding sector color
 			var target = _targets[entLight.Id.ToString()];
-			if (target >= sectorColors.Count) {
-				Log.Debug("No color target!!");
+			if (target > sectorColors.Count || target == -1) {
 				continue;
 			}
 
-			var color = sectorColors[target];
+			var color = sectorColors[target - 1];
 			var mb = lightData.Override ? lightData.Brightness : _brightness;
 			var oColor = new RGBColor(color.R, color.G, color.B);
 			// If we're currently using a scene, animate it
 			entLight.SetState(_ct, oColor, mb);
 		}
-
-		ColorService.Counter.Tick(Id);
 		return Task.CompletedTask;
 	}
 
 
 	private void SetData() {
-		var sd = DataUtil.GetSystemData();
 		_targets = new Dictionary<string, int>();
 		_ipAddress = Data.IpAddress;
 		_user = Data.User;
@@ -247,14 +243,7 @@ public sealed class HueDevice : ColorTarget, IColorTarget, IDisposable {
 		_brightness = Data.Brightness;
 		_lightMappings = Data.MappedLights;
 		foreach (var ld in _lightMappings) {
-			var target = ld.TargetSector;
-
-			if (sd.UseCenter) {
-				Log.Debug("Setting center sectors?");
-				target = ColorUtil.FindEdge(target + 1);
-			}
-
-			_targets[ld.Id] = target;
+			_targets[ld.Id] = ld.TargetSector;
 		}
 
 		Enable = Data.Enable;

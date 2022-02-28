@@ -117,21 +117,21 @@ public class YeelightDevice : ColorTarget, IColorTarget {
 			return;
 		}
 
-		var col = sectors[_targetSector];
+		if (_targetSector > sectors.Count || _targetSector == -1) {
+			return;
+		}
+		
+		var col = sectors[_targetSector - 1];
 		if (_data.Brightness < 255) {
 			col = ColorUtil.ClampBrightness(col, (int)_brightness);
 		}
 
-		if (_targetSector >= sectors.Count) {
-			return;
-		}
+		
 
 		await _yeeDevice.SetRGBColor(col.R, col.G, col.B);
-		ColorService.Counter.Tick(Id);
 	}
 
 	private void LoadData() {
-		var sd = DataUtil.GetSystemData();
 		var prevIp = IpAddress;
 		var restart = false;
 		IpAddress = _data.IpAddress;
@@ -144,14 +144,8 @@ public class YeelightDevice : ColorTarget, IColorTarget {
 			}
 		}
 
-		var target = _data.TargetSector;
-
-		if (sd.UseCenter) {
-			target = ColorUtil.FindEdge(target + 1);
-		}
-
 		_brightness = _data.Brightness * 2.55f;
-		_targetSector = target;
+		_targetSector = _data.TargetSector;
 		Id = _data.Id;
 		Enable = _data.Enable;
 

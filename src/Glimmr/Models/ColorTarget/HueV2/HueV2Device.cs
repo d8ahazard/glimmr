@@ -12,7 +12,6 @@ using HueApi.Entertainment;
 using HueApi.Entertainment.Extensions;
 using HueApi.Entertainment.Models;
 using HueApi.Models;
-using Newtonsoft.Json;
 using Serilog;
 using Color = System.Drawing.Color;
 
@@ -239,24 +238,22 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 
 			// Otherwise, get the corresponding sector color
 			var target = _targets[entLight.Id];
-			if (target >= sectorColors.Count) {
+			if (target > sectorColors.Count || target == -1) {
 				Log.Debug("NO TARGET!!");
 				continue;
 			}
 			
-			var color = sectorColors[target];
+			var color = sectorColors[target - 1];
 			var mb = lightData.Override ? lightData.Brightness : _brightness;
 			var oColor = new RGBColor(color.R, color.G, color.B);
 			entLight.SetState(_ct, oColor, mb);
 		}
 
-		ColorService.Counter.Tick(Id);
 		return Task.CompletedTask;
 	}
 
 
 	private void SetData() {
-		var sd = DataUtil.GetSystemData();
 		_targets = new Dictionary<int, int>();
 		_ipAddress = Data.IpAddress;
 		_user = Data.AppKey;
@@ -275,14 +272,7 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 		}
 		
 		foreach (var ld in _group.Services) {
-			var target = ld.TargetSector;
-
-			if (sd.UseCenter) {
-				Log.Debug("Setting center sectors?");
-				target = ColorUtil.FindEdge(target + 1);
-			}
-
-			_targets[ld.Channel] = target;
+			_targets[ld.Channel] = ld.TargetSector;
 		}
 
 		Enable = Data.Enable;

@@ -645,7 +645,7 @@ public class ColorService : BackgroundService {
 		if (ColorSendEventAsync != null) {
 			try {
 				await ColorSendEventAsync
-					.InvokeAsync(this, new ColorSendEventArgs(colors, sectors, fadeTime))
+					.InvokeAsync(this, new ColorSendEventArgs(colors, sectors))
 					.ConfigureAwait(false);
 				Counter.Tick("source");
 			} catch (Exception e) {
@@ -709,11 +709,9 @@ public class ColorService : BackgroundService {
 public class ColorSendEventArgs : EventArgs {
 	public Color[] LedColors { get; }
 	public Color[] SectorColors { get; }
-	public int FadeTime { get; }
 
-	public ColorSendEventArgs(Color[] leds, Color[] sectors, int fadeTime) {
+	public ColorSendEventArgs(Color[] leds, Color[] sectors) {
 		LedColors = leds;
 		SectorColors = sectors;
-		FadeTime = fadeTime;
 	}
 }

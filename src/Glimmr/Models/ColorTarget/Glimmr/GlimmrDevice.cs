@@ -179,7 +179,6 @@ public class GlimmrDevice : ColorTarget, IColorTarget, IDisposable {
 			var cp = new ColorPacket(toSend);
 			var packet = cp.Encode();
 			await _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep);
-			ColorService.Counter.Tick(Id);
 		} catch (Exception e) {
 			Log.Warning("Exception: " + e.Message);
 		}

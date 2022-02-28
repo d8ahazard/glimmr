@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Glimmr.Services;
+using Serilog;
 
 #endregion
 
@@ -82,10 +83,15 @@ public class FrameCounter : IDisposable {
 			_ticks = new ConcurrentDictionary<string, int> { ["source"] = 0 };
 		}
 
-		if (_ticks.ContainsKey(id)) {
-			_ticks[id]++;
-		} else {
-			_ticks[id] = 1;
+		try {
+			if (_ticks.ContainsKey(id)) {
+				_ticks[id]++;
+			} else {
+				_ticks[id] = 0;
+			}
+		} catch (Exception e) {
+			Log.Debug("Exception ticking: " + e.Message);
+			_ticks = new ConcurrentDictionary<string, int> { ["source"] = 0 };
 		}
 	}
 

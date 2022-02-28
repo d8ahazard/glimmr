@@ -80,8 +80,7 @@ public class SystemData {
 	[DefaultValue(true)]
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 	public bool EnablePillarBox { get; set; } = true;
-
-
+	
 	/// <summary>
 	///     If set, rainbow wipe will not be played on application startup.
 	/// </summary>

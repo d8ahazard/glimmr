@@ -159,6 +159,5 @@ public class DreamScreenStream : ColorSource {
 
 		_splitter.Update(frame).ConfigureAwait(false);
 		frame.Dispose();
-		_cs.Counter.Tick("Dreamscreen");
 	}
 }

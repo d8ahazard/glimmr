@@ -155,10 +155,10 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 
 		var toSend = ledColors.ToArray();
 		switch (_stripMode) {
-			case StripMode.Single when _targetSector >= sectorColors.Count || _targetSector == -1:
+			case StripMode.Single when _targetSector > sectorColors.Count || _targetSector == -1:
 				return;
 			case StripMode.Single:
-				toSend = ColorUtil.FillArray(sectorColors[_targetSector], _ledCount).ToArray();
+				toSend = ColorUtil.FillArray(sectorColors[_targetSector - 1], _ledCount).ToArray();
 				break;
 			case StripMode.Sectored: {
 				var output = new Color[_ledCount];
@@ -206,7 +206,6 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 			var cp = new ColorPacket(toSend, (UdpStreamMode)_protocol);
 			var packet = cp.Encode(255);
 			await _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep).ConfigureAwait(false);
-			ColorService.Counter.Tick(Id);
 		} catch (Exception e) {
 			Log.Debug("Exception: " + e.Message + " at " + e.StackTrace);
 		}

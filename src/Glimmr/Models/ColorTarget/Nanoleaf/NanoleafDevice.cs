@@ -195,13 +195,11 @@ public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
 		var cols = new Dictionary<int, Color>();
 		foreach (var (key, target) in _targets) {
 			var color = Color.FromArgb(0, 0, 0);
-			if (target != -1) {
-				if (target < sectors.Count) {
-					color = sectors[target];
-				}
+			if (target > sectors.Count || target == -1) {
+				cols[key] = color;
+				continue;
 			}
-
-			cols[key] = color;
+			cols[key] = sectors[target - 1];
 		}
 
 		if (_nanoleafClient == null || _streamingClient == null) {
@@ -210,11 +208,9 @@ public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
 		}
 
 		await _streamingClient.SetColorAsync(cols, 1).ConfigureAwait(false);
-		ColorService.Counter.Tick(Id);
 	}
 
 	private void SetData() {
-		var sd = DataUtil.GetSystemData();
 		DataUtil.GetItem<int>("captureMode");
 		_layout = _data.Layout;
 		_frameTime = _data.Type == "NL42" ? 100 : 16;
@@ -244,17 +240,7 @@ public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
 				continue;
 			}
 
-			if (p.TargetSector != -1) {
-				var target = p.TargetSector;
-
-				if (sd.UseCenter) {
-					target = ColorUtil.FindEdge(target);
-				}
-
-				_targets[p.PanelId] = target - 1;
-			} else {
-				_targets[p.PanelId] = -1;
-			}
+			_targets[p.PanelId] = p.TargetSector;
 		}
 	}
 
