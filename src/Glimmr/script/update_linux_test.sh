@@ -1,7 +1,7 @@
 #!/bin/bash
 
 arch="$(arch)"
-if [ -f "/usr/bin/raspi-config" ] && [ "$arch" == "armv71" ] 
+if [ "$arch" == "armv71" ] 
   then
     PUBPROFILE="LinuxARM"
     PUBPATH="linux-arm"
