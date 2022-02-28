@@ -1,9 +1,10 @@
 #!/bin/bash
 
-if [ -f "/usr/bin/raspi-config" ] && [ "$arch" == "aarch64" ] 
+arch="$(arch)"
+if [ -f "/usr/bin/raspi-config" ] && [ "$arch" == "armv71" ] 
   then
-    PUBPROFILE="LinuxARM64"
-    PUBPATH="linux-arm64"
+    PUBPROFILE="LinuxARM"
+    PUBPATH="linux-arm"
   else
     exit 1
 fi
