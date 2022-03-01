@@ -927,6 +927,7 @@ function handleClick(target) {
             if (target.getAttribute("data-linked") === "false") {
                 let devId = deviceData["id"];
                 if (!isValid(bar)) {
+                    console.log("Creating new progress bar?")
                     bar = new ProgressBar.Circle("#CircleBar", {
                         strokeWidth: 15,
                         easing: 'easeInOut',
@@ -937,6 +938,9 @@ function handleClick(target) {
                         svgStyle: null,
                         value: 1
                     });
+                    bar.animate(0);
+                    let cb = document.getElementById("CircleBar");
+                    cb.classList.remove("hide");
                 }
                 sendMessage("authorizeDevice", devId, false);
             }
@@ -2592,7 +2596,6 @@ function appendBeamMap() {
                     rCheck.setAttribute("data-beamProperty", "Repeat");
                     checkDiv1.appendChild(rCheck);
                     checkDiv1.appendChild(label3);
-
                     rGroup.appendChild(checkDiv1);
                     itemDiv.appendChild(rGroup);
 
@@ -2612,7 +2615,6 @@ function appendBeamMap() {
                     rCheck2.setAttribute("data-beamProperty", "Reverse");
                     checkDiv2.appendChild(rCheck2);
                     checkDiv2.appendChild(label4);
-
                     rGroup2.appendChild(checkDiv2);
                     itemDiv.appendChild(rGroup2);
                     beamCol.appendChild(itemDiv);

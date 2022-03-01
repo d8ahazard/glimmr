@@ -38,7 +38,6 @@ public class FrameBuilder {
 		} else {
 			_inputCoords = DrawLeds();
 		}
-		Log.Debug("FrameBuilder created, we have " + _inputCoords.Size + " coordinates.");
 	}
 
 

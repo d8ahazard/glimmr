@@ -4,18 +4,12 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using Glimmr.Enums;
 
 #endregion
 
 namespace Glimmr.Models.Util;
 
 public static class ColorUtil {
-	private static DeviceMode _deviceMode;
-	private static int _hCount;
-	private static bool _useCenter;
-	private static int _vCount;
-	
 	/// <summary>
 	///     Take a n-color list, and convert down to 12 for DS
 	/// </summary>
@@ -378,13 +372,7 @@ public static class ColorUtil {
 	}
 
 
-	public static void SetSystemData() {
-		var sd = DataUtil.GetSystemData();
-		_deviceMode = sd.DeviceMode;
-		_useCenter = sd.UseCenter;
-		_hCount = sd.HSectors;
-		_vCount = sd.VSectors;
-	}
+	
 
 	/// <summary>
 	///     Adjust the brightness of a list of colors

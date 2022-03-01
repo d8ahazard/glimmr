@@ -245,8 +245,9 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 			
 			var color = sectorColors[target - 1];
 			var mb = lightData.Override ? lightData.Brightness : _brightness;
+			color = ColorUtil.ClampBrightness(color, mb);
 			var oColor = new RGBColor(color.R, color.G, color.B);
-			entLight.SetState(_ct, oColor, mb);
+			entLight.SetState(_ct, oColor, null);
 		}
 
 		return Task.CompletedTask;

@@ -80,6 +80,8 @@ public class AudioStream : ColorSource {
 
 	protected override Task ExecuteAsync(CancellationToken ct) {
 		_ct = ct;
+		var ver = Bass.Version;
+		Log.Debug("Using bassver: " + ver);
 		return Task.Run(async () => {
 			try {
 				Bass.RecordInit(_recordDeviceIndex);

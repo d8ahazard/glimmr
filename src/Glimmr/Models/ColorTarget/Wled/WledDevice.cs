@@ -13,8 +13,6 @@ using Glimmr.Enums;
 using Glimmr.Models.ColorSource.UDP;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using Newtonsoft.Json;
-using Q42.HueApi.Models;
 using Serilog;
 
 #endregion
@@ -156,6 +154,7 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		var toSend = ledColors.ToArray();
 		switch (_stripMode) {
 			case StripMode.Single when _targetSector > sectorColors.Count || _targetSector == -1:
+				Log.Debug("OOR: " + _targetSector + " vs " + sectorColors.Count);
 				return;
 			case StripMode.Single:
 				toSend = ColorUtil.FillArray(sectorColors[_targetSector - 1], _ledCount).ToArray();
@@ -247,16 +246,6 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		url += "&T=" + (on ? "1" : "0");
 		url += "&A=" + (int)scaledBright;
 		await _httpClient.GetAsync(url);
-		url = "http://" + IpAddress + "/json/si/";
-		var bod = new Dictionary<string, dynamic> {
-			["v"] = true,
-			["time"] = DateTimeOffset.Now.ToUnixTimeSeconds(),
-			["on"] = on
-		};
-		var foo = JsonConvert.SerializeObject(bod);
-		Log.Debug("Payload: " + foo);
-		var res = await _httpClient.PostAsync(url, new JsonContent(foo));
-		Log.Debug("Status: " + JsonConvert.SerializeObject(res));
 	}
 
 	protected virtual async Task Dispose(bool disposing) {

@@ -156,10 +156,15 @@ public class HueV2Data : IColorTargetData {
 
 	public void ConfigureEntertainment(List<EntertainmentConfiguration> groups, List<Entertainment> devs,
 		List<Light> lights, bool json = false) {
+		if (groups.Count == 0) Log.Debug("No groups...");
+		if (devs.Count == 0) Log.Debug("No devices...");
+		if (lights.Count == 0) Log.Debug("No lights...");
 		var ll = new List<LightMapV2>();
+		var ids = new List<string>();
 		foreach (var light in lights.Where(light => light.Color != null)) {
 			var lMap = new LightMapV2(light, devs);
-			ll.Add(lMap);
+			if (!ids.Contains(lMap.Id)) ll.Add(lMap);
+			ids.Add(lMap.Id);
 		}
 		
 		foreach (var g in groups.Where(g => g.Type == "entertainment_configuration")) {

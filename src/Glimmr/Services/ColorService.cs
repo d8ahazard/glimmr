@@ -7,6 +7,7 @@ using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using Glimmr.Enums;
 using Glimmr.Models;
 using Glimmr.Models.ColorSource;
@@ -15,6 +16,7 @@ using Glimmr.Models.Util;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Serilog;
+using Timer = System.Timers.Timer;
 
 #endregion
 
@@ -108,20 +110,20 @@ public class ColorService : BackgroundService {
 		var colorTask = Task.Run(async () => {
 			await Initialize();
 			_loopWatch.Start();
+			var saveTimer = new Timer(5000);
+			saveTimer.Elapsed += SaveFrame;
+			saveTimer.Start();
 			while (!stoppingToken.IsCancellationRequested) {
-				// Save a frame every 5 seconds
-				if (_loopWatch.Elapsed >= TimeSpan.FromMilliseconds(500)) {
-					FrameSaveEvent.Invoke();
-					_loopWatch.Restart();
-				}
-
 				await Task.Delay(TimeSpan.FromSeconds(1), CancellationToken.None);
 			}
-
-			_loopWatch.Stop();
+			saveTimer.Stop();
 		}, CancellationToken.None);
 		Log.Debug("Color Service Started.");
 		return colorTask;
+	}
+
+	private void SaveFrame(object? sender, ElapsedEventArgs e) {
+		FrameSaveEvent.Invoke();
 	}
 
 	public override Task StopAsync(CancellationToken cancellationToken) {
@@ -229,13 +231,13 @@ public class ColorService : BackgroundService {
 		}
 		
 		var (colors, sectors) = _splitter.Update(tMat).Result;
-		await SendColors(colors, sectors, 0, true);
+		await SendColors(colors, sectors, true);
 		await Task.Delay(500);
-		await SendColors(emptyColors, emptySectors, 0, true);
+		await SendColors(emptyColors, emptySectors, true);
 		await Task.Delay(500);
-		await SendColors(colors, sectors, 0, true);
+		await SendColors(colors, sectors, true);
 		await Task.Delay(1000);
-		await SendColors(emptyColors, emptySectors, 0, true);
+		await SendColors(emptyColors, emptySectors, true);
 		_testing = false;
 	}
 
@@ -288,7 +290,7 @@ public class ColorService : BackgroundService {
 			ControlService.SetMode(DeviceMode.Off, true).ConfigureAwait(false);
 			ControlService.SetModeEvent += Mode;
 			SendColors(ColorUtil.EmptyColors(_systemData.LedCount),
-				ColorUtil.EmptyColors(_systemData.SectorCount), 0, true).ConfigureAwait(false);
+				ColorUtil.EmptyColors(_systemData.SectorCount), true).ConfigureAwait(false);
 			Log.Information("Auto-disabling stream.");
 			StopDevices().ConfigureAwait(false);
 		}
@@ -302,13 +304,13 @@ public class ColorService : BackgroundService {
 		colors[led] = Color.FromArgb(255, 0, 0);
 		var sectors = ColorUtil.LedsToSectors(colors.ToList(), _systemData).ToArray();
 		var blackSectors = ColorUtil.EmptyList(_systemData.SectorCount).ToArray();
-		await SendColors(colors, sectors, 0, true);
+		await SendColors(colors, sectors, true);
 		await Task.Delay(500);
-		await SendColors(colors, blackSectors, 0, true);
+		await SendColors(colors, blackSectors, true);
 		await Task.Delay(500);
-		await SendColors(colors, sectors, 0, true);
+		await SendColors(colors, sectors, true);
 		await Task.Delay(1000);
-		await SendColors(colors, blackSectors, 0, true);
+		await SendColors(colors, blackSectors, true);
 		_testing = false;
 
 	}
@@ -388,7 +390,7 @@ public class ColorService : BackgroundService {
 				cols[i] = rCol;
 				var (colors, sectors) = _splitter.Update(builder.Build(cols)).Result;				
 				try {
-					await SendColors(colors, sectors, 0, true).ConfigureAwait(false);
+					await SendColors(colors, sectors, true).ConfigureAwait(false);
 				} catch (Exception e) {
 					Log.Warning("SEND EXCEPTION: " + JsonConvert.SerializeObject(e));
 				}
@@ -567,24 +569,45 @@ public class ColorService : BackgroundService {
 			
 			// Cancel any attempts to start streaming after four seconds if unsuccessful
 			var cts = new CancellationTokenSource();
+			var sTasks = new List<Task>();
 			Log.Debug("Starting streaming targets...");
-			var startCount = 0;
+			cts.CancelAfter(TimeSpan.FromSeconds(4));
+			var enableCount = 0;
 			foreach (var sDev in _sDevices) {
-				try {
-					if (sDev.Enable || sDev.Id == "0") {
-						await sDev.StartStream(_targetTokenSource.Token).ConfigureAwait(false);
-						startCount++;
-					}
-				} catch (Exception e) {
-					Log.Warning("Exception starting stream: " + e.Message);
+				if (!sDev.Enable && sDev.Id != "0") {
+					continue;
 				}
+
+				enableCount++;
+				sTasks.Add(WrapTask(sDev.StartStream(_targetTokenSource.Token), cts.Token));
 			}
 
-			cts.CancelAfter(TimeSpan.FromSeconds(4));
+			try {
+				await Task.WhenAll(sTasks);
+			} catch (Exception e) {
+				Log.Warning("Exception starting dev: " + e.Message);
+			}
+
+			var startCount = _sDevices.Count(dev => dev.Enable && dev.Streaming);
 			_streamStarted = true;
-			var enabledCount = _sDevices.Count(dev => dev.Enable);
-			Log.Information($"Streaming started on {startCount}/{enabledCount} devices.");
+			Log.Information($"Streaming started on {startCount}/{enableCount} devices.");
 		}
+	}
+
+	private Task WrapTask(Task toWrap, CancellationToken token) {
+		return Task.Run(async () => {
+			try {
+				await Task.Run(async () => {
+					try {
+						await toWrap;
+					} catch (Exception e) {
+						Log.Debug("Exception with wrapped task: " + e.Message);
+					}
+				}, token);
+			} catch (TaskCanceledException) {
+				Log.Debug("Task canceled...");
+			}
+		}, CancellationToken.None);
 	}
 
 	private async Task StopDevices() {
@@ -597,7 +620,6 @@ public class ColorService : BackgroundService {
 		// Give our devices four seconds to stop streaming, then cancel so we're not waiting forever...
 		var cts = new CancellationTokenSource();
 		cts.CancelAfter(TimeSpan.FromSeconds(5));
-		var len = 0;
 		var en = 0;
 		var toKill = new List<Task>();
 		var killSource = new CancellationTokenSource();
@@ -612,24 +634,18 @@ public class ColorService : BackgroundService {
 					continue;
 				}
 
-				
-				toKill.Add(Task.Run(async () => {
-					try {
-						await dev.StopStream();
-					} catch {
-						//ignored
-					}
-				}, killSource.Token));
+				toKill.Add(WrapTask(dev.StopStream(), killSource.Token));
 			} catch (Exception) {
 				// Ignored.
 			}
 		}
 
 		await Task.WhenAll(toKill);
+		var len = _sDevices.Count(dev => dev.Enable && !dev.Streaming);
 		Log.Information($"Streaming stopped on {len}/{en} devices.");
 	}
 
-	public async Task SendColors(Color[] colors, Color[] sectors, int fadeTime = 0, bool force = false) {
+	public async Task SendColors(Color[] colors, Color[] sectors, bool force = false) {
 		if (!_streamStarted) {
 			return;
 		}

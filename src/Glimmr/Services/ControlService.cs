@@ -146,7 +146,6 @@ public class ControlService : BackgroundService {
 
 		DataUtil.SetItem("AutoDisabled", autoDisabled);
 		DataUtil.SetItem("DeviceMode", mode);
-		ColorUtil.SetSystemData();
 		await SetModeEvent.InvokeAsync(this, new DynamicEventArgs(mode));
 	}
 
@@ -199,18 +198,20 @@ public class ControlService : BackgroundService {
 
 		if (dev.GetType().GetMethod("CheckAuthAsync") != null) {
 			var count = 0;
+			var serializerSettings = new JsonSerializerSettings {
+				ContractResolver = new CamelCasePropertyNamesContractResolver()
+			};
 			while (count < 30) {
 				try {
-					var activated = await dev.CheckAuthAsync(data).ConfigureAwait(false);
+					Log.Debug("Checking activation...");
+					var activated = await dev.CheckAuthAsync(data);
+					Log.Debug("Checked...");
 					if (!string.IsNullOrEmpty(activated.Token)) {
 						Log.Information("Device is activated!");
 						await DataUtil.AddDeviceAsync(activated, true);
 						if (clientProxy != null) {
-							await clientProxy.SendAsync("auth", "authorized");
-						}
-
-						await _hubContext.Clients.All.SendAsync("device",
-							JsonConvert.SerializeObject((IColorTargetData)activated));
+							await clientProxy.SendAsync("auth", "authorized"); }
+						await _hubContext.Clients.All.SendAsync("device", JsonConvert.SerializeObject((IColorTargetData)data, serializerSettings)).ConfigureAwait(false);
 						return true;
 					}
 				} catch (Exception e) {
@@ -223,8 +224,7 @@ public class ControlService : BackgroundService {
 					continue;
 				}
 
-				await clientProxy.SendAsync("auth", "update", count);
-				return false;
+				await clientProxy.SendAsync("auth", "update", count).ConfigureAwait(false);
 			}
 		} else {
 			Log.Warning("Error creating activator!");
@@ -377,7 +377,6 @@ v. {version}
 		MulticastService = new MulticastService();
 		ServiceDiscovery = new ServiceDiscovery(MulticastService);
 		LoadAgents();
-		ColorUtil.SetSystemData();
 		Log.Information("Control service initialized...");
 	}
 
@@ -460,7 +459,6 @@ v. {version}
 			}
 		}
 
-		ColorUtil.SetSystemData();
 		_ut?.Stop();
 		_ut = new Timer();
 		_ut.Interval = 1000 * 60 * 60 * _sd.AutoUpdateTime;

@@ -38,13 +38,13 @@ arch="$(arch)"
 PUBPROFILE="Linux"
 PUBPATH="linux-arm"
 
-if [ -f "/usr/bin/raspi-config" ] && [ "$arch" == "armv71" ] 
+if [ -f "/usr/bin/raspi-config" ] && [[ $arch == armv71 ]] 
   then
     PUBPROFILE="LinuxARM"
     PUBPATH="linux-arm"
 fi
 
-if [ -f "/usr/bin/raspi-config" ] && [ "$arch" == "aarch64" ] 
+if [ -f "/usr/bin/raspi-config" ] && [[ $arch == aarch64 ]]
   then
     PUBPROFILE="LinuxARM64"
     PUBPATH="linux-arm64"

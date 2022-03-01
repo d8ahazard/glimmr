@@ -129,7 +129,7 @@ public class LedDevice : ColorTarget, IColorTarget {
 
 		var ld1 = DataUtil.GetDevice<LedData>("1");
 		_data1 = ld1;
-
+		Enable = _data.Enable;
 		_agent?.ReloadData();
 		return Task.CompletedTask;
 	}
