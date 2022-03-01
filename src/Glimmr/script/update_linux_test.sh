@@ -29,7 +29,7 @@ service glimmr stop
 echo "Services stopped." >> $log
 
 cd /tmp || exit
-url="https://drive.google.com/u/0/uc?id=182aa-0mmgUeEL7RbG8QW5UV_cF_0_QMG&export=download"
+url="https://drive.google.com/u/0/uc?id=1PAPOv7PYGcL7LxAijU1j9PAVKdK36vuw&export=download"
 echo "Grabbing archive from $url" >> $log
 wget -O archive.tgz "$url"
 tar zxvf ./archive.tgz -C /usr/share/Glimmr/

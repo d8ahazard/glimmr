@@ -21,6 +21,15 @@ for %%x in (
 
 cd ..\src\Glimmr\
 
+cd .\bin\
+del /Q /S .\*.zip
+del /Q /S .\*.tgz
+del /Q /S .\*.zip
+del /Q /S .\*.rpm
+del /Q /S .\*.deb8
+
+cd ..
+
 echo Build deb packages
 dotnet deb -c Release -o .\bin -r linux-arm
 dotnet deb -c Release -o .\bin -r linux-arm64
@@ -29,17 +38,12 @@ dotnet rpm -c Release -o .\bin -r linux-arm
 dotnet rpm -c Release -o .\bin -r linux-arm64
 dotnet rpm -c Release -o .\bin -r linux-x64
 
+
 echo Build MSI package
 SET "APP=C:\Progra~2\Inno Setup 6\iscc.exe"
 "%APP%" "%~dp0..\src\Glimmr\build_app.iss"
 
-:Archive
 cd .\bin\
-del /Q /S .\*.zip
-del /Q /S .\*.tgz
-del /Q /S .\*.zip
-del /Q /S .\*.rpm
-del /Q /S .\*.deb
 
 echo Copying OSX Files...
 del /S /Q ..\..\..\Glimmr-macos-installer-builder\macOS-x64\application\*
