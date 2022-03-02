@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using ManagedBass;
-using Newtonsoft.Json;
 using Serilog;
 
 #endregion
@@ -82,7 +81,7 @@ public class AudioStream : ColorSource {
 	protected override Task ExecuteAsync(CancellationToken ct) {
 		_ct = ct;
 		var ver = Bass.Version;
-		Log.Debug("Using bassver: " + ver);
+		Log.Debug("Using bass ver: " + ver);
 		return Task.Run(async () => {
 			try {
 				Bass.RecordInit(_recordDeviceIndex);
@@ -185,7 +184,7 @@ public class AudioStream : ColorSource {
 		var fft = new float[SampleSize]; // fft data buffer
 		// Get our FFT for "everything"
 		var res = Bass.ChannelGetData(handle, fft, (int)getFlag(SampleSize));
-		Log.Debug("FFT: " + JsonConvert.SerializeObject(fft));
+		//Log.Debug("FFT: " + JsonConvert.SerializeObject(fft));
 		if (level < 700) {
 			_frameData = lData;
 			if (_maxVal > 0) {
