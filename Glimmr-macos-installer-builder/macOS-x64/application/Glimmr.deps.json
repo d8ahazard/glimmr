@@ -32,7 +32,7 @@
   },
   "targets": {
     ".NETCoreApp,Version=v6.0": {
-      "Glimmr/1.2.3-master-0001076": {
+      "Glimmr/1.2.3-master-0001092": {
         "dependencies": {
           "AdalightNet": "1.0.8",
           "AutoMapper": "11.0.1",
@@ -76,6 +76,7 @@
           "Swashbuckle.AspNetCore.Annotations": "6.2.3",
           "System.Drawing.Common": "6.0.0",
           "System.Net.WebSockets": "4.3.0",
+          "WLED": "1.0.41",
           "Xamarin.Mac.digitalhigh": "8.3.0.41",
           "YeelightAPI": "1.10.2",
           "digitalhigh.rpi-ws281x-csharp": "1.1.7",
@@ -273,7 +274,7 @@
           "System.Memory.Reference": "6.0.0.0",
           "System.Net": "4.0.0.0",
           "System.Net.Http.Reference": "6.0.0.0",
-          "System.Net.Http.Json": "6.0.0.0",
+          "System.Net.Http.Json.Reference": "6.0.0.0",
           "System.Net.HttpListener": "6.0.0.0",
           "System.Net.Mail": "6.0.0.0",
           "System.Net.NameResolution.Reference": "6.0.0.0",
@@ -1342,7 +1343,7 @@
           "System.Net.Http.dll": {}
         }
       },
-      "System.Net.Http.Json/6.0.0.0": {
+      "System.Net.Http.Json.Reference/6.0.0.0": {
         "compile": {
           "System.Net.Http.Json.dll": {}
         }
@@ -2291,7 +2292,7 @@
           "System.Memory": "4.5.4",
           "System.Runtime.CompilerServices.Unsafe": "6.0.0",
           "System.Text.Encodings.Web": "6.0.0",
-          "System.Text.Json": "6.0.0"
+          "System.Text.Json": "6.0.1"
         },
         "compile": {
           "lib/netstandard2.0/Microsoft.Extensions.DependencyModel.dll": {}
@@ -3163,6 +3164,11 @@
           "runtime.native.System.Security.Cryptography.OpenSsl": "4.3.0"
         }
       },
+      "System.Net.Http.Json/6.0.0": {
+        "dependencies": {
+          "System.Text.Json": "6.0.1"
+        }
+      },
       "System.Net.NameResolution/4.3.0": {
         "dependencies": {
           "Microsoft.NETCore.Platforms": "5.0.0",
@@ -3589,7 +3595,7 @@
           "System.Runtime.CompilerServices.Unsafe": "6.0.0"
         }
       },
-      "System.Text.Json/6.0.0": {
+      "System.Text.Json/6.0.1": {
         "dependencies": {
           "System.Runtime.CompilerServices.Unsafe": "6.0.0",
           "System.Text.Encodings.Web": "6.0.0"
@@ -3684,6 +3690,15 @@
           "ref/netstandard2.0/Tmds.LibC.dll": {}
         }
       },
+      "WLED/1.0.41": {
+        "dependencies": {
+          "System.Net.Http.Json": "6.0.0",
+          "System.Text.Json": "6.0.1"
+        },
+        "compile": {
+          "lib/netstandard2.0/Kevsoft.WLED.dll": {}
+        }
+      },
       "Xamarin.Mac.digitalhigh/8.3.0.41": {
         "compile": {
           "lib/Xamarin.Mac.dll": {}
@@ -3700,7 +3715,7 @@
       }
     },
     ".NETCoreApp,Version=v6.0/osx-x64": {
-      "Glimmr/1.2.3-master-0001076": {
+      "Glimmr/1.2.3-master-0001092": {
         "dependencies": {
           "AdalightNet": "1.0.8",
           "AutoMapper": "11.0.1",
@@ -3744,6 +3759,7 @@
           "Swashbuckle.AspNetCore.Annotations": "6.2.3",
           "System.Drawing.Common": "6.0.0",
           "System.Net.WebSockets": "4.3.0",
+          "WLED": "1.0.41",
           "Xamarin.Mac.digitalhigh": "8.3.0.41",
           "YeelightAPI": "1.10.2",
           "digitalhigh.rpi-ws281x-csharp": "1.1.7",
@@ -3941,7 +3957,7 @@
           "System.Memory.Reference": "6.0.0.0",
           "System.Net": "4.0.0.0",
           "System.Net.Http.Reference": "6.0.0.0",
-          "System.Net.Http.Json": "6.0.0.0",
+          "System.Net.Http.Json.Reference": "6.0.0.0",
           "System.Net.HttpListener": "6.0.0.0",
           "System.Net.Mail": "6.0.0.0",
           "System.Net.NameResolution.Reference": "6.0.0.0",
@@ -5946,7 +5962,7 @@
           "System.Memory": "4.5.4",
           "System.Runtime.CompilerServices.Unsafe": "6.0.0",
           "System.Text.Encodings.Web": "6.0.0",
-          "System.Text.Json": "6.0.0"
+          "System.Text.Json": "6.0.1"
         },
         "runtime": {
           "lib/netstandard2.0/Microsoft.Extensions.DependencyModel.dll": {
@@ -6944,6 +6960,11 @@
           "runtime.native.System.Security.Cryptography.OpenSsl": "4.3.0"
         }
       },
+      "System.Net.Http.Json/6.0.0": {
+        "dependencies": {
+          "System.Text.Json": "6.0.1"
+        }
+      },
       "System.Net.NameResolution/4.3.0": {
         "dependencies": {
           "Microsoft.NETCore.Platforms": "5.0.0",
@@ -7388,7 +7409,7 @@
           "System.Runtime.CompilerServices.Unsafe": "6.0.0"
         }
       },
-      "System.Text.Json/6.0.0": {
+      "System.Text.Json/6.0.1": {
         "dependencies": {
           "System.Runtime.CompilerServices.Unsafe": "6.0.0",
           "System.Text.Encodings.Web": "6.0.0"
@@ -7479,6 +7500,18 @@
         }
       },
       "Tmds.LibC/0.2.0": {},
+      "WLED/1.0.41": {
+        "dependencies": {
+          "System.Net.Http.Json": "6.0.0",
+          "System.Text.Json": "6.0.1"
+        },
+        "runtime": {
+          "lib/netstandard2.0/Kevsoft.WLED.dll": {
+            "assemblyVersion": "1.0.41.0",
+            "fileVersion": "1.0.41.0"
+          }
+        }
+      },
       "Xamarin.Mac.digitalhigh/8.3.0.41": {
         "runtime": {
           "lib/Xamarin.Mac.dll": {
@@ -7502,7 +7535,7 @@
     }
   },
   "libraries": {
-    "Glimmr/1.2.3-master-0001076": {
+    "Glimmr/1.2.3-master-0001092": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
@@ -8903,6 +8936,13 @@
       "path": "system.net.http/4.3.0",
       "hashPath": "system.net.http.4.3.0.nupkg.sha512"
     },
+    "System.Net.Http.Json/6.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-GbIV4y344kGOKjshAKCIDCMUTTW/hyUC42wV0Y5SXEdIbaKBIHBUxZ2MOe4/ZiV2svUAGfQ0c8LGtUExpOI8tg==",
+      "path": "system.net.http.json/6.0.0",
+      "hashPath": "system.net.http.json.6.0.0.nupkg.sha512"
+    },
     "System.Net.NameResolution/4.3.0": {
       "type": "package",
       "serviceable": true,
@@ -9211,12 +9251,12 @@
       "path": "system.text.encodings.web/6.0.0",
       "hashPath": "system.text.encodings.web.6.0.0.nupkg.sha512"
     },
-    "System.Text.Json/6.0.0": {
+    "System.Text.Json/6.0.1": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-zaJsHfESQvJ11vbXnNlkrR46IaMULk/gHxYsJphzSF+07kTjPHv+Oc14w6QEOfo3Q4hqLJgStUaYB9DBl0TmWg==",
-      "path": "system.text.json/6.0.0",
-      "hashPath": "system.text.json.6.0.0.nupkg.sha512"
+      "sha512": "sha512-X3cTdM+jna1YyfTUzToW7aVgINFv7R1W4+1+3hua/YCyLjApPoR8fd+2Cep9DbfYjbv+rBx4K6dlmAWEJr9AHg==",
+      "path": "system.text.json/6.0.1",
+      "hashPath": "system.text.json.6.0.1.nupkg.sha512"
     },
     "System.Text.RegularExpressions/4.3.0": {
       "type": "package",
@@ -9308,6 +9348,13 @@
       "sha512": "sha512-+RvLuNHOLW7cxzgDe9yHLoayBgjsuH2/gJtJnuVMxweKrxxYT6TwQNAmt06SFWpjwk68aRcwwD4FfMMA6tZvVA==",
       "path": "tmds.libc/0.2.0",
       "hashPath": "tmds.libc.0.2.0.nupkg.sha512"
+    },
+    "WLED/1.0.41": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-CLyg9oS65e1bllUJOb6BRafRWeJTdm+Fvrv6Ugc8pNwjuKkX0yZfPb3pHgYfenBx7QhDUrwAbuUlVqEkIDQegA==",
+      "path": "wled/1.0.41",
+      "hashPath": "wled.1.0.41.nupkg.sha512"
     },
     "Xamarin.Mac.digitalhigh/8.3.0.41": {
       "type": "package",
@@ -10293,7 +10340,7 @@
       "serviceable": false,
       "sha512": ""
     },
-    "System.Net.Http.Json/6.0.0.0": {
+    "System.Net.Http.Json.Reference/6.0.0.0": {
       "type": "referenceassembly",
       "serviceable": false,
       "sha512": ""
