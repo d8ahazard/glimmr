@@ -88,6 +88,12 @@ public class SystemData {
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 	public bool SkipDemo { get; set; }
 
+	///<summary>
+	/// Gamma correction value.
+	/// </summary>
+	[DefaultValue(1f)] [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public float GammaCorrection { get; set; }
+
 	/// <summary>
 	///     If set, introduction/tour will not run on UI load.
 	/// </summary>

@@ -374,8 +374,9 @@ public class ColorService : BackgroundService {
 
 	private async Task Demo(object o, DynamicEventArgs? dynamicEventArgs) {
 		await StartStream();
-		var builder = new FrameBuilder(new[] { 30, 30, 60, 60 });
-		var ledCount = 180;
+		var dims = new[] { 20, 20, 40, 40 };
+		var builder = new FrameBuilder(dims);
+		var ledCount = dims.Sum();
 		var i = 0;
 		var cols = ColorUtil.EmptyColors(ledCount);
 		try {

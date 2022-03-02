@@ -26,7 +26,6 @@ namespace Glimmr.Models.ColorTarget.Led;
 public class LedDevice : ColorTarget, IColorTarget {
 	private readonly LedAgent? _agent;
 	private LedData _data;
-	private LedData? _data1;
 
 	public bool Streaming { get; set; }
 	public string Id { get; }
@@ -43,12 +42,10 @@ public class LedDevice : ColorTarget, IColorTarget {
 		}
 		
 		// Store the second LED strip data as well...
-		_data1 = DataUtil.GetDevice<LedData>("1");
+		DataUtil.GetDevice<LedData>("1");
 		Id = _data.Id;
-		Enable = _data.Enable;
 		_agent = cs.ControlService.GetAgent("LedAgent");
-		
-
+		Enable = _agent?.Enable ?? false;
 		Log.Debug("LED device created.");
 		cs.ColorSendEventAsync += SetColors;
 	}
@@ -64,23 +61,12 @@ public class LedDevice : ColorTarget, IColorTarget {
 			return;
 		}
 		
-		var e2 = _data1?.Enable ?? false;
-		// Don't do anything if neither strip is enabled.
-		if (!Enable && !e2) {
-			return;
-		}
-
-		// Still set our streaming flag, despite not "actually" streaming anything from this.
+		// Set streaming to true if we're using strip 1.
 		if (Enable && Id == "1") {
 			Streaming = true;
-		}
-		
-		// Return if not controller 0
-		if (Id != "0") {
-			Log.Debug($"Id is {Id}, returning.");
 			return;
 		}
-
+		
 		// Reload all data
 		_agent?.ReloadData();
 
@@ -107,6 +93,12 @@ public class LedDevice : ColorTarget, IColorTarget {
 	}
 
 
+	/// <summary>
+	/// Flash the color of the individual strip.
+	/// This one, we'll use, because it's not used frequently.
+	/// </summary>
+	/// <param name="color">The color to flash.</param>
+	/// <returns></returns>
 	public Task FlashColor(Color color) {
 		_agent?.SetColor(color, Id);
 		return Task.CompletedTask;
@@ -114,6 +106,7 @@ public class LedDevice : ColorTarget, IColorTarget {
 
 
 	public void Dispose() {
+		Streaming = false;
 		_agent?.Clear();
 	}
 
@@ -127,14 +120,15 @@ public class LedDevice : ColorTarget, IColorTarget {
 			return Task.CompletedTask;
 		}
 
-		var ld1 = DataUtil.GetDevice<LedData>("1");
-		_data1 = ld1;
-		Enable = _data.Enable;
 		_agent?.ReloadData();
+		Enable = _agent?.Enable ?? false;
 		return Task.CompletedTask;
 	}
 
 	private async Task SetColors(object sender, ColorSendEventArgs args) {
+		if (Id == "1") {
+			return;
+		}
 		await SetColors(args.LedColors, args.SectorColors);
 	}
 
@@ -144,15 +138,11 @@ public class LedDevice : ColorTarget, IColorTarget {
 		if (Id == "1") {
 			return Task.CompletedTask;
 		}
-		
-		if (ledColors == null) {
-			throw new ArgumentException("Invalid color input.");
-		}
 
-		_agent?.SetColors(ledColors.ToArray());
-		
-		if (!Enable) {
-			return Task.CompletedTask;
+		try {
+			_agent?.SetColors(ledColors.ToArray());
+		} catch (Exception e) {
+			Log.Debug("Exception setting colors: " + e.Message);
 		}
 
 		return Task.CompletedTask;
@@ -160,7 +150,7 @@ public class LedDevice : ColorTarget, IColorTarget {
 
 
 	private async Task StopLights() {
-		if (Id != "0") {
+		if (Id == "1") {
 			return;
 		}
 

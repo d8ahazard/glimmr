@@ -165,7 +165,7 @@ let data = {
             switch (typeof (check)) {
                 case "number":
                     if (string === "audioMin" || string === "audioGain" || string === "audioRotationLower" ||
-                    string === "audioRotationUpper" || string === "audioRotationSpeed") {
+                    string === "audioRotationUpper" || string === "audioRotationSpeed" || string === "gammaCorrection") {
                         this.systemInternal[string] = parseFloat(value);
                     } else {
                         let num = parseInt(value);

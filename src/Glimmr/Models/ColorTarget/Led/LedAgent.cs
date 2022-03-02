@@ -30,8 +30,14 @@ public class LedAgent : IColorTargetAgent {
 	private bool _use0;
 	private bool _use1;
 	private WS281x? _ws281X;
+	private byte[] _gammaTable;
+	
+	public bool Enable => _use0 || _use1;
 
 	public LedAgent() {
+		_sd = DataUtil.GetSystemData();
+		var gamma = _sd.GammaCorrection;
+		_gammaTable = SetGammaCorrection(gamma, 255, 255);
 		_colors1 = ColorUtil.EmptyColors(_d0?.LedCount ?? 0);
 		_colors2 = ColorUtil.EmptyColors(_d1?.LedCount ?? 0);
 		_sd = DataUtil.GetSystemData();
@@ -56,23 +62,21 @@ public class LedAgent : IColorTargetAgent {
 
 	public void ReloadData() {
 		_sd = DataUtil.GetSystemData();
+		var gamma = _sd.GammaCorrection;
+		_gammaTable = SetGammaCorrection(gamma, 255, 255);
 		LedData? d0 = DataUtil.GetDevice<LedData>("0");
 		LedData? d1 = DataUtil.GetDevice<LedData>("1");
-		if (!SystemUtil.IsRaspberryPi() || d0 == null || d1 == null || _d0 == null || _d1 == null) {
+		if (!SystemUtil.IsRaspberryPi() || d0 == null || d1 == null) {
 			_d0 = d0;
 			_d1 = d1;
 			return;
 		}
-
-		if (d0.StripType != _d0.StripType || d1.StripType != _d1.StripType) {
-			_ws281X?.Dispose();
-			LoadStrips(d0, d1);
-		}
-
+		
 		_d0 = d0;
 		_d1 = d1;
 
-		if (_ws281X == null) {
+		if (d0.StripType != _d0.StripType || d1.StripType != _d1.StripType || _ws281X == null) {
+			_ws281X?.Dispose();
 			LoadStrips(_d0, _d1);
 		}
 
@@ -97,9 +101,27 @@ public class LedAgent : IColorTargetAgent {
 		_ws281X?.SetBrightness(_s1Brightness, 1);
 	}
 
+	private static byte[] SetGammaCorrection(float gamma, int max_in, int max_out) {
+		var GammaCorrection = new byte[256];
+		var logBS = new int[256];
+		for (var i = 0; i < 256; i++) {
+			GammaCorrection[i] = (byte) i;
+			logBS[i] = i;
+		}
+		
+		if (gamma > 1.0f)
+		{
+			for (var i = 0; i < 256; i++) {
+				GammaCorrection[i] = (byte)(Math.Pow(i / (float)max_in, gamma) * max_out + 0.5);
+				logBS[i] = GammaCorrection[i];
+			}
+		}
+		return GammaCorrection;
+	}
+
 
 	private void LoadStrips(LedData d0, LedData d1) {
-		var settings = Settings.CreateDefaultSettings();
+		var settings = Settings.CreateDefaultSettings(false);
 		var stripType0 = d0.StripType switch {
 			1 => StripType.SK6812W_STRIP,
 			2 => StripType.WS2811_STRIP_RBG,
@@ -114,8 +136,8 @@ public class LedAgent : IColorTargetAgent {
 			_ => StripType.WS2812_STRIP
 		};
 
-		_controller0 = settings.AddController(ControllerType.PWM0, d0.LedCount, stripType0, (byte)d0.Brightness);
-		_controller1 = settings.AddController(ControllerType.PWM1, d1.LedCount, stripType1, (byte)d1.Brightness);
+		_controller0 = settings.AddController(d0.LedCount, stripType0, ControllerType.PWM0, (byte)d0.Brightness);
+		_controller1 = settings.AddController(d1.LedCount, stripType1, ControllerType.PWM1, (byte)d1.Brightness);
 		_colors1 = ColorUtil.EmptyColors(d0.LedCount);
 		_colors2 = ColorUtil.EmptyColors(d1.LedCount);
 		_ws281X = new WS281x(settings);
@@ -147,7 +169,6 @@ public class LedAgent : IColorTargetAgent {
 		if (_use1) {
 			_controller1?.SetLEDS(_colors2);
 		}
-
 		if (_use0 || _use1) {
 			_ws281X?.Render();
 		}
@@ -275,7 +296,10 @@ public class LedAgent : IColorTargetAgent {
 		if (data.ReverseStrip) {
 			toSend = toSend.Reverse().ToArray();
 		}
-
+		for (var i = 0; i < toSend.Length; i++) {
+			toSend[i] = Color.FromArgb(_gammaTable[toSend[i].R], _gammaTable[toSend[i].G], _gammaTable[toSend[i].B]);
+		}
+		
 		if (data.StripType == 1) {
 			for (var i = 0; i < toSend.Length; i++) {
 				var tCol = toSend[i];
@@ -284,6 +308,7 @@ public class LedAgent : IColorTargetAgent {
 			}
 		}
 
+		
 		if (id == "0") {
 			_colors1 = toSend;
 		} else {
@@ -304,14 +329,6 @@ public class LedAgent : IColorTargetAgent {
 	}
 
 	public void Clear() {
-		if (_use0) {
-			_controller0?.SetAll(Color.Empty);
-		}
-
-		if (_use1) {
-			_controller1?.SetAll(Color.Empty);
-		}
-
-		_ws281X?.Render();
+		if (Enable) _ws281X?.Reset();
 	}
 }
