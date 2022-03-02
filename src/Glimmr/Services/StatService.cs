@@ -37,7 +37,7 @@ public class StatService : BackgroundService {
 			while (!stoppingToken.IsCancellationRequested) {
 				try {
 					await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
-					var cd = await CpuUtil.GetStats();
+					var cd = await StatUtil.GetStats();
 					cd.Fps = _colorService.Counter.Rates;
 					_colorService.ControlService.Stats = cd;
 					await _hubContext.Clients.All.SendAsync("stats", cd, stoppingToken);

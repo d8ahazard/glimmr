@@ -14,7 +14,7 @@ using Serilog;
 
 namespace Glimmr.Models.Util;
 
-public static class CpuUtil {
+public static class StatUtil {
 	private static float _tempMax;
 	private static float _tempMin = float.MinValue;
 	private static string[]? _throttledState;
@@ -50,7 +50,7 @@ public static class CpuUtil {
 			} else {
 				cd.CpuUsage = GetProcessAverage().Result;
 				cd.CpuTemp = GetTemperature().Result;
-				cd.MemoryUsage = GetMemoryUsage();
+				cd.MemoryUsage = GetMemory();
 				_throttledState = await GetThrottledState();
 				cd.ThrottledState = _throttledState;
 			}
@@ -204,11 +204,12 @@ public static class CpuUtil {
 		return temp;
 	}
 
-	private static int GetMemoryUsage() {
-		return RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? GetMemoryUsageOsx() : GetMemoryUsageLinux();
+	public static int GetMemory(bool returnTotal = false) {
+		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return CpuMonitor.GetMemoryWindows(returnTotal);
+		return RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? GetMemoryOsx(returnTotal) : GetMemoryLinux(returnTotal);
 	}
 
-	private static int GetMemoryUsageLinux() {
+	private static int GetMemoryLinux(bool returnTotal = false) {
 		var process = new Process {
 			StartInfo = new ProcessStartInfo {
 				FileName = "vmstat",
@@ -248,14 +249,14 @@ public static class CpuUtil {
 		}
 
 		if (Math.Abs(used - -1) > float.MinValue && Math.Abs(total - -1f) > float.MinValue) {
-			return (int)(used / total);
+			return returnTotal ? (int)total : (int)(used / total);
 		}
 
 		process.Dispose();
 		return 0;
 	}
 
-	private static int GetMemoryUsageOsx() {
+	private static int GetMemoryOsx(bool returnTotal = false) {
 		var process = new Process {
 			StartInfo = new ProcessStartInfo {
 				FileName = "vm_stat",
@@ -320,7 +321,7 @@ public static class CpuUtil {
 
 		var total = free + active + spec + throttled + wired;
 		process.Dispose();
-		return total == 0 ? 0 : active / total;
+		return returnTotal ? total : total == 0 ? 0 : active / total;
 	}
 
 	private static async Task<int> GetProcessAverage() {

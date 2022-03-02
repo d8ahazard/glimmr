@@ -528,7 +528,7 @@ public class GlimmrController : ControllerBase {
 	/// <returns></returns>
 	[HttpGet("stats")]
 	public async Task<ActionResult<StatData>> GetStats() {
-		return await CpuUtil.GetStats();
+		return await StatUtil.GetStats();
 	}
 
 

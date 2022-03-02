@@ -340,12 +340,10 @@ public class ColorService : BackgroundService {
 	}
 
 	private IEnumerable<IColorTarget> GetDevice(IEnumerable<dynamic> devices, string c) {
-		Log.Debug("Trying to create device: " + c);
 		var output = new List<IColorTarget>();
 		var tag = c.Replace("Glimmr.Models.ColorTarget.", "");
 		tag = tag.Split(".")[0];
-		Log.Debug("Trying to create device: " + c);
-
+		
 		foreach (IColorTargetData device in devices.Where(device => device.Tag == tag)) {
 			switch (tag) {
 				case "Hue":
@@ -371,7 +369,6 @@ public class ColorService : BackgroundService {
 					break;
 			}
 		}
-		Log.Debug("Created " + output.Count + " " + tag + " devices.");
 		return output;
 	}
 

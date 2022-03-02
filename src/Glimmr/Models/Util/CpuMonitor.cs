@@ -1,6 +1,8 @@
 ﻿#region
 
+using System.Runtime.InteropServices;
 using LibreHardwareMonitor.Hardware;
+using Newtonsoft.Json;
 
 #endregion
 
@@ -67,4 +69,48 @@ public class CpuMonitor : IVisitor {
 		computer.Close();
 		return output;
 	}
+
+	public static int GetMemoryWindows(bool returnTotal = false) {
+		ulong installedMemory = 0;
+		ulong usedMemory = 0;
+		var memStatus = new MemState();
+		if (!GlobalMemoryStatusEx(memStatus)) {
+			return returnTotal ? (int)installedMemory : (int)usedMemory;
+		}
+
+		installedMemory = memStatus.ullTotalPhys;
+		usedMemory = memStatus.dwMemoryLoad;
+		return returnTotal ? (int) installedMemory : (int)usedMemory;
+	} 
+
+	[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+	private class MemState
+	{
+		[JsonProperty]
+		public uint dwLength;
+		[JsonProperty]
+		public uint dwMemoryLoad;
+		[JsonProperty]
+		public ulong ullTotalPhys;
+		[JsonProperty]
+		public ulong ullAvailPhys;
+		[JsonProperty]
+		public ulong ullTotalPageFile;
+		[JsonProperty]
+		public ulong ullAvailPageFile;
+		[JsonProperty]
+		public ulong ullTotalVirtual;
+		[JsonProperty]
+		public ulong ullAvailVirtual;
+		[JsonProperty]
+		public ulong ullAvailExtendedVirtual;
+		public MemState()
+		{
+			dwLength = (uint)Marshal.SizeOf(typeof(MemState));
+		}
+	}
+
+	[return: MarshalAs(UnmanagedType.Bool)]
+	[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+	static extern bool GlobalMemoryStatusEx([In, Out] MemState lpBuffer);
 }

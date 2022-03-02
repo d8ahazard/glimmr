@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using ManagedBass;
+using Newtonsoft.Json;
 using Serilog;
 
 #endregion
@@ -85,7 +86,12 @@ public class AudioStream : ColorSource {
 		return Task.Run(async () => {
 			try {
 				Bass.RecordInit(_recordDeviceIndex);
-				_handle = Bass.RecordStart(SampleFreq, 2, BassFlags.Default, 60, UpdateAudio);
+				var period = 16;
+				if (StatUtil.GetMemory(true) / 1024 < 1024) {
+					Log.Debug("RAM is less than 1G, setting period to 30fps");
+					period = 33;
+				}
+				_handle = Bass.RecordStart(SampleFreq, 2, BassFlags.Default, period, UpdateAudio);
 				_hasDll = true;
 				Log.Information("Recording init completed for device " + _recordDeviceIndex);
 			} catch (DllNotFoundException) {
@@ -179,7 +185,7 @@ public class AudioStream : ColorSource {
 		var fft = new float[SampleSize]; // fft data buffer
 		// Get our FFT for "everything"
 		var res = Bass.ChannelGetData(handle, fft, (int)getFlag(SampleSize));
-		
+		Log.Debug("FFT: " + JsonConvert.SerializeObject(fft));
 		if (level < 700) {
 			_frameData = lData;
 			if (_maxVal > 0) {

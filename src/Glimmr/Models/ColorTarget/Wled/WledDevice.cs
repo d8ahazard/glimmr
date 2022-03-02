@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,6 +12,7 @@ using Glimmr.Enums;
 using Glimmr.Models.ColorSource.UDP;
 using Glimmr.Models.Util;
 using Glimmr.Services;
+using Kevsoft.WLED;
 using Serilog;
 
 #endregion
@@ -22,8 +22,8 @@ namespace Glimmr.Models.ColorTarget.Wled;
 public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 	private string IpAddress { get; set; }
 	private const int Port = 21324;
-	private readonly HttpClient _httpClient;
 	private readonly UdpClient _udpClient;
+	private readonly WLedClient _wLedClient;
 
 	private int _brightness;
 	private WledData _data;
@@ -42,13 +42,13 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		_segments = Array.Empty<WledSegment>();
 		cs.ControlService.RefreshSystemEvent += RefreshSystem;
 		_udpClient = cs.ControlService.UdpClient;
-		_httpClient = cs.ControlService.HttpSender;
 		_data = wd ?? throw new ArgumentException("Invalid WLED data.");
 		Id = _data.Id;
 		IpAddress = _data.IpAddress;
 		_brightness = _data.Brightness;
 		_multiplier = _data.LedMultiplier;
 		ReloadData();
+		_wLedClient = new WLedClient(IpAddress);
 		ColorService.ColorSendEventAsync += SetColors;
 	}
 
@@ -242,10 +242,7 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 			scaledBright = 255;
 		}
 
-		var url = "http://" + IpAddress + "/win";
-		url += "&T=" + (on ? "1" : "0");
-		url += "&A=" + (int)scaledBright;
-		await _httpClient.GetAsync(url);
+		await _wLedClient.Post(new StateRequest { Brightness = (byte) scaledBright, On = on });
 	}
 
 	protected virtual async Task Dispose(bool disposing) {

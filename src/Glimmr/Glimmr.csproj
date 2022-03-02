@@ -80,6 +80,7 @@
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
         <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.2.3" />
         <PackageReference Include="System.Net.WebSockets" Version="4.3.0" />
+        <PackageReference Include="WLED" Version="1.0.41" />
         <PackageReference Include="Xamarin.Mac.digitalhigh" Version="8.3.0.41" />
         <PackageReference Include="YeelightAPI" Version="1.10.2" />
         <PackageReference Update="Packaging.Targets">
