@@ -26,7 +26,7 @@ del /Q /S .\*.zip
 del /Q /S .\*.tgz
 del /Q /S .\*.zip
 del /Q /S .\*.rpm
-del /Q /S .\*.deb8
+del /Q /S .\*.deb
 
 cd ..
 

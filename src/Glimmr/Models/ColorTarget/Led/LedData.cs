@@ -130,7 +130,6 @@ public class LedData : IColorTargetData {
 		new("LedMultiplier", "ledMultiplier", ""),
 		new("ReverseStrip", "check", "Reverse Strip")
 			{ ValueHint = "Reverse the order of the leds to clockwise (facing screen)." },
-		new("FixGamma", "check", "Fix Gamma") { ValueHint = "Automatically correct Gamma (recommended)" },
 		new("MilliampsPerLed", "text", "Milliamps Per LED")
 			{ ValueHint = "'Default' = 30 (.3w), 'Normal' = 55 (.55w)" }
 	};
