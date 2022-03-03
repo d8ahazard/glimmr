@@ -416,10 +416,13 @@ public class ColorService : BackgroundService {
 				continue;
 			}
 			Log.Debug($"Reloading data for {dev.Data.Name} ({dev.Data.Id})");
-			await dev.ReloadData().ConfigureAwait(false);
-			var doEnable = dev.Data.Enable;
-			if (_deviceMode != DeviceMode.Off && doEnable && !dev.Streaming) {
-				Log.Debug("Starting stream for newly enabled device...");
+			var enabled = dev.Enable;
+			var streaming = dev.Streaming;
+			
+			await dev.ReloadData();
+			var doEnable = dev.Enable;
+			if (_deviceMode != DeviceMode.Off && doEnable && !enabled && !dev.Streaming) {
+				
 				await dev.StartStream(_targetTokenSource.Token);
 				return;
 			}
@@ -430,9 +433,13 @@ public class ColorService : BackgroundService {
 				}
 				continue;
 			}
-			Log.Information("Stopping disabled device: " + dev.Id);
-			await dev.StopStream().ConfigureAwait(false);
 
+			if (enabled && !doEnable && dev.Streaming) {
+				Log.Information("Stopping disabled device: " + dev.Id);
+				await dev.StopStream().ConfigureAwait(false);
+	
+			}
+			
 			return;
 		}
 

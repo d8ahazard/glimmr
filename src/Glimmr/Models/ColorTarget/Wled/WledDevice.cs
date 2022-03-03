@@ -47,8 +47,10 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		IpAddress = _data.IpAddress;
 		_brightness = _data.Brightness;
 		_multiplier = _data.LedMultiplier;
+		Log.Debug("Creating wc...");
+		_wLedClient = new WLedClient("http://" + IpAddress + "/");
+		Log.Debug("Created.");
 		ReloadData();
-		_wLedClient = new WLedClient(IpAddress);
 		ColorService.ColorSendEventAsync += SetColors;
 	}
 
@@ -73,8 +75,8 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		if (_ep == null) {
 			return;
 		}
-
-		await UpdateLightState(Streaming);
+		await SetLightBrightness(_brightness);
+		await SetLightPower(Streaming);
 		await FlashColor(Color.Black);
 		Streaming = true;
 		Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
@@ -101,7 +103,7 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		Log.Debug($"{_data.Tag}::Stopping stream...{_data.Id}.");
 		Streaming = false;
 		await FlashColor(Color.Black);
-		await UpdateLightState(false);
+		await SetLightPower(false);
 		await Task.FromResult(true);
 		Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 	}
@@ -127,7 +129,7 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		}
 
 		if (oldBrightness != _brightness) {
-			UpdateLightState(Streaming).ConfigureAwait(false);
+			SetLightBrightness(_brightness).ConfigureAwait(false);
 		}
 
 		_segments = _data.Segments;
@@ -236,13 +238,23 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		ReloadData();
 	}
 
-	private async Task UpdateLightState(bool on, int bri = -1) {
-		var scaledBright = bri == -1 ? _brightness / 100f * 255f : bri;
+	private async Task SetLightPower(bool on) {
+		var res = await _wLedClient.GetState();
+		var oc = 0;
+		while (res.On != on && oc < 5) {
+			await _wLedClient.Post(new StateRequest { On = on });
+			res = await _wLedClient.GetState();
+			oc++;
+		}
+	}
+
+	private async Task SetLightBrightness(int brightness) {
+		var scaledBright = brightness / 100f * 255f;
 		if (scaledBright > 255) {
 			scaledBright = 255;
 		}
-
-		await _wLedClient.Post(new StateRequest { Brightness = (byte) scaledBright, On = on });
+		Log.Debug("Setting bri to " + scaledBright);
+		await _wLedClient.Post(new StateRequest { Brightness = (byte) scaledBright});
 	}
 
 	protected virtual async Task Dispose(bool disposing) {
