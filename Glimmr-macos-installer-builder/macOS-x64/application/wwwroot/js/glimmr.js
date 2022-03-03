@@ -157,7 +157,6 @@ let data = {
             let check = this.systemInternal[string];
             // If types match, set it
             if (typeof (check) === typeof (value)) {
-                console.log("Typematch, setting: ", string, value);
                 this.systemInternal[string] = value;
                 return;
             }
@@ -170,10 +169,7 @@ let data = {
                     } else {
                         let num = parseInt(value);
                         if (typeof (num) === typeof (check)) {
-                            console.log("Set: ", string, num);
                             this.systemInternal[string] = num;
-                        } else {
-                            console.log("FAIL: " + typeof (num));
                         }    
                     }
                     
@@ -198,8 +194,8 @@ let data = {
                             if (typeof (obj) === "object" && isValid(obj)) {
                                 this.systemInternal[string] = obj;
                             }
-                        } catch {
-                            console.log("Error...");
+                        } catch (Exception) {
+                            // Ignored
                         }
                     }
                     break;
@@ -209,7 +205,7 @@ let data = {
             }
             this.systemListener();
         } else {
-            console.log("Property doesn't exist, stupid: " + string);
+            console.log("Property doesn't exist: " + string);
         }
     },
     registerSystemListener: function (listener) {
@@ -325,8 +321,6 @@ function loadPickr() {
         asSelect.value = "-1";
         pickr.setColor("#" + newColor);
         sendMessage("systemData", data.SystemData);
-        console.log("Sending SD: ", data.SystemData);
-
     }).on('swatchselect', (color) => {
         let col = color.toHEXA();
         newColor = col[0] + col[1] + col[2];
@@ -336,7 +330,6 @@ function loadPickr() {
         asSelect.value = "-1";
         pickr.setColor("#" + newColor);
         sendMessage("systemData", data.SystemData);
-        console.log("Sending SD: ", data.SystemData);
     });
 }
 
@@ -611,14 +604,9 @@ function setSocketListeners() {
             if (isValid(deviceData) && deviceData["id"] === parsed["id"]) {
                 deviceData = parsed;
                 if (expanded) {
-                    console.log("Updating expanded device settings...")
                     createDeviceSettings();
-                } else {
-                    console.log("No settings shown?!");
                 }
             }
-        } else {
-            console.log("Invalid existing!!")
         }
     });
 
@@ -806,7 +794,6 @@ function setListeners() {
             let id = target.getAttribute("data-id");
             let property = target.getAttribute("data-property");
             let channel = parseInt(target.getAttribute("data-channel"));
-            console.log("LP: ", id, property, channel);
             let numVal = parseInt(val);
             if (!isNaN(numVal)) val = numVal;
             updateLightProperty(id, property, val, channel);
@@ -814,13 +801,11 @@ function setListeners() {
         }
 
         if (isValid(obj) && isValid(property) && isValid(val) && obj === "SystemData") {
-            console.log("CHANGE: ", property, val);
             data.setProp(property, val);
             if (property === "screenCapMode" || property === "captureMode" || property === "streamMode") {
                 updateCaptureUi();
             }
 
-            console.log("Sending updated object: ", obj, data.SystemData);
             sendMessage(obj, data.SystemData, true);
 
             if (property === "leftCount" || property === "rightCount" || property === "topCount" || property === "bottomCount") {
@@ -892,8 +877,6 @@ function handleClick(target) {
             message += " Would you like to continue?";
             if (confirm(message)) {
                 sendMessage("systemControl", action, false);
-            } else {
-                console.log(action + " canceled.");
             }
             break;
         case target.classList.contains("closeBtn"):
@@ -902,7 +885,6 @@ function handleClick(target) {
         case target.classList.contains("sector"):
             let val = parseInt(target.getAttribute("data-sector"));
             if (target.classList.contains("flashSectorRegion")) {
-                console.log("Flashing sector...");
                 sendMessage("flashSector", val, false);
                 return;
             }
@@ -911,7 +893,7 @@ function handleClick(target) {
                     nanoModal.hide();
                     nanoModal = null;
                 }
-                updateDeviceSector(val, target);
+                updateDeviceSector(val);
                 return;
             }
             if (target.classList.contains("lifxSectorRegion")
@@ -927,7 +909,6 @@ function handleClick(target) {
             if (target.getAttribute("data-linked") === "false") {
                 let devId = deviceData["id"];
                 if (!isValid(bar)) {
-                    console.log("Creating new progress bar?")
                     bar = new ProgressBar.Circle("#CircleBar", {
                         strokeWidth: 15,
                         easing: 'easeInOut',
@@ -947,7 +928,6 @@ function handleClick(target) {
             break;
         case target.classList.contains("led"):
             let sector = target.getAttribute("data-sector");
-            console.log("Flashing LED " + sector);
             sendMessage("flashLed", parseInt(sector), false);
             break;
         case target.classList.contains("deviceIcon"):
@@ -975,8 +955,6 @@ function handleClick(target) {
 
                 sendMessage("deleteDevice", deviceId, false);
                 console.log('Deleting device.');
-            } else {
-                console.log('Device deletion canceled.');
             }
             break;
         case target.classList.contains("settingBtn"):
@@ -1051,8 +1029,7 @@ async function toggleSettingsDiv() {
 }
 
 
-function updateDeviceSector(sector, target) {
-    console.log("Sector click: ", sector, target);
+function updateDeviceSector(sector) {
     let dev = deviceData;
     if (dev["tag"] === "Nanoleaf") {
         let layout = dev["layout"];
@@ -3027,9 +3004,10 @@ function selectSectors() {
                 }
             }
         }
-        let tileLayout = deviceData.Layout;
+        let tileLayout = deviceData["layout"];
+        console.log("Tile layout: ", tileLayout);
         if (isValid(tileLayout)) {
-            let positionData = tileLayout.PositionData;
+            let positionData = tileLayout["positionData"];
             if (isValid(positionData)) {
                 for (let i = 0; i < positionData.length; i++) {
                     let target = positionData[i]["targetSector"];

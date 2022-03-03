@@ -1234,6 +1234,14 @@
              segments simultaneously to avoid lag and extra work.
              </summary>
         </member>
+        <member name="M:Glimmr.Models.ColorTarget.Led.LedDevice.FlashColor(System.Drawing.Color)">
+            <summary>
+            Flash the color of the individual strip.
+            This one, we'll use, because it's not used frequently.
+            </summary>
+            <param name="color">The color to flash.</param>
+            <returns></returns>
+        </member>
         <member name="P:Glimmr.Models.ColorTarget.Lifx.LifxData.BeamLayout">
             <summary>
                 Layout of beam elements.
@@ -2329,6 +2337,11 @@
             <summary>
                 If set, rainbow wipe will not be played on application startup.
             </summary>
+        </member>
+        <member name="P:Glimmr.Models.SystemData.GammaCorrection">
+            <summary>
+             Gamma correction value.
+             </summary>
         </member>
         <member name="P:Glimmr.Models.SystemData.SkipTour">
             <summary>
