@@ -20,7 +20,14 @@ namespace Glimmr.Models.Util;
 public static class SystemUtil {
 	public static void Reboot() {
 		Log.Debug("Rebooting");
-		Process.Start("shutdown", RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "/r /t 0" : "-r now");
+		if (IsRaspberryPi()) {
+			var appDir = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
+			var cmd = Path.Join(appDir, "reboot.sh");
+			Log.Debug("Reboot command should be: " + cmd);
+			Process.Start("/bin/bash", cmd);
+		} else {
+			Process.Start("shutdown", RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "/r /t 0" : "-r now");	
+		}
 	}
 
 	public static bool IsOnline(string target) {

@@ -24,7 +24,6 @@ public class AudioStream : ColorSource {
 	public FrameSplitter FrameSplitter { get; }
 	private readonly FrameBuilder _builder;
 
-	private List<AudioData> _devices;
 	//private float _gain;
 	private int _handle;
 	private bool _hasDll;
@@ -43,7 +42,6 @@ public class AudioStream : ColorSource {
 
 	public AudioStream(ColorService cs) {
 		_frameData = new Dictionary<float, int>();
-		_devices = new List<AudioData>();
 		_map = new AudioMap();
 		FrameSplitter = new FrameSplitter(cs);
 		SendColors = true;
@@ -55,6 +53,7 @@ public class AudioStream : ColorSource {
 	}
 
 	public override Task Start(CancellationToken ct) {
+		_ct = ct;
 		RunTask = ExecuteAsync(ct);
 		return Task.CompletedTask;
 	}
@@ -68,11 +67,18 @@ public class AudioStream : ColorSource {
 		if (idx == _recordDeviceIndex || _ct == null) {
 			return;
 		}
-
 		_restart = true;
 		while (_running) {
-			Task.Delay(TimeSpan.FromMilliseconds(500));
-			RunTask = ExecuteAsync((CancellationToken) _ct);
+			Task.Delay(TimeSpan.FromSeconds(1));
+		}
+		try {
+			if (_ct == null) {
+				Log.Debug("NULL CT!");
+				return;
+			}
+			RunTask = ExecuteAsync((CancellationToken)_ct);
+		} catch (Exception e) {
+			Log.Warning("Exception: " + e.Message + " at " + e.StackTrace + " via " + e.Source);
 		}
 		_restart = false;
 	}
@@ -85,14 +91,10 @@ public class AudioStream : ColorSource {
 		return Task.Run(async () => {
 			try {
 				Bass.RecordInit(_recordDeviceIndex);
-				var period = 16;
-				if (StatUtil.GetMemory(true) / 1024 < 1024) {
-					Log.Debug("RAM is less than 1G, setting period to 30fps");
-					period = 33;
-				}
+				var period = 33;
 				_handle = Bass.RecordStart(SampleFreq, 2, BassFlags.Default, period, UpdateAudio);
 				_hasDll = true;
-				Log.Information("Recording init completed for device " + _recordDeviceIndex);
+				Log.Information($"Recording init completed for {_sd?.RecDev ?? ""} ({_recordDeviceIndex})");
 			} catch (DllNotFoundException) {
 				Log.Warning("Bass.dll not found, nothing to do...");
 				_hasDll = false;
@@ -112,7 +114,10 @@ public class AudioStream : ColorSource {
 			while (!ct.IsCancellationRequested && !_restart) {
 				await Task.Delay(TimeSpan.FromMilliseconds(500), CancellationToken.None);
 			}
-			_ct = null;
+
+			if (_restart) {
+				Log.Debug("Restarting...");
+			}
 			try {
 				Bass.ChannelStop(_handle);
 				Bass.Free();
@@ -134,13 +139,9 @@ public class AudioStream : ColorSource {
 
 	private void LoadData() {
 		_sd = DataUtil.GetSystemData();
-		// _gain = _sd.AudioGain;
-		// _min = _sd.AudioMin;
-		var rd = _sd.RecDev;
-		_devices = DataUtil.GetCollection<AudioData>("Dev_Audio");
 		_map = new AudioMap();
+		var rd = _sd.RecDev;
 		_recordDeviceIndex = -1;
-		_devices = new List<AudioData>();
 		try {
 			for (var a = 0; Bass.RecordGetDeviceInfo(a, out var info); a++) {
 				if (!info.IsEnabled) {
@@ -151,7 +152,6 @@ public class AudioStream : ColorSource {
 					var ad = new AudioData();
 					ad.ParseDevice(info);
 					DataUtil.InsertCollection<AudioData>("Dev_Audio", ad).ConfigureAwait(true);
-					_devices.Add(ad);
 				} catch (Exception e) {
 					Log.Warning("Error loading devices: " + e.Message);
 				}
@@ -163,6 +163,7 @@ public class AudioStream : ColorSource {
 					if (rd != info.Name) {
 						continue;
 					}
+					Log.Debug("Setting index to " + a);
 					_recordDeviceIndex = a;
 				}
 			}
@@ -170,11 +171,8 @@ public class AudioStream : ColorSource {
 			if (e.GetType() == typeof(DllNotFoundException)) {
 				_hasDll = false;
 				Log.Warning("Unable to find bass.dll, nothing to do.");
-				return;
 			}
 		}
-
-		_devices = DataUtil.GetCollection<AudioData>("Dev_Audio");
 	}
 
 	private bool ProcessHandle(int handle) {
@@ -215,7 +213,8 @@ public class AudioStream : ColorSource {
 						if (_frameData.ContainsKey(freq)) {
 							var prev = _frameData[freq];
 							if (y < prev) {
-								y = (y + prev) / 2;
+								var diff = y - prev;
+								y = prev + diff / 2;
 							}
 						}
 

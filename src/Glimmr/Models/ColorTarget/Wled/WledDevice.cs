@@ -47,9 +47,7 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		IpAddress = _data.IpAddress;
 		_brightness = _data.Brightness;
 		_multiplier = _data.LedMultiplier;
-		Log.Debug("Creating wc...");
 		_wLedClient = new WLedClient("http://" + IpAddress + "/");
-		Log.Debug("Created.");
 		ReloadData();
 		ColorService.ColorSendEventAsync += SetColors;
 	}
@@ -76,7 +74,7 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 			return;
 		}
 		await SetLightBrightness(_brightness);
-		await SetLightPower(Streaming);
+		await SetLightPower(true);
 		await FlashColor(Color.Black);
 		Streaming = true;
 		Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
@@ -253,7 +251,6 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		if (scaledBright > 255) {
 			scaledBright = 255;
 		}
-		Log.Debug("Setting bri to " + scaledBright);
 		await _wLedClient.Post(new StateRequest { Brightness = (byte) scaledBright});
 	}
 

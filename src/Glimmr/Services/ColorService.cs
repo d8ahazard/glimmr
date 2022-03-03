@@ -219,7 +219,7 @@ public class ColorService : BackgroundService {
 		// When building center, we only need the v and h sectors.
 		var dims = new[]
 			{ _systemData.VSectors, _systemData.VSectors, _systemData.HSectors, _systemData.HSectors };
-		var builder = new FrameBuilder(dims, true);
+		var builder = new FrameBuilder(dims, true, _systemData.UseCenter);
 		var col = Color.FromArgb(255, 0, 0);
 		var emptyColors = ColorUtil.EmptyColors(_systemData.LedCount);
 		var emptySectors = ColorUtil.EmptyColors(_systemData.SectorCount);
@@ -239,6 +239,7 @@ public class ColorService : BackgroundService {
 		await Task.Delay(1000);
 		await SendColors(emptyColors, emptySectors, true);
 		_testing = false;
+		Log.Debug("Sector flash complete.");
 	}
 
 	public void CheckAutoDisable(bool sourceActive) {
@@ -363,7 +364,7 @@ public class ColorService : BackgroundService {
 
 						output.Add(dev);
 					} catch (Exception e) {
-						Log.Warning($"Exception adding device {device.Id}: " + e.Message + " at " + e.StackTrace);
+						Log.Warning($"Exception adding {tag} ({c}) device {device.Id}: " + e.Message + " at " + e.StackTrace);
 					}
 
 					break;
@@ -417,7 +418,6 @@ public class ColorService : BackgroundService {
 			}
 			Log.Debug($"Reloading data for {dev.Data.Name} ({dev.Data.Id})");
 			var enabled = dev.Enable;
-			var streaming = dev.Streaming;
 			
 			await dev.ReloadData();
 			var doEnable = dev.Enable;

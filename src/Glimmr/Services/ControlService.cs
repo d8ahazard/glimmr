@@ -68,6 +68,7 @@ public class ControlService : BackgroundService {
 	
 	public ControlService(IHubContext<SocketServer> hubContext) {
 		_myCs = this;
+		ShowHeader();
 		_sd = DataUtil.GetSystemData();
 		_hubContext = hubContext;
 		_levelSwitch = Program.LogSwitch;
@@ -76,8 +77,7 @@ public class ControlService : BackgroundService {
 		_bt.Interval = 1000 * 60 * 60;
 		_bt.Elapsed += CheckBackups;
 		_bt.Start();
-		
-		
+
 		_ut = new Timer();
 		_ut.Interval = 1000 * 60 * 60 * _sd.AutoUpdateTime;
 		_ut.Elapsed += CheckUpdate;
@@ -322,7 +322,7 @@ public class ControlService : BackgroundService {
 		if (_sd.AutoUpdate) SystemUtil.Update();
 	}
 
-	private void Initialize() {
+	private void ShowHeader() {
 		var entry = Assembly.GetEntryAssembly();
 		var version = "1.1.0";
 		if (entry != null) {
@@ -348,6 +348,9 @@ public class ControlService : BackgroundService {
 v. {version}
 ";
 		Log.Information(text);
+	}
+
+	private void Initialize() {
 		Log.Information("Initializing control service...");
 		SetLogLevel();
 		var devs = DataUtil.GetDevices();
@@ -414,6 +417,8 @@ v. {version}
 
 		await Task.FromResult(true);
 		Log.Information("Control service stopped.");
+		Log.Information("Glimmr is now terminated. Bye!");
+		Log.Information("");
 	}
 
 

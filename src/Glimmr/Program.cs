@@ -84,7 +84,6 @@ public static class Program {
 			.ConfigureWebHostDefaults(webBuilder => {
 				var path = Path.Combine(AppContext.BaseDirectory, "wwwroot");
 				if (Directory.Exists(path)) {
-					Log.Debug("using base dir: " + AppContext.BaseDirectory);
 					webBuilder.UseContentRoot(AppContext.BaseDirectory);
 				}
 				webBuilder.UseStartup<Startup>();

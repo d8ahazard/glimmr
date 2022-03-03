@@ -230,20 +230,17 @@ public static class StatUtil {
 			}
 
 			if (data.Contains("total memory")) {
-				var str = data.Replace(" used memory", "");
-				if (float.TryParse(str.Split(" ")[0], out var foo)) {
-					used = foo;
+				var str = data.Replace("K total memory", "");
+				if (float.TryParse(str, out var foo)) {
+					total = foo;
 				}
-			}
-
-			if (!data.Contains("used memory")) {
 				continue;
 			}
 
-			{
-				var str = data.Replace(" total memory", "");
-				if (float.TryParse(str.Split(" ")[0], out var foo)) {
-					total = foo;
+			if (data.Contains("used memory")) {
+				var str = data.Replace("K used memory", "");
+				if (float.TryParse(str, out var foo)) {
+					used = foo;
 				}
 			}
 		}

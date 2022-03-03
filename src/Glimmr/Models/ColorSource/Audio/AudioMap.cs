@@ -138,7 +138,6 @@ public class AudioMap {
 
 	private float RotateHue(float hue) {
 		if (_triggered) {
-			var rot = _rotation;
 			_triggered = false;
 			_rotation += _rotationSpeed;
 			if (_rotation > 1) {
@@ -148,7 +147,6 @@ public class AudioMap {
 			if (_rotation < 0) {
 				_rotation = 1 - _rotationSpeed;
 			}
-			Log.Debug($"Triggered, rotating from {rot} to {_rotation}, speed is {_rotationSpeed}");
 		}
 
 		var output = hue;

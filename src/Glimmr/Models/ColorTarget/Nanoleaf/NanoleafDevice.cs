@@ -59,12 +59,10 @@ public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
 		}
 
 		try {
-			Log.Debug("Creating nano client: " + host);
 			_nanoleafClient = new NanoleafClient(host, n.Token);
-			Log.Debug("Nano client created.");
 			_streamingClient = new NanoleafStreamingClient(host, streamMode, controlService.UdpClient);
 		} catch (Exception e) {
-			Log.Debug("Exception creating client..." + e.Message);
+			Log.Debug("Exception creating Nanoleaf client..." + e.Message);
 		}
 
 		_frameWatch = new Stopwatch();

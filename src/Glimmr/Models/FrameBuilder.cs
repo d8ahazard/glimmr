@@ -26,15 +26,20 @@ public class FrameBuilder {
 	private readonly int _rightCount;
 	private readonly int _topCount;
 
-	public FrameBuilder(IReadOnlyList<int> inputDimensions, bool sectors = false) {
+	public FrameBuilder(IReadOnlyList<int> inputDimensions, bool sectors = false, bool center=false) {
 		_leftCount = inputDimensions[0];
 		_rightCount = inputDimensions[1];
 		_topCount = inputDimensions[2];
 		_bottomCount = inputDimensions[3];
 		_ledCount = _leftCount + _rightCount + _topCount + _bottomCount;
 		if (sectors) {
-			_ledCount -= 4;
-			_inputCoords = DrawSectors();
+			if (center) {
+				_ledCount = _leftCount * _topCount;
+				_inputCoords = DrawCenterSectors();
+			} else {
+				_ledCount -= 4;
+				_inputCoords = DrawSectors();
+			}
 		} else {
 			_inputCoords = DrawLeds();
 		}
@@ -241,6 +246,33 @@ public class FrameBuilder {
 			pts[2] = center;
 			polly.Push(new VectorOfPoint(pts));
 			step += 1;
+		}
+
+		return polly;
+	}
+
+	private VectorOfVectorOfPoint DrawCenterSectors() {
+		var polly = new VectorOfVectorOfPoint();
+		// Individual segment sizes
+		var sectorWidth = ScaleWidth / _topCount;
+		var sectorHeight = ScaleHeight / _leftCount;
+		// These are based on the border/strip values
+		// Minimum limits for top, bottom, left, right            
+		var top = ScaleHeight - sectorHeight;
+		for (var v = _leftCount; v > 0; v--) {
+			var left = ScaleWidth - sectorWidth;
+			for (var h = _topCount; h > 0; h--) {
+				var rect = new Rectangle(left, top, sectorWidth, sectorHeight);
+				var pts = new Point[4];
+				pts[0] = new Point(rect.Left, rect.Top);
+				pts[1] = new Point(rect.Right, rect.Top);
+				pts[2] = new Point(rect.Left, rect.Bottom);
+				pts[3] = new Point(rect.Right, rect.Bottom);
+				polly.Push(new VectorOfPoint(pts));
+				left -= sectorWidth;
+			}
+
+			top -= sectorHeight;
 		}
 
 		return polly;

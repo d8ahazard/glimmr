@@ -52,8 +52,10 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			// Tempting to do this in one, but we risk DIVIDING BY ZERO.
 			if (total > 0) {
 				var tot = total / 1024;
-				Log.Debug($"Total available RAM is lt 1024 MB ({total}), restricting frame rate.");
-				if (tot < 1024) interval = 33.333333333;
+				if (tot < 1024) {
+					Log.Debug($"Total available RAM is lt 1024 MB ({total}), restricting frame rate.");
+					interval = 33.333333333;
+				}
 			}
 			_sceneTimer = new Timer(interval);
 			_sceneTimer.Elapsed += UpdateColors;
