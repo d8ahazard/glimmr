@@ -25,6 +25,8 @@ public class LedAgent : IColorTargetAgent {
 	private int _s0MaxBrightness;
 	private int _s1Brightness;
 	private int _s1MaxBrightness;
+	private int _s0CurrentBrightness;
+	private int _s1CurrentBrightness;
 	private SystemData _sd;
 
 	private bool _use0;
@@ -89,6 +91,7 @@ public class LedAgent : IColorTargetAgent {
 		if (_use0) {
 			_s0Brightness = (int)(_d0.Brightness / 100f * 255f);
 			_s0MaxBrightness = _s0Brightness;
+			_s0CurrentBrightness = _s0Brightness;
 			_ws281X?.SetBrightness(_s0Brightness);
 		}
 
@@ -98,6 +101,7 @@ public class LedAgent : IColorTargetAgent {
 
 		_s1Brightness = (int)(_d1.Brightness / 100f * 255f);
 		_s1MaxBrightness = _s1Brightness;
+		_s1CurrentBrightness = _s1Brightness;
 		_ws281X?.SetBrightness(_s1Brightness, 1);
 	}
 
@@ -188,15 +192,20 @@ public class LedAgent : IColorTargetAgent {
 		// Total power we have at our disposal
 		var totalWatts = _ablVolts * _ablAmps;
 		// Subtract CPU usage (Probably needs more for splitter, etc)
-		// This should totally work
+		totalWatts -= 5;
+		// Subtract splitter usage
+		totalWatts -= 5;
+		// This should totally work...maybe
 		var totalCost = 0;
 		if (_d0.Enable) {
-			totalCost += _d0.MilliampsPerLed * _d0.LedCount;
+			totalCost += _d0.MilliampsPerLed * _d0.LedCount * 5;
 		}
 
 		if (_d1.Enable) {
-			totalCost += _d1.MilliampsPerLed * _d1.LedCount;
+			totalCost += _d1.MilliampsPerLed * _d1.LedCount * 5;
 		}
+
+		totalCost /= 1000;
 
 		var usage = 0f;
 		// Loop each LED, subtract it's current score 
@@ -250,26 +259,38 @@ public class LedAgent : IColorTargetAgent {
 			if (_use0) {
 				var scaleI = scale * _s0MaxBrightness;
 				_s0Brightness = LerpBrightness(_s0Brightness, scaleI, _s0MaxBrightness);
-				_ws281X?.SetBrightness(_s0Brightness);
+				if (_s0CurrentBrightness != _s0Brightness) {
+					_ws281X?.SetBrightness(_s0Brightness);
+					_s0CurrentBrightness = _s0Brightness;
+				}
 			}
 
 			if (!_use1) {
 				return;
 			}
 
-			{
-				var scaleI = scale * _s1MaxBrightness;
-				_s1Brightness = LerpBrightness(_s1Brightness, scaleI, _s1MaxBrightness);
-				_ws281X?.SetBrightness(_s1Brightness);
-			}
-		} else {
-			if (_use0 && _s0Brightness < _s0MaxBrightness) {
-				_ws281X?.SetBrightness(LerpBrightness(_s0Brightness, _s0MaxBrightness, _s0MaxBrightness));
+			var scaleB = scale * _s1MaxBrightness;
+			_s1Brightness = LerpBrightness(_s1Brightness, scaleB, _s1MaxBrightness);
+			if (_s1CurrentBrightness == _s1Brightness) {
+				return;
 			}
 
-			if (_use1 && _s1Brightness < _s0MaxBrightness) {
-				_ws281X?.SetBrightness(LerpBrightness(_s1Brightness, _s1MaxBrightness, _s1MaxBrightness), 1);
+			_ws281X?.SetBrightness(_s1Brightness);
+			_s1CurrentBrightness = _s1Brightness;
+
+		} else {
+			
+			if (_use0 && _s0Brightness < _s0MaxBrightness) {
+				_s0CurrentBrightness = LerpBrightness(_s0Brightness, _s0MaxBrightness, _s0MaxBrightness);
+				_ws281X?.SetBrightness(_s0CurrentBrightness);
 			}
+
+			if (!_use1 || _s1Brightness >= _s0MaxBrightness) {
+				return;
+			}
+
+			_s1CurrentBrightness = LerpBrightness(_s1Brightness, _s1MaxBrightness, _s1MaxBrightness);
+			_ws281X?.SetBrightness(_s1CurrentBrightness, 1);
 		}
 	}
 

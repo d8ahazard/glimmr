@@ -40,7 +40,7 @@
     <ItemGroup>
         <PackageReference Include="AdalightNet" Version="1.0.8" />
         <PackageReference Include="AutoMapper" Version="11.0.1" />
-        <PackageReference Include="digitalhigh.rpi-ws281x-csharp" Version="1.1.8" />
+        <PackageReference Include="digitalhigh.rpi-ws281x-csharp" Version="1.1.9" />
         <PackageReference Include="DirectShowLib.Standard" Version="2.1.0" />
         <PackageReference Include="DreamScreenNet" Version="1.0.5" />
         <PackageReference Include="DasMulli.SimpleGitVersion" Version="1.0.0" PrivateAssets="All" />
