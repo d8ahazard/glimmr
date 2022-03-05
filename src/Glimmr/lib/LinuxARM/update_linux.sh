@@ -36,7 +36,7 @@ function vercomp () {
 
 arch="$(arch)"
 PUBPROFILE="Linux"
-PUBPATH="linux-arm"
+PUBPATH="linux"
 
 if [ -f "/usr/bin/raspi-config" ] && [ "$arch" == "armv71" ] 
   then

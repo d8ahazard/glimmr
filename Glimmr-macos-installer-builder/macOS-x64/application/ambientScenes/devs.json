@@ -103,7 +103,7 @@
     "#f4de94"
   ],
   "AnimationTime": 5,
-  "Mode": "Random",
+  "Mode": "Linear",
   "Easing": "Blend",
   "Name": "Devs",
   "Id": 9

@@ -32,7 +32,7 @@
   },
   "targets": {
     ".NETCoreApp,Version=v6.0": {
-      "Glimmr/1.2.3-master-0001100": {
+      "Glimmr/1.2.3-master-0001104": {
         "dependencies": {
           "AdalightNet": "1.0.8",
           "AutoMapper": "11.0.1",
@@ -79,7 +79,7 @@
           "WLED": "1.0.41",
           "Xamarin.Mac.digitalhigh": "8.3.0.41",
           "YeelightAPI": "1.10.2",
-          "digitalhigh.rpi-ws281x-csharp": "1.1.8",
+          "digitalhigh.rpi-ws281x-csharp": "1.1.9",
           "Microsoft.AspNetCore.Antiforgery": "6.0.0.0",
           "Microsoft.AspNetCore.Authentication.Abstractions.Reference": "6.0.0.0",
           "Microsoft.AspNetCore.Authentication.Cookies": "6.0.0.0",
@@ -1871,7 +1871,7 @@
           "lib/netcoreapp2.0/DeviceDiscovery.dll": {}
         }
       },
-      "digitalhigh.rpi-ws281x-csharp/1.1.8": {
+      "digitalhigh.rpi-ws281x-csharp/1.1.9": {
         "compile": {
           "lib/net6.0/rpi_ws281x.dll": {}
         }
@@ -3715,7 +3715,7 @@
       }
     },
     ".NETCoreApp,Version=v6.0/osx-x64": {
-      "Glimmr/1.2.3-master-0001100": {
+      "Glimmr/1.2.3-master-0001104": {
         "dependencies": {
           "AdalightNet": "1.0.8",
           "AutoMapper": "11.0.1",
@@ -3762,7 +3762,7 @@
           "WLED": "1.0.41",
           "Xamarin.Mac.digitalhigh": "8.3.0.41",
           "YeelightAPI": "1.10.2",
-          "digitalhigh.rpi-ws281x-csharp": "1.1.8",
+          "digitalhigh.rpi-ws281x-csharp": "1.1.9",
           "Microsoft.AspNetCore.Antiforgery": "6.0.0.0",
           "Microsoft.AspNetCore.Authentication.Abstractions.Reference": "6.0.0.0",
           "Microsoft.AspNetCore.Authentication.Cookies": "6.0.0.0",
@@ -5366,7 +5366,7 @@
           }
         }
       },
-      "digitalhigh.rpi-ws281x-csharp/1.1.8": {
+      "digitalhigh.rpi-ws281x-csharp/1.1.9": {
         "runtime": {
           "lib/net6.0/rpi_ws281x.dll": {
             "assemblyVersion": "1.1.0.0",
@@ -7535,7 +7535,7 @@
     }
   },
   "libraries": {
-    "Glimmr/1.2.3-master-0001100": {
+    "Glimmr/1.2.3-master-0001104": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
@@ -7599,12 +7599,12 @@
       "path": "devicediscovery/1.0.0",
       "hashPath": "devicediscovery.1.0.0.nupkg.sha512"
     },
-    "digitalhigh.rpi-ws281x-csharp/1.1.8": {
+    "digitalhigh.rpi-ws281x-csharp/1.1.9": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-cNO1hOdfkPazTTUXa30uqeQc97LJT09AhrOVNnJBtFmsm+N7Ol7U5kLjuv2Y5kZve/suaeQXVxf7RNgRDis34w==",
-      "path": "digitalhigh.rpi-ws281x-csharp/1.1.8",
-      "hashPath": "digitalhigh.rpi-ws281x-csharp.1.1.8.nupkg.sha512"
+      "sha512": "sha512-b5aOfWkAG4fkUHhe3Fvsct26Jbgp6m3w1ZtB7U2sW0hADfhikT8e3MVuC3teO86VaNV2ji1oU9BPxArOhvTOtQ==",
+      "path": "digitalhigh.rpi-ws281x-csharp/1.1.9",
+      "hashPath": "digitalhigh.rpi-ws281x-csharp.1.1.9.nupkg.sha512"
     },
     "DirectShowLib.Standard/2.1.0": {
       "type": "package",
