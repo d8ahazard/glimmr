@@ -16,13 +16,13 @@ namespace Glimmr.Models.ColorSource.Audio;
 
 public class AudioStream : ColorSource {
 	public bool SendColors {
-		set => FrameSplitter.DoSend = value;
+		set => Splitter.DoSend = value;
 	}
 
-	public override bool SourceActive => FrameSplitter.SourceActive;
+	public override bool SourceActive => Splitter.SourceActive;
 
-	public FrameSplitter FrameSplitter { get; }
-	private readonly FrameBuilder _builder;
+	public sealed override FrameSplitter Splitter { get; set; }
+	public sealed override FrameBuilder? Builder { get; set; }
 
 	//private float _gain;
 	private int _handle;
@@ -36,6 +36,7 @@ public class AudioStream : ColorSource {
 	private CancellationToken? _ct;
 	private bool _restart;
 	private bool _running;
+	private bool _updating;
 	private double _maxVal;
 	private int _cutoff;
 	private Dictionary<float, int> _frameData;
@@ -43,9 +44,9 @@ public class AudioStream : ColorSource {
 	public AudioStream(ColorService cs) {
 		_frameData = new Dictionary<float, int>();
 		_map = new AudioMap();
-		FrameSplitter = new FrameSplitter(cs);
+		Splitter = new FrameSplitter(cs);
 		SendColors = true;
-		_builder = new FrameBuilder(new[] {
+		Builder = new FrameBuilder(new[] {
 			4, 4, 6, 6
 		});
 		cs.ControlService.RefreshSystemEvent += RefreshSystem;
@@ -177,6 +178,8 @@ public class AudioStream : ColorSource {
 
 	private bool ProcessHandle(int handle) {
 		if (!_running) return false;
+		if (_updating) return true;
+		_updating = true;
 		var lData = new Dictionary<float, int>();
 		var level = Bass.ChannelGetLevel(handle);
 		var fft = new float[SampleSize]; // fft data buffer
@@ -192,8 +195,10 @@ public class AudioStream : ColorSource {
 			switch (res) {
 				case -1:
 					Log.Warning("Error getting channel data: " + Bass.LastError);
+					_updating = false;
 					return true;
 				case 0:
+					_updating = false;
 					return true;
 				case > 0: {
 					for (var a = 0; a < SampleSize; a++) {
@@ -206,18 +211,19 @@ public class AudioStream : ColorSource {
 						var y = Math.Sqrt(val) * 3 * 255 - 4;
 						if (y > 255) y = 255;
 						if (y < 0) y = 0;
-						if (y == 0) {
-							continue;
-						}
+						
 
 						if (_frameData.ContainsKey(freq)) {
 							var prev = _frameData[freq];
 							if (y < prev) {
-								var diff = y - prev;
-								y = prev + diff / 2;
+								y = prev - 8;
 							}
 						}
 
+						if (y == 0) {
+							continue;
+						}
+						
 						if (y > _maxVal) {
 							_maxVal = y;
 						}
@@ -238,12 +244,13 @@ public class AudioStream : ColorSource {
 			}
 		}
 		var sectors = _map.MapColors(_frameData).ToList();
-		var frame = _builder.Build(sectors);
+		var frame = Builder?.Build(sectors);
 		if (frame != null) {
-			FrameSplitter.Update(frame).ConfigureAwait(false);
+			Splitter.Update(frame).ConfigureAwait(false);
 			frame.Dispose();
 		}
 
+		_updating = false;
 		return true;
 	}
 

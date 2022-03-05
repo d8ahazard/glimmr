@@ -16,7 +16,7 @@ using static Glimmr.Models.GlimmrConstants;
 
 namespace Glimmr.Models;
 
-public class FrameBuilder {
+public class FrameBuilder : IDisposable {
 	private readonly int _bottomCount;
 
 	// This will store the coords of input values
@@ -276,5 +276,9 @@ public class FrameBuilder {
 		}
 
 		return polly;
+	}
+
+	public void Dispose() {
+		((IDisposable)_inputCoords).Dispose();
 	}
 }

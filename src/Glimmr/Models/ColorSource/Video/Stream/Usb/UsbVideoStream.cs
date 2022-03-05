@@ -117,14 +117,13 @@ public class UsbVideoStream : IVideoStream, IDisposable {
 	private void SetFrame(object? sender, EventArgs e) {
 		if (_video != null && _video.Ptr != IntPtr.Zero) {
 			using var frame = new Mat();
-			_video.Read(frame);
-			
+			_video.Read(frame);			
 			_splitter?.Update(frame);
+			frame.Dispose();
 		} else {
 			if (_splitter != null) {
 				_splitter.SourceActive = false;
 			}
-
 			Log.Debug("No frame to set...");
 		}
 	}

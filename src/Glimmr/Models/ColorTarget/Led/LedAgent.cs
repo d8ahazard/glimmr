@@ -33,13 +33,14 @@ public class LedAgent : IColorTargetAgent {
 	private bool _use1;
 	private WS281x? _ws281X;
 	private byte[] _gammaTable;
-	
+	private float _gamma;
+
 	public bool Enable => _use0 || _use1;
 
 	public LedAgent() {
 		_sd = DataUtil.GetSystemData();
-		var gamma = _sd.GammaCorrection;
-		_gammaTable = SetGammaCorrection(gamma, 255, 255);
+		_gamma = _sd.GammaCorrection;
+		_gammaTable = SetGammaCorrection(_gamma, 255, 255);
 		_colors1 = ColorUtil.EmptyColors(_d0?.LedCount ?? 0);
 		_colors2 = ColorUtil.EmptyColors(_d1?.LedCount ?? 0);
 		_sd = DataUtil.GetSystemData();
@@ -64,8 +65,8 @@ public class LedAgent : IColorTargetAgent {
 
 	public void ReloadData() {
 		_sd = DataUtil.GetSystemData();
-		var gamma = _sd.GammaCorrection;
-		_gammaTable = SetGammaCorrection(gamma, 255, 255);
+		_gamma = _sd.GammaCorrection;
+		_gammaTable = SetGammaCorrection(_gamma, 255, 255);
 		LedData? d0 = DataUtil.GetDevice<LedData>("0");
 		LedData? d1 = DataUtil.GetDevice<LedData>("1");
 		if (!SystemUtil.IsRaspberryPi() || d0 == null || d1 == null) {
@@ -279,7 +280,6 @@ public class LedAgent : IColorTargetAgent {
 			_s1CurrentBrightness = _s1Brightness;
 
 		} else {
-			
 			if (_use0 && _s0Brightness < _s0MaxBrightness) {
 				_s0CurrentBrightness = LerpBrightness(_s0Brightness, _s0MaxBrightness, _s0MaxBrightness);
 				_ws281X?.SetBrightness(_s0CurrentBrightness);
@@ -318,7 +318,8 @@ public class LedAgent : IColorTargetAgent {
 			toSend = toSend.Reverse().ToArray();
 		}
 		for (var i = 0; i < toSend.Length; i++) {
-			toSend[i] = Color.FromArgb(_gammaTable[toSend[i].R], _gammaTable[toSend[i].G], _gammaTable[toSend[i].B]);
+			toSend[i] = ColorUtil.AdjustGamma(toSend[i]); 
+			//toSend[i] = Color.FromArgb(_gammaTable[toSend[i].R], _gammaTable[toSend[i].G], _gammaTable[toSend[i].B]);
 		}
 		
 		if (data.StripType == 1) {

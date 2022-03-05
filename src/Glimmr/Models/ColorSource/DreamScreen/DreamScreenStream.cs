@@ -18,12 +18,12 @@ using GlimmrMode = Glimmr.Enums.DeviceMode;
 namespace Glimmr.Models.ColorSource.DreamScreen;
 
 public class DreamScreenStream : ColorSource {
-	public override bool SourceActive => _splitter.SourceActive;
+	public override bool SourceActive => Splitter.SourceActive;
 	private const int TargetGroup = 20;
-	private readonly FrameBuilder _builder;
+	public sealed override FrameBuilder? Builder { get; set; }
 	private readonly DreamScreenClient? _client;
 	private readonly ColorService _cs;
-	private readonly FrameSplitter _splitter;
+	public sealed override FrameSplitter Splitter { get; set; }
 	private DreamDevice? _dDev;
 	private IPAddress? _targetDreamScreen;
 
@@ -37,8 +37,8 @@ public class DreamScreenStream : ColorSource {
 		}
 
 		var rect = new[] { 3, 3, 5, 5 };
-		_builder = new FrameBuilder(rect, true);
-		_splitter = new FrameSplitter(colorService);
+		Builder = new FrameBuilder(rect, true);
+		Splitter = new FrameSplitter(colorService);
 		_cs.ControlService.RefreshSystemEvent += RefreshSystem;
 		RefreshSystem();
 	}
@@ -48,7 +48,7 @@ public class DreamScreenStream : ColorSource {
 			return Task.CompletedTask;
 		}
 
-		_splitter.DoSend = true;
+		Splitter.DoSend = true;
 		Log.Debug("Starting DS stream, Target is " + _targetDreamScreen + " group is " + TargetGroup);
 		_client.StartSubscribing(_targetDreamScreen);
 		_client.SetMode(_dDev, DeviceMode.Off);
@@ -135,7 +135,7 @@ public class DreamScreenStream : ColorSource {
 			_client.ColorsReceived += UpdateColors;
 		}
 
-		_splitter.DoSend = true;
+		Splitter.DoSend = true;
 		while (!stoppingToken.IsCancellationRequested) {
 			await Task.Delay(1, stoppingToken);
 		}
@@ -146,18 +146,18 @@ public class DreamScreenStream : ColorSource {
 			_client.ColorsReceived -= UpdateColors;
 		}
 
-		_splitter.DoSend = false;
+		Splitter.DoSend = false;
 		Log.Debug("DS stream service stopped.");
 	}
 
 	private void UpdateColors(object? sender, DreamScreenClient.DeviceColorEventArgs e) {
 		var colors = e.Colors;
-		var frame = _builder.Build(colors);
+		var frame = Builder?.Build(colors);
 		if (frame == null) {
 			return;
 		}
 
-		_splitter.Update(frame).ConfigureAwait(false);
+		Splitter.Update(frame).ConfigureAwait(false);
 		frame.Dispose();
 	}
 }

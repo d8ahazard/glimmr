@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,6 +34,9 @@ public class ColorService : BackgroundService {
 	private readonly Dictionary<string, ColorSource> _streams;
 	private readonly Stopwatch _watch;
 
+	private Dictionary<long, Color[]> _recording;
+	private Stopwatch _recordWatch;
+	public bool Recording { get; set; }
 	private bool _autoDisabled;
 	private bool _testing;
 	private int _autoDisableDelay;
@@ -59,6 +63,8 @@ public class ColorService : BackgroundService {
 	public ColorService() {
 		ControlService.GetInstance().ColorService = this;
 		_watch = new Stopwatch();
+		_recordWatch = new Stopwatch();
+		_recording = new Dictionary<long, Color[]>();
 		_loopWatch = new Stopwatch();
 		_streamTokenSource = new CancellationTokenSource();
 		_targetTokenSource = new CancellationTokenSource();
@@ -132,6 +138,7 @@ public class ColorService : BackgroundService {
 		StopServices().ConfigureAwait(true);
 		DataUtil.Dispose();
 		Log.Information("Color service stopped.");
+		_splitter.Dispose();
 		base.StopAsync(cancellationToken);
 		return Task.CompletedTask;
 	}
@@ -231,6 +238,7 @@ public class ColorService : BackgroundService {
 		}
 		
 		var (colors, sectors) = _splitter.Update(tMat).Result;
+		tMat.Dispose();
 		await SendColors(colors, sectors, true);
 		await Task.Delay(500);
 		await SendColors(emptyColors, emptySectors, true);
@@ -239,6 +247,7 @@ public class ColorService : BackgroundService {
 		await Task.Delay(1000);
 		await SendColors(emptyColors, emptySectors, true);
 		_testing = false;
+		builder.Dispose();
 		Log.Debug("Sector flash complete.");
 	}
 
@@ -387,19 +396,24 @@ public class ColorService : BackgroundService {
 				var progress = pi / ledCount;
 				var rCol = ColorUtil.Rainbow(progress);
 				cols[i] = rCol;
-				var (colors, sectors) = _splitter.Update(builder.Build(cols)).Result;				
-				try {
-					await SendColors(colors, sectors, true).ConfigureAwait(false);
-				} catch (Exception e) {
-					Log.Warning("SEND EXCEPTION: " + JsonConvert.SerializeObject(e));
-				}
+				var frame = builder.Build(cols);
+				if (frame != null) {
+					var (colors, sectors) = _splitter.Update(frame).Result;
+					frame.Dispose();
+					try {
+						await SendColors(colors, sectors, true).ConfigureAwait(false);
+					} catch (Exception e) {
+						Log.Warning("SEND EXCEPTION: " + JsonConvert.SerializeObject(e));
+					}
+				}								
+				
 				i++;
 			}
 			_splitter.DoSend = true;
 		} catch (Exception f) {
 			Log.Warning("Outer demo exception: " + f.Message);
 		}
-
+		builder.Dispose();
 		await Task.Delay(500);
 	}
 
@@ -668,6 +682,10 @@ public class ColorService : BackgroundService {
 				await ColorSendEventAsync
 					.InvokeAsync(this, new ColorSendEventArgs(colors, sectors))
 					.ConfigureAwait(false);
+				if (Recording) {
+					var time = _recordWatch.ElapsedMilliseconds;
+					_recording[time] = sectors;
+				}
 				Counter.Tick("source");
 			} catch (Exception e) {
 				Log.Warning("Exception: " + e.Message + " at " + e.StackTrace);
@@ -693,6 +711,10 @@ public class ColorService : BackgroundService {
 		//_frameWatch.Stop();
 		_streamTokenSource.Cancel();
 		CancelSource(_targetTokenSource, true);
+		foreach (var (_, svc) in _streams) {
+			svc.Splitter.Dispose();
+			svc.Builder?.Dispose();
+		}
 		foreach (var s in _sDevices) {
 			try {
 				s.Dispose();
@@ -724,6 +746,38 @@ public class ColorService : BackgroundService {
 		}
 
 		_sDevices = devs.ToArray();
+	}
+
+	public void StartRecording() {
+		if (Recording) {
+			Log.Debug("Recording already in progress.");
+		}
+
+		_recording = new Dictionary<long, Color[]>();
+		var rts = new CancellationTokenSource();
+		rts.CancelAfter(TimeSpan.FromSeconds(30));
+		Task.Run(async () => {
+			Log.Debug("Starting recording...");
+			_recordWatch.Restart();
+			Recording = true;
+			while (!rts.IsCancellationRequested) {
+				await Task.Delay(500, CancellationToken.None);
+			}
+
+			_recordWatch.Stop();
+			Log.Debug("Recording completed.");
+			Recording = false;
+			var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+			try {
+				var userDir = SystemUtil.GetUserDir();
+				var path = Path.Join(userDir, "rec" + timestamp + ".rec");
+				await File.WriteAllTextAsync(path,
+					JsonConvert.SerializeObject(_recording), CancellationToken.None);
+				Log.Debug("Recording saved to " + path);
+			} catch (Exception e) {
+				Log.Warning("Exception saving rec file: " + e.Message);
+			}
+		}, CancellationToken.None);
 	}
 }
 

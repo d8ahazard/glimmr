@@ -19,13 +19,13 @@ namespace Glimmr.Models.ColorSource.Video;
 public class VideoStream : ColorSource {
 	// should we send them to devices?
 	public bool SendColors {
-		set => FrameSplitter.DoSend = value;
+		set => Splitter.DoSend = value;
 	}
 
-	public override bool SourceActive => FrameSplitter.SourceActive;
-
-	public FrameSplitter FrameSplitter { get; }
-
+	public override bool SourceActive => Splitter.SourceActive;
+	public sealed override FrameSplitter Splitter { get; set; }
+	
+	public sealed override FrameBuilder? Builder { get; set; }
 
 	// Loaded data
 	private CameraType _camType;
@@ -41,7 +41,7 @@ public class VideoStream : ColorSource {
 	public VideoStream(ColorService colorService) {
 		_systemData = DataUtil.GetSystemData();
 		colorService.ControlService.RefreshSystemEvent += RefreshSystem;
-		FrameSplitter = new FrameSplitter(colorService, true);
+		Splitter = new FrameSplitter(colorService, true);
 		SendColors = true;
 	}
 
@@ -70,7 +70,7 @@ public class VideoStream : ColorSource {
 				return;
 			}
 
-			await _vc.Start(FrameSplitter, ct);
+			await _vc.Start(Splitter, ct);
 			while (!ct.IsCancellationRequested) {
 				await Task.Delay(10, CancellationToken.None);
 			}

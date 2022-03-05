@@ -69,6 +69,20 @@ public class SocketServer : Hub {
 		await _cs.AuthorizeDevice(id, sender);
 	}
 
+	public async Task StartRecording() {
+		if (_cs == null) {
+			Log.Debug("NO CONTROL SERVICE!");
+			return;
+		}
+
+		if (_cs.ColorService.Recording) {
+			return;
+		}
+
+		_cs.ColorService.StartRecording();
+		await Clients.Caller.SendAsync("recStarted");
+	}
+
 	public async Task Store() {
 		if (_cs == null) {
 			Log.Debug("NO CONTROL SERVICE!");

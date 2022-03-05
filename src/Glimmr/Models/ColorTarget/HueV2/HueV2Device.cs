@@ -226,6 +226,7 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 			return Task.CompletedTask;
 		}
 
+		
 		foreach (var entLight in _entLayer) {
 			//Get data for our light from map
 			var lightData = _group.Services.SingleOrDefault(item =>
@@ -242,12 +243,11 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 				Log.Debug("NO TARGET!!");
 				continue;
 			}
-			
 			var color = sectorColors[target - 1];
 			var mb = lightData.Override ? lightData.Brightness : _brightness;
 			color = ColorUtil.ClampBrightness(color, mb);
 			var oColor = new RGBColor(color.R, color.G, color.B);
-			entLight.SetState(_ct, oColor, null);
+			entLight.SetState(_ct, oColor, mb);
 		}
 
 		return Task.CompletedTask;

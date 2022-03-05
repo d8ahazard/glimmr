@@ -22,7 +22,7 @@ using Color = System.Drawing.Color;
 
 namespace Glimmr.Models;
 
-public class FrameSplitter {
+public class FrameSplitter : IDisposable {
 	// Do we send our frame data to the UI?
 	public bool DoSend {
 		set {
@@ -366,6 +366,7 @@ public class FrameSplitter {
 			for (var i = 0; i < _fullSectors.Length; i++) {
 				var sub = new Mat(clone, _fullSectors[i]);
 				sectorColors[i] = GetAverage(sub);
+				sub.Dispose();
 			}
 		}
 
@@ -883,6 +884,11 @@ public class FrameSplitter {
 		}
 
 		return fs;
+	}
+
+	public void Dispose() {
+		_lockTarget?.Dispose();
+		_cropTimer.Dispose();
 	}
 }
 

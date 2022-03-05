@@ -15,18 +15,22 @@ using Serilog;
 namespace Glimmr.Models.ColorSource.AudioVideo;
 
 public class AudioVideoStream : ColorSource {
-	public override bool SourceActive => _vs != null && _vs.FrameSplitter.SourceActive;
+	public override bool SourceActive => _vs != null && _vs.Splitter.SourceActive;
 	
 	private readonly ColorService _cs;
+	public sealed override FrameSplitter Splitter { get; set; } 
 	private AudioStream? _as;
 	private Task? _aTask;
 	private bool _doSave;
 	private SystemData _systemData;
 	private VideoStream? _vs;
 	private Task? _vTask;
+	public sealed override FrameBuilder? Builder { get; set; }
 
 	public AudioVideoStream(ColorService cs) {
 		_cs = cs;
+		var vS = (ColorSource?) _cs.GetStream(DeviceMode.Video.ToString());
+		Splitter = vS != null ? vS.Splitter : new FrameSplitter(cs);
 		_systemData = DataUtil.GetSystemData();
 		_cs.ControlService.RefreshSystemEvent += RefreshSystem;
 		_cs.FrameSaveEvent += TriggerSave;
@@ -82,10 +86,10 @@ public class AudioVideoStream : ColorSource {
 
 					continue;
 				}
-				var vCols = _vs.FrameSplitter.GetColors();
-				var vSecs = _vs.FrameSplitter.GetSectors();
-				var aCols = _as.FrameSplitter.GetColors();
-				var aSecs = _as.FrameSplitter.GetSectors();
+				var vCols = _vs.Splitter.GetColors();
+				var vSecs = _vs.Splitter.GetSectors();
+				var aCols = _as.Splitter.GetColors();
+				var aSecs = _as.Splitter.GetSectors();
 				if (vCols.Length == 0 || vCols.Length != aCols.Length || vSecs.Length == 0 ||
 				    vSecs.Length != aSecs.Length) {
 					continue;
@@ -108,7 +112,7 @@ public class AudioVideoStream : ColorSource {
 				if (_doSave && _cs.ControlService.SendPreview) {
 					_doSave = false;
 					Log.Debug("Merge...");
-					_vs.FrameSplitter.MergeFrame(oCols, oSecs);
+					_vs.Splitter.MergeFrame(oCols, oSecs);
 				}
 				await Task.Delay(16, CancellationToken.None);
 			}

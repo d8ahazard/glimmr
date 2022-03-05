@@ -10,6 +10,8 @@ using System.Linq;
 namespace Glimmr.Models.Util;
 
 public static class ColorUtil {
+
+	public static byte[]? _gammaTable;
 	/// <summary>
 	///     Take a n-color list, and convert down to 12 for DS
 	/// </summary>
@@ -46,10 +48,10 @@ public static class ColorUtil {
 			offset = input.Length - Math.Abs(offset);
 		}
 
-		var output = EmptyColors(len);
+		var output = new Color[len];
 		var total = Convert.ToInt32((len + offset) * multiplier);
 
-		var doubled = EmptyColors(total);
+		var doubled = new Color[total];
 		var dIdx = 0;
 		while (dIdx < total) {
 			foreach (var t in input) {
@@ -238,6 +240,41 @@ public static class ColorUtil {
 
 		return Color.FromArgb(color.A, (int)red, (int)green, (int)blue);
 	}
+	
+	public static Color AdjustGamma(Color color) {
+		if (_gammaTable == null) {
+			var sd = DataUtil.GetSystemData();
+			var gc = sd.GammaCorrection;
+			_gammaTable = GammaTable(gc);
+		}
+		var red = (float)color.R;
+		var green = (float)color.G;
+		var blue = (float)color.B;
+
+		var existing = (int)(color.GetBrightness() * 255);
+		var brightness = _gammaTable[existing];
+		if (existing == brightness) return color;
+		if (existing > brightness) {
+			var diff = existing - brightness;
+			red -= diff;
+			green -= diff;
+			blue -= diff;
+			red = Math.Max(red, 0);
+			green = Math.Max(green, 0);
+			blue = Math.Max(blue, 0);
+			return Color.FromArgb(color.A, (int)red, (int)green, (int)blue);
+		} else {
+			var diff = brightness - existing;
+			red += diff;
+			green += diff;
+			blue += diff;
+			red = Math.Min(red, 255);
+			green = Math.Min(green, 255);
+			blue = Math.Min(blue, 255);
+		
+			return Color.FromArgb(color.A, (int)red, (int)green, (int)blue);	
+		}
+	}
 
 
 	public static Color[] FillArray(Color input, int len) {
@@ -283,13 +320,22 @@ public static class ColorUtil {
 		return output;
 	}
 
-	public static byte[] GammaTable(float factor) {
-		var output = new byte[256];
+	public static byte[] GammaTable(float gamma) {
+		var GammaCorrection = new byte[256];
+		var logBS = new int[256];
 		for (var i = 0; i < 256; i++) {
-			output[i] = (byte)(Math.Pow(i / (float)256, factor) * 256 + 0.5);
+			GammaCorrection[i] = (byte) i;
+			logBS[i] = i;
 		}
-
-		return output;
+		
+		if (gamma > 1.0f)
+		{
+			for (var i = 0; i < 256; i++) {
+				GammaCorrection[i] = (byte)(Math.Pow(i / (float)255, gamma) * 255 + 0.5);
+				logBS[i] = GammaCorrection[i];
+			}
+		}
+		return GammaCorrection;
 	}
 
 	public static float HueFromFrequency(float frequency, int octave) {

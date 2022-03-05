@@ -19,12 +19,13 @@ namespace Glimmr.Models.ColorSource.Ambient {
 	public class AmbientStream : ColorSource {
 		private const int SectorCount = 120;
 		private readonly Random _random;
-		private readonly FrameSplitter _splitter;
+		public sealed override FrameSplitter Splitter { get; set; }
+		public sealed override FrameBuilder? Builder { get; set; }
+
 		private readonly Stopwatch _watch;
 		private string _ambientColor;
 		private int _ambientScene;
 		private double _animationTime;
-		private readonly FrameBuilder _builder;
 		private int _colorIndex;
 		private Color[] _currentColors;
 		private EasingMode _easingMode;
@@ -32,11 +33,14 @@ namespace Glimmr.Models.ColorSource.Ambient {
 		private AnimationMode _mode;
 		private Color[] _nextColors;
 		private Color[] _sceneColors;
+		private Color[] _emptyColors;
 		private readonly Timer _sceneTimer;
 		private List<AmbientScene> _scenes;
+		private bool _sending;
 	
 		public AmbientStream(ColorService colorService) {
 			_ambientColor = "#FFFFFF";
+			_emptyColors = ColorUtil.EmptyColors(SectorCount);
 			_currentColors = Array.Empty<Color>();
 			_nextColors = Array.Empty<Color>();
 			_sceneColors = Array.Empty<Color>();
@@ -44,8 +48,8 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			_random = new Random();
 			_loader = new JsonLoader("ambientScenes");
 			_scenes = _loader.LoadFiles<AmbientScene>();
-			_builder = new FrameBuilder(new[] { 20, 20, 40, 40 });
-			_splitter = new FrameSplitter(colorService);
+			Builder = new FrameBuilder(new[] { 20, 20, 40, 40 });
+			Splitter = new FrameSplitter(colorService);
 			colorService.ControlService.RefreshSystemEvent += RefreshSystem;
 			var interval = 16.65d;
 			var total = StatUtil.GetMemory(true);
@@ -62,7 +66,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 		}
 
 		
-		public override bool SourceActive => _splitter.SourceActive;
+		public override bool SourceActive => Splitter.SourceActive;
 
 		
 		#region Data
@@ -97,32 +101,20 @@ namespace Glimmr.Models.ColorSource.Ambient {
 
 			// Load our array of hex color strings to the _sceneColors variable
 			var colorStrings = scene.Colors;
-			if (colorStrings != null) {
-				_sceneColors = new Color[colorStrings.Length];
-				for (var i = 0; i < _sceneColors.Length; i++) {
-					_sceneColors[i] = ColorTranslator.FromHtml(colorStrings[i]);
-				}
-			} else {
-				Log.Warning("Color strings are null.");
+			_sceneColors = new Color[colorStrings.Length];
+			for (var i = 0; i < _sceneColors.Length; i++) {
+				_sceneColors[i] = ColorTranslator.FromHtml(colorStrings[i]);
 			}
-
 			// Set animation time to milliseconds
 			_animationTime = scene.AnimationTime * 1000f;
 
 			_easingMode = EasingMode.Blend;
 			// Load easing mode
-			if (scene.Easing != null) {
-				_easingMode = Enum.Parse<EasingMode>(scene.Easing);
-			}
-
+			_easingMode = Enum.Parse<EasingMode>(scene.Easing);
+			
 			_mode = AnimationMode.Linear;
-			// Load color mode
-			if (scene.Mode != null) {
-				_mode = Enum.Parse<AnimationMode>(scene.Mode);
-			} else {
-				Log.Warning("Unable to parse scene mode: ");
-			}
-
+			_mode = Enum.Parse<AnimationMode>(scene.Mode);
+			
 			// Set color index 
 			_colorIndex = 0;
 			
@@ -143,7 +135,7 @@ namespace Glimmr.Models.ColorSource.Ambient {
 		
 		protected override Task ExecuteAsync(CancellationToken ct) {
 			RefreshSystem();
-			_splitter.DoSend = true;
+			Splitter.DoSend = true;
 			return Task.Run(async () => {
 				_sceneTimer.Enabled = true;
 				_watch.Start();
@@ -152,12 +144,14 @@ namespace Glimmr.Models.ColorSource.Ambient {
 				}
 				_sceneTimer.Enabled = false;
 				_watch.Stop();
-				_splitter.DoSend = false;
+				Splitter.DoSend = false;
 				Log.Information("Ambient stream service stopped.");
 			}, CancellationToken.None);
 		}	
 		
 		private void UpdateColors(object? sender, ElapsedEventArgs args) {
+			if (_sending) return;
+			_sending = true;
 			var sectors = new Color[SectorCount];
 			// Load this one for fading
 			var elapsed = _watch.ElapsedMilliseconds;
@@ -185,8 +179,8 @@ namespace Glimmr.Models.ColorSource.Ambient {
 					sectors = _easingMode switch {
 						EasingMode.Blend => _currentColors,
 						EasingMode.FadeOut => _currentColors,
-						EasingMode.FadeIn => ColorUtil.EmptyColors(SectorCount),
-						EasingMode.FadeInOut => ColorUtil.EmptyColors(SectorCount),
+						EasingMode.FadeIn => _emptyColors,
+						EasingMode.FadeInOut => _emptyColors,
 						_ => sectors
 					};
 					_watch.Restart();
@@ -197,12 +191,8 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			}
 
 			try {
-				if (_builder == null) {
-					return;
-				}
-
-				var frame = _builder.Build(sectors);
-				_splitter.Update(frame).ConfigureAwait(false);
+				var frame = Builder.Build(sectors);
+				Splitter.Update(frame).ConfigureAwait(true);
 				frame?.Dispose();
 						
 						
@@ -210,6 +200,8 @@ namespace Glimmr.Models.ColorSource.Ambient {
 			} catch (Exception e) {
 				Log.Warning("EX: " + e.Message);
 			}
+
+			_sending = false;
 		}
 
 					
