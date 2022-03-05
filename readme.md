@@ -57,7 +57,11 @@ wget -qO- https://raw.githubusercontent.com/d8ahazard/glimmr/master/script/setup
 
 *Alternatively*, you can flash a custom image directly to your pi from here:
 
-https://mega.nz/file/iuwQESYL#herJGmGqMvsfsc8UVy_q5aGosUzZJBSIUDo0ZlzkeaQ
+Full Raspi OS image can be found here: 
+
+X64: https://mega.nz/file/7mQi2LzI#_GuzOiBSl3TT9G7la7b0vk7tA844t0dIfgyZJH864G4
+X86: https://mega.nz/file/ryYExJSI#SEKZchp-Q9nauYCYnF7pq86HAun_hyVx6YR53PK5Qxg
+
 
 You will need to use "BalenaEtcher", a free software for flashing the image.
 
