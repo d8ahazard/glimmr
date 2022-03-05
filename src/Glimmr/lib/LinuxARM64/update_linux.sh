@@ -36,7 +36,7 @@ function vercomp () {
 
 arch="$(arch)"
 PUBPROFILE="Linux"
-PUBPATH="linux-arm"
+PUBPATH="linux"
 
 if [ -f "/usr/bin/raspi-config" ] && [ "$arch" == "armv71" ] 
   then
@@ -87,18 +87,20 @@ if [ -f "/etc/Glimmr/version" ]
     fi
 fi
 
+cd /tmp || exit
 echo "Updating glimmr to version $ver." >> $log
+url="https://github.com/d8ahazard/glimmr/releases/download/$ver/Glimmr-$PUBPATH-$ver.tgz"
+echo "Grabbing archive from $url" >> $log
+wget -O archive.tgz "$url"
 #Stop service
 echo "Stopping glimmr services..." >> $log
 service glimmr stop
 echo "Services stopped." >> $log
-
-cd /tmp || exit
-url="https://github.com/d8ahazard/glimmr/releases/download/$ver/Glimmr-$PUBPATH-$ver.tgz"
-echo "Grabbing archive from $url" >> $log
-wget -O archive.tgz "$url"
+echo "Extracting archive..." >> $log
 tar zxvf ./archive.tgz -C /usr/share/Glimmr/
+echo "Setting permissions..." >> $log
 chmod -R 777 /usr/share/Glimmr/
+echo "Cleanup..." >> $log
 rm ./archive.tgz
 echo "Update completed." >> $log
 echo "$ver" > /etc/Glimmr/version

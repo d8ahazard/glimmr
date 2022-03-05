@@ -28,6 +28,8 @@ public class FrameSplitter : IDisposable {
 		set {
 			_doSend = value;
 			if (_doSend) {
+				_lCropCounter.Clear();
+				_pillarCropCounter.Clear();
 				_cropTimer.Start();
 			} else {
 				_cropTimer.Stop();	
@@ -605,9 +607,9 @@ public class FrameSplitter : IDisposable {
 				var c1 = gr.Row(height - y);
 				var c2 = gr.Row(y);
 				var b1 = c1.GetRawData().SkipLast(8).Skip(8).ToArray();
-				var b2 = c1.GetRawData().SkipLast(8).Skip(8).ToArray();
+				var b2 = c2.GetRawData().SkipLast(8).Skip(8).ToArray();
 				var l1 = Sum(b1) / b1.Length;
-				var l2 = Sum(b2) / b1.Length;
+				var l2 = Sum(b2) / b2.Length;
 				c1.Dispose();
 				c2.Dispose();
 				if (l1 <= _cropBlackLevel && l2 <= _cropBlackLevel && l1==l2) {
@@ -629,9 +631,9 @@ public class FrameSplitter : IDisposable {
 				var c1 = gr.Col(width - x);
 				var c2 = gr.Col(x);
 				var b1 = c1.GetRawData().SkipLast(8).Skip(8).ToArray();
-				var b2 = c1.GetRawData().SkipLast(8).Skip(8).ToArray();
+				var b2 = c2.GetRawData().SkipLast(8).Skip(8).ToArray();
 				var l1 = Sum(b1) / b1.Length;
-				var l2 = Sum(b2) / b1.Length;
+				var l2 = Sum(b2) / b2.Length;
 				c1.Dispose();
 				c2.Dispose();
 				if (l1 <= _cropBlackLevel && l2 <= _cropBlackLevel && l1 == l2) {
