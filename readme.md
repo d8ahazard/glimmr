@@ -59,7 +59,8 @@ wget -qO- https://raw.githubusercontent.com/d8ahazard/glimmr/master/script/setup
 
 Full Raspi OS image can be found here: 
 
-X64: https://mega.nz/file/7mQi2LzI#_GuzOiBSl3TT9G7la7b0vk7tA844t0dIfgyZJH864G4
+X64: https://mega.nz/file/fqoiQYLJ#KvpQTGfMSyb2h3FPpyaf2qCD838HXZTe3E-UlCpvqQA
+
 X86: https://mega.nz/file/ryYExJSI#SEKZchp-Q9nauYCYnF7pq86HAun_hyVx6YR53PK5Qxg
 
 
