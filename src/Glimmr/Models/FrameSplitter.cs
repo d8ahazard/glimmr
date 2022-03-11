@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Timers;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
+using Emgu.CV.IntensityTransform;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using Glimmr.Enums;
@@ -47,6 +48,8 @@ public class FrameSplitter : IDisposable {
 	private readonly List<VectorOfPoint> _targets;
 	private readonly bool _useCrop;
 	private bool _allBlack;
+	private bool _correctGamma;
+	private float _gammaCorrection;
 	private int _blackLevel;
 	private int _bottomCount;
 
@@ -122,6 +125,8 @@ public class FrameSplitter : IDisposable {
 		_empty = Array.Empty<Color>();
 		_emptySectors = _empty;
 		var sd = DataUtil.GetSystemData();
+		_gammaCorrection = sd.GammaCorrection;
+		_correctGamma = _useCrop && _gammaCorrection > 1;
 		_cropDelay = sd.CropDelay;
 		cs.ControlService.RefreshSystemEvent += RefreshSystem;
 		cs.FrameSaveEvent += TriggerSave;
@@ -350,6 +355,13 @@ public class FrameSplitter : IDisposable {
 			return (Array.Empty<Color>(), Array.Empty<Color>());
 		}
 
+		var corrected = clone;
+		
+		if (_correctGamma) {
+			IntensityTransformInvoke.GammaCorrection(clone, corrected, _gammaCorrection);
+			clone = corrected;
+		}
+
 		if (_useCrop && _checkCrop) {
 			await CheckCrop(clone).ConfigureAwait(false);
 			_checkCrop = false;
@@ -389,6 +401,7 @@ public class FrameSplitter : IDisposable {
 		// Dispose
 		frame.Dispose();
 		clone.Dispose();
+		corrected.Dispose();
 		return (_colorsLed, _colorsSectors);
 	}
 

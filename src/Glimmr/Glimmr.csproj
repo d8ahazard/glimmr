@@ -37,6 +37,7 @@
         <DebugType>full</DebugType>
     </PropertyGroup>
 
+    
     <ItemGroup>
         <PackageReference Include="AdalightNet" Version="1.0.8" />
         <PackageReference Include="AutoMapper" Version="11.0.1" />
@@ -170,7 +171,8 @@
             systemctl start glimmr.service
         </PostInstallScript>
     </PropertyGroup>
-
+    
+    
     <!-- Linux Pre-remove -->
     <PropertyGroup>
         <PreRemoveScript>

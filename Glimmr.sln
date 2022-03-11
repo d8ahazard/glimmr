@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Glimmr", "./src/Glimmr/Glim
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GlimmrTray", "./src/GlimmrTray/GlimmrTray.csproj", "{F27D4BA2-9D49-48E2-9948-89EFFF8C029B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Image2Scene", "./src/Image2Scene/Image2Scene.csproj", "{5BA67998-79C5-4E9B-BADB-3A8E8A4FDAAC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,6 +27,10 @@ Global
 		{F27D4BA2-9D49-48E2-9948-89EFFF8C029B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F27D4BA2-9D49-48E2-9948-89EFFF8C029B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F27D4BA2-9D49-48E2-9948-89EFFF8C029B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5BA67998-79C5-4E9B-BADB-3A8E8A4FDAAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5BA67998-79C5-4E9B-BADB-3A8E8A4FDAAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5BA67998-79C5-4E9B-BADB-3A8E8A4FDAAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5BA67998-79C5-4E9B-BADB-3A8E8A4FDAAC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

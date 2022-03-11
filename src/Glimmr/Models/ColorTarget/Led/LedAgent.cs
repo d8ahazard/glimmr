@@ -317,10 +317,10 @@ public class LedAgent : IColorTargetAgent {
 		if (data.ReverseStrip) {
 			toSend = toSend.Reverse().ToArray();
 		}
-		for (var i = 0; i < toSend.Length; i++) {
-			toSend[i] = ColorUtil.AdjustGamma(toSend[i]); 
-			//toSend[i] = Color.FromArgb(_gammaTable[toSend[i].R], _gammaTable[toSend[i].G], _gammaTable[toSend[i].B]);
-		}
+		// for (var i = 0; i < toSend.Length; i++) {
+		// 	toSend[i] = ColorUtil.AdjustGamma(toSend[i]); 
+		// 	//toSend[i] = Color.FromArgb(_gammaTable[toSend[i].R], _gammaTable[toSend[i].G], _gammaTable[toSend[i].B]);
+		// }
 		
 		if (data.StripType == 1) {
 			for (var i = 0; i < toSend.Length; i++) {

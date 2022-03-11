@@ -9,6 +9,8 @@ src/Glimmr/bin/*
 src/Glimmr/obj/*
 src/GlimmrTray/bin/*
 src/GlimmrTray/obj/*
+src/Image2Scene/bin/*
+src/Image2Scene/obj/*
 packages/*
 store.db*
 CodeGraphData/*

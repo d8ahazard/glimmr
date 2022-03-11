@@ -1,11 +1,11 @@
-﻿#region
+﻿namespace Image2Scene; 
+#region
 
 using System;
 using Newtonsoft.Json;
 
 #endregion
 
-namespace Glimmr.Models.ColorSource.Ambient;
 
 [Serializable]
 public class AmbientScene {

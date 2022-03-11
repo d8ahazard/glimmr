@@ -16,5 +16,6 @@
   "RotationSpeed": 0.005,
   "RotationThreshold": 0.85,
   "Id": 4,
-  "Name": "Corners"
+  "Name": "Corners",
+  "System": true
 }

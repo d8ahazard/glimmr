@@ -555,6 +555,10 @@ function setSocketListeners() {
         if (isValid(parsed)) {
             console.log("Loading data: ", parsed);
             data.load(parsed);
+            let ambientForm = document.getElementById("ambientForm");
+            let audioForm = document.getElementById("audioForm");
+            audioForm.reset();
+            ambientForm.reset();
         }
     });
 

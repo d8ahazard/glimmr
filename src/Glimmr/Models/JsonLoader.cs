@@ -50,11 +50,17 @@ public class JsonLoader {
 
 		try {
 			var scene = JsonConvert.DeserializeObject<AudioScene>(json);
+			var fileName = scene.Name.Replace(" ", "").ToLowerInvariant();
 			var scenes = LoadFiles<AudioScene>();
+			foreach (var exScene in scenes.Where(exScene => !exScene.System).Where(exScene => exScene.Name == scene.Name)) {
+				Log.Debug("Updating existing user audio scene.");
+				scene.Id = exScene.Id;
+				return SaveJson(scene, fileName, "audioScenes");
+			}
 			ids.AddRange(scenes.Select(sc => sc.Id));
 			if (ids.Count > 0) {
 				scene.Id = ids.Max() + 1;
-				return SaveJson(scene, scene.Name, "audioScenes");
+				return SaveJson(scene, fileName, "audioScenes");
 			}
 		} catch (Exception) {
 			Log.Debug("Can't import JSON as audio scene.");
@@ -63,15 +69,28 @@ public class JsonLoader {
 		try {
 			var scene = JsonConvert.DeserializeObject<AmbientScene>(json);
 			if (scene == null) {
-				Log.Warning("Unable to import scene as ambient.");
+				Log.Warning("Unable to import scene as ambient either.");
 				return false;
 			}
+			var fileName = scene.Name.Replace(" ", "").ToLowerInvariant();
 
 			var scenes = LoadFiles<AmbientScene>();
+			foreach (var exScene in scenes) {
+				if (exScene.System) {
+					Log.Debug($"{exScene.Name} is system, skipping.");
+					continue;
+				}
+
+				if (exScene.Name == scene.Name) {
+					Log.Debug("Updating existing user ambient scene: " + scene.Name);
+					scene.Id = exScene.Id;
+					return SaveJson(scene, fileName, "ambientScenes");
+				}
+			}
 			ids.AddRange(scenes.Select(sc => sc.Id));
 			if (ids.Count > 0) {
 				scene.Id = ids.Max() + 1;
-				return SaveJson(scene, scene.Name, "ambientScenes");
+				return SaveJson(scene, fileName, "ambientScenes");
 			}
 		} catch (Exception) {
 			Log.Debug("Can't import JSON as audio scene.");
@@ -97,7 +116,7 @@ public class JsonLoader {
 		var filePath = Path.Join(userPath, $"{name}.json");
 		Log.Debug("Saving scene to " + filePath);
 		try {
-			File.WriteAllText(filePath, JsonConvert.SerializeObject(scene));
+			File.WriteAllText(filePath, JsonConvert.SerializeObject(scene, Formatting.Indented));
 			return true;
 		} catch (Exception) {
 			Log.Warning("Exception saving file to " + filePath);

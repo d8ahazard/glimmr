@@ -13,27 +13,7 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf;
 
 [Serializable]
 public class NanoleafData : IColorTargetData {
-	/// <summary>
-	///     Mirror layout horizontally.
-	/// </summary>
-	[DefaultValue(false)]
-	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-	public bool MirrorX { get; set; }
-
-	/// <summary>
-	///     Mirror layout vertically.
-	/// </summary>
-	[DefaultValue(false)]
-	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-	public bool MirrorY { get; set; }
-
-	/// <summary>
-	///     Layout rotation.
-	/// </summary>
-	[DefaultValue(0)]
-	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-	public float Rotation { get; set; }
-
+	
 	/// <summary>
 	///     Device Brightness.
 	/// </summary>

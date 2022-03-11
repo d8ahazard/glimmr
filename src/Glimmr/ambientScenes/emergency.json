@@ -21,5 +21,6 @@
   "Mode": "Linear",
   "Easing": "FadeInOut",
   "Name": "Emergency",
-  "Id": 11
+  "Id": 11,
+  "System": true
 }

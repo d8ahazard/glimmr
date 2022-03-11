@@ -16,5 +16,6 @@
   "RotationSpeed": 0.005,
   "RotationThreshold": 0.85,
   "Id": 1,
-  "Name": "Top"
+  "Name": "Top",
+  "System": true
 }

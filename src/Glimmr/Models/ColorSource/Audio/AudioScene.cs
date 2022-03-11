@@ -37,4 +37,6 @@ public struct AudioScene {
 	[JsonProperty] public Dictionary<string, int> OctaveMap { get; set; }
 	[JsonProperty] public int Id { get; set; }
 	[JsonProperty] public string Name { get; set; }
+
+	[JsonProperty] public bool System { get; set; }
 }

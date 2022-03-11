@@ -3,15 +3,13 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 
 #endregion
 
 namespace Glimmr.Models.Util;
 
 public static class ColorUtil {
-
-	public static byte[]? _gammaTable;
+	private static byte[]? _gammaTable;
 	/// <summary>
 	///     Take a n-color list, and convert down to 12 for DS
 	/// </summary>
@@ -64,7 +62,7 @@ public static class ColorUtil {
 		}
 
 		for (var i = 0; i < len; i++) {
-			var tgt = Convert.ToInt32((i + offset) * multiplier);
+			var tgt = Convert.ToInt32(offset + i * multiplier);
 			if (tgt >= total) {
 				tgt = total - 1;
 			}
@@ -247,33 +245,40 @@ public static class ColorUtil {
 			var gc = sd.GammaCorrection;
 			_gammaTable = GammaTable(gc);
 		}
-		var red = (float)color.R;
-		var green = (float)color.G;
-		var blue = (float)color.B;
 
-		var existing = (int)(color.GetBrightness() * 255);
-		var brightness = _gammaTable[existing];
-		if (existing == brightness) return color;
-		if (existing > brightness) {
-			var diff = existing - brightness;
-			red -= diff;
-			green -= diff;
-			blue -= diff;
-			red = Math.Max(red, 0);
-			green = Math.Max(green, 0);
-			blue = Math.Max(blue, 0);
-			return Color.FromArgb(color.A, (int)red, (int)green, (int)blue);
-		} else {
-			var diff = brightness - existing;
-			red += diff;
-			green += diff;
-			blue += diff;
-			red = Math.Min(red, 255);
-			green = Math.Min(green, 255);
-			blue = Math.Min(blue, 255);
-		
-			return Color.FromArgb(color.A, (int)red, (int)green, (int)blue);	
-		}
+		var (hue, sat, brightness) = ColorToHSV(color);
+		return brightness == 0 ? Color.FromArgb(0, 0, 0) : ColorFromHSV(hue, sat, _gammaTable[brightness]);
+	}
+
+	private static (double, double, int) ColorToHSV(Color color)
+	{
+		int max = Math.Max(color.R, Math.Max(color.G, color.B));
+		int min = Math.Min(color.R, Math.Min(color.G, color.B));
+
+		var hue = color.GetHue();
+		var saturation = max == 0 ? 0 : 1d - 1d * min / max;
+		var value = max;
+		return (hue, saturation, value);
+	}
+
+	public static Color ColorFromHSV(double hue, double saturation, int value)
+	{
+		var hi = Convert.ToInt32(Math.Floor(hue / 60)) % 6;
+		var f = hue / 60 - Math.Floor(hue / 60);
+
+		var v = Convert.ToInt32(value);
+		var p = Convert.ToInt32(value * (1 - saturation));
+		var q = Convert.ToInt32(value * (1 - f * saturation));
+		var t = Convert.ToInt32(value * (1 - (1 - f) * saturation));
+
+		return hi switch {
+			0 => Color.FromArgb(255, v, t, p),
+			1 => Color.FromArgb(255, q, v, p),
+			2 => Color.FromArgb(255, p, v, t),
+			3 => Color.FromArgb(255, p, q, v),
+			4 => Color.FromArgb(255, t, p, v),
+			_ => Color.FromArgb(255, v, p, q)
+		};
 	}
 
 

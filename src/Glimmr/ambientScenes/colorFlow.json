@@ -11,5 +11,6 @@
   "Mode": "Random",
   "Easing": "Blend",
   "Name": "ColorFlow",
-  "Id": 10
+  "Id": 10,
+  "System": true
 }

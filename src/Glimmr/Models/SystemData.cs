@@ -80,7 +80,7 @@ public class SystemData {
 	[DefaultValue(true)]
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 	public bool EnablePillarBox { get; set; } = true;
-	
+
 	/// <summary>
 	///     If set, rainbow wipe will not be played on application startup.
 	/// </summary>
@@ -91,8 +91,9 @@ public class SystemData {
 	///<summary>
 	/// Gamma correction value.
 	/// </summary>
-	[DefaultValue(1f)] [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-	public float GammaCorrection { get; set; }
+	[DefaultValue(1f)]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public float GammaCorrection { get; set; } = 1f;
 
 	/// <summary>
 	///     If set, introduction/tour will not run on UI load.
@@ -484,6 +485,8 @@ public class SystemData {
 	public string? DeviceId { get; set; } = "";
 
 	public SystemData() {
+		if (GammaCorrection < 1) GammaCorrection = 1;
+		if (GammaCorrection > 4) GammaCorrection = 4;
 		CheckDeviceVariables();
 	}
 
@@ -500,6 +503,8 @@ public class SystemData {
 		BaudRate = 115200;
 		CropBlackLevel = 7;
 		BlackLevel = 7;
+		if (GammaCorrection < 1) GammaCorrection = 1;
+		if (GammaCorrection > 4) GammaCorrection = 4;
 		CheckDeviceVariables();
 		EnableAutoBrightness = true;
 		LogLevel = 1;
@@ -507,6 +512,8 @@ public class SystemData {
 
 	public string CheckDeviceVariables() {
 		var id = DeviceId;
+		if (GammaCorrection < 1) GammaCorrection = 1;
+		if (GammaCorrection > 4) GammaCorrection = 4;
 		if (string.IsNullOrEmpty(id)) {
 			id = NetworkInterface
 				.GetAllNetworkInterfaces()

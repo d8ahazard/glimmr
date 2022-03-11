@@ -17,25 +17,32 @@ using static Glimmr.Models.GlimmrConstants;
 namespace Glimmr.Models;
 
 public class FrameBuilder : IDisposable {
-	private readonly int _bottomCount;
+	private int _bottomCount;
 
 	// This will store the coords of input values
-	private readonly VectorOfVectorOfPoint _inputCoords;
-	private readonly int _ledCount;
-	private readonly int _leftCount;
-	private readonly int _rightCount;
-	private readonly int _topCount;
+	private VectorOfVectorOfPoint _inputCoords;
+	private Rectangle[] _centerCoords;
+	private int _ledCount;
+	private int _leftCount;
+	private int _rightCount;
+	private int _topCount;
+	private bool _center;
+	private bool _disposed;
+	private bool _updating;
 
 	public FrameBuilder(IReadOnlyList<int> inputDimensions, bool sectors = false, bool center=false) {
 		_leftCount = inputDimensions[0];
 		_rightCount = inputDimensions[1];
 		_topCount = inputDimensions[2];
 		_bottomCount = inputDimensions[3];
+		_centerCoords = Array.Empty<Rectangle>();
+		_center = center;
 		_ledCount = _leftCount + _rightCount + _topCount + _bottomCount;
+		_inputCoords = new VectorOfVectorOfPoint();
 		if (sectors) {
 			if (center) {
 				_ledCount = _leftCount * _topCount;
-				_inputCoords = DrawCenterSectors();
+				_centerCoords = DrawCenterSectors();
 			} else {
 				_ledCount -= 4;
 				_inputCoords = DrawSectors();
@@ -45,8 +52,35 @@ public class FrameBuilder : IDisposable {
 		}
 	}
 
+	public void Update(IReadOnlyList<int> inputDimensions, bool sectors = false, bool center=false) {
+		_updating = true;
+		_leftCount = inputDimensions[0];
+		_rightCount = inputDimensions[1];
+		_topCount = inputDimensions[2];
+		_bottomCount = inputDimensions[3];
+		_centerCoords = Array.Empty<Rectangle>();
+		_center = center;
+		_ledCount = _leftCount + _rightCount + _topCount + _bottomCount;
+		_inputCoords = new VectorOfVectorOfPoint();
+		if (sectors) {
+			if (center) {
+				_ledCount = _leftCount * _topCount;
+				_centerCoords = DrawCenterSectors();
+			} else {
+				_ledCount -= 4;
+				_inputCoords = DrawSectors();
+			}
+		} else {
+			_inputCoords = DrawLeds();
+		}
+
+		_updating = false;
+	}
+
 
 	public Mat? Build(IEnumerable<Color> colors) {
+		if (_disposed) return null;
+		if (_updating) return null;
 		var enumerable = colors as Color[] ?? colors.ToArray();
 		if (enumerable.Length != _ledCount) {
 			throw new ArgumentOutOfRangeException(
@@ -60,7 +94,12 @@ public class FrameBuilder : IDisposable {
 				idx = i;
 				var color = enumerable[i];
 				var col = new MCvScalar(color.B, color.G, color.R);
-				CvInvoke.FillPoly(gMat,_inputCoords[i],col,LineType.AntiAlias);
+				if (_center) {
+					CvInvoke.Rectangle(gMat,_centerCoords[i], col, -1);
+				} else {
+					CvInvoke.DrawContours(gMat, _inputCoords, i, col, -1);
+					//CvInvoke.FillPoly(gMat,_inputCoords[i],col,LineType.AntiAlias);	
+				}
 			}
 			//CvInvoke.GaussianBlur(gMat, gMat, new Size(29,29), 0);
 			return gMat;
@@ -251,8 +290,8 @@ public class FrameBuilder : IDisposable {
 		return polly;
 	}
 
-	private VectorOfVectorOfPoint DrawCenterSectors() {
-		var polly = new VectorOfVectorOfPoint();
+	private Rectangle[] DrawCenterSectors() {
+		var polly = new List<Rectangle>();
 		// Individual segment sizes
 		var sectorWidth = ScaleWidth / _topCount;
 		var sectorHeight = ScaleHeight / _leftCount;
@@ -263,22 +302,18 @@ public class FrameBuilder : IDisposable {
 			var left = ScaleWidth - sectorWidth;
 			for (var h = _topCount; h > 0; h--) {
 				var rect = new Rectangle(left, top, sectorWidth, sectorHeight);
-				var pts = new Point[4];
-				pts[0] = new Point(rect.Left, rect.Top);
-				pts[1] = new Point(rect.Right, rect.Top);
-				pts[2] = new Point(rect.Left, rect.Bottom);
-				pts[3] = new Point(rect.Right, rect.Bottom);
-				polly.Push(new VectorOfPoint(pts));
+				polly.Add(rect);
 				left -= sectorWidth;
 			}
 
 			top -= sectorHeight;
 		}
 
-		return polly;
+		return polly.ToArray();
 	}
 
 	public void Dispose() {
+		_disposed = true;
 		((IDisposable)_inputCoords).Dispose();
 	}
 }
