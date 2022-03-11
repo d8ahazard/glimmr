@@ -1,4 +1,122 @@
 #!/bin/bash
+
+set -fb
+
+readonly THISDIR=$(cd "$(dirname "$0")" ; pwd)
+readonly MY_NAME=$(basename "$0")
+readonly FILE_TO_FETCH_URL="https://raw.githubusercontent.com/d8ahazard/glimmr/master/src/Glimmr/script/update_linux.sh"
+readonly EXISTING_SHELL_SCRIPT="${THISDIR}/update_linux.sh"
+readonly EXECUTABLE_SHELL_SCRIPT="${THISDIR}/.update_linux.sh"
+arch="$(arch)"
+PUBPROFILE="Linux"
+PUBPATH="linux"
+log=$(ls -t /var/log/glimmr/glimmr* | head -1)
+if [ "$log" == "" ]
+  then
+    log=/var/log/glimmr/glimmr.log
+fi
+
+if [ ! -f $log ]
+  then
+    log=/var/log/glimmr/glimmr.log
+    touch $log
+    chmod 777 $log
+fi
+
+
+function get_remote_file() {
+  readonly REQUEST_URL=$1
+  readonly OUTPUT_FILENAME=$2
+  readonly TEMP_FILE="${THISDIR}/tmp.file"
+  if [ -n "$(which wget)" ]; then
+    echo "Fetching updated script." >> $log
+    $(wget -O "${TEMP_FILE}"  "$REQUEST_URL" 2>&1)
+    if [[ $? -eq 0 ]]; then
+      mv "${TEMP_FILE}" "${OUTPUT_FILENAME}"
+      chmod 755 "${OUTPUT_FILENAME}"
+    else
+      return 1
+    fi
+  fi
+}
+
+function clean_up() {
+  # clean up code (if required) that has to execute every time here
+}
+
+function self_clean_up() {
+  rm -f "${EXECUTABLE_SHELL_SCRIPT}"
+}
+
+function update_self_and_invoke() {
+  get_remote_file "${FILE_TO_FETCH_URL}" "${EXECUTABLE_SHELL_SCRIPT}"
+  if [ $? -ne 0 ]; then
+    cp "${EXISTING_SHELL_SCRIPT}" "${EXECUTABLE_SHELL_SCRIPT}"
+  fi
+  exec "${EXECUTABLE_SHELL_SCRIPT}" "$@"
+}
+function main() {
+  cp "${EXECUTABLE_SHELL_SCRIPT}" "${EXISTING_SHELL_SCRIPT}"
+  
+
+  if [ -f "/usr/bin/raspi-config" ] && [ "$arch" == "armv71" ] 
+    then
+      PUBPROFILE="LinuxARM"
+      PUBPATH="linux-arm"
+  fi
+  
+  if [ -f "/usr/bin/raspi-config" ] && [ "$arch" == "aarch64" ] 
+    then
+      PUBPROFILE="LinuxARM64"
+      PUBPATH="linux-arm64"
+  fi
+  
+  echo "Checking for Glimmr updates for $PUBPROFILE." >> $log
+  
+  if [ ! -d "/usr/share/Glimmr" ]
+    then
+  # Make dir
+    mkdir /usr/share/Glimmr  
+  fi
+  
+  # Download and extract latest release
+  ver=$(wget "https://api.github.com/repos/d8ahazard/glimmr/releases/latest" -q -O - | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+  echo "Repo version is $ver." >> $log
+  if [ -f "/etc/Glimmr/version" ]
+    then
+      curr=$(head -n 1 /etc/Glimmr/version)
+      echo "Current version is $curr." >> $log
+      diff=$(vercomp "$curr" "$ver")
+      if [ "$diff" != "2" ]
+        then
+          echo "Nothing to update." >> $log
+          exit 0
+      fi
+  fi
+  
+  cd /tmp || exit
+  echo "Updating glimmr to version $ver." >> $log
+  url="https://github.com/d8ahazard/glimmr/releases/download/$ver/Glimmr-$PUBPATH-$ver.tgz"
+  echo "Grabbing archive from $url" >> $log
+  wget -O archive.tgz "$url"
+  #Stop service
+  echo "Stopping glimmr services..." >> $log
+  service glimmr stop
+  echo "Services stopped." >> $log
+  echo "Extracting archive..." >> $log
+  tar zxvf ./archive.tgz -C /usr/share/Glimmr/
+  echo "Setting permissions..." >> $log
+  chmod -R 777 /usr/share/Glimmr/
+  echo "Cleanup..." >> $log
+  rm ./archive.tgz
+  echo "Update completed." >> $log
+  echo "$ver" > /etc/Glimmr/version
+  echo "Restarting glimmr service..." >> $log
+  
+  # Restart Service
+  service glimmr start
+} 
+
 function vercomp () {
     if [[ "$1" == "$2" ]]
     then
@@ -34,77 +152,12 @@ function vercomp () {
     return 0
 }
 
-arch="$(arch)"
-PUBPROFILE="Linux"
-PUBPATH="linux"
-
-if [ -f "/usr/bin/raspi-config" ] && [ "$arch" == "armv71" ] 
-  then
-    PUBPROFILE="LinuxARM"
-    PUBPATH="linux-arm"
+if [[ $MY_NAME = \.* ]]; then
+  # invoke real main program
+  trap "clean_up; self_clean_up" EXIT
+  main "$@"
+else
+  # update myself and invoke updated version
+  trap clean_up EXIT
+  update_self_and_invoke "$@"
 fi
-
-if [ -f "/usr/bin/raspi-config" ] && [ "$arch" == "aarch64" ] 
-  then
-    PUBPROFILE="LinuxARM64"
-    PUBPATH="linux-arm64"
-fi
-
-# shellcheck disable=SC2012
-log=$(ls -t /var/log/glimmr/glimmr* | head -1)
-if [ "$log" == "" ]
-  then
-    log=/var/log/glimmr/glimmr.log
-fi
-
-if [ ! -f $log ]
-  then
-    log=/var/log/glimmr/glimmr.log
-    touch $log
-    chmod 777 $log
-fi
-
-echo "Checking for Glimmr updates for $PUBPROFILE." >> $log
-
-if [ ! -d "/usr/share/Glimmr" ]
-  then
-# Make dir
-  mkdir /usr/share/Glimmr  
-fi
-
-# Download and extract latest release
-ver=$(wget "https://api.github.com/repos/d8ahazard/glimmr/releases/latest" -q -O - | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-echo "Repo version is $ver." >> $log
-if [ -f "/etc/Glimmr/version" ]
-  then
-    curr=$(head -n 1 /etc/Glimmr/version)
-    echo "Current version is $curr." >> $log
-    diff=$(vercomp "$curr" "$ver")
-    if [ "$diff" != "2" ]
-      then
-        echo "Nothing to update." >> $log
-        exit 0
-    fi
-fi
-
-cd /tmp || exit
-echo "Updating glimmr to version $ver." >> $log
-url="https://github.com/d8ahazard/glimmr/releases/download/$ver/Glimmr-$PUBPATH-$ver.tgz"
-echo "Grabbing archive from $url" >> $log
-wget -O archive.tgz "$url"
-#Stop service
-echo "Stopping glimmr services..." >> $log
-service glimmr stop
-echo "Services stopped." >> $log
-echo "Extracting archive..." >> $log
-tar zxvf ./archive.tgz -C /usr/share/Glimmr/
-echo "Setting permissions..." >> $log
-chmod -R 777 /usr/share/Glimmr/
-echo "Cleanup..." >> $log
-rm ./archive.tgz
-echo "Update completed." >> $log
-echo "$ver" > /etc/Glimmr/version
-echo "Restarting glimmr service..." >> $log
-
-# Restart Service
-service glimmr start
