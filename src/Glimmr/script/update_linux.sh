@@ -30,6 +30,7 @@ function get_remote_file() {
   readonly TEMP_FILE="${THISDIR}/tmp.file"
   if [ -n "$(which wget)" ]; then
     echo "Fetching updated script." >> $log
+    echo "Fetching updated script."
     $(wget -O "${TEMP_FILE}"  "$REQUEST_URL" 2>&1)
     if [[ $? -eq 0 ]]; then
       mv "${TEMP_FILE}" "${OUTPUT_FILENAME}"
@@ -72,6 +73,7 @@ function main() {
   fi
   
   echo "Checking for Glimmr updates for $PUBPROFILE." >> $log
+  echo "Checking for Glimmr updates for $PUBPROFILE."
   
   if [ ! -d "/usr/share/Glimmr" ]
     then
@@ -82,36 +84,48 @@ function main() {
   # Download and extract latest release
   ver=$(wget "https://api.github.com/repos/d8ahazard/glimmr/releases/latest" -q -O - | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
   echo "Repo version is $ver." >> $log
+  echo "Repo version is $ver."
   if [ -f "/etc/Glimmr/version" ]
     then
       curr=$(head -n 1 /etc/Glimmr/version)
       echo "Current version is $curr." >> $log
+      echo "Current version is $curr."
       diff=$(vercomp "$curr" "$ver")
       if [ "$diff" != "2" ]
         then
-          echo "Nothing to update." >> $log
+          echo "Nothing to update, diff is $diff." >> $log
+          echo "Nothing to update, diff is $diff."
           exit 0
       fi
   fi
   
   cd /tmp || exit
   echo "Updating glimmr to version $ver." >> $log
+  echo "Updating glimmr to version $ver."
   url="https://github.com/d8ahazard/glimmr/releases/download/$ver/Glimmr-$PUBPATH-$ver.tgz"
   echo "Grabbing archive from $url" >> $log
+  echo "Grabbing archive from $url"
   wget -O archive.tgz "$url"
   #Stop service
   echo "Stopping glimmr services..." >> $log
+  echo "Stopping glimmr services..."
   service glimmr stop
   echo "Services stopped." >> $log
+  echo "Services stopped."
   echo "Extracting archive..." >> $log
+  echo "Extracting archive..."
   tar zxvf ./archive.tgz -C /usr/share/Glimmr/
   echo "Setting permissions..." >> $log
+  echo "Setting permissions..."
   chmod -R 777 /usr/share/Glimmr/
   echo "Cleanup..." >> $log
+  echo "Cleanup..."
   rm ./archive.tgz
   echo "Update completed." >> $log
+  echo "Update completed."
   echo "$ver" > /etc/Glimmr/version
   echo "Restarting glimmr service..." >> $log
+  echo "Restarting glimmr service..."
   
   # Restart Service
   service glimmr start
