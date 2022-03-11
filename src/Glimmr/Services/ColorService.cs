@@ -25,6 +25,7 @@ namespace Glimmr.Services;
 
 // Handles capturing and sending color data
 public class ColorService : BackgroundService {
+	public bool Recording { get; set; }
 	public ControlService ControlService { get; }
 
 	public readonly FrameCounter Counter;
@@ -33,18 +34,17 @@ public class ColorService : BackgroundService {
 
 	private readonly Dictionary<string, ColorSource> _streams;
 	private readonly Stopwatch _watch;
-
-	private Dictionary<long, Color[]> _recording;
-	private Stopwatch _recordWatch;
-	public bool Recording { get; set; }
-	private bool _autoDisabled;
-	private bool _testing;
-	private int _autoDisableDelay;
 	private int _adCount;
-	
+	private bool _autoDisabled;
+	private int _autoDisableDelay;
+
 	private DeviceMode _deviceMode;
 
 	private bool _enableAutoDisable;
+
+	private Dictionary<long, Color[]> _recording;
+
+	private readonly Stopwatch _recordWatch;
 	// Figure out how to make these generic, non-callable
 
 	private IColorTarget[] _sDevices;
@@ -59,6 +59,7 @@ public class ColorService : BackgroundService {
 
 	// Token for the color target
 	private CancellationTokenSource _targetTokenSource;
+	private bool _testing;
 
 	public ColorService() {
 		ControlService.GetInstance().ColorService = this;
@@ -116,12 +117,14 @@ public class ColorService : BackgroundService {
 		var colorTask = Task.Run(async () => {
 			await Initialize();
 			_loopWatch.Start();
-			var saveTimer = new Timer(5000);
+
+			var saveTimer = new Timer(1000);
 			saveTimer.Elapsed += SaveFrame;
 			saveTimer.Start();
 			while (!stoppingToken.IsCancellationRequested) {
 				await Task.Delay(TimeSpan.FromSeconds(1), CancellationToken.None);
 			}
+
 			saveTimer.Stop();
 		}, CancellationToken.None);
 		Log.Debug("Color Service Started.");
@@ -236,7 +239,7 @@ public class ColorService : BackgroundService {
 			Log.Debug("No mat, returning...");
 			return;
 		}
-		
+
 		var (colors, sectors) = _splitter.Update(tMat).Result;
 		tMat.Dispose();
 		await SendColors(colors, sectors, true);
@@ -266,13 +269,14 @@ public class ColorService : BackgroundService {
 		if (_deviceMode == DeviceMode.Off) {
 			return;
 		}
-		
+
 		if (sourceActive) {
 			// If our source is active and we're auto-disabled, turn it off.
 			_adCount = 0;
 			if (!_autoDisabled) {
 				return;
 			}
+
 			Log.Information("Auto-enabling stream.");
 			_autoDisabled = false;
 			DataUtil.SetItem("AutoDisabled", _autoDisabled);
@@ -286,11 +290,13 @@ public class ColorService : BackgroundService {
 				_adCount = _autoDisableDelay;
 				return;
 			}
+
 			_adCount++;
-			
+
 			if (_adCount < _autoDisableDelay) {
 				return;
 			}
+
 			_adCount = _autoDisableDelay;
 			Log.Debug($"Auto-disabling: {_adCount}/{_autoDisableDelay}");
 			_autoDisabled = true;
@@ -322,7 +328,6 @@ public class ColorService : BackgroundService {
 		await Task.Delay(1000);
 		await SendColors(colors, blackSectors, true);
 		_testing = false;
-
 	}
 
 	private void LoadData() {
@@ -353,7 +358,7 @@ public class ColorService : BackgroundService {
 		var output = new List<IColorTarget>();
 		var tag = c.Replace("Glimmr.Models.ColorTarget.", "");
 		tag = tag.Split(".")[0];
-		
+
 		foreach (IColorTargetData device in devices.Where(device => device.Tag == tag)) {
 			switch (tag) {
 				case "Hue":
@@ -365,7 +370,7 @@ public class ColorService : BackgroundService {
 							Log.Warning("Unable to load type for " + c);
 							continue;
 						}
-				
+
 						if (Activator.CreateInstance(cType, device, this) is not IColorTarget dev) {
 							Log.Warning("Unable to load instance for " + c);
 							continue;
@@ -373,12 +378,14 @@ public class ColorService : BackgroundService {
 
 						output.Add(dev);
 					} catch (Exception e) {
-						Log.Warning($"Exception adding {tag} ({c}) device {device.Id}: " + e.Message + " at " + e.StackTrace);
+						Log.Warning($"Exception adding {tag} ({c}) device {device.Id}: " + e.Message + " at " +
+						            e.StackTrace);
 					}
 
 					break;
 			}
 		}
+
 		return output;
 	}
 
@@ -405,14 +412,16 @@ public class ColorService : BackgroundService {
 					} catch (Exception e) {
 						Log.Warning("SEND EXCEPTION: " + JsonConvert.SerializeObject(e));
 					}
-				}								
-				
+				}
+
 				i++;
 			}
+
 			_splitter.DoSend = true;
 		} catch (Exception f) {
 			Log.Warning("Outer demo exception: " + f.Message);
 		}
+
 		builder.Dispose();
 		await Task.Delay(500);
 	}
@@ -424,19 +433,21 @@ public class ColorService : BackgroundService {
 		}
 
 		// REALLY reload device 0 if we update LED 1
-		if (id == "1") id = "0";
-		
+		if (id == "1") {
+			id = "0";
+		}
+
 		foreach (var dev in _sDevices) {
 			if (dev.Data.Id != id) {
 				continue;
 			}
+
 			Log.Debug($"Reloading data for {dev.Data.Name} ({dev.Data.Id})");
 			var enabled = dev.Enable;
-			
+
 			await dev.ReloadData();
 			var doEnable = dev.Enable;
 			if (_deviceMode != DeviceMode.Off && doEnable && !enabled && !dev.Streaming) {
-				
 				await dev.StartStream(_targetTokenSource.Token);
 				return;
 			}
@@ -445,15 +456,15 @@ public class ColorService : BackgroundService {
 				if (!doEnable) {
 					await dev.FlashColor(Color.Black);
 				}
+
 				continue;
 			}
 
 			if (enabled && !doEnable && dev.Streaming) {
 				Log.Information("Stopping disabled device: " + dev.Id);
 				await dev.StopStream().ConfigureAwait(false);
-	
 			}
-			
+
 			return;
 		}
 
@@ -533,18 +544,19 @@ public class ColorService : BackgroundService {
 			DataUtil.SetItem("AutoDisabled", _autoDisabled);
 			Log.Debug("Unsetting auto-disabled flag...");
 		}
-		
+
 		_streamTokenSource.Cancel();
 		await Task.Delay(TimeSpan.FromMilliseconds(500));
 		if (_stream is { SourceActive: true }) {
 			Log.Debug("Killing stream!");
 			_stream.Stop();
 		}
+
 		if (_streamStarted && newMode == 0) {
 			await StopDevices();
 		}
 
-		
+
 		_streamTokenSource = new CancellationTokenSource();
 		if (_streamTokenSource.IsCancellationRequested) {
 			Log.Warning("Token source has cancellation requested.");
@@ -579,13 +591,12 @@ public class ColorService : BackgroundService {
 
 		_deviceMode = newMode;
 		Log.Information($"Device mode updated to {newMode}.");
-		
 	}
 
 	private async Task StartStream() {
 		if (!_streamStarted) {
 			_streamStarted = true;
-			
+
 			// Cancel any attempts to start streaming after four seconds if unsuccessful
 			var cts = new CancellationTokenSource();
 			var sTasks = new List<Task>();
@@ -686,13 +697,14 @@ public class ColorService : BackgroundService {
 					var time = _recordWatch.ElapsedMilliseconds;
 					_recording[time] = sectors;
 				}
+
 				Counter.Tick("source");
 			} catch (Exception e) {
 				Log.Warning("Exception: " + e.Message + " at " + e.StackTrace);
 			}
 		}
 	}
-	
+
 
 	private static void CancelSource(CancellationTokenSource target, bool dispose = false) {
 		if (!target.IsCancellationRequested) {
@@ -715,6 +727,7 @@ public class ColorService : BackgroundService {
 			svc.Splitter.Dispose();
 			svc.Builder?.Dispose();
 		}
+
 		foreach (var s in _sDevices) {
 			try {
 				s.Dispose();

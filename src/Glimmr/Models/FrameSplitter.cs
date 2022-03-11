@@ -59,7 +59,7 @@ public class FrameSplitter : IDisposable {
 	private Color[] _colorsLedIn;
 	private Color[] _colorsSectors;
 	private Color[] _colorsSectorsIn;
-	private readonly bool _correctGamma;
+	private bool _correctGamma;
 	private int _cropBlackLevel;
 	private int _cropCount;
 	private int _cropDelay;
@@ -76,7 +76,7 @@ public class FrameSplitter : IDisposable {
 
 	private Rectangle[] _fullCoords;
 	private Rectangle[] _fullSectors;
-	private readonly float _gammaCorrection;
+	private float _gammaCorrection;
 	private int _hSectors;
 
 	// Are we cropping right now?
@@ -155,6 +155,8 @@ public class FrameSplitter : IDisposable {
 
 	private void RefreshSystem() {
 		var sd = DataUtil.GetSystemData();
+		_gammaCorrection = sd.GammaCorrection;
+		_correctGamma = _useCrop && _gammaCorrection > 1;
 		_blackLevel = sd.BlackLevel;
 		_cropBlackLevel = sd.CropBlackLevel;
 		_leftCount = sd.LeftCount;
