@@ -11,12 +11,12 @@ using Serilog;
 namespace Glimmr.Models.ColorSource;
 
 public abstract class ColorSource : BackgroundService {
-	protected Task? RunTask;
 	public abstract bool SourceActive { get; }
-	public abstract Task Start(CancellationToken ct);
-	public abstract FrameSplitter Splitter { get; set; }
-	
+
 	public abstract FrameBuilder? Builder { get; set; }
+	public abstract FrameSplitter Splitter { get; set; }
+	protected Task? RunTask;
+	public abstract Task Start(CancellationToken ct);
 
 	public void Stop() {
 		if (RunTask == null) {

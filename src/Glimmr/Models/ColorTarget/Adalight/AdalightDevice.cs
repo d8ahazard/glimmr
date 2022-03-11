@@ -119,10 +119,6 @@ public class AdalightDevice : ColorTarget, IColorTarget {
 		_adalight.Dispose();
 	}
 
-	private Task SetColors(object sender, ColorSendEventArgs args) {
-		return SetColors(args.LedColors, args.SectorColors);
-	}
-
 
 	public Task SetColors(IReadOnlyList<Color> ledColors, IReadOnlyList<Color> _) {
 		if (!Enable || !Streaming) {
@@ -141,6 +137,10 @@ public class AdalightDevice : ColorTarget, IColorTarget {
 		toSend = FixGamma(toSend);
 		_adalight.UpdateColorsAsync(toSend.ToList());
 		return Task.CompletedTask;
+	}
+
+	private Task SetColors(object sender, ColorSendEventArgs args) {
+		return SetColors(args.LedColors, args.SectorColors);
 	}
 
 	private Color[] FixGamma(Color[] input) {

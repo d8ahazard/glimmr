@@ -116,10 +116,6 @@ public class GlimmrDevice : ColorTarget, IColorTarget, IDisposable {
 		GC.SuppressFinalize(this);
 	}
 
-	private Task SetColors(object sender, ColorSendEventArgs args) {
-		return SetColors(args.LedColors, args.SectorColors);
-	}
-
 
 	public async Task SetColors(IReadOnlyList<Color> ledColors, IReadOnlyList<Color> _) {
 		if (!Streaming || !Enable) {
@@ -182,6 +178,10 @@ public class GlimmrDevice : ColorTarget, IColorTarget, IDisposable {
 		} catch (Exception e) {
 			Log.Warning("Exception: " + e.Message);
 		}
+	}
+
+	private Task SetColors(object sender, ColorSendEventArgs args) {
+		return SetColors(args.LedColors, args.SectorColors);
 	}
 
 	private void RefreshSystem() {

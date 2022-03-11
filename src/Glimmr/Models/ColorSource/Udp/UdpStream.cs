@@ -23,23 +23,23 @@ namespace Glimmr.Models.ColorSource.UDP;
 
 public class UdpStream : ColorSource {
 	public override bool SourceActive => _sourceActive;
+	public sealed override FrameBuilder? Builder { get; set; }
+	public sealed override FrameSplitter Splitter { get; set; }
 	private readonly ControlService _cs;
 	private readonly CancellationTokenSource _cts;
 	private readonly CancellationToken _listenToken;
-	public sealed override FrameSplitter Splitter { get; set; }
-	public sealed override FrameBuilder? Builder { get; set; }
 	private readonly UdpClient _uc;
 	private readonly Socket _us;
+	private readonly ManualResetEvent allDone;
+	private CancellationTokenSource _cancelSource;
+	private Task? _cancelTask;
 	private DeviceMode _devMode;
 	private ServiceDiscovery? _discovery;
 	private GlimmrData? _gd;
 	private string _hostName;
 	private SystemData _sd;
-	private CancellationTokenSource _cancelSource;
 	private bool _sourceActive;
 	private int _timeOut;
-	private Task? _cancelTask;
-	private readonly ManualResetEvent allDone;
 
 	public UdpStream(ColorService cs) {
 		allDone = new ManualResetEvent(false);
@@ -66,7 +66,7 @@ public class UdpStream : ColorSource {
 		}
 
 		_cancelSource = new CancellationTokenSource();
-		
+
 
 		var sd = DataUtil.GetSystemData();
 		_devMode = sd.DeviceMode;
@@ -145,7 +145,7 @@ public class UdpStream : ColorSource {
 			}
 		}
 	}
-	
+
 	private async Task Listen2() {
 		_us.Listen(1000);
 		while (!_listenToken.IsCancellationRequested) {
@@ -153,11 +153,11 @@ public class UdpStream : ColorSource {
 				allDone.Reset();
 				_us.BeginAccept(Listen_Callback, _us);
 				allDone.WaitOne();
-				
 			} catch (Exception) {
 				// Ignored
 			}
 		}
+
 		await Task.FromResult(true);
 	}
 
@@ -168,13 +168,14 @@ public class UdpStream : ColorSource {
 			Log.Debug("Null async stage!");
 			return;
 		}
-		var listener = (Socket) ar.AsyncState;  
+
+		var listener = (Socket)ar.AsyncState;
 		var handler = listener.EndAccept(ar);
 		var state = new StateObject {
 			WorkSocket = handler
 		};
-		handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,  
-			ReadCallback, state);  
+		handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
+			ReadCallback, state);
 	}
 
 	private static void ReadCallback(IAsyncResult ar) {
@@ -183,33 +184,34 @@ public class UdpStream : ColorSource {
 			Log.Debug("Null async state!");
 			return;
 		}
-		var state = (StateObject) ar.AsyncState;  
+
+		var state = (StateObject)ar.AsyncState;
 		var handler = state.WorkSocket;
-		if (handler == null) return;
+		if (handler == null) {
+			return;
+		}
+
 		// Read data from the client socket.  
-		var read = handler.EndReceive(ar);  
-  
+		var read = handler.EndReceive(ar);
+
 		// Data was read from the client socket.  
-		if (read > 0)
-		{
+		if (read > 0) {
 			for (var i = 0; i <= read; i++) {
 				state.sb.AppendFormat("{0:x2}", state.buffer[i]);
 			}
+
 			Log.Debug("State (reading): " + state.sb);
-			handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,  
-				ReadCallback, state);  
-		}
-		else
-		{  
-			if (state.sb.Length > 1)
-			{  
+			handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
+				ReadCallback, state);
+		} else {
+			if (state.sb.Length > 1) {
 				// All the data has been read from the client;  
 				// display it on the console.  
 				Log.Debug("State (done): " + state.sb);
-				
-			}  
-			handler.Close();  
-		}  
+			}
+
+			handler.Close();
+		}
 	}
 
 	public override Task StopAsync(CancellationToken stoppingToken) {
@@ -222,7 +224,7 @@ public class UdpStream : ColorSource {
 	private async Task ProcessFrame(IEnumerable<byte> data) {
 		Splitter.DoSend = true;
 		_sourceActive = true;
-		
+
 		if (_devMode != Udp) {
 			_gd = new GlimmrData(DataUtil.GetSystemData());
 			var dims = new[] { _gd.LeftCount, _gd.RightCount, _gd.TopCount, _gd.BottomCount };
@@ -237,7 +239,7 @@ public class UdpStream : ColorSource {
 				Log.Warning("Null builder.");
 				return;
 			}
-			
+
 			// Set our timeout value and restart watch every time a frame is received
 			_timeOut = cp.Duration;
 			_cancelSource.Cancel();
@@ -263,11 +265,10 @@ public class UdpStream : ColorSource {
 		}
 	}
 
-	private class StateObject
-	{  
-		public Socket? WorkSocket;  
-		public const int BufferSize = 1024;  
-		public readonly byte[] buffer = new byte[BufferSize];  
+	private class StateObject {
+		public const int BufferSize = 1024;
+		public readonly byte[] buffer = new byte[BufferSize];
 		public readonly StringBuilder sb = new();
-	}  
+		public Socket? WorkSocket;
+	}
 }

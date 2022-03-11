@@ -10,6 +10,7 @@ namespace Glimmr.Models.Util;
 
 public static class ColorUtil {
 	private static byte[]? _gammaTable;
+
 	/// <summary>
 	///     Take a n-color list, and convert down to 12 for DS
 	/// </summary>
@@ -238,7 +239,7 @@ public static class ColorUtil {
 
 		return Color.FromArgb(color.A, (int)red, (int)green, (int)blue);
 	}
-	
+
 	public static Color AdjustGamma(Color color) {
 		if (_gammaTable == null) {
 			var sd = DataUtil.GetSystemData();
@@ -250,8 +251,7 @@ public static class ColorUtil {
 		return brightness == 0 ? Color.FromArgb(0, 0, 0) : ColorFromHSV(hue, sat, _gammaTable[brightness]);
 	}
 
-	private static (double, double, int) ColorToHSV(Color color)
-	{
+	private static (double, double, int) ColorToHSV(Color color) {
 		int max = Math.Max(color.R, Math.Max(color.G, color.B));
 		int min = Math.Min(color.R, Math.Min(color.G, color.B));
 
@@ -261,8 +261,7 @@ public static class ColorUtil {
 		return (hue, saturation, value);
 	}
 
-	public static Color ColorFromHSV(double hue, double saturation, int value)
-	{
+	public static Color ColorFromHSV(double hue, double saturation, int value) {
 		var hi = Convert.ToInt32(Math.Floor(hue / 60)) % 6;
 		var f = hue / 60 - Math.Floor(hue / 60);
 
@@ -329,17 +328,17 @@ public static class ColorUtil {
 		var GammaCorrection = new byte[256];
 		var logBS = new int[256];
 		for (var i = 0; i < 256; i++) {
-			GammaCorrection[i] = (byte) i;
+			GammaCorrection[i] = (byte)i;
 			logBS[i] = i;
 		}
-		
-		if (gamma > 1.0f)
-		{
+
+		if (gamma > 1.0f) {
 			for (var i = 0; i < 256; i++) {
 				GammaCorrection[i] = (byte)(Math.Pow(i / (float)255, gamma) * 255 + 0.5);
 				logBS[i] = GammaCorrection[i];
 			}
 		}
+
 		return GammaCorrection;
 	}
 
@@ -422,8 +421,6 @@ public static class ColorUtil {
 		return output;
 	}
 
-
-	
 
 	/// <summary>
 	///     Adjust the brightness of a list of colors

@@ -80,37 +80,35 @@ public class CpuMonitor : IVisitor {
 
 		installedMemory = memStatus.ullTotalPhys;
 		usedMemory = memStatus.dwMemoryLoad;
-		return returnTotal ? (int) installedMemory : (int)usedMemory;
-	} 
-
-	[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-	private class MemState
-	{
-		[JsonProperty]
-		public uint dwLength;
-		[JsonProperty]
-		public uint dwMemoryLoad;
-		[JsonProperty]
-		public ulong ullTotalPhys;
-		[JsonProperty]
-		public ulong ullAvailPhys;
-		[JsonProperty]
-		public ulong ullTotalPageFile;
-		[JsonProperty]
-		public ulong ullAvailPageFile;
-		[JsonProperty]
-		public ulong ullTotalVirtual;
-		[JsonProperty]
-		public ulong ullAvailVirtual;
-		[JsonProperty]
-		public ulong ullAvailExtendedVirtual;
-		public MemState()
-		{
-			dwLength = (uint)Marshal.SizeOf(typeof(MemState));
-		}
+		return returnTotal ? (int)installedMemory : (int)usedMemory;
 	}
 
 	[return: MarshalAs(UnmanagedType.Bool)]
 	[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-	static extern bool GlobalMemoryStatusEx([In, Out] MemState lpBuffer);
+	private static extern bool GlobalMemoryStatusEx([In] [Out] MemState lpBuffer);
+
+	[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+	private class MemState {
+		[JsonProperty] public uint dwLength;
+
+		[JsonProperty] public uint dwMemoryLoad;
+
+		[JsonProperty] public ulong ullAvailExtendedVirtual;
+
+		[JsonProperty] public ulong ullAvailPageFile;
+
+		[JsonProperty] public ulong ullAvailPhys;
+
+		[JsonProperty] public ulong ullAvailVirtual;
+
+		[JsonProperty] public ulong ullTotalPageFile;
+
+		[JsonProperty] public ulong ullTotalPhys;
+
+		[JsonProperty] public ulong ullTotalVirtual;
+
+		public MemState() {
+			dwLength = (uint)Marshal.SizeOf(typeof(MemState));
+		}
+	}
 }

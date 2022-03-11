@@ -88,13 +88,6 @@ public class SystemData {
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 	public bool SkipDemo { get; set; }
 
-	///<summary>
-	/// Gamma correction value.
-	/// </summary>
-	[DefaultValue(1f)]
-	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-	public float GammaCorrection { get; set; } = 1f;
-
 	/// <summary>
 	///     If set, introduction/tour will not run on UI load.
 	/// </summary>
@@ -171,13 +164,6 @@ public class SystemData {
 	public float AudioGain { get; set; } = .6f;
 
 	/// <summary>
-	///     Low cutoff for audio detection, values below this will not be displayed (0-255).
-	/// </summary>
-	[DefaultValue(1)]
-	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-	public int AudioCutoff { get; set; } = 1;
-	
-	/// <summary>
 	///     Lower limit to color range (0 - 1)
 	///     Range is calculated as the absolute value between lower and upper.
 	/// </summary>
@@ -185,7 +171,14 @@ public class SystemData {
 	[DefaultValue(0f)]
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 	public float AudioRotationLower { get; set; }
-	
+
+	/// <summary>
+	///     How many degrees to rotate on each trigger (0 - 1)
+	/// </summary>
+	[DefaultValue(.5f)]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public float AudioRotationSpeed { get; set; } = .5f;
+
 	/// <summary>
 	///     Upper limit to color range (0 - 1)
 	///     Range is calculated as the absolute value between lower and upper.
@@ -194,20 +187,13 @@ public class SystemData {
 	[DefaultValue(1.0f)]
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 	public float AudioRotationUpper { get; set; } = 1.0f;
-	
+
 	/// <summary>
-	///     How many degrees to rotate on each trigger (0 - 1)
+	///     Gamma correction value.
 	/// </summary>
-	[DefaultValue(.5f)]
+	[DefaultValue(1f)]
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-	public float AudioRotationSpeed { get; set; } = .5f;
-	
-	/// <summary>
-	///     Minimum amplitude to trigger color rotation (0-255)
-	/// </summary>
-	[DefaultValue(100)]
-	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-	public int AudioRotationTrigger { get; set; } = 100;
+	public float GammaCorrection { get; set; } = 1f;
 
 	/// <summary>
 	///     Current ambient scene.
@@ -215,6 +201,20 @@ public class SystemData {
 	[DefaultValue(0)]
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 	public int AmbientScene { get; set; }
+
+	/// <summary>
+	///     Low cutoff for audio detection, values below this will not be displayed (0-255).
+	/// </summary>
+	[DefaultValue(1)]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public int AudioCutoff { get; set; } = 1;
+
+	/// <summary>
+	///     Minimum amplitude to trigger color rotation (0-255)
+	/// </summary>
+	[DefaultValue(100)]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public int AudioRotationTrigger { get; set; } = 100;
 
 	/// <summary>
 	///     Current audio scene.
@@ -485,8 +485,14 @@ public class SystemData {
 	public string? DeviceId { get; set; } = "";
 
 	public SystemData() {
-		if (GammaCorrection < 1) GammaCorrection = 1;
-		if (GammaCorrection > 4) GammaCorrection = 4;
+		if (GammaCorrection < 1) {
+			GammaCorrection = 1;
+		}
+
+		if (GammaCorrection > 4) {
+			GammaCorrection = 4;
+		}
+
 		CheckDeviceVariables();
 	}
 
@@ -503,8 +509,14 @@ public class SystemData {
 		BaudRate = 115200;
 		CropBlackLevel = 7;
 		BlackLevel = 7;
-		if (GammaCorrection < 1) GammaCorrection = 1;
-		if (GammaCorrection > 4) GammaCorrection = 4;
+		if (GammaCorrection < 1) {
+			GammaCorrection = 1;
+		}
+
+		if (GammaCorrection > 4) {
+			GammaCorrection = 4;
+		}
+
 		CheckDeviceVariables();
 		EnableAutoBrightness = true;
 		LogLevel = 1;
@@ -512,8 +524,14 @@ public class SystemData {
 
 	public string CheckDeviceVariables() {
 		var id = DeviceId;
-		if (GammaCorrection < 1) GammaCorrection = 1;
-		if (GammaCorrection > 4) GammaCorrection = 4;
+		if (GammaCorrection < 1) {
+			GammaCorrection = 1;
+		}
+
+		if (GammaCorrection > 4) {
+			GammaCorrection = 4;
+		}
+
 		if (string.IsNullOrEmpty(id)) {
 			id = NetworkInterface
 				.GetAllNetworkInterfaces()

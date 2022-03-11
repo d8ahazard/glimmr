@@ -16,20 +16,20 @@ namespace Glimmr.Models.ColorSource.AudioVideo;
 
 public class AudioVideoStream : ColorSource {
 	public override bool SourceActive => _vs != null && _vs.Splitter.SourceActive;
-	
+	public sealed override FrameBuilder? Builder { get; set; }
+	public sealed override FrameSplitter Splitter { get; set; }
+
 	private readonly ColorService _cs;
-	public sealed override FrameSplitter Splitter { get; set; } 
 	private AudioStream? _as;
 	private Task? _aTask;
 	private bool _doSave;
 	private SystemData _systemData;
 	private VideoStream? _vs;
 	private Task? _vTask;
-	public sealed override FrameBuilder? Builder { get; set; }
 
 	public AudioVideoStream(ColorService cs) {
 		_cs = cs;
-		var vS = (ColorSource?) _cs.GetStream(DeviceMode.Video.ToString());
+		var vS = (ColorSource?)_cs.GetStream(DeviceMode.Video.ToString());
 		Splitter = vS != null ? vS.Splitter : new FrameSplitter(cs);
 		_systemData = DataUtil.GetSystemData();
 		_cs.ControlService.RefreshSystemEvent += RefreshSystem;
@@ -59,6 +59,7 @@ public class AudioVideoStream : ColorSource {
 			Log.Warning("Unable to acquire audio or video stream.");
 			return Task.CompletedTask;
 		}
+
 		Log.Debug("Starting main av loop...");
 		RunTask = ExecuteAsync(ct);
 		return Task.CompletedTask;
@@ -86,6 +87,7 @@ public class AudioVideoStream : ColorSource {
 
 					continue;
 				}
+
 				var vCols = _vs.Splitter.GetColors();
 				var vSecs = _vs.Splitter.GetSectors();
 				var aCols = _as.Splitter.GetColors();
@@ -94,6 +96,7 @@ public class AudioVideoStream : ColorSource {
 				    vSecs.Length != aSecs.Length) {
 					continue;
 				}
+
 				var oCols = new Color[_systemData.LedCount];
 				var oSecs = new Color[_systemData.SectorCount];
 				for (var i = 0; i < vCols.Length; i++) {
@@ -107,6 +110,7 @@ public class AudioVideoStream : ColorSource {
 					var vCol = vSecs[i];
 					oSecs[i] = ColorUtil.SetBrightness(vCol, ab);
 				}
+
 				await _cs.SendColors(oCols, oSecs);
 
 				if (_doSave && _cs.ControlService.SendPreview) {
@@ -114,6 +118,7 @@ public class AudioVideoStream : ColorSource {
 					Log.Debug("Merge...");
 					_vs.Splitter.MergeFrame(oCols, oSecs);
 				}
+
 				await Task.Delay(16, CancellationToken.None);
 			}
 

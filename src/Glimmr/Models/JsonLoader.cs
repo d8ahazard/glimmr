@@ -52,11 +52,13 @@ public class JsonLoader {
 			var scene = JsonConvert.DeserializeObject<AudioScene>(json);
 			var fileName = scene.Name.Replace(" ", "").ToLowerInvariant();
 			var scenes = LoadFiles<AudioScene>();
-			foreach (var exScene in scenes.Where(exScene => !exScene.System).Where(exScene => exScene.Name == scene.Name)) {
+			foreach (var exScene in scenes.Where(exScene => !exScene.System)
+				         .Where(exScene => exScene.Name == scene.Name)) {
 				Log.Debug("Updating existing user audio scene.");
 				scene.Id = exScene.Id;
 				return SaveJson(scene, fileName, "audioScenes");
 			}
+
 			ids.AddRange(scenes.Select(sc => sc.Id));
 			if (ids.Count > 0) {
 				scene.Id = ids.Max() + 1;
@@ -72,6 +74,7 @@ public class JsonLoader {
 				Log.Warning("Unable to import scene as ambient either.");
 				return false;
 			}
+
 			var fileName = scene.Name.Replace(" ", "").ToLowerInvariant();
 
 			var scenes = LoadFiles<AmbientScene>();
@@ -87,6 +90,7 @@ public class JsonLoader {
 					return SaveJson(scene, fileName, "ambientScenes");
 				}
 			}
+
 			ids.AddRange(scenes.Select(sc => sc.Id));
 			if (ids.Count > 0) {
 				scene.Id = ids.Max() + 1;

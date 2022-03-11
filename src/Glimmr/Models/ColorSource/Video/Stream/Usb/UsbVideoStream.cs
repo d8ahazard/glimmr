@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Glimmr.Models.Util;
-using static Glimmr.Models.GlimmrConstants;
 using Serilog;
+using static Glimmr.Models.GlimmrConstants;
 
 #endregion
 
@@ -85,7 +85,7 @@ public class UsbVideoStream : IVideoStream, IDisposable {
 		}
 
 		_video = new VideoCapture(_inputStream, api);
-		
+
 
 		foreach (var (prop, val) in props) {
 			_video.Set(prop, val);
@@ -117,13 +117,14 @@ public class UsbVideoStream : IVideoStream, IDisposable {
 	private void SetFrame(object? sender, EventArgs e) {
 		if (_video != null && _video.Ptr != IntPtr.Zero) {
 			using var frame = new Mat();
-			_video.Read(frame);			
+			_video.Read(frame);
 			_splitter?.Update(frame);
 			frame.Dispose();
 		} else {
 			if (_splitter != null) {
 				_splitter.SourceActive = false;
 			}
+
 			Log.Debug("No frame to set...");
 		}
 	}
@@ -139,7 +140,7 @@ public class UsbVideoStream : IVideoStream, IDisposable {
 			}
 		} catch (Exception e) {
 			Log.Warning("Exception: " + e.Message);
-		}		
+		}
 	}
 
 	protected virtual void Dispose(bool disposing) {

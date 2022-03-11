@@ -26,7 +26,7 @@ public static class SystemUtil {
 			Log.Debug("Reboot command should be: " + cmd);
 			Process.Start("/bin/bash", cmd);
 		} else {
-			Process.Start("shutdown", RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "/r /t 0" : "-r now");	
+			Process.Start("shutdown", RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "/r /t 0" : "-r now");
 		}
 	}
 
@@ -160,7 +160,10 @@ public static class SystemUtil {
 		foreach (var ad in AppDomain.CurrentDomain.GetAssemblies()) {
 			try {
 				var types = ad.GetTypes() ?? throw new ArgumentNullException(ad.ToString());
-				output.AddRange(from type in types where typeof(T).IsAssignableFrom(type) && !type.IsInterface && !type.IsAbstract where type.FullName != null select type.FullName);
+				output.AddRange(from type in types
+					where typeof(T).IsAssignableFrom(type) && !type.IsInterface && !type.IsAbstract
+					where type.FullName != null
+					select type.FullName);
 			} catch (Exception e) {
 				Log.Warning("Exception listing types: " + e.Message);
 			}
@@ -228,7 +231,7 @@ public static class SystemUtil {
 				var w = v.Width;
 				var h = v.Height;
 
-				if (usb == i || w != 0 && h != 0) {
+				if (usb == i || (w != 0 && h != 0)) {
 					output[i] = GetVideoNameLinux(i).Result;
 				}
 
@@ -279,7 +282,7 @@ public static class SystemUtil {
 			var w = v.Width;
 			var h = v.Height;
 
-			if (selection == index || w != 0 && h != 0) {
+			if (selection == index || (w != 0 && h != 0)) {
 				result = GetVideoName(index).Result;
 			}
 

@@ -7,37 +7,38 @@ using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using Glimmr.Models.Util;
 using Glimmr.Services;
-using System.Timers;
 using Serilog;
 using Timer = System.Timers.Timer;
 
 #endregion
 
-namespace Glimmr.Models.ColorSource.Ambient; 
+namespace Glimmr.Models.ColorSource.Ambient;
 
 public class AmbientStream : ColorSource {
-	private int _sectorCount = 120;
-	private readonly Random _random;
-	public sealed override FrameSplitter Splitter { get; set; }
+	public override bool SourceActive => Splitter.SourceActive;
 	public sealed override FrameBuilder? Builder { get; set; }
+	public sealed override FrameSplitter Splitter { get; set; }
+	private readonly JsonLoader _loader;
+	private readonly Random _random;
+	private readonly Timer _sceneTimer;
 
 	private readonly Stopwatch _watch;
 	private string _ambientColor;
 	private int _ambientScene;
 	private double _animationTime;
 	private int _colorIndex;
-	private EasingMode _easingMode;
-	private readonly JsonLoader _loader;
-	private AnimationMode _mode;
-	private List<Color[]> _colors;
-	private Color[] _sceneColors;
-	private Color[] _emptyColors;
-	private readonly Timer _sceneTimer;
-	private List<AmbientScene> _scenes;
-	private bool _sending;
 	private ColorMatrix? _colorMatrix;
+	private List<Color[]> _colors;
+	private EasingMode _easingMode;
+	private Color[] _emptyColors;
+	private AnimationMode _mode;
+	private Color[] _sceneColors;
+	private List<AmbientScene> _scenes;
+	private int _sectorCount = 120;
+	private bool _sending;
 
 	public AmbientStream(ColorService colorService) {
 		_colors = new List<Color[]>();
@@ -61,30 +62,34 @@ public class AmbientStream : ColorSource {
 				fps = 33.333333333;
 			}
 		}
+
 		_sceneTimer = new Timer(fps);
 		_sceneTimer.Elapsed += UpdateColors;
 	}
 
-	public override bool SourceActive => Splitter.SourceActive;
 
-		
 	#region Data
-		
+
 	/// <summary>
-	/// Refresh system data and reload scene.
+	///     Refresh system data and reload scene.
 	/// </summary>
 	public override void RefreshSystem() {
 		var started = _sceneTimer.Enabled;
-		if (started) _sceneTimer.Enabled = false;
+		if (started) {
+			_sceneTimer.Enabled = false;
+		}
+
 		var sd = DataUtil.GetSystemData();
 		_ambientScene = sd.AmbientScene;
 		_ambientColor = sd.AmbientColor;
 		LoadScene();
-		if (started) _sceneTimer.Enabled = true;
+		if (started) {
+			_sceneTimer.Enabled = true;
+		}
 	}
-		
+
 	/// <summary>
-	/// Load scene data to memory
+	///     Load scene data to memory
 	/// </summary>
 	private void LoadScene() {
 		// Fetch all scenes from HDD
@@ -96,6 +101,7 @@ public class AmbientStream : ColorSource {
 		foreach (var s in _scenes.Where(s => s.Id == _ambientScene)) {
 			scene = s;
 		}
+
 		Log.Debug($"Loading ambient scene '{scene.Name}'.");
 		// If scene is "solid color", set it to the current ambient color.
 		if (_ambientScene == -1) {
@@ -108,17 +114,18 @@ public class AmbientStream : ColorSource {
 		for (var i = 0; i < _sceneColors.Length; i++) {
 			_sceneColors[i] = ColorTranslator.FromHtml(colorStrings[i]);
 		}
+
 		// Set animation time to milliseconds
 		_animationTime = scene.AnimationTime * 1000f;
-			
+
 		// Load easing mode
 		_easingMode = EasingMode.Blend;
 		_easingMode = Enum.Parse<EasingMode>(scene.Easing);
-			
+
 		_mode = AnimationMode.Linear;
 		_mode = Enum.Parse<AnimationMode>(scene.Mode);
 		Log.Debug("Disposing builder...");
-			
+
 		if (_mode == AnimationMode.Matrix) {
 			Log.Debug("Loading matrix.");
 			_colorMatrix = new ColorMatrix(scene);
@@ -126,8 +133,8 @@ public class AmbientStream : ColorSource {
 			_emptyColors = ColorUtil.EmptyColors(_sectorCount).ToArray();
 			var w = _colorMatrix.Width;
 			var h = _colorMatrix.Height;
-			Builder?.Update(new[] { h, h, w, w },true, true);
-				
+			Builder?.Update(new[] { h, h, w, w }, true, true);
+
 			_colorMatrix.Update();
 			_colors.Add(_colorMatrix.ColorArray().ToArray());
 			_colorMatrix.Update();
@@ -143,11 +150,13 @@ public class AmbientStream : ColorSource {
 			Builder?.Update(new[] { 20, 20, 40, 40 });
 			// Load two arrays of colors, which we will use for the actual fade values
 			_colors.Add(RefreshColors(_sceneColors).ToArray());
-			_colors.Add(RefreshColors(_colors[0]).ToArray()); 
+			_colors.Add(RefreshColors(_colors[0]).ToArray());
 		}
+
 		// Set color index 
 		_colorIndex = 0;
 	}
+
 	#endregion
 
 	#region Sending
@@ -158,7 +167,7 @@ public class AmbientStream : ColorSource {
 		Log.Debug("Started...");
 		return Task.CompletedTask;
 	}
-		
+
 	protected override Task ExecuteAsync(CancellationToken ct) {
 		RefreshSystem();
 		Splitter.DoSend = true;
@@ -168,15 +177,19 @@ public class AmbientStream : ColorSource {
 			while (!ct.IsCancellationRequested) {
 				await Task.Delay(TimeSpan.FromMilliseconds(500), CancellationToken.None);
 			}
+
 			_sceneTimer.Enabled = false;
 			_watch.Stop();
 			Splitter.DoSend = false;
 			Log.Information("Ambient stream service stopped.");
 		}, CancellationToken.None);
-	}	
-		
+	}
+
 	private void UpdateColors(object? sender, ElapsedEventArgs args) {
-		if (_sending) return;
+		if (_sending) {
+			return;
+		}
+
 		_sending = true;
 		var sectors = _emptyColors;
 		// Load this one for fading
@@ -192,7 +205,7 @@ public class AmbientStream : ColorSource {
 					EasingMode.FadeOut => FadeOut(_colors[0], avg),
 					EasingMode.FadeInOut => FadeInOut(_colors[1], avg),
 					_ => sectors
-				};	
+				};
 				break;
 			}
 			case <= 0:
@@ -212,8 +225,8 @@ public class AmbientStream : ColorSource {
 				sectors = _colors[0];
 				break;
 		}
-			
-			
+
+
 		try {
 			if (Builder != null) {
 				var frame = Builder.Build(sectors);
@@ -227,27 +240,24 @@ public class AmbientStream : ColorSource {
 		_sending = false;
 	}
 
-		
 	#endregion
 
 	#region ColorUtils
-		
 
-		
 	private static Color[] BlendColor(IReadOnlyList<Color> targets, IReadOnlyList<Color> destinations, double percent) {
 		var output = new Color[targets.Count];
 		for (var t = 0; t < targets.Count; t++) {
 			var target = targets[t];
 			var dest = destinations[t];
-			var r = (int) ((target.R - dest.R) * percent) + dest.R;
-			var g = (int) ((target.G - dest.G) * percent) + dest.G;
-			var b = (int) ((target.B - dest.B) * percent) + dest.B;
+			var r = (int)((target.R - dest.R) * percent) + dest.R;
+			var g = (int)((target.G - dest.G) * percent) + dest.G;
+			var b = (int)((target.B - dest.B) * percent) + dest.B;
 			r = r > 255 ? 255 : r < 0 ? 0 : r;
 			g = g > 255 ? 255 : g < 0 ? 0 : g;
 			b = b > 255 ? 255 : b < 0 ? 0 : b;
 			output[t] = Color.FromArgb(r, g, b);
 		}
-		
+
 		return output;
 	}
 
@@ -275,7 +285,7 @@ public class AmbientStream : ColorSource {
 			return ColorUtil.EmptyColors(_sectorCount);
 		}
 
-		var max = input.Count == 0 ? 0: input.Count - 1;
+		var max = input.Count == 0 ? 0 : input.Count - 1;
 		var rand = _random.Next(0, max);
 		switch (_mode) {
 			case AnimationMode.Linear:
@@ -316,7 +326,10 @@ public class AmbientStream : ColorSource {
 				_colorIndex = CycleInt(_colorIndex, max);
 				break;
 			case AnimationMode.Matrix:
-				if (_colorMatrix == null) return output;
+				if (_colorMatrix == null) {
+					return output;
+				}
+
 				_colorMatrix.Update();
 				output = _colorMatrix.ColorArray().ToArray();
 				break;
@@ -324,6 +337,7 @@ public class AmbientStream : ColorSource {
 				Log.Warning("Unknown animation mode: " + _mode);
 				break;
 		}
+
 		return output;
 	}
 
@@ -350,14 +364,13 @@ public class AmbientStream : ColorSource {
 
 	#region Enumerators
 
-
 	/// <summary>
 	///     Linear - Each color from the list of colors is assigned to a sector, and the order is incremented by 1 each update
 	///     Reverse - Same as linear, but the order is decremented each update
 	///     Random - A random color will be assigned to each sector every update
 	///     RandomAll - One random color will be selected and applied to all sectors each update
 	///     LinearAll - One color will be selected and applied to all tiles, with the color incremented each update
-	///     Matrix - Uses a 9 x 16 grid to create more advanced animations. Map must include a 
+	///     Matrix - Uses a 9 x 16 grid to create more advanced animations. Map must include a
 	/// </summary>
 	private enum AnimationMode {
 		Linear = 0,
@@ -369,35 +382,41 @@ public class AmbientStream : ColorSource {
 	}
 
 	/// <summary>
-	/// The direction the matrix will move in.
+	///     The direction the matrix will move in.
 	/// </summary>
 	public enum MatrixDirection {
 		/// <summary>
-		/// Direction changes each frame cycle
+		///     Direction changes each frame cycle
 		/// </summary>
 		Random = 0,
+
 		/// <summary>
-		/// Left-to-right
+		///     Left-to-right
 		/// </summary>
 		LTR = 1,
+
 		/// <summary>
-		/// Top-to-bottom
+		///     Top-to-bottom
 		/// </summary>
 		TTB = 2,
+
 		/// <summary>
-		/// Right-to-left
+		///     Right-to-left
 		/// </summary>
 		RTL = 3,
+
 		/// <summary>
-		/// Bottom to top
+		///     Bottom to top
 		/// </summary>
 		BTT = 4,
+
 		/// <summary>
-		/// Rotate clockwise
+		///     Rotate clockwise
 		/// </summary>
 		CW = 5,
+
 		/// <summary>
-		/// Rotate counter-clockwise
+		///     Rotate counter-clockwise
 		/// </summary>
 		CCW = 6
 	}
@@ -408,5 +427,6 @@ public class AmbientStream : ColorSource {
 		FadeOut = 2,
 		FadeInOut = 3
 	}
+
 	#endregion
 }

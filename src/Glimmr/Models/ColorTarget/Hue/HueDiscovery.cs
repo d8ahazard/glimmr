@@ -76,7 +76,7 @@ public class HueDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth {
 			var lights = client.GetLightsAsync().Result;
 			data.AddGroups(groups);
 			data.AddLights(lights);
-			
+
 			dev.UpdateFromDiscovered(data);
 			Log.Debug("Returning dev: " + JsonConvert.SerializeObject(dev));
 			return dev;

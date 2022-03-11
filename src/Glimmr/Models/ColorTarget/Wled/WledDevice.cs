@@ -73,6 +73,7 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		if (_ep == null) {
 			return;
 		}
+
 		await SetLightBrightness(_brightness);
 		await SetLightPower(true);
 		await FlashColor(Color.Black);
@@ -141,10 +142,6 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		GC.SuppressFinalize(this);
 	}
 
-	private Task SetColors(object sender, ColorSendEventArgs args) {
-		return SetColors(args.LedColors, args.SectorColors);
-	}
-
 
 	public async Task SetColors(IReadOnlyList<Color> ledColors, IReadOnlyList<Color> sectorColors) {
 		if (!Streaming || !Enable) {
@@ -210,6 +207,10 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		}
 	}
 
+	private Task SetColors(object sender, ColorSendEventArgs args) {
+		return SetColors(args.LedColors, args.SectorColors);
+	}
+
 
 	private Color[] ShiftColors(IReadOnlyList<Color> input) {
 		var output = new Color[input.Count];
@@ -251,7 +252,8 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		if (scaledBright > 255) {
 			scaledBright = 255;
 		}
-		await _wLedClient.Post(new StateRequest { Brightness = (byte) scaledBright});
+
+		await _wLedClient.Post(new StateRequest { Brightness = (byte)scaledBright });
 	}
 
 	protected virtual async Task Dispose(bool disposing) {

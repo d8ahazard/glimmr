@@ -34,7 +34,6 @@ public class GlimmrController : ControllerBase {
 	public GlimmrController() {
 		var cs = ControlService.GetInstance();
 		_controlService = cs;
-		
 	}
 
 	/// <summary>

@@ -9,7 +9,6 @@ using Newtonsoft.Json;
 using Q42.HueApi;
 using Q42.HueApi.Models.Bridge;
 using Q42.HueApi.Models.Groups;
-using Serilog;
 
 #endregion
 

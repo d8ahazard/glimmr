@@ -20,26 +20,28 @@ public class AudioStream : ColorSource {
 	}
 
 	public override bool SourceActive => Splitter.SourceActive;
+	public sealed override FrameBuilder? Builder { get; set; }
 
 	public sealed override FrameSplitter Splitter { get; set; }
-	public sealed override FrameBuilder? Builder { get; set; }
+	private const int SampleFreq = 48000;
+	private const int SampleSize = 512;
+	private CancellationToken? _ct;
+	private int _cutoff;
+	private Dictionary<float, int> _frameData;
 
 	//private float _gain;
 	private int _handle;
 	private bool _hasDll;
 	private AudioMap _map;
+
+	private double _maxVal;
+
 	//private float _min = .015f;
 	private int _recordDeviceIndex;
-	private SystemData? _sd;
-	private const int SampleSize = 512;
-	private const int SampleFreq = 48000;
-	private CancellationToken? _ct;
 	private bool _restart;
 	private bool _running;
+	private SystemData? _sd;
 	private bool _updating;
-	private double _maxVal;
-	private int _cutoff;
-	private Dictionary<float, int> _frameData;
 
 	public AudioStream(ColorService cs) {
 		_frameData = new Dictionary<float, int>();
@@ -68,19 +70,23 @@ public class AudioStream : ColorSource {
 		if (idx == _recordDeviceIndex || _ct == null) {
 			return;
 		}
+
 		_restart = true;
 		while (_running) {
 			Task.Delay(TimeSpan.FromSeconds(1));
 		}
+
 		try {
 			if (_ct == null) {
 				Log.Debug("NULL CT!");
 				return;
 			}
+
 			RunTask = ExecuteAsync((CancellationToken)_ct);
 		} catch (Exception e) {
 			Log.Warning("Exception: " + e.Message + " at " + e.StackTrace + " via " + e.Source);
 		}
+
 		_restart = false;
 	}
 
@@ -119,6 +125,7 @@ public class AudioStream : ColorSource {
 			if (_restart) {
 				Log.Debug("Restarting...");
 			}
+
 			try {
 				Bass.ChannelStop(_handle);
 				Bass.Free();
@@ -164,6 +171,7 @@ public class AudioStream : ColorSource {
 					if (rd != info.Name) {
 						continue;
 					}
+
 					Log.Debug("Setting index to " + a);
 					_recordDeviceIndex = a;
 				}
@@ -177,8 +185,14 @@ public class AudioStream : ColorSource {
 	}
 
 	private bool ProcessHandle(int handle) {
-		if (!_running) return false;
-		if (_updating) return true;
+		if (!_running) {
+			return false;
+		}
+
+		if (_updating) {
+			return true;
+		}
+
 		_updating = true;
 		var lData = new Dictionary<float, int>();
 		var level = Bass.ChannelGetLevel(handle);
@@ -205,13 +219,19 @@ public class AudioStream : ColorSource {
 						var val = fft[a];
 						if (float.IsNaN(val) || float.IsInfinity(val)) {
 							val = 0;
-						} 
+						}
+
 						var freq = FftIndex2Frequency(a, SampleSize, SampleFreq);
-						
+
 						var y = Math.Sqrt(val) * 3 * 255 - 4;
-						if (y > 255) y = 255;
-						if (y < 0) y = 0;
-						
+						if (y > 255) {
+							y = 255;
+						}
+
+						if (y < 0) {
+							y = 0;
+						}
+
 
 						if (_frameData.ContainsKey(freq)) {
 							var prev = _frameData[freq];
@@ -223,12 +243,14 @@ public class AudioStream : ColorSource {
 						if (y == 0) {
 							continue;
 						}
-						
+
 						if (y > _maxVal) {
 							_maxVal = y;
 						}
-						lData[freq] = (int) FlattenValue(y);
+
+						lData[freq] = (int)FlattenValue(y);
 					}
+
 					if (lData.Count > 0) {
 						_frameData = lData;
 					} else {
@@ -236,6 +258,7 @@ public class AudioStream : ColorSource {
 							_maxVal--;
 						}
 					}
+
 					break;
 				}
 				default:
@@ -243,6 +266,7 @@ public class AudioStream : ColorSource {
 					break;
 			}
 		}
+
 		var sectors = _map.MapColors(_frameData).ToList();
 		var frame = Builder?.Build(sectors);
 		if (frame != null) {
@@ -255,7 +279,10 @@ public class AudioStream : ColorSource {
 	}
 
 	private double FlattenValue(double v) {
-		if (v <= _cutoff) v = 0;
+		if (v <= _cutoff) {
+			v = 0;
+		}
+
 		return v / _maxVal * 255;
 	}
 

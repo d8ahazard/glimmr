@@ -86,6 +86,7 @@ public static class Program {
 				if (Directory.Exists(path)) {
 					webBuilder.UseContentRoot(AppContext.BaseDirectory);
 				}
+
 				webBuilder.UseStartup<Startup>();
 				webBuilder.UseUrls("http://*");
 			})

@@ -18,19 +18,19 @@ namespace Glimmr.Models;
 
 public class FrameBuilder : IDisposable {
 	private int _bottomCount;
+	private bool _center;
+	private Rectangle[] _centerCoords;
+	private bool _disposed;
 
 	// This will store the coords of input values
 	private VectorOfVectorOfPoint _inputCoords;
-	private Rectangle[] _centerCoords;
 	private int _ledCount;
 	private int _leftCount;
 	private int _rightCount;
 	private int _topCount;
-	private bool _center;
-	private bool _disposed;
 	private bool _updating;
 
-	public FrameBuilder(IReadOnlyList<int> inputDimensions, bool sectors = false, bool center=false) {
+	public FrameBuilder(IReadOnlyList<int> inputDimensions, bool sectors = false, bool center = false) {
 		_leftCount = inputDimensions[0];
 		_rightCount = inputDimensions[1];
 		_topCount = inputDimensions[2];
@@ -52,7 +52,12 @@ public class FrameBuilder : IDisposable {
 		}
 	}
 
-	public void Update(IReadOnlyList<int> inputDimensions, bool sectors = false, bool center=false) {
+	public void Dispose() {
+		_disposed = true;
+		((IDisposable)_inputCoords).Dispose();
+	}
+
+	public void Update(IReadOnlyList<int> inputDimensions, bool sectors = false, bool center = false) {
 		_updating = true;
 		_leftCount = inputDimensions[0];
 		_rightCount = inputDimensions[1];
@@ -79,13 +84,20 @@ public class FrameBuilder : IDisposable {
 
 
 	public Mat? Build(IEnumerable<Color> colors) {
-		if (_disposed) return null;
-		if (_updating) return null;
+		if (_disposed) {
+			return null;
+		}
+
+		if (_updating) {
+			return null;
+		}
+
 		var enumerable = colors as Color[] ?? colors.ToArray();
 		if (enumerable.Length != _ledCount) {
 			throw new ArgumentOutOfRangeException(
 				$"Color length should be {_ledCount} versus {enumerable.Length}.");
 		}
+
 		var idx = 0;
 
 		try {
@@ -95,20 +107,21 @@ public class FrameBuilder : IDisposable {
 				var color = enumerable[i];
 				var col = new MCvScalar(color.B, color.G, color.R);
 				if (_center) {
-					CvInvoke.Rectangle(gMat,_centerCoords[i], col, -1);
+					CvInvoke.Rectangle(gMat, _centerCoords[i], col, -1);
 				} else {
 					CvInvoke.DrawContours(gMat, _inputCoords, i, col, -1);
 					//CvInvoke.FillPoly(gMat,_inputCoords[i],col,LineType.AntiAlias);	
 				}
 			}
+
 			//CvInvoke.GaussianBlur(gMat, gMat, new Size(29,29), 0);
 			return gMat;
 		} catch (Exception e) {
-			Log.Debug($"Exception, input coords are {_inputCoords.Size} but requested {idx}: " + e.Message + " at " + e.StackTrace + " " + JsonConvert.SerializeObject(e));
+			Log.Debug($"Exception, input coords are {_inputCoords.Size} but requested {idx}: " + e.Message + " at " +
+			          e.StackTrace + " " + JsonConvert.SerializeObject(e));
 		}
 
 		return null;
-
 	}
 
 
@@ -121,7 +134,7 @@ public class FrameBuilder : IDisposable {
 		var lHeight = (int)Math.Round((float)ScaleHeight / _leftCount, MidpointRounding.AwayFromZero);
 		var bWidth = (int)Math.Round((float)ScaleWidth / _bottomCount, MidpointRounding.AwayFromZero);
 		var rHeight = (int)Math.Round((float)ScaleHeight / _rightCount, MidpointRounding.AwayFromZero);
-		
+
 		// These are based on the border/strip values
 		// Minimum limits for top, bottom, left, right            
 		const int minTop = 0;
@@ -140,7 +153,7 @@ public class FrameBuilder : IDisposable {
 				ord = minTop;
 				c2 = minTop + rHeight;
 			}
-			
+
 			var pts = new Point[3];
 			pts[0] = new Point(ScaleWidth, ord);
 			pts[1] = new Point(ScaleWidth, c2);
@@ -163,6 +176,7 @@ public class FrameBuilder : IDisposable {
 				c2 = tWidth;
 				ord = minLeft;
 			}
+
 			var pts = new Point[3];
 			pts[0] = new Point(ord, minTop);
 			pts[1] = new Point(c2, minTop);
@@ -186,7 +200,7 @@ public class FrameBuilder : IDisposable {
 				ord = ScaleHeight - lHeight;
 				c2 = ScaleHeight;
 			}
-			
+
 			var pts = new Point[3];
 			pts[0] = new Point(minLeft, ord);
 			pts[1] = new Point(minLeft, c2);
@@ -209,6 +223,7 @@ public class FrameBuilder : IDisposable {
 				ord = ScaleWidth - bWidth;
 				c2 = ScaleWidth;
 			}
+
 			var pts = new Point[3];
 			pts[0] = new Point(ord, ScaleHeight);
 			pts[1] = new Point(c2, ScaleHeight);
@@ -216,7 +231,7 @@ public class FrameBuilder : IDisposable {
 			polly.Push(new VectorOfPoint(pts));
 			step += 1;
 		}
-		
+
 		return polly;
 	}
 
@@ -235,8 +250,14 @@ public class FrameBuilder : IDisposable {
 		var step = _rightCount - 1;
 		while (step >= 0) {
 			var ord = step * hHeight;
-			if (step == _rightCount - 1) ord = ScaleHeight - hHeight;
-			if (step == 0) ord = minLeft;
+			if (step == _rightCount - 1) {
+				ord = ScaleHeight - hHeight;
+			}
+
+			if (step == 0) {
+				ord = minLeft;
+			}
+
 			var pts = new Point[3];
 			pts[0] = new Point(ScaleWidth, ord);
 			pts[1] = new Point(ScaleWidth, ord + hHeight > ScaleHeight ? ScaleHeight : ord + hHeight);
@@ -249,8 +270,14 @@ public class FrameBuilder : IDisposable {
 		step = _topCount - 2;
 		while (step >= 1) {
 			var ord = step * vWidth;
-			if (step == 1) ord = 0;
-			if (step == _topCount - 2) ord = ScaleWidth - vWidth;
+			if (step == 1) {
+				ord = 0;
+			}
+
+			if (step == _topCount - 2) {
+				ord = ScaleWidth - vWidth;
+			}
+
 			var pts = new Point[3];
 			pts[0] = new Point(ord, minTop);
 			pts[1] = new Point(ord + vWidth > ScaleWidth ? ScaleWidth : ord + vWidth, minTop);
@@ -263,8 +290,14 @@ public class FrameBuilder : IDisposable {
 		// Calc left regions (top to bottom), skipping top-left
 		while (step <= _leftCount - 1) {
 			var ord = step * hHeight;
-			if (step == 0) ord = minTop;
-			if (step == _leftCount - 1) ord = ScaleHeight - hHeight;
+			if (step == 0) {
+				ord = minTop;
+			}
+
+			if (step == _leftCount - 1) {
+				ord = ScaleHeight - hHeight;
+			}
+
 			var pts = new Point[3];
 			pts[0] = new Point(minLeft, ord);
 			pts[1] = new Point(minLeft, ord + hHeight > ScaleHeight - 3 ? ScaleHeight : ord + hHeight);
@@ -277,8 +310,14 @@ public class FrameBuilder : IDisposable {
 		// Calc bottom center regions (L-R)
 		while (step <= _bottomCount - 2) {
 			var ord = step * vWidth;
-			if (step == 1) ord = minLeft;
-			if (step == _bottomCount - 2) ord = ScaleWidth - vWidth;
+			if (step == 1) {
+				ord = minLeft;
+			}
+
+			if (step == _bottomCount - 2) {
+				ord = ScaleWidth - vWidth;
+			}
+
 			var pts = new Point[3];
 			pts[0] = new Point(ord, ScaleHeight);
 			pts[1] = new Point(ord + vWidth > ScaleWidth ? ScaleWidth : ord + vWidth, ScaleHeight);
@@ -310,10 +349,5 @@ public class FrameBuilder : IDisposable {
 		}
 
 		return polly.ToArray();
-	}
-
-	public void Dispose() {
-		_disposed = true;
-		((IDisposable)_inputCoords).Dispose();
 	}
 }

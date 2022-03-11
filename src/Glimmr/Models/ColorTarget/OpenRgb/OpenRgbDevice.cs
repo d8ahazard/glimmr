@@ -24,6 +24,7 @@ public class OpenRgbDevice : ColorTarget, IColorTarget {
 	private int _offset;
 	private StripMode _stripMode;
 	private int _targetSector;
+
 	public OpenRgbDevice(OpenRgbData data, ColorService cs) : base(cs) {
 		Id = data.Id;
 		_data = data;
@@ -107,17 +108,8 @@ public class OpenRgbDevice : ColorTarget, IColorTarget {
 		return Task.CompletedTask;
 	}
 
-	
 
 	public void Dispose() {
-	}
-
-	private Task SetColors(object sender, ColorSendEventArgs args) {
-		if (!_client?.Connected ?? false) {
-			return Task.CompletedTask;
-		}
-
-		return SetColors(args.LedColors, args.SectorColors);
 	}
 
 
@@ -147,7 +139,6 @@ public class OpenRgbDevice : ColorTarget, IColorTarget {
 			}
 		}
 
-	
 
 		var converted = _data.ColorOrder switch {
 			ColorOrder.Rgb => toSend.Select(col => new OpenRGB.NET.Models.Color(col.R, col.G, col.B)).ToList(),
@@ -161,6 +152,37 @@ public class OpenRgbDevice : ColorTarget, IColorTarget {
 
 		_client?.Update(_data.DeviceId, converted.ToArray());
 		await Task.FromResult(true);
+	}
+
+	public Task ReloadData() {
+		var dev = DataUtil.GetDevice<OpenRgbData>(Id);
+		if (dev == null) {
+			return Task.CompletedTask;
+		}
+
+		_data = dev;
+		Enable = _data.Enable;
+
+
+		_offset = _data.Offset;
+		Enable = _data.Enable;
+		_stripMode = _data.StripMode;
+		_targetSector = _data.TargetSector;
+		_multiplier = _data.LedMultiplier;
+		if (_multiplier == 0) {
+			_multiplier = 1;
+		}
+
+		_ledCount = _data.LedCount;
+		return Task.CompletedTask;
+	}
+
+	private Task SetColors(object sender, ColorSendEventArgs args) {
+		if (!_client?.Connected ?? false) {
+			return Task.CompletedTask;
+		}
+
+		return SetColors(args.LedColors, args.SectorColors);
 	}
 
 	private Color[] ShiftColors(IReadOnlyList<Color> input) {
@@ -179,28 +201,7 @@ public class OpenRgbDevice : ColorTarget, IColorTarget {
 				l++;
 			}
 		}
+
 		return output;
-	}
-	public Task ReloadData() {
-		var dev = DataUtil.GetDevice<OpenRgbData>(Id);
-		if (dev == null) {
-			return Task.CompletedTask;
-		}
-
-		_data = dev;
-		Enable = _data.Enable;
-				
-
-		_offset = _data.Offset;
-		Enable = _data.Enable;
-		_stripMode = _data.StripMode;
-		_targetSector = _data.TargetSector;
-		_multiplier = _data.LedMultiplier;
-		if (_multiplier == 0) {
-			_multiplier = 1;
-		}
-
-		_ledCount = _data.LedCount;
-		return Task.CompletedTask;
 	}
 }

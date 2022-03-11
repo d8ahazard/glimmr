@@ -40,6 +40,7 @@ public class SocketServer : Hub {
 			Log.Debug("NO CONTROL SERVICE!");
 			return;
 		}
+
 		Log.Debug("HUB MODE: " + mode);
 		try {
 			await _cs.SetMode(mode).ConfigureAwait(false);
@@ -156,14 +157,21 @@ public class SocketServer : Hub {
 			dynamic? devObject = device.ToObject(typeName);
 			if (devObject != null) {
 				await _cs.UpdateDevice(devObject, false);
-				if (string.IsNullOrEmpty(id)) return;
+				if (string.IsNullOrEmpty(id)) {
+					return;
+				}
+
 				var data = DataUtil.GetDevice(id);
-				if (data == null) return;
+				if (data == null) {
+					return;
+				}
+
 				var serializerSettings = new JsonSerializerSettings {
 					ContractResolver = new CamelCasePropertyNamesContractResolver()
 				};
 
-				await Clients.All.SendAsync("device", JsonConvert.SerializeObject((IColorTargetData)data, serializerSettings));
+				await Clients.All.SendAsync("device",
+					JsonConvert.SerializeObject((IColorTargetData)data, serializerSettings));
 			}
 		}
 	}
@@ -236,7 +244,8 @@ public class SocketServer : Hub {
 			return;
 		}
 
-		try {_states[Context.ConnectionId] = false;
+		try {
+			_states[Context.ConnectionId] = false;
 			SetSend();
 			Log.Debug("Connected: " + Context.ConnectionId);
 			await Clients.Caller.SendAsync("olo", DataUtil.GetStoreSerialized(_cs)).ConfigureAwait(false);

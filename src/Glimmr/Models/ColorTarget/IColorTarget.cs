@@ -15,7 +15,7 @@ namespace Glimmr.Models.ColorTarget;
 public interface IColorTarget {
 	public bool Enable { get; set; }
 	public bool Streaming { get; set; }
-	
+
 	[JsonProperty] public DateTime LastSeen => DateTime.Now;
 
 	public IColorTargetData Data { get; set; }

@@ -20,13 +20,14 @@ using Color = System.Drawing.Color;
 namespace Glimmr.Models.ColorTarget.HueV2;
 
 public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
+	public bool Testing { get; set; }
 	private HueV2Data Data { get; set; }
-	private HueGroup? _group;
 	private int _brightness;
 	private StreamingHueClient? _client;
 	private CancellationToken _ct;
 	private bool _disposed;
 	private EntertainmentLayer? _entLayer;
+	private HueGroup? _group;
 	private string _ipAddress;
 	private string? _selectedGroup;
 	private Dictionary<int, int> _targets;
@@ -61,7 +62,6 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 		set => Data = (HueV2Data)value;
 	}
 
-	public bool Testing { get; set; }
 	public string Id { get; }
 	public bool Streaming { get; set; }
 
@@ -94,6 +94,7 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 		if (!Enable) {
 			return;
 		}
+
 		_ct = ct;
 
 		if (string.IsNullOrEmpty(_user) || string.IsNullOrEmpty(_token)) {
@@ -107,7 +108,7 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 
 		// Ensure our streaming group still exists
 		var all = await _client.LocalHueApi.GetEntertainmentConfigurations();
-		
+
 		EntertainmentConfiguration? group = null;
 		foreach (var g in all.Data.Where(g => g.Id.ToString() == _selectedGroup)) {
 			group = g;
@@ -123,7 +124,7 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 		foreach (var g in Data.Groups.Where(g => g.Id == _selectedGroup)) {
 			_group = g;
 		}
-		
+
 		if (_group == null) {
 			Log.Information("Unable to find selected streaming group.");
 			return;
@@ -134,19 +135,30 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 		foreach (var c in channels) {
 			var added = false;
 			foreach (var m in c.Members) {
-				if (added) break;
-				foreach(var l in _group.Services) {
-					if (added) break;
-					if (m.Service == null) continue;
+				if (added) {
+					break;
+				}
+
+				foreach (var l in _group.Services) {
+					if (added) {
+						break;
+					}
+
+					if (m.Service == null) {
+						continue;
+					}
+
 					if (l.SvcId != m.Service.Rid) {
 						continue;
 					}
+
 					maps.Add(c);
 					added = true;
 					break;
 				}
 			}
 		}
+
 		var entGroup = new StreamingGroup(maps);
 
 		//Create a streaming group
@@ -212,10 +224,6 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 		await Task.FromResult(true);
 	}
 
-	private async Task SetColors(object sender, ColorSendEventArgs args) {
-		await SetColors(args.LedColors, args.SectorColors);
-	}
-
 	/// <summary>
 	///     Update lights in entertainment group...
 	/// </summary>
@@ -226,7 +234,7 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 			return Task.CompletedTask;
 		}
 
-		
+
 		foreach (var entLight in _entLayer) {
 			//Get data for our light from map
 			var lightData = _group.Services.SingleOrDefault(item =>
@@ -243,6 +251,7 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 				Log.Debug("NO TARGET!!");
 				continue;
 			}
+
 			var color = sectorColors[target - 1];
 			var mb = lightData.Override ? lightData.Brightness : _brightness;
 			color = ColorUtil.ClampBrightness(color, mb);
@@ -251,6 +260,10 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 		}
 
 		return Task.CompletedTask;
+	}
+
+	private async Task SetColors(object sender, ColorSendEventArgs args) {
+		await SetColors(args.LedColors, args.SectorColors);
 	}
 
 
@@ -266,18 +279,18 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 			_group = g;
 			break;
 		}
+
 		if (_group == null) {
 			Log.Warning("No group selected for entertainment.");
 			Enable = false;
 			return;
 		}
-		
+
 		foreach (var ld in _group.Services) {
 			_targets[ld.Channel] = ld.TargetSector;
 		}
 
 		Enable = Data.Enable;
-		
 	}
 
 	private void Dispose(bool disposing) {

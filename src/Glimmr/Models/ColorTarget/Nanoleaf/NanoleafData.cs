@@ -13,7 +13,6 @@ namespace Glimmr.Models.ColorTarget.Nanoleaf;
 
 [Serializable]
 public class NanoleafData : IColorTargetData {
-	
 	/// <summary>
 	///     Device Brightness.
 	/// </summary>

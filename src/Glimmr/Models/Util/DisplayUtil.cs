@@ -79,7 +79,7 @@ public static class DisplayUtil {
 		var height = 0;
 		// Enumerate system display devices
 		var devIdx = 0;
-		
+
 		while (true) {
 			var deviceData = new DisplayDevice { cb = Marshal.SizeOf(typeof(DisplayDevice)) };
 			if (EnumDisplayDevices(null, devIdx, ref deviceData, 0) != 0) {

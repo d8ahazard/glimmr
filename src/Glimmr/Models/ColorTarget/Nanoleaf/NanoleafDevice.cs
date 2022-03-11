@@ -20,12 +20,12 @@ public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
 	private readonly NanoleafClient? _nanoleafClient;
 	private readonly NanoleafStreamingClient? _streamingClient;
 	private int _brightness;
+	private Task? _checkTask;
 	private NanoleafData _data;
 	private bool _disposed;
 	private int _frameTime;
 	private TileLayout? _layout;
 	private Dictionary<int, int> _targets;
-	private Task? _checkTask;
 
 	/// <summary>
 	///     Use this for sending color data to the panel
@@ -109,6 +109,7 @@ public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
 					await _nanoleafClient.StartExternalAsync();
 					await _nanoleafClient.SetBrightnessAsync(_brightness);
 				}
+
 				await Task.Delay(TimeSpan.FromMinutes(15), ct);
 			}
 		}, CancellationToken.None);
@@ -128,12 +129,13 @@ public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
 			Log.Warning("Client is null...");
 			return;
 		}
-		
+
 		Log.Debug($"{_data.Tag}::Stopping stream...{_data.Id}.");
 		if (_checkTask is { IsCompleted: false }) {
 			await _checkTask.WaitAsync(TimeSpan.FromSeconds(1));
 			_checkTask = null;
 		}
+
 		await _nanoleafClient.TurnOffAsync();
 		Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 	}
@@ -174,10 +176,6 @@ public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
 		Dispose(true);
 	}
 
-	private Task SetColors(object sender, ColorSendEventArgs args) {
-		return SetColors(args.LedColors, args.SectorColors);
-	}
-
 
 	public async Task SetColors(IReadOnlyList<Color> _, IReadOnlyList<Color> sectors) {
 		if (!Streaming || !Enable) {
@@ -197,6 +195,7 @@ public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
 				cols[key] = color;
 				continue;
 			}
+
 			cols[key] = sectors[target - 1];
 		}
 
@@ -206,6 +205,10 @@ public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
 		}
 
 		await _streamingClient.SetColorAsync(cols, 1).ConfigureAwait(false);
+	}
+
+	private Task SetColors(object sender, ColorSendEventArgs args) {
+		return SetColors(args.LedColors, args.SectorColors);
 	}
 
 	private void SetData() {

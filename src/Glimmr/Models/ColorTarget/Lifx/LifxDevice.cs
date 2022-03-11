@@ -118,10 +118,6 @@ public class LifxDevice : ColorTarget, IColorTarget {
 	public void Dispose() {
 	}
 
-	private Task SetColors(object sender, ColorSendEventArgs args) {
-		return SetColors(args.LedColors, args.SectorColors);
-	}
-
 
 	public async Task SetColors(IReadOnlyList<Color> ledColors, IReadOnlyList<Color> sectorColors) {
 		if (!Streaming || !Enable) {
@@ -133,6 +129,10 @@ public class LifxDevice : ColorTarget, IColorTarget {
 		} else {
 			await SetColorSingle(sectorColors);
 		}
+	}
+
+	private Task SetColors(object sender, ColorSendEventArgs args) {
+		return SetColors(args.LedColors, args.SectorColors);
 	}
 
 	private static int[] GenerateGammaTable(double gamma = 2.3, int maxOut = 255) {

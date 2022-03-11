@@ -43,29 +43,29 @@ public class ControlService : BackgroundService {
 	public ServiceDiscovery ServiceDiscovery { get; private set; } = null!;
 	public StatData? Stats { get; set; }
 	public UdpClient UdpClient { get; private set; } = null!;
+	private static Timer? _bt;
 
 	private static LoggingLevelSwitch? _levelSwitch;
 
 	private static ControlService _myCs = null!;
-	
-	private readonly IHubContext<SocketServer> _hubContext;
 
 	private static Timer? _ut;
-	private static Timer? _bt;
-	
+
+	private readonly IHubContext<SocketServer> _hubContext;
+
 	public AsyncEvent<DynamicEventArgs> DemoLedEvent = null!;
 	public AsyncEvent<DynamicEventArgs> DeviceReloadEvent = null!;
 	public AsyncEvent<DynamicEventArgs> DeviceRescanEvent = null!;
 	public AsyncEvent<DynamicEventArgs> FlashDeviceEvent = null!;
+	public AsyncEvent<DynamicEventArgs> FlashLedEvent = null!;
 	public AsyncEvent<DynamicEventArgs> FlashSectorEvent = null!;
 	public AsyncEvent<DynamicEventArgs> RefreshLedEvent = null!;
 	public AsyncEvent<DynamicEventArgs> SetModeEvent = null!;
 	public AsyncEvent<DynamicEventArgs> StartStreamEvent = null!;
-	public AsyncEvent<DynamicEventArgs> FlashLedEvent = null!;
 
 	private Dictionary<string, dynamic> _agents = null!;
 	private SystemData _sd;
-	
+
 	public ControlService(IHubContext<SocketServer> hubContext) {
 		_myCs = this;
 		ShowHeader();
@@ -210,8 +210,12 @@ public class ControlService : BackgroundService {
 						Log.Information("Device is activated!");
 						await DataUtil.AddDeviceAsync(activated, true);
 						if (clientProxy != null) {
-							await clientProxy.SendAsync("auth", "authorized"); }
-						await _hubContext.Clients.All.SendAsync("device", JsonConvert.SerializeObject((IColorTargetData)data, serializerSettings)).ConfigureAwait(false);
+							await clientProxy.SendAsync("auth", "authorized");
+						}
+
+						await _hubContext.Clients.All.SendAsync("device",
+								JsonConvert.SerializeObject((IColorTargetData)data, serializerSettings))
+							.ConfigureAwait(false);
 						return true;
 					}
 				} catch (Exception e) {
@@ -243,7 +247,7 @@ public class ControlService : BackgroundService {
 	public async Task FlashLed(int led) {
 		await FlashLedEvent.InvokeAsync(this, new DynamicEventArgs(led));
 	}
-	
+
 	public async Task FlashDevice(string deviceId) {
 		await FlashDeviceEvent.InvokeAsync(this, new DynamicEventArgs(deviceId));
 	}
@@ -271,6 +275,7 @@ public class ControlService : BackgroundService {
 			while (!stoppingToken.IsCancellationRequested) {
 				await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
 			}
+
 			_bt?.Stop();
 			_ut?.Stop();
 		}, stoppingToken);
@@ -281,10 +286,10 @@ public class ControlService : BackgroundService {
 		var userPath = SystemUtil.GetUserDir();
 		var dbFiles = Directory.GetFiles(userPath, "*.db");
 		DataUtil.BackupDb();
-		
+
 		Array.Sort(dbFiles);
 		Array.Reverse(dbFiles);
-		
+
 		// Prune extra backups
 		if (dbFiles.Length <= 8) {
 			return;
@@ -319,7 +324,9 @@ public class ControlService : BackgroundService {
 	}
 
 	private void CheckUpdate(object? sender, ElapsedEventArgs elapsedEventArgs) {
-		if (_sd.AutoUpdate) SystemUtil.Update();
+		if (_sd.AutoUpdate) {
+			SystemUtil.Update();
+		}
 	}
 
 	private void ShowHeader() {

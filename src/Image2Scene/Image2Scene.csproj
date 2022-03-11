@@ -8,11 +8,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Emgu.CV" Version="4.5.5.4823" />
-      <PackageReference Include="Emgu.CV.runtime.windows" Version="4.5.5.4823" />
-      <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+        <PackageReference Include="Emgu.CV" Version="4.5.5.4823"/>
+        <PackageReference Include="Emgu.CV.runtime.windows" Version="4.5.5.4823"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.1"/>
     </ItemGroup>
-
 
 
 </Project>

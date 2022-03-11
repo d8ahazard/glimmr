@@ -22,6 +22,8 @@ public static class DataUtil {
 	private static List<dynamic>? _devices;
 	private static int _lockCount;
 	private static LiteDatabase? _db = GetDb();
+
+
 	private static SystemData? _systemData = CacheSystemData();
 
 	private static LiteDatabase GetDb() {
@@ -35,7 +37,7 @@ public static class DataUtil {
 		var userPath = SystemUtil.GetUserDir();
 		userPath = Path.Join(userPath, "store.db");
 		var bootPath = Path.Join("/boot", "store.db");
-		
+
 		if (!File.Exists(userPath) && File.Exists(bootPath)) {
 			Log.Information("Copying database from /boot directory.");
 			try {
@@ -228,7 +230,7 @@ public static class DataUtil {
 		}
 
 		var output = new List<dynamic>(devices.Length);
-	
+
 		foreach (var device in devices) {
 			foreach (var dev in devs) {
 				try {
@@ -260,6 +262,7 @@ public static class DataUtil {
 				}
 			}
 		}
+
 		Log.Debug("Loaded " + output.Count + " devices.");
 
 		_devices = output;
@@ -369,7 +372,7 @@ public static class DataUtil {
 
 		return result;
 	}
-	
+
 	public static string BackupDb() {
 		if (_db == null) {
 			Log.Warning("DB is null, this is bad!!");

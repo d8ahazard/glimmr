@@ -20,6 +20,7 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.Hue;
 
 public sealed class HueDevice : ColorTarget, IColorTarget, IDisposable {
+	public bool Testing { get; set; }
 	private HueData Data { get; set; }
 	private int _brightness;
 	private StreamingHueClient? _client;
@@ -64,7 +65,6 @@ public sealed class HueDevice : ColorTarget, IColorTarget, IDisposable {
 		set => Data = (HueData)value;
 	}
 
-	public bool Testing { get; set; }
 	public string Id { get; }
 	public bool Streaming { get; set; }
 
@@ -193,16 +193,12 @@ public sealed class HueDevice : ColorTarget, IColorTarget, IDisposable {
 		Log.Debug($"{Data.Tag}::Stream stopped: {Data.Id}");
 	}
 
-	private Task SetColors(object sender, ColorSendEventArgs args) {
-		return SetColors(args.LedColors, args.SectorColors);
-	}
-
 	/// <summary>
 	///     Update lites in entertainment group...
 	/// </summary>
 	/// <param name="_">Led Colors (Ignored)</param>
 	/// <param name="sectorColors"></param>
-	public Task SetColors(IReadOnlyList<Color> _,IReadOnlyList<Color> sectorColors) {
+	public Task SetColors(IReadOnlyList<Color> _, IReadOnlyList<Color> sectorColors) {
 		if (!Streaming || !Enable || _entLayer == null) {
 			return Task.CompletedTask;
 		}
@@ -230,7 +226,12 @@ public sealed class HueDevice : ColorTarget, IColorTarget, IDisposable {
 			// If we're currently using a scene, animate it
 			entLight.SetState(_ct, oColor, mb);
 		}
+
 		return Task.CompletedTask;
+	}
+
+	private Task SetColors(object sender, ColorSendEventArgs args) {
+		return SetColors(args.LedColors, args.SectorColors);
 	}
 
 

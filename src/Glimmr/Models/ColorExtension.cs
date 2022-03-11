@@ -1,6 +1,10 @@
-﻿using System.Drawing;
+﻿#region
 
-namespace Glimmr.Models; 
+using System.Drawing;
+
+#endregion
+
+namespace Glimmr.Models;
 
 public static class ColorExtension {
 	public static string ToHex(this Color c) {

@@ -150,7 +150,6 @@ public class DiscoveryService : BackgroundService {
 
 		try {
 			await Task.WhenAll(tasks);
-			
 		} catch (Exception e) {
 			Log.Warning($"Exception during discovery: {e.Message}" + e.StackTrace);
 		} finally {

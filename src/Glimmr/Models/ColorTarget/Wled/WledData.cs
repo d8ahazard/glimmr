@@ -228,7 +228,8 @@ public class WledData : IColorTargetData {
 						["4"] = "DNRGB"
 					}) { ValueHint = "Select desired WLED protocol. Default is DRGB." }
 				};
-				props.AddRange(Segments.Select(seg => seg.Id).Select(id => new SettingsProperty($"segmentOffset{id}", "number", $"Segment {id} Offset")));
+				props.AddRange(Segments.Select(seg => seg.Id).Select(id =>
+					new SettingsProperty($"segmentOffset{id}", "number", $"Segment {id} Offset")));
 
 				return props.ToArray();
 			}

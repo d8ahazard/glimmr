@@ -9,7 +9,7 @@ using System.Windows.Forms;
 
 #endregion
 
-namespace GlimmrTray; 
+namespace GlimmrTray;
 
 internal static class Program {
 	private const uint EventSystemMinimizeStart = 0x0016;
@@ -60,7 +60,7 @@ internal static class Program {
 		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 			trayIcon = Icon.ExtractAssociatedIcon(Path.Combine(AppContext.BaseDirectory, "GlimmrTray.exe"));
 		}
-			
+
 		var processStartInfo = new ProcessStartInfo {
 			FileName = path,
 			ErrorDialog = true,
@@ -106,7 +106,7 @@ internal static class Program {
 	}
 
 	private static void ShowUi(object sender, EventArgs e) {
-		Process.Start("explorer","http://localhost");
+		Process.Start("explorer", "http://localhost");
 	}
 
 	private static void CloseApp(object sender, EventArgs e) {

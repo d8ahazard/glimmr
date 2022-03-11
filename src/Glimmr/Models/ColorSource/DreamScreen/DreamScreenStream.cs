@@ -19,11 +19,11 @@ namespace Glimmr.Models.ColorSource.DreamScreen;
 
 public class DreamScreenStream : ColorSource {
 	public override bool SourceActive => Splitter.SourceActive;
-	private const int TargetGroup = 20;
 	public sealed override FrameBuilder? Builder { get; set; }
+	public sealed override FrameSplitter Splitter { get; set; }
+	private const int TargetGroup = 20;
 	private readonly DreamScreenClient? _client;
 	private readonly ColorService _cs;
-	public sealed override FrameSplitter Splitter { get; set; }
 	private DreamDevice? _dDev;
 	private IPAddress? _targetDreamScreen;
 

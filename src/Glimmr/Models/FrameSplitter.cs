@@ -17,7 +17,6 @@ using Glimmr.Services;
 using Newtonsoft.Json;
 using Serilog;
 using static Glimmr.Models.GlimmrConstants;
-using Color = System.Drawing.Color;
 
 #endregion
 
@@ -33,34 +32,34 @@ public class FrameSplitter : IDisposable {
 				_pillarCropCounter.Clear();
 				_cropTimer.Start();
 			} else {
-				_cropTimer.Stop();	
+				_cropTimer.Stop();
 			}
 		}
 	}
 
-	private bool _doSend;
 	public bool SourceActive { get; set; }
 	private ColorService ColorService { get; }
 	private readonly float _borderHeight;
 
 	// The width of the border to crop from for LEDs
 	private readonly float _borderWidth;
+	private readonly Timer _cropTimer;
 	private readonly List<VectorOfPoint> _targets;
 	private readonly bool _useCrop;
 	private bool _allBlack;
-	private bool _correctGamma;
-	private float _gammaCorrection;
 	private int _blackLevel;
 	private int _bottomCount;
 
 	// Loaded data
 	private CaptureMode _captureMode;
+	private bool _checkCrop;
 
 	// The current crop mode?
 	private Color[] _colorsLed;
 	private Color[] _colorsLedIn;
 	private Color[] _colorsSectors;
 	private Color[] _colorsSectorsIn;
+	private readonly bool _correctGamma;
 	private int _cropBlackLevel;
 	private int _cropCount;
 	private int _cropDelay;
@@ -71,16 +70,21 @@ public class FrameSplitter : IDisposable {
 
 	private bool _doSave;
 
+	private bool _doSend;
+	private Color[] _empty;
+	private Color[] _emptySectors;
+
 	private Rectangle[] _fullCoords;
 	private Rectangle[] _fullSectors;
+	private readonly float _gammaCorrection;
 	private int _hSectors;
 
 	// Are we cropping right now?
 	private bool _lCrop;
+	private CropCounter _lCropCounter;
 
 	// Current crop settings
 	private int _lCropPixels;
-	private CropCounter _lCropCounter;
 
 	private int _ledCount;
 	private int _leftCount;
@@ -102,16 +106,12 @@ public class FrameSplitter : IDisposable {
 	private int _srcArea;
 	private int _topCount;
 	private bool _useCenter;
-	private Color[] _empty;
 
-	
+
 	// Source stuff
 	private PointF[] _vectors;
 	private int _vSectors;
 	private bool _warned;
-	private Color[] _emptySectors;
-	private readonly Timer _cropTimer;
-	private bool _checkCrop;
 
 	public FrameSplitter(ColorService cs, bool crop = false) {
 		_vectors = Array.Empty<PointF>();
@@ -141,6 +141,11 @@ public class FrameSplitter : IDisposable {
 		_fullSectors = DrawSectors();
 		_cropTimer = new Timer(1000);
 		_cropTimer.Elapsed += TriggerCropCheck;
+	}
+
+	public void Dispose() {
+		_lockTarget?.Dispose();
+		_cropTimer.Dispose();
 	}
 
 	private void TriggerCropCheck(object? sender, ElapsedEventArgs e) {
@@ -226,7 +231,10 @@ public class FrameSplitter : IDisposable {
 	}
 
 	private void TriggerSave() {
-		if (!_doSend) return;
+		if (!_doSend) {
+			return;
+		}
+
 		_doSave = true;
 	}
 
@@ -356,7 +364,7 @@ public class FrameSplitter : IDisposable {
 		}
 
 		var corrected = clone;
-		
+
 		if (_correctGamma) {
 			IntensityTransformInvoke.GammaCorrection(clone, corrected, _gammaCorrection);
 			clone = corrected;
@@ -366,6 +374,7 @@ public class FrameSplitter : IDisposable {
 			await CheckCrop(clone).ConfigureAwait(false);
 			_checkCrop = false;
 		}
+
 		var ledColors = _empty;
 		var sectorColors = _emptySectors;
 
@@ -394,6 +403,7 @@ public class FrameSplitter : IDisposable {
 			if (ColorService.ControlService.SendPreview) {
 				SaveFrames(frame, clone);
 			}
+
 			_doSave = false;
 			_merge = false;
 		}
@@ -569,7 +579,8 @@ public class FrameSplitter : IDisposable {
 		var green = (int)foo.V1;
 		var blue = (int)foo.V0;
 		if (red < _blackLevel && green < _blackLevel && blue < _blackLevel) {
-			return Color.FromArgb(0, 0, 0, 0); }
+			return Color.FromArgb(0, 0, 0, 0);
+		}
 
 		return Color.FromArgb(red, green, blue);
 	}
@@ -603,12 +614,22 @@ public class FrameSplitter : IDisposable {
 		// If it is, we can stop here
 		if (noImage) {
 			_allBlack = true;
-			if (_doSend) ColorService.CheckAutoDisable(false);
+			if (_doSend) {
+				ColorService.CheckAutoDisable(false);
+			}
+
 			return;
 		}
-		if (_doSend) ColorService.CheckAutoDisable(true);
+
+		if (_doSend) {
+			ColorService.CheckAutoDisable(true);
+		}
+
 		// Return here, because otherwise, "no input" detection won't work.
-		if (!_useCrop) return;
+		if (!_useCrop) {
+			return;
+		}
+
 		// Convert image to greyscale
 		var gr = new Mat();
 		CvInvoke.CvtColor(image, gr, ColorConversion.Bgr2Gray);
@@ -625,7 +646,7 @@ public class FrameSplitter : IDisposable {
 				var l2 = Sum(b2) / b2.Length;
 				c1.Dispose();
 				c2.Dispose();
-				if (l1 <= _cropBlackLevel && l2 <= _cropBlackLevel && l1==l2) {
+				if (l1 <= _cropBlackLevel && l2 <= _cropBlackLevel && l1 == l2) {
 					lPixels = y;
 				} else {
 					break;
@@ -664,9 +685,8 @@ public class FrameSplitter : IDisposable {
 			if (pPixels == 0) {
 				if (_pillarCropCounter.Triggered || _pCrop) {
 					_pillarCropCounter.Clear();
-					_pCropPixels = 0;	
+					_pCropPixels = 0;
 				}
-				
 			} else {
 				_pillarCropCounter.Tick(pPixels);
 			}
@@ -684,14 +704,14 @@ public class FrameSplitter : IDisposable {
 					_lCropCounter.Clear();
 					_lCrop = false;
 					_sectorChanged = true;
-					_lCropPixels = 0;	
+					_lCropPixels = 0;
 				}
 			} else {
 				// Tick our counter - up if the difference between current and new crop values are lt 4, down otherwise.
 				_lCropCounter.Tick(lPixels);
 			}
 		}
-		
+
 		if (_lCropCounter.Triggered && !_lCrop) {
 			_lCrop = true;
 			_sectorChanged = true;
@@ -900,18 +920,14 @@ public class FrameSplitter : IDisposable {
 
 		return fs;
 	}
-
-	public void Dispose() {
-		_lockTarget?.Dispose();
-		_cropTimer.Dispose();
-	}
 }
 
 public class CropCounter {
-	[JsonProperty]
-	private readonly int _max;
-	[JsonProperty]
-	private int _count;
+	[JsonProperty] public bool Triggered => _count >= _max;
+
+	[JsonProperty] private readonly int _max;
+
+	[JsonProperty] private int _count;
 
 	[JsonProperty] private int _dimension;
 
@@ -934,14 +950,13 @@ public class CropCounter {
 		} else {
 			if (dim == 0) {
 				_count--;
-				if (_count < 0) _count = 0;
+				if (_count < 0) {
+					_count = 0;
+				}
 			} else {
 				_count = 0;
-				_dimension = dim;	
+				_dimension = dim;
 			}
 		}
 	}
-
-	[JsonProperty]
-	public bool Triggered => _count >= _max;
 }

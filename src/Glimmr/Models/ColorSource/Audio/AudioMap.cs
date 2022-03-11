@@ -14,6 +14,7 @@ public class AudioMap {
 	private readonly int[] _leftSectors;
 	private readonly JsonLoader _loader;
 	private readonly int[] _rightSectors;
+	private int _kickCount;
 	private float _maxVal;
 	private float _minVal;
 	private Dictionary<string, int> _octaveMap;
@@ -23,7 +24,6 @@ public class AudioMap {
 	private int _rotationThreshold;
 	private float _rotationUpper = 1f;
 	private bool _triggered;
-	private int _kickCount;
 
 	public AudioMap() {
 		_octaveMap = new Dictionary<string, int>();
@@ -38,12 +38,15 @@ public class AudioMap {
 		// Total number of sectors
 		const int len = 20;
 		var output = ColorUtil.EmptyColors(len);
-		if (lChannel.Count == 0) return output;
+		if (lChannel.Count == 0) {
+			return output;
+		}
+
 		var triggered = false;
 		var l = 0;
 		var r = 0;
 		var black = Color.FromArgb(0, 0, 0, 0);
-		
+
 		//Log.Debug("LMap: " + JsonConvert.SerializeObject(lChannel));
 		foreach (var (key, octave) in _octaveMap) {
 			try {
@@ -58,6 +61,7 @@ public class AudioMap {
 					if (!triggered && lFreq < 100) {
 						triggered = lMax >= _rotationThreshold;
 					}
+
 					//Log.Debug($"MaxFreq {octave} is {lFreq} at {lMax}");
 					var lHue = RotateHue(ColorUtil.HueFromFrequency(lFreq, octave));
 					if (lMax > _maxVal) {
@@ -69,15 +73,17 @@ public class AudioMap {
 					}
 
 					output[l] = ColorUtil.HsvToColor(lHue * 360, 1, lMax / 255f);
-					output[r] = output[l];	
+					output[r] = output[l];
 				}
-				
 			} catch (Exception e) {
 				Log.Debug($"Ex {l} {r}: " + e.Message + " at " + e.StackTrace);
 			}
 		}
 
-		if (triggered) _kickCount++;
+		if (triggered) {
+			_kickCount++;
+		}
+
 		if (_kickCount >= 4) {
 			_kickCount = 0;
 			_triggered = true;
@@ -87,7 +93,7 @@ public class AudioMap {
 	}
 
 	/// <summary>
-	/// Select the highest frequency in a given octave, where step is the octave from 0-9
+	///     Select the highest frequency in a given octave, where step is the octave from 0-9
 	/// </summary>
 	/// <param name="stuff"></param>
 	/// <param name="step"></param>

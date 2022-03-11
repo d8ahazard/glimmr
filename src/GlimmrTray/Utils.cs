@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 #endregion
 
-namespace GlimmrTray; 
+namespace GlimmrTray;
 
 internal sealed class CmdArgumentException : Exception {
 	public CmdArgumentException(string message) : base(message) {

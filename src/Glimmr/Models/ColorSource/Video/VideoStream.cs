@@ -23,9 +23,9 @@ public class VideoStream : ColorSource {
 	}
 
 	public override bool SourceActive => Splitter.SourceActive;
-	public sealed override FrameSplitter Splitter { get; set; }
-	
+
 	public sealed override FrameBuilder? Builder { get; set; }
+	public sealed override FrameSplitter Splitter { get; set; }
 
 	// Loaded data
 	private CameraType _camType;

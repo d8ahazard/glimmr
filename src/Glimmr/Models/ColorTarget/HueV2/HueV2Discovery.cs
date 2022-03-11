@@ -8,14 +8,13 @@ using Glimmr.Models.ColorTarget.Hue;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using HueApi;
+using HueApi.BridgeLocator;
 using HueApi.Models;
 using Newtonsoft.Json;
 using Q42.HueApi;
 using Serilog;
 using HttpBridgeLocator = HueApi.BridgeLocator.HttpBridgeLocator;
-using IBridgeLocator = HueApi.BridgeLocator.IBridgeLocator;
 using Light = HueApi.Models.Light;
-using LocatedBridge = HueApi.BridgeLocator.LocatedBridge;
 
 #endregion
 
@@ -42,6 +41,47 @@ public class HueV2Discovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth 
 		}
 
 		Log.Debug("Hue: Discovery complete.");
+	}
+
+	public async Task<dynamic> CheckAuthAsync(dynamic dev) {
+		Log.Debug("Checking auth...");
+		var devData = (HueV2Data)dev;
+		try {
+			var client = string.IsNullOrEmpty(devData.AppKey)
+				? new LocalHueClient(devData.IpAddress)
+				: new LocalHueClient(devData.IpAddress, devData.AppKey);
+			//Make sure the user has pressed the button on the bridge before calling RegisterAsync
+			//It will throw an LinkButtonNotPressedException if the user did not press the button
+			var devName = Environment.MachineName;
+			if (devName.Length > 19) {
+				devName = devName[..18];
+			}
+
+			Log.Debug("Using device name for registration: " + devName);
+			var result = await client.RegisterAsync("Glimmr", devName, true);
+			if (result == null) {
+				return devData;
+			}
+
+			if (string.IsNullOrEmpty(result.Username) || string.IsNullOrEmpty(result.StreamingClientKey)) {
+				return devData;
+			}
+
+			devData.Token = result.StreamingClientKey;
+			devData.AppKey = result.Username;
+			devData = UpdateDeviceData(devData);
+			devData = UpdateDeviceData(devData);
+			devData.Token = result.StreamingClientKey;
+			devData.AppKey = result.Username;
+			return devData;
+		} catch (LinkButtonNotPressedException) {
+			Log.Debug($@"Hue: The link button is not pressed at {devData.IpAddress}.");
+		} catch (Exception e) {
+			Log.Warning("Exception linking hue: " + e.Message + " at " + e.StackTrace);
+		}
+
+		Log.Debug("Returning...");
+		return devData;
 	}
 
 	private void LoadTestJson() {
@@ -79,46 +119,6 @@ public class HueV2Discovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth 
 		}
 	}
 
-	public async Task<dynamic> CheckAuthAsync(dynamic dev) {
-		Log.Debug("Checking auth...");
-		var devData = (HueV2Data) dev;
-		try {
-			var client = string.IsNullOrEmpty(devData.AppKey)
-				? new LocalHueClient(devData.IpAddress)
-				: new LocalHueClient(devData.IpAddress, devData.AppKey);
-			//Make sure the user has pressed the button on the bridge before calling RegisterAsync
-			//It will throw an LinkButtonNotPressedException if the user did not press the button
-			var devName = Environment.MachineName;
-			if (devName.Length > 19) {
-				devName = devName[..18];
-			}
-
-			Log.Debug("Using device name for registration: " + devName);
-			var result = await client.RegisterAsync("Glimmr", devName, true);
-			if (result == null) {
-				return devData;
-			}
-
-			if (string.IsNullOrEmpty(result.Username) || string.IsNullOrEmpty(result.StreamingClientKey)) {
-				return devData;
-			}
-
-			devData.Token = result.StreamingClientKey;
-			devData.AppKey = result.Username;
-			devData = UpdateDeviceData(devData);
-			devData = UpdateDeviceData(devData);
-			devData.Token = result.StreamingClientKey;
-			devData.AppKey = result.Username;
-			return devData;
-		} catch (LinkButtonNotPressedException) {
-			Log.Debug($@"Hue: The link button is not pressed at {devData.IpAddress}.");
-		} catch (Exception e) {
-			Log.Warning("Exception linking hue: " + e.Message + " at " + e.StackTrace);
-		}
-		Log.Debug("Returning...");
-		return devData;
-	}
-
 	private void DeviceFound(IBridgeLocator bridgeLocator, LocatedBridge locatedBridge) {
 		var data = new HueV2Data(locatedBridge);
 		data = UpdateDeviceData(data);
@@ -137,7 +137,6 @@ public class HueV2Discovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth 
 			var d1 = DataUtil.GetDevice<HueData>(data.Id[..^2]);
 
 			if (d1 != null) {
-				
 				deleteV1 = true;
 				var oldDev = (HueData)d1;
 				appKey = oldDev.User;
@@ -153,7 +152,10 @@ public class HueV2Discovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth 
 			dev = (HueV2Data)dd;
 			appKey = dev.AppKey;
 			token = dev.Token;
-			if (deleteV1) Log.Debug("Can't delete V1 device, dupe IDs. it's still in use.");
+			if (deleteV1) {
+				Log.Debug("Can't delete V1 device, dupe IDs. it's still in use.");
+			}
+
 			deleteV1 = false;
 		}
 
@@ -166,6 +168,7 @@ public class HueV2Discovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth 
 			Log.Debug("No app key, returning..");
 			return data;
 		}
+
 		data.AppKey = appKey;
 		data.Token = token;
 		Log.Debug("Connecting to " + data.IpAddress + " with key: " + data.AppKey);
@@ -180,6 +183,7 @@ public class HueV2Discovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth 
 			} else {
 				dev = data;
 			}
+
 			return dev;
 		} catch (Exception e) {
 			Log.Warning("Hue Discovery Exception: " + e.Message + " at " + e.StackTrace);

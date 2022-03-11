@@ -99,10 +99,6 @@ public class DreamScreenDevice : ColorTarget, IColorTarget {
 		set => _data = (DreamScreenData)value;
 	}
 
-	private Task SetColors(object sender, ColorSendEventArgs args) {
-		return SetColors(args.LedColors, args.SectorColors);
-	}
-
 
 	public async Task SetColors(IReadOnlyList<Color> _, IReadOnlyList<Color> sectorColors) {
 		if (!_data.Enable || !Streaming) {
@@ -118,6 +114,10 @@ public class DreamScreenDevice : ColorTarget, IColorTarget {
 		}
 
 		await _client.SendColors(_dev, sectorColors);
+	}
+
+	private Task SetColors(object sender, ColorSendEventArgs args) {
+		return SetColors(args.LedColors, args.SectorColors);
 	}
 
 	private void LoadData() {

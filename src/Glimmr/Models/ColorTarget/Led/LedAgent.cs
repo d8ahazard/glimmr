@@ -12,6 +12,7 @@ using rpi_ws281x;
 namespace Glimmr.Models.ColorTarget.Led;
 
 public class LedAgent : IColorTargetAgent {
+	public bool Enable => _use0 || _use1;
 	private float _ablAmps;
 	private float _ablVolts;
 	private Color[] _colors1;
@@ -21,21 +22,19 @@ public class LedAgent : IColorTargetAgent {
 	private LedData? _d0;
 	private LedData? _d1;
 	private bool _enableAbl;
+	private float _gamma;
+	private byte[] _gammaTable;
 	private int _s0Brightness;
+	private int _s0CurrentBrightness;
 	private int _s0MaxBrightness;
 	private int _s1Brightness;
-	private int _s1MaxBrightness;
-	private int _s0CurrentBrightness;
 	private int _s1CurrentBrightness;
+	private int _s1MaxBrightness;
 	private SystemData _sd;
 
 	private bool _use0;
 	private bool _use1;
 	private WS281x? _ws281X;
-	private byte[] _gammaTable;
-	private float _gamma;
-
-	public bool Enable => _use0 || _use1;
 
 	public LedAgent() {
 		_sd = DataUtil.GetSystemData();
@@ -74,7 +73,7 @@ public class LedAgent : IColorTargetAgent {
 			_d1 = d1;
 			return;
 		}
-		
+
 		_d0 = d0;
 		_d1 = d1;
 
@@ -110,17 +109,17 @@ public class LedAgent : IColorTargetAgent {
 		var GammaCorrection = new byte[256];
 		var logBS = new int[256];
 		for (var i = 0; i < 256; i++) {
-			GammaCorrection[i] = (byte) i;
+			GammaCorrection[i] = (byte)i;
 			logBS[i] = i;
 		}
-		
-		if (gamma > 1.0f)
-		{
+
+		if (gamma > 1.0f) {
 			for (var i = 0; i < 256; i++) {
 				GammaCorrection[i] = (byte)(Math.Pow(i / (float)max_in, gamma) * max_out + 0.5);
 				logBS[i] = GammaCorrection[i];
 			}
 		}
+
 		return GammaCorrection;
 	}
 
@@ -154,12 +153,15 @@ public class LedAgent : IColorTargetAgent {
 			UpdateColors(input, "0");
 			updated = true;
 		}
+
 		if (_use1) {
 			UpdateColors(input, "1");
 			updated = true;
 		}
-		
-		if (updated) Render();
+
+		if (updated) {
+			Render();
+		}
 	}
 
 	private void Render() {
@@ -174,6 +176,7 @@ public class LedAgent : IColorTargetAgent {
 		if (_use1) {
 			_controller1?.SetLEDS(_colors2);
 		}
+
 		if (_use0 || _use1) {
 			_ws281X?.Render();
 		}
@@ -278,7 +281,6 @@ public class LedAgent : IColorTargetAgent {
 
 			_ws281X?.SetBrightness(_s1Brightness);
 			_s1CurrentBrightness = _s1Brightness;
-
 		} else {
 			if (_use0 && _s0Brightness < _s0MaxBrightness) {
 				_s0CurrentBrightness = LerpBrightness(_s0Brightness, _s0MaxBrightness, _s0MaxBrightness);
@@ -321,7 +323,7 @@ public class LedAgent : IColorTargetAgent {
 		// 	toSend[i] = ColorUtil.AdjustGamma(toSend[i]); 
 		// 	//toSend[i] = Color.FromArgb(_gammaTable[toSend[i].R], _gammaTable[toSend[i].G], _gammaTable[toSend[i].B]);
 		// }
-		
+
 		if (data.StripType == 1) {
 			for (var i = 0; i < toSend.Length; i++) {
 				var tCol = toSend[i];
@@ -330,7 +332,7 @@ public class LedAgent : IColorTargetAgent {
 			}
 		}
 
-		
+
 		if (id == "0") {
 			_colors1 = toSend;
 		} else {
@@ -351,6 +353,8 @@ public class LedAgent : IColorTargetAgent {
 	}
 
 	public void Clear() {
-		if (Enable) _ws281X?.Reset();
+		if (Enable) {
+			_ws281X?.Reset();
+		}
 	}
 }

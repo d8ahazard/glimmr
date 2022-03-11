@@ -1,27 +1,24 @@
-﻿namespace Image2Scene; 
-#region
+﻿#region
 
-using System;
 using Newtonsoft.Json;
 
 #endregion
 
+namespace Image2Scene;
+
+#region
+
+
+
+#endregion
 
 [Serializable]
 public class AmbientScene {
-	
-	public AmbientScene() {}
-	public AmbientScene(string name, string[][] toArray, string md, float delay, int step) {
-		Name = name;
-		ColorMatrix = toArray;
-		MatrixDirection = md;
-		AnimationTime = delay;
-		MatrixStep = step;
-		Mode = "Matrix";
-		Easing = "Blend";
-		Id = 0;
-		Colors = Array.Empty<string>();
-	}
+	/// <summary>
+	///     If the scene is system-defined or not. If it is, it cannot be deleted or overwritten.
+	/// </summary>
+	/// [JsonProperty]
+	public bool System { get; set; } = false;
 
 	/// <summary>
 	///     Amount of time (in milliseconds) between color updates.
@@ -32,7 +29,7 @@ public class AmbientScene {
 	/// <summary>
 	///     Deprecated. This is now determined by easing type and animation time.
 	/// </summary>
-	[JsonProperty (DefaultValueHandling = DefaultValueHandling.Ignore)]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
 	public float EasingTime { get; set; }
 
 	/// <summary>
@@ -40,6 +37,12 @@ public class AmbientScene {
 	/// </summary>
 	[JsonProperty]
 	public int Id { get; set; }
+
+	/// <summary>
+	///     How many spaces to animate in a given direction per step.
+	/// </summary>
+	[JsonProperty]
+	public int MatrixStep { get; set; } = 1;
 
 	/// <summary>
 	///     Easing mode.
@@ -70,32 +73,35 @@ public class AmbientScene {
 	public string Name { get; set; } = "";
 
 	/// <summary>
+	///     The animation direction of the color matrix.
+	/// </summary>
+	[JsonProperty]
+	public string? MatrixDirection { get; set; }
+
+	/// <summary>
 	///     An array of colors used by the scene.
 	/// </summary>
 	[JsonProperty]
 	public string[]? Colors { get; set; } = Array.Empty<string>();
-	
+
 	/// <summary>
 	///     A 2D array of colors used by the scene (basically, a small image)
 	/// </summary>
 	[JsonProperty]
 	public string[][]? ColorMatrix { get; set; }
 
-	/// <summary>
-	/// The animation direction of the color matrix.
-	/// </summary>
-	[JsonProperty]
-	public string? MatrixDirection { get; set; }
+	public AmbientScene() {
+	}
 
-	/// <summary>
-	/// How many spaces to animate in a given direction per step.
-	/// </summary>
-	[JsonProperty]
-	public int MatrixStep { get; set; } = 1;
-	
-	/// <summary>
-	/// If the scene is system-defined or not. If it is, it cannot be deleted or overwritten.
-	/// </summary>
-	/// [JsonProperty]
-	public bool System { get; set; } = false;
+	public AmbientScene(string name, string[][] toArray, string md, float delay, int step) {
+		Name = name;
+		ColorMatrix = toArray;
+		MatrixDirection = md;
+		AnimationTime = delay;
+		MatrixStep = step;
+		Mode = "Matrix";
+		Easing = "Blend";
+		Id = 0;
+		Colors = Array.Empty<string>();
+	}
 }

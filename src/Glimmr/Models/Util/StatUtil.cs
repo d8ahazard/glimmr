@@ -205,8 +205,13 @@ public static class StatUtil {
 	}
 
 	public static int GetMemory(bool returnTotal = false) {
-		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return CpuMonitor.GetMemoryWindows(returnTotal);
-		return RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? GetMemoryOsx(returnTotal) : GetMemoryLinux(returnTotal);
+		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+			return CpuMonitor.GetMemoryWindows(returnTotal);
+		}
+
+		return RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
+			? GetMemoryOsx(returnTotal)
+			: GetMemoryLinux(returnTotal);
 	}
 
 	private static int GetMemoryLinux(bool returnTotal = false) {
@@ -234,6 +239,7 @@ public static class StatUtil {
 				if (float.TryParse(str, out var foo)) {
 					total = foo;
 				}
+
 				continue;
 			}
 
