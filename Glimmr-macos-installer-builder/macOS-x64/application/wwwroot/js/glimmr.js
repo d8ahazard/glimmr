@@ -164,16 +164,16 @@ let data = {
             switch (typeof (check)) {
                 case "number":
                     if (string === "audioMin" || string === "audioGain" || string === "audioRotationLower" ||
-                    string === "audioRotationUpper" || string === "audioRotationSpeed" || string === "gammaCorrection"
-                    || string === "ablAmps" || string === "ablVolts") {
+                        string === "audioRotationUpper" || string === "audioRotationSpeed" || string === "gammaCorrection"
+                        || string === "ablAmps" || string === "ablVolts") {
                         this.systemInternal[string] = parseFloat(value);
                     } else {
                         let num = parseInt(value);
                         if (typeof (num) === typeof (check)) {
                             this.systemInternal[string] = num;
-                        }    
+                        }
                     }
-                    
+
                     break;
                 case "string":
                     let str = value.toString();
@@ -242,7 +242,7 @@ data.registerDevicesListener(function () {
         devTimeout = null;
     }
     devTimeout = setTimeout(function () {
-        console.log("Reloading devices from listener.")
+        console.log("Reloading devices from listener.");
         loadDevices();
     }, 500);
 });
@@ -555,6 +555,10 @@ function setSocketListeners() {
         if (isValid(parsed)) {
             console.log("Loading data: ", parsed);
             data.load(parsed);
+            let ambientForm = document.getElementById("ambientForm");
+            let audioForm = document.getElementById("audioForm");
+            audioForm.reset();
+            ambientForm.reset();
         }
     });
 
@@ -898,8 +902,8 @@ function handleClick(target) {
                 return;
             }
             if (target.classList.contains("lifxSectorRegion")
-                || target.classList.contains("openRgbSectorRegion")    
-                || target.classList.contains("wledSectorRegion") 
+                || target.classList.contains("openRgbSectorRegion")
+                || target.classList.contains("wledSectorRegion")
                 || target.classList.contains("dreamSectorRegion")) {
                 target.classList.add("checked");
                 updateDevice(deviceData["id"], "targetSector", val);
@@ -1063,7 +1067,7 @@ function updateLightProperty(myId, propertyName, value, channel) {
                     groups[i] = group;
                     break;
                 }
-            }            
+            }
         }
     }
     updateDevice(deviceData["id"], "groups", groups);
@@ -1119,7 +1123,7 @@ function setMode(newMode) {
             break;
         case 0:
             document.getElementById("inputPreview").src = "../img/no_preview.jpg";
-            document.getElementById("outputPreview").src =  "../img/no_preview.jpg";
+            document.getElementById("outputPreview").src = "../img/no_preview.jpg";
     }
 
     sizeContent();
@@ -1703,7 +1707,7 @@ function loadSettingObject(obj) {
                 if (value === true) {
                     target.setAttribute('checked', "true");
                 } else {
-                    console.log("Setting ", prop, dataProp[prop])
+                    console.log("Setting ", prop, dataProp[prop]);
                     target.value = dataProp[prop];
                 }
             }
@@ -2242,7 +2246,7 @@ function createDeviceSettings() {
                 case "sectormap":
                     let region = "flashSector";
                     let dirString = "Click a sector above to assign it to your " + deviceData["tag"] + " device.";
-                    
+
                     if (deviceData["tag"] === "Wled" && deviceData["stripMode"] === 3) {
                         region = "wledSector";
                     }
@@ -2256,7 +2260,7 @@ function createDeviceSettings() {
                     if (deviceData["tag"] === "dreamScreen") {
                         region = "dreamSector";
                     }
-                    
+
                     if (region === "flashSector") {
                         dirString = "Click a tile to select it's target sector.";
                     }
@@ -2988,7 +2992,7 @@ function selectSectors() {
             lights = deviceData["lights"];
         }
         if (isValid(deviceData["groups"]) && isValid(deviceData["selectedGroup"])) {
-            for(let i = 0; i < deviceData["groups"].length; i++) {
+            for (let i = 0; i < deviceData["groups"].length; i++) {
                 if (deviceData["groups"][i]["id"] === deviceData["selectedGroup"]) {
                     lights = deviceData["groups"][i]["services"];
                     break;
@@ -3458,30 +3462,30 @@ function createHueMap() {
     // Get the main light group
     let lightRow = document.createElement("div");
     lightRow.classList.add("row", "justify-content-center", "col-12", "delSetting");
-    
-    
+
+
     let targetGroup;
-    for (let i=0; i < groups.length; i++) {
+    for (let i = 0; i < groups.length; i++) {
         if (groups[i]["id"] === selectedGroup) {
             targetGroup = groups[i];
             break;
         }
     }
     console.log("Selected group: ", targetGroup);
-    
+
     if (targetGroup !== undefined) {
         let services = targetGroup["services"];
         for (let l in services) {
             if (services.hasOwnProperty(l)) {
                 let light = services[l];
-                let c = light["channel"]
+                let c = light["channel"];
                 let id = light["svcId"];
                 let override = light["override"];
-                let brightness = light["override"] ? light["brightness"] : devBrightness
+                let brightness = light["override"] ? light["brightness"] : devBrightness;
                 let selection = light["targetSector"];
                 let name = light["name"];
                 if (light["type"].includes("strip")) {
-                    name += " ("+ c +")";
+                    name += " (" + c + ")";
                 }
                 // Create the div for the other divs
                 const lightCol = document.createElement('div');
@@ -3590,11 +3594,11 @@ function createHueMap() {
                 lightCol.appendChild(selDiv);
                 lightCol.appendChild(rangeDiv);
                 lightCol.appendChild(chkDiv);
-                lightRow.appendChild(lightCol);                   
-            
-            }            
-        }        
-    }     
+                lightRow.appendChild(lightCol);
+
+            }
+        }
+    }
     hueMapRow.appendChild(lightRow);
     return hueMapRow;
 }
@@ -3686,7 +3690,7 @@ function drawNanoShapes(panel) {
         });
 
         let sectorText = data["targetSector"];
-       
+
         let sText2 = new Konva.Text({
             x: x,
             y: y - 35,

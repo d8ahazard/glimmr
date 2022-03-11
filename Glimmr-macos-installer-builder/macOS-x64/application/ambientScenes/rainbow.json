@@ -121,5 +121,6 @@
   "Mode": "Linear",
   "Easing": "Blend",
   "Name": "Rainbow",
-  "Id": 4
+  "Id": 4,
+  "System": true
 }

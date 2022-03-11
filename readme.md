@@ -325,6 +325,21 @@ repository, then install via the settings -> integrations page.
 https://github.com/d8ahazard/glimmr_ha
 
 
+## Creating Ambient Scenes
+
+I've created a custom utility for creating ambient scenes. You can find it here:
+https://github.com/d8ahazard/glimmr/releases/download/1.2.4/Image2Scene.exe
+
+To use it, simply run the executable and select the image you wish to use as the ambient scene.
+
+Alternatively, you can drag and drop an image onto the application to select it.
+
+Once a source image is provided you will be prompted to select a resolution, enter a 
+theme name, and configure other scene parameters. 
+
+The application will then generate a theme JSON file, which can be 
+uploaded to Glimmr using the "Upload Theme" feature in app settings.
+
 ## PROFIT
 
 From here, you can use the app normally to control your devices. Open up the Dreamscreen mobile app, add new devices if your Glimmr device is not deteced, and then place it in a group with a DS device (If using DS sync mode).

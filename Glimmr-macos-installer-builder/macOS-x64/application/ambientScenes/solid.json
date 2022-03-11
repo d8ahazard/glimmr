@@ -4,5 +4,6 @@
   "Mode": "Linear",
   "Easing": "Blend",
   "Name": "Solid",
-  "Id": -1
+  "Id": -1,
+  "System": true
 }

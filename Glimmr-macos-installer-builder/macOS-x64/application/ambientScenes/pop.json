@@ -10,5 +10,6 @@
   "Mode": "Random",
   "Easing": "Blend",
   "Name": "Pop",
-  "Id": 7
+  "Id": 7,
+  "System": true
 }

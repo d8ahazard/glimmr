@@ -16,5 +16,6 @@
   "RotationSpeed": 0.00,
   "RotationThreshold": 0.85,
   "Id": 0,
-  "Name": "Bottom"
+  "Name": "Bottom",
+  "System": true
 }

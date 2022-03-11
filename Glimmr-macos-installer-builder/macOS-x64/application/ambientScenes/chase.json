@@ -63,5 +63,6 @@
   "Mode": "Linear",
   "Easing": "Blend",
   "Name": "Chase",
-  "Id": 12
+  "Id": 12,
+  "System": true
 }

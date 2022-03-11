@@ -32,7 +32,7 @@
   },
   "targets": {
     ".NETCoreApp,Version=v6.0": {
-      "Glimmr/1.2.3-master-0001106": {
+      "Glimmr/1.2.4-master-0001118": {
         "dependencies": {
           "AdalightNet": "1.0.8",
           "AutoMapper": "11.0.1",
@@ -55,8 +55,8 @@
           "Makaretu.Dns.Multicast": "0.27.0",
           "ManagedBass": "3.1.0",
           "Microsoft.AspNet.SignalR.Client": "2.4.3",
-          "Microsoft.AspNetCore.Mvc.NewtonsoftJson": "6.0.2",
-          "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation": "6.0.2",
+          "Microsoft.AspNetCore.Mvc.NewtonsoftJson": "6.0.3",
+          "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation": "6.0.3",
           "Microsoft.AspNetCore.SignalR": "1.1.0",
           "Microsoft.VisualStudio.Azure.Containers.Tools.Targets": "1.14.0",
           "Nanoleaf.Core": "2.0.0",
@@ -71,9 +71,9 @@
           "Serilog.Sinks.Async": "1.5.0",
           "Serilog.Sinks.Console": "4.0.1",
           "Serilog.Sinks.File": "5.0.0",
-          "SimpleGitVersion.Core": "7.0.0",
-          "Swashbuckle.AspNetCore": "6.2.3",
-          "Swashbuckle.AspNetCore.Annotations": "6.2.3",
+          "SimpleGitVersion.Core": "7.1.0",
+          "Swashbuckle.AspNetCore": "6.3.0",
+          "Swashbuckle.AspNetCore.Annotations": "6.3.0",
           "System.Drawing.Common": "6.0.0",
           "System.Net.WebSockets": "4.3.0",
           "WLED": "1.0.41",
@@ -1857,7 +1857,7 @@
           "lib/netstandard1.0/Common.Logging.Core.dll": {}
         }
       },
-      "CSemVer/10.0.0": {
+      "CSemVer/10.1.0": {
         "compile": {
           "lib/netstandard2.1/CSemVer.dll": {}
         }
@@ -2128,7 +2128,7 @@
           "Microsoft.Extensions.Primitives": "5.0.0"
         }
       },
-      "Microsoft.AspNetCore.JsonPatch/6.0.2": {
+      "Microsoft.AspNetCore.JsonPatch/6.0.3": {
         "dependencies": {
           "Microsoft.CSharp": "4.7.0",
           "Newtonsoft.Json": "13.0.1"
@@ -2137,9 +2137,9 @@
           "lib/net6.0/Microsoft.AspNetCore.JsonPatch.dll": {}
         }
       },
-      "Microsoft.AspNetCore.Mvc.NewtonsoftJson/6.0.2": {
+      "Microsoft.AspNetCore.Mvc.NewtonsoftJson/6.0.3": {
         "dependencies": {
-          "Microsoft.AspNetCore.JsonPatch": "6.0.2",
+          "Microsoft.AspNetCore.JsonPatch": "6.0.3",
           "Newtonsoft.Json": "13.0.1",
           "Newtonsoft.Json.Bson": "1.0.2"
         },
@@ -2147,26 +2147,26 @@
           "lib/net6.0/Microsoft.AspNetCore.Mvc.NewtonsoftJson.dll": {}
         }
       },
-      "Microsoft.AspNetCore.Mvc.Razor.Extensions/6.0.2": {
+      "Microsoft.AspNetCore.Mvc.Razor.Extensions/6.0.3": {
         "dependencies": {
-          "Microsoft.AspNetCore.Razor.Language": "6.0.2",
-          "Microsoft.CodeAnalysis.Razor": "6.0.2"
+          "Microsoft.AspNetCore.Razor.Language": "6.0.3",
+          "Microsoft.CodeAnalysis.Razor": "6.0.3"
         },
         "compile": {
           "lib/netstandard2.0/Microsoft.AspNetCore.Mvc.Razor.Extensions.dll": {}
         }
       },
-      "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation/6.0.2": {
+      "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation/6.0.3": {
         "dependencies": {
-          "Microsoft.AspNetCore.Mvc.Razor.Extensions": "6.0.2",
-          "Microsoft.CodeAnalysis.Razor": "6.0.2",
+          "Microsoft.AspNetCore.Mvc.Razor.Extensions": "6.0.3",
+          "Microsoft.CodeAnalysis.Razor": "6.0.3",
           "Microsoft.Extensions.DependencyModel": "6.0.0"
         },
         "compile": {
           "lib/net6.0/Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation.dll": {}
         }
       },
-      "Microsoft.AspNetCore.Razor.Language/6.0.2": {
+      "Microsoft.AspNetCore.Razor.Language/6.0.3": {
         "compile": {
           "lib/netstandard2.0/Microsoft.AspNetCore.Razor.Language.dll": {}
         }
@@ -2253,9 +2253,9 @@
           "lib/netcoreapp3.1/Microsoft.CodeAnalysis.CSharp.dll": {}
         }
       },
-      "Microsoft.CodeAnalysis.Razor/6.0.2": {
+      "Microsoft.CodeAnalysis.Razor/6.0.3": {
         "dependencies": {
-          "Microsoft.AspNetCore.Razor.Language": "6.0.2",
+          "Microsoft.AspNetCore.Razor.Language": "6.0.3",
           "Microsoft.CodeAnalysis.CSharp": "4.0.0",
           "Microsoft.CodeAnalysis.Common": "4.0.0"
         },
@@ -2795,18 +2795,18 @@
           "lib/netstandard1.3/SimpleBase.dll": {}
         }
       },
-      "SimpleGitVersion.Abstractions/7.0.0": {
+      "SimpleGitVersion.Abstractions/7.1.0": {
         "dependencies": {
-          "CSemVer": "10.0.0"
+          "CSemVer": "10.1.0"
         },
         "compile": {
           "lib/netstandard2.1/SimpleGitVersion.Abstractions.dll": {}
         }
       },
-      "SimpleGitVersion.Core/7.0.0": {
+      "SimpleGitVersion.Core/7.1.0": {
         "dependencies": {
           "LibGit2Sharp": "0.26.2",
-          "SimpleGitVersion.Abstractions": "7.0.0"
+          "SimpleGitVersion.Abstractions": "7.1.0"
         },
         "compile": {
           "lib/netstandard2.1/SimpleGitVersion.Core.dll": {}
@@ -2833,23 +2833,23 @@
           "lib/netstandard2.0/SocketLite.dll": {}
         }
       },
-      "Swashbuckle.AspNetCore/6.2.3": {
+      "Swashbuckle.AspNetCore/6.3.0": {
         "dependencies": {
           "Microsoft.Extensions.ApiDescription.Server": "3.0.0",
-          "Swashbuckle.AspNetCore.Swagger": "6.2.3",
-          "Swashbuckle.AspNetCore.SwaggerGen": "6.2.3",
-          "Swashbuckle.AspNetCore.SwaggerUI": "6.2.3"
+          "Swashbuckle.AspNetCore.Swagger": "6.3.0",
+          "Swashbuckle.AspNetCore.SwaggerGen": "6.3.0",
+          "Swashbuckle.AspNetCore.SwaggerUI": "6.3.0"
         }
       },
-      "Swashbuckle.AspNetCore.Annotations/6.2.3": {
+      "Swashbuckle.AspNetCore.Annotations/6.3.0": {
         "dependencies": {
-          "Swashbuckle.AspNetCore.SwaggerGen": "6.2.3"
+          "Swashbuckle.AspNetCore.SwaggerGen": "6.3.0"
         },
         "compile": {
           "lib/net6.0/Swashbuckle.AspNetCore.Annotations.dll": {}
         }
       },
-      "Swashbuckle.AspNetCore.Swagger/6.2.3": {
+      "Swashbuckle.AspNetCore.Swagger/6.3.0": {
         "dependencies": {
           "Microsoft.OpenApi": "1.2.3"
         },
@@ -2857,15 +2857,15 @@
           "lib/net6.0/Swashbuckle.AspNetCore.Swagger.dll": {}
         }
       },
-      "Swashbuckle.AspNetCore.SwaggerGen/6.2.3": {
+      "Swashbuckle.AspNetCore.SwaggerGen/6.3.0": {
         "dependencies": {
-          "Swashbuckle.AspNetCore.Swagger": "6.2.3"
+          "Swashbuckle.AspNetCore.Swagger": "6.3.0"
         },
         "compile": {
           "lib/net6.0/Swashbuckle.AspNetCore.SwaggerGen.dll": {}
         }
       },
-      "Swashbuckle.AspNetCore.SwaggerUI/6.2.3": {
+      "Swashbuckle.AspNetCore.SwaggerUI/6.3.0": {
         "compile": {
           "lib/net6.0/Swashbuckle.AspNetCore.SwaggerUI.dll": {}
         }
@@ -3715,7 +3715,7 @@
       }
     },
     ".NETCoreApp,Version=v6.0/osx-x64": {
-      "Glimmr/1.2.3-master-0001106": {
+      "Glimmr/1.2.4-master-0001118": {
         "dependencies": {
           "AdalightNet": "1.0.8",
           "AutoMapper": "11.0.1",
@@ -3738,8 +3738,8 @@
           "Makaretu.Dns.Multicast": "0.27.0",
           "ManagedBass": "3.1.0",
           "Microsoft.AspNet.SignalR.Client": "2.4.3",
-          "Microsoft.AspNetCore.Mvc.NewtonsoftJson": "6.0.2",
-          "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation": "6.0.2",
+          "Microsoft.AspNetCore.Mvc.NewtonsoftJson": "6.0.3",
+          "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation": "6.0.3",
           "Microsoft.AspNetCore.SignalR": "1.1.0",
           "Microsoft.VisualStudio.Azure.Containers.Tools.Targets": "1.14.0",
           "Nanoleaf.Core": "2.0.0",
@@ -3754,9 +3754,9 @@
           "Serilog.Sinks.Async": "1.5.0",
           "Serilog.Sinks.Console": "4.0.1",
           "Serilog.Sinks.File": "5.0.0",
-          "SimpleGitVersion.Core": "7.0.0",
-          "Swashbuckle.AspNetCore": "6.2.3",
-          "Swashbuckle.AspNetCore.Annotations": "6.2.3",
+          "SimpleGitVersion.Core": "7.1.0",
+          "Swashbuckle.AspNetCore": "6.3.0",
+          "Swashbuckle.AspNetCore.Annotations": "6.3.0",
           "System.Drawing.Common": "6.0.0",
           "System.Net.WebSockets": "4.3.0",
           "WLED": "1.0.41",
@@ -5346,11 +5346,11 @@
           }
         }
       },
-      "CSemVer/10.0.0": {
+      "CSemVer/10.1.0": {
         "runtime": {
           "lib/netstandard2.1/CSemVer.dll": {
-            "assemblyVersion": "10.0.0.0",
-            "fileVersion": "2.55194.55264.21762"
+            "assemblyVersion": "10.1.0.0",
+            "fileVersion": "2.55195.14142.45858"
           }
         }
       },
@@ -5692,61 +5692,61 @@
           "Microsoft.Extensions.Primitives": "5.0.0"
         }
       },
-      "Microsoft.AspNetCore.JsonPatch/6.0.2": {
+      "Microsoft.AspNetCore.JsonPatch/6.0.3": {
         "dependencies": {
           "Microsoft.CSharp": "4.7.0",
           "Newtonsoft.Json": "13.0.1"
         },
         "runtime": {
           "lib/net6.0/Microsoft.AspNetCore.JsonPatch.dll": {
-            "assemblyVersion": "6.0.2.0",
-            "fileVersion": "6.0.222.6412"
+            "assemblyVersion": "6.0.3.0",
+            "fileVersion": "6.0.322.12401"
           }
         }
       },
-      "Microsoft.AspNetCore.Mvc.NewtonsoftJson/6.0.2": {
+      "Microsoft.AspNetCore.Mvc.NewtonsoftJson/6.0.3": {
         "dependencies": {
-          "Microsoft.AspNetCore.JsonPatch": "6.0.2",
+          "Microsoft.AspNetCore.JsonPatch": "6.0.3",
           "Newtonsoft.Json": "13.0.1",
           "Newtonsoft.Json.Bson": "1.0.2"
         },
         "runtime": {
           "lib/net6.0/Microsoft.AspNetCore.Mvc.NewtonsoftJson.dll": {
-            "assemblyVersion": "6.0.2.0",
-            "fileVersion": "6.0.222.6412"
+            "assemblyVersion": "6.0.3.0",
+            "fileVersion": "6.0.322.12401"
           }
         }
       },
-      "Microsoft.AspNetCore.Mvc.Razor.Extensions/6.0.2": {
+      "Microsoft.AspNetCore.Mvc.Razor.Extensions/6.0.3": {
         "dependencies": {
-          "Microsoft.AspNetCore.Razor.Language": "6.0.2",
-          "Microsoft.CodeAnalysis.Razor": "6.0.2"
+          "Microsoft.AspNetCore.Razor.Language": "6.0.3",
+          "Microsoft.CodeAnalysis.Razor": "6.0.3"
         },
         "runtime": {
           "lib/netstandard2.0/Microsoft.AspNetCore.Mvc.Razor.Extensions.dll": {
-            "assemblyVersion": "6.0.2.0",
-            "fileVersion": "6.0.222.6412"
+            "assemblyVersion": "6.0.3.0",
+            "fileVersion": "6.0.322.12401"
           }
         }
       },
-      "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation/6.0.2": {
+      "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation/6.0.3": {
         "dependencies": {
-          "Microsoft.AspNetCore.Mvc.Razor.Extensions": "6.0.2",
-          "Microsoft.CodeAnalysis.Razor": "6.0.2",
+          "Microsoft.AspNetCore.Mvc.Razor.Extensions": "6.0.3",
+          "Microsoft.CodeAnalysis.Razor": "6.0.3",
           "Microsoft.Extensions.DependencyModel": "6.0.0"
         },
         "runtime": {
           "lib/net6.0/Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation.dll": {
-            "assemblyVersion": "6.0.2.0",
-            "fileVersion": "6.0.222.6412"
+            "assemblyVersion": "6.0.3.0",
+            "fileVersion": "6.0.322.12401"
           }
         }
       },
-      "Microsoft.AspNetCore.Razor.Language/6.0.2": {
+      "Microsoft.AspNetCore.Razor.Language/6.0.3": {
         "runtime": {
           "lib/netstandard2.0/Microsoft.AspNetCore.Razor.Language.dll": {
-            "assemblyVersion": "6.0.2.0",
-            "fileVersion": "6.0.222.6412"
+            "assemblyVersion": "6.0.3.0",
+            "fileVersion": "6.0.322.12401"
           }
         }
       },
@@ -5920,16 +5920,16 @@
           }
         }
       },
-      "Microsoft.CodeAnalysis.Razor/6.0.2": {
+      "Microsoft.CodeAnalysis.Razor/6.0.3": {
         "dependencies": {
-          "Microsoft.AspNetCore.Razor.Language": "6.0.2",
+          "Microsoft.AspNetCore.Razor.Language": "6.0.3",
           "Microsoft.CodeAnalysis.CSharp": "4.0.0",
           "Microsoft.CodeAnalysis.Common": "4.0.0"
         },
         "runtime": {
           "lib/netstandard2.0/Microsoft.CodeAnalysis.Razor.dll": {
-            "assemblyVersion": "6.0.2.0",
-            "fileVersion": "6.0.222.6412"
+            "assemblyVersion": "6.0.3.0",
+            "fileVersion": "6.0.322.12401"
           }
         }
       },
@@ -6549,26 +6549,26 @@
           }
         }
       },
-      "SimpleGitVersion.Abstractions/7.0.0": {
+      "SimpleGitVersion.Abstractions/7.1.0": {
         "dependencies": {
-          "CSemVer": "10.0.0"
+          "CSemVer": "10.1.0"
         },
         "runtime": {
           "lib/netstandard2.1/SimpleGitVersion.Abstractions.dll": {
-            "assemblyVersion": "7.0.0.0",
-            "fileVersion": "1.64850.51792.63234"
+            "assemblyVersion": "7.1.0.0",
+            "fileVersion": "1.64851.10671.21794"
           }
         }
       },
-      "SimpleGitVersion.Core/7.0.0": {
+      "SimpleGitVersion.Core/7.1.0": {
         "dependencies": {
           "LibGit2Sharp": "0.26.2",
-          "SimpleGitVersion.Abstractions": "7.0.0"
+          "SimpleGitVersion.Abstractions": "7.1.0"
         },
         "runtime": {
           "lib/netstandard2.1/SimpleGitVersion.Core.dll": {
-            "assemblyVersion": "7.0.0.0",
-            "fileVersion": "1.64850.51792.63234"
+            "assemblyVersion": "7.1.0.0",
+            "fileVersion": "1.64851.10671.21794"
           }
         }
       },
@@ -6605,52 +6605,52 @@
           }
         }
       },
-      "Swashbuckle.AspNetCore/6.2.3": {
+      "Swashbuckle.AspNetCore/6.3.0": {
         "dependencies": {
           "Microsoft.Extensions.ApiDescription.Server": "3.0.0",
-          "Swashbuckle.AspNetCore.Swagger": "6.2.3",
-          "Swashbuckle.AspNetCore.SwaggerGen": "6.2.3",
-          "Swashbuckle.AspNetCore.SwaggerUI": "6.2.3"
+          "Swashbuckle.AspNetCore.Swagger": "6.3.0",
+          "Swashbuckle.AspNetCore.SwaggerGen": "6.3.0",
+          "Swashbuckle.AspNetCore.SwaggerUI": "6.3.0"
         }
       },
-      "Swashbuckle.AspNetCore.Annotations/6.2.3": {
+      "Swashbuckle.AspNetCore.Annotations/6.3.0": {
         "dependencies": {
-          "Swashbuckle.AspNetCore.SwaggerGen": "6.2.3"
+          "Swashbuckle.AspNetCore.SwaggerGen": "6.3.0"
         },
         "runtime": {
           "lib/net6.0/Swashbuckle.AspNetCore.Annotations.dll": {
-            "assemblyVersion": "6.2.3.0",
-            "fileVersion": "6.2.3.0"
+            "assemblyVersion": "6.3.0.0",
+            "fileVersion": "6.3.0.0"
           }
         }
       },
-      "Swashbuckle.AspNetCore.Swagger/6.2.3": {
+      "Swashbuckle.AspNetCore.Swagger/6.3.0": {
         "dependencies": {
           "Microsoft.OpenApi": "1.2.3"
         },
         "runtime": {
           "lib/net6.0/Swashbuckle.AspNetCore.Swagger.dll": {
-            "assemblyVersion": "6.2.3.0",
-            "fileVersion": "6.2.3.0"
+            "assemblyVersion": "6.3.0.0",
+            "fileVersion": "6.3.0.0"
           }
         }
       },
-      "Swashbuckle.AspNetCore.SwaggerGen/6.2.3": {
+      "Swashbuckle.AspNetCore.SwaggerGen/6.3.0": {
         "dependencies": {
-          "Swashbuckle.AspNetCore.Swagger": "6.2.3"
+          "Swashbuckle.AspNetCore.Swagger": "6.3.0"
         },
         "runtime": {
           "lib/net6.0/Swashbuckle.AspNetCore.SwaggerGen.dll": {
-            "assemblyVersion": "6.2.3.0",
-            "fileVersion": "6.2.3.0"
+            "assemblyVersion": "6.3.0.0",
+            "fileVersion": "6.3.0.0"
           }
         }
       },
-      "Swashbuckle.AspNetCore.SwaggerUI/6.2.3": {
+      "Swashbuckle.AspNetCore.SwaggerUI/6.3.0": {
         "runtime": {
           "lib/net6.0/Swashbuckle.AspNetCore.SwaggerUI.dll": {
-            "assemblyVersion": "6.2.3.0",
-            "fileVersion": "6.2.3.0"
+            "assemblyVersion": "6.3.0.0",
+            "fileVersion": "6.3.0.0"
           }
         }
       },
@@ -7535,7 +7535,7 @@
     }
   },
   "libraries": {
-    "Glimmr/1.2.3-master-0001106": {
+    "Glimmr/1.2.4-master-0001118": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
@@ -7578,12 +7578,12 @@
       "path": "common.logging.core/3.4.1",
       "hashPath": "common.logging.core.3.4.1.nupkg.sha512"
     },
-    "CSemVer/10.0.0": {
+    "CSemVer/10.1.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-nls5sItvfyqxKRzb350BnumQmdSXP/0H1X1sM7sPgoyVITYtCshzN4lUoJHTPd3Bf9wnJs9ve/h1BBuMJErL2Q==",
-      "path": "csemver/10.0.0",
-      "hashPath": "csemver.10.0.0.nupkg.sha512"
+      "sha512": "sha512-sZABdYeJ33qsIh5Ii3k4L7C88gbdX0fFk19K2jGkiIOikXXUMPMEF1mBdhuHnKGVWkQB6ljsy6TzvFC40sByaQ==",
+      "path": "csemver/10.1.0",
+      "hashPath": "csemver.10.1.0.nupkg.sha512"
     },
     "DasMulli.SimpleGitVersion/1.0.0": {
       "type": "package",
@@ -7865,40 +7865,40 @@
       "path": "microsoft.aspnetcore.http.features/2.2.0",
       "hashPath": "microsoft.aspnetcore.http.features.2.2.0.nupkg.sha512"
     },
-    "Microsoft.AspNetCore.JsonPatch/6.0.2": {
+    "Microsoft.AspNetCore.JsonPatch/6.0.3": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-SifO3B9FwrRMXIdBHgVoMU17j6E43nYGUIC/3WRpNldCyZKOeBGJ8eT1KfQK80FaxkkJU+4MPm0uCbeYnXvkFQ==",
-      "path": "microsoft.aspnetcore.jsonpatch/6.0.2",
-      "hashPath": "microsoft.aspnetcore.jsonpatch.6.0.2.nupkg.sha512"
+      "sha512": "sha512-eObF1OgvkQHJXmDMcMYM/oRZ1Vk939UZr2QShBsXoY01AkS+7nczgzzWdNd2TutlNx6AWZKBizg/sBCOXQDPbg==",
+      "path": "microsoft.aspnetcore.jsonpatch/6.0.3",
+      "hashPath": "microsoft.aspnetcore.jsonpatch.6.0.3.nupkg.sha512"
     },
-    "Microsoft.AspNetCore.Mvc.NewtonsoftJson/6.0.2": {
+    "Microsoft.AspNetCore.Mvc.NewtonsoftJson/6.0.3": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-AQ8dnOXPJajeWgM0FW6uMs71+SFnVLe+skEHj/chF3fvkeXFCGqhzaWALlin+LoLKi17+frdRJ340cfT5afs4Q==",
-      "path": "microsoft.aspnetcore.mvc.newtonsoftjson/6.0.2",
-      "hashPath": "microsoft.aspnetcore.mvc.newtonsoftjson.6.0.2.nupkg.sha512"
+      "sha512": "sha512-h0ZMz0yR6HiqjKo2wrZP4WWBaioelPDljvCewdl6Qo7n2iTZpIRjukB0O5idyzATUJRDKltBDex0pGLH3Q0utQ==",
+      "path": "microsoft.aspnetcore.mvc.newtonsoftjson/6.0.3",
+      "hashPath": "microsoft.aspnetcore.mvc.newtonsoftjson.6.0.3.nupkg.sha512"
     },
-    "Microsoft.AspNetCore.Mvc.Razor.Extensions/6.0.2": {
+    "Microsoft.AspNetCore.Mvc.Razor.Extensions/6.0.3": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-uJfIP4PASP+lLmcCaIwawDShM+/LxUVRGqrI+o7rqFSDHtaLKVmGEOpK0z+yKhBrDQcwKgiYQffw9IRlIulLFA==",
-      "path": "microsoft.aspnetcore.mvc.razor.extensions/6.0.2",
-      "hashPath": "microsoft.aspnetcore.mvc.razor.extensions.6.0.2.nupkg.sha512"
+      "sha512": "sha512-Mmg/rzp3ZJWMqXHBQgZ9Q1oV50ItPgeoby4ugvEYCT5dYlHSDzu1p3CQLm+UfHk1nAfz3vsfL/LpEL7vc0PiCw==",
+      "path": "microsoft.aspnetcore.mvc.razor.extensions/6.0.3",
+      "hashPath": "microsoft.aspnetcore.mvc.razor.extensions.6.0.3.nupkg.sha512"
     },
-    "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation/6.0.2": {
+    "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation/6.0.3": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-gF/+zCwhYwKFVcZoAgmPt1QcLfUlzgRlDn9g1dD1gTvGwJL/e/CKMFpEayvD8eQA88H4c6PB82LOA6xuhN8P/g==",
-      "path": "microsoft.aspnetcore.mvc.razor.runtimecompilation/6.0.2",
-      "hashPath": "microsoft.aspnetcore.mvc.razor.runtimecompilation.6.0.2.nupkg.sha512"
+      "sha512": "sha512-8s8dUQa2dI00qm8VoOpKWPO2Fxo8kVL9yFL8/I5NxjsGzG+XkTA6QUDBY9qtK0AN6usyE03Xo9x02gYhweowHw==",
+      "path": "microsoft.aspnetcore.mvc.razor.runtimecompilation/6.0.3",
+      "hashPath": "microsoft.aspnetcore.mvc.razor.runtimecompilation.6.0.3.nupkg.sha512"
     },
-    "Microsoft.AspNetCore.Razor.Language/6.0.2": {
+    "Microsoft.AspNetCore.Razor.Language/6.0.3": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-9OBHuEY1bBCsOXsOcN8m1urwvgKgMy5JWODL6jWLDZZRYIj7PUCYCCYC6KO1kNFq+u9x145aDs25ydr2VAvhRw==",
-      "path": "microsoft.aspnetcore.razor.language/6.0.2",
-      "hashPath": "microsoft.aspnetcore.razor.language.6.0.2.nupkg.sha512"
+      "sha512": "sha512-mO/fUczuRB10B/z7ym2TiI2arDGVSjvxqwdATbWh9l517LvrI+DkE3kAw4kQnOQvNDjKgxPlaapJV19Wbf6f6w==",
+      "path": "microsoft.aspnetcore.razor.language/6.0.3",
+      "hashPath": "microsoft.aspnetcore.razor.language.6.0.3.nupkg.sha512"
     },
     "Microsoft.AspNetCore.Routing/2.2.0": {
       "type": "package",
@@ -7977,12 +7977,12 @@
       "path": "microsoft.codeanalysis.csharp/4.0.0",
       "hashPath": "microsoft.codeanalysis.csharp.4.0.0.nupkg.sha512"
     },
-    "Microsoft.CodeAnalysis.Razor/6.0.2": {
+    "Microsoft.CodeAnalysis.Razor/6.0.3": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-MvGMztDQrlc6upO2ncTY/pMXVRYV6AC93b9n8wUL3eGcxH3Mhn3FVjpnnh/4SyAFgnBAyCGD1KYBhWEOYJuLBg==",
-      "path": "microsoft.codeanalysis.razor/6.0.2",
-      "hashPath": "microsoft.codeanalysis.razor.6.0.2.nupkg.sha512"
+      "sha512": "sha512-9rwIxrKQBlglWYWvR+oWZJf4pz5fExHaG15jiMf7VHRMYx7yqs3MJgfYFDsNXRQZD6gH0yHhyFh2yas6zC8KpQ==",
+      "path": "microsoft.codeanalysis.razor/6.0.3",
+      "hashPath": "microsoft.codeanalysis.razor.6.0.3.nupkg.sha512"
     },
     "Microsoft.CSharp/4.7.0": {
       "type": "package",
@@ -8649,19 +8649,19 @@
       "path": "simplebase/1.3.1",
       "hashPath": "simplebase.1.3.1.nupkg.sha512"
     },
-    "SimpleGitVersion.Abstractions/7.0.0": {
+    "SimpleGitVersion.Abstractions/7.1.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-dfKubRt2/B9fLyuo7U4pCX8tKajcAkWkpcgAc863YHLUmDDW/ZupK5ew8CIra3XXoNvwUBpoVdP+/mBsqtxSYw==",
-      "path": "simplegitversion.abstractions/7.0.0",
-      "hashPath": "simplegitversion.abstractions.7.0.0.nupkg.sha512"
+      "sha512": "sha512-qKtDGGyV5RZaPb4TLAaa18KNjfYxwgfZ1k+9mDM3JRt/VfhNzmYQ/AMSYHWoSW9s6MtezYVBOch6vtBLjA6ZtQ==",
+      "path": "simplegitversion.abstractions/7.1.0",
+      "hashPath": "simplegitversion.abstractions.7.1.0.nupkg.sha512"
     },
-    "SimpleGitVersion.Core/7.0.0": {
+    "SimpleGitVersion.Core/7.1.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-5XMyovcGd7Ta18W+IAvp8rlDP8iTit/Qi9tiwTjQ/VbkIQwb9qMSPxSHn6U/dtvDQMa5FP6pV1jfIgfDsYSQWw==",
-      "path": "simplegitversion.core/7.0.0",
-      "hashPath": "simplegitversion.core.7.0.0.nupkg.sha512"
+      "sha512": "sha512-zX/yHVjJST/oVW4U4WaZbJCpTvIpz94/mziHs4pOCMmdcDtMQxKBMKsHflW8LZPdZosCNQ/ej3BDkGfL+c4iHA==",
+      "path": "simplegitversion.core/7.1.0",
+      "hashPath": "simplegitversion.core.7.1.0.nupkg.sha512"
     },
     "SimpleHttpListener/4.2.3": {
       "type": "package",
@@ -8677,40 +8677,40 @@
       "path": "socketlite.pcl/4.2.1",
       "hashPath": "socketlite.pcl.4.2.1.nupkg.sha512"
     },
-    "Swashbuckle.AspNetCore/6.2.3": {
+    "Swashbuckle.AspNetCore/6.3.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-cnzQDn0Le+hInsw2SYwlOhOCPXpYi/szcvnyqZJ12v+QyrLBwAmWXBg6RIyHB18s/mLeywC+Rg2O9ndz0IUNYQ==",
-      "path": "swashbuckle.aspnetcore/6.2.3",
-      "hashPath": "swashbuckle.aspnetcore.6.2.3.nupkg.sha512"
+      "sha512": "sha512-3TAV6JqsJF2F5e5d/tiQuW/TlzKXB/n2IcL5QR1FP8ArmLhmPkpeHiLZ3+1YnJ5840/X5ApvpRRJpM9809IjTg==",
+      "path": "swashbuckle.aspnetcore/6.3.0",
+      "hashPath": "swashbuckle.aspnetcore.6.3.0.nupkg.sha512"
     },
-    "Swashbuckle.AspNetCore.Annotations/6.2.3": {
+    "Swashbuckle.AspNetCore.Annotations/6.3.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-I8rcqNo+60+zJl5TpRF9JZSnGYPGJmgtlK+ZyTDsG+0lRDjMCPTPndcSSgeUpUh1XsMPuCx38hNu78Xf+xvjeg==",
-      "path": "swashbuckle.aspnetcore.annotations/6.2.3",
-      "hashPath": "swashbuckle.aspnetcore.annotations.6.2.3.nupkg.sha512"
+      "sha512": "sha512-MylnnwqP0OwHUnYAKc3v5jBlWHWLBoi5Jw2d+1Tw2ozPJGIBMko0XIlgBURMpEhV7vmIqjXEQ+zk5iDlFRfLIg==",
+      "path": "swashbuckle.aspnetcore.annotations/6.3.0",
+      "hashPath": "swashbuckle.aspnetcore.annotations.6.3.0.nupkg.sha512"
     },
-    "Swashbuckle.AspNetCore.Swagger/6.2.3": {
+    "Swashbuckle.AspNetCore.Swagger/6.3.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-qOF7j1sL0bWm8g/qqHVPCvkO3JlVvUIB8WfC98kSh6BT5y5DAnBNctfac7XR5EZf+eD7/WasvANncTqwZYfmWQ==",
-      "path": "swashbuckle.aspnetcore.swagger/6.2.3",
-      "hashPath": "swashbuckle.aspnetcore.swagger.6.2.3.nupkg.sha512"
+      "sha512": "sha512-+taHh7kowNF+tQo9a82avwDtfqhAC82jTZTqZwypDpauPvwavyVtJ7+ERxE+yDb6U/nOcMicMmDAGbqbJ2Pc+Q==",
+      "path": "swashbuckle.aspnetcore.swagger/6.3.0",
+      "hashPath": "swashbuckle.aspnetcore.swagger.6.3.0.nupkg.sha512"
     },
-    "Swashbuckle.AspNetCore.SwaggerGen/6.2.3": {
+    "Swashbuckle.AspNetCore.SwaggerGen/6.3.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-+Xq7WdMCCfcXlnbLJVFNgY8ITdP2TRYIlpbt6IKzDw5FwFxdi9lBfNDtcT+/wkKwX70iBBFmXldnnd02/VO72A==",
-      "path": "swashbuckle.aspnetcore.swaggergen/6.2.3",
-      "hashPath": "swashbuckle.aspnetcore.swaggergen.6.2.3.nupkg.sha512"
+      "sha512": "sha512-8PRLtqCXTIfc+W/pcyab8GqHzHuFRZ3L+9/fix/ssVknwy/pbgkOqgzq9DGWfKz+MZReIp5ajZLR7bXioDdacQ==",
+      "path": "swashbuckle.aspnetcore.swaggergen/6.3.0",
+      "hashPath": "swashbuckle.aspnetcore.swaggergen.6.3.0.nupkg.sha512"
     },
-    "Swashbuckle.AspNetCore.SwaggerUI/6.2.3": {
+    "Swashbuckle.AspNetCore.SwaggerUI/6.3.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-bCRI87uKJVb4G+KURWm8LQrL64St04dEFZcF6gIM67Zc0Sr/N47EO83ybLMYOvfNdO1DCv8xwPcrz9J/VEhQ5g==",
-      "path": "swashbuckle.aspnetcore.swaggerui/6.2.3",
-      "hashPath": "swashbuckle.aspnetcore.swaggerui.6.2.3.nupkg.sha512"
+      "sha512": "sha512-OmVLGzyeNBFUAx6E/bqrZW4uxfv9q2MtegYzeHv5Dj8N34ry8104d6OcyRIV4BhwHBSFD1rMvDlPciguFMtQ5w==",
+      "path": "swashbuckle.aspnetcore.swaggerui/6.3.0",
+      "hashPath": "swashbuckle.aspnetcore.swaggerui.6.3.0.nupkg.sha512"
     },
     "System.AppContext/4.3.0": {
       "type": "package",

@@ -16,5 +16,6 @@
   "RotationSpeed": 0.005,
   "RotationThreshold": 0.85,
   "Id": 3,
-  "Name": "Middle"
+  "Name": "Middle",
+  "System": true
 }

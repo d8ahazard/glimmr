@@ -117,9 +117,10 @@
     "#FF0015",
     "#FF000B"
   ],
-  "AnimationTime": 1,
+  "AnimationTime": 0.75,
   "Mode": "Reverse",
   "Easing": "Blend",
   "Name": "Fast Rainbow",
-  "Id": 13
+  "Id": 13,
+  "System": true
 }

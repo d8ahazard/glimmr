@@ -424,6 +424,12 @@
                 if the event handler is <c>null</c>.
             </returns>
         </member>
+        <member name="P:Glimmr.Models.ColorSource.Ambient.AmbientScene.System">
+            <summary>
+                If the scene is system-defined or not. If it is, it cannot be deleted or overwritten.
+            </summary>
+            [JsonProperty]
+        </member>
         <member name="P:Glimmr.Models.ColorSource.Ambient.AmbientScene.AnimationTime">
             <summary>
                 Amount of time (in milliseconds) between color updates.
@@ -437,6 +443,11 @@
         <member name="P:Glimmr.Models.ColorSource.Ambient.AmbientScene.Id">
             <summary>
                 Theme ID. Will be auto-assigned for user defined themes.
+            </summary>
+        </member>
+        <member name="P:Glimmr.Models.ColorSource.Ambient.AmbientScene.MatrixStep">
+            <summary>
+                How many spaces to animate in a given direction per step.
             </summary>
         </member>
         <member name="P:Glimmr.Models.ColorSource.Ambient.AmbientScene.Easing">
@@ -456,6 +467,7 @@
                 Random = 2 (Colors are selected randomly)
                 RandomAll = 3 (One random color for everything)
                 LinearAll = 4 (Colors progress normally, one color for everything)
+                Matrix = 5 (Uses a custom grid to create more advanced animations)
             </summary>
         </member>
         <member name="P:Glimmr.Models.ColorSource.Ambient.AmbientScene.Name">
@@ -463,19 +475,29 @@
                 The theme name.
             </summary>
         </member>
+        <member name="P:Glimmr.Models.ColorSource.Ambient.AmbientScene.MatrixDirection">
+            <summary>
+                The animation direction of the color matrix.
+            </summary>
+        </member>
         <member name="P:Glimmr.Models.ColorSource.Ambient.AmbientScene.Colors">
             <summary>
                 An array of colors used by the scene.
             </summary>
         </member>
+        <member name="P:Glimmr.Models.ColorSource.Ambient.AmbientScene.ColorMatrix">
+            <summary>
+                A 2D array of colors used by the scene (basically, a small image)
+            </summary>
+        </member>
         <member name="M:Glimmr.Models.ColorSource.Ambient.AmbientStream.RefreshSystem">
             <summary>
-            Refresh system data and reload scene.
+                Refresh system data and reload scene.
             </summary>
         </member>
         <member name="M:Glimmr.Models.ColorSource.Ambient.AmbientStream.LoadScene">
             <summary>
-            Load scene data to memory
+                Load scene data to memory
             </summary>
         </member>
         <member name="T:Glimmr.Models.ColorSource.Ambient.AmbientStream.AnimationMode">
@@ -485,6 +507,47 @@
                 Random - A random color will be assigned to each sector every update
                 RandomAll - One random color will be selected and applied to all sectors each update
                 LinearAll - One color will be selected and applied to all tiles, with the color incremented each update
+                Matrix - Uses a 9 x 16 grid to create more advanced animations. Map must include a
+            </summary>
+        </member>
+        <member name="T:Glimmr.Models.ColorSource.Ambient.AmbientStream.MatrixDirection">
+            <summary>
+                The direction the matrix will move in.
+            </summary>
+        </member>
+        <member name="F:Glimmr.Models.ColorSource.Ambient.AmbientStream.MatrixDirection.Random">
+            <summary>
+                Direction changes each frame cycle
+            </summary>
+        </member>
+        <member name="F:Glimmr.Models.ColorSource.Ambient.AmbientStream.MatrixDirection.LTR">
+            <summary>
+                Left-to-right
+            </summary>
+        </member>
+        <member name="F:Glimmr.Models.ColorSource.Ambient.AmbientStream.MatrixDirection.TTB">
+            <summary>
+                Top-to-bottom
+            </summary>
+        </member>
+        <member name="F:Glimmr.Models.ColorSource.Ambient.AmbientStream.MatrixDirection.RTL">
+            <summary>
+                Right-to-left
+            </summary>
+        </member>
+        <member name="F:Glimmr.Models.ColorSource.Ambient.AmbientStream.MatrixDirection.BTT">
+            <summary>
+                Bottom to top
+            </summary>
+        </member>
+        <member name="F:Glimmr.Models.ColorSource.Ambient.AmbientStream.MatrixDirection.CW">
+            <summary>
+                Rotate clockwise
+            </summary>
+        </member>
+        <member name="F:Glimmr.Models.ColorSource.Ambient.AmbientStream.MatrixDirection.CCW">
+            <summary>
+                Rotate counter-clockwise
             </summary>
         </member>
         <member name="P:Glimmr.Models.ColorSource.Audio.AudioData.IsDefault">
@@ -514,7 +577,7 @@
         </member>
         <member name="M:Glimmr.Models.ColorSource.Audio.AudioMap.HighNote(System.Collections.Generic.Dictionary{System.Single,System.Int32},System.Int32)">
             <summary>
-            Select the highest frequency in a given octave, where step is the octave from 0-9
+                Select the highest frequency in a given octave, where step is the octave from 0-9
             </summary>
             <param name="stuff"></param>
             <param name="step"></param>
@@ -742,6 +805,11 @@
                 List of available entertainment groups.
             </summary>
         </member>
+        <member name="P:Glimmr.Models.ColorTarget.HueV2.HueV2Data.AppKey">
+            <summary>
+                Hue user ID assigned after device is linked.
+            </summary>
+        </member>
         <member name="P:Glimmr.Models.ColorTarget.HueV2.HueV2Data.SelectedGroup">
             <summary>
                 Target entertainment group to use for streaming.
@@ -750,11 +818,6 @@
         <member name="P:Glimmr.Models.ColorTarget.HueV2.HueV2Data.Token">
             <summary>
                 Token for entertainment streaming assigned after device is linked.
-            </summary>
-        </member>
-        <member name="P:Glimmr.Models.ColorTarget.HueV2.HueV2Data.AppKey">
-            <summary>
-                Hue user ID assigned after device is linked.
             </summary>
         </member>
         <member name="P:Glimmr.Models.ColorTarget.HueV2.HueV2Data.Tag">
@@ -794,7 +857,7 @@
         </member>
         <member name="M:Glimmr.Models.ColorTarget.HueV2.HueEntertainmentConfig.#ctor">
             <summary>
-            Config ID
+                Config ID
             </summary>
         </member>
         <member name="T:Glimmr.Models.ColorTarget.HueV2.LightMapV2">
@@ -802,19 +865,24 @@
                 Used to associate light data with mapping/brightness info.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.ColorTarget.HueV2.LightMapV2.SvcId">
-            <summary>
-            Channel ID of light/device
-            </summary>
-        </member>
         <member name="P:Glimmr.Models.ColorTarget.HueV2.LightMapV2.Override">
             <summary>
                 Override hue brightness and use light-specific value.
             </summary>
         </member>
+        <member name="P:Glimmr.Models.ColorTarget.HueV2.LightMapV2.SvcId">
+            <summary>
+                Channel ID of light/device
+            </summary>
+        </member>
         <member name="P:Glimmr.Models.ColorTarget.HueV2.LightMapV2.Brightness">
             <summary>
                 Light-specific brightness - needs override enable to be used.
+            </summary>
+        </member>
+        <member name="P:Glimmr.Models.ColorTarget.HueV2.LightMapV2.Channel">
+            <summary>
+                Device channel
             </summary>
         </member>
         <member name="P:Glimmr.Models.ColorTarget.HueV2.LightMapV2.TargetSector">
@@ -824,42 +892,37 @@
         </member>
         <member name="P:Glimmr.Models.ColorTarget.HueV2.LightMapV2.Id">
             <summary>
-            Light ID
-            </summary>
-        </member>
-        <member name="P:Glimmr.Models.ColorTarget.HueV2.LightMapV2.Owner">
-            <summary>
-            Owner RID of the light.
+                Light ID
             </summary>
         </member>
         <member name="P:Glimmr.Models.ColorTarget.HueV2.LightMapV2.Name">
             <summary>
-            Light name
+                Light name
+            </summary>
+        </member>
+        <member name="P:Glimmr.Models.ColorTarget.HueV2.LightMapV2.Owner">
+            <summary>
+                Owner RID of the light.
             </summary>
         </member>
         <member name="P:Glimmr.Models.ColorTarget.HueV2.LightMapV2.Type">
             <summary>
-            ArchType of the device
-            </summary>
-        </member>
-        <member name="P:Glimmr.Models.ColorTarget.HueV2.LightMapV2.Channel">
-            <summary>
-            Device channel
-            </summary>
-        </member>
-        <member name="P:Glimmr.Models.ColorTarget.HueV2.HueGroup.Name">
-            <summary>
-            Group Name
-            </summary>
-        </member>
-        <member name="P:Glimmr.Models.ColorTarget.HueV2.HueGroup.Id">
-            <summary>
-            Group ID
+                ArchType of the device
             </summary>
         </member>
         <member name="P:Glimmr.Models.ColorTarget.HueV2.HueGroup.Services">
             <summary>
-            List of all services associated with this group.
+                List of all services associated with this group.
+            </summary>
+        </member>
+        <member name="P:Glimmr.Models.ColorTarget.HueV2.HueGroup.Id">
+            <summary>
+                Group ID
+            </summary>
+        </member>
+        <member name="P:Glimmr.Models.ColorTarget.HueV2.HueGroup.Name">
+            <summary>
+                Group Name
             </summary>
         </member>
         <member name="M:Glimmr.Models.ColorTarget.HueV2.HueV2Device.StartStream(System.Threading.CancellationToken)">
@@ -1224,20 +1287,18 @@
             </summary>
         </member>
         <member name="T:Glimmr.Models.ColorTarget.Led.LedDevice">
-             <summary>
-             A wrapper for the WS281X Library.
-            
-             Despite showing two devices in the UI, for all intents and purposes,
-             the "LED 0" device actually handles all updates for *both* strips.
-            
-             All data is passed to the "agent" via LED 0 and updated for both
-             segments simultaneously to avoid lag and extra work.
-             </summary>
+            <summary>
+                A wrapper for the WS281X Library.
+                Despite showing two devices in the UI, for all intents and purposes,
+                the "LED 0" device actually handles all updates for *both* strips.
+                All data is passed to the "agent" via LED 0 and updated for both
+                segments simultaneously to avoid lag and extra work.
+            </summary>
         </member>
         <member name="M:Glimmr.Models.ColorTarget.Led.LedDevice.FlashColor(System.Drawing.Color)">
             <summary>
-            Flash the color of the individual strip.
-            This one, we'll use, because it's not used frequently.
+                Flash the color of the individual strip.
+                This one, we'll use, because it's not used frequently.
             </summary>
             <param name="color">The color to flash.</param>
             <returns></returns>
@@ -1421,21 +1482,6 @@
                 This beam's position in the layout.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.ColorTarget.Nanoleaf.NanoleafData.MirrorX">
-            <summary>
-                Mirror layout horizontally.
-            </summary>
-        </member>
-        <member name="P:Glimmr.Models.ColorTarget.Nanoleaf.NanoleafData.MirrorY">
-            <summary>
-                Mirror layout vertically.
-            </summary>
-        </member>
-        <member name="P:Glimmr.Models.ColorTarget.Nanoleaf.NanoleafData.Rotation">
-            <summary>
-                Layout rotation.
-            </summary>
-        </member>
         <member name="P:Glimmr.Models.ColorTarget.Nanoleaf.NanoleafData.Brightness">
             <summary>
                 Device Brightness.
@@ -1513,6 +1559,11 @@
             <param name="n"></param>
             <param name="cs"></param>
         </member>
+        <member name="P:Glimmr.Models.ColorTarget.OpenRgb.OpenRgbData.ReverseStrip">
+            <summary>
+                Reverse the order of data sent to leds.
+            </summary>
+        </member>
         <member name="P:Glimmr.Models.ColorTarget.OpenRgb.OpenRgbData.ColorOrder">
             <summary>
                 The order of the color values for the particular device.
@@ -1521,11 +1572,6 @@
         <member name="P:Glimmr.Models.ColorTarget.OpenRgb.OpenRgbData.Type">
             <summary>
                 The OpenRGB device type.
-            </summary>
-        </member>
-        <member name="P:Glimmr.Models.ColorTarget.OpenRgb.OpenRgbData.ReverseStrip">
-            <summary>
-                Reverse the order of data sent to leds.
             </summary>
         </member>
         <member name="P:Glimmr.Models.ColorTarget.OpenRgb.OpenRgbData.LedMultiplier">
@@ -1568,14 +1614,6 @@
                 Target sector, if using sectored StripMode.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.ColorTarget.OpenRgb.OpenRgbData.StripMode">
-            <summary>
-                LED Strip mode.
-                Normal = 0,
-                Loop = 2,
-                Single = 3
-            </summary>
-        </member>
         <member name="P:Glimmr.Models.ColorTarget.OpenRgb.OpenRgbData.Description">
             <summary>
                 Device description.
@@ -1599,6 +1637,14 @@
         <member name="P:Glimmr.Models.ColorTarget.OpenRgb.OpenRgbData.Version">
             <summary>
                 Device version.
+            </summary>
+        </member>
+        <member name="P:Glimmr.Models.ColorTarget.OpenRgb.OpenRgbData.StripMode">
+            <summary>
+                LED Strip mode.
+                Normal = 0,
+                Loop = 2,
+                Single = 3
             </summary>
         </member>
         <member name="P:Glimmr.Models.ColorTarget.OpenRgb.OpenRgbData.Tag">
@@ -2338,11 +2384,6 @@
                 If set, rainbow wipe will not be played on application startup.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.GammaCorrection">
-            <summary>
-             Gamma correction value.
-             </summary>
-        </member>
         <member name="P:Glimmr.Models.SystemData.SkipTour">
             <summary>
                 If set, introduction/tour will not run on UI load.
@@ -2398,20 +2439,9 @@
                 How much to increase input audio volume.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.AudioCutoff">
-            <summary>
-                Low cutoff for audio detection, values below this will not be displayed (0-255).
-            </summary>
-        </member>
         <member name="P:Glimmr.Models.SystemData.AudioRotationLower">
             <summary>
                 Lower limit to color range (0 - 1)
-                Range is calculated as the absolute value between lower and upper.
-            </summary>
-        </member>
-        <member name="P:Glimmr.Models.SystemData.AudioRotationUpper">
-            <summary>
-                Upper limit to color range (0 - 1)
                 Range is calculated as the absolute value between lower and upper.
             </summary>
         </member>
@@ -2420,14 +2450,30 @@
                 How many degrees to rotate on each trigger (0 - 1)
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.AudioRotationTrigger">
+        <member name="P:Glimmr.Models.SystemData.AudioRotationUpper">
             <summary>
-                Minimum amplitude to trigger color rotation (0-255)
+                Upper limit to color range (0 - 1)
+                Range is calculated as the absolute value between lower and upper.
+            </summary>
+        </member>
+        <member name="P:Glimmr.Models.SystemData.GammaCorrection">
+            <summary>
+                Gamma correction value.
             </summary>
         </member>
         <member name="P:Glimmr.Models.SystemData.AmbientScene">
             <summary>
                 Current ambient scene.
+            </summary>
+        </member>
+        <member name="P:Glimmr.Models.SystemData.AudioCutoff">
+            <summary>
+                Low cutoff for audio detection, values below this will not be displayed (0-255).
+            </summary>
+        </member>
+        <member name="P:Glimmr.Models.SystemData.AudioRotationTrigger">
+            <summary>
+                Minimum amplitude to trigger color rotation (0-255)
             </summary>
         </member>
         <member name="P:Glimmr.Models.SystemData.AudioScene">
