@@ -59,9 +59,9 @@ wget -qO- https://raw.githubusercontent.com/d8ahazard/glimmr/master/script/setup
 
 Full Raspi OS image can be found here: 
 
-X64: https://mega.nz/file/fqoiQYLJ#KvpQTGfMSyb2h3FPpyaf2qCD838HXZTe3E-UlCpvqQA
+X64: https://mega.nz/file/C34GEAqZ#RpckErhTPhn6qz1cVDNDmr4QP9wfYemEaAOLvRRBz4E
 
-X86: https://mega.nz/file/ryYExJSI#SEKZchp-Q9nauYCYnF7pq86HAun_hyVx6YR53PK5Qxg
+X86: https://mega.nz/file/amoy3SpJ#HvFbZYQkVWIiHbA2z81uaLxEN26gEfkexIAjdQJFEJY
 
 
 You will need to use "BalenaEtcher", a free software for flashing the image.
