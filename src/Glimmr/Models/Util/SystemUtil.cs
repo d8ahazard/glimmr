@@ -5,6 +5,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -80,16 +84,49 @@ public static class SystemUtil {
 	}
 
 	public static void Update() {
+		var updateNeeded = false;
+		var version = "0.0.0";
+		try {
+			var ver = Assembly.GetEntryAssembly()?.GetName().Version;
+			if (ver != null) version = ver.ToString();
+			var relUrl = "https://api.github.com/repos/d8ahazard/glimmr/releases/latest";
+			using var handler = new HttpClientHandler();
+			handler.UseDefaultCredentials = true;
+			using var client = new HttpClient(handler);
+			client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Glimmr", "1.2.4")); // set your own values here
+			var cj = client.GetFromJsonAsync<GithubRelease>(relUrl).Result;
+			if (cj != null) {
+				Log.Debug("Release fetched...");
+				var tag = cj.tag_name;
+				Log.Debug("Tag is " + tag + " versus " + version);
+				updateNeeded = UpdateNeeded(version, tag);
+			} else {
+				Log.Debug("Can't get cj there...");
+			}
+		} catch (Exception e) {
+			Log.Warning("Exception updating: " + e.Message);
+		}
+
+		if (!updateNeeded) {
+			Log.Debug("No updates are required at this time.");
+			return;
+		}
+		
 		Log.Debug("Updating...");
 		Log.Information("Backing up current settings...");
 		DataUtil.BackupDb();
+		
 		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-			Ps("update_win");
+			var appDir = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
+			var cmd = Path.Join(appDir, "update_win.ps1");
+			UpdateUpdater("update_win.ps1", cmd);
+			Ps("update_win.ps1");
 		}
 
 		if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
 			var appDir = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
 			var cmd = Path.Join(appDir, "update_osx.sh");
+			UpdateUpdater("update_osx.sh", cmd);
 			Log.Debug("Update command should be: " + cmd);
 			Process.Start("/bin/bash", cmd);
 		}
@@ -101,8 +138,31 @@ public static class SystemUtil {
 		{
 			var appDir = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
 			var cmd = Path.Join(appDir, "update_linux.sh");
+			UpdateUpdater("update_linux.sh", cmd);
 			Log.Debug("Update command should be: " + cmd);
 			Process.Start("/bin/bash", cmd);
+		}
+	}
+
+	private static bool UpdateNeeded(string local, string avail) {
+		var lParts = local.Split(".");
+		var aParts = avail.Split(".");
+		for (var i = 0; i < aParts.Length; i++) {
+			if (int.Parse(lParts[i]) >= int.Parse(aParts[i])) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private static void UpdateUpdater(string file, string target) {
+		var url = $"https://raw.githubusercontent.com/d8ahazard/glimmr/master/src/Glimmr/script/{file}";
+		using var client = new HttpClient();
+		var res = client.GetStringAsync(url).Result;
+		try {
+			File.WriteAllText(res, target);
+		} catch (Exception e) {
+			Log.Debug("Exception updating update script: " + e.Message);
 		}
 	}
 
