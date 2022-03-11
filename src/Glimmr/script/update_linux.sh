@@ -1,15 +1,4 @@
 #!/bin/bash
-
-set -fb
-
-readonly THISDIR=$(cd "$(dirname "$0")" ; pwd)
-readonly MY_NAME=$(basename "$0")
-readonly FILE_TO_FETCH_URL="https://raw.githubusercontent.com/d8ahazard/glimmr/master/src/Glimmr/script/update_linux.sh"
-readonly EXISTING_SHELL_SCRIPT="${THISDIR}/update_linux.sh"
-readonly EXECUTABLE_SHELL_SCRIPT="${THISDIR}/.update_linux.sh"
-arch="$(arch)"
-PUBPROFILE="Linux"
-PUBPATH="linux"
 log=$(ls -t /var/log/glimmr/glimmr* | head -1)
 if [ "$log" == "" ]
   then
@@ -23,6 +12,17 @@ if [ ! -f $log ]
     chmod 777 $log
 fi
 
+set -fb
+
+readonly THISDIR=$(cd "$(dirname "$0")" ; pwd)
+readonly MY_NAME=$(basename "$0")
+readonly FILE_TO_FETCH_URL="https://raw.githubusercontent.com/d8ahazard/glimmr/master/src/Glimmr/script/update_linux.sh"
+readonly EXISTING_SHELL_SCRIPT="${THISDIR}/update_linux.sh"
+readonly EXECUTABLE_SHELL_SCRIPT="${THISDIR}/.update_linux.sh"
+arch="$(arch)"
+PUBPROFILE="Linux"
+PUBPATH="linux"
+
 
 function get_remote_file() {
   readonly REQUEST_URL=$1
@@ -30,7 +30,7 @@ function get_remote_file() {
   readonly TEMP_FILE="${THISDIR}/tmp.file"
   if [ -n "$(which wget)" ]; then
     echo "Fetching updated script." >> $log
-    echo "Fetching updated script."
+    echo "Fetching updated script from $REQUEST_URL and saving to $TEMP_FILE."
     $(wget -O "${TEMP_FILE}"  "$REQUEST_URL" 2>&1)
     if [[ $? -eq 0 ]]; then
       mv "${TEMP_FILE}" "${OUTPUT_FILENAME}"
@@ -41,9 +41,6 @@ function get_remote_file() {
   fi
 }
 
-function clean_up() {
-  # clean up code (if required) that has to execute every time here
-}
 
 function self_clean_up() {
   rm -f "${EXECUTABLE_SHELL_SCRIPT}"
@@ -56,6 +53,7 @@ function update_self_and_invoke() {
   fi
   exec "${EXECUTABLE_SHELL_SCRIPT}" "$@"
 }
+
 function main() {
   cp "${EXECUTABLE_SHELL_SCRIPT}" "${EXISTING_SHELL_SCRIPT}"
   
@@ -132,13 +130,12 @@ function main() {
 } 
 
 function vercomp () {
-    if [[ "$1" == "$2" ]]
+    if [[ $1 == $2 ]]
     then
-        echo "0"
         return 0
     fi
     local IFS=.
-    local i ver1=("$1") ver2=("$2")
+    local i ver1=($1) ver2=($2)
     # fill empty fields in ver1 with zeros
     for ((i=${#ver1[@]}; i<${#ver2[@]}; i++))
     do
@@ -153,22 +150,19 @@ function vercomp () {
         fi
         if ((10#${ver1[i]} > 10#${ver2[i]}))
         then
-            echo "1"
             return 1
         fi
         if ((10#${ver1[i]} < 10#${ver2[i]}))
         then
-            echo "2"
             return 2
         fi
     done
-    echo "0"
     return 0
 }
 
 if [[ $MY_NAME = \.* ]]; then
   # invoke real main program
-  trap "clean_up; self_clean_up" EXIT
+  trap self_clean_up EXIT
   main "$@"
 else
   # update myself and invoke updated version
