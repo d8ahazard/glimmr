@@ -1,12 +1,12 @@
 [Setup]
 AppName=Glimmr
-AppVersion=1.2.0
+AppVersion=1.2.5
 DefaultDirName={autopf64}\Glimmr
 DefaultGroupName=Glimmr
 SetupIconFile=appIcon.ico
 UninstallDisplayIcon=appIcon.ico
 OutputDir=bin
-OutputBaseFilename=Glimmr-Windows-1.2.0
+OutputBaseFilename=Glimmr-Windows-installer-1.2.5
 
 [Files]
 Source: "bin\Windows\*"; DestDir: "{app}";Flags: ignoreversion recursesubdirs

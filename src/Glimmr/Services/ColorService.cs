@@ -456,15 +456,13 @@ public class ColorService : BackgroundService {
 				if (!doEnable) {
 					await dev.FlashColor(Color.Black);
 				}
-
-				continue;
+				return;
 			}
 
 			if (enabled && !doEnable && dev.Streaming) {
 				Log.Information("Stopping disabled device: " + dev.Id);
 				await dev.StopStream().ConfigureAwait(false);
 			}
-
 			return;
 		}
 

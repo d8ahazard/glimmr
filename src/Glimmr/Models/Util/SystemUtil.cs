@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -22,6 +21,8 @@ using Serilog;
 namespace Glimmr.Models.Util;
 
 public static class SystemUtil {
+
+	private static DateTime? LastUpdate;
 	public static void Reboot() {
 		Log.Debug("Rebooting");
 		if (IsRaspberryPi()) {
@@ -85,26 +86,38 @@ public static class SystemUtil {
 
 	public static void Update() {
 		var updateNeeded = false;
-		var version = "0.0.0";
-		try {
-			var ver = Assembly.GetEntryAssembly()?.GetName().Version;
-			if (ver != null) version = ver.ToString();
-			var relUrl = "https://api.github.com/repos/d8ahazard/glimmr/releases/latest";
-			using var handler = new HttpClientHandler();
-			handler.UseDefaultCredentials = true;
-			using var client = new HttpClient(handler);
-			client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Glimmr", "1.2.4")); // set your own values here
-			var cj = client.GetFromJsonAsync<GithubRelease>(relUrl).Result;
-			if (cj != null) {
-				Log.Debug("Release fetched...");
-				var tag = cj.tag_name;
-				Log.Debug("Tag is " + tag + " versus " + version);
-				updateNeeded = UpdateNeeded(version, tag);
-			} else {
-				Log.Debug("Can't get cj there...");
+		var now = DateTime.Now;
+		if (LastUpdate != null) {
+			var last = (DateTime) LastUpdate;
+			var diff = last - now;
+			var diffInSeconds = Math.Abs(diff.TotalSeconds);
+			updateNeeded = diffInSeconds <= 60;
+			if (updateNeeded) Log.Information($"Last update attempt was {diffInSeconds} seconds ago, forcing update.");
+		}
+		LastUpdate = DateTime.Now;
+		var version = Version.Parse("0.0.0");
+		if (!updateNeeded) {
+			try {
+				var ver = Assembly.GetEntryAssembly()?.GetName().Version;
+				if (ver != null) version = ver;
+				var relUrl = "https://api.github.com/repos/d8ahazard/glimmr/releases/latest";
+				using var handler = new HttpClientHandler();
+				handler.UseDefaultCredentials = true;
+				using var client = new HttpClient(handler);
+				client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Glimmr", "1.2.5")); // set your own values here
+				var cj = client.GetFromJsonAsync<GithubRelease>(relUrl).Result;
+				if (cj != null) {
+					Log.Debug("Release fetched...");
+					var tag = cj.tag_name;
+					var newVersion = Version.Parse(tag);
+					Log.Debug("Tag is " + tag + " versus " + version);
+					updateNeeded = newVersion.CompareTo(version) > 0;
+				} else {
+					Log.Debug("Can't get cj there...");
+				}
+			} catch (Exception e) {
+				Log.Warning("Exception updating: " + e.Message);
 			}
-		} catch (Exception e) {
-			Log.Warning("Exception updating: " + e.Message);
 		}
 
 		if (!updateNeeded) {
@@ -142,17 +155,6 @@ public static class SystemUtil {
 			Log.Debug("Update command should be: " + cmd);
 			Process.Start("/bin/bash", cmd);
 		}
-	}
-
-	private static bool UpdateNeeded(string local, string avail) {
-		var lParts = local.Split(".");
-		var aParts = avail.Split(".");
-		for (var i = 0; i < aParts.Length; i++) {
-			if (int.Parse(lParts[i]) >= int.Parse(aParts[i])) {
-				return false;
-			}
-		}
-		return true;
 	}
 
 	private static void UpdateUpdater(string file, string target) {
