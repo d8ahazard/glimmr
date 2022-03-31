@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Glimmr.Enums;
+using Glimmr.Models.Data;
 using Serilog;
 
 #endregion

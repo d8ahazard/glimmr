@@ -1,20 +1,15 @@
 ﻿#region
 
 using System;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Glimmr.Models.ColorTarget.Hue;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using HueApi;
 using HueApi.BridgeLocator;
-using HueApi.Models;
-using Newtonsoft.Json;
 using Q42.HueApi;
 using Serilog;
 using HttpBridgeLocator = HueApi.BridgeLocator.HttpBridgeLocator;
-using Light = HueApi.Models.Light;
 
 #endregion
 
@@ -32,7 +27,6 @@ public class HueV2Discovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth 
 
 	public async Task Discover(int timeout, CancellationToken ct) {
 		try {
-			LoadTestJson();
 			await _bridgeLocatorHttp.LocateBridgesAsync(ct);
 		} catch (Exception e) {
 			if (!e.Message.Contains("canceled")) {
@@ -84,45 +78,10 @@ public class HueV2Discovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth 
 		return devData;
 	}
 
-	private void LoadTestJson() {
-		var path = SystemUtil.GetUserDir();
-		var jsonPath = Path.Join(path, "hue_lights.json");
-		var jsonPath2 = Path.Join(path, "hue_entertainment_config.json");
-		var jsonPath3 = Path.Join(path, "hue_entertainment.json");
-		if (!File.Exists(jsonPath) || !File.Exists(jsonPath2) || !File.Exists(jsonPath3)) {
-			return;
-		}
-
-		var json = File.ReadAllText(jsonPath);
-		var json2 = File.ReadAllText(jsonPath2);
-		var json3 = File.ReadAllText(jsonPath3);
-		try {
-			var groups = JsonConvert.DeserializeObject<HueResponse<Entertainment>>(json3);
-			var entData = JsonConvert.DeserializeObject<HueResponse<EntertainmentConfiguration>>(json2);
-			var lightData = JsonConvert.DeserializeObject<HueResponse<Light>>(json);
-			var testData = new HueV2Data {
-				Id = "GregBridge",
-				Name = "Greg's Bridge",
-				Token = "WOO",
-				AppKey = "FOO"
-			};
-			if (entData != null && groups != null && lightData != null) {
-				Log.Debug("Configuring test data ent...");
-				testData.ConfigureEntertainment(entData.Data, groups.Data, lightData.Data, true);
-				ControlService.AddDevice(testData).ConfigureAwait(true);
-			} else {
-				Log.Warning("Unable to load entertainment data.");
-			}
-			//testData.ConfigureEntertainment(bridgeData);
-		} catch (Exception e) {
-			Log.Debug("Exception parsing bridge data: " + e.Message);
-		}
-	}
-
+	
 	private void DeviceFound(IBridgeLocator bridgeLocator, LocatedBridge locatedBridge) {
 		var data = new HueV2Data(locatedBridge);
 		data = UpdateDeviceData(data);
-		Log.Debug("Found device: " + JsonConvert.SerializeObject(data));
 		_controlService.AddDevice(data).ConfigureAwait(false);
 	}
 
@@ -130,21 +89,7 @@ public class HueV2Discovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth 
 		// Check for existing device
 		var appKey = string.Empty;
 		var token = string.Empty;
-		var deleteV1 = false;
 		HueV2Data? dev = null;
-
-		try {
-			var d1 = DataUtil.GetDevice<HueData>(data.Id[..^2]);
-
-			if (d1 != null) {
-				deleteV1 = true;
-				var oldDev = (HueData)d1;
-				appKey = oldDev.User;
-				token = oldDev.Token;
-			}
-		} catch (Exception e) {
-			Log.Debug("Exception with old dd: " + e.Message);
-		}
 
 		var dd = DataUtil.GetDevice<HueV2Data>(data.Id);
 		if (dd != null) {
@@ -152,18 +97,8 @@ public class HueV2Discovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth 
 			dev = (HueV2Data)dd;
 			appKey = dev.AppKey;
 			token = dev.Token;
-			if (deleteV1) {
-				Log.Debug("Can't delete V1 device, dupe IDs. it's still in use.");
-			}
-
-			deleteV1 = false;
 		}
-
-		if (deleteV1) {
-			Log.Debug("Deleting v1 device.");
-			DataUtil.DeleteDevice(data.Id[..^2]);
-		}
-
+		
 		if (string.IsNullOrEmpty(appKey)) {
 			Log.Debug("No app key, returning..");
 			return data;

@@ -16,6 +16,8 @@ using Glimmr.Models.ColorSource.Ambient;
 using Glimmr.Models.ColorSource.Audio;
 using Glimmr.Models.ColorTarget;
 using Glimmr.Models.ColorTarget.Glimmr;
+using Glimmr.Models.Data;
+using Glimmr.Models.Helpers;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.AspNetCore.Http;

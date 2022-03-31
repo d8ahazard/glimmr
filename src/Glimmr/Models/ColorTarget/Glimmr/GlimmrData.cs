@@ -3,6 +3,7 @@
 using System;
 using System.Globalization;
 using System.Net.Http;
+using Glimmr.Models.Data;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
 
@@ -63,10 +64,8 @@ public class GlimmrData : IColorTargetData {
 		Id = id;
 		Tag = "Glimmr";
 		Name ??= Tag;
-		if (Id != null) {
-			Name = StringUtil.UppercaseFirst(Id);
-		}
-
+		Name = StringUtil.UppercaseFirst(Id);
+		
 		IpAddress = ip;
 		FetchData();
 		LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
@@ -74,7 +73,7 @@ public class GlimmrData : IColorTargetData {
 
 	public GlimmrData(SystemData sd) {
 		Tag = "Glimmr";
-		Name ??= Tag;
+		Name = sd.DeviceName;
 		LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 		LeftCount = sd.LeftCount;
 		RightCount = sd.RightCount;
@@ -128,9 +127,6 @@ public class GlimmrData : IColorTargetData {
 
 		IpAddress = data.IpAddress;
 		FetchData();
-		if (Id != null) {
-			Name = StringUtil.UppercaseFirst(Id);
-		}
 	}
 
 	/// <summary>
@@ -157,6 +153,7 @@ public class GlimmrData : IColorTargetData {
 			TopCount = sd.TopCount;
 			BottomCount = sd.BottomCount;
 			Brightness = sd.Brightness;
+			Name = sd.Name;
 		} catch (Exception) {
 			// Ignored
 		}

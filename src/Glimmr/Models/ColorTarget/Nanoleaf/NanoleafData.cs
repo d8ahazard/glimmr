@@ -3,9 +3,9 @@
 using System;
 using System.ComponentModel;
 using System.Globalization;
-using Glimmr.Models.Util;
-using Nanoleaf.Client.Models.Responses;
+using Glimmr.Models.Data;
 using Newtonsoft.Json;
+using Serilog;
 
 #endregion
 
@@ -63,23 +63,14 @@ public class NanoleafData : IColorTargetData {
 		Name ??= Tag;
 		if (!string.IsNullOrEmpty(IpAddress)) {
 			var hc = IpAddress.GetHashCode();
+			Log.Debug("HC: " + hc);
 			Name = "Nanoleaf - " + hc.ToString(CultureInfo.InvariantCulture)[..4];
 		}
 
 		Layout ??= new TileLayout();
 	}
 
-	public NanoleafData(Info dn) {
-		LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
-		Id = dn.SerialNumber;
-		Name = dn.Name;
-		Version = dn.FirmwareVersion;
-		var hostIp = IpUtil.GetIpFromHost(Name);
-		IpAddress = hostIp == null ? "" : hostIp.ToString();
-		Tag = "Nanoleaf";
-		Layout ??= new TileLayout();
-	}
-
+	
 	/// <summary>
 	///     Device tag.
 	/// </summary>

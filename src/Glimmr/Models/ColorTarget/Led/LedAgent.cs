@@ -3,6 +3,7 @@
 using System;
 using System.Drawing;
 using System.Linq;
+using Glimmr.Models.Data;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using rpi_ws281x;

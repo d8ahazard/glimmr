@@ -6,7 +6,7 @@ using System.Linq;
 
 #endregion
 
-namespace Glimmr.Models.ColorSource.UDP;
+namespace Glimmr.Models.ColorSource.Udp;
 
 public class ColorPacket {
 	public Color[] Colors { get; private set; }

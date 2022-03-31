@@ -9,7 +9,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Enums;
-using Glimmr.Models.ColorSource.UDP;
+using Glimmr.Models.ColorSource.Udp;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Kevsoft.WLED;

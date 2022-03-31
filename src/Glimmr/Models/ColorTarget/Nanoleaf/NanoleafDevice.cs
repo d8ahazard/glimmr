@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
+using Glimmr.Models.Data;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Nanoleaf.Client;

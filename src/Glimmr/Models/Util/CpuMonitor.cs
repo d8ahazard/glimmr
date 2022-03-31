@@ -1,6 +1,7 @@
 ﻿#region
 
 using System.Runtime.InteropServices;
+using Glimmr.Models.Data;
 using LibreHardwareMonitor.Hardware;
 using Newtonsoft.Json;
 

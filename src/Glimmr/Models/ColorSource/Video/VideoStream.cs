@@ -8,6 +8,8 @@ using Glimmr.Models.ColorSource.Video.Stream;
 using Glimmr.Models.ColorSource.Video.Stream.PiCam;
 using Glimmr.Models.ColorSource.Video.Stream.Screen;
 using Glimmr.Models.ColorSource.Video.Stream.Usb;
+using Glimmr.Models.Data;
+using Glimmr.Models.FrameUtils;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Serilog;

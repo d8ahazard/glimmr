@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
+using Glimmr.Models.Data;
 using Glimmr.Models.Util;
 using LifxNetPlus;
 using LiteDB;
@@ -154,23 +155,17 @@ public class LifxData : IColorTargetData {
 		Tag = "Lifx";
 		Layout = new TileLayout();
 		BeamLayout = new BeamLayout();
-		DeviceTag = "Lifx Bulb";
+		DeviceTag = "Bulb";
 		LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 		Brightness = 255;
 	}
 
 	public LifxData(Device b) {
 		Tag = "Lifx";
-		Name ??= Tag;
 		HostName = b.HostName;
 		var ip = IpUtil.GetIpFromHost(HostName);
 		if (ip != null) {
 			IpAddress = ip.ToString();
-		}
-
-		Name ??= Tag;
-		if (Id is { Length: > 4 }) {
-			Name = string.Concat("Lifx - ", Id.AsSpan(Id.Length - 5, 5));
 		}
 
 		Service = b.Service;
@@ -180,9 +175,8 @@ public class LifxData : IColorTargetData {
 		Id = MacAddressString;
 		BeamLayout = new BeamLayout();
 		Layout = new TileLayout();
-		DeviceTag = "Lifx Bulb";
+		DeviceTag = "Bulb";
 		Brightness = 255;
-		Name = string.Concat("Lifx - ", Id.AsSpan(Id.Length - 5, 5));
 		LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 		Kps();
 	}
@@ -197,7 +191,15 @@ public class LifxData : IColorTargetData {
 	///     Device Name.
 	/// </summary>
 	[JsonProperty]
-	public string Name { get; set; } = "";
+	public string Name {
+		get =>
+			Id.Length > 5 ?
+			string.Concat(DeviceTag, " ",
+				Id.AsSpan(Id.Length - 5, 5).ToString().ToUpper().Replace(":", ""))
+			: DeviceTag;
+		set { }
+	}
+
 
 	/// <summary>
 	///     Device ID.
@@ -232,12 +234,11 @@ public class LifxData : IColorTargetData {
 		IpAddress = ld.IpAddress;
 		MacAddress = ld.MacAddress;
 		DeviceTag = ld.DeviceTag;
-		Name = string.Concat(DeviceTag, " - ", Id.AsSpan(Id.Length - 5, 5));
 		Layout.MergeLayout(ld.Layout);
 		var omz = MultiZoneCount;
 		MultiZoneCount = ld.MultiZoneCount;
 		HasMultiZone = ld.HasMultiZone;
-		if (HasMultiZone && (omz != MultiZoneCount || BeamLayout == null)) {
+		if (HasMultiZone && omz != MultiZoneCount) {
 			GenerateBeamLayout();
 		}
 	}

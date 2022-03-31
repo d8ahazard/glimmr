@@ -123,9 +123,11 @@
 <div class="col-12 headerCol">General</div>
 <div class="col-12 pb-1">
     <span>
-        <b>Hostname:</b>
+        <b>Device Name:</b>
     </span>
-    <span id="hostDiv"></span>
+    <span id="hostDiv">
+        <input type="text" class="form-control" data-object="SystemData" data-property="deviceName" id="deviceName">
+    </span>
 </div>
 <div class="col-12 pb-1">
     <span>
@@ -764,6 +766,9 @@
             </div>
         </div>
     </div>
+</div>
+<div aria-live="polite" aria-atomic="true" id="Toaster">
+
 </div>
 <div id="blank"></div>
 </div>

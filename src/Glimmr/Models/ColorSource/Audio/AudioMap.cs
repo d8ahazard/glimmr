@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using Glimmr.Models.Helpers;
 using Glimmr.Models.Util;
 using Serilog;
 

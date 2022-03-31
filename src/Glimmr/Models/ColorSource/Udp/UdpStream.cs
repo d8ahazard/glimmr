@@ -11,15 +11,17 @@ using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Enums;
 using Glimmr.Models.ColorTarget.Glimmr;
+using Glimmr.Models.Data;
+using Glimmr.Models.FrameUtils;
+using Glimmr.Models.Helpers;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Makaretu.Dns;
 using Serilog;
-using static Glimmr.Enums.DeviceMode;
 
 #endregion
 
-namespace Glimmr.Models.ColorSource.UDP;
+namespace Glimmr.Models.ColorSource.Udp;
 
 public class UdpStream : ColorSource {
 	public override bool SourceActive => _sourceActive;
@@ -110,7 +112,7 @@ public class UdpStream : ColorSource {
 		_sd = DataUtil.GetSystemData();
 		var dims = new[] { _gd.LeftCount, _gd.RightCount, _gd.TopCount, _gd.BottomCount };
 		Builder = new FrameBuilder(dims);
-		await _cs.SetMode(Udp);
+		await _cs.SetMode(DeviceMode.Udp);
 	}
 
 	private Task Mode(object arg1, DynamicEventArgs arg2) {
@@ -225,11 +227,11 @@ public class UdpStream : ColorSource {
 		Splitter.DoSend = true;
 		_sourceActive = true;
 
-		if (_devMode != Udp) {
+		if (_devMode != DeviceMode.Udp) {
 			_gd = new GlimmrData(DataUtil.GetSystemData());
 			var dims = new[] { _gd.LeftCount, _gd.RightCount, _gd.TopCount, _gd.BottomCount };
 			Builder = new FrameBuilder(dims);
-			await _cs.SetMode(Udp);
+			await _cs.SetMode(DeviceMode.Udp);
 		}
 
 		try {

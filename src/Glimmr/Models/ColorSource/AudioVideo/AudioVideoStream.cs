@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Glimmr.Enums;
 using Glimmr.Models.ColorSource.Audio;
 using Glimmr.Models.ColorSource.Video;
+using Glimmr.Models.Data;
+using Glimmr.Models.FrameUtils;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Serilog;

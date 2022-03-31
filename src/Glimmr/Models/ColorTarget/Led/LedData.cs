@@ -88,7 +88,7 @@ public class LedData : IColorTargetData {
 
 	[JsonProperty]
 	public string Name {
-		get => $"LED {Id} - GPIO {GpioNumber}";
+		get => $"LED {Id}";
 		set { }
 	}
 

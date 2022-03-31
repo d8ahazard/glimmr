@@ -70,7 +70,6 @@ public class HueV2Data : IColorTargetData {
 		Token = "";
 		SelectedGroup = "";
 		Groups = new List<HueGroup>();
-		Name = string.Concat("Hue - ", Id.AsSpan(Id.Length - 5, 4));
 	}
 
 	/// <summary>
@@ -83,7 +82,14 @@ public class HueV2Data : IColorTargetData {
 	///     Device name.
 	/// </summary>
 	[JsonProperty]
-	public string Name { get; set; } = "";
+	public string Name {
+		get =>
+			Id.Length > 6 ?
+				string.Concat("Hue ",
+					Id.AsSpan(Id.Length - 5, 5).ToString().ToUpper().Replace(":", ""))
+				: "Hue Bridge";
+		set { }
+	}
 
 	/// <summary>
 	///     Unique device ID.
@@ -146,7 +152,6 @@ public class HueV2Data : IColorTargetData {
 
 		Groups = ng;
 		IpAddress = input.IpAddress;
-		Name = string.Concat("Hue - ", Id.AsSpan(Id.Length - 5, 4));
 	}
 
 	/// <summary>

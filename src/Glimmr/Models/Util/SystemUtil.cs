@@ -14,6 +14,8 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using DirectShowLib;
 using Emgu.CV;
+using Glimmr.Hubs;
+using Microsoft.AspNetCore.SignalR;
 using Serilog;
 
 #endregion
@@ -84,7 +86,7 @@ public static class SystemUtil {
 		return output.ToLower().Contains("raspbian") || File.Exists("/usr/bin/raspi-config");
 	}
 
-	public static void Update() {
+	public static void Update(IHubContext<SocketServer> hubContext) {
 		var updateNeeded = false;
 		var now = DateTime.Now;
 		if (LastUpdate != null) {
@@ -92,14 +94,18 @@ public static class SystemUtil {
 			var diff = last - now;
 			var diffInSeconds = Math.Abs(diff.TotalSeconds);
 			updateNeeded = diffInSeconds <= 60;
-			if (updateNeeded) Log.Information($"Last update attempt was {diffInSeconds} seconds ago, forcing update.");
+			if (updateNeeded) {
+				hubContext.Clients.All.SendAsync("toast", "Updating", "Forcing update.");
+				Log.Information($"Last update attempt was {diffInSeconds} seconds ago, forcing update.");
+			}
 		}
 		LastUpdate = DateTime.Now;
 		var version = Version.Parse("0.0.0");
+		var ver = Assembly.GetEntryAssembly()?.GetName().Version;
+		if (ver != null) version = ver;
+
 		if (!updateNeeded) {
 			try {
-				var ver = Assembly.GetEntryAssembly()?.GetName().Version;
-				if (ver != null) version = ver;
 				var relUrl = "https://api.github.com/repos/d8ahazard/glimmr/releases/latest";
 				using var handler = new HttpClientHandler();
 				handler.UseDefaultCredentials = true;
@@ -112,6 +118,9 @@ public static class SystemUtil {
 					var newVersion = Version.Parse(tag);
 					Log.Debug("Tag is " + tag + " versus " + version);
 					updateNeeded = newVersion.CompareTo(version) > 0;
+					if (updateNeeded) {
+						hubContext.Clients.All.SendAsync("toast", "Updating", "Updating from	" + version + " to " + newVersion + ".");
+					}
 				} else {
 					Log.Debug("Can't get cj there...");
 				}
@@ -121,6 +130,7 @@ public static class SystemUtil {
 		}
 
 		if (!updateNeeded) {
+			hubContext.Clients.All.SendAsync("toast", "Up-to-date", $"Software version {version} is the latest available.");
 			Log.Debug("No updates are required at this time.");
 			return;
 		}

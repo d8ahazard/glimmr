@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
 using Emgu.CV.Structure;
+using Glimmr.Models.FrameUtils;
 using MMALSharp;
 using MMALSharp.Common;
 using MMALSharp.Common.Utility;

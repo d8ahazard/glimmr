@@ -4,6 +4,7 @@ using System;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
+using Glimmr.Models.Data;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Makaretu.Dns;
@@ -77,7 +78,7 @@ public class NanoleafDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAu
 		}
 
 		var devName = name.Split(".")[0];
-		devName = devName[Math.Max(0, devName.Length - 3)..];
+		devName = devName[Math.Max(0, devName.Length - 4)..];
 		nData.Name = devName;
 		foreach (var msg in e.Message.AdditionalRecords) {
 			try {

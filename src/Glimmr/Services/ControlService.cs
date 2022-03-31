@@ -20,6 +20,8 @@ using Glimmr.Models;
 using Glimmr.Models.ColorTarget;
 using Glimmr.Models.ColorTarget.Glimmr;
 using Glimmr.Models.ColorTarget.Led;
+using Glimmr.Models.Data;
+using Glimmr.Models.Helpers;
 using Glimmr.Models.Util;
 using Makaretu.Dns;
 using Microsoft.AspNetCore.SignalR;
@@ -51,7 +53,7 @@ public class ControlService : BackgroundService {
 
 	private static Timer? _ut;
 
-	private readonly IHubContext<SocketServer> _hubContext;
+	private static IHubContext<SocketServer> _hubContext;
 
 	public AsyncEvent<DynamicEventArgs> DemoLedEvent = null!;
 	public AsyncEvent<DynamicEventArgs> DeviceReloadEvent = null!;
@@ -325,7 +327,7 @@ public class ControlService : BackgroundService {
 
 	private void CheckUpdate(object? sender, ElapsedEventArgs elapsedEventArgs) {
 		if (_sd.AutoUpdate) {
-			SystemUtil.Update();
+			SystemUtil.Update(_hubContext);
 		}
 	}
 
@@ -483,16 +485,19 @@ v. {version}
 	public static Task SystemControl(string action) {
 		switch (action) {
 			case "restart":
+				_hubContext.Clients.All.SendAsync("toast", "Restarting", "Restarting Glimmr TV service.");
 				SystemUtil.Restart();
 				break;
 			case "shutdown":
+				_hubContext.Clients.All.SendAsync("toast", "Shutting down", "Shutdown triggered.");
 				SystemUtil.Shutdown();
 				break;
 			case "reboot":
+				_hubContext.Clients.All.SendAsync("toast", "Restarting", "Reboot triggered.");
 				SystemUtil.Reboot();
 				break;
 			case "update":
-				SystemUtil.Update();
+				SystemUtil.Update(_hubContext);
 				break;
 		}
 

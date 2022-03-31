@@ -3,6 +3,7 @@ let loadTimeout;
 // Row for settings and device cards divs
 let settingsRow;
 let cardRow;
+let addRot = 0;
 // Settings content elements
 let settingsTab;
 let settingsContent;
@@ -48,6 +49,7 @@ let log3 = true;
 let log4 = true;
 let logOpen = false;
 let winWidth, winHeight;
+let toastIdx = 0;
 
 // We're going to create one object to store our stuff, and add listeners for when values are changed.
 let data = {
@@ -242,7 +244,6 @@ data.registerDevicesListener(function () {
         devTimeout = null;
     }
     devTimeout = setTimeout(function () {
-        console.log("Reloading devices from listener.");
         loadDevices();
     }, 500);
 });
@@ -539,6 +540,10 @@ function setSocketListeners() {
                 led.classList.remove("unlinked");
                 led.classList.add("linked");
                 cb.classList.add("hide");
+                if (isValid(deviceData)) {
+                    let name = deviceData["name"];
+                    showToast("Device Linked", "Device " + name + " has been linked successfully.");
+                }
                 break;
             default:
                 break;
@@ -561,6 +566,11 @@ function setSocketListeners() {
             ambientForm.reset();
         }
     });
+    
+    websocket.on('toast', function (title, message) {
+        console.log("Toast: ", title, message);
+        showToast(title, message);
+    }); 
 
     websocket.on('inputImage', function (data) {
         document.getElementById("inputPreview").src = "data:image/png;base64," + data;
@@ -675,6 +685,58 @@ function loadStats(cpuData) {
             overIcon.classList.add("text-danger");
         }
     }
+}
+
+function showToast(title, body) {
+    let toaster = document.getElementById("Toaster");
+    let toast = document.createElement("div");
+    let tId = "toast" + toastIdx;
+    toastIdx++;
+    toast.id = tId;
+    toast.classList.add("toast");
+    toast.setAttribute("role", "alert");
+    toast.setAttribute("aria-live", "assertive");
+    toast.setAttribute("aria-atomic", "true");
+    
+    let header = document.createElement("div");
+    header.classList.add("toast-header");
+    
+    let strong = document.createElement("strong");
+    strong.classList.add("mr-auto");
+    strong.textContent = title;
+    
+    let button = document.createElement("button");
+    button.type = "button";
+    button.classList.add("ml-2","btn","btn-sm","close");
+    button.setAttribute("data-dismiss", "toast");
+    button.setAttribute("aria-label", "Close");
+    
+    let span = document.createElement("span");
+    span.setAttribute("aria-hidden", "true");
+    span.textContent = "x";
+    
+    let bodyDiv = document.createElement("div");
+    bodyDiv.classList.add("toast-body");
+    bodyDiv.textContent = body;
+    
+    button.appendChild(span);
+    header.appendChild(strong);
+    header.appendChild(button);
+    toast.appendChild(header);
+    toast.appendChild(bodyDiv);
+    toaster.appendChild(toast);
+    let te = document.getElementById(tId);
+    const toastEl = new bootstrap.Toast(te, {
+        delay: 5000,
+        autohide: true,
+        animation: true,
+        newestOnTop: true,
+        showEasing: "swing",
+        hideEasing: "linear",
+        showMethod: "fadeIn",
+        hideMethod: "fadeOut"
+    });
+    toastEl.show();    
 }
 
 function downloadDb() {
@@ -818,7 +880,7 @@ function setListeners() {
                 createLedMap(lPreview);
             }
 
-            if (property === "yseCenter" || property === "hSectors" || property === "vSectors") {
+            if (property === "useCenter" || property === "hSectors" || property === "vSectors") {
                 if (property === "useCenter") useCenter = val;
                 if (property === "hSectors") hSectors = val;
                 if (property === "vSectors") vSectors = val;
@@ -1215,11 +1277,11 @@ function loadUi() {
     if (isValid(sd)) {
         let version = sd.version;
         let vDiv = document.getElementById("versionDiv");
-        let hDiv = document.getElementById("hostDiv");
+        let devName = document.getElementById("deviceName");
         let utDiv = document.getElementById("utDiv");
         let ipDiv = document.getElementById("ipDiv");
         vDiv.innerHTML = version.toString();
-        hDiv.innerHTML = sd["deviceName"];
+        devName.value = sd["deviceName"];
         ipDiv.innerHTML = sd["ipAddress"];
         utDiv.innerHTML = data.stats["uptime"];
 
@@ -1707,7 +1769,6 @@ function loadSettingObject(obj) {
                 if (value === true) {
                     target.setAttribute('checked', "true");
                 } else {
-                    console.log("Setting ", prop, dataProp[prop]);
                     target.value = dataProp[prop];
                 }
             }
@@ -2156,7 +2217,6 @@ function createDeviceSettings() {
     let st = card.scrollTop;
     let container = document.querySelector("div.card.container-fluid > div");
     if (deviceData === undefined) deviceData = JSON.parse(ledData);
-    console.log("Loading device data: ", deviceData);
     document.querySelectorAll(".delSetting").forEach(e => e.remove());
     let props = deviceData["keyProperties"];
     if (isValid(props)) {
@@ -2285,7 +2345,7 @@ function createDeviceSettings() {
                         dirCol.innerHTML = "Click a tile to select a target sector.";
                         container.appendChild(dirCol);
                         container.appendChild(stageRow);
-                        drawNanoShapes(deviceData);
+                        drawNanoShapes();
                     } else {
                         let linkPane = createLinkPane("nanoleaf", false);
                         document.getElementById("linkCol").append(linkPane);
@@ -2399,6 +2459,7 @@ function createSettingElement(settingElement) {
             element.step = "0.025";
             element.value = settingElement.value;
             settingElement.hint = "Multiply or divide the number of LEDs that are pulled from the grid.";
+            break;
     }
     if (settingElement.type !== "check") {
         label.classList.add("form-label");
@@ -2824,12 +2885,17 @@ function createSectorCenter(targetElement, regionName) {
     let imgL = tgt.offsetLeft;
     let imgT = tgt.offsetTop;
     let selected = -1;
-    if (isValid(deviceData)) selected = deviceData["targetSector"];
-    if (!isValid(selected)) selected = -1;
     let wFactor = w / 1920;
     let hFactor = h / 1080;
     let wMargin = 62 * wFactor;
     let hMargin = 52 * hFactor;
+    let bump = 0;
+    if (isValid(deviceData)) {
+        selected = deviceData["targetSector"];
+        bump = 15;
+    }
+    if (!isValid(selected)) selected = -1;
+
     let fHeight = (h - hMargin - hMargin) / vSectors;
     let fWidth = (w - wMargin - wMargin) / hSectors;
     let map = document.createElement("div");
@@ -2843,7 +2909,7 @@ function createSectorCenter(targetElement, regionName) {
     let t = hFactor - hMargin - fHeight + h;
     let sector = 1;
     for (let v = vSectors; v > 0; v--) {
-        let l = wFactor - wMargin - fWidth + w;
+        let l = wFactor - wMargin - fWidth + w + bump;
         for (let h = hSectors; h > 0; h--) {
             let s1 = document.createElement("div");
             s1.classList.add("sector");
@@ -3010,7 +3076,6 @@ function selectSectors() {
             }
         }
         let tileLayout = deviceData["layout"];
-        console.log("Tile layout: ", tileLayout);
         if (isValid(tileLayout)) {
             let positionData = tileLayout["positionData"];
             if (isValid(positionData)) {
@@ -3229,7 +3294,6 @@ function createLedMap(targetElement) {
             count *= mult;
         }
         range = ranges(total, offset, count);
-        console.log("Range created: ", range);
     }
 
     let tgt = targetElement;
@@ -3266,7 +3330,6 @@ function createLedMap(targetElement) {
     let r = 0;
     let index = 0;
     let reverse = isValid(deviceData && deviceData["reverseStrip"]) ? deviceData["reverseStrip"] : false;
-    console.log("Reversed? ", reverse);
     for (let i = 0; i < rightCount; i++) {
         t = h - hMargin - ((i + 1) * frHeight);
         b = t + frHeight;
@@ -3438,7 +3501,6 @@ function createHueMap() {
         let opt = document.createElement("option");
         opt.value = groups[i]["id"];
         opt.innerText = groups[i]["name"];
-        console.log("Checking:", selectedGroup, groups[i]["id"], groups[i]);
         if (selectedGroup === groups[i]["id"]) opt.selected = true;
         groupSelect.appendChild(opt);
     }
@@ -3447,12 +3509,10 @@ function createHueMap() {
     hueMapRow.appendChild(groupSelectCol);
 
     if (!isValid(groupId)) {
-        console.log("No group, returning: ", groupId);
         return hueMapRow;
     }
 
     if (!isValid(groupData) || !isValid(groupData["services"])) {
-        console.log("No service/group data, returning: ", groupData);
         return hueMapRow;
     }
     let lights = groupData["services"];
@@ -3471,8 +3531,7 @@ function createHueMap() {
             break;
         }
     }
-    console.log("Selected group: ", targetGroup);
-
+    
     if (targetGroup !== undefined) {
         let services = targetGroup["services"];
         for (let l in services) {
@@ -3603,13 +3662,14 @@ function createHueMap() {
     return hueMapRow;
 }
 
-function drawNanoShapes(panel) {
+function drawNanoShapes() {
+    if (!isValid(deviceData)) return;
+    let panel = deviceData;
     // Get window width
     let width = document.getElementById("stageCol").offsetWidth;
     let height = width * .5625;
     if (height > 800) height = 800;
-    let rotation = panel["rotation"];
-    if (!isValid(rotation)) rotation = 0;
+    let rotation = 0;
     // Get layout data from panel
     let mirrorX = panel["mirrorX"];
     let mirrorY = panel["mirrorY"];
@@ -3647,7 +3707,8 @@ function drawNanoShapes(panel) {
     let stage = new Konva.Stage({
         container: 'stageCol',
         width: width,
-        height: height
+        height: height,
+        draggable: false
     });
 
     // Shape layer
@@ -3679,109 +3740,85 @@ function drawNanoShapes(panel) {
         if (mirrorX) x *= -1;
         if (!mirrorY) y *= -1;
         if (shape === 12) continue;
-
+        let fontSize = 30;
+        let tOffset = 35;
+        let sWidth = 1;
+        if (shape === 9) {
+            fontSize = 15;
+            tOffset/=2;
+            sWidth = .5;
+        }
+        
         let sText = new Konva.Text({
             x: x,
             y: y,
             text: data["panelId"],
-            fontSize: 30,
+            fontSize: fontSize,
             listening: false,
-            fontFamily: 'Calibri'
+            fontFamily: 'Calibri',
+            stroke: 'white',
+            strokeWidth: sWidth
         });
-
-        let sectorText = data["targetSector"];
 
         let sText2 = new Konva.Text({
             x: x,
-            y: y - 35,
-            text: sectorText,
-            fontSize: 30,
+            y: y - tOffset,
+            text: data["targetSector"],
+            fontSize: fontSize,
             listening: false,
-            fontFamily: 'Calibri'
+            fontFamily: 'Calibri',
+            stroke: 'white',
+            strokeWidth: sWidth,
+            fillAfterStrokeEnabled: true
         });
-        let o = data["o"];
+        
+        let orientation = data["o"];
         // Draw each individual shape
+        let sides = 0;
         switch (shape) {
             // Hexagon
             case 7:
-                const hexA = 2 * Math.PI / 6;
-                let r = sideLength;
-                let points = [];
-                for (let i = 0; i < 6; i++) {
-                    let px = x + r * Math.cos(hexA * i);
-                    let py = y + r * Math.sin(hexA * i);
-                    points.push(px);
-                    points.push(py);
-                }
-                shapeDrawing = new Konva.Line({
-                    points: points,
-                    fill: 'white',
-                    stroke: 'black',
-                    strokeWidth: 5,
-                    closed: true,
-                    id: data["panelId"]
-                });
+            sides = 6;
+            orientation += 30;
                 break;
             // Triangles
             case 0:
             case 1:
             case 8:
             case 9:
-                //y = (data.y * -1) + Math.abs(minY);
-                let invert = false;
-                if (o === 60 || o === 180 || o === 300 || o === 540) {
-                    invert = true;
-                }
-
-                let angle = (2 * Math.PI) / 3;
-                // Calculate our overall height based on side length
-                let h = sideLength;
-                //h *= 2;
-                let halfHeight = h / 2;
-                let ha = angle / 4;
-                let a0 = ha;
-                let a1 = angle + ha;
-                let a2 = (angle * 2) + ha;
-                let x0 = halfHeight * Math.cos(a0) + x;
-                let x1 = halfHeight * Math.cos(a1) + x;
-                let x2 = halfHeight * Math.cos(a2) + x;
-                let y0 = (halfHeight * Math.sin(a0) + y) - halfHeight;
-                let y1 = halfHeight * Math.sin(a1) + y - halfHeight;
-                let y2 = halfHeight * Math.sin(a2) + y + h;
-                if (!invert) {
-                    y0 = halfHeight * Math.sin(a0) + y;
-                    y1 = halfHeight * Math.sin(a1) + y;
-                    y2 = halfHeight * Math.sin(a2) + y;
-                }
-                shapeDrawing = new Konva.Line({
-                    points: [x0, y0, x1, y1, x2, y2],
-                    fill: 'white',
-                    stroke: 'black',
-                    strokeWidth: 5,
-                    closed: true,
-                    rotation: rotation,
-                    id: data["panelId"]
-                });
+                sides = 3;
+                sideLength = data["sideLength"] / Math.sqrt(3);
                 break;
             // Squares
             case 2:
             case 3:
             case 4:
-                let tx = x - (sideLength / 2);
-                let ty = y - (sideLength / 2);
-                shapeDrawing = new Konva.Rect({
-                    x: tx,
-                    y: ty,
-                    width: sideLength,
-                    height: sideLength,
-                    fill: 'white',
-                    stroke: 'black',
-                    strokeWidth: 4
-                });
-
+                sides = 4;
+                orientation += 45;
+                sideLength *= .7;
                 break;
             case 5:
                 break;
+        }
+        if (sides !== 0) {
+            shapeDrawing = new Konva.RegularPolygon({
+                x: x,
+                y: y,
+                sides: sides,
+                radius: sideLength,
+                fill: '#ffffff',
+                stroke: '#070909',
+                strokeWidth: 1,
+                draggable: false,
+                rotation: orientation + addRot,
+                shadowColor: 'black',
+                shadowBlur: 10,
+                shadowOffset: {
+                    x: 2,
+                    y: 2
+                },
+                shadowOpacity: 0.2
+            });
         }
         if (isValid(shapeDrawing)) {
             shapeDrawing.on('click', function () {
@@ -3800,21 +3837,9 @@ function drawNanoShapes(panel) {
         shapeGroup.add(sText);
         shapeGroup.add(sText2);
     }
-    // Add to our canvas layer and draw
-    let tr = new Konva.Transformer({
-        nodes: [shapeGroup],
-        resizeEnabled: false,
-        rotateEnabled: true,
-        rotateAnchorOffset: 20
-    });
-
-    shapeGroup.on('transformend', function () {
-        updateDevice(deviceData["id"], "rotation", shapeGroup.rotation());
-    });
-    cLayer.add(tr);
-    tr.nodes([shapeGroup]);
+    
     cLayer.add(shapeGroup);
-
+    
     let container = document.getElementById('stageCol');
 
     // now we need to fit stage into parent
@@ -3825,7 +3850,6 @@ function drawNanoShapes(panel) {
     stage.width(width * scale);
     stage.height(height * scale);
     stage.scale({x: scale, y: scale});
-    //shapeGroup.scale = scale;
     stage.draw();
 
     cLayer.draw();
@@ -3847,7 +3871,6 @@ function setNanoMap(id, current) {
     }
 
     if (current !== -1) {
-        console.log("Trying to check sector " + current);
         document.querySelector('.sector[data-sector="' + current + '"]').classList.add("checked");
     }
 

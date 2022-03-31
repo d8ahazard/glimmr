@@ -120,7 +120,7 @@ public class WledData : IColorTargetData {
 					seg.Offset = seg.Start;
 				}
 			}
-
+			Name = State.Info.Name;
 			Brightness = (int)(jsonObj.WledState.Bri / 255f * 100);
 		} catch (Exception e) {
 			Log.Debug("Yeah, here's your problem, smart guy: " + e.Message);

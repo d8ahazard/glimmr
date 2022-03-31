@@ -3,6 +3,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Glimmr.Models.Data;
 using Glimmr.Services;
 using LifxNetPlus;
 using Newtonsoft.Json;
@@ -13,7 +14,7 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.Lifx;
 
 public class LifxDiscovery : ColorDiscovery, IColorDiscovery {
-	protected virtual string DeviceTag => "Lifx Bulb";
+	protected virtual string DeviceTag => "Bulb";
 	private readonly LifxClient? _client;
 	private readonly ControlService _controlService;
 
@@ -43,11 +44,7 @@ public class LifxDiscovery : ColorDiscovery, IColorDiscovery {
 
 	private async void Client_DeviceDiscovered(object? sender, LifxClient.DeviceDiscoveryEventArgs e) {
 		var bulb = e.Device;
-		if (bulb == null) {
-			return;
-		}
 
-		//Log.Debug("Device found: " + JsonConvert.SerializeObject(bulb));
 		var ld = await GetBulbInfo(bulb);
 		if (ld == null) {
 			return;
@@ -69,7 +66,7 @@ public class LifxDiscovery : ColorDiscovery, IColorDiscovery {
 		var tag = DeviceTag;
 		// Set multi zone stuff
 		if (ver is { Product: 31 or 32 or 38 }) {
-			tag = ver.Product == 38 ? "Lifx Beam" : "Lifx Z";
+			tag = ver.Product == 38 ? "Beam" : "Z";
 			hasMulti = true;
 			if (ver.Product != 31) {
 				if (ver.Version >= 1532997580) {
@@ -121,7 +118,7 @@ public class LifxDiscovery : ColorDiscovery, IColorDiscovery {
 		}
 
 		if (ver is { Product: 55 or 101 }) {
-			tag = "Lifx Tile";
+			tag = "Tile";
 			try {
 				var tData = _client.GetDeviceChainAsync(b).Result;
 				if (tData != null) {

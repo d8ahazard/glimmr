@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models;
 using Glimmr.Models.ColorTarget;
+using Glimmr.Models.Helpers;
 using Glimmr.Models.Util;
 using Microsoft.Extensions.Hosting;
 using Serilog;

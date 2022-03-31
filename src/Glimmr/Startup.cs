@@ -5,6 +5,7 @@ using System.IO;
 using System.Reflection;
 using Glimmr.Hubs;
 using Glimmr.Models;
+using Glimmr.Models.Helpers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.SignalR;
@@ -52,6 +53,8 @@ public class Startup {
 		var serializer = JsonSerializer.Create(settings);
 		services.AddSingleton(serializer);
 	}
+	
+	public static IServiceProvider __serviceProvider;
 
 	// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
 	public static void Configure(IApplicationBuilder app, IWebHostEnvironment env) {

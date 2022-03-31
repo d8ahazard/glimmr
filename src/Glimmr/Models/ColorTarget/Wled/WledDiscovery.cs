@@ -35,7 +35,7 @@ public class WledDiscovery : ColorDiscovery, IColorDiscovery {
 			_sd.ServiceDiscovered += ServiceDiscovered;
 			_sd.ServiceInstanceDiscovered += DeviceDiscovered;
 			_mDns.Start();
-			_mDns.SendQuery("_glimmr._tcp", type: DnsType.PTR);
+			_mDns.SendQuery("_wled._tcp", type: DnsType.PTR);
 			await Task.Delay(TimeSpan.FromSeconds(timeout), CancellationToken.None);
 			_mDns.NetworkInterfaceDiscovered -= InterfaceDiscovered;
 			_sd.ServiceDiscovered -= ServiceDiscovered;
@@ -94,7 +94,7 @@ public class WledDiscovery : ColorDiscovery, IColorDiscovery {
 			}
 
 			if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(ip)) {
-				var nData = new WledData(id, ip) { Name = name };
+				var nData = new WledData(id, ip);
 				ControlService.AddDevice(nData).ConfigureAwait(false);
 				_ids.Add(id);
 			} else {

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Glimmr.Enums;
 using Glimmr.Models;
 using Glimmr.Models.ColorTarget;
+using Glimmr.Models.Data;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Microsoft.AspNetCore.SignalR;
@@ -27,9 +28,7 @@ public class SocketServer : Hub {
 
 	public SocketServer() {
 		var cs = ControlService.GetInstance();
-		if (cs != null) {
-			_cs = cs;
-		}
+		_cs = cs;
 
 		_states = new Dictionary<string, bool>();
 	}
@@ -187,10 +186,6 @@ public class SocketServer : Hub {
 
 	public Task SettingsShown(bool open) {
 		var client = Context.ConnectionId;
-		if (client == null) {
-			Log.Warning("Unable to get client identity...");
-			return Task.CompletedTask;
-		}
 
 		_states[client] = open;
 		if (open) {

@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Glimmr.Models.ColorTarget;
+using Glimmr.Models.Data;
 using Glimmr.Services;
 using LiteDB;
 using Newtonsoft.Json.Linq;
