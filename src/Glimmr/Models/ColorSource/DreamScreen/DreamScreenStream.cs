@@ -8,7 +8,7 @@ using DreamScreenNet;
 using DreamScreenNet.Devices;
 using DreamScreenNet.Enum;
 using Glimmr.Models.ColorTarget.DreamScreen;
-using Glimmr.Models.FrameUtils;
+using Glimmr.Models.Frame;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Serilog;

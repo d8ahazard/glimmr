@@ -1,9 +1,17 @@
 @echo off
 if "%~1"=="-r" taskkill /IM Glimmr.exe
-dotnet publish -c release ..\src\Glimmr\Glimmr.csproj /p:PublishProfile=Windows -o ..\src\Glimmr\bin\Windows
-dotnet publish -r win-x64 -c release ..\src\GlimmrTray\GlimmrTray.csproj -o ..\src\Glimmr\bin\Windows --self-contained
+cd .\src\
+for %%x in (
+    win-x64
+) do (
+	echo Building %%x
+	dotnet publish -r %%x -c Release .\Glimmr\Glimmr.csproj -o .\Glimmr\bin\%%x --self-contained=true
+	dotnet publish -r %%x -c release .\GlimmrTray\GlimmrTray.csproj -o .\Glimmr\bin\%%x --self-contained=true
+    dotnet publish -r %%x -c release .\Image2Scene\Image2Scene.csproj -o .\Glimmr\bin\%%x --self-contained=true
+)
 if "%~1"=="-r" GOTO LAUNCH
 GOTO END
 :LAUNCH
-start /D ..\src\Glimmr\bin\Windows\ ..\src\Glimmr\bin\Windows\Glimmr.exe
+start /D .\Glimmr\bin\win-x64\Glimmr.exe
+cd ..\..\..\..
 :END

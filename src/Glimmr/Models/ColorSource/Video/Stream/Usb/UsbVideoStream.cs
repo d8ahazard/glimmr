@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
-using Glimmr.Models.FrameUtils;
+using Glimmr.Models.Frame;
 using Glimmr.Models.Util;
 using Serilog;
 using static Glimmr.Models.Constant.GlimmrConstants;

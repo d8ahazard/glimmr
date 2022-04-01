@@ -16,12 +16,11 @@ using Emgu.CV;
 using Emgu.CV.Util;
 using Glimmr.Enums;
 using Glimmr.Hubs;
-using Glimmr.Models;
 using Glimmr.Models.ColorTarget;
 using Glimmr.Models.ColorTarget.Glimmr;
 using Glimmr.Models.ColorTarget.Led;
 using Glimmr.Models.Data;
-using Glimmr.Models.Helpers;
+using Glimmr.Models.Helper;
 using Glimmr.Models.Util;
 using Makaretu.Dns;
 using Microsoft.AspNetCore.SignalR;
@@ -53,7 +52,7 @@ public class ControlService : BackgroundService {
 
 	private static Timer? _ut;
 
-	private static IHubContext<SocketServer> _hubContext;
+	private static IHubContext<SocketServer>? _hubContext;
 
 	public AsyncEvent<DynamicEventArgs> DemoLedEvent = null!;
 	public AsyncEvent<DynamicEventArgs> DeviceReloadEvent = null!;
@@ -215,6 +214,7 @@ public class ControlService : BackgroundService {
 							await clientProxy.SendAsync("auth", "authorized");
 						}
 
+						if (_hubContext == null) return true;
 						await _hubContext.Clients.All.SendAsync("device",
 								JsonConvert.SerializeObject((IColorTargetData)data, serializerSettings))
 							.ConfigureAwait(false);
@@ -268,6 +268,7 @@ public class ControlService : BackgroundService {
 
 
 	public async Task NotifyClients() {
+		if (_hubContext == null) return;
 		await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized(this));
 	}
 
@@ -326,7 +327,7 @@ public class ControlService : BackgroundService {
 	}
 
 	private void CheckUpdate(object? sender, ElapsedEventArgs elapsedEventArgs) {
-		if (_sd.AutoUpdate) {
+		if (_sd.AutoUpdate && _hubContext != null) {
 			SystemUtil.Update(_hubContext);
 		}
 	}
@@ -439,12 +440,13 @@ v. {version}
 			var serializerSettings = new JsonSerializerSettings {
 				ContractResolver = new CamelCasePropertyNamesContractResolver()
 			};
-
+			if (_hubContext == null) return;
 			await _hubContext.Clients.All.SendAsync("device", JsonConvert.SerializeObject(data2, serializerSettings));
 		}
 	}
 
 	public async Task SendLogLine(LogEvent message) {
+		if (_hubContext == null) return;
 		await _hubContext.Clients.All.SendAsync("log", JsonConvert.SerializeObject(message));
 	}
 
@@ -478,26 +480,26 @@ v. {version}
 		_ut.Interval = 1000 * 60 * 60 * _sd.AutoUpdateTime;
 		_ut.Elapsed += CheckUpdate;
 		_ut.Start();
-		await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized(this));
+		if (_hubContext != null) await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized(this));
 		RefreshSystemEvent.Invoke();
 	}
 
 	public static Task SystemControl(string action) {
 		switch (action) {
 			case "restart":
-				_hubContext.Clients.All.SendAsync("toast", "Restarting", "Restarting Glimmr TV service.");
+				_hubContext?.Clients.All.SendAsync("toast", "Restarting", "Restarting Glimmr TV service.");
 				SystemUtil.Restart();
 				break;
 			case "shutdown":
-				_hubContext.Clients.All.SendAsync("toast", "Shutting down", "Shutdown triggered.");
+				_hubContext?.Clients.All.SendAsync("toast", "Shutting down", "Shutdown triggered.");
 				SystemUtil.Shutdown();
 				break;
 			case "reboot":
-				_hubContext.Clients.All.SendAsync("toast", "Restarting", "Reboot triggered.");
+				_hubContext?.Clients.All.SendAsync("toast", "Restarting", "Reboot triggered.");
 				SystemUtil.Reboot();
 				break;
 			case "update":
-				SystemUtil.Update(_hubContext);
+				if (_hubContext != null) SystemUtil.Update(_hubContext);
 				break;
 		}
 
@@ -513,6 +515,7 @@ v. {version}
 	public async Task SendImage(string method, Mat image) {
 		var vb = new VectorOfByte();
 		CvInvoke.Imencode(".png", image, vb);
+		if (_hubContext == null) return;
 		await _hubContext.Clients.All.SendAsync(method, vb.ToArray());
 	}
 
@@ -523,7 +526,7 @@ v. {version}
 	public async Task<bool> RemoveDevice(string id) {
 		ColorService.StopDevice(id, true);
 		var res = DataUtil.DeleteDevice(id);
-		if (res) {
+		if (res && _hubContext != null) {
 			await _hubContext.Clients.All.SendAsync("deleteDevice", id);
 		}
 

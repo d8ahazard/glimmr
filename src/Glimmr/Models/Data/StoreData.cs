@@ -3,7 +3,7 @@
 using System.Collections.Generic;
 using Glimmr.Models.ColorSource.Ambient;
 using Glimmr.Models.ColorSource.Audio;
-using Glimmr.Models.Helpers;
+using Glimmr.Models.Helper;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
 

@@ -516,6 +516,30 @@ input[type="range"]::-webkit-slider-thumb:not[data-object="SystemData"] {
     border: 0 solid transparent;
 }
 
+#Toaster {
+    z-index: 10000;
+    position: absolute;
+    right: 25px;
+    width: 300px;
+    pointer-events: none;
+    bottom: 55px;
+    float: right;
+}
+
+.toast {
+    pointer-events: all;
+}
+
+.toast-body {
+    background: var(--bg-primary) !important;
+    color: var(--fg-primary) !important;
+}
+
+.toast-header {
+    background: var(--bg-secondary) !important;
+    color: var(--fg-secondary) !important;
+}
+
 input[type="range"]::-webkit-slider-thumb:not[data-object="SystemData"]::before {
     content: '+';
     position: absolute;

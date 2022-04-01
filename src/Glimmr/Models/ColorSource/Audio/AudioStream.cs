@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Data;
-using Glimmr.Models.FrameUtils;
+using Glimmr.Models.Frame;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using ManagedBass;

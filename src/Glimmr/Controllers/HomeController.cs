@@ -2,7 +2,7 @@
 
 using System.Diagnostics;
 using Glimmr.Models;
-using Glimmr.Models.Helpers;
+using Glimmr.Models.Helper;
 using Microsoft.AspNetCore.Mvc;
 
 #endregion

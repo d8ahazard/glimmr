@@ -110,7 +110,7 @@ public static class SystemUtil {
 				using var handler = new HttpClientHandler();
 				handler.UseDefaultCredentials = true;
 				using var client = new HttpClient(handler);
-				client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Glimmr", "1.2.5")); // set your own values here
+				client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Glimmr", "1.2.6")); // set your own values here
 				var cj = client.GetFromJsonAsync<GithubRelease>(relUrl).Result;
 				if (cj != null) {
 					Log.Debug("Release fetched...");

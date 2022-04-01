@@ -11,10 +11,17 @@ echo Killing Glimmr task...
 plink -no-antispoof -pw glimmrtv glimmrtv@%1 "echo glimmrtv | sudo -S service glimmr stop"
 plink -no-antispoof -pw glimmrtv glimmrtv@%1 "echo glimmrtv | sudo -S pkill -f Glimmr"
 
+cd ..\src\
 :BUILD2
-dotnet publish ..\src\Glimmr\Glimmr.csproj /p:PublishProfile=LinuxARM -o ..\src\Glimmr\bin\linuxARM --self-contained=true
+for %%x in (
+    linux-arm
+) do (
+	echo Building %%x
+	dotnet publish -r %%x -c Release .\Glimmr\Glimmr.csproj -o .\Glimmr\bin\%%x --self-contained=true
+    dotnet publish -r %%x -c release .\Image2Scene\Image2Scene.csproj -o .\Glimmr\bin\%%x --self-contained=true
+)
 if "%1"=="" GOTO :END
-cd ..\src\Glimmr\bin\linuxARM
+cd .\Glimmr\bin\linux-arm
 IF "%2"=="-j" GOTO JS
 IF "%2"=="-c" GOTO CSS
 IF "%2"=="-w" GOTO WEB
@@ -64,4 +71,4 @@ echo -j: Copy Java only, don't restart
 echo -s: Stop glimmr service, then copy. Can be used before the -f flag.
 echo _______________________________
 :END
-cd ../../../..
+cd ..\..\..\..

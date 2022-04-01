@@ -1,67 +1,84 @@
 @echo off
-IF [%1] == [] GOTO Error
-set version=%~1
+set version=""
+set fullVersion=""
+cd ..\src\
 
-echo Building Glimmr Tray for Windows...
-dotnet publish -r win-x64 -c release ..\src\GlimmrTray\GlimmrTray.csproj -o ..\src\Glimmr\bin\Windows --self-contained
+del /Q /S .\Glimmr\bin\*.tgz
+del /Q /S .\Glimmr\bin\*.zip
+del /Q /S .\Glimmr\bin\*.rpm
+del /Q /S .\Glimmr\bin\*.deb
+del /Q /S .\Glimmr\bin\*.exe
 
-echo Build packages for various architectures
-for %%x in (
-	Linux
-	LinuxARM
-	LinuxARM64
-	Windows
-	WindowsARM
-	OSX
+echo Creating DEB/RPM for linux-x64
+cd .\Glimmr
+dotnet deb -c Release -o .\bin -r linux-x64
+for /f "delims=" %%a in ('DIR /b /a-d .\bin\Glimmr.*.linux-x64.deb') do set "name=%%a"
+echo %name:~0,-14%
+set fullVersion=%name:~0,-14%
+echo FULL VERSION: %fullVersion%
+for /F "tokens=1,2,3 delims='-'" %%a in ("%fullVersion:~7%") do (
+   set VERSION=%%a
+)
+echo VERSION: %VERSION%
+cd ..
+
+echo Windows...
+for %%x in (	
+    win-arm64
+    win-x64
+    win-x86
 ) do (
 	echo Building %%x
-	dotnet publish -c Release ..\src\Glimmr\Glimmr.csproj /p:PublishProfile=%%x -o ..\src\Glimmr\bin\%%x --self-contained=true
+	dotnet publish -r %%x -c Release .\Glimmr\Glimmr.csproj -o .\Glimmr\bin\%%x --self-contained=true
+    dotnet publish -r %%x -c release .\Image2Scene\Image2Scene.csproj -o .\Glimmr\bin\%%x --self-contained=true
+    dotnet publish -r %%x -c release .\GlimmrTray\GlimmrTray.csproj -o .\Glimmr\bin\%%x --self-contained=true
+    echo Archiving %%x
+    %~dp07z.exe a -tzip -r .\Glimmr\bin\%fullVersion%.%%x.zip .\Glimmr\bin\%%x\*
+    echo Building MSI for %%x
+    "C:\Progra~2\Inno Setup 6\iscc.exe" /F%fullVersion%.%%x %~dp0..\src\Glimmr\build_%%x.iss
+)
+
+echo Linux...
+for %%x in (
+    linux-x64
+    linux-arm
+    linux-arm64
+) do (
+	echo Building %%x
+	dotnet publish -r %%x -c Release .\Glimmr\Glimmr.csproj -o .\Glimmr\bin\%%x --self-contained=true
+    dotnet publish -r %%x -c release .\Image2Scene\Image2Scene.csproj -o .\Glimmr\bin\%%x --self-contained=true
+    cd .\Glimmr
+    echo Creating DEB/RPM for %%x
+    dotnet deb -c Release -o .\bin -r %%x
+    dotnet rpm -c Release -o .\bin -r %%x
+    pause
+    cd ..
+        
+    echo Archiving %%x
+    %~dp07z.exe a -ttar -so -an -r .\Glimmr\bin\%%x\* | %~dp07z a -si .\Glimmr\bin\%fullVersion%.%%x.tgz
+    if ["%%x"] == "linux-arm64" (
+        echo Copying x64 RPI files for %%x
+        xcopy /-I /Y .\Glimmr\bin\%fullVersion%.%%x.tgz ..\Glimmr-image-gen-x64\stage2\05-glimmr\files\archive.tgz
+    )
+    if ["%%x"] == "linux-arm" (
+        echo Copying x86 RPI files for %%x
+        xcopy /-I /Y .\Glimmr\bin\%fullVersion%.%%x.tgz ..\Glimmr-image-gen\stage2\05-glimmr\files\archive.tgz
+    )
 )
 
 
-cd ..\src\Glimmr\
+echo OSX...
+for %%x in (
+	osx-x64
+) do (
+	echo Building %%x
+	dotnet publish -r %%x -c Release .\Glimmr\Glimmr.csproj -o .\Glimmr\bin\%%x --self-contained=true
+    dotnet publish -r %%x -c release .\Image2Scene\Image2Scene.csproj -o .\Glimmr\bin\%%x --self-contained=true
+    echo Archiving %%x
+    %~dp07z.exe a -ttar -so -an -r .\Glimmr\bin\%%x\* | %~dp07z a -si .\Glimmr\bin\%fullVersion%.%%x.tgz
+    echo Copying OSX Files...
+    del /S /Q ..\Glimmr-macos-installer-builder\macOS-x64\application\*
+    xcopy /Y /E .\Glimmr\bin\osx-x64\* ..\Glimmr-macos-installer-builder\macOS-x64\application
+)
 
-cd .\bin\
-del /Q /S .\*.zip
-del /Q /S .\*.tgz
-del /Q /S .\*.zip
-del /Q /S .\*.rpm
-del /Q /S .\*.deb
-
-cd ..
-
-echo Build deb packages
-dotnet deb -c Release -o .\bin -r linux-arm
-dotnet deb -c Release -o .\bin -r linux-arm64
-dotnet deb -c Release -o .\bin -r linux-x64
-dotnet rpm -c Release -o .\bin -r linux-arm
-dotnet rpm -c Release -o .\bin -r linux-arm64
-dotnet rpm -c Release -o .\bin -r linux-x64
-
-
-echo Build MSI package
-SET "APP=C:\Progra~2\Inno Setup 6\iscc.exe"
-"%APP%" "%~dp0..\src\Glimmr\build_app.iss"
-
-cd .\bin\
-
-echo Copying OSX Files...
-del /S /Q ..\..\..\Glimmr-macos-installer-builder\macOS-x64\application\*
-xcopy /Y /E .\OSX\* ..\..\..\Glimmr-macos-installer-builder\macOS-x64\application
-
-echo Creating archives...
-
-%~dp07z.exe a -ttar -so -an -r .\LinuxARM\* | %~dp07z a -si Glimmr-linux-arm-%version%.tgz
-%~dp07z.exe a -ttar -so -an -r .\LinuxARM64\* | %~dp07z a -si Glimmr-linux-arm64-%version%.tgz
-xcopy /-I /Y .\Glimmr-linux-arm64-%version%.tgz ..\..\..\Glimmr-image-gen-x64\stage2\05-glimmr\files\archive.tgz
-xcopy /-I /Y .\Glimmr-linux-arm-%version%.tgz ..\..\..\Glimmr-image-gen\stage2\05-glimmr\files\archive.tgz
-%~dp07z.exe a -ttar -so -an -r .\Linux\* | %~dp07z a -si Glimmr-linux-%version%.tgz
-%~dp07z.exe a -ttar -so -an -r .\OSX\* | %~dp07z a -si Glimmr-osx-%version%.tgz
-%~dp07z.exe a -tzip -r Glimmr-windows-%version%.zip .\Windows\*
-%~dp07z.exe a -tzip -r Glimmr-windows-arm-%version%.zip .\WindowsARM\*
-GOTO End
-
-:Error
-echo Please enter a version number.
-
-:End
+cd ../script

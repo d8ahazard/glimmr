@@ -9,7 +9,7 @@
                 Default endpoint - returns a SystemData object.
             </summary>
             <returns>
-                <see cref="T:Glimmr.Models.SystemData" />
+                <see cref="T:Glimmr.Models.Data.SystemData" />
             </returns>
         </member>
         <member name="M:Glimmr.Controllers.GlimmrController.GetAmbientColor">
@@ -238,7 +238,7 @@
             </param>
             <returns></returns>
         </member>
-        <member name="M:Glimmr.Controllers.GlimmrController.UpdateSystem(Glimmr.Models.SystemData)">
+        <member name="M:Glimmr.Controllers.GlimmrController.UpdateSystem(Glimmr.Models.Data.SystemData)">
             <summary>
                 Update System configuration.
             </summary>
@@ -386,43 +386,6 @@
             <summary>
                 All leds use a single sector.
             </summary>
-        </member>
-        <member name="T:Glimmr.Models.AsyncEventHandler">
-            <summary>
-                Represents an asynchronous event handler.
-            </summary>
-            <param name="sender">The object firing the event.</param>
-            <param name="eventArgs">The object containing the event data.</param>
-            <returns>A task that completes when this handler is done handling the event.</returns>
-        </member>
-        <member name="T:Glimmr.Models.AsyncEventHandler`1">
-            <summary>
-                Represents an asynchronous event handler.
-            </summary>
-            <typeparam name="TEventArgs">The type of the event arguments.</typeparam>
-            <param name="sender">The object firing the event.</param>
-            <param name="eventArgs">The object containing the event data.</param>
-            <returns>A task that completes when this handler is done handling the event.</returns>
-        </member>
-        <member name="T:Glimmr.Models.Extensions">
-            <summary>
-                Provides extension methods for use with <see cref="T:Glimmr.Models.AsyncEventHandler" /> and
-                <see cref="T:Glimmr.Models.AsyncEventHandler`1" />, as well as functions to convert synchronous event handlers to
-                asynchronous event handlers.
-            </summary>
-        </member>
-        <member name="M:Glimmr.Models.Extensions.InvokeAsync``1(Glimmr.Models.AsyncEventHandler{``0},System.Object,``0)">
-            <summary>
-                Asynchronously invokes an event, dispatching the provided event arguments to all registered handlers.
-            </summary>
-            <typeparam name="TEventArgs">The type of the event arguments.</typeparam>
-            <param name="eventHandler">This event handler.</param>
-            <param name="sender">The object firing the event.</param>
-            <param name="eventArgs">The object containing the event data.</param>
-            <returns>
-                A <see cref="T:System.Threading.Tasks.Task" /> that completes only when all registered handlers complete. A completed task is returned
-                if the event handler is <c>null</c>.
-            </returns>
         </member>
         <member name="P:Glimmr.Models.ColorSource.Ambient.AmbientScene.System">
             <summary>
@@ -1682,56 +1645,6 @@
                 UI Properties.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.ColorTarget.TileLayout.NumPanels">
-            <summary>
-                Number of panels in the layout.
-            </summary>
-        </member>
-        <member name="P:Glimmr.Models.ColorTarget.TileLayout.SideLength">
-            <summary>
-                Length of sides of each panel. This is not used for shapes.
-            </summary>
-        </member>
-        <member name="P:Glimmr.Models.ColorTarget.TileLayout.PositionData">
-            <summary>
-                Array of position data for our tiles.
-            </summary>
-        </member>
-        <member name="P:Glimmr.Models.ColorTarget.TileData.O">
-            <summary>
-                Orientation.
-            </summary>
-        </member>
-        <member name="P:Glimmr.Models.ColorTarget.TileData.PanelId">
-            <summary>
-                Panel ID.
-            </summary>
-        </member>
-        <member name="P:Glimmr.Models.ColorTarget.TileData.ShapeType">
-            <summary>
-                What type of shape is this?
-            </summary>
-        </member>
-        <member name="P:Glimmr.Models.ColorTarget.TileData.SideLength">
-            <summary>
-                Length of panel sides.
-            </summary>
-        </member>
-        <member name="P:Glimmr.Models.ColorTarget.TileData.TargetSector">
-            <summary>
-                The sector to use for streaming for this panel.
-            </summary>
-        </member>
-        <member name="P:Glimmr.Models.ColorTarget.TileData.X">
-            <summary>
-                Tile X position.
-            </summary>
-        </member>
-        <member name="P:Glimmr.Models.ColorTarget.TileData.Y">
-            <summary>
-                Tile Y position.
-            </summary>
-        </member>
         <member name="P:Glimmr.Models.ColorTarget.Wled.WledData.ReverseStrip">
             <summary>
                 Reverse the order of data sent to leds.
@@ -2240,168 +2153,155 @@
                 UI Properties.
             </summary>
         </member>
-        <member name="M:Glimmr.Models.DescribeEnumMembers.#ctor(System.String)">
-            <summary>
-                Initialize schema filter.
-            </summary>
-            <param name="xmlPath">Path of our xml file.</param>
-        </member>
-        <member name="M:Glimmr.Models.DescribeEnumMembers.Apply(Microsoft.OpenApi.Models.OpenApiSchema,Swashbuckle.AspNetCore.SwaggerGen.SchemaFilterContext)">
-            <summary>
-                Apply this schema filter.
-            </summary>
-            <param name="argSchema">Target schema object.</param>
-            <param name="argContext">Schema filter context.</param>
-        </member>
-        <member name="P:Glimmr.Models.StatData.Fps">
+        <member name="P:Glimmr.Models.Data.StatData.Fps">
             <summary>
                 Current number of frames per second.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.StatData.CpuTemp">
+        <member name="P:Glimmr.Models.Data.StatData.CpuTemp">
             <summary>
                 Current CPU temperature (May not work with some AMD processors).
             </summary>
         </member>
-        <member name="P:Glimmr.Models.StatData.MemoryUsage">
+        <member name="P:Glimmr.Models.Data.StatData.MemoryUsage">
             <summary>
                 Total percentage of memory used.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.StatData.TempMax">
+        <member name="P:Glimmr.Models.Data.StatData.TempMax">
             <summary>
                 Maximum detected temperature.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.StatData.TempMin">
+        <member name="P:Glimmr.Models.Data.StatData.TempMin">
             <summary>
                 Minimum detected temperature.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.StatData.CpuUsage">
+        <member name="P:Glimmr.Models.Data.StatData.CpuUsage">
             <summary>
                 Percentage of CPU Used
             </summary>
         </member>
-        <member name="P:Glimmr.Models.StatData.Uptime">
+        <member name="P:Glimmr.Models.Data.StatData.Uptime">
             <summary>
                 System Uptime.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.StatData.ThrottledState">
+        <member name="P:Glimmr.Models.Data.StatData.ThrottledState">
             <summary>
                 Current throttle state.
             </summary>
         </member>
-        <member name="T:Glimmr.Models.StoreData">
+        <member name="T:Glimmr.Models.Data.StoreData">
             <summary>
                 A JSON representation of the database.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.StoreData.AmbientScenes">
+        <member name="P:Glimmr.Models.Data.StoreData.AmbientScenes">
             <summary>
                 List of detected ambient scenes.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.StoreData.DevAudio">
+        <member name="P:Glimmr.Models.Data.StoreData.DevAudio">
             <summary>
                 List of available audio devices.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.StoreData.AudioScenes">
+        <member name="P:Glimmr.Models.Data.StoreData.AudioScenes">
             <summary>
                 List of detected audio scenes.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.StoreData.DevUsb">
+        <member name="P:Glimmr.Models.Data.StoreData.DevUsb">
             <summary>
                 List of available USB devices.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.StoreData.Devices">
+        <member name="P:Glimmr.Models.Data.StoreData.Devices">
             <summary>
                 List of devices and their settings.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.StoreData.Stats">
+        <member name="P:Glimmr.Models.Data.StoreData.Stats">
             <summary>
                 List of detected audio scenes.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.StoreData.SystemData">
+        <member name="P:Glimmr.Models.Data.StoreData.SystemData">
             <summary>
                 Main SystemData Object.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.IsWindows">
+        <member name="P:Glimmr.Models.Data.SystemData.IsWindows">
             <summary>
                 Whether or not the OS is windows (Auto-set).
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.AutoDisabled">
+        <member name="P:Glimmr.Models.Data.SystemData.AutoDisabled">
             <summary>
                 If the system is currently auto-disabled due to no input.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.AutoRemoveDevices">
+        <member name="P:Glimmr.Models.Data.SystemData.AutoRemoveDevices">
             <summary>
                 If enabled, devices will be automatically removed after the specified time.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.AutoUpdate">
+        <member name="P:Glimmr.Models.Data.SystemData.AutoUpdate">
             <summary>
                 If enabled, Glimmr will automatically update itself daily.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.DefaultSet">
+        <member name="P:Glimmr.Models.Data.SystemData.DefaultSet">
             <summary>
                 Set on first-time initialization. Don't change this.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.EnableAutoBrightness">
+        <member name="P:Glimmr.Models.Data.SystemData.EnableAutoBrightness">
             <summary>
                 If set, wired LED strips will have their brightness automatically adjusted,
                 a la WLED.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.EnableAutoDisable">
+        <member name="P:Glimmr.Models.Data.SystemData.EnableAutoDisable">
             <summary>
                 If set, streaming will be automatically stopped when no input is detected.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.EnableLetterBox">
+        <member name="P:Glimmr.Models.Data.SystemData.EnableLetterBox">
             <summary>
                 If set, horizontal black bars will be cropped when detected.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.EnablePillarBox">
+        <member name="P:Glimmr.Models.Data.SystemData.EnablePillarBox">
             <summary>
                 If set, vertical black bars will be cropped when detected.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.SkipDemo">
+        <member name="P:Glimmr.Models.Data.SystemData.SkipDemo">
             <summary>
                 If set, rainbow wipe will not be played on application startup.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.SkipTour">
+        <member name="P:Glimmr.Models.Data.SystemData.SkipTour">
             <summary>
                 If set, introduction/tour will not run on UI load.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.UseCenter">
+        <member name="P:Glimmr.Models.Data.SystemData.UseCenter">
             <summary>
                 If set, sectors will also be collected from teh center of the screen, not just the perimeter.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.CamType">
+        <member name="P:Glimmr.Models.Data.SystemData.CamType">
             <summary>
                 Type of camera used for capture.
                 0 = Raspberry pi camera module
                 1 = USB webcam
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.CaptureMode">
+        <member name="P:Glimmr.Models.Data.SystemData.CaptureMode">
             <summary>
                 Currently selected capture mode for video input.
                 Camera = 1
@@ -2409,158 +2309,158 @@
                 Screen = 3
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.DeviceMode">
+        <member name="P:Glimmr.Models.Data.SystemData.DeviceMode">
             <summary>
                 The currently selected device mode.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.PreviousMode">
+        <member name="P:Glimmr.Models.Data.SystemData.PreviousMode">
             <summary>
                 The previous device mode before Auto-disable was activated.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.Units">
+        <member name="P:Glimmr.Models.Data.SystemData.Units">
             <summary>
                 Temperature units.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.AblAmps">
+        <member name="P:Glimmr.Models.Data.SystemData.AblAmps">
             <summary>
                 Input amps of power supply.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.AblVolts">
+        <member name="P:Glimmr.Models.Data.SystemData.AblVolts">
             <summary>
                 Input voltage of power supply.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.AudioGain">
+        <member name="P:Glimmr.Models.Data.SystemData.AudioGain">
             <summary>
                 How much to increase input audio volume.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.AudioRotationLower">
+        <member name="P:Glimmr.Models.Data.SystemData.AudioRotationLower">
             <summary>
                 Lower limit to color range (0 - 1)
                 Range is calculated as the absolute value between lower and upper.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.AudioRotationSpeed">
+        <member name="P:Glimmr.Models.Data.SystemData.AudioRotationSpeed">
             <summary>
                 How many degrees to rotate on each trigger (0 - 1)
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.AudioRotationUpper">
+        <member name="P:Glimmr.Models.Data.SystemData.AudioRotationUpper">
             <summary>
                 Upper limit to color range (0 - 1)
                 Range is calculated as the absolute value between lower and upper.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.GammaCorrection">
+        <member name="P:Glimmr.Models.Data.SystemData.GammaCorrection">
             <summary>
                 Gamma correction value.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.AmbientScene">
+        <member name="P:Glimmr.Models.Data.SystemData.AmbientScene">
             <summary>
                 Current ambient scene.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.AudioCutoff">
+        <member name="P:Glimmr.Models.Data.SystemData.AudioCutoff">
             <summary>
                 Low cutoff for audio detection, values below this will not be displayed (0-255).
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.AudioRotationTrigger">
+        <member name="P:Glimmr.Models.Data.SystemData.AudioRotationTrigger">
             <summary>
                 Minimum amplitude to trigger color rotation (0-255)
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.AudioScene">
+        <member name="P:Glimmr.Models.Data.SystemData.AudioScene">
             <summary>
                 Current audio scene.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.AutoDisableDelay">
+        <member name="P:Glimmr.Models.Data.SystemData.AutoDisableDelay">
             <summary>
                 How long to wait (in seconds) before disabling streaming when no
                 input is detected, when auto-disable is active.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.AutoDiscoveryFrequency">
+        <member name="P:Glimmr.Models.Data.SystemData.AutoDiscoveryFrequency">
             <summary>
                 Delay (in minutes) between execution of auto-discovery.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.AutoRemoveDevicesAfter">
+        <member name="P:Glimmr.Models.Data.SystemData.AutoRemoveDevicesAfter">
             <summary>
                 If enabled,
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.AutoUpdateTime">
+        <member name="P:Glimmr.Models.Data.SystemData.AutoUpdateTime">
             <summary>
                 How frequently to automatically check for updates (in hours).
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.BaudRate">
+        <member name="P:Glimmr.Models.Data.SystemData.BaudRate">
             <summary>
                 Serial port speed to use for connecting to adalight devices.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.BlackLevel">
+        <member name="P:Glimmr.Models.Data.SystemData.BlackLevel">
             <summary>
                 Colors below this brightness will be considered "black".
                 (Max 255)
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.BottomCount">
+        <member name="P:Glimmr.Models.Data.SystemData.BottomCount">
             <summary>
                 Number of LEDs along the bottom of the screen.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.CropBlackLevel">
+        <member name="P:Glimmr.Models.Data.SystemData.CropBlackLevel">
             <summary>
                 Value cropping checks use to determine what is "black" and should
                 be cropped.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.CropDelay">
+        <member name="P:Glimmr.Models.Data.SystemData.CropDelay">
             <summary>
                 The number of frames required for detection before cropping is
                 activated, if enabled.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.DiscoveryTimeout">
+        <member name="P:Glimmr.Models.Data.SystemData.DiscoveryTimeout">
             <summary>
                 How long to wait before canceling discovery tasks, in seconds.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.HSectors">
+        <member name="P:Glimmr.Models.Data.SystemData.HSectors">
             <summary>
                 Number of horizontal sectors around the screen
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.LedCount">
+        <member name="P:Glimmr.Models.Data.SystemData.LedCount">
             <summary>
                 Number of LEDs for the "master grid". This is auto-computed via left/right/top/bottom counts.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.LeftCount">
+        <member name="P:Glimmr.Models.Data.SystemData.LeftCount">
             <summary>
                 Number of LEDs along the left side of the screen.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.LogLevel">
+        <member name="P:Glimmr.Models.Data.SystemData.LogLevel">
             <summary>
                 Level to log the logging at. 0 = debug, 1 = inf
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.OpenRgbPort">
+        <member name="P:Glimmr.Models.Data.SystemData.OpenRgbPort">
             <summary>
                 Port to use for OpenRGB communication. (Default is 6742)
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.PreviewMode">
+        <member name="P:Glimmr.Models.Data.SystemData.PreviewMode">
             <summary>
                 Image preview mode for the web UI.
                 0 = None
@@ -2568,88 +2468,188 @@
                 2 = Sectors
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.RightCount">
+        <member name="P:Glimmr.Models.Data.SystemData.RightCount">
             <summary>
                 Number of LEDs along the right side of the screen.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.SectorCount">
+        <member name="P:Glimmr.Models.Data.SystemData.SectorCount">
             <summary>
                 Total number of sectors available. Is auto-computed based on sector counts and
                 whether center sectors are enabled.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.TopCount">
+        <member name="P:Glimmr.Models.Data.SystemData.TopCount">
             <summary>
                 Number of LEDs along the top of the screen.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.UsbSelection">
+        <member name="P:Glimmr.Models.Data.SystemData.UsbSelection">
             <summary>
                 Currently selected USB device for HDMI/camera capture.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.VSectors">
+        <member name="P:Glimmr.Models.Data.SystemData.VSectors">
             <summary>
                 Number of vertical sectors along the left/right of screen.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.StreamMode">
+        <member name="P:Glimmr.Models.Data.SystemData.StreamMode">
             <summary>
                 Currently selected streaming mode.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.AmbientColor">
+        <member name="P:Glimmr.Models.Data.SystemData.AmbientColor">
             <summary>
                 Current ambient color used when AmbientShow is set to "solid".
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.DeviceName">
+        <member name="P:Glimmr.Models.Data.SystemData.DeviceName">
             <summary>
                 Device name (should be device hostname)
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.DsIp">
+        <member name="P:Glimmr.Models.Data.SystemData.DsIp">
             <summary>
                 Target DreamScreen device to receive color data from.
                 (Streaming mode must be set to 0/DreamScreen)
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.IpAddress">
+        <member name="P:Glimmr.Models.Data.SystemData.IpAddress">
             <summary>
                 Local IP Address.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.OpenRgbIp">
+        <member name="P:Glimmr.Models.Data.SystemData.OpenRgbIp">
             <summary>
                 IP address to use for OpenRGB communication.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.RecDev">
+        <member name="P:Glimmr.Models.Data.SystemData.RecDev">
             <summary>
                 Name of the selected audio device for audio and audio/video capture.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.Theme">
+        <member name="P:Glimmr.Models.Data.SystemData.Theme">
             <summary>
                 Web UI theme
                 (dark/light)
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.TimeZone">
+        <member name="P:Glimmr.Models.Data.SystemData.TimeZone">
             <summary>
                 Time zone to use for automatic updates.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.Version">
+        <member name="P:Glimmr.Models.Data.SystemData.Version">
             <summary>
                 Version string based on current build + github revision.
             </summary>
         </member>
-        <member name="P:Glimmr.Models.SystemData.DeviceId">
+        <member name="P:Glimmr.Models.Data.SystemData.DeviceId">
             <summary>
                 A unique device ID based on MAC address, or random if no NIC accessible.
             </summary>
+        </member>
+        <member name="P:Glimmr.Models.Data.TileLayout.NumPanels">
+            <summary>
+                Number of panels in the layout.
+            </summary>
+        </member>
+        <member name="P:Glimmr.Models.Data.TileLayout.SideLength">
+            <summary>
+                Length of sides of each panel. This is not used for shapes.
+            </summary>
+        </member>
+        <member name="P:Glimmr.Models.Data.TileLayout.PositionData">
+            <summary>
+                Array of position data for our tiles.
+            </summary>
+        </member>
+        <member name="P:Glimmr.Models.Data.TileData.O">
+            <summary>
+                Orientation.
+            </summary>
+        </member>
+        <member name="P:Glimmr.Models.Data.TileData.PanelId">
+            <summary>
+                Panel ID.
+            </summary>
+        </member>
+        <member name="P:Glimmr.Models.Data.TileData.ShapeType">
+            <summary>
+                What type of shape is this?
+            </summary>
+        </member>
+        <member name="P:Glimmr.Models.Data.TileData.SideLength">
+            <summary>
+                Length of panel sides.
+            </summary>
+        </member>
+        <member name="P:Glimmr.Models.Data.TileData.TargetSector">
+            <summary>
+                The sector to use for streaming for this panel.
+            </summary>
+        </member>
+        <member name="P:Glimmr.Models.Data.TileData.X">
+            <summary>
+                Tile X position.
+            </summary>
+        </member>
+        <member name="P:Glimmr.Models.Data.TileData.Y">
+            <summary>
+                Tile Y position.
+            </summary>
+        </member>
+        <member name="T:Glimmr.Models.Helper.AsyncEventHandler">
+            <summary>
+                Represents an asynchronous event handler.
+            </summary>
+            <param name="sender">The object firing the event.</param>
+            <param name="eventArgs">The object containing the event data.</param>
+            <returns>A task that completes when this handler is done handling the event.</returns>
+        </member>
+        <member name="T:Glimmr.Models.Helper.AsyncEventHandler`1">
+            <summary>
+                Represents an asynchronous event handler.
+            </summary>
+            <typeparam name="TEventArgs">The type of the event arguments.</typeparam>
+            <param name="sender">The object firing the event.</param>
+            <param name="eventArgs">The object containing the event data.</param>
+            <returns>A task that completes when this handler is done handling the event.</returns>
+        </member>
+        <member name="T:Glimmr.Models.Helper.Extensions">
+            <summary>
+                Provides extension methods for use with <see cref="T:Glimmr.Models.Helper.AsyncEventHandler" /> and
+                <see cref="T:Glimmr.Models.Helper.AsyncEventHandler`1" />, as well as functions to convert synchronous event handlers to
+                asynchronous event handlers.
+            </summary>
+        </member>
+        <member name="M:Glimmr.Models.Helper.Extensions.InvokeAsync``1(Glimmr.Models.Helper.AsyncEventHandler{``0},System.Object,``0)">
+            <summary>
+                Asynchronously invokes an event, dispatching the provided event arguments to all registered handlers.
+            </summary>
+            <typeparam name="TEventArgs">The type of the event arguments.</typeparam>
+            <param name="eventHandler">This event handler.</param>
+            <param name="sender">The object firing the event.</param>
+            <param name="eventArgs">The object containing the event data.</param>
+            <returns>
+                A <see cref="T:System.Threading.Tasks.Task" /> that completes only when all registered handlers complete. A completed task is returned
+                if the event handler is <c>null</c>.
+            </returns>
+        </member>
+        <member name="M:Glimmr.Models.Helper.DescribeEnumMembers.#ctor(System.String)">
+            <summary>
+                Initialize schema filter.
+            </summary>
+            <param name="xmlPath">Path of our xml file.</param>
+        </member>
+        <member name="M:Glimmr.Models.Helper.DescribeEnumMembers.Apply(Microsoft.OpenApi.Models.OpenApiSchema,Swashbuckle.AspNetCore.SwaggerGen.SchemaFilterContext)">
+            <summary>
+                Apply this schema filter.
+            </summary>
+            <param name="argSchema">Target schema object.</param>
+            <param name="argContext">Schema filter context.</param>
         </member>
         <member name="M:Glimmr.Models.Util.ColorUtil.TruncateColors(System.Drawing.Color[])">
             <summary>

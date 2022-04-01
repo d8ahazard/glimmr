@@ -3,7 +3,6 @@ let loadTimeout;
 // Row for settings and device cards divs
 let settingsRow;
 let cardRow;
-let addRot = 0;
 // Settings content elements
 let settingsTab;
 let settingsContent;
@@ -3810,7 +3809,7 @@ function drawNanoShapes() {
                 stroke: '#070909',
                 strokeWidth: 1,
                 draggable: false,
-                rotation: orientation + addRot,
+                rotation: orientation,
                 shadowColor: 'black',
                 shadowBlur: 10,
                 shadowOffset: {

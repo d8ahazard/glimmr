@@ -10,12 +10,24 @@ echo Killing Glimmr task...
 plink -no-antispoof -pw Digitalhigh digitalhigh@%1 "echo digitalhigh | sudo -S pkill -f Glimmr"
 
 :BUILD2
-dotnet publish ..\src\Glimmr\Glimmr.csproj /p:PublishProfile=OSX -o ..\src\Glimmr\bin\OSX --self-contained=true
+cd ..\src\
+
+echo OSX...
+for %%x in (
+	osx-x64
+) do (
+	echo Building %%x
+	dotnet publish -r %%x -c Release .\Glimmr\Glimmr.csproj -o .\Glimmr\bin\%%x --self-contained=true
+    dotnet publish -r %%x -c release .\Image2Scene\Image2Scene.csproj -o .\Glimmr\bin\%%x --self-contained=true
+    echo Archiving %%x
+    %~dp07z.exe a -ttar -so -an -r .\Glimmr\bin\%%x\* | %~dp07z a -si .\Glimmr\bin\Glimmr-%%x-%version%.tgz
+    echo Copying OSX Files...
+    del /S /Q ..\Glimmr-macos-installer-builder\macOS-x64\application\*
+    xcopy /Y /E .\Glimmr\bin\osx-x64\* ..\Glimmr-macos-installer-builder\macOS-x64\application
+)
+
 if "%1"=="" GOTO :END
-cd ..\src\Glimmr\bin\OSX
-echo Copying OSX Files...
-del /S /Q ..\..\..\..\..\Glimmr-macos-installer-builder\macOS-x64\application\*
-xcopy /Y /E .\* ..\..\..\..\..\Glimmr-macos-installer-builder\macOS-x64\application\
+cd .\Glimmr\bin\osx-x64
 IF "%2"=="-j" GOTO JS
 IF "%2"=="-c" GOTO CSS
 IF "%2"=="-w" GOTO WEB
@@ -56,6 +68,7 @@ GOTO END
 :HELP
 echo _______________________________
 echo Script Usage:
+echo Edit the credentials in the top of the script to work for your OSX machine.
 echo publish_osx.bat <IP_OF_GLIMMR> -c/-f/-k/-j/-s
 echo OR
 echo publish_osx.bat -h (Show Help)
@@ -68,4 +81,4 @@ echo -j: Copy Java only, don't restart
 echo -s: Stop glimmr service, then copy. Can be used before the -f flag.
 echo _______________________________
 :END
-cd ../../../..
+cd ..\..\..\..
