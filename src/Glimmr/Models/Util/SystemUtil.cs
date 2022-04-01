@@ -178,7 +178,7 @@ public static class SystemUtil {
 		using var client = new HttpClient();
 		var res = client.GetStringAsync(url).Result;
 		try {
-			File.WriteAllText(res, target);
+			File.WriteAllText(target, res);
 		} catch (Exception e) {
 			Log.Debug("Exception updating update script: " + e.Message);
 		}
