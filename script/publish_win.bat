@@ -1,6 +1,6 @@
 @echo off
 if "%~1"=="-r" taskkill /IM Glimmr.exe
-cd .\src\
+cd ..\src\
 for %%x in (
     win-x64
 ) do (

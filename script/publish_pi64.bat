@@ -11,8 +11,9 @@ echo Killing Glimmr task...
 plink -no-antispoof -pw glimmrtv glimmrtv@%1 "echo glimmrtv | sudo -S service glimmr stop"
 plink -no-antispoof -pw glimmrtv glimmrtv@%1 "echo glimmrtv | sudo -S pkill -f Glimmr"
 
-cd ..\src\
+
 :BUILD2
+cd ..\src\
 for %%x in (
     linux-arm64
 ) do (
