@@ -15,7 +15,7 @@ public class SocketSink : ILogEventSink {
 	public void Emit(LogEvent logEvent) {
 		_cs ??= ControlService.GetInstance();
 		try {
-			_cs.SendLogLine(logEvent).ConfigureAwait(false);
+			ControlService.SendLogLine(logEvent).ConfigureAwait(false);
 		} catch (Exception) {
 			// Ignored
 		}

@@ -92,6 +92,8 @@ public class GlimmrDiscovery : ColorDiscovery, IColorDiscovery {
 						Log.Debug("TXT: " + msg);
 						id = msg.ToString().Split("mac=")[1];
 						break;
+					default:
+						continue;
 				}
 			}
 

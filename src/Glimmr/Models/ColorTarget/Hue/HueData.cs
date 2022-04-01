@@ -96,7 +96,6 @@ public class HueData : IColorTargetData {
 		Groups = new List<HueGroup>();
 		Lights = new List<LightData>();
 		Name = string.Concat("Hue - ", Id.AsSpan(Id.Length - 5, 4));
-		MappedLights ??= new List<LightMap>();
 	}
 
 	/// <summary>
@@ -250,10 +249,6 @@ public class LightData {
 	}
 
 	public LightData(Light l) {
-		if (l == null) {
-			return;
-		}
-
 		LastState = new State();
 		Name = l.Name;
 		Id = l.Id;
@@ -275,8 +270,7 @@ public class HueGroup : Group {
 	public new string Id { get; set; } = "";
 
 	/// <inheritdoc />
-	public HueGroup() {
-	}
+	public HueGroup() { }
 
 	public HueGroup(Group g) {
 		Id = g.Id;

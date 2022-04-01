@@ -1,39 +1,45 @@
-﻿namespace Glimmr.Enums;
+﻿#region
+
+using Newtonsoft.Json;
+
+#endregion
+
+namespace Glimmr.Enums;
 
 public enum ColorOrder {
 	/// <summary>
 	///     RGB
 	/// </summary>
-	Rgb = 0,
-	RGB = 0,
+	[JsonProperty] Rgb = 0,
+	[JsonProperty] RGB = 0,
 
 	/// <summary>
 	///     RBG
 	/// </summary>
-	Rbg = 1,
-	RBG = 1,
+	[JsonProperty] Rbg = 1,
+	[JsonProperty] RBG = 1,
 
 	/// <summary>
 	///     GBR
 	/// </summary>
-	Gbr = 2,
-	GBR = 2,
+	[JsonProperty] Gbr = 2,
+	[JsonProperty] GBR = 2,
 
 	/// <summary>
 	///     GRB
 	/// </summary>
-	Grb = 3,
-	GRB = 3,
+	[JsonProperty] Grb = 3,
+	[JsonProperty] GRB = 3,
 
 	/// <summary>
 	///     BGR
 	/// </summary>
-	Bgr = 4,
-	BGR = 4,
+	[JsonProperty] Bgr = 4,
+	[JsonProperty] BGR = 4,
 
 	/// <summary>
 	///     BRG
 	/// </summary>
-	Brg = 5,
-	BRG = 5
+	[JsonProperty] Brg = 5,
+	[JsonProperty] BRG = 5
 }

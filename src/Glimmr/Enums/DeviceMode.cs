@@ -1,4 +1,10 @@
-﻿namespace Glimmr.Enums;
+﻿#region
+
+using Newtonsoft.Json;
+
+#endregion
+
+namespace Glimmr.Enums;
 
 /// <summary>
 ///     The current device mode.
@@ -14,35 +20,35 @@ public enum DeviceMode {
 	/// <summary>
 	///     Off
 	/// </summary>
-	Off = 0,
+	[JsonProperty] Off = 0,
 
 	/// <summary>
 	///     Video
 	/// </summary>
-	Video = 1,
+	[JsonProperty] Video = 1,
 
 	/// <summary>
 	///     Audio
 	/// </summary>
-	Audio = 2,
+	[JsonProperty] Audio = 2,
 
 	/// <summary>
 	///     Ambient
 	/// </summary>
-	Ambient = 3,
+	[JsonProperty] Ambient = 3,
 
 	/// <summary>
 	///     Audio+Video
 	/// </summary>
-	AudioVideo = 4,
+	[JsonProperty] AudioVideo = 4,
 
 	/// <summary>
 	///     UDP (Glimmr/WLED)
 	/// </summary>
-	Udp = 5,
+	[JsonProperty] Udp = 5,
 
 	/// <summary>
 	///     DreamScreen
 	/// </summary>
-	DreamScreen = 6
+	[JsonProperty] DreamScreen = 6
 }

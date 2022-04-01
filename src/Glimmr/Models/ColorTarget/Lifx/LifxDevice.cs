@@ -115,8 +115,7 @@ public class LifxDevice : ColorTarget, IColorTarget {
 		return Task.CompletedTask;
 	}
 
-	public void Dispose() {
-	}
+	public void Dispose() { }
 
 
 	public async Task SetColors(IReadOnlyList<Color> ledColors, IReadOnlyList<Color> sectorColors) {
@@ -146,8 +145,6 @@ public class LifxDevice : ColorTarget, IColorTarget {
 	}
 
 	private void LoadData() {
-		var sd = DataUtil.GetSystemData();
-
 		DataUtil.GetItem<int>("captureMode");
 
 		_hasMulti = _data.HasMultiZone;

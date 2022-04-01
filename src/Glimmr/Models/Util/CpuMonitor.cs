@@ -21,11 +21,9 @@ public class CpuMonitor : IVisitor {
 		}
 	}
 
-	public void VisitSensor(ISensor sensor) {
-	}
+	public void VisitSensor(ISensor sensor) { }
 
-	public void VisitParameter(IParameter parameter) {
-	}
+	public void VisitParameter(IParameter parameter) { }
 
 	public static StatData Monitor() {
 		Computer computer = new() {

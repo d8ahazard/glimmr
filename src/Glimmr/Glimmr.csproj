@@ -37,7 +37,7 @@
         <DebugType>full</DebugType>
     </PropertyGroup>
 
-    
+
     <ItemGroup>
         <PackageReference Include="AdalightNet" Version="1.0.8" />
         <PackageReference Include="AutoMapper" Version="11.0.1" />
@@ -101,10 +101,10 @@
         <Content Include="script/update_linux.sh" CopyToPublishDirectory="Always" LinuxFileMode="1755" Link="%(Filename)%(Extension)">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
-		<Content Include="script/reboot.sh" CopyToPublishDirectory="Always" LinuxFileMode="1755" Link="%(Filename)%(Extension)">
+        <Content Include="script/reboot.sh" CopyToPublishDirectory="Always" LinuxFileMode="1755" Link="%(Filename)%(Extension)">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
-		<Content Include="script/glimmr.service" CopyToPublishDirectory="Always" LinuxFileMode="1755" Link="%(Filename)%(Extension)">
+        <Content Include="script/glimmr.service" CopyToPublishDirectory="Always" LinuxFileMode="1755" Link="%(Filename)%(Extension)">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
     </ItemGroup>
@@ -123,7 +123,7 @@
         </Content>
     </ItemGroup>
 
-	<!-- Raspi/arm64 -->
+    <!-- Raspi/arm64 -->
     <ItemGroup Condition="'$(RuntimeIdentifier)'=='linux-arm64' OR '$(RuntimeIdentifier)'=='win-arm64'">
         <Content Include="lib/LinuxARM64/*" CopyToPublishDirectory="Always" LinuxFileMode="1755" Link="%(Filename)%(Extension)">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -135,7 +135,7 @@
         <Content Include="lib/OSX/*" CopyToPublishDirectory="Always" LinuxFileMode="1755" Link="%(Filename)%(Extension)">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
-		<Content Include="script/update_osx.sh" CopyToPublishDirectory="Always" LinuxFileMode="1755" Link="%(Filename)%(Extension)">
+        <Content Include="script/update_osx.sh" CopyToPublishDirectory="Always" LinuxFileMode="1755" Link="%(Filename)%(Extension)">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
     </ItemGroup>
@@ -145,10 +145,10 @@
         <Content Include="lib/Windows/*" CopyToPublishDirectory="Always" LinuxFileMode="1755" Link="%(Filename)%(Extension)">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
-		<Content Include="script/restart_win.ps1" CopyToPublishDirectory="Always" LinuxFileMode="1755" Link="%(Filename)%(Extension)">
+        <Content Include="script/restart_win.ps1" CopyToPublishDirectory="Always" LinuxFileMode="1755" Link="%(Filename)%(Extension)">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
-		<Content Include="script/update_win.ps1" CopyToPublishDirectory="Always" LinuxFileMode="1755" Link="%(Filename)%(Extension)">
+        <Content Include="script/update_win.ps1" CopyToPublishDirectory="Always" LinuxFileMode="1755" Link="%(Filename)%(Extension)">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
     </ItemGroup>
@@ -393,5 +393,4 @@
         <RpmDependency Include="cmake-curses-gui" />
         <RpmDependency Include="freeglut3-dev" />
     </ItemGroup>
-
 </Project>

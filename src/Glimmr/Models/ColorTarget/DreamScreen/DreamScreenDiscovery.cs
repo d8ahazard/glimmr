@@ -14,11 +14,9 @@ namespace Glimmr.Models.ColorTarget.DreamScreen;
 
 public class DreamScreenDiscovery : ColorDiscovery, IColorDiscovery {
 	private readonly DreamScreenClient? _client;
-	private readonly ControlService _cs;
 
 	public DreamScreenDiscovery(ColorService colorService) : base(colorService) {
 		_client = colorService.ControlService.GetAgent("DreamAgent");
-		_cs = colorService.ControlService;
 	}
 
 	public async Task Discover(int timeout, CancellationToken ct) {
@@ -28,18 +26,18 @@ public class DreamScreenDiscovery : ColorDiscovery, IColorDiscovery {
 		}
 
 		Log.Debug("DS: Starting discovery...");
-		_client.DeviceDiscovered += DevFound;
+		_client.DeviceDiscovered += DeviceFound;
 		_client.StartDeviceDiscovery();
 		await Task.Delay(TimeSpan.FromSeconds(timeout), CancellationToken.None);
 		_client.StopDeviceDiscovery();
-		_client.DeviceDiscovered -= DevFound;
+		_client.DeviceDiscovered -= DeviceFound;
 		Log.Debug("DS: Discovery complete.");
 	}
 
-	private void DevFound(object? sender, DreamScreenClient.DeviceDiscoveryEventArgs e) {
+	private static void DeviceFound(object? sender, DreamScreenClient.DeviceDiscoveryEventArgs e) {
 		Log.Debug("Dream Device found??");
 		var dd = new DreamScreenData(e.Device);
 		Log.Debug("Got one: " + JsonConvert.SerializeObject(dd));
-		_cs.AddDevice(dd).ConfigureAwait(false);
+		ControlService.AddDevice(dd).ConfigureAwait(false);
 	}
 }

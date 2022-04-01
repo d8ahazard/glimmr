@@ -74,8 +74,7 @@ public class ColorMatrix {
 
 
 	public void Update() {
-		var rotate = true;
-		var step = _step;
+		const bool rotate = true;
 		var hStep = 0;
 		var vStep = 0;
 		switch (_matrixDirection) {
@@ -101,6 +100,11 @@ public class ColorMatrix {
 				}
 
 				break;
+			case AmbientStream.MatrixDirection.Random:
+			case AmbientStream.MatrixDirection.LTR:
+			case AmbientStream.MatrixDirection.TTB:
+			case AmbientStream.MatrixDirection.RTL:
+			case AmbientStream.MatrixDirection.BTT:
 			default:
 				_currentDirection = _matrixDirection;
 				break;
@@ -108,21 +112,21 @@ public class ColorMatrix {
 
 		switch (_currentDirection) {
 			case AmbientStream.MatrixDirection.RTL:
-				hStep -= step;
+				hStep -= _step;
 				break;
 			case AmbientStream.MatrixDirection.TTB:
-				vStep -= step;
+				vStep -= _step;
 				break;
 			case AmbientStream.MatrixDirection.LTR:
-				hStep += step;
+				hStep += _step;
 				break;
 			case AmbientStream.MatrixDirection.BTT:
-				vStep += step;
+				vStep += _step;
 				break;
 			case AmbientStream.MatrixDirection.Random:
 				if (_matrixDirection == _currentDirection || rotate) {
-					_randH = _random.Next(step * -1, step);
-					_randV = _random.Next(step * -1, step);
+					_randH = _random.Next(_step * -1, _step);
+					_randV = _random.Next(_step * -1, _step);
 				}
 
 				hStep = _randH;

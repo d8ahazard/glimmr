@@ -70,7 +70,7 @@ public class NanoleafData : IColorTargetData {
 		Layout ??= new TileLayout();
 	}
 
-	
+
 	/// <summary>
 	///     Device tag.
 	/// </summary>

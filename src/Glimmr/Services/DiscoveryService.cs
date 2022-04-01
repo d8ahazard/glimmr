@@ -6,7 +6,6 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Glimmr.Models;
 using Glimmr.Models.ColorTarget;
 using Glimmr.Models.Helper;
 using Glimmr.Models.Util;

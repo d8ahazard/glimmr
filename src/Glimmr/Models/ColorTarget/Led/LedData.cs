@@ -116,8 +116,7 @@ public class LedData : IColorTargetData {
 	public string LastSeen { get; set; }
 
 
-	public void UpdateFromDiscovered(IColorTargetData data) {
-	}
+	public void UpdateFromDiscovered(IColorTargetData data) { }
 
 	/// <summary>
 	///     UI Elements.

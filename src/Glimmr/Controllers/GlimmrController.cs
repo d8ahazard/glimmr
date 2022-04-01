@@ -11,7 +11,6 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Enums;
-using Glimmr.Models;
 using Glimmr.Models.ColorSource.Ambient;
 using Glimmr.Models.ColorSource.Audio;
 using Glimmr.Models.ColorTarget;

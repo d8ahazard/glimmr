@@ -85,10 +85,12 @@ public class AudioMap {
 			_kickCount++;
 		}
 
-		if (_kickCount >= 4) {
-			_kickCount = 0;
-			_triggered = true;
+		if (_kickCount < 4) {
+			return output;
 		}
+
+		_kickCount = 0;
+		_triggered = true;
 
 		return output;
 	}

@@ -77,24 +77,24 @@ public class FrameSplitter : IDisposable {
 	private float _gammaCorrection;
 	private int _hSectors;
 
-	// Current crop data
-	private FrameCropTrigger _lFrameCropTrigger;
-	private FrameCropTrigger _pFrameCropTrigger;
-
-	private int _lCropPixels;
-	private int _pCropPixels;
-
 	// Track crop state
 	private bool _lCrop;
-	private bool _pCrop;
+
+	private int _lCropPixels;
 
 	private int _ledCount;
 	private int _leftCount;
+
+	// Current crop data
+	private FrameCropTrigger _lFrameCropTrigger;
 	private VectorOfPointF? _lockTarget;
 	private bool _merge;
 	private DeviceMode _mode;
+	private bool _pCrop;
+	private int _pCropPixels;
+	private FrameCropTrigger _pFrameCropTrigger;
 
-	
+
 	private int _previewMode;
 	private int _rightCount;
 	private Size _scaleSize;
@@ -145,6 +145,7 @@ public class FrameSplitter : IDisposable {
 	public void Dispose() {
 		_lockTarget?.Dispose();
 		_cropTimer.Dispose();
+		GC.SuppressFinalize(this);
 	}
 
 	private void TriggerCropCheck(object? sender, ElapsedEventArgs e) {
@@ -248,7 +249,7 @@ public class FrameSplitter : IDisposable {
 		}
 
 		if (inMat is { IsEmpty: false }) {
-			ColorService.ControlService.SendImage("inputImage", inMat).ConfigureAwait(false);
+			ControlService.SendImage("inputImage", inMat).ConfigureAwait(false);
 		}
 
 		if (outMat.IsEmpty) {
@@ -293,7 +294,7 @@ public class FrameSplitter : IDisposable {
 		}
 
 		if (outMat is { IsEmpty: false }) {
-			ColorService.ControlService.SendImage("outputImage", outMat).ConfigureAwait(false);
+			ControlService.SendImage("outputImage", outMat).ConfigureAwait(false);
 		}
 
 		inMat.Dispose();
@@ -636,7 +637,7 @@ public class FrameSplitter : IDisposable {
 		_allBlack = false;
 		// Check letterboxing
 		if (_cropLetter) {
-			for (var y = 0; y < hMax; y+=2) {
+			for (var y = 0; y < hMax; y += 2) {
 				var c1 = gr.Row(height - y);
 				var c2 = gr.Row(y);
 				var b1 = c1.GetRawData().SkipLast(8).Skip(8).ToArray();
@@ -651,18 +652,19 @@ public class FrameSplitter : IDisposable {
 					break;
 				}
 			}
-			
+
 			_lFrameCropTrigger.Tick(lPixels);
 			if (_lFrameCropTrigger.Triggered != _lCrop && !_sectorChanged) {
 				_sectorChanged = true;
 				_lCrop = _lFrameCropTrigger.Triggered;
 			}
+
 			_lCropPixels = lPixels;
 		}
 
 		// Check pillarboxing
 		if (_cropPillar) {
-			for (var x = 0; x < wMax; x+=2) {
+			for (var x = 0; x < wMax; x += 2) {
 				var c1 = gr.Col(width - x);
 				var c2 = gr.Col(x);
 				var b1 = c1.GetRawData().SkipLast(8).Skip(8).ToArray();
@@ -677,18 +679,19 @@ public class FrameSplitter : IDisposable {
 					break;
 				}
 			}
-			
+
 			_pFrameCropTrigger.Tick(pPixels);
 			if (_pFrameCropTrigger.Triggered != _pCrop && !_sectorChanged) {
 				_sectorChanged = true;
 				_pCrop = _pFrameCropTrigger.Triggered;
 			}
+
 			_pCropPixels = pPixels;
 		}
 
 		// Cleanup mat
 		gr.Dispose();
-		
+
 		// Only calculate new sectors if the value has changed
 		if (_sectorChanged) {
 			Log.Debug($"Crop changed, redrawing {_lCropPixels} and {_pCropPixels}...");
@@ -892,4 +895,3 @@ public class FrameSplitter : IDisposable {
 		return fs;
 	}
 }
-

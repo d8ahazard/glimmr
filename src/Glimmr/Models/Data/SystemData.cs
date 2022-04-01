@@ -565,6 +565,7 @@ public class SystemData {
 		if (string.IsNullOrEmpty(devName)) {
 			devName = Dns.GetHostName();
 		}
+
 		DeviceName = devName;
 
 		return id;

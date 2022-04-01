@@ -100,7 +100,7 @@ public class AudioStream : ColorSource {
 		return Task.Run(async () => {
 			try {
 				Bass.RecordInit(_recordDeviceIndex);
-				var period = 33;
+				const int period = 33;
 				_handle = Bass.RecordStart(SampleFreq, 2, BassFlags.Default, period, UpdateAudio);
 				_hasDll = true;
 				Log.Information($"Recording init completed for {_sd?.RecDev ?? ""} ({_recordDeviceIndex})");

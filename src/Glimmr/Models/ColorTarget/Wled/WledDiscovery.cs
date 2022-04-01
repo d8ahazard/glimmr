@@ -80,16 +80,16 @@ public class WledDiscovery : ColorDiscovery, IColorDiscovery {
 			var id = string.Empty;
 
 
-			foreach (var msg in rr) {
+			foreach (var msg in rr.Where(msg => msg.Type is DnsType.A or DnsType.TXT)) {
 				switch (msg.Type) {
-					// Extract IP
 					case DnsType.A:
 						ip = msg.ToString().Split(" ").Last();
 						break;
-					// Extract Mac
 					case DnsType.TXT:
-						id = msg.ToString().Split("=")[1];
+						id = msg.ToString().Split(" ").Last();
 						break;
+					default:
+						continue;
 				}
 			}
 

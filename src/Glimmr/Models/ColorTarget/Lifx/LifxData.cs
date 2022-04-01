@@ -193,10 +193,10 @@ public class LifxData : IColorTargetData {
 	[JsonProperty]
 	public string Name {
 		get =>
-			Id.Length > 5 ?
-			string.Concat(DeviceTag, " ",
-				Id.AsSpan(Id.Length - 5, 5).ToString().ToUpper().Replace(":", ""))
-			: DeviceTag;
+			Id.Length > 5
+				? string.Concat(DeviceTag, " ",
+					Id.AsSpan(Id.Length - 5, 5).ToString().ToUpper().Replace(":", ""))
+				: DeviceTag;
 		set { }
 	}
 

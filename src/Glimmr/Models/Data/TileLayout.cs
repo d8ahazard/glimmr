@@ -34,8 +34,7 @@ public class TileLayout {
 	[JsonProperty]
 	public TileData[]? PositionData { get; set; }
 
-	public TileLayout() {
-	}
+	public TileLayout() { }
 
 	public TileLayout(Layout layout) {
 		NumPanels = layout.NumPanels;
@@ -132,8 +131,7 @@ public class TileData {
 	[JsonProperty]
 	public int Y { get; set; }
 
-	public TileData() {
-	}
+	public TileData() { }
 
 	public TileData(Tile t, int index) {
 		X = (int)t.UserX;

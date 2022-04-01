@@ -1,13 +1,19 @@
-﻿namespace Glimmr.Enums;
+﻿#region
+
+using Newtonsoft.Json;
+
+#endregion
+
+namespace Glimmr.Enums;
 
 public enum DeviceUnits {
 	/// <summary>
 	///     Imperial
 	/// </summary>
-	Imperial = 0,
+	[JsonProperty] Imperial = 0,
 
 	/// <summary>
 	///     Metric
 	/// </summary>
-	Metric = 1
+	[JsonProperty] Metric = 1
 }

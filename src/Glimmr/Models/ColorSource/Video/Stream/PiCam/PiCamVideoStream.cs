@@ -96,8 +96,7 @@ public sealed class PiCamVideoStream : IVideoStream, IDisposable {
 			WorkingData.Clear();
 		}
 
-		public void Split() {
-		}
+		public void Split() { }
 
 		public event EventHandler<EmguEventArgs>? MyEmguEvent;
 	}

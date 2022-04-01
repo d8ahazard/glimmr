@@ -15,8 +15,7 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.Hue;
 
 public class HueDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth {
-	public HueDiscovery(ColorService colorService) : base(colorService) {
-	}
+	public HueDiscovery(ColorService colorService) : base(colorService) { }
 
 	public async Task Discover(int timeout, CancellationToken ct) {
 		Log.Debug("Hue: V1 Discovery disabled...");

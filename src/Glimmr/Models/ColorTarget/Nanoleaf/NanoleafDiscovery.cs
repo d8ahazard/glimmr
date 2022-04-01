@@ -102,6 +102,8 @@ public class NanoleafDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAu
 						nData.Port = int.Parse(sValues[6], CultureInfo.InvariantCulture);
 						nData.Hostname = sValues[7];
 						break;
+					default:
+						continue;
 				}
 			} catch (Exception f) {
 				Log.Debug("Exception caught: " + f.Message);

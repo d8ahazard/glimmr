@@ -55,6 +55,7 @@ public class FrameBuilder : IDisposable {
 	public void Dispose() {
 		_disposed = true;
 		((IDisposable)_inputCoords).Dispose();
+		GC.SuppressFinalize(this);
 	}
 
 	public void Update(IReadOnlyList<int> inputDimensions, bool sectors = false, bool center = false) {

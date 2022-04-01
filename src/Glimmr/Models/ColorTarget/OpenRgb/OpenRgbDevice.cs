@@ -109,8 +109,7 @@ public class OpenRgbDevice : ColorTarget, IColorTarget {
 	}
 
 
-	public void Dispose() {
-	}
+	public void Dispose() { }
 
 
 	public async Task SetColors(IReadOnlyList<Color> list, IReadOnlyList<Color> colors1) {
@@ -125,6 +124,9 @@ public class OpenRgbDevice : ColorTarget, IColorTarget {
 			case StripMode.Single:
 				toSend = ColorUtil.FillArray(colors1[_targetSector - 1], _ledCount);
 				break;
+			case StripMode.Normal:
+			case StripMode.Sectored:
+			case StripMode.Loop:
 			default: {
 				toSend = ColorUtil.TruncateColors(toSend, _offset, _ledCount, _multiplier);
 				if (_stripMode == StripMode.Loop) {
@@ -140,15 +142,31 @@ public class OpenRgbDevice : ColorTarget, IColorTarget {
 		}
 
 
-		var converted = _data.ColorOrder switch {
-			ColorOrder.Rgb => toSend.Select(col => new OpenRGB.NET.Models.Color(col.R, col.G, col.B)).ToList(),
-			ColorOrder.Rbg => toSend.Select(col => new OpenRGB.NET.Models.Color(col.R, col.B, col.G)).ToList(),
-			ColorOrder.Gbr => toSend.Select(col => new OpenRGB.NET.Models.Color(col.G, col.B, col.R)).ToList(),
-			ColorOrder.Grb => toSend.Select(col => new OpenRGB.NET.Models.Color(col.G, col.R, col.B)).ToList(),
-			ColorOrder.Bgr => toSend.Select(col => new OpenRGB.NET.Models.Color(col.B, col.G, col.R)).ToList(),
-			ColorOrder.Brg => toSend.Select(col => new OpenRGB.NET.Models.Color(col.B, col.R, col.G)).ToList(),
-			_ => throw new ArgumentOutOfRangeException(nameof(_data.ColorOrder))
-		};
+		List<OpenRGB.NET.Models.Color>? converted;
+		switch (_data.ColorOrder) {
+			case ColorOrder.Rgb:
+				converted = toSend.Select(col => new OpenRGB.NET.Models.Color(col.R, col.G, col.B)).ToList();
+				break;
+			case ColorOrder.Rbg:
+				converted = toSend.Select(col => new OpenRGB.NET.Models.Color(col.R, col.B, col.G)).ToList();
+				break;
+			case ColorOrder.Gbr:
+				converted = toSend.Select(col => new OpenRGB.NET.Models.Color(col.G, col.B, col.R)).ToList();
+				break;
+			case ColorOrder.Grb:
+				converted = toSend.Select(col => new OpenRGB.NET.Models.Color(col.G, col.R, col.B)).ToList();
+				break;
+			case ColorOrder.Bgr:
+				converted = toSend.Select(col => new OpenRGB.NET.Models.Color(col.B, col.G, col.R)).ToList();
+				break;
+			case ColorOrder.Brg:
+				converted = toSend.Select(col => new OpenRGB.NET.Models.Color(col.B, col.R, col.G)).ToList();
+				break;
+			default:
+				Log.Debug("Well, this is odd...");
+				converted = toSend.Select(col => new OpenRGB.NET.Models.Color(col.R, col.B, col.G)).ToList();
+				break;
+		}
 
 		_client?.Update(_data.DeviceId, converted.ToArray());
 		await Task.FromResult(true);

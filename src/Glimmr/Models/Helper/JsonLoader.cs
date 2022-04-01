@@ -84,11 +84,13 @@ public class JsonLoader {
 					continue;
 				}
 
-				if (exScene.Name == scene.Name) {
-					Log.Debug("Updating existing user ambient scene: " + scene.Name);
-					scene.Id = exScene.Id;
-					return SaveJson(scene, fileName, "ambientScenes");
+				if (exScene.Name != scene.Name) {
+					continue;
 				}
+
+				Log.Debug("Updating existing user ambient scene: " + scene.Name);
+				scene.Id = exScene.Id;
+				return SaveJson(scene, fileName, "ambientScenes");
 			}
 
 			ids.AddRange(scenes.Select(sc => sc.Id));

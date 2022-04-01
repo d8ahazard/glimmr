@@ -4,7 +4,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Hubs;
-using Glimmr.Models;
 using Glimmr.Models.Helper;
 using Glimmr.Models.Util;
 using Microsoft.AspNetCore.SignalR;

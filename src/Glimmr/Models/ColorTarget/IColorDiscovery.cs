@@ -13,7 +13,7 @@ public interface IColorDiscovery {
 }
 
 public abstract class ColorDiscovery {
-	protected ControlService ControlService { get; }
+	private ControlService ControlService { get; }
 
 	protected ColorDiscovery(ColorService colorService) {
 		ControlService = colorService.ControlService;

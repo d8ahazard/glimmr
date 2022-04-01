@@ -65,7 +65,7 @@ public class GlimmrData : IColorTargetData {
 		Tag = "Glimmr";
 		Name ??= Tag;
 		Name = StringUtil.UppercaseFirst(Id);
-		
+
 		IpAddress = ip;
 		FetchData();
 		LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);

@@ -149,6 +149,5 @@ public class AdalightData : IColorTargetData {
 	};
 
 
-	public void UpdateFromDiscovered(IColorTargetData data) {
-	}
+	public void UpdateFromDiscovered(IColorTargetData data) { }
 }

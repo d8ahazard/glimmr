@@ -84,8 +84,8 @@ public class HueV2Data : IColorTargetData {
 	[JsonProperty]
 	public string Name {
 		get =>
-			Id.Length > 6 ?
-				string.Concat("Hue ",
+			Id.Length > 6
+				? string.Concat("Hue ",
 					Id.AsSpan(Id.Length - 5, 5).ToString().ToUpper().Replace(":", ""))
 				: "Hue Bridge";
 		set { }
@@ -198,8 +198,7 @@ public class HueEntertainmentConfig : EntertainmentConfiguration {
 	/// <summary>
 	///     Config ID
 	/// </summary>
-	public HueEntertainmentConfig() {
-	}
+	public HueEntertainmentConfig() { }
 
 	public HueEntertainmentConfig(EntertainmentConfiguration config) {
 		Id = config.Id;
@@ -296,14 +295,12 @@ public class LightMapV2 {
 		TargetSector = l.TargetSector;
 	}
 
-	public LightMapV2(Light input, List<Entertainment> devsData) {
+	public LightMapV2(Light input, IEnumerable<Entertainment> devsData) {
 		Id = input.Id.ToString();
 		Owner = input.Owner.Rid.ToString();
 		Channel = -1;
-		foreach (var svc in devsData) {
-			if (svc.Owner != null && svc.Owner.Rid.ToString() == Owner) {
-				SvcId = svc.Id;
-			}
+		foreach (var svc in devsData.Where(svc => svc.Owner != null && svc.Owner.Rid.ToString() == Owner)) {
+			SvcId = svc.Id;
 		}
 
 		Brightness = 255;
@@ -359,12 +356,7 @@ public class HueGroup {
 				}
 
 				var cId = fromJson ? cc : s.ChannelId;
-				foreach (var l in lights) {
-					if (l.SvcId != sm.Service.Rid) {
-						continue;
-					}
-
-					var lMap = new LightMapV2(l, cId);
+				foreach (var lMap in from l in lights where l.SvcId == sm.Service.Rid select new LightMapV2(l, cId)) {
 					Services.Add(lMap);
 
 					break;

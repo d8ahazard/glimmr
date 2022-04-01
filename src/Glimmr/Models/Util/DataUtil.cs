@@ -339,8 +339,7 @@ public static class DataUtil {
 		var serial = string.Empty;
 		try {
 			serial = GetItem("Serial");
-		} catch (KeyNotFoundException) {
-		}
+		} catch (KeyNotFoundException) { }
 
 		if (!string.IsNullOrEmpty(serial)) {
 			return serial;

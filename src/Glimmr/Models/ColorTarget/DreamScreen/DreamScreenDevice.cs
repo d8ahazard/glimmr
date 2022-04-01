@@ -91,8 +91,7 @@ public class DreamScreenDevice : ColorTarget, IColorTarget {
 		return Task.CompletedTask;
 	}
 
-	public void Dispose() {
-	}
+	public void Dispose() { }
 
 	IColorTargetData IColorTarget.Data {
 		get => _data;

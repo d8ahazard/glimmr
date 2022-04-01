@@ -20,7 +20,6 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.Hue;
 
 public sealed class HueDevice : ColorTarget, IColorTarget, IDisposable {
-	public bool Testing { get; set; }
 	private HueData Data { get; set; }
 	private int _brightness;
 	private StreamingHueClient? _client;

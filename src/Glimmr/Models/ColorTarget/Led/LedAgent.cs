@@ -24,7 +24,6 @@ public class LedAgent : IColorTargetAgent {
 	private LedData? _d1;
 	private bool _enableAbl;
 	private float _gamma;
-	private byte[] _gammaTable;
 	private int _s0Brightness;
 	private int _s0CurrentBrightness;
 	private int _s0MaxBrightness;
@@ -40,7 +39,7 @@ public class LedAgent : IColorTargetAgent {
 	public LedAgent() {
 		_sd = DataUtil.GetSystemData();
 		_gamma = _sd.GammaCorrection;
-		_gammaTable = SetGammaCorrection(_gamma, 255, 255);
+		SetGammaCorrection(_gamma, 255, 255);
 		_colors1 = ColorUtil.EmptyColors(_d0?.LedCount ?? 0);
 		_colors2 = ColorUtil.EmptyColors(_d1?.LedCount ?? 0);
 		_sd = DataUtil.GetSystemData();
@@ -66,7 +65,7 @@ public class LedAgent : IColorTargetAgent {
 	public void ReloadData() {
 		_sd = DataUtil.GetSystemData();
 		_gamma = _sd.GammaCorrection;
-		_gammaTable = SetGammaCorrection(_gamma, 255, 255);
+		SetGammaCorrection(_gamma, 255, 255);
 		LedData? d0 = DataUtil.GetDevice<LedData>("0");
 		LedData? d1 = DataUtil.GetDevice<LedData>("1");
 		if (!SystemUtil.IsRaspberryPi() || d0 == null || d1 == null) {
@@ -106,7 +105,7 @@ public class LedAgent : IColorTargetAgent {
 		_ws281X?.SetBrightness(_s1Brightness, 1);
 	}
 
-	private static byte[] SetGammaCorrection(float gamma, int max_in, int max_out) {
+	private static void SetGammaCorrection(float gamma, int max_in, int max_out) {
 		var GammaCorrection = new byte[256];
 		var logBS = new int[256];
 		for (var i = 0; i < 256; i++) {
@@ -114,14 +113,16 @@ public class LedAgent : IColorTargetAgent {
 			logBS[i] = i;
 		}
 
-		if (gamma > 1.0f) {
+		if (!(gamma > 1.0f)) {
+			return;
+		}
+
+		{
 			for (var i = 0; i < 256; i++) {
 				GammaCorrection[i] = (byte)(Math.Pow(i / (float)max_in, gamma) * max_out + 0.5);
 				logBS[i] = GammaCorrection[i];
 			}
 		}
-
-		return GammaCorrection;
 	}
 
 

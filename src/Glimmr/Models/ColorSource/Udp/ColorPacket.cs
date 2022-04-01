@@ -3,6 +3,7 @@
 using System;
 using System.Drawing;
 using System.Linq;
+using Serilog;
 
 #endregion
 
@@ -116,7 +117,8 @@ public class ColorPacket {
 				DecodeWarls(input.Skip(2).ToArray());
 				break;
 			default:
-				throw new ArgumentOutOfRangeException(nameof(UdpStreamMode));
+				Log.Debug("Invalid UDP Stream Mode.");
+				break;
 		}
 	}
 

@@ -18,32 +18,32 @@ public static class DisplayUtil {
 	[Flags]
 	public enum DisplayDeviceStateFlags {
 		/// <summary>The device is part of the desktop.</summary>
-		AttachedToDesktop = 0x1,
-		MultiDriver = 0x2,
+		[JsonProperty] AttachedToDesktop = 0x1,
+		[JsonProperty] MultiDriver = 0x2,
 
 		/// <summary>This is the primary display.</summary>
-		PrimaryDevice = 0x4,
+		[JsonProperty] PrimaryDevice = 0x4,
 
 		/// <summary>Represents a pseudo device used to mirror application drawing for remoting or other purposes.</summary>
-		MirroringDriver = 0x8,
+		[JsonProperty] MirroringDriver = 0x8,
 
 		/// <summary>The device is VGA compatible.</summary>
-		VgaCompatible = 0x16,
+		[JsonProperty] VgaCompatible = 0x16,
 
 		/// <summary>The device is removable; it cannot be the primary display.</summary>
-		Removable = 0x20,
+		[JsonProperty] Removable = 0x20,
 
 		/// <summary>The device has more display modes than its output devices support.</summary>
-		ModesPruned = 0x8000000,
-		Remote = 0x4000000,
-		Disconnect = 0x2000000
+		[JsonProperty] ModesPruned = 0x8000000,
+		[JsonProperty] Remote = 0x4000000,
+		[JsonProperty] Disconnect = 0x2000000
 	}
 
 	public enum ScreenOrientation {
-		Angle0 = 0,
-		Angle180 = 2,
-		Angle270 = 3,
-		Angle90 = 1
+		[JsonProperty] Angle0 = 0,
+		[JsonProperty] Angle180 = 2,
+		[JsonProperty] Angle270 = 3,
+		[JsonProperty] Angle90 = 1
 	}
 
 
@@ -51,10 +51,10 @@ public static class DisplayUtil {
 
 
 	[DllImport("user32.dll")]
-	public static extern bool EnumDisplaySettings(string deviceName, int modeNum, ref Devmode devMode);
+	private static extern bool EnumDisplaySettings(string deviceName, int modeNum, ref Devmode devMode);
 
 	[DllImport("User32.dll")]
-	public static extern int EnumDisplayDevices(string? lpDevice, int iDevNum, ref DisplayDevice lpDisplayDevice,
+	private static extern int EnumDisplayDevices(string? lpDevice, int iDevNum, ref DisplayDevice lpDisplayDevice,
 		int dwFlags);
 
 	public static Rectangle GetDisplaySize() {
@@ -201,7 +201,7 @@ public static class DisplayUtil {
 		[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
 		public readonly string DeviceString;
 
-		[MarshalAs(UnmanagedType.U4)] public readonly DisplayDeviceStateFlags StateFlags;
+		[MarshalAs(UnmanagedType.U4)] private readonly DisplayDeviceStateFlags StateFlags;
 
 		[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
 		public readonly string DeviceID;
@@ -288,8 +288,7 @@ public class MonitorInfo {
 	[DefaultValue("")]
 	public string? Id { get; set; }
 
-	public MonitorInfo() {
-	}
+	public MonitorInfo() { }
 
 	public MonitorInfo(DisplayUtil.DisplayDevice device, DisplayUtil.Devmode mode) {
 		DeviceName = device.DeviceName;

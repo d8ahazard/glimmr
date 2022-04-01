@@ -14,8 +14,7 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.Adalight;
 
 public class AdalightDiscovery : ColorDiscovery, IColorDiscovery {
-	public AdalightDiscovery(ColorService cs) : base(cs) {
-	}
+	public AdalightDiscovery(ColorService cs) : base(cs) { }
 
 	public async Task Discover(int timeout, CancellationToken ct) {
 		var sd = DataUtil.GetSystemData();

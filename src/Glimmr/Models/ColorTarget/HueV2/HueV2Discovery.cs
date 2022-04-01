@@ -17,12 +17,10 @@ namespace Glimmr.Models.ColorTarget.HueV2;
 
 public class HueV2Discovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth {
 	private readonly HttpBridgeLocator _bridgeLocatorHttp;
-	private readonly ControlService _controlService;
 
 	public HueV2Discovery(ColorService colorService) : base(colorService) {
 		_bridgeLocatorHttp = new HttpBridgeLocator();
 		_bridgeLocatorHttp.BridgeFound += DeviceFound;
-		_controlService = colorService.ControlService;
 	}
 
 	public async Task Discover(int timeout, CancellationToken ct) {
@@ -78,11 +76,11 @@ public class HueV2Discovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth 
 		return devData;
 	}
 
-	
-	private void DeviceFound(IBridgeLocator bridgeLocator, LocatedBridge locatedBridge) {
+
+	private static void DeviceFound(IBridgeLocator bridgeLocator, LocatedBridge locatedBridge) {
 		var data = new HueV2Data(locatedBridge);
 		data = UpdateDeviceData(data);
-		_controlService.AddDevice(data).ConfigureAwait(false);
+		ControlService.AddDevice(data).ConfigureAwait(false);
 	}
 
 	private static HueV2Data UpdateDeviceData(HueV2Data data) {
@@ -98,7 +96,7 @@ public class HueV2Discovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth 
 			appKey = dev.AppKey;
 			token = dev.Token;
 		}
-		
+
 		if (string.IsNullOrEmpty(appKey)) {
 			Log.Debug("No app key, returning..");
 			return data;

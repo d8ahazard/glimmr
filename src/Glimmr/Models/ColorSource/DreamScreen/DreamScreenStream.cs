@@ -108,16 +108,21 @@ public class DreamScreenStream : ColorSource {
 			switch (e.Response.Type) {
 				case MessageType.Mode:
 					var mode = (DeviceMode)int.Parse(e.Response.Payload.ToString());
-					if (mode == DeviceMode.Video || mode == DeviceMode.Ambient) {
+					if (mode is DeviceMode.Video or DeviceMode.Ambient) {
 						_cs.ControlService.SetMode(GlimmrMode.DreamScreen).ConfigureAwait(false);
 					}
 
-					if (mode == DeviceMode.Ambient) {
-						_cs.ControlService.SetMode(GlimmrMode.Ambient).ConfigureAwait(false);
-					}
-
-					if (mode == DeviceMode.Off) {
-						_cs.ControlService.SetMode(GlimmrMode.Off).ConfigureAwait(false);
+					switch (mode) {
+						case DeviceMode.Ambient:
+							_cs.ControlService.SetMode(GlimmrMode.Ambient).ConfigureAwait(false);
+							break;
+						case DeviceMode.Off:
+							_cs.ControlService.SetMode(GlimmrMode.Off).ConfigureAwait(false);
+							break;
+						case DeviceMode.Video:
+							break;
+						case DeviceMode.Audio:
+							break;
 					}
 
 					break;

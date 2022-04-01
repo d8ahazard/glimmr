@@ -120,6 +120,7 @@ public class WledData : IColorTargetData {
 					seg.Offset = seg.Start;
 				}
 			}
+
 			Name = State.Info.Name;
 			Brightness = (int)(jsonObj.WledState.Bri / 255f * 100);
 		} catch (Exception e) {
@@ -233,6 +234,8 @@ public class WledData : IColorTargetData {
 
 				return props.ToArray();
 			}
+			case StripMode.Normal:
+			case StripMode.Loop:
 			default:
 				return new[] {
 					new("ledmap", "ledmap", ""),

@@ -1,6 +1,10 @@
-﻿using System;
+﻿#region
 
-namespace Glimmr.Models.Frame; 
+using System;
+
+#endregion
+
+namespace Glimmr.Models.Frame;
 
 public class FrameCropTrigger {
 	public bool Triggered => _count >= _max;
@@ -27,13 +31,15 @@ public class FrameCropTrigger {
 			_count = 0;
 			return;
 		}
-		
+
 		if (Math.Abs(dim - _dimension) <= 2) {
 			if (_count < _max + 4) {
 				_count++;
 			}
 		} else {
-			if (_count > 0) _count--;
+			if (_count > 0) {
+				_count--;
+			}
 		}
 
 		if (_count < _max) {

@@ -565,11 +565,11 @@ function setSocketListeners() {
             ambientForm.reset();
         }
     });
-    
+
     websocket.on('toast', function (title, message) {
         console.log("Toast: ", title, message);
         showToast(title, message);
-    }); 
+    });
 
     websocket.on('inputImage', function (data) {
         document.getElementById("inputPreview").src = "data:image/png;base64," + data;
@@ -696,28 +696,28 @@ function showToast(title, body) {
     toast.setAttribute("role", "alert");
     toast.setAttribute("aria-live", "assertive");
     toast.setAttribute("aria-atomic", "true");
-    
+
     let header = document.createElement("div");
     header.classList.add("toast-header");
-    
+
     let strong = document.createElement("strong");
     strong.classList.add("mr-auto");
     strong.textContent = title;
-    
+
     let button = document.createElement("button");
     button.type = "button";
-    button.classList.add("ml-2","btn","btn-sm","close");
+    button.classList.add("ml-2", "btn", "btn-sm", "close");
     button.setAttribute("data-dismiss", "toast");
     button.setAttribute("aria-label", "Close");
-    
+
     let span = document.createElement("span");
     span.setAttribute("aria-hidden", "true");
     span.textContent = "x";
-    
+
     let bodyDiv = document.createElement("div");
     bodyDiv.classList.add("toast-body");
     bodyDiv.textContent = body;
-    
+
     button.appendChild(span);
     header.appendChild(strong);
     header.appendChild(button);
@@ -735,7 +735,7 @@ function showToast(title, body) {
         showMethod: "fadeIn",
         hideMethod: "fadeOut"
     });
-    toastEl.show();    
+    toastEl.show();
 }
 
 function downloadDb() {
@@ -3530,7 +3530,7 @@ function createHueMap() {
             break;
         }
     }
-    
+
     if (targetGroup !== undefined) {
         let services = targetGroup["services"];
         for (let l in services) {
@@ -3744,10 +3744,10 @@ function drawNanoShapes() {
         let sWidth = 1;
         if (shape === 9) {
             fontSize = 15;
-            tOffset/=2;
+            tOffset /= 2;
             sWidth = .5;
         }
-        
+
         let sText = new Konva.Text({
             x: x,
             y: y,
@@ -3770,15 +3770,15 @@ function drawNanoShapes() {
             strokeWidth: sWidth,
             fillAfterStrokeEnabled: true
         });
-        
+
         let orientation = data["o"];
         // Draw each individual shape
         let sides = 0;
         switch (shape) {
             // Hexagon
             case 7:
-            sides = 6;
-            orientation += 30;
+                sides = 6;
+                orientation += 30;
                 break;
             // Triangles
             case 0:
@@ -3836,9 +3836,9 @@ function drawNanoShapes() {
         shapeGroup.add(sText);
         shapeGroup.add(sText2);
     }
-    
+
     cLayer.add(shapeGroup);
-    
+
     let container = document.getElementById('stageCol');
 
     // now we need to fit stage into parent

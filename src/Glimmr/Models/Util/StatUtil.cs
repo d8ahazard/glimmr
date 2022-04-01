@@ -244,7 +244,11 @@ public static class StatUtil {
 				continue;
 			}
 
-			if (data.Contains("used memory")) {
+			if (!data.Contains("used memory")) {
+				continue;
+			}
+
+			{
 				var str = data.Replace("K used memory", "");
 				if (float.TryParse(str, out var foo)) {
 					used = foo;

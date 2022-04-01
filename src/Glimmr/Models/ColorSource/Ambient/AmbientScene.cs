@@ -85,8 +85,7 @@ public class AmbientScene {
 	[JsonProperty]
 	public string[][]? ColorMatrix { get; set; }
 
-	public AmbientScene() {
-	}
+	public AmbientScene() { }
 
 	public AmbientScene(string name, string[][] toArray, string md, float delay, int step) {
 		Name = name;

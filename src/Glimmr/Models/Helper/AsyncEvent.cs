@@ -45,10 +45,6 @@ public class AsyncEvent<TEventArgs> where TEventArgs : DynamicEventArgs {
 			throw new NullReferenceException("callback is null");
 		}
 
-		if (e == null) {
-			return null;
-		}
-
 		lock (e._locker) {
 			e._invocationList.Remove(callback);
 		}

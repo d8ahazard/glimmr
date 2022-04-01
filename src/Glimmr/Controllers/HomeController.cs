@@ -1,7 +1,6 @@
 ﻿#region
 
 using System.Diagnostics;
-using Glimmr.Models;
 using Glimmr.Models.Helper;
 using Microsoft.AspNetCore.Mvc;
 

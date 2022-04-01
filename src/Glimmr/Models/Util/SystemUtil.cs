@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using DirectShowLib;
 using Emgu.CV;
 using Glimmr.Hubs;
+using Glimmr.Models.Constant;
 using Microsoft.AspNetCore.SignalR;
 using Serilog;
 
@@ -23,8 +24,8 @@ using Serilog;
 namespace Glimmr.Models.Util;
 
 public static class SystemUtil {
-
 	private static DateTime? LastUpdate;
+
 	public static void Reboot() {
 		Log.Debug("Rebooting");
 		if (IsRaspberryPi()) {
@@ -90,7 +91,7 @@ public static class SystemUtil {
 		var updateNeeded = false;
 		var now = DateTime.Now;
 		if (LastUpdate != null) {
-			var last = (DateTime) LastUpdate;
+			var last = (DateTime)LastUpdate;
 			var diff = last - now;
 			var diffInSeconds = Math.Abs(diff.TotalSeconds);
 			updateNeeded = diffInSeconds <= 60;
@@ -99,19 +100,22 @@ public static class SystemUtil {
 				Log.Information($"Last update attempt was {diffInSeconds} seconds ago, forcing update.");
 			}
 		}
+
 		LastUpdate = DateTime.Now;
 		var version = Version.Parse("0.0.0");
 		var ver = Assembly.GetEntryAssembly()?.GetName().Version;
-		if (ver != null) version = ver;
+		if (ver != null) {
+			version = ver;
+		}
 
 		if (!updateNeeded) {
 			try {
-				var relUrl = "https://api.github.com/repos/d8ahazard/glimmr/releases/latest";
 				using var handler = new HttpClientHandler();
 				handler.UseDefaultCredentials = true;
 				using var client = new HttpClient(handler);
-				client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Glimmr", "1.2.6")); // set your own values here
-				var cj = client.GetFromJsonAsync<GithubRelease>(relUrl).Result;
+				client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Glimmr",
+					"1.2.6")); // set your own values here
+				var cj = client.GetFromJsonAsync<GithubRelease>(GlimmrConstants.relUrl).Result;
 				if (cj != null) {
 					Log.Debug("Release fetched...");
 					var tag = cj.tag_name;
@@ -119,7 +123,8 @@ public static class SystemUtil {
 					Log.Debug("Tag is " + tag + " versus " + version);
 					updateNeeded = newVersion.CompareTo(version) > 0;
 					if (updateNeeded) {
-						hubContext.Clients.All.SendAsync("toast", "Updating", "Updating from	" + version + " to " + newVersion + ".");
+						hubContext.Clients.All.SendAsync("toast", "Updating",
+							"Updating from	" + version + " to " + newVersion + ".");
 					}
 				} else {
 					Log.Debug("Can't get cj there...");
@@ -130,15 +135,16 @@ public static class SystemUtil {
 		}
 
 		if (!updateNeeded) {
-			hubContext.Clients.All.SendAsync("toast", "Up-to-date", $"Software version {version} is the latest available.");
+			hubContext.Clients.All.SendAsync("toast", "Up-to-date",
+				$"Software version {version} is the latest available.");
 			Log.Debug("No updates are required at this time.");
 			return;
 		}
-		
+
 		Log.Debug("Updating...");
 		Log.Information("Backing up current settings...");
 		DataUtil.BackupDb();
-		
+
 		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 			var appDir = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
 			var cmd = Path.Join(appDir, "update_win.ps1");

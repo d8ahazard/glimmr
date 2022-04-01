@@ -1,4 +1,10 @@
-﻿namespace Glimmr.Enums;
+﻿#region
+
+using Newtonsoft.Json;
+
+#endregion
+
+namespace Glimmr.Enums;
 
 public enum ShapeType {
 	Triangle = 0,
@@ -13,13 +19,13 @@ public enum ShapeType {
 }
 
 public enum ShapeSize {
-	Triangle = 150,
-	Rhythm = 0,
-	Square = 100,
-	ControlSquareMaster = 100,
-	ControlSquarePassive = 100,
-	HexagonShapes = 67,
-	TriangleShapes = 134,
-	MiniTriangleShapes = 67,
-	ShapesController = 0
+	[JsonProperty] Triangle = 150,
+	[JsonProperty] Rhythm = 0,
+	[JsonProperty] Square = 100,
+	[JsonProperty] ControlSquareMaster = 100,
+	[JsonProperty] ControlSquarePassive = 100,
+	[JsonProperty] HexagonShapes = 67,
+	[JsonProperty] TriangleShapes = 134,
+	[JsonProperty] MiniTriangleShapes = 67,
+	[JsonProperty] ShapesController = 0
 }

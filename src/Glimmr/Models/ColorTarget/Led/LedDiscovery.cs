@@ -11,8 +11,7 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.Led;
 
 public class LedDiscovery : ColorDiscovery, IColorDiscovery {
-	public LedDiscovery(ColorService colorService) : base(colorService) {
-	}
+	public LedDiscovery(ColorService colorService) : base(colorService) { }
 
 	public async Task Discover(int timeout, CancellationToken ct) {
 		DataUtil.DeleteDevice("2");

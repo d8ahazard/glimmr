@@ -46,13 +46,13 @@ public class ControlService : BackgroundService {
 	public UdpClient UdpClient { get; private set; } = null!;
 	private static Timer? _bt;
 
+	private static IHubContext<SocketServer>? _hubContext;
+
 	private static LoggingLevelSwitch? _levelSwitch;
 
 	private static ControlService _myCs = null!;
 
 	private static Timer? _ut;
-
-	private static IHubContext<SocketServer>? _hubContext;
 
 	public AsyncEvent<DynamicEventArgs> DemoLedEvent = null!;
 	public AsyncEvent<DynamicEventArgs> DeviceReloadEvent = null!;
@@ -214,7 +214,10 @@ public class ControlService : BackgroundService {
 							await clientProxy.SendAsync("auth", "authorized");
 						}
 
-						if (_hubContext == null) return true;
+						if (_hubContext == null) {
+							return true;
+						}
+
 						await _hubContext.Clients.All.SendAsync("device",
 								JsonConvert.SerializeObject((IColorTargetData)data, serializerSettings))
 							.ConfigureAwait(false);
@@ -268,7 +271,10 @@ public class ControlService : BackgroundService {
 
 
 	public async Task NotifyClients() {
-		if (_hubContext == null) return;
+		if (_hubContext == null) {
+			return;
+		}
+
 		await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized(this));
 	}
 
@@ -332,7 +338,7 @@ public class ControlService : BackgroundService {
 		}
 	}
 
-	private void ShowHeader() {
+	private static void ShowHeader() {
 		var entry = Assembly.GetEntryAssembly();
 		var version = "1.1.0";
 		if (entry != null) {
@@ -432,7 +438,7 @@ v. {version}
 	}
 
 
-	public async Task AddDevice(IColorTargetData data) {
+	public static async Task AddDevice(IColorTargetData data) {
 		await DataUtil.AddDeviceAsync(data);
 		Log.Debug("Adding device " + data.Name);
 		IColorTargetData? data2 = DataUtil.GetDevice(data.Id) ?? null;
@@ -440,13 +446,19 @@ v. {version}
 			var serializerSettings = new JsonSerializerSettings {
 				ContractResolver = new CamelCasePropertyNamesContractResolver()
 			};
-			if (_hubContext == null) return;
+			if (_hubContext == null) {
+				return;
+			}
+
 			await _hubContext.Clients.All.SendAsync("device", JsonConvert.SerializeObject(data2, serializerSettings));
 		}
 	}
 
-	public async Task SendLogLine(LogEvent message) {
-		if (_hubContext == null) return;
+	public static async Task SendLogLine(LogEvent message) {
+		if (_hubContext == null) {
+			return;
+		}
+
 		await _hubContext.Clients.All.SendAsync("log", JsonConvert.SerializeObject(message));
 	}
 
@@ -480,7 +492,10 @@ v. {version}
 		_ut.Interval = 1000 * 60 * 60 * _sd.AutoUpdateTime;
 		_ut.Elapsed += CheckUpdate;
 		_ut.Start();
-		if (_hubContext != null) await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized(this));
+		if (_hubContext != null) {
+			await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized(this));
+		}
+
 		RefreshSystemEvent.Invoke();
 	}
 
@@ -499,7 +514,10 @@ v. {version}
 				SystemUtil.Reboot();
 				break;
 			case "update":
-				if (_hubContext != null) SystemUtil.Update(_hubContext);
+				if (_hubContext != null) {
+					SystemUtil.Update(_hubContext);
+				}
+
 				break;
 		}
 
@@ -512,10 +530,13 @@ v. {version}
 		await RefreshDevice(device.Id);
 	}
 
-	public async Task SendImage(string method, Mat image) {
+	public static async Task SendImage(string method, Mat image) {
 		var vb = new VectorOfByte();
 		CvInvoke.Imencode(".png", image, vb);
-		if (_hubContext == null) return;
+		if (_hubContext == null) {
+			return;
+		}
+
 		await _hubContext.Clients.All.SendAsync(method, vb.ToArray());
 	}
 

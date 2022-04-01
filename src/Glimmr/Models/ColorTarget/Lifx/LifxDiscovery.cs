@@ -16,18 +16,15 @@ namespace Glimmr.Models.ColorTarget.Lifx;
 public class LifxDiscovery : ColorDiscovery, IColorDiscovery {
 	protected virtual string DeviceTag => "Bulb";
 	private readonly LifxClient? _client;
-	private readonly ControlService _controlService;
 
 	public LifxDiscovery(ColorService cs) : base(cs) {
 		var client = cs.ControlService.GetAgent("LifxAgent");
-		_controlService = cs.ControlService;
 		if (client == null) {
 			return;
 		}
 
 		_client = client;
 		_client.DeviceDiscovered += Client_DeviceDiscovered;
-		_controlService = cs.ControlService;
 	}
 
 	public async Task Discover(int timeout, CancellationToken ct) {
@@ -51,7 +48,7 @@ public class LifxDiscovery : ColorDiscovery, IColorDiscovery {
 		}
 
 		Log.Debug("Adding device: " + JsonConvert.SerializeObject(ld));
-		await _controlService.AddDevice(ld);
+		await ControlService.AddDevice(ld);
 	}
 
 	private async Task<LifxData?> GetBulbInfo(Device b) {

@@ -179,18 +179,22 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 				toSend = output;
 				break;
 			}
-			default: {
+			case StripMode.Loop: {
 				toSend = ColorUtil.TruncateColors(toSend, _offset, _ledCount, _multiplier);
-				if (_stripMode == StripMode.Loop) {
-					toSend = ShiftColors(toSend);
-				} else {
-					if (_data.ReverseStrip) {
-						toSend = toSend.Reverse().ToArray();
-					}
+				toSend = ShiftColors(toSend, _data.ReverseStrip);
+				break;
+			}
+			case StripMode.Normal: {
+				toSend = ColorUtil.TruncateColors(toSend, _offset, _ledCount, _multiplier);
+				if (_data.ReverseStrip) {
+					toSend = toSend.Reverse().ToArray();
 				}
 
 				break;
 			}
+			default:
+				Log.Debug("Well, this is weird...");
+				break;
 		}
 
 		if (_ep == null) {
@@ -212,10 +216,10 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 	}
 
 
-	private Color[] ShiftColors(IReadOnlyList<Color> input) {
+	private static Color[] ShiftColors(IReadOnlyList<Color> input, bool reverse) {
 		var output = new Color[input.Count];
 		var il = output.Length - 1;
-		if (!_data.ReverseStrip) {
+		if (!reverse) {
 			for (var i = 0; i < input.Count / 2; i++) {
 				output[i] = input[i];
 				output[il - i] = input[i];

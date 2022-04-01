@@ -20,7 +20,6 @@ using Color = System.Drawing.Color;
 namespace Glimmr.Models.ColorTarget.HueV2;
 
 public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
-	public bool Testing { get; set; }
 	private HueV2Data Data { get; set; }
 	private int _brightness;
 	private StreamingHueClient? _client;

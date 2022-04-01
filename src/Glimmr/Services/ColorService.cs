@@ -10,7 +10,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using Glimmr.Enums;
-using Glimmr.Models;
 using Glimmr.Models.ColorSource;
 using Glimmr.Models.ColorTarget;
 using Glimmr.Models.Data;
@@ -28,11 +27,13 @@ namespace Glimmr.Services;
 
 // Handles capturing and sending color data
 public class ColorService : BackgroundService {
-	public bool Recording { get; set; }
+	public bool Recording { get; private set; }
 	public ControlService ControlService { get; }
 
 	public readonly FrameCounter Counter;
 	private readonly Stopwatch _loopWatch;
+
+	private readonly Stopwatch _recordWatch;
 	private readonly FrameSplitter _splitter;
 
 	private readonly Dictionary<string, ColorSource> _streams;
@@ -46,8 +47,6 @@ public class ColorService : BackgroundService {
 	private bool _enableAutoDisable;
 
 	private Dictionary<long, Color[]> _recording;
-
-	private readonly Stopwatch _recordWatch;
 	// Figure out how to make these generic, non-callable
 
 	private IColorTarget[] _sDevices;
@@ -184,8 +183,7 @@ public class ColorService : BackgroundService {
 		var devId = dynamicEventArgs.Arg0;
 		var disable = false;
 		var ts = new CancellationTokenSource();
-		try {
-		} catch (Exception) {
+		try { } catch (Exception) {
 			// Ignored
 		}
 
@@ -459,13 +457,16 @@ public class ColorService : BackgroundService {
 				if (!doEnable) {
 					await dev.FlashColor(Color.Black);
 				}
+
 				return;
 			}
 
-			if (enabled && !doEnable && dev.Streaming) {
-				Log.Information("Stopping disabled device: " + dev.Id);
-				await dev.StopStream().ConfigureAwait(false);
+			if (!enabled || doEnable || !dev.Streaming) {
+				return;
 			}
+
+			Log.Information("Stopping disabled device: " + dev.Id);
+			await dev.StopStream().ConfigureAwait(false);
 			return;
 		}
 
@@ -625,7 +626,7 @@ public class ColorService : BackgroundService {
 		}
 	}
 
-	private Task WrapTask(Task toWrap, CancellationToken token) {
+	private static Task WrapTask(Task toWrap, CancellationToken token) {
 		return Task.Run(async () => {
 			try {
 				await Task.Run(async () => {

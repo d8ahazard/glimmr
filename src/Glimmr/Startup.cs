@@ -18,10 +18,18 @@ using Newtonsoft.Json;
 namespace Glimmr;
 
 public class Startup {
-	private const string Version = "v1.4";
-
 	// This method gets called by the runtime. Use this method to add services to the container.
 	public static void ConfigureServices(IServiceCollection services) {
+		var val = "0.0.0.0";
+		var assembly = Assembly.GetEntryAssembly();
+		if (assembly != null) {
+			var attrib = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+			if (attrib != null) {
+				val = attrib.InformationalVersion;
+			}
+		}
+
+		var Version = val.Split("-")[0];
 		services.AddControllersWithViews();
 		services.AddControllers()
 			.AddJsonOptions(options => { options.JsonSerializerOptions.PropertyNamingPolicy = null; })
@@ -55,6 +63,17 @@ public class Startup {
 
 	// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
 	public static void Configure(IApplicationBuilder app, IWebHostEnvironment env) {
+		var val = "0.0.0.0";
+		var assembly = Assembly.GetEntryAssembly();
+		if (assembly != null) {
+			var attrib = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+			if (attrib != null) {
+				val = attrib.InformationalVersion;
+			}
+		}
+
+		var Version = val.Split("-")[0];
+
 		if (env.IsDevelopment()) {
 			app.UseDeveloperExceptionPage();
 		} else {
@@ -80,10 +99,7 @@ public class Startup {
 		app.Use(async (context, next) => {
 			var unused = context.RequestServices
 				.GetRequiredService<IHubContext<SocketServer>>();
-
-			if (next != null) {
-				await next.Invoke();
-			}
+			await next.Invoke();
 		});
 	}
 }
