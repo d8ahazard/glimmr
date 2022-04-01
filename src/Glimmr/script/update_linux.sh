@@ -14,7 +14,7 @@ fi
 
 arch="$(arch)"
 PUBPROFILE="Linux"
-PUBPATH="linux"
+PUBPATH="linux-x64"
 
 if [ -f "/usr/bin/raspi-config" ] && [ "$arch" == "armv71" ] 
   then

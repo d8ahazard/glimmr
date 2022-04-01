@@ -51,7 +51,6 @@ for %%x in (
     echo Creating DEB/RPM for %%x
     dotnet deb -c Release -o .\bin -r %%x
     dotnet rpm -c Release -o .\bin -r %%x
-    pause
     cd ..
         
     echo Archiving %%x

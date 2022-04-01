@@ -13,7 +13,7 @@ cd $HOME || exit
 echo "Downloading latest release."
 ver=$(curl -s "https://api.github.com/repos/d8ahazard/glimmr/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
 echo ver is $ver
-url="https://github.com/d8ahazard/glimmr/releases/download/$ver/Glimmr-osx-$ver.tgz"
+url="https://github.com/d8ahazard/glimmr/releases/download/$ver/Glimmr.$ver.osx-x64.tgz"
 echo Grabbing archive from $url
 curl -L -o $HOME/archive.tgz $url
 rm -rf /Applications/glimmr/*
