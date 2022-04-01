@@ -45,7 +45,7 @@ cd /tmp || exit
 
 echo "Updating glimmr to version $ver." >> $log
 echo "Updating glimmr to version $ver."
-url="https://github.com/d8ahazard/glimmr/releases/download/$ver/Glimmr-$ver.$PUBPATH.tgz"
+url="https://github.com/d8ahazard/glimmr/releases/download/$ver/Glimmr.$ver.$PUBPATH.tgz"
 echo "Grabbing archive from $url" >> $log
 echo "Grabbing archive from $url"
 wget -O archive.tgz "$url"
