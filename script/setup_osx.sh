@@ -20,7 +20,7 @@ if [ ! -d "/Library/Glimmr/$ver" ]
 # Make dir
   mkdir /Library/Glimmr/"$ver"/
 fi
-url="https://github.com/d8ahazard/glimmr/releases/download/$ver/Glimmr-osx-$ver.tgz"
+url="https://github.com/d8ahazard/glimmr/releases/download/$ver/Glimmr.$ver.osx-x64.tar.gz"
 echo Grabbing archive from "$url"
 curl -L -o "$HOME"/archive.tgz "$url"
 tar zxvf "$HOME"/archive.tgz -C /Library/Glimmr/"$ver"

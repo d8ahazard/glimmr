@@ -9,7 +9,7 @@ OutputDir=bin
 OutputBaseFilename=Glimmr-win-arm-installer
 
 [Files]
-Source: "bin\win-arm\*"; DestDir: "{app}";Flags: ignoreversion recursesubdirs
+Source: "bin\Release\net6.0\win-arm64\*"; DestDir: "{app}";Flags: ignoreversion recursesubdirs
 
 [Icons]
 Name: "{group}\Glimmr"; Filename: "{app}\Glimmr.exe"; WorkingDir: "{app}"

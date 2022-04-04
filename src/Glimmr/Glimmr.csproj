@@ -1,8 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
     <PropertyGroup>
-        <RuntimeIdentifiers>ubuntu.18.04-x64;linux-arm;linux-arm64;linux-x64;osx-x64;win-x64;win-arm;win-x86;win-arm64</RuntimeIdentifiers>
         <TargetFramework>net6.0</TargetFramework>
-        <VersionPrefix>1.2.6</VersionPrefix>
+        <RuntimeIdentifiers>linux-arm;linux-arm64;linux-x64;osx-x64;win-x64;win-x86;win-arm64</RuntimeIdentifiers>
         <Product>Glimmr</Product>
         <ProductName>Glimmr</ProductName>
         <CopyRefAssembliesToPublishDirectory>false</CopyRefAssembliesToPublishDirectory>
@@ -16,7 +15,6 @@
         <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
-        <PackageVersion>1.2.6</PackageVersion>
         <Copyright>GPLv3</Copyright>
         <PackageProjectUrl>https://github.com/d8ahazard/Glimmr</PackageProjectUrl>
         <PackageLicenseUrl>https://raw.githubusercontent.com/d8ahazard/glimmr/master/COPYING</PackageLicenseUrl>
@@ -24,6 +22,8 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <NoWarn>$(NoWarn);1591</NoWarn>
         <PackageIconUrl>https://github.com/d8ahazard/glimmr/raw/master/appIcon.png</PackageIconUrl>
+        <PackageVersion>1.2.6</PackageVersion>
+        <VersionPrefix>1.2.6</VersionPrefix>
         <AssemblyVersion>1.2.6</AssemblyVersion>
         <FileVersion>1.2.6</FileVersion>
         <InvariantGlobalization>false</InvariantGlobalization>
@@ -86,11 +86,54 @@
             <NoWarn>NU1701</NoWarn>
         </PackageReference>
         <PackageReference Include="YeelightAPI" Version="1.10.2" />
+        <PackageReference Include="Packaging.Targets" Version="0.1.220" />
         <PackageReference Update="Packaging.Targets">
             <Version>0.1.220</Version>
         </PackageReference>
     </ItemGroup>
-
+   
+    <ItemGroup>
+        <ProjectReference Include="..\Image2Scene\Image2Scene.csproj" Condition="'$(RuntimeIdentifier)'=='linux-arm64'">
+            <Project>{c5e8cee5-eae6-4337-9cdf-55c907ff93c5}</Project>
+            <Name>Image2Scene</Name>
+            <RuntimeIdentifier>linux-arm64</RuntimeIdentifier>
+        </ProjectReference>
+        <ProjectReference Include="..\Image2Scene\Image2Scene.csproj" Condition="'$(RuntimeIdentifier)'=='linux-arm64'">
+            <Project>{c5e8cee5-eae6-4337-9cdf-55c907ff93c5}</Project>
+            <Name>Image2Scene</Name>
+            <RuntimeIdentifier>linux-arm64</RuntimeIdentifier>
+        </ProjectReference>
+        <ProjectReference Include="..\Image2Scene\Image2Scene.csproj" Condition="'$(RuntimeIdentifier)'=='linux-arm'">
+            <Project>{c5e8cee5-eae6-4337-9cdf-55c907ff93c5}</Project>
+            <Name>Image2Scene</Name>
+            <RuntimeIdentifier>linux-arm</RuntimeIdentifier>
+        </ProjectReference>
+        <ProjectReference Include="..\Image2Scene\Image2Scene.csproj" Condition="'$(RuntimeIdentifier)'=='linux-x64'">
+            <Project>{c5e8cee5-eae6-4337-9cdf-55c907ff93c5}</Project>
+            <Name>Image2Scene</Name>
+            <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+        </ProjectReference>
+        <ProjectReference Include="..\Image2Scene\Image2Scene.csproj" Condition="'$(RuntimeIdentifier)'=='win-x64'">
+            <Project>{c5e8cee5-eae6-4337-9cdf-55c907ff93c5}</Project>
+            <Name>Image2Scene</Name>
+            <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+        </ProjectReference>
+        <ProjectReference Include="..\Image2Scene\Image2Scene.csproj" Condition="'$(RuntimeIdentifier)'=='win-x86'">
+            <Project>{c5e8cee5-eae6-4337-9cdf-55c907ff93c5}</Project>
+            <Name>Image2Scene</Name>
+            <RuntimeIdentifier>win-x86</RuntimeIdentifier>
+        </ProjectReference>
+        <ProjectReference Include="..\Image2Scene\Image2Scene.csproj" Condition="'$(RuntimeIdentifier)'=='win-arm64'">
+            <Project>{c5e8cee5-eae6-4337-9cdf-55c907ff93c5}</Project>
+            <Name>Image2Scene</Name>
+            <RuntimeIdentifier>win-arm64</RuntimeIdentifier>
+        </ProjectReference>
+        <ProjectReference Include="..\Image2Scene\Image2Scene.csproj" Condition="'$(RuntimeIdentifier)'=='osx-x64'">
+            <Project>{c5e8cee5-eae6-4337-9cdf-55c907ff93c5}</Project>
+            <Name>Image2Scene</Name>
+            <RuntimeIdentifier>osx-x64</RuntimeIdentifier>
+        </ProjectReference>
+    </ItemGroup>
     <!-- All builds -->
     <ItemGroup>
         <None Include="../../COPYING" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
