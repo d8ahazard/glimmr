@@ -29,9 +29,11 @@ param (
 )
 $targets = "linux-arm64", "linux-arm", "linux-x64", "win-arm64", "win-x64", "win-x86", "osx-x64"
 $package = $true
-if (-not($targetRuntime -eq "all")){
-	$targets = $targetRuntime
+if ($targetDevice -ne "" -or ($service -and $targetRuntime -like "win-*") -or $css -or $js -or $web) {
 	$package = $false
+}
+if ($targetRuntime -ne "all") {
+	$targets = $targetRuntime
 }
 $extensions = "tgz", "tar.gz", "zip", "rpm", "deb", "exe", "msi"
 $version = ""
@@ -59,8 +61,22 @@ if (-not(Test-Path -Path $innoPath -PathType Leaf)) {
 	Write-Host "Inno setup found."
 }
 
-foreach ($extension IN $extensions) {
-	Remove-Item "$binPath\*.$extension"
+if ($targetRuntime -eq "all") {
+	Write-Host "Deleting previous builds..."
+	foreach ($extension IN $extensions) {
+		Remove-Item "$binPath\*.$extension"
+	}	
+}
+
+if ($package) {
+	if ($targetRuntime -eq "all") {
+		Write-Host "Deleting previous builds..."
+		foreach ($extension IN $extensions) {
+			Remove-Item "$binPath\*.$extension"
+		}
+	} else {
+		Remove-Item "$binPath\*${targetRuntime}*"
+	}	
 }
 
 Set-Location ..\src\Glimmr\
@@ -80,7 +96,13 @@ foreach ($target in $targets) {
 		dotnet publish -r $target -c Release -o "$binPath\Release\net6.0\$target" --self-contained=true $trayPath\GlimmrTray.csproj
 		if ($package) {
 			Write-Host "Creating zip..."
+			dotnet zip -c Release -r $target -o $binPath
 			Invoke-Expression -Command "$PSScriptRoot\7z.exe a -mx9 -tzip -r $binPath\$fullVersion.$target.zip $binPath\Release\net6.0\$targetRuntime\*"
+			$path = @(Get-ChildItem "$binPath\Glimmr.*.$target.zip")[0]
+			$outputFile = Split-Path $path -leaf
+			$fullVersion = $outputFile.Replace(".$target.zip", "")
+			$version = $fullVersion.Replace("Glimmr.","")
+			Write-Host "Version set to $version"
 			Write-Host "Building installer..."
 			$innoPath = "C:\Program Files (x86)\Inno Setup 6\iscc.exe"
 			$arguments = "/F$fullVersion.$target", "$glimmrPath\build_$target.iss"
@@ -116,7 +138,7 @@ foreach ($target in $targets) {
 			dotnet tarball -c Release -o $binPath -r $target
 			Write-Host "Copying OSX files for installer builder..."
 			Remove-Item $osxPath\* -Recurse
-			Copy-Item -Path "$binPath\$target\*" -Destination $glimmrPath -Recurse
+			Copy-Item -Path "$binPath\Release\net6.0\$target\*" -Destination $osxPath -Recurse
 		}
 	}	
 }
