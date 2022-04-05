@@ -23,7 +23,7 @@ if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     }
 }
 
-$download = "https://github.com/d8ahazard/glimmr/releases/download/$tag/Glimmr-windows-$tag.zip"
+$download = "https://github.com/d8ahazard/glimmr/releases/download/$tag/Glimmr.$tag.win-x64.zip"
 $zip = "$Env:ProgramData\Glimmr\archive.zip"
 
 Write-Host "Dowloading latest release"

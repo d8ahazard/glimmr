@@ -1,6 +1,6 @@
 #!/bin/bash
 PUBPROFILE="Linux";
-PUBFILE="linux"
+PUBFILE="linux-x64"
 env=${1:-"normal"}
 unameOut="$(uname -s)"
 arch="$(arch)"
