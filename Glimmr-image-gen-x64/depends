@@ -2,16 +2,12 @@ quilt
 parted
 realpath:coreutils
 qemu-arm-static:qemu-user-static
-coreutils
 debootstrap
 zerofree
 zip
 mkdosfs:dosfstools
 capsh:libcap2-bin
 bsdtar:libarchive-tools
-dosfstools
-libcap2-bin
-libarchive-tools
 grep
 rsync
 xz:xz-utils
@@ -20,9 +16,8 @@ xxd
 file
 git
 lsmod:kmod
-kmod
 bc
 qemu-nbd:qemu-utils
-qemu-utils
 kpartx
 gpg
+pigz
