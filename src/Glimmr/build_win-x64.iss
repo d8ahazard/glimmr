@@ -9,7 +9,7 @@ OutputDir=bin
 OutputBaseFilename=Glimmr-Windows-installer
 
 [Files]
-Source: "bin\Release\net6.0\win-x64\*"; DestDir: "{app}";Flags: ignoreversion recursesubdirs
+Source: "bin\Release\net6.0\win-x64\publish\*"; DestDir: "{app}";Flags: ignoreversion recursesubdirs
 
 [Icons]
 Name: "{group}\Glimmr"; Filename: "{app}\Glimmr.exe"; WorkingDir: "{app}"

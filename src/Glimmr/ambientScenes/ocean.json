@@ -1414,7 +1414,7 @@
   ],
   "MatrixDirection": "Random",
   "MatrixStep": 4,
-  "AnimationTime": 5,
+  "AnimationTime": 3,
   "Mode": "Matrix",
   "Easing": "Blend",
   "Name": "Ocean",

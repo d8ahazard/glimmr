@@ -1413,7 +1413,7 @@
     ]
   ],
   "MatrixDirection": "LTR",
-  "MatrixStep": 1,
+  "MatrixStep": 3,
   "AnimationTime": 0.25,
   "Mode": "Matrix",
   "Easing": "Blend",

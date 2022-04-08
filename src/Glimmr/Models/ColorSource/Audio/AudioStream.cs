@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Models.Data;
@@ -25,7 +26,7 @@ public class AudioStream : ColorSource {
 	public sealed override FrameBuilder? Builder { get; set; }
 
 	public sealed override FrameSplitter Splitter { get; set; }
-	private const int SampleFreq = 48000;
+	private int _SampleFreq = 48000;
 	private const int SampleSize = 512;
 	private CancellationToken? _ct;
 	private int _cutoff;
@@ -101,7 +102,11 @@ public class AudioStream : ColorSource {
 			try {
 				Bass.RecordInit(_recordDeviceIndex);
 				const int period = 33;
-				_handle = Bass.RecordStart(SampleFreq, 2, BassFlags.Default, period, UpdateAudio);
+				Log.Debug("WTF: " + _SampleFreq);
+				_handle = Bass.RecordStart(0, 0, BassFlags.Default, period, UpdateAudio);
+				Log.Debug("Trying to get windows frequency??");
+				var nfo = Bass.ChannelGetAttribute(_handle, ChannelAttribute.Bitrate);
+				Log.Debug("Freq: " + nfo);
 				_hasDll = true;
 				Log.Information($"Recording init completed for {_sd?.RecDev ?? ""} ({_recordDeviceIndex})");
 			} catch (DllNotFoundException) {
@@ -174,6 +179,11 @@ public class AudioStream : ColorSource {
 						continue;
 					}
 
+					var freq = AudioInfo.ChannelFrequency(a);
+					if (freq != -1) {
+						Log.Debug("Setting frequency to " + freq);
+						_SampleFreq = freq;
+					}
 					Log.Debug("Setting index to " + a);
 					_recordDeviceIndex = a;
 				}
@@ -223,7 +233,7 @@ public class AudioStream : ColorSource {
 							val = 0;
 						}
 
-						var freq = FftIndex2Frequency(a, SampleSize, SampleFreq);
+						var freq = FftIndex2Frequency(a, SampleSize, _SampleFreq);
 
 						var y = Math.Sqrt(val) * 3 * 255 - 4;
 						if (y > 255) {

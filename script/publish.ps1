@@ -93,11 +93,11 @@ foreach ($target in $targets) {
 	dotnet publish -r $target -c Release -o "$binPath\Release\net6.0\$target" --self-contained=true
 	if($target -like 'win-*') {
 		Write-Host "Publishing..."
-		dotnet publish -r $target -c Release -o "$binPath\Release\net6.0\$target" --self-contained=true $trayPath\GlimmrTray.csproj
+		dotnet publish -r $target -c Release -o "$binPath\Release\net6.0\$target\publish" --self-contained=true $trayPath\GlimmrTray.csproj
 		if ($package) {
 			Write-Host "Creating zip..."
-			dotnet zip -c Release -r $target -o $binPath
-			Invoke-Expression -Command "$PSScriptRoot\7z.exe a -mx9 -tzip -r $binPath\$fullVersion.$target.zip $binPath\Release\net6.0\$targetRuntime\*"
+			dotnet zip -c Release -r $target -o $binPath --no-restore
+			#Invoke-Expression -Command "$PSScriptRoot\7z.exe a -mx9 -tzip -r $binPath\$fullVersion.$target.zip $binPath\Release\net6.0\$targetRuntime\*"
 			$path = @(Get-ChildItem "$binPath\Glimmr.*.$target.zip")[0]
 			$outputFile = Split-Path $path -leaf
 			$fullVersion = $outputFile.Replace(".$target.zip", "")
