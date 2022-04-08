@@ -22,6 +22,7 @@ using Glimmr.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
+using Log = Serilog.Log;
 
 #endregion
 

@@ -3,6 +3,7 @@
 using System.Diagnostics;
 using Glimmr.Models.Helper;
 using Microsoft.AspNetCore.Mvc;
+using Activity = System.Diagnostics.Activity;
 
 #endregion
 

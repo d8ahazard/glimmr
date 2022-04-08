@@ -16,6 +16,7 @@ using Glimmr.Models.Util;
 using Glimmr.Services;
 using Serilog;
 using static Glimmr.Models.Constant.GlimmrConstants;
+using Timer = System.Timers.Timer;
 
 #endregion
 

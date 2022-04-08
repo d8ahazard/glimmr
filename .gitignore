@@ -11,6 +11,7 @@ src/GlimmrTray/bin/*
 src/GlimmrTray/obj/*
 src/Image2Scene/bin/*
 src/Image2Scene/obj/*
+src/Glimmr-Android/*
 packages/*
 store.db*
 CodeGraphData/*
