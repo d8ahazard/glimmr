@@ -293,7 +293,7 @@ Click the "Save settings" button to submit your configuration.
 ### Swagger API
 
 Glimmr has a fully REST-ful API that supports control and enumeration of nearly every method and
-relevant data structure in the application. All methods are documented on (https://app.swaggerhub.com/apis/d8ahazard/glimmr/)[Swagger Hub].
+relevant data structure in the application. All methods are documented on [Swagger Hub](https://app.swaggerhub.com/apis/d8ahazard/glimmr/).
 Additionally, you can access the API documentation locally by going to http://<YOUR_GLIMMR_ADDRESS>/swagger/index.html.
 
 The local API reference can be used to view and set data in real-time, as well as see in-depth descriptions 
