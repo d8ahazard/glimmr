@@ -310,6 +310,7 @@ public class FrameSplitter : IDisposable {
 	}
 
 	public async Task<(Color[], Color[])> Update(Mat? frame) {
+		
 		if (frame == null || frame.IsEmpty) {
 			SourceActive = false;
 			if (!_warned) {
@@ -359,7 +360,7 @@ public class FrameSplitter : IDisposable {
 		if (clone == null || clone.IsEmpty) {
 			Log.Warning("Null/Empty input!");
 			// Dispose frame
-			frame.Dispose();
+			//frame.Dispose();
 			clone?.Dispose();
 			return (Array.Empty<Color>(), Array.Empty<Color>());
 		}
@@ -610,8 +611,8 @@ public class FrameSplitter : IDisposable {
 		var raw = image.GetRawData();
 		var unique = raw.Distinct().ToArray();
 
-		var count = Sum(raw);
-		var noImage = count == 0 || width == 0 || height == 0 || (unique.Length == 1 && unique[0] <= _cropBlackLevel);
+		//var count = Sum(raw);
+		var noImage = width == 0 || height == 0 || (unique.Length == 1 && unique[0] <= _cropBlackLevel);
 		// If it is, we can stop here
 		if (noImage) {
 			_allBlack = true;
@@ -632,15 +633,13 @@ public class FrameSplitter : IDisposable {
 		}
 
 		// Convert image to greyscale
-		var gr = new Mat();
-		CvInvoke.CvtColor(image, gr, ColorConversion.Bgr2Gray);
 
 		_allBlack = false;
 		// Check letterboxing
 		if (_cropLetter) {
 			for (var y = 0; y < hMax; y += 2) {
-				var c1 = gr.Row(height - y);
-				var c2 = gr.Row(y);
+				var c1 = image.Row(height - y);
+				var c2 = image.Row(y);
 				var b1 = c1.GetRawData().SkipLast(8).Skip(8).ToArray();
 				var b2 = c2.GetRawData().SkipLast(8).Skip(8).ToArray();
 				var l1 = Sum(b1) / b1.Length;
@@ -666,8 +665,8 @@ public class FrameSplitter : IDisposable {
 		// Check pillarboxing
 		if (_cropPillar) {
 			for (var x = 0; x < wMax; x += 2) {
-				var c1 = gr.Col(width - x);
-				var c2 = gr.Col(x);
+				var c1 = image.Col(width - x);
+				var c2 = image.Col(x);
 				var b1 = c1.GetRawData().SkipLast(8).Skip(8).ToArray();
 				var b2 = c2.GetRawData().SkipLast(8).Skip(8).ToArray();
 				var l1 = Sum(b1) / b1.Length;
@@ -691,7 +690,7 @@ public class FrameSplitter : IDisposable {
 		}
 
 		// Cleanup mat
-		gr.Dispose();
+		//image.Dispose();
 
 		// Only calculate new sectors if the value has changed
 		if (_sectorChanged) {

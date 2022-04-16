@@ -72,7 +72,7 @@ public class ControlService : BackgroundService {
 		ShowHeader();
 		_sd = DataUtil.GetSystemData();
 		_hubContext = hubContext;
-		_levelSwitch = Program.LogSwitch;
+		//_levelSwitch = Program.LogSwitch;
 		Initialize();
 		_bt = new Timer();
 		_bt.Interval = 1000 * 60 * 60;

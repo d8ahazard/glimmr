@@ -120,7 +120,7 @@ public class ColorService : BackgroundService {
 			await Initialize();
 			_loopWatch.Start();
 
-			var saveTimer = new Timer(1000);
+			var saveTimer = new Timer(5000);
 			saveTimer.Elapsed += SaveFrame;
 			saveTimer.Start();
 			while (!stoppingToken.IsCancellationRequested) {
