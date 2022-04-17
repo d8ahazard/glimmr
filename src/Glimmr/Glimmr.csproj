@@ -22,10 +22,10 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <NoWarn>$(NoWarn);1591</NoWarn>
         <PackageIconUrl>https://github.com/d8ahazard/glimmr/raw/master/appIcon.png</PackageIconUrl>
-        <PackageVersion>1.2.6</PackageVersion>
-        <VersionPrefix>1.2.6</VersionPrefix>
-        <AssemblyVersion>1.2.6</AssemblyVersion>
-        <FileVersion>1.2.6</FileVersion>
+        <PackageVersion>1.2.7</PackageVersion>
+        <VersionPrefix>1.2.7</VersionPrefix>
+        <AssemblyVersion>1.2.7</AssemblyVersion>
+        <FileVersion>1.2.7</FileVersion>
         <InvariantGlobalization>false</InvariantGlobalization>
     </PropertyGroup>
 
