@@ -44,12 +44,19 @@ public static class Program {
 		var lc = new LoggerConfiguration()
 			.Enrich.WithCaller()
 			.MinimumLevel.ControlledBy(LogSwitch)
-			.WriteTo.Console(outputTemplate: outputTemplate, theme: SystemConsoleTheme.Literate)
+			//.WriteTo.Console(outputTemplate: outputTemplate, theme: SystemConsoleTheme.Literate)
 			.Filter.ByExcluding(c => c.Properties["Caller"].ToString().Contains("SerilogLogger"))
 			.Enrich.FromLogContext()
 			.WriteTo.Async(a =>
-				a.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: outputTemplate))
-			.WriteTo.SocketSink();
+				a.File(
+					logPath,
+					rollingInterval: RollingInterval.Day,
+					outputTemplate: outputTemplate,
+					flushToDiskInterval: TimeSpan.FromSeconds(1)
+				)
+			)
+			.WriteTo.Async(a => a.SocketSink())
+			.WriteTo.Async(a => a.Console(outputTemplate: outputTemplate, theme: SystemConsoleTheme.Literate));
 
 		Log.Logger = lc.CreateLogger();
 

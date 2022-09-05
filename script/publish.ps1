@@ -165,11 +165,11 @@ if ($targetDevice -ne "" -or ($service -and $targetRuntime -like "win-*")) {
 		
 		if (-not ($full)) {
 			if ($css) {
-				pscp -P 22 -r -pw $password $binPath\Release\net6.0\$targetRuntime\wwwroot\css\* "${username}@${targetDevice}:$targetPath/wwwroot/css/"
+				pscp -P 22 -r -pw $password $binPath\Release\net6.0\$targetRuntime\wwwroot\css\ "${username}@${targetDevice}:$targetPath/wwwroot/css/"
 			} elseif ($javascript) {
-				pscp -P 22 -r -pw $password $binPath\Release\net6.0\$targetRuntime\wwwroot\js\* "${username}@${targetDevice}:$targetPath/wwwroot/js/"
+				pscp -P 22 -r -pw $password $binPath\Release\net6.0\$targetRuntime\wwwroot\js\ "${username}@${targetDevice}:$targetPath/wwwroot/js/"
 			} elseif ($web) {
-				pscp -P 22 -r -pw $password $binPath\Release\net6.0\$targetRuntime\wwwroot\* "${username}@${targetDevice}:$targetPath/wwwroot/"
+				pscp -P 22 -r -pw $password $binPath\Release\net6.0\$targetRuntime\wwwroot\ "${username}@${targetDevice}:$targetPath/wwwroot/"
 			} else {
 				foreach($file in $baseFiles) {
 					pscp -P 22 -r -pw $password $binPath\Release\net6.0\$targetRuntime\$file "${username}@${targetDevice}:$targetPath/$file"
