@@ -63,7 +63,7 @@
         <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.15.0" />
         <PackageReference Include="MMALSharp" Version="0.6.0" />
         <PackageReference Include="Nanoleaf.Core" Version="2.0.0" />
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
         <PackageReference Include="OpenRGB.NET" Version="1.7.0" />
         <PackageReference Include="HueApi" Version="0.5.42" />
         <PackageReference Include="HueApi.ColorConverters" Version="0.5.42" />
