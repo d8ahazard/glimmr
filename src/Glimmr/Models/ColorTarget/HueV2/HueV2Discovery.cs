@@ -107,9 +107,9 @@ public class HueV2Discovery : ColorDiscovery, IColorDiscovery, IColorTargetAuth 
 		Log.Debug("Connecting to " + data.IpAddress + " with key: " + data.AppKey);
 		var client = new LocalHueApi(data.IpAddress, appKey);
 		try {
-			var groups = client.GetEntertainmentConfigurations().Result.Data;
-			var devs = client.GetEntertainmentServices().Result.Data;
-			var lights = client.GetLights().Result.Data;
+			var groups = client.GetEntertainmentConfigurationsAsync().Result.Data;
+			var devs = client.GetEntertainmentServicesAsync().Result.Data;
+			var lights = client.GetLightsAsync().Result.Data;
 			data.ConfigureEntertainment(groups, devs, lights);
 			if (dev != null) {
 				dev.UpdateFromDiscovered(data);

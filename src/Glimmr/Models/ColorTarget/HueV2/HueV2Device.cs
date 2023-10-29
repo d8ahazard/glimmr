@@ -106,7 +106,7 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 		_client = new StreamingHueClient(_ipAddress, _user, _token);
 
 		// Ensure our streaming group still exists
-		var all = await _client.LocalHueApi.GetEntertainmentConfigurations();
+		var all = await _client.LocalHueApi.GetEntertainmentConfigurationsAsync();
 
 		EntertainmentConfiguration? group = null;
 		foreach (var g in all.Data.Where(g => g.Id.ToString() == _selectedGroup)) {
@@ -165,7 +165,7 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 		var connected = false;
 		try {
 			//Connect to the streaming group
-			await _client.Connect(group.Id);
+			await _client.ConnectAsync(group.Id);
 			connected = true;
 		} catch (Exception) {
 			Log.Information("Exception connecting to hue, re-trying.");
@@ -173,7 +173,7 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 
 		try {
 			if (!connected) {
-				await _client.Connect(group.Id);
+				await _client.ConnectAsync(group.Id);
 			}
 		} catch (Exception e) {
 			Log.Warning("Exception caught: " + e.Message);
@@ -182,7 +182,7 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 		}
 
 		//Start auto updating this entertainment group
-		_updateTask = _client.AutoUpdate(entGroup, ct, 60);
+		_updateTask = _client.AutoUpdateAsync(entGroup, ct, 60);
 		Log.Debug($"{Data.Tag}::Stream started: {Data.Id}");
 		Streaming = true;
 	}

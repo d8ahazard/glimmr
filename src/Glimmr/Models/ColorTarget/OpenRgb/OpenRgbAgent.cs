@@ -6,7 +6,7 @@ using System.Linq;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using OpenRGB.NET;
-using OpenRGB.NET.Models;
+using OpenRGB.NET.Utils;
 using Serilog;
 
 #endregion
@@ -16,7 +16,7 @@ namespace Glimmr.Models.ColorTarget.OpenRgb;
 public class OpenRgbAgent : IColorTargetAgent {
 	public bool Connected => _client?.Connected ?? false;
 	private string Ip { get; set; } = "";
-	private OpenRGBClient? _client;
+	private OpenRgbClient? _client;
 	private Device[]? _devices;
 	private int _port;
 
@@ -83,8 +83,7 @@ public class OpenRgbAgent : IColorTargetAgent {
 			if (!_client.Connected) {
 				return false;
 			}
-
-			_client.SetMode(deviceId, mode);
+			_client.UpdateMode(deviceId,mode);
 			return true;
 		} catch (Exception e) {
 			Log.Warning("Exception starting OpenRGB: " + e.Message);
@@ -120,7 +119,7 @@ public class OpenRgbAgent : IColorTargetAgent {
 		}
 
 		try {
-			_client = new OpenRGBClient(Ip, _port, "Glimmr", false);
+			_client = new OpenRgbClient(Ip, _port, "Glimmr", false);
 			Connect();
 		} catch (Exception e) {
 			Log.Debug("Exception creating OpenRGB Client: " + e.Message);

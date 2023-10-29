@@ -8,8 +8,7 @@ using System.Linq;
 using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
-using OpenRGB.NET.Enums;
-using OpenRGB.NET.Models;
+using OpenRGB.NET;
 
 #endregion
 
