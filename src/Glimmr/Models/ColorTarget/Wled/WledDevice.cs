@@ -104,6 +104,7 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		await FlashColor(Color.Black);
 		await SetLightPower(false);
 		await Task.FromResult(true);
+		await _wLedClient.Post(new StateRequest { On = false });
 		Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 	}
 
@@ -246,6 +247,12 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		var oc = 0;
 		while (res.On != on && oc < 5) {
 			await _wLedClient.Post(new StateRequest { On = on });
+			// If on is false, send a manual post directly to the device with a JSON body of "live":false
+			if (!on) {
+				var client = new WebClient();
+				client.Headers.Add("Content-Type", "application/json");
+				client.UploadString("http://" + IpAddress + "/json/state", "{\"live\":false}");
+			}
 			res = await _wLedClient.GetState();
 			oc++;
 		}

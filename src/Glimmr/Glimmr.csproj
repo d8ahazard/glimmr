@@ -23,7 +23,7 @@
         <NoWarn>$(NoWarn);1591</NoWarn>
         <PackageIconUrl>https://github.com/d8ahazard/glimmr/raw/master/appIcon.png</PackageIconUrl>
         <PackageVersion>1.2.8</PackageVersion>
-        <VersionPrefix>1.2.7</VersionPrefix>
+        <VersionPrefix>1.2.8</VersionPrefix>
         <AssemblyVersion>1.2.8</AssemblyVersion>
         <FileVersion>1.2.8</FileVersion>
         <InvariantGlobalization>false</InvariantGlobalization>

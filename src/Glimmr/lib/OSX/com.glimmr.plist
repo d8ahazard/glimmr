@@ -6,11 +6,11 @@
 	<string>com.glimmr.loginscript</string>
 	<key>ProgramArguments</key>
 	<array>
-		<string>/Library/Glimmr/1.2.6/Glimmr</string>
+		<string>/Library/Glimmr/1.2.8/Glimmr</string>
 	</array>
 	<key>RunAtLoad</key>
 	<true/>
 	<key>WorkingDirectory</key>
-	<string>/Library/Glimmr/1.2.7/</string>
+	<string>/Library/Glimmr/1.2.8/</string>
 </dict>
 </plist>

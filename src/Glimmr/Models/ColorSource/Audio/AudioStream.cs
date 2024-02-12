@@ -103,7 +103,7 @@ public class AudioStream : ColorSource {
 				Bass.RecordInit(_recordDeviceIndex);
 				const int period = 33;
 				Log.Debug("WTF: " + _SampleFreq);
-				_handle = Bass.RecordStart(0, 0, BassFlags.Default, period, UpdateAudio);
+				_handle = Bass.RecordStart(_SampleFreq, 2, BassFlags.Default, period, UpdateAudio);
 				Log.Debug("Trying to get windows frequency??");
 				var nfo = Bass.ChannelGetAttribute(_handle, ChannelAttribute.Bitrate);
 				Log.Debug("Freq: " + nfo);

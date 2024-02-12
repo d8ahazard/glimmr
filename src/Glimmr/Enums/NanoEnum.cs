@@ -15,7 +15,7 @@ public enum ShapeType {
 	HexagonShapes = 7,
 	TriangleShapes = 8,
 	MiniTriangleShapes = 9,
-	ShapesController = 10
+	ControllerShapes = 10
 }
 
 public enum ShapeSize {

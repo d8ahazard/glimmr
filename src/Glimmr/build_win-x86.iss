@@ -1,6 +1,6 @@
 [Setup]
 AppName=Glimmr
-AppVersion=1.2.7
+AppVersion=1.2.8
 DefaultDirName={autopf}\Glimmr
 DefaultGroupName=Glimmr
 SetupIconFile=appIcon.ico

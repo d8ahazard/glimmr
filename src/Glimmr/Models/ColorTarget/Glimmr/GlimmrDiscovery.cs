@@ -15,15 +15,17 @@ using Serilog;
 namespace Glimmr.Models.ColorTarget.Glimmr;
 
 public class GlimmrDiscovery : ColorDiscovery, IColorDiscovery {
+	private readonly ControlService _controlService;
 	private readonly MulticastService _mDns;
 	private readonly ServiceDiscovery _sd;
 	private List<string> _ids;
 	private bool _stopDiscovery;
+	private static string _recordName = "_glimmr._tcp";
 
 	public GlimmrDiscovery(ColorService cs) : base(cs) {
-		var controlService = cs.ControlService;
-		_mDns = controlService.MulticastService;
-		_sd = controlService.ServiceDiscovery;
+		_controlService = cs.ControlService;
+		_mDns = _controlService.MulticastService;
+		_sd = _controlService.ServiceDiscovery;
 		_ids = new List<string>();
 	}
 
@@ -35,7 +37,7 @@ public class GlimmrDiscovery : ColorDiscovery, IColorDiscovery {
 			_sd.ServiceDiscovered += ServiceDiscovered;
 			_sd.ServiceInstanceDiscovered += DeviceDiscovered;
 			_mDns.Start();
-			_mDns.SendQuery("_glimmr._tcp", type: DnsType.PTR);
+			_mDns.SendQuery(_recordName, type: DnsType.PTR);
 			await Task.Delay(TimeSpan.FromSeconds(timeout), CancellationToken.None);
 			_mDns.NetworkInterfaceDiscovered -= InterfaceDiscovered;
 			_sd.ServiceDiscovered -= ServiceDiscovered;
@@ -55,7 +57,7 @@ public class GlimmrDiscovery : ColorDiscovery, IColorDiscovery {
 	}
 
 	private void InterfaceDiscovered(object? sender, NetworkInterfaceEventArgs e) {
-		_sd.QueryServiceInstances("_glimmr._tcp");
+		_sd.QueryServiceInstances(_recordName);
 	}
 
 	private void DeviceDiscovered(object? sender, ServiceInstanceDiscoveryEventArgs e) {
