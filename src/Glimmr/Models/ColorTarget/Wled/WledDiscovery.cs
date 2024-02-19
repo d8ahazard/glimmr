@@ -18,6 +18,7 @@ public class WledDiscovery : ColorDiscovery, IColorDiscovery {
 	private readonly ServiceDiscovery _sd;
 	private List<string> _ids;
 	private bool _stopDiscovery;
+	private const string _serviceName = "_wled._tcp";
 
 	public WledDiscovery(ColorService cs) : base(cs) {
 		var controlService = cs.ControlService;
@@ -35,7 +36,7 @@ public class WledDiscovery : ColorDiscovery, IColorDiscovery {
 			_sd.ServiceDiscovered += ServiceDiscovered;
 			_sd.ServiceInstanceDiscovered += DeviceDiscovered;
 			_mDns.Start();
-			_mDns.SendQuery("_wled._tcp", type: DnsType.PTR);
+			_mDns.SendQuery(_serviceName, type: DnsType.PTR);
 			await Task.Delay(TimeSpan.FromSeconds(timeout), CancellationToken.None);
 			_mDns.NetworkInterfaceDiscovered -= InterfaceDiscovered;
 			_sd.ServiceDiscovered -= ServiceDiscovered;
@@ -49,54 +50,73 @@ public class WledDiscovery : ColorDiscovery, IColorDiscovery {
 	}
 
 	private void ServiceDiscovered(object? sender, DomainName serviceName) {
-		if (!_stopDiscovery) {
+		if (!_stopDiscovery && serviceName.ToString().Contains(_serviceName)) {
+			Log.Debug("WLED: Service discovered. Sending query...");
 			_mDns.SendQuery(serviceName, type: DnsType.PTR);
 		}
 	}
 
 	private void InterfaceDiscovered(object? sender, NetworkInterfaceEventArgs e) {
-		_sd.QueryServiceInstances("_wled._tcp");
+		if (_stopDiscovery) return;
+		Log.Debug("WLED: Interface discovered. Sending query...");
+		_sd.QueryServiceInstances(_serviceName);
 	}
 
 	private void DeviceDiscovered(object? sender, ServiceInstanceDiscoveryEventArgs e) {
 		var foo = e.Message;
+		var name = e.ServiceInstanceName.ToString();
+
 		if (!foo.ToString().Contains("_wled")) {
 			return;
 		}
 
-		var name = e.ServiceInstanceName.ToString();
-
+		
 		if (name.Contains(".local")) {
 			name = name.Split(".")[0];
 		}
 
 		if (_ids.Contains(name)) {
+			Log.Debug("WLED: Device already discovered. Ignoring: " + name);
 			return;
 		}
 
 		try {
-			var rr = e.Message.AdditionalRecords;
+			var combinedRecords = e.Message.Answers.Concat(e.Message.AdditionalRecords).ToList();
 			var ip = string.Empty;
 			var id = string.Empty;
 
 
-			foreach (var msg in rr.Where(msg => msg.Type is DnsType.A or DnsType.TXT)) {
+			foreach (var msg in combinedRecords.Where(msg => msg.Type is DnsType.A or DnsType.TXT)) {
 				switch (msg.Type) {
 					case DnsType.A:
 						ip = msg.ToString().Split(" ").Last();
+						Log.Debug("WLED: Found IP: " + ip + " for " + name);
 						break;
 					case DnsType.TXT:
 						id = msg.ToString().Split(" ").Last();
+						Log.Debug("WLED: Found ID: " + id + " for " + name);
 						break;
 					default:
+						Log.Debug("WLED: Unknown record type. Ignoring: " + msg.Type + " for " + name);
 						continue;
 				}
 			}
 
 			if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(ip)) {
-				var nData = new WledData(id, ip);
-				ControlService.AddDevice(nData).ConfigureAwait(false);
-				_ids.Add(id);
+				try {
+					var nData = new WledData(id, ip);
+					if (nData.Initialized) {
+						Log.Debug("WLED: Adding device to control service. ID: " + id + " IP: " + ip + "...");
+						ControlService.AddDevice(nData).ConfigureAwait(false);
+						_ids.Add(id);	
+					}
+				} catch (Exception f) {
+					Log.Warning("WLED: Exception creating WLED data: " + f.Message);
+					
+				}
+
+				
+				
 			} else {
 				Log.Warning("Unable to get data for wled.");
 			}

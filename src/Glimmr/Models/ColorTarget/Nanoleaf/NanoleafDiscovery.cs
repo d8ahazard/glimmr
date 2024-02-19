@@ -63,13 +63,11 @@ public class NanoleafDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAu
 			var sendQuery = false;
 			foreach(var _recordName in _recordNames) {
 				if (serviceName.ToString().Contains(_recordName, StringComparison.OrdinalIgnoreCase)) {
-					Log.Information("Service discovered: {ServiceName}", serviceName);
 					sendQuery = true;
 					break;
 				}
 			}
 			if (sendQuery) {
-				Log.Information("Service discovered: {ServiceName}", serviceName);
 				_mDns.SendQuery(serviceName, type: DnsType.PTR);
 			}
 		}
@@ -79,7 +77,6 @@ public class NanoleafDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAu
 		var nanoleaf = new NanoleafClient(deviceData.IpAddress, "");
 		try {
 			var result = await nanoleaf.CreateTokenAsync();
-			Log.Information("Authorized.");
 			if (!string.IsNullOrEmpty(result.Token)) {
 				deviceData.Token = result.Token;
 				nanoleaf.Dispose();
@@ -97,7 +94,6 @@ public class NanoleafDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAu
 	}
 	
 	private void InterfaceDiscovered(object? sender, NetworkInterfaceEventArgs e) {
-		Log.Information("Interface discovered: {NetworkInterface}", e.NetworkInterfaces);
 		foreach(var _recordName in _recordNames) {
 			_sd.QueryServiceInstances(_recordName);
 		}
@@ -111,15 +107,12 @@ public class NanoleafDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAu
         return;
     }
 
-    Log.Information("Nanoleaf device discovered: {ServiceInstanceName}", e.ServiceInstanceName);
-
+    
     // Combine Answers and AdditionalRecords for processing
     var combinedRecords = e.Message.Answers.Concat(e.Message.AdditionalRecords).ToList();
 
-    Log.Debug("Combined records for processing: {Records}", combinedRecords);
-
+    
     if (!combinedRecords.Any()) {
-        Log.Information("No records found, might need to query explicitly...");
         // Consider explicit querying if necessary, as previously discussed
         return;
     }
@@ -137,14 +130,12 @@ public class NanoleafDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAu
         UpdateNanoleafData(nData);
     }
 
-    Log.Information("Processed Nanoleaf data: {NanoleafData}", JsonConvert.SerializeObject(nData));
     ControlService.AddDevice(nData).ConfigureAwait(true);
 }
 
 private NanoleafData? ProcessDnsRecords(IEnumerable<ResourceRecord> records) {
     var nData = new NanoleafData { IpAddress = string.Empty };
     foreach (var record in records) {
-        Log.Information("Processing record: {Record}", record);
         switch (record) {
             case ARecord aRecord:
                 nData.IpAddress = aRecord.Address.ToString();

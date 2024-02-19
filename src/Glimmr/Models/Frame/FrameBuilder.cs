@@ -127,228 +127,91 @@ public class FrameBuilder : IDisposable {
 
 
 	private VectorOfVectorOfPoint DrawLeds() {
-		// This is where we're saving our output
 		var polly = new VectorOfVectorOfPoint();
 		var center = new Point(ScaleWidth / 2, ScaleHeight / 2);
-		// Individual segment sizes
-		var tWidth = (int)Math.Round((float)ScaleWidth / _topCount, MidpointRounding.AwayFromZero);
-		var lHeight = (int)Math.Round((float)ScaleHeight / _leftCount, MidpointRounding.AwayFromZero);
-		var bWidth = (int)Math.Round((float)ScaleWidth / _bottomCount, MidpointRounding.AwayFromZero);
-		var rHeight = (int)Math.Round((float)ScaleHeight / _rightCount, MidpointRounding.AwayFromZero);
 
-		// These are based on the border/strip values
-		// Minimum limits for top, bottom, left, right            
-		const int minTop = 0;
-		const int minLeft = 0;
-		// Calc right regions, bottom to top
-		var step = _rightCount - 1;
-		var c2 = 0;
-		while (step >= 0) {
-			var ord = step * rHeight;
-			if (step == _rightCount - 1) {
-				ord = ScaleHeight - rHeight;
-				c2 = ScaleHeight;
-			}
+		// Pre-calculate segment sizes
+		var segmentWidths = new[] {
+			(int)Math.Round((float)ScaleWidth / _topCount, MidpointRounding.AwayFromZero),
+			(int)Math.Round((float)ScaleWidth / _bottomCount, MidpointRounding.AwayFromZero)
+		};
 
-			if (step == 0) {
-				ord = minTop;
-				c2 = minTop + rHeight;
-			}
+		var segmentHeights = new[] {
+			(int)Math.Round((float)ScaleHeight / _leftCount, MidpointRounding.AwayFromZero),
+			(int)Math.Round((float)ScaleHeight / _rightCount, MidpointRounding.AwayFromZero)
+		};
 
-			var pts = new Point[3];
-			pts[0] = new Point(ScaleWidth, ord);
-			pts[1] = new Point(ScaleWidth, c2);
-			pts[2] = center;
-			polly.Push(new VectorOfPoint(pts));
-			step--;
-			c2 = ord;
-		}
-
-		// Calc top regions, from right to left, skipping top-right corner (total horizontal sectors minus one)
-		step = _topCount - 1;
-		while (step >= 0) {
-			var ord = step * tWidth;
-			if (step == _topCount - 1) {
-				ord = ScaleWidth - tWidth;
-				c2 = ScaleWidth;
-			}
-
-			if (step == 0) {
-				c2 = tWidth;
-				ord = minLeft;
-			}
-
-			var pts = new Point[3];
-			pts[0] = new Point(ord, minTop);
-			pts[1] = new Point(c2, minTop);
-			pts[2] = center;
-			polly.Push(new VectorOfPoint(pts));
-			step--;
-			c2 = ord;
-		}
-
-		step = 0;
-		// Calc left regions (top to bottom), skipping top-left
-		while (step < _leftCount) {
-			var ord = step * lHeight;
-			c2 = ord + lHeight;
-			if (step == 0) {
-				ord = minTop;
-				c2 = minTop + lHeight;
-			}
-
-			if (step == _leftCount - 1) {
-				ord = ScaleHeight - lHeight;
-				c2 = ScaleHeight;
-			}
-
-			var pts = new Point[3];
-			pts[0] = new Point(minLeft, ord);
-			pts[1] = new Point(minLeft, c2);
-			pts[2] = center;
-			polly.Push(new VectorOfPoint(pts));
-			step++;
-		}
-
-		step = 0;
-		// Calc bottom center regions (L-R)
-		while (step < _bottomCount) {
-			var ord = step * bWidth;
-			c2 = ord + bWidth;
-			if (step == 0) {
-				ord = minLeft;
-				c2 = minLeft + bWidth;
-			}
-
-			if (step == _bottomCount) {
-				ord = ScaleWidth - bWidth;
-				c2 = ScaleWidth;
-			}
-
-			var pts = new Point[3];
-			pts[0] = new Point(ord, ScaleHeight);
-			pts[1] = new Point(c2, ScaleHeight);
-			pts[2] = center;
-			polly.Push(new VectorOfPoint(pts));
-			step += 1;
-		}
+		// Calculate points for each side and add them to 'polly'
+		AddSidePoints(polly, center, 0, segmentWidths[0], _topCount, true);
+		AddSidePoints(polly, center, ScaleHeight, segmentWidths[1], _bottomCount, true);
+		AddSidePoints(polly, center, 0, segmentHeights[0], _leftCount, false);
+		AddSidePoints(polly, center, ScaleWidth, segmentHeights[1], _rightCount, false);
 
 		return polly;
 	}
+
+	private void AddSidePoints(VectorOfVectorOfPoint polly, Point center, int start, int segmentSize, int count, bool horizontal) {
+		for (int i = 0; i < count; i++) {
+			var ord = i * segmentSize;
+			var c2 = ord + segmentSize;
+
+			Point[] pts;
+			if (horizontal) {
+				pts = new[] { new Point(ord, start), new Point(c2, start), center };
+			} else {
+				pts = new[] { new Point(start, ord), new Point(start, c2), center };
+			}
+
+			polly.Push(new VectorOfPoint(pts));
+		}
+	}
+
 
 	private VectorOfVectorOfPoint DrawSectors() {
-		// This is where we're saving our output
-		var polly = new VectorOfVectorOfPoint();
-		var center = new Point(ScaleWidth / 2, ScaleHeight / 2);
-		// Individual segment sizes
-		var vWidth = ScaleWidth / _topCount;
-		var hHeight = ScaleHeight / _leftCount;
-		// These are based on the border/strip values
-		// Minimum limits for top, bottom, left, right            
-		const int minTop = 0;
-		const int minLeft = 0;
-		// Calc right regions, bottom to top
-		var step = _rightCount - 1;
-		while (step >= 0) {
-			var ord = step * hHeight;
-			if (step == _rightCount - 1) {
-				ord = ScaleHeight - hHeight;
-			}
+        var polly = new VectorOfVectorOfPoint();
+        var center = new Point(ScaleWidth / 2, ScaleHeight / 2);
+        int[] sides = { _rightCount, _topCount - 1, _leftCount, _bottomCount - 1 }; // Adjust counts for corners
+        int[] dimensions = { ScaleHeight, ScaleWidth, ScaleHeight, ScaleWidth }; // Heights and widths for each side
+        bool[] isHorizontal = { false, true, false, true }; // Orientation of each side
+    
+        for (int side = 0; side < 4; side++) {
+            int stepSize = dimensions[side] / sides[side]; // Step size for the current side
+            for (int i = 0; i < sides[side]; i++) {
+                int ord = i * stepSize; // Calculate the ordinal position for the current step
+                Point[] pts = new Point[3];
+    
+                if (isHorizontal[side]) {
+                    pts[0] = new Point(ord, side == 1 ? 0 : ScaleHeight);
+                    pts[1] = new Point(Math.Min(ord + stepSize, ScaleWidth), side == 1 ? 0 : ScaleHeight);
+                } else {
+                    pts[0] = new Point(side == 2 ? 0 : ScaleWidth, ord);
+                    pts[1] = new Point(side == 2 ? 0 : ScaleWidth, Math.Min(ord + stepSize, ScaleHeight));
+                }
+                pts[2] = center;
+    
+                polly.Push(new VectorOfPoint(pts));
+            }
+        }
+    
+        return polly;
+    }
 
-			if (step == 0) {
-				ord = minLeft;
-			}
-
-			var pts = new Point[3];
-			pts[0] = new Point(ScaleWidth, ord);
-			pts[1] = new Point(ScaleWidth, ord + hHeight > ScaleHeight ? ScaleHeight : ord + hHeight);
-			pts[2] = center;
-			polly.Push(new VectorOfPoint(pts));
-			step--;
-		}
-
-		// Calc top regions, from right to left, skipping top-right corner (total horizontal sectors minus one)
-		step = _topCount - 2;
-		while (step >= 1) {
-			var ord = step * vWidth;
-			if (step == 1) {
-				ord = 0;
-			}
-
-			if (step == _topCount - 2) {
-				ord = ScaleWidth - vWidth;
-			}
-
-			var pts = new Point[3];
-			pts[0] = new Point(ord, minTop);
-			pts[1] = new Point(ord + vWidth > ScaleWidth ? ScaleWidth : ord + vWidth, minTop);
-			pts[2] = center;
-			polly.Push(new VectorOfPoint(pts));
-			step--;
-		}
-
-		step = 0;
-		// Calc left regions (top to bottom), skipping top-left
-		while (step <= _leftCount - 1) {
-			var ord = step * hHeight;
-			if (step == 0) {
-				ord = minTop;
-			}
-
-			if (step == _leftCount - 1) {
-				ord = ScaleHeight - hHeight;
-			}
-
-			var pts = new Point[3];
-			pts[0] = new Point(minLeft, ord);
-			pts[1] = new Point(minLeft, ord + hHeight > ScaleHeight - 3 ? ScaleHeight : ord + hHeight);
-			pts[2] = center;
-			polly.Push(new VectorOfPoint(pts));
-			step++;
-		}
-
-		step = 1;
-		// Calc bottom center regions (L-R)
-		while (step <= _bottomCount - 2) {
-			var ord = step * vWidth;
-			if (step == 1) {
-				ord = minLeft;
-			}
-
-			if (step == _bottomCount - 2) {
-				ord = ScaleWidth - vWidth;
-			}
-
-			var pts = new Point[3];
-			pts[0] = new Point(ord, ScaleHeight);
-			pts[1] = new Point(ord + vWidth > ScaleWidth ? ScaleWidth : ord + vWidth, ScaleHeight);
-			pts[2] = center;
-			polly.Push(new VectorOfPoint(pts));
-			step += 1;
-		}
-
-		return polly;
-	}
 
 	private Rectangle[] DrawCenterSectors() {
-		var polly = new List<Rectangle>();
-		// Individual segment sizes
-		var sectorWidth = ScaleWidth / _topCount;
-		var sectorHeight = ScaleHeight / _leftCount;
-		// These are based on the border/strip values
-		// Minimum limits for top, bottom, left, right            
-		var top = ScaleHeight - sectorHeight;
-		for (var v = _leftCount; v > 0; v--) {
-			var left = ScaleWidth - sectorWidth;
-			for (var h = _topCount; h > 0; h--) {
-				var rect = new Rectangle(left, top, sectorWidth, sectorHeight);
-				polly.Add(rect);
-				left -= sectorWidth;
-			}
+        var rectangles = new List<Rectangle>();
+        int sectorWidth = ScaleWidth / _topCount;
+        int sectorHeight = ScaleHeight / _leftCount;
+    
+        for (int v = 0; v < _leftCount; v++) {
+            int top = v * sectorHeight;
+            for (int h = 0; h < _topCount; h++) {
+                int left = h * sectorWidth;
+                var rect = new Rectangle(left, top, sectorWidth, sectorHeight);
+                rectangles.Add(rect);
+            }
+        }
+    
+        return rectangles.ToArray();
+    }
 
-			top -= sectorHeight;
-		}
-
-		return polly.ToArray();
-	}
 }

@@ -100,15 +100,18 @@ public sealed class NanoleafDevice : ColorTarget, IColorTarget, IDisposable {
 			_frameWatch.Restart();
 		}
 
-		await _nanoleafClient.StartExternalAsync();
+		await _nanoleafClient.TurnOnAsync();
 		await _nanoleafClient.SetBrightnessAsync(_brightness);
+		await _nanoleafClient.StartExternalAsync();
 		_checkTask = Task.Run(async () => {
 			while (!ct.IsCancellationRequested) {
 				var nfo = await _nanoleafClient.GetCurrentEffectAsync();
-				if (nfo != "*Dynamic*") {
-					Log.Debug("Re-starting nanoleaf stream...");
+				if (nfo != "*Dynamic*" && nfo != "*ExtControl*") {
+					Log.Debug($"Re-starting nanoleaf stream: {nfo}");
 					await _nanoleafClient.StartExternalAsync();
 					await _nanoleafClient.SetBrightnessAsync(_brightness);
+				} else {
+					Log.Debug("Nanoleaf stream is running...");
 				}
 
 				await Task.Delay(TimeSpan.FromMinutes(15), ct);

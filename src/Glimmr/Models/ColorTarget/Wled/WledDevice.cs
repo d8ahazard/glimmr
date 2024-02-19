@@ -80,19 +80,8 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		Streaming = true;
 		Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
 	}
-
-
-	public async Task FlashColor(Color color) {
-		try {
-			var colors = ColorUtil.FillArray(color, _ledCount);
-			var cp = new ColorPacket(colors, (UdpStreamMode)_protocol);
-			var packet = cp.Encode();
-			await _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep).ConfigureAwait(false);
-		} catch (Exception e) {
-			Log.Debug("Exception flashing color: " + e.Message);
-		}
-	}
-
+	
+	
 
 	public async Task StopStream() {
 		if (!Streaming) {
@@ -107,6 +96,19 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		await _wLedClient.Post(new StateRequest { On = false });
 		Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 	}
+
+
+	public async Task FlashColor(Color color) {
+		try {
+			var colors = ColorUtil.FillArray(color, _ledCount);
+			var cp = new ColorPacket(colors, (UdpStreamMode)_protocol);
+			var packet = cp.Encode();
+			await _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep).ConfigureAwait(false);
+		} catch (Exception e) {
+			Log.Debug("Exception flashing color: " + e.Message);
+		}
+	}
+
 
 
 	public Task ReloadData() {
@@ -159,6 +161,7 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 				break;
 			case StripMode.Sectored: {
 				var output = new Color[_ledCount];
+				var colorCount = 0;
 				foreach (var seg in _segments) {
 					var cols = ColorUtil.TruncateColors(toSend, seg.Offset, seg.LedCount, seg.Multiplier);
 					if (seg.ReverseStrip) {
@@ -173,10 +176,10 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 						}
 
 						output[start] = col;
+						colorCount++;
 						start++;
 					}
 				}
-
 				toSend = output;
 				break;
 			}

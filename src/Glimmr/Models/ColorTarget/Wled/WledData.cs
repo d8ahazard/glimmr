@@ -6,9 +6,11 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using Glimmr.Enums;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Serilog;
 
 #endregion
@@ -84,6 +86,10 @@ public class WledData : IColorTargetData {
 	/// </summary>
 	[JsonProperty]
 	public WledStateData State { get; set; }
+	
+	
+	[JsonProperty]
+	public bool Initialized { get; set; }
 
 
 	public WledData() {
@@ -95,7 +101,6 @@ public class WledData : IColorTargetData {
 		if (!string.IsNullOrEmpty(Id)) {
 			Name = StringUtil.UppercaseFirst(Id);
 		}
-
 		LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 	}
 
@@ -107,10 +112,17 @@ public class WledData : IColorTargetData {
 		IpAddress = ipaddress;
 		Segments = Array.Empty<WledSegment>();
 		using var webClient = new HttpClient();
+		webClient.Timeout = TimeSpan.FromSeconds(7);
 		try {
 			var url = "http://" + IpAddress + "/json";
 			var jsonData = webClient.GetStringAsync(url).Result;
-			var jsonObj = JsonConvert.DeserializeObject<WledStateData>(jsonData);
+			Log.Debug("Json Data: " + jsonData);
+			
+			var settings = new JsonSerializerSettings {
+				ContractResolver = new IgnorePropertiesResolver(new[] { "effects" }) // Specify the property names to ignore
+			};
+
+			var jsonObj = JsonConvert.DeserializeObject<WledStateData>(jsonData, settings);
 			State = jsonObj;
 
 			LedCount = jsonObj.Info.Leds.Count;
@@ -123,8 +135,10 @@ public class WledData : IColorTargetData {
 
 			Name = State.Info.Name;
 			Brightness = (int)(jsonObj.WledState.Bri / 255f * 100);
+			Initialized = true;
 		} catch (Exception e) {
-			Log.Debug("Yeah, here's your problem, smart guy: " + e.Message);
+			Log.Debug("Exception fetching WLED Data: " + e.Message);
+			Initialized = false;
 		}
 	}
 
@@ -229,9 +243,11 @@ public class WledData : IColorTargetData {
 						["4"] = "DNRGB"
 					}) { ValueHint = "Select desired WLED protocol. Default is DRGB." }
 				};
-				props.AddRange(Segments.Select(seg => seg.Id).Select(id =>
-					new SettingsProperty($"segmentOffset{id}", "number", $"Segment {id} Offset")));
-
+				foreach(var seg in Segments) {
+					props.Add(new SettingsProperty($"segmentOffset{seg.Id}", "number", $"Segment {seg.Id} Offset"));
+					props.Add(new SettingsProperty($"segmentMultiplier{seg.Id}", "number", $"Segment {seg.Id} Multiplier"));
+				}
+				
 				return props.ToArray();
 			}
 			case StripMode.Normal:
@@ -606,7 +622,7 @@ public struct Info {
 	/// </summary>
 	[JsonProperty("fxcount")]
 	public int Fxcount { get; set; }
-
+	
 	/// <summary>
 	///     IP address?
 	/// </summary>
@@ -728,4 +744,23 @@ public struct WledStateData {
 	/// </summary>
 	[JsonProperty("state")]
 	public WledState WledState { get; set; }
+
+}
+
+public class IgnorePropertiesResolver : DefaultContractResolver {
+	private readonly HashSet<string> ignoreProps;
+
+	public IgnorePropertiesResolver(IEnumerable<string> propNamesToIgnore) {
+		ignoreProps = new HashSet<string>(propNamesToIgnore, StringComparer.OrdinalIgnoreCase);
+	}
+
+	protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization) {
+		var property = base.CreateProperty(member, memberSerialization);
+
+		if (property.PropertyName != null && ignoreProps.Contains(property.PropertyName)) {
+			property.ShouldSerialize = _ => false;
+		}
+
+		return property;
+	}
 }

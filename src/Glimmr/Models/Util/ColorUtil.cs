@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using Glimmr.Models.Data;
 
 #endregion
@@ -32,46 +33,20 @@ public static class ColorUtil {
 	}
 
 	public static Color[] TruncateColors(Color[] input, int offset, int len, float multiplier = 1f) {
-		if (offset >= input.Length) {
-			while (offset >= input.Length) {
-				offset -= input.Length;
-			}
-		}
-
-		if (offset < 0 && Math.Abs(offset) >= input.Length) {
-			offset += input.Length;
-		}
-
-		if (offset < 0) {
-			offset = input.Length - Math.Abs(offset);
-		}
+		// Normalize the offset to ensure it's within the bounds of the input array
+		offset = (offset % input.Length + input.Length) % input.Length;
 
 		var output = new Color[len];
-		var total = Convert.ToInt32((len + offset) * multiplier);
-
-		var doubled = new Color[total];
-		var dIdx = 0;
-		while (dIdx < total) {
-			foreach (var t in input) {
-				doubled[dIdx] = t;
-				dIdx++;
-				if (dIdx >= total) {
-					break;
-				}
-			}
-		}
-
 		for (var i = 0; i < len; i++) {
-			var tgt = Convert.ToInt32(offset + i * multiplier);
-			if (tgt >= total) {
-				tgt = total - 1;
-			}
-
-			output[i] = doubled[tgt];
+			// Calculate the target index based on offset, multiplier, and loop index
+			// Use modulo to ensure the index is within the bounds of the input array
+			var tgt = (int)((offset + i * multiplier) % input.Length);
+			output[i] = input[tgt];
 		}
 
 		return output;
 	}
+
 
 
 	/// <summary>
@@ -80,97 +55,44 @@ public static class ColorUtil {
 	/// <param name="colors"></param>
 	/// <returns></returns>
 	private static Color AverageColors(params Color[] colors) {
-		var inputCount = colors.Length;
-		if (inputCount == 0) {
+		if (colors.Length == 0) {
 			return Color.FromArgb(0, 0, 0, 0);
 		}
 
-		var avgG = 0;
-		var avgB = 0;
-		var avgR = 0;
-		var avgA = 0;
-		foreach (var t in colors) {
-			avgG += t.G * t.G;
-			avgB += t.B * t.B;
-			avgR += t.R * t.R;
-			avgA += t.A * t.A;
+		int sumR = 0, sumG = 0, sumB = 0, sumA = 0;
+		foreach (var color in colors) {
+			sumR += color.R;
+			sumG += color.G;
+			sumB += color.B;
+			sumA += color.A;
 		}
 
-		avgG /= inputCount;
-		avgB /= inputCount;
-		avgR /= inputCount;
-		avgA /= inputCount;
-		return Color.FromArgb((int)Math.Sqrt(avgA), (int)Math.Sqrt(avgR), (int)Math.Sqrt(avgB),
-			(int)Math.Sqrt(avgG));
+		int count = colors.Length;
+		return Color.FromArgb(
+			sumA / count,
+			sumR / count,
+			sumG / count,
+			sumB / count
+		);
 	}
+
 
 	public static Color ClampAlpha(Color tCol) {
-		var rI = tCol.R;
-		var gI = tCol.G;
-		var bI = tCol.B;
-		float tM = Math.Max(rI, Math.Max(gI, bI));
-		float tm = Math.Min(rI, Math.Min(gI, bI));
-		//If the maximum value is 0, immediately return pure black.
-		if (tM == 0) {
-			return Color.FromArgb(0, 0, 0, 0);
-		}
+		// Relative luminance formula for sRGB colors
+		var luminance = 0.2126f * tCol.R + 0.7152f * tCol.G + 0.0722f * tCol.B;
 
-		if (tm >= 255) {
-			return Color.FromArgb(255, 0, 0, 0);
-		}
+		// Convert luminance to an integer and clamp it between 0 and 255
+		var wO = (int)Math.Max(0, Math.Min(255, luminance));
 
-		//This section serves to figure out what the color with 100% hue is
-		var multiplier = 255.0f / tM;
-		var hR = rI * multiplier;
-		var hG = gI * multiplier;
-		var hB = bI * multiplier;
+		// Subtract luminance from each color component and clamp the result
+		var rO = (int)Math.Max(0, Math.Min(255, tCol.R - luminance));
+		var gO = (int)Math.Max(0, Math.Min(255, tCol.G - luminance));
+		var bO = (int)Math.Max(0, Math.Min(255, tCol.B - luminance));
 
-		//This calculates the Whiteness (not strictly speaking Luminance) of the color
-		var maxWhite = Math.Max(hR, Math.Max(hG, hB));
-		var minWhite = Math.Min(hR, Math.Min(hG, hB));
-		var luminance = ((maxWhite + minWhite) / 2.0f - 127.5f) * (255.0f / 127.5f) / multiplier;
-
-		//Calculate the output values
-		var wO = Convert.ToInt32(luminance);
-		var bO = Convert.ToInt32(bI - luminance);
-		var rO = Convert.ToInt32(rI - luminance);
-		var gO = Convert.ToInt32(gI - luminance);
-
-		//Trim them so that they are all between 0 and 255
-		if (wO < 0) {
-			wO = 0;
-		}
-
-		if (bO < 0) {
-			bO = 0;
-		}
-
-		if (rO < 0) {
-			rO = 0;
-		}
-
-		if (gO < 0) {
-			gO = 0;
-		}
-
-		if (wO > 255) {
-			wO = 255;
-		}
-
-		if (bO > 255) {
-			bO = 255;
-		}
-
-		if (rO > 255) {
-			rO = 255;
-		}
-
-		if (gO > 255) {
-			gO = 255;
-		}
-
+		// Return the adjusted color
 		return Color.FromArgb(wO, rO, gO, bO);
 	}
+
 
 
 	/// <summary>
@@ -201,43 +123,73 @@ public static class ColorUtil {
 	}
 
 	public static Color SetBrightness(Color color, float brightness) {
-		// var hsb = ColorToHsb(input);
-		if (brightness == 0) {
-			return Color.FromArgb(0, 0, 0);
-		}
+		// Ensure brightness is within the valid range [0, 1]
+		brightness = Math.Max(0, Math.Min(brightness, 1));
 
-		// return HsbToColor(hsb[0], hsb[1], brightness);
-		var red = (float)color.R;
-		var green = (float)color.G;
-		var blue = (float)color.B;
+		// Convert RGB to HSL
+		var (h, s, l) = RgbToHsl(color);
 
-		var existing = color.GetBrightness();
-		if (existing > brightness) {
-			var diff = existing - brightness;
-			red -= diff;
-			green -= diff;
-			blue -= diff;
-			red = Math.Max(red, 0);
-			green = Math.Max(green, 0);
-			blue = Math.Max(blue, 0);
-		}
+		// Set the new brightness (lightness in HSL)
+		l = brightness;
 
-		if (!(existing < brightness)) {
-			return Color.FromArgb(color.A, (int)red, (int)green, (int)blue);
-		}
-
-		{
-			var diff = brightness - existing;
-			red += diff;
-			green += diff;
-			blue += diff;
-			red = Math.Min(red, 255);
-			green = Math.Min(green, 255);
-			blue = Math.Min(blue, 255);
-		}
-
-		return Color.FromArgb(color.A, (int)red, (int)green, (int)blue);
+		// Convert HSL back to RGB
+		return HslToRgb(h, s, l);
 	}
+
+	private static (float h, float s, float l) RgbToHsl(Color color) {
+		var r = color.R / 255f;
+		var g = color.G / 255f;
+		var b = color.B / 255f;
+		var max = Math.Max(r, Math.Max(g, b));
+		var min = Math.Min(r, Math.Min(g, b));
+		float h, s, l;
+		l = (max + min) / 2;
+
+		if (max == min) {
+			h = s = 0; // achromatic
+		} else {
+			var d = max - min;
+			s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+			if (max == r) {
+				h = (g - b) / d + (g < b ? 6 : 0);
+			} else if (max == g) {
+				h = (b - r) / d + 2;
+			} else {
+				h = (r - g) / d + 4;
+			}
+			h /= 6;
+		}
+
+		return (h, s, l);
+	}
+
+	private static Color HslToRgb(float h, float s, float l) {
+		float r, g, b;
+
+		if (s == 0) {
+			r = g = b = l; // achromatic
+		} else {
+			float Hue2Rgb(float p, float q, float t) {
+				if (t < 0) t += 1;
+				if (t > 1) t -= 1;
+				return t switch {
+					< 1 / 6f => p + (q - p) * 6 * t,
+					< 1 / 2f => q,
+					< 2 / 3f => p + (q - p) * (2 / 3f - t) * 6,
+					_ => p
+				};
+			}
+
+			var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+			var p = 2 * l - q;
+			r = Hue2Rgb(p, q, h + 1 / 3f);
+			g = Hue2Rgb(p, q, h);
+			b = Hue2Rgb(p, q, h - 1 / 3f);
+		}
+
+		return Color.FromArgb((int)(r * 255), (int)(g * 255), (int)(b * 255));
+	}
+
 
 
 	public static Color[] FillArray(Color input, int len) {
@@ -317,72 +269,39 @@ public static class ColorUtil {
 	}
 
 	public static List<Color> LedsToSectors(List<Color> ledColors, SystemData sd) {
-		var rightColors = ledColors.GetRange(0, sd.RightCount);
-		var topColors = ledColors.GetRange(sd.RightCount - 1, sd.TopCount);
-		var leftColors = ledColors.GetRange(sd.TopCount - 1, sd.LeftCount);
-		var bottomColors = ledColors.GetRange(sd.LeftCount - 1, sd.BottomCount);
-		var rStep = (float)rightColors.Count / sd.VSectors;
-		var tStep = (float)topColors.Count / sd.HSectors;
-		var lStep = (float)leftColors.Count / sd.VSectors;
-		var bStep = (float)bottomColors.Count / sd.HSectors;
-		var output = new List<Color>();
-		var toAvg = new List<Color>();
-		// Add the last range of colors from the bottom to sector 0
-		for (var i = bottomColors.Count - 1 - bStep; i < bottomColors.Count; i++) {
-			toAvg.Add(bottomColors[(int)i]);
-		}
+        var output = new List<Color>();
+    
+        // Helper function to add averaged colors from a section to the output
+        void AddAveragedColors(int start, int count, float step, int maxSectors) {
+            var toAvg = new List<Color>();
+            for (var i = start; i < Math.Min(start + count, ledColors.Count) && output.Count < maxSectors; i++) {
+                toAvg.Add(ledColors[i]);
+                if ((i - start) % step == 0) {
+                    output.Add(AverageColors(toAvg.ToArray()));
+                    toAvg.Clear();
+                }
+            }
+            // Add any remaining colors
+            if (toAvg.Any()) {
+                output.Add(AverageColors(toAvg.ToArray()));
+            }
+        }
+    
+        // Right section
+        AddAveragedColors(0, sd.RightCount, (float)sd.RightCount / sd.VSectors, sd.VSectors);
+    
+        // Top section
+        AddAveragedColors(sd.RightCount - 1, sd.TopCount, (float)sd.TopCount / sd.HSectors, sd.VSectors + sd.HSectors - 1);
+    
+        // Left section
+        AddAveragedColors(sd.TopCount - 1, sd.LeftCount, (float)sd.LeftCount / sd.VSectors, sd.VSectors * 2 + sd.HSectors - 2);
+    
+        // Bottom section, starting from the last color to include the bit from the next corner
+        AddAveragedColors(ledColors.Count - sd.BottomCount, sd.BottomCount, (float)sd.BottomCount / sd.HSectors, sd.SectorCount);
+    
+        return output;
+    }
 
-		var idx = 0;
-		while (idx < rightColors.Count && output.Count <= sd.VSectors) {
-			toAvg.AddRange(rightColors);
-
-			// On the last sector, don't average it so we can add the bit from the next corner
-			if (idx % rStep == 0 && output.Count < sd.VSectors) {
-				output.Add(AverageColors(toAvg.ToArray()));
-				toAvg = new List<Color>();
-			}
-
-			idx++;
-		}
-
-		idx = 0;
-		while (idx < topColors.Count && output.Count < sd.VSectors + sd.HSectors - 1) {
-			toAvg.AddRange(topColors);
-
-			if (idx % tStep == 0) {
-				output.Add(AverageColors(toAvg.ToArray()));
-				toAvg = new List<Color>();
-			}
-
-			idx++;
-		}
-
-		idx = 0;
-		while (idx < leftColors.Count && output.Count < sd.VSectors + sd.HSectors + sd.VSectors - 2) {
-			toAvg.AddRange(leftColors);
-
-			if (idx % lStep == 0) {
-				output.Add(AverageColors(toAvg.ToArray()));
-				toAvg = new List<Color>();
-			}
-
-			idx++;
-		}
-
-		idx = 0;
-		while (idx < bottomColors.Count && output.Count < sd.SectorCount) {
-			toAvg.AddRange(bottomColors);
-
-			if (idx % bStep == 0) {
-				output.Add(AverageColors(toAvg.ToArray()));
-				toAvg = new List<Color>();
-			}
-
-			idx++;
-		}
-
-		return output;
-	}
 
 
 	/// <summary>
