@@ -322,12 +322,12 @@ public class FrameSplitter : IDisposable {
 
 	private Mat ApplyGammaCorrectionIfNeeded(Mat frame)
 	{
-		// if (_correctGamma)
-		// {
-		// 	var corrected = new Mat();
-		// 	IntensityTransformInvoke.GammaCorrection(frame, corrected, _gammaCorrection);
-		// 	return corrected;
-		// }
+		if (_correctGamma)
+		{
+			var corrected = new Mat();
+			IntensityTransformInvoke.GammaCorrection(frame, corrected, _gammaCorrection);
+			return corrected;
+		}
 		return frame;
 	}
 
