@@ -171,6 +171,7 @@ public class ColorService : BackgroundService {
 		}
 		
 		Log.Information("Setting device mode..." + _deviceMode);
+		await ControlService.SetMode(_deviceMode, _systemData.AutoDisabled, true).ConfigureAwait(true);
 		Log.Information("Color service started.");
 	}
 
