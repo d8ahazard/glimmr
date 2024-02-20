@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Timers;
 using Emgu.CV;
@@ -17,7 +16,6 @@ using Glimmr.Models.Util;
 using Glimmr.Services;
 using Serilog;
 using static Glimmr.Models.Constant.GlimmrConstants;
-using Timer = System.Timers.Timer;
 
 #endregion
 
@@ -248,112 +246,131 @@ public class FrameSplitter : IDisposable {
 		_doSave = true;
 	}
 
-	public async Task<(Color[], Color[])> Update(Mat? frame) {
-		
-		if (frame == null || frame.IsEmpty) {
+	public async Task<(Color[], Color[])> Update(Mat? frame)
+	{
+		if (frame == null || frame.IsEmpty || frame.Cols == 0 || frame.Rows == 0)
+		{
 			SourceActive = false;
-			if (!_warned) {
-				Log.Warning("Frame is null.");
-			}
-
-			_warned = true;
+			LogWarningOnce("Frame is null or empty.");
 			return (Array.Empty<Color>(), Array.Empty<Color>());
 		}
 
-		if (frame.Cols == 0) {
-			SourceActive = false;
-			if (!_warned) {
-				Log.Warning("Frame has no columns.");
-			}
+		var processedFrame = ProcessFrame(frame);
 
-			_warned = true;
+		if (processedFrame == null || processedFrame.IsEmpty)
+		{
+			Log.Warning("Processed frame is null or empty.");
 			return (Array.Empty<Color>(), Array.Empty<Color>());
 		}
 
-		if (frame.Rows == 0) {
-			SourceActive = false;
-			if (!_warned) {
-				Log.Warning("Frame has no rows.");
-			}
-
-			_warned = true;
-			return (Array.Empty<Color>(), Array.Empty<Color>());
-		}
-
-		var clone = frame;
-
-		if (frame.Width != ScaleWidth || frame.Height != ScaleWidth) {
-			CvInvoke.Resize(frame, clone, new Size(ScaleWidth, ScaleHeight));
-		}
-
-		if (_captureMode == CaptureMode.Camera && _mode == DeviceMode.Video) {
-			clone = CheckCamera(frame);
-			if (clone == null || clone.IsEmpty || clone.Cols == 0) {
-				Log.Warning("Invalid input frame.");
-				SourceActive = false;
-				return (Array.Empty<Color>(), Array.Empty<Color>());
-			}
-		}
-
-		// Don't do anything if there's no frame.
-		if (clone == null || clone.IsEmpty) {
-			Log.Warning("Null/Empty input!");
-			// Dispose frame
-			//frame.Dispose();
-			clone?.Dispose();
-			return (Array.Empty<Color>(), Array.Empty<Color>());
-		}
-
-		var corrected = clone;
-
-		if (_correctGamma) {
-			IntensityTransformInvoke.GammaCorrection(clone, corrected, _gammaCorrection);
-			clone = corrected;
-		}
-
-		if (_useCrop && _checkCrop) {
-			await CheckCrop(clone).ConfigureAwait(false);
+		if (_useCrop && _checkCrop)
+		{
+			await CheckCrop(processedFrame).ConfigureAwait(false);
 			_checkCrop = false;
 		}
 
-		var ledColors = _empty;
-		var sectorColors = _emptySectors;
-
-		if (!_allBlack) {
-			for (var i = 0; i < _fullCoords.Length; i++) {
-				var sub = new Mat(clone, _fullCoords[i]);
-				ledColors[i] = GetAverage(sub);
-				sub.Dispose();
-			}
-
-
-			for (var i = 0; i < _fullSectors.Length; i++) {
-				var sub = new Mat(clone, _fullSectors[i]);
-				sectorColors[i] = GetAverage(sub);
-				sub.Dispose();
-			}
-		}
+		var (ledColors, sectorColors) = ComputeColors(processedFrame);
 
 		_colorsLed = ledColors;
 		_colorsSectors = sectorColors;
-		if (_doSend) {
+
+		if (_doSend)
+		{
 			await ColorService.SendColors(ledColors, sectorColors);
 		}
 
-		if (_doSave && (_doSend || _merge)) {
-			if (ColorService.ControlService.SendPreview) {
-				SaveFrames(frame, clone);
-			}
+		HandleSaving(frame, processedFrame);
 
+		// Cleanup
+		CleanupResources(frame, processedFrame);
+
+		return (_colorsLed, _colorsSectors);
+	}
+
+	private void LogWarningOnce(string message)
+	{
+		if (!_warned)
+		{
+			Log.Warning(message);
+			_warned = true;
+		}
+	}
+
+	private Mat ProcessFrame(Mat frame)
+	{
+		var clone = ShouldResize(frame) ? ResizeFrame(frame) : frame;
+
+		if (_captureMode == CaptureMode.Camera && _mode == DeviceMode.Video)
+		{
+			clone = CheckCamera(clone);
+		}
+
+		return ApplyGammaCorrectionIfNeeded(clone);
+	}
+
+	private static bool ShouldResize(Mat frame)
+	{
+		return frame.Width != ScaleWidth || frame.Height != ScaleHeight;
+	}
+
+	private static Mat ResizeFrame(Mat frame)
+	{
+		var resized = new Mat();
+		CvInvoke.Resize(frame, resized, new Size(ScaleWidth, ScaleHeight));
+		return resized;
+	}
+
+	private Mat ApplyGammaCorrectionIfNeeded(Mat frame)
+	{
+		if (_correctGamma)
+		{
+			var corrected = new Mat();
+			IntensityTransformInvoke.GammaCorrection(frame, corrected, _gammaCorrection);
+			return corrected;
+		}
+		return frame;
+	}
+
+	private (Color[], Color[]) ComputeColors(Mat frame)
+	{
+		if (_allBlack) return (_empty, _emptySectors);
+
+		var ledColors = new Color[_fullCoords.Length];
+		var sectorColors = new Color[_fullSectors.Length];
+
+		Parallel.For(0, _fullCoords.Length, i =>
+		{
+			using (var sub = new Mat(frame, _fullCoords[i]))
+			{
+				ledColors[i] = GetAverage(sub);
+			}
+		});
+
+		Parallel.For(0, _fullSectors.Length, i =>
+		{
+			using (var sub = new Mat(frame, _fullSectors[i]))
+			{
+				sectorColors[i] = GetAverage(sub);
+			}
+		});
+
+		return (ledColors, sectorColors);
+	}
+
+	private void HandleSaving(Mat original, Mat processed)
+	{
+		if (_doSave && (_doSend || _merge) && ColorService.ControlService.SendPreview)
+		{
+			SaveFrames(original, processed);
 			_doSave = false;
 			_merge = false;
 		}
+	}
 
-		// Dispose
-		frame.Dispose();
-		clone.Dispose();
-		corrected.Dispose();
-		return (_colorsLed, _colorsSectors);
+	private static void CleanupResources(Mat original, Mat processed)
+	{
+		original.Dispose();
+		if (processed != original) processed.Dispose();
 	}
 
 	
