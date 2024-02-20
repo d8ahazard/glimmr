@@ -91,9 +91,9 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		Log.Debug($"{_data.Tag}::Stopping stream...{_data.Id}.");
 		Streaming = false;
 		await FlashColor(Color.Black);
-		await SetLightPower(false);
-		await Task.FromResult(true);
 		await _wLedClient.Post(new StateRequest { On = false });
+		await Task.FromResult(true);
+		await SetLightPower(false);
 		Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 	}
 
@@ -161,7 +161,6 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 				break;
 			case StripMode.Sectored: {
 				var output = new Color[_ledCount];
-				var colorCount = 0;
 				foreach (var seg in _segments) {
 					var cols = ColorUtil.TruncateColors(toSend, seg.Offset, seg.LedCount, seg.Multiplier);
 					if (seg.ReverseStrip) {
@@ -176,7 +175,6 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 						}
 
 						output[start] = col;
-						colorCount++;
 						start++;
 					}
 				}

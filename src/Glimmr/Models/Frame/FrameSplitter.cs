@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Timers;
 using Emgu.CV;
@@ -239,69 +240,7 @@ public class FrameSplitter : IDisposable {
 		_doSave = true;
 	}
 
-	private void SaveFrames(Mat inMat, Mat outMat) {
-		_doSave = false;
-		var cols = _colorsLed;
-		var secs = _colorsSectors;
-		if (_merge) {
-			Log.Debug("Using merged colors?");
-			cols = _colorsLedIn;
-			secs = _colorsSectorsIn;
-		}
-
-		if (inMat is { IsEmpty: false }) {
-			ControlService.SendImage("inputImage", inMat).ConfigureAwait(false);
-		}
-
-		if (outMat.IsEmpty) {
-			return;
-		}
-
-		var colBlack = new Bgr(Color.FromArgb(0, 0, 0, 0)).MCvScalar;
-		switch (_previewMode) {
-			case 1: {
-				for (var i = 0; i < _fullCoords.Length; i++) {
-					var color = cols[i];
-					if (color.R < _blackLevel && color.G < _blackLevel && color.B < _blackLevel) {
-						color = Color.Black;
-					}
-
-					var col = new Bgr(color).MCvScalar;
-					CvInvoke.Rectangle(outMat, _fullCoords[i], col, -1, LineType.AntiAlias);
-					CvInvoke.Rectangle(outMat, _fullCoords[i], colBlack, 1, LineType.AntiAlias);
-				}
-
-				break;
-			}
-			case 2: {
-				Log.Debug($"Using {_fullSectors.Length} colors for preview...");
-				for (var i = 0; i < _fullSectors.Length; i++) {
-					var s = _fullSectors[i];
-					var color = secs[i];
-					if (color.R < _blackLevel && color.G < _blackLevel && color.B < _blackLevel) {
-						color = Color.FromArgb(0, 0, 0);
-					}
-
-					var col = new Bgr(color).MCvScalar;
-					CvInvoke.Rectangle(outMat, s, col, -1, LineType.AntiAlias);
-					CvInvoke.Rectangle(outMat, s, colBlack, 1, LineType.AntiAlias);
-					var cInt = i + 1;
-					var tPoint = new Point(s.X, s.Y + 30);
-					CvInvoke.PutText(outMat, cInt.ToString(), tPoint, FontFace.HersheySimplex, 0.75, colBlack);
-				}
-
-				break;
-			}
-		}
-
-		if (outMat is { IsEmpty: false }) {
-			ControlService.SendImage("outputImage", outMat).ConfigureAwait(false);
-		}
-
-		inMat.Dispose();
-		outMat.Dispose();
-	}
-
+	
 	public void MergeFrame(Color[] leds, Color[] sectors) {
 		_colorsLedIn = leds;
 		_colorsSectorsIn = sectors;
@@ -416,6 +355,67 @@ public class FrameSplitter : IDisposable {
 		corrected.Dispose();
 		return (_colorsLed, _colorsSectors);
 	}
+
+	private void SaveFrames(Mat inMat, Mat outMat) {
+		_doSave = false;
+		var cols = _colorsLed;
+		var secs = _colorsSectors;
+		if (_merge) {
+			cols = _colorsLedIn;
+			secs = _colorsSectorsIn;
+		}
+		if (inMat is { IsEmpty: false }) {
+			Log.Debug("Sending input image...");
+			ControlService.SendImage("inputImage", inMat).ConfigureAwait(false);
+		}
+
+		if (outMat.IsEmpty) {
+			Log.Debug("Output image is empty.");
+			return;
+		}
+		var colBlack = new Bgr(Color.FromArgb(0, 0, 0, 0)).MCvScalar;
+		switch (_previewMode) {
+			
+			case 1: {
+				for (var i = 0; i < _fullCoords.Length; i++) {
+					var color = cols[i];
+					if (color.R < _blackLevel && color.G < _blackLevel && color.B < _blackLevel) {
+						color = Color.Black;
+					}
+
+					var col = new Bgr(color).MCvScalar;
+					CvInvoke.Rectangle(outMat, _fullCoords[i], col, -1, LineType.AntiAlias);
+					CvInvoke.Rectangle(outMat, _fullCoords[i], colBlack, 1, LineType.AntiAlias);
+				}
+				break;
+			}
+			case 2: {
+				for (var i = 0; i < _fullSectors.Length; i++) {
+					var s = _fullSectors[i];
+					var color = secs[i];
+					if (color.R < _blackLevel && color.G < _blackLevel && color.B < _blackLevel) {
+						color = Color.FromArgb(0, 0, 0);
+					}
+
+					var col = new Bgr(color).MCvScalar;
+					CvInvoke.Rectangle(outMat, s, col, -1, LineType.AntiAlias);
+					CvInvoke.Rectangle(outMat, s, colBlack, 1, LineType.AntiAlias);
+					var cInt = i + 1;
+					var tPoint = new Point(s.X, s.Y + 30);
+					CvInvoke.PutText(outMat, cInt.ToString(), tPoint, FontFace.HersheySimplex, 0.75, colBlack);
+				}
+				break;
+			}
+		}
+
+		if (outMat is { IsEmpty: false }) {
+			ControlService.SendImage("outputImage", outMat).ConfigureAwait(false);
+		}
+
+		inMat.Dispose();
+		outMat.Dispose();
+	}
+
 
 	private Mat? CheckCamera(Mat input) {
 		var scaled = input.Clone();
@@ -595,113 +595,115 @@ public class FrameSplitter : IDisposable {
 		return _colorsSectors;
 	}
 
-	private async Task CheckCrop(Mat image) {
-		// Set our tolerances
-		_sectorChanged = false;
-		var width = ScaleWidth;
-		var height = ScaleHeight;
-		var wMax = width / 3;
-		var hMax = height / 3;
-		// How many non-black pixels can be in a given row
-		var lPixels = 0;
-		var pPixels = 0;
-
-		width--;
-		height--;
-		var raw = image.GetRawData();
-		var unique = raw.Distinct().ToArray();
-
-		//var count = Sum(raw);
-		var noImage = width == 0 || height == 0 || (unique.Length == 1 && unique[0] <= _cropBlackLevel);
-		// If it is, we can stop here
-		if (noImage) {
+	private async Task CheckCrop(Mat? image) {
+		if (image == null || image.IsEmpty || image.Width <= 1 || image.Height <= 1) {
 			_allBlack = true;
-			if (_doSend) {
-				ColorService.CheckAutoDisable(false);
-			}
-
+			HandleAutoDisable();
 			return;
 		}
 
-		if (_doSend) {
-			ColorService.CheckAutoDisable(true);
-		}
-
-		// Return here, because otherwise, "no input" detection won't work.
-		if (!_useCrop) {
-			return;
-		}
-
-		// Convert image to greyscale
+		if (!_useCrop) return;
 
 		_allBlack = false;
-		// Check letterboxing
-		if (_cropLetter) {
-			for (var y = 0; y < hMax; y += 2) {
-				var c1 = image.Row(height - y);
-				var c2 = image.Row(y);
-				var b1 = c1.GetRawData().SkipLast(8).Skip(8).ToArray();
-				var b2 = c2.GetRawData().SkipLast(8).Skip(8).ToArray();
-				var l1 = Sum(b1) / b1.Length;
-				var l2 = Sum(b2) / b2.Length;
-				c1.Dispose();
-				c2.Dispose();
-				if (l1 <= _cropBlackLevel && l2 <= _cropBlackLevel && l1 == l2) {
-					lPixels = y;
-				} else {
-					break;
-				}
-			}
-
-			_lFrameCropTrigger.Tick(lPixels);
-			if (_lFrameCropTrigger.Triggered != _lCrop && !_sectorChanged) {
-				_sectorChanged = true;
-				_lCrop = _lFrameCropTrigger.Triggered;
-			}
-
-			_lCropPixels = lPixels;
+		var width = image.Width;
+		var height = image.Height;
+		var wMax = width / 3;
+		var hMax = height / 3;
+			
+		
+		var greyImage = image.NumberOfChannels > 1 ? new Mat() : image;
+		if (image.NumberOfChannels > 1) {
+			CvInvoke.CvtColor(image, greyImage, ColorConversion.Bgr2Gray);
 		}
 
-		// Check pillarboxing
-		if (_cropPillar) {
-			for (var x = 0; x < wMax; x += 2) {
-				var c1 = image.Col(width - x);
-				var c2 = image.Col(x);
-				var b1 = c1.GetRawData().SkipLast(8).Skip(8).ToArray();
-				var b2 = c2.GetRawData().SkipLast(8).Skip(8).ToArray();
-				var l1 = Sum(b1) / b1.Length;
-				var l2 = Sum(b2) / b2.Length;
-				c1.Dispose();
-				c2.Dispose();
-				if (l1 <= _cropBlackLevel && l2 <= _cropBlackLevel && l1 == l2) {
-					pPixels = x;
-				} else {
-					break;
-				}
-			}
+		CheckEdges(greyImage, wMax, hMax);
 
-			_pFrameCropTrigger.Tick(pPixels);
-			if (_pFrameCropTrigger.Triggered != _pCrop && !_sectorChanged) {
-				_sectorChanged = true;
-				_pCrop = _pFrameCropTrigger.Triggered;
-			}
-
-			_pCropPixels = pPixels;
+		if (greyImage != image) {
+			greyImage.Dispose();
 		}
 
-		// Cleanup mat
-		//image.Dispose();
-
-		// Only calculate new sectors if the value has changed
 		if (_sectorChanged) {
-			Log.Debug($"Crop changed, redrawing {_lCropPixels} and {_pCropPixels}...");
-			_fullCoords = DrawGrid();
-			_fullSectors = DrawSectors();
+			UpdateSectors();
 			_sectorChanged = false;
 		}
 
-		await Task.FromResult(true);
+		await Task.CompletedTask;
 	}
+
+	private void CheckEdges(Mat greyImage, int wMax, int hMax) {
+		// Check for uniform black edges for letterboxing (top and bottom)
+		var lCropPixels = AreEdgesBlack(greyImage, hMax, true);
+
+		// Check for uniform black edges for pillarboxing (left and right)
+		var pCropPixels = AreEdgesBlack(greyImage, wMax, false);
+
+		// If there's a change in crop pixels, update the crop trigger
+		if (_lCropPixels != lCropPixels || _pCropPixels != pCropPixels) {
+			UpdateCropTrigger();
+		}
+	}
+	
+	private int AreEdgesBlack(Mat greyImage, int maxIndex, bool isRow) {
+		var uniformBlackArea = 0;
+
+		for (var i = 0; i < maxIndex; i++) {
+			// Check the current edge pixel for being black
+			var currentEdgeIsBlack = CheckPixelIsBlack(greyImage, i, isRow, true);
+			// Check the opposite edge pixel for being black
+			var oppositeEdgeIsBlack = CheckPixelIsBlack(greyImage, i, isRow, false);
+
+			// If both edges have a black pixel at the same position, increase the uniform black area count
+			if (currentEdgeIsBlack && oppositeEdgeIsBlack) {
+				uniformBlackArea = i + 1;
+			} else {
+				// If one edge is not black or the black areas are not uniform, break the loop
+				break;
+			}
+		}
+
+		return uniformBlackArea;
+	}
+
+	private bool CheckPixelIsBlack(Mat greyImage, int index, bool isRow, bool isCurrentEdge) {
+		var row = isRow ? isCurrentEdge ? index : greyImage.Rows - 1 - index : 0;
+		var col = isRow ? 0 : isCurrentEdge ? index : greyImage.Cols - 1 - index;
+
+		var pixel = new byte[greyImage.NumberOfChannels];
+		Marshal.Copy(greyImage.DataPointer + row * greyImage.Step + col * greyImage.ElementSize, pixel, 0, pixel.Length);
+
+		// Calculate the average value of all of the pixels
+		var pixelAverage = Sum(pixel) / pixel.Length;
+		if (pixelAverage > 0) {
+			Log.Debug($"Pixel at {row}, {col} is not black: {pixelAverage} vs {_cropBlackLevel}");
+		} else {
+			Log.Debug($"Pixel at {row}, {col} is black: {pixelAverage} vs {_cropBlackLevel}");
+		}
+		return pixelAverage <= _cropBlackLevel;
+	}
+	
+	private void UpdateCropTrigger() {
+		if (_lCropPixels > 0 || _pCropPixels > 0) {
+			_lCrop = _lCropPixels > 0;
+			_pCrop = _pCropPixels > 0;
+			_sectorChanged = true;
+		}
+	}
+
+	
+	private void HandleAutoDisable() {
+		if (_doSend) {
+			var autoDisable = _allBlack;
+			ColorService.CheckAutoDisable(autoDisable);
+			Log.Debug(autoDisable ? "Enabling auto-disable due to all black." : "Disabling auto-disable.");
+		}
+	}
+
+
+	private void UpdateSectors() {
+		_fullCoords = DrawGrid();
+		_fullSectors = DrawSectors();
+	}
+
 
 	private static int Sum(IEnumerable<byte> bytes) {
 		return bytes.Aggregate(0, (current, b) => current + b);

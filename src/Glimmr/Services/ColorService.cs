@@ -169,8 +169,8 @@ public class ColorService : BackgroundService {
 			DataUtil.SetSystemData(_systemData);
 			_deviceMode = _systemData.DeviceMode;
 		}
-
-		await ControlService.SetMode(_deviceMode).ConfigureAwait(true);
+		
+		Log.Information("Setting device mode..." + _deviceMode);
 		Log.Information("Color service started.");
 	}
 
@@ -392,40 +392,58 @@ public class ColorService : BackgroundService {
 
 	private async Task Demo(object o, DynamicEventArgs? dynamicEventArgs) {
 		await StartStream();
-		var dims = new[] { 20, 20, 40, 40 };
+		var dims = new[] { 20, 20, 40, 40 };  // Assuming this represents top, right, bottom, left LED counts
 		var builder = new FrameBuilder(dims);
 		var ledCount = dims.Sum();
-		var i = 0;
 		var cols = ColorUtil.EmptyColors(ledCount);
+    
 		try {
 			_splitter.DoSend = false;
-			while (i < ledCount) {
-				var pi = i * 1.0f;
-				var progress = pi / ledCount;
-				var rCol = ColorUtil.Rainbow(progress);
-				cols[i] = rCol;
-				var frame = builder.Build(cols);
-				if (frame != null) {
-					var (colors, sectors) = _splitter.Update(frame).Result;
-					frame.Dispose();
-					try {
-						await SendColors(colors, sectors, true).ConfigureAwait(false);
-					} catch (Exception e) {
-						Log.Warning("SEND EXCEPTION: " + JsonConvert.SerializeObject(e));
-					}
-				}
 
-				i++;
+			// Fill in the LEDs with the rainbow pattern
+			for (var i = 0; i < ledCount; i++) {
+				UpdateRainbow(cols, i, ledCount);
+				await SendFrame(builder, cols);
+			}
+
+			await Task.Delay(750); // Wait for 1/2 a second
+
+			// Reverse the animation at double speed
+			for (var i = ledCount - 1; i >= 0; i -= 4) {
+				cols[i] = Color.Black;
+				if (i - 1 >= 0) cols[i - 1] = Color.Black;
+				if (i - 2 >= 0) cols[i - 2] = Color.Black;
+				if (i - 3 >= 0) cols[i - 3] = Color.Black;
+				await SendFrame(builder, cols);
 			}
 
 			_splitter.DoSend = true;
-		} catch (Exception f) {
-			Log.Warning("Outer demo exception: " + f.Message);
+		} catch (Exception ex) {
+			Log.Warning($"Outer demo exception: {ex.Message}");
+		} finally {
+			builder.Dispose();
 		}
-
-		builder.Dispose();
-		await Task.Delay(500);
 	}
+
+	private void UpdateRainbow(Color[] cols, int index, int ledCount) {
+		var progress = index / (float)ledCount;
+		cols[index] = ColorUtil.Rainbow(progress);
+	}
+
+	private async Task SendFrame(FrameBuilder builder, Color[] cols) {
+		var frame = builder.Build(cols);
+		if (frame != null) {
+			try {
+				var (colors, sectors) = await _splitter.Update(frame);
+				await SendColors(colors, sectors, true).ConfigureAwait(false);
+			} catch (Exception e) {
+				Log.Warning($"SEND EXCEPTION: {JsonConvert.SerializeObject(e)}");
+			} finally {
+				frame.Dispose();
+			}
+		}
+	}
+
 
 	private async Task RefreshDeviceData(object o, DynamicEventArgs dynamicEventArgs) {
 		var id = dynamicEventArgs.Arg0;
@@ -531,69 +549,71 @@ public class ColorService : BackgroundService {
 	}
 
 	private async Task Mode(object o, DynamicEventArgs dynamicEventArgs) {
-		var sd = DataUtil.GetSystemData();
-		var newMode = (DeviceMode)dynamicEventArgs.Arg0;
-		Log.Debug("New mode set: " + newMode);
-		bool init = dynamicEventArgs.Arg1 ?? false;
-		if (init) {
-			Log.Debug("Initializing mode.");
-		}
+    var sd = DataUtil.GetSystemData();
+    var newMode = (DeviceMode)dynamicEventArgs.Arg0;
+    Log.Debug($"New mode set: {newMode}");
 
-		_deviceMode = newMode;
-		// Don't unset auto-disable if init is set...
-		if (sd.AutoDisabled && !init) {
-			_autoDisabled = false;
-			DataUtil.SetItem("AutoDisabled", _autoDisabled);
-			Log.Debug("Unsetting auto-disabled flag...");
-		}
+    bool init = dynamicEventArgs.Arg1 ?? false;
+    if (init) {
+        Log.Debug("Initializing mode.");
+    }
 
-		_streamTokenSource.Cancel();
-		await Task.Delay(TimeSpan.FromMilliseconds(500));
-		if (_stream is { SourceActive: true }) {
-			Log.Debug("Killing stream!");
-			_stream.Stop();
-		}
+    // Early return if the mode hasn't actually changed to avoid unnecessary processing
+    if (_deviceMode == newMode && !init) {
+        Log.Debug("Mode set to current mode; no change required.");
+        return;
+    }
 
-		if (_streamStarted && newMode == 0) {
-			await StopDevices();
-		}
+    _deviceMode = newMode;
 
+    if (sd.AutoDisabled && !init) {
+        _autoDisabled = false;
+        DataUtil.SetItem("AutoDisabled", _autoDisabled);
+        Log.Debug("Auto-disabled flag unset.");
+    }
 
-		_streamTokenSource = new CancellationTokenSource();
-		if (_streamTokenSource.IsCancellationRequested) {
-			Log.Warning("Token source has cancellation requested.");
-			//return;
-		}
+    _streamTokenSource.Cancel();
+    await Task.Delay(500);
 
-		// Load our stream regardless
-		ColorSource? stream = null;
-		if (newMode == DeviceMode.Udp) {
-			stream = sd.StreamMode == StreamMode.DreamScreen
-				? _streams["DreamScreen"]
-				: _streams["UDP"];
-		} else if (newMode != DeviceMode.Off) {
-			stream = _streams[newMode.ToString()];
-		}
+    if (_stream?.SourceActive == true) {
+        Log.Debug("Stopping active stream.");
+        _stream.Stop();
+    }
 
-		_stream = stream;
-		if (stream != null) {
-			Log.Debug("Setting stream mode to " + newMode);
-			await stream.Start(_streamTokenSource.Token);
-			Log.Debug("Stream started.");
-			_stream = stream;
-		} else {
-			if (newMode != DeviceMode.Off) {
-				Log.Warning("Unable to acquire stream.");
-			}
-		}
+    // Consider refactoring StopDevices to handle this check internally
+    if (_streamStarted && newMode == DeviceMode.Off) {
+        await StopDevices();
+    }
 
-		if (newMode != 0 && !_streamStarted && !_autoDisabled) {
-			await StartStream();
-		}
+    // Resetting the token source for new usage
+    _streamTokenSource = new CancellationTokenSource();
+    if (_streamTokenSource.IsCancellationRequested) {
+        Log.Warning("New token source already has cancellation requested.");
+        return; // Consider handling this case more gracefully
+    }
 
-		_deviceMode = newMode;
-		Log.Information($"Device mode updated to {newMode}.");
-	}
+    var stream = newMode switch {
+        DeviceMode.Udp => sd.StreamMode == StreamMode.DreamScreen ? _streams["DreamScreen"] : _streams["UDP"],
+        DeviceMode.Off => null,
+        _ => _streams.TryGetValue(newMode.ToString(), out var selectedStream) ? selectedStream : null,
+    };
+
+    if (stream != null) {
+        Log.Debug($"Starting stream for mode {newMode}.");
+        await stream.Start(_streamTokenSource.Token);
+        _stream = stream; // No need to set _stream twice
+    } else if (newMode != DeviceMode.Off) {
+        Log.Warning("Unable to acquire stream for the new mode.");
+    }
+
+    // Check if conditions for starting the stream are met
+    if (newMode != DeviceMode.Off && !_streamStarted && !_autoDisabled) {
+        await StartStream();
+    }
+
+    Log.Information($"Device mode updated to {newMode}.");
+}
+
 
 	private async Task StartStream() {
 		if (!_streamStarted) {
@@ -678,32 +698,23 @@ public class ColorService : BackgroundService {
 	}
 
 	public async Task SendColors(Color[] colors, Color[] sectors, bool force = false) {
-		if (!_streamStarted) {
+		if (!_streamStarted || (_autoDisabled && !force) || (_testing && !force)) {
 			return;
 		}
 
-		if (_autoDisabled && !force) {
-			return;
-		}
+		if (ColorSendEventAsync == null) return; // Exit early if no subscribers
 
-		if (_testing && !force) {
-			return;
-		}
-
-		if (ColorSendEventAsync != null) {
-			try {
-				await ColorSendEventAsync
-					.InvokeAsync(this, new ColorSendEventArgs(colors, sectors))
-					.ConfigureAwait(false);
-				if (Recording) {
-					var time = _recordWatch.ElapsedMilliseconds;
-					_recording[time] = sectors;
-				}
-
-				Counter.Tick("source");
-			} catch (Exception e) {
-				Log.Warning("Exception: " + e.Message + " at " + e.StackTrace);
+		try {
+			await ColorSendEventAsync.InvokeAsync(this, new ColorSendEventArgs(colors, sectors)).ConfigureAwait(false);
+        
+			if (Recording) {
+				var time = _recordWatch.ElapsedMilliseconds;
+				_recording[time] = sectors;
 			}
+
+			Counter.Tick("source");
+		} catch (Exception e) {
+			Log.Warning($"Exception: {e.Message} at {e.StackTrace}");
 		}
 	}
 

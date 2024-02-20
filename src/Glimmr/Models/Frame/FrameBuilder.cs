@@ -142,27 +142,34 @@ public class FrameBuilder : IDisposable {
 		};
 
 		// Calculate points for each side and add them to 'polly'
-		AddSidePoints(polly, center, 0, segmentWidths[0], _topCount, true);
-		AddSidePoints(polly, center, ScaleHeight, segmentWidths[1], _bottomCount, true);
-		AddSidePoints(polly, center, 0, segmentHeights[0], _leftCount, false);
-		AddSidePoints(polly, center, ScaleWidth, segmentHeights[1], _rightCount, false);
+		AddSidePoints(polly, center, ScaleWidth, segmentHeights[1], _rightCount, false, true);
+		AddSidePoints(polly, center, 0, segmentWidths[0], _topCount, true, true);
+		AddSidePoints(polly, center, 0, segmentHeights[0], _leftCount, false, false);
+		AddSidePoints(polly, center, ScaleHeight, segmentWidths[1], _bottomCount, true, false);
+		
 
 		return polly;
 	}
 
-	private void AddSidePoints(VectorOfVectorOfPoint polly, Point center, int start, int segmentSize, int count, bool horizontal) {
-		for (int i = 0; i < count; i++) {
-			var ord = i * segmentSize;
-			var c2 = ord + segmentSize;
+	private static void AddSidePoints(VectorOfVectorOfPoint polly, Point center, int start, int segmentSize, int count, bool horizontal, bool reverse) {
+		if (reverse) {
+			for (var i = count; i >= 0; i--) {
+				var ord = i * segmentSize;
+				var c2 = ord + segmentSize;
 
-			Point[] pts;
-			if (horizontal) {
-				pts = new[] { new Point(ord, start), new Point(c2, start), center };
-			} else {
-				pts = new[] { new Point(start, ord), new Point(start, c2), center };
+				var pts = horizontal ? new[] { new Point(ord, start), new Point(c2, start), center } : new[] { new Point(start, ord), new Point(start, c2), center };
+
+				polly.Push(new VectorOfPoint(pts));
 			}
+		} else {
+			for (var i = 0; i < count; i++) {
+				var ord = i * segmentSize;
+				var c2 = ord + segmentSize;
 
-			polly.Push(new VectorOfPoint(pts));
+				var pts = horizontal ? new[] { new Point(ord, start), new Point(c2, start), center } : new[] { new Point(start, ord), new Point(start, c2), center };
+
+				polly.Push(new VectorOfPoint(pts));
+			}
 		}
 	}
 
@@ -174,11 +181,11 @@ public class FrameBuilder : IDisposable {
         int[] dimensions = { ScaleHeight, ScaleWidth, ScaleHeight, ScaleWidth }; // Heights and widths for each side
         bool[] isHorizontal = { false, true, false, true }; // Orientation of each side
     
-        for (int side = 0; side < 4; side++) {
-            int stepSize = dimensions[side] / sides[side]; // Step size for the current side
-            for (int i = 0; i < sides[side]; i++) {
-                int ord = i * stepSize; // Calculate the ordinal position for the current step
-                Point[] pts = new Point[3];
+        for (var side = 0; side < 4; side++) {
+            var stepSize = dimensions[side] / sides[side]; // Step size for the current side
+            for (var i = 0; i < sides[side]; i++) {
+                var ord = i * stepSize; // Calculate the ordinal position for the current step
+                var pts = new Point[3];
     
                 if (isHorizontal[side]) {
                     pts[0] = new Point(ord, side == 1 ? 0 : ScaleHeight);
@@ -199,13 +206,13 @@ public class FrameBuilder : IDisposable {
 
 	private Rectangle[] DrawCenterSectors() {
         var rectangles = new List<Rectangle>();
-        int sectorWidth = ScaleWidth / _topCount;
-        int sectorHeight = ScaleHeight / _leftCount;
+        var sectorWidth = ScaleWidth / _topCount;
+        var sectorHeight = ScaleHeight / _leftCount;
     
-        for (int v = 0; v < _leftCount; v++) {
-            int top = v * sectorHeight;
-            for (int h = 0; h < _topCount; h++) {
-                int left = h * sectorWidth;
+        for (var v = 0; v < _leftCount; v++) {
+            var top = v * sectorHeight;
+            for (var h = 0; h < _topCount; h++) {
+                var left = h * sectorWidth;
                 var rect = new Rectangle(left, top, sectorWidth, sectorHeight);
                 rectangles.Add(rect);
             }

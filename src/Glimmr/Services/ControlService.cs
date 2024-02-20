@@ -139,7 +139,7 @@ public class ControlService : BackgroundService {
 		await DeviceRescanEvent.InvokeAsync(this, new DynamicEventArgs("foo"));
 	}
 
-	public async Task SetMode(DeviceMode mode, bool autoDisabled = false) {
+	public async Task SetMode(DeviceMode mode, bool autoDisabled = false, bool init = false) {
 		Log.Information("Setting mode: " + mode);
 		if (mode != DeviceMode.Off) {
 			DataUtil.SetItem("PreviousMode", mode);
@@ -147,7 +147,9 @@ public class ControlService : BackgroundService {
 
 		DataUtil.SetItem("AutoDisabled", autoDisabled);
 		DataUtil.SetItem("DeviceMode", mode);
-		await SetModeEvent.InvokeAsync(this, new DynamicEventArgs(mode));
+		// If init is true, set DynamicEventArgs.Arg1 to true
+		var args = new DynamicEventArgs(mode, init);
+		await SetModeEvent.InvokeAsync(this, args);
 	}
 
 	public async Task<bool> AuthorizeDevice(string id, IClientProxy? clientProxy = null) {

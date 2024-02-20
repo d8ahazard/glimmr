@@ -184,29 +184,52 @@ public class SocketServer : Hub {
 	}
 
 	public Task SettingsShown(bool open) {
-		var client = Context.ConnectionId;
+		try {
+			Log.Debug("Settings shown: " + open);
+			var client = Context.ConnectionId;
+			Log.Debug("Client: " + client);
+			// Ensure _states dictionary is initialized
+			if (_states == null) {
+				Log.Error("States dictionary is null.");
+				return Task.CompletedTask;
+			}
+			Log.Debug("Setting state.");
+			_states[client] = open;
+			Log.Debug($"{(open ? "Open" : "Close")} client: {client}");
 
-		_states[client] = open;
-		if (open) {
-			Log.Debug("Open client: " + client);
-		} else {
-			Log.Debug("Close client: " + client);
+			SetSend();
+		} catch (Exception ex) {
+			Log.Error($"An error occurred in SettingsShown: {ex.Message}", ex);
 		}
-
-		SetSend();
+    
 		return Task.CompletedTask;
 	}
 
-	private void SetSend() {
-		if (_cs == null) {
-			Log.Debug("NO CONTROL SERVICE!");
-			return;
-		}
 
-		var send = _states.Any(state => state.Value);
-		_doSend = send;
-		_cs.SendPreview = _doSend;
+	private void SetSend() {
+		Log.Debug("SetSend");
+		try {
+			if (_cs == null) {
+				Log.Debug("NO CONTROL SERVICE!");
+				return;
+			}
+
+			// Ensure _states dictionary is initialized
+			if (_states == null) {
+				Log.Error("States dictionary is null in SetSend.");
+				return;
+			}
+			Log.Debug("Setting send.");
+			var send = _states.Any(state => state.Value);
+			_doSend = send;
+			Log.Debug("Setting SendPreview: " + _doSend);
+			_cs.SendPreview = _doSend;
+			Log.Debug("SendPreview set.");
+		} catch (Exception ex) {
+			Log.Error($"An error occurred in SetSend: {ex.Message}", ex.StackTrace);
+		}
 	}
+
 
 	public async Task FlashSector(int sector) {
 		if (_cs == null) {
