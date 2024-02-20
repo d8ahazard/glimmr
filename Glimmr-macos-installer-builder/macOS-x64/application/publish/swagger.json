@@ -12,7 +12,7 @@
       "name": "GPL3.0",
       "url": "https://github.com/d8ahazard/glimmr/blob/master/COPYING"
     },
-    "version": "1.2.7"
+    "version": "1.2.6"
   },
   "paths": {
     "/api/Glimmr": {

@@ -390,6 +390,7 @@ v. {version}
 		UdpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 		// This should keep our socket from doing bad things?
 		UdpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout, 30);
+		UdpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.IpTimeToLive, true);
 		UdpClient.Client.Blocking = false;
 		if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
 			UdpClient.DontFragment = true;

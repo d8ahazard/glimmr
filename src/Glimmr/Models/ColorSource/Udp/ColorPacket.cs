@@ -28,26 +28,30 @@ public class ColorPacket {
 
 	public byte[] Encode(int duration = 1) {
 		var header = new[] { (byte)UdpStreamMode, (byte)duration };
-		var data = Array.Empty<byte>();
 		Duration = duration;
-		data = UdpStreamMode switch {
+
+		byte[] data = UdpStreamMode switch {
 			UdpStreamMode.Drgb => EncodeDrgb(),
 			UdpStreamMode.Dnrgb => EncodeDnrgb(),
 			UdpStreamMode.Drgbw => EncodeDrgbw(),
 			UdpStreamMode.Warls => EncodeWarls(),
-			_ => data
+			_ => Array.Empty<byte>()
 		};
 
-		return header.Concat(data).ToArray();
+		var result = new byte[header.Length + data.Length];
+		Buffer.BlockCopy(header, 0, result, 0, header.Length);
+		Buffer.BlockCopy(data, 0, result, header.Length, data.Length);
+
+		return result;
 	}
 
 	private byte[] EncodeWarls() {
 		var output = new byte[Colors.Length * 4];
-		for (var i = 0; i < Colors.Length; i++) {
-			output[i] = (byte)i;
-			output[i + 1] = Colors[i].R;
-			output[i + 2] = Colors[i].G;
-			output[i + 3] = Colors[i].B;
+		for (int i = 0, j = 0; i < Colors.Length; i++, j += 4) {
+			output[j] = (byte)i;
+			output[j + 1] = Colors[i].R;
+			output[j + 2] = Colors[i].G;
+			output[j + 3] = Colors[i].B;
 		}
 
 		return output;
@@ -55,13 +59,11 @@ public class ColorPacket {
 
 	private byte[] EncodeDrgbw() {
 		var output = new byte[Colors.Length * 4];
-		var dIdx = 0;
-		foreach (var color in Colors) {
-			output[dIdx] = color.R;
-			output[dIdx + 1] = color.G;
-			output[dIdx + 2] = color.B;
-			output[dIdx + 3] = color.A;
-			dIdx += 4;
+		for (int i = 0, j = 0; i < Colors.Length; i++, j += 4) {
+			output[j] = Colors[i].R;
+			output[j + 1] = Colors[i].G;
+			output[j + 2] = Colors[i].B;
+			output[j + 3] = Colors[i].A; // Assuming A is for W (White) in RGBW
 		}
 
 		return output;
@@ -72,12 +74,10 @@ public class ColorPacket {
 		var len = BitConverter.GetBytes((short)Colors.Length);
 		data[0] = len[0];
 		data[1] = len[1];
-		var dIdx = 2;
-		foreach (var color in Colors) {
-			data[dIdx] = color.R;
-			data[dIdx + 1] = color.G;
-			data[dIdx + 2] = color.B;
-			dIdx += 3;
+		for (int i = 0, j = 2; i < Colors.Length; i++, j += 3) {
+			data[j] = Colors[i].R;
+			data[j + 1] = Colors[i].G;
+			data[j + 2] = Colors[i].B;
 		}
 
 		return data;
@@ -85,16 +85,15 @@ public class ColorPacket {
 
 	private byte[] EncodeDrgb() {
 		var output = new byte[Colors.Length * 3];
-		var oIdx = 0;
-		foreach (var t in Colors) {
-			output[oIdx] = t.R;
-			output[oIdx + 1] = t.G;
-			output[oIdx + 2] = t.B;
-			oIdx += 3;
+		for (int i = 0, j = 0; i < Colors.Length; i++, j += 3) {
+			output[j] = Colors[i].R;
+			output[j + 1] = Colors[i].G;
+			output[j + 2] = Colors[i].B;
 		}
 
 		return output;
 	}
+
 
 	private void DecodePacket(byte[] input) {
 		if (input.Length < 2) {

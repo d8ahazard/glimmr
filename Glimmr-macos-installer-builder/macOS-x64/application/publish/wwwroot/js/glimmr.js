@@ -2008,6 +2008,13 @@ function updateDevice(id, property, value) {
         value = segments;
         property = "segments";
     }
+    if (property.includes("segmentMultiplier")) {
+        let segmentId = parseInt(property.replace("segmentMultiplier", ""));
+        let segments = dev["segments"];
+        segments[segmentId]["multiplier"] = parseInt(value);
+        value = segments;
+        property = "segments";
+    }
     if (isValid(dev) && dev.hasOwnProperty(property)) {
         dev[property] = value;
         data.setDevice(dev);

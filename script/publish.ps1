@@ -27,7 +27,7 @@ param (
 	# Push all web files, no restart
 	$web = $false
 )
-$targets = "linux-arm64", "linux-arm", "linux-x64", "win-arm64", "win-x64", "win-x86", "osx-x64"
+$targets = "linux-arm64", "linux-x64", "win-arm64", "win-x64", "win-x86", "osx-x64"
 $package = $true
 if ($targetDevice -ne "" -or ($service -and $targetRuntime -like "win-*") -or $css -or $js -or $web) {
 	$package = $false
@@ -126,11 +126,6 @@ foreach ($target in $targets) {
 		Write-Host "Version set to $version"
 		Write-Host "Copying x64 ARM package for builder..."
 		Copy-Item -Path "$binPath\$fullVersion.$target.tar.gz" -Destination "$builderPath64\archive.tgz"
-	}
-	
-	if ($target -like 'linux-arm' -and $package) {
-		Write-Host "Copying ARM package for builder..."
-		Copy-Item -Path "$binPath\$fullVersion.$target.tar.gz" -Destination "$builderPath\archive.tgz"
 	}
 	
 	if ($target -like 'osx-*' -and $package) {
