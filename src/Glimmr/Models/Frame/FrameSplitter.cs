@@ -713,7 +713,6 @@ public class FrameSplitter : IDisposable {
 
 		// Only calculate new sectors if the value has changed
 		if (_sectorChanged) {
-			Log.Debug($"Crop changed, redrawing {_lCropPixels} and {_pCropPixels}...");
 			_fullCoords = DrawGrid();
 			_fullSectors = DrawSectors();
 			_sectorChanged = false;
