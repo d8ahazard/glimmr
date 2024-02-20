@@ -2,3 +2,6 @@ comitup
 comitup-watch
 davesteele-comitup-apt-source
 vim
+firmware-realtek
+firmware-ath9k-htc
+firmware-iwlwifi

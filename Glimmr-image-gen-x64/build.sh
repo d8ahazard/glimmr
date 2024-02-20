@@ -21,7 +21,7 @@ EOF
 			PACKAGES="$(sed -f "${SCRIPT_DIR}/remove-comments.sed" < "${i}-packages-nr")"
 			if [ -n "$PACKAGES" ]; then
 				on_chroot << EOF
-apt-get -o APT::Acquire::Retries=3 install --no-install-recommends -y $PACKAGES
+apt-get -o Acquire::Retries=3 install --no-install-recommends -y $PACKAGES
 EOF
 				if [ "${USE_QCOW2}" = "1" ]; then
 					on_chroot << EOF
@@ -36,7 +36,7 @@ EOF
 			PACKAGES="$(sed -f "${SCRIPT_DIR}/remove-comments.sed" < "${i}-packages")"
 			if [ -n "$PACKAGES" ]; then
 				on_chroot << EOF
-apt-get -o APT::Acquire::Retries=3 install -y $PACKAGES
+apt-get -o Acquire::Retries=3 install -y $PACKAGES
 EOF
 				if [ "${USE_QCOW2}" = "1" ]; then
 					on_chroot << EOF
@@ -194,6 +194,7 @@ trap term EXIT INT TERM
 
 export PI_GEN=${PI_GEN:-pi-gen}
 export PI_GEN_REPO=${PI_GEN_REPO:-https://github.com/RPi-Distro/pi-gen}
+export PI_GEN_RELEASE=${PI_GEN_RELEASE:-Raspberry Pi reference}
 
 if [ -z "${IMG_NAME}" ]; then
 	echo "IMG_NAME not set" 1>&2
@@ -225,9 +226,8 @@ export TARGET_HOSTNAME=${TARGET_HOSTNAME:-raspberrypi}
 
 export FIRST_USER_NAME=${FIRST_USER_NAME:-pi}
 export FIRST_USER_PASS
-export RELEASE=${RELEASE:-bullseye}
-export WPA_ESSID
-export WPA_PASSWORD
+export DISABLE_FIRST_BOOT_USER_RENAME=${DISABLE_FIRST_BOOT_USER_RENAME:-0}
+export RELEASE=${RELEASE:-bookworm} # Don't forget to update stage0/prerun.sh
 export WPA_COUNTRY
 export ENABLE_SSH="${ENABLE_SSH:-0}"
 export PUBKEY_ONLY_SSH="${PUBKEY_ONLY_SSH:-0}"
@@ -282,12 +282,27 @@ fi
 
 export NO_PRERUN_QCOW2="${NO_PRERUN_QCOW2:-1}"
 
+if [ "$SETFCAP" != "1" ]; then
+	export CAPSH_ARG="--drop=cap_setfcap"
+fi
+
 dependencies_check "${BASE_DIR}/depends"
 
 #check username is valid
 if [[ ! "$FIRST_USER_NAME" =~ ^[a-z][-a-z0-9_]*$ ]]; then
 	echo "Invalid FIRST_USER_NAME: $FIRST_USER_NAME"
 	exit 1
+fi
+
+if [[ "$DISABLE_FIRST_BOOT_USER_RENAME" == "1" ]] && [ -z "${FIRST_USER_PASS}" ]; then
+	echo "To disable user rename on first boot, FIRST_USER_PASS needs to be set"
+	echo "Not setting FIRST_USER_PASS makes your system vulnerable and open to cyberattacks"
+	exit 1
+fi
+
+if [[ "$DISABLE_FIRST_BOOT_USER_RENAME" == "1" ]]; then
+	echo "User rename on the first boot is disabled"
+	echo "Be advised of the security risks linked to shipping a device with default username/password set."
 fi
 
 if [[ -n "${APT_PROXY}" ]] && ! curl --silent "${APT_PROXY}" >/dev/null ; then

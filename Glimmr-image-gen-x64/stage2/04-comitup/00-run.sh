@@ -4,6 +4,8 @@ set -e
 
 touch ${ROOTFS_DIR}/boot/ssh
 
+install -m 644 files/userconf.txt ${ROOTFS_DIR}/boot/
+
 rm -f ${ROOTFS_DIR}/etc/network/interfaces
 install -m 644 files/interfaces ${ROOTFS_DIR}/etc/network/
 
