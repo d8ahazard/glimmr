@@ -81,7 +81,8 @@ public class FrameSplitter : IDisposable {
 
 	// Track crop state
 	private bool _lCrop;
-
+	private bool _pCrop;
+	
 	private int _lCropPixels;
 
 	private int _ledCount;
@@ -92,7 +93,6 @@ public class FrameSplitter : IDisposable {
 	private VectorOfPointF? _lockTarget;
 	private bool _merge;
 	private DeviceMode _mode;
-	private bool _pCrop;
 	private int _pCropPixels;
 	private FrameCropTrigger _pFrameCropTrigger;
 
@@ -593,97 +593,117 @@ public class FrameSplitter : IDisposable {
 	public Color[] GetSectors() {
 		return _colorsSectors;
 	}
+	
+	private async Task CheckCrop(Mat image) {
+		// Set our tolerances
+		_sectorChanged = false;
+		var width = ScaleWidth;
+		var height = ScaleHeight;
+		var wMax = width / 3;
+		var hMax = height / 3;
+		// How many non-black pixels can be in a given row
+		var lPixels = 0;
+		var pPixels = 0;
 
-	private async Task CheckCrop(Mat? image) {
-		if (image == null || image.IsEmpty || image.Width <= 1 || image.Height <= 1) {
+		width--;
+		height--;
+		var raw = image.GetRawData();
+		var unique = raw.Distinct().ToArray();
+
+		//var count = Sum(raw);
+		var noImage = width == 0 || height == 0 || (unique.Length == 1 && unique[0] <= _cropBlackLevel);
+		// If it is, we can stop here
+		if (noImage) {
 			_allBlack = true;
-			HandleAutoDisable();
+			if (_doSend) {
+				ColorService.CheckAutoDisable(false);
+			}
+
 			return;
 		}
 
-		if (!_useCrop) return;
+		if (_doSend) {
+			ColorService.CheckAutoDisable(true);
+		}
+
+		// Return here, because otherwise, "no input" detection won't work.
+		if (!_useCrop) {
+			return;
+		}
+
+		// Convert image to greyscale
 
 		_allBlack = false;
-		var width = image.Width;
-		var height = image.Height;
-		var wMax = width / 3;
-		var hMax = height / 3;
-			
-		
-		var greyImage = image.NumberOfChannels > 1 ? new Mat() : image;
-		if (image.NumberOfChannels > 1) {
-			CvInvoke.CvtColor(image, greyImage, ColorConversion.Bgr2Gray);
+		// Check letterboxing
+		if (_cropLetter) {
+			for (var y = 0; y < hMax; y += 2) {
+				var c1 = image.Row(height - y);
+				var c2 = image.Row(y);
+				var b1 = c1.GetRawData().SkipLast(8).Skip(8).ToArray();
+				var b2 = c2.GetRawData().SkipLast(8).Skip(8).ToArray();
+				var l1 = Sum(b1) / b1.Length;
+				var l2 = Sum(b2) / b2.Length;
+				c1.Dispose();
+				c2.Dispose();
+				if (l1 <= _cropBlackLevel && l2 <= _cropBlackLevel && l1 == l2) {
+					lPixels = y;
+				} else {
+					break;
+				}
+			}
+
+			_lFrameCropTrigger.Tick(lPixels);
+			if (_lFrameCropTrigger.Triggered != _lCrop && !_sectorChanged) {
+				_sectorChanged = true;
+				_lCrop = _lFrameCropTrigger.Triggered;
+			}
+
+			_lCropPixels = lPixels;
 		}
 
-		CheckEdges(greyImage, wMax, hMax);
+		// Check pillarboxing
+		if (_cropPillar) {
+			for (var x = 0; x < wMax; x += 2) {
+				var c1 = image.Col(width - x);
+				var c2 = image.Col(x);
+				var b1 = c1.GetRawData().SkipLast(8).Skip(8).ToArray();
+				var b2 = c2.GetRawData().SkipLast(8).Skip(8).ToArray();
+				var l1 = Sum(b1) / b1.Length;
+				var l2 = Sum(b2) / b2.Length;
+				c1.Dispose();
+				c2.Dispose();
+				if (l1 <= _cropBlackLevel && l2 <= _cropBlackLevel && l1 == l2) {
+					pPixels = x;
+				} else {
+					break;
+				}
+			}
 
-		if (greyImage != image) {
-			greyImage.Dispose();
+			_pFrameCropTrigger.Tick(pPixels);
+			if (_pFrameCropTrigger.Triggered != _pCrop && !_sectorChanged) {
+				_sectorChanged = true;
+				_pCrop = _pFrameCropTrigger.Triggered;
+			}
+
+			_pCropPixels = pPixels;
 		}
 
+		// Cleanup mat
+		//image.Dispose();
+
+		// Only calculate new sectors if the value has changed
 		if (_sectorChanged) {
-			UpdateSectors();
+			Log.Debug($"Crop changed, redrawing {_lCropPixels} and {_pCropPixels}...");
+			_fullCoords = DrawGrid();
+			_fullSectors = DrawSectors();
 			_sectorChanged = false;
 		}
 
-		await Task.CompletedTask;
+		await Task.FromResult(true);
 	}
 
-	private void CheckEdges(Mat greyImage, int wMax, int hMax) {
-		// Check for uniform black edges for letterboxing (top and bottom)
-		var lCropPixels = AreEdgesBlack(greyImage, hMax, true);
-
-		// Check for uniform black edges for pillarboxing (left and right)
-		var pCropPixels = AreEdgesBlack(greyImage, wMax, false);
-		// If there's a change in crop pixels, update the crop trigger
-		if (_lCropPixels != lCropPixels || _pCropPixels != pCropPixels) {
-			_lCropPixels = lCropPixels;
-			_pCropPixels = pCropPixels;
-			UpdateCropTrigger();
-		}
-	}
 	
-	private int AreEdgesBlack(Mat greyImage, int maxIndex, bool isRow) {
-		var uniformBlackArea = 0;
-
-		for (var i = 0; i < maxIndex; i++) {
-			// Check the current edge pixel for being black
-			var currentEdgeIsBlack = CheckPixelIsBlack(greyImage, i, isRow, true);
-			// Check the opposite edge pixel for being black
-			var oppositeEdgeIsBlack = CheckPixelIsBlack(greyImage, i, isRow, false);
-
-			// If both edges have a black pixel at the same position, increase the uniform black area count
-			if (currentEdgeIsBlack && oppositeEdgeIsBlack) {
-				uniformBlackArea = i + 1;
-			} else {
-				// If one edge is not black or the black areas are not uniform, break the loop
-				break;
-			}
-		}
-
-		return uniformBlackArea;
-	}
-
-	private bool CheckPixelIsBlack(Mat greyImage, int index, bool isRow, bool isCurrentEdge) {
-		var row = isRow ? isCurrentEdge ? index : greyImage.Rows - 1 - index : 0;
-		var col = isRow ? 0 : isCurrentEdge ? index : greyImage.Cols - 1 - index;
-
-		var pixel = new byte[greyImage.NumberOfChannels];
-		Marshal.Copy(greyImage.DataPointer + row * greyImage.Step + col * greyImage.ElementSize, pixel, 0, pixel.Length);
-
-		// Calculate the average value of all of the pixels
-		var pixelAverage = Sum(pixel) / pixel.Length;
-		return pixelAverage <= _cropBlackLevel;
-	}
 	
-	private void UpdateCropTrigger() {
-		if (_lCropPixels > 0 || _pCropPixels > 0) {
-			_lCrop = _lCropPixels > 0;
-			_pCrop = _pCropPixels > 0;
-			_sectorChanged = true;
-		}
-	}
-
 	
 	private void HandleAutoDisable() {
 		if (_doSend) {
@@ -695,6 +715,7 @@ public class FrameSplitter : IDisposable {
 
 
 	private void UpdateSectors() {
+		Log.Debug("Updating sectors.");
 		_fullCoords = DrawGrid();
 		_fullSectors = DrawSectors();
 	}
