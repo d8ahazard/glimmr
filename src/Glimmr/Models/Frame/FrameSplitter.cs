@@ -365,7 +365,6 @@ public class FrameSplitter : IDisposable {
 			secs = _colorsSectorsIn;
 		}
 		if (inMat is { IsEmpty: false }) {
-			Log.Debug("Sending input image...");
 			ControlService.SendImage("inputImage", inMat).ConfigureAwait(false);
 		}
 
@@ -636,9 +635,10 @@ public class FrameSplitter : IDisposable {
 
 		// Check for uniform black edges for pillarboxing (left and right)
 		var pCropPixels = AreEdgesBlack(greyImage, wMax, false);
-
 		// If there's a change in crop pixels, update the crop trigger
 		if (_lCropPixels != lCropPixels || _pCropPixels != pCropPixels) {
+			_lCropPixels = lCropPixels;
+			_pCropPixels = pCropPixels;
 			UpdateCropTrigger();
 		}
 	}
@@ -673,11 +673,6 @@ public class FrameSplitter : IDisposable {
 
 		// Calculate the average value of all of the pixels
 		var pixelAverage = Sum(pixel) / pixel.Length;
-		if (pixelAverage > 0) {
-			Log.Debug($"Pixel at {row}, {col} is not black: {pixelAverage} vs {_cropBlackLevel}");
-		} else {
-			Log.Debug($"Pixel at {row}, {col} is black: {pixelAverage} vs {_cropBlackLevel}");
-		}
 		return pixelAverage <= _cropBlackLevel;
 	}
 	
