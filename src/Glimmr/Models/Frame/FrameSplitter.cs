@@ -356,6 +356,20 @@ public class FrameSplitter : IDisposable {
 		return (_colorsLed, _colorsSectors);
 	}
 
+	
+	private Color GetAverage(IInputArray sInput) {
+		var foo = CvInvoke.Mean(sInput);
+		var red = (int)foo.V2;
+		var green = (int)foo.V1;
+		var blue = (int)foo.V0;
+		if (red < _blackLevel && green < _blackLevel && blue < _blackLevel) {
+			return Color.FromArgb(0, 0, 0, 0);
+		}
+
+		return Color.FromArgb(red, green, blue);
+	}
+
+	
 	private void SaveFrames(Mat inMat, Mat outMat) {
 		_doSave = false;
 		var cols = _colorsLed;
@@ -372,7 +386,7 @@ public class FrameSplitter : IDisposable {
 			Log.Debug("Output image is empty.");
 			return;
 		}
-		var colBlack = new Bgr(Color.FromArgb(0, 0, 0, 0)).MCvScalar;
+		var colBlack = new Bgr(Color.FromArgb(255, 128, 128, 128)).MCvScalar;
 		switch (_previewMode) {
 			
 			case 1: {
@@ -574,18 +588,7 @@ public class FrameSplitter : IDisposable {
 		return outPut;
 	}
 
-	private Color GetAverage(IInputArray sInput) {
-		var foo = CvInvoke.Mean(sInput);
-		var red = (int)foo.V2;
-		var green = (int)foo.V1;
-		var blue = (int)foo.V0;
-		if (red < _blackLevel && green < _blackLevel && blue < _blackLevel) {
-			return Color.FromArgb(0, 0, 0, 0);
-		}
-
-		return Color.FromArgb(red, green, blue);
-	}
-
+	
 	public Color[] GetColors() {
 		return _colorsLed;
 	}
@@ -594,7 +597,7 @@ public class FrameSplitter : IDisposable {
 		return _colorsSectors;
 	}
 	
-	private async Task CheckCrop(Mat image) {
+	private async Task CheckCropOg(Mat image) {
 		// Set our tolerances
 		_sectorChanged = false;
 		var width = ScaleWidth;
@@ -702,25 +705,125 @@ public class FrameSplitter : IDisposable {
 		await Task.FromResult(true);
 	}
 
-	
-	
-	
-	private void HandleAutoDisable() {
-		if (_doSend) {
-			var autoDisable = _allBlack;
-			ColorService.CheckAutoDisable(autoDisable);
-			Log.Debug(autoDisable ? "Enabling auto-disable due to all black." : "Disabling auto-disable.");
+	private async Task CheckCrop(Mat image)
+	{
+		// Set our tolerances
+		_sectorChanged = false;
+		var width = ScaleWidth - 1; // Adjusted here to avoid decrementing later
+		var height = ScaleHeight - 1; // Adjusted here to avoid decrementing later
+		var wMax = width / 3;
+		var hMax = height / 3;
+
+		// Early check for no image condition
+		if (width <= 0 || height <= 0)
+		{
+			_allBlack = true;
+			if (_doSend)
+			{
+				ColorService.CheckAutoDisable(false);
+			}
+			return;
 		}
+
+		if (_doSend)
+		{
+			ColorService.CheckAutoDisable(true);
+		}
+
+		if (!_useCrop)
+		{
+			return;
+		}
+
+		_allBlack = false;
+		var lPixels = 0;
+		var pPixels = 0;
+
+		// Process for letterboxing
+		if (_cropLetter)
+		{
+			for (var y = 0; y < hMax; y += 2)
+			{
+				var avgTop = GetRowAverage(image, y, width);
+				var avgBottom = GetRowAverage(image, height - y, width);
+				if (avgTop <= _cropBlackLevel && avgBottom <= _cropBlackLevel && avgTop == avgBottom)
+				{
+					lPixels = y;
+				}
+				else
+				{
+					break;
+				}
+			}
+
+			UpdateCrop(ref _lCrop, ref _lCropPixels, lPixels, _lFrameCropTrigger);
+		}
+
+		// Process for pillarboxing
+		if (_cropPillar)
+		{
+			for (var x = 0; x < wMax; x += 2)
+			{
+				var avgLeft = GetColAverage(image, x, height);
+				var avgRight = GetColAverage(image, width - x, height);
+				if (avgLeft <= _cropBlackLevel && avgRight <= _cropBlackLevel && avgLeft == avgRight)
+				{
+					pPixels = x;
+				}
+				else
+				{
+					break;
+				}
+			}
+
+			UpdateCrop(ref _pCrop, ref _pCropPixels, pPixels, _pFrameCropTrigger);
+		}
+
+		// Update sectors if needed
+		if (_sectorChanged)
+		{
+			Log.Debug($"Crop changed, redrawing {_lCropPixels} and {_pCropPixels}...");
+			_fullCoords = DrawGrid();
+			_fullSectors = DrawSectors();
+			_sectorChanged = false;
+		}
+
+		await Task.FromResult(true);
 	}
 
-
-	private void UpdateSectors() {
-		Log.Debug("Updating sectors.");
-		_fullCoords = DrawGrid();
-		_fullSectors = DrawSectors();
+// Helper method to calculate the average brightness of a row, avoiding direct raw data access
+	private double GetRowAverage(Mat image, int rowIndex, int width)
+	{
+		var row = image.Row(rowIndex);
+		var rowData = row.GetRawData().SkipLast(8).Skip(8).ToArray();
+		var average = rowData.Average(byteValue => byteValue);
+		row.Dispose();
+		return average;
 	}
 
+// Helper method to calculate the average brightness of a column, similar to the row average calculation
+	private double GetColAverage(Mat image, int colIndex, int height)
+	{
+		var col = image.Col(colIndex);
+		var colData = col.GetRawData().SkipLast(8).Skip(8).ToArray();
+		var average = colData.Average(byteValue => byteValue);
+		col.Dispose();
+		return average;
+	}
 
+// Method to update crop values and check if sector changed
+	private void UpdateCrop(ref bool cropFlag, ref int cropPixels, int newPixels, FrameCropTrigger frameCropTrigger)
+	{
+		frameCropTrigger.Tick(newPixels);
+		if (frameCropTrigger.Triggered != cropFlag && !_sectorChanged)
+		{
+			_sectorChanged = true;
+			cropFlag = frameCropTrigger.Triggered;
+		}
+		cropPixels = newPixels;
+	}
+
+	
 	private static int Sum(IEnumerable<byte> bytes) {
 		return bytes.Aggregate(0, (current, b) => current + b);
 	}
