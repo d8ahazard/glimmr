@@ -130,7 +130,7 @@ public class ControlService : BackgroundService {
 					}
 				}
 			} catch (Exception e) {
-				Log.Warning("Agent creation error: " + e.Message);
+				Log.Warning($"Agent creation error ({c}): " + e.Message + " at " + e.StackTrace);
 			}
 		}
 	}

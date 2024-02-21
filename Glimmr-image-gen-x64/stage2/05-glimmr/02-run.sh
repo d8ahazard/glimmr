@@ -25,3 +25,7 @@ KillMode=process
 WantedBy=multi-user.target
 
 " > ${ROOTFS_DIR}/etc/systemd/system/glimmr.service
+
+if [ -f "${ROOTFS_DIR}/etc/ld.so.preload" ]; then
+   mv "${ROOTFS_DIR}/etc/ld.so.preload" "${ROOTFS_DIR}/etc/ld.so.preload.disabled"
+fi

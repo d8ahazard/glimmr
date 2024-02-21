@@ -326,15 +326,6 @@ public class LedAgent : IColorTargetAgent {
 		// 	//toSend[i] = Color.FromArgb(_gammaTable[toSend[i].R], _gammaTable[toSend[i].G], _gammaTable[toSend[i].B]);
 		// }
 
-		if (data.StripType == 1) {
-			for (var i = 0; i < toSend.Length; i++) {
-				var tCol = toSend[i];
-				tCol = ColorUtil.ClampAlpha(tCol);
-				toSend[i] = tCol;
-			}
-		}
-
-
 		if (id == "0") {
 			_colors1 = toSend;
 		} else {
