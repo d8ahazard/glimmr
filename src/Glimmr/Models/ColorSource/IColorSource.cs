@@ -18,6 +18,7 @@ public abstract class ColorSource : BackgroundService {
 	public abstract FrameSplitter Splitter { get; set; }
 	protected Task? RunTask;
 	public abstract Task Start(CancellationToken ct);
+	
 
 	public void Stop() {
 		if (RunTask == null) {

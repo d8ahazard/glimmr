@@ -27,6 +27,7 @@ param (
 	# Push all web files, no restart
 	$web = $false
 )
+$msbuild_path = "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe"
 $targets = "linux-arm64", "linux-x64", "win-arm64", "win-x64", "win-x86", "osx-x64"
 $package = $true
 if ($targetDevice -ne "" -or ($service -and $targetRuntime -like "win-*") -or $css -or $js -or $web) {
@@ -43,7 +44,6 @@ $glimmrPath = Resolve-Path -path "$PSScriptRoot\..\src\Glimmr"
 $binPath = Resolve-Path -path "$PSScriptRoot\..\src\Glimmr\bin"
 $trayPath = Resolve-Path -path "$PSScriptRoot\..\src\GlimmrTray"
 $osxPath = Resolve-Path -path "$PSScriptRoot\..\Glimmr-macos-installer-builder\MacOS-x64\application"
-$builderPath = Resolve-Path -path "$PSScriptRoot\..\Glimmr-image-gen\stage2\05-glimmr\files"
 $builderPath64 = Resolve-Path -path "$PSScriptRoot\..\Glimmr-image-gen-x64\stage2\05-glimmr\files"
 $baseFiles = "Glimmr.Views.dll", "Glimmr.deps.json", "Glimmr.Views.pdb","wwwroot\js\*","wwwroot\css\*","Glimmr.dll",
 "Glimmr.pdb","Glimmr.xml","Glimmr.runtimeconfig.json","Glimmr"
@@ -90,14 +90,14 @@ if ($targetRuntime -like "win-*") {
 
 foreach ($target in $targets) {
 	write-host Packaging $target
-	dotnet publish -r $target -c Release -o "$binPath\Release\net6.0\$target" --self-contained=true
+	dotnet publish -r $target -c Release -o "$binPath\Release\net8.0\$target" --self-contained=true
 	if($target -like 'win-*') {
 		Write-Host "Publishing..."
-		dotnet publish -r $target -c Release -o "$binPath\Release\net6.0\$target\publish" --self-contained=true $trayPath\GlimmrTray.csproj
+		dotnet publish -r $target -c Release -o "$binPath\Release\net8.0\$target\publish" --self-contained=true $trayPath\GlimmrTray.csproj
 		if ($package) {
 			Write-Host "Creating zip..."
 			dotnet zip -c Release -r $target -o $binPath --no-restore
-			#Invoke-Expression -Command "$PSScriptRoot\7z.exe a -mx9 -tzip -r $binPath\$fullVersion.$target.zip $binPath\Release\net6.0\$targetRuntime\*"
+			#Invoke-Expression -Command "$PSScriptRoot\7z.exe a -mx9 -tzip -r $binPath\$fullVersion.$target.zip $binPath\Release\net8.0\$targetRuntime\*"
 			$path = @(Get-ChildItem "$binPath\Glimmr.*.$target.zip")[0]
 			$outputFile = Split-Path $path -leaf
 			$fullVersion = $outputFile.Replace(".$target.zip", "")
@@ -113,7 +113,8 @@ foreach ($target in $targets) {
 	
 	if ($target -like 'linux-*' -and $package) {
 		Write-Host "Creating deb/rpm/tar..."
-		dotnet deb -c Release -r $target -o $binPath
+		
+		dotnet deb -c Release -r $target -o $binPath 
 		dotnet rpm -c Release -r $target -o $binPath
 		dotnet tarball -c Release -r $target -o $binPath		
 	}
@@ -133,7 +134,7 @@ foreach ($target in $targets) {
 			dotnet tarball -c Release -o $binPath -r $target
 			Write-Host "Copying OSX files for installer builder..."
 			Remove-Item $osxPath\* -Recurse
-			Copy-Item -Path "$binPath\Release\net6.0\$target\*" -Destination $osxPath -Recurse
+			Copy-Item -Path "$binPath\Release\net8.0\$target\*" -Destination $osxPath -Recurse
 		}
 	}	
 }
@@ -160,18 +161,18 @@ if ($targetDevice -ne "" -or ($service -and $targetRuntime -like "win-*")) {
 		
 		if (-not ($full)) {
 			if ($css) {
-				pscp -P 22 -r -pw $password $binPath\Release\net6.0\$targetRuntime\wwwroot\css\ "${username}@${targetDevice}:$targetPath/wwwroot/css/"
+				pscp -P 22 -r -pw $password $binPath\Release\net8.0\$targetRuntime\wwwroot\css\ "${username}@${targetDevice}:$targetPath/wwwroot/css/"
 			} elseif ($javascript) {
-				pscp -P 22 -r -pw $password $binPath\Release\net6.0\$targetRuntime\wwwroot\js\ "${username}@${targetDevice}:$targetPath/wwwroot/js/"
+				pscp -P 22 -r -pw $password $binPath\Release\net8.0\$targetRuntime\wwwroot\js\ "${username}@${targetDevice}:$targetPath/wwwroot/js/"
 			} elseif ($web) {
-				pscp -P 22 -r -pw $password $binPath\Release\net6.0\$targetRuntime\wwwroot\ "${username}@${targetDevice}:$targetPath/wwwroot/"
+				pscp -P 22 -r -pw $password $binPath\Release\net8.0\$targetRuntime\wwwroot\ "${username}@${targetDevice}:$targetPath/wwwroot/"
 			} else {
 				foreach($file in $baseFiles) {
-					pscp -P 22 -r -pw $password $binPath\Release\net6.0\$targetRuntime\$file "${username}@${targetDevice}:$targetPath/$file"
+					pscp -P 22 -r -pw $password $binPath\Release\net8.0\$targetRuntime\$file "${username}@${targetDevice}:$targetPath/$file"
 				}
 			}
 		} else {
-			pscp -P 22 -r -pw $password $binPath\Release\net6.0\$targetRuntime\* "${username}@${targetDevice}:$targetPath/"	
+			pscp -P 22 -r -pw $password $binPath\Release\net8.0\$targetRuntime\* "${username}@${targetDevice}:$targetPath/"	
 		}		
 	}
 	
@@ -184,7 +185,7 @@ if ($targetDevice -ne "" -or ($service -and $targetRuntime -like "win-*")) {
 			plink -no-antispoof -pw $password "$username@$targetDevice" "echo $password | sudo -S service glimmr start"
 		} else {
 			Write-Host "Restarting Glimmr on Windoze"
-			Start-Process "$binPath\Release\net6.0\$targetRuntime\Glimmr.exe"
+			Start-Process "$binPath\Release\net8.0\$targetRuntime\Glimmr.exe"
 		}
 	}
 }
