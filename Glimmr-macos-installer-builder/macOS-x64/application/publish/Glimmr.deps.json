@@ -32,7 +32,7 @@
   },
   "targets": {
     ".NETCoreApp,Version=v6.0": {
-      "Glimmr/1.3.0-master-0001159": {
+      "Glimmr/1.3.0-master-0001162": {
         "dependencies": {
           "AdalightNet": "1.0.8",
           "DasMulli.SimpleGitVersion": "1.0.0",
@@ -3489,7 +3489,7 @@
       }
     },
     ".NETCoreApp,Version=v6.0/osx-x64": {
-      "Glimmr/1.3.0-master-0001159": {
+      "Glimmr/1.3.0-master-0001162": {
         "dependencies": {
           "AdalightNet": "1.0.8",
           "DasMulli.SimpleGitVersion": "1.0.0",
@@ -7135,7 +7135,7 @@
     }
   },
   "libraries": {
-    "Glimmr/1.3.0-master-0001159": {
+    "Glimmr/1.3.0-master-0001162": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
