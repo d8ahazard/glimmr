@@ -392,6 +392,16 @@ v. {version}
 		UdpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout, 30);
 		UdpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.IpTimeToLive, true);
 		UdpClient.Client.Blocking = false;
+		var currentSendBufferSize = UdpClient.Client.SendBufferSize;
+		Console.WriteLine("Current Send Buffer Size: " + currentSendBufferSize);
+
+		// Set the desired buffer size
+		const int newSendBufferSize = 212992;
+		if (currentSendBufferSize != newSendBufferSize) {
+			Log.Information($"Increased UDP Send buffer from {currentSendBufferSize} to {newSendBufferSize}");
+			UdpClient.Client.SendBufferSize = newSendBufferSize;	
+		}
+		
 		if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
 			UdpClient.DontFragment = true;
 		}
