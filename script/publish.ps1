@@ -110,23 +110,21 @@ foreach ($target in $targets) {
 			Start-Process -FilePath $innoPath -ArgumentList $arguments -Wait
 		}
 	}
-	
+
+	$version = (Get-Item "$binPath\Release\net8.0\$target\Glimmr.dll").VersionInfo.FileVersion
+	# Format the name like Glimmr.1.3.0-master-0001168.linux-x64
+	$dateString = Get-Date -Format "yyyyMMddhhmm"
+	$fullVersion = "Glimmr.$version-master-$dateString.$target"
+
 	if ($target -like 'linux-*' -and $package) {
-		Write-Host "Creating deb/rpm/tar..."
-		
-		dotnet deb -c Release -r $target -o $binPath 
-		dotnet rpm -c Release -r $target -o $binPath
-		dotnet tarball -c Release -r $target -o $binPath		
+		Write-Host "Creating tarball at $binPath\$fullVersion.tar.gz..."
+		Invoke-Expression -Command "$PSScriptRoot\7z.exe a -mx9 -ttar -r $binPath\$fullVersion.tar $binPath\Release\net8.0\$targetRuntime\*"
+		Invoke-Expression -Command "$PSScriptRoot\7z.exe a -mx9 -tgzip $binPath\$fullVersion.tar.gz $binPath\$fullVersion.tar"
 	}
 	
 	if ($target -like 'linux-arm64' -and $package) {
-		$path = @(Get-ChildItem "$binPath\Glimmr.*.linux-arm64.rpm")[0]
-		$outputFile = Split-Path $path -leaf
-		$fullVersion = $outputFile.Replace(".linux-arm64.rpm", "")
-		$version = $fullVersion.Replace("Glimmr.","")
-		Write-Host "Version set to $version"
 		Write-Host "Copying x64 ARM package for builder..."
-		Copy-Item -Path "$binPath\$fullVersion.$target.tar.gz" -Destination "$builderPath64\archive.tgz"
+		Copy-Item -Path "$binPath\$fullVersion.tar.gz" -Destination "$builderPath64\archive.tgz"
 	}
 	
 	if ($target -like 'osx-*' -and $package) {
@@ -158,22 +156,22 @@ if ($targetDevice -ne "" -or ($service -and $targetRuntime -like "win-*")) {
 		} else {
 			$targetPath = "/Library/Glimmr/$version"
 		}
-		
-		if (-not ($full)) {
+
+		if (-not $full) {
 			if ($css) {
-				pscp -P 22 -r -pw $password $binPath\Release\net8.0\$targetRuntime\wwwroot\css\ "${username}@${targetDevice}:$targetPath/wwwroot/css/"
+				pscp -P 22 -r -pw $password "${binPath}/Release/net8.0/${targetRuntime}/wwwroot/css/" "${username}@${targetDevice}:${targetPath}/wwwroot/css/"
 			} elseif ($javascript) {
-				pscp -P 22 -r -pw $password $binPath\Release\net8.0\$targetRuntime\wwwroot\js\ "${username}@${targetDevice}:$targetPath/wwwroot/js/"
+				pscp -P 22 -r -pw $password "${binPath}/Release/net8.0/${targetRuntime}/wwwroot/js/" "${username}@${targetDevice}:${targetPath}/wwwroot/js/"
 			} elseif ($web) {
-				pscp -P 22 -r -pw $password $binPath\Release\net8.0\$targetRuntime\wwwroot\ "${username}@${targetDevice}:$targetPath/wwwroot/"
+				pscp -P 22 -r -pw $password "${binPath}/Release/net8.0/${targetRuntime}/wwwroot/" "${username}@${targetDevice}:${targetPath}/wwwroot/"
 			} else {
-				foreach($file in $baseFiles) {
-					pscp -P 22 -r -pw $password $binPath\Release\net8.0\$targetRuntime\$file "${username}@${targetDevice}:$targetPath/$file"
+				foreach ($file in $baseFiles) {
+					pscp -P 22 -r -pw $password "${binPath}/Release/net8.0/${targetRuntime}/${file}" "${username}@${targetDevice}:${targetPath}/${file}"
 				}
 			}
 		} else {
-			pscp -P 22 -r -pw $password $binPath\Release\net8.0\$targetRuntime\* "${username}@${targetDevice}:$targetPath/"	
-		}		
+			pscp -P 22 -r -pw $password "${binPath}/Release/net8.0/${targetRuntime}/*" "${username}@${targetDevice}:${targetPath}/"
+		}
 	}
 	
 	if ($service -and -not ($web -and $css -and $js)) {

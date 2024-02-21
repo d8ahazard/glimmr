@@ -28,4 +28,5 @@ WantedBy=multi-user.target
 
 if [ -f "${ROOTFS_DIR}/etc/ld.so.preload" ]; then
    mv "${ROOTFS_DIR}/etc/ld.so.preload" "${ROOTFS_DIR}/etc/ld.so.preload.disabled"
+   echo "" > "${ROOTFS_DIR}/etc/ld.so.preload"
 fi
