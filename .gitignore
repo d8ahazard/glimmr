@@ -12,6 +12,7 @@ src/GlimmrTray/obj/*
 src/Image2Scene/bin/*
 src/Image2Scene/obj/*
 src/Glimmr-Android/*
+Glimmr-macos-installer-builder/macOS-x64/application/*
 packages/*
 store.db*
 CodeGraphData/*
