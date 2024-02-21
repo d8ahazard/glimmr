@@ -270,7 +270,7 @@
         <DebDependency Include="libqtgui4" />
         <DebDependency Include="libqt4-test" />
         <DebDependency Include="libglu1-mesa" />
-        <DebDependency Include="libdc1394-22" />
+        <DebDependency Include="libdc1394" />
         <DebDependency Include="libtesseract-dev" />
         <DebDependency Include="icu-devtools" />
         <DebDependency Include="libjpeg-dev" />
@@ -297,7 +297,7 @@
         <DebDependency Include="libavformat-dev" />
         <DebDependency Include="libopenexr-dev" />
         <DebDependency Include="libjasper-dev" />
-        <DebDependency Include="libdc1394-22-dev" />
+        <DebDependency Include="libdc1394-dev" />
         <DebDependency Include="libv4l-dev" />
         <DebDependency Include="libeigen3-dev" />
         <DebDependency Include="libopengl-dev" />
@@ -311,7 +311,7 @@
         <RpmDependency Include="libqtgui4" />
         <RpmDependency Include="libqt4-test" />
         <RpmDependency Include="libglu1-mesa" />
-        <RpmDependency Include="libdc1394-22" />
+        <RpmDependency Include="libdc1394" />
         <RpmDependency Include="libtesseract-dev" />
         <RpmDependency Include="icu-devtools" />
         <RpmDependency Include="libjpeg-dev" />
@@ -338,7 +338,7 @@
         <RpmDependency Include="libavformat-dev" />
         <RpmDependency Include="libopenexr-dev" />
         <RpmDependency Include="libjasper-dev" />
-        <RpmDependency Include="libdc1394-22-dev" />
+        <RpmDependency Include="libdc1394-dev" />
         <RpmDependency Include="libv4l-dev" />
         <RpmDependency Include="libeigen3-dev" />
         <RpmDependency Include="libopengl-dev" />
@@ -353,7 +353,7 @@
         <DebDependency Include="libhdf5-dev" />
         <DebDependency Include="libatlas-base-dev" />
         <DebDependency Include="libglu1-mesa" />
-        <DebDependency Include="libdc1394-22" />
+        <DebDependency Include="libdc1394" />
         <DebDependency Include="libtesseract-dev" />
         <DebDependency Include="icu-devtools" />
         <DebDependency Include="libjpeg-dev" />
@@ -384,7 +384,7 @@
         <DebDependency Include="libavformat-dev" />
         <DebDependency Include="libopenexr-dev" />
         <DebDependency Include="libjasper-dev" />
-        <DebDependency Include="libdc1394-22-dev" />
+        <DebDependency Include="libdc1394-dev" />
         <DebDependency Include="libv4l-dev" />
         <DebDependency Include="libeigen3-dev" />
         <DebDependency Include="libopengl-dev" />
@@ -394,7 +394,7 @@
         <RpmDependency Include="libhdf5-dev" />
         <RpmDependency Include="libatlas-base-dev" />
         <RpmDependency Include="libglu1-mesa" />
-        <RpmDependency Include="libdc1394-22" />
+        <RpmDependency Include="libdc1394" />
         <RpmDependency Include="libtesseract-dev" />
         <RpmDependency Include="icu-devtools" />
         <RpmDependency Include="libjpeg-dev" />
@@ -425,7 +425,7 @@
         <RpmDependency Include="libavformat-dev" />
         <RpmDependency Include="libopenexr-dev" />
         <RpmDependency Include="libjasper-dev" />
-        <RpmDependency Include="libdc1394-22-dev" />
+        <RpmDependency Include="libdc1394-dev" />
         <RpmDependency Include="libv4l-dev" />
         <RpmDependency Include="libeigen3-dev" />
         <RpmDependency Include="libopengl-dev" />
