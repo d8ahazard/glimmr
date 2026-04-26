@@ -49,14 +49,11 @@ public class UdpStream : ColorSource {
 		_uc = new UdpClient(21324) { Ttl = 5, Client = { ReceiveBufferSize = 2000 } };
 		_uc.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 		_uc.Client.Blocking = false;
-
 		_cancelSource = new CancellationTokenSource();
+
 		if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
 			_uc.DontFragment = true;
 		}
-
-		_cancelSource = new CancellationTokenSource();
-
 
 		var sd = DataUtil.GetSystemData();
 		_devMode = sd.DeviceMode;
@@ -85,7 +82,8 @@ public class UdpStream : ColorSource {
 	public sealed override void RefreshSystem() {
 		var sd = DataUtil.GetSystemData();
 		_devMode = sd.DeviceMode;
-		_hostName = _sd.DeviceName;
+		_sd = sd;
+		_hostName = sd.DeviceName;
 		_discovery?.Dispose();
 		var address = new List<IPAddress> { IPAddress.Parse(IpUtil.GetLocalIpAddress()) };
 		var service = new ServiceProfile(_hostName, "_glimmr._tcp", 21324, address);
@@ -137,9 +135,10 @@ public class UdpStream : ColorSource {
 	}
 
 	public override Task StopAsync(CancellationToken stoppingToken) {
+		_cts.Cancel();
+		_cancelSource.Cancel();
 		_uc.Close();
 		_uc.Dispose();
-		_cancelTask?.Dispose();
 		return Task.CompletedTask;
 	}
 
@@ -165,8 +164,9 @@ public class UdpStream : ColorSource {
 			// Set our timeout value and restart watch every time a frame is received
 			_timeOut = cp.Duration;
 			_cancelSource.Cancel();
+			_cancelSource.Dispose();
 			_cancelSource = new CancellationTokenSource();
-			_cancelTask = new Task(DisableSource, _cancelSource.Token);
+			_cancelTask = DisableSource(_timeOut, _cancelSource.Token);
 			var frame = Builder.Build(ledColors);
 			if (frame != null) {
 				await Splitter.Update(frame);
@@ -177,13 +177,15 @@ public class UdpStream : ColorSource {
 		}
 	}
 
-	private async void DisableSource() {
+	private async Task DisableSource(int timeout, CancellationToken token) {
 		try {
-			await Task.Delay(TimeSpan.FromSeconds(_timeOut), _cancelSource.Token);
+			await Task.Delay(TimeSpan.FromSeconds(timeout), token);
 			_sourceActive = false;
 			Splitter.DoSend = SourceActive;
-		} catch (Exception) {
+		} catch (OperationCanceledException) {
 			//ignored
+		} catch (Exception e) {
+			Log.Debug("Exception disabling UDP source: " + e.Message);
 		}
 	}
 }

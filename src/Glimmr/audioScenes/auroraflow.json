@@ -1,0 +1,17 @@
+{
+  "Id": 10,
+  "Name": "Aurora Flow",
+  "System": true,
+  "Mode": "Aurora",
+  "Palette": "aurora",
+  "BandScale": "Mel",
+  "BandCount": 24,
+  "Sensitivity": 0.7,
+  "NoiseGate": 0.05,
+  "Attack": 0.45,
+  "Decay": 0.18,
+  "BeatSensitivity": 0.55,
+  "Motion": 0.3,
+  "Sparkle": 0.0,
+  "StrobeLimit": 0.7
+}

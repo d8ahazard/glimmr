@@ -12,7 +12,11 @@ fi
 if [ -n "${FIRST_USER_PASS}" ]; then
 	echo "${FIRST_USER_NAME}:${FIRST_USER_PASS}" | chpasswd
 fi
-echo "root:root" | chpasswd
+
+# Lock the root account. Bookworm-and-later policy: no password root,
+# privilege escalation goes through sudo. The first user is in the sudo
+# group (see stage2/01-sys-tweaks).
+passwd -l root
 EOF
 
 

@@ -160,10 +160,10 @@ public class GlimmrDevice : ColorTarget, IColorTarget, IDisposable {
 			}
 
 			var leds1 = new List<Color>();
-			left = left.Reverse().ToArray();
-			top = top.Reverse().ToArray();
-			bottom = bottom.Reverse().ToArray();
-			right = right.Reverse().ToArray();
+			left = Enumerable.Reverse(left).ToArray();
+			top = Enumerable.Reverse(top).ToArray();
+			bottom = Enumerable.Reverse(bottom).ToArray();
+			right = Enumerable.Reverse(right).ToArray();
 
 			leds1.AddRange(left);
 			leds1.AddRange(top);

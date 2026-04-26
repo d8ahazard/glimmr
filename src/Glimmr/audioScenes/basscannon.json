@@ -1,0 +1,17 @@
+{
+  "Id": 11,
+  "Name": "Bass Cannon",
+  "System": true,
+  "Mode": "BassCannon",
+  "Palette": "hellfire",
+  "BandScale": "Log",
+  "BandCount": 16,
+  "Sensitivity": 0.7,
+  "NoiseGate": 0.04,
+  "Attack": 0.65,
+  "Decay": 0.4,
+  "BeatSensitivity": 0.7,
+  "Motion": 0.55,
+  "Sparkle": 0.45,
+  "StrobeLimit": 0.5
+}

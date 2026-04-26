@@ -151,13 +151,28 @@ namespace GlimmrControl.Core {
 			await Navigation.PushModalAsync(page, false);
 		}
 
+		private async void OnCalibrateRoomTapped(object sender, EventArgs e) {
+			if (deviceList.Count == 0) {
+				return;
+			}
+
+			var targetDevice = deviceList.FirstOrDefault(d => d.IsEnabled);
+			if (targetDevice == null) {
+				return;
+			}
+
+			var page = new RoomCalibrationPage(targetDevice);
+			await Navigation.PushModalAsync(page, false);
+		}
+
 		private void
-			UpdateElementsVisibility() //Show welcome labels and hide deletion mode button if there are no devices
+			UpdateElementsVisibility()
 		{
 			var listIsEmpty = deviceList.Count == 0;
 
 			welcomeLabel.IsVisible = listIsEmpty;
 			instructionLabel.IsVisible = listIsEmpty;
+			CalibrateRoomButton.IsVisible = !listIsEmpty;
 			topMenuBar.SetButtonIcon(ButtonLocation.Left, listIsEmpty ? ButtonIcon.None : ButtonIcon.Delete);
 
 			//iOS workaround for listview not updating unless ItemSource is modified

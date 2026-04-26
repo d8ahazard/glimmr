@@ -191,7 +191,7 @@ public class LifxDevice : ColorTarget, IColorTarget {
 			}
 
 			if (segment.Reverse && !segment.Repeat) {
-				segColors = segColors.Reverse().ToArray();
+				segColors = Enumerable.Reverse(segColors).ToArray();
 			}
 
 			output.AddRange(segColors);

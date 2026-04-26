@@ -1,11 +1,10 @@
 ﻿#region
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
+using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
+using Glimmr.Models.ColorSource.Audio.Engine;
 using Glimmr.Models.Data;
 using Glimmr.Models.Frame;
 using Glimmr.Models.Util;
@@ -17,6 +16,12 @@ using Serilog;
 
 namespace Glimmr.Models.ColorSource.Audio;
 
+/// <summary>
+///     Capture-side orchestrator for the audio visualizer. Talks to BASS,
+///     pulls FFT magnitudes, hands them to <see cref="AudioMap" /> (which
+///     owns the analyzer + active effect), and pushes the resulting 20
+///     colors into the standard frame pipeline.
+/// </summary>
 public class AudioStream : ColorSource {
 	public bool SendColors {
 		set => Splitter.DoSend = value;
@@ -24,39 +29,40 @@ public class AudioStream : ColorSource {
 
 	public override bool SourceActive => Splitter.SourceActive;
 	public sealed override FrameBuilder? Builder { get; set; }
-
 	public sealed override FrameSplitter Splitter { get; set; }
-	private int _SampleFreq = 48000;
-	private const int SampleSize = 512;
-	private CancellationToken? _ct;
-	private int _cutoff;
-	private Dictionary<float, int> _frameData;
 
-	//private float _gain;
+	private const int SampleSize = 512;
+
+	private readonly object _lastFrameLock = new();
+	private CancellationToken? _ct;
+	private DateTime _lastFrameTimeUtc;
+	private DateTime _lastSilenceTimeUtc;
 	private int _handle;
 	private bool _hasDll;
 	private AudioMap _map;
-
-	private double _maxVal;
-
-	//private float _min = .015f;
 	private int _recordDeviceIndex;
 	private bool _restart;
 	private bool _running;
+	private int _sampleFreq = 48000;
 	private SystemData? _sd;
 	private bool _updating;
 
 	public AudioStream(ColorService cs) {
-		_frameData = new Dictionary<float, int>();
 		_map = new AudioMap();
 		Splitter = new FrameSplitter(cs);
 		SendColors = true;
-		Builder = new FrameBuilder(new[] {
-			4, 4, 6, 6
-		});
+		Builder = new FrameBuilder(new[] { 4, 4, 6, 6 });
 		cs.ControlService.RefreshSystemEvent += RefreshSystem;
 		RefreshSystem();
 	}
+
+	/// <summary>
+	///     The most recent reactive state observed by the analyzer. Exposed
+	///     so the audio+video stream can blend richer features (beat,
+	///     bass, centroid) into video frames instead of reading only
+	///     brightness from the rendered colors.
+	/// </summary>
+	public AudioReactiveState ReactiveState => _map.State;
 
 	public override Task Start(CancellationToken ct) {
 		_ct = ct;
@@ -64,73 +70,69 @@ public class AudioStream : ColorSource {
 		return Task.CompletedTask;
 	}
 
-
 	public sealed override void RefreshSystem() {
 		_sd = DataUtil.GetSystemData();
-		_cutoff = _sd.AudioCutoff;
 		var idx = _recordDeviceIndex;
 		LoadData();
+		_map.Refresh();
 		if (idx == _recordDeviceIndex || _ct == null) {
 			return;
 		}
 
 		_restart = true;
+		_ = RestartWhenStopped();
+	}
+
+	private async Task RestartWhenStopped() {
 		while (_running) {
-			Task.Delay(TimeSpan.FromSeconds(1));
+			await Task.Delay(TimeSpan.FromSeconds(1));
 		}
 
 		try {
 			if (_ct == null) {
-				Log.Debug("NULL CT!");
+				Log.Debug("RestartWhenStopped: cancellation token is null, aborting restart.");
 				return;
 			}
 
+			_restart = false;
 			RunTask = ExecuteAsync((CancellationToken)_ct);
 		} catch (Exception e) {
 			Log.Warning("Exception: " + e.Message + " at " + e.StackTrace + " via " + e.Source);
 		}
-
-		_restart = false;
 	}
-
 
 	protected override Task ExecuteAsync(CancellationToken ct) {
 		_ct = ct;
-		var ver = Bass.Version;
-		Log.Debug("Using bass ver: " + ver);
+		Log.Debug("Using bass ver: " + Bass.Version);
 		return Task.Run(async () => {
 			try {
 				Bass.RecordInit(_recordDeviceIndex);
 				const int period = 33;
-				Log.Debug("WTF: " + _SampleFreq);
-				_handle = Bass.RecordStart(_SampleFreq, 2, BassFlags.Default, period, UpdateAudio);
-				Log.Debug("Trying to get windows frequency??");
-				var nfo = Bass.ChannelGetAttribute(_handle, ChannelAttribute.Bitrate);
-				Log.Debug("Freq: " + nfo);
+				_handle = Bass.RecordStart(_sampleFreq, 2, BassFlags.Default, period, UpdateAudio);
 				_hasDll = true;
-				Log.Information($"Recording init completed for {_sd?.RecDev ?? ""} ({_recordDeviceIndex})");
+				Log.Information(
+					$"Recording init completed for {_sd?.RecDev ?? ""} ({_recordDeviceIndex})");
 			} catch (DllNotFoundException) {
-				Log.Warning("Bass.dll not found, nothing to do...");
+				Log.Warning("Bass.dll not found, audio visualizer disabled.");
 				_hasDll = false;
 			} catch (Exception e) {
-				Log.Debug("Generic exception: " + e.Message);
+				Log.Debug("Audio init exception: " + e.Message);
 			}
 
 			if (!_hasDll) {
-				Log.Debug("Audio stream unavailable, no bass.dll found.");
 				return Task.CompletedTask;
 			}
 
 			Log.Debug("Starting audio stream service...");
 			_running = true;
+			_lastFrameTimeUtc = DateTime.UtcNow;
 			Bass.ChannelPlay(_handle, true);
-			Log.Debug("Audio stream started.");
 			while (!ct.IsCancellationRequested && !_restart) {
 				await Task.Delay(TimeSpan.FromMilliseconds(500), CancellationToken.None);
 			}
 
 			if (_restart) {
-				Log.Debug("Restarting...");
+				Log.Debug("Audio stream restart requested.");
 			}
 
 			try {
@@ -139,7 +141,7 @@ public class AudioStream : ColorSource {
 				Bass.RecordFree();
 				Log.Debug("Audio stream service stopped.");
 			} catch (Exception e) {
-				Log.Warning("Exception stopping stream..." + e.Message);
+				Log.Warning("Exception stopping stream: " + e.Message);
 			}
 
 			_running = false;
@@ -151,10 +153,8 @@ public class AudioStream : ColorSource {
 		return !_restart && ProcessHandle(handle);
 	}
 
-
 	private void LoadData() {
 		_sd = DataUtil.GetSystemData();
-		_map = new AudioMap();
 		var rd = _sd.RecDev;
 		_recordDeviceIndex = -1;
 		try {
@@ -168,7 +168,7 @@ public class AudioStream : ColorSource {
 					ad.ParseDevice(info);
 					DataUtil.InsertCollection<AudioData>("Dev_Audio", ad).ConfigureAwait(true);
 				} catch (Exception e) {
-					Log.Warning("Error loading devices: " + e.Message);
+					Log.Warning("Error loading audio device info: " + e.Message);
 				}
 
 				if (rd == null && a == 0) {
@@ -181,17 +181,16 @@ public class AudioStream : ColorSource {
 
 					var freq = AudioInfo.ChannelFrequency(a);
 					if (freq != -1) {
-						Log.Debug("Setting frequency to " + freq);
-						_SampleFreq = freq;
+						_sampleFreq = freq;
 					}
-					Log.Debug("Setting index to " + a);
+
 					_recordDeviceIndex = a;
 				}
 			}
 		} catch (Exception e) {
 			if (e.GetType() == typeof(DllNotFoundException)) {
 				_hasDll = false;
-				Log.Warning("Unable to find bass.dll, nothing to do.");
+				Log.Warning("Unable to find bass.dll, audio visualizer disabled.");
 			}
 		}
 	}
@@ -206,103 +205,64 @@ public class AudioStream : ColorSource {
 		}
 
 		_updating = true;
-		var lData = new Dictionary<float, int>();
-		var level = Bass.ChannelGetLevel(handle);
-		var fft = new float[SampleSize]; // fft data buffer
-		// Get our FFT for "everything"
-		var res = Bass.ChannelGetData(handle, fft, (int)getFlag(SampleSize));
-		//Log.Debug("FFT: " + JsonConvert.SerializeObject(fft));
-		if (level < 700) {
-			_frameData = lData;
-			if (_maxVal > 0) {
-				_maxVal--;
-			}
-		} else {
-			switch (res) {
-				case -1:
-					Log.Warning("Error getting channel data: " + Bass.LastError);
-					_updating = false;
-					return true;
-				case 0:
-					_updating = false;
-					return true;
-				case > 0: {
-					for (var a = 0; a < SampleSize; a++) {
-						var val = fft[a];
-						if (float.IsNaN(val) || float.IsInfinity(val)) {
-							val = 0;
-						}
 
-						var freq = FftIndex2Frequency(a, SampleSize, _SampleFreq);
-
-						var y = Math.Sqrt(val) * 3 * 255 - 4;
-						if (y > 255) {
-							y = 255;
-						}
-
-						if (y < 0) {
-							y = 0;
-						}
-
-
-						if (_frameData.ContainsKey(freq)) {
-							var prev = _frameData[freq];
-							if (y < prev) {
-								y = prev - 8;
-							}
-						}
-
-						if (y == 0) {
-							continue;
-						}
-
-						if (y > _maxVal) {
-							_maxVal = y;
-						}
-
-						lData[freq] = (int)FlattenValue(y);
-					}
-
-					if (lData.Count > 0) {
-						_frameData = lData;
-					} else {
-						if (_maxVal > 0) {
-							_maxVal--;
-						}
-					}
-
-					break;
+		try {
+			DateTime now;
+			float deltaSeconds;
+			lock (_lastFrameLock) {
+				now = DateTime.UtcNow;
+				deltaSeconds = (float)(now - _lastFrameTimeUtc).TotalSeconds;
+				if (deltaSeconds <= 0f || deltaSeconds > 1f) {
+					deltaSeconds = 0.033f;
 				}
-				default:
-					Log.Debug("NO RES: " + res / SampleSize);
-					break;
+
+				_lastFrameTimeUtc = now;
 			}
+
+			// BASS interleaves L/R; pull each channel separately so we have
+			// stereo balance even though we only send a mono FFT downstream.
+			var levels = Bass.ChannelGetLevel(handle);
+			var left = (short)(levels & 0xFFFF);
+			var right = (short)((levels >> 16) & 0xFFFF);
+			var leftAbs = MathF.Abs(left);
+			var rightAbs = MathF.Abs(right);
+			var balance = leftAbs + rightAbs > 1f
+				? (rightAbs - leftAbs) / (leftAbs + rightAbs)
+				: 0f;
+
+			var fft = new float[SampleSize];
+			var res = Bass.ChannelGetData(handle, fft, (int)GetFlag(SampleSize));
+
+			Color[] colors;
+			if (res > 0) {
+				colors = _map.Process(fft, _sampleFreq, deltaSeconds, balance);
+				_lastSilenceTimeUtc = leftAbs + rightAbs < 700f
+					? _lastSilenceTimeUtc == default ? now : _lastSilenceTimeUtc
+					: default;
+			} else if (res == 0) {
+				_updating = false;
+				return true;
+			} else {
+				Log.Warning("Error getting channel data: " + Bass.LastError);
+				_updating = false;
+				return true;
+			}
+
+			var frame = Builder?.Build(colors);
+			if (frame != null) {
+				Splitter.Update(frame).ConfigureAwait(false);
+				frame.Dispose();
+			}
+		} catch (Exception e) {
+			Log.Warning("Audio frame processing failed: " + e.Message);
+		} finally {
+			_updating = false;
 		}
 
-		var sectors = _map.MapColors(_frameData).ToList();
-		var frame = Builder?.Build(sectors);
-		if (frame != null) {
-			Splitter.Update(frame).ConfigureAwait(false);
-			frame.Dispose();
-		}
-
-		_updating = false;
 		return true;
 	}
 
-	private double FlattenValue(double v) {
-		if (v <= _cutoff) {
-			v = 0;
-		}
-
-		return v / _maxVal * 255;
-	}
-
-	private static float FftIndex2Frequency(int index, int length, int sampleRate) {
-		return 0.5f * index * sampleRate / length;
-	}
-
-	private static DataFlags getFlag(int size) {
+	private static DataFlags GetFlag(int size) {
 		return size switch {
 			256 => DataFlags.FFT512,
 			512 => DataFlags.FFT1024,
@@ -312,12 +272,4 @@ public class AudioStream : ColorSource {
 			_ => 0
 		};
 	}
-
-	#region intColors
-
-	#endregion
-
-	#region floatColors
-
-	#endregion
 }

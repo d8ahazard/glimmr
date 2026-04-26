@@ -1,0 +1,15 @@
+[Unit]
+Description=Glimmr Pi 5 WS281x PWM bring-up
+Documentation=https://github.com/jgarff/rpi_ws281x/wiki/Raspberry-Pi-5-Support
+DefaultDependencies=no
+After=systemd-modules-load.service local-fs.target
+Before=glimmr.service basic.target
+ConditionPathIsReadable=/proc/device-tree/model
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/glimmr-pi5-leds.sh
+
+[Install]
+WantedBy=multi-user.target

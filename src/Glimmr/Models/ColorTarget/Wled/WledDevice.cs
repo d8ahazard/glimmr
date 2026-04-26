@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Text;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,6 +24,7 @@ namespace Glimmr.Models.ColorTarget.Wled;
 public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 	private string IpAddress { get; set; }
 	private const int Port = 21324;
+	private static readonly HttpClient HttpClient = new();
 	private readonly UdpClient _udpClient;
 	private readonly WLedClient _wLedClient;
 
@@ -164,7 +167,7 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 				foreach (var seg in _segments) {
 					var cols = ColorUtil.TruncateColors(toSend, seg.Offset, seg.LedCount, seg.Multiplier);
 					if (seg.ReverseStrip) {
-						cols = cols.Reverse().ToArray();
+						cols = Enumerable.Reverse(cols).ToArray();
 					}
 
 					var start = seg.Start;
@@ -189,7 +192,7 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 			case StripMode.Normal: {
 				toSend = ColorUtil.TruncateColors(toSend, _offset, _ledCount, _multiplier);
 				if (_data.ReverseStrip) {
-					toSend = toSend.Reverse().ToArray();
+					toSend = Enumerable.Reverse(toSend).ToArray();
 				}
 
 				break;
@@ -250,9 +253,8 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 			await _wLedClient.Post(new StateRequest { On = on });
 			// If on is false, send a manual post directly to the device with a JSON body of "live":false
 			if (!on) {
-				var client = new WebClient();
-				client.Headers.Add("Content-Type", "application/json");
-				client.UploadString("http://" + IpAddress + "/json/state", "{\"live\":false}");
+				using var content = new StringContent("{\"live\":false}", Encoding.UTF8, "application/json");
+				await HttpClient.PostAsync("http://" + IpAddress + "/json/state", content);
 			}
 			res = await _wLedClient.GetState();
 			oc++;

@@ -61,6 +61,7 @@ public class DreamScreenDevice : ColorTarget, IColorTarget {
 		}
 
 		await _client.SetMode(_dev, DeviceMode.Video);
+		Streaming = true;
 		Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
 	}
 
@@ -75,6 +76,7 @@ public class DreamScreenDevice : ColorTarget, IColorTarget {
 
 		Log.Debug($"{_data.Tag}::Stopping stream... {_data.Id}.");
 		await _client.SetMode(_dev, DeviceMode.Off);
+		Streaming = false;
 		Log.Debug($"{_data.Tag}::Stream stopped: {_data.Id}.");
 	}
 

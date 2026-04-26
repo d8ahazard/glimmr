@@ -33,6 +33,15 @@
                HorizontalTextAlignment="Center"
                Style="{StaticResource LabelStyle}" />
 
+        <Button x:Name="CalibrateRoomButton"
+                Text="&#x1F3AF; Calibrate Room Map"
+                FontSize="16" FontAttributes="Bold"
+                TextColor="White" BackgroundColor="#335588"
+                CornerRadius="8" HeightRequest="48"
+                Margin="12,8,12,4"
+                IsVisible="False"
+                Clicked="OnCalibrateRoomTapped" />
+
         <ListView x:Name="DeviceListView"
                   ItemsSource="{Binding DeviceList}"
                   ItemTapped="OnDeviceTapped"

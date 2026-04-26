@@ -1,1 +1,3 @@
-raspi-copies-and-fills
+# raspi-copies-and-fills was a 32-bit-only ARM memcpy/memset shim and is
+# not available (or needed) on arm64 Bookworm. This sub-stage is left in
+# place as a no-op to preserve the existing pi-gen stage layout.

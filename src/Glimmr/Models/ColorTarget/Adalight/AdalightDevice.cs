@@ -127,7 +127,7 @@ public class AdalightDevice : ColorTarget, IColorTarget {
 
 		var toSend = ColorUtil.TruncateColors(ledColors.ToArray(), _offset, _ledCount, _multiplier);
 		if (_reverseStrip) {
-			toSend = toSend.Reverse().ToArray();
+			toSend = Enumerable.Reverse(toSend).ToArray();
 		}
 
 		if (_brightness < 100) {

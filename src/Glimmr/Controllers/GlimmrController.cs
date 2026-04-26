@@ -6,13 +6,17 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Mime;
+using System.Net.WebSockets;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Glimmr.Enums;
+using Glimmr.Models.Backup;
+using Glimmr.Models.ColorSource.Monitorr;
 using Glimmr.Models.ColorSource.Ambient;
 using Glimmr.Models.ColorSource.Audio;
+using Glimmr.Models.ColorSource.Audio.Engine;
 using Glimmr.Models.ColorTarget;
 using Glimmr.Models.ColorTarget.Glimmr;
 using Glimmr.Models.Data;
@@ -177,13 +181,24 @@ public class GlimmrController : ControllerBase {
 				continue;
 			}
 
-			sd.AmbientScene = mode;
+			sd.AudioScene = mode;
 			sd.DeviceMode = DeviceMode.Audio;
 			await _controlService.UpdateSystem(sd);
 			return scene;
 		}
 
 		return null;
+	}
+
+	/// <summary>
+	///     List the available audio visualizer effect modes.
+	/// </summary>
+	[HttpGet("audioModes")]
+	public ActionResult<string[]> GetAudioModes() {
+		return AudioEffectRegistry.AvailableModes
+			.Distinct()
+			.OrderBy(m => m, StringComparer.OrdinalIgnoreCase)
+			.ToArray();
 	}
 
 	/// <summary>
@@ -548,6 +563,23 @@ public class GlimmrController : ControllerBase {
 	}
 
 	/// <summary>
+	///     Accept Monitorr realtime LED color frames over a LAN WebSocket.
+	/// </summary>
+	/// <returns></returns>
+	[HttpGet("realtime")]
+	public async Task<IActionResult> Realtime(CancellationToken cancellationToken) {
+		if (!HttpContext.WebSockets.IsWebSocketRequest) {
+			return BadRequest("Monitorr realtime requires a WebSocket request.");
+		}
+
+		var colorService = _controlService.ColorService;
+		using var socket = await HttpContext.WebSockets.AcceptWebSocketAsync();
+		using var session = new MonitorrRealtimeSession(colorService);
+		await session.Run(socket, cancellationToken).ConfigureAwait(false);
+		return new EmptyResult();
+	}
+
+	/// <summary>
 	///     Fetch store data object.
 	/// </summary>
 	/// <returns></returns>
@@ -583,5 +615,93 @@ public class GlimmrController : ControllerBase {
 	public async Task<ActionResult<SystemData>> UpdateSystem([FromBody] SystemData ld) {
 		await _controlService.UpdateSystem(ld);
 		return new ActionResult<SystemData>(ld);
+	}
+
+	/// <summary>
+	///     Export the full configuration as a versioned JSON bundle.
+	/// </summary>
+	/// <returns>An ExportBundle containing all devices, scenes, and settings.</returns>
+	[HttpGet("export")]
+	public ActionResult<ExportBundle> Export() {
+		try {
+			var svc = new BackupService(_controlService);
+			var bundle = svc.CreateExport();
+			return new ActionResult<ExportBundle>(bundle);
+		} catch (Exception e) {
+			Log.Warning("Export failed: " + e.Message);
+			return StatusCode(500, "Export failed: " + e.Message);
+		}
+	}
+
+	/// <summary>
+	///     Import a previously exported configuration bundle.
+	/// </summary>
+	/// <param name="bundle">The ExportBundle to import.</param>
+	/// <returns>An ImportResult with migration details and any warnings.</returns>
+	[HttpPost("import")]
+	public async Task<ActionResult<ImportResult>> Import([FromBody] ExportBundle bundle) {
+		try {
+			var svc = new BackupService(_controlService);
+			var result = svc.ImportExport(bundle);
+			if (result.Success) {
+				await _controlService.NotifyClients();
+			}
+
+			return new ActionResult<ImportResult>(result);
+		} catch (Exception e) {
+			Log.Warning("Import failed: " + e.Message);
+			return StatusCode(500, "Import failed: " + e.Message);
+		}
+	}
+
+	/// <summary>
+	///     Download the full configuration export as a .json file.
+	/// </summary>
+	/// <returns>A downloadable JSON file containing the ExportBundle.</returns>
+	[HttpGet("export/download")]
+	public IActionResult ExportDownload() {
+		try {
+			var svc = new BackupService(_controlService);
+			var path = svc.ExportToFile();
+			var fileBytes = System.IO.File.ReadAllBytes(path);
+			var fileName = Path.GetFileName(path);
+			return File(fileBytes, MediaTypeNames.Application.Octet, fileName);
+		} catch (Exception e) {
+			Log.Warning("Export download failed: " + e.Message);
+			return StatusCode(500, "Export download failed: " + e.Message);
+		}
+	}
+
+	/// <summary>
+	///     Retrieve only the export manifest for a lightweight compatibility check.
+	/// </summary>
+	/// <returns>An ExportManifest summarizing what would be exported.</returns>
+	[HttpGet("export/manifest")]
+	public ActionResult<ExportManifest> ExportManifest() {
+		try {
+			var svc = new BackupService(_controlService);
+			var bundle = svc.CreateExport();
+			return new ActionResult<ExportManifest>(bundle.Manifest);
+		} catch (Exception e) {
+			Log.Warning("Export manifest failed: " + e.Message);
+			return StatusCode(500, "Export manifest failed: " + e.Message);
+		}
+	}
+
+	/// <summary>
+	///     Generate a support diagnostics package with anonymized config, logs,
+	///     network info, and performance metrics.
+	/// </summary>
+	/// <returns>A SupportPackage for troubleshooting.</returns>
+	[HttpGet("support")]
+	public ActionResult<SupportPackage> GetSupportPackage() {
+		try {
+			var svc = new BackupService(_controlService);
+			var package = svc.GenerateSupportPackage();
+			return new ActionResult<SupportPackage>(package);
+		} catch (Exception e) {
+			Log.Warning("Support package generation failed: " + e.Message);
+			return StatusCode(500, "Support package generation failed: " + e.Message);
+		}
 	}
 }

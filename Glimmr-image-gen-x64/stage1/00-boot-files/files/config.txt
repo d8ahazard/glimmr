@@ -1,6 +1,11 @@
 # For more options and information see
 # http://rptl.io/configtxt
-# Some settings may impact device functionality. See link above for details
+# Some settings may impact device functionality. See link above for details.
+#
+# This image targets Raspberry Pi 3, 4 (incl. CM4), and 5 (incl. CM5).
+# The bootloader on each board picks the right kernel image and DTB from
+# the firmware partition; both linux-image-rpi-v8 (Pi 3/4) and
+# linux-image-rpi-2712 (Pi 5) are installed.
 
 # Uncomment some or all of these to enable the optional hardware interfaces
 #dtparam=i2c_arm=on
@@ -10,7 +15,7 @@
 # Enable audio (loads snd_bcm2835)
 dtparam=audio=on
 
-# Additional overlays and parameters are documented
+# Additional overlays and parameters are documented in
 # /boot/firmware/overlays/README
 
 # Automatically load overlays for detected cameras
@@ -30,9 +35,6 @@ max_framebuffers=2
 # Use the kernel's default instead.
 disable_fw_kms_setup=1
 
-# Run in 64-bit mode
-arm_64bit=1
-
 # Disable compensation for displays with overscan
 disable_overscan=1
 
@@ -45,5 +47,11 @@ arm_boost=1
 # (e.g. for USB device mode) or if USB support is not required.
 otg_mode=1
 
-[all]
+[cm5]
+dtoverlay=dwc2,dr_mode=host
 
+[pi5]
+# Pi 5 boots fine with the firmware defaults; per-Pi-5 tweaks (LED PWM
+# alt-function, etc.) are appended by the Glimmr stage.
+
+[all]

@@ -102,6 +102,9 @@ public static class Program {
 				services.AddHostedService<ColorService>();
 				services.AddHostedService<StatService>();
 				services.AddHostedService<DiscoveryService>();
+				services.AddSingleton<RoomMapService>();
+				services.AddSingleton<CalibrationService>();
+				services.AddSingleton<OutputSchedulerService>();
 			});
 	}
 }

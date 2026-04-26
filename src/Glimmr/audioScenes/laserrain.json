@@ -1,0 +1,17 @@
+{
+  "Id": 12,
+  "Name": "Laser Rain",
+  "System": true,
+  "Mode": "LaserRain",
+  "Palette": "synthwave",
+  "BandScale": "Mel",
+  "BandCount": 32,
+  "Sensitivity": 0.65,
+  "NoiseGate": 0.06,
+  "Attack": 0.75,
+  "Decay": 0.55,
+  "BeatSensitivity": 0.7,
+  "Motion": 0.7,
+  "Sparkle": 0.6,
+  "StrobeLimit": 0.65
+}

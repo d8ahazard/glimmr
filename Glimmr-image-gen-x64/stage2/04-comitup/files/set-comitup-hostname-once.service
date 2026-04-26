@@ -1,0 +1,15 @@
+[Unit]
+Description=Set system hostname to Comitup AP name (once)
+Documentation=https://davesteele.github.io/comitup/
+After=comitup.service network.target
+Wants=comitup.service
+ConditionPathExists=/usr/sbin/comitup
+ConditionPathExists=!/var/lib/glimmr/hostname-set
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/set-comitup-hostname-once.sh
+
+[Install]
+WantedBy=multi-user.target

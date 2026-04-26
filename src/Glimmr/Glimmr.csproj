@@ -85,6 +85,7 @@
         <PackageReference Include="Microsoft.Build.Locator">
             <Version>1.7.1</Version>
         </PackageReference>
+        <PackageReference Include="MQTTnet" Version="4.3.7.1207" />
         <PackageReference Include="YeelightAPI" Version="1.10.2" />
         <PackageReference Include="Packaging.Targets" Version="0.1.220" />        
     </ItemGroup>
@@ -134,6 +135,14 @@
     <!-- All builds -->
     <ItemGroup>
         <None Include="../../COPYING" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <!-- The Web SDK auto-includes JSON files in the project as Content; we
+         just upgrade the copy policy so updated presets ship into the
+         publish output. -->
+    <ItemGroup>
+        <Content Update="audioScenes\*.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
+        <Content Update="ambientScenes\*.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
     </ItemGroup>
 
     <!-- All Linux Flavors-->

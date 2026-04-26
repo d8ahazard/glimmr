@@ -4,14 +4,31 @@ using System;
 using System.Collections.Generic;
 using Glimmr.Models.ColorTarget.Adalight;
 using Glimmr.Models.ColorTarget.DreamScreen;
+using Glimmr.Models.ColorTarget.Elgato;
 using Glimmr.Models.ColorTarget.Glimmr;
+using Glimmr.Models.ColorTarget.Govee;
+using Glimmr.Models.ColorTarget.HomeAssistant;
+using Glimmr.Models.ColorTarget.Hue;
 using Glimmr.Models.ColorTarget.HueV2;
+using Glimmr.Models.ColorTarget.Hyperion;
 using Glimmr.Models.ColorTarget.Led;
 using Glimmr.Models.ColorTarget.Lifx;
+using Glimmr.Models.ColorTarget.MqttLight;
 using Glimmr.Models.ColorTarget.Nanoleaf;
 using Glimmr.Models.ColorTarget.OpenRgb;
+using Glimmr.Models.ColorTarget.Shelly;
+using Glimmr.Models.ColorTarget.Twinkly;
+using Glimmr.Models.ColorTarget.Wiz;
 using Glimmr.Models.ColorTarget.Wled;
 using Glimmr.Models.ColorTarget.Yeelight;
+using Glimmr.Models.ColorTarget.Tuya;
+using Glimmr.Models.ColorTarget.Tapo;
+using Glimmr.Models.ColorTarget.Dirigera;
+using Glimmr.Models.ColorTarget.LedFx;
+using Glimmr.Models.ColorTarget.Prismatik;
+using Glimmr.Models.ColorTarget.SignalRgb;
+using Glimmr.Models.ColorTarget.RazerChroma;
+using Glimmr.Models.ColorTarget.DeConz;
 using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -28,14 +45,31 @@ namespace Glimmr.Models.ColorTarget;
 /// </summary>
 [SwaggerSubType(typeof(AdalightData))]
 [SwaggerSubType(typeof(DreamScreenData))]
+[SwaggerSubType(typeof(ElgatoData))]
 [SwaggerSubType(typeof(GlimmrData))]
+[SwaggerSubType(typeof(GoveeData))]
+[SwaggerSubType(typeof(HomeAssistantData))]
+[SwaggerSubType(typeof(HueData))]
 [SwaggerSubType(typeof(HueV2Data))]
+[SwaggerSubType(typeof(HyperionData))]
 [SwaggerSubType(typeof(LedData))]
 [SwaggerSubType(typeof(LifxData))]
+[SwaggerSubType(typeof(MqttLightData))]
 [SwaggerSubType(typeof(NanoleafData))]
 [SwaggerSubType(typeof(OpenRgbData))]
+[SwaggerSubType(typeof(ShellyData))]
+[SwaggerSubType(typeof(TwinklyData))]
+[SwaggerSubType(typeof(WizData))]
 [SwaggerSubType(typeof(WledData))]
 [SwaggerSubType(typeof(YeelightData))]
+[SwaggerSubType(typeof(TuyaData))]
+[SwaggerSubType(typeof(TapoData))]
+[SwaggerSubType(typeof(DirigeraData))]
+[SwaggerSubType(typeof(LedFxData))]
+[SwaggerSubType(typeof(PrismatikData))]
+[SwaggerSubType(typeof(SignalRgbData))]
+[SwaggerSubType(typeof(RazerChromaData))]
+[SwaggerSubType(typeof(DeConzData))]
 public interface IColorTargetData {
 	/// <summary>
 	///     If set, Glimmr will attempt to control this device.

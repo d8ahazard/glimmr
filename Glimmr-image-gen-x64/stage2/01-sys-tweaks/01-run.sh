@@ -57,9 +57,29 @@ for GRP in adm dialout cdrom audio users sudo video games plugdev input gpio spi
 done
 EOF
 
-if [ -f "${ROOTFS_DIR}/etc/sudoers.d/010_pi-nopasswd" ]; then
-  sed -i "s/^pi /$FIRST_USER_NAME /" "${ROOTFS_DIR}/etc/sudoers.d/010_pi-nopasswd"
-fi
+# Sudoers policy.
+#
+# Raspberry Pi OS 6.2 (April 2026) flipped the default for the `pi`
+# nopasswd file: fresh installs get a password-required sudo rule
+# instead of a blanket NOPASSWD. We explicitly opt into the new default
+# here -- requiring a password on sudo is the correct posture for a
+# device that ships with a known username, and the user can re-enable
+# passwordless sudo via raspi-config or the Control Centre if they
+# really want to.
+#
+# We still drop a small NOPASSWD allow-list so the Glimmr UI can call
+# specific privileged helpers (reboot, shutdown, time/timezone changes)
+# without prompting; everything else requires the user's password.
+
+# Replace any pre-existing 010_pi-nopasswd file with our scoped version.
+rm -f "${ROOTFS_DIR}/etc/sudoers.d/010_pi-nopasswd"
+
+cat > "${ROOTFS_DIR}/etc/sudoers.d/010-glimmr" <<EOF
+# Allow ${FIRST_USER_NAME} to run a small set of system-control commands
+# without a password. Anything else still prompts.
+${FIRST_USER_NAME} ALL=(root) NOPASSWD: /sbin/reboot, /sbin/shutdown, /sbin/poweroff, /usr/sbin/halt, /usr/bin/timedatectl, /usr/bin/systemctl restart glimmr.service, /usr/bin/systemctl stop glimmr.service, /usr/bin/systemctl start glimmr.service, /usr/bin/journalctl
+EOF
+chmod 0440 "${ROOTFS_DIR}/etc/sudoers.d/010-glimmr"
 
 on_chroot << EOF
 setupcon --force --save-only -v

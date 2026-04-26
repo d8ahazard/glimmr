@@ -110,7 +110,7 @@ public class OpenRgbAgent : IColorTargetAgent {
 
 	private bool DeviceExists(int deviceId) {
 		_devices ??= Array.Empty<Device>();
-		return deviceId >= _devices.Length - 1;
+		return deviceId >= 0 && deviceId < _devices.Length;
 	}
 
 	private void LoadClient() {

@@ -1,0 +1,17 @@
+{
+  "Id": 14,
+  "Name": "Chroma Bloom",
+  "System": true,
+  "Mode": "ChromaBloom",
+  "Palette": "rainbow",
+  "BandScale": "Mel",
+  "BandCount": 24,
+  "Sensitivity": 0.7,
+  "NoiseGate": 0.04,
+  "Attack": 0.55,
+  "Decay": 0.22,
+  "BeatSensitivity": 0.5,
+  "Motion": 0.35,
+  "Sparkle": 0.0,
+  "StrobeLimit": 0.7
+}

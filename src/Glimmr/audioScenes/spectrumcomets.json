@@ -1,0 +1,17 @@
+{
+  "Id": 13,
+  "Name": "Spectrum Comets",
+  "System": true,
+  "Mode": "SpectrumComets",
+  "Palette": "plasma",
+  "BandScale": "Log",
+  "BandCount": 20,
+  "Sensitivity": 0.65,
+  "NoiseGate": 0.04,
+  "Attack": 0.7,
+  "Decay": 0.25,
+  "BeatSensitivity": 0.55,
+  "Motion": 0.4,
+  "Sparkle": 0.3,
+  "StrobeLimit": 0.7
+}

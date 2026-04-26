@@ -34,6 +34,9 @@ public class Startup {
 		services.AddControllers()
 			.AddJsonOptions(options => { options.JsonSerializerOptions.PropertyNamingPolicy = null; })
 			.AddNewtonsoftJson();
+		services.AddCors(options => {
+			options.AddPolicy("LanClients", policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+		});
 		services.AddSwaggerGen(c => {
 			var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
 			var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
@@ -87,7 +90,9 @@ public class Startup {
 		app.UseStaticFiles();
 		app.UseSwagger();
 		app.UseSwaggerUI(c => { c.SwaggerEndpoint($"/swagger/{Version}/swagger.json", $"My API {Version}"); });
+		app.UseWebSockets();
 		app.UseRouting();
+		app.UseCors("LanClients");
 		app.UseAuthorization();
 
 		app.UseEndpoints(endpoints => {

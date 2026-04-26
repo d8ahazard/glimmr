@@ -1,0 +1,17 @@
+{
+  "Id": 15,
+  "Name": "Vortex",
+  "System": true,
+  "Mode": "Vortex",
+  "Palette": "midnight",
+  "BandScale": "Octave",
+  "BandCount": 16,
+  "Sensitivity": 0.7,
+  "NoiseGate": 0.04,
+  "Attack": 0.6,
+  "Decay": 0.3,
+  "BeatSensitivity": 0.6,
+  "Motion": 0.55,
+  "Sparkle": 0.0,
+  "StrobeLimit": 0.7
+}

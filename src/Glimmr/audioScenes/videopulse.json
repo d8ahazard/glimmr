@@ -1,0 +1,17 @@
+{
+  "Id": 16,
+  "Name": "Video Pulse",
+  "System": true,
+  "Mode": "VideoPulse",
+  "Palette": "sunset",
+  "BandScale": "Mel",
+  "BandCount": 16,
+  "Sensitivity": 0.6,
+  "NoiseGate": 0.05,
+  "Attack": 0.6,
+  "Decay": 0.25,
+  "BeatSensitivity": 0.5,
+  "Motion": 0.3,
+  "Sparkle": 0.2,
+  "StrobeLimit": 0.85
+}

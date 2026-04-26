@@ -190,7 +190,7 @@ public class WledData : IColorTargetData {
 		Name = StringUtil.UppercaseFirst(input.Name);
 		var segments = input.Segments;
 		for (var i = 0; i < segments.Length; i++) {
-			if (Segments.Length < i) {
+			if (i < Segments.Length) {
 				segments[i].Offset = Segments[i].Offset;
 			}
 		}

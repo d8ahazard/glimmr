@@ -74,7 +74,7 @@ public class ColorService : BackgroundService {
 		_sDevices = Array.Empty<IColorTarget>();
 		_systemData = DataUtil.GetSystemData();
 		_enableAutoDisable = _systemData.EnableAutoDisable;
-		_streams = new Dictionary<string, ColorSource>();
+		_streams = new Dictionary<string, ColorSource>(StringComparer.OrdinalIgnoreCase);
 		ControlService = ControlService.GetInstance();
 		Counter = new FrameCounter(this);
 		ControlService.SetModeEvent += Mode;
@@ -594,7 +594,9 @@ public class ColorService : BackgroundService {
     }
 
     var stream = newMode switch {
-        DeviceMode.Udp => sd.StreamMode == StreamMode.DreamScreen ? _streams["DreamScreen"] : _streams["UDP"],
+        DeviceMode.Udp => sd.StreamMode == StreamMode.DreamScreen
+	        ? _streams.GetValueOrDefault("DreamScreen")
+	        : _streams.GetValueOrDefault("Udp"),
         DeviceMode.Off => null,
         _ => _streams.TryGetValue(newMode.ToString(), out var selectedStream) ? selectedStream : null,
     };

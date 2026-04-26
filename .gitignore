@@ -27,3 +27,5 @@ store-log.db
 script/publish_pi2.bat
 src/wwwroot/img/_preview_input.jpg
 src/wwwroot/img/_preview_output.jpg
+/src/Glimmr.Tests/bin
+/src/Glimmr.Tests/obj

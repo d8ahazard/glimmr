@@ -24,6 +24,9 @@
         <Compile Update="DeviceControlPage.xaml.cs">
             <DependentUpon>DeviceControlPage.xaml</DependentUpon>
         </Compile>
+        <Compile Update="RoomCalibrationPage.xaml.cs">
+            <DependentUpon>RoomCalibrationPage.xaml</DependentUpon>
+        </Compile>
     </ItemGroup>
 
     <ItemGroup>
@@ -40,6 +43,9 @@
             <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
         </EmbeddedResource>
         <EmbeddedResource Update="MenuBar.xaml">
+            <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+        </EmbeddedResource>
+        <EmbeddedResource Update="RoomCalibrationPage.xaml">
             <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
         </EmbeddedResource>
     </ItemGroup>

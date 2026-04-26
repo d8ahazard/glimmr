@@ -68,27 +68,38 @@ public class LedAgent : IColorTargetAgent {
 		SetGammaCorrection(_gamma, 255, 255);
 		LedData? d0 = DataUtil.GetDevice<LedData>("0");
 		LedData? d1 = DataUtil.GetDevice<LedData>("1");
-		if (!SystemUtil.IsRaspberryPi() || d0 == null || d1 == null) {
+		if (!SystemUtil.IsRaspberryPi()) {
 			_d0 = d0;
 			_d1 = d1;
 			return;
 		}
 
+		var reloadStrips = _ws281X == null || StripConfigChanged(_d0, d0) || StripConfigChanged(_d1, d1);
 		_d0 = d0;
 		_d1 = d1;
 
-		if (d0.StripType != _d0.StripType || d1.StripType != _d1.StripType || _ws281X == null) {
+		if (_d0 == null && _d1 == null) {
+			_ws281X?.Dispose();
+			_ws281X = null;
+			_controller0 = null;
+			_controller1 = null;
+			_use0 = false;
+			_use1 = false;
+			return;
+		}
+
+		if (reloadStrips) {
 			_ws281X?.Dispose();
 			LoadStrips(_d0, _d1);
 		}
 
-		_use0 = _d0.Enable;
-		_use1 = _d1.Enable;
+		_use0 = _d0?.Enable == true && _controller0 != null;
+		_use1 = _d1?.Enable == true && _controller1 != null;
 		_enableAbl = _sd.EnableAutoBrightness;
 		_ablVolts = _sd.AblVolts;
 		_ablAmps = _sd.AblAmps;
 
-		if (_use0) {
+		if (_use0 && _d0 != null) {
 			_s0Brightness = (int)(_d0.Brightness / 100f * 255f);
 			_s0MaxBrightness = _s0Brightness;
 			_s0CurrentBrightness = _s0Brightness;
@@ -99,10 +110,20 @@ public class LedAgent : IColorTargetAgent {
 			return;
 		}
 
+		if (_d1 == null) {
+			return;
+		}
+
 		_s1Brightness = (int)(_d1.Brightness / 100f * 255f);
 		_s1MaxBrightness = _s1Brightness;
 		_s1CurrentBrightness = _s1Brightness;
 		_ws281X?.SetBrightness(_s1Brightness, 1);
+	}
+
+	private static bool StripConfigChanged(LedData? current, LedData? next) {
+		return current?.LedCount != next?.LedCount ||
+		       current?.StripType != next?.StripType ||
+		       current?.Brightness != next?.Brightness;
 	}
 
 	private static void SetGammaCorrection(float gamma, int max_in, int max_out) {
@@ -126,27 +147,36 @@ public class LedAgent : IColorTargetAgent {
 	}
 
 
-	private void LoadStrips(LedData d0, LedData d1) {
+	private void LoadStrips(LedData? d0, LedData? d1) {
 		var settings = Settings.CreateDefaultSettings(false);
-		var stripType0 = d0.StripType switch {
-			1 => StripType.SK6812W_STRIP,
-			2 => StripType.WS2811_STRIP_RBG,
-			0 => StripType.WS2812_STRIP,
-			_ => StripType.WS2812_STRIP
-		};
+		if (d0 != null) {
+			_controller0 = settings.AddController(d0.LedCount, ToStripType(d0.StripType), ControllerType.PWM0,
+				(byte)d0.Brightness);
+			_colors1 = ColorUtil.EmptyColors(d0.LedCount);
+		} else {
+			_controller0 = null;
+			_colors1 = Array.Empty<Color>();
+		}
 
-		var stripType1 = d1.StripType switch {
-			1 => StripType.SK6812W_STRIP,
-			2 => StripType.WS2811_STRIP_RBG,
-			0 => StripType.WS2812_STRIP,
-			_ => StripType.WS2812_STRIP
-		};
+		if (d1 != null) {
+			_controller1 = settings.AddController(d1.LedCount, ToStripType(d1.StripType), ControllerType.PWM1,
+				(byte)d1.Brightness);
+			_colors2 = ColorUtil.EmptyColors(d1.LedCount);
+		} else {
+			_controller1 = null;
+			_colors2 = Array.Empty<Color>();
+		}
 
-		_controller0 = settings.AddController(d0.LedCount, stripType0, ControllerType.PWM0, (byte)d0.Brightness);
-		_controller1 = settings.AddController(d1.LedCount, stripType1, ControllerType.PWM1, (byte)d1.Brightness);
-		_colors1 = ColorUtil.EmptyColors(d0.LedCount);
-		_colors2 = ColorUtil.EmptyColors(d1.LedCount);
 		_ws281X = new WS281x(settings);
+	}
+
+	private static StripType ToStripType(int stripType) {
+		return stripType switch {
+			1 => StripType.SK6812W_STRIP,
+			2 => StripType.WS2811_STRIP_RBG,
+			0 => StripType.WS2812_STRIP,
+			_ => StripType.WS2812_STRIP
+		};
 	}
 
 	public void SetColors(Color[] input) {
@@ -188,12 +218,12 @@ public class LedAgent : IColorTargetAgent {
 	private void VoltAdjust() {
 		// Gonna do this from scratch. According to ws2812B docs, modern B strips should
 		// use .3w/LED, or 3000 milliamps.
-		if (_d0 == null || _d1 == null) {
+		if (_d0 == null && _d1 == null) {
 			return;
 		}
 
-		var strip0Draw = _d0.MilliampsPerLed; // 20
-		var strip1Draw = _d1.MilliampsPerLed;
+		var strip0Draw = _d0?.MilliampsPerLed ?? 0; // 20
+		var strip1Draw = _d1?.MilliampsPerLed ?? 0;
 
 		// Total power we have at our disposal
 		var totalWatts = _ablVolts * _ablAmps;
@@ -203,11 +233,11 @@ public class LedAgent : IColorTargetAgent {
 		totalWatts -= 5;
 		// This should totally work...maybe
 		var totalCost = 0;
-		if (_d0.Enable) {
+		if (_use0 && _d0 != null) {
 			totalCost += _d0.MilliampsPerLed * _d0.LedCount * 5;
 		}
 
-		if (_d1.Enable) {
+		if (_use1 && _d1 != null) {
 			totalCost += _d1.MilliampsPerLed * _d1.LedCount * 5;
 		}
 
@@ -216,7 +246,7 @@ public class LedAgent : IColorTargetAgent {
 		var usage = 0f;
 		// Loop each LED, subtract it's current score 
 		if (totalWatts <= totalCost) {
-			if (_d0.Enable) {
+			if (_use0 && _d0 != null) {
 				var use = 0f;
 				if (_d0.StripType == 1) {
 					var l1 = strip0Draw / 4f;
@@ -237,19 +267,19 @@ public class LedAgent : IColorTargetAgent {
 				usage += use;
 			}
 
-			if (_d1.Enable) {
+			if (_use1 && _d1 != null) {
 				var use = 0f;
 				if (_d1.StripType == 1) {
 					var l1 = strip1Draw / 4f;
 					foreach (var t in _colors2) {
 						use = t.R / 255f * l1 + t.G / 255f * l1 + t.B / 255f * l1 + t.A / 255f * l1;
-						use = Math.Max(10f, use);
+						use = Math.Max(.1f, use);
 					}
 				} else {
 					var l1 = strip1Draw / 3f;
 					foreach (var t in _colors2) {
 						use = t.R / 255f * l1 + t.G / 255f * l1 + t.B / 255f * l1;
-						use = Math.Max(10f, use);
+						use = Math.Max(.1f, use);
 					}
 				}
 
@@ -281,7 +311,7 @@ public class LedAgent : IColorTargetAgent {
 				return;
 			}
 
-			_ws281X?.SetBrightness(_s1Brightness);
+			_ws281X?.SetBrightness(_s1Brightness, 1);
 			_s1CurrentBrightness = _s1Brightness;
 		} else {
 			if (_use0 && _s0Brightness < _s0MaxBrightness) {
@@ -289,7 +319,7 @@ public class LedAgent : IColorTargetAgent {
 				_ws281X?.SetBrightness(_s0CurrentBrightness);
 			}
 
-			if (!_use1 || _s1Brightness >= _s0MaxBrightness) {
+			if (!_use1 || _s1Brightness >= _s1MaxBrightness) {
 				return;
 			}
 
@@ -312,14 +342,14 @@ public class LedAgent : IColorTargetAgent {
 
 
 	private void UpdateColors(Color[] colors, string id) {
-		if (_d0 == null || _d1 == null) {
+		var data = id == "0" ? _d0 : _d1;
+		if (data == null) {
 			return;
 		}
 
-		var data = id == "0" ? _d0 : _d1;
 		var toSend = ColorUtil.TruncateColors(colors, data.Offset, data.LedCount, data.LedMultiplier);
 		if (data.ReverseStrip) {
-			toSend = toSend.Reverse().ToArray();
+			toSend = Enumerable.Reverse(toSend).ToArray();
 		}
 		// for (var i = 0; i < toSend.Length; i++) {
 		// 	toSend[i] = ColorUtil.AdjustGamma(toSend[i]); 

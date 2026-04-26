@@ -133,7 +133,7 @@ public class OpenRgbDevice : ColorTarget, IColorTarget {
 					toSend = ShiftColors(toSend);
 				} else {
 					if (_data.ReverseStrip) {
-						toSend = toSend.Reverse().ToArray();
+						toSend = Enumerable.Reverse(toSend).ToArray();
 					}
 				}
 
