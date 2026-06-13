@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="GlimmrControl.Views.ControlPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+    xmlns:shapes="clr-namespace:Microsoft.Maui.Controls.Shapes;assembly=Microsoft.Maui.Controls"
+    xmlns:vm="clr-namespace:GlimmrControl.ViewModels"
+    x:DataType="vm:ControlViewModel"
+    Shell.NavBarIsVisible="False"
+    Title="{Binding DeviceName}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16,12,16,40" Spacing="2">
+
+            <!-- Hero -->
+            <Grid Margin="4,18,4,8">
+                <Label Grid.Row="0" Text="{Binding DeviceName}" Style="{StaticResource HeroName}" />
+                <VerticalStackLayout Margin="0,18,0,0" Spacing="2">
+                    <Label Text="{Binding ModeName}" Style="{StaticResource HeroMode}" TextColor="{Binding Accent}">
+                        <Label.Shadow>
+                            <Shadow Brush="{Binding AccentBrush}" Radius="26" Opacity="0.5" Offset="0,0" />
+                        </Label.Shadow>
+                    </Label>
+                    <Label Text="{Binding ConnectionStatus}" Style="{StaticResource FaintLabel}" />
+                </VerticalStackLayout>
+            </Grid>
+
+            <!-- Mode chips (horizontal, accent-driven) -->
+            <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never" Margin="0,8,0,4">
+                <HorizontalStackLayout BindableLayout.ItemsSource="{Binding Modes}" Spacing="8" Padding="4">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ChipViewModel">
+                            <Border BackgroundColor="{Binding ChipBackground}" Stroke="{Binding ChipBorder}"
+                                    StrokeThickness="1" StrokeShape="RoundRectangle 18" Padding="14,12"
+                                    WidthRequest="84">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ControlViewModel}}, Path=SetModeCommand}"
+                                        CommandParameter="{Binding Id}" />
+                                </Border.GestureRecognizers>
+                                <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
+                                    <shapes:Path Data="{Binding Glyph, Converter={StaticResource PathData}}"
+                                                 Stroke="{Binding ChipText}" StrokeThickness="1.9"
+                                                 Aspect="Uniform" HeightRequest="24" WidthRequest="24"
+                                                 HorizontalOptions="Center" />
+                                    <Label Text="{Binding Name}" TextColor="{Binding ChipText}" FontSize="12"
+                                           FontAttributes="Bold" HorizontalOptions="Center" />
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </HorizontalStackLayout>
+            </ScrollView>
+
+            <!-- Ambient panel -->
+            <VerticalStackLayout IsVisible="{Binding ShowAmbient}" Spacing="2">
+                <Label Text="SCENES" Style="{StaticResource SectionLabel}" />
+                <FlexLayout BindableLayout.ItemsSource="{Binding AmbientScenes}" Wrap="Wrap">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ChipViewModel">
+                            <Border BackgroundColor="{Binding ChipBackground}" Stroke="{Binding ChipBorder}"
+                                    StrokeThickness="1" StrokeShape="RoundRectangle 999" Padding="15,9" Margin="0,4,8,4">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ControlViewModel}}, Path=SelectAmbientSceneCommand}"
+                                        CommandParameter="{Binding .}" />
+                                </Border.GestureRecognizers>
+                                <Label Text="{Binding Name}" TextColor="{Binding ChipText}" FontSize="13" FontAttributes="Bold" />
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </FlexLayout>
+
+                <Label Text="COLOR" Style="{StaticResource SectionLabel}" />
+                <Border Style="{StaticResource Panel}">
+                    <VerticalStackLayout Spacing="14">
+                        <Border HeightRequest="46" StrokeShape="RoundRectangle 12"
+                                BackgroundColor="{Binding AmbientColorHex}" Stroke="{StaticResource GlimmrLine}" />
+                        <Grid ColumnDefinitions="20,*" ColumnSpacing="10">
+                            <Label Grid.Column="0" Text="R" Style="{StaticResource FaintLabel}" VerticalOptions="Center" />
+                            <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding AmbientR}"
+                                    MinimumTrackColor="{StaticResource GlimmrDanger}">
+                                <Slider.Behaviors>
+                                    <toolkit:EventToCommandBehavior EventName="DragCompleted" Command="{Binding ApplyAmbientColorCommand}" />
+                                </Slider.Behaviors>
+                            </Slider>
+                        </Grid>
+                        <Grid ColumnDefinitions="20,*" ColumnSpacing="10">
+                            <Label Grid.Column="0" Text="G" Style="{StaticResource FaintLabel}" VerticalOptions="Center" />
+                            <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding AmbientG}"
+                                    MinimumTrackColor="{StaticResource GlimmrGreen}">
+                                <Slider.Behaviors>
+                                    <toolkit:EventToCommandBehavior EventName="DragCompleted" Command="{Binding ApplyAmbientColorCommand}" />
+                                </Slider.Behaviors>
+                            </Slider>
+                        </Grid>
+                        <Grid ColumnDefinitions="20,*" ColumnSpacing="10">
+                            <Label Grid.Column="0" Text="B" Style="{StaticResource FaintLabel}" VerticalOptions="Center" />
+                            <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding AmbientB}"
+                                    MinimumTrackColor="{StaticResource GlimmrCyan}">
+                                <Slider.Behaviors>
+                                    <toolkit:EventToCommandBehavior EventName="DragCompleted" Command="{Binding ApplyAmbientColorCommand}" />
+                                </Slider.Behaviors>
+                            </Slider>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Audio panel -->
+            <VerticalStackLayout IsVisible="{Binding ShowAudio}" Spacing="2">
+                <Label Text="AUDIO SCENE" Style="{StaticResource SectionLabel}" />
+                <FlexLayout BindableLayout.ItemsSource="{Binding AudioScenes}" Wrap="Wrap">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ChipViewModel">
+                            <Border BackgroundColor="{Binding ChipBackground}" Stroke="{Binding ChipBorder}"
+                                    StrokeThickness="1" StrokeShape="RoundRectangle 999" Padding="15,9" Margin="0,4,8,4">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ControlViewModel}}, Path=SelectAudioSceneCommand}"
+                                        CommandParameter="{Binding .}" />
+                                </Border.GestureRecognizers>
+                                <Label Text="{Binding Name}" TextColor="{Binding ChipText}" FontSize="13" FontAttributes="Bold" />
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </FlexLayout>
+
+                <Label Text="RESPONSE" Style="{StaticResource SectionLabel}" />
+                <VerticalStackLayout Spacing="14" Padding="4,4,4,8">
+                    <Label Text="Gain" Style="{StaticResource MutedLabel}" />
+                    <Slider Minimum="0" Maximum="2" Value="{Binding AudioGain}" MinimumTrackColor="{Binding Accent}">
+                        <Slider.Behaviors>
+                            <toolkit:EventToCommandBehavior EventName="DragCompleted" Command="{Binding CommitAudioSettingsCommand}" />
+                        </Slider.Behaviors>
+                    </Slider>
+                    <Label Text="Rotation speed" Style="{StaticResource MutedLabel}" />
+                    <Slider Minimum="0.01" Maximum="1" Value="{Binding AudioRotationSpeed}" MinimumTrackColor="{Binding Accent}">
+                        <Slider.Behaviors>
+                            <toolkit:EventToCommandBehavior EventName="DragCompleted" Command="{Binding CommitAudioSettingsCommand}" />
+                        </Slider.Behaviors>
+                    </Slider>
+                    <Label Text="Rotation sensitivity" Style="{StaticResource MutedLabel}" />
+                    <Slider Minimum="0" Maximum="255" Value="{Binding AudioRotationTrigger}" MinimumTrackColor="{Binding Accent}">
+                        <Slider.Behaviors>
+                            <toolkit:EventToCommandBehavior EventName="DragCompleted" Command="{Binding CommitAudioSettingsCommand}" />
+                        </Slider.Behaviors>
+                    </Slider>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+
+            <!-- Stream panel -->
+            <VerticalStackLayout IsVisible="{Binding ShowStream}" Spacing="2">
+                <Label Text="STREAMING SOURCE" Style="{StaticResource SectionLabel}" />
+                <HorizontalStackLayout Spacing="8" Padding="4">
+                    <Button Text="DreamScreen" Style="{StaticResource GhostButton}" WidthRequest="124"
+                            Command="{Binding SetStreamModeCommand}">
+                        <Button.CommandParameter><x:Int32>0</x:Int32></Button.CommandParameter>
+                    </Button>
+                    <Button Text="Glimmr" Style="{StaticResource GhostButton}" WidthRequest="100"
+                            Command="{Binding SetStreamModeCommand}">
+                        <Button.CommandParameter><x:Int32>1</x:Int32></Button.CommandParameter>
+                    </Button>
+                    <Button Text="WLED" Style="{StaticResource GhostButton}" WidthRequest="90"
+                            Command="{Binding SetStreamModeCommand}">
+                        <Button.CommandParameter><x:Int32>2</x:Int32></Button.CommandParameter>
+                    </Button>
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
+
+            <!-- Hue Sync panel -->
+            <VerticalStackLayout IsVisible="{Binding ShowHueSync}" Spacing="2">
+                <Label Text="HUE SYNC BRIDGE" Style="{StaticResource SectionLabel}" />
+                <Border Style="{StaticResource Panel}">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="{Binding HueSyncStatus}" Style="{StaticResource BodyLabel}" />
+                        <HorizontalStackLayout Spacing="8">
+                            <Button Text="Pair Hue Sync App" Style="{StaticResource PrimaryButton}" Command="{Binding PairHueSyncCommand}" />
+                            <Button Text="Forget" Style="{StaticResource GhostButton}" WidthRequest="100" Command="{Binding ForgetHueSyncCommand}" />
+                        </HorizontalStackLayout>
+                        <Label Text="Tap Pair, then connect from the Philips Hue Sync app within 60 seconds." Style="{StaticResource FaintLabel}" />
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Devices -->
+            <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+                <Label Grid.Column="0" Text="DEVICES" Style="{StaticResource SectionLabel}" VerticalOptions="Center" />
+                <Button Grid.Column="1" Text="Rescan" Style="{StaticResource GhostButton}" WidthRequest="96" HeightRequest="36"
+                        FontSize="13" Command="{Binding RescanCommand}" />
+            </Grid>
+            <VerticalStackLayout BindableLayout.ItemsSource="{Binding Devices}" Spacing="0">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="vm:DeviceRowViewModel">
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" Padding="6,12" ColumnSpacing="12" RowSpacing="6">
+                            <Label Grid.Row="0" Grid.Column="0" Text="{Binding Name}" Style="{StaticResource RowTitle}" VerticalOptions="Center" />
+                            <Switch Grid.Row="0" Grid.Column="1" IsToggled="{Binding Enable}" VerticalOptions="Center" />
+                            <Slider Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Minimum="0" Maximum="{Binding MaxBrightness}"
+                                    Value="{Binding Brightness}" />
+                            <BoxView Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Style="{StaticResource RowSeparator}"
+                                     VerticalOptions="End" Margin="0,8,0,-12" />
+                        </Grid>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+
+            <!-- Advanced -->
+            <Button Text="Advanced settings" Style="{StaticResource GhostButton}" Margin="0,20,0,4"
+                    Command="{Binding OpenAdvancedCommand}" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

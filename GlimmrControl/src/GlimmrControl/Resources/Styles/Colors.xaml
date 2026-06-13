@@ -1,0 +1,82 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<?xaml-comp compile="true" ?>
+<ResourceDictionary 
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- Glimmr "Ambient Dark" design system, mirroring src/Glimmr.Web/src/styles.css.
+         OLED-black surfaces, hierarchy via spacing + glow, accent driven by mode. -->
+
+    <Color x:Key="Primary">#46C8FF</Color>
+    <Color x:Key="PrimaryDark">#46C8FF</Color>
+    <Color x:Key="PrimaryDarkText">#F2F2F5</Color>
+    <Color x:Key="Secondary">#46C8FF</Color>
+    <Color x:Key="SecondaryDarkText">#46C8FF</Color>
+    <Color x:Key="Tertiary">#7B6CFF</Color>
+
+    <Color x:Key="White">White</Color>
+    <Color x:Key="Black">Black</Color>
+    <Color x:Key="Magenta">#E25DFF</Color>
+    <Color x:Key="MidnightBlue">#190649</Color>
+    <Color x:Key="OffBlack">#000000</Color>
+
+    <!-- Core surfaces (web bg / bg-raised / bg-soft / bg-press) -->
+    <Color x:Key="GlimmrBg">#000000</Color>
+    <Color x:Key="GlimmrRaised">#0A0A0C</Color>
+    <Color x:Key="GlimmrSurface">#131318</Color>
+    <Color x:Key="GlimmrSurfaceAlt">#1C1C24</Color>
+    <Color x:Key="GlimmrPress">#1C1C24</Color>
+    <!-- Hairline separators: white @ ~7% (web line) -->
+    <Color x:Key="GlimmrLine">#12FFFFFF</Color>
+    <Color x:Key="GlimmrBorder">#12FFFFFF</Color>
+
+    <!-- Text (web fg / fg-dim / fg-faint) -->
+    <Color x:Key="GlimmrText">#F2F2F5</Color>
+    <Color x:Key="GlimmrMuted">#9B9BA6</Color>
+    <Color x:Key="GlimmrDim">#9B9BA6</Color>
+    <Color x:Key="GlimmrFaint">#5B5B66</Color>
+
+    <!-- Accents -->
+    <Color x:Key="GlimmrAccent">#46C8FF</Color>
+    <Color x:Key="GlimmrCyan">#46C8FF</Color>
+    <Color x:Key="GlimmrViolet">#7B6CFF</Color>
+    <Color x:Key="GlimmrMagenta">#E25DFF</Color>
+    <Color x:Key="GlimmrGreen">#5DFF8F</Color>
+    <Color x:Key="GlimmrOk">#5DFF8F</Color>
+    <Color x:Key="GlimmrOrange">#FF9E43</Color>
+    <Color x:Key="GlimmrWarn">#FFE347</Color>
+    <Color x:Key="GlimmrDanger">#FF5470</Color>
+
+    <!-- Accent tints used for active chip/button fills (accent @ low alpha over black) -->
+    <Color x:Key="GlimmrAccentSoft">#1F46C8FF</Color>
+    <Color x:Key="GlimmrAccentEdge">#8C46C8FF</Color>
+    <Color x:Key="GlimmrDangerSoft">#1FFF5470</Color>
+
+    <Color x:Key="Gray100">#E1E1E1</Color>
+    <Color x:Key="Gray200">#C8C8C8</Color>
+    <Color x:Key="Gray300">#ACACAC</Color>
+    <Color x:Key="Gray400">#919191</Color>
+    <Color x:Key="Gray500">#6E6E6E</Color>
+    <Color x:Key="Gray600">#404040</Color>
+    <Color x:Key="Gray900">#212121</Color>
+    <Color x:Key="Gray950">#141414</Color>
+
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Primary}"/>
+    <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource Secondary}"/>
+    <SolidColorBrush x:Key="TertiaryBrush" Color="{StaticResource Tertiary}"/>
+    <SolidColorBrush x:Key="WhiteBrush" Color="{StaticResource White}"/>
+    <SolidColorBrush x:Key="BlackBrush" Color="{StaticResource Black}"/>
+
+    <SolidColorBrush x:Key="GlimmrBgBrush" Color="{StaticResource GlimmrBg}"/>
+    <SolidColorBrush x:Key="GlimmrSurfaceBrush" Color="{StaticResource GlimmrSurface}"/>
+    <SolidColorBrush x:Key="GlimmrAccentBrush" Color="{StaticResource GlimmrAccent}"/>
+
+    <SolidColorBrush x:Key="Gray100Brush" Color="{StaticResource Gray100}"/>
+    <SolidColorBrush x:Key="Gray200Brush" Color="{StaticResource Gray200}"/>
+    <SolidColorBrush x:Key="Gray300Brush" Color="{StaticResource Gray300}"/>
+    <SolidColorBrush x:Key="Gray400Brush" Color="{StaticResource Gray400}"/>
+    <SolidColorBrush x:Key="Gray500Brush" Color="{StaticResource Gray500}"/>
+    <SolidColorBrush x:Key="Gray600Brush" Color="{StaticResource Gray600}"/>
+    <SolidColorBrush x:Key="Gray900Brush" Color="{StaticResource Gray900}"/>
+    <SolidColorBrush x:Key="Gray950Brush" Color="{StaticResource Gray950}"/>
+</ResourceDictionary>

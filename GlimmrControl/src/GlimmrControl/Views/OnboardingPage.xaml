@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="GlimmrControl.Views.OnboardingPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:GlimmrControl.ViewModels"
+    xmlns:models="clr-namespace:GlimmrControl.Models"
+    x:DataType="vm:OnboardingViewModel"
+    Shell.NavBarIsVisible="False"
+    Title="Set up Glimmr">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="22,28,22,28" Spacing="16" MaximumWidthRequest="560" HorizontalOptions="Fill">
+
+            <!-- Step: Intro -->
+            <VerticalStackLayout IsVisible="{Binding ShowIntro}" Spacing="12">
+                <Label Text="SET UP" Style="{StaticResource SectionLabel}" TextColor="{StaticResource GlimmrAccent}" Margin="0,0,0,2" />
+                <Label Text="Add a new Glimmr" Style="{StaticResource ScreenTitle}" />
+                <Label Style="{StaticResource MutedLabel}" FontSize="15"
+                       Text="A new Glimmr broadcasts its own Wi-Fi network named “glimmr-…”. We'll connect to it, hand it your home Wi-Fi details, then find it once it joins your network." />
+                <Border Style="{StaticResource Panel}" Margin="0,8,0,0">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="BEFORE YOU START" Style="{StaticResource SectionLabel}" Margin="0,0,0,2" />
+                        <Label Text="• Power on your Glimmr and wait about 30 seconds." Style="{StaticResource MutedLabel}" />
+                        <Label Text="• Have your home Wi-Fi password ready." Style="{StaticResource MutedLabel}" />
+                    </VerticalStackLayout>
+                </Border>
+                <Button Text="Get started" Style="{StaticResource PrimaryButton}" Command="{Binding StartCommand}" />
+            </VerticalStackLayout>
+
+            <!-- Step: Find hotspot -->
+            <VerticalStackLayout IsVisible="{Binding ShowFindHotspot}" Spacing="12">
+                <Label Text="STEP 1" Style="{StaticResource SectionLabel}" TextColor="{StaticResource GlimmrAccent}" Margin="0,0,0,2" />
+                <Label Text="Connect to your Glimmr" Style="{StaticResource ScreenTitle}" FontSize="24" />
+
+                <VerticalStackLayout IsVisible="{Binding CanScan}" Spacing="4">
+                    <Label Text="Tap your Glimmr's setup network:" Style="{StaticResource MutedLabel}" Margin="2,4" />
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Hotspots}" Spacing="0">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="models:WifiNetwork">
+                                <Grid Padding="6,0">
+                                    <Grid ColumnDefinitions="*,Auto" Padding="4,15">
+                                        <Grid.GestureRecognizers>
+                                            <TapGestureRecognizer
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:OnboardingViewModel}}, Path=JoinHotspotCommand}"
+                                                CommandParameter="{Binding .}" />
+                                        </Grid.GestureRecognizers>
+                                        <Label Grid.Column="0" Text="{Binding Ssid}" Style="{StaticResource RowTitle}" VerticalOptions="Center" />
+                                        <Label Grid.Column="1" Text="›" FontSize="22" TextColor="{StaticResource GlimmrFaint}" VerticalOptions="Center" />
+                                    </Grid>
+                                    <BoxView Style="{StaticResource RowSeparator}" VerticalOptions="End" />
+                                </Grid>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                    <Button Text="Scan again" Style="{StaticResource GhostButton}" Margin="0,8,0,0" Command="{Binding ScanHotspotsCommand}" />
+                </VerticalStackLayout>
+
+                <VerticalStackLayout IsVisible="{Binding CanEnterSsidManually}" Spacing="10">
+                    <Label Text="Enter the Glimmr network name shown in your Wi-Fi settings:" Style="{StaticResource MutedLabel}" Margin="2,4" />
+                    <Border Style="{StaticResource InputPanel}">
+                        <Entry Text="{Binding ManualSsid}" Placeholder="glimmr-1234" />
+                    </Border>
+                    <Button Text="Join this network" Style="{StaticResource PrimaryButton}" Command="{Binding JoinManualCommand}" />
+                </VerticalStackLayout>
+
+                <Button Text="I'm already connected to it" Style="{StaticResource GhostButton}" Command="{Binding AlreadyConnectedCommand}" />
+            </VerticalStackLayout>
+
+            <!-- Step: Portal (pick home network) -->
+            <VerticalStackLayout IsVisible="{Binding ShowPortal}" Spacing="12">
+                <Label Text="STEP 2" Style="{StaticResource SectionLabel}" TextColor="{StaticResource GlimmrAccent}" Margin="0,0,0,2" />
+                <Label Text="Choose your home Wi-Fi" Style="{StaticResource ScreenTitle}" FontSize="24" />
+                <Label Text="Pick the network your Glimmr should join:" Style="{StaticResource MutedLabel}" Margin="2,0" />
+                <VerticalStackLayout BindableLayout.ItemsSource="{Binding HomeNetworks}" Spacing="0">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="models:WifiNetwork">
+                            <Grid Padding="6,0">
+                                <Grid ColumnDefinitions="*,Auto" Padding="4,15">
+                                    <Grid.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:OnboardingViewModel}}, Path=SelectHomeNetworkCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    </Grid.GestureRecognizers>
+                                    <Label Grid.Column="0" Text="{Binding Ssid}" Style="{StaticResource RowTitle}" VerticalOptions="Center" />
+                                    <Label Grid.Column="1" Text="🔒" IsVisible="{Binding Secured}" VerticalOptions="Center" />
+                                </Grid>
+                                <BoxView Style="{StaticResource RowSeparator}" VerticalOptions="End" />
+                            </Grid>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+                <Button Text="Refresh list" Style="{StaticResource GhostButton}" Margin="0,8,0,0" Command="{Binding RefreshHomeNetworksCommand}" />
+                <Button Text="Open setup page in browser" Style="{StaticResource GhostButton}" Command="{Binding OpenPortalInBrowserCommand}" />
+            </VerticalStackLayout>
+
+            <!-- Step: Provisioning -->
+            <VerticalStackLayout IsVisible="{Binding ShowProvisioning}" Spacing="14">
+                <Label Text="ALMOST DONE" Style="{StaticResource SectionLabel}" TextColor="{StaticResource GlimmrAccent}" Margin="0,0,0,2" />
+                <Label Text="Reconnect &amp; finish" Style="{StaticResource ScreenTitle}" FontSize="24" />
+                <Border Style="{StaticResource Panel}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="1. Your Glimmr is now joining your home Wi-Fi." Style="{StaticResource BodyLabel}" />
+                        <Label Text="2. Reconnect this phone to your home Wi-Fi (the setup network is gone now)." Style="{StaticResource BodyLabel}" />
+                        <Label Text="3. Tap below and we'll find your Glimmr." Style="{StaticResource BodyLabel}" />
+                    </VerticalStackLayout>
+                </Border>
+                <Button Text="Find my Glimmr" Style="{StaticResource PrimaryButton}" Command="{Binding FindProvisionedDeviceCommand}" />
+            </VerticalStackLayout>
+
+            <!-- Shared status -->
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" HorizontalOptions="Center" />
+            <Label Text="{Binding StatusMessage}" Style="{StaticResource MutedLabel}" HorizontalTextAlignment="Center"
+                   IsVisible="{Binding StatusMessage, Converter={StaticResource StringNotEmpty}}" />
+
+            <Button Text="Cancel" Style="{StaticResource GhostButton}" Margin="0,8,0,0" Command="{Binding CancelCommand}" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

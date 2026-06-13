@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="GlimmrControl.Views.AdvancedSettingsPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Advanced settings">
+
+    <Grid>
+        <WebView x:Name="Web" />
+        <ActivityIndicator x:Name="Spinner" IsRunning="True" IsVisible="True"
+                           Color="{StaticResource GlimmrAccent}"
+                           VerticalOptions="Center" HorizontalOptions="Center" />
+    </Grid>
+</ContentPage>

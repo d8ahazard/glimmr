@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="GlimmrControl.Views.DeviceListPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:GlimmrControl.ViewModels"
+    xmlns:models="clr-namespace:GlimmrControl.Models"
+    x:DataType="vm:DeviceListViewModel"
+    Shell.NavBarIsVisible="False"
+    Title="Glimmr">
+
+    <Grid RowDefinitions="Auto,*,Auto" Padding="16,12,16,16" RowSpacing="6">
+
+        <!-- Header -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto" Margin="4,14,4,10" ColumnSpacing="8">
+            <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
+                <Label Text="Glimmr" Style="{StaticResource ScreenTitle}" />
+                <Label Text="Your devices" Style="{StaticResource ScreenSub}" />
+            </VerticalStackLayout>
+            <Button Grid.Column="1" Text="Scan" Style="{StaticResource GhostButton}"
+                    WidthRequest="78" HeightRequest="40" FontSize="13" Command="{Binding ScanCommand}" />
+            <Button Grid.Column="2" Text="＋" FontSize="20" Style="{StaticResource GhostButton}"
+                    WidthRequest="46" HeightRequest="40" Command="{Binding AddManualCommand}" />
+        </Grid>
+
+        <!-- Device list -->
+        <RefreshView Grid.Row="1" IsRefreshing="{Binding IsScanning}" Command="{Binding ScanCommand}">
+            <CollectionView ItemsSource="{Binding Devices}" SelectionMode="None">
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout Padding="24,70" Spacing="10" HorizontalOptions="Center">
+                        <Label Text="No Glimmr devices yet" Style="{StaticResource RowTitle}"
+                               FontSize="18" HorizontalOptions="Center" />
+                        <Label Text="Set up a new Glimmr, scan your network, or add one by IP."
+                               Style="{StaticResource MutedLabel}" HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:GlimmrDevice">
+                        <Grid Padding="6,0">
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14" Padding="4,14">
+                                <Grid.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:DeviceListViewModel}}, Path=OpenCommand}"
+                                        CommandParameter="{Binding .}" />
+                                </Grid.GestureRecognizers>
+                                <Ellipse Grid.Column="0" WidthRequest="9" HeightRequest="9" VerticalOptions="Center"
+                                         Fill="{Binding Reachability, Converter={StaticResource Dot}}" />
+                                <VerticalStackLayout Grid.Column="1" Spacing="1" VerticalOptions="Center">
+                                    <Label Text="{Binding Name}" Style="{StaticResource RowTitle}" />
+                                    <Label Text="{Binding StatusText}" Style="{StaticResource RowSub}" />
+                                </VerticalStackLayout>
+                                <Button Grid.Column="2" Text="✕" FontSize="15" BackgroundColor="Transparent"
+                                        TextColor="{StaticResource GlimmrFaint}" WidthRequest="40" HeightRequest="40"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:DeviceListViewModel}}, Path=RemoveCommand}"
+                                        CommandParameter="{Binding .}" />
+                            </Grid>
+                            <BoxView Style="{StaticResource RowSeparator}" VerticalOptions="End" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+        <!-- Footer -->
+        <VerticalStackLayout Grid.Row="2" Spacing="10" Margin="0,8,0,0">
+            <Label Text="{Binding StatusMessage}" Style="{StaticResource MutedLabel}"
+                   IsVisible="{Binding StatusMessage, Converter={StaticResource StringNotEmpty}}"
+                   HorizontalTextAlignment="Center" />
+            <Button Text="Set up a new Glimmr" Style="{StaticResource PrimaryButton}" Command="{Binding StartOnboardingCommand}" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

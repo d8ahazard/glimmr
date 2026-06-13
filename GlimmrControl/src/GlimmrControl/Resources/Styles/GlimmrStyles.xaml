@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- Force the OLED-dark Glimmr look regardless of system theme. -->
+    <Style TargetType="ContentPage" ApplyToDerivedTypes="True">
+        <Setter Property="BackgroundColor" Value="{StaticResource GlimmrBg}" />
+        <Setter Property="Padding" Value="0" />
+    </Style>
+
+    <Style TargetType="Shell" ApplyToDerivedTypes="True">
+        <Setter Property="Shell.BackgroundColor" Value="{StaticResource GlimmrBg}" />
+        <Setter Property="Shell.ForegroundColor" Value="{StaticResource GlimmrText}" />
+        <Setter Property="Shell.TitleColor" Value="{StaticResource GlimmrText}" />
+        <Setter Property="Shell.DisabledColor" Value="{StaticResource GlimmrFaint}" />
+        <Setter Property="Shell.UnselectedColor" Value="{StaticResource GlimmrFaint}" />
+        <Setter Property="Shell.NavBarHasShadow" Value="False" />
+    </Style>
+
+    <Style TargetType="NavigationPage" ApplyToDerivedTypes="True">
+        <Setter Property="BarBackgroundColor" Value="{StaticResource GlimmrBg}" />
+        <Setter Property="BarTextColor" Value="{StaticResource GlimmrText}" />
+    </Style>
+
+    <!-- Typography -->
+    <Style x:Key="ScreenTitle" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource GlimmrText}" />
+        <Setter Property="FontSize" Value="30" />
+        <Setter Property="FontAttributes" Value="Bold" />
+    </Style>
+
+    <Style x:Key="ScreenSub" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource GlimmrDim}" />
+        <Setter Property="FontSize" Value="14" />
+    </Style>
+
+    <!-- Web .section-label: faint, uppercase, tracked (author text in CAPS). -->
+    <Style x:Key="SectionLabel" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource GlimmrFaint}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="CharacterSpacing" Value="1.6" />
+        <Setter Property="Margin" Value="4,22,4,6" />
+    </Style>
+
+    <Style x:Key="RowTitle" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource GlimmrText}" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="FontAttributes" Value="Bold" />
+    </Style>
+
+    <Style x:Key="RowSub" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource GlimmrDim}" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+
+    <Style x:Key="BodyLabel" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource GlimmrText}" />
+        <Setter Property="FontSize" Value="15" />
+    </Style>
+
+    <Style x:Key="MutedLabel" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource GlimmrDim}" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+
+    <Style x:Key="FaintLabel" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource GlimmrFaint}" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+
+    <!-- Hero (web .hero-name / .hero-mode) -->
+    <Style x:Key="HeroName" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource GlimmrFaint}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="CharacterSpacing" Value="2.2" />
+    </Style>
+
+    <Style x:Key="HeroMode" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource GlimmrText}" />
+        <Setter Property="FontSize" Value="34" />
+        <Setter Property="FontAttributes" Value="Bold" />
+    </Style>
+
+    <!-- Raised panel (web .mapwrap / .linkpane) - used sparingly for grouped content -->
+    <Style x:Key="Panel" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{StaticResource GlimmrRaised}" />
+        <Setter Property="Stroke" Value="{StaticResource GlimmrLine}" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="Padding" Value="14" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 18" />
+    </Style>
+
+    <!-- Flat list row (web .row-item) - separator drawn by a BoxView in the page -->
+    <Style x:Key="RowSeparator" TargetType="BoxView">
+        <Setter Property="Color" Value="{StaticResource GlimmrLine}" />
+        <Setter Property="HeightRequest" Value="1" />
+    </Style>
+
+    <!-- Buttons (web .btn / .btn.primary / .btn.danger) -->
+    <Style x:Key="PrimaryButton" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{StaticResource GlimmrAccentSoft}" />
+        <Setter Property="TextColor" Value="{StaticResource GlimmrAccent}" />
+        <Setter Property="BorderColor" Value="{StaticResource GlimmrAccentEdge}" />
+        <Setter Property="BorderWidth" Value="1" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="HeightRequest" Value="50" />
+    </Style>
+
+    <Style x:Key="GhostButton" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{StaticResource GlimmrSurface}" />
+        <Setter Property="TextColor" Value="{StaticResource GlimmrText}" />
+        <Setter Property="BorderColor" Value="{StaticResource GlimmrLine}" />
+        <Setter Property="BorderWidth" Value="1" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="HeightRequest" Value="46" />
+    </Style>
+
+    <Style x:Key="DangerButton" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{StaticResource GlimmrDangerSoft}" />
+        <Setter Property="TextColor" Value="{StaticResource GlimmrDanger}" />
+        <Setter Property="BorderColor" Value="{StaticResource GlimmrDanger}" />
+        <Setter Property="BorderWidth" Value="1" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="HeightRequest" Value="46" />
+    </Style>
+
+    <!-- Sliders + switches default to the cyan accent (overridden per-mode in code) -->
+    <Style TargetType="Slider" ApplyToDerivedTypes="True">
+        <Setter Property="MinimumTrackColor" Value="{StaticResource GlimmrAccent}" />
+        <Setter Property="MaximumTrackColor" Value="{StaticResource GlimmrPress}" />
+        <Setter Property="ThumbColor" Value="{StaticResource GlimmrText}" />
+    </Style>
+
+    <Style TargetType="Switch" ApplyToDerivedTypes="True">
+        <Setter Property="OnColor" Value="{StaticResource GlimmrAccent}" />
+        <Setter Property="ThumbColor" Value="{StaticResource GlimmrText}" />
+    </Style>
+
+    <!-- Inputs (web .input) -->
+    <Style TargetType="Entry" ApplyToDerivedTypes="True">
+        <Setter Property="TextColor" Value="{StaticResource GlimmrText}" />
+        <Setter Property="PlaceholderColor" Value="{StaticResource GlimmrFaint}" />
+        <Setter Property="BackgroundColor" Value="Transparent" />
+    </Style>
+
+    <Style x:Key="InputPanel" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{StaticResource GlimmrSurface}" />
+        <Setter Property="Stroke" Value="{StaticResource GlimmrLine}" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 12" />
+        <Setter Property="Padding" Value="6,2" />
+    </Style>
+
+    <!-- Activity indicator -->
+    <Style TargetType="ActivityIndicator" ApplyToDerivedTypes="True">
+        <Setter Property="Color" Value="{StaticResource GlimmrAccent}" />
+    </Style>
+
+</ResourceDictionary>

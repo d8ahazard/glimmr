@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="glimmr" x1="96" y1="96" x2="416" y2="416" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#46C8FF"/>
+      <stop offset="0.5" stop-color="#7B6CFF"/>
+      <stop offset="1" stop-color="#E25DFF"/>
+    </linearGradient>
+  </defs>
+  <g stroke="url(#glimmr)" stroke-width="9" fill="none" opacity="0.85">
+    <circle cx="256" cy="256" r="60"/>
+    <circle cx="256" cy="196" r="60"/>
+    <circle cx="256" cy="316" r="60"/>
+    <circle cx="308" cy="226" r="60"/>
+    <circle cx="308" cy="286" r="60"/>
+    <circle cx="204" cy="226" r="60"/>
+    <circle cx="204" cy="286" r="60"/>
+  </g>
+  <path d="M256 312 L196 222 Q256 196 316 222 Z" fill="#FFFFFF"/>
+</svg>
