@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System;
 using System.Threading;
@@ -21,12 +21,18 @@ public abstract class ColorSource : BackgroundService {
 	
 
 	public void Stop() {
-		if (RunTask == null) {
+		var task = RunTask;
+		RunTask = null;
+		if (task == null) {
 			return;
 		}
 
 		try {
-			RunTask.Dispose();
+			// Tasks can only be disposed once completed; cancellation is handled by the
+			// caller's token, so just release our reference (and dispose if finished).
+			if (task.IsCompleted) {
+				task.Dispose();
+			}
 		} catch (Exception e) {
 			Log.Debug("Exception killing run task: " + e.Message);
 		}

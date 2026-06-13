@@ -132,7 +132,9 @@ public class LedDevice : ColorTarget, IColorTarget {
 		}
 
 		try {
-			_agent?.SetColors(ledColors.ToArray());
+			// Avoid a per-frame copy when the source is already an array (the common case).
+			var colors = ledColors as Color[] ?? ledColors.ToArray();
+			_agent?.SetColors(colors);
 		} catch (Exception e) {
 			Log.Debug("Exception setting colors: " + e.Message);
 		}

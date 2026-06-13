@@ -1,0 +1,43 @@
+---
+description: Glimmr repo map, color pipeline architecture, and build commands
+alwaysApply: true
+---
+
+# Glimmr Architecture
+
+Glimmr is a .NET 8 ambient lighting server designed to run on a Raspberry Pi 4/5,
+driving GPIO LED strips plus network lighting devices (Hue, WLED, Nanoleaf, Lifx, ...).
+
+## Repo map
+
+- `src/Glimmr` - main server (ASP.NET + BackgroundServices)
+- `src/Glimmr.Web` - Preact/Vite SPA, builds into `src/Glimmr/wwwroot/app` (served at `/app/`)
+- `src/GlimmrTray` - Windows tray launcher for Glimmr.exe
+- `src/Image2Scene` - CLI: image -> ambient scene JSON
+- `glimmr_ha` - Home Assistant custom integration (Python, domain `glimmr`)
+- `Glimmr-image-gen-x64` - pi-gen fork; bookworm arm64 Pi 3/4/5 OS image. Needs
+  `stage2/05-glimmr/files/archive.tgz` from `script/publish.ps1` before building.
+- `script/` - publish + platform install scripts
+- The WS281x driver lives in the sibling repo `e:/dev/rpi-ws281x-csharp`
+  (NuGet `digitalhigh.rpi-ws281x-csharp`).
+
+## Color pipeline
+
+```
+ColorSource (Video/Audio/AudioVideo/Ambient/Udp/DreamScreen/HueSync)
+  -> FrameSplitter.Update(Mat)        [720x480, resize/warp/gamma, ROI means]
+  -> ColorService.SendColors          [broadcast via ColorSendEventAsync]
+  -> IColorTarget devices             [LedAgent (WS281x), Hue, WLED, ...]
+```
+
+- Each ColorSource owns its own `FrameSplitter`; `ColorService._splitter` is only for flash/demo.
+- `DeviceMode`: 0 Off, 1 Video, 2 Audio, 3 Ambient, 4 AudioVideo, 5 Udp/Stream, 6 DreamScreen, 7 HueSync.
+- LED strips: device "0" = PWM0/GPIO 18, device "1" = PWM1/GPIO 19. `LedAgent` drives both;
+  Pi 5 supports a single strip on GPIO 19 only (RP1 `rp1_ws281x_pwm` kernel module).
+
+## Build / test
+
+- Server: `dotnet build src/Glimmr/Glimmr.csproj -p:SkipGlimmrWeb=true`
+- Tests: `dotnet test src/Glimmr.Tests`
+- Web UI: `npm run build` in `src/Glimmr.Web` (runs `tsc --noEmit` + vite)
+- Release packaging: `script/publish.ps1` (Windows; also feeds the Pi image builder)

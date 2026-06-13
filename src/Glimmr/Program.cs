@@ -83,7 +83,15 @@ public static class Program {
 			.UseSerilog(logger)
 			.UseConsoleLifetime()
 			.ConfigureServices(services => {
-				services.AddSignalR();
+				services.AddSignalR(o => {
+					// Generous timeouts: settings changes can trigger heavy refresh work,
+					// and throttled/background tabs ping slowly. Don't drop clients for it.
+					o.KeepAliveInterval = TimeSpan.FromSeconds(10);
+					o.ClientTimeoutInterval = TimeSpan.FromSeconds(60);
+					// Allow a few overlapping invocations so a slow call (e.g. device scan)
+					// doesn't queue up subsequent settings commits behind it.
+					o.MaximumParallelInvocationsPerClient = 3;
+				});
 				services.Configure<HostOptions>(hostOptions => {
 					hostOptions.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore;
 				});
@@ -95,7 +103,19 @@ public static class Program {
 				}
 
 				webBuilder.UseStartup<Startup>();
-				webBuilder.UseUrls("http://*");
+				webBuilder.ConfigureKestrel(options => {
+					// Standard Glimmr web UI / API over HTTP.
+					options.ListenAnyIP(80);
+
+					// HTTPS endpoint required for the emulated Hue Bridge so the Hue Sync app
+					// (which expects a TLS bridge for the CLIP v2 API) can pair and stream to us.
+					try {
+						var cert = Glimmr.Models.ColorSource.HueSync.HueCertificateFactory.CreateOrLoad();
+						options.ListenAnyIP(443, listenOptions => listenOptions.UseHttps(cert));
+					} catch (Exception e) {
+						Log.Warning("Unable to bind HTTPS/443 for Hue Sync bridge emulation: " + e.Message);
+					}
+				});
 			})
 			.ConfigureServices(services => {
 				services.AddSingleton<IHostedService, ControlService>();

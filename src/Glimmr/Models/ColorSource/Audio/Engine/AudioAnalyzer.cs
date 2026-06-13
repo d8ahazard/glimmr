@@ -9,9 +9,9 @@ namespace Glimmr.Models.ColorSource.Audio.Engine;
 /// <summary>
 ///     Converts a frame of FFT magnitudes from <see cref="ManagedBass" />
 ///     into an <see cref="AudioReactiveState" />. This is the single
-///     hot-path DSP class in the audio pipeline; it is allocation-free
-///     after construction so it is safe to call from the BASS recording
-///     callback on every frame.
+///     hot-path DSP class in the audio pipeline; all array buffers are
+///     pre-allocated (output arrays are double-buffered), so the only
+///     per-frame allocation is the small state record itself.
 /// </summary>
 public sealed class AudioAnalyzer {
 	private const int ChromaBins = 12;
@@ -21,6 +21,15 @@ public sealed class AudioAnalyzer {
 	private readonly float[] _bandsSmoothed;
 	private readonly float[] _chroma;
 	private readonly float[] _chromaSmoothed;
+
+	// Double-buffered output arrays handed to AudioReactiveState. Alternating between
+	// two pre-allocated copies keeps the hot path allocation-free while consumers
+	// still always see a fully written snapshot.
+	private readonly float[][] _bandsOut;
+	private readonly float[][] _bandsRawOut;
+	private readonly float[][] _chromaOut;
+	private int _outIndex;
+
 	private readonly AutoGainController _agc;
 	private readonly BeatDetector _beat;
 	private float _attack = 0.55f;
@@ -36,6 +45,9 @@ public sealed class AudioAnalyzer {
 		_bandsSmoothed = new float[config.BandCount];
 		_chroma = new float[ChromaBins];
 		_chromaSmoothed = new float[ChromaBins];
+		_bandsOut = new[] { new float[config.BandCount], new float[config.BandCount] };
+		_bandsRawOut = new[] { new float[config.BandCount], new float[config.BandCount] };
+		_chromaOut = new[] { new float[ChromaBins], new float[ChromaBins] };
 		_agc = new AutoGainController();
 		_beat = new BeatDetector(config.BandCount);
 	}
@@ -190,9 +202,18 @@ public sealed class AudioAnalyzer {
 		// Chroma fold-down for musical color rotation effects.
 		ComputeChroma(fft, binWidth, deltaSeconds);
 
+		// Copy into the inactive output buffers instead of cloning - no allocations.
+		_outIndex ^= 1;
+		var bandsOut = _bandsOut[_outIndex];
+		var bandsRawOut = _bandsRawOut[_outIndex];
+		var chromaOut = _chromaOut[_outIndex];
+		Array.Copy(_bands, bandsOut, _bands.Length);
+		Array.Copy(_bandsRaw, bandsRawOut, _bandsRaw.Length);
+		Array.Copy(_chromaSmoothed, chromaOut, _chromaSmoothed.Length);
+
 		var state = new AudioReactiveState(
-			(float[])_bands.Clone(),
-			(float[])_bandsRaw.Clone(),
+			bandsOut,
+			bandsRawOut,
 			bass, lowMid, mid, highMid, treble,
 			Math.Clamp(rms, 0f, 1f),
 			Math.Clamp(peak, 0f, 1f),
@@ -202,7 +223,7 @@ public sealed class AudioAnalyzer {
 			beat,
 			_beat.Bpm,
 			Math.Clamp(stereoBalance, -1f, 1f),
-			(float[])_chromaSmoothed.Clone(),
+			chromaOut,
 			_agc.Gate,
 			_agc.Gain,
 			_frameIndex++,

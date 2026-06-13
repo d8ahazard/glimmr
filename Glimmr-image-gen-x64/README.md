@@ -6,13 +6,38 @@ Tool used to create Raspberry Pi OS images. (Previously known as Raspbian).
 
 _This fork creates the [Glimmr](https://github.com/d8ahazard/glimmr) + [Comitup](https://davesteele.github.io/comitup/) spin_
 
+## Glimmr quick start
+
+This fork builds a **Debian Bookworm arm64 lite** appliance image for the
+**Raspberry Pi 3 / 4 / 5** (stages 0-2 only) with:
+
+- Glimmr preinstalled as a root systemd service (`glimmr.service`)
+- Comitup WiFi onboarding (AP name `glimmr-<nnn>`) on NetworkManager
+- Pi 3/4 WS281x LED output via PWM pinmux (GPIO 19, ALT5)
+- Pi 5 WS281x LED output via the `rp1_ws281x_pwm` kernel module built from
+  jgarff's `pi5` branch (GPIO 19, ALT3), loaded by `glimmr-pi5-leds.service`
+
+**Prerequisite:** `stage2/05-glimmr/files/archive.tgz` (the self-contained
+linux-arm64 Glimmr publish) must exist before building. It is produced by
+`script/publish.ps1` in the main repo (the `linux-arm64` target copies it here
+automatically). The build will fail without it.
+
+Build natively on a Debian Bookworm host with `./build.sh`, or anywhere with
+Docker via `./build-docker.sh`. The finished image lands in `deploy/`.
+
+To pin the comitup apt-source package for reproducible builds, export
+`COMITUP_APT_SOURCE_DEB=<deb filename>` before building (see
+`stage2/04-comitup/00-run.sh`).
+
+---
+
+Upstream pi-gen documentation follows.
 
 ## Dependencies
 
-pi-gen runs on Debian-based operating systems. Currently it is only supported on
-either Debian Buster or Ubuntu Xenial and is known to have issues building on
-earlier releases of these systems. On other Linux distributions it may be possible
-to use the Docker build described below.
+pi-gen runs on Debian-based operating systems. It is recommended to build on
+Debian Bookworm (matching the target release). On other Linux distributions it
+may be possible to use the Docker build described below.
 
 To install the required dependencies for `pi-gen` you should run:
 
@@ -31,7 +56,7 @@ Getting started is as simple as cloning this repository on your build machine. Y
 can do so with:
 
 ```bash
-git clone https://github.com/RPI-Distro/pi-gen.git
+git clone https://github.com/d8ahazard/Glimmr-image-gen-x64.git
 ```
 
 `--depth 1` can be added afer `git clone` to create a shallow clone, only containing

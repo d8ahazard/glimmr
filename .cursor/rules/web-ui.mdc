@@ -1,0 +1,27 @@
+---
+description: Conventions for the Glimmr.Web Preact SPA
+globs: src/Glimmr.Web/**
+alwaysApply: false
+---
+
+# Glimmr.Web Conventions
+
+- This is **Preact** (with `@preact/signals`), not React. Use `preact/hooks`,
+  `class=` (not `className`), and signals for global state (`lib/store.ts`).
+- Backend contract: SignalR hub at `/socket` pushes camelCase JSON (`olo` = full store);
+  actions invoke hub methods with REST fallback to `POST /api/Glimmr/{method}`.
+  Types in `src/types.ts` must mirror the C# models (camelCase).
+- Build output goes to `../Glimmr/wwwroot/app` (base `/app/`); `dotnet publish` runs
+  `npm ci && npm run build` automatically (skip with `-p:SkipGlimmrWeb=true`).
+- Form inputs that write to SystemData must commit on blur/Enter or debounce
+  (see `CountCell`/`TextField` in `components/ui.tsx`) - never per keystroke,
+  every commit is a hub round-trip.
+
+## Mapping conventions
+
+- LED master grid: 0-based, starts bottom-right corner, walks counter-clockwise
+  (right side up, top right-to-left, left down, bottom left-to-right). Geometry in
+  `lib/maps.ts` mirrors `FrameSplitter.DrawGrid` - keep them in sync.
+- Sectors: 1-based, start bottom-right, counter-clockwise (`DrawSectors`).
+- Device brightness sliders are 0-100. Hue V1 per-light override brightness is 0-255
+  (`mappedLights`), Hue V2 uses `groups[].services`.

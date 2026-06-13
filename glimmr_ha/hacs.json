@@ -1,6 +1,5 @@
 {
-    "name": "Glimmr Integration",
-    "domains": ["light"],
-    "homeassistant": "0.114.0",
-    "iot_class": ["Local Push", "Local Polling"]
-  }
+  "name": "Glimmr",
+  "homeassistant": "2024.1.0",
+  "render_readme": true
+}

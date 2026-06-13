@@ -30,7 +30,6 @@ public class Startup {
 		}
 
 		var Version = val.Split("-")[0];
-		services.AddControllersWithViews();
 		services.AddControllers()
 			.AddJsonOptions(options => { options.JsonSerializerOptions.PropertyNamingPolicy = null; })
 			.AddNewtonsoftJson();
@@ -77,17 +76,22 @@ public class Startup {
 
 		var Version = val.Split("-")[0];
 
-		if (env.IsDevelopment()) {
-			app.UseDeveloperExceptionPage();
-		} else {
-			app.UseExceptionHandler("/Home/Error");
-			// The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-			app.UseHsts();
-		}
-
 		app.UseDeveloperExceptionPage();
-		app.UseHttpsRedirection();
-		app.UseStaticFiles();
+		// NOTE: HTTPS redirect is intentionally disabled. Glimmr is a LAN appliance served over
+		// HTTP, and the emulated Hue Bridge must answer on both HTTP (v1 /api) and HTTPS (CLIP v2)
+		// without forcing redirects. The HTTPS/443 endpoint is added in Program.cs for Hue Sync.
+		var staticFiles = new StaticFileOptions {
+			OnPrepareResponse = ctx => {
+				// The SPA entry point must always revalidate so UI updates appear on a
+				// plain refresh; hashed assets are immutable and can cache forever.
+				if (ctx.File.Name == "index.html") {
+					ctx.Context.Response.Headers.CacheControl = "no-cache";
+				} else if (ctx.Context.Request.Path.StartsWithSegments("/app/assets")) {
+					ctx.Context.Response.Headers.CacheControl = "public,max-age=31536000,immutable";
+				}
+			}
+		};
+		app.UseStaticFiles(staticFiles);
 		app.UseSwagger();
 		app.UseSwaggerUI(c => { c.SwaggerEndpoint($"/swagger/{Version}/swagger.json", $"My API {Version}"); });
 		app.UseWebSockets();
@@ -96,10 +100,10 @@ public class Startup {
 		app.UseAuthorization();
 
 		app.UseEndpoints(endpoints => {
-			endpoints.MapControllerRoute(
-				"default",
-				"{controller=Home}/{action=Index}/{id?}");
+			endpoints.MapControllers();
 			endpoints.MapHub<SocketServer>("/socket");
+			// The web UI is a static SPA built from src/Glimmr.Web into wwwroot/app.
+			endpoints.MapFallbackToFile("app/index.html", staticFiles);
 		});
 		app.Use(async (context, next) => {
 			var unused = context.RequestServices

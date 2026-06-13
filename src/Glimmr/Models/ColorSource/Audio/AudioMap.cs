@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System;
 using System.Drawing;
@@ -24,6 +24,8 @@ public class AudioMap {
 	private readonly JsonLoader _loader = new("audioScenes");
 	private AudioAnalyzer _analyzer;
 	private AudioBandConfig _bandConfig;
+	private float _defaultGain;
+	private float _defaultNoiseGate;
 	private IAudioEffect _effect;
 	private int _loadedSceneId = int.MinValue;
 	private string _loadedMode = string.Empty;
@@ -69,6 +71,11 @@ public class AudioMap {
 
 		_scene = scene;
 
+		// Cache the SystemData-derived fallbacks here so Process() doesn't hit the
+		// database on every audio frame.
+		_defaultGain = sd.AudioGain;
+		_defaultNoiseGate = sd.AudioCutoff > 0 ? Math.Min(1f, sd.AudioCutoff / 64f) : 0f;
+
 		var desiredCount = NormalizeBandCount(scene.BandCount);
 		var desiredScale = ParseScale(scene.BandScale);
 		if (_bandConfig.BandCount != desiredCount || _bandConfig.Scale != desiredScale) {
@@ -97,13 +104,8 @@ public class AudioMap {
 	///     return 20 perimeter colors ready for <see cref="Frame.FrameBuilder" />.
 	/// </summary>
 	public Color[] Process(float[] fft, int sampleRate, float deltaSeconds, float stereoBalance) {
-		var sd = DataUtil.GetSystemData();
-		var sensitivity = _scene.Sensitivity > 0f ? _scene.Sensitivity : sd.AudioGain;
-		var noiseGate = _scene.NoiseGate > 0f
-			? _scene.NoiseGate
-			: sd.AudioCutoff > 0
-				? Math.Min(1f, sd.AudioCutoff / 64f)
-				: 0f;
+		var sensitivity = _scene.Sensitivity > 0f ? _scene.Sensitivity : _defaultGain;
+		var noiseGate = _scene.NoiseGate > 0f ? _scene.NoiseGate : _defaultNoiseGate;
 		var beatSensitivity = _scene.BeatSensitivity > 0f ? _scene.BeatSensitivity : 0.6f;
 
 		State = _analyzer.Analyze(fft, sampleRate, deltaSeconds, sensitivity, beatSensitivity,

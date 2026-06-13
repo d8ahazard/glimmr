@@ -118,7 +118,8 @@ foreach ($target in $targets) {
 
 	if ($target -like 'linux-*' -and $package) {
 		Write-Host "Creating tarball at $binPath\$fullVersion.tar.gz..."
-		Invoke-Expression -Command "$PSScriptRoot\7z.exe a -mx9 -ttar -r $binPath\$fullVersion.tar $binPath\Release\net8.0\$targetRuntime\*"
+		# Use $target here, not $targetRuntime - the latter is "all" in full builds.
+		Invoke-Expression -Command "$PSScriptRoot\7z.exe a -mx9 -ttar -r $binPath\$fullVersion.tar $binPath\Release\net8.0\$target\*"
 		Invoke-Expression -Command "$PSScriptRoot\7z.exe a -mx9 -tgzip $binPath\$fullVersion.tar.gz $binPath\$fullVersion.tar"
 	}
 	

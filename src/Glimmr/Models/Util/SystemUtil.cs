@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System;
 using System.Collections.Generic;
@@ -25,6 +25,8 @@ namespace Glimmr.Models.Util;
 
 public static class SystemUtil {
 	private static DateTime? LastUpdate;
+	private static bool? _isRaspberryPi;
+	private static string? _piModel;
 
 	public static void Reboot() {
 		Log.Debug("Rebooting");
@@ -67,24 +69,73 @@ public static class SystemUtil {
 		return File.Exists("/docker_install.sh");
 	}
 
-	public static bool IsRaspberryPi() {
+	/// <summary>
+	///     Returns the device-tree model string (e.g. "Raspberry Pi 5 Model B Rev 1.0"),
+	///     or an empty string when unavailable.
+	/// </summary>
+	public static string GetPiModel() {
+		if (_piModel != null) {
+			return _piModel;
+		}
+
+		_piModel = string.Empty;
 		if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+			return _piModel;
+		}
+
+		try {
+			const string modelPath = "/proc/device-tree/model";
+			if (File.Exists(modelPath)) {
+				// Device-tree strings are NUL-terminated.
+				_piModel = File.ReadAllText(modelPath).TrimEnd('\0').Trim();
+			}
+		} catch (Exception e) {
+			Log.Debug("Exception reading device-tree model: " + e.Message);
+		}
+
+		return _piModel;
+	}
+
+	public static bool IsRaspberryPi() {
+		if (_isRaspberryPi.HasValue) {
+			return _isRaspberryPi.Value;
+		}
+
+		if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+			_isRaspberryPi = false;
 			return false;
 		}
 
-		Process process = new() {
-			StartInfo = {
-				FileName = "cat",
-				Arguments = "/etc/os-release",
-				UseShellExecute = false,
-				RedirectStandardOutput = true,
-				RedirectStandardError = true
+		// Device-tree model is the authoritative check and works on any distro.
+		if (GetPiModel().Contains("Raspberry Pi", StringComparison.OrdinalIgnoreCase)) {
+			_isRaspberryPi = true;
+			return true;
+		}
+
+		// Fallback heuristics for older images without an accessible device tree.
+		var osRelease = string.Empty;
+		try {
+			if (File.Exists("/etc/os-release")) {
+				osRelease = File.ReadAllText("/etc/os-release");
 			}
-		};
-		process.Start();
-		var output = process.StandardOutput.ReadToEnd();
-		process.WaitForExit();
-		return output.ToLower().Contains("raspbian") || File.Exists("/usr/bin/raspi-config");
+		} catch (Exception e) {
+			Log.Debug("Exception reading os-release: " + e.Message);
+		}
+
+		_isRaspberryPi = osRelease.Contains("raspbian", StringComparison.OrdinalIgnoreCase) ||
+		                 File.Exists("/usr/bin/raspi-config");
+		return _isRaspberryPi.Value;
+	}
+
+	/// <summary>
+	///     True on Raspberry Pi 5 / Compute Module 5 (BCM2712). The Pi 5 routes GPIO through the
+	///     RP1 chip, so WS281x output requires the rp1_ws281x_pwm kernel module (set up by the
+	///     Glimmr OS image) and currently supports a single strip on GPIO 19.
+	/// </summary>
+	public static bool IsRaspberryPi5() {
+		var model = GetPiModel();
+		return model.Contains("Raspberry Pi 5", StringComparison.OrdinalIgnoreCase) ||
+		       model.Contains("Compute Module 5", StringComparison.OrdinalIgnoreCase);
 	}
 
 	public static void Update(IHubContext<SocketServer> hubContext) {

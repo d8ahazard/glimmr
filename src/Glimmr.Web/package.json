@@ -1,0 +1,21 @@
+{
+  "name": "glimmr-web",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@microsoft/signalr": "^10.0.0",
+    "@preact/signals": "^2.9.1",
+    "preact": "^10.29.2"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.5",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.16"
+  }
+}

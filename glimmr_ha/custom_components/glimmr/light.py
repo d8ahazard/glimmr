@@ -1,93 +1,99 @@
-"""Glimmr integration."""
+"""Glimmr light platform."""
 from __future__ import annotations
 
-from typing import List, Any, Tuple, Set
+import asyncio
+from typing import Any
 
-import homeassistant.helpers.config_validation as cv
-import voluptuous as vol
 from glimmr import Glimmr
-from glimmr.exceptions import GlimmrConnectionError, GlimmrError
-# Import the device class from the component
+from glimmr.exceptions import GlimmrError
 from homeassistant.components.light import (
     ATTR_EFFECT,
     ATTR_RGB_COLOR,
-    COLOR_MODE_RGB,
-    PLATFORM_SCHEMA,
-    SUPPORT_EFFECT,
+    ColorMode,
     LightEntity,
+    LightEntityFeature,
 )
-from homeassistant.const import CONF_HOST, CONF_NAME, CONF_MAC
-from homeassistant.util import slugify
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, LOGGER
 
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
-    {vol.Required(CONF_HOST): cv.string,
-     vol.Required(CONF_NAME): cv.string,
-     vol.Required(CONF_MAC): cv.string}
-)
+# Pseudo-effects exposing Glimmr device modes through the effect list.
+# Values match Glimmr's DeviceMode enum.
+MODE_EFFECTS: dict[str, int] = {
+    "Mode: Video": 1,
+    "Mode: Audio": 2,
+    "Mode: Ambient": 3,
+    "Mode: Audio/Video": 4,
+    "Mode: Streaming": 5,
+    "Mode: DreamScreen": 6,
+    "Mode: Hue Sync": 7,
+}
+
+# Legacy negative scene IDs (from the glimmr python library) to device modes.
+LEGACY_SCENE_MODES: dict[int, int] = {
+    -2: 1,  # Video
+    -3: 2,  # Audio
+    -4: 3,  # Ambient
+    -5: 4,  # Audio/Video
+    -6: 5,  # Streaming
+    -7: 6,  # DreamScreen
+    -8: 7,  # Hue Sync
+}
 
 
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    """Set up the Glimmr platform from legacy config."""
-    # Assign configuration variables.
-    # The configuration check takes care they are present.
-    ip_address = config[CONF_HOST]
-    try:
-        bulb = Glimmr(ip_address)
-        # Add devices
-        LOGGER.debug("Creating light %s", ip_address)
-        async_add_entities([GlimmrLight(bulb)], update_before_add=True)
-        return True
-    except GlimmrConnectionError:
-        LOGGER.error("Can't add device with ip %s.", ip_address)
-        return False
-
-
-async def async_setup_entry(hass, entry, async_add_entities):
-    """Set up the Glimmr platform from config_flow."""
-    # Assign configuration variables.
-    light = hass.data[DOMAIN][entry.unique_id]
-    LOGGER.debug("Setting up glimmr: ")
-    glimmr_light = GlimmrLight(light)
-    LOGGER.debug("ASE", glimmr_light)
-    # Add devices with defined name
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up the Glimmr light from a config entry."""
+    glimmr: Glimmr = hass.data[DOMAIN][entry.entry_id]
+    LOGGER.debug("Setting up glimmr light for entry %s", entry.entry_id)
+    glimmr_light = GlimmrLight(glimmr)
     async_add_entities([glimmr_light], update_before_add=True)
 
-    # Register services
-    async def async_update(call=None):
-        """Trigger update."""
-        LOGGER.debug("[glimmr light %s] update requested", entry.data.get(CONF_HOST))
-        await glimmr_light.async_update()
-        await glimmr_light.async_update_ha_state()
+    async def async_update(call=None) -> None:
+        """Trigger a state refresh (matches the `update` service in services.yaml)."""
+        LOGGER.debug("[glimmr light] update requested")
+        await glimmr_light.async_update(force=True)
+        glimmr_light.async_write_ha_state()
 
-    service_name = slugify(f"{entry.data.get(CONF_NAME)} updateService")
-    hass.services.async_register(DOMAIN, service_name, async_update)
-    return True
+    hass.services.async_register(DOMAIN, "update", async_update)
 
 
 class GlimmrLight(LightEntity):
-    _attr_icon = "mdi:led-strip-variant"
-    """Representation of Glimmr device."""
+    """Representation of a Glimmr device."""
 
-    def __init__(self, glimmr: Glimmr):
-        """Initialize an Glimmr."""
+    _attr_icon = "mdi:led-strip-variant"
+    _attr_color_mode = ColorMode.RGB
+    _attr_supported_color_modes = {ColorMode.RGB}
+    _attr_supported_features = LightEntityFeature.EFFECT
+
+    def __init__(self, glimmr: Glimmr) -> None:
+        """Initialize a Glimmr light."""
         LOGGER.debug("Initializing light...")
         self.glimmr: Glimmr = glimmr
         self.glimmr.LOGGER = LOGGER
-        self.glimmr.system_data = glimmr.system_data
         self._state = self.glimmr.system_data.device_mode
         if self.glimmr.system_data.auto_disabled:
             self._state = 0
-        self._brightness = 255
-        self._name = self.glimmr.system_data.device_name
-        self.rgb_color = bytes.fromhex(self.glimmr.system_data.ambient_color)
-        self._available = None
-        self._effect = self.glimmr.system_data.ambient_scene
-        self._scenes: List[str] = []
-        self.update_scene_list()
+        self._attr_brightness = 255
+        self._attr_name = self.glimmr.system_data.device_name
+        self._attr_unique_id = str(self.glimmr.system_data.device_id)
+        self._rgb_color: tuple[int, int, int] = (255, 255, 255)
+        self._available: bool | None = None
+        self._effect: str | None = None
+        self._scenes: list[str] = []
+        self.update_color()
+        self.update_scene_list_sync()
 
-    async def async_added_to_hass(self):
+    # ------------------------------------------------------------------ #
+    # Lifecycle
+    # ------------------------------------------------------------------ #
+
+    async def async_added_to_hass(self) -> None:
         """Register device notification."""
         LOGGER.debug("Added, connecting to ws.")
         await self.async_initialize_device()
@@ -97,188 +103,113 @@ class GlimmrLight(LightEntity):
             LOGGER.debug("Disconnecting from ws.")
             self.glimmr.socket.stop()
 
-    def turn_off(self, **kwargs: Any) -> None:
-        self.glimmr.set_mode(0)
-
-    def turn_on(self, **kwargs: Any) -> None:
-        """Instruct the light to turn on."""
-        if ATTR_RGB_COLOR in kwargs:
-            self.glimmr.set_ambient_color(kwargs.get(ATTR_RGB_COLOR))
-            return
-
-        if ATTR_EFFECT in kwargs:
-            scene_id = self.glimmr.get_scene_id_from_name(kwargs[ATTR_EFFECT])
-
-            if scene_id < -1:  # rhythm
-                mode = 0
-                if scene_id == -2:
-                    mode = 1
-                if scene_id == -3:
-                    mode = 2
-                if scene_id == -4:
-                    mode = 3
-                if scene_id == -5:
-                    mode = 4
-                if scene_id == -6:
-                    mode = 5
-                if scene_id == -7:
-                    mode = 6
-                LOGGER.debug("Setting mode to %s", mode)
-                self.glimmr.set_mode(mode)
-                return
-            else:
-                LOGGER.debug("Setting ambient scene: %s", scene_id)
-                self.glimmr.system_data.ambient_scene = scene_id
-                self.glimmr.set_ambient_scene(scene_id)
-                return
-
-        else:
-            self.glimmr.set_mode(self.glimmr.system_data.previous_mode)
+    # ------------------------------------------------------------------ #
+    # Properties
+    # ------------------------------------------------------------------ #
 
     @property
-    def brightness(self):
-        """Unused."""
-        return self._brightness
-
-    @property
-    def supported_features(self) -> int:
-        return SUPPORT_EFFECT
-
-    @property
-    def rgb_color(self) -> Tuple[int, int, int]:
-        """Return the ambient color property."""
-        LOGGER.debug("RGBCOL")
-        LOGGER.debug("Color: %s", self._rgb_color)
+    def rgb_color(self) -> tuple[int, int, int]:
+        """Return the ambient color."""
         return self._rgb_color
 
     @property
-    def name(self):
-        """Return the ip as name of the device if any."""
-        return self._name
-
-    @property
-    def unique_id(self):
-        """Return light unique_id."""
-        return self.glimmr.system_data.device_id
-
-    @property
-    def is_on(self):
-        """Return true if light is on."""
+    def is_on(self) -> bool:
+        """Return true if the device is in any active mode."""
         return self._state != 0
-
-    async def async_turn_on(self, **kwargs):
-        """Instruct the light to turn on."""
-
-        if ATTR_RGB_COLOR in kwargs:
-            rgb = kwargs[ATTR_RGB_COLOR]
-            color = '#%02x%02x%02x' % rgb
-            LOGGER.debug("Setting ambient color to " + color)
-            await self.glimmr.set_ambient_color(color)
-            return
-
-        if ATTR_EFFECT in kwargs:
-            scene_id = kwargs[ATTR_EFFECT]
-            s_id = self.glimmr.get_scene_id_from_name(scene_id)
-            if s_id < -1:
-                mode = self.glimmr.system_data.previous_mode
-                if s_id == -2:
-                    mode = 1
-                if s_id == -3:
-                    mode = 2
-                if s_id == -4:
-                    mode = 3
-                if s_id == -5:
-                    mode = 4
-                if s_id == -6:
-                    mode = 5
-                if s_id == -7:
-                    mode = 6
-                await self.glimmr.set_mode(mode)
-                return
-            else:
-                LOGGER.debug(
-                    "[glimmrlight %s] Setting ambient scene: %s",
-                    self.glimmr.system_data.device_name,
-                    s_id
-                )
-                await self.glimmr.set_ambient_scene(s_id)
-
-        else:
-            LOGGER.debug("Setting mode to %s", self.glimmr.system_data.previous_mode)
-            await self.glimmr.set_mode(self.glimmr.system_data.previous_mode)
-
-    async def async_turn_off(self, **kwargs):
-        """Instruct the light to turn off."""
-        await self.glimmr.set_mode(0)
 
     @property
     def should_poll(self) -> bool:
-        """Update the state periodically."""
+        """Poll only while the push socket is down."""
         return self.glimmr.connected is False
 
     @property
-    def supported_color_modes(self) -> Set[str]:
-        return {COLOR_MODE_RGB}
-
-    @property
-    def effect(self):
+    def effect(self) -> str | None:
         """Return the current effect."""
-        LOGGER.debug("Cur effect requested: %s", self._effect)
         return self._effect
 
     @property
-    def effect_list(self):
-        """Return the list of supported effects.
-
-        URL: https://docs.pro.glimmrconnected.com/#light-modes
-        """
-        return self._scenes
+    def effect_list(self) -> list[str]:
+        """Ambient scenes plus device-mode pseudo effects."""
+        return [*self._scenes, *MODE_EFFECTS.keys()]
 
     @property
-    def available(self):
+    def available(self) -> bool | None:
         """Return if light is available."""
         return self._available
-
-    async def async_update(self, force=False):
-        """Fetch new state data for this light."""
-        LOGGER.debug("Forcing state update.")
-        await self.update_state(force)
-
-        if self._state is not None and self._state is not False and force is True:
-            LOGGER.debug("Updating scene list.")
-            await self.update_scene_list()
 
     @property
     def device_info(self):
         """Get device specific attributes."""
-        LOGGER.debug(
-            "[glimmrlight %s] Call device info...",
-            self._name
-        )
         return {
-            "identifiers": {(DOMAIN, self._name)},
-            "name": self._name,
+            "identifiers": {(DOMAIN, str(self.glimmr.system_data.device_id))},
+            "name": self._attr_name,
             "manufacturer": "D8ahazard",
             "model": "Glimmr",
+            "sw_version": getattr(self.glimmr.system_data, "version", None),
         }
 
-    @property
-    def color_mode(self) -> str:
-        return COLOR_MODE_RGB
+    # ------------------------------------------------------------------ #
+    # Commands
+    # ------------------------------------------------------------------ #
 
-    def update_state_available(self):
-        """Update the state if bulb is available."""
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Instruct the light to turn on."""
+        if ATTR_RGB_COLOR in kwargs:
+            rgb = kwargs[ATTR_RGB_COLOR]
+            color = "#%02x%02x%02x" % tuple(rgb)
+            LOGGER.debug("Setting ambient color to %s", color)
+            await self.glimmr.set_ambient_color(color)
+            return
+
+        if ATTR_EFFECT in kwargs:
+            effect = kwargs[ATTR_EFFECT]
+
+            # Device-mode pseudo effects (Video, Audio, Hue Sync, ...).
+            if effect in MODE_EFFECTS:
+                mode = MODE_EFFECTS[effect]
+                LOGGER.debug("Setting mode to %s", mode)
+                await self.glimmr.set_mode(mode)
+                return
+
+            s_id = self.glimmr.get_scene_id_from_name(effect)
+            if s_id in LEGACY_SCENE_MODES:
+                mode = LEGACY_SCENE_MODES[s_id]
+                LOGGER.debug("Setting mode to %s", mode)
+                await self.glimmr.set_mode(mode)
+                return
+
+            LOGGER.debug("Setting ambient scene: %s", s_id)
+            await self.glimmr.set_ambient_scene(s_id)
+            return
+
+        LOGGER.debug("Setting mode to %s", self.glimmr.system_data.previous_mode)
+        await self.glimmr.set_mode(self.glimmr.system_data.previous_mode)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Instruct the light to turn off."""
+        await self.glimmr.set_mode(0)
+
+    # ------------------------------------------------------------------ #
+    # State updates
+    # ------------------------------------------------------------------ #
+
+    async def async_update(self, force: bool = False) -> None:
+        """Fetch new state data for this light."""
+        await self.update_state(True)
+
+    def update_state_available(self) -> None:
+        """Update the state if the device is available."""
         self._state = self.glimmr.system_data.device_mode
         if self.glimmr.system_data.auto_disabled:
             self._state = 0
         self._available = True
 
-    def update_state_unavailable(self):
-        """Update the state if bulb is unavailable."""
+    def update_state_unavailable(self) -> None:
+        """Update the state if the device is unavailable."""
         self._state = 0
         self._available = False
 
-    async def update_state(self, pull: bool):
+    async def update_state(self, pull: bool) -> None:
         """Update the state."""
         try:
             if pull:
@@ -286,8 +217,7 @@ class GlimmrLight(LightEntity):
             self.update_state_available()
             self.update_color()
             self.update_effect()
-            self.update_mode()
-            await self.update_scene_list()
+            self.update_scene_list_sync()
         except TimeoutError as ex:
             LOGGER.debug(ex)
             self.update_state_unavailable()
@@ -296,96 +226,73 @@ class GlimmrLight(LightEntity):
             self.update_state_unavailable()
         LOGGER.debug(
             "[glimmrlight %s] updated state, avail, scene: %s, %s, %s",
-            self._name,
+            self._attr_name,
             self._state,
             self._available,
-            self._effect
+            self._effect,
         )
 
-    async def async_effect(
-            self,
-            effect: int | None = None
-    ) -> None:
-        """Set the effect of a Glimmr light."""
-        await self.glimmr.set_ambient_scene(effect)
+    def update_color(self) -> None:
+        """Update the rgb color from the device's ambient color hex string."""
+        hex_color = self.glimmr.system_data.ambient_color or "FFFFFF"
+        hex_color = hex_color.lstrip("#")
+        try:
+            self._rgb_color = (
+                int(hex_color[0:2], 16),
+                int(hex_color[2:4], 16),
+                int(hex_color[4:6], 16),
+            )
+        except ValueError:
+            LOGGER.debug("Invalid ambient color: %s", hex_color)
 
-    def update_color(self):
-        """Update the hs color."""
-        hex_color = self.glimmr.system_data.ambient_color
-        LOGGER.debug("Updating color from " + self.glimmr.system_data.ambient_color)
-        r_hex = hex_color[0:2]
-        g_hex = hex_color[2:4]
-        b_hex = hex_color[4:6]
-        self._rgb_color = int(r_hex, 16), int(g_hex, 16), int(b_hex, 16)
-        LOGGER.debug("Updated color: %s", self._rgb_color)
-
-    def update_effect(self):
-        """Update the bulb scene."""
+    def update_effect(self) -> None:
+        """Derive the current effect from the device mode."""
         mode = self.glimmr.system_data.device_mode
-        effect = 0
-        if mode == 0:
-            effect = self.glimmr.system_data.ambient_scene
-        if mode == 1:
-            effect = -2
-        if mode == 2:
-            effect = -3
-        if mode == 3:
-            effect = self.glimmr.system_data.ambient_scene
-        if mode == 4:
-            effect = -5
-        if mode == 5:
-            effect = -6
-        LOGGER.debug("Effect id set to: %s", effect)
-        self._effect = self.glimmr.get_scene_name_from_id(effect)
+        if mode in (0, 3):
+            # Off / ambient: show the ambient scene name.
+            scene = self.glimmr.system_data.ambient_scene
+            self._effect = self.glimmr.get_scene_name_from_id(scene)
+            return
 
-    async def update_scene_list(self):
-        """Update the scene list."""
-        LOGGER.debug("Updating scene list...")
-        _value = self.glimmr.ambient_scenes
-        self._scenes = list(_value.keys())
-        LOGGER.debug("Updating scene list: %s", self._scenes)
+        for name, m in MODE_EFFECTS.items():
+            if m == mode:
+                self._effect = name
+                return
 
-    def update_mode(self):
-        pass
+        self._effect = None
 
-    @rgb_color.setter
-    def rgb_color(self, value):
-        self._rgb_color = value
+    def update_scene_list_sync(self) -> None:
+        """Update the ambient scene list from the library cache."""
+        self._scenes = list(self.glimmr.ambient_scenes.keys())
 
-    def update_data(self, data):
-        LOGGER.debug("Updating from ws!")
-        self.update_state(False)
-        super().schedule_update_ha_state(True)
+    # ------------------------------------------------------------------ #
+    # Push (SignalR) plumbing
+    # ------------------------------------------------------------------ #
 
-    async def async_initialize_device(self):
+    async def async_initialize_device(self) -> None:
         LOGGER.debug("Starting socket.")
         await self.hass.async_add_executor_job(self.glimmr.socket.start)
-        self.glimmr.socket.on("olo", self.update_data)
-        self.glimmr.socket.on("mode", self.mode_changed)
-        self.glimmr.socket.on("stats", self.stats)
-        self.glimmr.socket.on("log", self.log)
-        self.glimmr.socket.on("frames", self.frames)
-        self.glimmr.socket.on_open(self.connected)
-        self.glimmr.socket.on_close(self.closed)
+        self.glimmr.socket.on("olo", self._on_store)
+        self.glimmr.socket.on("mode", self._on_mode)
+        self.glimmr.socket.on_open(self._on_open)
+        self.glimmr.socket.on_close(self._on_close)
 
-    def mode_changed(self, mode):
-        LOGGER.debug("Modechange...")
-        LOGGER.debug("Updating mode from ws: %s", mode[0])
+    def _on_store(self, data) -> None:
+        """Full store push from the device (runs on the SignalR thread)."""
+        LOGGER.debug("Store update from ws.")
+        asyncio.run_coroutine_threadsafe(self.update_state(False), self.hass.loop)
+        self.schedule_update_ha_state()
+
+    def _on_mode(self, mode) -> None:
+        """Mode change push from the device (runs on the SignalR thread)."""
+        LOGGER.debug("Mode update from ws: %s", mode[0])
         self.glimmr.system_data.device_mode = mode[0]
-        super().schedule_update_ha_state(True)
+        self.update_state_available()
+        self.update_effect()
+        self.schedule_update_ha_state()
 
-    def stats(self, stats):
-        LOGGER.debug("Oooh, stats: ", stats)
-        pass
+    def _on_open(self) -> None:
+        LOGGER.debug("Socket connected.")
 
-    def log(self, msg):
-        pass
-
-    def frames(self, frames):
-        pass
-
-    def connected(self):
-        pass
-
-    def closed(self):
-        pass
+    def _on_close(self) -> None:
+        LOGGER.debug("Socket closed.")

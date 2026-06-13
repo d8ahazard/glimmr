@@ -1,0 +1,37 @@
+---
+description: Performance and ownership rules for the per-frame color hot path
+globs: src/Glimmr/Models/**/*.cs,src/Glimmr/Services/ColorService.cs
+alwaysApply: false
+---
+
+# Color Hot Path Rules
+
+The capture -> splitter -> device path runs 30-60 times per second. Treat it like a
+real-time loop.
+
+## No per-frame allocations
+
+- Do NOT allocate `Mat`s, arrays, or LINQ chains (`ToArray`, `Reverse`, `Skip`) inside
+  per-frame code. Reuse preallocated buffers (see `FrameSplitter`'s persistent
+  `_resizeMat`/`_gammaMat`/`_warpMat`, ROI cache, and double-buffered color arrays).
+- Color output arrays are double-buffered and reused: consumers must copy what they
+  need synchronously inside the `ColorSendEventAsync` handler, never hold references
+  across frames.
+
+## FrameSplitter.Update contract
+
+- The CALLER owns the input `Mat` and disposes it; `Update` never disposes inputs.
+- `Update` drops overlapping frames (`IsBusy`) - latest frame always wins; never queue
+  frames behind an in-flight update. Always `await Update(frame)` before disposing the frame.
+- Capture callbacks (BASS, MMAL, DreamScreen) must not block: check `Splitter.IsBusy`
+  and drop, or hand off to a worker (see `AudioStream.RenderLoop`).
+
+## LED / power conventions
+
+- `LedData.Brightness` and device brightness in the UI are 0-100 percent. Convert with
+  `LedAgent.ToByteBrightness` when talking to the driver (0-255).
+- ABL (auto brightness limiting) lives in `LedAgent.VoltAdjust`: per-LED draw is summed,
+  compared against `AblVolts * AblAmps` (with 10% headroom), and brightness is scaled
+  through an EMA (fast attack, slow release). Don't reintroduce per-frame snapping.
+- Always pass explicit GPIO pins (`(Pin)LedData.GpioNumber`) to `Settings.AddController`;
+  never rely on the wrapper's defaults for dual-strip setups.

@@ -16,10 +16,19 @@ install -m 644 files/interfaces "${ROOTFS_DIR}/etc/network/"
 # maintained for Bookworm/NetworkManager but is not in Debian; we install
 # the maintainer's apt source which then pulls comitup itself in
 # 01-packages.
-APT_DEB=$(curl -fsSL https://davesteele.github.io/comitup/pkgs.json \
-	| grep apt-source_ \
-	| tail -1 \
-	| tr -d ' ,"')
+# Set COMITUP_APT_SOURCE_DEB to pin an exact apt-source package filename
+# (e.g. "davesteele-comitup-apt-source_1.3_all.deb") for reproducible builds;
+# otherwise the newest version from pkgs.json is used (version-sorted, not
+# file-order, so a re-ordered upstream listing can't hand us an old build).
+if [ -n "${COMITUP_APT_SOURCE_DEB:-}" ]; then
+	APT_DEB="${COMITUP_APT_SOURCE_DEB}"
+else
+	APT_DEB=$(curl -fsSL https://davesteele.github.io/comitup/pkgs.json \
+		| grep apt-source_ \
+		| tr -d ' ,"' \
+		| sort -V \
+		| tail -1)
+fi
 
 if [ -z "${APT_DEB}" ]; then
 	echo "ERROR: could not determine davesteele-comitup-apt-source filename" >&2

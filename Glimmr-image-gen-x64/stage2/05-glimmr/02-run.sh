@@ -4,7 +4,9 @@
 # Pi 5 (BCM2712 via RP1) uses ALT3 for the PWM function on GPIO 18/19,
 # and the rp1_ws281x_pwm kernel module + dtoverlay are loaded at boot
 # by glimmr-pi5-leds.service (see files/glimmr-pi5-leds.service).
-cat >> "${ROOTFS_DIR}/boot/firmware/config.txt" <<'EOF'
+# Idempotent: re-runs (e.g. CONTINUE=1 builds) must not duplicate the block.
+if ! grep -q "Glimmr LED output" "${ROOTFS_DIR}/boot/firmware/config.txt"; then
+	cat >> "${ROOTFS_DIR}/boot/firmware/config.txt" <<'EOF'
 
 # --- Glimmr LED output (WS281x via PWM) ---
 [pi3]
@@ -15,8 +17,9 @@ gpio=19=op,a5
 gpio=19=op,a3
 [all]
 EOF
+fi
 
-echo "done" > "${ROOTFS_DIR}/home/glimmrtv/firstrun"
+echo "done" > "${ROOTFS_DIR}/home/${FIRST_USER_NAME}/firstrun"
 mkdir -p "${ROOTFS_DIR}/usr/share/Glimmr"
 tar zxf ./files/archive.tgz -C "${ROOTFS_DIR}/usr/share/Glimmr/"
 chown -R 0:0 "${ROOTFS_DIR}/usr/share/Glimmr"

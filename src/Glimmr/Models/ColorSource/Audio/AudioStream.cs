@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System;
 using System.Drawing;
@@ -33,10 +33,19 @@ public class AudioStream : ColorSource {
 
 	private const int SampleSize = 512;
 
+	/// <summary>Seconds of sustained silence before the output is forced to black.</summary>
+	private const double SilenceTimeoutSeconds = 2.5;
+
 	private readonly object _lastFrameLock = new();
+	private readonly object _handoffLock = new();
+	private readonly float[] _fftBuffer = new float[SampleSize];
+	private readonly Color[] _handoffColors = new Color[PerimeterLayout.SlotCount];
+	private readonly SemaphoreSlim _frameSignal = new(0, 1);
 	private CancellationToken? _ct;
 	private DateTime _lastFrameTimeUtc;
 	private DateTime _lastSilenceTimeUtc;
+	private bool _hasPending;
+	private bool _silenced;
 	private int _handle;
 	private bool _hasDll;
 	private AudioMap _map;
@@ -126,6 +135,9 @@ public class AudioStream : ColorSource {
 			Log.Debug("Starting audio stream service...");
 			_running = true;
 			_lastFrameTimeUtc = DateTime.UtcNow;
+			// Frame building + splitter updates run on a worker so the BASS recording
+			// callback only does cheap DSP and never blocks on device I/O.
+			var renderTask = Task.Run(() => RenderLoop(ct), CancellationToken.None);
 			Bass.ChannelPlay(_handle, true);
 			while (!ct.IsCancellationRequested && !_restart) {
 				await Task.Delay(TimeSpan.FromMilliseconds(500), CancellationToken.None);
@@ -145,8 +157,60 @@ public class AudioStream : ColorSource {
 			}
 
 			_running = false;
+			await renderTask.ConfigureAwait(false);
 			return Task.CompletedTask;
 		}, CancellationToken.None);
+	}
+
+	/// <summary>
+	///     Consumes the latest colors produced by the BASS callback and pushes them
+	///     through the frame pipeline. Latest-wins: if a frame is still being processed
+	///     when new colors arrive, the older colors are simply overwritten.
+	/// </summary>
+	private async Task RenderLoop(CancellationToken ct) {
+		var local = new Color[PerimeterLayout.SlotCount];
+		while (!ct.IsCancellationRequested && !_restart && _running) {
+			try {
+				await _frameSignal.WaitAsync(TimeSpan.FromMilliseconds(250), CancellationToken.None)
+					.ConfigureAwait(false);
+				bool hasFrame;
+				lock (_handoffLock) {
+					hasFrame = _hasPending;
+					if (hasFrame) {
+						Array.Copy(_handoffColors, local, local.Length);
+						_hasPending = false;
+					}
+				}
+
+				if (hasFrame) {
+					await RenderColors(local).ConfigureAwait(false);
+					continue;
+				}
+
+				// No new audio frame: check whether we've been silent long enough to
+				// force the output to black.
+				var silentSince = _lastSilenceTimeUtc;
+				if (_silenced || silentSince == default ||
+				    (DateTime.UtcNow - silentSince).TotalSeconds < SilenceTimeoutSeconds) {
+					continue;
+				}
+
+				_silenced = true;
+				await RenderColors(_map.Silence()).ConfigureAwait(false);
+			} catch (Exception e) {
+				Log.Warning("Audio render loop exception: " + e.Message);
+			}
+		}
+	}
+
+	private async Task RenderColors(Color[] colors) {
+		var frame = Builder?.Build(colors);
+		if (frame == null) {
+			return;
+		}
+
+		await Splitter.Update(frame).ConfigureAwait(false);
+		frame.Dispose();
 	}
 
 	private bool UpdateAudio(int handle, IntPtr buffer, int length, IntPtr user) {
@@ -230,15 +294,19 @@ public class AudioStream : ColorSource {
 				? (rightAbs - leftAbs) / (leftAbs + rightAbs)
 				: 0f;
 
-			var fft = new float[SampleSize];
-			var res = Bass.ChannelGetData(handle, fft, (int)GetFlag(SampleSize));
+			var res = Bass.ChannelGetData(handle, _fftBuffer, (int)GetFlag(SampleSize));
 
 			Color[] colors;
 			if (res > 0) {
-				colors = _map.Process(fft, _sampleFreq, deltaSeconds, balance);
-				_lastSilenceTimeUtc = leftAbs + rightAbs < 700f
-					? _lastSilenceTimeUtc == default ? now : _lastSilenceTimeUtc
-					: default;
+				colors = _map.Process(_fftBuffer, _sampleFreq, deltaSeconds, balance);
+				if (leftAbs + rightAbs < 700f) {
+					if (_lastSilenceTimeUtc == default) {
+						_lastSilenceTimeUtc = now;
+					}
+				} else {
+					_lastSilenceTimeUtc = default;
+					_silenced = false;
+				}
 			} else if (res == 0) {
 				_updating = false;
 				return true;
@@ -248,10 +316,19 @@ public class AudioStream : ColorSource {
 				return true;
 			}
 
-			var frame = Builder?.Build(colors);
-			if (frame != null) {
-				Splitter.Update(frame).ConfigureAwait(false);
-				frame.Dispose();
+			// Hand the colors to the render worker; the callback never touches the
+			// frame pipeline directly.
+			lock (_handoffLock) {
+				Array.Copy(colors, _handoffColors, _handoffColors.Length);
+				_hasPending = true;
+			}
+
+			if (_frameSignal.CurrentCount == 0) {
+				try {
+					_frameSignal.Release();
+				} catch (SemaphoreFullException) {
+					// Worker already signaled; latest colors win.
+				}
 			}
 		} catch (Exception e) {
 			Log.Warning("Audio frame processing failed: " + e.Message);

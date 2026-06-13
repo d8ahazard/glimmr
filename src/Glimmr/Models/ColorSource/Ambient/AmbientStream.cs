@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System;
 using System.Collections.Generic;
@@ -187,7 +187,7 @@ public class AmbientStream : ColorSource {
 		}, CancellationToken.None);
 	}
 
-	private void UpdateColors(object? sender, ElapsedEventArgs args) {
+	private async void UpdateColors(object? sender, ElapsedEventArgs args) {
 		if (_sending) {
 			return;
 		}
@@ -232,8 +232,11 @@ public class AmbientStream : ColorSource {
 		try {
 			if (Builder != null) {
 				var frame = Builder.Build(sectors);
-				Splitter.Update(frame).ConfigureAwait(true);
-				frame?.Dispose();
+				if (frame != null) {
+					// Await before disposing - the splitter reads the mat during processing.
+					await Splitter.Update(frame).ConfigureAwait(false);
+					frame.Dispose();
+				}
 			}
 		} catch (Exception e) {
 			Log.Warning("EX: " + e.Message + " at " + e.StackTrace);

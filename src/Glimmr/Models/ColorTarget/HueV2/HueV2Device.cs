@@ -244,10 +244,15 @@ public sealed class HueV2Device : ColorTarget, IColorTarget, IDisposable {
 				continue;
 			}
 
-			// Otherwise, get the corresponding sector color
-			var target = _targets[entLight.Id];
-			if (target > sectorColors.Count || target == -1) {
-				Log.Debug("NO TARGET!!");
+			// Otherwise, get the corresponding sector color. Sectors are 1-based
+			// in the UI (1..Count) and map to sectorColors[target - 1]. Skip any
+			// light that is unmapped (0 / -1) or out of range, otherwise
+			// sectorColors[target - 1] throws (target 0 -> index -1) every frame.
+			if (!_targets.TryGetValue(entLight.Id, out var target)) {
+				continue;
+			}
+
+			if (target < 1 || target > sectorColors.Count) {
 				continue;
 			}
 

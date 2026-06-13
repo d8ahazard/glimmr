@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System;
 using System.Drawing;
@@ -78,35 +78,47 @@ public class ScreenVideoStream : IVideoStream, IDisposable {
 	}
 
 
-	private void CaptureScreen(CancellationToken ct) {
+	private async Task CaptureScreen(CancellationToken ct) {
 		Log.Debug("Screen capture started...");
+		// Reusable capture target - allocating a full-screen bitmap per frame is expensive.
+#pragma warning disable CA1416
+		Bitmap? bcs = null;
+		if (_ss == null) {
+			bcs = new Bitmap(_width, _height, PixelFormat.Format24bppRgb);
+		}
+
 		while (!ct.IsCancellationRequested && _capturing) {
 			try {
 				Image<Bgr, byte>? newMat;
 				if (_ss == null) {
 					// We can ignore warnings about this, there's a flag set in the runtime config to allow this in 'nix.
-#pragma warning disable CA1416
-					var bcs = new Bitmap(_width, _height, PixelFormat.Format24bppRgb);
-					using var g = Graphics.FromImage(bcs);
-					g.CopyFromScreen(_left, _top, 0, 0, bcs.Size, CopyPixelOperation.SourceCopy);
-					g.Flush();
-#pragma warning restore CA1416
-					var sc = bcs.ToImage<Bgr, byte>();
+					using (var g = Graphics.FromImage(bcs!)) {
+						g.CopyFromScreen(_left, _top, 0, 0, bcs!.Size, CopyPixelOperation.SourceCopy);
+						g.Flush();
+					}
+
+					using var sc = bcs.ToImage<Bgr, byte>();
 					newMat = sc.Resize(640, 480, Inter.Nearest);
 				} else {
 					newMat = _ss.Grab();
 					if (newMat == null) {
-						return;
+						break;
 					}
 				}
 
-				_splitter?.Update(newMat.Mat);
+				// Await before disposing - the splitter reads the mat during processing.
+				if (_splitter != null) {
+					await _splitter.Update(newMat.Mat).ConfigureAwait(false);
+				}
+
 				newMat.Dispose();
 			} catch (Exception e) {
 				Log.Debug("Exception grabbing screen: " + e.Message);
 			}
 		}
 
+		bcs?.Dispose();
+#pragma warning restore CA1416
 		Log.Debug("Capture completed?");
 	}
 }

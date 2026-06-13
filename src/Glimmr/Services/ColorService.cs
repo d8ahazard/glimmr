@@ -242,7 +242,7 @@ public class ColorService : BackgroundService {
 			return;
 		}
 
-		var (colors, sectors) = _splitter.Update(tMat).Result;
+		var (colors, sectors) = await _splitter.Update(tMat);
 		tMat.Dispose();
 		await SendColors(colors, sectors, true);
 		await Task.Delay(500);
@@ -709,16 +709,18 @@ public class ColorService : BackgroundService {
 
 		try {
 			await ColorSendEventAsync.InvokeAsync(this, new ColorSendEventArgs(colors, sectors)).ConfigureAwait(false);
-        
-			if (Recording) {
-				var time = _recordWatch.ElapsedMilliseconds;
-				_recording[time] = sectors;
-			}
-
-			Counter.Tick("source");
 		} catch (Exception e) {
+			// A single misbehaving device must not starve the frame counter (FPS)
+			// or other subscribers - log and continue.
 			Log.Warning($"Exception: {e.Message} at {e.StackTrace}");
 		}
+
+		if (Recording) {
+			var time = _recordWatch.ElapsedMilliseconds;
+			_recording[time] = sectors;
+		}
+
+		Counter.Tick("source");
 	}
 
 

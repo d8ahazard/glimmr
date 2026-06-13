@@ -29,3 +29,11 @@ src/wwwroot/img/_preview_input.jpg
 src/wwwroot/img/_preview_output.jpg
 /src/Glimmr.Tests/bin
 /src/Glimmr.Tests/obj
+
+# Web UI (src/Glimmr.Web)
+src/Glimmr.Web/node_modules/
+src/Glimmr/wwwroot/app/
+
+# Dev tools build artifacts
+tools/**/bin/
+tools/**/obj/

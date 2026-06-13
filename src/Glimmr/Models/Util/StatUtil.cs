@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System;
 using System.Collections.Generic;
@@ -256,11 +256,12 @@ public static class StatUtil {
 			}
 		}
 
-		if (Math.Abs(used - -1) > float.MinValue && Math.Abs(total - -1f) > float.MinValue) {
-			return returnTotal ? (int)total : (int)(used / total);
+		process.Dispose();
+		if (total > 0 && used >= 0) {
+			// Used/total is a 0-1 fraction; report a percentage.
+			return returnTotal ? (int)total : (int)Math.Round(used / total * 100f);
 		}
 
-		process.Dispose();
 		return 0;
 	}
 
@@ -349,24 +350,17 @@ public static class StatUtil {
 		var split0 = RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
 			? processResult.Split("averages: ")[1]
 			: processResult.Split("average: ")[1];
-		var loadAverages = split0.Split(", ");
-		var idx = 0;
-		var average = 0f;
-		foreach (var avg in loadAverages) {
-			if (!float.TryParse(avg.Trim(), out var la1)) {
-				continue;
-			}
+		var loadAverages = split0.Split(",");
 
-			idx++;
-			average += la1;
-		}
-
-		if (idx <= 0 || !(average > 0)) {
+		// Use the 1-minute load average and convert to a percentage of total
+		// cores - a raw load average truncated to int is ~always 0.
+		if (loadAverages.Length == 0 ||
+		    !float.TryParse(loadAverages[0].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var load1)) {
 			return 0;
 		}
 
-		average /= idx;
-		return (int)average;
+		var percent = load1 / Environment.ProcessorCount * 100f;
+		return (int)Math.Round(Math.Clamp(percent, 0f, 100f));
 	}
 
 	private static async Task<string[]> GetThrottledStatePi() {

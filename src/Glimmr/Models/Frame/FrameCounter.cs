@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System;
 using System.Collections.Concurrent;
@@ -15,14 +15,31 @@ using Serilog;
 namespace Glimmr.Models.Frame;
 
 public class FrameCounter : IDisposable {
-	public ConcurrentDictionary<string, int> Rates { get; private set; }
+	/// <summary>
+	///     Current per-source frame rates. Decays to zero when the source stops
+	///     ticking (input lost, capture device restarted) instead of freezing at
+	///     the last computed value.
+	/// </summary>
+	public ConcurrentDictionary<string, int> Rates {
+		get {
+			if (DateTime.UtcNow - _lastTickUtc > TimeSpan.FromSeconds(3)) {
+				return new ConcurrentDictionary<string, int> { ["source"] = 0 };
+			}
+
+			return _rates;
+		}
+		private set => _rates = value;
+	}
+
 	private readonly Stopwatch _stopwatch;
+	private DateTime _lastTickUtc = DateTime.MinValue;
 	private DeviceMode _mode;
+	private ConcurrentDictionary<string, int> _rates;
 	private ConcurrentDictionary<string, int> _ticks;
 
 	public FrameCounter(ColorService cs) {
 		_ticks = new ConcurrentDictionary<string, int> { ["source"] = 0 };
-		Rates = _ticks;
+		_rates = _ticks;
 		_stopwatch = new Stopwatch();
 		cs.ControlService.SetModeEvent += Mode;
 		cs.ControlService.RefreshSystemEvent += RefreshSystem;
@@ -73,6 +90,8 @@ public class FrameCounter : IDisposable {
 			_ticks = new ConcurrentDictionary<string, int> { ["source"] = 0 };
 			return;
 		}
+
+		_lastTickUtc = DateTime.UtcNow;
 
 		if (!_stopwatch.IsRunning) {
 			_stopwatch.Start();

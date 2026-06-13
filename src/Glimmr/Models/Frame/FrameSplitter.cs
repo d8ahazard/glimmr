@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System;
 using System.Collections.Generic;
@@ -37,6 +37,13 @@ public class FrameSplitter : IDisposable {
 	}
 
 	public bool SourceActive { get; set; }
+
+	/// <summary>
+	///     True while a frame is being processed. Capture callbacks can check this to skip
+	///     filling buffers for frames that would be dropped anyway.
+	/// </summary>
+	public bool IsBusy => _updating;
+
 	private ColorService ColorService { get; }
 	private readonly float _borderHeight;
 
@@ -99,6 +106,32 @@ public class FrameSplitter : IDisposable {
 	private int _rightCount;
 	private Size _scaleSize;
 
+	// Reusable processing buffers - allocated once and reused every frame to keep
+	// the hot path allocation-free.
+	private readonly Mat _resizeMat = new();
+	private readonly Mat _gammaMat = new();
+	private readonly Mat _warpMat = new();
+	private Mat? _warpTransform;
+
+	// Cached ROI views into the processed frame. Rebuilt only when the source mat or
+	// the grid geometry changes, instead of allocating hundreds of Mats per frame.
+	private Mat[] _ledRois = Array.Empty<Mat>();
+	private Mat[] _sectorRois = Array.Empty<Mat>();
+	private Mat? _roiSource;
+	private IntPtr _roiSourcePtr;
+	private bool _roiDirty = true;
+
+	// Double-buffered output: colors are written into the inactive buffer, then the
+	// published reference is swapped so concurrent readers (e.g. AudioVideoStream)
+	// always see a fully written array.
+	private readonly Color[][] _ledBuffers = { Array.Empty<Color>(), Array.Empty<Color>() };
+	private readonly Color[][] _sectorBuffers = { Array.Empty<Color>(), Array.Empty<Color>() };
+	private int _bufferIndex;
+
+	// True while a frame is in flight; overlapping updates are dropped so processing
+	// never builds a backlog and always works on the freshest frame.
+	private volatile bool _updating;
+
 	// Set this when the sector changes
 	private bool _sectorChanged;
 	private int _sectorCount;
@@ -145,7 +178,28 @@ public class FrameSplitter : IDisposable {
 	public void Dispose() {
 		_lockTarget?.Dispose();
 		_cropTimer.Dispose();
+		_resizeMat.Dispose();
+		_gammaMat.Dispose();
+		_warpMat.Dispose();
+		_warpTransform?.Dispose();
+		ClearRoiCache();
 		GC.SuppressFinalize(this);
+	}
+
+	private void ClearRoiCache() {
+		foreach (var roi in _ledRois) {
+			roi.Dispose();
+		}
+
+		foreach (var roi in _sectorRois) {
+			roi.Dispose();
+		}
+
+		_ledRois = Array.Empty<Mat>();
+		_sectorRois = Array.Empty<Mat>();
+		_roiSource = null;
+		_roiSourcePtr = IntPtr.Zero;
+		_roiDirty = true;
 	}
 
 	private void TriggerCropCheck(object? sender, ElapsedEventArgs e) {
@@ -225,8 +279,13 @@ public class FrameSplitter : IDisposable {
 			new Point(0, ScaleHeight)
 		};
 
+		// Lock target (or vectors) may have changed; recompute the warp transform lazily.
+		_warpTransform?.Dispose();
+		_warpTransform = null;
+
 		_fullCoords = DrawGrid();
 		_fullSectors = DrawSectors();
+		_roiDirty = true;
 		_doSave = true;
 	}
 
@@ -246,6 +305,13 @@ public class FrameSplitter : IDisposable {
 		_doSave = true;
 	}
 
+	/// <summary>
+	///     Process a captured (or synthetic) frame into LED and sector colors.
+	///     The caller retains ownership of <paramref name="frame" /> and is responsible for
+	///     disposing it; the splitter never disposes input frames.
+	///     If a frame is already being processed, the new frame is dropped immediately so
+	///     processing never builds a backlog - output always reflects the freshest frame.
+	/// </summary>
 	public async Task<(Color[], Color[])> Update(Mat? frame)
 	{
 		if (frame == null || frame.IsEmpty || frame.Cols == 0 || frame.Rows == 0)
@@ -255,36 +321,47 @@ public class FrameSplitter : IDisposable {
 			return (Array.Empty<Color>(), Array.Empty<Color>());
 		}
 
-		var processedFrame = ProcessFrame(frame);
-
-		if (processedFrame == null || processedFrame.IsEmpty)
+		if (_updating)
 		{
-			Log.Warning("Processed frame is null or empty.");
-			return (Array.Empty<Color>(), Array.Empty<Color>());
+			// Drop the stale frame; return the most recent published colors.
+			return (_colorsLed, _colorsSectors);
 		}
 
-		if (_useCrop && _checkCrop)
+		_updating = true;
+		try
 		{
-			await CheckCrop(processedFrame).ConfigureAwait(false);
-			_checkCrop = false;
+			var processedFrame = ProcessFrame(frame);
+
+			if (processedFrame == null || processedFrame.IsEmpty)
+			{
+				LogWarningOnce("Processed frame is null or empty.");
+				return (Array.Empty<Color>(), Array.Empty<Color>());
+			}
+
+			if (_useCrop && _checkCrop)
+			{
+				await CheckCrop(processedFrame).ConfigureAwait(false);
+				_checkCrop = false;
+			}
+
+			var (ledColors, sectorColors) = ComputeColors(processedFrame);
+
+			_colorsLed = ledColors;
+			_colorsSectors = sectorColors;
+
+			if (_doSend)
+			{
+				await ColorService.SendColors(ledColors, sectorColors);
+			}
+
+			await HandleSaving(frame, processedFrame).ConfigureAwait(false);
+
+			return (_colorsLed, _colorsSectors);
 		}
-
-		var (ledColors, sectorColors) = ComputeColors(processedFrame);
-
-		_colorsLed = ledColors;
-		_colorsSectors = sectorColors;
-
-		if (_doSend)
+		finally
 		{
-			await ColorService.SendColors(ledColors, sectorColors);
+			_updating = false;
 		}
-
-		HandleSaving(frame, processedFrame);
-
-		// Cleanup
-		CleanupResources(frame, processedFrame);
-
-		return (_colorsLed, _colorsSectors);
 	}
 
 	private void LogWarningOnce(string message)
@@ -296,16 +373,32 @@ public class FrameSplitter : IDisposable {
 		}
 	}
 
-	private Mat ProcessFrame(Mat frame)
+	private Mat? ProcessFrame(Mat frame)
 	{
-		var clone = ShouldResize(frame) ? ResizeFrame(frame) : frame;
+		var output = frame;
+		if (ShouldResize(output))
+		{
+			// Resize into the persistent buffer; OpenCV reuses the allocation when the size matches.
+			CvInvoke.Resize(output, _resizeMat, _scaleSize);
+			output = _resizeMat;
+		}
 
 		if (_captureMode == CaptureMode.Camera && _mode == DeviceMode.Video)
 		{
-			clone = CheckCamera(clone);
+			output = CheckCamera(output);
+			if (output == null)
+			{
+				return null;
+			}
 		}
 
-		return ApplyGammaCorrectionIfNeeded(clone);
+		if (_correctGamma)
+		{
+			IntensityTransformInvoke.GammaCorrection(output, _gammaMat, _gammaCorrection);
+			output = _gammaMat;
+		}
+
+		return output;
 	}
 
 	private static bool ShouldResize(Mat frame)
@@ -313,64 +406,81 @@ public class FrameSplitter : IDisposable {
 		return frame.Width != ScaleWidth || frame.Height != ScaleHeight;
 	}
 
-	private static Mat ResizeFrame(Mat frame)
+	/// <summary>
+	///     Rebuilds the cached ROI views when the source mat or grid geometry changes.
+	///     For the video path the processed frame lives in a persistent buffer, so this is
+	///     effectively a one-time cost instead of hundreds of Mat allocations per frame.
+	/// </summary>
+	private void EnsureRoiCache(Mat frame)
 	{
-		var resized = new Mat();
-		CvInvoke.Resize(frame, resized, new Size(ScaleWidth, ScaleHeight));
-		return resized;
-	}
-
-	private Mat ApplyGammaCorrectionIfNeeded(Mat frame)
-	{
-		if (_correctGamma)
+		if (!_roiDirty && ReferenceEquals(_roiSource, frame) && frame.DataPointer == _roiSourcePtr)
 		{
-			var corrected = new Mat();
-			IntensityTransformInvoke.GammaCorrection(frame, corrected, _gammaCorrection);
-			return corrected;
+			return;
 		}
-		return frame;
+
+		ClearRoiCache();
+		var ledRois = new Mat[_fullCoords.Length];
+		for (var i = 0; i < _fullCoords.Length; i++)
+		{
+			ledRois[i] = new Mat(frame, _fullCoords[i]);
+		}
+
+		var sectorRois = new Mat[_fullSectors.Length];
+		for (var i = 0; i < _fullSectors.Length; i++)
+		{
+			sectorRois[i] = new Mat(frame, _fullSectors[i]);
+		}
+
+		_ledRois = ledRois;
+		_sectorRois = sectorRois;
+		_roiSource = frame;
+		_roiSourcePtr = frame.DataPointer;
+		_roiDirty = false;
 	}
 
 	private (Color[], Color[]) ComputeColors(Mat frame)
 	{
 		if (_allBlack) return (_empty, _emptySectors);
 
-		var ledColors = new Color[_fullCoords.Length];
-		var sectorColors = new Color[_fullSectors.Length];
+		EnsureRoiCache(frame);
 
-		Parallel.For(0, _fullCoords.Length, i =>
+		// Write into the inactive buffers, then publish - readers never see a half-written array.
+		var idx = _bufferIndex ^ 1;
+		var ledColors = _ledBuffers[idx];
+		if (ledColors.Length != _ledRois.Length)
 		{
-			using (var sub = new Mat(frame, _fullCoords[i]))
-			{
-				ledColors[i] = GetAverage(sub);
-			}
-		});
+			ledColors = new Color[_ledRois.Length];
+			_ledBuffers[idx] = ledColors;
+		}
 
-		Parallel.For(0, _fullSectors.Length, i =>
+		var sectorColors = _sectorBuffers[idx];
+		if (sectorColors.Length != _sectorRois.Length)
 		{
-			using (var sub = new Mat(frame, _fullSectors[i]))
-			{
-				sectorColors[i] = GetAverage(sub);
-			}
-		});
+			sectorColors = new Color[_sectorRois.Length];
+			_sectorBuffers[idx] = sectorColors;
+		}
 
+		var ledRois = _ledRois;
+		Parallel.For(0, ledRois.Length, i => { ledColors[i] = GetAverage(ledRois[i]); });
+
+		var sectorRois = _sectorRois;
+		Parallel.For(0, sectorRois.Length, i => { sectorColors[i] = GetAverage(sectorRois[i]); });
+
+		_bufferIndex = idx;
 		return (ledColors, sectorColors);
 	}
 
-	private void HandleSaving(Mat original, Mat processed)
+	private async Task HandleSaving(Mat original, Mat processed)
 	{
-		if (_doSave && (_doSend || _merge) && ColorService.ControlService.SendPreview)
+		if (!_doSave || (!_doSend && !_merge) || !ColorService.ControlService.SendPreview)
 		{
-			SaveFrames(original, processed);
-			_doSave = false;
-			_merge = false;
+			return;
 		}
-	}
 
-	private static void CleanupResources(Mat original, Mat processed)
-	{
-		original.Dispose();
-		if (processed != original) processed.Dispose();
+		_doSave = false;
+		var merge = _merge;
+		_merge = false;
+		await SaveFrames(original, processed, merge).ConfigureAwait(false);
 	}
 
 	
@@ -387,40 +497,45 @@ public class FrameSplitter : IDisposable {
 	}
 
 	
-	private void SaveFrames(Mat inMat, Mat outMat) {
-		_doSave = false;
+	private async Task SaveFrames(Mat inMat, Mat outMat, bool merge) {
 		var cols = _colorsLed;
 		var secs = _colorsSectors;
-		if (_merge) {
+		if (merge) {
 			cols = _colorsLedIn;
 			secs = _colorsSectorsIn;
 		}
+
+		// Work on clones: the source mats are persistent buffers that will be overwritten
+		// by the next frame, and the preview encode/send is async.
 		if (inMat is { IsEmpty: false }) {
-			ControlService.SendImage("inputImage", inMat).ConfigureAwait(false);
+			using var inClone = inMat.Clone();
+			await ControlService.SendImage("inputImage", inClone).ConfigureAwait(false);
 		}
 
 		if (outMat.IsEmpty) {
 			Log.Debug("Output image is empty.");
 			return;
 		}
+
+		using var outClone = outMat.Clone();
 		var colBlack = new Bgr(Color.FromArgb(255, 128, 128, 128)).MCvScalar;
 		switch (_previewMode) {
 			
 			case 1: {
-				for (var i = 0; i < _fullCoords.Length; i++) {
+				for (var i = 0; i < _fullCoords.Length && i < cols.Length; i++) {
 					var color = cols[i];
 					if (color.R < _blackLevel && color.G < _blackLevel && color.B < _blackLevel) {
 						color = Color.Black;
 					}
 
 					var col = new Bgr(color).MCvScalar;
-					CvInvoke.Rectangle(outMat, _fullCoords[i], col, -1, LineType.AntiAlias);
-					CvInvoke.Rectangle(outMat, _fullCoords[i], colBlack, 1, LineType.AntiAlias);
+					CvInvoke.Rectangle(outClone, _fullCoords[i], col, -1, LineType.AntiAlias);
+					CvInvoke.Rectangle(outClone, _fullCoords[i], colBlack, 1, LineType.AntiAlias);
 				}
 				break;
 			}
 			case 2: {
-				for (var i = 0; i < _fullSectors.Length; i++) {
+				for (var i = 0; i < _fullSectors.Length && i < secs.Length; i++) {
 					var s = _fullSectors[i];
 					var color = secs[i];
 					if (color.R < _blackLevel && color.G < _blackLevel && color.B < _blackLevel) {
@@ -428,53 +543,45 @@ public class FrameSplitter : IDisposable {
 					}
 
 					var col = new Bgr(color).MCvScalar;
-					CvInvoke.Rectangle(outMat, s, col, -1, LineType.AntiAlias);
-					CvInvoke.Rectangle(outMat, s, colBlack, 1, LineType.AntiAlias);
+					CvInvoke.Rectangle(outClone, s, col, -1, LineType.AntiAlias);
+					CvInvoke.Rectangle(outClone, s, colBlack, 1, LineType.AntiAlias);
 					var cInt = i + 1;
 					var tPoint = new Point(s.X, s.Y + 30);
-					CvInvoke.PutText(outMat, cInt.ToString(), tPoint, FontFace.HersheySimplex, 0.75, colBlack);
+					CvInvoke.PutText(outClone, cInt.ToString(), tPoint, FontFace.HersheySimplex, 0.75, colBlack);
 				}
 				break;
 			}
 		}
 
-		if (outMat is { IsEmpty: false }) {
-			ControlService.SendImage("outputImage", outMat).ConfigureAwait(false);
+		if (outClone is { IsEmpty: false }) {
+			await ControlService.SendImage("outputImage", outClone).ConfigureAwait(false);
 		}
-
-		inMat.Dispose();
-		outMat.Dispose();
 	}
 
 
 	private Mat? CheckCamera(Mat input) {
-		var scaled = input.Clone();
-
-		Mat? output = null;
-
-		// If we don't have a target, find one
+		// If we don't have a target, find one. FindTarget only reads the input frame.
 		if (_lockTarget == null) {
-			_lockTarget = FindTarget(scaled);
+			_lockTarget = FindTarget(input);
 			if (_lockTarget != null) {
 				Log.Debug("Target hit.");
 				DataUtil.SetItem("LockTarget", _lockTarget.ToArray());
+				_warpTransform?.Dispose();
+				_warpTransform = null;
 			} else {
 				Log.Debug("No target.");
 			}
 		}
 
-		// If we do or we found one...crop it out
-		if (_lockTarget != null) {
-			var dPoints = _lockTarget.ToArray();
-			var warpMat = CvInvoke.GetPerspectiveTransform(dPoints, _vectors);
-			output = new Mat();
-			CvInvoke.WarpPerspective(scaled, output, warpMat, _scaleSize);
-			warpMat.Dispose();
+		if (_lockTarget == null) {
+			return null;
 		}
 
-		scaled.Dispose();
-		// Once we have a warped frame, we need to do a check every N seconds for letterboxing...
-		return output;
+		// The perspective transform only depends on the lock target, so compute it once
+		// and reuse it; only the warp itself runs per frame, into a persistent buffer.
+		_warpTransform ??= CvInvoke.GetPerspectiveTransform(_lockTarget.ToArray(), _vectors);
+		CvInvoke.WarpPerspective(input, _warpMat, _warpTransform, _scaleSize);
+		return _warpMat;
 	}
 
 	private VectorOfPointF? FindTarget(IInputArray input) {
@@ -614,113 +721,6 @@ public class FrameSplitter : IDisposable {
 		return _colorsSectors;
 	}
 	
-	private async Task CheckCropOg(Mat image) {
-		// Set our tolerances
-		_sectorChanged = false;
-		var width = ScaleWidth;
-		var height = ScaleHeight;
-		var wMax = width / 3;
-		var hMax = height / 3;
-		// How many non-black pixels can be in a given row
-		var lPixels = 0;
-		var pPixels = 0;
-
-		width--;
-		height--;
-		var raw = image.GetRawData();
-		var unique = raw.Distinct().ToArray();
-
-		//var count = Sum(raw);
-		var noImage = width == 0 || height == 0 || (unique.Length == 1 && unique[0] <= _cropBlackLevel);
-		// If it is, we can stop here
-		if (noImage) {
-			_allBlack = true;
-			if (_doSend) {
-				ColorService.CheckAutoDisable(false);
-			}
-
-			return;
-		}
-
-		if (_doSend) {
-			ColorService.CheckAutoDisable(true);
-		}
-
-		// Return here, because otherwise, "no input" detection won't work.
-		if (!_useCrop) {
-			return;
-		}
-
-		// Convert image to greyscale
-
-		_allBlack = false;
-		// Check letterboxing
-		if (_cropLetter) {
-			for (var y = 0; y < hMax; y += 2) {
-				var c1 = image.Row(height - y);
-				var c2 = image.Row(y);
-				var b1 = c1.GetRawData().SkipLast(8).Skip(8).ToArray();
-				var b2 = c2.GetRawData().SkipLast(8).Skip(8).ToArray();
-				var l1 = Sum(b1) / b1.Length;
-				var l2 = Sum(b2) / b2.Length;
-				c1.Dispose();
-				c2.Dispose();
-				if (l1 <= _cropBlackLevel && l2 <= _cropBlackLevel && l1 == l2) {
-					lPixels = y;
-				} else {
-					break;
-				}
-			}
-
-			_lFrameCropTrigger.Tick(lPixels);
-			if (_lFrameCropTrigger.Triggered != _lCrop && !_sectorChanged) {
-				_sectorChanged = true;
-				_lCrop = _lFrameCropTrigger.Triggered;
-			}
-
-			_lCropPixels = lPixels;
-		}
-
-		// Check pillarboxing
-		if (_cropPillar) {
-			for (var x = 0; x < wMax; x += 2) {
-				var c1 = image.Col(width - x);
-				var c2 = image.Col(x);
-				var b1 = c1.GetRawData().SkipLast(8).Skip(8).ToArray();
-				var b2 = c2.GetRawData().SkipLast(8).Skip(8).ToArray();
-				var l1 = Sum(b1) / b1.Length;
-				var l2 = Sum(b2) / b2.Length;
-				c1.Dispose();
-				c2.Dispose();
-				if (l1 <= _cropBlackLevel && l2 <= _cropBlackLevel && l1 == l2) {
-					pPixels = x;
-				} else {
-					break;
-				}
-			}
-
-			_pFrameCropTrigger.Tick(pPixels);
-			if (_pFrameCropTrigger.Triggered != _pCrop && !_sectorChanged) {
-				_sectorChanged = true;
-				_pCrop = _pFrameCropTrigger.Triggered;
-			}
-
-			_pCropPixels = pPixels;
-		}
-
-		// Cleanup mat
-		//image.Dispose();
-
-		// Only calculate new sectors if the value has changed
-		if (_sectorChanged) {
-			_fullCoords = DrawGrid();
-			_fullSectors = DrawSectors();
-			_sectorChanged = false;
-		}
-
-		await Task.FromResult(true);
-	}
-
 	private async Task CheckCrop(Mat image)
 	{
 		// Set our tolerances
@@ -741,17 +741,30 @@ public class FrameSplitter : IDisposable {
 			return;
 		}
 
-		if (_doSend)
+		// Detect a fully black frame by sampling a handful of rows; this is what drives
+		// auto-disable when the source goes dark.
+		var sampleBlack = true;
+		for (var i = 0; i <= 4; i++)
 		{
-			ColorService.CheckAutoDisable(true);
+			var y = Math.Min(height, i * height / 4);
+			if (GetRowAverage(image, y) > _cropBlackLevel)
+			{
+				sampleBlack = false;
+				break;
+			}
 		}
 
-		if (!_useCrop)
+		_allBlack = sampleBlack;
+		if (_doSend)
+		{
+			ColorService.CheckAutoDisable(!sampleBlack);
+		}
+
+		if (!_useCrop || sampleBlack)
 		{
 			return;
 		}
 
-		_allBlack = false;
 		var lPixels = 0;
 		var pPixels = 0;
 
@@ -760,8 +773,8 @@ public class FrameSplitter : IDisposable {
 		{
 			for (var y = 0; y < hMax; y += 2)
 			{
-				var avgTop = GetRowAverage(image, y, width);
-				var avgBottom = GetRowAverage(image, height - y, width);
+				var avgTop = GetRowAverage(image, y);
+				var avgBottom = GetRowAverage(image, height - y);
 				if (avgTop <= _cropBlackLevel && avgBottom <= _cropBlackLevel && avgTop == avgBottom)
 				{
 					lPixels = y;
@@ -780,8 +793,8 @@ public class FrameSplitter : IDisposable {
 		{
 			for (var x = 0; x < wMax; x += 2)
 			{
-				var avgLeft = GetColAverage(image, x, height);
-				var avgRight = GetColAverage(image, width - x, height);
+				var avgLeft = GetColAverage(image, x);
+				var avgRight = GetColAverage(image, width - x);
 				if (avgLeft <= _cropBlackLevel && avgRight <= _cropBlackLevel && avgLeft == avgRight)
 				{
 					pPixels = x;
@@ -801,33 +814,65 @@ public class FrameSplitter : IDisposable {
 			Log.Debug($"Crop changed, redrawing {_lCropPixels} and {_pCropPixels}...");
 			_fullCoords = DrawGrid();
 			_fullSectors = DrawSectors();
+			_roiDirty = true;
 			_sectorChanged = false;
 		}
 
 		await Task.FromResult(true);
 	}
 
-// Helper method to calculate the average brightness of a row, avoiding direct raw data access
-	private double GetRowAverage(Mat image, int rowIndex, int width)
+	/// <summary>
+	///     Average byte value of a row, reading the mat data directly - no per-call
+	///     allocations or LINQ. Skips the first/last 8 bytes like the legacy implementation.
+	/// </summary>
+	private static unsafe int GetRowAverage(Mat image, int rowIndex)
 	{
-		var row = image.Row(rowIndex);
-		var rowData = row.GetRawData().SkipLast(8).Skip(8).ToArray();
-		var average = rowData.Average(byteValue => byteValue);
-		row.Dispose();
-		return average;
+		var bytesPerRow = image.Cols * image.NumberOfChannels;
+		if (bytesPerRow <= 16)
+		{
+			return 0;
+		}
+
+		var ptr = (byte*)image.DataPointer + (long)rowIndex * image.Step;
+		long sum = 0;
+		for (var i = 8; i < bytesPerRow - 8; i++)
+		{
+			sum += ptr[i];
+		}
+
+		return (int)(sum / (bytesPerRow - 16));
 	}
 
-// Helper method to calculate the average brightness of a column, similar to the row average calculation
-	private double GetColAverage(Mat image, int colIndex, int height)
+	/// <summary>
+	///     Average byte value of a column, reading the mat data directly.
+	///     Skips ~8 bytes (3 pixels) at the top and bottom edges.
+	/// </summary>
+	private static unsafe int GetColAverage(Mat image, int colIndex)
 	{
-		var col = image.Col(colIndex);
-		var colData = col.GetRawData().SkipLast(8).Skip(8).ToArray();
-		var average = colData.Average(byteValue => byteValue);
-		col.Dispose();
-		return average;
+		var channels = image.NumberOfChannels;
+		var rows = image.Rows;
+		const int skip = 3;
+		if (rows <= skip * 2)
+		{
+			return 0;
+		}
+
+		var step = image.Step;
+		var basePtr = (byte*)image.DataPointer + colIndex * channels;
+		long sum = 0;
+		for (var r = skip; r < rows - skip; r++)
+		{
+			var p = basePtr + (long)r * step;
+			for (var c = 0; c < channels; c++)
+			{
+				sum += p[c];
+			}
+		}
+
+		return (int)(sum / ((rows - skip * 2) * channels));
 	}
 
-// Method to update crop values and check if sector changed
+	// Method to update crop values and check if sector changed
 	private void UpdateCrop(ref bool cropFlag, ref int cropPixels, int newPixels, FrameCropTrigger frameCropTrigger)
 	{
 		frameCropTrigger.Tick(newPixels);
@@ -837,11 +882,6 @@ public class FrameSplitter : IDisposable {
 			cropFlag = frameCropTrigger.Triggered;
 		}
 		cropPixels = newPixels;
-	}
-
-	
-	private static int Sum(IEnumerable<byte> bytes) {
-		return bytes.Aggregate(0, (current, b) => current + b);
 	}
 
 	private Rectangle[] DrawGrid() {

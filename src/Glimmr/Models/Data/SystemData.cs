@@ -484,6 +484,36 @@ public class SystemData {
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 	public string? DeviceId { get; set; } = "";
 
+	/// <summary>
+	///     Stable emulated Hue Bridge ID (16 hex chars) advertised to the Hue Sync app.
+	///     Must remain constant once paired or the Hue Sync app will require re-pairing.
+	/// </summary>
+	[DefaultValue("")]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public string HueSyncBridgeId { get; set; } = "";
+
+	/// <summary>
+	///     Stable emulated Hue Bridge MAC (aa:bb:cc:dd:ee:ff) advertised to the Hue Sync app.
+	/// </summary>
+	[DefaultValue("")]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public string HueSyncBridgeMac { get; set; } = "";
+
+	/// <summary>
+	///     Application username (whitelist key) granted to the Hue Sync app during pairing.
+	/// </summary>
+	[DefaultValue("")]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public string HueSyncUser { get; set; } = "";
+
+	/// <summary>
+	///     DTLS pre-shared key (hex) granted to the Hue Sync app during pairing. This is the
+	///     PSK used to decrypt the entertainment stream.
+	/// </summary>
+	[DefaultValue("")]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public string HueSyncClientKey { get; set; } = "";
+
 	public SystemData() {
 		if (GammaCorrection < 1) {
 			GammaCorrection = 1;

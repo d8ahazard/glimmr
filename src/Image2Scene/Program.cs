@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System.Drawing;
 using Emgu.CV;
@@ -88,7 +88,7 @@ void ProcessImage(string? iMpath) {
 		Console.WriteLine("How many pixels should the image move per 'frame' (default: 5)");
 		var stepString = Console.ReadLine();
 		var step = 5;
-		if (!string.IsNullOrEmpty(delString)) {
+		if (!string.IsNullOrEmpty(stepString)) {
 			int.TryParse(stepString, out step);
 		}
 

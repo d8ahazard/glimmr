@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System.Linq;
 using System.Net;
@@ -156,14 +156,20 @@ public class DreamScreenStream : ColorSource {
 		Log.Debug("DS stream service stopped.");
 	}
 
-	private void UpdateColors(object? sender, DreamScreenClient.DeviceColorEventArgs e) {
+	private async void UpdateColors(object? sender, DreamScreenClient.DeviceColorEventArgs e) {
+		if (Splitter.IsBusy) {
+			// Drop the frame rather than queueing behind an in-flight update.
+			return;
+		}
+
 		var colors = e.Colors;
 		var frame = Builder?.Build(colors);
 		if (frame == null) {
 			return;
 		}
 
-		Splitter.Update(frame).ConfigureAwait(false);
+		// Await before disposing - the splitter reads the mat during processing.
+		await Splitter.Update(frame).ConfigureAwait(false);
 		frame.Dispose();
 	}
 }

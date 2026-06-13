@@ -223,6 +223,47 @@ public class GlimmrController : ControllerBase {
 	}
 
 	/// <summary>
+	///     Arm the emulated Hue Bridge "link button" so the Hue Sync app can pair with Glimmr.
+	///     Call this, then press "connect/search" in the Hue Sync app within the window.
+	/// </summary>
+	/// <returns>An object describing the current pairing state.</returns>
+	[HttpGet("hueSyncLink")]
+	public ActionResult<object> HueSyncLink() {
+		var bridge = Models.ColorSource.HueSync.HueSyncBridge.Instance;
+		bridge.ArmLink();
+		return new {
+			bridge.BridgeId,
+			bridge.BridgeMac,
+			armed = bridge.IsLinkArmed,
+			paired = bridge.IsPaired
+		};
+	}
+
+	/// <summary>
+	///     Report whether the Hue Sync app is currently paired with the emulated bridge.
+	/// </summary>
+	[HttpGet("hueSyncStatus")]
+	public ActionResult<object> HueSyncStatus() {
+		var bridge = Models.ColorSource.HueSync.HueSyncBridge.Instance;
+		return new {
+			bridge.BridgeId,
+			bridge.BridgeMac,
+			armed = bridge.IsLinkArmed,
+			paired = bridge.IsPaired,
+			streaming = bridge.Streaming
+		};
+	}
+
+	/// <summary>
+	///     Forget the paired Hue Sync app, forcing a fresh pairing next time.
+	/// </summary>
+	[HttpGet("hueSyncUnpair")]
+	public ActionResult<bool> HueSyncUnpair() {
+		Models.ColorSource.HueSync.HueSyncBridge.Instance.Unpair();
+		return true;
+	}
+
+	/// <summary>
 	///     Download a backup of the current database.
 	/// </summary>
 	/// <returns>A copy of the LiteDB used for setting storage.</returns>

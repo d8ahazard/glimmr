@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System;
 using System.Threading;
@@ -24,6 +24,7 @@ public sealed class PiCamVideoStream : IVideoStream, IDisposable {
 	private const int CapHeight = 480;
 	private const int CapWidth = 640;
 	private readonly MMALCamera _cam;
+	private Image<Bgr, byte>? _image;
 	private FrameSplitter? _splitter;
 
 	public PiCamVideoStream() {
@@ -75,9 +76,17 @@ public sealed class PiCamVideoStream : IVideoStream, IDisposable {
 	}
 
 	private void ProcessFrame(object? sender, EmguEventArgs args) {
-		var input = new Image<Bgr, byte>(CapWidth, CapHeight) { Bytes = args.ImageData };
-		_splitter?.Update(input.Mat.Clone());
-		input.Dispose();
+		var splitter = _splitter;
+		if (splitter == null || splitter.IsBusy) {
+			// Drop the frame rather than queueing work behind an in-flight update.
+			return;
+		}
+
+		// Reuse a persistent image buffer; the splitter doesn't take ownership and the
+		// busy guard ensures we never overwrite a frame that's still being processed.
+		_image ??= new Image<Bgr, byte>(CapWidth, CapHeight);
+		_image.Bytes = args.ImageData;
+		_ = splitter.Update(_image.Mat);
 	}
 
 	private class EmguEventArgs : EventArgs {
@@ -113,6 +122,8 @@ public sealed class PiCamVideoStream : IVideoStream, IDisposable {
 
 		if (disposing) {
 			_cam.Cleanup();
+			_image?.Dispose();
+			_image = null;
 		}
 
 		_disposedValue = true;

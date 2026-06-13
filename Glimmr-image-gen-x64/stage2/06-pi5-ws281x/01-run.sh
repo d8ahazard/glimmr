@@ -42,10 +42,11 @@ git clone --depth 1 --branch "\${PI5_REPO_REF}" \
 
 cd "\${WORK}/rpi_ws281x/rp1_ws281x_pwm"
 
-# The kernel-module Makefile defaults to /lib/modules/\$(uname -r)/build,
-# which inside the qemu-user-static chroot resolves to the BUILD HOST's
-# kernel rather than the Pi 5 target kernel. Pin it explicitly.
-make KDIR="/lib/modules/\${KVER}/build" KERNELDIR="/lib/modules/\${KVER}/build"
+# The kernel-module Makefile hardcodes /lib/modules/\$(uname -r)/build in its
+# build rule, which inside the qemu-user-static chroot resolves to the BUILD
+# HOST's kernel rather than the Pi 5 target kernel. Bypass it and invoke the
+# kernel build system directly against the target headers.
+make -C "/lib/modules/\${KVER}/build" M="\$(pwd)" modules
 
 install -D -m 644 rp1_ws281x_pwm.ko \
     "/lib/modules/\${KVER}/extra/rp1_ws281x_pwm.ko"

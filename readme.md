@@ -3,7 +3,7 @@
 ## What the heck is this??
 Glimmr is a FOSS ambient home lighting solution. Hook it up to a HDMI signal, use a webcam, or use the screen capture function; and drive a wide range of lighting devices in sync with the input signal. It's similar to Hyperion, Govee, or the Hue Sync box, only with a much broader support for devices.
 
-The project is written in dotnet core, which means it can run on most any modern arm, intel, or AMD processor. Presently, it has been tested to work with Debian and Ubuntu linux, as well as raspbian and Windows 10 and 11. It is specifically designed to run on a raspberry Pi 4B, however, it has also been shown to run fine on a 3B, and could potentailly also work on a zero...although it has not been tested.
+The project is written in dotnet core, which means it can run on most any modern arm, intel, or AMD processor. Presently, it has been tested to work with Debian and Ubuntu linux, as well as Raspberry Pi OS and Windows 10 and 11. It is specifically designed to run on a Raspberry Pi 4 or 5 (the official OS image supports both, including Pi 5 LED output via the RP1 kernel module), and has also been shown to run fine on a 3B.
 
 Supported devices include DreamScreen, Hue, Lifx, Nanoleaf, WLED, Adalight (Arduino), Yeelight, and WS2812B/SK6822 strips connected to the GPIO of a raspberry pi. Additionally, a *vast* array of desktop RGB devices are supported via OpenRGB integration. And, if there's not a device supported and it has an API, I'm more than willing to try adding support for it.
 
@@ -55,11 +55,10 @@ sudo su
 wget -qO- https://raw.githubusercontent.com/d8ahazard/glimmr/master/script/setup_linux.sh | bash
 ```
 
-*Alternatively*, you can flash a custom image directly to your pi from here:
+*Alternatively*, you can flash a custom image directly to your pi (Pi 3/4/5, arm64,
+built from [Glimmr-image-gen-x64](Glimmr-image-gen-x64/)):
 
-Full Raspi OS image can be found here: 
-
-X64: [https://mega.nz/file/C34GEAqZ#RpckErhTPhn6qz1cVDNDmr4QP9wfYemEaAOLvRRBz4E](https://mega.nz/file/RgsCSTSK#D-dH-XGBLuh3DOEZ98YGkOQk6ZkpId8PONLT7KDyNjM)
+Check [releases](https://github.com/d8ahazard/glimmr/releases/latest) for the latest prebuilt image.
 
 
 You will need to use "BalenaEtcher", a free software for flashing the image.

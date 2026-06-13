@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System;
 using System.Collections.Generic;
@@ -374,8 +374,9 @@ v. {version}
 		var devs = DataUtil.GetDevices();
 		if (devs.Count == 0) {
 			if (SystemUtil.IsRaspberryPi()) {
-				var ld0 = new LedData { Id = "0", Brightness = 255, GpioNumber = 18, Enable = true };
-				var ld1 = new LedData { Id = "1", Brightness = 255, GpioNumber = 19 };
+				// Brightness is a 0-100 percentage.
+				var ld0 = new LedData { Id = "0", Brightness = 100, GpioNumber = 18, Enable = true };
+				var ld1 = new LedData { Id = "1", Brightness = 100, GpioNumber = 19 };
 				DataUtil.AddDeviceAsync(ld0).ConfigureAwait(false);
 				DataUtil.AddDeviceAsync(ld1).ConfigureAwait(false);
 			}
@@ -509,7 +510,17 @@ v. {version}
 			await _hubContext.Clients.All.SendAsync("olo", DataUtil.GetStoreSerialized(this));
 		}
 
-		RefreshSystemEvent.Invoke();
+		// Fan out the refresh on the threadpool: subscribers (splitters, agents,
+		// devices, discovery) can do non-trivial work, and this is invoked from
+		// hub methods - blocking those stalls the client's SignalR invocations.
+		var refresh = RefreshSystemEvent;
+		_ = Task.Run(() => {
+			try {
+				refresh.Invoke();
+			} catch (Exception e) {
+				Log.Warning("Exception during system refresh: " + e.Message + " at " + e.StackTrace);
+			}
+		});
 	}
 
 	public static Task SystemControl(string action) {

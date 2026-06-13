@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System;
 using System.Drawing;
@@ -33,6 +33,12 @@ public class AudioVideoStream : ColorSource {
 	public sealed override FrameSplitter Splitter { get; set; }
 
 	private readonly ColorService _cs;
+
+	// Double-buffered blend output so we don't allocate two arrays per 16ms tick;
+	// consumers always get a fully written array that stays stable for two ticks.
+	private readonly Color[][] _ledOut = { Array.Empty<Color>(), Array.Empty<Color>() };
+	private readonly Color[][] _secOut = { Array.Empty<Color>(), Array.Empty<Color>() };
+	private int _outIndex;
 	private AudioStream? _as;
 	private Task? _aTask;
 	private bool _doSave;
@@ -114,8 +120,18 @@ public class AudioVideoStream : ColorSource {
 
 				var state = _as.ReactiveState;
 
-				var oCols = new Color[_systemData.LedCount];
-				var oSecs = new Color[_systemData.SectorCount];
+				_outIndex ^= 1;
+				var oCols = _ledOut[_outIndex];
+				if (oCols.Length != _systemData.LedCount) {
+					oCols = new Color[_systemData.LedCount];
+					_ledOut[_outIndex] = oCols;
+				}
+
+				var oSecs = _secOut[_outIndex];
+				if (oSecs.Length != _systemData.SectorCount) {
+					oSecs = new Color[_systemData.SectorCount];
+					_secOut[_outIndex] = oSecs;
+				}
 
 				BlendInto(vCols, aCols, oCols, state, isLed: true);
 				BlendInto(vSecs, aSecs, oSecs, state, isLed: false);

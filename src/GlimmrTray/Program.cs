@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System;
 using System.Diagnostics;
@@ -18,7 +18,8 @@ internal static class Program {
 	private const int SwShow = 5;
 	private const uint WinEventOutOfContext = 0;
 
-	private static IntPtr _procId;
+	private static Process _glimmr;
+	private static IntPtr _hookHandle;
 	private static bool _winShown;
 
 	// Need to ensure delegate is not collected while we're using it,
@@ -38,9 +39,6 @@ internal static class Program {
 			var dir = AppDomain.CurrentDomain.BaseDirectory;
 			var path = Path.Combine(dir, "Glimmr.exe");
 			Run(path, dir);
-		} catch (CmdArgumentException e) {
-			Console.Error.WriteLine(e.Message);
-			Environment.ExitCode = -1;
 		} catch (Exception e) {
 			Console.Error.WriteLine(e.ToString());
 			Environment.ExitCode = -1;
@@ -49,7 +47,8 @@ internal static class Program {
 
 	private static void WinEventProc(IntPtr hWinEventHook, uint eventType,
 		IntPtr handle, int idObject, int idChild, uint dwEventThread, uint wmsEventTime) {
-		SwitchWindow(handle);
+		// The Glimmr console window was minimized; hide it to the tray.
+		ShowWindow(handle, SwHide);
 		_winShown = false;
 	}
 
@@ -67,13 +66,14 @@ internal static class Program {
 			WorkingDirectory = baseDirectory
 		};
 
-		var p = Process.Start(processStartInfo);
-		ExitAtSame(p);
-		SwitchWindow(GetConsoleWindow());
-		if (p != null) {
-			_procId = p.Handle;
-			_winShown = true;
+		_glimmr = Process.Start(processStartInfo);
+		if (_glimmr == null) {
+			Console.Error.WriteLine("Unable to start Glimmr.");
+			return;
 		}
+
+		ExitAtSame(_glimmr);
+		_winShown = true;
 
 		var trayText = "Glimmr TV System Tray";
 		var contextMenu = new ContextMenuStrip();
@@ -88,21 +88,34 @@ internal static class Program {
 			Visible = true,
 			ContextMenuStrip = contextMenu
 		};
-		SetWinEventHook(EventSystemMinimizeStart, EventSystemMinimizeStart, _procId,
-			ProcDelegate, 0, 0, WinEventOutOfContext);
 
-		tray.MouseDoubleClick += (_, _) => {
-			if (p != null) {
-				SwitchWindow(p.MainWindowHandle);
-			}
+		// Watch for the Glimmr console window being minimized so we can hide
+		// it to the tray. Scope the hook to the Glimmr process id.
+		_hookHandle = SetWinEventHook(EventSystemMinimizeStart, EventSystemMinimizeStart, IntPtr.Zero,
+			ProcDelegate, (uint)_glimmr.Id, 0, WinEventOutOfContext);
 
-			ShowWindow(_procId, !_winShown ? SwHide : SwShow);
-		};
+		tray.MouseDoubleClick += (_, _) => ToggleGlimmrWindow();
 		Application.Run();
 	}
 
+	private static void ToggleGlimmrWindow() {
+		if (_glimmr == null || _glimmr.HasExited) {
+			return;
+		}
+
+		var hWnd = _glimmr.MainWindowHandle;
+		if (hWnd == IntPtr.Zero) {
+			return;
+		}
+
+		ShowWindow(hWnd, _winShown ? SwHide : SwShow);
+		_winShown = !_winShown;
+	}
+
 	private static void OpenData(object sender, EventArgs e) {
-		Process.Start("explorer.exe", @"C:\ProgramData\Glimmr");
+		var dataDir = Path.Combine(
+			Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Glimmr");
+		Process.Start("explorer.exe", dataDir);
 	}
 
 	private static void ShowUi(object sender, EventArgs e) {
@@ -110,19 +123,27 @@ internal static class Program {
 	}
 
 	private static void CloseApp(object sender, EventArgs e) {
+		if (_hookHandle != IntPtr.Zero) {
+			UnhookWinEvent(_hookHandle);
+			_hookHandle = IntPtr.Zero;
+		}
+
+		// Stop Glimmr too - exiting the tray should shut the whole app down.
+		ExitProcess(_glimmr);
 		Application.Exit();
 	}
 
 	private static void ExitProcess(Process p) {
 		try {
-			p.Kill();
+			if (p is { HasExited: false }) {
+				p.Kill();
+			}
 		} catch {
 			// Ignored
 		}
 	}
 
 	private static void ExitAtSame(Process p) {
-		UnhookWinEvent(p.Handle);
 		p.EnableRaisingEvents = true;
 		p.Exited += (_, _) => { Environment.Exit(0); };
 		AppDomain.CurrentDomain.ProcessExit += (_, _) => { ExitProcess(p); };
@@ -130,19 +151,6 @@ internal static class Program {
 
 	[DllImport("user32.dll")]
 	private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-
-	private static void SwitchWindow(IntPtr hWnd) {
-		var success = ShowWindow(hWnd, SwHide);
-		if (success) {
-			return;
-		}
-
-		_winShown = true;
-		ShowWindow(hWnd, SwShow);
-	}
-
-	[DllImport("kernel32.dll")]
-	private static extern IntPtr GetConsoleWindow();
 
 	private delegate void WinEventDelegate(IntPtr hWinEventHook, uint eventType,
 		IntPtr window, int idObject, int idChild, uint dwEventThread, uint eventTime);

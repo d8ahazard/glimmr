@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System;
 using System.Collections.Generic;
@@ -128,25 +128,26 @@ public class HueV2Data : IColorTargetData {
 			}
 		}
 
+		// Keep the freshly discovered groups/services as-is, but carry over any
+		// user mappings (sector/brightness/override) from groups we already knew.
+		// Groups that are new to us keep their full service list - previously they
+		// were wiped to empty because the merge only ran for pre-existing groups.
 		var ng = new List<HueGroup>();
 		foreach (var group in input.Groups) {
-			var services = group.Services;
-			var ns = new List<LightMapV2>();
-			foreach (var existingG in Groups.Where(existingG => existingG.Id == group.Id)) {
-				var exServices = existingG.Services;
-				foreach (var svc in services) {
-					foreach (var exSvc in exServices.Where(exSvc => svc.Id == exSvc.Id)) {
-						svc.TargetSector = exSvc.TargetSector;
-						svc.Brightness = exSvc.Brightness;
-						svc.Override = exSvc.Override;
-						break;
+			var existing = Groups.FirstOrDefault(g => g.Id == group.Id);
+			if (existing != null) {
+				foreach (var svc in group.Services) {
+					var exSvc = existing.Services.FirstOrDefault(e => e.Id == svc.Id);
+					if (exSvc == null) {
+						continue;
 					}
 
-					ns.Add(svc);
+					svc.TargetSector = exSvc.TargetSector;
+					svc.Brightness = exSvc.Brightness;
+					svc.Override = exSvc.Override;
 				}
 			}
 
-			group.Services = ns;
 			ng.Add(group);
 		}
 
@@ -163,6 +164,9 @@ public class HueV2Data : IColorTargetData {
 
 	public void ConfigureEntertainment(List<EntertainmentConfiguration> groups, List<Entertainment> devs,
 		List<Light> lights, bool json = false) {
+		// Rebuild from scratch - this can be called more than once on the same
+		// instance (e.g. during linking) and must not duplicate groups.
+		Groups = new List<HueGroup>();
 		if (groups.Count == 0) {
 			Log.Debug("No groups...");
 		}

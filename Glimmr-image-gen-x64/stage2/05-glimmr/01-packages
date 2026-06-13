@@ -34,6 +34,9 @@ libgtk-3-0
 libtbb12
 libatlas3-base
 libdc1394-25
+# Emgu.CV's libcvextern.so links against VTK (viz module) - without this the
+# app aborts on the first Mat allocation and never starts.
+libvtk9.1
 
 # X11 helpers (used by Glimmr's screen capture path on desktop builds;
 # safe to keep on a headless image -- they're tiny and avoid surprises

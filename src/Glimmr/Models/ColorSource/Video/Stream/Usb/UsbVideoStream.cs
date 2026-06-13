@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System;
 using System.Runtime.InteropServices;
@@ -51,7 +51,9 @@ public class UsbVideoStream : IVideoStream, IDisposable {
 		if (_splitter == null) return;
 		if (_video.Ptr == IntPtr.Zero) return;
 		if (_video.Grab()) {
-			if (_video.Retrieve(_frame)) await _splitter.Update(_frame?.Clone()).ConfigureAwait(true);
+			// The splitter doesn't take ownership of the frame, so we can reuse our
+			// persistent capture buffer every iteration instead of cloning it.
+			if (_video.Retrieve(_frame)) await _splitter.Update(_frame).ConfigureAwait(false);
 		}
 	}
 
