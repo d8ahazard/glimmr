@@ -2,6 +2,7 @@ import { useState, useEffect } from "preact/hooks";
 import { system } from "./lib/store";
 import { TabBar, StatStrip, Toaster, OfflineBanner, type Tab } from "./components/chrome";
 import { ControlScreen } from "./screens/Control";
+import { ScenesScreen } from "./screens/Scenes";
 import { DevicesScreen } from "./screens/Devices";
 import { CaptureScreen } from "./screens/Capture";
 import { SettingsScreen } from "./screens/Settings";
@@ -46,6 +47,7 @@ export function App() {
 			<TabBar tab={tab} onChange={setTab} />
 			<main class="shell-main">
 				{tab === "control" && <ControlScreen />}
+				{tab === "scenes" && <ScenesScreen />}
 				{tab === "devices" && <DevicesScreen />}
 				{tab === "capture" && <CaptureScreen />}
 				{tab === "settings" && <SettingsScreen onRunWizard={() => setWizardOpen(true)} />}

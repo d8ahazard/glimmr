@@ -17,6 +17,8 @@ using Glimmr.Models.ColorSource.Monitorr;
 using Glimmr.Models.ColorSource.Ambient;
 using Glimmr.Models.ColorSource.Audio;
 using Glimmr.Models.ColorSource.Audio.Engine;
+using Glimmr.Models.ColorSource.Scene;
+using Glimmr.Models.ColorSource.Scene.Script;
 using Glimmr.Models.ColorTarget;
 using Glimmr.Models.ColorTarget.Glimmr;
 using Glimmr.Models.Data;
@@ -208,6 +210,156 @@ public class GlimmrController : ControllerBase {
 	[HttpGet("audioScenes")]
 	public ActionResult<AudioScene[]> GetAudioScenes() {
 		return new StoreData().AudioScenes;
+	}
+
+	/// <summary>
+	///     List all scenes (scripted animations + baked video sequences).
+	/// </summary>
+	[HttpGet("scenes")]
+	public ActionResult<SceneV2[]> GetScenes() {
+		return new SceneStore().List().ToArray();
+	}
+
+	/// <summary>
+	///     Get a single scene by id.
+	/// </summary>
+	[HttpGet("scene")]
+	public ActionResult<SceneV2> GetScene([FromQuery] string id) {
+		var scene = new SceneStore().Get(id);
+		return scene == null ? NotFound() : new ActionResult<SceneV2>(scene);
+	}
+
+	/// <summary>
+	///     Create or update a (script) scene. For script scenes the DSL is compiled to populate
+	///     the grid size / fps and to surface any errors.
+	/// </summary>
+	[HttpPost("scene")]
+	public async Task<ActionResult<SceneV2>> SaveScene([FromBody] SceneV2 scene) {
+		if (scene == null) {
+			return BadRequest("No scene provided.");
+		}
+
+		var store = new SceneStore();
+		var existing = string.IsNullOrEmpty(scene.Id) ? null : store.Get(scene.Id);
+		if (existing is { System: true }) {
+			return BadRequest("System scenes cannot be modified.");
+		}
+
+		if (string.Equals(scene.Kind, "script", StringComparison.OrdinalIgnoreCase) ||
+		    string.IsNullOrWhiteSpace(scene.Kind)) {
+			scene.Kind = "script";
+			var spec = SceneScriptParser.Parse(scene.Script, out var errors);
+			// Author-controlled grid/fps from the script is authoritative.
+			scene.Width = spec.Width;
+			scene.Height = spec.Height;
+			scene.Fps = spec.Fps;
+			if (errors.Count > 0) {
+				return BadRequest(new { ok = false, errors });
+			}
+		}
+
+		var saved = store.Save(scene);
+		await _controlService.NotifyClients();
+		return new ActionResult<SceneV2>(saved);
+	}
+
+	/// <summary>
+	///     Validate (compile) an animation script without saving it.
+	/// </summary>
+	[HttpPost("scene/validate")]
+	public ActionResult ValidateScene([FromBody] string script) {
+		SceneScriptParser.Parse(script ?? string.Empty, out var errors);
+		return Ok(new { ok = errors.Count == 0, errors });
+	}
+
+	/// <summary>
+	///     Activate a scene: set it as current and switch device mode to Scene.
+	/// </summary>
+	[HttpPost("scene/select")]
+	public async Task<IActionResult> SelectScene([FromBody] string id) {
+		var store = new SceneStore();
+		if (store.Get(id) == null) {
+			return NotFound();
+		}
+
+		var sd = DataUtil.GetSystemData();
+		sd.SceneId = id;
+		sd.DeviceMode = DeviceMode.Scene;
+		await _controlService.UpdateSystem(sd);
+		await _controlService.SetMode(DeviceMode.Scene);
+		return Ok(true);
+	}
+
+	/// <summary>
+	///     Delete a (user) scene and its frame blob.
+	/// </summary>
+	[HttpDelete("scene")]
+	public async Task<IActionResult> DeleteScene([FromQuery] string id) {
+		var ok = new SceneStore().Delete(id);
+		if (ok) {
+			await _controlService.NotifyClients();
+		}
+
+		return Ok(ok);
+	}
+
+	/// <summary>
+	///     Bake an uploaded video into a scene (server-side decode + downsample).
+	/// </summary>
+	[HttpPost("scene/bakeVideo")]
+	[RequestSizeLimit(1_073_741_824)]
+	public async Task<IActionResult> BakeVideo(
+		IFormFile file,
+		[FromForm] string? name,
+		[FromForm] int width,
+		[FromForm] int height,
+		[FromForm] double fps,
+		[FromForm] double trimStart,
+		[FromForm] double trimEnd,
+		[FromForm] double speed,
+		[FromForm] string? fit,
+		[FromForm] bool loop,
+		[FromForm] bool reverse,
+		[FromForm] bool mirror) {
+		if (file == null || file.Length == 0) {
+			return BadRequest("No video uploaded.");
+		}
+
+		var tempPath = Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N") + Path.GetExtension(file.FileName));
+		try {
+			await using (var stream = new FileStream(tempPath, FileMode.Create)) {
+				await file.CopyToAsync(stream);
+			}
+
+			var store = new SceneStore();
+			var baker = new VideoBaker(store);
+			var scene = baker.Bake(tempPath, new VideoBaker.Options {
+				Name = name ?? "Video Scene",
+				Width = width,
+				Height = height,
+				Fps = fps,
+				TrimStart = trimStart,
+				TrimEnd = trimEnd,
+				Speed = speed,
+				Fit = string.IsNullOrWhiteSpace(fit) ? "crop" : fit,
+				Loop = loop,
+				Reverse = reverse,
+				Mirror = mirror
+			});
+			await _controlService.NotifyClients();
+			return Ok(scene);
+		} catch (Exception e) {
+			Log.Warning("Video bake failed: " + e.Message);
+			return BadRequest(e.Message);
+		} finally {
+			try {
+				if (System.IO.File.Exists(tempPath)) {
+					System.IO.File.Delete(tempPath);
+				}
+			} catch (Exception) {
+				// ignored
+			}
+		}
 	}
 
 

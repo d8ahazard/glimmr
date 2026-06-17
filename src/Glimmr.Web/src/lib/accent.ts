@@ -10,7 +10,8 @@ const MODE_ACCENTS: Record<number, string> = {
 	4: "#7b6cff", // a/v: violet
 	5: "#5dff8f", // stream: green
 	6: "#5dff8f",
-	7: "#ff9e43"  // hue sync: hue orange
+	7: "#ff9e43", // hue sync: hue orange
+	8: "#ffb24d"  // scenes: amber (replaced by color for the solid scene)
 };
 
 function hexToRgb(hex: string): [number, number, number] | null {
@@ -38,7 +39,8 @@ export function startAccentSync() {
 		const m = mode.value;
 		const sd = system.value;
 		let accent = MODE_ACCENTS[m] ?? "#46c8ff";
-		if (m === 3 && sd?.ambientColor) {
+		// The static-color scene (and legacy ambient) drives the accent from the chosen color.
+		if ((m === 3 || (m === 8 && sd?.sceneId === "solid")) && sd?.ambientColor) {
 			accent = "#" + sd.ambientColor.replace("#", "");
 		}
 		const rgb = hexToRgb(accent);

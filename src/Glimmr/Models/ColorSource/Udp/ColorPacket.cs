@@ -27,12 +27,21 @@ public class ColorPacket {
 	}
 
 	public byte[] Encode(int duration = 1) {
+		return Encode(duration, 0);
+	}
+
+	/// <summary>
+	///     Encode a packet. <paramref name="startIndex" /> is only used by the DNRGB protocol,
+	///     where it is the LED index this packet's data begins at (lets a large matrix be split
+	///     across several packets, since one DNRGB packet tops out around 489 pixels).
+	/// </summary>
+	public byte[] Encode(int duration, int startIndex) {
 		var header = new[] { (byte)UdpStreamMode, (byte)duration };
 		Duration = duration;
 
 		byte[] data = UdpStreamMode switch {
 			UdpStreamMode.Drgb => EncodeDrgb(),
-			UdpStreamMode.Dnrgb => EncodeDnrgb(),
+			UdpStreamMode.Dnrgb => EncodeDnrgb(startIndex),
 			UdpStreamMode.Drgbw => EncodeDrgbw(),
 			UdpStreamMode.Warls => EncodeWarls(),
 			_ => Array.Empty<byte>()
@@ -69,11 +78,11 @@ public class ColorPacket {
 		return output;
 	}
 
-	private byte[] EncodeDnrgb() {
+	private byte[] EncodeDnrgb(int startIndex) {
 		var data = new byte[Colors.Length * 3 + 2];
-		var len = BitConverter.GetBytes((short)Colors.Length);
-		data[0] = len[0];
-		data[1] = len[1];
+		// WLED DNRGB: 16-bit start index, big-endian (high byte first).
+		data[0] = (byte)((startIndex >> 8) & 0xFF);
+		data[1] = (byte)(startIndex & 0xFF);
 		for (int i = 0, j = 2; i < Colors.Length; i++, j += 3) {
 			data[j] = Colors[i].R;
 			data[j + 1] = Colors[i].G;
@@ -163,7 +172,8 @@ public class ColorPacket {
 			throw new ArgumentOutOfRangeException(nameof(toArray));
 		}
 
-		var start = BitConverter.ToInt16(new[] { hi, lo });
+		// 16-bit big-endian start index (matches EncodeDnrgb / WLED spec).
+		var start = (hi << 8) | lo;
 		var len = start + input.Length / 3;
 		var cols = Colors;
 		if (cols.Length > len) {

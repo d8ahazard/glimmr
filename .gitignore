@@ -37,3 +37,4 @@ src/Glimmr/wwwroot/app/
 # Dev tools build artifacts
 tools/**/bin/
 tools/**/obj/
+/bin

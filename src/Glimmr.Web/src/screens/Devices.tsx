@@ -14,6 +14,12 @@ function subtitle(dev: DeviceData): string {
 	return parts.join(" · ");
 }
 
+function displayName(dev: DeviceData, devs: DeviceData[]): string {
+	const name = dev.name ?? "";
+	const dupes = devs.filter(d => (d.name ?? "") === name).length > 1;
+	return dupes && dev.ipAddress ? `${name} (${dev.ipAddress})` : name;
+}
+
 export function DevicesScreen() {
 	const [openDevice, setOpenDevice] = useState<string | null>(null);
 	const devs = sortedDevices.value;
@@ -62,7 +68,7 @@ export function DevicesScreen() {
 							<div key={dev.id} class="row-item tappable" onClick={() => setOpenDevice(dev.id)}>
 								<div class="row-icon"><img src={deviceIcon(dev)} alt="" loading="lazy" /></div>
 								<div class="row-body">
-									<div class="row-title">{dev.name}</div>
+									<div class="row-title">{displayName(dev, devs)}</div>
 									<div class="row-sub">{subtitle(dev)}</div>
 									<div style={{ marginTop: "6px", paddingRight: "6px" }} onClick={e => e.stopPropagation()}>
 										<Slider

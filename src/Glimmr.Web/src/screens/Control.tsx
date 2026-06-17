@@ -1,48 +1,15 @@
 import { useEffect, useState } from "preact/hooks";
 import {
 	system, sortedDevices, mode, setMode, setSystemProps, updateDevice,
-	ambientScenes, audioScenes, showToast
+	audioScenes, scenes, showToast
 } from "../lib/store";
 import { MODES } from "../types";
 import { MODE_ICONS } from "../components/icons";
 import { Toggle, Slider, SelectField } from "../components/ui";
 import { ColorWheel } from "../components/ColorWheel";
 import { DeviceSheet, deviceIcon } from "../components/device/DeviceSheet";
-import { getHueSyncStatus, armHueSyncLink, unpairHueSync } from "../lib/api";
+import { getHueSyncStatus, armHueSyncLink, unpairHueSync, selectScene } from "../lib/api";
 import type { HueSyncStatus } from "../types";
-
-function AmbientPanel() {
-	const sd = system.value;
-	if (!sd) return null;
-	const scenes = [...ambientScenes.value].sort((a, b) => a.name.localeCompare(b.name));
-	return (
-		<>
-			<div class="section-label">Color</div>
-			<ColorWheel
-				color={sd.ambientColor}
-				onCommit={hex => setSystemProps({ ambientColor: hex, ambientScene: -1 })}
-			/>
-			<div class="section-label">Scenes</div>
-			<div class="scene-chips">
-				<button
-					class={"scene-chip" + (sd.ambientScene === -1 ? " active" : "")}
-					onClick={() => setSystemProps({ ambientScene: -1 })}
-				>
-					Solid Color
-				</button>
-				{scenes.map(s => (
-					<button
-						key={s.id}
-						class={"scene-chip" + (sd.ambientScene === s.id ? " active" : "")}
-						onClick={() => setSystemProps({ ambientScene: s.id })}
-					>
-						{s.name}
-					</button>
-				))}
-			</div>
-		</>
-	);
-}
 
 function AudioPanel() {
 	const sd = system.value;
@@ -104,6 +71,48 @@ function AudioPanel() {
 						onCommit={v => setSystemProps({ audioRotationUpper: v })}
 					/>
 				</div>
+			</div>
+		</>
+	);
+}
+
+function pickScene(id: string) {
+	const cur = system.value;
+	if (cur) system.value = { ...cur, deviceMode: 8, sceneId: id, autoDisabled: false };
+	void selectScene(id);
+}
+
+function ScenePanel() {
+	const sd = system.value;
+	if (!sd) return null;
+	// "solid" is the static-color scene, driven by the color wheel below, not a chip.
+	const list = [...scenes.value].filter(s => s.id !== "solid").sort((a, b) => a.name.localeCompare(b.name));
+	return (
+		<>
+			<div class="section-label">Static color</div>
+			<ColorWheel
+				color={sd.ambientColor}
+				onCommit={hex => {
+					setSystemProps({ ambientColor: hex });
+					if (sd.sceneId !== "solid" || sd.deviceMode !== 8) pickScene("solid");
+				}}
+			/>
+			<div class="section-label">Scenes</div>
+			{list.length === 0 && (
+				<p class="field-hint" style={{ margin: "0 8px" }}>
+					No scenes yet — create one in the Scenes tab.
+				</p>
+			)}
+			<div class="scene-chips">
+				{list.map(s => (
+					<button
+						key={s.id}
+						class={"scene-chip" + (sd.sceneId === s.id ? " active" : "")}
+						onClick={() => pickScene(s.id)}
+					>
+						{s.name}
+					</button>
+				))}
 			</div>
 		</>
 	);
@@ -242,7 +251,7 @@ export function ControlScreen() {
 	const m = mode.value;
 	const [openDevice, setOpenDevice] = useState<string | null>(null);
 	const devs = sortedDevices.value;
-	const modeName = MODES.find(x => x.id === m)?.name ?? "Off";
+	const modeName = m === 3 ? "Scenes" : MODES.find(x => x.id === m)?.name ?? "Off";
 
 	return (
 		<div class="screen">
@@ -268,7 +277,7 @@ export function ControlScreen() {
 				})}
 			</div>
 
-			{m === 3 && <AmbientPanel />}
+			{(m === 8 || m === 3) && <ScenePanel />}
 			{(m === 2 || m === 4) && <AudioPanel />}
 			{m === 5 && <StreamPanel />}
 			{m === 7 && <HueSyncPanel />}

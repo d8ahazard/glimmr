@@ -38,7 +38,9 @@ public class TwinklyDiscovery : ColorDiscovery, IColorDiscovery {
 			_sd.ServiceDiscovered += ServiceDiscovered;
 			_sd.ServiceInstanceDiscovered += DeviceDiscovered;
 			_mDns.Start();
-			_mDns.SendQuery(ServiceName, type: DnsType.PTR);
+			// Use the fully-qualified query ("<service>.local"); a bare PTR query without the
+			// ".local" suffix is ignored by real mDNS responders.
+			_sd.QueryServiceInstances(ServiceName);
 			await Task.Delay(TimeSpan.FromSeconds(timeout), CancellationToken.None);
 			_mDns.NetworkInterfaceDiscovered -= InterfaceDiscovered;
 			_sd.ServiceDiscovered -= ServiceDiscovered;

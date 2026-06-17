@@ -43,6 +43,10 @@ export const IconHue = ({ size }: IconProps) => (
 	<svg {...base(size)}><path d="M9 18h6" /><path d="M10 21h4" /><path d="M12 3a6.5 6.5 0 0 0-3.5 12V17h7v-2A6.5 6.5 0 0 0 12 3z" /></svg>
 );
 
+export const IconScenes = ({ size }: IconProps) => (
+	<svg {...base(size)}><path d="M12 3l1.6 3.7L17 8.3l-3.4 1.6L12 13.6l-1.6-3.7L7 8.3l3.4-1.6z" /><path d="M18 13l.8 1.9 2 .8-2 .8L18 18.4l-.8-1.9-2-.8 2-.8z" /><path d="M6 14l.7 1.6L8.4 16l-1.7.6L6 18.3l-.7-1.7L3.6 16l1.7-.4z" /></svg>
+);
+
 export const IconControl = ({ size }: IconProps) => (
 	<svg {...base(size)}><path d="M4 8h10M18 8h2M4 16h2M10 16h10" /><circle cx="16" cy="8" r="2.2" /><circle cx="8" cy="16" r="2.2" /></svg>
 );
@@ -93,6 +97,7 @@ export const MODE_ICONS: Record<string, (p: IconProps) => JSX.Element> = {
 	audio: IconAudio,
 	av: IconAv,
 	ambient: IconAmbient,
+	scenes: IconScenes,
 	stream: IconStream,
 	hue: IconHue
 };

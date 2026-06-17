@@ -7,6 +7,10 @@ set -e
 # firmware partition.
 touch "${ROOTFS_DIR}/boot/firmware/ssh"
 
+# Pre-seed the first-boot user so userconf-pi creates the Glimmr login
+# (glimmrtv/glimmrtv) non-interactively instead of running the account-setup
+# wizard. This MUST match FIRST_USER_NAME/FIRST_USER_PASS in ./config and the
+# defaults in script/publish.ps1; the hash is SHA-512 crypt of "glimmrtv".
 install -m 644 files/userconf.txt "${ROOTFS_DIR}/boot/firmware/userconf.txt"
 
 rm -f "${ROOTFS_DIR}/etc/network/interfaces"

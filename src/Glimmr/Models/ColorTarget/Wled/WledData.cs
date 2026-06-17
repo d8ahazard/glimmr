@@ -91,6 +91,84 @@ public class WledData : IColorTargetData {
 	[JsonProperty]
 	public bool Initialized { get; set; }
 
+	/// <summary>
+	///     Matrix width in pixels (auto-detected from WLED's 2D config when available).
+	/// </summary>
+	[JsonProperty]
+	public int MatrixWidth { get; set; }
+
+	/// <summary>
+	///     Matrix height in pixels (auto-detected from WLED's 2D config when available).
+	/// </summary>
+	[JsonProperty]
+	public int MatrixHeight { get; set; }
+
+	/// <summary>
+	///     How the matrix maps the screen: 2 = Mirror (literal), 3 = Extend (edge reflection).
+	/// </summary>
+	[DefaultValue(MatrixMode.Mirror)]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public MatrixMode MatrixMode { get; set; } = MatrixMode.Mirror;
+
+	/// <summary>
+	///     Which screen edge the panel sits next to. 0 = Left, 1 = Right, 2 = Top, 3 = Bottom.
+	///     For Extend, this is the edge that gets reflected outward across the panel.
+	/// </summary>
+	[DefaultValue(MatrixSide.Bottom)]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public MatrixSide MatrixSide { get; set; } = MatrixSide.Bottom;
+
+	/// <summary>
+	///     Extend mode: how far into the screen (percent) the edge reflection samples.
+	/// </summary>
+	[DefaultValue(50)]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public int ExtendDepth { get; set; } = 50;
+
+	/// <summary>
+	///     Extend mode: brightness drop (percent) at the panel's far edge, so the reflection
+	///     fades into the distance.
+	/// </summary>
+	[DefaultValue(40)]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public int ExtendFade { get; set; } = 40;
+
+	/// <summary>
+	///     Flip the matrix output left-right before sending (for physical mounting orientation).
+	/// </summary>
+	[DefaultValue(false)]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public bool FlipHorizontal { get; set; }
+
+	/// <summary>
+	///     Flip the matrix output top-bottom before sending (for physical mounting orientation).
+	/// </summary>
+	[DefaultValue(false)]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public bool FlipVertical { get; set; }
+
+	/// <summary>
+	///     Matrix wiring zig-zags (serpentine). Auto-detected from WLED's 2D panel config.
+	/// </summary>
+	[DefaultValue(false)]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public bool Serpentine { get; set; }
+
+	/// <summary>
+	///     Matrix wiring runs in columns (vertical/transposed) rather than rows.
+	///     Auto-detected from WLED's 2D panel config.
+	/// </summary>
+	[DefaultValue(false)]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public bool Vertical { get; set; }
+
+	/// <summary>
+	///     Wiring start corner: 0 = Top-Left, 1 = Top-Right, 2 = Bottom-Left, 3 = Bottom-Right.
+	///     Auto-detected from WLED's 2D panel config.
+	/// </summary>
+	[JsonProperty]
+	public int StartCorner { get; set; }
+
 
 	public WledData() {
 		Tag = "Wled";
@@ -111,22 +189,23 @@ public class WledData : IColorTargetData {
 		LastSeen = DateTime.Now.ToString(CultureInfo.InvariantCulture);
 		IpAddress = ipaddress;
 		Segments = Array.Empty<WledSegment>();
-		using var webClient = new HttpClient();
-		webClient.Timeout = TimeSpan.FromSeconds(7);
-		try {
-			var url = "http://" + IpAddress + "/json";
-			var jsonData = webClient.GetStringAsync(url).Result;
-			Log.Debug("Json Data: " + jsonData);
-			
-			var settings = new JsonSerializerSettings {
-				ContractResolver = new IgnorePropertiesResolver(new[] { "effects" }) // Specify the property names to ignore
-			};
 
-			var jsonObj = JsonConvert.DeserializeObject<WledStateData>(jsonData, settings);
+		// Fetch the lightweight state+info endpoint (no effects/palettes) with a generous
+		// timeout and a couple of retries. Cheap ESP32-C3 boards on weak WiFi are slow to
+		// answer the full /json, which used to time out and silently drop the device.
+		var jsonData = FetchStateInfo();
+		if (string.IsNullOrEmpty(jsonData)) {
+			Log.Debug($"WLED: No data from {IpAddress} after retries; not initializing.");
+			Initialized = false;
+			return;
+		}
+
+		try {
+			var jsonObj = JsonConvert.DeserializeObject<WledStateData>(jsonData);
 			State = jsonObj;
 
 			LedCount = jsonObj.Info.Leds.Count;
-			Segments = jsonObj.WledState.Segments;
+			Segments = jsonObj.WledState.Segments ?? Array.Empty<WledSegment>();
 			foreach (var seg in Segments) {
 				if (seg.Offset == 0) {
 					seg.Offset = seg.Start;
@@ -136,10 +215,38 @@ public class WledData : IColorTargetData {
 			Name = State.Info.Name;
 			Brightness = (int)(jsonObj.WledState.Bri / 255f * 100);
 			Initialized = true;
+
+			// Auto-detect a 2D matrix. WLED applies its own panel wiring to realtime data, so we
+			// only need the dimensions here (Glimmr streams a plain row-major image over DDP).
+			var matrix = jsonObj.Info.Leds.Matrix;
+			if (matrix is { W: > 0, H: > 0 }) {
+				MatrixWidth = matrix.W;
+				MatrixHeight = matrix.H;
+				StripMode = StripMode.Matrix;
+				MatrixMode = MatrixMode.Mirror;
+			}
 		} catch (Exception e) {
-			Log.Debug("Exception fetching WLED Data: " + e.Message);
+			Log.Debug("Exception parsing WLED Data: " + e.Message);
 			Initialized = false;
 		}
+	}
+
+	/// <summary>
+	///     Fetch WLED's <c>/json/si</c> (state + info only) with retries. Returns null on failure.
+	/// </summary>
+	private string? FetchStateInfo() {
+		const int attempts = 3;
+		var url = "http://" + IpAddress + "/json/si";
+		for (var i = 0; i < attempts; i++) {
+			using var webClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+			try {
+				return webClient.GetStringAsync(url).Result;
+			} catch (Exception e) {
+				Log.Debug($"WLED: fetch attempt {i + 1}/{attempts} for {IpAddress} failed: {e.Message}");
+			}
+		}
+
+		return null;
 	}
 
 	/// <summary>
@@ -196,6 +303,18 @@ public class WledData : IColorTargetData {
 		}
 
 		Segments = segments;
+
+		// Carry matrix dimensions across rediscovery. On first detection switch to Matrix mode;
+		// user mode/side/flip overrides are preserved on later rediscoveries.
+		if (input is { MatrixWidth: > 0, MatrixHeight: > 0 }) {
+			var firstDetect = MatrixWidth == 0 || MatrixHeight == 0;
+			MatrixWidth = input.MatrixWidth;
+			MatrixHeight = input.MatrixHeight;
+			if (firstDetect) {
+				StripMode = StripMode.Matrix;
+				MatrixMode = MatrixMode.Mirror;
+			}
+		}
 	}
 
 	/// <summary>
@@ -209,6 +328,55 @@ public class WledData : IColorTargetData {
 	private SettingsProperty[] Kps() {
 		var multiplier = new SettingsProperty("LedMultiplier", "ledMultiplier", "");
 		switch (StripMode) {
+			case StripMode.Matrix: {
+				var matrixProps = new List<SettingsProperty> {
+					new("StripMode", "select", "Strip Mode", new Dictionary<string, string> {
+						["0"] = "Normal",
+						["1"] = "Sectored",
+						["2"] = "Loop (Play Bar)",
+						["3"] = "Single Color",
+						["4"] = "Matrix (2D)"
+					}),
+					new("MatrixWidth", "number", "Matrix Width") { ValueMin = "1" },
+					new("MatrixHeight", "number", "Matrix Height") { ValueMin = "1" },
+					new("MatrixMode", "select", "Matrix Mode", new Dictionary<string, string> {
+						["2"] = "Mirror (full screen)",
+						["3"] = "Extend (edge reflection)"
+					}) {
+						ValueHint =
+							"Mirror: the literal full screen. Extend: reflect the chosen screen edge outward " +
+							"across the panel, fading with distance, so it looks like the screen continues."
+					},
+					new("MatrixSide", "select", "Screen Side", new Dictionary<string, string> {
+						["0"] = "Left",
+						["1"] = "Right",
+						["2"] = "Top",
+						["3"] = "Bottom"
+					}) {
+						ValueHint = "Which screen edge the panel sits next to (the edge reflected in Extend mode)."
+					}
+				};
+
+				if (MatrixMode == MatrixMode.Extend) {
+					matrixProps.Add(new SettingsProperty("ExtendDepth", "number", "Reflection Depth %") {
+						ValueMin = "1",
+						ValueMax = "100",
+						ValueHint = "How far into the screen (percent) the edge reflection samples."
+					});
+					matrixProps.Add(new SettingsProperty("ExtendFade", "number", "Edge Fade %") {
+						ValueMin = "0",
+						ValueMax = "100",
+						ValueHint = "Brightness drop at the panel's far edge so the reflection fades into the distance."
+					});
+				}
+
+				matrixProps.Add(new SettingsProperty("FlipHorizontal", "check", "Flip Horizontal"));
+				matrixProps.Add(new SettingsProperty("FlipVertical", "check", "Flip Vertical"));
+
+				// Matrix targets always stream over DDP (handles chunking + sync), so the WLED
+				// realtime protocol and physical wiring are not exposed here - WLED owns both.
+				return matrixProps.ToArray();
+			}
 			case StripMode.Single:
 				return new[] {
 					new("sectormap", "sectormap", ""),
@@ -216,7 +384,8 @@ public class WledData : IColorTargetData {
 						["0"] = "Normal",
 						["1"] = "Sectored",
 						["2"] = "Loop (Play Bar)",
-						["3"] = "Single Color"
+						["3"] = "Single Color",
+						["4"] = "Matrix (2D)"
 					}),
 					multiplier,
 					new("ReverseStrip", "check", "Reverse Strip Direction"),
@@ -234,7 +403,8 @@ public class WledData : IColorTargetData {
 						["0"] = "Normal",
 						["1"] = "Sectored",
 						["2"] = "Loop (Play Bar)",
-						["3"] = "Single Color"
+						["3"] = "Single Color",
+						["4"] = "Matrix (2D)"
 					}),
 					new("Protocol", "select", "Streaming Protocol", new Dictionary<string, string> {
 						["1"] = "WARLS",
@@ -259,7 +429,8 @@ public class WledData : IColorTargetData {
 						["0"] = "Normal",
 						["1"] = "Sectored",
 						["2"] = "Loop (Play Bar)",
-						["3"] = "Single Color"
+						["3"] = "Single Color",
+						["4"] = "Matrix (2D)"
 					}),
 					new("Offset", "number", "Strip Offset"),
 					multiplier,
@@ -548,6 +719,12 @@ public struct Leds {
 	public int Count { get; set; }
 
 	/// <summary>
+	///     2D matrix dimensions, present only when a 2D matrix is configured.
+	/// </summary>
+	[JsonProperty("matrix")]
+	public WledMatrixInfo? Matrix { get; set; }
+
+	/// <summary>
 	///     Maximum power.
 	/// </summary>
 	[JsonProperty("maxpwr")]
@@ -763,4 +940,52 @@ public class IgnorePropertiesResolver : DefaultContractResolver {
 
 		return property;
 	}
+}
+
+/// <summary>
+///     2D matrix dimensions reported by WLED in <c>info.leds.matrix</c>.
+/// </summary>
+public class WledMatrixInfo {
+	[JsonProperty("w")] public int W { get; set; }
+	[JsonProperty("h")] public int H { get; set; }
+}
+
+/// <summary>
+///     Minimal subset of WLED's <c>/json/cfg</c> needed to read 2D panel wiring.
+/// </summary>
+public class WledCfg {
+	[JsonProperty("hw")] public WledCfgHw? Hw { get; set; }
+}
+
+public class WledCfgHw {
+	[JsonProperty("led")] public WledCfgLed? Led { get; set; }
+}
+
+public class WledCfgLed {
+	[JsonProperty("matrix")] public WledCfgMatrix? Matrix { get; set; }
+}
+
+public class WledCfgMatrix {
+	[JsonProperty("mpc")] public int Mpc { get; set; }
+	[JsonProperty("panels")] public List<WledPanel>? Panels { get; set; }
+}
+
+/// <summary>
+///     A single WLED 2D panel. Field names mirror WLED's cfg.json.
+/// </summary>
+public class WledPanel {
+	/// <summary>First LED at the bottom of the panel.</summary>
+	[JsonProperty("b")] public bool Bottom { get; set; }
+
+	/// <summary>First LED at the right of the panel.</summary>
+	[JsonProperty("r")] public bool Right { get; set; }
+
+	/// <summary>Panel is wired in columns (vertical) rather than rows.</summary>
+	[JsonProperty("v")] public bool Vertical { get; set; }
+
+	/// <summary>Panel wiring zig-zags (serpentine).</summary>
+	[JsonProperty("s")] public bool Serpentine { get; set; }
+
+	[JsonProperty("w")] public int W { get; set; }
+	[JsonProperty("h")] public int H { get; set; }
 }

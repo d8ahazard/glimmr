@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Timers;
 using Emgu.CV;
@@ -12,6 +13,7 @@ using Emgu.CV.IntensityTransform;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using Glimmr.Enums;
+using Glimmr.Models.ColorTarget.Wled;
 using Glimmr.Models.Util;
 using Glimmr.Services;
 using Serilog;
@@ -65,6 +67,7 @@ public class FrameSplitter : IDisposable {
 	private Color[] _colorsLedIn;
 	private Color[] _colorsSectors;
 	private Color[] _colorsSectorsIn;
+	private Color[] _colorsMatrix = Array.Empty<Color>();
 	private bool _correctGamma;
 	private int _cropBlackLevel;
 	private int _cropDelay;
@@ -78,6 +81,7 @@ public class FrameSplitter : IDisposable {
 	private bool _doSend;
 	private Color[] _empty;
 	private Color[] _emptySectors;
+	private Color[] _emptyMatrix = Array.Empty<Color>();
 
 	private Rectangle[] _fullCoords;
 	private Rectangle[] _fullSectors;
@@ -126,6 +130,7 @@ public class FrameSplitter : IDisposable {
 	// always see a fully written array.
 	private readonly Color[][] _ledBuffers = { Array.Empty<Color>(), Array.Empty<Color>() };
 	private readonly Color[][] _sectorBuffers = { Array.Empty<Color>(), Array.Empty<Color>() };
+	private readonly Color[][] _matrixBuffers = { Array.Empty<Color>(), Array.Empty<Color>() };
 	private int _bufferIndex;
 
 	// True while a frame is in flight; overlapping updates are dropped so processing
@@ -135,6 +140,16 @@ public class FrameSplitter : IDisposable {
 	// Set this when the sector changes
 	private bool _sectorChanged;
 	private int _sectorCount;
+	// Upper bound for the adaptive content-grid resolution so a huge configured panel
+	// can't explode the per-frame ROI count.
+	private const int MaxMatrixSample = 64;
+	private int _matrixSampleWidth;
+	private int _matrixSampleHeight;
+	// 2D matrix content grid: a single INTER_AREA downscale of the frame (one native call)
+	// instead of per-cell Mean. Only computed when an enabled matrix device exists.
+	private bool _matrixActive;
+	private Mat? _matrixSmall;
+	private byte[] _matrixBytes = Array.Empty<byte>();
 	private int _srcArea;
 	private int _topCount;
 	private bool _useCenter;
@@ -182,6 +197,7 @@ public class FrameSplitter : IDisposable {
 		_gammaMat.Dispose();
 		_warpMat.Dispose();
 		_warpTransform?.Dispose();
+		_matrixSmall?.Dispose();
 		ClearRoiCache();
 		GC.SuppressFinalize(this);
 	}
@@ -241,6 +257,37 @@ public class FrameSplitter : IDisposable {
 
 		_sectorCount = sd.SectorCount;
 		_emptySectors = ColorUtil.EmptyColors(_sectorCount);
+
+		var matrixW = sd.MatrixSampleWidth < 1 ? 24 : sd.MatrixSampleWidth;
+		var matrixH = sd.MatrixSampleHeight < 1 ? 32 : sd.MatrixSampleHeight;
+
+		// Adapt the content-grid resolution up to the largest enabled 2D matrix panel so
+		// Mirror / high-detail modes aren't bottlenecked by the default sample grid. The
+		// configured SystemData values act as a floor; the grid resolution is capped. We also
+		// only compute the matrix grid at all when at least one matrix device is enabled.
+		_matrixActive = false;
+		foreach (var wled in DataUtil.GetDevices<WledData>("Wled")) {
+			if (wled is not { Enable: true, StripMode: StripMode.Matrix }) {
+				continue;
+			}
+
+			_matrixActive = true;
+			if (wled.MatrixWidth > matrixW) {
+				matrixW = wled.MatrixWidth;
+			}
+
+			if (wled.MatrixHeight > matrixH) {
+				matrixH = wled.MatrixHeight;
+			}
+		}
+
+		_matrixSampleWidth = Math.Clamp(matrixW, 1, MaxMatrixSample);
+		_matrixSampleHeight = Math.Clamp(matrixH, 1, MaxMatrixSample);
+
+		_emptyMatrix = ColorUtil.EmptyColors(_matrixSampleWidth * _matrixSampleHeight);
+		_matrixSmall?.Dispose();
+		_matrixSmall = new Mat(_matrixSampleHeight, _matrixSampleWidth, DepthType.Cv8U, 3);
+		_matrixBytes = new byte[_matrixSampleWidth * _matrixSampleHeight * 3];
 
 		if (_ledCount == 0) {
 			_ledCount = 200;
@@ -344,14 +391,16 @@ public class FrameSplitter : IDisposable {
 				_checkCrop = false;
 			}
 
-			var (ledColors, sectorColors) = ComputeColors(processedFrame);
+			var (ledColors, sectorColors, matrixColors) = ComputeColors(processedFrame);
 
 			_colorsLed = ledColors;
 			_colorsSectors = sectorColors;
+			_colorsMatrix = matrixColors;
 
 			if (_doSend)
 			{
-				await ColorService.SendColors(ledColors, sectorColors);
+				await ColorService.SendColors(ledColors, sectorColors, matrixColors,
+					_matrixSampleWidth, _matrixSampleHeight);
 			}
 
 			await HandleSaving(frame, processedFrame).ConfigureAwait(false);
@@ -438,9 +487,9 @@ public class FrameSplitter : IDisposable {
 		_roiDirty = false;
 	}
 
-	private (Color[], Color[]) ComputeColors(Mat frame)
+	private (Color[], Color[], Color[]) ComputeColors(Mat frame)
 	{
-		if (_allBlack) return (_empty, _emptySectors);
+		if (_allBlack) return (_empty, _emptySectors, _emptyMatrix);
 
 		EnsureRoiCache(frame);
 
@@ -460,14 +509,57 @@ public class FrameSplitter : IDisposable {
 			_sectorBuffers[idx] = sectorColors;
 		}
 
+		var matrixLen = _matrixActive ? _matrixSampleWidth * _matrixSampleHeight : 0;
+		var matrixColors = _matrixBuffers[idx];
+		if (matrixColors.Length != matrixLen)
+		{
+			matrixColors = new Color[matrixLen];
+			_matrixBuffers[idx] = matrixColors;
+		}
+
 		var ledRois = _ledRois;
 		Parallel.For(0, ledRois.Length, i => { ledColors[i] = GetAverage(ledRois[i]); });
 
 		var sectorRois = _sectorRois;
 		Parallel.For(0, sectorRois.Length, i => { sectorColors[i] = GetAverage(sectorRois[i]); });
 
+		if (_matrixActive)
+		{
+			ComputeMatrixColors(frame, matrixColors);
+		}
+
 		_bufferIndex = idx;
-		return (ledColors, sectorColors);
+		return (ledColors, sectorColors, matrixColors);
+	}
+
+	/// <summary>
+	///     Build the 2D matrix content grid with a single area-averaging downscale (one native
+	///     call) instead of a Mean per cell. Output is row-major, top-left, BGR-&gt;RGB, with the
+	///     same near-black clamp the per-cell path used.
+	/// </summary>
+	private void ComputeMatrixColors(Mat frame, Color[] matrixColors)
+	{
+		if (_matrixSmall == null || matrixColors.Length == 0)
+		{
+			return;
+		}
+
+		CvInvoke.Resize(frame, _matrixSmall, new Size(_matrixSampleWidth, _matrixSampleHeight), 0, 0, Inter.Area);
+
+		var len = Math.Min(_matrixBytes.Length,
+			_matrixSmall.Rows * _matrixSmall.Cols * _matrixSmall.NumberOfChannels);
+		Marshal.Copy(_matrixSmall.DataPointer, _matrixBytes, 0, len);
+
+		for (var i = 0; i < matrixColors.Length; i++)
+		{
+			var j = i * 3;
+			int b = _matrixBytes[j];
+			int g = _matrixBytes[j + 1];
+			int r = _matrixBytes[j + 2];
+			matrixColors[i] = r < _blackLevel && g < _blackLevel && b < _blackLevel
+				? Color.FromArgb(0, 0, 0, 0)
+				: Color.FromArgb(r, g, b);
+		}
 	}
 
 	private async Task HandleSaving(Mat original, Mat processed)
@@ -720,6 +812,17 @@ public class FrameSplitter : IDisposable {
 	public Color[] GetSectors() {
 		return _colorsSectors;
 	}
+
+	/// <summary>
+	///     Most recent full-frame matrix content sample (row-major, top-left origin).
+	///     <see cref="MatrixWidth" /> columns by <see cref="MatrixHeight" /> rows.
+	/// </summary>
+	public Color[] GetMatrix() {
+		return _colorsMatrix;
+	}
+
+	public int MatrixWidth => _matrixSampleWidth;
+	public int MatrixHeight => _matrixSampleHeight;
 	
 	private async Task CheckCrop(Mat image)
 	{
@@ -741,18 +844,11 @@ public class FrameSplitter : IDisposable {
 			return;
 		}
 
-		// Detect a fully black frame by sampling a handful of rows; this is what drives
-		// auto-disable when the source goes dark.
-		var sampleBlack = true;
-		for (var i = 0; i <= 4; i++)
-		{
-			var y = Math.Min(height, i * height / 4);
-			if (GetRowAverage(image, y) > _cropBlackLevel)
-			{
-				sampleBlack = false;
-				break;
-			}
-		}
+		// Detect a dark frame from the whole-frame average brightness (more robust than sampling
+		// a handful of rows, which could miss/over-weight partial content). Drives auto-disable.
+		var mean = CvInvoke.Mean(image);
+		var avgBrightness = (mean.V0 + mean.V1 + mean.V2) / 3.0;
+		var sampleBlack = avgBrightness <= _cropBlackLevel;
 
 		_allBlack = sampleBlack;
 		if (_doSend)
@@ -1071,4 +1167,5 @@ public class FrameSplitter : IDisposable {
 
 		return fs;
 	}
+
 }

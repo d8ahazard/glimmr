@@ -16,7 +16,8 @@ namespace Glimmr.Models.ColorTarget.Wled;
 public class WledDiscovery : ColorDiscovery, IColorDiscovery {
 	private readonly MulticastService _mDns;
 	private readonly ServiceDiscovery _sd;
-	private List<string> _ids;
+	private readonly HashSet<string> _ids;
+	private readonly object _idLock = new();
 	private bool _stopDiscovery;
 	private const string _serviceName = "_wled._tcp";
 
@@ -24,11 +25,14 @@ public class WledDiscovery : ColorDiscovery, IColorDiscovery {
 		var controlService = cs.ControlService;
 		_mDns = controlService.MulticastService;
 		_sd = controlService.ServiceDiscovery;
-		_ids = new List<string>();
+		_ids = new HashSet<string>();
 	}
 
 	public async Task Discover(int timeout, CancellationToken ct) {
-		_ids = new List<string>();
+		lock (_idLock) {
+			_ids.Clear();
+		}
+
 		Log.Debug("WLED: Discovery started...");
 
 		try {
@@ -36,8 +40,20 @@ public class WledDiscovery : ColorDiscovery, IColorDiscovery {
 			_sd.ServiceDiscovered += ServiceDiscovered;
 			_sd.ServiceInstanceDiscovered += DeviceDiscovered;
 			_mDns.Start();
-			_mDns.SendQuery(_serviceName, type: DnsType.PTR);
-			await Task.Delay(TimeSpan.FromSeconds(timeout), CancellationToken.None);
+			// Query the fully-qualified service instance. Makaretu's QueryServiceInstances
+			// appends ".local"; a bare "_wled._tcp" PTR query (what we sent before) is ignored
+			// by real WLED/ESP mDNS responders - they only answer "_wled._tcp.local" - so no
+			// device was ever discovered. (Glimmr's own devices answered the bare query only
+			// because they run the same lenient Makaretu responder.)
+			// Re-issue the query every couple of seconds across the window. mDNS multicast is
+			// lossy on WiFi, so cheap ESP boards (e.g. ESP32-C3) often miss or drop a single
+			// query - repeating it greatly improves the odds of catching every device.
+			var reps = Math.Max(1, timeout / 2);
+			for (var i = 0; i < reps && !ct.IsCancellationRequested; i++) {
+				_sd.QueryServiceInstances(_serviceName);
+				await Task.Delay(TimeSpan.FromSeconds(2), CancellationToken.None);
+			}
+
 			_mDns.NetworkInterfaceDiscovered -= InterfaceDiscovered;
 			_sd.ServiceDiscovered -= ServiceDiscovered;
 			_sd.ServiceInstanceDiscovered -= DeviceDiscovered;
@@ -75,9 +91,14 @@ public class WledDiscovery : ColorDiscovery, IColorDiscovery {
 			name = name.Split(".")[0];
 		}
 
-		if (_ids.Contains(name)) {
-			Log.Debug("WLED: Device already discovered. Ignoring: " + name);
-			return;
+		// Claim this instance up front so the repeated mDNS queries (and multi-interface
+		// answers) don't spawn concurrent /json fetches to the same device - cheap ESP boards
+		// can't service parallel requests and time out when hammered.
+		lock (_idLock) {
+			if (!_ids.Add(name)) {
+				Log.Debug("WLED: Device already being handled. Ignoring: " + name);
+				return;
+			}
 		}
 
 		try {
@@ -85,21 +106,35 @@ public class WledDiscovery : ColorDiscovery, IColorDiscovery {
 			var ip = string.Empty;
 			var id = string.Empty;
 
-
-			foreach (var msg in combinedRecords.Where(msg => msg.Type is DnsType.A or DnsType.TXT)) {
-				switch (msg.Type) {
-					case DnsType.A:
-						ip = msg.ToString().Split(" ").Last();
+			// Use the strongly-typed records rather than string-splitting ToString(): WLED's TXT
+			// record is "mac=<hex>", which the old Split(" ").Last() turned into an id of
+			// "mac=..." (creating duplicates). The A record gives us the IPv4 address directly.
+			foreach (var msg in combinedRecords) {
+				switch (msg) {
+					case ARecord a:
+						ip = a.Address.ToString();
 						Log.Debug("WLED: Found IP: " + ip + " for " + name);
 						break;
-					case DnsType.TXT:
-						id = msg.ToString().Split(" ").Last();
-						Log.Debug("WLED: Found ID: " + id + " for " + name);
+					case TXTRecord t: {
+						foreach (var s in t.Strings) {
+							if (!s.StartsWith("mac=", StringComparison.OrdinalIgnoreCase)) {
+								continue;
+							}
+
+							id = s["mac=".Length..].Trim();
+							Log.Debug("WLED: Found ID: " + id + " for " + name);
+						}
+
 						break;
-					default:
-						Log.Debug("WLED: Unknown record type. Ignoring: " + msg.Type + " for " + name);
-						continue;
+					}
 				}
+			}
+
+			// Fall back to the mDNS instance name (e.g. "wled-e3b958") if no MAC was advertised,
+			// so a device is still created.
+			if (string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(name)) {
+				id = name;
+				Log.Debug("WLED: No MAC in TXT; using instance name as ID: " + id);
 			}
 
 			if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(ip)) {
@@ -108,7 +143,6 @@ public class WledDiscovery : ColorDiscovery, IColorDiscovery {
 					if (nData.Initialized) {
 						Log.Debug("WLED: Adding device to control service. ID: " + id + " IP: " + ip + "...");
 						ControlService.AddDevice(nData).ConfigureAwait(false);
-						_ids.Add(id);	
 					}
 				} catch (Exception f) {
 					Log.Warning("WLED: Exception creating WLED data: " + f.Message);

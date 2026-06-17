@@ -98,6 +98,20 @@ export interface DeviceData {
 	stripMode?: number;
 	reverseStrip?: boolean;
 	targetSector?: number;
+	// WLED 2D matrix (StripMode.Matrix). Width/height/wiring auto-detected from WLED.
+	matrixWidth?: number;
+	matrixHeight?: number;
+	// 0 = Blend, 1 = Column, 2 = Mirror.
+	matrixMode?: number;
+	// 0 = Left, 1 = Right, 2 = Top, 3 = Bottom (screen edge the panel sits next to).
+	matrixSide?: number;
+	extendDepth?: number;
+	extendFade?: number;
+	flipHorizontal?: boolean;
+	flipVertical?: boolean;
+	serpentine?: boolean;
+	vertical?: boolean;
+	startCorner?: number;
 	token?: string;
 	appKey?: string;
 	segments?: WledSegment[];
@@ -137,6 +151,8 @@ export interface SystemData {
 	bottomCount: number;
 	hSectors: number;
 	vSectors: number;
+	matrixSampleWidth?: number;
+	matrixSampleHeight?: number;
 	ledCount: number;
 	sectorCount: number;
 	gammaCorrection: number;
@@ -154,6 +170,7 @@ export interface SystemData {
 	audioRotationTrigger: number;
 	ambientScene: number;
 	ambientColor: string;
+	sceneId?: string;
 	streamMode: number;
 	dsIp: string;
 	autoDiscoveryFrequency: number;
@@ -182,6 +199,24 @@ export interface Scene {
 	[key: string]: unknown;
 }
 
+/** A "Scenes" tab scene: a scripted particle animation or a baked video sequence. */
+export interface SceneV2 {
+	id: string;
+	name: string;
+	kind: "color" | "image" | "video" | "script";
+	system: boolean;
+	width: number;
+	height: number;
+	fps: number;
+	loop: boolean;
+	reverse: boolean;
+	mirror: boolean;
+	color?: string;
+	script: string;
+	framesFile: string;
+	frameCount: number;
+}
+
 export interface StatData {
 	cpuTemp: number;
 	cpuUsage: number;
@@ -199,6 +234,7 @@ export interface StoreData {
 	devAudio?: { id: string;[key: string]: unknown }[];
 	ambientScenes?: Scene[];
 	audioScenes?: Scene[];
+	scenes?: SceneV2[];
 	stats?: StatData;
 }
 
@@ -235,7 +271,7 @@ export const MODES = [
 	{ id: 1, name: "Video", icon: "video" },
 	{ id: 2, name: "Audio", icon: "audio" },
 	{ id: 4, name: "A/V", icon: "av" },
-	{ id: 3, name: "Ambient", icon: "ambient" },
+	{ id: 8, name: "Scenes", icon: "scenes" },
 	{ id: 5, name: "Stream", icon: "stream" },
 	{ id: 7, name: "Hue Sync", icon: "hue" }
 ] as const;

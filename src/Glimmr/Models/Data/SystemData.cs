@@ -392,6 +392,24 @@ public class SystemData {
 	public int VSectors { get; set; } = 6;
 
 	/// <summary>
+	///     Number of columns sampled from the full frame for 2D matrix targets (e.g. WLED
+	///     matrices / curtains). This grid is sampled independently of the perimeter sectors.
+	///     Higher values trade CPU (one mean per cell, per frame) for fidelity; matrix devices
+	///     interpolate from this grid, so a modest value still looks smooth on large matrices.
+	/// </summary>
+	[DefaultValue(24)]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public int MatrixSampleWidth { get; set; } = 24;
+
+	/// <summary>
+	///     Number of rows sampled from the full frame for 2D matrix targets. See
+	///     <see cref="MatrixSampleWidth" />.
+	/// </summary>
+	[DefaultValue(32)]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public int MatrixSampleHeight { get; set; } = 32;
+
+	/// <summary>
 	///     Currently selected streaming mode.
 	/// </summary>
 	[DefaultValue(15)]
@@ -404,6 +422,14 @@ public class SystemData {
 	/// </summary>
 	[JsonProperty]
 	public string AmbientColor { get; set; } = "FFFFFF";
+
+	/// <summary>
+	///     Id of the currently selected scene (scripted animation or baked video) used when
+	///     <see cref="DeviceMode" /> is <see cref="Glimmr.Enums.DeviceMode.Scene" />.
+	/// </summary>
+	[DefaultValue("")]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public string SceneId { get; set; } = "";
 
 	/// <summary>
 	///     Device name (should be device hostname)

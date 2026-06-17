@@ -10,6 +10,7 @@ import type {
 	DeviceData,
 	LogLine,
 	Scene,
+	SceneV2,
 	StatData,
 	StoreData,
 	SystemData,
@@ -24,6 +25,7 @@ export const system = signal<SystemData | null>(null);
 export const devices = signal<DeviceData[]>([]);
 export const ambientScenes = signal<Scene[]>([]);
 export const audioScenes = signal<Scene[]>([]);
+export const scenes = signal<SceneV2[]>([]);
 export const usbDevices = signal<Record<string, string>>({});
 export const audioDevices = signal<{ id: string }[]>([]);
 export const stats = signal<StatData | null>(null);
@@ -48,7 +50,13 @@ export const mode = computed(() => {
 export const sortedDevices = computed(() =>
 	[...devices.value]
 		.filter(d => !(d.tag === "DreamScreen" && (d.deviceTag ?? "").includes("DreamScreen")))
-		.sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""))
+		// Sort by name, then IP (numeric-aware) so the order is stable and enable/disable
+		// can't reshuffle same-named devices.
+		.sort((a, b) => {
+			const byName = (a.name ?? "").localeCompare(b.name ?? "");
+			if (byName !== 0) return byName;
+			return (a.ipAddress ?? "").localeCompare(b.ipAddress ?? "", undefined, { numeric: true });
+		})
 );
 
 let toastId = 0;
@@ -76,6 +84,7 @@ function loadStore(parsed: StoreData) {
 		if (parsed.devAudio) audioDevices.value = parsed.devAudio as { id: string }[];
 		if (parsed.ambientScenes) ambientScenes.value = parsed.ambientScenes;
 		if (parsed.audioScenes) audioScenes.value = parsed.audioScenes;
+		if (parsed.scenes) scenes.value = parsed.scenes;
 		if (parsed.stats) stats.value = parsed.stats;
 	});
 }

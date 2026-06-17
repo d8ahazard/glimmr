@@ -43,8 +43,10 @@ public class NanoleafDiscovery : ColorDiscovery, IColorDiscovery, IColorTargetAu
 			_sd.ServiceDiscovered += ServiceDiscovered;
 			_sd.ServiceInstanceDiscovered += DeviceDiscovered;
 			_mDns.Start();
+			// Use the fully-qualified query ("<service>.local"); a bare PTR query without the
+			// ".local" suffix is ignored by real mDNS responders.
 			foreach (var recordName in _recordNames) {
-				_mDns.SendQuery(recordName, type: DnsType.PTR);
+				_sd.QueryServiceInstances(recordName);
 			}
 			await Task.Delay(TimeSpan.FromSeconds(timeout), CancellationToken.None);
 			_mDns.NetworkInterfaceDiscovered -= InterfaceDiscovered;

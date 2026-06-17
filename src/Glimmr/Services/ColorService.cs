@@ -567,10 +567,12 @@ public class ColorService : BackgroundService {
 
     _deviceMode = newMode;
 
-    if (sd.AutoDisabled && !init) {
+    // Entering any active mode clears a prior auto-off so it can't leave the new mode dark.
+    // (Auto-disable only ever runs for the video capture splitter, which has crop enabled.)
+    if (_autoDisabled && newMode != DeviceMode.Off) {
         _autoDisabled = false;
         DataUtil.SetItem("AutoDisabled", _autoDisabled);
-        Log.Debug("Auto-disabled flag unset.");
+        Log.Debug("Auto-disabled flag cleared on mode change.");
     }
 
     _streamTokenSource.Cancel();
@@ -609,8 +611,8 @@ public class ColorService : BackgroundService {
         Log.Warning("Unable to acquire stream for the new mode.");
     }
 
-    // Check if conditions for starting the stream are met
-    if (newMode != DeviceMode.Off && !_streamStarted && !_autoDisabled) {
+    // Ensure devices are streaming for any active mode (StartStream is idempotent).
+    if (newMode != DeviceMode.Off && !_autoDisabled) {
         await StartStream();
     }
 
@@ -619,34 +621,37 @@ public class ColorService : BackgroundService {
 
 
 	private async Task StartStream() {
-		if (!_streamStarted) {
-			_streamStarted = true;
+		_streamStarted = true;
 
-			// Cancel any attempts to start streaming after four seconds if unsuccessful
-			var cts = new CancellationTokenSource();
-			var sTasks = new List<Task>();
-			Log.Debug("Starting streaming targets...");
-			cts.CancelAfter(TimeSpan.FromSeconds(4));
-			var enableCount = 0;
-			foreach (var sDev in _sDevices) {
-				if (!sDev.Enable && sDev.Id != "0") {
-					continue;
-				}
-
-				enableCount++;
-				sTasks.Add(WrapTask(sDev.StartStream(_targetTokenSource.Token), cts.Token));
+		// Cancel any attempts to start streaming after four seconds if unsuccessful
+		var cts = new CancellationTokenSource();
+		var sTasks = new List<Task>();
+		Log.Debug("Starting streaming targets...");
+		cts.CancelAfter(TimeSpan.FromSeconds(4));
+		var enableCount = 0;
+		foreach (var sDev in _sDevices) {
+			if (!sDev.Enable && sDev.Id != "0") {
+				continue;
 			}
 
-			try {
-				await Task.WhenAll(sTasks);
-			} catch (Exception e) {
-				Log.Warning("Exception starting dev: " + e.Message);
+			enableCount++;
+			// Idempotent: skip devices already streaming so re-entering a mode can safely
+			// (re)start any that were stopped without relying on the _streamStarted flag.
+			if (sDev.Streaming) {
+				continue;
 			}
 
-			var startCount = _sDevices.Count(dev => dev.Enable && dev.Streaming);
-			_streamStarted = true;
-			Log.Information($"Streaming started on {startCount}/{enableCount} devices.");
+			sTasks.Add(WrapTask(sDev.StartStream(_targetTokenSource.Token), cts.Token));
 		}
+
+		try {
+			await Task.WhenAll(sTasks);
+		} catch (Exception e) {
+			Log.Warning("Exception starting dev: " + e.Message);
+		}
+
+		var startCount = _sDevices.Count(dev => dev.Enable && dev.Streaming);
+		Log.Information($"Streaming started on {startCount}/{enableCount} devices.");
 	}
 
 	private static Task WrapTask(Task toWrap, CancellationToken token) {
@@ -700,7 +705,12 @@ public class ColorService : BackgroundService {
 		Log.Information($"Streaming stopped on {len}/{en} devices.");
 	}
 
-	public async Task SendColors(Color[] colors, Color[] sectors, bool force = false) {
+	public Task SendColors(Color[] colors, Color[] sectors, bool force = false) {
+		return SendColors(colors, sectors, Array.Empty<Color>(), 0, 0, force);
+	}
+
+	public async Task SendColors(Color[] colors, Color[] sectors, Color[] matrix, int matrixWidth,
+		int matrixHeight, bool force = false) {
 		if (!_streamStarted || (_autoDisabled && !force) || (_testing && !force)) {
 			return;
 		}
@@ -708,7 +718,8 @@ public class ColorService : BackgroundService {
 		if (ColorSendEventAsync == null) return; // Exit early if no subscribers
 
 		try {
-			await ColorSendEventAsync.InvokeAsync(this, new ColorSendEventArgs(colors, sectors)).ConfigureAwait(false);
+			await ColorSendEventAsync.InvokeAsync(this,
+				new ColorSendEventArgs(colors, sectors, matrix, matrixWidth, matrixHeight)).ConfigureAwait(false);
 		} catch (Exception e) {
 			// A single misbehaving device must not starve the frame counter (FPS)
 			// or other subscribers - log and continue.
@@ -816,8 +827,27 @@ public class ColorSendEventArgs : EventArgs {
 	public Color[] LedColors { get; }
 	public Color[] SectorColors { get; }
 
-	public ColorSendEventArgs(Color[] leds, Color[] sectors) {
+	/// <summary>
+	///     Full-frame content grid, sampled independently of the edge LEDs and perimeter
+	///     sectors. Row-major from the top-left corner, <see cref="MatrixWidth" /> columns by
+	///     <see cref="MatrixHeight" /> rows. Empty for sources/flashes that don't sample one;
+	///     only 2D matrix targets (e.g. WLED matrices) consume it.
+	/// </summary>
+	public Color[] MatrixColors { get; }
+
+	public int MatrixWidth { get; }
+	public int MatrixHeight { get; }
+
+	public ColorSendEventArgs(Color[] leds, Color[] sectors) : this(leds, sectors,
+		Array.Empty<Color>(), 0, 0) {
+	}
+
+	public ColorSendEventArgs(Color[] leds, Color[] sectors, Color[] matrix, int matrixWidth,
+		int matrixHeight) {
 		LedColors = leds;
 		SectorColors = sectors;
+		MatrixColors = matrix;
+		MatrixWidth = matrixWidth;
+		MatrixHeight = matrixHeight;
 	}
 }

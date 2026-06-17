@@ -145,6 +145,7 @@
     <ItemGroup>
         <Content Update="audioScenes\*.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
         <Content Update="ambientScenes\*.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
+        <Content Update="scenes\*.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
     </ItemGroup>
 
     <!-- Web UI (src/Glimmr.Web): Vite + Preact SPA compiled into wwwroot/app.

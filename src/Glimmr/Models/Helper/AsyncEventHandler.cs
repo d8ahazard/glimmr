@@ -1,7 +1,6 @@
 ﻿#region
 
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 
 #endregion
@@ -46,8 +45,14 @@ public static class Extensions {
 		this AsyncEventHandler<TEventArgs> eventHandler,
 		object sender,
 		TEventArgs eventArgs) {
-		var delegates = eventHandler.GetInvocationList().Cast<AsyncEventHandler<TEventArgs>>();
-		var tasks = delegates.Select(it => it.Invoke(sender, eventArgs));
+		// Manual loop instead of Cast/Select LINQ to avoid per-invoke iterator allocations
+		// (this runs on the per-frame color-send path).
+		var list = eventHandler.GetInvocationList();
+		var tasks = new Task[list.Length];
+		for (var i = 0; i < list.Length; i++) {
+			tasks[i] = ((AsyncEventHandler<TEventArgs>)list[i]).Invoke(sender, eventArgs);
+		}
+
 		return Task.WhenAll(tasks);
 	}
 }

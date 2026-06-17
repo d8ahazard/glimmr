@@ -16,6 +16,7 @@ namespace Glimmr.Enums;
 ///     Udp = 5
 ///     DreamScreen = 6
 ///     HueSync = 7
+///     Scene = 8
 /// </summary>
 public enum DeviceMode {
 	/// <summary>
@@ -56,5 +57,10 @@ public enum DeviceMode {
 	/// <summary>
 	///     Hue Sync (emulated Hue Bridge entertainment receiver)
 	/// </summary>
-	[JsonProperty] HueSync = 7
+	[JsonProperty] HueSync = 7,
+
+	/// <summary>
+	///     Scene (frame-driven: scripted particle animations or baked video sequences)
+	/// </summary>
+	[JsonProperty] Scene = 8
 }

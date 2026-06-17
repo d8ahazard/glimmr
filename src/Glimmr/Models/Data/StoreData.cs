@@ -1,8 +1,10 @@
 ﻿#region
 
 using System.Collections.Generic;
+using System.Linq;
 using Glimmr.Models.ColorSource.Ambient;
 using Glimmr.Models.ColorSource.Audio;
+using Glimmr.Models.ColorSource.Scene;
 using Glimmr.Models.Helper;
 using Glimmr.Models.Util;
 using Newtonsoft.Json;
@@ -20,6 +22,12 @@ public class StoreData {
 	/// </summary>
 	[JsonProperty]
 	public AmbientScene[] AmbientScenes { get; set; }
+
+	/// <summary>
+	///     List of available scenes (scripted animations and baked video sequences).
+	/// </summary>
+	[JsonProperty]
+	public SceneV2[] Scenes { get; set; }
 
 	/// <summary>
 	///     List of available audio devices.
@@ -67,5 +75,6 @@ public class StoreData {
 		var jl2 = new JsonLoader("audioScenes");
 		AmbientScenes = jl1.LoadDynamic<AmbientScene>().ToArray();
 		AudioScenes = jl2.LoadDynamic<AudioScene>().ToArray();
+		Scenes = new SceneStore().List().ToArray();
 	}
 }

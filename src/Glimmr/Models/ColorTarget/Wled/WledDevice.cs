@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Net;
@@ -33,6 +34,7 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 
 	private bool _disposed;
 	private IPEndPoint? _ep;
+	private IPEndPoint? _ddpEp;
 	private int _ledCount;
 	private float _multiplier;
 	private int _offset;
@@ -41,10 +43,35 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 	private StripMode _stripMode;
 	private int _targetSector;
 
+	private int _matrixWidth;
+	private int _matrixHeight;
+	private MatrixMode _matrixMode = MatrixMode.Mirror;
+	private MatrixSide _matrixSide = MatrixSide.Bottom;
+	private bool _flipHorizontal;
+	private bool _flipVertical;
+	private int _extendDepth = 50;
+	private int _extendFade = 40;
+	private Color[] _panel = Array.Empty<Color>();
+	private Color[] _matrixWire = Array.Empty<Color>();
+	private int _wireW;
+	private int _wireH;
+
+	// Throttles DDP send-failure warnings so a bad link can't flood the log.
+	private readonly Stopwatch _udpWatch = Stopwatch.StartNew();
+
+	// Reusable DDP packet buffers (ring) to avoid per-frame allocations on the send path.
+	private const int DdpRingSize = 16;
+	private byte[][] _ddpRing = Array.Empty<byte[]>();
+	private int _ddpRingIdx;
+
 	public WledDevice(WledData wd, ColorService cs) : base(cs) {
 		_segments = Array.Empty<WledSegment>();
 		cs.ControlService.RefreshSystemEvent += RefreshSystem;
-		_udpClient = cs.ControlService.UdpClient;
+		// Each WLED gets its own socket. A single shared, non-blocking socket hammered by every
+		// device fire-and-forget can overflow its send buffer and silently drop a weaker link's
+		// packets (that was why .27 never received DDP). DontFragment is left off so large
+		// datagrams fragment instead of being dropped on a lower-MTU WiFi path.
+		_udpClient = new UdpClient();
 		_data = wd ?? throw new ArgumentException("Invalid WLED data.");
 		Id = _data.Id;
 		IpAddress = _data.IpAddress;
@@ -77,11 +104,29 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 			return;
 		}
 
+		// Matrix targets stream over DDP (port 4048) instead of WLED's native realtime port.
+		_ddpEp = IpUtil.Parse(IpAddress, DdpPacket.Port);
+
 		await SetLightBrightness(_brightness);
 		await SetLightPower(true);
+		await ClearLiveOverride();
 		await FlashColor(Color.Black);
 		Streaming = true;
 		Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
+	}
+
+	/// <summary>
+	///     Clear WLED's live-override flag (<c>lor</c>) so the device applies our realtime data.
+	///     If the user touches the WLED app while streaming, WLED sets <c>lor=1</c> and silently
+	///     ignores incoming DDP/UDP - this releases that so a stream start always takes effect.
+	/// </summary>
+	private async Task ClearLiveOverride() {
+		try {
+			using var content = new StringContent("{\"lor\":0}", Encoding.UTF8, "application/json");
+			await HttpClient.PostAsync("http://" + IpAddress + "/json/state", content);
+		} catch (Exception e) {
+			Log.Debug($"{_data.Tag}::Clear live override failed: {e.Message}");
+		}
 	}
 	
 	
@@ -103,6 +148,12 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 
 	public async Task FlashColor(Color color) {
 		try {
+			if (_stripMode == StripMode.Matrix) {
+				var count = Math.Max(_matrixWidth * _matrixHeight, 1);
+				await SendMatrixColors(ColorUtil.FillArray(color, count));
+				return;
+			}
+
 			var colors = ColorUtil.FillArray(color, _ledCount);
 			var cp = new ColorPacket(colors, (UdpStreamMode)_protocol);
 			var packet = cp.Encode();
@@ -139,6 +190,16 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 
 		_segments = _data.Segments;
 		_ledCount = _data.LedCount;
+
+		_matrixWidth = _data.MatrixWidth;
+		_matrixHeight = _data.MatrixHeight;
+		// Only Mirror/Extend are supported; legacy values map to Mirror.
+		_matrixMode = _data.MatrixMode == MatrixMode.Extend ? MatrixMode.Extend : MatrixMode.Mirror;
+		_matrixSide = _data.MatrixSide;
+		_flipHorizontal = _data.FlipHorizontal;
+		_flipVertical = _data.FlipVertical;
+		_extendDepth = _data.ExtendDepth;
+		_extendFade = _data.ExtendFade;
 		return Task.CompletedTask;
 	}
 
@@ -156,6 +217,9 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 
 		var toSend = ledColors.ToArray();
 		switch (_stripMode) {
+			case StripMode.Matrix:
+				// Matrix is driven from the full-frame content grid via the event handler.
+				return;
 			case StripMode.Single when _targetSector > sectorColors.Count || _targetSector == -1:
 				Log.Debug("OOR: " + _targetSector + " vs " + sectorColors.Count);
 				return;
@@ -207,16 +271,18 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 			return;
 		}
 
-		try {
-			var cp = new ColorPacket(toSend, (UdpStreamMode)_protocol);
-			var packet = cp.Encode(255);
-			await _udpClient.SendAsync(packet.ToArray(), packet.Length, _ep).ConfigureAwait(false);
-		} catch (Exception e) {
-			Log.Debug("Exception: " + e.Message + " at " + e.StackTrace);
-		}
+		// Fire-and-forget so a slow/queued WLED socket can't gate the color pipeline / FPS.
+		var cp = new ColorPacket(toSend, (UdpStreamMode)_protocol);
+		var packet = cp.Encode(255);
+		_ = SendDatagram(packet, packet.Length, _ep);
+		await Task.CompletedTask;
 	}
 
 	private Task SetColors(object sender, ColorSendEventArgs args) {
+		if (_stripMode == StripMode.Matrix) {
+			return SetMatrixColors(args.MatrixColors, args.MatrixWidth, args.MatrixHeight);
+		}
+
 		return SetColors(args.LedColors, args.SectorColors);
 	}
 
@@ -240,6 +306,190 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 
 
 		return output;
+	}
+
+	/// <summary>
+	///     Map the full-frame content grid onto a 2D matrix and stream it over DDP. Mirror shows
+	///     the literal full screen; Extend reflects the chosen screen edge outward across the
+	///     panel, fading with distance. Flips reorient the output; WLED applies its own 2D wiring.
+	/// </summary>
+	private Task SetMatrixColors(IReadOnlyList<Color> matrix, int srcW, int srcH) {
+		if (!Streaming || !Enable || _ddpEp == null) {
+			return Task.CompletedTask;
+		}
+
+		if (matrix.Count == 0 || srcW <= 0 || srcH <= 0 || matrix.Count < srcW * srcH) {
+			return Task.CompletedTask;
+		}
+
+		var w = _matrixWidth;
+		var h = _matrixHeight;
+		if (w <= 0 || h <= 0) {
+			return Task.CompletedTask;
+		}
+
+		EnsureMatrixBuffers(w, h);
+
+		if (_matrixMode == MatrixMode.Extend) {
+			FillExtend(matrix, srcW, srcH, w, h);
+		} else {
+			FillMirror(matrix, srcW, srcH, w, h);
+		}
+
+		// Copy the logical panel into the wire buffer, applying flips for physical mounting.
+		for (var dy = 0; dy < h; dy++) {
+			var oy = _flipVertical ? h - 1 - dy : dy;
+			for (var dx = 0; dx < w; dx++) {
+				var ox = _flipHorizontal ? w - 1 - dx : dx;
+				_matrixWire[oy * w + ox] = _panel[dy * w + dx];
+			}
+		}
+
+		SendMatrixColors(_matrixWire);
+		return Task.CompletedTask;
+	}
+
+	/// <summary>
+	///     Mirror: map the whole screen 1:1 across the panel (bilinear sampled).
+	/// </summary>
+	private void FillMirror(IReadOnlyList<Color> matrix, int srcW, int srcH, int w, int h) {
+		for (var dy = 0; dy < h; dy++) {
+			var v = h <= 1 ? 0f : (float)dy / (h - 1);
+			for (var dx = 0; dx < w; dx++) {
+				var u = w <= 1 ? 0f : (float)dx / (w - 1);
+				_panel[dy * w + dx] = SampleSource(matrix, srcW, srcH, u, v);
+			}
+		}
+	}
+
+	/// <summary>
+	///     Extend: reflect the screen's near edge outward across the panel. The panel edge nearest
+	///     the screen shows that screen edge; moving away samples progressively inward (a mirror
+	///     image), up to <see cref="_extendDepth" />% deep, dimming toward the far edge by
+	///     <see cref="_extendFade" />% so it reads as the scene receding rather than a flat stretch.
+	/// </summary>
+	private void FillExtend(IReadOnlyList<Color> matrix, int srcW, int srcH, int w, int h) {
+		var horizontal = _matrixSide is MatrixSide.Left or MatrixSide.Right;
+		var depth = Math.Clamp(_extendDepth / 100f, 0.01f, 1f);
+		var fade = Math.Clamp(_extendFade / 100f, 0f, 1f);
+
+		for (var dy = 0; dy < h; dy++) {
+			for (var dx = 0; dx < w; dx++) {
+				float u, v, dist;
+				if (horizontal) {
+					var t = w <= 1 ? 0f : (float)dx / (w - 1);
+					// Right: near edge at dx=0 (screen u=1); Left: near edge at dx=w-1 (screen u=0).
+					dist = _matrixSide == MatrixSide.Right ? t : 1f - t;
+					u = _matrixSide == MatrixSide.Right ? 1f - dist * depth : dist * depth;
+					v = h <= 1 ? 0f : (float)dy / (h - 1);
+				} else {
+					var t = h <= 1 ? 0f : (float)dy / (h - 1);
+					// Bottom: near edge at dy=0 (screen v=1); Top: near edge at dy=h-1 (screen v=0).
+					dist = _matrixSide == MatrixSide.Bottom ? t : 1f - t;
+					v = _matrixSide == MatrixSide.Bottom ? 1f - dist * depth : dist * depth;
+					u = w <= 1 ? 0f : (float)dx / (w - 1);
+				}
+
+				var c = SampleSource(matrix, srcW, srcH, u, v);
+				var bright = 1f - fade * dist;
+				_panel[dy * w + dx] = Color.FromArgb(
+					ClampByte(c.R * bright), ClampByte(c.G * bright), ClampByte(c.B * bright));
+			}
+		}
+	}
+
+	/// <summary>Bilinearly sample the source content grid at normalized (u, v) in [0,1].</summary>
+	private static Color SampleSource(IReadOnlyList<Color> src, int srcW, int srcH, float u, float v) {
+		var fx = Math.Clamp(u, 0f, 1f) * (srcW - 1);
+		var fy = Math.Clamp(v, 0f, 1f) * (srcH - 1);
+		var x0 = (int)MathF.Floor(fx);
+		var y0 = (int)MathF.Floor(fy);
+		var x1 = Math.Min(x0 + 1, srcW - 1);
+		var y1 = Math.Min(y0 + 1, srcH - 1);
+		var fracX = fx - x0;
+		var fracY = fy - y0;
+
+		var c00 = src[y0 * srcW + x0];
+		var c10 = src[y0 * srcW + x1];
+		var c01 = src[y1 * srcW + x0];
+		var c11 = src[y1 * srcW + x1];
+		return BilerpColor(c00, c10, c01, c11, fracX, fracY);
+	}
+
+	private void EnsureMatrixBuffers(int w, int h) {
+		if (_wireW == w && _wireH == h) {
+			return;
+		}
+
+		_matrixWire = new Color[w * h];
+		_panel = new Color[w * h];
+		_wireW = w;
+		_wireH = h;
+	}
+
+	/// <summary>
+	///     Stream a full matrix frame to WLED over DDP. Packets are encoded synchronously (so the
+	///     reused <c>wire</c> buffer is safe to overwrite next frame) and fired without awaiting -
+	///     latency wins, and a slow socket can't stall the color pipeline. The last packet carries
+	///     the PUSH flag so WLED latches the whole frame at once (no torn/partial display).
+	/// </summary>
+	private Task SendMatrixColors(Color[] wire) {
+		var ep = _ddpEp;
+		if (ep == null) {
+			return Task.CompletedTask;
+		}
+
+		// Encode into a ring of reusable buffers instead of allocating per packet every frame.
+		// The ring is large enough that a buffer is long done sending before it's reused.
+		if (_ddpRing.Length == 0) {
+			_ddpRing = new byte[DdpRingSize][];
+			for (var i = 0; i < DdpRingSize; i++) {
+				_ddpRing[i] = new byte[DdpPacket.MaxPacketBytes];
+			}
+		}
+
+		var total = wire.Length;
+		for (var start = 0; start < total; start += DdpPacket.MaxPixelsPerPacket) {
+			var count = Math.Min(DdpPacket.MaxPixelsPerPacket, total - start);
+			var push = start + count >= total;
+			var buf = _ddpRing[_ddpRingIdx];
+			_ddpRingIdx = (_ddpRingIdx + 1) % _ddpRing.Length;
+			var len = DdpPacket.EncodeInto(buf, wire, start, count, push);
+			_ = SendDatagram(buf, len, ep);
+		}
+
+		return Task.CompletedTask;
+	}
+
+	private async Task SendDatagram(byte[] packet, int len, IPEndPoint ep) {
+		try {
+			await _udpClient.SendAsync(packet, len, ep).ConfigureAwait(false);
+		} catch (Exception e) {
+			// Throttle so a persistently bad link doesn't flood the log every frame.
+			if (_udpWatch.ElapsedMilliseconds > 5000) {
+				_udpWatch.Restart();
+				Log.Warning($"{_data.Tag}::DDP send to {ep} failed: {e.Message}");
+			}
+		}
+	}
+
+	private static Color BilerpColor(Color c00, Color c10, Color c01, Color c11, float fx, float fy) {
+		var r = Lerp(Lerp(c00.R, c10.R, fx), Lerp(c01.R, c11.R, fx), fy);
+		var g = Lerp(Lerp(c00.G, c10.G, fx), Lerp(c01.G, c11.G, fx), fy);
+		var b = Lerp(Lerp(c00.B, c10.B, fx), Lerp(c01.B, c11.B, fx), fy);
+		return Color.FromArgb(ClampByte(r), ClampByte(g), ClampByte(b));
+	}
+
+	private static float Lerp(float a, float b, float t) {
+		return a + (b - a) * t;
+	}
+
+	private static int ClampByte(float v) {
+		if (v <= 0f) {
+			return 0;
+		}
+
+		return v >= 255f ? 255 : (int)(v + 0.5f);
 	}
 
 	private void RefreshSystem() {
@@ -279,6 +529,8 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 			if (Streaming) {
 				await StopStream();
 			}
+
+			_udpClient.Dispose();
 		}
 
 		_disposed = true;

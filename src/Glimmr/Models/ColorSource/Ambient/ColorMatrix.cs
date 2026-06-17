@@ -41,7 +41,9 @@ public class ColorMatrix {
 
 		_matrixDirection = Enum.Parse<AmbientStream.MatrixDirection>(dir);
 		_currentDirection = _matrixDirection;
-		Colors = matrix.Select(m => m.Select(ColorTranslator.FromHtml).ToArray()).ToArray();
+		// Parse defensively: a single malformed color in a scene file must not throw and kill
+		// the whole ambient stream (that took out the "Ocean" scene). Bad entries fall back to black.
+		Colors = matrix.Select(m => m.Select(ParseColor).ToArray()).ToArray();
 		_step = scene.MatrixStep;
 		Height = Colors.Length;
 		Width = Colors[0].Length;
@@ -55,6 +57,15 @@ public class ColorMatrix {
 		_rotationStep = 1;
 		if (_matrixDirection == AmbientStream.MatrixDirection.CCW) {
 			_rotationStep = 4;
+		}
+	}
+
+	private static Color ParseColor(string hex) {
+		try {
+			return ColorTranslator.FromHtml(hex);
+		} catch (Exception) {
+			Log.Warning($"Ambient matrix: invalid color '{hex}', falling back to black.");
+			return Color.Black;
 		}
 	}
 

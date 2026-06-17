@@ -25,5 +25,11 @@ public enum StripMode {
 	/// <summary>
 	///     All leds use a single sector.
 	/// </summary>
-	[JsonProperty] Single = 3
+	[JsonProperty] Single = 3,
+
+	/// <summary>
+	///     2D matrix (e.g. WLED matrix / curtain). Maps a full-frame content grid across
+	///     the matrix, blending source columns horizontally.
+	/// </summary>
+	[JsonProperty] Matrix = 4
 }

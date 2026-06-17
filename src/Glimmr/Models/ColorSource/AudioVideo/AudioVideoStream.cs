@@ -136,7 +136,10 @@ public class AudioVideoStream : ColorSource {
 				BlendInto(vCols, aCols, oCols, state, isLed: true);
 				BlendInto(vSecs, aSecs, oSecs, state, isLed: false);
 
-				await _cs.SendColors(oCols, oSecs);
+				// Forward the video matrix sample unmodified so 2D matrix targets still get
+				// full-frame content during audio/video mode.
+				await _cs.SendColors(oCols, oSecs, _vs.Splitter.GetMatrix(),
+					_vs.Splitter.MatrixWidth, _vs.Splitter.MatrixHeight);
 
 				if (_doSave && _cs.ControlService.SendPreview) {
 					_doSave = false;

@@ -474,6 +474,60 @@ a { color: var(--accent); text-decoration: none; }
 
 @keyframes rotate { to { transform: rotate(360deg); } }
 
+/* Small square icon button (delete etc.) */
+.icon-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	border-radius: 10px;
+	border: 1px solid var(--line);
+	background: var(--bg-soft);
+	color: var(--fg-dim);
+	cursor: pointer;
+	transition: background 140ms ease, color 140ms ease, transform 80ms ease;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.icon-btn:hover { color: var(--danger); }
+.icon-btn:active { transform: scale(0.94); }
+
+/* Scenes: editor sheet actions + monospace script area + error list */
+.sheet-actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-top: 16px;
+}
+
+.code-area {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 12.5px;
+	line-height: 1.5;
+	white-space: pre;
+	tab-size: 2;
+	resize: vertical;
+	min-height: 220px;
+}
+
+.scene-errors {
+	margin: 8px 4px 0;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.scene-error {
+	font-size: 12.5px;
+	color: var(--danger);
+	background: rgb(255 84 112 / 0.1);
+	border: 1px solid rgb(255 84 112 / 0.3);
+	border-radius: 8px;
+	padding: 7px 10px;
+}
+
 /* Segmented chips (mode selector etc.) */
 .chips {
 	display: flex;

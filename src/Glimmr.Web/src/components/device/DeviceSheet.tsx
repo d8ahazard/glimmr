@@ -217,6 +217,8 @@ const GRID_MAP_TYPES = ["ledmap", "sectorLedMap", "sectormap"];
 export function DeviceSheet({ deviceId, onClose }: { deviceId: string; onClose: () => void }) {
 	const dev = devices.value.find(d => d.id === deviceId);
 	if (!dev) return null;
+	const dupeName = devices.value.filter(d => (d.name ?? "") === (dev.name ?? "")).length > 1;
+	const titleName = dupeName && dev.ipAddress ? `${dev.name} (${dev.ipAddress})` : dev.name;
 	const props = dev.keyProperties ?? [];
 	const mapTypes = props.map(p => p.valueType).filter(t => MAP_TYPES.includes(t));
 	const fieldProps = props.filter(p => !MAP_TYPES.includes(p.valueType));
@@ -241,7 +243,7 @@ export function DeviceSheet({ deviceId, onClose }: { deviceId: string; onClose: 
 				<div class="row-item no-sep">
 					<div class="row-icon"><img src={deviceIcon(dev)} alt="" /></div>
 					<div class="row-body">
-						<div class="row-title">{dev.name}</div>
+						<div class="row-title">{titleName}</div>
 						<div class="row-sub">
 							{dev.deviceTag ?? dev.tag}
 							{(dev.multiZoneCount ?? dev.ledCount) != null && dev.deviceTag !== "Lifx Bulb"

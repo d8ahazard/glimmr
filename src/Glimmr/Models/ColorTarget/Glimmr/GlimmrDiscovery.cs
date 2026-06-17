@@ -37,7 +37,9 @@ public class GlimmrDiscovery : ColorDiscovery, IColorDiscovery {
 			_sd.ServiceDiscovered += ServiceDiscovered;
 			_sd.ServiceInstanceDiscovered += DeviceDiscovered;
 			_mDns.Start();
-			_mDns.SendQuery(_recordName, type: DnsType.PTR);
+			// Use the fully-qualified query ("<service>.local"); a bare PTR query without the
+			// ".local" suffix is ignored by real mDNS responders.
+			_sd.QueryServiceInstances(_recordName);
 			await Task.Delay(TimeSpan.FromSeconds(timeout), CancellationToken.None);
 			_mDns.NetworkInterfaceDiscovered -= InterfaceDiscovered;
 			_sd.ServiceDiscovered -= ServiceDiscovered;
