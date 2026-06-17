@@ -1,0 +1,18 @@
+{
+  "Id": "starfield",
+  "Name": "Starfield",
+  "Kind": "script",
+  "System": true,
+  "Width": 48,
+  "Height": 48,
+  "Fps": 30,
+  "Loop": true,
+  "Reverse": false,
+  "Script": "// Starfield - stars stream outward from the center like a hyperspace warp,\n// leaving short trails as they accelerate past.\n@scene fps=30 bg=#000008 trail=0.72 size=48x48\n\nemit stars\n  rate    = ${density} per 0.02..0.05s\n  origin  = x:center y:center\n  vel     = dir:radial speed:${speed}\n  color   = pick(#ffffff,#cfe3ff,#fff0c0,#ffd9d9)\n  life    = 2.5s\n",
+  "FramesFile": "",
+  "FrameCount": 0,
+  "Params": [
+    { "Key": "density", "Label": "Star density", "Min": 1, "Max": 8, "Step": 1, "Default": 3, "Hint": "Stars emitted per tick." },
+    { "Key": "speed", "Label": "Warp speed", "Min": 10, "Max": 60, "Step": 1, "Default": 28, "Hint": "How fast stars fly outward." }
+  ]
+}

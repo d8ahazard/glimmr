@@ -1,6 +1,7 @@
 ﻿#region
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Net;
@@ -430,6 +431,13 @@ public class SystemData {
 	[DefaultValue("")]
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 	public string SceneId { get; set; } = "";
+
+	/// <summary>
+	///     Per-scene tunable parameter overrides (slider values), keyed by scene id then param
+	///     key. Missing entries fall back to each scene's declared <see cref="SceneParam.Default" />.
+	/// </summary>
+	[JsonProperty]
+	public Dictionary<string, Dictionary<string, double>> SceneParams { get; set; } = new();
 
 	/// <summary>
 	///     Device name (should be device hostname)

@@ -190,7 +190,20 @@ export interface SystemData {
 	skipDemo: boolean;
 	hueSyncBridgeId?: string;
 	hueSyncBridgeMac?: string;
+	/** Per-scene slider overrides: sceneId -> param key -> value. */
+	sceneParams?: Record<string, Record<string, number>>;
 	[key: string]: unknown;
+}
+
+/** A tunable slider an animation scene exposes. */
+export interface SceneParam {
+	key: string;
+	label: string;
+	min: number;
+	max: number;
+	step: number;
+	default: number;
+	hint?: string;
 }
 
 export interface Scene {
@@ -203,7 +216,7 @@ export interface Scene {
 export interface SceneV2 {
 	id: string;
 	name: string;
-	kind: "color" | "image" | "video" | "script";
+	kind: "color" | "image" | "video" | "script" | "builtin";
 	system: boolean;
 	width: number;
 	height: number;
@@ -215,6 +228,8 @@ export interface SceneV2 {
 	script: string;
 	framesFile: string;
 	frameCount: number;
+	provider?: string;
+	params?: SceneParam[];
 }
 
 export interface StatData {

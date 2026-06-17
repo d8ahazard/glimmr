@@ -1,0 +1,18 @@
+{
+  "Id": "meteor",
+  "Name": "Meteor Shower",
+  "Kind": "script",
+  "System": true,
+  "Width": 48,
+  "Height": 32,
+  "Fps": 30,
+  "Loop": true,
+  "Reverse": false,
+  "Script": "// Meteor shower - shooting stars streak in from the top edge and arc down\n// across the sky under gravity, trailing bright tails.\n@scene fps=30 bg=#000010 trail=0.8 size=48x32\n\nemit meteors\n  rate    = 1 per ${interval}s\n  origin  = x:rand y:top\n  vel     = dir:right speed:${speed} spread:14\n  gravity = down 26\n  color   = pick(#bfe0ff,#ffffff,#ffe6bf,#d9ecff)\n  life    = 2.2s\n",
+  "FramesFile": "",
+  "FrameCount": 0,
+  "Params": [
+    { "Key": "interval", "Label": "Meteor frequency", "Min": 0.15, "Max": 2.0, "Step": 0.05, "Default": 0.5, "Hint": "Seconds between meteors (lower = more)." },
+    { "Key": "speed", "Label": "Speed", "Min": 20, "Max": 70, "Step": 1, "Default": 40 }
+  ]
+}

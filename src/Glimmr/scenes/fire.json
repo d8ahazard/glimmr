@@ -1,0 +1,19 @@
+{
+  "Id": "fire",
+  "Name": "Fire",
+  "Kind": "script",
+  "System": true,
+  "Width": 32,
+  "Height": 48,
+  "Fps": 30,
+  "Loop": true,
+  "Reverse": false,
+  "Script": "// Fire - flames rise from the bottom edge, fanning out and cooling from\n// yellow through orange to red as the embers age and fade.\n@scene fps=30 bg=#0a0200 trail=${cooling} size=32x48\n\nemit flames\n  rate    = ${intensity} per 0.03..0.06s\n  origin  = x:rand y:bottom\n  vel     = dir:up speed:${rise} spread:34\n  gravity = up 6\n  color   = pick(#ff3300,#ff6a00,#ff9a00,#ffcc33)\n  colorshift = -35\n  life    = 0.8..1.5s\n",
+  "FramesFile": "",
+  "FrameCount": 0,
+  "Params": [
+    { "Key": "intensity", "Label": "Intensity", "Min": 2, "Max": 14, "Step": 1, "Default": 6, "Hint": "Flame particles spawned per tick." },
+    { "Key": "rise", "Label": "Flame height", "Min": 10, "Max": 50, "Step": 1, "Default": 26, "Hint": "Upward speed of the flames." },
+    { "Key": "cooling", "Label": "Smoulder", "Min": 0.6, "Max": 0.95, "Step": 0.01, "Default": 0.82, "Hint": "Higher leaves longer, smokier trails." }
+  ]
+}

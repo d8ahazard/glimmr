@@ -111,6 +111,12 @@ public class EmitterSpec {
 	public SpawnDirection Direction { get; set; } = SpawnDirection.Up;
 	public NumRange Speed { get; set; } = new(20);
 
+	/// <summary>
+	///     Random spray cone in degrees applied to the launch direction (0 = straight, 30 = a
+	///     +/-15 degree spread). Lets directional emitters fan out like a flame or fountain.
+	/// </summary>
+	public double Spread { get; set; }
+
 	/// <summary>Gravity acceleration in cells/sec^2 (x, y); y positive points down.</summary>
 	public double GravityX { get; set; }
 	public double GravityY { get; set; }

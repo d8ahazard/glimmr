@@ -12,6 +12,7 @@ using System.Timers;
 using Glimmr.Enums;
 using Glimmr.Models.ColorSource;
 using Glimmr.Models.ColorTarget;
+using Glimmr.Models.ColorTarget.Wled;
 using Glimmr.Models.Data;
 using Glimmr.Models.Frame;
 using Glimmr.Models.Helper;
@@ -29,6 +30,12 @@ namespace Glimmr.Services;
 public class ColorService : BackgroundService {
 	public bool Recording { get; private set; }
 	public ControlService ControlService { get; }
+
+	/// <summary>
+	///     Shared sender-side coordinator that keeps WLED matrix targets streaming over DDP in
+	///     lock-step (latest-frame-only, synchronized PUSH release across devices).
+	/// </summary>
+	public WledMatrixStreamer WledMatrixStreamer { get; } = new();
 
 	public readonly FrameCounter Counter;
 	private readonly Stopwatch _loopWatch;

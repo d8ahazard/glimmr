@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "preact/hooks";
 import { system, scenes, devices, outputImage, setPreviewsActive, setSystemProps, showToast } from "../lib/store";
 import type { SceneV2 } from "../types";
-import { Sheet, TextField, ToggleRow, SelectField, confirmAction } from "../components/ui";
+import { Sheet, TextField, ToggleRow, SelectField, Slider, confirmAction } from "../components/ui";
 import { ColorWheel } from "../components/ColorWheel";
 import { IconTrash } from "../components/icons";
 import {
@@ -48,9 +48,27 @@ export function ScenesScreen() {
 
 	const list = [...scenes.value].sort((a, b) => a.name.localeCompare(b.name));
 	const activeId = sd.deviceMode === 8 ? sd.sceneId : undefined;
+	const activeScene = activeId ? list.find(s => s.id === activeId) : undefined;
 	const images = list.filter(s => s.kind === "image");
-	const animations = list.filter(s => s.kind === "script");
+	// Scripted particle animations and bespoke built-in providers share the Animations section.
+	const animations = list.filter(s => s.kind === "script" || s.kind === "builtin");
 	const videos = list.filter(s => s.kind === "video");
+
+	function setParam(sceneId: string, key: string, value: number) {
+		const cur = system.value;
+		if (!cur) return;
+		const sp = { ...(cur.sceneParams ?? {}) };
+		sp[sceneId] = { ...(sp[sceneId] ?? {}), [key]: value };
+		setSystemProps({ sceneParams: sp });
+	}
+
+	function resetParams(sceneId: string) {
+		const cur = system.value;
+		if (!cur) return;
+		const sp = { ...(cur.sceneParams ?? {}) };
+		delete sp[sceneId];
+		setSystemProps({ sceneParams: sp });
+	}
 
 	const renderRow = (s: SceneV2) => (
 		<div
@@ -107,9 +125,39 @@ export function ScenesScreen() {
 					<div class="preview-pair" style={{ gridTemplateColumns: "1fr" }}>
 						<figure>
 							<img src={outputImage.value ?? "/img/no_preview.jpg"} alt="Scene preview" />
-							<figcaption>{list.find(s => s.id === activeId)?.name ?? "Scene"}</figcaption>
+							<figcaption>{activeScene?.name ?? "Scene"}</figcaption>
 						</figure>
 					</div>
+
+					{activeScene?.params && activeScene.params.length > 0 && (
+						<>
+							<div class="section-label">Tweak</div>
+							<div class="rows">
+								{activeScene.params.map(p => {
+									const val = sd.sceneParams?.[activeId]?.[p.key] ?? p.default;
+									return (
+										<div class="field" key={p.key}>
+											<label class="field-label">
+												{p.label} <span class="muted tiny">{val}</span>
+											</label>
+											<Slider
+												value={val}
+												min={p.min}
+												max={p.max}
+												step={p.step}
+												label={p.label}
+												onCommit={v => setParam(activeId, p.key, v)}
+											/>
+											{p.hint && <div class="field-hint">{p.hint}</div>}
+										</div>
+									);
+								})}
+							</div>
+							<div class="scene-chips" style={{ marginTop: "6px" }}>
+								<button class="btn small" onClick={() => resetParams(activeId)}>Reset to defaults</button>
+							</div>
+						</>
+					)}
 				</>
 			)}
 

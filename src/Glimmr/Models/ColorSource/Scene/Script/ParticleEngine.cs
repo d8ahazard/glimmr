@@ -122,6 +122,18 @@ public class ParticleEngine : ISceneProvider {
 				break;
 		}
 
+		// Optional spray cone: rotate the launch vector by a random angle within +/- Spread/2.
+		if (em.Spread > 0 && (vx != 0 || vy != 0)) {
+			var spreadRad = em.Spread * Math.PI / 180.0;
+			var a = (_rand.NextDouble() - 0.5) * spreadRad;
+			var cos = (float)Math.Cos(a);
+			var sin = (float)Math.Sin(a);
+			var rx = vx * cos - vy * sin;
+			var ry = vx * sin + vy * cos;
+			vx = rx;
+			vy = ry;
+		}
+
 		var life = (float)Math.Max(0.05, em.Life.Sample(_rand));
 		var p = new Particle {
 			X = px,

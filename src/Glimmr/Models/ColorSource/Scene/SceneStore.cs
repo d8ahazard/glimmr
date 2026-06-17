@@ -76,6 +76,11 @@ public class SceneStore {
 			Id = "solid", Name = "Solid Color", Kind = "color", System = true, Width = 1, Height = 1
 		});
 
+		// Bundled bespoke-provider animations (Tetris, Pac-Man, Lightning, ...).
+		foreach (var b in BuiltInScenes.All()) {
+			byId.TryAdd(b.Id, b);
+		}
+
 		foreach (var amb in LoadAmbientImages()) {
 			byId.TryAdd(amb.Id, amb);
 		}

@@ -1,11 +1,36 @@
 #region
 
+using System.Collections.Generic;
 using System.ComponentModel;
 using Newtonsoft.Json;
 
 #endregion
 
 namespace Glimmr.Models.ColorSource.Scene;
+
+/// <summary>
+///     A user-tunable knob for an animation scene. The UI renders one slider per param; the
+///     current value (defaulting to <see cref="Default" />) is substituted into a script scene's
+///     <c>${Key}</c> tokens or handed to a built-in provider before playback.
+/// </summary>
+public class SceneParam {
+	/// <summary>Stable identifier referenced by scripts (<c>${Key}</c>) and providers.</summary>
+	[JsonProperty]
+	public string Key { get; set; } = "";
+
+	/// <summary>Human-friendly slider label.</summary>
+	[JsonProperty]
+	public string Label { get; set; } = "";
+
+	[JsonProperty] public double Min { get; set; }
+	[JsonProperty] public double Max { get; set; } = 1;
+	[JsonProperty] public double Step { get; set; } = 1;
+	[JsonProperty] public double Default { get; set; }
+
+	/// <summary>Optional one-line explanation shown under the slider.</summary>
+	[JsonProperty]
+	public string Hint { get; set; } = "";
+}
 
 /// <summary>
 ///     A "Scenes" tab scene. Unlike the legacy <see cref="Ambient.AmbientScene" /> (a single
@@ -138,4 +163,18 @@ public class SceneV2 {
 	[DefaultValue(0)]
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 	public int FrameCount { get; set; }
+
+	/// <summary>
+	///     Name of the built-in animation provider for <see cref="Kind" /> = "builtin"
+	///     (e.g. "tetris", "pacman", "lightning"). Empty for script/video/image/color scenes.
+	/// </summary>
+	[JsonProperty]
+	public string Provider { get; set; } = "";
+
+	/// <summary>
+	///     Tunable sliders this scene exposes. Script scenes reference them as <c>${Key}</c>
+	///     tokens; built-in providers receive the resolved values. Empty for scenes with no knobs.
+	/// </summary>
+	[JsonProperty]
+	public List<SceneParam> Params { get; set; } = new();
 }

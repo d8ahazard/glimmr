@@ -1,4 +1,4 @@
-import type { HueSyncStatus, SceneV2 } from "../types";
+import type { HueSyncStatus, SceneParam, SceneV2 } from "../types";
 
 const base = "/api/Glimmr";
 
@@ -15,7 +15,7 @@ function normScene(raw: unknown): SceneV2 {
 	return {
 		id: pick(r, "id", "Id", ""),
 		name: pick(r, "name", "Name", ""),
-		kind: pick<"color" | "image" | "video" | "script">(r, "kind", "Kind", "script"),
+		kind: pick<"color" | "image" | "video" | "script" | "builtin">(r, "kind", "Kind", "script"),
 		system: pick(r, "system", "System", false),
 		width: pick(r, "width", "Width", 0),
 		height: pick(r, "height", "Height", 0),
@@ -26,8 +26,26 @@ function normScene(raw: unknown): SceneV2 {
 		color: pick(r, "color", "Color", ""),
 		script: pick(r, "script", "Script", ""),
 		framesFile: pick(r, "framesFile", "FramesFile", ""),
-		frameCount: pick(r, "frameCount", "FrameCount", 0)
+		frameCount: pick(r, "frameCount", "FrameCount", 0),
+		provider: pick(r, "provider", "Provider", ""),
+		params: normParams(pick<unknown[]>(r, "params", "Params", []))
 	};
+}
+
+function normParams(raw: unknown): SceneParam[] {
+	if (!Array.isArray(raw)) return [];
+	return raw.map(p => {
+		const o = (p ?? {}) as Record<string, unknown>;
+		return {
+			key: pick(o, "key", "Key", ""),
+			label: pick(o, "label", "Label", ""),
+			min: pick(o, "min", "Min", 0),
+			max: pick(o, "max", "Max", 1),
+			step: pick(o, "step", "Step", 1),
+			default: pick(o, "default", "Default", 0),
+			hint: pick(o, "hint", "Hint", "")
+		};
+	});
 }
 
 export async function getScenes(): Promise<SceneV2[]> {

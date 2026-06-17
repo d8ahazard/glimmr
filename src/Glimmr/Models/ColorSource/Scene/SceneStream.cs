@@ -72,6 +72,7 @@ public class SceneStream : ColorSource {
 		}
 
 		_mirror = scene.Mirror;
+		var paramValues = SceneParams.Resolve(scene, DataUtil.GetSystemData());
 		try {
 			switch (scene.Kind?.ToLowerInvariant()) {
 				case "video":
@@ -83,8 +84,17 @@ public class SceneStream : ColorSource {
 				case "image":
 					_provider = new ImageProvider(scene);
 					break;
+				case "builtin":
+					_provider = BuiltInScenes.CreateProvider(scene, paramValues);
+					if (_provider == null) {
+						Log.Warning($"Scene '{scene.Name}' references unknown provider '{scene.Provider}'.");
+						return;
+					}
+
+					break;
 				default: {
-					var spec = SceneScriptParser.Parse(scene.Script, out var errors);
+					var script = SceneParams.Apply(scene.Script, paramValues);
+					var spec = SceneScriptParser.Parse(script, out var errors);
 					if (errors.Count > 0) {
 						Log.Warning($"Scene '{scene.Name}' script has {errors.Count} issue(s); first: {errors[0]}");
 					}

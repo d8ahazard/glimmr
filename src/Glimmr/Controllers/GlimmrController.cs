@@ -248,7 +248,9 @@ public class GlimmrController : ControllerBase {
 		if (string.Equals(scene.Kind, "script", StringComparison.OrdinalIgnoreCase) ||
 		    string.IsNullOrWhiteSpace(scene.Kind)) {
 			scene.Kind = "script";
-			var spec = SceneScriptParser.Parse(scene.Script, out var errors);
+			// Substitute declared params with their defaults so authored ${tokens} compile.
+			var script = SceneParams.Apply(scene.Script, SceneParams.Resolve(scene, null));
+			var spec = SceneScriptParser.Parse(script, out var errors);
 			// Author-controlled grid/fps from the script is authoritative.
 			scene.Width = spec.Width;
 			scene.Height = spec.Height;

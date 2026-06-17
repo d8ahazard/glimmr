@@ -280,6 +280,9 @@ public static class SceneScriptParser {
 				case "speed":
 					em.Speed = ParseRange(v);
 					break;
+				case "spread":
+					em.Spread = ParseDouble(v);
+					break;
 			}
 		}
 	}

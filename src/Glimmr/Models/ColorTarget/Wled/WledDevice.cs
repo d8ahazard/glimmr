@@ -59,13 +59,18 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 	// Throttles DDP send-failure warnings so a bad link can't flood the log.
 	private readonly Stopwatch _udpWatch = Stopwatch.StartNew();
 
-	// Reusable DDP packet buffers (ring) to avoid per-frame allocations on the send path.
-	private const int DdpRingSize = 16;
-	private byte[][] _ddpRing = Array.Empty<byte[]>();
-	private int _ddpRingIdx;
+	// Shared coordinator that owns the synchronized DDP send loop for all matrix targets.
+	private readonly WledMatrixStreamer _streamer;
+	private bool _matrixRegistered;
+
+	// Periodically re-asserts lor=0 while streaming so a user touching the WLED UI (which sets
+	// lor=1 and makes WLED ignore realtime data) can't silently kill the stream until restart.
+	private Timer? _lorWatchdog;
+	private const int LorWatchdogMs = 10000;
 
 	public WledDevice(WledData wd, ColorService cs) : base(cs) {
 		_segments = Array.Empty<WledSegment>();
+		_streamer = cs.WledMatrixStreamer;
 		cs.ControlService.RefreshSystemEvent += RefreshSystem;
 		// Each WLED gets its own socket. A single shared, non-blocking socket hammered by every
 		// device fire-and-forget can overflow its send buffer and silently drop a weaker link's
@@ -110,9 +115,31 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		await SetLightBrightness(_brightness);
 		await SetLightPower(true);
 		await ClearLiveOverride();
+
+		// Matrix frames are streamed in lock-step with any other matrix targets via the shared
+		// coordinator; register before the first frame so it has a socket + endpoint to use.
+		if (_stripMode == StripMode.Matrix && _ddpEp != null) {
+			_streamer.Register(Id, _ddpEp, _udpClient, Math.Max(_matrixWidth * _matrixHeight, 1));
+			_matrixRegistered = true;
+		}
+
 		await FlashColor(Color.Black);
 		Streaming = true;
+		StartLorWatchdog();
 		Log.Debug($"{_data.Tag}::Stream started: {_data.Id}.");
+	}
+
+	/// <summary>
+	///     Start a low-frequency timer that re-asserts <c>lor=0</c> while streaming. See
+	///     <see cref="ClearLiveOverride" /> for why this matters.
+	/// </summary>
+	private void StartLorWatchdog() {
+		_lorWatchdog?.Dispose();
+		_lorWatchdog = new Timer(_ => {
+			if (Streaming) {
+				_ = ClearLiveOverride();
+			}
+		}, null, LorWatchdogMs, LorWatchdogMs);
 	}
 
 	/// <summary>
@@ -138,6 +165,13 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 
 		Log.Debug($"{_data.Tag}::Stopping stream...{_data.Id}.");
 		Streaming = false;
+		_lorWatchdog?.Dispose();
+		_lorWatchdog = null;
+		if (_matrixRegistered) {
+			_streamer.Unregister(Id);
+			_matrixRegistered = false;
+		}
+
 		await FlashColor(Color.Black);
 		await _wLedClient.Post(new StateRequest { On = false });
 		await Task.FromResult(true);
@@ -150,7 +184,7 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		try {
 			if (_stripMode == StripMode.Matrix) {
 				var count = Math.Max(_matrixWidth * _matrixHeight, 1);
-				await SendMatrixColors(ColorUtil.FillArray(color, count));
+				await SendMatrixFrameDirect(ColorUtil.FillArray(color, count));
 				return;
 			}
 
@@ -345,7 +379,9 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 			}
 		}
 
-		SendMatrixColors(_matrixWire);
+		// Hand the mapped frame to the shared coordinator; it owns the synchronized DDP send so
+		// this device's PUSH latches together with every other matrix target.
+		_streamer.Submit(Id, _matrixWire);
 		return Task.CompletedTask;
 	}
 
@@ -428,37 +464,27 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 	}
 
 	/// <summary>
-	///     Stream a full matrix frame to WLED over DDP. Packets are encoded synchronously (so the
-	///     reused <c>wire</c> buffer is safe to overwrite next frame) and fired without awaiting -
-	///     latency wins, and a slow socket can't stall the color pipeline. The last packet carries
-	///     the PUSH flag so WLED latches the whole frame at once (no torn/partial display).
+	///     Send a one-off full matrix frame to WLED over DDP directly (used for flashes at stream
+	///     start/stop, which run outside the coordinator's send loop). Packets are awaited so the
+	///     frame is guaranteed flushed before we power the device off; the last packet carries the
+	///     PUSH flag so WLED latches the whole frame at once.
 	/// </summary>
-	private Task SendMatrixColors(Color[] wire) {
+	private async Task SendMatrixFrameDirect(Color[] wire) {
 		var ep = _ddpEp;
 		if (ep == null) {
-			return Task.CompletedTask;
-		}
-
-		// Encode into a ring of reusable buffers instead of allocating per packet every frame.
-		// The ring is large enough that a buffer is long done sending before it's reused.
-		if (_ddpRing.Length == 0) {
-			_ddpRing = new byte[DdpRingSize][];
-			for (var i = 0; i < DdpRingSize; i++) {
-				_ddpRing[i] = new byte[DdpPacket.MaxPacketBytes];
-			}
+			return;
 		}
 
 		var total = wire.Length;
+		var seq = 0;
 		for (var start = 0; start < total; start += DdpPacket.MaxPixelsPerPacket) {
 			var count = Math.Min(DdpPacket.MaxPixelsPerPacket, total - start);
 			var push = start + count >= total;
-			var buf = _ddpRing[_ddpRingIdx];
-			_ddpRingIdx = (_ddpRingIdx + 1) % _ddpRing.Length;
-			var len = DdpPacket.EncodeInto(buf, wire, start, count, push);
-			_ = SendDatagram(buf, len, ep);
+			seq = seq % 15 + 1;
+			var buf = new byte[DdpPacket.MaxPacketBytes];
+			var len = DdpPacket.EncodeInto(buf, wire, start, count, push, seq);
+			await SendDatagram(buf, len, ep);
 		}
-
-		return Task.CompletedTask;
 	}
 
 	private async Task SendDatagram(byte[] packet, int len, IPEndPoint ep) {
@@ -528,6 +554,13 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 		if (disposing) {
 			if (Streaming) {
 				await StopStream();
+			}
+
+			_lorWatchdog?.Dispose();
+			_lorWatchdog = null;
+			if (_matrixRegistered) {
+				_streamer.Unregister(Id);
+				_matrixRegistered = false;
 			}
 
 			_udpClient.Dispose();

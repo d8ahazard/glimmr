@@ -1,0 +1,19 @@
+{
+  "Id": "matrixrain",
+  "Name": "Matrix Rain",
+  "Kind": "script",
+  "System": true,
+  "Width": 32,
+  "Height": 48,
+  "Fps": 30,
+  "Loop": true,
+  "Reverse": false,
+  "Script": "// Matrix rain - glowing green glyphs cascade down the panel, leaving long\n// fading trails behind each falling head.\n@scene fps=30 bg=#000300 trail=0.85 size=32x48\n\nemit drops\n  rate    = ${density} per 0.04..0.09s\n  origin  = x:rand y:top\n  vel     = dir:down speed:${speed}\n  gravity = down 2\n  color   = pick(#00ff66,#00ff99,#33ffaa,#ccffdd)\n  life    = ${fade}s\n",
+  "FramesFile": "",
+  "FrameCount": 0,
+  "Params": [
+    { "Key": "density", "Label": "Rain density", "Min": 1, "Max": 8, "Step": 1, "Default": 3, "Hint": "Falling streams spawned per tick." },
+    { "Key": "speed", "Label": "Fall speed", "Min": 10, "Max": 40, "Step": 1, "Default": 20 },
+    { "Key": "fade", "Label": "Trail length", "Min": 0.8, "Max": 3.0, "Step": 0.1, "Default": 1.6, "Hint": "How long each trail persists." }
+  ]
+}

@@ -282,6 +282,31 @@ where there are two pixels for a strip that correspond to a segment of the scree
 those LEDs to display the same color. The color being displayed will be whatever the strip's offset
 is set to.
 
+"Matrix (2D)" is auto-selected when WLED reports a 2D panel. Glimmr streams a full-frame image to
+the panel over DDP (UDP port 4048) and lets WLED apply its own physical wiring. When you run two or
+more matrices, Glimmr keeps them in lock-step: each frame stages its pixel data first, then releases
+the final latch packet to every panel back-to-back so they update together. If frames are produced
+faster than the network can drain them, the oldest pending frame is dropped (latest-frame-wins) to
+keep jitter and inter-device skew low.
+
+##### WLED matrix streaming requirements
+For smooth, in-sync matrix playback, configure each panel as follows:
+
+- Use **ESP32** hardware, not ESP8266 (ESP8266 lacks the margin for high-rate pixel streams).
+- Connect panels to your **normal/infrastructure Wi-Fi**, not the WLED access point.
+- In WLED's Sync settings set the realtime input to **DDP**, then reboot the device once.
+- **Disable Wi-Fi sleep** on the ESP32 (WLED config) to remove stutter and reduce ping jitter.
+- Give each panel a **static IP / DHCP reservation** so the stream never depends on rediscovery.
+- **Disable the WLED UDP notifier** (send and receive) on these panels - it is a second, unneeded
+  state-sync subsystem when Glimmr is driving per-pixel frames.
+- Avoid touching the WLED web UI during a show: interacting with it can set WLED's live override
+  (`lor`) and make WLED ignore realtime data. Glimmr periodically re-asserts `lor=0` while streaming
+  to recover from this automatically.
+
+Note on frame rate: a single WS2812/SK6812 chain signals at 800 kb/s, so a 960-pixel panel needs
+roughly 29 ms of wire time per frame - about a 30-35 fps ceiling regardless of network speed. To
+exceed that, split the panel across multiple parallel LED outputs or use a faster LED chipset.
+
 Click the "Save settings" button to submit your configuration.
 
 
