@@ -158,6 +158,8 @@ export interface SystemData {
 	gammaCorrection: number;
 	blackLevel: number;
 	enableAutoBrightness: boolean;
+	enablePreviewStudio?: boolean;
+	enablePhoneCalibration?: boolean;
 	ablAmps: number;
 	ablVolts: number;
 	baudRate: number;
@@ -184,6 +186,8 @@ export interface SystemData {
 	openRgbIp: string;
 	openRgbPort: number;
 	previewMode: number;
+	previewFrameRate?: number;
+	targetSendTimeoutMs?: number;
 	logLevel: number;
 	defaultSet: boolean;
 	skipTour: boolean;
@@ -228,8 +232,44 @@ export interface SceneV2 {
 	script: string;
 	framesFile: string;
 	frameCount: number;
+	thumbnailFile?: string;
 	provider?: string;
 	params?: SceneParam[];
+}
+
+export interface Vec3 {
+	x: number;
+	y: number;
+	z: number;
+}
+
+export interface RoomMapEmitter {
+	id: string;
+	providerId: string;
+	deviceId: string;
+	physicalType: string;
+	addressableCount: number;
+	position: Vec3;
+	orientation: Vec3;
+	normal?: Vec3;
+	confidence: number;
+	[key: string]: unknown;
+}
+
+export interface EmitterGraph {
+	id: string;
+	name: string;
+	version: string;
+	emitters: RoomMapEmitter[];
+}
+
+export interface CalibrationSession {
+	sessionId: string;
+	createdAtUnixMs: number;
+	expiresAtUnixMs: number;
+	status: "created" | "streaming" | "solved" | "expired";
+	sceneId: string;
+	frameCount: number;
 }
 
 export interface StatData {

@@ -1,0 +1,22 @@
+{
+  "Id": "1e4c2f48dbdc4489a7706bf2311d1d73",
+  "Name": "Dolphin Paradise in 8K HDR - Stunning Underwater Footage of Dolphins",
+  "Kind": "video",
+  "System": false,
+  "Width": 60,
+  "Height": 32,
+  "Fps": 30.0,
+  "Loop": true,
+  "Reverse": false,
+  "Mirror": false,
+  "Color": "",
+  "MatrixDirection": "Random",
+  "MatrixStep": 1,
+  "AnimationTime": 3.0,
+  "Script": "",
+  "FramesFile": "1e4c2f48dbdc4489a7706bf2311d1d73.bin.gz",
+  "FrameCount": 5497,
+  "ThumbnailFile": "1e4c2f48dbdc4489a7706bf2311d1d73.thumb.png",
+  "Provider": "",
+  "Params": []
+}

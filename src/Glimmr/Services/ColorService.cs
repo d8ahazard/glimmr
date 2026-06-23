@@ -1,6 +1,7 @@
 ﻿#region
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -30,6 +31,7 @@ namespace Glimmr.Services;
 public class ColorService : BackgroundService {
 	public bool Recording { get; private set; }
 	public ControlService ControlService { get; }
+	public DeviceMode CurrentMode => _deviceMode;
 
 	/// <summary>
 	///     Shared sender-side coordinator that keeps WLED matrix targets streaming over DDP in
@@ -42,6 +44,7 @@ public class ColorService : BackgroundService {
 
 	private readonly Stopwatch _recordWatch;
 	private readonly FrameSplitter _splitter;
+	private long _lastPreviewTick;
 
 	private readonly Dictionary<string, ColorSource> _streams;
 	private readonly Stopwatch _watch;
@@ -69,6 +72,20 @@ public class ColorService : BackgroundService {
 	// Token for the color target
 	private CancellationTokenSource _targetTokenSource;
 	private bool _testing;
+	private int _targetSendTimeoutMs;
+	private readonly ConcurrentDictionary<string, TargetDispatchState> _targetDispatch =
+		new(StringComparer.OrdinalIgnoreCase);
+	private long _framesProcessed;
+	private long _framesDropped;
+	private long _updateMsTotal;
+	private long _computeMsTotal;
+	private long _dispatchMsTotal;
+	private long _previewMsTotal;
+	private int _updateMsMax;
+	private long _previewFramesSent;
+	private long _previewBytesSent;
+	private long _previewEncodeMsTotal;
+	private int _previewEncodeMsMax;
 
 	public ColorService() {
 		ControlService.GetInstance().ColorService = this;
@@ -127,7 +144,7 @@ public class ColorService : BackgroundService {
 			await Initialize();
 			_loopWatch.Start();
 
-			var saveTimer = new Timer(5000);
+			var saveTimer = new Timer(100);
 			saveTimer.Elapsed += SaveFrame;
 			saveTimer.Start();
 			while (!stoppingToken.IsCancellationRequested) {
@@ -141,18 +158,27 @@ public class ColorService : BackgroundService {
 	}
 
 	private void SaveFrame(object? sender, ElapsedEventArgs e) {
+		var fps = DataUtil.GetSystemData().PreviewFrameRate;
+		if (fps < 1) fps = 1;
+		if (fps > 10) fps = 10;
+		var minInterval = 1000.0 / fps;
+		var now = Environment.TickCount64;
+		if (now - _lastPreviewTick < minInterval) {
+			return;
+		}
+
+		_lastPreviewTick = now;
 		FrameSaveEvent.Invoke();
 	}
 
 	public override Task StopAsync(CancellationToken cancellationToken) {
 		Log.Information("Stopping color service...");
 		_loopWatch.Stop();
-		StopServices().ConfigureAwait(true);
+		StopServices().ConfigureAwait(false).GetAwaiter().GetResult();
 		DataUtil.Dispose();
 		Log.Information("Color service stopped.");
 		_splitter.Dispose();
-		base.StopAsync(cancellationToken);
-		return Task.CompletedTask;
+		return base.StopAsync(cancellationToken);
 	}
 
 
@@ -218,11 +244,11 @@ public class ColorService : BackgroundService {
 		}
 
 		await device.FlashColor(rColor);
-		Thread.Sleep(500);
+		await Task.Delay(500);
 		await device.FlashColor(bColor);
-		Thread.Sleep(500);
+		await Task.Delay(500);
 		await device.FlashColor(rColor);
-		Thread.Sleep(500);
+		await Task.Delay(500);
 		await device.FlashColor(bColor);
 		if (disable) {
 			await device.StopStream();
@@ -347,6 +373,7 @@ public class ColorService : BackgroundService {
 		_systemData = sd;
 		_enableAutoDisable = _systemData.EnableAutoDisable;
 		_autoDisableDelay = _systemData.AutoDisableDelay;
+		_targetSendTimeoutMs = Math.Clamp(_systemData.TargetSendTimeoutMs, 20, 500);
 		// Create new lists
 		var sDevs = new List<IColorTarget>();
 		var classes = SystemUtil.GetClasses<IColorTarget>();
@@ -545,11 +572,11 @@ public class ColorService : BackgroundService {
 	}
 
 	private void ReloadSystemData() {
-		var sd = _systemData;
 		_systemData = DataUtil.GetSystemData();
 
-		_autoDisableDelay = sd.AutoDisableDelay;
+		_autoDisableDelay = _systemData.AutoDisableDelay;
 		_enableAutoDisable = _systemData.EnableAutoDisable;
+		_targetSendTimeoutMs = Math.Clamp(_systemData.TargetSendTimeoutMs, 20, 500);
 
 		if (_autoDisableDelay < 1) {
 			_autoDisableDelay = 10;
@@ -722,15 +749,15 @@ public class ColorService : BackgroundService {
 			return;
 		}
 
-		if (ColorSendEventAsync == null) return; // Exit early if no subscribers
+		if (ColorSendEventAsync != null) {
+			var args = new ColorSendEventArgs(colors, sectors, matrix, matrixWidth, matrixHeight);
+			var handlers = ColorSendEventAsync.GetInvocationList();
+			var tasks = new Task[handlers.Length];
+			for (var i = 0; i < handlers.Length; i++) {
+				tasks[i] = DispatchToTarget((AsyncEventHandler<ColorSendEventArgs>)handlers[i], args);
+			}
 
-		try {
-			await ColorSendEventAsync.InvokeAsync(this,
-				new ColorSendEventArgs(colors, sectors, matrix, matrixWidth, matrixHeight)).ConfigureAwait(false);
-		} catch (Exception e) {
-			// A single misbehaving device must not starve the frame counter (FPS)
-			// or other subscribers - log and continue.
-			Log.Warning($"Exception: {e.Message} at {e.StackTrace}");
+			await Task.WhenAll(tasks).ConfigureAwait(false);
 		}
 
 		if (Recording) {
@@ -739,6 +766,136 @@ public class ColorService : BackgroundService {
 		}
 
 		Counter.Tick("source");
+	}
+
+	private async Task DispatchToTarget(AsyncEventHandler<ColorSendEventArgs> handler,
+		ColorSendEventArgs args) {
+		var key = HandlerKey(handler);
+		var state = _targetDispatch.GetOrAdd(key, _ => new TargetDispatchState());
+		if (Interlocked.CompareExchange(ref state.InFlight, 1, 0) != 0) {
+			Interlocked.Increment(ref state.SkippedFrames);
+			return;
+		}
+
+		Interlocked.Increment(ref state.Calls);
+		var releaseInFinally = true;
+		var watch = Stopwatch.StartNew();
+		try {
+			var task = handler(this, args);
+			var completed = await Task.WhenAny(task, Task.Delay(_targetSendTimeoutMs)).ConfigureAwait(false);
+			if (completed != task) {
+				releaseInFinally = false;
+				Interlocked.Increment(ref state.Timeouts);
+				_ = task.ContinueWith(t => {
+					if (t.IsFaulted) {
+						Interlocked.Increment(ref state.Errors);
+						Log.Warning($"Target send failed after timeout ({key}): {t.Exception?.GetBaseException().Message}");
+					}
+
+					Interlocked.Exchange(ref state.InFlight, 0);
+				}, CancellationToken.None);
+				return;
+			}
+
+			await task.ConfigureAwait(false);
+		} catch (Exception e) {
+			Interlocked.Increment(ref state.Errors);
+			Log.Warning($"Target send failed ({key}): {e.Message}");
+		} finally {
+			var elapsedMs = Math.Max(0, (int)watch.ElapsedMilliseconds);
+			AddDuration(ref state.TotalMs, ref state.MaxMs, elapsedMs);
+			if (releaseInFinally) {
+				Interlocked.Exchange(ref state.InFlight, 0);
+			}
+		}
+	}
+
+	private static string HandlerKey(AsyncEventHandler<ColorSendEventArgs> handler) {
+		var targetType = handler.Target?.GetType().Name ?? "Static";
+		return $"{targetType}.{handler.Method.Name}";
+	}
+
+	private static void AddDuration(ref long total, ref int max, int elapsedMs) {
+		Interlocked.Add(ref total, elapsedMs);
+		int current;
+		do {
+			current = max;
+			if (elapsedMs <= current) {
+				break;
+			}
+		} while (Interlocked.CompareExchange(ref max, elapsedMs, current) != current);
+	}
+
+	public void ReportFrameDrop() {
+		Interlocked.Increment(ref _framesDropped);
+	}
+
+	public void ReportFrameUpdate(int totalMs, int computeMs, int dispatchMs, int previewMs) {
+		Interlocked.Increment(ref _framesProcessed);
+		AddDuration(ref _updateMsTotal, ref _updateMsMax, totalMs);
+		Interlocked.Add(ref _computeMsTotal, computeMs);
+		Interlocked.Add(ref _dispatchMsTotal, dispatchMs);
+		Interlocked.Add(ref _previewMsTotal, previewMs);
+	}
+
+	public void ReportPreviewSend(int bytes, int encodeAndSendMs) {
+		Interlocked.Increment(ref _previewFramesSent);
+		Interlocked.Add(ref _previewBytesSent, Math.Max(0, bytes));
+		AddDuration(ref _previewEncodeMsTotal, ref _previewEncodeMsMax, encodeAndSendMs);
+	}
+
+	public PerformanceData SnapshotPerformance() {
+		var processed = Interlocked.Read(ref _framesProcessed);
+		var previewFrames = Interlocked.Read(ref _previewFramesSent);
+		var output = new PerformanceData {
+			Pipeline = new PipelinePerf {
+				FramesProcessed = processed,
+				FramesDropped = Interlocked.Read(ref _framesDropped),
+				AvgUpdateMs = processed == 0 ? 0 : (double)Interlocked.Read(ref _updateMsTotal) / processed,
+				AvgComputeMs = processed == 0 ? 0 : (double)Interlocked.Read(ref _computeMsTotal) / processed,
+				AvgDispatchMs = processed == 0 ? 0 : (double)Interlocked.Read(ref _dispatchMsTotal) / processed,
+				AvgPreviewMs = processed == 0 ? 0 : (double)Interlocked.Read(ref _previewMsTotal) / processed,
+				MaxUpdateMs = Volatile.Read(ref _updateMsMax)
+			},
+			Preview = new PreviewPerf {
+				FramesSent = previewFrames,
+				BytesSent = Interlocked.Read(ref _previewBytesSent),
+				AvgEncodeAndSendMs = previewFrames == 0
+					? 0
+					: (double)Interlocked.Read(ref _previewEncodeMsTotal) / previewFrames,
+				MaxEncodeAndSendMs = Volatile.Read(ref _previewEncodeMsMax)
+			}
+		};
+
+		foreach (var (key, value) in _targetDispatch) {
+			var calls = Interlocked.Read(ref value.Calls);
+			output.Targets[key] = new TargetSendPerf {
+				Calls = calls,
+				SkippedFrames = Interlocked.Read(ref value.SkippedFrames),
+				Timeouts = Interlocked.Read(ref value.Timeouts),
+				Errors = Interlocked.Read(ref value.Errors),
+				InFlight = Volatile.Read(ref value.InFlight),
+				AvgMs = calls == 0 ? 0 : (double)Interlocked.Read(ref value.TotalMs) / calls,
+				MaxMs = Volatile.Read(ref value.MaxMs)
+			};
+		}
+
+		return output;
+	}
+
+	public void ResetPerformanceCounters() {
+		Interlocked.Exchange(ref _framesProcessed, 0);
+		Interlocked.Exchange(ref _framesDropped, 0);
+		Interlocked.Exchange(ref _updateMsTotal, 0);
+		Interlocked.Exchange(ref _computeMsTotal, 0);
+		Interlocked.Exchange(ref _dispatchMsTotal, 0);
+		Interlocked.Exchange(ref _previewMsTotal, 0);
+		Interlocked.Exchange(ref _updateMsMax, 0);
+		Interlocked.Exchange(ref _previewFramesSent, 0);
+		Interlocked.Exchange(ref _previewBytesSent, 0);
+		Interlocked.Exchange(ref _previewEncodeMsTotal, 0);
+		Interlocked.Exchange(ref _previewEncodeMsMax, 0);
+		_targetDispatch.Clear();
 	}
 
 
@@ -827,6 +984,16 @@ public class ColorService : BackgroundService {
 				Log.Warning("Exception saving rec file: " + e.Message);
 			}
 		}, CancellationToken.None);
+	}
+
+	private sealed class TargetDispatchState {
+		public long Calls;
+		public long SkippedFrames;
+		public long Timeouts;
+		public long Errors;
+		public long TotalMs;
+		public int MaxMs;
+		public int InFlight;
 	}
 }
 

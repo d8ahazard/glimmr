@@ -449,7 +449,7 @@ public static class DataUtil {
 
 	public static StoreData GetStoreSerialized(ControlService cs) {
 		var output = new StoreData {
-			Stats = cs.Stats ?? StatUtil.GetStats().Result
+			Stats = cs.Stats ?? new StatData()
 		};
 		return output;
 	}

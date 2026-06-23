@@ -1,15 +1,16 @@
 import { useEffect, useState } from "preact/hooks";
 import {
 	system, sortedDevices, mode, setMode, setSystemProps, updateDevice,
-	audioScenes, scenes, showToast
+	audioScenes, scenes, showToast, scanDevices, scanning, outputImage, setPreviewsActive
 } from "../lib/store";
-import { MODES } from "../types";
-import { MODE_ICONS } from "../components/icons";
+import { MODES, type DeviceData } from "../types";
+import { IconChevron, IconRefresh, MODE_ICONS } from "../components/icons";
 import { Toggle, Slider, SelectField } from "../components/ui";
 import { ColorWheel } from "../components/ColorWheel";
 import { DeviceSheet, deviceIcon } from "../components/device/DeviceSheet";
 import { getHueSyncStatus, armHueSyncLink, unpairHueSync, selectScene } from "../lib/api";
 import type { HueSyncStatus } from "../types";
+import { PreviewImage } from "../components/PreviewImage";
 
 function AudioPanel() {
 	const sd = system.value;
@@ -148,7 +149,20 @@ function StreamPanel() {
 	);
 }
 
-export function HueSyncPanel() {
+function subtitle(dev: DeviceData): string {
+	const parts: string[] = [];
+	if (dev.ipAddress) parts.push(dev.ipAddress);
+	const count = dev.multiZoneCount ?? dev.ledCount;
+	if (count != null && dev.deviceTag !== "Lifx Bulb") parts.push(`${count} LEDs`);
+	return parts.join(" · ");
+}
+
+function displayName(dev: DeviceData, duplicate: boolean): string {
+	const name = dev.name ?? "";
+	return duplicate && dev.ipAddress ? `${name} (${dev.ipAddress})` : name;
+}
+
+export function HueSyncPanel({ enablePolling = true }: { enablePolling?: boolean } = {}) {
 	const [status, setStatus] = useState<HueSyncStatus | null>(null);
 	const [pairing, setPairing] = useState(false);
 
@@ -158,9 +172,10 @@ export function HueSyncPanel() {
 
 	useEffect(() => {
 		refresh();
+		if (!enablePolling) return;
 		const t = setInterval(refresh, 5000);
 		return () => clearInterval(t);
-	}, []);
+	}, [enablePolling]);
 
 	const pair = async () => {
 		const ok = await armHueSyncLink();
@@ -218,14 +233,21 @@ export function HueSyncPanel() {
 	);
 }
 
-function DeviceQuickRow({ id, onOpen }: { id: string; onOpen: (id: string) => void }) {
-	const dev = sortedDevices.value.find(d => d.id === id);
-	if (!dev) return null;
+function DeviceQuickRow({
+	dev,
+	duplicateName,
+	onOpen
+}: {
+	dev: DeviceData;
+	duplicateName: boolean;
+	onOpen: (id: string) => void;
+}) {
 	return (
 		<div class="row-item tappable" onClick={() => onOpen(dev.id)}>
 			<div class="row-icon"><img src={deviceIcon(dev)} alt="" loading="lazy" /></div>
 			<div class="row-body">
-				<div class="row-title">{dev.name}</div>
+				<div class="row-title">{displayName(dev, duplicateName)}</div>
+				<div class="row-sub">{subtitle(dev)}</div>
 				<div style={{ marginTop: "6px", paddingRight: "6px" }} onClick={e => e.stopPropagation()}>
 					<Slider
 						value={dev.brightness ?? 100}
@@ -241,17 +263,38 @@ function DeviceQuickRow({ id, onOpen }: { id: string; onOpen: (id: string) => vo
 					onChange={v => updateDevice({ ...dev, enable: v })}
 					label={`Enable ${dev.name}`}
 				/>
+				<span class="muted" style={{ display: "inline-flex" }}><IconChevron size={16} /></span>
 			</div>
 		</div>
 	);
 }
 
-export function ControlScreen() {
+export function ControlScreen({ onOpenPreviewStudio }: { onOpenPreviewStudio?: () => void } = {}) {
 	const sd = system.value;
 	const m = mode.value;
 	const [openDevice, setOpenDevice] = useState<string | null>(null);
 	const devs = sortedDevices.value;
 	const modeName = m === 3 ? "Scenes" : MODES.find(x => x.id === m)?.name ?? "Off";
+	const busy = scanning.value;
+	const groups = new Map<string, DeviceData[]>();
+	for (const d of devs) {
+		const key = d.deviceTag && d.tag === "Lifx" ? d.deviceTag : d.tag;
+		const list = groups.get(key) ?? [];
+		list.push(d);
+		groups.set(key, list);
+	}
+	const nameCounts = new Map<string, number>();
+	for (const d of devs) {
+		const name = d.name ?? "";
+		nameCounts.set(name, (nameCounts.get(name) ?? 0) + 1);
+	}
+	const previewEnabled = sd?.enablePreviewStudio ?? true;
+
+	useEffect(() => {
+		if (!previewEnabled) return;
+		setPreviewsActive(true);
+		return () => setPreviewsActive(false);
+	}, [previewEnabled]);
 
 	return (
 		<div class="screen">
@@ -281,19 +324,52 @@ export function ControlScreen() {
 			{(m === 2 || m === 4) && <AudioPanel />}
 			{m === 5 && <StreamPanel />}
 			{m === 7 && <HueSyncPanel />}
+			{(sd?.enablePreviewStudio ?? true) && (
+				<>
+					<div class="section-label split">
+						<span>Live preview</span>
+						<button class="btn small" onClick={() => onOpenPreviewStudio?.()}>Full preview</button>
+					</div>
+					<button class="preview-card-btn" onClick={() => onOpenPreviewStudio?.()}>
+						<PreviewImage signal={outputImage} alt="Live output preview" />
+						<span>Tap to open Preview Studio</span>
+					</button>
+				</>
+			)}
 
-			<div class="section-label">Devices</div>
-			<div class="rows">
-				{devs.length === 0 && (
-					<div class="row-item"><div class="row-body muted">No devices yet — go to the Devices tab to scan.</div></div>
-				)}
-				{devs.filter(d => d.enable).map(d => (
-					<DeviceQuickRow key={d.id} id={d.id} onOpen={setOpenDevice} />
-				))}
-				{devs.filter(d => !d.enable).map(d => (
-					<DeviceQuickRow key={d.id} id={d.id} onOpen={setOpenDevice} />
-				))}
+			<div class="section-label split">
+				<span>Devices</span>
+				<button class="btn small" disabled={busy} onClick={scanDevices}>
+					<span class={busy ? "spin" : ""} style={{ display: "inline-flex" }}>
+						<IconRefresh size={15} />
+					</span>
+					{busy ? "Scanning…" : "Scan"}
+				</button>
 			</div>
+			{devs.length === 0 && (
+				<div class="rows">
+					<div class="row-item">
+						<div class="row-body muted">
+							{busy ? "Looking for devices…" : "No devices yet. Tap Scan to discover devices."}
+						</div>
+					</div>
+				</div>
+			)}
+			{[...groups.entries()].map(([tag, list]) => (
+				<div key={tag}>
+					<div class="section-label">{tag}</div>
+					<div class="rows">
+						{list.map(d => (
+							<DeviceQuickRow
+								key={d.id}
+								dev={d}
+								duplicateName={(nameCounts.get(d.name ?? "") ?? 0) > 1}
+								onOpen={setOpenDevice}
+							/>
+						))}
+					</div>
+				</div>
+			))}
 
 			{openDevice && <DeviceSheet deviceId={openDevice} onClose={() => setOpenDevice(null)} />}
 		</div>

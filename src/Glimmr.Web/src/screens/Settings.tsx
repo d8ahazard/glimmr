@@ -1,13 +1,17 @@
-import { useState } from "preact/hooks";
+import type { ComponentChildren } from "preact";
+import { useEffect, useState } from "preact/hooks";
 import {
-	system, stats, setSystemProps, systemControl, logLines, showToast
+	system, stats, setSystemProps, systemControl, logLines, showToast,
+	usbDevices, audioDevices, inputImage, outputImage, setPreviewsActive
 } from "../lib/store";
 import {
-	SelectField, TextField, ToggleRow, Sheet, confirmAction
+	SelectField, TextField, ToggleRow, Sheet, confirmAction, CountCell
 } from "../components/ui";
 import { downloadDatabase, downloadLogs, uploadFile } from "../lib/api";
 import { TIMEZONES } from "../lib/timezones";
 import { HueSyncPanel } from "./Control";
+import { LedMap, SectorMap } from "../components/maps";
+import { PreviewImage } from "../components/PreviewImage";
 
 const UPDATE_HOURS = Array.from({ length: 24 }, (_, h) => ({
 	value: h,
@@ -91,6 +95,26 @@ function FileUploadRow({
 	);
 }
 
+function SectionGroup({
+	title, defaultOpen = true, onToggle, children
+}: {
+	title: string;
+	defaultOpen?: boolean;
+	onToggle?: (open: boolean) => void;
+	children: ComponentChildren;
+}) {
+	return (
+		<details
+			class="section-group"
+			open={defaultOpen}
+			onToggle={ev => onToggle?.((ev.currentTarget as HTMLDetailsElement).open)}
+		>
+			<summary>{title}</summary>
+			<div class="section-group-body">{children}</div>
+		</details>
+	);
+}
+
 const CONTROL_WARNINGS: Record<string, string> = {
 	shutdown: "This will shut down the device. You will need to manually turn it back on.",
 	reboot: "This will restart the device.",
@@ -102,7 +126,17 @@ export function SettingsScreen({ onRunWizard }: { onRunWizard: () => void }) {
 	const sd = system.value;
 	const st = stats.value;
 	const [showLog, setShowLog] = useState(false);
+	const [captureSectionOpen, setCaptureSectionOpen] = useState(true);
+	// Capture/preview settings now live in this screen. Only stream previews while that
+	// section is expanded to avoid unnecessary encode/send overhead.
+	useEffect(() => {
+		if (!captureSectionOpen) return;
+		setPreviewsActive(true);
+		return () => setPreviewsActive(false);
+	}, [captureSectionOpen]);
 	if (!sd) return <div class="screen" />;
+	const usb = usbDevices.value;
+	const showUsb = sd.captureMode === 2 || (sd.captureMode === 1 && sd.camType === 1);
 
 	const control = (action: "shutdown" | "reboot" | "restart" | "update") => {
 		if (confirmAction(`Warning: ${CONTROL_WARNINGS[action]} Continue?`)) {
@@ -122,7 +156,174 @@ export function SettingsScreen({ onRunWizard }: { onRunWizard: () => void }) {
 				<div class="kv"><b>Uptime</b><span>{st?.uptime ?? "—"}</span></div>
 			</div>
 
-			<div class="section-label">General</div>
+			<SectionGroup title="Capture & Mapping" onToggle={setCaptureSectionOpen}>
+				<p class="screen-sub" style={{ marginBottom: "8px" }}>
+					What Glimmr watches and how it maps your room lighting grid.
+				</p>
+				<div class="section-label">Preview</div>
+				<div class="preview-pair">
+					<figure>
+						<PreviewImage signal={inputImage} alt="Input preview" />
+						<figcaption>Input</figcaption>
+					</figure>
+					<figure>
+						<PreviewImage signal={outputImage} alt="Output preview" />
+						<figcaption>Output</figcaption>
+					</figure>
+				</div>
+				<SelectField
+					label="Preview Overlay"
+					value={[0, 1, 2].includes(sd.previewMode) ? sd.previewMode : 0}
+					options={[
+						{ value: 0, label: "None" },
+						{ value: 1, label: "LEDs" },
+						{ value: 2, label: "Sectors" }
+					]}
+					onChange={v => setSystemProps({ previewMode: parseInt(v) })}
+				/>
+				<TextField
+					label="Preview FPS"
+					hint="Lower = lighter CPU, higher = smoother live preview."
+					type="number"
+					min={1}
+					max={10}
+					step={1}
+					value={sd.previewFrameRate ?? 3}
+					onCommit={v => setSystemProps({ previewFrameRate: Math.max(1, Math.min(10, parseInt(v) || 3)) })}
+				/>
+				<TextField
+					label="Target send timeout (ms)"
+					hint="Maximum wait for one device send before moving on to keep frame output responsive."
+					type="number"
+					min={20}
+					max={500}
+					step={5}
+					value={sd.targetSendTimeoutMs ?? 120}
+					onCommit={v =>
+						setSystemProps({ targetSendTimeoutMs: Math.max(20, Math.min(500, parseInt(v) || 120)) })}
+				/>
+
+				<div class="section-label">Input source</div>
+				<SelectField
+					label="Input Source"
+					value={sd.captureMode}
+					options={[
+						{ value: 1, label: "Camera" },
+						{ value: 2, label: "HDMI Capture" },
+						{ value: 3, label: "Screen" }
+					]}
+					onChange={v => setSystemProps({ captureMode: parseInt(v) })}
+				/>
+				{sd.captureMode === 1 && (
+					<SelectField
+						label="Camera Type"
+						value={sd.camType}
+						options={[
+							{ value: 0, label: "Raspberry Pi Camera" },
+							{ value: 1, label: "USB Web Camera" }
+						]}
+						onChange={v => setSystemProps({ camType: parseInt(v) })}
+					/>
+				)}
+				{showUsb && (
+					<SelectField
+						label="USB Device"
+						value={sd.usbSelection}
+						allowEmpty
+						options={Object.entries(usb).map(([k, v]) => ({ value: k, label: String(v) }))}
+						onChange={v => setSystemProps({ usbSelection: parseInt(v) || 0 })}
+					/>
+				)}
+				<div class="section-label">Input tuning</div>
+				<div class="grid-2">
+					<TextField
+						label="Black Level"
+						hint="Minimum brightness for colors to display. Default 7."
+						type="number" min={0} max={255} step={1}
+						value={sd.blackLevel}
+						onCommit={v => setSystemProps({ blackLevel: parseInt(v) || 0 })}
+					/>
+					<TextField
+						label="Gamma"
+						hint="Gamma correction for wired LEDs (1.0–4.0)."
+						type="number" min={1} max={4} step={0.1}
+						value={sd.gammaCorrection}
+						onCommit={v => setSystemProps({ gammaCorrection: parseFloat(v) || 1 })}
+					/>
+				</div>
+				<SelectField
+					label="Audio Input Device"
+					value={sd.recDev ?? ""}
+					allowEmpty
+					options={audioDevices.value.map(d => ({ value: d.id, label: d.id }))}
+					onChange={v => setSystemProps({ recDev: v })}
+				/>
+
+				<div class="section-label">Crop & detection</div>
+				<div class="rows">
+					<ToggleRow
+						label="Letterbox cropping"
+						hint="Crop black bars from the top and bottom."
+						on={sd.enableLetterBox}
+						onChange={v => setSystemProps({ enableLetterBox: v })}
+					/>
+					<ToggleRow
+						label="Pillarbox cropping"
+						hint="Crop black bars from the left and right."
+						on={sd.enablePillarBox}
+						onChange={v => setSystemProps({ enablePillarBox: v })}
+					/>
+				</div>
+				<div class="grid-2 mt">
+					<TextField
+						label="Cropping Delay"
+						hint="Seconds to wait before cropping."
+						type="number" min={1} max={60} step={1}
+						value={sd.cropDelay}
+						onCommit={v => setSystemProps({ cropDelay: parseInt(v) || 1 })}
+					/>
+					<TextField
+						label="Crop Black Level"
+						hint="Non-black pixels allowed per line."
+						type="number" min={8} max={40} step={1}
+						value={sd.cropBlackLevel}
+						onCommit={v => setSystemProps({ cropBlackLevel: parseInt(v) || 8 })}
+					/>
+				</div>
+
+				<div class="section-label">LED grid</div>
+				<p class="field-hint" style={{ margin: "0 8px 10px" }}>
+					Total LEDs around the perimeter of your screen — the master grid every device maps onto.
+				</p>
+				<div class="count-grid">
+					<CountCell label="Top" value={sd.topCount} onCommit={v => setSystemProps({ topCount: v })} />
+					<CountCell label="Bottom" value={sd.bottomCount} onCommit={v => setSystemProps({ bottomCount: v })} />
+					<CountCell label="Left" value={sd.leftCount} onCommit={v => setSystemProps({ leftCount: v })} />
+					<CountCell label="Right" value={sd.rightCount} onCommit={v => setSystemProps({ rightCount: v })} />
+				</div>
+				<LedMap caption={`${sd.ledCount} LEDs total — tap one to flash it.`} />
+
+				<div class="section-label">Sector grid</div>
+				<p class="field-hint" style={{ margin: "0 8px 10px" }}>
+					Sectors for single-color devices like bulbs and panels. Re-map devices after changing.
+				</p>
+				<div class="count-grid">
+					<CountCell label="Horiz" value={sd.hSectors} onCommit={v => setSystemProps({ hSectors: v })} />
+					<CountCell label="Vert" value={sd.vSectors} onCommit={v => setSystemProps({ vSectors: v })} />
+				</div>
+				<div class="rows">
+					<ToggleRow
+						label="Include center"
+						hint="Sample the middle of the screen too, not just the edges."
+						on={sd.useCenter}
+						onChange={v => setSystemProps({ useCenter: v })}
+					/>
+				</div>
+				<SectorMap caption={`${sd.sectorCount} sectors — tap one to flash it.`} />
+			</SectionGroup>
+
+			<SectionGroup title="Core configuration">
+				<div class="section-label">General</div>
 			<TextField
 				label="Device Name"
 				value={sd.deviceName}
@@ -159,6 +360,18 @@ export function SettingsScreen({ onRunWizard }: { onRunWizard: () => void }) {
 					hint="Disable the rainbow wipe on startup."
 					on={sd.skipDemo}
 					onChange={v => setSystemProps({ skipDemo: v })}
+				/>
+				<ToggleRow
+					label="Enable Preview Studio"
+					hint="Show the full 3D preview experience on the Control screen."
+					on={sd.enablePreviewStudio ?? true}
+					onChange={v => setSystemProps({ enablePreviewStudio: v })}
+				/>
+				<ToggleRow
+					label="Enable phone calibration"
+					hint="Allow live phone-camera calibration sessions."
+					on={sd.enablePhoneCalibration ?? true}
+					onChange={v => setSystemProps({ enablePhoneCalibration: v })}
 				/>
 			</div>
 			<button class="btn mt" onClick={onRunWizard}>Run setup wizard</button>
@@ -272,9 +485,11 @@ export function SettingsScreen({ onRunWizard }: { onRunWizard: () => void }) {
 				/>
 			</div>
 
-			<HueSyncPanel />
+			<HueSyncPanel enablePolling={false} />
+			</SectionGroup>
 
-			<div class="section-label">Backup & import</div>
+			<SectionGroup title="Maintenance" defaultOpen={false}>
+				<div class="section-label">Backup & import</div>
 			<div class="rows">
 				<div class="row-item">
 					<div class="row-body">
@@ -319,13 +534,14 @@ export function SettingsScreen({ onRunWizard }: { onRunWizard: () => void }) {
 				<button class="btn" style={{ flex: 1 }} onClick={downloadLogs}>Download log</button>
 			</div>
 
-			<div class="section-label">System</div>
+				<div class="section-label">System</div>
 			<div style={{ display: "flex", gap: "10px", margin: "0 4px", flexWrap: "wrap" }}>
 				<button class="btn" style={{ flex: 1 }} onClick={() => control("restart")}>Restart service</button>
 				<button class="btn" style={{ flex: 1 }} onClick={() => control("update")}>Update</button>
 				<button class="btn" style={{ flex: 1 }} onClick={() => control("reboot")}>Reboot</button>
 				<button class="btn danger" style={{ flex: 1 }} onClick={() => control("shutdown")}>Shut down</button>
 			</div>
+			</SectionGroup>
 
 			{showLog && <LogViewerSheet onClose={() => setShowLog(false)} />}
 		</div>

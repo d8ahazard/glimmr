@@ -165,6 +165,13 @@ public class SceneV2 {
 	public int FrameCount { get; set; }
 
 	/// <summary>
+	///     Optional file name (relative to the user scenes dir) of a PNG thumbnail for this
+	///     scene. Used by the web gallery tiles.
+	/// </summary>
+	[JsonProperty]
+	public string ThumbnailFile { get; set; } = "";
+
+	/// <summary>
 	///     Name of the built-in animation provider for <see cref="Kind" /> = "builtin"
 	///     (e.g. "tetris", "pacman", "lightning"). Empty for script/video/image/color scenes.
 	/// </summary>

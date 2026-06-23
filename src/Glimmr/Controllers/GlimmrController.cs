@@ -306,6 +306,115 @@ public class GlimmrController : ControllerBase {
 	}
 
 	/// <summary>
+	///     Upload a PNG/JPEG data URL to use as a scene thumbnail.
+	/// </summary>
+	[HttpPost("scene/thumbnail")]
+	public async Task<IActionResult> SaveSceneThumbnail([FromBody] SceneThumbnailRequest req) {
+		if (req == null || string.IsNullOrWhiteSpace(req.SceneId) || string.IsNullOrWhiteSpace(req.DataUrl)) {
+			return BadRequest("SceneId and DataUrl are required.");
+		}
+
+		var store = new SceneStore();
+		var scene = store.Get(req.SceneId);
+		if (scene == null) {
+			return NotFound();
+		}
+
+		try {
+			var comma = req.DataUrl.IndexOf(',');
+			if (comma < 0 || comma + 1 >= req.DataUrl.Length) {
+				return BadRequest("Invalid image payload.");
+			}
+
+			var header = req.DataUrl[..comma];
+			var payload = req.DataUrl[(comma + 1)..];
+			var ext = header.Contains("image/jpeg", StringComparison.OrdinalIgnoreCase) ? ".jpg" : ".png";
+			var bytes = Convert.FromBase64String(payload);
+
+			scene.ThumbnailFile = scene.Id + ".thumb" + ext;
+			System.IO.File.WriteAllBytes(store.ThumbnailPath(scene), bytes);
+			store.Save(scene);
+			await _controlService.NotifyClients();
+			return Ok(new { ok = true, scene.ThumbnailFile });
+		} catch (Exception e) {
+			Log.Warning("Failed to save scene thumbnail: " + e.Message);
+			return BadRequest("Unable to save thumbnail.");
+		}
+	}
+
+	/// <summary>
+	///     Capture the current live output preview and store it as the scene thumbnail.
+	/// </summary>
+	[HttpPost("scene/thumbnail/capture")]
+	public async Task<IActionResult> CaptureSceneThumbnail([FromBody] SceneThumbnailCaptureRequest req) {
+		if (req == null || string.IsNullOrWhiteSpace(req.SceneId)) {
+			return BadRequest("SceneId is required.");
+		}
+
+		var store = new SceneStore();
+		var scene = store.Get(req.SceneId);
+		if (scene == null) {
+			return NotFound();
+		}
+
+		// Give the renderer a short window to produce an output preview frame.
+		byte[]? png = null;
+		for (var i = 0; i < 20; i++) {
+			png = ControlService.GetLastPreviewImage("outputImage");
+			if (png is { Length: > 0 }) {
+				break;
+			}
+
+			await Task.Delay(250);
+		}
+
+		if (png is not { Length: > 0 }) {
+			return BadRequest("No preview frame available yet.");
+		}
+
+		try {
+			scene.ThumbnailFile = scene.Id + ".thumb.png";
+			System.IO.File.WriteAllBytes(store.ThumbnailPath(scene), png);
+			store.Save(scene);
+			await _controlService.NotifyClients();
+			return Ok(new { ok = true, scene.ThumbnailFile });
+		} catch (Exception e) {
+			Log.Warning("Failed to capture scene thumbnail: " + e.Message);
+			return BadRequest("Unable to capture thumbnail.");
+		}
+	}
+
+	/// <summary>
+	///     Fetch a scene thumbnail image if one exists.
+	/// </summary>
+	[HttpGet("scene/thumbnail")]
+	public IActionResult GetSceneThumbnail([FromQuery] string id) {
+		var store = new SceneStore();
+		var scene = store.Get(id);
+		if (scene == null || string.IsNullOrWhiteSpace(scene.ThumbnailFile)) {
+			return NotFound();
+		}
+
+		var path = store.ThumbnailPath(scene);
+		if (!System.IO.File.Exists(path)) {
+			return NotFound();
+		}
+
+		var ext = Path.GetExtension(path).ToLowerInvariant();
+		var contentType = ext == ".jpg" || ext == ".jpeg" ? "image/jpeg" : "image/png";
+		return PhysicalFile(path, contentType);
+	}
+
+	/// <summary>
+	///     Force preview streaming on/off without requiring a SignalR SettingsShown client.
+	/// </summary>
+	[HttpPost("previewActive")]
+	public IActionResult SetPreviewActive([FromBody] bool active) {
+		_controlService.SendPreview = active;
+		return Ok(new { active });
+	}
+
+	/// <summary>
 	///     Bake an uploaded video into a scene (server-side decode + downsample).
 	/// </summary>
 	[HttpPost("scene/bakeVideo")]
@@ -728,7 +837,7 @@ public class GlimmrController : ControllerBase {
 	[HttpPost("scanDevices")]
 	public async Task<ActionResult<IColorTargetData[]>> ScanDevices() {
 		await _controlService.ScanDevices();
-		Thread.Sleep(5000);
+		await Task.Delay(TimeSpan.FromSeconds(5));
 		return new ActionResult<IColorTargetData[]>(
 			DataUtil.GetDevices().Select(i => (IColorTargetData)i).ToArray());
 	}
@@ -740,6 +849,23 @@ public class GlimmrController : ControllerBase {
 	[HttpGet("stats")]
 	public async Task<ActionResult<StatData>> GetStats() {
 		return await StatUtil.GetStats();
+	}
+
+	/// <summary>
+	///     Fetch the current performance counters tracked by the runtime pipeline.
+	/// </summary>
+	[HttpGet("stats/perf")]
+	public ActionResult<PerformanceData> GetPerfStats() {
+		return new ActionResult<PerformanceData>(_controlService.ColorService.SnapshotPerformance());
+	}
+
+	/// <summary>
+	///     Reset runtime performance counters used for benchmarking/audit passes.
+	/// </summary>
+	[HttpPost("stats/perf/reset")]
+	public IActionResult ResetPerfStats() {
+		_controlService.ColorService.ResetPerformanceCounters();
+		return Ok(new { ok = true });
 	}
 
 
@@ -899,4 +1025,13 @@ public class GlimmrController : ControllerBase {
 			return StatusCode(500, "Support package generation failed: " + e.Message);
 		}
 	}
+}
+
+public sealed class SceneThumbnailRequest {
+	public string SceneId { get; init; } = "";
+	public string DataUrl { get; init; } = "";
+}
+
+public sealed class SceneThumbnailCaptureRequest {
+	public string SceneId { get; init; } = "";
 }

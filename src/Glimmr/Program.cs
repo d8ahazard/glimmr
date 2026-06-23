@@ -124,6 +124,7 @@ public static class Program {
 				services.AddHostedService<DiscoveryService>();
 				services.AddSingleton<RoomMapService>();
 				services.AddSingleton<CalibrationService>();
+				services.AddSingleton<CalibrationRtcService>();
 				services.AddSingleton<OutputSchedulerService>();
 			});
 	}

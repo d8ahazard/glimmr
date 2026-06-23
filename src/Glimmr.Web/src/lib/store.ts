@@ -60,6 +60,7 @@ export const sortedDevices = computed(() =>
 );
 
 let toastId = 0;
+let previewConsumers = 0;
 
 export function showToast(title: string, body: string) {
 	const t = { id: ++toastId, title, body };
@@ -87,6 +88,7 @@ function loadStore(parsed: StoreData) {
 		if (parsed.scenes) scenes.value = parsed.scenes;
 		if (parsed.stats) stats.value = parsed.stats;
 	});
+	clearPreviewIfLightsOff(system.value);
 }
 
 let offlineTimer: number | undefined;
@@ -103,6 +105,13 @@ function setConnected(up: boolean) {
 	offlineTimer = window.setTimeout(() => {
 		if (!connected.value) offline.value = true;
 	}, 2500);
+}
+
+function clearPreviewIfLightsOff(sd: SystemData | null) {
+	if (!sd) return;
+	if (!sd.autoDisabled && sd.deviceMode !== 0) return;
+	inputImage.value = null;
+	outputImage.value = null;
 }
 
 export function connect() {
@@ -124,7 +133,10 @@ export function connect() {
 
 	hub.on("mode", (m: number) => {
 		const sd = system.value;
-		if (sd) system.value = { ...sd, deviceMode: m, autoDisabled: false };
+		if (!sd) return;
+		const next = { ...sd, deviceMode: m, autoDisabled: false };
+		system.value = next;
+		clearPreviewIfLightsOff(next);
 	});
 
 	hub.on("stats", (s: StatData) => {
@@ -258,7 +270,11 @@ async function invoke(method: string, ...args: unknown[]) {
 
 export function setMode(m: number) {
 	const sd = system.value;
-	if (sd) system.value = { ...sd, deviceMode: m, autoDisabled: false };
+	if (sd) {
+		const next = { ...sd, deviceMode: m, autoDisabled: false };
+		system.value = next;
+		clearPreviewIfLightsOff(next);
+	}
 	void invoke("Mode", m);
 }
 
@@ -268,6 +284,7 @@ export function setSystemProps(patch: Partial<SystemData>) {
 	if (!sd) return;
 	const next = { ...sd, ...patch };
 	system.value = next;
+	clearPreviewIfLightsOff(next);
 	void invoke("SystemData", JSON.stringify(next));
 }
 
@@ -321,5 +338,16 @@ export function systemControl(action: "shutdown" | "reboot" | "restart" | "updat
 }
 
 export function setPreviewsActive(active: boolean) {
-	void invoke("SettingsShown", active);
+	if (active) {
+		previewConsumers++;
+		if (previewConsumers === 1) {
+			void invoke("SettingsShown", true);
+		}
+		return;
+	}
+
+	previewConsumers = Math.max(0, previewConsumers - 1);
+	if (previewConsumers === 0) {
+		void invoke("SettingsShown", false);
+	}
 }

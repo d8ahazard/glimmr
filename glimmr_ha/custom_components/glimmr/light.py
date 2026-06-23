@@ -101,7 +101,7 @@ class GlimmrLight(LightEntity):
     async def async_will_remove_from_hass(self) -> None:
         if self.glimmr.connected:
             LOGGER.debug("Disconnecting from ws.")
-            self.glimmr.socket.stop()
+            await self.glimmr.socket.stop()
 
     # ------------------------------------------------------------------ #
     # Properties

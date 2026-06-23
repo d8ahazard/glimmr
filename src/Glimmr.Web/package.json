@@ -11,10 +11,12 @@
   "dependencies": {
     "@microsoft/signalr": "^10.0.0",
     "@preact/signals": "^2.9.1",
-    "preact": "^10.29.2"
+    "preact": "^10.29.2",
+    "three": "^0.184.0"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.10.5",
+    "@types/three": "^0.184.1",
     "typescript": "^6.0.3",
     "vite": "^8.0.16"
   }

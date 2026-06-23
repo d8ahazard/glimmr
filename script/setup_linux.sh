@@ -28,8 +28,9 @@ if [ -f "/usr/bin/raspi-config" ]; then
 fi
 
 if [ "$IS_PI" == "1" ] && { [ "$arch" == "armv7l" ] || [ "$arch" == "armv71" ]; }; then
-  PUBPROFILE="LinuxARM"
-  PUBFILE="linux-arm"
+  echo "32-bit ARM installs are no longer supported by setup_linux.sh."
+  echo "Please use a 64-bit Raspberry Pi OS image and linux-arm64 build."
+  exit 1
 fi
 
 if [ "$IS_PI" == "1" ] && [ "$arch" == "aarch64" ]; then

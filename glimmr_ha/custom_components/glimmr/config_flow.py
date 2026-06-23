@@ -85,7 +85,6 @@ class GlimmrFlowHandler(ConfigFlow, domain=DOMAIN):
         if user_input.get(CONF_MAC) is None or not prepare:
             LOGGER.debug("Creating glimmr from config flow (NO mac/not prepare) " + user_input[CONF_HOST])
             glimmr = Glimmr(user_input[CONF_HOST])
-            await glimmr.update()
             glimmr.LOGGER = LOGGER
             try:
                 await glimmr.update()

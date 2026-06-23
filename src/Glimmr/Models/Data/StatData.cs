@@ -67,4 +67,11 @@ public class StatData {
 
 	[JsonProperty]
 	public string[] ThrottledState { get; set; } = Array.Empty<string>();
+
+	/// <summary>
+	///     Runtime performance counters for frame processing, preview transport, and per-target
+	///     dispatch behavior.
+	/// </summary>
+	[JsonProperty]
+	public PerformanceData Perf { get; set; } = new();
 }

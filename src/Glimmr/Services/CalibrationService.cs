@@ -29,6 +29,18 @@ public class CalibrationService {
 
 		Log.Information("Flashing emitter '{Id}' with color R={R} G={G} B={B}.",
 			emitterId, color.R, color.G, color.B);
+		try {
+			// Prefer physical-device flash by mapped device id; this drives the real output stack.
+			if (!string.IsNullOrWhiteSpace(emitter.DeviceId)) {
+				_ = ControlService.GetInstance().FlashDevice(emitter.DeviceId);
+			} else if (emitter.Segments.Count > 0) {
+				var led = Math.Max(0, emitter.Segments[0].StartIndex);
+				_ = ControlService.GetInstance().FlashLed(led);
+			}
+		} catch (Exception e) {
+			Log.Warning("FlashEmitter runtime flash failed: {Message}", e.Message);
+		}
+
 		return emitter;
 	}
 
@@ -51,8 +63,9 @@ public class CalibrationService {
 			}
 
 			Log.Debug("Chase: flashing emitter '{Id}'.", id);
+			FlashEmitter(id, white);
 			chased.Add(id);
-			await Task.Delay(150, ct).ConfigureAwait(false);
+			await Task.Delay(220, ct).ConfigureAwait(false);
 		}
 
 		return chased;

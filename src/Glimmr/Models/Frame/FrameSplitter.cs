@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -371,10 +372,15 @@ public class FrameSplitter : IDisposable {
 		if (_updating)
 		{
 			// Drop the stale frame; return the most recent published colors.
+			ColorService.ReportFrameDrop();
 			return (_colorsLed, _colorsSectors);
 		}
 
 		_updating = true;
+		var totalWatch = Stopwatch.StartNew();
+		var computeMs = 0;
+		var dispatchMs = 0;
+		var previewMs = 0;
 		try
 		{
 			var processedFrame = ProcessFrame(frame);
@@ -391,7 +397,9 @@ public class FrameSplitter : IDisposable {
 				_checkCrop = false;
 			}
 
+			var computeWatch = Stopwatch.StartNew();
 			var (ledColors, sectorColors, matrixColors) = ComputeColors(processedFrame);
+			computeMs = (int)computeWatch.ElapsedMilliseconds;
 
 			_colorsLed = ledColors;
 			_colorsSectors = sectorColors;
@@ -399,17 +407,22 @@ public class FrameSplitter : IDisposable {
 
 			if (_doSend)
 			{
+				var dispatchWatch = Stopwatch.StartNew();
 				await ColorService.SendColors(ledColors, sectorColors, matrixColors,
 					_matrixSampleWidth, _matrixSampleHeight);
+				dispatchMs = (int)dispatchWatch.ElapsedMilliseconds;
 			}
 
+			var previewWatch = Stopwatch.StartNew();
 			await HandleSaving(frame, processedFrame).ConfigureAwait(false);
+			previewMs = (int)previewWatch.ElapsedMilliseconds;
 
 			return (_colorsLed, _colorsSectors);
 		}
 		finally
 		{
 			_updating = false;
+			ColorService.ReportFrameUpdate((int)totalWatch.ElapsedMilliseconds, computeMs, dispatchMs, previewMs);
 		}
 	}
 

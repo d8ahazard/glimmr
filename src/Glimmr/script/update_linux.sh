@@ -16,10 +16,11 @@ arch="$(arch)"
 PUBPROFILE="Linux"
 PUBPATH="linux-x64"
 
-if [ -f "/usr/bin/raspi-config" ] && [ "$arch" == "armv71" ] 
+if [ -f "/usr/bin/raspi-config" ] && { [ "$arch" == "armv7l" ] || [ "$arch" == "armv71" ]; }
   then
-    PUBPROFILE="LinuxARM"
-    PUBPATH="linux-arm"
+    echo "32-bit ARM installs are no longer supported by Glimmr update_linux.sh." >> "$log"
+    echo "Please migrate to a 64-bit OS image (linux-arm64) before updating."
+    exit 1
 fi
 
 if [ -f "/usr/bin/raspi-config" ] && [ "$arch" == "aarch64" ] 
@@ -65,7 +66,12 @@ tar zxvf ./archive.tgz -C /usr/share/Glimmr/
 # Permissions and cleanup
 echo "Setting permissions..." >> $log
 echo "Setting permissions..."
-chmod -R 777 /usr/share/Glimmr/
+chown -R 0:0 /usr/share/Glimmr
+find /usr/share/Glimmr -type d -exec chmod 755 {} \;
+find /usr/share/Glimmr -type f -exec chmod 644 {} \;
+if [ -f /usr/share/Glimmr/Glimmr ]; then
+  chmod 755 /usr/share/Glimmr/Glimmr
+fi
 echo "Cleanup..." >> $log
 echo "Cleanup..."
 rm ./archive.tgz

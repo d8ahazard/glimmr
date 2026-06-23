@@ -30,7 +30,7 @@ param (
 $msbuild_path = "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe"
 $targets = "linux-arm64", "linux-x64", "win-arm64", "win-x64", "win-x86", "osx-x64"
 $package = $true
-if ($targetDevice -ne "" -or ($service -and $targetRuntime -like "win-*") -or $css -or $js -or $web) {
+if ($targetDevice -ne "" -or ($service -and $targetRuntime -like "win-*") -or $css -or $javascript -or $web) {
 	$package = $false
 }
 if ($targetRuntime -ne "all") {
@@ -45,8 +45,8 @@ $binPath = Resolve-Path -path "$PSScriptRoot\..\src\Glimmr\bin"
 $trayPath = Resolve-Path -path "$PSScriptRoot\..\src\GlimmrTray"
 $osxPath = Resolve-Path -path "$PSScriptRoot\..\Glimmr-macos-installer-builder\MacOS-x64\application"
 $builderPath64 = Resolve-Path -path "$PSScriptRoot\..\Glimmr-image-gen-x64\stage2\05-glimmr\files"
-$baseFiles = "Glimmr.Views.dll", "Glimmr.deps.json", "Glimmr.Views.pdb","wwwroot\js\*","wwwroot\css\*","Glimmr.dll",
-"Glimmr.pdb","Glimmr.xml","Glimmr.runtimeconfig.json","Glimmr"
+$baseFiles = "Glimmr.deps.json", "Glimmr.dll", "Glimmr.pdb", "Glimmr.xml",
+"Glimmr.runtimeconfig.json", "Glimmr", "wwwroot\app\*", "scenes\*"
 
 if (-not(Test-Path -Path $innoPath -PathType Leaf)) {
 	try {
@@ -160,11 +160,11 @@ if ($targetDevice -ne "" -or ($service -and $targetRuntime -like "win-*")) {
 
 		if (-not $full) {
 			if ($css) {
-				pscp -P 22 -r -pw $password "${binPath}/Release/net8.0/${targetRuntime}/wwwroot/css/" "${username}@${targetDevice}:${targetPath}/wwwroot/css/"
+				pscp -P 22 -r -pw $password "${binPath}/Release/net8.0/${targetRuntime}/wwwroot/app/assets/*.css" "${username}@${targetDevice}:${targetPath}/wwwroot/app/assets/"
 			} elseif ($javascript) {
-				pscp -P 22 -r -pw $password "${binPath}/Release/net8.0/${targetRuntime}/wwwroot/js/" "${username}@${targetDevice}:${targetPath}/wwwroot/js/"
+				pscp -P 22 -r -pw $password "${binPath}/Release/net8.0/${targetRuntime}/wwwroot/app/assets/*.js" "${username}@${targetDevice}:${targetPath}/wwwroot/app/assets/"
 			} elseif ($web) {
-				pscp -P 22 -r -pw $password "${binPath}/Release/net8.0/${targetRuntime}/wwwroot/" "${username}@${targetDevice}:${targetPath}/wwwroot/"
+				pscp -P 22 -r -pw $password "${binPath}/Release/net8.0/${targetRuntime}/wwwroot/app/" "${username}@${targetDevice}:${targetPath}/wwwroot/app/"
 			} else {
 				foreach ($file in $baseFiles) {
 					pscp -P 22 -r -pw $password "${binPath}/Release/net8.0/${targetRuntime}/${file}" "${username}@${targetDevice}:${targetPath}/${file}"
@@ -175,7 +175,7 @@ if ($targetDevice -ne "" -or ($service -and $targetRuntime -like "win-*")) {
 		}
 	}
 	
-	if ($service -and -not ($web -and $css -and $js)) {
+	if ($service -and -not ($web -or $css -or $javascript)) {
 		if ($targetRuntime -like 'osx-*') {
 			Write-Host "Restarting Glimmr on OSX"
 			plink -no-antispoof -pw $password "$username@$targetDevice" "echo $password | sudo launchctl load -w /Library/LaunchAgents/com.glimmr.plist"

@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -37,8 +38,21 @@ using Timer = System.Timers.Timer;
 namespace Glimmr.Services;
 
 public class ControlService : BackgroundService {
-	public bool SendPreview { get; set; }
+	public bool SendPreview {
+		get => _sendPreview;
+		set {
+			_sendPreview = value;
+			if (_sendPreview) {
+				_ = PushClearPreviewIfLightsOffAsync();
+			}
+		}
+	}
 	public ColorService ColorService { get; set; } = null!;
+	private static readonly object PreviewImageLock = new();
+	private static readonly byte[] BlankPreviewPng = Convert.FromBase64String(
+		"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADElEQVR4nGNgYGBgAAAABAABJzQnCgAAAABJRU5ErkJggg==");
+	private static byte[]? _lastInputImagePng;
+	private static byte[]? _lastOutputImagePng;
 	public HttpClient HttpSender { get; private set; } = null!;
 	public MulticastService MulticastService { get; private set; } = null!;
 	public ServiceDiscovery ServiceDiscovery { get; private set; } = null!;
@@ -53,6 +67,7 @@ public class ControlService : BackgroundService {
 	private static ControlService _myCs = null!;
 
 	private static Timer? _ut;
+	private bool _sendPreview;
 
 	public AsyncEvent<DynamicEventArgs> DemoLedEvent = null!;
 	public AsyncEvent<DynamicEventArgs> DeviceReloadEvent = null!;
@@ -147,6 +162,9 @@ public class ControlService : BackgroundService {
 
 		DataUtil.SetItem("AutoDisabled", autoDisabled);
 		DataUtil.SetItem("DeviceMode", mode);
+		if (SendPreview && (mode == DeviceMode.Off || autoDisabled)) {
+			_ = PushClearPreviewAsync();
+		}
 		// If init is true, set DynamicEventArgs.Arg1 to true
 		var args = new DynamicEventArgs(mode, init);
 		await SetModeEvent.InvokeAsync(this, args);
@@ -434,7 +452,7 @@ v. {version}
 		HttpSender.Dispose();
 		UdpClient.Dispose();
 		MulticastService.Dispose();
-		foreach (dynamic agent in _agents) {
+		foreach (var (_, agent) in _agents) {
 			try {
 				var type = agent.GetType();
 				if (type.GetMethod("Dispose") != null) {
@@ -445,10 +463,10 @@ v. {version}
 			}
 		}
 
-		await Task.FromResult(true);
 		Log.Information("Control service stopped.");
 		Log.Information("Glimmr is now terminated. Bye!");
 		Log.Information("");
+		await base.StopAsync(cancellationToken);
 	}
 
 
@@ -555,13 +573,66 @@ v. {version}
 	}
 
 	public static async Task SendImage(string method, Mat image) {
+		var watch = Stopwatch.StartNew();
 		var vb = new VectorOfByte();
 		CvInvoke.Imencode(".png", image, vb);
+		var bytes = vb.ToArray();
+		lock (PreviewImageLock) {
+			if (method == "outputImage") {
+				_lastOutputImagePng = bytes;
+			} else if (method == "inputImage") {
+				_lastInputImagePng = bytes;
+			}
+		}
+		if (_hubContext == null) {
+			_myCs?.ColorService.ReportPreviewSend(bytes.Length, (int)watch.ElapsedMilliseconds);
+			return;
+		}
+
+		await _hubContext.Clients.All.SendAsync(method, bytes);
+		_myCs?.ColorService.ReportPreviewSend(bytes.Length, (int)watch.ElapsedMilliseconds);
+	}
+
+	private static bool LightsAreOff() {
+		try {
+			var sd = DataUtil.GetSystemData();
+			return sd.AutoDisabled || sd.DeviceMode == DeviceMode.Off;
+		} catch (Exception e) {
+			Log.Debug("Unable to determine light state for preview clear: " + e.Message);
+			return false;
+		}
+	}
+
+	private static async Task PushClearPreviewIfLightsOffAsync() {
+		if (!LightsAreOff()) {
+			return;
+		}
+
+		await PushClearPreviewAsync();
+	}
+
+	private static async Task PushClearPreviewAsync() {
+		lock (PreviewImageLock) {
+			_lastInputImagePng = BlankPreviewPng;
+			_lastOutputImagePng = BlankPreviewPng;
+		}
+
 		if (_hubContext == null) {
 			return;
 		}
 
-		await _hubContext.Clients.All.SendAsync(method, vb.ToArray());
+		await _hubContext.Clients.All.SendAsync("inputImage", BlankPreviewPng);
+		await _hubContext.Clients.All.SendAsync("outputImage", BlankPreviewPng);
+	}
+
+	public static byte[]? GetLastPreviewImage(string method = "outputImage") {
+		lock (PreviewImageLock) {
+			if (method == "inputImage") {
+				return _lastInputImagePng?.ToArray();
+			}
+
+			return _lastOutputImagePng?.ToArray();
+		}
 	}
 
 	public async Task DemoLed(string id) {

@@ -4,8 +4,9 @@ import type { SceneV2 } from "../types";
 import { Sheet, TextField, ToggleRow, SelectField, Slider, confirmAction } from "../components/ui";
 import { ColorWheel } from "../components/ColorWheel";
 import { IconTrash } from "../components/icons";
+import { PreviewImage } from "../components/PreviewImage";
 import {
-	saveScene, validateScene, selectScene, deleteScene, bakeVideo
+	saveScene, validateScene, selectScene, deleteScene, bakeVideo, sceneThumbnailUrl, saveSceneThumbnail
 } from "../lib/api";
 
 const STARTER_SCRIPT = `@scene fps=30 bg=#000010 trail=0.85 size=32x48
@@ -37,12 +38,7 @@ async function activate(id: string) {
 export function ScenesScreen() {
 	const sd = system.value;
 	const [editing, setEditing] = useState<{ kind: "script" | "video"; scene?: SceneV2 } | null>(null);
-
-	// Stream live preview frames while the Scenes tab is open.
-	useEffect(() => {
-		setPreviewsActive(true);
-		return () => setPreviewsActive(false);
-	}, []);
+	const [thumbBusy, setThumbBusy] = useState<string | null>(null);
 
 	if (!sd) return <div class="screen" />;
 
@@ -53,6 +49,13 @@ export function ScenesScreen() {
 	// Scripted particle animations and bespoke built-in providers share the Animations section.
 	const animations = list.filter(s => s.kind === "script" || s.kind === "builtin");
 	const videos = list.filter(s => s.kind === "video");
+
+	// Stream live preview frames only while a scene is active in scene mode.
+	useEffect(() => {
+		if (!activeId) return;
+		setPreviewsActive(true);
+		return () => setPreviewsActive(false);
+	}, [activeId]);
 
 	function setParam(sceneId: string, key: string, value: number) {
 		const cur = system.value;
@@ -70,22 +73,44 @@ export function ScenesScreen() {
 		setSystemProps({ sceneParams: sp });
 	}
 
-	const renderRow = (s: SceneV2) => (
+	const renderTile = (s: SceneV2) => (
 		<div
 			key={s.id}
-			class={"row-item selectable" + (s.id === activeId ? " picking" : "")}
+			class={"scene-tile" + (s.id === activeId ? " active" : "")}
 			onClick={() => activate(s.id)}
 		>
-			<div class="row-body">
-				<div class="row-title">
-					{s.name}{" "}
-					<span class="muted tiny">
-						{s.kind === "video" ? `${s.frameCount}f · ` : ""}{s.width}×{s.height}{s.mirror ? " · mirror" : ""}
-					</span>
-				</div>
-				<div class="row-sub">{s.id === activeId ? "Playing now" : "Tap to play"}</div>
+			<div class="scene-tile-thumb">
+				<img
+					src={s.thumbnailFile ? sceneThumbnailUrl(s.id, s.thumbnailFile) : "/img/no_preview.jpg"}
+					alt={`${s.name} thumbnail`}
+					loading="lazy"
+				/>
 			</div>
-			<div class="row-trail" onClick={e => e.stopPropagation()}>
+			<div class="scene-tile-body">
+				<div class="scene-tile-title">
+					<span>{s.name}</span>
+					<span class="scene-kind">{s.kind}</span>
+				</div>
+				<div class="row-sub">
+					{s.kind === "video" ? `${s.frameCount}f · ` : ""}{s.width}×{s.height}
+					{s.mirror ? " · mirror" : ""}
+				</div>
+			</div>
+			<div class="scene-tile-actions" onClick={e => e.stopPropagation()}>
+				<button
+					class="btn small"
+					disabled={thumbBusy === s.id || s.id !== activeId}
+					onClick={async () => {
+						const frame = outputImage.value;
+						if (!frame) return;
+						setThumbBusy(s.id);
+						const ok = await saveSceneThumbnail(s.id, frame);
+						setThumbBusy(null);
+						showToast("Scene thumbnail", ok ? "Updated." : "Save failed.");
+					}}
+				>
+					{thumbBusy === s.id ? "Saving…" : "Screenshot"}
+				</button>
 				{s.kind === "script" && !s.system && (
 					<button class="btn small" onClick={() => setEditing({ kind: "script", scene: s })}>Edit</button>
 				)}
@@ -124,7 +149,7 @@ export function ScenesScreen() {
 					<div class="section-label">Now playing</div>
 					<div class="preview-pair" style={{ gridTemplateColumns: "1fr" }}>
 						<figure>
-							<img src={outputImage.value ?? "/img/no_preview.jpg"} alt="Scene preview" />
+							<PreviewImage signal={outputImage} alt="Scene preview" />
 							<figcaption>{activeScene?.name ?? "Scene"}</figcaption>
 						</figure>
 					</div>
@@ -178,13 +203,13 @@ export function ScenesScreen() {
 			{images.length === 0 && (
 				<p class="field-hint" style={{ margin: "0 8px" }}>No image scenes. Build one with Image2Scene and import it as an ambient scene.</p>
 			)}
-			<div class="rows">{images.map(renderRow)}</div>
+			<div class="scene-grid">{images.map(renderTile)}</div>
 
 			<div class="section-label">Animations</div>
 			<div class="scene-chips" style={{ marginBottom: "6px" }}>
 				<button class="btn small primary" onClick={() => setEditing({ kind: "script" })}>New animation</button>
 			</div>
-			<div class="rows">{animations.map(renderRow)}</div>
+			<div class="scene-grid">{animations.map(renderTile)}</div>
 
 			<div class="section-label">Videos</div>
 			<div class="scene-chips" style={{ marginBottom: "6px" }}>
@@ -193,7 +218,7 @@ export function ScenesScreen() {
 			{videos.length === 0 && (
 				<p class="field-hint" style={{ margin: "0 8px" }}>No video scenes yet — bake one from a clip.</p>
 			)}
-			<div class="rows">{videos.map(renderRow)}</div>
+			<div class="scene-grid">{videos.map(renderTile)}</div>
 
 			{editing?.kind === "script" && (
 				<ScriptEditor scene={editing.scene} onClose={() => setEditing(null)} />

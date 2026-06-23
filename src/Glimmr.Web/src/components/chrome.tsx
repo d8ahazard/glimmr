@@ -1,14 +1,12 @@
 import type { JSX } from "preact";
 import { toasts, stats, offline, everConnected, system } from "../lib/store";
-import { IconControl, IconDevices, IconCapture, IconSettings, IconScenes } from "./icons";
+import { IconControl, IconSettings, IconScenes } from "./icons";
 
-export type Tab = "control" | "scenes" | "devices" | "capture" | "settings";
+export type Tab = "control" | "scenes" | "settings";
 
 const TABS: { id: Tab; label: string; icon: (p: { size?: number }) => JSX.Element }[] = [
 	{ id: "control", label: "Control", icon: IconControl },
 	{ id: "scenes", label: "Scenes", icon: IconScenes },
-	{ id: "devices", label: "Devices", icon: IconDevices },
-	{ id: "capture", label: "Capture", icon: IconCapture },
 	{ id: "settings", label: "Settings", icon: IconSettings }
 ];
 

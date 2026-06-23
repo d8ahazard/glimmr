@@ -5,7 +5,7 @@
   "config_flow": true,
   "documentation": "https://github.com/d8ahazard/glimmr_ha",
   "issue_tracker": "https://github.com/d8ahazard/glimmr_ha/issues",
-  "requirements": ["glimmr==1.2.0", "signalrcore==0.9.2"],
+  "requirements": ["glimmr>=1.2.0", "signalrcore==0.9.2"],
   "zeroconf": ["_glimmr._tcp.local."],
   "codeowners": ["@d8ahazard"],
   "iot_class": "local_push"

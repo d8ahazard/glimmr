@@ -1,6 +1,16 @@
-import type { HueSyncStatus, SceneParam, SceneV2 } from "../types";
+import type {
+	CalibrationSession,
+	EmitterGraph,
+	HueSyncStatus,
+	RoomMapEmitter,
+	SceneParam,
+	SceneV2,
+	Vec3
+} from "../types";
 
 const base = "/api/Glimmr";
+const roomMapBase = "/api/RoomMap";
+const calibrationBase = "/api/CalibrationSession";
 
 // MVC controllers serialize with Newtonsoft's default (PascalCase) naming, whereas the
 // SignalR "olo" store is camelCase. Normalize scene payloads from REST so callers always
@@ -27,6 +37,7 @@ function normScene(raw: unknown): SceneV2 {
 		script: pick(r, "script", "Script", ""),
 		framesFile: pick(r, "framesFile", "FramesFile", ""),
 		frameCount: pick(r, "frameCount", "FrameCount", 0),
+		thumbnailFile: pick(r, "thumbnailFile", "ThumbnailFile", ""),
 		provider: pick(r, "provider", "Provider", ""),
 		params: normParams(pick<unknown[]>(r, "params", "Params", []))
 	};
@@ -46,6 +57,53 @@ function normParams(raw: unknown): SceneParam[] {
 			hint: pick(o, "hint", "Hint", "")
 		};
 	});
+}
+
+function normVec(raw: unknown): Vec3 {
+	const r = (raw ?? {}) as Record<string, unknown>;
+	return {
+		x: pick(r, "x", "X", 0),
+		y: pick(r, "y", "Y", 0),
+		z: pick(r, "z", "Z", 0)
+	};
+}
+
+function normEmitter(raw: unknown): RoomMapEmitter {
+	const r = (raw ?? {}) as Record<string, unknown>;
+	return {
+		id: pick(r, "id", "Id", ""),
+		providerId: pick(r, "providerId", "ProviderId", ""),
+		deviceId: pick(r, "deviceId", "DeviceId", ""),
+		physicalType: pick(r, "physicalType", "PhysicalType", ""),
+		addressableCount: pick(r, "addressableCount", "AddressableCount", 0),
+		position: normVec(pick(r, "position", "Position", {})),
+		orientation: normVec(pick(r, "orientation", "Orientation", {})),
+		normal: normVec(pick(r, "normal", "Normal", {})),
+		confidence: pick(r, "confidence", "Confidence", 0)
+	};
+}
+
+function normGraph(raw: unknown): EmitterGraph {
+	const r = (raw ?? {}) as Record<string, unknown>;
+	const emits = pick<unknown[]>(r, "emitters", "Emitters", []);
+	return {
+		id: pick(r, "id", "Id", ""),
+		name: pick(r, "name", "Name", ""),
+		version: pick(r, "version", "Version", "1"),
+		emitters: Array.isArray(emits) ? emits.map(normEmitter) : []
+	};
+}
+
+function normCalibrationSession(raw: unknown): CalibrationSession {
+	const r = (raw ?? {}) as Record<string, unknown>;
+	return {
+		sessionId: pick(r, "sessionId", "SessionId", ""),
+		createdAtUnixMs: pick(r, "createdAtUnixMs", "CreatedAtUnixMs", 0),
+		expiresAtUnixMs: pick(r, "expiresAtUnixMs", "ExpiresAtUnixMs", 0),
+		status: pick(r, "status", "Status", "created") as CalibrationSession["status"],
+		sceneId: pick(r, "sceneId", "SceneId", ""),
+		frameCount: pick(r, "frameCount", "FrameCount", 0)
+	};
 }
 
 export async function getScenes(): Promise<SceneV2[]> {
@@ -116,6 +174,24 @@ export async function selectScene(id: string): Promise<boolean> {
 export async function deleteScene(id: string): Promise<boolean> {
 	try {
 		const res = await fetch(`${base}/scene?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+		return res.ok;
+	} catch {
+		return false;
+	}
+}
+
+export function sceneThumbnailUrl(sceneId: string, stamp?: string): string {
+	const v = encodeURIComponent(stamp ?? "");
+	return `${base}/scene/thumbnail?id=${encodeURIComponent(sceneId)}${v ? `&v=${v}` : ""}`;
+}
+
+export async function saveSceneThumbnail(sceneId: string, dataUrl: string): Promise<boolean> {
+	try {
+		const res = await fetch(`${base}/scene/thumbnail`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ sceneId, dataUrl })
+		});
 		return res.ok;
 	} catch {
 		return false;
@@ -208,6 +284,121 @@ export async function uploadFile(endpoint: "database" | "importAmbientScene" | "
 	form.append("files", file);
 	try {
 		const res = await fetch(`${base}/${endpoint}`, { method: "POST", body: form });
+		return res.ok;
+	} catch {
+		return false;
+	}
+}
+
+export async function getRoomMap(): Promise<EmitterGraph | null> {
+	try {
+		const res = await fetch(roomMapBase);
+		if (!res.ok) return null;
+		return normGraph(await res.json());
+	} catch {
+		return null;
+	}
+}
+
+export async function importRoomMapProvider(providerId: string): Promise<boolean> {
+	try {
+		const res = await fetch(`${roomMapBase}/import/${encodeURIComponent(providerId)}`, { method: "POST" });
+		return res.ok;
+	} catch {
+		return false;
+	}
+}
+
+export async function updateRoomEmitter(id: string, position?: Vec3, orientation?: Vec3): Promise<boolean> {
+	try {
+		const res = await fetch(`${roomMapBase}/emitters/${encodeURIComponent(id)}`, {
+			method: "PUT",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ position, orientation })
+		});
+		return res.ok;
+	} catch {
+		return false;
+	}
+}
+
+export async function addRoomEmitter(emitter: Record<string, unknown>): Promise<boolean> {
+	try {
+		const res = await fetch(`${roomMapBase}/emitters`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(emitter)
+		});
+		return res.ok;
+	} catch {
+		return false;
+	}
+}
+
+export async function deleteRoomEmitter(id: string): Promise<boolean> {
+	try {
+		const res = await fetch(`${roomMapBase}/emitters/${encodeURIComponent(id)}`, { method: "DELETE" });
+		return res.ok;
+	} catch {
+		return false;
+	}
+}
+
+export async function flashRoomEmitter(id: string, color = { r: 255, g: 255, b: 255, w: 0 }): Promise<boolean> {
+	try {
+		const res = await fetch(`${roomMapBase}/calibrate/flash/${encodeURIComponent(id)}`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(color)
+		});
+		return res.ok;
+	} catch {
+		return false;
+	}
+}
+
+export async function createCalibrationSession(sceneId: string): Promise<CalibrationSession | null> {
+	try {
+		const res = await fetch(`${calibrationBase}/session`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ sceneId })
+		});
+		if (!res.ok) return null;
+		return normCalibrationSession(await res.json());
+	} catch {
+		return null;
+	}
+}
+
+export async function getCalibrationSession(sessionId: string): Promise<CalibrationSession | null> {
+	try {
+		const res = await fetch(`${calibrationBase}/session/${encodeURIComponent(sessionId)}`);
+		if (!res.ok) return null;
+		return normCalibrationSession(await res.json());
+	} catch {
+		return null;
+	}
+}
+
+export async function submitCalibrationFrame(sessionId: string, dataUrl: string): Promise<boolean> {
+	try {
+		const res = await fetch(`${calibrationBase}/session/${encodeURIComponent(sessionId)}/frame`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ dataUrl })
+		});
+		return res.ok;
+	} catch {
+		return false;
+	}
+}
+
+export async function completeCalibrationSession(sessionId: string): Promise<boolean> {
+	try {
+		const res = await fetch(`${calibrationBase}/session/${encodeURIComponent(sessionId)}/complete`, {
+			method: "POST"
+		});
 		return res.ok;
 	} catch {
 		return false;

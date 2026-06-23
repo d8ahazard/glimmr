@@ -66,7 +66,7 @@ public static class BuiltInScenes {
 	private static SceneV2 Builtin(string id, string name, int w, int h, List<SceneParam> ps) {
 		return new SceneV2 {
 			Id = id, Name = name, Kind = "builtin", Provider = id,
-			System = true, Width = w, Height = h, Fps = 30, Params = ps
+			System = true, Width = w, Height = h, Fps = 30, Params = ps, ThumbnailFile = id + ".thumb.png"
 		};
 	}
 

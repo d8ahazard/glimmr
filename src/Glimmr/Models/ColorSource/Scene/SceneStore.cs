@@ -61,6 +61,14 @@ public class SceneStore {
 						continue;
 					}
 
+					if (string.IsNullOrWhiteSpace(scene.ThumbnailFile)) {
+						var inferred = scene.Id + ".thumb.png";
+						var thumbPath = Path.Join(dir, inferred);
+						if (File.Exists(thumbPath)) {
+							scene.ThumbnailFile = inferred;
+						}
+					}
+
 					scene.System = ReferenceEquals(dir, _appDir);
 					byId[scene.Id] = scene;
 				} catch (Exception e) {
@@ -73,7 +81,8 @@ public class SceneStore {
 		// and the legacy ambient image scenes (Image2Scene matrices), surfaced as image scenes so
 		// everything lives under one unified "Scenes" mode.
 		byId.TryAdd("solid", new SceneV2 {
-			Id = "solid", Name = "Solid Color", Kind = "color", System = true, Width = 1, Height = 1
+			Id = "solid", Name = "Solid Color", Kind = "color", System = true, Width = 1, Height = 1,
+			ThumbnailFile = "solid.thumb.png"
 		});
 
 		// Bundled bespoke-provider animations (Tetris, Pac-Man, Lightning, ...).
@@ -107,6 +116,7 @@ public class SceneStore {
 					Name = a.Name,
 					Kind = "image",
 					System = true,
+					ThumbnailFile = "ambient-" + a.Id + ".thumb.png",
 					Width = a.ColorMatrix[0].Length,
 					Height = a.ColorMatrix.Length,
 					ColorMatrix = a.ColorMatrix,
@@ -139,6 +149,14 @@ public class SceneStore {
 
 		var appPath = Path.Join(_appDir, file);
 		return File.Exists(appPath) ? appPath : userPath;
+	}
+
+	/// <summary>
+	///     Resolve the absolute path for a scene thumbnail in the user scenes directory.
+	/// </summary>
+	public string ThumbnailPath(SceneV2 scene) {
+		var file = string.IsNullOrEmpty(scene.ThumbnailFile) ? scene.Id + ".thumb.png" : scene.ThumbnailFile;
+		return Path.Join(_userDir, file);
 	}
 
 	/// <summary>
@@ -179,6 +197,13 @@ public class SceneStore {
 				var blob = Path.Join(_userDir, scene.FramesFile);
 				if (File.Exists(blob)) {
 					File.Delete(blob);
+				}
+			}
+
+			if (!string.IsNullOrEmpty(scene.ThumbnailFile)) {
+				var thumb = Path.Join(_userDir, scene.ThumbnailFile);
+				if (File.Exists(thumb)) {
+					File.Delete(thumb);
 				}
 			}
 		} catch (Exception e) {

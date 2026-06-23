@@ -68,6 +68,20 @@ public class SystemData {
 	public bool EnableAutoDisable { get; set; } = true;
 
 	/// <summary>
+	///     Enables the advanced Preview Studio experience in the web UI.
+	/// </summary>
+	[DefaultValue(true)]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public bool EnablePreviewStudio { get; set; } = true;
+
+	/// <summary>
+	///     Enables phone-assisted calibration session workflows.
+	/// </summary>
+	[DefaultValue(true)]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public bool EnablePhoneCalibration { get; set; } = true;
+
+	/// <summary>
 	///     If set, horizontal black bars will be cropped when detected.
 	/// </summary>
 	[DefaultValue(true)]
@@ -346,6 +360,22 @@ public class SystemData {
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
 	public int PreviewMode { get; set; }
 
+	/// <summary>
+	///     Target preview frame rate for web clients. Preview is intentionally throttled to
+	///     reduce encode overhead on slower hardware.
+	/// </summary>
+	[DefaultValue(3)]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public int PreviewFrameRate { get; set; } = 3;
+
+	/// <summary>
+	///     Maximum time (ms) the dispatcher waits for a single color target handler before
+	///     moving on. Slow targets time out and catch the next frame when available.
+	/// </summary>
+	[DefaultValue(120)]
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+	public int TargetSendTimeoutMs { get; set; } = 120;
+
 
 	/// <summary>
 	///     Number of LEDs along the right side of the screen.
@@ -573,6 +603,8 @@ public class SystemData {
 		BaudRate = 115200;
 		CropBlackLevel = 7;
 		BlackLevel = 7;
+		PreviewFrameRate = 3;
+		TargetSendTimeoutMs = 120;
 		if (GammaCorrection < 1) {
 			GammaCorrection = 1;
 		}
@@ -583,6 +615,8 @@ public class SystemData {
 
 		CheckDeviceVariables();
 		EnableAutoBrightness = true;
+		EnablePreviewStudio = true;
+		EnablePhoneCalibration = true;
 		LogLevel = 1;
 	}
 

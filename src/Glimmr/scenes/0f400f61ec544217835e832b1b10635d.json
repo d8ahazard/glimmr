@@ -1,0 +1,22 @@
+{
+  "Id": "0f400f61ec544217835e832b1b10635d",
+  "Name": "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)",
+  "Kind": "video",
+  "System": false,
+  "Width": 42,
+  "Height": 32,
+  "Fps": 20.0,
+  "Loop": true,
+  "Reverse": false,
+  "Mirror": false,
+  "Color": "",
+  "MatrixDirection": "Random",
+  "MatrixStep": 1,
+  "AnimationTime": 3.0,
+  "Script": "",
+  "FramesFile": "0f400f61ec544217835e832b1b10635d.bin.gz",
+  "FrameCount": 4261,
+  "ThumbnailFile": "0f400f61ec544217835e832b1b10635d.thumb.png",
+  "Provider": "",
+  "Params": []
+}

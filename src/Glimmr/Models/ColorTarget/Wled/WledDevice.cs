@@ -364,7 +364,13 @@ public class WledDevice : ColorTarget, IColorTarget, IDisposable {
 
 		EnsureMatrixBuffers(w, h);
 
-		if (_matrixMode == MatrixMode.Extend) {
+		// Scene mode always renders matrix targets as a full-screen mirror so scene playback is
+		// deterministic across curtains. In all other modes, honor the device's configured
+		// curtain behavior (Mirror vs Extend + side/depth/fade).
+		var effectiveMode = ColorService.CurrentMode == DeviceMode.Scene
+			? MatrixMode.Mirror
+			: _matrixMode;
+		if (effectiveMode == MatrixMode.Extend) {
 			FillExtend(matrix, srcW, srcH, w, h);
 		} else {
 			FillMirror(matrix, srcW, srcH, w, h);
